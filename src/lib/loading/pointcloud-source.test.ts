@@ -9,6 +9,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { LoadManager } from './load-manager'
 import { createResourcePolicy, type EnvironmentProbe, type PolicyOverrides } from './resource-policy'
 import { createPointCloudSourceAdapter, type PointCloudRunnerModule } from './pointcloud-source'
+import { fingerprintBlob } from './fingerprint'
 import { IfcUrlFetchError } from '../fetch-ifc-url'
 import type { PointCloudRunOptions } from '../pointcloud/pc-runner'
 import type { PointCloudSystemAPI } from '../pointcloud/point-cloud-system'
@@ -200,8 +201,9 @@ describe('point cloud adapter — a whole-file scan', () => {
 describe('point cloud adapter — cancel, remove, errors', () => {
   it('cancel aborts THIS scan only; a sibling keeps loading', async () => {
     const h = current = harness()
-    const a = h.submit(h.scan('a.las'))
-    const b = h.submit(h.scan('b.las'))
+    // Fingerprints given: the runner calls come in submission order.
+    const a = h.submit(h.scan('a.las'), { fingerprint: 'fa' })
+    const b = h.submit(h.scan('b.las'), { fingerprint: 'fb' })
     await until(() => h.runner.calls.length === 2, 'both decoding')
     h.mgr.cancel(a.id)
     expect((await a.settled).status).toBe('cancelled')
@@ -332,7 +334,13 @@ describe('point cloud adapter — URL and bytes sources', () => {
 describe('point cloud adapter — lanes', () => {
   it('decodes at most maxConcurrentDecodes scans at once; the rest wait for a slot', async () => {
     const h = current = harness({ overrides: { maxConcurrentDecodes: 2 } })
-    const handles = [h.submit(h.scan('a.las')), h.submit(h.scan('b.las')), h.submit(h.scan('c.las'))]
+    // Fingerprints given: the jobs ask for the lane in submission order, not
+    // in the order their samples happen to finish.
+    const handles = [
+      h.submit(h.scan('a.las'), { fingerprint: 'fa' }),
+      h.submit(h.scan('b.las'), { fingerprint: 'fb' }),
+      h.submit(h.scan('c.las'), { fingerprint: 'fc' }),
+    ]
     await until(() => h.runner.calls.length === 2, 'two decoding')
     await until(() => h.job(handles[2].id).status === 'waiting', 'third waiting')
     expect(h.job(handles[2].id).waitReason).toBe('slot')
@@ -467,3 +475,97 @@ describe('point cloud adapter — review fixes', () => {
     expect((await next.settled).status).toBe('loaded')
   })
 })
+
+describe('point cloud adapter — content identity', () => {
+  it('records the file’s fingerprint on the job, so the next copy is recognised', async () => {
+    const h = current = harness()
+    const handle = h.submit(h.scan('site.las', 2048))
+    await until(() => h.runner.calls.length === 1)
+    await until(() => (h.job(handle.id).fingerprint ?? '').startsWith('f1:2048:'), 'fingerprint recorded')
+    h.runner.calls[0].header(); h.runner.calls[0].finish()
+    await handle.settled
+    const fp = h.job(handle.id).fingerprint
+    expect(h.mgr.findSameSource('pointcloud', { fingerprint: fp })).toMatchObject({ jobId: handle.id, status: 'loaded' })
+    // Another kind never matches.
+    expect(h.mgr.findSameSource('mesh', { fingerprint: fp })).toBeNull()
+  })
+
+  it('a URL job is found by its URL before anything is downloaded', async () => {
+    const h = current = harness()
+    h.setFetch(() => new Promise<File>(() => { /* a download that never ends */ }))
+    const handle = h.submit({ type: 'url', url: 'https://cdn.example/big.laz' }, { origin: 'url' })
+    await until(() => h.job(handle.id).phase === 'download', 'downloading')
+    expect(h.mgr.findSameSource('pointcloud', { sourceUrl: 'https://cdn.example/big.laz' })).toMatchObject({ jobId: handle.id })
+    h.mgr.cancel(handle.id)
+    await handle.settled
+    // A cancelled job holds nothing.
+    expect(h.mgr.findSameSource('pointcloud', { sourceUrl: 'https://cdn.example/big.laz' })).toBeNull()
+  })
+
+  it('a downloaded scan gets its fingerprint once the bytes are here — the same file dropped later matches it', async () => {
+    const h = current = harness()
+    const bytes = new Uint8Array(300).fill(7)
+    h.setFetch(async (_url, o) => new File([bytes], o.fileName ?? 'demo.laz'))
+    const handle = h.submit({ type: 'url', url: 'https://cdn.example/demo.laz' }, { origin: 'demo' })
+    await until(() => h.runner.calls.length === 1, 'decoding')
+    const fp = await fingerprintBlob(new File([bytes], 'my-copy.laz'))
+    expect(h.job(handle.id).fingerprint).toBe(fp)
+    h.runner.calls[0].header(); h.runner.calls[0].finish()
+    await handle.settled
+    expect(h.mgr.findSameSource('pointcloud', { fingerprint: fp })).toMatchObject({ jobId: handle.id, status: 'loaded' })
+  })
+
+  it('host bytes that came from a URL are found by that URL', async () => {
+    const h = current = harness()
+    const handle = h.submit(h.scan('site.laz'), { origin: 'sdk', sourceUrl: 'https://cdn.example/site.laz' })
+    await until(() => h.runner.calls.length === 1)
+    expect(h.mgr.findSameSource('pointcloud', { sourceUrl: 'https://cdn.example/site.laz' })).toMatchObject({ jobId: handle.id })
+  })
+
+  it('Reload of a downloaded scan samples the bytes it fetches again, not the old identity', async () => {
+    const h = current = harness()
+    let version = 1
+    h.setFetch(async (_url, o) => new File([new Uint8Array(300).fill(version)], o.fileName ?? 'live.laz'))
+    const first = h.submit({ type: 'url', url: 'https://cdn.example/live.laz' }, { origin: 'sdk' })
+    await until(() => h.runner.calls.length === 1)
+    h.runner.calls[0].header(); h.runner.calls[0].finish()
+    await first.settled
+    const before = h.job(first.id).fingerprint
+    // The server's copy changes; the user reloads the row.
+    version = 2
+    const again = h.mgr.reload(first.id)
+    if (!again) throw new Error('no reload')
+    await until(() => h.runner.calls.length === 2, 'the reload decodes')
+    const after = h.job(again.id).fingerprint
+    expect(after).toBe(await fingerprintBlob(new File([new Uint8Array(300).fill(2)], 'x')))
+    expect(after).not.toBe(before)
+    h.runner.calls[1].header(); h.runner.calls[1].finish()
+    expect((await again.settled).status).toBe('loaded')
+  })
+
+  it('a cancel while the file is being sampled ends cancelled, not failed, and never reaches the runner', async () => {
+    const h = current = harness()
+    const g = gatedFile('held.las')
+    const handle = h.submit({ type: 'file', file: g.file })
+    await until(() => g.reads() === 1, 'sampling')
+    h.mgr.cancel(handle.id)
+    const out = await handle.settled
+    expect(out.status).toBe('cancelled')
+    expect(h.job(handle.id).error).toBeNull()
+    g.open()
+    await new Promise((r) => setTimeout(r, 10))
+    expect(h.runner.calls).toHaveLength(0)
+  })
+})
+
+/** A file whose read waits until `open()` — holds a job inside its sampling step. */
+function gatedFile(name: string): { file: File; open: () => void; reads: () => number } {
+  let open: () => void = () => {}
+  const gate = new Promise<void>((r) => { open = r })
+  let reads = 0
+  const file = new File([new Uint8Array(1000)], name)
+  const read = file.arrayBuffer.bind(file)
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => { reads++; await gate; return read() } })
+  return { file, open, reads: () => reads }
+}
+

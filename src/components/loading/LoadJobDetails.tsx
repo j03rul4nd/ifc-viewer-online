@@ -197,7 +197,11 @@ export function LoadJobDetails({ job, detail }: { job: LoadJobView; detail: Load
       {job.stalled && job.status === 'running' && (
         <p className="text-[10.5px] leading-snug text-[var(--warn)]">{stalledText(job, t)}</p>
       )}
-      {job.duplicateOf && <p className="text-[10.5px] leading-snug text-[var(--text-dim)]">{t('row.duplicate')}</p>}
+      {job.duplicateOf && (
+        <p className="text-[10.5px] leading-snug text-[var(--text-dim)]">
+          {t(job.kind === 'pointcloud' ? 'row.duplicateScan' : job.kind === 'mesh' ? 'row.duplicateMesh' : 'row.duplicate')}
+        </p>
+      )}
       <PhaseChecklist job={job} />
       <div className="border-t border-[var(--border)] pt-2">
         <MetricsGrid job={job} advanced={advanced} />

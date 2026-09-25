@@ -26,6 +26,7 @@
 // first model and ignores the rest.
 
 import { abortError, isAbortError } from './retry-policy'
+import { fingerprintBlob, meshIdentity } from './fingerprint'
 import { SourceLoadError, classifySourceError, downloadLoadError, runnerLoadError } from './source-errors'
 import { urlSourceName } from './pointcloud-source'
 import type {
@@ -86,6 +87,24 @@ function abortable<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
  */
 function cacheModeFor(ctx: JobContext): RequestCache {
   return ctx.opts.origin === 'sdk' ? 'default' : 'force-cache'
+}
+
+/**
+ * Record the import's identity on the job — the entry file's content plus the
+ * files it came with (meshIdentity) — once there is content to read: the next
+ * drop of the same model finds it (findSameSource) and is not decoded a
+ * second time. Cheap — three 64 KB samples — and best effort: a file that
+ * cannot be sampled just goes without.
+ */
+async function recordFingerprint(ctx: JobContext, files: File[]): Promise<void> {
+  if (ctx.opts.fingerprint || files.length === 0) return
+  const [entry, ...sidecars] = files
+  try {
+    const fp = await abortable(fingerprintBlob(entry), ctx.signal)
+    ctx.setMeta({ fingerprint: meshIdentity(entry.name, fp, sidecars) })
+  } catch (err) {
+    if (ctx.signal.aborted || isAbortError(err)) throw abortError()
+  }
 }
 
 function sourceUrlOf(ctx: JobContext): string | null {
@@ -200,6 +219,9 @@ export function createMeshSourceAdapter(deps: MeshSourceDeps): SourceAdapter {
     if (ctx.source.type !== 'file' && entry) {
       ctx.setMeta({ fileName: entry.name, sizeBytes: files.reduce((a, f) => a + f.size, 0) })
     }
+    // Entry content + the sidecars it came with: the same .obj brought back
+    // with its .mtl is a different import (see meshIdentity).
+    await recordFingerprint(ctx, files)
 
     enter('decode')
     const system = await abortable(deps.getSystem(), signal)

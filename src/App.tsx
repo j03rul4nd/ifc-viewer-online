@@ -102,7 +102,7 @@ import { useIfcLoader } from './lib/loader'
 import {
   resetLoading, notifyModelRemoving, notifyModelRemoved, cancelAllLoads, type LoadingHooks,
   submitPointClouds, submitMeshes, canLoadKind, describeSourceError, sourceErrorKey, type SourceSubmitItem,
-  removeSourceResult, clearSources,
+  removeSourceResult, clearSources, loadPointCloudsOnce, loadMeshesOnce,
 } from './lib/loading'
 import { legacyPhase } from './lib/loading/phases'
 import {
@@ -1268,7 +1268,8 @@ export default function App() {
   function submitDroppedSources(pointcloud: File[], mesh: File[]): void {
     if (pointcloud.length > 0) {
       if (canLoadKind('pointcloud')) {
-        submitPointClouds(pointcloud.map((file) => ({ source: { type: 'file', file } })), { origin: 'drop' })
+        // A scan already in the scene is not decoded again (see loadPointCloudsOnce).
+        void loadPointCloudsOnce(pointcloud.map((file) => ({ source: { type: 'file', file } })), { origin: 'drop' })
       } else {
         toast(tToasts('model.dropUnsupported', { count: pointcloud.length }), 'warning')
       }
@@ -1281,7 +1282,7 @@ export default function App() {
         // Only sidecars (.bin, .mtl): nothing to decode. Said, not swallowed.
         toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
       } else {
-        submitMeshes(groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })), { origin: 'drop' })
+        void loadMeshesOnce(groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })), { origin: 'drop' })
       }
     }
   }
@@ -2469,7 +2470,9 @@ export default function App() {
     // is toasted by the loading hooks, like any other scan's.
     if (urlParams.scanUrls.length > 0) {
       if (canLoadKind('pointcloud')) {
-        submitPointClouds(urlParams.scanUrls.map((url) => ({
+        // The same URL twice in the link, or a scan the page already holds,
+        // is loaded once.
+        void loadPointCloudsOnce(urlParams.scanUrls.map((url) => ({
           source: { type: 'url', url, fileName: deriveScanFileName(url) },
         })), { origin: 'url' })
       } else {

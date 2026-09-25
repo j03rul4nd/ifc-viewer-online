@@ -81,6 +81,8 @@
     "stalledGeneric": "Sin progreso desde hace un rato. Sigue esperando o cancela.",
     "stalledShort": "Sin progreso reciente",
     "duplicate": "Mismo contenido que un modelo que ya está en la escena",
+    "duplicateScan": "Mismo contenido que un escaneo que ya está en la escena",
+    "duplicateMesh": "Mismo contenido que un modelo 3D que ya está en la escena",
     "retrying": "Intento {{attempt}}"
   },
   "counter": {
@@ -359,5 +361,22 @@
     "buildings": "Edificios del entorno",
     "pointCloud": "Nube de puntos",
     "mesh": "Modelo 3D"
+  },
+  "duplicate": {
+    "inScene": "«{{name}}» ya está en la escena",
+    "loading": "«{{name}}» ya se está cargando",
+    "sameAsInScene": "«{{name}}» tiene el mismo contenido que «{{existing}}», que ya está en la escena",
+    "sameAsLoading": "«{{name}}» tiene el mismo contenido que «{{existing}}», que ya se está cargando",
+    "revealed": "«{{name}}» ya estaba en la escena, oculto: se vuelve a mostrar",
+    "revealedSameAs": "«{{name}}» tiene el mismo contenido que «{{existing}}», que estaba oculto: se vuelve a mostrar",
+    "resumed": "«{{name}}» estaba en pausa: vuelve a la cola",
+    "resumedSameAs": "«{{name}}» tiene el mismo contenido que «{{existing}}», que estaba en pausa: vuelve a la cola",
+    "manyNamed": "{{names}} ya están en la escena o cargándose",
+    "revealedSome": "Los ocultos se vuelven a mostrar.",
+    "resumedSome": "Los que estaban en pausa vuelven a la cola.",
+    "many_one": "{{count}} archivo ya está en la escena o cargándose",
+    "many_other": "{{count}} archivos ya están en la escena o cargándose",
+    "quoted": "«{{name}}»",
+    "loadAnyway": "Cargar una copia igualmente"
   }
 }

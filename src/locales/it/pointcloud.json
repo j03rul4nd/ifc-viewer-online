@@ -88,7 +88,14 @@
     "memory": "{{mb}} MB sulla GPU",
     "truncated": "Fermato a {{count}} punti — il file ne contiene più di quanti questo visualizzatore ne tenga in memoria contemporaneamente.",
     "noModel": "Nessun modello IFC caricato — la scansione è posizionata da sola.",
-    "partial": "Una parte di questa scansione non è stata letta e manca dalla vista. Quello che vedi è incompleto."
+    "partial": "Una parte di questa scansione non è stata letta e manca dalla vista. Quello che vedi è incompleto.",
+    "budget": "Budget di punti: {{used}} di {{max}}",
+    "budgetNearlyFull": "Budget di punti: {{used}} di {{max}} — quasi pieno",
+    "budgetFull": "Budget di punti: {{used}} di {{max}} — pieno",
+    "budgetLabel": "Budget di punti in memoria",
+    "budgetHint": "Punti tenuti in memoria dalle scansioni caricate, comprese quelle ancora in caricamento. Una scansione che non ci sta aspetta finché un’altra scansione è in caricamento; altrimenti si carica troncata, o viene rifiutata quando il budget è pieno. Le nuvole COPC in streaming non contano: le limita l’impostazione Dettaglio.",
+    "budgetReserved": "+ {{reserved}} riservati alle scansioni ancora in caricamento",
+    "budgetAbout": "Informazioni sul budget di punti"
   },
   "align": {
     "title": "Allineamento",

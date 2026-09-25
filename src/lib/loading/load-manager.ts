@@ -163,6 +163,7 @@ interface JobRecord {
    * the source, and the embed contract still reports `model-error {url}`.
    */
   sourceUrl: string | null
+  sourceVersion: number | null
   /** upload/drop Files are disk-backed and cheap to keep for Reload. */
   retainFiles: boolean
   opts: SubmitOptions
@@ -291,6 +292,11 @@ function fallbackName(source: LoadSource): string {
   } catch {
     return 'model.ifc'
   }
+}
+
+/** Two versions of the same fingerprint: unknown on either side counts as the same. */
+function sameVersion(a: number | null, b: number | null): boolean {
+  return a === null || b === null || a === b
 }
 
 function defaultPriority(origin: JobOrigin, inBatch: boolean, firstInBatch: boolean): Priority {
@@ -622,12 +628,15 @@ export class LoadManager {
       let failGate: (e: unknown) => void = () => {}
       const gate = new Promise<void>((resolve, reject) => { openGate = resolve; failGate = reject })
       this.beginUnload(rec)
+      // A scan / mesh fetched again from its URL may come back changed: its
+      // adapter samples the new bytes. An IFC reloads from the bytes it had.
+      const refetched = rec.kind !== 'ifc' && source.type === 'url'
       const handle = this.createJob(source, rec.kind, {
         ...rec.opts,
         origin: 'reload',
         priority: rec.priority,
         batchId: rec.batchId ?? undefined,
-        fingerprint: rec.fingerprint ?? rec.opts.fingerprint,
+        fingerprint: refetched ? undefined : rec.fingerprint ?? rec.opts.fingerprint,
         requestId: undefined,
       }, { retainFiles: rec.retainFiles, gate })
       Promise.resolve()
@@ -734,12 +743,35 @@ export class LoadManager {
 
   // ── Queries ─────────────────────────────────────────────────────────────────
 
-  /** A loaded model (preferred) or a live job with this content fingerprint. */
-  findDuplicate(fingerprint: string): DuplicateHit | null {
+  /**
+   * A loaded model (preferred) or a live job with this content fingerprint.
+   * `kind` narrows it — the upload dialog asks for IFC models only.
+   */
+  findDuplicate(fingerprint: string, kind?: SourceKind): DuplicateHit | null {
+    return this.findSameSource(kind ?? null, { fingerprint })
+  }
+
+  /**
+   * Something already in the scene (loaded, preferred) or on its way (active)
+   * with the same CONTENT (fingerprint) or from the same URL. What the scan
+   * and mesh entry points ask before loading a file the scene already holds:
+   * the same survey dropped twice used to be decoded and uploaded twice.
+   * `kind` (null = any) is part of the key — a scan and a model never match.
+   * A `version` skips jobs whose own known version differs (an edited file
+   * whose sample did not change), and the next candidate is considered.
+   */
+  findSameSource(
+    kind: SourceKind | null,
+    key: { fingerprint?: string | null; sourceUrl?: string | null; version?: number | null },
+  ): DuplicateHit | null {
+    if (!key.fingerprint && !key.sourceUrl) return null
     let loaded: JobRecord | null = null
     let active: JobRecord | null = null
     for (const rec of this.jobs.values()) {
-      if (rec.fingerprint !== fingerprint) continue
+      if (kind !== null && rec.kind !== kind) continue
+      const same = (key.fingerprint != null && rec.fingerprint === key.fingerprint) ||
+        (key.sourceUrl != null && rec.sourceUrl === key.sourceUrl)
+      if (!same || !sameVersion(key.version ?? null, rec.sourceVersion)) continue
       if (rec.status === 'loaded') loaded = rec
       else if (ACTIVE_STATUSES.has(rec.status)) active = rec
     }
@@ -1127,7 +1159,8 @@ export class LoadManager {
       managed: init.managed,
       adapter: init.adapter,
       source: init.source,
-      sourceUrl: init.source?.type === 'url' ? init.source.url : null,
+      sourceUrl: init.source?.type === 'url' ? init.source.url : init.opts.sourceUrl ?? null,
+      sourceVersion: init.opts.sourceVersion ?? null,
       retainFiles: init.retainFiles,
       opts: init.opts,
       fileName: init.fileName,
@@ -1312,7 +1345,8 @@ export class LoadManager {
   private duplicateOf(rec: JobRecord): string | null {
     if (!rec.fingerprint) return null
     for (const other of this.jobs.values()) {
-      if (other !== rec && other.status === 'loaded' && other.fingerprint === rec.fingerprint) {
+      if (other !== rec && other.kind === rec.kind && other.status === 'loaded' && other.fingerprint === rec.fingerprint &&
+        sameVersion(rec.sourceVersion, other.sourceVersion)) {
         return other.resultId
       }
     }
@@ -2628,6 +2662,7 @@ export class LoadManager {
       duplicateOf: rec.duplicateOf,
       requestId: rec.requestId,
       sourceUrl: rec.sourceUrl,
+      sourceVersion: rec.sourceVersion,
       seq: rec.seq,
       capabilities: this.capabilities(rec),
     }

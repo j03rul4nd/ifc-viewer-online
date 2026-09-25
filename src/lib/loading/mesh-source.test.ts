@@ -7,6 +7,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { LoadManager } from './load-manager'
 import { createResourcePolicy, type EnvironmentProbe } from './resource-policy'
 import { createMeshSourceAdapter, type MeshRunnerModule } from './mesh-source'
+import { fingerprintBlob, meshIdentity } from './fingerprint'
 import type { MeshRunOptions } from '../mesh/mesh-runner'
 import type { MeshSystemAPI } from '../mesh/mesh-system'
 import type { JobHandle, JobOutcome, LoadJobView, LoadSource, SubmitOptions } from './types'
@@ -124,10 +125,13 @@ describe('mesh adapter', () => {
 
   it('frees its decode slot while it waits to be placed', async () => {
     const h = current = harness({ maxConcurrentDecodes: 1 })
-    const a = h.submit({ type: 'file', file: glb('a.glb') })
-    const b = h.submit({ type: 'file', file: glb('b.glb') })
+    // Fingerprints given: a and b ask for the slot in submission order, not in
+    // the order their samples happen to finish.
+    const a = h.submit({ type: 'file', file: glb('a.glb') }, { fingerprint: 'fa' })
+    const b = h.submit({ type: 'file', file: glb('b.glb') }, { fingerprint: 'fb' })
     await until(() => h.runner.calls.length === 1, 'a decoding')
-    expect(h.job(b.id).waitReason).toBe('slot')
+    expect(h.runner.calls[0].opts.files[0].name).toBe('a.glb')
+    await until(() => h.job(b.id).waitReason === 'slot', 'b waiting for the slot')
     // a finishes decoding and queues for placement → b may decode.
     const placing = h.runner.calls[0].place()
     await until(() => h.runner.calls.length === 2, 'b decoding')
@@ -137,8 +141,9 @@ describe('mesh adapter', () => {
 
   it('cancel stops THIS import only — no sibling is touched, nothing is left loading', async () => {
     const h = current = harness()
-    const a = h.submit({ type: 'file', file: glb('a.glb') })
-    const b = h.submit({ type: 'file', file: glb('b.glb') })
+    // Fingerprints given: the runner calls come in submission order.
+    const a = h.submit({ type: 'file', file: glb('a.glb') }, { fingerprint: 'fa' })
+    const b = h.submit({ type: 'file', file: glb('b.glb') }, { fingerprint: 'fb' })
     await until(() => h.runner.calls.length === 2)
     h.mgr.cancel(a.id)
     expect((await a.settled).status).toBe('cancelled')
@@ -260,3 +265,64 @@ describe('mesh adapter — review fixes', () => {
     expect((await anchor.settled).status).toBe('loaded')
   })
 })
+
+describe('mesh adapter — identity for the duplicate check', () => {
+  it('a cancel while the file is being sampled ends cancelled, not failed, and never reaches the runner', async () => {
+    const h = current = harness()
+    const g = gatedFile('held.glb')
+    const handle = h.submit({ type: 'file', file: g.file })
+    await until(() => g.reads() === 1, 'sampling')
+    h.mgr.cancel(handle.id)
+    const out = await handle.settled
+    expect(out.status).toBe('cancelled')
+    expect(h.job(handle.id).error).toBeNull()
+    g.open()
+    await new Promise((r) => setTimeout(r, 10))
+    expect(h.runner.calls).toHaveLength(0)
+  })
+
+  it('records the entry content plus the files it came with', async () => {
+    const h = current = harness()
+    const entry = new File([new Uint8Array(64).fill(3)], 'house.obj')
+    const mtl = new File([new Uint8Array(12)], 'house.mtl')
+    const alone = h.submit({ type: 'file', file: entry })
+    const withMtl = h.submit({ type: 'file', file: entry, sidecars: [mtl] })
+    await until(() => h.runner.calls.length === 2, 'both decoding')
+    const fp = await fingerprintBlob(entry)
+    expect(h.job(alone.id).fingerprint).toBe(fp)
+    // The same .obj brought back with its .mtl is another import, not a copy.
+    expect(h.job(withMtl.id).fingerprint).toBe(meshIdentity('house.obj', fp, [mtl]))
+    expect(h.job(withMtl.id).fingerprint).not.toBe(fp)
+  })
+
+  it('a .glb is self-contained: what else was in the drop does not change it', async () => {
+    const fp = 'f1:abc'
+    expect(meshIdentity('chair.glb', fp, [{ name: 'notes.txt', size: 3 }])).toBe(fp)
+    // Sidecar order does not matter; names are case-insensitive.
+    expect(meshIdentity('a.gltf', fp, [{ name: 'B.bin', size: 1 }, { name: 'a.png', size: 2 }]))
+      .toBe(meshIdentity('a.gltf', fp, [{ name: 'a.png', size: 2 }, { name: 'b.bin', size: 1 }]))
+  })
+
+  it('a downloaded mesh gets its fingerprint once the bytes are here — a later drop of the same file matches it', async () => {
+    const bytes = new Uint8Array(32).fill(9)
+    const h = current = harness({ fetchFile: async (_url, o) => new File([bytes], o.fileName ?? 'demo.glb') })
+    const handle = h.submit({ type: 'url', url: 'https://cdn.example/demo.glb' })
+    await until(() => h.runner.calls.length === 1, 'decoding')
+    const fp = await fingerprintBlob(new File([bytes], 'renamed.glb'))
+    expect(h.job(handle.id).fingerprint).toBe(fp)
+    await h.runner.calls[0].place()
+    await handle.settled
+    expect(h.mgr.findSameSource('mesh', { fingerprint: fp })?.jobId).toBe(handle.id)
+  })
+})
+
+/** A file whose read waits until `open()` — holds a job inside its sampling step. */
+function gatedFile(name: string): { file: File; open: () => void; reads: () => number } {
+  let open: () => void = () => {}
+  const gate = new Promise<void>((r) => { open = r })
+  let reads = 0
+  const file = new File([new Uint8Array(1000)], name)
+  const read = file.arrayBuffer.bind(file)
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => { reads++; await gate; return read() } })
+  return { file, open, reads: () => reads }
+}

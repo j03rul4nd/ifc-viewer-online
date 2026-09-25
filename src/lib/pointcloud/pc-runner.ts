@@ -260,6 +260,24 @@ export function availablePoints(): number {
   return Math.max(0, s.maxPoints - used)
 }
 
+/**
+ * The same ledger in its two parts, for the panel's meter: points uploaded,
+ * and points promised to scans still parsing beyond what they hold so far. A
+ * plain-text scan is promised everything left until it knows its count —
+ * shown as one lump of "used", a 50 k-point .xyz read as a full budget.
+ */
+export function budgetUsage(): { resident: number; reserved: number; max: number } {
+  const s = usePointCloudStore.getState()
+  let resident = 0
+  let reserved = 0
+  for (const c of s.clouds) {
+    if (c.sourceKind === 'temporal-replay' || streamingClouds.has(c.id)) continue
+    resident += c.pointCount
+    reserved += Math.max(0, (reservations.get(c.id) ?? 0) - c.pointCount)
+  }
+  return { resident, reserved, max: s.maxPoints }
+}
+
 function othersHoldReservations(cloudId: string): boolean {
   for (const id of reservations.keys()) if (id !== cloudId) return true
   return false

@@ -8,6 +8,7 @@
     "save": "บันทึก",
     "cancel": "ยกเลิก",
     "close": "ปิด",
+    "optionAvailable": "มีตัวเลือก: {{label}}",
     "delete": "ลบ",
     "clear": "ล้าง",
     "reset": "รีเซ็ต",

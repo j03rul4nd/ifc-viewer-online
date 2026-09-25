@@ -81,6 +81,8 @@
     "stalledGeneric": "Seit einer Weile kein Fortschritt. Warten Sie weiter oder brechen Sie ab.",
     "stalledShort": "Kein aktueller Fortschritt",
     "duplicate": "Gleicher Inhalt wie ein Modell, das bereits in der Szene ist",
+    "duplicateScan": "Gleicher Inhalt wie ein Scan, der bereits in der Szene ist",
+    "duplicateMesh": "Gleicher Inhalt wie ein 3D-Modell, das bereits in der Szene ist",
     "retrying": "Versuch {{attempt}}"
   },
   "counter": {
@@ -359,5 +361,22 @@
     "buildings": "Umgebungsbebauung",
     "pointCloud": "Punktwolke",
     "mesh": "3D-Modell"
+  },
+  "duplicate": {
+    "inScene": "„{{name}}“ ist bereits in der Szene",
+    "loading": "„{{name}}“ wird bereits geladen",
+    "sameAsInScene": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das bereits in der Szene ist",
+    "sameAsLoading": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das bereits geladen wird",
+    "revealed": "„{{name}}“ war bereits in der Szene, aber ausgeblendet — es wird wieder angezeigt",
+    "revealedSameAs": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das ausgeblendet war — es wird wieder angezeigt",
+    "resumed": "„{{name}}“ war angehalten — es steht wieder in der Warteschlange",
+    "resumedSameAs": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das angehalten war — es steht wieder in der Warteschlange",
+    "manyNamed": "{{names}} sind bereits in der Szene oder werden geladen",
+    "revealedSome": "Ausgeblendete werden wieder angezeigt.",
+    "resumedSome": "Angehaltene stehen wieder in der Warteschlange.",
+    "many_one": "{{count}} Datei ist bereits in der Szene oder wird geladen",
+    "many_other": "{{count}} Dateien sind bereits in der Szene oder werden geladen",
+    "quoted": "„{{name}}“",
+    "loadAnyway": "Trotzdem als Kopie laden"
   }
 }
