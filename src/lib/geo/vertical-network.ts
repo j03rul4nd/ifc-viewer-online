@@ -47,6 +47,7 @@ import {
   bestConfidence, MAX_GRADE, CROSSING_CLEARANCE_M,
 } from './vertical'
 import { corridorHighM, corridorLowM } from './terrain-truth'
+import { runToEnd, type Steps } from './steps'
 
 // ── Level crossings ────────────────────────────────────────────────────────────
 
@@ -472,6 +473,18 @@ export function solveVerticalNetwork(
   ways: ReadonlyArray<VerticalWay>,
   opts: VerticalNetworkOptions,
 ): SolvedProfile[] {
+  return runToEnd(verticalNetworkSteps(ways, opts))
+}
+
+/**
+ * `solveVerticalNetwork`, pausable between ways and between chains — see
+ * `steps`. On a district (Poblenou, ~2 200 profiles) the solve is 200-400 ms,
+ * spread over every way and every pass, so it pauses rather than hurries.
+ */
+export function* verticalNetworkSteps(
+  ways: ReadonlyArray<VerticalWay>,
+  opts: VerticalNetworkOptions,
+): Steps<SolvedProfile[]> {
   if (ways.length === 0) return []
 
   const mToN = opts.mToN
@@ -488,6 +501,7 @@ export function solveVerticalNetwork(
 
   // ── 3. Crossings ────────────────────────────────────────────────────────────
   const crossings = findLevelCrossings(sorted, { mToN })
+  yield
   const overIndex = new Map<string, LevelCrossing[]>()
   const stackedUnder = new Map<string, number>()
   for (const c of crossings) {
@@ -510,7 +524,7 @@ export function solveVerticalNetwork(
   }
 
   // ── 1, 2, 4. Per-way plans ──────────────────────────────────────────────────
-  const plans: WayPlan[] = sorted.map((w) => {
+  const planWay = (w: VerticalWay): WayPlan => {
     const densified = densify(w.points, stepN, mToN, maxPer)
     const ground = densified.points.map((p) => opts.groundM(p.x, p.y))
     const anyTrusted = densified.points.some((p) => trusted(p.x, p.y))
@@ -571,7 +585,12 @@ export function solveVerticalNetwork(
     }
 
     return { densified, ground, targetM, hard, phase, core, confidence: target.confidence }
-  })
+  }
+  const plans: WayPlan[] = []
+  for (const w of sorted) {
+    yield
+    plans.push(planWay(w))
+  }
 
   // ── 5. Chains ───────────────────────────────────────────────────────────────
   const index = new NodeIndex(snapN)
@@ -732,10 +751,13 @@ export function solveVerticalNetwork(
     }
   }
 
-  const runPasses = (): void => {
+  function* runPasses(): Steps<void> {
     // ── 6. First pass: chains solved free ───────────────────────────────────────
     const noPins = new Map<number, number>()
-    for (const chain of chains) solveChain(chain, noPins)
+    for (const chain of chains) {
+      yield
+      solveChain(chain, noPins)
+    }
 
     // ── 7. Junction reconciliation ──────────────────────────────────────────────
     // Every arm of a crossroads must arrive at ONE height, or the junction tears
@@ -779,7 +801,10 @@ export function solveVerticalNetwork(
           }
           pinned.set(node, Math.max(sum / arms.length, owed))
         }
-        for (const chain of chains) solveChain(chain, pinned)
+        for (const chain of chains) {
+          yield
+          solveChain(chain, pinned)
+        }
       }
       // Guarantee, not hope. Whatever the last pass achieved, every arm leaves
       // the junction from the SAME vertex height. Any residual is a fraction of
@@ -791,7 +816,7 @@ export function solveVerticalNetwork(
       }
     }
   }
-  runPasses()
+  yield* runPasses()
   // One more round when a lower way turned out to stand higher than intended:
   // the floors it implies are re-derived from the SOLVED profiles and the
   // network solved again from its intent, so nothing of the first answer's
@@ -799,11 +824,11 @@ export function solveVerticalNetwork(
   if (crossings.length > 0 && deriveFloors((u, j) => solved[u][j])) {
     for (let w = 0; w < plans.length; w++) solved[w] = [...plans[w].targetM]
     relaxedWay.fill(false)
-    runPasses()
+    yield* runPasses()
   }
 
   // ── Assemble ────────────────────────────────────────────────────────────────
-  return sorted.map((w, i) => {
+  const assemble = (w: VerticalWay, i: number): SolvedProfile => {
     const plan = plans[i]
     const elevationM = solved[i]
     // Phase is re-derived from where the vertex ACTUALLY ended up, not from
@@ -861,7 +886,13 @@ export function solveVerticalNetwork(
         : plan.confidence,
       relaxed: relaxedWay[i],
     }
-  })
+  }
+  const profiles: SolvedProfile[] = []
+  for (let i = 0; i < sorted.length; i++) {
+    yield
+    profiles.push(assemble(sorted[i], i))
+  }
+  return profiles
 }
 
 // ── Sampling a solved profile ──────────────────────────────────────────────────

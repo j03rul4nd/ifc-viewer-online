@@ -17,7 +17,7 @@ import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
-  buildBuildingsGeometry,
+  buildBuildingsGeometrySliced,
   type BuildingDetail, type BuildingRange, type ContextTone,
 } from './building-mesh'
 import {
@@ -27,18 +27,20 @@ import {
 } from './context-suppression'
 import { createFacadeMaterial } from './facade-shader'
 import { buildVehicleLayer } from './props-scene'
-import { buildBarrierLayer, buildFurnitureLayer, buildPlacedSignalLayer } from './street-furniture'
+import {
+  buildBarrierLayerSliced, buildFurnitureLayerSliced, buildPlacedSignalLayerSliced,
+} from './street-furniture'
 import { buildMarinaBoatLayer, buildLakeBoatLayer } from './marina-boats'
 import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
 import { landmarksIn, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
-import { barcelonaFabric, barcelonaFacadeAt } from './barcelona-fabric'
+import { barcelonaFabricSliced, barcelonaFacadeAt } from './barcelona-fabric'
 import { isBarcelona } from './barcelona-barris'
 import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropAsset } from './props-assets'
 import { isShanghai } from './shanghai-region'
 import { buildShanghaiParkDetails } from './shanghai-parks'
 import {
-  buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayerSliced, disposeLayer,
-  solveSceneVertical, buildWaterMask, buildPierLayer, waterLevelM, type LayerMeshOptions,
+  buildSurfaceLayerSliced, buildBridgeLayer, buildTreeLayerSliced, buildLinearLayerSliced, disposeLayer,
+  solveSceneVerticalSliced, buildWaterMask, buildPierLayer, waterLevelM, type LayerMeshOptions,
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
@@ -329,6 +331,13 @@ export interface GeoSystemAPI {
    * Replaces the whole set; the caller owns it (the store persists it).
    */
   setHiddenFeatures(ids: ReadonlyArray<string>): void
+  /**
+   * Resolves once every requested scene rebuild has landed, or been dropped by
+   * a teardown. The setters above return at once and the scene follows a phase
+   * at a time; a caller that must see the result — a test, an SDK `done` —
+   * waits here. Never starts a build of its own.
+   */
+  settled(): Promise<void>
   isActive(): boolean
   dispose(): void
 }
@@ -438,6 +447,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Vertex slices of the merged buildings mesh, for hit-testing. */
   let buildingRanges: BuildingRange[] = []
   let buildingsMesh: THREE.Mesh | null = null
+  /** Estimated-height blocks in the last committed buildings mesh. */
+  let estimatedBuildings = 0
   let hoverCallback: ((info: ContextHover | null) => void) | null = null
   let hoverAttached: ((e: PointerEvent) => void) | null = null
   /** Last thing reported, so an unchanged hover does not re-render the UI. */
@@ -922,6 +933,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (osmFeatures) rebuildLayers()
     },
 
+    async settled() {
+      // A rebuild started while this waits replaces `layersSettled`; keep
+      // waiting until the promise awaited is still the latest one.
+      for (;;) {
+        const current = layersSettled
+        await current
+        if (current === layersSettled) return
+      }
+    },
+
     setContextHoverCallback(cb) {
       hoverCallback = cb
       if (cb && !hoverAttached) {
@@ -1051,7 +1072,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     })
   }
 
-  function rebuildLayers(): number {
+  /**
+   * Rebuild every OSM layer from the cached features, as a cascade of phases.
+   * Returns at once; `layersSettled` resolves when the last phase has landed,
+   * and `estimatedBuildings` holds the count from the blocks it built.
+   */
+  function rebuildLayers(): void {
     if (contextDetail === 'showcase') ensurePropAssets()
     // THE CASCADE. A new rebuild supersedes any still running: its generation
     // is what every later phase checks before it touches the scene.
@@ -1060,7 +1086,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       clearLayers()
       buildingRanges = []
       buildingsMesh = null
-      return 0
+      estimatedBuildings = 0
+      return
     }
     // DOUBLE-BUFFERED. The previous scene stays on screen while its
     // replacement is built; each kind is swapped the moment its new objects
@@ -1084,8 +1111,6 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         staged.delete(kind)
       }
     }
-    buildingRanges = []
-    buildingsMesh = null
     const discard = (): void => {
       for (const list of staged.values()) for (const o of list) disposeLayer(o)
       staged.clear()
@@ -1189,9 +1214,38 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ...opts, excludeAt: modelExclusion(), scenery: vehiclesEnabled,
       waterElevation: ring => groundFrameFor(opts).zAtElevationM(waterLevelM(ring, groundFrameFor(opts), false) + .15),
     })
-    let estimatedCount = 0
-
     const inBarcelona = isBarcelona(placement.lat, placement.lon)
+
+    // Everything else, a phase at a time, handing the main thread back between
+    // phases so what is ready gets painted and input is answered. Each phase's
+    // shader programs are compiled in parallel (KHR_parallel_shader_compile)
+    // before it joins the scene, so no first frame freezes on a compile.
+    const budget = deviceBudget(ctx.renderer.getContext?.() ?? null)
+    const alive = (): boolean => gen === layerGeneration && geoRoot !== null
+    const phase = async (
+      kinds: ReadonlyArray<FeatureKind>, onCommit?: () => void,
+    ): Promise<boolean> => {
+      if (!alive()) return false
+      // The staged objects themselves, parented to a holder for the compile;
+      // `commit` re-parents them under the map root.
+      const fresh = new THREE.Group()
+      for (const k of kinds) for (const o of staged.get(k) ?? []) fresh.add(o)
+      if (fresh.children.length > 0) await precompile(ctx.renderer, fresh, ctx.getActiveCamera(), ctx.scene)
+      if (!alive()) return false
+      commit(kinds)
+      onCommit?.()
+      await yieldToMain()
+      return alive()
+    }
+    const cascade = async (): Promise<void> => {
+    await yieldToMain()
+    if (!alive()) return
+
+    // The blocks first: they are what a site view is read by, and the count
+    // the caller reports comes from them. They used to be built in the same
+    // task as the call — on a district a few hundred milliseconds of frozen
+    // page before anything else could start — and are sliced like the rest now.
+    let builtBlocks: { mesh: THREE.Mesh; ranges: BuildingRange[]; estimated: number } | null = null
     if (layerVisibility.building) {
       let footprints: Array<{
         id: string; ring: NonNullable<OsmFeature['ring']>; holes?: OsmFeature['holes']
@@ -1204,17 +1258,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         }))
       // Barcelona's fabric, barri by barri: storey counts where OSM has none,
       // and the Eixample's hollow blocks restored — see barcelona-fabric.
-      if (inBarcelona) footprints = barcelonaFabric(footprints, visibleFeatures, placement.lat)
+      if (inBarcelona) {
+        const fabric = await barcelonaFabricSliced(footprints, visibleFeatures, placement!.lat, { alive })
+        if (fabric === undefined) return
+        footprints = fabric
+      }
       // At 'detailed' the facades join the same sun as the ground and the
       // canopies; at 'simple' they stay unlit, which is cheaper and is the
       // right answer when the surroundings are only there for orientation.
       // Showcase is detailed plus authored props, so it is lit too — it used
       // to fall back to the unlit path and paint the blocks without the sun.
       const litFacades = contextDetail !== 'simple'
-      const built = buildBuildingsGeometry(footprints, {
+      const built = await buildBuildingsGeometrySliced(footprints, {
         ...opts, detail: contextDetail, lit: litFacades, contextTone, localOrigin: true,
         typologyAt: inBarcelona ? barcelonaFacadeAt : null,
-      })
+      }, { alive })
+      if (built === undefined) return
       if (built) {
         const mesh = new THREE.Mesh(
           built.geometry,
@@ -1224,13 +1283,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         )
         mesh.name = 'osm-buildings'
         if (built.origin) mesh.position.set(built.origin.x, built.origin.y, 0)
-        buildingRanges = built.ranges
-        buildingsMesh = mesh
         // Above the flat tiles and the surface layers, so grade-level walls do
         // not z-fight with the basemap or with a park drawn under them.
         mesh.renderOrder = 5
         stage('building', mesh)
-        estimatedCount = built.estimatedCount
+        builtBlocks = { mesh, ranges: built.ranges, estimated: built.estimatedCount }
       }
 
       // Rooftop kit rides the SAME layer switch as the buildings, because it is
@@ -1241,42 +1298,23 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // garden reads as an error, not as a roof.
       const roofProps = buildRoofPropLayer(footprints.filter((f) => !f.interior), opts)
       if (roofProps) stage('building', roofProps.object)
-    }
-    if (layerVisibility.building) {
       const lm = buildLandmarkLayer(loadedLandmarks, opts)
       if (lm) stage('building', lm)
     }
-    // The blocks go on screen NOW, in the same task: they are what a site view
-    // is read by, and the building count the caller wants comes from them.
-    commit(['building'])
-
-    // Everything else, a phase at a time, handing the main thread back between
-    // phases so what is ready gets painted and input is answered. Each phase's
-    // shader programs are compiled in parallel (KHR_parallel_shader_compile)
-    // before it joins the scene, so no first frame freezes on a compile.
-    const budget = deviceBudget(ctx.renderer.getContext?.() ?? null)
-    const alive = (): boolean => gen === layerGeneration && geoRoot !== null
-    const phase = async (kinds: ReadonlyArray<FeatureKind>): Promise<boolean> => {
-      if (!alive()) return false
-      // The staged objects themselves, parented to a holder for the compile;
-      // `commit` re-parents them under the map root.
-      const fresh = new THREE.Group()
-      for (const k of kinds) for (const o of staged.get(k) ?? []) fresh.add(o)
-      if (fresh.children.length > 0) await precompile(ctx.renderer, fresh, ctx.getActiveCamera(), ctx.scene)
-      if (!alive()) return false
-      commit(kinds)
-      await yieldToMain()
-      return alive()
-    }
-    const cascade = async (): Promise<void> => {
-    await yieldToMain()
-    if (!alive()) return
+    // Picking reads the mesh it can see, so the lookup changes in the same
+    // task as the mesh does — never pointing at blocks already taken down.
+    if (!await phase(['building'], () => {
+      buildingRanges = builtBlocks?.ranges ?? []
+      buildingsMesh = builtBlocks?.mesh ?? null
+      estimatedBuildings = builtBlocks?.estimated ?? 0
+    })) return
 
     // Ground cover, coarsest first: greenery, then bare ground over it, then
     // water on top — a river drawn under its own banks would vanish.
     for (const layer of ['green', 'sand', 'rock', 'water'] as const) {
       if (!layerVisibility[layer]) continue
-      const built = buildSurfaceLayer(visibleFeatures, layer, opts)
+      const built = await buildSurfaceLayerSliced(visibleFeatures, layer, opts, { alive })
+      if (built === undefined) return
       const detail = layer === 'water' ? parkDetails?.water : layer === 'green' ? parkDetails?.green : null
       if (built || detail?.children.length) {
         const group = new THREE.Group()
@@ -1293,8 +1331,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (!await phase(['green', 'sand', 'rock', 'water'])) return
     // The vertical field — only the structures and the ways on them read it,
     // so it is solved here, after the blocks and the ground are on screen,
-    // rather than in front of everything.
-    opts.vertical = solveSceneVertical(visibleFeatures, opts, waterMask)
+    // rather than in front of everything. Sliced like the roads: on a district
+    // it is hundreds of milliseconds. `undefined` means a newer rebuild took over.
+    const vertical = await solveSceneVerticalSliced(visibleFeatures, opts, waterMask, { alive })
+    if (vertical === undefined) return
+    opts.vertical = vertical
     if (import.meta.env.DEV) {
       // Console-reachable, dev only. When a road is floating, the geometry
       // cannot say why — every decision that produced it has been forgotten by
@@ -1352,7 +1393,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ...opts, barcelona: inBarcelona, excludeAt: modelExclusion(),
     }
     if (layerVisibility.signal) {
-      const built = buildPlacedSignalLayer(visibleFeatures, streetOpts)
+      const built = await buildPlacedSignalLayerSliced(visibleFeatures, streetOpts, { alive })
+      if (built === undefined) return
       if (built) stage('signal', built.object)
     }
     // Mapped benches, lamps, fountains, bins and bollards, and the fences,
@@ -1360,11 +1402,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // the surroundings are orientation, not a street to stand in.
     if (surfaceQuality() === 'detailed') {
       if (layerVisibility.furniture) {
-        const built = buildFurnitureLayer(visibleFeatures, streetOpts)
+        const built = await buildFurnitureLayerSliced(visibleFeatures, streetOpts, { alive })
+        if (built === undefined) return
         if (built) stage('furniture', built.object)
       }
       if (layerVisibility.barrier) {
-        const built = buildBarrierLayer(visibleFeatures, streetOpts)
+        const built = await buildBarrierLayerSliced(visibleFeatures, streetOpts, { alive })
+        if (built === undefined) return
         if (built) stage('barrier', built.object)
       }
     }
@@ -1409,7 +1453,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (!await phase(['bridge'])) return
 
     if (layerVisibility.tree) {
-      const built = buildTreeLayer(visibleFeatures, { ...opts, excludeAt: modelExclusion() })
+      const built = await buildTreeLayerSliced(visibleFeatures, { ...opts, excludeAt: modelExclusion() }, { alive })
+      if (built === undefined) return
       if (built) { stage('tree', built.object) }
     }
     if (!await phase(['tree'])) return
@@ -1428,7 +1473,6 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     fitShadowCamera()
     }
     layersSettled = cascade().finally(() => { if (gen !== layerGeneration) discard() })
-    return estimatedCount
   }
 
   /**
@@ -1658,12 +1702,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (osmCache?.key === key) {
       osmFeatures = osmCache.features
       if (osmFeatures.length === 0) return { status: 'empty' }
-      const estimatedCount = rebuildLayers()
+      rebuildLayers()
       await layersSettled
       return {
         status: 'ready',
         counts: osmCache.counts,
-        estimatedCount,
+        estimatedCount: estimatedBuildings,
         truncated: osmCache.truncated,
         overture: osmCache.overture,
       }
@@ -1703,10 +1747,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (reply.features.length === 0) return { status: 'empty' }
 
     osmFeatures = reply.features
-    const estimatedCount = rebuildLayers()
+    rebuildLayers()
     await layersSettled
     return {
-      status: 'ready', counts: reply.counts, estimatedCount,
+      status: 'ready', counts: reply.counts, estimatedCount: estimatedBuildings,
       truncated: reply.truncated, overture: reply.overture,
     }
   }

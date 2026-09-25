@@ -665,15 +665,19 @@ describe('geo-system · OSM feature cache', () => {
       occlusion: 0, detail: 0, contourInterval: 0,
     }
     geo.setTerrainLook(LOOK)
+    await geo.settled()
     const before = buildings()
     expect(before).toBeDefined()
 
     // A sun slider only repaints the hillshade. It must NOT pay for a rebuild.
     geo.setTerrainLook({ ...LOOK, sunAzimuth: 200 })
+    await geo.settled()
     expect(buildings()).toBe(before)
 
-    // `detail` moves the ground, so everything on it has to be re-derived.
+    // `detail` moves the ground, so everything on it has to be re-derived —
+    // a phase at a time, which `settled()` waits out.
     geo.setTerrainLook({ ...LOOK, sunAzimuth: 200, detail: 0.6 })
+    await geo.settled()
     const after = buildings()
     expect(after).toBeDefined()
     expect(after).not.toBe(before)
@@ -700,6 +704,7 @@ describe('geo-system · OSM feature cache', () => {
     const seen: Array<THREE.Object3D | undefined> = [buildings()]
     for (const on of [true, false, true, false]) {
       await geo.setTerrain(on)
+      await geo.settled()
       seen.push(buildings())
     }
     for (const o of seen) expect(o).toBeDefined()
@@ -846,9 +851,11 @@ describe('geo-system · a federated model is one building', () => {
     expect(buildingsIn(f.scene)).toBeDefined()
 
     geo.setHiddenFeatures(['w908035012'])
+    await geo.settled()
     expect(buildingsIn(f.scene)).toBeUndefined()
 
     geo.setHiddenFeatures([])
+    await geo.settled()
     expect(buildingsIn(f.scene)).toBeDefined()
     geo.dispose()
   })
@@ -862,6 +869,7 @@ describe('geo-system · a federated model is one building', () => {
 
     const before = buildingsIn(f.scene)
     geo.setHiddenFeatures(['w-from-another-site'])
+    await geo.settled()
     const after = buildingsIn(f.scene)
     expect(after).toBeDefined()
     // Rebuilt, not reused: the set genuinely changed, and geo-system cannot
@@ -871,6 +879,7 @@ describe('geo-system · a federated model is one building', () => {
     // The same set twice must NOT rebuild — this is what keeps an unrelated
     // React render from re-extruding the neighbourhood.
     geo.setHiddenFeatures(['w-from-another-site'])
+    await geo.settled()
     expect(buildingsIn(f.scene)).toBe(after)
     geo.dispose()
   })

@@ -11,11 +11,12 @@
 //
 // Not part of `vitest run`: timings belong to the machine, and a suite that
 // fails on a busy laptop teaches nobody anything. What IS pinned in the suite
-// is the promise the sliced build makes — src/lib/geo/linear-layer-sliced.test.ts.
+// is the promise the sliced build makes — src/lib/geo/sliced-builders.test.ts.
 //
-// Two questions, two kinds of bench:
-//   • how long the layer takes, in total — `buildLinearLayer`;
-//   • how long the main thread is ever held — `buildLinearLayerSliced` at the
+// Two questions, two kinds of bench, for the road and rail layers and for the
+// vertical solve in front of them:
+//   • how long it takes, in total — `buildLinearLayer`, `solveSceneVertical`;
+//   • how long the main thread is ever held — the `…Sliced` twin at the
 //     pipeline's own budget, reporting the LONGEST slice it ran. That second
 //     number is the one a user feels; the first is only what it costs.
 
@@ -25,9 +26,10 @@ import { gunzipSync } from 'node:zlib'
 import { parseOsmFeatures, type OsmFeature } from '../../src/lib/geo/osm-features'
 import {
   buildLinearLayer, buildLinearLayerSliced, buildWaterMask, solveSceneVertical,
-  type LayerMeshOptions,
+  solveSceneVerticalSliced, type LayerMeshOptions,
 } from '../../src/lib/geo/osm-scene'
 import { latLonToNormalized, metresToNormalized } from '../../src/lib/geo/geo-math'
+import type { SliceOptions } from '../../src/lib/geo/render-scheduler'
 
 const json = JSON.parse(gunzipSync(
   readFileSync(new URL('./poblenou-roads.json.gz', import.meta.url)),
@@ -88,33 +90,47 @@ for (const kind of ['road', 'rail'] as const) {
   })
 }
 
+/**
+ * A bench that runs a sliced build at the pipeline's 12 ms budget and reports
+ * the longest slice it ran, over the measured iterations.
+ */
+function slicedBench(label: string, run: (slice: SliceOptions) => Promise<unknown>): void {
+  const longest: number[] = []
+  bench(label, async () => {
+    let worst = 0
+    let start = performance.now()
+    await run({
+      budgetMs: 12,
+      // A macrotask, like the browser's: the next slice starts on a fresh turn.
+      yieldTo: () => new Promise<void>((resolve) => {
+        worst = Math.max(worst, performance.now() - start)
+        setImmediate(() => { start = performance.now(); resolve() })
+      }),
+    })
+    longest.push(Math.max(worst, performance.now() - start))
+  }, {
+    ...RUNS,
+    // tinybench tears down after the warm-up too; report the measured runs.
+    teardown: () => {
+      if (longest.length <= RUNS.warmupIterations) { longest.length = 0; return }
+      const sorted = [...longest].sort((a, b) => a - b)
+      console.log(`  ${label}: longest slice per build — median ${
+        sorted[sorted.length >> 1].toFixed(0)} ms, worst ${sorted[sorted.length - 1].toFixed(0)} ms`)
+      longest.length = 0
+    },
+  })
+}
+
 for (const kind of ['road', 'rail'] as const) {
   describe(`Poblenou · ${kind} layer, sliced at the pipeline's 12 ms`, () => {
     for (const quality of ['simple', 'detailed'] as const) {
-      const longest: number[] = []
-      bench(quality, async () => {
-        let worst = 0
-        let start = performance.now()
-        await buildLinearLayerSliced(FEATURES, kind, OPTS[quality], {
-          budgetMs: 12,
-          // A macrotask, like the browser's: the next slice starts on a fresh turn.
-          yieldTo: () => new Promise<void>((resolve) => {
-            worst = Math.max(worst, performance.now() - start)
-            setImmediate(() => { start = performance.now(); resolve() })
-          }),
-        })
-        longest.push(Math.max(worst, performance.now() - start))
-      }, {
-        ...RUNS,
-        // tinybench tears down after the warm-up too; report the measured runs.
-        teardown: () => {
-          if (longest.length <= RUNS.warmupIterations) { longest.length = 0; return }
-          const sorted = [...longest].sort((a, b) => a - b)
-          console.log(`  ${kind} · ${quality}: longest slice per build — median ${
-            sorted[sorted.length >> 1].toFixed(0)} ms, worst ${sorted[sorted.length - 1].toFixed(0)} ms`)
-          longest.length = 0
-        },
-      })
+      slicedBench(`${kind} · ${quality}`, (slice) => buildLinearLayerSliced(FEATURES, kind, OPTS[quality], slice))
     }
   })
 }
+
+describe('Poblenou · vertical solve', () => {
+  const mask = buildWaterMask(FEATURES, { mToN: M_TO_N })
+  bench('whole solve', () => { solveSceneVertical(FEATURES, OPTS.simple, mask) }, RUNS)
+  slicedBench('vertical · sliced', (slice) => solveSceneVerticalSliced(FEATURES, OPTS.simple, mask, slice))
+})

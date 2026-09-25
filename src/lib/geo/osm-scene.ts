@@ -40,7 +40,7 @@ import {
   type TreeShape, type BuildingRegion, type BroadleafVariant,
 } from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
-import { plantingClearance } from './planting-clearance'
+import { plantingClearanceSteps } from './planting-clearance'
 import { isShanghai } from './shanghai-region'
 import { roofPropAnchors } from './roof-props'
 import type { RoofProp, RoofPropBuilding, RoofPropKind } from './roof-props'
@@ -57,7 +57,7 @@ import {
 } from './surface-shaders'
 import { metricAttributes, type RoughnessBand } from './surface-attributes'
 import {
-  solveVerticalNetwork, sampleProfile, junctionElevationM,
+  verticalNetworkSteps, sampleProfile, junctionElevationM,
   type SolvedProfile, type VerticalWay, type ProfileSampler,
 } from './vertical-network'
 import { createGroundResolver } from './terrain-truth'
@@ -292,27 +292,51 @@ export function buildSurfaceLayer(
   layer: SurfaceLayerKind,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Mesh> | null {
+  return runToEnd(surfaceLayerSteps(features, layer, opts))
+}
+
+/**
+ * `buildSurfaceLayer`, handing the main thread back between polygons — see
+ * `steps`. Same mesh either way; `undefined` means `alive()` cancelled it.
+ */
+export function buildSurfaceLayerSliced(
+  features: ReadonlyArray<OsmFeature>,
+  layer: SurfaceLayerKind,
+  opts: LayerMeshOptions,
+  slice: SliceOptions = {},
+): Promise<LayerMesh<THREE.Mesh> | null | undefined> {
+  return runSliced(surfaceLayerSteps(features, layer, opts), slice)
+}
+
+function surfaceLayerSteps(
+  features: ReadonlyArray<OsmFeature>,
+  layer: SurfaceLayerKind,
+  opts: LayerMeshOptions,
+): Steps<LayerMesh<THREE.Mesh> | null> {
   return opts.quality === 'detailed'
     ? buildDetailedSurface(features, layer, opts)
     : buildSimpleSurface(features, layer, opts)
 }
 
-function buildSimpleSurface(
+function* buildSimpleSurface(
   features: ReadonlyArray<OsmFeature>,
   layer: SurfaceLayerKind,
   opts: LayerMeshOptions,
-): LayerMesh<THREE.Mesh> | null {
+): Steps<LayerMesh<THREE.Mesh> | null> {
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
   const lift = LIFT_M[layer]
 
-  const positions: number[] = []
-  const colors: number[] = []
+  // Typed, growing sinks — see growable-array. Plain arrays here were most of
+  // the greenery layer's cost on a district, and all of it garbage collection.
+  const positions = new GrowableArray('f64')
+  const colors = new GrowableArray('f32')
   let count = 0
   let dropped = 0
 
   for (const f of features) {
     if (f.kind !== layer || !f.ring) continue
+    yield
     const outer = projectRing(f.ring)
     const holes = (f.holes ?? []).map(projectRing).filter((h) => h.length >= 3)
     const faces = triangulate(outer, mToN, holes)
@@ -350,13 +374,15 @@ function buildSimpleSurface(
   }
 
   if (count === 0) return null
+  yield
 
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('position', new THREE.BufferAttribute(yield* positions.toFloat32Steps(), 3))
   if (colors.length > 0) {
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+    geometry.setAttribute('color', new THREE.BufferAttribute(yield* colors.toFloat32Steps(), 3))
   }
-  geometry.computeVertexNormals()
+  yield* vertexNormalSteps(geometry)
+  yield
   geometry.computeBoundingSphere()
 
   // WATER IS OPAQUE, and this is the third and last layer to make that
@@ -597,11 +623,11 @@ function collectSurfacePieces(
  * two neighbouring lawns with the same noise are as obvious a tell as one flat
  * green.
  */
-function buildDetailedSurface(
+function* buildDetailedSurface(
   features: ReadonlyArray<OsmFeature>,
   layer: SurfaceLayerKind,
   opts: LayerMeshOptions,
-): LayerMesh<THREE.Mesh> | null {
+): Steps<LayerMesh<THREE.Mesh> | null> {
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
   const sample = opts.sampleGroundM
@@ -676,7 +702,9 @@ function buildDetailedSurface(
   const totalClaim = pieces.items.reduce((a, it) => a + it.areaM2 * weightOf(it), 0)
 
   // PASS 2 — subdivide each feature within its own share.
+  yield
   for (const { f, ringM, faces, areaM2, boundaries } of pieces.items) {
+    yield
     const share = totalClaim > 0
       ? (spare * areaM2 * weightOf({ ringM })) / totalClaim
       : spare / pieces.items.length
@@ -741,6 +769,7 @@ function buildDetailedSurface(
   }
 
   if (count === 0) return null
+  yield
 
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
@@ -1382,6 +1411,28 @@ export function solveSceneVertical(
   opts: LayerMeshOptions,
   waterAt?: ((nx: number, ny: number) => boolean) | null,
 ): Map<string, SolvedProfile> {
+  return runToEnd(sceneVerticalSteps(features, opts, waterAt))
+}
+
+/**
+ * `solveSceneVertical`, handing the main thread back between ways and chains.
+ * On Poblenou the solve was one 240-770 ms task in front of the roads; the
+ * answer is the same map either way. `undefined` means `alive()` cancelled it.
+ */
+export function solveSceneVerticalSliced(
+  features: ReadonlyArray<OsmFeature>,
+  opts: LayerMeshOptions,
+  waterAt: ((nx: number, ny: number) => boolean) | null | undefined,
+  slice: SliceOptions = {},
+): Promise<Map<string, SolvedProfile> | undefined> {
+  return runSliced(sceneVerticalSteps(features, opts, waterAt), slice)
+}
+
+function* sceneVerticalSteps(
+  features: ReadonlyArray<OsmFeature>,
+  opts: LayerMeshOptions,
+  waterAt?: ((nx: number, ny: number) => boolean) | null,
+): Steps<Map<string, SolvedProfile>> {
   const frame = groundFrameFor(opts)
   const resolver = createGroundResolver({
     rawSample: opts.sampleGroundM ?? null,
@@ -1410,13 +1461,14 @@ export function solveSceneVertical(
   }
   if (ways.length === 0) return new Map()
 
-  const solved = solveVerticalNetwork(ways, {
+  const solved = yield* verticalNetworkSteps(ways, {
     mToN: frame.mToN,
     groundM: (nx, ny) => resolver.groundM(nx, ny),
     groundTrusted: (nx, ny) => resolver.resolve(nx, ny).confidence !== 'low',
     stepM: opts.groundStepM,
   })
   const profiles = new Map(solved.map((p) => [p.wayId, p]))
+  yield
   solveAccessProfiles(features, profiles, frame.mToN, (x,y)=>resolver.groundM(x,y))
   return profiles
 }
@@ -3063,12 +3115,12 @@ interface PlacedTree {
  * nothing about the map projection, which is what keeps it testable in numbers
  * a person can read.
  */
-function seededTrees(
+function* seededTrees(
   features: ReadonlyArray<OsmFeature>,
   mToN: number,
   excludeAt: ((nx: number, ny: number) => boolean) | null | undefined,
   regionName: BuildingRegion,
-): PlacedTree[] {
+): Steps<PlacedTree[]> {
   const green = features.filter(
     (f) => f.kind === 'green' && f.ring && f.ring.length >= 3
       && f.style.cover && f.style.cover !== 'bare',
@@ -3089,7 +3141,7 @@ function seededTrees(
 
   // Procedural trunks must respect paths, paved squares and rail corridors.
   // Surveyed tree points are handled separately and remain authoritative.
-  const blocked = plantingClearance(features, toMetres)
+  const blocked = yield* plantingClearanceSteps(features, toMetres)
 
   /**
    * What each polygon grows, kept beside the seed regions rather than inside
@@ -3148,6 +3200,7 @@ function seededTrees(
 
   const out: PlacedTree[] = []
   for (const region of regions) {
+    yield
     if (out.length >= MAX_SEEDED_TREES) break
     const d = density.get(region.id) ?? 1
     const room = MAX_SEEDED_TREES - out.length
@@ -3361,6 +3414,26 @@ export function buildTreeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Group> | null {
+  return runToEnd(treeLayerSteps(features, opts))
+}
+
+/**
+ * `buildTreeLayer`, handing the main thread back between seeded woods and
+ * species — see `steps`. Same canopy either way; `undefined` means `alive()`
+ * cancelled it.
+ */
+export function buildTreeLayerSliced(
+  features: ReadonlyArray<OsmFeature>,
+  opts: LayerMeshOptions,
+  slice: SliceOptions = {},
+): Promise<LayerMesh<THREE.Group> | null | undefined> {
+  return runSliced(treeLayerSteps(features, opts), slice)
+}
+
+function* treeLayerSteps(
+  features: ReadonlyArray<OsmFeature>,
+  opts: LayerMeshOptions,
+): Steps<LayerMesh<THREE.Group> | null> {
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
 
@@ -3401,7 +3474,8 @@ export function buildTreeLayer(
     return bufferCentreline(line,((f.widthM??2)/2+1.2)*mToN).map(r=>r.map(p=>({x:p.x/mToN,y:p.y/mToN})))
   })) : null
   const excludePlanting = (x:number,y:number) => !!opts.excludeAt?.(x,y) || !!parkKeepOut?.(x/mToN,y/mToN)
-  const trees = [...mapped, ...seededTrees(features, mToN, excludePlanting, regionName)]
+  yield
+  const trees = [...mapped, ...yield* seededTrees(features, mToN, excludePlanting, regionName)]
   if (trees.length === 0) return null
   const focus = latLonToNormalized(opts.anchorLat, opts.anchorLon ?? 0)
   // Spend the regional mesh budget near the model; distant trees retain their
@@ -3501,6 +3575,7 @@ export function buildTreeLayer(
   }
 
   for (const [shape, subset] of bySpecies) {
+    yield
     // Showcase: one authored mesh IS the whole tree — trunk, limbs and crown in
     // a single instanced draw, half the draw calls of the procedural pair.
     const groups = byAsset(shape, subset)

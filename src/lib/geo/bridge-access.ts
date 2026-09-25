@@ -33,12 +33,76 @@ export function connectedDeck(
   return found
 }
 
+/**
+ * `connectedDeck` for many points against one set of decks.
+ *
+ * Asked once per stair vertex, the scan above walks every feature and every
+ * deck vertex each time — stair vertices × features, which on a district was a
+ * quarter of the vertical solve. This indexes the deck vertices once, on a grid
+ * a hair wider than the reach so a pair within reach is never split across two
+ * cells by rounding, and visits the candidates in the scan's own order (feature,
+ * then vertex), so ties resolve exactly as they did. A deck vertex with NaN
+ * coordinates is always a candidate, and a non-finite query falls back to the
+ * scan: in both cases `distanceTo` is NaN, which the scan never rejects.
+ */
+export function deckLookup(
+  features: ReadonlyArray<OsmFeature>, profiles: ReadonlyMap<string, SolvedProfile>, unit: number,
+): (p: THREE.Vector2) => ReturnType<typeof connectedDeck> {
+  const reach = .35 * unit
+  const cell = reach * 1.01
+  const entries: Array<{ f: OsmFeature; profile: SolvedProfile; i: number; v: THREE.Vector2 }> = []
+  const cells = new Map<number, Map<number, number[]>>()
+  const always: number[] = []
+  for (const f of features) {
+    if (f.style.accessKind || !f.ring || f.functional !== 'pedestrian') continue
+    const profile = profiles.get(f.id)
+    if (profile?.structure !== 'bridge') continue
+    for (let i = 0; i < f.ring.length; i++) {
+      const v = accessPoint(f.ring[i])
+      const k = entries.push({ f, profile, i, v }) - 1
+      if (Number.isNaN(v.x) || Number.isNaN(v.y)) { always.push(k); continue }
+      const cx = Math.floor(v.x / cell)
+      const cy = Math.floor(v.y / cell)
+      let column = cells.get(cx)
+      if (!column) { column = new Map(); cells.set(cx, column) }
+      const list = column.get(cy)
+      if (list) list.push(k)
+      else column.set(cy, [k])
+    }
+  }
+  return (p) => {
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return connectedDeck(p, features, profiles, unit)
+    const cx = Math.floor(p.x / cell)
+    const cy = Math.floor(p.y / cell)
+    const candidates = [...always]
+    for (let dx = -1; dx <= 1; dx++) {
+      const column = cells.get(cx + dx)
+      if (!column) continue
+      for (let dy = -1; dy <= 1; dy++) candidates.push(...(column.get(cy + dy) ?? []))
+    }
+    candidates.sort((a, b) => a - b)
+    let found: ReturnType<typeof connectedDeck> = null
+    for (const k of candidates) {
+      const { f, profile, i, v } = entries[k]
+      if (v.distanceTo(p) > reach) continue
+      const { elevationM, groundM } = sampleProfile(profile).sample(v.x, v.y)
+      if (elevationM - groundM < .7) continue
+      const neighbour = accessPoint(f.ring![i + 1] ?? f.ring![i - 1] ?? f.ring![i])
+      if (!found || elevationM > found.heightM) found = { heightM: elevationM, direction: neighbour.sub(v).normalize(), sourceId: f.id }
+    }
+    return found
+  }
+}
+
 /** Stair rise is constrained by connected levels, not the maximum grade of a
  * walking ramp. Flat end landings and landings at mapped corners are explicit. */
 export function solveAccessProfiles(
   features:ReadonlyArray<OsmFeature>, profiles:Map<string,SolvedProfile>, unit:number,
   ground:(x:number,y:number)=>number,
 ): void {
+  // Built on first use and kept for every stair: the stair profiles this adds
+  // are never candidates (an access way is not a deck), so it cannot go stale.
+  let decks: ReturnType<typeof deckLookup> | null = null
   for(const f of features){
     if(!f.ring || !['stairs','escalator'].includes(f.style.accessKind??'')) continue
     const path=f.ring.map(accessPoint)
@@ -46,7 +110,8 @@ export function solveAccessProfiles(
     const lengths=[0]
     for(let i=1;i<path.length;i++) lengths.push(lengths[i-1]+path[i].distanceTo(path[i-1])/unit)
     if(lengths[lengths.length-1]<.1) continue
-    const attached=path.map(p=>connectedDeck(p,features,profiles,unit))
+    decks ??= deckLookup(features,profiles,unit)
+    const attached=path.map(p=>decks!(p))
     if(!attached.some(Boolean)) continue // No invented rise for unlocated stairs.
     const anchors=new Map<number,number>()
     anchors.set(0,attached[0]?.heightM??ground(path[0].x,path[0].y))
