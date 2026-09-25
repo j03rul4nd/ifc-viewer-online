@@ -141,3 +141,96 @@ layer at "Detailed":
 - **Assets on demand**: showcase asks only for what the scene can draw
   (`neededPropAssets`), data before scenery, a few downloads at a time; a later
   scene adds a batch instead of re-downloading the kit.
+
+### The road layer, sliced (2026-09-25)
+
+The cascade yields *between* layers, so one layer is still one task. On the
+Poblenou plot (City preset, 2 895 road ways, 1.17 M road vertices) the road
+layer was the long one. Measured in the running app on a full rebuild:
+
+| | Before | After |
+|---|---|---|
+| Road layer on the main thread | one task, 1 342–1 385 ms | 41 slices; longest 50 ms, the rest ≤ 24 ms |
+| Rail layer | one task, 170–395 ms | 6 slices; longest 20 ms |
+
+Those are wall-clock numbers from a quiet machine. With other processes
+saturating the CPU every task stretches — the buildings task went from 271 ms
+to 500–1 430 ms — and the road slices with it (longest 63–246 ms). Outside
+the browser the longest slice measures 20–36 ms (`linear-layer.bench.ts`).
+
+- **No single stage dominated**, so there was nothing to make fast. Profiled,
+  the time is spread over every vertex (surface quads, profile lookups, the
+  topology pass, the final buffer passes). The builder now pauses instead.
+- **One body, two drivers** (`steps.ts`): `buildLinearLayer`'s body is a
+  generator (`linearLayerSteps`, and `roadNetworkSteps` inside it) that
+  `yield`s between features, ribbons, junctions and buffer chunks.
+  `buildLinearLayer` runs it straight through; `buildLinearLayerSliced` runs it
+  a 12 ms slice at a time (`runSliced` in `render-scheduler.ts`). A pause carries
+  no value and changes no state, so the output is the same bytes either way —
+  `sliced-builders.test.ts` pins that on the Port Vell survey with a pause
+  after every step.
+- **The whole-buffer passes are chunked too**: the rebase, the float32 casts and
+  `computeVertexNormals` (run as three's own routine over runs of triangles,
+  valid because the geometry is still non-indexed then). The rebase and cast
+  were one 150 ms task on a cold build.
+- **An O(n²) that was real, but smaller than it looked**: a ribbon corner cut at
+  a profile station projects onto a segment *end*, which both indexed lookups in
+  `sampleProfile` decline, so it fell through to a full scan per vertex. An exact
+  ring search (`ringNearest`) answers those now, same segment as the scan. On a
+  5 km way that is 19 ms → 5 ms; on Poblenou's profiles it is ~10 % of the rail
+  layer. The profiler put it at 91 % — per-call profiling overhead, not cost.
+- **Benchmark**: `npx vitest bench --run scripts/geo/linear-layer.bench.ts`, on a
+  real Overpass extract of the Poblenou box (`scripts/geo/poblenou-roads.json.gz`).
+  It reports total build time and the longest slice.
+### The rest of the rebuild, sliced (2026-09-25)
+
+The same treatment for every other builder that held the thread, plus four
+exact algorithmic fixes found on the way. Each builder keeps its synchronous
+name and gains a `…Sliced` twin over the same generator; the cascade awaits
+the twins. Measured on the full Poblenou extract in Node, warm-to-cold ranges;
+the right column is the longest single step with a pause after every step
+(a cold first run can add ~40 ms to it):
+
+| Stage | Before, one task | After, longest step |
+|---|---|---|
+| Barcelona fabric (`barcelonaFabricSliced`) | 125–186 ms | 6–16 ms |
+| Buildings mesh (`buildBuildingsGeometrySliced`) | 63–172 ms | 5–35 ms |
+| Vertical solve (`solveSceneVerticalSliced`) | 224–418 ms | 20–44 ms |
+| Greenery (`buildSurfaceLayerSliced`) | 77–222 ms | 10–27 ms |
+| Trees (`buildTreeLayerSliced`) | 77–398 ms | 6–14 ms |
+| Signals / furniture / barriers (`…LayerSliced`) | signals 53–155 ms | 5–19 ms |
+
+- **The blocks moved into the cascade.** They were built in the same task as
+  the call that asked for them; now they are the cascade's first phase. The
+  estimated count reaches `setBuildings` after `layersSettled`, and picking
+  switches to the new mesh in the same task that swaps it in. `geo.settled()`
+  is how a caller — a test, an SDK `done` — waits for a rebuild to land.
+- **`connectedDeck` scanned every feature for every stair vertex.**
+  `deckLookup` indexes the deck vertices once and visits candidates in the
+  scan's order, so every tie resolves as before (a test compares the two point
+  by point). The vertical solve went from 224–259 to 179–195 ms in total.
+- **`ringsTouch` measured every vertex against every segment** of each nearby
+  pair. Vertices and segments clearly out of reach by box are now skipped,
+  with a margin far above rounding. The fabric went from 125–138 ms to
+  24–26 ms warm, 161–186 to 74–82 ms cold.
+- **Keep heavy loop bodies out of generators.** The building mesh's
+  several-hundred-line per-building body, left inline in the generator's loop,
+  ran twice as slow on a first build; as a plain function the generator calls
+  per building it is faster than before slicing (52–55 vs 63–66 ms warm). The
+  road layer's loops already call out to closures and showed no difference.
+- **The keep-out grid built a string per cell** for tens of thousands of road
+  rings; numeric keys, same buckets, same order.
+- **The plain ground cover pushed into `number[]`**; it uses `GrowableArray` now
+  like the roads. On Poblenou that path was mostly garbage collection.
+- Every change was checked the same way: every stage's output, fingerprinted
+  byte for byte on ten real extracts, identical to the code before, run
+  synchronously and sliced with a pause after every step.
+- **In the app**, a full Poblenou rebuild (City preset, a layer toggle) is now
+  90–116 slices over 1.1–1.5 s, and the longest of them is 30–34 ms; the
+  synchronous start of the rebuild is 6–11 ms. Before, the same rebuild held
+  the thread for 271 ms (blocks), 124 ms (ground), 239 ms (vertical),
+  1.3–1.4 s (roads), 170–395 ms (rail) and 93–155 ms (signals).
+- **Still one task**: an exaggeration change re-extrudes the terrain before
+  the rebuild starts, 103–135 ms measured — terrain code, not investigated
+  here. Roof props, landmarks, piers, bridges and the invented scenery stay
+  synchronous; all are small on this data.

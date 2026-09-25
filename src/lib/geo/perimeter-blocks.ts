@@ -30,6 +30,7 @@
 import { latLonToNormalized, metresToNormalized, normalizedToLatLon } from './geo-math'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
+import { runToEnd, type Steps } from './steps'
 
 type LatLon = { lat: number; lon: number }
 type P = { x: number; y: number }
@@ -87,6 +88,16 @@ export function splitPerimeterBlocks<T extends PerimeterBuilding>(
   rulesAt: (lat: number, lon: number) => PerimeterRules | null,
   isOpenGround?: (lat: number, lon: number) => boolean,
 ): PerimeterResult<T> {
+  return runToEnd(splitPerimeterBlocksSteps(buildings, anchorLat, rulesAt, isOpenGround))
+}
+
+/** `splitPerimeterBlocks`, pausable between grid cells and blocks — see `steps`. */
+export function* splitPerimeterBlocksSteps<T extends PerimeterBuilding>(
+  buildings: ReadonlyArray<T>,
+  anchorLat: number,
+  rulesAt: (lat: number, lon: number) => PerimeterRules | null,
+  isOpenGround?: (lat: number, lon: number) => boolean,
+): Steps<PerimeterResult<T>> {
   const mToN = metresToNormalized(anchorLat)
   // Local metres about a shared origin: the clipping below needs well-scaled
   // numbers, and normalized coordinates are ~4e-8 per metre.
@@ -116,16 +127,18 @@ export function splitPerimeterBlocks<T extends PerimeterBuilding>(
       }
     }
   })
-  const tested = new Set<string>()
+  const tested = new Set<number>()
+  const n = buildings.length
   for (const cell of grid.values()) {
+    yield
     for (let a = 0; a < cell.length; a++) {
       for (let b = a + 1; b < cell.length; b++) {
         const i = cell[a], j = cell[b]
-        const key = i < j ? `${i}:${j}` : `${j}:${i}`
+        const key = i < j ? i * n + j : j * n + i
         if (tested.has(key)) continue
         tested.add(key)
         if (!overlapBoxes(boxes[i], boxes[j], TOUCH_M)) continue
-        if (ringsTouch(rings[i], rings[j], TOUCH_M)) parent[find(i)] = find(j)
+        if (ringsTouch(rings[i], rings[j], TOUCH_M, boxes[i], boxes[j])) parent[find(i)] = find(j)
       }
     }
   }
@@ -144,6 +157,7 @@ export function splitPerimeterBlocks<T extends PerimeterBuilding>(
 
   for (const members of clusters.values()) {
     if (members.length < 4) continue
+    yield
     const hull = convexHull(members.flatMap((i) => rings[i]))
     const hullArea = area(hull)
     if (hullArea < MIN_BLOCK_M2 || hullArea > MAX_BLOCK_M2) continue
@@ -235,9 +249,42 @@ function segDist(p: P, a: P, b: P): number {
   return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy)
 }
 
-function ringsTouch(a: ReadonlyArray<P>, b: ReadonlyArray<P>, tol: number): boolean {
-  for (const p of a) for (let j = 0; j < b.length; j++) if (segDist(p, b[j], b[(j + 1) % b.length]) <= tol) return true
-  for (const p of b) for (let j = 0; j < a.length; j++) if (segDist(p, a[j], a[(j + 1) % a.length]) <= tol) return true
+/**
+ * Does any vertex of either ring come within `tol` of the other's outline?
+ *
+ * A vertex lying clearly outside the other ring's box is further than `tol`
+ * from every one of its segments — each segment lies inside that box — so it
+ * is skipped without being measured. That is what keeps this from being
+ * vertices × segments for every pair of neighbours that merely come close,
+ * which on a Barcelona district was most of the fabric's cost. The margin on
+ * `tol` is far above rounding, so no vertex the full test would accept is
+ * skipped: the answer is the same, only reached sooner.
+ */
+function ringsTouch(
+  a: ReadonlyArray<P>, b: ReadonlyArray<P>, tol: number,
+  boxA: ReturnType<typeof bbox>, boxB: ReturnType<typeof bbox>,
+): boolean {
+  const m = tol * 1.001
+  for (const p of a) {
+    if (p.x < boxB.minX - m || p.x > boxB.maxX + m || p.y < boxB.minY - m || p.y > boxB.maxY + m) continue
+    if (nearOutline(p, b, tol, m)) return true
+  }
+  for (const p of b) {
+    if (p.x < boxA.minX - m || p.x > boxA.maxX + m || p.y < boxA.minY - m || p.y > boxA.maxY + m) continue
+    if (nearOutline(p, a, tol, m)) return true
+  }
+  return false
+}
+
+/** Is `p` within `tol` of any segment of `ring`? Segments clearly out of reach by box are not measured. */
+function nearOutline(p: P, ring: ReadonlyArray<P>, tol: number, m: number): boolean {
+  for (let j = 0; j < ring.length; j++) {
+    const s = ring[j]
+    const e = ring[(j + 1) % ring.length]
+    if (p.x < Math.min(s.x, e.x) - m || p.x > Math.max(s.x, e.x) + m
+      || p.y < Math.min(s.y, e.y) - m || p.y > Math.max(s.y, e.y) + m) continue
+    if (segDist(p, s, e) <= tol) return true
+  }
   return false
 }
 

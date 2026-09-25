@@ -33,6 +33,7 @@
 // PURE: geometry in, geometry out. No materials, no scene, no I/O.
 
 import * as THREE from 'three'
+import { runToEnd, type Steps } from './steps'
 
 /** One centreline handed to the network builder, already in the planar frame. */
 export interface NetworkWay {
@@ -222,9 +223,14 @@ interface HalfEdge {
  * so each lookup probes the eight neighbouring cells too. That costs nine map
  * reads per vertex and removes the entire class of bug where two roads meet on
  * paper and miss in the mesh.
+ *
+ * Keyed by column, then row, as numbers. It was one `${ix}:${iy}` string per
+ * probe — nine string builds and hashes per vertex, in the busiest loop of the
+ * topology pass. The probe order is unchanged, so the node a vertex snaps to is
+ * the same one it always was.
  */
 class NodeIndex {
-  private readonly cells = new Map<string, number[]>()
+  private readonly cells = new Map<number, Map<number, number[]>>()
   readonly positions: THREE.Vector2[] = []
   /** How many way-vertices landed on each node. */
   readonly uses: number[] = []
@@ -232,18 +238,16 @@ class NodeIndex {
 
   constructor(private readonly snap: number) {}
 
-  private key(ix: number, iy: number): string {
-    return `${ix}:${iy}`
-  }
-
   /** Node id for a point, creating one when nothing sits within `snap`. */
   add(p: THREE.Vector2, elevation?: number): number {
     const ix = Math.floor(p.x / this.snap)
     const iy = Math.floor(p.y / this.snap)
     const snapSq = this.snap * this.snap
     for (let dx = -1; dx <= 1; dx++) {
+      const column = this.cells.get(ix + dx)
+      if (!column) continue
       for (let dy = -1; dy <= 1; dy++) {
-        const bucket = this.cells.get(this.key(ix + dx, iy + dy))
+        const bucket = column.get(iy + dy)
         if (!bucket) continue
         for (const id of bucket) {
           const existing = this.elevations[id]
@@ -259,10 +263,14 @@ class NodeIndex {
     this.positions.push(p.clone())
     this.elevations.push(elevation)
     this.uses.push(1)
-    const k = this.key(ix, iy)
-    const bucket = this.cells.get(k)
+    let column = this.cells.get(ix)
+    if (!column) {
+      column = new Map()
+      this.cells.set(ix, column)
+    }
+    const bucket = column.get(iy)
     if (bucket) bucket.push(id)
-    else this.cells.set(k, [id])
+    else column.set(iy, [id])
     return id
   }
 }
@@ -277,16 +285,22 @@ class NodeIndex {
  * un-joined — which is exactly the notch a roundabout used to show at whichever
  * vertex the mapper happened to start drawing from.
  */
-function splitWays(ways: ReadonlyArray<NetworkWay>, index: NodeIndex): RawEdge[] {
+function* splitWays(ways: ReadonlyArray<NetworkWay>, index: NodeIndex): Steps<RawEdge[]> {
   // Pass 1 registers every vertex, so `uses` is complete before we decide where
   // to cut. Node ids are stable, so pass 2 re-reads them for free.
-  const nodeIds: number[][] = ways.map((w) => w.points.map((p,i) => index.add(p,w.elevations?.[i])))
+  const nodeIds: number[][] = []
+  for (const w of ways) {
+    yield
+    nodeIds.push(w.points.map((p,i) => index.add(p,w.elevations?.[i])))
+  }
 
   const edges: RawEdge[] = []
-  ways.forEach((way, wi) => {
+  for (let wi = 0; wi < ways.length; wi++) {
+    yield
+    const way = ways[wi]
     let ids = nodeIds[wi]
     let pts = way.points.map((p) => p.clone())
-    if (ids.length < 2) return
+    if (ids.length < 2) continue
 
     const closed = ids[0] === ids[ids.length - 1] && ids.length > 2
     if (closed) {
@@ -312,7 +326,7 @@ function splitWays(ways: ReadonlyArray<NetworkWay>, index: NodeIndex): RawEdge[]
         runFrom = ids[i]
       }
     }
-  })
+  }
   return edges
 }
 
@@ -499,16 +513,6 @@ export function mitredBorders(
   return { left, right, joins }
 }
 
-// ── Assembly ───────────────────────────────────────────────────────────────────
-
-/**
- * Build the drawable network.
- *
- * `snap` is in the same units as the way coordinates; callers working in the
- * normalized planar frame pass `mToN` and let the default metric snap scale.
- */
-
-
 // ── 6. Curve smoothing ─────────────────────────────────────────────────────────
 
 /**
@@ -656,22 +660,39 @@ export function solveIslands(ways: ReadonlyArray<NetworkWay>, snap: number): Roa
   return out
 }
 
+/**
+ * Build the drawable network.
+ *
+ * `snap` is in the same units as the way coordinates; callers working in the
+ * normalized planar frame pass `mToN` and let the default metric snap scale.
+ */
 export function buildRoadNetwork(
   ways: ReadonlyArray<NetworkWay>, opts: { snap?: number; mToN?: number } = {},
 ): RoadNetwork {
+  return runToEnd(roadNetworkSteps(ways, opts))
+}
+
+/**
+ * `buildRoadNetwork`, pausable between ways, edges and nodes — see `steps`.
+ * On a district (Poblenou, ~2 900 ways) it is 150–250 ms of the road layer.
+ */
+export function* roadNetworkSteps(
+  ways: ReadonlyArray<NetworkWay>, opts: { snap?: number; mToN?: number } = {},
+): Steps<RoadNetwork> {
   const snap = opts.snap ?? DEFAULT_SNAP_M * (opts.mToN ?? 1)
   if (ways.length === 0 || !(snap > 0) || !Number.isFinite(snap)) {
     return { ribbons: [], junctions: [], islands: [], count: 0 }
   }
 
   const index = new NodeIndex(snap)
-  const edges = splitWays(ways, index)
+  const edges = yield* splitWays(ways, index)
   if (edges.length === 0) return { ribbons: [], junctions: [], islands: [], count: 0 }
 
   // Smooth BEFORE anything measures the edges. Trims, tapers and mitres all read
   // `points`, and smoothing afterwards would leave each of them describing a
   // centreline that no longer exists.
   for (const e of edges) {
+    yield
     if (ways[e.wayIndex].smooth !== false) e.points = smoothCurve(e.points, ways[e.wayIndex].halfWidth)
   }
 
@@ -683,13 +704,16 @@ export function buildRoadNetwork(
     else incident.set(node, [he])
   }
   const edgeLength = edges.map((e) => arcLengths(e.points).pop() ?? 0)
-  edges.forEach((e, i) => {
+  yield
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i]
     const halfWidth = ways[e.wayIndex].halfWidth
     const dStart = endDirection(e.points, true)
     const dEnd = endDirection(e.points, false)
     if (dStart) push(e.from, { edge: i, atStart: true, dir: dStart, halfWidth })
     if (dEnd) push(e.to, { edge: i, atStart: false, dir: dEnd, halfWidth })
-  })
+  }
+  yield
 
   /** What a node worked out, held until the ribbons exist to close it against. */
   interface SolvedNode {
@@ -709,6 +733,7 @@ export function buildRoadNetwork(
   const junctions: RoadJunctionSurface[] = []
 
   for (const [node, arms] of incident) {
+    yield
     const at = index.positions[node]
 
     if (arms.length === 2) {
@@ -768,10 +793,12 @@ export function buildRoadNetwork(
   const ribbons: RoadRibbon[] = []
   const ribbonByEdge = new Array<RoadRibbon | null>(edges.length).fill(null)
   const drawn = new Set<number>()
-  edges.forEach((e, i) => {
+  for (let i = 0; i < edges.length; i++) {
+    yield
+    const e = edges[i]
     const way = ways[e.wayIndex]
     let centre = trimPolyline(e.points, trimStart[i], trimEnd[i])
-    if (!centre) return
+    if (!centre) continue
 
     // A two-vertex OSM segment still needs stations inside its width transition.
     // Sample only the flare, keeping long constant-width spans inexpensive.
@@ -820,11 +847,13 @@ export function buildRoadNetwork(
     ribbons.push(ribbon)
     ribbonByEdge[i] = ribbon
     drawn.add(e.wayIndex)
-  })
+  }
 
   for (const node of solved) {
+    yield
     junctions.push(closeJunction(node, ribbonByEdge, edges, ways, snap))
   }
+  yield
 
   return { ribbons, junctions, islands: solveIslands(ways, snap), count: drawn.size }
 }

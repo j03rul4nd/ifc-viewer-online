@@ -29,6 +29,8 @@ import { createGroundFrame } from './ground-frame'
 import { hashId, variate } from './feature-variation'
 import type { OsmFeature, LatLonPoint } from './osm-features'
 import type { SolvedProfile } from './vertical-network'
+import { runToEnd, type Steps } from './steps'
+import { runSliced, type SliceOptions } from './render-scheduler'
 
 export interface StreetFurnitureOptions {
   anchorLat: number
@@ -169,10 +171,20 @@ export function planFurniture(
   toLocal: (p: LatLonPoint) => V,
   network?: Network,
 ): FurniturePlan[] {
+  return runToEnd(furniturePlanSteps(features, toLocal, network))
+}
+
+/** `planFurniture`, pausable between nodes — see `steps`. */
+function* furniturePlanSteps(
+  features: ReadonlyArray<OsmFeature>,
+  toLocal: (p: LatLonPoint) => V,
+  network?: Network,
+): Steps<FurniturePlan[]> {
   const net = network ?? buildNetwork(features, toLocal)
   const out: FurniturePlan[] = []
   for (const f of features) {
     if (f.kind !== 'furniture' || !f.point || !f.style.furniture) continue
+    yield
     const p = toLocal(f.point)
     const seed = f.id
     const kind = f.style.furniture
@@ -287,6 +299,15 @@ export function planSignals(
   toLocal: (p: LatLonPoint) => V,
   network?: Network,
 ): SignalPlan[] {
+  return runToEnd(signalPlanSteps(features, toLocal, network))
+}
+
+/** `planSignals`, pausable between signal nodes — see `steps`. */
+function* signalPlanSteps(
+  features: ReadonlyArray<OsmFeature>,
+  toLocal: (p: LatLonPoint) => V,
+  network?: Network,
+): Steps<SignalPlan[]> {
   const net = network ?? buildNetwork(features, toLocal)
   const out: SignalPlan[] = []
   /** Standing in SOME carriageway — the crossing street's, or a parallel lane's. */
@@ -323,6 +344,7 @@ export function planSignals(
 
   for (const f of features) {
     if (f.kind !== 'signal' || !f.point) continue
+    yield
     const p = toLocal(f.point)
     const vehicle = f.style.pedestrianSignal !== true
     const pedestrian = f.style.pedestrianSignal === true || f.style.crossingSignal === true
@@ -542,9 +564,22 @@ function geometryFor(slot: keyof typeof PROCEDURAL, opts: StreetFurnitureOptions
 export function buildFurnitureLayer(
   features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions,
 ): FurnitureLayer | null {
+  return runToEnd(furnitureLayerSteps(features, opts))
+}
+
+/** `buildFurnitureLayer` a slice at a time; `undefined` means cancelled. */
+export function buildFurnitureLayerSliced(
+  features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions, slice: SliceOptions = {},
+): Promise<FurnitureLayer | null | undefined> {
+  return runSliced(furnitureLayerSteps(features, opts), slice)
+}
+
+function* furnitureLayerSteps(
+  features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions,
+): Steps<FurnitureLayer | null> {
   if (!features.some((f) => f.kind === 'furniture')) return null
   const L = localFrame(opts)
-  const plans = planFurniture(features, L.toLocal)
+  const plans = yield* furniturePlanSteps(features, L.toLocal)
   const bySlot = new Map<FurnitureSlot, Placed[]>()
   for (const { slot, at } of plans) {
     if (L.excluded(at)) continue
@@ -568,9 +603,22 @@ export function buildFurnitureLayer(
 export function buildPlacedSignalLayer(
   features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions,
 ): FurnitureLayer | null {
+  return runToEnd(signalLayerSteps(features, opts))
+}
+
+/** `buildPlacedSignalLayer` a slice at a time; `undefined` means cancelled. */
+export function buildPlacedSignalLayerSliced(
+  features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions, slice: SliceOptions = {},
+): Promise<FurnitureLayer | null | undefined> {
+  return runSliced(signalLayerSteps(features, opts), slice)
+}
+
+function* signalLayerSteps(
+  features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions,
+): Steps<FurnitureLayer | null> {
   if (!features.some((f) => f.kind === 'signal')) return null
   const L = localFrame(opts)
-  const plans = planSignals(features, L.toLocal)
+  const plans = yield* signalPlanSteps(features, L.toLocal)
   const vehicle: Placed[] = [], pedestrian: Placed[] = []
   for (const { kind, at } of plans) {
     if (L.excluded(at)) continue
@@ -613,6 +661,19 @@ const BARRIER_TONE: Record<string, [number, number, number]> = {
 export function buildBarrierLayer(
   features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions,
 ): FurnitureLayer | null {
+  return runToEnd(barrierLayerSteps(features, opts))
+}
+
+/** `buildBarrierLayer` a slice at a time; `undefined` means cancelled. */
+export function buildBarrierLayerSliced(
+  features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions, slice: SliceOptions = {},
+): Promise<FurnitureLayer | null | undefined> {
+  return runSliced(barrierLayerSteps(features, opts), slice)
+}
+
+function* barrierLayerSteps(
+  features: ReadonlyArray<OsmFeature>, opts: StreetFurnitureOptions,
+): Steps<FurnitureLayer | null> {
   const wanted = features.filter((f) => f.kind === 'barrier' && f.ring && f.ring.length >= 2)
   if (wanted.length === 0) return null
   const L = localFrame(opts)
@@ -657,6 +718,7 @@ export function buildBarrierLayer(
   }
 
   for (const f of wanted) {
+    yield
     const kind = f.style.barrier ?? 'fence'
     // AN UNTAGGED FENCE IN A PARK IS A LAWN EDGE. 69 of the 81 fences in the
     // Ciutadella box carry no height, and most of them hoop the lawns at knee

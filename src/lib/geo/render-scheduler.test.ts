@@ -5,8 +5,9 @@
 
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
-  yieldToMain, deviceBudget, __resetDeviceBudget, precompile, mapLimited, slice,
+  yieldToMain, deviceBudget, __resetDeviceBudget, precompile, mapLimited, slice, runSliced,
 } from './render-scheduler'
+import { runToEnd, type Steps } from './steps'
 import * as THREE from 'three'
 
 const g = globalThis as unknown as { scheduler?: unknown; navigator: Record<string, unknown> }
@@ -113,5 +114,49 @@ describe('slice', () => {
     expect(s.due()).toBe(true)
     s.reset()
     expect(slice(1e6).due()).toBe(false)
+  })
+})
+
+describe('runSliced', () => {
+  /** Ten steps that spin for `ms` each, then return what they counted. */
+  function* spinning(ms: number, log: string[]): Steps<number> {
+    let n = 0
+    try {
+      for (let i = 0; i < 10; i++) {
+        const until = performance.now() + ms
+        while (performance.now() < until) { /* spin */ }
+        n++
+        yield
+      }
+      return n
+    } finally {
+      log.push('closed')
+    }
+  }
+
+  it('returns what the steps return, and what runToEnd returns', async () => {
+    const yieldTo = vi.fn(() => Promise.resolve())
+    await expect(runSliced(spinning(0, []), { budgetMs: 1e6, yieldTo })).resolves.toBe(10)
+    expect(runToEnd(spinning(0, []))).toBe(10)
+    // Never due, so it never had to give way.
+    expect(yieldTo).not.toHaveBeenCalled()
+  })
+
+  it('gives way whenever a slice is spent', async () => {
+    const yieldTo = vi.fn(() => Promise.resolve())
+    await expect(runSliced(spinning(1, []), { budgetMs: 0, yieldTo })).resolves.toBe(10)
+    expect(yieldTo).toHaveBeenCalledTimes(10)
+  })
+
+  it('stops, and closes the steps, when the build is no longer wanted', async () => {
+    const log: string[] = []
+    let calls = 0
+    const out = await runSliced(spinning(1, log), {
+      budgetMs: 0, yieldTo: () => Promise.resolve(), alive: () => ++calls < 3,
+    })
+    expect(out).toBeUndefined()
+    expect(calls).toBe(3)
+    // `finally` ran: nothing the generator held is left half-open.
+    expect(log).toEqual(['closed'])
   })
 })

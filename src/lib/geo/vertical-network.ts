@@ -47,6 +47,7 @@ import {
   bestConfidence, MAX_GRADE, CROSSING_CLEARANCE_M,
 } from './vertical'
 import { corridorHighM, corridorLowM } from './terrain-truth'
+import { runToEnd, type Steps } from './steps'
 
 // ── Level crossings ────────────────────────────────────────────────────────────
 
@@ -472,6 +473,18 @@ export function solveVerticalNetwork(
   ways: ReadonlyArray<VerticalWay>,
   opts: VerticalNetworkOptions,
 ): SolvedProfile[] {
+  return runToEnd(verticalNetworkSteps(ways, opts))
+}
+
+/**
+ * `solveVerticalNetwork`, pausable between ways and between chains — see
+ * `steps`. On a district (Poblenou, ~2 200 profiles) the solve is 200-400 ms,
+ * spread over every way and every pass, so it pauses rather than hurries.
+ */
+export function* verticalNetworkSteps(
+  ways: ReadonlyArray<VerticalWay>,
+  opts: VerticalNetworkOptions,
+): Steps<SolvedProfile[]> {
   if (ways.length === 0) return []
 
   const mToN = opts.mToN
@@ -488,6 +501,7 @@ export function solveVerticalNetwork(
 
   // ── 3. Crossings ────────────────────────────────────────────────────────────
   const crossings = findLevelCrossings(sorted, { mToN })
+  yield
   const overIndex = new Map<string, LevelCrossing[]>()
   const stackedUnder = new Map<string, number>()
   for (const c of crossings) {
@@ -510,7 +524,7 @@ export function solveVerticalNetwork(
   }
 
   // ── 1, 2, 4. Per-way plans ──────────────────────────────────────────────────
-  const plans: WayPlan[] = sorted.map((w) => {
+  const planWay = (w: VerticalWay): WayPlan => {
     const densified = densify(w.points, stepN, mToN, maxPer)
     const ground = densified.points.map((p) => opts.groundM(p.x, p.y))
     const anyTrusted = densified.points.some((p) => trusted(p.x, p.y))
@@ -571,7 +585,12 @@ export function solveVerticalNetwork(
     }
 
     return { densified, ground, targetM, hard, phase, core, confidence: target.confidence }
-  })
+  }
+  const plans: WayPlan[] = []
+  for (const w of sorted) {
+    yield
+    plans.push(planWay(w))
+  }
 
   // ── 5. Chains ───────────────────────────────────────────────────────────────
   const index = new NodeIndex(snapN)
@@ -732,10 +751,13 @@ export function solveVerticalNetwork(
     }
   }
 
-  const runPasses = (): void => {
+  function* runPasses(): Steps<void> {
     // ── 6. First pass: chains solved free ───────────────────────────────────────
     const noPins = new Map<number, number>()
-    for (const chain of chains) solveChain(chain, noPins)
+    for (const chain of chains) {
+      yield
+      solveChain(chain, noPins)
+    }
 
     // ── 7. Junction reconciliation ──────────────────────────────────────────────
     // Every arm of a crossroads must arrive at ONE height, or the junction tears
@@ -779,7 +801,10 @@ export function solveVerticalNetwork(
           }
           pinned.set(node, Math.max(sum / arms.length, owed))
         }
-        for (const chain of chains) solveChain(chain, pinned)
+        for (const chain of chains) {
+          yield
+          solveChain(chain, pinned)
+        }
       }
       // Guarantee, not hope. Whatever the last pass achieved, every arm leaves
       // the junction from the SAME vertex height. Any residual is a fraction of
@@ -791,7 +816,7 @@ export function solveVerticalNetwork(
       }
     }
   }
-  runPasses()
+  yield* runPasses()
   // One more round when a lower way turned out to stand higher than intended:
   // the floors it implies are re-derived from the SOLVED profiles and the
   // network solved again from its intent, so nothing of the first answer's
@@ -799,11 +824,11 @@ export function solveVerticalNetwork(
   if (crossings.length > 0 && deriveFloors((u, j) => solved[u][j])) {
     for (let w = 0; w < plans.length; w++) solved[w] = [...plans[w].targetM]
     relaxedWay.fill(false)
-    runPasses()
+    yield* runPasses()
   }
 
   // ── Assemble ────────────────────────────────────────────────────────────────
-  return sorted.map((w, i) => {
+  const assemble = (w: VerticalWay, i: number): SolvedProfile => {
     const plan = plans[i]
     const elevationM = solved[i]
     // Phase is re-derived from where the vertex ACTUALLY ended up, not from
@@ -861,7 +886,13 @@ export function solveVerticalNetwork(
         : plan.confidence,
       relaxed: relaxedWay[i],
     }
-  })
+  }
+  const profiles: SolvedProfile[] = []
+  for (let i = 0; i < sorted.length; i++) {
+    yield
+    profiles.push(assemble(sorted[i], i))
+  }
+  return profiles
 }
 
 // ── Sampling a solved profile ──────────────────────────────────────────────────
@@ -1012,6 +1043,119 @@ export function sampleProfile(p: SolvedProfile): ProfileSampler {
     return g
   }
 
+  /**
+   * EXACT nearest segment, from a second grid searched in growing rings.
+   *
+   * The two lookups above only trust a winner that is strictly INTERIOR to its
+   * segment, so a point that sits on one of the profile's own vertices always
+   * fell through to the full scan. That is not a corner case, it is the common
+   * one: a ribbon is cut at the stations this profile placed, so nearly every
+   * corner of every quad lands on a vertex. That made each vertex O(segments)
+   * and a way O(n²): querying a 5 km alignment the way a ribbon does took
+   * 19 ms, against 5 ms with this. (A profiler put it at 91 % of the rail
+   * layer; that was per-call profiling overhead, not the cost.)
+   *
+   * Searching outward ring by ring, a result is final once no unsearched cell
+   * could hold anything closer, and ties go to the LOWEST index, as they do in
+   * `scanAll`. So this returns the scan's answer, not an approximation of it.
+   * Where it cannot promise that — non-finite input, or a search that has grown
+   * past what the scan would cost — it returns null and the scan runs.
+   */
+  let rings: RingIndex | null | undefined
+  const buildRings = (): RingIndex | null => {
+    const n = pts.length - 1
+    let total = 0
+    let widest = 0
+    for (let i = 0; i < n; i++) {
+      const a = pts[i]
+      const b = pts[i + 1]
+      if (!Number.isFinite(a.x + a.y + b.x + b.y)) return null
+      total += Math.hypot(b.x - a.x, b.y - a.y)
+      widest = Math.max(widest, Math.abs(b.x - a.x), Math.abs(b.y - a.y))
+    }
+    // About one segment per cell, coarsened until no segment spans more than
+    // RING_MAX_SPAN cells a side — which bounds what registering it costs.
+    const cell = Math.max(total / n, widest / RING_MAX_SPAN)
+    if (!(cell > 0) || !Number.isFinite(cell)) return null
+    const cells = new Map<number, Map<number, number[]>>()
+    let loX = Infinity
+    let hiX = -Infinity
+    let loY = Infinity
+    let hiY = -Infinity
+    for (let i = 0; i < n; i++) {
+      const a = pts[i]
+      const b = pts[i + 1]
+      const x0 = Math.floor(Math.min(a.x, b.x) / cell)
+      const x1 = Math.floor(Math.max(a.x, b.x) / cell)
+      const y0 = Math.floor(Math.min(a.y, b.y) / cell)
+      const y1 = Math.floor(Math.max(a.y, b.y) / cell)
+      loX = Math.min(loX, x0); hiX = Math.max(hiX, x1)
+      loY = Math.min(loY, y0); hiY = Math.max(hiY, y1)
+      for (let cx = x0; cx <= x1; cx++) {
+        let column = cells.get(cx)
+        if (!column) { column = new Map(); cells.set(cx, column) }
+        for (let cy = y0; cy <= y1; cy++) {
+          const list = column.get(cy)
+          if (list) list.push(i)
+          else column.set(cy, [i])
+        }
+      }
+    }
+    return { cell, cells, loX, hiX, loY, hiY }
+  }
+
+  const ringNearest = (x: number, y: number): { i: number; t: number } | null => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+    if (rings === undefined) rings = buildRings()
+    if (!rings) return null
+    const { cell, cells, loX, hiX, loY, hiY } = rings
+    const qx = Math.floor(x / cell)
+    const qy = Math.floor(y / cell)
+    let bestI = -1
+    let bestT = 0
+    let bestD2 = Infinity
+    let work = 0
+    const budget = 4 * (pts.length - 1) + 64
+
+    const visit = (cx: number, cy: number): void => {
+      work++
+      const list = cells.get(cx)?.get(cy)
+      if (!list) return
+      for (const i of list) {
+        work++
+        const got = project(i, x, y)
+        if (got.d2 < bestD2 || (got.d2 === bestD2 && i < bestI)) {
+          bestD2 = got.d2; bestI = i; bestT = got.t
+        }
+      }
+    }
+
+    // Rings wholly outside the indexed cells are empty: start at the first
+    // one that is not.
+    for (let k = Math.max(0, loX - qx, qx - hiX, loY - qy, qy - hiY); ; k++) {
+      // The cells at Chebyshev distance exactly k, clipped to the indexed ones.
+      const xa = Math.max(qx - k, loX)
+      const xb = Math.min(qx + k, hiX)
+      const ya = Math.max(qy - k, loY)
+      const yb = Math.min(qy + k, hiY)
+      for (let cx = xa; cx <= xb; cx++) {
+        if (cx === qx - k || cx === qx + k) {
+          for (let cy = ya; cy <= yb; cy++) visit(cx, cy)
+        } else {
+          if (qy - k >= ya) visit(cx, qy - k)
+          if (k > 0 && qy + k <= yb) visit(cx, qy + k)
+        }
+      }
+      if (work > budget) return null
+      // Everything unsearched lies at least k cells from the query point. The
+      // margin absorbs float rounding in the cell indices, so a segment that
+      // truly ties can never be one this search left out.
+      const covered = qx - k <= loX && qx + k >= hiX && qy - k <= loY && qy + k >= hiY
+      if (covered || bestD2 < (k * cell * RING_MARGIN) ** 2) break
+    }
+    return bestI >= 0 ? { i: bestI, t: bestT } : null
+  }
+
   const nearest = (x: number, y: number): { i: number; t: number } => {
     if (pts.length < 2) return { i: 0, t: 0 }
     const n = pts.length - 1
@@ -1047,6 +1191,10 @@ export function sampleProfile(p: SolvedProfile): ProfileSampler {
         }
       }
       if (bestI >= 0 && bestT > 0 && bestT < 1) { hint = bestI; return { i: bestI, t: bestT } }
+
+      // RINGS: the same answer as the scan below, found without scanning.
+      const exact = ringNearest(x, y)
+      if (exact) { hint = exact.i; return exact }
     }
 
     // Otherwise scan. An early-out on "the last few segments stopped improving"
@@ -1197,6 +1345,24 @@ export const DEFAULT_PROFILE_MAX_SAMPLES = 48
 
 /** Below this many segments a full scan is cheaper than indexing them. */
 const GRID_WORTH_IT = 24
+
+/** Most cells a single segment may span a side in the exact ring index. */
+const RING_MAX_SPAN = 16
+
+/** Safety factor on the ring search's stopping distance — see `ringNearest`. */
+const RING_MARGIN = 1 - 1e-6
+
+/** The exact nearest-segment index behind `ProfileSampler`. */
+interface RingIndex {
+  cell: number
+  /** Segment indices by cell column, then row. */
+  cells: Map<number, Map<number, number[]>>
+  /** Extent of the cells that hold anything. */
+  loX: number
+  hiX: number
+  loY: number
+  hiY: number
+}
 
 /**
  * The junction rule, in one place.
