@@ -7,7 +7,8 @@
       "base": "Basemap",
       "terrain": "Terrain",
       "context": "Surroundings",
-      "place": "Placement"
+      "place": "Placement",
+      "perf": "Performance"
     },
     "mode": {
       "off": "Off",
@@ -17,7 +18,17 @@
     },
     "back": "Back",
     "mapOff": "The map is off. Turn it on to load what is around the model.",
-    "terrainHint": "Real elevation under the model, draped with the basemap. Adds a few tiles to load."
+    "terrainHint": "Real elevation under the model, draped with the basemap. Adds a few tiles to load.",
+    "modeBasic": "Basic",
+    "modeAdvanced": "Advanced",
+    "modeLabel": "Panel mode",
+    "introTitle": "See your model where it stands",
+    "introBody": "Basemap, real terrain and the buildings around it. Your file never leaves your browser.",
+    "cancel": "Cancel",
+    "moreControls": "Every control is in Advanced",
+    "adjust": "Adjust",
+    "sectionFailed": "This section could not be shown.",
+    "sectionRetry": "Try again"
   },
   "consent": {
     "title": "Load map tiles?",
@@ -206,5 +217,110 @@
   },
   "attribution": {
     "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+  },
+  "quick": {
+    "view": "View",
+    "custom": "Custom",
+    "basemap": "Basemap",
+    "show": "Show",
+    "quality": "Quality",
+    "terrain": "3D terrain",
+    "context": "Buildings & surroundings",
+    "cost": {
+      "light": "Light",
+      "medium": "Medium",
+      "heavy": "Heavy"
+    },
+    "presets": {
+      "plan": {
+        "name": "Flat map",
+        "desc": "The basemap under your model. The fastest view."
+      },
+      "relief": {
+        "name": "Terrain",
+        "desc": "Real elevation, draped with the basemap."
+      },
+      "city": {
+        "name": "City",
+        "desc": "Terrain plus the surrounding buildings, kept plain."
+      },
+      "showcase": {
+        "name": "Presentation",
+        "desc": "Lit facades, 3D trees, vehicles and street furniture."
+      }
+    },
+    "showcaseNote": "Includes illustrative scenery (cars, lamps, boats) that is not mapped data.",
+    "qualityHint": {
+      "simple": "Plain masses — quickest, best for working.",
+      "detailed": "Storeys, lit materials and moving water.",
+      "showcase": "Adds authored 3D trees, vehicles and furniture (about {{kb}} KB, downloaded once)."
+    },
+    "offHint": "Pick a view now — it is applied as soon as the map is on."
+  },
+  "scene": {
+    "building": "Building the surroundings… {{pct}}%",
+    "downloading": "Downloading the surroundings from OpenStreetMap…",
+    "stats": "{{triangles}} triangles · built in {{ms}} ms",
+    "failed": "Could not build: {{layers}}. The rest of the scene is fine.",
+    "retry": "Retry",
+    "skipped": "Left out to keep the view smooth: {{layers}} — too much geometry for this device.",
+    "loadAnyway": "Load anyway",
+    "slow": "The view is running slowly ({{fps}} fps).",
+    "lowerQuality": "Lower quality",
+    "autoLowered": "Quality lowered to {{level}} to keep the view smooth.",
+    "restore": "Restore",
+    "contextLost": "The graphics card ran out of memory and recovered. The scene was rebuilt with a smaller geometry budget.",
+    "scenery": "Scenery"
+  },
+  "perf": {
+    "fps": "Frame rate",
+    "fpsValue": "{{fps}} fps",
+    "measuring": "measuring…",
+    "triangles": "Surroundings geometry",
+    "budgetOf": "of {{budget}}",
+    "unlimited": "no limit",
+    "lastBuild": "Last build",
+    "device": "Device class",
+    "tier": {
+      "low": "Light",
+      "mid": "Standard",
+      "high": "High-end"
+    },
+    "tiles": "Map tiles in memory",
+    "layers": "Per layer",
+    "status": {
+      "ok": "OK",
+      "failed": "Failed",
+      "skipped": "Left out"
+    },
+    "adaptive": "Adaptive quality",
+    "adaptiveHint": "Steps the detail level down on its own when the view stays slow. You can always put it back.",
+    "lift": "Lift the geometry limit",
+    "liftHint": "The limit keeps the tab from freezing — or losing the graphics context — on dense districts. Lift it only on a capable machine.",
+    "rebuild": "Rebuild scene",
+    "empty": "Turn on the surroundings to see what the scene costs.",
+    "mapOff": "Turn the map on to measure it."
+  },
+  "context": {
+    "appearance": "Appearance",
+    "layers": "Layers",
+    "groups": {
+      "built": "Built",
+      "mobility": "Mobility",
+      "nature": "Nature",
+      "street": "Street furniture"
+    },
+    "showAll": "Show all",
+    "hideAll": "Hide all",
+    "detailOnly": "Detailed and Showcase only",
+    "yield": "Model and map",
+    "scenery": "Scenery",
+    "whatIsIt": "What does this include?"
+  },
+  "georef": {
+    "found": "Georeferenced — it will land in place.",
+    "partial": "Partly georeferenced — check the position once it is on.",
+    "none": "No georeferencing — you will place it on a map.",
+    "invalid": "Unusable georeferencing — you will place it on a map."
   }
 }
