@@ -6,6 +6,7 @@
 //     { type: 'error', id: string, message: string }
 
 import { unzipSync, strFromU8 } from 'fflate'
+import { viewpointFromBcf } from '../lib/bcf-viewpoint'
 import type { BcfTopic, BcfViewpoint, BcfComment } from '../types'
 
 // ── Minimal XML helpers ───────────────────────────────────────────────────────
@@ -16,10 +17,25 @@ function tagText(xml: string, tag: string): string {
   return m ? m[1].trim() : ''
 }
 
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
+
+/**
+ * Text as it was before it was written into XML: the five named entities and
+ * character references, in one pass so `&amp;lt;` stays `&lt;`. The export
+ * escapes every value (xmlEscape in lib/bcf), and other tools do the same.
+ */
+function xmlUnescape(s: string): string {
+  return s.replace(/&(?:(amp|lt|gt|quot|apos)|#(\d+)|#x([\da-fA-F]+));/g, (ref, name, dec, hex) => {
+    if (name) return ENTITIES[name]
+    const code = dec ? parseInt(dec, 10) : parseInt(hex, 16)
+    return code <= 0x10ffff ? String.fromCodePoint(code) : ref
+  })
+}
+
 /** Extract value of an attribute from a tag opening string or full XML block. */
 function attr(xml: string, name: string): string {
   const m = new RegExp(`\\b${name}="([^"]*)"`, 'i').exec(xml)
-  return m ? m[1] : ''
+  return m ? xmlUnescape(m[1]) : ''
 }
 
 /** Extract all blocks that start with <tag (including attributes) and end with </tag>. */
@@ -34,6 +50,52 @@ function openTag(xml: string, tag: string): string {
   return m ? m[0] : ''
 }
 
+/**
+ * Every outermost <tag> element, self-closing or not: `open` is its start tag
+ * (for attr), `body` what it holds ('' when self-closing). Self-closing is how
+ * this app, Solibri and BIMcollab write <Component IfcGuid="…" />. Case-sensitive,
+ * as XML is: a BCF 3.0 <ViewPoint> holds a <Viewpoint>, and only the P differs.
+ * Each ends at its own closing tag, not the first one: a BCF comment is a
+ * <Comment Guid="…"> that holds its text in a <Comment>.
+ */
+function elements(xml: string, tag: string): { open: string; body: string }[] {
+  const re = new RegExp(`<(/?)${tag}(?:\\s[^>]*?)?(/?)>`, 'g')
+  const found: { open: string; body: string }[] = []
+  let depth = 0
+  let open = ''
+  let start = 0
+  for (const m of xml.matchAll(re)) {
+    const [token, closing, selfClosing] = m
+    if (closing) {
+      if (depth > 0 && --depth === 0) found.push({ open, body: xml.slice(start, m.index) })
+    } else if (selfClosing) {
+      if (depth === 0) found.push({ open: token.slice(0, -2), body: '' })
+    } else if (depth++ === 0) {
+      open = token.slice(0, -1)
+      start = m.index + token.length
+    }
+  }
+  return found
+}
+
+/** Text of the first <tag> child, case-sensitive (see elements), entities decoded. */
+function childText(xml: string, tag: string): string {
+  return xmlUnescape(elements(xml, tag)[0]?.body.trim() ?? '')
+}
+
+/**
+ * Base64 of a byte array, in chunks: spreading a whole snapshot into one
+ * String.fromCharCode call overflows the stack once it is a few hundred KB,
+ * which is every real PNG — and fails the whole import with it.
+ */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
+  return btoa(bin)
+}
+
 function parseFloat3(xml: string, tag: string): { x: number; y: number; z: number } | undefined {
   const block = tagText(xml, tag)
   if (!block) return undefined
@@ -46,7 +108,8 @@ function parseFloat3(xml: string, tag: string): { x: number; y: number; z: numbe
 
 // ── Viewpoint parser ──────────────────────────────────────────────────────────
 
-function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: string): BcfViewpoint {
+/** A .bcfv as the app holds it: read in IFC world axes, returned in scene axes. */
+export function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: string): BcfViewpoint {
   const vp: BcfViewpoint = { guid: vpGuid }
 
   // Perspective camera
@@ -71,20 +134,27 @@ function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: string): Bc
     }
   }
 
-  // Selected component GUIDs
-  const selectionBlock = tagText(vpXml, 'Selection')
-  if (selectionBlock) {
-    const guids: string[] = []
-    for (const compBlock of tagBlocks(selectionBlock, 'Component')) {
-      const g = attr(compBlock, 'IfcGuid')
-      if (g) guids.push(g)
-    }
-    if (guids.length > 0) vp.componentGuids = guids
+  // Selected component GUIDs. Only those under <Selection>: 3.0 also lists
+  // <Component>s under <Visibility><Exceptions> and <Coloring>, unselected.
+  const guids = elements(vpXml, 'Selection')
+    .flatMap((selection) => elements(selection.body, 'Component'))
+    .map((component) => attr(component.open, 'IfcGuid'))
+    .filter(Boolean)
+  if (guids.length > 0) vp.componentGuids = guids
+
+  // Clipping planes. The file was read, so "none" is an answer too: opening
+  // this viewpoint shows it uncut, as the tool that wrote it did.
+  const planes: NonNullable<BcfViewpoint['clippingPlanes']> = []
+  for (const planeBlock of tagBlocks(tagText(vpXml, 'ClippingPlanes'), 'ClippingPlane')) {
+    const location  = parseFloat3(planeBlock, 'Location')
+    const direction = parseFloat3(planeBlock, 'Direction')
+    if (location && direction) planes.push({ location, direction })
   }
+  vp.clippingPlanes = planes
 
   if (snapshotB64) vp.snapshotBase64 = snapshotB64
 
-  return vp
+  return viewpointFromBcf(vp)
 }
 
 // ── Markup parser ─────────────────────────────────────────────────────────────
@@ -97,37 +167,36 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
   const topicTag = openTag(markupXml, 'Topic') || openTag(markupXml, 'bim:Topic') || ''
   const guid     = attr(topicTag, 'Guid') || topicGuid
 
-  const title    = tagText(topicBlock, 'Title')
-  const desc     = tagText(topicBlock, 'Description')
-  const status   = attr(topicTag, 'TopicStatus') || tagText(topicBlock, 'TopicStatus')
-  const type     = attr(topicTag, 'TopicType')   || tagText(topicBlock, 'TopicType')
-  const priority = tagText(topicBlock, 'Priority')
-  const created  = tagText(topicBlock, 'CreationDate')
-  const author   = tagText(topicBlock, 'CreationAuthor')
-  const assigned = tagText(topicBlock, 'AssignedTo')
+  const text = (tag: string) => xmlUnescape(tagText(topicBlock, tag))
 
-  const labels: string[] = []
-  const labelsBlock = tagText(markupXml, 'Labels')
-  if (labelsBlock) {
-    for (const lb of labelsBlock.split(/<\/?Label>/i).filter((_, i) => i % 2 === 1)) {
-      if (lb.trim()) labels.push(lb.trim())
-    }
-  }
+  const title    = text('Title')
+  const desc     = text('Description')
+  const status   = attr(topicTag, 'TopicStatus') || text('TopicStatus')
+  const type     = attr(topicTag, 'TopicType')   || text('TopicType')
+  const priority = text('Priority')
+  const created  = text('CreationDate')
+  const author   = text('CreationAuthor')
+  const assigned = text('AssignedTo')
 
-  // Comments
-  const comments: BcfComment[] = []
-  for (const commentBlock of tagBlocks(markupXml, 'Comment')) {
-    const commentTag = openTag(commentBlock, 'Comment')
-    const cguid = attr(commentTag, 'Guid') || tagText(commentBlock, 'Guid')
-    const vpTag = openTag(commentBlock, 'Viewpoint')
-    comments.push({
-      guid:          cguid || crypto.randomUUID(),
-      date:          tagText(commentBlock, 'Date'),
-      author:        tagText(commentBlock, 'Author'),
-      text:          tagText(commentBlock, 'Comment'),
-      viewpointGuid: attr(vpTag, 'Guid') || undefined,
+  // Labels: 2.1 repeats <Labels>, each one a label; 3.0 has one <Labels> that
+  // holds a <Label> per label. Each <Labels> is read by what it holds.
+  const labels = elements(topicBlock, 'Labels')
+    .flatMap(({ body }) => {
+      const inner = elements(body, 'Label')
+      return inner.length > 0 ? inner.map((label) => label.body) : [body]
     })
-  }
+    .map((label) => xmlUnescape(label.trim()))
+    .filter(Boolean)
+
+  // Comments: beside <Topic> in 2.1, in its <Comments> in 3.0. The text is an
+  // inner <Comment>, so each is read from its outer element (see elements).
+  const comments: BcfComment[] = elements(markupXml, 'Comment').map(({ open, body }) => ({
+    guid:          attr(open, 'Guid') || childText(body, 'Guid') || crypto.randomUUID(),
+    date:          childText(body, 'Date'),
+    author:        childText(body, 'Author'),
+    text:          childText(body, 'Comment'),
+    viewpointGuid: attr(elements(body, 'Viewpoint')[0]?.open ?? '', 'Guid') || undefined,
+  }))
 
   return {
     guid,
@@ -144,9 +213,28 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
   }
 }
 
+/** A viewpoint as markup.bcf lists it: its Guid and the files it names. */
+interface ViewpointRef { guid: string; file: string; snapshot: string }
+
+/**
+ * The viewpoints a markup lists. Each names its .bcfv in <Viewpoint> and its
+ * image in <Snapshot>; only the element around them changes:
+ *   3.0  <Viewpoints><ViewPoint Guid="…">…</ViewPoint>…</Viewpoints>
+ *   2.1  <Viewpoints Guid="…">…</Viewpoints>, one per viewpoint
+ * The 3.0 list is itself a <Viewpoints>, so its entries are looked for first.
+ */
+function markupViewpoints(markupXml: string): ViewpointRef[] {
+  const entries = elements(markupXml, 'ViewPoint')
+  return (entries.length > 0 ? entries : elements(markupXml, 'Viewpoints')).map(({ open, body }) => ({
+    guid:     attr(open, 'Guid'),
+    file:     childText(body, 'Viewpoint'),
+    snapshot: childText(body, 'Snapshot'),
+  }))
+}
+
 // ── Main parse function ───────────────────────────────────────────────────────
 
-function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string } {
+export function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string } {
   const files = unzipSync(new Uint8Array(buffer))
 
   // Detect version
@@ -180,22 +268,20 @@ function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string
 
     const base = parseMarkup(markupXml, topicGuid)
 
-    // Parse viewpoints referenced in markup
+    // Parse viewpoints referenced in markup. Its Guid is the one comments
+    // point at, and it is what pairs a snapshot with its camera.
     const viewpoints: BcfViewpoint[] = []
 
-    // BCF 2.1: <Viewpoints Guid="..."><Viewpoint>viewpoint.bcfv</Viewpoint><Snapshot>snapshot.png</Snapshot></Viewpoints>
-    for (const vpBlock of tagBlocks(markupXml, 'Viewpoints')) {
-      const vpTag  = openTag(vpBlock, 'Viewpoints')
-      const vpGuid = attr(vpTag, 'Guid')
-      const vpFile = tagText(vpBlock, 'Viewpoint').toLowerCase()
-      const snapFile = tagText(vpBlock, 'Snapshot').toLowerCase()
+    for (const { guid: vpGuid, file, snapshot } of markupViewpoints(markupXml)) {
+      const vpFile   = file.toLowerCase()
+      const snapFile = snapshot.toLowerCase()
 
       const vpData    = vpFile ? folderFiles.get(vpFile) : undefined
       const snapData  = snapFile ? folderFiles.get(snapFile) : undefined
 
       let snapshotB64: string | undefined
       if (snapData) {
-        const b64 = btoa(String.fromCharCode(...snapData))
+        const b64 = bytesToBase64(snapData)
         const ext = snapFile.endsWith('.jpg') || snapFile.endsWith('.jpeg') ? 'jpeg' : 'png'
         snapshotB64 = `data:image/${ext};base64,${b64}`
       }
@@ -208,7 +294,8 @@ function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string
       }
     }
 
-    // BCF 3.0: viewpoints may be listed differently — look for any .bcfv files in folder
+    // Last resort, for a markup that lists no viewpoint we could read: every
+    // .bcfv in the folder, with no snapshot or markup Guid to pair it with.
     if (viewpoints.length === 0) {
       for (const [fileName, data] of folderFiles) {
         if (!fileName.endsWith('.bcfv')) continue

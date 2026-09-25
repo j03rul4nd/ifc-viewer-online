@@ -83,6 +83,17 @@ export interface ViewerHandle {
   getCameraViewpoint: () => CameraViewpoint | null
   /** Capture the current renderer canvas as a PNG data-URL. Returns '' on failure. */
   takeSnapshot: () => string
+  /**
+   * Every section cut in force (enabled planes, and the section box's six
+   * faces while it is on), each as a point and the normal of the side it
+   * KEEPS, in scene axes. Empty when nothing is cut.
+   */
+  getSectionPlanes: () => Array<{ point: Vec3Like; normal: Vec3Like }>
+  /**
+   * Replace every section cut with these (same shape as getSectionPlanes).
+   * Each comes back as a face plane; an empty list removes all cuts.
+   */
+  applySectionPlanes: (planes: ReadonlyArray<{ point: Vec3Like; normal: Vec3Like }>) => void
 }
 
 // ── Camera state (BCF viewpoints + Tour Mode — D-24) ──────────────────────────
@@ -90,15 +101,18 @@ export interface ViewerHandle {
 export interface Vec3Like { x: number; y: number; z: number }
 
 /**
- * Full camera read-back: `position`+`direction` feed BCF viewpoints (BCF spec
- * format), `position`+`target` feed tour steps, `fovDeg`/`aspect` feed the
- * auto-tour framing math.
+ * Full camera read-back, in scene axes: `position`+`direction`+`up` feed BCF
+ * viewpoints (bcf-viewpoint.ts turns them into IFC axes for the file),
+ * `position`+`target` feed tour steps, `fovDeg`/`aspect` feed the auto-tour
+ * framing math.
  */
 export interface CameraViewpoint {
   position:  Vec3Like
   target:    Vec3Like
   /** Normalised view direction (target − position). */
   direction: Vec3Like
+  /** The camera's own up (top of the screen), unit length. */
+  up?:       Vec3Like
   /** Vertical field of view in degrees (fallback 45 for orthographic). */
   fovDeg:    number
   aspect:    number
@@ -1467,6 +1481,20 @@ export interface EditorCommand {
 
 // ── BCF types ─────────────────────────────────────────────────────────────────
 
+/**
+ * A BCF clipping plane. As in the spec, `direction` points to the side that is
+ * cut AWAY (the invisible side) — the opposite of a three.js plane normal.
+ */
+export interface BcfClippingPlane {
+  location:  Vec3Like
+  direction: Vec3Like
+}
+
+/**
+ * A BCF viewpoint as the app holds it: every vector in SCENE axes (x east,
+ * y up, z south). The .bcfv file is in IFC world axes; bcf-viewpoint.ts is the
+ * only thing that converts, on write and on read.
+ */
 export interface BcfViewpoint {
   guid:              string
   snapshotBase64?:   string
@@ -1476,6 +1504,12 @@ export interface BcfViewpoint {
   fieldOfView?:      number
   aspectRatio?:      number
   componentGuids?:   string[]
+  /**
+   * Section planes in force when the viewpoint was taken. Absent = not
+   * recorded (older captures): opening it leaves the current cuts alone.
+   * Empty = recorded as "no cuts": opening it removes them.
+   */
+  clippingPlanes?:   BcfClippingPlane[]
 }
 
 export interface BcfComment {
