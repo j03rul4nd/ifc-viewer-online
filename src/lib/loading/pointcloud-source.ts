@@ -31,6 +31,7 @@
 // module only knows their types; the app injects `loadRunner` (a dynamic import).
 
 import { abortError, isAbortError } from './retry-policy'
+import { fingerprintBlob } from './fingerprint'
 import { SourceLoadError, classifySourceError, downloadLoadError, runnerLoadError } from './source-errors'
 import type {
   AdapterEstimate, AdapterResult, JobContext, LaneTicket, LoadError, LoadSource, PhaseId,
@@ -84,6 +85,21 @@ function abortable<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
       (e) => { signal.removeEventListener('abort', onAbort); reject(e) },
     )
   })
+}
+
+/**
+ * Record the content's identity on the job, once there is content to read:
+ * the next drop of the same file finds it (findSameSource) and is not decoded
+ * a second time. Cheap — three 64 KB samples — and best effort: a file that
+ * cannot be sampled just goes without.
+ */
+async function recordFingerprint(ctx: JobContext, file: File): Promise<void> {
+  if (ctx.opts.fingerprint) return
+  try {
+    ctx.setMeta({ fingerprint: await abortable(fingerprintBlob(file), ctx.signal) })
+  } catch (err) {
+    if (ctx.signal.aborted || isAbortError(err)) throw abortError()
+  }
 }
 
 /** A name for a URL source without fetching it: the path's last segment. */
@@ -189,6 +205,7 @@ export function createPointCloudSourceAdapter(deps: PointCloudSourceDeps): Sourc
     const file = await materialise(ctx, enter)
     ctx.throwIfCancelled()
     if (ctx.source.type !== 'file') ctx.setMeta({ fileName: file.name, sizeBytes: file.size })
+    await recordFingerprint(ctx, file)
 
     enter('identify')
     const system = await abortable(deps.getSystem(), signal)

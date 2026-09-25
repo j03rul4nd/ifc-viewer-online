@@ -102,3 +102,21 @@ export async function fingerprintBytes(bytes: Uint8Array | ArrayBuffer): Promise
   }
   return digestSample(sample, size)
 }
+
+/**
+ * A mesh import's identity: its entry file's fingerprint, plus the files it
+ * came with when the format references files of its own (.gltf, .obj). An
+ * .obj imported alone (grey) and the same .obj with its .mtl and textures are
+ * different imports — the second is how a user fixes the first. Sidecars
+ * count by name and size: the model references them by name. A .glb is
+ * self-contained, so whatever else sat in the same drop does not change it.
+ */
+export function meshIdentity(
+  entryName: string,
+  entryFingerprint: string,
+  sidecars: ReadonlyArray<{ name: string; size: number }>,
+): string {
+  if (/\.glb$/i.test(entryName) || sidecars.length === 0) return entryFingerprint
+  const signature = sidecars.map((f) => `${f.name.toLowerCase()}:${f.size}`).sort().join('|')
+  return `${entryFingerprint}+${signature}`
+}

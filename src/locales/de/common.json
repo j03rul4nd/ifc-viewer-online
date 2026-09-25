@@ -8,6 +8,7 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "close": "Schließen",
+    "optionAvailable": "Option verfügbar: {{label}}",
     "delete": "Löschen",
     "clear": "Leeren",
     "reset": "Zurücksetzen",

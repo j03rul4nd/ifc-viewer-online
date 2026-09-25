@@ -8,6 +8,7 @@
     "save": "Desa",
     "cancel": "Cancel·la",
     "close": "Tanca",
+    "optionAvailable": "Opció disponible: {{label}}",
     "delete": "Elimina",
     "clear": "Esborra",
     "reset": "Reinicia",

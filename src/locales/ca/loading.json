@@ -81,6 +81,8 @@
     "stalledGeneric": "Fa estona que no hi ha progrés. Continua esperant o cancel·la.",
     "stalledShort": "Sense progrés recent",
     "duplicate": "Mateix contingut que un model que ja és a l'escena",
+    "duplicateScan": "Mateix contingut que un escaneig que ja és a l'escena",
+    "duplicateMesh": "Mateix contingut que un model 3D que ja és a l'escena",
     "retrying": "Intent {{attempt}}"
   },
   "counter": {
@@ -359,5 +361,22 @@
     "buildings": "Edificis de l'entorn",
     "pointCloud": "Núvol de punts",
     "mesh": "Model 3D"
+  },
+  "duplicate": {
+    "inScene": "«{{name}}» ja és a l'escena",
+    "loading": "«{{name}}» ja s'està carregant",
+    "sameAsInScene": "«{{name}}» té el mateix contingut que «{{existing}}», que ja és a l'escena",
+    "sameAsLoading": "«{{name}}» té el mateix contingut que «{{existing}}», que ja s'està carregant",
+    "revealed": "«{{name}}» ja era a l'escena, amagat: es torna a mostrar",
+    "revealedSameAs": "«{{name}}» té el mateix contingut que «{{existing}}», que estava amagat: es torna a mostrar",
+    "resumed": "«{{name}}» estava en pausa: torna a la cua",
+    "resumedSameAs": "«{{name}}» té el mateix contingut que «{{existing}}», que estava en pausa: torna a la cua",
+    "manyNamed": "{{names}} ja són a l'escena o s'estan carregant",
+    "revealedSome": "Els amagats es tornen a mostrar.",
+    "resumedSome": "Els que estaven en pausa tornen a la cua.",
+    "many_one": "{{count}} fitxer ja és a l'escena o s'està carregant",
+    "many_other": "{{count}} fitxers ja són a l'escena o s'estan carregant",
+    "quoted": "«{{name}}»",
+    "loadAnyway": "Carrega'n una còpia igualment"
   }
 }

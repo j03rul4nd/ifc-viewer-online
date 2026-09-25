@@ -50,7 +50,7 @@ function job(patch: JobPatch = {}): LoadJobView {
     status: 'queued', waitReason: null, phase: null, phases: [],
     progress: { fraction: 0, determinate: false }, stalled: false, attempts: 1, error: null,
     metrics: { submittedAt: 1000, etaMs: null, etaReliable: false, estimatedPeakBytes: 0, phaseDurations: {}, ...metrics },
-    resultId: null, fingerprint: null, duplicateOf: null, requestId: null, sourceUrl: null, seq,
+    resultId: null, fingerprint: null, duplicateOf: null, requestId: null, sourceUrl: null, sourceVersion: null, seq,
     capabilities: {
       cancel: true, retry: false, hold: true, resume: false, reprioritize: true, reload: false, remove: false, dismiss: false,
       focus: false,

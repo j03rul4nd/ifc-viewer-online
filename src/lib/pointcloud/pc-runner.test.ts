@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   realignCloud, guardPostHeader, runPointCloudLoad, loadPointCloud, streamPointCloud,
-  cancelPointCloud, availablePoints, type LoadResult, type PointCloudRunOptions,
+  cancelPointCloud, availablePoints, budgetUsage, type LoadResult, type PointCloudRunOptions,
 } from './pc-runner'
 import { usePointCloudStore } from '../../stores/pointCloudStore'
 import { saveCloudUpAxis } from './pc-align'
@@ -588,6 +588,8 @@ describe('point cloud loads — worker lifecycle', () => {
     await until(() => a.worker.granted !== undefined, 'the first grant')
     expect(a.worker.granted).toBe(700)
     expect(availablePoints()).toBe(300)
+    // The meter tells what is uploaded from what is only promised.
+    expect(budgetUsage()).toEqual({ resident: 0, reserved: 700, max: 1_000 })
 
     b.worker.header(600)
     await tick()
@@ -606,6 +608,7 @@ describe('point cloud loads — worker lifecycle', () => {
     b.worker.done(300, FRAME, true)
     await until(() => b.load.settled, 'the second load to settle')
     expect(availablePoints()).toBe(0)
+    expect(budgetUsage()).toEqual({ resident: 1_000, reserved: 0, max: 1_000 })
     // Never more resident than the cap, whatever the order.
     const total = usePointCloudStore.getState().clouds.reduce((n, c) => n + c.pointCount, 0)
     expect(total).toBeLessThanOrEqual(1_000)

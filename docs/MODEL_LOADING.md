@@ -330,8 +330,71 @@ about a millisecond per file. SDK bytes are already in memory and have no
 modification time, so they get a full digest, `f2:<size>:<SHA-256 of every
 byte>` (≤ 1 GB; without it they are not cached at all). The import dialog flags a file whose fingerprint
 is already loaded or already in the queue ("already loaded — Open existing /
-Load duplicate anyway"), and unchecks in-batch duplicates. Programmatic loads
-(SDK, URL, demo) keep today's behaviour and are not prompted.
+Load duplicate anyway"), and unchecks in-batch duplicates. Programmatic IFC
+loads (SDK, URL, demo) keep today's behaviour and are not prompted.
+
+**Scans and meshes** are checked on the user's own "open these" — the panels'
+pickers and demos, a drop on the viewer, `?scan=` (`loadPointCloudsOnce` /
+`loadMeshesOnce`). Identity is the content for a local file — the same `f1`
+sample; a mesh by its entry file plus the name and size of the files it came
+with, so the `.obj` brought back with its `.mtl` is a new import
+(`meshIdentity`) — and the URL for a download, checked before a byte is
+fetched (host bytes carry theirs as `SubmitOptions.sourceUrl`).
+
+The sample reads three 64 KB windows, and a scan edited in place — points
+reclassified, same count, same header — keeps it. So a local file also
+carries its **version**, the newest modification time of its files, on the
+job itself (`SubmitOptions.sourceVersion`, which a Reload keeps): the same
+sample with another known time is an edit and loads as new — also next to
+its original in one selection — and its row is not marked a copy
+(`duplicateOf`); a copy made by the file manager keeps the time and is
+recognised. `findSameSource` skips jobs of another version and considers the
+next, so an older version still loading is found behind a newer one in the
+scene. A download has no time worth trusting and matches on its URL or sample
+alone. `reload()` of a scan / mesh fetched from a URL drops the old
+fingerprint so the adapter samples what came back.
+
+A match is a scan / mesh of the SAME kind that is loaded or still loading, an
+earlier item of the same selection, or an item of another drop still being
+sampled alongside (`pendingKeys`). Loaded ones are looked up in the job rows
+and, because Dismiss, "Clear finished" and the history cap forget a loaded row
+while its cloud stays on screen, in an identity map written as each job lands
+and checked against the stores — the IFC path's `fingerprintByModel`, for
+scans and meshes. One being removed (its row `unloading`) is not a match.
+
+What was asked for again is acted on rather than reloaded: a loaded one is
+framed, a hidden one is shown again, a load on hold goes back in the queue.
+One toast says so, naming the file opened and, when the panel lists it under
+another name, the scan it matched ("IMG.las has the same content as site.las,
+already in the scene"); several are listed, up to three, or counted, with a
+sentence for any shown again or put back in the queue (only a single one is
+framed). Its **Load a copy anyway** loads one copy per scan matched, because
+a second copy is sometimes the point. That button is the only way to the
+copy, so the toast stays until it is used or closed — a keyboard user reaches
+it at the end of the page — and the next duplicate toast of the same kind
+replaces it (a scan and a mesh re-dropped together keep one each). Toasts are
+read out through two screen-reader-only regions (polite; assertive for
+errors) holding the new messages, all of them, with "Option available: …"
+when there is a button, and emptied again after a few seconds; a toast
+pauses while hovered or focused, one with an action closes only from its ✕,
+and a toast that leaves while focus is in it — by its buttons, replaced, or
+reset — hands focus back to where it came from.
+
+A drop still being sampled belongs to its session and to its kind: going
+back to the landing (`resetLoading`) or clearing that kind (the panels' and
+the SDK's clear, `cancelLoadsOfKind`) ends it, drops its claims (a new drop
+of the same file is not "already loading") and takes away the duplicate
+toast that described the scene before.
+
+The adapters record the fingerprint on every job (`setMeta`), so a demo
+downloaded once is recognised when the same file is later dropped from disk.
+Two gaps remain, both toward loading a copy rather than refusing one: a URL is
+known only by its URL until its bytes arrive, so a demo opened after a local
+copy of the same file is downloaded and loaded again; and a mesh drop gives
+every model all the drop's non-model files (`groupMeshFiles`), so the same
+`.obj` + `.mtl` dropped with any other file — another model, a stray
+texture — is not recognised. The
+SDK is not checked: a host that adds a scan twice asked for two.
 
 ## 9. Errors and retry
 
@@ -454,9 +517,8 @@ instead of after a 15-minute timeout.
 
 - Registry holds `Blob` handles instead of `ArrayBuffer`s and consumers read on
   demand (one IFC copy per model off the heap).
-- Duplicate detection for scans and meshes (the fingerprint path is IFC-only).
-- A point budget the user can see: `availablePoints()` is exported, the panel
-  does not show it yet.
+- Let the user raise the resident-point budget on a machine with room for more
+  (it is a fixed 20 M today; the panel now shows how much of it is used).
 - Move the mesh decode off the main thread where three.js allows it
   (`createImageBitmap` works in workers; the blocker is TextureLoader / MTLLoader).
 - Self-host the fragments worker (today fetched from unpkg at viewer start).
@@ -516,20 +578,22 @@ the real app; see §16 for the measured ones.
 | `src/lib/loading/external-sources.test.ts` | 12 | GIS status mirrored into background rows (terrain, buildings: loaded / failed / cancelled / removed, late start, stop). `watchSourceRemovals`: a scan / mesh entry that leaves its store is a cancel for a job still loading and a removal for a loaded one; replays and settled jobs ignored; kinds never cross; a throwing manager never breaks the store write. | Real zustand stores and i18n; fake and real manager |
 | `src/lib/loading/viewer-abort.test.ts` | 18 | AbortError shape, recognising fragments' abort string, fraction clamping, restoring the active model after a discard, and `pollModelIdle` (two idle polls 100 ms apart, timeout). | Fake timers |
 | `src/lib/loading/drop-routing.test.ts` | 18 | Mixed drops routed per subsystem, with arrival order kept (the anchor rule). Images count as textures only beside a mesh. `.xml` is not IDS. Drag-over sniffing. Extension lists match the importers. | Plain objects |
-| `src/lib/loading/pointcloud-source.test.ts` | 20 | The point cloud adapter through a **real `LoadManager`**: identify → place → decode with point counters, the early `resultId`, the job signal and the sourceUrl identity; never a model job; per-scan cancel (a sibling keeps loading); runner keys → `detailKey` and retry rules (timeout never auto-retried, a full budget stays retryable, a crashed worker once); `setWaiting('budget')`; Remove / focus; viewer-unavailable; URL sources (network lane, byte progress, fallback, 404) and SDK bytes; the decode lane's slots **per kind**; the anchor wait in an empty scene; no Reload without a retained source; a retry clearing the old error row; a stuck attempt's slot released when the next starts. | Fake runner, system and network |
-| `src/lib/loading/mesh-source.test.ts` | 9 | The mesh adapter through a real manager: entry + sidecars, decode then place, the decode slot freed while waiting to be placed, per-import cancel, `detailKey`, a multi-file URL source under one network ticket (and its progress counted by files while the byte total is unknown), Remove via mesh-runner, cancel while waiting for the anchor. | Fake runner, system and network |
-| `src/lib/loading/index-sources.test.ts` | 5 | The words a failed scan / mesh reaches the user and an SDK host with: the runner's reason, the HTTP status filled in, the kind-neutral generic sentence, no raw key; the mesh wire key. | Real i18n |
-| `src/lib/pointcloud/pc-runner.test.ts` | 46 | Per-load staleness (a sibling's removal no longer cancels a parse nor freezes a COPC), every exit settling once (cancel before / after the header, stale continuations, a rejecting `resolveAlignment`), the resident-point ledger (waits, wake-ups on any freed room, a fitting request granted at once), the COPC resident count, the up-axis kept at done, bare `.copc` streaming. | Stubbed `Worker`, fake system; fake timers |
+| `src/lib/loading/pointcloud-source.test.ts` | 26 | The point cloud adapter through a **real `LoadManager`**: identify → place → decode with point counters, the early `resultId`, the job signal and the sourceUrl identity; the content fingerprint on every job (a downloaded scan's once its bytes arrive), host bytes found by their URL, a cancel while the file is sampled ending cancelled before the runner, Reload of a URL scan sampling the bytes it fetched again; never a model job; per-scan cancel (a sibling keeps loading); runner keys → `detailKey` and retry rules (timeout never auto-retried, a full budget stays retryable, a crashed worker once); `setWaiting('budget')`; Remove / focus; viewer-unavailable; URL sources (network lane, byte progress, fallback, 404) and SDK bytes; the decode lane's slots **per kind**; the anchor wait in an empty scene; no Reload without a retained source; a retry clearing the old error row; a stuck attempt's slot released when the next starts. | Fake runner, system and network |
+| `src/lib/loading/mesh-source.test.ts` | 13 | The mesh adapter through a real manager: entry + sidecars, its identity (entry content plus the files it came with; a `.glb` is self-contained; a downloaded mesh's fingerprint; a cancel while sampling), decode then place, the decode slot freed while waiting to be placed, per-import cancel, `detailKey`, a multi-file URL source under one network ticket (and its progress counted by files while the byte total is unknown), Remove via mesh-runner, cancel while waiting for the anchor. | Fake runner, system and network |
+| `src/lib/loading/index-sources.test.ts` | 39 | The words a failed scan / mesh reaches the user and an SDK host with: the runner's reason, the HTTP status filled in, the kind-neutral generic sentence, no raw key; the mesh wire key. **Opening what the scene already holds:** a renamed copy (named after the panel's item), a URL still loading, `?scan=a,a`, the same file twice in one selection or in two overlapping drops, one report and one copy per identity, kinds never crossing (nor the IFC dialog's check), a dismissed / cleared row still recognised until the scan leaves the scene, a hidden scan shown again, a paused load resumed, "load a copy" keeping its options, the `.obj` brought back with its `.mtl`, host bytes by URL, the SDK not checked, a reset ending a drop still being sampled and its toast; an edited scan with the same sample loading by its modification time, names listed or counted with one toast replacing the last and staying until closed, a hidden renamed copy named with its original, a scan being removed not matching, a file and a link to one scan counting once, a copy marked against its own kind only, a clear ending a drop still being sampled (its claims and its toast too), an ended session claiming nothing; a file and its edit picked together both loading, the version kept across a Reload, an older version still loading found behind a newer one, a scan and a mesh keeping a toast each, several duplicates saying what was done to them. | Real i18n, stores and manager; fake adapters |
+| `src/lib/pointcloud/pc-runner.test.ts` | 46 | Per-load staleness (a sibling's removal no longer cancels a parse nor freezes a COPC), every exit settling once (cancel before / after the header, stale continuations, a rejecting `resolveAlignment`), the resident-point ledger (waits, wake-ups on any freed room, a fitting request granted at once; its two parts for the panel's meter, `budgetUsage`), the COPC resident count, the up-axis kept at done, bare `.copc` streaming. | Stubbed `Worker`, fake system; fake timers |
 | `src/workers/point-cloud.worker.test.ts` | 4 | The real worker's budget park: no points before `budget`, nothing after a cancel while parked, a short grant flags `truncated`, progress before done. | jsdom; a small ASCII PLY |
 | `src/lib/mesh/mesh-runner.test.ts` · `mesh-loader.test.ts` | 46 · 22 | No row ever left "loading" (a 9-case table), a sibling's removal no longer cancels, abort during decode / placement, a stalled glTF parse removing its row at once; `entryName`, `mtllib` / same-name `.mtl` pairing, glTF causes, texture stats after the drain. | Real OBJ loader and mesh system; stubbed GLTFLoader |
 | `src/stores/pointCloudStore.test.ts` · `meshStore.test.ts` | 15 · 5 | A single removal no longer bumps the epoch (clear still does); removing an absent id notifies nobody. | Real stores |
+| `src/components/PointBudgetMeter.test.ts` | 4 | The budget meter: `aria-valuetext`, "nearly full" from 90 % and "full" at the cap in words as well as colour, the reserved part apart from the uploaded one, the hint behind a reachable button. | **jsdom**, real i18n |
+| `src/stores/toastStore.test.ts` | 18 | A toast's action kept out of the store, run once, gone with its toast; a paused countdown resuming with the time it had left; duration 0 staying until closed. Mounted: the messages read out (polite, errors assertive; all toasts of one render, in order; the same message twice read twice; the option named, not the buttons; emptied after a while), focus handed back however the toast leaves and kept across a window switch, focus holding a toast like the pointer, no countdown on a toast that stays, a missed tap on a toast with an action keeps it and its ✕ closes it, a plain toast still closes on click, hovering holds it. | **jsdom**, real store |
 | `scripts/post-header-guard.test.ts` | 4 | Every pc-runner continuation after the header is guarded (the shape that used to hang loads silently). | Reads the source |
 | `src/lib/loading/discipline.test.ts` | 8 | Discipline tokens (camelCase, accents, other languages, ISO 19650 role letters) and batch-name inference. | Pure |
 | `src/lib/loading/fingerprint.test.ts` | 6 | `f1:<size>:<hex>` shape, equality and difference, Blob vs bytes parity, FNV fallback. | Pure |
 | `src/lib/loading/load-log.test.ts` | 10 | `[IFC-LOAD]` line format, trace gated by `ifc:log-level`, a throwing `localStorage`, perf-mark cleanup. | Stubs |
 | `src/lib/loading/metrics.test.ts` · `model-id.test.ts` | 7 · 4 | ms/MB running means, counters, peak heap. Model id shape, uniqueness within a millisecond, monotonic even if the clock goes back. | Pure |
 | `src/components/loading/job-view.test.ts` | 68 | The pure view model: phase lines, wait-reason sentences, display order, stats, formatting, ETA display, indicator model, first-load focus, checklist. It never shows 100 % before commit. | Pure |
-| `src/components/loading/loading-ui.test.ts` | 30 | Mounts `LoadingIndicator`, `LoadingCenter`, `FirstLoadCard` and `SceneLoadingSection`.<br/>• **Indicator:** activity rather than a %, while nothing measures; "All models loaded" only after a model actually landed; failures announced; the floating and mobile variants.<br/>• **Center:** real phase lines, Escape without reaching panels, confirming cancel-all and cache clear with focus moved and announced, Retry on a cancelled row, no "0 %", closing on a press outside.<br/>• **First-load card:** batch-led titles.<br/>• **Hand-over:** an upload does not open the Center. | **jsdom**, real stores and i18n, stub controller |
+| `src/components/loading/loading-ui.test.ts` | 31 | Mounts `LoadingIndicator`, `LoadingCenter`, `FirstLoadCard` and `SceneLoadingSection`.<br/>• **Indicator:** activity rather than a %, while nothing measures; "All models loaded" only after a model actually landed; failures announced; the floating and mobile variants.<br/>• **Center:** real phase lines, Escape without reaching panels, confirming cancel-all and cache clear with focus moved and announced, Retry on a cancelled row, no "0 %", closing on a press outside.<br/>• **First-load card:** batch-led titles.<br/>• **Hand-over:** an upload does not open the Center. A scan or mesh copy is not called "a model". | **jsdom**, real stores and i18n, stub controller |
 | `src/components/loading/useNow.test.ts` | 4 | One shared ticker per interval, cleared with its last subscriber, safe to unsubscribe during a tick. | Fake timers |
 | `src/locales/loading-parity.test.ts` | 11 | `loading` namespace key parity across the 10 locales (plural-aware for ja/th/zh), the same interpolation params, no empty strings, a label for every engine enum, short discipline badges. | Reads JSON |
 | `src/locales/toasts-loading-parity.test.ts` | 10 | The 5 loading toast keys exist with the English params in every locale. | Reads JSON |
@@ -538,7 +602,7 @@ the real app; see §16 for the measured ones.
 | `src/workers/ifc-parser.worker.test.ts` | 23 | `invalid-file`, `read-failed` and OOM before the importer is built. A posted `File` read inside the worker (`reading` stage first); the legacy transferred-buffer path. Stage order, ProgressData passthrough, a result with no copy, the throttle gate. OOM vs `worker-init` vs `parse` classification. | jsdom; `web-ifc` and fragments **mocked** |
 | `src/lib/upload.utils.test.ts` | 46 | Header and schema checks, fingerprint and duplicate lookup, the single-small-file fast path, batch naming, the import-dialog reducer. | jsdom (real `File` slices) |
 
-At the time of writing these 34 files hold **771 cases, all passing** (`npx vitest run src/lib/loading src/components/loading …`, about 10 s). Two things are not in the table:
+At the time of writing these 36 files hold **838 cases, all passing** (`npx vitest run src/lib/loading src/components/loading …`, about 10 s). Two things are not in the table:
 - `src/lib/loader.test.ts` (19 cases) predates this system. Only its
   `buildCacheKey` and legacy OPFS cases exercise real code; the rest re-implement
   the old loader inside the test.

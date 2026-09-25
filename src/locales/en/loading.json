@@ -81,6 +81,8 @@
     "stalledGeneric": "No progress for a while. Keep waiting or cancel.",
     "stalledShort": "No recent progress",
     "duplicate": "Same content as a model already in the scene",
+    "duplicateScan": "Same content as a scan already in the scene",
+    "duplicateMesh": "Same content as a 3D model already in the scene",
     "retrying": "Attempt {{attempt}}"
   },
   "counter": {
@@ -359,5 +361,22 @@
     "buildings": "Surrounding buildings",
     "pointCloud": "Point cloud",
     "mesh": "3D model"
+  },
+  "duplicate": {
+    "inScene": "“{{name}}” is already in the scene",
+    "loading": "“{{name}}” is already loading",
+    "sameAsInScene": "“{{name}}” has the same content as “{{existing}}”, already in the scene",
+    "sameAsLoading": "“{{name}}” has the same content as “{{existing}}”, which is already loading",
+    "revealed": "“{{name}}” was already in the scene, hidden — it is shown again",
+    "revealedSameAs": "“{{name}}” has the same content as “{{existing}}”, which was hidden — it is shown again",
+    "resumed": "“{{name}}” was on hold — it is back in the queue",
+    "resumedSameAs": "“{{name}}” has the same content as “{{existing}}”, which was on hold — it is back in the queue",
+    "manyNamed": "{{names}} are already in the scene or loading",
+    "revealedSome": "Hidden ones are shown again.",
+    "resumedSome": "Ones on hold are back in the queue.",
+    "many_one": "{{count}} file is already in the scene or loading",
+    "many_other": "{{count}} files are already in the scene or loading",
+    "quoted": "“{{name}}”",
+    "loadAnyway": "Load a copy anyway"
   }
 }

@@ -8,6 +8,7 @@
     "save": "保存",
     "cancel": "キャンセル",
     "close": "閉じる",
+    "optionAvailable": "操作できます: {{label}}",
     "delete": "削除",
     "clear": "クリア",
     "reset": "リセット",

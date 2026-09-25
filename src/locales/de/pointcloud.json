@@ -88,7 +88,14 @@
     "memory": "{{mb}} MB auf der GPU",
     "truncated": "Bei {{count}} Punkten gestoppt — die Datei enthält mehr, als dieser Viewer gleichzeitig im Speicher hält.",
     "noModel": "Kein IFC-Modell geladen — der Scan steht für sich allein.",
-    "partial": "Ein Teil dieses Scans konnte nicht gelesen werden und fehlt in der Ansicht. Was Sie sehen, ist unvollständig."
+    "partial": "Ein Teil dieses Scans konnte nicht gelesen werden und fehlt in der Ansicht. Was Sie sehen, ist unvollständig.",
+    "budget": "Punktbudget: {{used}} von {{max}}",
+    "budgetNearlyFull": "Punktbudget: {{used}} von {{max}} — fast voll",
+    "budgetFull": "Punktbudget: {{used}} von {{max}} — voll",
+    "budgetLabel": "Punktbudget im Speicher",
+    "budgetHint": "Punkte, die die geladenen Scans im Speicher halten, einschließlich der noch ladenden. Ein Scan, der nicht passt, wartet, solange ein anderer Scan noch lädt; sonst wird er gekürzt geladen oder abgelehnt, wenn das Budget voll ist. Gestreamte COPC-Wolken zählen nicht; die Einstellung Detailgrad begrenzt sie.",
+    "budgetReserved": "+ {{reserved}} reserviert für noch ladende Scans",
+    "budgetAbout": "Über das Punktbudget"
   },
   "align": {
     "title": "Ausrichtung",

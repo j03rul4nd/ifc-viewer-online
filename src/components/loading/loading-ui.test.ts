@@ -39,7 +39,7 @@ function job(patch: Partial<LoadJobView> = {}): LoadJobView {
     status: 'queued', waitReason: null, phase: null, phases: [],
     progress: { fraction: 0, determinate: false }, stalled: false, attempts: 1, error: null,
     metrics: { submittedAt: 1000, startedAt: 1000, etaMs: null, etaReliable: false, estimatedPeakBytes: 0, phaseDurations: {} },
-    resultId: null, fingerprint: null, duplicateOf: null, requestId: null, sourceUrl: null, seq,
+    resultId: null, fingerprint: null, duplicateOf: null, requestId: null, sourceUrl: null, sourceVersion: null, seq,
     capabilities: {
       cancel: true, retry: false, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: false,
       focus: false,
@@ -440,6 +440,26 @@ describe('LoadingCenter', () => {
 })
 
 describe('LoadingCenter — scans and meshes', () => {
+  it('a copy of a scan or a mesh is not called "a model" in its details', () => {
+    const rows = [
+      job({ kind: 'pointcloud', status: 'loaded', displayName: 'copy.las', resultId: 'pc-2', duplicateOf: 'j0', metrics: FINISHED, capabilities: settledCaps() }),
+      job({ kind: 'mesh', status: 'loaded', displayName: 'copy.glb', resultId: 'm-2', duplicateOf: 'j1', metrics: FINISHED, capabilities: settledCaps() }),
+      job({ kind: 'ifc', status: 'loaded', displayName: 'copy.ifc', resultId: 'ifc-2', duplicateOf: 'j2', metrics: FINISHED, capabilities: settledCaps() }),
+    ]
+    act(() => useLoadingStore.getState().setSnapshot(snapshot(rows)))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter())
+    // One row open at a time: open each in turn and collect what it says.
+    let text = ''
+    for (const row of rows) {
+      act(() => useLoadingStore.getState().setExpanded(row.id))
+      text += document.getElementById('loading-center')?.textContent ?? ''
+    }
+    expect(text).toContain('Same content as a scan already in the scene')
+    expect(text).toContain('Same content as a 3D model already in the scene')
+    expect(text).toContain('Same content as a model already in the scene')
+  })
+
   it('offers "Show in scene" exactly where the manager says something can frame the result', () => {
     const cloud = job({
       kind: 'pointcloud', status: 'loaded', displayName: 'site.laz', resultId: 'pc-1',

@@ -33,6 +33,7 @@ import { createPointCloudSourceAdapter, urlSourceName } from './pointcloud-sourc
 import { createMeshSourceAdapter } from './mesh-source'
 import { registerLoadingController, type DuplicateMatch, type ImportOptions, type LoadingController } from './controller'
 import { inferBatchName } from './discipline'
+import { fingerprintBlob, meshIdentity } from './fingerprint'
 import type {
   JobHandle, JobOrigin, LoadBatchView, LoadError, LoadEvent, LoadJobView, LoadSource, Priority, SourceKind, SubmitOptions,
 } from './types'
@@ -51,6 +52,7 @@ import { isMeshEnabled } from '../mesh/mesh-flag'
 import { usePointCloudStore } from '../../stores/pointCloudStore'
 import { useMeshStore } from '../../stores/meshStore'
 import { useSceneStore } from '../../stores/sceneStore'
+import { toast, useToastStore } from '../../stores/toastStore'
 import { createLogger } from '../logger'
 import type { ViewerAPI } from '../viewer'
 import type { CacheEntry, ModelInfo } from '../../types'
@@ -221,6 +223,10 @@ export function getLoadManager(): LoadManager {
       shouldFrame: (opts) => opts.frame ?? (modelRegistry.size() === 0 && readyMeshes() <= 1),
     }))
   }
+  // What each scan / mesh was loaded from, recorded as it lands — part of the
+  // manager, not of the UI bridges, like the models' fingerprints are part of
+  // their commit.
+  mgr.subscribe((e) => { if (e.type === 'loaded') rememberSourceIdentity(e.job) })
   manager = mgr
   if (import.meta.env.DEV) {
     (globalThis as Record<string, unknown>).__ifcLoad = {
@@ -482,7 +488,7 @@ function findJob(jobId: string): LoadJobView | undefined {
 }
 
 function findDuplicate(fingerprint: string): DuplicateMatch | null {
-  const hit = getLoadManager().findDuplicate(fingerprint)
+  const hit = getLoadManager().findDuplicate(fingerprint, 'ifc')
   if (hit) {
     return {
       modelId: hit.status === 'loaded' ? hit.resultId : null,
@@ -696,6 +702,8 @@ export function submitIfcBytes(fileName: string, bytes: Uint8Array | ArrayBuffer
 
 export interface SourceSubmitItem {
   source: LoadSource
+  /** Content fingerprint, when the caller already has it (the duplicate check computes it). */
+  fingerprint?: string
   /**
    * The URL the bytes came from when the source is not a URL itself (bytes a
    * host fetched). The scan's / mesh's identity across sessions — saved
@@ -736,7 +744,9 @@ function submitOfKind(
     priority: opts.priority,
     requestId: opts.requestId,
     frame,
-    ...(it.sourceUrl ? { extra: { sourceUrl: it.sourceUrl } } : {}),
+    ...(it.fingerprint ? { fingerprint: it.fingerprint } : {}),
+    ...(it.sourceUrl ? { sourceUrl: it.sourceUrl, extra: { sourceUrl: it.sourceUrl } } : {}),
+    ...versionOpt(it),
   })
   if (items.length === 1) return [mgr.submit(items[0].source, kind, optsFor(items[0], opts.frame))]
   // Named after the files when they share a stem; otherwise "3 scans" /
@@ -771,6 +781,409 @@ export function submitPointClouds(items: SourceSubmitItem[], opts: SourceSubmitO
  */
 export function submitMeshes(items: SourceSubmitItem[], opts: SourceSubmitOptions): JobHandle[] {
   return submitOfKind('mesh', items, opts, 'model.glb')
+}
+
+// ── Loading a scan / mesh the scene already holds ─────────────────────────────
+
+type ExternalKind = 'pointcloud' | 'mesh'
+
+const fallbackNameOf = (kind: ExternalKind): string => (kind === 'pointcloud' ? 'scan.las' : 'model.glb')
+
+/**
+ * What each scan / mesh in the scene was loaded from — its content, its URL,
+ * the version of its files — kept here and not only on the job rows, as
+ * fingerprintByModel is for models: Dismiss, "Clear finished" and the history
+ * cap forget a loaded row while its cloud stays on screen, and the same file
+ * dropped again must still be recognised. Written when a job lands. An entry
+ * whose result is no longer in its store is stale — the panel ✕, the SDK and
+ * the clear commands all end there — and is dropped when met.
+ */
+interface SourceIdentity {
+  kind: ExternalKind
+  resultId: string
+  fingerprint: string | null
+  sourceUrl: string | null
+  /** See versionOf; null = unknown. */
+  version: number | null
+}
+const identityByResult = new Map<string, SourceIdentity>()
+
+function rememberSourceIdentity(job: LoadJobView): void {
+  if (!job.managed || (job.kind !== 'pointcloud' && job.kind !== 'mesh') || !job.resultId) return
+  if (!job.fingerprint && !job.sourceUrl) return
+  identityByResult.set(`${job.kind}:${job.resultId}`, {
+    kind: job.kind,
+    resultId: job.resultId,
+    fingerprint: job.fingerprint ?? null,
+    sourceUrl: job.sourceUrl ?? null,
+    version: job.sourceVersion,
+  })
+}
+
+/**
+ * Identities claimed by a submission that is still sampling its files. The
+ * manager learns of a drop's files only once all of them are fingerprinted,
+ * so two drops that overlap would otherwise both miss each other. The owner
+ * token keeps a submission from releasing a claim a later one made.
+ */
+const pendingKeys = new Map<string, { fileName: string; owner: symbol; version: number | null }>()
+
+/** Bumped by resetLoading: a drop still being sampled, or a toast's "load a copy", belongs to the session it started in. */
+let sessionEpoch = 0
+
+/**
+ * Bumped per kind by cancelLoadsOfKind — the clear commands. A drop still
+ * being sampled has no job for the clear to cancel; without this it landed
+ * right after the clear, the very thing cancelling the queue is for.
+ */
+const clearGeneration: Record<ExternalKind, number> = { pointcloud: 0, mesh: 0 }
+
+/** The newest duplicate toast of each kind: the next one replaces it instead of stacking. */
+const duplicateToastId: Record<ExternalKind, string | null> = { pointcloud: null, mesh: null }
+
+/** A scan / mesh in the scene: what the panel lists it as, and whether it is on screen. */
+function sceneEntryOf(kind: ExternalKind, id: string): { fileName: string; visible: boolean } | null {
+  const entry = kind === 'pointcloud'
+    ? usePointCloudStore.getState().clouds.find((c) => c.id === id)
+    : useMeshStore.getState().meshes.find((m) => m.id === id)
+  if (!entry || entry.status === 'error') return null
+  return entry
+}
+
+/** What a skipped item matched. */
+export interface SceneMatch {
+  /** loaded = in the scene (maybe hidden); loading = a job is working on it; paused = the user held that job. */
+  state: 'loaded' | 'loading' | 'paused'
+  /** The job holding it; null when its row is gone (dismissed) or it is a twin in the same selection. */
+  jobId: string | null
+  resultId: string | null
+  /** The name the user knows it by — the panel's, or the job row's. */
+  fileName: string
+}
+
+/** One item of a submission that the scene already holds (or is loading). */
+export interface SourceDuplicate {
+  item: SourceSubmitItem
+  name: string
+  existing: SceneMatch
+}
+
+/** The URL that identifies a source across loads, when it has one. */
+function sourceUrlKey(item: SourceSubmitItem): string | null {
+  if (item.source.type === 'url') return item.source.url
+  return item.sourceUrl ?? null
+}
+
+/**
+ * A local file's identity: its sampled content (the IFC path's fingerprint —
+ * renaming a copy does not make it new); for a mesh, plus the files it came
+ * with (meshIdentity: the .obj brought back with its .mtl is a new import).
+ */
+async function contentKeyOf(kind: ExternalKind, item: SourceSubmitItem): Promise<string | null> {
+  if (item.fingerprint) return item.fingerprint
+  if (item.source.type !== 'file') return null
+  const { file, sidecars } = item.source
+  try {
+    const fp = await fingerprintBlob(file)
+    return kind === 'mesh' ? meshIdentity(file.name, fp, sidecars ?? []) : fp
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A local source's version: the newest modification time of its files. The
+ * fingerprint samples three 64 KB windows, and a scan edited in place —
+ * points reclassified, same count, same header — keeps its sample: a file
+ * with the same sample and ANOTHER time is an edit, loaded as new. A copy
+ * made by the file manager keeps the time; a download has none to trust, so a
+ * URL has no version and matches on its URL (or its sample) alone.
+ */
+function versionOf(item: SourceSubmitItem): number | null {
+  if (item.source.type !== 'file') return null
+  const times = [item.source.file, ...(item.source.sidecars ?? [])].map((f) => f.lastModified).filter((t) => t > 0)
+  return times.length > 0 ? Math.max(...times) : null
+}
+
+/** A job's SubmitOptions.sourceVersion for an item (the manager compares it, see findSameSource). */
+function versionOpt(item: SourceSubmitItem): { sourceVersion?: number } {
+  const version = versionOf(item)
+  return version !== null ? { sourceVersion: version } : {}
+}
+
+/** Unknown on either side counts as the same version. */
+function sameVersion(a: number | null, b: number | null): boolean {
+  return a === null || b === null || a === b
+}
+
+function matchInScene(
+  kind: ExternalKind,
+  fingerprint: string | null,
+  url: string | null,
+  keys: string[],
+  version: number | null,
+): SceneMatch | null {
+  const mgr = getLoadManager()
+  const hit = mgr.findSameSource(kind, { fingerprint, sourceUrl: url, version })
+  if (hit) {
+    const entry = hit.resultId ? sceneEntryOf(kind, hit.resultId) : null
+    return {
+      state: hit.status === 'loaded' ? 'loaded' : hit.status === 'held' ? 'paused' : 'loading',
+      jobId: hit.jobId,
+      resultId: hit.resultId,
+      fileName: entry?.fileName ?? hit.fileName,
+    }
+  }
+  // Its row may be gone while the scan is still on screen.
+  for (const [key, id] of identityByResult) {
+    if (id.kind !== kind) continue
+    const same = (fingerprint !== null && id.fingerprint === fingerprint) || (url !== null && id.sourceUrl === url)
+    if (!same || !sameVersion(version, id.version)) continue
+    // On its way out (a Remove still unloading it): its store entry is about to go.
+    const row = mgr.findByResult(kind, id.resultId)
+    if (row && (row.status === 'unloading' || row.status === 'removed')) continue
+    const entry = sceneEntryOf(kind, id.resultId)
+    if (!entry) { identityByResult.delete(key); continue }
+    return { state: 'loaded', jobId: null, resultId: id.resultId, fileName: entry.fileName }
+  }
+  // A submission running alongside this one is about to load it.
+  for (const k of keys) {
+    const pending = pendingKeys.get(`${kind}|${k}`)
+    if (pending && sameVersion(version, pending.version)) {
+      return { state: 'loading', jobId: null, resultId: null, fileName: pending.fileName }
+    }
+  }
+  return null
+}
+
+interface Claim {
+  owner: symbol
+  keys: string[]
+  epoch: number
+  generation: number
+}
+
+async function partition(
+  kind: ExternalKind,
+  items: SourceSubmitItem[],
+  claim: Claim | null,
+): Promise<{ fresh: SourceSubmitItem[]; duplicates: SourceDuplicate[] }> {
+  const fresh: SourceSubmitItem[] = []
+  const duplicates: SourceDuplicate[] = []
+  // Each identity met in this selection, and whether it was reported already:
+  // one report — and one "load a copy" — per identity, not one per file. An
+  // identity can hold several versions (the file and its edit, side by side).
+  type Seen = { fileName: string; reported: boolean; version: number | null }
+  const seen = new Map<string, Seen[]>()
+  const seenAs = (key: string, version: number | null): Seen | undefined =>
+    seen.get(key)?.find((e) => sameVersion(e.version, version))
+  const remember = (key: string, entry: Seen): void => {
+    const list = seen.get(key)
+    if (!list) seen.set(key, [entry])
+    else if (!list.includes(entry)) list.push(entry)
+  }
+  // And one per scan / mesh matched: a file and a link to the same scan are one.
+  const matched = new Set<string>()
+  for (const item of items) {
+    const fingerprint = await contentKeyOf(kind, item)
+    // The session ended, or this kind was cleared, while the file was being
+    // sampled: nothing of this drop will load, and it must not claim anything.
+    if (claim && (claim.epoch !== sessionEpoch || claim.generation !== clearGeneration[kind])) {
+      return { fresh: [], duplicates: [] }
+    }
+    const version = versionOf(item)
+    const url = sourceUrlKey(item)
+    const name = sourceFileName(item.source, fallbackNameOf(kind))
+    const keys = [fingerprint && `f:${fingerprint}`, url && `u:${url}`].filter((k): k is string => !!k)
+
+    const twin = keys.map((k) => seenAs(k, version)).find((e) => e !== undefined)
+    if (twin) {
+      if (!twin.reported) {
+        // Its twin earlier in this selection is being submitted now.
+        twin.reported = true
+        duplicates.push({ item, name, existing: { state: 'loading', jobId: null, resultId: null, fileName: twin.fileName } })
+      }
+      for (const k of keys) remember(k, twin)
+      continue
+    }
+
+    const existing = matchInScene(kind, fingerprint, url, keys, version)
+    const entry: Seen = { fileName: existing?.fileName ?? name, reported: existing !== null, version }
+    for (const k of keys) remember(k, entry)
+    if (existing) {
+      const target = existing.resultId ? `r:${existing.resultId}` : existing.jobId ? `j:${existing.jobId}` : null
+      if (target !== null) {
+        if (matched.has(target)) continue
+        matched.add(target)
+      }
+      duplicates.push({ item, name, existing })
+      continue
+    }
+    if (claim) {
+      for (const k of keys) {
+        const key = `${kind}|${k}`
+        pendingKeys.set(key, { fileName: name, owner: claim.owner, version })
+        claim.keys.push(key)
+      }
+    }
+    fresh.push(fingerprint ? { ...item, fingerprint } : item)
+  }
+  return { fresh, duplicates }
+}
+
+/**
+ * Split a submission into what to load and what the scene already holds.
+ *
+ * Identity is the CONTENT for a local file (with its modification time, see
+ * versionOf) and the URL for a download (checked before a byte is fetched).
+ * A match is a scan / mesh of the same kind in the scene — whether or not its
+ * Loading Center row is still there — or one still loading; and within one
+ * selection, the same file picked twice. Fresh items come back with their
+ * fingerprint, so their job does not sample the file a second time.
+ */
+export function partitionDuplicates(
+  kind: ExternalKind,
+  items: SourceSubmitItem[],
+): Promise<{ fresh: SourceSubmitItem[]; duplicates: SourceDuplicate[] }> {
+  return partition(kind, items, null)
+}
+
+/** Show a scan / mesh already in the scene: make it visible again if hidden, and frame it. Returns whether it was hidden. */
+function showInScene(kind: ExternalKind, match: SceneMatch, frame: boolean): boolean {
+  const id = match.resultId
+  if (!id) return false
+  const hidden = sceneEntryOf(kind, id)?.visible === false
+  if (!hidden && match.jobId) {
+    if (frame) {
+      try { getLoadManager().focusResult(match.jobId) } catch { /* framing is a courtesy */ }
+    }
+    return false
+  }
+  if (hidden) {
+    if (kind === 'pointcloud') usePointCloudStore.getState().setVisible(id, true)
+    else useMeshStore.getState().setVisible(id, true)
+  }
+  const viewer = resolveViewer()
+  if (viewer) {
+    // One chain: a hidden mesh has no bounds to frame until it is visible.
+    const system: Promise<{ setVisible(id: string, visible: boolean): void; frame(id?: string): void }> =
+      kind === 'pointcloud' ? viewer.getPointClouds() : viewer.getMeshes()
+    void system.then((sys) => {
+      if (hidden) sys.setVisible(id, true)
+      if (frame) sys.frame(id)
+    }).catch(() => { /* no viewer any more */ })
+  }
+  return hidden
+}
+
+/** Several duplicates: named while they fit in a line (up to three), counted beyond. */
+function describeMany(dups: SourceDuplicate[]): string {
+  if (dups.length > 3) return i18n.t('loading:duplicate.many', { count: dups.length })
+  const names = dups.map((d) => i18n.t('loading:duplicate.quoted', { name: d.name }))
+  // Intl.ListFormat is ES2021; the lib this build types against predates it.
+  const ListFormat = (Intl as unknown as {
+    ListFormat?: new (locale: string, o: { type: 'conjunction' }) => { format(items: string[]): string }
+  }).ListFormat
+  let list = names.join(', ')
+  try {
+    if (ListFormat) list = new ListFormat(i18n.language, { type: 'conjunction' }).format(names)
+  } catch { /* an unknown locale tag: the plain list */ }
+  return i18n.t('loading:duplicate.manyNamed', { names: list })
+}
+
+/**
+ * Act on what was asked again, and say so. What the user re-opens is what
+ * they want to see: a hidden scan is shown again, a load on hold goes back
+ * in the queue, and a single one is framed — the answer to "where is it?".
+ * The file opened is named, and the scan it matched too when the panel lists
+ * it under another name (a renamed copy); several are listed, or counted.
+ *
+ * The toast's button loads a copy after all — a second copy is sometimes the
+ * point (comparing a scan with itself moved). It is the only way to that
+ * copy, so the toast stays until it is used or closed (a keyboard user has
+ * to reach it at the end of the page); the next duplicate toast replaces it.
+ */
+function announceDuplicates(kind: ExternalKind, dups: SourceDuplicate[], opts: SourceSubmitOptions, epoch: number): void {
+  if (dups.length === 0) return
+  const single = dups.length === 1
+  let message = ''
+  let revealedAny = false
+  let resumedAny = false
+  for (const d of dups) {
+    const ex = d.existing
+    const renamed = ex.fileName !== d.name
+    const both = { name: d.name, existing: ex.fileName }
+    if (ex.state === 'paused' && ex.jobId) {
+      getLoadManager().resume(ex.jobId)
+      resumedAny = true
+      if (single) message = renamed ? i18n.t('loading:duplicate.resumedSameAs', both) : i18n.t('loading:duplicate.resumed', { name: d.name })
+    } else if (ex.state === 'loaded') {
+      const revealed = showInScene(kind, ex, single)
+      revealedAny ||= revealed
+      if (single && revealed) {
+        message = renamed ? i18n.t('loading:duplicate.revealedSameAs', both) : i18n.t('loading:duplicate.revealed', { name: d.name })
+      }
+    }
+    if (single && !message) {
+      const loaded = ex.state === 'loaded'
+      message = renamed
+        ? i18n.t(loaded ? 'loading:duplicate.sameAsInScene' : 'loading:duplicate.sameAsLoading', both)
+        : i18n.t(loaded ? 'loading:duplicate.inScene' : 'loading:duplicate.loading', { name: d.name })
+    }
+  }
+  if (!single) {
+    // What was done to them, since no single name carries it.
+    message = [
+      describeMany(dups),
+      revealedAny ? i18n.t('loading:duplicate.revealedSome') : '',
+      resumedAny ? i18n.t('loading:duplicate.resumedSome') : '',
+    ].filter(Boolean).join(' ')
+  }
+  const again = (): void => {
+    if (epoch !== sessionEpoch) return
+    submitOfKind(kind, dups.map((d) => d.item), opts, fallbackNameOf(kind))
+  }
+  const previous = duplicateToastId[kind]
+  if (previous) useToastStore.getState().removeToast(previous)
+  duplicateToastId[kind] = toast(message, 'info', {
+    duration: 0,
+    action: { label: i18n.t('loading:duplicate.loadAnyway'), run: again },
+  })
+}
+
+/**
+ * The user's own "open these" (panel pickers, drops, demos, ?scan=): load
+ * what is new, show — and offer to load a copy of — what the scene already
+ * holds. The SDK does not go through here: a host that adds a scan twice
+ * asked for two.
+ */
+async function submitOnce(kind: ExternalKind, items: SourceSubmitItem[], opts: SourceSubmitOptions): Promise<JobHandle[]> {
+  if (items.length === 0) return []
+  const claim: Claim = { owner: Symbol('submission'), keys: [], epoch: sessionEpoch, generation: clearGeneration[kind] }
+  try {
+    const { fresh, duplicates } = await partition(kind, items, claim)
+    // The session ended (back to the landing) or this kind was cleared while
+    // the files were sampled: the drop went with them.
+    if (claim.epoch !== sessionEpoch || claim.generation !== clearGeneration[kind]) return []
+    const handles = submitOfKind(kind, fresh, opts, fallbackNameOf(kind))
+    announceDuplicates(kind, duplicates, opts, claim.epoch)
+    return handles
+  } finally {
+    // Submitted jobs carry their fingerprint / URL: the manager answers for them now.
+    for (const k of claim.keys) {
+      if (pendingKeys.get(k)?.owner === claim.owner) pendingKeys.delete(k)
+    }
+  }
+}
+
+/** Point clouds from the user's own pick / drop / demo / link — a copy already in the scene is not loaded again. */
+export function loadPointCloudsOnce(items: SourceSubmitItem[], opts: SourceSubmitOptions): Promise<JobHandle[]> {
+  return submitOnce('pointcloud', items, opts)
+}
+
+/** Meshes from the user's own pick / drop / demo — a copy already in the scene is not loaded again. */
+export function loadMeshesOnce(items: SourceSubmitItem[], opts: SourceSubmitOptions): Promise<JobHandle[]> {
+  return submitOnce('mesh', items, opts)
 }
 
 /** Whether the build can load this kind at all (its adapter is registered). */
@@ -810,6 +1223,13 @@ export async function describeSourceError(error: LoadError, kind: SourceKind = '
  * alone let it land right after the clear.
  */
 export function cancelLoadsOfKind(kind: 'pointcloud' | 'mesh'): void {
+  // …and a drop of this kind still being sampled, which has no job yet: its
+  // claims go too (a new drop of the same file is not "already loading"), and
+  // so does a toast saying what the scene held before the clear.
+  clearGeneration[kind]++
+  for (const key of [...pendingKeys.keys()]) if (key.startsWith(`${kind}|`)) pendingKeys.delete(key)
+  const stale = duplicateToastId[kind]
+  if (stale) { useToastStore.getState().removeToast(stale); duplicateToastId[kind] = null }
   const mgr = getLoadManager()
   for (const job of mgr.getSnapshot().jobs) {
     if (job.kind === kind && job.managed && ACTIVE_STATUSES.has(job.status)) mgr.cancel(job.id)
@@ -871,14 +1291,24 @@ export function notifyModelRemoved(modelId: string): void {
 }
 
 /**
- * Back to an empty session (landing, `ifcviewer:clear`): cancel every load,
- * refuse late commits, forget the rows, and free the conversion workers'
- * WASM heaps — the next session starts from a clean pool.
+ * Back to an empty session (the landing page): cancel every load, refuse late
+ * commits, forget the rows and what the scene held, end any drop still being
+ * sampled and its duplicate toast, and free the conversion workers' WASM heaps
+ * — the next session starts from a clean pool. (`ifcviewer:clear` only
+ * cancels the model loads: cancelAllLoads.)
  */
 export function resetLoading(): void {
+  sessionEpoch++
   getLoadManager().reset()
   pool?.terminateAll()
   fingerprintByModel.clear()
+  identityByResult.clear()
+  pendingKeys.clear()
+  // "Load a copy" of a scan from the session that just ended would do nothing.
+  const toasts = useToastStore.getState()
+  for (const t of toasts.toasts) if (t.actionLabel) toasts.removeToast(t.id)
+  duplicateToastId.pointcloud = null
+  duplicateToastId.mesh = null
   useLoadingStore.getState().reset()
 }
 

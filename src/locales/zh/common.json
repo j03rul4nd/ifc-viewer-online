@@ -8,6 +8,7 @@
     "save": "保存",
     "cancel": "取消",
     "close": "关闭",
+    "optionAvailable": "可用操作：{{label}}",
     "delete": "删除",
     "clear": "清除",
     "reset": "重置",

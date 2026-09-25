@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
 import { useMeshStore } from '../stores/meshStore'
 import { removeMesh as dropMesh, reapply } from '../lib/mesh/mesh-runner'
-import { submitMeshes, sourceErrorKey, cancelLoadsOfKind } from '../lib/loading'
+import { submitMeshes, loadMeshesOnce, sourceErrorKey, cancelLoadsOfKind } from '../lib/loading'
 import { groupMeshFiles } from '../lib/loading/drop-routing'
 import { useLoadingStore } from '../stores/loadingStore'
 import { MESH_EXTENSIONS } from '../lib/mesh/mesh-types'
@@ -102,7 +102,8 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
       toast(describeError('error.noEntryFile'), 'error')
       return
     }
-    submitMeshes(
+    // A model already in the scene is framed and offered again, not imported twice.
+    void loadMeshesOnce(
       groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })),
       { origin: 'upload', frame: true },
     )
@@ -118,12 +119,12 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
     if (!entry) return
     setDemoBusy(demo.id)
     setDemoProgress(0)
-    const [handle] = submitMeshes(
+    const [handle] = await loadMeshesOnce(
       [{ source: { type: 'url', url: entry, sidecars: sidecars.map((url) => ({ url })) } }],
       { origin: 'demo', frame: true },
     )
     try {
-      await followDownload(handle.id, setDemoProgress)
+      if (handle) await followDownload(handle.id, setDemoProgress)
     } finally {
       setDemoBusy(null)
       setDemoProgress(0)

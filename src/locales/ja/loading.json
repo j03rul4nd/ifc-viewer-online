@@ -63,6 +63,8 @@
     "stalledGeneric": "しばらく進行がありません。このまま待つか、キャンセルしてください。",
     "stalledShort": "最近の進行なし",
     "duplicate": "シーン内の既存のモデルと同じ内容です",
+    "duplicateScan": "シーン内の既存のスキャンと同じ内容です",
+    "duplicateMesh": "シーン内の既存の 3D モデルと同じ内容です",
     "retrying": "{{attempt}} 回目の試行"
   },
   "counter": {
@@ -333,5 +335,21 @@
     "buildings": "周辺の建物",
     "pointCloud": "点群",
     "mesh": "3D モデル"
+  },
+  "duplicate": {
+    "inScene": "「{{name}}」はすでにシーンにあります",
+    "loading": "「{{name}}」はすでに読み込み中です",
+    "sameAsInScene": "「{{name}}」は、すでにシーンにある「{{existing}}」と同じ内容です",
+    "sameAsLoading": "「{{name}}」は、読み込み中の「{{existing}}」と同じ内容です",
+    "revealed": "「{{name}}」は非表示のままシーンにありました。再表示しました",
+    "revealedSameAs": "「{{name}}」は、非表示だった「{{existing}}」と同じ内容です。再表示しました",
+    "resumed": "「{{name}}」は保留中でした。キューに戻しました",
+    "resumedSameAs": "「{{name}}」は、保留中だった「{{existing}}」と同じ内容です。キューに戻しました",
+    "manyNamed": "{{names}}はすでにシーンにあるか、読み込み中です",
+    "revealedSome": "非表示だったものを再表示しました。",
+    "resumedSome": "保留中だったものをキューに戻しました。",
+    "many_other": "{{count}} 個のファイルはすでにシーンにあるか、読み込み中です",
+    "quoted": "「{{name}}」",
+    "loadAnyway": "それでも重複して読み込む"
   }
 }
