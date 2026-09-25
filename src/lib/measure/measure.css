@@ -1,0 +1,95 @@
+/* ─── Measurement labels ───────────────────────────────────────────────────────
+   HTML tags the CSS2DRenderer pins to world points. Dark pills with the kind's
+   colour as a dot, so a value reads on a white facade and on the night sky
+   alike, and the colour says what kind of value it is without a legend. */
+
+.pv-mlabel {
+  --c: #ffb224;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 7px;
+  border-radius: 8px;
+  background: rgba(10, 10, 14, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  color: #f2f3f5;
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  white-space: pre;
+  user-select: none;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+.pv-mlabel[data-kind='area'] { --c: #3dd68c; }
+.pv-mlabel[data-kind='angle'] { --c: #f76b8a; }
+.pv-mlabel[data-kind='point'] { --c: #b49cff; }
+.pv-mlabel[data-kind='axis-x'] { --c: #ff5a5a; }
+.pv-mlabel[data-kind='axis-y'] { --c: #4cd964; }
+.pv-mlabel[data-kind='axis-z'] { --c: #4c8dff; }
+
+.pv-mlabel__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+.pv-mlabel[data-kind='point'] .pv-mlabel__dot { align-self: flex-start; margin-top: 4px; }
+
+.pv-mlabel--interactive { pointer-events: auto; cursor: pointer; }
+.pv-mlabel--interactive:hover,
+.pv-mlabel.is-hovered { border-color: var(--c); }
+
+.pv-mlabel.is-selected {
+  border-color: var(--c);
+  box-shadow: 0 0 0 1px var(--c), 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+.pv-mlabel.is-muted { opacity: 0.45; }
+
+.pv-mlabel__del {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0 -3px 0 1px;
+  border: 0;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #c7c9d1;
+  font: 600 13px/1 ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.pv-mlabel__del:hover { background: rgba(229, 72, 77, 0.9); color: #fff; }
+.pv-mlabel--interactive:hover .pv-mlabel__del,
+.pv-mlabel.is-selected .pv-mlabel__del { display: inline-flex; }
+
+/* Secondary tags: axis legs of a distance, segments of a path, a perimeter. */
+.pv-mlabel--sub {
+  padding: 1px 6px;
+  gap: 0;
+  border-radius: 6px;
+  font-size: 10.5px;
+  color: var(--c);
+  background: rgba(10, 10, 14, 0.74);
+  box-shadow: none;
+}
+.pv-mlabel--sub .pv-mlabel__dot { display: none; }
+
+@media (pointer: coarse) {
+  /* No hover on touch: the delete control shows on the selected tag only, and
+     is big enough for a finger. */
+  .pv-mlabel__del { width: 22px; height: 22px; font-size: 15px; }
+}
