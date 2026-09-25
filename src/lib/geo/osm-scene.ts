@@ -337,20 +337,24 @@ function* buildSimpleSurface(
   for (const f of features) {
     if (f.kind !== layer || !f.ring) continue
     yield
-    const outer = projectRing(f.ring)
-    const holes = (f.holes ?? []).map(projectRing).filter((h) => h.length >= 3)
-    const faces = triangulate(outer, mToN, holes)
-    // Indices address the outer ring followed by every hole.
-    const ring = holes.length ? [...outer, ...holes.flat()] : outer
+    const ring = projectRing(f.ring)
+    if(ring.length<3){dropped++;continue}
+    const holes = (f.holes ?? []).filter(r => r.length >= 3).map(projectRing)
+    const origin = ring[0]
+    const metric = (r: THREE.Vector2[]) => r.map(p => new THREE.Vector2((p.x-origin.x)/mToN, (p.y-origin.y)/mToN))
+    const outerM = metric(ring), holesM = holes.map(metric)
+    let faces: number[][] | null = null
+    try { faces = THREE.ShapeUtils.triangulateShape(outerM, holesM) } catch { /* counted below */ }
+    const vertices = [outerM, ...holesM].flat().map(p => new THREE.Vector2(origin.x+p.x*mToN, origin.y+p.y*mToN))
     // A ring the triangulator refuses is a feature the user asked for and will
     // not see. Counted, not swallowed — see LayerMesh.dropped.
-    if (!faces) { dropped++; continue }
+    if (!faces?.length) { dropped++; continue }
 
     // Water: one level for the whole polygon, taken as the MINIMUM ground under
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      flatZ = frame.zAtElevationM(waterLevelM(outer, frame, f.isSea === true) + lift)
+      flatZ = frame.zAtElevationM(waterLevelM(ring, frame, f.isSea === true) + lift)
     }
 
     // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
@@ -362,7 +366,7 @@ function* buildSimpleSurface(
     // on real terrain each face is split until its edges are shorter than the
     // DEM can resolve. On the flat map this is a no-op and costs nothing.
     for (const [a, b, c] of faces) {
-      for (const tri of subdivideOnGround([ring[a], ring[b], ring[c]], frame)) {
+      for (const tri of subdivideOnGround([vertices[a], vertices[b], vertices[c]], frame)) {
         for (const p of tri) {
           const z = layer === 'water' ? flatZ : frame.groundZ(p.x, p.y) + lift * mToN
           positions.push(p.x, p.y, z)
@@ -576,26 +580,17 @@ function collectSurfacePieces(
   const items: SurfacePiece[] = []
   let dropped = 0
 
-  const toLocal = (p: LatLonPoint): Vec2 => {
-    const { nx, ny } = latLonToNormalized(p.lat, p.lon)
-    return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
-  }
   for (const f of wanted) {
-    const outerM: Vec2[] = f.ring!.map(toLocal)
-    const asVectors = outerM.map((p) => new THREE.Vector2(p.x, p.y))
-    if (THREE.ShapeUtils.isClockWise(asVectors)) {
-      asVectors.reverse()
-      outerM.reverse()
-    }
-    // Holes — the pond cut out of a lawn, the courtyard out of a square. Left
-    // out, the lawn is laid straight across the pond and the two z-fight.
-    const holesM = (f.holes ?? []).map((h) => h.map(toLocal)).filter((h) => h.length >= 3)
+    const project = (ring: NonNullable<OsmFeature['ring']>) => ring.map(p => {
+      const { nx, ny } = latLonToNormalized(p.lat, p.lon)
+      return new THREE.Vector2((nx - originX) / mToN, (ny - originY) / mToN)
+    })
+    const asVectors = project(f.ring!)
+    const holes = (f.holes ?? []).filter(r => r.length >= 3).map(project)
 
     let faces: Face[]
     try {
-      const raw = THREE.ShapeUtils.triangulateShape(
-        asVectors, holesM.map((h) => h.map((p) => new THREE.Vector2(p.x, p.y))),
-      )
+      const raw = THREE.ShapeUtils.triangulateShape(asVectors, holes)
       if (raw.length === 0) { dropped++; continue }
       faces = raw.map((t) => [t[0], t[1], t[2]] as Face)
     } catch {
@@ -603,10 +598,11 @@ function collectSurfacePieces(
       continue
     }
 
-    // Indices address the outer ring followed by each hole, so the points must too.
-    const ringM = holesM.length ? [...outerM, ...holesM.flat()] : outerM
-    const areaM2 = Math.max(0, ringAreaM2(outerM) - holesM.reduce((a, h) => a + ringAreaM2(h), 0))
-    items.push({ f, ringM, faces, areaM2, boundaries: [outerM, ...holesM] })
+    // triangulateShape removes duplicate closing vertices; flatten afterwards.
+    const boundaries = [asVectors, ...holes]
+    const ringM = boundaries.flat()
+    items.push({ f, ringM, boundaries, faces,
+      areaM2: Math.max(0, ringAreaM2(asVectors) - holes.reduce((sum, h) => sum + ringAreaM2(h), 0)) })
   }
 
   return { items, dropped }
@@ -3198,15 +3194,17 @@ function* seededTrees(
   const density = allocateDensity(weighted, MAX_SEEDED_TREES, (areaM2, id) =>
     naturalTotalFor(areaM2, byId.get(id)?.perimeterM ?? 0, COVER_SPACING_M.forest))
 
+  const holesById = new Map(green.map(f => [f.id, buildKeepOut((f.holes ?? []).map(r => r.map(toMetres)))]))
   const out: PlacedTree[] = []
   for (const region of regions) {
     yield
     if (out.length >= MAX_SEEDED_TREES) break
     const d = density.get(region.id) ?? 1
     const room = MAX_SEEDED_TREES - out.length
+    const regionBlocked = (x: number, y: number) => blocked(x, y) || !!holesById.get(region.id)?.(x, y)
     const grown: SeededTree[] = [
-      ...seedRegion(region, { density: d, maxTrees: room, blocked }),
-      ...seedFringe(region, { density: d, maxTrees: Math.max(0, room - 1), blocked }),
+      ...seedRegion(region, { density: d, maxTrees: room, blocked: regionBlocked }),
+      ...seedFringe(region, { density: d, maxTrees: Math.max(0, room - 1), blocked: regionBlocked }),
     ]
     for (const t of grown) {
       if (out.length >= MAX_SEEDED_TREES) break

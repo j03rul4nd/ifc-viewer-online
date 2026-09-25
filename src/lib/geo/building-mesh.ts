@@ -429,7 +429,7 @@ function* buildingsGeometrySteps(
       // the wall continues past it as a parapet. A flat roof flush with its
       // walls is the "sheared box" look — every real flat roof has an upstand,
       // and that one edge is what gives a skyline its bite.
-      const parapet = detailed
+      const parapet = detailed && !b.style?.openCanopy
         ? Math.min(PARAPET_M, (topM - baseM) * 0.08) * metresToNormalized
         : 0
       const capZ = topZ - parapet
@@ -442,6 +442,28 @@ function* buildingsGeometrySteps(
           // Roof deck reads darker than the parapet coping that surrounds it.
           tinted(roofBase * (detailed ? 0.9 : 1), roofTint),
         )
+      }
+    } else if (roofShape === 'mansard') {
+      // Mapped mansard envelope: steep skirt and a raised, level upper cap.
+      // Breakpoint and pitch are approximations when only the shape is tagged.
+      const upper = ring2d.map(p => new THREE.Vector2(
+        centroid.x + (p.x-centroid.x)*.76, centroid.y + (p.y-centroid.y)*.76))
+      const breakZ = topZ
+      const roofTriangle = (a: THREE.Vector2,b: THREE.Vector2,c: THREE.Vector2,az:number,bz:number,cz:number) => {
+        const n = new THREE.Vector3(b.x-a.x,b.y-a.y,bz-az).cross(new THREE.Vector3(c.x-a.x,c.y-a.y,cz-az)).normalize()
+        if(n.z<0)n.negate()
+        pushTriangle(positions,normals,colors,a,b,c,az,bz,cz,n.x,n.y,n.z,tinted(roofBase,roofTint))
+      }
+      for(let i=0;i<ring2d.length;i++) {
+        const j=(i+1)%ring2d.length
+        roofTriangle(ring2d[i],ring2d[j],upper[j],eaveZ,eaveZ,breakZ)
+        roofTriangle(ring2d[i],upper[j],upper[i],eaveZ,breakZ,breakZ)
+      }
+      // A triangulated cap handles concave mapped outlines without a fan
+      // crossing courtyards or re-entrant corners.
+      for(const [a,b,c] of faces) {
+        // Keep the top continuous: a level cap avoids fabricated per-face peaks.
+        roofTriangle(upper[a],upper[b],upper[c],breakZ,breakZ,breakZ)
       }
     } else if (roofShape === 'dome') {
       // Rings of triangles on a spherical profile, each ring the FOOTPRINT
@@ -532,10 +554,28 @@ function* buildingsGeometrySteps(
       }
     }
 
+    if(b.style?.openCanopy) {
+      // OSM building=roof describes open space, not a solid building block.
+      // Slim supports are illustrative; their locations are not surveyed.
+      const half=.18*metresToNormalized, bottom=groundZ+b.height.minHeightM*metresToNormalized
+      const slabBottom=Math.max(bottom, eaveZ-.25*metresToNormalized)
+      for(let i=0;i<ring2d.length;i++) {
+        const p=ring2d[i],next=ring2d[(i+1)%ring2d.length]
+        const corners=[new THREE.Vector2(p.x-half,p.y-half),new THREE.Vector2(p.x+half,p.y-half),new THREE.Vector2(p.x+half,p.y+half),new THREE.Vector2(p.x-half,p.y+half)]
+        for(let k=0;k<4;k++) {
+          const a=corners[k],c=corners[(k+1)%4],dx=c.x-a.x,dy=c.y-a.y,len=Math.hypot(dx,dy)
+          pushTriangle(positions,normals,colors,a,c,c,bottom,bottom,slabBottom,dy/len,-dx/len,0,tinted(roofBase,wallTint))
+          pushTriangle(positions,normals,colors,a,c,a,bottom,slabBottom,slabBottom,dy/len,-dx/len,0,tinted(roofBase,wallTint))
+        }
+        const dx=next.x-p.x,dy=next.y-p.y,len=Math.hypot(dx,dy)||1
+        pushTriangle(positions,normals,colors,p,next,next,slabBottom,slabBottom,eaveZ,dy/len,-dx/len,0,tinted(roofBase,roofTint))
+        pushTriangle(positions,normals,colors,p,next,p,slabBottom,eaveZ,eaveZ,dy/len,-dx/len,0,tinted(roofBase,roofTint))
+      }
+    }
     // ── Walls ──────────────────────────────────────────────────────────────────
     // The outer ring and every courtyard. A hole's walls use the same rule —
     // its clockwise winding is what turns them to face the void.
-    const wallRings = roofShape === 'flat' ? [ring2d, ...holes2d] : [ring2d]
+    const wallRings = b.style?.openCanopy ? [] : roofShape === 'flat' ? [ring2d, ...holes2d] : [ring2d]
     // One storey rhythm per building, fitted to its own height so the top
     // floor is a whole floor rather than whatever the division leaves over.
     const facadeSeed = (hashId(`${seed}#fac`) % 997) / 997

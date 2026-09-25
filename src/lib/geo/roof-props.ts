@@ -180,6 +180,7 @@ export function roofPropAnchors(
 
   for (const b of buildings) {
     if (out.length >= max) break
+    if (b.style?.openCanopy) continue
     if (!b.ring || b.ring.length < 3) continue
 
     const pts = b.ring.map((p) => latLonToNormalized(p.lat, p.lon))

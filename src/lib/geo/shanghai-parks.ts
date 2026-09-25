@@ -3,7 +3,7 @@ import { latLonToNormalized } from './geo-math'
 import { createGroundFrame } from './ground-frame'
 import { variate } from './feature-variation'
 import { isShanghai } from './shanghai-region'
-import { buildKeepOut } from './tree-seeding'
+import { plantingClearance } from './planting-clearance'
 import type { OsmFeature } from './osm-features'
 import type { LayerMeshOptions } from './osm-scene'
 
@@ -33,13 +33,13 @@ export function buildShanghaiParkDetails(features: readonly OsmFeature[], opts: 
   const frame=createGroundFrame(opts), unit=frame.mToN
   const origin=latLonToNormalized(opts.anchorLat,opts.anchorLon!)
   const local=(p: {lat:number;lon:number}): P => {const n=latLonToNormalized(p.lat,p.lon);return {x:(n.nx-origin.nx)/unit,y:(n.ny-origin.ny)/unit}}
-  const rows=features.filter(f=>f.ring?.length).map(f=>({f, ring:f.ring!.map(local)}))
+  const rows=features.filter(f=>f.ring?.length).map(f=>({f, ring:f.ring!.map(local), holes:(f.holes ?? []).map(r=>r.map(local))}))
   const parks=rows.filter(r=>r.f.kind==='green' && (r.f.style.cover==='park' || r.f.style.cover==='shrub'))
   const waters=rows.filter(r=>r.f.kind==='water')
-  const buildings=rows.filter(r=>r.f.kind==='building')
-  const roads=rows.filter(r=>r.f.kind==='road')
-  const blockedGround=buildKeepOut([...buildings,...waters].map(r=>r.ring))
-  const roadSegments=roads.flatMap(r=>r.ring.slice(1).map((b,i)=>({a:r.ring[i],b,clearance:(r.f.widthM??2)/2})))
+  const roads=rows.filter(r=>r.f.kind==='road' && r.f.vertical?.structure!=='tunnel')
+  const blockedGround=plantingClearance(features,local)
+  const inPark=(p:P)=>parks.some(r=>inside(p,r.ring) && !r.holes.some(h=>inside(p,h)))
+  const roadSegments=roads.filter(r=>r.f.widthM!==undefined).flatMap(r=>r.ring.slice(1).map((b,i)=>({a:r.ring[i],b,clearance:(r.f.widthM??2)/2})))
   const ground=(p:P)=>frame.groundZ(origin.nx+p.x*unit,origin.ny+p.y*unit)/unit
   const excluded=(p:P,margin=1)=>opts.excludeAt?.(origin.nx+p.x*unit,origin.ny+p.y*unit) ||
     blockedGround(p.x,p.y) || roadSegments.some(({a,b,clearance})=>{
@@ -59,7 +59,7 @@ export function buildShanghaiParkDetails(features: readonly OsmFeature[], opts: 
   const edgeVerts:number[]=[], edgeIndices:number[]=[]
   // Nearer small park lakes earn shore detail. A district-spanning river does not.
   const lakes=waters.filter(r=>r.f.style.waterKind!=='river' && !r.f.isSea &&
-    r.ring.some(p=>parks.some(park=>inside(p,park.ring))))
+    r.ring.some(inPark))
     .sort((a,b)=>Math.min(...a.ring.map(p=>Math.hypot(p.x,p.y)))-Math.min(...b.ring.map(p=>Math.hypot(p.x,p.y))) || a.f.id.localeCompare(b.f.id))
   for(const {f,ring} of lakes){
     if(ring.length<3 || Math.max(...ring.map(p=>Math.hypot(p.x,p.y)))>2500)continue
@@ -94,7 +94,7 @@ export function buildShanghaiParkDetails(features: readonly OsmFeature[], opts: 
     const bank=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x807e66,roughness:.96,side:THREE.DoubleSide}));bank.name='mapped-lake-bank';result.water.add(bank)
   }
   // Border planting respects every building, water polygon, road width and IFC footprint.
-  for(const {f,ring} of parks.sort((a,b)=>a.f.id.localeCompare(b.f.id))){
+  for(const {f,ring,holes} of parks.sort((a,b)=>a.f.id.localeCompare(b.f.id))){
     for(let i=0;i<ring.length;i++){
       const a=ring[i],b=ring[(i+1)%ring.length],len=Math.hypot(b.x-a.x,b.y-a.y)
       if(len<1)continue
@@ -103,37 +103,48 @@ export function buildShanghaiParkDetails(features: readonly OsmFeature[], opts: 
         const nx=-(b.y-a.y)/len,ny=(b.x-a.x)/len
         const sign=inside({x:p.x+nx,y:p.y+ny},ring)?1:-1
         p.x+=nx*sign*2;p.y+=ny*sign*2
-        if(Math.hypot(p.x,p.y)>1600 || !inside(p,ring) || excluded(p,1))continue
+        if(Math.hypot(p.x,p.y)>1600 || !inside(p,ring) || holes.some(h=>inside(p,h)) || excluded(p,1))continue
         if(variate(id,0)>.32)add('green','shrub',p,ground(p),variate(id,1)*6.28,.7+variate(id,2)*.9)
       }
     }
   }
   if(opts.scenery){
-    for(const {f,ring} of roads.filter(r=>r.f.style.roadClass==='pedestrian').sort((a,b)=>a.f.id.localeCompare(b.f.id))){
+    for(const {f,ring} of roads.filter(r=>r.f.style.roadClass==='pedestrian' && r.f.widthM!==undefined && (!r.f.vertical || r.f.vertical.structure==='ground')).sort((a,b)=>a.f.id.localeCompare(b.f.id))){
       let run=0
       for(let i=1;i<ring.length;i++){
         const a=ring[i-1],b=ring[i],len=Math.hypot(b.x-a.x,b.y-a.y),yaw=Math.atan2(b.y-a.y,b.x-a.x)
         for(let d=(36-run%36)%36;d<len;d+=36){
           const p={x:a.x+Math.cos(yaw)*d-Math.sin(yaw)*((f.widthM??2)/2+1.5),y:a.y+Math.sin(yaw)*d+Math.cos(yaw)*((f.widthM??2)/2+1.5)}
-          if(Math.hypot(p.x,p.y)>1300 || !parks.some(r=>inside(p,r.ring)) || excluded(p,.3))continue
+          if(Math.hypot(p.x,p.y)>1300 || !inPark(p) || excluded(p,.3))continue
           const id=`${f.id}:${i}:${d}`;add('scenery',variate(id,1)>.45?'bench':'lantern',p,ground(p),yaw)
-          if (variate(id,3)<.045 && items.scenery.filter(x=>x.name==='pergola').length<6) {
-            const centre={x:p.x-Math.sin(yaw)*4,y:p.y+Math.cos(yaw)*4}
-            const samples=[centre,...[-2.6,2.6].flatMap(x=>[-1.9,1.9].map(y=>({x:centre.x+x*Math.cos(yaw)-y*Math.sin(yaw),y:centre.y+x*Math.sin(yaw)+y*Math.cos(yaw)})))]
-            if(samples.every(v=>parks.some(r=>inside(v,r.ring))&&!excluded(v,.4)))add('scenery','pergola',centre,ground(centre),yaw)
-          }
+
         }run+=len
       }
     }
   }
   for(const f of features.filter(f=>f.kind==='water' && f.style.waterKind==='fountain')){
     const ring=f.ring?.map(local)
-    const p=f.point?local(f.point):ring?ring.reduce((s,p)=>({x:s.x+p.x/ring.length,y:s.y+p.y/ring.length}),{x:0,y:0}):null
+    let p=f.point?local(f.point):ring?ring.reduce((s,p)=>({x:s.x+p.x/ring.length,y:s.y+p.y/ring.length}),{x:0,y:0}):null
+    const holes=(f.holes ?? []).map(r=>r.map(local))
+    const fits=(v:P)=>!!ring && inside(v,ring) && !holes.some(h=>inside(v,h))
+    // Concave basins can have their vertex average outside the water.
+    if(ring && p && !fits(p)) {
+      const xs=ring.map(v=>v.x),ys=ring.map(v=>v.y)
+      let best:P|null=null,bestClearance=0
+      for(let i=1;i<20;i++)for(let j=1;j<20;j++){
+        const v={x:Math.min(...xs)+(Math.max(...xs)-Math.min(...xs))*i/20,y:Math.min(...ys)+(Math.max(...ys)-Math.min(...ys))*j/20}
+        if(!fits(v))continue
+        const clearance=Math.min(...[ring,...holes].flatMap(r=>r.map((a,k)=>distance(v,a,r[(k+1)%r.length]))))
+        if(clearance>bestClearance){best=v;bestClearance=clearance}
+      }
+      p=best
+    }
     if(!p || Math.hypot(p.x,p.y)>1800 || opts.excludeAt?.(origin.nx+p.x*unit,origin.ny+p.y*unit))continue
     // Node locations have no surveyed basin size: jets are an illustrative symbol.
     const z=ring?opts.waterElevation(ring.map(p=>new THREE.Vector2(origin.nx+p.x*unit,origin.ny+p.y*unit)))/unit:ground(p)+.1
-    const radius = ring ? Math.min(...ring.map(v=>Math.hypot(v.x-p.x,v.y-p.y))) : 3
-    add('water','fountain-jets',p,z,0,Math.max(.35,Math.min(2,radius/1.5)))
+    const radius = ring ? Math.min(...[ring,...holes].flatMap(r=>r.map((a,i)=>distance(p!,a,r[(i+1)%r.length])))) : 3
+    if(radius<.3)continue
+    add('water','fountain-jets',p,z,0,Math.min(2,radius/1.5))
   }
   for(const layer of ['water','green','scenery'] as const){
     const names=[...new Set(items[layer].map(x=>x.name))]
