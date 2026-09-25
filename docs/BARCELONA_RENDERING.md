@@ -236,7 +236,22 @@ the right column is the longest single step with a pause after every step
   at once for the procedural relief. `prebakeSurfaceTextures` bakes them first,
   in slices of at most a few tens of ms, to the same texels. Measured on a first
   switch: the slices that commit each phase went from 169–826 ms to 59–91 ms.
-- **Still one task**: an exaggeration change re-extrudes the terrain before
-  the rebuild starts, 103–135 ms measured — terrain code, not investigated
-  here. Roof props, landmarks, piers, bridges and the invented scenery stay
+- **The terrain sliders** (exaggeration, sun, micro-relief) re-bake the relief's
+  vertex colours — all 148 225 vertices, synchronously, on every slider step,
+  before any rebuild. It was not the geometry: exaggeration is a scale on the
+  mesh. The cost was work that never changed between steps: five sun vectors
+  (twenty trig calls) rebuilt per vertex inside `hillshade`, the altitudinal
+  belts reclassified per vertex although they depend on neither sun nor
+  exaggeration, the tree line and snow line recomputed from the latitude on
+  each of up to 27 zone tests per vertex, and in Detailed the whole blend run
+  twice (colour, then make-up). Now `hillshader` holds the light,
+  `ecosystemBlender` holds the latitude, one blend gives both, and the patch
+  keeps the belts of its current surface until `applyHeights` moves it. Output
+  checked byte for byte (colours and aGround, every style × quality × look ×
+  exaggeration, through the real patch code). Per exaggeration or sun step:
+  imagery 27 → 5 ms, ecosystem 67 → 5 ms, ecosystem Detailed 96 → 5 ms (Node);
+  in the dev app, Detailed ecosystem went from 262–320 ms to 9–18 ms per step.
+  A micro-relief step does move the ground and has to reclassify:
+  64 → 29 ms flat, 97 → 32 ms Detailed.
+- Roof props, landmarks, piers, bridges and the invented scenery stay
   synchronous; all are small on this data.

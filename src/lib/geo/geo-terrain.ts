@@ -21,9 +21,9 @@
 import * as THREE from 'three'
 import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
-  terrainZoomFor, imageryZoomFor, hillshade, hypsometricColor,
+  terrainZoomFor, imageryZoomFor, hillshader, hypsometricColor,
   slopeColor, slopeFraction, occlusionFactor, contourFactor,
-  ecosystemColorSmooth, ecosystemGroundSmooth, beltJitterM, patchMix,
+  ecosystemBlender, ecosystemMixColor, ecosystemMixGround, beltJitterM, patchMix,
   computeNormals, vertexSpacingM, clampTerrainLook, DEFAULT_TERRAIN_LOOK,
   SHADE_AMBIENT_IMAGERY, SHADE_AMBIENT_RELIEF,
 } from './terrain-sampling'
@@ -181,6 +181,18 @@ function assemblePatch(
    */
   let terrainMaterial: THREE.MeshStandardMaterial | null = null
   let groundAttr: THREE.BufferAttribute | null = null
+  /**
+   * The ecosystem belts of the CURRENT surface: tint per vertex (r, g, b),
+   * and whether aGround.xyz already holds the matching make-up. A belt depends
+   * on height, slope and position only — not on the sun and not on
+   * exaggeration — yet it is ~80 % of a re-bake, and the exaggeration slider
+   * re-bakes on every step. So it is worked out once per surface and reused
+   * until `applyHeights` moves the ground. Float64, so what comes back out is
+   * the exact number the bake would have computed.
+   */
+  let beltTint: Float64Array | null = null
+  let beltTintValid = false
+  let beltGroundValid = false
   // Typed loosely on purpose: the mesh swaps between the flat-colour material
   // and the procedural one, so it cannot be pinned to either.
   const mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material> =
@@ -225,6 +237,8 @@ function assemblePatch(
     // Skip the recompute when nothing synthetic is blended in — the worker's
     // normals already describe the measured surface exactly.
     effectiveNormals = look.detail > 0 ? computeNormals(effective, verts, spacingM) : normals
+    beltTintValid = false
+    beltGroundValid = false
     for (let idx = 0; idx < verts * verts; idx++) {
       const o = idx * 3
       // Tile-local axes (X east, Y north, Z up) ARE the plane's local axes.
@@ -243,11 +257,13 @@ function assemblePatch(
   function recolor(): void {
     const ambient = style === 'imagery' ? SHADE_AMBIENT_IMAGERY : SHADE_AMBIENT_RELIEF
     const sun = { azimuthDeg: look.sunAzimuth, altitudeDeg: look.sunAltitude }
+    const shadeAt = hillshader(sun, ambient, exaggeration, look.softness)
     // In procedural mode the vertex colour carries the belt TONE and the light
     // moves into aGround.w, because the shader supplies the albedo and would
     // otherwise multiply a tint that already had the light baked into it.
     const proc = isProcedural()
     const ground = proc ? ensureGroundAttr().array as Float32Array : null
+    const tints = proc || style === 'ecosystem' ? bakeBelts(proc) : null
     for (let j = 0; j < verts; j++) {
       for (let i = 0; i < verts; i++) {
         const idx = j * verts + i
@@ -256,25 +272,15 @@ function assemblePatch(
         const ny = effectiveNormals[o + 1]
         const nz = effectiveNormals[o + 2]
 
-        let shade = hillshade(nx, ny, nz, sun, ambient, exaggeration, look.softness)
+        let shade = shadeAt(nx, ny, nz)
         shade *= occlusionFactor(sky[idx], look.occlusion)
 
         let r = shade, g = shade, b = shade
         if (proc) {
-          const slopeDeg = (Math.acos(Math.min(1, Math.max(0, nz))) * 180) / Math.PI
-          // Displace the boundary, not the terrain: a straight snow line is a
-          // stronger claim about the site than a wandering one, and it is the
-          // claim that is wrong. Colour and material read the SAME jittered
-          // height, or the tint would stop matching what it is made of.
-          const belt = effective[idx] + beltJitterM(i, j)
-          const tint = ecosystemColorSmooth(belt, anchorLat, slopeDeg)
-          const make = patchMix(ecosystemGroundSmooth(belt, anchorLat, slopeDeg), i, j)
-          r = tint.r; g = tint.g; b = tint.b
-          const go = idx * 4
-          ground![go] = make.vegetation
-          ground![go + 1] = make.mineral
-          ground![go + 2] = make.roughness
-          ground![go + 3] = shade * (look.contourInterval > 0
+          // The make-up in aGround.xyz was written by `bakeBelts`; only the
+          // light (w) is this bake's to set.
+          r = tints![o]; g = tints![o + 1]; b = tints![o + 2]
+          ground![idx * 4 + 3] = shade * (look.contourInterval > 0
             ? contourFactor(
                 effective[idx], look.contourInterval,
                 (Math.hypot(nx, ny) / Math.max(1e-6, nz)) * spacingM,
@@ -287,12 +293,7 @@ function assemblePatch(
           const tint = slopeColor(slopeFraction(nz, SLOPE_MAX_DEG))
           r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
         } else if (style === 'ecosystem') {
-          // Absolute elevation, not a normalized fraction: the belts are tied
-          // to real metres above sea level, so a low hill must NOT be painted
-          // like a high summit just because it is the highest thing nearby.
-          const slopeDeg = (Math.acos(Math.min(1, Math.max(0, nz))) * 180) / Math.PI
-          const tint = ecosystemColorSmooth(effective[idx] + beltJitterM(i, j), anchorLat, slopeDeg)
-          r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
+          r = tints![o] * shade; g = tints![o + 1] * shade; b = tints![o + 2] * shade
         }
 
         if (!proc && look.contourInterval > 0) {
@@ -312,6 +313,50 @@ function assemblePatch(
     }
     colorAttr.needsUpdate = true
     if (groundAttr) groundAttr.needsUpdate = true
+  }
+
+  /**
+   * Belt tints of the current surface — and, with `withGround`, its make-up
+   * written into aGround.xyz — worked out only if `applyHeights` has moved the
+   * ground since the last time. See `beltTint`.
+   */
+  function bakeBelts(withGround: boolean): Float64Array {
+    const bakeGround = withGround && !beltGroundValid
+    if (beltTintValid && !bakeGround) return beltTint!
+    const tints = beltTint ??= new Float64Array(verts * verts * 3)
+    const ground = bakeGround ? ensureGroundAttr().array as Float32Array : null
+    const blend = ecosystemBlender(anchorLat)
+    for (let j = 0; j < verts; j++) {
+      for (let i = 0; i < verts; i++) {
+        const idx = j * verts + i
+        const o = idx * 3
+        const nz = effectiveNormals[o + 2]
+        const slopeDeg = (Math.acos(Math.min(1, Math.max(0, nz))) * 180) / Math.PI
+        // Absolute elevation, not a normalized fraction: the belts are tied
+        // to real metres above sea level, so a low hill must NOT be painted
+        // like a high summit just because it is the highest thing nearby.
+        //
+        // Displace the boundary, not the terrain: a straight snow line is a
+        // stronger claim about the site than a wandering one, and it is the
+        // claim that is wrong. Colour and material read the SAME jittered
+        // height, or the tint would stop matching what it is made of.
+        const mix = blend(effective[idx] + beltJitterM(i, j), slopeDeg)
+        if (!beltTintValid) {
+          const tint = ecosystemMixColor(mix)
+          tints[o] = tint.r; tints[o + 1] = tint.g; tints[o + 2] = tint.b
+        }
+        if (ground) {
+          const make = patchMix(ecosystemMixGround(mix), i, j)
+          const go = idx * 4
+          ground[go] = make.vegetation
+          ground[go + 1] = make.mineral
+          ground[go + 2] = make.roughness
+        }
+      }
+    }
+    beltTintValid = true
+    if (ground) beltGroundValid = true
+    return tints
   }
 
   /** True when the patch should draw itself with real ground materials. */
@@ -494,6 +539,7 @@ function assemblePatch(
       material.dispose()
       terrainMaterial?.dispose()
       terrainMaterial = null
+      beltTint = null
       texture?.dispose()
       bitmap?.close()
       texture = null

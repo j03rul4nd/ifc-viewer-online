@@ -6,6 +6,7 @@ import {
   sampleHeightGrid,
   computeNormals,
   hillshade,
+  hillshader,
   hypsometricColor,
   terrainZoomFor,
   imageryZoomFor,
@@ -33,6 +34,11 @@ import {
   ecosystemGround,
   ecosystemGroundSmooth,
   ecosystemBlend,
+  ecosystemBlender,
+  ecosystemMixColor,
+  ecosystemMixGround,
+  type EcosystemMix,
+  type SunDirection,
   beltJitterM,
   patchMix,
 } from './terrain-sampling'
@@ -374,6 +380,114 @@ describe('hillshade with a configurable sun', () => {
     const soft = hillshade(shadow.nx, shadow.ny, shadow.nz, DEFAULT_SUN, SHADE_AMBIENT_RELIEF, 1, 1)
     expect(soft).toBeGreaterThan(hard)
   })
+})
+
+// The per-grid shaders hoist what depends on the light or the latitude out of
+// the per-vertex work. These are the straightforward per-call definitions,
+// written out, and the fast versions must equal them EXACTLY (toBe, never
+// toBeCloseTo): the terrain colours they feed were checked byte for byte.
+describe('hillshader and ecosystemBlender are the per-call formulas, bit for bit', () => {
+  const LIGHTS = [
+    { offsetDeg: 0, weight: 0.45 },
+    { offsetDeg: -60, weight: 0.2 },
+    { offsetDeg: 60, weight: 0.2 },
+    { offsetDeg: 180, weight: 0.15 },
+  ]
+  function referenceHillshade(
+    nx: number, ny: number, nz: number,
+    sun: SunDirection, ambient: number, exaggeration: number, softness: number,
+  ): number {
+    let x = nx, y = ny, z = nz
+    if (exaggeration !== 1 && nz > 1e-6) {
+      const gx = (nx / nz) * exaggeration
+      const gy = (ny / nz) * exaggeration
+      const len = Math.hypot(gx, gy, 1)
+      x = gx / len; y = gy / len; z = 1 / len
+    }
+    const primary = sunVector(sun)
+    const hard = Math.max(0, x * primary.x + y * primary.y + z * primary.z)
+    let soft = 0
+    let totalWeight = 0
+    for (const light of LIGHTS) {
+      const v = sunVector({ azimuthDeg: sun.azimuthDeg + light.offsetDeg, altitudeDeg: sun.altitudeDeg })
+      soft += Math.max(0, x * v.x + y * v.y + z * v.z) * light.weight
+      totalWeight += light.weight
+    }
+    soft /= totalWeight
+    const s = Math.min(1, Math.max(0, softness))
+    return ambient + (1 - ambient) * (hard * (1 - s) + soft * s)
+  }
+
+  function referenceBlend(e: number, lat: number, slope: number, blendM = 60): EcosystemMix {
+    const boundary = (lo: number, hi: number, zone: EcosystemZone, upward: boolean): number => {
+      for (let i = 0; i < 12; i++) {
+        const mid = (lo + hi) / 2
+        if ((ecosystemZone(mid, lat, slope) === zone) === upward) lo = mid
+        else hi = mid
+      }
+      return (lo + hi) / 2
+    }
+    const half = blendM / 2
+    const here = ecosystemZone(e, lat, slope)
+    const mix: EcosystemMix = { here, above: here, below: here, wAbove: 0, wBelow: 0 }
+    if (!(blendM > 0)) return mix
+    const upper = ecosystemZone(e + half, lat, slope)
+    if (upper !== here) {
+      mix.above = upper
+      mix.wAbove = Math.min(0.5, Math.max(0, (e - (boundary(e, e + half, here, true) - half)) / blendM))
+    }
+    const lower = ecosystemZone(e - half, lat, slope)
+    if (lower !== here) {
+      mix.below = lower
+      mix.wBelow = Math.min(0.5, Math.max(0, ((boundary(e - half, e, here, false) + half) - e) / blendM))
+    }
+    return mix
+  }
+
+  it('hillshader(sun, ambient, k, softness)(n) === the per-call hillshade', () => {
+    let seed = 7
+    const rnd = (): number => ((seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296)
+    for (const sun of [DEFAULT_SUN, { azimuthDeg: 33.3, altitudeDeg: 71 }, { azimuthDeg: 200, altitudeDeg: 4 }]) {
+      for (const [ambient, k, softness] of [[0.55, 1, 0.5], [SHADE_AMBIENT_RELIEF, 2.7, 0], [0.3, 0.4, 1], [0.6, 1.8, 1.4]]) {
+        const shade = hillshader(sun, ambient, k, softness)
+        for (let n = 0; n < 400; n++) {
+          const x = rnd() * 2 - 1, y = rnd() * 2 - 1, z = n % 50 === 0 ? 0 : rnd()
+          const len = Math.hypot(x, y, z) || 1
+          const want = referenceHillshade(x / len, y / len, z / len, sun, ambient, k, softness)
+          expect(shade(x / len, y / len, z / len)).toBe(want)
+          expect(hillshade(x / len, y / len, z / len, sun, ambient, k, softness)).toBe(want)
+        }
+      }
+    }
+  })
+
+  it('ecosystemBlender(lat)(e, slope) === the per-call blend, and the mix helpers match the smooth ones', () => {
+    const same = (a: object, b: object): boolean => {
+      const x = a as Record<string, unknown>, y = b as Record<string, unknown>
+      return Object.keys(x).length === Object.keys(y).length && Object.keys(x).every((k) => x[k] === y[k])
+    }
+    const wrong: string[] = []
+    let checked = 0
+    for (const lat of [0, -23.4, 42.5, 60, 80]) {
+      for (const blendM of [60, 0, 150]) {
+        const blend = ecosystemBlender(lat, blendM)
+        for (const slope of [0, 20, 37.9, 38, 55]) {
+          for (let e = -120; e < 6200; e += 7.3) {
+            const got = blend(e, slope)
+            checked++
+            if (!same(got, referenceBlend(e, lat, slope, blendM))
+              || !same(ecosystemMixColor(got), ecosystemColorSmooth(e, lat, slope, blendM))
+              || !same(ecosystemMixGround(got), ecosystemGroundSmooth(e, lat, slope, blendM))) {
+              wrong.push(`lat ${lat} blend ${blendM} slope ${slope} e ${e}`)
+            }
+          }
+        }
+      }
+    }
+    expect(wrong.slice(0, 5)).toEqual([])
+    // Every belt boundary is in the sweep, both sides of the rock slope.
+    expect(checked).toBeGreaterThan(60_000)
+  }, 20_000)
 })
 
 describe('skyViewFactor', () => {
