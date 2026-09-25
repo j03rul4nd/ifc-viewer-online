@@ -9,12 +9,13 @@
 // trip through a writer and a parser that both forget to convert passes too.
 
 import { describe, it, expect } from 'vitest'
-import { buildBcfTextEntries } from './bcf'
+import { strToU8, zipSync } from 'fflate'
+import { buildBcfTextEntries, exportBcfZip } from './bcf'
 import {
   clippingPlanesFromCuts, cutsFromClippingPlanes, sceneUpFor, viewpointFromBcf, viewpointToBcf,
 } from './bcf-viewpoint'
 import { parseBcfParserMsg } from './worker-schemas'
-import { bytesToBase64, parseViewpoint } from '../workers/bcf-parser.worker'
+import { bytesToBase64, parseBcfZip, parseViewpoint } from '../workers/bcf-parser.worker'
 import type { BcfTopic, BcfViewpoint, Vec3Like } from '../types'
 
 function sampleTopic(): BcfTopic {
@@ -281,5 +282,162 @@ describe('BCF snapshot import', () => {
     expect(b64.slice(43_688, 43_696)).toBe(slice(32_766, 32_772))
     expect(b64.slice((996_000 / 3) * 4)).toBe(slice(996_000, png.length))
     expect(bytesToBase64(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBe('iVBORw==')
+  })
+})
+
+// ── Import: .bcfzip → topics ────────────────────────────────────────────────
+
+/** A 1×1 PNG, as a captured snapshot arrives from the viewer. */
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+
+const asBuffer = (bytes: Uint8Array): ArrayBuffer => new Uint8Array(bytes).buffer
+
+/** A .bcfzip of hand-written entries, as another tool would ship it. */
+function zipOf(entries: Record<string, string>): ArrayBuffer {
+  return asBuffer(zipSync(Object.fromEntries(Object.entries(entries).map(([path, xml]) => [path, strToU8(xml)]))))
+}
+
+/** Two viewpoints: the first with a snapshot and a selection, the second bare. */
+function topicToImport(): BcfTopic {
+  return {
+    ...sampleTopic(),
+    viewpoints: [
+      {
+        guid:            'aaaaaaaa-0000-0000-0000-000000000002',
+        cameraPosition:  { x: 12.5, y: 7.25, z: -3 },
+        cameraDirection: { x: 0.6, y: -0.8, z: 0 },
+        cameraUp:        { x: 0.8, y: 0.6, z: 0 },
+        fieldOfView:     60,
+        componentGuids:  ['1Abc$DefGHI0jklMNOpqrs', '2O2Fr$t4X7Zf8NOew3FLOH'],
+        snapshotBase64:  PNG,
+      },
+      {
+        guid:            'dddddddd-0000-0000-0000-000000000004',
+        cameraPosition:  { x: 0, y: 30, z: 0 },
+        cameraDirection: { x: 0, y: -1, z: 0 },
+        cameraUp:        { x: 0, y: 0, z: -1 },
+      },
+    ],
+  }
+}
+
+describe('BCF import (parseBcfZip)', () => {
+  it('reads back snapshot, selection and viewpoint Guid from its own 2.1 and 3.0 export', () => {
+    for (const version of ['2.1', '3.0'] as const) {
+      const sent = topicToImport()
+      const { topics, version: read } = parseBcfZip(asBuffer(exportBcfZip([sent], version)))
+      expect(read).toBe(version)
+      expect(topics).toHaveLength(1)
+
+      const [first, second] = topics[0].viewpoints
+      expect(topics[0].viewpoints).toHaveLength(2)
+
+      expect(first.guid).toBe(sent.viewpoints[0].guid)
+      expect(first.snapshotBase64).toBe(PNG)
+      expect(first.componentGuids).toEqual(sent.viewpoints[0].componentGuids)
+      expect(first.cameraPosition).toEqual(sent.viewpoints[0].cameraPosition)
+      expect(first.cameraDirection).toEqual(sent.viewpoints[0].cameraDirection)
+
+      // The snapshot stays with its own viewpoint.
+      expect(second.guid).toBe(sent.viewpoints[1].guid)
+      expect(second.snapshotBase64).toBeUndefined()
+      expect(second.componentGuids).toBeUndefined()
+      expect(second.cameraPosition).toEqual(sent.viewpoints[1].cameraPosition)
+    }
+  })
+
+  it('3.0: takes the viewpoint Guid from the markup <ViewPoint>, the one comments point at', () => {
+    const topic = 'eeeeeeee-0000-0000-0000-000000000005'
+    const { topics } = parseBcfZip(zipOf({
+      'bcf.version': '<?xml version="1.0" encoding="UTF-8"?><Version VersionId="3.0" />',
+      [`${topic}/markup.bcf`]: `<?xml version="1.0" encoding="UTF-8"?>
+<Markup>
+  <Topic Guid="${topic}" TopicType="Issue" TopicStatus="Open">
+    <Title>Duct through beam</Title>
+    <CreationDate>2026-09-25T10:00:00Z</CreationDate>
+    <Comments>
+      <Comment Guid="cccccccc-0000-0000-0000-000000000006">
+        <Date>2026-09-25T10:05:00Z</Date>
+        <Author>coordinator</Author>
+        <Comment>See view</Comment>
+        <Viewpoint Guid="11111111-0000-0000-0000-000000000007" />
+      </Comment>
+    </Comments>
+    <Viewpoints>
+      <ViewPoint Guid="11111111-0000-0000-0000-000000000007">
+        <Viewpoint>Viewpoint_A.bcfv</Viewpoint>
+        <Snapshot>Snapshot_A.jpg</Snapshot>
+        <Index>0</Index>
+      </ViewPoint>
+    </Viewpoints>
+  </Topic>
+</Markup>`,
+      // Its file carries no Guid of its own, so only the markup can name it.
+      [`${topic}/Viewpoint_A.bcfv`]: foreignBcfv({ pos: '10 20 30', dir: '0 0 -1', up: '0 1 0' })
+        .replace(' Guid="bbbbbbbb-0000-0000-0000-000000000009"', ''),
+      [`${topic}/Snapshot_A.jpg`]: 'jpeg bytes',
+    }))
+
+    const [vp] = topics[0].viewpoints
+    expect(topics[0].viewpoints).toHaveLength(1)
+    expect(vp.guid).toBe('11111111-0000-0000-0000-000000000007')
+    expect(vp.snapshotBase64).toBe(`data:image/jpeg;base64,${btoa('jpeg bytes')}`)
+    expect(vp.cameraPosition).toEqual({ x: 10, y: 30, z: -20 })
+  })
+
+  it('still reads every .bcfv when the markup lists no viewpoint', () => {
+    const topic = 'ffffffff-0000-0000-0000-000000000008'
+    const { topics } = parseBcfZip(zipOf({
+      [`${topic}/markup.bcf`]: `<Markup><Topic Guid="${topic}"><Title>Bare</Title></Topic></Markup>`,
+      [`${topic}/viewpoint.bcfv`]: foreignBcfv({ pos: '0 0 30', dir: '0 0 -1', up: '0 1 0' }),
+    }))
+    expect(topics[0].viewpoints.map((vp) => vp.guid)).toEqual(['bbbbbbbb-0000-0000-0000-000000000009'])
+  })
+})
+
+describe('BCF import: selected components', () => {
+  /** A .bcfv selection as Solibri or BIMcollab write it. */
+  const solibriBcfv = `<?xml version="1.0" encoding="UTF-8"?>
+<VisualizationInfo Guid="bbbbbbbb-0000-0000-0000-000000000009">
+  <Components>
+    <ViewSetupHints SpacesVisible="false" SpaceBoundariesVisible="false" OpeningsVisible="false" />
+    <Selection>
+      <Component IfcGuid="2O2Fr$t4X7Zf8NOew3FLOH"/>
+      <Component IfcGuid="0K7w7JN4X3$9mQNZm2mLUx" />
+      <Component IfcGuid="1hOSvn6df7F8_7GcBWlRGQ">
+        <OriginatingSystem>Solibri</OriginatingSystem>
+        <AuthoringToolId>4711</AuthoringToolId>
+      </Component>
+    </Selection>
+    <Visibility DefaultVisibility="true">
+      <Exceptions>
+        <Component IfcGuid="3cUkl32yn9qRSPvBJVyWYp"/>
+      </Exceptions>
+    </Visibility>
+    <Coloring>
+      <Color Color="FFFF0000">
+        <Component IfcGuid="0uB1pNZB5ExBw1m$rOoGSg"/>
+      </Color>
+    </Coloring>
+  </Components>
+  <PerspectiveCamera>
+    <CameraViewPoint><X>0</X><Y>0</Y><Z>30</Z></CameraViewPoint>
+    <CameraDirection><X>0</X><Y>0</Y><Z>-1</Z></CameraDirection>
+    <CameraUpVector><X>0</X><Y>1</Y><Z>0</Z></CameraUpVector>
+    <FieldOfView>60</FieldOfView>
+  </PerspectiveCamera>
+</VisualizationInfo>`
+
+  it('reads self-closing and paired <Component>s, only those under <Selection>', () => {
+    expect(parseViewpoint(solibriBcfv, 'g').componentGuids).toEqual([
+      '2O2Fr$t4X7Zf8NOew3FLOH',
+      '0K7w7JN4X3$9mQNZm2mLUx',
+      '1hOSvn6df7F8_7GcBWlRGQ',
+    ])
+  })
+
+  it('leaves componentGuids unset when nothing is selected', () => {
+    const hidden = solibriBcfv.replace(/<Selection>[\s\S]*?<\/Selection>/, '<Selection />')
+    expect(parseViewpoint(hidden, 'g').componentGuids).toBeUndefined()
   })
 })

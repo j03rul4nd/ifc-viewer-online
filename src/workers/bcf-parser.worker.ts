@@ -36,6 +36,22 @@ function openTag(xml: string, tag: string): string {
 }
 
 /**
+ * Every <tag> element, self-closing or not: `open` is its start tag (for attr),
+ * `body` what it holds ('' when self-closing). Self-closing is how this app,
+ * Solibri and BIMcollab write <Component IfcGuid="…" />. Case-sensitive, as
+ * XML is: a BCF 3.0 <ViewPoint> holds a <Viewpoint>, and only the P differs.
+ */
+function elements(xml: string, tag: string): { open: string; body: string }[] {
+  const re = new RegExp(`(<${tag}(?:\\s[^>]*?)?)(?:/>|>([\\s\\S]*?)</${tag}\\s*>)`, 'g')
+  return [...xml.matchAll(re)].map((m) => ({ open: m[1], body: m[2] ?? '' }))
+}
+
+/** Text of the first <tag> child, case-sensitive (see elements). */
+function childText(xml: string, tag: string): string {
+  return elements(xml, tag)[0]?.body.trim() ?? ''
+}
+
+/**
  * Base64 of a byte array, in chunks: spreading a whole snapshot into one
  * String.fromCharCode call overflows the stack once it is a few hundred KB,
  * which is every real PNG — and fails the whole import with it.
@@ -86,16 +102,13 @@ export function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: stri
     }
   }
 
-  // Selected component GUIDs
-  const selectionBlock = tagText(vpXml, 'Selection')
-  if (selectionBlock) {
-    const guids: string[] = []
-    for (const compBlock of tagBlocks(selectionBlock, 'Component')) {
-      const g = attr(compBlock, 'IfcGuid')
-      if (g) guids.push(g)
-    }
-    if (guids.length > 0) vp.componentGuids = guids
-  }
+  // Selected component GUIDs. Only those under <Selection>: 3.0 also lists
+  // <Component>s under <Visibility><Exceptions> and <Coloring>, unselected.
+  const guids = elements(vpXml, 'Selection')
+    .flatMap((selection) => elements(selection.body, 'Component'))
+    .map((component) => attr(component.open, 'IfcGuid'))
+    .filter(Boolean)
+  if (guids.length > 0) vp.componentGuids = guids
 
   // Clipping planes. The file was read, so "none" is an answer too: opening
   // this viewpoint shows it uncut, as the tool that wrote it did.
@@ -169,9 +182,28 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
   }
 }
 
+/** A viewpoint as markup.bcf lists it: its Guid and the files it names. */
+interface ViewpointRef { guid: string; file: string; snapshot: string }
+
+/**
+ * The viewpoints a markup lists. Each names its .bcfv in <Viewpoint> and its
+ * image in <Snapshot>; only the element around them changes:
+ *   3.0  <Viewpoints><ViewPoint Guid="…">…</ViewPoint>…</Viewpoints>
+ *   2.1  <Viewpoints Guid="…">…</Viewpoints>, one per viewpoint
+ * The 3.0 list is itself a <Viewpoints>, so its entries are looked for first.
+ */
+function markupViewpoints(markupXml: string): ViewpointRef[] {
+  const entries = elements(markupXml, 'ViewPoint')
+  return (entries.length > 0 ? entries : elements(markupXml, 'Viewpoints')).map(({ open, body }) => ({
+    guid:     attr(open, 'Guid'),
+    file:     childText(body, 'Viewpoint'),
+    snapshot: childText(body, 'Snapshot'),
+  }))
+}
+
 // ── Main parse function ───────────────────────────────────────────────────────
 
-function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string } {
+export function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string } {
   const files = unzipSync(new Uint8Array(buffer))
 
   // Detect version
@@ -205,15 +237,13 @@ function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string
 
     const base = parseMarkup(markupXml, topicGuid)
 
-    // Parse viewpoints referenced in markup
+    // Parse viewpoints referenced in markup. Its Guid is the one comments
+    // point at, and it is what pairs a snapshot with its camera.
     const viewpoints: BcfViewpoint[] = []
 
-    // BCF 2.1: <Viewpoints Guid="..."><Viewpoint>viewpoint.bcfv</Viewpoint><Snapshot>snapshot.png</Snapshot></Viewpoints>
-    for (const vpBlock of tagBlocks(markupXml, 'Viewpoints')) {
-      const vpTag  = openTag(vpBlock, 'Viewpoints')
-      const vpGuid = attr(vpTag, 'Guid')
-      const vpFile = tagText(vpBlock, 'Viewpoint').toLowerCase()
-      const snapFile = tagText(vpBlock, 'Snapshot').toLowerCase()
+    for (const { guid: vpGuid, file, snapshot } of markupViewpoints(markupXml)) {
+      const vpFile   = file.toLowerCase()
+      const snapFile = snapshot.toLowerCase()
 
       const vpData    = vpFile ? folderFiles.get(vpFile) : undefined
       const snapData  = snapFile ? folderFiles.get(snapFile) : undefined
@@ -233,7 +263,8 @@ function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string
       }
     }
 
-    // BCF 3.0: viewpoints may be listed differently — look for any .bcfv files in folder
+    // Last resort, for a markup that lists no viewpoint we could read: every
+    // .bcfv in the folder, with no snapshot or markup Guid to pair it with.
     if (viewpoints.length === 0) {
       for (const [fileName, data] of folderFiles) {
         if (!fileName.endsWith('.bcfv')) continue
