@@ -61,6 +61,7 @@ import { depthRangeFor, depthRangeChanged, type DepthRange } from './depth-range
 import { auditVertical, describeAudit } from './vertical-audit'
 import { buildVerticalOverlay, disposeVerticalOverlay, type VerticalOverlay } from './vertical-overlay'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
+import { prebakeSurfaceTextures } from './surface-textures'
 import {
   budgetGate, createFrameWatch, TRIANGLE_BUDGET,
   type BudgetGate, type DeviceTier, type FrameVerdict, type LayerKey, type SceneLayerStat, type SceneReport,
@@ -920,7 +921,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Re-apply sticky visuals (style/exaggeration survive rebuilds).
       if (terrainStyle !== 'imagery') patch.setStyle(terrainStyle)
       if (terrainExaggeration !== 1) patch.setExaggeration(terrainExaggeration)
-      if (contextDetail !== 'simple') patch.setQuality(surfaceQuality())
+      // Detailed relief once its maps are baked — see setContextDetail.
+      if (contextDetail !== 'simple') {
+        void prebakeSurfaceTextures().then(() => {
+          if (terrain === patch && contextDetail !== 'simple') patch.setQuality(surfaceQuality())
+        })
+      }
       patch.setLook(terrainLook)
       // Clip the flat basemap under the patch so valleys BELOW the ground
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
@@ -1021,7 +1027,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // assets land instead of blocking on them.
       if (level === 'showcase') ensurePropAssets()
       // One control, whole scene: facades, ground layers AND the relief itself.
-      terrain?.setQuality(surfaceQuality())
+      // The detailed relief and every detailed layer share six baked detail
+      // maps, and the relief asks for four of them at once — a few hundred
+      // milliseconds in one piece on a first switch. They are baked in slices
+      // first; the relief changes over when they are ready.
+      if (surfaceQuality() === 'detailed') {
+        void prebakeSurfaceTextures().then(() => {
+          if (contextDetail === level) terrain?.setQuality(surfaceQuality())
+        })
+      } else {
+        terrain?.setQuality(surfaceQuality())
+      }
       if (osmFeatures) void requestRebuild()
     },
 
@@ -1472,6 +1488,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       prelude = lastPrelude
     }
     emitReport('building', 0)
+
+    // The detailed materials' shared maps, in slices, before any layer asks for
+    // one inside a single builder step.
+    if (surfaceQuality() === 'detailed') {
+      await prebakeSurfaceTextures()
+      if (!alive()) return null
+    }
 
     // What is already standing and staying, for the budget of a partial build.
     const standing = full ? 0 : [...layerStats.values()]
