@@ -16,6 +16,7 @@ import {
 import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-library'
 import { currentModelFacts, importSound, rhythmFor } from '../../lib/capture/studio-actions'
 import { applyTemplate, TEMPLATE_IDS, templateMinClips, type TemplateId } from '../../lib/capture/viral-templates'
+import { beatCaptions, clearBeatCaptions, hasBeatCaptions, isBeatCaption } from '../../lib/capture/beat-captions'
 import { hookEndSec, syncProjectToMusic } from '../../lib/capture/music-analysis'
 import { formatStart } from '../../lib/capture/tiktok-link'
 import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
@@ -298,6 +299,15 @@ function ProjectPanel() {
         <ViralSound />
         {project.audio.kind !== 'none' && (
           <Slider label={t('studio.volume')} value={project.audio.volume} min={0} max={1} step={0.01} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => setAudio({ volume: v })} />
+        )}
+        {rhythm && project.texts.some((o) => isBeatCaption(o)) && (
+          <>
+            <button type="button" className="studio-btn" aria-pressed={hasBeatCaptions(project)}
+              onClick={() => edit((pr) => (hasBeatCaptions(pr) ? clearBeatCaptions(pr) : beatCaptions(pr, rhythm)))}>
+              {hasBeatCaptions(project) ? `✓ ${t('studio.beatCaptions.on')}` : t('studio.beatCaptions.label')}
+            </button>
+            <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.beatCaptions.hint')}</p>
+          </>
         )}
         {rhythm && project.clips.length > 1 && (
           <>
