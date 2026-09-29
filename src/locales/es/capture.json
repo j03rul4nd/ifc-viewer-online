@@ -583,7 +583,91 @@
       "keepTapping": "Sigue tocando al ritmo…",
       "apply": "Cortar el vídeo a este sonido",
       "save": "Guardar este ritmo",
-      "howTo": "En TikTok: pulsa “Añadir sonido”, elige este sonido y recórtalo para que empiece en {{start}} — los cortes caen en su beat ({{bpm}} BPM)."
+      "howTo": "En TikTok: pulsa “Añadir sonido”, elige este sonido y recórtalo para que empiece en {{start}} — los cortes caen en su beat ({{bpm}} BPM).",
+      "captureTab": "Capturarlo de una pestaña de TikTok (ordenador)",
+      "captureMic": "Escucharlo con el micrófono (móvil)",
+      "captureHint": "Pestaña: abre el enlace en otra pestaña, pulsa aquí, elige esa pestaña con “Compartir audio de la pestaña” activado, dale al play allí y para cuando haya sonado. Obtenemos el sonido real, detectamos el beat y el drop y cortamos el vídeo a él. Micrófono: ponlo en tu móvil junto al dispositivo — solo se usa para el ritmo.",
+      "recordingTab": "Grabando la pestaña… dale al play del sonido",
+      "recordingMic": "Escuchando… reproduce el sonido cerca del micrófono",
+      "stopRecording": "Parar y analizar",
+      "noTabAudio": "No llegó audio. Comparte una PESTAÑA del navegador y activa “Compartir audio de la pestaña”."
+    },
+    "templates": {
+      "title": "Plantillas virales",
+      "undoHint": "Una plantilla reordena tus planos y añade textos. Ctrl+Z la deshace.",
+      "dropReveal": {
+        "name": "💥 Revelación en el drop",
+        "hint": "Gancho “espera al final”, una subida, tu mejor plano en el drop y luego cortes rápidos."
+      },
+      "loop": {
+        "name": "🔁 Bucle infinito",
+        "hint": "El final enlaza con el principio y se repite sin corte — las revisualizaciones cuentan."
+      },
+      "beforeAfter": {
+        "name": "↔️ Antes / después",
+        "hint": "Dos mitades con un destello blanco entre ellas."
+      },
+      "pov": {
+        "name": "👀 POV",
+        "hint": "Una frase en primera persona arriba durante todo el clip."
+      },
+      "facts": {
+        "name": "🔢 Datos del modelo",
+        "hint": "Un dato real del modelo en cada plano."
+      },
+      "copy": {
+        "waitForIt": "Espera al final… 👀",
+        "before": "ANTES",
+        "after": "DESPUÉS",
+        "pov": "POV: el modelo por fin carga sin errores",
+        "factsTitle": "{{n}} datos de este edificio"
+      },
+      "fact": {
+        "storeys": "{{n}} plantas",
+        "elements": "{{n}} elementos",
+        "health": "Health Score {{n}}/100",
+        "schema": "Hecho en {{schema}}"
+      }
+    },
+    "flow": {
+      "cta": "Clip desde un sonido de TikTok",
+      "ctaHint": "Pega el enlace de un sonido — el vídeo se corta a su ritmo y a su drop.",
+      "progress": "Pasos",
+      "steps": {
+        "link": "Sonido",
+        "beat": "Ritmo",
+        "style": "Estilo",
+        "done": "Listo"
+      },
+      "pasteHint": "Truco: copia el enlace de un sonido de TikTok y pulsa Ctrl+V en cualquier parte del estudio.",
+      "recent": "Tus sonidos recientes",
+      "remembered": "ritmo recordado",
+      "beatQ": "Deja que el estudio lo escuche — elige una opción:",
+      "beatHintDesktop": "Lo mejor: capturar la pestaña de TikTok — obtenemos el sonido real, detectamos el ritmo y el drop, y podemos meterlo en el vídeo.",
+      "beatHintPhone": "Lo mejor en el móvil: reproduce el sonido en otro dispositivo (o altavoz) y deja que el micrófono escuche unos 20 s.",
+      "haveFile": "Tengo el archivo",
+      "tap": "Marcar tocando",
+      "next": "Siguiente",
+      "waveHint": "Ritmo y drop (rojo). Haz clic o usa ←/→ para mover el drop.",
+      "tempo": "Tempo {{bpm}} BPM",
+      "halfHint": "Mitad de tempo — si los cortes van demasiado rápido",
+      "doubleHint": "Doble de tempo — si los cortes van demasiado lentos",
+      "relisten": "Volver a escuchar",
+      "styleQ": "Estilo",
+      "length": "Duración",
+      "window": "Usa el sonido desde {{from}}, {{len}} s — la revelación cae en el drop a los {{drop}} s.",
+      "embed": "Meter el sonido en el archivo de vídeo",
+      "embedHint": "Necesario para Reels/Shorts. En TikTok llega a más gente si añades el sonido en la app — el corte ya está sincronizado.",
+      "generate": "Generar clip",
+      "generated": "Clip listo — cortado al sonido",
+      "doneEmbedded": "Listo: el sonido va en el vídeo y la revelación cae en el drop. Previsualízalo, retócalo y exporta.",
+      "tryStyle": "Probar otro estilo",
+      "another": "Otro sonido"
+    },
+    "beatCaptions": {
+      "label": "Subtítulos palabra a palabra al ritmo",
+      "on": "Subtítulos al ritmo",
+      "hint": "Dos o tres palabras cada vez, grandes y centradas; cada palabra nueva entra de golpe en un beat. Siguen al ritmo aunque edites o muevas el texto."
     }
   },
   "cover": {

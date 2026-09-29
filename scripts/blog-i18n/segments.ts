@@ -35,6 +35,19 @@ function blockFields(b: ContentBlock, at: string, add: (path: string, value: unk
     case 'ul': case 'ol': b.items.forEach((x, i) => add(`${at}.items.${i}`, x)); break
     case 'code': break
     case 'callout': add(`${at}.text`, b.text, 'rich'); add(`${at}.title`, b.title); break
+    case 'bimo-tip': add(`${at}.text`, b.text, 'rich'); add(`${at}.title`, b.title); break
+    case 'bimo-quiz':
+      add(`${at}.title`, b.title)
+      b.questions.forEach((q, i) => {
+        add(`${at}.questions.${i}.q`, q.q)
+        q.options.forEach((o, j) => add(`${at}.questions.${i}.options.${j}`, o))
+        add(`${at}.questions.${i}.why`, q.why, 'rich')
+      })
+      break
+    case 'bimo-checklist':
+      add(`${at}.title`, b.title)
+      b.items.forEach((it, i) => { add(`${at}.items.${i}.label`, it.label, 'rich'); add(`${at}.items.${i}.hint`, it.hint, 'rich') })
+      break
     case 'takeaways': add(`${at}.title`, b.title); b.items.forEach((x, i) => add(`${at}.items.${i}`, x, 'rich')); break
     case 'steps':
       b.items.forEach((s, i) => {
@@ -310,7 +323,9 @@ export function retargetLinks(post: BlogPost, bySlug: Map<string, string>): void
   }
   for (const b of post.content) {
     switch (b.type) {
-      case 'p': case 'callout': retargetRich(b.text); break
+      case 'p': case 'callout': case 'bimo-tip': retargetRich(b.text); break
+      case 'bimo-quiz': b.questions.forEach((q) => retargetRich(q.why)); break
+      case 'bimo-checklist': b.items.forEach((i) => { retargetRich(i.label); retargetRich(i.hint) }); break
       case 'takeaways': b.items.forEach(retargetRich); break
       case 'steps': b.items.forEach((i) => { retargetRich(i.body); retargetRich(i.detail) }); break
       case 'decision': b.options.forEach((o) => { retargetRich(o.body); if (o.to && bySlug.has(o.to)) o.to = bySlug.get(o.to) }); break

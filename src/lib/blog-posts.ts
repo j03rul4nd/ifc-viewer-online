@@ -34,6 +34,12 @@ export type ContentBlock =
   | { type: 'code'; text: string; lang?: string }
   /** `title` overrides the variant label ("Tip", "Warning", "Note"). */
   | { type: 'callout'; variant: 'tip' | 'warning' | 'info'; text: RichText; title?: string }
+  /** An aside in the mascot's voice. Use sparingly: one per post, for the tip a reader would otherwise miss. */
+  | { type: 'bimo-tip'; text: RichText; title?: string; emotion?: 'happy' | 'curious' | 'thinking' | 'surprised' | 'excited' | 'sad' }
+  /** Check-your-understanding at the end of a teaching post. 3–5 questions; `why` explains every answer. */
+  | { type: 'bimo-quiz'; title?: string; questions: Array<{ q: string; options: string[]; answer: number; why?: RichText }> }
+  /** A procedure the reader performs on their own model and ticks off; progress persists per browser. `id` must be unique within the post. */
+  | { type: 'bimo-checklist'; id: string; title?: string; items: Array<{ label: RichText; hint?: RichText }> }
   /** "What do I leave with?" — 3–5 bullets, near the top of a long post. See docs/BLOG_COMPONENTS.md. */
   | { type: 'takeaways'; title?: string; items: RichText[] }
   /** A procedure. `detail` folds away so the sequence stays scannable. */
@@ -654,13 +660,14 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: 'Step 2: Choose the Right IFC Version' },
       { type: 'p', text: "Unless your project specification explicitly requires IFC2x3, export to IFC4 Reference View. IFC4 is the current ISO standard, produces smaller file sizes for complex geometry via tessellated meshes, and resolves several structural ambiguities present in the older schema." },
       { type: 'h2', text: 'Step 3: Configure These Settings' },
-      { type: 'ul', items: [
-        '"Export GUIDs": set to "Keep Existing". Never "Generate New" — this breaks BCF cross-references on every re-export.',
-        '"Site Placement": set to "Shared Coordinates". Prevents elements from being placed 10 km from the WCS origin.',
-        '"Include Steel Connections": Off (unless delivering a structural steel model).',
-        '"Export Base Quantities": On for LOD 200+ deliveries.',
-        '"Split Walls and Columns by Level": On. Ensures walls are associated with individual storeys.',
+      { type: 'bimo-checklist', id: 'clean-ifc-export-revit:settings', title: 'Revit IFC export settings', items: [
+        { label: '"Export GUIDs": Keep Existing', hint: 'Never "Generate New" — it breaks BCF cross-references on every re-export.' },
+        { label: '"Site Placement": Shared Coordinates', hint: 'Prevents elements from being placed 10 km from the WCS origin.' },
+        { label: '"Include Steel Connections": Off', hint: 'Unless you are delivering a structural steel model.' },
+        { label: '"Export Base Quantities": On', hint: 'Needed for LOD 200+ deliveries.' },
+        { label: '"Split Walls and Columns by Level": On', hint: 'Ensures walls are associated with individual storeys.' },
       ]},
+      { type: 'bimo-tip', emotion: 'curious', text: 'Save these as a named export setup in Revit ("Modify Setup…" → duplicate). The next export — or the next person on the team — starts from the right settings instead of the defaults.' },
       { type: 'callout', variant: 'warning', text: "Never export directly to the CDE. A failed delivery that requires re-upload creates a new version in the CDE audit trail and notifies the entire project team. Always validate locally first." },
       { type: 'tool', id: 'validator', why: 'Check the export before it leaves your machine — the settings only matter if the result passes.' },
       { type: 'h2', text: 'Common Revit-Specific Issues After Export' },
@@ -670,6 +677,11 @@ export const BLOG_POSTS: BlogPost[] = [
         'Missing property sets: Revit properties export as custom Psets by default. Review the Pset mapping to ensure required standard Psets are included.',
       ]},
       { type: 'related', to: 'revit-ifc-export-breaks', section: 'The Diagnostic Workflow', why: 'When the export still breaks: the five usual causes, in the order to check them.' },
+      { type: 'bimo-quiz', title: 'Quick check', questions: [
+        { q: 'Which "Export GUIDs" option keeps BCF issues linked across re-exports?', options: ['Generate New', 'Keep Existing', 'It makes no difference'], answer: 1, why: 'New GUIDs on every export mean every BCF topic points at elements that no longer exist.' },
+        { q: 'Elements land ~10 km from the origin after export. Which setting do you check first?', options: ['Export Base Quantities', 'Site Placement', 'Split Walls and Columns by Level'], answer: 1, why: 'Site Placement set to Shared Coordinates keeps the model where the survey point says it is.' },
+        { q: 'A Revit family has no IFC mapping. What does it export as?', options: ['IfcBuildingElementProxy', 'IfcWall', 'It is skipped'], answer: 0, why: 'Unmapped families fall back to proxies — map common families to proper IFC classes in the mapping table.' },
+      ]},
     ],
   },
 
@@ -727,17 +739,21 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: 'Part 3: File Header Traceability' },
       { type: 'p', text: "The IFC STEP file header FILE_NAME record has author and organization fields. ISO 19650-2 §9.1 requires these to be populated for traceability. Most tools leave them as empty strings by default." },
       { type: 'h2', text: 'ISO 19650 Compliance Checklist' },
-      { type: 'ol', items: [
-        'Filename follows the convention specified in the PIR.',
-        'IfcProject.LongName = official project name as it appears in contracts.',
-        'IfcProject.Description = brief project description.',
-        'IfcProject.ObjectType = project type and current phase.',
-        'FILE_NAME author field = originator\'s full name.',
-        'FILE_NAME organization field = originator\'s company name.',
-        'All physical elements have IfcRelAssociatesClassification.',
-        'Classification system matches the one agreed in the PIR.',
-        'Health Score ≥ 80 (structural quality prerequisite for formal delivery).',
-      ]},
+      {
+        type: "bimo-checklist",
+        id: "iso19650-ifc-checklist:delivery",
+        items: [
+          { label: "Filename follows the convention specified in the PIR." },
+          { label: "IfcProject.LongName = official project name as it appears in contracts." },
+          { label: "IfcProject.Description = brief project description." },
+          { label: "IfcProject.ObjectType = project type and current phase." },
+          { label: "FILE_NAME author field = originator's full name." },
+          { label: "FILE_NAME organization field = originator's company name." },
+          { label: "All physical elements have IfcRelAssociatesClassification." },
+          { label: "Classification system matches the one agreed in the PIR." },
+          { label: "Health Score ≥ 80 (structural quality prerequisite for formal delivery)." },
+        ],
+      },
       { type: 'related', to: 'ifc-model-handover-documentation', section: '5. The transmittal note', why: 'What the transmittal that accompanies each container should record.' },
       { type: 'h2', text: 'Turning the Checklist Into an Agreement' },
       {
@@ -829,6 +845,14 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "If a file already contains invalid or duplicate GlobalIds, the validator can auto-fix them: it generates a fresh, spec-compliant 22-character GlobalId using the correct base-64 alphabet with a leading character in 0–3. Use this to repair a delivered file's format — but fix the export setting upstream too, or the next re-export reintroduces the drift." },
       { type: 'callout', variant: 'tip', text: "Put it in the BEP: 'IFC deliveries must use stable GlobalIds across revisions (Keep Existing). Files with out-of-range or duplicate GlobalIds will be rejected at the CDE.' One sentence prevents an entire class of coordination failures." },
       { type: 'p', text: ["Related reading on the duplicate-GUID case (two elements, one ID) and the full set of structural checks: see ", { text: 'Duplicate GUIDs in IFC', to: 'duplicate-guids-ifc' }, ' and ', { text: 'The 7 Most Common IFC Validation Errors', to: 'common-ifc-validation-errors' }, ' in this blog.'] },
+      {
+        type: "bimo-quiz",
+        questions: [
+          { q: "Which setting stops Revit from minting new GlobalIds on every export?", options: ["\"Export IFC GUIDs\": Keep Existing","\"Export IFC GUIDs\": Generate New","Exporting to IFC4 instead of IFC2x3"], answer: 0, why: "Keep Existing reuses the GlobalId Revit stores per element instead of creating a new one each time." },
+          { q: "A GlobalId starts with the character \"Z\". What does that tell you?", options: ["It is fine — any base-64 character works","It is out of range: the first character must encode 0–3","It was generated by ArchiCAD"], answer: 1, why: "A 128-bit UUID packed into 22 base-64 characters leaves only two significant bits in the first character." },
+          { q: "Why is GUID drift so expensive to catch?", options: ["The file fails schema validation","Each export looks valid on its own — the damage appears downstream in BCF and clash results","Viewers refuse to open the file"], answer: 1, why: "A regenerated GlobalId is not a schema error; you only see it when you compare revisions or a BCF issue lands on the wrong element." },
+        ],
+      },
     ],
   },
 

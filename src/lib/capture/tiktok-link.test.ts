@@ -11,6 +11,14 @@ describe('parseTikTokUrl', () => {
     expect(parseTikTokUrl('https://vm.tiktok.com/ZMabc123/')?.kind).toBe('short')
   })
 
+  it('reads sound pages with non-Latin titles', () => {
+    const link = parseTikTokUrl('https://www.tiktok.com/music/原声-voyaseekcom-7519445668029582093')
+    expect(link?.kind).toBe('music')
+    expect(link?.title).toBe('原声 voyaseekcom')
+    // Pasting the link back into a browser must still open the same sound.
+    expect(decodeURI(link!.url)).toBe('https://www.tiktok.com/music/原声-voyaseekcom-7519445668029582093')
+  })
+
   it('rejects anything else', () => {
     expect(parseTikTokUrl('https://evil.com/tiktok.com/music/x-1')).toBeNull()
     expect(parseTikTokUrl('https://nottiktok.com/music/x-1')).toBeNull()

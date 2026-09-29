@@ -583,7 +583,91 @@
       "keepTapping": "Keep tapping to the beat…",
       "apply": "Cut the video to this sound",
       "save": "Save this beat",
-      "howTo": "In TikTok: tap “Add sound”, pick this sound, and trim it to start at {{start}} — the cuts land on its beat ({{bpm}} BPM)."
+      "howTo": "In TikTok: tap “Add sound”, pick this sound, and trim it to start at {{start}} — the cuts land on its beat ({{bpm}} BPM).",
+      "captureTab": "Capture it from a TikTok tab (computer)",
+      "captureMic": "Listen with the microphone (phone)",
+      "captureHint": "Tab: open the link in another tab, press here, pick that tab with “Share tab audio” on, press play there and stop when it has played. We get the real sound, find the beat and the drop, and cut the video to it. Microphone: play it on your phone next to the device — used only for timing.",
+      "recordingTab": "Recording the tab… press play on the sound",
+      "recordingMic": "Listening… play the sound near the microphone",
+      "stopRecording": "Stop and analyse",
+      "noTabAudio": "No audio came through. Share a browser TAB and turn on “Share tab audio”."
+    },
+    "templates": {
+      "title": "Viral templates",
+      "undoHint": "A template re-arranges your shots and adds captions. Ctrl+Z undoes it.",
+      "dropReveal": {
+        "name": "💥 Reveal on the drop",
+        "hint": "“Wait for it” hook, a build, your best shot on the drop, then fast cuts."
+      },
+      "loop": {
+        "name": "🔁 Seamless loop",
+        "hint": "The end flows into the start, so it replays with no seam — rewatches count."
+      },
+      "beforeAfter": {
+        "name": "↔️ Before / after",
+        "hint": "Two halves with a white flash between them."
+      },
+      "pov": {
+        "name": "👀 POV",
+        "hint": "A first-person line on top for the whole clip."
+      },
+      "facts": {
+        "name": "🔢 Facts about the model",
+        "hint": "One real fact from the model on each shot."
+      },
+      "copy": {
+        "waitForIt": "Wait for it… 👀",
+        "before": "BEFORE",
+        "after": "AFTER",
+        "pov": "POV: the model finally loads without errors",
+        "factsTitle": "{{n}} facts about this building"
+      },
+      "fact": {
+        "storeys": "{{n}} storeys",
+        "elements": "{{n}} elements",
+        "health": "Health Score {{n}}/100",
+        "schema": "Built in {{schema}}"
+      }
+    },
+    "flow": {
+      "cta": "Clip from a TikTok sound",
+      "ctaHint": "Paste a sound link — the video is cut to its beat and drop.",
+      "progress": "Steps",
+      "steps": {
+        "link": "Sound",
+        "beat": "Beat",
+        "style": "Style",
+        "done": "Ready"
+      },
+      "pasteHint": "Tip: copy a TikTok sound link and just press Ctrl+V anywhere in the studio.",
+      "recent": "Your recent sounds",
+      "remembered": "beat remembered",
+      "beatQ": "Let the studio hear it — pick one:",
+      "beatHintDesktop": "Best: capture the TikTok tab — we get the real sound, find the beat and the drop, and can put it in the video.",
+      "beatHintPhone": "Best on a phone: play the sound on another device (or speaker) and let the microphone listen for ~20 s.",
+      "haveFile": "I have the file",
+      "tap": "Tap the beat",
+      "next": "Next",
+      "waveHint": "Beat grid and drop (red). Click or use ←/→ to move the drop.",
+      "tempo": "Tempo {{bpm}} BPM",
+      "halfHint": "Half time — if the cuts feel too fast",
+      "doubleHint": "Double time — if the cuts feel too slow",
+      "relisten": "Listen again",
+      "styleQ": "Style",
+      "length": "Length",
+      "window": "Uses the sound from {{from}}, {{len}} s — the reveal lands on the drop at {{drop}} s.",
+      "embed": "Put the sound in the video file",
+      "embedHint": "Needed for Reels/Shorts. For TikTok, reach is better adding the sound in the app — the cut is already timed to it.",
+      "generate": "Generate clip",
+      "generated": "Clip ready — cut to the sound",
+      "doneEmbedded": "Done: the sound is in the video, the reveal hits on the drop. Preview it, tweak it, then Export.",
+      "tryStyle": "Try another style",
+      "another": "Another sound"
+    },
+    "beatCaptions": {
+      "label": "Captions word by word, on the beat",
+      "on": "Captions on the beat",
+      "hint": "Two or three words at a time, big and centred; each new word punches in on a beat. They stay on the beat when you edit or move a caption."
     }
   },
   "cover": {
