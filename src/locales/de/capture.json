@@ -348,7 +348,10 @@
         "fixed": "Was behoben wurde",
         "zoomThrough": "Durchflug",
         "pullOut": "Rückfahrt",
-        "endCard": "Abspann-Karte"
+        "endCard": "Abspann-Karte",
+        "sectionCut": "Schnitt Geschoss für Geschoss",
+        "sectionSweep": "Schnitt-Fahrt",
+        "exploded": "Explosionsansicht"
       },
       "sectionHint": {
         "hero": "Rückzug auf das ganze Modell, mit Titel",
@@ -366,7 +369,10 @@
         "fixed": "Befunde der vorigen Prüfung, die jetzt weg sind",
         "zoomThrough": "Ein beschleunigender Flug durch die Fassade in ein Geschoss",
         "pullOut": "Von einem Meter vor einem Detail zurück zum ganzen Gebäude",
-        "endCard": "Name und URL über einem wandernden Farbverlauf"
+        "endCard": "Name und URL über einem wandernden Farbverlauf",
+        "sectionCut": "Ein Grundrissschnitt, der vom Dach abwärts an jedem Geschoss hält",
+        "sectionSweep": "Ein vertikaler Schnitt quer durch das Gebäude, das Innere sichtbar",
+        "exploded": "Die Geschosse lösen sich und fügen sich wieder zusammen"
       },
       "empty": {
         "storeys": "Keine Geschosse in diesem Modell",
@@ -376,7 +382,9 @@
         "buildup": "Braucht mindestens 3 Geschosse",
         "ids": "Keine fehlgeschlagenen IDS-Spezifikationen – zuerst eine IDS-Prüfung ausführen",
         "bcf": "Keine BCF-Themen mit Blickpunkt oder Bauteilen",
-        "fixed": "Nichts zu vergleichen – nach dem Beheben erneut prüfen"
+        "fixed": "Nichts zu vergleichen – nach dem Beheben erneut prüfen",
+        "sectionCut": "Braucht mindestens 2 Geschosse",
+        "exploded": "Braucht mindestens 3 Geschosse"
       },
       "emptyGeneric": "Für dieses Modell nichts zu zeigen",
       "shots": "{{n}} Aufnahmen",
@@ -434,6 +442,8 @@
       "unassigned": "Nicht zugewiesen",
       "showDetails": "Details zeigen",
       "showDetailsHint": "Betroffene Elemente, Lösung, BCF-Status – für Prüfvideos.",
+      "narration": "Erzählte Untertitel",
+      "narrationHint": "Ein kurzer Satz pro Einstellung, aus den Daten des Modells. Ersetzt die Einstellungs-Beschriftungen.",
       "styleLabel": "Schnittstil",
       "styles": {
         "classic": "Klassisch",
@@ -473,7 +483,27 @@
         "blueprint": "Weißes transparentes Modell auf Marineblau, Monospace-Schrift, Cyan-Akzent.",
         "golden-hour": "Sandfarbenes Modell im Abendlicht, Orange/Petrol-Grading, Letterbox."
       },
-      "lookPreview": "Vorschau an Ihrem Modell"
+      "lookPreview": "Vorschau an Ihrem Modell",
+      "say": {
+        "intro": "{{name}}: {{elements}} Elemente auf {{storeys}} Geschossen.",
+        "introFlat": "{{name}}: {{elements}} Elemente, aus dem IFC gelesen.",
+        "rise": "{{storeys}} Geschosse, {{height}} m vom Boden bis zum Dach.",
+        "footprint": "Von oben: etwa {{width}} × {{depth}} m.",
+        "storey": "{{name}}, Geschoss {{index}} von {{total}}: {{elements}} Elemente.",
+        "system": "{{label}}: {{elements}} Elemente, {{percent}} % des Modells.",
+        "issue": "{{label}}: {{count}} Elemente zu prüfen.",
+        "ids": "Anforderung nicht erfüllt: {{label}}. {{count}} Elemente.",
+        "fixed": "Behoben: {{label}}. {{count}} Befunde gelöst.",
+        "bcf": "Offenes Thema: {{label}}.",
+        "detail": "Aus der Nähe: {{label}}.",
+        "inside": "In {{name}}.",
+        "context": "Zurück, bis {{name}} ganz zu sehen ist.",
+        "closing": "Das war {{name}}.",
+        "closingScore": "{{name}}: Health Score {{score}}/100.",
+        "sectionCut": "Schnitt von {{from}} bis {{to}}: {{storeys}} Grundrisse.",
+        "sectionSweep": "Ein vertikaler Schnitt über {{length}} m Gebäude.",
+        "exploded": "{{storeys}} Geschosse, auseinandergezogen und wieder zusammengesetzt."
+      }
     },
     "remaining": "Noch etwa {{seconds}} s",
     "sfxVolume": "Effektlautstärke",

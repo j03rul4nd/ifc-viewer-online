@@ -348,7 +348,10 @@
         "fixed": "What was fixed",
         "zoomThrough": "Zoom through",
         "pullOut": "Pull-out",
-        "endCard": "End card"
+        "endCard": "End card",
+        "sectionCut": "Section, storey by storey",
+        "sectionSweep": "Section sweep",
+        "exploded": "Exploded view"
       },
       "sectionHint": {
         "hero": "Pull back to the whole model, with the title",
@@ -366,7 +369,10 @@
         "fixed": "Findings of the previous run that are gone now",
         "zoomThrough": "An accelerating push through the facade into a storey",
         "pullOut": "From a metre off a detail back to the whole building",
-        "endCard": "The name and the URL over a drifting gradient"
+        "endCard": "The name and the URL over a drifting gradient",
+        "sectionCut": "A plan cut going down from the roof, stopping at each storey",
+        "sectionSweep": "A vertical cut crossing the building, the inside in poché",
+        "exploded": "The storeys pull apart and fit back together"
       },
       "empty": {
         "storeys": "No storeys found in this model",
@@ -376,7 +382,9 @@
         "buildup": "Needs at least 3 storeys",
         "ids": "No failed IDS specifications — run an IDS check first",
         "bcf": "No BCF topics with a viewpoint or components",
-        "fixed": "Nothing to compare — validate again after fixing"
+        "fixed": "Nothing to compare — validate again after fixing",
+        "sectionCut": "Needs at least 2 storeys",
+        "exploded": "Needs at least 3 storeys"
       },
       "emptyGeneric": "Nothing to show for this model",
       "shots": "{{n}} shots",
@@ -434,6 +442,8 @@
       "unassigned": "Unassigned",
       "showDetails": "Show details",
       "showDetailsHint": "Affected elements, how to fix, BCF status — for review videos.",
+      "narration": "Narrated subtitles",
+      "narrationHint": "One short line per shot, from the model’s own data. Replaces the shot labels.",
       "styleLabel": "Edit style",
       "styles": {
         "classic": "Classic",
@@ -473,7 +483,27 @@
         "blueprint": "White translucent model on navy, mono type, cyan accent.",
         "golden-hour": "Sand model under a late-sun sky, orange/teal grade, letterbox."
       },
-      "lookPreview": "Preview on your model"
+      "lookPreview": "Preview on your model",
+      "say": {
+        "intro": "{{name}}: {{elements}} elements across {{storeys}} storeys.",
+        "introFlat": "{{name}}: {{elements}} elements, read from the IFC.",
+        "rise": "{{storeys}} storeys, {{height}} m from the ground to the top.",
+        "footprint": "From above: about {{width}} × {{depth}} m.",
+        "storey": "{{name}}, storey {{index}} of {{total}}: {{elements}} elements.",
+        "system": "{{label}}: {{elements}} elements, {{percent}}% of the model.",
+        "issue": "{{label}}: {{count}} elements to review.",
+        "ids": "Requirement not met: {{label}}. {{count}} elements.",
+        "fixed": "Fixed: {{label}}. {{count}} findings resolved.",
+        "bcf": "Open topic: {{label}}.",
+        "detail": "A closer look: {{label}}.",
+        "inside": "Inside {{name}}.",
+        "context": "Pulling back to see {{name}} whole.",
+        "closing": "That was {{name}}.",
+        "closingScore": "{{name}}: Health Score {{score}}/100.",
+        "sectionCut": "Cut from {{from}} down to {{to}}: {{storeys}} plans.",
+        "sectionSweep": "A vertical cut across {{length}} m of building.",
+        "exploded": "{{storeys}} storeys, pulled apart and put back together."
+      }
     },
     "remaining": "About {{seconds}} s left",
     "sfxVolume": "Effects volume",

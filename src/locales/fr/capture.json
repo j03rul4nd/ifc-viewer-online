@@ -348,7 +348,10 @@
         "fixed": "Ce qui a été corrigé",
         "zoomThrough": "Traversée",
         "pullOut": "Recul d’échelle",
-        "endCard": "Carton de fin"
+        "endCard": "Carton de fin",
+        "sectionCut": "Coupe niveau par niveau",
+        "sectionSweep": "Balayage en coupe",
+        "exploded": "Vue éclatée"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -366,7 +369,10 @@
         "fixed": "Anomalies de la validation précédente qui ont disparu",
         "zoomThrough": "Une poussée qui accélère, traverse la façade et entre dans un niveau",
         "pullOut": "D’un mètre d’un détail jusqu’au bâtiment entier",
-        "endCard": "Le nom et l’URL sur un dégradé en mouvement"
+        "endCard": "Le nom et l’URL sur un dégradé en mouvement",
+        "sectionCut": "Une coupe en plan qui descend depuis le toit et s’arrête à chaque niveau",
+        "sectionSweep": "Une coupe verticale qui traverse le bâtiment et révèle l’intérieur",
+        "exploded": "Les niveaux s’écartent puis se réassemblent"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",
@@ -376,7 +382,9 @@
         "buildup": "Il faut au moins 3 niveaux",
         "ids": "Aucune spécification IDS en échec — lancez d’abord un contrôle IDS",
         "bcf": "Aucun sujet BCF avec point de vue ou composants",
-        "fixed": "Rien à comparer — revalidez après correction"
+        "fixed": "Rien à comparer — revalidez après correction",
+        "sectionCut": "Il faut au moins 2 niveaux",
+        "exploded": "Il faut au moins 3 niveaux"
       },
       "emptyGeneric": "Rien à montrer pour cette maquette",
       "shots": "{{n}} plans",
@@ -434,6 +442,8 @@
       "unassigned": "Non attribué",
       "showDetails": "Afficher les détails",
       "showDetailsHint": "Éléments concernés, correction, statut BCF — pour les vidéos de revue.",
+      "narration": "Sous-titres narrés",
+      "narrationHint": "Une phrase courte par plan, tirée des données du modèle. Remplace les étiquettes.",
       "styleLabel": "Style de montage",
       "styles": {
         "classic": "Classique",
@@ -473,7 +483,27 @@
         "blueprint": "Maquette blanche translucide sur bleu marine, police monospace, accent cyan.",
         "golden-hour": "Maquette sable sous un ciel de fin de journée, étalonnage orange/bleu canard, letterbox."
       },
-      "lookPreview": "Aperçu sur votre maquette"
+      "lookPreview": "Aperçu sur votre maquette",
+      "say": {
+        "intro": "{{name}} : {{elements}} éléments sur {{storeys}} niveaux.",
+        "introFlat": "{{name}} : {{elements}} éléments, lus dans l’IFC.",
+        "rise": "{{storeys}} niveaux, {{height}} m du sol au toit.",
+        "footprint": "Vu d’en haut : environ {{width}} × {{depth}} m.",
+        "storey": "{{name}}, niveau {{index}} sur {{total}} : {{elements}} éléments.",
+        "system": "{{label}} : {{elements}} éléments, {{percent}} % du modèle.",
+        "issue": "{{label}} : {{count}} éléments à vérifier.",
+        "ids": "Exigence non respectée : {{label}}. {{count}} éléments.",
+        "fixed": "Corrigé : {{label}}. {{count}} constats résolus.",
+        "bcf": "Sujet ouvert : {{label}}.",
+        "detail": "De près : {{label}}.",
+        "inside": "À l’intérieur de {{name}}.",
+        "context": "On recule pour voir {{name}} en entier.",
+        "closing": "C’était {{name}}.",
+        "closingScore": "{{name}} : Health Score {{score}}/100.",
+        "sectionCut": "Coupe de {{from}} à {{to}} : {{storeys}} plans.",
+        "sectionSweep": "Une coupe verticale sur {{length}} m de bâtiment.",
+        "exploded": "{{storeys}} niveaux, écartés puis réassemblés."
+      }
     },
     "remaining": "Environ {{seconds}} s restantes",
     "sfxVolume": "Volume des effets",

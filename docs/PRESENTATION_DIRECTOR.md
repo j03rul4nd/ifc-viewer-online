@@ -100,3 +100,28 @@ The scene is restored after the render (models' own materials, the user's backdr
 - **Restyle after generating**: the project panel's look picker (`restyleProject`) re-grades and re-styles the titles instantly, undoable; the 3D shots keep their paint and light (re-generate to repaint).
 - **Dive between projects**: in *By project* with `zoomThrough` in the recipe, an exponential zoom from the whole set into each project precedes its shots (everything visible). *By project* and *One by one* now keep the end card.
 - **Look preview** (`previewLook`): the template editor renders one still of the loaded model in the chosen look (paint, light, backdrop, grade, title) and restores the scene — see the look on this building before generating.
+
+## Narrated subtitles (`captions.narration`)
+
+- `src/lib/director/narration.ts`. The planner tags every shot with a typed `NarrationFact` (`intro`, `rise`, `footprint`, `storey`, `system`, `issue`, `ids`, `fixed`, `bcf`, `detail`, `inside`, `context`, `closing`) whose numbers come from the model facts only: element and storey counts, height and footprint from the bounds, a system's share of the elements, the Health Score only when ≥ 70.
+- `PlanStrings.narrate` turns a fact into one localised sentence (`studio.director.say.*`, 10 languages); `subtitleCues` cuts it into cues: ≤ 44 characters (30 on vertical), broken at clause marks, then at the space nearest the middle, never a lone word; at least 1 s per cue; sentences dropped from the end when they cannot be read at 17 characters/s. A dot inside a number ("19.241") is not the end of a sentence.
+- Placement: bottom-centre caption pill (mid-centre on vertical, clear of the feed UI), the look's ink. It replaces the per-shot labels and the stats line; the CTA keeps the last shot; end cards say nothing.
+- Voice: not included. `speechSynthesis` plays straight to the speakers, with no stream the MP4 mixer can capture, so the text track is subtitles only.
+
+## Section shots (`sectionCut`, `sectionSweep`)
+
+- `ShotScene.cut = { normal, points, stepped }`: `run.ts` sets the cut once with `viewer.setPresentationSection` (poché in the look's accent, `#c8553d` without a look), moves it every frame with `viewer.movePresentationSection(cutPointAt(points, t / duration, stepped))` (synchronous — just the plane), and removes it when the shot ends. Part of the shot cache key.
+- **sectionCut** (≥ 2 storeys): a plan cut from above the roof down through up to 6 storeys (spread, top to bottom), at 1.2 m above each floor (less on low storeys); stepped — glides to each level in 40 % of its segment and holds so every plan reads. Orbit at 50° elevation.
+- **sectionSweep**: a vertical plane across the long side, from just outside the building to 60 % through, the camera on the removed side looking at the cut face.
+- Narration: "Cut from Roof down to Foundation: 6 plans." / "A vertical cut across 68 m of building."
+- Verified on Torre Poblenou (MP4 frames): the roof opens, the ground-floor plan with columns and core in poché, the sweep showing all slabs; the scene is whole again afterwards.
+- Templates: Blueprint (storey cut + sweep), Launch 2026 16:9 (storey cut, instead of the closing turn), Brutalist reel and Plum noir film (sweep).
+
+## Exploded view (`exploded`)
+
+- Fragments cannot move single elements, so the explosion is rendered, not modelled: `viewer.setShotExplode({ bands, offsets })` makes `renderShotFrame` draw one pass per band — every model lifted by the band's offset and clipped to its (lifted) y-range by two planes — over ONE depth buffer (autoClear off, the colour background only on the first pass, since it clears). Floors occlude each other correctly; positions and planes are restored after every frame. Only shot frames honour it; `endShotRender` clears it.
+- `explodeBands(storeys, 8)`: contiguous bands, each starting 5 cm under its first storey's floor so the slab travels with it; lowest and highest open-ended. `explodeOffsets(n, gap, p)`: apart over 10–45 %, held, back together over 70–95 %; gap = 0.9 × height / bands. The orbit frames the building at its tallest, exploded.
+- Needs ≥ 3 storeys. Narration: "18 storeys, pulled apart and put back together."
+- Verified on Torre Poblenou (native and Cloud Dancer): 8 bands, backdrop intact, cost ≈ one render pass per band (8 s shot at 1080p ≈ 40 s).
+- Templates: Editorial clay (after the build-up), Teal & persimmon (instead of the build-up).
+- Not done: exploding by system or by discipline model (models side by side) — the same pass mechanism would take a per-model offset.

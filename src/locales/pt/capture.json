@@ -348,7 +348,10 @@
         "fixed": "O que foi corrigido",
         "zoomThrough": "Zoom através",
         "pullOut": "Afastamento de escala",
-        "endCard": "Cartão final"
+        "endCard": "Cartão final",
+        "sectionCut": "Corte piso a piso",
+        "sectionSweep": "Varrimento em corte",
+        "exploded": "Vista explodida"
       },
       "sectionHint": {
         "hero": "Afasta até ao modelo completo, com o título",
@@ -366,7 +369,10 @@
         "fixed": "Problemas da validação anterior que já não existem",
         "zoomThrough": "Um avanço que acelera, atravessa a fachada e entra num piso",
         "pullOut": "De um metro de um detalhe até ao edifício completo",
-        "endCard": "O nome e o endereço sobre um degradê em movimento"
+        "endCard": "O nome e o endereço sobre um degradê em movimento",
+        "sectionCut": "Um corte em planta que desce da cobertura e para em cada piso",
+        "sectionSweep": "Um corte vertical que atravessa o edifício e mostra o interior",
+        "exploded": "Os pisos separam-se e voltam a encaixar"
       },
       "empty": {
         "storeys": "Este modelo não tem pisos",
@@ -376,7 +382,9 @@
         "buildup": "Precisa de pelo menos 3 pisos",
         "ids": "Sem especificações IDS falhadas — execute primeiro uma verificação IDS",
         "bcf": "Sem tópicos BCF com ponto de vista ou componentes",
-        "fixed": "Nada a comparar — valide de novo depois de corrigir"
+        "fixed": "Nada a comparar — valide de novo depois de corrigir",
+        "sectionCut": "Precisa de pelo menos 2 pisos",
+        "exploded": "Precisa de pelo menos 3 pisos"
       },
       "emptyGeneric": "Nada a mostrar neste modelo",
       "shots": "{{n}} tomadas",
@@ -434,6 +442,8 @@
       "unassigned": "Sem atribuição",
       "showDetails": "Mostrar detalhes",
       "showDetailsHint": "Elementos afetados, como corrigir, estado BCF — para vídeos de revisão.",
+      "narration": "Legendas narradas",
+      "narrationHint": "Uma frase curta por plano, com os dados do próprio modelo. Substitui as etiquetas.",
       "styleLabel": "Estilo de edição",
       "styles": {
         "classic": "Clássico",
@@ -473,7 +483,27 @@
         "blueprint": "Modelo branco translúcido sobre azul-marinho, letra monoespaçada, acento ciano.",
         "golden-hour": "Maqueta cor de areia sob céu de fim de tarde, gradação laranja/azul, faixas de cinema."
       },
-      "lookPreview": "Pré-visualização no seu modelo"
+      "lookPreview": "Pré-visualização no seu modelo",
+      "say": {
+        "intro": "{{name}}: {{elements}} elementos em {{storeys}} pisos.",
+        "introFlat": "{{name}}: {{elements}} elementos, lidos do IFC.",
+        "rise": "{{storeys}} pisos, {{height}} m do chão à cobertura.",
+        "footprint": "Visto de cima: cerca de {{width}} × {{depth}} m.",
+        "storey": "{{name}}, piso {{index}} de {{total}}: {{elements}} elementos.",
+        "system": "{{label}}: {{elements}} elementos, {{percent}}% do modelo.",
+        "issue": "{{label}}: {{count}} elementos para rever.",
+        "ids": "Requisito não cumprido: {{label}}. {{count}} elementos.",
+        "fixed": "Corrigido: {{label}}. {{count}} ocorrências resolvidas.",
+        "bcf": "Tópico aberto: {{label}}.",
+        "detail": "De perto: {{label}}.",
+        "inside": "Dentro de {{name}}.",
+        "context": "Afastamo-nos para ver {{name}} inteiro.",
+        "closing": "Este foi {{name}}.",
+        "closingScore": "{{name}}: Health Score {{score}}/100.",
+        "sectionCut": "Corte de {{from}} a {{to}}: {{storeys}} plantas.",
+        "sectionSweep": "Um corte vertical ao longo de {{length}} m de edifício.",
+        "exploded": "{{storeys}} pisos, separados e novamente encaixados."
+      }
     },
     "remaining": "Faltam cerca de {{seconds}} s",
     "sfxVolume": "Volume dos efeitos",

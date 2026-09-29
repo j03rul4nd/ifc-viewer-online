@@ -348,7 +348,10 @@
         "fixed": "修正された内容",
         "zoomThrough": "ズームスルー",
         "pullOut": "プルアウト",
-        "endCard": "エンドカード"
+        "endCard": "エンドカード",
+        "sectionCut": "階ごとの断面",
+        "sectionSweep": "断面スイープ",
+        "exploded": "分解図"
       },
       "sectionHint": {
         "hero": "タイトルとともにモデル全体へ引く",
@@ -366,7 +369,10 @@
         "fixed": "前回の検証にあり、今回は解消された指摘",
         "zoomThrough": "加速しながらファサードを抜けて階の中へ",
         "pullOut": "ディテールの 1 m 手前から建物全体まで引く",
-        "endCard": "流れるグラデーションの上に名前と URL"
+        "endCard": "流れるグラデーションの上に名前と URL",
+        "sectionCut": "屋根から下へ、各階で止まる平面断面",
+        "sectionSweep": "建物を横切る垂直断面で内部を見せる",
+        "exploded": "各階が分かれ、また組み合わさる"
       },
       "empty": {
         "storeys": "このモデルには階がありません",
@@ -376,7 +382,9 @@
         "buildup": "3 階以上が必要です",
         "ids": "不合格の IDS 仕様はありません — 先に IDS チェックを実行してください",
         "bcf": "視点または要素を持つ BCF トピックがありません",
-        "fixed": "比較対象がありません — 修正後に再検証してください"
+        "fixed": "比較対象がありません — 修正後に再検証してください",
+        "sectionCut": "2階以上が必要です",
+        "exploded": "3階以上が必要です"
       },
       "emptyGeneric": "このモデルで表示できるものはありません",
       "shots": "{{n}} ショット",
@@ -434,6 +442,8 @@
       "unassigned": "未割り当て",
       "showDetails": "詳細を表示",
       "showDetailsHint": "該当要素、修正方法、BCF ステータス — レビュー動画向け。",
+      "narration": "ナレーション字幕",
+      "narrationHint": "モデル自身のデータから、ショットごとに短い一文。ショットのラベルの代わりに表示します。",
       "styleLabel": "編集スタイル",
       "styles": {
         "classic": "クラシック",
@@ -473,7 +483,27 @@
         "blueprint": "ネイビーの上の半透明の白いモデル、等幅フォント、シアンのアクセント。",
         "golden-hour": "夕暮れの空の下の砂色モデル、オレンジ/ティールのグレード、レターボックス。"
       },
-      "lookPreview": "あなたのモデルでプレビュー"
+      "lookPreview": "あなたのモデルでプレビュー",
+      "say": {
+        "intro": "{{name}}：{{storeys}}階、{{elements}}要素。",
+        "introFlat": "{{name}}：IFCから読み込んだ{{elements}}要素。",
+        "rise": "{{storeys}}階、地面から頂部まで{{height}} m。",
+        "footprint": "上から：約{{width}} × {{depth}} m。",
+        "storey": "{{name}}、{{total}}階中{{index}}階目：{{elements}}要素。",
+        "system": "{{label}}：{{elements}}要素、モデルの{{percent}}%。",
+        "issue": "{{label}}：確認が必要な要素{{count}}件。",
+        "ids": "要件未達：{{label}}。{{count}}要素。",
+        "fixed": "修正済み：{{label}}。{{count}}件解決。",
+        "bcf": "未解決のトピック：{{label}}。",
+        "detail": "クローズアップ：{{label}}。",
+        "inside": "{{name}}の内部へ。",
+        "context": "引いて{{name}}の全体を。",
+        "closing": "以上、{{name}}でした。",
+        "closingScore": "{{name}}：Health Score {{score}}/100。",
+        "sectionCut": "{{from}}から{{to}}までの断面：{{storeys}}プラン。",
+        "sectionSweep": "建物{{length}} mを横切る垂直断面。",
+        "exploded": "{{storeys}}階を分解し、また組み直す。"
+      }
     },
     "remaining": "残り約 {{seconds}} 秒",
     "sfxVolume": "効果音の音量",
