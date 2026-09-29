@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Vistes",
     "hide": "Amaga els controls de càmera",
-    "show": "Mostra les vistes de càmera"
+    "show": "Mostra les vistes de càmera",
+    "scope": {
+      "label": "Enquadrar",
+      "auto": "Auto",
+      "active": "Actiu",
+      "group": "Grup",
+      "all": "Tot",
+      "autoHint": "Tot el visible; l'emplaçament actiu si l'escena abasta llocs llunyans",
+      "activeHint": "Només el model actiu",
+      "groupHint": "Tots els models del grup del model actiu",
+      "allHint": "Tots els models i núvols de punts visibles"
+    },
+    "narrowed": "L'escena abasta llocs llunyans: s'enquadra l'actiu.",
+    "showAll": "Veure-ho tot",
+    "empty": "No hi ha res visible per enquadrar. Mostra un model o un núvol de punts."
   },
   "overlays": {
     "validationHighlights": "Ressaltades de validació",
@@ -143,10 +157,72 @@
       "collapse": "Replega el grup",
       "expand": "Desplega el grup",
       "moveTogether": "Mou-los junts",
-      "moveTogetherHint": "Mou tots els fitxers d'aquest edifici alhora, mantenint-ne l'alineació",
-      "scopeModel": "Aquest fitxer",
-      "scopeGroup": "Els {{count}} fitxers",
-      "positionOnly": "Moure el conjunt desplaça tots els fitxers per igual. La rotació i l'escala continuen sent per fitxer: girar cadascun sobre el seu origen els dispersaria."
+      "moveTogetherHint": "Mou tots els fitxers d'aquest edifici alhora, mantenint-ne l'alineació"
+    },
+    "tree": {
+      "myGroups": "Els meus grups",
+      "detectedGroups": "Detectats",
+      "newGroupEllipsis": "Nou grup…",
+      "backToAuto": "Tornar a automàtic",
+      "noGroup": "Sense grup",
+      "moveTo": "Moure a grup",
+      "hide": "Amagar",
+      "show": "Mostrar",
+      "hideGroup": "Amagar grup",
+      "showGroup": "Mostrar grup",
+      "points": "{{formatted}} pts",
+      "rename": "Reanomenar",
+      "renameHint": "Doble clic per reanomenar",
+      "counts": "{{models}} IFC · {{clouds}} núvols",
+      "frameGroup": "Enquadrar grup",
+      "emptyGroup": "Grup buit: arrossega-hi models o núvols",
+      "looseClouds": "Núvols sense assignar",
+      "dropToCreate": "Deixa anar per crear un grup",
+      "newGroup": "Nou grup",
+      "defaultName": "Grup {{n}}",
+      "groupMenu": "Opcions del grup",
+      "pin": "Fixar com a grup propi",
+      "moveUp": "Pujar",
+      "moveDown": "Baixar",
+      "delete": "Eliminar grup",
+      "basis": {
+        "user": "Manual",
+        "projectGuid": "Mateix projecte (GUID)",
+        "projectName": "Mateix projecte i emplaçament",
+        "proximity": "Proximitat geogràfica",
+        "single": "Fitxer únic"
+      }
+    },
+    "scope": {
+      "label": "Àmbit",
+      "model": "Fitxer",
+      "group": "Grup ({{count}})",
+      "scene": "Escena ({{count}})",
+      "modelHint": "Edita només el fitxer actiu",
+      "groupHint": "Mou el grup del fitxer actiu (IFC i núvols) com un sol bloc",
+      "sceneHint": "Mou tot el que hi ha carregat (IFC i núvols) com un sol bloc"
+    },
+    "rigid": {
+      "noGeometry": "Encara no hi ha geometria per moure.",
+      "pivot": "Posició del conjunt",
+      "pivotHint": "Centre en planta i cota més baixa. Canviar-la desplaça tot el conjunt sense trencar-ne l'alineació.",
+      "turn": "Girar el conjunt",
+      "degrees": "Graus",
+      "apply": "Girar",
+      "geoTitle": "Georeferència (àncora del mapa)",
+      "heading": "rumb {{deg}}°",
+      "geoHint": "El mapa s'ancora a aquest conjunt: moure'l aquí no en canvia la lat/lon. Per calibrar lat/lon i rumb fes servir l'editor d'ubicació.",
+      "calibrate": "Calibrar lat/lon al mapa",
+      "resetHint": "Retorna tots els membres a la posició original"
+    },
+    "history": {
+      "undo": "Desfer",
+      "redo": "Refer",
+      "temporary": "Moure per mirar",
+      "temporaryHint": "Mou lliurement i després torna a com estava",
+      "temporaryOn": "Canvis temporals: es desfaran en restaurar.",
+      "restore": "Restaurar",
+      "keep": "Conservar"
     }
   },
   "transform": {

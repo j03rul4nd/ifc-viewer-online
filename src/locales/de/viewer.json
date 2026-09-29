@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Ansichten",
     "hide": "Kamera-Steuerung ausblenden",
-    "show": "Kameraansichten anzeigen"
+    "show": "Kameraansichten anzeigen",
+    "scope": {
+      "label": "Ausschnitt",
+      "auto": "Auto",
+      "active": "Aktiv",
+      "group": "Gruppe",
+      "all": "Alles",
+      "autoHint": "Alles Sichtbare; der aktive Standort, wenn die Szene weit entfernte Standorte umfasst",
+      "activeHint": "Nur das aktive Modell",
+      "groupHint": "Alle Modelle der Gruppe des aktiven Modells",
+      "allHint": "Alle sichtbaren Modelle und Punktwolken"
+    },
+    "narrowed": "Die Szene umfasst weit entfernte Standorte – der aktive wird gezeigt.",
+    "showAll": "Alles zeigen",
+    "empty": "Nichts Sichtbares. Blende zuerst ein Modell oder eine Punktwolke ein."
   },
   "overlays": {
     "validationHighlights": "Validierungs-Hervorhebungen",
@@ -143,10 +157,72 @@
       "collapse": "Gruppe einklappen",
       "expand": "Gruppe ausklappen",
       "moveTogether": "Zusammen bewegen",
-      "moveTogetherHint": "Alle Dateien dieses Gebäudes gemeinsam bewegen, unter Beibehaltung der Ausrichtung",
-      "scopeModel": "Diese Datei",
-      "scopeGroup": "Alle {{count}} Dateien",
-      "positionOnly": "Das Verschieben des Satzes bewegt jede Datei gleich weit. Drehung und Skalierung bleiben pro Datei — jede um ihren eigenen Ursprung zu drehen würde sie auseinanderreißen."
+      "moveTogetherHint": "Alle Dateien dieses Gebäudes gemeinsam bewegen, unter Beibehaltung der Ausrichtung"
+    },
+    "tree": {
+      "myGroups": "Meine Gruppen",
+      "detectedGroups": "Erkannt",
+      "newGroupEllipsis": "Neue Gruppe…",
+      "backToAuto": "Zurück zu automatisch",
+      "noGroup": "Keine Gruppe",
+      "moveTo": "In Gruppe verschieben",
+      "hide": "Ausblenden",
+      "show": "Einblenden",
+      "hideGroup": "Gruppe ausblenden",
+      "showGroup": "Gruppe einblenden",
+      "points": "{{formatted}} Pkt.",
+      "rename": "Umbenennen",
+      "renameHint": "Doppelklick zum Umbenennen",
+      "counts": "{{models}} IFC · {{clouds}} Wolken",
+      "frameGroup": "Gruppe einpassen",
+      "emptyGroup": "Leere Gruppe: Modelle oder Wolken hierher ziehen",
+      "looseClouds": "Nicht zugeordnete Punktwolken",
+      "dropToCreate": "Loslassen, um eine Gruppe zu erstellen",
+      "newGroup": "Neue Gruppe",
+      "defaultName": "Gruppe {{n}}",
+      "groupMenu": "Gruppenoptionen",
+      "pin": "Als eigene Gruppe festlegen",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "delete": "Gruppe löschen",
+      "basis": {
+        "user": "Manuell",
+        "projectGuid": "Gleiches Projekt (GUID)",
+        "projectName": "Gleiches Projekt und Grundstück",
+        "proximity": "Geografische Nähe",
+        "single": "Einzelne Datei"
+      }
+    },
+    "scope": {
+      "label": "Bereich",
+      "model": "Datei",
+      "group": "Gruppe ({{count}})",
+      "scene": "Szene ({{count}})",
+      "modelHint": "Nur die aktive Datei bearbeiten",
+      "groupHint": "Die Gruppe der aktiven Datei (IFC und Wolken) als Block bewegen",
+      "sceneHint": "Alles Geladene (IFC und Wolken) als Block bewegen"
+    },
+    "rigid": {
+      "noGeometry": "Noch keine Geometrie zum Bewegen.",
+      "pivot": "Position des Ensembles",
+      "pivotHint": "Grundrissmitte auf der untersten Ebene. Eine Änderung verschiebt das ganze Ensemble, ohne seine Ausrichtung zu zerstören.",
+      "turn": "Ensemble drehen",
+      "degrees": "Grad",
+      "apply": "Drehen",
+      "geoTitle": "Georeferenz (Kartenanker)",
+      "heading": "Kurs {{deg}}°",
+      "geoHint": "Die Karte ist an dieses Ensemble verankert: Verschieben hier ändert Lat/Lon nicht. Zum Kalibrieren von Lat/Lon und Kurs den Standort-Editor verwenden.",
+      "calibrate": "Lat/Lon auf der Karte kalibrieren",
+      "resetHint": "Alle Mitglieder in ihre ursprüngliche Position zurücksetzen"
+    },
+    "history": {
+      "undo": "Rückgängig",
+      "redo": "Wiederholen",
+      "temporary": "Zum Ansehen verschieben",
+      "temporaryHint": "Frei verschieben und danach zurück zum vorherigen Zustand",
+      "temporaryOn": "Temporäre Änderungen: werden beim Wiederherstellen verworfen.",
+      "restore": "Wiederherstellen",
+      "keep": "Behalten"
     }
   },
   "transform": {

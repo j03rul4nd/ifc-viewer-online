@@ -11,10 +11,24 @@
 //
 // The numpad shortcuts work whether it is open or not; they never needed it.
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ViewerAPI } from '../lib/viewer'
+import type { ViewerAPI, CameraPresetOptions } from '../lib/viewer'
+import { resolveFraming, type FramingResult, type FramingScope } from '../lib/camera-framing'
+import { useModelGroups } from '../hooks/useModelGroups'
+import { usePointCloudStore } from '../stores/pointCloudStore'
+import { useSceneStore } from '../stores/sceneStore'
 import type { CameraPreset } from '../types'
+
+const SCOPES: FramingScope[] = ['auto', 'active', 'group', 'all']
+const LS_SCOPE = 'ifcv.camera.scope'
+
+function readScope(): FramingScope {
+  try {
+    const v = localStorage.getItem(LS_SCOPE)
+    return SCOPES.includes(v as FramingScope) ? (v as FramingScope) : 'auto'
+  } catch { return 'auto' }
+}
 
 interface CameraControlsProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -134,9 +148,45 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
     return api.onWalkStateChange((s) => setWalking(s.active))
   }, [viewerApiRef])
 
+  // ── Scope: what a view frames when there is more than one thing ─────────
+  // The presets used to look at the active model only. With a federated set,
+  // several buildings or a scan on top, the scope decides: see camera-framing.
+  const [scope, setScopeState] = useState<FramingScope>(readScope)
+  const setScope = useCallback((next: FramingScope) => {
+    setScopeState(next)
+    try { localStorage.setItem(LS_SCOPE, next) } catch { /* private mode */ }
+  }, [])
+
+  const { groupIdOf, hasGroups } = useModelGroups()
+  const clouds = usePointCloudStore((s) => s.clouds)
+  const models = useSceneStore((s) => s.models)
+  const activeModelId = useSceneStore((s) => s.activeModelId)
+  const visibleCloudIds = useMemo(() => clouds.filter((c) => c.visible).map((c) => c.id), [clouds])
+
+  const presetOpts = useCallback((s: FramingScope = scope): CameraPresetOptions => (
+    { scope: s, groupIdOf, visibleCloudIds }
+  ), [scope, groupIdOf, visibleCloudIds])
+
+  // Preview of what the current scope will frame — recomputed while open so
+  // the popover can say "narrowed to this site" and disable itself when empty.
+  const [preview, setPreview] = useState<FramingResult | null | undefined>(undefined)
+  useEffect(() => {
+    if (!visible) return
+    const api = viewerApiRef.current
+    if (!api) return
+    setPreview(resolveFraming({
+      items: api.getFramingItems(presetOpts()),
+      activeModelId: activeModelId ?? null,
+      scope,
+    }))
+  }, [visible, viewerApiRef, presetOpts, scope, activeModelId, models])
+
+  const multi = models.length + visibleCloudIds.length > 1
+  const empty = preview === null
+
   const go = useCallback((preset: CameraPreset) => {
-    viewerApiRef.current?.setCameraPreset(preset)
-  }, [viewerApiRef])
+    viewerApiRef.current?.setCameraPreset(preset, presetOpts())
+  }, [viewerApiRef, presetOpts])
 
   /** Choosing a view is the whole errand, so it also ends it. */
   const choose = useCallback((preset: CameraPreset) => {
@@ -236,6 +286,46 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
             <span className="text-[9px] text-[var(--text-muted)] opacity-60 ml-auto">G</span>
           </button>
 
+          {/* Scope — only worth showing when there is more than one thing to frame */}
+          {multi && (
+            <div className="flex flex-col gap-1 w-full p-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)]">
+              <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] px-1">{t('cameraControls.scope.label')}</span>
+              <div role="radiogroup" aria-label={t('cameraControls.scope.label')} className="grid grid-cols-4 gap-0.5">
+                {SCOPES.map((s) => (
+                  <button
+                    key={s}
+                    role="radio"
+                    aria-checked={scope === s}
+                    onClick={() => setScope(s)}
+                    disabled={s === 'group' && !hasGroups}
+                    title={t(`cameraControls.scope.${s}Hint`)}
+                    className={`px-1.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-35 disabled:cursor-not-allowed ${
+                      scope === s
+                        ? 'bg-[rgba(90,140,255,0.22)] text-[var(--text)]'
+                        : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)]'
+                    }`}
+                  >
+                    {t(`cameraControls.scope.${s}`)}
+                  </button>
+                ))}
+              </div>
+              {preview?.narrowed && (
+                <div className="flex items-center gap-1 px-1 text-[10px] text-[var(--text-dim)]">
+                  <span className="flex-1">{t('cameraControls.narrowed')}</span>
+                  <button onClick={() => setScope('all')} className="text-[var(--accent)] hover:underline">
+                    {t('cameraControls.showAll')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {empty && (
+            <div className="px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] border border-[var(--border)] text-[10px] text-[var(--text-dim)] max-w-[220px]">
+              {t('cameraControls.empty')}
+            </div>
+          )}
+
           {/* Preset grid — 2 columns */}
           <div
             className="grid gap-1 p-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)]"
@@ -245,8 +335,9 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
               <button
                 key={key}
                 onClick={() => choose(key)}
+                disabled={empty}
                 title={shortcut ? `${label} (${shortcut})` : label}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)] active:bg-[rgba(255,255,255,0.10)] transition-colors text-[11px] font-medium"
+                className="disabled:opacity-35 disabled:pointer-events-none flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)] active:bg-[rgba(255,255,255,0.10)] transition-colors text-[11px] font-medium"
               >
                 <span className="opacity-75"><Ic /></span>
                 <span>{label}</span>

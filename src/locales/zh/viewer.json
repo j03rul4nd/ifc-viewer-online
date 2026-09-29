@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "视图",
     "hide": "隐藏相机控件",
-    "show": "显示相机视图"
+    "show": "显示相机视图",
+    "scope": {
+      "label": "取景",
+      "auto": "自动",
+      "active": "当前",
+      "group": "分组",
+      "all": "全部",
+      "autoHint": "所有可见内容；若场景跨越远距离场地，则取当前场地",
+      "activeHint": "仅当前模型",
+      "groupHint": "当前模型所在分组的所有模型",
+      "allHint": "所有可见模型和点云"
+    },
+    "narrowed": "场景跨越远距离场地——正在取景当前场地。",
+    "showAll": "显示全部",
+    "empty": "没有可取景的可见内容。请先显示模型或点云。"
   },
   "overlays": {
     "validationHighlights": "验证高亮",
@@ -143,10 +157,72 @@
       "collapse": "折叠分组",
       "expand": "展开分组",
       "moveTogether": "一起移动",
-      "moveTogetherHint": "整体移动该建筑的所有文件，并保持它们之间的对齐",
-      "scopeModel": "此文件",
-      "scopeGroup": "全部 {{count}} 个文件",
-      "positionOnly": "移动整组会让每个文件位移相同距离。旋转和缩放仍按文件进行——让每个文件绕自身原点旋转会把它们打散。"
+      "moveTogetherHint": "整体移动该建筑的所有文件，并保持它们之间的对齐"
+    },
+    "tree": {
+      "myGroups": "我的分组",
+      "detectedGroups": "自动识别",
+      "newGroupEllipsis": "新建分组…",
+      "backToAuto": "恢复自动",
+      "noGroup": "不分组",
+      "moveTo": "移至分组",
+      "hide": "隐藏",
+      "show": "显示",
+      "hideGroup": "隐藏分组",
+      "showGroup": "显示分组",
+      "points": "{{formatted}} 点",
+      "rename": "重命名",
+      "renameHint": "双击重命名",
+      "counts": "{{models}} 个 IFC · {{clouds}} 个点云",
+      "frameGroup": "取景分组",
+      "emptyGroup": "空分组：将模型或点云拖到这里",
+      "looseClouds": "未分配的点云",
+      "dropToCreate": "松开以创建分组",
+      "newGroup": "新建分组",
+      "defaultName": "分组 {{n}}",
+      "groupMenu": "分组选项",
+      "pin": "固定为我的分组",
+      "moveUp": "上移",
+      "moveDown": "下移",
+      "delete": "删除分组",
+      "basis": {
+        "user": "手动",
+        "projectGuid": "同一项目 (GUID)",
+        "projectName": "同一项目和场地",
+        "proximity": "地理邻近",
+        "single": "单个文件"
+      }
+    },
+    "scope": {
+      "label": "范围",
+      "model": "文件",
+      "group": "分组 ({{count}})",
+      "scene": "场景 ({{count}})",
+      "modelHint": "仅编辑当前文件",
+      "groupHint": "将当前文件所在分组（IFC 和点云）作为整体移动",
+      "sceneHint": "将所有已加载内容（IFC 和点云）作为整体移动"
+    },
+    "rigid": {
+      "noGeometry": "暂无可移动的几何体。",
+      "pivot": "整体位置",
+      "pivotHint": "平面中心、最低标高。修改后整体移动，不破坏相互对齐。",
+      "turn": "旋转整体",
+      "degrees": "度",
+      "apply": "旋转",
+      "geoTitle": "地理参考（地图锚点）",
+      "heading": "方位 {{deg}}°",
+      "geoHint": "地图锚定在此整体上：在此移动不会改变其经纬度。要校准经纬度和方位，请使用位置编辑器。",
+      "calibrate": "在地图上校准经纬度",
+      "resetHint": "将所有成员恢复到原始位置"
+    },
+    "history": {
+      "undo": "撤销",
+      "redo": "重做",
+      "temporary": "临时移动查看",
+      "temporaryHint": "自由移动，之后恢复原状",
+      "temporaryOn": "临时更改：恢复时将被撤销。",
+      "restore": "恢复",
+      "keep": "保留"
     }
   },
   "transform": {

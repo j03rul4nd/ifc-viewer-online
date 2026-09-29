@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "ビュー",
     "hide": "カメラコントロールを非表示",
-    "show": "カメラビューを表示"
+    "show": "カメラビューを表示",
+    "scope": {
+      "label": "フレーミング",
+      "auto": "自動",
+      "active": "アクティブ",
+      "group": "グループ",
+      "all": "すべて",
+      "autoHint": "表示中のすべて。離れた敷地にまたがる場合はアクティブな敷地",
+      "activeHint": "アクティブなモデルのみ",
+      "groupHint": "アクティブなモデルのグループ内の全モデル",
+      "allHint": "表示中の全モデルと点群"
+    },
+    "narrowed": "離れた敷地にまたがるため、アクティブな敷地を表示しています。",
+    "showAll": "すべて表示",
+    "empty": "表示できるものがありません。モデルまたは点群を表示してください。"
   },
   "overlays": {
     "validationHighlights": "検証ハイライト",
@@ -143,10 +157,72 @@
       "collapse": "グループを折りたたむ",
       "expand": "グループを展開",
       "moveTogether": "まとめて移動",
-      "moveTogetherHint": "この建物のファイルを位置関係を保ったまま一括で移動します",
-      "scopeModel": "このファイル",
-      "scopeGroup": "{{count}} 件すべて",
-      "positionOnly": "セットを移動すると全ファイルが同じだけ動きます。回転と拡大縮小はファイル単位のままです — 各ファイルを自身の原点で回すとばらばらになります。"
+      "moveTogetherHint": "この建物のファイルを位置関係を保ったまま一括で移動します"
+    },
+    "tree": {
+      "myGroups": "マイグループ",
+      "detectedGroups": "自動検出",
+      "newGroupEllipsis": "新しいグループ…",
+      "backToAuto": "自動に戻す",
+      "noGroup": "グループなし",
+      "moveTo": "グループへ移動",
+      "hide": "非表示",
+      "show": "表示",
+      "hideGroup": "グループを非表示",
+      "showGroup": "グループを表示",
+      "points": "{{formatted}} 点",
+      "rename": "名前を変更",
+      "renameHint": "ダブルクリックで名前を変更",
+      "counts": "IFC {{models}} · 点群 {{clouds}}",
+      "frameGroup": "グループにフィット",
+      "emptyGroup": "空のグループ：モデルや点群をここにドラッグ",
+      "looseClouds": "未割り当ての点群",
+      "dropToCreate": "ドロップしてグループを作成",
+      "newGroup": "新しいグループ",
+      "defaultName": "グループ {{n}}",
+      "groupMenu": "グループのオプション",
+      "pin": "自分のグループとして固定",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "delete": "グループを削除",
+      "basis": {
+        "user": "手動",
+        "projectGuid": "同一プロジェクト (GUID)",
+        "projectName": "同一プロジェクトと敷地",
+        "proximity": "地理的な近さ",
+        "single": "単一ファイル"
+      }
+    },
+    "scope": {
+      "label": "範囲",
+      "model": "ファイル",
+      "group": "グループ ({{count}})",
+      "scene": "シーン ({{count}})",
+      "modelHint": "アクティブなファイルのみ編集",
+      "groupHint": "アクティブなファイルのグループ（IFCと点群）を一体で移動",
+      "sceneHint": "読み込んだすべて（IFCと点群）を一体で移動"
+    },
+    "rigid": {
+      "noGeometry": "移動できるジオメトリがまだありません。",
+      "pivot": "セットの位置",
+      "pivotHint": "平面の中心・最下レベル。変更するとセット全体が位置関係を保ったまま移動します。",
+      "turn": "セットを回転",
+      "degrees": "度",
+      "apply": "回転",
+      "geoTitle": "ジオリファレンス（地図のアンカー）",
+      "heading": "方位 {{deg}}°",
+      "geoHint": "地図はこのセットに固定されています。ここで動かしても緯度経度は変わりません。緯度経度と方位の調整は位置エディタを使用してください。",
+      "calibrate": "地図で緯度経度を調整",
+      "resetHint": "すべてのメンバーを元の位置に戻す"
+    },
+    "history": {
+      "undo": "元に戻す",
+      "redo": "やり直す",
+      "temporary": "一時的に動かして見る",
+      "temporaryHint": "自由に動かして、あとで元の状態に戻す",
+      "temporaryOn": "一時的な変更です。復元すると取り消されます。",
+      "restore": "復元",
+      "keep": "保持"
     }
   },
   "transform": {

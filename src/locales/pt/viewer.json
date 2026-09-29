@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Vistas",
     "hide": "Ocultar controles de câmera",
-    "show": "Exibir vistas de câmera"
+    "show": "Exibir vistas de câmera",
+    "scope": {
+      "label": "Enquadrar",
+      "auto": "Auto",
+      "active": "Ativo",
+      "group": "Grupo",
+      "all": "Tudo",
+      "autoHint": "Tudo o que está visível; o local ativo se a cena abrange locais distantes",
+      "activeHint": "Apenas o modelo ativo",
+      "groupHint": "Todos os modelos do grupo do modelo ativo",
+      "allHint": "Todos os modelos e nuvens de pontos visíveis"
+    },
+    "narrowed": "A cena abrange locais distantes: a enquadrar o ativo.",
+    "showAll": "Ver tudo",
+    "empty": "Nada visível para enquadrar. Mostre um modelo ou uma nuvem de pontos."
   },
   "overlays": {
     "validationHighlights": "Destaques de validação",
@@ -143,10 +157,72 @@
       "collapse": "Recolher grupo",
       "expand": "Expandir grupo",
       "moveTogether": "Mover juntos",
-      "moveTogetherHint": "Move todos os ficheiros deste edifício em conjunto, mantendo o alinhamento",
-      "scopeModel": "Este ficheiro",
-      "scopeGroup": "Os {{count}} ficheiros",
-      "positionOnly": "Mover o conjunto desloca todos os ficheiros por igual. Rotação e escala continuam por ficheiro: rodar cada um sobre a sua origem dispersá-los-ia."
+      "moveTogetherHint": "Move todos os ficheiros deste edifício em conjunto, mantendo o alinhamento"
+    },
+    "tree": {
+      "myGroups": "Os meus grupos",
+      "detectedGroups": "Detetados",
+      "newGroupEllipsis": "Novo grupo…",
+      "backToAuto": "Voltar ao automático",
+      "noGroup": "Sem grupo",
+      "moveTo": "Mover para grupo",
+      "hide": "Ocultar",
+      "show": "Mostrar",
+      "hideGroup": "Ocultar grupo",
+      "showGroup": "Mostrar grupo",
+      "points": "{{formatted}} pts",
+      "rename": "Renomear",
+      "renameHint": "Duplo clique para renomear",
+      "counts": "{{models}} IFC · {{clouds}} nuvens",
+      "frameGroup": "Enquadrar grupo",
+      "emptyGroup": "Grupo vazio: arraste para aqui modelos ou nuvens",
+      "looseClouds": "Nuvens de pontos sem grupo",
+      "dropToCreate": "Largue para criar um grupo",
+      "newGroup": "Novo grupo",
+      "defaultName": "Grupo {{n}}",
+      "groupMenu": "Opções do grupo",
+      "pin": "Fixar como grupo próprio",
+      "moveUp": "Subir",
+      "moveDown": "Descer",
+      "delete": "Eliminar grupo",
+      "basis": {
+        "user": "Manual",
+        "projectGuid": "Mesmo projeto (GUID)",
+        "projectName": "Mesmo projeto e local",
+        "proximity": "Proximidade geográfica",
+        "single": "Ficheiro único"
+      }
+    },
+    "scope": {
+      "label": "Âmbito",
+      "model": "Ficheiro",
+      "group": "Grupo ({{count}})",
+      "scene": "Cena ({{count}})",
+      "modelHint": "Editar apenas o ficheiro ativo",
+      "groupHint": "Mover o grupo do ficheiro ativo (IFC e nuvens) como um só bloco",
+      "sceneHint": "Mover tudo o que está carregado (IFC e nuvens) como um só bloco"
+    },
+    "rigid": {
+      "noGeometry": "Ainda não há geometria para mover.",
+      "pivot": "Posição do conjunto",
+      "pivotHint": "Centro em planta na cota mais baixa. Alterá-la desloca todo o conjunto sem quebrar o alinhamento.",
+      "turn": "Rodar o conjunto",
+      "degrees": "Graus",
+      "apply": "Rodar",
+      "geoTitle": "Georreferência (âncora do mapa)",
+      "heading": "rumo {{deg}}°",
+      "geoHint": "O mapa está ancorado a este conjunto: movê-lo aqui não altera a lat/lon. Para calibrar lat/lon e rumo use o editor de localização.",
+      "calibrate": "Calibrar lat/lon no mapa",
+      "resetHint": "Devolver todos os membros à posição original"
+    },
+    "history": {
+      "undo": "Anular",
+      "redo": "Refazer",
+      "temporary": "Mover para ver",
+      "temporaryHint": "Mova livremente e depois volte ao estado anterior",
+      "temporaryOn": "Alterações temporárias: serão desfeitas ao restaurar.",
+      "restore": "Restaurar",
+      "keep": "Manter"
     }
   },
   "transform": {

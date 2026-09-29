@@ -76,6 +76,7 @@ import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
+import { useTransformHistoryStore } from './stores/transformHistoryStore'
 // pc-types is deliberately dependency-free — importing it here costs the
 // entry bundle nothing, which is why clampOffset and NO_OFFSET live there.
 import { NO_OFFSET } from './lib/pointcloud/pc-types'
@@ -111,6 +112,7 @@ import {
 import { ACTIVE_STATUSES, type JobOrigin, type JobOutcome, type LoadSource } from './lib/loading/types'
 import { fetchFileFromUrl } from './lib/fetch-ifc-url'
 import { useLoadingStore, jobForModel } from './stores/loadingStore'
+import { useSceneGroupStore } from './stores/sceneGroupStore'
 import { LoadingCenter, LoadingIndicator, FirstLoadCard } from './components/loading'
 import { publishAggregateResult } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
@@ -1037,6 +1039,7 @@ export default function App() {
       viewerApiRef.current?.frameActiveModel()
     },
 
+    createGroup: (name, fileKeys) => useSceneGroupStore.getState().createGroup(name, fileKeys),
   }
 
   const {
@@ -1579,6 +1582,7 @@ export default function App() {
       void viewerApiRef.current?.getPointClouds().then((system) => system.dispose())
     }
     usePointCloudStore.getState().clearClouds()
+    useTransformHistoryStore.getState().clearHistory()
     // Imported meshes too: the viewer's mesh system is disposed with it, and
     // rows left behind listed "ready" models no scene held.
     useMeshStore.getState().clearMeshes()
@@ -2839,7 +2843,7 @@ export default function App() {
 
                   {/* Camera preset overlay (yields to the tour bar while playing —
                       it shares the bottom edge and presets fight the tour narrative) */}
-                  {sceneModels.length > 0 && effectiveChrome.showCameraControls && tourMode !== 'playing' && (
+                  {(sceneModels.length > 0 || pointCloudCount > 0) && effectiveChrome.showCameraControls && tourMode !== 'playing' && (
                     <CameraControls
                       viewerApiRef={viewerApiRef}
                       visible={cameraControlsVisible}
@@ -2987,7 +2991,6 @@ export default function App() {
                           )
                         }
                       }}
-                      onSetTransform={setSceneModelTransform}
                       onTransformMode={() => {}}
                       onRemove={(id) => { void handleRemoveModel(id) }}
                       onValidate={(id) => { void validation.run(undefined, id, true) }}

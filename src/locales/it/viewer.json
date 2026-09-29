@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Viste",
     "hide": "Nascondi controlli fotocamera",
-    "show": "Mostra viste fotocamera"
+    "show": "Mostra viste fotocamera",
+    "scope": {
+      "label": "Inquadra",
+      "auto": "Auto",
+      "active": "Attivo",
+      "group": "Gruppo",
+      "all": "Tutto",
+      "autoHint": "Tutto il visibile; il sito attivo se la scena copre siti lontani",
+      "activeHint": "Solo il modello attivo",
+      "groupHint": "Tutti i modelli del gruppo del modello attivo",
+      "allHint": "Tutti i modelli e le nuvole di punti visibili"
+    },
+    "narrowed": "La scena copre siti lontani: inquadro quello attivo.",
+    "showAll": "Mostra tutto",
+    "empty": "Niente di visibile da inquadrare. Mostra un modello o una nuvola di punti."
   },
   "overlays": {
     "validationHighlights": "Evidenziazioni di validazione",
@@ -143,10 +157,72 @@
       "collapse": "Comprimi gruppo",
       "expand": "Espandi gruppo",
       "moveTogether": "Sposta insieme",
-      "moveTogetherHint": "Sposta tutti i file di questo edificio insieme, mantenendone l'allineamento",
-      "scopeModel": "Questo file",
-      "scopeGroup": "Tutti i {{count}} file",
-      "positionOnly": "Spostare l'insieme sposta ogni file della stessa quantità. Rotazione e scala restano per file: ruotarli ciascuno sul proprio origine li disperderebbe."
+      "moveTogetherHint": "Sposta tutti i file di questo edificio insieme, mantenendone l'allineamento"
+    },
+    "tree": {
+      "myGroups": "I miei gruppi",
+      "detectedGroups": "Rilevati",
+      "newGroupEllipsis": "Nuovo gruppo…",
+      "backToAuto": "Torna ad automatico",
+      "noGroup": "Nessun gruppo",
+      "moveTo": "Sposta nel gruppo",
+      "hide": "Nascondi",
+      "show": "Mostra",
+      "hideGroup": "Nascondi gruppo",
+      "showGroup": "Mostra gruppo",
+      "points": "{{formatted}} pti",
+      "rename": "Rinomina",
+      "renameHint": "Doppio clic per rinominare",
+      "counts": "{{models}} IFC · {{clouds}} nuvole",
+      "frameGroup": "Inquadra gruppo",
+      "emptyGroup": "Gruppo vuoto: trascina qui modelli o nuvole",
+      "looseClouds": "Nuvole di punti non assegnate",
+      "dropToCreate": "Rilascia per creare un gruppo",
+      "newGroup": "Nuovo gruppo",
+      "defaultName": "Gruppo {{n}}",
+      "groupMenu": "Opzioni del gruppo",
+      "pin": "Fissa come gruppo mio",
+      "moveUp": "Sposta su",
+      "moveDown": "Sposta giù",
+      "delete": "Elimina gruppo",
+      "basis": {
+        "user": "Manuale",
+        "projectGuid": "Stesso progetto (GUID)",
+        "projectName": "Stesso progetto e sito",
+        "proximity": "Vicinanza geografica",
+        "single": "File singolo"
+      }
+    },
+    "scope": {
+      "label": "Ambito",
+      "model": "File",
+      "group": "Gruppo ({{count}})",
+      "scene": "Scena ({{count}})",
+      "modelHint": "Modifica solo il file attivo",
+      "groupHint": "Sposta il gruppo del file attivo (IFC e nuvole) come un unico blocco",
+      "sceneHint": "Sposta tutto ciò che è caricato (IFC e nuvole) come un unico blocco"
+    },
+    "rigid": {
+      "noGeometry": "Ancora nessuna geometria da spostare.",
+      "pivot": "Posizione dell'insieme",
+      "pivotHint": "Centro in pianta alla quota più bassa. Cambiarla sposta tutto l'insieme senza romperne l'allineamento.",
+      "turn": "Ruota l'insieme",
+      "degrees": "Gradi",
+      "apply": "Ruota",
+      "geoTitle": "Georeferenza (ancora della mappa)",
+      "heading": "rotta {{deg}}°",
+      "geoHint": "La mappa è ancorata a questo insieme: spostarlo qui non cambia la sua lat/lon. Per calibrare lat/lon e rotta usa l'editor di posizione.",
+      "calibrate": "Calibra lat/lon sulla mappa",
+      "resetHint": "Riporta ogni membro alla posizione originale"
+    },
+    "history": {
+      "undo": "Annulla",
+      "redo": "Ripeti",
+      "temporary": "Sposta per guardare",
+      "temporaryHint": "Sposta liberamente e poi torna com'era",
+      "temporaryOn": "Modifiche temporanee: verranno annullate al ripristino.",
+      "restore": "Ripristina",
+      "keep": "Mantieni"
     }
   },
   "transform": {
