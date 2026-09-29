@@ -23,7 +23,7 @@ def add(cls,name,z,material,parts,pearl=None):
  api('geometry.edit_object_placement',product=e)
  key=(cls,material)
  if key not in types:
-  types[key]=api('root.create_entity',ifc_class=cls+'Type',name=f'Reference {cls[3:]} â€” {material}',predefined_type='USERDEFINED')
+  types[key]=api('root.create_entity',ifc_class=cls+'Type',name=f'Reference {cls[3:]} — {material}',predefined_type='USERDEFINED')
   types[key].ElementType='Approximate reference component'
  api('type.assign_type',related_objects=[e],relating_type=types[key])
  verts=[];faces=[]
