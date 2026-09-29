@@ -14,6 +14,13 @@
 export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client'
 export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
 
+/**
+ * What a view frames when several models or scans are loaded: `auto` (default)
+ * = everything visible, narrowed to the active group when the scene spans
+ * distant sites; `active` = the active model; `group` = its group; `all` = all.
+ */
+export type CameraScope = 'auto' | 'active' | 'group' | 'all'
+
 export interface IfcViewerOptions {
   /** App base URL. Defaults to the parent of this script's URL. */
   baseUrl?: string
@@ -587,8 +594,10 @@ export class IfcViewer {
   /** Reset the camera to its default position. */
   reset(): void { this.send({ type: 'ifcviewer:reset' }) }
 
-  /** Fly to a named camera view (iso/top/front/right/left/back/bottom). */
-  setView(view: CameraView): void { this.send({ type: 'ifcviewer:view', preset: view }) }
+  /** Fly to a named camera view (iso/top/front/right/left/back/bottom), optionally framing a scope. */
+  setView(view: CameraView, scope?: CameraScope): void {
+    this.send({ type: 'ifcviewer:view', preset: view, ...(scope ? { scope } : {}) })
+  }
 
   /** Change the UI language at runtime (no-ops for unsupported codes). */
   setLanguage(lang: string): void { this.send({ type: 'ifcviewer:set-language', lang }) }

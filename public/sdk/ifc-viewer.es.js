@@ -154,9 +154,9 @@ const l = class l {
   reset() {
     this.send({ type: "ifcviewer:reset" });
   }
-  /** Fly to a named camera view (iso/top/front/right/left/back/bottom). */
-  setView(t) {
-    this.send({ type: "ifcviewer:view", preset: t });
+  /** Fly to a named camera view (iso/top/front/right/left/back/bottom), optionally framing a scope. */
+  setView(t, e) {
+    this.send({ type: "ifcviewer:view", preset: t, ...e ? { scope: e } : {} });
   }
   /** Change the UI language at runtime (no-ops for unsupported codes). */
   setLanguage(t) {

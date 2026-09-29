@@ -55,7 +55,10 @@ export type ExplodeLayer = Array<{ modelId: string; ids: number[] }>
 
 export interface CameraPresetOptions {
   scope?: FramingScope
-  /** Group id per model/cloud id (from useModelGroups). Without it every model is its own group. */
+  /**
+   * Group id per model/cloud id (from useModelGroups). Omitted = the map last
+   * handed to `setFramingGroups`, so SDK and embed calls frame groups too.
+   */
   groupIdOf?: Record<string, string>
   /** Point clouds the user has visible. Omitted = every loaded cloud, as one item. */
   visibleCloudIds?: string[]
@@ -499,6 +502,8 @@ export interface ViewerAPI {
   setGizmo(opts: GizmoOptions | null): void
   /** Re-seat the handle after the pivot moved by other means (undo, typed edit). */
   setGizmoPosition(p: Vec3Like): void
+  /** Remember the scene's grouping for framing calls that do not pass one (SDK, embed). */
+  setFramingGroups(groupIdOf: Record<string, string>): void
   /** The world boxes a preset would choose from, with visibility applied. */
   getFramingItems(opts?: CameraPresetOptions): FramingItem[]
   /**
@@ -1226,6 +1231,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let geoPointerSuppressed = false
   // Move/turn handle — created on first use (lib/scene-gizmo).
   let sceneGizmo: SceneGizmo | null = null
+  /** Grouping pushed by the app; the default for framing calls without one. */
+  let framingGroupIdOf: Record<string, string> = {}
   /** The press started on a gizmo axis: its release is a drag end, never a pick. */
   let pressOnGizmo = false
   let satelliteResolver: SatelliteResolver | null = null
@@ -3277,7 +3284,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         items.push({
           id: mid,
           kind: 'model',
-          groupId: opts?.groupIdOf?.[mid] ?? null,
+          groupId: (opts?.groupIdOf ?? framingGroupIdOf)[mid] ?? null,
           visible: !modelHidden.has(mid) && model.object.visible,
           box: { min: world.min.clone(), max: world.max.clone() },
         })
@@ -3287,7 +3294,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         if (ids) {
           for (const id of ids) {
             const b = pointCloudInstance.getBounds(id)
-            if (b) items.push({ id, kind: 'cloud', groupId: opts?.groupIdOf?.[id] ?? null, visible: true, box: { min: b.min, max: b.max } })
+            if (b) items.push({ id, kind: 'cloud', groupId: (opts?.groupIdOf ?? framingGroupIdOf)[id] ?? null, visible: true, box: { min: b.min, max: b.max } })
           }
         } else {
           const b = pointCloudInstance.getBounds()
@@ -3313,6 +3320,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       )
       void world.camera.controls.fitToBox(box, true)
       return true
+    },
+
+    setFramingGroups(groupIdOf: Record<string, string>) {
+      framingGroupIdOf = groupIdOf
     },
 
     setGizmo(opts: GizmoOptions | null) {

@@ -76,6 +76,7 @@ import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
+import { useModelGroups } from './hooks/useModelGroups'
 import { useTransformHistoryStore } from './stores/transformHistoryStore'
 // pc-types is deliberately dependency-free — importing it here costs the
 // entry bundle nothing, which is why clampOffset and NO_OFFSET live there.
@@ -538,6 +539,10 @@ export default function App() {
   }, [accent])
 
   const viewerApiRef = useRef<ViewerAPI | null>(null)
+  // The viewer frames groups for calls that carry none (SDK, embed, other
+  // panels) — it needs the same grouping the Scene panel shows.
+  const { groupIdOf: sceneGroupIdOf } = useModelGroups()
+  useEffect(() => { viewerApiRef.current?.setFramingGroups(sceneGroupIdOf) }, [sceneGroupIdOf])
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
 
@@ -1839,7 +1844,10 @@ export default function App() {
         case 'ifcviewer:view': {
           const preset = typeof msg.preset === 'string' ? msg.preset : ''
           if (CAMERA_PRESETS.includes(preset as CameraPreset)) {
-            viewerApiRef.current?.setCameraPreset(preset as CameraPreset)
+            const scope = typeof msg.scope === 'string' && ['auto', 'active', 'group', 'all'].includes(msg.scope)
+              ? msg.scope as 'auto' | 'active' | 'group' | 'all'
+              : undefined
+            viewerApiRef.current?.setCameraPreset(preset as CameraPreset, scope ? { scope } : undefined)
           }
           break
         }
