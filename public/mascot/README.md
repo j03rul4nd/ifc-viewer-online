@@ -6,8 +6,8 @@ asistente de ayuda. Todo se genera de forma procedural desde
 
 | Archivo | Qué es |
 |---|---|
-| `bimo.blend` | Escena editable: malla, esqueleto, shape keys, 11 acciones de cuerpo + 11 acciones de cara (`face_*`) |
-| `bimo.glb` | Export glTF con skin, morph targets y 11 clips de animación |
+| `bimo.blend` | Escena editable: malla, esqueleto, shape keys, 27 acciones de cuerpo + acciones de cara (`face_*`) |
+| `bimo.glb` | Export glTF con skin, morph targets y 27 clips de animación |
 | `mascot.json` | Emociones, nombres de morphs y pesos faciales por emoción (lo usa el visor web) |
 | `index.html` | Visor Three.js: PBR físico + shaders GLSL, bloom, transiciones con muelles |
 | `renders/` | Stills en Cycles (fondo de la marca) listos para blog/redes |
@@ -25,16 +25,35 @@ npm run mascot:render   # + renders Cycles (SAMPLES=128 STILLS=happy,sad ...)
 El cuerpo es un único volumen blando: `head` controla los 2/3 superiores con pesos
 suaves, `body` el squash & stretch (conserva volumen).
 
-## Emociones
+## Animaciones (27)
 
-`idle, happy, excited, curious, thinking, sad, surprised, love, sleepy, wave, angry`
+| Grupo | Clips | Uso típico |
+|---|---|---|
+| Emociones (bucle) | `idle happy excited love laugh shy curious surprised sad angry sleepy` | blog, redes, reacciones |
+| Estados de producto (bucle) | `listening talking thinking loading confused error point_left point_right wave dance` | asistente, onboarding, tooltips, estados vacíos |
+| Momentos (una vez) | `hello celebrate nod shake wink jump` | entrada, éxito, confirmación, funnels |
 
-Cada una es un clip en bucle del cuerpo + un preset facial (shape keys
-`EyeBlink, EyeHappy, EyeSad, EyeAngry, EyeWide, EyeUp, MouthSmile, MouthFrown,
-MouthOpen, MouthO, CheekPuff`, más rubor, brillo y tinte de ojos). En web las
-transiciones mezclan los clips con `crossFadeTo` (0.55 s) y la cara con muelles
-ligeramente sub-amortiguados, más un "pop" de squash al cambiar, parpadeo
-aleatorio y mirada que sigue al cursor.
+Los "momentos" se reproducen una vez y vuelven solos al bucle anterior.
+
+## Expresiones (shape keys)
+
+`EyeBlink EyeHappy EyeSad EyeAngry EyeWide EyeUp EyeDown EyeSmall EyeHeart
+EyeWinkL EyeWinkR EyeLookL EyeLookR MouthSmile MouthFrown MouthOpen MouthO
+MouthCat (ω) MouthFlat CheekPuff`, más rubor, brillo y tinte de ojos por emoción
+(`mascot.json → face`). Los ojos llevan dos brillos que se ocultan al parpadear,
+guiñar o poner corazones.
+
+## API del visor
+
+```js
+bimo.play('celebrate')   // cualquier clip
+bimo.say(3000)           // habla (boca procedural) N ms y vuelve al estado anterior
+bimo.list()              // { loops, oneshots }
+bimo.state               // clip actual
+```
+
+El visor añade parpadeo aleatorio, ojos y cabeza que siguen al cursor, "pop"
+de squash al cambiar y transiciones con muelles.
 
 ## Paleta
 

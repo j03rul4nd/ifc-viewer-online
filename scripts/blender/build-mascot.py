@@ -203,7 +203,7 @@ def shape(key, fn, only, spark=None):
         kind = name.split(".")[0]
         if kind == "spark" and spark:
             fn_ = fn
-            fn = lambda p, s: spark(p)
+            fn = (lambda p, s: spark(p, s)) if spark.__code__.co_argcount == 2 else (lambda p, s: spark(p))
         elif kind not in only:
             continue
         side = -1 if name.endswith(".R") else 1
@@ -283,6 +283,47 @@ shape("MouthFrown", mouth_frown, {"mouth"})
 shape("MouthOpen", mouth_open, {"mouth"})
 shape("MouthO", mouth_o, {"mouth"})
 shape("CheekPuff", cheek_puff, {"cheek"})
+
+# ── extra expressions for product use ────────────────────────────────────────
+def eye_heart(p, s):
+    # polar remap of the ellipse onto the classic heart curve
+    u, w = p.x / EYE_W, p.z / EYE_H
+    r = min(1.0, math.hypot(u, w))
+    t = math.atan2(u, w)
+    hx = 16 * math.sin(t) ** 3 / 17
+    hz = (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) / 17
+    return Vector((r * hx * EYE_W * 1.35, p.y, r * hz * EYE_H * 0.9 + EYE_H * 0.12))
+
+def side_only(fn, want):
+    return lambda p, s: fn(p, s) if s == want else p
+
+def shift(dx, dz):
+    return lambda p, s=None: Vector((p.x + dx, p.y, p.z + dz))
+
+def eye_small(p, s):
+    return Vector((p.x * 0.45, p.y, p.z * 0.45 - 0.004))
+
+def eye_down(p, s):
+    return Vector((p.x, p.y, p.z * 0.85 - 0.02))
+
+def mouth_cat(p, s):
+    # ω: centre peak, two dips, corners up
+    u = max(-1.0, min(1.0, p.x / MOUTH_W))
+    return Vector((p.x * 1.45, p.y, p.z * 0.75 + 0.009 * math.cos(2 * math.pi * u) + 0.003))
+
+def mouth_flat(p, s):
+    return Vector((p.x * 0.9, p.y, p.z * 0.5))
+
+hide = lambda p: p * 0.0
+shape("EyeHeart", eye_heart, {"eye"}, spark=hide)
+shape("EyeWinkL", side_only(eye_happy, 1), {"eye"}, spark=lambda p, s: p * 0.0 if s == 1 else p)
+shape("EyeWinkR", side_only(eye_happy, -1), {"eye"}, spark=lambda p, s: p * 0.0 if s == -1 else p)
+shape("EyeLookL", lambda p, s: shift(-0.022, 0)(p), {"eye"}, spark=shift(-0.026, 0))
+shape("EyeLookR", lambda p, s: shift(0.022, 0)(p), {"eye"}, spark=shift(0.026, 0))
+shape("EyeDown", eye_down, {"eye"}, spark=shift(0, -0.022))
+shape("EyeSmall", eye_small, {"eye"}, spark=lambda p: p * 0.4)
+shape("MouthCat", mouth_cat, {"mouth"})
+shape("MouthFlat", mouth_flat, {"mouth"})
 SHAPE_KEYS = [k.name for k in face.data.shape_keys.key_blocks[1:]]
 
 # Arms: rounded capsules
@@ -450,7 +491,11 @@ def squash(k):
 
 BONES = [b.name for b in arm_data.bones]
 
-def make_action(name, length, keys, loop=True):
+ONESHOTS = []
+
+def make_action(name, length, keys, loop=True, linear=()):
+    if not loop:
+        ONESHOTS.append(name)
     act = bpy.data.actions.new(name)
     act.use_fake_user = True
     rig.animation_data_create()
@@ -473,6 +518,8 @@ def make_action(name, length, keys, loop=True):
         for kp in fc.keyframe_points:
             kp.interpolation = "BEZIER"
             kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
+            if fc.group and fc.group.name in linear:
+                kp.interpolation = "LINEAR"
         if loop:
             fc.modifiers.new("CYCLES")
     act.frame_range = (0, length)
@@ -588,20 +635,166 @@ ACTIONS["angry"] = make_action("angry", 30, [
     (15, P(B(s=squash(0.92), r=(7, 0, 0)), H(7, 0, 0), A((-6, 0, 0), (-8, 0, 0)), arm("L", -8, 10), arm("R", -8, 10))),
 ])
 
+# ── product actions ──────────────────────────────────────────────────────────
+# Loops for UI states (listening, talking, loading, pointing…) and one-shots
+# for moments (hello, celebrate, nod…). One-shots return to the previous loop
+# in the web player.
+
+ACTIONS["listening"] = make_action("listening", 80, [
+    (0,  P(B(r=(-5, 0, 0)), H(-4, 0, 8), A((-6, 0, -4), (-8, 0, -6)), arm("L", 6), arm("R", 6))),
+    (20, P(B(r=(-6, 0, 0)), H(2, 0, 9), A((-2, 0, -6), (-4, 0, -8)), arm("L", 8), arm("R", 8))),
+    (40, P(B(r=(-5, 0, 0), s=squash(1.015)), H(-4, 0, 7), A((-6, 0, -3), (-8, 0, -5)), arm("L", 6), arm("R", 6))),
+    (60, P(B(r=(-6, 0, 0)), H(2, 0, 9), A((-2, 0, -5), (-4, 0, -7)), arm("L", 8), arm("R", 8))),
+])
+
+ACTIONS["talking"] = make_action("talking", 48, [
+    (0,  P(B(s=squash(1.0)), H(0, -4, 3), A((4, 0, 0), (6, 0, 0)), arm("L", 10, 10), arm("R", 20, 25))),
+    (12, P(B(s=squash(1.03)), H(-4, 2, -2), A((-4, 0, 3), (-6, 0, 4)), arm("L", 14, 18), arm("R", 12, 10))),
+    (24, P(B(s=squash(0.99)), H(2, 5, -3), A((4, 0, -2), (6, 0, -4)), arm("L", 24, 26), arm("R", 10, 12))),
+    (36, P(B(s=squash(1.02)), H(-3, -2, 2), A((-3, 0, 0), (-5, 0, 0)), arm("L", 12, 12), arm("R", 16, 20))),
+])
+
+# antenna.2 spins linearly: the cube becomes a little loading indicator
+ACTIONS["loading"] = make_action("loading", 40, [
+    (0,  P(B(s=squash(1.0)), H(-6, 0, 0), A((0, 0, 0), (0, 0, 0)), arm("L", 4), arm("R", 4))),
+    (10, P(B(s=squash(1.02)), H(-6, 0, 2), A((0, 0, 0), (0, 90, 0)), arm("L", 6), arm("R", 6))),
+    (20, P(B(s=squash(1.0)), H(-6, 0, 0), A((0, 0, 0), (0, 180, 0)), arm("L", 4), arm("R", 4))),
+    (30, P(B(s=squash(1.02)), H(-6, 0, -2), A((0, 0, 0), (0, 270, 0)), arm("L", 6), arm("R", 6))),
+    (40, P(B(s=squash(1.0)), H(-6, 0, 0), A((0, 0, 0), (0, 360, 0)), arm("L", 4), arm("R", 4))),
+], linear=("antenna.2",))
+
+ACTIONS["confused"] = make_action("confused", 90, [
+    (0,  P(H(0, 6, 14), A((0, 0, 20), (0, 0, 30)), arm("L", 45, 10, 30), arm("R", 45, 10, 30))),
+    (40, P(H(0, 6, 16), A((0, 0, 24), (0, 0, 34)), arm("L", 50, 10, 30), arm("R", 50, 10, 30))),
+    (48, P(H(0, -6, -14), A((0, 0, -20), (0, 0, -30)), arm("L", 45, 10, 30), arm("R", 45, 10, 30))),
+    (82, P(H(0, -6, -16), A((0, 0, -24), (0, 0, -34)), arm("L", 50, 10, 30), arm("R", 50, 10, 30))),
+])
+
+ACTIONS["error"] = make_action("error", 60, [
+    (0,  P(B(s=squash(0.97)), H(4, 0, 0), A((10, 0, 0), (14, 0, 0)), arm("L", 55, 25, 30), arm("R", 55, 25, 30))),
+    (4,  P(B(s=squash(0.97)), H(4, 8, 0), A((10, 0, 6), (14, 0, 8)), arm("L", 55, 25, 30), arm("R", 55, 25, 30))),
+    (8,  P(B(s=squash(0.97)), H(4, -8, 0), A((10, 0, -6), (14, 0, -8)), arm("L", 55, 25, 30), arm("R", 55, 25, 30))),
+    (12, P(B(s=squash(0.97)), H(4, 5, 0), A((10, 0, 4), (14, 0, 6)), arm("L", 55, 25, 30), arm("R", 55, 25, 30))),
+    (16, P(B(s=squash(0.96)), H(5, 0, 4), A((12, 0, 0), (16, 0, 0)), arm("L", 50, 22, 30), arm("R", 50, 22, 30))),
+    (40, P(B(s=squash(0.96)), H(6, 0, 6), A((14, 0, 2), (18, 0, 2)), arm("L", 48, 22, 30), arm("R", 48, 22, 30))),
+])
+
+def pointing(side):
+    # side = which way on screen; the character's left arm points to screen right
+    a, o, t = ("L", "R", 1) if side == "right" else ("R", "L", -1)
+    return make_action("point_" + side, 60, [
+        (0,  P(B(r=(0, 6 * t, -4 * t)), H(0, 16 * t, -6 * t), A((0, 0, 8 * t), (0, 0, 12 * t)), arm(a, 85, 25), arm(o, 8))),
+        (15, P(B(r=(0, 6 * t, -5 * t), s=squash(1.02)), H(-2, 18 * t, -7 * t), A((0, 0, 4 * t), (0, 0, 6 * t)), arm(a, 95, 22), arm(o, 10))),
+        (30, P(B(r=(0, 6 * t, -4 * t)), H(0, 16 * t, -6 * t), A((0, 0, 10 * t), (0, 0, 14 * t)), arm(a, 85, 25), arm(o, 8))),
+        (45, P(B(r=(0, 6 * t, -5 * t), s=squash(1.02)), H(-2, 18 * t, -7 * t), A((0, 0, 4 * t), (0, 0, 6 * t)), arm(a, 95, 22), arm(o, 10))),
+    ])
+ACTIONS["point_right"] = pointing("right")
+ACTIONS["point_left"] = pointing("left")
+
+ACTIONS["shy"] = make_action("shy", 90, [
+    (0,  P(B(r=(4, 0, 4), s=squash(0.97)), H(10, -10, 10), A((10, 0, 10), (14, 0, 14)), arm("L", 30, 60, 30), arm("R", 30, 60, 30))),
+    (45, P(B(r=(4, 0, 6), s=squash(0.96)), H(12, -12, 12), A((12, 0, 14), (16, 0, 18)), arm("L", 34, 64, 30), arm("R", 34, 64, 30))),
+])
+
+ACTIONS["dance"] = make_action("dance", 40, [
+    (0,  P(R(0), B(r=(0, 0, 10), s=squash(0.92)), H(0, 8, 10), A((0, 0, 18), (0, 0, 26)), arm("L", 110), arm("R", 20)), ),
+    (10, P(R(0.05), B(r=(0, 0, 0), s=squash(1.06)), H(-4, 0, 0), A((-6, 0, 0), (-10, 0, 0)), arm("L", 60), arm("R", 60))),
+    (20, P(R(0), B(r=(0, 0, -10), s=squash(0.92)), H(0, -8, -10), A((0, 0, -18), (0, 0, -26)), arm("L", 20), arm("R", 110))),
+    (30, P(R(0.05), B(r=(0, 0, 0), s=squash(1.06)), H(-4, 0, 0), A((-6, 0, 0), (-10, 0, 0)), arm("L", 60), arm("R", 60))),
+])
+
+ACTIONS["laugh"] = make_action("laugh", 20, [
+    (0,  P(B(r=(-6, 0, 0), s=squash(0.95)), H(-10, 0, 0), A((-10, 0, 0), (-14, 0, 0)), arm("L", 20, 30), arm("R", 20, 30))),
+    (5,  P(B(r=(-8, 0, 0), s=squash(1.03)), H(-14, 0, 2), A((6, 0, 0), (10, 0, 0)), arm("L", 26, 34), arm("R", 26, 34))),
+    (10, P(B(r=(-6, 0, 0), s=squash(0.95)), H(-10, 0, 0), A((-10, 0, 0), (-14, 0, 0)), arm("L", 20, 30), arm("R", 20, 30))),
+    (15, P(B(r=(-8, 0, 0), s=squash(1.03)), H(-14, 0, -2), A((6, 0, 0), (10, 0, 0)), arm("L", 26, 34), arm("R", 26, 34))),
+])
+
+# ── one-shots ────────────────────────────────────────────────────────────────
+Z = lambda k: (k, k, k)
+ACTIONS["hello"] = make_action("hello", 60, [
+    (0,  P({"root": {"s": Z(0.01)}}, B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 0), arm("R", 0))),
+    (8,  P({"root": {"s": Z(1.18), "l": (0, 0.06, 0)}}, B(s=squash(1.12)), H(-6, 0, 0), A((-20, 0, 0), (-30, 0, 0)), arm("L", 80), arm("R", 80))),
+    (14, P({"root": {"s": Z(0.94)}}, B(s=squash(0.88)), H(4, 0, 0), A((16, 0, 0), (24, 0, 0)), arm("L", 30), arm("R", 30))),
+    (20, P({"root": {"s": Z(1.02)}}, B(s=squash(1.03)), H(0, 4, 6), A((-6, 0, 4), (-8, 0, 6)), arm("L", 140), arm("R", 4))),
+    (30, P({"root": {"s": Z(1.0)}}, B(s=squash(1.0)), H(0, 4, 8), A((0, 0, -4), (0, 0, -8)), arm("L", 150), arm("R", 4))),
+    (38, P({"root": {"s": Z(1.0)}}, B(s=squash(1.0)), H(0, 4, 6), A((0, 0, 6), (0, 0, 10)), arm("L", 125), arm("R", 4))),
+    (46, P({"root": {"s": Z(1.0)}}, B(s=squash(1.0)), H(0, 4, 8), A((0, 0, -4), (0, 0, -8)), arm("L", 150), arm("R", 4))),
+    (60, P({"root": {"s": Z(1.0)}}, B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 0), arm("R", 0))),
+], loop=False)
+
+ACTIONS["celebrate"] = make_action("celebrate", 54, [
+    (0,  P(R(0), {"root": {"r": (0, 0, 0)}}, B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 10), arm("R", 10))),
+    (8,  P(R(0), {"root": {"r": (0, 0, 0)}}, B(s=squash(0.8)), H(8, 0, 0), A((-16, 0, 0), (-24, 0, 0)), arm("L", -10), arm("R", -10))),
+    (18, P(R(0.38), {"root": {"r": (0, 200, 0)}}, B(s=squash(1.15)), H(-8, 0, 0), A((24, 0, 0), (34, 0, 0)), arm("L", 150), arm("R", 150))),
+    (28, P(R(0.02), {"root": {"r": (0, 360, 0)}}, B(s=squash(1.05)), H(-4, 0, 0), A((10, 0, 0), (14, 0, 0)), arm("L", 140), arm("R", 140))),
+    (32, P(R(0), {"root": {"r": (0, 360, 0)}}, B(s=squash(0.82)), H(8, 0, 0), A((-20, 0, 0), (-28, 0, 0)), arm("L", 70), arm("R", 70))),
+    (40, P(R(0.04), {"root": {"r": (0, 360, 0)}}, B(s=squash(1.06)), H(-4, 0, 0), A((12, 0, 0), (16, 0, 0)), arm("L", 130), arm("R", 130))),
+    (54, P(R(0), {"root": {"r": (0, 360, 0)}}, B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 20), arm("R", 20))),
+], loop=False)
+
+ACTIONS["nod"] = make_action("nod", 30, [
+    (0,  P(H(0, 0, 0), A())),
+    (7,  P(H(16, 0, 0), A((-14, 0, 0), (-20, 0, 0)))),
+    (13, P(H(-4, 0, 0), A((12, 0, 0), (16, 0, 0)))),
+    (20, P(H(12, 0, 0), A((-8, 0, 0), (-12, 0, 0)))),
+    (30, P(H(0, 0, 0), A())),
+], loop=False)
+
+ACTIONS["shake"] = make_action("shake", 36, [
+    (0,  P(H(0, 0, 0), A())),
+    (6,  P(H(2, 18, 0), A((0, 0, -12), (0, 0, -18)))),
+    (13, P(H(2, -18, 0), A((0, 0, 12), (0, 0, 18)))),
+    (20, P(H(2, 12, 0), A((0, 0, -8), (0, 0, -12)))),
+    (27, P(H(2, -8, 0), A((0, 0, 6), (0, 0, 8)))),
+    (36, P(H(0, 0, 0), A())),
+], loop=False)
+
+ACTIONS["wink"] = make_action("wink", 36, [
+    (0,  P(B(s=squash(1.0)), H(0, 0, 0), A(), arm("R", 0))),
+    (8,  P(B(s=squash(0.95)), H(0, 6, -10), A((0, 0, -10), (0, 0, -14)), arm("R", 40, 30))),
+    (24, P(B(s=squash(1.0)), H(0, 6, -10), A((0, 0, 4), (0, 0, 6)), arm("R", 44, 30))),
+    (36, P(B(s=squash(1.0)), H(0, 0, 0), A(), arm("R", 0))),
+], loop=False)
+
+ACTIONS["jump"] = make_action("jump", 30, [
+    (0,  P(R(0), B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 10), arm("R", 10))),
+    (6,  P(R(0), B(s=squash(0.82)), H(6, 0, 0), A((-12, 0, 0), (-18, 0, 0)), arm("L", -10), arm("R", -10))),
+    (13, P(R(0.26), B(s=squash(1.14)), H(-6, 0, 0), A((22, 0, 0), (30, 0, 0)), arm("L", 110), arm("R", 110))),
+    (20, P(R(0), B(s=squash(0.86)), H(6, 0, 0), A((-14, 0, 0), (-20, 0, 0)), arm("L", 30), arm("R", 30))),
+    (30, P(R(0), B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 10), arm("R", 10))),
+], loop=False)
+
 # Face presets: shape-key weights + cheek blush / eye glow (read by the web
 # player via mascot.json).
 FACE_PRESETS = {
-    "idle":      {"MouthSmile": 0.45, "_blush": 0.35},
+    "idle":      {"MouthCat": 0.8, "_blush": 0.35},
     "happy":     {"EyeHappy": 1.0, "MouthSmile": 1.0, "MouthOpen": 0.35, "CheekPuff": 0.6, "_blush": 0.8},
     "excited":   {"EyeWide": 0.6, "EyeHappy": 0.5, "MouthOpen": 1.0, "MouthSmile": 0.8, "_blush": 0.6, "_glow": 1.5},
     "curious":   {"EyeWide": 0.35, "EyeUp": 0.4, "MouthO": 0.45},
     "thinking":  {"EyeUp": 1.0, "EyeBlink": 0.25, "MouthFrown": 0.25, "MouthO": 0.2},
     "sad":       {"EyeSad": 1.0, "MouthFrown": 0.9, "_glow": 0.55},
     "surprised": {"EyeWide": 1.0, "MouthO": 1.0, "MouthOpen": 0.4, "_glow": 1.3},
-    "love":      {"EyeHappy": 0.9, "MouthSmile": 0.9, "CheekPuff": 1.0, "_blush": 1.0, "_tint": "#FF9CC8"},
+    "love":      {"EyeHeart": 1.0, "MouthCat": 1.0, "CheekPuff": 1.0, "_blush": 1.0, "_tint": "#FF7FB6", "_glow": 1.3},
     "sleepy":    {"EyeBlink": 0.82, "MouthO": 0.3, "_glow": 0.5},
     "wave":      {"EyeHappy": 0.7, "MouthSmile": 1.0, "MouthOpen": 0.2, "_blush": 0.4},
     "angry":     {"EyeAngry": 1.0, "MouthFrown": 1.0, "_tint": "#FF8A8A", "_glow": 1.2},
+    "listening": {"EyeWide": 0.25, "EyeUp": 0.15, "MouthCat": 0.5, "_blush": 0.3},
+    "talking":   {"MouthSmile": 0.4, "_talk": 1, "_blush": 0.3},
+    "loading":   {"EyeUp": 0.7, "EyeSmall": 0.2, "MouthFlat": 0.8, "_glow": 1.2},
+    "confused":  {"EyeWinkL": 0.35, "EyeLookR": 0.5, "MouthFrown": 0.35, "MouthO": 0.25},
+    "error":     {"EyeSad": 0.6, "EyeSmall": 0.3, "MouthFlat": 0.6, "MouthFrown": 0.4, "_tint": "#FFB08A"},
+    "point_right": {"EyeLookR": 1.0, "MouthSmile": 0.8, "_blush": 0.3},
+    "point_left":  {"EyeLookL": 1.0, "MouthSmile": 0.8, "_blush": 0.3},
+    "shy":       {"EyeHappy": 1.0, "EyeDown": 0.3, "MouthCat": 1.0, "CheekPuff": 1.0, "_blush": 1.0},
+    "dance":     {"EyeHappy": 1.0, "MouthCat": 1.0, "_blush": 0.5, "_glow": 1.2},
+    "laugh":     {"EyeHappy": 1.0, "MouthOpen": 1.0, "MouthSmile": 1.0, "CheekPuff": 0.8, "_blush": 0.8},
+    "hello":     {"EyeHappy": 0.85, "MouthSmile": 1.0, "MouthOpen": 0.35, "_blush": 0.5},
+    "celebrate": {"EyeHappy": 1.0, "MouthOpen": 1.0, "MouthSmile": 1.0, "_blush": 0.8, "_glow": 1.5},
+    "nod":       {"EyeHappy": 0.4, "MouthSmile": 0.8},
+    "shake":     {"EyeBlink": 0.2, "MouthFlat": 0.6, "MouthFrown": 0.3},
+    "wink":      {"EyeWinkR": 1.0, "MouthSmile": 0.9, "_blush": 0.5},
+    "jump":      {"EyeWide": 0.5, "MouthO": 0.6, "MouthOpen": 0.3},
 }
 
 # Store shape-key actions in the .blend for animators (not exported).
@@ -621,6 +814,7 @@ for kb in face.data.shape_keys.key_blocks[1:]:
 import json
 with open(os.path.join(OUT, "mascot.json"), "w") as f:
     json.dump({"name": "Bimo", "fps": FPS, "emotions": list(ACTIONS.keys()),
+               "oneshots": ONESHOTS,
                "shapeKeys": SHAPE_KEYS, "face": FACE_PRESETS}, f, indent=2)
 
 bpy.ops.object.select_all(action="SELECT")
@@ -685,9 +879,12 @@ if RENDER:
     for tr in rig.animation_data.nla_tracks:
         tr.mute = True
     stills = os.environ.get("STILLS", "idle,happy,curious,sad,surprised,love,thinking,wave").split(",")
-    frame_for = {"happy": 9, "excited": 6, "wave": 10, "sleepy": 60, "surprised": 4}
+    frame_for = {"happy": 9, "excited": 6, "wave": 10, "sleepy": 60, "surprised": 4,
+                 "hello": 30, "celebrate": 40, "jump": 13, "wink": 20, "dance": 0}
     face.data.shape_keys.animation_data.action = None
     for emo in stills:
+        for pb in rig.pose.bones:  # clear leftovers from the previous still
+            pb.location, pb.rotation_euler, pb.scale = (0, 0, 0), (0, 0, 0), (1, 1, 1)
         for tr in rig.animation_data.nla_tracks:
             tr.mute = tr.name != emo
         scene.frame_set(frame_for.get(emo, 0))
