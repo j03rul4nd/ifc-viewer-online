@@ -80,6 +80,11 @@
           </div>
         </div>
 
+        <label class="f">Fondo</label>
+        <select id="bg">
+          <option value="">Por defecto (oscuro)</option><option value="white">Blanco</option><option value="paper">Papel</option><option value="blueprint">Plano</option><option value="sky">Cielo</option>
+        </select>
+
         <label class="f">Idioma del visor</label>
         <select id="lang">
           <option value="">Auto</option>
@@ -123,6 +128,7 @@
       if ($('panel').checked) u.searchParams.set('panel', '1');
       const accent = $('accent').value.replace(/^#/, '');
       if (accent && accent.toLowerCase() !== '5e6ad2') u.searchParams.set('accent', accent);
+      if ($('bg').value) u.searchParams.set('bg', $('bg').value);
       if ($('lang').value) u.searchParams.set('lang', $('lang').value);
       return u.toString();
     }
@@ -156,7 +162,7 @@
       document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
       render();
     }));
-    ['model', 'validate', 'panel', 'accent', 'lang', 'height'].forEach((id) => {
+    ['model', 'validate', 'panel', 'accent', 'bg', 'lang', 'height'].forEach((id) => {
       $(id).addEventListener('input', render);
       $(id).addEventListener('change', render);
     });
