@@ -583,7 +583,14 @@
       "keepTapping": "Sigue tocando al ritmo…",
       "apply": "Cortar el vídeo a este sonido",
       "save": "Guardar este ritmo",
-      "howTo": "En TikTok: pulsa “Añadir sonido”, elige este sonido y recórtalo para que empiece en {{start}} — los cortes caen en su beat ({{bpm}} BPM)."
+      "howTo": "En TikTok: pulsa “Añadir sonido”, elige este sonido y recórtalo para que empiece en {{start}} — los cortes caen en su beat ({{bpm}} BPM).",
+      "captureTab": "Capturarlo de una pestaña de TikTok (ordenador)",
+      "captureMic": "Escucharlo con el micrófono (móvil)",
+      "captureHint": "Pestaña: abre el enlace en otra pestaña, pulsa aquí, elige esa pestaña con “Compartir audio de la pestaña” activado, dale al play allí y para cuando haya sonado. Obtenemos el sonido real, detectamos el beat y el drop y cortamos el vídeo a él. Micrófono: ponlo en tu móvil junto al dispositivo — solo se usa para el ritmo.",
+      "recordingTab": "Grabando la pestaña… dale al play del sonido",
+      "recordingMic": "Escuchando… reproduce el sonido cerca del micrófono",
+      "stopRecording": "Parar y analizar",
+      "noTabAudio": "No llegó audio. Comparte una PESTAÑA del navegador y activa “Compartir audio de la pestaña”."
     },
     "templates": {
       "title": "Plantillas virales",

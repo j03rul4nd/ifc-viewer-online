@@ -18,6 +18,8 @@ import { planAutoEdit, PLATFORM_SPECS, BED_RHYTHM, type ModelFacts, type Platfor
 import { createTextOverlay } from './timeline'
 import { exportProject, type SourceMedia } from './project-export'
 import { decodeUserAudio, getBuiltInBed } from './audio-library'
+import { sliceBuffer, soundStart } from './sound-capture'
+import type { SoundLink } from './tiktok-link'
 import { analyzeMusic, offsetForDrop, projectRhythm, syncProjectToMusic, toMono } from './music-analysis'
 
 /** What the model can honestly say about itself — nothing invented. */
@@ -166,19 +168,45 @@ export function rhythmFor(project: EditProject) {
  * app) whose soundtrack we take. Decoded and analysed locally — the file never
  * leaves the browser. Then the edit is synced to it straight away.
  */
-export async function importSound(file: File, label = 'Analysing sound'): Promise<void> {
+export interface SoundImportOptions {
+  /** Shown on the timeline; defaults to the file's name. */
+  name?: string
+  /** A live recording: cut the silence before the sound started. */
+  trimLeadingSilence?: boolean
+  /**
+   * Keep only the beat grid, not the audio (a microphone recording of a phone
+   * speaker is timing, not something to publish). The sound is then added in
+   * the app, as with tap tempo.
+   */
+  timingOnly?: boolean
+  link?: SoundLink
+}
+
+export async function importSound(file: File | Blob, label = 'Analysing sound', opts: SoundImportOptions = {}): Promise<void> {
   const s = useClipStudioStore.getState()
   s.setJob({ label, progress: null })
   try {
     // Decode at the export rate so preview and export hear the same buffer.
-    const buffer = await decodeUserAudio(file, new OfflineAudioContext(2, 1, 48_000))
+    let buffer = await decodeUserAudio(file, new OfflineAudioContext(2, 1, 48_000))
+    if (opts.trimLeadingSilence) {
+      const mono = toMono(Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i)))
+      buffer = sliceBuffer(buffer, soundStart(mono, buffer.sampleRate))
+    }
     const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i))
     const music = analyzeMusic(toMono(channels), buffer.sampleRate)
+    const name = opts.name ?? (file instanceof File ? file.name : 'sound')
+    if (opts.timingOnly) {
+      s.edit((p) => {
+        const next: EditProject = { ...p, audio: { ...p.audio, kind: p.audio.kind === 'builtin' ? 'none' : p.audio.kind, music, link: opts.link ?? p.audio.link } }
+        return next.clips.length > 0 ? syncProjectToMusic(next, music) : next
+      })
+      return
+    }
     s.setSound(buffer)
     s.edit((p) => {
       const withSound: EditProject = {
         ...p,
-        audio: { ...p.audio, kind: 'user', trackId: null, fileName: file.name, music, rights: p.audio.rights ?? 'viral', offsetSec: offsetForDrop(music, 0) },
+        audio: { ...p.audio, kind: 'user', trackId: null, fileName: name, music, link: opts.link ?? p.audio.link, rights: p.audio.rights ?? 'viral', offsetSec: offsetForDrop(music, 0) },
       }
       return withSound.clips.length > 0 ? syncProjectToMusic(withSound, music) : withSound
     })

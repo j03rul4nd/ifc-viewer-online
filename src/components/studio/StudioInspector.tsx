@@ -17,6 +17,7 @@ import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-libr
 import { currentModelFacts, importSound, rhythmFor } from '../../lib/capture/studio-actions'
 import { applyTemplate, TEMPLATE_IDS, templateMinClips, type TemplateId } from '../../lib/capture/viral-templates'
 import { hookEndSec, metaFromTaps, syncProjectToMusic } from '../../lib/capture/music-analysis'
+import { canCapture, startCapture, type CaptureSource, type Recording } from '../../lib/capture/sound-capture'
 import { enrichTikTokLink, formatStart, parseTikTokUrl, trendingSoundsUrl, type SoundLink } from '../../lib/capture/tiktok-link'
 import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
 
@@ -427,6 +428,34 @@ function TikTokSound() {
   const [link, setLink] = useState<SoundLink | null>(audio.link ?? null)
   const [tapping, setTapping] = useState<{ t0: number; taps: number[]; drop: number | null } | null>(null)
   const inApp = !!audio.link && !!audio.music && !(audio.kind === 'user' && hasSound)
+  const busy = useClipStudioStore((s) => !!s.job)
+  const [recording, setRecording] = useState<{ source: CaptureSource; rec: Recording } | null>(null)
+
+  // Listen to the sound while it plays (a TikTok tab, or the phone's speaker).
+  const record = async (source: CaptureSource) => {
+    if (!link) return
+    let rec: Recording
+    try {
+      rec = await startCapture(source)
+    } catch (e) {
+      const code = e instanceof Error ? e.message : ''
+      if (code === 'NO_AUDIO') toast(t('studio.tiktok.noTabAudio'), 'warning')
+      else if (!(e instanceof DOMException && e.name === 'NotAllowedError')) toast(t('studio.sound.failed', { reason: code }), 'error')
+      return
+    }
+    setRecording({ source, rec })
+    try {
+      const blob = await rec.done
+      await importSound(blob, t('studio.sound.analysing'), {
+        name: link.title ?? t('studio.tiktok.untitled'), trimLeadingSilence: true, timingOnly: source === 'mic', link,
+      })
+      toast(t('studio.sound.ready'), 'success')
+    } catch (e) {
+      toast(t('studio.sound.failed', { reason: e instanceof Error ? e.message : String(e) }), 'error')
+    } finally {
+      setRecording(null)
+    }
+  }
 
   const onUrl = async (v: string) => {
     setUrl(v)
@@ -471,7 +500,28 @@ function TikTokSound() {
         </div>
       )}
 
-      {link && !tapping && (
+      {link && !tapping && !recording && (
+        <>
+          {canCapture('tab') && (
+            <button type="button" className="studio-btn studio-btn--accent" disabled={busy} onClick={() => void record('tab')}>
+              🎧 {t('studio.tiktok.captureTab')}
+            </button>
+          )}
+          {canCapture('mic') && (
+            <button type="button" className="studio-btn" disabled={busy} onClick={() => void record('mic')}>
+              🎤 {t('studio.tiktok.captureMic')}
+            </button>
+          )}
+          <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.tiktok.captureHint')}</p>
+        </>
+      )}
+      {recording && (
+        <div className="flex flex-col gap-1.5 rounded bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] p-2">
+          <span className="text-[11.5px] font-medium">● {t(recording.source === 'tab' ? 'studio.tiktok.recordingTab' : 'studio.tiktok.recordingMic')}</span>
+          <button type="button" className="studio-btn studio-btn--accent" onClick={() => recording.rec.stop()}>{t('studio.tiktok.stopRecording')}</button>
+        </div>
+      )}
+      {link && !tapping && !recording && (
         <>
           <button type="button" className="studio-btn" onClick={() => setTapping({ t0: performance.now(), taps: [], drop: null })}>
             ⏱ {t('studio.tiktok.tapStart')}
