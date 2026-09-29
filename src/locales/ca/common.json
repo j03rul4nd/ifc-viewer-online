@@ -243,5 +243,56 @@
     "loading": "Carregant…",
     "processing": "Processant…",
     "fromCache": "Des de la memòria cau"
+  },
+  "mascot": {
+    "label": "Bimo, la mascota d’IFC Viewer",
+    "hello": "Hola, sóc en Bimo! Deixa anar un IFC i t’ho ensenyo tot.",
+    "tip1": "Deixa anar un fitxer .ifc i l’obro directament al navegador.",
+    "tip2": "No es puja res. El teu model es queda al teu ordinador.",
+    "tip3": "Prova el validador. M’encanta un informe IDS net.",
+    "hide": "Amaga en Bimo",
+    "blogHello": "Et faig companyia mentre llegeixes.",
+    "blogTip1": "Vols provar-ho? Obre el visor i deixa anar el teu IFC.",
+    "blogTip2": "Dubtes? Fes servir el botó d’IA de l’article per preguntar-ho al teu assistent.",
+    "blogTip3": "Truc: l’índex et porta directament a qualsevol secció.",
+    "blogDone": "Has arribat al final! Ho proves amb el teu model?",
+    "welcome": "Ja hi ets! Guardaré cada validació per tu.",
+    "signin": "Hola de nou! Inicia la sessió i et porto el teu historial.",
+    "signup": "Crea el teu compte i recordaré cada model que revisis.",
+    "proPitch": "Pro guarda el teu historial, sincronitza les teves regles i posa el teu logo als informes.",
+    "proLater": "Cap problema, el visor gratuït continua sent gratuït.",
+    "newsPrompt": "Només escric quan hi ha alguna cosa que val la pena.",
+    "emailThanks": "Gràcies! Ja ets a la llista.",
+    "emailError": "Vaja, no ha funcionat. Ho tornes a provar?",
+    "ebookThanks": "Gaudeix del manual! Ja s’està descarregant."
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Rep un avís quan llancem novetats",
+      "promptSuffix": " — sense spam, dona’t de baixa quan vulguis",
+      "placeholder": "el.teu@email.com",
+      "submit": "Avisa’m",
+      "successTitle": "Ja ets a la llista",
+      "successBody": "T’avisarem quan llancem novetats. Sense spam, dona’t de baixa quan vulguis.",
+      "notAvailable": "Encara no està disponible. Torna-ho a provar aviat.",
+      "genericError": "Alguna cosa ha fallat. Torna-ho a provar.",
+      "consentBefore": "En subscriure’t acceptes rebre de tant en tant correus sobre novetats del producte (enviats amb Resend). Sense spam, dona’t de baixa quan vulguis. Consulta la nostra ",
+      "privacyLink": "Política de privadesa",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "La teva adreça de correu",
+      "placeholder": "tu@estudi.com",
+      "submit": "Envia’m el manual",
+      "sending": "S’està enviant…",
+      "invalid": "Aquesta adreça no sembla correcta. Revisa-la i torna-ho a provar.",
+      "unreachable": "No hem pogut connectar amb la nostra llista de correu, així que potser no rebràs notícies nostres. La descàrrega està llesta igualment.",
+      "doneTitle": "La descàrrega ha començat",
+      "doneBody": "Si no ha passat res, potser el navegador l’ha bloquejada. Fes servir l’enllaç directe de sota.",
+      "downloadAgain": "Torna a descarregar el PDF",
+      "consentBefore": "Sense compte ni targeta. Un correu, dona’t de baixa quan vulguis. Consulta la ",
+      "privacyLink": "política de privadesa",
+      "consentAfter": "."
+    }
   }
 }

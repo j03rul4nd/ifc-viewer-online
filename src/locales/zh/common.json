@@ -239,5 +239,56 @@
     "loading": "加载中…",
     "processing": "处理中…",
     "fromCache": "来自缓存"
+  },
+  "mascot": {
+    "label": "IFC Viewer 的吉祥物 Bimo",
+    "hello": "你好，我是 Bimo！拖入一个 IFC，我带你四处看看。",
+    "tip1": "拖入 .ifc 文件，我会直接在浏览器中打开它。",
+    "tip2": "不会上传任何内容，你的模型只留在你的电脑上。",
+    "tip3": "试试验证器吧，我最喜欢干净的 IDS 报告。",
+    "hide": "隐藏 Bimo",
+    "blogHello": "你阅读的时候我陪着你。",
+    "blogTip1": "想试试吗？打开查看器，拖入你自己的 IFC。",
+    "blogTip2": "有疑问？用文章里的 AI 按钮问问你的助手。",
+    "blogTip3": "小技巧：目录可以直接跳到任意章节。",
+    "blogDone": "你读完啦！要用自己的模型试一试吗？",
+    "welcome": "欢迎加入！我会帮你保存每一次验证。",
+    "signin": "欢迎回来！登录后我把你的历史记录拿来。",
+    "signup": "创建账户，我会记住你检查过的每个模型。",
+    "proPitch": "Pro 会保存你的历史、同步你的规则，并在报告上加上你的标志。",
+    "proLater": "没关系，免费查看器永远免费。",
+    "newsPrompt": "只有值得一读的内容我才会写。",
+    "emailThanks": "谢谢！你已加入列表。",
+    "emailError": "嗯，没有成功。再试一次？",
+    "ebookThanks": "祝阅读愉快！手册正在下载。"
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "新功能上线时通知我",
+      "promptSuffix": "——无垃圾邮件，可随时退订",
+      "placeholder": "your@email.com",
+      "submit": "通知我",
+      "successTitle": "你已加入列表",
+      "successBody": "新功能上线时我们会通知你。无垃圾邮件，可随时退订。",
+      "notAvailable": "暂不可用，请稍后再试。",
+      "genericError": "出了点问题，请重试。",
+      "consentBefore": "订阅即表示你同意偶尔接收产品更新邮件（通过 Resend 发送）。无垃圾邮件，可随时退订。请查看我们的",
+      "privacyLink": "隐私政策",
+      "consentAfter": "。"
+    },
+    "ebook": {
+      "emailLabel": "你的邮箱地址",
+      "placeholder": "you@example.com",
+      "submit": "把手册发给我",
+      "sending": "发送中…",
+      "invalid": "这个邮箱地址看起来不对，请检查后重试。",
+      "unreachable": "我们暂时无法连接邮件列表，因此你可能收不到我们的消息。你的下载仍已准备好。",
+      "doneTitle": "下载已开始",
+      "doneBody": "如果没有反应，可能是浏览器拦截了下载。请使用下方的直接链接。",
+      "downloadAgain": "重新下载 PDF",
+      "consentBefore": "无需账户，无需银行卡。只发一封邮件，可随时退订。请查看",
+      "privacyLink": "隐私政策",
+      "consentAfter": "。"
+    }
   }
 }

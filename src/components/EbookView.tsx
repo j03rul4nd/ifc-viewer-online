@@ -26,6 +26,7 @@ import * as Icons from './Icons'
 import SideRays from './reactbits/SideRays'
 import { subscribeEmail } from '../lib/subscribe'
 import { trackEmailCaptured, trackFeatureUsed } from '../lib/analytics'
+import BimoMascot from './mascot/BimoMascot'
 import { RULE_COUNT } from '../types'
 import { EBOOKS, PRIMARY_EBOOK, type EbookMeta } from '../lib/ebook'
 
@@ -170,6 +171,7 @@ function Bullet({ children }: { children: ReactNode }) {
 type GateState = 'idle' | 'sending' | 'done'
 
 function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta; compact?: boolean }) {
+  const { t } = useTranslation('common', { keyPrefix: 'emailCapture.ebook' })
   const [email, setEmail]   = useState('')
   const [state, setState]   = useState<GateState>('idle')
   const [notice, setNotice] = useState<string | null>(null)
@@ -188,7 +190,7 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
     e.preventDefault()
     const value = email.trim()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
-      setNotice('That address does not look right — check it and try again.')
+      setNotice(t('invalid'))
       return
     }
     setNotice(null)
@@ -201,25 +203,31 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
       trackEmailCaptured({ source: book.subscribeSource, already_subscribed: !!result.already, locale })
     } else if (!result.disabled) {
       // The list is unreachable. Say so plainly — and hand over the book anyway.
-      setNotice('We could not reach our mailing list just now, so you may not hear from us. Your download is ready regardless.')
+      setNotice(t('unreachable'))
     }
 
     setState('done')
     download()
-  }, [email, download, book])
+  }, [email, download, book, t])
 
   if (state === 'done') {
     return (
       <div
-        className="rounded-2xl border px-5 py-5"
+        className="relative rounded-2xl border px-5 py-5 sm:pr-[120px]"
         style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
       >
+        {!compact && (
+          <BimoMascot
+            variant="inline" initial="celebrate" greetingKey="ebookThanks" bubble="left"
+            className="hidden sm:block absolute right-2 bottom-1 w-[108px] h-[108px]"
+          />
+        )}
         <p className="flex items-center gap-2 text-[14px] font-semibold text-[var(--text)]">
           <Icons.OK size={17} className="text-[var(--ok)]" aria-hidden="true" />
-          Your download has started
+          {t('doneTitle')}
         </p>
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-[var(--text-dim)]">
-          {notice ?? 'If nothing happened, your browser may have blocked it — use the direct link below.'}
+          {notice ?? t('doneBody')}
         </p>
         <button
           type="button"
@@ -228,7 +236,7 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
           style={{ borderColor: 'var(--border-strong)', background: 'var(--surface)' }}
         >
           <Icons.Download size={14} aria-hidden="true" />
-          Download the PDF again
+          {t('downloadAgain')}
         </button>
       </div>
     )
@@ -237,7 +245,7 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
   return (
     <form onSubmit={onSubmit} className={compact ? '' : 'mt-7'}>
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <label htmlFor={id} className="sr-only">Your email address</label>
+        <label htmlFor={id} className="sr-only">{t('emailLabel')}</label>
         <input
           id={id}
           type="email"
@@ -245,7 +253,7 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@practice.com"
+          placeholder={t('placeholder')}
           className="flex-1 rounded-xl border px-4 py-3 text-[14px] text-[var(--text)] outline-none transition-colors placeholder:text-[var(--text-faint)] focus:border-[var(--accent)]"
           style={{ borderColor: 'var(--border-strong)', background: 'var(--surface)' }}
         />
@@ -256,13 +264,13 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
           style={{ background: 'var(--accent)' }}
         >
           <Icons.Download size={15} aria-hidden="true" />
-          {state === 'sending' ? 'Sending…' : 'Send me the handbook'}
+          {state === 'sending' ? t('sending') : t('submit')}
         </button>
       </div>
       <p className="mt-2.5 text-[11.5px] leading-relaxed text-[var(--text-faint)]">
         {notice ?? (
-          <>No account, no card. One email, unsubscribe any time — see the{' '}
-            <a href={url('privacy')} className="underline decoration-[var(--border-strong)] underline-offset-2 hover:text-[var(--text-dim)]">privacy policy</a>.
+          <>{t('consentBefore')}
+            <a href={url('privacy')} className="underline decoration-[var(--border-strong)] underline-offset-2 hover:text-[var(--text-dim)]">{t('privacyLink')}</a>{t('consentAfter')}
           </>
         )}
       </p>

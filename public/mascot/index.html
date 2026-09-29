@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Bimo Mascot</title>
+<style>
+  :root {
+    --bg: #0A0A0C; --surface: #101014; --border: #23232c; --text: #EDEEF5;
+    --text-dim: #9A9CB0; --accent: #5E6AD2; --accent-2: #8B93E8;
+  }
+  :root[data-theme="light"] {
+    --bg: #F5F6FA; --surface: #FFFFFF; --border: #DEE0EA; --text: #16171F;
+    --text-dim: #5B6180; --accent: #3645C4; --accent-2: #5E6AD2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: Geist, ui-sans-serif, system-ui, -apple-system, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 16px; display: flex;
+    flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+  .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 760px;
+    pointer-events: auto; background: color-mix(in srgb, var(--surface) 78%, transparent);
+    border: 1px solid var(--border); border-radius: 14px; padding: 6px; backdrop-filter: blur(14px); }
+  button { font: inherit; font-size: 13px; color: var(--text-dim); background: transparent;
+    border: 0; border-radius: 9px; padding: 7px 11px; cursor: pointer; transition: all .2s; }
+  button:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  button.on { color: #fff; background: var(--accent); }
+  #title { position: fixed; top: 18px; left: 20px; font-size: 13px; color: var(--text-dim); }
+  #title b { color: var(--text); font-weight: 600; }
+  #emotions { display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; }
+  .row small { width: 100%; text-align: center; font-size: 10.5px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-dim); padding-top: 2px; }
+  @media (max-width: 600px) { button { padding: 6px 8px; font-size: 12px; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="title"><b>Bimo</b> · mascota · arrastra para orbitar, mueve el cursor</div>
+<div id="ui">
+  <div id="emotions"></div>
+  <div class="row">
+    <button id="auto">▶ Auto</button>
+    <button id="theme">◐ Tema</button>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const base = new URL('.', import.meta.url);
+const meta = await fetch(new URL('mascot.json', base)).then(r => r.json());
+const LABELS = { idle: 'Idle', happy: 'Feliz', excited: 'Emocionado', curious: 'Curioso',
+  thinking: 'Pensando', sad: 'Triste', surprised: 'Sorpresa', love: 'Amor',
+  sleepy: 'Sueño', wave: 'Saludo', angry: 'Enfadado', listening: 'Escuchando',
+  talking: 'Hablando', loading: 'Cargando', confused: 'Confuso', error: 'Error',
+  point_right: 'Señala →', point_left: '← Señala', shy: 'Tímido', dance: 'Baile',
+  laugh: 'Risa', hello: 'Aparecer', celebrate: 'Celebrar', nod: 'Sí', shake: 'No',
+  wink: 'Guiño', jump: 'Salto' };
+// Groups for the demo UI. In the product, use window.bimo (see bottom).
+const GROUPS = {
+  'Emociones': ['idle', 'happy', 'excited', 'love', 'laugh', 'shy', 'curious', 'surprised', 'sad', 'angry', 'sleepy'],
+  'Estados de producto': ['listening', 'talking', 'thinking', 'loading', 'confused', 'error', 'point_left', 'point_right', 'wave', 'dance'],
+  'Momentos': ['hello', 'celebrate', 'nod', 'shake', 'wink', 'jump'],
+};
+
+// ── renderer / scene ─────────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.toneMappingExposure = 0.9;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const BG = { dark: 0x0a0a0c, light: 0xf5f6fa };
+scene.background = new THREE.Color(BG.dark);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.35;
+
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 50);
+camera.position.set(1.1, 0.8, 4.4);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.05, 0);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 1.6; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI * 0.55;
+
+// Studio lighting in the brand palette: warm key, cool fill, indigo rims.
+const key = new THREE.DirectionalLight(0xfff5ec, 1.6);
+key.position.set(1.6, 2.6, 2.2);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.radius = 6; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+Object.assign(key.shadow.camera, { left: -1.5, right: 1.5, top: 1.5, bottom: -1.5 });
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xb8c2ff, 0.35); fill.position.set(-2.2, 1.2, 1.4); scene.add(fill);
+const rim = new THREE.DirectionalLight(0x8b93e8, 1.8); rim.position.set(-0.6, 2.0, -2.2); scene.add(rim);
+const kick = new THREE.PointLight(0x5e6ad2, 1.5, 5); kick.position.set(1.8, 0.5, -1.2); scene.add(kick);
+
+// Ground: soft radial glow + shadow catcher, fades into the page background.
+const groundMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false,
+  uniforms: { uColor: { value: new THREE.Color(0x5e6ad2) }, uStrength: { value: 0.22 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec2 vUv;
+    void main(){ float d = length(vUv-.5)*2.; float g = pow(max(0.,1.-d),2.2);
+      gl_FragColor = vec4(uColor, g*uStrength); }`,
+});
+const glow = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), groundMat);
+glow.rotation.x = -Math.PI / 2; glow.position.y = 0.001; scene.add(glow);
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.ShadowMaterial({ opacity: 0.35 }));
+shadow.rotation.x = -Math.PI / 2; shadow.receiveShadow = true; scene.add(shadow);
+
+// ── post ─────────────────────────────────────────────────────────────────────
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.35, 0.3, 1.3);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// ── shared GLSL uniforms ─────────────────────────────────────────────────────
+const U = {
+  uTime: { value: 0 },
+  uRim: { value: new THREE.Color(0x8b93e8) },
+  uRimStrength: { value: 0.45 },
+  uEyeTint: { value: new THREE.Color(0x8c95ff) },
+  uGlow: { value: 1 },
+  uBlink: { value: 0 },
+};
+
+// Body: physical pearl + GLSL fresnel rim, wrap-lit fake subsurface and a
+// faint iridescent drift so light "moves" over it.
+function pearl(src) {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: src.color, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.12,
+    sheen: 0.5, sheenColor: new THREE.Color(0xa5adf5), sheenRoughness: 0.4,
+    iridescence: 0.18, iridescenceIOR: 1.3, iridescenceThicknessRange: [200, 500],
+  });
+  m.onBeforeCompile = (s) => {
+    Object.assign(s.uniforms, { uRim: U.uRim, uRimStrength: U.uRimStrength, uTime: U.uTime });
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', `#include <common>
+        uniform vec3 uRim; uniform float uRimStrength; uniform float uTime;`)
+      .replace('#include <opaque_fragment>', `
+        float fres = pow(1.0 - abs(dot(normal, normalize(-vViewPosition))), 3.0);
+        // wrap lighting approximates light bleeding through the soft shell
+        float sss = smoothstep(0.0, 1.0, 0.5 + 0.5 * normal.y) * 0.06;
+        float drift = 0.5 + 0.5 * sin(uTime * 0.6 + normal.x * 3.0 + normal.y * 2.0);
+        outgoingLight += uRim * fres * uRimStrength * (0.75 + 0.25 * drift);
+        outgoingLight += vec3(0.55, 0.6, 1.0) * sss;
+        #include <opaque_fragment>`);
+  };
+  return m;
+}
+
+function indigo(src) {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: src.color, roughness: 0.3, clearcoat: 0.9, clearcoatRoughness: 0.06,
+    sheen: 0.4, sheenColor: new THREE.Color(0xc9ceff),
+  });
+  m.onBeforeCompile = (s) => {
+    Object.assign(s.uniforms, { uRim: U.uRim });
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRim;')
+      .replace('#include <opaque_fragment>', `
+        float f = pow(1.0 - abs(dot(normal, normalize(-vViewPosition))), 2.5);
+        outgoingLight += uRim * f * 0.6;
+        #include <opaque_fragment>`);
+  };
+  return m;
+}
+
+// Visor: black glass with a slow holographic sweep across it.
+function visorMat() {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: 0x07080f, roughness: 0.05, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.02,
+    iridescence: 0.25, iridescenceIOR: 1.6, envMapIntensity: 0.55,
+  });
+  m.onBeforeCompile = (s) => {
+    Object.assign(s.uniforms, { uTime: U.uTime, uRim: U.uRim });
+    s.vertexShader = s.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime; uniform vec3 uRim; varying vec3 vObj;')
+      .replace('#include <opaque_fragment>', `
+        float band = smoothstep(0.08, 0.0, abs(fract(vObj.x * 0.9 + vObj.y * 0.5 - uTime * 0.12) - 0.5));
+        float scan = 0.5 + 0.5 * sin(vObj.y * 420.0);
+        outgoingLight += uRim * (band * 0.05 + scan * 0.006);
+        #include <opaque_fragment>`);
+  };
+  return m;
+}
+
+// Eyes/mouth: emissive with a soft vertical gradient and breathing pulse.
+function eyeMat() {
+  const m = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+  m.onBeforeCompile = (s) => {
+    Object.assign(s.uniforms, { uTime: U.uTime, uTint: U.uEyeTint, uGlow: U.uGlow });
+    s.vertexShader = s.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vH;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvH = position.y;');
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime; uniform vec3 uTint; uniform float uGlow; varying float vH;')
+      .replace('#include <opaque_fragment>', `
+        float grad = smoothstep(0.5, 0.75, vH);
+        float pulse = 0.92 + 0.08 * sin(uTime * 2.2);
+        outgoingLight = mix(uTint * 0.8, vec3(0.9), 0.05 + 0.2 * grad) * 0.85 * uGlow * pulse;
+        #include <opaque_fragment>`);
+  };
+  return m;
+}
+
+// ── load ─────────────────────────────────────────────────────────────────────
+const gltf = await new GLTFLoader().loadAsync(new URL('bimo.glb', base).href);
+const root = gltf.scene;
+scene.add(root);
+const morphMeshes = [];
+let blushMat, headBone, bodyBone, rootBone;
+root.traverse((o) => {
+  if (o.isBone) {
+    if (o.name === 'head') headBone = o;
+    if (o.name === 'body') bodyBone = o;
+    if (o.name === 'root') rootBone = o;
+  }
+  if (!o.isMesh) return;
+  o.castShadow = true;
+  const n = o.material.name;
+  if (n === 'Bimo_Pearl') o.material = pearl(o.material);
+  else if (n === 'Bimo_Indigo') o.material = indigo(o.material);
+  else if (n === 'Bimo_Visor') o.material = visorMat();
+  else if (n === 'Bimo_Eye') { o.material = eyeMat(); o.castShadow = false; }
+  else if (n === 'Bimo_Blush') {
+    blushMat = o.material = new THREE.MeshBasicMaterial({ color: 0xff8fb8, transparent: true, opacity: 0, depthWrite: false });
+    o.castShadow = false;
+  } else if (n === 'Bimo_Spark') {
+    o.material = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 3, 3), toneMapped: false });
+    o.castShadow = false;
+  } else if (n === 'Bimo_Cube') {
+    o.material = new THREE.MeshPhysicalMaterial({ color: 0x8b93e8, emissive: 0x8b93e8,
+      emissiveIntensity: 2.2, roughness: 0.15, clearcoat: 1, transmission: 0.25, thickness: 0.05 });
+  }
+  if (o.morphTargetDictionary) morphMeshes.push(o);
+});
+
+// ── springs: every expressive value eases with a slightly under-damped
+// spring, which is what makes transitions feel soft and "juicy". ──────────────
+class Spring {
+  constructor(v = 0, k = 170, d = 17) { this.x = v; this.v = 0; this.t = v; this.k = k; this.d = d; }
+  step(dt) { const a = this.k * (this.t - this.x) - this.d * this.v; this.v += a * dt; this.x += this.v * dt; return this.x; }
+}
+const face = Object.fromEntries(meta.shapeKeys.map(k => [k, new Spring(0)]));
+const blush = new Spring(0, 90, 14), glowS = new Spring(1, 120, 14);
+const t0 = new THREE.Color(0x8c95ff);
+const tint = { r: new Spring(t0.r), g: new Spring(t0.g), b: new Spring(t0.b) };
+const pop = new Spring(1, 260, 9);            // squash-stretch impulse on change
+const look = { x: new Spring(0, 60, 13), y: new Spring(0, 60, 13) };
+const eyeX = new Spring(0, 260, 26), eyeY = new Spring(0, 260, 26);
+
+// ── animation ────────────────────────────────────────────────────────────────
+const mixer = new THREE.AnimationMixer(root);
+const actions = {};
+for (const clip of gltf.animations) actions[clip.name] = mixer.clipAction(clip);
+let current = null, currentName = '';
+const baseTint = new THREE.Color(0xc9ceff);
+
+const ONESHOTS = new Set(meta.oneshots || []);
+let loopName = 'idle', talking = false;
+function applyFace(name) {
+  const p = meta.face[name] || {};
+  for (const k in face) face[k].t = p[k] ?? 0;
+  blush.t = p._blush ?? 0;
+  glowS.t = p._glow ?? 1;
+  const c = new THREE.Color(p._tint ?? '#8C95FF');
+  tint.r.t = c.r; tint.g.t = c.g; tint.b.t = c.b;
+  talking = !!p._talk;
+}
+function setEmotion(name, fade = 0.55) {
+  if (name === currentName || !actions[name]) return;
+  const next = actions[name];
+  const once = ONESHOTS.has(name);
+  next.reset().setEffectiveWeight(1);
+  next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+  next.clampWhenFinished = once;
+  next.play();
+  if (current) current.crossFadeTo(next, once ? 0.2 : fade, true); else next.fadeIn(0.3);
+  current = next; currentName = name;
+  if (!once) loopName = name;
+  applyFace(name);
+  pop.x = 0.9; pop.v = 0;                     // little anticipation squash
+  if (blinkT < 0) blinkT = 0;                 // blink on a change of thought
+  document.querySelectorAll('#emotions button').forEach(b => b.classList.toggle('on', b.dataset.e === name));
+}
+// one-shots hand back to whatever loop was playing before
+mixer.addEventListener('finished', (e) => {
+  if (e.action === current && ONESHOTS.has(currentName)) setEmotion(loopName, 0.35);
+});
+
+const bar = document.getElementById('emotions');
+for (const [group, names] of Object.entries(GROUPS)) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('small'); lab.textContent = group; row.append(lab);
+  for (const e of names.filter(n => actions[n])) {
+    const b = document.createElement('button');
+    b.textContent = LABELS[e] ?? e; b.dataset.e = e;
+    b.onclick = () => { stopAuto(); setEmotion(e); };
+    row.append(b);
+  }
+  bar.append(row);
+}
+setEmotion('hello');
+
+let autoTimer = null;
+const autoBtn = document.getElementById('auto');
+function stopAuto() { clearInterval(autoTimer); autoTimer = null; autoBtn.classList.remove('on'); }
+autoBtn.onclick = () => {
+  if (autoTimer) return stopAuto();
+  autoBtn.classList.add('on');
+  let i = meta.emotions.indexOf(currentName);
+  autoTimer = setInterval(() => setEmotion(meta.emotions[++i % meta.emotions.length]), 2600);
+};
+document.getElementById('theme').onclick = () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light';
+  const light = r.dataset.theme === 'light';
+  scene.background.set(light ? BG.light : BG.dark);
+  shadow.material.opacity = light ? 0.18 : 0.35;
+  groundMat.uniforms.uStrength.value = light ? 0.14 : 0.22;
+  U.uRimStrength.value = light ? 0.2 : 0.45;
+  scene.environmentIntensity = light ? 0.7 : 0.35;
+};
+
+// ── cursor look-at + blinking ────────────────────────────────────────────────
+const mouse = new THREE.Vector2();
+addEventListener('pointermove', (e) => {
+  mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+});
+let nextBlink = 2, blinkT = -1, nextDart = 1;
+const dart = new THREE.Vector2();
+const ant = { x: new Spring(0, 90, 5), z: new Spring(0, 90, 5) };
+const headPrev = new THREE.Quaternion(); let rootPrevY = 0;
+
+const clock = new THREE.Timer();
+const qLook = new THREE.Quaternion(), eul = new THREE.Euler();
+renderer.setAnimationLoop(() => {
+  clock.update();
+  const dt = Math.min(clock.getDelta(), 1 / 30);
+  const t = clock.getElapsed();
+  U.uTime.value = t;
+  mixer.update(dt);
+
+  // blink: a quick close/open on top of the emotion's own eye pose
+  if (t > nextBlink && blinkT < 0) blinkT = 0;
+  let blinkAdd = 0;
+  if (blinkT >= 0) {
+    blinkT += dt;
+    blinkAdd = Math.sin(Math.min(1, blinkT / 0.16) * Math.PI);
+    if (blinkT > 0.16) { blinkT = -1; nextBlink = t + 1.8 + Math.random() * 3.5; }
+  }
+  const w = {};
+  for (const k in face) w[k] = face[k].step(dt);
+  w.EyeBlink = Math.min(1, Math.max(0, w.EyeBlink) + blinkAdd * (1 - (w.EyeHappy ?? 0)) * (1 - (w.EyeHeart ?? 0)));
+  // procedural lip-flap while talking: layered sines read as syllables
+  if (talking) {
+    const v = 0.5 + 0.5 * Math.sin(t * 13) * Math.sin(t * 5.3 + 1) + 0.2 * Math.sin(t * 29);
+    w.MouthOpen = Math.max(0, Math.min(1, v)) * 0.75;
+    w.MouthO = Math.max(0, Math.sin(t * 7.1)) * 0.3;
+  }
+  // eyes follow the cursor before the head does
+  const ex = eyeX.step(dt), ey = eyeY.step(dt);
+  w.EyeLookR = Math.min(1, (w.EyeLookR ?? 0) + Math.max(0, ex));
+  w.EyeLookL = Math.min(1, (w.EyeLookL ?? 0) + Math.max(0, -ex));
+  w.EyeUp = Math.min(1, (w.EyeUp ?? 0) + Math.max(0, ey) * 0.6);
+  w.EyeDown = Math.min(1, (w.EyeDown ?? 0) + Math.max(0, -ey) * 0.6);
+  for (const m of morphMeshes) {
+    for (const k in w) {
+      const i = m.morphTargetDictionary[k];
+      if (i !== undefined) m.morphTargetInfluences[i] = Math.max(0, w[k]);
+    }
+  }
+  if (blushMat) blushMat.opacity = Math.max(0, blush.step(dt)) * 0.75;
+  U.uGlow.value = glowS.step(dt);
+  U.uEyeTint.value.setRGB(tint.r.step(dt), tint.g.step(dt), tint.b.step(dt));
+
+  // additive head look toward the cursor (in bone space: x nod, y turn)
+  look.x.t = -mouse.y * 0.18; look.y.t = mouse.x * 0.3;
+  if (t > nextDart) { dart.set((Math.random() - .5) * .35, (Math.random() - .5) * .25); nextDart = t + .4 + Math.random() * 1.6; }
+  eyeX.t = mouse.x * 0.8 + dart.x; eyeY.t = mouse.y * 0.8 + dart.y;
+  if (headBone) {
+    qLook.setFromEuler(eul.set(look.x.step(dt), look.y.step(dt), 0));
+    headBone.quaternion.multiply(qLook);
+  }
+  // squash & stretch pop on top of the clip
+  // moving hold: breathing + slow sway under every clip
+  const s = pop.step(dt) * (1 + 0.012 * Math.sin(t * 2.1));
+  if (bodyBone) {
+    bodyBone.scale.multiply(new THREE.Vector3(1 / Math.sqrt(s), s, 1 / Math.sqrt(s)));
+    bodyBone.quaternion.multiply(qLook.setFromEuler(eul.set(0, 0, 0.012 * Math.sin(t * 0.7))));
+  }
+  // follow-through: the antenna lags head rotation and body bounce
+  const a1 = root.getObjectByName('antenna.1'), a2 = root.getObjectByName('antenna.2');
+  if (headBone && a1) {
+    const hq = headBone.getWorldQuaternion(new THREE.Quaternion());
+    const dq = hq.clone().multiply(headPrev.invert()); headPrev.copy(hq);
+    eul.setFromQuaternion(dq);
+    const ry = rootBone ? rootBone.getWorldPosition(new THREE.Vector3()).y : 0;
+    const vy = (ry - rootPrevY) / Math.max(dt, 1e-3); rootPrevY = ry;
+    ant.x.v += -eul.x * 18 + vy * 1.2; ant.z.v += -eul.z * 18;
+    const ax = THREE.MathUtils.clamp(ant.x.step(dt), -.6, .6), az = THREE.MathUtils.clamp(ant.z.step(dt), -.6, .6);
+    a1.quaternion.multiply(qLook.setFromEuler(eul.set(ax * .5, 0, az * .5)));
+    if (a2) a2.quaternion.multiply(qLook.setFromEuler(eul.set(ax, 0, az)));
+  }
+
+  controls.update();
+  composer.render();
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+
+// ── public API: what the product, blog embeds and funnels call ──────────────
+//   bimo.play('celebrate')       any emotion/state/moment from mascot.json
+//   bimo.say(3000)               talk for N ms, then back to the previous loop
+//   bimo.list()                  { loops: [...], oneshots: [...] }
+window.bimo = {
+  play: (name) => { stopAuto(); setEmotion(name); },
+  say(ms = 2500) {
+    const back = loopName === 'talking' ? 'idle' : loopName;
+    setEmotion('talking');
+    clearTimeout(this._t); this._t = setTimeout(() => setEmotion(back), ms);
+  },
+  list: () => ({ loops: meta.emotions.filter(e => !ONESHOTS.has(e)), oneshots: [...ONESHOTS] }),
+  get state() { return currentName; },
+};
+</script>
+</body>
+</html>
