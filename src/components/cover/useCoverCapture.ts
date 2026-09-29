@@ -20,6 +20,7 @@ import { LOOKS, resolveInkPaper, resolveSceneLook, type LookId } from '../../lib
 import { LIGHTS, resolveLight, type LightId } from '../../lib/cover/lighting'
 import { chunkLayers, cutPlane, explodeGap, groupLayers, planCutY, planFitDistance, sampleEvenly, storeysFromTree, type CutMode, type Layer } from '../../lib/cover/cuts'
 import { isPhysicalCategory } from '../../lib/cover/stats'
+import { DISCIPLINE_COLORS, groupByDiscipline, heroOpacity, type DisciplineId } from '../../lib/cover/disciplines'
 import type { CaptureStep, StudioView } from '../../lib/cover/recipes'
 import type { ModelMeasures } from '../../lib/cover/facts'
 import type { CoverImage, CoverPalette, CoverShot } from '../../lib/cover/types'
@@ -39,7 +40,7 @@ const MAX_EXPLODE_BANDS = 7
 const MAX_PLANS = 12
 
 export type CaptureRes = 1 | 2 | 4
-export type BusyKind = 'shots' | 'pack' | 'cut' | 'explode' | 'plans' | 'recipe'
+export type BusyKind = 'shots' | 'pack' | 'cut' | 'explode' | 'plans' | 'disciplines' | 'recipe'
 
 export interface CaptureSettings {
   palette: CoverPalette
@@ -52,6 +53,8 @@ export interface CaptureSettings {
   res: CaptureRes
   light: LightId
   sunAzimuth: number | null
+  /** User corrections to the guessed discipline (model id → discipline). */
+  disciplineOverrides: Record<string, DisciplineId>
 }
 
 function wait(ms: number): Promise<void> {
@@ -336,6 +339,77 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
     return out
   }, [viewerApiRef, storeyLayers, subjectBox, dress, finish])
 
+  // Coordination: the federated set framed once, then (1) every model in its
+  // discipline's colour on a white model, and (2) each discipline alone in the
+  // current look. Same camera for all, so the tiles line up with the hero.
+  const disciplinesJob = useCallback(async (lookId: LookId): Promise<CoverShot[]> => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return []
+    const { t: tr, settings: st, models } = live.current
+    const groups = groupByDiscipline(models, st.disciplineOverrides)
+    if (groups.length < 2) { toast(tr('cover.disciplinesNone'), 'info'); return [] }
+    await jumpTo('iso')
+    // Let the jump's tile streaming finish BEFORE tinting: tiles that land
+    // after setPresentationLook keep their own material (the model that missed
+    // the tint changed from run to run).
+    await wait(1200)
+    if (sectionOn.current) { await viewer.setPresentationSection(null); sectionOn.current = false }
+
+    const out: CoverShot[] = []
+    const modelColors: Record<string, string> = {}
+    const modelOpacities: Record<string, number> = {}
+    const opacityOf = heroOpacity(groups)
+    for (const g of groups) {
+      for (const id of g.modelIds) {
+        modelColors[id] = DISCIPLINE_COLORS[g.discipline]
+        const o = opacityOf[g.discipline]
+        if (o !== undefined) modelOpacities[id] = o
+      }
+    }
+    const tinted = { ...resolveSceneLook(LOOKS.clay, st.palette, false), focusTypes: [], modelColors, modelOpacities }
+    await viewer.setPresentationLook(tinted)
+    // Tiles streamed in after the jump arrive in their own material and miss the
+    // tint (which model varied run to run). Paint again once streaming settles.
+    await wait(500)
+    await viewer.setPresentationLook(tinted)
+    lookOn.current = true
+    const bg = backdropFor('clay')
+    if (bg) viewer.setBackground({ preset: 'custom', mode: 'gradient', top: bg.top, bottom: bg.bottom })
+    await wait(200)
+    const url = viewer.takeSnapshot(st.res, { annotations: false })
+    if (url.startsWith('data:image/png')) out.push(newShot(tr('cover.disciplinesAll'), await finish(await dataUrlToImage(url), 'clay')))
+
+    const shown = models.filter((m) => m.visible).map((m) => m.id)
+    try {
+      for (const g of groups) {
+        for (const id of shown) viewer.setModelVisible(id, g.modelIds.includes(id))
+        // Showing a model re-streams its tiles in whatever colour they last had
+        // (the discipline tint). Dress, let streaming settle; snapshot() dresses again.
+        await wait(300)
+        let shot: CoverShot | null
+        if (lookId === 'clay') {
+          // White model: each discipline alone in its own colour, matching the
+          // hero and the legend, instead of three identical white tiles.
+          const solo = { ...tinted, modelOpacities: {} }
+          await viewer.setPresentationLook(solo)
+          await wait(400)
+          await viewer.setPresentationLook(solo)
+          await wait(160)
+          const u = viewer.takeSnapshot(st.res, { annotations: false })
+          shot = u.startsWith('data:image/png') ? newShot(tr(`cover.discipline.${g.discipline}`), await finish(await dataUrlToImage(u), 'clay')) : null
+        } else {
+          await dress(lookId)
+          await wait(400)
+          shot = await snapshot(withLook(tr(`cover.discipline.${g.discipline}`), lookId), lookId)
+        }
+        if (shot) out.push({ ...shot, discipline: g.discipline, elements: g.elements })
+      }
+    } finally {
+      for (const id of shown) viewer.setModelVisible(id, true)
+    }
+    return out
+  }, [viewerApiRef, jumpTo, backdropFor, finish, snapshot, dress, withLook])
+
   // ── Public jobs ──────────────────────────────────────────────────────────────
 
   const captureCurrent = useCallback(() => {
@@ -369,6 +443,8 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
   }, [batch, cutJob])
 
   const capturePlans = useCallback(() => batch('plans', () => plansJob(live.current.settings.look)), [batch, plansJob])
+
+  const captureDisciplines = useCallback(() => batch('disciplines', () => disciplinesJob(live.current.settings.look)), [batch, disciplinesJob])
 
   // Exploded axonometric: storeys from the spatial tree, one render each,
   // lifted apart and stacked bottom-up over the look's backdrop.
@@ -418,10 +494,11 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
     for (const s of steps) {
       if (s.kind === 'view') out.push(...await viewsJob([s.view], s.look))
       else if (s.kind === 'cut') out.push(...await cutJob(s.cut, 0.45, s.look, false))
+      else if (s.kind === 'disciplines') out.push(...await disciplinesJob(s.look))
       else out.push(...await plansJob(live.current.settings.look))
     }
     return out
-  }, { light }), [batch, viewsJob, cutJob, plansJob])
+  }, { light }), [batch, viewsJob, cutJob, plansJob, disciplinesJob])
 
   const frameFocus = useCallback(async () => {
     const viewer = viewerApiRef.current
@@ -447,6 +524,6 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
   }, [subjectBox])
 
   return {
-    busy, captureCurrent, captureAuto, capturePack, captureCut, capturePlans, captureExploded, captureSteps, frameFocus, measure,
+    busy, captureCurrent, captureAuto, capturePack, captureCut, capturePlans, captureExploded, captureDisciplines, captureSteps, frameFocus, measure,
   }
 }

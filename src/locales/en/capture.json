@@ -535,7 +535,8 @@
       "statement": "Statement",
       "magazine": "Magazine",
       "datasheet": "Project sheet",
-      "diptych": "Diptych"
+      "diptych": "Diptych",
+      "coordination": "Coordination"
     },
     "fmt": {
       "slide": "Slide",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Client deck",
       "board": "Competition board",
-      "sheet": "Project sheet"
+      "sheet": "Project sheet",
+      "coordination": "Coordination sheet"
     },
     "recipeHint": {
       "pinterest": "A 2:3 moodboard pin: the model four ways, on paper, softly graded",
@@ -664,7 +666,8 @@
       "story": "A 9:16 story with the building framed in an arch, in warm evening light",
       "client": "The meeting deck: cover, project sheet, views, storey plans, numbers and thanks",
       "board": "An A1 board in the order a jury reads it: hero, section, plan, elevation",
-      "sheet": "An A4 project data sheet: hero, facts table, concept and two supporting views"
+      "sheet": "An A4 project data sheet: hero, facts table, concept and two supporting views",
+      "coordination": "Architecture, structure and MEP on one slide, in their colours"
     },
     "recipeBusy": "Setting up…",
     "cat": {
@@ -832,6 +835,18 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "Applying the finish…"
+    "grading": "Applying the finish…",
+    "disciplines": "Disciplines",
+    "disciplinesHint": "The federated set tinted by discipline, then each discipline alone",
+    "disciplinesNone": "Load two or more models (architecture, structure, MEP…) to compare disciplines.",
+    "disciplinesAll": "Federated · by discipline",
+    "discipline": {
+      "arch": "Architecture",
+      "struct": "Structure",
+      "mep": "MEP",
+      "other": "Other"
+    },
+    "disciplineAuto": "Detected from the file name or content — change it if it is wrong",
+    "disciplineManual": "Set by hand — click to go back to the detected discipline"
   }
 }

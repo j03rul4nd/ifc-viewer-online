@@ -25,7 +25,7 @@ import {
   type CoverTemplate, type CoverTemplateId, type DeckStyle, type TemplateCategory,
 } from './template-kit'
 import { drawStatement, magazine, minimal, moodboard, polaroid, statement, swatch } from './templates-aesthetic'
-import { datasheet, diptych, projectSheet } from './templates-pro'
+import { coordination, datasheet, diptych, projectSheet } from './templates-pro'
 import type { CoverSpec } from './types'
 
 export type { CoverTemplate, CoverTemplateId, TemplateCategory } from './template-kit'
@@ -36,7 +36,7 @@ export const COVER_TEMPLATE_IDS: readonly CoverTemplateId[] = [
   // Editorial
   'monolith', 'editorial', 'magazine', 'gallery', 'swiss', 'bento',
   // Professional
-  'board', 'datasheet', 'diptych', 'sequence', 'styles', 'spotlight', 'blueprint',
+  'board', 'datasheet', 'diptych', 'coordination', 'sequence', 'styles', 'spotlight', 'blueprint',
 ]
 
 export const TEMPLATE_CATEGORIES: readonly TemplateCategory[] = ['social', 'editorial', 'pro']
@@ -740,7 +740,7 @@ export const COVER_TEMPLATES: Record<CoverTemplateId, CoverTemplate> = {
   monolith, editorial, arch, blueprint, bento, swiss, gallery, poster,
   board, sequence, styles, spotlight,
   moodboard, swatch, polaroid, minimal, statement, magazine,
-  datasheet, diptych,
+  datasheet, diptych, coordination,
 }
 
 // ── Deck slides ────────────────────────────────────────────────────────────────

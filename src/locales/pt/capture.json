@@ -535,7 +535,8 @@
       "statement": "Citação",
       "magazine": "Revista",
       "datasheet": "Ficha técnica",
-      "diptych": "Díptico"
+      "diptych": "Díptico",
+      "coordination": "Coordenação"
     },
     "fmt": {
       "slide": "Slide",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Apresentação ao cliente",
       "board": "Prancha de concurso",
-      "sheet": "Ficha de projeto"
+      "sheet": "Ficha de projeto",
+      "coordination": "Prancha de coordenação"
     },
     "recipeHint": {
       "pinterest": "Um pin 2:3 estilo moodboard: o modelo de quatro formas, sobre papel, com um tratamento suave",
@@ -664,7 +666,8 @@
       "story": "Uma story 9:16 com o edifício num arco, em luz quente de fim de tarde",
       "client": "A apresentação da reunião: capa, ficha, vistas, plantas, números e agradecimento",
       "board": "Uma prancha A1 na ordem em que um júri a lê: imagem principal, corte, planta, alçado",
-      "sheet": "Uma ficha técnica A4: imagem principal, tabela de dados, conceito e duas vistas de apoio"
+      "sheet": "Uma ficha técnica A4: imagem principal, tabela de dados, conceito e duas vistas de apoio",
+      "coordination": "Arquitetura, estrutura e instalações num slide, cada uma na sua cor"
     },
     "recipeBusy": "A preparar…",
     "cat": {
@@ -832,6 +835,18 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "A aplicar o acabamento…"
+    "grading": "A aplicar o acabamento…",
+    "disciplines": "Disciplinas",
+    "disciplinesHint": "O conjunto federado colorido por disciplina e depois cada disciplina à parte",
+    "disciplinesNone": "Carregue dois ou mais modelos (arquitetura, estrutura, instalações…) para comparar disciplinas.",
+    "disciplinesAll": "Federado · por disciplina",
+    "discipline": {
+      "arch": "Arquitetura",
+      "struct": "Estrutura",
+      "mep": "Instalações",
+      "other": "Outros"
+    },
+    "disciplineAuto": "Detetada pelo nome do ficheiro ou pelo conteúdo: altere-a se estiver errada",
+    "disciplineManual": "Escolhida à mão: clique para voltar à detetada"
   }
 }

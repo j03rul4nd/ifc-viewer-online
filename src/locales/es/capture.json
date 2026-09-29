@@ -535,7 +535,8 @@
       "statement": "Cita",
       "magazine": "Revista",
       "datasheet": "Ficha técnica",
-      "diptych": "Díptico"
+      "diptych": "Díptico",
+      "coordination": "Coordinación"
     },
     "fmt": {
       "slide": "Diapositiva",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Dossier de cliente",
       "board": "Lámina de concurso",
-      "sheet": "Ficha de proyecto"
+      "sheet": "Ficha de proyecto",
+      "coordination": "Lámina de coordinación"
     },
     "recipeHint": {
       "pinterest": "Pin 2:3 tipo moodboard: el modelo de cuatro maneras, sobre papel y con un acabado suave",
@@ -664,7 +666,8 @@
       "story": "Story 9:16 con el edificio enmarcado en un arco y luz cálida de tarde",
       "client": "El dossier de la reunión: portada, ficha, vistas, plantas, cifras y agradecimiento",
       "board": "Lámina A1 en el orden en que la lee un jurado: imagen principal, sección, planta y alzado",
-      "sheet": "Ficha técnica A4: imagen principal, tabla de datos, concepto y dos vistas de apoyo"
+      "sheet": "Ficha técnica A4: imagen principal, tabla de datos, concepto y dos vistas de apoyo",
+      "coordination": "Arquitectura, estructura e instalaciones en una diapositiva, cada una en su color"
     },
     "recipeBusy": "Preparando…",
     "cat": {
@@ -832,6 +835,18 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "Aplicando el acabado…"
+    "grading": "Aplicando el acabado…",
+    "disciplines": "Disciplinas",
+    "disciplinesHint": "El conjunto federado teñido por disciplina y luego cada disciplina por separado",
+    "disciplinesNone": "Carga dos o más modelos (arquitectura, estructura, instalaciones…) para comparar disciplinas.",
+    "disciplinesAll": "Federado · por disciplina",
+    "discipline": {
+      "arch": "Arquitectura",
+      "struct": "Estructura",
+      "mep": "Instalaciones",
+      "other": "Otros"
+    },
+    "disciplineAuto": "Detectada por el nombre del fichero o su contenido: cámbiala si no es correcta",
+    "disciplineManual": "Elegida a mano: pulsa para volver a la detectada"
   }
 }

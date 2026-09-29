@@ -535,7 +535,8 @@
       "statement": "Cita",
       "magazine": "Revista",
       "datasheet": "Fitxa tècnica",
-      "diptych": "Díptic"
+      "diptych": "Díptic",
+      "coordination": "Coordinació"
     },
     "fmt": {
       "slide": "Diapositiva",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Dossier de client",
       "board": "Làmina de concurs",
-      "sheet": "Fitxa de projecte"
+      "sheet": "Fitxa de projecte",
+      "coordination": "Làmina de coordinació"
     },
     "recipeHint": {
       "pinterest": "Pin 2:3 tipus moodboard: el model de quatre maneres, sobre paper i amb un acabat suau",
@@ -664,7 +666,8 @@
       "story": "Story 9:16 amb l’edifici emmarcat en un arc i llum càlida de tarda",
       "client": "El dossier de la reunió: portada, fitxa, vistes, plantes, xifres i agraïment",
       "board": "Làmina A1 en l’ordre en què la llegeix un jurat: imatge principal, secció, planta i alçat",
-      "sheet": "Fitxa tècnica A4: imatge principal, taula de dades, concepte i dues vistes de suport"
+      "sheet": "Fitxa tècnica A4: imatge principal, taula de dades, concepte i dues vistes de suport",
+      "coordination": "Arquitectura, estructura i instal·lacions en una diapositiva, cadascuna del seu color"
     },
     "recipeBusy": "Preparant…",
     "cat": {
@@ -832,6 +835,18 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "Aplicant l’acabat…"
+    "grading": "Aplicant l’acabat…",
+    "disciplines": "Disciplines",
+    "disciplinesHint": "El conjunt federat tenyit per disciplina i després cada disciplina per separat",
+    "disciplinesNone": "Carrega dos o més models (arquitectura, estructura, instal·lacions…) per comparar disciplines.",
+    "disciplinesAll": "Federat · per disciplina",
+    "discipline": {
+      "arch": "Arquitectura",
+      "struct": "Estructura",
+      "mep": "Instal·lacions",
+      "other": "Altres"
+    },
+    "disciplineAuto": "Detectada pel nom del fitxer o el contingut: canvia-la si no és correcta",
+    "disciplineManual": "Triada a mà: prem per tornar a la detectada"
   }
 }

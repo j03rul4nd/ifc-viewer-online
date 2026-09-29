@@ -535,7 +535,8 @@
       "statement": "一句话",
       "magazine": "杂志封面",
       "datasheet": "项目简介",
-      "diptych": "双联"
+      "diptych": "双联",
+      "coordination": "协调"
     },
     "fmt": {
       "slide": "幻灯片",
@@ -655,7 +656,8 @@
       "story": "快拍",
       "client": "客户汇报",
       "board": "竞赛图板",
-      "sheet": "项目简介"
+      "sheet": "项目简介",
+      "coordination": "协调图板"
     },
     "recipeHint": {
       "pinterest": "2:3 情绪板图钉：模型的四种表现，纸张质感，柔和调色",
@@ -664,7 +666,8 @@
       "story": "9:16 快拍：建筑框在拱形里，傍晚暖光",
       "client": "汇报用演示：封面、项目简介、视图、各层平面、数据和致谢",
       "board": "按评委阅读顺序排版的 A1 图板：主图、剖面、平面、立面",
-      "sheet": "A4 项目数据页：主图、数据表、设计理念和两张辅助视图"
+      "sheet": "A4 项目数据页：主图、数据表、设计理念和两张辅助视图",
+      "coordination": "建筑、结构与机电同页呈现，各用其色"
     },
     "recipeBusy": "正在准备…",
     "cat": {
@@ -832,6 +835,18 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "正在应用调色…"
+    "grading": "正在应用调色…",
+    "disciplines": "专业",
+    "disciplinesHint": "按专业着色的整合模型，再逐个专业单独显示",
+    "disciplinesNone": "请加载两个或更多模型（建筑、结构、机电…）以比较各专业。",
+    "disciplinesAll": "整合 · 按专业",
+    "discipline": {
+      "arch": "建筑",
+      "struct": "结构",
+      "mep": "机电",
+      "other": "其他"
+    },
+    "disciplineAuto": "根据文件名或内容识别——如有误请更改",
+    "disciplineManual": "已手动设置——点击恢复为自动识别"
   }
 }

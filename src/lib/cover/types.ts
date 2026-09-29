@@ -5,6 +5,7 @@
 // the same spec paints the live preview, the thumbnails and the export.
 
 import type { CoverDesign } from './design'
+import type { DisciplineId } from './disciplines'
 
 export type CoverImage = CanvasImageSource & { width: number; height: number }
 
@@ -23,6 +24,10 @@ export interface CoverShot {
   image: CoverImage
   /** User framing; absent = the template's own default. */
   crop?: ShotCrop
+  /** Set on a per-discipline capture of a federated set (coordination board). */
+  discipline?: DisciplineId
+  /** Physical elements the shot shows, when it shows one discipline. */
+  elements?: number
 }
 
 /** The text the user fills in. Empty strings are simply not drawn. */
