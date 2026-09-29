@@ -17,7 +17,8 @@ import { renderShot, openVideoReader } from './media-codec'
 import { planAutoEdit, PLATFORM_SPECS, BED_RHYTHM, type ModelFacts, type Platform } from './auto-edit'
 import { createTextOverlay } from './timeline'
 import { exportProject, type SourceMedia } from './project-export'
-import { getBuiltInBed } from './audio-library'
+import { decodeUserAudio, getBuiltInBed } from './audio-library'
+import { analyzeMusic, offsetForDrop, projectRhythm, syncProjectToMusic, toMono } from './music-analysis'
 
 /** What the model can honestly say about itself — nothing invented. */
 export function currentModelFacts(): ModelFacts {
@@ -151,19 +152,55 @@ export function rhythmFor(project: EditProject) {
   if (project.audio.kind === 'builtin' && project.audio.trackId && project.audio.trackId in BED_RHYTHM) {
     return BED_RHYTHM[project.audio.trackId as keyof typeof BED_RHYTHM]
   }
+  if (project.audio.kind === 'user' && project.audio.music) {
+    return projectRhythm(project.audio.music, project.audio.offsetSec)
+  }
   return null
+}
+
+// ── Sounds ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Bring in a sound: an audio file, or a video (a TikTok/Reel saved from the
+ * app) whose soundtrack we take. Decoded and analysed locally — the file never
+ * leaves the browser. Then the edit is synced to it straight away.
+ */
+export async function importSound(file: File, label = 'Analysing sound'): Promise<void> {
+  const s = useClipStudioStore.getState()
+  s.setJob({ label, progress: null })
+  try {
+    // Decode at the export rate so preview and export hear the same buffer.
+    const buffer = await decodeUserAudio(file, new OfflineAudioContext(2, 1, 48_000))
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i))
+    const music = analyzeMusic(toMono(channels), buffer.sampleRate)
+    s.setSound(buffer)
+    s.edit((p) => {
+      const withSound: EditProject = {
+        ...p,
+        audio: { ...p.audio, kind: 'user', trackId: null, fileName: file.name, music, rights: p.audio.rights ?? 'viral', offsetSec: offsetForDrop(music, 0) },
+      }
+      return withSound.clips.length > 0 ? syncProjectToMusic(withSound, music) : withSound
+    })
+  } finally {
+    s.setJob(null)
+  }
 }
 
 // ── Export ─────────────────────────────────────────────────────────────────────
 
-export async function exportStudio(signal?: AbortSignal, label = 'Exporting'): Promise<Blob> {
+export async function exportStudio(signal?: AbortSignal, label = 'Exporting', withMusic = true): Promise<Blob> {
   const s = useClipStudioStore.getState()
-  const { project, media, output } = s
+  const { media, output } = s
+  let { project } = s
   let bed: AudioBuffer | null = null
-  if (project.audio.kind === 'builtin' && project.audio.trackId) {
+  if (!withMusic) {
+    // "Add the sound in the app": picture timed to the sound, but no music in the file.
+    project = { ...project, audio: { ...project.audio, kind: 'none' } }
+  } else if (project.audio.kind === 'builtin' && project.audio.trackId) {
     bed = await getBuiltInBed(project.audio.trackId as Parameters<typeof getBuiltInBed>[0], 48_000)
+  } else if (project.audio.kind === 'user') {
+    bed = s.sound
   }
-  // The studio offers built-in beds only; a user track is not mixed yet.
   s.setJob({ label, progress: 0 })
   try {
     const result = await exportProject(project, media, {

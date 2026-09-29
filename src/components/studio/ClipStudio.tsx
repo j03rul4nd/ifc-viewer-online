@@ -20,7 +20,7 @@ import {
   clipIndexAt, duplicateClip, projectDuration, removeClip, splitAt,
   createMediaOverlay, type EditProject,
 } from '../../lib/capture/project'
-import { createTextOverlay } from '../../lib/capture/timeline'
+import { createTextOverlay, needsRightsWarning } from '../../lib/capture/timeline'
 import { SHOT_TYPES, type ShotType } from '../../lib/capture/shots'
 import { hasWebCodecs } from '../../lib/capture/media-codec'
 import { formatBytes } from '../../lib/capture/replay-buffer-core'
@@ -115,8 +115,16 @@ export default function ClipStudio() {
 
   const onAddShot = (type: ShotType) => run((signal) => addShot(type, t(`studio.shots.${type}`), 4, signal))
 
-  const onExport = () => run(async (signal) => {
-    const blob = await exportStudio(signal, t('studio.exporting', { percent: 0 }))
+  // A viral sound's rights are unknown: say so before writing the file, and
+  // offer the version TikTok itself rewards — same cut, sound added in the app.
+  const [rightsAsk, setRightsAsk] = useState(false)
+  const onExport = () => {
+    if (needsRightsWarning(project.audio)) { setRightsAsk(true); return }
+    doExport(true)
+  }
+  const doExport = (withMusic: boolean) => run(async (signal) => {
+    setRightsAsk(false)
+    const blob = await exportStudio(signal, t('studio.exporting', { percent: 0 }), withMusic)
     const ext = blob.type.includes('webm') ? 'webm' : 'mp4'
     downloadBlob(blob, `ifc-clip-${output.preset}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${ext}`)
     toast(t('studio.exportDone', { size: formatBytes(blob.size) }), 'success')
@@ -297,6 +305,21 @@ export default function ClipStudio() {
 
         <aside className="studio-side hidden overflow-y-auto border-l border-[var(--border)] lg:block"><StudioInspector /></aside>
       </div>
+
+      {rightsAsk && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4" role="alertdialog" aria-modal="true" aria-labelledby="studio-rights-title">
+          <div className="flex max-w-[440px] flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 text-[13px] leading-relaxed">
+            <h3 id="studio-rights-title" className="text-[15px] font-semibold">⚠ {t('studio.sound.warnTitle')}</h3>
+            <p>{t('studio.sound.warnBody', { name: project.audio.fileName ?? '' })}</p>
+            <p className="text-[var(--text-dim)]">{t('studio.sound.warnTip')}</p>
+            <div className="mt-1 flex flex-wrap justify-end gap-2">
+              <button type="button" className="studio-btn" onClick={() => setRightsAsk(false)}>{t('studio.cancel')}</button>
+              <button type="button" className="studio-btn" onClick={() => doExport(false)}>{t('studio.sound.exportSilent')}</button>
+              <button type="button" className="studio-btn studio-btn--accent" onClick={() => doExport(true)}>{t('studio.sound.exportAnyway')}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <StudioTimeline onSeek={(tt) => { engine.pause(); setPlayhead(tt) }} />
 

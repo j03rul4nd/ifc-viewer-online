@@ -133,6 +133,25 @@ export interface AudioSelection {
   fadeSec: number
   /** Where in the source audio playback starts, seconds. */
   offsetSec: number
+  /** Who owns the user's sound (kind 'user' only) — drives the export warning. */
+  rights?: SoundRights
+  /** Beat grid and drop of the user's sound, from music-analysis.ts. */
+  music?: import('./music-analysis').MusicMeta
+}
+
+/**
+ * Where a user's sound came from.
+ *   own        — made or commissioned by the user; theirs to use
+ *   licensed   — from a library they hold a licence for (incl. TikTok's Commercial Music Library)
+ *   viral      — a trending/original sound saved from TikTok, Reels or Shorts: rights unknown
+ */
+export type SoundRights = 'own' | 'licensed' | 'viral'
+
+export const SOUND_RIGHTS: readonly SoundRights[] = ['viral', 'own', 'licensed']
+
+/** The export should stop and explain the rights before writing the file. */
+export function needsRightsWarning(audio: AudioSelection): boolean {
+  return audio.kind === 'user' && (audio.rights ?? 'viral') === 'viral'
 }
 
 export const DEFAULT_AUDIO: AudioSelection = {
