@@ -44,6 +44,12 @@ export interface ScenePlacement {
   pivotOf: (ids: ReadonlyArray<string>) => Vec3 | null
   /** Move these ids as one rigid body. Recorded for undo. */
   moveRigid: (ids: ReadonlyArray<string>, motion: RigidMotion) => void
+  /**
+   * Start a live drag of these ids (the 3D gizmo). `update` takes the TOTAL
+   * motion since the drag began and re-applies it to the pre-drag placement,
+   * so pointer jitter never accumulates; the whole drag is one undo step.
+   */
+  beginDrag: (ids: ReadonlyArray<string>) => { update: (motion: RigidMotion) => void; end: () => void }
   /** Set one model's transform (per-file editing). Recorded for undo. */
   setModelTransform: (id: string, t: ModelTransform) => void
   /** Restore identity for these models and zero these clouds' offsets. Recorded. */
@@ -124,6 +130,24 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
     }
   }, [membersOf, record, applyModel, applyCloud])
 
+  const beginDrag = useCallback((ids: ReadonlyArray<string>) => {
+    const base = membersOf(ids)
+    let moved = false
+    return {
+      update: (motion: RigidMotion) => {
+        if (base.length === 0) return
+        // Recorded on the first real movement, not on press: a click on the
+        // handle that goes nowhere must not leave an empty undo step behind.
+        if (!moved) { record(); moved = true }
+        for (const u of applyRigidMotion(base, motion)) {
+          if (u.kind === 'model') applyModel(u.id, { position: u.position, rotation: u.rotation })
+          else applyCloud(u.id, { x: u.offset.x, y: u.offset.y, z: u.offset.z, yawDeg: u.yawDeg })
+        }
+      },
+      end: () => { /* nothing to flush: every update was applied as it came */ },
+    }
+  }, [membersOf, record, applyModel, applyCloud])
+
   const setModelTransform = useCallback((id: string, t: ModelTransform) => {
     record()
     applyModel(id, t)
@@ -165,5 +189,5 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
     }
   }, [applySnapshot])
 
-  return { membersOf, pivotOf, moveRigid, setModelTransform, reset, undo, redo, beginTemporary, endTemporary }
+  return { membersOf, pivotOf, moveRigid, beginDrag, setModelTransform, reset, undo, redo, beginTemporary, endTemporary }
 }

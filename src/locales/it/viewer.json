@@ -223,6 +223,15 @@
       "temporaryOn": "Modifiche temporanee: verranno annullate al ripristino.",
       "restore": "Ripristina",
       "keep": "Mantieni"
+    },
+    "gizmo": {
+      "label": "Maniglia",
+      "off": "No",
+      "translate": "Sposta",
+      "rotate": "Ruota",
+      "offHint": "Nessuna maniglia nel visore",
+      "translateHint": "Trascina le frecce nel visore per spostare l'ambito scelto",
+      "rotateHint": "Trascina l'anello nel visore per ruotare l'ambito scelto (passo di 1°)"
     }
   },
   "transform": {

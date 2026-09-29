@@ -20,7 +20,7 @@
 import * as THREE from 'three'
 import { createPointCloudMaterial, type PointCloudMaterial } from './pc-material'
 import { effectiveTransform } from './pc-align'
-import { allocateBudget, type ChunkView } from './pc-lod'
+import { allocateBudget, viewChanged, viewSignature, type ChunkView } from './pc-lod'
 import {
   selectNodes, planResidency,
   type OctreeNode, type OctreeRoot, type NodeBounds,
@@ -232,7 +232,9 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   let rafId: number | null = null
   let lastLodAt = 0
   let lastStreamAt = 0
-  const lastCameraPos = new THREE.Vector3(NaN, NaN, NaN)
+  /** The view the last pass was computed for — see pc-lod.viewSignature. */
+  let lastView: number[] | null = null
+  const nextView: number[] = []
 
   const frustum = new THREE.Frustum()
   const projScreen = new THREE.Matrix4()
@@ -327,7 +329,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
 
   /** Force the next pass to recompute even if the camera has not moved. */
   function invalidateLod(): void {
-    lastCameraPos.set(NaN, NaN, NaN)
+    lastView = null
   }
 
   function effectiveRenderBudget(): number {
@@ -425,14 +427,16 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
     camera.updateMatrixWorld()
     const camPos = tmpVec.setFromMatrixPosition(camera.matrixWorld)
 
-    // A static camera over a static scene needs no re-allocation at all.
-    const moved = !(Number.isFinite(lastCameraPos.x) && camPos.distanceTo(lastCameraPos) < LOD_CAMERA_EPSILON)
+    // A static view over a static scene needs no re-allocation at all. "View",
+    // not position: a camera that only turns or zooms changes what is on screen.
+    viewSignature(camera.matrixWorld.elements, camera.projectionMatrix.elements, nextView)
+    const moved = viewChanged(lastView, nextView, LOD_CAMERA_EPSILON)
     // A streamed cloud still needs passes while the camera is still: nodes are
     // arriving, and each one changes what is drawable. diffSelection makes that
     // idempotent, so a settled view asks for nothing.
     const streaming = [...clouds.values()].some((c) => c.streaming !== null)
     if (!moved && !streaming) return
-    lastCameraPos.copy(camPos)
+    lastView = [...nextView]
 
     projScreen.multiplyMatrices(
       (camera as THREE.PerspectiveCamera).projectionMatrix,
