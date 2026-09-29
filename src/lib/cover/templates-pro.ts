@@ -6,7 +6,8 @@
 // The sheet's layout is shared with the deck's project slide.
 
 import { orientationOf } from './formats'
-import { drawLines, setTracking, wrapLines, type Rect } from './draw'
+import { compactNumber, drawLines, setTracking, wrapLines, type Rect } from './draw'
+import { DISCIPLINE_COLORS } from './disciplines'
 import {
   FACE, caption, drawLogo, drawPlaceholder, drawShot, factsTable, finish, fitTitle, ground, hairline, label,
   pad2, paragraph, qrBlock, sans, serif, sheetRows, title, unit, type CoverTemplate, type DeckStyle,
@@ -161,6 +162,99 @@ export const diptych: CoverTemplate = {
       }
     })
     drawLogo(ctx, spec.content.logo, { x: w - m - u * 12, y: m + u * 4.8, w: u * 12, h: u * 4 })
+    finish(ctx, spec)
+  },
+}
+
+// ── Coordination board ─────────────────────────────────────────────────────────
+// The federated set as a coordination sheet: the whole building tinted by
+// discipline as the hero, then each discipline alone in its own colour with
+// its element count, and a bar of how the elements split. The shots come from
+// the studio's "Disciplines" capture (tagged with `discipline`); untagged
+// shots are ignored except as a fallback hero.
+
+export const coordination: CoverTemplate = {
+  id: 'coordination', category: 'pro', defaultPalette: 'ink', shots: 4,
+  style: { display: 'sans', radius: 0, grid: false },
+  cover(ctx, spec) {
+    const { width: w, height: h, palette: p } = spec
+    const u = unit(spec)
+    const o = orientationOf(w, h)
+    const m = u * 5
+    const g = u * 1.6
+    ground(ctx, spec)
+
+    const heroIdx = Math.max(0, spec.shots.findIndex((s) => !s.discipline))
+    const tiles = spec.shots.map((s, i) => ({ s, i })).filter(({ s }) => s.discipline).slice(0, 4)
+
+    // Header: title left, meta right.
+    const headH = u * 11
+    label(ctx, spec.content.subtitle || spec.content.location, m, m + u * 1.2, u * 1.25, p.accent)
+    const t = fitTitle(ctx, title(spec), FACE.sans(600, -0.025), { w: w * 0.6, h: headH - u * 3 }, { maxSize: u * 6.5, minSize: u * 2.8, lineHeight: 0.95, maxLines: 1 })
+    ctx.fillStyle = p.fg
+    drawLines(ctx, t.lines, m, m + u * 3 + t.size * 0.86, t.lineHeight)
+    setTracking(ctx, 0)
+    label(ctx, [spec.content.client, spec.content.date].filter(Boolean).join('  ·  '), w - m, m + u * 1.2, u * 1.2, p.fg, 'right')
+    label(ctx, spec.content.studio, w - m, m + u * 3.6, u * 1.1, p.muted, 'right')
+
+    const top = m + headH
+    const legendH = tiles.length ? u * 7 : 0
+    const bottom = h - m - legendH
+    const capH = u * 4.2
+
+    let hero: Rect
+    let cells: Rect[]
+    const n = Math.max(1, tiles.length)
+    if (o === 'landscape') {
+      hero = { x: m, y: top, w: (w - m * 2) * 0.6, h: bottom - top }
+      const cx = hero.x + hero.w + g
+      const cw = w - m - cx
+      const ch = (bottom - top - g * (n - 1)) / n
+      cells = tiles.map((_, k) => ({ x: cx, y: top + k * (ch + g), w: cw, h: ch - capH }))
+    } else {
+      const heroH = (bottom - top) * (o === 'portrait' ? 0.55 : 0.5)
+      hero = { x: m, y: top, w: w - m * 2, h: heroH }
+      const cy = top + heroH + g
+      const cw = (w - m * 2 - g * (n - 1)) / n
+      cells = tiles.map((_, k) => ({ x: m + k * (cw + g), y: cy, w: cw, h: bottom - cy - capH }))
+    }
+
+    drawShot(ctx, spec, heroIdx, hero)
+    if (spec.shots[heroIdx]) label(ctx, spec.shots[heroIdx].label, hero.x + u * 1.6, hero.y + hero.h - u * 1.6, u * 1.1, '#F6F4EF', 'left', hero.w - u * 3.2)
+
+    tiles.forEach(({ s, i }, k) => {
+      const r = cells[k]
+      if (!r || r.h <= 0) return
+      const color = DISCIPLINE_COLORS[s.discipline!]
+      drawShot(ctx, spec, i, r)
+      // Discipline colour as a rule on top of the tile, the way coordination sets are keyed.
+      ctx.fillStyle = color
+      ctx.fillRect(r.x, r.y, r.w, Math.max(2, u * 0.45))
+      const cyText = r.y + r.h + u * 2.6
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.arc(r.x + u * 0.7, cyText - u * 0.55, u * 0.6, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.font = sans(u * 1.5, 600)
+      ctx.fillStyle = p.fg
+      ctx.fillText(s.label, r.x + u * 1.8, cyText, r.w * 0.66)
+      if (s.elements) label(ctx, compactNumber(s.elements), r.x + r.w, cyText, u * 1.2, p.muted, 'right')
+    })
+
+    // How the elements split across disciplines.
+    const total = tiles.reduce((a, { s }) => a + (s.elements ?? 0), 0)
+    if (tiles.length && total > 0) {
+      const y = h - m - u * 2.2
+      const bw = w - m * 2
+      let x = m
+      tiles.forEach(({ s }) => {
+        const part = (bw * (s.elements ?? 0)) / total
+        ctx.fillStyle = DISCIPLINE_COLORS[s.discipline!]
+        ctx.fillRect(x, y - u * 0.9, Math.max(0, part - u * 0.25), u * 0.9)
+        x += part
+      })
+      label(ctx, `${compactNumber(total)} · ${spec.labels.elements}`, m, y - u * 2.1, u * 1.1, p.muted)
+    }
     finish(ctx, spec)
   },
 }

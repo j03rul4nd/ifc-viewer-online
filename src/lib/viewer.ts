@@ -39,6 +39,11 @@ export interface PresentationLook {
   focusColor: string | null
   /** Hide the ground grid (drawings: line work, sections, plans). */
   hideGrid?: boolean
+  /**
+   * Per-model base colour for 'clay' / 'ghost' (model id → '#rrggbb'),
+   * overriding `baseColor` — a federated set tinted by discipline.
+   */
+  modelColors?: Record<string, string>
 }
 
 /** Plane cut for a Cover Studio capture. */
@@ -3122,7 +3127,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         if (look.base === 'original') {
           await paintPalette(model, new Map(restIds.map((id) => [id, typeMap.get(id)!])))
         } else if (restIds.length) {
-          await model.setColor(restIds, new THREE.Color(look.baseColor))
+          await model.setColor(restIds, new THREE.Color(look.modelColors?.[modelId] ?? look.baseColor))
         }
         if (restIds.length && look.baseOpacity < 0.999) await model.setOpacity(restIds, look.baseOpacity)
         if (focusIds.length) {

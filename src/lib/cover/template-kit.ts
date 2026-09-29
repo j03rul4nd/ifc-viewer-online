@@ -19,7 +19,7 @@ export type CoverTemplateId =
   | 'monolith' | 'editorial' | 'arch' | 'blueprint' | 'bento' | 'swiss' | 'gallery' | 'poster'
   | 'board' | 'sequence' | 'styles' | 'spotlight'
   | 'moodboard' | 'swatch' | 'polaroid' | 'minimal' | 'statement' | 'magazine'
-  | 'datasheet' | 'diptych'
+  | 'datasheet' | 'diptych' | 'coordination'
 
 /** Where a template is filed in the gallery. */
 export type TemplateCategory = 'social' | 'editorial' | 'pro'

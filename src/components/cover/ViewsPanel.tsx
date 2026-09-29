@@ -34,6 +34,9 @@ interface Props {
   onCut: () => void
   onExplode: () => void
   onPlans: () => void
+  onDisciplines: () => void
+  /** Visible models — the coordination capture needs two or more. */
+  modelCount: number
   onFrameFocus: () => void
 }
 
@@ -110,6 +113,7 @@ export default function ViewsPanel(p: Props) {
           <div className="flex flex-wrap gap-1.5">
             <button className={cls.btn} onClick={p.onExplode} disabled={!!busy}><Icons.Layers size={13} />{busy === 'explode' ? busyLabel : t('cover.explode')}</button>
             <button className={cls.btn} onClick={p.onPlans} disabled={!!busy}><Icons.Building size={13} />{busy === 'plans' ? busyLabel : t('cover.storeyPlans')}</button>
+            <button className={cls.btn} onClick={p.onDisciplines} disabled={!!busy || p.modelCount < 2} title={p.modelCount < 2 ? t('cover.disciplinesNone') : t('cover.disciplinesHint')}><Icons.Layers size={13} />{busy === 'disciplines' ? busyLabel : t('cover.disciplines')}</button>
           </div>
         </div>
         <div className="text-[11px] text-[var(--text-dim)] mb-2">{t('cover.shotsHint')}</div>

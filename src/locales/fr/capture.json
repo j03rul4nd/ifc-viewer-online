@@ -535,7 +535,8 @@
       "statement": "Citation",
       "magazine": "Magazine",
       "datasheet": "Fiche technique",
-      "diptych": "Diptyque"
+      "diptych": "Diptyque",
+      "coordination": "Coordination"
     },
     "fmt": {
       "slide": "Diapositive",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Présentation client",
       "board": "Planche de concours",
-      "sheet": "Fiche projet"
+      "sheet": "Fiche projet",
+      "coordination": "Planche de coordination"
     },
     "recipeHint": {
       "pinterest": "Une épingle 2:3 façon moodboard : le modèle de quatre façons, sur papier, en douceur",
@@ -664,7 +666,8 @@
       "story": "Une story 9:16 avec le bâtiment dans une arche, en lumière chaude du soir",
       "client": "La présentation de réunion : couverture, fiche, vues, plans d’étage, chiffres et remerciements",
       "board": "Une planche A1 dans l’ordre de lecture d’un jury : image principale, coupe, plan, élévation",
-      "sheet": "Une fiche projet A4 : image principale, tableau de données, concept et deux vues d’appui"
+      "sheet": "Une fiche projet A4 : image principale, tableau de données, concept et deux vues d’appui",
+      "coordination": "Architecture, structure et fluides sur une diapositive, chacun dans sa couleur"
     },
     "recipeBusy": "Préparation…",
     "cat": {
@@ -832,6 +835,16 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "Application du rendu…"
+    "grading": "Application du rendu…",
+    "disciplines": "Disciplines",
+    "disciplinesHint": "La maquette fédérée teintée par discipline, puis chaque discipline seule",
+    "disciplinesNone": "Chargez deux modèles ou plus (architecture, structure, fluides…) pour comparer les disciplines.",
+    "disciplinesAll": "Fédérée · par discipline",
+    "discipline": {
+      "arch": "Architecture",
+      "struct": "Structure",
+      "mep": "Fluides",
+      "other": "Autres"
+    }
   }
 }

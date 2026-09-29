@@ -535,7 +535,8 @@
       "statement": "Citazione",
       "magazine": "Rivista",
       "datasheet": "Scheda tecnica",
-      "diptych": "Dittico"
+      "diptych": "Dittico",
+      "coordination": "Coordinamento"
     },
     "fmt": {
       "slide": "Slide",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Presentazione cliente",
       "board": "Tavola di concorso",
-      "sheet": "Scheda progetto"
+      "sheet": "Scheda progetto",
+      "coordination": "Tavola di coordinamento"
     },
     "recipeHint": {
       "pinterest": "Un pin 2:3 in stile moodboard: il modello in quattro modi, su carta, con un trattamento morbido",
@@ -664,7 +666,8 @@
       "story": "Una story 9:16 con l’edificio in un arco, nella luce calda della sera",
       "client": "La presentazione per la riunione: copertina, scheda, viste, piante, numeri e ringraziamenti",
       "board": "Una tavola A1 nell’ordine in cui la legge una giuria: immagine principale, sezione, pianta, prospetto",
-      "sheet": "Una scheda tecnica A4: immagine principale, tabella dati, concept e due viste di supporto"
+      "sheet": "Una scheda tecnica A4: immagine principale, tabella dati, concept e due viste di supporto",
+      "coordination": "Architettura, strutture e impianti in una slide, ognuno nel suo colore"
     },
     "recipeBusy": "Preparazione…",
     "cat": {
@@ -832,6 +835,16 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "Applicazione della resa…"
+    "grading": "Applicazione della resa…",
+    "disciplines": "Discipline",
+    "disciplinesHint": "Il modello federato colorato per disciplina, poi ogni disciplina da sola",
+    "disciplinesNone": "Carica due o più modelli (architettura, strutture, impianti…) per confrontare le discipline.",
+    "disciplinesAll": "Federato · per disciplina",
+    "discipline": {
+      "arch": "Architettura",
+      "struct": "Strutture",
+      "mep": "Impianti",
+      "other": "Altro"
+    }
   }
 }

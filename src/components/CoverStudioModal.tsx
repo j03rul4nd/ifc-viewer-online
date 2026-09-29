@@ -58,7 +58,7 @@ type Tab = 'design' | 'views' | 'text' | 'slides'
 const TABS: Tab[] = ['design', 'views', 'text', 'slides']
 const NO_DECK: DeckOptions = { views: false, data: false, closing: false, project: false, statement: false, perSlide: 1 }
 const RECIPE_ICON: Record<RecipeId, keyof typeof Icons> = {
-  pinterest: 'Palette', carousel: 'Layers', post: 'Share', story: 'Film', client: 'Play', board: 'Ruler', sheet: 'FileIfc',
+  pinterest: 'Palette', carousel: 'Layers', post: 'Share', story: 'Film', client: 'Play', board: 'Ruler', sheet: 'FileIfc', coordination: 'Layers',
 }
 
 function today(lang: string): string {
@@ -499,6 +499,8 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           onCut={() => void cap.captureCut().then(addShots)}
           onExplode={() => void cap.captureExploded().then(addShots)}
           onPlans={() => void cap.capturePlans().then(addShots)}
+          onDisciplines={() => void cap.captureDisciplines().then(addShots)}
+          modelCount={models.filter((m) => m.visible).length}
           onFrameFocus={() => void cap.frameFocus()} />
       case 'text':
         return <ContentPanel doc={doc} update={update} autoValues={autoValues} logoUrl={logoUrl} onLogo={onLogo} onLogoRemove={() => setLogoUrl(null)} />

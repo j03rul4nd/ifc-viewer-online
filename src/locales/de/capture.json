@@ -535,7 +535,8 @@
       "statement": "Statement",
       "magazine": "Magazin",
       "datasheet": "Projektblatt",
-      "diptych": "Diptychon"
+      "diptych": "Diptychon",
+      "coordination": "Koordination"
     },
     "fmt": {
       "slide": "Folie",
@@ -655,7 +656,8 @@
       "story": "Story",
       "client": "Kundenpräsentation",
       "board": "Wettbewerbsplan",
-      "sheet": "Projektblatt"
+      "sheet": "Projektblatt",
+      "coordination": "Koordinationsplan"
     },
     "recipeHint": {
       "pinterest": "Ein 2:3-Moodboard-Pin: das Modell auf vier Arten, auf Papier, sanft entwickelt",
@@ -664,7 +666,8 @@
       "story": "Eine 9:16-Story mit dem Gebäude im Bogen, in warmem Abendlicht",
       "client": "Die Präsentation fürs Meeting: Titel, Projektblatt, Ansichten, Grundrisse, Zahlen, Dank",
       "board": "Ein A1-Plan in der Reihenfolge, in der eine Jury liest: Hauptbild, Schnitt, Grundriss, Ansicht",
-      "sheet": "Ein A4-Projektdatenblatt: Hauptbild, Kennwerte, Konzept und zwei weitere Ansichten"
+      "sheet": "Ein A4-Projektdatenblatt: Hauptbild, Kennwerte, Konzept und zwei weitere Ansichten",
+      "coordination": "Architektur, Tragwerk und TGA auf einer Folie, jede in ihrer Farbe"
     },
     "recipeBusy": "Wird vorbereitet…",
     "cat": {
@@ -832,6 +835,16 @@
       "instagram": "Instagram",
       "linkedin": "LinkedIn"
     },
-    "grading": "Bildlook wird angewendet…"
+    "grading": "Bildlook wird angewendet…",
+    "disciplines": "Fachdisziplinen",
+    "disciplinesHint": "Das föderierte Modell nach Disziplin eingefärbt, dann jede Disziplin einzeln",
+    "disciplinesNone": "Lade zwei oder mehr Modelle (Architektur, Tragwerk, TGA…), um Disziplinen zu vergleichen.",
+    "disciplinesAll": "Föderiert · nach Disziplin",
+    "discipline": {
+      "arch": "Architektur",
+      "struct": "Tragwerk",
+      "mep": "TGA",
+      "other": "Sonstige"
+    }
   }
 }

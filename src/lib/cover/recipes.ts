@@ -22,10 +22,12 @@ export type CaptureStep =
   | { kind: 'view'; view: StudioView; look: LookId }
   | { kind: 'cut'; cut: 'plan' | 'long' | 'cross'; look: LookId }
   | { kind: 'plans' }
+  /** Federated set: all disciplines tinted, then each one alone (one step, several shots). */
+  | { kind: 'disciplines'; look: LookId }
 
-export type RecipeId = 'pinterest' | 'carousel' | 'post' | 'client' | 'board' | 'sheet' | 'story'
+export type RecipeId = 'pinterest' | 'carousel' | 'post' | 'client' | 'board' | 'sheet' | 'story' | 'coordination'
 
-export const RECIPE_IDS: readonly RecipeId[] = ['pinterest', 'carousel', 'post', 'story', 'client', 'board', 'sheet']
+export const RECIPE_IDS: readonly RecipeId[] = ['pinterest', 'carousel', 'post', 'story', 'client', 'board', 'sheet', 'coordination']
 
 export interface Recipe {
   id: RecipeId
@@ -84,6 +86,11 @@ export const RECIPES: Record<RecipeId, Recipe> = {
   sheet: {
     id: 'sheet', format: 'a4', template: 'datasheet', mode: 'cover',
     steps: [v('iso'), v('front', 'lines'), { kind: 'cut', cut: 'plan', look: 'clay' }],
+  },
+  // Coordination sheet of a federated set (architecture / structure / MEP).
+  coordination: {
+    id: 'coordination', format: 'slide', template: 'coordination', mode: 'cover',
+    steps: [{ kind: 'disciplines', look: 'clay' }],
   },
 }
 
