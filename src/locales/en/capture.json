@@ -93,7 +93,8 @@
       "pop": "Pop",
       "words": "Words",
       "slam": "Slam",
-      "count": "Count up"
+      "count": "Count up",
+      "roll": "Roll"
     },
     "effects": {
       "in": "Opening",
@@ -351,7 +352,9 @@
         "endCard": "End card",
         "sectionCut": "Section, storey by storey",
         "sectionSweep": "Section sweep",
-        "exploded": "Exploded view"
+        "exploded": "Exploded view",
+        "plans": "Floor plans",
+        "interior": "Interior"
       },
       "sectionHint": {
         "hero": "Pull back to the whole model, with the title",
@@ -372,7 +375,9 @@
         "endCard": "The name and the URL over a drifting gradient",
         "sectionCut": "A plan cut going down from the roof, stopping at each storey",
         "sectionSweep": "A vertical cut crossing the building, the inside in poché",
-        "exploded": "The storeys pull apart and fit back together"
+        "exploded": "The storeys pull apart and fit back together",
+        "plans": "Each storey cut at plan height, seen from above: the rooms",
+        "interior": "Eye height inside a storey, a slow turn"
       },
       "empty": {
         "storeys": "No storeys found in this model",
@@ -384,7 +389,9 @@
         "bcf": "No BCF topics with a viewpoint or components",
         "fixed": "Nothing to compare — validate again after fixing",
         "sectionCut": "Needs at least 2 storeys",
-        "exploded": "Needs at least 3 storeys"
+        "exploded": "Needs at least 3 storeys",
+        "plans": "No storeys found in this model",
+        "interior": "No storey tall enough to stand in"
       },
       "emptyGeneric": "Nothing to show for this model",
       "shots": "{{n}} shots",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Cut from {{from}} down to {{to}}: {{storeys}} plans.",
         "sectionSweep": "A vertical cut across {{length}} m of building.",
-        "exploded": "{{storeys}} storeys, pulled apart and put back together."
-      }
+        "exploded": "{{storeys}} storeys, pulled apart and put back together.",
+        "plan": "Plan of {{name}}: {{elements}} elements.",
+        "planRooms": "Plan of {{name}}: {{rooms}} rooms.",
+        "interior": "Inside {{name}}.",
+        "interiorRooms": "Inside {{name}}: {{rooms}} rooms on this floor."
+      },
+      "hud": "Interface",
+      "hudOn": "Technical HUD",
+      "hudHint": "Corner type with the subject, a shot counter, live cut heights and a timeline with an accent dot."
     },
     "remaining": "About {{seconds}} s left",
     "sfxVolume": "Effects volume",

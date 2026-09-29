@@ -12,6 +12,7 @@
 //   • source time   — seconds inside a source's media
 // A clip maps one onto the other with in/out points and a speed.
 
+import type { Hud } from './hud'
 import type { AudioSelection, TextOverlay, TextAnimId } from './timeline'
 import type { ProjectSfx } from './sfx'
 import type { Grade } from './grade'
@@ -139,6 +140,8 @@ export interface EditProject {
   grade?: Grade
   /** Which look styled the grade and the titles, for the picker. */
   lookId?: string
+  /** Technical interface frame over the picture (director clips). */
+  hud?: Hud
 }
 
 export interface ProjectFx {

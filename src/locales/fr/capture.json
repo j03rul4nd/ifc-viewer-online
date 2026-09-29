@@ -93,7 +93,8 @@
       "pop": "Rebond",
       "words": "Mots",
       "slam": "Impact",
-      "count": "Compteur"
+      "count": "Compteur",
+      "roll": "Défiler"
     },
     "effects": {
       "in": "Ouverture",
@@ -351,7 +352,9 @@
         "endCard": "Carton de fin",
         "sectionCut": "Coupe niveau par niveau",
         "sectionSweep": "Balayage en coupe",
-        "exploded": "Vue éclatée"
+        "exploded": "Vue éclatée",
+        "plans": "Plans d’étage",
+        "interior": "Intérieur"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -372,7 +375,9 @@
         "endCard": "Le nom et l’URL sur un dégradé en mouvement",
         "sectionCut": "Une coupe en plan qui descend depuis le toit et s’arrête à chaque niveau",
         "sectionSweep": "Une coupe verticale qui traverse le bâtiment et révèle l’intérieur",
-        "exploded": "Les niveaux s’écartent puis se réassemblent"
+        "exploded": "Les niveaux s’écartent puis se réassemblent",
+        "plans": "Chaque niveau coupé à hauteur de plan, vu d’en haut : les pièces",
+        "interior": "À hauteur d’yeux dans un niveau, un lent panoramique"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",
@@ -384,7 +389,9 @@
         "bcf": "Aucun sujet BCF avec point de vue ou composants",
         "fixed": "Rien à comparer — revalidez après correction",
         "sectionCut": "Il faut au moins 2 niveaux",
-        "exploded": "Il faut au moins 3 niveaux"
+        "exploded": "Il faut au moins 3 niveaux",
+        "plans": "Aucun niveau dans ce modèle",
+        "interior": "Aucun niveau assez haut pour s’y tenir debout"
       },
       "emptyGeneric": "Rien à montrer pour cette maquette",
       "shots": "{{n}} plans",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}} : Health Score {{score}}/100.",
         "sectionCut": "Coupe de {{from}} à {{to}} : {{storeys}} plans.",
         "sectionSweep": "Une coupe verticale sur {{length}} m de bâtiment.",
-        "exploded": "{{storeys}} niveaux, écartés puis réassemblés."
-      }
+        "exploded": "{{storeys}} niveaux, écartés puis réassemblés.",
+        "plan": "Plan de {{name}} : {{elements}} éléments.",
+        "planRooms": "Plan de {{name}} : {{rooms}} pièces.",
+        "interior": "À l’intérieur de {{name}}.",
+        "interiorRooms": "À l’intérieur de {{name}} : {{rooms}} pièces à ce niveau."
+      },
+      "hud": "Interface",
+      "hudOn": "HUD technique",
+      "hudHint": "Texte dans les coins avec le sujet, compteur de plans, hauteur de coupe en direct et une frise avec un point d’accent."
     },
     "remaining": "Environ {{seconds}} s restantes",
     "sfxVolume": "Volume des effets",

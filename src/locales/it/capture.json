@@ -93,7 +93,8 @@
       "pop": "Rimbalzo",
       "words": "Parole",
       "slam": "Colpo",
-      "count": "Contatore"
+      "count": "Contatore",
+      "roll": "Rullo"
     },
     "effects": {
       "in": "Apertura",
@@ -351,7 +352,9 @@
         "endCard": "Cartello finale",
         "sectionCut": "Sezione piano per piano",
         "sectionSweep": "Sezione in movimento",
-        "exploded": "Vista esplosa"
+        "exploded": "Vista esplosa",
+        "plans": "Piante",
+        "interior": "Interno"
       },
       "sectionHint": {
         "hero": "Allarga fino al modello intero, con il titolo",
@@ -372,7 +375,9 @@
         "endCard": "Il nome e l’URL su un gradiente in movimento",
         "sectionCut": "Un taglio in pianta che scende dalla copertura e si ferma a ogni piano",
         "sectionSweep": "Un taglio verticale che attraversa l’edificio e ne mostra l’interno",
-        "exploded": "I piani si separano e tornano a incastrarsi"
+        "exploded": "I piani si separano e tornano a incastrarsi",
+        "plans": "Ogni piano tagliato all’altezza di pianta, visto dall’alto: gli ambienti",
+        "interior": "Ad altezza d’occhi dentro un piano, una rotazione lenta"
       },
       "empty": {
         "storeys": "Nessun piano in questo modello",
@@ -384,7 +389,9 @@
         "bcf": "Nessun argomento BCF con punto di vista o componenti",
         "fixed": "Niente da confrontare — rivalida dopo le correzioni",
         "sectionCut": "Servono almeno 2 piani",
-        "exploded": "Servono almeno 3 piani"
+        "exploded": "Servono almeno 3 piani",
+        "plans": "Nessun piano in questo modello",
+        "interior": "Nessun piano abbastanza alto da starci in piedi"
       },
       "emptyGeneric": "Niente da mostrare per questo modello",
       "shots": "{{n}} inquadrature",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Taglio da {{from}} a {{to}}: {{storeys}} piante.",
         "sectionSweep": "Un taglio verticale lungo {{length}} m di edificio.",
-        "exploded": "{{storeys}} piani, separati e rimessi insieme."
-      }
+        "exploded": "{{storeys}} piani, separati e rimessi insieme.",
+        "plan": "Pianta di {{name}}: {{elements}} elementi.",
+        "planRooms": "Pianta di {{name}}: {{rooms}} ambienti.",
+        "interior": "Dentro {{name}}.",
+        "interiorRooms": "Dentro {{name}}: {{rooms}} ambienti su questo piano."
+      },
+      "hud": "Interfaccia",
+      "hudOn": "HUD tecnico",
+      "hudHint": "Testo agli angoli con il soggetto, contatore delle inquadrature, altezza del taglio in diretta e una timeline con un punto d’accento."
     },
     "remaining": "Circa {{seconds}} s rimanenti",
     "sfxVolume": "Volume effetti",

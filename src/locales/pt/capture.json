@@ -93,7 +93,8 @@
       "pop": "Ressalto",
       "words": "Palavras",
       "slam": "Impacto",
-      "count": "Contador"
+      "count": "Contador",
+      "roll": "Rolar"
     },
     "effects": {
       "in": "Abertura",
@@ -351,7 +352,9 @@
         "endCard": "Cartão final",
         "sectionCut": "Corte piso a piso",
         "sectionSweep": "Varrimento em corte",
-        "exploded": "Vista explodida"
+        "exploded": "Vista explodida",
+        "plans": "Plantas",
+        "interior": "Interior"
       },
       "sectionHint": {
         "hero": "Afasta até ao modelo completo, com o título",
@@ -372,7 +375,9 @@
         "endCard": "O nome e o endereço sobre um degradê em movimento",
         "sectionCut": "Um corte em planta que desce da cobertura e para em cada piso",
         "sectionSweep": "Um corte vertical que atravessa o edifício e mostra o interior",
-        "exploded": "Os pisos separam-se e voltam a encaixar"
+        "exploded": "Os pisos separam-se e voltam a encaixar",
+        "plans": "Cada piso cortado à altura de planta, visto de cima: as divisões",
+        "interior": "À altura dos olhos dentro de um piso, uma rotação lenta"
       },
       "empty": {
         "storeys": "Este modelo não tem pisos",
@@ -384,7 +389,9 @@
         "bcf": "Sem tópicos BCF com ponto de vista ou componentes",
         "fixed": "Nada a comparar — valide de novo depois de corrigir",
         "sectionCut": "Precisa de pelo menos 2 pisos",
-        "exploded": "Precisa de pelo menos 3 pisos"
+        "exploded": "Precisa de pelo menos 3 pisos",
+        "plans": "Nenhum piso neste modelo",
+        "interior": "Nenhum piso com altura para estar de pé"
       },
       "emptyGeneric": "Nada a mostrar neste modelo",
       "shots": "{{n}} tomadas",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Corte de {{from}} a {{to}}: {{storeys}} plantas.",
         "sectionSweep": "Um corte vertical ao longo de {{length}} m de edifício.",
-        "exploded": "{{storeys}} pisos, separados e novamente encaixados."
-      }
+        "exploded": "{{storeys}} pisos, separados e novamente encaixados.",
+        "plan": "Planta de {{name}}: {{elements}} elementos.",
+        "planRooms": "Planta de {{name}}: {{rooms}} divisões.",
+        "interior": "Dentro de {{name}}.",
+        "interiorRooms": "Dentro de {{name}}: {{rooms}} divisões neste piso."
+      },
+      "hud": "Interface",
+      "hudOn": "HUD técnico",
+      "hudHint": "Texto nos cantos com o assunto, contador de planos, altura do corte em direto e uma linha do tempo com um ponto de destaque."
     },
     "remaining": "Faltam cerca de {{seconds}} s",
     "sfxVolume": "Volume dos efeitos",

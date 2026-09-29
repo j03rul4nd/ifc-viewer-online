@@ -14,7 +14,7 @@ import {
   type FrameLayout, type PadStyle,
 } from './frame-layout'
 import {
-  visibleTextsAt, textRenderStateAt, transitionCoverAt,
+  visibleTextsAt, textRenderStateAt, transitionCoverAt, rollOffset,
   TEXT_STYLE_SPECS, type EditTimeline, type TextOverlay, type TextAnchor,
 } from './timeline'
 import { drawWatermark } from './watermark'
@@ -131,7 +131,7 @@ function drawBackdrop(
 
 // ── Text ───────────────────────────────────────────────────────────────────────
 
-interface TextState { alpha: number; dy: number; scale: number; text?: string }
+interface TextState { alpha: number; dy: number; scale: number; text?: string; roll?: { since: number; until: number } }
 
 function drawTextOverlay(
   ctx: CanvasRenderingContext2D,
@@ -164,7 +164,9 @@ function drawTextOverlay(
   const blockWidth = Math.min(maxWidth, Math.max(...lines.map((l) => ctx.measureText(l).width), 0))
 
   const margin = Math.min(width, height) * MARGIN_FRAC
-  const { x, y, align } = anchorBlock(overlay.anchor, layout, margin, blockHeight)
+  const placed = anchorBlock(overlay.anchor, layout, margin, blockHeight)
+  const { x, align } = placed
+  const y = overlay.yFrac !== undefined ? overlay.yFrac * height - blockHeight / 2 : placed.y
   const offsetY = state.dy * height
 
   // Scale about the block's own centre so 'pop' grows outward, not from a corner.
@@ -185,12 +187,50 @@ function drawTextOverlay(
     ctx.shadowBlur = fontSize * 0.34
     ctx.shadowOffsetY = fontSize * 0.05
   }
-  lines.forEach((line, i) => {
-    // +0.80em puts the alphabetic baseline inside the line box.
-    ctx.fillText(line, x, y + offsetY + i * lineHeight + fontSize * 0.8)
-  })
+  if (state.roll) {
+    drawRolledLines(ctx, lines, { x, y: y + offsetY, align, lineHeight, fontSize }, state.roll)
+  } else {
+    lines.forEach((line, i) => {
+      // +0.80em puts the alphabetic baseline inside the line box.
+      ctx.fillText(line, x, y + offsetY + i * lineHeight + fontSize * 0.8)
+    })
+  }
 
   ctx.restore()
+}
+
+/**
+ * Letters rolling up through each line's box (the box clips them), one after
+ * another; the index runs on across lines so a two-line card reads in order.
+ */
+function drawRolledLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  at: { x: number; y: number; align: CanvasTextAlign; lineHeight: number; fontSize: number },
+  roll: { since: number; until: number },
+): void {
+  let index = 0
+  lines.forEach((line, li) => {
+    const w = ctx.measureText(line).width
+    const left = at.align === 'left' ? at.x : at.align === 'right' ? at.x - w : at.x - w / 2
+    const top = at.y + li * at.lineHeight
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(left - at.fontSize, top - at.fontSize * 0.08, w + at.fontSize * 2, at.lineHeight + at.fontSize * 0.1)
+    ctx.clip()
+    ctx.textAlign = 'left'
+    const chars = Array.from(line)
+    let prefix = ''
+    for (const ch of chars) {
+      const cx = left + ctx.measureText(prefix).width
+      prefix += ch
+      if (ch.trim()) {
+        const off = rollOffset(index++, roll.since, roll.until)
+        if (off > -0.999 && off < 0.999) ctx.fillText(ch, cx, top + off * at.lineHeight + at.fontSize * 0.8)
+      }
+    }
+    ctx.restore()
+  })
 }
 
 interface PlateBox {

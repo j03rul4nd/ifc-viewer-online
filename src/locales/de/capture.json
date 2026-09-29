@@ -93,7 +93,8 @@
       "pop": "Pop",
       "words": "Wörter",
       "slam": "Knall",
-      "count": "Hochzählen"
+      "count": "Hochzählen",
+      "roll": "Rollen"
     },
     "effects": {
       "in": "Anfang",
@@ -351,7 +352,9 @@
         "endCard": "Abspann-Karte",
         "sectionCut": "Schnitt Geschoss für Geschoss",
         "sectionSweep": "Schnitt-Fahrt",
-        "exploded": "Explosionsansicht"
+        "exploded": "Explosionsansicht",
+        "plans": "Grundrisse",
+        "interior": "Innenraum"
       },
       "sectionHint": {
         "hero": "Rückzug auf das ganze Modell, mit Titel",
@@ -372,7 +375,9 @@
         "endCard": "Name und URL über einem wandernden Farbverlauf",
         "sectionCut": "Ein Grundrissschnitt, der vom Dach abwärts an jedem Geschoss hält",
         "sectionSweep": "Ein vertikaler Schnitt quer durch das Gebäude, das Innere sichtbar",
-        "exploded": "Die Geschosse lösen sich und fügen sich wieder zusammen"
+        "exploded": "Die Geschosse lösen sich und fügen sich wieder zusammen",
+        "plans": "Jedes Geschoss in Grundrisshöhe geschnitten, von oben: die Räume",
+        "interior": "Augenhöhe in einem Geschoss, eine langsame Drehung"
       },
       "empty": {
         "storeys": "Keine Geschosse in diesem Modell",
@@ -384,7 +389,9 @@
         "bcf": "Keine BCF-Themen mit Blickpunkt oder Bauteilen",
         "fixed": "Nichts zu vergleichen – nach dem Beheben erneut prüfen",
         "sectionCut": "Braucht mindestens 2 Geschosse",
-        "exploded": "Braucht mindestens 3 Geschosse"
+        "exploded": "Braucht mindestens 3 Geschosse",
+        "plans": "Keine Geschosse in diesem Modell",
+        "interior": "Kein Geschoss hoch genug zum Stehen"
       },
       "emptyGeneric": "Für dieses Modell nichts zu zeigen",
       "shots": "{{n}} Aufnahmen",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Schnitt von {{from}} bis {{to}}: {{storeys}} Grundrisse.",
         "sectionSweep": "Ein vertikaler Schnitt über {{length}} m Gebäude.",
-        "exploded": "{{storeys}} Geschosse, auseinandergezogen und wieder zusammengesetzt."
-      }
+        "exploded": "{{storeys}} Geschosse, auseinandergezogen und wieder zusammengesetzt.",
+        "plan": "Grundriss {{name}}: {{elements}} Elemente.",
+        "planRooms": "Grundriss {{name}}: {{rooms}} Räume.",
+        "interior": "In {{name}}.",
+        "interiorRooms": "In {{name}}: {{rooms}} Räume auf dieser Ebene."
+      },
+      "hud": "Oberfläche",
+      "hudOn": "Technisches HUD",
+      "hudHint": "Ecktexte mit dem Motiv, Einstellungszähler, Schnitthöhe live und eine Zeitleiste mit Akzentpunkt."
     },
     "remaining": "Noch etwa {{seconds}} s",
     "sfxVolume": "Effektlautstärke",
