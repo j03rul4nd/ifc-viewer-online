@@ -693,6 +693,10 @@
       "openTiktok": "Open TikTok",
       "share": "Share…",
       "done": "Done"
+    },
+    "direct": {
+      "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
+      "resize": "Resize"
     }
   },
   "cover": {

@@ -183,6 +183,7 @@ function TextPanel({ text }: { text: TextOverlay }) {
     <>
       <Section title={t('editor.text.content')}>
         <textarea
+          data-studio-text-input
           className="studio-input min-h-[72px] resize-y"
           value={text.text}
           placeholder={t('editor.text.placeholder')}
