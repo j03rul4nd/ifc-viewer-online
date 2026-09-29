@@ -32,6 +32,7 @@ import { usePreviewEngine } from './usePreviewEngine'
 import { StudioTimeline } from './StudioTimeline'
 import { StudioInspector } from './StudioInspector'
 import { SoundToClip } from './SoundToClip'
+import { ExportSheet } from './ExportSheet'
 import { StudioDirector, runRecipe, useDirectorLabels } from './StudioDirector'
 import './studio.css'
 
@@ -117,24 +118,9 @@ export default function ClipStudio() {
 
   const onAddShot = (type: ShotType) => run((signal) => addShot(type, t(`studio.shots.${type}`), 4, signal))
 
-  // A viral sound's rights are unknown: say so before writing the file, and
-  // offer the version TikTok itself rewards — same cut, sound added in the app.
-  const [rightsAsk, setRightsAsk] = useState(false)
-  const onExport = () => {
-    if (needsRightsWarning(project.audio)) { setRightsAsk(true); return }
-    doExport(true)
-  }
-  const doExport = (withMusic: boolean) => run(async (signal) => {
-    setRightsAsk(false)
-    const blob = await exportStudio(signal, t('studio.exporting', { percent: 0 }), withMusic)
-    const ext = blob.type.includes('webm') ? 'webm' : 'mp4'
-    downloadBlob(blob, `ifc-clip-${output.preset}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${ext}`)
-    toast(t('studio.exportDone', { size: formatBytes(blob.size) }), 'success')
-    // Cut for a TikTok sound that is added in the app: say exactly where to start it.
-    const a = useClipStudioStore.getState().project.audio
-    const embedded = withMusic && a.kind === 'user' && !!useClipStudioStore.getState().sound
-    if (a.link && a.music && !embedded) toast(t('studio.tiktok.howTo', { start: formatStart(a.offsetSec), bpm: Math.round(a.music.bpm) }), 'info')
-  })
+  // Export opens the sheet (settings → progress → done), CapCut-style.
+  const [exporting, setExporting] = useState(false)
+  const onExport = () => { engine.pause(); setExporting(true) }
 
   // ── Editing shortcuts ───────────────────────────────────────────────────────
   const addText = useCallback(() => {
@@ -154,6 +140,7 @@ export default function ClipStudio() {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
+      if (exporting) return
       const el = e.target as HTMLElement
       if (el.closest('input, textarea, select, [contenteditable="true"]')) return
       const mod = e.ctrlKey || e.metaKey
@@ -174,7 +161,7 @@ export default function ClipStudio() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, engine, edit, playhead, deleteSelected, selection, addText, setPlayhead, duration, undo, redo, job, close])
+  }, [open, engine, edit, playhead, deleteSelected, selection, addText, setPlayhead, duration, undo, redo, job, close, exporting])
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return
@@ -313,20 +300,7 @@ export default function ClipStudio() {
         <aside className="studio-side hidden overflow-y-auto border-l border-[var(--border)] lg:block"><StudioInspector /></aside>
       </div>
 
-      {rightsAsk && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4" role="alertdialog" aria-modal="true" aria-labelledby="studio-rights-title">
-          <div className="flex max-w-[440px] flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 text-[13px] leading-relaxed">
-            <h3 id="studio-rights-title" className="text-[15px] font-semibold">⚠ {t('studio.sound.warnTitle')}</h3>
-            <p>{t('studio.sound.warnBody', { name: project.audio.fileName ?? '' })}</p>
-            <p className="text-[var(--text-dim)]">{t('studio.sound.warnTip')}</p>
-            <div className="mt-1 flex flex-wrap justify-end gap-2">
-              <button type="button" className="studio-btn" onClick={() => setRightsAsk(false)}>{t('studio.cancel')}</button>
-              <button type="button" className="studio-btn" onClick={() => doExport(false)}>{t('studio.sound.exportSilent')}</button>
-              <button type="button" className="studio-btn studio-btn--accent" onClick={() => doExport(true)}>{t('studio.sound.exportAnyway')}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {exporting && <ExportSheet onClose={() => setExporting(false)} previewCanvas={canvasRef.current} />}
 
       <StudioTimeline onSeek={(tt) => { engine.pause(); setPlayhead(tt) }} />
 

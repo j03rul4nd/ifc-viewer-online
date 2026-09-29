@@ -30,6 +30,8 @@ export interface CodecChoice {
   video: 'avc' | 'vp9'
   audio: 'aac' | 'opus' | null
   mime: string
+  /** The GPU encoder takes this size: ask for it (often several times faster). */
+  hardware?: boolean
 }
 
 /** True where WebCodecs exists at all. Everything else falls back to the realtime path. */
@@ -48,13 +50,23 @@ export async function pickCodec(width: number, height: number, withAudio: boolea
     const aac = withAudio && (await canEncodeAudio('aac'))
     // H.264 without AAC would mean MP4+Opus, which some platforms reject —
     // prefer a silent MP4 over an audio track that fails the upload.
-    return { container: 'mp4', video: 'avc', audio: aac ? 'aac' : null, mime: 'video/mp4' }
+    return { container: 'mp4', video: 'avc', audio: aac ? 'aac' : null, mime: 'video/mp4', hardware: await hardwareEncodes('avc1.640028', size) }
   }
   if (await canEncodeVideo('vp9', size)) {
     const opus = withAudio && (await canEncodeAudio('opus'))
-    return { container: 'webm', video: 'vp9', audio: opus ? 'opus' : null, mime: 'video/webm' }
+    return { container: 'webm', video: 'vp9', audio: opus ? 'opus' : null, mime: 'video/webm', hardware: await hardwareEncodes('vp09.00.40.08', size) }
   }
   return null
+}
+
+/** Whether the GPU encoder accepts this codec at this size (false where the check itself fails). */
+async function hardwareEncodes(codec: string, size: { width: number; height: number }): Promise<boolean> {
+  try {
+    const r = await VideoEncoder.isConfigSupported({ codec, ...size, hardwareAcceleration: 'prefer-hardware' })
+    return !!r.supported
+  } catch {
+    return false
+  }
 }
 
 // ── Reading sources ────────────────────────────────────────────────────────────
@@ -185,6 +197,7 @@ export async function createVideoWriter(o: WriterOptions): Promise<VideoWriter> 
     bitrate: o.bitrate ?? defaultBitrate(width, height, o.fps),
     // A keyframe every second keeps scrubbing smooth wherever it is uploaded.
     keyFrameInterval: 1,
+    ...(o.choice.hardware ? { hardwareAcceleration: 'prefer-hardware' as const } : {}),
   })
   output.addVideoTrack(video, { frameRate: o.fps })
   const audio = o.choice.audio ? new AudioBufferSource({ codec: o.choice.audio, bitrate: 160_000 }) : null
