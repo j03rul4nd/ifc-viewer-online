@@ -20,6 +20,10 @@ export interface ProjectExportOptions {
   watermark: boolean
   /** Decoded music bed, or null for a silent file. */
   bed: AudioBuffer | null
+  /** Video bitrate, bits/s; missing = the default for the size. */
+  bitrate?: number
+  /** Called every few frames with the frame just encoded — for a live thumbnail. */
+  onPreview?: (canvas: HTMLCanvasElement, fraction: number) => void
   onProgress?: (fraction: number, stage: 'frames' | 'audio' | 'finishing') => void
   signal?: AbortSignal
 }
@@ -60,7 +64,12 @@ export async function exportProject(
     return r
   }
   const layout = layoutClips(project)
-  const writer = await createVideoWriter({ width: o.width, height: o.height, fps: o.fps, choice })
+  const writer = await createVideoWriter({ width: o.width, height: o.height, fps: o.fps, choice, bitrate: o.bitrate })
+  // The music is mixed offline while the frames encode, not after them.
+  const audioJob = wantsAudio && choice.audio
+    ? mixBed(hasBed ? o.bed : null, project.audio, duration, 48_000, project.sfx)
+    : null
+  audioJob?.catch(() => { /* surfaced when awaited below */ })
   try {
 
     const frames = Math.max(1, Math.round(duration * o.fps))
@@ -94,12 +103,13 @@ export async function exportProject(
       })
       await writer.addFrame(i)
       o.onProgress?.((i + 1) / frames, 'frames')
+      if (o.onPreview && (i % Math.max(1, Math.round(o.fps / 4)) === 0)) o.onPreview(writer.canvas, (i + 1) / frames)
     }
 
     let audio: AudioBuffer | null = null
-    if (wantsAudio && choice.audio) {
+    if (audioJob) {
       o.onProgress?.(1, 'audio')
-      audio = await mixBed(hasBed ? o.bed : null, project.audio, duration, 48_000, project.sfx)
+      audio = await audioJob
     }
     o.onProgress?.(1, 'finishing')
     const blob = await writer.finalize(audio)

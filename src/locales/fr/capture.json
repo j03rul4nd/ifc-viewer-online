@@ -668,6 +668,31 @@
       "label": "Captions word by word, on the beat",
       "on": "Captions on the beat",
       "hint": "Two or three words at a time, big and centred; each new word punches in on a beat. They stay on the beat when you edit or move a caption."
+    },
+    "export2": {
+      "exportingTitle": "Exporting…",
+      "doneTitle": "Saved to your device",
+      "resolution": "Resolution",
+      "fps": "Frame rate",
+      "quality": "Quality",
+      "q": {
+        "small": "Smaller file",
+        "recommended": "Recommended",
+        "high": "Higher"
+      },
+      "eta": "about {{time}}",
+      "fastHint": "720p exports about twice as fast — fine for a phone feed.",
+      "withMusic": "Include the music",
+      "rightsNote": "Viral sound: its rights are unknown. The platform may mute the video, take it down or limit its reach. For TikTok, leave it off and add the same sound in the app — the cut is already timed to it.",
+      "name": "File name",
+      "left": "{{time}} left",
+      "starting": "Starting…",
+      "keepOpen": "You can switch tabs — it keeps going.",
+      "saved": "{{file}} · {{size}} · exported in {{time}}",
+      "saveAgain": "Save again",
+      "openTiktok": "Open TikTok",
+      "share": "Share…",
+      "done": "Done"
     }
   },
   "cover": {
