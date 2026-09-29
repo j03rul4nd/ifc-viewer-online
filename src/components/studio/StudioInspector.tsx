@@ -14,7 +14,8 @@ import {
   createTextOverlay, MEDIA_ANIMS, SOUND_RIGHTS, TEXT_ANCHORS, TEXT_ANIMS, TEXT_STYLES, type SoundRights, type TextOverlay,
 } from '../../lib/capture/timeline'
 import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-library'
-import { importSound, rhythmFor } from '../../lib/capture/studio-actions'
+import { currentModelFacts, importSound, rhythmFor } from '../../lib/capture/studio-actions'
+import { applyTemplate, TEMPLATE_IDS, templateMinClips, type TemplateId } from '../../lib/capture/viral-templates'
 import { hookEndSec, metaFromTaps, syncProjectToMusic } from '../../lib/capture/music-analysis'
 import { enrichTikTokLink, formatStart, parseTikTokUrl, trendingSoundsUrl, type SoundLink } from '../../lib/capture/tiktok-link'
 import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
@@ -331,6 +332,8 @@ function ProjectPanel() {
         </label>
       </Section>
 
+      <ViralTemplates />
+
       <Section title={t('studio.project')}>
         <span className="text-[11.5px] text-[var(--text-dim)]">{t('studio.intro')}</span>
         <Chips value={project.intro.type} options={fades} label={fadeLabel} onChange={(v) => edit((pr) => ({ ...pr, intro: { ...pr.intro, type: v } }))} />
@@ -505,5 +508,50 @@ function TikTokSound() {
         </p>
       )}
     </div>
+  )
+}
+
+// ── Viral templates ────────────────────────────────────────────────────────────
+
+function ViralTemplates() {
+  const { t } = useTranslation('capture')
+  const project = useClipStudioStore((s) => s.project)
+  const edit = useClipStudioStore((s) => s.edit)
+
+  const apply = (id: TemplateId) => {
+    const f = currentModelFacts()
+    const facts = [
+      f.storeyCount ? t('studio.templates.fact.storeys', { n: f.storeyCount }) : null,
+      f.elementCount ? t('studio.templates.fact.elements', { n: f.elementCount.toLocaleString() }) : null,
+      typeof f.healthScore === 'number' ? t('studio.templates.fact.health', { n: Math.round(f.healthScore) }) : null,
+      f.schema ? t('studio.templates.fact.schema', { schema: f.schema }) : null,
+    ].filter((x): x is string => !!x)
+    const m = project.audio.music
+    edit((p) => applyTemplate(p, id, {
+      rhythm: rhythmFor(p),
+      dropAt: m ? m.dropSec - p.audio.offsetSec : null,
+      labels: {
+        waitForIt: t('studio.templates.copy.waitForIt'),
+        before: t('studio.templates.copy.before'),
+        after: t('studio.templates.copy.after'),
+        pov: t('studio.templates.copy.pov'),
+        facts,
+        factsTitle: t('studio.templates.copy.factsTitle', { n: facts.length }),
+      },
+    }))
+  }
+
+  return (
+    <Section title={t('studio.templates.title')}>
+      <div className="grid grid-cols-1 gap-1.5">
+        {TEMPLATE_IDS.map((id) => (
+          <button key={id} type="button" className="studio-btn flex-col items-start text-left" disabled={project.clips.length < templateMinClips(id)} onClick={() => apply(id)}>
+            <span className="font-medium">{t(`studio.templates.${id}.name`)}</span>
+            <span className="text-[11px] font-normal text-[var(--text-faint)]">{t(`studio.templates.${id}.hint`)}</span>
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.templates.undoHint')}</p>
+    </Section>
   )
 }

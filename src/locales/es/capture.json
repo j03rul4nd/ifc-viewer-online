@@ -584,6 +584,43 @@
       "apply": "Cortar el vídeo a este sonido",
       "save": "Guardar este ritmo",
       "howTo": "En TikTok: pulsa “Añadir sonido”, elige este sonido y recórtalo para que empiece en {{start}} — los cortes caen en su beat ({{bpm}} BPM)."
+    },
+    "templates": {
+      "title": "Plantillas virales",
+      "undoHint": "Una plantilla reordena tus planos y añade textos. Ctrl+Z la deshace.",
+      "dropReveal": {
+        "name": "💥 Revelación en el drop",
+        "hint": "Gancho “espera al final”, una subida, tu mejor plano en el drop y luego cortes rápidos."
+      },
+      "loop": {
+        "name": "🔁 Bucle infinito",
+        "hint": "El final enlaza con el principio y se repite sin corte — las revisualizaciones cuentan."
+      },
+      "beforeAfter": {
+        "name": "↔️ Antes / después",
+        "hint": "Dos mitades con un destello blanco entre ellas."
+      },
+      "pov": {
+        "name": "👀 POV",
+        "hint": "Una frase en primera persona arriba durante todo el clip."
+      },
+      "facts": {
+        "name": "🔢 Datos del modelo",
+        "hint": "Un dato real del modelo en cada plano."
+      },
+      "copy": {
+        "waitForIt": "Espera al final… 👀",
+        "before": "ANTES",
+        "after": "DESPUÉS",
+        "pov": "POV: el modelo por fin carga sin errores",
+        "factsTitle": "{{n}} datos de este edificio"
+      },
+      "fact": {
+        "storeys": "{{n}} plantas",
+        "elements": "{{n}} elementos",
+        "health": "Health Score {{n}}/100",
+        "schema": "Hecho en {{schema}}"
+      }
     }
   },
   "cover": {

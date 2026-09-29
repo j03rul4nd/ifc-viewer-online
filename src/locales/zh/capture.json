@@ -584,6 +584,43 @@
       "apply": "Cut the video to this sound",
       "save": "Save this beat",
       "howTo": "In TikTok: tap “Add sound”, pick this sound, and trim it to start at {{start}} — the cuts land on its beat ({{bpm}} BPM)."
+    },
+    "templates": {
+      "title": "Viral templates",
+      "undoHint": "A template re-arranges your shots and adds captions. Ctrl+Z undoes it.",
+      "dropReveal": {
+        "name": "💥 Reveal on the drop",
+        "hint": "“Wait for it” hook, a build, your best shot on the drop, then fast cuts."
+      },
+      "loop": {
+        "name": "🔁 Seamless loop",
+        "hint": "The end flows into the start, so it replays with no seam — rewatches count."
+      },
+      "beforeAfter": {
+        "name": "↔️ Before / after",
+        "hint": "Two halves with a white flash between them."
+      },
+      "pov": {
+        "name": "👀 POV",
+        "hint": "A first-person line on top for the whole clip."
+      },
+      "facts": {
+        "name": "🔢 Facts about the model",
+        "hint": "One real fact from the model on each shot."
+      },
+      "copy": {
+        "waitForIt": "Wait for it… 👀",
+        "before": "BEFORE",
+        "after": "AFTER",
+        "pov": "POV: the model finally loads without errors",
+        "factsTitle": "{{n}} facts about this building"
+      },
+      "fact": {
+        "storeys": "{{n}} storeys",
+        "elements": "{{n}} elements",
+        "health": "Health Score {{n}}/100",
+        "schema": "Built in {{schema}}"
+      }
     }
   },
   "cover": {
