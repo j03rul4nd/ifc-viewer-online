@@ -1,27 +1,31 @@
 <!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shanghai · revisión de calles y edificios</title>
 <style>html,body{overflow:hidden}aside{max-height:38vh;overflow:auto}</style>
 <style>body{margin:0;background:#bccbd5;font:14px system-ui;color:#183443}aside{position:fixed;z-index:2;top:18px;left:18px;padding:20px;background:#fffffff0;border-radius:12px;max-width:330px}h1{font-size:20px;margin:0 0 12px}button{padding:9px;margin:3px;border:1px solid #abc;border-radius:6px;background:white;cursor:pointer}p{line-height:1.5;font-size:12px}canvas{display:block}</style>
-<aside><h1>Shanghai · espacio urbano</h1><p><a href="?district=lujiazui">Lujiazui</a> · <a href="?district=xintiandi">Xintiandi</a></p><button id="ring">Anillo Mingzhu</button><button id="link">Conexiones</button><button id="low">Desde la calle</button><button id="stairs">Escaleras</button><button id="elevator">Ascensor</button><button id="park">Caminos y jardines</button><button id="buildings">Edificios</button><p id="reference">Trazados de escaleras y posición del ascensor: OSM. Dimensiones, cerramientos y barandas aproximados. Anillo: anchura de referencia 8,5 m; altura cartográfica 9 m.</p><p id="stats">Preparando geometría…</p></aside>
+<aside><h1>Shanghai · espacio urbano</h1><p><a href="?district=lujiazui">Lujiazui</a> · <a href="?district=xintiandi">Xintiandi</a> &middot; <a href="?district=jingan">Jing&#8217;an</a> &middot; <a href="?district=yuyuan">Yuyuan</a></p><button id="ring">Anillo Mingzhu</button><button id="link">Conexiones</button><button id="low">Desde la calle</button><button id="stairs">Escaleras</button><button id="elevator">Ascensor</button><button id="park">Caminos y jardines</button><button id="buildings">Edificios</button><p id="reference">Trazados de escaleras y posición del ascensor: OSM. Dimensiones, cerramientos y barandas aproximados. Anillo: anchura de referencia 8,5 m; altura cartográfica 9 m.</p><p id="stats">Preparando geometría…</p></aside>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import fixture from '/src/lib/geo/__fixtures__/shanghai-parks.json';
 import xintiandiFixture from '/src/lib/geo/__fixtures__/shanghai-xintiandi.json';
+import jinganFixture from '/src/lib/geo/__fixtures__/shanghai-jingan.json';
+import yuyuanFixture from '/src/lib/geo/__fixtures__/shanghai-yuyuan.json';
+import {buildShanghaiParkDetails} from '/src/lib/geo/shanghai-parks.ts';
 import accessFixture from '/src/lib/geo/__fixtures__/shanghai-access.json';
 import {buildBuildingsGeometry} from '/src/lib/geo/building-mesh.ts';
 import {parseOsmFeatures} from '/src/lib/geo/osm-features.ts';
 import {buildLinearLayer,solveSceneVertical,buildSurfaceLayer,buildTreeLayer} from '/src/lib/geo/osm-scene.ts';
 import {latLonToNormalized,metresToNormalized} from '/src/lib/geo/geo-math.ts';
-const district=new URLSearchParams(location.search).get('district'),historic=district==='xintiandi';
-const lat=historic?31.218:31.24022,lon=historic?121.4755:121.49599,o=latLonToNormalized(lat,lon),unit=metresToNormalized(lat);
+const district=new URLSearchParams(location.search).get('district'),historic=['xintiandi','jingan','yuyuan'].includes(district);
+const [lat,lon]=district==='jingan'?[31.22541,121.44073]:district==='yuyuan'?[31.22917,121.4875]:historic?[31.218,121.4755]:[31.24022,121.49599];const o=latLonToNormalized(lat,lon),unit=metresToNormalized(lat);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0xbccbd5);renderer.toneMapping=THREE.ACESFilmicToneMapping;document.body.append(renderer.domElement);
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,5000);camera.up.set(0,0,1);
 const controls=new OrbitControls(camera,renderer.domElement);scene.add(new THREE.HemisphereLight(0xecf6ff,0x727362,2));const sun=new THREE.DirectionalLight(0xfff0d9,3);sun.position.set(-80,-150,240);scene.add(sun);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0xa6b3ac,roughness:1}));ground.position.z=-.1;scene.add(ground);
-const start=performance.now(),features=parseOsmFeatures(historic?xintiandiFixture:{elements:[...accessFixture.elements,...fixture.elements]}),opts={anchorLat:lat,anchorLon:lon,quality:'detailed'};opts.vertical=solveSceneVertical(features,opts);
+const start=performance.now(),features=parseOsmFeatures(district==='jingan'?jinganFixture:district==='yuyuan'?yuyuanFixture:historic?xintiandiFixture:{elements:[...accessFixture.elements,...fixture.elements]}),opts={anchorLat:lat,anchorLon:lon,quality:'detailed'};opts.vertical=solveSceneVertical(features,opts);
 const roads=buildLinearLayer(features,'road',opts);const root=new THREE.Group();root.scale.setScalar(1/unit);root.position.set(-o.nx/unit,-o.ny/unit,0);root.add(roads.object);scene.add(root);
 const landscape=new THREE.Group();root.add(landscape);
 for(const kind of ['green','water']){const built=buildSurfaceLayer(features,kind,opts);if(built)landscape.add(built.object)}
+const parkDetails=buildShanghaiParkDetails(features,{...opts,scenery:true,waterElevation:()=>.15*unit});if(parkDetails)landscape.add(parkDetails.water,parkDetails.green,parkDetails.scenery);
 const trees=buildTreeLayer(features,opts);if(trees)landscape.add(trees.object);landscape.visible=false;
 const built=buildBuildingsGeometry(features.filter(f=>f.kind==='building'&&f.ring),{...opts,detail:'detailed',lit:true,localOrigin:true});
 let buildings;if(built){buildings=new THREE.Mesh(built.geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72}));buildings.position.set(built.origin.x,built.origin.y,0);buildings.visible=false;root.add(buildings)}

@@ -27,3 +27,25 @@ Run `npx vitest run src/lib/geo src/locales scripts/blender/shanghai-park-assets
 With Vite running, `/scripts/qa/shanghai-parks.html` compares the existing shared prop geometry with the regional pack on the same OSM fixture and scene. It displays frame rate, draw calls, triangle count and construction time. It is a development comparison, not a historical screenshot of production; both modes use the current surface renderer. Local checks observed approximately 2.49 million triangles and 16 draw calls with regional planting, 18 draws with path scenery, and 60 FPS after shader warm-up on the test machine. Frame rate dropped during concurrent test workloads; these figures are not a device-independent performance guarantee.
 
 Rollback: revert the regional rendering release. IFC model assets are not changed.
+
+
+## September 24 topology and historic districts
+
+- Green and water surfaces now triangulate inner rings in both quality modes. Detailed shoreline distance includes island boundaries; seeded foliage excludes green holes.
+- Park decoration uses the same paved-area and rail clearances as procedural trees. Ground furniture does not follow elevated/tunnel ways or paved polygon perimeters. Random pergolas were removed: they were not mapped structures.
+- Fountain symbols are fitted to the actual nearest basin edge (including holes); concave basins use an interior sample when the vertex average is outside. Very narrow basins omit jets.
+- Explicit `building=roof` is rendered as an open canopy with slender illustrative supports, not a solid room. Equipment is excluded from those roofs.
+- Mapped mansard roofs keep a steep skirt and raised cap. Pitch, breakpoint and supports are approximate, not surveyed architectural detail. Roofs with courtyard holes retain the conservative flat treatment.
+- New official OSM API snapshots cover Jing'an and Yuyuan. Each JSON records source URL, retrieval time and ODbL attribution. Religious site polygons must not be extruded as a single building; actual individual building outlines remain authoritative. The snapshots do not establish exact facade detail or a complete restoration model.
+
+### Research and limits
+
+The [Shanghai municipal garden reference](https://english.shanghai.gov.cn/en-Parks/20241118/3ab0a509201343a59102f9bc63a3aab4.html) describes Yuyuan's white walls, dark tiles, pavilions, rockeries and ponds. These references guide review, but no synthetic rockery or pavilion layout is inserted as surveyed data.
+
+The [municipal Jing'an square update](https://english.shanghai.gov.cn/en-Latest-WhatsNew/20240320/1793a6e62ca445c3aefab0bb1f3b7f32.html) reports the 2024 reopening and a raised plaza. It does not give a usable elevation measurement: the implementation does not invent an exact raised datum from that article.
+
+OSM identity checks: Jing'an site `w13981430`, main hall `w1246090668`, Yuyuan garden `w40036584`, Huxinting `w228035340`. Never apply one temple style to every religious building: this area also includes the Fuyou Road mosque.
+
+### Reproduce review
+
+Use `/scripts/qa/shanghai-bridges.html?district=yuyuan` or `district=jingan`. Export production geometry with `node scripts/blender/export-shanghai-city.mjs yuyuan`; render the resulting directory with `scripts/blender/render-shanghai-rail.py`. Blender review is a geometry/material inspection, not a screenshot of the browser's shader output.

@@ -102,7 +102,7 @@ describe('parseRoofShape', () => {
     // `skillion` was in this list until the mesh learned to build a mono-pitch.
     // It is the second most common roof tag on `building:part` in the Lujiazui
     // patch, and flat is the one shape a mono-pitch is not.
-    for (const s of [undefined, '', 'sawtooth', 'mansard', 'quadruple_saltbox']) {
+    for (const s of [undefined, '', 'sawtooth', 'quadruple_saltbox']) {
       expect(parseRoofShape(s)).toBe('flat')
     }
   })
@@ -1215,7 +1215,7 @@ describe('parseRoofShape — a mono-pitch is not a flat roof', () => {
 
   it('still falls back to flat for a shape it cannot build', () => {
     // A wrong shape confidently drawn is worse than a flat cap.
-    expect(parseRoofShape('mansard')).toBe('flat')
+    expect(parseRoofShape('mansard')).toBe('mansard')
     expect(parseRoofShape('sawtooth')).toBe('flat')
     expect(parseRoofShape(undefined)).toBe('flat')
   })
