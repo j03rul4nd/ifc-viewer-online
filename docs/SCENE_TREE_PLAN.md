@@ -1,6 +1,6 @@
 # Árbol de escena: grupos, nubes de puntos, transformaciones y cámara
 
-Estado a 2026-09-24. **F3, F1 y F2 construidas** (gizmo 3D incluido); F4 pendiente.
+Estado a 2026-09-24. **F1–F3 construidas** (gizmo 3D incluido); F4 medida y cerrada (ver notas).
 
 ## Lo que ya existe (no rehacer)
 
@@ -85,7 +85,21 @@ Estado a 2026-09-24. **F3, F1 y F2 construidas** (gizmo 3D incluido); F4 pendien
     "ver todos" — evita una vista a 3 km donde no se ve nada.
 - Doble clic en un grupo/modelo/nube del árbol = encuadrar ese nodo.
 
-### F4 — Render de nubes (G5)
+### F4 — Render de nubes (G5) — MEDIDA Y CERRADA
+> Medido (2026-09-29): 4 nubes demo = 280k pts, 35 trozos, 5 MB GPU, todo
+> dibujado. `allocateBudget` cuesta 3 ms/2k trozos, 10 ms/10k, 79 ms/30k, pero
+> con trozos de 262k pts y techo de 20 M residentes el caso real son ≤ ~200
+> trozos (<1 ms): la CPU del LOD NO es el cuello de botella. Ya existían:
+> presupuesto global por tamaño en pantalla, frustum culling, recorte de
+> presupuesto al interactuar, display por uniforms, caché de nodos COPC
+> (memoria 64 MB + IndexedDB 256 MB).
+> ARREGLADO: el pase de LOD solo se relanzaba si la cámara se DESPLAZABA; girar
+> en el sitio (modo a pie), zoom de lente o cambio a ortográfica dejaban
+> ocultos trozos que volvían a estar en pantalla (`pc-lod.viewChanged`).
+> Candidatos NO hechos (sin evidencia de que hagan falta hoy): caché de
+> LAS/PLY ya parseados entre recargas; cuando ≥100k trozos, ordenar y cortar la
+> cola en vez del mínimo de 1024 pts (decisión de producto: hoy se prefiere
+> sobrepasar presupuesto a dejar huecos).
 - Medir primero (puntos residentes, draw calls, ms/frame con 1/3/5 nubes).
 - Candidatos: presupuesto de puntos repartido por visibilidad y distancia
   entre nubes (no igualitario), LOD por octree ya en streaming, frustum
