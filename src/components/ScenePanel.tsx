@@ -471,6 +471,23 @@ export default function ScenePanel({
   // Only while the transform section is open: a handle whose controls are
   // collapsed away would be a surprise on the canvas.
   useSceneGizmo(viewerApiRef, placement, gizmoIds, expandTransform && activeModelId ? gizmoMode : null)
+
+  // W / E toggle the handle the way DCC tools do; Escape puts it away. Only
+  // while this panel is open, never while typing, and never while walking —
+  // there W moves you and E raises you.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return
+      if (viewerApiRef.current?.isWalkMode()) return
+      if (e.code === 'KeyW') { setGizmoMode((m) => (m === 'translate' ? null : 'translate')); setExpandTransform(true) }
+      else if (e.code === 'KeyE') { setGizmoMode((m) => (m === 'rotate' ? null : 'rotate')); setExpandTransform(true) }
+      else if (e.code === 'Escape' && gizmoMode) { setGizmoMode(null); e.stopPropagation() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [viewerApiRef, gizmoMode])
   const { renderQuality, setRenderQuality } = useUIStore()
 
   const handleQualityChange = useCallback((q: 'standard' | 'quality') => {
@@ -642,7 +659,7 @@ export default function ScenePanel({
                       role="radio"
                       aria-checked={gizmoMode === m}
                       onClick={() => setGizmoMode(m)}
-                      title={t(`scene.gizmo.${m ?? 'off'}Hint`)}
+                      title={`${t(`scene.gizmo.${m ?? 'off'}Hint`)}${m === 'translate' ? ' (W)' : m === 'rotate' ? ' (E)' : ' (Esc)'}`}
                       className={[
                         'flex-1 h-[24px] rounded-[6px] text-[10.5px] font-medium transition-all border',
                         gizmoMode === m
