@@ -131,19 +131,29 @@ export function finishSoundClip(project: EditProject, m: MusicMeta, cut: SoundCu
     dropAt = placed[near].start
     p = { ...p, audio: { ...p.audio, offsetSec: m.dropSec - dropAt } }
   }
-  const window = cut.durationSec + (dropAt - cut.dropAtSec)
+  // The clip's end: the whole bars after the drop that come nearest the asked
+  // length, and never past the end of the sound.
+  const bar = barSec(m)
+  const soundLeft = m.durationSec - p.audio.offsetSec
+  const barsAfter = Math.max(1, Math.min(Math.round((cut.durationSec - dropAt) / bar), Math.floor((soundLeft - dropAt) / bar + 1e-6)))
+  const targetEnd = dropAt + barsAfter * bar
+  const window = targetEnd
+
+  // Fill up to it: the style and the beat snap trim shots, so give the time
+  // back after the drop, a beat at a time (later cuts stay on the beat).
+  const loopTail = style === 'loop' ? p.clips[p.clips.length - 1]?.id : undefined
+  p = fillToLength(p, targetEnd, dropAt, m.beatSec, loopTail)
 
   // End on a bar line within the sound's window. Cuts sit on the beat grid,
   // so the excess is whole beats: take it from the longest shot after the
   // drop, and every later cut stays on the beat.
-  const loopTail = style === 'loop' ? p.clips[p.clips.length - 1]?.id : undefined
   const keep = Math.max(0.5, m.beatSec)
   for (let guard = 0; guard < p.clips.length + 2; guard++) {
     const placedNow = layoutClips(p)
     const total = placedNow.reduce((mx, c) => Math.max(mx, c.end), 0)
     // Bar lines count from the drop — the one downbeat we are sure of.
-    const barsAfter = Math.max(1, Math.floor((Math.min(total, window) - dropAt) / barSec(m) + 1e-6))
-    const over = total - (dropAt + barsAfter * barSec(m))
+    const bars = Math.max(1, Math.floor((Math.min(total, window) - dropAt) / bar + 1e-6))
+    const over = total - (dropAt + bars * bar)
     if (over < 1e-3) break
     const pool = placedNow.filter((c) => c.start >= dropAt - 1e-3 && c.clip.id !== loopTail && c.end - c.start - keep > 1e-3)
     const longest = pool.sort((a, b) => (b.end - b.start) - (a.end - a.start))[0]
@@ -167,4 +177,47 @@ function reseamLoop(p: EditProject): EditProject {
   const delta = opener.inSec - tail.outSec
   if (Math.abs(delta) < 1e-6 || tail.inSec + delta < 0) return p
   return { ...p, clips: [...p.clips.slice(0, -1), { ...tail, inSec: tail.inSec + delta, outSec: tail.outSec + delta }] }
+}
+
+/** Slowest a shot may be slowed to fill time — below this, motion looks broken. */
+export const MIN_FILL_SPEED = 0.6
+
+/**
+ * Lengthen the edit to `targetEnd` without moving the drop cut: shots after
+ * the drop grow by whole beats — first from footage their source still has
+ * (the shortest shot first, so they even out), then, if the footage runs out,
+ * by slowing a shot down (never below MIN_FILL_SPEED). A loop's tail grows at
+ * its START, so its last frame still meets the opener.
+ */
+export function fillToLength(project: EditProject, targetEnd: number, dropAt: number, beatSec: number, loopTailId?: string): EditProject {
+  let p = project
+  if (!(beatSec > 0)) return p
+  const sourceLen = new Map(p.sources.map((s) => [s.id, s.durationSec]))
+  for (let guard = 0; guard < 400; guard++) {
+    const placed = layoutClips(p)
+    const total = placed.reduce((mx, c) => Math.max(mx, c.end), 0)
+    if (targetEnd - total < 1e-3) break
+    const step = Math.min(beatSec, targetEnd - total)
+    const after = placed.filter((c) => c.start >= dropAt - 1e-3)
+    const room = (c: typeof placed[number]) => {
+      const need = step * c.clip.speed
+      if (c.clip.id === loopTailId) return c.clip.inSec - need >= -1e-6 ? c.clip.inSec : -1
+      const left = (sourceLen.get(c.clip.sourceId) ?? c.clip.outSec) - c.clip.outSec
+      return left - need >= -1e-6 ? left : -1
+    }
+    const grow = after.filter((c) => room(c) >= 0).sort((a, b) => (a.end - a.start) - (b.end - b.start))[0]
+    if (grow) {
+      p = trimClipEdge(p, grow.clip.id, grow.clip.id === loopTailId ? 'start' : 'end', grow.clip.id === loopTailId ? -step : step)
+      continue
+    }
+    // Out of footage: slow the fastest shot after the drop by one beat's worth.
+    const slow = after
+      .filter((c) => c.clip.id !== loopTailId)
+      .map((c) => ({ c, speed: (c.clip.outSec - c.clip.inSec) / (c.end - c.start + step) }))
+      .filter((x) => x.speed >= MIN_FILL_SPEED - 1e-9)
+      .sort((a, b) => b.speed - a.speed)[0]
+    if (!slow) break
+    p = { ...p, clips: p.clips.map((c) => (c.id === slow.c.clip.id ? { ...c, speed: slow.speed } : c)) }
+  }
+  return p
 }
