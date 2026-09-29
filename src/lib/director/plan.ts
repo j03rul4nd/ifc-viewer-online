@@ -7,10 +7,10 @@
 // unit-testable and identical for one model or a batch of fifty.
 
 import { defaultShot, fitDistance, orbitPoint, zoomKeyframes, DEFAULT_FOV_DEG, type Bounds, type CameraPose, type ShotSpec, type ShotType, type Vec3 } from '../capture/shots'
-import type { ClipTransition } from '../capture/project'
+import { MOTION_TRANSITIONS, type ClipTransition } from '../capture/project'
 import { WORD_STEP_SEC, type TextAnchor, type TextAnimId, type TextStyleId } from '../capture/timeline'
 import { cueAt, type ProjectSfx, type SfxCue } from '../capture/sfx'
-import { PACE_SHOT_SEC, type CaptionLook, type Recipe, type SectionKind } from './recipe'
+import { PACE_SHOT_SEC, isKineticStyle, type CaptionLook, type Recipe, type SectionKind } from './recipe'
 import { LOOKS, type Grade, type Look } from './looks'
 import { MAX_CUE_CHARS, subtitleCues, type NarrationFact } from './narration'
 import type { Hud, HudMark } from '../capture/hud'
@@ -166,6 +166,8 @@ export interface PlannedClip {
   durationSec: number
   /** Picture punches (launch style): project times, amount. */
   punch?: { times: number[]; amount: number }
+  /** Motion style: the joins cycle through these instead of repeating `transition`. */
+  transitionCycle?: ClipTransition[]
   /** Motion-blur sub-frames per rendered frame (1 = off). */
   motionBlur: number
   /** Sound effects placed on the cut (none when the recipe has them off). */
@@ -227,10 +229,12 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     }
     const durationSec = at
     const texts = recipe.captions.enabled ? planTexts(recipe, shots, starts, overlap, subject, allModels, title, strings) : []
-    const launch = recipe.style === 'launch'
+    const launch = isKineticStyle(recipe.style)
+    const motion = recipe.style === 'motion'
     return {
       modelId: subject.modelId, title, width, height, shots, texts, transition, transitionSec: overlap, durationSec,
       ...(launch ? { punch: { times: punchTimes(starts, overlap, beat, durationSec), amount: PUNCH_AMOUNT } } : {}),
+      ...(motion && overlap > 0 ? { transitionCycle: [...MOTION_TRANSITIONS] } : {}),
       // Fast launch cuts get a real shutter; calmer ones stay crisp (and 3× cheaper).
       motionBlur: launch && recipe.pace === 'fast' ? 3 : 1,
       ...(recipe.sfx && recipe.sfx !== 'off' ? { sfx: planSfx(recipe.sfx, shots, starts, overlap, texts, durationSec) } : {}),
@@ -558,7 +562,7 @@ function sectionDrafts(
 
 /** Launch style: speed-ramp the moves that have a hero moment in the middle. */
 function launchEase(recipe: Recipe, type: ShotType, shot: ShotSpec): ShotSpec {
-  if (recipe.style !== 'launch' || !RAMPED.includes(type)) return shot
+  if (!isKineticStyle(recipe.style) || !RAMPED.includes(type)) return shot
   // A ramp needs travel to read: widen the sweep a little.
   return { ...shot, easing: 'ramp', sweepDeg: shot.sweepDeg * 1.25 }
 }
@@ -839,9 +843,12 @@ function planTexts(
     ...(art.type.uppercase && kind !== 'muted' ? { uppercase: true } : {}),
   }
   // Launch grammar: titles slam in, numbers count up, labels land word by word.
-  const launch = recipe.style === 'launch'
+  // Motion grammar: titles glitch in, labels whip in blurred, the CTA echoes.
+  const launch = isKineticStyle(recipe.style)
+  const motion = recipe.style === 'motion'
   const anim = (kind: 'title' | 'stats' | 'label' | 'cta'): TextAnimId =>
-    !launch ? look.anim : kind === 'stats' ? 'count' : kind === 'label' ? 'words' : 'slam'
+    motion ? MOTION_ANIMS[kind]
+      : !launch ? look.anim : kind === 'stats' ? 'count' : kind === 'label' ? 'words' : 'slam'
   const texts: PlannedText[] = []
   const push = (t: Omit<PlannedText, 'anim'>, anim: TextAnimId = look.anim) => {
     const kind = t.style === 'title' || (t.style === look.title && t.anchor !== 'top-left') ? 'title' : t.style === 'caption' ? 'muted' : 'body'
@@ -857,7 +864,12 @@ function planTexts(
   // art-directed title sits in the open sky above the building — the
   // cinematic rule: type never sits on the subject.
   const titleAnchor: TextAnchor = 'top-center'
-  if (title) push({ text: title, startSec: launch ? 0.12 : 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: titleAnchor }, anim('title'))
+  // Motion: the title first flashes word by word on full-frame colour cards
+  // (the kinetic-type cold open), then lands glitched over the picture.
+  const flash = motion && title ? wordFlash(title, heroEnd) : []
+  for (const f of flash) texts.push(f)
+  const titleStart = flash.length ? flash[flash.length - 1].endSec : launch ? 0.12 : 0.3
+  if (title) push({ text: title, startSec: titleStart, endSec: Math.max(titleStart + 1, heroEnd - 0.2), style: motion ? 'display' : look.title, anchor: titleAnchor }, anim('title'))
   const sub: string[] = []
   if (recipe.captions.showStats) {
     const elements = models.reduce((s, m) => s + m.elementCount, 0)
@@ -927,6 +939,43 @@ function planTexts(
     push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: look.cta, anchor: vertical ? 'mid-center' : 'bottom-center' }, anim('cta'))
   }
   return texts
+}
+
+/** Motion style: which lettering each caption role gets. */
+const MOTION_ANIMS: Record<'title' | 'stats' | 'label' | 'cta', TextAnimId> = {
+  title: 'glitch', stats: 'count', label: 'blurSlide', cta: 'echo',
+}
+
+/** Motion style's HUD/card accent when the look has none. */
+export const MOTION_ACCENT = '#FF4F1F'
+
+/** Card colour + ink + entry for each flashed word, cycled — the orange/ink/paper/blue rhythm. */
+const FLASH_CARDS: Array<{ card: string; ink: string; anim: TextAnimId }> = [
+  { card: '#FF4F1F', ink: '#111111', anim: 'slam' },
+  { card: '#0E0F12', ink: '#FF4F1F', anim: 'select' },
+  { card: '#F1EFEA', ink: '#2B4BFF', anim: 'zoomIn' },
+  { card: '#2B4BFF', ink: '#FFFFFF', anim: 'glitch' },
+]
+
+/** Seconds each flashed word holds. Fast enough to feel cut, slow enough to read one word. */
+export const FLASH_WORD_SEC = 0.42
+
+/**
+ * The cold open: the title's words one at a time on full-frame cards. At most
+ * 5 words and never more than 60 % of the hero shot, so the model still gets
+ * its reveal.
+ */
+export function wordFlash(title: string, heroEnd: number): PlannedText[] {
+  const words = title.split(/\s+/).filter(Boolean).slice(0, 5)
+  const per = Math.min(FLASH_WORD_SEC, (heroEnd * 0.6) / Math.max(1, words.length))
+  if (words.length < 2 || per < 0.25) return []
+  return words.map((w, i) => {
+    const c = FLASH_CARDS[i % FLASH_CARDS.length]
+    return {
+      text: w, startSec: round3(i * per), endSec: round3((i + 1) * per),
+      style: 'wordCard', anchor: 'mid-center', anim: c.anim, color: c.ink, accent: c.card, uppercase: true,
+    }
+  })
 }
 
 function titleFor(recipe: Recipe, name: string): string {

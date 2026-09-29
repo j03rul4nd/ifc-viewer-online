@@ -84,7 +84,9 @@
       "subtitle": "Sottotitolo",
       "caption": "Didascalia",
       "lowerThird": "Sottopancia",
-      "badge": "Etichetta"
+      "badge": "Etichetta",
+      "display": "Titolo display",
+      "wordCard": "Scheda parola"
     },
     "anims": {
       "none": "Nessuna",
@@ -94,7 +96,14 @@
       "words": "Parole",
       "slam": "Colpo",
       "count": "Contatore",
-      "roll": "Rullo"
+      "roll": "Rullo",
+      "glitch": "Glitch",
+      "maskUp": "Maschera",
+      "echo": "Eco",
+      "select": "Selezione",
+      "blurSlide": "Scorrimento sfocato",
+      "zoomIn": "Zoom attraverso",
+      "marquee": "Scorrevole"
     },
     "effects": {
       "in": "Apertura",
@@ -231,7 +240,11 @@
       "slideLeft": "Scorrimento",
       "slideUp": "Scorrimento in alto",
       "zoom": "Zoom",
-      "whip": "Frustata"
+      "whip": "Frustata",
+      "glitch": "Glitch",
+      "iris": "Iride",
+      "squeeze": "Schiacciamento",
+      "spin": "Rotazione"
     },
     "applyToAll": "Applica a tutti gli stacchi",
     "firstClipNoTransition": "La prima clip apre il video — imposta invece una dissolvenza di apertura in Progetto.",
@@ -454,11 +467,13 @@
       "styleLabel": "Stile di montaggio",
       "styles": {
         "classic": "Classico",
-        "launch": "Lancio 2026"
+        "launch": "Lancio 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Movimenti morbidi, dissolvenze, titoli calmi.",
-        "launch": "Rampe di velocità, motion blur, punch a ogni stacco, titoli d’impatto, numeri che scorrono, didascalie parola per parola."
+        "launch": "Rampe di velocità, motion blur, punch a ogni stacco, titoli d’impatto, numeri che scorrono, didascalie parola per parola.",
+        "motion": "Tipografia cinetica: il titolo lampeggia parola per parola su schede colorate, titoli glitch, un HUD di design e una transizione diversa a ogni taglio."
       },
       "sfxLabel": "Effetti sonori",
       "sfxLevels": {
@@ -551,7 +566,9 @@
       "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
-    }
+    },
+    "hudTitle": "HUD motion",
+    "hudOn": "Cornice di sicurezza, mirini e timecode sull’immagine"
   },
   "cover": {
     "open": "Studio copertine — copertine, slide e post dal modello",

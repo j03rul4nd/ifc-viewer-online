@@ -89,9 +89,19 @@ export interface RecipeCaptions {
  * - 'launch':  the 2026 product-launch grammar — speed-ramped moves, motion
  *              blur on fast ones, a punch-in on every cut and on the bar,
  *              slammed titles, counting numbers, word-by-word labels.
+ * - 'motion':  kinetic typography on top of the launch grammar — the title
+ *              flashes word by word on full-frame colour cards, glitched
+ *              headlines, masked and blur-slid labels, a design-tool HUD, and
+ *              a different motion-graphics join (glitch/squeeze/iris/spin) on
+ *              every cut.
  */
-export type EditStyle = 'classic' | 'launch'
-export const EDIT_STYLES: readonly EditStyle[] = ['classic', 'launch']
+export type EditStyle = 'classic' | 'launch' | 'motion'
+export const EDIT_STYLES: readonly EditStyle[] = ['classic', 'launch', 'motion']
+
+/** Launch and motion share the cutting grammar (ramps, punches, shutter). */
+export function isKineticStyle(style: EditStyle | undefined): boolean {
+  return style === 'launch' || style === 'motion'
+}
 
 /** How much sound design the director adds on top of the music. */
 export type SfxLevel = 'off' | 'subtle' | 'full'
@@ -254,6 +264,12 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     ...BASE, id: 'brutalist-reel', name: 'Brutalist reel', look: 'brutalist-mono', style: 'launch', sfx: 'full',
     format: 'reel', targetSec: 15, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
     sections: ['pullOut', 'buildup', 'sectionSweep', 'systems', 'endCard'], maxSystems: 2,
+    captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'kinetic-type', name: 'Kinetic type', style: 'motion', sfx: 'full', hud: true,
+    format: 'reel', targetSec: 16, pace: 'fast', transition: 'glitch', transitionSec: 0.3, music: 'upbeat',
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'systems', 'endCard'], maxSystems: 2,
     captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
   },
   {

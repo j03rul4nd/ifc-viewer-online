@@ -84,7 +84,9 @@
       "subtitle": "หัวเรื่องรอง",
       "caption": "คำบรรยาย",
       "lowerThird": "แถบล่างจอ",
-      "badge": "ป้าย"
+      "badge": "ป้าย",
+      "display": "หัวเรื่องใหญ่",
+      "wordCard": "การ์ดคำ"
     },
     "anims": {
       "none": "ไม่มี",
@@ -94,7 +96,14 @@
       "words": "ทีละคำ",
       "slam": "กระแทก",
       "count": "นับขึ้น",
-      "roll": "ม้วน"
+      "roll": "ม้วน",
+      "glitch": "กลิตช์",
+      "maskUp": "มาสก์",
+      "echo": "เอคโค",
+      "select": "กรอบเลือก",
+      "blurSlide": "สไลด์เบลอ",
+      "zoomIn": "ซูมทะลุ",
+      "marquee": "ตัววิ่ง"
     },
     "effects": {
       "in": "เปิดเรื่อง",
@@ -231,7 +240,11 @@
       "slideLeft": "สไลด์",
       "slideUp": "สไลด์ขึ้น",
       "zoom": "ซูม",
-      "whip": "วิป"
+      "whip": "วิป",
+      "glitch": "กลิตช์",
+      "iris": "ไอริส",
+      "squeeze": "บีบ",
+      "spin": "หมุน"
     },
     "applyToAll": "ใช้กับทุกจุดตัด",
     "firstClipNoTransition": "คลิปแรกคือจุดเริ่มวิดีโอ — ให้ตั้งค่าเฟดเปิดในส่วนโปรเจกต์แทน",
@@ -454,11 +467,13 @@
       "styleLabel": "สไตล์การตัดต่อ",
       "styles": {
         "classic": "คลาสสิก",
-        "launch": "เปิดตัว 2026"
+        "launch": "เปิดตัว 2026",
+        "motion": "โมชัน"
       },
       "styleHint": {
         "classic": "กล้องเคลื่อนนุ่มนวล เฟด และชื่อเรื่องเรียบ ๆ",
-        "launch": "สปีดแรมป์ โมชันเบลอ ซูมกระแทกทุกจุดตัด ชื่อเรื่องกระแทก ตัวเลขนับขึ้น ป้ายขึ้นทีละคำ"
+        "launch": "สปีดแรมป์ โมชันเบลอ ซูมกระแทกทุกจุดตัด ชื่อเรื่องกระแทก ตัวเลขนับขึ้น ป้ายขึ้นทีละคำ",
+        "motion": "ตัวอักษรเคลื่อนไหว: ชื่อเรื่องแวบทีละคำบนการ์ดสี หัวเรื่องแบบกลิตช์ HUD งานออกแบบ และทรานซิชันต่างกันทุกคัต"
       },
       "sfxLabel": "เอฟเฟกต์เสียง",
       "sfxLevels": {
@@ -551,7 +566,9 @@
       "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
-    }
+    },
+    "hudTitle": "HUD โมชัน",
+    "hudOn": "กรอบปลอดภัย กากบาท และไทม์โค้ดบนภาพ"
   },
   "cover": {
     "open": "สตูดิโอปก — สร้างปก สไลด์ และโพสต์จากโมเดล",

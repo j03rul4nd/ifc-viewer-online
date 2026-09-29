@@ -84,7 +84,9 @@
       "subtitle": "サブタイトル",
       "caption": "キャプション",
       "lowerThird": "テロップ",
-      "badge": "バッジ"
+      "badge": "バッジ",
+      "display": "ディスプレイ",
+      "wordCard": "ワードカード"
     },
     "anims": {
       "none": "なし",
@@ -94,7 +96,14 @@
       "words": "単語ごと",
       "slam": "スラム",
       "count": "カウントアップ",
-      "roll": "ロール"
+      "roll": "ロール",
+      "glitch": "グリッチ",
+      "maskUp": "マスク",
+      "echo": "エコー",
+      "select": "選択枠",
+      "blurSlide": "ブラースライド",
+      "zoomIn": "ズームスルー",
+      "marquee": "マーキー"
     },
     "effects": {
       "in": "オープニング",
@@ -231,7 +240,11 @@
       "slideLeft": "スライド",
       "slideUp": "上へスライド",
       "zoom": "ズーム",
-      "whip": "ホイップ"
+      "whip": "ホイップ",
+      "glitch": "グリッチ",
+      "iris": "アイリス",
+      "squeeze": "スクイーズ",
+      "spin": "スピン"
     },
     "applyToAll": "すべてのカットに適用",
     "firstClipNoTransition": "最初のクリップは動画の冒頭です — 代わりに「プロジェクト」でオープニングのフェードを設定してください。",
@@ -454,11 +467,13 @@
       "styleLabel": "編集スタイル",
       "styles": {
         "classic": "クラシック",
-        "launch": "ローンチ 2026"
+        "launch": "ローンチ 2026",
+        "motion": "モーション"
       },
       "styleHint": {
         "classic": "なめらかなカメラワーク、フェード、落ち着いたタイトル。",
-        "launch": "スピードランプ、モーションブラー、カットごとのズームパンチ、スラムタイトル、カウントアップ、単語ごとのラベル。"
+        "launch": "スピードランプ、モーションブラー、カットごとのズームパンチ、スラムタイトル、カウントアップ、単語ごとのラベル。",
+        "motion": "キネティックタイポ：タイトルがカラーカード上で一語ずつ点滅、グリッチ見出し、デザインHUD、カットごとに異なるトランジション。"
       },
       "sfxLabel": "効果音",
       "sfxLevels": {
@@ -551,7 +566,9 @@
       "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
-    }
+    },
+    "hudTitle": "モーションHUD",
+    "hudOn": "セーフフレーム、十字線、タイムコードを映像に重ねる"
   },
   "cover": {
     "open": "カバースタジオ — モデルから表紙・スライド・投稿を作成",

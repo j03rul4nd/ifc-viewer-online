@@ -84,7 +84,9 @@
       "subtitle": "Untertitel",
       "caption": "Bildtext",
       "lowerThird": "Bauchbinde",
-      "badge": "Label"
+      "badge": "Label",
+      "display": "Headline",
+      "wordCard": "Wortkarte"
     },
     "anims": {
       "none": "Keine",
@@ -94,7 +96,14 @@
       "words": "Wörter",
       "slam": "Knall",
       "count": "Hochzählen",
-      "roll": "Rollen"
+      "roll": "Rollen",
+      "glitch": "Glitch",
+      "maskUp": "Maske",
+      "echo": "Echo",
+      "select": "Auswahl",
+      "blurSlide": "Wisch mit Unschärfe",
+      "zoomIn": "Durchzoomen",
+      "marquee": "Laufschrift"
     },
     "effects": {
       "in": "Anfang",
@@ -231,7 +240,11 @@
       "slideLeft": "Schieben",
       "slideUp": "Nach oben schieben",
       "zoom": "Zoom",
-      "whip": "Wischer"
+      "whip": "Wischer",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Stauchen",
+      "spin": "Drehung"
     },
     "applyToAll": "Auf alle Schnitte anwenden",
     "firstClipNoTransition": "Der erste Clip eröffnet das Video – legen Sie stattdessen unter Projekt eine Einblendung fest.",
@@ -454,11 +467,13 @@
       "styleLabel": "Schnittstil",
       "styles": {
         "classic": "Klassisch",
-        "launch": "Launch 2026"
+        "launch": "Launch 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Weiche Kamerafahrten, Blenden, ruhige Titel.",
-        "launch": "Speed Ramps, Bewegungsunschärfe, Zoom-Punch auf jedem Schnitt, Titel mit Wucht, hochzählende Zahlen, Beschriftung Wort für Wort."
+        "launch": "Speed Ramps, Bewegungsunschärfe, Zoom-Punch auf jedem Schnitt, Titel mit Wucht, hochzählende Zahlen, Beschriftung Wort für Wort.",
+        "motion": "Kinetische Typo: der Titel blitzt Wort für Wort auf Farbkarten, Glitch-Headlines, ein Design-HUD und bei jedem Schnitt ein anderer Übergang."
       },
       "sfxLabel": "Soundeffekte",
       "sfxLevels": {
@@ -551,7 +566,9 @@
       "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
-    }
+    },
+    "hudTitle": "Motion-HUD",
+    "hudOn": "Sicherheitsrahmen, Fadenkreuze und laufender Timecode über dem Bild"
   },
   "cover": {
     "open": "Cover-Studio — Titelbilder, Folien und Posts aus dem Modell",
