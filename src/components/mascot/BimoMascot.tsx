@@ -165,6 +165,26 @@ export default function BimoMascot({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, mood?.id])
 
+  // blog: posts also carry the SVG Bimo (BimoTip/Quiz/Checklist/Feedback).
+  // Never show two Bimos at once — step aside while any of those is on screen.
+  const [aside, setAside] = useState(false)
+  useEffect(() => {
+    if (!blog) return
+    const seen = new Set<Element>()
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) { if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target) }
+      setAside(seen.size > 0)
+    })
+    const observeAll = () => document.querySelectorAll('svg.bimo-svg').forEach((el) => {
+      if (!wrap.current?.contains(el)) io.observe(el)
+    })
+    observeAll()
+    const mo = new MutationObserver(observeAll)   // blocks can mount after us
+    mo.observe(document.body, { childList: true, subtree: true })
+    return () => { io.disconnect(); mo.disconnect() }
+  }, [blog])
+  useEffect(() => { if (aside) setBubble(null) }, [aside])
+
   // occasional idle beats so he's never a frozen loop
   useEffect(() => {
     if (!ready) return
@@ -206,7 +226,7 @@ export default function BimoMascot({
     : ''
 
   return (
-    <div ref={wrap} className={`pointer-events-none select-none group ${placement} ${className}`}>
+    <div ref={wrap} aria-hidden={aside || undefined} className={`pointer-events-none select-none group transition-[opacity,transform] duration-300 ${aside ? 'opacity-0 translate-y-3 [&_*]:!pointer-events-none' : ''} ${placement} ${className}`}>
       {bubble && (
         <div
           role="status"

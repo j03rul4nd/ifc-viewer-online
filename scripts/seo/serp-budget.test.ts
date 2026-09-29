@@ -154,7 +154,7 @@ describe.each(HAND_AUTHORED)('the hand-authored $lang home', ({ lang, file }) =>
 // the previous versions of this problem all came from a second list drifting.
 
 /** Directories under public/ that are generated or are not landing pages. */
-const NOT_LANDINGS = new Set(['blog', 'fix', 'sdk', 'embed', 'fonts', 'models'])
+const NOT_LANDINGS = new Set(['blog', 'fix', 'sdk', 'embed', 'fonts', 'models', 'mascot'])
 
 interface Landed { url: string; file: string; title: string; description: string }
 
