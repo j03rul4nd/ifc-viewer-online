@@ -264,7 +264,49 @@
     "newsPrompt": "Ich schreibe nur, wenn es sich lohnt.",
     "emailThanks": "Danke! Sie stehen auf der Liste.",
     "emailError": "Hm, das hat nicht geklappt. Noch einmal versuchen?",
-    "ebookThanks": "Viel Spaß mit dem Handbuch! Der Download läuft."
+    "ebookThanks": "Viel Spaß mit dem Handbuch! Der Download läuft.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Fehler 404",
+        "title": "Diese Seite ist verschwunden",
+        "body": "Ich habe überall gesucht und sie nicht gefunden. Vielleicht wurde sie verschoben oder der Link enthält einen Tippfehler."
+      },
+      "unsupported": {
+        "eyebrow": "Nicht unterstützt",
+        "title": "Das wird noch nicht unterstützt",
+        "body": "Ihr Browser oder dieser Dateityp kann das noch nicht. Versuchen Sie ein aktuelles Chrome, Edge, Firefox oder Safari."
+      },
+      "docs": {
+        "eyebrow": "Dokumentation",
+        "title": "Ich zeige Ihnen, wie es geht",
+        "body": "Anleitungen, Referenz und Beispiele, Schritt für Schritt nachvollziehbar."
+      },
+      "offline": {
+        "eyebrow": "Offline",
+        "title": "Sie sind offline",
+        "body": "Ich warte hier. Was schon geöffnet ist, funktioniert weiter; der Rest kommt mit der Verbindung zurück."
+      },
+      "error": {
+        "eyebrow": "Etwas ist schiefgelaufen",
+        "title": "Das hat nicht funktioniert",
+        "body": "Der Fehler liegt bei uns, nicht bei Ihnen. Versuchen Sie es erneut und schreiben Sie uns, falls es wieder passiert."
+      },
+      "empty": {
+        "eyebrow": "Noch nichts hier",
+        "title": "Hier ist es noch leer",
+        "body": "Sobald Sie etwas hinzufügen, erscheint es hier."
+      },
+      "comingSoon": {
+        "eyebrow": "Demnächst",
+        "title": "Ich baue das gerade",
+        "body": "Es ist noch nicht fertig, aber unterwegs. Schauen Sie bald wieder vorbei."
+      },
+      "success": {
+        "eyebrow": "Erledigt",
+        "title": "Alles fertig!",
+        "body": "Alles hat geklappt. Sie können weitermachen."
+      }
+    }
   },
   "emailCapture": {
     "footer": {

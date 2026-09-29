@@ -264,7 +264,49 @@
     "newsPrompt": "Solo escribo cuando hay algo que merece la pena.",
     "emailThanks": "¡Gracias! Ya estás en la lista.",
     "emailError": "Vaya, no ha funcionado. ¿Lo intentas otra vez?",
-    "ebookThanks": "¡Disfruta del manual! Ya se está descargando."
+    "ebookThanks": "¡Disfruta del manual! Ya se está descargando.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Error 404",
+        "title": "Esta página se ha perdido",
+        "body": "He buscado por todas partes y no la encuentro. Puede que se haya movido o que el enlace tenga una errata."
+      },
+      "unsupported": {
+        "eyebrow": "No compatible",
+        "title": "Esto aún no es compatible",
+        "body": "Tu navegador o este tipo de archivo todavía no lo permiten. Prueba con un Chrome, Edge, Firefox o Safari recientes."
+      },
+      "docs": {
+        "eyebrow": "Documentación",
+        "title": "Te enseño cómo funciona",
+        "body": "Guías, referencia y ejemplos, pensados para seguirlos paso a paso."
+      },
+      "offline": {
+        "eyebrow": "Sin conexión",
+        "title": "Estás sin conexión",
+        "body": "Te espero aquí. Lo que ya está abierto sigue funcionando; el resto vuelve con la conexión."
+      },
+      "error": {
+        "eyebrow": "Algo ha fallado",
+        "title": "Eso no ha funcionado",
+        "body": "El fallo es nuestro, no tuyo. Vuelve a intentarlo y, si se repite, cuéntanos qué estabas haciendo."
+      },
+      "empty": {
+        "eyebrow": "Aún no hay nada",
+        "title": "Esto está un poco vacío",
+        "body": "Cuando añadas algo, aparecerá aquí."
+      },
+      "comingSoon": {
+        "eyebrow": "Próximamente",
+        "title": "Lo estoy construyendo ahora mismo",
+        "body": "Todavía no está listo, pero va en camino. Vuelve pronto."
+      },
+      "success": {
+        "eyebrow": "Hecho",
+        "title": "¡Todo listo!",
+        "body": "Todo ha ido bien. Ya puedes seguir."
+      }
+    }
   },
   "emailCapture": {
     "footer": {

@@ -23,14 +23,52 @@
 // GLSL micro-roughness breakup so highlights don't look CG-perfect.
 
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 export interface BimoMeta {
   emotions: string[]
   oneshots: string[]
   shapeKeys: string[]
   face: Record<string, Record<string, number | string>>
+}
+
+// ── shared asset ─────────────────────────────────────────────────────────────
+// Parsed once per page; every instance clones the rigged scene (bones, skin,
+// morph targets) with SkeletonUtils and shares geometry and clips.
+// bimo.opt.glb is bimo.glb run through `npm run mascot:optimize` (meshopt +
+// quantisation): ~570 KB on disk, ~200 KB over the wire, versus 2.7 MB.
+
+const assets = new Map<string, Promise<{ meta: BimoMeta; gltf: GLTF }>>()
+
+export function loadBimoAsset(base = '/mascot/') {
+  let p = assets.get(base)
+  if (!p) {
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
+    p = Promise.all([
+      fetch(base + 'mascot.json').then(r => r.json() as Promise<BimoMeta>),
+      loader.loadAsync(base + 'bimo.opt.glb'),
+    ]).then(([meta, gltf]) => ({ meta, gltf }))
+    p.catch(() => assets.delete(base))  // let a later instance retry
+    assets.set(base, p)
+  }
+  return p
+}
+
+// Soft radial glow for the eyes, drawn once. Stands in for bloom, which does
+// not survive a transparent canvas and would cost a full-screen pass per Bimo.
+let glowTex: THREE.Texture | null = null
+function eyeGlowTexture() {
+  if (glowTex) return glowTex
+  const c = document.createElement('canvas'); c.width = c.height = 64
+  const g = c.getContext('2d')!
+  const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+  grd.addColorStop(0, 'rgba(255,255,255,0.9)'); grd.addColorStop(0.35, 'rgba(255,255,255,0.35)'); grd.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64)
+  glowTex = new THREE.CanvasTexture(c)
+  return glowTex
 }
 
 export interface BimoOptions {
@@ -46,11 +84,31 @@ export interface BimoOptions {
   targetY?: number
 }
 
+/** Procedural micro-reactions, layered on top of whatever clip is playing. */
+export type BimoMicro =
+  | 'blink' | 'flinch' | 'giggle' | 'boing' | 'shiver' | 'perk'
+  | 'nod' | 'tilt' | 'squish' | 'heart' | 'glance'
+
+/** What a screen point hits on the model (see pick). */
+export type BimoPart = 'antenna' | 'face' | 'head' | 'body' | 'arm' | 'foot'
+
 export interface Bimo {
   play(name: string): void
   say(ms?: number): void
   /** Gaze target in normalised device coords (-1..1). */
   lookAt(x: number, y: number): void
+  /** Gaze at a screen point (client px) or the centre of an element. */
+  lookAtClient(x: number, y: number): void
+  lookAtElement(el: Element): void
+  /** A short procedural reaction; `strength` scales it (default 1). */
+  micro(kind: BimoMicro, strength?: number): void
+  /** Hold shape-key weights on top of the clip's face until cleared
+   *  (e.g. { EyeWide: 0.6, MouthO: 0.4 }). Pass null to release. */
+  setExpression(weights: Record<string, number> | null): void
+  /** Briefly add weight to one shape key, decaying on its own. */
+  pulse(key: string, amount?: number): void
+  /** Ray-cast a client-space point against the skinned model. */
+  pick(clientX: number, clientY: number): BimoPart | null
   setPaused(p: boolean): void
   resize(): void
   readonly state: string
@@ -108,10 +166,7 @@ function stylise(m: THREE.MeshPhysicalMaterial, U: Record<string, THREE.IUniform
 export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   const base = opts.baseUrl ?? '/mascot/'
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
-  const [meta, gltf] = await Promise.all([
-    fetch(base + 'mascot.json').then(r => r.json() as Promise<BimoMeta>),
-    new GLTFLoader().loadAsync(base + 'bimo.glb'),
-  ])
+  const { meta, gltf } = await loadBimoAsset(base)
 
   const { canvas } = opts
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' })
@@ -174,12 +229,14 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   let blushMat: THREE.MeshBasicMaterial | null = null
   const disposables: { dispose(): void }[] = [eyeMat, envTex, pmrem]
 
-  const root = gltf.scene
+  const root = SkeletonUtils.clone(gltf.scene)
   scene.add(root)
   const morphMeshes: THREE.Mesh[] = []
   const bones: Record<string, THREE.Bone> = {}
   root.traverse((o) => {
-    if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone
+    // GLTFLoader sanitises node names ('antenna.1' → 'antenna1'); key bones by
+    // the sanitised form so lookups don't depend on that detail.
+    if ((o as THREE.Bone).isBone) bones[o.name.replace(/[^A-Za-z0-9_]/g, '')] = o as THREE.Bone
     const mesh = o as THREE.Mesh
     if (!mesh.isMesh) return
     mesh.castShadow = true
@@ -218,9 +275,28 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
       })
     }
     if (m) { mesh.material = m; disposables.push(m) }
-    disposables.push(mesh.geometry)
+    // geometry is shared by every clone on the page: never dispose it here
     if (mesh.morphTargetDictionary) morphMeshes.push(mesh)
   })
+
+  const rest = ['head', 'body', 'antenna1', 'antenna2'].filter(n => bones[n])
+    .map(n => ({ bone: bones[n], q: bones[n].quaternion.clone(), s: bones[n].scale.clone() }))
+
+  // eye halos, parented to the head so they follow every clip
+  const halos: THREE.Sprite[] = []
+  if (bones.head) {
+    root.updateMatrixWorld(true)
+    for (const x of [-0.138, 0.138]) {
+      const mat = new THREE.SpriteMaterial({
+        map: eyeGlowTexture(), color: 0x8c95ff, transparent: true, opacity: 0.55,
+        blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+      })
+      const sp = new THREE.Sprite(mat)
+      sp.scale.setScalar(0.2)
+      sp.position.copy(bones.head.worldToLocal(new THREE.Vector3(x, 0.655, 0.47)))
+      bones.head.add(sp); halos.push(sp); disposables.push(mat)
+    }
+  }
 
   // ── state springs ──────────────────────────────────────────────────────────
   const face: Record<string, Spring> = Object.fromEntries(meta.shapeKeys.map(k => [k, new Spring(0)]))
@@ -228,6 +304,12 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   const t0 = new THREE.Color(0x8c95ff)
   const tint = { r: new Spring(t0.r), g: new Spring(t0.g), b: new Spring(t0.b) }
   const pop = new Spring(1, 260, 9)
+  // additive kick springs for micro-reactions (head nod/turn/tilt, body lean)
+  const nudge = { x: new Spring(0, 220, 13), y: new Spring(0, 220, 13), z: new Spring(0, 200, 11) }
+  const lean = new Spring(0, 150, 12)
+  let wiggleT = 0, wiggleAmp = 0, wiggleHz = 0
+  const transient: Record<string, number> = {}
+  let hold: Record<string, number> | null = null
   const head = { x: new Spring(0, 55, 12), y: new Spring(0, 55, 12) }
   const eye = { x: new Spring(0, 320, 30), y: new Spring(0, 320, 30) }
   const ant = { x: new Spring(0, 90, 5), z: new Spring(0, 90, 5) }       // under-damped on purpose
@@ -244,7 +326,7 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
 
   function applyFace(name: string) {
     const p = meta.face[name] || {}
-    for (const k in face) face[k].t = (p[k] as number) ?? 0
+    for (const k in face) face[k].t = (hold && k in hold) ? hold[k] : ((p[k] as number) ?? 0)
     blush.t = (p._blush as number) ?? 0
     glow.t = (p._glow as number) ?? 1
     const c = new THREE.Color((p._tint as string) ?? '#8C95FF')
@@ -284,6 +366,10 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     const dt = Math.min(timer.getDelta(), 1 / 30)
     const t = timer.getElapsed()
     U.uTime.value = t
+    // The procedural layers below multiply onto these bones. A clip that
+    // doesn't key a bone leaves last frame's result in place, so restore the
+    // rest pose first or the squash/tilt would compound every frame.
+    for (const r of rest) { r.bone.quaternion.copy(r.q); r.bone.scale.copy(r.s) }
     mixer.update(dt)
 
     // blink
@@ -302,6 +388,13 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
 
     const w: Record<string, number> = {}
     for (const k in face) w[k] = face[k].step(dt)
+    const decay = Math.exp(-4.5 * dt)
+    for (const k in transient) {
+      if (k === '_blush') blush.x += transient[k] * (1 - decay)
+      else if (k in w) w[k] = Math.min(1, w[k] + transient[k])
+      transient[k] *= decay
+      if (transient[k] < 0.01) delete transient[k]
+    }
     w.EyeBlink = Math.min(1, Math.max(0, w.EyeBlink) + blinkAdd * (1 - (w.EyeHappy ?? 0)) * (1 - (w.EyeHeart ?? 0)))
     if (talking) {
       const v = 0.5 + 0.5 * Math.sin(t * 13) * Math.sin(t * 5.3 + 1) + 0.2 * Math.sin(t * 29)
@@ -319,22 +412,31 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
       for (const k in w) { const i = dict[k]; if (i !== undefined) inf[i] = Math.max(0, w[k]) }
     }
     if (blushMat) blushMat.opacity = Math.max(0, blush.step(dt)) * 0.75
+    const open = 1 - Math.min(1, Math.max(w.EyeBlink ?? 0, w.EyeHappy ?? 0) * 0.85)
+    for (const h of halos) {
+      const hm = h.material as THREE.SpriteMaterial
+      hm.opacity = 0.5 * open * (U.uGlow.value as number)
+      hm.color.copy(U.uEyeTint.value as THREE.Color)
+    }
     U.uGlow.value = glow.step(dt)
     ;(U.uEyeTint.value as THREE.Color).setRGB(tint.r.step(dt), tint.g.step(dt), tint.b.step(dt))
 
     // head follows the eyes, slower (additive on top of the clip)
     head.x.t = -gaze.y * 0.16; head.y.t = gaze.x * 0.28
     if (bones.head) {
-      bones.head.quaternion.multiply(q.setFromEuler(eul.set(head.x.step(dt), head.y.step(dt), 0)))
+      bones.head.quaternion.multiply(q.setFromEuler(eul.set(
+        head.x.step(dt) + nudge.x.step(dt), head.y.step(dt) + nudge.y.step(dt), nudge.z.step(dt))))
     }
     // moving hold: breathing + slow sway under every clip
     if (bones.body) {
       const s = pop.step(dt) * (1 + (reduced ? 0 : 0.012 * Math.sin(t * 2.1)))
       bones.body.scale.multiply(sv.set(1 / Math.sqrt(s), s, 1 / Math.sqrt(s)))
-      if (!reduced) bones.body.quaternion.multiply(q.setFromEuler(eul.set(0, 0, 0.012 * Math.sin(t * 0.7))))
+      let wob = 0
+      if (wiggleT > 0) { wiggleT -= dt; wob = Math.sin(t * wiggleHz * Math.PI * 2) * wiggleAmp * Math.min(1, wiggleT * 3) }
+      if (!reduced) bones.body.quaternion.multiply(q.setFromEuler(eul.set(0, 0, 0.012 * Math.sin(t * 0.7) + lean.step(dt) + wob)))
     }
     // follow-through: antenna lags head rotation and body bounce
-    if (bones.head && bones['antenna.1']) {
+    if (bones.head && bones.antenna1) {
       bones.head.updateWorldMatrix(true, false)
       const hq = bones.head.getWorldQuaternion(new THREE.Quaternion())
       const dq = hq.clone().multiply(headPrev.invert())
@@ -346,8 +448,8 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
       ant.x.t = 0; ant.z.t = 0
       const ax = THREE.MathUtils.clamp(ant.x.step(dt), -0.6, 0.6)
       const az = THREE.MathUtils.clamp(ant.z.step(dt), -0.6, 0.6)
-      bones['antenna.1'].quaternion.multiply(q.setFromEuler(eul.set(ax * 0.5, 0, az * 0.5)))
-      bones['antenna.2']?.quaternion.multiply(q.setFromEuler(eul.set(ax, 0, az)))
+      bones.antenna1.quaternion.multiply(q.setFromEuler(eul.set(ax * 0.5, 0, az * 0.5)))
+      bones.antenna2?.quaternion.multiply(q.setFromEuler(eul.set(ax, 0, az)))
     }
     renderer.render(scene, camera)
   }
@@ -362,6 +464,47 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   renderer.setAnimationLoop(frame)
   play(opts.initial ?? 'hello')
 
+  function micro(kind: BimoMicro, k = 1) {
+    const r = reduced ? 0.4 : 1
+    k *= r
+    switch (kind) {
+      case 'blink': blinkT = 0; break
+      case 'flinch': pop.x = 1 - 0.14 * k; nudge.x.v -= 5 * k; lean.v += (Math.random() - 0.5) * 3 * k; pulse('EyeWide', 0.8 * k); blinkT = 0; break
+      case 'giggle': wiggleT = 0.7; wiggleAmp = 0.05 * k; wiggleHz = 7; pulse('EyeHappy', 1); pulse('MouthOpen', 0.6 * k); pulse('_blush', 0.6); break
+      case 'boing': ant.x.v += 26 * k; ant.z.v += (Math.random() - 0.5) * 20 * k; pop.x = 1 - 0.06 * k; pulse('EyeWide', 0.4 * k); break
+      case 'shiver': wiggleT = 0.9; wiggleAmp = 0.025 * k; wiggleHz = 16; pulse('EyeSmall', 0.6 * k); break
+      case 'perk': nudge.x.v -= 3.5 * k; ant.x.v -= 12 * k; pop.x = 1 + 0.06 * k; pulse('EyeWide', 0.6 * k); break
+      case 'nod': nudge.x.v += 6 * k; break
+      case 'tilt': nudge.z.v += (Math.random() < 0.5 ? -1 : 1) * 4 * k; pulse('EyeUp', 0.3 * k); break
+      case 'squish': pop.x = 1 - 0.2 * k; pulse('EyeHappy', 0.7 * k); break
+      case 'heart': pulse('EyeHeart', 1); pulse('_blush', 1); pulse('MouthCat', 0.8); pop.x = 1 + 0.05 * k; break
+      case 'glance': dart.set((Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 0.6); nextDart = timer.getElapsed() + 0.9; break
+    }
+  }
+  function pulse(key: string, amount = 1) { transient[key] = Math.max(transient[key] ?? 0, amount) }
+
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
+  function pick(cx: number, cy: number): BimoPart | null {
+    const r = canvas.getBoundingClientRect()
+    ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1)
+    ray.setFromCamera(ndc, camera)
+    root.updateMatrixWorld(true)
+    const hit = ray.intersectObject(root, true).find(h => (h.object as THREE.Mesh).isMesh && !(h.object as THREE.Sprite).isSprite)
+    if (!hit) return null
+    const n = hit.object.name.toLowerCase()
+    if (n.includes('antenna')) return 'antenna'
+    if (n.includes('arm')) return 'arm'
+    if (n.includes('foot')) return 'foot'
+    if (n.includes('visor') || n.includes('face')) return 'face'
+    return hit.point.y > 0.55 ? 'head' : 'body'
+  }
+  function lookAtClient(cx: number, cy: number) {
+    const r = canvas.getBoundingClientRect()
+    const x = (cx - (r.left + r.width / 2)) / (innerWidth * 0.35)
+    const y = -(cy - (r.top + r.height * 0.45)) / (innerHeight * 0.35)
+    gaze.set(THREE.MathUtils.clamp(x, -1, 1), THREE.MathUtils.clamp(y, -1, 1))
+  }
+
   return {
     play: (n) => play(n),
     say(ms = 2500) {
@@ -370,6 +513,12 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
       window.setTimeout(() => { if (currentName === 'talking') play(back) }, ms)
     },
     lookAt(x, y) { gaze.set(THREE.MathUtils.clamp(x, -1, 1), THREE.MathUtils.clamp(y, -1, 1)) },
+    lookAtClient,
+    lookAtElement(el) { const b = el.getBoundingClientRect(); lookAtClient(b.left + b.width / 2, b.top + b.height / 2) },
+    micro,
+    setExpression(weights) { hold = weights; applyFace(currentName) },
+    pulse,
+    pick,
     setPaused(p) {
       if (p === paused) return
       paused = p

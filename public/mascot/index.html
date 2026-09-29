@@ -415,7 +415,7 @@ renderer.setAnimationLoop(() => {
     bodyBone.quaternion.multiply(qLook.setFromEuler(eul.set(0, 0, 0.012 * Math.sin(t * 0.7))));
   }
   // follow-through: the antenna lags head rotation and body bounce
-  const a1 = root.getObjectByName('antenna.1'), a2 = root.getObjectByName('antenna.2');
+  const a1 = root.getObjectByName('antenna1'), a2 = root.getObjectByName('antenna2');
   if (headBone && a1) {
     const hq = headBone.getWorldQuaternion(new THREE.Quaternion());
     const dq = hq.clone().multiply(headPrev.invert()); headPrev.copy(hq);

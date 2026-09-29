@@ -1,3 +1,11 @@
+/* 3D upgrade (BimoLive): the canvas sits exactly over the SVG artboard and the
+   SVG fades out underneath once the first 3D frame is up. The SVG stays in the
+   DOM for accessibility, crawlers and as the instant fallback. */
+.bimo-live { position: absolute; inset: 0; }
+.bimo .bimo-svg { transition: opacity .45s ease; }
+.bimo-3d .bimo-svg { opacity: 0; }
+.bimo-3d .bimo-fx { display: none; }
+
 /* ─── Bimo ─────────────────────────────────────────────────────────────────
    One body loop per emotion on .bimo-rig / .bimo-upper, plus the boop and the
    emotion props. Transforms only (compositor-friendly). All of it switches off

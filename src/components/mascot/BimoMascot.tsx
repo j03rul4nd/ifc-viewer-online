@@ -11,16 +11,20 @@
 //                      what just happened: <BimoMascot mood={{ clip:
 //                      'celebrate', textKey: 'emailThanks', id: n }} />
 //
-// Cost control: three.js and the 2 MB GLB load only once the canvas is near
-// the viewport (dynamic import), rendering pauses when it leaves it or the
-// tab is hidden, and the canvas is small. Under prefers-reduced-motion he
-// still reacts, but without jumps or spins (handled in the runtime).
+// Cost control (bimoLoadPolicy.ts): the SVG twin paints first as a poster and
+// is all that crawlers, low-end devices and Save-Data visitors ever get. The
+// runtime chunk and the ~200 KB meshopt GLB load only after the page is idle,
+// on a capable device, once the canvas is near the viewport and a live slot is
+// free; rendering pauses offscreen or in a hidden tab. Under
+// prefers-reduced-motion he still reacts, but without jumps or spins.
 //
 // Copy lives in the `common` namespace under `mascot.*` (all 10 locales).
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Bimo } from './bimoRuntime'
+import BimoSvg from './Bimo'
+import { canRender3D, claimSlot, markSlot, releaseSlot, whenIdle } from './bimoLoadPolicy'
 
 type Variant = 'landing' | 'blog' | 'inline'
 /** A reaction to play; bump `id` to replay the same clip. */
@@ -90,14 +94,23 @@ export default function BimoMascot({
   // mount lazily once visible
   useEffect(() => {
     const el = wrap.current
-    if (!el || hidden) return
+    if (!el || hidden || !canRender3D()) return
     let cancelled = false
     let started = false
+    let slot: ReturnType<typeof claimSlot> = null
     const io = new IntersectionObserver(async ([e]) => {
       if (bimo.current) bimo.current.setPaused(!e.isIntersecting || document.hidden)
+      if (slot) markSlot(slot, e.isIntersecting)
       if (!e.isIntersecting || started) return
       started = true
       try {
+        await whenIdle()
+        if (cancelled) return
+        slot = claimSlot(() => {           // evicted by a visible Bimo elsewhere
+          bimo.current?.dispose(); bimo.current = null
+          setReady(false); slot = null; started = false
+        })
+        if (!slot) { started = false; return }
         const { createBimo } = await import('./bimoRuntime')
         if (cancelled || !canvas.current) return
         bimo.current = await createBimo({ canvas: canvas.current, distance: 3.0, targetY: 0.52, initial })
@@ -105,7 +118,8 @@ export default function BimoMascot({
         setReady(true)
         if (greeting) window.setTimeout(() => say(tx(greeting), 3800), 700)
       } catch {
-        // WebGL unavailable or asset failed: the page works fine without him.
+        // WebGL or asset failed: the SVG poster stays, the page is unaffected.
+        releaseSlot(slot); slot = null
       }
     }, { rootMargin: '120px' })
     io.observe(el)
@@ -115,6 +129,7 @@ export default function BimoMascot({
       cancelled = true
       io.disconnect()
       document.removeEventListener('visibilitychange', onVis)
+      releaseSlot(slot)
       bimo.current?.dispose(); bimo.current = null
       setReady(false)
     }
@@ -155,6 +170,41 @@ export default function BimoMascot({
     addEventListener('scroll', onScroll, { passive: true })
     return () => { removeEventListener('scroll', onScroll); window.clearTimeout(settle) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blog, ready])
+
+  // blog: react to what the reader is looking at. Each block type gets a
+  // fitting clip the first time it crosses the middle of the screen, at most
+  // one reaction every few seconds so it never becomes a distraction.
+  useEffect(() => {
+    if (!blog || !ready) return
+    const REACT: [string, string][] = [
+      ['[data-callout="warning"]', 'surprised'],
+      ['[data-callout="tip"]', 'happy'],
+      ['[data-callout="info"]', 'nod'],
+      ['article pre', 'thinking'],
+      ['article table', 'curious'],
+      ['article figure, article img', 'listening'],
+      ['article h2', 'nod'],
+    ]
+    const clipFor = new Map<Element, string>()
+    for (const [sel, clip] of REACT) document.querySelectorAll(sel).forEach((el) => { if (!clipFor.has(el)) clipFor.set(el, clip) })
+    let last = 0
+    const done = new Set<Element>()
+    const io = new IntersectionObserver((entries) => {
+      const now = performance.now()
+      for (const e of entries) {
+        if (!e.isIntersecting || done.has(e.target) || now - last < 3500) continue
+        const b = bimo.current
+        const clip = clipFor.get(e.target)
+        if (!b || !clip || b.state === 'celebrate') continue
+        done.add(e.target); last = now
+        const back = b.state
+        b.play(clip)
+        if (!b.meta.oneshots.includes(clip)) window.setTimeout(() => bimo.current?.state === clip && bimo.current.play(back === clip ? 'idle' : back), 2400)
+      }
+    }, { rootMargin: '-45% 0px -45% 0px' })
+    clipFor.forEach((_, el) => io.observe(el))
+    return () => io.disconnect()
   }, [blog, ready])
 
   // funnel reactions: play the clip, optionally say something
@@ -245,6 +295,12 @@ export default function BimoMascot({
         >
           ×
         </button>
+      )}
+      {!ready && (
+        // SVG poster until (or instead of) the 3D model
+        <div aria-hidden="true" className="absolute inset-0 grid place-items-center [&_svg]:w-[64%] [&_svg]:h-auto">
+          <BimoSvg emotion="idle" size={96} live={false} />
+        </div>
       )}
       <canvas
         ref={canvas}
