@@ -196,6 +196,61 @@ links, references) lands on that heading below the sticky header, and re-aims
 for ~1.5 s while images above it load and shift the layout — until the reader
 scrolls themselves. Text-fragment links (`#:~:text=`) are left to the browser.
 
+## Bimo, the mascot — `src/components/mascot/`
+
+Bimo is the vector twin of the 3D mascot (`public/mascot/`, `scripts/blender/build-mascot.py`):
+same 11 emotions (`idle happy excited curious thinking sad surprised love sleepy wave angry`),
+drawn as an SVG so it costs a few KB instead of the 2.3 MB GLB. `Bimo.tsx` springs the face
+between emotions, blinks, follows the pointer and reacts to a click ("boop") when `interactive`.
+All motion stops under `prefers-reduced-motion`. Labels live in `mascot/bimo-copy.ts` (10 languages,
+keyed by the article's language).
+
+Bimo is a voice, not decoration: at most one tip per post, and only blocks that make the reader
+*do* something (answer, tick, vote).
+
+### Bimo tip — `type: 'bimo-tip'`
+
+```ts
+{ type: 'bimo-tip', text: RichText, title?: string, emotion?: 'happy' | 'curious' | 'thinking' | 'surprised' | 'excited' | 'sad' }
+```
+
+The one practical trick a reader would otherwise miss ("save this as a named export setup").
+Use a `callout` for warnings; Bimo is for the friendly, "you'll thank me later" aside.
+
+### Quiz — `type: 'bimo-quiz'`
+
+```ts
+{ type: 'bimo-quiz', title?: string, questions: [{ q, options: string[], answer: number, why?: RichText }] }
+```
+
+Check-your-understanding at the end of a teaching post. 3–5 questions, every answer in the
+article above, `why` on every question (shown right or wrong). Bimo thinks, cheers or droops per
+answer; a good final score fires confetti. Serialised as a Q&A list for "Copy for AI" and crawlers.
+
+### Checklist — `type: 'bimo-checklist'`
+
+```ts
+{ type: 'bimo-checklist', id: 'slug:what', title?: string, items: [{ label: RichText, hint?: RichText }] }
+```
+
+A procedure the reader performs on *their own* model with the post open (export settings,
+pre-delivery checks). Progress ring + Bimo's mood follow the ticks; ticks persist in
+`localStorage` under `bimo:checklist:<id>` (per browser, never required). Prefer `steps` when
+the reader only needs to understand the order, not track it.
+
+### Feedback — automatic
+
+Every post ends with `BimoFeedback` ("Was this article useful?"). The vote is remembered per
+browser and sent as the `blog_feedback` analytics event (`slug`, `lang`, `vote`) behind the same
+opt-out gate as every other event. No authoring needed.
+
+### In the app
+
+`Bimo` also appears where an emotion helps a state land: the upload drop zone (curious → excited
+while a file is dragged over), the validation "Fix this first" summary (mood follows the Health
+Score via `emotionForScore`) and the blog's empty search. New uses: pass `interactive` only where a
+click can't be mistaken for an action.
+
 ## Share kit (automatic, no authoring needed) — `ShareKit.tsx`
 
 The community-blog patterns worth keeping, because each one carries what the

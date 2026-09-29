@@ -23,6 +23,7 @@ import React, { useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
+import Bimo from './mascot/Bimo'
 import { useIfcUploadFlow }       from '../hooks/useIfcUploadFlow'
 import type {
   SubmitScope,
@@ -154,12 +155,8 @@ function IdleView({
         {isDragging && (
           <div className="absolute inset-0 shimmer pointer-events-none" />
         )}
-        <div
-          className="w-14 h-14 mx-auto mb-3.5 rounded-xl bg-[var(--bg)] border border-[var(--border-strong)] flex items-center justify-center transition-colors"
-          style={{ color: isDragging ? 'var(--accent-2)' : 'var(--text-dim)' }}
-        >
-          <Icons.Upload size={22} />
-        </div>
+        {/* Bimo waits for the file and cheers when one is dragged over. */}
+        <Bimo emotion={isDragging ? 'excited' : 'curious'} size={60} className="mx-auto mb-2.5" />
         <p className="text-[14px] font-medium mb-1">
           {isDragging ? t('upload.idle.releaseToOpen') : t('upload.idle.dropHintMulti')}
         </p>

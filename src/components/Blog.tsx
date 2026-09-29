@@ -27,9 +27,11 @@ import { ContinueReading, RecsProvider, RelatedPoint, ToolCard, readHistory, typ
 import { relatedPosts } from '../lib/blog-related'
 import { foundationalPosts, freshness, inboundLinks, lastTouched, topicsFor, whatsNew, type Topic } from '../lib/blog-topics'
 import { BLOG_TOOLS, toolCopy, toolHref, type BlogTool } from '../lib/blog-tools'
-import { trackBlogPostOpened, trackBlogSearch, trackBlogToolClicked, trackBlogTopicOpened, type BlogSurface } from '../lib/analytics'
+import { trackBlogFeedback, trackBlogPostOpened, trackBlogSearch, trackBlogToolClicked, trackBlogTopicOpened, type BlogSurface } from '../lib/analytics'
 import './blog/editorial.css'
 import { Bars, Callout, Decision, Steps, Takeaways, Term } from './blog/EditorialBlocks'
+import { BimoChecklist, BimoFeedback, BimoQuiz, BimoTip } from './mascot/BimoBlocks'
+import Bimo from './mascot/Bimo'
 import {
   filterBlogPosts,
   getBlogHubCopy,
@@ -265,6 +267,38 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
         <Callout variant={block.variant} title={block.title} lang={lang}>
           <RenderInline text={block.text} lang={lang} onNavigateToPost={onNavigateToPost} />
         </Callout>
+      )
+
+    case 'bimo-tip':
+      return (
+        <BimoTip title={block.title} emotion={block.emotion} lang={lang}>
+          <RenderInline text={block.text} lang={lang} onNavigateToPost={onNavigateToPost} />
+        </BimoTip>
+      )
+
+    case 'bimo-quiz':
+      return (
+        <BimoQuiz
+          title={block.title}
+          lang={lang}
+          questions={block.questions.map((q) => ({
+            q: q.q, options: q.options, answer: q.answer,
+            why: q.why && <RenderInline text={q.why} lang={lang} onNavigateToPost={onNavigateToPost} />,
+          }))}
+        />
+      )
+
+    case 'bimo-checklist':
+      return (
+        <BimoChecklist
+          id={block.id}
+          title={block.title}
+          lang={lang}
+          items={block.items.map((it) => ({
+            label: <RenderInline text={it.label} lang={lang} onNavigateToPost={onNavigateToPost} />,
+            hint: it.hint && <RenderInline text={it.hint} lang={lang} onNavigateToPost={onNavigateToPost} />,
+          }))}
+        />
       )
 
     case 'takeaways':
@@ -1624,10 +1658,8 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
             </div>
           ) : (
             <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--surface)] px-5 py-12 text-center">
-              <span className="mx-auto inline-flex w-12 h-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-faint)]">
-                <Icons.Search size={20} aria-hidden="true" />
-              </span>
-              <h3 className="mt-4 text-[17px] font-semibold text-[var(--text)]">{copy.noResultsTitle}</h3>
+              <Bimo emotion="curious" size={72} interactive className="mx-auto" />
+              <h3 className="mt-3 text-[17px] font-semibold text-[var(--text)]">{copy.noResultsTitle}</h3>
               <p className="mx-auto mt-2 max-w-[480px] text-[13.5px] leading-[1.7] text-[var(--text-dim)]">{copy.noResultsBody}</p>
               <button
                 type="button"
@@ -2132,6 +2164,14 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
             <ReferenceList />
             </ReferencesProvider>
+
+            {/* "Was this useful?" — the one signal we get from readers who don't
+                convert; Bimo reacts so answering feels acknowledged. */}
+            <BimoFeedback
+              id={post.slug}
+              lang={post.lang ?? 'en'}
+              onVote={(vote) => trackBlogFeedback({ slug: post.slug, lang: post.lang ?? 'en', vote })}
+            />
 
             <SelectionShare containerRef={bodyRef} pageUrl={`${typeof location !== 'undefined' ? location.origin : ''}${postHref(post.slug, post.lang ?? 'en')}`} title={post.title} lang={post.lang ?? 'en'} />
 

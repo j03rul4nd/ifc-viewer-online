@@ -36,7 +36,9 @@ export function linkedSlugs(post: BlogPost): Set<string> {
   const add = (xs: string[]) => xs.forEach((x) => out.add(x))
   for (const b of post.content as ContentBlock[]) {
     switch (b.type) {
-      case 'p': case 'callout': add(slugsIn(b.text)); break
+      case 'p': case 'callout': case 'bimo-tip': add(slugsIn(b.text)); break
+      case 'bimo-quiz': b.questions.forEach((q) => add(slugsIn(q.why))); break
+      case 'bimo-checklist': b.items.forEach((i) => { add(slugsIn(i.label)); add(slugsIn(i.hint)) }); break
       case 'takeaways': b.items.forEach((i) => add(slugsIn(i))); break
       case 'steps': b.items.forEach((i) => { add(slugsIn(i.body)); add(slugsIn(i.detail)) }); break
       case 'decision': b.options.forEach((o) => { add(slugsIn(o.body)); if (o.to) out.add(o.to) }); break

@@ -128,6 +128,13 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       return `\`\`\`${block.lang ?? ''}\n${block.text}\n\`\`\`\n`
     case 'callout':
       return `> **${block.title ?? block.variant.toUpperCase()}:** ${richToMarkdown(block.text)}\n`
+    case 'bimo-tip':
+      return `> **${block.title ?? 'Tip'}:** ${richToMarkdown(block.text)}\n`
+    case 'bimo-quiz':
+      return [`**${block.title ?? 'Quiz'}**`, ...block.questions.map((q, n) =>
+        `${n + 1}. ${q.q}\n${q.options.map((o, i) => `   - ${i === q.answer ? `**${o}** ✓` : o}`).join('\n')}${q.why ? `\n   _${richToMarkdown(q.why)}_` : ''}`), ''].join('\n')
+    case 'bimo-checklist':
+      return [`**${block.title ?? 'Checklist'}**`, ...block.items.map((i) => `- [ ] ${richToMarkdown(i.label)}${i.hint ? ` — ${richToMarkdown(i.hint)}` : ''}`), ''].join('\n')
     case 'takeaways':
       return [`**${block.title ?? 'Key takeaways'}**`, ...block.items.map((i) => `- ${richToMarkdown(i)}`), ''].join('\n')
     case 'steps':
