@@ -265,5 +265,34 @@
     "emailThanks": "Thanks! You’re on the list.",
     "emailError": "Hmm, that didn’t go through. Try again?",
     "ebookThanks": "Enjoy the handbook! It’s downloading now."
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Get notified when new features ship",
+      "promptSuffix": " — no spam, unsubscribe anytime",
+      "placeholder": "your@email.com",
+      "submit": "Notify me",
+      "successTitle": "You’re on the list",
+      "successBody": "We’ll let you know when new features ship. No spam, unsubscribe anytime.",
+      "notAvailable": "Not available yet. Try again soon.",
+      "genericError": "Something went wrong. Try again.",
+      "consentBefore": "By subscribing you consent to receive occasional product update emails (sent via Resend). No spam, unsubscribe anytime. See our ",
+      "privacyLink": "Privacy Policy",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "Your email address",
+      "placeholder": "you@practice.com",
+      "submit": "Send me the handbook",
+      "sending": "Sending…",
+      "invalid": "That address does not look right. Check it and try again.",
+      "unreachable": "We could not reach our mailing list just now, so you may not hear from us. Your download is ready regardless.",
+      "doneTitle": "Your download has started",
+      "doneBody": "If nothing happened, your browser may have blocked it. Use the direct link below.",
+      "downloadAgain": "Download the PDF again",
+      "consentBefore": "No account, no card. One email, unsubscribe any time. See the ",
+      "privacyLink": "privacy policy",
+      "consentAfter": "."
+    }
   }
 }

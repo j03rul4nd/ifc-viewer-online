@@ -265,5 +265,34 @@
     "emailThanks": "¡Gracias! Ya estás en la lista.",
     "emailError": "Vaya, no ha funcionado. ¿Lo intentas otra vez?",
     "ebookThanks": "¡Disfruta del manual! Ya se está descargando."
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Recibe un aviso cuando lancemos novedades",
+      "promptSuffix": " — sin spam, date de baja cuando quieras",
+      "placeholder": "tu@email.com",
+      "submit": "Avísame",
+      "successTitle": "Ya estás en la lista",
+      "successBody": "Te avisaremos cuando lancemos novedades. Sin spam, date de baja cuando quieras.",
+      "notAvailable": "Aún no está disponible. Inténtalo pronto.",
+      "genericError": "Algo ha fallado. Inténtalo de nuevo.",
+      "consentBefore": "Al suscribirte aceptas recibir de vez en cuando emails sobre novedades del producto (enviados con Resend). Sin spam, date de baja cuando quieras. Consulta nuestra ",
+      "privacyLink": "Política de privacidad",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "Tu dirección de email",
+      "placeholder": "tu@estudio.com",
+      "submit": "Envíame el manual",
+      "sending": "Enviando…",
+      "invalid": "Esa dirección no parece correcta. Revísala e inténtalo de nuevo.",
+      "unreachable": "No hemos podido conectar con nuestra lista de correo, así que puede que no recibas noticias nuestras. Tu descarga está lista igualmente.",
+      "doneTitle": "Tu descarga ha empezado",
+      "doneBody": "Si no ha pasado nada, puede que tu navegador la haya bloqueado. Usa el enlace directo de abajo.",
+      "downloadAgain": "Descargar el PDF otra vez",
+      "consentBefore": "Sin cuenta ni tarjeta. Un email, date de baja cuando quieras. Consulta la ",
+      "privacyLink": "política de privacidad",
+      "consentAfter": "."
+    }
   }
 }

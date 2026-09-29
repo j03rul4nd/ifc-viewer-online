@@ -231,6 +231,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
   // the already-translated category labels (catFull.*). 'landing' stays the default
   // namespace, so every other t() call in this component is unchanged.
   const { t, i18n } = useTranslation(['landing', 'validation'])
+  const { t: te } = useTranslation('common', { keyPrefix: 'emailCapture.footer' })
 
   // Base URL for the static fix-guide pages. EN at the site root, other locales
   // under a /<lang>/ prefix (mirrors LANG_PATH in the page generator).
@@ -278,10 +279,10 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
     } else if (result.disabled) {
       // Worker not yet deployed — silently succeed in dev, show message in prod
       if (import.meta.env.DEV) setEmailStatus('success')
-      else { setEmailStatus('error'); setEmailError('Not available yet — try again soon.') }
+      else { setEmailStatus('error'); setEmailError(te('notAvailable')) }
     } else {
       setEmailStatus('error')
-      setEmailError(result.error ?? 'Something went wrong. Try again.')
+      setEmailError(result.error ?? te('genericError'))
       setBimoMood({ clip: 'confused', textKey: 'emailError', id: Date.now() })
     }
   }, [emailValue, i18n.language])
@@ -1406,17 +1407,17 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     <path d="M8 14l4 4 8-8" stroke="var(--ok)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <p className="text-[13px] font-medium" style={{ color: 'var(--ok)' }}>
-                    You&apos;re on the list
+                    {te('successTitle')}
                   </p>
                   <p className="text-[11px] text-[var(--text-faint)]">
-                    We&apos;ll let you know when new features ship — no spam, unsubscribe anytime.
+                    {te('successBody')}
                   </p>
                 </div>
               ) : (
                 <>
                   <p className="text-[12px] sm:text-[13px] text-[var(--text-dim)] text-center mb-3">
-                    Get notified when new features ship
-                    <span className="hidden sm:inline"> — no spam, unsubscribe anytime</span>
+                    {te('prompt')}
+                    <span className="hidden sm:inline">{te('promptSuffix')}</span>
                   </p>
                   <form
                     onSubmit={(e) => { void handleEmailSubmit(e) }}
@@ -1426,7 +1427,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       type="email"
                       value={emailValue}
                       onChange={(e) => setEmailValue(e.target.value)}
-                      placeholder="your@email.com"
+                      placeholder={te('placeholder')}
                       required
                       disabled={emailStatus === 'loading'}
                       className="h-9 px-3 rounded-lg text-[13px] border bg-[var(--surface-2)] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors w-52 disabled:opacity-60"
@@ -1438,7 +1439,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       className="h-9 px-4 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-50"
                       style={{ background: 'var(--accent)', color: '#fff' }}
                     >
-                      {emailStatus === 'loading' ? '...' : 'Notify me'}
+                      {emailStatus === 'loading' ? '...' : te('submit')}
                     </button>
                   </form>
                   {emailStatus === 'error' && emailError && (
@@ -1447,16 +1448,15 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     </p>
                   )}
                   <p className="text-[10.5px] text-center mt-3 text-[var(--text-faint)] max-w-sm mx-auto leading-relaxed">
-                    By subscribing you consent to receive occasional product update emails (sent via
-                    Resend). No spam, unsubscribe anytime. See our{' '}
+                    {te('consentBefore')}
                     <button
                       type="button"
                       onClick={onNavigateToPrivacy}
                       className="underline underline-offset-2 hover:text-[var(--accent-2)] transition-colors"
                     >
-                      Privacy Policy
+                      {te('privacyLink')}
                     </button>
-                    .
+                    {te('consentAfter')}
                   </p>
                 </>
               )}

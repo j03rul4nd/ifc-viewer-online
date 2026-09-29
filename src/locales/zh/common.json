@@ -261,5 +261,34 @@
     "emailThanks": "谢谢！你已加入列表。",
     "emailError": "嗯，没有成功。再试一次？",
     "ebookThanks": "祝阅读愉快！手册正在下载。"
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "新功能上线时通知我",
+      "promptSuffix": "——无垃圾邮件，可随时退订",
+      "placeholder": "your@email.com",
+      "submit": "通知我",
+      "successTitle": "你已加入列表",
+      "successBody": "新功能上线时我们会通知你。无垃圾邮件，可随时退订。",
+      "notAvailable": "暂不可用，请稍后再试。",
+      "genericError": "出了点问题，请重试。",
+      "consentBefore": "订阅即表示你同意偶尔接收产品更新邮件（通过 Resend 发送）。无垃圾邮件，可随时退订。请查看我们的",
+      "privacyLink": "隐私政策",
+      "consentAfter": "。"
+    },
+    "ebook": {
+      "emailLabel": "你的邮箱地址",
+      "placeholder": "you@example.com",
+      "submit": "把手册发给我",
+      "sending": "发送中…",
+      "invalid": "这个邮箱地址看起来不对，请检查后重试。",
+      "unreachable": "我们暂时无法连接邮件列表，因此你可能收不到我们的消息。你的下载仍已准备好。",
+      "doneTitle": "下载已开始",
+      "doneBody": "如果没有反应，可能是浏览器拦截了下载。请使用下方的直接链接。",
+      "downloadAgain": "重新下载 PDF",
+      "consentBefore": "无需账户，无需银行卡。只发一封邮件，可随时退订。请查看",
+      "privacyLink": "隐私政策",
+      "consentAfter": "。"
+    }
   }
 }

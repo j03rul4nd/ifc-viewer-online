@@ -265,5 +265,34 @@
     "emailThanks": "Obrigado! Você está na lista.",
     "emailError": "Hmm, não funcionou. Tentar de novo?",
     "ebookThanks": "Aproveite o manual! O download já começou."
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Receba um aviso quando lançarmos novidades",
+      "promptSuffix": " — sem spam, cancele quando quiser",
+      "placeholder": "seu@email.com",
+      "submit": "Avise-me",
+      "successTitle": "Você está na lista",
+      "successBody": "Vamos avisar quando lançarmos novidades. Sem spam, cancele quando quiser.",
+      "notAvailable": "Ainda não está disponível. Tente novamente em breve.",
+      "genericError": "Algo deu errado. Tente novamente.",
+      "consentBefore": "Ao se inscrever, você aceita receber ocasionalmente emails sobre novidades do produto (enviados via Resend). Sem spam, cancele quando quiser. Veja a nossa ",
+      "privacyLink": "Política de privacidade",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "Seu endereço de email",
+      "placeholder": "voce@escritorio.com",
+      "submit": "Enviar o manual",
+      "sending": "Enviando…",
+      "invalid": "Esse endereço não parece correto. Verifique e tente novamente.",
+      "unreachable": "Não conseguimos acessar nossa lista de emails agora, então talvez você não receba notícias nossas. Seu download está pronto mesmo assim.",
+      "doneTitle": "Seu download começou",
+      "doneBody": "Se nada aconteceu, seu navegador pode tê-lo bloqueado. Use o link direto abaixo.",
+      "downloadAgain": "Baixar o PDF novamente",
+      "consentBefore": "Sem conta, sem cartão. Um email, cancele quando quiser. Veja a ",
+      "privacyLink": "política de privacidade",
+      "consentAfter": "."
+    }
   }
 }
