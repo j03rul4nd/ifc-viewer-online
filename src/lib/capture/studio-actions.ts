@@ -250,7 +250,9 @@ export async function clipFromSound(
 ): Promise<void> {
   const cut = cutForSound(sound.music, recipe.targetSec)
   // The director plans to the sound's tempo and length; the music comes from the sound.
-  await generatePresentation({ ...recipe, music: 'none', targetSec: cut.durationSec + 1, onBeat: true, fadeIn: false, fadeOut: false }, lang, labels, signal, { beatSec: sound.music.beatSec })
+  // A quarter more footage than the clip needs, so the edit can trim to the
+  // beat and still fill the full length with real motion (not slow-mo).
+  await generatePresentation({ ...recipe, music: 'none', targetSec: cut.durationSec * 1.25, onBeat: true, fadeIn: false, fadeOut: false }, lang, labels, signal, { beatSec: sound.music.beatSec })
   const s = useClipStudioStore.getState()
   s.setSound(sound.buffer)
   s.edit((p) => finishSoundClip({
