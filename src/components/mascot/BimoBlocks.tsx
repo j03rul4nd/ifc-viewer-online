@@ -154,7 +154,7 @@ export function BimoQuiz({ title, questions, lang = 'en' }: WithLang & { title?:
         <Bimo emotion={emotion} size={60} interactive label={copy.boop} />
         <div className="min-w-0 flex-1">
           <h2 id={headingId} className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)]">
-            {title ?? 'Quiz'}
+            {title ?? copy.quiz}
           </h2>
           {!finished && (
             <>
@@ -294,7 +294,7 @@ export function BimoChecklist({ id, title, items, lang = 'en', compact = false }
         <Bimo emotion={checklistEmotion(count, total)} size={compact ? 44 : 56} interactive label={copy.boop} />
         <div className="min-w-0 flex-1">
           <h2 id={headingId} className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)]">
-            {title ?? 'Checklist'}
+            {title ?? copy.checklist}
           </h2>
           <p className="mt-0.5 text-[13px] text-[var(--text-dim)]" aria-live="polite">
             {count === total && total > 0 ? copy.allDone : copy.done(count, total)}
