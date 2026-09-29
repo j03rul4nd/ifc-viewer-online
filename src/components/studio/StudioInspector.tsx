@@ -156,6 +156,10 @@ function TransitionGlyph({ kind }: { kind: ClipTransition }) {
     case 'slideUp': return <svg {...common}><path d="M9 11V1M6 4l3-3 3 3" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
     case 'zoom': return <svg {...common}><rect x="5" y="3.5" width="8" height="5" rx="1" stroke="currentColor" fill="none" /><rect x="1" y="1" width="16" height="10" rx="1" stroke="currentColor" fill="none" opacity=".5" /></svg>
     case 'whip': return <svg {...common}><path d="M1 3h9M1 6h14M1 9h9" stroke="currentColor" strokeWidth="1.5" /></svg>
+    case 'glitch': return <svg {...common}><path d="M1 3h8M5 6h12M2 9h9" stroke="currentColor" strokeWidth="1.5" /><path d="M9 3h3M11 9h3" stroke="#FF2B5E" strokeWidth="1.5" /></svg>
+    case 'iris': return <svg {...common}><rect x="1" y="1" width="16" height="10" rx="1" stroke="currentColor" fill="none" opacity=".5" /><circle cx="9" cy="6" r="3.2" fill="currentColor" /></svg>
+    case 'squeeze': return <svg {...common}><path d="M1 6h16" stroke="currentColor" strokeWidth="2" /><path d="M9 1v3M7.5 2.5 9 4l1.5-1.5M9 11V8M7.5 9.5 9 8l1.5 1.5" stroke="currentColor" fill="none" /></svg>
+    case 'spin': return <svg {...common}><path d="M13.5 3.5A5 5 0 1 0 14 8" stroke="currentColor" fill="none" strokeWidth="1.5" /><path d="M14 1v3h-3" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
   }
 }
 
@@ -304,6 +308,20 @@ function ProjectPanel() {
           <button type="button" className="studio-link" onClick={() => edit((pr) => ({ ...pr, sfx: undefined }))}>{t('studio.sfxRemove')}</button>
         </Section>
       )}
+
+      <Section title={t('studio.hudTitle')}>
+        <label className="flex items-center gap-2 text-[11.5px] text-[var(--text-dim)]">
+          <input
+            type="checkbox"
+            checked={!!project.fx?.hud}
+            onChange={(e) => {
+              const on = e.target.checked
+              edit((pr) => ({ ...pr, fx: { ...pr.fx, hud: on ? { label: pr.sources[0]?.label ?? 'IFC', accent: '#FF4F1F' } : undefined } }))
+            }}
+          />
+          {t('studio.hudOn')}
+        </label>
+      </Section>
 
       <Section title={t('studio.project')}>
         <span className="text-[11.5px] text-[var(--text-dim)]">{t('studio.intro')}</span>

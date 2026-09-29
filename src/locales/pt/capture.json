@@ -84,7 +84,9 @@
       "subtitle": "Subtítulo",
       "caption": "Legenda",
       "lowerThird": "Oráculo",
-      "badge": "Etiqueta"
+      "badge": "Etiqueta",
+      "display": "Título display",
+      "wordCard": "Cartão de palavra"
     },
     "anims": {
       "none": "Nenhuma",
@@ -93,7 +95,14 @@
       "pop": "Ressalto",
       "words": "Palavras",
       "slam": "Impacto",
-      "count": "Contador"
+      "count": "Contador",
+      "glitch": "Glitch",
+      "maskUp": "Máscara",
+      "echo": "Eco",
+      "select": "Seleção",
+      "blurSlide": "Deslize com blur",
+      "zoomIn": "Zoom através",
+      "marquee": "Letreiro"
     },
     "effects": {
       "in": "Abertura",
@@ -230,7 +239,11 @@
       "slideLeft": "Deslizar",
       "slideUp": "Deslizar para cima",
       "zoom": "Zoom",
-      "whip": "Chicote"
+      "whip": "Chicote",
+      "glitch": "Glitch",
+      "iris": "Íris",
+      "squeeze": "Compressão",
+      "spin": "Giro"
     },
     "applyToAll": "Aplicar a todos os cortes",
     "firstClipNoTransition": "O primeiro clipe abre o vídeo — defina antes uma entrada em Projeto.",
@@ -447,11 +460,13 @@
       "styleLabel": "Estilo de edição",
       "styles": {
         "classic": "Clássico",
-        "launch": "Lançamento 2026"
+        "launch": "Lançamento 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Movimentos suaves, transições e títulos calmos.",
-        "launch": "Rampas de velocidade, desfoque de movimento, zoom de impacto em cada corte, títulos fortes, números que contam e legendas palavra a palavra."
+        "launch": "Rampas de velocidade, desfoque de movimento, zoom de impacto em cada corte, títulos fortes, números que contam e legendas palavra a palavra.",
+        "motion": "Tipografia cinética: o título pisca palavra a palavra em cartões de cor, títulos com glitch, um HUD de design e uma transição diferente em cada corte."
       },
       "sfxLabel": "Efeitos sonoros",
       "sfxLevels": {
@@ -510,7 +525,9 @@
     "sfxRemove": "Remover efeitos sonoros",
     "sfxCount": "{{n}} efeitos",
     "sfxTitle": "Efeitos sonoros",
-    "restyleHint": "Muda de imediato a gradação e os textos. As tomadas 3D mantêm a cor e a luz — gere de novo para as repintar."
+    "restyleHint": "Muda de imediato a gradação e os textos. As tomadas 3D mantêm a cor e a luz — gere de novo para as repintar.",
+    "hudTitle": "HUD motion",
+    "hudOn": "Moldura de segurança, cruzes e timecode sobre a imagem"
   },
   "cover": {
     "open": "Estúdio de capas — capas, slides e posts a partir do modelo",

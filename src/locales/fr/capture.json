@@ -84,7 +84,9 @@
       "subtitle": "Sous-titre",
       "caption": "Légende",
       "lowerThird": "Synthé",
-      "badge": "Badge"
+      "badge": "Badge",
+      "display": "Titre display",
+      "wordCard": "Carte mot"
     },
     "anims": {
       "none": "Aucune",
@@ -93,7 +95,14 @@
       "pop": "Rebond",
       "words": "Mots",
       "slam": "Impact",
-      "count": "Compteur"
+      "count": "Compteur",
+      "glitch": "Glitch",
+      "maskUp": "Masque",
+      "echo": "Écho",
+      "select": "Sélection",
+      "blurSlide": "Glissé flou",
+      "zoomIn": "Zoom traversant",
+      "marquee": "Défilement"
     },
     "effects": {
       "in": "Ouverture",
@@ -230,7 +239,11 @@
       "slideLeft": "Glissement",
       "slideUp": "Glissement haut",
       "zoom": "Zoom",
-      "whip": "Filé"
+      "whip": "Filé",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Écrasement",
+      "spin": "Rotation"
     },
     "applyToAll": "Appliquer à toutes les coupes",
     "firstClipNoTransition": "Le premier clip ouvre la vidéo — réglez plutôt un fondu d’ouverture dans Projet.",
@@ -447,11 +460,13 @@
       "styleLabel": "Style de montage",
       "styles": {
         "classic": "Classique",
-        "launch": "Lancement 2026"
+        "launch": "Lancement 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Mouvements adoucis, fondus, titres posés.",
-        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot."
+        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot.",
+        "motion": "Typo cinétique : le titre défile mot par mot sur des cartes de couleur, titres glitchés, un HUD de design et une transition différente à chaque coupe."
       },
       "sfxLabel": "Effets sonores",
       "sfxLevels": {
@@ -510,7 +525,9 @@
     "sfxRemove": "Retirer les effets sonores",
     "sfxCount": "{{n}} effets",
     "sfxTitle": "Effets sonores",
-    "restyleHint": "Change instantanément l’étalonnage et les titres. Les plans 3D gardent leur couleur et leur lumière — régénérez pour les repeindre."
+    "restyleHint": "Change instantanément l’étalonnage et les titres. Les plans 3D gardent leur couleur et leur lumière — régénérez pour les repeindre.",
+    "hudTitle": "HUD motion",
+    "hudOn": "Cadre de sécurité, repères et timecode sur l’image"
   },
   "cover": {
     "open": "Studio de couvertures — couvertures, diapositives et posts depuis le modèle",

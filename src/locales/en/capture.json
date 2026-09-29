@@ -84,7 +84,9 @@
       "subtitle": "Subtitle",
       "caption": "Caption",
       "lowerThird": "Lower third",
-      "badge": "Badge"
+      "badge": "Badge",
+      "display": "Display",
+      "wordCard": "Word card"
     },
     "anims": {
       "none": "None",
@@ -93,7 +95,14 @@
       "pop": "Pop",
       "words": "Words",
       "slam": "Slam",
-      "count": "Count up"
+      "count": "Count up",
+      "glitch": "Glitch",
+      "maskUp": "Mask rise",
+      "echo": "Echo",
+      "select": "Selection",
+      "blurSlide": "Blur slide",
+      "zoomIn": "Zoom through",
+      "marquee": "Marquee"
     },
     "effects": {
       "in": "Opening",
@@ -230,7 +239,11 @@
       "slideLeft": "Slide",
       "slideUp": "Slide up",
       "zoom": "Zoom",
-      "whip": "Whip"
+      "whip": "Whip",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Squeeze",
+      "spin": "Spin"
     },
     "applyToAll": "Apply to all cuts",
     "firstClipNoTransition": "The first clip opens the video — set an intro fade in Project instead.",
@@ -447,11 +460,13 @@
       "styleLabel": "Edit style",
       "styles": {
         "classic": "Classic",
-        "launch": "Launch 2026"
+        "launch": "Launch 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Eased camera moves, fades, calm titles.",
-        "launch": "Speed-ramped moves, motion blur, a punch on every cut, slammed titles, counting numbers, word-by-word labels."
+        "launch": "Speed-ramped moves, motion blur, a punch on every cut, slammed titles, counting numbers, word-by-word labels.",
+        "motion": "Kinetic type: the title flashes word by word on colour cards, glitched headlines, a design HUD and a different motion join on every cut."
       },
       "sfxLabel": "Sound effects",
       "sfxLevels": {
@@ -510,7 +525,9 @@
     "sfxRemove": "Remove sound effects",
     "sfxCount": "{{n}} effects",
     "sfxTitle": "Sound effects",
-    "restyleHint": "Changes the grade and the titles instantly. The 3D shots keep their paint and light — generate again to repaint them."
+    "restyleHint": "Changes the grade and the titles instantly. The 3D shots keep their paint and light — generate again to repaint them.",
+    "hudTitle": "Motion HUD",
+    "hudOn": "Safe frame, crosshairs and a running timecode over the picture"
   },
   "cover": {
     "open": "Cover studio — covers, slides and posts from the model",

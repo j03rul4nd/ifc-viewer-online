@@ -84,7 +84,9 @@
       "subtitle": "Subtítol",
       "caption": "Rètol",
       "lowerThird": "Faldó",
-      "badge": "Etiqueta"
+      "badge": "Etiqueta",
+      "display": "Titular",
+      "wordCard": "Targeta de paraula"
     },
     "anims": {
       "none": "Cap",
@@ -93,7 +95,14 @@
       "pop": "Rebot",
       "words": "Paraules",
       "slam": "Cop",
-      "count": "Comptador"
+      "count": "Comptador",
+      "glitch": "Glitch",
+      "maskUp": "Màscara",
+      "echo": "Eco",
+      "select": "Selecció",
+      "blurSlide": "Escombrat amb blur",
+      "zoomIn": "Zoom a través",
+      "marquee": "Marquesina"
     },
     "effects": {
       "in": "Obertura",
@@ -230,7 +239,11 @@
       "slideLeft": "Lliscar",
       "slideUp": "Lliscar amunt",
       "zoom": "Zoom",
-      "whip": "Escombrat"
+      "whip": "Escombrat",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Compressió",
+      "spin": "Gir"
     },
     "applyToAll": "Aplica a tots els talls",
     "firstClipNoTransition": "El primer clip obre el vídeo: posa un fos d’entrada a Projecte.",
@@ -447,11 +460,13 @@
       "styleLabel": "Estil d’edició",
       "styles": {
         "classic": "Clàssic",
-        "launch": "Llançament 2026"
+        "launch": "Llançament 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Moviments suaus, fosos i títols tranquils.",
-        "launch": "Rampes de velocitat, desenfocament de moviment, cop de zoom a cada tall, títols d’impacte, números que compten i rètols paraula a paraula."
+        "launch": "Rampes de velocitat, desenfocament de moviment, cop de zoom a cada tall, títols d’impacte, números que compten i rètols paraula a paraula.",
+        "motion": "Tipografia cinètica: el títol destella paraula a paraula sobre targetes de color, titulars amb glitch, un HUD de disseny i una transició diferent a cada tall."
       },
       "sfxLabel": "Efectes de so",
       "sfxLevels": {
@@ -510,7 +525,9 @@
     "sfxRemove": "Treu els efectes de so",
     "sfxCount": "{{n}} efectes",
     "sfxTitle": "Efectes de so",
-    "restyleHint": "Canvia a l’instant l’etalonatge i els textos. Les preses 3D conserven el color i la llum: torna a generar per repintar-les."
+    "restyleHint": "Canvia a l’instant l’etalonatge i els textos. Les preses 3D conserven el color i la llum: torna a generar per repintar-les.",
+    "hudTitle": "HUD motion",
+    "hudOn": "Marc de seguretat, creus i codi de temps sobre la imatge"
   },
   "cover": {
     "open": "Estudi de portades — portades, diapositives i posts del model",

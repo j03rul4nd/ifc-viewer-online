@@ -15,7 +15,8 @@ import {
 } from './frame-layout'
 import {
   visibleTextsAt, textRenderStateAt, transitionCoverAt,
-  TEXT_STYLE_SPECS, type EditTimeline, type TextOverlay, type TextAnchor,
+  TEXT_STYLE_SPECS, DEFAULT_CARD_COLOR, TEXT_ANIM_SEC,
+  type EditTimeline, type TextOverlay, type TextAnchor, type TextRenderState,
 } from './timeline'
 import { drawWatermark } from './watermark'
 
@@ -131,7 +132,7 @@ function drawBackdrop(
 
 // ── Text ───────────────────────────────────────────────────────────────────────
 
-interface TextState { alpha: number; dy: number; scale: number; text?: string }
+type TextState = TextRenderState
 
 function drawTextOverlay(
   ctx: CanvasRenderingContext2D,
@@ -166,18 +167,45 @@ function drawTextOverlay(
   const margin = Math.min(width, height) * MARGIN_FRAC
   const { x, y, align } = anchorBlock(overlay.anchor, layout, margin, blockHeight)
   const offsetY = state.dy * height
+  const fx = state.fx
+
+  // A word card floods the frame before any motion — the card itself never
+  // scales or slides, only the type on it does.
+  if (spec.plate === 'card') {
+    ctx.save()
+    ctx.globalAlpha = Math.min(1, state.alpha * 1.4)
+    ctx.fillStyle = overlay.accent ?? DEFAULT_CARD_COLOR
+    ctx.fillRect(0, 0, width, height)
+    ctx.restore()
+  }
+
+  if (fx?.kind === 'marquee') {
+    ctx.globalAlpha = state.alpha
+    drawMarquee(ctx, content, overlay, fx.t, fontSize, width, height)
+    ctx.restore()
+    return
+  }
+
+  if (state.dx) ctx.translate(state.dx * width, 0)
 
   // Scale about the block's own centre so 'pop' grows outward, not from a corner.
   const centreX = align === 'left' ? x + blockWidth / 2 : align === 'right' ? x - blockWidth / 2 : x
   const centreY = y + offsetY + blockHeight / 2
 
   ctx.translate(centreX, centreY)
-  ctx.scale(state.scale, state.scale)
+  // blurSlide stretches along its travel — the smear of a fast pan.
+  const stretch = fx?.kind === 'blurSlide' ? 1 + 0.45 * (1 - Math.min(fx.inP, fx.outP)) : 1
+  ctx.scale(state.scale * stretch, state.scale)
   ctx.translate(-centreX, -centreY)
   ctx.globalAlpha = state.alpha
   ctx.textAlign = align
 
   drawPlate(ctx, spec.plate, { x, y: y + offsetY, blockWidth, blockHeight, align, fontSize }, darkInk, overlay.accent)
+
+  if (fx?.kind === 'blurSlide' && typeof ctx.filter === 'string') {
+    const blur = (1 - Math.min(fx.inP, fx.outP)) * fontSize * 0.28
+    if (blur > 0.5) ctx.filter = `blur(${blur.toFixed(1)}px)`
+  }
 
   ctx.fillStyle = overlay.color
   if (spec.plate === 'shadow') {
@@ -185,12 +213,226 @@ function drawTextOverlay(
     ctx.shadowBlur = fontSize * 0.34
     ctx.shadowOffsetY = fontSize * 0.05
   }
-  lines.forEach((line, i) => {
-    // +0.80em puts the alphabetic baseline inside the line box.
-    ctx.fillText(line, x, y + offsetY + i * lineHeight + fontSize * 0.8)
-  })
+  const top = y + offsetY
+  // +0.80em puts the alphabetic baseline inside the line box.
+  const baseline = (i: number) => top + i * lineHeight + fontSize * 0.8
+  const left = align === 'left' ? x : align === 'right' ? x - blockWidth : x - blockWidth / 2
+  const box = { left, top, width: blockWidth, height: blockHeight }
+
+  switch (fx?.kind) {
+    case 'glitch':
+      drawGlitchLines(ctx, lines, x, baseline, box, fontSize, fx, width)
+      break
+    case 'maskUp':
+      lines.forEach((line, i) => {
+        // Each line rises out of its own slot, 80 ms after the one above;
+        // on exit they all leave upward through the same slot.
+        const p = easeOut(clamp01((fx.t - i * 0.08) / TEXT_ANIM_SEC))
+        const shift = (1 - p) * lineHeight - (1 - fx.outP) * lineHeight
+        ctx.save()
+        ctx.beginPath()
+        ctx.rect(0, top + i * lineHeight - fontSize * 0.05, width, lineHeight + fontSize * 0.08)
+        ctx.clip()
+        ctx.fillText(line, x, baseline(i) + shift)
+        ctx.restore()
+      })
+      break
+    case 'echo':
+      drawEcho(ctx, lines, x, baseline, box, fontSize, overlay.color, fx.inP)
+      break
+    default:
+      lines.forEach((line, i) => ctx.fillText(line, x, baseline(i)))
+  }
+
+  if (fx?.kind === 'select') {
+    ctx.shadowColor = 'transparent'
+    drawSelection(ctx, box, fontSize, overlay.accent ?? '#3D6BFF', fx.inP)
+  }
 
   ctx.restore()
+}
+
+// ── Motion-graphics lettering ──────────────────────────────────────────────────
+
+interface Box { left: number; top: number; width: number; height: number }
+
+/** Deterministic 0–1 noise: the same frame always glitches the same way, so a re-export is identical. */
+export function hash01(n: number): number {
+  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
+
+/**
+ * RGB split + sliced scanlines. The intensity is 1 at the first frame and 0
+ * once the entry settles; a short aftershock at ~0.5 s keeps it from reading
+ * as a plain fade. The slices change 24 times a second — a glitch that moves
+ * smoothly looks like a wobble, not a signal error.
+ */
+function drawGlitchLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  baseline: (i: number) => number,
+  box: Box,
+  fontSize: number,
+  fx: NonNullable<TextState['fx']>,
+  frameWidth: number,
+): void {
+  // Linear in time, not eased: an eased settle is over before the eye catches it.
+  const settle = 1 - Math.min(1, fx.t / 0.5)
+  const aftershock = fx.t > 0.5 && fx.t < 0.58 ? 0.55 : 0
+  const k = Math.max(settle, aftershock, 1 - fx.outP)
+  const draw = () => lines.forEach((line, i) => ctx.fillText(line, x, baseline(i)))
+  if (k < 0.02) { draw(); return }
+
+  const tick = Math.floor(fx.t * 24)
+  const split = fontSize * 0.09 * k
+  const ink = ctx.fillStyle
+  ctx.save()
+  ctx.shadowColor = 'transparent'
+  ctx.globalAlpha *= 0.8
+  ctx.fillStyle = '#FF2B5E'
+  ctx.translate(split, 0)
+  draw()
+  ctx.fillStyle = '#19E6FF'
+  ctx.translate(-split * 2, split * 0.3)
+  draw()
+  ctx.restore()
+
+  // The ink in horizontal bands, each thrown sideways by its own amount.
+  const bands = 7
+  const bandH = (box.height + fontSize * 0.4) / bands
+  for (let b = 0; b < bands; b++) {
+    const r = hash01(tick * 13 + b)
+    const dx = r > 0.55 ? (hash01(tick * 7 + b * 3) - 0.5) * fontSize * 1.4 * k : 0
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, box.top - fontSize * 0.2 + b * bandH, frameWidth, bandH + 0.5)
+    ctx.clip()
+    ctx.translate(dx, 0)
+    ctx.fillStyle = ink
+    draw()
+    ctx.restore()
+  }
+}
+
+/** Outlined copies stacked above and below the word, emerging from behind it. */
+function drawEcho(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  baseline: (i: number) => number,
+  box: Box,
+  fontSize: number,
+  color: string,
+  inP: number,
+): void {
+  ctx.save()
+  ctx.shadowColor = 'transparent'
+  ctx.strokeStyle = color
+  ctx.lineWidth = Math.max(1, fontSize * 0.018)
+  const step = box.height * 0.92 * inP
+  for (let k = 3; k >= 1; k--) {
+    for (const dir of [-1, 1]) {
+      ctx.save()
+      ctx.globalAlpha *= 0.6 / k
+      lines.forEach((line, i) => ctx.strokeText(line, x, baseline(i) + dir * k * step))
+      ctx.restore()
+    }
+  }
+  ctx.restore()
+  lines.forEach((line, i) => ctx.fillText(line, x, baseline(i)))
+}
+
+/** The design-tool selection: a thin box that draws itself, then its handles and a size tag. */
+function drawSelection(ctx: CanvasRenderingContext2D, box: Box, fontSize: number, accent: string, inP: number): void {
+  const pad = fontSize * 0.14
+  const l = box.left - pad
+  const t = box.top - pad * 0.6
+  const w = box.width + pad * 2
+  const h = box.height + pad * 1.2
+  const perimeter = 2 * (w + h)
+  ctx.save()
+  ctx.strokeStyle = accent
+  ctx.lineWidth = Math.max(1.5, fontSize * 0.012)
+  ctx.setLineDash([perimeter * inP, perimeter])
+  ctx.strokeRect(l, t, w, h)
+  ctx.setLineDash([])
+  const handles = clamp01((inP - 0.55) / 0.45)
+  if (handles > 0) {
+    ctx.globalAlpha *= handles
+    const s = Math.max(5, fontSize * 0.075)
+    ctx.fillStyle = '#ffffff'
+    for (const [hx, hy] of [[l, t], [l + w, t], [l, t + h], [l + w, t + h], [l + w / 2, t], [l + w / 2, t + h]]) {
+      ctx.fillRect(hx - s / 2, hy - s / 2, s, s)
+      ctx.strokeRect(hx - s / 2, hy - s / 2, s, s)
+    }
+    // Size tag under the box, the way a design tool labels a selection.
+    const tag = `${Math.round(w)} × ${Math.round(h)}`
+    const tf = Math.max(9, fontSize * 0.1)
+    ctx.font = `600 ${tf}px ${FONT_STACKS.mono}`
+    setLetterSpacing(ctx, 0)
+    ctx.textAlign = 'center'
+    const tw = ctx.measureText(tag).width + tf
+    ctx.fillStyle = accent
+    roundRect(ctx, l + w / 2 - tw / 2, t + h + tf * 0.6, tw, tf * 1.5, tf * 0.3)
+    ctx.fill()
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(tag, l + w / 2, t + h + tf * 1.72)
+  }
+  ctx.restore()
+}
+
+/**
+ * The text tiling the frame: rows alternate direction and alternate filled /
+ * outlined, with an accent band across the middle. Ignores the anchor — a
+ * marquee IS the frame.
+ */
+function drawMarquee(
+  ctx: CanvasRenderingContext2D,
+  content: string,
+  overlay: TextOverlay,
+  t: number,
+  fontSize: number,
+  width: number,
+  height: number,
+): void {
+  const size = fontSize * 0.75
+  ctx.font = `900 ${size}px ${FONT_STACKS[overlay.font ?? 'sans']}`
+  setLetterSpacing(ctx, -0.02 * size)
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.shadowColor = 'transparent'
+  const unit = `${content.replace(/\s+/g, ' ').trim()} · `
+  const unitW = Math.max(1, ctx.measureText(unit).width)
+  const rowH = size * 1.08
+  const rows = Math.ceil(height / rowH) + 1
+  const speed = width * 0.22
+  const mid = Math.floor(rows / 2)
+  for (let r = 0; r < rows; r++) {
+    const dir = r % 2 === 0 ? -1 : 1
+    const offset = (((dir * t * speed * (1 + (r % 3) * 0.15)) % unitW) + unitW) % unitW
+    const cy = r * rowH + rowH / 2 - rowH * 0.3
+    if (r === mid) {
+      ctx.fillStyle = overlay.accent ?? DEFAULT_CARD_COLOR
+      ctx.fillRect(0, cy - rowH / 2, width, rowH)
+    }
+    ctx.fillStyle = r === mid ? '#111111' : overlay.color
+    ctx.strokeStyle = overlay.color
+    ctx.lineWidth = Math.max(1, size * 0.02)
+    for (let x0 = -offset; x0 < width; x0 += unitW) {
+      if (r % 2 === 1 && r !== mid) ctx.strokeText(unit, x0, cy)
+      else ctx.fillText(unit, x0, cy)
+    }
+  }
+}
+
+function clamp01(v: number): number {
+  return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0
+}
+
+function easeOut(p: number): number {
+  return 1 - Math.pow(1 - clamp01(p), 3)
 }
 
 interface PlateBox {
@@ -215,8 +457,8 @@ function inkLuminance(hex: string): number {
   return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255
 }
 
-function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'bar', box: PlateBox, light = false, accent?: string): void {
-  if (plate === 'shadow') return
+function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'bar' | 'card', box: PlateBox, light = false, accent?: string): void {
+  if (plate === 'shadow' || plate === 'card') return
   const { x, y, blockWidth, blockHeight, align, fontSize } = box
   const padX = fontSize * (plate === 'pill' ? 0.62 : 0.55)
   const padY = fontSize * 0.34

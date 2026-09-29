@@ -234,6 +234,11 @@ export async function renderPlannedClip(
   }
 
   project = setAllTransitions(project, clip.transition, Math.max(0.1, clip.transitionSec))
+  // A kinetic edit never uses the same join twice in a row.
+  if (clip.transitionCycle?.length) {
+    const cycle = clip.transitionCycle
+    project = { ...project, clips: project.clips.map((c, i) => (i === 0 ? c : { ...c, transition: cycle[(i - 1) % cycle.length] })) }
+  }
   const total = projectDuration(project)
   project = {
     ...project,
@@ -246,8 +251,8 @@ export async function renderPlannedClip(
     audio: recipe.music === 'none'
       ? { kind: 'none', trackId: null, fileName: null, volume: 0, fadeSec: 0, offsetSec: 0 }
       : { kind: 'builtin', trackId: recipe.music, fileName: null, volume: recipe.musicVolume, fadeSec: 0.8, offsetSec: 0 },
-    intro: recipe.fadeIn ? { type: 'black', sec: recipe.style === 'launch' ? 0.15 : 0.5 } : { type: 'none', sec: 0 },
-    ...(clip.punch ? { fx: { punch: clip.punch } } : {}),
+    intro: recipe.fadeIn ? { type: 'black', sec: recipe.style && recipe.style !== 'classic' ? 0.15 : 0.5 } : { type: 'none', sec: 0 },
+    ...(clip.punch || clip.hud ? { fx: { ...(clip.punch ? { punch: clip.punch } : {}), ...(clip.hud ? { hud: clip.hud } : {}) } } : {}),
     ...(clip.sfx ? { sfx: clip.sfx } : {}),
     outro: recipe.fadeOut ? { type: 'black', sec: 0.6 } : { type: 'none', sec: 0 },
   }
