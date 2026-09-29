@@ -663,6 +663,11 @@
       "doneEmbedded": "Listo: el sonido va en el vídeo y la revelación cae en el drop. Previsualízalo, retócalo y exporta.",
       "tryStyle": "Probar otro estilo",
       "another": "Otro sonido"
+    },
+    "beatCaptions": {
+      "label": "Subtítulos palabra a palabra al ritmo",
+      "on": "Subtítulos al ritmo",
+      "hint": "Dos o tres palabras cada vez, grandes y centradas; cada palabra nueva entra de golpe en un beat. Siguen al ritmo aunque edites o muevas el texto."
     }
   },
   "cover": {

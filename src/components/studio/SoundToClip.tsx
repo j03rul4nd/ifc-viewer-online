@@ -59,6 +59,7 @@ export function SoundToClip({ run, busy, canRender }: {
   const [style, setStyle] = useState<TemplateId>('dropReveal')
   const [length, setLength] = useState<number>(15)
   const [embed, setEmbed] = useState(true)
+  const [wordCaptions, setWordCaptions] = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
   const latest = useRef('')
 
@@ -165,7 +166,7 @@ export function SoundToClip({ run, busy, canRender }: {
     const ready: ReadySound = { ...sound, buffer: embed ? sound.buffer : null }
     void run(async (signal) => {
       try {
-        await clipFromSound(ready, style, { ...base, targetSec: length }, i18n.language, labels, templateLabels(), signal)
+        await clipFromSound(ready, style, { ...base, targetSec: length }, i18n.language, labels, templateLabels(), signal, wordCaptions)
         setStep('done')
         toast(t('studio.flow.generated'), 'success')
       } catch (e) {
@@ -314,6 +315,11 @@ export function SoundToClip({ run, busy, canRender }: {
           <p className="text-[11px] text-[var(--text-faint)]">
             {t('studio.flow.window', { from: formatStart(cut.offsetSec), len: cut.durationSec.toFixed(0), drop: cut.dropAtSec.toFixed(1) })}
           </p>
+
+          <label className="flex items-start gap-2 text-[11.5px] text-[var(--text-dim)]">
+            <input type="checkbox" className="mt-0.5" checked={wordCaptions} onChange={(e) => setWordCaptions(e.target.checked)} />
+            <span>{t('studio.beatCaptions.label')}<br /><span className="text-[11px] text-[var(--text-faint)]">{t('studio.beatCaptions.hint')}</span></span>
+          </label>
 
           {sound.buffer && (
             <label className="flex items-start gap-2 text-[11.5px] text-[var(--text-dim)]">

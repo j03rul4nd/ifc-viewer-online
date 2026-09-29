@@ -663,6 +663,11 @@
       "doneEmbedded": "Done: the sound is in the video, the reveal hits on the drop. Preview it, tweak it, then Export.",
       "tryStyle": "Try another style",
       "another": "Another sound"
+    },
+    "beatCaptions": {
+      "label": "Captions word by word, on the beat",
+      "on": "Captions on the beat",
+      "hint": "Two or three words at a time, big and centred; each new word punches in on a beat. They stay on the beat when you edit or move a caption."
     }
   },
   "cover": {

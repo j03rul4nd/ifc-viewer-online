@@ -10,6 +10,7 @@
 import { projectRhythm, type MusicMeta } from './music-analysis'
 import { layoutClips, snapCutsToBeats, trimClipEdge, type EditProject } from './project'
 import type { SoundLink } from './tiktok-link'
+import { beatCaptions } from './beat-captions'
 import { applyTemplate, type TemplateContext, type TemplateId } from './viral-templates'
 
 /** Seconds in a bar (4 beats). */
@@ -110,7 +111,7 @@ export function recentSounds(): RememberedSound[] {
  *   5. end on the last bar line — for a loop, trimming the tail's START so its
  *      last frame still meets the first.
  */
-export function finishSoundClip(project: EditProject, m: MusicMeta, cut: SoundCut, style: TemplateId, ctx: TemplateContext): EditProject {
+export function finishSoundClip(project: EditProject, m: MusicMeta, cut: SoundCut, style: TemplateId, ctx: TemplateContext, captionsOnBeat = true): EditProject {
   let p: EditProject = { ...project, audio: { ...project.audio, offsetSec: cut.offsetSec, music: m, fadeSec: 0.05 } }
   const rhythm = projectRhythm(m, cut.offsetSec)
   p = applyTemplate(p, style, { ...ctx, rhythm, dropAt: cut.dropAtSec, targetSec: cut.durationSec })
@@ -154,7 +155,9 @@ export function finishSoundClip(project: EditProject, m: MusicMeta, cut: SoundCu
   const end = layoutClips(p).reduce((mx, c) => Math.max(mx, c.end), 0)
   const times: number[] = []
   for (let t = Math.max(0, dropAt); t < end - 1e-3; t += barSec(m)) times.push(t)
-  return { ...p, fx: { ...p.fx, punch: { times, amount: 0.05 } } }
+  p = { ...p, fx: { ...p.fx, punch: { times, amount: 0.05 } } }
+  // 6. Captions word by word, each word on a beat of the (possibly slid) sound.
+  return captionsOnBeat ? beatCaptions(p, projectRhythm(m, p.audio.offsetSec)) : p
 }
 
 /** Snapping moves out-points; put the loop's tail back so its last frame meets the opener. */

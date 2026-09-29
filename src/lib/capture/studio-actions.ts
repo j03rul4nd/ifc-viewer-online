@@ -246,6 +246,7 @@ export async function clipFromSound(
   labels: GenerateLabels,
   templateLabels: TemplateContext['labels'],
   signal?: AbortSignal,
+  captionsOnBeat = true,
 ): Promise<void> {
   const cut = cutForSound(sound.music, recipe.targetSec)
   // The director plans to the sound's tempo and length; the music comes from the sound.
@@ -259,7 +260,7 @@ export async function clipFromSound(
       kind: sound.buffer ? 'user' : 'none', trackId: null, fileName: sound.name, volume: 1,
       link: sound.link ?? undefined, rights: p.audio.rights ?? 'viral',
     },
-  }, sound.music, cut, style, { rhythm: null, dropAt: null, labels: templateLabels }))
+  }, sound.music, cut, style, { rhythm: null, dropAt: null, labels: templateLabels }, captionsOnBeat))
   if (sound.link) rememberSound(sound.link, sound.music)
 }
 
