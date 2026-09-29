@@ -55,8 +55,9 @@ export type TextAnimId =
   | 'words'   // kinetic typography: the words land one by one
   | 'slam'    // hits hard: oversized, snaps to size with a small overshoot
   | 'count'   // numbers in the text count up from zero
+  | 'roll'    // letters roll up into place through a mask, and out the top
 
-export const TEXT_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop', 'words', 'slam', 'count']
+export const TEXT_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop', 'words', 'slam', 'count', 'roll']
 
 /** The animations a picture overlay can use (the text-only ones make no sense on an image). */
 export const MEDIA_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop']
@@ -89,6 +90,8 @@ export interface TextOverlay {
   accent?: string
   /** Force upper case regardless of the style. */
   uppercase?: boolean
+  /** Vertical centre as a fraction of the frame height; overrides the anchor's row. */
+  yFrac?: number
 }
 
 // ── Transitions ────────────────────────────────────────────────────────────────
@@ -183,6 +186,7 @@ export interface NewTextInput {
   font?: 'sans' | 'serif' | 'mono'
   accent?: string
   uppercase?: boolean
+  yFrac?: number
 }
 
 /**
@@ -208,6 +212,7 @@ export function createTextOverlay(input: NewTextInput, duration: number): TextOv
     ...(input.font ? { font: input.font } : {}),
     ...(input.accent ? { accent: input.accent } : {}),
     ...(input.uppercase ? { uppercase: true } : {}),
+    ...(input.yFrac !== undefined && Number.isFinite(input.yFrac) ? { yFrac: Math.min(0.95, Math.max(0.05, input.yFrac)) } : {}),
   }
 }
 
@@ -242,10 +247,28 @@ export interface TextRenderState {
   scale: number
   /** What to draw instead of the card's text at this moment (words, count). */
   text?: string
+  /** Roll: seconds since the card came in and until it goes (per-letter timing is the renderer's). */
+  roll?: { since: number; until: number }
 }
 
 /** Seconds between two words landing in a 'words' card. */
 export const WORD_STEP_SEC = 0.11
+/** Roll: delay between two letters, and how long one letter takes to land. */
+export const ROLL_STAGGER_SEC = 0.022
+export const ROLL_LETTER_SEC = 0.3
+
+/**
+ * Where a rolling letter sits, in line heights: 1 = one line below its place
+ * (not yet in), 0 = in place, -1 = one line above (gone). Letters enter one
+ * after another and leave the same way over the card's last moments.
+ */
+export function rollOffset(index: number, since: number, until: number): number {
+  const inP = Math.min(1, Math.max(0, (since - index * ROLL_STAGGER_SEC) / ROLL_LETTER_SEC))
+  if (inP < 1) return 1 - easeOutCubic(inP)
+  const outP = Math.min(1, Math.max(0, (ROLL_LETTER_SEC + index * ROLL_STAGGER_SEC * 0.5 - until) / ROLL_LETTER_SEC))
+  return outP > 0 ? -outP * outP : 0
+}
+
 /** How long a 'count' card takes to reach its numbers. */
 export const COUNT_SEC = 0.9
 
@@ -312,6 +335,8 @@ export function textRenderStateAt(o: TextOverlay, t: number): TextRenderState | 
       const s = q < 1 ? 1.5 - 0.56 * easeOutCubic(q) : 0.94 + 0.06 * clamp((sinceIn - 0.16) / 0.12, 0, 1)
       return { alpha: Math.min(clamp(sinceIn / 0.06, 0, 1), easeOutCubic(outP)), dy: 0, scale: s }
     }
+    case 'roll':
+      return { alpha: 1, dy: 0, scale: 1, roll: { since: sinceIn, until: untilOut } }
     case 'count': {
       const f = easeOutCubic(clamp(sinceIn / Math.min(COUNT_SEC, length * 0.6), 0, 1))
       return { alpha: eased, dy: 0, scale: 1, text: countText(o.text, f) }

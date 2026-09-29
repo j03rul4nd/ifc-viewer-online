@@ -16,6 +16,7 @@ import { framingRect, overlaysAt, punchScale, type ClipSample, type EditProject,
 import { textRenderStateAt } from './timeline'
 import { drawTextCardsAt } from './compositor'
 import { drawWatermark } from './watermark'
+import { drawHud } from './hud'
 
 export interface FramePicture {
   image: CanvasImageSource
@@ -81,9 +82,11 @@ export function composeProjectFrame(o: ComposeProjectOptions): void {
     ctx.save()
     ctx.translate(0, bar)
     drawTextCardsAt(ctx, o.project.texts, o.t, width, height - bar * 2)
+    if (o.project.hud) drawHud(ctx, o.project.hud, o.t, width, height - bar * 2)
     ctx.restore()
   } else {
     drawTextCardsAt(ctx, o.project.texts, o.t, width, height)
+    if (o.project.hud) drawHud(ctx, o.project.hud, o.t, width, height)
   }
   if (o.watermark) drawWatermark(ctx, width, height)
 

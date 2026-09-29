@@ -239,10 +239,11 @@ export async function renderPlannedClip(
     ...project,
     texts: clip.texts.map((t) => createTextOverlay({
       text: t.text, startSec: t.startSec, endSec: Math.min(total, t.endSec), style: t.style, anchor: t.anchor, anim: t.anim,
-      ...(t.color ? { color: t.color } : {}), ...(t.font ? { font: t.font } : {}), ...(t.accent ? { accent: t.accent } : {}), ...(t.uppercase ? { uppercase: true } : {}),
+      ...(t.color ? { color: t.color } : {}), ...(t.font ? { font: t.font } : {}), ...(t.accent ? { accent: t.accent } : {}), ...(t.uppercase ? { uppercase: true } : {}), ...(t.yFrac !== undefined ? { yFrac: t.yFrac } : {}),
     }, total)),
     ...(clip.grade ? { grade: clip.grade } : {}),
     lookId: clip.look.id,
+    ...(clip.hud ? { hud: clip.hud } : {}),
     audio: recipe.music === 'none'
       ? { kind: 'none', trackId: null, fileName: null, volume: 0, fadeSec: 0, offsetSec: 0 }
       : { kind: 'builtin', trackId: recipe.music, fileName: null, volume: recipe.musicVolume, fadeSec: 0.8, offsetSec: 0 },

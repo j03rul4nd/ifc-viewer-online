@@ -13,6 +13,7 @@ import { cueAt, type ProjectSfx, type SfxCue } from '../capture/sfx'
 import { PACE_SHOT_SEC, type CaptionLook, type Recipe, type SectionKind } from './recipe'
 import { LOOKS, type Grade, type Look } from './looks'
 import { MAX_CUE_CHARS, subtitleCues, type NarrationFact } from './narration'
+import type { Hud, HudMark } from '../capture/hud'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,12 @@ export interface Subject {
   detail?: string[]
   /** A recorded camera for this subject (BCF viewpoints). */
   pose?: CameraPose
+  /** Storeys: how many rooms (IfcSpace) it holds, when the model has them. */
+  rooms?: number
+  /** Storeys: the box of its largest room (IfcSpace) — empty space to stand in. */
+  room?: Box
+  /** The interior storey: columns and walls in it, for a camera route that misses them. */
+  obstacles?: Box[]
 }
 
 export interface ModelFacts {
@@ -141,6 +148,8 @@ export interface PlannedText {
   endSec: number
   style: TextStyleId
   anchor: TextAnchor
+  /** Vertical centre as a fraction of the height (overrides the anchor's row). */
+  yFrac?: number
 }
 
 export interface PlannedClip {
@@ -165,6 +174,8 @@ export interface PlannedClip {
   grade?: Grade
   /** The look everything was styled for. */
   look: Look
+  /** Technical interface frame, when the recipe asks for it. */
+  hud?: Hud
 }
 
 /** Launch grammar: which moves get a speed ramp (reveals keep their ease-out). */
@@ -225,6 +236,7 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
       ...(recipe.sfx && recipe.sfx !== 'off' ? { sfx: planSfx(recipe.sfx, shots, starts, overlap, texts, durationSec) } : {}),
       ...(lookOf(recipe).grade ? { grade: lookOf(recipe).grade! } : {}),
       look: lookOf(recipe),
+      ...(recipe.hud ? { hud: planHud(shots, starts, overlap, durationSec, title || subject.name, subject, lookOf(recipe), FORMAT_SIZE[recipe.format].height > FORMAT_SIZE[recipe.format].width) } : {}),
     }
   }
 
@@ -403,6 +415,35 @@ function sectionDrafts(
           { sweepDeg: 70, elevationDeg: 22, easing: 'linear' },
           { explode: { bands, gap } }, undefined, 1.5)
         out.push(said(d, { kind: 'exploded', storeys: m.storeys.length }))
+        break
+      }
+      case 'plans':
+        // Each storey as a drawing: cut at plan height, the camera settling
+        // from an oblique view to nearly overhead, close on that floor.
+        for (const s of pickSpread(typicalStoreys(m.storeys), recipe.maxStoreys)) {
+          const b = boxToBounds(s.box)
+          const cutY = planCutHeight(s, m.storeys)
+          const floor: Bounds = { center: { ...b.center, y: (s.box.min.y + cutY) / 2 }, size: { ...b.size, y: Math.max(1, cutY - s.box.min.y) } }
+          const d = make('plans', 'orbit', minBounds(floor, 2), s.label,
+            { sweepDeg: 35, elevationDeg: 62, padding: 1.05, easing: 'easeInOut' },
+            { cut: { normal: { x: 0, y: -1, z: 0 }, points: [{ ...b.center, y: cutY }], stepped: false } },
+            recipe.captions.labelShots ? s.label : undefined)
+          out.push(said(d, { kind: 'plan', name: s.label, rooms: s.rooms ?? 0, elements: s.count }))
+        }
+        break
+      case 'interior': {
+        // Eye height inside a middle storey, turning slowly with a wide lens.
+        // Off-centre so a central core does not fill the frame.
+        const s = interiorStorey(m.storeys)
+        if (!s) break
+        const b = boxToBounds(s.box)
+        // Eye height over the room's own floor: the storey's box starts lower
+        // (columns and slab edges from below), which put the eye in the slab.
+        const keyframes = interiorKeyframes(s.room ?? s.box, (s.room ?? s.box).min.y + 1.6, s.obstacles ?? [])
+        // No cut: the slab above is the ceiling (a cut shows the backdrop instead).
+        const d = make('interior', 'path', b, s.label, { keyframes, easing: 'easeInOut', fovDeg: 72 }, {},
+          recipe.captions.labelShots ? s.label : undefined, 1.2)
+        out.push(said(d, { kind: 'interior', name: s.label, rooms: s.rooms ?? 0 }))
         break
       }
       case 'buildup': {
@@ -632,6 +673,90 @@ export function explodeOffsets(bands: number, gap: number, p: number): number[] 
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 
+/**
+ * The HUD for a clip: one mark per 3D shot (the end card has none — the HUD
+ * stops where it starts), with the storey counter or the live cut height.
+ */
+export function planHud(
+  shots: readonly PlannedShot[], starts: readonly number[], overlap: number, durationSec: number,
+  title: string, subject: ModelFacts, look: Look, vertical: boolean,
+): Hud {
+  const baseY = subject.bounds.center.y - subject.bounds.size.y / 2
+  const marks: HudMark[] = []
+  let end = durationSec
+  shots.forEach((s, i) => {
+    const startSec = i === 0 ? 0 : starts[i] + overlap / 2
+    const endSec = i < shots.length - 1 ? starts[i + 1] + overlap / 2 : durationSec
+    if (s.card) { end = Math.min(end, startSec); return }
+    const say = s.say
+    const cut = s.scene.cut && s.scene.cut.normal.y < -0.5
+      ? { ys: s.scene.cut.points.map((p) => p.y), stepped: s.scene.cut.stepped, baseY }
+      : undefined
+    const meta = say?.kind === 'storey' ? `L ${say.index}/${say.total}`
+      : say?.kind === 'exploded' ? `${say.storeys} L`
+      : say?.kind === 'system' ? `${say.percent}%`
+      : undefined
+    marks.push({ startSec: round3(startSec), endSec: round3(endSec), label: s.label, ...(meta ? { meta } : {}), ...(cut ? { cut } : {}) })
+  })
+  const accent = look.id === 'native' ? '#ff5a1f' : look.accent
+  const ink = look.id === 'native' ? '#f4f4f5' : look.type.ink
+  return { title, accent, ink, durationSec: round3(end), marks, ...(vertical ? { vertical: true } : {}) }
+}
+
+/** Storeys worth a plan: the typical floors — no near-empty foundation or roof slab. */
+export function typicalStoreys(storeys: readonly Subject[]): Subject[] {
+  const counts = storeys.map((s) => s.count).sort((a, b) => a - b)
+  const median = counts[Math.floor(counts.length / 2)] ?? 0
+  const full = storeys.filter((s) => s.count >= Math.max(10, median * 0.5))
+  const inner = full.length > 3 ? full.slice(1, -1) : full
+  return inner.length ? inner : [...storeys]
+}
+
+/** A storey you can stand in, preferring one with a room, near the middle. */
+export function interiorStorey(storeys: readonly Subject[]): Subject | null {
+  const tall = typicalStoreys(storeys).filter((s) => s.box.max.y - s.box.min.y > 2.4)
+  const roomy = tall.filter((s) => s.room)
+  const pool = roomy.length ? roomy : tall
+  return pool.length ? pool[Math.floor(pool.length / 2)] : null
+}
+
+/**
+ * Walk into a room at eye height: from a fifth of the way along its long axis,
+ * a slow dolly forward while the view pans across the far end.
+ */
+export function interiorKeyframes(room: Box, eye: number, obstacles: readonly Box[] = []): CameraPose[] {
+  const b = boxToBounds(room)
+  const alongX = b.size.x >= b.size.z
+  const len = alongX ? b.size.x : b.size.z
+  const width = alongX ? b.size.z : b.size.x
+  const at = (f: number, side = 0): Vec3 => alongX
+    ? { x: room.min.x + len * f, y: eye, z: b.center.z + side }
+    : { x: b.center.x + side, y: eye, z: room.min.z + len * f }
+  // The eye must not pass through a column or a wall: of the parallel lines
+  // across the room, the one nearest the middle whose whole route is clear.
+  const side = clearLine(obstacles, at, width, eye) ?? 0
+  return [0, 1, 2, 3].map((i) => ({
+    position: at(0.18 + i * 0.05, side),
+    target: at(0.95, side * 0.3 + (i / 3 - 0.5) * width * 0.9),
+    fovDeg: 72,
+  }))
+}
+
+/** Lateral offset of a route (f 0.14–0.37 along the room) clear of every obstacle by 0.5 m; null when none is. */
+export function clearLine(obstacles: readonly Box[], at: (f: number, side: number) => Vec3, width: number, eye: number): number | null {
+  const pad = 0.5
+  const blocked = (p: Vec3) => obstacles.some((o) =>
+    eye >= o.min.y - 0.2 && eye <= o.max.y + 0.2 &&
+    p.x >= o.min.x - pad && p.x <= o.max.x + pad && p.z >= o.min.z - pad && p.z <= o.max.z + pad)
+  for (const k of [0, 0.12, -0.12, 0.24, -0.24, 0.36, -0.36]) {
+    const side = k * width
+    let ok = true
+    for (let f = 0.14; f <= 0.37 && ok; f += 0.01) if (blocked(at(f, side))) ok = false
+    if (ok) return side
+  }
+  return null
+}
+
 /** A plan is cut ~1.2 m above the floor, below the storey above. */
 function planCutHeight(s: Subject, all: readonly Subject[]): number {
   const floor = s.box.min.y
@@ -731,7 +856,7 @@ function planTexts(
   // Launch titles hit within the first beat: no slow fade-in on a feed. An
   // art-directed title sits in the open sky above the building — the
   // cinematic rule: type never sits on the subject.
-  const titleAnchor: TextAnchor = vertical || art.id !== 'native' ? 'top-center' : 'mid-center'
+  const titleAnchor: TextAnchor = 'top-center'
   if (title) push({ text: title, startSec: launch ? 0.12 : 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: titleAnchor }, anim('title'))
   const sub: string[] = []
   if (recipe.captions.showStats) {
@@ -792,7 +917,8 @@ function planTexts(
       // The hero's line waits for the title to land; the rest start after the cut.
       const from = i === 0 ? (title ? 1.1 : 0.3) : starts[i] + overlap + 0.2
       for (const cue of subtitleCues(narrate(fact), from, end(i) - 0.15, maxChars)) {
-        push({ ...styled('body'), text: cue.text, startSec: cue.startSec, endSec: cue.endSec, style: 'caption', anchor: vertical ? 'mid-center' : 'bottom-center' }, 'fade')
+        // Vertical: above the band the feed's own UI covers, below the building's middle.
+        push({ ...styled('body'), text: cue.text, startSec: cue.startSec, endSec: cue.endSec, style: 'caption', anchor: 'bottom-center', ...(vertical ? { yFrac: 0.72 } : {}) }, launch ? 'roll' : 'fade')
       }
     }
   }

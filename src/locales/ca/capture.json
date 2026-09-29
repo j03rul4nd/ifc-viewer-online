@@ -93,7 +93,8 @@
       "pop": "Rebot",
       "words": "Paraules",
       "slam": "Cop",
-      "count": "Comptador"
+      "count": "Comptador",
+      "roll": "Rodar"
     },
     "effects": {
       "in": "Obertura",
@@ -351,7 +352,9 @@
         "endCard": "Targeta final",
         "sectionCut": "Secció planta a planta",
         "sectionSweep": "Escombrat en secció",
-        "exploded": "Vista en explosió"
+        "exploded": "Vista en explosió",
+        "plans": "Plantes en planta",
+        "interior": "Interior"
       },
       "sectionHint": {
         "hero": "Allunya la càmera fins al model sencer, amb el títol",
@@ -372,7 +375,9 @@
         "endCard": "El nom i la web sobre un degradat en moviment",
         "sectionCut": "Un tall en planta que baixa des de la coberta i s’atura a cada planta",
         "sectionSweep": "Un tall vertical que travessa l’edifici i mostra l’interior",
-        "exploded": "Les plantes se separen i tornen a encaixar"
+        "exploded": "Les plantes se separen i tornen a encaixar",
+        "plans": "Cada planta tallada a 1,2 m, vista des de dalt: les estances",
+        "interior": "A l’alçada dels ulls dins d’una planta, un gir lent"
       },
       "empty": {
         "storeys": "Aquest model no té plantes",
@@ -384,7 +389,9 @@
         "bcf": "No hi ha temes BCF amb punt de vista o components",
         "fixed": "Res a comparar: torna a validar després d’arreglar",
         "sectionCut": "Necessita almenys 2 plantes",
-        "exploded": "Necessita almenys 3 plantes"
+        "exploded": "Necessita almenys 3 plantes",
+        "plans": "No s’han trobat plantes en aquest model",
+        "interior": "Cap planta té alçada per estar-hi dret"
       },
       "emptyGeneric": "Res a mostrar en aquest model",
       "shots": "{{n}} preses",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Tall de {{from}} a {{to}}: {{storeys}} plantes.",
         "sectionSweep": "Un tall vertical al llarg de {{length}} m d’edifici.",
-        "exploded": "{{storeys}} plantes, separades i tornades a encaixar."
-      }
+        "exploded": "{{storeys}} plantes, separades i tornades a encaixar.",
+        "plan": "Planta de {{name}}: {{elements}} elements.",
+        "planRooms": "Planta de {{name}}: {{rooms}} estances.",
+        "interior": "Dins de {{name}}.",
+        "interiorRooms": "Dins de {{name}}: {{rooms}} estances en aquesta planta."
+      },
+      "hud": "Interfície",
+      "hudOn": "HUD tècnic",
+      "hudHint": "Text a les cantonades amb el que es veu, comptador de preses, alçada del tall en directe i una línia de temps amb un punt d’accent."
     },
     "remaining": "Queden uns {{seconds}} s",
     "sfxVolume": "Volum dels efectes",

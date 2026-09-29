@@ -93,7 +93,8 @@
       "pop": "弹出",
       "words": "逐词",
       "slam": "重击",
-      "count": "数字滚动"
+      "count": "数字滚动",
+      "roll": "滚动"
     },
     "effects": {
       "in": "开场",
@@ -351,7 +352,9 @@
         "endCard": "片尾卡",
         "sectionCut": "逐层剖切",
         "sectionSweep": "剖切扫描",
-        "exploded": "爆炸视图"
+        "exploded": "爆炸视图",
+        "plans": "平面图",
+        "interior": "室内"
       },
       "sectionHint": {
         "hero": "拉远至整个模型并显示标题",
@@ -372,7 +375,9 @@
         "endCard": "名称和网址叠加在流动渐变背景上",
         "sectionCut": "从屋顶向下的平面剖切，在每层停留",
         "sectionSweep": "穿过建筑的竖向剖切，展示内部",
-        "exploded": "各楼层分开后再合拢"
+        "exploded": "各楼层分开后再合拢",
+        "plans": "每层在平面高度剖切，从上方看：房间",
+        "interior": "在楼层内以视线高度缓慢环视"
       },
       "empty": {
         "storeys": "此模型没有楼层",
@@ -384,7 +389,9 @@
         "bcf": "没有带视点或构件的 BCF 议题",
         "fixed": "无可比较内容——修复后请重新校验",
         "sectionCut": "至少需要 2 层",
-        "exploded": "至少需要 3 层"
+        "exploded": "至少需要 3 层",
+        "plans": "此模型中没有楼层",
+        "interior": "没有足够高的楼层"
       },
       "emptyGeneric": "此模型没有可展示的内容",
       "shots": "{{n}} 个镜头",
@@ -502,8 +509,15 @@
         "closingScore": "{{name}}：Health Score {{score}}/100。",
         "sectionCut": "从{{from}}剖切到{{to}}：{{storeys}}个平面。",
         "sectionSweep": "沿建筑{{length}}米的竖向剖切。",
-        "exploded": "{{storeys}}层，分开后再合拢。"
-      }
+        "exploded": "{{storeys}}层，分开后再合拢。",
+        "plan": "{{name}}平面：{{elements}}个构件。",
+        "planRooms": "{{name}}平面：{{rooms}}个房间。",
+        "interior": "{{name}}内部。",
+        "interiorRooms": "{{name}}内部：本层{{rooms}}个房间。"
+      },
+      "hud": "界面",
+      "hudOn": "技术 HUD",
+      "hudHint": "角落显示当前内容、镜头计数、实时剖切高度，以及带强调色圆点的时间轴。"
     },
     "remaining": "约剩 {{seconds}} 秒",
     "sfxVolume": "音效音量",

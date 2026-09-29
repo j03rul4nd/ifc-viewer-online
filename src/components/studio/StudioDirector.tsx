@@ -75,6 +75,12 @@ export function useDirectorLabels(): GenerateLabels {
           case 'sectionCut': return t('studio.director.say.sectionCut', { storeys: f.storeys, from: f.from, to: f.to })
           case 'sectionSweep': return t('studio.director.say.sectionSweep', { length: n(f.lengthM) })
           case 'exploded': return t('studio.director.say.exploded', { storeys: f.storeys })
+          case 'plan': return f.rooms > 1
+            ? t('studio.director.say.planRooms', { name: f.name, rooms: f.rooms })
+            : t('studio.director.say.plan', { name: f.name, elements: n(f.elements) })
+          case 'interior': return f.rooms > 1
+            ? t('studio.director.say.interiorRooms', { name: f.name, rooms: f.rooms })
+            : t('studio.director.say.interior', { name: f.name })
           case 'closing': return f.score !== null
             ? t('studio.director.say.closingScore', { name: f.name, score: f.score })
             : t('studio.director.say.closing', { name: f.name })
@@ -223,6 +229,8 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
       case 'buildup': return { n: facts.models.some((m) => m.storeys.length >= 3) ? 1 : 0 }
       case 'sectionCut': return { n: facts.models.some((m) => m.storeys.length >= 2) ? 1 : 0 }
       case 'exploded': return { n: facts.models.some((m) => m.storeys.length >= 3) ? 1 : 0 }
+      case 'plans': return { n: Math.min(draft.maxStoreys, sum((m) => m.storeys.length)) }
+      case 'interior': return { n: facts.models.some((m) => m.storeys.some((s) => s.box.max.y - s.box.min.y > 2.4)) ? 1 : 0 }
       case 'systems': return { n: Math.min(draft.maxSystems, sum((m) => m.systems.length)) }
       case 'issues': return { n: Math.min(draft.maxIssues, sum((m) => m.issues.length)) }
       case 'tour': return { n: tourStops }
@@ -402,6 +410,10 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
               <Toggle label={t('studio.snapToBeat')} checked={draft.onBeat} onChange={(v) => set({ onBeat: v })} />
             )}
           </Field>
+          <Field label={t('studio.director.hud')}>
+            <Toggle label={t('studio.director.hudOn')} hint={t('studio.director.hudHint')} checked={!!draft.hud} onChange={(v) => set({ hud: v })} />
+          </Field>
+
           <Field label={t('studio.director.sfxLabel')} hint={t(`studio.director.sfxHint.${draft.sfx ?? 'off'}`)}>
             <Chips value={draft.sfx ?? 'off'} options={SFX_LEVELS} label={(v) => t(`studio.director.sfxLevels.${v}`)} onChange={(v) => set({ sfx: v })} />
           </Field>
