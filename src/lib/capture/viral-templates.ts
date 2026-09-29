@@ -29,6 +29,8 @@ export interface TemplateContext {
   rhythm: Rhythm | null
   /** Project time of the drop, when known. */
   dropAt: number | null
+  /** Length the clip should reach, when a sound sets it (fast cuts share what is left). */
+  targetSec?: number
   labels: {
     waitForIt: string
     before: string
@@ -116,8 +118,14 @@ function dropReveal(project: EditProject, ctx: TemplateContext): EditProject {
   const placed = layoutClips(p)
   const revealAt = placed[build.length]?.start ?? 0
   if (ctx.rhythm && placed.length > build.length + 1) {
-    const two = ctx.rhythm.beatSec * 2
-    p = withClips(p, p.clips.map((c, i) => (i > build.length ? { ...c, outSec: Math.min(c.outSec, c.inSec + two * c.speed) } : c)))
+    // Fast cuts: two beats each — or, when a sound sets the length, an equal
+    // share of what is left after the hero, in whole beats (never under two).
+    const beat = ctx.rhythm.beatSec
+    const after = placed.length - build.length - 1
+    const heroEnd = placed[build.length]?.end ?? 0
+    const share = ctx.targetSec ? Math.floor((ctx.targetSec - heroEnd) / after / beat) * beat : 0
+    const each = Math.max(2 * beat, share)
+    p = withClips(p, p.clips.map((c, i) => (i > build.length ? { ...c, outSec: Math.min(c.outSec, c.inSec + each * c.speed) } : c)))
   }
   const hookEnd = Math.max(1, revealAt || Math.min(2, total(p)))
   return addText(p, { text: ctx.labels.waitForIt, startSec: 0, endSec: hookEnd, style: 'title', anchor: 'top-center', anim: 'pop' })

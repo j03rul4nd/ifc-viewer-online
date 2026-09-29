@@ -628,6 +628,41 @@
         "health": "Health Score {{n}}/100",
         "schema": "Built in {{schema}}"
       }
+    },
+    "flow": {
+      "cta": "Clip from a TikTok sound",
+      "ctaHint": "Paste a sound link — the video is cut to its beat and drop.",
+      "progress": "Steps",
+      "steps": {
+        "link": "Sound",
+        "beat": "Beat",
+        "style": "Style",
+        "done": "Ready"
+      },
+      "pasteHint": "Tip: copy a TikTok sound link and just press Ctrl+V anywhere in the studio.",
+      "recent": "Your recent sounds",
+      "remembered": "beat remembered",
+      "beatQ": "Let the studio hear it — pick one:",
+      "beatHintDesktop": "Best: capture the TikTok tab — we get the real sound, find the beat and the drop, and can put it in the video.",
+      "beatHintPhone": "Best on a phone: play the sound on another device (or speaker) and let the microphone listen for ~20 s.",
+      "haveFile": "I have the file",
+      "tap": "Tap the beat",
+      "next": "Next",
+      "waveHint": "Beat grid and drop (red). Click or use ←/→ to move the drop.",
+      "tempo": "Tempo {{bpm}} BPM",
+      "halfHint": "Half time — if the cuts feel too fast",
+      "doubleHint": "Double time — if the cuts feel too slow",
+      "relisten": "Listen again",
+      "styleQ": "Style",
+      "length": "Length",
+      "window": "Uses the sound from {{from}}, {{len}} s — the reveal lands on the drop at {{drop}} s.",
+      "embed": "Put the sound in the video file",
+      "embedHint": "Needed for Reels/Shorts. For TikTok, reach is better adding the sound in the app — the cut is already timed to it.",
+      "generate": "Generate clip",
+      "generated": "Clip ready — cut to the sound",
+      "doneEmbedded": "Done: the sound is in the video, the reveal hits on the drop. Preview it, tweak it, then Export.",
+      "tryStyle": "Try another style",
+      "another": "Another sound"
     }
   },
   "cover": {
