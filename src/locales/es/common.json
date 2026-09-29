@@ -255,6 +255,15 @@
     "blogTip1": "¿Quieres probarlo? Abre el visor y suelta tu propio IFC.",
     "blogTip2": "¿Dudas? Usa el botón de IA del artículo para preguntarle a tu asistente.",
     "blogTip3": "Truco: el índice te lleva directo a cualquier sección.",
-    "blogDone": "¡Has llegado al final! ¿Lo pruebas con tu propio modelo?"
+    "blogDone": "¡Has llegado al final! ¿Lo pruebas con tu propio modelo?",
+    "welcome": "¡Ya estás dentro! Guardaré cada validación por ti.",
+    "signin": "¡Hola de nuevo! Inicia sesión y te traigo tu historial.",
+    "signup": "Crea tu cuenta y recordaré cada modelo que revises.",
+    "proPitch": "Pro guarda tu historial, sincroniza tus reglas y pone tu logo en los informes.",
+    "proLater": "Sin problema, el visor gratis sigue siendo gratis.",
+    "newsPrompt": "Solo escribo cuando hay algo que merece la pena.",
+    "emailThanks": "¡Gracias! Ya estás en la lista.",
+    "emailError": "Vaya, no ha funcionado. ¿Lo intentas otra vez?",
+    "ebookThanks": "¡Disfruta del manual! Ya se está descargando."
   }
 }

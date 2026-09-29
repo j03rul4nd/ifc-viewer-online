@@ -255,6 +255,15 @@
     "blogTip1": "Envie d’essayer ? Ouvre le viewer et dépose ton propre IFC.",
     "blogTip2": "Des questions ? Utilise le bouton IA de l’article pour interroger ton assistant.",
     "blogTip3": "Astuce : la table des matières mène directement à chaque section.",
-    "blogDone": "Tu es arrivé au bout ! On essaie avec ton propre modèle ?"
+    "blogDone": "Tu es arrivé au bout ! On essaie avec ton propre modèle ?",
+    "welcome": "C’est fait ! Je garde chaque validation pour toi.",
+    "signin": "Re-bonjour ! Connecte-toi et je récupère ton historique.",
+    "signup": "Crée ton compte et je me souviendrai de chaque modèle que tu vérifies.",
+    "proPitch": "Pro garde ton historique, synchronise tes règles et met ton logo sur les rapports.",
+    "proLater": "Pas de souci, le viewer gratuit reste gratuit.",
+    "newsPrompt": "Je n’écris que quand ça vaut le coup.",
+    "emailThanks": "Merci ! Tu es sur la liste.",
+    "emailError": "Oups, ça n’a pas marché. On réessaie ?",
+    "ebookThanks": "Bonne lecture ! Le guide est en cours de téléchargement."
   }
 }

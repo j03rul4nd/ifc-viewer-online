@@ -255,6 +255,15 @@
     "blogTip1": "Vuoi provarlo? Apri il viewer e trascina il tuo IFC.",
     "blogTip2": "Dubbi? Usa il pulsante IA dell’articolo per chiedere al tuo assistente.",
     "blogTip3": "Suggerimento: l’indice ti porta subito a ogni sezione.",
-    "blogDone": "Sei arrivato alla fine! Lo provi con il tuo modello?"
+    "blogDone": "Sei arrivato alla fine! Lo provi con il tuo modello?",
+    "welcome": "Ci sei! Custodirò ogni validazione per te.",
+    "signin": "Bentornato! Accedi e recupero la tua cronologia.",
+    "signup": "Crea il tuo account e ricorderò ogni modello che controlli.",
+    "proPitch": "Pro conserva la cronologia, sincronizza le tue regole e mette il tuo logo nei report.",
+    "proLater": "Nessun problema, il viewer gratuito resta gratuito.",
+    "newsPrompt": "Scrivo solo quando c’è qualcosa che vale la pena leggere.",
+    "emailThanks": "Grazie! Sei nella lista.",
+    "emailError": "Ops, non è andata. Riprovi?",
+    "ebookThanks": "Buona lettura! Il manuale si sta scaricando."
   }
 }

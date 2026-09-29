@@ -6,6 +6,10 @@
 //                      corner of blog posts; reacts to scrolling, celebrates
 //                      when the reader reaches the end, and can be hidden
 //                      (remembered per browser)
+//   variant="inline"   sized by the parent, for funnel steps (welcome, auth,
+//                      Pro upsell, email capture). Pass `mood` to react to
+//                      what just happened: <BimoMascot mood={{ clip:
+//                      'celebrate', textKey: 'emailThanks', id: n }} />
 //
 // Cost control: three.js and the 2 MB GLB load only once the canvas is near
 // the viewport (dynamic import), rendering pauses when it leaves it or the
@@ -18,11 +22,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Bimo } from './bimoRuntime'
 
-type Variant = 'landing' | 'blog'
+type Variant = 'landing' | 'blog' | 'inline'
+/** A reaction to play; bump `id` to replay the same clip. */
+export interface BimoMood { clip: string; textKey?: string; id: number }
+type BubbleSide = 'left' | 'right' | 'top'
 
 const IDLE_BEATS: Record<Variant, string[]> = {
   landing: ['curious', 'listening', 'wink', 'nod', 'point_left', 'thinking'],
   blog: ['listening', 'thinking', 'curious', 'nod', 'point_left'],
+  inline: ['curious', 'listening', 'wink', 'nod'],
 }
 const CLICK_BEATS = ['celebrate', 'laugh', 'wink', 'love', 'nod']
 const HIDE_KEY = 'bimo-hidden'
@@ -31,7 +39,28 @@ function readHidden() {
   try { return localStorage.getItem(HIDE_KEY) === '1' } catch { return false }
 }
 
-export default function BimoMascot({ className = '', variant = 'landing' }: { className?: string; variant?: Variant }) {
+interface Props {
+  className?: string
+  variant?: Variant
+  /** First clip (default 'hello'). */
+  initial?: string
+  /** `mascot.*` key said on appear; null for none. */
+  greetingKey?: string | null
+  /** `mascot.*` keys cycled on click. */
+  tipKeys?: string[]
+  mood?: BimoMood
+  bubble?: BubbleSide
+}
+
+const BUBBLE_POS: Record<BubbleSide, string> = {
+  left: 'right-[70%] top-[6%] rounded-br-md',
+  right: 'left-[70%] top-[6%] rounded-bl-md',
+  top: 'left-1/2 ml-[-95px] sm:ml-[-115px] bottom-[92%] rounded-b-md',
+}
+
+export default function BimoMascot({
+  className = '', variant = 'landing', initial, greetingKey, tipKeys, mood, bubble: side,
+}: Props) {
   const { t } = useTranslation('common', { keyPrefix: 'mascot' })
   const blog = variant === 'blog'
   const [hidden, setHidden] = useState(() => blog && readHidden())
@@ -43,10 +72,12 @@ export default function BimoMascot({ className = '', variant = 'landing' }: { cl
   const clicks = useRef(0)
   const tRef = useRef(t)
   tRef.current = t
+  // keys arrive as props, so look them up untyped
+  const tx = (k: string) => (tRef.current as unknown as (key: string) => string)(k)
 
-  const tips = () => blog
-    ? [tRef.current('blogTip1'), tRef.current('blogTip2'), tRef.current('blogTip3')]
-    : [tRef.current('tip1'), tRef.current('tip2'), tRef.current('tip3')]
+  const tips = () => (tipKeys ?? (blog ? ['blogTip1', 'blogTip2', 'blogTip3'] : ['tip1', 'tip2', 'tip3'])).map(k => tx(k))
+  const greeting = greetingKey === undefined ? (blog ? 'blogHello' : variant === 'landing' ? 'hello' : null) : greetingKey
+  const bubbleSide: BubbleSide = side ?? (blog || variant === 'landing' ? 'left' : 'top')
 
   const bubbleTimer = useRef(0)
   function say(text: string, ms = 3400) {
@@ -69,10 +100,10 @@ export default function BimoMascot({ className = '', variant = 'landing' }: { cl
       try {
         const { createBimo } = await import('./bimoRuntime')
         if (cancelled || !canvas.current) return
-        bimo.current = await createBimo({ canvas: canvas.current, distance: 3.0, targetY: 0.52 })
+        bimo.current = await createBimo({ canvas: canvas.current, distance: 3.0, targetY: 0.52, initial })
         if (cancelled) { bimo.current.dispose(); bimo.current = null; return }
         setReady(true)
-        window.setTimeout(() => say(tRef.current(blog ? 'blogHello' : 'hello'), 3800), 700)
+        if (greeting) window.setTimeout(() => say(tx(greeting), 3800), 700)
       } catch {
         // WebGL unavailable or asset failed: the page works fine without him.
       }
@@ -126,6 +157,14 @@ export default function BimoMascot({ className = '', variant = 'landing' }: { cl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blog, ready])
 
+  // funnel reactions: play the clip, optionally say something
+  useEffect(() => {
+    if (!ready || !mood) return
+    bimo.current?.play(mood.clip)
+    if (mood.textKey) { const k = mood.textKey; window.setTimeout(() => say(tx(k), 4200), 500) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, mood?.id])
+
   // occasional idle beats so he's never a frozen loop
   useEffect(() => {
     if (!ready) return
@@ -171,7 +210,7 @@ export default function BimoMascot({ className = '', variant = 'landing' }: { cl
       {bubble && (
         <div
           role="status"
-          className={`absolute right-[70%] ${blog ? 'bottom-[78%]' : 'top-[6%]'} w-[190px] sm:w-[230px] rounded-2xl rounded-br-md border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-[12px] sm:text-[12.5px] leading-snug text-[var(--text)] shadow-[0_12px_40px_-12px_rgba(94,106,210,0.45)] animate-[bimoBubble_.35s_cubic-bezier(.2,1.4,.4,1)]`}
+          className={`absolute z-10 ${blog ? 'right-[70%] bottom-[78%] rounded-br-md' : BUBBLE_POS[bubbleSide]} w-[min(190px,48vw)] sm:w-[230px] rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-[12px] sm:text-[12.5px] leading-snug text-[var(--text)] shadow-[0_12px_40px_-12px_rgba(94,106,210,0.45)] animate-[bimoBubble_.35s_cubic-bezier(.2,1.4,.4,1)]`}
         >
           {bubble}
         </div>

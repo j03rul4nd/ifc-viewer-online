@@ -255,6 +255,15 @@
     "blogTip1": "Vols provar-ho? Obre el visor i deixa anar el teu IFC.",
     "blogTip2": "Dubtes? Fes servir el botó d’IA de l’article per preguntar-ho al teu assistent.",
     "blogTip3": "Truc: l’índex et porta directament a qualsevol secció.",
-    "blogDone": "Has arribat al final! Ho proves amb el teu model?"
+    "blogDone": "Has arribat al final! Ho proves amb el teu model?",
+    "welcome": "Ja hi ets! Guardaré cada validació per tu.",
+    "signin": "Hola de nou! Inicia la sessió i et porto el teu historial.",
+    "signup": "Crea el teu compte i recordaré cada model que revisis.",
+    "proPitch": "Pro guarda el teu historial, sincronitza les teves regles i posa el teu logo als informes.",
+    "proLater": "Cap problema, el visor gratuït continua sent gratuït.",
+    "newsPrompt": "Només escric quan hi ha alguna cosa que val la pena.",
+    "emailThanks": "Gràcies! Ja ets a la llista.",
+    "emailError": "Vaja, no ha funcionat. Ho tornes a provar?",
+    "ebookThanks": "Gaudeix del manual! Ja s’està descarregant."
   }
 }

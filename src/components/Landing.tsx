@@ -41,7 +41,7 @@ import SideRays      from './reactbits/SideRays'
 import SoftAurora    from './reactbits/SoftAurora'
 import Grainient     from './reactbits/Grainient'
 import PixelCard     from './reactbits/PixelCard'
-import BimoMascot    from './mascot/BimoMascot'
+import BimoMascot, { type BimoMood } from './mascot/BimoMascot'
 
 interface LandingProps {
   onLaunch: () => void
@@ -262,6 +262,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
   const [emailValue,   setEmailValue]   = useState('')
   const [emailStatus,  setEmailStatus]  = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [emailError,   setEmailError]   = useState('')
+  const [bimoMood,     setBimoMood]     = useState<BimoMood | undefined>()
 
   const handleEmailSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -272,6 +273,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
     const result = await subscribeEmail(email, 'landing_footer', i18n.language)
     if (result.ok || result.already) {
       setEmailStatus('success')
+      setBimoMood({ clip: 'celebrate', textKey: 'emailThanks', id: Date.now() })
       trackEmailCaptured({ source: 'landing_footer', already_subscribed: !!result.already, locale: i18n.language })
     } else if (result.disabled) {
       // Worker not yet deployed — silently succeed in dev, show message in prod
@@ -280,6 +282,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
     } else {
       setEmailStatus('error')
       setEmailError(result.error ?? 'Something went wrong. Try again.')
+      setBimoMood({ clip: 'confused', textKey: 'emailError', id: Date.now() })
     }
   }, [emailValue, i18n.language])
 
@@ -1393,6 +1396,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               transition={{ delay: 0.24 }}
               className="mt-10 sm:mt-12 pt-8 sm:pt-10 border-t border-[var(--border)]"
             >
+              <div className="relative mx-auto -mt-2 mb-1 w-[96px] h-[96px]">
+                <BimoMascot variant="inline" className="absolute inset-0" greetingKey="newsPrompt" bubble="right" mood={bimoMood} />
+              </div>
               {emailStatus === 'success' ? (
                 <div className="flex flex-col items-center gap-2 text-center">
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">

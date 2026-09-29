@@ -9,11 +9,12 @@
 // prefers-reduced-motion swaps the animated canvas for a static gradient and
 // disables the entrance motion.
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useCloudAccountStore } from '../stores/cloudAccountStore'
 import AuroraBackdrop from './AuroraBackdrop'
+import BimoMascot, { type BimoMood } from './mascot/BimoMascot'
 
 interface WelcomeViewProps {
   onStart: () => void
@@ -55,20 +56,13 @@ function BrandIcon() {
     </svg>
   )
 }
-function CheckIcon() {
-  return (
-    <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  )
-}
-
 export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProps) {
   const { t } = useTranslation('pro')
   const email = useCloudAccountStore((s) => s.email)
   const status = useCloudAccountStore((s) => s.status)
   const reduce = useReducedMotion()
   const light = theme === 'light'
+  const [mood, setMood] = useState<BimoMood | undefined>()
 
   const benefits = [
     { Icon: HistoryIcon, title: t('welcomePage.historyTitle'), body: t('welcomePage.historyBody') },
@@ -103,17 +97,9 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
       {/* Layer 2 — content */}
       <div className="relative z-10 min-h-full w-full flex items-center justify-center px-5 py-14 overflow-y-auto">
         <div className="w-full max-w-[600px] flex flex-col items-center text-center">
-          {/* Success badge */}
-          <motion.div
-            custom={0} variants={fade} initial="hidden" animate="show"
-            className="w-16 h-16 rounded-[20px] grid place-items-center mb-7"
-            style={{
-              color: 'white',
-              background: 'linear-gradient(160deg, var(--accent), var(--accent-2))',
-              boxShadow: '0 12px 30px -8px rgba(94,106,210,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
-            }}
-          >
-            <CheckIcon />
+          {/* Bimo celebrates the sign-up (replaces the old check badge) */}
+          <motion.div custom={0} variants={fade} initial="hidden" animate="show" className="relative w-[150px] h-[150px] -mb-2">
+            <BimoMascot variant="inline" initial="celebrate" greetingKey="welcome" bubble="right" mood={mood} className="absolute inset-0" />
           </motion.div>
 
           {/* Headline */}
@@ -172,6 +158,8 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
           >
             <button
               onClick={onStart}
+              onPointerEnter={() => setMood({ clip: 'excited', id: Date.now() })}
+              onPointerLeave={() => setMood({ clip: 'idle', id: Date.now() })}
               className="group relative h-12 px-7 rounded-full text-[14px] font-semibold text-white cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
                 background: 'linear-gradient(160deg, var(--accent), var(--accent-2))',

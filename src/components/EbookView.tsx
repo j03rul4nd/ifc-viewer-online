@@ -26,6 +26,7 @@ import * as Icons from './Icons'
 import SideRays from './reactbits/SideRays'
 import { subscribeEmail } from '../lib/subscribe'
 import { trackEmailCaptured, trackFeatureUsed } from '../lib/analytics'
+import BimoMascot from './mascot/BimoMascot'
 import { RULE_COUNT } from '../types'
 import { EBOOKS, PRIMARY_EBOOK, type EbookMeta } from '../lib/ebook'
 
@@ -211,9 +212,15 @@ function EmailGate({ id, book, compact = false }: { id: string; book: EbookMeta;
   if (state === 'done') {
     return (
       <div
-        className="rounded-2xl border px-5 py-5"
+        className="relative rounded-2xl border px-5 py-5 sm:pr-[120px]"
         style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
       >
+        {!compact && (
+          <BimoMascot
+            variant="inline" initial="celebrate" greetingKey="ebookThanks" bubble="left"
+            className="hidden sm:block absolute right-2 bottom-1 w-[108px] h-[108px]"
+          />
+        )}
         <p className="flex items-center gap-2 text-[14px] font-semibold text-[var(--text)]">
           <Icons.OK size={17} className="text-[var(--ok)]" aria-hidden="true" />
           Your download has started

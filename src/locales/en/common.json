@@ -255,6 +255,15 @@
     "blogTip1": "Want to try this? Open the viewer and drop your own IFC.",
     "blogTip2": "Questions? Use the AI button on this article to ask your assistant about it.",
     "blogTip3": "Tip: the table of contents jumps straight to any section.",
-    "blogDone": "You made it to the end! Ready to try it on your own model?"
+    "blogDone": "You made it to the end! Ready to try it on your own model?",
+    "welcome": "You’re in! I’ll keep every validation run safe for you.",
+    "signin": "Welcome back! Sign in and I’ll fetch your history.",
+    "signup": "Create your account and I’ll remember every model you check.",
+    "proPitch": "Pro keeps your history, syncs your rules and puts your logo on reports.",
+    "proLater": "No worries, the free viewer stays free.",
+    "newsPrompt": "I only write when there’s something worth reading.",
+    "emailThanks": "Thanks! You’re on the list.",
+    "emailError": "Hmm, that didn’t go through. Try again?",
+    "ebookThanks": "Enjoy the handbook! It’s downloading now."
   }
 }
