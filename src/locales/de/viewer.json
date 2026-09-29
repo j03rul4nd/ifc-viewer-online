@@ -232,7 +232,9 @@
       "offHint": "Kein Griff im Viewer",
       "translateHint": "Pfeile im Viewer ziehen, um den gewählten Bereich zu bewegen",
       "rotateHint": "Ring im Viewer ziehen, um den gewählten Bereich zu drehen (1°-Schritte)"
-    }
+    },
+    "placedByHand": "Manuell",
+    "placedByHandHint": "Von Hand platziert: Die Karte setzt es nicht nach seiner Georeferenz zurück. „Zurücksetzen“ gibt es der Karte zurück."
   },
   "transform": {
     "position": "Position",

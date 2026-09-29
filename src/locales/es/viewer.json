@@ -232,7 +232,9 @@
       "offHint": "Sin manipulador en el visor",
       "translateHint": "Arrastra las flechas en el visor para mover el ámbito elegido",
       "rotateHint": "Arrastra el anillo en el visor para girar el ámbito elegido (paso de 1°)"
-    }
+    },
+    "placedByHand": "A mano",
+    "placedByHandHint": "Lo colocaste a mano: el mapa no lo recoloca con su georreferencia. «Restablecer» se lo devuelve al mapa."
   },
   "transform": {
     "position": "Posición",

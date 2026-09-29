@@ -232,7 +232,9 @@
       "offHint": "Pas de poignée dans la vue",
       "translateHint": "Faites glisser les flèches dans la vue pour déplacer la portée choisie",
       "rotateHint": "Faites glisser l'anneau dans la vue pour tourner la portée choisie (pas de 1°)"
-    }
+    },
+    "placedByHand": "Manuel",
+    "placedByHandHint": "Placé à la main : la carte ne le replace pas selon sa géoréférence. « Réinitialiser » le rend à la carte."
   },
   "transform": {
     "position": "Position",
