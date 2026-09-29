@@ -92,7 +92,8 @@ The product uses the real GLB with its skeleton, not a copy:
 ### Micro-reactions and interaction (`bimoRuntime.ts`)
 
 ```ts
-bimo.micro('boing' | 'flinch' | 'giggle' | 'shiver' | 'perk' | 'nod' | 'tilt' | 'squish' | 'heart' | 'glance' | 'blink', strength?)
+bimo.micro('boing' | 'flinch' | 'giggle' | 'shiver' | 'perk' | 'nod' | 'tilt' | 'squish' | 'heart' | 'glance' | 'twitch' | 'blink' | 'doubleBlink', strength?)
+bimo.setAutonomy(false)                             // turns off autonomous behaviour
 bimo.setExpression({ EyeWide: 0.6, MouthO: 0.4 })   // held over the clip; null to release
 bimo.pulse('EyeHeart', 1)                           // decays on its own
 bimo.pick(clientX, clientY)                         // 'antenna' | 'face' | 'head' | 'body' | 'arm' | 'foot' | null
@@ -109,3 +110,29 @@ In `BimoStage`, clicking each part reacts differently:
 - foot: jump.
 
 Stroking the head triggers `heart`.
+
+### Life (`bimoLife.ts`)
+
+So he never feels like a repeating loop on screens where people stay for minutes:
+
+- **Rig**: `root → body → spine → head` (the spine lets the body bend in an S), plus arms, feet and a 2-bone antenna.
+- **Long idles**: `idle`, `idle_look` (9 s, looks around and up at his antenna) and `idle_shift` (7 s, shifts weight and taps a foot).
+- **Ambient moments**: `look_around`, `sigh`, `stretch` and `yawn`.
+- **Director**: while he's idle, it rotates the idle variants and drops in moments and small gestures at irregular intervals (mostly every 5–11 s).
+  - With no input for 45 s he yawns; at 80 s he dozes off.
+  - Any pointer, scroll or key wakes him with a start.
+  - It never replaces a clip chosen by the component; outside the idle family it only adds small gestures.
+- **Organic motion**:
+  - breathing with an inhale, exhale and rest whose rate depends on his energy (the energy of the current emotion);
+  - sway and head drift driven by fractal noise instead of sines;
+  - each loop cycle plays at a slightly different speed.
+- **Secondary physics**:
+  - a soft body that squashes when he lands;
+  - spine and head that trail behind the body (overlap);
+  - loose arms, each tuned slightly differently;
+  - a spring-chain antenna;
+  - inertia when the page scrolls.
+- **Environment**:
+  - a light follows the cursor, so the highlights glide over the pearl shell and the visor;
+  - a fast pointer pass nearby startles him.
+- **Micro-reactions as sequences**: anticipation → action → follow-through → settle. For example, `boing` looks up and crouches, then the antenna whips, then he giggles.
