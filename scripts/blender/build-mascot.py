@@ -492,6 +492,7 @@ def squash(k):
 BONES = [b.name for b in arm_data.bones]
 
 ONESHOTS = []
+OVERLAP = {"head": 2, "arm.L": 3, "arm.R": 5, "antenna.1": 4, "antenna.2": 7}
 
 def make_action(name, length, keys, loop=True, linear=()):
     if not loop:
@@ -520,9 +521,18 @@ def make_action(name, length, keys, loop=True, linear=()):
             kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
             if fc.group and fc.group.name in linear:
                 kp.interpolation = "LINEAR"
+        # Overlapping action (Disney's 12 principles / AnimSchool "offsets"):
+        # children arrive after their parents, so nothing moves as one block.
+        # arm.R trails arm.L by two more frames to avoid twinning.
+        d = OVERLAP.get(fc.group.name if fc.group else "", 0)
+        if d:
+            for kp in fc.keyframe_points:
+                kp.co.x += d
+                kp.handle_left.x += d
+                kp.handle_right.x += d
         if loop:
             fc.modifiers.new("CYCLES")
-    act.frame_range = (0, length)
+    act.frame_range = (0, length if loop else length + max(OVERLAP.values()))
     track = rig.animation_data.nla_tracks.new()
     track.name = name
     track.strips.new(name, 0, act)

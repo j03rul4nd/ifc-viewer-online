@@ -41,6 +41,7 @@ import SideRays      from './reactbits/SideRays'
 import SoftAurora    from './reactbits/SoftAurora'
 import Grainient     from './reactbits/Grainient'
 import PixelCard     from './reactbits/PixelCard'
+import BimoMascot    from './mascot/BimoMascot'
 
 interface LandingProps {
   onLaunch: () => void
@@ -643,12 +644,14 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </button>
           </motion.div>
 
-          {/* Hero card */}
+          {/* Hero card, with Bimo perched on its top edge */}
+          <div className="relative mt-10 sm:mt-14">
+          <BimoMascot className="absolute z-[4] right-[3%] sm:right-[5%] w-[128px] h-[128px] sm:w-[190px] sm:h-[190px] -top-[100px] sm:-top-[152px]" />
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.45, ease: 'easeOut' }}
-            className="relative mt-10 sm:mt-14 rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_rgba(94,106,210,0.3)]"
+            className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_rgba(94,106,210,0.3)]"
             aria-label="Application preview"
           >
             {/* Mock browser bar */}
@@ -664,6 +667,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </div>
             <HeroPreview lightBg={landingTheme === 'light'} />
           </motion.div>
+          </div>
 
           {/* Gradual blur at the hero bottom edge */}
           <GradualBlur

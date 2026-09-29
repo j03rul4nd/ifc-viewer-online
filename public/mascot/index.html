@@ -304,6 +304,7 @@ function setEmotion(name, fade = 0.55) {
   if (!once) loopName = name;
   applyFace(name);
   pop.x = 0.9; pop.v = 0;                     // little anticipation squash
+  if (blinkT < 0) blinkT = 0;                 // blink on a change of thought
   document.querySelectorAll('#emotions button').forEach(b => b.classList.toggle('on', b.dataset.e === name));
 }
 // one-shots hand back to whatever loop was playing before
@@ -350,7 +351,10 @@ const mouse = new THREE.Vector2();
 addEventListener('pointermove', (e) => {
   mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
 });
-let nextBlink = 2, blinkT = -1;
+let nextBlink = 2, blinkT = -1, nextDart = 1;
+const dart = new THREE.Vector2();
+const ant = { x: new Spring(0, 90, 5), z: new Spring(0, 90, 5) };
+const headPrev = new THREE.Quaternion(); let rootPrevY = 0;
 
 const clock = new THREE.Timer();
 const qLook = new THREE.Quaternion(), eul = new THREE.Euler();
@@ -396,14 +400,32 @@ renderer.setAnimationLoop(() => {
 
   // additive head look toward the cursor (in bone space: x nod, y turn)
   look.x.t = -mouse.y * 0.18; look.y.t = mouse.x * 0.3;
-  eyeX.t = mouse.x * 0.8; eyeY.t = mouse.y * 0.8;
+  if (t > nextDart) { dart.set((Math.random() - .5) * .35, (Math.random() - .5) * .25); nextDart = t + .4 + Math.random() * 1.6; }
+  eyeX.t = mouse.x * 0.8 + dart.x; eyeY.t = mouse.y * 0.8 + dart.y;
   if (headBone) {
     qLook.setFromEuler(eul.set(look.x.step(dt), look.y.step(dt), 0));
     headBone.quaternion.multiply(qLook);
   }
   // squash & stretch pop on top of the clip
-  const s = pop.step(dt);
-  if (bodyBone) bodyBone.scale.multiply(new THREE.Vector3(1 / Math.sqrt(s), s, 1 / Math.sqrt(s)));
+  // moving hold: breathing + slow sway under every clip
+  const s = pop.step(dt) * (1 + 0.012 * Math.sin(t * 2.1));
+  if (bodyBone) {
+    bodyBone.scale.multiply(new THREE.Vector3(1 / Math.sqrt(s), s, 1 / Math.sqrt(s)));
+    bodyBone.quaternion.multiply(qLook.setFromEuler(eul.set(0, 0, 0.012 * Math.sin(t * 0.7))));
+  }
+  // follow-through: the antenna lags head rotation and body bounce
+  const a1 = root.getObjectByName('antenna.1'), a2 = root.getObjectByName('antenna.2');
+  if (headBone && a1) {
+    const hq = headBone.getWorldQuaternion(new THREE.Quaternion());
+    const dq = hq.clone().multiply(headPrev.invert()); headPrev.copy(hq);
+    eul.setFromQuaternion(dq);
+    const ry = rootBone ? rootBone.getWorldPosition(new THREE.Vector3()).y : 0;
+    const vy = (ry - rootPrevY) / Math.max(dt, 1e-3); rootPrevY = ry;
+    ant.x.v += -eul.x * 18 + vy * 1.2; ant.z.v += -eul.z * 18;
+    const ax = THREE.MathUtils.clamp(ant.x.step(dt), -.6, .6), az = THREE.MathUtils.clamp(ant.z.step(dt), -.6, .6);
+    a1.quaternion.multiply(qLook.setFromEuler(eul.set(ax * .5, 0, az * .5)));
+    if (a2) a2.quaternion.multiply(qLook.setFromEuler(eul.set(ax, 0, az)));
+  }
 
   controls.update();
   composer.render();
