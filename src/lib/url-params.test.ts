@@ -397,3 +397,16 @@ describe('embed URL: the tool rail', () => {
     expect(parsePanelAllowlist(url.searchParams.get('panels'))).toEqual([])
   })
 })
+
+describe('parseAppUrlParams — bg', () => {
+  it('reads a preset, a colour or a gradient', () => {
+    expect(parseAppUrlParams('?bg=white').background?.preset).toBe('white')
+    expect(parseAppUrlParams('?bg=f4f4f5').background).toMatchObject({ mode: 'solid', top: '#f4f4f5' })
+    expect(parseAppUrlParams('?bg=dbeafe,ffffff').background).toMatchObject({ mode: 'gradient', bottom: '#ffffff' })
+  })
+
+  it('ignores a value it cannot read', () => {
+    expect(parseAppUrlParams('?bg=rainbow').background).toBeUndefined()
+    expect(parseAppUrlParams('').background).toBeUndefined()
+  })
+})

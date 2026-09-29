@@ -127,6 +127,8 @@ import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useGeoStore } from './stores/geoStore'
+import { parseBackgroundSpec } from './lib/scene/background'
+import { planCutY } from './lib/cover/cuts'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
@@ -237,6 +239,109 @@ function deriveScanFileName(url: string): string {
 function urlPathName(url: string): string {
   try { return decodeURIComponent(new URL(url, window.location.href).pathname.split('/').pop() ?? '') }
   catch { return '' }
+}
+
+// ── SDK reply shapes ────────────────────────────────────────────────────────
+// What the embed bridge hands back to a host. Plain data, built from the same
+// stores the panels read, and deliberately narrower than the internal state:
+// every field here is one a host can come to depend on.
+
+function asVec3(v: unknown): { x: number; y: number; z: number } | null {
+  if (!v || typeof v !== 'object') return null
+  const o = v as Record<string, unknown>
+  const x = Number(o.x), y = Number(o.y), z = Number(o.z)
+  return [x, y, z].every(Number.isFinite) ? { x, y, z } : null
+}
+
+function walkStateOut(s: { active: boolean; speed: number }): { active: boolean; speed: number } {
+  return { active: s.active, speed: s.speed }
+}
+
+/** Site-local wall time of an instant, without pulling suncalc into this chunk. */
+function wallDateTime(ms: number, timeZone: string): { date: string; time: string } {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(ms))
+    const get = (t: string): string => parts.find((p) => p.type === t)?.value ?? '00'
+    return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` }
+  } catch {
+    const d = new Date(ms).toISOString()
+    return { date: d.slice(0, 10), time: d.slice(11, 16) }
+  }
+}
+
+function solarStateOut() {
+  const s = useSolarStore.getState()
+  const wall = wallDateTime(s.timeUTC, s.timeZone)
+  return {
+    active: s.active,
+    date: wall.date,
+    time: wall.time,
+    timeZone: s.timeZone,
+    moon: s.moonOn,
+    sky: s.skyOn,
+    quality: s.quality,
+    // `source` says how much to trust it: 'ifc' is the model's own
+    // georeference, 'manual' a location someone typed or a host passed.
+    location: s.location
+      ? { lat: s.location.lat, lon: s.location.lon, source: s.location.source }
+      : null,
+  }
+}
+
+function siteStateOut() {
+  const g = useGeoStore.getState()
+  return {
+    enabled: g.mapMode === 'on',
+    status: g.mapMode,
+    terrain: g.terrainEnabled,
+    buildings: g.buildingsEnabled,
+    buildingsStatus: g.buildingsStatus,
+    detail: g.contextDetail,
+    terrainStyle: g.terrainStyle,
+    exaggeration: g.terrainExaggeration,
+    vehicles: g.vehicles,
+    placement: g.placement
+      ? { lat: g.placement.lat, lon: g.placement.lon, rotationDeg: g.placement.rotationDeg, source: g.placement.source, confidence: g.placement.confidence }
+      : null,
+    // A licence obligation, not decoration: a host that shows the map must
+    // show these.
+    attributions: g.attributions.slice(),
+  }
+}
+
+function sectionsOut(api: ViewerAPI) {
+  const snap = api.getSections().getSnapshot()
+  return {
+    planes: snap.planes.map((p) => ({
+      id: p.id, kind: p.kind, axis: p.axis, enabled: p.enabled, offset: p.offset,
+      flipped: p.flipped, range: { min: p.range.min, max: p.range.max },
+    })),
+    box: snap.box ? { enabled: snap.box.enabled, ranges: snap.box.ranges } : null,
+    active: snap.active,
+  }
+}
+
+function measurementsOut(api: ViewerAPI) {
+  const snap = api.getMeasure().getSnapshot()
+  return {
+    tool: snap.tool,
+    units: snap.settings.units,
+    // Values are always metres (square metres for areas, degrees for angles)
+    // whatever the panel displays — a host formats them its own way.
+    items: snap.items.map((m) => ({
+      id: m.id,
+      kind: m.kind,
+      name: m.name,
+      value: m.kind === 'point' ? null : m.value,
+      ...(m.kind === 'area' ? { perimeter: m.perimeter, planar: m.planar } : {}),
+      ...(m.kind === 'distance' ? { components: m.components } : {}),
+      ...(m.kind === 'point' ? { coords: m.coords, frame: m.frame } : {}),
+      points: m.points,
+    })),
+  }
 }
 
 // Camera presets accepted by the `ifcviewer:view` embed command.
@@ -415,7 +520,7 @@ export default function App() {
     const m = BLOG_LANG_RE.exec(rel)
     return m ? m[1] : 'en'
   })
-  const [accent] = useState(() => urlParams.accent ?? '#5E6AD2')
+  const [accent, setAccent] = useState(() => urlParams.accent ?? '#5E6AD2')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
     try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
@@ -1784,6 +1889,15 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // The inbound handler below is subscribed from an effect whose deps do not
+  // include the rail or the filter state, so it reads them through refs —
+  // otherwise `open-panel` would toggle the rail as it was when the handler
+  // was last bound, and re-showing a model would re-apply stale filters.
+  const railItemsRef = useRef(railItems)
+  railItemsRef.current = railItems
+  const filtersRef = useRef({ hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel })
+  filtersRef.current = { hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel }
+
   // ── Inbound postMessage commands (host CDE → iframe) ──────────────────────
   // Lets a CDE drive the embedded viewer two-way (load / select / isolate / fit).
   // Only active when running inside an iframe. Commands use the `ifcviewer:` ns.
@@ -1806,6 +1920,10 @@ export default function App() {
           emitEmbedEvent('result', { requestId, ok: false, error: err instanceof Error ? err.message : String(err) })
         }
       }
+      // An embed that boots without a model opens the upload prompt, which is
+      // right for a visitor and wrong once the HOST supplies the model: it sat
+      // on top of every model an SDK add() loaded. A host load dismisses it.
+      if (/^ifcviewer:(load|load-bytes|add-pointcloud|add-mesh)$/.test(msg.type)) setShowUpload(false)
       switch (msg.type) {
         case 'ifcviewer:load': {
           const urls = Array.isArray(msg.url) ? msg.url
@@ -1878,7 +1996,7 @@ export default function App() {
           // a host page written against a newer build still works here.
           if (target === undefined) break
           if (target === null) { closeAllPanels(); break }
-          const item = railItems.find((i) => i.id === target)
+          const item = railItemsRef.current.find((i) => i.id === target)
           // Not on the rail = not available in this chrome, with this content.
           // Silently doing nothing beats pretending it opened.
           if (item && !item.open) item.onToggle()
@@ -1886,8 +2004,8 @@ export default function App() {
         }
         case 'ifcviewer:get-panels': {
           void respond(() => ({
-            open: railItems.find((i) => i.open)?.id ?? null,
-            available: railItems.map((i) => ({ id: i.id, label: i.label, open: i.open })),
+            open: railItemsRef.current.find((i) => i.open)?.id ?? null,
+            available: railItemsRef.current.map((i) => ({ id: i.id, label: i.label, open: i.open })),
           }))
           break
         }
@@ -2390,6 +2508,280 @@ export default function App() {
           }))
           break
 
+        // ── Presentation: look, walk, sun, map (SDK 1.11) ──────────────────
+        // Everything here goes through the same store or panel the visitor's
+        // own clicks do, so the viewer's UI never disagrees with what a host
+        // set — the background menu shows the host's colour, the sun panel
+        // shows the host's date.
+        case 'ifcviewer:set-background': {
+          void respond(() => {
+            const bg = parseBackgroundSpec(msg.background)
+            if (!bg) throw new Error('Unknown background — use a preset name, "#rrggbb", "#top,#bottom" or { top, bottom }')
+            // Not saved: the iframe shares storage with the app itself.
+            useSceneStore.getState().setBackground(bg, { persist: false })
+            return bg
+          })
+          break
+        }
+        case 'ifcviewer:get-background':
+          void respond(() => useSceneStore.getState().background)
+          break
+        case 'ifcviewer:set-accent': {
+          void respond(() => {
+            const raw = typeof msg.accent === 'string' ? msg.accent.trim() : ''
+            if (!/^#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(raw)) throw new Error('Accent must be "#rrggbb"')
+            setAccent(raw.startsWith('#') ? raw : `#${raw}`)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:set-client-mode':
+          void respond(() => { useUIStore.getState().setClientMode(msg.enabled !== false); return null })
+          break
+        case 'ifcviewer:set-render-quality': {
+          void respond(() => {
+            const q = msg.quality === 'quality' || msg.quality === 'high' ? 'quality' : 'standard'
+            // Store and viewer both, as the Scene panel does: the store alone
+            // only moves the toggle.
+            useUIStore.getState().setRenderQuality(q)
+            viewerApiRef.current?.setRenderQuality(q)
+            return q
+          })
+          break
+        }
+        case 'ifcviewer:set-walk': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            if (typeof msg.speed === 'number' && Number.isFinite(msg.speed) && msg.speed > 0) api.setWalkSpeed(msg.speed)
+            if (typeof msg.enabled === 'boolean') {
+              const on = api.setWalkMode(msg.enabled)
+              if (msg.enabled && !on) throw new Error('Walk mode needs a model in the scene')
+            }
+            return walkStateOut(api.getWalkState())
+          })
+          break
+        }
+        case 'ifcviewer:get-walk':
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return walkStateOut(api.getWalkState())
+          })
+          break
+        case 'ifcviewer:get-camera':
+          void respond(() => viewerApiRef.current?.getCameraViewpoint() ?? null)
+          break
+        case 'ifcviewer:look-at': {
+          void respond(() => {
+            const p = asVec3(msg.position)
+            const t = asVec3(msg.target)
+            if (!p || !t) throw new Error('lookAt needs position and target as { x, y, z }')
+            viewerApiRef.current?.setCameraLookAt(p, t, msg.animate !== false)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:set-solar': {
+          const cmd = (msg.solar && typeof msg.solar === 'object' ? msg.solar : {}) as Record<string, unknown>
+          const loc = cmd.location as { lat?: unknown; lon?: unknown } | undefined
+          void respond(async () => {
+            if (!isSolarEnabled()) throw new Error('The sun study is not available in this build')
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first — the sun study needs something to cast shadows')
+            await dispatchPanelCommand('sdk:solar', {
+              active:   typeof cmd.active === 'boolean' ? cmd.active : undefined,
+              date:     typeof cmd.date === 'string' ? cmd.date : undefined,
+              time:     typeof cmd.time === 'string' ? cmd.time : undefined,
+              moon:     typeof cmd.moon === 'boolean' ? cmd.moon : undefined,
+              sky:      typeof cmd.sky === 'boolean' ? cmd.sky : undefined,
+              quality:  cmd.quality === 'high' || cmd.quality === 'standard' ? cmd.quality : undefined,
+              location: loc && Number.isFinite(Number(loc.lat)) && Number.isFinite(Number(loc.lon))
+                && Math.abs(Number(loc.lat)) <= 90 && Math.abs(Number(loc.lon)) <= 180
+                ? { lat: Number(loc.lat), lon: Number(loc.lon) } : undefined,
+            }, { unavailable: 'The sun study did not come up in time', subscriberTimeoutMs: 60_000, timeoutMs: 30_000 })
+            return solarStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:get-solar':
+          void respond(() => solarStateOut())
+          break
+        case 'ifcviewer:set-site': {
+          const cmd = (msg.site && typeof msg.site === 'object' ? msg.site : {}) as Record<string, unknown>
+          void respond(async () => {
+            if (!isGisEnabled()) throw new Error('Map mode is not available in this build')
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first — map mode places the model on the map')
+            const pick = <T,>(v: unknown, ok: readonly T[]): T | undefined => ok.includes(v as T) ? v as T : undefined
+            await dispatchPanelCommand('sdk:site', {
+              enabled:      typeof cmd.enabled === 'boolean' ? cmd.enabled : true,
+              terrain:      typeof cmd.terrain === 'boolean' ? cmd.terrain : undefined,
+              buildings:    typeof cmd.buildings === 'boolean' ? cmd.buildings : undefined,
+              vehicles:     typeof cmd.vehicles === 'boolean' ? cmd.vehicles : undefined,
+              layers:       cmd.layers && typeof cmd.layers === 'object' ? cmd.layers as Record<string, boolean> : undefined,
+              detail:       pick(cmd.detail, ['simple', 'detailed', 'showcase'] as const),
+              terrainStyle: pick(cmd.terrainStyle, ['imagery', 'shaded', 'hypsometric', 'slope', 'ecosystem'] as const),
+              exaggeration: typeof cmd.exaggeration === 'number' ? Math.min(3, Math.max(1, cmd.exaggeration)) : undefined,
+            }, { unavailable: 'Map mode did not come up in time', subscriberTimeoutMs: 60_000, timeoutMs: 180_000 })
+            return siteStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:get-site':
+          void respond(() => siteStateOut())
+          break
+        // ── Analysis: sections and measurements (SDK 1.11) ─────────────────
+        // Driven on the viewer's own systems, the ones the panels drive, so a
+        // cut made by a host shows up in the Section panel and can be dragged.
+        case 'ifcviewer:add-section': {
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            let axis: 'x' | 'y' | 'z' = msg.axis === 'x' || msg.axis === 'y' ? msg.axis : 'z'
+            let offset = typeof msg.offset === 'number' && Number.isFinite(msg.offset) ? msg.offset : undefined
+            // A plan cut at a named storey — the cut a blog post means by
+            // "the ground floor plan": 1.2 m above that level.
+            if (msg.level !== undefined && msg.level !== null) {
+              axis = 'z'
+              const levels = await api.getStoreyLevels()
+              const i = typeof msg.level === 'number'
+                ? msg.level
+                : levels.findIndex((l) => l.name.toLowerCase() === String(msg.level).toLowerCase())
+              if (i < 0 || i >= levels.length) {
+                throw new Error(`No storey "${String(msg.level)}" — the model has: ${levels.map((l) => l.name).join(', ') || 'none'}`)
+              }
+              offset = planCutY(levels[i].y, levels[i + 1]?.y ?? null)
+            }
+            const id = sections.addAxisPlane(axis)
+            if (!id) throw new Error('Nothing to cut — load a model first')
+            if (offset !== undefined) sections.setOffset(id, offset, true)
+            if (msg.flip === true) sections.flip(id)
+            return { id, ...sectionsOut(api) }
+          })
+          break
+        }
+        case 'ifcviewer:update-section': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            const id = typeof msg.id === 'string' ? msg.id : ''
+            const plane = sections.getSnapshot().planes.find((p) => p.id === id)
+            if (!plane) throw new Error(`No section plane "${id}"`)
+            if (typeof msg.offset === 'number' && Number.isFinite(msg.offset)) sections.setOffset(id, msg.offset, true)
+            if (typeof msg.enabled === 'boolean') sections.setEnabled(id, msg.enabled)
+            if (typeof msg.flipped === 'boolean' && msg.flipped !== plane.flipped) sections.flip(id)
+            return sectionsOut(api)
+          })
+          break
+        }
+        case 'ifcviewer:remove-section': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            if (typeof msg.id === 'string') sections.remove(msg.id)
+            else sections.clear()
+            return sectionsOut(api)
+          })
+          break
+        }
+        case 'ifcviewer:section-box': {
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            if (msg.fit === false) sections.removeBox()
+            else {
+              const ok = await sections.enableBox(msg.fit === 'selection' ? 'selection' : 'model')
+              if (!ok) throw new Error(msg.fit === 'selection' ? 'Select an element first' : 'Nothing to box — load a model first')
+            }
+            return sectionsOut(api)
+          })
+          break
+        }
+        case 'ifcviewer:get-sections':
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return { ...sectionsOut(api), levels: await api.getStoreyLevels() }
+          })
+          break
+        case 'ifcviewer:set-measure-tool': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const tool = typeof msg.tool === 'string' && ['distance', 'path', 'area', 'angle', 'point'].includes(msg.tool)
+              ? msg.tool as 'distance' | 'path' | 'area' | 'angle' | 'point'
+              : 'none'
+            // The tools read the pointer only while their panel is open, so
+            // arming one opens it — the visitor then also sees what to click.
+            // Arm FIRST: the panel re-arms its last-used tool on open when
+            // none is armed, which would override the host's choice.
+            api.getMeasure().setTool(tool)
+            if (tool !== 'none') useUIStore.getState().setMeasurementPanelOpen(true)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:get-measurements':
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return measurementsOut(api)
+          })
+          break
+        case 'ifcviewer:clear-measurements':
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            if (typeof msg.id === 'string') api.getMeasure().remove(msg.id)
+            else api.getMeasure().clear()
+            return measurementsOut(api)
+          })
+          break
+        // ── Federated scenes: one model at a time (SDK 1.11) ───────────────
+        case 'ifcviewer:model-visible': {
+          void respond(() => {
+            const id = typeof msg.modelId === 'string' ? msg.modelId : ''
+            if (!useSceneStore.getState().models.some((m) => m.id === id)) throw new Error(`No model "${id}"`)
+            const visible = msg.visible !== false
+            useSceneStore.getState().setModelVisible(id, visible)
+            viewerApiRef.current?.setModelVisible(id, visible)
+            if (visible) {
+              // Re-apply per-element/category filters after un-hiding a model
+              // so hidden elements stay hidden — as the Scene panel does.
+              const f = filtersRef.current
+              viewerApiRef.current?.applyFilters(f.hidden, f.isolated, f.hiddenElements, f.isolatedElement, f.isolatedElementModel)
+            }
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:model-opacity': {
+          void respond(() => {
+            const o = Number(msg.opacity)
+            if (!Number.isFinite(o)) throw new Error('Opacity must be a number between 0 and 1')
+            viewerApiRef.current?.setModelOpacity(Math.min(1, Math.max(0.05, o)), typeof msg.modelId === 'string' ? msg.modelId : undefined)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:isolate-model': {
+          void respond(() => {
+            const id = typeof msg.modelId === 'string' ? msg.modelId : null
+            const scene = useSceneStore.getState()
+            if (id && !scene.models.some((m) => m.id === id)) throw new Error(`No model "${id}"`)
+            for (const m of scene.models) {
+              const visible = id === null || m.id === id
+              if (m.visible !== visible) scene.setModelVisible(m.id, visible)
+            }
+            if (id) viewerApiRef.current?.isolateModel(id)
+            else viewerApiRef.current?.showAllModels()
+            return null
+          })
+          break
+        }
         case 'ifcviewer:remove-model': {
           const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
           if (modelId) void handleRemoveModel(modelId)
@@ -2512,6 +2904,35 @@ export default function App() {
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingState, sceneModels.length])
+
+  // ── Relay walk mode and measurements to an embedding parent (SDK 1.11) ─────
+  // Both change from inside the viewer (a key, a click), so a host that drew
+  // its own "walking" badge or a table of measurements would otherwise have to
+  // poll. Bound once a model is in: the viewer's systems exist from then on.
+  useEffect(() => {
+    if (!isEmbedded() || !hasSceneModels) return
+    const api = viewerApiRef.current
+    if (!api) return
+    let lastWalk = api.getWalkState().active
+    const offWalk = api.onWalkStateChange((s) => {
+      if (s.active === lastWalk) return   // speed / pointer-lock chatter
+      lastWalk = s.active
+      emitEmbedEvent('walk-changed', walkStateOut(s))
+    })
+    const measure = api.getMeasure()
+    // The snapshot is rebuilt on every change (tool, draft point), so compare
+    // what a host sees rather than the array.
+    const keyOf = (): string => measure.getSnapshot().items
+      .map((m) => `${m.id}:${m.name ?? ''}:${m.kind === 'point' ? m.coords.x : m.value}`).join('|')
+    let lastKey = keyOf()
+    const offMeasure = measure.subscribe(() => {
+      const key = keyOf()
+      if (key === lastKey) return
+      lastKey = key
+      emitEmbedEvent('measurements-changed', measurementsOut(api))
+    })
+    return () => { offWalk(); offMeasure() }
+  }, [hasSceneModels])
 
   // ── Relay element selection to an embedding parent (CDE integration) ───────
   useEffect(() => {
