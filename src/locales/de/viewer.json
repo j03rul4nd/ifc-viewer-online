@@ -234,7 +234,8 @@
       "rotateHint": "Ring im Viewer ziehen, um den gewählten Bereich zu drehen (1°-Schritte)"
     },
     "placedByHand": "Manuell",
-    "placedByHandHint": "Von Hand platziert: Die Karte setzt es nicht nach seiner Georeferenz zurück. „Zurücksetzen“ gibt es der Karte zurück."
+    "placedByHandHint": "Von Hand platziert: Die Karte setzt es nicht nach seiner Georeferenz zurück. „Zurücksetzen“ gibt es der Karte zurück.",
+    "frameOnDoubleClick": "Doppelklick zum Einpassen"
   },
   "transform": {
     "position": "Position",

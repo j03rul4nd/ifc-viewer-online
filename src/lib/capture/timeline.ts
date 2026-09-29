@@ -71,10 +71,11 @@ export type TextAnimId =
   | 'blurSlide' // whips in from the left with motion blur and a stretch
   | 'zoomIn'    // lands normally, then the camera flies THROUGH the letters on exit
   | 'marquee'   // the text tiles the frame in rows scrolling in alternate directions
+  | 'roll'    // letters roll up into place through a mask, and out the top
 
 export const TEXT_ANIMS: readonly TextAnimId[] = [
   'none', 'fade', 'slideUp', 'pop', 'words', 'slam', 'count',
-  'glitch', 'maskUp', 'echo', 'select', 'blurSlide', 'zoomIn', 'marquee',
+  'roll', 'glitch', 'maskUp', 'echo', 'select', 'blurSlide', 'zoomIn', 'marquee',
 ]
 
 /** The motion-graphics animations: they need the compositor's special passes. */
@@ -111,6 +112,8 @@ export interface TextOverlay {
   accent?: string
   /** Force upper case regardless of the style. */
   uppercase?: boolean
+  /** Vertical centre as a fraction of the frame height; overrides the anchor's row. */
+  yFrac?: number
 }
 
 // ── Transitions ────────────────────────────────────────────────────────────────
@@ -152,6 +155,25 @@ export interface AudioSelection {
   fadeSec: number
   /** Where in the source audio playback starts, seconds. */
   offsetSec: number
+  /** Who owns the user's sound (kind 'user' only) — drives the export warning. */
+  rights?: SoundRights
+  /** Beat grid and drop of the user's sound, from music-analysis.ts. */
+  music?: import('./music-analysis').MusicMeta
+}
+
+/**
+ * Where a user's sound came from.
+ *   own        — made or commissioned by the user; theirs to use
+ *   licensed   — from a library they hold a licence for (incl. TikTok's Commercial Music Library)
+ *   viral      — a trending/original sound saved from TikTok, Reels or Shorts: rights unknown
+ */
+export type SoundRights = 'own' | 'licensed' | 'viral'
+
+export const SOUND_RIGHTS: readonly SoundRights[] = ['viral', 'own', 'licensed']
+
+/** The export should stop and explain the rights before writing the file. */
+export function needsRightsWarning(audio: AudioSelection): boolean {
+  return audio.kind === 'user' && (audio.rights ?? 'viral') === 'viral'
 }
 
 export const DEFAULT_AUDIO: AudioSelection = {
@@ -205,6 +227,7 @@ export interface NewTextInput {
   font?: 'sans' | 'serif' | 'mono'
   accent?: string
   uppercase?: boolean
+  yFrac?: number
 }
 
 /**
@@ -230,6 +253,7 @@ export function createTextOverlay(input: NewTextInput, duration: number): TextOv
     ...(input.font ? { font: input.font } : {}),
     ...(input.accent ? { accent: input.accent } : {}),
     ...(input.uppercase ? { uppercase: true } : {}),
+    ...(input.yFrac !== undefined && Number.isFinite(input.yFrac) ? { yFrac: Math.min(0.95, Math.max(0.05, input.yFrac)) } : {}),
   }
 }
 
@@ -272,10 +296,28 @@ export interface TextRenderState {
    * need a running clock, not just a progress.
    */
   fx?: { kind: MotionFxKind; inP: number; outP: number; t: number }
+  /** Roll: seconds since the card came in and until it goes (per-letter timing is the renderer's). */
+  roll?: { since: number; until: number }
 }
 
 /** Seconds between two words landing in a 'words' card. */
 export const WORD_STEP_SEC = 0.11
+/** Roll: delay between two letters, and how long one letter takes to land. */
+export const ROLL_STAGGER_SEC = 0.022
+export const ROLL_LETTER_SEC = 0.3
+
+/**
+ * Where a rolling letter sits, in line heights: 1 = one line below its place
+ * (not yet in), 0 = in place, -1 = one line above (gone). Letters enter one
+ * after another and leave the same way over the card's last moments.
+ */
+export function rollOffset(index: number, since: number, until: number): number {
+  const inP = Math.min(1, Math.max(0, (since - index * ROLL_STAGGER_SEC) / ROLL_LETTER_SEC))
+  if (inP < 1) return 1 - easeOutCubic(inP)
+  const outP = Math.min(1, Math.max(0, (ROLL_LETTER_SEC + index * ROLL_STAGGER_SEC * 0.5 - until) / ROLL_LETTER_SEC))
+  return outP > 0 ? -outP * outP : 0
+}
+
 /** How long a 'count' card takes to reach its numbers. */
 export const COUNT_SEC = 0.9
 
@@ -342,6 +384,8 @@ export function textRenderStateAt(o: TextOverlay, t: number): TextRenderState | 
       const s = q < 1 ? 1.5 - 0.56 * easeOutCubic(q) : 0.94 + 0.06 * clamp((sinceIn - 0.16) / 0.12, 0, 1)
       return { alpha: Math.min(clamp(sinceIn / 0.06, 0, 1), easeOutCubic(outP)), dy: 0, scale: s }
     }
+    case 'roll':
+      return { alpha: 1, dy: 0, scale: 1, roll: { since: sinceIn, until: untilOut } }
     case 'count': {
       const f = easeOutCubic(clamp(sinceIn / Math.min(COUNT_SEC, length * 0.6), 0, 1))
       return { alpha: eased, dy: 0, scale: 1, text: countText(o.text, f) }

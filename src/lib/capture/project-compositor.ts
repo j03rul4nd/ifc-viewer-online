@@ -16,6 +16,7 @@ import { framingRect, overlaysAt, punchScale, type ClipSample, type EditProject,
 import { textRenderStateAt } from './timeline'
 import { drawTextCardsAt, hash01 } from './compositor'
 import { drawWatermark } from './watermark'
+import { drawHud } from './hud'
 
 export interface FramePicture {
   image: CanvasImageSource
@@ -81,11 +82,13 @@ export function composeProjectFrame(o: ComposeProjectOptions): void {
     ctx.save()
     ctx.translate(0, bar)
     drawTextCardsAt(ctx, o.project.texts, o.t, width, height - bar * 2)
+    if (o.project.hud) drawHud(ctx, o.project.hud, o.t, width, height - bar * 2)
     ctx.restore()
   } else {
     drawTextCardsAt(ctx, o.project.texts, o.t, width, height)
+    if (o.project.hud) drawHud(ctx, o.project.hud, o.t, width, height)
   }
-  if (o.project.fx?.hud) drawHud(ctx, width, height, o.t, o.project.fx.hud)
+  if (o.project.fx?.hud) drawMotionHud(ctx, width, height, o.t, o.project.fx.hud)
   if (o.watermark) drawWatermark(ctx, width, height)
 
   if (sample.cover.amount > 0.001) {
@@ -277,7 +280,7 @@ export function tearFrame(ctx: CanvasRenderingContext2D, width: number, height: 
  * corners, a mono label top-left, a running timecode top-right and a
  * blinking record dot. Scales with the frame's short side.
  */
-export function drawHud(ctx: CanvasRenderingContext2D, width: number, height: number, t: number, hud: { label: string; accent: string }): void {
+export function drawMotionHud(ctx: CanvasRenderingContext2D, width: number, height: number, t: number, hud: { label: string; accent: string }): void {
   const u = Math.min(width, height)
   const m = u * 0.045
   const fs = Math.max(9, u * 0.016)

@@ -96,6 +96,7 @@
       "words": "ทีละคำ",
       "slam": "กระแทก",
       "count": "นับขึ้น",
+      "roll": "ม้วน",
       "glitch": "กลิตช์",
       "maskUp": "มาสก์",
       "echo": "เอคโค",
@@ -364,7 +365,9 @@
         "endCard": "การ์ดปิดท้าย",
         "sectionCut": "ตัดทีละชั้น",
         "sectionSweep": "กวาดภาพตัด",
-        "exploded": "มุมมองแยกชิ้น"
+        "exploded": "มุมมองแยกชิ้น",
+        "plans": "แปลนชั้น",
+        "interior": "ภายใน"
       },
       "sectionHint": {
         "hero": "ถอยออกให้เห็นโมเดลทั้งหมดพร้อมชื่อเรื่อง",
@@ -385,7 +388,9 @@
         "endCard": "ชื่อและ URL บนพื้นหลังไล่สีที่เคลื่อนไหว",
         "sectionCut": "ภาพตัดแปลนที่ลดลงจากหลังคา หยุดที่ทุกชั้น",
         "sectionSweep": "ภาพตัดแนวตั้งที่ผ่านอาคาร เผยให้เห็นภายใน",
-        "exploded": "ชั้นต่างๆ แยกออกแล้วประกอบกลับ"
+        "exploded": "ชั้นต่างๆ แยกออกแล้วประกอบกลับ",
+        "plans": "ตัดแต่ละชั้นที่ความสูงแปลน มองจากด้านบน: ห้องต่างๆ",
+        "interior": "ระดับสายตาภายในชั้น หมุนช้าๆ"
       },
       "empty": {
         "storeys": "โมเดลนี้ไม่มีชั้น",
@@ -397,7 +402,9 @@
         "bcf": "ไม่มีหัวข้อ BCF ที่มีมุมมองหรือองค์ประกอบ",
         "fixed": "ไม่มีอะไรให้เปรียบเทียบ — ตรวจสอบอีกครั้งหลังแก้ไข",
         "sectionCut": "ต้องมีอย่างน้อย 2 ชั้น",
-        "exploded": "ต้องมีอย่างน้อย 3 ชั้น"
+        "exploded": "ต้องมีอย่างน้อย 3 ชั้น",
+        "plans": "ไม่พบชั้นในโมเดลนี้",
+        "interior": "ไม่มีชั้นที่สูงพอให้ยืน"
       },
       "emptyGeneric": "ไม่มีอะไรให้แสดงสำหรับโมเดลนี้",
       "shots": "{{n}} ช็อต",
@@ -517,8 +524,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100",
         "sectionCut": "ตัดจาก {{from}} ถึง {{to}}: {{storeys}} แปลน",
         "sectionSweep": "ภาพตัดแนวตั้งตลอด {{length}} ม. ของอาคาร",
-        "exploded": "{{storeys}} ชั้น แยกออกและประกอบกลับ"
-      }
+        "exploded": "{{storeys}} ชั้น แยกออกและประกอบกลับ",
+        "plan": "แปลน {{name}}: {{elements}} องค์ประกอบ",
+        "planRooms": "แปลน {{name}}: {{rooms}} ห้อง",
+        "interior": "ภายใน {{name}}",
+        "interiorRooms": "ภายใน {{name}}: {{rooms}} ห้องในชั้นนี้"
+      },
+      "hud": "อินเทอร์เฟซ",
+      "hudOn": "HUD เชิงเทคนิค",
+      "hudHint": "ข้อความมุมจอบอกสิ่งที่เห็น ตัวนับช็อต ความสูงภาพตัดแบบสด และไทม์ไลน์พร้อมจุดสีเน้น"
     },
     "remaining": "เหลืออีกประมาณ {{seconds}} วินาที",
     "sfxVolume": "ระดับเสียงเอฟเฟกต์",
@@ -526,6 +540,33 @@
     "sfxCount": "{{n}} เอฟเฟกต์",
     "sfxTitle": "เอฟเฟกต์เสียง",
     "restyleHint": "เปลี่ยนการเกรดสีและข้อความทันที ช็อต 3D ยังคงสีและแสงเดิม — สร้างใหม่เพื่อระบายสีใหม่",
+    "sound": {
+      "title": "Viral sound / your track",
+      "import": "Import sound (audio or TikTok video)",
+      "replace": "Replace sound",
+      "importHint": "An MP3/M4A/WAV, or a TikTok, Reel or Short you saved — we take its soundtrack. It is analysed in your browser and never uploaded.",
+      "analysing": "Analysing the beat…",
+      "ready": "Sound ready — cuts synced to the beat and the drop",
+      "failed": "Could not read that sound: {{reason}}",
+      "missing": "\"{{name}}\" is not loaded any more — import it again to hear it.",
+      "drop": "drop at {{sec}} s",
+      "rights": "Who owns this sound?",
+      "rightsOpt": {
+        "viral": "Viral / unknown",
+        "own": "Mine",
+        "licensed": "Licensed"
+      },
+      "sync": "Sync the edit to the sound",
+      "syncHint": "Starts the sound so the drop lands on the first cut, moves every cut onto the beat and punches in on each bar after the drop.",
+      "addHook": "Add hook caption",
+      "hookHint": "A big line at the top for the first seconds — the hook decides whether people keep watching. Keep it out of the bottom third, where TikTok puts its own caption.",
+      "hookText": "Wait for the reveal 👀",
+      "warnTitle": "This sound may be copyrighted",
+      "warnBody": "\"{{name}}\" is marked as a viral sound. Trending sounds often contain music owned by labels or other creators, and TikTok's terms do not allow business accounts to use other users' original sounds. The platform can mute the video, take it down or reduce its reach. You are responsible for the rights to what you publish.",
+      "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
+      "exportSilent": "Export without music",
+      "exportAnyway": "Export with the sound"
+    },
     "hudTitle": "HUD โมชัน",
     "hudOn": "กรอบปลอดภัย กากบาท และไทม์โค้ดบนภาพ"
   },

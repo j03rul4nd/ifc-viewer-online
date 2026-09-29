@@ -96,6 +96,7 @@
       "words": "Palabras",
       "slam": "Golpe",
       "count": "Contador",
+      "roll": "Rodar",
       "glitch": "Glitch",
       "maskUp": "Máscara",
       "echo": "Eco",
@@ -364,7 +365,9 @@
         "endCard": "Tarjeta final",
         "sectionCut": "Sección planta a planta",
         "sectionSweep": "Barrido en sección",
-        "exploded": "Vista en explosión"
+        "exploded": "Vista en explosión",
+        "plans": "Plantas en planta",
+        "interior": "Interior"
       },
       "sectionHint": {
         "hero": "Aleja la cámara hasta el modelo completo, con el título",
@@ -385,7 +388,9 @@
         "endCard": "El nombre y la web sobre un degradado en movimiento",
         "sectionCut": "Un corte en planta que baja desde la cubierta y se detiene en cada planta",
         "sectionSweep": "Un corte vertical que atraviesa el edificio y muestra el interior",
-        "exploded": "Las plantas se separan y vuelven a encajar"
+        "exploded": "Las plantas se separan y vuelven a encajar",
+        "plans": "Cada planta cortada a 1,2 m, vista desde arriba: las estancias",
+        "interior": "A la altura de los ojos dentro de una planta, un giro lento"
       },
       "empty": {
         "storeys": "Este modelo no tiene plantas",
@@ -397,7 +402,9 @@
         "bcf": "No hay temas BCF con punto de vista o componentes",
         "fixed": "Nada que comparar: vuelve a validar después de arreglar",
         "sectionCut": "Necesita al menos 2 plantas",
-        "exploded": "Necesita al menos 3 plantas"
+        "exploded": "Necesita al menos 3 plantas",
+        "plans": "No se encontraron plantas en este modelo",
+        "interior": "Ninguna planta tiene altura para estar de pie"
       },
       "emptyGeneric": "Nada que mostrar en este modelo",
       "shots": "{{n}} tomas",
@@ -517,8 +524,15 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Corte de {{from}} a {{to}}: {{storeys}} plantas.",
         "sectionSweep": "Un corte vertical a lo largo de {{length}} m de edificio.",
-        "exploded": "{{storeys}} plantas, separadas y vueltas a encajar."
-      }
+        "exploded": "{{storeys}} plantas, separadas y vueltas a encajar.",
+        "plan": "Planta de {{name}}: {{elements}} elementos.",
+        "planRooms": "Planta de {{name}}: {{rooms}} estancias.",
+        "interior": "Dentro de {{name}}.",
+        "interiorRooms": "Dentro de {{name}}: {{rooms}} estancias en esta planta."
+      },
+      "hud": "Interfaz",
+      "hudOn": "HUD técnico",
+      "hudHint": "Texto en las esquinas con lo que se ve, contador de tomas, altura del corte en directo y una línea de tiempo con un punto de acento."
     },
     "remaining": "Quedan unos {{seconds}} s",
     "sfxVolume": "Volumen de efectos",
@@ -526,6 +540,33 @@
     "sfxCount": "{{n}} efectos",
     "sfxTitle": "Efectos de sonido",
     "restyleHint": "Cambia al instante el etalonaje y los textos. Las tomas 3D conservan su color y su luz: vuelve a generar para repintarlas.",
+    "sound": {
+      "title": "Sonido viral / tu pista",
+      "import": "Importar sonido (audio o vídeo de TikTok)",
+      "replace": "Cambiar sonido",
+      "importHint": "Un MP3/M4A/WAV, o un TikTok, Reel o Short que hayas guardado — tomamos su banda sonora. Se analiza en tu navegador y nunca se sube.",
+      "analysing": "Analizando el ritmo…",
+      "ready": "Sonido listo — cortes sincronizados con el beat y el drop",
+      "failed": "No se pudo leer ese sonido: {{reason}}",
+      "missing": "\"{{name}}\" ya no está cargado — impórtalo de nuevo para oírlo.",
+      "drop": "drop en {{sec}} s",
+      "rights": "¿De quién es este sonido?",
+      "rightsOpt": {
+        "viral": "Viral / desconocido",
+        "own": "Mío",
+        "licensed": "Con licencia"
+      },
+      "sync": "Sincronizar el vídeo con el sonido",
+      "syncHint": "Arranca el sonido para que el drop caiga en el primer corte, pone cada corte en el beat y hace un punch-in en cada compás tras el drop.",
+      "addHook": "Añadir texto gancho (hook)",
+      "hookHint": "Una frase grande arriba durante los primeros segundos — el hook decide si la gente sigue mirando. Fuera del tercio inferior, donde TikTok pone su propio texto.",
+      "hookText": "Espera al final 👀",
+      "warnTitle": "Este sonido puede tener derechos de autor",
+      "warnBody": "\"{{name}}\" está marcado como sonido viral. Los sonidos en tendencia suelen contener música de discográficas u otros creadores, y los términos de TikTok no permiten a cuentas de empresa usar sonidos originales de otros usuarios. La plataforma puede silenciar el vídeo, retirarlo o reducir su alcance. Tú eres responsable de los derechos de lo que publicas.",
+      "warnTip": "Consejo: para el máximo alcance, exporta sin música y elige el mismo sonido dentro de TikTok/Instagram — el corte ya está sincronizado con él, y tu vídeo aparece en la página del sonido.",
+      "exportSilent": "Exportar sin música",
+      "exportAnyway": "Exportar con el sonido"
+    },
     "hudTitle": "HUD motion",
     "hudOn": "Marco de seguridad, cruces y código de tiempo sobre la imagen"
   },

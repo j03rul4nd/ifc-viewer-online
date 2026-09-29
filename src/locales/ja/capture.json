@@ -96,6 +96,7 @@
       "words": "単語ごと",
       "slam": "スラム",
       "count": "カウントアップ",
+      "roll": "ロール",
       "glitch": "グリッチ",
       "maskUp": "マスク",
       "echo": "エコー",
@@ -364,7 +365,9 @@
         "endCard": "エンドカード",
         "sectionCut": "階ごとの断面",
         "sectionSweep": "断面スイープ",
-        "exploded": "分解図"
+        "exploded": "分解図",
+        "plans": "平面図",
+        "interior": "インテリア"
       },
       "sectionHint": {
         "hero": "タイトルとともにモデル全体へ引く",
@@ -385,7 +388,9 @@
         "endCard": "流れるグラデーションの上に名前と URL",
         "sectionCut": "屋根から下へ、各階で止まる平面断面",
         "sectionSweep": "建物を横切る垂直断面で内部を見せる",
-        "exploded": "各階が分かれ、また組み合わさる"
+        "exploded": "各階が分かれ、また組み合わさる",
+        "plans": "各階を平面の高さで切り、上から見る：部屋",
+        "interior": "階の中で目の高さからゆっくり見回す"
       },
       "empty": {
         "storeys": "このモデルには階がありません",
@@ -397,7 +402,9 @@
         "bcf": "視点または要素を持つ BCF トピックがありません",
         "fixed": "比較対象がありません — 修正後に再検証してください",
         "sectionCut": "2階以上が必要です",
-        "exploded": "3階以上が必要です"
+        "exploded": "3階以上が必要です",
+        "plans": "このモデルに階がありません",
+        "interior": "立てる高さの階がありません"
       },
       "emptyGeneric": "このモデルで表示できるものはありません",
       "shots": "{{n}} ショット",
@@ -517,8 +524,15 @@
         "closingScore": "{{name}}：Health Score {{score}}/100。",
         "sectionCut": "{{from}}から{{to}}までの断面：{{storeys}}プラン。",
         "sectionSweep": "建物{{length}} mを横切る垂直断面。",
-        "exploded": "{{storeys}}階を分解し、また組み直す。"
-      }
+        "exploded": "{{storeys}}階を分解し、また組み直す。",
+        "plan": "{{name}}の平面：{{elements}}要素。",
+        "planRooms": "{{name}}の平面：{{rooms}}室。",
+        "interior": "{{name}}の内部。",
+        "interiorRooms": "{{name}}の内部：この階に{{rooms}}室。"
+      },
+      "hud": "インターフェース",
+      "hudOn": "テクニカルHUD",
+      "hudHint": "四隅に被写体名、ショット番号、断面の高さをリアルタイム表示し、アクセントの点が進むタイムライン。"
     },
     "remaining": "残り約 {{seconds}} 秒",
     "sfxVolume": "効果音の音量",
@@ -526,6 +540,33 @@
     "sfxCount": "効果音 {{n}} 個",
     "sfxTitle": "効果音",
     "restyleHint": "グレードとタイトルをすぐに変更します。3D ショットの色と光はそのまま — 塗り直すには再生成してください。",
+    "sound": {
+      "title": "Viral sound / your track",
+      "import": "Import sound (audio or TikTok video)",
+      "replace": "Replace sound",
+      "importHint": "An MP3/M4A/WAV, or a TikTok, Reel or Short you saved — we take its soundtrack. It is analysed in your browser and never uploaded.",
+      "analysing": "Analysing the beat…",
+      "ready": "Sound ready — cuts synced to the beat and the drop",
+      "failed": "Could not read that sound: {{reason}}",
+      "missing": "\"{{name}}\" is not loaded any more — import it again to hear it.",
+      "drop": "drop at {{sec}} s",
+      "rights": "Who owns this sound?",
+      "rightsOpt": {
+        "viral": "Viral / unknown",
+        "own": "Mine",
+        "licensed": "Licensed"
+      },
+      "sync": "Sync the edit to the sound",
+      "syncHint": "Starts the sound so the drop lands on the first cut, moves every cut onto the beat and punches in on each bar after the drop.",
+      "addHook": "Add hook caption",
+      "hookHint": "A big line at the top for the first seconds — the hook decides whether people keep watching. Keep it out of the bottom third, where TikTok puts its own caption.",
+      "hookText": "Wait for the reveal 👀",
+      "warnTitle": "This sound may be copyrighted",
+      "warnBody": "\"{{name}}\" is marked as a viral sound. Trending sounds often contain music owned by labels or other creators, and TikTok's terms do not allow business accounts to use other users' original sounds. The platform can mute the video, take it down or reduce its reach. You are responsible for the rights to what you publish.",
+      "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
+      "exportSilent": "Export without music",
+      "exportAnyway": "Export with the sound"
+    },
     "hudTitle": "モーションHUD",
     "hudOn": "セーフフレーム、十字線、タイムコードを映像に重ねる"
   },

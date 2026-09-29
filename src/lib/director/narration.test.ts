@@ -31,8 +31,12 @@ describe('subtitleCues', () => {
     expect(subtitleCues('Torre: 19.203 elementos en 18 plantas.', 0, 4, 44)[0].text).toBe('Torre: 19.203 elementos en 18 plantas.')
   })
 
+  it('breaks at a colon before anything else', () => {
+    expect(wrapChunks('Torre Poblenou: 19.241 elementos en 18 plantas.', 44)).toEqual(['Torre Poblenou:', '19.241 elementos en 18 plantas.'])
+  })
+
   it('balances two lines instead of leaving a word alone', () => {
-    const [a, b] = wrapChunks('Torre Poblenou: 19.241 elementos en 18 plantas.', 44)
+    const [a, b] = wrapChunks('Un corte vertical a lo largo de 68 m de edificio.', 44)
     expect(Math.abs(a.length - b.length)).toBeLessThan(12)
   })
 
