@@ -568,7 +568,23 @@
       "exportAnyway": "Exportar con el sonido"
     },
     "hudTitle": "HUD motion",
-    "hudOn": "Marco de seguridad, cruces y código de tiempo sobre la imagen"
+    "hudOn": "Marco de seguridad, cruces y código de tiempo sobre la imagen",
+    "tiktok": {
+      "title": "Sonido de TikTok (por enlace)",
+      "trending": "Top sonidos virales (TikTok Creative Center)",
+      "placeholder": "Pega el enlace de un sonido o vídeo de TikTok",
+      "invalid": "Eso no es un enlace de TikTok.",
+      "untitled": "Sonido de TikTok",
+      "open": "Abrir",
+      "tapStart": "Marcar el ritmo: pulsa y pon el sonido",
+      "tapHint": "Pon el sonido en tu móvil a la vez. Toca al ritmo y pulsa “Drop” cuando explote. No hace falta el archivo: el vídeo se corta según tus toques.",
+      "tap": "Toca",
+      "drop": "Drop",
+      "keepTapping": "Sigue tocando al ritmo…",
+      "apply": "Cortar el vídeo a este sonido",
+      "save": "Guardar este ritmo",
+      "howTo": "En TikTok: pulsa “Añadir sonido”, elige este sonido y recórtalo para que empiece en {{start}} — los cortes caen en su beat ({{bpm}} BPM)."
+    }
   },
   "cover": {
     "open": "Estudio de portadas — portadas, diapositivas y posts del modelo",

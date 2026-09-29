@@ -2,7 +2,7 @@
 // Edits whatever is selected on the timeline; with nothing selected it shows
 // the project: format, music, fades, cut-on-the-beat.
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useClipStudioStore, OUTPUT_PRESETS, type OutputPreset } from '../../stores/clipStudioStore'
 import { toast } from '../../stores/toastStore'
@@ -15,7 +15,8 @@ import {
 } from '../../lib/capture/timeline'
 import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-library'
 import { importSound, rhythmFor } from '../../lib/capture/studio-actions'
-import { hookEndSec, syncProjectToMusic } from '../../lib/capture/music-analysis'
+import { hookEndSec, metaFromTaps, syncProjectToMusic } from '../../lib/capture/music-analysis'
+import { enrichTikTokLink, formatStart, parseTikTokUrl, trendingSoundsUrl, type SoundLink } from '../../lib/capture/tiktok-link'
 import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
 
 const SPEEDS = [0.5, 1, 1.5, 2, 3]
@@ -292,6 +293,7 @@ function ProjectPanel() {
           label={(v) => (v === 'none' ? t('studio.musicNone') : t(`editor.beds.${v as BuiltInBedId}`))}
           onChange={(v) => setAudio(v === 'none' ? { kind: 'none', trackId: null } : { kind: 'builtin', trackId: v })}
         />
+        <TikTokSound />
         <ViralSound />
         {project.audio.kind !== 'none' && (
           <Slider label={t('studio.volume')} value={project.audio.volume} min={0} max={1} step={0.01} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => setAudio({ volume: v })} />
@@ -402,6 +404,105 @@ function ViralSound() {
           <button type="button" className="studio-btn" disabled={!hasClips} onClick={addHook}>{t('studio.sound.addHook')}</button>
           <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.sound.hookHint')}</p>
         </>
+      )}
+    </div>
+  )
+}
+
+// ── TikTok sound (by link) ─────────────────────────────────────────────────────
+// Cut the edit for a sound that stays in TikTok: paste its link, tap along
+// while it plays on the phone, mark the drop. We export the picture timed to
+// it and say where to start the sound in the app — free, and the best reach.
+
+function TikTokSound() {
+  const { t } = useTranslation('capture')
+  const audio = useClipStudioStore((s) => s.project.audio)
+  const hasClips = useClipStudioStore((s) => s.project.clips.length > 0)
+  const hasSound = useClipStudioStore((s) => !!s.sound)
+  const edit = useClipStudioStore((s) => s.edit)
+  const [url, setUrl] = useState(audio.link?.url ?? '')
+  const [link, setLink] = useState<SoundLink | null>(audio.link ?? null)
+  const [tapping, setTapping] = useState<{ t0: number; taps: number[]; drop: number | null } | null>(null)
+  const inApp = !!audio.link && !!audio.music && !(audio.kind === 'user' && hasSound)
+
+  const onUrl = async (v: string) => {
+    setUrl(v)
+    const parsed = parseTikTokUrl(v)
+    setLink(parsed)
+    latest.current = v
+    if (!parsed) return
+    const rich = await enrichTikTokLink(parsed)
+    if (latest.current === v) setLink(rich) // a newer paste wins
+  }
+  const latest = useRef('')
+
+  const now = () => (performance.now() - (tapping?.t0 ?? 0)) / 1000
+  const meta = tapping ? metaFromTaps(tapping.taps, tapping.drop) : null
+
+  const apply = () => {
+    if (!meta || !link) return
+    edit((p) => {
+      // The sound lives in TikTok: keep the file silent unless the user also imported it.
+      const next: EditProject = { ...p, audio: { ...p.audio, kind: p.audio.kind === 'builtin' ? 'none' : p.audio.kind, music: meta, link } }
+      return next.clips.length > 0 ? syncProjectToMusic(next, meta) : next
+    })
+    setTapping(null)
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-[var(--border)] p-2.5">
+      <span className="text-[11.5px] font-semibold">{t('studio.tiktok.title')}</span>
+      <a className="studio-btn justify-center" href={trendingSoundsUrl(navigator.language.split('-')[1] ?? 'ES')} target="_blank" rel="noopener noreferrer">
+        🔥 {t('studio.tiktok.trending')}
+      </a>
+      <input className="studio-input" type="url" inputMode="url" placeholder={t('studio.tiktok.placeholder')} value={url} onChange={(e) => { void onUrl(e.target.value) }} />
+      {url && !link && <p className="text-[11px] text-[var(--warn)]">{t('studio.tiktok.invalid')}</p>}
+      {link && (
+        <div className="flex items-center gap-2">
+          {link.cover && <img src={link.cover} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />}
+          <div className="min-w-0 flex-1 text-[11.5px]">
+            <div className="truncate font-medium">{link.title ?? t('studio.tiktok.untitled')}</div>
+            {link.author && <div className="truncate text-[var(--text-faint)]">@{link.author}</div>}
+          </div>
+          <a className="studio-link shrink-0" href={link.url} target="_blank" rel="noopener noreferrer">{t('studio.tiktok.open')}</a>
+        </div>
+      )}
+
+      {link && !tapping && (
+        <>
+          <button type="button" className="studio-btn" onClick={() => setTapping({ t0: performance.now(), taps: [], drop: null })}>
+            ⏱ {t('studio.tiktok.tapStart')}
+          </button>
+          <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.tiktok.tapHint')}</p>
+        </>
+      )}
+      {tapping && (
+        <>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button type="button" className="studio-btn studio-btn--accent h-14 justify-center text-[15px]" onPointerDown={() => setTapping((s) => s && { ...s, taps: [...s.taps, now()] })}>
+              {t('studio.tiktok.tap')} ({tapping.taps.length})
+            </button>
+            <button type="button" className="studio-btn h-14 justify-center text-[15px]" aria-pressed={tapping.drop !== null} onPointerDown={() => setTapping((s) => s && { ...s, drop: now() })}>
+              💥 {t('studio.tiktok.drop')}
+            </button>
+          </div>
+          <span className="font-mono text-[11px] text-[var(--text-dim)]">
+            {meta ? `${Math.round(meta.bpm)} BPM` : t('studio.tiktok.keepTapping')}
+            {tapping.drop !== null && ` · ${t('studio.sound.drop', { sec: tapping.drop.toFixed(1) })}`}
+          </span>
+          <div className="flex gap-1.5">
+            <button type="button" className="studio-btn flex-1" onClick={() => setTapping(null)}>{t('studio.cancel')}</button>
+            <button type="button" className="studio-btn studio-btn--accent flex-1" disabled={!meta || tapping.drop === null} onClick={apply}>
+              {hasClips ? t('studio.tiktok.apply') : t('studio.tiktok.save')}
+            </button>
+          </div>
+        </>
+      )}
+
+      {inApp && audio.music && (
+        <p className="rounded bg-[color-mix(in_srgb,var(--ok)_14%,transparent)] p-2 text-[11.5px] leading-relaxed">
+          {t('studio.tiktok.howTo', { start: formatStart(audio.offsetSec), bpm: Math.round(audio.music.bpm) })}
+        </p>
       )}
     </div>
   )

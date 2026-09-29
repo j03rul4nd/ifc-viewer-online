@@ -159,6 +159,8 @@ export interface AudioSelection {
   rights?: SoundRights
   /** Beat grid and drop of the user's sound, from music-analysis.ts. */
   music?: import('./music-analysis').MusicMeta
+  /** The TikTok sound this edit is cut for (added in the app, not in the file). */
+  link?: import('./tiktok-link').SoundLink
 }
 
 /**

@@ -131,6 +131,29 @@ function findDrop(energy: Float32Array, frameSec: number, grid: number, beatSec:
   return best
 }
 
+// ── Tap tempo ─────────────────────────────────────────────────────────────────
+
+/**
+ * The beat grid from the user tapping along — for a sound we do not have as a
+ * file (it plays on their phone, in TikTok). Times are seconds since the sound
+ * started. Median interval for the tempo (one late tap does not skew it), the
+ * mean phase for the grid. Null until there are enough taps.
+ */
+export function metaFromTaps(taps: number[], dropSec: number | null, durationSec = 60): MusicMeta | null {
+  if (taps.length < 4) return null
+  const gaps = taps.slice(1).map((t, i) => t - taps[i]).filter((g) => g > 60 / 240 && g < 60 / 50).sort((a, b) => a - b)
+  if (gaps.length < 3) return null
+  const beatSec = gaps[Math.floor(gaps.length / 2)]
+  // Circular mean of each tap's phase, so taps either side of a beat average to it.
+  let x = 0, y = 0
+  for (const t of taps) { const a = (t / beatSec) * 2 * Math.PI; x += Math.cos(a); y += Math.sin(a) }
+  let phase = (Math.atan2(y, x) / (2 * Math.PI)) * beatSec
+  if (phase < 0) phase += beatSec
+  // The drop snaps to the grid: a human press is a few frames late.
+  const drop = dropSec === null ? phase : phase + Math.round((dropSec - phase) / beatSec) * beatSec
+  return { bpm: 60 / beatSec, beatSec, gridOffsetSec: phase, dropSec: Math.max(0, drop), durationSec, confidence: 0.5 }
+}
+
 // ── Using it on the project ──────────────────────────────────────────────────
 
 /** The beat grid in PROJECT time, given where playback starts in the source. */

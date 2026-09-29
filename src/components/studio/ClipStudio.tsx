@@ -21,6 +21,7 @@ import {
   createMediaOverlay, type EditProject,
 } from '../../lib/capture/project'
 import { createTextOverlay, needsRightsWarning } from '../../lib/capture/timeline'
+import { formatStart } from '../../lib/capture/tiktok-link'
 import { SHOT_TYPES, type ShotType } from '../../lib/capture/shots'
 import { hasWebCodecs } from '../../lib/capture/media-codec'
 import { formatBytes } from '../../lib/capture/replay-buffer-core'
@@ -128,6 +129,10 @@ export default function ClipStudio() {
     const ext = blob.type.includes('webm') ? 'webm' : 'mp4'
     downloadBlob(blob, `ifc-clip-${output.preset}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${ext}`)
     toast(t('studio.exportDone', { size: formatBytes(blob.size) }), 'success')
+    // Cut for a TikTok sound that is added in the app: say exactly where to start it.
+    const a = useClipStudioStore.getState().project.audio
+    const embedded = withMusic && a.kind === 'user' && !!useClipStudioStore.getState().sound
+    if (a.link && a.music && !embedded) toast(t('studio.tiktok.howTo', { start: formatStart(a.offsetSec), bpm: Math.round(a.music.bpm) }), 'info')
   })
 
   // ── Editing shortcuts ───────────────────────────────────────────────────────
