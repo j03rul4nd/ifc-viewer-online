@@ -158,6 +158,16 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
         </p>
         <p className="text-[10px] text-[var(--text-muted)] leading-tight">
           {model.elementCount.toLocaleString()} el · {formatBytes(model.fileSize)}
+          {model.placedByHand && (
+            // Why the map leaves this one alone — otherwise a model that stops
+            // following its georeference looks like a bug.
+            <span
+              title={t('scene.placedByHandHint')}
+              className="ml-1.5 px-1 py-px rounded bg-[rgba(245,166,35,0.12)] text-[var(--warn)] text-[9px] font-medium"
+            >
+              {t('scene.placedByHand')}
+            </span>
+          )}
         </p>
       </button>
 

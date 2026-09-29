@@ -232,7 +232,9 @@
       "offHint": "Sense manipulador al visor",
       "translateHint": "Arrossega les fletxes al visor per moure l'àmbit triat",
       "rotateHint": "Arrossega l'anell al visor per girar l'àmbit triat (pas d'1°)"
-    }
+    },
+    "placedByHand": "A mà",
+    "placedByHandHint": "L'has col·locat a mà: el mapa no el recol·loca amb la seva georeferència. «Restablir» el retorna al mapa."
   },
   "transform": {
     "position": "Posició",

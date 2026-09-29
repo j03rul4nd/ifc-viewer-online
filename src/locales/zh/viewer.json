@@ -232,7 +232,9 @@
       "offHint": "视图中不显示控制柄",
       "translateHint": "在视图中拖动箭头以移动所选范围",
       "rotateHint": "在视图中拖动圆环以旋转所选范围（1° 步进）"
-    }
+    },
+    "placedByHand": "手动",
+    "placedByHandHint": "已手动放置：地图不会按其地理参考重新放置。“重置”将其交还给地图。"
   },
   "transform": {
     "position": "位置",
