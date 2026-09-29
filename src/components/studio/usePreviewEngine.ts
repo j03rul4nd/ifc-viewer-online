@@ -68,14 +68,26 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     el.preload = 'auto'
     el.src = url
     el.addEventListener('seeked', () => { if (!clock.current) draw() })
-    el.addEventListener('loadeddata', () => { if (!clock.current) draw() })
+    el.addEventListener('loadeddata', () => { decoded.current.add(el!); if (!clock.current) draw() })
     videos.current.set(key, el)
     return el
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlFor])
 
+  // A <video> keeps showing its last decoded frame while it seeks (readyState
+  // drops below HAVE_CURRENT_DATA meanwhile). Drawing that frame instead of
+  // nothing keeps scrubbing and cuts from flashing black.
+  const decoded = useRef(new WeakSet<HTMLVideoElement>())
   const pictureOf = (el: HTMLVideoElement | null): FramePicture | null =>
-    el && el.readyState >= 2 && el.videoWidth > 0 ? { image: el, width: el.videoWidth, height: el.videoHeight } : null
+    el && el.videoWidth > 0 && (el.readyState >= 2 || decoded.current.has(el))
+      ? { image: el, width: el.videoWidth, height: el.videoHeight }
+      : null
+
+  /** A still (imported image) is its own frame; a video clip is its <video>. */
+  const stillOf = (sourceId: string): FramePicture | null => {
+    const m = mediaRef.current.get(sourceId)
+    return m?.kind === 'image' ? { image: m.image, width: m.width, height: m.height } : null
+  }
 
   const draw = useCallback((tOverride?: number) => {
     const canvas = canvasRef.current
@@ -86,12 +98,8 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     const sample = sampleProject(p, t)
     composeProjectFrame({
       ctx, width: canvas.width, height: canvas.height, project: p, sample, t,
-      frameOf: (c) => pictureOf(videos.current.get(c.clip.id) ?? null),
-      overlayOf: (ov) => {
-        const m = mediaRef.current.get(ov.sourceId)
-        if (m?.kind === 'image') return { image: m.image, width: m.width, height: m.height }
-        return pictureOf(videos.current.get(ov.id) ?? null)
-      },
+      frameOf: (c) => stillOf(c.clip.sourceId) ?? pictureOf(videos.current.get(c.clip.id) ?? null),
+      overlayOf: (ov) => stillOf(ov.sourceId) ?? pictureOf(videos.current.get(ov.id) ?? null),
       fill: outputRef.current.fill,
       watermark: outputRef.current.watermark,
     })
