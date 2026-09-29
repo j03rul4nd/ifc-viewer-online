@@ -152,7 +152,8 @@ export function rhythmFor(project: EditProject) {
   if (project.audio.kind === 'builtin' && project.audio.trackId && project.audio.trackId in BED_RHYTHM) {
     return BED_RHYTHM[project.audio.trackId as keyof typeof BED_RHYTHM]
   }
-  if (project.audio.kind === 'user' && project.audio.music) {
+  // A user file, or a TikTok sound known only by its taps: either way, a grid.
+  if (project.audio.kind !== 'builtin' && project.audio.music) {
     return projectRhythm(project.audio.music, project.audio.offsetSec)
   }
   return null

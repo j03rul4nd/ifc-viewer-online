@@ -551,6 +551,22 @@
       "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
+    },
+    "tiktok": {
+      "title": "TikTok sound (by link)",
+      "trending": "Top viral sounds (TikTok Creative Center)",
+      "placeholder": "Paste a TikTok sound or video link",
+      "invalid": "That is not a TikTok link.",
+      "untitled": "TikTok sound",
+      "open": "Open",
+      "tapStart": "Mark the beat: press, then play the sound",
+      "tapHint": "Play the sound on your phone as you press. Tap along with the beat and hit “Drop” when it kicks in. No file needed — the video is cut to your taps.",
+      "tap": "Tap",
+      "drop": "Drop",
+      "keepTapping": "Keep tapping to the beat…",
+      "apply": "Cut the video to this sound",
+      "save": "Save this beat",
+      "howTo": "In TikTok: tap “Add sound”, pick this sound, and trim it to start at {{start}} — the cuts land on its beat ({{bpm}} BPM)."
     }
   },
   "cover": {
