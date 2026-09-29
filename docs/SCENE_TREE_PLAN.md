@@ -1,6 +1,6 @@
 # Árbol de escena: grupos, nubes de puntos, transformaciones y cámara
 
-Estado a 2026-09-24. **F3, F1 y F2 construidas** (F2 sin gizmo 3D); F4 pendiente.
+Estado a 2026-09-24. **F3, F1 y F2 construidas** (gizmo 3D incluido); F4 pendiente.
 
 ## Lo que ya existe (no rehacer)
 
@@ -56,7 +56,11 @@ Estado a 2026-09-24. **F3, F1 y F2 construidas** (F2 sin gizmo 3D); F4 pendiente
 > el editor de ubicación existente en vez de duplicarlo.
 > Arreglado de paso: `model.box` de fragments ya incluye la matriz del pivote;
 > el visor la aplicaba dos veces (`pivotLocalBox`).
-> PENDIENTE: gizmo 3D (TransformControls) sobre el pivote del ámbito.
+> Gizmo 3D: `lib/scene-gizmo.ts` (TransformControls sobre un proxy en el
+> pivote; mover en 3 ejes, girar solo rumbo con paso de 1°), `viewer.setGizmo`
+> / `setGizmoPosition`, `hooks/useSceneGizmo.ts` y `placement.beginDrag`
+> (movimiento TOTAL desde el pre-arrastre, un paso de deshacer por arrastre).
+> Soltar sobre un eje no selecciona el elemento de detrás.
 - Selector de ámbito: **Elemento activo / Grupo / Escena completa**.
 - Transformación de grupo como matriz alrededor de un pivote común
   (`groupReferencePosition`), aplicada a modelos **y nubes** del grupo; rotar

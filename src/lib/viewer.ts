@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
+import { createSceneGizmo, type SceneGizmo, type GizmoOptions } from './scene-gizmo'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
@@ -491,6 +492,13 @@ export interface ViewerAPI {
    * visible (the camera does not move).
    */
   setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions): FramingResult | null
+  /**
+   * Show the move/turn handle on a scope's pivot, or hide it (null). The viewer
+   * only draws it and reports the drag; placement applies it (useScenePlacement).
+   */
+  setGizmo(opts: GizmoOptions | null): void
+  /** Re-seat the handle after the pivot moved by other means (undo, typed edit). */
+  setGizmoPosition(p: Vec3Like): void
   /** The world boxes a preset would choose from, with visibility applied. */
   getFramingItems(opts?: CameraPresetOptions): FramingItem[]
   /**
@@ -1216,6 +1224,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
   let geoPointerSuppressed = false
+  // Move/turn handle — created on first use (lib/scene-gizmo).
+  let sceneGizmo: SceneGizmo | null = null
+  /** The press started on a gizmo axis: its release is a drag end, never a pick. */
+  let pressOnGizmo = false
   let satelliteResolver: SatelliteResolver | null = null
   let geoSystemInstance: import('./geo/geo-system').GeoSystemAPI | null = null
   let geoLoadPromise: Promise<import('./geo/geo-system').GeoSystemAPI> | null = null
@@ -1967,6 +1979,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let pdY    = 0
 
   const onPointerDown = (e: PointerEvent): void => {
+    pressOnGizmo = sceneGizmo?.isHot() ?? false
     pdTime = Date.now()
     pdX    = e.clientX
     pdY    = e.clientY
@@ -1974,6 +1987,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerUp = (e: PointerEvent): void => {
     if (geoPointerSuppressed) return   // map placement editor owns the pointer
+    // A short click on a gizmo axis would otherwise select the element behind
+    // it — and swap the active model out from under the handle being used.
+    if (pressOnGizmo) { pressOnGizmo = false; return }
     const dt   = Date.now() - pdTime
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return   // ignore drags / long-press
@@ -3299,6 +3315,21 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return true
     },
 
+    setGizmo(opts: GizmoOptions | null) {
+      if (!opts && !sceneGizmo) return
+      sceneGizmo ??= createSceneGizmo({
+        scene: world.scene.three,
+        getCamera: () => world.camera.three,
+        domElement: canvas,
+        setOrbitEnabled: (enabled) => { world.camera.controls.enabled = enabled },
+      })
+      sceneGizmo.set(opts)
+    },
+
+    setGizmoPosition(p: Vec3Like) {
+      sceneGizmo?.setPosition(p)
+    },
+
     setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions) {
       const framing = resolveFraming({
         items: this.getFramingItems(opts),
@@ -4361,6 +4392,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      try { sceneGizmo?.dispose() } catch { /* ok */ }
+      sceneGizmo = null
       try { videoInstance?.dispose() } catch { /* ok */ }
       videoInstance = null
       videoLoadPromise = null

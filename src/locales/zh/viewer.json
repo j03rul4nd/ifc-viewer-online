@@ -223,6 +223,15 @@
       "temporaryOn": "临时更改：恢复时将被撤销。",
       "restore": "恢复",
       "keep": "保留"
+    },
+    "gizmo": {
+      "label": "控制柄",
+      "off": "关",
+      "translate": "移动",
+      "rotate": "旋转",
+      "offHint": "视图中不显示控制柄",
+      "translateHint": "在视图中拖动箭头以移动所选范围",
+      "rotateHint": "在视图中拖动圆环以旋转所选范围（1° 步进）"
     }
   },
   "transform": {

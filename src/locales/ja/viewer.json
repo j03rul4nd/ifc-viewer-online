@@ -223,6 +223,15 @@
       "temporaryOn": "一時的な変更です。復元すると取り消されます。",
       "restore": "復元",
       "keep": "保持"
+    },
+    "gizmo": {
+      "label": "ハンドル",
+      "off": "オフ",
+      "translate": "移動",
+      "rotate": "回転",
+      "offHint": "ビューアにハンドルを表示しない",
+      "translateHint": "ビューアの矢印をドラッグして選択した範囲を移動",
+      "rotateHint": "ビューアのリングをドラッグして選択した範囲を回転（1°刻み）"
     }
   },
   "transform": {
