@@ -9,7 +9,7 @@ describe('Shanghai Tower reconstruction release',()=>{
   const model=DEMO_MODELS.find(m=>m.id==='shanghai-tower')!
   expect(model).toBeDefined()
   expect(model.description).toContain('Approximate reconstruction')
-  expect(model.ifcUrl).toContain('?v=20260907-r1')
+  expect(model.ifcUrl).toContain('?v=20260929-r2')
   const path=`public/models/shanghai-tower/${model.fileName}`
   expect(model.sizeBytes).toBe(statSync(path).size)
   const bytes=readFileSync(path),report=JSON.parse(readFileSync('public/models/shanghai-tower/validation.json','utf8'))
