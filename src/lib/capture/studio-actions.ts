@@ -20,6 +20,7 @@ import { exportProject, type SourceMedia } from './project-export'
 import { decodeUserAudio, getBuiltInBed } from './audio-library'
 import { sliceBuffer, soundStart } from './sound-capture'
 import type { SoundLink } from './tiktok-link'
+import { exportBitrate, exportSize, rememberExportSpeed, type ExportSettings } from './export-settings'
 import { cutForSound, finishSoundClip, rememberSound } from './sound-clip'
 import type { TemplateContext, TemplateId } from './viral-templates'
 import type { MusicMeta } from './music-analysis'
@@ -268,7 +269,20 @@ export async function clipFromSound(
 
 // ── Export ─────────────────────────────────────────────────────────────────────
 
-export async function exportStudio(signal?: AbortSignal, label = 'Exporting', withMusic = true): Promise<Blob> {
+export interface StudioExportOptions {
+  /** Include the music (false = picture only; the sound is added in the app). */
+  withMusic?: boolean
+  /** Resolution / fps / quality from the export sheet; missing = the output as set. */
+  settings?: ExportSettings
+  /** A live thumbnail of the frames as they encode. */
+  onPreview?: (canvas: HTMLCanvasElement, fraction: number) => void
+  /** Progress 0–1 (the sheet shows its own bar instead of the studio's overlay). */
+  onProgress?: (fraction: number) => void
+}
+
+export async function exportStudio(signal?: AbortSignal, label = 'Exporting', opts: StudioExportOptions | boolean = {}): Promise<Blob> {
+  const o: StudioExportOptions = typeof opts === 'boolean' ? { withMusic: opts } : opts
+  const withMusic = o.withMusic ?? true
   const s = useClipStudioStore.getState()
   const { media, output } = s
   let { project } = s
@@ -281,15 +295,22 @@ export async function exportStudio(signal?: AbortSignal, label = 'Exporting', wi
   } else if (project.audio.kind === 'user') {
     bed = s.sound
   }
-  s.setJob({ label, progress: 0 })
+  const size = o.settings ? exportSize(output, o.settings.resolution) : { width: output.width, height: output.height }
+  const fps = o.settings?.fps ?? output.fps
+  const bitrate = o.settings ? exportBitrate(size, o.settings) : undefined
+  // With its own progress UI the sheet takes over; otherwise the studio overlay shows it.
+  const report = (f: number) => (o.onProgress ? o.onProgress(f) : s.setJob({ label, progress: f }))
+  if (!o.onProgress) s.setJob({ label, progress: 0 })
+  const started = performance.now()
   try {
     const result = await exportProject(project, media, {
-      width: output.width, height: output.height, fps: output.fps, fill: output.fill, watermark: output.watermark,
-      bed, signal,
-      onProgress: (f) => s.setJob({ label, progress: f }),
+      ...size, fps, bitrate, fill: output.fill, watermark: output.watermark,
+      bed, signal, onPreview: o.onPreview,
+      onProgress: (f) => report(f),
     })
+    rememberExportSpeed(size, result.frames, (performance.now() - started) / 1000)
     return result.blob
   } finally {
-    s.setJob(null)
+    if (!o.onProgress) s.setJob(null)
   }
 }

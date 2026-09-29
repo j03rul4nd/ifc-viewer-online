@@ -668,6 +668,31 @@
       "label": "Subtítulos palabra a palabra al ritmo",
       "on": "Subtítulos al ritmo",
       "hint": "Dos o tres palabras cada vez, grandes y centradas; cada palabra nueva entra de golpe en un beat. Siguen al ritmo aunque edites o muevas el texto."
+    },
+    "export2": {
+      "exportingTitle": "Exportando…",
+      "doneTitle": "Guardado en tu dispositivo",
+      "resolution": "Resolución",
+      "fps": "Fotogramas por segundo",
+      "quality": "Calidad",
+      "q": {
+        "small": "Menor tamaño",
+        "recommended": "Recomendada",
+        "high": "Máxima"
+      },
+      "eta": "unos {{time}}",
+      "fastHint": "720p exporta el doble de rápido — de sobra para verlo en el móvil.",
+      "withMusic": "Incluir la música",
+      "rightsNote": "Sonido viral: sus derechos son desconocidos. La plataforma puede silenciar el vídeo, retirarlo o limitar su alcance. Para TikTok, déjalo desmarcado y añade el mismo sonido en la app — el corte ya está sincronizado.",
+      "name": "Nombre del archivo",
+      "left": "Quedan {{time}}",
+      "starting": "Empezando…",
+      "keepOpen": "Puedes cambiar de pestaña — sigue exportando.",
+      "saved": "{{file}} · {{size}} · exportado en {{time}}",
+      "saveAgain": "Guardar otra vez",
+      "openTiktok": "Abrir TikTok",
+      "share": "Compartir…",
+      "done": "Hecho"
     }
   },
   "cover": {
