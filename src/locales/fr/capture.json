@@ -84,7 +84,9 @@
       "subtitle": "Sous-titre",
       "caption": "Légende",
       "lowerThird": "Synthé",
-      "badge": "Badge"
+      "badge": "Badge",
+      "display": "Titre display",
+      "wordCard": "Carte mot"
     },
     "anims": {
       "none": "Aucune",
@@ -94,7 +96,14 @@
       "words": "Mots",
       "slam": "Impact",
       "count": "Compteur",
-      "roll": "Défiler"
+      "roll": "Défiler",
+      "glitch": "Glitch",
+      "maskUp": "Masque",
+      "echo": "Écho",
+      "select": "Sélection",
+      "blurSlide": "Glissé flou",
+      "zoomIn": "Zoom traversant",
+      "marquee": "Défilement"
     },
     "effects": {
       "in": "Ouverture",
@@ -231,7 +240,11 @@
       "slideLeft": "Glissement",
       "slideUp": "Glissement haut",
       "zoom": "Zoom",
-      "whip": "Filé"
+      "whip": "Filé",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Écrasement",
+      "spin": "Rotation"
     },
     "applyToAll": "Appliquer à toutes les coupes",
     "firstClipNoTransition": "Le premier clip ouvre la vidéo — réglez plutôt un fondu d’ouverture dans Projet.",
@@ -454,11 +467,13 @@
       "styleLabel": "Style de montage",
       "styles": {
         "classic": "Classique",
-        "launch": "Lancement 2026"
+        "launch": "Lancement 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Mouvements adoucis, fondus, titres posés.",
-        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot."
+        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot.",
+        "motion": "Typo cinétique : le titre défile mot par mot sur des cartes de couleur, titres glitchés, un HUD de design et une transition différente à chaque coupe."
       },
       "sfxLabel": "Effets sonores",
       "sfxLevels": {
@@ -552,6 +567,8 @@
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
     },
+    "hudTitle": "HUD motion",
+    "hudOn": "Cadre de sécurité, repères et timecode sur l’image",
     "tiktok": {
       "title": "TikTok sound (by link)",
       "trending": "Top viral sounds (TikTok Creative Center)",

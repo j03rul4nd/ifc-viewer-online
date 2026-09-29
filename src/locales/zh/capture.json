@@ -84,7 +84,9 @@
       "subtitle": "副标题",
       "caption": "字幕",
       "lowerThird": "下三分之一",
-      "badge": "标签"
+      "badge": "标签",
+      "display": "大标题",
+      "wordCard": "单词卡"
     },
     "anims": {
       "none": "无",
@@ -94,7 +96,14 @@
       "words": "逐词",
       "slam": "重击",
       "count": "数字滚动",
-      "roll": "滚动"
+      "roll": "滚动",
+      "glitch": "故障",
+      "maskUp": "遮罩上升",
+      "echo": "回声",
+      "select": "选框",
+      "blurSlide": "模糊滑入",
+      "zoomIn": "穿越缩放",
+      "marquee": "跑马灯"
     },
     "effects": {
       "in": "开场",
@@ -231,7 +240,11 @@
       "slideLeft": "滑动",
       "slideUp": "上滑",
       "zoom": "缩放",
-      "whip": "甩镜"
+      "whip": "甩镜",
+      "glitch": "故障",
+      "iris": "光圈",
+      "squeeze": "挤压",
+      "spin": "旋转"
     },
     "applyToAll": "应用到所有剪切点",
     "firstClipNoTransition": "第一个片段是视频开头——请在“项目”中设置开场淡入。",
@@ -454,11 +467,13 @@
       "styleLabel": "剪辑风格",
       "styles": {
         "classic": "经典",
-        "launch": "2026 发布会"
+        "launch": "2026 发布会",
+        "motion": "动态"
       },
       "styleHint": {
         "classic": "平缓运镜、淡入淡出、沉稳字幕。",
-        "launch": "变速运镜、运动模糊、每个剪切点缩放冲击、重击标题、数字滚动、逐词标注。"
+        "launch": "变速运镜、运动模糊、每个剪切点缩放冲击、重击标题、数字滚动、逐词标注。",
+        "motion": "动态文字：标题在彩色卡片上逐词闪现，故障风标题，设计 HUD，每个剪辑点使用不同转场。"
       },
       "sfxLabel": "音效",
       "sfxLevels": {
@@ -552,6 +567,8 @@
       "exportSilent": "Export without music",
       "exportAnyway": "Export with the sound"
     },
+    "hudTitle": "动态 HUD",
+    "hudOn": "在画面上叠加安全框、十字准星和时间码",
     "tiktok": {
       "title": "TikTok sound (by link)",
       "trending": "Top viral sounds (TikTok Creative Center)",

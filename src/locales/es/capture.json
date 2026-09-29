@@ -84,7 +84,9 @@
       "subtitle": "Subtítulo",
       "caption": "Rótulo",
       "lowerThird": "Faldón",
-      "badge": "Etiqueta"
+      "badge": "Etiqueta",
+      "display": "Titular",
+      "wordCard": "Tarjeta de palabra"
     },
     "anims": {
       "none": "Ninguna",
@@ -94,7 +96,14 @@
       "words": "Palabras",
       "slam": "Golpe",
       "count": "Contador",
-      "roll": "Rodar"
+      "roll": "Rodar",
+      "glitch": "Glitch",
+      "maskUp": "Máscara",
+      "echo": "Eco",
+      "select": "Selección",
+      "blurSlide": "Barrido con blur",
+      "zoomIn": "Zoom a través",
+      "marquee": "Marquesina"
     },
     "effects": {
       "in": "Apertura",
@@ -231,7 +240,11 @@
       "slideLeft": "Deslizar",
       "slideUp": "Deslizar arriba",
       "zoom": "Zoom",
-      "whip": "Barrido"
+      "whip": "Barrido",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Compresión",
+      "spin": "Giro"
     },
     "applyToAll": "Aplicar a todos los cortes",
     "firstClipNoTransition": "El primer clip abre el vídeo: pon un fundido de entrada en Proyecto.",
@@ -454,11 +467,13 @@
       "styleLabel": "Estilo de edición",
       "styles": {
         "classic": "Clásico",
-        "launch": "Lanzamiento 2026"
+        "launch": "Lanzamiento 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Movimientos suaves, fundidos y títulos tranquilos.",
-        "launch": "Rampas de velocidad, desenfoque de movimiento, golpe de zoom en cada corte, títulos de impacto, números que cuentan y rótulos palabra a palabra."
+        "launch": "Rampas de velocidad, desenfoque de movimiento, golpe de zoom en cada corte, títulos de impacto, números que cuentan y rótulos palabra a palabra.",
+        "motion": "Tipografía cinética: el título destella palabra a palabra sobre tarjetas de color, titulares con glitch, un HUD de diseño y una transición distinta en cada corte."
       },
       "sfxLabel": "Efectos de sonido",
       "sfxLevels": {
@@ -552,6 +567,8 @@
       "exportSilent": "Exportar sin música",
       "exportAnyway": "Exportar con el sonido"
     },
+    "hudTitle": "HUD motion",
+    "hudOn": "Marco de seguridad, cruces y código de tiempo sobre la imagen",
     "tiktok": {
       "title": "Sonido de TikTok (por enlace)",
       "trending": "Top sonidos virales (TikTok Creative Center)",

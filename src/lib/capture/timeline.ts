@@ -25,16 +25,19 @@ export const TEXT_ANCHORS: readonly TextAnchor[] = [
 ]
 
 /** Preset looks. Users pick a role ("title"), not a font stack. */
-export type TextStyleId = 'title' | 'subtitle' | 'caption' | 'lowerThird' | 'badge'
+export type TextStyleId =
+  | 'title' | 'subtitle' | 'caption' | 'lowerThird' | 'badge'
+  | 'display'   // motion-graphics headline: huge, black weight, tight tracking
+  | 'wordCard'  // one word on a full-frame colour card — the kinetic-type flash
 
-export const TEXT_STYLES: readonly TextStyleId[] = ['title', 'subtitle', 'caption', 'lowerThird', 'badge']
+export const TEXT_STYLES: readonly TextStyleId[] = ['title', 'subtitle', 'caption', 'lowerThird', 'badge', 'display', 'wordCard']
 
 export interface TextStyleSpec {
   /** Font size as a fraction of frame HEIGHT — keeps titles proportional across 480p→1080p and 1:1→9:16. */
   sizeFrac: number
   weight: number
-  /** Backing treatment that keeps text legible over arbitrary geometry. */
-  plate: 'shadow' | 'pill' | 'bar'
+  /** Backing treatment that keeps text legible over arbitrary geometry. 'card' floods the whole frame with the accent. */
+  plate: 'shadow' | 'pill' | 'bar' | 'card'
   /** Letter-spacing as a fraction of font size. */
   tracking: number
   uppercase: boolean
@@ -47,7 +50,12 @@ export const TEXT_STYLE_SPECS: Record<TextStyleId, TextStyleSpec> = {
   caption:    { sizeFrac: 0.034, weight: 500, plate: 'pill',   tracking: 0,     uppercase: false, defaultAnchor: 'bottom-center' },
   lowerThird: { sizeFrac: 0.042, weight: 700, plate: 'bar',    tracking: 0,     uppercase: false, defaultAnchor: 'bottom-left' },
   badge:      { sizeFrac: 0.028, weight: 700, plate: 'pill',   tracking: 0.08,  uppercase: true,  defaultAnchor: 'top-left' },
+  display:    { sizeFrac: 0.13,  weight: 900, plate: 'shadow', tracking: -0.035, uppercase: true, defaultAnchor: 'mid-left' },
+  wordCard:   { sizeFrac: 0.24,  weight: 900, plate: 'card',   tracking: -0.04, uppercase: true,  defaultAnchor: 'mid-center' },
 }
+
+/** Card colour of a 'wordCard' when the text has no accent of its own. */
+export const DEFAULT_CARD_COLOR = '#FF4F1F'
 
 /** Entry/exit motion. 'none' pops in hard; the rest ease over TEXT_ANIM_SEC. */
 export type TextAnimId =
@@ -55,9 +63,23 @@ export type TextAnimId =
   | 'words'   // kinetic typography: the words land one by one
   | 'slam'    // hits hard: oversized, snaps to size with a small overshoot
   | 'count'   // numbers in the text count up from zero
+  // Motion-graphics lettering (the kinetic-type reel grammar):
+  | 'glitch'    // RGB split and sliced scanlines that snap into clean type
+  | 'maskUp'    // each line rises out of an invisible mask, staggered
+  | 'echo'      // outlined copies stacked above and below collapse into the word
+  | 'select'    // a design-tool selection box with handles draws around the type
+  | 'blurSlide' // whips in from the left with motion blur and a stretch
+  | 'zoomIn'    // lands normally, then the camera flies THROUGH the letters on exit
+  | 'marquee'   // the text tiles the frame in rows scrolling in alternate directions
   | 'roll'    // letters roll up into place through a mask, and out the top
 
-export const TEXT_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop', 'words', 'slam', 'count', 'roll']
+export const TEXT_ANIMS: readonly TextAnimId[] = [
+  'none', 'fade', 'slideUp', 'pop', 'words', 'slam', 'count',
+  'roll', 'glitch', 'maskUp', 'echo', 'select', 'blurSlide', 'zoomIn', 'marquee',
+]
+
+/** The motion-graphics animations: they need the compositor's special passes. */
+export type MotionFxKind = 'glitch' | 'maskUp' | 'echo' | 'select' | 'blurSlide' | 'zoomIn' | 'marquee'
 
 /** The animations a picture overlay can use (the text-only ones make no sense on an image). */
 export const MEDIA_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop']
@@ -268,6 +290,14 @@ export interface TextRenderState {
   scale: number
   /** What to draw instead of the card's text at this moment (words, count). */
   text?: string
+  /** Horizontal offset as a fraction of frame width (blurSlide). */
+  dx?: number
+  /**
+   * Motion-graphics pass. `inP`/`outP` are the eased entry/exit progress (1 =
+   * settled), `t` the seconds since the card started — marquee and glitch
+   * need a running clock, not just a progress.
+   */
+  fx?: { kind: MotionFxKind; inP: number; outP: number; t: number }
   /** Roll: seconds since the card came in and until it goes (per-letter timing is the renderer's). */
   roll?: { since: number; until: number }
 }
@@ -362,6 +392,27 @@ export function textRenderStateAt(o: TextOverlay, t: number): TextRenderState | 
       const f = easeOutCubic(clamp(sinceIn / Math.min(COUNT_SEC, length * 0.6), 0, 1))
       return { alpha: eased, dy: 0, scale: 1, text: countText(o.text, f) }
     }
+    case 'glitch':
+    case 'maskUp':
+    case 'echo':
+    case 'select':
+      // The compositor animates these itself; the card stays fully opaque
+      // while the effect runs so the entry reads, and only fades on exit.
+      return { alpha: o.anim === 'maskUp' ? 1 : easeOutCubic(outP), dy: 0, scale: 1, fx: { kind: o.anim, inP: easeOutCubic(inP), outP: easeOutCubic(outP), t: sinceIn } }
+    case 'blurSlide': {
+      // In from the left, out to the right — the whip of a camera pan.
+      const dx = inP < 1 && inP <= outP ? -(1 - easeOutCubic(inP)) * 0.35 : outP < 1 ? (1 - easeOutCubic(outP)) * 0.35 : 0
+      return { alpha: Math.min(clamp(inP * 3, 0, 1), clamp(outP * 3, 0, 1)), dy: 0, scale: 1, dx, fx: { kind: 'blurSlide', inP: easeOutCubic(inP), outP: easeOutCubic(outP), t: sinceIn } }
+    }
+    case 'zoomIn': {
+      // Pops in; on exit the scale runs away exponentially and the letters
+      // fill the frame — you fly through the counter of a letter into the next shot.
+      const exit = 1 - outP
+      const scale = exit > 0 ? Math.pow(14, exit * exit) : 0.9 + 0.1 * eased
+      return { alpha: exit > 0 ? clamp(1 - (exit - 0.55) / 0.45, 0, 1) : eased, dy: 0, scale, fx: { kind: 'zoomIn', inP: easeOutCubic(inP), outP: easeOutCubic(outP), t: sinceIn } }
+    }
+    case 'marquee':
+      return { alpha: Math.min(clamp(inP * 2, 0, 1), clamp(outP * 2, 0, 1)), dy: 0, scale: 1, fx: { kind: 'marquee', inP: easeOutCubic(inP), outP: easeOutCubic(outP), t: sinceIn } }
   }
 }
 
