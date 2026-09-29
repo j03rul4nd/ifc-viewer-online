@@ -12,7 +12,7 @@
 //
 // The composition is `lib/scene-tree`; the overrides are `sceneGroupStore`.
 
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { SceneModel } from '../types'
@@ -26,6 +26,8 @@ import type { PointCloudEntry } from '../lib/pointcloud/pc-types'
 
 type DragItem = { kind: 'model' | 'cloud'; id: string }
 const DND_MIME = 'application/x-ifcv-scene-item'
+/** Hold this long on a row before it lifts for a touch drag. */
+const LONG_PRESS_MS = 400
 
 interface SceneGroupTreeProps {
   groups: SceneTreeGroup[]
@@ -186,7 +188,70 @@ export default function SceneGroupTree({
 
   // ── Drag and drop ──────────────────────────────────────────────────────────
 
+  // Touch has no HTML5 drag and drop, so a long press starts one by hand.
+  // Drop targets register here under their id and carry `data-scene-drop`, so
+  // the finger's position can be resolved to the same handler a mouse drop uses.
+  const dropHandlers = useRef(new Map<string, (item: DragItem) => void>())
+  const touchDrag = useRef<{ item: DragItem; timer: number | null; x: number; y: number; active: boolean; target: string | null } | null>(null)
+  const [touchDraggingId, setTouchDraggingId] = useState<string | null>(null)
+
+  const targetAt = (x: number, y: number): string | null =>
+    (document.elementFromPoint(x, y)?.closest('[data-scene-drop]') as HTMLElement | null)?.dataset.sceneDrop ?? null
+
+  const endTouch = (commit: boolean): void => {
+    const t = touchDrag.current
+    touchDrag.current = null
+    if (!t) return
+    if (t.timer !== null) window.clearTimeout(t.timer)
+    setTouchDraggingId(null)
+    setDropTarget(null)
+    if (commit && t.active && t.target) dropHandlers.current.get(t.target)?.(t.item)
+  }
+
+  const touchProps = (item: DragItem) => ({
+    onTouchStart: (e: React.TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const p = e.touches[0]
+      const timer = window.setTimeout(() => {
+        const t = touchDrag.current
+        if (!t) return
+        t.active = true
+        t.timer = null
+        setTouchDraggingId(item.id)
+        try { navigator.vibrate?.(12) } catch { /* not supported */ }
+      }, LONG_PRESS_MS)
+      touchDrag.current = { item, timer, x: p.clientX, y: p.clientY, active: false, target: null }
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      const t = touchDrag.current
+      if (!t) return
+      const p = e.touches[0]
+      // Moving before the press matured is a scroll, and stays one.
+      if (!t.active) {
+        if (Math.hypot(p.clientX - t.x, p.clientY - t.y) > 10) endTouch(false)
+        return
+      }
+      const id = targetAt(p.clientX, p.clientY)
+      t.target = id
+      setDropTarget(id)
+    },
+    onTouchEnd: () => endTouch(true),
+    onTouchCancel: () => endTouch(false),
+  })
+
+  // While a touch drag is live the panel must not scroll under the finger.
+  // React's touch listeners are passive, so this one is attached by hand.
+  useEffect(() => {
+    if (!touchDraggingId) return
+    const stop = (e: TouchEvent): void => { e.preventDefault() }
+    window.addEventListener('touchmove', stop, { passive: false })
+    return () => window.removeEventListener('touchmove', stop)
+  }, [touchDraggingId])
+
   const dragProps = (item: DragItem) => ({
+    ...touchProps(item),
+    'data-dragging': touchDraggingId === item.id ? 'true' : undefined,
+    className: touchDraggingId === item.id ? 'opacity-60 ring-1 ring-[var(--accent)] rounded-lg' : undefined,
     draggable: true,
     onDragStart: (e: React.DragEvent) => {
       dragRef.current = item
@@ -196,7 +261,10 @@ export default function SceneGroupTree({
     onDragEnd: () => { dragRef.current = null; setDropTarget(null) },
   })
 
-  const dropProps = (targetId: string, onDrop: (item: DragItem) => void) => ({
+  const dropProps = (targetId: string, onDrop: (item: DragItem) => void) => {
+    dropHandlers.current.set(targetId, onDrop)
+    return {
+    'data-scene-drop': targetId,
     onDragOver: (e: React.DragEvent) => {
       if (!dragRef.current) return
       e.preventDefault()
@@ -213,7 +281,8 @@ export default function SceneGroupTree({
       setDropTarget(null)
       if (item) onDrop(item)
     },
-  })
+  }
+  }
 
   const dropOnto = (value: string) => (item: DragItem): void => {
     if (item.kind === 'model') {
@@ -242,7 +311,9 @@ export default function SceneGroupTree({
     <div
       key={c.id}
       {...dragProps({ kind: 'cloud', id: c.id })}
-      className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-transparent hover:bg-[rgba(255,255,255,0.04)]"
+      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border hover:bg-[rgba(255,255,255,0.04)] ${
+        touchDraggingId === c.id ? 'opacity-60 border-[var(--accent)]' : 'border-transparent'
+      }`}
     >
       <button
         onClick={() => setCloudVisible(c, !c.visible)}
