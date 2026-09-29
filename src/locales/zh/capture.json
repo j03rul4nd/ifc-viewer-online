@@ -640,7 +640,11 @@
       "magazine": "杂志封面",
       "datasheet": "项目简介",
       "diptych": "双联",
-      "coordination": "协调"
+      "coordination": "协调",
+      "evolution": "形体演变",
+      "nocturne": "夜曲",
+      "anatomy": "解剖",
+      "collage": "拼贴"
     },
     "fmt": {
       "slide": "幻灯片",
@@ -715,7 +719,8 @@
       "xray": "X 光",
       "blueprint": "蓝图",
       "noir": "黑白",
-      "duotone": "双色调"
+      "duotone": "双色调",
+      "miniature": "微缩模型"
     },
     "lookHint": {
       "asis": "模型原本的颜色",
@@ -725,7 +730,8 @@
       "xray": "环境透明，突出元素为实体",
       "blueprint": "蓝底白线",
       "noir": "带颗粒的电影感黑白",
-      "duotone": "使用模板配色的双色印刷"
+      "duotone": "使用模板配色的双色印刷",
+      "miniature": "移轴微缩：真实色彩、明亮天空、微缩虚化"
     },
     "cutTitle": "剖切",
     "cutAt": "剖切位置",
@@ -761,7 +767,12 @@
       "client": "客户汇报",
       "board": "竞赛图板",
       "sheet": "项目简介",
-      "coordination": "协调图板"
+      "coordination": "协调图板",
+      "evolution": "形体演变",
+      "nocturne": "蓝调时刻",
+      "collage": "拼贴",
+      "miniature": "微缩模型",
+      "anatomy": "解剖"
     },
     "recipeHint": {
       "pinterest": "2:3 情绪板图钉：模型的四种表现，纸张质感，柔和调色",
@@ -771,7 +782,12 @@
       "client": "汇报用演示：封面、项目简介、视图、各层平面、数据和致谢",
       "board": "按评委阅读顺序排版的 A1 图板：主图、剖面、平面、立面",
       "sheet": "A4 项目数据页：主图、数据表、设计理念和两张辅助视图",
-      "coordination": "建筑、结构与机电同页呈现，各用其色"
+      "coordination": "建筑、结构与机电同页呈现，各用其色",
+      "evolution": "BIG 式图解：建筑一步步生长",
+      "nocturne": "真实窗户点亮的黄昏主视觉",
+      "collage": "后数字拼贴：剪影、平涂、硬阴影",
+      "miniature": "适合社交媒体的移轴微缩",
+      "anatomy": "带引线标注每层的爆炸轴测图"
     },
     "recipeBusy": "正在准备…",
     "cat": {
@@ -951,6 +967,25 @@
       "other": "其他"
     },
     "disciplineAuto": "根据文件名或内容识别——如有误请更改",
-    "disciplineManual": "已手动设置——点击恢复为自动识别"
+    "disciplineManual": "已手动设置——点击恢复为自动识别",
+    "viral": {
+      "title": "爆款格式",
+      "hint": "基于真实模型生成：图像提示词无法仿造。",
+      "night": "夜景",
+      "nightHint": "蓝调时刻，点亮模型自身的窗户",
+      "evolution": "形体演变",
+      "evolutionHint": "同一机位下建筑逐层生长——BIG 式图解",
+      "anatomy": "解剖",
+      "anatomyHint": "爆炸轴测图，每层标注在其实际位置",
+      "cutout": "拼贴剪影",
+      "cutoutHint": "透明背景的建筑剪影，平涂色调，用于后数字拼贴",
+      "noGlass": "此模型没有可点亮的窗户或玻璃面板。",
+      "step": {
+        "base": "基座",
+        "grow": "生长",
+        "stack": "叠加",
+        "crown": "冠顶"
+      }
+    }
   }
 }

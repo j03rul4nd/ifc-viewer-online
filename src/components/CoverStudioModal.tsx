@@ -34,7 +34,7 @@ import { derivePalette, extractSwatches, paletteFromSwatches } from '../lib/cove
 import { AUTO_FACT_IDS, autoFacts, customFacts, mergeFacts, type AutoFactId, type ModelMeasures } from '../lib/cover/facts'
 import { qrMatrix } from '../lib/cover/qr'
 import { buildCaption, type CaptionPlatform } from '../lib/cover/caption'
-import { RECIPES, RECIPE_IDS, missingSteps, type RecipeId } from '../lib/cover/recipes'
+import { RECIPES, RECIPE_IDS, isTaggedStep, missingSteps, type RecipeId } from '../lib/cover/recipes'
 import { GRADE_PRESETS } from '../lib/cover/grade'
 import type { LightId } from '../lib/cover/lighting'
 import type { LookId } from '../lib/cover/looks'
@@ -60,6 +60,7 @@ const TABS: Tab[] = ['design', 'views', 'text', 'slides']
 const NO_DECK: DeckOptions = { views: false, data: false, closing: false, project: false, statement: false, perSlide: 1 }
 const RECIPE_ICON: Record<RecipeId, keyof typeof Icons> = {
   pinterest: 'Palette', carousel: 'Layers', post: 'Share', story: 'Film', client: 'Play', board: 'Ruler', sheet: 'FileIfc', coordination: 'Layers',
+  evolution: 'ArrowRight', nocturne: 'Sparkles', collage: 'Palette', miniature: 'Camera', anatomy: 'Ruler',
 }
 
 function today(lang: string): string {
@@ -339,12 +340,15 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
     const onlySeed = doc.shots.length === 1 && doc.shots[0].id === seedId.current
     const have = onlySeed ? 0 : doc.shots.length
     const want = r.mode === 'deck' ? r.steps.length : tpl.shots
-    const steps = missingSteps(r, have, want)
+    const steps = missingSteps(r, have, want, onlySeed ? [] : doc.shots)
     if (!steps.length) return
     setRecipeBusy(id)
     try {
       const shots = await cap.captureSteps(steps, light)
-      if (shots.length) update((d) => ({ ...d, shots: onlySeed ? shots : [...d.shots, ...shots] }))
+      // A tagged capture (night, cut-out, miniature…) IS the recipe's picture: put it first, so templates that
+      // take the first shot show it rather than an older one.
+      const lead = steps.some(isTaggedStep)
+      if (shots.length) update((d) => ({ ...d, shots: onlySeed ? shots : lead ? [...shots, ...d.shots] : [...d.shots, ...shots] }))
       if (onlySeed && shots.length) seedId.current = null
     } finally {
       setRecipeBusy(null)
@@ -502,6 +506,10 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           onExplode={() => void cap.captureExploded().then(addShots)}
           onPlans={() => void cap.capturePlans().then(addShots)}
           onDisciplines={() => void cap.captureDisciplines().then(addShots)}
+          onNight={() => void cap.captureNight().then(addShots)}
+          onEvolution={() => void cap.captureEvolution().then(addShots)}
+          onAnatomy={() => void cap.captureAnatomy().then(addShots)}
+          onCutout={() => void cap.captureCutout().then(addShots)}
           modelCount={models.filter((m) => m.visible).length}
           modelDisciplines={models.filter((m) => m.visible).map((m) => ({ id: m.id, fileName: m.fileName, discipline: discOverrides[m.id] ?? disciplineOf(m), manual: m.id in discOverrides }))}
           setDiscipline={(id, d) => setDiscOverrides((o) => {

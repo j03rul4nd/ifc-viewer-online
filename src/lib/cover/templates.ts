@@ -26,17 +26,18 @@ import {
 } from './template-kit'
 import { drawStatement, magazine, minimal, moodboard, polaroid, statement, swatch } from './templates-aesthetic'
 import { coordination, datasheet, diptych, projectSheet } from './templates-pro'
+import { anatomy, collage, evolution, nocturne } from './templates-viral'
 import type { CoverSpec } from './types'
 
 export type { CoverTemplate, CoverTemplateId, TemplateCategory } from './template-kit'
 
 export const COVER_TEMPLATE_IDS: readonly CoverTemplateId[] = [
   // Social & Pinterest
-  'moodboard', 'swatch', 'polaroid', 'minimal', 'statement', 'arch', 'poster',
+  'collage', 'nocturne', 'moodboard', 'swatch', 'polaroid', 'minimal', 'statement', 'arch', 'poster',
   // Editorial
   'monolith', 'editorial', 'magazine', 'gallery', 'swiss', 'bento',
   // Professional
-  'board', 'datasheet', 'diptych', 'coordination', 'sequence', 'styles', 'spotlight', 'blueprint',
+  'evolution', 'anatomy', 'board', 'datasheet', 'diptych', 'coordination', 'sequence', 'styles', 'spotlight', 'blueprint',
 ]
 
 export const TEMPLATE_CATEGORIES: readonly TemplateCategory[] = ['social', 'editorial', 'pro']
@@ -741,6 +742,7 @@ export const COVER_TEMPLATES: Record<CoverTemplateId, CoverTemplate> = {
   board, sequence, styles, spotlight,
   moodboard, swatch, polaroid, minimal, statement, magazine,
   datasheet, diptych, coordination,
+  evolution, nocturne, anatomy, collage,
 }
 
 // ── Deck slides ────────────────────────────────────────────────────────────────

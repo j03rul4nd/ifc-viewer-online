@@ -47,6 +47,8 @@ export interface PresentationLook {
   modelColors?: Record<string, string>
   /** Per-model opacity for non-focus elements (model id → 0–1), overriding `baseOpacity`. */
   modelOpacities?: Record<string, number>
+  /** Painted last, over everything above: explicit elements in explicit colours (e.g. unlit windows at night). */
+  overrides?: Array<{ modelId: string; ids: number[]; color: string }>
 }
 
 /** Plane cut for a Cover Studio capture. */
@@ -1149,6 +1151,39 @@ async function paintPalette(model: FRAGS.FragmentsModel, typeMap: Map<number, st
   }
   for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
   for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+}
+
+/**
+ * A complete material for presentation looks. setColor/setOpacity mark their
+ * materials `preserveOriginalMaterial`, which the fragments' material list
+ * never de-duplicates: every call appends one entry PER ITEM, and the list's
+ * ids are capped at 65 535 — a 2 000-element tower overflowed ("Fragments:
+ * Memory overflow!") after ~30 repaints, i.e. one style pack. A full material
+ * is de-duplicated by value, so repainting the same colours adds nothing.
+ */
+function lookMaterial(color: THREE.ColorRepresentation, opacity = 1): FRAGS.MaterialDefinition {
+  return {
+    color: new THREE.Color(color),
+    opacity,
+    transparent: opacity < 0.999,
+    renderedFaces: FRAGS.RenderedFaces.TWO,
+    preserveOriginalMaterial: false,
+  }
+}
+
+/** The category palette as de-duplicated look materials (presentation captures only). */
+async function paintPaletteFlat(model: FRAGS.FragmentsModel, typeMap: Map<number, string>): Promise<void> {
+  const batches = new Map<string, { color: number; opacity: number; ids: number[] }>()
+  for (const [localId, rawType] of typeMap.entries()) {
+    const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
+    if (!pal) continue
+    const opacity = pal.opacity ?? 1
+    const key = `${pal.color}:${opacity}`
+    const b = batches.get(key) ?? { color: pal.color, opacity, ids: [] }
+    b.ids.push(localId)
+    batches.set(key, b)
+  }
+  for (const b of batches.values()) await model.highlight(b.ids, lookMaterial(b.color, b.opacity))
 }
 
 export function createViewer(container: HTMLElement): ViewerAPI {
@@ -3207,8 +3242,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (modelObjects.size === 0) return
       for (const [modelId, model] of modelObjects) {
         const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
-        await model.resetOpacity(undefined)
-        await model.resetColor(undefined)
+        // resetHighlight clears without creating materials (resetColor/resetOpacity
+        // would append one per item — see lookMaterial()).
+        await model.resetHighlight(undefined)
         if (!look) { await paintPalette(model, typeMap); continue }
 
         const focus = new Set(look.focusTypes.map((t) => t.toUpperCase()))
@@ -3219,16 +3255,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           if (focus.has(t) || focus.has(canonicalType(rawType))) focusIds.push(localId)
           else restIds.push(localId)
         }
-        if (look.base === 'original') {
-          await paintPalette(model, new Map(restIds.map((id) => [id, typeMap.get(id)!])))
-        } else if (restIds.length) {
-          await model.setColor(restIds, new THREE.Color(look.modelColors?.[modelId] ?? look.baseColor))
-        }
         const opacity = look.modelOpacities?.[modelId] ?? look.baseOpacity
-        if (restIds.length && opacity < 0.999) await model.setOpacity(restIds, opacity)
+        if (look.base === 'original') {
+          await paintPaletteFlat(model, new Map(restIds.map((id) => [id, typeMap.get(id)!])))
+        } else if (restIds.length) {
+          await model.highlight(restIds, lookMaterial(look.modelColors?.[modelId] ?? look.baseColor, opacity))
+        }
         if (focusIds.length) {
-          if (look.focusColor) await model.setColor(focusIds, new THREE.Color(look.focusColor))
-          else await paintPalette(model, new Map(focusIds.map((id) => [id, typeMap.get(id)!])))
+          if (look.focusColor) await model.highlight(focusIds, lookMaterial(look.focusColor))
+          else await paintPaletteFlat(model, new Map(focusIds.map((id) => [id, typeMap.get(id)!])))
+        }
+        for (const o of look.overrides ?? []) {
+          if (o.modelId === modelId && o.ids.length) await model.highlight(o.ids, lookMaterial(o.color))
         }
       }
       await fragmentsManager.core.update(true)

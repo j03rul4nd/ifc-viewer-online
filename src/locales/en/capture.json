@@ -640,7 +640,11 @@
       "magazine": "Magazine",
       "datasheet": "Project sheet",
       "diptych": "Diptych",
-      "coordination": "Coordination"
+      "coordination": "Coordination",
+      "evolution": "Form evolution",
+      "nocturne": "Nocturne",
+      "anatomy": "Anatomy",
+      "collage": "Collage"
     },
     "fmt": {
       "slide": "Slide",
@@ -715,7 +719,8 @@
       "xray": "X-ray",
       "blueprint": "Blueprint",
       "noir": "Noir",
-      "duotone": "Duotone"
+      "duotone": "Duotone",
+      "miniature": "Miniature"
     },
     "lookHint": {
       "asis": "The model with its own colours",
@@ -725,7 +730,8 @@
       "xray": "Context ghosted, the highlighted element solid",
       "blueprint": "White lines on blueprint blue",
       "noir": "Cinematic high-contrast black & white with grain",
-      "duotone": "Two-tone print in the template palette"
+      "duotone": "Two-tone print in the template palette",
+      "miniature": "Tilt-shift toy model: real colours, bright sky, miniature blur"
     },
     "cutTitle": "Cut",
     "cutAt": "Cut position",
@@ -761,7 +767,12 @@
       "client": "Client deck",
       "board": "Competition board",
       "sheet": "Project sheet",
-      "coordination": "Coordination sheet"
+      "coordination": "Coordination sheet",
+      "evolution": "Form evolution",
+      "nocturne": "Blue hour",
+      "collage": "Collage",
+      "miniature": "Miniature",
+      "anatomy": "Anatomy"
     },
     "recipeHint": {
       "pinterest": "A 2:3 moodboard pin: the model four ways, on paper, softly graded",
@@ -771,7 +782,12 @@
       "client": "The meeting deck: cover, project sheet, views, storey plans, numbers and thanks",
       "board": "An A1 board in the order a jury reads it: hero, section, plan, elevation",
       "sheet": "An A4 project data sheet: hero, facts table, concept and two supporting views",
-      "coordination": "Architecture, structure and MEP on one slide, in their colours"
+      "coordination": "Architecture, structure and MEP on one slide, in their colours",
+      "evolution": "The BIG diagram: your building growing, step by step",
+      "nocturne": "Twilight hero with its real windows lit",
+      "collage": "Post-digital collage: cut-out, flat colour, hard shadow",
+      "miniature": "Tilt-shift toy model for the feed",
+      "anatomy": "Exploded axonometric with leader lines to every storey"
     },
     "recipeBusy": "Setting up…",
     "cat": {
@@ -951,6 +967,25 @@
       "other": "Other"
     },
     "disciplineAuto": "Detected from the file name or content — change it if it is wrong",
-    "disciplineManual": "Set by hand — click to go back to the detected discipline"
+    "disciplineManual": "Set by hand — click to go back to the detected discipline",
+    "viral": {
+      "title": "Viral formats",
+      "hint": "Built from the real model: an image prompt cannot fake these.",
+      "night": "Night",
+      "nightHint": "Blue hour with the model’s own windows lit warm",
+      "evolution": "Form evolution",
+      "evolutionHint": "The building growing storey band by storey band, one camera — the BIG diagram",
+      "anatomy": "Anatomy",
+      "anatomyHint": "Exploded axonometric with each storey labelled where it lands",
+      "cutout": "Collage cut-out",
+      "cutoutHint": "The building cut out on transparency, in flat tones, for the post-digital collage",
+      "noGlass": "This model has no windows or glazed panels to light.",
+      "step": {
+        "base": "Base",
+        "grow": "Grow",
+        "stack": "Stack",
+        "crown": "Crown"
+      }
+    }
   }
 }

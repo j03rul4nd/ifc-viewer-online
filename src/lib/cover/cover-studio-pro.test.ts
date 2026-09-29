@@ -197,7 +197,8 @@ describe('recipes and light', () => {
       expect(COVER_TEMPLATES[r.template], id).toBeDefined()
       expect(COVER_FORMATS[r.format], id).toBeDefined()
       if (r.light) expect(LIGHTS[r.light]).toBeDefined()
-      for (const s of r.steps) if (s.kind !== 'plans') expect(LOOKS[s.look], `${id} look`).toBeDefined()
+      // Plans and cut-outs carry no look of their own.
+      for (const s of r.steps) if ('look' in s) expect(LOOKS[s.look], `${id} look`).toBeDefined()
       expect(r.steps.length).toBeGreaterThan(0)
     }
   })

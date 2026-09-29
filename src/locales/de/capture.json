@@ -640,7 +640,11 @@
       "magazine": "Magazin",
       "datasheet": "Projektblatt",
       "diptych": "Diptychon",
-      "coordination": "Koordination"
+      "coordination": "Koordination",
+      "evolution": "Formentwicklung",
+      "nocturne": "Nocturne",
+      "anatomy": "Anatomie",
+      "collage": "Collage"
     },
     "fmt": {
       "slide": "Folie",
@@ -715,7 +719,8 @@
       "xray": "Röntgen",
       "blueprint": "Blaupause",
       "noir": "Noir",
-      "duotone": "Duoton"
+      "duotone": "Duoton",
+      "miniature": "Miniatur"
     },
     "lookHint": {
       "asis": "Das Modell in seinen eigenen Farben",
@@ -725,7 +730,8 @@
       "xray": "Kontext transparent, das Element massiv",
       "blueprint": "Weiße Linien auf Blaupausenblau",
       "noir": "Kinoreifes Schwarzweiß mit Korn",
-      "duotone": "Zweifarbendruck in der Vorlagenpalette"
+      "duotone": "Zweifarbendruck in der Vorlagenpalette",
+      "miniature": "Tilt-Shift-Modell: echte Farben, heller Himmel, Miniaturunschärfe"
     },
     "cutTitle": "Schnitt",
     "cutAt": "Schnittposition",
@@ -761,7 +767,12 @@
       "client": "Kundenpräsentation",
       "board": "Wettbewerbsplan",
       "sheet": "Projektblatt",
-      "coordination": "Koordinationsplan"
+      "coordination": "Koordinationsplan",
+      "evolution": "Formentwicklung",
+      "nocturne": "Blaue Stunde",
+      "collage": "Collage",
+      "miniature": "Miniatur",
+      "anatomy": "Anatomie"
     },
     "recipeHint": {
       "pinterest": "Ein 2:3-Moodboard-Pin: das Modell auf vier Arten, auf Papier, sanft entwickelt",
@@ -771,7 +782,12 @@
       "client": "Die Präsentation fürs Meeting: Titel, Projektblatt, Ansichten, Grundrisse, Zahlen, Dank",
       "board": "Ein A1-Plan in der Reihenfolge, in der eine Jury liest: Hauptbild, Schnitt, Grundriss, Ansicht",
       "sheet": "Ein A4-Projektdatenblatt: Hauptbild, Kennwerte, Konzept und zwei weitere Ansichten",
-      "coordination": "Architektur, Tragwerk und TGA auf einer Folie, jede in ihrer Farbe"
+      "coordination": "Architektur, Tragwerk und TGA auf einer Folie, jede in ihrer Farbe",
+      "evolution": "Das BIG-Diagramm: dein Gebäude wächst Schritt für Schritt",
+      "nocturne": "Dämmerungsbild mit echten, erleuchteten Fenstern",
+      "collage": "Postdigitale Collage: Ausschnitt, Flachfarbe, harter Schatten",
+      "miniature": "Tilt-Shift-Modell für den Feed",
+      "anatomy": "Explosionsaxonometrie mit Hinweislinien zu jedem Geschoss"
     },
     "recipeBusy": "Wird vorbereitet…",
     "cat": {
@@ -951,6 +967,25 @@
       "other": "Sonstige"
     },
     "disciplineAuto": "Aus Dateiname oder Inhalt erkannt — ändern, falls falsch",
-    "disciplineManual": "Von Hand gesetzt — klicken, um zur erkannten Disziplin zurückzukehren"
+    "disciplineManual": "Von Hand gesetzt — klicken, um zur erkannten Disziplin zurückzukehren",
+    "viral": {
+      "title": "Virale Formate",
+      "hint": "Aus dem echten Modell gebaut: Ein Bild-Prompt kann das nicht nachahmen.",
+      "night": "Nacht",
+      "nightHint": "Blaue Stunde mit den eigenen Fenstern des Modells warm erleuchtet",
+      "evolution": "Formentwicklung",
+      "evolutionHint": "Das Gebäude wächst geschossweise aus einer Kamera — das BIG-Diagramm",
+      "anatomy": "Anatomie",
+      "anatomyHint": "Explosionsaxonometrie, jedes Geschoss dort beschriftet, wo es liegt",
+      "cutout": "Collage-Ausschnitt",
+      "cutoutHint": "Das Gebäude freigestellt, in flachen Tönen, für die postdigitale Collage",
+      "noGlass": "Dieses Modell hat keine Fenster oder Glasflächen zum Beleuchten.",
+      "step": {
+        "base": "Basis",
+        "grow": "Wachsen",
+        "stack": "Stapeln",
+        "crown": "Krone"
+      }
+    }
   }
 }

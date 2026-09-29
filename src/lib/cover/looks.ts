@@ -12,9 +12,9 @@
 
 import type { PostFilter } from './filters'
 
-export type LookId = 'asis' | 'clay' | 'lines' | 'xray' | 'spotlight' | 'blueprint' | 'noir' | 'duotone'
+export type LookId = 'asis' | 'clay' | 'lines' | 'xray' | 'spotlight' | 'blueprint' | 'noir' | 'duotone' | 'miniature'
 
-export const LOOK_IDS: readonly LookId[] = ['asis', 'clay', 'lines', 'spotlight', 'xray', 'blueprint', 'noir', 'duotone']
+export const LOOK_IDS: readonly LookId[] = ['asis', 'clay', 'lines', 'spotlight', 'xray', 'blueprint', 'noir', 'duotone', 'miniature']
 
 /** What the viewer does to the scene for this look. */
 export interface SceneLook {
@@ -76,6 +76,11 @@ export const LOOKS: Record<LookId, Look> = {
   noir: {
     id: 'noir', post: 'mono', ink: '#000000', paper: '#ffffff', grain: 0.22, wantsFocus: false,
     scene: { base: 'original', baseColor: CLAY, baseOpacity: 1, focusColor: null, background: { top: '#2A2A2A', bottom: '#050505' } },
+  },
+  // Tilt-shift toy model: the real colours, a bright sky, the miniature blur.
+  miniature: {
+    id: 'miniature', post: 'tiltshift', ink: '#000000', paper: '#ffffff', grain: 0, wantsFocus: false,
+    scene: { base: 'original', baseColor: CLAY, baseOpacity: 1, focusColor: null, background: { top: '#9EC9EE', bottom: '#EAF3FA' }, hideGrid: true },
   },
   duotone: {
     id: 'duotone', post: 'duotone', ink: 'palette:fg', paper: 'palette:bg', grain: 0.12, wantsFocus: false,

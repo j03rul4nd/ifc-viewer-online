@@ -28,6 +28,16 @@ export interface CoverShot {
   discipline?: DisciplineId
   /** Physical elements the shot shows, when it shows one discipline. */
   elements?: number
+  /** Form-evolution step (1-based), when the shot is one stage of the building growing. */
+  step?: number
+  /** Labels pinned to points of the picture (0–1 of its width/height): an annotated exploded view. */
+  callouts?: Array<{ x: number; y: number; label: string }>
+  /** Cut out on transparency (collage): templates place it on their own planes. */
+  cutout?: boolean
+  /** A blue-hour frame with the model's own glazing lit. */
+  night?: boolean
+  /** The render style it was captured in. */
+  look?: string
 }
 
 /** The text the user fills in. Empty strings are simply not drawn. */

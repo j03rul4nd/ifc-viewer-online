@@ -18,16 +18,26 @@ import type { CoverTemplateId } from './templates'
 /** The views the studio frames (and has captions for). */
 export type StudioView = 'current' | 'iso' | 'front' | 'right' | 'top'
 
+import type { CoverShot } from './types'
+
 export type CaptureStep =
   | { kind: 'view'; view: StudioView; look: LookId }
   | { kind: 'cut'; cut: 'plan' | 'long' | 'cross'; look: LookId }
   | { kind: 'plans' }
   /** Federated set: all disciplines tinted, then each one alone (one step, several shots). */
   | { kind: 'disciplines'; look: LookId }
+  | { kind: 'night'; look: LookId }
+  | { kind: 'evolution'; look: LookId }
+  | { kind: 'anatomy'; look: LookId }
+  | { kind: 'cutout' }
 
 export type RecipeId = 'pinterest' | 'carousel' | 'post' | 'client' | 'board' | 'sheet' | 'story' | 'coordination'
+  | 'evolution' | 'nocturne' | 'anatomy' | 'collage' | 'miniature'
 
-export const RECIPE_IDS: readonly RecipeId[] = ['pinterest', 'carousel', 'post', 'story', 'client', 'board', 'sheet', 'coordination']
+export const RECIPE_IDS: readonly RecipeId[] = [
+  'evolution', 'nocturne', 'collage', 'miniature', 'anatomy',
+  'pinterest', 'carousel', 'post', 'story', 'client', 'board', 'sheet', 'coordination',
+]
 
 export interface Recipe {
   id: RecipeId
@@ -92,10 +102,69 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     id: 'coordination', format: 'slide', template: 'coordination', mode: 'cover',
     steps: [{ kind: 'disciplines', look: 'clay' }],
   },
+  // BIG-style form diagram: the building growing from its real storeys.
+  evolution: {
+    id: 'evolution', format: 'slide', template: 'evolution', mode: 'cover',
+    steps: [{ kind: 'evolution', look: 'clay' }],
+  },
+  // Blue-hour hero: the IFC's glazing lit warm.
+  nocturne: {
+    id: 'nocturne', format: 'instagram', template: 'nocturne', mode: 'cover', light: 'dusk',
+    steps: [{ kind: 'night', look: 'asis' }],
+  },
+  // Post-digital collage: cut-out on flat planes.
+  collage: {
+    id: 'collage', format: 'instagram', template: 'collage', mode: 'cover',
+    steps: [{ kind: 'cutout' }],
+  },
+  // Tilt-shift toy model from above.
+  miniature: {
+    id: 'miniature', format: 'instagram', template: 'minimal', mode: 'cover', light: 'noon',
+    steps: [v('iso', 'miniature')],
+  },
+  // Annotated exploded axonometric.
+  anatomy: {
+    id: 'anatomy', format: 'boardh', template: 'anatomy', mode: 'cover',
+    steps: [{ kind: 'anatomy', look: 'clay' }],
+  },
 }
 
-/** How many captures a recipe still needs, given the shots already there. */
-export function missingSteps(recipe: Recipe, have: number, want: number): CaptureStep[] {
+/**
+ * Steps whose shots a template recognises by a tag (a night frame, evolution
+ * steps, an annotated exploded view, a cut-out, discipline tiles). Their
+ * template needs THAT shot, not just any shot: "have enough shots" is not
+ * enough.
+ */
+function tagOf(step: CaptureStep): ((s: CoverShot) => boolean) | null {
+  switch (step.kind) {
+    case 'night': return (s) => !!s.night
+    case 'evolution': return (s) => s.step !== undefined
+    case 'anatomy': return (s) => !!s.callouts?.length
+    case 'cutout': return (s) => !!s.cutout
+    case 'disciplines': return (s) => !!s.discipline
+    // A look that IS the format (the tilt-shift toy model) needs a shot in that look.
+    case 'view': return step.look === 'miniature' ? (s) => s.look === 'miniature' : null
+    default: return null
+  }
+}
+
+/** Whether a step's shot is one a template recognises by its tag. */
+export function isTaggedStep(step: CaptureStep): boolean {
+  return tagOf(step) !== null
+}
+
+/**
+ * The captures a recipe still needs. Tagged steps run whenever no shot carries
+ * their tag, whatever else is already there; plain views top the shot count
+ * up to what the layout shows.
+ */
+export function missingSteps(recipe: Recipe, have: number, want: number, shots: readonly CoverShot[] = []): CaptureStep[] {
+  if (recipe.steps.some((s) => tagOf(s))) {
+    return recipe.steps.filter((s) => {
+      const has = tagOf(s)
+      return has ? !shots.some(has) : false
+    })
+  }
   const need = Math.max(0, want - have)
   return recipe.steps.slice(0, need)
 }
