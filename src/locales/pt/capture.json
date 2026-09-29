@@ -845,6 +845,8 @@
       "struct": "Estrutura",
       "mep": "Instalações",
       "other": "Outros"
-    }
+    },
+    "disciplineAuto": "Detetada pelo nome do ficheiro ou pelo conteúdo: altere-a se estiver errada",
+    "disciplineManual": "Escolhida à mão: clique para voltar à detetada"
   }
 }

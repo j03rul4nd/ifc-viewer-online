@@ -845,6 +845,8 @@
       "struct": "Structure",
       "mep": "Fluides",
       "other": "Autres"
-    }
+    },
+    "disciplineAuto": "Détectée d’après le nom du fichier ou son contenu — modifiez-la si elle est fausse",
+    "disciplineManual": "Choisie à la main — cliquez pour revenir à la discipline détectée"
   }
 }

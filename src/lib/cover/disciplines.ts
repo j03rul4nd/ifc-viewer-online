@@ -87,12 +87,19 @@ export interface DisciplineGroup {
   elements: number
 }
 
-/** Visible models grouped by discipline, in the conventional A → S → MEP order. */
-export function groupByDiscipline(models: ReadonlyArray<ModelLike & { id: string; visible?: boolean }>): DisciplineGroup[] {
+/**
+ * Visible models grouped by discipline, in the conventional A → S → MEP order.
+ * `overrides` (model id → discipline) wins over the guess: file names are not
+ * always ISO 19650, and the user knows which model is which.
+ */
+export function groupByDiscipline(
+  models: ReadonlyArray<ModelLike & { id: string; visible?: boolean }>,
+  overrides: Readonly<Record<string, DisciplineId>> = {},
+): DisciplineGroup[] {
   const groups = new Map<DisciplineId, DisciplineGroup>()
   for (const m of models) {
     if (m.visible === false) continue
-    const d = disciplineOf(m)
+    const d = overrides[m.id] ?? disciplineOf(m)
     const g = groups.get(d) ?? { discipline: d, modelIds: [], fileNames: [], elements: 0 }
     g.modelIds.push(m.id)
     g.fileNames.push(m.fileName)
@@ -100,4 +107,14 @@ export function groupByDiscipline(models: ReadonlyArray<ModelLike & { id: string
     groups.set(d, g)
   }
   return DISCIPLINE_ORDER.filter((d) => groups.has(d)).map((d) => groups.get(d)!)
+}
+
+/**
+ * Opacity for each discipline in the coordination hero. Architecture wraps the
+ * building, so when structure or services are in the set it goes translucent —
+ * the way coordination views show what is inside the envelope.
+ */
+export function heroOpacity(groups: readonly DisciplineGroup[]): Partial<Record<DisciplineId, number>> {
+  const inner = groups.some((g) => g.discipline === 'struct' || g.discipline === 'mep')
+  return inner && groups.some((g) => g.discipline === 'arch') ? { arch: 0.32 } : {}
 }

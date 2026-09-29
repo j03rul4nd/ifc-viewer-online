@@ -10,7 +10,7 @@ import { compactNumber, drawLines, setTracking, wrapLines, type Rect } from './d
 import { DISCIPLINE_COLORS } from './disciplines'
 import {
   FACE, caption, drawLogo, drawPlaceholder, drawShot, factsTable, finish, fitTitle, ground, hairline, label,
-  pad2, paragraph, qrBlock, sans, serif, sheetRows, title, unit, type CoverTemplate, type DeckStyle,
+  mono, pad2, paragraph, qrBlock, sans, serif, sheetRows, title, unit, type CoverTemplate, type DeckStyle,
 } from './template-kit'
 import type { CoverSpec } from './types'
 
@@ -254,6 +254,17 @@ export const coordination: CoverTemplate = {
         x += part
       })
       label(ctx, `${compactNumber(total)} · ${spec.labels.elements}`, m, y - u * 2.1, u * 1.1, p.muted)
+      // Name and share under each segment wide enough to hold it.
+      x = m
+      tiles.forEach(({ s }) => {
+        const part = (bw * (s.elements ?? 0)) / total
+        const pct = Math.round(((s.elements ?? 0) / total) * 100)
+        const name = s.label.split(' · ')[0]
+        ctx.font = mono(u * 1.05, 500)
+        const text = `${name.toUpperCase()} ${pct}%`
+        if (ctx.measureText(text).width < part - u) label(ctx, text, x, y + u * 1.9, u * 1.05, DISCIPLINE_COLORS[s.discipline!])
+        x += part
+      })
     }
     finish(ctx, spec)
   },

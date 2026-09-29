@@ -845,6 +845,8 @@
       "struct": "结构",
       "mep": "机电",
       "other": "其他"
-    }
+    },
+    "disciplineAuto": "根据文件名或内容识别——如有误请更改",
+    "disciplineManual": "已手动设置——点击恢复为自动识别"
   }
 }

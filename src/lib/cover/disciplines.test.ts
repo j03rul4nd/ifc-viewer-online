@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { disciplineOf, groupByDiscipline, roleFromContent, roleFromIsoName } from './disciplines'
+import { disciplineOf, groupByDiscipline, heroOpacity, roleFromContent, roleFromIsoName } from './disciplines'
 
 describe('roleFromIsoName', () => {
   it('reads the ISO 19650 role field', () => {
@@ -45,5 +45,21 @@ describe('groupByDiscipline', () => {
     ])
     expect(g.map((x) => x.discipline)).toEqual(['arch', 'mep'])
     expect(g[0]).toMatchObject({ modelIds: ['a1', 'a2'], elements: 14 })
+  })
+})
+
+describe('overrides and hero opacity', () => {
+  const models = [
+    { id: 'x', fileName: 'shell.ifc', categories: [{ id: 'IFCWALL', count: 10 }] },
+    { id: 'y', fileName: 'frame.ifc', categories: [{ id: 'IFCWALL', count: 4 }] },
+  ]
+  it('a user override beats the guess', () => {
+    expect(groupByDiscipline(models).map((g) => g.discipline)).toEqual(['arch'])
+    const g = groupByDiscipline(models, { y: 'struct' })
+    expect(g.map((x) => [x.discipline, x.modelIds])).toEqual([['arch', ['x']], ['struct', ['y']]])
+  })
+  it('architecture goes translucent only when there is something inside it', () => {
+    expect(heroOpacity(groupByDiscipline(models, { y: 'struct' }))).toEqual({ arch: 0.32 })
+    expect(heroOpacity(groupByDiscipline(models))).toEqual({})
   })
 })

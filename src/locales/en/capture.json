@@ -845,6 +845,8 @@
       "struct": "Structure",
       "mep": "MEP",
       "other": "Other"
-    }
+    },
+    "disciplineAuto": "Detected from the file name or content — change it if it is wrong",
+    "disciplineManual": "Set by hand — click to go back to the detected discipline"
   }
 }

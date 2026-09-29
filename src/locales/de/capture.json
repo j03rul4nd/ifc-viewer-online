@@ -845,6 +845,8 @@
       "struct": "Tragwerk",
       "mep": "TGA",
       "other": "Sonstige"
-    }
+    },
+    "disciplineAuto": "Aus Dateiname oder Inhalt erkannt — ändern, falls falsch",
+    "disciplineManual": "Von Hand gesetzt — klicken, um zur erkannten Disziplin zurückzukehren"
   }
 }

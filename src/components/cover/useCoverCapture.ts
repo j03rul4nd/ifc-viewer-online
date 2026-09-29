@@ -20,7 +20,7 @@ import { LOOKS, resolveInkPaper, resolveSceneLook, type LookId } from '../../lib
 import { LIGHTS, resolveLight, type LightId } from '../../lib/cover/lighting'
 import { chunkLayers, cutPlane, explodeGap, groupLayers, planCutY, planFitDistance, sampleEvenly, storeysFromTree, type CutMode, type Layer } from '../../lib/cover/cuts'
 import { isPhysicalCategory } from '../../lib/cover/stats'
-import { DISCIPLINE_COLORS, groupByDiscipline } from '../../lib/cover/disciplines'
+import { DISCIPLINE_COLORS, groupByDiscipline, heroOpacity, type DisciplineId } from '../../lib/cover/disciplines'
 import type { CaptureStep, StudioView } from '../../lib/cover/recipes'
 import type { ModelMeasures } from '../../lib/cover/facts'
 import type { CoverImage, CoverPalette, CoverShot } from '../../lib/cover/types'
@@ -53,6 +53,8 @@ export interface CaptureSettings {
   res: CaptureRes
   light: LightId
   sunAzimuth: number | null
+  /** User corrections to the guessed discipline (model id → discipline). */
+  disciplineOverrides: Record<string, DisciplineId>
 }
 
 function wait(ms: number): Promise<void> {
@@ -344,16 +346,27 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
     const viewer = viewerApiRef.current
     if (!viewer) return []
     const { t: tr, settings: st, models } = live.current
-    const groups = groupByDiscipline(models)
+    const groups = groupByDiscipline(models, st.disciplineOverrides)
     if (groups.length < 2) { toast(tr('cover.disciplinesNone'), 'info'); return [] }
     await jumpTo('iso')
-    await wait(450)
+    // Let the jump's tile streaming finish BEFORE tinting: tiles that land
+    // after setPresentationLook keep their own material (the model that missed
+    // the tint changed from run to run).
+    await wait(1200)
     if (sectionOn.current) { await viewer.setPresentationSection(null); sectionOn.current = false }
 
     const out: CoverShot[] = []
     const modelColors: Record<string, string> = {}
-    for (const g of groups) for (const id of g.modelIds) modelColors[id] = DISCIPLINE_COLORS[g.discipline]
-    const tinted = { ...resolveSceneLook(LOOKS.clay, st.palette, false), focusTypes: [], modelColors }
+    const modelOpacities: Record<string, number> = {}
+    const opacityOf = heroOpacity(groups)
+    for (const g of groups) {
+      for (const id of g.modelIds) {
+        modelColors[id] = DISCIPLINE_COLORS[g.discipline]
+        const o = opacityOf[g.discipline]
+        if (o !== undefined) modelOpacities[id] = o
+      }
+    }
+    const tinted = { ...resolveSceneLook(LOOKS.clay, st.palette, false), focusTypes: [], modelColors, modelOpacities }
     await viewer.setPresentationLook(tinted)
     // Tiles streamed in after the jump arrive in their own material and miss the
     // tint (which model varied run to run). Paint again once streaming settles.
@@ -373,9 +386,22 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
         // Showing a model re-streams its tiles in whatever colour they last had
         // (the discipline tint). Dress, let streaming settle; snapshot() dresses again.
         await wait(300)
-        await dress(lookId)
-        await wait(400)
-        const shot = await snapshot(withLook(tr(`cover.discipline.${g.discipline}`), lookId), lookId)
+        let shot: CoverShot | null
+        if (lookId === 'clay') {
+          // White model: each discipline alone in its own colour, matching the
+          // hero and the legend, instead of three identical white tiles.
+          const solo = { ...tinted, modelOpacities: {} }
+          await viewer.setPresentationLook(solo)
+          await wait(400)
+          await viewer.setPresentationLook(solo)
+          await wait(160)
+          const u = viewer.takeSnapshot(st.res, { annotations: false })
+          shot = u.startsWith('data:image/png') ? newShot(tr(`cover.discipline.${g.discipline}`), await finish(await dataUrlToImage(u), 'clay')) : null
+        } else {
+          await dress(lookId)
+          await wait(400)
+          shot = await snapshot(withLook(tr(`cover.discipline.${g.discipline}`), lookId), lookId)
+        }
         if (shot) out.push({ ...shot, discipline: g.discipline, elements: g.elements })
       }
     } finally {

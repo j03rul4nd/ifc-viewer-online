@@ -845,6 +845,8 @@
       "struct": "Estructura",
       "mep": "Instal·lacions",
       "other": "Altres"
-    }
+    },
+    "disciplineAuto": "Detectada pel nom del fitxer o el contingut: canvia-la si no és correcta",
+    "disciplineManual": "Triada a mà: prem per tornar a la detectada"
   }
 }

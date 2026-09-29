@@ -5,6 +5,7 @@ import * as Icons from '../Icons'
 import { LOOKS, LOOK_IDS, type LookId } from '../../lib/cover/looks'
 import { LIGHTS, LIGHT_IDS, type LightId } from '../../lib/cover/lighting'
 import { CUT_MODES, type CutMode } from '../../lib/cover/cuts'
+import { DISCIPLINE_COLORS, DISCIPLINE_ORDER, type DisciplineId } from '../../lib/cover/disciplines'
 import type { ShotCrop } from '../../lib/cover/types'
 import type { History } from './useHistory'
 import type { StudioDoc } from './doc'
@@ -37,6 +38,10 @@ interface Props {
   onDisciplines: () => void
   /** Visible models — the coordination capture needs two or more. */
   modelCount: number
+  /** Each visible model's discipline (guessed or set by hand), for the coordination capture. */
+  modelDisciplines: Array<{ id: string; fileName: string; discipline: DisciplineId; manual: boolean }>
+  /** null goes back to the guess. */
+  setDiscipline: (modelId: string, d: DisciplineId | null) => void
   onFrameFocus: () => void
 }
 
@@ -114,6 +119,29 @@ export default function ViewsPanel(p: Props) {
             <button className={cls.btn} onClick={p.onExplode} disabled={!!busy}><Icons.Layers size={13} />{busy === 'explode' ? busyLabel : t('cover.explode')}</button>
             <button className={cls.btn} onClick={p.onPlans} disabled={!!busy}><Icons.Building size={13} />{busy === 'plans' ? busyLabel : t('cover.storeyPlans')}</button>
             <button className={cls.btn} onClick={p.onDisciplines} disabled={!!busy || p.modelCount < 2} title={p.modelCount < 2 ? t('cover.disciplinesNone') : t('cover.disciplinesHint')}><Icons.Layers size={13} />{busy === 'disciplines' ? busyLabel : t('cover.disciplines')}</button>
+            {p.modelDisciplines.length >= 2 && (
+              <div className="w-full space-y-1 pt-1">
+                {p.modelDisciplines.map((m) => (
+                  <label key={m.id} className="flex items-center gap-2 text-[11px] text-[var(--text-dim)]">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: DISCIPLINE_COLORS[m.discipline] }} />
+                    <span className="flex-1 min-w-0 truncate" title={m.fileName}>{m.fileName}</span>
+                    <select
+                      className={`${cls.input} !w-auto !h-[24px] !text-[11px] py-0`}
+                      value={m.discipline}
+                      onChange={(e) => p.setDiscipline(m.id, e.target.value as DisciplineId)}
+                      title={m.manual ? t('cover.disciplineManual') : t('cover.disciplineAuto')}
+                    >
+                      {DISCIPLINE_ORDER.map((d) => <option key={d} value={d}>{t(`cover.discipline.${d}`)}</option>)}
+                    </select>
+                    {m.manual && (
+                      <button className="text-[var(--text-dim)] hover:text-[var(--text)]" onClick={() => p.setDiscipline(m.id, null)} title={t('cover.disciplineManual')} aria-label={t('cover.disciplineManual')}>
+                        <Icons.Reset size={11} />
+                      </button>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="text-[11px] text-[var(--text-dim)] mb-2">{t('cover.shotsHint')}</div>

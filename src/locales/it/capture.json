@@ -845,6 +845,8 @@
       "struct": "Strutture",
       "mep": "Impianti",
       "other": "Altro"
-    }
+    },
+    "disciplineAuto": "Rilevata dal nome del file o dal contenuto: cambiala se non è corretta",
+    "disciplineManual": "Scelta a mano: clicca per tornare a quella rilevata"
   }
 }
