@@ -22,6 +22,7 @@ import {
   moonPhaseIndex, type DayTimes,
 } from '../lib/solar/sun-math'
 import { parseAppUrlParams } from '../lib/url-params'
+import { appBus } from '../lib/event-bus'
 import { ViewportPanel } from './ViewportPanel'
 import { loadCities, searchCities, type City } from '../lib/solar/city-search'
 import {
@@ -206,6 +207,60 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
       ).getTime())
     })()
   }, [activeModelId, resolveLocation, startWith])
+
+  // ── SDK bridge: `sdk:solar` from the embed postMessage handler ─────────────
+  // Same ladder as the button and the deep link — the IFC's georeference, then
+  // the map placement, then a saved manual location — plus one rung only a
+  // host can offer: an explicit `location`. What it never does is fall back to
+  // the default city: a host asking for a sun study at a place nobody named
+  // gets an error it can act on, not shadows for Madrid.
+  useEffect(() => appBus.on('sdk:solar', (cmd) => {
+    void (async () => {
+      try {
+        if (cmd.active === false) {
+          await handleStop()
+          cmd.done?.(true)
+          return
+        }
+        const s0 = useSolarStore.getState()
+        if (cmd.moon !== undefined) s0.setMoonOn(cmd.moon)
+        if (cmd.sky !== undefined) s0.setSkyOn(cmd.sky)
+        if (cmd.quality) s0.setQuality(cmd.quality)
+
+        if (!s0.active || cmd.location) {
+          const loc: SolarLocation | null = cmd.location
+            ? { lat: cmd.location.lat, lon: cmd.location.lon, yawDeg: 0, source: 'manual', northSource: 'assumed' }
+            : await resolveLocation()
+          if (!loc) throw new Error('The model carries no location — pass location: { lat, lon }')
+          await startWith(loc)
+          if (!useSolarStore.getState().active) throw new Error('The sun study could not start')
+        }
+
+        if (cmd.date || cmd.time) {
+          const s = useSolarStore.getState()
+          const now = utcToWallParts(new Date(s.timeUTC), s.timeZone)
+          let { year, month, day, hour, minute } = now
+          if (cmd.date) {
+            const m = /^(?:(\d{4})-)?(\d{2})-(\d{2})$/.exec(cmd.date.trim())
+            if (!m) throw new Error(`Bad date "${cmd.date}" — use YYYY-MM-DD or MM-DD`)
+            if (m[1]) year = +m[1]
+            month = +m[2]; day = +m[3]
+          }
+          if (cmd.time) {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(cmd.time.trim())
+            if (!m || +m[1] > 23 || +m[2] > 59) throw new Error(`Bad time "${cmd.time}" — use HH:MM`)
+            hour = +m[1]; minute = +m[2]
+          }
+          if (month < 1 || month > 12 || day < 1 || day > 31) throw new Error(`Bad date "${cmd.date}"`)
+          s.setFollow('manual')
+          s.setTimeUTC(wallTimeToUTC(year, month, day, hour, minute, s.timeZone).getTime())
+        }
+        cmd.done?.(true)
+      } catch (err) {
+        cmd.done?.(false, err instanceof Error ? err.message : String(err))
+      }
+    })()
+  }), [handleStop, resolveLocation, startWith])
 
   // Realtime follow.
   useEffect(() => {

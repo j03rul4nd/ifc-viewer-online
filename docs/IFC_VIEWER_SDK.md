@@ -67,13 +67,17 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | Option     | Type                                  | Default     | Notes |
 |------------|---------------------------------------|-------------|-------|
 | `baseUrl`  | string                                | auto        | App base URL. Auto-derived from the script URL. |
-| `ui`       | `'minimal'` \| `'full'` \| `'kiosk'`  | `'minimal'` | Chrome preset. |
+| `ui`       | `'minimal'` \| `'full'` \| `'kiosk'` \| `'client'` | `'minimal'` | Chrome preset. `client` is the stakeholder skin. |
 | `validate` | boolean                               | `true`      | Run validation on load (drives the Health Score). |
 | `panel`    | boolean                               | `false`     | Auto-open the validation panel. |
 | `lang`     | string                                | auto        | Force UI language (`en`, `es`, …). |
 | `accent`   | `#rrggbb`                             | brand       | Tint the viewer to match your dashboard. |
 | `height` / `width` | number \| string              | `'100%'`    | iframe size (number → px). |
 | `model`    | string                                | —           | Auto-load this public IFC URL once ready. |
+| `background` | preset \| `#rrggbb` \| `#top,#bottom` \| `{ top, bottom? }` | — | Scene background from the first frame (v1.11). Not saved as the visitor's preference. |
+| `map`      | `true` \| `('terrain'\|'buildings'\|'showcase')[]` | — | Put the model on the map once it loads (v1.11). Your page declares tile consent — see [Presentation](#presentation-look-sun-map-v111). |
+| `solar` / `moon` | `'MM-DDTHH:MM'` / boolean         | —           | Open the sun study at this site-local time once loaded (v1.11). |
+| `scans`    | string[]                              | —           | Point cloud URLs to load alongside the model (v1.11). |
 | `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). A backstop: the viewer now answers every load it accepts with `model-loaded` or `model-error`, including parse failures and cancellations. |
 | `onReady` / `onModelLoaded` / `onModelError` / `onProgress` | function | — | Convenience callbacks (same as `.on(...)`). |
 
@@ -123,6 +127,66 @@ Inside the iframe, every load is a job in the viewer's loading queue ([`MODEL_LO
 | `element-selected` | `{ expressId, modelId, ifcType, name }` |
 | `pointcloud-picked` | `{ cloudId, position, sourcePosition, classification, intensity, distance }` — armed with `inspectPointCloud()`. `sourcePosition` is the file's own coordinates, which is the number a survey record already holds |
 | `map-feature-picked` | `{ id, name?, label?, featureKind, heightM?, heightEstimated }` — a building in the OpenStreetMap surroundings. Context, not model: never validated, never exported, and `heightEstimated` is true far more often than not |
+| `walk-changed` | `{ active, speed }` — walk mode turned on or off, by the visitor (G / Esc) or the host (v1.11) |
+| `measurements-changed` | `{ tool, units, items }` — a measurement was added, removed or renamed; carries the whole list (v1.11) |
+
+## Presentation: look, sun, map (v1.11)
+
+For blog posts and project pages. Every call goes through the same store or
+panel as the visitor's own clicks, so the viewer's UI always agrees with what
+the host set. All return promises and **reject with a readable reason** (no
+model yet, feature not in this build, a model with no location…).
+
+| Method | Description |
+|--------|-------------|
+| `setBackground(bg)` / `getBackground()` | A preset (`white`, `paper`, `blueprint`, `sky`, `studio`), `'#rrggbb'`, `'#top,#bottom'` or `{ top, bottom? }`. Not saved as the visitor's own preference (the iframe shares storage with the app). |
+| `setAccent(color)` | Re-theme the UI accent at runtime. |
+| `setClientMode(on)` | Stakeholder skin on/off — `ui: 'client'` at runtime. |
+| `setRenderQuality('standard' \| 'quality')` | Heavier rendering for a hero shot. |
+| `getCamera()` / `lookAt(position, target, animate?)` | The camera as data (`{ position, target, direction, up, fovDeg }`, scene metres, Y up) — build "saved views" in your own UI. |
+| `setWalkMode(on, { speed? })` / `getWalkState()` | First-person walk (WASD, drag to look, Esc). Emits `walk-changed`. |
+| `setSolar({ date?, time?, moon?, sky?, quality?, location?, active? })` / `getSolar()` | Real shadows at a **site-local** date/time (`date: 'MM-DD'` or `'YYYY-MM-DD'`, `time: 'HH:MM'`). The site comes from the IFC georeference, then the map placement; pass `location: { lat, lon }` for a model without one — the SDK never falls back to a default city. `active: false` stops the study. |
+| `setSiteContext({ enabled?, terrain?, buildings?, layers?, detail?, terrainStyle?, exaggeration?, vehicles? })` / `getSiteContext()` | Map mode with terrain and OpenStreetMap surroundings. Resolves once they are up (the first OSM query for a place can take tens of seconds). `getSiteContext().attributions` must be shown wherever the map is. |
+
+**Consent.** Map tiles, elevation and OpenStreetMap data come from third
+parties, so the visitor's browser talks to them. `setSiteContext()` and the
+`map` option are *your page* declaring that consent for its visitors; the
+viewer does not show its own consent sheet inside someone else's page.
+
+```js
+const viewer = await IfcViewer.create('#viewer', {
+  model: 'https://example.com/house.ifc',
+  ui: 'client',
+  background: 'white',
+  map: ['terrain', 'buildings'],
+  solar: '06-21T19:30',
+})
+// Change the story as the reader scrolls:
+await viewer.setSolar({ date: '12-21', time: '09:30' })
+```
+
+## Analysis: sections, measurements, federated models (v1.11)
+
+| Method | Description |
+|--------|-------------|
+| `addSection({ axis?, offset?, level?, flip? })` | Add a section plane — the same cut the Section panel makes, so the visitor can drag it. `{ level: 'Level 1' }` (name or index from `getSections().levels`) is a floor plan 1.2 m above that storey; `{ axis: 'x', offset: 4.5 }` is a section at 4.5 m (IFC metres, Z up). Resolves with the new `id` and every plane. |
+| `updateSection(id, { offset?, enabled?, flipped? })` | Move, toggle or flip a plane. |
+| `removeSection(id?)` | One plane, or every cut when `id` is omitted. |
+| `setSectionBox('model' \| 'selection' \| false)` | A section box around the model or the selected element; `false` removes it. |
+| `getSections()` | `{ planes, box, active, levels }`. |
+| `setMeasureTool('distance' \| 'path' \| 'area' \| 'angle' \| 'point' \| 'none')` | Arm a tool for the visitor (opens the Measure panel so they see what to click). |
+| `getMeasurements()` / `clearMeasurements(id?)` | `{ tool, units, items }`. `value` is **always SI** — metres, m², degrees — whatever unit the viewer displays; `units` is only what it displays. |
+| `setModelVisible(modelId, visible)` | Show/hide one model of a federated scene without unloading it. |
+| `setModelOpacity(opacity, modelId?)` | Ghost a model (0.05–1). |
+| `isolateModel(modelId \| null)` | Only this model; `null` shows them all again. |
+
+```js
+const { levels } = await viewer.getSections()
+await viewer.addSection({ level: levels[0].name })
+viewer.setView('top')
+await viewer.setMeasureTool('distance')
+viewer.on('measurements-changed', ({ items }) => console.table(items))
+```
 
 ## Querying the viewer (CDE workflows)
 

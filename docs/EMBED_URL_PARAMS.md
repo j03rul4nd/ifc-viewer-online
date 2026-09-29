@@ -40,6 +40,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
 | `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
 | `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
+| `bg`       | preset / `rrggbb` / `top,bottom` | saved     | Scene background for this page view: `white`, `paper`, `blueprint`, `sky`, `studio`, one colour, or a top,bottom gradient (`bg=dbeafe,ffffff`). Applied from the first frame and **not** saved as the visitor's preference. An unreadable value is ignored. |
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
 | `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
@@ -174,6 +175,9 @@ the loaded model and camera persist.
 
 # Themed to a dashboard's brand colour
 ?model=https://host/a.ifc&embed=1&accent=22c55e
+
+# A blog figure: white page, the model on its site, a solstice evening
+?model=https://host/a.ifc&ui=client&bg=white&map=terrain,buildings&solar=06-21T19:30
 ```
 
 ## Present in dashboards & BI tools
@@ -203,6 +207,8 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `model-error`      | `url` (URL loads) or `name` (byte/file loads), `message`. Sent for download failures, invalid/unparseable files, scene failures and cancelled loads |
 | `validation-completed` | `qualityScore`, `errors`, `warnings`, `info` |
 | `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
+| `walk-changed`     | `active`, `speed` |
+| `measurements-changed` | `tool`, `units`, `items` (values always SI) |
 
 Messages about a load a host started with a `requestId` (see below and the
 [SDK](./IFC_VIEWER_SDK.md)) echo that `requestId`, so a host can tell its own
@@ -232,6 +238,15 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear) | Isolate a category |
 | `ifcviewer:fit`     | — | Frame the active model |
 | `ifcviewer:reset`   | — | Reset the camera |
+
+Since SDK v1.11 the bridge also takes `set-background`, `set-accent`,
+`set-client-mode`, `set-render-quality`, `set-walk`, `get-camera`, `look-at`,
+`set-solar`, `set-site`, `add-section`, `update-section`, `remove-section`,
+`section-box`, `get-sections`, `set-measure-tool`, `get-measurements`,
+`clear-measurements`, `model-visible`, `model-opacity` and `isolate-model`
+(all `ifcviewer:`-prefixed, answered with a `result` envelope when they carry a
+`requestId`). Their fields are those of the SDK methods of the same name — use
+the [SDK](./IFC_VIEWER_SDK.md) rather than posting them by hand.
 
 ```js
 const frame = document.querySelector('iframe').contentWindow
