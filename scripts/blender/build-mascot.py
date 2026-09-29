@@ -620,6 +620,7 @@ bpy.ops.export_scene.gltf(
     export_apply=False,
     export_yup=True,
 )
+bpy.context.preferences.filepaths.save_version = 0  # no .blend1 backups
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "bimo.blend"))
 print("exported", os.path.join(OUT, "bimo.glb"), "actions:", list(ACTIONS))
 
