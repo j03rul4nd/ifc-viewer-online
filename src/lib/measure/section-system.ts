@@ -32,7 +32,7 @@ import {
   niceStep, padRange, projectBounds,
   type AxisRanges, type Bounds, type Range,
 } from './section-math'
-import type { IfcAxis } from './measure-types'
+import type { IfcAxis, Vec3 } from './measure-types'
 
 export interface SectionSystemDeps {
   scene: THREE.Scene
@@ -79,6 +79,12 @@ export interface SectionBoxInfo {
   step: number
 }
 
+/**
+ * A cut as a half-space, in scene axes: a point on the plane and the unit
+ * normal of the side it KEEPS. What a BCF viewpoint records and restores.
+ */
+export interface SectionCut { point: Vec3; normal: Vec3 }
+
 export type SectionSelection = string | 'box' | null
 
 export interface SectionSnapshot {
@@ -121,6 +127,17 @@ export interface SectionSystem {
   setInteractive(on: boolean): void
   refreshBounds(): void
   clear(): void
+
+  /**
+   * Every cut in force: enabled planes, then the box's six faces while it is
+   * on. Each point is the model's centre projected onto the plane.
+   */
+  getActivePlanes(): SectionCut[]
+  /**
+   * Replace every plane and the box with these cuts, each as a face plane (a
+   * box comes back as six). Degenerate entries are skipped; [] clears.
+   */
+  applyPlanes(cuts: readonly SectionCut[]): void
 
   /** Pointer routing from the viewer. */
   pointerMove(e: PointerEvent): void
@@ -823,7 +840,8 @@ export function createSectionSystem(deps: SectionSystemDeps): SectionSystem {
     afterChange(final)
   }
 
-  function clear(): void {
+  /** Every plane and the box gone, without announcing it. */
+  function dropAll(): void {
     for (const id of [...planes.keys()]) {
       const entry = planes.get(id)!
       deps.setPlane(false, entry.plane)
@@ -836,6 +854,37 @@ export function createSectionSystem(deps: SectionSystemDeps): SectionSystem {
     hovered = null
     placing = false
     hidePreview()
+  }
+
+  function clear(): void {
+    dropAll()
+    afterChange(true)
+  }
+
+  function getActivePlanes(): SectionCut[] {
+    const centre = boundsCenter()
+    const cut = (plane: THREE.Plane): SectionCut => {
+      const p = plane.projectPoint(centre, new THREE.Vector3())
+      const n = plane.normal
+      return { point: { x: p.x, y: p.y, z: p.z }, normal: { x: n.x, y: n.y, z: n.z } }
+    }
+    const out: SectionCut[] = []
+    for (const entry of planes.values()) if (entry.info.enabled) out.push(cut(entry.plane))
+    if (box?.enabled) for (const p of box.planes) out.push(cut(p.plane))
+    return out
+  }
+
+  function applyPlanes(cuts: readonly SectionCut[]): void {
+    dropAll()
+    bounds = readBounds()
+    for (const c of cuts) {
+      const point = new THREE.Vector3(c.point.x, c.point.y, c.point.z)
+      const normal = new THREE.Vector3(c.normal.x, c.normal.y, c.normal.z)
+      const len = normal.length()
+      if (!Number.isFinite(point.x + point.y + point.z) || !(len > 1e-9) || !Number.isFinite(len)) continue
+      // A face plane keeps the side its slide direction points to (not flipped).
+      makeEntry('face', null, point, normal.divideScalar(len), 0, false)
+    }
     afterChange(true)
   }
 
@@ -946,6 +995,11 @@ export function createSectionSystem(deps: SectionSystemDeps): SectionSystem {
       emit()
     },
     clear,
+    getActivePlanes,
+    applyPlanes(cuts) {
+      applyPlanes(cuts)
+      ensureTicking()
+    },
 
     pointerMove(e) {
       const at = deps.aim(e)

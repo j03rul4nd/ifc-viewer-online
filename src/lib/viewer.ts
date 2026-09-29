@@ -3559,10 +3559,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const aspect  = isPersp
           ? (cam as THREE.PerspectiveCamera).aspect
           : container.clientWidth / Math.max(1, container.clientHeight)
+        // The top of the screen as drawn. Taken from the camera, not derived
+        // from `dir`: looking straight down, only the camera knows which way
+        // the plan is turned.
+        cam.updateMatrixWorld()
+        const up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1).normalize()
         return {
           position:  { x: pos.x, y: pos.y, z: pos.z },
           target:    { x: tgt.x, y: tgt.y, z: tgt.z },
           direction: { x: dir.x, y: dir.y, z: dir.z },
+          up:        { x: up.x, y: up.y, z: up.z },
           fovDeg,
           aspect,
         }

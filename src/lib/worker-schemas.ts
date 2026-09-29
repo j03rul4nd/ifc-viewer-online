@@ -254,6 +254,10 @@ const BcfViewpointSchema = z.object({
   fieldOfView:      z.number().optional(),
   aspectRatio:      z.number().optional(),
   componentGuids:   z.array(z.string()).optional(),
+  clippingPlanes:   z.array(z.object({
+    location:  z.object({ x: z.number(), y: z.number(), z: z.number() }),
+    direction: z.object({ x: z.number(), y: z.number(), z: z.number() }),
+  })).optional(),
 })
 
 const BcfCommentSchema = z.object({
