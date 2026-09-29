@@ -63,6 +63,9 @@ export interface ScenePlacement {
 export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI | null>): ScenePlacement {
   const applyModel = useCallback((id: string, t: ModelTransform) => {
     useSceneStore.getState().setModelTransform(id, t)
+    // Every path through here is the user's hand (fields, handle, group move,
+    // undo): the map must not pull this model back to its georeference.
+    useSceneStore.getState().setPlacedByHand(id, true)
     viewerApiRef.current?.setModelTransform(t, id)
   }, [viewerApiRef])
 
@@ -159,6 +162,8 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
     for (const m of useSceneStore.getState().models) {
       if (!want.has(m.id)) continue
       useSceneStore.getState().setModelTransform(m.id, { position: V0, rotation: V0, scale: 1 })
+      // Reset hands placement back: a georeferenced model returns to the map.
+      useSceneStore.getState().setPlacedByHand(m.id, false)
       viewerApiRef.current?.resetModelTransform(m.id)
     }
     for (const c of usePointCloudStore.getState().clouds) {

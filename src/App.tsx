@@ -542,6 +542,20 @@ export default function App() {
   // The viewer frames groups for calls that carry none (SDK, embed, other
   // panels) — it needs the same grouping the Scene panel shows.
   const { groupIdOf: sceneGroupIdOf } = useModelGroups()
+  const hasSceneModels = useSceneStore((s) => s.models.length > 0)
+  // Mirror moves the viewer makes on its own (map satellites) into sceneStore,
+  // or the Scene panel and group moves keep working from the old position.
+  useEffect(() => {
+    const api = viewerApiRef.current
+    if (!api?.onModelTransformChange) return
+    return api.onModelTransformChange((id, t) => {
+      const m = useSceneStore.getState().models.find((x) => x.id === id)
+      if (!m) return
+      const p = m.transform.position as { x: number; y: number; z: number } | undefined
+      const same = p && Math.abs(p.x - t.position.x) < 1e-6 && Math.abs(p.y - t.position.y) < 1e-6 && Math.abs(p.z - t.position.z) < 1e-6
+      if (!same) useSceneStore.getState().setModelTransform(id, t)
+    })
+  }, [hasSceneModels])
   useEffect(() => { viewerApiRef.current?.setFramingGroups(sceneGroupIdOf) }, [sceneGroupIdOf])
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
@@ -1662,6 +1676,9 @@ export default function App() {
         bounds: NonNullable<ReturnType<typeof api.getModelBounds>>
       }> = []
       for (const m of useSceneStore.getState().models) {
+        // Placed by hand: the user's calibration wins over the file's own
+        // georeference, or every map move would silently undo it.
+        if (m.placedByHand) continue
         const extraction = georefs[m.id]
         const bounds = api.getModelBounds(m.id)
         if (!extraction || !bounds) continue

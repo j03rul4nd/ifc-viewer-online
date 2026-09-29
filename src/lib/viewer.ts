@@ -554,6 +554,12 @@ export interface ViewerAPI {
    */
   setModelTransform(transform: ModelTransform, modelId?: string): void
   /**
+   * Hear about every change to a model's transform — including the ones the
+   * viewer makes itself (map satellites). The app mirrors them into sceneStore;
+   * without it the Scene panel and group moves worked from stale positions.
+   */
+  onModelTransformChange(cb: (modelId: string, transform: Required<ModelTransform>) => void): () => void
+  /**
    * Host hook: which loaded models carry their own georeferencing.
    *
    * Map mode uses it to send every non-anchor model to its own coordinates.
@@ -1240,6 +1246,14 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let sceneGizmo: SceneGizmo | null = null
   /** Grouping pushed by the app; the default for framing calls without one. */
   let framingGroupIdOf: Record<string, string> = {}
+  const transformListeners = new Set<(modelId: string, transform: Required<ModelTransform>) => void>()
+  function emitTransform(modelId: string): void {
+    const t = pivotTransforms.get(modelId)
+    if (!t) return
+    for (const cb of transformListeners) {
+      try { cb(modelId, { position: { ...t.position }, rotation: { ...t.rotation }, scale: t.scale }) } catch { /* a listener must not break a move */ }
+    }
+  }
   /** The press started on a gizmo axis: its release is a drag end, never a pick. */
   let pressOnGizmo = false
   let satelliteResolver: SatelliteResolver | null = null
@@ -3420,6 +3434,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       // where it used to be.
       try { snapResolver?.clear() } catch { /* ok */ }
       storeyLevelsCache = null
+      emitTransform(tid)
+    },
+
+    onModelTransformChange(cb) {
+      transformListeners.add(cb)
+      return () => { transformListeners.delete(cb) }
     },
 
     setSatelliteResolver(fn) { satelliteResolver = fn },
@@ -3436,6 +3456,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       refreshSelectionBox()
       try { snapResolver?.clear() } catch { /* ok */ }
       storeyLevelsCache = null
+      emitTransform(tid)
     },
 
     getModelBounds(modelId?: string) {
