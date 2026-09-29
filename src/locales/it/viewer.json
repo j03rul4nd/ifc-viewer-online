@@ -234,7 +234,8 @@
       "rotateHint": "Trascina l'anello nel visore per ruotare l'ambito scelto (passo di 1°)"
     },
     "placedByHand": "A mano",
-    "placedByHandHint": "Posizionato a mano: la mappa non lo ricolloca dalla sua georeferenza. «Reimposta» lo restituisce alla mappa."
+    "placedByHandHint": "Posizionato a mano: la mappa non lo ricolloca dalla sua georeferenza. «Reimposta» lo restituisce alla mappa.",
+    "frameOnDoubleClick": "Doppio clic per inquadrare"
   },
   "transform": {
     "position": "Posizione",

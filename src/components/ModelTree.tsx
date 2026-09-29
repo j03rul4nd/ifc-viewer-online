@@ -339,11 +339,13 @@ interface ModelTreeProps {
    * should be the way in to what you can do with it.
    */
   onOpenScene?: (modelId: string) => void
+  /** Double-click on a group row: fit the camera to its models and scans. */
+  onFrameItems?: (ids: string[]) => void
 }
 
 const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
   function ModelTree({
-    onSelectElement, onFilterBySubtree, onFocusElements, onRemoveModel, onOpenScene,
+    onSelectElement, onFilterBySubtree, onFocusElements, onRemoveModel, onOpenScene, onFrameItems,
   }, ref) {
     // Narrow selectors, not the whole store. Subscribing to all of
     // useValidationStore re-rendered the entire tree on every partial issue
@@ -741,6 +743,10 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                   {flat.kind === 'group-header' ? (
                     <GroupHeaderRowView
                       flat={flat}
+                      onFrame={onFrameItems ? () => {
+                        const g = sceneGroups.find((x) => x.id === flat.groupId)
+                        if (g) onFrameItems([...g.memberIds, ...g.cloudIds])
+                      } : undefined}
                       onToggle={() => setCollapsedGroups((prev) => {
                         const next = new Set(prev)
                         if (next.has(flat.groupId)) next.delete(flat.groupId)
@@ -872,12 +878,15 @@ function EyeBtn({
 
 // ── Model header row ──────────────────────────────────────────────────────────
 
-function GroupHeaderRowView({ flat, onToggle }: { flat: GroupHeaderRow; onToggle: () => void }) {
+function GroupHeaderRowView({ flat, onToggle, onFrame }: { flat: GroupHeaderRow; onToggle: () => void; onFrame?: () => void }) {
   const { t } = useTranslation('tree')
   return (
     <div
       className="flex items-center gap-2 px-2 h-[30px] cursor-pointer select-none border-b border-[var(--border)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] transition-colors"
       onClick={onToggle}
+      // Double-click frames the group. Its two clicks fold and unfold the row,
+      // so the tree ends where it started.
+      onDoubleClick={onFrame}
       role="button"
       aria-expanded={!flat.isCollapsed}
       title={`${flat.isCollapsed ? t('actions.expand') : t('actions.collapse')} · ${flat.label}`}

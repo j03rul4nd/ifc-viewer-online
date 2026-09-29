@@ -234,7 +234,8 @@
       "rotateHint": "Faites glisser l'anneau dans la vue pour tourner la portée choisie (pas de 1°)"
     },
     "placedByHand": "Manuel",
-    "placedByHandHint": "Placé à la main : la carte ne le replace pas selon sa géoréférence. « Réinitialiser » le rend à la carte."
+    "placedByHandHint": "Placé à la main : la carte ne le replace pas selon sa géoréférence. « Réinitialiser » le rend à la carte.",
+    "frameOnDoubleClick": "Double-clic pour cadrer"
   },
   "transform": {
     "position": "Position",

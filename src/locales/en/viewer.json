@@ -246,7 +246,8 @@
       "rotateHint": "Drag the ring in the viewer to turn the chosen scope (1° steps)"
     },
     "placedByHand": "By hand",
-    "placedByHandHint": "You placed this by hand: the map will not re-seat it from its georeference. Reset hands it back to the map."
+    "placedByHandHint": "You placed this by hand: the map will not re-seat it from its georeference. Reset hands it back to the map.",
+    "frameOnDoubleClick": "Double-click to frame"
   },
   "transform": {
     "position": "Position",

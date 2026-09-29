@@ -234,7 +234,8 @@
       "rotateHint": "ビューアのリングをドラッグして選択した範囲を回転（1°刻み）"
     },
     "placedByHand": "手動",
-    "placedByHandHint": "手動で配置済み：地図はジオリファレンスで再配置しません。「リセット」で地図に戻ります。"
+    "placedByHandHint": "手動で配置済み：地図はジオリファレンスで再配置しません。「リセット」で地図に戻ります。",
+    "frameOnDoubleClick": "ダブルクリックでフィット"
   },
   "transform": {
     "position": "位置",
