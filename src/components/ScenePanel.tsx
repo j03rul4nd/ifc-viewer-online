@@ -3,7 +3,7 @@
 // and exposes model-pivot transform controls (translate / rotate / scale).
 // Designed to scale to multiple models when Sprint 6 multi-model lands.
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import { useModelGroups } from '../hooks/useModelGroups'
@@ -60,16 +60,25 @@ interface NumberInputProps {
 
 function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInputProps) {
   const [draft, setDraft] = useState(value.toFixed(2))
+  /** The raw text last handed to onChange — Enter then blur must not apply it twice. */
+  const committed = useRef<string | null>(null)
 
   // Sync when value changes externally
-  useEffect(() => { setDraft(value.toFixed(2)) }, [value])
+  useEffect(() => { setDraft(value.toFixed(2)); committed.current = null }, [value])
 
   const commit = (raw: string) => {
     const n = parseFloat(raw)
     if (!isNaN(n)) {
       const clamped = min !== undefined ? Math.max(min, max !== undefined ? Math.min(max, n) : n) : n
-      onChange(clamped)
       setDraft(clamped.toFixed(2))
+      // Only a real edit reaches onChange. Focusing a field and leaving it
+      // used to write the same value back — an empty undo step, and a model
+      // marked as placed by hand that nobody had moved. A group-position
+      // field is edited as a DELTA from its pivot, so applying the same text
+      // twice (Enter, then the blur that follows) moved the set twice.
+      if (clamped.toFixed(2) === value.toFixed(2) || committed.current === raw) return
+      committed.current = raw
+      onChange(clamped)
     } else {
       setDraft(value.toFixed(2))
     }
