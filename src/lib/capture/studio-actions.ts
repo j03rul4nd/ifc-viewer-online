@@ -18,6 +18,13 @@ import { planAutoEdit, PLATFORM_SPECS, BED_RHYTHM, type ModelFacts, type Platfor
 import { createTextOverlay } from './timeline'
 import { exportProject, type SourceMedia } from './project-export'
 import { decodeUserAudio, getBuiltInBed } from './audio-library'
+import { sliceBuffer, soundStart } from './sound-capture'
+import type { SoundLink } from './tiktok-link'
+import { cutForSound, finishSoundClip, rememberSound } from './sound-clip'
+import type { TemplateContext, TemplateId } from './viral-templates'
+import type { MusicMeta } from './music-analysis'
+import type { Recipe } from '../director/recipe'
+import { generatePresentation, type GenerateLabels } from '../director/generate'
 import { analyzeMusic, offsetForDrop, projectRhythm, syncProjectToMusic, toMono } from './music-analysis'
 
 /** What the model can honestly say about itself — nothing invented. */
@@ -166,25 +173,94 @@ export function rhythmFor(project: EditProject) {
  * app) whose soundtrack we take. Decoded and analysed locally — the file never
  * leaves the browser. Then the edit is synced to it straight away.
  */
-export async function importSound(file: File, label = 'Analysing sound'): Promise<void> {
+export interface SoundImportOptions {
+  /** Shown on the timeline; defaults to the file's name. */
+  name?: string
+  /** A live recording: cut the silence before the sound started. */
+  trimLeadingSilence?: boolean
+  /**
+   * Keep only the beat grid, not the audio (a microphone recording of a phone
+   * speaker is timing, not something to publish). The sound is then added in
+   * the app, as with tap tempo.
+   */
+  timingOnly?: boolean
+  link?: SoundLink
+}
+
+/** Decode (at the export rate) and analyse a sound; optionally cut the silence before it starts. */
+export async function analyseSound(file: File | Blob, trimLeadingSilence = false): Promise<{ buffer: AudioBuffer; music: MusicMeta; mono: Float32Array }> {
+  let buffer = await decodeUserAudio(file, new OfflineAudioContext(2, 1, 48_000))
+  if (trimLeadingSilence) {
+    const raw = toMono(Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i)))
+    buffer = sliceBuffer(buffer, soundStart(raw, buffer.sampleRate))
+  }
+  const mono = toMono(Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i)))
+  return { buffer, music: analyzeMusic(mono, buffer.sampleRate), mono }
+}
+
+export async function importSound(file: File | Blob, label = 'Analysing sound', opts: SoundImportOptions = {}): Promise<void> {
   const s = useClipStudioStore.getState()
   s.setJob({ label, progress: null })
   try {
-    // Decode at the export rate so preview and export hear the same buffer.
-    const buffer = await decodeUserAudio(file, new OfflineAudioContext(2, 1, 48_000))
-    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i))
-    const music = analyzeMusic(toMono(channels), buffer.sampleRate)
+    const { buffer, music } = await analyseSound(file, opts.trimLeadingSilence)
+    const name = opts.name ?? (file instanceof File ? file.name : 'sound')
+    if (opts.timingOnly) {
+      s.edit((p) => {
+        const next: EditProject = { ...p, audio: { ...p.audio, kind: p.audio.kind === 'builtin' ? 'none' : p.audio.kind, music, link: opts.link ?? p.audio.link } }
+        return next.clips.length > 0 ? syncProjectToMusic(next, music) : next
+      })
+      return
+    }
     s.setSound(buffer)
     s.edit((p) => {
       const withSound: EditProject = {
         ...p,
-        audio: { ...p.audio, kind: 'user', trackId: null, fileName: file.name, music, rights: p.audio.rights ?? 'viral', offsetSec: offsetForDrop(music, 0) },
+        audio: { ...p.audio, kind: 'user', trackId: null, fileName: name, music, link: opts.link ?? p.audio.link, rights: p.audio.rights ?? 'viral', offsetSec: offsetForDrop(music, 0) },
       }
       return withSound.clips.length > 0 ? syncProjectToMusic(withSound, music) : withSound
     })
   } finally {
     s.setJob(null)
   }
+}
+
+/** A sound ready to cut a clip to: its beat grid, and its audio when we may embed it. */
+export interface ReadySound {
+  link: SoundLink | null
+  name: string
+  music: MusicMeta
+  /** Clean audio (a tab capture or a file). Null = timing only; the sound is added in the app. */
+  buffer: AudioBuffer | null
+}
+
+/**
+ * The whole "clip from this sound" in one go: render the model's shots cut to
+ * the sound's own beat and length, then time them to it — reveal on the drop,
+ * cuts on the beat, the chosen style, ending on a bar line.
+ */
+export async function clipFromSound(
+  sound: ReadySound,
+  style: TemplateId,
+  recipe: Recipe,
+  lang: string,
+  labels: GenerateLabels,
+  templateLabels: TemplateContext['labels'],
+  signal?: AbortSignal,
+): Promise<void> {
+  const cut = cutForSound(sound.music, recipe.targetSec)
+  // The director plans to the sound's tempo and length; the music comes from the sound.
+  await generatePresentation({ ...recipe, music: 'none', targetSec: cut.durationSec + 1, onBeat: true, fadeIn: false, fadeOut: false }, lang, labels, signal, { beatSec: sound.music.beatSec })
+  const s = useClipStudioStore.getState()
+  s.setSound(sound.buffer)
+  s.edit((p) => finishSoundClip({
+    ...p,
+    audio: {
+      ...p.audio,
+      kind: sound.buffer ? 'user' : 'none', trackId: null, fileName: sound.name, volume: 1,
+      link: sound.link ?? undefined, rights: p.audio.rights ?? 'viral',
+    },
+  }, sound.music, cut, style, { rhythm: null, dropAt: null, labels: templateLabels }))
+  if (sound.link) rememberSound(sound.link, sound.music)
 }
 
 // ── Export ─────────────────────────────────────────────────────────────────────

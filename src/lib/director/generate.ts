@@ -3,7 +3,7 @@
 import { linkedViewer } from '../capture/viewer-link'
 import { useClipStudioStore } from '../../stores/clipStudioStore'
 import { gatherSceneFacts, type ReviewWords } from './facts'
-import { planPresentation, type PlanStrings, type SceneFacts } from './plan'
+import { planPresentation, type PlanStrings, type Rhythm, type SceneFacts } from './plan'
 import { applyLook, rhythmForMusic, runDirector, type RunLabels } from './run'
 import { LOOKS, type LookId } from './looks'
 import { cameraAt, defaultShot } from '../capture/shots'
@@ -33,6 +33,8 @@ export async function inspectScene(lang: string, system: (key: SystemKey) => str
 
 export async function generatePresentation(
   recipe: Recipe, lang: string, labels: GenerateLabels, signal?: AbortSignal,
+  /** Cut to this beat instead of the recipe's built-in bed (a user's or TikTok sound). */
+  rhythm?: Rhythm,
 ): Promise<{ clips: number; exported: number; reused: number }> {
   const viewer = linkedViewer()
   if (!viewer) throw new NothingToPresentError()
@@ -47,7 +49,10 @@ export async function generatePresentation(
   } finally {
     s.setJob(null)
   }
-  const clips = planPresentation(recipe, facts, labels.plan, rhythmForMusic(recipe.music))
+  // With an outside beat the plan still needs "music on" to cut to it; the
+  // caller replaces the bed with the real sound afterwards.
+  const planned = rhythm && recipe.music === 'none' ? { ...recipe, music: 'upbeat' as const } : recipe
+  const clips = planPresentation(planned, facts, labels.plan, rhythm ?? rhythmForMusic(recipe.music))
   if (clips.length === 0) throw new NothingToPresentError()
   const { exported, reused } = await runDirector(viewer, clips, recipe, labels, signal)
   return { clips: clips.length, exported, reused }

@@ -31,6 +31,7 @@ import {
 import { usePreviewEngine } from './usePreviewEngine'
 import { StudioTimeline } from './StudioTimeline'
 import { StudioInspector } from './StudioInspector'
+import { SoundToClip } from './SoundToClip'
 import { StudioDirector, runRecipe, useDirectorLabels } from './StudioDirector'
 import './studio.css'
 
@@ -193,6 +194,7 @@ export default function ClipStudio() {
 
   const mediaBin = (
     <div className="flex flex-col gap-5 p-4">
+      <SoundToClip run={run} busy={!!job} canRender={shotsOk} />
       <StudioDirector run={run} busy={!!job} canRender={shotsOk} />
       {project.clips.length > 0 && <p className="-mt-3 text-[11px] text-[var(--text-faint)]">{t('studio.autoClipReplace')}</p>}
 
