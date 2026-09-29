@@ -430,6 +430,12 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
       return `<pre><code>${esc(block.text)}</code></pre>`
     case 'callout':
       return `<aside><p>${renderRichText(block.text, prefix)}</p></aside>`
+    case 'bimo-tip':
+      return `<aside><p>${block.title ? `<strong>${esc(block.title)}</strong> ` : ''}${renderRichText(block.text, prefix)}</p></aside>`
+    case 'bimo-quiz':
+      return `<section><h2>${esc(block.title ?? 'Quiz')}</h2><ol>${block.questions.map((q) => `<li><p>${esc(q.q)}</p><ul>${q.options.map((o, i) => `<li>${i === q.answer ? `<strong>${esc(o)}</strong>` : esc(o)}</li>`).join('')}</ul>${q.why ? `<p>${renderRichText(q.why, prefix)}</p>` : ''}</li>`).join('')}</ol></section>`
+    case 'bimo-checklist':
+      return `<section><h2>${esc(block.title ?? 'Checklist')}</h2><ul>${block.items.map((i) => `<li>${renderRichText(i.label, prefix)}${i.hint ? ` — ${renderRichText(i.hint, prefix)}` : ''}</li>`).join('')}</ul></section>`
     case 'takeaways':
       return `<section><h2>${esc(block.title ?? editorialCopy(langOf(prefix)).takeaways)}</h2><ul>${block.items.map((item) => `<li>${renderRichText(item, prefix)}</li>`).join('')}</ul></section>`
     case 'steps':

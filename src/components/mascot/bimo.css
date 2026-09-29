@@ -1,0 +1,134 @@
+/* ─── Bimo ─────────────────────────────────────────────────────────────────
+   One body loop per emotion on .bimo-rig / .bimo-upper, plus the boop and the
+   emotion props. Transforms only (compositor-friendly). All of it switches off
+   under prefers-reduced-motion at the bottom of this file. */
+
+.bimo {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+.bimo-svg { overflow: visible; display: block; }
+.bimo-rig, .bimo-upper, .bimo-arm-l, .bimo-arm-r, .bimo-antenna, .bimo-shadow, .bimo-fx {
+  transform-box: fill-box;
+}
+.bimo-rig    { transform-origin: 50% 100%; animation: bimo-bob 3.2s ease-in-out infinite; }
+.bimo-upper  { transform-origin: 50% 90%; }
+.bimo-arm-l  { transform-origin: 80% 20%; }
+.bimo-arm-r  { transform-origin: 20% 20%; }
+.bimo-antenna{ transform-origin: 50% 100%; animation: bimo-sway 2.6s ease-in-out infinite; }
+.bimo-shadow { transform-origin: 50% 50%; animation: bimo-shadow 3.2s ease-in-out infinite; }
+
+.bimo-interactive { cursor: pointer; border-radius: 999px; -webkit-tap-highlight-color: transparent; }
+.bimo-interactive:focus-visible { outline: 2px solid var(--accent-2, #8B93E8); outline-offset: 4px; }
+.bimo-interactive .bimo-svg { transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+.bimo-interactive:hover .bimo-svg { transform: translateY(-2px) scale(1.04); }
+.bimo-interactive:active .bimo-svg { transform: scale(.94, .9); transition-duration: .08s; }
+
+/* ── emotion loops ── */
+.bimo-happy .bimo-rig     { animation: bimo-bounce .9s cubic-bezier(.3,.7,.4,1) infinite; }
+.bimo-happy .bimo-shadow  { animation: bimo-shadow .9s ease-in-out infinite; }
+.bimo-excited .bimo-rig   { animation: bimo-jump .7s cubic-bezier(.3,.7,.4,1) infinite; }
+.bimo-excited .bimo-arm-l { animation: bimo-cheer-l .35s ease-in-out infinite alternate; }
+.bimo-excited .bimo-arm-r { animation: bimo-cheer-r .35s ease-in-out infinite alternate; }
+.bimo-excited .bimo-shadow{ animation: bimo-shadow .7s ease-in-out infinite; }
+.bimo-curious .bimo-upper { animation: bimo-tilt 2.4s ease-in-out infinite; }
+.bimo-thinking .bimo-upper{ transform: rotate(-6deg); animation: bimo-ponder 3s ease-in-out infinite; }
+.bimo-thinking .bimo-arm-r{ transform: rotate(-120deg) translate(-2px, 4px); }
+.bimo-sad .bimo-rig       { animation: bimo-droop 4s ease-in-out infinite; }
+.bimo-sad .bimo-antenna   { transform: rotate(28deg); animation: none; }
+.bimo-surprised .bimo-rig { animation: bimo-pop .5s cubic-bezier(.34,1.56,.64,1) 1; }
+.bimo-love .bimo-upper    { animation: bimo-heartbeat 1.1s ease-in-out infinite; }
+.bimo-sleepy .bimo-rig    { animation: bimo-breathe 4.2s ease-in-out infinite; }
+.bimo-sleepy .bimo-antenna{ transform: rotate(-34deg); animation: none; }
+.bimo-wave .bimo-arm-r    { animation: bimo-wave .5s ease-in-out infinite alternate; }
+.bimo-angry .bimo-rig     { animation: bimo-shake .28s linear infinite; }
+
+/* ── props ── */
+.bimo-fx { transform-origin: 50% 100%; animation: bimo-float 2.2s ease-in-out infinite; }
+.bimo-fx-z      { animation: bimo-zzz 2.6s ease-in-out infinite; }
+.bimo-fx-dots circle { animation: bimo-dot 1.4s ease-in-out infinite; }
+.bimo-fx-dots circle:nth-child(2) { animation-delay: .2s; }
+.bimo-fx-dots circle:nth-child(3) { animation-delay: .4s; }
+.bimo-fx-spark  { animation: bimo-twinkle 1.2s ease-in-out infinite; transform-origin: 50% 50%; }
+.bimo-fx-bang   { animation: bimo-pop .4s cubic-bezier(.34,1.56,.64,1) 1; }
+
+/* ── boop ── */
+.bimo-booping .bimo-rig { animation: bimo-boop .55s cubic-bezier(.34,1.56,.64,1) 1; }
+.bimo-burst {
+  position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none;
+}
+.bimo-burst i {
+  position: absolute; width: 7px; height: 7px; margin: -3.5px; border-radius: 2px;
+  background: #FF8FB1;
+  transform: rotate(var(--a)) translateY(0) scale(.4);
+  animation: bimo-burst .7s cubic-bezier(.2,.8,.3,1) forwards;
+}
+.bimo-burst i:nth-child(even) { background: #A9B0FF; border-radius: 50%; }
+.bimo-burst i:nth-child(3n)   { background: #FFD66B; }
+
+@keyframes bimo-bob      { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
+@keyframes bimo-shadow   { 0%,100% { transform: scaleX(1) } 50% { transform: scaleX(.86); opacity: .2 } }
+@keyframes bimo-sway     { 0%,100% { transform: rotate(-5deg) } 50% { transform: rotate(6deg) } }
+@keyframes bimo-bounce   { 0%,100% { transform: translateY(0) scale(1.03,.97) } 45% { transform: translateY(-8px) scale(.97,1.04) } }
+@keyframes bimo-jump     { 0%,100% { transform: translateY(0) scale(1.06,.93) } 45% { transform: translateY(-14px) scale(.95,1.06) } }
+@keyframes bimo-cheer-l  { from { transform: rotate(10deg) } to { transform: rotate(60deg) translateY(-6px) } }
+@keyframes bimo-cheer-r  { from { transform: rotate(-10deg) } to { transform: rotate(-60deg) translateY(-6px) } }
+@keyframes bimo-tilt     { 0%,100% { transform: rotate(0) } 35%,65% { transform: rotate(9deg) } }
+@keyframes bimo-ponder   { 0%,100% { transform: rotate(-6deg) } 50% { transform: rotate(-9deg) translateY(1px) } }
+@keyframes bimo-droop    { 0%,100% { transform: translateY(2px) scale(1.02,.97) } 50% { transform: translateY(3px) scale(1.04,.95) } }
+@keyframes bimo-pop      { 0% { transform: scale(.7) } 60% { transform: scale(1.12) } 100% { transform: scale(1) } }
+@keyframes bimo-heartbeat{ 0%,40%,100% { transform: scale(1) } 20% { transform: scale(1.06) } 30% { transform: scale(.98) } }
+@keyframes bimo-breathe  { 0%,100% { transform: scale(1,1) } 50% { transform: scale(1.03,.96) } }
+@keyframes bimo-wave     { from { transform: rotate(-150deg) translate(2px,-4px) } to { transform: rotate(-110deg) translate(2px,-4px) } }
+@keyframes bimo-shake    { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-1.5px) } 75% { transform: translateX(1.5px) } }
+@keyframes bimo-float    { 0%,100% { transform: translateY(0); opacity: 1 } 50% { transform: translateY(-3px); opacity: .7 } }
+@keyframes bimo-zzz      { 0% { transform: translate(0,4px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translate(4px,-6px); opacity: 0 } }
+@keyframes bimo-dot      { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+@keyframes bimo-twinkle  { 0%,100% { transform: scale(.6) rotate(0); opacity: .4 } 50% { transform: scale(1.1) rotate(45deg); opacity: 1 } }
+@keyframes bimo-boop     { 0% { transform: scale(1.18,.78) } 45% { transform: scale(.9,1.14) translateY(-10px) } 100% { transform: scale(1) } }
+@keyframes bimo-burst    { to { transform: rotate(var(--a)) translateY(-46px) scale(1); opacity: 0 } }
+
+/* ── shared UI around Bimo (speech bubble, cards) ── */
+.bimo-bubble {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--accent-2, #8B93E8) 30%, var(--border, #2a2b36));
+  background: color-mix(in srgb, var(--accent, #5E6AD2) 7%, var(--surface, #101014));
+  border-radius: 16px;
+  animation: bimo-bubble-in .45s cubic-bezier(.34,1.56,.64,1) both;
+}
+.bimo-bubble::before {
+  content: ''; position: absolute; left: -7px; top: 22px; width: 12px; height: 12px;
+  background: inherit; border-left: inherit; border-bottom: inherit;
+  transform: rotate(45deg); border-bottom-left-radius: 3px;
+}
+.bimo-bubble-notail::before { display: none; }
+@keyframes bimo-bubble-in { from { opacity: 0; transform: translateX(-6px) scale(.97) } to { opacity: 1; transform: none } }
+
+.bimo-choice {
+  transition: transform .18s ease, border-color .18s ease, background-color .18s ease;
+}
+.bimo-choice:not(:disabled):hover { transform: translateX(3px); }
+.bimo-choice:not(:disabled):active { transform: scale(.98); }
+.bimo-shake-x { animation: bimo-shake .28s linear 2; }
+.bimo-check-pop { animation: bimo-pop .35s cubic-bezier(.34,1.56,.64,1) 1; }
+
+.bimo-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.bimo-confetti i {
+  position: absolute; top: -10px; width: 7px; height: 11px; border-radius: 2px;
+  animation: bimo-fall 1.6s cubic-bezier(.25,.6,.4,1) forwards;
+}
+@keyframes bimo-fall { to { transform: translateY(260px) rotate(540deg); opacity: 0 } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bimo *, .bimo-bubble, .bimo-choice, .bimo-shake-x, .bimo-check-pop, .bimo-confetti i {
+    animation: none !important;
+    transition: none !important;
+  }
+  .bimo-confetti { display: none; }
+}

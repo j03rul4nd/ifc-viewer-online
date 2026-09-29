@@ -698,6 +698,11 @@ export function trackBlogSearch(props: { query_length: number; results: number; 
   track('blog_search', props)
 }
 
+/** Reader's answer to "was this article useful?" (BimoFeedback). Same opt-out gate as every event. */
+export function trackBlogFeedback(props: { slug: string; lang: string; vote: 'yes' | 'meh' | 'no' }): void {
+  track('blog_feedback', props)
+}
+
 export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 'article'; lang: string }): void {
   track('blog_tool_clicked', props)
 }

@@ -34,6 +34,12 @@ export type ContentBlock =
   | { type: 'code'; text: string; lang?: string }
   /** `title` overrides the variant label ("Tip", "Warning", "Note"). */
   | { type: 'callout'; variant: 'tip' | 'warning' | 'info'; text: RichText; title?: string }
+  /** An aside in the mascot's voice. Use sparingly: one per post, for the tip a reader would otherwise miss. */
+  | { type: 'bimo-tip'; text: RichText; title?: string; emotion?: 'happy' | 'curious' | 'thinking' | 'surprised' | 'excited' | 'sad' }
+  /** Check-your-understanding at the end of a teaching post. 3–5 questions; `why` explains every answer. */
+  | { type: 'bimo-quiz'; title?: string; questions: Array<{ q: string; options: string[]; answer: number; why?: RichText }> }
+  /** A procedure the reader performs on their own model and ticks off; progress persists per browser. `id` must be unique within the post. */
+  | { type: 'bimo-checklist'; id: string; title?: string; items: Array<{ label: RichText; hint?: RichText }> }
   /** "What do I leave with?" — 3–5 bullets, near the top of a long post. See docs/BLOG_COMPONENTS.md. */
   | { type: 'takeaways'; title?: string; items: RichText[] }
   /** A procedure. `detail` folds away so the sequence stays scannable. */
@@ -654,13 +660,14 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: 'Step 2: Choose the Right IFC Version' },
       { type: 'p', text: "Unless your project specification explicitly requires IFC2x3, export to IFC4 Reference View. IFC4 is the current ISO standard, produces smaller file sizes for complex geometry via tessellated meshes, and resolves several structural ambiguities present in the older schema." },
       { type: 'h2', text: 'Step 3: Configure These Settings' },
-      { type: 'ul', items: [
-        '"Export GUIDs": set to "Keep Existing". Never "Generate New" — this breaks BCF cross-references on every re-export.',
-        '"Site Placement": set to "Shared Coordinates". Prevents elements from being placed 10 km from the WCS origin.',
-        '"Include Steel Connections": Off (unless delivering a structural steel model).',
-        '"Export Base Quantities": On for LOD 200+ deliveries.',
-        '"Split Walls and Columns by Level": On. Ensures walls are associated with individual storeys.',
+      { type: 'bimo-checklist', id: 'clean-ifc-export-revit:settings', title: 'Revit IFC export settings', items: [
+        { label: '"Export GUIDs": Keep Existing', hint: 'Never "Generate New" — it breaks BCF cross-references on every re-export.' },
+        { label: '"Site Placement": Shared Coordinates', hint: 'Prevents elements from being placed 10 km from the WCS origin.' },
+        { label: '"Include Steel Connections": Off', hint: 'Unless you are delivering a structural steel model.' },
+        { label: '"Export Base Quantities": On', hint: 'Needed for LOD 200+ deliveries.' },
+        { label: '"Split Walls and Columns by Level": On', hint: 'Ensures walls are associated with individual storeys.' },
       ]},
+      { type: 'bimo-tip', emotion: 'curious', text: 'Save these as a named export setup in Revit ("Modify Setup…" → duplicate). The next export — or the next person on the team — starts from the right settings instead of the defaults.' },
       { type: 'callout', variant: 'warning', text: "Never export directly to the CDE. A failed delivery that requires re-upload creates a new version in the CDE audit trail and notifies the entire project team. Always validate locally first." },
       { type: 'tool', id: 'validator', why: 'Check the export before it leaves your machine — the settings only matter if the result passes.' },
       { type: 'h2', text: 'Common Revit-Specific Issues After Export' },
@@ -670,6 +677,11 @@ export const BLOG_POSTS: BlogPost[] = [
         'Missing property sets: Revit properties export as custom Psets by default. Review the Pset mapping to ensure required standard Psets are included.',
       ]},
       { type: 'related', to: 'revit-ifc-export-breaks', section: 'The Diagnostic Workflow', why: 'When the export still breaks: the five usual causes, in the order to check them.' },
+      { type: 'bimo-quiz', title: 'Quick check', questions: [
+        { q: 'Which "Export GUIDs" option keeps BCF issues linked across re-exports?', options: ['Generate New', 'Keep Existing', 'It makes no difference'], answer: 1, why: 'New GUIDs on every export mean every BCF topic points at elements that no longer exist.' },
+        { q: 'Elements land ~10 km from the origin after export. Which setting do you check first?', options: ['Export Base Quantities', 'Site Placement', 'Split Walls and Columns by Level'], answer: 1, why: 'Site Placement set to Shared Coordinates keeps the model where the survey point says it is.' },
+        { q: 'A Revit family has no IFC mapping. What does it export as?', options: ['IfcBuildingElementProxy', 'IfcWall', 'It is skipped'], answer: 0, why: 'Unmapped families fall back to proxies — map common families to proper IFC classes in the mapping table.' },
+      ]},
     ],
   },
 
