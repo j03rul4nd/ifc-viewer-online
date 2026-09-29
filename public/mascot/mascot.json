@@ -1,0 +1,96 @@
+{
+  "name": "Bimo",
+  "fps": 30,
+  "emotions": [
+    "idle",
+    "happy",
+    "excited",
+    "curious",
+    "thinking",
+    "sad",
+    "surprised",
+    "love",
+    "sleepy",
+    "wave",
+    "angry"
+  ],
+  "shapeKeys": [
+    "EyeBlink",
+    "EyeHappy",
+    "EyeSad",
+    "EyeAngry",
+    "EyeWide",
+    "EyeUp",
+    "MouthSmile",
+    "MouthFrown",
+    "MouthOpen",
+    "MouthO",
+    "CheekPuff"
+  ],
+  "face": {
+    "idle": {
+      "MouthSmile": 0.35
+    },
+    "happy": {
+      "EyeHappy": 1.0,
+      "MouthSmile": 1.0,
+      "MouthOpen": 0.35,
+      "CheekPuff": 0.6,
+      "_blush": 0.8
+    },
+    "excited": {
+      "EyeWide": 0.6,
+      "EyeHappy": 0.5,
+      "MouthOpen": 1.0,
+      "MouthSmile": 0.8,
+      "_blush": 0.6,
+      "_glow": 1.5
+    },
+    "curious": {
+      "EyeWide": 0.35,
+      "EyeUp": 0.4,
+      "MouthO": 0.45
+    },
+    "thinking": {
+      "EyeUp": 1.0,
+      "EyeBlink": 0.25,
+      "MouthFrown": 0.25,
+      "MouthO": 0.2
+    },
+    "sad": {
+      "EyeSad": 1.0,
+      "MouthFrown": 0.9,
+      "_glow": 0.55
+    },
+    "surprised": {
+      "EyeWide": 1.0,
+      "MouthO": 1.0,
+      "MouthOpen": 0.4,
+      "_glow": 1.3
+    },
+    "love": {
+      "EyeHappy": 0.9,
+      "MouthSmile": 0.9,
+      "CheekPuff": 1.0,
+      "_blush": 1.0,
+      "_tint": "#FF9CC8"
+    },
+    "sleepy": {
+      "EyeBlink": 0.82,
+      "MouthO": 0.3,
+      "_glow": 0.5
+    },
+    "wave": {
+      "EyeHappy": 0.7,
+      "MouthSmile": 1.0,
+      "MouthOpen": 0.2,
+      "_blush": 0.4
+    },
+    "angry": {
+      "EyeAngry": 1.0,
+      "MouthFrown": 1.0,
+      "_tint": "#FF8A8A",
+      "_glow": 1.2
+    }
+  }
+}
