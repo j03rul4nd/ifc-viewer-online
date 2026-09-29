@@ -234,7 +234,8 @@
       "rotateHint": "Arraste o anel no visualizador para rodar o âmbito escolhido (passo de 1°)"
     },
     "placedByHand": "À mão",
-    "placedByHandHint": "Colocado à mão: o mapa não o recoloca pela sua georreferência. «Repor» devolve-o ao mapa."
+    "placedByHandHint": "Colocado à mão: o mapa não o recoloca pela sua georreferência. «Repor» devolve-o ao mapa.",
+    "frameOnDoubleClick": "Duplo clique para enquadrar"
   },
   "transform": {
     "position": "Posição",

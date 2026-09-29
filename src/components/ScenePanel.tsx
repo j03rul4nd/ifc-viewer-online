@@ -152,7 +152,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       </button>
 
       {/* Model info — click to activate */}
-      <button onClick={onActivate} className="flex-1 min-w-0 text-left px-0.5">
+      <button onClick={onActivate} onDoubleClick={onFrame} title={t('scene.frameOnDoubleClick')} className="flex-1 min-w-0 text-left px-0.5">
         <p className={`text-[12px] font-medium truncate leading-tight ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text)]'}`}>
           {model.fileName}
         </p>

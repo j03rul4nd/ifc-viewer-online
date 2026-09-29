@@ -324,7 +324,7 @@ export default function SceneGroupTree({
       </button>
       <span className="flex-none text-[8.5px] font-semibold px-1 py-px rounded bg-[rgba(64,196,160,0.14)] text-[rgb(90,210,170)]">PC</span>
       <span className="flex-1 min-w-0">
-        <span className="block truncate text-[11.5px] text-[var(--text)]" title={c.fileName}>{c.fileName}</span>
+        <span className="block truncate text-[11.5px] text-[var(--text)] cursor-default" title={`${c.fileName} · ${t('scene.frameOnDoubleClick')}`} onDoubleClick={() => frame([c.id])}>{c.fileName}</span>
         <span className="block text-[10px] text-[var(--text-muted)] tabular-nums">
           {t('scene.tree.points', { count: c.pointCount, formatted: c.pointCount.toLocaleString() })}
         </span>
