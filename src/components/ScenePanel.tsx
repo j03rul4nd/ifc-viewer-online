@@ -9,6 +9,8 @@ import type { ViewerAPI } from '../lib/viewer'
 import { useModelGroups } from '../hooks/useModelGroups'
 import SceneGroupTree from './SceneGroupTree'
 import { useScenePlacement, type ScenePlacement } from '../hooks/useScenePlacement'
+import { useSceneGizmo } from '../hooks/useSceneGizmo'
+import type { GizmoMode } from '../lib/scene-gizmo'
 import { useTransformHistoryStore } from '../stores/transformHistoryStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { usePointCloudStore } from '../stores/pointCloudStore'
@@ -460,6 +462,32 @@ export default function ScenePanel({
   }, [groupIds.length, sceneIds.length])
   const scope = scopes.includes(transformScope) ? transformScope : 'model'
   const [expandTransform, setExpandTransform] = useState(true)
+  /** The 3D handle: off, move or turn. Acts on the same scope as the fields. */
+  const [gizmoMode, setGizmoMode] = useState<GizmoMode | null>(null)
+  const gizmoIds = useMemo(
+    () => (scope === 'group' ? groupIds : scope === 'scene' ? sceneIds : activeModelId ? [activeModelId] : []),
+    [scope, groupIds, sceneIds, activeModelId],
+  )
+  // Only while the transform section is open: a handle whose controls are
+  // collapsed away would be a surprise on the canvas.
+  useSceneGizmo(viewerApiRef, placement, gizmoIds, expandTransform && activeModelId ? gizmoMode : null)
+
+  // W / E toggle the handle the way DCC tools do; Escape puts it away. Only
+  // while this panel is open, never while typing, and never while walking —
+  // there W moves you and E raises you.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return
+      if (viewerApiRef.current?.isWalkMode()) return
+      if (e.code === 'KeyW') { setGizmoMode((m) => (m === 'translate' ? null : 'translate')); setExpandTransform(true) }
+      else if (e.code === 'KeyE') { setGizmoMode((m) => (m === 'rotate' ? null : 'rotate')); setExpandTransform(true) }
+      else if (e.code === 'Escape' && gizmoMode) { setGizmoMode(null); e.stopPropagation() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [viewerApiRef, gizmoMode])
   const { renderQuality, setRenderQuality } = useUIStore()
 
   const handleQualityChange = useCallback((q: 'standard' | 'quality') => {
@@ -623,6 +651,26 @@ export default function ScenePanel({
             {expandTransform && (
               <div className="px-3 pb-3">
                 <HistoryBar placement={placement} />
+                <div className="flex items-center gap-1 mb-2.5" role="radiogroup" aria-label={t('scene.gizmo.label')}>
+                  <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-medium mr-1">{t('scene.gizmo.label')}</span>
+                  {([null, 'translate', 'rotate'] as const).map((m) => (
+                    <button
+                      key={m ?? 'off'}
+                      role="radio"
+                      aria-checked={gizmoMode === m}
+                      onClick={() => setGizmoMode(m)}
+                      title={`${t(`scene.gizmo.${m ?? 'off'}Hint`)}${m === 'translate' ? ' (W)' : m === 'rotate' ? ' (E)' : ' (Esc)'}`}
+                      className={[
+                        'flex-1 h-[24px] rounded-[6px] text-[10.5px] font-medium transition-all border',
+                        gizmoMode === m
+                          ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
+                          : 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)]',
+                      ].join(' ')}
+                    >
+                      {t(`scene.gizmo.${m ?? 'off'}`)}
+                    </button>
+                  ))}
+                </div>
                 {scopes.length > 1 && (
                   <div className="flex gap-1.5 mb-2.5" role="radiogroup" aria-label={t('scene.scope.label')}>
                     {scopes.map((sc) => (

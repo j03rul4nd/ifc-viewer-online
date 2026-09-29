@@ -223,6 +223,15 @@
       "temporaryOn": "Cambios temporales: se desharán al restaurar.",
       "restore": "Restaurar",
       "keep": "Conservar"
+    },
+    "gizmo": {
+      "label": "Manipulador",
+      "off": "No",
+      "translate": "Mover",
+      "rotate": "Girar",
+      "offHint": "Sin manipulador en el visor",
+      "translateHint": "Arrastra las flechas en el visor para mover el ámbito elegido",
+      "rotateHint": "Arrastra el anillo en el visor para girar el ámbito elegido (paso de 1°)"
     }
   },
   "transform": {

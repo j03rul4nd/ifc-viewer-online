@@ -104,3 +104,44 @@ export function allocateBudget(views: ChunkView[], budget: number): LodAllocatio
 
   return { draw, total }
 }
+
+// ── When a LOD pass is due ─────────────────────────────────────────────────────
+
+/**
+ * What a LOD pass depends on about the camera: where it is, where it looks, and
+ * how it projects. The camera's world matrix (16) then its projection (16).
+ *
+ * Position alone is not enough. Turning your head on the spot (walk mode, or an
+ * orbit about the camera itself), zooming a lens or switching to orthographic
+ * all change which chunks are in view without moving the camera an inch — and
+ * a pass keyed on position left the chunks that had been culled out of view
+ * hidden after they came back into it.
+ */
+export function viewSignature(
+  matrixWorld: ArrayLike<number>, projection: ArrayLike<number>, out: number[] = [],
+): number[] {
+  out.length = 32
+  for (let i = 0; i < 16; i++) out[i] = matrixWorld[i]
+  for (let i = 0; i < 16; i++) out[16 + i] = projection[i]
+  return out
+}
+
+/** Translation elements of a column-major 4×4: compared in metres, not as ratios. */
+const TRANSLATION = new Set([12, 13, 14])
+
+/**
+ * True when two view signatures differ enough to change the draw selection:
+ * 5 cm of travel, or ~0.006° of rotation / the equivalent change of lens.
+ * An empty or mismatched `prev` always counts as moved.
+ */
+export function viewChanged(prev: ArrayLike<number> | null, next: ArrayLike<number>, moveEpsilon = 0.05): boolean {
+  if (!prev || prev.length !== next.length) return true
+  for (let i = 0; i < next.length; i++) {
+    const a = prev[i]
+    const b = next[i]
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return true
+    const eps = i < 16 && TRANSLATION.has(i) ? moveEpsilon : 1e-4 * Math.max(1, Math.abs(b))
+    if (Math.abs(a - b) > eps) return true
+  }
+  return false
+}

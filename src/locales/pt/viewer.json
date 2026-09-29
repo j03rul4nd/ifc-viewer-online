@@ -223,6 +223,15 @@
       "temporaryOn": "Alterações temporárias: serão desfeitas ao restaurar.",
       "restore": "Restaurar",
       "keep": "Manter"
+    },
+    "gizmo": {
+      "label": "Manipulador",
+      "off": "Não",
+      "translate": "Mover",
+      "rotate": "Rodar",
+      "offHint": "Sem manipulador no visualizador",
+      "translateHint": "Arraste as setas no visualizador para mover o âmbito escolhido",
+      "rotateHint": "Arraste o anel no visualizador para rodar o âmbito escolhido (passo de 1°)"
     }
   },
   "transform": {

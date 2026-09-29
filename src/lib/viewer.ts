@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
+import { createSceneGizmo, type SceneGizmo, type GizmoOptions } from './scene-gizmo'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
@@ -61,7 +62,10 @@ export type ExplodeLayer = Array<{ modelId: string; ids: number[] }>
 
 export interface CameraPresetOptions {
   scope?: FramingScope
-  /** Group id per model/cloud id (from useModelGroups). Without it every model is its own group. */
+  /**
+   * Group id per model/cloud id (from useModelGroups). Omitted = the map last
+   * handed to `setFramingGroups`, so SDK and embed calls frame groups too.
+   */
   groupIdOf?: Record<string, string>
   /** Point clouds the user has visible. Omitted = every loaded cloud, as one item. */
   visibleCloudIds?: string[]
@@ -498,6 +502,15 @@ export interface ViewerAPI {
    * visible (the camera does not move).
    */
   setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions): FramingResult | null
+  /**
+   * Show the move/turn handle on a scope's pivot, or hide it (null). The viewer
+   * only draws it and reports the drag; placement applies it (useScenePlacement).
+   */
+  setGizmo(opts: GizmoOptions | null): void
+  /** Re-seat the handle after the pivot moved by other means (undo, typed edit). */
+  setGizmoPosition(p: Vec3Like): void
+  /** Remember the scene's grouping for framing calls that do not pass one (SDK, embed). */
+  setFramingGroups(groupIdOf: Record<string, string>): void
   /** The world boxes a preset would choose from, with visibility applied. */
   getFramingItems(opts?: CameraPresetOptions): FramingItem[]
   /**
@@ -1223,6 +1236,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
   let geoPointerSuppressed = false
+  // Move/turn handle — created on first use (lib/scene-gizmo).
+  let sceneGizmo: SceneGizmo | null = null
+  /** Grouping pushed by the app; the default for framing calls without one. */
+  let framingGroupIdOf: Record<string, string> = {}
+  /** The press started on a gizmo axis: its release is a drag end, never a pick. */
+  let pressOnGizmo = false
   let satelliteResolver: SatelliteResolver | null = null
   let geoSystemInstance: import('./geo/geo-system').GeoSystemAPI | null = null
   let geoLoadPromise: Promise<import('./geo/geo-system').GeoSystemAPI> | null = null
@@ -1974,6 +1993,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let pdY    = 0
 
   const onPointerDown = (e: PointerEvent): void => {
+    pressOnGizmo = sceneGizmo?.isHot() ?? false
     pdTime = Date.now()
     pdX    = e.clientX
     pdY    = e.clientY
@@ -1981,6 +2001,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerUp = (e: PointerEvent): void => {
     if (geoPointerSuppressed) return   // map placement editor owns the pointer
+    // A short click on a gizmo axis would otherwise select the element behind
+    // it — and swap the active model out from under the handle being used.
+    if (pressOnGizmo) { pressOnGizmo = false; return }
     const dt   = Date.now() - pdTime
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return   // ignore drags / long-press
@@ -3269,7 +3292,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         items.push({
           id: mid,
           kind: 'model',
-          groupId: opts?.groupIdOf?.[mid] ?? null,
+          groupId: (opts?.groupIdOf ?? framingGroupIdOf)[mid] ?? null,
           visible: !modelHidden.has(mid) && model.object.visible,
           box: { min: world.min.clone(), max: world.max.clone() },
         })
@@ -3279,7 +3302,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         if (ids) {
           for (const id of ids) {
             const b = pointCloudInstance.getBounds(id)
-            if (b) items.push({ id, kind: 'cloud', groupId: opts?.groupIdOf?.[id] ?? null, visible: true, box: { min: b.min, max: b.max } })
+            if (b) items.push({ id, kind: 'cloud', groupId: (opts?.groupIdOf ?? framingGroupIdOf)[id] ?? null, visible: true, box: { min: b.min, max: b.max } })
           }
         } else {
           const b = pointCloudInstance.getBounds()
@@ -3305,6 +3328,25 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       )
       void world.camera.controls.fitToBox(box, true)
       return true
+    },
+
+    setFramingGroups(groupIdOf: Record<string, string>) {
+      framingGroupIdOf = groupIdOf
+    },
+
+    setGizmo(opts: GizmoOptions | null) {
+      if (!opts && !sceneGizmo) return
+      sceneGizmo ??= createSceneGizmo({
+        scene: world.scene.three,
+        getCamera: () => world.camera.three,
+        domElement: canvas,
+        setOrbitEnabled: (enabled) => { world.camera.controls.enabled = enabled },
+      })
+      sceneGizmo.set(opts)
+    },
+
+    setGizmoPosition(p: Vec3Like) {
+      sceneGizmo?.setPosition(p)
     },
 
     setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions) {
@@ -4369,6 +4411,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      try { sceneGizmo?.dispose() } catch { /* ok */ }
+      sceneGizmo = null
       try { videoInstance?.dispose() } catch { /* ok */ }
       videoInstance = null
       videoLoadPromise = null

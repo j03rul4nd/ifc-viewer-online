@@ -223,6 +223,15 @@
       "temporaryOn": "Changements temporaires : ils seront annulés à la restauration.",
       "restore": "Restaurer",
       "keep": "Conserver"
+    },
+    "gizmo": {
+      "label": "Poignée",
+      "off": "Non",
+      "translate": "Déplacer",
+      "rotate": "Tourner",
+      "offHint": "Pas de poignée dans la vue",
+      "translateHint": "Faites glisser les flèches dans la vue pour déplacer la portée choisie",
+      "rotateHint": "Faites glisser l'anneau dans la vue pour tourner la portée choisie (pas de 1°)"
     }
   },
   "transform": {
