@@ -58,6 +58,12 @@ export interface SceneModel {
    * model, so the guess is always overridable. See `lib/model-grouping`.
    */
   userGroupId?: string | null
+  /**
+   * The user moved this model by hand (Scene panel, gizmo, group move). The map
+   * no longer snaps it back to its own georeferencing — that would silently
+   * undo a calibration. Cleared by Reset, which hands placement back to the map.
+   */
+  placedByHand?: boolean
 }
 
 export interface SelectedInfo {

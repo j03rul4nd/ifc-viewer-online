@@ -47,6 +47,8 @@ interface SceneStore {
   setModelVisible:  (id: string, visible: boolean) => void
   /** Store the updated transform so the UI stays in sync with viewer state. */
   setModelTransform:(id: string, transform: ModelTransform) => void
+  /** Mark (or clear) a model as placed by hand — see SceneModel.placedByHand. */
+  setPlacedByHand:  (id: string, byHand: boolean) => void
   /** Select which model the scene controls operate on. */
   setActiveModel:   (id: string | null) => void
   /** Change the scene backdrop (persisted; applied by Viewer.tsx → setBackground). */
@@ -121,6 +123,15 @@ export const useSceneStore = create<SceneStore>()(
           }),
           false,
           'setModelTransform',
+        ),
+
+      setPlacedByHand: (id, byHand) =>
+        set(
+          (s) => ({
+            models: s.models.map((m) => (m.id === id && Boolean(m.placedByHand) !== byHand ? { ...m, placedByHand: byHand } : m)),
+          }),
+          false,
+          'setPlacedByHand',
         ),
 
       setActiveModel: (id) =>
