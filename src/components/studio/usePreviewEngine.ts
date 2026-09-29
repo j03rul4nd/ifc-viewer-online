@@ -15,7 +15,7 @@ import { overlayTime, type SourceMedia } from '../../lib/capture/project-export'
 import { getBuiltInBed, scheduleAudioEnvelope, resolveAudioOffset } from '../../lib/capture/audio-library'
 import { scheduleSfx } from '../../lib/capture/sfx'
 import { masterBus } from '../../lib/capture/media-codec'
-import type { StudioOutput } from '../../stores/clipStudioStore'
+import { useClipStudioStore, type StudioOutput } from '../../stores/clipStudioStore'
 
 /** Beyond this drift (seconds) a playing clip is re-seeked. */
 const DRIFT_SEC = 0.2
@@ -162,7 +162,8 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
 
   const startAudio = useCallback(async () => {
     const p = projectRef.current
-    const hasBed = p.audio.kind === 'builtin' && !!p.audio.trackId
+    const userSound = p.audio.kind === 'user' ? useClipStudioStore.getState().sound : null
+    const hasBed = (p.audio.kind === 'builtin' && !!p.audio.trackId) || !!userSound
     const hasSfx = !!p.sfx && p.sfx.cues.length > 0
     if (!hasBed && !hasSfx) return
     const ctx = new AudioContext()
@@ -173,7 +174,7 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
       audio.current = { ctx, src: null, sfx: sfxSources }
       return
     }
-    const bed = await getBuiltInBed(p.audio.trackId as Parameters<typeof getBuiltInBed>[0], ctx.sampleRate)
+    const bed = userSound ?? await getBuiltInBed(p.audio.trackId as Parameters<typeof getBuiltInBed>[0], ctx.sampleRate)
     if (!clock.current) { void ctx.close(); return }
     const duration = projectDuration(p)
     const src = ctx.createBufferSource()

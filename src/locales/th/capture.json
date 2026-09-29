@@ -510,7 +510,34 @@
     "sfxRemove": "ลบเอฟเฟกต์เสียง",
     "sfxCount": "{{n}} เอฟเฟกต์",
     "sfxTitle": "เอฟเฟกต์เสียง",
-    "restyleHint": "เปลี่ยนการเกรดสีและข้อความทันที ช็อต 3D ยังคงสีและแสงเดิม — สร้างใหม่เพื่อระบายสีใหม่"
+    "restyleHint": "เปลี่ยนการเกรดสีและข้อความทันที ช็อต 3D ยังคงสีและแสงเดิม — สร้างใหม่เพื่อระบายสีใหม่",
+    "sound": {
+      "title": "Viral sound / your track",
+      "import": "Import sound (audio or TikTok video)",
+      "replace": "Replace sound",
+      "importHint": "An MP3/M4A/WAV, or a TikTok, Reel or Short you saved — we take its soundtrack. It is analysed in your browser and never uploaded.",
+      "analysing": "Analysing the beat…",
+      "ready": "Sound ready — cuts synced to the beat and the drop",
+      "failed": "Could not read that sound: {{reason}}",
+      "missing": "\"{{name}}\" is not loaded any more — import it again to hear it.",
+      "drop": "drop at {{sec}} s",
+      "rights": "Who owns this sound?",
+      "rightsOpt": {
+        "viral": "Viral / unknown",
+        "own": "Mine",
+        "licensed": "Licensed"
+      },
+      "sync": "Sync the edit to the sound",
+      "syncHint": "Starts the sound so the drop lands on the first cut, moves every cut onto the beat and punches in on each bar after the drop.",
+      "addHook": "Add hook caption",
+      "hookHint": "A big line at the top for the first seconds — the hook decides whether people keep watching. Keep it out of the bottom third, where TikTok puts its own caption.",
+      "hookText": "Wait for the reveal 👀",
+      "warnTitle": "This sound may be copyrighted",
+      "warnBody": "\"{{name}}\" is marked as a viral sound. Trending sounds often contain music owned by labels or other creators, and TikTok's terms do not allow business accounts to use other users' original sounds. The platform can mute the video, take it down or reduce its reach. You are responsible for the rights to what you publish.",
+      "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
+      "exportSilent": "Export without music",
+      "exportAnyway": "Export with the sound"
+    }
   },
   "cover": {
     "open": "สตูดิโอปก — สร้างปก สไลด์ และโพสต์จากโมเดล",

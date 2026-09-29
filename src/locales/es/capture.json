@@ -510,7 +510,34 @@
     "sfxRemove": "Quitar efectos de sonido",
     "sfxCount": "{{n}} efectos",
     "sfxTitle": "Efectos de sonido",
-    "restyleHint": "Cambia al instante el etalonaje y los textos. Las tomas 3D conservan su color y su luz: vuelve a generar para repintarlas."
+    "restyleHint": "Cambia al instante el etalonaje y los textos. Las tomas 3D conservan su color y su luz: vuelve a generar para repintarlas.",
+    "sound": {
+      "title": "Sonido viral / tu pista",
+      "import": "Importar sonido (audio o vídeo de TikTok)",
+      "replace": "Cambiar sonido",
+      "importHint": "Un MP3/M4A/WAV, o un TikTok, Reel o Short que hayas guardado — tomamos su banda sonora. Se analiza en tu navegador y nunca se sube.",
+      "analysing": "Analizando el ritmo…",
+      "ready": "Sonido listo — cortes sincronizados con el beat y el drop",
+      "failed": "No se pudo leer ese sonido: {{reason}}",
+      "missing": "\"{{name}}\" ya no está cargado — impórtalo de nuevo para oírlo.",
+      "drop": "drop en {{sec}} s",
+      "rights": "¿De quién es este sonido?",
+      "rightsOpt": {
+        "viral": "Viral / desconocido",
+        "own": "Mío",
+        "licensed": "Con licencia"
+      },
+      "sync": "Sincronizar el vídeo con el sonido",
+      "syncHint": "Arranca el sonido para que el drop caiga en el primer corte, pone cada corte en el beat y hace un punch-in en cada compás tras el drop.",
+      "addHook": "Añadir texto gancho (hook)",
+      "hookHint": "Una frase grande arriba durante los primeros segundos — el hook decide si la gente sigue mirando. Fuera del tercio inferior, donde TikTok pone su propio texto.",
+      "hookText": "Espera al final 👀",
+      "warnTitle": "Este sonido puede tener derechos de autor",
+      "warnBody": "\"{{name}}\" está marcado como sonido viral. Los sonidos en tendencia suelen contener música de discográficas u otros creadores, y los términos de TikTok no permiten a cuentas de empresa usar sonidos originales de otros usuarios. La plataforma puede silenciar el vídeo, retirarlo o reducir su alcance. Tú eres responsable de los derechos de lo que publicas.",
+      "warnTip": "Consejo: para el máximo alcance, exporta sin música y elige el mismo sonido dentro de TikTok/Instagram — el corte ya está sincronizado con él, y tu vídeo aparece en la página del sonido.",
+      "exportSilent": "Exportar sin música",
+      "exportAnyway": "Exportar con el sonido"
+    }
   },
   "cover": {
     "open": "Estudio de portadas — portadas, diapositivas y posts del modelo",

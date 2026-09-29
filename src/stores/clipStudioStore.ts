@@ -82,6 +82,9 @@ interface ClipStudioState {
   setOutput: (patch: Partial<StudioOutput>) => void
   setPreset: (preset: OutputPreset) => void
   setJob: (job: StudioJob | null) => void
+  /** Decoded user sound (kind 'user'), 48 kHz. Held by reference, never uploaded. */
+  sound: AudioBuffer | null
+  setSound: (sound: AudioBuffer | null) => void
 }
 
 const DEFAULT_OUTPUT: StudioOutput = {
@@ -165,6 +168,8 @@ export const useClipStudioStore = create<ClipStudioState>()(
       setOutput: (patch) => set((s) => ({ output: { ...s.output, ...patch } }), false, 'studio/output'),
       setPreset: (preset) => set((s) => ({ output: { ...s.output, preset, ...OUTPUT_PRESETS[preset] } }), false, 'studio/preset'),
       setJob: (job) => set({ job }, false, 'studio/job'),
+      sound: null,
+      setSound: (sound) => set({ sound }, false, 'studio/sound'),
     }),
     { name: 'clipStudio' },
   ),
