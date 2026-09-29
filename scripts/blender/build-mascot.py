@@ -52,7 +52,7 @@ PEARL = hex_rgba("#EEF0FB")
 INDIGO = hex_rgba("#5E6AD2")
 INDIGO_LIGHT = hex_rgba("#8B93E8")
 GLASS = hex_rgba("#0B0C16")
-EYE = hex_rgba("#C9CEFF")
+EYE = hex_rgba("#8C95FF")
 BLUSH = hex_rgba("#FF8FB8")
 
 # ── scene reset ──────────────────────────────────────────────────────────────
@@ -75,8 +75,8 @@ def mesh_obj(name, bm):
 
 # ── geometry ─────────────────────────────────────────────────────────────────
 BODY_C = Vector((0, 0, 0.55))
-BODY_R = Vector((0.46, 0.40, 0.44))
-SQUIRCLE_P = 2.6
+BODY_R = Vector((0.47, 0.41, 0.42))
+SQUIRCLE_P = 2.35
 
 def squircle(d):
     """Scale unit direction d onto a super-ellipsoid surface."""
@@ -90,8 +90,12 @@ def body_surface(bm, inflate=1.0):
         p = squircle(v.co.normalized()) * inflate
         # slightly narrower at the top: friendlier, less "box"
         t = max(0.0, p.z / BODY_R.z)
-        p.x *= 1 - 0.06 * t
-        p.y *= 1 - 0.04 * t
+        p.x *= 1 - 0.05 * t
+        p.y *= 1 - 0.03 * t
+        # mochi: a little heavier at the bottom, like it's sitting down
+        b = max(0.0, -p.z / BODY_R.z)
+        p.x *= 1 + 0.06 * b
+        p.y *= 1 + 0.04 * b
         v.co = p + BODY_C
 
 bm = bmesh.new()
@@ -108,8 +112,8 @@ def surface_point(x, z, lift):
 
 # Visor: a rounded-rectangle (squircle) grid projected onto the body, so its
 # outline is a clean curve rather than the stair-step of cut faces.
-VISOR_C = (0.0, 0.645)      # x, z centre
-VISOR_H = (0.335, 0.2)      # half extents
+VISOR_C = (0.0, 0.64)      # x, z centre
+VISOR_H = (0.355, 0.215)     # half extents
 bm = bmesh.new()
 N, M = 56, 34
 grid = []
@@ -138,11 +142,11 @@ m = visor.modifiers.new("Subsurf", "SUBSURF")
 m.levels = m.render_levels = 1
 
 # Face: eyes + mouth + cheeks in one mesh with shape keys.
-EYE_W, EYE_D, EYE_H = 0.05, 0.012, 0.082
-EYE_X, EYE_Z = 0.13, 0.675
-MOUTH_W, MOUTH_H = 0.042, 0.01
-MOUTH_Z = 0.565
-CHEEK_X, CHEEK_Z = 0.235, 0.585
+EYE_W, EYE_D, EYE_H = 0.058, 0.012, 0.09
+EYE_X, EYE_Z = 0.138, 0.655
+MOUTH_W, MOUTH_H = 0.032, 0.009
+MOUTH_Z = 0.56
+CHEEK_X, CHEEK_Z = 0.245, 0.575
 
 face_bm = bmesh.new()
 parts = {}  # name -> (verts, centre)
@@ -172,10 +176,17 @@ c, n = surface_point(0, MOUTH_Z, 0.017)
 add_blob("mouth", c, n, (MOUTH_W, 0.008, MOUTH_H), segs=(32, 10))
 for side, sx in (("L", 1), ("R", -1)):
     c, n = surface_point(sx * CHEEK_X, CHEEK_Z, 0.018)
-    add_blob("cheek." + side, c, n, (0.038, 0.004, 0.022), segs=(20, 8))
+    add_blob("cheek." + side, c, n, (0.048, 0.004, 0.028), segs=(20, 8))
+
+# Catchlights: two sparkles per eye, both lit from the same top-right key
+# light. Nothing reads as "alive and cute" faster than a highlight in the eye.
+for side, sx in (("L", 1), ("R", -1)):
+    for tag, (ox, oz, r) in (("1", (0.02, 0.028, 0.017)), ("2", (-0.02, -0.03, 0.008))):
+        c, n = surface_point(sx * EYE_X + ox, EYE_Z + oz, 0.03)
+        add_blob(f"spark.{side}{tag}", c, n, (r, 0.004, r), segs=(16, 8))
 
 face = mesh_obj("Face", face_bm)
-MAT_SLOT = {"eye": 0, "mouth": 0, "cheek": 1}
+MAT_SLOT = {"eye": 0, "mouth": 0, "cheek": 1, "spark": 2}
 for name, (idx, _, _) in parts.items():
     s = set(idx)
     for p in face.data.polygons:
@@ -186,10 +197,14 @@ for name, (idx, _, _) in parts.items():
 face.shape_key_add(name="Basis")
 base = [v.co.copy() for v in face.data.vertices]
 
-def shape(key, fn, only):
+def shape(key, fn, only, spark=None):
     sk = face.shape_key_add(name=key, from_mix=False)
     for name, (idx, c, inv) in parts.items():
-        if name.split(".")[0] not in only:
+        kind = name.split(".")[0]
+        if kind == "spark" and spark:
+            fn_ = fn
+            fn = lambda p, s: spark(p)
+        elif kind not in only:
             continue
         side = -1 if name.endswith(".R") else 1
         fwd = inv.inverted()
@@ -197,6 +212,8 @@ def shape(key, fn, only):
             loc = inv @ (base[i] - c)
             loc = fn(loc, side)
             sk.data[i].co = fwd @ loc + c
+        if kind == "spark" and spark:
+            fn = fn_
     return sk
 
 def eye_blink(p, s):
@@ -255,12 +272,12 @@ def cheek_show(p, s):
 def cheek_puff(p, s):
     return Vector((p.x * 1.25, p.y * 1.4, p.z * 1.25))
 
-shape("EyeBlink", eye_blink, {"eye"})
-shape("EyeHappy", eye_happy, {"eye"})
-shape("EyeSad", eye_sad, {"eye"})
-shape("EyeAngry", eye_angry, {"eye"})
-shape("EyeWide", eye_wide, {"eye"})
-shape("EyeUp", eye_look_up, {"eye"})
+shape("EyeBlink", eye_blink, {"eye"}, spark=lambda p: p * 0.0 + Vector((0, 0, -0.02)))
+shape("EyeHappy", eye_happy, {"eye"}, spark=lambda p: p * 0.0)
+shape("EyeSad", eye_sad, {"eye"}, spark=lambda p: p * 1.15 + Vector((0, 0, -0.008)))
+shape("EyeAngry", eye_angry, {"eye"}, spark=lambda p: p * 0.5)
+shape("EyeWide", eye_wide, {"eye"}, spark=lambda p: p * 1.35)
+shape("EyeUp", eye_look_up, {"eye"}, spark=lambda p: p + Vector((0, 0, 0.018)))
 shape("MouthSmile", mouth_smile, {"mouth"})
 shape("MouthFrown", mouth_frown, {"mouth"})
 shape("MouthOpen", mouth_open, {"mouth"})
@@ -280,10 +297,10 @@ def capsule(name, centre, radii, tilt_deg=0, axis="Y"):
         v.co = rot @ v.co + centre
     return mesh_obj(name, b)
 
-arm_l = capsule("Arm.L", Vector((0.47, 0, 0.44)), (0.055, 0.055, 0.12), 32)
-arm_r = capsule("Arm.R", Vector((-0.47, 0, 0.44)), (0.055, 0.055, 0.12), -32)
-foot_l = capsule("Foot.L", Vector((0.17, -0.03, 0.06)), (0.12, 0.14, 0.065))
-foot_r = capsule("Foot.R", Vector((-0.17, -0.03, 0.06)), (0.12, 0.14, 0.065))
+arm_l = capsule("Arm.L", Vector((0.462, 0, 0.42)), (0.058, 0.058, 0.095), 38)
+arm_r = capsule("Arm.R", Vector((-0.462, 0, 0.42)), (0.058, 0.058, 0.095), -38)
+foot_l = capsule("Foot.L", Vector((0.17, -0.03, 0.06)), (0.105, 0.12, 0.065))
+foot_r = capsule("Foot.R", Vector((-0.17, -0.03, 0.06)), (0.105, 0.12, 0.065))
 
 # Antenna: curved stem + rounded cube bulb
 b = bmesh.new()
@@ -344,7 +361,7 @@ m_indigo = principled("Bimo_Indigo", INDIGO, rough=0.32, coat=0.8, coat_rough=0.
                       sheen=0.25, sheen_tint=hex_rgba("#C9CEFF"))
 m_glass = principled("Bimo_Visor", GLASS, rough=0.06, coat=1.0, coat_rough=0.02,
                      spec=0.8, ior=1.5)
-m_eye = principled("Bimo_Eye", EYE, rough=0.3, emit=EYE, emit_str=6.0)
+m_eye = principled("Bimo_Eye", hex_rgba("#1A1C3A"), rough=0.25, emit=EYE, emit_str=1.0)
 m_blush = principled("Bimo_Blush", BLUSH, rough=0.5, emit=BLUSH, emit_str=0.6, alpha=0.8)
 m_blush.blend_method = "BLEND" if hasattr(m_blush, "blend_method") else None
 m_cube = principled("Bimo_Cube", INDIGO_LIGHT, rough=0.15, coat=1.0,
@@ -354,6 +371,8 @@ body.data.materials.append(m_body)
 visor.data.materials.append(m_glass)
 face.data.materials.append(m_eye)
 face.data.materials.append(m_blush)
+m_spark = principled("Bimo_Spark", (1, 1, 1, 1), rough=0.2, emit=(1, 1, 1, 1), emit_str=12.0)
+face.data.materials.append(m_spark)
 for o in (arm_l, arm_r, foot_l, foot_r, stem):
     o.data.materials.append(m_indigo)
 bulb.data.materials.append(m_cube)
@@ -572,7 +591,7 @@ ACTIONS["angry"] = make_action("angry", 30, [
 # Face presets: shape-key weights + cheek blush / eye glow (read by the web
 # player via mascot.json).
 FACE_PRESETS = {
-    "idle":      {"MouthSmile": 0.35},
+    "idle":      {"MouthSmile": 0.45, "_blush": 0.35},
     "happy":     {"EyeHappy": 1.0, "MouthSmile": 1.0, "MouthOpen": 0.35, "CheekPuff": 0.6, "_blush": 0.8},
     "excited":   {"EyeWide": 0.6, "EyeHappy": 0.5, "MouthOpen": 1.0, "MouthSmile": 0.8, "_blush": 0.6, "_glow": 1.5},
     "curious":   {"EyeWide": 0.35, "EyeUp": 0.4, "MouthO": 0.45},
@@ -679,7 +698,7 @@ if RENDER:
         tint = hex_rgba(preset["_tint"]) if "_tint" in preset else EYE
         pn = m_eye.node_tree.nodes["Principled BSDF"]
         pn.inputs["Emission Color"].default_value = tint
-        pn.inputs["Emission Strength"].default_value = 6.0 * preset.get("_glow", 1.0)
+        pn.inputs["Emission Strength"].default_value = 1.0 * preset.get("_glow", 1.0)
         scene.render.filepath = os.path.join(OUT, "renders", f"bimo-{emo}.png")
         bpy.ops.render.render(write_still=True)
         print("rendered", emo)

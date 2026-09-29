@@ -125,7 +125,7 @@ const U = {
   uTime: { value: 0 },
   uRim: { value: new THREE.Color(0x8b93e8) },
   uRimStrength: { value: 0.45 },
-  uEyeTint: { value: new THREE.Color(0xc9ceff) },
+  uEyeTint: { value: new THREE.Color(0x8c95ff) },
   uGlow: { value: 1 },
   uBlink: { value: 0 },
 };
@@ -207,7 +207,7 @@ function eyeMat() {
       .replace('#include <opaque_fragment>', `
         float grad = smoothstep(0.5, 0.75, vH);
         float pulse = 0.92 + 0.08 * sin(uTime * 2.2);
-        outgoingLight = mix(uTint, vec3(1.0), 0.35 + 0.35 * grad) * 2.4 * uGlow * pulse;
+        outgoingLight = mix(uTint * 0.8, vec3(0.9), 0.05 + 0.2 * grad) * 0.85 * uGlow * pulse;
         #include <opaque_fragment>`);
   };
   return m;
@@ -235,6 +235,9 @@ root.traverse((o) => {
   else if (n === 'Bimo_Blush') {
     blushMat = o.material = new THREE.MeshBasicMaterial({ color: 0xff8fb8, transparent: true, opacity: 0, depthWrite: false });
     o.castShadow = false;
+  } else if (n === 'Bimo_Spark') {
+    o.material = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 3, 3), toneMapped: false });
+    o.castShadow = false;
   } else if (n === 'Bimo_Cube') {
     o.material = new THREE.MeshPhysicalMaterial({ color: 0x8b93e8, emissive: 0x8b93e8,
       emissiveIntensity: 2.2, roughness: 0.15, clearcoat: 1, transmission: 0.25, thickness: 0.05 });
@@ -250,7 +253,8 @@ class Spring {
 }
 const face = Object.fromEntries(meta.shapeKeys.map(k => [k, new Spring(0)]));
 const blush = new Spring(0, 90, 14), glowS = new Spring(1, 120, 14);
-const tint = { r: new Spring(0.79), g: new Spring(0.81), b: new Spring(1) };
+const t0 = new THREE.Color(0x8c95ff);
+const tint = { r: new Spring(t0.r), g: new Spring(t0.g), b: new Spring(t0.b) };
 const pop = new Spring(1, 260, 9);            // squash-stretch impulse on change
 const look = { x: new Spring(0, 60, 13), y: new Spring(0, 60, 13) };
 
@@ -271,7 +275,7 @@ function setEmotion(name) {
   for (const k in face) face[k].t = p[k] ?? 0;
   blush.t = p._blush ?? 0;
   glowS.t = p._glow ?? 1;
-  const c = new THREE.Color(p._tint ?? '#C9CEFF');
+  const c = new THREE.Color(p._tint ?? '#8C95FF');
   tint.r.t = c.r; tint.g.t = c.g; tint.b.t = c.b;
   pop.x = 0.9; pop.v = 0;                     // little anticipation squash
   document.querySelectorAll('#emotions button').forEach(b => b.classList.toggle('on', b.dataset.e === name));

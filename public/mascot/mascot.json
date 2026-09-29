@@ -29,7 +29,8 @@
   ],
   "face": {
     "idle": {
-      "MouthSmile": 0.35
+      "MouthSmile": 0.45,
+      "_blush": 0.35
     },
     "happy": {
       "EyeHappy": 1.0,
