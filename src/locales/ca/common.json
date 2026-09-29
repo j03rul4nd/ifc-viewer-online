@@ -264,7 +264,49 @@
     "newsPrompt": "Només escric quan hi ha alguna cosa que val la pena.",
     "emailThanks": "Gràcies! Ja ets a la llista.",
     "emailError": "Vaja, no ha funcionat. Ho tornes a provar?",
-    "ebookThanks": "Gaudeix del manual! Ja s’està descarregant."
+    "ebookThanks": "Gaudeix del manual! Ja s’està descarregant.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Error 404",
+        "title": "Aquesta pàgina s’ha perdut",
+        "body": "L’he buscada per tot arreu i no la trobo. Potser s’ha mogut o l’enllaç té una errada."
+      },
+      "unsupported": {
+        "eyebrow": "No compatible",
+        "title": "Això encara no és compatible",
+        "body": "El teu navegador o aquest tipus de fitxer encara no ho permeten. Prova amb un Chrome, Edge, Firefox o Safari recents."
+      },
+      "docs": {
+        "eyebrow": "Documentació",
+        "title": "T’ensenyo com funciona",
+        "body": "Guies, referència i exemples, pensats per seguir-los pas a pas."
+      },
+      "offline": {
+        "eyebrow": "Sense connexió",
+        "title": "No tens connexió",
+        "body": "T’espero aquí. El que ja és obert continua funcionant; la resta torna amb la connexió."
+      },
+      "error": {
+        "eyebrow": "Alguna cosa ha fallat",
+        "title": "Això no ha funcionat",
+        "body": "L’error és nostre, no teu. Torna-ho a provar i, si es repeteix, explica’ns què feies."
+      },
+      "empty": {
+        "eyebrow": "Encara no hi ha res",
+        "title": "Això és una mica buit",
+        "body": "Quan hi afegeixis alguna cosa, apareixerà aquí."
+      },
+      "comingSoon": {
+        "eyebrow": "Properament",
+        "title": "Ho estic construint ara mateix",
+        "body": "Encara no està llest, però ja arriba. Torna aviat."
+      },
+      "success": {
+        "eyebrow": "Fet",
+        "title": "Tot a punt!",
+        "body": "Tot ha anat bé. Ja pots continuar."
+      }
+    }
   },
   "emailCapture": {
     "footer": {

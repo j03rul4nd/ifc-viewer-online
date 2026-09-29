@@ -44,7 +44,7 @@ export default function ProUpsellModal({ trigger, onOpenAccount, onClose }: ProU
     >
       <div className="px-4 py-3 flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <BimoMascot variant="inline" initial="love" greetingKey={null} className="shrink-0 w-[84px] h-[84px]" />
+          <BimoMascot variant="inline" initial="love" greetingKey={null} className="relative shrink-0 w-[84px] h-[84px]" />
           <p className="text-[12.5px] leading-snug text-[var(--text)]">{tm('proPitch')}</p>
         </div>
         <ul className="text-[12px] text-[var(--text-muted)] leading-relaxed list-disc pl-4">

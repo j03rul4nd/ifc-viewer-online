@@ -264,7 +264,49 @@
     "newsPrompt": "Scrivo solo quando c’è qualcosa che vale la pena leggere.",
     "emailThanks": "Grazie! Sei nella lista.",
     "emailError": "Ops, non è andata. Riprovi?",
-    "ebookThanks": "Buona lettura! Il manuale si sta scaricando."
+    "ebookThanks": "Buona lettura! Il manuale si sta scaricando.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Errore 404",
+        "title": "Questa pagina si è persa",
+        "body": "L’ho cercata ovunque senza trovarla. Forse è stata spostata o il link contiene un errore."
+      },
+      "unsupported": {
+        "eyebrow": "Non supportato",
+        "title": "Questo non è ancora supportato",
+        "body": "Il tuo browser o questo tipo di file non lo permettono ancora. Prova con una versione recente di Chrome, Edge, Firefox o Safari."
+      },
+      "docs": {
+        "eyebrow": "Documentazione",
+        "title": "Ti mostro come funziona",
+        "body": "Guide, riferimento ed esempi, da seguire passo dopo passo."
+      },
+      "offline": {
+        "eyebrow": "Offline",
+        "title": "Sei offline",
+        "body": "Ti aspetto qui. Ciò che è già aperto continua a funzionare; il resto torna con la connessione."
+      },
+      "error": {
+        "eyebrow": "Qualcosa è andato storto",
+        "title": "Non ha funzionato",
+        "body": "L’errore è nostro, non tuo. Riprova e, se succede ancora, raccontaci cosa stavi facendo."
+      },
+      "empty": {
+        "eyebrow": "Ancora niente",
+        "title": "È un po’ vuoto qui",
+        "body": "Quando aggiungerai qualcosa, comparirà qui."
+      },
+      "comingSoon": {
+        "eyebrow": "In arrivo",
+        "title": "Ci sto lavorando proprio ora",
+        "body": "Non è ancora pronto, ma sta arrivando. Torna presto."
+      },
+      "success": {
+        "eyebrow": "Fatto",
+        "title": "Tutto pronto!",
+        "body": "È andato tutto bene. Puoi continuare."
+      }
+    }
   },
   "emailCapture": {
     "footer": {

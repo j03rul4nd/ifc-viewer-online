@@ -1,6 +1,7 @@
 import React from 'react'
 import { faceFor, gazeOffset, mouthPath, type BimoEmotion, type BimoFace } from './bimo-face'
 import './bimo.css'
+import BimoLive from './BimoLive'
 
 // ─── Bimo ────────────────────────────────────────────────────────────────────
 // Vector twin of the 3D mascot (public/mascot, scripts/blender/build-mascot.py):
@@ -28,6 +29,10 @@ export type BimoProps = {
   label?: string
   className?: string
   style?: React.CSSProperties
+  /** Upgrade to the rigged 3D model when the load policy allows it
+   *  (bimoLoadPolicy.ts). Defaults to on at 48 px and up; tiny inline
+   *  Bimos stay SVG. The SVG remains in the DOM either way. */
+  live?: boolean
 }
 
 const EYE_L = { x: 45, y: 56 }
@@ -63,8 +68,10 @@ function usePrefersReducedMotion(): boolean {
 }
 
 export default function Bimo({
-  emotion = 'idle', size = 96, interactive = false, onBoop, label, className = '', style,
+  emotion = 'idle', size = 96, interactive = false, onBoop, label, className = '', style, live,
 }: BimoProps) {
+  const upgrade = live ?? size >= 48
+  const [is3D, setIs3D] = React.useState(false)
   const reduce = usePrefersReducedMotion()
   const uid = "bimo" + React.useId().replace(/[^a-zA-Z0-9]/g, "")
   const [booping, setBooping] = React.useState(false)
@@ -286,9 +293,20 @@ export default function Bimo({
     </svg>
   )
 
-  const classes = `bimo bimo-${shown}${booping ? ' bimo-booping' : ''}${interactive ? ' bimo-interactive' : ''} ${className}`
+  const classes = `bimo bimo-${shown}${booping ? ' bimo-booping' : ''}${interactive ? ' bimo-interactive' : ''}${is3D ? ' bimo-3d' : ''} ${className}`
+  const layer = upgrade && (
+    <BimoLive
+      clip={emotion}
+      boopKey={boopKey}
+      boopClip={emotion === 'sad' || emotion === 'angry' ? 'surprised' : 'jump'}
+      entrance={emotion}
+      track={interactive}
+      onReady={setIs3D}
+      className="bimo-live"
+    />
+  )
 
-  if (!interactive) return <span className={classes} style={style}>{body}</span>
+  if (!interactive) return <span className={classes} style={style}>{body}{layer}</span>
 
   return (
     <button
@@ -300,6 +318,7 @@ export default function Bimo({
       data-boop={boopKey}
     >
       {body}
+      {layer}
       {booping && (
         <span key={boopKey} className="bimo-burst" aria-hidden="true">
           {Array.from({ length: 6 }, (_, i) => <i key={i} style={{ '--a': `${i * 60}deg` } as React.CSSProperties} />)}

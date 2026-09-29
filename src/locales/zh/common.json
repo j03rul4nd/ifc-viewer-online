@@ -260,7 +260,49 @@
     "newsPrompt": "只有值得一读的内容我才会写。",
     "emailThanks": "谢谢！你已加入列表。",
     "emailError": "嗯，没有成功。再试一次？",
-    "ebookThanks": "祝阅读愉快！手册正在下载。"
+    "ebookThanks": "祝阅读愉快！手册正在下载。",
+    "states": {
+      "notFound": {
+        "eyebrow": "错误 404",
+        "title": "这个页面走丢了",
+        "body": "我到处找过了，还是没找到。它可能已被移动，或者链接有拼写错误。"
+      },
+      "unsupported": {
+        "eyebrow": "暂不支持",
+        "title": "这个还不支持",
+        "body": "你的浏览器或这种文件类型暂时无法使用此功能。请试试最新版的 Chrome、Edge、Firefox 或 Safari。"
+      },
+      "docs": {
+        "eyebrow": "文档",
+        "title": "我带你看看",
+        "body": "指南、参考和示例，可以一步一步跟着做。"
+      },
+      "offline": {
+        "eyebrow": "离线",
+        "title": "你已离线",
+        "body": "我在这里等你。已打开的内容仍可使用，其余内容会在恢复连接后回来。"
+      },
+      "error": {
+        "eyebrow": "出错了",
+        "title": "没有成功",
+        "body": "问题出在我们这边，不是你。请重试；如果反复出现，请告诉我们你当时在做什么。"
+      },
+      "empty": {
+        "eyebrow": "这里还没有内容",
+        "title": "这里有点空",
+        "body": "添加内容后，它会显示在这里。"
+      },
+      "comingSoon": {
+        "eyebrow": "即将推出",
+        "title": "我正在努力搭建",
+        "body": "还没准备好，但快了。请稍后再来。"
+      },
+      "success": {
+        "eyebrow": "完成",
+        "title": "全部搞定！",
+        "body": "一切顺利，可以继续了。"
+      }
+    }
   },
   "emailCapture": {
     "footer": {
