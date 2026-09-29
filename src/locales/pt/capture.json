@@ -566,7 +566,11 @@
       "magazine": "Revista",
       "datasheet": "Ficha técnica",
       "diptych": "Díptico",
-      "coordination": "Coordenação"
+      "coordination": "Coordenação",
+      "evolution": "Evolução da forma",
+      "nocturne": "Noturno",
+      "anatomy": "Anatomia",
+      "collage": "Collage"
     },
     "fmt": {
       "slide": "Slide",
@@ -641,7 +645,8 @@
       "xray": "Raio X",
       "blueprint": "Blueprint",
       "noir": "Noir",
-      "duotone": "Duotone"
+      "duotone": "Duotone",
+      "miniature": "Maquete"
     },
     "lookHint": {
       "asis": "O modelo com as suas cores",
@@ -651,7 +656,8 @@
       "xray": "Contexto transparente, elemento destacado sólido",
       "blueprint": "Linhas brancas sobre azul",
       "noir": "Preto e branco cinematográfico com grão",
-      "duotone": "Impressão a duas cores na paleta do modelo"
+      "duotone": "Impressão a duas cores na paleta do modelo",
+      "miniature": "Maquete tilt-shift: cores reais, céu claro, desfoque de miniatura"
     },
     "cutTitle": "Corte",
     "cutAt": "Posição do corte",
@@ -687,7 +693,12 @@
       "client": "Apresentação ao cliente",
       "board": "Prancha de concurso",
       "sheet": "Ficha de projeto",
-      "coordination": "Prancha de coordenação"
+      "coordination": "Prancha de coordenação",
+      "evolution": "Evolução da forma",
+      "nocturne": "Hora azul",
+      "collage": "Collage",
+      "miniature": "Maquete",
+      "anatomy": "Anatomia"
     },
     "recipeHint": {
       "pinterest": "Um pin 2:3 estilo moodboard: o modelo de quatro formas, sobre papel, com um tratamento suave",
@@ -697,7 +708,12 @@
       "client": "A apresentação da reunião: capa, ficha, vistas, plantas, números e agradecimento",
       "board": "Uma prancha A1 na ordem em que um júri a lê: imagem principal, corte, planta, alçado",
       "sheet": "Uma ficha técnica A4: imagem principal, tabela de dados, conceito e duas vistas de apoio",
-      "coordination": "Arquitetura, estrutura e instalações num slide, cada uma na sua cor"
+      "coordination": "Arquitetura, estrutura e instalações num slide, cada uma na sua cor",
+      "evolution": "O diagrama da BIG: o seu edifício a crescer passo a passo",
+      "nocturne": "Imagem ao anoitecer com as janelas reais acesas",
+      "collage": "Collage pós-digital: recorte, cor plana, sombra dura",
+      "miniature": "Maquete tilt-shift para as redes",
+      "anatomy": "Axonometria explodida com linhas de chamada para cada piso"
     },
     "recipeBusy": "A preparar…",
     "cat": {
@@ -877,6 +893,25 @@
       "other": "Outros"
     },
     "disciplineAuto": "Detetada pelo nome do ficheiro ou pelo conteúdo: altere-a se estiver errada",
-    "disciplineManual": "Escolhida à mão: clique para voltar à detetada"
+    "disciplineManual": "Escolhida à mão: clique para voltar à detetada",
+    "viral": {
+      "title": "Formatos virais",
+      "hint": "Feitos a partir do modelo real: um prompt de imagem não os consegue imitar.",
+      "night": "Noturno",
+      "nightHint": "A hora azul com as janelas do próprio modelo acesas",
+      "evolution": "Evolução da forma",
+      "evolutionHint": "O edifício a crescer por faixas de pisos, uma só câmara — o diagrama da BIG",
+      "anatomy": "Anatomia",
+      "anatomyHint": "Axonometria explodida com cada piso legendado onde cai",
+      "cutout": "Recorte collage",
+      "cutoutHint": "O edifício recortado com transparência, em tons planos, para o collage pós-digital",
+      "noGlass": "Este modelo não tem janelas nem painéis de vidro para acender.",
+      "step": {
+        "base": "Base",
+        "grow": "Crescer",
+        "stack": "Empilhar",
+        "crown": "Coroar"
+      }
+    }
   }
 }

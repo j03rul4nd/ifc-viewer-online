@@ -48,6 +48,31 @@ Verified in the real app (headless Chromium over the dev server): every quick st
 
 **Why owning the scene matters.** A screenshot tool can only crop. We can repaint every element (clay), ghost the context and keep one category solid, swap the backdrop, and frame the building's real bounding box. Nobody else can do that from an IFC.
 
+## Viral formats — what the vanguard publishes (2026-09-29)
+
+**The brief.** Make images that stop the scroll, look like they took work, and that an image-prompt AI cannot produce, because they come out of the real model: its storeys, its glazing, its measured geometry.
+
+**What the practices that set the tone actually publish.**
+- **BIG: the form-evolution diagram.** A row of steps, one camera, the massing changing by one move each time, a verb under each step. It makes the form read as inevitable. Ingels built the firm's reach on media made for online consumption, e.g. the comic-book *Yes Is More*. ([Architizer](https://architizer.com/blog/practice/details/big-branding-bjarke-ingels-message-of-optimism/), [ArchDaily](https://www.archdaily.com/553064/spotlight-bjarke-ingels))
+- **Post-digital collage** (Dogma, OFFICE KGDVS, Fala, Point Supreme). Instead of photorealism: flat, muted colour planes, geometric cut-outs, paper texture, Hockney/Ruscha references. It is the Instagram language of the younger European offices. ([Drawing Matter](https://drawingmatter.org/postdigital-collage-naivety-as-an-ideo-aesthetic-technique/), [Metropolis](https://metropolismag.com/projects/architecture-enters-age-post-digital-drawing/), [ArchDaily](https://www.archdaily.com/899685/post-digital-drawing-valorizes-the-ordinary-and-renders-it-to-look-like-the-past))
+- **The blue-hour hero.** Dusk shots with warm interior glow against a cool sky outperform daylight renders, and marketing now asks for one twilight hero per project. Warm fixtures, readable darks, light that directs the eye. ([Maverick Frame](https://maverickframe.com/blog/architectural-visualization-trends/), [Archfine](https://archfine.com/rendering-techniques/night-architectural-renders), [Chaos](https://blog.chaos.com/top-7-trends-in-archviz-you-cant-ignore))
+- **Imperfection over polish.** Grain and analogue feel make an image feel observed rather than manufactured.
+- **Portfolio staples.** The annotated exploded axonometric, and the tilt-shift "toy model" aerial.
+
+**What we built: each format fed by a capture only the model can make.**
+
+| Format | How it is made (the part a prompt can't fake) | Code |
+|---|---|---|
+| **Form evolution** | Storeys from the spatial tree, banded into 2–4 steps; one camera; each step isolates bands 0…k; white model; numbered steps, arrows, verbs (Base → Grow → Stack → Crown, renameable). | `evolutionJob`, template `evolution` |
+| **Nocturne** | Two passes from the same camera. (1) The scene under the dusk light. (2) A mask where the IFC's own glazing (`IfcWindow`, `IfcPlate`) is white and everything else black. They are composed into lit windows with bloom. About a quarter of the panes are off and a quarter dimmed, deterministic per element id, so the building looks inhabited. The title is set like light. | `nightJob`, `composeNight`, `windowLighting`, template `nocturne` |
+| **Anatomy** | Exploded bands rendered on transparency. Each band's own opaque pixels give the anchor for its leader line; the frame is cropped to the stack; labels are the IFC storey names. Leaders turn at staggered verticals so they never overlap. | `anatomyJob`, `paddedUnion`, template `anatomy` |
+| **Collage** | The whole building rendered on transparency (a true cut-out), flattened into four printed tones spread over its own luminance range (light-independent), cropped tight. The template sets it on flat sky/ground planes with a sun disc, a sheared hard shadow of the real silhouette, and paper grain. | `cutoutJob`, `posterize`, template `collage` |
+| **Miniature** | A render style: real colours, bright sky, tilt-shift blur band plus toy-model grade. Usable on any capture. | look `miniature`, `tiltShift` |
+
+Each format has a **one-click recipe**. Recipes with a tagged capture (night, cut-out, steps, anatomy, miniature, disciplines) now run it whenever no shot carries that tag, and put it first, instead of reusing whatever shots are already there.
+
+**Engine fix found on the way.** `setColor`/`setOpacity` create `preserveOriginalMaterial` materials that the fragments' material list never de-duplicates: one entry per item per call, and the list's ids are capped at 65 535. On a 2 000-element tower, a few recipes in a row threw `Fragments: Memory overflow!`. Presentation looks now clear with `resetHighlight` and paint complete materials through `highlight()`, which are de-duplicated by value.
+
 ## Roadmap (next, ordered by value)
 
 1. ~~Section cuts~~ — **done**: plan / long / cross section at any position, with the cut solids in poché and a square-on + cutaway-axonometric pair (`lib/cover/cuts.ts`, `viewer.setPresentationSection`).

@@ -5,7 +5,9 @@
 // drawing, a duotone print or a grainy monochrome. Pure functions over RGBA
 // buffers so every filter is testable without a canvas.
 
-export type PostFilter = 'none' | 'levels' | 'lines' | 'blueprint' | 'mono' | 'duotone'
+import { tiltShift } from './viral'
+
+export type PostFilter = 'none' | 'levels' | 'lines' | 'blueprint' | 'mono' | 'duotone' | 'tiltshift'
 
 export interface Rgba { data: Uint8ClampedArray; width: number; height: number }
 
@@ -85,6 +87,8 @@ export interface FilterOptions {
 /** Apply a filter in place and return the same buffer. */
 export function applyFilter(img: Rgba, filter: PostFilter, opts: FilterOptions): Rgba {
   if (filter === 'none') return img
+  // Miniature: tilt-shift blur + toy grade (viral.ts owns the maths).
+  if (filter === 'tiltshift') return tiltShift(img)
   const { width: w, height: h, data: d } = img
   const lum = luminance(img)
   const ink = hexToRgb(opts.ink)

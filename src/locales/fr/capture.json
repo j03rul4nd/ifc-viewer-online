@@ -566,7 +566,11 @@
       "magazine": "Magazine",
       "datasheet": "Fiche technique",
       "diptych": "Diptyque",
-      "coordination": "Coordination"
+      "coordination": "Coordination",
+      "evolution": "Évolution de la forme",
+      "nocturne": "Nocturne",
+      "anatomy": "Anatomie",
+      "collage": "Collage"
     },
     "fmt": {
       "slide": "Diapositive",
@@ -641,7 +645,8 @@
       "xray": "Rayons X",
       "blueprint": "Blueprint",
       "noir": "Noir",
-      "duotone": "Bichromie"
+      "duotone": "Bichromie",
+      "miniature": "Maquette"
     },
     "lookHint": {
       "asis": "Le modèle avec ses couleurs",
@@ -651,7 +656,8 @@
       "xray": "Contexte transparent, élément mis en avant opaque",
       "blueprint": "Traits blancs sur bleu",
       "noir": "Noir et blanc cinématographique avec grain",
-      "duotone": "Impression deux tons dans la palette du modèle"
+      "duotone": "Impression deux tons dans la palette du modèle",
+      "miniature": "Maquette tilt-shift : vraies couleurs, ciel clair, flou de miniature"
     },
     "cutTitle": "Coupe",
     "cutAt": "Position de la coupe",
@@ -687,7 +693,12 @@
       "client": "Présentation client",
       "board": "Planche de concours",
       "sheet": "Fiche projet",
-      "coordination": "Planche de coordination"
+      "coordination": "Planche de coordination",
+      "evolution": "Évolution de la forme",
+      "nocturne": "Heure bleue",
+      "collage": "Collage",
+      "miniature": "Maquette",
+      "anatomy": "Anatomie"
     },
     "recipeHint": {
       "pinterest": "Une épingle 2:3 façon moodboard : le modèle de quatre façons, sur papier, en douceur",
@@ -697,7 +708,12 @@
       "client": "La présentation de réunion : couverture, fiche, vues, plans d’étage, chiffres et remerciements",
       "board": "Une planche A1 dans l’ordre de lecture d’un jury : image principale, coupe, plan, élévation",
       "sheet": "Une fiche projet A4 : image principale, tableau de données, concept et deux vues d’appui",
-      "coordination": "Architecture, structure et fluides sur une diapositive, chacun dans sa couleur"
+      "coordination": "Architecture, structure et fluides sur une diapositive, chacun dans sa couleur",
+      "evolution": "Le diagramme de BIG : votre bâtiment qui grandit étape par étape",
+      "nocturne": "Image au crépuscule avec ses vraies fenêtres allumées",
+      "collage": "Collage post-digital : découpe, aplat, ombre dure",
+      "miniature": "Maquette tilt-shift pour les réseaux",
+      "anatomy": "Axonométrie éclatée avec lignes de rappel vers chaque niveau"
     },
     "recipeBusy": "Préparation…",
     "cat": {
@@ -877,6 +893,25 @@
       "other": "Autres"
     },
     "disciplineAuto": "Détectée d’après le nom du fichier ou son contenu — modifiez-la si elle est fausse",
-    "disciplineManual": "Choisie à la main — cliquez pour revenir à la discipline détectée"
+    "disciplineManual": "Choisie à la main — cliquez pour revenir à la discipline détectée",
+    "viral": {
+      "title": "Formats viraux",
+      "hint": "Construits à partir du vrai modèle : un prompt d’image ne peut pas les imiter.",
+      "night": "Nuit",
+      "nightHint": "L’heure bleue avec les propres fenêtres du modèle allumées",
+      "evolution": "Évolution de la forme",
+      "evolutionHint": "Le bâtiment qui grandit par bandes d’étages, une seule caméra — le diagramme de BIG",
+      "anatomy": "Anatomie",
+      "anatomyHint": "Axonométrie éclatée, chaque niveau légendé là où il tombe",
+      "cutout": "Découpe collage",
+      "cutoutHint": "Le bâtiment détouré, en aplats, pour le collage post-digital",
+      "noGlass": "Ce modèle n’a ni fenêtres ni panneaux vitrés à allumer.",
+      "step": {
+        "base": "Base",
+        "grow": "Croître",
+        "stack": "Empiler",
+        "crown": "Couronner"
+      }
+    }
   }
 }

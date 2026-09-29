@@ -566,7 +566,11 @@
       "magazine": "Revista",
       "datasheet": "Fitxa tècnica",
       "diptych": "Díptic",
-      "coordination": "Coordinació"
+      "coordination": "Coordinació",
+      "evolution": "Evolució de la forma",
+      "nocturne": "Nocturn",
+      "anatomy": "Anatomia",
+      "collage": "Collage"
     },
     "fmt": {
       "slide": "Diapositiva",
@@ -641,7 +645,8 @@
       "xray": "Raigs X",
       "blueprint": "Blueprint",
       "noir": "Noir",
-      "duotone": "Duotò"
+      "duotone": "Duotò",
+      "miniature": "Maqueta"
     },
     "lookHint": {
       "asis": "El model amb els seus colors",
@@ -651,7 +656,8 @@
       "xray": "Context en transparència i l’element destacat sòlid",
       "blueprint": "Línies blanques sobre blau pla",
       "noir": "Blanc i negre cinematogràfic amb gra",
-      "duotone": "Impressió a dues tintes amb la paleta de la plantilla"
+      "duotone": "Impressió a dues tintes amb la paleta de la plantilla",
+      "miniature": "Maqueta tilt-shift: colors reals, cel clar i desenfocament de miniatura"
     },
     "cutTitle": "Tall",
     "cutAt": "Posició del tall",
@@ -687,7 +693,12 @@
       "client": "Dossier de client",
       "board": "Làmina de concurs",
       "sheet": "Fitxa de projecte",
-      "coordination": "Làmina de coordinació"
+      "coordination": "Làmina de coordinació",
+      "evolution": "Evolució de la forma",
+      "nocturne": "Hora blava",
+      "collage": "Collage",
+      "miniature": "Maqueta",
+      "anatomy": "Anatomia"
     },
     "recipeHint": {
       "pinterest": "Pin 2:3 tipus moodboard: el model de quatre maneres, sobre paper i amb un acabat suau",
@@ -697,7 +708,12 @@
       "client": "El dossier de la reunió: portada, fitxa, vistes, plantes, xifres i agraïment",
       "board": "Làmina A1 en l’ordre en què la llegeix un jurat: imatge principal, secció, planta i alçat",
       "sheet": "Fitxa tècnica A4: imatge principal, taula de dades, concepte i dues vistes de suport",
-      "coordination": "Arquitectura, estructura i instal·lacions en una diapositiva, cadascuna del seu color"
+      "coordination": "Arquitectura, estructura i instal·lacions en una diapositiva, cadascuna del seu color",
+      "evolution": "El diagrama de BIG: el teu edifici creixent pas a pas",
+      "nocturne": "Imatge al capvespre amb les finestres reals enceses",
+      "collage": "Collage postdigital: retall, color pla i ombra dura",
+      "miniature": "Maqueta tilt-shift per a xarxes",
+      "anatomy": "Axonometria explotada amb línies de referència a cada planta"
     },
     "recipeBusy": "Preparant…",
     "cat": {
@@ -877,6 +893,25 @@
       "other": "Altres"
     },
     "disciplineAuto": "Detectada pel nom del fitxer o el contingut: canvia-la si no és correcta",
-    "disciplineManual": "Triada a mà: prem per tornar a la detectada"
+    "disciplineManual": "Triada a mà: prem per tornar a la detectada",
+    "viral": {
+      "title": "Formats virals",
+      "hint": "Fets a partir del model real: un prompt d’imatge no els pot imitar.",
+      "night": "Nocturn",
+      "nightHint": "Hora blava amb les finestres del mateix model enceses",
+      "evolution": "Evolució de la forma",
+      "evolutionHint": "L’edifici creixent per bandes de plantes amb una sola càmera: el diagrama de BIG",
+      "anatomy": "Anatomia",
+      "anatomyHint": "Axonometria explotada amb cada planta retolada on cau",
+      "cutout": "Retall collage",
+      "cutoutHint": "L’edifici retallat amb transparència, en tintes planes, per al collage postdigital",
+      "noGlass": "Aquest model no té finestres ni panells de vidre per encendre.",
+      "step": {
+        "base": "Base",
+        "grow": "Créixer",
+        "stack": "Apilar",
+        "crown": "Coronar"
+      }
+    }
   }
 }

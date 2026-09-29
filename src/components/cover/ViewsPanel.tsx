@@ -36,6 +36,10 @@ interface Props {
   onExplode: () => void
   onPlans: () => void
   onDisciplines: () => void
+  onNight: () => void
+  onEvolution: () => void
+  onAnatomy: () => void
+  onCutout: () => void
   /** Visible models — the coordination capture needs two or more. */
   modelCount: number
   /** Each visible model's discipline (guessed or set by hand), for the coordination capture. */
@@ -89,6 +93,25 @@ export default function ViewsPanel(p: Props) {
           </div>
         </label>
         {LOOKS[p.look].wantsFocus && !p.focusCat && <div className="text-[11px] text-[var(--warn,#F5A623)] mb-2">{t('cover.focusHint')}</div>}
+      </Section>
+
+      <Section title={t('cover.viral.title')}>
+        <div className="text-[11px] text-[var(--text-dim)] mb-2">{t('cover.viral.hint')}</div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {([
+            ['evolution', p.onEvolution, 'ArrowRight'],
+            ['night', p.onNight, 'Sparkles'],
+            ['anatomy', p.onAnatomy, 'Ruler'],
+            ['cutout', p.onCutout, 'Palette'],
+          ] as const).map(([kind, run, icon]) => {
+            const Icon = Icons[icon]
+            return (
+              <button key={kind} className={cls.btn} onClick={run} disabled={!!busy} title={t(`cover.viral.${kind}Hint`)}>
+                <Icon size={13} />{busy === kind ? busyLabel : t(`cover.viral.${kind}`)}
+              </button>
+            )
+          })}
+        </div>
       </Section>
 
       <Section title={t('cover.shots')}>

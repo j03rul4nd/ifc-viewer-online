@@ -21,6 +21,7 @@ import { LIGHTS, resolveLight, type LightId } from '../../lib/cover/lighting'
 import { chunkLayers, cutPlane, explodeGap, groupLayers, planCutY, planFitDistance, sampleEvenly, storeysFromTree, type CutMode, type Layer } from '../../lib/cover/cuts'
 import { isPhysicalCategory } from '../../lib/cover/stats'
 import { DISCIPLINE_COLORS, groupByDiscipline, heroOpacity, type DisciplineId } from '../../lib/cover/disciplines'
+import { alphaBounds, composeNight, evolutionSteps, paddedUnion, posterize, windowLighting } from '../../lib/cover/viral'
 import type { CaptureStep, StudioView } from '../../lib/cover/recipes'
 import type { ModelMeasures } from '../../lib/cover/facts'
 import type { CoverImage, CoverPalette, CoverShot } from '../../lib/cover/types'
@@ -40,7 +41,7 @@ const MAX_EXPLODE_BANDS = 7
 const MAX_PLANS = 12
 
 export type CaptureRes = 1 | 2 | 4
-export type BusyKind = 'shots' | 'pack' | 'cut' | 'explode' | 'plans' | 'disciplines' | 'recipe'
+export type BusyKind = 'shots' | 'pack' | 'cut' | 'explode' | 'plans' | 'disciplines' | 'night' | 'evolution' | 'anatomy' | 'cutout' | 'recipe'
 
 export interface CaptureSettings {
   palette: CoverPalette
@@ -68,6 +69,23 @@ export async function dataUrlToImage(url: string): Promise<CoverImage> {
 
 export function newShot(label: string, image: CoverImage): CoverShot {
   return { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, label, image }
+}
+
+/** What glows at night: the IFC's own glazing. */
+const GLAZING = ['IFCWINDOW', 'IFCPLATE']
+/** Flat white light for the glazing mask: no shading, so a pane reads fully on. */
+const MASK_LIGHT = { sky: '#FFFFFF', ground: '#FFFFFF', ambient: 3, key: '#FFFFFF', keyIntensity: 0, azimuth: 0, elevation: 60, fill: '#FFFFFF', fillIntensity: 0 }
+/** Tones a collage cut-out is flattened into (dark → light); the template adds colour around it. */
+const COLLAGE_TONES = ['#3B3632', '#8A8279', '#D8D0C3', '#F6F2EA']
+
+async function pixels(image: CoverImage): Promise<{ ctx: CanvasRenderingContext2D; data: ImageData; canvas: HTMLCanvasElement } | null> {
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return null
+  ctx.drawImage(image, 0, 0)
+  return { ctx, canvas, data: ctx.getImageData(0, 0, canvas.width, canvas.height) }
 }
 
 export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI | null>, settings: CaptureSettings, t: TFunction<'capture'>) {
@@ -216,7 +234,7 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
     const url = viewer.takeSnapshot(live.current.settings.res, { annotations: false })
     if (!url.startsWith('data:image/png')) return null
     const image = await finish(await dataUrlToImage(url), lookId)
-    return newShot(label, image)
+    return { ...newShot(label, image), look: lookId }
   }, [viewerApiRef, dress, subjectBox, finish])
 
   // ── Batches ──────────────────────────────────────────────────────────────────
@@ -410,6 +428,173 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
     return out
   }, [viewerApiRef, jumpTo, backdropFor, finish, snapshot, dress, withLook])
 
+  // ── Viral formats ───────────────────────────────────────────────────────────
+
+  /** Every visible model's built elements, as one layer (a cut-out of the building). */
+  const wholeBuilding = useCallback(() => live.current.models
+    .filter((m) => m.visible)
+    .map((m) => ({ modelId: m.id, ids: m.categories.filter((c) => isPhysicalCategory(c.id)).flatMap((c) => c.elementIds) }))
+    .filter((p) => p.ids.length), [])
+
+  // Blue hour: the scene under a dusk light, then a mask of the model's own
+  // glazing (white panes, black everything else), composed into lit windows
+  // with bloom. The "twilight hero shot" — from the real windows, not a guess.
+  const nightJob = useCallback(async (lookId: LookId): Promise<CoverShot[]> => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return []
+    const { t: tr, settings: st, models } = live.current
+    const hasGlass = models.some((m) => m.visible && m.categories.some((c) => GLAZING.includes(c.id.toUpperCase())))
+    if (!hasGlass) { toast(tr('cover.viral.noGlass'), 'info'); return [] }
+    if (sectionOn.current) { await viewer.setPresentationSection(null); sectionOn.current = false }
+
+    viewer.setLighting(resolveLight('dusk', st.sunAzimuth))
+    await dress(lookId)
+    const sky = LIGHTS.dusk.sky!
+    viewer.setBackground({ preset: 'custom', mode: 'gradient', top: sky.top, bottom: sky.bottom })
+    await wait(300)
+    const baseUrl = viewer.takeSnapshot(st.res, { annotations: false })
+
+    // Not every pane is lit: some off, some dimmed — per element, the same every export.
+    const overrides: Array<{ modelId: string; ids: number[]; color: string }> = []
+    for (const md of models) {
+      if (!md.visible) continue
+      const glass = md.categories.filter((c) => GLAZING.includes(c.id.toUpperCase())).flatMap((c) => c.elementIds)
+      const { off, dim } = windowLighting(glass)
+      overrides.push({ modelId: md.id, ids: off, color: '#000000' }, { modelId: md.id, ids: dim, color: '#6A6A6A' })
+    }
+    const mask = { base: 'clay' as const, baseColor: '#000000', baseOpacity: 1, focusTypes: GLAZING, focusColor: '#FFFFFF', hideGrid: true, overrides }
+    viewer.setLighting(MASK_LIGHT)
+    await viewer.setPresentationLook(mask)
+    lookOn.current = true
+    viewer.setBackground({ preset: 'custom', mode: 'solid', top: '#000000', bottom: '#000000' })
+    await wait(400)
+    await viewer.setPresentationLook(mask)
+    await wait(160)
+    const maskUrl = viewer.takeSnapshot(st.res, { annotations: false })
+    if (!baseUrl.startsWith('data:image/png') || !maskUrl.startsWith('data:image/png')) return []
+
+    const base = await pixels(await finish(await dataUrlToImage(baseUrl), lookId))
+    const m = await pixels(await dataUrlToImage(maskUrl))
+    if (!base || !m) return []
+    composeNight(base.data, m.data)
+    base.ctx.putImageData(base.data, 0, 0)
+    return [{ ...newShot(tr('cover.viral.night'), await createImageBitmap(base.canvas)), night: true }]
+  }, [viewerApiRef, dress, finish])
+
+  // Form evolution, BIG-style: the same camera, the building growing band by
+  // band from its real storeys — base → … → crown. The diagram that makes a
+  // form look inevitable.
+  const evolutionJob = useCallback(async (lookId: LookId): Promise<CoverShot[]> => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return []
+    const tr = live.current.t
+    const layers = await storeyLayers()
+    const n = evolutionSteps(layers.length)
+    if (n < 2) { toast(tr('cover.explodeNone'), 'info'); return [] }
+    const bands = chunkLayers(layers, n)
+    await jumpTo('iso')
+    await wait(1200)
+    if (sectionOn.current) { await viewer.setPresentationSection(null); sectionOn.current = false }
+    type Step = 'base' | 'grow' | 'stack' | 'crown'
+    const words: Step[] = n === 2 ? ['base', 'crown'] : n === 3 ? ['base', 'grow', 'crown'] : ['base', 'grow', 'stack', 'crown']
+    const out: CoverShot[] = []
+    for (let k = 0; k < bands.length; k++) {
+      const shown = bands.slice(0, k + 1).flatMap((b) => b.parts.flatMap((p) => p.ids.map((expressId) => ({ expressId, modelId: p.modelId }))))
+      viewer.isolateElements(shown, true)
+      // Isolation re-streams tiles: dress, settle, dress again.
+      await wait(350)
+      await dress(lookId)
+      await wait(350)
+      await dress(lookId)
+      await wait(160)
+      const url = viewer.takeSnapshot(live.current.settings.res, { annotations: false })
+      if (!url.startsWith('data:image/png')) continue
+      const shot = newShot(tr(`cover.viral.step.${words[k]}`), await finish(await dataUrlToImage(url), lookId))
+      out.push({ ...shot, step: k + 1 })
+    }
+    viewer.isolateElements([], false)
+    return out
+  }, [viewerApiRef, storeyLayers, jumpTo, dress, finish])
+
+  // Anatomy: the exploded axonometric, with each band's label pinned to where
+  // that band actually landed in the frame (measured from its own layer).
+  const anatomyJob = useCallback(async (lookId: LookId): Promise<CoverShot[]> => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return []
+    const { t: tr, settings: st } = live.current
+    const layers = chunkLayers(await storeyLayers(), 6)
+    if (layers.length < 2) { toast(tr('cover.explodeNone'), 'info'); return [] }
+    const box = await subjectBox()
+    if (!box) return []
+    const gap = explodeGap(box.max.y - box.min.y, layers.length, Math.max(1, st.spread))
+    const tall = { min: box.min, max: { ...box.max, y: box.max.y + gap * (layers.length - 1) } }
+    const vp = viewer.getCameraViewpoint()
+    const pose = presetPose(tall, 'iso', vp?.fovDeg ?? 45, vp?.aspect ?? 16 / 9)
+    const k = 0.74
+    viewer.setCameraLookAt({
+      x: pose.target.x + (pose.position.x - pose.target.x) * k,
+      y: pose.target.y + (pose.position.y - pose.target.y) * k,
+      z: pose.target.z + (pose.position.z - pose.target.z) * k,
+    }, pose.target, false)
+    await dress(lookId)
+    await wait(400)
+    const urls = await viewer.captureExplodedLayers(layers.map((l) => l.parts), gap, st.res)
+    const imgs = await Promise.all(urls.map(dataUrlToImage))
+    if (!imgs.length) return []
+    // Where each band landed (its own layer's opaque pixels), in frame pixels.
+    const boxes: Array<{ x0: number; y0: number; x1: number; y1: number; label: string }> = []
+    for (let i = 0; i < imgs.length; i++) {
+      const px = await pixels(imgs[i])
+      const b = px ? alphaBounds(px.data) : null
+      if (b) boxes.push({ ...b, label: layers[i].names.join(' / ') })
+    }
+    const c = document.createElement('canvas')
+    c.width = imgs[0].width
+    c.height = imgs[0].height
+    const ctx = c.getContext('2d')
+    if (!ctx) return []
+    // A drawing's own paper, not the light's sky: the sheet is the ground.
+    const bg = LOOKS[lookId].scene.background ?? backdropFor(lookId) ?? useSceneStore.getState().background
+    const g = ctx.createLinearGradient(0, 0, 0, c.height)
+    g.addColorStop(0, bg.top)
+    g.addColorStop(1, bg.bottom)
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, c.width, c.height)
+    for (const img of imgs) ctx.drawImage(img, 0, 0)
+    // Crop to the stack: a tall exploded tower in a wide frame is a sliver.
+    const crop = paddedUnion(boxes, c.width, c.height, 0.06) ?? { x: 0, y: 0, w: c.width, h: c.height }
+    const callouts = boxes.map((b) => ({ x: (b.x1 - crop.x) / crop.w, y: ((b.y0 + b.y1) / 2 - crop.y) / crop.h, label: b.label }))
+    const image = await finish(await createImageBitmap(c, crop.x, crop.y, crop.w, crop.h), lookId)
+    return [{ ...newShot(tr('cover.viral.anatomy'), image), callouts }]
+  }, [viewerApiRef, storeyLayers, subjectBox, dress, backdropFor, finish])
+
+  // Collage cut-out: the building alone on transparency, flattened into a few
+  // printed tones and cropped tight — the template sets it on flat planes.
+  const cutoutJob = useCallback(async (): Promise<CoverShot[]> => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return []
+    const { t: tr, settings: st } = live.current
+    const parts = wholeBuilding()
+    if (!parts.length) return []
+    await dress('clay')
+    await wait(300)
+    const [url] = await viewer.captureExplodedLayers([parts], 0, st.res)
+    if (!url) return []
+    const px = await pixels(await dataUrlToImage(url))
+    if (!px) return []
+    const b = alphaBounds(px.data)
+    if (!b) return []
+    posterize(px.data, COLLAGE_TONES)
+    px.ctx.putImageData(px.data, 0, 0)
+    const pad = Math.round(Math.max(b.x1 - b.x0, b.y1 - b.y0) * 0.03)
+    const x = Math.max(0, b.x0 - pad)
+    const y = Math.max(0, b.y0 - pad)
+    const w = Math.min(px.canvas.width - x, b.x1 - b.x0 + pad * 2)
+    const h = Math.min(px.canvas.height - y, b.y1 - b.y0 + pad * 2)
+    const image = await createImageBitmap(px.canvas, x, y, w, h)
+    return [{ ...newShot(tr('cover.viral.cutout'), image), cutout: true }]
+  }, [viewerApiRef, wholeBuilding, dress])
+
   // ── Public jobs ──────────────────────────────────────────────────────────────
 
   const captureCurrent = useCallback(() => {
@@ -443,6 +628,11 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
   }, [batch, cutJob])
 
   const capturePlans = useCallback(() => batch('plans', () => plansJob(live.current.settings.look)), [batch, plansJob])
+
+  const captureNight = useCallback(() => batch('night', () => nightJob(live.current.settings.look)), [batch, nightJob])
+  const captureEvolution = useCallback(() => batch('evolution', () => evolutionJob(live.current.settings.look === 'asis' ? 'clay' : live.current.settings.look)), [batch, evolutionJob])
+  const captureAnatomy = useCallback(() => batch('anatomy', () => anatomyJob(live.current.settings.look)), [batch, anatomyJob])
+  const captureCutout = useCallback(() => batch('cutout', () => cutoutJob()), [batch, cutoutJob])
 
   const captureDisciplines = useCallback(() => batch('disciplines', () => disciplinesJob(live.current.settings.look)), [batch, disciplinesJob])
 
@@ -495,10 +685,14 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
       if (s.kind === 'view') out.push(...await viewsJob([s.view], s.look))
       else if (s.kind === 'cut') out.push(...await cutJob(s.cut, 0.45, s.look, false))
       else if (s.kind === 'disciplines') out.push(...await disciplinesJob(s.look))
+      else if (s.kind === 'night') out.push(...await nightJob(s.look))
+      else if (s.kind === 'evolution') out.push(...await evolutionJob(s.look))
+      else if (s.kind === 'anatomy') out.push(...await anatomyJob(s.look))
+      else if (s.kind === 'cutout') out.push(...await cutoutJob())
       else out.push(...await plansJob(live.current.settings.look))
     }
     return out
-  }, { light }), [batch, viewsJob, cutJob, plansJob, disciplinesJob])
+  }, { light }), [batch, viewsJob, cutJob, plansJob, disciplinesJob, nightJob, evolutionJob, anatomyJob, cutoutJob])
 
   const frameFocus = useCallback(async () => {
     const viewer = viewerApiRef.current
@@ -524,6 +718,6 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
   }, [subjectBox])
 
   return {
-    busy, captureCurrent, captureAuto, capturePack, captureCut, capturePlans, captureExploded, captureDisciplines, captureSteps, frameFocus, measure,
+    busy, captureCurrent, captureAuto, capturePack, captureCut, capturePlans, captureExploded, captureDisciplines, captureNight, captureEvolution, captureAnatomy, captureCutout, captureSteps, frameFocus, measure,
   }
 }

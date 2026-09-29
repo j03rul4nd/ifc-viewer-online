@@ -20,6 +20,7 @@ export type CoverTemplateId =
   | 'board' | 'sequence' | 'styles' | 'spotlight'
   | 'moodboard' | 'swatch' | 'polaroid' | 'minimal' | 'statement' | 'magazine'
   | 'datasheet' | 'diptych' | 'coordination'
+  | 'evolution' | 'nocturne' | 'anatomy' | 'collage'
 
 /** Where a template is filed in the gallery. */
 export type TemplateCategory = 'social' | 'editorial' | 'pro'
