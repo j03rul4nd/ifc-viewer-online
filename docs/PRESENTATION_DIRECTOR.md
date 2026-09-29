@@ -125,3 +125,15 @@ The scene is restored after the render (models' own materials, the user's backdr
 - Verified on Torre Poblenou (native and Cloud Dancer): 8 bands, backdrop intact, cost ≈ one render pass per band (8 s shot at 1080p ≈ 40 s).
 - Templates: Editorial clay (after the build-up), Teal & persimmon (instead of the build-up).
 - Not done: exploding by system or by discipline model (models side by side) — the same pass mechanism would take a per-model offset.
+
+## Motion pass (2026-09-29)
+
+Borrowed from 2026 motion-graphics grammar (one accent over neutrals, masked word rolls, a technical interface frame, a travelling dot that ties the shots together) — applied to real model data, nothing decorative.
+
+- **Text**: titles always in the sky (`top-center`), never on the building. `TextOverlay.yFrac` places a card's centre at a fraction of the height: vertical subtitles sit at 72 %, above the feed's UI and under the building's middle. New anim **`roll`** (letters rise through a per-line mask, 22 ms stagger, 0.3 s each, out through the top) — the launch style's subtitles. Subtitles break at `: ` first.
+- **HUD** (`recipe.hud`, `project.hud`, `src/lib/capture/hud.ts`): corner mono type (project · subject), shot counter `03/07`, live detail (the height of a horizontal cut, printed every frame; storey `L 3/18`; system share), a timeline with a tick per shot and an accent dot. Stops where the end card starts; vertical formats put the timeline at the top. On in Launch 2026 ×2 and Blueprint.
+- **`plans`**: typical storeys (`typicalStoreys`: no near-empty foundation or roof slab) cut at plan height, the camera settling at 62° close on that floor. Narration says the rooms when there are ≥ 2 IfcSpace, else the elements.
+- **`interior`**: eye height (1.6 m over the room's own floor — the storey box starts lower and put the eye in the slab) inside the largest IfcSpace of a middle storey, a slow dolly along the long side with a pan across the far end, 72° lens. `clearLine` picks the parallel route nearest the middle that clears every column/wall/stair of that storey by 0.5 m (their boxes gathered in facts). No cut: the slab above is the ceiling (a cut showed the backdrop).
+- Rooms: IfcSpace per storey from containment, else placed by box height (Torre Poblenou: one open-plan space per floor, not listed under the storeys). The category is matched by `id` (`IFCSPACE`); its `label` is "Spaces".
+- Client walkthrough template: hero → tour → plans → interior → aerial → closing.
+- Known: the slab underside reads dark in the interior (the viewer's key light is from above).

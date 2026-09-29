@@ -34,6 +34,8 @@ export type SectionKind =
   | 'sectionCut'   // a plan cut going down from the roof, stopping at every storey
   | 'sectionSweep' // a vertical cut sweeping through the building, the inside in poché
   | 'exploded'  // the storeys pull apart into an exploded view and fit back together
+  | 'plans'     // each storey cut at plan height, seen from nearly overhead: the rooms
+  | 'interior'  // eye height inside a storey, a slow turn with a wide lens
   | 'systems'   // structure / envelope / MEP / interiors, each isolated
   | 'issues'    // the worst validation findings, highlighted
   | 'ids'       // failed IDS specifications, the failing elements highlighted
@@ -44,7 +46,7 @@ export type SectionKind =
   | 'closing'   // slow final turn with the call to action
   | 'endCard'   // the name and the URL over a drifting gradient
 
-export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'sectionCut', 'sectionSweep', 'exploded', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing', 'endCard']
+export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'sectionCut', 'sectionSweep', 'exploded', 'plans', 'interior', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing', 'endCard']
 
 export type Pace = 'calm' | 'normal' | 'fast'
 export const PACES: readonly Pace[] = ['calm', 'normal', 'fast']
@@ -87,9 +89,19 @@ export interface RecipeCaptions {
  * - 'launch':  the 2026 product-launch grammar — speed-ramped moves, motion
  *              blur on fast ones, a punch-in on every cut and on the bar,
  *              slammed titles, counting numbers, word-by-word labels.
+ * - 'motion':  kinetic typography on top of the launch grammar — the title
+ *              flashes word by word on full-frame colour cards, glitched
+ *              headlines, masked and blur-slid labels, a design-tool HUD, and
+ *              a different motion-graphics join (glitch/squeeze/iris/spin) on
+ *              every cut.
  */
-export type EditStyle = 'classic' | 'launch'
-export const EDIT_STYLES: readonly EditStyle[] = ['classic', 'launch']
+export type EditStyle = 'classic' | 'launch' | 'motion'
+export const EDIT_STYLES: readonly EditStyle[] = ['classic', 'launch', 'motion']
+
+/** Launch and motion share the cutting grammar (ramps, punches, shutter). */
+export function isKineticStyle(style: EditStyle | undefined): boolean {
+  return style === 'launch' || style === 'motion'
+}
 
 /** How much sound design the director adds on top of the music. */
 export type SfxLevel = 'off' | 'subtle' | 'full'
@@ -101,6 +113,8 @@ export interface Recipe {
   look?: LookId
   /** Sound effects: off, whooshes only, or the full launch set. Missing = off. */
   sfx?: SfxLevel
+  /** Technical interface frame: corner type, shot counter, live data, a timeline with an accent dot. */
+  hud?: boolean
   /** Cutting grammar; missing = classic. */
   style?: EditStyle
   name: string
@@ -164,7 +178,7 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
   {
     ...BASE, id: 'client-walkthrough', name: 'Client walkthrough',
     format: 'wide', targetSec: 60, pace: 'calm', music: 'calm', transitionSec: 0.8,
-    sections: ['hero', 'tour', 'storeys', 'aerial', 'closing'],
+    sections: ['hero', 'tour', 'plans', 'interior', 'aerial', 'closing'],
     captions: { ...CAPTIONS, showScore: false },
   },
   {
@@ -215,14 +229,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     multiModel: 'groups',
   },
   {
-    ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch', sfx: 'full',
+    ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch', sfx: 'full', hud: true,
     format: 'reel', targetSec: 16, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
     sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'endCard'], maxSystems: 1, maxStoreys: 1,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
   {
-    ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch', sfx: 'full',
+    ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch', sfx: 'full', hud: true,
     format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'cinematic',
     sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'sectionCut', 'systems', 'endCard'], maxSystems: 2, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
@@ -253,7 +267,13 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
   },
   {
-    ...BASE, id: 'blueprint-tech', name: 'Blueprint', look: 'blueprint',
+    ...BASE, id: 'kinetic-type', name: 'Kinetic type', style: 'motion', sfx: 'full', hud: true,
+    format: 'reel', targetSec: 16, pace: 'fast', transition: 'glitch', transitionSec: 0.3, music: 'upbeat',
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'systems', 'endCard'], maxSystems: 2,
+    captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'blueprint-tech', name: 'Blueprint', look: 'blueprint', hud: true,
     format: 'wide', targetSec: 30, pace: 'normal', transition: 'crossfade', music: 'corporate',
     sections: ['hero', 'sectionCut', 'systems', 'storeys', 'sectionSweep', 'endCard'], maxSystems: 4, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'clean', cta: 'ifcvieweronline.eu' },
@@ -353,6 +373,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
     multiModel: oneOf(o.multiModel, MULTI_MODEL_MODES, BASE.multiModel),
     style: oneOf(o.style, EDIT_STYLES, 'classic'),
     sfx: oneOf(o.sfx, SFX_LEVELS, 'off'),
+    hud: bool(o.hud, false),
     look: oneOf(o.look, LOOK_IDS, 'native'),
     fadeIn: bool(o.fadeIn, true),
     fadeOut: bool(o.fadeOut, true),

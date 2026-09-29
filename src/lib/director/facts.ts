@@ -16,7 +16,7 @@ import { groupIssuesForTour } from '../tour/generateAutoTour'
 import { getRuleLabel, type BcfTopic, type SpatialNode, type ValidationIssue } from '../../types'
 import { DEFAULT_FOV_DEG, type CameraPose } from '../capture/shots'
 import { groupSystems, type SystemKey } from './systems'
-import type { Box, ModelFacts, SceneFacts, Subject, TourStop } from './plan'
+import { interiorStorey, type Box, type ModelFacts, type SceneFacts, type Subject, type TourStop } from './plan'
 
 /** The viewer calls the gatherer needs. */
 export interface FactsViewer {
@@ -81,6 +81,40 @@ export async function gatherSceneFacts(viewer: FactsViewer, o: FactsOptions): Pr
       if (storeys.length >= (o.maxStoreys ?? 30)) break
     }
     storeys.sort((a, b) => a.box.min.y - b.box.min.y)
+    // Rooms: the IfcSpace elements each storey contains; when the spatial tree
+    // does not list them under a storey, placed by where their box sits.
+    const spaces = (info?.categories ?? []).find((c) => c.id === 'IFCSPACE' || c.label?.toUpperCase() === 'IFCSPACE')?.elementIds ?? []
+    if (spaces.length && storeys.length) {
+      const set = new Set(spaces)
+      let placed = 0
+      for (const st of storeys) { st.rooms = st.ids.filter((id) => set.has(id)).length; placed += st.rooms }
+      // Boxes placed by height; the largest room of a storey is where an
+      // interior shot can stand (a room is empty space by definition).
+      for (const id of spaces.slice(0, 300)) {
+        const box = await viewer.getElementsBox([id], modelId)
+        if (!box) continue
+        const y = (box.min.y + box.max.y) / 2
+        const home = [...storeys].reverse().find((st) => st.box.min.y - 0.3 <= y)
+        if (!home) continue
+        if (placed === 0) home.rooms = (home.rooms ?? 0) + 1
+        const area = (box.max.x - box.min.x) * (box.max.z - box.min.z)
+        const best = home.room ? (home.room.max.x - home.room.min.x) * (home.room.max.z - home.room.min.z) : 0
+        if (area > best) home.room = box
+      }
+    }
+    // What the interior shot has to steer around: columns and walls of that storey.
+    const inside = interiorStorey(storeys)
+    if (inside) {
+      const kinds = new Set(['IFCCOLUMN', 'IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCSTAIR', 'IFCSTAIRFLIGHT', 'IFCRAILING'])
+      const mine = new Set(inside.ids)
+      const ids = (info?.categories ?? []).filter((c) => kinds.has(String(c.id ?? '').toUpperCase())).flatMap((c) => c.elementIds ?? []).filter((id) => mine.has(id))
+      const boxes: Box[] = []
+      for (const id of ids.slice(0, 160)) {
+        const box = await viewer.getElementsBox([id], modelId)
+        if (box) boxes.push(box)
+      }
+      inside.obstacles = boxes
+    }
 
     const systems: Subject[] = []
     for (const g of groupSystems(info?.categories ?? [])) {

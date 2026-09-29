@@ -152,12 +152,22 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       </button>
 
       {/* Model info — click to activate */}
-      <button onClick={onActivate} className="flex-1 min-w-0 text-left px-0.5">
+      <button onClick={onActivate} onDoubleClick={onFrame} title={t('scene.frameOnDoubleClick')} className="flex-1 min-w-0 text-left px-0.5">
         <p className={`text-[12px] font-medium truncate leading-tight ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text)]'}`}>
           {model.fileName}
         </p>
         <p className="text-[10px] text-[var(--text-muted)] leading-tight">
           {model.elementCount.toLocaleString()} el · {formatBytes(model.fileSize)}
+          {model.placedByHand && (
+            // Why the map leaves this one alone — otherwise a model that stops
+            // following its georeference looks like a bug.
+            <span
+              title={t('scene.placedByHandHint')}
+              className="ml-1.5 px-1 py-px rounded bg-[rgba(245,166,35,0.12)] text-[var(--warn)] text-[9px] font-medium"
+            >
+              {t('scene.placedByHand')}
+            </span>
+          )}
         </p>
       </button>
 

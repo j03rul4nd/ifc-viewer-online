@@ -12,6 +12,7 @@
 //   • source time   — seconds inside a source's media
 // A clip maps one onto the other with in/out points and a speed.
 
+import type { Hud } from './hud'
 import type { AudioSelection, TextOverlay, TextAnimId } from './timeline'
 import type { ProjectSfx } from './sfx'
 import type { Grade } from './grade'
@@ -41,17 +42,27 @@ export interface MediaSource {
  *   slideLeft / slideUp — the incoming clip pushes the outgoing one (overlaps)
  *   zoom       — outgoing punches in and fades, incoming settles (overlaps)
  *   whip       — fast directional blur-pan, the Reels staple (overlaps)
+ * Motion-graphics joins (all overlap):
+ *   glitch     — RGB split and torn scanlines across the join
+ *   iris       — the incoming shot opens as a growing circle
+ *   squeeze    — the outgoing shot collapses into a bright line, the next unfolds from it
+ *   spin       — a rotating punch-in hands over to a counter-rotating settle
  */
 export type ClipTransition =
   | 'cut' | 'crossfade' | 'dipBlack' | 'dipWhite' | 'slideLeft' | 'slideUp' | 'zoom' | 'whip'
+  | 'glitch' | 'iris' | 'squeeze' | 'spin'
 
 export const CLIP_TRANSITIONS: readonly ClipTransition[] = [
   'cut', 'crossfade', 'dipBlack', 'dipWhite', 'slideLeft', 'slideUp', 'zoom', 'whip',
+  'glitch', 'iris', 'squeeze', 'spin',
 ]
+
+/** The motion-graphics joins, in the order a kinetic edit cycles through them. */
+export const MOTION_TRANSITIONS: readonly ClipTransition[] = ['glitch', 'squeeze', 'iris', 'spin']
 
 /** Transitions that overlap the two clips in time (and so shorten the project). */
 export function overlapsClips(t: ClipTransition): boolean {
-  return t === 'crossfade' || t === 'slideLeft' || t === 'slideUp' || t === 'zoom' || t === 'whip'
+  return t !== 'cut' && t !== 'dipBlack' && t !== 'dipWhite'
 }
 
 export const MIN_CLIP_SEC = 0.25
@@ -139,6 +150,8 @@ export interface EditProject {
   grade?: Grade
   /** Which look styled the grade and the titles, for the picker. */
   lookId?: string
+  /** Technical interface frame over the picture (director clips). */
+  hud?: Hud
 }
 
 export interface ProjectFx {
@@ -148,6 +161,12 @@ export interface ProjectFx {
    * and on the beat.
    */
   punch?: { times: number[]; amount: number }
+  /**
+   * Motion-graphics HUD over the picture: hairline safe frame, corner
+   * crosshairs, a running timecode and small mono labels — the "design tool
+   * chrome" that makes a kinetic edit read as authored.
+   */
+  hud?: { label: string; accent: string }
 }
 
 /** How long a punch takes to settle back, seconds. */

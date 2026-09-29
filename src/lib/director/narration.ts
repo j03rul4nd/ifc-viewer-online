@@ -21,6 +21,8 @@ export type NarrationFact =
   | { kind: 'sectionCut'; storeys: number; from: string; to: string }
   | { kind: 'sectionSweep'; lengthM: number }
   | { kind: 'exploded'; storeys: number }
+  | { kind: 'plan'; name: string; rooms: number; elements: number }
+  | { kind: 'interior'; name: string; rooms: number }
   | { kind: 'closing'; name: string; score: number | null }
 
 export type NarrationKind = NarrationFact['kind']
@@ -79,7 +81,7 @@ export function wrapChunks(s: string, max: number): string[] {
   let rest = s
   while (rest.length > max) {
     const window = rest.slice(0, max + 1)
-    let cut = Math.max(...[', ', ' · ', '; ', ' — ', '、', '，'].map((m) => {
+    let cut = Math.max(...[': ', ', ', ' · ', '; ', ' — ', '：', '、', '，'].map((m) => {
       const i = window.lastIndexOf(m)
       return i > max * 0.25 ? i + m.trimEnd().length : -1
     }))

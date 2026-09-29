@@ -2824,6 +2824,7 @@ export default function App() {
                           handleSetActiveModel(id)
                           setScenePanelOpen(true)
                         }}
+                        onFrameItems={(ids) => { viewerApiRef.current?.frameItems(ids) }}
                       />
                     </div>
                   </Panel>

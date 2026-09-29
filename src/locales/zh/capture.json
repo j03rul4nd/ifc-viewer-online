@@ -84,7 +84,9 @@
       "subtitle": "副标题",
       "caption": "字幕",
       "lowerThird": "下三分之一",
-      "badge": "标签"
+      "badge": "标签",
+      "display": "大标题",
+      "wordCard": "单词卡"
     },
     "anims": {
       "none": "无",
@@ -93,7 +95,15 @@
       "pop": "弹出",
       "words": "逐词",
       "slam": "重击",
-      "count": "数字滚动"
+      "count": "数字滚动",
+      "roll": "滚动",
+      "glitch": "故障",
+      "maskUp": "遮罩上升",
+      "echo": "回声",
+      "select": "选框",
+      "blurSlide": "模糊滑入",
+      "zoomIn": "穿越缩放",
+      "marquee": "跑马灯"
     },
     "effects": {
       "in": "开场",
@@ -230,7 +240,11 @@
       "slideLeft": "滑动",
       "slideUp": "上滑",
       "zoom": "缩放",
-      "whip": "甩镜"
+      "whip": "甩镜",
+      "glitch": "故障",
+      "iris": "光圈",
+      "squeeze": "挤压",
+      "spin": "旋转"
     },
     "applyToAll": "应用到所有剪切点",
     "firstClipNoTransition": "第一个片段是视频开头——请在“项目”中设置开场淡入。",
@@ -351,7 +365,9 @@
         "endCard": "片尾卡",
         "sectionCut": "逐层剖切",
         "sectionSweep": "剖切扫描",
-        "exploded": "爆炸视图"
+        "exploded": "爆炸视图",
+        "plans": "平面图",
+        "interior": "室内"
       },
       "sectionHint": {
         "hero": "拉远至整个模型并显示标题",
@@ -372,7 +388,9 @@
         "endCard": "名称和网址叠加在流动渐变背景上",
         "sectionCut": "从屋顶向下的平面剖切，在每层停留",
         "sectionSweep": "穿过建筑的竖向剖切，展示内部",
-        "exploded": "各楼层分开后再合拢"
+        "exploded": "各楼层分开后再合拢",
+        "plans": "每层在平面高度剖切，从上方看：房间",
+        "interior": "在楼层内以视线高度缓慢环视"
       },
       "empty": {
         "storeys": "此模型没有楼层",
@@ -384,7 +402,9 @@
         "bcf": "没有带视点或构件的 BCF 议题",
         "fixed": "无可比较内容——修复后请重新校验",
         "sectionCut": "至少需要 2 层",
-        "exploded": "至少需要 3 层"
+        "exploded": "至少需要 3 层",
+        "plans": "此模型中没有楼层",
+        "interior": "没有足够高的楼层"
       },
       "emptyGeneric": "此模型没有可展示的内容",
       "shots": "{{n}} 个镜头",
@@ -447,11 +467,13 @@
       "styleLabel": "剪辑风格",
       "styles": {
         "classic": "经典",
-        "launch": "2026 发布会"
+        "launch": "2026 发布会",
+        "motion": "动态"
       },
       "styleHint": {
         "classic": "平缓运镜、淡入淡出、沉稳字幕。",
-        "launch": "变速运镜、运动模糊、每个剪切点缩放冲击、重击标题、数字滚动、逐词标注。"
+        "launch": "变速运镜、运动模糊、每个剪切点缩放冲击、重击标题、数字滚动、逐词标注。",
+        "motion": "动态文字：标题在彩色卡片上逐词闪现，故障风标题，设计 HUD，每个剪辑点使用不同转场。"
       },
       "sfxLabel": "音效",
       "sfxLevels": {
@@ -502,15 +524,51 @@
         "closingScore": "{{name}}：Health Score {{score}}/100。",
         "sectionCut": "从{{from}}剖切到{{to}}：{{storeys}}个平面。",
         "sectionSweep": "沿建筑{{length}}米的竖向剖切。",
-        "exploded": "{{storeys}}层，分开后再合拢。"
-      }
+        "exploded": "{{storeys}}层，分开后再合拢。",
+        "plan": "{{name}}平面：{{elements}}个构件。",
+        "planRooms": "{{name}}平面：{{rooms}}个房间。",
+        "interior": "{{name}}内部。",
+        "interiorRooms": "{{name}}内部：本层{{rooms}}个房间。"
+      },
+      "hud": "界面",
+      "hudOn": "技术 HUD",
+      "hudHint": "角落显示当前内容、镜头计数、实时剖切高度，以及带强调色圆点的时间轴。"
     },
     "remaining": "约剩 {{seconds}} 秒",
     "sfxVolume": "音效音量",
     "sfxRemove": "移除音效",
     "sfxCount": "{{n}} 个音效",
     "sfxTitle": "音效",
-    "restyleHint": "立即更改调色和文字。3D 镜头保留原有配色和光照——重新生成才会重绘。"
+    "restyleHint": "立即更改调色和文字。3D 镜头保留原有配色和光照——重新生成才会重绘。",
+    "sound": {
+      "title": "Viral sound / your track",
+      "import": "Import sound (audio or TikTok video)",
+      "replace": "Replace sound",
+      "importHint": "An MP3/M4A/WAV, or a TikTok, Reel or Short you saved — we take its soundtrack. It is analysed in your browser and never uploaded.",
+      "analysing": "Analysing the beat…",
+      "ready": "Sound ready — cuts synced to the beat and the drop",
+      "failed": "Could not read that sound: {{reason}}",
+      "missing": "\"{{name}}\" is not loaded any more — import it again to hear it.",
+      "drop": "drop at {{sec}} s",
+      "rights": "Who owns this sound?",
+      "rightsOpt": {
+        "viral": "Viral / unknown",
+        "own": "Mine",
+        "licensed": "Licensed"
+      },
+      "sync": "Sync the edit to the sound",
+      "syncHint": "Starts the sound so the drop lands on the first cut, moves every cut onto the beat and punches in on each bar after the drop.",
+      "addHook": "Add hook caption",
+      "hookHint": "A big line at the top for the first seconds — the hook decides whether people keep watching. Keep it out of the bottom third, where TikTok puts its own caption.",
+      "hookText": "Wait for the reveal 👀",
+      "warnTitle": "This sound may be copyrighted",
+      "warnBody": "\"{{name}}\" is marked as a viral sound. Trending sounds often contain music owned by labels or other creators, and TikTok's terms do not allow business accounts to use other users' original sounds. The platform can mute the video, take it down or reduce its reach. You are responsible for the rights to what you publish.",
+      "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
+      "exportSilent": "Export without music",
+      "exportAnyway": "Export with the sound"
+    },
+    "hudTitle": "动态 HUD",
+    "hudOn": "在画面上叠加安全框、十字准星和时间码"
   },
   "cover": {
     "open": "封面工作室 — 从模型生成封面、幻灯片和帖子",

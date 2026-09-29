@@ -2,15 +2,20 @@
 // Edits whatever is selected on the timeline; with nothing selected it shows
 // the project: format, music, fades, cut-on-the-beat.
 
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useClipStudioStore, OUTPUT_PRESETS, type OutputPreset } from '../../stores/clipStudioStore'
+import { toast } from '../../stores/toastStore'
 import {
   CLIP_TRANSITIONS, MAX_SPEED, MAX_TRANSITION_SEC, MIN_SPEED, setAllTransitions, snapCutsToBeats, updateClip,
   type Clip, type ClipTransition, type EditProject, type Framing, type MediaOverlay,
 } from '../../lib/capture/project'
-import { MEDIA_ANIMS, TEXT_ANCHORS, TEXT_ANIMS, TEXT_STYLES, type TextOverlay } from '../../lib/capture/timeline'
+import {
+  createTextOverlay, MEDIA_ANIMS, SOUND_RIGHTS, TEXT_ANCHORS, TEXT_ANIMS, TEXT_STYLES, type SoundRights, type TextOverlay,
+} from '../../lib/capture/timeline'
 import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-library'
-import { rhythmFor } from '../../lib/capture/studio-actions'
+import { importSound, rhythmFor } from '../../lib/capture/studio-actions'
+import { hookEndSec, syncProjectToMusic } from '../../lib/capture/music-analysis'
 import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
 
 const SPEEDS = [0.5, 1, 1.5, 2, 3]
@@ -156,6 +161,10 @@ function TransitionGlyph({ kind }: { kind: ClipTransition }) {
     case 'slideUp': return <svg {...common}><path d="M9 11V1M6 4l3-3 3 3" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
     case 'zoom': return <svg {...common}><rect x="5" y="3.5" width="8" height="5" rx="1" stroke="currentColor" fill="none" /><rect x="1" y="1" width="16" height="10" rx="1" stroke="currentColor" fill="none" opacity=".5" /></svg>
     case 'whip': return <svg {...common}><path d="M1 3h9M1 6h14M1 9h9" stroke="currentColor" strokeWidth="1.5" /></svg>
+    case 'glitch': return <svg {...common}><path d="M1 3h8M5 6h12M2 9h9" stroke="currentColor" strokeWidth="1.5" /><path d="M9 3h3M11 9h3" stroke="#FF2B5E" strokeWidth="1.5" /></svg>
+    case 'iris': return <svg {...common}><rect x="1" y="1" width="16" height="10" rx="1" stroke="currentColor" fill="none" opacity=".5" /><circle cx="9" cy="6" r="3.2" fill="currentColor" /></svg>
+    case 'squeeze': return <svg {...common}><path d="M1 6h16" stroke="currentColor" strokeWidth="2" /><path d="M9 1v3M7.5 2.5 9 4l1.5-1.5M9 11V8M7.5 9.5 9 8l1.5 1.5" stroke="currentColor" fill="none" /></svg>
+    case 'spin': return <svg {...common}><path d="M13.5 3.5A5 5 0 1 0 14 8" stroke="currentColor" fill="none" strokeWidth="1.5" /><path d="M14 1v3h-3" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
   }
 }
 
@@ -283,6 +292,7 @@ function ProjectPanel() {
           label={(v) => (v === 'none' ? t('studio.musicNone') : t(`editor.beds.${v as BuiltInBedId}`))}
           onChange={(v) => setAudio(v === 'none' ? { kind: 'none', trackId: null } : { kind: 'builtin', trackId: v })}
         />
+        <ViralSound />
         {project.audio.kind !== 'none' && (
           <Slider label={t('studio.volume')} value={project.audio.volume} min={0} max={1} step={0.01} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => setAudio({ volume: v })} />
         )}
@@ -305,6 +315,20 @@ function ProjectPanel() {
         </Section>
       )}
 
+      <Section title={t('studio.hudTitle')}>
+        <label className="flex items-center gap-2 text-[11.5px] text-[var(--text-dim)]">
+          <input
+            type="checkbox"
+            checked={!!project.fx?.hud}
+            onChange={(e) => {
+              const on = e.target.checked
+              edit((pr) => ({ ...pr, fx: { ...pr.fx, hud: on ? { label: pr.sources[0]?.label ?? 'IFC', accent: '#FF4F1F' } : undefined } }))
+            }}
+          />
+          {t('studio.hudOn')}
+        </label>
+      </Section>
+
       <Section title={t('studio.project')}>
         <span className="text-[11.5px] text-[var(--text-dim)]">{t('studio.intro')}</span>
         <Chips value={project.intro.type} options={fades} label={fadeLabel} onChange={(v) => edit((pr) => ({ ...pr, intro: { ...pr.intro, type: v } }))} />
@@ -312,5 +336,73 @@ function ProjectPanel() {
         <Chips value={project.outro.type} options={fades} label={fadeLabel} onChange={(v) => edit((pr) => ({ ...pr, outro: { ...pr.outro, type: v } }))} />
       </Section>
     </>
+  )
+}
+
+// ── Viral sound ────────────────────────────────────────────────────────────────
+// The user's own track or a trending sound saved from TikTok/Reels/Shorts
+// (audio file, or the video itself — we take its soundtrack). Analysed
+// locally for tempo and drop, then the edit is cut to it.
+
+function ViralSound() {
+  const { t } = useTranslation('capture')
+  const audio = useClipStudioStore((s) => s.project.audio)
+  const hasClips = useClipStudioStore((s) => s.project.clips.length > 0)
+  const hasSound = useClipStudioStore((s) => !!s.sound)
+  const busy = useClipStudioStore((s) => !!s.job)
+  const edit = useClipStudioStore((s) => s.edit)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const music = audio.kind === 'user' ? audio.music : undefined
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      await importSound(file, t('studio.sound.analysing'))
+      toast(t('studio.sound.ready'), 'success')
+    } catch (e) {
+      toast(t('studio.sound.failed', { reason: e instanceof Error ? e.message : String(e) }), 'error')
+    }
+  }
+
+  const addHook = () => edit((p) => {
+    const end = hookEndSec(p)
+    const hook = createTextOverlay({ text: t('studio.sound.hookText'), startSec: 0, endSec: end, style: 'title', anim: 'pop', anchor: 'top-center' }, Math.max(end, 0.5))
+    return { ...p, texts: [...p.texts, hook] }
+  })
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-[var(--border)] p-2.5">
+      <span className="text-[11.5px] font-semibold">{t('studio.sound.title')}</span>
+      <button type="button" className="studio-btn" disabled={busy} onClick={() => fileRef.current?.click()}>
+        ♪ {audio.kind === 'user' && hasSound ? t('studio.sound.replace') : t('studio.sound.import')}
+      </button>
+      <input ref={fileRef} type="file" accept="audio/*,video/mp4,video/quicktime,video/webm" hidden onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
+      <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.sound.importHint')}</p>
+
+      {audio.kind === 'user' && !hasSound && (
+        <p className="text-[11px] text-[var(--warn)]">{t('studio.sound.missing', { name: audio.fileName ?? '' })}</p>
+      )}
+
+      {music && hasSound && (
+        <>
+          <span className="font-mono text-[11px] text-[var(--text-dim)]">
+            {audio.fileName} · {Math.round(music.bpm)} BPM · {t('studio.sound.drop', { sec: music.dropSec.toFixed(1) })}
+          </span>
+          <span className="text-[11.5px] text-[var(--text-dim)]">{t('studio.sound.rights')}</span>
+          <Chips
+            value={audio.rights ?? 'viral'}
+            options={SOUND_RIGHTS}
+            label={(v) => t(`studio.sound.rightsOpt.${v}`)}
+            onChange={(v: SoundRights) => edit((p) => ({ ...p, audio: { ...p.audio, rights: v } }))}
+          />
+          <button type="button" className="studio-btn studio-btn--accent" disabled={!hasClips} onClick={() => edit((p) => syncProjectToMusic(p, music))}>
+            {t('studio.sound.sync')}
+          </button>
+          <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.sound.syncHint')}</p>
+          <button type="button" className="studio-btn" disabled={!hasClips} onClick={addHook}>{t('studio.sound.addHook')}</button>
+          <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.sound.hookHint')}</p>
+        </>
+      )}
+    </div>
   )
 }

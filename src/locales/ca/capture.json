@@ -84,7 +84,9 @@
       "subtitle": "Subtítol",
       "caption": "Rètol",
       "lowerThird": "Faldó",
-      "badge": "Etiqueta"
+      "badge": "Etiqueta",
+      "display": "Titular",
+      "wordCard": "Targeta de paraula"
     },
     "anims": {
       "none": "Cap",
@@ -93,7 +95,15 @@
       "pop": "Rebot",
       "words": "Paraules",
       "slam": "Cop",
-      "count": "Comptador"
+      "count": "Comptador",
+      "roll": "Rodar",
+      "glitch": "Glitch",
+      "maskUp": "Màscara",
+      "echo": "Eco",
+      "select": "Selecció",
+      "blurSlide": "Escombrat amb blur",
+      "zoomIn": "Zoom a través",
+      "marquee": "Marquesina"
     },
     "effects": {
       "in": "Obertura",
@@ -230,7 +240,11 @@
       "slideLeft": "Lliscar",
       "slideUp": "Lliscar amunt",
       "zoom": "Zoom",
-      "whip": "Escombrat"
+      "whip": "Escombrat",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Compressió",
+      "spin": "Gir"
     },
     "applyToAll": "Aplica a tots els talls",
     "firstClipNoTransition": "El primer clip obre el vídeo: posa un fos d’entrada a Projecte.",
@@ -351,7 +365,9 @@
         "endCard": "Targeta final",
         "sectionCut": "Secció planta a planta",
         "sectionSweep": "Escombrat en secció",
-        "exploded": "Vista en explosió"
+        "exploded": "Vista en explosió",
+        "plans": "Plantes en planta",
+        "interior": "Interior"
       },
       "sectionHint": {
         "hero": "Allunya la càmera fins al model sencer, amb el títol",
@@ -372,7 +388,9 @@
         "endCard": "El nom i la web sobre un degradat en moviment",
         "sectionCut": "Un tall en planta que baixa des de la coberta i s’atura a cada planta",
         "sectionSweep": "Un tall vertical que travessa l’edifici i mostra l’interior",
-        "exploded": "Les plantes se separen i tornen a encaixar"
+        "exploded": "Les plantes se separen i tornen a encaixar",
+        "plans": "Cada planta tallada a 1,2 m, vista des de dalt: les estances",
+        "interior": "A l’alçada dels ulls dins d’una planta, un gir lent"
       },
       "empty": {
         "storeys": "Aquest model no té plantes",
@@ -384,7 +402,9 @@
         "bcf": "No hi ha temes BCF amb punt de vista o components",
         "fixed": "Res a comparar: torna a validar després d’arreglar",
         "sectionCut": "Necessita almenys 2 plantes",
-        "exploded": "Necessita almenys 3 plantes"
+        "exploded": "Necessita almenys 3 plantes",
+        "plans": "No s’han trobat plantes en aquest model",
+        "interior": "Cap planta té alçada per estar-hi dret"
       },
       "emptyGeneric": "Res a mostrar en aquest model",
       "shots": "{{n}} preses",
@@ -447,11 +467,13 @@
       "styleLabel": "Estil d’edició",
       "styles": {
         "classic": "Clàssic",
-        "launch": "Llançament 2026"
+        "launch": "Llançament 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Moviments suaus, fosos i títols tranquils.",
-        "launch": "Rampes de velocitat, desenfocament de moviment, cop de zoom a cada tall, títols d’impacte, números que compten i rètols paraula a paraula."
+        "launch": "Rampes de velocitat, desenfocament de moviment, cop de zoom a cada tall, títols d’impacte, números que compten i rètols paraula a paraula.",
+        "motion": "Tipografia cinètica: el títol destella paraula a paraula sobre targetes de color, titulars amb glitch, un HUD de disseny i una transició diferent a cada tall."
       },
       "sfxLabel": "Efectes de so",
       "sfxLevels": {
@@ -502,15 +524,51 @@
         "closingScore": "{{name}}: Health Score {{score}}/100.",
         "sectionCut": "Tall de {{from}} a {{to}}: {{storeys}} plantes.",
         "sectionSweep": "Un tall vertical al llarg de {{length}} m d’edifici.",
-        "exploded": "{{storeys}} plantes, separades i tornades a encaixar."
-      }
+        "exploded": "{{storeys}} plantes, separades i tornades a encaixar.",
+        "plan": "Planta de {{name}}: {{elements}} elements.",
+        "planRooms": "Planta de {{name}}: {{rooms}} estances.",
+        "interior": "Dins de {{name}}.",
+        "interiorRooms": "Dins de {{name}}: {{rooms}} estances en aquesta planta."
+      },
+      "hud": "Interfície",
+      "hudOn": "HUD tècnic",
+      "hudHint": "Text a les cantonades amb el que es veu, comptador de preses, alçada del tall en directe i una línia de temps amb un punt d’accent."
     },
     "remaining": "Queden uns {{seconds}} s",
     "sfxVolume": "Volum dels efectes",
     "sfxRemove": "Treu els efectes de so",
     "sfxCount": "{{n}} efectes",
     "sfxTitle": "Efectes de so",
-    "restyleHint": "Canvia a l’instant l’etalonatge i els textos. Les preses 3D conserven el color i la llum: torna a generar per repintar-les."
+    "restyleHint": "Canvia a l’instant l’etalonatge i els textos. Les preses 3D conserven el color i la llum: torna a generar per repintar-les.",
+    "sound": {
+      "title": "Viral sound / your track",
+      "import": "Import sound (audio or TikTok video)",
+      "replace": "Replace sound",
+      "importHint": "An MP3/M4A/WAV, or a TikTok, Reel or Short you saved — we take its soundtrack. It is analysed in your browser and never uploaded.",
+      "analysing": "Analysing the beat…",
+      "ready": "Sound ready — cuts synced to the beat and the drop",
+      "failed": "Could not read that sound: {{reason}}",
+      "missing": "\"{{name}}\" is not loaded any more — import it again to hear it.",
+      "drop": "drop at {{sec}} s",
+      "rights": "Who owns this sound?",
+      "rightsOpt": {
+        "viral": "Viral / unknown",
+        "own": "Mine",
+        "licensed": "Licensed"
+      },
+      "sync": "Sync the edit to the sound",
+      "syncHint": "Starts the sound so the drop lands on the first cut, moves every cut onto the beat and punches in on each bar after the drop.",
+      "addHook": "Add hook caption",
+      "hookHint": "A big line at the top for the first seconds — the hook decides whether people keep watching. Keep it out of the bottom third, where TikTok puts its own caption.",
+      "hookText": "Wait for the reveal 👀",
+      "warnTitle": "This sound may be copyrighted",
+      "warnBody": "\"{{name}}\" is marked as a viral sound. Trending sounds often contain music owned by labels or other creators, and TikTok's terms do not allow business accounts to use other users' original sounds. The platform can mute the video, take it down or reduce its reach. You are responsible for the rights to what you publish.",
+      "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
+      "exportSilent": "Export without music",
+      "exportAnyway": "Export with the sound"
+    },
+    "hudTitle": "HUD motion",
+    "hudOn": "Marc de seguretat, creus i codi de temps sobre la imatge"
   },
   "cover": {
     "open": "Estudi de portades — portades, diapositives i posts del model",

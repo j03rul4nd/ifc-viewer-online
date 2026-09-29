@@ -84,7 +84,9 @@
       "subtitle": "Sous-titre",
       "caption": "Légende",
       "lowerThird": "Synthé",
-      "badge": "Badge"
+      "badge": "Badge",
+      "display": "Titre display",
+      "wordCard": "Carte mot"
     },
     "anims": {
       "none": "Aucune",
@@ -93,7 +95,15 @@
       "pop": "Rebond",
       "words": "Mots",
       "slam": "Impact",
-      "count": "Compteur"
+      "count": "Compteur",
+      "roll": "Défiler",
+      "glitch": "Glitch",
+      "maskUp": "Masque",
+      "echo": "Écho",
+      "select": "Sélection",
+      "blurSlide": "Glissé flou",
+      "zoomIn": "Zoom traversant",
+      "marquee": "Défilement"
     },
     "effects": {
       "in": "Ouverture",
@@ -230,7 +240,11 @@
       "slideLeft": "Glissement",
       "slideUp": "Glissement haut",
       "zoom": "Zoom",
-      "whip": "Filé"
+      "whip": "Filé",
+      "glitch": "Glitch",
+      "iris": "Iris",
+      "squeeze": "Écrasement",
+      "spin": "Rotation"
     },
     "applyToAll": "Appliquer à toutes les coupes",
     "firstClipNoTransition": "Le premier clip ouvre la vidéo — réglez plutôt un fondu d’ouverture dans Projet.",
@@ -351,7 +365,9 @@
         "endCard": "Carton de fin",
         "sectionCut": "Coupe niveau par niveau",
         "sectionSweep": "Balayage en coupe",
-        "exploded": "Vue éclatée"
+        "exploded": "Vue éclatée",
+        "plans": "Plans d’étage",
+        "interior": "Intérieur"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -372,7 +388,9 @@
         "endCard": "Le nom et l’URL sur un dégradé en mouvement",
         "sectionCut": "Une coupe en plan qui descend depuis le toit et s’arrête à chaque niveau",
         "sectionSweep": "Une coupe verticale qui traverse le bâtiment et révèle l’intérieur",
-        "exploded": "Les niveaux s’écartent puis se réassemblent"
+        "exploded": "Les niveaux s’écartent puis se réassemblent",
+        "plans": "Chaque niveau coupé à hauteur de plan, vu d’en haut : les pièces",
+        "interior": "À hauteur d’yeux dans un niveau, un lent panoramique"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",
@@ -384,7 +402,9 @@
         "bcf": "Aucun sujet BCF avec point de vue ou composants",
         "fixed": "Rien à comparer — revalidez après correction",
         "sectionCut": "Il faut au moins 2 niveaux",
-        "exploded": "Il faut au moins 3 niveaux"
+        "exploded": "Il faut au moins 3 niveaux",
+        "plans": "Aucun niveau dans ce modèle",
+        "interior": "Aucun niveau assez haut pour s’y tenir debout"
       },
       "emptyGeneric": "Rien à montrer pour cette maquette",
       "shots": "{{n}} plans",
@@ -447,11 +467,13 @@
       "styleLabel": "Style de montage",
       "styles": {
         "classic": "Classique",
-        "launch": "Lancement 2026"
+        "launch": "Lancement 2026",
+        "motion": "Motion"
       },
       "styleHint": {
         "classic": "Mouvements adoucis, fondus, titres posés.",
-        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot."
+        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot.",
+        "motion": "Typo cinétique : le titre défile mot par mot sur des cartes de couleur, titres glitchés, un HUD de design et une transition différente à chaque coupe."
       },
       "sfxLabel": "Effets sonores",
       "sfxLevels": {
@@ -502,15 +524,51 @@
         "closingScore": "{{name}} : Health Score {{score}}/100.",
         "sectionCut": "Coupe de {{from}} à {{to}} : {{storeys}} plans.",
         "sectionSweep": "Une coupe verticale sur {{length}} m de bâtiment.",
-        "exploded": "{{storeys}} niveaux, écartés puis réassemblés."
-      }
+        "exploded": "{{storeys}} niveaux, écartés puis réassemblés.",
+        "plan": "Plan de {{name}} : {{elements}} éléments.",
+        "planRooms": "Plan de {{name}} : {{rooms}} pièces.",
+        "interior": "À l’intérieur de {{name}}.",
+        "interiorRooms": "À l’intérieur de {{name}} : {{rooms}} pièces à ce niveau."
+      },
+      "hud": "Interface",
+      "hudOn": "HUD technique",
+      "hudHint": "Texte dans les coins avec le sujet, compteur de plans, hauteur de coupe en direct et une frise avec un point d’accent."
     },
     "remaining": "Environ {{seconds}} s restantes",
     "sfxVolume": "Volume des effets",
     "sfxRemove": "Retirer les effets sonores",
     "sfxCount": "{{n}} effets",
     "sfxTitle": "Effets sonores",
-    "restyleHint": "Change instantanément l’étalonnage et les titres. Les plans 3D gardent leur couleur et leur lumière — régénérez pour les repeindre."
+    "restyleHint": "Change instantanément l’étalonnage et les titres. Les plans 3D gardent leur couleur et leur lumière — régénérez pour les repeindre.",
+    "sound": {
+      "title": "Viral sound / your track",
+      "import": "Import sound (audio or TikTok video)",
+      "replace": "Replace sound",
+      "importHint": "An MP3/M4A/WAV, or a TikTok, Reel or Short you saved — we take its soundtrack. It is analysed in your browser and never uploaded.",
+      "analysing": "Analysing the beat…",
+      "ready": "Sound ready — cuts synced to the beat and the drop",
+      "failed": "Could not read that sound: {{reason}}",
+      "missing": "\"{{name}}\" is not loaded any more — import it again to hear it.",
+      "drop": "drop at {{sec}} s",
+      "rights": "Who owns this sound?",
+      "rightsOpt": {
+        "viral": "Viral / unknown",
+        "own": "Mine",
+        "licensed": "Licensed"
+      },
+      "sync": "Sync the edit to the sound",
+      "syncHint": "Starts the sound so the drop lands on the first cut, moves every cut onto the beat and punches in on each bar after the drop.",
+      "addHook": "Add hook caption",
+      "hookHint": "A big line at the top for the first seconds — the hook decides whether people keep watching. Keep it out of the bottom third, where TikTok puts its own caption.",
+      "hookText": "Wait for the reveal 👀",
+      "warnTitle": "This sound may be copyrighted",
+      "warnBody": "\"{{name}}\" is marked as a viral sound. Trending sounds often contain music owned by labels or other creators, and TikTok's terms do not allow business accounts to use other users' original sounds. The platform can mute the video, take it down or reduce its reach. You are responsible for the rights to what you publish.",
+      "warnTip": "Tip: for the most reach, export without music and pick the same sound inside TikTok/Instagram — the cut is already timed to it, and your video appears on the sound's page.",
+      "exportSilent": "Export without music",
+      "exportAnyway": "Export with the sound"
+    },
+    "hudTitle": "HUD motion",
+    "hudOn": "Cadre de sécurité, repères et timecode sur l’image"
   },
   "cover": {
     "open": "Studio de couvertures — couvertures, diapositives et posts depuis le modèle",
