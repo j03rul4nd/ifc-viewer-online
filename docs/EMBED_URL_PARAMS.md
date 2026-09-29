@@ -239,14 +239,50 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:fit`     | — | Frame the active model |
 | `ifcviewer:reset`   | — | Reset the camera |
 
-Since SDK v1.11 the bridge also takes `set-background`, `set-accent`,
-`set-client-mode`, `set-render-quality`, `set-walk`, `get-camera`, `look-at`,
-`set-solar`, `set-site`, `add-section`, `update-section`, `remove-section`,
-`section-box`, `get-sections`, `set-measure-tool`, `get-measurements`,
-`clear-measurements`, `model-visible`, `model-opacity` and `isolate-model`
-(all `ifcviewer:`-prefixed, answered with a `result` envelope when they carry a
-`requestId`). Their fields are those of the SDK methods of the same name — use
-the [SDK](./IFC_VIEWER_SDK.md) rather than posting them by hand.
+#### Commands added in SDK v1.11
+
+Every command below answers with a `result` envelope
+(`{ source: 'ifc-validator', type: 'result', requestId, ok, data | error }`)
+when it carries a `requestId`. On failure, `error` is a readable reason, such
+as "no model yet", "feature not in this build" or "model has no location".
+
+| `type` | Fields | Effect / `data` |
+|--------|--------|-----------------|
+| `ifcviewer:set-background` | `background`: preset, `'#rrggbb'`, `'#top,#bottom'` or `{ top, bottom? }` | Paints the scene without saving the preference. Returns the resolved background |
+| `ifcviewer:get-background` | — | `{ preset, mode, top, bottom }` |
+| `ifcviewer:set-accent` | `accent`: `#rrggbb` | Re-themes the UI accent |
+| `ifcviewer:set-client-mode` | `enabled` | Turns the stakeholder skin on or off |
+| `ifcviewer:set-render-quality` | `quality`: `standard` \| `quality` | Switches the heavier rendering |
+| `ifcviewer:get-camera` | — | `{ position, target, direction, up, fovDeg }` (scene metres, Y up) |
+| `ifcviewer:look-at` | `position`, `target`, `animate?` | Flies the camera |
+| `ifcviewer:set-walk` | `enabled?`, `speed?` (m/s) | Walk mode. Returns `{ active, speed }` |
+| `ifcviewer:get-walk` | — | `{ active, speed }` |
+| `ifcviewer:set-solar` | `solar: { active?, date?, time?, moon?, sky?, quality?, location? }` | Sun study at site-local time. Returns `{ active, date, time, timeZone, moon, sky, quality, location }` |
+| `ifcviewer:get-solar` | — | Same shape as above |
+| `ifcviewer:set-site` | `site: { enabled?, terrain?, buildings?, layers?, detail?, terrainStyle?, exaggeration?, vehicles? }` | Map mode. Resolves once it is up. Returns state + `placement` + `attributions` |
+| `ifcviewer:get-site` | — | Same shape as above |
+| `ifcviewer:add-section` | `axis?` (`x`\|`y`\|`z`), `offset?`, `level?` (storey name or index), `flip?` | Adds a plane. Returns `{ id, planes, box, active }` |
+| `ifcviewer:update-section` | `id`, `offset?`, `enabled?`, `flipped?` | Moves, toggles or flips the plane |
+| `ifcviewer:remove-section` | `id?` | Removes one plane, or every cut when `id` is omitted |
+| `ifcviewer:section-box` | `fit`: `model` \| `selection` \| `false` | Adds or removes the section box |
+| `ifcviewer:get-sections` | — | `{ planes, box, active, levels }` |
+| `ifcviewer:set-measure-tool` | `tool`: `distance`\|`path`\|`area`\|`angle`\|`point`\|`none` | Arms a tool and opens the Measure panel |
+| `ifcviewer:get-measurements` | — | `{ tool, units, items }`. Values are always SI |
+| `ifcviewer:clear-measurements` | `id?` | Removes one measurement, or all of them |
+| `ifcviewer:model-visible` | `modelId`, `visible` | Shows or hides one model |
+| `ifcviewer:model-opacity` | `opacity` (0.05–1), `modelId?` | Ghosts a model |
+| `ifcviewer:isolate-model` | `modelId` \| `null` | Shows only that model, or all of them again |
+
+```js
+// Raw postMessage (the SDK does this for you):
+frame.postMessage({ type: 'ifcviewer:set-solar', requestId: 'r1',
+  solar: { date: '06-21', time: '19:30' } }, 'https://www.ifcvieweronline.eu')
+window.addEventListener('message', (e) => {
+  if (e.data?.type === 'result' && e.data.requestId === 'r1') console.log(e.data)
+})
+```
+
+Prefer the [SDK](./IFC_VIEWER_SDK.md): it correlates the replies, applies timeouts and is typed.
 
 ```js
 const frame = document.querySelector('iframe').contentWindow
