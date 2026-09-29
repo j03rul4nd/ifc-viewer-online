@@ -348,7 +348,10 @@
         "fixed": "Cosa è stato corretto",
         "zoomThrough": "Zoom attraverso",
         "pullOut": "Allontanamento di scala",
-        "endCard": "Cartello finale"
+        "endCard": "Cartello finale",
+        "sectionCut": "Sezione piano per piano",
+        "sectionSweep": "Sezione in movimento",
+        "exploded": "Vista esplosa"
       },
       "sectionHint": {
         "hero": "Allarga fino al modello intero, con il titolo",
@@ -366,7 +369,10 @@
         "fixed": "Criticità della validazione precedente ora sparite",
         "zoomThrough": "Una spinta che accelera, attraversa la facciata ed entra in un piano",
         "pullOut": "Da un metro da un dettaglio fino all’intero edificio",
-        "endCard": "Il nome e l’URL su un gradiente in movimento"
+        "endCard": "Il nome e l’URL su un gradiente in movimento",
+        "sectionCut": "Un taglio in pianta che scende dalla copertura e si ferma a ogni piano",
+        "sectionSweep": "Un taglio verticale che attraversa l’edificio e ne mostra l’interno",
+        "exploded": "I piani si separano e tornano a incastrarsi"
       },
       "empty": {
         "storeys": "Nessun piano in questo modello",
@@ -376,7 +382,9 @@
         "buildup": "Servono almeno 3 piani",
         "ids": "Nessuna specifica IDS fallita — esegui prima un controllo IDS",
         "bcf": "Nessun argomento BCF con punto di vista o componenti",
-        "fixed": "Niente da confrontare — rivalida dopo le correzioni"
+        "fixed": "Niente da confrontare — rivalida dopo le correzioni",
+        "sectionCut": "Servono almeno 2 piani",
+        "exploded": "Servono almeno 3 piani"
       },
       "emptyGeneric": "Niente da mostrare per questo modello",
       "shots": "{{n}} inquadrature",
@@ -434,6 +442,8 @@
       "unassigned": "Non assegnato",
       "showDetails": "Mostra dettagli",
       "showDetailsHint": "Elementi coinvolti, correzione, stato BCF — per i video di revisione.",
+      "narration": "Sottotitoli narrati",
+      "narrationHint": "Una frase breve per inquadratura, dai dati del modello. Sostituisce le etichette.",
       "styleLabel": "Stile di montaggio",
       "styles": {
         "classic": "Classico",
@@ -473,7 +483,27 @@
         "blueprint": "Modello bianco traslucido su blu navy, carattere monospaziato, accento ciano.",
         "golden-hour": "Plastico color sabbia sotto il cielo del tramonto, grading arancio/petrolio, letterbox."
       },
-      "lookPreview": "Anteprima sul tuo modello"
+      "lookPreview": "Anteprima sul tuo modello",
+      "say": {
+        "intro": "{{name}}: {{elements}} elementi su {{storeys}} piani.",
+        "introFlat": "{{name}}: {{elements}} elementi, letti dall’IFC.",
+        "rise": "{{storeys}} piani, {{height}} m da terra alla copertura.",
+        "footprint": "Dall’alto: circa {{width}} × {{depth}} m.",
+        "storey": "{{name}}, piano {{index}} di {{total}}: {{elements}} elementi.",
+        "system": "{{label}}: {{elements}} elementi, il {{percent}}% del modello.",
+        "issue": "{{label}}: {{count}} elementi da verificare.",
+        "ids": "Requisito non soddisfatto: {{label}}. {{count}} elementi.",
+        "fixed": "Corretto: {{label}}. {{count}} segnalazioni risolte.",
+        "bcf": "Tema aperto: {{label}}.",
+        "detail": "Da vicino: {{label}}.",
+        "inside": "Dentro {{name}}.",
+        "context": "Ci allontaniamo per vedere {{name}} per intero.",
+        "closing": "Questo era {{name}}.",
+        "closingScore": "{{name}}: Health Score {{score}}/100.",
+        "sectionCut": "Taglio da {{from}} a {{to}}: {{storeys}} piante.",
+        "sectionSweep": "Un taglio verticale lungo {{length}} m di edificio.",
+        "exploded": "{{storeys}} piani, separati e rimessi insieme."
+      }
     },
     "remaining": "Circa {{seconds}} s rimanenti",
     "sfxVolume": "Volume effetti",

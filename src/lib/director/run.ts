@@ -20,8 +20,8 @@ import type { ValidationIssue } from '../../types'
 import type { Recipe } from './recipe'
 import { ensureLookFonts, type Look } from './looks'
 import type { BackgroundSettings } from '../scene/background'
-import type { SceneLighting } from '../viewer'
-import type { PlannedClip, ShotScene, Rhythm } from './plan'
+import type { PresentationSection, SceneLighting } from '../viewer'
+import { cutPointAt, explodeOffsets, type PlannedClip, type ShotScene, type Rhythm } from './plan'
 
 /** The viewer calls a run needs on top of shot rendering. */
 export interface DirectorViewer extends ShotRenderer {
@@ -33,6 +33,9 @@ export interface DirectorViewer extends ShotRenderer {
   setModelVisible(modelId: string, visible: boolean): void
   isolateElements(targets: Array<{ expressId: number; modelId?: string | null }>, enabled: boolean): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean): void
+  setPresentationSection(section: PresentationSection | null): Promise<void>
+  movePresentationSection(point: { x: number; y: number; z: number }): void
+  setShotExplode(explode: { bands: Array<{ min: number; max: number }>; offsets: number[] } | null): void
 }
 
 export interface RunLabels {
@@ -88,7 +91,10 @@ function resetScene(viewer: DirectorViewer, scene: ShotScene, hidden: string[]):
   for (const id of hidden) viewer.setModelVisible(id, true)
 }
 
-const hasSceneChange = (s: ShotScene) => !!(s.visibleModels || s.isolate?.length || s.highlight?.length || s.stages?.length)
+const hasSceneChange = (s: ShotScene) => !!(s.visibleModels || s.isolate?.length || s.highlight?.length || s.stages?.length || s.cut || s.explode)
+
+/** Cut solids are filled in the look's accent; the app's section red without a look. */
+const POCHE_NATIVE = '#c8553d'
 
 /** How many stages are visible at progress p (0–1): the first from the start, all by 85 %. */
 export function stagesAt(p: number, n: number): number {
@@ -186,7 +192,24 @@ export async function renderPlannedClip(
     } else {
       const hidden = applyScene(viewer, planned.scene)
       try {
-        const beforeFrame = stageDriver(viewer, planned.scene, planned.shot.durationSec)
+        const staged = stageDriver(viewer, planned.scene, planned.shot.durationSec)
+        const cut = planned.scene.cut
+        if (cut) {
+          await viewer.setPresentationSection({
+            normal: cut.normal, point: cut.points[0],
+            poche: clip.look.id === 'native' ? POCHE_NATIVE : clip.look.accent,
+          })
+        }
+        const dur = planned.shot.durationSec
+        const explode = planned.scene.explode
+        const beforeFrame = staged || cut || explode
+          ? (t: number) => {
+            const p = dur > 0 ? t / dur : 1
+            staged?.(t)
+            if (cut) viewer.movePresentationSection(cutPointAt(cut.points, p, cut.stepped))
+            if (explode) viewer.setShotExplode({ bands: explode.bands, offsets: explodeOffsets(explode.bands.length, explode.gap, p) })
+          }
+          : undefined
         beforeFrame?.(0)
         blob = await renderShot(viewer, planned.shot, {
           width: clip.width, height: clip.height, fps, signal, beforeFrame, motionBlur: clip.motionBlur,
@@ -194,6 +217,8 @@ export async function renderPlannedClip(
           onProgress: (f) => onShot(i, f),
         })
       } finally {
+        if (planned.scene.cut) await viewer.setPresentationSection(null)
+        if (planned.scene.explode) viewer.setShotExplode(null)
         resetScene(viewer, planned.scene, hidden)
         // The validation overlay repaints (and then resets) highlights — put the look's paint back.
         if (planned.scene.highlight?.length && clip.look.palette) await viewer.applyModelPalette(clip.look.palette, clip.look.glazingOpacity)

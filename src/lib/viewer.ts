@@ -442,6 +442,19 @@ export interface ViewerAPI {
    */
   setPresentationSection(section: PresentationSection | null): Promise<void>
   /**
+   * Move the cut set by setPresentationSection to pass through `point` (same
+   * normal). Synchronous and cheap — a video shot moves it every frame.
+   */
+  movePresentationSection(point: Vec3Like): void
+  /**
+   * Exploded view for shot frames: each band (a y-range of the model, in
+   * scene metres) is drawn lifted by its offset, clipped to its range, all
+   * passes sharing one depth buffer — a real 3D explosion, no geometry moved
+   * between frames. null (or all offsets 0) renders normally. Only
+   * renderShotFrame honours it.
+   */
+  setShotExplode(explode: { bands: Array<{ min: number; max: number }>; offsets: number[] } | null): void
+  /**
    * Exploded axonometric: render each layer (a storey: element ids per model)
    * alone, lifted by index × gap, over a transparent background, from the
    * current camera. Returns one PNG data URL per layer, in input order; the
@@ -1506,6 +1519,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     cacheKey: THREE.MeshLambertMaterial['customProgramCacheKey']
   }>()
   let sectionPrevPlanes: THREE.Plane[] | null = null
+  let presentationPlane: THREE.Plane | null = null
+  let shotExplode: { bands: Array<{ min: number; max: number }>; offsets: number[] } | null = null
   // Grid visibility before a presentation look/section hid it (null = untouched).
   let presentationGridPrev: boolean | null = null
   const hidePresentationGrid = (hide: boolean) => {
@@ -1515,6 +1530,47 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     } else if (presentationGridPrev !== null) {
       grid.visible = presentationGridPrev
       presentationGridPrev = null
+    }
+  }
+
+  /**
+   * One exploded frame: a pass per band, the models lifted by the band's
+   * offset and clipped to its (lifted) range, over one shared depth buffer so
+   * the floors occlude each other correctly. Background only on the first
+   * pass (a colour background clears the buffer).
+   */
+  function renderExploded(ex: { bands: Array<{ min: number; max: number }>; offsets: number[] }, cam: THREE.Camera) {
+    const wr3 = world.renderer!.three
+    const scene3 = world.scene.three
+    const baseplanes = wr3.clippingPlanes
+    const bg = scene3.background
+    const autoClear = wr3.autoClear
+    const objects = [...new Set([...modelObjects.values()].map((m) => m.object))]
+    const origY = objects.map((o) => o.position.y)
+    // Keep y ≤ max (normal down) and y ≥ min (normal up); three discards the negative side.
+    const below = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)
+    const above = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+    try {
+      wr3.autoClear = false
+      wr3.clear()
+      ex.bands.forEach((b, i) => {
+        const off = ex.offsets[i] ?? 0
+        objects.forEach((o, k) => { o.position.y = origY[k] + off; o.updateMatrixWorld(true) })
+        below.constant = b.max + off
+        above.constant = -(b.min + off)
+        wr3.clippingPlanes = [
+          ...baseplanes,
+          ...(Number.isFinite(b.max) ? [below] : []),
+          ...(Number.isFinite(b.min) ? [above] : []),
+        ]
+        if (i > 0) scene3.background = null
+        wr3.render(scene3, cam)
+      })
+    } finally {
+      objects.forEach((o, k) => { o.position.y = origY[k]; o.updateMatrixWorld(true) })
+      wr3.clippingPlanes = baseplanes
+      scene3.background = bg
+      wr3.autoClear = autoClear
     }
   }
 
@@ -3137,6 +3193,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const wr3 = world.renderer!.three
       wr3.clippingPlanes = sectionPrevPlanes ?? wr3.clippingPlanes
       sectionPrevPlanes = null
+      presentationPlane = null
       if (!section) {
         // Hand the fill back to the section tool, if it has one up.
         presentationPoche = null
@@ -3154,12 +3211,19 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       )
       sectionPrevPlanes = wr3.clippingPlanes
       wr3.clippingPlanes = [...wr3.clippingPlanes, plane]
+      presentationPlane = plane
 
       // Poché for the cut (see patchPocheMaterial). Takes over from any section
       // tool fill while the capture is set up.
       presentationPoche = section.poche
       syncPoche()
       await fragmentsManager.core.update(true)
+    },
+
+    movePresentationSection(point) {
+      const plane = presentationPlane
+      if (!plane) return
+      plane.setFromNormalAndCoplanarPoint(plane.normal, new THREE.Vector3(point.x, point.y, point.z))
     },
 
     async captureExplodedLayers(layers, gap, scale = 1) {
@@ -3958,14 +4022,19 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       // Waiting for it is what makes an instant camera jump render complete
       // geometry instead of whatever the previous pose had loaded.
       try { await fragmentsManager.core.update(true) } catch { /* render what is loaded */ }
-      wr.render(world.scene.three, cam)
+      const ex = shotExplode
+      if (ex && ex.offsets.some((o) => o !== 0)) renderExploded(ex, cam)
+      else wr.render(world.scene.three, cam)
       // Labels at the size they have on screen, relative to the frame height.
       return withShotLabels(wr.domElement, s.height / Math.max(1, s.size.y))
     },
 
+    setShotExplode(explode) { shotExplode = explode },
+
     async endShotRender(): Promise<void> {
       const s = shotSession
       if (!s) return
+      shotExplode = null
       shotSession = null
       shotHandlesRestore?.()
       shotHandlesRestore = null

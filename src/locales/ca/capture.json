@@ -348,7 +348,10 @@
         "fixed": "El que s’ha arreglat",
         "zoomThrough": "Zoom que travessa",
         "pullOut": "Allunyament d’escala",
-        "endCard": "Targeta final"
+        "endCard": "Targeta final",
+        "sectionCut": "Secció planta a planta",
+        "sectionSweep": "Escombrat en secció",
+        "exploded": "Vista en explosió"
       },
       "sectionHint": {
         "hero": "Allunya la càmera fins al model sencer, amb el títol",
@@ -366,7 +369,10 @@
         "fixed": "Incidències de la validació anterior que ja no hi són",
         "zoomThrough": "Una empenta que accelera, travessa la façana i entra en una planta",
         "pullOut": "D’un metre d’un detall fins a l’edifici sencer",
-        "endCard": "El nom i la web sobre un degradat en moviment"
+        "endCard": "El nom i la web sobre un degradat en moviment",
+        "sectionCut": "Un tall en planta que baixa des de la coberta i s’atura a cada planta",
+        "sectionSweep": "Un tall vertical que travessa l’edifici i mostra l’interior",
+        "exploded": "Les plantes se separen i tornen a encaixar"
       },
       "empty": {
         "storeys": "Aquest model no té plantes",
@@ -376,7 +382,9 @@
         "buildup": "Necessita almenys 3 plantes",
         "ids": "No hi ha especificacions IDS fallides: fes abans una comprovació IDS",
         "bcf": "No hi ha temes BCF amb punt de vista o components",
-        "fixed": "Res a comparar: torna a validar després d’arreglar"
+        "fixed": "Res a comparar: torna a validar després d’arreglar",
+        "sectionCut": "Necessita almenys 2 plantes",
+        "exploded": "Necessita almenys 3 plantes"
       },
       "emptyGeneric": "Res a mostrar en aquest model",
       "shots": "{{n}} preses",
@@ -434,6 +442,8 @@
       "unassigned": "Sense assignar",
       "showDetails": "Mostra els detalls",
       "showDetailsHint": "Elements afectats, com arreglar-ho i estat BCF: per a vídeos de revisió.",
+      "narration": "Subtítols narrats",
+      "narrationHint": "Una frase curta per presa, amb les dades del mateix model. Substitueix les etiquetes.",
       "styleLabel": "Estil d’edició",
       "styles": {
         "classic": "Clàssic",
@@ -473,7 +483,27 @@
         "blueprint": "Model blanc translúcid sobre blau marí, lletra monoespai, accent cian.",
         "golden-hour": "Maqueta color sorra sota un cel de capvespre, etalonatge taronja/blau, bandes de cine."
       },
-      "lookPreview": "Previsualització al teu model"
+      "lookPreview": "Previsualització al teu model",
+      "say": {
+        "intro": "{{name}}: {{elements}} elements en {{storeys}} plantes.",
+        "introFlat": "{{name}}: {{elements}} elements, llegits de l’IFC.",
+        "rise": "{{storeys}} plantes, {{height}} m del terra a la coberta.",
+        "footprint": "Des de dalt: uns {{width}} × {{depth}} m.",
+        "storey": "{{name}}, planta {{index}} de {{total}}: {{elements}} elements.",
+        "system": "{{label}}: {{elements}} elements, el {{percent}} % del model.",
+        "issue": "{{label}}: {{count}} elements per revisar.",
+        "ids": "Requisit no complert: {{label}}. {{count}} elements.",
+        "fixed": "Corregit: {{label}}. {{count}} incidències resoltes.",
+        "bcf": "Tema obert: {{label}}.",
+        "detail": "De prop: {{label}}.",
+        "inside": "Dins de {{name}}.",
+        "context": "Ens allunyem per veure {{name}} sencer.",
+        "closing": "Això ha estat {{name}}.",
+        "closingScore": "{{name}}: Health Score {{score}}/100.",
+        "sectionCut": "Tall de {{from}} a {{to}}: {{storeys}} plantes.",
+        "sectionSweep": "Un tall vertical al llarg de {{length}} m d’edifici.",
+        "exploded": "{{storeys}} plantes, separades i tornades a encaixar."
+      }
     },
     "remaining": "Queden uns {{seconds}} s",
     "sfxVolume": "Volum dels efectes",

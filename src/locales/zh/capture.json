@@ -348,7 +348,10 @@
         "fixed": "已修复内容",
         "zoomThrough": "穿越推进",
         "pullOut": "拉远揭示",
-        "endCard": "片尾卡"
+        "endCard": "片尾卡",
+        "sectionCut": "逐层剖切",
+        "sectionSweep": "剖切扫描",
+        "exploded": "爆炸视图"
       },
       "sectionHint": {
         "hero": "拉远至整个模型并显示标题",
@@ -366,7 +369,10 @@
         "fixed": "上次校验中已消失的问题",
         "zoomThrough": "加速推进，穿过立面进入楼层",
         "pullOut": "从细节前一米拉远到整栋建筑",
-        "endCard": "名称和网址叠加在流动渐变背景上"
+        "endCard": "名称和网址叠加在流动渐变背景上",
+        "sectionCut": "从屋顶向下的平面剖切，在每层停留",
+        "sectionSweep": "穿过建筑的竖向剖切，展示内部",
+        "exploded": "各楼层分开后再合拢"
       },
       "empty": {
         "storeys": "此模型没有楼层",
@@ -376,7 +382,9 @@
         "buildup": "至少需要 3 个楼层",
         "ids": "没有未通过的 IDS 规范——请先运行 IDS 检查",
         "bcf": "没有带视点或构件的 BCF 议题",
-        "fixed": "无可比较内容——修复后请重新校验"
+        "fixed": "无可比较内容——修复后请重新校验",
+        "sectionCut": "至少需要 2 层",
+        "exploded": "至少需要 3 层"
       },
       "emptyGeneric": "此模型没有可展示的内容",
       "shots": "{{n}} 个镜头",
@@ -434,6 +442,8 @@
       "unassigned": "未分配",
       "showDetails": "显示详情",
       "showDetailsHint": "受影响构件、修复方法、BCF 状态——用于审查视频。",
+      "narration": "解说字幕",
+      "narrationHint": "每个镜头一句简短说明，数据来自模型本身。替代镜头标签。",
       "styleLabel": "剪辑风格",
       "styles": {
         "classic": "经典",
@@ -473,7 +483,27 @@
         "blueprint": "海军蓝上的半透明白模，等宽字体，青色点缀。",
         "golden-hour": "夕阳天空下的沙色模型，橙青调色，宽银幕黑边。"
       },
-      "lookPreview": "在你的模型上预览"
+      "lookPreview": "在你的模型上预览",
+      "say": {
+        "intro": "{{name}}：{{storeys}}层，{{elements}}个构件。",
+        "introFlat": "{{name}}：从 IFC 读取的{{elements}}个构件。",
+        "rise": "{{storeys}}层，从地面到顶部{{height}}米。",
+        "footprint": "俯瞰：约{{width}} × {{depth}}米。",
+        "storey": "{{name}}，第{{index}}/{{total}}层：{{elements}}个构件。",
+        "system": "{{label}}：{{elements}}个构件，占模型{{percent}}%。",
+        "issue": "{{label}}：{{count}}个构件待检查。",
+        "ids": "未满足要求：{{label}}。{{count}}个构件。",
+        "fixed": "已修复：{{label}}。解决{{count}}项问题。",
+        "bcf": "未关闭议题：{{label}}。",
+        "detail": "近看：{{label}}。",
+        "inside": "进入{{name}}。",
+        "context": "拉远，看到{{name}}全貌。",
+        "closing": "以上是{{name}}。",
+        "closingScore": "{{name}}：Health Score {{score}}/100。",
+        "sectionCut": "从{{from}}剖切到{{to}}：{{storeys}}个平面。",
+        "sectionSweep": "沿建筑{{length}}米的竖向剖切。",
+        "exploded": "{{storeys}}层，分开后再合拢。"
+      }
     },
     "remaining": "约剩 {{seconds}} 秒",
     "sfxVolume": "音效音量",

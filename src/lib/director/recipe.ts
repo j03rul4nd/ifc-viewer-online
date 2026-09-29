@@ -31,6 +31,9 @@ export type SectionKind =
   | 'buildup'   // one continuous turn while the storeys appear bottom to top
   | 'zoomThrough' // an accelerating push through the facade into a storey
   | 'pullOut'   // from a metre off a detail back to the whole building
+  | 'sectionCut'   // a plan cut going down from the roof, stopping at every storey
+  | 'sectionSweep' // a vertical cut sweeping through the building, the inside in poché
+  | 'exploded'  // the storeys pull apart into an exploded view and fit back together
   | 'systems'   // structure / envelope / MEP / interiors, each isolated
   | 'issues'    // the worst validation findings, highlighted
   | 'ids'       // failed IDS specifications, the failing elements highlighted
@@ -41,7 +44,7 @@ export type SectionKind =
   | 'closing'   // slow final turn with the call to action
   | 'endCard'   // the name and the URL over a drifting gradient
 
-export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing', 'endCard']
+export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'sectionCut', 'sectionSweep', 'exploded', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing', 'endCard']
 
 export type Pace = 'calm' | 'normal' | 'fast'
 export const PACES: readonly Pace[] = ['calm', 'normal', 'fast']
@@ -74,6 +77,8 @@ export interface RecipeCaptions {
   cta: string
   /** Review videos: affected elements, how to fix, BCF status under each finding. */
   details?: boolean
+  /** Narrated subtitles: one short line per shot from the model's own data. */
+  narration?: boolean
 }
 
 /**
@@ -219,38 +224,38 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
   {
     ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch', sfx: 'full',
     format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'cinematic',
-    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing', 'endCard'], maxSystems: 2, maxStoreys: 2,
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'sectionCut', 'systems', 'endCard'], maxSystems: 2, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
   },
   // Art-directed presentations: one look each, paced for a meeting screen.
   {
     ...BASE, id: 'editorial-clay', name: 'Editorial clay', look: 'cloud-dancer',
     format: 'wide', targetSec: 30, pace: 'calm', music: 'calm', transition: 'crossfade', transitionSec: 0.8,
-    sections: ['pullOut', 'buildup', 'storeys', 'systems', 'endCard'], maxStoreys: 2, maxSystems: 2,
+    sections: ['pullOut', 'buildup', 'exploded', 'storeys', 'systems', 'endCard'], maxStoreys: 2, maxSystems: 2,
     captions: { ...CAPTIONS, look: 'minimal', cta: 'ifcvieweronline.eu' },
   },
   {
     ...BASE, id: 'teal-persimmon', name: 'Teal & persimmon', look: 'transformative-teal', style: 'launch', sfx: 'subtle',
     format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'upbeat',
-    sections: ['pullOut', 'buildup', 'zoomThrough', 'systems', 'endCard'], maxSystems: 3,
+    sections: ['pullOut', 'exploded', 'zoomThrough', 'systems', 'endCard'], maxSystems: 3,
     captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
   },
   {
     ...BASE, id: 'plum-noir-film', name: 'Plum noir film', look: 'plum-noir', sfx: 'subtle',
     format: 'wide', targetSec: 32, pace: 'calm', transition: 'dipBlack', transitionSec: 0.6, music: 'cinematic',
-    sections: ['hero', 'buildup', 'aerial', 'storeys', 'endCard'], maxStoreys: 2,
+    sections: ['hero', 'buildup', 'aerial', 'sectionSweep', 'storeys', 'endCard'], maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'clean', cta: 'ifcvieweronline.eu' },
   },
   {
     ...BASE, id: 'brutalist-reel', name: 'Brutalist reel', look: 'brutalist-mono', style: 'launch', sfx: 'full',
     format: 'reel', targetSec: 15, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
-    sections: ['pullOut', 'buildup', 'systems', 'endCard'], maxSystems: 2,
+    sections: ['pullOut', 'buildup', 'sectionSweep', 'systems', 'endCard'], maxSystems: 2,
     captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
   },
   {
     ...BASE, id: 'blueprint-tech', name: 'Blueprint', look: 'blueprint',
     format: 'wide', targetSec: 30, pace: 'normal', transition: 'crossfade', music: 'corporate',
-    sections: ['hero', 'systems', 'storeys', 'zoomThrough', 'endCard'], maxSystems: 4, maxStoreys: 2,
+    sections: ['hero', 'sectionCut', 'systems', 'storeys', 'sectionSweep', 'endCard'], maxSystems: 4, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'clean', cta: 'ifcvieweronline.eu' },
   },
   {
@@ -338,6 +343,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
       enabled: bool(c.enabled, true),
       look: oneOf(c.look, CAPTION_LOOK_IDS, 'clean'),
       details: bool(c.details, false),
+      narration: bool(c.narration, false),
       title: str(c.title, 80),
       showStats: bool(c.showStats, true),
       showScore: bool(c.showScore, true),

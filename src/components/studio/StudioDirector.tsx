@@ -55,6 +55,31 @@ export function useDirectorLabels(): GenerateLabels {
       fixedSummary: (resolved, before, after) => before !== null && after !== null
         ? t('studio.director.fixedSummaryScore', { resolved, before, after })
         : t('studio.director.fixedSummary', { resolved }),
+      narrate: (f) => {
+        const n = (v: number) => v.toLocaleString()
+        switch (f.kind) {
+          case 'intro': return f.storeys > 0
+            ? t('studio.director.say.intro', { name: f.name, elements: n(f.elements), storeys: f.storeys })
+            : t('studio.director.say.introFlat', { name: f.name, elements: n(f.elements) })
+          case 'rise': return t('studio.director.say.rise', { storeys: f.storeys, height: n(f.heightM) })
+          case 'footprint': return t('studio.director.say.footprint', { width: n(f.widthM), depth: n(f.depthM) })
+          case 'storey': return t('studio.director.say.storey', { name: f.name, index: f.index, total: f.total, elements: n(f.elements) })
+          case 'system': return t('studio.director.say.system', { label: f.label, elements: n(f.elements), percent: f.percent })
+          case 'issue': return t('studio.director.say.issue', { label: f.label, count: n(f.count) })
+          case 'ids': return t('studio.director.say.ids', { label: f.label, count: n(f.count) })
+          case 'fixed': return t('studio.director.say.fixed', { label: f.label, count: n(f.count) })
+          case 'bcf': return t('studio.director.say.bcf', { label: f.label })
+          case 'detail': return t('studio.director.say.detail', { label: f.label })
+          case 'inside': return t('studio.director.say.inside', { name: f.name })
+          case 'context': return t('studio.director.say.context', { name: f.name })
+          case 'sectionCut': return t('studio.director.say.sectionCut', { storeys: f.storeys, from: f.from, to: f.to })
+          case 'sectionSweep': return t('studio.director.say.sectionSweep', { length: n(f.lengthM) })
+          case 'exploded': return t('studio.director.say.exploded', { storeys: f.storeys })
+          case 'closing': return f.score !== null
+            ? t('studio.director.say.closingScore', { name: f.name, score: f.score })
+            : t('studio.director.say.closing', { name: f.name })
+        }
+      },
     },
     review: {
       more: (n) => t('studio.director.more', { n }),
@@ -196,6 +221,8 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
     switch (k) {
       case 'storeys': return { n: Math.min(draft.maxStoreys, sum((m) => m.storeys.length)) }
       case 'buildup': return { n: facts.models.some((m) => m.storeys.length >= 3) ? 1 : 0 }
+      case 'sectionCut': return { n: facts.models.some((m) => m.storeys.length >= 2) ? 1 : 0 }
+      case 'exploded': return { n: facts.models.some((m) => m.storeys.length >= 3) ? 1 : 0 }
       case 'systems': return { n: Math.min(draft.maxSystems, sum((m) => m.systems.length)) }
       case 'issues': return { n: Math.min(draft.maxIssues, sum((m) => m.issues.length)) }
       case 'tour': return { n: tourStops }
@@ -388,6 +415,7 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
                 <Toggle label={t('studio.director.showStats')} checked={draft.captions.showStats} onChange={(v) => setCap({ showStats: v })} />
                 <Toggle label={t('studio.director.showScore')} hint={t('studio.director.showScoreHint')} checked={draft.captions.showScore} onChange={(v) => setCap({ showScore: v })} />
                 <Toggle label={t('studio.director.showDetails')} hint={t('studio.director.showDetailsHint')} checked={!!draft.captions.details} onChange={(v) => setCap({ details: v })} />
+                <Toggle label={t('studio.director.narration')} hint={t('studio.director.narrationHint')} checked={!!draft.captions.narration} onChange={(v) => setCap({ narration: v })} />
                 <Toggle label={t('studio.director.labelShots')} checked={draft.captions.labelShots} onChange={(v) => setCap({ labelShots: v })} />
                 <input className="studio-input" value={draft.captions.cta} maxLength={80} placeholder={t('studio.director.ctaPlaceholder')} onChange={(e) => setCap({ cta: e.target.value })} aria-label={t('studio.director.cta')} />
               </div>

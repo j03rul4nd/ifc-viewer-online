@@ -12,6 +12,7 @@ import { WORD_STEP_SEC, type TextAnchor, type TextAnimId, type TextStyleId } fro
 import { cueAt, type ProjectSfx, type SfxCue } from '../capture/sfx'
 import { PACE_SHOT_SEC, type CaptionLook, type Recipe, type SectionKind } from './recipe'
 import { LOOKS, type Grade, type Look } from './looks'
+import { MAX_CUE_CHARS, subtitleCues, type NarrationFact } from './narration'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,8 @@ export interface PlanStrings {
   ids?: (label: string, count: number) => string
   fixed?: (label: string, count: number) => string
   fixedSummary?: (resolved: number, before: number | null, after: number | null) => string
+  /** One narrated line per shot (subtitles); missing = no narration. */
+  narrate?: (fact: NarrationFact) => string
 }
 
 export interface Rhythm { beatSec: number }
@@ -101,6 +104,13 @@ export interface ShotScene {
   stages?: { modelId: string; ids: number[] }[][]
   /** Elements painted with the overlay colours, the rest ghosted. */
   highlight?: { modelId?: string; ids: number[]; severity: 'error' | 'warning' | 'info' }[]
+  /**
+   * A section plane moving over the shot: it keeps the side `normal` points
+   * toward and passes through `cutPointAt(points, p, stepped)` at progress p.
+   */
+  cut?: { normal: Vec3; points: Vec3[]; stepped: boolean }
+  /** Exploded view: y-bands of the model pulled apart by `gap` each (see explodeOffsets). */
+  explode?: { bands: Array<{ min: number; max: number }>; gap: number }
 }
 
 export interface PlannedShot {
@@ -112,6 +122,8 @@ export interface PlannedShot {
   caption?: string
   /** Detail lines under the caption (review videos). */
   details?: string[]
+  /** What the shot is about, for its narrated subtitle. */
+  say?: NarrationFact
   /** A 2D end card instead of a 3D shot: name, facts, URL over a drifting gradient. */
   card?: { title: string; subtitle?: string; url?: string }
   scene: ShotScene
@@ -298,17 +310,21 @@ function sectionDrafts(
     weight,
     group: section,
   })
+  const said = (d: Draft, fact: NarrationFact): Draft => ({ ...d, shot: { ...d.shot, say: fact } })
+  const metres = (n: number) => Math.round(n)
 
   for (const section of sections) {
     switch (section) {
       case 'hero':
-        out.push(make('hero', 'reveal', m.bounds, m.name, {}, {}, undefined, 1.3))
+        out.push(said(make('hero', 'reveal', m.bounds, m.name, {}, {}, undefined, 1.3),
+          { kind: 'intro', name: m.name, elements: m.elementCount, storeys: m.storeys.length }))
         break
       case 'orbit':
         out.push(make('orbit', 'orbit', m.bounds, m.name, { sweepDeg: 70, easing: 'linear' }, {}))
         break
       case 'aerial':
-        out.push(make('aerial', 'topDown', m.bounds, m.name, {}, {}))
+        out.push(said(make('aerial', 'topDown', m.bounds, m.name, {}, {}),
+          { kind: 'footprint', widthM: metres(Math.max(m.bounds.size.x, m.bounds.size.z)), depthM: metres(Math.min(m.bounds.size.x, m.bounds.size.z)) }))
         break
       case 'zoomThrough': {
         // Push through the facade into the heart of a storey (or the model),
@@ -321,6 +337,7 @@ function sectionDrafts(
           keyframes: zoomKeyframes(m.bounds.center, target, dir, far, 0.35, DEFAULT_FOV_DEG),
           pathTiming: 'even', easing: 'easeIn',
         }, {}, recipe.captions.labelShots && into ? into.label : undefined, 0.8))
+        out[out.length - 1] = said(out[out.length - 1], { kind: 'inside', name: into?.label ?? m.name })
         break
       }
       case 'pullOut': {
@@ -341,6 +358,51 @@ function sectionDrafts(
           // Linear on a geometric path = the same apparent speed all the way out.
           pathTiming: 'even', easing: 'linear',
         }, d ? { highlight: [{ modelId: d.modelId, ids: d.ids, severity: 'info' }] } : {}, undefined, 1.2))
+        out[out.length - 1] = said(out[out.length - 1], { kind: 'context', name: m.name })
+        break
+      }
+      case 'sectionCut': {
+        // A plan cut from above the roof down to the ground storey, stopping
+        // at each one: the drawing a section tool would make, storey by storey.
+        if (m.storeys.length < 2) break
+        const top = m.bounds.center.y + m.bounds.size.y / 2
+        // Its own cap: one continuous shot, not the per-storey shot budget.
+        const picked = pickSpread(m.storeys, 6).slice().reverse()
+        const points = [
+          { x: m.bounds.center.x, y: top + 0.5, z: m.bounds.center.z },
+          ...picked.map((s) => ({ x: m.bounds.center.x, y: planCutHeight(s, m.storeys), z: m.bounds.center.z })),
+        ]
+        const d = make('sectionCut', 'orbit', m.bounds, m.name,
+          { sweepDeg: 60, elevationDeg: 50, easing: 'linear' },
+          { cut: { normal: { x: 0, y: -1, z: 0 }, points, stepped: true } }, undefined, 1.2 + picked.length * 0.15)
+        out.push(said(d, { kind: 'sectionCut', storeys: picked.length, from: picked[0].label, to: picked[picked.length - 1].label }))
+        break
+      }
+      case 'sectionSweep': {
+        // A vertical plane crossing the long side: the inside revealed slice by slice.
+        const long = m.bounds.size.x >= m.bounds.size.z ? 'x' : 'z'
+        const half = m.bounds.size[long] / 2
+        const at = (k: number): Vec3 => ({ ...m.bounds.center, [long]: m.bounds.center[long] + k * half })
+        const normal: Vec3 = long === 'x' ? { x: -1, y: 0, z: 0 } : { x: 0, y: 0, z: -1 }
+        // Looking at the cut face: the camera sits on the removed side.
+        const d = make('sectionSweep', 'orbit', m.bounds, m.name,
+          { sweepDeg: 35, elevationDeg: 24, easing: 'linear', headingDeg: long === 'x' ? 70 : 340 },
+          { cut: { normal, points: [at(1.02), at(0.25), at(-0.2)], stepped: false } }, undefined, 1.1)
+        out.push(said(d, { kind: 'sectionSweep', lengthM: Math.round(m.bounds.size[long]) }))
+        break
+      }
+      case 'exploded': {
+        // Storeys in up to 8 bands pulled apart and fitted back: needs a building.
+        if (m.storeys.length < 3) break
+        const bands = explodeBands(m.storeys, 8)
+        const gap = (m.bounds.size.y / bands.length) * 0.9
+        const lift = gap * (bands.length - 1)
+        // Frame the building at its tallest, exploded.
+        const framed: Bounds = { center: { ...m.bounds.center, y: m.bounds.center.y + lift / 2 }, size: { ...m.bounds.size, y: m.bounds.size.y + lift } }
+        const d = make('exploded', 'orbit', framed, m.name,
+          { sweepDeg: 70, elevationDeg: 22, easing: 'linear' },
+          { explode: { bands, gap } }, undefined, 1.5)
+        out.push(said(d, { kind: 'exploded', storeys: m.storeys.length }))
         break
       }
       case 'buildup': {
@@ -349,6 +411,7 @@ function sectionDrafts(
         const stages = m.storeys.map((st) => [{ modelId: st.modelId, ids: st.ids }])
         out.push(make('buildup', 'orbit', m.bounds, m.name,
           { sweepDeg: 80, elevationDeg: 22, easing: 'linear' }, { stages }, undefined, 1.6))
+        out[out.length - 1] = said(out[out.length - 1], { kind: 'rise', storeys: m.storeys.length, heightM: metres(m.bounds.size.y) })
         break
       }
       case 'storeys':
@@ -357,6 +420,7 @@ function sectionDrafts(
             { elevationDeg: 48, sweepDeg: 30, padding: 1.2 },
             subjectScene(recipe, s, 'info'),
             recipe.captions.labelShots ? s.label : undefined))
+          out[out.length - 1] = said(out[out.length - 1], { kind: 'storey', name: s.label, elements: s.count, index: m.storeys.indexOf(s) + 1, total: m.storeys.length })
         }
         break
       case 'systems':
@@ -365,6 +429,7 @@ function sectionDrafts(
             { sweepDeg: 45, elevationDeg: 26, padding: 1.1, easing: 'easeInOut' },
             subjectScene(recipe, s, 'info'),
             recipe.captions.labelShots ? strings.system(s.label, s.count) : undefined))
+          out[out.length - 1] = said(out[out.length - 1], { kind: 'system', label: s.label, elements: s.count, percent: m.elementCount > 0 ? Math.min(100, Math.round((s.count / m.elementCount) * 100)) : 0 })
         }
         break
       case 'issues':
@@ -374,6 +439,7 @@ function sectionDrafts(
             // Findings are always shown in context — highlighted, never isolated.
             { highlight: [{ modelId: s.modelId, ids: s.ids, severity: s.severity ?? 'warning' }] },
             recipe.captions.labelShots ? strings.issue(s.label, s.count) : undefined), recipe, s))
+          out[out.length - 1] = said(out[out.length - 1], { kind: 'issue', label: s.label, count: s.count, severity: s.severity ?? 'warning' })
         }
         break
       case 'ids':
@@ -382,6 +448,7 @@ function sectionDrafts(
             { sweepDeg: 35, elevationDeg: 30, padding: 1.8 },
             { highlight: [{ modelId: sub.modelId, ids: sub.ids, severity: 'error' }] },
             recipe.captions.labelShots ? (strings.ids ?? strings.issue)(sub.label, sub.count) : undefined), recipe, sub))
+          out[out.length - 1] = said(out[out.length - 1], { kind: 'ids', label: sub.label, count: sub.count })
         }
         break
       case 'fixed':
@@ -390,6 +457,7 @@ function sectionDrafts(
             { sweepDeg: 35, elevationDeg: 30, padding: 1.8 },
             { highlight: [{ modelId: sub.modelId, ids: sub.ids, severity: 'info' }] },
             recipe.captions.labelShots ? (strings.fixed ?? strings.issue)(sub.label, sub.count) : undefined), recipe, sub))
+          out[out.length - 1] = said(out[out.length - 1], { kind: 'fixed', label: sub.label, count: sub.count })
         }
         break
       case 'bcf':
@@ -399,7 +467,7 @@ function sectionDrafts(
             // The topic's own camera: fly in to it, then settle.
             ? make('bcf', 'path', m.bounds, sub.label, { keyframes: [pullBack(fitPoseToAspect(sub.pose, SCREEN_ASPECT, aspect), sub.pose.target, 1.35), fitPoseToAspect(sub.pose, SCREEN_ASPECT, aspect)], easing: 'easeOut' }, hl, recipe.captions.labelShots ? sub.label : undefined)
             : make('bcf', 'focus', minBounds(boxToBounds(sub.box), 2), sub.label, { sweepDeg: 30, padding: 1.8 }, hl, recipe.captions.labelShots ? sub.label : undefined)
-          out.push(withDetails(draft, recipe, sub))
+          out.push(said(withDetails(draft, recipe, sub), { kind: 'bcf', label: sub.label }))
         }
         break
       case 'tour': {
@@ -426,13 +494,15 @@ function sectionDrafts(
             { sweepDeg: 40, padding: 1.7 },
             { highlight: [{ modelId: d.modelId, ids: d.ids, severity: 'info' }] },
             recipe.captions.labelShots ? d.label : undefined))
+          out[out.length - 1] = said(out[out.length - 1], { kind: 'detail', label: d.label })
         } else {
           out.push(make('detail', 'dollyIn', m.bounds, m.name, {}, {}))
         }
         break
       }
       case 'closing':
-        out.push(make('closing', 'orbit', m.bounds, m.name, { sweepDeg: 40, elevationDeg: 20, easing: 'easeOut' }, {}, undefined, 1.2))
+        out.push(said(make('closing', 'orbit', m.bounds, m.name, { sweepDeg: 40, elevationDeg: 20, easing: 'easeOut' }, {}, undefined, 1.2),
+          { kind: 'closing', name: m.name, score: recipe.captions.showScore && m.score !== null && m.score >= PRESENTABLE_SCORE ? m.score : null }))
         break
       case 'endCard': {
         const d = make('endCard', 'orbit', m.bounds, m.name, {}, {}, undefined, 0.9)
@@ -520,6 +590,56 @@ function withDetails(d: Draft, recipe: Recipe, sub: Subject): Draft {
   return { ...d, weight: d.weight * 1.3, shot: { ...d.shot, details: sub.detail.slice(0, 4) } }
 }
 
+/**
+ * Where a moving cut is at progress p (0–1). Stepped: glides to each stop in
+ * the first 40 % of its segment and holds for the rest, so every plan reads.
+ * Otherwise smooth from the first point to the last.
+ */
+export function cutPointAt(points: readonly Vec3[], p: number, stepped: boolean): Vec3 {
+  if (points.length === 0) return { x: 0, y: 0, z: 0 }
+  if (points.length === 1) return points[0]
+  const q = Math.min(1, Math.max(0, p)) * (points.length - 1)
+  const i = Math.min(points.length - 2, Math.floor(q))
+  const f = q - i
+  const s = stepped ? smooth(Math.min(1, f / 0.4)) : f
+  const a = points[i], b = points[i + 1]
+  return { x: a.x + (b.x - a.x) * s, y: a.y + (b.y - a.y) * s, z: a.z + (b.z - a.z) * s }
+}
+
+const smooth = (t: number) => t * t * (3 - 2 * t)
+
+/**
+ * Split the storeys (bottom to top) into at most `max` contiguous bands. A
+ * band starts just under its first storey's floor so the slab travels with
+ * it; the lowest reaches down and the highest up without limit.
+ */
+export function explodeBands(storeys: readonly Subject[], max: number): Array<{ min: number; max: number }> {
+  const sorted = [...storeys].sort((a, b) => a.box.min.y - b.box.min.y)
+  const k = Math.max(1, Math.min(max, sorted.length))
+  const starts: number[] = []
+  for (let i = 0; i < k; i++) starts.push(sorted[Math.floor((i * sorted.length) / k)].box.min.y - 0.05)
+  return starts.map((y, i) => ({ min: i === 0 ? -Infinity : y, max: i === k - 1 ? Infinity : starts[i + 1] }))
+}
+
+/**
+ * How far each band is lifted at progress p: apart over 10–45 %, held,
+ * together again over 70–95 %. Band i rises i × gap at full explosion.
+ */
+export function explodeOffsets(bands: number, gap: number, p: number): number[] {
+  const e = p < 0.45 ? smooth(clamp01((p - 0.1) / 0.35)) : p < 0.7 ? 1 : 1 - smooth(clamp01((p - 0.7) / 0.25))
+  return Array.from({ length: bands }, (_, i) => i * gap * e)
+}
+
+const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
+
+/** A plan is cut ~1.2 m above the floor, below the storey above. */
+function planCutHeight(s: Subject, all: readonly Subject[]): number {
+  const floor = s.box.min.y
+  const next = all.find((o) => o.box.min.y > floor + 0.5)
+  const room = (next ? next.box.min.y : s.box.max.y) - floor
+  return floor + Math.min(1.2, Math.max(0.3, room * 0.45))
+}
+
 function subjectScene(recipe: Recipe, s: Subject, severity: 'error' | 'warning' | 'info'): ShotScene {
   return recipe.isolateSubjects
     ? { isolate: [{ modelId: s.modelId, ids: s.ids }] }
@@ -603,6 +723,9 @@ function planTexts(
     texts.push({ ...styled(kind), ...t, anim })
   }
   const end = (i: number) => starts[i] + shots[i].shot.durationSec - (i < shots.length - 1 ? overlap : 0)
+  // Narration: a subtitle track says what each shot shows; it takes over the
+  // per-shot labels and the stats line (it names the subject with its numbers).
+  const narrate = recipe.captions.narration && strings.narrate ? strings.narrate : null
 
   const heroEnd = end(0)
   // Launch titles hit within the first beat: no slow fade-in on a feed. An
@@ -619,7 +742,7 @@ function planTexts(
   if (recipe.captions.showScore && models.length === 1 && subject.score !== null && subject.score >= PRESENTABLE_SCORE) {
     sub.push(strings.score(subject.score))
   }
-  if (sub.length && look.stats) {
+  if (sub.length && look.stats && !narrate) {
     // Vertical frames have no room under a wrapped title — the facts follow it
     // on the second shot instead of piling onto it.
     if (vertical && shots.length > 1) {
@@ -631,7 +754,7 @@ function planTexts(
 
   for (let i = 1; i < shots.length; i++) {
     const cap = shots[i].caption
-    if (!cap) continue
+    if (!cap || narrate) continue
     push({ text: cap, startSec: round3(starts[i] + overlap + 0.15), endSec: round3(Math.max(starts[i] + overlap + 1, end(i) - 0.15)), style: look.label, anchor: low }, anim('label'))
   }
   // The fixes summary ("12 fixed · Health Score 71 → 86") opens the first fix
@@ -659,7 +782,21 @@ function planTexts(
   }
   const cta = recipe.captions.cta.trim()
   // An end card already carries the URL.
-  if (cta && shots.length > 1 && !shots[shots.length - 1].card) {
+  const ctaShown = !!cta && shots.length > 1 && !shots[shots.length - 1].card
+  if (narrate) {
+    const maxChars = vertical ? MAX_CUE_CHARS.vertical : MAX_CUE_CHARS.wide
+    for (let i = 0; i < shots.length; i++) {
+      const fact = shots[i].say
+      // The closing CTA owns the last shot's lower band.
+      if (!fact || shots[i].card || (ctaShown && i === shots.length - 1)) continue
+      // The hero's line waits for the title to land; the rest start after the cut.
+      const from = i === 0 ? (title ? 1.1 : 0.3) : starts[i] + overlap + 0.2
+      for (const cue of subtitleCues(narrate(fact), from, end(i) - 0.15, maxChars)) {
+        push({ ...styled('body'), text: cue.text, startSec: cue.startSec, endSec: cue.endSec, style: 'caption', anchor: vertical ? 'mid-center' : 'bottom-center' }, 'fade')
+      }
+    }
+  }
+  if (ctaShown) {
     const last = shots.length - 1
     push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: look.cta, anchor: vertical ? 'mid-center' : 'bottom-center' }, anim('cta'))
   }
