@@ -243,5 +243,18 @@
     "loading": "Carregant…",
     "processing": "Processant…",
     "fromCache": "Des de la memòria cau"
+  },
+  "mascot": {
+    "label": "Bimo, la mascota d’IFC Viewer",
+    "hello": "Hola, sóc en Bimo! Deixa anar un IFC i t’ho ensenyo tot.",
+    "tip1": "Deixa anar un fitxer .ifc i l’obro directament al navegador.",
+    "tip2": "No es puja res. El teu model es queda al teu ordinador.",
+    "tip3": "Prova el validador. M’encanta un informe IDS net.",
+    "hide": "Amaga en Bimo",
+    "blogHello": "Et faig companyia mentre llegeixes.",
+    "blogTip1": "Vols provar-ho? Obre el visor i deixa anar el teu IFC.",
+    "blogTip2": "Dubtes? Fes servir el botó d’IA de l’article per preguntar-ho al teu assistent.",
+    "blogTip3": "Truc: l’índex et porta directament a qualsevol secció.",
+    "blogDone": "Has arribat al final! Ho proves amb el teu model?"
   }
 }

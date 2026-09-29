@@ -243,5 +243,18 @@
     "loading": "Laden…",
     "processing": "Verarbeitung…",
     "fromCache": "Aus Cache"
+  },
+  "mascot": {
+    "label": "Bimo, das Maskottchen von IFC Viewer",
+    "hello": "Hallo, ich bin Bimo! Zieh eine IFC-Datei herein und ich zeig dir alles.",
+    "tip1": "Zieh eine .ifc-Datei herein und ich öffne sie direkt im Browser.",
+    "tip2": "Nichts wird hochgeladen. Dein Modell bleibt auf deinem Rechner.",
+    "tip3": "Probier den Validator. Ich liebe einen sauberen IDS-Bericht.",
+    "hide": "Bimo ausblenden",
+    "blogHello": "Ich leiste dir beim Lesen Gesellschaft.",
+    "blogTip1": "Lust, es auszuprobieren? Öffne den Viewer und zieh deine eigene IFC herein.",
+    "blogTip2": "Fragen? Nutze den KI-Button im Artikel, um deinen Assistenten zu fragen.",
+    "blogTip3": "Tipp: Das Inhaltsverzeichnis springt direkt zu jedem Abschnitt.",
+    "blogDone": "Geschafft, bis zum Ende! Probierst du es mit deinem eigenen Modell?"
   }
 }

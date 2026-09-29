@@ -8,6 +8,7 @@ import CountUp        from './reactbits/CountUp'
 import FaultyTerminal from './reactbits/FaultyTerminal'
 import SoftAurora     from './reactbits/SoftAurora'
 import ReadingProgress             from './blog/ReadingProgress'
+import BimoMascot                  from './mascot/BimoMascot'
 import TableOfContents, { extractHeadings, slugify } from './blog/TableOfContents'
 import CodeBlock                   from './blog/CodeBlock'
 import CopyForAI                   from './blog/CopyForAI'
@@ -2001,6 +2002,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
       className="min-h-screen bg-[var(--bg)]"
     >
       <ReadingProgress />
+      <BimoMascot variant="blog" />
       {/* ── Sticky nav ── */}
       <nav className={`lp-sticky-nav sticky top-0 z-20 border-b border-[var(--border)] backdrop-blur-[14px] ${navBg}`}>
         <div className="max-w-[1120px] mx-auto px-4 sm:px-7 h-[54px] flex items-center justify-between">

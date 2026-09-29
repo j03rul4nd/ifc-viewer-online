@@ -243,5 +243,18 @@
     "loading": "Cargando…",
     "processing": "Procesando…",
     "fromCache": "Desde caché"
+  },
+  "mascot": {
+    "label": "Bimo, la mascota de IFC Viewer",
+    "hello": "¡Hola, soy Bimo! Suelta un IFC y te enseño todo.",
+    "tip1": "Suelta un archivo .ifc y lo abro directamente en tu navegador.",
+    "tip2": "No se sube nada. Tu modelo se queda en tu equipo.",
+    "tip3": "Prueba el validador. Me encanta un informe IDS limpio.",
+    "hide": "Ocultar a Bimo",
+    "blogHello": "Te hago compañía mientras lees.",
+    "blogTip1": "¿Quieres probarlo? Abre el visor y suelta tu propio IFC.",
+    "blogTip2": "¿Dudas? Usa el botón de IA del artículo para preguntarle a tu asistente.",
+    "blogTip3": "Truco: el índice te lleva directo a cualquier sección.",
+    "blogDone": "¡Has llegado al final! ¿Lo pruebas con tu propio modelo?"
   }
 }
