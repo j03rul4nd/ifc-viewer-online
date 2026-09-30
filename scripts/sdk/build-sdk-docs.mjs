@@ -15,6 +15,7 @@ import { dirname, resolve } from 'node:path'
 import { SDK_DOCS_I18N } from './sdk-docs-i18n.mjs'
 import { SDK_DOCS_V111 } from './sdk-docs-v111.mjs'
 import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
+import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -532,6 +533,7 @@ Object.assign(T.en, {
 for (const l of LANGS) if (SDK_DOCS_I18N[l]) Object.assign(T[l], SDK_DOCS_I18N[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V111[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -665,6 +667,21 @@ const API_GROUPS = [
     ['createPresentation(recipe?, options?)', 'Promise<PresentationState>', 'dirCreate'],
     ['exportPresentation({ resolution?, music? })', 'Promise<PresentationVideo>', 'dirExport'],
     ['closePresentation()', 'Promise<void>', 'dirClose'],
+  ]],
+  ['cover', 'grpCover', [
+    ['getCoverOptions()', 'Promise<CoverCatalog>', 'covOptions'],
+    ['createCover({ recipe?, template?, format?, palette?, text? })', 'Promise<CoverState>', 'covCreate'],
+    ['getCover()', 'Promise<CoverState | null>', 'covGet'],
+    ['exportCover({ type?, slide? })', 'Promise<CoverFile>', 'covExport'],
+    ['closeCover()', 'Promise<void>', 'covClose'],
+  ]],
+  ['groups', 'grpGroups', [
+    ['getGroups()', 'Promise<SceneGroupsState>', 'grpList'],
+    ['createGroup(name, modelIds?)', 'Promise<string>', 'grpCreate'],
+    ['renameGroup(id, name) · deleteGroup(id)', 'Promise<void>', 'grpEdit'],
+    ["assignToGroup(itemId, groupId | null | 'loose')", 'Promise<void>', 'grpAssign'],
+    ['setGroupVisible(id, visible) · isolateGroup(id | null)', 'Promise<void>', 'grpShow'],
+    ['frameGroup(id)', 'Promise<void>', 'grpFrame'],
   ]],
   ['measure', 'grpMeasure', [
     ['setMeasureTool(tool)', 'Promise<void>', 'msTool'],
@@ -932,6 +949,14 @@ await viewer.createPresentation("linkedin-teaser", { title: "Casa Poblenou", tar
 const { bytes, mimeType } = await viewer.exportPresentation({ resolution: 1080 });
 video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
 
+const REC_COVER =
+`await viewer.createCover({
+  recipe: "pinterest",
+  text: { title: "Casa Poblenou", location: "Barcelona", website: "https://example.com" },
+});
+const { bytes, mimeType } = await viewer.exportCover({ type: "png" });
+img.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
+
 const REC_THEME =
 `new IfcViewer("#viewer", { accent: "#22c55e" });
 
@@ -1119,6 +1144,7 @@ function page(lang) {
     recipe('rec8T', 'rec8B', REC_PLAN) +
     recipe('rec9T', 'rec9B', REC_TOUR) +
     recipe('rec10T', 'rec10B', REC_VIDEO) +
+    recipe('rec11T', 'rec11B', REC_COVER) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'

@@ -195,6 +195,22 @@ const { bytes, mimeType } = await viewer.exportPresentation({ resolution: 1080 }
 video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
 ```
 
+## Cover Studio and scene groups (v1.13)
+
+| Method | Description |
+|--------|-------------|
+| `getCoverOptions()` | `{ recipes, templates, formats: [{ id, width, height, ratio }], palettes }`. |
+| `createCover({ recipe?, template?, format?, palette?, text? })` | Opens Cover Studio (it stays editable) and runs the `recipe` if one is given (`pinterest`, `carousel`, `post`, `client`, `board`, `sheet`, `story`, `coordination`); the recipe captures the views it needs. It then applies the template, format and palette, plus `text: { title, subtitle, client, location, date, studio, tagline, concept, website }`. Resolves with `{ template, format, palette, mode, shots, slides, text }`. Also works in `kiosk` and `client`. |
+| `getCover()` | The same state, or `null` when the studio is closed. |
+| `exportCover({ type?, slide? })` | `png` / `jpeg` export one page (`slide`, 0-based). `pdf` / `pptx` export the whole document and `zip` every page. Resolves `{ bytes, mimeType, sizeBytes, slides }`; the bytes are transferred. |
+| `closeCover()` | Closes the studio. |
+| `getGroups()` | `{ groups: [{ id, name, user, basis, modelIds, cloudIds }], looseCloudIds }`. This is the same grouping the Scene panel shows: inferred from the IFC (project, site, location) plus the groups users made. |
+| `createGroup(name, modelIds?)` | Creates a user group. Resolves with its id. Groups are remembered per file name on the visitor's device. |
+| `renameGroup(id, name)` / `deleteGroup(id)` | Work on user groups only. Automatic groups reject with a reason. |
+| `assignToGroup(itemId, groupId \| null \| 'loose')` | Moves a model or point cloud into a group. `null` hands it back to automatic grouping; `'loose'` keeps it in no group. |
+| `setGroupVisible(id, visible)` / `isolateGroup(id \| null)` | Show or hide a whole group's models, or show only that group. |
+| `frameGroup(id)` | Fits the camera to a group, hidden members included. |
+
 ## Analysis: sections, measurements, federated models (v1.11)
 
 | Method | Description |

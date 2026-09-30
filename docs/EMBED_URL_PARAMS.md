@@ -283,6 +283,15 @@ as "no model yet", "feature not in this build" or "model has no location".
 | `ifcviewer:create-presentation` *(1.12)* | `recipe`, `options?` | Generates a presentation in Clip Studio. Returns `{ clips, durationSec, width, height }` |
 | `ifcviewer:export-presentation` *(1.12)* | `resolution?`, `music?` | Encodes it. `data: { bytes (transferred ArrayBuffer), mimeType, sizeBytes }` |
 | `ifcviewer:close-presentation` *(1.12)* | — | Closes Clip Studio |
+| `ifcviewer:get-cover-options` *(1.13)* | — | `{ recipes, templates, formats, palettes }` |
+| `ifcviewer:create-cover` *(1.13)* | `recipe?`, `template?`, `format?`, `palette?`, `text?` | Makes a cover in Cover Studio. Returns its state |
+| `ifcviewer:get-cover` / `ifcviewer:close-cover` *(1.13)* | — | Returns the state (or `null`) / closes the studio |
+| `ifcviewer:export-cover` *(1.13)* | `fileType?` (`png`·`jpeg`·`pdf`·`pptx`·`zip`), `slide?` | `data: { bytes (transferred), mimeType, sizeBytes, slides }`. The field is `fileType`, not `type`, which is taken by the message itself |
+| `ifcviewer:get-groups` *(1.13)* | — | `{ groups, looseCloudIds }` |
+| `ifcviewer:create-group` *(1.13)* | `name`, `modelIds?` | `data: { id }` |
+| `ifcviewer:rename-group` / `ifcviewer:delete-group` *(1.13)* | `groupId`, `name` / `groupId` | User groups only |
+| `ifcviewer:assign-group` *(1.13)* | `itemId`, `groupId` (id · `null` · `'loose'`) | Moves a model or cloud |
+| `ifcviewer:group-visible` / `ifcviewer:isolate-group` / `ifcviewer:frame-group` *(1.13)* | `groupId`, `visible` / `groupId` (or `null`) / `groupId` | Acts on a whole group |
 
 ```js
 // Raw postMessage (the SDK does this for you):
