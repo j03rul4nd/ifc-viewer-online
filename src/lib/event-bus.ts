@@ -134,6 +134,27 @@ export interface SdkPointCloudCommand {
   done?: (ok: boolean, errorOrId?: string) => void
 }
 
+/**
+ * `sdk:cover` — drive Cover Studio. Its document, capture pipeline and
+ * exporters all live in the (lazy) modal, so the bridge hands it the command.
+ */
+export interface SdkCoverCommand {
+  action: 'apply' | 'export' | 'state'
+  /** `apply`: a quick-start recipe to run first (captures the views it needs). */
+  recipe?: string
+  template?: string
+  format?: string
+  /** A stock palette id, or 'image' / 'image-dark'. */
+  palette?: string
+  /** Title, subtitle, client, location, date, studio, tagline, concept. */
+  text?: Record<string, string>
+  /** `export`: file type. */
+  type?: 'png' | 'jpeg' | 'pdf' | 'pptx' | 'zip'
+  /** `export` png/jpeg: which slide, 0-based. */
+  slide?: number
+  done?: (ok: boolean, error?: string, data?: unknown) => void
+}
+
 /** Internal/embed command used by article demos to start the bundled IFC + video scene. */
 export interface SdkVideoCommand {
   action: 'demo'
@@ -198,6 +219,7 @@ export type AppEventMap = {
   'sdk:pointcloud':         SdkPointCloudCommand
   'sdk:video':              SdkVideoCommand
   'sdk:mesh':               SdkMeshCommand
+  'sdk:cover':              SdkCoverCommand
 }
 
 // ── Core bus class ─────────────────────────────────────────────────────────────

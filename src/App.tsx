@@ -66,6 +66,7 @@ import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 // Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
 const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
 const ClipStudio   = React.lazy(() => import('./components/studio/ClipStudio'))
+const CoverStudioModal = React.lazy(() => import('./components/CoverStudioModal'))
 const CompareModal = React.lazy(() => import('./components/CompareModal'))
 const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
 // Client presentation skin (D-25) — lazy: loads only when ui=client / toggled on
@@ -137,6 +138,10 @@ import { planCutY } from './lib/cover/cuts'
 import { applyTemplate, PRESENTATION_TEMPLATES, type PresentationTemplateId } from './lib/templates/presentationTemplates'
 import { useClipStudioStore } from './stores/clipStudioStore'
 import { linkViewer } from './lib/capture/viewer-link'
+import { useCoverStudioStore } from './stores/coverStudioStore'
+import { LOOSE } from './lib/scene-tree'
+import { modelFileKey, type ModelGroups } from './hooks/useModelGroups'
+import type { SdkCoverCommand } from './lib/event-bus'
 import { projectDuration } from './lib/capture/project'
 import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
@@ -370,6 +375,44 @@ function presentationStateOut() {
     width: s.output.width,
     height: s.output.height,
   }
+}
+
+/**
+ * Open Cover Studio if needed, wait for it to be listening, run one command.
+ * The studio is a lazy modal that grabs the current view on open, so the
+ * first command after opening waits for that too (inside the modal).
+ */
+async function coverCommand(cmd: Omit<SdkCoverCommand, 'done'>): Promise<unknown> {
+  useCoverStudioStore.getState().setOpen(true)
+  const deadline = Date.now() + 30_000
+  while (!appBus.hasListeners('sdk:cover')) {
+    if (Date.now() > deadline) throw new Error('Cover Studio did not open in time')
+    await new Promise((r) => setTimeout(r, 50))
+  }
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Cover Studio did not finish in time')), 5 * 60_000)
+    appBus.emit('sdk:cover', {
+      ...cmd,
+      done: (ok, error, data) => { clearTimeout(timer); if (ok) resolve(data); else reject(new Error(error ?? 'Cover command failed')) },
+    })
+  })
+}
+
+function groupsOut(g: ModelGroups) {
+  return {
+    groups: g.groups.map((x) => ({
+      id: x.id, name: x.label, user: x.user, basis: x.basis,
+      modelIds: [...x.memberIds], cloudIds: [...x.cloudIds],
+    })),
+    looseCloudIds: [...g.looseCloudIds],
+  }
+}
+
+/** A group the user (or a host) created — the only kind that can be renamed, deleted or filled. */
+function findUserGroup(id: unknown): { id: string; name: string } {
+  const g = useSceneGroupStore.getState().userGroups.find((x) => x.id === id)
+  if (!g) throw new Error(`No user group "${String(id)}" — automatic groups cannot be edited; create one with createGroup()`)
+  return g
 }
 
 function measurementsOut(api: ViewerAPI) {
@@ -694,7 +737,10 @@ export default function App() {
   const viewerApiRef = useRef<ViewerAPI | null>(null)
   // The viewer frames groups for calls that carry none (SDK, embed, other
   // panels) — it needs the same grouping the Scene panel shows.
-  const { groupIdOf: sceneGroupIdOf } = useModelGroups()
+  const modelGroups = useModelGroups()
+  const sceneGroupIdOf = modelGroups.groupIdOf
+  const modelGroupsRef = useRef(modelGroups)
+  modelGroupsRef.current = modelGroups
   const hasSceneModels = useSceneStore((s) => s.models.length > 0)
   // Mirror moves the viewer makes on its own (map satellites) into sceneStore,
   // or the Scene panel and group moves keep working from the old position.
@@ -774,6 +820,7 @@ export default function App() {
   const { validationMode, result } = useValidationStore()
   const tourMode = usePresentationStore((s) => s.mode)
   const clipStudioOpen = useClipStudioStore((s) => s.open)
+  const coverStudioOpen = useCoverStudioStore((s) => s.open)
   const clientMode = useUIStore((s) => s.clientMode)
   const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
 
@@ -3042,6 +3089,142 @@ export default function App() {
         case 'ifcviewer:close-presentation':
           void respond(() => { useClipStudioStore.getState().closeStudio(); return null })
           break
+        // ── Cover Studio (SDK 1.13) ────────────────────────────────────────
+        case 'ifcviewer:get-cover-options':
+          void respond(async () => {
+            const [{ RECIPE_IDS }, { COVER_TEMPLATE_IDS }, { COVER_FORMATS }, { COVER_PALETTES }] = await Promise.all([
+              import('./lib/cover/recipes'), import('./lib/cover/templates'),
+              import('./lib/cover/formats'), import('./lib/cover/palettes'),
+            ])
+            return {
+              recipes: [...RECIPE_IDS],
+              templates: [...COVER_TEMPLATE_IDS],
+              formats: Object.values(COVER_FORMATS).map((f) => ({ id: f.id, width: f.width, height: f.height, ratio: f.ratio })),
+              palettes: [...COVER_PALETTES.map((p) => p.id), 'image', 'image-dark'],
+            }
+          })
+          break
+        case 'ifcviewer:create-cover': {
+          void respond(async () => {
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const text = msg.text && typeof msg.text === 'object' ? Object.fromEntries(
+              Object.entries(msg.text as Record<string, unknown>).filter(([, v]) => typeof v === 'string'),
+            ) as Record<string, string> : undefined
+            return coverCommand({
+              action: 'apply',
+              recipe: typeof msg.recipe === 'string' ? msg.recipe : undefined,
+              template: typeof msg.template === 'string' ? msg.template : undefined,
+              format: typeof msg.format === 'string' ? msg.format : undefined,
+              palette: typeof msg.palette === 'string' ? msg.palette : undefined,
+              text,
+            })
+          })
+          break
+        }
+        case 'ifcviewer:get-cover':
+          void respond(() => {
+            if (!useCoverStudioStore.getState().open) return null
+            return coverCommand({ action: 'state' })
+          })
+          break
+        case 'ifcviewer:export-cover': {
+          const reqId = requestId
+          void (async () => {
+            try {
+              if (!useCoverStudioStore.getState().open) throw new Error('No cover open — call createCover() first')
+              const type = ['png', 'jpeg', 'pdf', 'pptx', 'zip'].includes(msg.fileType as string) ? msg.fileType as 'png' : 'png'
+              const r = await coverCommand({ action: 'export', type, slide: typeof msg.slide === 'number' ? msg.slide : undefined }) as { blob: Blob; slides: number }
+              const bytes = await r.blob.arrayBuffer()
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType: r.blob.type, sizeBytes: bytes.byteLength, slides: r.slides } }, [bytes])
+            } catch (err) {
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: false, error: err instanceof Error ? err.message : String(err) })
+            }
+          })()
+          break
+        }
+        case 'ifcviewer:close-cover':
+          void respond(() => { useCoverStudioStore.getState().setOpen(false); return null })
+          break
+        // ── Scene groups (SDK 1.13) ────────────────────────────────────────
+        // Same store and the same inferred grouping the Scene panel shows; a
+        // group made by a host is a group the visitor can see and rename.
+        case 'ifcviewer:get-groups':
+          void respond(() => groupsOut(modelGroupsRef.current))
+          break
+        case 'ifcviewer:create-group': {
+          void respond(() => {
+            const name = typeof msg.name === 'string' ? msg.name.trim() : ''
+            if (!name) throw new Error('A group needs a name')
+            const ids = Array.isArray(msg.modelIds) ? msg.modelIds.filter((x): x is string => typeof x === 'string') : []
+            const models = useSceneStore.getState().models
+            const keys = ids.map((id) => {
+              const m = models.find((x) => x.id === id)
+              if (!m) throw new Error(`No model "${id}"`)
+              return modelFileKey(m)
+            })
+            const id = useSceneGroupStore.getState().createGroup(name, keys)
+            return { id }
+          })
+          break
+        }
+        case 'ifcviewer:rename-group': {
+          void respond(() => {
+            const g = findUserGroup(msg.groupId)
+            const name = typeof msg.name === 'string' ? msg.name.trim() : ''
+            if (!name) throw new Error('A group needs a name')
+            useSceneGroupStore.getState().renameGroup(g.id, name)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:delete-group':
+          void respond(() => { useSceneGroupStore.getState().deleteGroup(findUserGroup(msg.groupId).id); return null })
+          break
+        case 'ifcviewer:assign-group': {
+          void respond(() => {
+            const id = typeof msg.itemId === 'string' ? msg.itemId : ''
+            const to = msg.groupId === null ? null : msg.groupId === 'loose' ? LOOSE : findUserGroup(msg.groupId).id
+            const model = useSceneStore.getState().models.find((m) => m.id === id)
+            if (model) { useSceneGroupStore.getState().assignModel(modelFileKey(model), to); return null }
+            const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === id)
+            if (cloud) { useSceneGroupStore.getState().assignCloud(cloud.fileKey, to); return null }
+            throw new Error(`No model or point cloud "${id}"`)
+          })
+          break
+        }
+        case 'ifcviewer:group-visible':
+        case 'ifcviewer:isolate-group': {
+          void respond(() => {
+            const groups = modelGroupsRef.current.groups
+            const isolate = msg.type === 'ifcviewer:isolate-group'
+            const target = msg.groupId === null && isolate ? null : groups.find((g) => g.id === msg.groupId)
+            if (target === undefined) throw new Error(`No group "${String(msg.groupId)}" — see getGroups()`)
+            const scene = useSceneStore.getState()
+            const api = viewerApiRef.current
+            for (const m of scene.models) {
+              const inGroup = !!target && target.memberIds.includes(m.id)
+              const visible = isolate ? (target === null || inGroup) : (inGroup ? msg.visible !== false : m.visible)
+              if (visible !== m.visible) {
+                scene.setModelVisible(m.id, visible)
+                api?.setModelVisible(m.id, visible)
+              }
+            }
+            const f = filtersRef.current
+            api?.applyFilters(f.hidden, f.isolated, f.hiddenElements, f.isolatedElement, f.isolatedElementModel)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:frame-group': {
+          void respond(() => {
+            const g = modelGroupsRef.current.groups.find((x) => x.id === msg.groupId)
+            if (!g) throw new Error(`No group "${String(msg.groupId)}" — see getGroups()`)
+            const ok = viewerApiRef.current?.frameItems([...g.memberIds, ...g.cloudIds])
+            if (!ok) throw new Error('That group has nothing to frame')
+            return null
+          })
+          break
+        }
         case 'ifcviewer:remove-model': {
           const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
           if (modelId) void handleRemoveModel(modelId)
@@ -3816,6 +3999,12 @@ export default function App() {
                   {/* Clip Studio normally hangs off the toolbar's capture menu (or the
                       tour bar). With no toolbar — kiosk, client — nothing would
                       mount it, and an SDK createPresentation() would wait forever. */}
+                  {coverStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
+                    <React.Suspense fallback={null}>
+                      <CoverStudioModal viewerApiRef={viewerApiRef} onClose={() => useCoverStudioStore.getState().setOpen(false)} />
+                    </React.Suspense>
+                  )}
+
                   {clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
                     <React.Suspense fallback={null}>
                       <ClipStudio />

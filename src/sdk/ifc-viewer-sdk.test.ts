@@ -940,3 +940,41 @@ describe('IfcViewer — tours and director (1.12)', () => {
     v.dispose()
   })
 })
+
+describe('IfcViewer — cover studio and scene groups (1.13)', () => {
+  beforeEach(() => { mount() })
+  const quiet = (p: Promise<unknown>): void => { p.catch(() => {}) }
+
+  it('sends covers and groups under their own commands', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    quiet(v.createCover({ recipe: 'pinterest', text: { title: 'Casa' } }))
+    quiet(v.exportCover({ type: 'pdf' }))
+    quiet(v.createGroup('Fase 1', ['m1', 'm2']))
+    quiet(v.assignToGroup('m3', 'loose'))
+    quiet(v.isolateGroup(null))
+    quiet(v.frameGroup('g1'))
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:create-cover')[0]).toMatchObject({ recipe: 'pinterest', text: { title: 'Casa' } })
+    expect(postsOfType(post, 'ifcviewer:export-cover')[0]).toMatchObject({ fileType: 'pdf' })
+    expect(postsOfType(post, 'ifcviewer:create-group')[0]).toMatchObject({ name: 'Fase 1', modelIds: ['m1', 'm2'] })
+    expect(postsOfType(post, 'ifcviewer:assign-group')[0]).toMatchObject({ itemId: 'm3', groupId: 'loose' })
+    expect(postsOfType(post, 'ifcviewer:isolate-group')[0].groupId).toBeNull()
+    expect(postsOfType(post, 'ifcviewer:frame-group')[0].groupId).toBe('g1')
+    v.dispose()
+  })
+
+  it('resolves createGroup with the id alone', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    const p = v.createGroup('A')
+    await tick()
+    emitFromIframe(v, { type: 'result', requestId: lastRequestId(post), ok: true, data: { id: 'ug-1' } })
+    await expect(p).resolves.toBe('ug-1')
+    v.dispose()
+  })
+})

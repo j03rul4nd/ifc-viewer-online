@@ -11,6 +11,7 @@ import * as Icons from './Icons'
 import { useSceneStore } from '../stores/sceneStore'
 import { useCaptureStore } from '../stores/captureStore'
 import { useClipStudioStore } from '../stores/clipStudioStore'
+import { useCoverStudioStore } from '../stores/coverStudioStore'
 import { toast, toastFromError } from '../stores/toastStore'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useAppEvent } from '../hooks/useAppEvent'
@@ -67,7 +68,8 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   const openStudio = useClipStudioStore((s) => s.openStudio)
   const [capturing, setCapturing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [coverOpen, setCoverOpen] = useState(false)
+  const coverOpen = useCoverStudioStore((s) => s.open)
+  const setCoverOpen = useCoverStudioStore((s) => s.setOpen)
 
   // ── Canvas acquisition ──────────────────────────────────────────────────────
   // Where this instance owns a replay buffer, it records the viewer's
@@ -374,7 +376,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
           <ClipStudio />
         </Suspense>
       )}
-      {coverOpen && (
+      {replay && coverOpen && (
         <Suspense fallback={null}>
           <CoverStudioModal viewerApiRef={viewerApiRef} onClose={() => setCoverOpen(false)} />
         </Suspense>

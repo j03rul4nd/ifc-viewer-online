@@ -1,7 +1,7 @@
-var v = Object.defineProperty;
-var w = (i, t, e) => t in i ? v(i, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : i[t] = e;
-var o = (i, t, e) => w(i, typeof t != "symbol" ? t + "" : t, e);
-const m = [
+var m = Object.defineProperty;
+var w = (i, t, e) => t in i ? m(i, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : i[t] = e;
+var n = (i, t, e) => w(i, typeof t != "symbol" ? t + "" : t, e);
+const p = [
   { code: "en", label: "English" },
   { code: "es", label: "Español" },
   { code: "de", label: "Deutsch" },
@@ -12,7 +12,7 @@ const m = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.12.0", q = 12e4, y = 3e4, c = m.map((i) => i.code);
+], g = "1.13.0", q = 12e4, y = 3e4, l = p.map((i) => i.code);
 function b() {
   try {
     return new URL("../", import.meta.url).href;
@@ -38,28 +38,28 @@ function f(i, t) {
 }
 const d = class d {
   constructor(t, e = {}) {
-    o(this, "version", g);
-    o(this, "iframe");
-    o(this, "baseUrl");
-    o(this, "appOrigin");
-    o(this, "opts");
-    o(this, "loadTimeout");
-    o(this, "_ready", !1);
-    o(this, "languages", []);
-    o(this, "readyResolvers", []);
+    n(this, "version", g);
+    n(this, "iframe");
+    n(this, "baseUrl");
+    n(this, "appOrigin");
+    n(this, "opts");
+    n(this, "loadTimeout");
+    n(this, "_ready", !1);
+    n(this, "languages", []);
+    n(this, "readyResolvers", []);
     // Correlate each load with the iframe's echoed requestId so app-initiated loads
     // (URL param, in-iframe upload) never resolve a host add() promise.
-    o(this, "pending", /* @__PURE__ */ new Map());
+    n(this, "pending", /* @__PURE__ */ new Map());
     // Generic query (request/response) correlation, keyed by requestId.
-    o(this, "requests", /* @__PURE__ */ new Map());
+    n(this, "requests", /* @__PURE__ */ new Map());
     // Serialize loads so they land in call order and each add() settles before
     // the next is sent. The viewer itself queues concurrent loads (it no longer
     // rejects a second one), so this is about predictable ordering for hosts.
-    o(this, "loadChain", Promise.resolve());
-    o(this, "reqCounter", 0);
-    o(this, "listeners", /* @__PURE__ */ new Map());
-    o(this, "disposed", !1);
-    o(this, "onMessage", (t) => {
+    n(this, "loadChain", Promise.resolve());
+    n(this, "reqCounter", 0);
+    n(this, "listeners", /* @__PURE__ */ new Map());
+    n(this, "disposed", !1);
+    n(this, "onMessage", (t) => {
       if (t.source !== this.iframe.contentWindow) return;
       const e = t.data;
       if (!(!e || e.source !== "ifc-validator" || typeof e.type != "string"))
@@ -194,7 +194,7 @@ const d = class d {
    * for code + native label pairs to build a picker.
    */
   getLanguages() {
-    return this.languages.length ? this.languages.slice() : c.slice();
+    return this.languages.length ? this.languages.slice() : l.slice();
   }
   // ── Queries (request → response) ───────────────────────────────────────────
   /** List the models currently loaded in the scene. */
@@ -695,6 +695,84 @@ const d = class d {
     return this.request("ifcviewer:close-presentation").then(() => {
     });
   }
+  // ── Cover Studio (since v1.13.0) ────────────────────────────────────────
+  // Stills of the model laid out as covers, posters, carousels and sheets —
+  // rendered in the visitor's browser.
+  /** The recipes, templates, formats and palettes Cover Studio offers. */
+  getCoverOptions() {
+    return this.request("ifcviewer:get-cover-options");
+  }
+  /**
+   * Make a cover. Opens Cover Studio (the visitor can keep editing), runs the
+   * recipe if one is given — it captures the views it needs — then applies the
+   * template, format, palette and texts. Resolves when it is ready to export.
+   *
+   *   await viewer.createCover({ recipe: 'pinterest', text: { title: 'Casa Poblenou', location: 'Barcelona' } })
+   */
+  createCover(t = {}) {
+    return this.request("ifcviewer:create-cover", { ...t }, 5 * 6e4);
+  }
+  /** The cover as it stands, or null when Cover Studio is closed. */
+  getCover() {
+    return this.request("ifcviewer:get-cover", {}, 5 * 6e4);
+  }
+  /**
+   * Export the cover. `png` / `jpeg` give one page (`slide`, default the first);
+   * `pdf` and `pptx` the whole document; `zip` every page as PNG.
+   */
+  exportCover(t = {}) {
+    return this.request("ifcviewer:export-cover", { fileType: t.type ?? "png", slide: t.slide }, 5 * 6e4);
+  }
+  /** Close Cover Studio. */
+  closeCover() {
+    return this.request("ifcviewer:close-cover").then(() => {
+    });
+  }
+  // ── Scene groups (since v1.13.0) ────────────────────────────────────────
+  // The viewer groups files by the building they belong to (IFC project,
+  // site, location); users — and now hosts — add their own groups on top.
+  // User groups are remembered per file name on the visitor's device.
+  /** Every group in the scene, inferred and user-made. */
+  getGroups() {
+    return this.request("ifcviewer:get-groups");
+  }
+  /** Create a group, optionally filling it with models. Resolves with its id. */
+  createGroup(t, e = []) {
+    return this.request("ifcviewer:create-group", { name: t, modelIds: e }).then((r) => r.id);
+  }
+  /** Rename a user group. */
+  renameGroup(t, e) {
+    return this.request("ifcviewer:rename-group", { groupId: t, name: e }).then(() => {
+    });
+  }
+  /** Delete a user group; its files go back to automatic grouping. */
+  deleteGroup(t) {
+    return this.request("ifcviewer:delete-group", { groupId: t }).then(() => {
+    });
+  }
+  /**
+   * Move a model or point cloud into a user group. `null` hands it back to
+   * automatic grouping; `'loose'` keeps it in no group.
+   */
+  assignToGroup(t, e) {
+    return this.request("ifcviewer:assign-group", { itemId: t, groupId: e }).then(() => {
+    });
+  }
+  /** Show or hide every model of a group. */
+  setGroupVisible(t, e) {
+    return this.request("ifcviewer:group-visible", { groupId: t, visible: e }).then(() => {
+    });
+  }
+  /** Show only this group's models; `null` shows every model again. */
+  isolateGroup(t) {
+    return this.request("ifcviewer:isolate-group", { groupId: t }).then(() => {
+    });
+  }
+  /** Fit the camera to a group — hidden members included, which is how you find where it went. */
+  frameGroup(t) {
+    return this.request("ifcviewer:frame-group", { groupId: t }).then(() => {
+    });
+  }
   // ── Panels ──────────────────────────────────────────────────────────────
   // The viewer's tools live on a rail, one open at a time. Until now a host
   // could load a scan but not open the panel that configures it, could not ask
@@ -781,8 +859,8 @@ const d = class d {
         if (!this.disposed)
           try {
             t(s);
-          } catch (n) {
-            this.settle(s, !1, n instanceof Error ? n : new Error(String(n)));
+          } catch (o) {
+            this.settle(s, !1, o instanceof Error ? o : new Error(String(o)));
           }
       });
     });
@@ -802,11 +880,11 @@ const d = class d {
   }
   /** Send a query and resolve with the iframe's `result` payload. */
   request(t, e = {}, r = y, s = []) {
-    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((a, n) => {
-      const u = this.nextRequestId(), p = setTimeout(() => {
-        this.requests.delete(u), n(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
+    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((a, o) => {
+      const u = this.nextRequestId(), v = setTimeout(() => {
+        this.requests.delete(u), o(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
       }, r);
-      this.requests.set(u, { resolve: a, reject: n, timer: p }), this.whenReady().then(() => {
+      this.requests.set(u, { resolve: a, reject: o, timer: v }), this.whenReady().then(() => {
         this.disposed || this.post({ type: t, requestId: u, ...e }, s);
       });
     });
@@ -826,10 +904,10 @@ const d = class d {
   }
 };
 /** Languages the viewer ships with (code + native label). */
-o(d, "LANGUAGES", m), /** Just the language codes, for convenience. */
-o(d, "SUPPORTED_LANGUAGES", c);
-let l = d;
-const k = [
+n(d, "LANGUAGES", p), /** Just the language codes, for convenience. */
+n(d, "SUPPORTED_LANGUAGES", l);
+let c = d;
+const C = [
   "ready",
   "model-loaded",
   "model-error",
@@ -845,10 +923,10 @@ const k = [
   "tour-ended",
   "presentation-progress"
 ];
-class C extends HTMLElement {
+class k extends HTMLElement {
   constructor() {
     super(...arguments);
-    o(this, "_viewer", null);
+    n(this, "_viewer", null);
   }
   static get observedAttributes() {
     return ["model", "lang", "accent", "background"];
@@ -862,13 +940,13 @@ class C extends HTMLElement {
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
     e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const r = (n) => this.getAttribute(n) ?? void 0, s = (n) => {
-      if (!this.hasAttribute(n)) return;
-      const u = this.getAttribute(n);
+    const r = (o) => this.getAttribute(o) ?? void 0, s = (o) => {
+      if (!this.hasAttribute(o)) return;
+      const u = this.getAttribute(o);
       return u !== "false" && u !== "0" && u !== "no";
-    }, a = new l(e, {
+    }, a = new c(e, {
       ui: r("ui"),
-      panels: r("panels")?.split(",").map((n) => n.trim()).filter(Boolean),
+      panels: r("panels")?.split(",").map((o) => o.trim()).filter(Boolean),
       lang: r("lang"),
       accent: r("accent"),
       validate: s("validate"),
@@ -878,19 +956,19 @@ class C extends HTMLElement {
       background: r("background"),
       // `map` alone (or map="1") is the map; a list names the layers.
       map: this.hasAttribute("map") ? (() => {
-        const n = (this.getAttribute("map") ?? "").trim();
-        if (n === "" || n === "1" || n === "true") return !0;
-        if (!(n === "0" || n === "false"))
-          return n.split(",").map((u) => u.trim()).filter(Boolean);
+        const o = (this.getAttribute("map") ?? "").trim();
+        if (o === "" || o === "1" || o === "true") return !0;
+        if (!(o === "0" || o === "false"))
+          return o.split(",").map((u) => u.trim()).filter(Boolean);
       })() : void 0,
       solar: r("solar"),
       moon: s("moon"),
-      scans: r("scans")?.split(",").map((n) => n.trim()).filter(Boolean),
+      scans: r("scans")?.split(",").map((o) => o.trim()).filter(Boolean),
       height: "100%"
     });
     this._viewer = a;
-    for (const n of k)
-      a.on(n, (u) => this.dispatchEvent(new CustomEvent(`ifcviewer:${n}`, { detail: u, bubbles: !0, composed: !0 })));
+    for (const o of C)
+      a.on(o, (u) => this.dispatchEvent(new CustomEvent(`ifcviewer:${o}`, { detail: u, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";
@@ -991,9 +1069,24 @@ class C extends HTMLElement {
   exportPresentation(e) {
     return this._viewer.exportPresentation(e);
   }
+  createCover(e) {
+    return this._viewer.createCover(e);
+  }
+  exportCover(e) {
+    return this._viewer.exportCover(e);
+  }
+  getGroups() {
+    return this._viewer.getGroups();
+  }
+  isolateGroup(e) {
+    return this._viewer.isolateGroup(e);
+  }
+  frameGroup(e) {
+    return this._viewer.frameGroup(e);
+  }
 }
 function _(i = "ifc-viewer") {
-  typeof customElements < "u" && !customElements.get(i) && customElements.define(i, C);
+  typeof customElements < "u" && !customElements.get(i) && customElements.define(i, k);
 }
 if (typeof window < "u")
   try {
@@ -1001,9 +1094,9 @@ if (typeof window < "u")
   } catch {
   }
 export {
-  l as IfcViewer,
-  C as IfcViewerElement,
-  m as LANGUAGES,
-  l as default,
+  c as IfcViewer,
+  k as IfcViewerElement,
+  p as LANGUAGES,
+  c as default,
   _ as defineIfcViewerElement
 };

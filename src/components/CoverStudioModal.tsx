@@ -228,6 +228,9 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
   // isn't an undo step — undoing it would leave the studio blank.
   const seedId = useRef<string | null>(null)
   const seeded = useRef(false)
+  // Whether that first capture has been attempted — the SDK bridge waits on
+  // this, not on it having succeeded (a recipe captures its own views).
+  const [seedDone, setSeedDone] = useState(false)
   useEffect(() => {
     if (seeded.current) return
     seeded.current = true
@@ -235,7 +238,7 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
       if (!shots.length) return
       seedId.current = shots[0].id
       silently((d) => ({ ...d, shots: [...shots, ...d.shots] }))
-    })
+    }).finally(() => setSeedDone(true))
   }, [cap, silently])
 
   // ── Specs ────────────────────────────────────────────────────────────────────
@@ -439,6 +442,79 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
     appBus.emit('capture:exported', { format: 'pptx', target: 'download' })
     toast(t('cover.exported'), 'success')
   })
+
+  // ── SDK bridge: `sdk:cover` from the embed postMessage handler ─────────────
+  // The document, the capture pipeline and the exporters all live here, so the
+  // bridge hands commands over rather than rebuilding any of it. Read through a
+  // ref: the handler outlives renders, the state it needs does not.
+  const live = useRef({ doc, fontsReady, seedDone, busy: false, applyRecipe, update, exportSpecs, slides: visible.length, stockPalette })
+  live.current = { doc, fontsReady, seedDone, busy: !!cap.busy || !!recipeBusy || exporting, applyRecipe, update, exportSpecs, slides: visible.length, stockPalette }
+  useEffect(() => appBus.on('sdk:cover', (cmd) => {
+    const settled = async (): Promise<void> => {
+      // Ready = fonts in, the first capture attempted, nothing running; then one
+      // more frame so a state change just made has rendered into the specs.
+      const deadline = Date.now() + 120_000
+      for (;;) {
+        const l = live.current
+        if (l.fontsReady && l.seedDone && !l.busy) break
+        if (Date.now() > deadline) throw new Error('Cover Studio did not become ready in time')
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      await new Promise((r) => setTimeout(r, 120))
+    }
+    const state = () => {
+      const l = live.current
+      return { template: l.doc.template, format: l.doc.format, palette: l.doc.paletteId, mode: l.doc.mode, shots: l.doc.shots.length, slides: l.slides, text: { ...l.doc.text } }
+    }
+    void (async () => {
+      try {
+        await settled()
+        if (cmd.action === 'state') { cmd.done?.(true, undefined, state()); return }
+        if (cmd.action === 'apply') {
+          if (cmd.recipe !== undefined) {
+            if (!(cmd.recipe in RECIPES)) throw new Error(`No cover recipe "${cmd.recipe}" — one of ${RECIPE_IDS.join(', ')}`)
+            await live.current.applyRecipe(cmd.recipe as RecipeId)
+            await settled()
+          }
+          if (cmd.template !== undefined && !(cmd.template in COVER_TEMPLATES)) throw new Error(`No cover template "${cmd.template}"`)
+          if (cmd.format !== undefined && !(cmd.format in COVER_FORMATS)) throw new Error(`No cover format "${cmd.format}"`)
+          const stock = live.current.stockPalette
+          live.current.update((d) => {
+            const template = (cmd.template as CoverTemplateId | undefined) ?? d.template
+            const text = { ...d.text }
+            for (const [k, v] of Object.entries(cmd.text ?? {})) if (k in text && typeof v === 'string') (text as Record<string, string>)[k] = v
+            return {
+              ...d,
+              template,
+              format: (cmd.format as StudioDoc['format'] | undefined) ?? d.format,
+              paletteId: cmd.palette ?? (cmd.template && stock ? COVER_TEMPLATES[template].defaultPalette : d.paletteId),
+              text,
+            }
+          })
+          await settled()
+          cmd.done?.(true, undefined, state())
+          return
+        }
+        // export
+        if (!live.current.doc.shots.length) throw new Error('No view of the model could be captured — is the viewer visible?')
+        const specs = await live.current.exportSpecs()
+        if (!specs.length) throw new Error('Nothing to export')
+        const tpl = live.current.doc.template
+        const type = cmd.type ?? 'png'
+        let blob: Blob
+        if (type === 'png' || type === 'jpeg') {
+          const s = specs[Math.min(specs.length - 1, Math.max(0, cmd.slide ?? 0))]
+          blob = await renderToBlob(s, tpl, type === 'png' ? 'image/png' : 'image/jpeg')
+        } else if (type === 'pdf') blob = await buildPdf(specs, tpl, live.current.doc.text.title)
+        else if (type === 'pptx') blob = await buildPptx(specs, tpl, live.current.doc.text.title, i18n.language)
+        else blob = await buildZip(specs, tpl, 'cover')
+        appBus.emit('capture:exported', { format: type === 'jpeg' || type === 'zip' ? 'png' : type, target: 'share' })
+        cmd.done?.(true, undefined, { blob, slides: specs.length })
+      } catch (e) {
+        cmd.done?.(false, e instanceof Error ? e.message : String(e))
+      }
+    })()
+  }), [i18n.language])
 
   const makeCaption = useCallback((platform: CaptionPlatform) => buildCaption(
     { ...doc.text, facts },
