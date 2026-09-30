@@ -3538,6 +3538,7 @@ export default function App() {
                     onIsolate={handleIsolate}
                     onOpenDemoGallery={openDemoGallery}
                     onOpenExportModal={() => setShowExportModal(true)}
+                    onOpenCompare={() => setShowCompareModal(true)}
                     onOpenHelp={() => setShowHelp(true)}
                     viewerApiRef={viewerApiRef}
                   />

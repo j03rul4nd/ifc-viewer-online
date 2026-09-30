@@ -17,7 +17,10 @@
     "pickFiles": "选择 IFC 文件…",
     "use": "使用",
     "sceneLabel": "已加载模型 {{date}}",
-    "filesLabel": "{{count}} 个文件"
+    "filesLabel": "{{count}} 个文件",
+    "sceneShort": "已加载",
+    "filesShort": "文件",
+    "baselineShort": "基线"
   },
   "elements_other": "{{count}} 个构件",
   "filesCount_other": "{{count}} 个文件",
@@ -77,12 +80,14 @@
     "anyClass": "所有类",
     "storey": "楼层",
     "anyStorey": "所有楼层",
-    "search": "搜索名称、GlobalId、特性…"
+    "search": "搜索名称、GlobalId、特性…",
+    "toggle": "筛选"
   },
   "export": {
     "html": "报告（HTML）",
     "csv": "CSV",
-    "json": "JSON"
+    "json": "JSON",
+    "menu": "导出"
   },
   "baseline": {
     "saveHead": "保存为基线",
@@ -182,5 +187,17 @@
     "delete": "删除",
     "confirmDelete": "删除基线「{{label}}」？",
     "compareTwo": "对比选中的两个"
+  },
+  "setup": {
+    "edit": "更改版本",
+    "done": "返回结果"
+  },
+  "dock": {
+    "prev": "上一个变更",
+    "next": "下一个变更",
+    "expand": "打开面板",
+    "close": "关闭比较",
+    "start_one": "{{count}} 处变更 — 点 › 逐个查看",
+    "start_other": "{{count}} 处变更 — 点 › 逐个查看"
   }
 }
