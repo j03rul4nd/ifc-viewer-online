@@ -47,10 +47,17 @@ interface CaptureToolbarProps {
    * every instance regardless.
    */
   replay?: boolean
+  /**
+   * 'bar' lays every control out as its own button (Tour player, client
+   * layout). 'menu' folds them into one labelled Capture menu on desktop —
+   * the main toolbar, where five unlabelled icons in a row read as noise.
+   */
+  variant?: 'bar' | 'menu'
 }
 
-export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarProps) {
+export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }: CaptureToolbarProps) {
   const { t } = useTranslation('capture')
+  const { t: tToolbar } = useTranslation('toolbar')
   const isMobile = useIsMobile()
 
   const sceneModels = useSceneStore((s) => s.models)
@@ -68,6 +75,8 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   const openStudio = useClipStudioStore((s) => s.openStudio)
   const [capturing, setCapturing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [bgOpen, setBgOpen] = useState(false)
+  const background = useSceneStore((s) => s.background)
   const coverOpen = useCoverStudioStore((s) => s.open)
   const setCoverOpen = useCoverStudioStore((s) => s.setOpen)
 
@@ -204,11 +213,170 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
     }
   }, [capturing, captureLastSeconds, captureSeconds, openPreview, t])
 
+  // Esc closes the menu, like every other toolbar popover.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
+
   const btnBase = 'inline-flex items-center gap-1.5 px-2.5 h-[28px] rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none justify-center text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:opacity-80 disabled:opacity-35 disabled:cursor-not-allowed'
 
   return (
     <>
-      {/* Desktop: screenshot + replay capture with duration selector */}
+      {/* Desktop. 'menu': one labelled Capture menu. 'bar': every control
+          as its own button (screenshot + replay with duration selector). */}
+      {variant === 'menu' ? (
+        <div className="relative hidden md:flex shrink-0">
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            disabled={!hasModel}
+            title={tToolbar('menu.captureTooltip')}
+            aria-label={tToolbar('menu.capture')}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className={[
+              'relative inline-flex items-center gap-1.5 h-[28px] px-2 lg:px-2.5 rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none border disabled:opacity-35 disabled:cursor-not-allowed',
+              menuOpen
+                ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
+                : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] border-transparent',
+            ].join(' ')}
+          >
+            <Icons.Camera size={14} />
+            <span className="hidden lg:inline">{tToolbar('menu.capture')}</span>
+            <svg width="8" height="8" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 shrink-0"><path d="M3 5l4 4 4-4" /></svg>
+            {/* The replay buffer is always rolling — a quiet dot says so. */}
+            {isRecording && !menuOpen && (
+              <span className={`absolute top-[5px] right-[5px] w-[4px] h-[4px] rounded-full ${bufferReady ? 'bg-[var(--danger)]' : 'bg-[var(--warn,#F5A623)]'}`} />
+            )}
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-[59]" onClick={() => setMenuOpen(false)} />
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1.5 w-[272px] max-h-[calc(100dvh-64px)] overflow-y-auto bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5"
+              >
+                <div className="px-3 pt-1 pb-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
+                  {tToolbar('menu.quickCapture')}
+                </div>
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); void handleScreenshot() }}
+                  title={t('screenshotTooltip')}
+                  className="w-full flex items-center gap-2.5 px-3 h-[34px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
+                >
+                  <span className="w-[16px] flex justify-center shrink-0"><Icons.Camera size={15} /></span>
+                  <span className="flex-1 text-left">{tToolbar('menu.screenshot')}</span>
+                  <span className="text-[10px] font-mono text-[var(--text-faint)]">PNG</span>
+                </button>
+
+                {replayAvailable && (
+                  <div className="pb-2">
+                    <button
+                      role="menuitem"
+                      onClick={() => { setMenuOpen(false); void handleCapture() }}
+                      disabled={!isRecording || capturing}
+                      title={
+                        isRecording && !bufferReady
+                          ? t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })
+                          : t('replayTooltip', { seconds: captureSeconds })
+                      }
+                      className="w-full flex items-center gap-2.5 px-3 h-[34px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+                    >
+                      <span className="w-[16px] flex justify-center shrink-0"><Icons.Replay size={15} /></span>
+                      <span className="flex-1 text-left">{t('lastSeconds', { seconds: captureSeconds })}</span>
+                      {isRecording && (
+                        <span className={`w-[6px] h-[6px] rounded-full ${bufferReady ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--warn,#F5A623)]'}`} />
+                      )}
+                    </button>
+                    {/* Clip length — one tap, no second popover */}
+                    <div className="pl-[38px] pr-3 flex items-center gap-1" role="group" aria-label={t('durationTooltip')}>
+                      {CAPTURE_DURATIONS.map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setCaptureSeconds(d as CaptureDuration)}
+                          aria-pressed={d === captureSeconds}
+                          className={`flex-1 h-[22px] rounded-[5px] text-[11px] font-medium tabular-nums transition-colors ${
+                            d === captureSeconds
+                              ? 'bg-[var(--accent)] text-white'
+                              : 'bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)]'
+                          }`}
+                        >
+                          {d}s
+                        </button>
+                      ))}
+                    </div>
+                    <div className="pl-[38px] pr-3 mt-1.5">
+                      <div
+                        className="h-[2px] rounded bg-[var(--surface-2)] overflow-hidden"
+                        title={bufferReady
+                          ? t('bufferReady', { seconds: captureSeconds })
+                          : t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })}
+                      >
+                        <div
+                          className={`h-full transition-[width] duration-300 ${bufferReady ? 'bg-[var(--ok,#2E9E5B)]' : 'bg-[var(--warn,#F5A623)]'}`}
+                          style={{ width: `${bufferPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="my-1 mx-2 h-px bg-[var(--border)]" />
+                <div className="px-3 pt-1 pb-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
+                  {tToolbar('menu.studios')}
+                </div>
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); setCoverOpen(true) }}
+                  title={t('cover.open')}
+                  className="w-full flex items-center gap-2.5 px-3 h-[34px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
+                >
+                  <span className="w-[16px] flex justify-center shrink-0"><Icons.Sparkles size={15} /></span>
+                  <span className="flex-1 text-left">{tToolbar('menu.coverStudio')}</span>
+                </button>
+                {replay && (
+                  <button
+                    role="menuitem"
+                    onClick={() => { setMenuOpen(false); openStudio() }}
+                    title={t('studio.openTooltip')}
+                    className="w-full flex items-center gap-2.5 px-3 h-[34px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
+                  >
+                    <span className="w-[16px] flex justify-center shrink-0"><Icons.Film size={15} /></span>
+                    <span className="flex-1 text-left">{t('studio.open')}</span>
+                  </button>
+                )}
+
+                {replay && (
+                  <>
+                    <div className="my-1 mx-2 h-px bg-[var(--border)]" />
+                    <button
+                      onClick={() => setBgOpen((v) => !v)}
+                      aria-expanded={bgOpen}
+                      className="w-full flex items-center gap-2.5 px-3 h-[34px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
+                    >
+                      <span className="w-[16px] flex justify-center shrink-0"><Icons.Palette size={15} /></span>
+                      <span className="flex-1 text-left">{t('background.title')}</span>
+                      <span
+                        className="w-[12px] h-[12px] rounded-[3px] border border-[var(--border-strong)]"
+                        style={{ background: background.mode === 'gradient' ? `linear-gradient(180deg, ${background.top}, ${background.bottom})` : background.top }}
+                      />
+                      <svg width="8" height="8" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`opacity-50 transition-transform ${bgOpen ? 'rotate-180' : ''}`}><path d="M3 5l4 4 4-4" /></svg>
+                    </button>
+                    {bgOpen && (
+                      <div className="px-3 pt-1 pb-2">
+                        <SceneBackgroundMenu inline />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
       <div className="hidden md:flex items-center gap-0.5 shrink-0">
         <button
           onClick={() => void handleScreenshot()}
@@ -335,6 +503,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
           </button>
         )}
       </div>
+      )}
 
       {/* Mobile: screenshot + backdrop (replay unsupported / hidden — graceful
           degrade, but the backdrop matters just as much on a phone screenshot) */}

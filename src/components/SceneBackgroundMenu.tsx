@@ -27,9 +27,14 @@ function swatchStyle(settings: Pick<BackgroundSettings, 'mode' | 'top' | 'bottom
 interface SceneBackgroundMenuProps {
   /** Disabled until a model is on screen (nothing to restyle otherwise). */
   disabled?: boolean
+  /**
+   * Render only the picker body, without its own trigger and popover — for
+   * hosts that already sit inside a menu (the toolbar's Capture menu).
+   */
+  inline?: boolean
 }
 
-export function SceneBackgroundMenu({ disabled = false }: SceneBackgroundMenuProps) {
+export function SceneBackgroundMenu({ disabled = false, inline = false }: SceneBackgroundMenuProps) {
   const { t } = useTranslation('capture')
   const background = useSceneStore((s) => s.background)
   const setBackground = useSceneStore((s) => s.setBackground)
@@ -82,6 +87,87 @@ export function SceneBackgroundMenu({ disabled = false }: SceneBackgroundMenuPro
   const btnBase = 'inline-flex items-center gap-1.5 px-2.5 h-[28px] rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none justify-center text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:opacity-80 disabled:opacity-35 disabled:cursor-not-allowed'
   const swatchBase = 'relative h-[26px] rounded-[5px] border transition-transform duration-100 hover:scale-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]'
 
+  const body = (
+    <>
+      <div className={`flex items-center ${inline ? 'justify-end' : 'justify-between'}`}>
+        {/* Inline, the host's row already names it. */}
+        {!inline && <span className="text-[11px] font-semibold text-[var(--text)]">{t('background.title')}</span>}
+        {!isDefault && (
+          <button
+            onClick={() => setBackground(DEFAULT_BACKGROUND)}
+            className="text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] underline"
+          >
+            {t('background.reset')}
+          </button>
+        )}
+      </div>
+
+      {/* Presets */}
+      <div className="grid grid-cols-5 gap-1.5">
+        {BACKGROUND_PRESETS.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => choosePreset(p.id)}
+            title={t(`background.presets.${p.id}`)}
+            aria-label={t(`background.presets.${p.id}`)}
+            aria-pressed={background.preset === p.id}
+            style={swatchStyle(p)}
+            className={`${swatchBase} ${
+              background.preset === p.id
+                ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]'
+                : 'border-[var(--border-strong)]'
+            }`}
+          />
+        ))}
+      </div>
+
+      <div className="h-px bg-[var(--border)]" />
+
+      {/* Custom colours — the "our company blue" case */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-[var(--text-dim)]">{t('background.custom')}</span>
+          <div className="flex items-center gap-0.5 rounded-[5px] bg-[var(--surface-2)] border border-[var(--border-strong)] p-0.5">
+            {(['solid', 'gradient'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`px-1.5 h-[18px] rounded-[3px] text-[10px] font-medium transition-colors ${
+                  background.mode === m
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'text-[var(--text-dim)] hover:text-[var(--text)]'
+                }`}
+              >
+                {t(`background.mode.${m}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <ColorRow
+          label={background.mode === 'gradient' ? t('background.topColor') : t('background.color')}
+          value={topDraft}
+          onPick={(v) => setCustomColor('top', v)}
+          onDraft={setTopDraft}
+        />
+        {background.mode === 'gradient' && (
+          <ColorRow
+            label={t('background.bottomColor')}
+            value={bottomDraft}
+            onPick={(v) => setCustomColor('bottom', v)}
+            onDraft={setBottomDraft}
+          />
+        )}
+      </div>
+
+      <p className="text-[10px] leading-snug text-[var(--text-faint)]">
+        {t('background.hint')}
+      </p>
+    </>
+  )
+
+  if (inline) return <div className="flex flex-col gap-2.5">{body}</div>
+
   return (
     <div ref={rootRef} className="relative flex items-center">
       <button
@@ -108,79 +194,7 @@ export function SceneBackgroundMenu({ disabled = false }: SceneBackgroundMenuPro
             aria-label={t('background.title')}
             className="absolute right-0 top-full mt-1.5 w-[240px] bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] p-2.5 flex flex-col gap-2.5"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[var(--text)]">{t('background.title')}</span>
-              {!isDefault && (
-                <button
-                  onClick={() => setBackground(DEFAULT_BACKGROUND)}
-                  className="text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] underline"
-                >
-                  {t('background.reset')}
-                </button>
-              )}
-            </div>
-
-            {/* Presets */}
-            <div className="grid grid-cols-5 gap-1.5">
-              {BACKGROUND_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => choosePreset(p.id)}
-                  title={t(`background.presets.${p.id}`)}
-                  aria-label={t(`background.presets.${p.id}`)}
-                  aria-pressed={background.preset === p.id}
-                  style={swatchStyle(p)}
-                  className={`${swatchBase} ${
-                    background.preset === p.id
-                      ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]'
-                      : 'border-[var(--border-strong)]'
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="h-px bg-[var(--border)]" />
-
-            {/* Custom colours — the "our company blue" case */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-[var(--text-dim)]">{t('background.custom')}</span>
-                <div className="flex items-center gap-0.5 rounded-[5px] bg-[var(--surface-2)] border border-[var(--border-strong)] p-0.5">
-                  {(['solid', 'gradient'] as const).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setMode(m)}
-                      className={`px-1.5 h-[18px] rounded-[3px] text-[10px] font-medium transition-colors ${
-                        background.mode === m
-                          ? 'bg-[var(--accent)] text-white'
-                          : 'text-[var(--text-dim)] hover:text-[var(--text)]'
-                      }`}
-                    >
-                      {t(`background.mode.${m}`)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <ColorRow
-                label={background.mode === 'gradient' ? t('background.topColor') : t('background.color')}
-                value={topDraft}
-                onPick={(v) => setCustomColor('top', v)}
-                onDraft={setTopDraft}
-              />
-              {background.mode === 'gradient' && (
-                <ColorRow
-                  label={t('background.bottomColor')}
-                  value={bottomDraft}
-                  onPick={(v) => setCustomColor('bottom', v)}
-                  onDraft={setBottomDraft}
-                />
-              )}
-            </div>
-
-            <p className="text-[10px] leading-snug text-[var(--text-faint)]">
-              {t('background.hint')}
-            </p>
+            {body}
           </div>
         </>
       )}

@@ -156,5 +156,30 @@
     "blankKeeps": "Lascia un campo vuoto per mantenere ciò che il file già conteneva.",
     "schemaNote": "Lo schema IFC non viene mai cambiato. Un file aperto come IFC2x3 viene esportato come IFC2x3."
   },
-  "exportSettings": "Impostazioni di esportazione…"
+  "exportSettings": "Impostazioni di esportazione…",
+  "menu": {
+    "openIfc": "Apri file IFC…",
+    "openTooltip": "Apri — file IFC, modelli demo e altri dati",
+    "addData": "Aggiungi alla scena",
+    "check": "Verifica",
+    "checkTooltip": "Verifica — problemi in 3D, IDS, confronta versioni",
+    "issuesIn3d": "Mostra problemi in 3D",
+    "capture": "Cattura",
+    "captureTooltip": "Cattura — screenshot, replay, studi, sfondo",
+    "screenshot": "Screenshot",
+    "quickCapture": "Cattura rapida",
+    "studios": "Studi",
+    "coverStudio": "Studio copertine",
+    "share": "Condividi",
+    "shareTooltip": "Condividi — esporta file, incorpora, presenta",
+    "files": "File",
+    "publish": "Pubblica",
+    "inspect": "Ispeziona",
+    "context": "Contesto",
+    "navigate": "Naviga",
+    "edit": "Modifica",
+    "help": "Aiuto",
+    "idsCheck": "Verifica con IDS…",
+    "compareVersions": "Confronta versioni…"
+  }
 }
