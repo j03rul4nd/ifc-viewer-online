@@ -37,6 +37,7 @@ function writePrefs(prefs: PersistedPrefs): void {
 export function usePersistedPreferences(): void {
   const { treeWidth, treeVisible, setTreeWidth, setTreeVisible } = useUIStore()
   const hydrated = useRef(false)
+  const isPhone = (): boolean => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 767px)').matches
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // One-time hydration from localStorage
@@ -48,7 +49,8 @@ export function usePersistedPreferences(): void {
       log.debug('Hydrating treeWidth:', saved.treeWidth)
       setTreeWidth(saved.treeWidth)
     }
-    if (saved.treeVisible !== undefined) {
+    // A phone shows the tree as a sheet over the model: never reopen it on load.
+    if (saved.treeVisible !== undefined && !isPhone()) {
       log.debug('Hydrating treeVisible:', saved.treeVisible)
       setTreeVisible(saved.treeVisible)
     }
@@ -60,7 +62,7 @@ export function usePersistedPreferences(): void {
     if (!hydrated.current) return
     if (timerRef.current !== null) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      writePrefs({ treeWidth, treeVisible })
+      if (!isPhone()) writePrefs({ treeWidth, treeVisible })
     }, DEBOUNCE_MS)
     return () => {
       if (timerRef.current !== null) clearTimeout(timerRef.current)

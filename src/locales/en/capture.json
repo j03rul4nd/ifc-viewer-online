@@ -1100,5 +1100,7 @@
         "crown": "Crown"
       }
     }
-  }
+  },
+  "mobileMenu": "Capture",
+  "screenshot": "Screenshot"
 }

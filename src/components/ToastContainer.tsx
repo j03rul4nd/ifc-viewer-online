@@ -1,7 +1,7 @@
 // ─── Toast notification container ─────────────────────────────────────────────
 // Renders ephemeral notification toasts.
 // Desktop: bottom-right corner, fixed 340px wide.
-// Mobile:  bottom-center, full-width with horizontal padding.
+// Mobile:  top, under the toolbar, full-width with horizontal padding.
 //
 // A toast is heard as well as seen — for a skipped duplicate it is the only
 // feedback there is. What is read out goes through two screen-reader-only
@@ -195,12 +195,12 @@ export default function ToastContainer() {
       <div className="sr-only" aria-live="polite" aria-atomic="true" data-toast-announcer="polite">{spoken.polite}</div>
       <div className="sr-only" aria-live="assertive" aria-atomic="true" data-toast-announcer="assertive">{spoken.assertive}</div>
       {/* Desktop: bottom-right, fixed width.
-          Mobile: bottom-center, full-width minus safe horizontal insets. */}
+          Mobile: top, under the toolbar — at the bottom it covered the nav
+          and whatever sheet was open. */}
       <div
         className="fixed z-[300] flex flex-col gap-2.5 pointer-events-none
                    bottom-5 right-5 w-[340px]
-                   xs:bottom-5 xs:right-5 xs:w-[340px]
-                   max-xs:bottom-0 max-xs:right-0 max-xs:left-0 max-xs:w-auto max-xs:px-3"
+                   max-md:bottom-auto max-md:top-[calc(env(safe-area-inset-top)+52px)] max-md:right-3 max-md:left-3 max-md:w-auto"
         style={{
           // On very small screens, respect safe area at bottom
           paddingBottom: 'max(0px, env(safe-area-inset-bottom))',

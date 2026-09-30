@@ -1100,5 +1100,7 @@
         "crown": "冠顶"
       }
     }
-  }
+  },
+  "mobileMenu": "截取",
+  "screenshot": "截图"
 }

@@ -42,6 +42,10 @@ interface ColumnState { tree: boolean; sidebar: boolean; validation: boolean }
 
 const COLUMN_DEFAULTS: ColumnState = { tree: true, sidebar: true, validation: false }
 
+function isPhone(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 767px)').matches
+}
+
 function loadColumns(): ColumnState {
   if (typeof localStorage === 'undefined') return COLUMN_DEFAULTS
   try {
@@ -64,6 +68,9 @@ function rememberColumns(
   current: { treeVisible: boolean; sidebarExpanded: boolean; validationPanelOpen: boolean },
   patch: Partial<ColumnState>,
 ): void {
+  // Phones open these as sheets; what a phone does must not rewrite the
+  // desktop layout the same visitor comes back to.
+  if (isPhone()) return
   saveColumns({
     tree:       patch.tree ?? current.treeVisible,
     sidebar:    patch.sidebar ?? current.sidebarExpanded,
@@ -183,10 +190,12 @@ const TREE_WIDTH_MAX = 600
 export const useUIStore = create<UIStore>()(
   devtools(
     (set) => ({
-      validationPanelOpen:     loadColumns().validation,
+      // The remembered column is a desktop layout; on a phone it is a sheet over
+      // the model, so it starts closed there.
+      validationPanelOpen:     loadColumns().validation && !isPhone(),
       validationPanelFloating: false,
       treeWidth:               300,
-      treeVisible:             loadColumns().tree,
+      treeVisible:             loadColumns().tree && !isPhone(),
       mobileSidebarOpen:       false,
       sidebarExpanded:         loadColumns().sidebar,
       hiddenElements:          new Set<string>(),

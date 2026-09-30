@@ -591,9 +591,13 @@ export default function Toolbar({
       <div className="flex items-center gap-2 shrink min-w-0">
         <Icons.Logo size={18} className="shrink-0" />
         {/* App name: always visible */}
-        <span className="text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline">
+        <span className={`text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline ${fileName ? 'max-md:!hidden' : ''}`}>
           IFC Validator
         </span>
+        {/* Mobile: just the file name — the status lives in the dot on the right. */}
+        {fileName && (
+          <span className="md:hidden text-[12px] text-[var(--text-dim)] truncate min-w-0 max-w-[40vw]">{fileName}</span>
+        )}
         {/* Model context: desktop only */}
         <div className="hidden md:flex items-center gap-1.5 min-w-0">
           {loadingState !== 'idle' && (
@@ -893,7 +897,7 @@ export default function Toolbar({
       {loadingState !== 'idle' && (
         <div className="md:hidden flex items-center gap-1.5 px-2">
           <span className="font-mono text-[12px]" style={{ color: statusColor }}>●</span>
-          <span className="hidden xs:inline text-[11px] text-[var(--text-dim)] whitespace-nowrap">
+          <span className="sr-only">
             {statusLabel}
             {loadingState === 'loaded' && elementCount > 0 && (
               <span className="font-mono text-[var(--text-faint)]"> · {elementCount.toLocaleString()}</span>
@@ -905,8 +909,9 @@ export default function Toolbar({
       {qualityScore !== null && !isRunning && loadingState === 'loaded' && (
         <div className="md:hidden flex items-center ml-1">
           <span
-            className="text-[13px] font-bold font-mono tabular-nums"
-            style={{ color: scoreColor(qualityScore) }}
+            className="h-6 px-2 inline-flex items-center rounded-full text-[12px] font-bold font-mono tabular-nums border"
+            style={{ color: scoreColor(qualityScore), borderColor: 'currentColor' }}
+            title={`Health Score: ${qualityScore}/100`}
           >
             {qualityScore}
           </span>

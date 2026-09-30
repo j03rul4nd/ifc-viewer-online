@@ -34,6 +34,8 @@ interface MobileBottomNavProps {
   onOpenHelp: () => void
   /** Version comparison — the desktop toolbar button is hidden on phones. */
   onOpenCompare?: () => void
+  /** Back to the landing — the floating Home button is desktop-only. */
+  onGoHome?: () => void
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   /**
    * The tool catalogue, the same list the desktop rail draws.
@@ -256,7 +258,7 @@ export default function MobileBottomNav({
   tools,
   visible, selected, canIsolate,
   onOpenSidebarTab, onReset, onUpload, onIsolate,
-  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare,
+  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare, onGoHome,
 }: MobileBottomNavProps) {
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
@@ -454,10 +456,10 @@ export default function MobileBottomNav({
             <SheetBtn icon={ExportSVG(22)} label={t('export')}
               active={diffs.length > 0} badge={diffs.length > 0 ? diffs.length : undefined}
               onClick={() => { closeSheet(); onOpenExportModal() }} />
-            <SheetBtn
-              icon={<span style={{ fontSize: 19, lineHeight: 1, fontWeight: 700, fontFamily: 'monospace' }}>?</span>}
-              label={tComm('shortcuts.title')}
-              onClick={() => { closeSheet(); onOpenHelp() }} />
+            {onGoHome && (
+              <SheetBtn icon={<Icons.Chevron size={20} className="rotate-180" />} label={tComm('actions.home')}
+                onClick={() => { closeSheet(); onGoHome() }} />
+            )}
           </div>
           <SheetDivider />
           <div className="flex items-center gap-3 px-1 pt-3 pb-1">
