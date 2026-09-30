@@ -209,6 +209,8 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
 | `walk-changed`     | `active`, `speed` |
 | `measurements-changed` | `tool`, `units`, `items` (values always SI) |
+| `tour-started` / `tour-step` / `tour-ended` | `title, total, template` / `index, total, caption` / `completed` |
+| `presentation-progress` | `stage` (`generate` · `export`), `label?`, `progress` |
 
 Messages about a load a host started with a `requestId` (see below and the
 [SDK](./IFC_VIEWER_SDK.md)) echo that `requestId`, so a host can tell its own
@@ -272,6 +274,15 @@ as "no model yet", "feature not in this build" or "model has no location".
 | `ifcviewer:model-visible` | `modelId`, `visible` | Shows or hides one model |
 | `ifcviewer:model-opacity` | `opacity` (0.05–1), `modelId?` | Ghosts a model |
 | `ifcviewer:isolate-model` | `modelId` \| `null` | Shows only that model, or all of them again |
+| `ifcviewer:start-tour` *(1.12)* | `template?`, `autoplay?`, `title?`, `includeImprovements?` | Starts a built-in tour. Returns the tour state |
+| `ifcviewer:play-tour` *(1.12)* | `tour: { title?, steps: [{ position, target, caption?, highlight?, isolate?, modelId? }] }`, `startAt?`, `autoplay?` | Plays a host-authored tour |
+| `ifcviewer:tour-step` *(1.12)* | `index` or `delta` | Moves to another stop |
+| `ifcviewer:set-tour-autoplay` *(1.12)* | `autoplay` (true / ms / false) | Turns self-running on or off |
+| `ifcviewer:stop-tour` / `ifcviewer:get-tour` *(1.12)* | — | Stops the tour / returns `{ playing, title, template, stepIndex, total, steps }` |
+| `ifcviewer:get-recipes` *(1.12)* | — | The built-in director recipes |
+| `ifcviewer:create-presentation` *(1.12)* | `recipe`, `options?` | Generates a presentation in Clip Studio. Returns `{ clips, durationSec, width, height }` |
+| `ifcviewer:export-presentation` *(1.12)* | `resolution?`, `music?` | Encodes it. `data: { bytes (transferred ArrayBuffer), mimeType, sizeBytes }` |
+| `ifcviewer:close-presentation` *(1.12)* | — | Closes Clip Studio |
 
 ```js
 // Raw postMessage (the SDK does this for you):

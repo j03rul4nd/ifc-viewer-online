@@ -902,3 +902,41 @@ describe('IfcViewer — presentation and analysis (1.11)', () => {
     el.remove()
   })
 })
+
+describe('IfcViewer — tours and director (1.12)', () => {
+  beforeEach(() => { mount() })
+  const quiet = (p: Promise<unknown>): void => { p.catch(() => {}) }
+
+  it('sends tours and presentations under their own commands', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    const step = { position: { x: 1, y: 2, z: 3 }, target: { x: 0, y: 0, z: 0 }, caption: 'Hi' }
+    quiet(v.startTour('social', { autoplay: true }))
+    quiet(v.playTour({ title: 'T', steps: [step] }, { autoplay: 4000 }))
+    quiet(v.nextTourStep())
+    quiet(v.createPresentation('reel', { title: 'Hello', music: 'none' }))
+    quiet(v.exportPresentation({ resolution: 720 }))
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:start-tour')[0]).toMatchObject({ template: 'social', autoplay: true })
+    expect(postsOfType(post, 'ifcviewer:play-tour')[0]).toMatchObject({ tour: { title: 'T', steps: [step] }, autoplay: 4000 })
+    expect(postsOfType(post, 'ifcviewer:tour-step')[0]).toMatchObject({ delta: 1 })
+    expect(postsOfType(post, 'ifcviewer:create-presentation')[0]).toMatchObject({ recipe: 'reel', options: { title: 'Hello', music: 'none' } })
+    expect(postsOfType(post, 'ifcviewer:export-presentation')[0]).toMatchObject({ resolution: 720 })
+    v.dispose()
+  })
+
+  it('relays tour and presentation events', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const steps = vi.fn(); const ended = vi.fn(); const prog = vi.fn()
+    v.on('tour-step', steps); v.on('tour-ended', ended); v.on('presentation-progress', prog)
+    emitFromIframe(v, { type: 'tour-step', index: 1, total: 3, caption: 'x' })
+    emitFromIframe(v, { type: 'tour-ended', completed: true })
+    emitFromIframe(v, { type: 'presentation-progress', stage: 'export', progress: 0.5 })
+    expect(steps.mock.calls[0][0]).toMatchObject({ index: 1, total: 3 })
+    expect(ended).toHaveBeenCalledWith({ completed: true })
+    expect(prog.mock.calls[0][0]).toMatchObject({ stage: 'export', progress: 0.5 })
+    v.dispose()
+  })
+})

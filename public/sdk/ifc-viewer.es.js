@@ -1,5 +1,5 @@
-var p = Object.defineProperty;
-var w = (i, t, e) => t in i ? p(i, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : i[t] = e;
+var v = Object.defineProperty;
+var w = (i, t, e) => t in i ? v(i, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : i[t] = e;
 var o = (i, t, e) => w(i, typeof t != "symbol" ? t + "" : t, e);
 const m = [
   { code: "en", label: "English" },
@@ -12,7 +12,7 @@ const m = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.11.0", y = 12e4, q = 3e4, c = m.map((i) => i.code);
+], g = "1.12.0", q = 12e4, y = 3e4, c = m.map((i) => i.code);
 function b() {
   try {
     return new URL("../", import.meta.url).href;
@@ -36,7 +36,7 @@ function h(i) {
 function f(i, t) {
   return i == null ? t : typeof i == "number" ? `${i}px` : i;
 }
-const l = class l {
+const d = class d {
   constructor(t, e = {}) {
     o(this, "version", g);
     o(this, "iframe");
@@ -65,17 +65,17 @@ const l = class l {
       if (!(!e || e.source !== "ifc-validator" || typeof e.type != "string"))
         switch (e.type) {
           case "ready": {
-            this._ready = !0, Array.isArray(e.languages) && (this.languages = e.languages.filter((s) => typeof s == "string")), this.readyResolvers.splice(0).forEach((s) => s()), this.emit("ready", { languages: this.getLanguages() });
+            this._ready = !0, Array.isArray(e.languages) && (this.languages = e.languages.filter((r) => typeof r == "string")), this.readyResolvers.splice(0).forEach((r) => r()), this.emit("ready", { languages: this.getLanguages() });
             break;
           }
           case "model-loaded": {
-            const s = e;
-            e.requestId && this.settle(e.requestId, !0, s), this.emit("model-loaded", s);
+            const r = e;
+            e.requestId && this.settle(e.requestId, !0, r), this.emit("model-loaded", r);
             break;
           }
           case "model-error": {
-            const s = e;
-            e.requestId && this.settle(e.requestId, !1, new Error(s.message || "Model failed to load")), this.emit("model-error", s);
+            const r = e;
+            e.requestId && this.settle(e.requestId, !1, new Error(r.message || "Model failed to load")), this.emit("model-error", r);
             break;
           }
           case "model-progress":
@@ -99,28 +99,40 @@ const l = class l {
           case "measurements-changed":
             this.emit("measurements-changed", e);
             break;
+          case "tour-started":
+            this.emit("tour-started", e);
+            break;
+          case "tour-step":
+            this.emit("tour-step", e);
+            break;
+          case "tour-ended":
+            this.emit("tour-ended", { completed: !!e.completed });
+            break;
+          case "presentation-progress":
+            this.emit("presentation-progress", e);
+            break;
           case "result": {
-            const s = e.requestId;
-            if (!s) break;
-            const r = this.requests.get(s);
+            const r = e.requestId;
             if (!r) break;
-            clearTimeout(r.timer), this.requests.delete(s), e.ok ? r.resolve(e.data) : r.reject(new Error(typeof e.error == "string" ? e.error : "request failed"));
+            const s = this.requests.get(r);
+            if (!s) break;
+            clearTimeout(s.timer), this.requests.delete(r), e.ok ? s.resolve(e.data) : s.reject(new Error(typeof e.error == "string" ? e.error : "request failed"));
             break;
           }
         }
     });
-    const s = typeof t == "string" ? document.querySelector(t) : t;
-    if (!s) throw new Error(`IfcViewer: mount target not found: ${String(t)}`);
-    this.opts = e, this.baseUrl = e.baseUrl ?? b(), this.loadTimeout = e.loadTimeout ?? y;
-    const r = this.buildSrc();
-    this.appOrigin = P(r);
+    const r = typeof t == "string" ? document.querySelector(t) : t;
+    if (!r) throw new Error(`IfcViewer: mount target not found: ${String(t)}`);
+    this.opts = e, this.baseUrl = e.baseUrl ?? b(), this.loadTimeout = e.loadTimeout ?? q;
+    const s = this.buildSrc();
+    this.appOrigin = P(s);
     const a = document.createElement("iframe");
-    a.src = r, a.style.border = "0", a.style.width = f(e.width, "100%"), a.style.height = f(e.height, "100%"), a.setAttribute("allow", "fullscreen"), a.setAttribute("loading", "lazy"), a.title = e.title ?? "IFC model viewer", e.className && (a.className = e.className), s.appendChild(a), this.iframe = a, window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
+    a.src = s, a.style.border = "0", a.style.width = f(e.width, "100%"), a.style.height = f(e.height, "100%"), a.setAttribute("allow", "fullscreen"), a.setAttribute("loading", "lazy"), a.title = e.title ?? "IFC model viewer", e.className && (a.className = e.className), r.appendChild(a), this.iframe = a, window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
   }
   /** Create a viewer and resolve once it is ready to accept commands. */
   static async create(t, e = {}) {
-    const s = new l(t, e);
-    return await s.whenReady(), s;
+    const r = new d(t, e);
+    return await r.whenReady(), r;
   }
   // ── Public API ─────────────────────────────────────────────────────────────
   /** True once the iframe viewer has signalled readiness. */
@@ -133,15 +145,15 @@ const l = class l {
   }
   /** Load IFC bytes from the host app. Resolves once the model is rendered. */
   add(t, e) {
-    const s = h(e);
+    const r = h(e);
     return this.enqueueLoad(
-      (r) => this.post({ type: "ifcviewer:load-bytes", requestId: r, name: t, bytes: s }, [s])
+      (s) => this.post({ type: "ifcviewer:load-bytes", requestId: s, name: t, bytes: r }, [r])
     );
   }
   /** Load a model from a public (CORS-enabled) URL. */
   addFromUrl(t, e) {
     return this.enqueueLoad(
-      (s) => this.post({ type: "ifcviewer:load", requestId: s, url: t, name: e })
+      (r) => this.post({ type: "ifcviewer:load", requestId: r, url: t, name: e })
     );
   }
   /** Select + frame an element by its IFC expressID. */
@@ -224,13 +236,13 @@ const l = class l {
    * finishing would report failure on a working load.
    */
   addPointCloud(t, e) {
-    const s = h(e);
+    const r = h(e);
     return this.request(
       "ifcviewer:add-pointcloud",
-      { name: t, bytes: s },
+      { name: t, bytes: r },
       15 * 6e4,
-      [s]
-    ).then((r) => r.cloudId);
+      [r]
+    ).then((s) => s.cloudId);
   }
   /**
    * Add a scan the viewer fetches itself. The URL must allow CORS. Without a
@@ -242,7 +254,7 @@ const l = class l {
       "ifcviewer:add-pointcloud",
       e ? { url: t, name: e } : { url: t },
       15 * 6e4
-    ).then((s) => s.cloudId);
+    ).then((r) => r.cloudId);
   }
   /** Every scan currently loaded. See PointCloudInfo on reading the counts. */
   listPointClouds() {
@@ -333,13 +345,13 @@ const l = class l {
    * afterwards. That is what makes handing over a textured model free.
    */
   addMesh(t) {
-    const e = t.map((s) => s.bytes);
+    const e = t.map((r) => r.bytes);
     return this.request(
       "ifcviewer:add-mesh",
       { files: t },
       15 * 6e4,
       e
-    ).then((s) => s.meshId);
+    ).then((r) => r.meshId);
   }
   /**
    * Import a model the viewer fetches itself. Pass every URL the model needs —
@@ -489,8 +501,8 @@ const l = class l {
    * Fly the camera to `position`, looking at `target` (scene metres, Y up).
    * Pairs with getCamera() for "saved views" in your own UI.
    */
-  lookAt(t, e, s = !0) {
-    return this.request("ifcviewer:look-at", { position: t, target: e, animate: s }).then(() => {
+  lookAt(t, e, r = !0) {
+    return this.request("ifcviewer:look-at", { position: t, target: e, animate: r }).then(() => {
     });
   }
   /**
@@ -603,6 +615,86 @@ const l = class l {
     return this.request("ifcviewer:isolate-model", { modelId: t }).then(() => {
     });
   }
+  // ── Tours (since v1.12.0) ───────────────────────────────────────────────
+  // Played by the viewer's own tour bar, so a host-started tour looks exactly
+  // like one the visitor started: captions, arrows, share link.
+  /**
+   * Start a built-in tour. `social` and `client-walkthrough` show the model off
+   * (a handful of framed views); `technical-review` walks the validation
+   * issues, worst first, and needs validation to have run.
+   */
+  startTour(t = "client-walkthrough", e = {}) {
+    return this.request("ifcviewer:start-tour", { template: t, ...e }, 6e4);
+  }
+  /**
+   * Play a tour you authored: camera stops with a caption, and optionally the
+   * elements to highlight or the classes to isolate. Build the stops with
+   * getCamera(), or replay one saved from getTour().
+   *
+   *   await viewer.playTour({ title: 'Walkthrough', steps: [
+   *     { position: { x: 30, y: 20, z: 30 }, target: { x: 0, y: 0, z: 0 }, caption: 'The site' },
+   *     { position: …, target: …, caption: 'Structure', isolate: ['IfcColumn', 'IfcBeam'] },
+   *   ] }, { autoplay: 5000 })
+   */
+  playTour(t, e = {}) {
+    return this.request("ifcviewer:play-tour", { tour: t, ...e });
+  }
+  /** Jump to a stop (0-based). */
+  goToTourStep(t) {
+    return this.request("ifcviewer:tour-step", { index: t });
+  }
+  /** Next stop. */
+  nextTourStep() {
+    return this.request("ifcviewer:tour-step", { delta: 1 });
+  }
+  /** Previous stop. */
+  prevTourStep() {
+    return this.request("ifcviewer:tour-step", { delta: -1 });
+  }
+  /** Turn self-running on (true / ms per stop) or off (false) for the tour playing now. */
+  setTourAutoplay(t) {
+    return this.request("ifcviewer:set-tour-autoplay", { autoplay: t });
+  }
+  /** Stop the tour and give the camera back. */
+  stopTour() {
+    return this.request("ifcviewer:stop-tour");
+  }
+  /** The tour loaded now, its position, and its stops in playTour() shape. */
+  getTour() {
+    return this.request("ifcviewer:get-tour");
+  }
+  // ── Presentation director (since v1.12.0) ──────────────────────────────
+  // A recipe turns the model into an edited video: shots planned from the
+  // IFC itself (storeys, systems, issues), captions, music, transitions.
+  // Everything renders and encodes in the visitor's browser.
+  /** The built-in recipes — ids for createPresentation(). */
+  getPresentationRecipes() {
+    return this.request("ifcviewer:get-recipes");
+  }
+  /**
+   * Generate a presentation from a recipe. Opens the viewer's Clip Studio with
+   * the result, where the visitor can still edit it. Resolves once the shots
+   * are rendered — that takes a while (tens of seconds to minutes); follow it
+   * on `presentation-progress`.
+   */
+  createPresentation(t = "meeting-demo", e = {}) {
+    return this.request("ifcviewer:create-presentation", { recipe: t, options: e }, 15 * 6e4);
+  }
+  /**
+   * Encode the current presentation to a video file and hand its bytes to the
+   * host — to upload to your CMS, attach to a report, or play in a <video>:
+   *
+   *   const { bytes, mimeType } = await viewer.exportPresentation()
+   *   video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+   */
+  exportPresentation(t = {}) {
+    return this.request("ifcviewer:export-presentation", { ...t }, 30 * 6e4);
+  }
+  /** Close Clip Studio (the generated project is kept until the next one). */
+  closePresentation() {
+    return this.request("ifcviewer:close-presentation").then(() => {
+    });
+  }
   // ── Panels ──────────────────────────────────────────────────────────────
   // The viewer's tools live on a rail, one open at a time. Until now a host
   // could load a scan but not open the panel that configures it, could not ask
@@ -639,8 +731,8 @@ const l = class l {
   }
   /** Subscribe to a viewer event. Returns an unsubscribe function. */
   on(t, e) {
-    let s = this.listeners.get(t);
-    return s || (s = /* @__PURE__ */ new Set(), this.listeners.set(t, s)), s.add(e), () => this.off(t, e);
+    let r = this.listeners.get(t);
+    return r || (r = /* @__PURE__ */ new Set(), this.listeners.set(t, r)), r.add(e), () => this.off(t, e);
   }
   off(t, e) {
     this.listeners.get(t)?.delete(e);
@@ -663,41 +755,41 @@ const l = class l {
     t.search = "", t.hash = "", t.searchParams.set("embed", "1");
     const e = this.opts.ui ?? "minimal";
     if (e !== "minimal" && t.searchParams.set("ui", e), this.opts.validate === !1 && t.searchParams.set("validate", "0"), this.opts.panel && t.searchParams.set("panel", "1"), this.opts.panels && t.searchParams.set("panels", this.opts.panels.join(",")), this.opts.lang && t.searchParams.set("lang", this.opts.lang), this.opts.accent && t.searchParams.set("accent", this.opts.accent.replace(/^#/, "")), this.opts.background) {
-      const s = this.opts.background, r = typeof s == "string" ? s : "preset" in s ? s.preset : s.bottom ? `${s.top},${s.bottom}` : s.top;
-      t.searchParams.set("bg", r.replace(/#/g, ""));
+      const r = this.opts.background, s = typeof r == "string" ? r : "preset" in r ? r.preset : r.bottom ? `${r.top},${r.bottom}` : r.top;
+      t.searchParams.set("bg", s.replace(/#/g, ""));
     }
     return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), t.toString();
   }
   /** Queue a load so only one runs at a time; resolves with that load's result. */
   enqueueLoad(t) {
     if (this.disposed) return Promise.reject(new Error("IfcViewer disposed"));
-    const e = () => this.runLoad(t), s = this.loadChain.then(e, e);
-    return this.loadChain = s.then(() => {
+    const e = () => this.runLoad(t), r = this.loadChain.then(e, e);
+    return this.loadChain = r.then(() => {
     }, () => {
-    }), s;
+    }), r;
   }
   runLoad(t) {
-    return new Promise((e, s) => {
+    return new Promise((e, r) => {
       if (this.disposed) {
-        s(new Error("IfcViewer disposed"));
+        r(new Error("IfcViewer disposed"));
         return;
       }
-      const r = this.nextRequestId(), a = this.loadTimeout > 0 ? setTimeout(() => {
-        this.pending.delete(r), s(new Error(`IfcViewer: load timed out after ${this.loadTimeout}ms`));
+      const s = this.nextRequestId(), a = this.loadTimeout > 0 ? setTimeout(() => {
+        this.pending.delete(s), r(new Error(`IfcViewer: load timed out after ${this.loadTimeout}ms`));
       }, this.loadTimeout) : null;
-      this.pending.set(r, { resolve: e, reject: s, timer: a }), this.whenReady().then(() => {
+      this.pending.set(s, { resolve: e, reject: r, timer: a }), this.whenReady().then(() => {
         if (!this.disposed)
           try {
-            t(r);
+            t(s);
           } catch (n) {
-            this.settle(r, !1, n instanceof Error ? n : new Error(String(n)));
+            this.settle(s, !1, n instanceof Error ? n : new Error(String(n)));
           }
       });
     });
   }
-  settle(t, e, s) {
-    const r = this.pending.get(t);
-    r && (r.timer && clearTimeout(r.timer), this.pending.delete(t), e ? r.resolve(s) : r.reject(s));
+  settle(t, e, r) {
+    const s = this.pending.get(t);
+    s && (s.timer && clearTimeout(s.timer), this.pending.delete(t), e ? s.resolve(r) : s.reject(r));
   }
   nextRequestId() {
     return `r${Date.now().toString(36)}-${++this.reqCounter}`;
@@ -709,34 +801,34 @@ const l = class l {
     });
   }
   /** Send a query and resolve with the iframe's `result` payload. */
-  request(t, e = {}, s = q, r = []) {
+  request(t, e = {}, r = y, s = []) {
     return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((a, n) => {
-      const d = this.nextRequestId(), v = setTimeout(() => {
-        this.requests.delete(d), n(new Error(`IfcViewer: "${t}" timed out after ${s}ms`));
-      }, s);
-      this.requests.set(d, { resolve: a, reject: n, timer: v }), this.whenReady().then(() => {
-        this.disposed || this.post({ type: t, requestId: d, ...e }, r);
+      const u = this.nextRequestId(), p = setTimeout(() => {
+        this.requests.delete(u), n(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
+      }, r);
+      this.requests.set(u, { resolve: a, reject: n, timer: p }), this.whenReady().then(() => {
+        this.disposed || this.post({ type: t, requestId: u, ...e }, s);
       });
     });
   }
   post(t, e = []) {
-    const s = this.iframe.contentWindow;
-    s && s.postMessage(t, this.appOrigin || "*", e);
+    const r = this.iframe.contentWindow;
+    r && r.postMessage(t, this.appOrigin || "*", e);
   }
   emit(t, e) {
-    this.listeners.get(t)?.forEach((s) => {
+    this.listeners.get(t)?.forEach((r) => {
       try {
-        s(e);
-      } catch (r) {
-        console.error("[IfcViewer] listener error:", r);
+        r(e);
+      } catch (s) {
+        console.error("[IfcViewer] listener error:", s);
       }
     });
   }
 };
 /** Languages the viewer ships with (code + native label). */
-o(l, "LANGUAGES", m), /** Just the language codes, for convenience. */
-o(l, "SUPPORTED_LANGUAGES", c);
-let u = l;
+o(d, "LANGUAGES", m), /** Just the language codes, for convenience. */
+o(d, "SUPPORTED_LANGUAGES", c);
+let l = d;
 const k = [
   "ready",
   "model-loaded",
@@ -747,7 +839,11 @@ const k = [
   "pointcloud-picked",
   "map-feature-picked",
   "walk-changed",
-  "measurements-changed"
+  "measurements-changed",
+  "tour-started",
+  "tour-step",
+  "tour-ended",
+  "presentation-progress"
 ];
 class C extends HTMLElement {
   constructor() {
@@ -766,53 +862,53 @@ class C extends HTMLElement {
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
     e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const s = (n) => this.getAttribute(n) ?? void 0, r = (n) => {
+    const r = (n) => this.getAttribute(n) ?? void 0, s = (n) => {
       if (!this.hasAttribute(n)) return;
-      const d = this.getAttribute(n);
-      return d !== "false" && d !== "0" && d !== "no";
-    }, a = new u(e, {
-      ui: s("ui"),
-      panels: s("panels")?.split(",").map((n) => n.trim()).filter(Boolean),
-      lang: s("lang"),
-      accent: s("accent"),
-      validate: r("validate"),
-      panel: r("panel"),
-      baseUrl: s("base-url"),
-      model: s("model"),
-      background: s("background"),
+      const u = this.getAttribute(n);
+      return u !== "false" && u !== "0" && u !== "no";
+    }, a = new l(e, {
+      ui: r("ui"),
+      panels: r("panels")?.split(",").map((n) => n.trim()).filter(Boolean),
+      lang: r("lang"),
+      accent: r("accent"),
+      validate: s("validate"),
+      panel: s("panel"),
+      baseUrl: r("base-url"),
+      model: r("model"),
+      background: r("background"),
       // `map` alone (or map="1") is the map; a list names the layers.
       map: this.hasAttribute("map") ? (() => {
         const n = (this.getAttribute("map") ?? "").trim();
         if (n === "" || n === "1" || n === "true") return !0;
         if (!(n === "0" || n === "false"))
-          return n.split(",").map((d) => d.trim()).filter(Boolean);
+          return n.split(",").map((u) => u.trim()).filter(Boolean);
       })() : void 0,
-      solar: s("solar"),
-      moon: r("moon"),
-      scans: s("scans")?.split(",").map((n) => n.trim()).filter(Boolean),
+      solar: r("solar"),
+      moon: s("moon"),
+      scans: r("scans")?.split(",").map((n) => n.trim()).filter(Boolean),
       height: "100%"
     });
     this._viewer = a;
     for (const n of k)
-      a.on(n, (d) => this.dispatchEvent(new CustomEvent(`ifcviewer:${n}`, { detail: d, bubbles: !0, composed: !0 })));
+      a.on(n, (u) => this.dispatchEvent(new CustomEvent(`ifcviewer:${n}`, { detail: u, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";
   }
-  attributeChangedCallback(e, s, r) {
-    !this._viewer || r == null || (e === "lang" ? this._viewer.setLanguage(r) : e === "model" ? this._viewer.addFromUrl(r) : e === "accent" ? this._viewer.setAccent(r).catch(() => {
-    }) : e === "background" && this._viewer.setBackground(r).catch(() => {
+  attributeChangedCallback(e, r, s) {
+    !this._viewer || s == null || (e === "lang" ? this._viewer.setLanguage(s) : e === "model" ? this._viewer.addFromUrl(s) : e === "accent" ? this._viewer.setAccent(s).catch(() => {
+    }) : e === "background" && this._viewer.setBackground(s).catch(() => {
     }));
   }
   // ── Convenience proxies to the underlying viewer ──────────────────────────
-  add(e, s) {
-    return this._viewer.add(e, s);
+  add(e, r) {
+    return this._viewer.add(e, r);
   }
-  addFromUrl(e, s) {
-    return this._viewer.addFromUrl(e, s);
+  addFromUrl(e, r) {
+    return this._viewer.addFromUrl(e, r);
   }
-  select(e, s) {
-    this._viewer?.select(e, s);
+  select(e, r) {
+    this._viewer?.select(e, r);
   }
   isolate(e) {
     this._viewer?.isolate(e);
@@ -826,11 +922,11 @@ class C extends HTMLElement {
   screenshot() {
     return this._viewer.screenshot();
   }
-  addPointCloud(e, s) {
-    return this._viewer.addPointCloud(e, s);
+  addPointCloud(e, r) {
+    return this._viewer.addPointCloud(e, r);
   }
-  addPointCloudFromUrl(e, s) {
-    return this._viewer.addPointCloudFromUrl(e, s);
+  addPointCloudFromUrl(e, r) {
+    return this._viewer.addPointCloudFromUrl(e, r);
   }
   listPointClouds() {
     return this._viewer.listPointClouds();
@@ -841,14 +937,14 @@ class C extends HTMLElement {
   clearPointClouds() {
     return this._viewer.clearPointClouds();
   }
-  setPointCloudVisible(e, s) {
-    return this._viewer.setPointCloudVisible(e, s);
+  setPointCloudVisible(e, r) {
+    return this._viewer.setPointCloudVisible(e, r);
   }
   fitPointCloud(e) {
     return this._viewer.fitPointCloud(e);
   }
-  setPointCloudDisplay(e, s) {
-    return this._viewer.setPointCloudDisplay(e, s);
+  setPointCloudDisplay(e, r) {
+    return this._viewer.setPointCloudDisplay(e, r);
   }
   inspectPointCloud(e) {
     return this._viewer.inspectPointCloud(e);
@@ -862,8 +958,8 @@ class C extends HTMLElement {
   setSiteContext(e) {
     return this._viewer.setSiteContext(e);
   }
-  setWalkMode(e, s) {
-    return this._viewer.setWalkMode(e, s);
+  setWalkMode(e, r) {
+    return this._viewer.setWalkMode(e, r);
   }
   addSection(e) {
     return this._viewer.addSection(e);
@@ -877,22 +973,37 @@ class C extends HTMLElement {
   getMeasurements() {
     return this._viewer.getMeasurements();
   }
-  setView(e, s) {
-    this._viewer?.setView(e, s);
+  setView(e, r) {
+    this._viewer?.setView(e, r);
+  }
+  startTour(e, r) {
+    return this._viewer.startTour(e, r);
+  }
+  playTour(e, r) {
+    return this._viewer.playTour(e, r);
+  }
+  stopTour() {
+    return this._viewer.stopTour();
+  }
+  createPresentation(e, r) {
+    return this._viewer.createPresentation(e, r);
+  }
+  exportPresentation(e) {
+    return this._viewer.exportPresentation(e);
   }
 }
-function E(i = "ifc-viewer") {
+function _(i = "ifc-viewer") {
   typeof customElements < "u" && !customElements.get(i) && customElements.define(i, C);
 }
 if (typeof window < "u")
   try {
-    E();
+    _();
   } catch {
   }
 export {
-  u as IfcViewer,
+  l as IfcViewer,
   C as IfcViewerElement,
   m as LANGUAGES,
-  u as default,
-  E as defineIfcViewerElement
+  l as default,
+  _ as defineIfcViewerElement
 };

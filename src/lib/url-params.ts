@@ -282,7 +282,7 @@ function parseMapParam(v: string | null): MapDeepLink | undefined {
 }
 
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */
-function canonicalIfcType(raw: string): string {
+export function canonicalIfcType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
 }
 
@@ -375,6 +375,12 @@ export type EmbedEventType =
   // A measurement was added, removed or renamed. The payload is the whole list,
   // so a host never has to replay deltas to know what is on screen.
   | 'measurements-changed'
+  // A tour started, moved to another step, or ended (SDK 1.12).
+  | 'tour-started'
+  | 'tour-step'
+  | 'tour-ended'
+  // The director is generating or exporting a presentation (SDK 1.12).
+  | 'presentation-progress'
   | 'result'
 
 /** True when the app is running inside an iframe. */
@@ -430,10 +436,10 @@ export function __resetHostOrigin(): void { hostOrigin = null }
  * interaction) or the parent has an opaque origin — there, a message nobody can
  * receive would be strictly worse.
  */
-export function emitEmbedEvent(type: EmbedEventType, payload?: Record<string, unknown>): void {
+export function emitEmbedEvent(type: EmbedEventType, payload?: Record<string, unknown>, transfer: Transferable[] = []): void {
   if (typeof window === 'undefined' || window.parent === window) return
   try {
-    window.parent.postMessage({ source: 'ifc-validator', type, ...payload }, hostOrigin ?? '*')
+    window.parent.postMessage({ source: 'ifc-validator', type, ...payload }, hostOrigin ?? '*', transfer)
   } catch {
     /* parent may reject the message; nothing we can do, ignore */
   }
