@@ -258,3 +258,21 @@
   position: absolute; right: 6px; bottom: 6px; display: grid; place-items: center; width: 26px; height: 26px;
   border-radius: 999px; background: var(--ok, #2fbf71); color: #fff; font-weight: 700;
 }
+
+/* ── Magnetic timeline & direct manipulation ──────────────────────────────── */
+.studio-snap { background: var(--accent-2, #ffd84d); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-2, #ffd84d) 40%, transparent); }
+.studio-direct { touch-action: none; cursor: default; }
+.studio-guide { position: absolute; pointer-events: none; background: #ffd84d; opacity: 0.9; }
+.studio-guide--v { left: 50%; top: 0; bottom: 0; width: 1px; }
+.studio-guide--h { top: 50%; left: 0; right: 0; height: 1px; }
+.studio-direct-box {
+  position: absolute; pointer-events: none; cursor: move;
+  border: 1.5px solid #fff; border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.studio-direct-handle {
+  position: absolute; right: -9px; bottom: -9px; width: 18px; height: 18px; pointer-events: auto;
+  border-radius: 999px; background: #fff; border: 2px solid var(--accent, #7c83ff); cursor: nwse-resize;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+@media (pointer: coarse) { .studio-direct-handle { width: 26px; height: 26px; right: -13px; bottom: -13px; } }
