@@ -42,6 +42,8 @@
   "reset": "リセット",
   "ids": "IDS",
   "idsTooltip": "buildingSMART の IDS ファイルでモデルを検証",
+  "compare": "比較",
+  "compareTooltip": "IFC セットのバージョンを比較：変更、IDS、BCF",
   "map": "マップ",
   "mapTooltip": "モデルを実世界の地図上に表示(位置情報付き)",
   "embed": "埋め込み",

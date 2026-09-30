@@ -42,6 +42,8 @@
   "reset": "重置",
   "ids": "IDS",
   "idsTooltip": "根据 buildingSMART IDS 文件检查模型",
+  "compare": "对比",
+  "compareTooltip": "对比 IFC 文件集的版本：变更、IDS 与 BCF",
   "map": "地图",
   "mapTooltip": "在真实地图上显示模型(地理定位)",
   "embed": "嵌入",

@@ -50,6 +50,7 @@ import enPointCloud  from '../locales/en/pointcloud.json'
 import enMesh        from '../locales/en/mesh.json'
 import enVideo       from '../locales/en/video.json'
 import enLoading     from '../locales/en/loading.json'
+import enCompare     from '../locales/en/compare.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -78,6 +79,7 @@ const EN_RESOURCES = {
   mesh:        enMesh,
   video:       enVideo,
   loading:     enLoading,
+  compare:     enCompare,
 } as const
 
 // ── Init ──────────────────────────────────────────────────────────────────────

@@ -12,10 +12,12 @@
 //   ?model=https://host/file.ifc&map=terrain,buildings&scan=https://host/site.laz
 //   ?model=https://host/file.ifc&embed=1&panels=scene,map   (only those tools)
 //   ?model=https://host/file.ifc&embed=1&panels=-measurement (all but that one)
+//   ?model=https://host/file.ifc&embed=1&bg=white&solar=06-21T18:00   (look + sun)
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
 
 import { parsePanelAllowlist, type PanelId } from './ui/panel-rail'
+import { parseBackgroundSpec, type BackgroundSettings } from './scene/background'
 
 export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client'
 
@@ -55,6 +57,13 @@ export interface AppUrlParams {
    * resolved — a deep link must never pop the blocking default-location notice.
    */
   solar?: { year?: number; month: number; day: number; minutes: number }
+  /**
+   * `?bg=` — the scene background for this page view: a preset (`white`,
+   * `paper`, `blueprint`, `sky`, `studio`), one colour (`f4f4f5`) or a
+   * top,bottom gradient (`dbeafe,ffffff`). Not saved as the visitor's
+   * preference. See parseBackgroundSpec.
+   */
+  background?: BackgroundSettings
   /** `?moon=1` — enable the moon light for the solar deep link. */
   solarMoon?: boolean
   /**
@@ -229,6 +238,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     select: Number.isFinite(selectRaw) && selectRaw > 0 ? selectRaw : undefined,
     isolate: isolateRaw ? canonicalIfcType(isolateRaw) : undefined,
     ref: refRaw,
+    background: parseBackgroundSpec(p.get('bg') ?? '') ?? undefined,
     solar: parseSolarParam(p.get('solar')),
     solarMoon: parseBool(p.get('moon')),
     map: parseMapParam(p.get('map')),
@@ -272,7 +282,7 @@ function parseMapParam(v: string | null): MapDeepLink | undefined {
 }
 
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */
-function canonicalIfcType(raw: string): string {
+export function canonicalIfcType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
 }
 
@@ -360,6 +370,17 @@ export type EmbedEventType =
   // mode. Context, not model: none of it is validated or exported, and its
   // height is usually an estimate — which the payload says outright.
   | 'map-feature-picked'
+  // Walk mode turned on or off (by the visitor's keyboard or by the host).
+  | 'walk-changed'
+  // A measurement was added, removed or renamed. The payload is the whole list,
+  // so a host never has to replay deltas to know what is on screen.
+  | 'measurements-changed'
+  // A tour started, moved to another step, or ended (SDK 1.12).
+  | 'tour-started'
+  | 'tour-step'
+  | 'tour-ended'
+  // The director is generating or exporting a presentation (SDK 1.12).
+  | 'presentation-progress'
   | 'result'
 
 /** True when the app is running inside an iframe. */
@@ -415,10 +436,10 @@ export function __resetHostOrigin(): void { hostOrigin = null }
  * interaction) or the parent has an opaque origin — there, a message nobody can
  * receive would be strictly worse.
  */
-export function emitEmbedEvent(type: EmbedEventType, payload?: Record<string, unknown>): void {
+export function emitEmbedEvent(type: EmbedEventType, payload?: Record<string, unknown>, transfer: Transferable[] = []): void {
   if (typeof window === 'undefined' || window.parent === window) return
   try {
-    window.parent.postMessage({ source: 'ifc-validator', type, ...payload }, hostOrigin ?? '*')
+    window.parent.postMessage({ source: 'ifc-validator', type, ...payload }, hostOrigin ?? '*', transfer)
   } catch {
     /* parent may reject the message; nothing we can do, ignore */
   }

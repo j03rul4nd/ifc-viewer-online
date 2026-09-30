@@ -693,6 +693,10 @@
       "openTiktok": "Abrir TikTok",
       "share": "Compartir…",
       "done": "Hecho"
+    },
+    "direct": {
+      "hint": "Vista previa: toca un texto o imagen para seleccionarlo, arrástralo para moverlo, arrastra la esquina para cambiar el tamaño, toca dos veces un texto para editarlo. Toca la imagen vacía para reproducir.",
+      "resize": "Cambiar tamaño"
     }
   },
   "cover": {

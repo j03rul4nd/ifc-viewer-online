@@ -12,6 +12,9 @@
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { SDK_DOCS_I18N } from './sdk-docs-i18n.mjs'
+import { SDK_DOCS_V111 } from './sdk-docs-v111.mjs'
+import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -524,6 +527,12 @@ Object.assign(T.en, {
   footContact: 'Contact', footStable: 'Stable API', footMadeBy: 'IFC Viewer Online',
 })
 
+// The nine translations of everything above (and of later additions). Merged
+// last so a key present here always wins over the English fallback.
+for (const l of LANGS) if (SDK_DOCS_I18N[l]) Object.assign(T[l], SDK_DOCS_I18N[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V111[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const slug = (s) => String(s).replace(/[^a-zA-Z0-9]+/g, '-').replace(/(^-|-$)/g, '').toLowerCase()
@@ -608,11 +617,59 @@ const API_GROUPS = [
     ['setView(view)', 'void', 'setView'],
     ['fit() · reset()', 'void', 'fitReset'],
     ['setCamera(position, direction)', 'void', 'setCamera'],
+    ['getCamera()', 'Promise<CameraState | null>', 'camGet'],
+    ['lookAt(position, target, animate?)', 'Promise<void>', 'camLookAt'],
+    ['setWalkMode(enabled, { speed? })', 'Promise<WalkState>', 'walkSet'],
+    ['getWalkState()', 'Promise<WalkState>', 'walkGet'],
   ]],
   ['visibility', 'grpVisibility', [
     ['isolate(ifcType?)', 'void', 'isolate'],
     ['showAll()', 'void', 'showAll'],
     ['hideElements(ids, modelId?) · showElements(ids, modelId?)', 'void', 'hideShow'],
+    ['setModelVisible(modelId, visible)', 'Promise<void>', 'mdlVisible'],
+    ['setModelOpacity(opacity, modelId?)', 'Promise<void>', 'mdlOpacity'],
+    ['isolateModel(modelId | null)', 'Promise<void>', 'mdlIsolate'],
+  ]],
+  ['look', 'grpLook', [
+    ['setBackground(background)', 'Promise<BackgroundState>', 'lkBg'],
+    ['getBackground()', 'Promise<BackgroundState>', 'lkBgGet'],
+    ['setAccent(color)', 'Promise<void>', 'lkAccent'],
+    ['setClientMode(enabled)', 'Promise<void>', 'lkClient'],
+    ['setRenderQuality(quality)', 'Promise<void>', 'lkQuality'],
+  ]],
+  ['sun', 'grpSun', [
+    ['setSolar(opts?)', 'Promise<SolarState>', 'sunSet'],
+    ['getSolar()', 'Promise<SolarState>', 'sunGet'],
+  ]],
+  ['map', 'grpMap', [
+    ['setSiteContext(opts?)', 'Promise<SiteContextState>', 'siteSet'],
+    ['getSiteContext()', 'Promise<SiteContextState>', 'siteGet'],
+  ]],
+  ['sections', 'grpSections', [
+    ['addSection({ axis?, offset?, level?, flip? })', 'Promise<SectionsState & { id }>', 'secAdd'],
+    ['updateSection(id, { offset?, enabled?, flipped? })', 'Promise<SectionsState>', 'secUpdate'],
+    ['removeSection(id?)', 'Promise<SectionsState>', 'secRemove'],
+    ["setSectionBox('model' | 'selection' | false)", 'Promise<SectionsState>', 'secBox'],
+    ['getSections()', 'Promise<SectionsState>', 'secGet'],
+  ]],
+  ['tours', 'grpTours', [
+    ["startTour(template?, { autoplay?, title? })", 'Promise<TourState>', 'tourStart'],
+    ['playTour({ title?, steps }, { startAt?, autoplay? })', 'Promise<TourState>', 'tourPlay'],
+    ['nextTourStep() · prevTourStep() · goToTourStep(i)', 'Promise<TourState>', 'tourNav'],
+    ['setTourAutoplay(autoplay)', 'Promise<TourState>', 'tourAuto'],
+    ['stopTour()', 'Promise<TourState>', 'tourStop'],
+    ['getTour()', 'Promise<TourState>', 'tourGet'],
+  ]],
+  ['director', 'grpDirector', [
+    ['getPresentationRecipes()', 'Promise<PresentationRecipe[]>', 'dirRecipes'],
+    ['createPresentation(recipe?, options?)', 'Promise<PresentationState>', 'dirCreate'],
+    ['exportPresentation({ resolution?, music? })', 'Promise<PresentationVideo>', 'dirExport'],
+    ['closePresentation()', 'Promise<void>', 'dirClose'],
+  ]],
+  ['measure', 'grpMeasure', [
+    ['setMeasureTool(tool)', 'Promise<void>', 'msTool'],
+    ['getMeasurements()', 'Promise<MeasurementsState>', 'msGet'],
+    ['clearMeasurements(id?)', 'Promise<MeasurementsState>', 'msClear'],
   ]],
   ['queries', 'grpQueries', [
     ['getModels()', 'Promise<ModelSummary[]>', 'getModels'],
@@ -674,6 +731,10 @@ const OPTIONS = [
   ['lang', 'string', 'auto', 'optLang'],
   ['accent', '#rrggbb', 'brand', 'optAccent'],
   ['model', 'string', '—', 'optModel'],
+  ['background', 'BackgroundSpec', '—', 'optBackground'],
+  ['map', "boolean | ('terrain' | 'buildings' | 'showcase')[]", '—', 'optMap'],
+  ['solar · moon', "'MM-DDTHH:MM' · boolean", '—', 'optSolar'],
+  ['scans', 'string[]', '—', 'optScans'],
   ['height · width', 'number | string', "'100%'", 'optSize'],
   ['baseUrl', 'string', 'auto', 'optBaseUrl'],
   ['loadTimeout', 'number', '120000', 'optTimeout'],
@@ -689,6 +750,12 @@ const EVENTS = [
   ['element-selected', '{ expressId, modelId, ifcType, name }', 'evSelected'],
   ['pointcloud-picked', '{ cloudId, position, sourcePosition, classification, intensity, distance }', 'evPointPicked'],
   ['map-feature-picked', '{ id, name?, label?, featureKind, heightM?, heightEstimated }', 'evMapPicked'],
+  ['walk-changed', '{ active, speed }', 'evWalk'],
+  ['measurements-changed', '{ tool, units, items }', 'evMeasure'],
+  ['tour-started', '{ title, total, template }', 'evTourStarted'],
+  ['tour-step', '{ index, total, caption }', 'evTourStep'],
+  ['tour-ended', '{ completed }', 'evTourEnded'],
+  ['presentation-progress', '{ stage, label?, progress }', 'evPresProgress'],
 ]
 
 // Section nav model (id, translation key); reuses existing localized keys.
@@ -817,6 +884,53 @@ const res = await viewer.checkEir(profile);   // same IdsResult as checkIds
 res.specs.forEach((spec) => {
   spec.failures.forEach((f) => row(spec.name, f.globalId, f.reasons.join(" · ")));
 });`
+
+const REC_BLOG =
+`// Declared up front: the iframe boots with all of it, no clicks, no flash.
+const viewer = await IfcViewer.create("#viewer", {
+  model: "https://example.com/house.ifc",
+  ui: "client",
+  background: "white",
+  map: ["terrain", "buildings"],   // your page declares tile consent
+  solar: "06-21T19:30",            // summer solstice, site-local
+});
+
+// …or change the story as the reader scrolls
+await viewer.setSolar({ date: "12-21", time: "09:30" });
+const { attributions } = await viewer.getSiteContext(); // show these`
+
+const REC_PLAN =
+`const { levels } = await viewer.getSections();
+await viewer.addSection({ level: levels[0].name });   // floor plan, 1.2 m up
+viewer.setView("top");
+
+await viewer.setMeasureTool("distance");
+viewer.on("measurements-changed", ({ items }) => {
+  // value is SI — metres, m², degrees — whatever the viewer displays
+  render(items.map((m) => m.kind + ": " + m.value?.toFixed(2)));
+});`
+
+const REC_TOUR =
+`// 1. Once, while writing the post: frame each view and copy the camera.
+console.log(JSON.stringify(await viewer.getCamera()));
+
+// 2. In the page: play the stops, self-running, next to your text.
+await viewer.playTour({
+  title: "Casa Poblenou",
+  steps: [
+    { position: { x: 52, y: 29, z: 24 }, target: { x: 18, y: 7, z: -11 }, caption: "The site" },
+    { position: { x: 18, y: 40, z: 11 }, target: { x: 18, y: 0, z: 10 },
+      caption: "Structure", isolate: ["IfcColumn", "IfcSlab"] },
+  ],
+}, { autoplay: 6000 });
+viewer.on("tour-step", ({ index, caption }) => highlightParagraph(index));`
+
+const REC_VIDEO =
+`viewer.on("presentation-progress", ({ stage, progress }) => bar.value = progress ?? 0);
+await viewer.createPresentation("linkedin-teaser", { title: "Casa Poblenou", targetSec: 20 });
+
+const { bytes, mimeType } = await viewer.exportPresentation({ resolution: 1080 });
+video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
 
 const REC_THEME =
 `new IfcViewer("#viewer", { accent: "#22c55e" });
@@ -1001,6 +1115,10 @@ function page(lang) {
     recipe('rec2T', 'rec2B', REC_HEALTH) +
     recipe('rec3T', 'rec3B', REC_IDS) +
     recipe('rec6T', 'rec6B', REC_EIR) +
+    recipe('rec7T', 'rec7B', REC_BLOG) +
+    recipe('rec8T', 'rec8B', REC_PLAN) +
+    recipe('rec9T', 'rec9B', REC_TOUR) +
+    recipe('rec10T', 'rec10B', REC_VIDEO) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'

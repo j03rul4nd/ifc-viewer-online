@@ -12,7 +12,7 @@ import { devtools } from 'zustand/middleware'
 import type { SceneModel, ModelTransform, ModelInfo } from '../types'
 import {
   DEFAULT_BACKGROUND, BACKGROUND_STORAGE_KEY,
-  parseStoredBackground, serializeBackground,
+  parseStoredBackground, serializeBackground, parseBackgroundSpec,
   type BackgroundSettings,
 } from '../lib/scene/background'
 
@@ -22,6 +22,14 @@ import {
 // zero network — the anonymous footprint is untouched).
 
 function readBackground(): BackgroundSettings {
+  // `?bg=` (an embed, a blog iframe) wins for this page view, and is read
+  // here rather than applied after mount so the first frame is already the
+  // colour the page asked for — no dark flash inside a white article.
+  try {
+    const bg = new URLSearchParams(window.location.search).get('bg')
+    const fromUrl = bg ? parseBackgroundSpec(bg) : null
+    if (fromUrl) return fromUrl
+  } catch { /* no window (tests) */ }
   try {
     return parseStoredBackground(localStorage.getItem(BACKGROUND_STORAGE_KEY))
   } catch {
@@ -52,7 +60,13 @@ interface SceneStore {
   /** Select which model the scene controls operate on. */
   setActiveModel:   (id: string | null) => void
   /** Change the scene backdrop (persisted; applied by Viewer.tsx → setBackground). */
-  setBackground:    (background: BackgroundSettings) => void
+  /**
+   * `persist: false` paints without saving the preference: a background an
+   * embedding page chose is that page's look, and the iframe shares its
+   * storage with the app itself — saving it would repaint the visitor's own
+   * viewer the next time they open it.
+   */
+  setBackground:    (background: BackgroundSettings, opts?: { persist?: boolean }) => void
   /** Clear all models — called on navigate-to-landing. */
   clearScene:       () => void
 }
@@ -137,8 +151,8 @@ export const useSceneStore = create<SceneStore>()(
       setActiveModel: (id) =>
         set({ activeModelId: id }, false, 'setActiveModel'),
 
-      setBackground: (background) => {
-        try { localStorage.setItem(BACKGROUND_STORAGE_KEY, serializeBackground(background)) } catch { /* quota / private mode */ }
+      setBackground: (background, opts) => {
+        if (opts?.persist !== false) try { localStorage.setItem(BACKGROUND_STORAGE_KEY, serializeBackground(background)) } catch { /* quota / private mode */ }
         set({ background }, false, 'setBackground')
       },
 

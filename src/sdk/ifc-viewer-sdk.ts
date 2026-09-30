@@ -55,6 +55,29 @@ export interface IfcViewerOptions {
   title?: string
   /** Auto-load this public (CORS-enabled) IFC URL once the viewer is ready. */
   model?: string
+  /**
+   * Scene background from the first frame: a preset (`'white'`, `'paper'`,
+   * `'blueprint'`, `'sky'`, `'studio'`), one colour (`'#f4f4f5'`) or a
+   * top,bottom gradient (`'#dbeafe,#ffffff'`). Since v1.11.0.
+   */
+  background?: BackgroundSpec
+  /**
+   * Put the model on the map once it loads, from its own georeference. `true`
+   * for the map alone, or the layers to add. Map tiles and OpenStreetMap come
+   * from third parties — see {@link IfcViewer.setSiteContext} on consent.
+   * Since v1.11.0.
+   */
+  map?: boolean | Array<'terrain' | 'buildings' | 'showcase'>
+  /**
+   * Open the sun study at this SITE-LOCAL time once the model loads:
+   * `'06-21T18:00'` (every year) or `'2026-12-21T09:30'`. Only honoured when
+   * the model's location is known. Since v1.11.0.
+   */
+  solar?: string
+  /** With `solar`: light the moon too. Since v1.11.0. */
+  moon?: boolean
+  /** Point clouds to fetch alongside the model (CORS-enabled URLs). Since v1.11.0. */
+  scans?: string[]
   /** Reject add()/addFromUrl() after this many ms. 0 disables. Default 120000. */
   loadTimeout?: number
   /** Convenience callbacks (equivalent to .on(...)). */
@@ -261,6 +284,268 @@ export interface MapFeaturePickedEvent {
   heightEstimated: boolean
 }
 
+// ── Presentation & analysis (since v1.11.0) ─────────────────────────────────
+
+/** A background preset name. */
+export type BackgroundPreset = 'studio' | 'white' | 'paper' | 'blueprint' | 'sky'
+
+/**
+ * A scene background: a preset name, `'#rrggbb'`, `'#top,#bottom'` (gradient),
+ * or `{ top, bottom? }`.
+ */
+export type BackgroundSpec = BackgroundPreset | string | { preset: BackgroundPreset } | { top: string; bottom?: string }
+
+/** The background the viewer resolved, as returned by setBackground/getBackground. */
+export interface BackgroundState {
+  preset: BackgroundPreset | 'custom'
+  mode: 'solid' | 'gradient'
+  top: string
+  bottom: string
+}
+
+/** Where the camera is and what it looks at, in scene metres (Y up). */
+export interface CameraState {
+  position: Vec3
+  target: Vec3
+  direction: Vec3
+  up?: Vec3
+  fovDeg: number
+}
+
+/** First-person walk mode. */
+export interface WalkState {
+  active: boolean
+  /** Metres per second at a walk. */
+  speed: number
+}
+
+/** Options for {@link IfcViewer.setSolar}. Omitted fields are left alone. */
+export interface SolarOptions {
+  /** Start (default) or stop the study. */
+  active?: boolean
+  /** Site-local date: `'YYYY-MM-DD'`, or `'MM-DD'` for this year. */
+  date?: string
+  /** Site-local time, `'HH:MM'`. */
+  time?: string
+  moon?: boolean
+  /** Physically-based sky dome. */
+  sky?: boolean
+  quality?: 'standard' | 'high'
+  /**
+   * Where the site is, when the IFC does not say. Without it, a model with no
+   * georeference is an error — never a silent default city.
+   */
+  location?: { lat: number; lon: number }
+}
+
+export interface SolarState {
+  active: boolean
+  /** Site-local. */
+  date: string
+  time: string
+  /** IANA zone of the site, e.g. `Europe/Madrid`. */
+  timeZone: string
+  moon: boolean
+  sky: boolean
+  quality: 'standard' | 'high'
+  /** `source: 'ifc'` is the model's own georeference; `manual` was typed or passed. */
+  location: { lat: number; lon: number; source: 'ifc' | 'map' | 'manual' | 'default' } | null
+}
+
+/** Options for {@link IfcViewer.setSiteContext}. Omitted fields are left alone. */
+export interface SiteContextOptions {
+  /** Map mode on (default) or off. */
+  enabled?: boolean
+  /** 3D terrain relief. */
+  terrain?: boolean
+  /** OpenStreetMap surroundings: buildings, water, parks, roads… */
+  buildings?: boolean
+  /** Per-layer switches, e.g. `{ tree: false, water: true }`. */
+  layers?: Record<string, boolean>
+  /** Facade fidelity of the surroundings. `showcase` adds authored props. */
+  detail?: 'simple' | 'detailed' | 'showcase'
+  terrainStyle?: 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem'
+  /** Terrain vertical exaggeration, 1–3. */
+  exaggeration?: number
+  /** Decorative cars and trains. */
+  vehicles?: boolean
+}
+
+export interface SiteContextState {
+  enabled: boolean
+  status: string
+  terrain: boolean
+  buildings: boolean
+  buildingsStatus: 'idle' | 'loading' | 'ready' | 'empty' | 'error'
+  detail: 'simple' | 'detailed' | 'showcase'
+  terrainStyle: string
+  exaggeration: number
+  vehicles: boolean
+  placement: { lat: number; lon: number; rotationDeg: number; source: string; confidence: 'high' | 'approximate' } | null
+  /** Credits for what is on screen. Show them wherever you show the map. */
+  attributions: string[]
+}
+
+/** One section plane. `offset` is in IFC metres along `axis` (Z = up). */
+export interface SectionPlane {
+  id: string
+  kind: 'axis' | 'face'
+  axis: 'x' | 'y' | 'z' | null
+  enabled: boolean
+  offset: number
+  flipped: boolean
+  /** The model's extent along the axis — the offsets that cut something. */
+  range: { min: number; max: number }
+}
+
+export interface SectionsState {
+  planes: SectionPlane[]
+  box: { enabled: boolean; ranges: Record<'x' | 'y' | 'z', { min: number; max: number }> } | null
+  /** Enabled cuts, the box counting as one. */
+  active: number
+  /** Storeys, for plan cuts — only on getSections(). */
+  levels?: Array<{ name: string; y: number }>
+}
+
+/** Options for {@link IfcViewer.addSection}. */
+export interface AddSectionOptions {
+  /** Cut axis in IFC terms. `z` (default) is a plan cut, `x`/`y` are sections. */
+  axis?: 'x' | 'y' | 'z'
+  /** Where to cut, IFC metres along the axis. Default: mid-model. */
+  offset?: number
+  /**
+   * A plan cut at a storey — its name (case-insensitive) or index from
+   * `getSections().levels`. Cuts 1.2 m above that floor. Overrides axis/offset.
+   */
+  level?: string | number
+  /** Keep the other side. */
+  flip?: boolean
+}
+
+export type MeasureTool = 'distance' | 'path' | 'area' | 'angle' | 'point'
+
+/**
+ * One measurement. `value` is always SI — metres, square metres for an area,
+ * degrees for an angle — whatever unit the viewer displays; null for a point.
+ */
+export interface Measurement {
+  id: string
+  kind: MeasureTool
+  /** Set when someone renamed it. */
+  name: string | null
+  value: number | null
+  /** Areas. */
+  perimeter?: number
+  /** Areas: false when the traced outline is not flat (value is projected). */
+  planar?: boolean
+  /** Distances, split into IFC axes; `horizontal` is the plan length. */
+  components?: { dx: number; dy: number; dz: number; horizontal: number }
+  /** Points: coordinates in the model's own IFC frame (or the scene's). */
+  coords?: Vec3
+  frame?: 'model' | 'scene'
+  /** The picked points, scene metres. */
+  points: Vec3[]
+}
+
+export interface MeasurementsState {
+  /** The armed tool, or 'none'. */
+  tool: MeasureTool | 'none'
+  /** What the viewer displays. `value` is SI regardless. */
+  units: 'm' | 'cm' | 'mm' | 'ft'
+  items: Measurement[]
+}
+
+// ── Tours & presentation director (since v1.12.0) ────────────────────────────
+
+/** The built-in tour templates. */
+export type TourTemplate = 'social' | 'client-walkthrough' | 'technical-review'
+
+/** One stop of a host-authored tour. Positions in scene metres (Y up) — take them from getCamera(). */
+export interface TourStepInput {
+  position: Vec3
+  target: Vec3
+  caption?: string
+  /** Elements (expressIDs) to highlight at this stop. */
+  highlight?: number[]
+  /** IFC classes to isolate at this stop, e.g. ['IfcWall', 'IfcSlab']. */
+  isolate?: string[]
+  modelId?: string
+}
+
+export interface TourInput {
+  title?: string
+  steps: TourStepInput[]
+}
+
+/**
+ * `true` advances at the default pace (6 s per stop); a number is ms per stop
+ * (1 500–120 000). The tour ends after the last stop.
+ */
+export type TourAutoplay = boolean | number
+
+export interface TourState {
+  playing: boolean
+  title: string | null
+  template: TourTemplate | null
+  stepIndex: number | null
+  total: number
+  /** The stops, in the shape playTour() takes — save them to replay the tour later. */
+  steps: Array<Required<Omit<TourStepInput, 'modelId' | 'caption'>> & { caption: string | null; modelId: string | null }>
+}
+
+export interface TourStepEvent { index: number; total: number; caption: string | null }
+
+/** A built-in director recipe, as getPresentationRecipes() lists it. */
+export interface PresentationRecipe {
+  id: string
+  name: string
+  format: 'wide' | 'linkedin' | 'square' | 'reel' | 'tiktok'
+  targetSec: number
+  style: 'classic' | 'launch' | 'motion'
+  look: string | null
+  sections: string[]
+}
+
+/** Overrides applied on top of a recipe. */
+export interface PresentationOptions {
+  /** Output shape: `wide` 16:9, `linkedin` 4:5, `square`, `reel` / `tiktok` 9:16. */
+  format?: PresentationRecipe['format']
+  /** Target length, 5–180 s; the director fits the shots to it. */
+  targetSec?: number
+  pace?: 'calm' | 'normal' | 'fast'
+  /** Opening title card text. */
+  title?: string
+  /** Closing call to action. */
+  cta?: string
+  /** Narrated captions on or off. */
+  captions?: boolean
+  /** `'none'` for a silent video. */
+  music?: 'none'
+  watermark?: boolean
+}
+
+export interface PresentationState {
+  open: boolean
+  clips: number
+  durationSec: number
+  width: number
+  height: number
+}
+
+export interface PresentationVideo {
+  /** The encoded file (MP4, or WebM where the browser cannot encode MP4). Transferred, not copied. */
+  bytes: ArrayBuffer
+  mimeType: string
+  sizeBytes: number
+}
+
+export interface PresentationProgressEvent {
+  stage: 'generate' | 'export'
+  label?: string
+  /** 0–1, or null while indeterminate. */
+  progress: number | null
+}
+
 export interface IfcViewerEventMap {
   ready: ReadyEvent
   'model-loaded': ModelLoadedEvent
@@ -270,6 +555,18 @@ export interface IfcViewerEventMap {
   'element-selected': ElementSelectedEvent
   'pointcloud-picked': PointCloudPickedEvent
   'map-feature-picked': MapFeaturePickedEvent
+  /** Walk mode turned on or off — by the visitor (G / Esc) or by the host. Since v1.11.0. */
+  'walk-changed': WalkState
+  /** A measurement was added, removed or renamed. Carries the whole list. Since v1.11.0. */
+  'measurements-changed': MeasurementsState
+  /** A tour began playing — started by the host or by the visitor. Since v1.12.0. */
+  'tour-started': { title: string; total: number; template: TourTemplate | null }
+  /** The tour moved to another stop. Since v1.12.0. */
+  'tour-step': TourStepEvent
+  /** The tour stopped; `completed` when it had reached the last stop. Since v1.12.0. */
+  'tour-ended': { completed: boolean }
+  /** The director is generating or exporting a presentation. Since v1.12.0. */
+  'presentation-progress': PresentationProgressEvent
 }
 
 /** Languages the viewer ships with — code + native label, for building a picker. */
@@ -315,7 +612,23 @@ type Listener<T> = (payload: T) => void
 // no longer sends the raw last URL segment as the name (a signed URL's query
 // broke the format detection), and `addMesh*` wait as long as scans do (15
 // min) — an import may queue behind a model that is still converting.
-const SDK_VERSION = '1.10.1'
+// 1.11.0: presentation and analysis. Everything the viewer grew since 1.8 that a
+// blog post or a project page wants to drive: the scene background (and
+// `background` from the first frame), accent and client skin at runtime, walk
+// mode, the camera as data, the sun study, map mode and its surroundings,
+// section planes (including a plan cut at a named storey), measurements with
+// SI values, and per-model visibility in federated scenes. Two new events:
+// `walk-changed`, `measurements-changed`. New boot options `map`, `solar`,
+// `moon`, `scans` mirror the URL deep links, so a static page needs no JS.
+// 1.12.0: tours and the presentation director. startTour() runs a built-in
+// template (social / client walkthrough / technical review); playTour() plays
+// a tour the host authored — camera stops with captions, highlights and
+// isolation, optionally self-running — and getTour() hands it back in the
+// same shape so it can be saved. createPresentation() turns a director recipe
+// into a Clip Studio project; exportPresentation() encodes it in the visitor's
+// browser and returns the video bytes. Events tour-started / tour-step /
+// tour-ended / presentation-progress.
+const SDK_VERSION = '1.12.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -907,6 +1220,282 @@ export class IfcViewer {
     this.send({ type: 'ifcviewer:camera', position, direction })
   }
 
+  // ── Look (since v1.11.0) ────────────────────────────────────────────────
+  // Set from outside, these are NOT saved as the visitor's own preference:
+  // the iframe shares storage with the app, and a blog's white background
+  // should not follow a reader into their own viewer.
+
+  /**
+   * Change the scene background. A preset (`'white'`, `'paper'`, `'blueprint'`,
+   * `'sky'`, `'studio'`), `'#rrggbb'`, `'#top,#bottom'` or `{ top, bottom? }`.
+   * Rejects on anything else rather than painting a guess.
+   */
+  setBackground(background: BackgroundSpec): Promise<BackgroundState> {
+    return this.request<BackgroundState>('ifcviewer:set-background', { background })
+  }
+
+  /** The current scene background. */
+  getBackground(): Promise<BackgroundState> {
+    return this.request<BackgroundState>('ifcviewer:get-background')
+  }
+
+  /** Re-theme the viewer's UI accent at runtime (`#rrggbb`). */
+  setAccent(color: string): Promise<void> {
+    return this.request<unknown>('ifcviewer:set-accent', { accent: color }).then(() => undefined)
+  }
+
+  /**
+   * Switch the client skin on or off — the stakeholder view: no technical
+   * panels, a clean Health Score badge. Same as `ui: 'client'`, at runtime.
+   */
+  setClientMode(enabled: boolean): Promise<void> {
+    return this.request<unknown>('ifcviewer:set-client-mode', { enabled }).then(() => undefined)
+  }
+
+  /**
+   * `'quality'` turns on the heavier rendering (ambient occlusion, softer
+   * shadows) — for a hero shot or a screenshot; `'standard'` for everyday.
+   */
+  setRenderQuality(quality: 'standard' | 'quality'): Promise<void> {
+    return this.request<unknown>('ifcviewer:set-render-quality', { quality }).then(() => undefined)
+  }
+
+  // ── Camera & walk (since v1.11.0) ───────────────────────────────────────
+
+  /** Where the camera is and what it looks at — save it, restore it with lookAt. */
+  getCamera(): Promise<CameraState | null> {
+    return this.request<CameraState | null>('ifcviewer:get-camera')
+  }
+
+  /**
+   * Fly the camera to `position`, looking at `target` (scene metres, Y up).
+   * Pairs with getCamera() for "saved views" in your own UI.
+   */
+  lookAt(position: Vec3, target: Vec3, animate = true): Promise<void> {
+    return this.request<unknown>('ifcviewer:look-at', { position, target, animate }).then(() => undefined)
+  }
+
+  /**
+   * First-person walk mode: WASD / arrows to move, drag to look, Esc to leave.
+   * `speed` is metres per second. Emits `walk-changed`.
+   */
+  setWalkMode(enabled: boolean, opts: { speed?: number } = {}): Promise<WalkState> {
+    return this.request<WalkState>('ifcviewer:set-walk', { enabled, ...opts })
+  }
+
+  /** Whether walk mode is on, and at what speed. */
+  getWalkState(): Promise<WalkState> {
+    return this.request<WalkState>('ifcviewer:get-walk')
+  }
+
+  // ── Sun study (since v1.11.0) ───────────────────────────────────────────
+
+  /**
+   * Start or change the sun & moon study: real shadows at a site-local date and
+   * time. The site comes from the IFC's georeference, then the map placement;
+   * pass `location` for a model that has none — without one, this rejects
+   * instead of lighting the model as if it stood in some default city.
+   *
+   *   await viewer.setSolar({ date: '06-21', time: '18:00' })
+   */
+  setSolar(opts: SolarOptions = {}): Promise<SolarState> {
+    return this.request<SolarState>('ifcviewer:set-solar', { solar: opts }, 90_000)
+  }
+
+  /** The sun study's state: date, time and zone, and where the site is. */
+  getSolar(): Promise<SolarState> {
+    return this.request<SolarState>('ifcviewer:get-solar')
+  }
+
+  // ── Map mode (since v1.11.0) ────────────────────────────────────────────
+
+  /**
+   * Put the model on the map, with terrain and its OpenStreetMap surroundings.
+   *
+   * CONSENT: map tiles, elevation and OSM data come from third parties, so the
+   * visitor's browser talks to them. Calling this is YOUR page declaring that
+   * consent for its visitors — the viewer does not show its own consent sheet
+   * inside someone else's page. Show `attributions` wherever the map is shown.
+   *
+   * Resolves once the map (and the surroundings, when asked) are up; the first
+   * OpenStreetMap query for a place can take tens of seconds.
+   */
+  setSiteContext(opts: SiteContextOptions = {}): Promise<SiteContextState> {
+    return this.request<SiteContextState>('ifcviewer:set-site', { site: opts }, 200_000)
+  }
+
+  /** Map mode's state, placement and the attributions you must display. */
+  getSiteContext(): Promise<SiteContextState> {
+    return this.request<SiteContextState>('ifcviewer:get-site')
+  }
+
+  // ── Sections (since v1.11.0) ────────────────────────────────────────────
+  // The same cuts the Section panel makes — a visitor can open it and drag
+  // what the host placed.
+
+  /**
+   * Add a section plane. `{ level: 'Level 1' }` is a floor plan at that storey;
+   * `{ axis: 'x', offset: 4.5 }` a section at 4.5 m. Resolves with the new
+   * plane's `id` and every plane now in the scene.
+   */
+  addSection(opts: AddSectionOptions = {}): Promise<SectionsState & { id: string }> {
+    return this.request<SectionsState & { id: string }>('ifcviewer:add-section', { ...opts })
+  }
+
+  /** Move, toggle or flip a plane. */
+  updateSection(id: string, patch: { offset?: number; enabled?: boolean; flipped?: boolean }): Promise<SectionsState> {
+    return this.request<SectionsState>('ifcviewer:update-section', { id, ...patch })
+  }
+
+  /** Remove one plane, or every cut (planes and box) when `id` is omitted. */
+  removeSection(id?: string): Promise<SectionsState> {
+    return this.request<SectionsState>('ifcviewer:remove-section', id ? { id } : {})
+  }
+
+  /**
+   * A section box around the whole model, or around the selected element;
+   * `false` removes it.
+   */
+  setSectionBox(fit: 'model' | 'selection' | false = 'model'): Promise<SectionsState> {
+    return this.request<SectionsState>('ifcviewer:section-box', { fit })
+  }
+
+  /** Every plane, the box, and the model's storeys (for level cuts). */
+  getSections(): Promise<SectionsState> {
+    return this.request<SectionsState>('ifcviewer:get-sections')
+  }
+
+  // ── Measurements (since v1.11.0) ────────────────────────────────────────
+
+  /**
+   * Arm a measuring tool for the visitor (opens the Measure panel so they see
+   * what to click), or `'none'` to stand down. Results arrive on
+   * `measurements-changed`.
+   */
+  setMeasureTool(tool: MeasureTool | 'none'): Promise<void> {
+    return this.request<unknown>('ifcviewer:set-measure-tool', { tool }).then(() => undefined)
+  }
+
+  /** Every measurement on screen, with SI values. */
+  getMeasurements(): Promise<MeasurementsState> {
+    return this.request<MeasurementsState>('ifcviewer:get-measurements')
+  }
+
+  /** Remove one measurement, or all of them when `id` is omitted. */
+  clearMeasurements(id?: string): Promise<MeasurementsState> {
+    return this.request<MeasurementsState>('ifcviewer:clear-measurements', id ? { id } : {})
+  }
+
+  // ── Federated scenes (since v1.11.0) ───────────────────────────────────
+
+  /** Show or hide one model (see getModels()) without unloading it. */
+  setModelVisible(modelId: string, visible: boolean): Promise<void> {
+    return this.request<unknown>('ifcviewer:model-visible', { modelId, visible }).then(() => undefined)
+  }
+
+  /** Ghost a model (0.05–1) — e.g. the architecture around the MEP. Omit the id for the active model. */
+  setModelOpacity(opacity: number, modelId?: string): Promise<void> {
+    return this.request<unknown>('ifcviewer:model-opacity', { opacity, modelId }).then(() => undefined)
+  }
+
+  /** Show only this model; pass `null` to show them all again. */
+  isolateModel(modelId: string | null): Promise<void> {
+    return this.request<unknown>('ifcviewer:isolate-model', { modelId }).then(() => undefined)
+  }
+
+  // ── Tours (since v1.12.0) ───────────────────────────────────────────────
+  // Played by the viewer's own tour bar, so a host-started tour looks exactly
+  // like one the visitor started: captions, arrows, share link.
+
+  /**
+   * Start a built-in tour. `social` and `client-walkthrough` show the model off
+   * (a handful of framed views); `technical-review` walks the validation
+   * issues, worst first, and needs validation to have run.
+   */
+  startTour(template: TourTemplate = 'client-walkthrough', opts: { title?: string; autoplay?: TourAutoplay; includeImprovements?: boolean } = {}): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:start-tour', { template, ...opts }, 60_000)
+  }
+
+  /**
+   * Play a tour you authored: camera stops with a caption, and optionally the
+   * elements to highlight or the classes to isolate. Build the stops with
+   * getCamera(), or replay one saved from getTour().
+   *
+   *   await viewer.playTour({ title: 'Walkthrough', steps: [
+   *     { position: { x: 30, y: 20, z: 30 }, target: { x: 0, y: 0, z: 0 }, caption: 'The site' },
+   *     { position: …, target: …, caption: 'Structure', isolate: ['IfcColumn', 'IfcBeam'] },
+   *   ] }, { autoplay: 5000 })
+   */
+  playTour(tour: TourInput, opts: { startAt?: number; autoplay?: TourAutoplay } = {}): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:play-tour', { tour, ...opts })
+  }
+
+  /** Jump to a stop (0-based). */
+  goToTourStep(index: number): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:tour-step', { index })
+  }
+
+  /** Next stop. */
+  nextTourStep(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:tour-step', { delta: 1 })
+  }
+
+  /** Previous stop. */
+  prevTourStep(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:tour-step', { delta: -1 })
+  }
+
+  /** Turn self-running on (true / ms per stop) or off (false) for the tour playing now. */
+  setTourAutoplay(autoplay: TourAutoplay): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:set-tour-autoplay', { autoplay })
+  }
+
+  /** Stop the tour and give the camera back. */
+  stopTour(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:stop-tour')
+  }
+
+  /** The tour loaded now, its position, and its stops in playTour() shape. */
+  getTour(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:get-tour')
+  }
+
+  // ── Presentation director (since v1.12.0) ──────────────────────────────
+  // A recipe turns the model into an edited video: shots planned from the
+  // IFC itself (storeys, systems, issues), captions, music, transitions.
+  // Everything renders and encodes in the visitor's browser.
+
+  /** The built-in recipes — ids for createPresentation(). */
+  getPresentationRecipes(): Promise<PresentationRecipe[]> {
+    return this.request<PresentationRecipe[]>('ifcviewer:get-recipes')
+  }
+
+  /**
+   * Generate a presentation from a recipe. Opens the viewer's Clip Studio with
+   * the result, where the visitor can still edit it. Resolves once the shots
+   * are rendered — that takes a while (tens of seconds to minutes); follow it
+   * on `presentation-progress`.
+   */
+  createPresentation(recipe = 'meeting-demo', options: PresentationOptions = {}): Promise<PresentationState> {
+    return this.request<PresentationState>('ifcviewer:create-presentation', { recipe, options }, 15 * 60_000)
+  }
+
+  /**
+   * Encode the current presentation to a video file and hand its bytes to the
+   * host — to upload to your CMS, attach to a report, or play in a <video>:
+   *
+   *   const { bytes, mimeType } = await viewer.exportPresentation()
+   *   video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+   */
+  exportPresentation(opts: { resolution?: 720 | 1080 | 1440; music?: boolean } = {}): Promise<PresentationVideo> {
+    return this.request<PresentationVideo>('ifcviewer:export-presentation', { ...opts }, 30 * 60_000)
+  }
+
+  /** Close Clip Studio (the generated project is kept until the next one). */
+  closePresentation(): Promise<void> {
+    return this.request<unknown>('ifcviewer:close-presentation').then(() => undefined)
+  }
+
   // ── Panels ──────────────────────────────────────────────────────────────
   // The viewer's tools live on a rail, one open at a time. Until now a host
   // could load a scan but not open the panel that configures it, could not ask
@@ -993,6 +1582,17 @@ export class IfcViewer {
     if (this.opts.panels) url.searchParams.set('panels', this.opts.panels.join(','))
     if (this.opts.lang) url.searchParams.set('lang', this.opts.lang)
     if (this.opts.accent) url.searchParams.set('accent', this.opts.accent.replace(/^#/, ''))
+    if (this.opts.background) {
+      const bg = this.opts.background
+      const spec = typeof bg === 'string' ? bg
+        : 'preset' in bg ? bg.preset
+        : bg.bottom ? `${bg.top},${bg.bottom}` : bg.top
+      url.searchParams.set('bg', spec.replace(/#/g, ''))
+    }
+    if (this.opts.map) url.searchParams.set('map', this.opts.map === true || this.opts.map.length === 0 ? '1' : this.opts.map.join(','))
+    if (this.opts.solar) url.searchParams.set('solar', this.opts.solar)
+    if (this.opts.moon) url.searchParams.set('moon', '1')
+    if (this.opts.scans?.length) url.searchParams.set('scan', this.opts.scans.join(','))
     return url.toString()
   }
 
@@ -1110,6 +1710,24 @@ export class IfcViewer {
       case 'map-feature-picked':
         this.emit('map-feature-picked', data as unknown as MapFeaturePickedEvent)
         break
+      case 'walk-changed':
+        this.emit('walk-changed', { active: !!data.active, speed: Number(data.speed) })
+        break
+      case 'measurements-changed':
+        this.emit('measurements-changed', data as unknown as MeasurementsState)
+        break
+      case 'tour-started':
+        this.emit('tour-started', data as unknown as IfcViewerEventMap['tour-started'])
+        break
+      case 'tour-step':
+        this.emit('tour-step', data as unknown as TourStepEvent)
+        break
+      case 'tour-ended':
+        this.emit('tour-ended', { completed: !!data.completed })
+        break
+      case 'presentation-progress':
+        this.emit('presentation-progress', data as unknown as PresentationProgressEvent)
+        break
       case 'result': {
         const rid = data.requestId
         if (!rid) break
@@ -1137,16 +1755,22 @@ export class IfcViewer {
 //   <ifc-viewer model="https://host/a.ifc" ui="minimal" accent="#22c55e"
 //   <ifc-viewer model="https://host/a.ifc" panels="scene,map"
 //               style="display:block;height:520px"></ifc-viewer>
+//   <ifc-viewer model="https://host/a.ifc" background="white"
+//               map="terrain,buildings" solar="06-21T18:00"></ifc-viewer>
 //
 // Events are re-dispatched as DOM CustomEvents named `ifcviewer:<type>` (detail =
 // payload). The underlying IfcViewer is available via the element's `.viewer`.
 
-const FORWARDED_EVENTS = ['ready', 'model-loaded', 'model-error', 'model-progress', 'validation-completed', 'element-selected'] as const
+const FORWARDED_EVENTS = [
+  'ready', 'model-loaded', 'model-error', 'model-progress', 'validation-completed', 'element-selected',
+  'pointcloud-picked', 'map-feature-picked', 'walk-changed', 'measurements-changed',
+  'tour-started', 'tour-step', 'tour-ended', 'presentation-progress',
+] as const
 
 export class IfcViewerElement extends HTMLElement {
   private _viewer: IfcViewer | null = null
 
-  static get observedAttributes(): string[] { return ['model', 'lang', 'accent'] }
+  static get observedAttributes(): string[] { return ['model', 'lang', 'accent', 'background'] }
 
   /** The underlying IfcViewer instance (null before connected). */
   get viewer(): IfcViewer | null { return this._viewer }
@@ -1174,6 +1798,19 @@ export class IfcViewerElement extends HTMLElement {
       panel: boolAttr('panel'),
       baseUrl: attr('base-url'),
       model: attr('model'),
+      background: attr('background'),
+      // `map` alone (or map="1") is the map; a list names the layers.
+      map: this.hasAttribute('map')
+        ? (() => {
+            const v = (this.getAttribute('map') ?? '').trim()
+            if (v === '' || v === '1' || v === 'true') return true
+            if (v === '0' || v === 'false') return undefined
+            return v.split(',').map((t) => t.trim()).filter(Boolean) as Array<'terrain' | 'buildings' | 'showcase'>
+          })()
+        : undefined,
+      solar: attr('solar'),
+      moon: boolAttr('moon'),
+      scans: attr('scans')?.split(',').map((u) => u.trim()).filter(Boolean),
       height: '100%',
     })
     this._viewer = v
@@ -1192,6 +1829,8 @@ export class IfcViewerElement extends HTMLElement {
     if (!this._viewer || val == null) return
     if (name === 'lang') this._viewer.setLanguage(val)
     else if (name === 'model') void this._viewer.addFromUrl(val)
+    else if (name === 'accent') void this._viewer.setAccent(val).catch(() => { /* invalid colour */ })
+    else if (name === 'background') void this._viewer.setBackground(val).catch(() => { /* invalid spec */ })
   }
 
   // ── Convenience proxies to the underlying viewer ──────────────────────────
@@ -1211,6 +1850,20 @@ export class IfcViewerElement extends HTMLElement {
   fitPointCloud(cloudId?: string): Promise<void> { return this._viewer!.fitPointCloud(cloudId) }
   setPointCloudDisplay(display: PointCloudDisplayOptions, renderBudget?: number): Promise<void> { return this._viewer!.setPointCloudDisplay(display, renderBudget) }
   inspectPointCloud(enabled?: boolean): Promise<void> { return this._viewer!.inspectPointCloud(enabled) }
+  setBackground(background: BackgroundSpec): Promise<BackgroundState> { return this._viewer!.setBackground(background) }
+  setSolar(opts?: SolarOptions): Promise<SolarState> { return this._viewer!.setSolar(opts) }
+  setSiteContext(opts?: SiteContextOptions): Promise<SiteContextState> { return this._viewer!.setSiteContext(opts) }
+  setWalkMode(enabled: boolean, opts?: { speed?: number }): Promise<WalkState> { return this._viewer!.setWalkMode(enabled, opts) }
+  addSection(opts?: AddSectionOptions): Promise<SectionsState & { id: string }> { return this._viewer!.addSection(opts) }
+  removeSection(id?: string): Promise<SectionsState> { return this._viewer!.removeSection(id) }
+  setMeasureTool(tool: MeasureTool | 'none'): Promise<void> { return this._viewer!.setMeasureTool(tool) }
+  getMeasurements(): Promise<MeasurementsState> { return this._viewer!.getMeasurements() }
+  setView(view: CameraView, scope?: CameraScope): void { this._viewer?.setView(view, scope) }
+  startTour(template?: TourTemplate, opts?: { title?: string; autoplay?: TourAutoplay; includeImprovements?: boolean }): Promise<TourState> { return this._viewer!.startTour(template, opts) }
+  playTour(tour: TourInput, opts?: { startAt?: number; autoplay?: TourAutoplay }): Promise<TourState> { return this._viewer!.playTour(tour, opts) }
+  stopTour(): Promise<TourState> { return this._viewer!.stopTour() }
+  createPresentation(recipe?: string, options?: PresentationOptions): Promise<PresentationState> { return this._viewer!.createPresentation(recipe, options) }
+  exportPresentation(opts?: { resolution?: 720 | 1080 | 1440; music?: boolean }): Promise<PresentationVideo> { return this._viewer!.exportPresentation(opts) }
 }
 
 /** Register the <ifc-viewer> element (idempotent). Auto-called on import. */

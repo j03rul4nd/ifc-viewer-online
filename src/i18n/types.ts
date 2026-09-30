@@ -24,6 +24,7 @@ import type enPointCloud from '../locales/en/pointcloud.json';
 import type enMesh from '../locales/en/mesh.json';
 import type enVideo from '../locales/en/video.json';
 import type enLoading from '../locales/en/loading.json';
+import type enCompare from '../locales/en/compare.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -55,6 +56,7 @@ declare module 'i18next' {
       mesh: typeof enMesh;
       video: typeof enVideo;
       loading: typeof enLoading;
+      compare: typeof enCompare;
     };
   }
 }

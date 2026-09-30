@@ -796,3 +796,147 @@ describe('IfcViewer — imported 3D models', () => {
     v.dispose()
   })
 })
+
+describe('IfcViewer — presentation and analysis (1.11)', () => {
+  beforeEach(() => { mount() })
+
+  // Pending requests reject on dispose; these tests only read what was posted.
+  const quiet = (p: Promise<unknown>): void => { p.catch(() => {}) }
+
+  async function readyViewer(opts: Record<string, unknown> = {}) {
+    const v = new IfcViewer('#mount', { baseUrl: BASE, ...opts })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    return { v, post }
+  }
+
+  it('serialises the boot options as the URL deep links they mirror', () => {
+    const v = new IfcViewer('#mount', {
+      baseUrl: BASE, background: '#dbeafe,#ffffff', map: ['terrain', 'buildings'],
+      solar: '06-21T18:00', moon: true, scans: ['https://h/a.laz', 'https://h/b.laz'],
+    })
+    const u = new URL(v.iframe.src)
+    expect(u.searchParams.get('bg')).toBe('dbeafe,ffffff')
+    expect(u.searchParams.get('map')).toBe('terrain,buildings')
+    expect(u.searchParams.get('solar')).toBe('06-21T18:00')
+    expect(u.searchParams.get('moon')).toBe('1')
+    expect(u.searchParams.get('scan')).toBe('https://h/a.laz,https://h/b.laz')
+    v.dispose()
+  })
+
+  it('writes map=1 for the map on its own, and a preset background by name', () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE, map: true, background: { preset: 'paper' } })
+    const u = new URL(v.iframe.src)
+    expect(u.searchParams.get('map')).toBe('1')
+    expect(u.searchParams.get('bg')).toBe('paper')
+    v.dispose()
+  })
+
+  it('sends each command under its own type, with the arguments nested where the app reads them', async () => {
+    const { v, post } = await readyViewer()
+    quiet(v.setBackground('white'))
+    quiet(v.setSolar({ date: '12-21', time: '09:30' }))
+    quiet(v.setSiteContext({ terrain: true }))
+    quiet(v.addSection({ level: 'Level 1' }))
+    quiet(v.setWalkMode(true, { speed: 2 }))
+    quiet(v.setMeasureTool('area'))
+    quiet(v.isolateModel(null))
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:set-background')[0].background).toBe('white')
+    expect(postsOfType(post, 'ifcviewer:set-solar')[0].solar).toEqual({ date: '12-21', time: '09:30' })
+    expect(postsOfType(post, 'ifcviewer:set-site')[0].site).toEqual({ terrain: true })
+    expect(postsOfType(post, 'ifcviewer:add-section')[0].level).toBe('Level 1')
+    expect(postsOfType(post, 'ifcviewer:set-walk')[0]).toMatchObject({ enabled: true, speed: 2 })
+    expect(postsOfType(post, 'ifcviewer:set-measure-tool')[0].tool).toBe('area')
+    expect(postsOfType(post, 'ifcviewer:isolate-model')[0].modelId).toBeNull()
+    v.dispose()
+  })
+
+  it('removes every cut when no plane is named', async () => {
+    const { v, post } = await readyViewer()
+    quiet(v.removeSection())
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:remove-section')[0]).not.toHaveProperty('id')
+    v.dispose()
+  })
+
+  it('resolves a query with what the app answered, and rejects with its reason', async () => {
+    const { v, post } = await readyViewer()
+    const ok = v.getSolar()
+    await tick()
+    emitFromIframe(v, { type: 'result', requestId: lastRequestId(post), ok: true, data: { active: true, time: '18:00' } })
+    await expect(ok).resolves.toMatchObject({ active: true, time: '18:00' })
+
+    const bad = v.setSolar()
+    await tick()
+    emitFromIframe(v, { type: 'result', requestId: lastRequestId(post), ok: false, error: 'The model carries no location' })
+    await expect(bad).rejects.toThrow('no location')
+    v.dispose()
+  })
+
+  it('relays walk and measurement changes to listeners', async () => {
+    const { v } = await readyViewer()
+    const walk = vi.fn()
+    const meas = vi.fn()
+    v.on('walk-changed', walk)
+    v.on('measurements-changed', meas)
+    emitFromIframe(v, { type: 'walk-changed', active: true, speed: 1.4 })
+    emitFromIframe(v, { type: 'measurements-changed', tool: 'distance', units: 'm', items: [] })
+    expect(walk).toHaveBeenCalledWith({ active: true, speed: 1.4 })
+    expect(meas.mock.calls[0][0]).toMatchObject({ tool: 'distance', items: [] })
+    v.dispose()
+  })
+
+  it('reads the new attributes on <ifc-viewer>', () => {
+    const el = document.createElement('ifc-viewer') as IfcViewerElement
+    el.setAttribute('base-url', BASE)
+    el.setAttribute('background', 'blueprint')
+    el.setAttribute('map', 'terrain')
+    el.setAttribute('solar', '06-21T18:00')
+    document.body.appendChild(el)
+    const u = new URL(el.viewer!.iframe.src)
+    expect(u.searchParams.get('bg')).toBe('blueprint')
+    expect(u.searchParams.get('map')).toBe('terrain')
+    expect(u.searchParams.get('solar')).toBe('06-21T18:00')
+    el.remove()
+  })
+})
+
+describe('IfcViewer — tours and director (1.12)', () => {
+  beforeEach(() => { mount() })
+  const quiet = (p: Promise<unknown>): void => { p.catch(() => {}) }
+
+  it('sends tours and presentations under their own commands', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    const step = { position: { x: 1, y: 2, z: 3 }, target: { x: 0, y: 0, z: 0 }, caption: 'Hi' }
+    quiet(v.startTour('social', { autoplay: true }))
+    quiet(v.playTour({ title: 'T', steps: [step] }, { autoplay: 4000 }))
+    quiet(v.nextTourStep())
+    quiet(v.createPresentation('reel', { title: 'Hello', music: 'none' }))
+    quiet(v.exportPresentation({ resolution: 720 }))
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:start-tour')[0]).toMatchObject({ template: 'social', autoplay: true })
+    expect(postsOfType(post, 'ifcviewer:play-tour')[0]).toMatchObject({ tour: { title: 'T', steps: [step] }, autoplay: 4000 })
+    expect(postsOfType(post, 'ifcviewer:tour-step')[0]).toMatchObject({ delta: 1 })
+    expect(postsOfType(post, 'ifcviewer:create-presentation')[0]).toMatchObject({ recipe: 'reel', options: { title: 'Hello', music: 'none' } })
+    expect(postsOfType(post, 'ifcviewer:export-presentation')[0]).toMatchObject({ resolution: 720 })
+    v.dispose()
+  })
+
+  it('relays tour and presentation events', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const steps = vi.fn(); const ended = vi.fn(); const prog = vi.fn()
+    v.on('tour-step', steps); v.on('tour-ended', ended); v.on('presentation-progress', prog)
+    emitFromIframe(v, { type: 'tour-step', index: 1, total: 3, caption: 'x' })
+    emitFromIframe(v, { type: 'tour-ended', completed: true })
+    emitFromIframe(v, { type: 'presentation-progress', stage: 'export', progress: 0.5 })
+    expect(steps.mock.calls[0][0]).toMatchObject({ index: 1, total: 3 })
+    expect(ended).toHaveBeenCalledWith({ completed: true })
+    expect(prog.mock.calls[0][0]).toMatchObject({ stage: 'export', progress: 0.5 })
+    v.dispose()
+  })
+})

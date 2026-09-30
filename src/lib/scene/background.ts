@@ -201,3 +201,39 @@ export function serializeBackground(settings: BackgroundSettings): string {
     bottom: settings.bottom,
   })
 }
+
+/**
+ * A background asked for from OUTSIDE the app — the `?bg=` parameter or the
+ * SDK's `setBackground()`. One grammar for both, so a blog author can move a
+ * value between the two without learning a second syntax:
+ *
+ * - a preset name: `white`, `paper`, `blueprint`, `sky`, `studio`
+ * - one colour: `#f4f4f5` or `f4f4f5` (solid)
+ * - two colours: `#dbeafe,#ffffff` (a top → bottom gradient)
+ * - (SDK only) an object: `{ preset }` or `{ top, bottom? }`
+ *
+ * Null for anything else, so a typo leaves the scene as it was instead of
+ * painting it an arbitrary colour.
+ */
+export function parseBackgroundSpec(input: unknown): BackgroundSettings | null {
+  if (typeof input === 'string') {
+    const raw = input.trim().toLowerCase()
+    if (!raw) return null
+    if (raw !== 'custom' && presetById(raw as BackgroundPresetId)) return settingsFromPreset(raw as BackgroundPresetId)
+    const parts = raw.split(',').map((s) => normalizeHex(s.startsWith('#') ? s : `#${s}`))
+    if (parts.length === 1 && parts[0]) return { preset: 'custom', mode: 'solid', top: parts[0], bottom: parts[0] }
+    if (parts.length === 2 && parts[0] && parts[1]) return { preset: 'custom', mode: 'gradient', top: parts[0], bottom: parts[1] }
+    return null
+  }
+  if (typeof input === 'object' && input !== null) {
+    const o = input as Record<string, unknown>
+    if (typeof o.preset === 'string' && o.preset !== 'custom') return parseBackgroundSpec(o.preset)
+    const top = typeof o.top === 'string' ? normalizeHex(o.top) : null
+    if (!top) return null
+    const bottom = typeof o.bottom === 'string' ? normalizeHex(o.bottom) : null
+    return bottom && bottom !== top
+      ? { preset: 'custom', mode: 'gradient', top, bottom }
+      : { preset: 'custom', mode: 'solid', top, bottom: top }
+  }
+  return null
+}

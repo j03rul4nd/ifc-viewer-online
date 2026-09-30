@@ -142,32 +142,12 @@ function drawTextOverlay(
 ): void {
   const spec = TEXT_STYLE_SPECS[overlay.style]
   const { width, height } = layout
-  const fontSize = Math.max(8, spec.sizeFrac * height * clampScale(overlay.scale))
-  const raw = state.text ?? overlay.text
-  const content = spec.uppercase || overlay.uppercase ? raw.toUpperCase() : raw
   // Dark ink (light looks) gets a light plate and a soft light halo instead of
   // the dark shadow that suits white text.
   const darkInk = inkLuminance(overlay.color) < 0.35
 
   ctx.save()
-  // Instrument Serif ships one weight: ask for 400 so it is not faux-bolded.
-  const weight = overlay.font === 'serif' ? 400 : spec.weight
-  const size = overlay.font === 'serif' ? fontSize * 1.18 : fontSize
-  ctx.font = `${weight} ${size}px ${FONT_STACKS[overlay.font ?? 'sans']}`
-  ctx.textBaseline = 'alphabetic'
-  // letterSpacing is Chrome 99+/Safari 16.4+; harmless to set where unsupported.
-  setLetterSpacing(ctx, spec.tracking * fontSize)
-
-  const maxWidth = width * TEXT_MAX_WIDTH_FRAC
-  const lines = wrapLines(ctx, content, maxWidth)
-  const lineHeight = fontSize * LINE_HEIGHT
-  const blockHeight = lines.length * lineHeight
-  const blockWidth = Math.min(maxWidth, Math.max(...lines.map((l) => ctx.measureText(l).width), 0))
-
-  const margin = Math.min(width, height) * MARGIN_FRAC
-  const placed = anchorBlock(overlay.anchor, layout, margin, blockHeight)
-  const { x, align } = placed
-  const y = overlay.yFrac !== undefined ? overlay.yFrac * height - blockHeight / 2 : placed.y
+  const { fontSize, content, lines, lineHeight, blockHeight, blockWidth, x, y, align } = measureTextBlock(ctx, overlay, state.text ?? overlay.text, layout)
   const offsetY = state.dy * height
   const fx = state.fx
 
@@ -520,6 +500,57 @@ function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'ba
     ctx.fill()
   }
   ctx.restore()
+}
+
+/**
+ * Where a text card's block sits and how it is set — the one definition the
+ * renderer draws with and the preview hit-tests against. Sets ctx.font and
+ * letter spacing as a side effect (the renderer relies on it).
+ */
+export function measureTextBlock(
+  ctx: CanvasRenderingContext2D,
+  overlay: TextOverlay,
+  raw: string,
+  layout: { width: number; height: number },
+): { fontSize: number; content: string; lines: string[]; lineHeight: number; blockHeight: number; blockWidth: number; x: number; y: number; align: CanvasTextAlign } {
+  const spec = TEXT_STYLE_SPECS[overlay.style]
+  const { width, height } = layout
+  const fontSize = Math.max(8, spec.sizeFrac * height * clampScale(overlay.scale))
+  const content = spec.uppercase || overlay.uppercase ? raw.toUpperCase() : raw
+  // Instrument Serif ships one weight: ask for 400 so it is not faux-bolded.
+  const weight = overlay.font === 'serif' ? 400 : spec.weight
+  const size = overlay.font === 'serif' ? fontSize * 1.18 : fontSize
+  ctx.font = `${weight} ${size}px ${FONT_STACKS[overlay.font ?? 'sans']}`
+  ctx.textBaseline = 'alphabetic'
+  // letterSpacing is Chrome 99+/Safari 16.4+; harmless to set where unsupported.
+  setLetterSpacing(ctx, spec.tracking * fontSize)
+
+  const maxWidth = width * TEXT_MAX_WIDTH_FRAC
+  const lines = wrapLines(ctx, content, maxWidth)
+  const lineHeight = fontSize * LINE_HEIGHT
+  const blockHeight = lines.length * lineHeight
+  const blockWidth = Math.min(maxWidth, Math.max(...lines.map((l) => ctx.measureText(l).width), 0))
+
+  const margin = Math.min(width, height) * MARGIN_FRAC
+  const placed = anchorBlock(overlay.anchor, layout as FrameLayout, margin, blockHeight)
+  // A card dragged in the preview is placed by its centre, anywhere.
+  const x = overlay.xFrac !== undefined ? overlay.xFrac * width : placed.x
+  const align: CanvasTextAlign = overlay.xFrac !== undefined ? 'center' : placed.align
+  const y = overlay.yFrac !== undefined ? overlay.yFrac * height - blockHeight / 2 : placed.y
+  return { fontSize, content, lines, lineHeight, blockHeight, blockWidth, x, y, align }
+}
+
+/** The card's block in frame pixels (no animation), for hit-testing and handles. */
+export function textBlockRect(
+  ctx: CanvasRenderingContext2D,
+  overlay: TextOverlay,
+  layout: { width: number; height: number },
+): { x: number; y: number; w: number; h: number } {
+  ctx.save()
+  const m = measureTextBlock(ctx, overlay, overlay.text, layout)
+  ctx.restore()
+  const left = m.align === 'left' ? m.x : m.align === 'right' ? m.x - m.blockWidth : m.x - m.blockWidth / 2
+  return { x: left, y: m.y, w: m.blockWidth, h: m.blockHeight }
 }
 
 /** Top-left of the text block plus the textAlign that goes with the anchor. */

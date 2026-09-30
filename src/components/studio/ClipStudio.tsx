@@ -33,6 +33,7 @@ import { StudioTimeline } from './StudioTimeline'
 import { StudioInspector } from './StudioInspector'
 import { SoundToClip } from './SoundToClip'
 import { ExportSheet } from './ExportSheet'
+import { PreviewDirect } from './PreviewDirect'
 import { StudioDirector, runRecipe, useDirectorLabels } from './StudioDirector'
 import './studio.css'
 
@@ -117,6 +118,15 @@ export default function ClipStudio() {
   }, [open, pendingRecipe, job, run, i18n.language, directorLabels, t])
 
   const onAddShot = (type: ShotType) => run((signal) => addShot(type, t(`studio.shots.${type}`), 4, signal))
+
+  // Double-tap a caption in the preview: its text, ready to type (the phone shows the edit tab).
+  const editSelectedText = useCallback(() => {
+    setMobileTab('edit')
+    requestAnimationFrame(() => {
+      const el = [...document.querySelectorAll<HTMLTextAreaElement>('[data-studio-text-input]')].find((x) => x.offsetParent !== null)
+      el?.focus(); el?.select()
+    })
+  }, [])
 
   // Export opens the sheet (settings → progress → done), CapCut-style.
   const [exporting, setExporting] = useState(false)
@@ -253,7 +263,8 @@ export default function ClipStudio() {
         <main className="studio-stage flex min-h-0 min-w-0 flex-col">
           <div className="relative flex min-h-0 flex-1 items-center justify-center p-3">
             <div className="studio-canvas-wrap relative" style={{ aspectRatio: `${output.width} / ${output.height}` }}>
-              <canvas ref={canvasRef} width={preview.width} height={preview.height} className="block h-full w-full rounded-lg bg-black" onClick={() => engine.toggle()} />
+              <canvas ref={canvasRef} width={preview.width} height={preview.height} className="block h-full w-full rounded-lg bg-black" />
+              <PreviewDirect playing={engine.playing} onToggle={engine.toggle} onEditText={editSelectedText} />
               {safeZones && vertical && (output.preset === 'reel' || output.preset === 'tiktok') && (
                 <div className="studio-safe pointer-events-none absolute inset-0" aria-hidden="true">
                   <span className="studio-safe__top" /><span className="studio-safe__bottom" /><span className="studio-safe__right" />
@@ -302,7 +313,7 @@ export default function ClipStudio() {
 
       {exporting && <ExportSheet onClose={() => setExporting(false)} previewCanvas={canvasRef.current} />}
 
-      <StudioTimeline onSeek={(tt) => { engine.pause(); setPlayhead(tt) }} />
+      <StudioTimeline clock={engine} onSeek={(tt) => { engine.pause(); setPlayhead(tt) }} />
 
       {/* Tablet / phone: media and inspector as tabs under the timeline */}
       <div className="studio-sheet flex flex-col border-t border-[var(--border)] lg:hidden">

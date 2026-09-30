@@ -54,6 +54,8 @@ import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
+import { useCompareStore } from './stores/compareStore'
+import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
 import EirProfileEditor from './components/eir/EirProfileEditor'
 import { useEirStore } from './stores/eirStore'
@@ -63,6 +65,8 @@ import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 // Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
 const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
+const ClipStudio   = React.lazy(() => import('./components/studio/ClipStudio'))
+const CompareModal = React.lazy(() => import('./components/CompareModal'))
 const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
 // Client presentation skin (D-25) — lazy: loads only when ui=client / toggled on
 const ClientPresentationLayout = React.lazy(() => import('./components/ClientPresentationLayout'))
@@ -122,11 +126,19 @@ import { useElementFocus } from './hooks/useElementFocus'
 import { usePersistedPreferences } from './hooks/usePersistedPreferences'
 import { useValidationStore } from './stores/validationStore'
 import { useUIStore } from './stores/uiStore'
+import { canonicalIfcType } from './lib/url-params'
 import { useModelStore } from './stores/modelStore'
 import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useGeoStore } from './stores/geoStore'
+import { parseBackgroundSpec } from './lib/scene/background'
+import { planCutY } from './lib/cover/cuts'
+import { applyTemplate, PRESENTATION_TEMPLATES, type PresentationTemplateId } from './lib/templates/presentationTemplates'
+import { useClipStudioStore } from './stores/clipStudioStore'
+import { linkViewer } from './lib/capture/viewer-link'
+import { projectDuration } from './lib/capture/project'
+import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
@@ -237,6 +249,147 @@ function deriveScanFileName(url: string): string {
 function urlPathName(url: string): string {
   try { return decodeURIComponent(new URL(url, window.location.href).pathname.split('/').pop() ?? '') }
   catch { return '' }
+}
+
+// ── SDK reply shapes ────────────────────────────────────────────────────────
+// What the embed bridge hands back to a host. Plain data, built from the same
+// stores the panels read, and deliberately narrower than the internal state:
+// every field here is one a host can come to depend on.
+
+function asVec3(v: unknown): { x: number; y: number; z: number } | null {
+  if (!v || typeof v !== 'object') return null
+  const o = v as Record<string, unknown>
+  const x = Number(o.x), y = Number(o.y), z = Number(o.z)
+  return [x, y, z].every(Number.isFinite) ? { x, y, z } : null
+}
+
+function walkStateOut(s: { active: boolean; speed: number }): { active: boolean; speed: number } {
+  return { active: s.active, speed: s.speed }
+}
+
+/** Site-local wall time of an instant, without pulling suncalc into this chunk. */
+function wallDateTime(ms: number, timeZone: string): { date: string; time: string } {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(ms))
+    const get = (t: string): string => parts.find((p) => p.type === t)?.value ?? '00'
+    return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` }
+  } catch {
+    const d = new Date(ms).toISOString()
+    return { date: d.slice(0, 10), time: d.slice(11, 16) }
+  }
+}
+
+function solarStateOut() {
+  const s = useSolarStore.getState()
+  const wall = wallDateTime(s.timeUTC, s.timeZone)
+  return {
+    active: s.active,
+    date: wall.date,
+    time: wall.time,
+    timeZone: s.timeZone,
+    moon: s.moonOn,
+    sky: s.skyOn,
+    quality: s.quality,
+    // `source` says how much to trust it: 'ifc' is the model's own
+    // georeference, 'manual' a location someone typed or a host passed.
+    location: s.location
+      ? { lat: s.location.lat, lon: s.location.lon, source: s.location.source }
+      : null,
+  }
+}
+
+function siteStateOut() {
+  const g = useGeoStore.getState()
+  return {
+    enabled: g.mapMode === 'on',
+    status: g.mapMode,
+    terrain: g.terrainEnabled,
+    buildings: g.buildingsEnabled,
+    buildingsStatus: g.buildingsStatus,
+    detail: g.contextDetail,
+    terrainStyle: g.terrainStyle,
+    exaggeration: g.terrainExaggeration,
+    vehicles: g.vehicles,
+    placement: g.placement
+      ? { lat: g.placement.lat, lon: g.placement.lon, rotationDeg: g.placement.rotationDeg, source: g.placement.source, confidence: g.placement.confidence }
+      : null,
+    // A licence obligation, not decoration: a host that shows the map must
+    // show these.
+    attributions: g.attributions.slice(),
+  }
+}
+
+function sectionsOut(api: ViewerAPI) {
+  const snap = api.getSections().getSnapshot()
+  return {
+    planes: snap.planes.map((p) => ({
+      id: p.id, kind: p.kind, axis: p.axis, enabled: p.enabled, offset: p.offset,
+      flipped: p.flipped, range: { min: p.range.min, max: p.range.max },
+    })),
+    box: snap.box ? { enabled: snap.box.enabled, ranges: snap.box.ranges } : null,
+    active: snap.active,
+  }
+}
+
+/** `autoplay`: true = the player's default pace, a number = ms per step, else off. */
+function parseAutoplay(v: unknown): number | null {
+  if (v === true) return 6_000
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) return Math.min(120_000, Math.max(1_500, v))
+  return null
+}
+
+function tourStateOut() {
+  const s = usePresentationStore.getState()
+  return {
+    playing: s.mode === 'playing',
+    title: s.tour?.title ?? null,
+    template: s.templateId,
+    stepIndex: s.tour ? s.stepIndex : null,
+    total: s.tour?.steps.length ?? 0,
+    // Enough to save a tour and replay it later with playTour().
+    steps: (s.tour?.steps ?? []).map((st) => ({
+      position: st.camera.position,
+      target: st.camera.target,
+      caption: st.caption ?? null,
+      modelId: st.modelId ?? null,
+      highlight: st.highlightedExpressIds ?? [],
+      isolate: st.isolatedCategories ?? [],
+    })),
+  }
+}
+
+function presentationStateOut() {
+  const s = useClipStudioStore.getState()
+  return {
+    open: s.open,
+    clips: s.project.clips.length,
+    durationSec: Math.round(projectDuration(s.project) * 10) / 10,
+    width: s.output.width,
+    height: s.output.height,
+  }
+}
+
+function measurementsOut(api: ViewerAPI) {
+  const snap = api.getMeasure().getSnapshot()
+  return {
+    tool: snap.tool,
+    units: snap.settings.units,
+    // Values are always metres (square metres for areas, degrees for angles)
+    // whatever the panel displays — a host formats them its own way.
+    items: snap.items.map((m) => ({
+      id: m.id,
+      kind: m.kind,
+      name: m.name,
+      value: m.kind === 'point' ? null : m.value,
+      ...(m.kind === 'area' ? { perimeter: m.perimeter, planar: m.planar } : {}),
+      ...(m.kind === 'distance' ? { components: m.components } : {}),
+      ...(m.kind === 'point' ? { coords: m.coords, frame: m.frame } : {}),
+      points: m.points,
+    })),
+  }
 }
 
 // Camera presets accepted by the `ifcviewer:view` embed command.
@@ -415,7 +568,7 @@ export default function App() {
     const m = BLOG_LANG_RE.exec(rel)
     return m ? m[1] : 'en'
   })
-  const [accent] = useState(() => urlParams.accent ?? '#5E6AD2')
+  const [accent, setAccent] = useState(() => urlParams.accent ?? '#5E6AD2')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
     try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
@@ -612,6 +765,7 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
+  const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
   const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
@@ -619,6 +773,7 @@ export default function App() {
   // Stores
   const { validationMode, result } = useValidationStore()
   const tourMode = usePresentationStore((s) => s.mode)
+  const clipStudioOpen = useClipStudioStore((s) => s.open)
   const clientMode = useUIStore((s) => s.clientMode)
   const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
 
@@ -1086,11 +1241,19 @@ export default function App() {
   const ovGhostOpacity = useOverlayStore((s) => s.ghostOpacity)
   const ovXray         = useOverlayStore((s) => s.xray)
 
+  const compareHighlight = useCompareStore((s) => s.highlight)
+  const compareDiff      = useCompareStore((s) => s.diff)
+  const compareHead      = useCompareStore((s) => s.head.modelIds)
+  const compareBase      = useCompareStore((s) => s.base.modelIds)
+
   useEffect(() => {
     const viewer = viewerApiRef.current
     if (!viewer) return
     const opts = { severities: ovSeverities, ghostOpacity: ovGhostOpacity, xray: ovXray }
-    if (idsHighlightMode) {
+    if (compareHighlight && compareDiff) {
+      // Version diff on the shared overlay channel: removed=error, modified=warning, added=info.
+      viewer.setValidationHighlights(planCompareOverlay(compareDiff, compareHead, compareBase), true, opts)
+    } else if (idsHighlightMode) {
       const failures = Object.entries(idsResultsByModel).flatMap(([mid, r]) =>
         r.specs.flatMap((s) => {
           // EIR specs carry their severity in the identifier ("eir:warning") so
@@ -1109,7 +1272,7 @@ export default function App() {
     } else {
       viewer.setValidationHighlights([], false) // clears the shared overlay channel
     }
-  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray])
+  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, compareHighlight, compareDiff, compareHead, compareBase])
 
   // ── Analytics: track each completed validation run ────────────────────────
   const prevResultRef = useRef<typeof result>(null)
@@ -1784,6 +1947,15 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // The inbound handler below is subscribed from an effect whose deps do not
+  // include the rail or the filter state, so it reads them through refs —
+  // otherwise `open-panel` would toggle the rail as it was when the handler
+  // was last bound, and re-showing a model would re-apply stale filters.
+  const railItemsRef = useRef(railItems)
+  railItemsRef.current = railItems
+  const filtersRef = useRef({ hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel })
+  filtersRef.current = { hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel }
+
   // ── Inbound postMessage commands (host CDE → iframe) ──────────────────────
   // Lets a CDE drive the embedded viewer two-way (load / select / isolate / fit).
   // Only active when running inside an iframe. Commands use the `ifcviewer:` ns.
@@ -1806,6 +1978,10 @@ export default function App() {
           emitEmbedEvent('result', { requestId, ok: false, error: err instanceof Error ? err.message : String(err) })
         }
       }
+      // An embed that boots without a model opens the upload prompt, which is
+      // right for a visitor and wrong once the HOST supplies the model: it sat
+      // on top of every model an SDK add() loaded. A host load dismisses it.
+      if (/^ifcviewer:(load|load-bytes|add-pointcloud|add-mesh)$/.test(msg.type)) setShowUpload(false)
       switch (msg.type) {
         case 'ifcviewer:load': {
           const urls = Array.isArray(msg.url) ? msg.url
@@ -1878,7 +2054,7 @@ export default function App() {
           // a host page written against a newer build still works here.
           if (target === undefined) break
           if (target === null) { closeAllPanels(); break }
-          const item = railItems.find((i) => i.id === target)
+          const item = railItemsRef.current.find((i) => i.id === target)
           // Not on the rail = not available in this chrome, with this content.
           // Silently doing nothing beats pretending it opened.
           if (item && !item.open) item.onToggle()
@@ -1886,8 +2062,8 @@ export default function App() {
         }
         case 'ifcviewer:get-panels': {
           void respond(() => ({
-            open: railItems.find((i) => i.open)?.id ?? null,
-            available: railItems.map((i) => ({ id: i.id, label: i.label, open: i.open })),
+            open: railItemsRef.current.find((i) => i.open)?.id ?? null,
+            available: railItemsRef.current.map((i) => ({ id: i.id, label: i.label, open: i.open })),
           }))
           break
         }
@@ -2390,6 +2566,482 @@ export default function App() {
           }))
           break
 
+        // ── Presentation: look, walk, sun, map (SDK 1.11) ──────────────────
+        // Everything here goes through the same store or panel the visitor's
+        // own clicks do, so the viewer's UI never disagrees with what a host
+        // set — the background menu shows the host's colour, the sun panel
+        // shows the host's date.
+        case 'ifcviewer:set-background': {
+          void respond(() => {
+            const bg = parseBackgroundSpec(msg.background)
+            if (!bg) throw new Error('Unknown background — use a preset name, "#rrggbb", "#top,#bottom" or { top, bottom }')
+            // Not saved: the iframe shares storage with the app itself.
+            useSceneStore.getState().setBackground(bg, { persist: false })
+            return bg
+          })
+          break
+        }
+        case 'ifcviewer:get-background':
+          void respond(() => useSceneStore.getState().background)
+          break
+        case 'ifcviewer:set-accent': {
+          void respond(() => {
+            const raw = typeof msg.accent === 'string' ? msg.accent.trim() : ''
+            if (!/^#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(raw)) throw new Error('Accent must be "#rrggbb"')
+            setAccent(raw.startsWith('#') ? raw : `#${raw}`)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:set-client-mode':
+          void respond(() => { useUIStore.getState().setClientMode(msg.enabled !== false); return null })
+          break
+        case 'ifcviewer:set-render-quality': {
+          void respond(() => {
+            const q = msg.quality === 'quality' || msg.quality === 'high' ? 'quality' : 'standard'
+            // Store and viewer both, as the Scene panel does: the store alone
+            // only moves the toggle.
+            useUIStore.getState().setRenderQuality(q)
+            viewerApiRef.current?.setRenderQuality(q)
+            return q
+          })
+          break
+        }
+        case 'ifcviewer:set-walk': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            if (typeof msg.speed === 'number' && Number.isFinite(msg.speed) && msg.speed > 0) api.setWalkSpeed(msg.speed)
+            if (typeof msg.enabled === 'boolean') {
+              const on = api.setWalkMode(msg.enabled)
+              if (msg.enabled && !on) throw new Error('Walk mode needs a model in the scene')
+            }
+            return walkStateOut(api.getWalkState())
+          })
+          break
+        }
+        case 'ifcviewer:get-walk':
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return walkStateOut(api.getWalkState())
+          })
+          break
+        case 'ifcviewer:get-camera':
+          void respond(() => viewerApiRef.current?.getCameraViewpoint() ?? null)
+          break
+        case 'ifcviewer:look-at': {
+          void respond(() => {
+            const p = asVec3(msg.position)
+            const t = asVec3(msg.target)
+            if (!p || !t) throw new Error('lookAt needs position and target as { x, y, z }')
+            viewerApiRef.current?.setCameraLookAt(p, t, msg.animate !== false)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:set-solar': {
+          const cmd = (msg.solar && typeof msg.solar === 'object' ? msg.solar : {}) as Record<string, unknown>
+          const loc = cmd.location as { lat?: unknown; lon?: unknown } | undefined
+          void respond(async () => {
+            if (!isSolarEnabled()) throw new Error('The sun study is not available in this build')
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first — the sun study needs something to cast shadows')
+            await dispatchPanelCommand('sdk:solar', {
+              active:   typeof cmd.active === 'boolean' ? cmd.active : undefined,
+              date:     typeof cmd.date === 'string' ? cmd.date : undefined,
+              time:     typeof cmd.time === 'string' ? cmd.time : undefined,
+              moon:     typeof cmd.moon === 'boolean' ? cmd.moon : undefined,
+              sky:      typeof cmd.sky === 'boolean' ? cmd.sky : undefined,
+              quality:  cmd.quality === 'high' || cmd.quality === 'standard' ? cmd.quality : undefined,
+              location: loc && Number.isFinite(Number(loc.lat)) && Number.isFinite(Number(loc.lon))
+                && Math.abs(Number(loc.lat)) <= 90 && Math.abs(Number(loc.lon)) <= 180
+                ? { lat: Number(loc.lat), lon: Number(loc.lon) } : undefined,
+            }, { unavailable: 'The sun study did not come up in time', subscriberTimeoutMs: 60_000, timeoutMs: 30_000 })
+            return solarStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:get-solar':
+          void respond(() => solarStateOut())
+          break
+        case 'ifcviewer:set-site': {
+          const cmd = (msg.site && typeof msg.site === 'object' ? msg.site : {}) as Record<string, unknown>
+          void respond(async () => {
+            if (!isGisEnabled()) throw new Error('Map mode is not available in this build')
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first — map mode places the model on the map')
+            const pick = <T,>(v: unknown, ok: readonly T[]): T | undefined => ok.includes(v as T) ? v as T : undefined
+            await dispatchPanelCommand('sdk:site', {
+              enabled:      typeof cmd.enabled === 'boolean' ? cmd.enabled : true,
+              terrain:      typeof cmd.terrain === 'boolean' ? cmd.terrain : undefined,
+              buildings:    typeof cmd.buildings === 'boolean' ? cmd.buildings : undefined,
+              vehicles:     typeof cmd.vehicles === 'boolean' ? cmd.vehicles : undefined,
+              layers:       cmd.layers && typeof cmd.layers === 'object' ? cmd.layers as Record<string, boolean> : undefined,
+              detail:       pick(cmd.detail, ['simple', 'detailed', 'showcase'] as const),
+              terrainStyle: pick(cmd.terrainStyle, ['imagery', 'shaded', 'hypsometric', 'slope', 'ecosystem'] as const),
+              exaggeration: typeof cmd.exaggeration === 'number' ? Math.min(3, Math.max(1, cmd.exaggeration)) : undefined,
+            }, { unavailable: 'Map mode did not come up in time', subscriberTimeoutMs: 60_000, timeoutMs: 180_000 })
+            return siteStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:get-site':
+          void respond(() => siteStateOut())
+          break
+        // ── Analysis: sections and measurements (SDK 1.11) ─────────────────
+        // Driven on the viewer's own systems, the ones the panels drive, so a
+        // cut made by a host shows up in the Section panel and can be dragged.
+        case 'ifcviewer:add-section': {
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            let axis: 'x' | 'y' | 'z' = msg.axis === 'x' || msg.axis === 'y' ? msg.axis : 'z'
+            let offset = typeof msg.offset === 'number' && Number.isFinite(msg.offset) ? msg.offset : undefined
+            // A plan cut at a named storey — the cut a blog post means by
+            // "the ground floor plan": 1.2 m above that level.
+            if (msg.level !== undefined && msg.level !== null) {
+              axis = 'z'
+              const levels = await api.getStoreyLevels()
+              const i = typeof msg.level === 'number'
+                ? msg.level
+                : levels.findIndex((l) => l.name.toLowerCase() === String(msg.level).toLowerCase())
+              if (i < 0 || i >= levels.length) {
+                throw new Error(`No storey "${String(msg.level)}" — the model has: ${levels.map((l) => l.name).join(', ') || 'none'}`)
+              }
+              offset = planCutY(levels[i].y, levels[i + 1]?.y ?? null)
+            }
+            const id = sections.addAxisPlane(axis)
+            if (!id) throw new Error('Nothing to cut — load a model first')
+            if (offset !== undefined) sections.setOffset(id, offset, true)
+            if (msg.flip === true) sections.flip(id)
+            return { id, ...sectionsOut(api) }
+          })
+          break
+        }
+        case 'ifcviewer:update-section': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            const id = typeof msg.id === 'string' ? msg.id : ''
+            const plane = sections.getSnapshot().planes.find((p) => p.id === id)
+            if (!plane) throw new Error(`No section plane "${id}"`)
+            if (typeof msg.offset === 'number' && Number.isFinite(msg.offset)) sections.setOffset(id, msg.offset, true)
+            if (typeof msg.enabled === 'boolean') sections.setEnabled(id, msg.enabled)
+            if (typeof msg.flipped === 'boolean' && msg.flipped !== plane.flipped) sections.flip(id)
+            return sectionsOut(api)
+          })
+          break
+        }
+        case 'ifcviewer:remove-section': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            if (typeof msg.id === 'string') sections.remove(msg.id)
+            else sections.clear()
+            return sectionsOut(api)
+          })
+          break
+        }
+        case 'ifcviewer:section-box': {
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const sections = api.getSections()
+            if (msg.fit === false) sections.removeBox()
+            else {
+              const ok = await sections.enableBox(msg.fit === 'selection' ? 'selection' : 'model')
+              if (!ok) throw new Error(msg.fit === 'selection' ? 'Select an element first' : 'Nothing to box — load a model first')
+            }
+            return sectionsOut(api)
+          })
+          break
+        }
+        case 'ifcviewer:get-sections':
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return { ...sectionsOut(api), levels: await api.getStoreyLevels() }
+          })
+          break
+        case 'ifcviewer:set-measure-tool': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const tool = typeof msg.tool === 'string' && ['distance', 'path', 'area', 'angle', 'point'].includes(msg.tool)
+              ? msg.tool as 'distance' | 'path' | 'area' | 'angle' | 'point'
+              : 'none'
+            // The tools read the pointer only while their panel is open, so
+            // arming one opens it — the visitor then also sees what to click.
+            // Arm FIRST: the panel re-arms its last-used tool on open when
+            // none is armed, which would override the host's choice.
+            api.getMeasure().setTool(tool)
+            if (tool !== 'none') useUIStore.getState().setMeasurementPanelOpen(true)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:get-measurements':
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return measurementsOut(api)
+          })
+          break
+        case 'ifcviewer:clear-measurements':
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            if (typeof msg.id === 'string') api.getMeasure().remove(msg.id)
+            else api.getMeasure().clear()
+            return measurementsOut(api)
+          })
+          break
+        // ── Federated scenes: one model at a time (SDK 1.11) ───────────────
+        case 'ifcviewer:model-visible': {
+          void respond(() => {
+            const id = typeof msg.modelId === 'string' ? msg.modelId : ''
+            if (!useSceneStore.getState().models.some((m) => m.id === id)) throw new Error(`No model "${id}"`)
+            const visible = msg.visible !== false
+            useSceneStore.getState().setModelVisible(id, visible)
+            viewerApiRef.current?.setModelVisible(id, visible)
+            if (visible) {
+              // Re-apply per-element/category filters after un-hiding a model
+              // so hidden elements stay hidden — as the Scene panel does.
+              const f = filtersRef.current
+              viewerApiRef.current?.applyFilters(f.hidden, f.isolated, f.hiddenElements, f.isolatedElement, f.isolatedElementModel)
+            }
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:model-opacity': {
+          void respond(() => {
+            const o = Number(msg.opacity)
+            if (!Number.isFinite(o)) throw new Error('Opacity must be a number between 0 and 1')
+            viewerApiRef.current?.setModelOpacity(Math.min(1, Math.max(0.05, o)), typeof msg.modelId === 'string' ? msg.modelId : undefined)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:isolate-model': {
+          void respond(() => {
+            const id = typeof msg.modelId === 'string' ? msg.modelId : null
+            const scene = useSceneStore.getState()
+            if (id && !scene.models.some((m) => m.id === id)) throw new Error(`No model "${id}"`)
+            for (const m of scene.models) {
+              const visible = id === null || m.id === id
+              if (m.visible !== visible) scene.setModelVisible(m.id, visible)
+            }
+            if (id) viewerApiRef.current?.isolateModel(id)
+            else viewerApiRef.current?.showAllModels()
+            return null
+          })
+          break
+        }
+        // ── Tours (SDK 1.12) ────────────────────────────────────────────────
+        // A tour is the presentation store's tour; the TourPlayer the app
+        // already renders plays it, so a host-started tour looks and behaves
+        // exactly like one the visitor started (bar, captions, share link).
+        case 'ifcviewer:start-tour': {
+          void respond(async () => {
+            const viewer = viewerApiRef.current
+            if (!viewer || !useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const id = typeof msg.template === 'string' && msg.template in PRESENTATION_TEMPLATES
+              ? msg.template as PresentationTemplateId : 'client-walkthrough'
+            const result = useValidationStore.getState().result
+            const issues = result?.issues ?? []
+            const score = result?.qualityScore ?? null
+            if (id === 'technical-review' && issues.length === 0) {
+              throw new Error('A technical review needs validation issues — run validation first, or pick another template')
+            }
+            const ok = await applyTemplate(id, viewer, {
+              issues,
+              score,
+              includeImprovements: msg.includeImprovements === true,
+              strings: {
+                title: typeof msg.title === 'string' && msg.title
+                  ? msg.title
+                  : id === 'technical-review' ? tTourNs('autoTitle') : tTourNs('showcase.title'),
+                showcaseCaptions: [
+                  tTourNs('showcase.captions.overview'),
+                  tTourNs('showcase.captions.perspective'),
+                  tTourNs('showcase.captions.front'),
+                  tTourNs('showcase.captions.side'),
+                  tTourNs('showcase.captions.aerial'),
+                  tTourNs('showcase.captions.closing'),
+                ],
+                improvementsCaption: tTourNs('showcase.improvements'),
+                scoreHeadline: score !== null ? tTourNs('showcase.headline', { score }) : undefined,
+              },
+            })
+            if (!ok) throw new Error('Nothing to tour — the template produced no steps')
+            setSdkTourAutoplay(parseAutoplay(msg.autoplay))
+            return tourStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:play-tour': {
+          void respond(() => {
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const raw = (msg.tour && typeof msg.tour === 'object' ? msg.tour : {}) as { title?: unknown; steps?: unknown }
+            const steps = Array.isArray(raw.steps) ? raw.steps : []
+            const built: TourStep[] = []
+            steps.forEach((s, i) => {
+              const o = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>
+              const position = asVec3(o.position)
+              const target = asVec3(o.target)
+              if (!position || !target) throw new Error(`Step ${i + 1}: position and target must be { x, y, z }`)
+              const ids = Array.isArray(o.highlight) ? o.highlight.map(Number).filter((n) => Number.isFinite(n) && n > 0) : []
+              const cats = Array.isArray(o.isolate) ? o.isolate.filter((c): c is string => typeof c === 'string').map((c) => canonicalIfcType(c.toUpperCase())) : []
+              built.push({
+                id: `sdk-${i}`,
+                camera: { position, target },
+                caption: typeof o.caption === 'string' ? o.caption : undefined,
+                modelId: typeof o.modelId === 'string' ? o.modelId : undefined,
+                highlightedExpressIds: ids.length ? ids.slice(0, 500) : undefined,
+                isolatedCategories: cats.length ? cats : undefined,
+              })
+            })
+            if (built.length === 0) throw new Error('A tour needs at least one step')
+            const store = usePresentationStore.getState()
+            store.setTour({
+              id: `sdk-${Date.now().toString(36)}`,
+              title: typeof raw.title === 'string' ? raw.title : '',
+              steps: built,
+              createdFrom: 'manual',
+            })
+            store.setTemplateId(null)
+            const startAt = Number(msg.startAt)
+            store.play(Number.isInteger(startAt) && startAt >= 0 && startAt < built.length ? startAt : 0)
+            setSdkTourAutoplay(parseAutoplay(msg.autoplay))
+            return tourStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:tour-step': {
+          void respond(() => {
+            const store = usePresentationStore.getState()
+            if (store.mode !== 'playing' || !store.tour) throw new Error('No tour is playing')
+            const total = store.tour.steps.length
+            const target = typeof msg.index === 'number' ? msg.index
+              : store.stepIndex + (typeof msg.delta === 'number' ? msg.delta : 1)
+            store.setStepIndex(Math.min(total - 1, Math.max(0, Math.round(target))))
+            return tourStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:stop-tour':
+          void respond(() => {
+            setSdkTourAutoplay(null)
+            if (usePresentationStore.getState().mode === 'playing') usePresentationStore.getState().exitPlayback()
+            return tourStateOut()
+          })
+          break
+        case 'ifcviewer:set-tour-autoplay':
+          void respond(() => { setSdkTourAutoplay(parseAutoplay(msg.autoplay)); return tourStateOut() })
+          break
+        case 'ifcviewer:get-tour':
+          void respond(() => tourStateOut())
+          break
+        // ── Presentation director (SDK 1.12) ───────────────────────────────
+        // A recipe becomes a Clip Studio project the same way the studio's
+        // own "Generate" does; export renders it to a video file the host
+        // receives as bytes. Nothing is uploaded — the MP4 is encoded here.
+        case 'ifcviewer:get-recipes':
+          void respond(async () => {
+            const { BUILT_IN_RECIPES } = await import('./lib/director/recipe')
+            return BUILT_IN_RECIPES.map((r) => ({
+              id: r.id, name: r.name, format: r.format, targetSec: r.targetSec,
+              style: r.style ?? 'classic', look: r.look ?? null, sections: [...r.sections],
+            }))
+          })
+          break
+        case 'ifcviewer:create-presentation': {
+          void respond(async () => {
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const { builtInRecipe, DEFAULT_RECIPE_ID, OUTPUT_FORMATS, PACES } = await import('./lib/director/recipe')
+            const id = typeof msg.recipe === 'string' ? msg.recipe : DEFAULT_RECIPE_ID
+            const base = builtInRecipe(id)
+            if (!base) throw new Error(`No recipe "${id}" — see getPresentationRecipes()`)
+            const o = (msg.options && typeof msg.options === 'object' ? msg.options : {}) as Record<string, unknown>
+            const recipe = {
+              ...base,
+              ...(OUTPUT_FORMATS.includes(o.format as never) ? { format: o.format as typeof base.format } : {}),
+              ...(PACES.includes(o.pace as never) ? { pace: o.pace as typeof base.pace } : {}),
+              ...(typeof o.targetSec === 'number' && o.targetSec >= 5 && o.targetSec <= 180 ? { targetSec: Math.round(o.targetSec) } : {}),
+              ...(o.music === 'none' ? { music: 'none' as const } : {}),
+              ...(typeof o.watermark === 'boolean' ? { watermark: o.watermark } : {}),
+              captions: {
+                ...base.captions,
+                ...(typeof o.title === 'string' ? { title: o.title } : {}),
+                ...(typeof o.cta === 'string' ? { cta: o.cta } : {}),
+                ...(typeof o.captions === 'boolean' ? { enabled: o.captions } : {}),
+              },
+            }
+            const studio = useClipStudioStore
+            studio.getState().requestGenerate(recipe)
+            // Done = the studio took the recipe, ran its job, and stayed idle.
+            // The job drops to null for a moment between phases (plan →
+            // render → assemble), so idle only counts once it has lasted.
+            await new Promise<void>((resolve, reject) => {
+              let started = false
+              let settle: ReturnType<typeof setTimeout> | null = null
+              const finish = (err?: Error): void => {
+                off(); clearTimeout(timer); if (settle) clearTimeout(settle)
+                if (err) reject(err); else resolve()
+              }
+              const timer = setTimeout(() => finish(new Error('The presentation did not finish in time')), 15 * 60_000)
+              const check = (): void => {
+                const s = studio.getState()
+                if (!s.open) { finish(new Error('The studio was closed before the presentation finished')); return }
+                if (s.pendingRecipe !== null) return
+                if (s.job) { started = true; if (settle) { clearTimeout(settle); settle = null }; return }
+                // Never started (nothing to present is only toasted): give up
+                // after a while and let the empty-project check explain.
+                if (!settle) settle = setTimeout(() => finish(), started ? 2_500 : 10_000)
+              }
+              const off = studio.subscribe(check)
+            })
+            const s = studio.getState()
+            if (!s.project.clips.length) throw new Error('Nothing to present — the model gave the director no shots')
+            return presentationStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:export-presentation': {
+          const reqId = requestId
+          void (async () => {
+            try {
+              const s = useClipStudioStore.getState()
+              if (!s.project.clips.length) throw new Error('No presentation to export — call createPresentation() first')
+              const { exportStudio } = await import('./lib/capture/studio-actions')
+              const { DEFAULT_EXPORT } = await import('./lib/capture/export-settings')
+              const res = [720, 1080, 1440].includes(Number(msg.resolution)) ? Number(msg.resolution) as 720 | 1080 | 1440 : DEFAULT_EXPORT.resolution
+              let lastPct = -1
+              const blob = await exportStudio(undefined, 'Exporting', {
+                withMusic: msg.music !== false,
+                settings: { ...DEFAULT_EXPORT, resolution: res },
+                // One event per percent: the encoder reports every frame.
+                onProgress: (f) => {
+                  const pct = Math.floor(f * 100)
+                  if (pct === lastPct) return
+                  lastPct = pct
+                  emitEmbedEvent('presentation-progress', { stage: 'export', progress: f })
+                },
+              })
+              const bytes = await blob.arrayBuffer()
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType: blob.type, sizeBytes: bytes.byteLength } }, [bytes])
+            } catch (err) {
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: false, error: err instanceof Error ? err.message : String(err) })
+            }
+          })()
+          break
+        }
+        case 'ifcviewer:close-presentation':
+          void respond(() => { useClipStudioStore.getState().closeStudio(); return null })
+          break
         case 'ifcviewer:remove-model': {
           const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
           if (modelId) void handleRemoveModel(modelId)
@@ -2512,6 +3164,92 @@ export default function App() {
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingState, sceneModels.length])
+
+  // The capture toolbar normally hands Clip Studio the viewer. When App mounts
+  // the studio itself (no toolbar: kiosk, client) it has to do the same, or
+  // every shot fails with "open a model".
+  const studioViewerOwner = useRef({})
+  const studioStandalone = clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing'
+  useEffect(() => {
+    if (!studioStandalone) return
+    const owner = studioViewerOwner.current
+    linkViewer(owner, viewerApiRef.current)
+    return () => linkViewer(owner, null)
+  }, [studioStandalone])
+
+  // ── SDK tours: autoplay and relayed progress (SDK 1.12) ───────────────────
+  // Autoplay here rather than in the TourPlayer: the player's own toggle is
+  // local UI state, and a host that asked for a self-running tour on a blog
+  // should not depend on it. Ends the tour after the last step.
+  const [sdkTourAutoplay, setSdkTourAutoplay] = useState<number | null>(null)
+  const tourStepIndex = usePresentationStore((s) => s.stepIndex)
+  useEffect(() => {
+    if (sdkTourAutoplay === null || tourMode !== 'playing') return
+    const id = window.setTimeout(() => {
+      const st = usePresentationStore.getState()
+      const total = st.tour?.steps.length ?? 0
+      if (st.stepIndex >= total - 1) { st.exitPlayback(); setSdkTourAutoplay(null) }
+      else st.setStepIndex(st.stepIndex + 1)
+    }, sdkTourAutoplay)
+    return () => window.clearTimeout(id)
+  }, [sdkTourAutoplay, tourMode, tourStepIndex])
+  useEffect(() => { if (tourMode !== 'playing') setSdkTourAutoplay(null) }, [tourMode])
+
+  useEffect(() => {
+    if (!isEmbedded()) return
+    let prev = usePresentationStore.getState()
+    const offTour = usePresentationStore.subscribe((s) => {
+      const was = prev
+      prev = s
+      const caption = (st: typeof s) => st.tour?.steps[st.stepIndex]?.caption ?? null
+      const total = s.tour?.steps.length ?? 0
+      if (s.mode === 'playing' && was.mode !== 'playing') {
+        emitEmbedEvent('tour-started', { title: s.tour?.title ?? '', total, template: s.templateId })
+        emitEmbedEvent('tour-step', { index: s.stepIndex, total, caption: caption(s) })
+      } else if (s.mode === 'playing' && (s.stepIndex !== was.stepIndex || s.tour !== was.tour)) {
+        emitEmbedEvent('tour-step', { index: s.stepIndex, total, caption: caption(s) })
+      } else if (s.mode !== 'playing' && was.mode === 'playing') {
+        emitEmbedEvent('tour-ended', { completed: was.stepIndex >= (was.tour?.steps.length ?? 0) - 1 })
+      }
+    })
+    let lastJob: string | null = null
+    const offStudio = useClipStudioStore.subscribe((s) => {
+      const key = s.job ? `${s.job.label}:${Math.round((s.job.progress ?? 0) * 100)}` : null
+      if (key === lastJob) return
+      lastJob = key
+      if (s.job) emitEmbedEvent('presentation-progress', { stage: 'generate', label: s.job.label, progress: s.job.progress })
+    })
+    return () => { offTour(); offStudio() }
+  }, [])
+
+  // ── Relay walk mode and measurements to an embedding parent (SDK 1.11) ─────
+  // Both change from inside the viewer (a key, a click), so a host that drew
+  // its own "walking" badge or a table of measurements would otherwise have to
+  // poll. Bound once a model is in: the viewer's systems exist from then on.
+  useEffect(() => {
+    if (!isEmbedded() || !hasSceneModels) return
+    const api = viewerApiRef.current
+    if (!api) return
+    let lastWalk = api.getWalkState().active
+    const offWalk = api.onWalkStateChange((s) => {
+      if (s.active === lastWalk) return   // speed / pointer-lock chatter
+      lastWalk = s.active
+      emitEmbedEvent('walk-changed', walkStateOut(s))
+    })
+    const measure = api.getMeasure()
+    // The snapshot is rebuilt on every change (tool, draft point), so compare
+    // what a host sees rather than the array.
+    const keyOf = (): string => measure.getSnapshot().items
+      .map((m) => `${m.id}:${m.name ?? ''}:${m.kind === 'point' ? m.coords.x : m.value}`).join('|')
+    let lastKey = keyOf()
+    const offMeasure = measure.subscribe(() => {
+      const key = keyOf()
+      if (key === lastKey) return
+      lastKey = key
+      emitEmbedEvent('measurements-changed', measurementsOut(api))
+    })
+    return () => { offWalk(); offMeasure() }
+  }, [hasSceneModels])
 
   // ── Relay element selection to an embedding parent (CDE integration) ───────
   useEffect(() => {
@@ -2772,6 +3510,7 @@ export default function App() {
                       onOpenExportModal={() => setShowExportModal(true)}
                       onOpenEmbed={() => setShowEmbedModal(true)}
                       onOpenIds={() => setShowIdsModal(true)}
+                      onOpenCompare={() => setShowCompareModal(true)}
                       onOpenHelp={() => setShowHelp(true)}
                     />
                   )
@@ -3074,6 +3813,15 @@ export default function App() {
                       <ClientPresentationLayout viewerApiRef={viewerApiRef} canExit={!embedChrome.embed} />
                     </React.Suspense>
                   )}
+                  {/* Clip Studio normally hangs off the toolbar's capture menu (or the
+                      tour bar). With no toolbar — kiosk, client — nothing would
+                      mount it, and an SDK createPresentation() would wait forever. */}
+                  {clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
+                    <React.Suspense fallback={null}>
+                      <ClipStudio />
+                    </React.Suspense>
+                  )}
+
                   {tourMode === 'playing' && (
                     <React.Suspense fallback={null}>
                       <TourPlayer
@@ -3144,6 +3892,13 @@ export default function App() {
       {/* ── IDS check ── */}
       {showIdsModal && (
         <IdsModal onClose={() => setShowIdsModal(false)} />
+      )}
+
+      {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
+      {showCompareModal && (
+        <React.Suspense fallback={null}>
+          <CompareModal onClose={() => setShowCompareModal(false)} viewerApiRef={viewerApiRef} />
+        </React.Suspense>
       )}
 
       {/* ── EIR / BIM Validation profile editor ── */}

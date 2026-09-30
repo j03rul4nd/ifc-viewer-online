@@ -114,6 +114,8 @@ export interface TextOverlay {
   uppercase?: boolean
   /** Vertical centre as a fraction of the frame height; overrides the anchor's row. */
   yFrac?: number
+  /** Horizontal centre as a fraction of the frame width (dragged in the preview); overrides the anchor's column. */
+  xFrac?: number
   /**
    * 'words' only: the music's beat grid (project time). Words land on it, so
    * editing the text or moving the card keeps them on the beat. Missing = a

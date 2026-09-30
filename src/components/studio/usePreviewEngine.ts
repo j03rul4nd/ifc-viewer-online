@@ -43,6 +43,8 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
   outputRef.current = output
   const clock = useRef<{ start: number; from: number } | null>(null)
   const raf = useRef(0)
+  const listeners = useRef(new Set<(t: number, playing: boolean) => void>())
+  const emit = (t: number, isPlaying: boolean) => { for (const fn of listeners.current) fn(t, isPlaying) }
   const audio = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode | null; sfx: AudioBufferSourceNode[] } | null>(null)
 
   const urlFor = useCallback((sourceId: string): string | null => {
@@ -209,7 +211,9 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     for (const el of videos.current.values()) el.pause()
     stopAudio()
     setPlaying(false)
-    setPlayhead(Math.min(t, projectDuration(projectRef.current)))
+    const at = Math.min(t, projectDuration(projectRef.current))
+    setPlayhead(at)
+    emit(at, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setPlayhead, stopAudio])
 
@@ -230,8 +234,10 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
       }
       syncVideos(t, true)
       draw(t)
-      // Keep React's playhead roughly current without re-rendering at 60 Hz.
-      if (now - lastUi > 80) { lastUi = now; setPlayhead(t) }
+      emit(t, true)
+      // The timeline follows every frame through `subscribe`; React's playhead
+      // only needs to be roughly current, so the studio re-renders ~4×/s.
+      if (now - lastUi > 250) { lastUi = now; setPlayhead(t) }
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
@@ -245,6 +251,7 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     if (clock.current) return
     syncVideos(playhead, false)
     draw(playhead)
+    emit(playhead, false)
   }, [playhead, project, output, media, syncVideos, draw])
 
   // Drop videos for clips that no longer exist.
@@ -264,5 +271,12 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     urls.current.clear()
   }, [stopAudio])
 
-  return { playing, play, pause, toggle, redraw: draw }
+  /** Every-frame time for things that must move smoothly without re-rendering React (playhead line, readout). */
+  const subscribe = useCallback((fn: (t: number, playing: boolean) => void) => {
+    listeners.current.add(fn)
+    return () => { listeners.current.delete(fn) }
+  }, [])
+  const time = useCallback(() => currentTime(), [])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { playing, play, pause, toggle, redraw: draw, subscribe, time }
 }

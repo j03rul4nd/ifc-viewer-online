@@ -5,12 +5,16 @@
 //             the diamond between two clips selects the transition into the
 //             second
 //   text/ovl  drag to move, drag an edge to change when it starts or ends
-//   ruler     click or drag to scrub
+//   ruler     click or drag to scrub — or anywhere empty on the tracks
+//   magnetic  trims and moves snap to the playhead, the beats and every other
+//             edge (a guide line shows what caught); hold Alt to place freely
+//   playhead  moves every frame from the engine's clock, not through React,
+//             and the view follows it while playing
 //
 // Pointer events throughout, so mouse, pen and touch all work; handles grow
 // on coarse pointers. Every drag is one gesture = one undo step.
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useClipStudioStore } from '../../stores/clipStudioStore'
 import {
@@ -20,6 +24,7 @@ import {
 import { MIN_TEXT_SEC, type TextOverlay } from '../../lib/capture/timeline'
 import { rhythmFor } from '../../lib/capture/studio-actions'
 import type { BuiltInBedId } from '../../lib/capture/audio-library'
+import { snapTime } from '../../lib/capture/preview-hit'
 
 const TRACK_H = { clip: 56, text: 30, overlay: 30, audio: 22 }
 const MIN_PPS = 12
@@ -31,7 +36,15 @@ function fmt(t: number): string {
   return `${m}:${s.toFixed(1).padStart(4, '0')}`
 }
 
-export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
+/** Pixels within which an edge snaps. */
+const SNAP_PX = 8
+
+export interface TimelineClock {
+  /** Every-frame time from the preview engine. */
+  subscribe: (fn: (t: number, playing: boolean) => void) => () => void
+}
+
+export function StudioTimeline({ onSeek, clock }: { onSeek: (t: number) => void; clock?: TimelineClock }) {
   const { t } = useTranslation('capture')
   const project = useClipStudioStore((s) => s.project)
   const playhead = useClipStudioStore((s) => s.playhead)
@@ -49,6 +62,44 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
   const rhythm = rhythmFor(project)
   const beats = useMemo(() => (rhythm ? beatTimes(rhythm, total) : []), [rhythm, total])
   const [dropIndex, setDropIndex] = useState<number | null>(null)
+  const [snapAt, setSnapAt] = useState<number | null>(null)
+  const headRef = useRef<HTMLDivElement>(null)
+  const readoutRef = useRef<HTMLSpanElement>(null)
+  const ppsRef = useRef(pps)
+  ppsRef.current = pps
+  const totalRef = useRef(total)
+  totalRef.current = total
+
+  // The playhead line and the readout follow the engine's clock every frame.
+  const subscribe = clock?.subscribe
+  useEffect(() => {
+    if (!subscribe) return
+    return subscribe((tt, isPlaying) => {
+      const x = tt * ppsRef.current
+      if (headRef.current) headRef.current.style.transform = `translateX(${x}px)`
+      if (readoutRef.current) readoutRef.current.textContent = `${fmt(tt)} / ${fmt(totalRef.current)}`
+      // Playing: keep the playhead in view, a page at a time.
+      const el = scrollRef.current
+      if (isPlaying && el && (x < el.scrollLeft || x > el.scrollLeft + el.clientWidth - 24)) el.scrollLeft = Math.max(0, x - 24)
+    })
+  }, [subscribe])
+
+  /** Everything an edge can snap to, except the item being dragged. */
+  const snapTargets = (exclude: string): number[] => {
+    const st = useClipStudioStore.getState()
+    const pr = st.project
+    const out = [0, st.playhead, ...beats]
+    for (const c of layoutClips(pr)) if (c.clip.id !== exclude) out.push(c.start, c.end)
+    for (const o of [...pr.texts, ...pr.overlays]) if (o.id !== exclude) out.push(o.startSec, o.endSec)
+    return out
+  }
+  /** Snap an absolute time unless Alt is held; shows the guide. */
+  const snap = (tt: number, exclude: string, ev: PointerEvent): number => {
+    if (ev.altKey) { setSnapAt(null); return tt }
+    const r = snapTime(tt, snapTargets(exclude), SNAP_PX / pps)
+    setSnapAt(r.target)
+    return r.value
+  }
 
   const timeAtClientX = useCallback((clientX: number): number => {
     const el = scrollRef.current
@@ -113,10 +164,13 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
   const onTrim = (e: React.PointerEvent, p: PlacedClip, edge: 'start' | 'end') => {
     select({ kind: 'clip', id: p.clip.id })
     let applied = 0
-    drag(e, (dx) => {
-      edit((pr) => trimClipEdge(pr, p.clip.id, edge, dx - applied))
-      applied = dx
-    })
+    const edge0 = edge === 'start' ? p.start : p.end
+    drag(e, (dx, ev) => {
+      // The dragged edge snaps; the clip's own trim maths does the rest.
+      const want = snap(edge0 + dx, p.clip.id, ev) - edge0
+      edit((pr) => trimClipEdge(pr, p.clip.id, edge, want - applied))
+      applied = want
+    }, () => setSnapAt(null))
   }
 
   // ── Text / overlay interactions ────────────────────────────────────────────
@@ -125,7 +179,20 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
   ) => {
     select({ kind: key === 'texts' ? 'text' : 'overlay', id: item.id })
     const { startSec, endSec } = item
-    drag(e, (dx) => {
+    drag(e, (rawDx, ev) => {
+      // Snap whichever edge moves: both when moving (the nearer one wins).
+      let dx = rawDx
+      if (mode === 'start') dx = snap(startSec + rawDx, item.id, ev) - startSec
+      else if (mode === 'end') dx = snap(endSec + rawDx, item.id, ev) - endSec
+      else if (!ev.altKey) {
+        const a = snapTime(startSec + rawDx, snapTargets(item.id), SNAP_PX / pps)
+        const b = snapTime(endSec + rawDx, snapTargets(item.id), SNAP_PX / pps)
+        const da = a.target === null ? Infinity : Math.abs(a.value - (startSec + rawDx))
+        const db = b.target === null ? Infinity : Math.abs(b.value - (endSec + rawDx))
+        if (da <= db && a.target !== null) { dx = a.value - startSec; setSnapAt(a.target) }
+        else if (b.target !== null) { dx = b.value - endSec; setSnapAt(b.target) }
+        else setSnapAt(null)
+      } else setSnapAt(null)
       edit((pr) => {
         const list = pr[key] as unknown as T[]
         const next = list.map((o) => {
@@ -141,7 +208,7 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
         })
         return { ...pr, [key]: next } as EditProject
       })
-    })
+    }, () => setSnapAt(null))
   }
 
   const onWheel = (e: React.WheelEvent) => {
@@ -155,7 +222,7 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
   return (
     <div className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)]">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 text-[11px] text-[var(--text-faint)]">
-        <span className="font-mono tabular-nums text-[var(--text-dim)]">{fmt(playhead)} / {fmt(total)}</span>
+        <span ref={readoutRef} className="font-mono tabular-nums text-[var(--text-dim)]">{fmt(playhead)} / {fmt(total)}</span>
         <div className="flex items-center gap-1">
           <button type="button" className="studio-icon-btn" aria-label={t('studio.zoomOut')} onClick={() => setPps((v) => Math.max(MIN_PPS, v / 1.4))}>−</button>
           <button type="button" className="studio-icon-btn" aria-label={t('studio.zoomIn')} onClick={() => setPps((v) => Math.min(MAX_PPS, v * 1.4))}>+</button>
@@ -163,9 +230,13 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
       </div>
 
       <div ref={scrollRef} className="studio-timeline-scroll relative overflow-x-auto overflow-y-hidden" onWheel={onWheel}>
-        <div className="relative" style={{ width }}>
+        <div className="relative" style={{ width }} onPointerDown={(e) => {
+          // Empty space on any track scrubs, like the ruler (items stop propagation).
+          if ((e.target as HTMLElement).closest('.studio-clip, .studio-timed, .studio-diamond, .studio-audio')) return
+          onRulerDown(e)
+        }}>
           {/* Ruler */}
-          <div className="relative h-6 cursor-ew-resize select-none border-b border-[var(--border)]" onPointerDown={onRulerDown}>
+          <div className="relative h-6 cursor-ew-resize select-none border-b border-[var(--border)]">
             {Array.from({ length: Math.ceil(width / pps) + 1 }, (_, s) => (
               <span key={s} className="absolute top-0 h-full border-l border-[var(--border)] pl-1 text-[9.5px] font-mono text-[var(--text-faint)]" style={{ left: s * pps }}>
                 {s % (pps < 30 ? 5 : 1) === 0 ? `${s}s` : ''}
@@ -244,7 +315,10 @@ export function StudioTimeline({ onSeek }: { onSeek: (t: number) => void }) {
           </div>
 
           {/* Playhead */}
-          <div aria-hidden="true" className="pointer-events-none absolute top-0 bottom-0 z-30 w-px bg-[#ff4d6d]" style={{ left: playhead * pps }}>
+          {snapAt !== null && (
+            <div aria-hidden="true" className="studio-snap pointer-events-none absolute top-0 bottom-0 z-20 w-px" style={{ left: snapAt * pps }} />
+          )}
+          <div ref={headRef} aria-hidden="true" className="pointer-events-none absolute top-0 bottom-0 left-0 z-30 w-px bg-[#ff4d6d] will-change-transform" style={{ transform: `translateX(${playhead * pps}px)` }}>
             <span className="absolute -left-[5px] -top-0.5 h-2.5 w-2.5 rounded-sm bg-[#ff4d6d]" />
           </div>
         </div>

@@ -40,6 +40,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
 | `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
 | `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
+| `bg`       | preset / `rrggbb` / `top,bottom` | saved     | Scene background for this page view: `white`, `paper`, `blueprint`, `sky`, `studio`, one colour, or a top,bottom gradient (`bg=dbeafe,ffffff`). Applied from the first frame and **not** saved as the visitor's preference. An unreadable value is ignored. |
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
 | `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
@@ -174,6 +175,9 @@ the loaded model and camera persist.
 
 # Themed to a dashboard's brand colour
 ?model=https://host/a.ifc&embed=1&accent=22c55e
+
+# A blog figure: white page, the model on its site, a solstice evening
+?model=https://host/a.ifc&ui=client&bg=white&map=terrain,buildings&solar=06-21T19:30
 ```
 
 ## Present in dashboards & BI tools
@@ -203,6 +207,10 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `model-error`      | `url` (URL loads) or `name` (byte/file loads), `message`. Sent for download failures, invalid/unparseable files, scene failures and cancelled loads |
 | `validation-completed` | `qualityScore`, `errors`, `warnings`, `info` |
 | `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
+| `walk-changed`     | `active`, `speed` |
+| `measurements-changed` | `tool`, `units`, `items` (values always SI) |
+| `tour-started` / `tour-step` / `tour-ended` | `title, total, template` / `index, total, caption` / `completed` |
+| `presentation-progress` | `stage` (`generate` · `export`), `label?`, `progress` |
 
 Messages about a load a host started with a `requestId` (see below and the
 [SDK](./IFC_VIEWER_SDK.md)) echo that `requestId`, so a host can tell its own
@@ -232,6 +240,60 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear) | Isolate a category |
 | `ifcviewer:fit`     | — | Frame the active model |
 | `ifcviewer:reset`   | — | Reset the camera |
+
+#### Commands added in SDK v1.11
+
+Every command below answers with a `result` envelope
+(`{ source: 'ifc-validator', type: 'result', requestId, ok, data | error }`)
+when it carries a `requestId`. On failure, `error` is a readable reason, such
+as "no model yet", "feature not in this build" or "model has no location".
+
+| `type` | Fields | Effect / `data` |
+|--------|--------|-----------------|
+| `ifcviewer:set-background` | `background`: preset, `'#rrggbb'`, `'#top,#bottom'` or `{ top, bottom? }` | Paints the scene without saving the preference. Returns the resolved background |
+| `ifcviewer:get-background` | — | `{ preset, mode, top, bottom }` |
+| `ifcviewer:set-accent` | `accent`: `#rrggbb` | Re-themes the UI accent |
+| `ifcviewer:set-client-mode` | `enabled` | Turns the stakeholder skin on or off |
+| `ifcviewer:set-render-quality` | `quality`: `standard` \| `quality` | Switches the heavier rendering |
+| `ifcviewer:get-camera` | — | `{ position, target, direction, up, fovDeg }` (scene metres, Y up) |
+| `ifcviewer:look-at` | `position`, `target`, `animate?` | Flies the camera |
+| `ifcviewer:set-walk` | `enabled?`, `speed?` (m/s) | Walk mode. Returns `{ active, speed }` |
+| `ifcviewer:get-walk` | — | `{ active, speed }` |
+| `ifcviewer:set-solar` | `solar: { active?, date?, time?, moon?, sky?, quality?, location? }` | Sun study at site-local time. Returns `{ active, date, time, timeZone, moon, sky, quality, location }` |
+| `ifcviewer:get-solar` | — | Same shape as above |
+| `ifcviewer:set-site` | `site: { enabled?, terrain?, buildings?, layers?, detail?, terrainStyle?, exaggeration?, vehicles? }` | Map mode. Resolves once it is up. Returns state + `placement` + `attributions` |
+| `ifcviewer:get-site` | — | Same shape as above |
+| `ifcviewer:add-section` | `axis?` (`x`\|`y`\|`z`), `offset?`, `level?` (storey name or index), `flip?` | Adds a plane. Returns `{ id, planes, box, active }` |
+| `ifcviewer:update-section` | `id`, `offset?`, `enabled?`, `flipped?` | Moves, toggles or flips the plane |
+| `ifcviewer:remove-section` | `id?` | Removes one plane, or every cut when `id` is omitted |
+| `ifcviewer:section-box` | `fit`: `model` \| `selection` \| `false` | Adds or removes the section box |
+| `ifcviewer:get-sections` | — | `{ planes, box, active, levels }` |
+| `ifcviewer:set-measure-tool` | `tool`: `distance`\|`path`\|`area`\|`angle`\|`point`\|`none` | Arms a tool and opens the Measure panel |
+| `ifcviewer:get-measurements` | — | `{ tool, units, items }`. Values are always SI |
+| `ifcviewer:clear-measurements` | `id?` | Removes one measurement, or all of them |
+| `ifcviewer:model-visible` | `modelId`, `visible` | Shows or hides one model |
+| `ifcviewer:model-opacity` | `opacity` (0.05–1), `modelId?` | Ghosts a model |
+| `ifcviewer:isolate-model` | `modelId` \| `null` | Shows only that model, or all of them again |
+| `ifcviewer:start-tour` *(1.12)* | `template?`, `autoplay?`, `title?`, `includeImprovements?` | Starts a built-in tour. Returns the tour state |
+| `ifcviewer:play-tour` *(1.12)* | `tour: { title?, steps: [{ position, target, caption?, highlight?, isolate?, modelId? }] }`, `startAt?`, `autoplay?` | Plays a host-authored tour |
+| `ifcviewer:tour-step` *(1.12)* | `index` or `delta` | Moves to another stop |
+| `ifcviewer:set-tour-autoplay` *(1.12)* | `autoplay` (true / ms / false) | Turns self-running on or off |
+| `ifcviewer:stop-tour` / `ifcviewer:get-tour` *(1.12)* | — | Stops the tour / returns `{ playing, title, template, stepIndex, total, steps }` |
+| `ifcviewer:get-recipes` *(1.12)* | — | The built-in director recipes |
+| `ifcviewer:create-presentation` *(1.12)* | `recipe`, `options?` | Generates a presentation in Clip Studio. Returns `{ clips, durationSec, width, height }` |
+| `ifcviewer:export-presentation` *(1.12)* | `resolution?`, `music?` | Encodes it. `data: { bytes (transferred ArrayBuffer), mimeType, sizeBytes }` |
+| `ifcviewer:close-presentation` *(1.12)* | — | Closes Clip Studio |
+
+```js
+// Raw postMessage (the SDK does this for you):
+frame.postMessage({ type: 'ifcviewer:set-solar', requestId: 'r1',
+  solar: { date: '06-21', time: '19:30' } }, 'https://www.ifcvieweronline.eu')
+window.addEventListener('message', (e) => {
+  if (e.data?.type === 'result' && e.data.requestId === 'r1') console.log(e.data)
+})
+```
+
+Prefer the [SDK](./IFC_VIEWER_SDK.md): it correlates the replies, applies timeouts and is typed.
 
 ```js
 const frame = document.querySelector('iframe').contentWindow

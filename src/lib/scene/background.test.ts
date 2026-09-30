@@ -3,7 +3,7 @@ import {
   BACKGROUND_PRESETS, DEFAULT_BACKGROUND,
   normalizeHex, hexToRgb, relativeLuminance, isLightBackground, gridColorFor,
   presetById, settingsFromPreset, resolveBackground,
-  parseStoredBackground, serializeBackground,
+  parseStoredBackground, serializeBackground, parseBackgroundSpec,
   type BackgroundSettings,
 } from './background'
 
@@ -149,5 +149,24 @@ describe('persistence', () => {
     expect(parseStoredBackground('{"preset":"custom","top":"#123456"}')).toEqual({
       preset: 'custom', mode: 'solid', top: '#123456', bottom: '#123456',
     })
+  })
+})
+
+describe('parseBackgroundSpec', () => {
+  it('reads a preset by name, whatever the case', () => {
+    expect(parseBackgroundSpec('White')).toEqual(settingsFromPreset('white'))
+    expect(parseBackgroundSpec({ preset: 'sky' })).toEqual(settingsFromPreset('sky'))
+  })
+
+  it('reads one colour as solid and two as a top-to-bottom gradient, # optional', () => {
+    expect(parseBackgroundSpec('F4F4F5')).toEqual({ preset: 'custom', mode: 'solid', top: '#f4f4f5', bottom: '#f4f4f5' })
+    expect(parseBackgroundSpec('#dbeafe,fff')).toEqual({ preset: 'custom', mode: 'gradient', top: '#dbeafe', bottom: '#ffffff' })
+    expect(parseBackgroundSpec({ top: '#000', bottom: '#000' })).toMatchObject({ mode: 'solid' })
+  })
+
+  it('refuses what it cannot read rather than painting a guess', () => {
+    for (const bad of ['', 'custom', 'rainbow', '#12', '#fff,#000,#111', { top: 'red' }, 42, null]) {
+      expect(parseBackgroundSpec(bad)).toBeNull()
+    }
   })
 })

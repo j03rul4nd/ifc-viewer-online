@@ -80,6 +80,11 @@
           </div>
         </div>
 
+        <label class="f">背景</label>
+        <select id="bg">
+          <option value="">默认（深色）</option><option value="white">白色</option><option value="paper">纸张</option><option value="blueprint">蓝图</option><option value="sky">天空</option>
+        </select>
+
         <label class="f">查看器语言</label>
         <select id="lang">
           <option value="">自动</option>
@@ -123,6 +128,7 @@
       if ($('panel').checked) u.searchParams.set('panel', '1');
       const accent = $('accent').value.replace(/^#/, '');
       if (accent && accent.toLowerCase() !== '5e6ad2') u.searchParams.set('accent', accent);
+      if ($('bg').value) u.searchParams.set('bg', $('bg').value);
       if ($('lang').value) u.searchParams.set('lang', $('lang').value);
       return u.toString();
     }
@@ -156,7 +162,7 @@
       document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
       render();
     }));
-    ['model', 'validate', 'panel', 'accent', 'lang', 'height'].forEach((id) => {
+    ['model', 'validate', 'panel', 'accent', 'bg', 'lang', 'height'].forEach((id) => {
       $(id).addEventListener('input', render);
       $(id).addEventListener('change', render);
     });
