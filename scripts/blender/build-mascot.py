@@ -441,8 +441,10 @@ def bone(name, head, tail, parent=None, roll=0.0, connect=False):
     return b
 
 bone("root", (0, 0, 0), (0, 0, 0.1))
-bone("body", (0, 0, 0.12), (0, 0, 0.36), "root")
-bone("head", (0, 0, 0.36), (0, 0, 0.9), "body")
+bone("body", (0, 0, 0.12), (0, 0, 0.30), "root")
+# spine: lets the soft body bend in an S (body → spine → head overlap chain)
+bone("spine", (0, 0, 0.30), (0, 0, 0.40), "body")
+bone("head", (0, 0, 0.40), (0, 0, 0.9), "spine")
 bone("antenna.1", (0, 0, 0.96), (0, 0.005, 1.05), "head")
 bone("antenna.2", (0, 0.005, 1.05), tuple(bulb_loc), "antenna.1", connect=True)
 bone("arm.L", (0.42, 0, 0.53), (0.52, 0, 0.34), "body")
@@ -470,8 +472,12 @@ def skin(obj, weights):
     mod = obj.modifiers.new("Armature", "ARMATURE")
     mod.object = rig
 
-skin(body, lambda co: {"head": smoothstep(0.26, 0.44, co.z),
-                       "body": 1 - smoothstep(0.26, 0.44, co.z)})
+def body_weights(co):
+    b = 1 - smoothstep(0.16, 0.30, co.z)
+    h = smoothstep(0.30, 0.42, co.z)   # visor starts ~0.425: fully head, no sliding
+    return {"body": b, "spine": max(0.0, 1 - b - h), "head": h}
+
+skin(body, body_weights)
 skin(visor, "head")
 skin(face, "head")
 skin(arm_l, "arm.L")
@@ -492,7 +498,7 @@ def squash(k):
 BONES = [b.name for b in arm_data.bones]
 
 ONESHOTS = []
-OVERLAP = {"head": 2, "arm.L": 3, "arm.R": 5, "antenna.1": 4, "antenna.2": 7}
+OVERLAP = {"spine": 1, "head": 3, "arm.L": 3, "arm.R": 5, "antenna.1": 4, "antenna.2": 7}
 
 def make_action(name, length, keys, loop=True, linear=()):
     if not loop:
@@ -559,6 +565,9 @@ def B(**kw):  # body
 def H(nod=0, turn=0, tilt=0):
     # the "head" drives the upper two-thirds of one soft body, so keep it subtle
     return {"head": {"r": (nod * 0.6, turn * 0.8, tilt * 0.6)}}
+
+def S(nod=0, turn=0, tilt=0):  # spine
+    return {"spine": {"r": (nod, turn, tilt)}}
 
 def R(up=0, side=0):
     return {"root": {"l": (side, up, 0)}}
@@ -775,6 +784,67 @@ ACTIONS["jump"] = make_action("jump", 30, [
     (30, P(R(0), B(s=squash(1.0)), H(0, 0, 0), A(), arm("L", 10), arm("R", 10))),
 ], loop=False)
 
+# ── long idles & ambient moments ─────────────────────────────────────────────
+# Variety for screens people stay on: the web runtime's behaviour director
+# rotates between these idles and drops in the ambient one-shots at random,
+# so nothing reads as a short loop.
+
+ACTIONS["idle_look"] = make_action("idle_look", 270, [
+    (0,   P(B(), S(), H(0, 0, 0), A(), arm("L", 2), arm("R", 2))),
+    (40,  P(B(r=(0, 4, 0)), S(0, 4, 0), H(-2, 22, 4), A((0, 0, -8), (0, 0, -12)), arm("L", 4), arm("R", 2))),
+    (95,  P(B(r=(0, 5, 0)), S(0, 5, 2), H(-3, 26, 6), A((2, 0, -4), (4, 0, -6)), arm("L", 4), arm("R", 3))),
+    (130, P(B(r=(0, -3, 0)), S(0, -3, 0), H(-1, -14, -3), A((0, 0, 10), (0, 0, 16)), arm("L", 3), arm("R", 4))),
+    (185, P(B(r=(0, -5, 0)), S(-2, -5, -2), H(-8, -24, -6), A((4, 0, 6), (6, 0, 10)), arm("L", 2), arm("R", 6))),
+    (225, P(B(), S(-3, 0, 0), H(-14, 0, 8), A((-6, 0, 0), (-10, 0, 0)), arm("L", 3), arm("R", 3))),   # glances up at the antenna
+], loop=True)
+
+ACTIONS["idle_shift"] = make_action("idle_shift", 210, [
+    (0,   P(R(0, 0), B(r=(0, 0, 0)), S(), H(), arm("L", 3), arm("R", 3), {"foot.L": {"r": (0, 0, 0)}, "foot.R": {"r": (0, 0, 0)}})),
+    (35,  P(R(0, 0.015), B(r=(0, 0, 5), s=squash(0.985)), S(0, 0, -3), H(0, 3, -4), A((0, 0, -10), (0, 0, -16)), arm("L", 1), arm("R", 7))),
+    (80,  P(R(0, 0.015), B(r=(0, 0, 5), s=squash(1.01)), S(0, 0, -2), H(-2, 4, -3), A((0, 0, -4), (0, 0, -8)), arm("L", 2), arm("R", 6),
+           {"foot.R": {"r": (18, 0, 0)}})),
+    (88,  P(R(0, 0.015), B(r=(0, 0, 5)), S(0, 0, -2), H(-2, 4, -3), arm("L", 2), arm("R", 6), {"foot.R": {"r": (0, 0, 0)}})),
+    (96,  P(R(0, 0.015), B(r=(0, 0, 5)), S(0, 0, -2), H(-2, 4, -3), arm("L", 2), arm("R", 6), {"foot.R": {"r": (18, 0, 0)}})),
+    (104, P(R(0, 0.015), B(r=(0, 0, 5)), S(0, 0, -2), H(-2, 4, -3), arm("L", 2), arm("R", 6), {"foot.R": {"r": (0, 0, 0)}})),
+    (140, P(R(0, -0.015), B(r=(0, 0, -5), s=squash(0.985)), S(0, 0, 3), H(0, -3, 4), A((0, 0, 10), (0, 0, 16)), arm("L", 7), arm("R", 1))),
+    (185, P(R(0, -0.01), B(r=(0, 0, -3)), S(0, 0, 2), H(1, -2, 3), A((0, 0, 4), (0, 0, 6)), arm("L", 5), arm("R", 2))),
+], loop=True)
+
+ACTIONS["stretch"] = make_action("stretch", 96, [
+    (0,  P(R(0), B(), S(), H(), A(), arm("L", 0), arm("R", 0))),
+    (12, P(R(0), B(s=squash(0.9)), S(6, 0, 0), H(8, 0, 0), A((-8, 0, 0), (-12, 0, 0)), arm("L", -8), arm("R", -8))),        # anticipation
+    (34, P(R(0.03), B(s=squash(1.14), r=(-6, 0, 0)), S(-8, 0, 0), H(-16, 0, 0), A((14, 0, 0), (20, 0, 0)), arm("L", 118, 8, 10), arm("R", 112, 8, 10))),
+    (54, P(R(0.035), B(s=squash(1.16), r=(-7, 0, 3)), S(-9, 0, 4), H(-18, 4, 6), A((10, 0, 6), (14, 0, 10)), arm("L", 124, 10, 10), arm("R", 116, 10, 10))),
+    (66, P(R(0), B(s=squash(0.92)), S(4, 0, 0), H(6, 0, 0), A((-10, 0, 0), (-16, 0, 0)), arm("L", 10), arm("R", 10))),       # release
+    (80, P(R(0), B(s=squash(1.03)), S(-1, 0, 0), H(-2, 0, 0), A((6, 0, 0), (8, 0, 0)), arm("L", 2), arm("R", 2))),
+    (96, P(R(0), B(), S(), H(), A(), arm("L", 0), arm("R", 0))),
+], loop=False)
+
+ACTIONS["yawn"] = make_action("yawn", 84, [
+    (0,  P(B(), S(), H(), A(), arm("L", 0), arm("R", 0))),
+    (14, P(B(s=squash(0.97)), S(3, 0, 0), H(6, 0, 0), A((10, 0, 0), (14, 0, 0)), arm("L", -4), arm("R", -4))),
+    (36, P(B(s=squash(1.08), r=(-5, 0, 0)), S(-6, 0, 0), H(-16, 0, 4), A((-4, 0, 4), (-6, 0, 6)), arm("L", 24, 30, 30), arm("R", 10))),
+    (56, P(B(s=squash(1.06), r=(-4, 0, 0)), S(-5, 0, 0), H(-14, 0, 6), A((0, 0, 6), (0, 0, 8)), arm("L", 30, 34, 30), arm("R", 8))),
+    (70, P(B(s=squash(0.97)), S(2, 0, 0), H(5, 0, 2), A((12, 0, 0), (18, 0, 0)), arm("L", 2), arm("R", 2))),
+    (84, P(B(), S(), H(), A(), arm("L", 0), arm("R", 0))),
+], loop=False)
+
+ACTIONS["sigh"] = make_action("sigh", 60, [
+    (0,  P(B(), S(), H(), A(), arm("L", 0), arm("R", 0))),
+    (18, P(B(s=squash(1.06)), S(-3, 0, 0), H(-6, 0, 0), A((-6, 0, 0), (-8, 0, 0)), arm("L", 12), arm("R", 12))),              # breathe in
+    (38, P(B(s=squash(0.93), r=(4, 0, 0)), S(4, 0, 0), H(8, 0, 3), A((14, 0, 0), (22, 0, 0)), arm("L", -6), arm("R", -6))),   # let it go
+    (60, P(B(), S(), H(), A(), arm("L", 0), arm("R", 0))),
+], loop=False)
+
+ACTIONS["look_around"] = make_action("look_around", 90, [
+    (0,  P(S(), H(0, 0, 0), A())),
+    (12, P(S(0, 5, 0), H(-2, 28, 0), A((0, 0, -10), (0, 0, -14)))),
+    (40, P(S(0, 5, 0), H(-2, 28, 4), A((0, 0, -4), (0, 0, -6)))),
+    (50, P(S(0, -5, 0), H(-2, -28, 0), A((0, 0, 12), (0, 0, 18)))),
+    (76, P(S(0, -5, 0), H(-2, -28, -4), A((0, 0, 4), (0, 0, 6)))),
+    (90, P(S(), H(0, 0, 0), A())),
+], loop=False)
+
 # Face presets: shape-key weights + cheek blush / eye glow (read by the web
 # player via mascot.json).
 FACE_PRESETS = {
@@ -805,6 +875,12 @@ FACE_PRESETS = {
     "shake":     {"EyeBlink": 0.2, "MouthFlat": 0.6, "MouthFrown": 0.3},
     "wink":      {"EyeWinkR": 1.0, "MouthSmile": 0.9, "_blush": 0.5},
     "jump":      {"EyeWide": 0.5, "MouthO": 0.6, "MouthOpen": 0.3},
+    "idle_look": {"MouthCat": 0.6, "EyeWide": 0.1, "_blush": 0.3},
+    "idle_shift": {"MouthCat": 0.8, "_blush": 0.35},
+    "stretch":   {"EyeBlink": 0.75, "MouthO": 0.55, "MouthOpen": 0.3, "_blush": 0.3},
+    "yawn":      {"EyeBlink": 0.85, "MouthOpen": 1.0, "MouthO": 0.7, "_glow": 0.8},
+    "sigh":      {"EyeBlink": 0.55, "MouthFlat": 0.6, "MouthO": 0.2},
+    "look_around": {"EyeWide": 0.25, "MouthO": 0.25},
 }
 
 # Store shape-key actions in the .blend for animators (not exported).
@@ -890,7 +966,7 @@ if RENDER:
         tr.mute = True
     stills = os.environ.get("STILLS", "idle,happy,curious,sad,surprised,love,thinking,wave").split(",")
     frame_for = {"happy": 9, "excited": 6, "wave": 10, "sleepy": 60, "surprised": 4,
-                 "hello": 30, "celebrate": 40, "jump": 13, "wink": 20, "dance": 0}
+                 "hello": 30, "celebrate": 40, "stretch": 54, "yawn": 45, "sigh": 38, "idle_look": 95, "jump": 13, "wink": 20, "dance": 0}
     face.data.shape_keys.animation_data.action = None
     for emo in stills:
         for pb in rig.pose.bones:  # clear leftovers from the previous still

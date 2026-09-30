@@ -98,7 +98,12 @@ export default function BimoLive({
   }, [eligible])
 
   useEffect(() => { if (ready) inst.current?.play(clip) }, [clip, ready])
-  useEffect(() => { if (ready && boopKey) inst.current?.play(boopClip) }, [boopKey, ready, boopClip])
+  useEffect(() => {
+    if (!ready || !boopKey) return
+    inst.current?.micro('squish')
+    const t = window.setTimeout(() => inst.current?.play(boopClip), 160)
+    return () => window.clearTimeout(t)
+  }, [boopKey, ready, boopClip])
 
   useEffect(() => {
     if (!ready || !track) return

@@ -28,7 +28,13 @@
     "nod",
     "shake",
     "wink",
-    "jump"
+    "jump",
+    "idle_look",
+    "idle_shift",
+    "stretch",
+    "yawn",
+    "sigh",
+    "look_around"
   ],
   "oneshots": [
     "hello",
@@ -36,7 +42,11 @@
     "nod",
     "shake",
     "wink",
-    "jump"
+    "jump",
+    "stretch",
+    "yawn",
+    "sigh",
+    "look_around"
   ],
   "shapeKeys": [
     "EyeBlink",
@@ -218,6 +228,36 @@
       "EyeWide": 0.5,
       "MouthO": 0.6,
       "MouthOpen": 0.3
+    },
+    "idle_look": {
+      "MouthCat": 0.6,
+      "EyeWide": 0.1,
+      "_blush": 0.3
+    },
+    "idle_shift": {
+      "MouthCat": 0.8,
+      "_blush": 0.35
+    },
+    "stretch": {
+      "EyeBlink": 0.75,
+      "MouthO": 0.55,
+      "MouthOpen": 0.3,
+      "_blush": 0.3
+    },
+    "yawn": {
+      "EyeBlink": 0.85,
+      "MouthOpen": 1.0,
+      "MouthO": 0.7,
+      "_glow": 0.8
+    },
+    "sigh": {
+      "EyeBlink": 0.55,
+      "MouthFlat": 0.6,
+      "MouthO": 0.2
+    },
+    "look_around": {
+      "EyeWide": 0.25,
+      "MouthO": 0.25
     }
   }
 }

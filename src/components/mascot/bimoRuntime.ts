@@ -27,6 +27,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { Breath, Director, IDLE_FAMILY, Sequencer, fbm } from './bimoLife'
 
 export interface BimoMeta {
   emotions: string[]
@@ -82,12 +83,14 @@ export interface BimoOptions {
   /** Camera framing: distance and look-at height (metres). */
   distance?: number
   targetY?: number
+  /** Autonomous behaviour while idling (default true). */
+  autonomy?: boolean
 }
 
 /** Procedural micro-reactions, layered on top of whatever clip is playing. */
 export type BimoMicro =
-  | 'blink' | 'flinch' | 'giggle' | 'boing' | 'shiver' | 'perk'
-  | 'nod' | 'tilt' | 'squish' | 'heart' | 'glance'
+  | 'blink' | 'doubleBlink' | 'flinch' | 'giggle' | 'boing' | 'shiver' | 'perk'
+  | 'nod' | 'tilt' | 'squish' | 'heart' | 'glance' | 'twitch'
 
 /** What a screen point hits on the model (see pick). */
 export type BimoPart = 'antenna' | 'face' | 'head' | 'body' | 'arm' | 'foot'
@@ -107,6 +110,9 @@ export interface Bimo {
   setExpression(weights: Record<string, number> | null): void
   /** Briefly add weight to one shape key, decaying on its own. */
   pulse(key: string, amount?: number): void
+  /** Let Bimo act on his own while idling (fidgets, idle variants, dozing
+   *  off when nobody is around). On by default. */
+  setAutonomy(on: boolean): void
   /** Ray-cast a client-space point against the skinned model. */
   pick(clientX: number, clientY: number): BimoPart | null
   setPaused(p: boolean): void
@@ -196,6 +202,11 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   const rim = new THREE.DirectionalLight(0x8b93e8, 1.9); rim.position.set(-0.6, 2.0, -2.2)
   const kick = new THREE.PointLight(0x5e6ad2, 1.4, 5); kick.position.set(1.8, 0.5, -1.2)
   scene.add(key, fill, rim, kick)
+  // A soft light that follows the pointer, so highlights glide over the
+  // pearl shell and the visor as the visitor moves: he reacts to the room.
+  const cursorLight = new THREE.PointLight(0xc9ceff, 0.9, 4, 1.6)
+  cursorLight.position.set(0, 0.8, 1.6)
+  scene.add(cursorLight)
 
   if (opts.shadow !== false) {
     const catcher = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.ShadowMaterial({ opacity: 0.28 }))
@@ -279,7 +290,7 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     if (mesh.morphTargetDictionary) morphMeshes.push(mesh)
   })
 
-  const rest = ['head', 'body', 'antenna1', 'antenna2'].filter(n => bones[n])
+  const rest = ['head', 'spine', 'body', 'antenna1', 'antenna2', 'armL', 'armR'].filter(n => bones[n])
     .map(n => ({ bone: bones[n], q: bones[n].quaternion.clone(), s: bones[n].scale.clone() }))
 
   // eye halos, parented to the head so they follow every clip
@@ -309,6 +320,21 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   const lean = new Spring(0, 150, 12)
   let wiggleT = 0, wiggleAmp = 0, wiggleHz = 0
   const transient: Record<string, number> = {}
+  // ── life: energy, breath, secondary physics, sequencing ────────────────────
+  const ENERGY: Record<string, number> = {
+    excited: 1, dance: 1, celebrate: 1, jump: 0.95, laugh: 0.85, happy: 0.75, wave: 0.7, hello: 0.7,
+    talking: 0.6, surprised: 0.8, angry: 0.7, curious: 0.55, listening: 0.5, idle: 0.45,
+    idle_look: 0.4, idle_shift: 0.45, thinking: 0.35, loading: 0.4, sad: 0.2, sigh: 0.2, yawn: 0.1, sleepy: 0.05,
+  }
+  const energy = new Spring(0.45, 6, 5)       // slow: mood carries over between clips
+  const breath = new Breath()
+  const seq = new Sequencer()
+  const jelly = new Spring(1, 170, 7)          // soft-body squash from vertical acceleration
+  const spineLag = { x: new Spring(0, 90, 9), z: new Spring(0, 90, 9) }
+  const headLag = { x: new Spring(0, 70, 8), z: new Spring(0, 70, 8) }
+  const armLag = { L: new Spring(0, 60, 4.5), R: new Spring(0, 55, 4) }   // loose, slightly different
+  const bodyPrev = new THREE.Quaternion()
+  let rootPrevV = 0
   let hold: Record<string, number> | null = null
   const head = { x: new Spring(0, 55, 12), y: new Spring(0, 55, 12) }
   const eye = { x: new Spring(0, 320, 30), y: new Spring(0, 320, 30) }
@@ -346,10 +372,14 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     if (current) current.crossFadeTo(next, once ? 0.18 : fade, true); else next.fadeIn(0.25)
     current = next; currentName = name
     if (!once) loopName = name
+    energy.t = ENERGY[name] ?? 0.5
+    next.timeScale = 0.94 + Math.random() * 0.12
     applyFace(name)
     pop.x = 0.9; pop.v = 0
     if (blinkT < 0) blinkT = 0          // blink on a change of thought
   }
+  // No two loop cycles at exactly the same speed.
+  mixer.addEventListener('loop', (e) => { e.action.timeScale = 0.9 + Math.random() * 0.2 })
   mixer.addEventListener('finished', (e) => {
     if (e.action === current && ONESHOT.has(currentName)) play(loopName, 0.35)
   })
@@ -371,6 +401,9 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     // rest pose first or the squash/tilt would compound every frame.
     for (const r of rest) { r.bone.quaternion.copy(r.q); r.bone.scale.copy(r.s) }
     mixer.update(dt)
+    seq.update(dt)
+    director.update(dt, t)
+    const e = energy.step(dt)
 
     // blink
     if (t > nextBlink && blinkT < 0) blinkT = 0
@@ -425,15 +458,40 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     head.x.t = -gaze.y * 0.16; head.y.t = gaze.x * 0.28
     if (bones.head) {
       bones.head.quaternion.multiply(q.setFromEuler(eul.set(
-        head.x.step(dt) + nudge.x.step(dt), head.y.step(dt) + nudge.y.step(dt), nudge.z.step(dt))))
+        head.x.step(dt) + nudge.x.step(dt) + headLag.x.step(dt) + (reduced ? 0 : fbm(t * 0.3, 4) * 0.02),
+        head.y.step(dt) + nudge.y.step(dt) + (reduced ? 0 : fbm(t * 0.21, 5) * 0.03),
+        nudge.z.step(dt) + headLag.z.step(dt))))
     }
     // moving hold: breathing + slow sway under every clip
     if (bones.body) {
-      const s = pop.step(dt) * (1 + (reduced ? 0 : 0.012 * Math.sin(t * 2.1)))
+      // breath: shaped inhale/exhale at an energy-driven rate, plus soft-body
+      // jiggle from how fast the root is accelerating (landings squash)
+      const br = reduced ? 0 : breath.step(dt, e)
+      const ry = bones.root ? bones.root.getWorldPosition(sv).y : 0
+      const vy = (ry - rootPrevY.v) / Math.max(dt, 1e-3)
+      const ay = (vy - rootPrevV) / Math.max(dt, 1e-3)
+      rootPrevV = vy
+      if (!reduced) jelly.v += THREE.MathUtils.clamp(ay, -60, 60) * 0.004
+      const s = pop.step(dt) * jelly.step(dt) * (1 + 0.016 * br)
       bones.body.scale.multiply(sv.set(1 / Math.sqrt(s), s, 1 / Math.sqrt(s)))
       let wob = 0
       if (wiggleT > 0) { wiggleT -= dt; wob = Math.sin(t * wiggleHz * Math.PI * 2) * wiggleAmp * Math.min(1, wiggleT * 3) }
-      if (!reduced) bones.body.quaternion.multiply(q.setFromEuler(eul.set(0, 0, 0.012 * Math.sin(t * 0.7) + lean.step(dt) + wob)))
+      // sway from noise, larger when bored, livelier when excited
+      const sway = reduced ? 0 : fbm(t * (0.18 + 0.2 * e), 1) * 0.022 + fbm(t * 0.07, 2) * 0.012
+      const yaw = reduced ? 0 : fbm(t * 0.11, 3) * 0.03
+      bones.body.quaternion.multiply(q.setFromEuler(eul.set(-0.01 * br, yaw, sway + lean.step(dt) + wob)))
+
+      // overlap chain: spine and head trail the body's rotation, arms dangle
+      bones.body.updateWorldMatrix(true, false)
+      const bq = bones.body.getWorldQuaternion(new THREE.Quaternion())
+      eul.setFromQuaternion(bq.clone().multiply(bodyPrev.invert())); bodyPrev.copy(bq)
+      const wx = eul.x, wz = eul.z
+      spineLag.x.v -= wx * 14; spineLag.z.v -= wz * 14
+      headLag.x.v -= wx * 10; headLag.z.v -= wz * 12
+      armLag.L.v -= wz * 22 + vy * 0.6; armLag.R.v += wz * 20 - vy * 0.55
+      if (bones.spine) bones.spine.quaternion.multiply(q.setFromEuler(eul.set(spineLag.x.step(dt) + 0.012 * br, 0, spineLag.z.step(dt))))
+      if (bones.armL) bones.armL.quaternion.multiply(q.setFromEuler(eul.set(0, 0, THREE.MathUtils.clamp(armLag.L.step(dt), -0.5, 0.5) + 0.03 * br)))
+      if (bones.armR) bones.armR.quaternion.multiply(q.setFromEuler(eul.set(0, 0, THREE.MathUtils.clamp(armLag.R.step(dt), -0.5, 0.5) - 0.03 * br)))
     }
     // follow-through: antenna lags head rotation and body bounce
     if (bones.head && bones.antenna1) {
@@ -451,6 +509,7 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
       bones.antenna1.quaternion.multiply(q.setFromEuler(eul.set(ax * 0.5, 0, az * 0.5)))
       bones.antenna2?.quaternion.multiply(q.setFromEuler(eul.set(ax, 0, az)))
     }
+    cursorLight.position.lerp(sv.set(gaze.x * 1.6, 0.75 + gaze.y * 0.9, 1.5), 1 - Math.exp(-6 * dt))
     renderer.render(scene, camera)
   }
 
@@ -464,24 +523,102 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   renderer.setAnimationLoop(frame)
   play(opts.initial ?? 'hello')
 
+  // Micro-reactions are little performances, not single twitches: each one
+  // anticipates, acts, follows through and settles (via Sequencer steps and
+  // the springs, which overshoot on their own).
   function micro(kind: BimoMicro, k = 1) {
-    const r = reduced ? 0.4 : 1
-    k *= r
+    k *= reduced ? 0.4 : 1
+    const side = Math.random() < 0.5 ? -1 : 1
     switch (kind) {
       case 'blink': blinkT = 0; break
-      case 'flinch': pop.x = 1 - 0.14 * k; nudge.x.v -= 5 * k; lean.v += (Math.random() - 0.5) * 3 * k; pulse('EyeWide', 0.8 * k); blinkT = 0; break
-      case 'giggle': wiggleT = 0.7; wiggleAmp = 0.05 * k; wiggleHz = 7; pulse('EyeHappy', 1); pulse('MouthOpen', 0.6 * k); pulse('_blush', 0.6); break
-      case 'boing': ant.x.v += 26 * k; ant.z.v += (Math.random() - 0.5) * 20 * k; pop.x = 1 - 0.06 * k; pulse('EyeWide', 0.4 * k); break
-      case 'shiver': wiggleT = 0.9; wiggleAmp = 0.025 * k; wiggleHz = 16; pulse('EyeSmall', 0.6 * k); break
-      case 'perk': nudge.x.v -= 3.5 * k; ant.x.v -= 12 * k; pop.x = 1 + 0.06 * k; pulse('EyeWide', 0.6 * k); break
-      case 'nod': nudge.x.v += 6 * k; break
-      case 'tilt': nudge.z.v += (Math.random() < 0.5 ? -1 : 1) * 4 * k; pulse('EyeUp', 0.3 * k); break
-      case 'squish': pop.x = 1 - 0.2 * k; pulse('EyeHappy', 0.7 * k); break
-      case 'heart': pulse('EyeHeart', 1); pulse('_blush', 1); pulse('MouthCat', 0.8); pop.x = 1 + 0.05 * k; break
-      case 'glance': dart.set((Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 0.6); nextDart = timer.getElapsed() + 0.9; break
+      case 'doubleBlink': blinkT = 0; seq.add([[0.26, () => { blinkT = 0 }]]); break
+      case 'glance':
+        dart.set((Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 0.6); nextDart = timer.getElapsed() + 0.9
+        seq.add([[0.12, () => { nudge.y.v += dart.x * 2.5 * k }]])      // head follows the eyes a beat later
+        break
+      case 'twitch':                                                        // antenna flick, eyes check it
+        pulse('EyeUp', 0.8)
+        seq.add([[0.1, () => { ant.x.v += 14 * k; ant.z.v += side * 8 * k }], [0.5, () => pulse('EyeHappy', 0.3)]])
+        break
+      case 'flinch':
+        pop.x = 1 - 0.16 * k; nudge.x.v -= 6 * k; lean.v += side * 3 * k; pulse('EyeWide', 0.9 * k); blinkT = 0
+        ant.x.v -= 18 * k
+        seq.add([[0.28, () => micro('shiver', 0.5 * k)], [1.0, () => { jelly.v += 0.8; pulse('EyeBlink', 0.4) }]])   // …phew
+        break
+      case 'giggle':
+        pulse('EyeHappy', 1); pulse('_blush', 0.7); wiggleT = 0.8; wiggleAmp = 0.04 * k; wiggleHz = 6.5
+        seq.add([0, 0.16, 0.32, 0.5].map((at, i) => [at, () => { jelly.v -= (1.6 - i * 0.35) * k; pulse('MouthOpen', 0.7 - i * 0.12) }] as [number, () => void]))
+        break
+      case 'boing':
+        pop.x = 1 - 0.08 * k; pulse('EyeUp', 1)                               // anticipation: look up, crouch
+        seq.add([
+          [0.09, () => { ant.x.v += 30 * k; ant.z.v += side * 22 * k; pulse('EyeWide', 0.5) }],
+          [0.2, () => { nudge.x.v -= 2 * k }],
+          [0.45, () => micro('giggle', 0.5 * k)],
+        ])
+        break
+      case 'shiver': wiggleT = 0.9; wiggleAmp = 0.025 * k; wiggleHz = 15; pulse('EyeSmall', 0.6 * k); break
+      case 'perk':
+        pop.x = 1 - 0.05 * k                                                   // dip…
+        seq.add([[0.1, () => { pop.v += 1.4 * k; nudge.x.v -= 3.5 * k; ant.x.v -= 14 * k; pulse('EyeWide', 0.6 * k) }]])   // …and up
+        break
+      case 'nod': nudge.x.v += 6 * k; seq.add([[0.24, () => { nudge.x.v += 3.2 * k }]]); break
+      case 'tilt':
+        nudge.z.v += side * 4 * k; pulse('EyeUp', 0.3 * k)
+        seq.add([[0.18, () => { ant.z.v -= side * 10 * k }]])                 // antenna follows through
+        break
+      case 'squish':
+        pop.x = 1 - 0.22 * k; pulse('EyeHappy', 0.8 * k)
+        seq.add([[0.14, () => { jelly.v -= 1.2 * k }], [0.3, () => pulse('_blush', 0.4)]])
+        break
+      case 'heart':
+        pulse('EyeHeart', 1); pulse('_blush', 1); pulse('MouthCat', 0.9); pop.x = 1 - 0.1 * k
+        seq.add([
+          [0.15, () => { nudge.z.v += side * 3 * k }],
+          [0.45, () => { lean.v -= side * 1.8 * k }],                          // melts side to side
+          [0.9, () => { lean.v += side * 1.4 * k; pulse('EyeHeart', 0.8) }],
+          [1.35, () => { jelly.v += 0.9 * k }],
+        ])
+        break
     }
   }
   function pulse(key: string, amount = 1) { transient[key] = Math.max(transient[key] ?? 0, amount) }
+
+  const director = new Director({
+    loop: () => loopName,
+    busy: () => ONESHOT.has(currentName) || seq.busy,
+    play: (c) => play(c, 1.1),
+    micro: (m, k) => micro(m as BimoMicro, k),
+    wander: (x, y) => gaze.set(x, y),
+    available: (c) => !!actions[c],
+  })
+  director.enabled = opts.autonomy !== false && !reduced
+
+  // Environment: the page scrolling carries him (inertia), a pointer whipping
+  // past close by startles him, and any input counts as company.
+  let lastScroll = scrollY, lastStartle = 0
+  const pv = { x: 0, y: 0, t: 0 }
+  const onScroll = () => {
+    const d = scrollY - lastScroll; lastScroll = scrollY
+    const k = THREE.MathUtils.clamp(d / 60, -1, 1)
+    jelly.v += k * 0.6; spineLag.x.v += k * 1.2; ant.x.v += k * 10
+    director.poke()
+  }
+  const onPointer = (ev: PointerEvent) => {
+    const now = performance.now(), dtp = Math.max(1, now - pv.t)
+    const speed = Math.hypot(ev.clientX - pv.x, ev.clientY - pv.y) / dtp   // px/ms
+    pv.x = ev.clientX; pv.y = ev.clientY; pv.t = now
+    director.poke()
+    if (speed > 3.2 && now - lastStartle > 4000) {
+      const r = canvas.getBoundingClientRect()
+      const near = Math.hypot(ev.clientX - (r.left + r.width / 2), ev.clientY - (r.top + r.height / 2)) < Math.max(r.width, 160)
+      if (near) { lastStartle = now; micro('flinch', 0.6) }
+    }
+  }
+  const onKey = () => director.poke()
+  addEventListener('scroll', onScroll, { passive: true })
+  addEventListener('pointermove', onPointer, { passive: true })
+  addEventListener('keydown', onKey)
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
   function pick(cx: number, cy: number): BimoPart | null {
@@ -517,6 +654,7 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     lookAtElement(el) { const b = el.getBoundingClientRect(); lookAtClient(b.left + b.width / 2, b.top + b.height / 2) },
     micro,
     setExpression(weights) { hold = weights; applyFace(currentName) },
+    setAutonomy(on) { director.enabled = on && !reduced },
     pulse,
     pick,
     setPaused(p) {
@@ -530,6 +668,9 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
     meta,
     dispose() {
       disposed = true
+      removeEventListener('scroll', onScroll)
+      removeEventListener('pointermove', onPointer)
+      removeEventListener('keydown', onKey)
       renderer.setAnimationLoop(null)
       mixer.stopAllAction()
       disposables.forEach(d => d.dispose())
