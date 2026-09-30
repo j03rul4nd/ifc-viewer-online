@@ -351,7 +351,7 @@ export function BimoState({ kind, title, body, detail, actions, size = 260, full
       <h2 id={`bimo-state-${kind}`} className="mt-2 text-[clamp(22px,3.4vw,34px)] font-semibold tracking-[-0.025em] text-[var(--text)] [text-wrap:balance]">
         {title ?? tx(`${kind}.title`)}
       </h2>
-      <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-[var(--text-dim)]">{body ?? tx(`${kind}.body`)}</p>
+      {body !== '' && <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-[var(--text-dim)]">{body ?? tx(`${kind}.body`)}</p>}
       {detail && (
         <code className="mt-4 max-w-full overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-[12px] font-mono text-[var(--text-dim)]">
           {detail}

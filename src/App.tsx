@@ -50,6 +50,7 @@ import MobileBottomNav from './components/MobileBottomNav'
 import OverlayHud from './components/OverlayHud'
 import Blog from './components/Blog'
 import PrivacyPolicy from './components/legal/PrivacyPolicy'
+import NotFoundView from './components/NotFoundView'
 import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
@@ -443,6 +444,15 @@ const BLOG_LANGS = 'es|de|fr|pt|it|ca|zh|ja|th'
 const BLOG_LANG_RE = new RegExp(`^\\/(${BLOG_LANGS})\\/blog`)
 const BLOG_SLUG_RE = new RegExp(`^(?:\\/(${BLOG_LANGS}))\\/blog\\/([^/]+)\\/?$`)
 
+// Paths that legitimately render the landing. Anything else that reaches the
+// SPA (Vercel rewrites unknown paths to index.html) is a 404.
+const LANDING_PATH_RE = new RegExp(`^/(?:index\\.html|(?:${BLOG_LANGS}|en)/?(?:index\\.html)?|(?:i|invite)/[^/]+/?)?$`)
+function isLandingPath(rel: string): boolean {
+  if (LANDING_PATH_RE.test(rel)) return true
+  // Account routes fall back to the landing when accounts are disabled.
+  return /^\/(?:sign-in|sign-up|account|dashboard|admin)(?:\/|$)/.test(rel)
+}
+
 function blogUrlBase(lang: string): string {
   const base = import.meta.env.BASE_URL ?? '/'
   const prefix = lang !== 'en' ? `${lang}/` : ''
@@ -567,6 +577,7 @@ export default function App() {
         if (rel === '/dashboard' || rel.startsWith('/dashboard/')) return 'dashboard'
         if (rel === '/admin' || rel.startsWith('/admin/')) return 'admin'
       }
+      if (!isLandingPath(rel)) return 'notFound'
     }
     return 'landing'
   })
@@ -694,6 +705,8 @@ export default function App() {
         setRoute('dashboard')
       } else if (isAccountEnabled() && (rel === '/admin' || rel.startsWith('/admin/'))) {
         setRoute('admin')
+      } else if (!isLandingPath(rel)) {
+        setRoute('notFound')
       } else {
         // "/" is ambiguous: it is the landing AND the (stateful, non-URL)
         // viewer. Never kick a user out of the viewer on a popstate — Clerk's
@@ -3635,6 +3648,23 @@ export default function App() {
               onNavigateToLanding={handleNavigateToLanding}
               landingTheme={landingTheme}
               onToggleLandingTheme={handleToggleLandingTheme}
+            />
+          </motion.div>
+        )}
+
+        {route === 'notFound' && (
+          <motion.div
+            key="notFound"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <NotFoundView
+              path={typeof window !== 'undefined' ? window.location.pathname : ''}
+              onNavigateHome={handleNavigateToLanding}
+              onNavigateToBlog={() => handleNavigateToBlog()}
+              theme={landingTheme}
             />
           </motion.div>
         )}

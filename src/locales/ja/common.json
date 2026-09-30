@@ -302,6 +302,10 @@
         "title": "準備完了！",
         "body": "すべて完了しました。このまま進めます。"
       }
+    },
+    "notFoundPage": {
+      "home": "ホームへ戻る",
+      "blog": "ブログを読む"
     }
   },
   "emailCapture": {

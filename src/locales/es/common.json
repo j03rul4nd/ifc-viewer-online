@@ -306,6 +306,10 @@
         "title": "¡Todo listo!",
         "body": "Todo ha ido bien. Ya puedes seguir."
       }
+    },
+    "notFoundPage": {
+      "home": "Ir al inicio",
+      "blog": "Leer el blog"
     }
   },
   "emailCapture": {

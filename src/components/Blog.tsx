@@ -33,6 +33,7 @@ import './blog/editorial.css'
 import { Bars, Callout, Decision, Steps, Takeaways, Term } from './blog/EditorialBlocks'
 import { BimoChecklist, BimoFeedback, BimoQuiz, BimoTip } from './mascot/BimoBlocks'
 import Bimo from './mascot/Bimo'
+import { BimoState } from './mascot/BimoStage'
 import {
   filterBlogPosts,
   getBlogHubCopy,
@@ -2285,10 +2286,14 @@ export default function Blog({ slug, lang = 'en', onNavigateToPost, onNavigateTo
     if (!post) {
       return (
         <BlogMessage lang={lang} theme={landingTheme}>
-          <p className="text-[14px] text-[var(--text-dim)]">{chrome.notFound}</p>
-          <button onClick={onNavigateToBlog} className="text-[13px] text-[var(--accent-2)] hover:underline">
-            ← {chrome.backToAll}
-          </button>
+          {/* Bimo looks for the post with the reader; the copy stays in the
+              article's language (editorial copy), not the UI's. */}
+          <BimoState
+            kind="notFound"
+            title={chrome.notFound}
+            body=""
+            actions={[{ label: `← ${chrome.backToAll}`, onClick: onNavigateToBlog, primary: true }]}
+          />
         </BlogMessage>
       )
     }

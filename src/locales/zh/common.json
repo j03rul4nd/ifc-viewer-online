@@ -302,6 +302,10 @@
         "title": "全部搞定！",
         "body": "一切顺利，可以继续了。"
       }
+    },
+    "notFoundPage": {
+      "home": "返回首页",
+      "blog": "阅读博客"
     }
   },
   "emailCapture": {

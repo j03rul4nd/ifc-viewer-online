@@ -306,6 +306,10 @@
         "title": "Alles fertig!",
         "body": "Alles hat geklappt. Sie können weitermachen."
       }
+    },
+    "notFoundPage": {
+      "home": "Zur Startseite",
+      "blog": "Zum Blog"
     }
   },
   "emailCapture": {

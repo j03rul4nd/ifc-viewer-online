@@ -230,7 +230,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'notFound'
 }): void {
   track('route_changed', props)
 }

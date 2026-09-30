@@ -306,6 +306,10 @@
         "title": "Tot a punt!",
         "body": "Tot ha anat bé. Ja pots continuar."
       }
+    },
+    "notFoundPage": {
+      "home": "Anar a l’inici",
+      "blog": "Llegir el blog"
     }
   },
   "emailCapture": {

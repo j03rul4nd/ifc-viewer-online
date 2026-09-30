@@ -306,6 +306,10 @@
         "title": "All set!",
         "body": "Everything went through. You’re good to go."
       }
+    },
+    "notFoundPage": {
+      "home": "Go to the home page",
+      "blog": "Read the blog"
     }
   },
   "emailCapture": {
