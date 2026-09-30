@@ -42,10 +42,26 @@
     "description": "与配套 IFC 对齐的有限扫描时间轴。可拖动、暂停、变速并跳到最新帧。",
     "showcaseSelector": "选择 IFC 与时序 LiDAR 示例",
     "showcases": {
-      "pavilion": { "name": "运维展亭", "short": "基础扫描回放", "description": "与 IFC 对齐的紧凑时间轴，包含移动巡检车。" },
-      "warehouse": { "name": "动态仓库", "short": "叉车 + 自动搬运车", "description": "与货架和结构对齐的高密度点云、移动叉车、自动搬运车与扫描轨迹。" },
-      "construction": { "name": "4D 施工进度", "short": "阶段 + 偏差区域", "description": "结构点按阶段出现；红色偏移柱点簇用于演示空间偏差复核。" },
-      "tunnel": { "name": "隧道移动巡检", "short": "巡检车 + 扫描扇面", "description": "密集管线、移动巡检车、扫描扇面和技术廊道墙面的局部状态点簇。" }
+      "pavilion": {
+        "name": "运维展亭",
+        "short": "基础扫描回放",
+        "description": "与 IFC 对齐的紧凑时间轴，包含移动巡检车。"
+      },
+      "warehouse": {
+        "name": "动态仓库",
+        "short": "叉车 + 自动搬运车",
+        "description": "与货架和结构对齐的高密度点云、移动叉车、自动搬运车与扫描轨迹。"
+      },
+      "construction": {
+        "name": "4D 施工进度",
+        "short": "阶段 + 偏差区域",
+        "description": "结构点按阶段出现；红色偏移柱点簇用于演示空间偏差复核。"
+      },
+      "tunnel": {
+        "name": "隧道移动巡检",
+        "short": "巡检车 + 扫描扇面",
+        "description": "密集管线、移动巡检车、扫描扇面和技术廊道墙面的局部状态点簇。"
+      }
     },
     "start": "加载 IFC 并开始回放",
     "loading": "正在准备 IFC 和回放…",
@@ -56,7 +72,11 @@
     "speed": "速度",
     "loop": "循环回放",
     "timeline": "LiDAR 回放时间轴",
-    "status": { "playing": "播放中", "paused": "已暂停", "ended": "最新帧" },
+    "status": {
+      "playing": "播放中",
+      "paused": "已暂停",
+      "ended": "最新帧"
+    },
     "sequence": "第 {{count}} 帧",
     "dropped": "跳过 {{count}} 帧",
     "truncated": "{{count}} 个传入点超过固定 GPU 容量。",
@@ -70,8 +90,15 @@
     "mcapFailed": "无法创建 MCAP 示例。",
     "transport": {
       "title": "模拟二进制通道",
-      "status": { "connected": "已连接", "degraded": "性能下降", "reconnecting": "重新连接中" },
-      "mode": { "stable": "稳定通道", "unstable": "注入故障" },
+      "status": {
+        "connected": "已连接",
+        "degraded": "性能下降",
+        "reconnecting": "重新连接中"
+      },
+      "mode": {
+        "stable": "稳定通道",
+        "unstable": "注入故障"
+      },
       "latency": "模拟 {{count}} ms",
       "buffer": "缓冲区 {{depth}}/{{capacity}}",
       "loss": "丢失 {{count}}",
@@ -243,5 +270,133 @@
     "pcdCompressed": "无法解码 PCD 的压缩数据体。文件可能被截断。",
     "pcdMalformed": "无法读取 PCD 文件头。",
     "alignFailed": "扫描已成功读取，但无法计算它的放置位置，因此未被放置。"
+  },
+  "tabs": {
+    "appearance": "外观",
+    "placement": "位置",
+    "view": "视图",
+    "samples": "示例",
+    "help": "修复"
+  },
+  "ui": {
+    "loaded": "已加载的扫描",
+    "add": "添加扫描",
+    "frame": "缩放到此扫描",
+    "startTitle": "打开点云",
+    "startHint": "拖入一个或多个文件：并行加载，可单独移除。",
+    "orSample": "…或试试示例",
+    "featured": "推荐",
+    "showAllSamples": "显示全部 {{count}} 个示例",
+    "showFewerSamples": "收起",
+    "replayTeaser": "LiDAR + IFC 动画演示",
+    "replayTeaserHint": "四个与模型对齐的模拟扫描时间线。",
+    "advanced": "高级",
+    "quality": "绘制预算",
+    "qualityHint": "每帧绘制的点数。越多越密，但需要更快的 GPU。",
+    "qualityLevel": {
+      "low": "轻量",
+      "medium": "标准",
+      "high": "高",
+      "ultra": "最高"
+    },
+    "compare": "扫描 ↔ 模型",
+    "compareScan": "扫描",
+    "compareModel": "模型",
+    "stats": "性能",
+    "modes": {
+      "point-cloud": "仅扫描",
+      "ifc": "仅模型",
+      "overlay": "叠加",
+      "xray": "X 光",
+      "scan-vs-bim": "扫描 vs BIM"
+    },
+    "drawn": "已绘制 / 已加载"
+  },
+  "presets": {
+    "title": "快速样式",
+    "balanced": "均衡",
+    "detail": "清晰",
+    "presentation": "演示",
+    "performance": "流畅",
+    "custom": "自定义",
+    "reset": "重置外观"
+  },
+  "diag": {
+    "title": "检查",
+    "allGood": "此扫描看起来一切正常。",
+    "issueCount": "待检查：{{count}}",
+    "issue": {
+      "failed": "无法打开此文件。",
+      "partial": "部分扫描无法读取——当前显示不完整。",
+      "truncated": "内存只能容纳文件的一部分，扫描已被截断。",
+      "upAxisGuessed": "文件未说明哪个轴朝上。如果看起来是躺倒的，请切换。",
+      "colorUnavailable": "文件没有当前着色模式的数据，因此显示为单色。",
+      "hidden": "此扫描已隐藏。",
+      "faint": "不透明度太低，几乎看不见扫描。",
+      "farFromModel": "扫描离模型很远。",
+      "manualPlacement": "没有信息将此扫描与模型关联——已将其居中放在模型上。请检查位置。",
+      "crsUnknown": "此版本不认识扫描的坐标系，已忽略其地理参考。",
+      "tooLarge": "扫描比预期大得多——文件可能以毫米、厘米或英尺为单位。",
+      "tooSmall": "扫描比预期小得多——可能以千米为单位或被缩放过。",
+      "heavy": "全细节下点数很多——更轻的设置能让浏览更流畅。"
+    }
+  },
+  "fix": {
+    "flipUpAxis": "切换竖直轴",
+    "bestColor": "最佳着色",
+    "showAll": "显示",
+    "opacityFull": "完全不透明",
+    "fitCloud": "缩放到扫描",
+    "fitBoth": "同时显示",
+    "realign": "重新对齐",
+    "openPlacement": "调整位置",
+    "unitMm": "单位是毫米",
+    "unitCm": "单位是厘米",
+    "unitFt": "单位是英尺",
+    "scaleUp": "放大 ×1000",
+    "performance": "降低负载",
+    "remove": "移除",
+    "applied": "已修复：{{what}}"
+  },
+  "help": {
+    "title": "你看到了什么？",
+    "hint": "选择症状——每个按钮应用常见修复，均可在外观或位置中撤销。",
+    "sideways": {
+      "label": "躺倒或侧放",
+      "hint": "Y 朝上与 Z 朝上导出"
+    },
+    "invisible": {
+      "label": "看不到",
+      "hint": "显示并对准相机"
+    },
+    "wrongSize": {
+      "label": "太大或太小",
+      "hint": "选择文件的单位"
+    },
+    "misplaced": {
+      "label": "与模型不重合",
+      "hint": "重新对齐并打开位置"
+    },
+    "colours": {
+      "label": "全黑、全白或颜色奇怪",
+      "hint": "切换到文件支持的模式"
+    },
+    "sparse": {
+      "label": "很多空洞 / 太稀",
+      "hint": "更大的圆点"
+    },
+    "blobby": {
+      "label": "模糊、点太大",
+      "hint": "更小更清晰的点"
+    },
+    "slow": {
+      "label": "很卡",
+      "hint": "移动时绘制更少的点"
+    },
+    "broken": {
+      "label": "无法加载",
+      "hint": "常见原因"
+    },
+    "brokenTips": "支持 LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV。E57 和扫描仪工程文件（RCP、FLS、LSPROJ）需先导出为 LAS 或 PLY。部分 LAZ 使用浏览器无法解码的 LASzip 变体——请另存为 LAS 或 COPC。超大文件请先裁剪或抽稀。"
   }
 }

@@ -42,10 +42,26 @@
     "description": "Una línia de temps d’escaneig alineada amb el seu IFC. Desplaça’t, pausa, canvia la velocitat i salta a l’últim fotograma.",
     "showcaseSelector": "Tria un exemple d’IFC i LiDAR temporal",
     "showcases": {
-      "pavilion": { "name": "Pavelló d’operacions", "short": "Replay d’escaneig base", "description": "Una línia temporal compacta alineada amb el seu IFC i un carro d’inspecció en moviment." },
-      "warehouse": { "name": "Magatzem en moviment", "short": "Carretó + vehicle autònom", "description": "Retorns densos de magatzem amb carretó, vehicle autònom i traces alineades amb prestatgeries i estructura." },
-      "construction": { "name": "Progrés d’obra 4D", "short": "Fases + zona desviada", "description": "L’estructura apareix per fases mentre s’eleva un panell; un pilar desplaçat en vermell mostra la revisió de desviacions." },
-      "tunnel": { "name": "Inspecció mòbil de túnel", "short": "Carro + ventall LiDAR", "description": "Serveis densos, carro mòbil, ventall d’escaneig i una zona localitzada al mur del corredor tècnic." }
+      "pavilion": {
+        "name": "Pavelló d’operacions",
+        "short": "Replay d’escaneig base",
+        "description": "Una línia temporal compacta alineada amb el seu IFC i un carro d’inspecció en moviment."
+      },
+      "warehouse": {
+        "name": "Magatzem en moviment",
+        "short": "Carretó + vehicle autònom",
+        "description": "Retorns densos de magatzem amb carretó, vehicle autònom i traces alineades amb prestatgeries i estructura."
+      },
+      "construction": {
+        "name": "Progrés d’obra 4D",
+        "short": "Fases + zona desviada",
+        "description": "L’estructura apareix per fases mentre s’eleva un panell; un pilar desplaçat en vermell mostra la revisió de desviacions."
+      },
+      "tunnel": {
+        "name": "Inspecció mòbil de túnel",
+        "short": "Carro + ventall LiDAR",
+        "description": "Serveis densos, carro mòbil, ventall d’escaneig i una zona localitzada al mur del corredor tècnic."
+      }
     },
     "start": "Carrega IFC + inicia replay",
     "loading": "Preparant IFC + replay…",
@@ -56,7 +72,11 @@
     "speed": "Velocitat",
     "loop": "Repeteix el replay",
     "timeline": "Línia de temps del replay LiDAR",
-    "status": { "playing": "REPRODUINT", "paused": "PAUSAT", "ended": "ÚLTIM" },
+    "status": {
+      "playing": "REPRODUINT",
+      "paused": "PAUSAT",
+      "ended": "ÚLTIM"
+    },
     "sequence": "fotograma {{count}}",
     "dropped": "{{count}} omesos",
     "truncated": "{{count}} punts entrants han superat la capacitat GPU fixa.",
@@ -70,8 +90,15 @@
     "mcapFailed": "No s’ha pogut crear l’exemple MCAP.",
     "transport": {
       "title": "Canal binari simulat",
-      "status": { "connected": "CONNECTAT", "degraded": "DEGRADAT", "reconnecting": "RECONNECTANT" },
-      "mode": { "stable": "Canal estable", "unstable": "Injecta errors" },
+      "status": {
+        "connected": "CONNECTAT",
+        "degraded": "DEGRADAT",
+        "reconnecting": "RECONNECTANT"
+      },
+      "mode": {
+        "stable": "Canal estable",
+        "unstable": "Injecta errors"
+      },
       "latency": "{{count}} ms simulats",
       "buffer": "memòria {{depth}}/{{capacity}}",
       "loss": "{{count}} perduts",
@@ -243,5 +270,133 @@
     "pcdCompressed": "No s'ha pogut descodificar el cos comprimit del PCD. Pot ser que el fitxer estigui truncat.",
     "pcdMalformed": "No s'ha pogut llegir la capçalera PCD.",
     "alignFailed": "L'escaneig s'ha llegit bé, però no s'ha pogut calcular la seva col·locació. Ha quedat sense situar."
+  },
+  "tabs": {
+    "appearance": "Aspecte",
+    "placement": "Posició",
+    "view": "Vista",
+    "samples": "Exemples",
+    "help": "Arreglar"
+  },
+  "ui": {
+    "loaded": "Núvols carregats",
+    "add": "Afegeix núvol",
+    "frame": "Enquadra aquest núvol",
+    "startTitle": "Obre un núvol de punts",
+    "startHint": "Deixa anar un o diversos fitxers: es carreguen en paral·lel i pots treure'ls un a un.",
+    "orSample": "…o prova un exemple",
+    "featured": "Recomanat",
+    "showAllSamples": "Mostra els {{count}} exemples",
+    "showFewerSamples": "Mostra'n menys",
+    "replayTeaser": "Demos animades LiDAR + IFC",
+    "replayTeaserHint": "Quatre línies de temps d'escaneig simulades, alineades amb els seus models.",
+    "advanced": "Avançat",
+    "quality": "Pressupost de dibuix",
+    "qualityHint": "Punts dibuixats per fotograma. Més es veu més dens, però cal una GPU més ràpida.",
+    "qualityLevel": {
+      "low": "Lleuger",
+      "medium": "Normal",
+      "high": "Alt",
+      "ultra": "Màx."
+    },
+    "compare": "Núvol ↔ model",
+    "compareScan": "Núvol",
+    "compareModel": "Model",
+    "stats": "Rendiment",
+    "modes": {
+      "point-cloud": "Només núvol",
+      "ifc": "Només model",
+      "overlay": "Superposat",
+      "xray": "Raigs X",
+      "scan-vs-bim": "Núvol vs BIM"
+    },
+    "drawn": "Dibuixats / carregats"
+  },
+  "presets": {
+    "title": "Estil ràpid",
+    "balanced": "Equilibrat",
+    "detail": "Nítid",
+    "presentation": "Presentació",
+    "performance": "Ràpid",
+    "custom": "Personalitzat",
+    "reset": "Restableix l'aspecte"
+  },
+  "diag": {
+    "title": "Revisió",
+    "allGood": "Tot sembla correcte en aquest núvol.",
+    "issueCount": "Per revisar: {{count}}",
+    "issue": {
+      "failed": "No s'ha pogut obrir aquest fitxer.",
+      "partial": "Part del núvol no s'ha pogut llegir: el que veus és incomplet.",
+      "truncated": "Només cap a la memòria una part del fitxer, així que el núvol s'ha retallat.",
+      "upAxisGuessed": "El fitxer no indica quin eix és amunt. Si sembla estirat, gira'l.",
+      "colorUnavailable": "El fitxer no té dades per al mode de color actual i es dibuixa pla.",
+      "hidden": "Aquest núvol està ocult.",
+      "faint": "L'opacitat és tan baixa que el núvol gairebé no es veu.",
+      "farFromModel": "El núvol és molt lluny del model.",
+      "manualPlacement": "Res no relaciona aquest núvol amb el model: s'ha centrat sobre seu. Revisa la posició.",
+      "crsUnknown": "Aquest visor no coneix el sistema de coordenades del núvol, així que se n'ha ignorat la georeferència.",
+      "tooLarge": "El núvol és molt més gran del que s'esperava: probablement és en mil·límetres, centímetres o peus.",
+      "tooSmall": "El núvol és molt més petit del que s'esperava: pot ser en quilòmetres o escalat.",
+      "heavy": "Molts punts al màxim detall: un ajust més lleuger mantindrà la navegació fluida."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Gira l'eix vertical",
+    "bestColor": "Usa el millor color",
+    "showAll": "Mostra'l",
+    "opacityFull": "Opacitat total",
+    "fitCloud": "Enquadra el núvol",
+    "fitBoth": "Mostra tots dos",
+    "realign": "Recalcula l'alineació",
+    "openPlacement": "Ajusta la posició",
+    "unitMm": "És en mm",
+    "unitCm": "És en cm",
+    "unitFt": "És en peus",
+    "scaleUp": "Escala ×1000",
+    "performance": "Alleugereix",
+    "remove": "Treu",
+    "applied": "Arreglat: {{what}}"
+  },
+  "help": {
+    "title": "Què veus?",
+    "hint": "Tria el símptoma: cada botó aplica l'arranjament habitual, i tot es pot desfer des d'Aspecte o Posició.",
+    "sideways": {
+      "label": "Està estirat o de costat",
+      "hint": "Exportacions Y-amunt vs Z-amunt"
+    },
+    "invisible": {
+      "label": "No el veig",
+      "hint": "El mostra i enquadra la càmera"
+    },
+    "wrongSize": {
+      "label": "Enorme o minúscul",
+      "hint": "Tria la unitat del fitxer"
+    },
+    "misplaced": {
+      "label": "No quadra amb el model",
+      "hint": "Realinea i obre la posició"
+    },
+    "colours": {
+      "label": "Negre, blanc o colors estranys",
+      "hint": "Canvia a un mode que el fitxer admeti"
+    },
+    "sparse": {
+      "label": "Ple de forats / massa fi",
+      "hint": "Punts més grans i rodons"
+    },
+    "blobby": {
+      "label": "Borrós, punts massa grossos",
+      "hint": "Punts més petits i nítids"
+    },
+    "slow": {
+      "label": "Va lent",
+      "hint": "Dibuixa menys punts mentre et mous"
+    },
+    "broken": {
+      "label": "No carrega",
+      "hint": "Causes habituals"
+    },
+    "brokenTips": "Aquí es llegeixen LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 i els projectes d'escàner (RCP, FLS, LSPROJ) s'han d'exportar abans a LAS o PLY. Alguns LAZ fan servir una variant de LASzip que el navegador no pot descomprimir: desa'ls com a LAS o COPC. Fitxers molt grans: retalla'ls o delma'ls abans."
   }
 }

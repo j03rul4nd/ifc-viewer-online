@@ -42,10 +42,26 @@
     "description": "Eine Scan-Zeitleiste, ausgerichtet am zugehörigen IFC. Spulen, pausieren, Geschwindigkeit ändern und zum letzten Frame springen.",
     "showcaseSelector": "IFC- und zeitliches LiDAR-Beispiel wählen",
     "showcases": {
-      "pavilion": { "name": "Betriebspavillon", "short": "Basis-Scan-Replay", "description": "Kompakte, am IFC ausgerichtete Zeitleiste mit einem fahrenden Inspektionswagen." },
-      "warehouse": { "name": "Bewegtes Lager", "short": "Gabelstapler + autonomer Wagen", "description": "Dichte Lagerpunkte mit Gabelstapler, autonomem Wagen und Scan-Spuren entlang von Regalen und Tragwerk." },
-      "construction": { "name": "4D-Baufortschritt", "short": "Phasen + Abweichung", "description": "Tragwerkspunkte erscheinen phasenweise; ein rot versetzter Stützenbereich zeigt die Abweichungsprüfung." },
-      "tunnel": { "name": "Mobile Tunnelinspektion", "short": "Wagen + Scan-Fächer", "description": "Dichte Leitungen, fahrender Inspektionswagen, Scan-Fächer und lokalisierter Wandbereich im Versorgungstunnel." }
+      "pavilion": {
+        "name": "Betriebspavillon",
+        "short": "Basis-Scan-Replay",
+        "description": "Kompakte, am IFC ausgerichtete Zeitleiste mit einem fahrenden Inspektionswagen."
+      },
+      "warehouse": {
+        "name": "Bewegtes Lager",
+        "short": "Gabelstapler + autonomer Wagen",
+        "description": "Dichte Lagerpunkte mit Gabelstapler, autonomem Wagen und Scan-Spuren entlang von Regalen und Tragwerk."
+      },
+      "construction": {
+        "name": "4D-Baufortschritt",
+        "short": "Phasen + Abweichung",
+        "description": "Tragwerkspunkte erscheinen phasenweise; ein rot versetzter Stützenbereich zeigt die Abweichungsprüfung."
+      },
+      "tunnel": {
+        "name": "Mobile Tunnelinspektion",
+        "short": "Wagen + Scan-Fächer",
+        "description": "Dichte Leitungen, fahrender Inspektionswagen, Scan-Fächer und lokalisierter Wandbereich im Versorgungstunnel."
+      }
     },
     "start": "IFC laden + Replay starten",
     "loading": "IFC + Replay werden vorbereitet…",
@@ -56,7 +72,11 @@
     "speed": "Geschwindigkeit",
     "loop": "Replay wiederholen",
     "timeline": "LiDAR-Replay-Zeitleiste",
-    "status": { "playing": "LÄUFT", "paused": "PAUSIERT", "ended": "LETZTES" },
+    "status": {
+      "playing": "LÄUFT",
+      "paused": "PAUSIERT",
+      "ended": "LETZTES"
+    },
     "sequence": "Frame {{count}}",
     "dropped": "{{count}} übersprungen",
     "truncated": "{{count}} eingehende Punkte überschritten die feste GPU-Kapazität.",
@@ -70,8 +90,15 @@
     "mcapFailed": "Das MCAP-Beispiel konnte nicht erstellt werden.",
     "transport": {
       "title": "Simulierter Binärkanal",
-      "status": { "connected": "VERBUNDEN", "degraded": "BEEINTRÄCHTIGT", "reconnecting": "VERBINDET NEU" },
-      "mode": { "stable": "Stabiler Kanal", "unstable": "Fehler einspeisen" },
+      "status": {
+        "connected": "VERBUNDEN",
+        "degraded": "BEEINTRÄCHTIGT",
+        "reconnecting": "VERBINDET NEU"
+      },
+      "mode": {
+        "stable": "Stabiler Kanal",
+        "unstable": "Fehler einspeisen"
+      },
       "latency": "{{count}} ms simuliert",
       "buffer": "Puffer {{depth}}/{{capacity}}",
       "loss": "{{count}} verloren",
@@ -243,5 +270,133 @@
     "pcdCompressed": "Der komprimierte PCD-Inhalt konnte nicht dekodiert werden. Die Datei ist möglicherweise abgeschnitten.",
     "pcdMalformed": "Der PCD-Header konnte nicht gelesen werden.",
     "alignFailed": "Der Scan wurde gelesen, aber seine Platzierung ließ sich nicht bestimmen. Er bleibt unplatziert."
+  },
+  "tabs": {
+    "appearance": "Darstellung",
+    "placement": "Position",
+    "view": "Ansicht",
+    "samples": "Beispiele",
+    "help": "Beheben"
+  },
+  "ui": {
+    "loaded": "Geladene Scans",
+    "add": "Scan hinzufügen",
+    "frame": "Auf diesen Scan zoomen",
+    "startTitle": "Punktwolke öffnen",
+    "startHint": "Eine oder mehrere Dateien ablegen – sie laden parallel und lassen sich einzeln entfernen.",
+    "orSample": "…oder ein Beispiel testen",
+    "featured": "Empfohlen",
+    "showAllSamples": "Alle {{count}} Beispiele",
+    "showFewerSamples": "Weniger anzeigen",
+    "replayTeaser": "Animierte LiDAR- + IFC-Demos",
+    "replayTeaserHint": "Vier simulierte Scan-Zeitachsen, ausgerichtet an ihren Modellen.",
+    "advanced": "Erweitert",
+    "quality": "Zeichenbudget",
+    "qualityHint": "Punkte pro Frame. Mehr wirkt dichter, braucht aber eine schnellere GPU.",
+    "qualityLevel": {
+      "low": "Leicht",
+      "medium": "Normal",
+      "high": "Hoch",
+      "ultra": "Max."
+    },
+    "compare": "Scan ↔ Modell",
+    "compareScan": "Scan",
+    "compareModel": "Modell",
+    "stats": "Leistung",
+    "modes": {
+      "point-cloud": "Nur Scan",
+      "ifc": "Nur Modell",
+      "overlay": "Überlagert",
+      "xray": "Röntgen",
+      "scan-vs-bim": "Scan vs. BIM"
+    },
+    "drawn": "Gezeichnet / geladen"
+  },
+  "presets": {
+    "title": "Schnellstil",
+    "balanced": "Ausgewogen",
+    "detail": "Scharf",
+    "presentation": "Präsentation",
+    "performance": "Schnell",
+    "custom": "Eigene",
+    "reset": "Darstellung zurücksetzen"
+  },
+  "diag": {
+    "title": "Prüfung",
+    "allGood": "Mit diesem Scan scheint alles in Ordnung.",
+    "issueCount": "Zu prüfen: {{count}}",
+    "issue": {
+      "failed": "Diese Datei konnte nicht geöffnet werden.",
+      "partial": "Ein Teil des Scans war nicht lesbar – die Ansicht ist unvollständig.",
+      "truncated": "Nur ein Teil der Datei passt in den Speicher, der Scan wurde gekürzt.",
+      "upAxisGuessed": "Die Datei gibt die Hochachse nicht an. Liegt der Scan auf der Seite, drehen Sie ihn.",
+      "colorUnavailable": "Die Datei hat keine Daten für den aktuellen Farbmodus und wird flach gezeichnet.",
+      "hidden": "Dieser Scan ist ausgeblendet.",
+      "faint": "Die Deckkraft ist so gering, dass der Scan kaum sichtbar ist.",
+      "farFromModel": "Der Scan liegt weit vom Modell entfernt.",
+      "manualPlacement": "Nichts verbindet diesen Scan mit dem Modell – er wurde darauf zentriert. Position prüfen.",
+      "crsUnknown": "Das Koordinatensystem des Scans ist hier unbekannt, seine Georeferenz wurde ignoriert.",
+      "tooLarge": "Der Scan ist viel größer als erwartet – vermutlich in Millimetern, Zentimetern oder Fuß.",
+      "tooSmall": "Der Scan ist viel kleiner als erwartet – eventuell in Kilometern oder skaliert.",
+      "heavy": "Sehr viele Punkte bei voller Detailstufe – leichtere Einstellungen halten die Navigation flüssig."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Hochachse drehen",
+    "bestColor": "Beste Farbe",
+    "showAll": "Einblenden",
+    "opacityFull": "Volle Deckkraft",
+    "fitCloud": "Auf Scan zoomen",
+    "fitBoth": "Beides zeigen",
+    "realign": "Neu ausrichten",
+    "openPlacement": "Position anpassen",
+    "unitMm": "Ist in mm",
+    "unitCm": "Ist in cm",
+    "unitFt": "Ist in Fuß",
+    "scaleUp": "×1000 skalieren",
+    "performance": "Leichter",
+    "remove": "Entfernen",
+    "applied": "Behoben: {{what}}"
+  },
+  "help": {
+    "title": "Was sehen Sie?",
+    "hint": "Symptom wählen – jede Schaltfläche wendet die übliche Lösung an; alles lässt sich unter Darstellung oder Position rückgängig machen.",
+    "sideways": {
+      "label": "Liegt auf der Seite",
+      "hint": "Y-oben- vs. Z-oben-Exporte"
+    },
+    "invisible": {
+      "label": "Ich sehe ihn nicht",
+      "hint": "Blendet ein und richtet die Kamera aus"
+    },
+    "wrongSize": {
+      "label": "Riesig oder winzig",
+      "hint": "Einheit der Datei wählen"
+    },
+    "misplaced": {
+      "label": "Passt nicht zum Modell",
+      "hint": "Richtet neu aus, dann Position öffnen"
+    },
+    "colours": {
+      "label": "Schwarz, weiß oder seltsame Farben",
+      "hint": "Wechselt zu einem unterstützten Modus"
+    },
+    "sparse": {
+      "label": "Voller Löcher / zu dünn",
+      "hint": "Größere, runde Punkte"
+    },
+    "blobby": {
+      "label": "Unscharf, Punkte zu groß",
+      "hint": "Kleinere, schärfere Punkte"
+    },
+    "slow": {
+      "label": "Es ruckelt",
+      "hint": "Zeichnet beim Bewegen weniger Punkte"
+    },
+    "broken": {
+      "label": "Lädt nicht",
+      "hint": "Häufige Ursachen"
+    },
+    "brokenTips": "Gelesen werden LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 und Scannerprojekte (RCP, FLS, LSPROJ) zuerst als LAS oder PLY exportieren. Manche LAZ nutzen eine LASzip-Variante, die Browser nicht dekodieren – als LAS oder COPC neu speichern. Sehr große Dateien vorher zuschneiden oder ausdünnen."
   }
 }

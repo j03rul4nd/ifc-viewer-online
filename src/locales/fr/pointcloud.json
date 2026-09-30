@@ -42,10 +42,26 @@
     "description": "Une chronologie de scan alignée avec son IFC. Naviguez, mettez en pause, changez la vitesse et passez à la dernière image.",
     "showcaseSelector": "Choisir un exemple IFC et LiDAR temporel",
     "showcases": {
-      "pavilion": { "name": "Pavillon des opérations", "short": "Replay de scan initial", "description": "Une chronologie compacte alignée avec son IFC et un chariot d’inspection en mouvement." },
-      "warehouse": { "name": "Entrepôt en mouvement", "short": "Chariot + robot autonome", "description": "Des retours denses avec chariot élévateur, robot autonome et traces alignés sur les racks et la structure." },
-      "construction": { "name": "Avancement 4D du chantier", "short": "Phases + zone décalée", "description": "La structure apparaît par phases; une colonne décalée en rouge illustre le contrôle des écarts." },
-      "tunnel": { "name": "Inspection mobile du tunnel", "short": "Chariot + éventail LiDAR", "description": "Réseaux denses, chariot mobile, éventail de scan et zone murale localisée dans une galerie technique." }
+      "pavilion": {
+        "name": "Pavillon des opérations",
+        "short": "Replay de scan initial",
+        "description": "Une chronologie compacte alignée avec son IFC et un chariot d’inspection en mouvement."
+      },
+      "warehouse": {
+        "name": "Entrepôt en mouvement",
+        "short": "Chariot + robot autonome",
+        "description": "Des retours denses avec chariot élévateur, robot autonome et traces alignés sur les racks et la structure."
+      },
+      "construction": {
+        "name": "Avancement 4D du chantier",
+        "short": "Phases + zone décalée",
+        "description": "La structure apparaît par phases; une colonne décalée en rouge illustre le contrôle des écarts."
+      },
+      "tunnel": {
+        "name": "Inspection mobile du tunnel",
+        "short": "Chariot + éventail LiDAR",
+        "description": "Réseaux denses, chariot mobile, éventail de scan et zone murale localisée dans une galerie technique."
+      }
     },
     "start": "Charger l’IFC + démarrer",
     "loading": "Préparation IFC + replay…",
@@ -56,7 +72,11 @@
     "speed": "Vitesse",
     "loop": "Lire en boucle",
     "timeline": "Chronologie du replay LiDAR",
-    "status": { "playing": "LECTURE", "paused": "PAUSE", "ended": "DERNIÈRE" },
+    "status": {
+      "playing": "LECTURE",
+      "paused": "PAUSE",
+      "ended": "DERNIÈRE"
+    },
     "sequence": "image {{count}}",
     "dropped": "{{count}} ignorées",
     "truncated": "{{count}} points entrants dépassaient la capacité GPU fixe.",
@@ -70,8 +90,15 @@
     "mcapFailed": "L’exemple MCAP n’a pas pu être créé.",
     "transport": {
       "title": "Canal binaire simulé",
-      "status": { "connected": "CONNECTÉ", "degraded": "DÉGRADÉ", "reconnecting": "RECONNEXION" },
-      "mode": { "stable": "Canal stable", "unstable": "Injecter des pannes" },
+      "status": {
+        "connected": "CONNECTÉ",
+        "degraded": "DÉGRADÉ",
+        "reconnecting": "RECONNEXION"
+      },
+      "mode": {
+        "stable": "Canal stable",
+        "unstable": "Injecter des pannes"
+      },
       "latency": "{{count}} ms simulées",
       "buffer": "tampon {{depth}}/{{capacity}}",
       "loss": "{{count}} perdues",
@@ -243,5 +270,133 @@
     "pcdCompressed": "Le corps compressé du PCD n'a pas pu être décodé. Le fichier est peut-être tronqué.",
     "pcdMalformed": "L'en-tête PCD n'a pas pu être lu.",
     "alignFailed": "Le relevé a bien été lu, mais son placement n'a pas pu être calculé. Il reste non placé."
+  },
+  "tabs": {
+    "appearance": "Apparence",
+    "placement": "Position",
+    "view": "Vue",
+    "samples": "Exemples",
+    "help": "Corriger"
+  },
+  "ui": {
+    "loaded": "Nuages chargés",
+    "add": "Ajouter un nuage",
+    "frame": "Cadrer ce nuage",
+    "startTitle": "Ouvrir un nuage de points",
+    "startHint": "Déposez un ou plusieurs fichiers : ils se chargent en parallèle et se retirent un par un.",
+    "orSample": "…ou essayez un exemple",
+    "featured": "Recommandé",
+    "showAllSamples": "Voir les {{count}} exemples",
+    "showFewerSamples": "Voir moins",
+    "replayTeaser": "Démos animées LiDAR + IFC",
+    "replayTeaserHint": "Quatre chronologies de scan simulées, alignées sur leurs modèles.",
+    "advanced": "Avancé",
+    "quality": "Budget d'affichage",
+    "qualityHint": "Points dessinés par image. Plus, c'est plus dense, mais il faut un GPU plus rapide.",
+    "qualityLevel": {
+      "low": "Léger",
+      "medium": "Normal",
+      "high": "Élevé",
+      "ultra": "Max."
+    },
+    "compare": "Nuage ↔ modèle",
+    "compareScan": "Nuage",
+    "compareModel": "Modèle",
+    "stats": "Performances",
+    "modes": {
+      "point-cloud": "Nuage seul",
+      "ifc": "Modèle seul",
+      "overlay": "Superposé",
+      "xray": "Rayons X",
+      "scan-vs-bim": "Nuage vs BIM"
+    },
+    "drawn": "Dessinés / chargés"
+  },
+  "presets": {
+    "title": "Style rapide",
+    "balanced": "Équilibré",
+    "detail": "Net",
+    "presentation": "Présentation",
+    "performance": "Rapide",
+    "custom": "Personnalisé",
+    "reset": "Réinitialiser l'apparence"
+  },
+  "diag": {
+    "title": "Contrôle",
+    "allGood": "Tout semble correct pour ce nuage.",
+    "issueCount": "À vérifier : {{count}}",
+    "issue": {
+      "failed": "Ce fichier n'a pas pu être ouvert.",
+      "partial": "Une partie du nuage n'a pas pu être lue : l'affichage est incomplet.",
+      "truncated": "Seule une partie du fichier tient en mémoire, le nuage a été tronqué.",
+      "upAxisGuessed": "Le fichier n'indique pas l'axe vertical. S'il semble couché, basculez-le.",
+      "colorUnavailable": "Le fichier n'a pas de données pour ce mode de couleur, il s'affiche uni.",
+      "hidden": "Ce nuage est masqué.",
+      "faint": "L'opacité est si faible que le nuage est à peine visible.",
+      "farFromModel": "Le nuage est très loin du modèle.",
+      "manualPlacement": "Rien ne relie ce nuage au modèle : il a été centré dessus. Vérifiez la position.",
+      "crsUnknown": "Le système de coordonnées du nuage est inconnu ici, son géoréférencement a été ignoré.",
+      "tooLarge": "Le nuage est bien plus grand que prévu : probablement en millimètres, centimètres ou pieds.",
+      "tooSmall": "Le nuage est bien plus petit que prévu : peut-être en kilomètres ou mis à l'échelle.",
+      "heavy": "Beaucoup de points au détail maximal : des réglages plus légers garderont la navigation fluide."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Basculer l'axe",
+    "bestColor": "Meilleure couleur",
+    "showAll": "Afficher",
+    "opacityFull": "Opacité totale",
+    "fitCloud": "Cadrer le nuage",
+    "fitBoth": "Voir les deux",
+    "realign": "Recalculer l'alignement",
+    "openPlacement": "Ajuster la position",
+    "unitMm": "C'est en mm",
+    "unitCm": "C'est en cm",
+    "unitFt": "C'est en pieds",
+    "scaleUp": "Échelle ×1000",
+    "performance": "Alléger",
+    "remove": "Retirer",
+    "applied": "Corrigé : {{what}}"
+  },
+  "help": {
+    "title": "Que voyez-vous ?",
+    "hint": "Choisissez le symptôme : chaque bouton applique la correction habituelle, réversible depuis Apparence ou Position.",
+    "sideways": {
+      "label": "Il est couché sur le côté",
+      "hint": "Exports Y-haut vs Z-haut"
+    },
+    "invisible": {
+      "label": "Je ne le vois pas",
+      "hint": "L'affiche et cadre la caméra"
+    },
+    "wrongSize": {
+      "label": "Énorme ou minuscule",
+      "hint": "Choisissez l'unité du fichier"
+    },
+    "misplaced": {
+      "label": "Pas sur le modèle",
+      "hint": "Réaligne puis ouvre la position"
+    },
+    "colours": {
+      "label": "Noir, blanc ou couleurs étranges",
+      "hint": "Passe à un mode pris en charge"
+    },
+    "sparse": {
+      "label": "Plein de trous / trop fin",
+      "hint": "Points plus gros et ronds"
+    },
+    "blobby": {
+      "label": "Flou, points trop gros",
+      "hint": "Points plus petits et nets"
+    },
+    "slow": {
+      "label": "C'est lent",
+      "hint": "Dessine moins de points en mouvement"
+    },
+    "broken": {
+      "label": "Ne se charge pas",
+      "hint": "Causes fréquentes"
+    },
+    "brokenTips": "Formats lus : LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 et projets scanner (RCP, FLS, LSPROJ) doivent d'abord être exportés en LAS ou PLY. Certains LAZ utilisent une variante LASzip que les navigateurs ne décodent pas : réenregistrez-les en LAS ou COPC. Fichiers très lourds : recadrez-les ou décimez-les avant."
   }
 }

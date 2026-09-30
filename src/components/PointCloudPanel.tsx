@@ -41,6 +41,11 @@ import {
 import {
   getTemporalLidarShowcase, TEMPORAL_LIDAR_SHOWCASES, type TemporalShowcaseId,
 } from '../demo-models/realtime-lidar-showcases'
+import {
+  diagnoseCloud, bestColorMode, colorModeAvailable, matchPreset,
+  APPEARANCE_PRESETS, UNIT_FIX_SCALE,
+  type BoxCS, type FixId, type Issue, type AppearancePresetId,
+} from '../lib/pointcloud/pc-diagnostics'
 import type { ViewerAPI } from '../lib/viewer'
 import type { PointCloudSystemAPI, CloudStats, PickedPoint } from '../lib/pointcloud/point-cloud-system'
 import type {
@@ -55,6 +60,21 @@ interface PointCloudPanelProps {
 const log = createLogger('PointCloudPanel')
 
 const COLOR_MODES: PointColorMode[] = ['rgb', 'intensity', 'elevation', 'classification', 'flat']
+type PanelTab = 'appearance' | 'placement' | 'view' | 'samples' | 'help'
+const PANEL_TABS: PanelTab[] = ['appearance', 'placement', 'view', 'samples', 'help']
+type HelpSymptom = 'sideways' | 'invisible' | 'wrongSize' | 'misplaced' | 'colours' | 'sparse' | 'blobby' | 'slow' | 'broken'
+const HELP_SYMPTOMS: HelpSymptom[] = ['sideways', 'invisible', 'wrongSize', 'misplaced', 'colours', 'sparse', 'blobby', 'slow', 'broken']
+const PRESET_IDS: AppearancePresetId[] = ['balanced', 'detail', 'presentation', 'performance']
+/** Draw-budget steps behind the Advanced quality control. */
+const QUALITY_LEVELS = [
+  { id: 'low', budget: 1_500_000 },
+  { id: 'medium', budget: 4_000_000 },
+  { id: 'high', budget: 8_000_000 },
+  { id: 'ultra', budget: 14_000_000 },
+] as const
+/** Samples shown before "show all" — the featured ones first. */
+const SAMPLES_COLLAPSED = 4
+const SEVERITY_TINT: Record<Issue['severity'], string> = { error: '#E5484D', warn: '#F5A623', info: '#5E9ED6' }
 type DemoViewMode = 'point-cloud' | 'ifc' | 'overlay' | 'xray' | 'scan-vs-bim' | 'comparison'
 
 /** Confidence → badge colour. A guess must never look like a measurement. */
@@ -115,12 +135,19 @@ export default function PointCloudPanel({
   const activeModelId = useSceneStore((s) => s.activeModelId)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const tablistRef = useRef<HTMLDivElement>(null)
   const [stats, setStats] = useState<CloudStats | null>(null)
   // The resident-point budget as the runner's ledger sees it (whole-file scans
   // and the reservations of the ones still loading) — why a scan waits or
   // comes out truncated, shown before it happens rather than after.
   const [budget, setBudget] = useState<{ resident: number; reserved: number; max: number } | null>(null)
   const [showTransform, setShowTransform] = useState(false)
+  const [boxes, setBoxes] = useState<{ key: string; cloudBox: BoxCS | null; modelBox: BoxCS | null } | null>(null)
+  const [tab, setTab] = useState<PanelTab>('appearance')
+  const [showAllSamples, setShowAllSamples] = useState(false)
+  const [replayOpen, setReplayOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState<HelpSymptom | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [demoBusy, setDemoBusy] = useState<string | null>(null)
   const [demoProgress, setDemoProgress] = useState(0)
@@ -168,20 +195,61 @@ export default function PointCloudPanel({
     })
   }, [store.display, store.renderBudget, store.clouds.length, getSystem])
 
-  // ── Poll the render stats while anything is loaded ──────────────────────────
+  // ── Poll the render stats while the panel is open ──────────────────────────
+  // Only while it is OPEN: the panel stays mounted when closed (it owns the SDK
+  // bridge), and a once-a-second re-render of every section nobody can see was
+  // pure waste. Each read only sets state when a value actually moved, so an
+  // idle scene does not re-render at all. The same tick gathers the boxes the
+  // check-up compares (scan size, distance to the model).
   useEffect(() => {
-    if (store.clouds.length === 0) { setStats(null); setBudget(null); return }
+    if (store.clouds.length === 0) { setStats(null); setBudget(null); setBoxes(null); return }
+    if (!store.panelOpen) return
     let cancelled = false
     const read = (): void => {
+      if (typeof document !== 'undefined' && document.hidden) return
       void getSystem()?.then((system) => {
-        if (!cancelled) setStats(system.getStats())
+        if (cancelled) return
+        const next = system.getStats()
+        setStats((prev) => prev && prev.pointCount === next.pointCount && prev.drawnCount === next.drawnCount &&
+          prev.chunkCount === next.chunkCount && prev.gpuBytes === next.gpuBytes ? prev : next)
+        const id = usePointCloudStore.getState().activeCloudId
+        const b = id ? system.getBounds(id) : null
+        const viewer = viewerApiRef.current
+        const modelId = useSceneStore.getState().activeModelId
+        const cloudBox: BoxCS | null = b ? {
+          center: { x: (b.min.x + b.max.x) / 2, y: (b.min.y + b.max.y) / 2, z: (b.min.z + b.max.z) / 2 },
+          size: { x: b.max.x - b.min.x, y: b.max.y - b.min.y, z: b.max.z - b.min.z },
+        } : null
+        const modelBox = viewer && useSceneStore.getState().models.length > 0
+          ? (modelId ? viewer.getModelBounds(modelId) : viewer.getModelBounds()) : null
+        const key = JSON.stringify([cloudBox, modelBox], (_k, v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v)
+        setBoxes((prev) => prev?.key === key ? prev : { key, cloudBox, modelBox })
       })
-      setBudget(budgetUsage())
+      const nextBudget = budgetUsage()
+      setBudget((prev) => prev && prev.resident === nextBudget.resident && prev.reserved === nextBudget.reserved &&
+        prev.max === nextBudget.max ? prev : nextBudget)
     }
     read()
     const iv = setInterval(read, 1000)
     return () => { cancelled = true; clearInterval(iv) }
-  }, [store.clouds.length, getSystem])
+  }, [store.clouds.length, store.panelOpen, store.activeCloudId, getSystem, viewerApiRef])
+
+  // ── Colour fallback ─────────────────────────────────────────────────────────
+  // Display settings are shared and persisted, so a scan with no RGB used to
+  // open in "Scan colour" and draw as one flat blob — the single most common
+  // "my point cloud looks broken" report. When a scan lands, switch to the most
+  // informative mode it actually carries. Once per scan: after that the user's
+  // choice stands.
+  const colourCheckedRef = useRef(new Set<string>())
+  useEffect(() => {
+    const cloud = store.clouds.find((c) => c.id === store.activeCloudId)
+    if (!cloud || cloud.status !== 'ready' || colourCheckedRef.current.has(cloud.id)) return
+    colourCheckedRef.current.add(cloud.id)
+    const mode = usePointCloudStore.getState().display.colorMode
+    if (!colorModeAvailable(mode, cloud.attributes)) {
+      usePointCloudStore.getState().setDisplay({ colorMode: bestColorMode(cloud.attributes) })
+    }
+  }, [store.clouds, store.activeCloudId])
 
   // ── Loading ─────────────────────────────────────────────────────────────────
   // Every scan is a job in the loading queue, one per file — the same path a
@@ -794,8 +862,412 @@ export default function PointCloudPanel({
 
   const attributes = activeCloud?.attributes
   const alignment = activeCloud?.alignment ?? null
-  const needsTransform = activeCloud?.sourceKind !== 'temporal-replay' &&
+  const isReplayCloud = activeCloud?.sourceKind === 'temporal-replay'
+  const needsTransform = !isReplayCloud &&
     (alignment?.rung === 'manual' || alignment?.rung === 'local')
+  const hasClouds = store.clouds.length > 0
+  const activePreset = matchPreset(store.display, store.renderBudget)
+
+  const issues: Issue[] = activeCloud
+    ? diagnoseCloud({
+        cloud: activeCloud,
+        display: store.display,
+        cloudBox: boxes?.cloudBox ?? null,
+        modelBox: sceneModels.length > 0 ? boxes?.modelBox ?? null : null,
+        totalPoints: stats?.pointCount ?? store.clouds.reduce((n, c) => n + c.pointCount, 0),
+        density: store.display.density,
+      })
+    : []
+
+  // Featured samples first, then the rest in catalogue order.
+  const orderedSamples = [
+    ...DEMO_POINT_CLOUDS.filter((d) => d.featured),
+    ...DEMO_POINT_CLOUDS.filter((d) => !d.featured),
+  ]
+  const visibleSamples = showAllSamples ? orderedSamples : orderedSamples.slice(0, SAMPLES_COLLAPSED)
+
+  const applyPreset = (id: AppearancePresetId): void => {
+    const preset = APPEARANCE_PRESETS[id]
+    setDisplay(preset.display)
+    usePointCloudStore.getState().setRenderBudget(preset.renderBudget)
+  }
+
+  /**
+   * Switch tab and, when the list above has been scrolled past, bring the new
+   * tab's first group into view — otherwise it opens mid-way down, under the
+   * sticky tab bar.
+   */
+  const selectTab = (id: PanelTab): void => {
+    setTab(id)
+    const scroller = scrollRef.current, bar = tablistRef.current
+    if (!scroller || !bar) return
+    // Measured against the scroller, not offsetTop: the offset parent is the
+    // positioned panel shell, which counts the header too.
+    const natural = scroller.scrollTop + bar.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+    if (scroller.scrollTop > natural) scroller.scrollTop = natural
+  }
+
+  const fitActive = (): void => {
+    void getSystem()?.then((s) => s.frame(usePointCloudStore.getState().activeCloudId ?? undefined))
+  }
+
+  /** What each fix DOES. The diagnostics only name them. */
+  const applyFix = (fix: FixId, cloud: PointCloudEntry | null = activeCloud): void => {
+    if (cloud && cloud.id !== usePointCloudStore.getState().activeCloudId) {
+      usePointCloudStore.getState().setActiveCloud(cloud.id)
+    }
+    switch (fix) {
+      case 'flipUpAxis':
+        if (cloud?.frame) handleUpAxis(cloud.frame.upAxis === 'z' ? 'y' : 'z')
+        break
+      case 'bestColor':
+        setDisplay({ colorMode: bestColorMode(cloud?.attributes) })
+        break
+      case 'showAll':
+        for (const c of usePointCloudStore.getState().clouds) if (!c.visible) handleVisible(c, true)
+        if (usePointCloudStore.getState().display.opacity < 0.2) setDisplay({ opacity: 1 })
+        fitActive()
+        break
+      case 'opacityFull':
+        setDisplay({ opacity: 1 })
+        break
+      case 'fitCloud':
+        fitActive()
+        break
+      case 'fitBoth':
+        void getSystem()?.then((s) => s.frameWithModel())
+        break
+      case 'realign':
+        void handleRealign()
+        break
+      case 'openPlacement':
+        selectTab('placement')
+        setShowTransform(true)
+        return
+      case 'unitMm': case 'unitCm': case 'unitFt': case 'scaleUp':
+        handleOffset({ scaleMul: UNIT_FIX_SCALE[fix] })
+        // Framing after the new scale reaches the GPU, not before.
+        setTimeout(fitActive, 50)
+        break
+      case 'performance':
+        applyPreset('performance')
+        break
+      case 'remove':
+        if (cloud) handleRemove(cloud)
+        return
+    }
+    toast(t('fix.applied', { what: t(`fix.${fix}`) }), 'success')
+  }
+
+  /** Symptom → the usual fix. Each is reversible from Appearance/Placement. */
+  const applySymptom = (symptom: HelpSymptom): void => {
+    const d = usePointCloudStore.getState().display
+    switch (symptom) {
+      case 'sideways': applyFix('flipUpAxis'); return
+      case 'invisible': applyFix('showAll'); return
+      case 'misplaced':
+        if (sceneModels.length > 0) void handleRealign()
+        applyFix('openPlacement')
+        return
+      case 'slow': applyFix('performance'); return
+      case 'colours': {
+        const available = COLOR_MODES.filter((m) => m !== 'flat' && colorModeAvailable(m, attributes))
+        const next = available[(available.indexOf(d.colorMode) + 1) % available.length] ?? 'elevation'
+        setDisplay({ colorMode: next })
+        toast(t('fix.applied', { what: t(`display.mode.${next}`) }), 'success')
+        return
+      }
+      case 'sparse':
+        setDisplay({ pointSize: Math.min(10, Math.round((d.pointSize + 1.5) * 10) / 10), round: true })
+        toast(t('fix.applied', { what: t('help.sparse.label') }), 'success')
+        return
+      case 'blobby':
+        setDisplay({ pointSize: Math.max(0.5, Math.round((d.pointSize - 1) * 10) / 10), attenuate: false })
+        toast(t('fix.applied', { what: t('help.blobby.label') }), 'success')
+        return
+      case 'wrongSize': case 'broken':
+        setHelpOpen((open) => open === symptom ? null : symptom)
+    }
+  }
+
+  // ── Temporal replay block (start screen teaser + Samples tab) ──────────────
+  const replayBlock = (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2" role="list" aria-label={tDynamic('replay.showcaseSelector')}>
+        {TEMPORAL_LIDAR_SHOWCASES.map((showcase) => {
+          const selected = activeShowcase.id === showcase.id
+          return (
+            <button
+              key={showcase.id}
+              type="button"
+              role="listitem"
+              data-testid={`lidar-showcase-${showcase.id}`}
+              aria-pressed={selected}
+              disabled={replayBusy}
+              onClick={() => {
+                if (replayState) void handleStartReplay(showcase.id)
+                else setSelectedReplayId(showcase.id)
+              }}
+              className={`rounded-[10px] border px-2.5 py-2 text-left transition-colors disabled:opacity-50 ${
+                selected
+                  ? 'border-[var(--accent)] bg-[var(--surface-2)]'
+                  : 'border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)]'
+              }`}
+            >
+              <div className="text-[12px] font-semibold leading-tight text-[var(--text)]">
+                {tDynamic(`replay.showcases.${showcase.copyKey}.name`)}
+              </div>
+              <div className="mt-0.5 text-[11px] leading-snug text-[var(--text-faint)]">
+                {tDynamic(`replay.showcases.${showcase.copyKey}.short`)}
+              </div>
+              <div className="mt-1 font-mono text-[10px] text-[var(--text-faint)]">
+                {formatCount(showcase.approximatePoints)} pts · {showcase.frameRate} FPS
+              </div>
+            </button>
+          )
+        })}
+      </div>
+      <div
+        data-testid="lidar-replay-demo"
+        className="rounded-[12px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 flex flex-col gap-2"
+      >
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge tint="#F5A623">{t('replay.simulatedBadge')}</Badge>
+          <DemoChip>IFC + LiDAR</DemoChip>
+          <DemoChip>{activeShowcase.frameRate} FPS</DemoChip>
+          {(companionLoaded || replayState) && <Badge tint="#30A46C">{t('replay.ifcLoaded')}</Badge>}
+        </div>
+        <div className="text-[13px] font-semibold text-[var(--text)]">
+          {tDynamic(`replay.showcases.${activeShowcase.copyKey}.name`)}
+        </div>
+        <div className="text-[12px] leading-relaxed text-[var(--text-dim)]">
+          {tDynamic(`replay.showcases.${activeShowcase.copyKey}.description`)}
+        </div>
+
+        {!replayState ? (
+          <PrimaryButton testId="lidar-replay-start" disabled={replayBusy} onClick={() => { void handleStartReplay() }}>
+            {replayBusy ? t('replay.loading') : t('replay.start')}
+          </PrimaryButton>
+        ) : (
+          <div className="flex flex-col gap-2" aria-live="polite">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Badge tint={replayState.status === 'playing' ? '#30A46C' : '#F5A623'}>
+                  {t(`replay.status.${replayState.status}`)}
+                </Badge>
+                <span className="text-[11px] font-mono tabular-nums text-[var(--text-faint)]">
+                  {formatReplayTime(replayState.positionMs)} / {formatReplayTime(replayState.durationMs)}
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-[var(--text-faint)]">
+                {formatCount(replayPointCount)} pts
+              </span>
+            </div>
+
+            <input
+              type="range"
+              data-testid="lidar-replay-timeline"
+              aria-label={t('replay.timeline')}
+              min={0}
+              max={replayState.durationMs}
+              step={50}
+              value={replayState.positionMs}
+              onChange={(event) => handleReplaySeek(Number(event.target.value))}
+              className="pc-range w-full"
+            />
+
+            <div className="flex gap-1.5">
+              <SmallButton onClick={handleReplayToggle}>
+                {replayState.status === 'playing' ? t('replay.pause') : t('replay.play')}
+              </SmallButton>
+              <SmallButton onClick={handleReplayLatest}>{t('replay.latest')}</SmallButton>
+              <SmallButton onClick={() => { void handleStartReplay() }}>{t('replay.restart')}</SmallButton>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[12px] text-[var(--text-dim)]">{t('replay.speed')}</span>
+              <Segmented
+                label={t('replay.speed')}
+                value={String(replayState.speed)}
+                options={[0.5, 1, 2].map((speed) => ({ value: String(speed), label: `${speed}×` }))}
+                onChange={(v) => handleReplaySpeed(Number(v))}
+              />
+            </div>
+
+            <Switch label={t('replay.loop')} checked={replayState.loop} onChange={handleReplayLoop} />
+
+            {transportState && (
+              <Disclosure title={t('replay.transport.title')} badge={
+                <Badge tint={
+                  transportState.status === 'connected' ? '#30A46C'
+                    : transportState.status === 'reconnecting' ? '#E5484D' : '#F5A623'
+                }>
+                  {t(`replay.transport.status.${transportState.status}`)}
+                </Badge>
+              }>
+                <div data-testid="lidar-transport-telemetry" className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(['stable', 'unstable'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        data-testid={`lidar-transport-${mode}`}
+                        onClick={() => handleTransportMode(mode)}
+                        aria-pressed={transportMode === mode}
+                        className={`rounded-[8px] px-2 py-1.5 text-[11.5px] transition-colors ${
+                          transportMode === mode
+                            ? 'bg-[var(--accent)] text-white'
+                            : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-2)]'
+                        }`}
+                      >
+                        {t(`replay.transport.mode.${mode}`)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-mono text-[var(--text-faint)]">
+                    <span>{t('replay.transport.latency', { count: transportState.simulatedLatencyMs })}</span>
+                    <span className="text-right">
+                      {t('replay.transport.buffer', {
+                        depth: transportState.buffer.depth,
+                        capacity: transportState.buffer.capacity,
+                      })}
+                    </span>
+                    <span>{t('replay.transport.loss', { count: transportState.linkDropped })}</span>
+                    <span className="text-right">{t('replay.transport.reordered', { count: transportState.buffer.reordered })}</span>
+                    <span>{t('replay.transport.invalid', { count: transportState.buffer.invalid })}</span>
+                    <span className="text-right">{t('replay.transport.reconnects', { count: transportState.reconnects })}</span>
+                    <span>{t('replay.sequence', { count: replayState.sequence })}</span>
+                    <span className="text-right">{t('replay.dropped', { count: replayState.droppedFrames })}</span>
+                  </div>
+                  <Hint>{t('replay.transport.hint')}</Hint>
+                </div>
+              </Disclosure>
+            )}
+            {replayTruncated > 0 && <Note tone="warn">{t('replay.truncated', { count: replayTruncated })}</Note>}
+          </div>
+        )}
+
+        <Hint>{t('replay.disclaimer')}</Hint>
+        <button
+          type="button"
+          data-testid="lidar-replay-download-mcap"
+          disabled={mcapBusy}
+          title={t('replay.mcapHint')}
+          onClick={() => { void handleDownloadReplayMcap() }}
+          className="w-full rounded-[8px] border border-[var(--border-strong)] px-3 py-1.5 text-[11.5px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface)] hover:text-[var(--text)] disabled:opacity-50 transition-colors"
+        >
+          {mcapBusy ? t('replay.mcapBuilding') : t('replay.mcapDownload')}
+        </button>
+        {mcapError && <Note tone="warn">{t('replay.mcapFailed')}</Note>}
+        {replayError && <Note tone="warn">{t('replay.failed')}</Note>}
+      </div>
+    </div>
+  )
+
+  // ── Sample scans ───────────────────────────────────────────────────────────
+  const samplesBlock = (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-2">
+        {visibleSamples.map((demo) => {
+          const busy = demoBusy === demo.id
+          return (
+            <button
+              key={demo.id}
+              type="button"
+              data-testid={`pc-sample-${demo.id}`}
+              disabled={demoBusy !== null}
+              onClick={() => { void handleDemo(demo) }}
+              title={tDynamic(`demos.items.${demo.descriptionKey}`)}
+              className={[
+                'group w-full text-left rounded-[12px] border px-3 py-2.5 transition-colors',
+                busy
+                  ? 'border-[var(--accent)] bg-[var(--surface-2)]'
+                  : 'border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-40',
+              ].join(' ')}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-medium text-[var(--text)] truncate flex-1">{demo.name}</span>
+                {demo.featured && <Badge tint="#5E9ED6">{t('ui.featured')}</Badge>}
+                <span className="text-[11px] font-mono text-[var(--text-faint)] shrink-0">
+                  {formatDemoSize(demo.sizeBytes)}
+                </span>
+              </div>
+              <div className="text-[11.5px] text-[var(--text-dim)] leading-snug mt-1 line-clamp-2">
+                {tDynamic(`demos.items.${demo.descriptionKey}`)}
+              </div>
+              <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                <DemoChip>{formatCount(demo.pointCount)}</DemoChip>
+                <DemoChip>{demo.format}</DemoChip>
+                {demo.hasColor && <DemoChip>{t('demos.chip.colour')}</DemoChip>}
+                {demo.hasClassification && <DemoChip>{t('demos.chip.classification')}</DemoChip>}
+                {demo.unit && <DemoChip>{demo.unit}</DemoChip>}
+                <DemoChip>
+                  {demo.epsg ? t('demos.chip.crs', { code: demo.epsg }) : t('demos.chip.noCrs')}
+                </DemoChip>
+              </div>
+              {busy && (
+                <div className="mt-2 h-[3px] rounded-full bg-[var(--border)] overflow-hidden">
+                  <div className="h-full bg-[var(--accent)] transition-[width]"
+                    style={{ width: `${Math.round(demoProgress * 100)}%` }} />
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      {orderedSamples.length > SAMPLES_COLLAPSED && (
+        <button
+          type="button"
+          onClick={() => setShowAllSamples((v) => !v)}
+          className="self-center text-[12px] font-medium text-[var(--accent)] hover:underline underline-offset-2 py-1"
+        >
+          {showAllSamples ? t('ui.showFewerSamples') : t('ui.showAllSamples', { count: orderedSamples.length })}
+        </button>
+      )}
+      {/* One link per distinct source. Crediting them all to the first one
+          silently mis-attributed every sample that came from somewhere else —
+          and one of these corpora is CC BY, where the attribution is the
+          licence term, not a courtesy. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="text-[11px] text-[var(--text-faint)]">{t('demos.source')}</span>
+        {DEMO_SOURCES.map((source) => (
+          <a
+            key={source.sourceUrl}
+            href={source.sourceUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text)] underline underline-offset-2"
+          >
+            {source.sourceLabel}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept={acceptAttribute()}
+      multiple
+      className="hidden"
+      onChange={(e) => {
+        if (e.target.files?.length) void handleFiles(e.target.files)
+        e.target.value = ''
+      }}
+    />
+  )
+
+  const dropHandlers = {
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setDragOver(true) },
+    onDragLeave: () => setDragOver(false),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault()
+      setDragOver(false)
+      if (e.dataTransfer.files.length) void handleFiles(e.dataTransfer.files)
+    },
+  }
 
   return (
     <ViewportPanel
@@ -806,700 +1278,583 @@ export default function PointCloudPanel({
       // A sheet, not a dock: loading a scan, reading why it landed where it did
       // and nudging it are real work, not a three-button palette.
       mobile="sheet"
-      widthPx={300}
+      widthPx={380}
       anchor="top"
     >
+      <style>{PANEL_CSS}</style>
       {/* flex-1 + min-h-0: the only flex child of the shell, so it takes the
           available height and lets the scroll region below actually shrink —
           in the desktop card and inside the mobile sheet alike. */}
-      <div className="flex flex-col flex-1 min-h-0" data-testid="point-cloud-panel">
+      <div className="pc-panel flex flex-col flex-1 min-h-0" data-testid="point-cloud-panel" {...(hasClouds ? dropHandlers : {})}>
+        {fileInput}
 
-          {/* Header — pinned. */}
-          <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
-            <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">
-              {t('title')}
-            </div>
+        {/* Header — pinned. */}
+        <div className="px-4 pt-3 pb-2.5 border-b border-[var(--border)] flex items-center gap-2 shrink-0">
+          <div className="text-[14px] font-semibold text-[var(--text)] flex-1">{t('title')}</div>
+          {hasClouds && (
             <button
-              onClick={() => store.setPanelOpen(false)}
-              className="text-[var(--text-faint)] hover:text-[var(--text)] transition-colors"
-              title={t('close')}
-              aria-label={t('close')}
-            >
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M2 2l10 10M12 2L2 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* ── Load — pinned too, so it never scrolls out of reach ────────── */}
-          <div className="p-2 flex flex-col gap-1.5 shrink-0">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={acceptAttribute()}
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.length) void handleFiles(e.target.files)
-                e.target.value = ''
-              }}
-            />
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault()
-                setDragOver(false)
-                if (e.dataTransfer.files.length) void handleFiles(e.dataTransfer.files)
-              }}
+              type="button"
               onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M7 2v10M2 7h10" /></svg>
+              {t('ui.add')}
+            </button>
+          )}
+          <IconButton label={t('close')} onClick={() => store.setPanelOpen(false)}>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <path d="M2 2l10 10M12 2L2 12" />
+            </svg>
+          </IconButton>
+        </div>
+
+        {dragOver && hasClouds && (
+          <div className="mx-4 mt-3 rounded-[12px] border-2 border-dashed border-[var(--accent)] bg-[var(--surface-2)] py-4 text-center text-[13px] font-medium text-[var(--text)] shrink-0">
+            {t('load.another')}
+          </div>
+        )}
+
+        {!hasClouds ? (
+          /* ── Start screen: open a file, or try a sample ───────────────── */
+          <div key="start" className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-5">
+            <div
+              {...dropHandlers}
+              role="button"
+              tabIndex={0}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click() } }}
               className={[
-                'cursor-pointer rounded-[8px] border border-dashed px-2.5 py-3 text-center transition-colors',
+                'cursor-pointer rounded-[14px] border-2 border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]',
                 dragOver
                   ? 'border-[var(--accent)] bg-[var(--surface-2)]'
-                  : 'border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
+                  : 'border-[var(--border-strong)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)]',
               ].join(' ')}
             >
-              <div className="text-[12px] font-medium text-[var(--text)]">
-                {store.clouds.length === 0 ? t('load.drop') : t('load.another')}
-              </div>
-              <div className="text-[10px] font-mono text-[var(--text-faint)] mt-0.5">{t('load.formats')}</div>
-              <div className="text-[10px] text-[var(--text-faint)] mt-1">{t('load.hint')}</div>
-            </div>
-
-            {sceneModels.length === 0 && store.clouds.length > 0 && (
-              <Note>{t('status.noModel')}</Note>
-            )}
-          </div>
-
-        {/* ── Everything below scrolls ─────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-
-          {/* ── Temporal LiDAR exhibition replay ──────────────────────────── */}
-          <Section title={t('replay.title')}>
-            <div className="grid grid-cols-2 gap-1.5 mb-1.5" role="list" aria-label={tDynamic('replay.showcaseSelector')}>
-              {TEMPORAL_LIDAR_SHOWCASES.map((showcase) => {
-                const selected = activeShowcase.id === showcase.id
-                return (
-                  <button
-                    key={showcase.id}
-                    type="button"
-                    role="listitem"
-                    data-testid={`lidar-showcase-${showcase.id}`}
-                    aria-pressed={selected}
-                    disabled={replayBusy}
-                    onClick={() => {
-                      if (replayState) void handleStartReplay(showcase.id)
-                      else setSelectedReplayId(showcase.id)
-                    }}
-                    className={`rounded-[8px] border px-2 py-1.5 text-left transition-colors disabled:opacity-50 ${
-                      selected
-                        ? 'border-[var(--accent)] bg-[var(--surface-2)]'
-                        : 'border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-1)]'
-                    }`}
-                  >
-                    <div className="text-[10px] font-semibold leading-tight text-[var(--text)]">
-                      {tDynamic(`replay.showcases.${showcase.copyKey}.name`)}
-                    </div>
-                    <div className="mt-0.5 text-[8.5px] leading-tight text-[var(--text-faint)]">
-                      {tDynamic(`replay.showcases.${showcase.copyKey}.short`)}
-                    </div>
-                    <div className="mt-1 font-mono text-[8px] text-[var(--text-faint)]">
-                      {formatCount(showcase.approximatePoints)} pts · {showcase.frameRate} FPS
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-            <div
-              data-testid="lidar-replay-demo"
-              className="rounded-[9px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-2 flex flex-col gap-1.5"
-            >
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge tint="#F5A623">{t('replay.simulatedBadge')}</Badge>
-                <DemoChip>IFC + LiDAR</DemoChip>
-                <DemoChip>{activeShowcase.frameRate} FPS</DemoChip>
-                {(companionLoaded || replayState) && <Badge tint="#30A46C">{t('replay.ifcLoaded')}</Badge>}
-              </div>
-              <div className="text-[11px] font-medium text-[var(--text)]">
-                {tDynamic(`replay.showcases.${activeShowcase.copyKey}.name`)}
-              </div>
-              <div className="text-[10px] leading-snug text-[var(--text-dim)]">
-                {tDynamic(`replay.showcases.${activeShowcase.copyKey}.description`)}
-              </div>
-
-              {!replayState ? (
-                <button
-                  type="button"
-                  data-testid="lidar-replay-start"
-                  disabled={replayBusy}
-                  onClick={() => { void handleStartReplay() }}
-                  className="mt-0.5 w-full px-2 py-2 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 transition"
-                >
-                  {replayBusy ? t('replay.loading') : t('replay.start')}
-                </button>
-              ) : (
-                <div className="flex flex-col gap-1.5" aria-live="polite">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Badge tint={replayState.status === 'playing' ? '#30A46C' : '#F5A623'}>
-                        {t(`replay.status.${replayState.status}`)}
-                      </Badge>
-                      <span className="text-[9.5px] font-mono tabular-nums text-[var(--text-faint)]">
-                        {formatReplayTime(replayState.positionMs)} / {formatReplayTime(replayState.durationMs)}
-                      </span>
-                    </div>
-                    <span className="text-[9.5px] font-mono text-[var(--text-faint)]">
-                      {formatCount(replayPointCount)} pts
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    data-testid="lidar-replay-timeline"
-                    aria-label={t('replay.timeline')}
-                    min={0}
-                    max={replayState.durationMs}
-                    step={50}
-                    value={replayState.positionMs}
-                    onChange={(event) => handleReplaySeek(Number(event.target.value))}
-                    className="w-full accent-[var(--accent)]"
-                  />
-
-                  <div className="flex gap-1">
-                    <SmallButton onClick={handleReplayToggle}>
-                      {replayState.status === 'playing' ? t('replay.pause') : t('replay.play')}
-                    </SmallButton>
-                    <SmallButton onClick={handleReplayLatest}>{t('replay.latest')}</SmallButton>
-                    <SmallButton onClick={() => { void handleStartReplay() }}>{t('replay.restart')}</SmallButton>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-[var(--text-faint)]">{t('replay.speed')}</span>
-                    <div className="flex gap-1">
-                      {[0.5, 1, 2].map((speed) => (
-                        <button
-                          key={speed}
-                          type="button"
-                          onClick={() => handleReplaySpeed(speed)}
-                          aria-pressed={replayState.speed === speed}
-                          className={`px-1.5 py-0.5 rounded-[5px] text-[9.5px] font-mono transition-colors ${
-                            replayState.speed === speed
-                              ? 'bg-[var(--accent)] text-white'
-                              : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-1)]'
-                          }`}
-                        >
-                          {speed}×
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleReplayLoop}
-                    aria-pressed={replayState.loop}
-                    className="flex items-center justify-between text-[10px] text-[var(--text-dim)]"
-                  >
-                    <span>{t('replay.loop')}</span>
-                    <span className={replayState.loop ? 'text-[#30A46C]' : 'text-[var(--text-faint)]'}>
-                      {replayState.loop ? '●' : '○'}
-                    </span>
-                  </button>
-
-                  {transportState && (
-                    <div
-                      data-testid="lidar-transport-telemetry"
-                      className="rounded-[7px] border border-[var(--border)] bg-[var(--surface-1)] p-1.5 flex flex-col gap-1"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[9.5px] font-semibold text-[var(--text-dim)]">
-                          {t('replay.transport.title')}
-                        </span>
-                        <Badge tint={
-                          transportState.status === 'connected' ? '#30A46C'
-                            : transportState.status === 'reconnecting' ? '#E5484D' : '#F5A623'
-                        }>
-                          {t(`replay.transport.status.${transportState.status}`)}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-1">
-                        {(['stable', 'unstable'] as const).map((mode) => (
-                          <button
-                            key={mode}
-                            type="button"
-                            data-testid={`lidar-transport-${mode}`}
-                            onClick={() => handleTransportMode(mode)}
-                            aria-pressed={transportMode === mode}
-                            className={`rounded-[5px] px-1.5 py-1 text-[9.5px] transition-colors ${
-                              transportMode === mode
-                                ? 'bg-[var(--accent)] text-white'
-                                : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-2)]'
-                            }`}
-                          >
-                            {t(`replay.transport.mode.${mode}`)}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-mono text-[var(--text-faint)]">
-                        <span>{t('replay.transport.latency', { count: transportState.simulatedLatencyMs })}</span>
-                        <span className="text-right">
-                          {t('replay.transport.buffer', {
-                            depth: transportState.buffer.depth,
-                            capacity: transportState.buffer.capacity,
-                          })}
-                        </span>
-                        <span>{t('replay.transport.loss', { count: transportState.linkDropped })}</span>
-                        <span className="text-right">
-                          {t('replay.transport.reordered', { count: transportState.buffer.reordered })}
-                        </span>
-                        <span>{t('replay.transport.invalid', { count: transportState.buffer.invalid })}</span>
-                        <span className="text-right">
-                          {t('replay.transport.reconnects', { count: transportState.reconnects })}
-                        </span>
-                      </div>
-                      <div className="text-[8.5px] leading-snug text-[var(--text-faint)]">
-                        {t('replay.transport.hint')}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-1 text-[9.5px] font-mono text-[var(--text-faint)]">
-                    <span>{t('replay.sequence', { count: replayState.sequence })}</span>
-                    <span className="text-right">{t('replay.dropped', { count: replayState.droppedFrames })}</span>
-                  </div>
-                  {replayTruncated > 0 && <Note tone="warn">{t('replay.truncated', { count: replayTruncated })}</Note>}
-                </div>
-              )}
-
-              <div className="text-[9.5px] leading-snug text-[var(--text-faint)]">{t('replay.disclaimer')}</div>
-              <button
-                type="button"
-                data-testid="lidar-replay-download-mcap"
-                disabled={mcapBusy}
-                onClick={() => { void handleDownloadReplayMcap() }}
-                className="w-full rounded-[6px] border border-[var(--border-strong)] px-2 py-1 text-[9.5px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface-1)] disabled:opacity-50 transition-colors"
-              >
-                {mcapBusy ? t('replay.mcapBuilding') : t('replay.mcapDownload')}
-              </button>
-              <div className="text-[8.5px] leading-snug text-[var(--text-faint)]">{t('replay.mcapHint')}</div>
-              {mcapError && <Note tone="warn">{t('replay.mcapFailed')}</Note>}
-              {replayError && <Note tone="warn">{t('replay.failed')}</Note>}
-            </div>
-          </Section>
-
-          {/* ── Sample scans ───────────────────────────────────────────────── */}
-          {store.clouds.length === 0 && (
-            <Section title={t('demos.title')}>
-              <div className="text-[10px] text-[var(--text-faint)] leading-snug mb-0.5">{t('demos.hint')}</div>
-              {DEMO_POINT_CLOUDS.map((demo) => {
-                const busy = demoBusy === demo.id
-                return (
-                  <button
-                    key={demo.id}
-                    disabled={demoBusy !== null}
-                    onClick={() => { void handleDemo(demo) }}
-                    className={[
-                      'w-full text-left rounded-[8px] border px-2 py-1.5 transition-colors',
-                      busy
-                        ? 'border-[var(--accent)] bg-[var(--surface-2)]'
-                        : 'border-[var(--border)] hover:bg-[var(--surface-2)] disabled:opacity-40',
-                    ].join(' ')}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11.5px] text-[var(--text)] truncate flex-1">{demo.name}</span>
-                      <span className="text-[9.5px] font-mono text-[var(--text-faint)] shrink-0">
-                        {formatDemoSize(demo.sizeBytes)}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-[var(--text-dim)] leading-snug mt-0.5">
-                      {tDynamic(`demos.items.${demo.descriptionKey}`)}
-                    </div>
-                    <div className="flex items-center gap-1 flex-wrap mt-1">
-                      <DemoChip>{formatCount(demo.pointCount)}</DemoChip>
-                      <DemoChip>{demo.format}</DemoChip>
-                      {demo.hasColor && <DemoChip>{t('demos.chip.colour')}</DemoChip>}
-                      {demo.hasClassification && <DemoChip>{t('demos.chip.classification')}</DemoChip>}
-                      {demo.unit && <DemoChip>{demo.unit}</DemoChip>}
-                      <DemoChip>
-                        {demo.epsg ? t('demos.chip.crs', { code: demo.epsg }) : t('demos.chip.noCrs')}
-                      </DemoChip>
-                    </div>
-                    {busy && (
-                      <div className="mt-1 h-[2px] rounded-full bg-[var(--border)] overflow-hidden">
-                        <div className="h-full bg-[var(--accent)] transition-[width]"
-                          style={{ width: `${Math.round(demoProgress * 100)}%` }} />
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-              {/* One link per distinct source. Crediting them all to the first
-                  one silently mis-attributed every sample that came from
-                  somewhere else — and one of these corpora is CC BY, where the
-                  attribution is the licence term, not a courtesy. */}
-              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
-                <span className="text-[10px] text-[var(--text-faint)]">{t('demos.source')}</span>
-                {DEMO_SOURCES.map((source) => (
-                  <a
-                    key={source.sourceUrl}
-                    href={source.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] underline underline-offset-2"
-                  >
-                    {source.sourceLabel}
-                  </a>
+              <svg className="mx-auto mb-2 text-[var(--accent)]" width="34" height="34" viewBox="0 0 32 32" fill="currentColor" aria-hidden>
+                {[[8, 20], [12, 14], [16, 18], [20, 11], [24, 16], [10, 24], [15, 25], [21, 22], [26, 23], [18, 7]].map(([x, y], i) => (
+                  <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 1.8 : 1.3} opacity={0.55 + (i % 4) * 0.15} />
                 ))}
-              </div>
-            </Section>
-          )}
+              </svg>
+              <div className="text-[15px] font-semibold text-[var(--text)]">{t('ui.startTitle')}</div>
+              <div className="text-[12.5px] text-[var(--text-dim)] mt-1">{t('load.drop')}</div>
+              <div className="text-[11px] font-mono text-[var(--text-faint)] mt-2">{t('load.formats')}</div>
+              <div className="text-[11.5px] text-[var(--text-faint)] mt-2 leading-snug">{t('ui.startHint')} {t('load.hint')}</div>
+            </div>
 
-          {/* ── Loaded clouds ──────────────────────────────────────────────── */}
-          {store.clouds.length > 0 && (
-            <div className="px-2 pb-2 flex flex-col gap-1">
+            <div className="flex flex-col gap-2.5">
+              <SectionTitle>{t('ui.orSample')}</SectionTitle>
+              {samplesBlock}
+            </div>
+
+            <Disclosure
+              title={t('ui.replayTeaser')}
+              subtitle={t('ui.replayTeaserHint')}
+              open={replayOpen}
+              onToggle={setReplayOpen}
+              card
+            >
+              {replayBlock}
+            </Disclosure>
+          </div>
+        ) : (
+          /* One scroll region under the pinned header. Pinning the list, the
+             check-up AND the tabs left no room for the content in a short
+             viewport (the validation drawer open takes half of it); the tab bar
+             sticks instead, so it is always reachable without eating height. */
+          <div key="loaded" ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+            {/* ── Loaded scans ─────────────────────────────────────────────── */}
+            <div className="px-4 pt-3 pb-2 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <SectionTitle>{t('ui.loaded')}</SectionTitle>
+                {stats && stats.pointCount > 0 && (
+                  <span className="text-[11px] font-mono text-[var(--text-faint)]">
+                    {t('status.points', { count: formatCount(stats.pointCount) })}
+                  </span>
+                )}
+              </div>
               {store.clouds.map((cloud) => (
                 <CloudRow
                   key={cloud.id}
                   cloud={cloud}
                   active={cloud.id === store.activeCloudId}
+                  issueCount={cloud.id === store.activeCloudId ? issues.filter((i) => i.severity !== 'info').length : 0}
                   onSelect={() => usePointCloudStore.getState().setActiveCloud(cloud.id)}
                   onToggleVisible={() => handleVisible(cloud, !cloud.visible)}
+                  onFrame={() => {
+                    usePointCloudStore.getState().setActiveCloud(cloud.id)
+                    void getSystem()?.then((s) => s.frame(cloud.id))
+                  }}
                   onRemove={() => handleRemove(cloud)}
                   t={t}
-                  tDynamic={tDynamic}
+                  describeError={describeError}
                 />
               ))}
+              {sceneModels.length === 0 && <Note>{t('status.noModel')}</Note>}
             </div>
-          )}
 
-          {/* ── Alignment ──────────────────────────────────────────────────── */}
-          {activeCloud && alignment && (
-            <Section title={t('align.title')}>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-[var(--text)]">{t(`align.rung.${alignment.rung}`)}</span>
-                <Badge tint={CONFIDENCE_TINT[alignment.confidence] ?? '#888'}>
-                  {t(`align.confidence.${alignment.confidence}`)}
-                </Badge>
+            {/* ── Replay transport while a temporal demo runs ─────────────── */}
+            {isReplayCloud && replayState && (
+              <div className="px-4 pb-2 flex items-center gap-2" aria-live="polite">
+                <SmallButton onClick={handleReplayToggle}>
+                  {replayState.status === 'playing' ? t('replay.pause') : t('replay.play')}
+                </SmallButton>
+                <input
+                  type="range"
+                  aria-label={t('replay.timeline')}
+                  min={0}
+                  max={replayState.durationMs}
+                  step={50}
+                  value={replayState.positionMs}
+                  onChange={(event) => handleReplaySeek(Number(event.target.value))}
+                  className="pc-range flex-[2]"
+                />
+                <span className="text-[11px] font-mono tabular-nums text-[var(--text-faint)] shrink-0">
+                  {formatReplayTime(replayState.positionMs)}
+                </span>
               </div>
+            )}
 
-              {activeCloud.sourceKind !== 'temporal-replay' && (
+            {/* ── Check-up: what looks wrong, and the one-click fix ─────────── */}
+            {activeCloud && activeCloud.status !== 'parsing' && (
+              <div className="px-4 pb-3">
+                <CheckUp issues={issues} onFix={applyFix} t={t} describeError={describeError} cloud={activeCloud} />
+              </div>
+            )}
+
+            {/* ── Tabs ─────────────────────────────────────────────────────── */}
+            {/* Sentinel: a sticky element reports its STUCK offset, not where it sits. */}
+            <div ref={tablistRef} aria-hidden />
+            <div role="tablist" aria-label={t('title')} className="sticky top-0 z-10 px-3 border-b border-[var(--border)] flex gap-0.5 overflow-x-auto bg-[var(--surface)] backdrop-blur">
+              {PANEL_TABS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  id={`pc-tab-${id}`}
+                  aria-selected={tab === id}
+                  aria-controls={`pc-tabpanel-${id}`}
+                  onClick={() => selectTab(id)}
+                  className={[
+                    'relative px-2.5 py-2 text-[12.5px] font-medium whitespace-nowrap transition-colors',
+                    tab === id ? 'text-[var(--text)]' : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]',
+                  ].join(' ')}
+                >
+                  {t(`tabs.${id}`)}
+                  {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-[var(--accent)]" />}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Everything below scrolls ─────────────────────────────────── */}
+            <div
+              role="tabpanel"
+              id={`pc-tabpanel-${tab}`}
+              aria-labelledby={`pc-tab-${tab}`}
+              className="px-4 py-4 flex flex-col gap-5"
+            >
+              {tab === 'appearance' && (
                 <>
-                  {activeCloud.frame?.epsgCode
-                    ? <div className="text-[10px] font-mono text-[var(--text-faint)] mt-1">
-                        {t('align.crs', { code: activeCloud.frame.epsgCode })}
+                  <Group title={t('presets.title')}>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {PRESET_IDS.map((id) => (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={activePreset === id}
+                          onClick={() => applyPreset(id)}
+                          className={[
+                            'rounded-[10px] border px-3 py-2 text-[12.5px] font-medium text-left transition-colors',
+                            activePreset === id
+                              ? 'border-[var(--accent)] bg-[var(--surface-2)] text-[var(--text)]'
+                              : 'border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:text-[var(--text)]',
+                          ].join(' ')}
+                        >
+                          {t(`presets.${id}`)}
+                        </button>
+                      ))}
+                    </div>
+                    {activePreset === null && <Hint>{t('presets.custom')}</Hint>}
+                  </Group>
+
+                  <Group title={t('display.colorMode')}>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COLOR_MODES.map((mode) => {
+                        const available = colorModeAvailable(mode, attributes)
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            disabled={!available}
+                            aria-pressed={store.display.colorMode === mode}
+                            title={available ? undefined : t('display.modeUnavailable')}
+                            onClick={() => setDisplay({ colorMode: mode })}
+                            className={[
+                              'px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors',
+                              store.display.colorMode === mode
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                                : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
+                              available ? '' : 'opacity-35 cursor-not-allowed',
+                            ].join(' ')}
+                          >
+                            {t(`display.mode.${mode}`)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {store.display.colorMode === 'flat' && (
+                      <label className="flex items-center justify-between gap-2 mt-1">
+                        <span className="text-[12px] text-[var(--text-dim)]">{t('display.flatColor')}</span>
+                        <input
+                          type="color"
+                          value={`#${store.display.flatColor.toString(16).padStart(6, '0')}`}
+                          onChange={(e) => setDisplay({ flatColor: parseInt(e.target.value.slice(1), 16) })}
+                          className="h-7 w-10 rounded-[6px] border border-[var(--border-strong)] bg-transparent cursor-pointer"
+                        />
+                      </label>
+                    )}
+                  </Group>
+
+                  <Group title={t('display.pointSize')}>
+                    <Slider label={t('display.pointSize')} hideLabel value={store.display.pointSize} min={0.5} max={10} step={0.1}
+                      unit="px" onChange={(v) => setDisplay({ pointSize: v })} />
+                    <Switch label={t('display.round')} checked={store.display.round}
+                      onChange={() => setDisplay({ round: !store.display.round })} />
+                    <Switch label={t('display.attenuate')} checked={store.display.attenuate}
+                      onChange={() => setDisplay({ attenuate: !store.display.attenuate })} />
+                  </Group>
+
+                  <Disclosure title={t('ui.advanced')}>
+                    <div className="flex flex-col gap-3">
+                      <Slider label={t('display.opacity')} value={store.display.opacity} min={0.05} max={1} step={0.01}
+                        digits={2} onChange={(v) => setDisplay({ opacity: v })} />
+                      <div>
+                        <Slider label={t('display.density')} value={store.display.density} min={0.05} max={1} step={0.01}
+                          digits={2} onChange={(v) => setDisplay({ density: v })} />
+                        <Hint>{t('display.densityHint')}</Hint>
                       </div>
-                    : <div className="text-[10px] text-[var(--text-faint)] mt-1">{t('align.crsNone')}</div>}
-
-                  {activeCloud.frame && (
-                    <div className="text-[10px] font-mono text-[var(--text-faint)]">
-                      {t('align.unit', { unit: formatUnit(activeCloud.frame.unitScale) })}
-                      {' · '}
-                      {t(activeCloud.frame.unitSource === 'declared' ? 'align.unitDeclared' : 'align.unitAssumed')}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[12px] text-[var(--text-dim)]">{t('ui.quality')}</span>
+                        <Segmented
+                          label={t('ui.quality')}
+                          value={QUALITY_LEVELS.find((q) => q.budget === store.renderBudget)?.id ?? ''}
+                          options={QUALITY_LEVELS.map((q) => ({ value: q.id, label: t(`ui.qualityLevel.${q.id}`) }))}
+                          onChange={(v) => {
+                            const level = QUALITY_LEVELS.find((q) => q.id === v)
+                            if (level) usePointCloudStore.getState().setRenderBudget(level.budget)
+                          }}
+                          stretch
+                        />
+                        <Hint>{t('ui.qualityHint')}</Hint>
+                      </div>
+                      {attributes?.confidence && (
+                        <div>
+                          <Slider label={t('display.confidence')} value={store.display.confidenceThreshold}
+                            min={0} max={1} step={0.01} digits={2}
+                            onChange={(v) => setDisplay({ confidenceThreshold: v })} />
+                          <Hint>{t('display.confidenceHint')}</Hint>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </Disclosure>
+
+                  <button
+                    type="button"
+                    onClick={() => applyPreset('balanced')}
+                    className="self-start text-[12px] text-[var(--text-faint)] hover:text-[var(--text)] underline underline-offset-2"
+                  >
+                    {t('presets.reset')}
+                  </button>
                 </>
               )}
 
-              {activeCloud.frame && activeCloud.frame.upAxisSource !== 'declared' && (
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[10px] text-[var(--text-faint)] shrink-0">
-                    {t('align.upAxis')}
-                  </span>
-                  <div className="flex rounded-[7px] overflow-hidden border border-[var(--border-strong)]">
-                    {(['z', 'y'] as const).map((axis) => (
-                      <button
-                        key={axis}
-                        onClick={() => handleUpAxis(axis)}
-                        aria-pressed={activeCloud.frame!.upAxis === axis}
-                        className={`px-2 py-1 text-[10px] font-medium transition-colors ${
-                          activeCloud.frame!.upAxis === axis
-                            ? 'bg-[var(--accent)] text-[var(--accent-contrast,#fff)]'
-                            : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
-                        }`}
+              {tab === 'placement' && activeCloud && (
+                alignment ? (
+                  <>
+                    <Group title={t('align.title')}>
+                      <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13px] font-medium text-[var(--text)]">{t(`align.rung.${alignment.rung}`)}</span>
+                          <Badge tint={CONFIDENCE_TINT[alignment.confidence] ?? '#888'}>
+                            {t(`align.confidence.${alignment.confidence}`)}
+                          </Badge>
+                        </div>
+                        {!isReplayCloud && (
+                          <>
+                            <div className="text-[11.5px] font-mono text-[var(--text-faint)]">
+                              {activeCloud.frame?.epsgCode
+                                ? t('align.crs', { code: activeCloud.frame.epsgCode })
+                                : t('align.crsNone')}
+                            </div>
+                            {activeCloud.frame && (
+                              <div className="text-[11.5px] font-mono text-[var(--text-faint)]">
+                                {t('align.unit', { unit: formatUnit(activeCloud.frame.unitScale) })}
+                                {' · '}
+                                {t(activeCloud.frame.unitSource === 'declared' ? 'align.unitDeclared' : 'align.unitAssumed')}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {alignment.reasons.length > 0 && (
+                          <ul className="mt-1 flex flex-col gap-1">
+                            {alignment.reasons.map((key) => (
+                              <li key={key} className="text-[12px] leading-snug text-[var(--text-dim)] flex gap-1.5">
+                                <span className="text-[var(--text-faint)]">•</span><span>{tDynamic(key)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {alignment.confidence === 'manual' && <Note tone="warn">{t('align.manualWarning')}</Note>}
+                      </div>
+                      {!isReplayCloud && sceneModels.length > 0 && activeCloud.status === 'ready' && (
+                        <SmallButton onClick={() => { void handleRealign() }} disabled={realigning}>
+                          {t('align.recompute')}
+                        </SmallButton>
+                      )}
+                    </Group>
+
+                    {activeCloud.frame && activeCloud.frame.upAxisSource !== 'declared' && !isReplayCloud && (
+                      <Group title={t('align.upAxis')}>
+                        <Segmented
+                          label={t('align.upAxis')}
+                          value={activeCloud.frame.upAxis}
+                          options={[{ value: 'z', label: t('align.upAxisZ') }, { value: 'y', label: t('align.upAxisY') }]}
+                          onChange={(v) => handleUpAxis(v as 'y' | 'z')}
+                          stretch
+                        />
+                        {activeCloud.frame.upAxisSource === 'assumed' && <Hint>{t('align.upAxisGuessed')}</Hint>}
+                      </Group>
+                    )}
+
+                    {/* Actionable CRS gap: the file names a system we have no
+                        definition for. Offer the fix instead of only the diagnosis. */}
+                    {alignment.reasons.includes('align.reason.cloudCrsUnknown') && activeCloud.frame?.epsgCode && (
+                      <Group title={t('align.crsForm.title')}>
+                        <Hint>{t('align.crsForm.hint', { code: activeCloud.frame.epsgCode })}</Hint>
+                        <input
+                          value={proj4Text}
+                          onChange={(e) => { setProj4Text(e.target.value); setProj4Error(false) }}
+                          placeholder={t('align.crsForm.placeholder')}
+                          aria-label={t('align.crsForm.title')}
+                          spellCheck={false}
+                          className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]"
+                        />
+                        {proj4Error && <Note tone="warn">{t('align.crsForm.invalid')}</Note>}
+                        <SmallButton onClick={() => { void handleProj4Apply() }} disabled={!proj4Text.trim() || realigning}>
+                          {t('align.crsForm.apply')}
+                        </SmallButton>
+                      </Group>
+                    )}
+
+                    {!isReplayCloud && (
+                      <Group title={t('help.wrongSize.label')}>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(['unitMm', 'unitCm', 'unitFt'] as const).map((fix) => (
+                            <Chip key={fix} active={alignment.offset.scaleMul === UNIT_FIX_SCALE[fix]} onClick={() => applyFix(fix)}>
+                              {t(`fix.${fix}`)}
+                            </Chip>
+                          ))}
+                          <Chip active={alignment.offset.scaleMul === 1} onClick={() => { handleOffset({ scaleMul: 1 }); setTimeout(fitActive, 50) }}>
+                            ×1
+                          </Chip>
+                        </div>
+                      </Group>
+                    )}
+
+                    {!isReplayCloud && (
+                      <Disclosure
+                        title={t('transform.title')}
+                        open={showTransform || needsTransform}
+                        onToggle={setShowTransform}
                       >
-                        {axis === 'z' ? t('align.upAxisZ') : t('align.upAxisY')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {activeCloud.frame && activeCloud.frame.upAxisSource === 'assumed' && (
-                <div className="text-[10px] text-[var(--text-faint)] mt-1 leading-snug">
-                  {t('align.upAxisGuessed')}
-                </div>
-              )}
-
-              {/* A failure AFTER the cloud was already on screen. Not an error
-                  state — most of the scan is there — but the user has to be told
-                  that some of it is not, or they present a survey with a hole in
-                  it and never know. */}
-              {activeCloud.streamErrorKey && (
-                <div className="mt-2 px-2 py-1.5 rounded-[7px] border border-[var(--warn,#c98a2e)] bg-[color-mix(in_srgb,var(--warn,#c98a2e)_12%,transparent)]">
-                  <div className="text-[10px] text-[var(--text)] leading-snug">
-                    {t('status.partial')}
-                  </div>
-                  <div className="text-[10px] text-[var(--text-faint)] leading-snug mt-0.5">
-                    {describeError(activeCloud.streamErrorKey)}
-                  </div>
-                </div>
-              )}
-
-              {alignment.reasons.length > 0 && (
-                <ul className="mt-1.5 flex flex-col gap-1">
-                  {alignment.reasons.map((key) => (
-                    <li key={key} className="text-[10.5px] leading-snug text-[var(--text-dim)]">· {tDynamic(key)}</li>
-                  ))}
-                </ul>
+                        <div className="flex flex-col gap-3">
+                          <Slider label={t('transform.x')} value={alignment.offset.x} min={-200} max={200} step={0.05}
+                            unit="m" digits={2} onChange={(v) => handleOffset({ x: v })} />
+                          <Slider label={t('transform.y')} value={alignment.offset.y} min={-100} max={100} step={0.05}
+                            unit="m" digits={2} onChange={(v) => handleOffset({ y: v })} />
+                          <Slider label={t('transform.z')} value={alignment.offset.z} min={-200} max={200} step={0.05}
+                            unit="m" digits={2} onChange={(v) => handleOffset({ z: v })} />
+                          <Slider label={t('transform.rotation')} value={alignment.offset.yawDeg} min={-180} max={180} step={0.5}
+                            unit="°" onChange={(v) => handleOffset({ yawDeg: v })} />
+                          <Slider label={t('transform.pitch')} value={alignment.offset.pitchDeg} min={-45} max={45} step={0.25}
+                            unit="°" digits={2} onChange={(v) => handleOffset({ pitchDeg: v })} />
+                          <Slider label={t('transform.roll')} value={alignment.offset.rollDeg} min={-45} max={45} step={0.25}
+                            unit="°" digits={2} onChange={(v) => handleOffset({ rollDeg: v })} />
+                          <Slider label={t('transform.scale')} value={alignment.offset.scaleMul}
+                            min={Math.min(0.1, alignment.offset.scaleMul)} max={Math.max(3, alignment.offset.scaleMul)} step={0.001}
+                            unit="×" digits={3} onChange={(v) => handleOffset({ scaleMul: v })} />
+                          <SmallButton onClick={handleResetOffset}>{t('transform.reset')}</SmallButton>
+                          <Hint>{t('transform.hint')}</Hint>
+                        </div>
+                      </Disclosure>
+                    )}
+                  </>
+                ) : (
+                  <Hint>{activeCloud.status === 'parsing' ? t('load.parsingShort') : describeError(activeCloud.errorKey)}</Hint>
+                )
               )}
 
-              {alignment.confidence === 'manual' && <Note tone="warn">{t('align.manualWarning')}</Note>}
-
-              {/* Actionable CRS gap: the file names a system we have no
-                  definition for. Offer the fix instead of only the diagnosis. */}
-              {alignment.reasons.includes('align.reason.cloudCrsUnknown') && activeCloud.frame?.epsgCode && (
-                <div className="mt-1.5 flex flex-col gap-1 rounded-[8px] border border-[var(--border-strong)] p-2">
-                  <div className="text-[9.5px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">
-                    {t('align.crsForm.title')}
-                  </div>
-                  <div className="text-[10px] text-[var(--text-faint)] leading-snug">
-                    {t('align.crsForm.hint', { code: activeCloud.frame.epsgCode })}
-                  </div>
-                  <input
-                    value={proj4Text}
-                    onChange={(e) => { setProj4Text(e.target.value); setProj4Error(false) }}
-                    placeholder={t('align.crsForm.placeholder')}
-                    spellCheck={false}
-                    className="w-full px-1.5 py-1 rounded-[6px] text-[10px] font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)]"
-                  />
-                  {proj4Error && <Note tone="warn">{t('align.crsForm.invalid')}</Note>}
-                  <SmallButton onClick={() => { void handleProj4Apply() }} disabled={!proj4Text.trim() || realigning}>
-                    {t('align.crsForm.apply')}
-                  </SmallButton>
-                </div>
-              )}
-
-              {activeCloud.sourceKind !== 'temporal-replay' && (
-                <div className="flex gap-1 mt-1.5">
-                  <SmallButton onClick={() => setShowTransform((v) => !v)}>
-                    {t('transform.title')}
-                  </SmallButton>
-                  {/* Only worth offering when there IS a model to align against and
-                      the cloud was not already aligned to it. */}
-                  {sceneModels.length > 0 && activeCloud.status === 'ready' && (
-                    <SmallButton onClick={() => { void handleRealign() }} disabled={realigning}>
-                      {t('align.recompute')}
-                    </SmallButton>
-                  )}
-                </div>
-              )}
-            </Section>
-          )}
-
-          {/* ── Manual transform (only when the system had to guess) ────────── */}
-          {activeCloud && alignment && (showTransform || needsTransform) && (
-            <Section title={t('transform.title')}>
-              <Slider label={t('transform.x')} value={alignment.offset.x} min={-200} max={200} step={0.05}
-                unit="m" onChange={(v) => handleOffset({ x: v })} />
-              <Slider label={t('transform.y')} value={alignment.offset.y} min={-100} max={100} step={0.05}
-                unit="m" onChange={(v) => handleOffset({ y: v })} />
-              <Slider label={t('transform.z')} value={alignment.offset.z} min={-200} max={200} step={0.05}
-                unit="m" onChange={(v) => handleOffset({ z: v })} />
-              <Slider label={t('transform.rotation')} value={alignment.offset.yawDeg} min={-180} max={180} step={0.5}
-                unit="°" onChange={(v) => handleOffset({ yawDeg: v })} />
-              <Slider label={t('transform.pitch')} value={alignment.offset.pitchDeg} min={-45} max={45} step={0.25}
-                unit="°" onChange={(v) => handleOffset({ pitchDeg: v })} />
-              <Slider label={t('transform.roll')} value={alignment.offset.rollDeg} min={-45} max={45} step={0.25}
-                unit="°" onChange={(v) => handleOffset({ rollDeg: v })} />
-              <Slider label={t('transform.scale')} value={alignment.offset.scaleMul} min={0.1} max={3} step={0.001}
-                unit="×" digits={3} onChange={(v) => handleOffset({ scaleMul: v })} />
-              <button
-                onClick={handleResetOffset}
-                className="mt-1 w-full px-2 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-              >
-                {t('transform.reset')}
-              </button>
-              <div className="text-[10px] text-[var(--text-faint)] mt-1 leading-snug">{t('transform.hint')}</div>
-            </Section>
-          )}
-
-          {/* ── Appearance ─────────────────────────────────────────────────── */}
-          {store.clouds.length > 0 && (
-            <Section title={t('display.title')}>
-              <div className="text-[10.5px] text-[var(--text-dim)]">{t('display.colorMode')}</div>
-              <div className="flex flex-wrap gap-1">
-                {COLOR_MODES.map((mode) => {
-                  const available =
-                    mode === 'flat' || mode === 'elevation' ||
-                    (mode === 'rgb' && attributes?.color) ||
-                    (mode === 'intensity' && attributes?.intensity) ||
-                    (mode === 'classification' && attributes?.classification)
-                  return (
-                    <button
-                      key={mode}
-                      disabled={!available}
-                      title={available ? undefined : t('display.modeUnavailable')}
-                      onClick={() => setDisplay({ colorMode: mode })}
-                      className={[
-                        'px-2 py-1 rounded-[7px] text-[10.5px] font-medium transition-colors',
-                        store.display.colorMode === mode
-                          ? 'bg-[var(--accent)] text-white'
-                          : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
-                        available ? '' : 'opacity-35 cursor-not-allowed',
-                      ].join(' ')}
-                    >
-                      {t(`display.mode.${mode}`)}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {store.display.colorMode === 'flat' && (
-                <label className="flex items-center justify-between gap-2">
-                  <span className="text-[10.5px] text-[var(--text-dim)]">{t('display.flatColor')}</span>
-                  <input
-                    type="color"
-                    value={`#${store.display.flatColor.toString(16).padStart(6, '0')}`}
-                    onChange={(e) => setDisplay({ flatColor: parseInt(e.target.value.slice(1), 16) })}
-                    className="h-5 w-8 rounded-[4px] border border-[var(--border-strong)] bg-transparent cursor-pointer"
-                  />
-                </label>
-              )}
-
-              <Slider label={t('display.pointSize')} value={store.display.pointSize} min={0.5} max={10} step={0.1}
-                unit="px" onChange={(v) => setDisplay({ pointSize: v })} />
-              <Slider label={t('display.opacity')} value={store.display.opacity} min={0.05} max={1} step={0.01}
-                digits={2} onChange={(v) => setDisplay({ opacity: v })} />
-              <Slider label={t('display.density')} value={store.display.density} min={0.05} max={1} step={0.01}
-                digits={2} onChange={(v) => setDisplay({ density: v })} />
-              <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('display.densityHint')}</div>
-
-              {attributes?.confidence && (
+              {tab === 'view' && (
                 <>
-                  <Slider label={t('display.confidence')} value={store.display.confidenceThreshold}
-                    min={0} max={1} step={0.01} digits={2}
-                    onChange={(v) => setDisplay({ confidenceThreshold: v })} />
-                  <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('display.confidenceHint')}</div>
-                </>
-              )}
-
-              <div className="flex gap-1 mt-1">
-                <Toggle active={store.display.attenuate} onClick={() => setDisplay({ attenuate: !store.display.attenuate })}>
-                  {t('display.attenuate')}
-                </Toggle>
-                <Toggle active={store.display.round} onClick={() => setDisplay({ round: !store.display.round })}>
-                  {t('display.round')}
-                </Toggle>
-              </div>
-            </Section>
-          )}
-
-          {/* ── Inspect ────────────────────────────────────────────────────── */}
-          {store.clouds.length > 0 && (
-            <Section title={t('inspect.title')}>
-              <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('inspect.hint')}</div>
-              <div className="flex gap-1">
-                <SmallButton onClick={() => {
-                  setInspecting((v) => !v)
-                  setPicked(null); setPickMissed(false)
-                }}>
-                  {inspecting ? t('inspect.active') : t('inspect.enable')}
-                </SmallButton>
-                {picked && <SmallButton onClick={() => { setPicked(null); setPickMissed(false) }}>
-                  {t('inspect.clear')}
-                </SmallButton>}
-              </div>
-
-              {pickMissed && <Note>{t('inspect.none')}</Note>}
-
-              {picked && (
-                <div className="mt-1 flex flex-col gap-0.5 text-[10px] font-mono text-[var(--text-dim)]">
-                  <Field label={t('inspect.scene')}
-                    value={`${picked.position.x.toFixed(2)}, ${picked.position.y.toFixed(2)}, ${picked.position.z.toFixed(2)}`} />
-                  <Field label={t('inspect.source')}
-                    value={`${picked.sourcePosition.x.toFixed(3)}, ${picked.sourcePosition.y.toFixed(3)}, ${picked.sourcePosition.z.toFixed(3)}`} />
-                  {picked.classification !== null && attributes?.classification && (
-                    <Field label={t('inspect.classification')} value={String(picked.classification)} />
-                  )}
-                  {picked.intensity !== null && attributes?.intensity && (
-                    <Field label={t('inspect.intensity')} value={String(picked.intensity)} />
-                  )}
-                  <Field label={t('inspect.distance')} value={`${picked.distance.toFixed(2)} m`} />
-                </div>
-              )}
-            </Section>
-          )}
-
-          {/* ── View ───────────────────────────────────────────────────────── */}
-          {store.clouds.length > 0 && (
-            <Section title={t('view.title')}>
-              <div className="flex gap-1">
-                <SmallButton onClick={() => { void getSystem()?.then((s) => s.frame(store.activeCloudId ?? undefined)) }}>
-                  {t('view.fitCloud')}
-                </SmallButton>
-                <SmallButton onClick={() => { void getSystem()?.then((s) => s.frameWithModel()) }}>
-                  {t('view.fitBoth')}
-                </SmallButton>
-              </div>
-              {sceneModels.length > 0 && (
-                <>
-                  <div className="grid grid-cols-2 gap-1 mt-1" data-testid="scan-bim-demo-modes">
-                    {([
-                      ['point-cloud', 'Point Cloud'],
-                      ['ifc', 'IFC'],
-                      ['overlay', 'Overlay'],
-                      ['xray', 'X-Ray'],
-                      ['scan-vs-bim', 'Scan vs BIM'],
-                    ] as const).map(([mode, label]) => (
-                      <button
-                        key={mode}
-                        onClick={() => applyDemoView(mode)}
-                        aria-pressed={demoViewMode === mode}
-                        className={`px-2 py-1.5 rounded-[7px] text-[10px] font-medium border transition-colors ${
-                          demoViewMode === mode
-                            ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
-                            : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-1.5 rounded-[7px] border border-[var(--border)] px-2 py-1.5">
-                    <div className="flex justify-between text-[9.5px] text-[var(--text-faint)] mb-1">
-                      <span>POINT CLOUD</span><span>IFC</span>
+                  <Group title={t('view.title')}>
+                    <div className="flex gap-1.5">
+                      <SmallButton onClick={fitActive}>{t('view.fitCloud')}</SmallButton>
+                      <SmallButton onClick={() => { void getSystem()?.then((s) => s.frameWithModel()) }}>
+                        {t('view.fitBoth')}
+                      </SmallButton>
                     </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={comparisonBlend}
-                      aria-label="Point Cloud to IFC comparison"
-                      onChange={(event) => applyComparison(Number(event.target.value))}
-                      className="w-full accent-[var(--accent)]"
-                    />
-                  </div>
+                  </Group>
+
+                  {sceneModels.length > 0 && (
+                    <Group title={t('ui.compare')}>
+                      <div className="grid grid-cols-3 gap-1.5" data-testid="scan-bim-demo-modes">
+                        {(['point-cloud', 'overlay', 'ifc', 'xray', 'scan-vs-bim'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => applyDemoView(mode)}
+                            aria-pressed={demoViewMode === mode}
+                            className={`px-2 py-2 rounded-[9px] text-[11.5px] font-medium border transition-colors ${
+                              demoViewMode === mode
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                                : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
+                            }`}
+                          >
+                            {t(`ui.modes.${mode}`)}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="mt-1 rounded-[10px] border border-[var(--border)] px-3 py-2">
+                        <div className="flex justify-between text-[11px] text-[var(--text-faint)] mb-1">
+                          <span>{t('ui.compareScan')}</span><span>{t('ui.compareModel')}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={comparisonBlend}
+                          aria-label={t('ui.compare')}
+                          onChange={(event) => applyComparison(Number(event.target.value))}
+                          className="pc-range w-full"
+                        />
+                      </div>
+                    </Group>
+                  )}
+
+                  <Group title={t('inspect.title')}>
+                    <Hint>{t('inspect.hint')}</Hint>
+                    <div className="flex gap-1.5">
+                      <SmallButton
+                        active={inspecting}
+                        onClick={() => {
+                          setInspecting((v) => !v)
+                          setPicked(null); setPickMissed(false)
+                        }}
+                      >
+                        {inspecting ? t('inspect.active') : t('inspect.enable')}
+                      </SmallButton>
+                      {picked && <SmallButton onClick={() => { setPicked(null); setPickMissed(false) }}>
+                        {t('inspect.clear')}
+                      </SmallButton>}
+                    </div>
+                    {pickMissed && <Note>{t('inspect.none')}</Note>}
+                    {picked && (
+                      <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-2.5 flex flex-col gap-1 text-[11.5px] font-mono text-[var(--text-dim)]">
+                        <Field label={t('inspect.scene')}
+                          value={`${picked.position.x.toFixed(2)}, ${picked.position.y.toFixed(2)}, ${picked.position.z.toFixed(2)}`} />
+                        <Field label={t('inspect.source')}
+                          value={`${picked.sourcePosition.x.toFixed(3)}, ${picked.sourcePosition.y.toFixed(3)}, ${picked.sourcePosition.z.toFixed(3)}`} />
+                        {picked.classification !== null && attributes?.classification && (
+                          <Field label={t('inspect.classification')} value={String(picked.classification)} />
+                        )}
+                        {picked.intensity !== null && attributes?.intensity && (
+                          <Field label={t('inspect.intensity')} value={String(picked.intensity)} />
+                        )}
+                        <Field label={t('inspect.distance')} value={`${picked.distance.toFixed(2)} m`} />
+                      </div>
+                    )}
+                  </Group>
+
+                  {stats && stats.pointCount > 0 && (
+                    <Group title={t('ui.stats')}>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Stat label={t('ui.drawn')}
+                          value={`${formatCount(stats.drawnCount)} / ${formatCount(stats.pointCount)}`} />
+                        <Stat label="GPU" value={`${Math.round(stats.gpuBytes / 1048576)} MB`} />
+                      </div>
+                      <Hint>{t('status.chunks', { count: stats.chunkCount })}</Hint>
+                      {budget && budget.resident + budget.reserved > 0 && (
+                        <PointBudgetMeter {...budget} t={t} format={formatCount} />
+                      )}
+                    </Group>
+                  )}
                 </>
               )}
 
-              {stats && stats.pointCount > 0 && (
-                <div className="mt-1.5 text-[10px] font-mono text-[var(--text-faint)] leading-relaxed">
-                  <div>{t('status.points', { count: formatCount(stats.pointCount) })}</div>
-                  <div>{t('status.pointsDrawn', {
-                    drawn: formatCount(stats.drawnCount), total: formatCount(stats.pointCount),
-                  })}</div>
-                  <div>{t('status.chunks', { count: stats.chunkCount })}</div>
-                  <div>{t('status.memory', { mb: Math.round(stats.gpuBytes / 1048576) })}</div>
-                </div>
+              {tab === 'samples' && (
+                <>
+                  <Group title={t('demos.title')}>
+                    <Hint>{t('demos.hint')}</Hint>
+                    {samplesBlock}
+                  </Group>
+                  <Group title={t('replay.title')}>
+                    {replayBlock}
+                  </Group>
+                </>
               )}
 
-              {budget && budget.resident + budget.reserved > 0 && (
-                <PointBudgetMeter {...budget} t={t} format={formatCount} />
+              {tab === 'help' && (
+                <Group title={t('help.title')}>
+                  <Hint>{t('help.hint')}</Hint>
+                  <div className="flex flex-col gap-1.5">
+                    {HELP_SYMPTOMS.map((symptom) => {
+                      const needsCloud = symptom !== 'broken'
+                      const disabled = (needsCloud && (!activeCloud || activeCloud.status !== 'ready')) ||
+                        (symptom === 'sideways' && (!activeCloud?.frame || isReplayCloud)) ||
+                        (symptom === 'wrongSize' && isReplayCloud)
+                      return (
+                        <div key={symptom} className="flex flex-col">
+                          <button
+                            type="button"
+                            disabled={disabled}
+                            aria-expanded={symptom === 'wrongSize' || symptom === 'broken' ? helpOpen === symptom : undefined}
+                            onClick={() => applySymptom(symptom)}
+                            className="w-full flex items-center gap-3 rounded-[10px] border border-[var(--border)] px-3 py-2.5 text-left hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-[12.5px] font-medium text-[var(--text)]">{t(`help.${symptom}.label`)}</span>
+                              <span className="block text-[11px] text-[var(--text-faint)] mt-0.5">{t(`help.${symptom}.hint`)}</span>
+                            </span>
+                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-[var(--text-faint)] shrink-0">
+                              <path d={helpOpen === symptom ? 'M3 9l4-4 4 4' : 'M5 3l4 4-4 4'} />
+                            </svg>
+                          </button>
+                          {helpOpen === symptom && symptom === 'wrongSize' && alignment && (
+                            <div className="flex flex-wrap gap-1.5 px-1 pt-2 pb-1">
+                              {(['unitMm', 'unitCm', 'unitFt', 'scaleUp'] as const).map((fix) => (
+                                <Chip key={fix} active={alignment.offset.scaleMul === UNIT_FIX_SCALE[fix]} onClick={() => applyFix(fix)}>
+                                  {t(`fix.${fix}`)}
+                                </Chip>
+                              ))}
+                              <Chip active={alignment.offset.scaleMul === 1} onClick={() => { handleOffset({ scaleMul: 1 }); setTimeout(fitActive, 50) }}>
+                                ×1
+                              </Chip>
+                            </div>
+                          )}
+                          {helpOpen === symptom && symptom === 'broken' && (
+                            <div className="px-1 pt-2 pb-1 text-[12px] leading-relaxed text-[var(--text-dim)]">
+                              {t('help.brokenTips')}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Group>
               )}
-            </Section>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </ViewportPanel>
   )
@@ -1507,19 +1862,39 @@ export default function PointCloudPanel({
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** Range styling: a thicker track and a larger thumb than the browser default. */
+const PANEL_CSS = `
+.pc-panel .pc-range { -webkit-appearance: none; appearance: none; height: 20px; background: transparent; cursor: pointer; }
+.pc-panel .pc-range::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: var(--border-strong); }
+.pc-panel .pc-range::-moz-range-track { height: 4px; border-radius: 999px; background: var(--border-strong); }
+.pc-panel .pc-range::-moz-range-progress { height: 4px; border-radius: 999px; background: var(--accent); }
+.pc-panel .pc-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface, #fff); box-shadow: 0 0 0 1px var(--accent); }
+.pc-panel .pc-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface, #fff); }
+.pc-panel .pc-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.pc-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+`
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.06em]">{children}</div>
+}
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="px-2 py-2 border-t border-[var(--border)] flex flex-col gap-1">
-      <div className="text-[9.5px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">{title}</div>
+    <section className="flex flex-col gap-2">
+      <SectionTitle>{title}</SectionTitle>
       {children}
-    </div>
+    </section>
   )
+}
+
+function Hint({ children }: { children: React.ReactNode }) {
+  return <div className="text-[11.5px] leading-snug text-[var(--text-dim)] opacity-90">{children}</div>
 }
 
 function Badge({ tint, children }: { tint: string; children: React.ReactNode }) {
   return (
     <span
-      className="px-1.5 py-0.5 rounded-[5px] text-[9.5px] font-medium border"
+      className="px-1.5 py-0.5 rounded-[6px] text-[10.5px] font-medium border whitespace-nowrap"
       style={{ color: tint, borderColor: `${tint}55`, background: `${tint}18` }}
     >
       {children}
@@ -1530,9 +1905,27 @@ function Badge({ tint, children }: { tint: string; children: React.ReactNode }) 
 /** Compact fact chip on a sample-scan card — every value read from the file. */
 function DemoChip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="px-1 py-[1px] rounded-[4px] text-[9px] font-mono text-[var(--text-faint)] border border-[var(--border)]">
+    <span className="px-1.5 py-[1px] rounded-[5px] text-[10.5px] font-mono text-[var(--text-faint)] border border-[var(--border)]">
       {children}
     </span>
+  )
+}
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={[
+        'px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors',
+        active
+          ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+          : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -1546,38 +1939,150 @@ function Field({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Note({ children, tone = 'info' }: { children: React.ReactNode; tone?: 'info' | 'warn' }) {
-  const color = tone === 'warn' ? '#F5A623' : 'var(--text-faint)'
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-[10px] leading-snug mt-1" style={{ color }}>{children}</div>
+    <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+      <div className="text-[10.5px] text-[var(--text-faint)] truncate">{label}</div>
+      <div className="text-[13px] font-mono tabular-nums text-[var(--text)]">{value}</div>
+    </div>
+  )
+}
+
+function Note({ children, tone = 'info' }: { children: React.ReactNode; tone?: 'info' | 'warn' }) {
+  const color = tone === 'warn' ? '#F5A623' : 'var(--text-dim)'
+  return (
+    <div className="text-[11.5px] leading-snug" style={{ color }}>{children}</div>
+  )
+}
+
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="w-8 h-8 shrink-0 flex items-center justify-center rounded-[8px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+    >
+      {children}
+    </button>
+  )
+}
+
+function PrimaryButton(
+  { onClick, children, disabled, testId }: { onClick: () => void; children: React.ReactNode; disabled?: boolean; testId?: string },
+) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full px-3 py-2.5 rounded-[10px] text-[13px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 transition"
+    >
+      {children}
+    </button>
   )
 }
 
 function SmallButton(
-  { onClick, children, disabled }: { onClick: () => void; children: React.ReactNode; disabled?: boolean },
+  { onClick, children, disabled, active }: { onClick: () => void; children: React.ReactNode; disabled?: boolean; active?: boolean },
 ) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex-1 px-2 py-1.5 rounded-[7px] text-[10.5px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-40 transition-colors whitespace-nowrap"
+      aria-pressed={active}
+      className={[
+        'flex-1 px-3 py-2 rounded-[9px] text-[12px] font-medium border disabled:opacity-40 transition-colors whitespace-nowrap',
+        active
+          ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+          : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
+      ].join(' ')}
     >
       {children}
     </button>
   )
 }
 
-function Toggle({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Switch({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
   return (
     <button
-      onClick={onClick}
-      className={[
-        'flex-1 px-2 py-1 rounded-[7px] text-[10.5px] font-medium transition-colors',
-        active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
-      ].join(' ')}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className="flex items-center justify-between gap-3 py-1 text-left"
     >
-      {children}
+      <span className="text-[12.5px] text-[var(--text-dim)]">{label}</span>
+      <span className={`relative w-8 h-[18px] rounded-full transition-colors shrink-0 ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'}`}>
+        <span className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-[left] ${checked ? 'left-[16px]' : 'left-[2px]'}`} />
+      </span>
     </button>
+  )
+}
+
+function Segmented({ label, value, options, onChange, stretch }: {
+  label: string
+  value: string
+  options: { value: string; label: string }[]
+  onChange: (value: string) => void
+  stretch?: boolean
+}) {
+  return (
+    <div role="radiogroup" aria-label={label}
+      className={`flex rounded-[9px] border border-[var(--border-strong)] p-0.5 gap-0.5 ${stretch ? 'w-full' : ''}`}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={[
+            'px-2.5 py-1 rounded-[7px] text-[11.5px] font-medium transition-colors',
+            stretch ? 'flex-1' : '',
+            value === o.value ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
+          ].join(' ')}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function Disclosure({ title, subtitle, badge, open: controlledOpen, onToggle, card, children }: {
+  title: string
+  subtitle?: string
+  badge?: React.ReactNode
+  open?: boolean
+  onToggle?: (open: boolean) => void
+  card?: boolean
+  children: React.ReactNode
+}) {
+  const [localOpen, setLocalOpen] = useState(false)
+  const open = controlledOpen ?? localOpen
+  const toggle = (): void => {
+    if (onToggle) onToggle(!open)
+    else setLocalOpen(!open)
+  }
+  return (
+    <div className={card ? 'rounded-[12px] border border-[var(--border)] p-3' : 'border-t border-[var(--border)] pt-3'}>
+      <button type="button" aria-expanded={open} onClick={toggle} className="w-full flex items-center gap-2 text-left">
+        <span className="flex-1 min-w-0">
+          <span className="block text-[12.5px] font-semibold text-[var(--text)]">{title}</span>
+          {subtitle && <span className="block text-[11.5px] text-[var(--text-faint)] mt-0.5">{subtitle}</span>}
+        </span>
+        {badge}
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+          className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M3 5l4 4 4-4" />
+        </svg>
+      </button>
+      {open && <div className="mt-3">{children}</div>}
+    </div>
   )
 }
 
@@ -1589,90 +2094,208 @@ interface SliderProps {
   step: number
   unit?: string
   digits?: number
+  hideLabel?: boolean
   onChange: (v: number) => void
 }
 
-function Slider({ label, value, min, max, step, unit, digits = 1, onChange }: SliderProps) {
+function Slider({ label, value, min, max, step, unit, digits = 1, hideLabel, onChange }: SliderProps) {
+  const readout = (
+    <span className="text-[11.5px] font-mono tabular-nums text-[var(--text-faint)] whitespace-nowrap">
+      {value.toFixed(digits)}{unit ? ` ${unit}` : ''}
+    </span>
+  )
+  const input = (
+    <input
+      type="range"
+      min={min} max={max} step={step} value={value}
+      aria-label={hideLabel ? label : undefined}
+      onChange={(e) => onChange(parseFloat(e.target.value))}
+      className="pc-range w-full"
+    />
+  )
+  // Without a label the readout sits beside the track instead of on a line of its own.
+  if (hideLabel) return <div className="flex items-center gap-3">{input}{readout}</div>
   return (
-    <label className="flex flex-col gap-0.5">
-      <div className="flex items-center justify-between">
-        <span className="text-[10.5px] text-[var(--text-dim)]">{label}</span>
-        <span className="text-[10px] font-mono tabular-nums text-[var(--text-faint)]">
-          {value.toFixed(digits)}{unit ? ` ${unit}` : ''}
-        </span>
+    <label className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12px] text-[var(--text-dim)]">{label}</span>
+        {readout}
       </div>
-      <input
-        type="range"
-        min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-[var(--accent)]"
-      />
+      {input}
     </label>
+  )
+}
+
+function CheckUp({ issues, onFix, t, describeError, cloud }: {
+  issues: Issue[]
+  onFix: (fix: FixId) => void
+  t: TFunction<'pointcloud'>
+  describeError: (key: string | null | undefined) => string
+  cloud: PointCloudEntry
+}) {
+  const [expanded, setExpanded] = useState(true)
+  if (issues.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-[10px] border border-[#30A46C44] bg-[#30A46C12] px-3 py-2">
+        <span className="w-2 h-2 rounded-full bg-[#30A46C] shrink-0" />
+        <span className="text-[12px] text-[var(--text-dim)]">{t('diag.allGood')}</span>
+      </div>
+    )
+  }
+  const worst = issues[0].severity
+  return (
+    <div className="rounded-[12px] border overflow-hidden" style={{ borderColor: `${SEVERITY_TINT[worst]}55` }}>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left"
+        style={{ background: `${SEVERITY_TINT[worst]}14` }}
+      >
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: SEVERITY_TINT[worst] }} />
+        <span className="flex-1 text-[12.5px] font-semibold text-[var(--text)]">{t('diag.title')}</span>
+        <span className="text-[11.5px] text-[var(--text-faint)]">{t('diag.issueCount', { count: issues.length })}</span>
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+          className={`text-[var(--text-faint)] transition-transform ${expanded ? 'rotate-180' : ''}`}>
+          <path d="M3 5l4 4 4-4" />
+        </svg>
+      </button>
+      {expanded && (
+        <ul className="flex flex-col divide-y divide-[var(--border)]">
+          {issues.map((issue) => (
+            <li key={issue.id} className="px-3 py-2.5 flex flex-col gap-2">
+              <div className="flex gap-2">
+                <span className="w-1.5 h-1.5 rounded-full mt-[6px] shrink-0" style={{ background: SEVERITY_TINT[issue.severity] }} />
+                <div className="text-[12px] leading-snug text-[var(--text-dim)]">
+                  {t(`diag.issue.${issue.id}`)}
+                  {issue.id === 'failed' && cloud.errorKey && (
+                    <span className="block mt-0.5 text-[var(--text-faint)]">{describeError(cloud.errorKey)}</span>
+                  )}
+                  {issue.id === 'partial' && cloud.streamErrorKey && (
+                    <span className="block mt-0.5 text-[var(--text-faint)]">{describeError(cloud.streamErrorKey)}</span>
+                  )}
+                  {issue.id === 'truncated' && (
+                    <span className="block mt-0.5 text-[var(--text-faint)]">
+                      {t('status.truncated', { count: formatCount(cloud.pointCount) })}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {issue.fixes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pl-3.5">
+                  {issue.fixes.map((fix, i) => (
+                    <button
+                      key={fix}
+                      type="button"
+                      onClick={() => onFix(fix)}
+                      className={[
+                        'px-2.5 py-1 rounded-[8px] text-[11.5px] font-medium transition-colors',
+                        i === 0
+                          ? 'bg-[var(--accent)] text-white hover:brightness-110'
+                          : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
+                      ].join(' ')}
+                    >
+                      {t(`fix.${fix}`)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
 interface CloudRowProps {
   cloud: PointCloudEntry
   active: boolean
+  issueCount: number
   onSelect: () => void
   onToggleVisible: () => void
+  onFrame: () => void
   onRemove: () => void
   t: TFunction<'pointcloud'>
-  tDynamic: (key: string, opts?: Record<string, unknown>) => string
+  describeError: (key: string | null | undefined) => string
 }
 
-function CloudRow({ cloud, active, onSelect, onToggleVisible, onRemove, t, tDynamic }: CloudRowProps) {
+function CloudRow({ cloud, active, issueCount, onSelect, onToggleVisible, onFrame, onRemove, t, describeError }: CloudRowProps) {
   const parsing = cloud.status === 'parsing'
   const failed = cloud.status === 'error'
+  const dot = failed ? '#E5484D' : parsing ? 'var(--accent)' : issueCount > 0 ? '#F5A623' : '#30A46C'
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={active}
       onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() } }}
       className={[
-        'rounded-[8px] border px-2 py-1.5 cursor-pointer transition-colors',
+        'rounded-[10px] border px-3 py-2 cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]',
         active ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]',
+        !cloud.visible && !failed ? 'opacity-60' : '',
       ].join(' ')}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${parsing ? 'animate-pulse' : ''}`} style={{ background: dot }} />
         <div className="flex-1 min-w-0">
-          <div className="text-[11.5px] text-[var(--text)] truncate">{cloud.fileName}</div>
-          <div className="text-[9.5px] font-mono text-[var(--text-faint)]">
+          <div className="text-[12.5px] font-medium text-[var(--text)] truncate" title={cloud.fileName}>{cloud.fileName}</div>
+          <div className={`text-[11px] font-mono ${failed ? 'text-[#E5484D]' : 'text-[var(--text-faint)]'} truncate`}>
             {failed
-              ? tDynamic(cloud.errorKey ?? 'error.parseFailed')
+              ? describeError(cloud.errorKey)
               : parsing
                 ? `${t('load.parsingShort')} ${cloud.progress}%`
                 : cloud.sourceKind === 'temporal-replay'
                   ? t('replay.rowStatus')
-                  : t('status.points', { count: formatCount(cloud.pointCount) })}
+                  : `${t('status.points', { count: formatCount(cloud.pointCount) })} · ${cloud.format.toUpperCase()}`}
           </div>
         </div>
-        {!failed && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleVisible() }}
-            title={cloud.visible ? t('actions.visible') : t('actions.hidden')}
-            className="text-[var(--text-faint)] hover:text-[var(--text)] transition-colors px-1"
-          >
-            {cloud.visible ? '◉' : '○'}
-          </button>
+        {!failed && !parsing && (
+          <RowIcon label={t('view.fitCloud')} onClick={onFrame}>
+            <path d="M2 5V2h3M9 2h3v3M12 9v3H9M5 12H2V9" />
+          </RowIcon>
         )}
-        <button
-          onClick={(e) => { e.stopPropagation(); onRemove() }}
-          title={parsing ? t('actions.cancel') : t('actions.remove')}
-          className="text-[var(--text-faint)] hover:text-[#E5484D] transition-colors px-1"
-        >
-          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M2 2l10 10M12 2L2 12" />
-          </svg>
-        </button>
+        {!failed && (
+          <RowIcon label={cloud.visible ? t('actions.visible') : t('actions.hidden')} onClick={onToggleVisible} pressed={cloud.visible}>
+            {cloud.visible
+              ? <><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" /><circle cx="7" cy="7" r="1.8" /></>
+              : <><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" /><path d="M2 12L12 2" /></>}
+          </RowIcon>
+        )}
+        <RowIcon label={parsing ? t('actions.cancel') : t('actions.remove')} onClick={onRemove} danger>
+          <path d="M3 3l8 8M11 3L3 11" />
+        </RowIcon>
       </div>
 
       {parsing && (
-        <div className="mt-1 h-[2px] rounded-full bg-[var(--border)] overflow-hidden">
+        <div className="mt-2 h-[3px] rounded-full bg-[var(--border)] overflow-hidden">
           <div className="h-full bg-[var(--accent)] transition-[width]" style={{ width: `${cloud.progress}%` }} />
         </div>
       )}
-      {cloud.truncated && <Note tone="warn">{t('status.truncated', { count: formatCount(cloud.pointCount) })}</Note>}
     </div>
+  )
+}
+
+function RowIcon({ label, onClick, children, danger, pressed }: {
+  label: string; onClick: () => void; children: React.ReactNode; danger?: boolean; pressed?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onClick() }}
+      title={label}
+      aria-label={label}
+      aria-pressed={pressed}
+      className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-[7px] text-[var(--text-faint)] hover:bg-[var(--surface)] transition-colors ${
+        danger ? 'hover:text-[#E5484D]' : 'hover:text-[var(--text)]'
+      }`}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+        {children}
+      </svg>
+    </button>
   )
 }
 

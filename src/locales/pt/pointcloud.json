@@ -42,10 +42,26 @@
     "description": "Uma linha temporal de varrimento alinhada com o IFC. Navegue, pause, altere a velocidade e salte para o último frame.",
     "showcaseSelector": "Escolha um exemplo IFC e LiDAR temporal",
     "showcases": {
-      "pavilion": { "name": "Pavilhão de operações", "short": "Replay de varrimento base", "description": "Uma linha temporal compacta alinhada com o IFC e um carro de inspeção em movimento." },
-      "warehouse": { "name": "Armazém em movimento", "short": "Empilhador + carro autónomo", "description": "Retornos densos com empilhador, carro autónomo e rastos alinhados com estantes e estrutura." },
-      "construction": { "name": "Progresso de obra 4D", "short": "Fases + zona desviada", "description": "A estrutura aparece por fases; uma coluna deslocada a vermelho mostra a análise de desvios." },
-      "tunnel": { "name": "Inspeção móvel de túnel", "short": "Carro + leque LiDAR", "description": "Serviços densos, carro móvel, leque de varrimento e zona localizada na parede do corredor técnico." }
+      "pavilion": {
+        "name": "Pavilhão de operações",
+        "short": "Replay de varrimento base",
+        "description": "Uma linha temporal compacta alinhada com o IFC e um carro de inspeção em movimento."
+      },
+      "warehouse": {
+        "name": "Armazém em movimento",
+        "short": "Empilhador + carro autónomo",
+        "description": "Retornos densos com empilhador, carro autónomo e rastos alinhados com estantes e estrutura."
+      },
+      "construction": {
+        "name": "Progresso de obra 4D",
+        "short": "Fases + zona desviada",
+        "description": "A estrutura aparece por fases; uma coluna deslocada a vermelho mostra a análise de desvios."
+      },
+      "tunnel": {
+        "name": "Inspeção móvel de túnel",
+        "short": "Carro + leque LiDAR",
+        "description": "Serviços densos, carro móvel, leque de varrimento e zona localizada na parede do corredor técnico."
+      }
     },
     "start": "Carregar IFC + iniciar replay",
     "loading": "A preparar IFC + replay…",
@@ -56,7 +72,11 @@
     "speed": "Velocidade",
     "loop": "Repetir replay",
     "timeline": "Linha temporal do replay LiDAR",
-    "status": { "playing": "A REPRODUZIR", "paused": "PAUSADO", "ended": "ÚLTIMO" },
+    "status": {
+      "playing": "A REPRODUZIR",
+      "paused": "PAUSADO",
+      "ended": "ÚLTIMO"
+    },
     "sequence": "frame {{count}}",
     "dropped": "{{count}} omitidos",
     "truncated": "{{count}} pontos recebidos excederam a capacidade GPU fixa.",
@@ -70,8 +90,15 @@
     "mcapFailed": "Não foi possível criar o exemplo MCAP.",
     "transport": {
       "title": "Canal binário simulado",
-      "status": { "connected": "LIGADO", "degraded": "DEGRADADO", "reconnecting": "A RECONECTAR" },
-      "mode": { "stable": "Canal estável", "unstable": "Injetar falhas" },
+      "status": {
+        "connected": "LIGADO",
+        "degraded": "DEGRADADO",
+        "reconnecting": "A RECONECTAR"
+      },
+      "mode": {
+        "stable": "Canal estável",
+        "unstable": "Injetar falhas"
+      },
       "latency": "{{count}} ms simulados",
       "buffer": "buffer {{depth}}/{{capacity}}",
       "loss": "{{count}} perdidos",
@@ -243,5 +270,133 @@
     "pcdCompressed": "Não foi possível descodificar o corpo comprimido do PCD. O ficheiro pode estar truncado.",
     "pcdMalformed": "Não foi possível ler o cabeçalho PCD.",
     "alignFailed": "O levantamento foi lido, mas não foi possível calcular a sua colocação. Ficou por situar."
+  },
+  "tabs": {
+    "appearance": "Aparência",
+    "placement": "Posição",
+    "view": "Vista",
+    "samples": "Exemplos",
+    "help": "Corrigir"
+  },
+  "ui": {
+    "loaded": "Nuvens carregadas",
+    "add": "Adicionar nuvem",
+    "frame": "Enquadrar esta nuvem",
+    "startTitle": "Abra uma nuvem de pontos",
+    "startHint": "Solte um ou vários ficheiros: carregam em paralelo e pode remover cada um separadamente.",
+    "orSample": "…ou experimente um exemplo",
+    "featured": "Recomendado",
+    "showAllSamples": "Ver os {{count}} exemplos",
+    "showFewerSamples": "Ver menos",
+    "replayTeaser": "Demos animadas LiDAR + IFC",
+    "replayTeaserHint": "Quatro linhas temporais de digitalização simuladas, alinhadas com os seus modelos.",
+    "advanced": "Avançado",
+    "quality": "Orçamento de desenho",
+    "qualityHint": "Pontos desenhados por fotograma. Mais parece mais denso, mas exige uma GPU mais rápida.",
+    "qualityLevel": {
+      "low": "Leve",
+      "medium": "Normal",
+      "high": "Alto",
+      "ultra": "Máx."
+    },
+    "compare": "Nuvem ↔ modelo",
+    "compareScan": "Nuvem",
+    "compareModel": "Modelo",
+    "stats": "Desempenho",
+    "modes": {
+      "point-cloud": "Só nuvem",
+      "ifc": "Só modelo",
+      "overlay": "Sobreposto",
+      "xray": "Raio X",
+      "scan-vs-bim": "Nuvem vs BIM"
+    },
+    "drawn": "Desenhados / carregados"
+  },
+  "presets": {
+    "title": "Estilo rápido",
+    "balanced": "Equilibrado",
+    "detail": "Nítido",
+    "presentation": "Apresentação",
+    "performance": "Rápido",
+    "custom": "Personalizado",
+    "reset": "Repor aparência"
+  },
+  "diag": {
+    "title": "Verificação",
+    "allGood": "Tudo parece correto nesta nuvem.",
+    "issueCount": "Por rever: {{count}}",
+    "issue": {
+      "failed": "Não foi possível abrir este ficheiro.",
+      "partial": "Parte da nuvem não pôde ser lida: o que vê está incompleto.",
+      "truncated": "Só parte do ficheiro cabe na memória, por isso a nuvem foi cortada.",
+      "upAxisGuessed": "O ficheiro não indica o eixo vertical. Se parecer deitada, rode-a.",
+      "colorUnavailable": "O ficheiro não tem dados para o modo de cor atual e aparece plano.",
+      "hidden": "Esta nuvem está oculta.",
+      "faint": "A opacidade é tão baixa que a nuvem mal se vê.",
+      "farFromModel": "A nuvem está muito longe do modelo.",
+      "manualPlacement": "Nada liga esta nuvem ao modelo: foi centrada sobre ele. Verifique a posição.",
+      "crsUnknown": "O sistema de coordenadas da nuvem é desconhecido aqui, por isso a georreferência foi ignorada.",
+      "tooLarge": "A nuvem é muito maior do que o esperado: provavelmente está em milímetros, centímetros ou pés.",
+      "tooSmall": "A nuvem é muito menor do que o esperado: pode estar em quilómetros ou escalada.",
+      "heavy": "Muitos pontos no detalhe máximo: definições mais leves mantêm a navegação fluida."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Rodar eixo vertical",
+    "bestColor": "Melhor cor",
+    "showAll": "Mostrar",
+    "opacityFull": "Opacidade total",
+    "fitCloud": "Enquadrar nuvem",
+    "fitBoth": "Ver ambos",
+    "realign": "Recalcular alinhamento",
+    "openPlacement": "Ajustar posição",
+    "unitMm": "Está em mm",
+    "unitCm": "Está em cm",
+    "unitFt": "Está em pés",
+    "scaleUp": "Escala ×1000",
+    "performance": "Aliviar",
+    "remove": "Remover",
+    "applied": "Corrigido: {{what}}"
+  },
+  "help": {
+    "title": "O que vê?",
+    "hint": "Escolha o sintoma: cada botão aplica a correção habitual, reversível em Aparência ou Posição.",
+    "sideways": {
+      "label": "Está deitada de lado",
+      "hint": "Exportações Y-cima vs Z-cima"
+    },
+    "invisible": {
+      "label": "Não a vejo",
+      "hint": "Mostra-a e enquadra a câmara"
+    },
+    "wrongSize": {
+      "label": "Enorme ou minúscula",
+      "hint": "Escolha a unidade do ficheiro"
+    },
+    "misplaced": {
+      "label": "Não coincide com o modelo",
+      "hint": "Realinha e abre a posição"
+    },
+    "colours": {
+      "label": "Preta, branca ou cores estranhas",
+      "hint": "Muda para um modo suportado"
+    },
+    "sparse": {
+      "label": "Cheia de buracos / muito fina",
+      "hint": "Pontos maiores e redondos"
+    },
+    "blobby": {
+      "label": "Desfocada, pontos grandes",
+      "hint": "Pontos menores e nítidos"
+    },
+    "slow": {
+      "label": "Está lenta",
+      "hint": "Desenha menos pontos ao mover"
+    },
+    "broken": {
+      "label": "Não carrega",
+      "hint": "Causas comuns"
+    },
+    "brokenTips": "São lidos LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 e projetos de scanner (RCP, FLS, LSPROJ) têm de ser exportados antes para LAS ou PLY. Alguns LAZ usam uma variante LASzip que os browsers não descodificam: guarde-os como LAS ou COPC. Ficheiros muito grandes: recorte-os ou decime-os antes."
   }
 }
