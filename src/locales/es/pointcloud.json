@@ -42,10 +42,26 @@
     "description": "Una línea de tiempo de escaneo alineada con su IFC. Desplázate, pausa, cambia la velocidad y salta al último frame.",
     "showcaseSelector": "Elige un ejemplo de IFC y LiDAR temporal",
     "showcases": {
-      "pavilion": { "name": "Pabellón de operaciones", "short": "Replay de escaneo base", "description": "Una línea temporal compacta alineada con su IFC, con un carro de inspección en movimiento." },
-      "warehouse": { "name": "Almacén en movimiento", "short": "Carretilla + carro autónomo", "description": "Retornos densos de almacén con carretilla, carro autónomo y estelas de escaneo alineados con racks y estructura." },
-      "construction": { "name": "Progreso de obra 4D", "short": "Fases + zona desviada", "description": "La estructura aparece por fases mientras se eleva un panel; un pilar desplazado en rojo muestra la revisión de desviaciones." },
-      "tunnel": { "name": "Inspección móvil de túnel", "short": "Carro + abanico LiDAR", "description": "Servicios densos, carro de inspección móvil, abanico de escaneo y una zona localizada en el muro del corredor técnico." }
+      "pavilion": {
+        "name": "Pabellón de operaciones",
+        "short": "Replay de escaneo base",
+        "description": "Una línea temporal compacta alineada con su IFC, con un carro de inspección en movimiento."
+      },
+      "warehouse": {
+        "name": "Almacén en movimiento",
+        "short": "Carretilla + carro autónomo",
+        "description": "Retornos densos de almacén con carretilla, carro autónomo y estelas de escaneo alineados con racks y estructura."
+      },
+      "construction": {
+        "name": "Progreso de obra 4D",
+        "short": "Fases + zona desviada",
+        "description": "La estructura aparece por fases mientras se eleva un panel; un pilar desplazado en rojo muestra la revisión de desviaciones."
+      },
+      "tunnel": {
+        "name": "Inspección móvil de túnel",
+        "short": "Carro + abanico LiDAR",
+        "description": "Servicios densos, carro de inspección móvil, abanico de escaneo y una zona localizada en el muro del corredor técnico."
+      }
     },
     "start": "Cargar IFC + iniciar replay",
     "loading": "Preparando IFC + replay…",
@@ -74,8 +90,15 @@
     "mcapFailed": "No se pudo crear el ejemplo MCAP.",
     "transport": {
       "title": "Canal binario simulado",
-      "status": { "connected": "CONECTADO", "degraded": "DEGRADADO", "reconnecting": "RECONECTANDO" },
-      "mode": { "stable": "Canal estable", "unstable": "Inyectar fallos" },
+      "status": {
+        "connected": "CONECTADO",
+        "degraded": "DEGRADADO",
+        "reconnecting": "RECONECTANDO"
+      },
+      "mode": {
+        "stable": "Canal estable",
+        "unstable": "Inyectar fallos"
+      },
       "latency": "{{count}} ms simulados",
       "buffer": "búfer {{depth}}/{{capacity}}",
       "loss": "{{count}} perdidos",
@@ -247,5 +270,133 @@
     "pcdCompressed": "No se pudo descomprimir el cuerpo del PCD. Puede que el archivo esté truncado.",
     "pcdMalformed": "No se pudo leer la cabecera del PCD.",
     "alignFailed": "El escaneo se leyó bien, pero no se pudo calcular su colocación. Se ha dejado sin situar."
+  },
+  "tabs": {
+    "appearance": "Aspecto",
+    "placement": "Posición",
+    "view": "Vista",
+    "samples": "Ejemplos",
+    "help": "Arreglar"
+  },
+  "ui": {
+    "loaded": "Nubes cargadas",
+    "add": "Añadir nube",
+    "frame": "Encuadrar esta nube",
+    "startTitle": "Abre una nube de puntos",
+    "startHint": "Suelta uno o varios archivos: se cargan en paralelo y puedes quitar cada uno por separado.",
+    "orSample": "…o prueba un ejemplo",
+    "featured": "Recomendado",
+    "showAllSamples": "Ver los {{count}} ejemplos",
+    "showFewerSamples": "Ver menos",
+    "replayTeaser": "Demos animadas LiDAR + IFC",
+    "replayTeaserHint": "Cuatro líneas de tiempo de escaneo simuladas, alineadas con sus modelos.",
+    "advanced": "Avanzado",
+    "quality": "Presupuesto de dibujo",
+    "qualityHint": "Puntos dibujados por fotograma. Más se ve más denso, pero exige una GPU más rápida.",
+    "qualityLevel": {
+      "low": "Ligero",
+      "medium": "Normal",
+      "high": "Alto",
+      "ultra": "Máx."
+    },
+    "compare": "Nube ↔ modelo",
+    "compareScan": "Nube",
+    "compareModel": "Modelo",
+    "stats": "Rendimiento",
+    "modes": {
+      "point-cloud": "Solo nube",
+      "ifc": "Solo modelo",
+      "overlay": "Superpuesto",
+      "xray": "Rayos X",
+      "scan-vs-bim": "Nube vs BIM"
+    },
+    "drawn": "Dibujados / cargados"
+  },
+  "presets": {
+    "title": "Estilo rápido",
+    "balanced": "Equilibrado",
+    "detail": "Nítido",
+    "presentation": "Presentación",
+    "performance": "Rápido",
+    "custom": "Personalizado",
+    "reset": "Restablecer aspecto"
+  },
+  "diag": {
+    "title": "Revisión",
+    "allGood": "Todo parece correcto en esta nube.",
+    "issueCount": "Por revisar: {{count}}",
+    "issue": {
+      "failed": "No se ha podido abrir este archivo.",
+      "partial": "Parte de la nube no se pudo leer: lo que ves está incompleto.",
+      "truncated": "Solo cabe en memoria una parte del archivo, así que la nube se ha recortado.",
+      "upAxisGuessed": "El archivo no indica qué eje es arriba. Si parece tumbada, gírala.",
+      "colorUnavailable": "El archivo no tiene datos para el modo de color actual y se dibuja plano.",
+      "hidden": "Esta nube está oculta.",
+      "faint": "La opacidad es tan baja que la nube apenas se ve.",
+      "farFromModel": "La nube está muy lejos del modelo.",
+      "manualPlacement": "Nada relaciona esta nube con el modelo: se ha centrado sobre él. Revisa la posición.",
+      "crsUnknown": "Este visor no conoce el sistema de coordenadas de la nube, así que se ignoró su georreferencia.",
+      "tooLarge": "La nube es mucho más grande de lo esperado: probablemente está en milímetros, centímetros o pies.",
+      "tooSmall": "La nube es mucho más pequeña de lo esperado: puede estar en kilómetros o escalada.",
+      "heavy": "Muchos puntos al máximo detalle: un ajuste más ligero mantendrá la navegación fluida."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Girar eje vertical",
+    "bestColor": "Usar mejor color",
+    "showAll": "Mostrarla",
+    "opacityFull": "Opacidad total",
+    "fitCloud": "Encuadrar nube",
+    "fitBoth": "Ver ambos",
+    "realign": "Recalcular alineación",
+    "openPlacement": "Ajustar posición",
+    "unitMm": "Está en mm",
+    "unitCm": "Está en cm",
+    "unitFt": "Está en pies",
+    "scaleUp": "Escalar ×1000",
+    "performance": "Aligerar",
+    "remove": "Quitar",
+    "applied": "Arreglado: {{what}}"
+  },
+  "help": {
+    "title": "¿Qué ves?",
+    "hint": "Elige el síntoma: cada botón aplica el arreglo habitual, y todo se puede deshacer desde Aspecto o Posición.",
+    "sideways": {
+      "label": "Está tumbada o de lado",
+      "hint": "Exportaciones Y-arriba vs Z-arriba"
+    },
+    "invisible": {
+      "label": "No la veo",
+      "hint": "La muestra y encuadra la cámara"
+    },
+    "wrongSize": {
+      "label": "Enorme o diminuta",
+      "hint": "Elige la unidad del archivo"
+    },
+    "misplaced": {
+      "label": "No cuadra con el modelo",
+      "hint": "Realinea y abre la posición"
+    },
+    "colours": {
+      "label": "Negra, blanca o colores raros",
+      "hint": "Cambia a un modo que el archivo soporte"
+    },
+    "sparse": {
+      "label": "Llena de huecos / muy fina",
+      "hint": "Puntos más grandes y redondos"
+    },
+    "blobby": {
+      "label": "Borrosa, puntos muy gordos",
+      "hint": "Puntos más pequeños y nítidos"
+    },
+    "slow": {
+      "label": "Va lenta",
+      "hint": "Dibuja menos puntos al moverte"
+    },
+    "broken": {
+      "label": "No carga",
+      "hint": "Causas habituales"
+    },
+    "brokenTips": "Aquí se leen LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 y los proyectos de escáner (RCP, FLS, LSPROJ) hay que exportarlos antes a LAS o PLY. Algunos LAZ usan una variante de LASzip que el navegador no puede descomprimir: guárdalos como LAS o COPC. Archivos muy grandes: recórtalos o diézmalos antes."
   }
 }

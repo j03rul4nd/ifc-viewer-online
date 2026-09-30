@@ -42,10 +42,26 @@
     "description": "A finite scan timeline aligned with its companion IFC. Scrub, pause, change speed and jump to the latest frame.",
     "showcaseSelector": "Choose an IFC and temporal LiDAR example",
     "showcases": {
-      "pavilion": { "name": "Operations pavilion", "short": "Baseline scan replay", "description": "A compact scan timeline aligned with its pavilion IFC, including a moving inspection cart." },
-      "warehouse": { "name": "Moving warehouse", "short": "Forklift + autonomous cart", "description": "Dense warehouse returns with a moving forklift, autonomous cart and scan trails aligned with racks and structure." },
-      "construction": { "name": "4D construction progress", "short": "Phases + deviation cluster", "description": "Structural returns appear by phase while a panel is lifted; a red shifted-column cluster demonstrates spatial deviation review." },
-      "tunnel": { "name": "Mobile tunnel inspection", "short": "Trolley + scan fan", "description": "Dense services, a moving inspection trolley, scan fan and localized wall-condition cluster in a linear utility corridor." }
+      "pavilion": {
+        "name": "Operations pavilion",
+        "short": "Baseline scan replay",
+        "description": "A compact scan timeline aligned with its pavilion IFC, including a moving inspection cart."
+      },
+      "warehouse": {
+        "name": "Moving warehouse",
+        "short": "Forklift + autonomous cart",
+        "description": "Dense warehouse returns with a moving forklift, autonomous cart and scan trails aligned with racks and structure."
+      },
+      "construction": {
+        "name": "4D construction progress",
+        "short": "Phases + deviation cluster",
+        "description": "Structural returns appear by phase while a panel is lifted; a red shifted-column cluster demonstrates spatial deviation review."
+      },
+      "tunnel": {
+        "name": "Mobile tunnel inspection",
+        "short": "Trolley + scan fan",
+        "description": "Dense services, a moving inspection trolley, scan fan and localized wall-condition cluster in a linear utility corridor."
+      }
     },
     "start": "Load IFC + start replay",
     "loading": "Preparing IFC + replay…",
@@ -74,8 +90,15 @@
     "mcapFailed": "The MCAP example could not be created.",
     "transport": {
       "title": "Simulated binary channel",
-      "status": { "connected": "CONNECTED", "degraded": "DEGRADED", "reconnecting": "RECONNECTING" },
-      "mode": { "stable": "Stable channel", "unstable": "Inject faults" },
+      "status": {
+        "connected": "CONNECTED",
+        "degraded": "DEGRADED",
+        "reconnecting": "RECONNECTING"
+      },
+      "mode": {
+        "stable": "Stable channel",
+        "unstable": "Inject faults"
+      },
       "latency": "{{count}} ms simulated",
       "buffer": "buffer {{depth}}/{{capacity}}",
       "loss": "{{count}} lost",
@@ -247,5 +270,133 @@
     "pcdCompressed": "The compressed PCD body could not be decoded. The file may be truncated.",
     "pcdMalformed": "The PCD header could not be read.",
     "alignFailed": "The scan was read, but its placement could not be worked out. It has been left unplaced."
+  },
+  "tabs": {
+    "appearance": "Appearance",
+    "placement": "Placement",
+    "view": "View",
+    "samples": "Samples",
+    "help": "Fix it"
+  },
+  "ui": {
+    "loaded": "Loaded scans",
+    "add": "Add scan",
+    "frame": "Fit to this scan",
+    "startTitle": "Open a point cloud",
+    "startHint": "Drop one or several files — each loads in parallel and can be removed on its own.",
+    "orSample": "…or try a sample",
+    "featured": "Recommended",
+    "showAllSamples": "Show all {{count}} samples",
+    "showFewerSamples": "Show fewer",
+    "replayTeaser": "Animated LiDAR + IFC demos",
+    "replayTeaserHint": "Four simulated scan timelines aligned with their models.",
+    "advanced": "Advanced",
+    "quality": "Draw budget",
+    "qualityHint": "Points drawn per frame. Higher looks denser but needs a faster GPU.",
+    "qualityLevel": {
+      "low": "Light",
+      "medium": "Normal",
+      "high": "High",
+      "ultra": "Max"
+    },
+    "compare": "Scan ↔ model",
+    "compareScan": "Scan",
+    "compareModel": "Model",
+    "stats": "Performance",
+    "modes": {
+      "point-cloud": "Scan only",
+      "ifc": "Model only",
+      "overlay": "Overlay",
+      "xray": "X-ray",
+      "scan-vs-bim": "Scan vs BIM"
+    },
+    "drawn": "Drawn / loaded"
+  },
+  "presets": {
+    "title": "Quick look",
+    "balanced": "Balanced",
+    "detail": "Sharp",
+    "presentation": "Presentation",
+    "performance": "Fast",
+    "custom": "Custom",
+    "reset": "Reset appearance"
+  },
+  "diag": {
+    "title": "Check-up",
+    "allGood": "Everything looks right with this scan.",
+    "issue": {
+      "failed": "This file could not be opened.",
+      "partial": "Part of the scan could not be read — what you see is incomplete.",
+      "truncated": "Only part of the file fits in memory, so the scan was cut short.",
+      "upAxisGuessed": "The file does not say which way is up. If it looks like it is lying on its side, flip it.",
+      "colorUnavailable": "The file has no data for the current colour mode, so it draws flat.",
+      "hidden": "This scan is hidden.",
+      "faint": "Opacity is so low the scan is barely visible.",
+      "farFromModel": "The scan is far away from the model.",
+      "manualPlacement": "Nothing links this scan to the model — it was centred on it. Check the placement.",
+      "crsUnknown": "The scan's coordinate system is unknown to this build, so its georeference was ignored.",
+      "tooLarge": "The scan is far larger than expected — the file is probably in millimetres, centimetres or feet.",
+      "tooSmall": "The scan is far smaller than expected — it may be in kilometres or scaled down.",
+      "heavy": "A lot of points at full detail — lighter settings will keep navigation smooth."
+    },
+    "issueCount": "To review: {{count}}"
+  },
+  "fix": {
+    "flipUpAxis": "Flip up axis",
+    "bestColor": "Use best colour",
+    "showAll": "Show it",
+    "opacityFull": "Full opacity",
+    "fitCloud": "Fit to scan",
+    "fitBoth": "Show both",
+    "realign": "Re-run alignment",
+    "openPlacement": "Adjust placement",
+    "unitMm": "It's mm",
+    "unitCm": "It's cm",
+    "unitFt": "It's feet",
+    "scaleUp": "Scale ×1000",
+    "performance": "Go lighter",
+    "remove": "Remove",
+    "applied": "Fixed: {{what}}"
+  },
+  "help": {
+    "title": "What do you see?",
+    "hint": "Pick the symptom — each button applies the usual fix, and every fix can be undone from Appearance or Placement.",
+    "sideways": {
+      "label": "It is lying on its side",
+      "hint": "Y-up vs Z-up exports"
+    },
+    "invisible": {
+      "label": "I can't see it",
+      "hint": "Shows it and frames the camera"
+    },
+    "wrongSize": {
+      "label": "Huge or tiny",
+      "hint": "Pick the unit the file was written in"
+    },
+    "misplaced": {
+      "label": "Not on the model",
+      "hint": "Re-aligns, then open the placement"
+    },
+    "colours": {
+      "label": "Black, white or odd colours",
+      "hint": "Cycles to a mode the file supports"
+    },
+    "sparse": {
+      "label": "Full of holes / too thin",
+      "hint": "Bigger, round points"
+    },
+    "blobby": {
+      "label": "Blurry, points too big",
+      "hint": "Smaller, sharper points"
+    },
+    "slow": {
+      "label": "It's slow",
+      "hint": "Draws fewer points while you move"
+    },
+    "broken": {
+      "label": "It won't load",
+      "hint": "Common causes"
+    },
+    "brokenTips": "LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV read here. E57 and scanner projects (RCP, FLS, LSPROJ) must be exported to LAS or PLY first. Some LAZ files use a LASzip variant browsers cannot decode — re-save them as LAS or COPC. Very large files: crop or decimate them first."
   }
 }
