@@ -42,6 +42,8 @@
   "reset": "Reset",
   "ids": "IDS",
   "idsTooltip": "Check the model against a buildingSMART IDS file",
+  "compare": "Compare",
+  "compareTooltip": "Compare versions of your IFC set: changes, IDS and BCF",
   "map": "Map",
   "mapTooltip": "Show the model on a real-world map (georeferenced)",
   "sun": "Sun",

@@ -42,6 +42,8 @@
   "reset": "Restablecer",
   "ids": "IDS",
   "idsTooltip": "Comprobar el modelo con un archivo IDS de buildingSMART",
+  "compare": "Comparar",
+  "compareTooltip": "Comparar versiones de tu conjunto de IFC: cambios, IDS y BCF",
   "map": "Mapa",
   "mapTooltip": "Mostrar el modelo en un mapa real (georreferenciado)",
   "embed": "Insertar",

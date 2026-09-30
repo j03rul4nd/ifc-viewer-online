@@ -42,6 +42,8 @@
   "reset": "Reinicia",
   "ids": "IDS",
   "idsTooltip": "Comprova el model amb un fitxer IDS de buildingSMART",
+  "compare": "Compara",
+  "compareTooltip": "Compara versions del teu conjunt d'IFC: canvis, IDS i BCF",
   "map": "Mapa",
   "mapTooltip": "Mostra el model en un mapa real (georeferenciat)",
   "embed": "Incrusta",

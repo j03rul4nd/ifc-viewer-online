@@ -53,6 +53,8 @@ interface ToolbarProps {
   onOpenExportModal: () => void
   onOpenEmbed: () => void
   onOpenIds: () => void
+  /** Version comparison workspace (sets of IFCs across deliveries). */
+  onOpenCompare: () => void
   onOpenHelp: () => void
 }
 
@@ -252,7 +254,7 @@ function scoreColor(score: number): string {
 
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
-  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenIds, onOpenHelp,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenIds, onOpenCompare, onOpenHelp,
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
@@ -700,6 +702,11 @@ export default function Toolbar({
         <Btn onClick={onOpenIds} title={t('idsTooltip')} disabled={!canRun}>
           <Icons.Shield size={13} />
           {t('ids')}
+        </Btn>
+
+        <Btn onClick={onOpenCompare} title={t('compareTooltip')}>
+          <Icons.GitCompare size={13} />
+          {t('compare')}
         </Btn>
 
         <InlineDivider />
