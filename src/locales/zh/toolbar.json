@@ -156,5 +156,30 @@
     "blankKeeps": "留空某一项即可保留文件原有的内容。",
     "schemaNote": "IFC 模式版本永远不会被更改。以 IFC2x3 打开的文件仍导出为 IFC2x3。"
   },
-  "exportSettings": "导出设置…"
+  "exportSettings": "导出设置…",
+  "menu": {
+    "openIfc": "打开 IFC 文件…",
+    "openTooltip": "打开 — IFC 文件、演示模型和其他数据",
+    "addData": "添加到场景",
+    "check": "检查",
+    "checkTooltip": "检查 — 3D 问题显示、IDS、版本对比",
+    "issuesIn3d": "在 3D 中显示问题",
+    "capture": "截取",
+    "captureTooltip": "截取 — 截图、回放、工作室、背景",
+    "screenshot": "截图",
+    "quickCapture": "快速截取",
+    "studios": "工作室",
+    "coverStudio": "封面工作室",
+    "share": "分享",
+    "shareTooltip": "分享 — 导出文件、嵌入、演示",
+    "files": "文件",
+    "publish": "发布",
+    "inspect": "检视",
+    "context": "环境",
+    "navigate": "导航",
+    "edit": "编辑",
+    "help": "帮助",
+    "idsCheck": "按 IDS 检查…",
+    "compareVersions": "对比版本…"
+  }
 }
