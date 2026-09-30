@@ -455,6 +455,97 @@ export interface MeasurementsState {
   items: Measurement[]
 }
 
+// ── Tours & presentation director (since v1.12.0) ────────────────────────────
+
+/** The built-in tour templates. */
+export type TourTemplate = 'social' | 'client-walkthrough' | 'technical-review'
+
+/** One stop of a host-authored tour. Positions in scene metres (Y up) — take them from getCamera(). */
+export interface TourStepInput {
+  position: Vec3
+  target: Vec3
+  caption?: string
+  /** Elements (expressIDs) to highlight at this stop. */
+  highlight?: number[]
+  /** IFC classes to isolate at this stop, e.g. ['IfcWall', 'IfcSlab']. */
+  isolate?: string[]
+  modelId?: string
+}
+
+export interface TourInput {
+  title?: string
+  steps: TourStepInput[]
+}
+
+/**
+ * `true` advances at the default pace (6 s per stop); a number is ms per stop
+ * (1 500–120 000). The tour ends after the last stop.
+ */
+export type TourAutoplay = boolean | number
+
+export interface TourState {
+  playing: boolean
+  title: string | null
+  template: TourTemplate | null
+  stepIndex: number | null
+  total: number
+  /** The stops, in the shape playTour() takes — save them to replay the tour later. */
+  steps: Array<Required<Omit<TourStepInput, 'modelId' | 'caption'>> & { caption: string | null; modelId: string | null }>
+}
+
+export interface TourStepEvent { index: number; total: number; caption: string | null }
+
+/** A built-in director recipe, as getPresentationRecipes() lists it. */
+export interface PresentationRecipe {
+  id: string
+  name: string
+  format: 'wide' | 'linkedin' | 'square' | 'reel' | 'tiktok'
+  targetSec: number
+  style: 'classic' | 'launch' | 'motion'
+  look: string | null
+  sections: string[]
+}
+
+/** Overrides applied on top of a recipe. */
+export interface PresentationOptions {
+  /** Output shape: `wide` 16:9, `linkedin` 4:5, `square`, `reel` / `tiktok` 9:16. */
+  format?: PresentationRecipe['format']
+  /** Target length, 5–180 s; the director fits the shots to it. */
+  targetSec?: number
+  pace?: 'calm' | 'normal' | 'fast'
+  /** Opening title card text. */
+  title?: string
+  /** Closing call to action. */
+  cta?: string
+  /** Narrated captions on or off. */
+  captions?: boolean
+  /** `'none'` for a silent video. */
+  music?: 'none'
+  watermark?: boolean
+}
+
+export interface PresentationState {
+  open: boolean
+  clips: number
+  durationSec: number
+  width: number
+  height: number
+}
+
+export interface PresentationVideo {
+  /** The encoded file (MP4, or WebM where the browser cannot encode MP4). Transferred, not copied. */
+  bytes: ArrayBuffer
+  mimeType: string
+  sizeBytes: number
+}
+
+export interface PresentationProgressEvent {
+  stage: 'generate' | 'export'
+  label?: string
+  /** 0–1, or null while indeterminate. */
+  progress: number | null
+}
+
 export interface IfcViewerEventMap {
   ready: ReadyEvent
   'model-loaded': ModelLoadedEvent
@@ -468,6 +559,14 @@ export interface IfcViewerEventMap {
   'walk-changed': WalkState
   /** A measurement was added, removed or renamed. Carries the whole list. Since v1.11.0. */
   'measurements-changed': MeasurementsState
+  /** A tour began playing — started by the host or by the visitor. Since v1.12.0. */
+  'tour-started': { title: string; total: number; template: TourTemplate | null }
+  /** The tour moved to another stop. Since v1.12.0. */
+  'tour-step': TourStepEvent
+  /** The tour stopped; `completed` when it had reached the last stop. Since v1.12.0. */
+  'tour-ended': { completed: boolean }
+  /** The director is generating or exporting a presentation. Since v1.12.0. */
+  'presentation-progress': PresentationProgressEvent
 }
 
 /** Languages the viewer ships with — code + native label, for building a picker. */
@@ -521,7 +620,15 @@ type Listener<T> = (payload: T) => void
 // SI values, and per-model visibility in federated scenes. Two new events:
 // `walk-changed`, `measurements-changed`. New boot options `map`, `solar`,
 // `moon`, `scans` mirror the URL deep links, so a static page needs no JS.
-const SDK_VERSION = '1.11.0'
+// 1.12.0: tours and the presentation director. startTour() runs a built-in
+// template (social / client walkthrough / technical review); playTour() plays
+// a tour the host authored — camera stops with captions, highlights and
+// isolation, optionally self-running — and getTour() hands it back in the
+// same shape so it can be saved. createPresentation() turns a director recipe
+// into a Clip Studio project; exportPresentation() encodes it in the visitor's
+// browser and returns the video bytes. Events tour-started / tour-step /
+// tour-ended / presentation-progress.
+const SDK_VERSION = '1.12.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -1296,6 +1403,99 @@ export class IfcViewer {
     return this.request<unknown>('ifcviewer:isolate-model', { modelId }).then(() => undefined)
   }
 
+  // ── Tours (since v1.12.0) ───────────────────────────────────────────────
+  // Played by the viewer's own tour bar, so a host-started tour looks exactly
+  // like one the visitor started: captions, arrows, share link.
+
+  /**
+   * Start a built-in tour. `social` and `client-walkthrough` show the model off
+   * (a handful of framed views); `technical-review` walks the validation
+   * issues, worst first, and needs validation to have run.
+   */
+  startTour(template: TourTemplate = 'client-walkthrough', opts: { title?: string; autoplay?: TourAutoplay; includeImprovements?: boolean } = {}): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:start-tour', { template, ...opts }, 60_000)
+  }
+
+  /**
+   * Play a tour you authored: camera stops with a caption, and optionally the
+   * elements to highlight or the classes to isolate. Build the stops with
+   * getCamera(), or replay one saved from getTour().
+   *
+   *   await viewer.playTour({ title: 'Walkthrough', steps: [
+   *     { position: { x: 30, y: 20, z: 30 }, target: { x: 0, y: 0, z: 0 }, caption: 'The site' },
+   *     { position: …, target: …, caption: 'Structure', isolate: ['IfcColumn', 'IfcBeam'] },
+   *   ] }, { autoplay: 5000 })
+   */
+  playTour(tour: TourInput, opts: { startAt?: number; autoplay?: TourAutoplay } = {}): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:play-tour', { tour, ...opts })
+  }
+
+  /** Jump to a stop (0-based). */
+  goToTourStep(index: number): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:tour-step', { index })
+  }
+
+  /** Next stop. */
+  nextTourStep(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:tour-step', { delta: 1 })
+  }
+
+  /** Previous stop. */
+  prevTourStep(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:tour-step', { delta: -1 })
+  }
+
+  /** Turn self-running on (true / ms per stop) or off (false) for the tour playing now. */
+  setTourAutoplay(autoplay: TourAutoplay): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:set-tour-autoplay', { autoplay })
+  }
+
+  /** Stop the tour and give the camera back. */
+  stopTour(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:stop-tour')
+  }
+
+  /** The tour loaded now, its position, and its stops in playTour() shape. */
+  getTour(): Promise<TourState> {
+    return this.request<TourState>('ifcviewer:get-tour')
+  }
+
+  // ── Presentation director (since v1.12.0) ──────────────────────────────
+  // A recipe turns the model into an edited video: shots planned from the
+  // IFC itself (storeys, systems, issues), captions, music, transitions.
+  // Everything renders and encodes in the visitor's browser.
+
+  /** The built-in recipes — ids for createPresentation(). */
+  getPresentationRecipes(): Promise<PresentationRecipe[]> {
+    return this.request<PresentationRecipe[]>('ifcviewer:get-recipes')
+  }
+
+  /**
+   * Generate a presentation from a recipe. Opens the viewer's Clip Studio with
+   * the result, where the visitor can still edit it. Resolves once the shots
+   * are rendered — that takes a while (tens of seconds to minutes); follow it
+   * on `presentation-progress`.
+   */
+  createPresentation(recipe = 'meeting-demo', options: PresentationOptions = {}): Promise<PresentationState> {
+    return this.request<PresentationState>('ifcviewer:create-presentation', { recipe, options }, 15 * 60_000)
+  }
+
+  /**
+   * Encode the current presentation to a video file and hand its bytes to the
+   * host — to upload to your CMS, attach to a report, or play in a <video>:
+   *
+   *   const { bytes, mimeType } = await viewer.exportPresentation()
+   *   video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+   */
+  exportPresentation(opts: { resolution?: 720 | 1080 | 1440; music?: boolean } = {}): Promise<PresentationVideo> {
+    return this.request<PresentationVideo>('ifcviewer:export-presentation', { ...opts }, 30 * 60_000)
+  }
+
+  /** Close Clip Studio (the generated project is kept until the next one). */
+  closePresentation(): Promise<void> {
+    return this.request<unknown>('ifcviewer:close-presentation').then(() => undefined)
+  }
+
   // ── Panels ──────────────────────────────────────────────────────────────
   // The viewer's tools live on a rail, one open at a time. Until now a host
   // could load a scan but not open the panel that configures it, could not ask
@@ -1516,6 +1716,18 @@ export class IfcViewer {
       case 'measurements-changed':
         this.emit('measurements-changed', data as unknown as MeasurementsState)
         break
+      case 'tour-started':
+        this.emit('tour-started', data as unknown as IfcViewerEventMap['tour-started'])
+        break
+      case 'tour-step':
+        this.emit('tour-step', data as unknown as TourStepEvent)
+        break
+      case 'tour-ended':
+        this.emit('tour-ended', { completed: !!data.completed })
+        break
+      case 'presentation-progress':
+        this.emit('presentation-progress', data as unknown as PresentationProgressEvent)
+        break
       case 'result': {
         const rid = data.requestId
         if (!rid) break
@@ -1552,6 +1764,7 @@ export class IfcViewer {
 const FORWARDED_EVENTS = [
   'ready', 'model-loaded', 'model-error', 'model-progress', 'validation-completed', 'element-selected',
   'pointcloud-picked', 'map-feature-picked', 'walk-changed', 'measurements-changed',
+  'tour-started', 'tour-step', 'tour-ended', 'presentation-progress',
 ] as const
 
 export class IfcViewerElement extends HTMLElement {
@@ -1646,6 +1859,11 @@ export class IfcViewerElement extends HTMLElement {
   setMeasureTool(tool: MeasureTool | 'none'): Promise<void> { return this._viewer!.setMeasureTool(tool) }
   getMeasurements(): Promise<MeasurementsState> { return this._viewer!.getMeasurements() }
   setView(view: CameraView, scope?: CameraScope): void { this._viewer?.setView(view, scope) }
+  startTour(template?: TourTemplate, opts?: { title?: string; autoplay?: TourAutoplay; includeImprovements?: boolean }): Promise<TourState> { return this._viewer!.startTour(template, opts) }
+  playTour(tour: TourInput, opts?: { startAt?: number; autoplay?: TourAutoplay }): Promise<TourState> { return this._viewer!.playTour(tour, opts) }
+  stopTour(): Promise<TourState> { return this._viewer!.stopTour() }
+  createPresentation(recipe?: string, options?: PresentationOptions): Promise<PresentationState> { return this._viewer!.createPresentation(recipe, options) }
+  exportPresentation(opts?: { resolution?: 720 | 1080 | 1440; music?: boolean }): Promise<PresentationVideo> { return this._viewer!.exportPresentation(opts) }
 }
 
 /** Register the <ifc-viewer> element (idempotent). Auto-called on import. */

@@ -165,6 +165,36 @@ const viewer = await IfcViewer.create('#viewer', {
 await viewer.setSolar({ date: '12-21', time: '09:30' })
 ```
 
+## Tours and the presentation director (v1.12)
+
+Tours are played by the viewer's own tour bar, so a tour the host starts looks
+and behaves like one the visitor started: captions, arrows and the share link.
+The director turns the model into an edited video. It is rendered and encoded
+in the visitor's browser, and nothing is uploaded.
+
+| Method | Description |
+|--------|-------------|
+| `startTour(template?, { autoplay?, title?, includeImprovements? })` | Starts a built-in tour: `social` (5 views), `client-walkthrough` (up to 10, client skin) or `technical-review` (walks the validation issues, worst first; needs validation to have run). |
+| `playTour({ title?, steps }, { startAt?, autoplay? })` | Plays a tour you wrote. Each step is `{ position, target, caption?, highlight?: expressId[], isolate?: IfcClass[], modelId? }`, in scene metres with Y up. Take the positions from `getCamera()`. `autoplay: true` advances every 6 s; a number is ms per stop (1.5–120 s). The tour ends after the last stop. |
+| `nextTourStep()` / `prevTourStep()` / `goToTourStep(i)` | Moves to another stop. |
+| `setTourAutoplay(autoplay)` / `stopTour()` | Turns self-running on or off / stops the tour and gives the camera back. |
+| `getTour()` | `{ playing, title, template, stepIndex, total, steps }`. `steps` is in the shape `playTour()` takes, so you can save a tour and replay it later. |
+| `getPresentationRecipes()` | The built-in recipes: `{ id, name, format, targetSec, style, look, sections }`. |
+| `createPresentation(recipe?, { format?, targetSec?, pace?, title?, cta?, captions?, music?: 'none', watermark? })` | Generates a presentation (shots planned from the IFC, captions, music) and opens Clip Studio with it, where it stays editable. Resolves when the shots are rendered, which takes tens of seconds to minutes. It also works in `kiosk` and `client`, which have no toolbar. |
+| `exportPresentation({ resolution?: 720 \| 1080 \| 1440, music? })` | Encodes the presentation and resolves `{ bytes, mimeType, sizeBytes }`. The file is MP4, or WebM where the browser cannot encode MP4. The bytes are transferred, not copied. |
+| `closePresentation()` | Closes Clip Studio. |
+
+Events: `tour-started` `{ title, total, template }`, `tour-step` `{ index, total, caption }`,
+`tour-ended` `{ completed }`, `presentation-progress` `{ stage: 'generate' | 'export', label?, progress }`.
+
+```js
+await viewer.playTour({ title: 'Casa Poblenou', steps: savedSteps }, { autoplay: 6000 })
+
+await viewer.createPresentation('linkedin-teaser', { title: 'Casa Poblenou', targetSec: 20 })
+const { bytes, mimeType } = await viewer.exportPresentation({ resolution: 1080 })
+video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+```
+
 ## Analysis: sections, measurements, federated models (v1.11)
 
 | Method | Description |
