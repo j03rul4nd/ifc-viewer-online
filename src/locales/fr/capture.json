@@ -663,6 +663,40 @@
       "doneEmbedded": "Done: the sound is in the video, the reveal hits on the drop. Preview it, tweak it, then Export.",
       "tryStyle": "Try another style",
       "another": "Another sound"
+    },
+    "beatCaptions": {
+      "label": "Captions word by word, on the beat",
+      "on": "Captions on the beat",
+      "hint": "Two or three words at a time, big and centred; each new word punches in on a beat. They stay on the beat when you edit or move a caption."
+    },
+    "export2": {
+      "exportingTitle": "Exporting…",
+      "doneTitle": "Saved to your device",
+      "resolution": "Resolution",
+      "fps": "Frame rate",
+      "quality": "Quality",
+      "q": {
+        "small": "Smaller file",
+        "recommended": "Recommended",
+        "high": "Higher"
+      },
+      "eta": "about {{time}}",
+      "fastHint": "720p exports about twice as fast — fine for a phone feed.",
+      "withMusic": "Include the music",
+      "rightsNote": "Viral sound: its rights are unknown. The platform may mute the video, take it down or limit its reach. For TikTok, leave it off and add the same sound in the app — the cut is already timed to it.",
+      "name": "File name",
+      "left": "{{time}} left",
+      "starting": "Starting…",
+      "keepOpen": "You can switch tabs — it keeps going.",
+      "saved": "{{file}} · {{size}} · exported in {{time}}",
+      "saveAgain": "Save again",
+      "openTiktok": "Open TikTok",
+      "share": "Share…",
+      "done": "Done"
+    },
+    "direct": {
+      "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
+      "resize": "Resize"
     }
   },
   "cover": {

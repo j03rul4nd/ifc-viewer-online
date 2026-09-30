@@ -239,5 +239,98 @@
     "loading": "加载中…",
     "processing": "处理中…",
     "fromCache": "来自缓存"
+  },
+  "mascot": {
+    "label": "IFC Viewer 的吉祥物 Bimo",
+    "hello": "你好，我是 Bimo！拖入一个 IFC，我带你四处看看。",
+    "tip1": "拖入 .ifc 文件，我会直接在浏览器中打开它。",
+    "tip2": "不会上传任何内容，你的模型只留在你的电脑上。",
+    "tip3": "试试验证器吧，我最喜欢干净的 IDS 报告。",
+    "hide": "隐藏 Bimo",
+    "blogHello": "你阅读的时候我陪着你。",
+    "blogTip1": "想试试吗？打开查看器，拖入你自己的 IFC。",
+    "blogTip2": "有疑问？用文章里的 AI 按钮问问你的助手。",
+    "blogTip3": "小技巧：目录可以直接跳到任意章节。",
+    "blogDone": "你读完啦！要用自己的模型试一试吗？",
+    "welcome": "欢迎加入！我会帮你保存每一次验证。",
+    "signin": "欢迎回来！登录后我把你的历史记录拿来。",
+    "signup": "创建账户，我会记住你检查过的每个模型。",
+    "proPitch": "Pro 会保存你的历史、同步你的规则，并在报告上加上你的标志。",
+    "proLater": "没关系，免费查看器永远免费。",
+    "newsPrompt": "只有值得一读的内容我才会写。",
+    "emailThanks": "谢谢！你已加入列表。",
+    "emailError": "嗯，没有成功。再试一次？",
+    "ebookThanks": "祝阅读愉快！手册正在下载。",
+    "states": {
+      "notFound": {
+        "eyebrow": "错误 404",
+        "title": "这个页面走丢了",
+        "body": "我到处找过了，还是没找到。它可能已被移动，或者链接有拼写错误。"
+      },
+      "unsupported": {
+        "eyebrow": "暂不支持",
+        "title": "这个还不支持",
+        "body": "你的浏览器或这种文件类型暂时无法使用此功能。请试试最新版的 Chrome、Edge、Firefox 或 Safari。"
+      },
+      "docs": {
+        "eyebrow": "文档",
+        "title": "我带你看看",
+        "body": "指南、参考和示例，可以一步一步跟着做。"
+      },
+      "offline": {
+        "eyebrow": "离线",
+        "title": "你已离线",
+        "body": "我在这里等你。已打开的内容仍可使用，其余内容会在恢复连接后回来。"
+      },
+      "error": {
+        "eyebrow": "出错了",
+        "title": "没有成功",
+        "body": "问题出在我们这边，不是你。请重试；如果反复出现，请告诉我们你当时在做什么。"
+      },
+      "empty": {
+        "eyebrow": "这里还没有内容",
+        "title": "这里有点空",
+        "body": "添加内容后，它会显示在这里。"
+      },
+      "comingSoon": {
+        "eyebrow": "即将推出",
+        "title": "我正在努力搭建",
+        "body": "还没准备好，但快了。请稍后再来。"
+      },
+      "success": {
+        "eyebrow": "完成",
+        "title": "全部搞定！",
+        "body": "一切顺利，可以继续了。"
+      }
+    }
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "新功能上线时通知我",
+      "promptSuffix": "——无垃圾邮件，可随时退订",
+      "placeholder": "your@email.com",
+      "submit": "通知我",
+      "successTitle": "你已加入列表",
+      "successBody": "新功能上线时我们会通知你。无垃圾邮件，可随时退订。",
+      "notAvailable": "暂不可用，请稍后再试。",
+      "genericError": "出了点问题，请重试。",
+      "consentBefore": "订阅即表示你同意偶尔接收产品更新邮件（通过 Resend 发送）。无垃圾邮件，可随时退订。请查看我们的",
+      "privacyLink": "隐私政策",
+      "consentAfter": "。"
+    },
+    "ebook": {
+      "emailLabel": "你的邮箱地址",
+      "placeholder": "you@example.com",
+      "submit": "把手册发给我",
+      "sending": "发送中…",
+      "invalid": "这个邮箱地址看起来不对，请检查后重试。",
+      "unreachable": "我们暂时无法连接邮件列表，因此你可能收不到我们的消息。你的下载仍已准备好。",
+      "doneTitle": "下载已开始",
+      "doneBody": "如果没有反应，可能是浏览器拦截了下载。请使用下方的直接链接。",
+      "downloadAgain": "重新下载 PDF",
+      "consentBefore": "无需账户，无需银行卡。只发一封邮件，可随时退订。请查看",
+      "privacyLink": "隐私政策",
+      "consentAfter": "。"
+    }
   }
 }

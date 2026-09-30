@@ -243,5 +243,98 @@
     "loading": "Cargando…",
     "processing": "Procesando…",
     "fromCache": "Desde caché"
+  },
+  "mascot": {
+    "label": "Bimo, la mascota de IFC Viewer",
+    "hello": "¡Hola, soy Bimo! Suelta un IFC y te enseño todo.",
+    "tip1": "Suelta un archivo .ifc y lo abro directamente en tu navegador.",
+    "tip2": "No se sube nada. Tu modelo se queda en tu equipo.",
+    "tip3": "Prueba el validador. Me encanta un informe IDS limpio.",
+    "hide": "Ocultar a Bimo",
+    "blogHello": "Te hago compañía mientras lees.",
+    "blogTip1": "¿Quieres probarlo? Abre el visor y suelta tu propio IFC.",
+    "blogTip2": "¿Dudas? Usa el botón de IA del artículo para preguntarle a tu asistente.",
+    "blogTip3": "Truco: el índice te lleva directo a cualquier sección.",
+    "blogDone": "¡Has llegado al final! ¿Lo pruebas con tu propio modelo?",
+    "welcome": "¡Ya estás dentro! Guardaré cada validación por ti.",
+    "signin": "¡Hola de nuevo! Inicia sesión y te traigo tu historial.",
+    "signup": "Crea tu cuenta y recordaré cada modelo que revises.",
+    "proPitch": "Pro guarda tu historial, sincroniza tus reglas y pone tu logo en los informes.",
+    "proLater": "Sin problema, el visor gratis sigue siendo gratis.",
+    "newsPrompt": "Solo escribo cuando hay algo que merece la pena.",
+    "emailThanks": "¡Gracias! Ya estás en la lista.",
+    "emailError": "Vaya, no ha funcionado. ¿Lo intentas otra vez?",
+    "ebookThanks": "¡Disfruta del manual! Ya se está descargando.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Error 404",
+        "title": "Esta página se ha perdido",
+        "body": "He buscado por todas partes y no la encuentro. Puede que se haya movido o que el enlace tenga una errata."
+      },
+      "unsupported": {
+        "eyebrow": "No compatible",
+        "title": "Esto aún no es compatible",
+        "body": "Tu navegador o este tipo de archivo todavía no lo permiten. Prueba con un Chrome, Edge, Firefox o Safari recientes."
+      },
+      "docs": {
+        "eyebrow": "Documentación",
+        "title": "Te enseño cómo funciona",
+        "body": "Guías, referencia y ejemplos, pensados para seguirlos paso a paso."
+      },
+      "offline": {
+        "eyebrow": "Sin conexión",
+        "title": "Estás sin conexión",
+        "body": "Te espero aquí. Lo que ya está abierto sigue funcionando; el resto vuelve con la conexión."
+      },
+      "error": {
+        "eyebrow": "Algo ha fallado",
+        "title": "Eso no ha funcionado",
+        "body": "El fallo es nuestro, no tuyo. Vuelve a intentarlo y, si se repite, cuéntanos qué estabas haciendo."
+      },
+      "empty": {
+        "eyebrow": "Aún no hay nada",
+        "title": "Esto está un poco vacío",
+        "body": "Cuando añadas algo, aparecerá aquí."
+      },
+      "comingSoon": {
+        "eyebrow": "Próximamente",
+        "title": "Lo estoy construyendo ahora mismo",
+        "body": "Todavía no está listo, pero va en camino. Vuelve pronto."
+      },
+      "success": {
+        "eyebrow": "Hecho",
+        "title": "¡Todo listo!",
+        "body": "Todo ha ido bien. Ya puedes seguir."
+      }
+    }
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Recibe un aviso cuando lancemos novedades",
+      "promptSuffix": " — sin spam, date de baja cuando quieras",
+      "placeholder": "tu@email.com",
+      "submit": "Avísame",
+      "successTitle": "Ya estás en la lista",
+      "successBody": "Te avisaremos cuando lancemos novedades. Sin spam, date de baja cuando quieras.",
+      "notAvailable": "Aún no está disponible. Inténtalo pronto.",
+      "genericError": "Algo ha fallado. Inténtalo de nuevo.",
+      "consentBefore": "Al suscribirte aceptas recibir de vez en cuando emails sobre novedades del producto (enviados con Resend). Sin spam, date de baja cuando quieras. Consulta nuestra ",
+      "privacyLink": "Política de privacidad",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "Tu dirección de email",
+      "placeholder": "tu@estudio.com",
+      "submit": "Envíame el manual",
+      "sending": "Enviando…",
+      "invalid": "Esa dirección no parece correcta. Revísala e inténtalo de nuevo.",
+      "unreachable": "No hemos podido conectar con nuestra lista de correo, así que puede que no recibas noticias nuestras. Tu descarga está lista igualmente.",
+      "doneTitle": "Tu descarga ha empezado",
+      "doneBody": "Si no ha pasado nada, puede que tu navegador la haya bloqueado. Usa el enlace directo de abajo.",
+      "downloadAgain": "Descargar el PDF otra vez",
+      "consentBefore": "Sin cuenta ni tarjeta. Un email, date de baja cuando quieras. Consulta la ",
+      "privacyLink": "política de privacidad",
+      "consentAfter": "."
+    }
   }
 }

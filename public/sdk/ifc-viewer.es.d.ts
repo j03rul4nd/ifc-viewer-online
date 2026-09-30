@@ -42,6 +42,29 @@ export interface IfcViewerOptions {
     title?: string;
     /** Auto-load this public (CORS-enabled) IFC URL once the viewer is ready. */
     model?: string;
+    /**
+     * Scene background from the first frame: a preset (`'white'`, `'paper'`,
+     * `'blueprint'`, `'sky'`, `'studio'`), one colour (`'#f4f4f5'`) or a
+     * top,bottom gradient (`'#dbeafe,#ffffff'`). Since v1.11.0.
+     */
+    background?: BackgroundSpec;
+    /**
+     * Put the model on the map once it loads, from its own georeference. `true`
+     * for the map alone, or the layers to add. Map tiles and OpenStreetMap come
+     * from third parties — see {@link IfcViewer.setSiteContext} on consent.
+     * Since v1.11.0.
+     */
+    map?: boolean | Array<'terrain' | 'buildings' | 'showcase'>;
+    /**
+     * Open the sun study at this SITE-LOCAL time once the model loads:
+     * `'06-21T18:00'` (every year) or `'2026-12-21T09:30'`. Only honoured when
+     * the model's location is known. Since v1.11.0.
+     */
+    solar?: string;
+    /** With `solar`: light the moon too. Since v1.11.0. */
+    moon?: boolean;
+    /** Point clouds to fetch alongside the model (CORS-enabled URLs). Since v1.11.0. */
+    scans?: string[];
     /** Reject add()/addFromUrl() after this many ms. 0 disables. Default 120000. */
     loadTimeout?: number;
     /** Convenience callbacks (equivalent to .on(...)). */
@@ -312,6 +335,195 @@ export interface MapFeaturePickedEvent {
     /** True when the height was inferred from tags rather than surveyed. */
     heightEstimated: boolean;
 }
+/** A background preset name. */
+export type BackgroundPreset = 'studio' | 'white' | 'paper' | 'blueprint' | 'sky';
+/**
+ * A scene background: a preset name, `'#rrggbb'`, `'#top,#bottom'` (gradient),
+ * or `{ top, bottom? }`.
+ */
+export type BackgroundSpec = BackgroundPreset | string | {
+    preset: BackgroundPreset;
+} | {
+    top: string;
+    bottom?: string;
+};
+/** The background the viewer resolved, as returned by setBackground/getBackground. */
+export interface BackgroundState {
+    preset: BackgroundPreset | 'custom';
+    mode: 'solid' | 'gradient';
+    top: string;
+    bottom: string;
+}
+/** Where the camera is and what it looks at, in scene metres (Y up). */
+export interface CameraState {
+    position: Vec3;
+    target: Vec3;
+    direction: Vec3;
+    up?: Vec3;
+    fovDeg: number;
+}
+/** First-person walk mode. */
+export interface WalkState {
+    active: boolean;
+    /** Metres per second at a walk. */
+    speed: number;
+}
+/** Options for {@link IfcViewer.setSolar}. Omitted fields are left alone. */
+export interface SolarOptions {
+    /** Start (default) or stop the study. */
+    active?: boolean;
+    /** Site-local date: `'YYYY-MM-DD'`, or `'MM-DD'` for this year. */
+    date?: string;
+    /** Site-local time, `'HH:MM'`. */
+    time?: string;
+    moon?: boolean;
+    /** Physically-based sky dome. */
+    sky?: boolean;
+    quality?: 'standard' | 'high';
+    /**
+     * Where the site is, when the IFC does not say. Without it, a model with no
+     * georeference is an error — never a silent default city.
+     */
+    location?: {
+        lat: number;
+        lon: number;
+    };
+}
+export interface SolarState {
+    active: boolean;
+    /** Site-local. */
+    date: string;
+    time: string;
+    /** IANA zone of the site, e.g. `Europe/Madrid`. */
+    timeZone: string;
+    moon: boolean;
+    sky: boolean;
+    quality: 'standard' | 'high';
+    /** `source: 'ifc'` is the model's own georeference; `manual` was typed or passed. */
+    location: {
+        lat: number;
+        lon: number;
+        source: 'ifc' | 'map' | 'manual' | 'default';
+    } | null;
+}
+/** Options for {@link IfcViewer.setSiteContext}. Omitted fields are left alone. */
+export interface SiteContextOptions {
+    /** Map mode on (default) or off. */
+    enabled?: boolean;
+    /** 3D terrain relief. */
+    terrain?: boolean;
+    /** OpenStreetMap surroundings: buildings, water, parks, roads… */
+    buildings?: boolean;
+    /** Per-layer switches, e.g. `{ tree: false, water: true }`. */
+    layers?: Record<string, boolean>;
+    /** Facade fidelity of the surroundings. `showcase` adds authored props. */
+    detail?: 'simple' | 'detailed' | 'showcase';
+    terrainStyle?: 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem';
+    /** Terrain vertical exaggeration, 1–3. */
+    exaggeration?: number;
+    /** Decorative cars and trains. */
+    vehicles?: boolean;
+}
+export interface SiteContextState {
+    enabled: boolean;
+    status: string;
+    terrain: boolean;
+    buildings: boolean;
+    buildingsStatus: 'idle' | 'loading' | 'ready' | 'empty' | 'error';
+    detail: 'simple' | 'detailed' | 'showcase';
+    terrainStyle: string;
+    exaggeration: number;
+    vehicles: boolean;
+    placement: {
+        lat: number;
+        lon: number;
+        rotationDeg: number;
+        source: string;
+        confidence: 'high' | 'approximate';
+    } | null;
+    /** Credits for what is on screen. Show them wherever you show the map. */
+    attributions: string[];
+}
+/** One section plane. `offset` is in IFC metres along `axis` (Z = up). */
+export interface SectionPlane {
+    id: string;
+    kind: 'axis' | 'face';
+    axis: 'x' | 'y' | 'z' | null;
+    enabled: boolean;
+    offset: number;
+    flipped: boolean;
+    /** The model's extent along the axis — the offsets that cut something. */
+    range: {
+        min: number;
+        max: number;
+    };
+}
+export interface SectionsState {
+    planes: SectionPlane[];
+    box: {
+        enabled: boolean;
+        ranges: Record<'x' | 'y' | 'z', {
+            min: number;
+            max: number;
+        }>;
+    } | null;
+    /** Enabled cuts, the box counting as one. */
+    active: number;
+    /** Storeys, for plan cuts — only on getSections(). */
+    levels?: Array<{
+        name: string;
+        y: number;
+    }>;
+}
+/** Options for {@link IfcViewer.addSection}. */
+export interface AddSectionOptions {
+    /** Cut axis in IFC terms. `z` (default) is a plan cut, `x`/`y` are sections. */
+    axis?: 'x' | 'y' | 'z';
+    /** Where to cut, IFC metres along the axis. Default: mid-model. */
+    offset?: number;
+    /**
+     * A plan cut at a storey — its name (case-insensitive) or index from
+     * `getSections().levels`. Cuts 1.2 m above that floor. Overrides axis/offset.
+     */
+    level?: string | number;
+    /** Keep the other side. */
+    flip?: boolean;
+}
+export type MeasureTool = 'distance' | 'path' | 'area' | 'angle' | 'point';
+/**
+ * One measurement. `value` is always SI — metres, square metres for an area,
+ * degrees for an angle — whatever unit the viewer displays; null for a point.
+ */
+export interface Measurement {
+    id: string;
+    kind: MeasureTool;
+    /** Set when someone renamed it. */
+    name: string | null;
+    value: number | null;
+    /** Areas. */
+    perimeter?: number;
+    /** Areas: false when the traced outline is not flat (value is projected). */
+    planar?: boolean;
+    /** Distances, split into IFC axes; `horizontal` is the plan length. */
+    components?: {
+        dx: number;
+        dy: number;
+        dz: number;
+        horizontal: number;
+    };
+    /** Points: coordinates in the model's own IFC frame (or the scene's). */
+    coords?: Vec3;
+    frame?: 'model' | 'scene';
+    /** The picked points, scene metres. */
+    points: Vec3[];
+}
+export interface MeasurementsState {
+    /** The armed tool, or 'none'. */
+    tool: MeasureTool | 'none';
+    /** What the viewer displays. `value` is SI regardless. */
+    units: 'm' | 'cm' | 'mm' | 'ft';
+    items: Measurement[];
+}
 export interface IfcViewerEventMap {
     ready: ReadyEvent;
     'model-loaded': ModelLoadedEvent;
@@ -321,6 +533,10 @@ export interface IfcViewerEventMap {
     'element-selected': ElementSelectedEvent;
     'pointcloud-picked': PointCloudPickedEvent;
     'map-feature-picked': MapFeaturePickedEvent;
+    /** Walk mode turned on or off — by the visitor (G / Esc) or by the host. Since v1.11.0. */
+    'walk-changed': WalkState;
+    /** A measurement was added, removed or renamed. Carries the whole list. Since v1.11.0. */
+    'measurements-changed': MeasurementsState;
 }
 /** Languages the viewer ships with — code + native label, for building a picker. */
 export declare const LANGUAGES: ReadonlyArray<{
@@ -458,7 +674,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.10.1";
+    readonly version = "1.11.0";
     readonly iframe: HTMLIFrameElement;
     private readonly baseUrl;
     private readonly appOrigin;
@@ -656,6 +872,106 @@ export declare class IfcViewer {
     /** Place the camera at `position` looking along `direction`. */
     setCamera(position: Vec3, direction: Vec3): void;
     /**
+     * Change the scene background. A preset (`'white'`, `'paper'`, `'blueprint'`,
+     * `'sky'`, `'studio'`), `'#rrggbb'`, `'#top,#bottom'` or `{ top, bottom? }`.
+     * Rejects on anything else rather than painting a guess.
+     */
+    setBackground(background: BackgroundSpec): Promise<BackgroundState>;
+    /** The current scene background. */
+    getBackground(): Promise<BackgroundState>;
+    /** Re-theme the viewer's UI accent at runtime (`#rrggbb`). */
+    setAccent(color: string): Promise<void>;
+    /**
+     * Switch the client skin on or off — the stakeholder view: no technical
+     * panels, a clean Health Score badge. Same as `ui: 'client'`, at runtime.
+     */
+    setClientMode(enabled: boolean): Promise<void>;
+    /**
+     * `'quality'` turns on the heavier rendering (ambient occlusion, softer
+     * shadows) — for a hero shot or a screenshot; `'standard'` for everyday.
+     */
+    setRenderQuality(quality: 'standard' | 'quality'): Promise<void>;
+    /** Where the camera is and what it looks at — save it, restore it with lookAt. */
+    getCamera(): Promise<CameraState | null>;
+    /**
+     * Fly the camera to `position`, looking at `target` (scene metres, Y up).
+     * Pairs with getCamera() for "saved views" in your own UI.
+     */
+    lookAt(position: Vec3, target: Vec3, animate?: boolean): Promise<void>;
+    /**
+     * First-person walk mode: WASD / arrows to move, drag to look, Esc to leave.
+     * `speed` is metres per second. Emits `walk-changed`.
+     */
+    setWalkMode(enabled: boolean, opts?: {
+        speed?: number;
+    }): Promise<WalkState>;
+    /** Whether walk mode is on, and at what speed. */
+    getWalkState(): Promise<WalkState>;
+    /**
+     * Start or change the sun & moon study: real shadows at a site-local date and
+     * time. The site comes from the IFC's georeference, then the map placement;
+     * pass `location` for a model that has none — without one, this rejects
+     * instead of lighting the model as if it stood in some default city.
+     *
+     *   await viewer.setSolar({ date: '06-21', time: '18:00' })
+     */
+    setSolar(opts?: SolarOptions): Promise<SolarState>;
+    /** The sun study's state: date, time and zone, and where the site is. */
+    getSolar(): Promise<SolarState>;
+    /**
+     * Put the model on the map, with terrain and its OpenStreetMap surroundings.
+     *
+     * CONSENT: map tiles, elevation and OSM data come from third parties, so the
+     * visitor's browser talks to them. Calling this is YOUR page declaring that
+     * consent for its visitors — the viewer does not show its own consent sheet
+     * inside someone else's page. Show `attributions` wherever the map is shown.
+     *
+     * Resolves once the map (and the surroundings, when asked) are up; the first
+     * OpenStreetMap query for a place can take tens of seconds.
+     */
+    setSiteContext(opts?: SiteContextOptions): Promise<SiteContextState>;
+    /** Map mode's state, placement and the attributions you must display. */
+    getSiteContext(): Promise<SiteContextState>;
+    /**
+     * Add a section plane. `{ level: 'Level 1' }` is a floor plan at that storey;
+     * `{ axis: 'x', offset: 4.5 }` a section at 4.5 m. Resolves with the new
+     * plane's `id` and every plane now in the scene.
+     */
+    addSection(opts?: AddSectionOptions): Promise<SectionsState & {
+        id: string;
+    }>;
+    /** Move, toggle or flip a plane. */
+    updateSection(id: string, patch: {
+        offset?: number;
+        enabled?: boolean;
+        flipped?: boolean;
+    }): Promise<SectionsState>;
+    /** Remove one plane, or every cut (planes and box) when `id` is omitted. */
+    removeSection(id?: string): Promise<SectionsState>;
+    /**
+     * A section box around the whole model, or around the selected element;
+     * `false` removes it.
+     */
+    setSectionBox(fit?: 'model' | 'selection' | false): Promise<SectionsState>;
+    /** Every plane, the box, and the model's storeys (for level cuts). */
+    getSections(): Promise<SectionsState>;
+    /**
+     * Arm a measuring tool for the visitor (opens the Measure panel so they see
+     * what to click), or `'none'` to stand down. Results arrive on
+     * `measurements-changed`.
+     */
+    setMeasureTool(tool: MeasureTool | 'none'): Promise<void>;
+    /** Every measurement on screen, with SI values. */
+    getMeasurements(): Promise<MeasurementsState>;
+    /** Remove one measurement, or all of them when `id` is omitted. */
+    clearMeasurements(id?: string): Promise<MeasurementsState>;
+    /** Show or hide one model (see getModels()) without unloading it. */
+    setModelVisible(modelId: string, visible: boolean): Promise<void>;
+    /** Ghost a model (0.05–1) — e.g. the architecture around the MEP. Omit the id for the active model. */
+    setModelOpacity(opacity: number, modelId?: string): Promise<void>;
+    /** Show only this model; pass `null` to show them all again. */
+    isolateModel(modelId: string | null): Promise<void>;
+    /**
      * Open a tool panel, or pass `null` to close whatever is open.
      *
      * A panel that is not available — the chrome hides it, or nothing is loaded
@@ -722,6 +1038,19 @@ export declare class IfcViewerElement extends HTMLElement {
     fitPointCloud(cloudId?: string): Promise<void>;
     setPointCloudDisplay(display: PointCloudDisplayOptions, renderBudget?: number): Promise<void>;
     inspectPointCloud(enabled?: boolean): Promise<void>;
+    setBackground(background: BackgroundSpec): Promise<BackgroundState>;
+    setSolar(opts?: SolarOptions): Promise<SolarState>;
+    setSiteContext(opts?: SiteContextOptions): Promise<SiteContextState>;
+    setWalkMode(enabled: boolean, opts?: {
+        speed?: number;
+    }): Promise<WalkState>;
+    addSection(opts?: AddSectionOptions): Promise<SectionsState & {
+        id: string;
+    }>;
+    removeSection(id?: string): Promise<SectionsState>;
+    setMeasureTool(tool: MeasureTool | 'none'): Promise<void>;
+    getMeasurements(): Promise<MeasurementsState>;
+    setView(view: CameraView, scope?: CameraScope): void;
 }
 /** Register the <ifc-viewer> element (idempotent). Auto-called on import. */
 export declare function defineIfcViewerElement(tag?: string): void;

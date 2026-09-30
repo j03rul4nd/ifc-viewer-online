@@ -243,5 +243,98 @@
     "loading": "Chargement…",
     "processing": "Traitement…",
     "fromCache": "Depuis le cache"
+  },
+  "mascot": {
+    "label": "Bimo, la mascotte d’IFC Viewer",
+    "hello": "Bonjour, je suis Bimo ! Déposez un IFC et je vous fais visiter.",
+    "tip1": "Déposez un fichier .ifc et je l’ouvre directement dans votre navigateur.",
+    "tip2": "Rien n’est envoyé. Votre modèle reste sur votre machine.",
+    "tip3": "Essayez le validateur. J’adore un rapport IDS impeccable.",
+    "hide": "Masquer Bimo",
+    "blogHello": "Je vous tiens compagnie pendant votre lecture.",
+    "blogTip1": "Envie d’essayer ? Ouvrez le viewer et déposez votre propre IFC.",
+    "blogTip2": "Des questions ? Utilisez le bouton IA de l’article pour interroger votre assistant.",
+    "blogTip3": "Astuce : la table des matières mène directement à chaque section.",
+    "blogDone": "Vous êtes arrivé au bout ! On essaie avec votre propre modèle ?",
+    "welcome": "C’est fait ! Je garde chaque validation pour vous.",
+    "signin": "Bon retour ! Connectez-vous et je récupère votre historique.",
+    "signup": "Créez votre compte et je me souviendrai de chaque modèle que vous vérifiez.",
+    "proPitch": "Pro garde votre historique, synchronise vos règles et met votre logo sur les rapports.",
+    "proLater": "Pas de souci, le viewer gratuit reste gratuit.",
+    "newsPrompt": "Je n’écris que quand ça vaut le coup.",
+    "emailThanks": "Merci ! Vous êtes sur la liste.",
+    "emailError": "Oups, ça n’a pas marché. On réessaie ?",
+    "ebookThanks": "Bonne lecture ! Le guide est en cours de téléchargement.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Erreur 404",
+        "title": "Cette page s’est égarée",
+        "body": "J’ai cherché partout sans la trouver. Elle a peut-être été déplacée, ou le lien contient une faute de frappe."
+      },
+      "unsupported": {
+        "eyebrow": "Non pris en charge",
+        "title": "Ce n’est pas encore pris en charge",
+        "body": "Votre navigateur ou ce type de fichier ne le permet pas encore. Essayez une version récente de Chrome, Edge, Firefox ou Safari."
+      },
+      "docs": {
+        "eyebrow": "Documentation",
+        "title": "Je vous fais visiter",
+        "body": "Guides, référence et exemples, à suivre pas à pas."
+      },
+      "offline": {
+        "eyebrow": "Hors ligne",
+        "title": "Vous êtes hors ligne",
+        "body": "Je vous attends ici. Ce qui est déjà ouvert continue de fonctionner ; le reste revient avec la connexion."
+      },
+      "error": {
+        "eyebrow": "Une erreur s’est produite",
+        "title": "Cela n’a pas fonctionné",
+        "body": "L’erreur vient de nous, pas de vous. Réessayez, et si cela se reproduit, dites-nous ce que vous faisiez."
+      },
+      "empty": {
+        "eyebrow": "Rien pour l’instant",
+        "title": "C’est un peu vide ici",
+        "body": "Dès que vous ajouterez quelque chose, cela apparaîtra ici."
+      },
+      "comingSoon": {
+        "eyebrow": "Bientôt disponible",
+        "title": "Je le construis en ce moment",
+        "body": "Ce n’est pas encore prêt, mais ça arrive. Revenez bientôt."
+      },
+      "success": {
+        "eyebrow": "Terminé",
+        "title": "Tout est prêt !",
+        "body": "Tout s’est bien passé. Vous pouvez continuer."
+      }
+    }
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Soyez averti des nouvelles fonctionnalités",
+      "promptSuffix": " — pas de spam, désinscription à tout moment",
+      "placeholder": "votre@email.fr",
+      "submit": "Me prévenir",
+      "successTitle": "Vous êtes sur la liste",
+      "successBody": "Nous vous préviendrons à chaque nouveauté. Pas de spam, désinscription à tout moment.",
+      "notAvailable": "Pas encore disponible. Réessayez bientôt.",
+      "genericError": "Une erreur s’est produite. Réessayez.",
+      "consentBefore": "En vous abonnant, vous acceptez de recevoir de temps en temps des emails sur les nouveautés du produit (envoyés via Resend). Pas de spam, désinscription à tout moment. Consultez notre ",
+      "privacyLink": "Politique de confidentialité",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "Votre adresse email",
+      "placeholder": "vous@agence.fr",
+      "submit": "Envoyez-moi le guide",
+      "sending": "Envoi…",
+      "invalid": "Cette adresse ne semble pas correcte. Vérifiez-la et réessayez.",
+      "unreachable": "Nous n’avons pas pu joindre notre liste de diffusion, vous risquez donc de ne pas avoir de nouvelles. Votre téléchargement est prêt malgré tout.",
+      "doneTitle": "Votre téléchargement a commencé",
+      "doneBody": "S’il ne s’est rien passé, votre navigateur l’a peut-être bloqué. Utilisez le lien direct ci-dessous.",
+      "downloadAgain": "Télécharger à nouveau le PDF",
+      "consentBefore": "Sans compte ni carte. Un email, désinscription à tout moment. Consultez la ",
+      "privacyLink": "politique de confidentialité",
+      "consentAfter": "."
+    }
   }
 }

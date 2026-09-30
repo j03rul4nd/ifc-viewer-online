@@ -243,5 +243,98 @@
     "loading": "Laden…",
     "processing": "Verarbeitung…",
     "fromCache": "Aus Cache"
+  },
+  "mascot": {
+    "label": "Bimo, das Maskottchen von IFC Viewer",
+    "hello": "Hallo, ich bin Bimo! Ziehen Sie eine IFC-Datei herein und ich zeige Ihnen alles.",
+    "tip1": "Ziehen Sie eine .ifc-Datei herein und ich öffne sie direkt im Browser.",
+    "tip2": "Nichts wird hochgeladen. Ihr Modell bleibt auf Ihrem Rechner.",
+    "tip3": "Probieren Sie den Validator. Ich liebe einen sauberen IDS-Bericht.",
+    "hide": "Bimo ausblenden",
+    "blogHello": "Ich leiste Ihnen beim Lesen Gesellschaft.",
+    "blogTip1": "Lust, es auszuprobieren? Öffnen Sie den Viewer und ziehen Sie Ihre eigene IFC herein.",
+    "blogTip2": "Fragen? Nutzen Sie den KI-Button im Artikel, um Ihren Assistenten zu fragen.",
+    "blogTip3": "Tipp: Das Inhaltsverzeichnis springt direkt zu jedem Abschnitt.",
+    "blogDone": "Geschafft, bis zum Ende! Probieren Sie es mit Ihrem eigenen Modell?",
+    "welcome": "Sie sind dabei! Ich bewahre jeden Prüflauf für Sie auf.",
+    "signin": "Willkommen zurück! Melden Sie sich an und ich hole Ihren Verlauf.",
+    "signup": "Erstellen Sie Ihr Konto und ich merke mir jedes Modell, das Sie prüfen.",
+    "proPitch": "Pro speichert Ihren Verlauf, synchronisiert Ihre Regeln und setzt Ihr Logo auf Berichte.",
+    "proLater": "Kein Problem, der kostenlose Viewer bleibt kostenlos.",
+    "newsPrompt": "Ich schreibe nur, wenn es sich lohnt.",
+    "emailThanks": "Danke! Sie stehen auf der Liste.",
+    "emailError": "Hm, das hat nicht geklappt. Noch einmal versuchen?",
+    "ebookThanks": "Viel Spaß mit dem Handbuch! Der Download läuft.",
+    "states": {
+      "notFound": {
+        "eyebrow": "Fehler 404",
+        "title": "Diese Seite ist verschwunden",
+        "body": "Ich habe überall gesucht und sie nicht gefunden. Vielleicht wurde sie verschoben oder der Link enthält einen Tippfehler."
+      },
+      "unsupported": {
+        "eyebrow": "Nicht unterstützt",
+        "title": "Das wird noch nicht unterstützt",
+        "body": "Ihr Browser oder dieser Dateityp kann das noch nicht. Versuchen Sie ein aktuelles Chrome, Edge, Firefox oder Safari."
+      },
+      "docs": {
+        "eyebrow": "Dokumentation",
+        "title": "Ich zeige Ihnen, wie es geht",
+        "body": "Anleitungen, Referenz und Beispiele, Schritt für Schritt nachvollziehbar."
+      },
+      "offline": {
+        "eyebrow": "Offline",
+        "title": "Sie sind offline",
+        "body": "Ich warte hier. Was schon geöffnet ist, funktioniert weiter; der Rest kommt mit der Verbindung zurück."
+      },
+      "error": {
+        "eyebrow": "Etwas ist schiefgelaufen",
+        "title": "Das hat nicht funktioniert",
+        "body": "Der Fehler liegt bei uns, nicht bei Ihnen. Versuchen Sie es erneut und schreiben Sie uns, falls es wieder passiert."
+      },
+      "empty": {
+        "eyebrow": "Noch nichts hier",
+        "title": "Hier ist es noch leer",
+        "body": "Sobald Sie etwas hinzufügen, erscheint es hier."
+      },
+      "comingSoon": {
+        "eyebrow": "Demnächst",
+        "title": "Ich baue das gerade",
+        "body": "Es ist noch nicht fertig, aber unterwegs. Schauen Sie bald wieder vorbei."
+      },
+      "success": {
+        "eyebrow": "Erledigt",
+        "title": "Alles fertig!",
+        "body": "Alles hat geklappt. Sie können weitermachen."
+      }
+    }
+  },
+  "emailCapture": {
+    "footer": {
+      "prompt": "Benachrichtigung bei neuen Funktionen",
+      "promptSuffix": " – kein Spam, jederzeit abbestellbar",
+      "placeholder": "ihre@email.de",
+      "submit": "Benachrichtige mich",
+      "successTitle": "Sie stehen auf der Liste",
+      "successBody": "Wir melden uns, wenn neue Funktionen erscheinen. Kein Spam, jederzeit abbestellbar.",
+      "notAvailable": "Noch nicht verfügbar. Versuchen Sie es bald wieder.",
+      "genericError": "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+      "consentBefore": "Mit dem Abonnieren stimmen Sie gelegentlichen E-Mails zu Produkt-Updates zu (versendet über Resend). Kein Spam, jederzeit abbestellbar. Siehe unsere ",
+      "privacyLink": "Datenschutzerklärung",
+      "consentAfter": "."
+    },
+    "ebook": {
+      "emailLabel": "Ihre E-Mail-Adresse",
+      "placeholder": "sie@buero.de",
+      "submit": "Handbuch zusenden",
+      "sending": "Wird gesendet…",
+      "invalid": "Diese Adresse sieht nicht richtig aus. Prüfen Sie sie und versuchen Sie es erneut.",
+      "unreachable": "Wir konnten unsere Mailingliste gerade nicht erreichen, daher hören Sie vielleicht nichts von uns. Ihr Download ist trotzdem bereit.",
+      "doneTitle": "Ihr Download hat begonnen",
+      "doneBody": "Wenn nichts passiert ist, hat Ihr Browser ihn vielleicht blockiert. Nutzen Sie den direkten Link unten.",
+      "downloadAgain": "PDF erneut herunterladen",
+      "consentBefore": "Kein Konto, keine Karte. Eine E-Mail, jederzeit abbestellbar. Siehe die ",
+      "privacyLink": "Datenschutzerklärung",
+      "consentAfter": "."
+    }
   }
 }

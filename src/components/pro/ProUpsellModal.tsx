@@ -7,6 +7,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../Modal'
 import { trackProUpsellShown } from '../../lib/analytics'
+import BimoMascot from '../mascot/BimoMascot'
 
 interface ProUpsellModalProps {
   trigger: 'api_keys' | 'rulesets' | 'history' | 'landing' | 'manual'
@@ -16,6 +17,7 @@ interface ProUpsellModalProps {
 
 export default function ProUpsellModal({ trigger, onOpenAccount, onClose }: ProUpsellModalProps) {
   const { t } = useTranslation('pro')
+  const { t: tm } = useTranslation('common', { keyPrefix: 'mascot' })
 
   useEffect(() => { trackProUpsellShown({ trigger }) }, [trigger])
 
@@ -41,6 +43,10 @@ export default function ProUpsellModal({ trigger, onOpenAccount, onClose }: ProU
       )}
     >
       <div className="px-4 py-3 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <BimoMascot variant="inline" initial="love" greetingKey={null} className="relative shrink-0 w-[84px] h-[84px]" />
+          <p className="text-[12.5px] leading-snug text-[var(--text)]">{tm('proPitch')}</p>
+        </div>
         <ul className="text-[12px] text-[var(--text-muted)] leading-relaxed list-disc pl-4">
           <li>{t('plan.benefitHistory')}</li>
           <li>{t('plan.benefitSync')}</li>

@@ -44,7 +44,7 @@ describe('peaks / soundKey', () => {
   })
 })
 
-import { finishSoundClip } from './sound-clip'
+import { barSec, finishSoundClip, MIN_FILL_SPEED } from './sound-clip'
 import { addSource, createProject, layoutClips, type MediaSource } from './project'
 import type { TemplateContext } from './viral-templates'
 
@@ -73,9 +73,32 @@ describe('finishSoundClip', () => {
     expect(p.fx?.punch?.times[0]).toBeCloseTo(dropAt)
   })
 
-  it('reaches the sound-set length instead of two-beat stubs', () => {
-    const p = finishSoundClip(shots(), m, cut, 'dropReveal', ctx)
-    expect(end(p)).toBeGreaterThan(cut.durationSec * 0.7)
+  it('fills the full asked length, ending on a bar after the drop', () => {
+    for (const style of ['dropReveal', 'beforeAfter', 'pov', 'facts'] as const) {
+      const p = finishSoundClip(shots(), m, cut, style, ctx)
+      const dropAt = m.dropSec - p.audio.offsetSec
+      expect(Math.abs(end(p) - cut.durationSec)).toBeLessThanOrEqual(barSec(m) / 2 + 1e-6)
+      expect(((end(p) - dropAt) / barSec(m)) % 1).toBeCloseTo(0, 5)
+    }
+  })
+
+  it('slows shots down (not below the limit) when the footage runs out', () => {
+    // 11 s of footage in all, every source used to the last frame, for a 16 s clip.
+    let p0 = createProject()
+    for (const [i, len] of [3, 4, 2, 2].entries()) {
+      p0 = addSource(p0, { id: `t${i}`, kind: 'shot', label: '', durationSec: len, width: 1080, height: 1920 })
+    }
+    const p = finishSoundClip(p0, m, cut, 'pov', ctx)
+    expect(Math.abs(end(p) - cut.durationSec)).toBeLessThanOrEqual(barSec(m) / 2 + 1e-6)
+    expect(p.clips.some((c) => c.speed < 1)).toBe(true)
+    expect(Math.min(...p.clips.map((c) => c.speed))).toBeGreaterThanOrEqual(MIN_FILL_SPEED - 1e-9)
+  })
+
+  it('fills a loop to length and keeps it seamless', () => {
+    const p = finishSoundClip(shots(), m, cut, 'loop', ctx)
+    expect(Math.abs(end(p) - cut.durationSec)).toBeLessThanOrEqual(barSec(m) / 2 + 1e-6)
+    const opener = p.clips[0], tail = p.clips[p.clips.length - 1]
+    expect(tail.outSec).toBeCloseTo(opener.inSec)
   })
 
   it('keeps a loop seamless when trimming to the bar', () => {

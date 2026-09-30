@@ -38,6 +38,7 @@ export function Callout({ variant, title, children, lang = 'en' }: Lang & {
     <aside
       role="note"
       aria-label={title ?? label}
+      data-callout={variant}
       className="my-6 flex gap-3 rounded-xl border px-4 py-3.5 sm:px-5 sm:py-4"
       style={{
         borderColor: `color-mix(in srgb, ${color} 32%, var(--border))`,

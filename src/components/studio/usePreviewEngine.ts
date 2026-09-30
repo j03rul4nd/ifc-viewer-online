@@ -43,6 +43,8 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
   outputRef.current = output
   const clock = useRef<{ start: number; from: number } | null>(null)
   const raf = useRef(0)
+  const listeners = useRef(new Set<(t: number, playing: boolean) => void>())
+  const emit = (t: number, isPlaying: boolean) => { for (const fn of listeners.current) fn(t, isPlaying) }
   const audio = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode | null; sfx: AudioBufferSourceNode[] } | null>(null)
 
   const urlFor = useCallback((sourceId: string): string | null => {
@@ -68,14 +70,26 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     el.preload = 'auto'
     el.src = url
     el.addEventListener('seeked', () => { if (!clock.current) draw() })
-    el.addEventListener('loadeddata', () => { if (!clock.current) draw() })
+    el.addEventListener('loadeddata', () => { decoded.current.add(el!); if (!clock.current) draw() })
     videos.current.set(key, el)
     return el
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlFor])
 
+  // A <video> keeps showing its last decoded frame while it seeks (readyState
+  // drops below HAVE_CURRENT_DATA meanwhile). Drawing that frame instead of
+  // nothing keeps scrubbing and cuts from flashing black.
+  const decoded = useRef(new WeakSet<HTMLVideoElement>())
   const pictureOf = (el: HTMLVideoElement | null): FramePicture | null =>
-    el && el.readyState >= 2 && el.videoWidth > 0 ? { image: el, width: el.videoWidth, height: el.videoHeight } : null
+    el && el.videoWidth > 0 && (el.readyState >= 2 || decoded.current.has(el))
+      ? { image: el, width: el.videoWidth, height: el.videoHeight }
+      : null
+
+  /** A still (imported image) is its own frame; a video clip is its <video>. */
+  const stillOf = (sourceId: string): FramePicture | null => {
+    const m = mediaRef.current.get(sourceId)
+    return m?.kind === 'image' ? { image: m.image, width: m.width, height: m.height } : null
+  }
 
   const draw = useCallback((tOverride?: number) => {
     const canvas = canvasRef.current
@@ -86,12 +100,8 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     const sample = sampleProject(p, t)
     composeProjectFrame({
       ctx, width: canvas.width, height: canvas.height, project: p, sample, t,
-      frameOf: (c) => pictureOf(videos.current.get(c.clip.id) ?? null),
-      overlayOf: (ov) => {
-        const m = mediaRef.current.get(ov.sourceId)
-        if (m?.kind === 'image') return { image: m.image, width: m.width, height: m.height }
-        return pictureOf(videos.current.get(ov.id) ?? null)
-      },
+      frameOf: (c) => stillOf(c.clip.sourceId) ?? pictureOf(videos.current.get(c.clip.id) ?? null),
+      overlayOf: (ov) => stillOf(ov.sourceId) ?? pictureOf(videos.current.get(ov.id) ?? null),
       fill: outputRef.current.fill,
       watermark: outputRef.current.watermark,
     })
@@ -201,7 +211,9 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     for (const el of videos.current.values()) el.pause()
     stopAudio()
     setPlaying(false)
-    setPlayhead(Math.min(t, projectDuration(projectRef.current)))
+    const at = Math.min(t, projectDuration(projectRef.current))
+    setPlayhead(at)
+    emit(at, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setPlayhead, stopAudio])
 
@@ -222,8 +234,10 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
       }
       syncVideos(t, true)
       draw(t)
-      // Keep React's playhead roughly current without re-rendering at 60 Hz.
-      if (now - lastUi > 80) { lastUi = now; setPlayhead(t) }
+      emit(t, true)
+      // The timeline follows every frame through `subscribe`; React's playhead
+      // only needs to be roughly current, so the studio re-renders ~4×/s.
+      if (now - lastUi > 250) { lastUi = now; setPlayhead(t) }
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
@@ -237,6 +251,7 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     if (clock.current) return
     syncVideos(playhead, false)
     draw(playhead)
+    emit(playhead, false)
   }, [playhead, project, output, media, syncVideos, draw])
 
   // Drop videos for clips that no longer exist.
@@ -256,5 +271,12 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     urls.current.clear()
   }, [stopAudio])
 
-  return { playing, play, pause, toggle, redraw: draw }
+  /** Every-frame time for things that must move smoothly without re-rendering React (playhead line, readout). */
+  const subscribe = useCallback((fn: (t: number, playing: boolean) => void) => {
+    listeners.current.add(fn)
+    return () => { listeners.current.delete(fn) }
+  }, [])
+  const time = useCallback(() => currentTime(), [])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { playing, play, pause, toggle, redraw: draw, subscribe, time }
 }

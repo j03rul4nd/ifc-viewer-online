@@ -232,3 +232,47 @@
 }
 @keyframes studio-rec { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .studio-flow-rec::before { animation: none; } }
+
+/* ── Export sheet ─────────────────────────────────────────────────────────── */
+.studio-export-backdrop {
+  position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+@media (min-width: 640px) { .studio-export-backdrop { align-items: center; padding: 16px; } }
+.studio-export {
+  display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 560px; max-height: 92dvh; overflow-y: auto;
+  padding: 18px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 16px 16px 0 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: studio-sheet-in 180ms ease-out;
+}
+@media (min-width: 640px) { .studio-export { border-radius: 16px; } }
+@keyframes studio-sheet-in { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .studio-export { animation: none; } }
+.studio-export-cover {
+  position: relative; flex: none; width: 108px; max-height: 220px; overflow: hidden;
+  border-radius: 10px; background: #000; border: 1px solid var(--border);
+}
+@media (min-width: 640px) { .studio-export-cover { width: 144px; max-height: 280px; } }
+.studio-export-check {
+  position: absolute; right: 6px; bottom: 6px; display: grid; place-items: center; width: 26px; height: 26px;
+  border-radius: 999px; background: var(--ok, #2fbf71); color: #fff; font-weight: 700;
+}
+
+/* ── Magnetic timeline & direct manipulation ──────────────────────────────── */
+.studio-snap { background: var(--accent-2, #ffd84d); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-2, #ffd84d) 40%, transparent); }
+.studio-direct { touch-action: none; cursor: default; }
+.studio-guide { position: absolute; pointer-events: none; background: #ffd84d; opacity: 0.9; }
+.studio-guide--v { left: 50%; top: 0; bottom: 0; width: 1px; }
+.studio-guide--h { top: 50%; left: 0; right: 0; height: 1px; }
+.studio-direct-box {
+  position: absolute; pointer-events: none; cursor: move;
+  border: 1.5px solid #fff; border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.studio-direct-handle {
+  position: absolute; right: -9px; bottom: -9px; width: 18px; height: 18px; pointer-events: auto;
+  border-radius: 999px; background: #fff; border: 2px solid var(--accent, #7c83ff); cursor: nwse-resize;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+@media (pointer: coarse) { .studio-direct-handle { width: 26px; height: 26px; right: -13px; bottom: -13px; } }

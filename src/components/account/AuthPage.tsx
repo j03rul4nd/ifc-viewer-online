@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { SignIn, SignUp, UserProfile } from '@clerk/react'
 import { useCloudAccountStore } from '../../stores/cloudAccountStore'
 import AuroraBackdrop from '../AuroraBackdrop'
+import BimoMascot from '../mascot/BimoMascot'
 import { authAppearance } from './authAppearance'
 
 export type AuthPageKind = 'signin' | 'signup' | 'account'
@@ -66,6 +67,15 @@ export default function AuthPage({ kind, onNavigateHome, onNavigateWelcome, them
           ← {t('backHome')}
         </motion.button>
 
+        {!wide && (
+          <div className="relative w-[120px] h-[120px] -mb-8 z-10">
+            <BimoMascot
+              variant="inline" initial="wave" bubble="right"
+              greetingKey={kind === 'signup' ? 'signup' : 'signin'}
+              className="absolute inset-0"
+            />
+          </div>
+        )}
         <motion.div
           initial={{ opacity: 0, y: reduce ? 0 : 16, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

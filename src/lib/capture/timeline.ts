@@ -114,6 +114,19 @@ export interface TextOverlay {
   uppercase?: boolean
   /** Vertical centre as a fraction of the frame height; overrides the anchor's row. */
   yFrac?: number
+  /** Horizontal centre as a fraction of the frame width (dragged in the preview); overrides the anchor's column. */
+  xFrac?: number
+  /**
+   * 'words' only: the music's beat grid (project time). Words land on it, so
+   * editing the text or moving the card keeps them on the beat. Missing = a
+   * fixed quick stagger.
+   */
+  beat?: { beatSec: number; offsetSec: number }
+  /**
+   * 'words' only: show at most this many words at once, TikTok-caption style —
+   * the phrase is replaced as the next one starts. Missing = words accumulate.
+   */
+  chunk?: number
 }
 
 // ── Transitions ────────────────────────────────────────────────────────────────
@@ -302,6 +315,26 @@ export interface TextRenderState {
   roll?: { since: number; until: number }
 }
 
+/**
+ * When each word of `text` lands, seconds after the card starts, on a beat
+ * grid. The first word lands with the card; the rest on the following beats —
+ * or half (quarter) beats when a whole beat each would not fit the words in
+ * the first ~80 % of the card, leaving the end of it to be read.
+ */
+export function beatWordTimes(text: string, startSec: number, endSec: number, r: { beatSec: number; offsetSec: number }): number[] {
+  const n = text.trim().split(/\s+/).filter(Boolean).length
+  if (n === 0 || !(r.beatSec > 0)) return []
+  const length = Math.max(0, endSec - startSec)
+  let step = r.beatSec
+  while (step > r.beatSec / 4 + 1e-9 && (n - 1) * step > length * 0.8) step /= 2
+  // The first grid point strictly after the card starts; word 0 lands with the card.
+  const k = Math.floor((startSec - r.offsetSec) / step + 1e-6) + 1
+  const first = r.offsetSec + k * step
+  const times = [0]
+  for (let i = 1; i < n; i++) times.push(Math.min(length, first + (i - 1) * step - startSec))
+  return times
+}
+
 /** Seconds between two words landing in a 'words' card. */
 export const WORD_STEP_SEC = 0.11
 /** Roll: delay between two letters, and how long one letter takes to land. */
@@ -372,13 +405,20 @@ export function textRenderStateAt(o: TextOverlay, t: number): TextRenderState | 
     case 'pop':
       return { alpha: eased, dy: 0, scale: 0.86 + 0.14 * eased }
     case 'words': {
-      // In: the words land one by one; out: an ordinary fade.
-      const words = o.text.split(/(\s+)/)
-      const real = words.filter((w) => w.trim()).length
-      const shown = Math.min(real, 1 + Math.floor(sinceIn / WORD_STEP_SEC))
-      let k = 0
-      const text = words.filter((w) => (w.trim() ? ++k <= shown : k < shown)).join('').trimEnd()
-      return { alpha: easeOutCubic(outP), dy: 0, scale: 1, text }
+      // In: the words land one by one (on the beat when timed); out: a fade.
+      // Keep the card's own separators (line breaks) between the words shown.
+      const tokens = o.text.trim().split(/(\s+)/)
+      const words = tokens.filter((_, i) => i % 2 === 0)
+      const join = (a: number, b: number) => tokens.slice(a * 2, b * 2 - 1).join('')
+      const times = o.beat ? beatWordTimes(o.text, o.startSec, o.endSec, o.beat) : null
+      const at = (i: number) => times?.[i] ?? i * WORD_STEP_SEC
+      let shown = 1
+      while (shown < words.length && at(shown) <= sinceIn + 1e-6) shown++
+      const from = o.chunk && o.chunk > 0 ? Math.floor((shown - 1) / o.chunk) * o.chunk : 0
+      // The newest word punches in: a short scale kick that settles.
+      const kick = times ? Math.max(0, sinceIn - at(shown - 1)) : Infinity
+      const scale = 1 + 0.1 * Math.exp(-kick / 0.07)
+      return { alpha: easeOutCubic(outP), dy: 0, scale, text: join(from, shown) }
     }
     case 'slam': {
       // 1.5× → 1 in a sixth of a second, with a small overshoot below 1.

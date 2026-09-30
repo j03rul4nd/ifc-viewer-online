@@ -4,6 +4,8 @@
 // UI. Unknown languages fall back to English.
 
 export interface BimoCopy {
+  checklist: string
+  quiz: string
   says: string
   boop: string
   question: (n: number, total: number) => string
@@ -27,6 +29,8 @@ export interface BimoCopy {
 }
 
 const en: BimoCopy = {
+  checklist: "Checklist",
+  quiz: "Quick check",
   says: "Bimo's tip",
   boop: 'Boop Bimo',
   question: (n, t) => `Question ${n} of ${t}`,
@@ -50,6 +54,8 @@ const en: BimoCopy = {
 }
 
 const es: BimoCopy = {
+  checklist: "Lista de comprobación",
+  quiz: "Comprueba lo aprendido",
   says: 'El consejo de Bimo',
   boop: 'Toca a Bimo',
   question: (n, t) => `Pregunta ${n} de ${t}`,
@@ -73,6 +79,8 @@ const es: BimoCopy = {
 }
 
 const ca: BimoCopy = {
+  checklist: "Llista de comprovació",
+  quiz: "Comprova el que has après",
   says: 'El consell de Bimo',
   boop: 'Toca en Bimo',
   question: (n, t) => `Pregunta ${n} de ${t}`,
@@ -96,6 +104,8 @@ const ca: BimoCopy = {
 }
 
 const de: BimoCopy = {
+  checklist: "Checkliste",
+  quiz: "Kurzer Check",
   says: 'Bimos Tipp',
   boop: 'Bimo anstupsen',
   question: (n, t) => `Frage ${n} von ${t}`,
@@ -119,6 +129,8 @@ const de: BimoCopy = {
 }
 
 const fr: BimoCopy = {
+  checklist: "Liste de contrôle",
+  quiz: "Vérification rapide",
   says: 'Le conseil de Bimo',
   boop: 'Toucher Bimo',
   question: (n, t) => `Question ${n} sur ${t}`,
@@ -142,6 +154,8 @@ const fr: BimoCopy = {
 }
 
 const pt: BimoCopy = {
+  checklist: "Lista de verificação",
+  quiz: "Verificação rápida",
   says: 'A dica do Bimo',
   boop: 'Tocar no Bimo',
   question: (n, t) => `Pergunta ${n} de ${t}`,
@@ -165,6 +179,8 @@ const pt: BimoCopy = {
 }
 
 const it: BimoCopy = {
+  checklist: "Checklist",
+  quiz: "Verifica rapida",
   says: 'Il consiglio di Bimo',
   boop: 'Tocca Bimo',
   question: (n, t) => `Domanda ${n} di ${t}`,
@@ -188,6 +204,8 @@ const it: BimoCopy = {
 }
 
 const zh: BimoCopy = {
+  checklist: "检查清单",
+  quiz: "快速自测",
   says: 'Bimo 小贴士',
   boop: '戳一下 Bimo',
   question: (n, t) => `第 ${n} 题，共 ${t} 题`,
@@ -211,6 +229,8 @@ const zh: BimoCopy = {
 }
 
 const ja: BimoCopy = {
+  checklist: "チェックリスト",
+  quiz: "理解度チェック",
   says: 'Bimo のヒント',
   boop: 'Bimo をつつく',
   question: (n, t) => `問題 ${n} / ${t}`,
@@ -234,6 +254,8 @@ const ja: BimoCopy = {
 }
 
 const th: BimoCopy = {
+  checklist: "รายการตรวจสอบ",
+  quiz: "ทดสอบสั้น ๆ",
   says: 'เคล็ดลับจาก Bimo',
   boop: 'จิ้ม Bimo',
   question: (n, t) => `คำถาม ${n} จาก ${t}`,

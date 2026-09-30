@@ -28,6 +28,22 @@ const T = {
   th: { title: 'เครื่องมือสร้างการฝัง — นำเสนอโมเดล IFC ได้ทุกที่', desc: 'สร้าง iframe พร้อมคัดลอกเพื่อฝังตัวแสดงผล IFC แบบโต้ตอบในบล็อก แผง CDE รายงาน Power BI หรือแดชบอร์ด ไม่ต้องเขียนโค้ด ไม่ต้องอัปโหลด', h1: 'ฝังโมเดล IFC ได้ทุกที่', lede: 'วาง URL สาธารณะของ IFC ปรับรูปลักษณ์ แล้วคัดลอก iframe (หรือลิงก์) ใช้ได้ในบล็อก แผง CDE, Notion, Power BI และแดชบอร์ด โมเดลถูกประมวลผลในเบราว์เซอร์ของผู้เข้าชม ไม่มีการอัปโหลด', model: 'URL สาธารณะของ IFC', modelHelp: 'ต้องเข้าถึงได้ผ่าน HTTPS และเปิด CORS', layout: 'เลย์เอาต์', accent: 'สีเน้น', height: 'ความสูง (px)', options: 'ตัวเลือก', optValidate: 'รันการตรวจสอบ', optPanel: 'เปิดแผงการตรวจสอบ', language: 'ภาษาของตัวแสดงผล', auto: 'อัตโนมัติ', preview: 'ตัวอย่างสด', update: 'อัปเดตตัวอย่าง', linkTab: 'ลิงก์', iframeTab: 'iframe', copy: 'คัดลอก', copied: 'คัดลอกแล้ว!', biTitle: 'วางได้ที่ไหนบ้าง?', biHint: 'ที่ใดก็ได้ที่รองรับ iframe หรือ URL เว็บ: การฝังบล็อก/CMS, แผงเอกสาร CDE, Notion, Confluence, วิช্যువล “Web content” ของ Power BI, SharePoint หรือแดชบอร์ดใดก็ได้', langLabel: 'ภาษา', presetMinimal: 'มินิมอล', presetFull: 'เต็ม', presetKiosk: 'คีออสก์', noUrl: 'กรอก URL สาธารณะของ IFC ที่ถูกต้องเพื่อสร้างการฝัง' },
 }
 
+// Scene background (`?bg=`, see docs/EMBED_URL_PARAMS.md). Label + preset
+// names per language; the value is the same preset id the app parses.
+const BG = {
+  en: ['Background', 'Default (dark)', 'White', 'Paper', 'Blueprint', 'Sky'],
+  es: ['Fondo', 'Por defecto (oscuro)', 'Blanco', 'Papel', 'Plano', 'Cielo'],
+  de: ['Hintergrund', 'Standard (dunkel)', 'Weiß', 'Papier', 'Blaupause', 'Himmel'],
+  fr: ['Arrière-plan', 'Par défaut (sombre)', 'Blanc', 'Papier', 'Plan bleu', 'Ciel'],
+  pt: ['Fundo', 'Predefinido (escuro)', 'Branco', 'Papel', 'Planta', 'Céu'],
+  it: ['Sfondo', 'Predefinito (scuro)', 'Bianco', 'Carta', 'Cianografia', 'Cielo'],
+  ca: ['Fons', 'Per defecte (fosc)', 'Blanc', 'Paper', 'Plànol', 'Cel'],
+  zh: ['背景', '默认（深色）', '白色', '纸张', '蓝图', '天空'],
+  ja: ['背景', '既定（ダーク）', '白', '紙', '青図', '空'],
+  th: ['พื้นหลัง', 'ค่าเริ่มต้น (มืด)', 'ขาว', 'กระดาษ', 'พิมพ์เขียว', 'ท้องฟ้า'],
+}
+const BG_VALUES = ['', 'white', 'paper', 'blueprint', 'sky']
+
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const escAttr = (s) => esc(s).replace(/"/g, '&quot;')
 
@@ -125,6 +141,11 @@ function page(lang) {
           </div>
         </div>
 
+        <label class="f">${esc(BG[lang][0])}</label>
+        <select id="bg">
+          ${BG_VALUES.map((v, i) => `<option value="${v}">${esc(BG[lang][i + 1])}</option>`).join('')}
+        </select>
+
         <label class="f">${esc(t.language)}</label>
         <select id="lang">
           <option value="">${esc(t.auto)}</option>
@@ -168,6 +189,7 @@ function page(lang) {
       if ($('panel').checked) u.searchParams.set('panel', '1');
       const accent = $('accent').value.replace(/^#/, '');
       if (accent && accent.toLowerCase() !== '5e6ad2') u.searchParams.set('accent', accent);
+      if ($('bg').value) u.searchParams.set('bg', $('bg').value);
       if ($('lang').value) u.searchParams.set('lang', $('lang').value);
       return u.toString();
     }
@@ -201,7 +223,7 @@ function page(lang) {
       document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
       render();
     }));
-    ['model', 'validate', 'panel', 'accent', 'lang', 'height'].forEach((id) => {
+    ['model', 'validate', 'panel', 'accent', 'bg', 'lang', 'height'].forEach((id) => {
       $(id).addEventListener('input', render);
       $(id).addEventListener('change', render);
     });
