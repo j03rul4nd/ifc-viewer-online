@@ -54,6 +54,8 @@ import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
+import { useCompareStore } from './stores/compareStore'
+import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
 import EirProfileEditor from './components/eir/EirProfileEditor'
 import { useEirStore } from './stores/eirStore'
@@ -63,6 +65,7 @@ import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 // Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
 const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
+const CompareModal = React.lazy(() => import('./components/CompareModal'))
 const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
 // Client presentation skin (D-25) — lazy: loads only when ui=client / toggled on
 const ClientPresentationLayout = React.lazy(() => import('./components/ClientPresentationLayout'))
@@ -717,6 +720,7 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
+  const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
   const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
@@ -1191,11 +1195,19 @@ export default function App() {
   const ovGhostOpacity = useOverlayStore((s) => s.ghostOpacity)
   const ovXray         = useOverlayStore((s) => s.xray)
 
+  const compareHighlight = useCompareStore((s) => s.highlight)
+  const compareDiff      = useCompareStore((s) => s.diff)
+  const compareHead      = useCompareStore((s) => s.head.modelIds)
+  const compareBase      = useCompareStore((s) => s.base.modelIds)
+
   useEffect(() => {
     const viewer = viewerApiRef.current
     if (!viewer) return
     const opts = { severities: ovSeverities, ghostOpacity: ovGhostOpacity, xray: ovXray }
-    if (idsHighlightMode) {
+    if (compareHighlight && compareDiff) {
+      // Version diff on the shared overlay channel: removed=error, modified=warning, added=info.
+      viewer.setValidationHighlights(planCompareOverlay(compareDiff, compareHead, compareBase), true, opts)
+    } else if (idsHighlightMode) {
       const failures = Object.entries(idsResultsByModel).flatMap(([mid, r]) =>
         r.specs.flatMap((s) => {
           // EIR specs carry their severity in the identifier ("eir:warning") so
@@ -1214,7 +1226,7 @@ export default function App() {
     } else {
       viewer.setValidationHighlights([], false) // clears the shared overlay channel
     }
-  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray])
+  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, compareHighlight, compareDiff, compareHead, compareBase])
 
   // ── Analytics: track each completed validation run ────────────────────────
   const prevResultRef = useRef<typeof result>(null)
@@ -3193,6 +3205,7 @@ export default function App() {
                       onOpenExportModal={() => setShowExportModal(true)}
                       onOpenEmbed={() => setShowEmbedModal(true)}
                       onOpenIds={() => setShowIdsModal(true)}
+                      onOpenCompare={() => setShowCompareModal(true)}
                       onOpenHelp={() => setShowHelp(true)}
                     />
                   )
@@ -3565,6 +3578,13 @@ export default function App() {
       {/* ── IDS check ── */}
       {showIdsModal && (
         <IdsModal onClose={() => setShowIdsModal(false)} />
+      )}
+
+      {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
+      {showCompareModal && (
+        <React.Suspense fallback={null}>
+          <CompareModal onClose={() => setShowCompareModal(false)} viewerApiRef={viewerApiRef} />
+        </React.Suspense>
       )}
 
       {/* ── EIR / BIM Validation profile editor ── */}
