@@ -255,6 +255,343 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: 'ifc-sun-shadow-study-online',
+    title: 'Sun and Shadow Study From an IFC Model, in the Browser',
+    excerpt: "A shadow study usually means exporting to a render tool and guessing the north angle. A georeferenced IFC already knows where it is and which way is north — so the sun can be placed correctly at any date and time, in seconds, without leaving the browser.",
+    seoTitle: 'Sun and Shadow Study From an IFC Model, Online',
+    seoDescription: 'Run a sun and shadow study on a georeferenced IFC in the browser: correct location, true north and local time, sunrise and sunset, moon, shareable links.',
+    date: '2026-10-02',
+    readTimeMin: 9,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['sun study IFC', 'shadow study BIM', 'shadow analysis online', 'solar study IFC model', 'true north IFC', 'sun path BIM model', 'daylight shadow study browser'],
+    faqs: [
+      { q: 'Can I do a shadow study from an IFC file without a render tool?', a: 'Yes. If the IFC is georeferenced, its location and true north are in the file. IFC Viewer Online reads them, places the sun for any date and site-local time, and casts shadows on the model in the browser — no export, no plugin.' },
+      { q: 'Why is my shadow study pointing the wrong way?', a: 'Almost always true north. Many models are drawn with project north up and the rotation to true north is stored separately, or not at all. A study that ignores it rotates every shadow by the same error. Check where the tool got north from before trusting the result.' },
+      { q: 'What if my IFC has no georeferencing?', a: 'A good tool says so instead of silently assuming a location. You can then set the location manually, by coordinates or by city — but treat the result as indicative until the model is georeferenced properly.' },
+    ],
+    content: [
+      { type: 'p', text: "\"Will the new block shade the playground in December?\" is a question that arrives at every planning meeting, usually the day before. The traditional answer is an export to a rendering tool, an hour of setting up the sun, and a slightly nervous guess about which way north is." },
+      { type: 'p', text: "A georeferenced IFC already contains the two facts that guess is about: where on Earth the building is, and how the model is rotated relative to true north. With both, the sun's position at any moment is a calculation, not a setting." },
+      { type: 'takeaways', items: [
+        "A correct shadow study needs three inputs: latitude and longitude, true north, and the site's local time zone. A georeferenced IFC carries the first two.",
+        "The most common error is north. A study that uses project north instead of true north is wrong by the same angle at every hour.",
+        "A tool that silently falls back to a default location produces convincing, wrong shadows. Look for one that tells you where the location came from.",
+      ] },
+
+      { type: 'h2', text: 'What the sun needs from your model' },
+      {
+        type: 'table',
+        headers: ['Input', 'Where it comes from', 'If it is wrong'],
+        rows: [
+          ['Latitude / longitude', 'IfcSite reference coordinates, or IfcMapConversion with a known CRS', 'Sun height is wrong — shadows too long or too short'],
+          ['True north', 'The rotation stored in the georeferencing', 'Every shadow is rotated by the error'],
+          ['Time zone', 'Derived from the location', 'The study is shifted by an hour or more'],
+          ['Date and time', 'You choose it', '—'],
+        ],
+      },
+      {
+        type: 'p',
+        text: ['If you are not sure whether your model is georeferenced — or why it sits two kilometres from where it should — start with ', { text: 'IFC coordinates and georeferencing', to: 'ifc-coordinates-georeferencing' }, '. Everything below depends on it.'],
+      },
+
+      { type: 'h2', text: 'Where the location came from matters as much as the location' },
+      { type: 'p', text: "A sun study that looks right and is wrong is worse than none, because it gets put in a planning report. The single most useful thing a tool can do is say where it got its inputs from." },
+      { type: 'ul', items: [
+        "From the model: the georeferencing was found and used. This is the result you can defend.",
+        "Set by you: coordinates or a city were entered by hand. Fine for an early check; note it in anything you publish.",
+        "Default: nothing was found and the tool assumed a location. This should never be silent — ours shows a blocking notice rather than casting shadows for a city you are not in.",
+      ] },
+      { type: 'callout', variant: 'warning', title: 'Check north before you check shadows', text: "Rotate to a plan view at noon. In the northern hemisphere, shadows should point roughly north; in the southern, roughly south. If they point at a façade instead, the study is using the wrong north and every image you export from it will be wrong by the same angle." },
+
+      { type: 'h2', text: 'Running the study' },
+      { type: 'steps', items: [
+        { title: 'Open the IFC', body: "It loads in your browser; the model is never uploaded." },
+        { title: 'Turn on the Sun & Moon study', body: "The location and north are read from the model, with a badge showing their source." },
+        { title: 'Pick the dates that matter', body: "The solstices and equinoxes are the usual set: 21 June for the longest day, 21 December for the lowest sun." },
+        { title: 'Scrub through the day', body: "Drag the time; sunrise and sunset are marked on the timeline so you never study a sun below the horizon." },
+        { title: 'Save presets per file', body: "\"Winter, 10:00\" and \"Summer, 18:30\" become one click on the next revision of the same model." },
+      ] },
+      { type: 'p', text: "The moon is there too, with its phase — less important for planning, surprisingly useful for night renders and for explaining to a client why the courtyard is dark at 22:00 in winter." },
+
+      { type: 'h2', text: 'Sharing a sun study without sending a model' },
+      { type: 'p', text: "A study is only useful if the people who decide can see it. The same moment can be opened by a link: the date and site-local time travel in the URL, and the time zone is resolved from the model's own location, so \"21 June, 18:30\" means 18:30 on site, not in the viewer's office." },
+      { type: 'code', lang: 'text', text: "?model=https://your-host/model.ifc&solar=06-21T18:30\n?model=https://your-host/model.ifc&solar=12-21T10:00&moon=1" },
+      {
+        type: 'p',
+        text: ['The form without a year always means the current year, so a link in a planning document stays valid. The full set of parameters, and how to put the study on a web page or a CDE panel, is in ', { text: 'how to embed an IFC viewer', to: 'embed-ifc-viewer-website' }, '.'],
+      },
+
+      { type: 'h2', text: 'Adding the neighbours' },
+      {
+        type: 'p',
+        text: ['A building does not cast shadows in a vacuum, and neither does it receive them in one. Placing the model on a 3D map with the surrounding buildings and terrain turns \"does our block shade the playground\" into \"do the existing towers already shade it\". That workflow is covered in ', { text: 'viewing an IFC on a 3D map', to: 'view-ifc-on-3d-map-online' }, '.'],
+      },
+      { type: 'callout', variant: 'info', text: "A browser sun study is a fast, honest visual check. It is not a certified daylight or right-to-light calculation; when one is required, use it to decide which hours and façades deserve the formal analysis." },
+    ],
+  },
+
+  {
+    slug: 'measure-ifc-model-online',
+    title: 'How to Measure an IFC Model Online: Distances, Areas, Angles and Sections',
+    excerpt: "Measuring in a free viewer usually means clicking near a corner and hoping. Snapping to real vertices and edges, measuring through a section, and keeping the dimensions in the screenshot you send is what makes a browser measurement worth quoting.",
+    seoTitle: 'Measure an IFC Model Online: Distance, Area, Sections',
+    seoDescription: 'Measure IFC models in the browser with vertex and edge snapping: distances, areas, angles, section boxes and per-storey plan cuts, with dimensions in exports.',
+    date: '2026-10-02',
+    readTimeMin: 9,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['measure IFC online', 'IFC measurement tool', 'measure BIM model browser', 'IFC section box', 'IFC area measurement', 'IFC plan cut', 'IFC viewer measure distance'],
+    faqs: [
+      { q: 'Can I measure an IFC model without Revit or Navisworks?', a: 'Yes. IFC Viewer Online measures distances, paths, areas, angles and point coordinates directly on the IFC in your browser, with snapping to vertices, edge midpoints and edges, and nothing is uploaded.' },
+      { q: 'Why does my measurement snap to the wrong element?', a: 'Usually because the picker ignores section planes and hits the façade in front of the cut, or because the snap radius is in metres and becomes huge when zoomed out. Snapping that is calibrated in screen pixels and respects active cuts solves both.' },
+      { q: 'How do I cut a plan view of one storey?', a: 'Use a per-storey plan cut. The storey levels are read from the IFC (IfcBuildingStorey elevations, corrected for units and datum), and the cut is placed at a working height above the floor, like a drawn plan.' },
+    ],
+    content: [
+      { type: 'p', text: "Most \"measure\" buttons in free IFC viewers do something slightly different from what the name suggests. You click somewhere near a corner, the tool picks the nearest point on whatever triangle happened to be under the cursor, and you get a number with four decimals of false precision." },
+      { type: 'p', text: "That is fine for a rough check. It is not fine for a number you are going to put in an email to a contractor. The difference between the two is three things: what the tool snaps to, whether it respects sections, and whether the measurement survives into the image you send." },
+
+      { type: 'h2', text: 'Snapping: the part that decides whether a number is real' },
+      { type: 'p', text: "A measurement is only as good as its two endpoints. Good snapping finds the actual geometry you meant — a vertex, the midpoint of an edge, a point along an edge — and tells you which one it found before you click." },
+      {
+        type: 'table',
+        headers: ['Snap target', 'Use it for', 'Trap'],
+        rows: [
+          ['Vertex', 'Corners, ends of beams, grid intersections', 'Tessellated curves have many vertices; zoom in to pick the right one'],
+          ['Edge midpoint', 'Centre of a wall face, mid-span', 'Midpoint of the triangle edge, not of the wall, on badly tessellated models'],
+          ['Edge', 'Clear widths, door openings', 'Without a perpendicular mode you measure diagonally'],
+          ['Face', 'Areas, distance to a surface', 'Area of the picked face, not of the room'],
+        ],
+      },
+      { type: 'p', text: "One detail matters more than it sounds: the snap radius should be measured in screen pixels, not metres. A radius of one metre is a sensible tolerance up close and absurd from fifty metres away, where it grabs points on the wrong element. Calibrating it to the pixel size at the cursor keeps the behaviour the same at every zoom." },
+
+      { type: 'h2', text: 'The five measurements you actually need' },
+      { type: 'ol', items: [
+        "Distance — two points, with an optional perpendicular mode for clear widths and storey heights.",
+        "Path — a chain of points, for a cable route or an escape distance.",
+        "Area — a polygon, or the area of a picked face.",
+        "Angle — three points, for roof pitches and ramp gradients.",
+        "Point — the coordinates of a single point, useful when checking a model against a survey.",
+      ] },
+
+      { type: 'h2', text: 'Measuring inside: sections that the picker respects' },
+      { type: 'p', text: "To measure a ceiling void or a riser you need to cut the building open. Here is a trap that catches many web viewers: the section hides the façade visually, but the picker still hits it. You click on the duct you can see and get the wall you cannot." },
+      { type: 'callout', variant: 'warning', text: "Test any viewer with this: place a section through a building, then click an element that is only visible because of the cut. If the selection or measurement lands on the hidden façade, the tool's picking ignores clipping planes and every interior measurement is suspect." },
+      { type: 'ul', items: [
+        "Single planes along X, Y or Z, or aligned to a picked face.",
+        "A section box, to isolate one room or one riser.",
+        "Per-storey plan cuts: the storey levels are read from the IFC — elevations corrected for units and datum — and the cut sits at a working height above the floor, like a drawn plan.",
+      ] },
+      {
+        type: 'p',
+        text: ['When storey elevations come out wrong — a plan cut that slices through a slab — the cause is usually in the export, not in the viewer. ', { text: 'Common IFC model errors', to: 'common-ifc-model-errors' }, ' covers the storey and placement problems behind it.'],
+      },
+
+      { type: 'h2', text: 'Keeping the dimensions in what you send' },
+      { type: 'p', text: "A measurement nobody else can see is a measurement you have to retype. Dimensions should be drawn into screenshots, into the snapshot attached to a BCF issue, and into recorded video and GIFs — so the number travels with the image." },
+      {
+        type: 'p',
+        text: ['For issues, that means a BCF topic whose snapshot already shows the clearance that is too small. How to make those viewpoints open in the right place in other tools is in ', { text: 'BCF 2.1 vs 3.0', to: 'bcf-2-1-vs-3-0-viewpoints' }, '.'],
+      },
+
+      { type: 'h2', text: 'Keyboard, for people who measure all day' },
+      { type: 'ul', items: [
+        "M opens and closes the measure panel; the number keys on the top row switch tool.",
+        "Right-click finishes or cancels the measurement in progress.",
+        "Escape steps back one level at a time: cancel the drawing, leave the tool, close the panel.",
+      ] },
+      { type: 'callout', variant: 'info', text: "A browser measurement is only as accurate as the model. If the model was exported with the wrong units or a coarse tessellation, the number will be faithfully wrong. Validate the file before quoting dimensions from it." },
+    ],
+  },
+
+  {
+    slug: 'walk-through-ifc-model-first-person',
+    title: 'Walk Through an IFC Model in First Person, in the Browser',
+    excerpt: "Orbiting shows you a building as an object. Walking through it at eye height shows you the building as somebody will use it — and it is often the fastest way to find the door that opens into a column. How first-person navigation works on an IFC, and when it helps.",
+    seoTitle: 'Walk Through an IFC Model in First Person, Online',
+    seoDescription: 'Walk through an IFC model at eye height in the browser: WASD and mouse controls, click to go, speed, and why walking finds design problems orbiting misses.',
+    date: '2026-10-02',
+    readTimeMin: 7,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['walk through IFC model', 'first person BIM viewer', 'IFC walkthrough online', 'BIM walk mode browser', 'virtual walkthrough IFC', 'navigate IFC model'],
+    faqs: [
+      { q: 'Can I walk through an IFC model in a web browser?', a: 'Yes. In IFC Viewer Online press G to switch to walk mode: move with WASD or the arrow keys, look with the mouse, and double-click a floor to glide there at eye height. It runs on the IFC directly, with nothing uploaded.' },
+      { q: 'Why can I walk through walls?', a: 'On purpose. When reviewing a model you usually want to step through a wall into the next room rather than find the door. Collision also needs constant geometry queries that would slow large models down.' },
+      { q: 'Is a browser walkthrough good enough for a client presentation?', a: 'For a live review, yes. For a polished presentation, record the walk as a video and edit it, or use guided tours that move the camera between saved views.' },
+    ],
+    content: [
+      { type: 'p', text: "Orbiting is how BIM tools teach us to look at buildings: from outside, slightly above, turning the model in our hands. It is excellent for coordination and useless for one question — what will this feel like to walk through?" },
+      { type: 'p', text: "First-person navigation answers it, and it answers a few more practical ones along the way. The door that swings into a column. The corridor that is technically wide enough and feels like a tunnel. The ceiling that drops to 2.1 metres for no visible reason. All of these are obvious at eye height and nearly invisible from above." },
+
+      { type: 'h2', text: 'How walking works' },
+      {
+        type: 'table',
+        headers: ['Action', 'Control'],
+        rows: [
+          ['Enter or leave walk mode', 'G'],
+          ['Move', 'W A S D or the arrow keys'],
+          ['Look around', 'Mouse (click the view to capture the cursor)'],
+          ['Change speed', 'Mouse wheel while walking'],
+          ['Go to a spot', 'Double-click a floor — the camera glides there at 1.65 m above the surface'],
+        ],
+      },
+      { type: 'p', text: "With the cursor captured, a crosshair marks the centre of the view, and that is where clicks land: selecting an element while walking picks what you are looking at, not where the mouse was when you started." },
+
+      { type: 'h2', text: 'Why there is no collision' },
+      { type: 'p', text: "Games stop you at walls. A model review should not. When you are checking a building you usually want to step into the next room to look at the other side of a partition, not search for the door. And collision on a large IFC means querying geometry on every frame, which costs exactly the smoothness that makes walking useful." },
+      { type: 'callout', variant: 'tip', text: "Combine walking with a section box. Cut away the floor above, walk the storey, and you get both the eye-height view and the context of the plan." },
+
+      { type: 'h2', text: 'What walking finds that orbiting misses' },
+      { type: 'ul', items: [
+        "Door swings that clash with furniture, columns or each other.",
+        "Headroom under stairs, beams and ductwork.",
+        "Sightlines — whether the reception desk can see the entrance.",
+        "Wayfinding — whether the route to the stair is obvious from the lift lobby.",
+        "Proportion — rooms that meet the area requirement and still feel wrong.",
+      ] },
+      {
+        type: 'p',
+        text: ['When you find something, measure it on the spot — ', { text: 'how to measure an IFC model online', to: 'measure-ifc-model-online' }, ' — and raise it as a BCF issue with the viewpoint you are standing in.'],
+      },
+
+      { type: 'h2', text: 'From a walk to something you can send' },
+      {
+        type: 'p',
+        text: ['A live walk is a review. For a client, the same path recorded as a short video is usually more persuasive than any rendering. Turning a recording into an edited MP4 with titles, sized for the platform it will be watched on, is covered in ', { text: 'turning an IFC model into a video', to: 'ifc-model-video-social-media' }, '.'],
+      },
+      { type: 'callout', variant: 'info', text: "In a plan or elevation view (orthographic camera) there is no depth to walk into, so forward moves the view up the screen instead. Switch back to a perspective view for a true walkthrough." },
+    ],
+  },
+
+  {
+    slug: 'ifc-model-video-social-media',
+    title: 'Turn an IFC Model Into a Video for LinkedIn, Instagram or a Client',
+    excerpt: "A thirty-second clip of a model does more for a project than a slide of screenshots — if it arrives in the right format. Why the platforms reject WebM, why a vertical crop cuts the building in half, and how to produce an edited MP4 from an IFC without leaving the browser.",
+    seoTitle: 'Turn an IFC Model Into a Video for LinkedIn or Instagram',
+    seoDescription: 'Record an IFC model and export an edited MP4 for LinkedIn, Instagram or a client: aspect ratios, fit vs crop, titles, music, and why WebM gets rejected.',
+    date: '2026-10-02',
+    readTimeMin: 9,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['IFC to video', 'BIM model video', 'architecture video LinkedIn', 'BIM animation online', 'export 3D model MP4', 'Instagram architecture reel', 'BIM presentation video'],
+    faqs: [
+      { q: 'How do I make a video of an IFC model?', a: 'Open the model in IFC Viewer Online, record the view with the capture toolbar, then edit the clip — trim, titles, transitions, music — and export it as MP4 in the aspect ratio of the platform. Everything runs in the browser.' },
+      { q: 'Why does Instagram or LinkedIn reject my screen recording?', a: 'Usually because it is WebM, the default format of many browser recorders. The platforms expect MP4 with H.264 video. Export MP4 directly; converting a WebM afterwards often loses the audio track.' },
+      { q: 'How do I make a vertical video of a wide building?', a: 'Fit the frame rather than cropping it. A centre crop of a landscape view to 9:16 keeps a narrow strip and cuts the building off on both sides; fitting it, with blurred bars above and below, keeps the whole building and leaves room for a title.' },
+    ],
+    content: [
+      { type: 'p', text: "Architects and engineers produce some of the most visual work in any industry and then share it as a PDF of screenshots. A model turning slowly in the light, a cut opening to reveal the structure, a walk from the street to the atrium — thirty seconds of that does more on LinkedIn than a page of renders." },
+      { type: 'p', text: "The obstacle is rarely the recording. It is everything after: the file the platform refuses, the vertical crop that cuts off the building, the title that nobody can read on a phone." },
+
+      { type: 'h2', text: 'Formats: the part that silently fails' },
+      {
+        type: 'table',
+        headers: ['Platform', 'Shape that works', 'Notes'],
+        rows: [
+          ['LinkedIn feed', '1:1 or 4:5', 'Square and portrait take more of the feed than landscape'],
+          ['Instagram Reels / TikTok', '9:16', 'Keep text away from the top and bottom, where the interface sits'],
+          ['YouTube, client presentation', '16:9', 'The recording\'s native shape'],
+          ['Email to a client', '16:9, short', 'Under a minute; many mail systems cap attachment size'],
+        ],
+      },
+      { type: 'callout', variant: 'warning', title: 'Export MP4, not WebM', text: "Most browser recorders produce WebM. Instagram, TikTok and LinkedIn reject it or re-encode it badly. Export MP4 (H.264) directly. Converting afterwards works, but a careless conversion drops the audio without telling you." },
+
+      { type: 'h2', text: 'Fit, don\'t crop' },
+      { type: 'p', text: "Buildings are wide. A centre crop of a landscape recording to 9:16 keeps a strip roughly a third of the width, and the building leaves the frame on both sides. Fitting the whole frame into the vertical format keeps the building intact and leaves bands above and below — which, filled with a blurred copy of the same frame, look intentional and give you exactly the space you need for a title." },
+      { type: 'pull-quote', text: "The bands are not wasted space. They are where the title goes." },
+
+      { type: 'h2', text: 'From model to MP4, step by step' },
+      { type: 'steps', items: [
+        { title: 'Set up the shot', body: "Background, light, and a section or isolated discipline if that is the story. A sun study at golden hour does a lot of the work." },
+        { title: 'Record', body: "Orbit slowly, walk a route, or let the replay buffer keep the last moments so you never miss the good take." },
+        { title: 'Trim', body: "Cut the start and end. The first two seconds decide whether anybody watches the rest." },
+        { title: 'Add titles and a transition', body: "One line of text, large, on screen long enough to read twice. A fade at the end." },
+        { title: 'Add music if the platform plays it', body: "Optional; many feeds autoplay muted, so the video must work without sound." },
+        { title: 'Export for the platform', body: "Pick the preset — square, portrait, vertical, landscape — and export MP4. A GIF is available for places that do not play video." },
+      ] },
+
+      { type: 'h2', text: 'What makes a model video worth watching' },
+      { type: 'ul', items: [
+        "One idea per clip: the structure, the façade, the route through the building. Not all three.",
+        "Slow camera. What looks slow on a monitor looks right on a phone.",
+        "Real context: the model on its site, in its city, with the sun where it really is.",
+        "A readable title in the first second, and nothing important near the edges of a vertical frame.",
+      ] },
+      {
+        type: 'p',
+        text: ['The context shots — the model on a 3D map with terrain and neighbouring buildings — are covered in ', { text: 'viewing an IFC on a 3D map', to: 'view-ifc-on-3d-map-online' }, ', and the sun in ', { text: 'sun and shadow studies from an IFC', to: 'ifc-sun-shadow-study-online' }, '. For still images, see ', { text: 'presentation images from an IFC', to: 'ifc-presentation-images-boards' }, '.'],
+      },
+      { type: 'callout', variant: 'info', text: "Recording and editing happen in your browser; the model and the video stay on your machine until you choose to post them. That matters for projects still under NDA." },
+    ],
+  },
+
+  {
+    slug: 'ifc-presentation-images-boards',
+    title: 'Presentation Images From an IFC Model: Boards, Covers and Coordination Views',
+    excerpt: "Most project images are screenshots with the toolbar cropped out. A model already contains what a good presentation image needs — sections, disciplines, storeys, real north — and a template can turn it into a board, a cover or a coordination view in minutes.",
+    seoTitle: 'Presentation Images From an IFC: Boards and Covers',
+    seoDescription: 'Make presentation boards, covers and discipline-coloured coordination images from an IFC model in the browser: templates, sections with poché, light and export.',
+    date: '2026-10-02',
+    readTimeMin: 8,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['BIM presentation board', 'IFC model image', 'architecture presentation template', 'coordination view by discipline', 'section with poché', 'project cover image BIM', 'IFC render online'],
+    faqs: [
+      { q: 'Can I make presentation images from an IFC without a render engine?', a: 'Yes. IFC Viewer Online has a cover studio that captures views of the model, applies a look and lighting, and lays them out in templates — boards, covers, data sheets, coordination views — exported as images or a slide deck, in the browser.' },
+      { q: 'How do I show architecture, structure and MEP in one image?', a: 'Colour each discipline consistently and make the architecture translucent so the structure and services read through it. Disciplines can be detected from ISO 19650 file naming or the model content, and corrected by hand.' },
+      { q: 'What is poché in a section view?', a: 'The solid fill drawn where the section plane cuts through material. It is what makes a section read as a section rather than a model with a piece missing.' },
+    ],
+    content: [
+      { type: 'p', text: "Every project needs images long before it needs renders: a cover for the stage report, a board for the design review, a picture for the bid, a post when the planning application goes in. They are usually screenshots with the toolbar cropped out, and they look like it." },
+      { type: 'p', text: "The model already knows a great deal that a good presentation image needs. Where the storeys are. Which elements are structure and which are services. Where the site is and where the sun is. A template that uses that knowledge produces something in minutes that would take an afternoon in a layout tool." },
+
+      { type: 'h2', text: 'Four image types every project uses' },
+      {
+        type: 'table',
+        headers: ['Image', 'For', 'What makes it work'],
+        rows: [
+          ['Cover', 'Reports, bids, the project page', 'One strong view, generous space, the project name'],
+          ['Board', 'Design reviews', 'Several views — exterior, section, plan — in one consistent look'],
+          ['Data sheet', 'Handover, client updates', 'A view with the key facts and a QR link to the live model'],
+          ['Coordination view', 'Coordination meetings', 'Disciplines in consistent colours, architecture translucent'],
+        ],
+      },
+
+      { type: 'h2', text: 'Sections that read as sections' },
+      { type: 'p', text: "A cut model without poché looks broken: hollow walls, slabs with no thickness, a building with a slice missing. Filling the cut faces is what turns it into a section. The same fill should apply whether the cut comes from a presentation template or from the section tool — two different looks in the same report is the kind of inconsistency reviewers notice." },
+      {
+        type: 'p',
+        text: ['Plan cuts per storey are placed from the storey levels in the IFC, at a working height above the floor; the details are in ', { text: 'how to measure an IFC model online', to: 'measure-ifc-model-online' }, '.'],
+      },
+
+      { type: 'h2', text: 'Coordination images by discipline' },
+      { type: 'p', text: "For a coordination meeting the useful image is not the prettiest one. It is the one where everybody can find their own work: structure in one colour, mechanical in another, electrical in a third, and the architecture faded back so it gives context without hiding anything." },
+      { type: 'ul', items: [
+        "Disciplines are detected from ISO 19650 file naming (the role code), then from the file name, then from the content.",
+        "Any detection can be overridden per model — naming conventions are not always followed.",
+        "The architecture goes translucent automatically when structure or services are present.",
+      ] },
+
+      { type: 'h2', text: 'Light, finish and brand' },
+      { type: 'p', text: "A few controls account for most of the difference between a screenshot and an image: soft light from the right direction, a background that is not the default grey, and a consistent colour palette. Brand colours can be set once — or taken from an existing image — and every template then uses them." },
+      { type: 'callout', variant: 'tip', text: "Use the real sun. A cover lit at the actual site's golden hour, with the right north, is more convincing than any studio light — and it is the same study you would run for shadows." },
+
+      { type: 'h2', text: 'From one image to a deck' },
+      { type: 'p', text: "The same views can be assembled into a slide deck — project, statement, grid of views — and exported, so the design review presentation is built from the model rather than from screenshots pasted into slides. Undo covers every step, and the layout is saved with the file so the next revision starts where the last one ended." },
+      {
+        type: 'p',
+        text: ['For moving images, the same shots become a video: ', { text: 'turning an IFC model into a video', to: 'ifc-model-video-social-media' }, '. For quality evidence to go with them, see ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '.'],
+      },
+    ],
+  },
+
+  {
     slug: 'ids-information-delivery-specification-guide',
     title: 'IDS Explained: How to Check an IFC Model Against an Information Delivery Specification',
     excerpt: "IDS turns \"the model must contain the fire rating\" from a sentence in a PDF into a file a machine can check. Here is what the six facets actually test, where most IDS files go wrong, and how to run one against your IFC in a browser.",

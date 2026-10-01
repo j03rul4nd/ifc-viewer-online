@@ -10,6 +10,703 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_CA: BlogPost[] = [
   {
+    slug: "ifc-sun-shadow-study-online",
+    title: "Estudi de sol i ombres des d'un model IFC, al navegador",
+    excerpt: "Un estudi d'ombres sol implicar exportar a una eina de render i endevinar l'angle del nord. Un IFC georeferenciat ja sap on és i cap a on queda el nord, així que el sol es pot col·locar correctament en qualsevol data i hora, en segons i sense sortir del navegador.",
+    seoTitle: "Estudi de sol i ombres des d'un IFC, en línia",
+    seoDescription: "Fes un estudi de sol i ombres d'un IFC georeferenciat al navegador: ubicació i nord reals, hora local, sortida i posta de sol, lluna i enllaços.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "estudi solar IFC",
+      "estudi d'ombres BIM",
+      "anàlisi d'ombres en línia",
+      "assolellament model IFC",
+      "nord geogràfic IFC",
+      "trajectòria solar model BIM",
+      "estudi d'ombres al navegador",
+      "sun study IFC",
+      "shadow study BIM",
+      "shadow analysis online",
+      "solar study IFC model",
+      "true north IFC",
+      "sun path BIM model",
+      "daylight shadow study browser",
+    ],
+    faqs: [
+      {
+        q: "Puc fer un estudi d'ombres des d'un fitxer IFC sense eina de render?",
+        a: "Sí. Si l'IFC està georeferenciat, la seva ubicació i el nord geogràfic són al fitxer. IFC Viewer Online els llegeix, col·loca el sol en qualsevol data i hora local de l'emplaçament i projecta les ombres sobre el model al navegador, sense exportar res ni instal·lar connectors.",
+      },
+      {
+        q: "Per què el meu estudi d'ombres apunta en la direcció equivocada?",
+        a: "Gairebé sempre pel nord. Molts models es dibuixen amb el nord de projecte cap amunt i la rotació al nord geogràfic es desa a part, o no es desa. Un estudi que la ignora gira totes les ombres amb el mateix error. Comprova d'on ha tret l'eina el nord abans de fiar-te del resultat.",
+      },
+      {
+        q: "I si el meu IFC no està georeferenciat?",
+        a: "Una bona eina ho diu en lloc de suposar una ubicació en silenci. Aleshores pots fixar la ubicació a mà, per coordenades o per ciutat, però tracta el resultat com a orientatiu fins que el model estigui ben georeferenciat.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "«Farà ombra el nou bloc al pati de l'escola al desembre?» és una pregunta que apareix a cada reunió de planejament, normalment el dia abans. La resposta tradicional és exportar a una eina de render, una hora configurant el sol i una suposició una mica nerviosa sobre cap a on queda el nord.",
+      },
+      {
+        type: "p",
+        text: "Un IFC georeferenciat ja conté les dues dades que aquesta suposició intenta endevinar: en quin punt de la Terra és l'edifici i com està girat el model respecte al nord geogràfic. Amb totes dues, la posició del sol en qualsevol moment és un càlcul, no un ajust.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Un estudi d'ombres correcte necessita tres dades: latitud i longitud, nord geogràfic i la zona horària de l'emplaçament. Un IFC georeferenciat aporta les dues primeres.",
+          "L'error més freqüent és el nord. Un estudi que fa servir el nord de projecte en lloc del geogràfic s'equivoca amb el mateix angle a totes les hores.",
+          "Una eina que recorre en silenci a una ubicació per defecte produeix ombres convincents i falses. Busca'n una que et digui d'on surt la ubicació.",
+        ],
+      },
+      { type: "h2", text: "Què necessita el sol del teu model" },
+      {
+        type: "table",
+        headers: ["Dada", "D'on surt", "Si és incorrecta"],
+        rows: [
+          [
+            "Latitud / longitud",
+            "Coordenades de referència d'IfcSite, o IfcMapConversion amb un CRS conegut",
+            "L'altura del sol és incorrecta: ombres massa llargues o curtes",
+          ],
+          [
+            "Nord geogràfic",
+            "La rotació desada a la georeferenciació",
+            "Totes les ombres queden girades amb l'error",
+          ],
+          ["Zona horària", "Es dedueix de la ubicació", "L'estudi es desplaça una hora o més"],
+          ["Data i hora", "Les tries tu", "—"],
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Si no saps si el teu model està georeferenciat —o per què apareix a dos quilòmetres d'on hauria de ser—, comença per ",
+          { text: "coordenades i georeferenciació IFC", to: "ifc-coordinates-georeferencing" },
+          ". Tot el que segueix en depèn.",
+        ],
+      },
+      { type: "h2", text: "D'on surt la ubicació importa tant com la ubicació" },
+      {
+        type: "p",
+        text: "Un estudi solar que sembla correcte i és fals és pitjor que no tenir-ne cap, perquè acaba en un informe de planejament. El més útil que pot fer una eina és dir d'on ha tret les dades.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Del model: s'ha trobat la georeferenciació i s'ha fet servir. És el resultat que pots defensar.",
+          "Fixada per tu: coordenades o ciutat introduïdes a mà. Serveix per a una primera comprovació; indica-ho en el que publiquis.",
+          "Per defecte: no s'ha trobat res i l'eina ha suposat una ubicació. Això mai no hauria de ser silenciós: la nostra mostra un avís bloquejant en lloc de projectar ombres per a una ciutat on no ets.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Comprova el nord abans que les ombres",
+        text: "Gira a una vista en planta a migdia. A l'hemisferi nord les ombres han d'apuntar aproximadament al nord; al sud, aproximadament al sud. Si apunten a una façana, l'estudi fa servir un nord equivocat i cada imatge que n'exportis estarà malament amb el mateix angle.",
+      },
+      { type: "h2", text: "Com fer l'estudi" },
+      {
+        type: "steps",
+        items: [
+          { title: "Obre l'IFC", body: "Es carrega al teu navegador; el model no es puja mai." },
+          {
+            title: "Activa l'estudi de Sol i Lluna",
+            body: "La ubicació i el nord es llegeixen del model, amb una etiqueta que n'indica l'origen.",
+          },
+          {
+            title: "Tria les dates que importen",
+            body: "Els solsticis i equinoccis són el conjunt habitual: el 21 de juny per al dia més llarg i el 21 de desembre per al sol més baix.",
+          },
+          {
+            title: "Recorre el dia",
+            body: "Arrossega l'hora; la sortida i la posta de sol estan marcades a la línia de temps perquè no estudiïs mai un sol sota l'horitzó.",
+          },
+          {
+            title: "Desa ajustos per fitxer",
+            body: "«Hivern, 10:00» i «Estiu, 18:30» queden a un clic a la revisió següent del mateix model.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: "També hi ha la lluna, amb la seva fase: menys important per al planejament, sorprenentment útil per a vistes nocturnes i per explicar a un client per què el pati és fosc a les 22:00 a l'hivern.",
+      },
+      { type: "h2", text: "Compartir un estudi solar sense enviar el model" },
+      {
+        type: "p",
+        text: "Un estudi només serveix si qui decideix el pot veure. El mateix moment es pot obrir amb un enllaç: la data i l'hora local de l'emplaçament viatgen a l'URL, i la zona horària es resol a partir de la ubicació del mateix model, de manera que «21 de juny, 18:30» vol dir les 18:30 a l'obra, no a l'oficina de qui ho mira.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "?model=https://your-host/model.ifc&solar=06-21T18:30\n?model=https://your-host/model.ifc&solar=12-21T10:00&moon=1",
+      },
+      {
+        type: "p",
+        text: [
+          "La forma sense any sempre es refereix a l'any en curs, així que un enllaç en un document de planejament continua sent vàlid. Tots els paràmetres, i com posar l'estudi en un web o en un tauler de CDE, són a ",
+          { text: "com incrustar un visor IFC", to: "embed-ifc-viewer-website" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Afegir els veïns" },
+      {
+        type: "p",
+        text: [
+          "Un edifici no projecta ombres en el buit, ni en rep. Col·locar el model sobre un mapa 3D amb els edificis i el terreny del voltant converteix «fa ombra el nostre bloc al pati?» en «ja li fan ombra les torres existents?». Aquest flux s'explica a ",
+          { text: "veure un IFC sobre un mapa 3D", to: "view-ifc-on-3d-map-online" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Un estudi solar al navegador és una comprovació visual ràpida i honesta. No és un càlcul certificat d'il·luminació natural; quan se n'exigeixi un, fes-lo servir per decidir quines hores i façanes mereixen l'anàlisi formal.",
+      },
+    ],
+    lang: "ca",
+    translationKey: "ifc-sun-shadow-study-online",
+  },
+  {
+    slug: "measure-ifc-model-online",
+    title: "Com mesurar un model IFC en línia: distàncies, àrees, angles i seccions",
+    excerpt: "Mesurar en un visor gratuït sol voler dir clicar a prop d'una cantonada i esperar. Enganxar-se a vèrtexs i arestes reals, mesurar a través d'una secció i conservar les cotes a la captura que envies és el que fa que una mesura al navegador es pugui citar.",
+    seoTitle: "Mesurar un model IFC en línia: distàncies, àrees i seccions",
+    seoDescription: "Mesura models IFC al navegador amb enganxament a vèrtexs i arestes: distàncies, àrees, angles, caixes de secció i talls per planta, amb cotes.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "mesurar IFC en línia",
+      "eina de mesura IFC",
+      "mesurar model BIM al navegador",
+      "caixa de secció IFC",
+      "mesurar àrees IFC",
+      "tall en planta IFC",
+      "visor IFC mesurar distàncies",
+      "measure IFC online",
+      "IFC measurement tool",
+      "measure BIM model browser",
+      "IFC section box",
+      "IFC area measurement",
+      "IFC plan cut",
+      "IFC viewer measure distance",
+    ],
+    faqs: [
+      {
+        q: "Puc mesurar un model IFC sense Revit ni Navisworks?",
+        a: "Sí. IFC Viewer Online mesura distàncies, recorreguts, àrees, angles i coordenades de punts directament sobre l'IFC al teu navegador, amb enganxament a vèrtexs, punts mitjans i arestes, i sense pujar res.",
+      },
+      {
+        q: "Per què la meva mesura s'enganxa a l'element equivocat?",
+        a: "Normalment perquè la selecció ignora els plans de secció i toca la façana que hi ha davant del tall, o perquè el radi d'enganxament és en metres i es fa enorme quan t'allunyes. Un enganxament calibrat en píxels de pantalla i que respecta els talls actius resol totes dues coses.",
+      },
+      {
+        q: "Com trec una vista en planta d'una sola planta?",
+        a: "Amb un tall en planta per nivell. Les cotes de les plantes es llegeixen de l'IFC (elevacions d'IfcBuildingStorey, corregides per unitats i cota de referència) i el tall es col·loca a una altura de treball sobre el terra, com en un plànol dibuixat.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "La majoria de botons de «mesurar» dels visors IFC gratuïts fan una cosa lleugerament diferent del que promet el nom. Cliques a prop d'una cantonada, l'eina agafa el punt més proper del triangle que hi hagués sota el cursor i et dona un número amb quatre decimals de falsa precisió.",
+      },
+      {
+        type: "p",
+        text: "Per a una comprovació ràpida, ja va bé. Per a un número que posaràs en un correu a un contractista, no. La diferència és en tres coses: a què s'enganxa l'eina, si respecta les seccions i si la mesura sobreviu a la imatge que envies.",
+      },
+      { type: "h2", text: "L'enganxament: el que decideix si un número és real" },
+      {
+        type: "p",
+        text: "Una mesura és tan bona com els seus dos extrems. Un bon enganxament troba la geometria que volies —un vèrtex, el punt mitjà d'una aresta, un punt sobre una aresta— i et diu quina ha trobat abans que cliquis.",
+      },
+      {
+        type: "table",
+        headers: ["Objectiu d'enganxament", "Fes-lo servir per a", "Parany"],
+        rows: [
+          [
+            "Vèrtex",
+            "Cantonades, extrems de bigues, creuaments d'eixos",
+            "Les corbes tessel·lades tenen molts vèrtexs; apropa't per triar el correcte",
+          ],
+          [
+            "Punt mitjà d'aresta",
+            "Centre d'una cara de mur, centre de llum",
+            "En models mal tessel·lats és el punt mitjà de l'aresta del triangle, no del mur",
+          ],
+          ["Aresta", "Amplades lliures, obertures de porta", "Sense mode perpendicular mesures en diagonal"],
+          ["Cara", "Àrees, distància a una superfície", "Àrea de la cara triada, no de l'estança"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Hi ha un detall que importa més del que sembla: el radi d'enganxament s'hauria de mesurar en píxels de pantalla, no en metres. Un radi d'un metre és una tolerància raonable de prop i absurda a cinquanta metres, on atrapa punts de l'element equivocat. Calibrar-lo amb la mida de píxel sota el cursor manté el mateix comportament a qualsevol zoom.",
+      },
+      { type: "h2", text: "Les cinc mesures que realment necessites" },
+      {
+        type: "ol",
+        items: [
+          "Distància: dos punts, amb un mode perpendicular opcional per a amplades lliures i alçades de planta.",
+          "Recorregut: una cadena de punts, per al traçat d'un cable o una distància d'evacuació.",
+          "Àrea: un polígon, o l'àrea d'una cara triada.",
+          "Angle: tres punts, per a pendents de coberta i de rampes.",
+          "Punt: les coordenades d'un sol punt, útil per contrastar un model amb un aixecament.",
+        ],
+      },
+      { type: "h2", text: "Mesurar per dins: seccions que la selecció respecta" },
+      {
+        type: "p",
+        text: "Per mesurar un cel ras o un celobert d'instal·lacions cal obrir l'edifici. Aquí hi ha un parany en què cauen molts visors web: la secció amaga la façana a la vista, però la selecció hi continua tocant. Cliques el conducte que veus i obtens el mur que no veus.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        text: "Prova qualsevol visor així: posa una secció que travessi un edifici i clica un element que només es veu gràcies al tall. Si la selecció o la mesura cauen a la façana amagada, la selecció de l'eina ignora els plans de tall i qualsevol mesura interior és sospitosa.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Plans simples segons X, Y o Z, o alineats amb una cara triada.",
+          "Una caixa de secció, per aïllar una estança o un celobert.",
+          "Talls en planta per nivell: les cotes de les plantes es llegeixen de l'IFC —elevacions corregides per unitats i cota de referència— i el tall queda a una altura de treball sobre el terra, com en un plànol dibuixat.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Quan les cotes de planta surten malament —un tall en planta que travessa un forjat—, la causa sol ser a l'exportació, no al visor. ",
+          { text: "Els errors més comuns en models IFC", to: "common-ifc-model-errors" },
+          " explica els problemes de plantes i emplaçament que hi ha al darrere.",
+        ],
+      },
+      { type: "h2", text: "Conservar les cotes en el que envies" },
+      {
+        type: "p",
+        text: "Una mesura que ningú més pot veure és una mesura que hauràs de tornar a escriure. Les cotes s'haurien de dibuixar a les captures, a la imatge adjunta a una incidència BCF i als vídeos i GIF gravats, perquè el número viatgi amb la imatge.",
+      },
+      {
+        type: "p",
+        text: [
+          "En incidències, això vol dir un tema BCF la captura del qual ja mostra el pas lliure massa petit. Com fer que aquestes vistes s'obrin al lloc correcte en altres eines és a ",
+          { text: "BCF 2.1 davant de 3.0", to: "bcf-2-1-vs-3-0-viewpoints" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Teclat, per a qui mesura tot el dia" },
+      {
+        type: "ul",
+        items: [
+          "M obre i tanca el tauler de mesura; les tecles numèriques de la fila superior canvien d'eina.",
+          "El clic dret acaba o cancel·la la mesura en curs.",
+          "Escape retrocedeix un nivell cada vegada: cancel·la el dibuix, surt de l'eina, tanca el tauler.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Una mesura al navegador és tan precisa com el model. Si el model es va exportar amb unitats equivocades o una tessel·lació grollera, el número serà fidelment erroni. Valida el fitxer abans de citar cotes que en surtin.",
+      },
+    ],
+    lang: "ca",
+    translationKey: "measure-ifc-model-online",
+  },
+  {
+    slug: "walk-through-ifc-model-first-person",
+    title: "Recórrer un model IFC en primera persona, al navegador",
+    excerpt: "Orbitar t'ensenya un edifici com un objecte. Recórrer-lo a l'altura dels ulls te l'ensenya com l'utilitzarà algú, i sol ser la manera més ràpida de trobar la porta que obre contra un pilar. Com funciona la navegació en primera persona sobre un IFC i quan ajuda.",
+    seoTitle: "Recórrer un model IFC en primera persona, en línia",
+    seoDescription: "Recorre un model IFC a l'altura dels ulls al navegador: WASD i ratolí, clic per anar-hi, i per què caminar descobreix problemes que orbitar no veu.",
+    date: "2026-10-02",
+    readTimeMin: 7,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "recórrer model IFC",
+      "visor BIM primera persona",
+      "recorregut virtual IFC en línia",
+      "mode caminar BIM navegador",
+      "passeig virtual IFC",
+      "navegar model IFC",
+      "walk through IFC model",
+      "first person BIM viewer",
+      "IFC walkthrough online",
+      "BIM walk mode browser",
+      "virtual walkthrough IFC",
+      "navigate IFC model",
+    ],
+    faqs: [
+      {
+        q: "Puc recórrer un model IFC en un navegador web?",
+        a: "Sí. A IFC Viewer Online prem G per passar al mode a peu: mou-te amb WASD o les fletxes, mira amb el ratolí i fes doble clic en un terra per desplaçar-t'hi a l'altura dels ulls. Funciona directament sobre l'IFC, sense pujar res.",
+      },
+      {
+        q: "Per què puc travessar les parets?",
+        a: "Expressament. Quan revises un model normalment vols passar a l'estança del costat travessant el mur, no buscar la porta. A més, la col·lisió exigeix consultar la geometria contínuament, cosa que alentiria els models grans.",
+      },
+      {
+        q: "Un recorregut al navegador serveix per a una presentació a client?",
+        a: "Per a una revisió en directe, sí. Per a una presentació acurada, grava el recorregut com a vídeo i edita'l, o fes servir recorreguts guiats que mouen la càmera entre vistes desades.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Orbitar és com les eines BIM ens ensenyen a mirar edificis: des de fora, una mica per sobre, girant el model a les mans. És excel·lent per coordinar i inútil per a una pregunta: com serà recórrer-lo?",
+      },
+      {
+        type: "p",
+        text: "La navegació en primera persona respon aquesta pregunta, i unes quantes més de pràctiques pel camí. La porta que obre contra un pilar. El passadís tècnicament prou ample que se sent com un túnel. El sostre que baixa a 2,10 metres sense motiu aparent. Tot això és evident a l'altura dels ulls i gairebé invisible des de dalt.",
+      },
+      { type: "h2", text: "Com funciona caminar" },
+      {
+        type: "table",
+        headers: ["Acció", "Control"],
+        rows: [
+          ["Entrar o sortir del mode a peu", "G"],
+          ["Moure's", "W A S D o les fletxes"],
+          ["Mirar al voltant", "Ratolí (clica la vista per capturar el cursor)"],
+          ["Canviar la velocitat", "Roda del ratolí mentre camines"],
+          ["Anar a un punt", "Doble clic en un terra: la càmera s'hi llisca a 1,65 m sobre la superfície"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Amb el cursor capturat, una creu marca el centre de la vista i és allà on cauen els clics: seleccionar un element mentre camines agafa el que mires, no el lloc on era el ratolí quan vas començar.",
+      },
+      { type: "h2", text: "Per què no hi ha col·lisió" },
+      {
+        type: "p",
+        text: "Els videojocs t'aturen a les parets. Una revisió de model no hauria de fer-ho. Quan revises un edifici normalment vols passar a l'estança contigua per veure l'altra banda d'un envà, no buscar la porta. I la col·lisió en un IFC gran obliga a consultar la geometria a cada fotograma, cosa que costa just la fluïdesa que fa útil caminar.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Combina caminar amb una caixa de secció. Retalla la planta de dalt, recorre la planta i tindràs alhora la vista a l'altura dels ulls i el context del plànol.",
+      },
+      { type: "h2", text: "El que caminar descobreix i orbitar no" },
+      {
+        type: "ul",
+        items: [
+          "Obertures de portes que xoquen amb mobiliari, pilars o entre elles.",
+          "Gàlib sota escales, bigues i conductes.",
+          "Visuals: si des de la recepció es veu l'entrada.",
+          "Orientació: si el camí cap a l'escala és evident des del vestíbul d'ascensors.",
+          "Proporció: estances que compleixen la superfície exigida i tot i així se senten malament.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Quan trobis alguna cosa, mesura-la al moment —",
+          { text: "com mesurar un model IFC en línia", to: "measure-ifc-model-online" },
+          "— i obre-la com a incidència BCF amb la vista des d'on ets.",
+        ],
+      },
+      { type: "h2", text: "D'un recorregut a una cosa que puguis enviar" },
+      {
+        type: "p",
+        text: [
+          "Un recorregut en directe és una revisió. Per a un client, el mateix camí gravat com a vídeo curt sol convèncer més que qualsevol render. Convertir una gravació en un MP4 editat amb títols, amb la mida adequada per a la plataforma on es veurà, s'explica a ",
+          { text: "convertir un model IFC en vídeo", to: "ifc-model-video-social-media" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "En una vista de planta o alçat (càmera ortogràfica) no hi ha profunditat cap on caminar, així que avançar desplaça la vista cap amunt a la pantalla. Torna a una vista en perspectiva per a un recorregut de veritat.",
+      },
+    ],
+    lang: "ca",
+    translationKey: "walk-through-ifc-model-first-person",
+  },
+  {
+    slug: "ifc-model-video-social-media",
+    title: "Converteix un model IFC en un vídeo per a LinkedIn, Instagram o un client",
+    excerpt: "Un clip de trenta segons d'un model fa més per un projecte que una diapositiva de captures, si arriba en el format correcte. Per què les plataformes rebutgen WebM, per què un retall vertical parteix l'edifici per la meitat i com produir un MP4 editat des d'un IFC sense sortir del navegador.",
+    seoTitle: "Convertir un model IFC en vídeo per a LinkedIn o Instagram",
+    seoDescription: "Grava un model IFC i exporta un MP4 editat per a LinkedIn, Instagram o un client: formats, encaixar o retallar, títols, música i per què es rebutja WebM.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "IFC a vídeo",
+      "vídeo de model BIM",
+      "vídeo d'arquitectura LinkedIn",
+      "animació BIM en línia",
+      "exportar model 3D a MP4",
+      "reel d'arquitectura Instagram",
+      "vídeo de presentació BIM",
+      "IFC to video",
+      "BIM model video",
+      "architecture video LinkedIn",
+      "BIM animation online",
+      "export 3D model MP4",
+      "Instagram architecture reel",
+      "BIM presentation video",
+    ],
+    faqs: [
+      {
+        q: "Com faig un vídeo d'un model IFC?",
+        a: "Obre el model a IFC Viewer Online, grava la vista amb la barra de captura, edita el clip —retall, títols, transicions, música— i exporta'l en MP4 amb el format de la plataforma. Tot funciona al navegador.",
+      },
+      {
+        q: "Per què Instagram o LinkedIn rebutgen la meva gravació de pantalla?",
+        a: "Normalment perquè és WebM, el format per defecte de molts gravadors del navegador. Les plataformes esperen MP4 amb vídeo H.264. Exporta directament en MP4; convertir un WebM després sol perdre la pista d'àudio.",
+      },
+      {
+        q: "Com faig un vídeo vertical d'un edifici ample?",
+        a: "Encaixa l'enquadrament en lloc de retallar-lo. Un retall central d'una vista apaïsada a 9:16 deixa una franja estreta i talla l'edifici pels dos costats; encaixar-lo, amb bandes desenfocades a dalt i a baix, conserva l'edifici sencer i deixa espai per a un títol.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Arquitectes i enginyers produeixen una de les feines més visuals de qualsevol sector i després la comparteixen com un PDF de captures. Un model girant a poc a poc amb bona llum, un tall que s'obre per mostrar l'estructura, un passeig des del carrer fins a l'atri: trenta segons d'això fan més a LinkedIn que una pàgina de renders.",
+      },
+      {
+        type: "p",
+        text: "L'obstacle rarament és la gravació. És tot el que ve després: el fitxer que la plataforma rebutja, el retall vertical que talla l'edifici, el títol que ningú no pot llegir al mòbil.",
+      },
+      { type: "h2", text: "Formats: la part que falla en silenci" },
+      {
+        type: "table",
+        headers: ["Plataforma", "Format que funciona", "Notes"],
+        rows: [
+          ["Feed de LinkedIn", "1:1 o 4:5", "El quadrat i el vertical ocupen més feed que l'apaïsat"],
+          [
+            "Reels d'Instagram / TikTok",
+            "9:16",
+            "Mantén el text lluny de dalt i de baix, on hi ha la interfície",
+          ],
+          ["YouTube, presentació a client", "16:9", "El format nadiu de la gravació"],
+          [
+            "Correu a un client",
+            "16:9, curt",
+            "Menys d'un minut; molts sistemes de correu limiten la mida dels adjunts",
+          ],
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Exporta MP4, no WebM",
+        text: "La majoria de gravadors del navegador produeixen WebM. Instagram, TikTok i LinkedIn el rebutgen o el recodifiquen malament. Exporta directament en MP4 (H.264). Convertir després funciona, però una conversió descuidada perd l'àudio sense avisar.",
+      },
+      { type: "h2", text: "Encaixa, no retallis" },
+      {
+        type: "p",
+        text: "Els edificis són amples. Un retall central d'una gravació apaïsada a 9:16 es queda amb una franja d'aproximadament un terç de l'amplada, i l'edifici surt de l'enquadrament pels dos costats. Encaixar tot l'enquadrament en el format vertical manté l'edifici intacte i deixa bandes a dalt i a baix que, omplertes amb una còpia desenfocada del mateix fotograma, semblen intencionades i et donen just l'espai que necessites per a un títol.",
+      },
+      { type: "pull-quote", text: "Les bandes no són espai perdut. Són on va el títol." },
+      { type: "h2", text: "Del model a l'MP4, pas a pas" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Prepara el pla",
+            body: "Fons, llum, i una secció o una disciplina aïllada si aquesta és la història. Un estudi solar a l'hora daurada fa bona part de la feina.",
+          },
+          {
+            title: "Grava",
+            body: "Orbita a poc a poc, recorre un camí o deixa que la memòria de repetició guardi els últims moments per no perdre mai la bona presa.",
+          },
+          {
+            title: "Retalla",
+            body: "Talla l'inici i el final. Els dos primers segons decideixen si algú mira la resta.",
+          },
+          {
+            title: "Afegeix títols i una transició",
+            body: "Una línia de text, gran, a la pantalla prou temps per llegir-la dues vegades. Una fosa al final.",
+          },
+          {
+            title: "Afegeix música si la plataforma la reprodueix",
+            body: "Opcional; molts feeds reprodueixen sense so, així que el vídeo ha de funcionar sense.",
+          },
+          {
+            title: "Exporta per a la plataforma",
+            body: "Tria el preajust —quadrat, retrat, vertical, apaïsat— i exporta en MP4. També hi ha GIF per a llocs que no reprodueixen vídeo.",
+          },
+        ],
+      },
+      { type: "h2", text: "Què fa que valgui la pena mirar un vídeo d'un model" },
+      {
+        type: "ul",
+        items: [
+          "Una idea per clip: l'estructura, la façana, el recorregut per l'edifici. No totes tres.",
+          "Càmera lenta. El que sembla lent en un monitor es veu bé en un mòbil.",
+          "Context real: el model a la seva parcel·la, a la seva ciutat, amb el sol on és de veritat.",
+          "Un títol llegible el primer segon, i res d'important a prop de les vores en un enquadrament vertical.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Les preses de context —el model sobre un mapa 3D amb terreny i edificis veïns— s'expliquen a ",
+          { text: "veure un IFC sobre un mapa 3D", to: "view-ifc-on-3d-map-online" },
+          ", i el sol a ",
+          { text: "estudis de sol i ombres des d'un IFC", to: "ifc-sun-shadow-study-online" },
+          ". Per a imatges fixes, consulta ",
+          { text: "imatges de presentació des d'un IFC", to: "ifc-presentation-images-boards" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "La gravació i l'edició passen al teu navegador; el model i el vídeo es queden al teu equip fins que decideixis publicar-los. Això importa en projectes que encara són sota NDA.",
+      },
+    ],
+    lang: "ca",
+    translationKey: "ifc-model-video-social-media",
+  },
+  {
+    slug: "ifc-presentation-images-boards",
+    title: "Imatges de presentació des d'un model IFC: panells, portades i vistes de coordinació",
+    excerpt: "La majoria d'imatges de projecte són captures amb la barra d'eines retallada. Un model ja conté el que necessita una bona imatge de presentació —seccions, disciplines, plantes, el nord real— i una plantilla el pot convertir en un panell, una portada o una vista de coordinació en minuts.",
+    seoTitle: "Imatges de presentació des d'un IFC: panells i portades",
+    seoDescription: "Crea panells, portades i imatges de coordinació per disciplina des d'un model IFC al navegador: plantilles, seccions amb poché, llum i exportació.",
+    date: "2026-10-02",
+    readTimeMin: 8,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "panell de presentació BIM",
+      "imatge de model IFC",
+      "plantilla de presentació d'arquitectura",
+      "vista de coordinació per disciplina",
+      "secció amb poché",
+      "portada de projecte BIM",
+      "render IFC en línia",
+      "BIM presentation board",
+      "IFC model image",
+      "architecture presentation template",
+      "coordination view by discipline",
+      "section with poché",
+      "project cover image BIM",
+      "IFC render online",
+    ],
+    faqs: [
+      {
+        q: "Puc crear imatges de presentació des d'un IFC sense motor de render?",
+        a: "Sí. IFC Viewer Online té un estudi de portades que captura vistes del model, aplica un estil i il·luminació i les maqueta en plantilles —panells, portades, fitxes, vistes de coordinació— que s'exporten com a imatges o com a presentació, al navegador.",
+      },
+      {
+        q: "Com mostro arquitectura, estructura i instal·lacions en una sola imatge?",
+        a: "Acoloreix cada disciplina de manera coherent i fes l'arquitectura translúcida perquè l'estructura i les instal·lacions es llegeixin a través seu. Les disciplines es poden detectar per la nomenclatura ISO 19650 dels fitxers o pel contingut del model, i corregir a mà.",
+      },
+      {
+        q: "Què és el poché en una secció?",
+        a: "L'emplenament sòlid que es dibuixa on el pla de secció talla el material. És el que fa que una secció es llegeixi com a secció i no com un model al qual li falta un tros.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Tot projecte necessita imatges molt abans de necessitar renders: una portada per a l'informe de fase, un panell per a la revisió de disseny, una imatge per a la licitació, una publicació quan es presenta la llicència. Solen ser captures amb la barra d'eines retallada, i es nota.",
+      },
+      {
+        type: "p",
+        text: "El model ja sap molt del que necessita una bona imatge de presentació. On són les plantes. Quins elements són estructura i quins instal·lacions. On és la parcel·la i on és el sol. Una plantilla que fa servir aquest coneixement produeix en minuts una cosa que costaria una tarda en una eina de maquetació.",
+      },
+      { type: "h2", text: "Quatre tipus d'imatge que fa servir tot projecte" },
+      {
+        type: "table",
+        headers: ["Imatge", "Per a", "Què la fa funcionar"],
+        rows: [
+          [
+            "Portada",
+            "Informes, licitacions, la pàgina del projecte",
+            "Una vista potent, espai generós, el nom del projecte",
+          ],
+          [
+            "Panell",
+            "Revisions de disseny",
+            "Diverses vistes —exterior, secció, planta— amb un estil coherent",
+          ],
+          [
+            "Fitxa",
+            "Lliurament, actualitzacions al client",
+            "Una vista amb les dades clau i un QR al model en viu",
+          ],
+          [
+            "Vista de coordinació",
+            "Reunions de coordinació",
+            "Disciplines en colors coherents, arquitectura translúcida",
+          ],
+        ],
+      },
+      { type: "h2", text: "Seccions que es llegeixen com a seccions" },
+      {
+        type: "p",
+        text: "Un model tallat sense poché sembla trencat: murs buits, forjats sense gruix, un edifici al qual falta una llesca. Omplir les cares de tall és el que el converteix en una secció. El mateix emplenament s'hauria d'aplicar tant si el tall ve d'una plantilla de presentació com de l'eina de secció; dos estils diferents al mateix informe és el tipus d'incoherència que noten els revisors.",
+      },
+      {
+        type: "p",
+        text: [
+          "Els talls en planta per nivell es col·loquen a partir de les cotes de planta de l'IFC, a una altura de treball sobre el terra; els detalls són a ",
+          { text: "com mesurar un model IFC en línia", to: "measure-ifc-model-online" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Imatges de coordinació per disciplina" },
+      {
+        type: "p",
+        text: "Per a una reunió de coordinació, la imatge útil no és la més bonica. És aquella on cadascú troba la seva feina: l'estructura d'un color, la climatització d'un altre, l'electricitat d'un tercer, i l'arquitectura atenuada per donar context sense amagar res.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Les disciplines es detecten per la nomenclatura ISO 19650 del fitxer (el codi de rol), després pel nom del fitxer i després pel contingut.",
+          "Qualsevol detecció es pot corregir per model: les convencions de noms no sempre es compleixen.",
+          "L'arquitectura es torna translúcida automàticament quan hi ha estructura o instal·lacions.",
+        ],
+      },
+      { type: "h2", text: "Llum, acabat i marca" },
+      {
+        type: "p",
+        text: "Uns pocs controls expliquen la major part de la diferència entre una captura i una imatge: una llum suau des de la direcció adequada, un fons que no sigui el gris per defecte i una paleta de colors coherent. Els colors de marca es fixen una vegada —o s'extreuen d'una imatge existent— i totes les plantilles els fan servir.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Fes servir el sol real. Una portada il·luminada a l'hora daurada de l'emplaçament real, amb el nord correcte, convenç més que qualsevol llum d'estudi, i és el mateix estudi que faries per a les ombres.",
+      },
+      { type: "h2", text: "D'una imatge a una presentació" },
+      {
+        type: "p",
+        text: "Les mateixes vistes es poden muntar en una presentació —projecte, declaració, quadrícula de vistes— i exportar, de manera que la presentació de la revisió de disseny es construeix des del model i no des de captures enganxades en diapositives. Es pot desfer cada pas, i la maqueta es desa amb el fitxer perquè la revisió següent comenci on va acabar l'anterior.",
+      },
+      {
+        type: "p",
+        text: [
+          "Per a imatges en moviment, les mateixes preses es converteixen en vídeo: ",
+          { text: "convertir un model IFC en vídeo", to: "ifc-model-video-social-media" },
+          ". Per a l'evidència de qualitat que les acompanya, consulta ",
+          { text: "què lliurar juntament amb un model IFC", to: "ifc-model-handover-documentation" },
+          ".",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "ifc-presentation-images-boards",
+  },
+  {
     slug: "ids-information-delivery-specification-guide",
     title: "IDS explicat: com comprovar un model IFC amb una Information Delivery Specification",
     excerpt: "L'IDS converteix «el model ha de contenir la resistència al foc» d'una frase en un PDF en un fitxer que una màquina pot comprovar. Què comproven realment les sis facetes, on fallen la majoria de fitxers IDS i com executar-ne un contra el teu IFC al navegador.",
