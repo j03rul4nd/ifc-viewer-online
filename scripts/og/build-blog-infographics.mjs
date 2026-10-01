@@ -519,6 +519,139 @@ FIGURES['ifc-local-placement-chain'] = () => page({
 <span style="color:${C.red}">●</span> missing rotation → every sun study and map overlay is turned by the same angle</div>`,
 })
 
+// 17. ISO 19650 file name anatomy
+FIGURES['iso-19650-file-name-anatomy'] = () => {
+  const parts = [
+    ['TWR', 'Project', C.brand], ['ARQ', 'Originator', C.violet], ['Z1', 'Volume / system', C.cyan],
+    ['03', 'Level / location', C.green], ['M3', 'Type', C.amber], ['A', 'Role', C.red], ['0001', 'Number', C.sub],
+  ]
+  const seg = parts.map(([v, l, c], i) => `${i ? '<span class="dash">-</span>' : ''}<span class="seg" style="border-color:${c}"><span class="v" style="color:${c}">${v}</span><span class="l">${l}</span></span>`).join('')
+  const role = (code, name) => `<div class="r"><b>${code}</b><span>${name}</span></div>`
+  return page({
+    kicker: 'ISO 19650 information containers',
+    title: 'Anatomy of an ISO 19650 file name',
+    lede: 'Seven fields, separated by hyphens. Each one answers a question a tool or a person needs answered without opening the file.',
+    css: `.name{display:flex;align-items:flex-start;gap:6px;flex-wrap:nowrap}
+      .seg{display:flex;flex-direction:column;align-items:center;border:2.5px solid;border-radius:14px;background:#fff;padding:14px 18px;min-width:120px}
+      .seg .v{font-family:GeistMono,monospace;font-size:48px;font-weight:500;line-height:1}.seg .l{font-size:16px;color:${C.sub};margin-top:10px;white-space:nowrap}
+      .dash{font-family:GeistMono,monospace;font-size:48px;color:${C.faint};padding-top:12px}
+      .roles{position:absolute;left:0;top:170px;width:1460px;padding:20px 24px;display:grid;grid-template-columns:repeat(6,1fr);gap:10px 18px}
+      .roles h3{grid-column:1/-1;font-size:20px;margin-bottom:4px}.r{display:flex;gap:10px;align-items:baseline;font-size:17px;color:${C.sub}}
+      .r b{font-family:GeistMono,monospace;font-size:20px;color:${C.red};width:22px}`,
+    body: `<div class="name">${seg}<span class="dash">.ifc</span></div>
+<div class="roles card"><h3>Common role codes <span style="font-weight:400;color:${C.sub};font-size:16px">— the field that tells a viewer which discipline a model belongs to</span></h3>
+${role('A', 'Architect')}${role('S', 'Structural')}${role('M', 'Mechanical')}${role('E', 'Electrical')}${role('P', 'Public health')}${role('C', 'Civil')}
+${role('L', 'Landscape')}${role('B', 'Building surveyor')}${role('F', 'Facilities manager')}${role('W', 'Contractor')}${role('K', 'Client')}${role('X', 'Subcontractor')}</div>
+<div style="position:absolute;left:0;top:375px;font-size:16px;color:${C.faint}">Field codes and lengths are fixed per project in the information protocol; the role codes above follow the UK National Annex.</div>`,
+  })
+}
+
+// 18. ASPRS LAS classification codes
+FIGURES['las-classification-codes-asprs'] = () => {
+  const codes = [
+    [0, 'Never classified', '#9ca3af'], [1, 'Unclassified', '#cbd5e1'], [2, 'Ground', '#a16207'], [3, 'Low vegetation', '#86efac'],
+    [4, 'Medium vegetation', '#22c55e'], [5, 'High vegetation', '#15803d'], [6, 'Building', '#ef4444'], [7, 'Low point (noise)', '#111827'],
+    [8, 'Reserved', '#e5e7eb'], [9, 'Water', '#3b82f6'], [10, 'Rail', '#7c3aed'], [11, 'Road surface', '#6b7280'],
+    [12, 'Reserved', '#e5e7eb'], [13, 'Wire – guard', '#f59e0b'], [14, 'Wire – conductor', '#fbbf24'], [15, 'Transmission tower', '#ea580c'],
+    [16, 'Wire connector', '#fdba74'], [17, 'Bridge deck', '#0891b2'], [18, 'High noise', '#374151'],
+  ]
+  const cell = ([c, n, col]) => `<div class="c"><span class="sw" style="background:${col}"></span><span class="mono k">${c}</span><span class="n">${n}</span></div>`
+  return page({
+    kicker: 'LAS / LAZ point clouds',
+    title: 'ASPRS LAS classification codes (LAS 1.4)',
+    lede: 'Every point can carry a class. The common ones decide what you can filter: ground for terrain, building for scan-vs-BIM, noise to throw away.',
+    css: `.g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 14px}
+      .c{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid ${C.line};border-radius:10px;padding:10px 14px}
+      .sw{width:26px;height:26px;border-radius:7px;border:1px solid rgba(15,23,42,.15);flex:none}.k{font-size:20px;width:30px;color:${C.ink}}.n{font-size:18px;color:${C.sub}}`,
+    body: `<div class="g">${codes.map(cell).join('')}</div>`,
+  })
+}
+
+// 19. IFC 4.3 facility hierarchy
+FIGURES['ifc-4-3-facility-hierarchy'] = () => {
+  const fac = (x, name, part, col) => `<div class="b" style="left:${x}px;top:200px;border-color:${col}"><div class="t" style="color:${col}">${name}</div></div>
+    <div class="b" style="left:${x}px;top:330px;border-color:${C.line}"><div class="t" style="font-size:19px">${part}</div></div>`
+  return page({
+    kicker: 'IFC 4.3 · ISO 16739-1:2024',
+    title: 'IFC 4.3: buildings are now one kind of facility',
+    lede: 'IFC 4.3 adds bridges, roads, railways and ports beside buildings, each with its own parts — and alignments to position them along a route.',
+    css: `.b{position:absolute;width:270px;padding:14px 16px;border-radius:14px;background:#fff;border:2px solid;box-shadow:0 6px 18px rgba(15,23,42,.06);text-align:center}
+      .b .t{font-family:GeistMono,monospace;font-size:21px;font-weight:500}`,
+    body: `
+<svg width="1460" height="560" style="position:absolute;left:0;top:0"><g stroke="${C.brand}" stroke-width="3" fill="none">
+  <path d="M730 70 V110"/><path d="M135 150 H1325"/>${[135, 433, 730, 1028, 1325].map((x) => `<path d="M${x} 150 V200"/><path d="M${x} 260 V330"/>`).join('')}
+  <path d="M730 110 V150"/></g></svg>
+<div class="b" style="left:595px;top:10px;border-color:${C.brand}"><div class="t" style="color:${C.brand}">IfcSite</div></div>
+${fac(0, 'IfcBuilding', 'IfcBuildingStorey', C.green)}${fac(298, 'IfcBridge', 'IfcBridgePart', C.cyan)}${fac(595, 'IfcRoad', 'IfcRoadPart', C.amber)}${fac(893, 'IfcRailway', 'IfcRailwayPart', C.violet)}${fac(1190, 'IfcMarineFacility', 'IfcMarinePart', C.red)}
+<div class="card" style="position:absolute;left:0;top:440px;width:1460px;padding:16px 22px;font-size:18px;color:${C.sub};line-height:1.6">
+<b style="color:${C.ink}">IfcAlignment</b> describes a route — horizontal, vertical and cant — and <b style="color:${C.ink}">IfcLinearPlacement</b> positions elements by distance along it, instead of by x, y, z alone.</div>`,
+  })
+}
+
+// 20. Classification reference chain
+FIGURES['ifc-classification-reference-chain'] = () => page({
+  kicker: 'Classification in IFC',
+  title: 'How a Uniclass or OmniClass code is attached to an element',
+  css: `.b{position:absolute;padding:14px 18px;border-radius:14px;background:#fff;border:2px solid;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+    .b .t{font-family:GeistMono,monospace;font-size:18px;font-weight:500;white-space:nowrap}.b .s{font-family:GeistMono,monospace;font-size:15px;color:${C.sub};margin-top:5px;white-space:nowrap}
+    table{width:100%;border-collapse:collapse;font-size:17px}th{text-align:left;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:${C.sub};padding:9px 14px;border-bottom:2px solid ${C.line}}
+    td{padding:9px 14px;border-bottom:1px solid ${C.line}}`,
+  body: `
+<svg width="1460" height="230" style="position:absolute;left:0;top:0">
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="${C.sub}"/></marker></defs>
+  <g stroke="${C.sub}" stroke-width="2.5" fill="none" marker-end="url(#a)"><path d="M150 60 H216"/><path d="M640 60 H696"/><path d="M1100 60 H1156"/></g></svg>
+<div class="b" style="left:0;top:20px;width:150px;border-color:${C.green}"><div class="t" style="color:${C.green}">IfcWall</div><div class="s">#245</div></div>
+<div class="b" style="left:218px;top:20px;width:422px;border-color:${C.violet}"><div class="t" style="color:${C.violet}">IfcRelAssociatesClassification</div><div class="s">one code → many elements</div></div>
+<div class="b" style="left:698px;top:20px;width:402px;border-color:${C.brand}"><div class="t" style="color:${C.brand}">IfcClassificationReference</div><div class="s">Identification 'Ss_25_10_30'</div></div>
+<div class="b" style="left:1158px;top:20px;width:302px;border-color:${C.amber}"><div class="t" style="color:${C.amber}">IfcClassification</div><div class="s">Name 'Uniclass 2015'</div></div>
+<div class="card" style="position:absolute;left:0;top:150px;width:1460px;overflow:hidden"><table>
+<tr><th>System</th><th>Where it is common</th><th>Example code</th><th>Check both</th></tr>
+<tr><td><b>Uniclass 2015</b></td><td>UK and projects following ISO 19650 there</td><td class="mono">Ss_25_10_30</td><td>system name + code</td></tr>
+<tr><td><b>OmniClass</b></td><td>North America</td><td class="mono">21-02 10 10</td><td>table + number</td></tr>
+<tr><td><b>CCI</b></td><td>Denmark, Estonia, Czechia and growing</td><td class="mono">—</td><td>table + code</td></tr>
+<tr><td><b>NL-SfB</b></td><td>Netherlands and Belgium</td><td class="mono">21.12</td><td>system name + code</td></tr>
+</table></div>`,
+})
+
+// 21. Point cloud floor-plan slice + slab flatness
+FIGURES['point-cloud-floor-plan-slice'] = () => {
+  let dots = ''
+  let s = 7
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280)
+  for (let i = 0; i < 340; i++) {
+    const side = rnd()
+    let x, y
+    if (side < 0.3) { x = 40 + rnd() * 20; y = 60 + rnd() * 300 } else if (side < 0.6) { x = 560 + rnd() * 20; y = 60 + rnd() * 300 } else if (side < 0.82) { x = 40 + rnd() * 540; y = 350 + rnd() * 14 } else { x = 40 + rnd() * 540; y = 54 + rnd() * 12 }
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="${C.sub}" opacity=".55"/>`
+  }
+  for (let i = 0; i < 60; i++) dots += `<circle cx="${(180 + rnd() * 120).toFixed(1)}" cy="${(300 + rnd() * 50).toFixed(1)}" r="2.2" fill="${C.amber}" opacity=".6"/>`
+  return page({
+    kicker: 'Point cloud analysis',
+    title: 'A floor plan from a scan: one horizontal slice',
+    lede: 'Keep only the points in a thin band about 1.2 m above the floor — high enough to catch walls, doors and windows, low enough to miss most furniture.',
+    body: `<svg width="1460" height="560">
+  <g transform="translate(0,20)">
+    <text x="40" y="30" font-size="20" font-weight="700" fill="${C.ink}">Section through the scan</text>
+    <rect x="30" y="180" width="560" height="60" fill="${C.brand}" opacity=".14"/>
+    <line x1="30" y1="180" x2="590" y2="180" stroke="${C.brand}" stroke-width="2.5" stroke-dasharray="8 6"/>
+    <line x1="30" y1="240" x2="590" y2="240" stroke="${C.brand}" stroke-width="2.5" stroke-dasharray="8 6"/>
+    ${dots}
+    <text x="600" y="215" font-size="18" font-weight="700" fill="${C.brand}">slice 1.2 m ± 0.3 m</text>
+    <text x="190" y="390" font-size="16" fill="${C.amber}">furniture stays out</text>
+    <text x="40" y="395" font-size="16" fill="${C.sub}">floor 0.00</text>
+  </g>
+  <g transform="translate(860,40)">
+    <text x="0" y="10" font-size="20" font-weight="700" fill="${C.ink}">Top view of the slice = plan</text>
+    <rect x="0" y="40" width="520" height="300" fill="#fff" stroke="${C.line}" stroke-width="2" rx="10"/>
+    <path d="M40 80 H480 V300 H300 M240 300 H40 Z" fill="none" stroke="${C.ink}" stroke-width="7" stroke-dasharray="2 4"/>
+    <path d="M260 80 V180" stroke="${C.ink}" stroke-width="7" stroke-dasharray="2 4"/>
+    <path d="M240 300 A60 60 0 0 1 300 240" fill="none" stroke="${C.brand}" stroke-width="2"/>
+    <text x="0" y="380" font-size="17" fill="${C.sub}">Same idea, 8 cm band + 1 cm contours over a slab →</text>
+    <text x="0" y="406" font-size="17" fill="${C.sub}">a flatness map before the screed goes down.</text>
+  </g></svg>`,
+  })
+}
+
 // ── Render ───────────────────────────────────────────────────────────────────
 
 const only = process.argv.slice(2)
