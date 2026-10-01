@@ -219,7 +219,10 @@
     "classification": "Classification",
     "intensity": "Intensity",
     "distance": "Distance from camera",
-    "clear": "Clear"
+    "clear": "Clear",
+    "copy": "Copy coordinates",
+    "copied": "Coordinates copied",
+    "sliceHere": "Cut at this height"
   },
   "view": {
     "title": "View",
@@ -276,7 +279,8 @@
     "placement": "Placement",
     "view": "View",
     "samples": "Samples",
-    "help": "Fix it"
+    "help": "Fix it",
+    "analyze": "Analyze"
   },
   "ui": {
     "loaded": "Loaded scans",
@@ -398,5 +402,88 @@
       "hint": "Common causes"
     },
     "brokenTips": "LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV read here. E57 and scanner projects (RCP, FLS, LSPROJ) must be exported to LAS or PLY first. Some LAZ files use a LASzip variant browsers cannot decode — re-save them as LAS or COPC. Very large files: crop or decimate them first."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Use cases",
+      "hint": "One click sets up the view for a real task. Every filter below stays editable, and nothing changes the scan itself."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Floor plan cut",
+        "hint": "Keeps a 60 cm band at the picked height (or 1.2 m above the lowest point) and looks from above — walls read like a drawing."
+      },
+      "terrain": {
+        "label": "Terrain & contours",
+        "hint": "Colours by height, draws contour lines and keeps only ground returns when the file is classified."
+      },
+      "vegetation": {
+        "label": "Remove vegetation & noise",
+        "hint": "Hides the vegetation and noise classes so buildings, roads and ground stand out. Needs a classified file."
+      },
+      "slab": {
+        "label": "Slab flatness",
+        "hint": "Click a point on the slab: keeps a thin band around it and draws a line every 1 cm, so bumps and dips show as rings."
+      },
+      "scanVsBim": {
+        "label": "Scan vs BIM",
+        "hint": "Draws the scan in one bright colour over a translucent model, so anything built off-design sticks out. Needs an IFC model."
+      },
+      "clearance": {
+        "label": "Measure a clearance",
+        "hint": "Turns on the distance tool: click two points of the scan — floor to beam, wall to wall — to read the real, as-built gap."
+      }
+    },
+    "needsClasses": "Needs a classified file",
+    "needsModel": "Needs an IFC model",
+    "pickFirst": "Click a point on the scan first — Inspect is on.",
+    "applied": "Applied: {{what}}",
+    "activeBanner": "Analysis filters are hiding part of the scan.",
+    "reset": "Clear filters",
+    "slice": {
+      "title": "Height slice",
+      "toggle": "Only show a height band",
+      "from": "From",
+      "to": "To",
+      "hint": "Heights are scene metres. Pair it with Measure to read clear heights, or with a top view to trace a floor plan."
+    },
+    "contours": {
+      "title": "Contour lines",
+      "toggle": "Draw contour lines",
+      "hint": "Coarse steps read terrain; 1–2 cm steps reveal a slab that is not flat."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Tap a class to hide or show it. Codes follow the ASPRS LAS standard.",
+      "all": "All",
+      "ground": "Ground only",
+      "noVeg": "No vegetation",
+      "names": {
+        "c0": "Never classified",
+        "c1": "Unclassified",
+        "c2": "Ground",
+        "c3": "Low vegetation",
+        "c4": "Medium vegetation",
+        "c5": "High vegetation",
+        "c6": "Building",
+        "c7": "Noise",
+        "c8": "Key point",
+        "c9": "Water",
+        "c10": "Rail",
+        "c11": "Road surface",
+        "c12": "Overlap",
+        "c13": "Wire guard",
+        "c14": "Wire conductor",
+        "c15": "Transmission tower"
+      }
+    },
+    "measure": {
+      "title": "Measure the scan",
+      "hint": "Scans snap like models do: distances, areas and angles land on real points.",
+      "distance": "Distance",
+      "area": "Area",
+      "angle": "Angle",
+      "point": "Point"
+    }
   }
 }

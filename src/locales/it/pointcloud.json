@@ -219,7 +219,10 @@
     "classification": "Classificazione",
     "intensity": "Intensità",
     "distance": "Distanza dalla camera",
-    "clear": "Cancella"
+    "clear": "Cancella",
+    "copy": "Copia coordinate",
+    "copied": "Coordinate copiate",
+    "sliceHere": "Taglia a questa quota"
   },
   "view": {
     "title": "Vista",
@@ -276,7 +279,8 @@
     "placement": "Posizione",
     "view": "Vista",
     "samples": "Esempi",
-    "help": "Correggi"
+    "help": "Correggi",
+    "analyze": "Analizza"
   },
   "ui": {
     "loaded": "Nuvole caricate",
@@ -398,5 +402,88 @@
       "hint": "Cause comuni"
     },
     "brokenTips": "Si leggono LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 e i progetti scanner (RCP, FLS, LSPROJ) vanno prima esportati in LAS o PLY. Alcuni LAZ usano una variante LASzip che i browser non decodificano: salvali come LAS o COPC. File molto grandi: ritagliali o decimali prima."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Casi d'uso",
+      "hint": "Un clic prepara la vista per un compito reale. Ogni filtro qui sotto resta modificabile e nulla cambia la scansione."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Sezione in pianta",
+        "hint": "Mantiene una fascia di 60 cm alla quota del punto scelto (o 1,2 m sopra il punto più basso) e guarda dall'alto: i muri si leggono come un disegno."
+      },
+      "terrain": {
+        "label": "Terreno e curve di livello",
+        "hint": "Colora per quota, disegna curve di livello e tiene solo il terreno se il file è classificato."
+      },
+      "vegetation": {
+        "label": "Rimuovi vegetazione e rumore",
+        "hint": "Nasconde le classi di vegetazione e rumore per far emergere edifici, strade e terreno. Serve un file classificato."
+      },
+      "slab": {
+        "label": "Planarità del solaio",
+        "hint": "Clicca un punto del solaio: resta una fascia sottile attorno e una linea ogni 1 cm, così dossi e avvallamenti appaiono come anelli."
+      },
+      "scanVsBim": {
+        "label": "Scansione vs BIM",
+        "hint": "Disegna la scansione in un colore acceso sul modello traslucido: ciò che non è costruito da progetto salta all'occhio. Serve un modello IFC."
+      },
+      "clearance": {
+        "label": "Misura un franco",
+        "hint": "Attiva lo strumento distanza: clicca due punti della scansione (pavimento–trave, muro–muro) per leggere lo spazio reale costruito."
+      }
+    },
+    "needsClasses": "Serve un file classificato",
+    "needsModel": "Serve un modello IFC",
+    "pickFirst": "Prima clicca un punto della scansione: Ispeziona è attivo.",
+    "applied": "Applicato: {{what}}",
+    "activeBanner": "I filtri di analisi nascondono parte della scansione.",
+    "reset": "Rimuovi filtri",
+    "slice": {
+      "title": "Sezione per quota",
+      "toggle": "Mostra solo una fascia di quota",
+      "from": "Da",
+      "to": "A",
+      "hint": "Quote in metri di scena. Abbinalo a Misura per leggere le altezze libere, o alla vista dall'alto per ricavare una pianta."
+    },
+    "contours": {
+      "title": "Curve di livello",
+      "toggle": "Disegna curve di livello",
+      "hint": "Passi ampi per il terreno; 1–2 cm rivelano un solaio non piano."
+    },
+    "classes": {
+      "title": "Classi",
+      "hint": "Tocca una classe per nasconderla o mostrarla. Codici secondo lo standard ASPRS LAS.",
+      "all": "Tutte",
+      "ground": "Solo terreno",
+      "noVeg": "Senza vegetazione",
+      "names": {
+        "c0": "Mai classificato",
+        "c1": "Non classificato",
+        "c2": "Terreno",
+        "c3": "Vegetazione bassa",
+        "c4": "Vegetazione media",
+        "c5": "Vegetazione alta",
+        "c6": "Edificio",
+        "c7": "Rumore",
+        "c8": "Punto chiave",
+        "c9": "Acqua",
+        "c10": "Ferrovia",
+        "c11": "Sede stradale",
+        "c12": "Sovrapposizione",
+        "c13": "Fune di guardia",
+        "c14": "Conduttore",
+        "c15": "Traliccio"
+      }
+    },
+    "measure": {
+      "title": "Misura la scansione",
+      "hint": "Le scansioni si agganciano come i modelli: distanze, aree e angoli cadono su punti reali.",
+      "distance": "Distanza",
+      "area": "Area",
+      "angle": "Angolo",
+      "point": "Punto"
+    }
   }
 }

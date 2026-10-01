@@ -219,7 +219,10 @@
     "classification": "Classification",
     "intensity": "Intensité",
     "distance": "Distance à la caméra",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "copy": "Copier les coordonnées",
+    "copied": "Coordonnées copiées",
+    "sliceHere": "Couper à cette hauteur"
   },
   "view": {
     "title": "Vue",
@@ -276,7 +279,8 @@
     "placement": "Position",
     "view": "Vue",
     "samples": "Exemples",
-    "help": "Corriger"
+    "help": "Corriger",
+    "analyze": "Analyser"
   },
   "ui": {
     "loaded": "Nuages chargés",
@@ -398,5 +402,88 @@
       "hint": "Causes fréquentes"
     },
     "brokenTips": "Formats lus : LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 et projets scanner (RCP, FLS, LSPROJ) doivent d'abord être exportés en LAS ou PLY. Certains LAZ utilisent une variante LASzip que les navigateurs ne décodent pas : réenregistrez-les en LAS ou COPC. Fichiers très lourds : recadrez-les ou décimez-les avant."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Cas d'usage",
+      "hint": "Un clic prépare la vue pour une tâche réelle. Chaque filtre ci-dessous reste modifiable et rien ne change le scan lui-même."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Coupe en plan",
+        "hint": "Garde une bande de 60 cm à la hauteur du point choisi (ou 1,2 m au-dessus du point le plus bas) et regarde d'en haut : les murs se lisent comme un plan."
+      },
+      "terrain": {
+        "label": "Terrain et courbes de niveau",
+        "hint": "Colore par hauteur, trace des courbes de niveau et ne garde que le sol si le fichier est classifié."
+      },
+      "vegetation": {
+        "label": "Retirer végétation et bruit",
+        "hint": "Masque les classes végétation et bruit pour faire ressortir bâtiments, routes et sol. Nécessite un fichier classifié."
+      },
+      "slab": {
+        "label": "Planéité de dalle",
+        "hint": "Cliquez un point de la dalle : une fine bande est conservée autour et une ligne tracée tous les 1 cm, bosses et creux apparaissent en anneaux."
+      },
+      "scanVsBim": {
+        "label": "Scan vs BIM",
+        "hint": "Affiche le scan d'une couleur vive sur la maquette translucide : ce qui s'écarte du projet saute aux yeux. Nécessite une maquette IFC."
+      },
+      "clearance": {
+        "label": "Mesurer un gabarit",
+        "hint": "Active l'outil distance : cliquez deux points du scan (sol à poutre, mur à mur) pour lire l'espace réel tel que construit."
+      }
+    },
+    "needsClasses": "Nécessite un fichier classifié",
+    "needsModel": "Nécessite une maquette IFC",
+    "pickFirst": "Cliquez d'abord un point du scan — l'inspection est active.",
+    "applied": "Appliqué : {{what}}",
+    "activeBanner": "Des filtres d'analyse masquent une partie du scan.",
+    "reset": "Effacer les filtres",
+    "slice": {
+      "title": "Tranche en hauteur",
+      "toggle": "N'afficher qu'une bande de hauteur",
+      "from": "De",
+      "to": "À",
+      "hint": "Hauteurs en mètres de scène. Combinez avec Mesurer pour lire les hauteurs libres, ou avec la vue de dessus pour relever un plan."
+    },
+    "contours": {
+      "title": "Courbes de niveau",
+      "toggle": "Tracer les courbes de niveau",
+      "hint": "Des pas larges pour le terrain ; 1–2 cm révèlent une dalle qui n'est pas plane."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Touchez une classe pour la masquer ou l'afficher. Codes selon la norme ASPRS LAS.",
+      "all": "Toutes",
+      "ground": "Sol seul",
+      "noVeg": "Sans végétation",
+      "names": {
+        "c0": "Jamais classé",
+        "c1": "Non classé",
+        "c2": "Sol",
+        "c3": "Végétation basse",
+        "c4": "Végétation moyenne",
+        "c5": "Végétation haute",
+        "c6": "Bâtiment",
+        "c7": "Bruit",
+        "c8": "Point clé",
+        "c9": "Eau",
+        "c10": "Voie ferrée",
+        "c11": "Chaussée",
+        "c12": "Recouvrement",
+        "c13": "Câble de garde",
+        "c14": "Conducteur",
+        "c15": "Pylône"
+      }
+    },
+    "measure": {
+      "title": "Mesurer le scan",
+      "hint": "Les scans s'accrochent comme les maquettes : distances, surfaces et angles tombent sur des points réels.",
+      "distance": "Distance",
+      "area": "Surface",
+      "angle": "Angle",
+      "point": "Point"
+    }
   }
 }

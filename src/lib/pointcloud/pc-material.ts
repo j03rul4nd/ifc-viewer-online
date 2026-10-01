@@ -57,6 +57,12 @@ const VERTEX_SHADER = /* glsl */`
   uniform float uConfidenceMin;
   uniform vec3  uClassColors[16];
   uniform float uPixelRatio;
+  uniform float uSliceOn;
+  uniform float uSliceMin;       // fractions of [uElevMin, uElevMax]
+  uniform float uSliceMax;
+  uniform float uClassVisible[16];
+  uniform float uContours;
+  uniform float uContourStep;    // scene metres
 
   varying vec3 vColor;
   varying float vDrop;
@@ -85,14 +91,35 @@ const VERTEX_SHADER = /* glsl */`
     // done at 60 fps.
     vDrop = pcConfidence < uConfidenceMin ? 1.0 : 0.0;
 
+    // Height slice: a floor, a slab band, the ground — relative to the
+    // resident height range so the same fractions work on any scan.
+    float h = (worldPos.y - uElevMin) / max(uElevMax - uElevMin, 0.001);
+    if (uSliceOn > 0.5 && (h < uSliceMin || h > uSliceMax)) vDrop = 1.0;
+
+    // 255 = the scan carries no classes: never filtered, drawn as unclassified.
+    float rawCls = pcClass * 255.0;
+    bool hasCls = rawCls < 254.5;
+    int cls = hasCls ? int(clamp(rawCls + 0.5, 0.0, 15.0)) : 1;
+    if (hasCls && uClassVisible[cls] < 0.5) vDrop = 1.0;
+    if (vDrop > 0.5) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+
     int mode = int(uMode + 0.5);
     if (mode == 0)      vColor = pcColor;
     else if (mode == 1) vColor = rampIntensity(pcIntensity);
     // The elevation ramp reads TRUE scene height, not the chunk-local Z — using
     // the local value would band the ramp separately inside every chunk.
     else if (mode == 2) vColor = rampElevation((worldPos.y - uElevMin) / max(uElevMax - uElevMin, 0.001));
-    else if (mode == 3) vColor = uClassColors[int(clamp(pcClass * 255.0, 0.0, 15.0))];
+    else if (mode == 3) vColor = uClassColors[cls];
     else                vColor = uFlatColor;
+
+    // Iso-height lines: points within a thin band of every step darken, which
+    // reads as contour lines on terrain and as ridges on a slab that is not flat.
+    if (uContours > 0.5) {
+      float step = max(uContourStep, 0.01);
+      float f = fract(worldPos.y / step);
+      float band = min(f, 1.0 - f) * step;
+      if (band < step * 0.06) vColor = mix(vColor, vec3(0.05, 0.05, 0.07), 0.75);
+    }
 
     float attenuated = uSize * uPixelRatio * (300.0 / max(-mvPosition.z, 0.001));
     gl_PointSize = max(1.0, mix(uSize * uPixelRatio, attenuated, uAttenuate));
@@ -141,6 +168,12 @@ export function createPointCloudMaterial(display: PointCloudDisplay, pixelRatio:
       uPixelRatio:    { value: pixelRatio },
       uOpacity:       { value: display.opacity },
       uRound:         { value: display.round ? 1 : 0 },
+      uSliceOn:       { value: display.sliceEnabled ? 1 : 0 },
+      uSliceMin:      { value: display.sliceMin },
+      uSliceMax:      { value: display.sliceMax },
+      uClassVisible:  { value: classVisibility(display.classMask) },
+      uContours:      { value: display.contours ? 1 : 0 },
+      uContourStep:   { value: display.contourInterval },
     },
     transparent: display.opacity < 1,
     depthWrite: display.opacity >= 1,
@@ -155,6 +188,12 @@ export function createPointCloudMaterial(display: PointCloudDisplay, pixelRatio:
     material.uniforms.uOpacity.value = d.opacity
     material.uniforms.uRound.value = d.round ? 1 : 0
     material.uniforms.uPixelRatio.value = ratio
+    material.uniforms.uSliceOn.value = d.sliceEnabled ? 1 : 0
+    material.uniforms.uSliceMin.value = d.sliceMin
+    material.uniforms.uSliceMax.value = d.sliceMax
+    material.uniforms.uClassVisible.value = classVisibility(d.classMask)
+    material.uniforms.uContours.value = d.contours ? 1 : 0
+    material.uniforms.uContourStep.value = d.contourInterval
     const wantsBlend = d.opacity < 1
     if (material.transparent !== wantsBlend) {
       material.transparent = wantsBlend
@@ -169,6 +208,17 @@ export function createPointCloudMaterial(display: PointCloudDisplay, pixelRatio:
   }
 
   return material
+}
+
+/**
+ * pcClass value for a scan with no classification channel. Not an ASPRS class
+ * a file would carry in practice, and outside the 0-15 the filter controls.
+ */
+export const UNCLASSIFIED_CODE = 255
+
+/** Class bitmask → the 16 floats the shader indexes (1 drawn, 0 hidden). */
+export function classVisibility(mask: number): number[] {
+  return Array.from({ length: 16 }, (_, code) => ((mask >> code) & 1 ? 1 : 0))
 }
 
 /** Exported for tests — the mode enum must stay in step with the shader. */

@@ -60,8 +60,31 @@ interface PointCloudPanelProps {
 const log = createLogger('PointCloudPanel')
 
 const COLOR_MODES: PointColorMode[] = ['rgb', 'intensity', 'elevation', 'classification', 'flat']
-type PanelTab = 'appearance' | 'placement' | 'view' | 'samples' | 'help'
-const PANEL_TABS: PanelTab[] = ['appearance', 'placement', 'view', 'samples', 'help']
+type PanelTab = 'appearance' | 'placement' | 'view' | 'analyze' | 'samples' | 'help'
+const PANEL_TABS: PanelTab[] = ['appearance', 'placement', 'view', 'analyze', 'samples', 'help']
+/**
+ * One-click analysis set-ups. Each is a combination of the shader filters
+ * (slice / classes / contours), a colour mode, a camera and — for the
+ * clearance — the measurement tool, so a task starts from a readable view
+ * instead of from six sliders. Every one is undone by "Clear filters".
+ */
+type RecipeId = 'floorPlan' | 'terrain' | 'vegetation' | 'slab' | 'scanVsBim' | 'clearance'
+const RECIPES: RecipeId[] = ['floorPlan', 'terrain', 'vegetation', 'slab', 'scanVsBim', 'clearance']
+/** ASPRS classes shown in the filter, in the order people look for them. */
+const FILTER_CLASSES = [2, 6, 3, 4, 5, 11, 9, 7, 1, 10, 13, 14, 15, 0, 8, 12]
+const VEGETATION_NOISE_MASK = (1 << 3) | (1 << 4) | (1 << 5) | (1 << 7)
+const ALL_CLASSES_MASK = 0xffff
+const CONTOUR_STEPS = [0.01, 0.02, 0.05, 0.1, 0.5, 1, 5]
+/** Swatches for the class chips — the shader palette's values (pc-material). */
+const CLASS_SWATCH = [
+  '#999ead', '#8c919e', '#8c6647', '#6b9e59', '#54b361', '#338c47', '#d97359', '#e6404d',
+  '#b3b359', '#4d8ce6', '#bf80d9', '#737380', '#a6a6b3', '#e6bf59', '#f2a640', '#cc9966',
+]
+/** A contour step that gives roughly fifteen lines over a height range. */
+function niceStep(range: number): number {
+  const raw = Math.max(range, 0.1) / 15
+  return [0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50].find((s) => s >= raw) ?? 100
+}
 type HelpSymptom = 'sideways' | 'invisible' | 'wrongSize' | 'misplaced' | 'colours' | 'sparse' | 'blobby' | 'slow' | 'broken'
 const HELP_SYMPTOMS: HelpSymptom[] = ['sideways', 'invisible', 'wrongSize', 'misplaced', 'colours', 'sparse', 'blobby', 'slow', 'broken']
 const PRESET_IDS: AppearancePresetId[] = ['balanced', 'detail', 'presentation', 'performance']
@@ -143,6 +166,10 @@ export default function PointCloudPanel({
   // comes out truncated, shown before it happens rather than after.
   const [budget, setBudget] = useState<{ resident: number; reserved: number; max: number } | null>(null)
   const [showTransform, setShowTransform] = useState(false)
+  // Height range the shader's slice and elevation ramp work in (all scans, scene Y).
+  const [elevRange, setElevRange] = useState<{ min: number; max: number } | null>(null)
+  // A recipe that needs a height (slab flatness) waits here for the next pick.
+  const pendingRecipeRef = useRef<RecipeId | null>(null)
   const [boxes, setBoxes] = useState<{ key: string; cloudBox: BoxCS | null; modelBox: BoxCS | null } | null>(null)
   const [tab, setTab] = useState<PanelTab>('appearance')
   const [showAllSamples, setShowAllSamples] = useState(false)
@@ -224,6 +251,11 @@ export default function PointCloudPanel({
           ? (modelId ? viewer.getModelBounds(modelId) : viewer.getModelBounds()) : null
         const key = JSON.stringify([cloudBox, modelBox], (_k, v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v)
         setBoxes((prev) => prev?.key === key ? prev : { key, cloudBox, modelBox })
+        const all = system.getBounds()
+        if (all) {
+          const next = { min: Math.round(all.min.y * 100) / 100, max: Math.round(all.max.y * 100) / 100 }
+          setElevRange((prev) => prev && prev.min === next.min && prev.max === next.max ? prev : next)
+        }
       })
       const nextBudget = budgetUsage()
       setBudget((prev) => prev && prev.resident === nextBudget.resident && prev.reserved === nextBudget.reserved &&
@@ -744,6 +776,11 @@ export default function PointCloudPanel({
         const hit = system.pickPoint(e.clientX, e.clientY)
         setPicked(hit)
         setPickMissed(hit === null)
+        const pending = pendingRecipeRef.current
+        if (hit && pending) {
+          pendingRecipeRef.current = null
+          applyRecipeRef.current(pending, hit.position.y)
+        }
         // And to the shared inspector, so a scanned point is read in the same
         // place as an IFC element and an OSM building - rather than in a
         // readout only someone who already opened this panel would find.
@@ -988,6 +1025,116 @@ export default function PointCloudPanel({
       case 'wrongSize': case 'broken':
         setHelpOpen((open) => open === symptom ? null : symptom)
     }
+  }
+
+  // ── Analysis: slice / classes / contours / recipes ─────────────────────────
+  // All of it is shader state (pc-material), so every control is instant and
+  // nothing re-reads or rewrites the scan.
+  const elevSpan = elevRange ? Math.max(elevRange.max - elevRange.min, 0.001) : 1
+  const toFraction = (y: number): number =>
+    elevRange ? Math.max(0, Math.min(1, (y - elevRange.min) / elevSpan)) : 0
+  const toHeight = (f: number): number => (elevRange ? elevRange.min + f * elevSpan : f)
+  const disp = store.display
+  const filtersActive = disp.sliceEnabled || disp.classMask !== ALL_CLASSES_MASK || disp.contours
+  const hasClasses = store.clouds.some((c) => c.attributes?.classification)
+
+  /** Keep a band of `half` metres either side of scene height `y`. */
+  const sliceAround = (y: number, half: number): Partial<PointCloudDisplay> => ({
+    sliceEnabled: true, sliceMin: toFraction(y - half), sliceMax: toFraction(y + half),
+  })
+
+  const clearAnalysis = (): void => {
+    pendingRecipeRef.current = null
+    setDisplay({ sliceEnabled: false, sliceMin: 0, sliceMax: 1, classMask: ALL_CLASSES_MASK, contours: false })
+  }
+
+  const recipeUnavailable = (id: RecipeId): string | null => {
+    if (id === 'vegetation' && !hasClasses) return t('analyze.needsClasses')
+    if (id === 'scanVsBim' && sceneModels.length === 0) return t('analyze.needsModel')
+    return null
+  }
+
+  /**
+   * Look at the scans themselves. The viewer's presets frame the MODEL, which
+   * is the wrong box here: a terrain patch beside a building, or a scan with
+   * the model hidden, ends up edge-on or off screen.
+   */
+  const viewScan = (view: 'iso' | 'top'): void => {
+    const viewer = viewerApiRef.current
+    void getSystem()?.then((system) => {
+      const b = system.getBounds()
+      if (!viewer || !b) return
+      const c = { x: (b.min.x + b.max.x) / 2, y: (b.min.y + b.max.y) / 2, z: (b.min.z + b.max.z) / 2 }
+      const r = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z, 1) * 1.1
+      const dir = view === 'top' ? { x: 0, y: 1, z: 0.001 } : { x: 0.62, y: 0.48, z: 0.62 }
+      viewer.setCameraLookAt({ x: c.x + dir.x * r, y: c.y + dir.y * r, z: c.z + dir.z * r }, c)
+    })
+  }
+
+  /** `atY` is a picked scene height, for the recipes that work at one. */
+  const applyRecipe = (id: RecipeId, atY?: number): void => {
+    const y = atY ?? picked?.position.y
+    switch (id) {
+      case 'floorPlan': {
+        // Drawing convention: cut ~1.2 m above the floor — tall enough to catch
+        // walls, doors and windows, low enough to miss most furniture tops.
+        const at = y ?? (elevRange ? elevRange.min + 1.2 : 0)
+        setDisplay({ ...sliceAround(at, 0.3), contours: false })
+        viewScan('top')
+        break
+      }
+      case 'terrain':
+        setDisplay({
+          colorMode: 'elevation', contours: true, contourInterval: niceStep(elevSpan),
+          sliceEnabled: false, classMask: hasClasses ? 1 << 2 : ALL_CLASSES_MASK,
+        })
+        // Ground sits under the building: the model would hide exactly what
+        // this recipe is about, and an iso preset frames the model, not the scan.
+        if (sceneModels.length > 0) applyDemoView('point-cloud')
+        viewScan('iso')
+        break
+      case 'vegetation':
+        setDisplay({ classMask: ALL_CLASSES_MASK & ~VEGETATION_NOISE_MASK })
+        break
+      case 'slab':
+        if (y === undefined) {
+          pendingRecipeRef.current = 'slab'
+          setInspecting(true)
+          toast(t('analyze.pickFirst'), 'info')
+          return
+        }
+        setDisplay({ ...sliceAround(y, 0.08), contours: true, contourInterval: 0.01, colorMode: 'elevation' })
+        viewScan('top')
+        break
+      case 'scanVsBim':
+        applyDemoView('scan-vs-bim')
+        setDisplay({ colorMode: 'flat', flatColor: 0xff5a36, opacity: 1 })
+        break
+      case 'clearance':
+        setInspecting(false)
+        useUIStore.getState().setActiveMeasurementTool('distance')
+        useUIStore.getState().setMeasurementPanelOpen(true)
+        break
+    }
+    toast(t('analyze.applied', { what: t(`analyze.recipe.${id}.label`) }), 'success')
+  }
+  const applyRecipeRef = useRef(applyRecipe)
+  applyRecipeRef.current = applyRecipe
+
+  const armMeasure = (tool: 'distance' | 'area' | 'angle' | 'point'): void => {
+    setInspecting(false)
+    const ui = useUIStore.getState()
+    ui.setActiveMeasurementTool(ui.activeMeasurementTool === tool ? 'none' : tool)
+    ui.setMeasurementPanelOpen(true)
+  }
+
+  const copyPicked = (): void => {
+    if (!picked) return
+    const p = picked.sourcePosition
+    void navigator.clipboard?.writeText(`${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}`).then(
+      () => toast(t('inspect.copied'), 'success'),
+      () => log.warn('clipboard write refused'),
+    )
   }
 
   // ── Temporal replay block (start screen teaser + Samples tab) ──────────────
@@ -1741,6 +1888,65 @@ export default function PointCloudPanel({
                     </Group>
                   )}
 
+                  {stats && stats.pointCount > 0 && (
+                    <Group title={t('ui.stats')}>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Stat label={t('ui.drawn')}
+                          value={`${formatCount(stats.drawnCount)} / ${formatCount(stats.pointCount)}`} />
+                        <Stat label="GPU" value={`${Math.round(stats.gpuBytes / 1048576)} MB`} />
+                      </div>
+                      <Hint>{t('status.chunks', { count: stats.chunkCount })}</Hint>
+                      {budget && budget.resident + budget.reserved > 0 && (
+                        <PointBudgetMeter {...budget} t={t} format={formatCount} />
+                      )}
+                    </Group>
+                  )}
+                </>
+              )}
+
+              {tab === 'analyze' && (
+                <>
+                  {filtersActive && (
+                    <div className="flex items-center gap-2 rounded-[10px] border border-[#F5A62355] bg-[#F5A62314] px-3 py-2">
+                      <span className="w-2 h-2 rounded-full bg-[#F5A623] shrink-0" />
+                      <span className="flex-1 text-[12px] text-[var(--text-dim)]">{t('analyze.activeBanner')}</span>
+                      <button type="button" onClick={clearAnalysis}
+                        className="text-[12px] font-medium text-[var(--accent)] hover:underline underline-offset-2 whitespace-nowrap">
+                        {t('analyze.reset')}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Use cases: one click to a task-ready view ───────────── */}
+                  <Group title={t('analyze.recipes.title')}>
+                    <Hint>{t('analyze.recipes.hint')}</Hint>
+                    <div className="grid grid-cols-2 gap-2" data-testid="pc-recipes">
+                      {RECIPES.map((id) => {
+                        const blocked = recipeUnavailable(id)
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            data-testid={`pc-recipe-${id}`}
+                            disabled={blocked !== null}
+                            title={blocked ?? t(`analyze.recipe.${id}.hint`)}
+                            onClick={() => applyRecipe(id)}
+                            className="flex flex-col gap-1.5 rounded-[12px] border border-[var(--border)] px-3 py-2.5 text-left hover:border-[var(--accent)] hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <RecipeIcon id={id} />
+                            <span className="text-[12.5px] font-semibold leading-tight text-[var(--text)]">
+                              {t(`analyze.recipe.${id}.label`)}
+                            </span>
+                            <span className="text-[11px] leading-snug text-[var(--text-faint)] line-clamp-3">
+                              {blocked ?? t(`analyze.recipe.${id}.hint`)}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </Group>
+
+                  {/* ── Inspect a point ──────────────────────────────────────── */}
                   <Group title={t('inspect.title')}>
                     <Hint>{t('inspect.hint')}</Hint>
                     <div className="flex gap-1.5">
@@ -1765,29 +1971,110 @@ export default function PointCloudPanel({
                         <Field label={t('inspect.source')}
                           value={`${picked.sourcePosition.x.toFixed(3)}, ${picked.sourcePosition.y.toFixed(3)}, ${picked.sourcePosition.z.toFixed(3)}`} />
                         {picked.classification !== null && attributes?.classification && (
-                          <Field label={t('inspect.classification')} value={String(picked.classification)} />
+                          <Field label={t('inspect.classification')}
+                            value={picked.classification < 16
+                              ? `${picked.classification} · ${t(`analyze.classes.names.c${picked.classification}` as 'analyze.classes.names.c0')}`
+                              : String(picked.classification)} />
                         )}
                         {picked.intensity !== null && attributes?.intensity && (
                           <Field label={t('inspect.intensity')} value={String(picked.intensity)} />
                         )}
                         <Field label={t('inspect.distance')} value={`${picked.distance.toFixed(2)} m`} />
+                        <div className="flex gap-1.5 mt-1.5 font-sans">
+                          <SmallButton onClick={copyPicked}>{t('inspect.copy')}</SmallButton>
+                          <SmallButton onClick={() => setDisplay(sliceAround(picked.position.y, 0.3))}>
+                            {t('inspect.sliceHere')}
+                          </SmallButton>
+                        </div>
                       </div>
                     )}
                   </Group>
 
-                  {stats && stats.pointCount > 0 && (
-                    <Group title={t('ui.stats')}>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Stat label={t('ui.drawn')}
-                          value={`${formatCount(stats.drawnCount)} / ${formatCount(stats.pointCount)}`} />
-                        <Stat label="GPU" value={`${Math.round(stats.gpuBytes / 1048576)} MB`} />
+                  {/* ── Height slice ─────────────────────────────────────────── */}
+                  <Group title={t('analyze.slice.title')}>
+                    <Switch label={t('analyze.slice.toggle')} checked={disp.sliceEnabled}
+                      onChange={() => setDisplay({ sliceEnabled: !disp.sliceEnabled })} />
+                    {disp.sliceEnabled && (
+                      <div className="flex flex-col gap-3">
+                        <Slider label={t('analyze.slice.from')} value={toHeight(disp.sliceMin)} digits={2} unit="m"
+                          min={toHeight(0)} max={toHeight(1)} step={Math.max(0.01, elevSpan / 500)}
+                          onChange={(v) => setDisplay({ sliceMin: Math.min(toFraction(v), disp.sliceMax) })} />
+                        <Slider label={t('analyze.slice.to')} value={toHeight(disp.sliceMax)} digits={2} unit="m"
+                          min={toHeight(0)} max={toHeight(1)} step={Math.max(0.01, elevSpan / 500)}
+                          onChange={(v) => setDisplay({ sliceMax: Math.max(toFraction(v), disp.sliceMin) })} />
                       </div>
-                      <Hint>{t('status.chunks', { count: stats.chunkCount })}</Hint>
-                      {budget && budget.resident + budget.reserved > 0 && (
-                        <PointBudgetMeter {...budget} t={t} format={formatCount} />
-                      )}
+                    )}
+                    <Hint>{t('analyze.slice.hint')}</Hint>
+                  </Group>
+
+                  {/* ── Contours ─────────────────────────────────────────────── */}
+                  <Group title={t('analyze.contours.title')}>
+                    <Switch label={t('analyze.contours.toggle')} checked={disp.contours}
+                      onChange={() => setDisplay({ contours: !disp.contours })} />
+                    {disp.contours && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {CONTOUR_STEPS.map((step) => (
+                          <Chip key={step} active={disp.contourInterval === step}
+                            onClick={() => setDisplay({ contourInterval: step })}>
+                            {step < 1 ? `${Math.round(step * 100)} cm` : `${step} m`}
+                          </Chip>
+                        ))}
+                      </div>
+                    )}
+                    <Hint>{t('analyze.contours.hint')}</Hint>
+                  </Group>
+
+                  {/* ── Classes (only when a scan carries them) ──────────────── */}
+                  {hasClasses && (
+                    <Group title={t('analyze.classes.title')}>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Chip active={disp.classMask === ALL_CLASSES_MASK}
+                          onClick={() => setDisplay({ classMask: ALL_CLASSES_MASK })}>{t('analyze.classes.all')}</Chip>
+                        <Chip active={disp.classMask === 1 << 2}
+                          onClick={() => setDisplay({ classMask: 1 << 2 })}>{t('analyze.classes.ground')}</Chip>
+                        <Chip active={disp.classMask === (ALL_CLASSES_MASK & ~VEGETATION_NOISE_MASK)}
+                          onClick={() => setDisplay({ classMask: ALL_CLASSES_MASK & ~VEGETATION_NOISE_MASK })}>
+                          {t('analyze.classes.noVeg')}
+                        </Chip>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {FILTER_CLASSES.map((code) => {
+                          const on = (disp.classMask >> code) & 1
+                          return (
+                            <button
+                              key={code}
+                              type="button"
+                              role="switch"
+                              aria-checked={!!on}
+                              onClick={() => setDisplay({ classMask: disp.classMask ^ (1 << code) })}
+                              className={`flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[11.5px] transition-colors hover:bg-[var(--surface-2)] ${
+                                on ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through opacity-60'
+                              }`}
+                            >
+                              <span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: CLASS_SWATCH[code] }} />
+                              <span className="truncate flex-1">
+                                {t(`analyze.classes.names.c${code}` as 'analyze.classes.names.c0')}
+                              </span>
+                              <span className="font-mono text-[10px] text-[var(--text-faint)]">{code}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <Hint>{t('analyze.classes.hint')}</Hint>
                     </Group>
                   )}
+
+                  {/* ── Measure (the shared tool, which snaps to scans) ─────── */}
+                  <Group title={t('analyze.measure.title')}>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {(['distance', 'area', 'angle', 'point'] as const).map((tool) => (
+                        <SmallButton key={tool} active={measurementTool === tool} onClick={() => armMeasure(tool)}>
+                          {t(`analyze.measure.${tool}`)}
+                        </SmallButton>
+                      ))}
+                    </div>
+                    <Hint>{t('analyze.measure.hint')}</Hint>
+                  </Group>
                 </>
               )}
 
@@ -1936,6 +2223,24 @@ function Field({ label, value }: { label: string; value: string }) {
       <span className="text-[var(--text-faint)] shrink-0">{label}</span>
       <span className="text-[var(--text)] text-right break-all">{value}</span>
     </div>
+  )
+}
+
+/** Small line glyph per analysis recipe — enough to scan the grid by shape. */
+function RecipeIcon({ id }: { id: RecipeId }) {
+  const paths: Record<RecipeId, React.ReactNode> = {
+    floorPlan: <><path d="M3 4h14v12H3z" /><path d="M3 10h6M12 4v6M12 13v3" /></>,
+    terrain: <><path d="M2 15c3-5 5-7 8-7s5 3 8 7" /><path d="M5 15c2-3 3-4 5-4s3 2 5 4" /></>,
+    vegetation: <><path d="M10 17V9" /><path d="M10 9c-4 0-5-3-5-5 3 0 5 2 5 5zM10 11c3 0 5-2 5-5-3 0-5 2-5 5z" /><path d="M3 3l14 14" /></>,
+    slab: <><path d="M2 12l8-4 8 4-8 4z" /><path d="M6 12l4-2 4 2-4 2z" /></>,
+    scanVsBim: <><path d="M4 6h8v10H4z" /><circle cx="12" cy="5" r=".8" /><circle cx="15" cy="8" r=".8" /><circle cx="14" cy="12" r=".8" /><circle cx="16" cy="15" r=".8" /></>,
+    clearance: <><path d="M4 3v14M16 3v14" /><path d="M4 10h12M7 8l-3 2 3 2M13 8l3 2-3 2" /></>,
+  }
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" strokeWidth="1.4"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {paths[id]}
+    </svg>
   )
 }
 

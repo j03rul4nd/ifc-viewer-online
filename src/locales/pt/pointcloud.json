@@ -219,7 +219,10 @@
     "classification": "Classificação",
     "intensity": "Intensidade",
     "distance": "Distância à câmara",
-    "clear": "Limpar"
+    "clear": "Limpar",
+    "copy": "Copiar coordenadas",
+    "copied": "Coordenadas copiadas",
+    "sliceHere": "Cortar nesta altura"
   },
   "view": {
     "title": "Vista",
@@ -276,7 +279,8 @@
     "placement": "Posição",
     "view": "Vista",
     "samples": "Exemplos",
-    "help": "Corrigir"
+    "help": "Corrigir",
+    "analyze": "Analisar"
   },
   "ui": {
     "loaded": "Nuvens carregadas",
@@ -398,5 +402,88 @@
       "hint": "Causas comuns"
     },
     "brokenTips": "São lidos LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 e projetos de scanner (RCP, FLS, LSPROJ) têm de ser exportados antes para LAS ou PLY. Alguns LAZ usam uma variante LASzip que os browsers não descodificam: guarde-os como LAS ou COPC. Ficheiros muito grandes: recorte-os ou decime-os antes."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Casos de uso",
+      "hint": "Um clique prepara a vista para uma tarefa real. Todos os filtros abaixo continuam editáveis e nada altera o scan."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Corte em planta",
+        "hint": "Mantém uma faixa de 60 cm na altura do ponto escolhido (ou 1,2 m acima do ponto mais baixo) e olha de cima: as paredes leem-se como uma planta."
+      },
+      "terrain": {
+        "label": "Terreno e curvas de nível",
+        "hint": "Colore por altura, desenha curvas de nível e mantém só o solo se o ficheiro estiver classificado."
+      },
+      "vegetation": {
+        "label": "Remover vegetação e ruído",
+        "hint": "Oculta as classes de vegetação e ruído para destacar edifícios, estradas e solo. Requer um ficheiro classificado."
+      },
+      "slab": {
+        "label": "Planeza da laje",
+        "hint": "Clique num ponto da laje: mantém uma faixa fina à volta e desenha uma linha a cada 1 cm, pelo que saliências e depressões surgem como anéis."
+      },
+      "scanVsBim": {
+        "label": "Scan vs BIM",
+        "hint": "Desenha o scan numa cor viva sobre o modelo translúcido: o que não foi construído segundo o projeto salta à vista. Requer um modelo IFC."
+      },
+      "clearance": {
+        "label": "Medir um gabarito",
+        "hint": "Ativa a ferramenta de distância: clique em dois pontos do scan (chão a viga, parede a parede) para ler a folga real construída."
+      }
+    },
+    "needsClasses": "Requer um ficheiro classificado",
+    "needsModel": "Requer um modelo IFC",
+    "pickFirst": "Primeiro clique num ponto do scan — Inspecionar está ativo.",
+    "applied": "Aplicado: {{what}}",
+    "activeBanner": "Os filtros de análise ocultam parte do scan.",
+    "reset": "Limpar filtros",
+    "slice": {
+      "title": "Corte por altura",
+      "toggle": "Mostrar só uma faixa de altura",
+      "from": "De",
+      "to": "Até",
+      "hint": "Alturas em metros de cena. Combine com Medir para ler pés-direitos, ou com a vista de topo para decalcar uma planta."
+    },
+    "contours": {
+      "title": "Curvas de nível",
+      "toggle": "Desenhar curvas de nível",
+      "hint": "Passos largos para o terreno; 1–2 cm revelam uma laje que não está plana."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Toque numa classe para a ocultar ou mostrar. Códigos segundo a norma ASPRS LAS.",
+      "all": "Todas",
+      "ground": "Só solo",
+      "noVeg": "Sem vegetação",
+      "names": {
+        "c0": "Nunca classificado",
+        "c1": "Não classificado",
+        "c2": "Solo",
+        "c3": "Vegetação baixa",
+        "c4": "Vegetação média",
+        "c5": "Vegetação alta",
+        "c6": "Edifício",
+        "c7": "Ruído",
+        "c8": "Ponto-chave",
+        "c9": "Água",
+        "c10": "Ferrovia",
+        "c11": "Pavimento rodoviário",
+        "c12": "Sobreposição",
+        "c13": "Cabo de guarda",
+        "c14": "Condutor",
+        "c15": "Torre elétrica"
+      }
+    },
+    "measure": {
+      "title": "Medir o scan",
+      "hint": "Os scans fazem snap como os modelos: distâncias, áreas e ângulos caem em pontos reais.",
+      "distance": "Distância",
+      "area": "Área",
+      "angle": "Ângulo",
+      "point": "Ponto"
+    }
   }
 }

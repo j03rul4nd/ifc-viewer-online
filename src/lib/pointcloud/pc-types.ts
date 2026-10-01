@@ -334,6 +334,24 @@ export interface PointCloudDisplay {
   round: boolean
   /** Eye-dome-lighting-ish depth cue: darken points by depth gradient. */
   edl: boolean
+  // ── Analysis filters — shader-only, so they are as instant as the colour
+  //    modes. Session state: parseDisplay never restores them, because a slice
+  //    or a hidden class surviving a reload reads as "half my scan is gone". ──
+  /** Keep only the points inside [sliceMin, sliceMax] of the height range. */
+  sliceEnabled: boolean
+  /** Lower edge of the height slice, as a fraction 0-1 of the resident height range. */
+  sliceMin: number
+  /** Upper edge of the height slice, fraction 0-1. */
+  sliceMax: number
+  /**
+   * ASPRS classes 0-15 still drawn, one bit per class. 0xFFFF = all. Only
+   * applied when the source carried classification.
+   */
+  classMask: number
+  /** Draw iso-height lines over the points (terrain, slabs, floor flatness). */
+  contours: boolean
+  /** Contour spacing, scene metres. */
+  contourInterval: number
 }
 
 export const DEFAULT_DISPLAY: PointCloudDisplay = {
@@ -346,7 +364,16 @@ export const DEFAULT_DISPLAY: PointCloudDisplay = {
   confidenceThreshold: 0,
   round: true,
   edl: false,
+  sliceEnabled: false,
+  sliceMin: 0,
+  sliceMax: 1,
+  classMask: 0xffff,
+  contours: false,
+  contourInterval: 1,
 }
+
+/** Every ASPRS class the shader palette knows — the class filter's rows. */
+export const ASPRS_CLASS_CODES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const
 
 // ── Budgets ────────────────────────────────────────────────────────────────────
 

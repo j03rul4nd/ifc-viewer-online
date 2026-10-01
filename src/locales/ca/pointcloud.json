@@ -219,7 +219,10 @@
     "classification": "Classificació",
     "intensity": "Intensitat",
     "distance": "Distància a la càmera",
-    "clear": "Neteja"
+    "clear": "Neteja",
+    "copy": "Copia coordenades",
+    "copied": "Coordenades copiades",
+    "sliceHere": "Talla a aquesta alçada"
   },
   "view": {
     "title": "Vista",
@@ -276,7 +279,8 @@
     "placement": "Posició",
     "view": "Vista",
     "samples": "Exemples",
-    "help": "Arreglar"
+    "help": "Arreglar",
+    "analyze": "Analitzar"
   },
   "ui": {
     "loaded": "Núvols carregats",
@@ -398,5 +402,88 @@
       "hint": "Causes habituals"
     },
     "brokenTips": "Aquí es llegeixen LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 i els projectes d'escàner (RCP, FLS, LSPROJ) s'han d'exportar abans a LAS o PLY. Alguns LAZ fan servir una variant de LASzip que el navegador no pot descomprimir: desa'ls com a LAS o COPC. Fitxers molt grans: retalla'ls o delma'ls abans."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Casos d'ús",
+      "hint": "Un clic prepara la vista per a una tasca real. Tots els filtres de sota continuen sent editables i res no modifica l'escaneig."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Tall en planta",
+        "hint": "Deixa una franja de 60 cm a l'alçada del punt triat (o a 1,2 m sobre el punt més baix) i mira des de dalt: els murs es llegeixen com un plànol."
+      },
+      "terrain": {
+        "label": "Terreny i corbes de nivell",
+        "hint": "Acoloreix per alçada, dibuixa corbes de nivell i deixa només el terreny si el fitxer està classificat."
+      },
+      "vegetation": {
+        "label": "Treure vegetació i soroll",
+        "hint": "Amaga les classes de vegetació i soroll perquè destaquin edificis, vials i terreny. Cal un fitxer classificat."
+      },
+      "slab": {
+        "label": "Planor del forjat",
+        "hint": "Fes clic en un punt del forjat: deixa una franja fina al voltant i dibuixa una línia cada 1 cm, així els bonys i sots apareixen com a anells."
+      },
+      "scanVsBim": {
+        "label": "Escaneig vs BIM",
+        "hint": "Pinta l'escaneig en un color viu sobre el model translúcid: el que no es va construir segons projecte salta a la vista. Cal un model IFC."
+      },
+      "clearance": {
+        "label": "Mesurar un gàlib",
+        "hint": "Activa l'eina de distància: fes clic en dos punts de l'escaneig (terra a biga, mur a mur) per llegir el buit real construït."
+      }
+    },
+    "needsClasses": "Cal un fitxer classificat",
+    "needsModel": "Cal un model IFC",
+    "pickFirst": "Primer fes clic en un punt de l'escaneig: Inspeccionar està actiu.",
+    "applied": "Aplicat: {{what}}",
+    "activeBanner": "Els filtres d'anàlisi amaguen part de l'escaneig.",
+    "reset": "Treu els filtres",
+    "slice": {
+      "title": "Tall per alçada",
+      "toggle": "Mostra només una franja d'alçada",
+      "from": "Des de",
+      "to": "Fins a",
+      "hint": "Alçades en metres d'escena. Combina-ho amb Mesurar per llegir alçades lliures, o amb vista superior per calcar una planta."
+    },
+    "contours": {
+      "title": "Corbes de nivell",
+      "toggle": "Dibuixa corbes de nivell",
+      "hint": "Passos grans per llegir el terreny; passos d'1–2 cm revelen un forjat que no és pla."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Toca una classe per amagar-la o mostrar-la. Els codis segueixen l'estàndard ASPRS LAS.",
+      "all": "Totes",
+      "ground": "Només terreny",
+      "noVeg": "Sense vegetació",
+      "names": {
+        "c0": "Mai classificat",
+        "c1": "Sense classificar",
+        "c2": "Terreny",
+        "c3": "Vegetació baixa",
+        "c4": "Vegetació mitjana",
+        "c5": "Vegetació alta",
+        "c6": "Edifici",
+        "c7": "Soroll",
+        "c8": "Punt clau",
+        "c9": "Aigua",
+        "c10": "Via fèrria",
+        "c11": "Calçada",
+        "c12": "Solapament",
+        "c13": "Cable de guarda",
+        "c14": "Conductor",
+        "c15": "Torre elèctrica"
+      }
+    },
+    "measure": {
+      "title": "Mesurar l'escaneig",
+      "hint": "Els escanejos s'enganxen igual que els models: distàncies, àrees i angles cauen en punts reals.",
+      "distance": "Distància",
+      "area": "Àrea",
+      "angle": "Angle",
+      "point": "Punt"
+    }
   }
 }

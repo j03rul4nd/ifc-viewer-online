@@ -61,6 +61,13 @@ export function parseDisplay(raw: string | null): PointCloudDisplay {
       confidenceThreshold: num('confidenceThreshold', 0, 1),
       round: bool('round'),
       edl: bool('edl'),
+      // Analysis filters are session state — see PointCloudDisplay.
+      sliceEnabled: DEFAULT_DISPLAY.sliceEnabled,
+      sliceMin: DEFAULT_DISPLAY.sliceMin,
+      sliceMax: DEFAULT_DISPLAY.sliceMax,
+      classMask: DEFAULT_DISPLAY.classMask,
+      contours: DEFAULT_DISPLAY.contours,
+      contourInterval: DEFAULT_DISPLAY.contourInterval,
     }
   } catch {
     return { ...DEFAULT_DISPLAY }
