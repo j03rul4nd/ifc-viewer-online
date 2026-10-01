@@ -12,6 +12,469 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_FR_PACK: BlogPost[] = [
   {
+    slug: "ifc-spatial-structure-explained",
+    title: "La structure spatiale IFC expliquée : projet, site, bâtiment, niveau et espace (avec schémas)",
+    excerpt: "Tout modèle IFC est suspendu au même arbre : projet, site, bâtiment, niveau, espace. La plupart des problèmes imputés aux visionneuses — éléments sans niveau, plans qui coupent les dalles, modèles à deux kilomètres — sont des problèmes de cet arbre. Le voici dessiné, avec les erreurs qui le cassent.",
+    seoTitle: "La structure spatiale IFC expliquée, avec schémas",
+    seoDescription: "La hiérarchie spatiale IFC dessinée : projet, site, bâtiment, niveau et espace ; agrégation et contenance ; placements et erreurs qui cassent l'arbre.",
+    date: "2026-10-02",
+    readTimeMin: 10,
+    category: "Corriger les exports",
+    categorySlug: "export-fixes",
+    author: "IFC Viewer Team",
+    keywords: [
+      "structure spatiale IFC",
+      "hiérarchie IFC",
+      "IfcBuildingStorey",
+      "IfcSpace",
+      "schéma arborescence spatiale IFC",
+      "IfcRelContainedInSpatialStructure",
+      "IfcRelAggregates",
+      "IFC projet site bâtiment niveau",
+      "IFC spatial structure",
+      "IFC hierarchy",
+      "IFC spatial tree diagram",
+      "IFC project site building storey",
+    ],
+    faqs: [
+      {
+        q: "Qu'est-ce que la structure spatiale IFC ?",
+        a: "L'arbre dans lequel tout modèle IFC est organisé : un IfcProject, qui agrège un ou plusieurs IfcSite, qui agrègent des IfcBuilding (ou, en IFC4.3, d'autres ouvrages comme des ponts et des routes), qui agrègent des IfcBuildingStorey, qui agrègent des IfcSpace. Les éléments physiques, comme les murs et les portes, sont ensuite contenus dans l'un de ces éléments spatiaux, généralement un niveau.",
+      },
+      {
+        q: "Quelle différence entre agrégation et contenance en IFC ?",
+        a: "L'agrégation (IfcRelAggregates) construit l'arbre spatial lui-même : un bâtiment se compose de niveaux, un niveau d'espaces. La contenance (IfcRelContainedInSpatialStructure) place un élément physique dans cet arbre, et chaque élément ne peut être contenu que dans un seul élément spatial. Un élément peut en outre être référencé dans d'autres avec IfcRelReferencedInSpatialStructure — un poteau qui traverse deux niveaux, par exemple.",
+      },
+      {
+        q: "Pourquoi mon IFC affiche-t-il des éléments hors de tout niveau ?",
+        a: "Parce qu'ils ont été exportés sans relation de contenance, ou contenus directement dans le bâtiment ou le site. Les coupes en plan, les nomenclatures par niveau, le COBie et la plupart des vérificateurs travaillent niveau par niveau, donc ces éléments disparaissent en silence. La correction se trouve généralement dans l'affectation de niveau de l'outil auteur, pas dans la visionneuse.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Ouvrez n'importe quel modèle IFC dans n'importe quelle visionneuse : la première chose que vous voyez, avant le moindre mur, c'est un arbre — le projet en haut, un site, un bâtiment, une liste de niveaux. On dirait une aide à la navigation. C'est en réalité la colonne vertébrale du fichier, et un nombre surprenant de problèmes imputés aux visionneuses, aux exports ou aux vérificateurs sont des problèmes de cet arbre.",
+      },
+      {
+        type: "p",
+        text: "Ce guide dessine l'arbre, explique les deux relations distinctes qui le construisent et liste les erreurs qui le cassent — avec ce que chacune provoque en aval.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-spatial-structure-hierarchy.png",
+        alt: "Schéma de la structure spatiale IFC : IfcProject agrège IfcSite, IfcBuilding, IfcBuildingStorey et IfcSpace, avec murs, portes, dalles et poteaux contenus dans un niveau",
+        caption: "La structure spatiale IFC. Les traits bleus sont l'agrégation (l'arbre spatial) ; les tirets verts, la contenance (chaque élément dans exactement un niveau).",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-spatial-structure-hierarchy-800.png", width: 800 },
+          { src: "blog/images/ifc-spatial-structure-hierarchy.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "L'arbre spatial est construit par agrégation : projet → site → bâtiment → niveau → espace.",
+          "Les éléments physiques ne font pas partie de l'arbre. Ils sont contenus dans un élément spatial — généralement un niveau — par une autre relation.",
+          "Un élément sans contenance n'est pas « quelque part dans le bâtiment ». Pour les coupes en plan, les nomenclatures, le COBie et la plupart des contrôles, il n'existe pas.",
+        ],
+      },
+      { type: "h2", text: "Les cinq niveaux, et à quoi sert chacun" },
+      {
+        type: "table",
+        headers: ["Entité", "Ce qu'elle représente", "Ce qu'elle porte"],
+        rows: [
+          [
+            "IfcProject",
+            "Le projet entier — exactement un par fichier",
+            "Unités, contextes de représentation, la racine de tout",
+          ],
+          [
+            "IfcSite",
+            "La parcelle",
+            "Latitude, longitude et altitude de référence ; le géoréférencement commence ici",
+          ],
+          ["IfcBuilding", "Un bâtiment sur la parcelle", "Nom, adresse, altitude du rez-de-chaussée"],
+          [
+            "IfcBuildingStorey",
+            "Un niveau",
+            "Altitude — dont dépendent les coupes en plan et les nomenclatures par niveau",
+          ],
+          [
+            "IfcSpace",
+            "Une pièce ou un volume d'air",
+            "Nom, nom long, surface, volume — le programme des locaux",
+          ],
+        ],
+        caption: "En IFC4.3, le niveau bâtiment se généralise aux ouvrages : IfcBridge, IfcRoad, IfcRailway et IfcMarineFacility prennent la place d'IfcBuilding, avec des parties d'ouvrage en dessous.",
+      },
+      { type: "h2", text: "Deux relations, pas une" },
+      {
+        type: "p",
+        text: "La chose la plus utile à comprendre sur la structure spatiale, c'est que deux relations différentes sont à l'œuvre, et qu'elles ne veulent pas dire la même chose.",
+      },
+      {
+        type: "ul",
+        items: [
+          "IfcRelAggregates construit l'arbre spatial. Un bâtiment se décompose en niveaux ; un niveau en espaces. C'est une relation tout–partie.",
+          "IfcRelContainedInSpatialStructure place un élément physique — un mur, une porte, une pompe — dans cet arbre. Chaque élément peut être contenu dans exactement un élément spatial.",
+          "IfcRelReferencedInSpatialStructure ajoute des références secondaires : un poteau qui traverse deux niveaux est contenu dans l'un et référencé dans l'autre.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Si vous ne retenez qu'une règle : les espaces sont agrégés à un niveau ; les murs sont contenus dans un niveau. En IFC, un mur n'est jamais « une partie » d'un niveau, et un espace n'y est jamais « contenu ».",
+      },
+      { type: "h2", text: "Où est le modèle : les placements le long de l'arbre" },
+      {
+        type: "p",
+        text: "L'arbre spatial porte aussi le système de coordonnées. La position de chaque élément est un IfcLocalPlacement relatif à celui de son parent — le mur par rapport au niveau, le niveau par rapport au bâtiment, le bâtiment par rapport au site. La position du modèle sur Terre est fixée une seule fois, tout en haut.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-local-placement-chain.png",
+        alt: "Schéma de la chaîne de placements locaux IFC : IfcMapConversion, IfcSite, IfcBuilding, IfcBuildingStorey et IfcWall, chacun relatif à son parent",
+        caption: "Les placements sont relatifs à leur parent. Les coordonnées réelles se placent en haut, dans le géoréférencement — pas dans chaque élément.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-local-placement-chain-800.png", width: 800 },
+          { src: "blog/images/ifc-local-placement-chain.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: [
+          "Quand les coordonnées réelles sont au contraire repoussées dans chaque élément, les modèles tremblent à l'écran et les fichiers fédérés se retrouvent à des kilomètres les uns des autres. Toute l'histoire est dans ",
+          { text: "coordonnées et géoréférencement IFC", to: "ifc-coordinates-georeferencing" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Six erreurs qui cassent l'arbre" },
+      {
+        type: "table",
+        headers: ["Erreur", "Cause habituelle", "Ce qui casse en aval"],
+        rows: [
+          [
+            "Éléments dans aucun niveau",
+            "Éléments hébergés sur un niveau de référence, ou créés dans un groupe",
+            "Coupes en plan, nomenclatures par niveau, localisations COBie",
+          ],
+          [
+            "Éléments contenus directement dans IfcBuilding ou IfcSite",
+            "Réglage d'export, ou éléments d'aménagement modélisés sans niveau",
+            "Les contrôles par niveau les ignorent",
+          ],
+          [
+            "Niveaux aux altitudes fausses",
+            "Incohérence d'unités ou de point de base à l'export",
+            "Coupes en plan à travers les dalles, niveaux faux dans les nomenclatures",
+          ],
+          [
+            "Aucun IfcSpace",
+            "Pièces non exportées, ou exportées comme simple géométrie",
+            "Programme des locaux, surfaces, feuille Space du COBie",
+          ],
+          [
+            "Deux IfcBuilding là où un seul était voulu",
+            "Fichiers liés exportés séparément",
+            "Niveaux en double, fédération confuse",
+          ],
+          [
+            "Niveaux nommés différemment selon la discipline",
+            "Pas de nommage des niveaux convenu",
+            "Modèles fédérés qui ne s'alignent pas par niveau",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "La plupart relèvent des réglages d'export plutôt que de la modélisation, et presque toutes se voient dans les dix premières secondes après l'ouverture du fichier — si l'on regarde l'arbre avant la géométrie. Les contrôles correspondants font partie de ",
+          { text: "comment valider un fichier IFC", to: "how-to-validate-ifc-file" },
+          ", et les réglages d'export par outil sont dans ",
+          { text: "pourquoi les exports IFC de Revit cassent", to: "revit-ifc-export-breaks" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Contrôler la structure spatiale en une minute" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Ouvrez le fichier et lisez d'abord l'arbre",
+            body: "Un projet, un site, les bâtiments attendus, les niveaux attendus — dans l'ordre, avec des noms cohérents.",
+          },
+          {
+            title: "Vérifiez les altitudes des niveaux",
+            body: "Elles doivent croître et correspondre aux plans dans la tolérance convenue. Si elles sont décalées d'un facteur 1000, les unités sont les suspectes habituelles.",
+          },
+          {
+            title: "Cherchez les éléments hors de tout niveau",
+            body: "La validation les signale. Le cas courant est un élément contenu dans le bâtiment mais pas dans un niveau.",
+          },
+          {
+            title: "Faites une coupe en plan par niveau",
+            body: "Si la coupe traverse une dalle ou rate les murs, l'altitude ou la contenance est fausse. Le guide de mesure explique comment les coupes par niveau sont placées.",
+          },
+          {
+            title: "Vérifiez les espaces",
+            body: "Si le projet exige un programme des locaux ou un COBie, chaque pièce doit être un IfcSpace nommé — pas un volume coloré.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "L'étape de la coupe en plan est décrite dans ",
+          { text: "comment mesurer un modèle IFC en ligne", to: "measure-ifc-model-online" },
+          " ; l'importance des espaces pour la remise, dans ",
+          { text: "le COBie depuis l'IFC", to: "cobie-from-ifc-fm-handover" },
+          ".",
+        ],
+      },
+    ],
+    lang: "fr",
+    translationKey: "ifc-spatial-structure-explained",
+  },
+  {
+    slug: "ifc-file-format-explained",
+    title: "Que contient un fichier IFC ? Le format expliqué avec des schémas",
+    excerpt: "Un fichier .ifc est du texte brut qu'on peut ouvrir dans un éditeur de code — et une fois qu'on sait le lire, la moitié des mystères de l'IFC disparaissent. L'en-tête, les instances numérotées, le GlobalId, les relations qui portent les propriétés : voici le format, dessiné.",
+    seoTitle: "Que contient un fichier IFC ? Le format expliqué",
+    seoDescription: "Comment un fichier IFC est structuré : en-tête STEP et schéma, instances numérotées, GlobalId, héritage des entités et rattachement des property sets.",
+    date: "2026-10-02",
+    readTimeMin: 11,
+    category: "Outils & comparatifs",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "format de fichier IFC",
+      "structure fichier IFC",
+      "fichier STEP IFC",
+      "ISO 10303-21",
+      "schéma IFC expliqué",
+      "GlobalId IFC",
+      "hiérarchie des entités IFC",
+      "structure property set IFC",
+      "IFC file format",
+      "IFC file structure",
+      "STEP file IFC",
+      "IFC schema explained",
+      "IFC GlobalId",
+      "IFC entity hierarchy",
+      "IFC property set structure",
+    ],
+    faqs: [
+      {
+        q: "Quel est le format d'un fichier .ifc ?",
+        a: "Généralement un fichier physique STEP (ISO 10303-21) : du texte brut avec un en-tête qui nomme le schéma (IFC2X3, IFC4 ou IFC4X3) et une section de données où chaque ligne est une instance numérotée, comme #245= IFCWALL(...). Les mêmes données peuvent aussi être stockées en ifcXML ou compressées en ifcZIP.",
+      },
+      {
+        q: "Quelle différence entre un express ID et un GlobalId ?",
+        a: "L'express ID est le numéro de ligne (#245) : il est propre au fichier et renuméroté à chaque export. Le GlobalId est un GUID compressé de 22 caractères stocké comme premier attribut de toute entité racine ; il est censé rester identique pendant toute la vie de l'élément, et c'est sur lui que s'appuient les comparaisons, le BCF et les systèmes d'exploitation-maintenance.",
+      },
+      {
+        q: "Où sont stockées les propriétés dans un fichier IFC ?",
+        a: "Pas sur l'élément lui-même. Les propriétés vivent dans des property sets (IfcPropertySet), rattachés aux éléments par IfcRelDefinesByProperties, ou aux types d'éléments — et chaque occurrence d'un type hérite des property sets du type.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "La plupart des gens ne voient un fichier IFC qu'à travers une visionneuse. C'est dommage, car un fichier .ifc est du texte brut, et dix minutes passées à en lire un expliquent des choses qui sinon restent mystérieuses : pourquoi les GUID comptent, pourquoi une propriété peut « manquer » alors qu'on la voit, pourquoi les fichiers deviennent si lourds, pourquoi un mauvais réglage d'export casse tout en aval.",
+      },
+      { type: "p", text: "Ce guide ouvre le fichier et dessine ce qu'il contient." },
+      {
+        type: "image",
+        src: "blog/images/ifc-step-file-anatomy.png",
+        alt: "Fichier IFC STEP annoté : en-tête ISO-10303-21 avec FILE_SCHEMA IFC4, instances numérotées comme #245 IFCWALL avec son GlobalId, une relation de property set et Pset_WallCommon FireRating",
+        caption: "Un fichier IFC au format STEP (ISO 10303-21) : un en-tête qui nomme le schéma, puis une instance numérotée par ligne.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-step-file-anatomy-800.png", width: 800 },
+          { src: "blog/images/ifc-step-file-anatomy.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Un fichier IFC est une liste d'instances numérotées. Les numéros sont propres au fichier et changent à chaque export.",
+          "Le GlobalId — la chaîne de 22 caractères dans chaque instance — est l'identité censée durer.",
+          "Presque tout ce qui compte, propriétés et contenance spatiale comprises, est rattaché par des entités de relation plutôt que stocké sur l'élément.",
+        ],
+      },
+      { type: "h2", text: "L'en-tête : quel schéma, quelle vue" },
+      {
+        type: "p",
+        text: "Le fichier commence par ISO-10303-21; et une courte section HEADER. Trois lignes comptent :",
+      },
+      {
+        type: "ul",
+        items: [
+          "FILE_DESCRIPTION nomme la model view definition — Coordination View, Reference View, Design Transfer View — qui définit le sous-ensemble d'IFC que l'exportateur entendait utiliser.",
+          "FILE_NAME enregistre le nom du fichier, l'horodatage, l'auteur et le logiciel auteur.",
+          "FILE_SCHEMA nomme le schéma : IFC2X3, IFC4 ou IFC4X3. Chaque ligne suivante se lit selon ce schéma ; la même entité peut avoir des attributs différents selon la version.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Choisir entre les versions du schéma est un sujet à part : ",
+          { text: "IFC2x3 ou IFC4", to: "ifc2x3-vs-ifc4" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Les données : une instance par ligne" },
+      {
+        type: "p",
+        text: "Après DATA; chaque ligne a la même forme : un numéro, un nom d'entité et une liste d'attributs dans l'ordre défini par le schéma.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "#245= IFCWALL('1kTvXnbbzCWw8lcMd1dR4o',#2,'Basic Wall:Ext 300',$,$,#210,#240,$,.STANDARD.);",
+      },
+      {
+        type: "table",
+        headers: ["Élément", "Signification"],
+        rows: [
+          ["#245", "Numéro d'instance (express ID) — propre à ce fichier"],
+          ["'1kTvXnbbz…'", "GlobalId — un GUID compressé de 22 caractères"],
+          ["#2", "Référence à une autre instance (ici, l'historique du propriétaire)"],
+          ["$", "Attribut non renseigné"],
+          [".STANDARD.", "Une valeur d'énumération (le type prédéfini)"],
+          ["#210, #240", "Placement et représentation géométrique, définis sur d'autres lignes"],
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Ne vous fiez jamais aux numéros # d'un fichier à l'autre",
+        text: "Le même mur sera #245 dans un export et #9810 dans le suivant. Tout ce qui doit identifier un élément d'une version à l'autre — une comparaison, un sujet BCF, un inventaire patrimonial — doit utiliser le GlobalId.",
+      },
+      {
+        type: "p",
+        text: [
+          "Quand le GlobalId lui-même change à chaque export, tous les processus en aval cassent en même temps. La cause et la correction pour chaque outil auteur sont dans ",
+          { text: "pourquoi les GUID IFC changent à chaque export", to: "ifc-guids-changing-every-export" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Les entités héritent les unes des autres" },
+      {
+        type: "p",
+        text: "L'IFC est un modèle objet. Un IfcWall est un IfcBuiltElement, qui est un IfcElement, un IfcProduct, un IfcObject et, au bout du compte, un IfcRoot — et il porte les attributs de chacun. C'est pourquoi chaque mur, porte et espace a un GlobalId et un Name : ils viennent d'IfcRoot.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-entity-inheritance-ifcwall.png",
+        alt: "Schéma d'héritage des entités IFC pour IfcWall : IfcRoot, IfcObjectDefinition, IfcObject, IfcProduct, IfcElement, IfcBuiltElement, IfcWall",
+        caption: "Chaque entité hérite des attributs de ses supertypes. Un contrôle écrit pour IfcElement s'applique à tous les murs, portes et poteaux en dessous.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-entity-inheritance-ifcwall-800.png", width: 800 },
+          { src: "blog/images/ifc-entity-inheritance-ifcwall.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: "Les noms changent d'une version à l'autre : ce que l'IFC4.3 appelle IfcBuiltElement s'appelait IfcBuildingElement en IFC2x3 et IFC4. Un outil qui code un nom en dur rate l'autre — c'est une des raisons pour lesquelles un même modèle peut passer un contrôle dans un outil et l'échouer dans un autre.",
+      },
+      { type: "h2", text: "Les relations sont aussi des entités" },
+      {
+        type: "p",
+        text: "Le choix de conception qui rend l'IFC difficile à lire au début est aussi ce qui le rend puissant : les relations sont des objets à part entière. Un mur n'a pas de liste de propriétés. À la place, une instance IfcRelDefinesByProperties pointe vers le mur et vers un property set. La contenance spatiale, les matériaux, les types, les ouvertures et les groupes fonctionnent de la même manière.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "Schéma montrant comment une propriété IFC atteint un élément : IfcWall relié par IfcRelDefinesByProperties à IfcPropertySet Pset_WallCommon avec FireRating et IsExternal, et hérité d'IfcWallType",
+        caption: "Les propriétés vivent dans des property sets, rattachés à l'élément ou à son type. Un property set sur le type s'applique à toutes les occurrences.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: [
+          "C'est la racine de la fausse alerte la plus courante des contrôles qualité IFC : une propriété définie sur le type semble manquer pour un outil qui ne lit que l'occurrence. ",
+          { text: "Propriétés IFC manquantes après export", to: "ifc-properties-missing-after-export" },
+          " détaille les vraies causes ; ",
+          { text: "lire les property sets en Python", to: "read-ifc-property-sets-python" },
+          " montre comment suivre ces relations dans le code.",
+        ],
+      },
+      { type: "h2", text: "Pourquoi les fichiers IFC sont si lourds" },
+      {
+        type: "ul",
+        items: [
+          "La géométrie domine. Une façade triangulée ou un équipement CVC détaillé peuvent occuper des milliers de lignes ; les extrusions et la géométrie instanciée sont bien plus légères.",
+          "Les données répétées sont répétées. Les exportateurs qui ne partagent ni property sets ni représentations écrivent les mêmes lignes une fois par élément.",
+          "Rien n'est compressé en STEP brut. Un ifcZIP réduit typiquement un fichier de plusieurs fois, et c'est un format de livraison judicieux quand les outils du destinataire l'acceptent.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Les façons sûres d'alléger les fichiers sont dans ",
+          { text: "comment réduire la taille d'un fichier IFC", to: "reduce-ifc-file-size" },
+          ". Et quand un fichier est assez gros pour faire planter le navigateur, voyez ",
+          { text: "fichiers IFC volumineux et plantages du navigateur", to: "large-ifc-file-browser-crash" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Lire un fichier soi-même" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Ouvrez-le dans un éditeur de texte",
+            body: "N'importe quel éditeur qui supporte les gros fichiers. Regardez d'abord l'en-tête : le schéma et la vue de modèle disent à quoi s'attendre.",
+          },
+          {
+            title: "Cherchez l'entité qui vous intéresse",
+            body: "IFCWALL(, IFCSPACE(, IFCBUILDINGSTOREY(. Le simple décompte est déjà un contrôle rapide.",
+          },
+          {
+            title: "Suivez les références d'un élément",
+            body: "À partir d'un mur, cherchez son numéro # pour trouver les relations qui pointent vers lui — contenance, propriétés, type.",
+          },
+          {
+            title: "Passez ensuite à une visionneuse",
+            body: "Les mêmes informations, navigables : l'arbre spatial, le panneau des propriétés et une validation qui contrôle ces relations pour vous.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "La façon dont les éléments s'organisent en niveaux et en espaces est le sujet de ",
+          { text: "la structure spatiale IFC expliquée", to: "ifc-spatial-structure-explained" },
+          ".",
+        ],
+      },
+    ],
+    lang: "fr",
+    translationKey: "ifc-file-format-explained",
+  },
+  {
     slug: "ifc-sun-shadow-study-online",
     title: "Étude d'ensoleillement et d'ombres à partir d'un modèle IFC, dans le navigateur",
     excerpt: "Une étude d'ombres passe généralement par un export vers un outil de rendu et une estimation de l'angle du nord. Un IFC géoréférencé sait déjà où il se trouve et où est le nord : le soleil peut donc être placé correctement à n'importe quelle date et heure, en quelques secondes, sans quitter le navigateur.",
@@ -70,6 +533,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         ],
       },
       { type: "h2", text: "Ce dont le soleil a besoin dans votre modèle" },
+      {
+        type: "image",
+        src: "blog/images/sun-study-true-north-vs-project-north.png",
+        alt: "Schéma du nord du projet face au nord géographique pivoté de 28 degrés, avec les données d'une étude d'ensoleillement : latitude, longitude, nord géographique et fuseau horaire",
+        caption: "Le nord du projet n'est pas le nord géographique. Une étude d'ensoleillement qui ignore la rotation fait pivoter chaque ombre du même angle.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/sun-study-true-north-vs-project-north-800.png", width: 800 },
+          { src: "blog/images/sun-study-true-north-vs-project-north.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "table",
         headers: ["Donnée", "Provenance", "Si elle est fausse"],
@@ -233,6 +710,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
       { type: "h2", text: "L'accrochage : ce qui décide si un chiffre est réel" },
       {
+        type: "image",
+        src: "blog/images/measure-snap-targets-vertex-edge-face.png",
+        alt: "Quatre cibles d'accrochage pour mesurer un modèle IFC : sommet, milieu d'arête, arête et face, sur l'angle d'un mur",
+        caption: "Les quatre cibles d'accrochage. Savoir laquelle l'outil a trouvée avant le clic, c'est ce qui rend le chiffre fiable.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/measure-snap-targets-vertex-edge-face-800.png", width: 800 },
+          { src: "blog/images/measure-snap-targets-vertex-edge-face.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "Une mesure ne vaut que par ses deux extrémités. Un bon accrochage trouve la géométrie que vous visiez — un sommet, le milieu d'une arête, un point sur une arête — et vous indique laquelle il a trouvée avant le clic.",
       },
@@ -380,6 +871,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
       { type: "h2", text: "Comment fonctionne la marche" },
       {
+        type: "image",
+        src: "blog/images/ifc-walk-mode-keyboard-controls.png",
+        alt: "Commandes clavier pour parcourir un modèle IFC à la première personne : G pour le mode marche, W A S D pour se déplacer, la souris pour regarder, double-clic pour aller",
+        caption: "Commandes du mode marche : G pour démarrer, WASD (ZQSD en AZERTY) pour avancer, la souris pour regarder, double-clic sur un sol pour y aller à hauteur d'yeux.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-walk-mode-keyboard-controls-800.png", width: 800 },
+          { src: "blog/images/ifc-walk-mode-keyboard-controls.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "table",
         headers: ["Action", "Commande"],
         rows: [
@@ -521,6 +1026,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
       { type: "h2", text: "Ajustez, ne recadrez pas" },
       {
+        type: "image",
+        src: "blog/images/vertical-video-fit-vs-crop-building.png",
+        alt: "Comparaison d'une vidéo verticale 9:16 d'un bâtiment large : le recadrage central coupe le bâtiment, l'ajustement avec bandes floutées le garde entier et laisse la place pour un titre",
+        caption: "Un recadrage central garde un tiers d'un cadre paysage. Ajuster garde le bâtiment entier, et les bandes accueillent le titre.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/vertical-video-fit-vs-crop-building-800.png", width: 800 },
+          { src: "blog/images/vertical-video-fit-vs-crop-building.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "Les bâtiments sont larges. Un recadrage central d'un enregistrement paysage en 9:16 ne garde qu'une bande d'environ un tiers de la largeur, et le bâtiment sort du cadre des deux côtés. Ajuster tout le cadre au format vertical garde le bâtiment intact et laisse des bandes en haut et en bas — qui, remplies d'une copie floutée de la même image, paraissent voulues et offrent exactement la place nécessaire pour un titre.",
       },
@@ -637,6 +1156,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         text: "Le modèle sait déjà beaucoup de ce qu'il faut à une bonne image de présentation. Où sont les niveaux. Quels éléments relèvent de la structure et lesquels des fluides. Où se trouve le site et où est le soleil. Un gabarit qui exploite ces informations produit en quelques minutes ce qui prendrait un après-midi dans un logiciel de mise en page.",
       },
       { type: "h2", text: "Quatre types d'images qu'utilise chaque projet" },
+      {
+        type: "image",
+        src: "blog/images/ifc-presentation-image-types.png",
+        alt: "Quatre types d'images de présentation tirées d'un modèle IFC : couverture, planche, fiche avec QR code et vue de synthèse colorée par discipline",
+        caption: "Couverture, planche, fiche et vue de synthèse : quatre images dont chaque projet a besoin, toutes issues du modèle.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-presentation-image-types-800.png", width: 800 },
+          { src: "blog/images/ifc-presentation-image-types.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "table",
         headers: ["Image", "Pour", "Ce qui la fait fonctionner"],
@@ -780,6 +1313,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
       { type: "h2", text: "Anatomie d'une spécification" },
       {
+        type: "image",
+        src: "blog/images/ids-specification-applicability-requirements.png",
+        alt: "Schéma d'une spécification IDS : l'applicabilité (entity, classification, partOf) sélectionne les éléments, les exigences (property, attribute, material) y sont vérifiées",
+        caption: "Une spécification IDS se lit comme une phrase : pour chaque élément correspondant à l'applicabilité, exiger les exigences.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ids-specification-applicability-requirements-800.png", width: 800 },
+          { src: "blog/images/ids-specification-applicability-requirements.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "Un fichier IDS est une liste de spécifications. Chacune se lit comme une phrase avec un sujet et un prédicat : « pour chaque élément qui correspond à ceci, exiger cela ». Le sujet est l'applicabilité ; le prédicat, les exigences.",
       },
@@ -841,6 +1388,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         text: "Deux de ces pièges méritent qu'on s'y attarde, car ils expliquent la plupart des faux échecs signalés lors d'une première exécution d'IDS.",
       },
       { type: "h3", text: "Type ou occurrence" },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "Schéma d'un property set IFC rattaché à une occurrence IfcWall et à son IfcWallType, dont toutes les occurrences héritent les propriétés",
+        caption: "Les propriétés peuvent être portées par le type plutôt que par l'occurrence. Un vérificateur IDS doit suivre le type, sinon il fait échouer des éléments corrects.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Revit, ArchiCAD et Tekla écrivent couramment propriétés et matériaux sur l'objet type (IfcWallType) plutôt que sur chaque mur. La sémantique de l'IDS est claire : l'information héritée du type vaut pour l'occurrence. Un vérificateur qui ne regarde que l'occurrence fera échouer tous les murs d'un modèle parfaitement correct. Si un IDS vous dit que 100 % de vos éléments n'ont pas une propriété que vous voyez dans le panneau des propriétés, c'est presque toujours la raison — et la faute revient au vérificateur, pas à vous.",
@@ -990,6 +1551,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         text: "Comparer correctement des versions IFC n'est pas difficile, mais tout repose sur une décision que la plupart des outils prennent subtilement de travers : ce qui compte comme « le même élément ».",
       },
       { type: "h2", text: "L'identité, c'est tout le problème" },
+      {
+        type: "image",
+        src: "blog/images/ifc-version-compare-globalid.png",
+        alt: "Tableau comparant deux révisions IFC par GlobalId : inchangé, propriété modifiée, élément déplacé dans un autre fichier, éléments ajoutés et supprimés",
+        caption: "Appariement par GlobalId sur tout l'ensemble : une propriété modifiée, un élément passé dans un autre fichier de discipline, un ajout et une suppression.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-version-compare-globalid-800.png", width: 800 },
+          { src: "blog/images/ifc-version-compare-globalid.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Un élément IFC a deux identifiants. L'express ID (le #1234 dans le fichier) est un numéro de ligne : il est renuméroté à chaque export et ne signifie rien d'une version à l'autre. Le GlobalId est un GUID de 22 caractères conçu pour durer toute la vie de l'élément. Une comparaison qui apparie autrement que par GlobalId compare des numéros de ligne.",
@@ -1164,6 +1739,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
       { type: "h2", text: "2.1 contre 3.0 : les différences qui cassent les imports" },
       {
+        type: "image",
+        src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png",
+        alt: "XML de markup.bcf en BCF 2.1 et BCF 3.0 côte à côte, montrant où sont imbriqués Comments, Viewpoints et Labels",
+        caption: "Le même sujet en BCF 2.1 et 3.0. Commentaires, points de vue et étiquettes passent dans le Topic et dans des conteneurs.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure-800.png", width: 800 },
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "table",
         headers: ["Aspect", "BCF 2.1", "BCF 3.0"],
         rows: [
@@ -1198,6 +1787,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         text: "Le cas des étiquettes est étonnamment fréquent : il est facile d'écrire les étiquettes 2.1 sous forme d'une seule chaîne séparée par des virgules, que tout lecteur strict traite ensuite comme une seule longue étiquette. Des éléments répétés, un par étiquette, c'est ce que demande le schéma 2.1.",
       },
       { type: "h2", text: "Pourquoi la caméra atterrit au mauvais endroit" },
+      {
+        type: "image",
+        src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png",
+        alt: "Schéma des axes : les coordonnées monde IFC sont Z vers le haut et directes, une scène three.js est Y vers le haut ; les caméras BCF doivent être reconverties avant l'export",
+        caption: "L'IFC est Z vers le haut, three.js Y vers le haut. Sans conversion la caméra arrive pivotée de 90° ; sans décalage, au mauvais endroit.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes-800.png", width: 800 },
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Les caméras BCF sont stockées dans les coordonnées monde du projet IFC : en mètres, Z vers le haut. La plupart des visionneuses web font le rendu avec three.js, dont la scène a Y vers le haut, et beaucoup décalent le modèle vers l'origine pour que les grandes coordonnées géoréférencées ne tremblent pas sur le GPU. Ce sont deux choix de rendu sensés. Il faut les annuler tous les deux avant d'écrire un point de vue.",
@@ -1324,6 +1927,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         text: "La solution n'est pas un meilleur outil COBie à la fin. C'est d'extraire le COBie de l'IFC tôt et souvent, et de mesurer ce qui manque tant qu'il reste du temps pour le modéliser.",
       },
       { type: "h2", text: "Le COBie est une vue de l'IFC, pas un livrable à part" },
+      {
+        type: "image",
+        src: "blog/images/cobie-sheets-from-ifc-entities.png",
+        alt: "Schéma reliant les feuilles COBie aux entités IFC : Facility, Floor, Space, Zone, Type, Component et System, avec Space, Type et Component marqués comme cœur de l'exploitation",
+        caption: "Chaque feuille COBie est une vue d'entités IFC. Component, Space et Type portent l'essentiel de ce qu'utilise l'exploitation.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/cobie-sheets-from-ifc-entities-800.png", width: 800 },
+          { src: "blog/images/cobie-sheets-from-ifc-entities.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Chaque ligne qui compte dans le COBie correspond à quelque chose dans l'IFC. Un Floor est un IfcBuildingStorey. Un Space est un IfcSpace. Un Type est un type d'élément comme IfcDoorType. Un Component est une occurrence d'élément — une porte précise, une pompe précise. Les attributs que demande le COBie vivent dans les attributs et les property sets de l'IFC.",
@@ -1534,6 +2151,20 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         ],
       },
       { type: "h2", text: "Pourquoi ça ne charge pas : CORS, et deux autres causes" },
+      {
+        type: "image",
+        src: "blog/images/ifc-embed-iframe-cors-flow.png",
+        alt: "Schéma de flux d'une visionneuse IFC intégrée : la page charge l'iframe, la visionneuse télécharge l'IFC depuis votre stockage, qui doit renvoyer l'en-tête Access-Control-Allow-Origin",
+        caption: "Le modèle va de votre stockage au navigateur du visiteur. Sans en-tête CORS côté hébergeur, le navigateur refuse de le transmettre.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-embed-iframe-cors-flow-800.png", width: 800 },
+          { src: "blog/images/ifc-embed-iframe-cors-flow.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "callout",
         variant: "warning",

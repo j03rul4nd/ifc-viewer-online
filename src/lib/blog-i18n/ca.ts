@@ -10,6 +10,465 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_CA: BlogPost[] = [
   {
+    slug: "ifc-spatial-structure-explained",
+    title: "L'estructura espacial IFC explicada: projecte, emplaçament, edifici, planta i espai (amb diagrames)",
+    excerpt: "Tot model IFC penja del mateix arbre: projecte, emplaçament, edifici, planta, espai. La majoria de problemes que s'atribueixen als visors —elements sense planta, plantes que tallen forjats, models a dos quilòmetres— són problemes d'aquest arbre. Aquí el teniu dibuixat, amb els errors que el trenquen.",
+    seoTitle: "L'estructura espacial IFC explicada, amb diagrames",
+    seoDescription: "La jerarquia espacial IFC dibuixada: projecte, emplaçament, edifici, planta i espai; agregació davant de contenció; emplaçaments i errors típics.",
+    date: "2026-10-02",
+    readTimeMin: 10,
+    category: "Corregir exportacions",
+    categorySlug: "export-fixes",
+    author: "IFC Viewer Team",
+    keywords: [
+      "estructura espacial IFC",
+      "jerarquia IFC",
+      "IfcBuildingStorey",
+      "IfcSpace",
+      "diagrama arbre espacial IFC",
+      "IfcRelContainedInSpatialStructure",
+      "IfcRelAggregates",
+      "IFC projecte emplaçament edifici planta",
+      "IFC spatial structure",
+      "IFC hierarchy",
+      "IFC spatial tree diagram",
+      "IFC project site building storey",
+    ],
+    faqs: [
+      {
+        q: "Què és l'estructura espacial IFC?",
+        a: "L'arbre en què s'organitza tot model IFC: un IfcProject, que agrega un o més IfcSite, que agreguen IfcBuilding (o, a IFC4.3, altres instal·lacions com ponts i carreteres), que agreguen IfcBuildingStorey, que agreguen IfcSpace. Els elements físics, com murs i portes, queden continguts en un d'aquests elements espacials, normalment una planta.",
+      },
+      {
+        q: "Quina diferència hi ha entre agregació i contenció a IFC?",
+        a: "L'agregació (IfcRelAggregates) construeix el mateix arbre espacial: un edifici es compon de plantes i una planta d'espais. La contenció (IfcRelContainedInSpatialStructure) col·loca un element físic en aquest arbre, i cada element només pot estar contingut en un element espacial. A més, un element pot estar referenciat en d'altres amb IfcRelReferencedInSpatialStructure; per exemple, un pilar que travessa dues plantes.",
+      },
+      {
+        q: "Per què el meu IFC mostra elements fora de totes les plantes?",
+        a: "Perquè es van exportar sense relació de contenció o continguts directament a l'edifici o a l'emplaçament. Els talls en planta, les taules per nivell, COBie i la majoria de comprovadors treballen planta a planta, així que aquests elements desapareixen en silenci. La solució sol ser a l'assignació de nivell de l'eina d'autoria, no al visor.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Obre qualsevol model IFC en qualsevol visor i el primer que veuràs, abans que un sol mur, és un arbre: el projecte a dalt, un emplaçament, un edifici, una llista de plantes. Sembla una ajuda per navegar. En realitat és la columna vertebral del fitxer, i un nombre sorprenent de problemes que s'atribueixen a visors, exportacions o comprovadors són problemes d'aquest arbre.",
+      },
+      {
+        type: "p",
+        text: "Aquesta guia dibuixa l'arbre, explica les dues relacions diferents que el construeixen i enumera els errors que el trenquen, amb el que provoca cadascun aigües avall.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-spatial-structure-hierarchy.png",
+        alt: "Diagrama de l'estructura espacial IFC: IfcProject agrega IfcSite, IfcBuilding, IfcBuildingStorey i IfcSpace, amb murs, portes, forjats i pilars continguts en una planta",
+        caption: "L'estructura espacial IFC. Les línies blaves són agregació (l'arbre espacial); les verdes discontínues, contenció (cada element en exactament una planta).",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-spatial-structure-hierarchy-800.png", width: 800 },
+          { src: "blog/images/ifc-spatial-structure-hierarchy.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "L'arbre espacial es construeix per agregació: projecte → emplaçament → edifici → planta → espai.",
+          "Els elements físics no formen part de l'arbre. Estan continguts en un element espacial —normalment una planta— mitjançant una altra relació.",
+          "Un element sense contenció no és «en algun lloc de l'edifici». Per als talls en planta, les taules, COBie i la majoria de comprovacions, no existeix.",
+        ],
+      },
+      { type: "h2", text: "Els cinc nivells i per a què serveix cadascun" },
+      {
+        type: "table",
+        headers: ["Entitat", "Què representa", "Què conté"],
+        rows: [
+          [
+            "IfcProject",
+            "Tot el projecte: exactament un per fitxer",
+            "Unitats, contextos de representació, l'arrel de tot",
+          ],
+          [
+            "IfcSite",
+            "La parcel·la",
+            "Latitud, longitud i cota de referència; aquí comença la georeferenciació",
+          ],
+          ["IfcBuilding", "Un edifici a la parcel·la", "Nom, adreça, cota de la planta baixa"],
+          ["IfcBuildingStorey", "Una planta", "Cota: en depenen els talls en planta i les taules per nivell"],
+          [
+            "IfcSpace",
+            "Una estança o un volum d'aire",
+            "Nom, nom llarg, superfície, volum: el programa d'espais",
+          ],
+        ],
+        caption: "A IFC4.3 el nivell d'edifici es generalitza a instal·lacions: IfcBridge, IfcRoad, IfcRailway i IfcMarineFacility ocupen el lloc d'IfcBuilding, amb parts d'instal·lació a sota.",
+      },
+      { type: "h2", text: "Dues relacions, no una" },
+      {
+        type: "p",
+        text: "El més útil que es pot entendre de l'estructura espacial és que hi intervenen dues relacions diferents, i signifiquen coses diferents.",
+      },
+      {
+        type: "ul",
+        items: [
+          "IfcRelAggregates construeix l'arbre espacial. Un edifici es descompon en plantes; una planta, en espais. És una relació tot–part.",
+          "IfcRelContainedInSpatialStructure col·loca un element físic —un mur, una porta, una bomba— en aquest arbre. Cada element pot estar contingut en un únic element espacial.",
+          "IfcRelReferencedInSpatialStructure afegeix referències secundàries: un pilar que travessa dues plantes està contingut en una i referenciat a l'altra.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Si només en recordes una regla: els espais s'agreguen a una planta; els murs es contenen en una planta. A IFC un mur mai no és «part de» una planta, i un espai mai no hi està «contingut».",
+      },
+      { type: "h2", text: "On és el model: emplaçaments al llarg de l'arbre" },
+      {
+        type: "p",
+        text: "L'arbre espacial també porta el sistema de coordenades. La posició de cada element és un IfcLocalPlacement relatiu al del seu pare: el mur respecte a la planta, la planta respecte a l'edifici, l'edifici respecte a l'emplaçament. La posició del model a la Terra es decideix una sola vegada, a dalt de tot.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-local-placement-chain.png",
+        alt: "Diagrama de la cadena d'emplaçaments locals IFC: IfcMapConversion, IfcSite, IfcBuilding, IfcBuildingStorey i IfcWall, cadascun relatiu al seu pare",
+        caption: "Els emplaçaments són relatius al seu pare. Les coordenades reals van a dalt, a la georeferenciació, no a cada element.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-local-placement-chain-800.png", width: 800 },
+          { src: "blog/images/ifc-local-placement-chain.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: [
+          "Quan, en canvi, les coordenades reals s'empenyen a cada element, els models tremolen a la pantalla i els fitxers federats apareixen a quilòmetres els uns dels altres. La història completa és a ",
+          { text: "coordenades i georeferenciació IFC", to: "ifc-coordinates-georeferencing" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Sis errors que trenquen l'arbre" },
+      {
+        type: "table",
+        headers: ["Error", "Causa habitual", "Què es trenca aigües avall"],
+        rows: [
+          [
+            "Elements sense planta",
+            "Elements allotjats en un nivell de referència, o creats en un grup",
+            "Talls en planta, taules per nivell, ubicacions de COBie",
+          ],
+          [
+            "Elements continguts directament a IfcBuilding o IfcSite",
+            "Paràmetre d'exportació, o elements d'urbanització modelats sense nivell",
+            "Les comprovacions per planta se'ls salten",
+          ],
+          [
+            "Plantes amb cotes errònies",
+            "Desajust d'unitats o de punt base en exportar",
+            "Talls en planta que travessen forjats, nivells erronis a les taules",
+          ],
+          [
+            "Cap IfcSpace",
+            "Habitacions no exportades, o exportades com a simple geometria",
+            "Programa d'espais, superfícies, full Space de COBie",
+          ],
+          [
+            "Dos IfcBuilding on se'n volia un",
+            "Fitxers vinculats exportats per separat",
+            "Plantes duplicades, federació confusa",
+          ],
+          [
+            "Plantes amb noms diferents a cada disciplina",
+            "Sense nomenclatura de nivells acordada",
+            "Models federats que no coincideixen per nivell",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Gairebé tots són paràmetres d'exportació, no de modelatge, i gairebé tots es veuen els deu primers segons d'obrir el fitxer, si mires l'arbre abans que la geometria. Les comprovacions que hi ha al darrere formen part de ",
+          { text: "com validar un fitxer IFC", to: "how-to-validate-ifc-file" },
+          ", i els paràmetres d'exportació per eina són a ",
+          { text: "per què fallen les exportacions IFC de Revit", to: "revit-ifc-export-breaks" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Revisar l'estructura espacial en un minut" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Obre el fitxer i llegeix primer l'arbre",
+            body: "Un projecte, un emplaçament, els edificis que esperes i les plantes que esperes, en ordre i amb noms raonables.",
+          },
+          {
+            title: "Comprova les cotes de planta",
+            body: "Han d'anar en augment i coincidir amb els plànols dins de la tolerància acordada. Si estan desfasades en un factor de 1000, el sospitós habitual són les unitats.",
+          },
+          {
+            title: "Busca elements fora de totes les plantes",
+            body: "La validació els assenyala. El cas habitual és un element contingut a l'edifici però no en una planta.",
+          },
+          {
+            title: "Fes un tall en planta per nivell",
+            body: "Si el tall travessa un forjat o no agafa els murs, la cota o la contenció estan malament. La guia de mesura explica com es col·loquen els talls per planta.",
+          },
+          {
+            title: "Revisa els espais",
+            body: "Si el projecte necessita programa d'espais o COBie, cada estança ha de ser un IfcSpace amb nom, no un volum acolorit.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "El pas del tall en planta es descriu a ",
+          { text: "com mesurar un model IFC en línia", to: "measure-ifc-model-online" },
+          "; per què importen els espais al lliurament, a ",
+          { text: "COBie des d'IFC", to: "cobie-from-ifc-fm-handover" },
+          ".",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "ifc-spatial-structure-explained",
+  },
+  {
+    slug: "ifc-file-format-explained",
+    title: "Què hi ha dins d'un fitxer IFC? El format explicat amb diagrames",
+    excerpt: "Un fitxer .ifc és text pla que pots obrir en un editor de codi, i quan saps llegir-lo desapareixen la meitat dels misteris d'IFC. La capçalera, les instàncies numerades, el GlobalId, les relacions que porten les propietats: aquí teniu el format, dibuixat.",
+    seoTitle: "Què hi ha dins d'un fitxer IFC? El format explicat",
+    seoDescription: "Com s'estructura un fitxer IFC: capçalera STEP i esquema, instàncies numerades, GlobalId, herència d'entitats i com s'associen els property sets.",
+    date: "2026-10-02",
+    readTimeMin: 11,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "format de fitxer IFC",
+      "estructura fitxer IFC",
+      "fitxer STEP IFC",
+      "ISO 10303-21",
+      "esquema IFC explicat",
+      "GlobalId IFC",
+      "jerarquia d'entitats IFC",
+      "estructura property set IFC",
+      "IFC file format",
+      "IFC file structure",
+      "STEP file IFC",
+      "IFC schema explained",
+      "IFC GlobalId",
+      "IFC entity hierarchy",
+      "IFC property set structure",
+    ],
+    faqs: [
+      {
+        q: "Quin format té un fitxer .ifc?",
+        a: "Normalment és un fitxer físic STEP (ISO 10303-21): text pla amb una capçalera que indica l'esquema (IFC2X3, IFC4 o IFC4X3) i una secció de dades en què cada línia és una instància numerada, com #245= IFCWALL(...). Les mateixes dades també es poden desar com a ifcXML o comprimir com a ifcZIP.",
+      },
+      {
+        q: "Quina diferència hi ha entre un express ID i un GlobalId?",
+        a: "L'express ID és el número de línia (#245): és local al fitxer i es renumera a cada exportació. El GlobalId és un GUID comprimit de 22 caràcters desat com a primer atribut de tota entitat arrel; està pensat per no canviar durant la vida de l'element i és en el que es basen les comparacions, el BCF i els sistemes de FM.",
+      },
+      {
+        q: "On es desen les propietats en un fitxer IFC?",
+        a: "No en el mateix element. Les propietats viuen en property sets (IfcPropertySet), que s'associen als elements mitjançant IfcRelDefinesByProperties, o als tipus d'element; i cada ocurrència d'un tipus hereta els property sets del tipus.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "La majoria de gent només veu un fitxer IFC a través d'un visor. És una llàstima, perquè un fitxer .ifc és text pla, i deu minuts llegint-ne un expliquen coses que d'una altra manera continuen sent un misteri: per què importen els GUID, per què una propietat pot «faltar» encara que la vegis, per què els fitxers pesen tant, per què un paràmetre equivocat en una exportació ho trenca tot aigües avall.",
+      },
+      { type: "p", text: "Aquesta guia obre el fitxer i dibuixa el que hi ha a dins." },
+      {
+        type: "image",
+        src: "blog/images/ifc-step-file-anatomy.png",
+        alt: "Fitxer IFC STEP anotat: capçalera ISO-10303-21 amb FILE_SCHEMA IFC4, instàncies numerades com #245 IFCWALL amb el seu GlobalId, una relació de property set i Pset_WallCommon FireRating",
+        caption: "Un fitxer IFC en format STEP (ISO 10303-21): una capçalera que indica l'esquema i després una instància numerada per línia.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-step-file-anatomy-800.png", width: 800 },
+          { src: "blog/images/ifc-step-file-anatomy.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Un fitxer IFC és una llista d'instàncies numerades. Els números són locals al fitxer i canvien a cada exportació.",
+          "El GlobalId —la cadena de 22 caràcters dins de cada instància— és la identitat pensada per durar.",
+          "Gairebé tot el que és interessant, propietats i contenció espacial incloses, s'associa mitjançant entitats de relació en lloc de desar-se a l'element.",
+        ],
+      },
+      { type: "h2", text: "La capçalera: quin esquema, quina vista" },
+      {
+        type: "p",
+        text: "El fitxer comença amb ISO-10303-21; i una secció HEADER curta. N'importen tres línies:",
+      },
+      {
+        type: "ul",
+        items: [
+          "FILE_DESCRIPTION indica la model view definition —Coordination View, Reference View, Design Transfer View—, que defineix el subconjunt d'IFC que l'exportador pretenia fer servir.",
+          "FILE_NAME registra el nom del fitxer, la data, l'autor i l'aplicació d'autoria.",
+          "FILE_SCHEMA indica l'esquema: IFC2X3, IFC4 o IFC4X3. Cada línia posterior es llegeix segons aquest esquema; la mateixa entitat pot tenir atributs diferents en versions diferents.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Triar entre versions de l'esquema és un tema a part: ",
+          { text: "IFC2x3 davant d'IFC4", to: "ifc2x3-vs-ifc4" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Les dades: una instància per línia" },
+      {
+        type: "p",
+        text: "Després de DATA; totes les línies tenen la mateixa forma: un número, un nom d'entitat i una llista d'atributs en l'ordre que defineix l'esquema.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "#245= IFCWALL('1kTvXnbbzCWw8lcMd1dR4o',#2,'Basic Wall:Ext 300',$,$,#210,#240,$,.STANDARD.);",
+      },
+      {
+        type: "table",
+        headers: ["Element", "Significat"],
+        rows: [
+          ["#245", "Número d'instància (express ID): local a aquest fitxer"],
+          ["'1kTvXnbbz…'", "GlobalId: un GUID comprimit de 22 caràcters"],
+          ["#2", "Referència a una altra instància (aquí, l'historial del propietari)"],
+          ["$", "Atribut sense valor"],
+          [".STANDARD.", "Un valor d'enumeració (el tipus predefinit)"],
+          ["#210, #240", "Emplaçament i representació geomètrica, definits en altres línies"],
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "No et fiïs mai dels números # entre fitxers",
+        text: "El mateix mur serà #245 en una exportació i #9810 a la següent. Tot el que hagi d'identificar un element entre versions —una comparació, una incidència BCF, un inventari d'actius de FM— ha de fer servir el GlobalId.",
+      },
+      {
+        type: "p",
+        text: [
+          "Quan el mateix GlobalId canvia a cada exportació, tots els processos aigües avall es trenquen alhora. La causa i la solució per a cada eina d'autoria són a ",
+          { text: "per què els GUID d'IFC canvien a cada exportació", to: "ifc-guids-changing-every-export" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Les entitats hereten les unes de les altres" },
+      {
+        type: "p",
+        text: "IFC és un model d'objectes. Un IfcWall és un IfcBuiltElement, que és un IfcElement, un IfcProduct, un IfcObject i, en última instància, un IfcRoot, i porta els atributs de tots ells. Per això tot mur, porta i espai té GlobalId i Name: vénen d'IfcRoot.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-entity-inheritance-ifcwall.png",
+        alt: "Diagrama d'herència d'entitats IFC per a IfcWall: IfcRoot, IfcObjectDefinition, IfcObject, IfcProduct, IfcElement, IfcBuiltElement, IfcWall",
+        caption: "Cada entitat hereta els atributs dels seus supertipus. Una comprovació escrita per a IfcElement s'aplica a tots els murs, portes i pilars que hi ha a sota.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-entity-inheritance-ifcwall-800.png", width: 800 },
+          { src: "blog/images/ifc-entity-inheritance-ifcwall.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: "Els noms canvien entre versions: el que IFC4.3 anomena IfcBuiltElement era IfcBuildingElement a IFC2x3 i IFC4. Una eina que fixa un nom al codi es perd l'altre, i aquesta és una de les raons per les quals el mateix model pot passar una comprovació en una eina i suspendre-la en una altra.",
+      },
+      { type: "h2", text: "Les relacions també són entitats" },
+      {
+        type: "p",
+        text: "La decisió de disseny que fa IFC difícil de llegir al principi és també el que el fa potent: les relacions són objectes per dret propi. Un mur no té una llista de les seves propietats. En lloc d'això, una instància IfcRelDefinesByProperties apunta al mur i a un property set. La contenció espacial, els materials, els tipus, les obertures i els grups funcionen igual.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "Diagrama de com arriba una propietat IFC a un element: IfcWall unit per IfcRelDefinesByProperties a IfcPropertySet Pset_WallCommon amb FireRating i IsExternal, i heretada d'IfcWallType",
+        caption: "Les propietats viuen en property sets, associats a l'element o al seu tipus. Un property set al tipus s'aplica a totes les ocurrències.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: [
+          "Aquesta és l'arrel de la falsa alarma més comuna en les comprovacions de qualitat IFC: una propietat definida al tipus sembla faltar per a una eina que només llegeix l'ocurrència. ",
+          { text: "Propietats IFC que falten després d'exportar", to: "ifc-properties-missing-after-export" },
+          " explica les causes reals; ",
+          { text: "llegir property sets amb Python", to: "read-ifc-property-sets-python" },
+          " mostra com seguir aquestes relacions en codi.",
+        ],
+      },
+      { type: "h2", text: "Per què els fitxers IFC pesen tant" },
+      {
+        type: "ul",
+        items: [
+          "La geometria domina. Una façana triangulada o una peça d'instal·lacions detallada poden ocupar milers de línies; les extrusions i la geometria mapada (instanciada) són molt més petites.",
+          "Les dades repetides es repeteixen. Els exportadors que no comparteixen property sets o representacions escriuen les mateixes línies una vegada per element.",
+          "En STEP pla no hi ha res comprimit. ifcZIP sol reduir un fitxer diverses vegades, i és un format de lliurament raonable quan les eines del destinatari l'accepten.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Les maneres segures de reduir fitxers són a ",
+          { text: "com reduir la mida d'un fitxer IFC", to: "reduce-ifc-file-size" },
+          ". I quan un fitxer és tan gran que bloqueja el navegador, consulta ",
+          { text: "fitxers IFC grans que bloquegen el navegador", to: "large-ifc-file-browser-crash" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Llegir un fitxer pel teu compte" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Obre'l en un editor de text",
+            body: "Qualsevol editor que aguanti fitxers grans. Mira primer la capçalera: l'esquema i la vista de model et diuen què esperar.",
+          },
+          {
+            title: "Busca l'entitat que t'interessa",
+            body: "IFCWALL(, IFCSPACE(, IFCBUILDINGSTOREY(. Només el recompte ja és una comprovació ràpida.",
+          },
+          {
+            title: "Segueix les referències d'un element",
+            body: "Des d'un mur, busca el seu número # per trobar les relacions que hi apunten: contenció, propietats, tipus.",
+          },
+          {
+            title: "Després passa a un visor",
+            body: "La mateixa informació, navegable: l'arbre espacial, el tauler de propietats i una validació que comprova aquestes relacions per tu.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Com s'organitzen els elements en plantes i espais és el tema de ",
+          { text: "l'estructura espacial IFC explicada", to: "ifc-spatial-structure-explained" },
+          ".",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "ifc-file-format-explained",
+  },
+  {
     slug: "ifc-sun-shadow-study-online",
     title: "Estudi de sol i ombres des d'un model IFC, al navegador",
     excerpt: "Un estudi d'ombres sol implicar exportar a una eina de render i endevinar l'angle del nord. Un IFC georeferenciat ja sap on és i cap a on queda el nord, així que el sol es pot col·locar correctament en qualsevol data i hora, en segons i sense sortir del navegador.",
@@ -68,6 +527,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         ],
       },
       { type: "h2", text: "Què necessita el sol del teu model" },
+      {
+        type: "image",
+        src: "blog/images/sun-study-true-north-vs-project-north.png",
+        alt: "Diagrama del nord de projecte davant del nord geogràfic girat 28 graus, amb les dades que necessita un estudi de sol i ombres: latitud, longitud, nord geogràfic i zona horària",
+        caption: "El nord de projecte no és el nord geogràfic. Un estudi solar que ignora la rotació gira totes les ombres amb el mateix angle.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/sun-study-true-north-vs-project-north-800.png", width: 800 },
+          { src: "blog/images/sun-study-true-north-vs-project-north.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "table",
         headers: ["Dada", "D'on surt", "Si és incorrecta"],
@@ -228,6 +701,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
       { type: "h2", text: "L'enganxament: el que decideix si un número és real" },
       {
+        type: "image",
+        src: "blog/images/measure-snap-targets-vertex-edge-face.png",
+        alt: "Quatre objectius d'enganxament per mesurar un model IFC: vèrtex, punt mitjà d'aresta, aresta i cara, sobre la cantonada d'un mur",
+        caption: "Els quatre objectius d'enganxament. Saber quin ha trobat l'eina abans de clicar és el que fa fiable el número.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/measure-snap-targets-vertex-edge-face-800.png", width: 800 },
+          { src: "blog/images/measure-snap-targets-vertex-edge-face.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "Una mesura és tan bona com els seus dos extrems. Un bon enganxament troba la geometria que volies —un vèrtex, el punt mitjà d'una aresta, un punt sobre una aresta— i et diu quina ha trobat abans que cliquis.",
       },
@@ -371,6 +858,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
       { type: "h2", text: "Com funciona caminar" },
       {
+        type: "image",
+        src: "blog/images/ifc-walk-mode-keyboard-controls.png",
+        alt: "Controls de teclat per recórrer un model IFC en primera persona: G per al mode a peu, W A S D per moure's, ratolí per mirar, doble clic per anar-hi",
+        caption: "Controls del mode a peu: G per començar, WASD per moure't, el ratolí per mirar i doble clic en un terra per anar-hi a l'altura dels ulls.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-walk-mode-keyboard-controls-800.png", width: 800 },
+          { src: "blog/images/ifc-walk-mode-keyboard-controls.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "table",
         headers: ["Acció", "Control"],
         rows: [
@@ -509,6 +1010,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
       { type: "h2", text: "Encaixa, no retallis" },
       {
+        type: "image",
+        src: "blog/images/vertical-video-fit-vs-crop-building.png",
+        alt: "Comparació d'un vídeo vertical 9:16 d'un edifici ample: el retall central talla l'edifici; encaixar-lo amb bandes desenfocades el conserva sencer i deixa espai per a un títol",
+        caption: "Un retall central conserva un terç de l'enquadrament apaïsat. Encaixar manté l'edifici sencer i les bandes acullen el títol.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/vertical-video-fit-vs-crop-building-800.png", width: 800 },
+          { src: "blog/images/vertical-video-fit-vs-crop-building.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "Els edificis són amples. Un retall central d'una gravació apaïsada a 9:16 es queda amb una franja d'aproximadament un terç de l'amplada, i l'edifici surt de l'enquadrament pels dos costats. Encaixar tot l'enquadrament en el format vertical manté l'edifici intacte i deixa bandes a dalt i a baix que, omplertes amb una còpia desenfocada del mateix fotograma, semblen intencionades i et donen just l'espai que necessites per a un títol.",
       },
@@ -625,6 +1140,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         text: "El model ja sap molt del que necessita una bona imatge de presentació. On són les plantes. Quins elements són estructura i quins instal·lacions. On és la parcel·la i on és el sol. Una plantilla que fa servir aquest coneixement produeix en minuts una cosa que costaria una tarda en una eina de maquetació.",
       },
       { type: "h2", text: "Quatre tipus d'imatge que fa servir tot projecte" },
+      {
+        type: "image",
+        src: "blog/images/ifc-presentation-image-types.png",
+        alt: "Quatre tipus d'imatge de presentació creats des d'un model IFC: portada, panell, fitxa amb codi QR i vista de coordinació acolorida per disciplina",
+        caption: "Portada, panell, fitxa i vista de coordinació: quatre imatges que necessita tot projecte, totes des del model.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-presentation-image-types-800.png", width: 800 },
+          { src: "blog/images/ifc-presentation-image-types.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "table",
         headers: ["Imatge", "Per a", "Què la fa funcionar"],
@@ -772,6 +1301,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
       { type: "h2", text: "Anatomia d'una especificació" },
       {
+        type: "image",
+        src: "blog/images/ids-specification-applicability-requirements.png",
+        alt: "Diagrama d'una especificació IDS: l'aplicabilitat (entity, classification, partOf) selecciona elements i els requisits (property, attribute, material) s'hi comproven",
+        caption: "Una especificació IDS es llegeix com una frase: per a cada element que compleixi l'aplicabilitat, exigeix els requisits.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ids-specification-applicability-requirements-800.png", width: 800 },
+          { src: "blog/images/ids-specification-applicability-requirements.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "Un fitxer IDS és una llista d'especificacions. Cadascuna es llegeix com una frase amb subjecte i predicat: «per a cada element que compleixi això, exigeix allò». El subjecte és l'aplicabilitat; el predicat, els requisits.",
       },
@@ -833,6 +1376,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         text: "Dos d'aquests paranys mereixen una mirada més llarga, perquè expliquen la majoria de falsos errors que es veuen en executar un IDS per primera vegada.",
       },
       { type: "h3", text: "Tipus davant d'ocurrència" },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "Diagrama d'un property set IFC associat a una ocurrència IfcWall i al seu IfcWallType, les propietats del qual hereten totes les ocurrències",
+        caption: "Les propietats poden ser al tipus i no a l'ocurrència. Un comprovador IDS ha de seguir el tipus o suspendrà elements correctes.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Revit, ArchiCAD i Tekla escriuen habitualment propietats i materials a l'objecte tipus (IfcWallType) en lloc de fer-ho a cada mur. La semàntica de l'IDS és clara: la informació heretada del tipus compta per a l'ocurrència. Un comprovador que només mira l'ocurrència suspendrà tots els murs d'un model perfectament correcte. Si un IDS et diu que al 100 % dels elements els falta una propietat que veus al tauler de propietats, gairebé sempre és per això, i l'error és del comprovador, no teu.",
@@ -982,6 +1539,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         text: "Comparar versions IFC com cal no és difícil, però reposa sobre una decisió que la majoria d'eines resolen malament de manera subtil: què compta com a «el mateix element».",
       },
       { type: "h2", text: "La identitat és tot el problema" },
+      {
+        type: "image",
+        src: "blog/images/ifc-version-compare-globalid.png",
+        alt: "Taula que compara dues revisions IFC per GlobalId: sense canvis, propietat modificada, element mogut a un altre fitxer, elements afegits i eliminats",
+        caption: "Aparellar per GlobalId en tot el conjunt: una propietat canviada, un element que ha passat a un altre fitxer de disciplina, una addició i una eliminació.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-version-compare-globalid-800.png", width: 800 },
+          { src: "blog/images/ifc-version-compare-globalid.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Un element IFC té dos identificadors. L'express ID (el #1234 del fitxer) és un número de línia: es renumera a cada exportació i no vol dir res entre versions. El GlobalId és un GUID de 22 caràcters pensat per durar tota la vida de l'element. Una comparació que aparella per qualsevol cosa que no sigui el GlobalId està comparant números de línia.",
@@ -1160,6 +1731,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
       { type: "h2", text: "2.1 davant de 3.0: les diferències que trenquen les importacions" },
       {
+        type: "image",
+        src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png",
+        alt: "XML de markup.bcf en BCF 2.1 i BCF 3.0, l'un al costat de l'altre, mostrant on es nien Comments, Viewpoints i Labels",
+        caption: "La mateixa incidència en BCF 2.1 i 3.0. Comentaris, vistes i etiquetes passen a dins del Topic i a contenidors.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure-800.png", width: 800 },
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "table",
         headers: ["Aspecte", "BCF 2.1", "BCF 3.0"],
         rows: [
@@ -1194,6 +1779,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         text: "Això de les etiquetes és sorprenentment freqüent: és fàcil escriure les etiquetes 2.1 com una sola cadena separada per comes, que qualsevol lector estricte tracta després com una única etiqueta llarga. Elements repetits, un per etiqueta, és el que demana l'esquema 2.1.",
       },
       { type: "h2", text: "Per què la càmera apareix al lloc equivocat" },
+      {
+        type: "image",
+        src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png",
+        alt: "Diagrama d'eixos: les coordenades del món IFC tenen la Z cap amunt i són dextrògires; una escena three.js té la Y cap amunt; les càmeres BCF s'han de convertir abans d'exportar",
+        caption: "IFC té la Z cap amunt; three.js, la Y. Sense la conversió la càmera arriba girada 90°; sense el desplaçament, arriba al lloc equivocat.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes-800.png", width: 800 },
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Les càmeres BCF es desen en coordenades del món del projecte IFC: metres, amb la Z cap amunt. La majoria de visors web renderitzen amb three.js, l'escena del qual té la Y cap amunt, i molts desplacen el model cap a l'origen perquè les coordenades georeferenciades grans no tremolin a la GPU. Totes dues són decisions de renderització assenyades. Totes dues s'han de desfer abans d'escriure una vista.",
@@ -1320,6 +1919,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         text: "La solució no és una eina COBie millor al final. És extreure el COBie de l'IFC aviat i sovint, i mesurar el que falta mentre encara hi ha temps per modelar-ho.",
       },
       { type: "h2", text: "El COBie és una vista de l'IFC, no un lliurable a part" },
+      {
+        type: "image",
+        src: "blog/images/cobie-sheets-from-ifc-entities.png",
+        alt: "Diagrama que relaciona els fulls COBie amb entitats IFC: Facility, Floor, Space, Zone, Type, Component i System, amb Space, Type i Component marcats com a nucli de FM",
+        caption: "Cada full COBie és una vista d'entitats IFC. Component, Space i Type contenen gairebé tot el que fa servir la gestió d'instal·lacions.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/cobie-sheets-from-ifc-entities-800.png", width: 800 },
+          { src: "blog/images/cobie-sheets-from-ifc-entities.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Cada fila que importa al COBie correspon a alguna cosa de l'IFC. Un Floor és un IfcBuildingStorey. Un Space és un IfcSpace. Un Type és un tipus d'element com IfcDoorType. Un Component és una ocurrència d'element: una porta concreta, una bomba concreta. Els atributs que demana el COBie viuen als atributs i property sets de l'IFC.",
@@ -1522,6 +2135,20 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         ],
       },
       { type: "h2", text: "Per què no carrega: CORS i dues causes més" },
+      {
+        type: "image",
+        src: "blog/images/ifc-embed-iframe-cors-flow.png",
+        alt: "Diagrama de flux d'un visor IFC incrustat: la pàgina carrega l'iframe, el visor descarrega l'IFC del teu emmagatzematge, que ha de retornar la capçalera Access-Control-Allow-Origin",
+        caption: "El model viatja del teu emmagatzematge al navegador del visitant. Sense capçalera CORS al servidor, el navegador es nega a lliurar-lo.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-embed-iframe-cors-flow-800.png", width: 800 },
+          { src: "blog/images/ifc-embed-iframe-cors-flow.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "callout",
         variant: "warning",
