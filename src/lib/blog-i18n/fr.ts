@@ -12,6 +12,879 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_FR_PACK: BlogPost[] = [
   {
+    slug: "ids-information-delivery-specification-guide",
+    title: "L'IDS expliqué : comment contrôler un modèle IFC avec une Information Delivery Specification",
+    excerpt: "L'IDS transforme « le modèle doit contenir le degré coupe-feu » d'une phrase dans un PDF en un fichier qu'une machine peut vérifier. Ce que testent vraiment les six facettes, où la plupart des fichiers IDS se trompent, et comment en exécuter un sur votre IFC dans le navigateur.",
+    seoTitle: "L'IDS expliqué : contrôler un IFC avec un fichier IDS",
+    seoDescription: "Ce qu'est l'IDS 1.0 de buildingSMART, ce que testent ses six facettes, les erreurs qui le rendent inutile et comment l’exécuter dans le navigateur.",
+    date: "2026-10-01",
+    readTimeMin: 12,
+    category: "Validation",
+    categorySlug: "validation",
+    author: "IFC Viewer Team",
+    featured: true,
+    keywords: [
+      "IDS",
+      "Information Delivery Specification",
+      "vérificateur IDS",
+      "valider IFC avec IDS",
+      "buildingSMART IDS 1.0",
+      "fichier .ids",
+      "facettes IDS",
+      "alternative à ifctester",
+      "IDS en ligne",
+      "IDS checker",
+      "validate IFC against IDS",
+      ".ids file",
+      "IDS facets",
+      "ifctester alternative",
+      "IDS online",
+    ],
+    faqs: [
+      {
+        q: "Qu'est-ce qu'un fichier IDS ?",
+        a: "Un IDS (Information Delivery Specification) est un standard XML de buildingSMART, publié sous le nom d'IDS 1.0, qui décrit les informations qu'un modèle IFC doit contenir — par exemple « chaque IfcWall doit avoir une propriété FireRating dans Pset_WallCommon ». Comme il est lisible par une machine, tout outil conforme peut contrôler un modèle avec lui et obtenir la même réponse.",
+      },
+      {
+        q: "Quelles sont les six facettes de l'IDS ?",
+        a: "Entity (la classe IFC et le type prédéfini), Attribute (un attribut IFC direct comme Name), Classification (une référence de classification comme Uniclass ou OmniClass), Property (une propriété d'un property set, éventuellement avec type de donnée et valeur), Material et PartOf (une relation avec un élément parent, comme un niveau, un assemblage ou un groupe). Chaque facette peut sélectionner des éléments (applicabilité) ou leur imposer quelque chose (exigences).",
+      },
+      {
+        q: "Puis-je contrôler un IFC avec un IDS sans installer de logiciel ?",
+        a: "Oui. IFC Viewer Online lit le fichier .ids et l'IFC dans votre navigateur, évalue localement les six facettes de l'IDS 1.0, et met en évidence ou isole en 3D les éléments en échec. Aucun des deux fichiers n'est envoyé sur un serveur.",
+      },
+      {
+        q: "Quelle différence entre l'IDS et un jeu de règles de model checker ?",
+        a: "Un jeu de règles de model checker est généralement propre à un outil et teste souvent la géométrie (conflits, dégagements). L'IDS est un standard ouvert qui ne teste que l'information — classes, propriétés, valeurs, classifications, matériaux et relations —, si bien que le maître d'ouvrage l'écrit une fois et chaque prestataire peut l'exécuter dans n'importe quel outil.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Toutes les EIR jamais rédigées contiennent une phrase du genre « toutes les portes devront indiquer leur degré coupe-feu ». Et sur chaque projet, cette phrase est vérifiée de la même manière : quelqu'un ouvre le modèle, clique sur quelques portes et décide que ça doit aller. L'exigence est précise. Le contrôle est une impression.",
+      },
+      {
+        type: "p",
+        text: "L'IDS — l'Information Delivery Specification — existe pour combler cet écart. C'est un petit format XML, normalisé par buildingSMART sous le nom d'IDS 1.0, qui exprime les exigences d'information sous une forme testable par une machine. Écrivez l'exigence une fois, remettez le fichier .ids à chaque prestataire, et « ça doit aller » devient « 412 portes sur 418 passent ; voici les six qui échouent ».",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "L'IDS contrôle l'information, pas la géométrie : classes, attributs, propriétés, classifications, matériaux et relations.",
+          "Chaque spécification a deux moitiés : à quels éléments elle s'applique, et ce que ces éléments doivent avoir. La plupart des fichiers IDS défaillants se trompent sur la première.",
+          "Un IDS est une pièce contractuelle. Il se range à côté de la convention BIM (BEP), versionné, et il est envoyé aux prestataires avant le début de la modélisation, pas après le premier refus.",
+        ],
+      },
+      { type: "h2", text: "Anatomie d'une spécification" },
+      {
+        type: "p",
+        text: "Un fichier IDS est une liste de spécifications. Chacune se lit comme une phrase avec un sujet et un prédicat : « pour chaque élément qui correspond à ceci, exiger cela ». Le sujet est l'applicabilité ; le prédicat, les exigences.",
+      },
+      {
+        type: "code",
+        lang: "xml",
+        text: "<specification name=\"Doors carry a fire rating\" ifcVersion=\"IFC4\">\n  <applicability minOccurs=\"1\">\n    <entity><name><simpleValue>IFCDOOR</simpleValue></name></entity>\n  </applicability>\n  <requirements>\n    <property dataType=\"IFCLABEL\">\n      <propertySet><simpleValue>Pset_DoorCommon</simpleValue></propertySet>\n      <baseName><simpleValue>FireRating</simpleValue></baseName>\n    </property>\n  </requirements>\n</specification>",
+      },
+      {
+        type: "p",
+        text: "Lisez-la à voix haute : c'est exactement la phrase de l'EIR. Chaque IfcDoor doit avoir un FireRating dans Pset_DoorCommon, stocké comme label. Le minOccurs=\"1\" de l'applicabilité ajoute une seconde affirmation facile à manquer : le modèle doit contenir au moins une porte. Sans lui, un modèle sans aucune porte passe, ce qui est rarement l'intention de qui que ce soit.",
+      },
+      { type: "h2", text: "Les six facettes et ce que chacune teste vraiment" },
+      {
+        type: "table",
+        headers: ["Facette", "Teste", "Exigence typique", "Piège courant"],
+        rows: [
+          [
+            "Entity",
+            "Classe IFC et type prédéfini",
+            "Les murs sont des IfcWall, pas des IfcBuildingElementProxy",
+            "Oublier les sous-types : IfcWallStandardCase est un IfcWall en IFC2x3",
+          ],
+          [
+            "Attribute",
+            "Attributs IFC directs (Name, Description, Tag…)",
+            "Chaque espace a un Name et un LongName",
+            "Une chaîne vide est présente mais invalide, pas absente",
+          ],
+          [
+            "Property",
+            "Une propriété d'un property set, avec type de donnée et valeur",
+            "Pset_WallCommon.IsExternal vaut TRUE ou FALSE",
+            "Bonne valeur, mauvais type de donnée (un label là où un booléen était demandé)",
+          ],
+          [
+            "Classification",
+            "Une référence de classification et son code",
+            "Chaque élément a un code Uniclass Ss",
+            "Vérifier le code mais pas le système auquel il appartient",
+          ],
+          [
+            "Material",
+            "Un nom ou une catégorie de matériau associé",
+            "Les poteaux structurels déclarent un matériau",
+            "Matériaux sur le type, pas sur l'occurrence",
+          ],
+          [
+            "PartOf",
+            "Une relation avec un élément parent",
+            "Chaque élément est contenu dans un niveau",
+            "Confondre agrégation et contenance spatiale",
+          ],
+        ],
+        caption: "Chaque facette peut figurer dans l'applicabilité (pour sélectionner des éléments) ou dans les exigences (pour leur imposer quelque chose).",
+      },
+      {
+        type: "p",
+        text: "Deux de ces pièges méritent qu'on s'y attarde, car ils expliquent la plupart des faux échecs signalés lors d'une première exécution d'IDS.",
+      },
+      { type: "h3", text: "Type ou occurrence" },
+      {
+        type: "p",
+        text: "Revit, ArchiCAD et Tekla écrivent couramment propriétés et matériaux sur l'objet type (IfcWallType) plutôt que sur chaque mur. La sémantique de l'IDS est claire : l'information héritée du type vaut pour l'occurrence. Un vérificateur qui ne regarde que l'occurrence fera échouer tous les murs d'un modèle parfaitement correct. Si un IDS vous dit que 100 % de vos éléments n'ont pas une propriété que vous voyez dans le panneau des propriétés, c'est presque toujours la raison — et la faute revient au vérificateur, pas à vous.",
+      },
+      { type: "h3", text: "Types prédéfinis USERDEFINED" },
+      {
+        type: "p",
+        text: "Quand un type prédéfini vaut USERDEFINED, le vrai type se trouve dans ObjectType (sur les occurrences) ou ElementType (sur les types). Une facette entity qui demande IFCWALL avec le type prédéfini PARAPET doit correspondre à un mur dont le PredefinedType est USERDEFINED et l'ObjectType PARAPET. Les vérificateurs qui comparent l'énumération brute les ratent tous.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Testez votre vérificateur avant de lui faire confiance",
+        text: "buildingSMART publie un jeu officiel de cas de test IDS : de petites paires .ids et .ifc avec le résultat attendu. Demandez à tout outil sur lequel vous comptez s'il les exécute. Le nôtre exécute le jeu sélectionné à chaque build ; un vérificateur qui ne les a jamais vus sera en désaccord avec le standard d'une façon que vous ne découvrirez qu'en plein litige.",
+      },
+      { type: "h2", text: "Cinq erreurs qui rendent un IDS inutile" },
+      {
+        type: "ol",
+        items: [
+          "Une applicabilité trop large. « Tous les éléments doivent avoir un code Uniclass » embarque les ouvertures, les annotations et les éléments spatiaux que personne ne classe. Limitez chaque spécification aux classes réellement visées par l'exigence.",
+          "Des valeurs sans type de donnée. Une exigence FireRating = « EI 60 » ne dit rien sur la manière de la stocker ; le même texte stocké comme description dans un autre pset échouera quand même. Dites ce que vous voulez dire, type de donnée compris.",
+          "Des valeurs exactes là où un motif était voulu. Les données réelles contiennent « EI60 », « EI 60 » et « EI-60 ». Utilisez un xs:pattern ou une énumération, et convenez de la forme canonique dans le BEP.",
+          "Une spécification géante. Quarante exigences dans une seule spécification donnent un seul réussi/échoué par élément et un rapport inexploitable. Une exigence par spécification, nommée en langage clair, c'est ce qui rend le résultat lisible.",
+          "Écrire l'IDS après le modèle. Un IDS envoyé avec le premier refus est une nouvelle exigence. Un IDS envoyé avec la commande est une exigence. Seul le second est opposable.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Le volet contractuel de ce dernier point — quelles clauses rendent un IDS contraignant et ce qui se passe quand une livraison n'y satisfait pas — est traité dans ",
+          {
+            text: "les clauses du BEP qui évitent vraiment les mauvaises livraisons IFC",
+            to: "bim-execution-plan-ifc-quality-clauses",
+          },
+          " et dans ",
+          { text: "les critères d'acceptation IFC", to: "ifc-acceptance-criteria" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Exécuter un IDS sur votre modèle, étape par étape" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Ouvrez l'IFC",
+            body: "Glissez le modèle dans la visionneuse. Il est analysé dans votre navigateur ; rien n'est envoyé.",
+          },
+          {
+            title: "Chargez le fichier .ids",
+            body: "Ouvrez le panneau IDS et choisissez votre fichier — ou partez d'une des spécifications d'exemple fournies si vous voulez d'abord voir le format.",
+          },
+          {
+            title: "Lancez le contrôle",
+            body: "Chaque spécification est évaluée avec les six facettes. Les gros modèles affichent la progression par phase et peuvent être annulés à tout moment.",
+          },
+          {
+            title: "Lisez le résultat par spécification, élément ou classe",
+            body: "Regroupez les échecs selon la façon dont vous comptez les corriger. Chaque échec donne sa raison en clair : propriété manquante, mauvaise valeur, mauvais type de donnée, mauvaise classe.",
+          },
+          {
+            title: "Voyez-le en 3D",
+            body: "Mettre en évidence colore les éléments en échec dans le modèle ; Isoler masque tout le reste. Les deux sont à un clic, et c'est ainsi qu'une liste de GlobalIds devient une conversation avec le modeleur.",
+          },
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Exécutez l'IDS et la validation structurelle sur le même fichier. Le Health Score vous dit si le modèle est un IFC sain ; l'IDS vous dit s'il contient ce que le maître d'ouvrage a demandé. Une livraison a besoin des deux, et ils échouent pour des raisons différentes.",
+      },
+      { type: "h2", text: "L'IDS d'une révision à l'autre" },
+      {
+        type: "p",
+        text: [
+          "Une exécution d'IDS est un instantané. Ce dont un coordinateur a réellement besoin, c'est la tendance : la révision 7 a-t-elle corrigé les échecs relevés sur la révision 6, et en a-t-elle introduit de nouveaux ? Comme le résultat est indexé par GlobalId, la même spécification peut être comparée entre deux versions d'un modèle — ce qui ne fonctionne que si vos GlobalIds sont stables d'un export à l'autre. S'ils ne le sont pas, corrigez cela d'abord : ",
+          { text: "pourquoi les GUID IFC changent à chaque export", to: "ifc-guids-changing-every-export" },
+          ". La comparaison elle-même est traitée dans ",
+          { text: "comment comparer deux versions d'un modèle IFC", to: "compare-ifc-versions-what-changed" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Là où l'IDS s'arrête" },
+      {
+        type: "p",
+        text: "L'IDS ne contrôle pas la géométrie. Il ne vous dira pas que deux gaines se heurtent, qu'une porte est trop étroite pour un fauteuil roulant, ni que le modèle se trouve à deux kilomètres de son point topographique. Il ne vérifie pas non plus qu'un IFC est structurellement sain : un fichier avec des GlobalIds en double ou des placements cassés peut passer un IDS sans le moindre échec.",
+      },
+      {
+        type: "p",
+        text: [
+          "Ce n'est pas une faiblesse, c'est un périmètre. Utilisez l'IDS pour les exigences d'information, un model checker pour la structure et la géométrie, et joignez les deux rapports à la livraison. Le processus complet est dans ",
+          { text: "comment valider un fichier IFC", to: "how-to-validate-ifc-file" },
+          ".",
+        ],
+      },
+    ],
+    lang: "fr",
+    translationKey: "ids-information-delivery-specification-guide",
+  },
+  {
+    slug: "compare-ifc-versions-what-changed",
+    title: "Comment comparer deux versions d'un IFC et voir exactement ce qui a changé",
+    excerpt: "« Qu'est-ce qui a changé depuis la semaine dernière ? » est la question que pose chaque coordinateur et à laquelle presque aucun outil IFC ne répond bien. Comparer par GlobalId sur tout un ensemble de fichiers — et non un fichier contre un autre — transforme un diff en revue hebdomadaire.",
+    seoTitle: "Comparer deux versions IFC : voir exactement ce qui change",
+    seoDescription: "Comparez des révisions IFC par GlobalId sur tout un ensemble de fichiers : éléments ajoutés, supprimés et modifiés, IDS entre versions et suivi BCF.",
+    date: "2026-10-01",
+    readTimeMin: 11,
+    category: "Outils & comparatifs",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "comparer fichiers IFC",
+      "diff IFC",
+      "comparaison de versions IFC",
+      "ce qui a changé modèle IFC",
+      "comparer révisions IFC",
+      "comparer modèles IFC en ligne",
+      "détection de modifications IFC",
+      "compare IFC files",
+      "IFC diff",
+      "IFC version comparison",
+      "what changed IFC model",
+      "IFC revision compare",
+      "compare IFC models online",
+      "IFC change detection",
+    ],
+    faqs: [
+      {
+        q: "Comment comparer deux fichiers IFC ?",
+        a: "Chargez les deux versions et appariez les éléments par leur GlobalId IFC. Les éléments présents uniquement dans la nouvelle version sont ajoutés, ceux présents uniquement dans l'ancienne sont supprimés, et ceux présents dans les deux sont comparés attribut par attribut, propriété par propriété, ainsi que par classification, matériau et contenance. IFC Viewer Online le fait dans le navigateur et colore le résultat en 3D.",
+      },
+      {
+        q: "Pourquoi ma comparaison IFC marque-t-elle tout comme modifié ?",
+        a: "Presque toujours parce que les GlobalIds ne sont pas stables d'un export à l'autre. Si l'outil auteur régénère les GUID, chaque élément semble supprimé puis rajouté. Corrigez l'export pour que les GUID persistent avant de faire confiance à une comparaison.",
+      },
+      {
+        q: "Puis-je comparer un ensemble d'IFC fédérés, et pas un seul fichier ?",
+        a: "Oui, et c'est la comparaison la plus utile. Apparier par GlobalId sur tout l'ensemble signifie qu'un élément passé d'un fichier de discipline à un autre est signalé comme modifié — il a changé de fichier — et non comme une suppression plus un ajout.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Chaque lundi, quelque part, un coordinateur BIM reçoit une nouvelle livraison de maquettes par discipline et se pose la seule question qui compte : qu'est-ce qui a changé ? La réponse honnête sur la plupart des projets est « on ouvre les deux et on regarde ». Ça marche pour une maison. Pas pour onze fichiers et quarante mille éléments.",
+      },
+      {
+        type: "p",
+        text: "Comparer correctement des versions IFC n'est pas difficile, mais tout repose sur une décision que la plupart des outils prennent subtilement de travers : ce qui compte comme « le même élément ».",
+      },
+      { type: "h2", text: "L'identité, c'est tout le problème" },
+      {
+        type: "p",
+        text: "Un élément IFC a deux identifiants. L'express ID (le #1234 dans le fichier) est un numéro de ligne : il est renuméroté à chaque export et ne signifie rien d'une version à l'autre. Le GlobalId est un GUID de 22 caractères conçu pour durer toute la vie de l'élément. Une comparaison qui apparie autrement que par GlobalId compare des numéros de ligne.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Vérifiez ceci avant tout",
+        text: "Si votre outil auteur régénère les GlobalIds à l'export, chaque comparaison indiquera que tout le modèle a été supprimé puis rajouté. Aucun algorithme de diff ne peut s'en remettre. Regardez le rapport ajoutés/supprimés à la première comparaison : si les deux approchent le nombre total d'éléments, vos GUID ne sont pas stables.",
+      },
+      {
+        type: "p",
+        text: [
+          "Des GUID stables relèvent d'un réglage d'export, pas de la modélisation — ",
+          { text: "pourquoi les GUID IFC changent à chaque export", to: "ifc-guids-changing-every-export" },
+          " donne la correction pour chaque outil auteur. Et si vous avez le problème inverse, le même GUID utilisé deux fois dans un fichier, voyez ",
+          { text: "les GUID en double dans l'IFC", to: "duplicate-guids-ifc" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Comparez l'ensemble, pas le fichier" },
+      {
+        type: "p",
+        text: "Les vrais projets sont fédérés : architecture, structure, CVC-plomberie-électricité, parfois découpés en plus par bâtiment ou par niveau. Comparer fichier par fichier rate le changement le plus intéressant qui soit : un élément qui a changé de fichier. Le bureau d'études structure reprend un mur que l'architecte avait modélisé ; un diff fichier par fichier signale une suppression et un ajout sans rapport, et les deux sont faux.",
+      },
+      {
+        type: "p",
+        text: "Apparier par GlobalId sur tout l'ensemble règle le problème. L'élément est trouvé dans les deux versions, son fichier diffère, et il est signalé une seule fois, comme modifié, avec la raison « déplacé dans un autre fichier ». L'appariement par fichier garde un rôle — le récapitulatif par fichier —, mais c'est un détail de présentation, pas la règle d'identité.",
+      },
+      { type: "h2", text: "Ce que « modifié » devrait vouloir dire" },
+      {
+        type: "p",
+        text: "Une comparaison utile ne dit pas seulement qu'un élément a changé, mais comment. Voici les catégories qui méritent d'être séparées, car chacune s'adresse à une personne différente :",
+      },
+      {
+        type: "table",
+        headers: ["Changement", "Exemple", "Qui est concerné"],
+        rows: [
+          ["Ajouté / supprimé", "Une nouvelle cloison ; un poteau supprimé", "Tout le monde : c'est le titre"],
+          ["Classe modifiée", "Un proxy est devenu IfcWall", "Coordinateur, économiste"],
+          ["Attributs", "Nom ou repère modifié", "Le responsable des nomenclatures"],
+          ["Propriétés", "FireRating passé de EI 60 à EI 30", "Ingénieur sécurité incendie, prescripteur"],
+          ["Classification", "Code Uniclass modifié", "Équipes coûts et exploitation (FM)"],
+          ["Matériau", "Classe de béton modifiée", "Ingénieur structure"],
+          ["Contenance", "Déplacé vers un autre niveau", "Coordinateur"],
+          ["Fichier", "Déplacé vers une autre maquette de discipline", "Gestionnaire de l'information"],
+        ],
+      },
+      {
+        type: "pull-quote",
+        text: "Un diff qui dit seulement « modifié » est une liste d'endroits où aller regarder. Un diff qui dit ce qui a changé est une revue déjà faite.",
+      },
+      { type: "h2", text: "La revue hebdomadaire en cinq étapes" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Chargez la nouvelle livraison",
+            body: "Tous les fichiers de l'ensemble, dans une seule scène. L'analyse se fait dans le navigateur, donc les modèles confidentiels restent sur votre machine.",
+          },
+          {
+            title: "Comparez avec la version précédente ou une référence enregistrée",
+            body: "Une référence est un instantané conservé en local — l'état accepté la semaine dernière, ou celui lié à un jalon de paiement —, si bien que vous n'avez pas besoin d'ouvrir les anciens fichiers pour vous y comparer.",
+          },
+          {
+            title: "Lisez le récapitulatif, puis la 3D",
+            body: "Les ajouts dans une couleur, les modifications dans une autre, les suppressions dans une troisième. Le récapitulatif par fichier vous dit quelle discipline a bougé ; les couleurs, où.",
+          },
+          {
+            title: "Relancez l'IDS sur les deux versions",
+            body: "La même spécification évaluée sur l'ancien et le nouveau modèle montre quelles exigences ont été corrigées et lesquelles ont régressé — sans réanalyser aucun des fichiers.",
+          },
+          {
+            title: "Mettez à jour le BCF",
+            body: "Les changements qui demandent une action deviennent des sujets étiquetés avec la version dont ils proviennent, pour que la comparaison de la semaine suivante ne les soulève pas deux fois.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "L'étape 4 est celle où une comparaison cesse d'être une curiosité pour devenir du contrôle qualité. La mise en place de la spécification est traitée dans ",
+          { text: "l'IDS expliqué", to: "ids-information-delivery-specification-guide" },
+          " ; l'étape 5 dans ",
+          { text: "BCF 2.1 ou 3.0", to: "bcf-2-1-vs-3-0-viewpoints" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Lire une comparaison sans se laisser tromper" },
+      {
+        type: "ul",
+        items: [
+          "Beaucoup de changements de propriétés sans changement de géométrie signifient généralement qu'un réglage d'export a changé, pas la conception. Vérifiez le modèle d'export avant d'interroger le modeleur.",
+          "Des suppressions et des ajouts en nombres voisins sur une même classe, c'est une rotation des GUID, pas une reconception. Traitez-le comme un défaut d'export.",
+          "Des changements de contenance sur tout un niveau signifient généralement que le niveau a été recréé. Les éléments n'ont pas bougé ; c'est leur parent qui a bougé.",
+          "Zéro changement est un résultat qui mérite confirmation. Comparez une fois la référence avec elle-même — le résultat doit être strictement vide — pour savoir qu'un diff vide est réel.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Une comparaison est aussi le moyen le plus rapide de décider si une nouvelle révision mérite même une revue complète. Si c'est le cas, ",
+          {
+            text: "comment contrôler un modèle IFC avant livraison",
+            to: "how-to-check-ifc-model-before-delivery",
+          },
+          " donne la routine complète.",
+        ],
+      },
+    ],
+    lang: "fr",
+    translationKey: "compare-ifc-versions-what-changed",
+  },
+  {
+    slug: "bcf-2-1-vs-3-0-viewpoints",
+    title: "BCF 2.1 ou 3.0 : pourquoi vos points de vue s'ouvrent au mauvais endroit",
+    excerpt: "Le BCF est censé faire survivre un sujet au passage d'un outil à l'autre. En pratique, la caméra atterrit sous terre, la boîte de coupe disparaît et les étiquettes sont perdues. Les causes sont peu nombreuses, précises et corrigibles — et les connaître vous dit à quels outils faire confiance.",
+    seoTitle: "BCF 2.1 ou 3.0 : pourquoi les vues s'ouvrent mal",
+    seoDescription: "Les vraies différences entre BCF 2.1 et 3.0, pourquoi les points de vue s'ouvrent pivotés ou sous terre, où se perdent coupes et étiquettes, et comment tester.",
+    date: "2026-10-01",
+    readTimeMin: 10,
+    category: "Livraison & ISO 19650",
+    categorySlug: "delivery",
+    author: "IFC Viewer Team",
+    keywords: [
+      "BCF 2.1 vs 3.0",
+      "fichier BCF",
+      "bcfzip",
+      "point de vue BCF",
+      "ouvrir fichier BCF en ligne",
+      "BIM Collaboration Format",
+      "export BCF",
+      "visionneuse BCF",
+      "BCF file",
+      "BCF viewpoint",
+      "open BCF file online",
+      "BCF export",
+      "BCF viewer",
+    ],
+    faqs: [
+      {
+        q: "Quelle différence entre BCF 2.1 et BCF 3.0 ?",
+        a: "Le contenu est en grande partie le même : sujets, commentaires, points de vue avec caméra, sélection, visibilité et plans de coupe. La structure diffère : en 2.1, commentaires et références de points de vue sont frères de l'élément Topic dans markup.bcf ; en 3.0, ils sont imbriqués dans le Topic, les étiquettes et autres listes sont enveloppées dans des éléments conteneurs, la caméra perspective exige un AspectRatio et des extensions de projet décrivent les valeurs autorisées. Les outils qui lisent une structure ignorent souvent en silence des données de l'autre.",
+      },
+      {
+        q: "Pourquoi un point de vue BCF s'ouvre-t-il au mauvais endroit ?",
+        a: "Généralement parce que l'outil exportateur a écrit la caméra dans les axes de sa propre scène au lieu des coordonnées monde de l'IFC. Les visionneuses web basées sur three.js utilisent une scène avec Y vers le haut, alors que l'IFC utilise Z vers le haut ; une caméra exportée sans reconversion arrive pivotée de 90 degrés. L'autre cause fréquente est un décalage du modèle appliqué pour l'affichage et non retiré avant l'export.",
+      },
+      {
+        q: "Quelle version de BCF utiliser ?",
+        a: "Celle que tous les outils du projet lisent correctement — testez-le, ne le supposez pas. BCF 2.1 reste le mieux pris en charge ; 3.0 est mieux spécifié. Un outil qui écrit les deux vous laisse choisir selon le destinataire.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Le BCF — BIM Collaboration Format — n'a qu'un rôle : permettre à un sujet de quitter un outil et d'arriver dans un autre avec son contexte intact. Un commentaire, une position de caméra, un ensemble d'éléments sélectionnés, peut-être une boîte de coupe. Ouvrez le sujet n'importe où et vous voyez exactement ce que voyait son auteur.",
+      },
+      {
+        type: "p",
+        text: "Quiconque a échangé du BCF entre trois éditeurs sait à quel point cela échoue souvent. La caméra s'ouvre sous terre, ou pointée vers le ciel. La boîte de coupe manque. Les étiquettes ont disparu. Les commentaires sont tronqués à la première esperluette. Rien de tout cela n'est mystérieux, et tout vient d'une poignée d'erreurs d'implémentation précises.",
+      },
+      { type: "h2", text: "Ce que contient réellement un .bcfzip" },
+      {
+        type: "p",
+        text: "Un fichier BCF est un zip. À l'intérieur, un dossier par sujet, chacun contenant un markup.bcf (le sujet, ses commentaires et sa liste de points de vue), un ou plusieurs fichiers de point de vue .bcfv (caméra, sélection, visibilité, plans de coupe) et des captures PNG facultatives. Tout est en XML brut. Vous pouvez en décompresser un et le lire, et quand un outil se comporte mal, vous devriez le faire.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "issues.bcfzip\n├── bcf.version\n├── 1f2c…/\n│   ├── markup.bcf        ← topic, comments, viewpoint references\n│   ├── viewpoint.bcfv    ← camera, components, clipping planes\n│   └── snapshot.png\n└── 7a90…/\n    └── …",
+      },
+      { type: "h2", text: "2.1 contre 3.0 : les différences qui cassent les imports" },
+      {
+        type: "table",
+        headers: ["Aspect", "BCF 2.1", "BCF 3.0"],
+        rows: [
+          ["Commentaires dans markup.bcf", "Frères de <Topic>", "Imbriqués dans <Topic><Comments>"],
+          ["Liste des points de vue", "Frères de <Topic>", "Imbriqués dans <Topic><Viewpoints>"],
+          [
+            "Étiquettes",
+            "Éléments <Labels> répétés, un par étiquette",
+            "Un conteneur <Labels> avec des enfants <Label>",
+          ],
+          [
+            "Caméra perspective",
+            "Position, direction, vecteur haut, champ de vision",
+            "Idem, plus un AspectRatio obligatoire",
+          ],
+          [
+            "Valeurs autorisées",
+            "Implicites, convenues hors fichier",
+            "Déclarées dans les extensions de projet",
+          ],
+          ["Prise en charge réelle", "Quasi universelle", "En progression, inégale"],
+        ],
+        caption: "Le modèle de données a à peine changé ; la structure XML, si. Un analyseur écrit pour une structure lit l'autre comme un sujet sans commentaires.",
+      },
+      {
+        type: "p",
+        text: "Lisez ce tableau comme une liste de modes de défaillance. Un outil qui cherche les commentaires à côté du Topic n'en trouve aucun dans un fichier 3.0. Un outil qui attend un conteneur Labels lit un fichier 2.1 comme n'ayant qu'une étiquette, voire aucune. Une caméra 3.0 sans AspectRatio est invalide selon le schéma, et certains importateurs rejettent tout le point de vue.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Le cas des étiquettes est étonnamment fréquent : il est facile d'écrire les étiquettes 2.1 sous forme d'une seule chaîne séparée par des virgules, que tout lecteur strict traite ensuite comme une seule longue étiquette. Des éléments répétés, un par étiquette, c'est ce que demande le schéma 2.1.",
+      },
+      { type: "h2", text: "Pourquoi la caméra atterrit au mauvais endroit" },
+      {
+        type: "p",
+        text: "Les caméras BCF sont stockées dans les coordonnées monde du projet IFC : en mètres, Z vers le haut. La plupart des visionneuses web font le rendu avec three.js, dont la scène a Y vers le haut, et beaucoup décalent le modèle vers l'origine pour que les grandes coordonnées géoréférencées ne tremblent pas sur le GPU. Ce sont deux choix de rendu sensés. Il faut les annuler tous les deux avant d'écrire un point de vue.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Oubliez la conversion d'axes et la caméra arrive pivotée de 90° — regardant le ciel ou traversant le plancher.",
+          "Oubliez le décalage d'affichage et la caméra arrive dans la bonne orientation, à des centaines de mètres ou des kilomètres du modèle.",
+          "Convertissez la caméra mais pas les plans de coupe, et la vue est juste tandis que la boîte de coupe tranche tout à fait ailleurs.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Le problème de décalage s'aggrave à mesure que votre géoréférencement s'améliore, car les coordonnées réelles sont de grands nombres. Le contexte est dans ",
+          { text: "coordonnées et géoréférencement IFC", to: "ifc-coordinates-georeferencing" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Un test de dix minutes pour n'importe quel outil BCF" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Créez un sujet qui contient tout",
+            body: "Une caméra perspective en vue oblique, deux éléments sélectionnés, une boîte de coupe, trois étiquettes et un commentaire contenant une esperluette, des guillemets et un caractère accentué.",
+          },
+          {
+            title: "Exportez-le en 2.1 et en 3.0",
+            body: "Si l'outil n'écrit qu'une version, notez-le : vous finirez par rencontrer un destinataire qui a besoin de l'autre.",
+          },
+          {
+            title: "Importez-le dans un second outil",
+            body: "Vérifiez l'orientation de la caméra, la distance au modèle, la sélection, la boîte de coupe, le nombre d'étiquettes et le texte du commentaire caractère par caractère.",
+          },
+          {
+            title: "Faites l'aller-retour",
+            body: "Exportez de nouveau depuis le second outil et réimportez dans le premier. Tout ce qui survit à un saut mais pas à deux finira par vous coûter une réunion.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: "Notre propre exportateur BCF a été réécrit après exactement ce test : les points de vue sont désormais écrits dans les axes monde de l'IFC, sans le décalage d'affichage, les plans de coupe voyagent avec le point de vue, les étiquettes 2.1 sont écrites comme éléments répétés et les commentaires importés sont lus en entier, entités XML décodées. Il écrit en 2.1 comme en 3.0, pour s'adapter au destinataire.",
+      },
+      { type: "h2", text: "Les conventions qui font traiter les BCF" },
+      {
+        type: "ul",
+        items: [
+          "Un sujet par cause, pas par élément. Quatre cents murs sans property set, c'est un sujet avec un point de vue représentatif.",
+          "Mettez la règle ou l'exigence dans le titre. « Pset_WallCommon.FireRating manquant — ajouter au modèle d'export » est actionnable ; « données manquantes » ne l'est pas.",
+          "Étiquetez par révision. Un sujet soulevé sur la révision 6 doit le dire, pour qu'une comparaison ultérieure ne le soulève pas deux fois.",
+          "Joignez toujours la capture. C'est ce que le destinataire voit dans sa boîte de réception avant d'ouvrir un outil, et c'est souvent la seule partie qu'il regarde.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "La place du BCF dans le dossier de livraison complet — à côté du rapport de validation et du bordereau d'envoi — est traitée dans ",
+          { text: "ce qu'il faut livrer avec un modèle IFC", to: "ifc-model-handover-documentation" },
+          ". Créer automatiquement des sujets à partir d'une comparaison de révisions est expliqué dans ",
+          { text: "comment comparer deux versions IFC", to: "compare-ifc-versions-what-changed" },
+          ".",
+        ],
+      },
+    ],
+    lang: "fr",
+    translationKey: "bcf-2-1-vs-3-0-viewpoints",
+  },
+  {
+    slug: "cobie-from-ifc-fm-handover",
+    title: "COBie depuis l'IFC : ce dont votre équipe d'exploitation a vraiment besoin (et comment le vérifier avant la remise)",
+    excerpt: "Le COBie est l'endroit où le bon BIM va mourir : un tableur produit la dernière semaine du projet, plein de cellules vides, que l'équipe d'exploitation n'ouvre jamais. L'extraire tôt de l'IFC — et mesurer son niveau de complétude — change la donne.",
+    seoTitle: "COBie depuis l'IFC : ce qu'il faut à l'exploitation",
+    seoDescription: "Comment tirer le COBie de l’IFC, quelles feuilles l’exploitation utilise, pourquoi la plupart sont vides et comment mesurer leur complétude.",
+    date: "2026-10-01",
+    readTimeMin: 10,
+    category: "Livraison & ISO 19650",
+    categorySlug: "delivery",
+    author: "IFC Viewer Team",
+    keywords: [
+      "COBie",
+      "COBie depuis IFC",
+      "export COBie",
+      "tableur COBie",
+      "remise BIM exploitation",
+      "modèle d'information des actifs",
+      "validation COBie",
+      "IFC vers COBie",
+      "COBie from IFC",
+      "COBie export",
+      "COBie spreadsheet",
+      "FM handover BIM",
+      "asset information model",
+      "COBie validation",
+      "IFC to COBie",
+    ],
+    faqs: [
+      {
+        q: "Qu'est-ce que le COBie ?",
+        a: "Le COBie (Construction Operations Building information exchange) est une manière structurée de remettre les données patrimoniales — espaces, produits installés, leurs types, fabricants, garanties et informations de maintenance — à ceux qui exploiteront un bâtiment. Il est généralement livré sous forme de tableur, et c'est un sous-ensemble de ce qu'un modèle IFC peut porter.",
+      },
+      {
+        q: "Peut-on générer un COBie à partir d'un fichier IFC ?",
+        a: "Oui. Site, niveaux, espaces, zones, types et composants correspondent directement à des entités IFC et à leurs property sets. La qualité du COBie dépend entièrement de la présence de ces informations dans le modèle : un export ne peut pas inventer un fabricant ou un numéro de série jamais modélisé.",
+      },
+      {
+        q: "Quelles feuilles COBie comptent le plus pour l'exploitation-maintenance ?",
+        a: "Component (les équipements à maintenir), Space (le programme des locaux) et Type (les types de produits auxquels renvoient les composants). Un COBie avec des feuilles Component, Space et Type complètes est exploitable ; un COBie aux feuilles Contact et Document parfaites mais aux Components vides ne l'est pas.",
+      },
+      {
+        q: "Un score de complétude COBie équivaut-il à la conformité COBie ?",
+        a: "Non. Un score de complétude mesure quelle part des données dont dépend une équipe d'exploitation est présente et identifiable. La conformité formelle se vérifie par rapport à une spécification COBie précise et aux exigences propres au projet. Traitez la complétude comme une alerte précoce, pas comme un certificat.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Demandez à un responsable d'exploitation ce qu'il a fait du COBie de son dernier bâtiment neuf, et la réponse la plus courante est un silence. Le tableur existe. Il a été livré, il a satisfait au contrat, il compte dix-huit onglets. Et la feuille Component — celle qui liste ce qu'il faut entretenir — est à moitié vide, parce que personne ne l'a regardée avant la semaine de la remise.",
+      },
+      {
+        type: "p",
+        text: "La solution n'est pas un meilleur outil COBie à la fin. C'est d'extraire le COBie de l'IFC tôt et souvent, et de mesurer ce qui manque tant qu'il reste du temps pour le modéliser.",
+      },
+      { type: "h2", text: "Le COBie est une vue de l'IFC, pas un livrable à part" },
+      {
+        type: "p",
+        text: "Chaque ligne qui compte dans le COBie correspond à quelque chose dans l'IFC. Un Floor est un IfcBuildingStorey. Un Space est un IfcSpace. Un Type est un type d'élément comme IfcDoorType. Un Component est une occurrence d'élément — une porte précise, une pompe précise. Les attributs que demande le COBie vivent dans les attributs et les property sets de l'IFC.",
+      },
+      {
+        type: "table",
+        headers: ["Feuille COBie", "Provient de", "Usage pour l'exploitation"],
+        rows: [
+          ["Facility", "IfcProject, IfcSite, IfcBuilding", "Savoir de quel bâtiment il s'agit"],
+          ["Floor", "IfcBuildingStorey", "Naviguer dans l'inventaire patrimonial"],
+          [
+            "Space",
+            "IfcSpace (nom, nom long, surface)",
+            "Programme des locaux, nettoyage, gestion des espaces",
+          ],
+          ["Zone", "IfcZone et regroupements d'espaces", "Zones incendie, CVC et sûreté"],
+          ["Type", "Types d'éléments et leurs psets", "Données produit, garantie, pièces de rechange"],
+          ["Component", "Occurrences d'éléments", "Les équipements à maintenir : la raison d'être du COBie"],
+          ["System", "IfcSystem et ses affectations", "Quels composants forment un système"],
+        ],
+      },
+      {
+        type: "p",
+        text: "La conséquence est inconfortable et utile : si le COBie est pauvre, le modèle est pauvre. Corriger le tableur à la main la dernière semaine produit un document qui contredit le modèle dont il est censé découler — et la remise suivante recommence l'exercice.",
+      },
+      { type: "h2", text: "Pourquoi la plupart des livrables COBie sont vides" },
+      {
+        type: "ul",
+        items: [
+          "Les espaces n'ont jamais été modélisés, ou l'ont été sans nom. Pas d'espaces, pas de feuille Space, et chaque Component perd sa localisation.",
+          "Les composants n'ont pas d'identifiant stable. Si les GlobalIds changent d'un export à l'autre, l'inventaire patrimonial ne peut pas être mis à jour depuis un modèle ultérieur ; il faut le reconstruire.",
+          "Types absents ou génériques. Deux cents portes qui pointent vers un seul type nommé « Porte », c'est techniquement une feuille Type et pratiquement inutile.",
+          "Les données fabricant, modèle et garantie arrivent après le gel du modèle et sont saisies dans le tableur plutôt que dans le modèle.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Le deuxième point est celui qui détruit en silence la valeur de tout l'exercice. ",
+          { text: "Pourquoi les GUID IFC changent à chaque export", to: "ifc-guids-changing-every-export" },
+          " explique la cause et la correction pour chaque outil auteur.",
+        ],
+      },
+      { type: "h2", text: "Mesurer la complétude avant la remise" },
+      {
+        type: "p",
+        text: "Pas besoin d'un spécialiste COBie pour savoir si un modèle est sur la bonne voie. Trois questions, posées à chaque phase à partir du gel de la conception, attrapent presque tout :",
+      },
+      {
+        type: "ol",
+        items: [
+          "Composants : quelle part a à la fois un nom et un GlobalId ? Un équipement a besoin d'un libellé lisible et d'un identifiant stable pour être remis.",
+          "Espaces : quelle part est nommée ? Un espace sans nom est introuvable pour quiconque exploite le bâtiment.",
+          "Types : les composants renvoient-ils seulement à des types ?",
+        ],
+      },
+      {
+        type: "p",
+        text: "Notre extraction COBie répond exactement à ces trois questions et les combine en un indicateur de préparation à l'exploitation — les Components pèsent le plus, puis les Spaces, puis les Types — avec le détail par feuille à côté. C'est délibérément une mesure de complétude, pas un certificat de conformité : elle vous dit si les données dont dépend une équipe d'exploitation sont là, et le dit en ces termes.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Lancez l'extraction au gel de la conception, pas à la remise. Un score de préparation de 40 % au gel, c'est une tâche de modélisation avec des mois devant soi. Le même score la dernière semaine, c'est un tableur rempli à la main.",
+      },
+      { type: "h2", text: "Rédiger des exigences COBie que le modèle peut satisfaire" },
+      {
+        type: "p",
+        text: "Les exigences COBie ont leur place dans l'EIR et, idéalement, dans un fichier IDS que le prestataire peut exécuter lui-même. « Chaque IfcSpace a un Name et un LongName », « chaque IfcDoorType porte Manufacturer et ModelReference » : chacune est une spécification IDS, et chacune est vérifiable à chaque révision bien avant que quiconque n'ouvre un tableur.",
+      },
+      {
+        type: "p",
+        text: [
+          "La rédaction de ces spécifications est traitée dans ",
+          { text: "l'IDS expliqué", to: "ids-information-delivery-specification-guide" },
+          ". La place du COBie parmi les autres pièces de remise est dans ",
+          { text: "ce qu'il faut livrer avec un modèle IFC", to: "ifc-model-handover-documentation" },
+          ".",
+        ],
+      },
+      {
+        type: "pull-quote",
+        text: "Le COBie ne se produit pas à la remise. Il s'y révèle — et à ce moment-là, il est trop tard pour changer ce qu'il révèle.",
+      },
+    ],
+    lang: "fr",
+    translationKey: "cobie-from-ifc-fm-handover",
+  },
+  {
+    slug: "embed-ifc-viewer-website",
+    title: "Comment intégrer une visionneuse IFC dans un site web, un CDE ou un rapport Power BI",
+    excerpt: "Un modèle 3D interactif dans une offre, une page projet, un panneau de CDE ou un tableau de bord Power BI — avec une seule iframe, sans build, et sans envoyer le modèle sur le serveur de qui que ce soit. Ce que font les paramètres d'URL, et quand il vous faut le SDK.",
+    seoTitle: "Intégrer une visionneuse IFC : site web, CDE, Power BI",
+    seoDescription: "Intégrez un modèle IFC interactif avec une iframe : paramètres d'URL, modes pour les clients, Power BI et Notion, pièges CORS et quand utiliser le SDK.",
+    date: "2026-10-01",
+    readTimeMin: 9,
+    category: "Outils & comparatifs",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "intégrer visionneuse IFC",
+      "visionneuse IFC iframe",
+      "visionneuse IFC site web",
+      "IFC dans Power BI",
+      "intégrer maquette BIM site web",
+      "SDK visionneuse IFC",
+      "web component IFC",
+      "afficher modèle IFC sur un site",
+      "embed IFC viewer",
+      "IFC viewer iframe",
+      "IFC viewer website",
+      "IFC Power BI",
+      "embed BIM model website",
+      "IFC viewer SDK",
+      "IFC web component",
+      "show IFC model on website",
+    ],
+    faqs: [
+      {
+        q: "Comment intégrer un modèle IFC dans un site web ?",
+        a: "Hébergez le fichier .ifc à une URL publique qui autorise les requêtes d'autres origines, puis ajoutez une iframe pointant vers la visionneuse avec ?model=<votre URL>&embed=1. Le navigateur du visiteur télécharge et analyse le modèle. Le générateur d'intégration gratuit produit le code pour vous, avec aperçu en direct.",
+      },
+      {
+        q: "Puis-je afficher un modèle IFC dans Power BI ?",
+        a: "Oui. Ajoutez un visuel de contenu web ou de visionneuse HTML et collez le code de l'iframe. Le paramètre accent accorde la visionneuse aux couleurs du rapport.",
+      },
+      {
+        q: "Pourquoi mon IFC intégré ne se charge-t-il pas ?",
+        a: "Neuf fois sur dix, c'est CORS : le serveur qui héberge le fichier n'envoie pas l'en-tête Access-Control-Allow-Origin, et le navigateur refuse donc de transmettre le fichier à la visionneuse. Les liens privés qui exigent une connexion et les liens de partage qui renvoient une page HTML au lieu du fichier sont les autres causes courantes.",
+      },
+      {
+        q: "Quand utiliser le SDK plutôt qu'une iframe ?",
+        a: "Quand votre page doit dialoguer avec le modèle : sélectionner des éléments depuis votre propre interface, lire le Health Score ou la liste des problèmes, lancer un contrôle IDS ou réagir aux clics. L'iframe affiche un modèle ; le SDK permet à votre application de le piloter et de l'interroger.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Des captures d'écran d'une maquette BIM, c'est un drôle de contenu pour une offre. Tout l'intérêt de la maquette est d'être en trois dimensions et pleine de données, et la capture jette les deux. Une visionneuse intégrée les conserve : le lecteur peut tourner autour, couper, cliquer sur un élément et lire ses propriétés, sur n'importe quel appareil, sans rien installer.",
+      },
+      {
+        type: "p",
+        text: "Le faire demande une iframe. Bien le faire demande de connaître quatre paramètres et une règle de sécurité du navigateur.",
+      },
+      { type: "h2", text: "L'intégration minimale" },
+      {
+        type: "code",
+        lang: "html",
+        text: "<iframe\n  src=\"https://www.ifcvieweronline.eu/?model=https://your-host.com/model.ifc&embed=1\"\n  width=\"100%\" height=\"600\"\n  style=\"border:0;border-radius:12px;max-width:100%\"\n  loading=\"lazy\" allow=\"fullscreen\"\n  title=\"3D IFC model\">\n</iframe>",
+      },
+      {
+        type: "p",
+        text: "Le navigateur du visiteur télécharge l'IFC directement depuis votre hébergement et l'analyse en local. Le modèle ne nous est jamais envoyé, ce qui est généralement la première question de quiconque a signé un accord de confidentialité — et une vraie différence avec les intégrations qui vous obligent d'abord à téléverser le modèle dans le cloud d'un éditeur.",
+      },
+      {
+        type: "embed-configurator",
+        title: "Créez votre intégration",
+        description: "Collez une URL IFC publique, choisissez un mode et copiez l'iframe. L'aperçu se met à jour en direct.",
+      },
+      { type: "h2", text: "Les paramètres à connaître" },
+      {
+        type: "table",
+        headers: ["Paramètre", "Rôle", "À utiliser pour"],
+        rows: [
+          [
+            "model",
+            "Charge une ou plusieurs URL IFC (séparées par des virgules pour un ensemble fédéré)",
+            "Tout",
+          ],
+          ["ui", "Mode d'interface : minimal, full, kiosk ou client", "S'adapter au public"],
+          [
+            "validate",
+            "Lance la validation au chargement et affiche le Health Score",
+            "Montrer la qualité, pas seulement la géométrie",
+          ],
+          [
+            "isolate / select",
+            "S'ouvre avec une classe IFC isolée ou un élément sélectionné",
+            "Désigner ce dont vous parlez",
+          ],
+          [
+            "accent",
+            "Teinte la visionneuse d'une couleur hexadécimale",
+            "Tableaux de bord et pages aux couleurs de la marque",
+          ],
+          ["lang", "Force la langue de l'interface", "Sites localisés"],
+          [
+            "map",
+            "Place le modèle sur le fond de carte d'après son géoréférencement",
+            "Contexte du site dans les offres",
+          ],
+        ],
+        caption: "La référence complète, y compris études d'ensoleillement et nuages de points, figure dans la documentation d'intégration.",
+      },
+      {
+        type: "p",
+        text: "Le mode ui est le plus important. minimal convient aux articles de blog et à la documentation. kiosk retire tout pour les écrans d'un hall ou d'un espace de vente. client est pensé pour un envoi au maître d'ouvrage : une vue épurée et un badge qualité, sans les outils dont un coordinateur a besoin et qu'un client n'utilise pas.",
+      },
+      { type: "h2", text: "Où ça fonctionne" },
+      {
+        type: "ul",
+        items: [
+          "Sites web et blogs — tout CMS qui accepte du HTML : WordPress, Webflow, Ghost, un site statique.",
+          "Power BI — un visuel de contenu web ou de visionneuse HTML, avec accent réglé sur le thème du rapport. Un modèle à côté des graphiques de coûts et de planning qu'il explique.",
+          "Notion, Confluence, SharePoint — collez l'URL comme bloc intégré.",
+          "Panneaux de CDE et outils internes — une iframe, avec des événements de cycle de vie envoyés à la fenêtre parente pour que l'hôte réagisse quand le modèle est prêt ou validé.",
+          "Offres et appels d'offres — sous forme de lien si le format n'accepte pas l'intégration. Un lien vers un modèle vivant dans une réponse d'appel d'offres reste assez rare pour être remarqué.",
+        ],
+      },
+      { type: "h2", text: "Pourquoi ça ne charge pas : CORS, et deux autres causes" },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "C'est le navigateur qui refuse, pas la visionneuse",
+        text: "Quand une page demande un fichier situé sur un autre domaine, le navigateur ne le lui remet que si ce domaine répond avec un en-tête Access-Control-Allow-Origin. La plupart des hébergeurs de fichiers ne le font pas par défaut. Activez CORS sur le bucket ou le serveur qui héberge l'IFC — sur S3, Azure Blob et Google Cloud Storage, c'est une configuration courte — et l'intégration fonctionne.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Des liens de partage qui renvoient une page web, pas le fichier. Les liens Dropbox, OneDrive et Google Drive ouvrent généralement une page d'aperçu ; il vous faut la forme « téléchargement direct » du lien.",
+          "Des liens qui exigent une connexion. Le navigateur du visiteur n'a pas de session sur votre CDE, donc un lien privé renvoie une page de connexion.",
+          "De très gros fichiers sur des hébergements lents. Le modèle est téléchargé en entier avant l'analyse ; hébergez les gros ensembles fédérés sur un service rapide et envisagez de les découper.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Si les modèles sont trop lourds pour être intégrés confortablement, ",
+          { text: "comment réduire la taille d'un fichier IFC", to: "reduce-ifc-file-size" },
+          " présente les réductions sans risque.",
+        ],
+      },
+      { type: "h2", text: "Quand une iframe ne suffit plus : le SDK" },
+      {
+        type: "p",
+        text: "Une iframe affiche un modèle. Dès que votre page doit dialoguer avec lui — mettre en évidence un élément quand on clique sur une ligne de votre tableau, remonter le Health Score dans votre tableau de bord, exécuter une spécification IDS et lister les échecs dans votre propre interface, lancer une visite guidée —, il vous faut le SDK. Il enveloppe la même visionneuse dans une API typée et bidirectionnelle, disponible sous forme de script ou de web component <ifc-viewer>.",
+      },
+      {
+        type: "p",
+        text: [
+          "Si vous préférez construire votre propre visionneuse à partir des bibliothèques sous-jacentes, ",
+          {
+            text: "afficher de l'IFC sur le web avec three.js et Fragments",
+            to: "view-ifc-web-threejs-fragments",
+          },
+          " explique ce que cela implique — et pourquoi la plupart des équipes qui commencent par là finissent par intégrer.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Pour les projets confidentiels, la même architecture côté client qui fait fonctionner les intégrations est celle qui garde le modèle hors des serveurs tiers ; les détails sont dans ",
+          {
+            text: "visionneuses IFC pour projets confidentiels et sous NDA",
+            to: "ifc-viewer-confidential-nda-projects",
+          },
+          ".",
+        ],
+      },
+    ],
+    lang: "fr",
+    translationKey: "embed-ifc-viewer-website",
+  },
+  {
     slug: "ifc-health-score-guide",
     title: "Qu'est-ce qu'un bilan de santé BIM ? Le Health Score IFC expliqué",
     excerpt: "Votre BEP de projet dit « livrer un IFC de qualité ». Personne ne définit ce que cela signifie, jusqu'à ce que la maquette soit rejetée. Un Health Score IFC transforme des exigences de qualité vagues en un chiffre que tout le monde peut suivre.",
