@@ -156,5 +156,30 @@
     "blankKeeps": "空欄にすると、ファイルが元々持っていた値がそのまま残ります。",
     "schemaNote": "IFC スキーマは決して変更されません。IFC2x3 として開いたファイルは IFC2x3 として書き出されます。"
   },
-  "exportSettings": "書き出し設定…"
+  "exportSettings": "書き出し設定…",
+  "menu": {
+    "openIfc": "IFCファイルを開く…",
+    "openTooltip": "開く — IFCファイル、デモモデル、その他のデータ",
+    "addData": "シーンに追加",
+    "check": "チェック",
+    "checkTooltip": "チェック — 3Dでの問題表示、IDS、バージョン比較",
+    "issuesIn3d": "3Dで問題を表示",
+    "capture": "キャプチャ",
+    "captureTooltip": "キャプチャ — スクリーンショット、リプレイ、スタジオ、背景",
+    "screenshot": "スクリーンショット",
+    "quickCapture": "クイックキャプチャ",
+    "studios": "スタジオ",
+    "coverStudio": "カバースタジオ",
+    "share": "共有",
+    "shareTooltip": "共有 — ファイル書き出し、埋め込み、プレゼン",
+    "files": "ファイル",
+    "publish": "公開",
+    "inspect": "調べる",
+    "context": "コンテキスト",
+    "navigate": "ナビゲート",
+    "edit": "編集",
+    "help": "ヘルプ",
+    "idsCheck": "IDSでチェック…",
+    "compareVersions": "バージョンを比較…"
+  }
 }

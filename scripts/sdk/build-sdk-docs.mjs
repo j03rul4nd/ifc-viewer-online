@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import { SDK_DOCS_I18N } from './sdk-docs-i18n.mjs'
 import { SDK_DOCS_V111 } from './sdk-docs-v111.mjs'
+import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
+import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -530,6 +532,8 @@ Object.assign(T.en, {
 // last so a key present here always wins over the English fallback.
 for (const l of LANGS) if (SDK_DOCS_I18N[l]) Object.assign(T[l], SDK_DOCS_I18N[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V111[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -650,6 +654,35 @@ const API_GROUPS = [
     ["setSectionBox('model' | 'selection' | false)", 'Promise<SectionsState>', 'secBox'],
     ['getSections()', 'Promise<SectionsState>', 'secGet'],
   ]],
+  ['tours', 'grpTours', [
+    ["startTour(template?, { autoplay?, title? })", 'Promise<TourState>', 'tourStart'],
+    ['playTour({ title?, steps }, { startAt?, autoplay? })', 'Promise<TourState>', 'tourPlay'],
+    ['nextTourStep() · prevTourStep() · goToTourStep(i)', 'Promise<TourState>', 'tourNav'],
+    ['setTourAutoplay(autoplay)', 'Promise<TourState>', 'tourAuto'],
+    ['stopTour()', 'Promise<TourState>', 'tourStop'],
+    ['getTour()', 'Promise<TourState>', 'tourGet'],
+  ]],
+  ['director', 'grpDirector', [
+    ['getPresentationRecipes()', 'Promise<PresentationRecipe[]>', 'dirRecipes'],
+    ['createPresentation(recipe?, options?)', 'Promise<PresentationState>', 'dirCreate'],
+    ['exportPresentation({ resolution?, music? })', 'Promise<PresentationVideo>', 'dirExport'],
+    ['closePresentation()', 'Promise<void>', 'dirClose'],
+  ]],
+  ['cover', 'grpCover', [
+    ['getCoverOptions()', 'Promise<CoverCatalog>', 'covOptions'],
+    ['createCover({ recipe?, template?, format?, palette?, text? })', 'Promise<CoverState>', 'covCreate'],
+    ['getCover()', 'Promise<CoverState | null>', 'covGet'],
+    ['exportCover({ type?, slide? })', 'Promise<CoverFile>', 'covExport'],
+    ['closeCover()', 'Promise<void>', 'covClose'],
+  ]],
+  ['groups', 'grpGroups', [
+    ['getGroups()', 'Promise<SceneGroupsState>', 'grpList'],
+    ['createGroup(name, modelIds?)', 'Promise<string>', 'grpCreate'],
+    ['renameGroup(id, name) · deleteGroup(id)', 'Promise<void>', 'grpEdit'],
+    ["assignToGroup(itemId, groupId | null | 'loose')", 'Promise<void>', 'grpAssign'],
+    ['setGroupVisible(id, visible) · isolateGroup(id | null)', 'Promise<void>', 'grpShow'],
+    ['frameGroup(id)', 'Promise<void>', 'grpFrame'],
+  ]],
   ['measure', 'grpMeasure', [
     ['setMeasureTool(tool)', 'Promise<void>', 'msTool'],
     ['getMeasurements()', 'Promise<MeasurementsState>', 'msGet'],
@@ -736,6 +769,10 @@ const EVENTS = [
   ['map-feature-picked', '{ id, name?, label?, featureKind, heightM?, heightEstimated }', 'evMapPicked'],
   ['walk-changed', '{ active, speed }', 'evWalk'],
   ['measurements-changed', '{ tool, units, items }', 'evMeasure'],
+  ['tour-started', '{ title, total, template }', 'evTourStarted'],
+  ['tour-step', '{ index, total, caption }', 'evTourStep'],
+  ['tour-ended', '{ completed }', 'evTourEnded'],
+  ['presentation-progress', '{ stage, label?, progress }', 'evPresProgress'],
 ]
 
 // Section nav model (id, translation key); reuses existing localized keys.
@@ -889,6 +926,36 @@ viewer.on("measurements-changed", ({ items }) => {
   // value is SI — metres, m², degrees — whatever the viewer displays
   render(items.map((m) => m.kind + ": " + m.value?.toFixed(2)));
 });`
+
+const REC_TOUR =
+`// 1. Once, while writing the post: frame each view and copy the camera.
+console.log(JSON.stringify(await viewer.getCamera()));
+
+// 2. In the page: play the stops, self-running, next to your text.
+await viewer.playTour({
+  title: "Casa Poblenou",
+  steps: [
+    { position: { x: 52, y: 29, z: 24 }, target: { x: 18, y: 7, z: -11 }, caption: "The site" },
+    { position: { x: 18, y: 40, z: 11 }, target: { x: 18, y: 0, z: 10 },
+      caption: "Structure", isolate: ["IfcColumn", "IfcSlab"] },
+  ],
+}, { autoplay: 6000 });
+viewer.on("tour-step", ({ index, caption }) => highlightParagraph(index));`
+
+const REC_VIDEO =
+`viewer.on("presentation-progress", ({ stage, progress }) => bar.value = progress ?? 0);
+await viewer.createPresentation("linkedin-teaser", { title: "Casa Poblenou", targetSec: 20 });
+
+const { bytes, mimeType } = await viewer.exportPresentation({ resolution: 1080 });
+video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
+
+const REC_COVER =
+`await viewer.createCover({
+  recipe: "pinterest",
+  text: { title: "Casa Poblenou", location: "Barcelona", website: "https://example.com" },
+});
+const { bytes, mimeType } = await viewer.exportCover({ type: "png" });
+img.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
 
 const REC_THEME =
 `new IfcViewer("#viewer", { accent: "#22c55e" });
@@ -1075,6 +1142,9 @@ function page(lang) {
     recipe('rec6T', 'rec6B', REC_EIR) +
     recipe('rec7T', 'rec7B', REC_BLOG) +
     recipe('rec8T', 'rec8B', REC_PLAN) +
+    recipe('rec9T', 'rec9B', REC_TOUR) +
+    recipe('rec10T', 'rec10B', REC_VIDEO) +
+    recipe('rec11T', 'rec11B', REC_COVER) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'

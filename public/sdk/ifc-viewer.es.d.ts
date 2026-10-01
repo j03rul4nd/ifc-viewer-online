@@ -524,6 +524,163 @@ export interface MeasurementsState {
     units: 'm' | 'cm' | 'mm' | 'ft';
     items: Measurement[];
 }
+/** The built-in tour templates. */
+export type TourTemplate = 'social' | 'client-walkthrough' | 'technical-review';
+/** One stop of a host-authored tour. Positions in scene metres (Y up) — take them from getCamera(). */
+export interface TourStepInput {
+    position: Vec3;
+    target: Vec3;
+    caption?: string;
+    /** Elements (expressIDs) to highlight at this stop. */
+    highlight?: number[];
+    /** IFC classes to isolate at this stop, e.g. ['IfcWall', 'IfcSlab']. */
+    isolate?: string[];
+    modelId?: string;
+}
+export interface TourInput {
+    title?: string;
+    steps: TourStepInput[];
+}
+/**
+ * `true` advances at the default pace (6 s per stop); a number is ms per stop
+ * (1 500–120 000). The tour ends after the last stop.
+ */
+export type TourAutoplay = boolean | number;
+export interface TourState {
+    playing: boolean;
+    title: string | null;
+    template: TourTemplate | null;
+    stepIndex: number | null;
+    total: number;
+    /** The stops, in the shape playTour() takes — save them to replay the tour later. */
+    steps: Array<Required<Omit<TourStepInput, 'modelId' | 'caption'>> & {
+        caption: string | null;
+        modelId: string | null;
+    }>;
+}
+export interface TourStepEvent {
+    index: number;
+    total: number;
+    caption: string | null;
+}
+/** A built-in director recipe, as getPresentationRecipes() lists it. */
+export interface PresentationRecipe {
+    id: string;
+    name: string;
+    format: 'wide' | 'linkedin' | 'square' | 'reel' | 'tiktok';
+    targetSec: number;
+    style: 'classic' | 'launch' | 'motion';
+    look: string | null;
+    sections: string[];
+}
+/** Overrides applied on top of a recipe. */
+export interface PresentationOptions {
+    /** Output shape: `wide` 16:9, `linkedin` 4:5, `square`, `reel` / `tiktok` 9:16. */
+    format?: PresentationRecipe['format'];
+    /** Target length, 5–180 s; the director fits the shots to it. */
+    targetSec?: number;
+    pace?: 'calm' | 'normal' | 'fast';
+    /** Opening title card text. */
+    title?: string;
+    /** Closing call to action. */
+    cta?: string;
+    /** Narrated captions on or off. */
+    captions?: boolean;
+    /** `'none'` for a silent video. */
+    music?: 'none';
+    watermark?: boolean;
+}
+export interface PresentationState {
+    open: boolean;
+    clips: number;
+    durationSec: number;
+    width: number;
+    height: number;
+}
+export interface PresentationVideo {
+    /** The encoded file (MP4, or WebM where the browser cannot encode MP4). Transferred, not copied. */
+    bytes: ArrayBuffer;
+    mimeType: string;
+    sizeBytes: number;
+}
+export interface PresentationProgressEvent {
+    stage: 'generate' | 'export';
+    label?: string;
+    /** 0–1, or null while indeterminate. */
+    progress: number | null;
+}
+/** Quick-start cover recipes: they pick template, format and look, and capture the views they need. */
+export type CoverRecipe = 'pinterest' | 'carousel' | 'post' | 'client' | 'board' | 'sheet' | 'story' | 'coordination';
+/** The texts a cover template can show. Omitted fields keep what the studio has. */
+export interface CoverText {
+    title?: string;
+    subtitle?: string;
+    client?: string;
+    location?: string;
+    date?: string;
+    studio?: string;
+    tagline?: string;
+    concept?: string;
+    /** Shown as text and, when the template has one, as a QR code. */
+    website?: string;
+}
+export interface CoverOptions {
+    /** Run a recipe first (it captures the views it needs). */
+    recipe?: CoverRecipe;
+    /** A template id from getCoverOptions(), e.g. 'editorial', 'magazine', 'datasheet'. */
+    template?: string;
+    /** A format id, e.g. 'pinterest', 'instagram', 'linkedin', 'story', 'slide', 'a4', 'board'. */
+    format?: string;
+    /** A palette id, or 'image' / 'image-dark' to take the colours from the render. */
+    palette?: string;
+    text?: CoverText;
+}
+export interface CoverState {
+    template: string;
+    format: string;
+    palette: string;
+    mode: 'single' | 'deck' | string;
+    /** Views captured from the model. */
+    shots: number;
+    /** Pages the export will produce (1 for a single cover). */
+    slides: number;
+    text: Required<CoverText>;
+}
+export interface CoverCatalog {
+    recipes: CoverRecipe[];
+    templates: string[];
+    formats: Array<{
+        id: string;
+        width: number;
+        height: number;
+        ratio: string;
+    }>;
+    palettes: string[];
+}
+export interface CoverFile {
+    /** The file, transferred (not copied). */
+    bytes: ArrayBuffer;
+    mimeType: string;
+    sizeBytes: number;
+    /** Pages in the document the export came from. */
+    slides: number;
+}
+/** A group of models (and point clouds) in the scene. */
+export interface SceneGroup {
+    id: string;
+    name: string;
+    /** True for a group someone created — only those can be renamed, deleted or filled. */
+    user: boolean;
+    /** How it was formed: 'user', or the evidence the viewer grouped by (project, site, location, single). */
+    basis: string;
+    modelIds: string[];
+    cloudIds: string[];
+}
+export interface SceneGroupsState {
+    groups: SceneGroup[];
+    /** Point clouds in no group. */
+    looseCloudIds: string[];
+}
 export interface IfcViewerEventMap {
     ready: ReadyEvent;
     'model-loaded': ModelLoadedEvent;
@@ -537,6 +694,20 @@ export interface IfcViewerEventMap {
     'walk-changed': WalkState;
     /** A measurement was added, removed or renamed. Carries the whole list. Since v1.11.0. */
     'measurements-changed': MeasurementsState;
+    /** A tour began playing — started by the host or by the visitor. Since v1.12.0. */
+    'tour-started': {
+        title: string;
+        total: number;
+        template: TourTemplate | null;
+    };
+    /** The tour moved to another stop. Since v1.12.0. */
+    'tour-step': TourStepEvent;
+    /** The tour stopped; `completed` when it had reached the last stop. Since v1.12.0. */
+    'tour-ended': {
+        completed: boolean;
+    };
+    /** The director is generating or exporting a presentation. Since v1.12.0. */
+    'presentation-progress': PresentationProgressEvent;
 }
 /** Languages the viewer ships with — code + native label, for building a picker. */
 export declare const LANGUAGES: ReadonlyArray<{
@@ -674,7 +845,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.11.0";
+    readonly version = "1.13.0";
     readonly iframe: HTMLIFrameElement;
     private readonly baseUrl;
     private readonly appOrigin;
@@ -972,6 +1143,105 @@ export declare class IfcViewer {
     /** Show only this model; pass `null` to show them all again. */
     isolateModel(modelId: string | null): Promise<void>;
     /**
+     * Start a built-in tour. `social` and `client-walkthrough` show the model off
+     * (a handful of framed views); `technical-review` walks the validation
+     * issues, worst first, and needs validation to have run.
+     */
+    startTour(template?: TourTemplate, opts?: {
+        title?: string;
+        autoplay?: TourAutoplay;
+        includeImprovements?: boolean;
+    }): Promise<TourState>;
+    /**
+     * Play a tour you authored: camera stops with a caption, and optionally the
+     * elements to highlight or the classes to isolate. Build the stops with
+     * getCamera(), or replay one saved from getTour().
+     *
+     *   await viewer.playTour({ title: 'Walkthrough', steps: [
+     *     { position: { x: 30, y: 20, z: 30 }, target: { x: 0, y: 0, z: 0 }, caption: 'The site' },
+     *     { position: …, target: …, caption: 'Structure', isolate: ['IfcColumn', 'IfcBeam'] },
+     *   ] }, { autoplay: 5000 })
+     */
+    playTour(tour: TourInput, opts?: {
+        startAt?: number;
+        autoplay?: TourAutoplay;
+    }): Promise<TourState>;
+    /** Jump to a stop (0-based). */
+    goToTourStep(index: number): Promise<TourState>;
+    /** Next stop. */
+    nextTourStep(): Promise<TourState>;
+    /** Previous stop. */
+    prevTourStep(): Promise<TourState>;
+    /** Turn self-running on (true / ms per stop) or off (false) for the tour playing now. */
+    setTourAutoplay(autoplay: TourAutoplay): Promise<TourState>;
+    /** Stop the tour and give the camera back. */
+    stopTour(): Promise<TourState>;
+    /** The tour loaded now, its position, and its stops in playTour() shape. */
+    getTour(): Promise<TourState>;
+    /** The built-in recipes — ids for createPresentation(). */
+    getPresentationRecipes(): Promise<PresentationRecipe[]>;
+    /**
+     * Generate a presentation from a recipe. Opens the viewer's Clip Studio with
+     * the result, where the visitor can still edit it. Resolves once the shots
+     * are rendered — that takes a while (tens of seconds to minutes); follow it
+     * on `presentation-progress`.
+     */
+    createPresentation(recipe?: string, options?: PresentationOptions): Promise<PresentationState>;
+    /**
+     * Encode the current presentation to a video file and hand its bytes to the
+     * host — to upload to your CMS, attach to a report, or play in a <video>:
+     *
+     *   const { bytes, mimeType } = await viewer.exportPresentation()
+     *   video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+     */
+    exportPresentation(opts?: {
+        resolution?: 720 | 1080 | 1440;
+        music?: boolean;
+    }): Promise<PresentationVideo>;
+    /** Close Clip Studio (the generated project is kept until the next one). */
+    closePresentation(): Promise<void>;
+    /** The recipes, templates, formats and palettes Cover Studio offers. */
+    getCoverOptions(): Promise<CoverCatalog>;
+    /**
+     * Make a cover. Opens Cover Studio (the visitor can keep editing), runs the
+     * recipe if one is given — it captures the views it needs — then applies the
+     * template, format, palette and texts. Resolves when it is ready to export.
+     *
+     *   await viewer.createCover({ recipe: 'pinterest', text: { title: 'Casa Poblenou', location: 'Barcelona' } })
+     */
+    createCover(opts?: CoverOptions): Promise<CoverState>;
+    /** The cover as it stands, or null when Cover Studio is closed. */
+    getCover(): Promise<CoverState | null>;
+    /**
+     * Export the cover. `png` / `jpeg` give one page (`slide`, default the first);
+     * `pdf` and `pptx` the whole document; `zip` every page as PNG.
+     */
+    exportCover(opts?: {
+        type?: 'png' | 'jpeg' | 'pdf' | 'pptx' | 'zip';
+        slide?: number;
+    }): Promise<CoverFile>;
+    /** Close Cover Studio. */
+    closeCover(): Promise<void>;
+    /** Every group in the scene, inferred and user-made. */
+    getGroups(): Promise<SceneGroupsState>;
+    /** Create a group, optionally filling it with models. Resolves with its id. */
+    createGroup(name: string, modelIds?: string[]): Promise<string>;
+    /** Rename a user group. */
+    renameGroup(groupId: string, name: string): Promise<void>;
+    /** Delete a user group; its files go back to automatic grouping. */
+    deleteGroup(groupId: string): Promise<void>;
+    /**
+     * Move a model or point cloud into a user group. `null` hands it back to
+     * automatic grouping; `'loose'` keeps it in no group.
+     */
+    assignToGroup(itemId: string, groupId: string | null | 'loose'): Promise<void>;
+    /** Show or hide every model of a group. */
+    setGroupVisible(groupId: string, visible: boolean): Promise<void>;
+    /** Show only this group's models; `null` shows every model again. */
+    isolateGroup(groupId: string | null): Promise<void>;
+    /** Fit the camera to a group — hidden members included, which is how you find where it went. */
+    frameGroup(groupId: string): Promise<void>;
+    /**
      * Open a tool panel, or pass `null` to close whatever is open.
      *
      * A panel that is not available — the chrome hides it, or nothing is loaded
@@ -1051,6 +1321,29 @@ export declare class IfcViewerElement extends HTMLElement {
     setMeasureTool(tool: MeasureTool | 'none'): Promise<void>;
     getMeasurements(): Promise<MeasurementsState>;
     setView(view: CameraView, scope?: CameraScope): void;
+    startTour(template?: TourTemplate, opts?: {
+        title?: string;
+        autoplay?: TourAutoplay;
+        includeImprovements?: boolean;
+    }): Promise<TourState>;
+    playTour(tour: TourInput, opts?: {
+        startAt?: number;
+        autoplay?: TourAutoplay;
+    }): Promise<TourState>;
+    stopTour(): Promise<TourState>;
+    createPresentation(recipe?: string, options?: PresentationOptions): Promise<PresentationState>;
+    exportPresentation(opts?: {
+        resolution?: 720 | 1080 | 1440;
+        music?: boolean;
+    }): Promise<PresentationVideo>;
+    createCover(opts?: CoverOptions): Promise<CoverState>;
+    exportCover(opts?: {
+        type?: 'png' | 'jpeg' | 'pdf' | 'pptx' | 'zip';
+        slide?: number;
+    }): Promise<CoverFile>;
+    getGroups(): Promise<SceneGroupsState>;
+    isolateGroup(groupId: string | null): Promise<void>;
+    frameGroup(groupId: string): Promise<void>;
 }
 /** Register the <ifc-viewer> element (idempotent). Auto-called on import. */
 export declare function defineIfcViewerElement(tag?: string): void;

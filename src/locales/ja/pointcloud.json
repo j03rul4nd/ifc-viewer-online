@@ -42,10 +42,26 @@
     "description": "対応する IFC に位置合わせされた有限のスキャンタイムラインです。シーク、一時停止、速度変更、最新フレームへの移動ができます。",
     "showcaseSelector": "IFC と時系列 LiDAR の例を選択",
     "showcases": {
-      "pavilion": { "name": "オペレーション・パビリオン", "short": "基本スキャン再生", "description": "IFC に整合したコンパクトなタイムラインと移動する点検カートです。" },
-      "warehouse": { "name": "稼働中の倉庫", "short": "フォークリフトと自律搬送車", "description": "ラックと構造に整合した高密度点群、移動するフォークリフト、自律搬送車、走査軌跡です。" },
-      "construction": { "name": "4D 施工進捗", "short": "工程と偏差領域", "description": "構造点群が工程別に現れ、赤い位置ずれ柱領域で偏差確認を示します。" },
-      "tunnel": { "name": "トンネル移動点検", "short": "台車と LiDAR ファン", "description": "高密度設備、移動点検台車、走査ファン、壁面の局所状態領域を表示します。" }
+      "pavilion": {
+        "name": "オペレーション・パビリオン",
+        "short": "基本スキャン再生",
+        "description": "IFC に整合したコンパクトなタイムラインと移動する点検カートです。"
+      },
+      "warehouse": {
+        "name": "稼働中の倉庫",
+        "short": "フォークリフトと自律搬送車",
+        "description": "ラックと構造に整合した高密度点群、移動するフォークリフト、自律搬送車、走査軌跡です。"
+      },
+      "construction": {
+        "name": "4D 施工進捗",
+        "short": "工程と偏差領域",
+        "description": "構造点群が工程別に現れ、赤い位置ずれ柱領域で偏差確認を示します。"
+      },
+      "tunnel": {
+        "name": "トンネル移動点検",
+        "short": "台車と LiDAR ファン",
+        "description": "高密度設備、移動点検台車、走査ファン、壁面の局所状態領域を表示します。"
+      }
     },
     "start": "IFC を読み込み再生開始",
     "loading": "IFC とリプレイを準備中…",
@@ -56,7 +72,11 @@
     "speed": "速度",
     "loop": "リプレイをループ",
     "timeline": "LiDAR リプレイのタイムライン",
-    "status": { "playing": "再生中", "paused": "一時停止", "ended": "最新" },
+    "status": {
+      "playing": "再生中",
+      "paused": "一時停止",
+      "ended": "最新"
+    },
     "sequence": "フレーム {{count}}",
     "dropped": "{{count}} スキップ",
     "truncated": "{{count}} 個の入力点が固定 GPU 容量を超えました。",
@@ -70,8 +90,15 @@
     "mcapFailed": "MCAP 例を作成できませんでした。",
     "transport": {
       "title": "シミュレーション・バイナリチャンネル",
-      "status": { "connected": "接続済み", "degraded": "劣化", "reconnecting": "再接続中" },
-      "mode": { "stable": "安定チャンネル", "unstable": "障害を注入" },
+      "status": {
+        "connected": "接続済み",
+        "degraded": "劣化",
+        "reconnecting": "再接続中"
+      },
+      "mode": {
+        "stable": "安定チャンネル",
+        "unstable": "障害を注入"
+      },
       "latency": "シミュレーション {{count}} ms",
       "buffer": "バッファ {{depth}}/{{capacity}}",
       "loss": "損失 {{count}}",
@@ -243,5 +270,133 @@
     "pcdCompressed": "PCD の圧縮された本体をデコードできませんでした。ファイルが途中で切れている可能性があります。",
     "pcdMalformed": "PCD ヘッダーを読み取れませんでした。",
     "alignFailed": "スキャンは読み込めましたが、配置を決定できませんでした。未配置のままです。"
+  },
+  "tabs": {
+    "appearance": "表示",
+    "placement": "配置",
+    "view": "ビュー",
+    "samples": "サンプル",
+    "help": "修正"
+  },
+  "ui": {
+    "loaded": "読み込んだスキャン",
+    "add": "スキャンを追加",
+    "frame": "このスキャンに合わせる",
+    "startTitle": "点群を開く",
+    "startHint": "1つまたは複数のファイルをドロップ。並列で読み込まれ、個別に削除できます。",
+    "orSample": "…またはサンプルを試す",
+    "featured": "おすすめ",
+    "showAllSamples": "全{{count}}件のサンプルを表示",
+    "showFewerSamples": "少なく表示",
+    "replayTeaser": "LiDAR + IFC アニメーションデモ",
+    "replayTeaserHint": "モデルに位置合わせされた4つの模擬スキャンタイムライン。",
+    "advanced": "詳細設定",
+    "quality": "描画予算",
+    "qualityHint": "1フレームあたりの描画点数。多いほど密に見えますが、高速なGPUが必要です。",
+    "qualityLevel": {
+      "low": "軽量",
+      "medium": "標準",
+      "high": "高",
+      "ultra": "最大"
+    },
+    "compare": "スキャン ↔ モデル",
+    "compareScan": "スキャン",
+    "compareModel": "モデル",
+    "stats": "パフォーマンス",
+    "modes": {
+      "point-cloud": "スキャンのみ",
+      "ifc": "モデルのみ",
+      "overlay": "重ねる",
+      "xray": "X線",
+      "scan-vs-bim": "スキャン vs BIM"
+    },
+    "drawn": "描画 / 読込"
+  },
+  "presets": {
+    "title": "クイックスタイル",
+    "balanced": "バランス",
+    "detail": "シャープ",
+    "presentation": "プレゼン",
+    "performance": "高速",
+    "custom": "カスタム",
+    "reset": "表示をリセット"
+  },
+  "diag": {
+    "title": "チェック",
+    "allGood": "このスキャンに問題は見つかりません。",
+    "issueCount": "要確認: {{count}}",
+    "issue": {
+      "failed": "このファイルを開けませんでした。",
+      "partial": "スキャンの一部を読み込めませんでした。表示は不完全です。",
+      "truncated": "ファイルの一部しかメモリに収まらず、スキャンが途中で切れています。",
+      "upAxisGuessed": "ファイルに上方向の軸が記載されていません。横倒しに見える場合は切り替えてください。",
+      "colorUnavailable": "現在のカラーモードのデータがファイルにないため、単色で表示されています。",
+      "hidden": "このスキャンは非表示です。",
+      "faint": "不透明度が低すぎてほとんど見えません。",
+      "farFromModel": "スキャンがモデルから大きく離れています。",
+      "manualPlacement": "スキャンとモデルを結ぶ情報がないため、モデル中心に配置されました。配置を確認してください。",
+      "crsUnknown": "スキャンの座標系がこのビルドでは不明なため、ジオリファレンスは無視されました。",
+      "tooLarge": "想定よりはるかに大きいです。ミリ・センチ・フィート単位の可能性があります。",
+      "tooSmall": "想定よりはるかに小さいです。キロメートル単位か縮小されている可能性があります。",
+      "heavy": "最大詳細で点数が多すぎます。軽い設定にすると操作が滑らかになります。"
+    }
+  },
+  "fix": {
+    "flipUpAxis": "上軸を切替",
+    "bestColor": "最適な色",
+    "showAll": "表示する",
+    "opacityFull": "不透明にする",
+    "fitCloud": "スキャンに合わせる",
+    "fitBoth": "両方表示",
+    "realign": "位置合わせを再実行",
+    "openPlacement": "配置を調整",
+    "unitMm": "mm単位",
+    "unitCm": "cm単位",
+    "unitFt": "フィート単位",
+    "scaleUp": "×1000に拡大",
+    "performance": "軽くする",
+    "remove": "削除",
+    "applied": "修正しました: {{what}}"
+  },
+  "help": {
+    "title": "どう見えますか？",
+    "hint": "症状を選ぶと一般的な修正が適用されます。表示・配置タブからいつでも元に戻せます。",
+    "sideways": {
+      "label": "横倒しになっている",
+      "hint": "Y上とZ上の書き出しの違い"
+    },
+    "invisible": {
+      "label": "見えない",
+      "hint": "表示してカメラを合わせます"
+    },
+    "wrongSize": {
+      "label": "大きすぎる/小さすぎる",
+      "hint": "ファイルの単位を選択"
+    },
+    "misplaced": {
+      "label": "モデルと合わない",
+      "hint": "再位置合わせして配置を開く"
+    },
+    "colours": {
+      "label": "黒・白・変な色",
+      "hint": "対応するモードに切替"
+    },
+    "sparse": {
+      "label": "穴だらけ/細すぎる",
+      "hint": "大きく丸い点"
+    },
+    "blobby": {
+      "label": "ぼやける/点が大きい",
+      "hint": "小さくシャープな点"
+    },
+    "slow": {
+      "label": "動作が重い",
+      "hint": "移動中の描画点数を減らす"
+    },
+    "broken": {
+      "label": "読み込めない",
+      "hint": "よくある原因"
+    },
+    "brokenTips": "LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV に対応。E57 やスキャナーのプロジェクト (RCP, FLS, LSPROJ) は先に LAS か PLY に書き出してください。一部の LAZ はブラウザで復号できない LASzip 方式です。LAS か COPC で保存し直してください。巨大なファイルは事前に切り抜くか間引いてください。"
   }
 }

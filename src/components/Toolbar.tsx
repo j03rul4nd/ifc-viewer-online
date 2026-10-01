@@ -84,58 +84,12 @@ const Btn = ({
   )
 }
 
-// ── Shared export dropdown ────────────────────────────────────────────────────
-function ExportDropdown({
-  diffs,
-  onExportIfc,
-  onExportGlb,
-  onOpenSettings,
-}: {
-  diffs: number
-  onExportIfc: () => void
-  onExportGlb: () => void
-  onOpenSettings: () => void
-}) {
-  const { t } = useTranslation('toolbar')
-  return (
-    <div className="absolute right-0 top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5 min-w-[168px]">
-      <div className="px-3 py-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
-        {t('exportAs')}
-      </div>
-      <button
-        onClick={onExportIfc}
-        className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
-      >
-        <span className="font-mono text-[var(--accent)] text-[10px]">IFC</span>
-        {diffs > 0
-          ? t('exportIfcWithEdits', { count: diffs })
-          : t('exportIfc')}
-      </button>
-      <button
-        onClick={onExportGlb}
-        className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
-      >
-        <span className="font-mono text-[var(--ok)] text-[10px]">GLB</span>
-        {t('exportGlb')}
-      </button>
-      <div className="my-1 border-t border-[var(--border)]" />
-      <button
-        onClick={onOpenSettings}
-        className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
-      >
-        <span className="font-mono text-[var(--text-faint)] text-[10px]">···</span>
-        {t('exportSettings')}
-      </button>
-    </div>
-  )
-}
-
 // ── Grouped dropdown menu ─────────────────────────────────────────────────────
 // `data-toolbar-menu` lets a single document-level handler close whichever menu
 // is open. The `disabled` prop prevents opening the popover (trigger stays visible
 // so the toolbar layout never shifts — items are just not reachable).
 
-type MenuId = 'view' | 'tools' | 'more' | 'export'
+type MenuId = 'open' | 'check' | 'view' | 'tools' | 'share'
 
 const CaretSVG = (
   <svg width="8" height="8" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 shrink-0">
@@ -144,7 +98,7 @@ const CaretSVG = (
 )
 
 function ToolMenu({
-  id, openMenu, setOpenMenu, icon, label, title, dot = false, align = 'left', disabled = false, children,
+  id, openMenu, setOpenMenu, icon, label, title, dot = false, align = 'left', disabled = false, children, split = false,
 }: {
   id: MenuId
   openMenu: MenuId | null
@@ -156,6 +110,8 @@ function ToolMenu({
   align?: 'left' | 'right'
   disabled?: boolean
   children: React.ReactNode
+  /** Trigger drawn as a caret-only half of a split button. */
+  split?: boolean
 }) {
   const open = openMenu === id && !disabled
   return (
@@ -164,10 +120,12 @@ function ToolMenu({
         onClick={() => { if (!disabled) setOpenMenu(open ? null : id) }}
         disabled={disabled}
         title={title}
+        aria-label={label ?? title}
         aria-haspopup="menu"
         aria-expanded={open}
         className={[
-          'relative inline-flex items-center gap-1.5 h-[28px] px-2.5 rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none',
+          split ? 'relative inline-flex items-center justify-center h-[28px] w-[18px] rounded-[5px]' : 'relative inline-flex items-center gap-1.5 h-[28px] px-2 lg:px-2.5 rounded-[5px]',
+          'text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none',
           open
             ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)]'
             : disabled
@@ -176,7 +134,9 @@ function ToolMenu({
         ].join(' ')}
       >
         {icon}
-        {label && <span>{label}</span>}
+        {/* Labels from lg up; below that (iPad portrait, a half-width window)
+            the icon + tooltip carry it and the bar never overflows. */}
+        {label && <span className="hidden lg:inline">{label}</span>}
         {CaretSVG}
         {dot && !open && !disabled && (
           <span className="absolute top-[5px] right-[5px] w-[4px] h-[4px] rounded-full bg-[var(--accent)]" />
@@ -186,7 +146,7 @@ function ToolMenu({
         <div
           role="menu"
           className={[
-            'absolute top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5 min-w-[208px]',
+            'absolute top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5 min-w-[224px] max-h-[calc(100dvh-64px)] overflow-y-auto',
             align === 'right' ? 'right-0' : 'left-0',
           ].join(' ')}
         >
@@ -233,14 +193,18 @@ function MenuDivider() {
   return <div className="my-1 mx-2 h-px bg-[var(--border)]" />
 }
 
-// ── Toolbar zone divider ──────────────────────────────────────────────────────
-function ZoneDivider({ className = '' }: { className?: string }) {
-  return <div className={`w-px h-5 bg-[var(--border)] shrink-0 mx-3 ${className}`} />
+// Section heading inside a menu — names the job a group of items does.
+function MenuLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-3 pt-1.5 pb-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
+      {children}
+    </div>
+  )
 }
 
-// ── Inline divider (within a zone, between siblings) ─────────────────────────
-function InlineDivider() {
-  return <div className="w-px h-4 bg-[var(--border)] shrink-0 mx-1" />
+// ── Toolbar zone divider ──────────────────────────────────────────────────────
+function ZoneDivider({ className = '' }: { className?: string }) {
+  return <div className={`w-px h-5 bg-[var(--border)] shrink-0 mx-1.5 lg:mx-2.5 ${className}`} />
 }
 
 // ── Health score color ────────────────────────────────────────────────────────
@@ -397,14 +361,6 @@ export default function Toolbar({
     finally { setExporting(false) }
   }
 
-  const handleExportClick = (): void => {
-    if (sceneModels.length > 1) {
-      onOpenExportModal()
-    } else {
-      setOpenMenu((m) => (m === 'export' ? null : 'export'))
-    }
-  }
-
   // ── SVG assets (unchanged) ────────────────────────────────────────────────
   const ValidateSVG = (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -525,11 +481,6 @@ export default function Toolbar({
       <path d="M9.2 2.3a2.6 2.6 0 0 0-3 3.4L2 9.9l1.6 1.6 4.2-4.2a2.6 2.6 0 0 0 3.4-3l-1.7 1.7-1.3-1.3 1.7-1.7z"/>
     </svg>
   )
-  const MoreSVG = (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-      <circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/>
-    </svg>
-  )
   const OverlaySVG = (
     <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.5 4 13 7c-1.5 3-3.5 4.5-6 4.5S2.5 10 1 7z"/>
@@ -541,8 +492,9 @@ export default function Toolbar({
   const viewActive  = scenePanelOpen
   const toolsActive =
     measurementPanelOpen || clipPanelOpen || plansPanelOpen || geoPanelOpen ||
-    videoPanelOpen || activeMeasurementTool !== 'none' || clipPlaneCount > 0 ||
+    solarPanelOpen || activeMeasurementTool !== 'none' || clipPlaneCount > 0 ||
     !!activePlanViewId || mapModeOn
+  const dataActive = pointCloudPanelOpen || meshPanelOpen || videoPanelOpen
 
   // Issue count chip (reused in two places)
   const IssueChip = hasIssues && !isRunning ? (
@@ -584,179 +536,187 @@ export default function Toolbar({
         </div>
       )}
 
-      {/* ══ ZONE A — Identity + model context ════════════════════════════════
-          Logo · app name (always visible)
-          Desktop: + status dot · filename · element count
-          Mobile:  status dot moves to the right side                        */}
-      <div className="flex items-center gap-2 shrink min-w-0">
+      {/* ══ LAYOUT ═══════════════════════════════════════════════════════════
+          Reads left → right as the session does:
+            identity · Open ▾ · Validate [score] · Check ▾   ···   View ▾ · Tools ▾ · Capture ▾ │ Share ▾ · ? · account · lang
+          One filled button (Validate). Everything else is a named menu whose
+          label says what job it does, so nothing is an unexplained icon.
+          Labels show from lg (1024px) up; md–lg keeps icon + caret + tooltip,
+          so an iPad in portrait or a half-width window never overflows.    */}
+
+      {/* ── Identity + model context ───────────────────────────────────────── */}
+      <div className="flex items-center gap-2 min-w-0 shrink">
         <Icons.Logo size={18} className="shrink-0" />
-        {/* App name: always visible */}
-        <span className={`text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline ${fileName ? 'max-md:!hidden' : ''}`}>
+        {/* Name on phones without a model and on wide screens; with a model the
+            phone shows the file name instead (status lives in the dot). */}
+        <span className={`text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline md:hidden xl:inline ${fileName ? 'max-md:!hidden' : ''}`}>
           IFC Validator
         </span>
-        {/* Mobile: just the file name — the status lives in the dot on the right. */}
         {fileName && (
           <span className="md:hidden text-[12px] text-[var(--text-dim)] truncate min-w-0 max-w-[40vw]">{fileName}</span>
         )}
-        {/* Model context: desktop only */}
-        <div className="hidden md:flex items-center gap-1.5 min-w-0">
+        <div className="hidden lg:flex items-center gap-1.5 min-w-0" title={fileName ?? undefined}>
           {loadingState !== 'idle' && (
-            <span
-              className="w-[5px] h-[5px] rounded-full shrink-0"
-              style={{ background: statusColor }}
-            />
+            <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: statusColor }} />
           )}
-          <span className="text-[11px] font-mono text-[var(--text-faint)] truncate max-w-[180px]">
+          <span className="text-[11px] font-mono text-[var(--text-faint)] truncate max-w-[120px] xl:max-w-[200px]">
             {fileName ?? tCommon('file.noFileLoaded')}
           </span>
           {loadingState === 'loaded' && elementCount > 0 && (
-            <span className="text-[11px] font-mono text-[var(--text-faint)] shrink-0">
+            <span className="text-[11px] font-mono text-[var(--text-faint)] shrink-0 hidden xl:inline">
               · {elementCount.toLocaleString()}
             </span>
           )}
-          {/* Background loads: "Loading 3 models · 68%" — opens the Loading
-              Center. Renders nothing while nothing is loading. */}
-          <LoadingIndicator variant="toolbar" />
+        </div>
+        {/* Background loads: "Loading 3 models · 68%" — opens the Loading
+            Center. Renders nothing while nothing is loading. */}
+        <div className="hidden md:flex min-w-0"><LoadingIndicator variant="toolbar" /></div>
+      </div>
+
+      <ZoneDivider className="hidden md:block" />
+
+      {/* ── Bring data in: Open ▾ (split) ──────────────────────────────────────
+          The button opens an IFC in one click; the caret lists everything
+          else that can go into the scene. */}
+      <div className="hidden md:flex items-center shrink-0">
+        <button
+          onClick={onUpload}
+          title={t('openFile')}
+          aria-label={t('openFile')}
+          className="inline-flex items-center gap-1.5 h-[28px] pl-2 pr-1.5 lg:pl-2.5 rounded-[5px] text-[12px] font-medium whitespace-nowrap text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
+        >
+          <Icons.Upload size={14} />
+          <span className="hidden lg:inline">{t('open')}</span>
+        </button>
+        <ToolMenu
+          id="open" openMenu={openMenu} setOpenMenu={setOpenMenu}
+          icon={null} title={t('menu.openTooltip')} split dot={dataActive}
+        >
+          <MenuItem icon={<Icons.Upload size={15} />} label={t('menu.openIfc')}
+            onClick={() => { onUpload(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.Layers size={15} />} label={t('demo')}
+            onClick={() => { onOpenDemoGallery(); setOpenMenu(null) }} />
+          {(isPointCloudEnabled() || isMeshEnabled() || isVideoEnabled()) && (
+            <>
+              <MenuDivider />
+              <MenuLabel>{t('menu.addData')}</MenuLabel>
+            </>
+          )}
+          {isPointCloudEnabled() && (
+            <MenuItem icon={PointCloudSVG} label={tPointCloud('entry')} active={pointCloudPanelOpen}
+              badge={pointCloudCount > 0 ? pointCloudCount : undefined}
+              onClick={() => { togglePointCloudPanel(); setOpenMenu(null) }} />
+          )}
+          {isMeshEnabled() && (
+            <MenuItem icon={MeshSVG} label={tMesh('entry')} active={meshPanelOpen}
+              badge={meshCount > 0 ? meshCount : undefined}
+              onClick={() => { toggleMeshPanel(); setOpenMenu(null) }} />
+          )}
+          {isVideoEnabled() && (
+            <MenuItem icon={<Icons.Film size={15} />} label={tVideo('entry')} active={videoPanelOpen}
+              badge={videoCount > 0 ? videoCount : undefined}
+              onClick={() => { toggleVideoPanel(); setOpenMenu(null) }} />
+          )}
+        </ToolMenu>
+      </div>
+
+      {/* ── Validate — the hero action, with its result attached ──────────────
+          The score and issue count sit on the same pill as the button that
+          produced them: one glance answers "how is this model doing?". */}
+      <div className="hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5">
+        <div
+          className={[
+            'flex items-center h-[28px] rounded-[6px]',
+            qualityScore !== null && !isRunning ? 'bg-[var(--surface-2)] border border-[var(--border)]' : '',
+          ].join(' ')}
+        >
+          <Btn
+            onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
+            disabled={!isRunning && !canRun}
+            variant={canRun || isRunning ? 'primary' : 'ghost'}
+            title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
+          >
+            {isRunning ? SpinSVG : ValidateSVG}
+            {isRunning
+              ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
+              : validationStatus === 'error' ? t('retry') : t('validate')}
+          </Btn>
+          {qualityScore !== null && !isRunning && (
+            <div className="flex items-center gap-1.5 pl-2 pr-2" title={`Health Score: ${qualityScore}/100`}>
+              <span
+                className="text-[13px] font-bold font-mono tabular-nums leading-none"
+                style={{ color: scoreColor(qualityScore) }}
+              >
+                {qualityScore}
+              </span>
+              {IssueChip}
+            </div>
+          )}
         </div>
       </div>
 
-      <ZoneDivider className="hidden md:block" />
-
-      {/* ══ ZONE B — Primary actions ══════════════════════════════════════════
-          Open and Validate are the two actions that define every session.
-          Validate is the only accent-filled element in the bar when actionable —
-          it should be immediately identifiable in under one second.            */}
-      <div className="hidden md:flex items-center gap-0.5 shrink-0">
-        <Btn icon={Icons.Upload} onClick={onUpload} title={t('openFile')}>
-          {t('open')}
-        </Btn>
-
-        <InlineDivider />
-
-        {/* Validate — hero action. Primary fill only when canRun or running.
-            Issue count chip sits OUTSIDE the button to avoid crowding the label. */}
-        <Btn
-          onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
-          disabled={!isRunning && !canRun}
-          variant={canRun || isRunning ? 'primary' : 'ghost'}
-          title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
+      {/* ── Check ▾ — everything that reads the model against a standard ──── */}
+      <div className="hidden md:flex items-center shrink-0 ml-0.5 lg:ml-1">
+        <ToolMenu
+          id="check" openMenu={openMenu} setOpenMenu={setOpenMenu}
+          icon={<Icons.Shield size={14} />} label={t('menu.check')} title={t('menu.checkTooltip')}
+          dot={validationMode}
         >
-          {isRunning ? SpinSVG : ValidateSVG}
-          {isRunning
-            ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
-            : validationStatus === 'error' ? t('retry') : t('validate')}
-        </Btn>
-
-        {/* Issue chip — adjacent to Validate, not inside it */}
-        {IssueChip && <div className="ml-1">{IssueChip}</div>}
+          <MenuItem icon={OverlaySVG} label={t('menu.issuesIn3d')} active={validationMode}
+            disabled={!hasIssues}
+            badge={hasIssues && !isRunning && !validationMode ? issueCount : undefined}
+            onClick={() => {
+              if (!validationMode && useIdsStore.getState().highlightMode) {
+                useIdsStore.getState().setHighlightMode(false)
+              }
+              toggleValidationMode()
+              setOpenMenu(null)
+            }} />
+          <MenuDivider />
+          <MenuItem icon={<Icons.Shield size={15} />} label={t('menu.idsCheck')} disabled={!canRun}
+            onClick={() => { onOpenIds(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.GitCompare size={15} />} label={t('menu.compareVersions')}
+            onClick={() => { onOpenCompare(); setOpenMenu(null) }} />
+        </ToolMenu>
       </div>
 
-      {/* ── Health Score chip — appears after validation completes ────────────
-          This is the product's primary metric. It belongs in the persistent
-          toolbar so the user can orient themselves at a glance after returning
-          from another tab or opening a second model.                          */}
-      {qualityScore !== null && !isRunning && (
-        <>
-          <ZoneDivider className="hidden md:block" />
-          <div className="hidden md:flex items-center gap-2 shrink-0" title={`Health Score: ${qualityScore}/100`}>
-            <span className="text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-wider leading-none">
-              Score
-            </span>
-            <span
-              className="text-[15px] font-bold font-mono tabular-nums leading-none"
-              style={{ color: scoreColor(qualityScore) }}
-            >
-              {qualityScore}
-            </span>
-          </div>
-        </>
-      )}
+      {/* Flex spacer — pushes the workspace menus to the far end */}
+      <div className="flex-1 min-w-[8px] hidden md:block" />
 
-      <ZoneDivider className="hidden md:block" />
-
-      {/* ══ ZONE C — Analysis layer (viewport state controls) ════════════════
-          These buttons control what the 3D canvas shows — they modify the view,
-          not the model. Conceptually distinct from Zone B (running analyses).  */}
-      <div className="hidden md:flex items-center gap-0.5 shrink-0">
-        <Btn
-          onClick={() => {
-            if (!validationMode && useIdsStore.getState().highlightMode) {
-              useIdsStore.getState().setHighlightMode(false)
-            }
-            toggleValidationMode()
-          }}
-          disabled={!hasIssues}
-          title={validationMode ? t('overlayOn') : t('overlayOff')}
-          variant={validationMode ? 'secondary' : 'ghost'}
-        >
-          {OverlaySVG}
-          {t('overlay')}
-          {hasIssues && !isRunning && (
-            <span
-              className="text-[9px] font-mono tabular-nums leading-none ml-0.5"
-              style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : 'var(--text-faint)' }}
-            >
-              {issueCount}
-            </span>
-          )}
-        </Btn>
-
-        <InlineDivider />
-
-        <Btn onClick={onOpenIds} title={t('idsTooltip')} disabled={!canRun}>
-          <Icons.Shield size={13} />
-          {t('ids')}
-        </Btn>
-
-        <Btn onClick={onOpenCompare} title={t('compareTooltip')}>
-          <Icons.GitCompare size={13} />
-          {t('compare')}
-        </Btn>
-
-        <InlineDivider />
-      </div>
-
-      {/* ══ ZONE D — Capture Toolkit ══════════════════════════════════════════
-          Screenshot + retroactive replay capture (desktop). Self-contained:
-          owns its stores/hook and lazily mounts the preview modal. On mobile
-          it degrades to a lone screenshot button (replay needs WebM
-          MediaRecorder — unavailable on iOS Safari, see D-23).             */}
-      <CaptureToolbar viewerApiRef={viewerApiRef} />
-
-      {/* Flex spacer — pushes right zones to the far end */}
-      <div className="flex-1 hidden md:block" />
-
-      {/* ══ ZONE E — View & Tools menus ═══════════════════════════════════════
+      {/* ── Workspace: View ▾ · Tools ▾ · Capture ▾ ───────────────────────────
           Always rendered (no layout shift when a model loads). Disabled before
           a model is loaded — the structure is stable, items are just not usable. */}
       <div className="hidden md:flex items-center gap-0.5 shrink-0">
         <ToolMenu
           id="view" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={ViewMenuSVG} label={t('view')} title={t('viewMenu')}
-          dot={viewActive} disabled={!canRun}
+          dot={viewActive} disabled={!canRun} align="right"
         >
+          <MenuLabel>{t('menu.navigate')}</MenuLabel>
           <MenuItem icon={TreeSVG} label={t('tree')} active={treeVisible}
             onClick={() => { setTreeVisible(!treeVisible); setOpenMenu(null) }} />
           <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
             badge={sceneModels.length > 0 ? sceneModels.length : undefined}
             onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />
-          <MenuItem icon={<Icons.Isolate size={15} />} label={t('isolate')} disabled={!canIsolate}
-            onClick={() => { onIsolate(); setOpenMenu(null) }} />
-          <MenuItem icon={<Icons.Reset size={15} />} label={t('reset')}
-            onClick={() => { onReset(); setOpenMenu(null) }} />
           <MenuItem icon={LegendSVG(15)} label={t('legend')}
             onClick={() => { openSidebarLegend(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.Isolate size={15} />} label={t('isolate')} disabled={!canIsolate}
+            onClick={() => { onIsolate(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.Reset size={15} />} label={t('resetCamera')}
+            onClick={() => { onReset(); setOpenMenu(null) }} />
           <MenuDivider />
-          <MenuItem icon={UndoSVG(15)} label={t('undo')} disabled={!canUndo}
+          <MenuLabel>{t('menu.edit')}</MenuLabel>
+          <MenuItem icon={UndoSVG(15)} label={t('undo')} disabled={!canUndo} badge="Ctrl+Z"
             onClick={() => { undo(); setOpenMenu(null) }} />
-          <MenuItem icon={RedoSVG(15)} label={t('redo')} disabled={!canRedo}
+          <MenuItem icon={RedoSVG(15)} label={t('redo')} disabled={!canRedo} badge="Ctrl+⇧+Z"
             onClick={() => { redo(); setOpenMenu(null) }} />
         </ToolMenu>
         <ToolMenu
           id="tools" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={ToolsMenuSVG} label={t('tools')} title={t('toolsMenu')}
-          dot={toolsActive} disabled={!canRun}
+          dot={toolsActive} disabled={!canRun} align="right"
         >
+          <MenuLabel>{t('menu.inspect')}</MenuLabel>
           <MenuItem icon={MeasureSVG} label={t('measure')} active={measurementPanelOpen}
             badge={activeMeasurementTool !== 'none' ? '●' : undefined}
             onClick={() => { toggleMeasurementPanel(); setOpenMenu(null) }} />
@@ -766,6 +726,12 @@ export default function Toolbar({
           <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen}
             badge={activePlanViewId ? '●' : undefined}
             onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
+          {(isGisEnabled() || isSolarEnabled()) && (
+            <>
+              <MenuDivider />
+              <MenuLabel>{t('menu.context')}</MenuLabel>
+            </>
+          )}
           {isGisEnabled() && (
             <MenuItem icon={MapSVG} label={t('map')} active={geoPanelOpen || mapModeOn}
               badge={mapModeOn ? '●' : undefined}
@@ -776,95 +742,84 @@ export default function Toolbar({
               badge={solarActive ? '●' : undefined}
               onClick={() => { toggleSolarPanel(); setOpenMenu(null) }} />
           )}
-          {isPointCloudEnabled() && (
-            <MenuItem icon={PointCloudSVG} label={tPointCloud('entry')} active={pointCloudPanelOpen || pointCloudCount > 0}
-              badge={pointCloudCount > 0 ? pointCloudCount : undefined}
-              onClick={() => { togglePointCloudPanel(); setOpenMenu(null) }} />
+        </ToolMenu>
+      </div>
+      {/* Screenshot, replay, studios and background — one menu on desktop,
+          plain buttons on phones. Owns the replay buffer and the capture /
+          studio modals, so it stays mounted at every width. */}
+      <div className="contents md:flex md:items-center md:ml-0.5">
+        <CaptureToolbar viewerApiRef={viewerApiRef} variant="menu" />
+      </div>
+
+      <ZoneDivider className="hidden md:block" />
+
+      {/* ── Share ▾ — every way the work leaves this tab ──────────────────────
+          Accent border while the model has unsaved edits (diffs > 0), so
+          pending changes are visible without a notification. */}
+      <div className="hidden md:flex items-center shrink-0">
+        <ToolMenu
+          id="share" openMenu={openMenu} setOpenMenu={setOpenMenu}
+          icon={
+            <span className="relative inline-flex">
+              {DownloadSVG}
+              {diffs.length > 0 && (
+                <span className="absolute -top-[5px] -right-[7px] min-w-[13px] h-[13px] px-[3px] text-[8px] font-mono rounded-full bg-[var(--accent)] text-white leading-[13px] text-center tabular-nums">
+                  {diffs.length}
+                </span>
+              )}
+            </span>
+          }
+          label={t('menu.share')} title={t('menu.shareTooltip')}
+          disabled={!canRun || exporting} align="right"
+        >
+          <MenuLabel>{t('menu.files')}</MenuLabel>
+          {sceneModels.length > 1 ? (
+            <MenuItem icon={DownloadSVG} label={t('exportModels', { count: sceneModels.length })}
+              onClick={() => { setOpenMenu(null); onOpenExportModal() }} />
+          ) : (
+            <>
+              <MenuItem
+                icon={<span className="font-mono text-[var(--accent)] text-[9px] font-semibold">IFC</span>}
+                label={diffs.length > 0 ? t('exportIfcWithEdits', { count: diffs.length }) : t('exportIfc')}
+                onClick={() => void handleExportIfc()} />
+              <MenuItem
+                icon={<span className="font-mono text-[var(--ok)] text-[9px] font-semibold">GLB</span>}
+                label={t('exportGlb')}
+                onClick={() => void handleExportGlb()} />
+              <MenuItem
+                icon={<span className="font-mono text-[var(--text-faint)] text-[10px]">···</span>}
+                label={t('exportSettings')}
+                onClick={() => { setOpenMenu(null); onOpenExportModal() }} />
+            </>
           )}
-          {isMeshEnabled() && (
-            <MenuItem icon={MeshSVG} label={tMesh('entry')} active={meshPanelOpen || meshCount > 0}
-              badge={meshCount > 0 ? meshCount : undefined}
-              onClick={() => { toggleMeshPanel(); setOpenMenu(null) }} />
-          )}
-          {isVideoEnabled() && (
-            <MenuItem icon={<Icons.Film size={15} />} label={tVideo('entry')} active={videoPanelOpen || videoCount > 0}
-              badge={videoCount > 0 ? videoCount : undefined}
-              onClick={() => { toggleVideoPanel(); setOpenMenu(null) }} />
-          )}
+          <MenuDivider />
+          <MenuLabel>{t('menu.publish')}</MenuLabel>
+          <MenuItem icon={<Icons.Code size={15} />} label={t('embed')}
+            onClick={() => { onOpenEmbed(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.Eye size={15} />} label={tClient('entry')}
+            onClick={() => { setClientMode(true); setOpenMenu(null) }} />
           <MenuItem icon={TourSVG} label={tTour('entry')} active={tourMode !== 'idle'}
             badge={tourMode !== 'idle' ? '●' : undefined}
             onClick={() => { setTourRecording(true); setOpenMenu(null) }} />
         </ToolMenu>
       </div>
 
-      <ZoneDivider className="hidden md:block" />
-
-      {/* ══ ZONE F — Export ═══════════════════════════════════════════════════
-          Accent-tinted border when the model has unsaved edits (diffs > 0) so
-          the user is aware of pending changes without an explicit notification. */}
-      <div data-toolbar-menu className="relative hidden md:flex shrink-0">
+      {/* ── Utilities: help · account · language ───────────────────────────── */}
+      <div className="hidden md:flex items-center gap-0.5 shrink-0 ml-0.5 lg:ml-1">
         <button
-          onClick={handleExportClick}
-          disabled={!canRun || exporting}
-          title={t('export')}
-          className={[
-            'flex items-center gap-1.5 h-[28px] px-2.5 rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap disabled:opacity-35 disabled:cursor-not-allowed',
-            diffs.length > 0
-              ? 'text-[var(--accent)] border border-[var(--accent)]'
-              : 'text-[var(--text-dim)] border border-transparent hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
-          ].join(' ')}
+          onClick={onOpenHelp}
+          title={tCommon('shortcuts.title')}
+          aria-label={tCommon('shortcuts.title')}
+          className="flex items-center justify-center h-[28px] w-[28px] rounded-[5px] text-[12px] font-semibold font-mono text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
         >
-          {DownloadSVG}
-          {t('export')}
-          {diffs.length > 0 && (
-            <span className="px-1 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent)] text-white leading-none tabular-nums">
-              {diffs.length}
-            </span>
-          )}
-          {sceneModels.length > 1
-            ? <span className="text-[10px] font-mono text-[var(--text-faint)]">{sceneModels.length}</span>
-            : CaretSVG}
+          ?
         </button>
-        {openMenu === 'export' && sceneModels.length <= 1 && (
-          <ExportDropdown
-            diffs={diffs.length}
-            onExportIfc={() => void handleExportIfc()}
-            onExportGlb={() => void handleExportGlb()}
-            onOpenSettings={() => { setOpenMenu(null); onOpenExportModal() }}
-          />
-        )}
-      </div>
-
-      {/* ══ ZONE G — Utilities ════════════════════════════════════════════════
-          ··· overflow menu (Embed, Demo, Help) + Language selector.
-          These are the lowest-priority controls — separated from Zone F so they
-          don't compete visually with the output actions.                      */}
-      <div className="hidden md:flex items-center gap-0.5 shrink-0 ml-1">
-        <ToolMenu
-          id="more" openMenu={openMenu} setOpenMenu={setOpenMenu}
-          icon={MoreSVG} title={t('more')} align="right"
-        >
-          {canRun && (
-            <MenuItem icon={<Icons.Code size={15} />} label={t('embed')}
-              onClick={() => { onOpenEmbed(); setOpenMenu(null) }} />
-          )}
-          {canRun && (
-            <MenuItem icon={<Icons.Eye size={15} />} label={tClient('entry')}
-              onClick={() => { setClientMode(true); setOpenMenu(null) }} />
-          )}
-          <MenuItem icon={<Icons.Layers size={15} />} label={t('demo')}
-            onClick={() => { onOpenDemoGallery(); setOpenMenu(null) }} />
-          <MenuItem
-            icon={<span className="text-[13px] font-bold font-mono leading-none">?</span>}
-            label={tCommon('shortcuts.title')}
-            onClick={() => { onOpenHelp(); setOpenMenu(null) }} />
-        </ToolMenu>
         {accountEnabled && (
           <button
             onClick={() => { trackProEntryClick({ source: 'toolbar' }); setAccountOpen(true) }}
             title={tPro('title')}
             className={[
-              'flex items-center justify-center h-[28px] w-[30px] rounded-[5px] transition-colors duration-100',
+              'flex items-center justify-center h-[28px] w-[28px] rounded-[5px] transition-colors duration-100',
               accountStatus === 'signed-in'
                 ? 'text-[var(--accent)] hover:bg-[var(--surface-2)]'
                 : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
@@ -877,7 +832,6 @@ export default function Toolbar({
             </svg>
           </button>
         )}
-        <InlineDivider />
         <LanguageSelector />
       </div>
 

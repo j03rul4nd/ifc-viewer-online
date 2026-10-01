@@ -66,6 +66,8 @@ import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 // Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
 const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
+const ClipStudio   = React.lazy(() => import('./components/studio/ClipStudio'))
+const CoverStudioModal = React.lazy(() => import('./components/CoverStudioModal'))
 const CompareModal = React.lazy(() => import('./components/CompareModal'))
 const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
 // Client presentation skin (D-25) — lazy: loads only when ui=client / toggled on
@@ -126,6 +128,7 @@ import { useElementFocus } from './hooks/useElementFocus'
 import { usePersistedPreferences } from './hooks/usePersistedPreferences'
 import { useValidationStore } from './stores/validationStore'
 import { useUIStore } from './stores/uiStore'
+import { canonicalIfcType } from './lib/url-params'
 import { useModelStore } from './stores/modelStore'
 import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
@@ -133,6 +136,15 @@ import { useTakeoffStore } from './stores/takeoffStore'
 import { useGeoStore } from './stores/geoStore'
 import { parseBackgroundSpec } from './lib/scene/background'
 import { planCutY } from './lib/cover/cuts'
+import { applyTemplate, PRESENTATION_TEMPLATES, type PresentationTemplateId } from './lib/templates/presentationTemplates'
+import { useClipStudioStore } from './stores/clipStudioStore'
+import { linkViewer } from './lib/capture/viewer-link'
+import { useCoverStudioStore } from './stores/coverStudioStore'
+import { LOOSE } from './lib/scene-tree'
+import { modelFileKey, type ModelGroups } from './hooks/useModelGroups'
+import type { SdkCoverCommand } from './lib/event-bus'
+import { projectDuration } from './lib/capture/project'
+import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
@@ -326,6 +338,82 @@ function sectionsOut(api: ViewerAPI) {
     box: snap.box ? { enabled: snap.box.enabled, ranges: snap.box.ranges } : null,
     active: snap.active,
   }
+}
+
+/** `autoplay`: true = the player's default pace, a number = ms per step, else off. */
+function parseAutoplay(v: unknown): number | null {
+  if (v === true) return 6_000
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) return Math.min(120_000, Math.max(1_500, v))
+  return null
+}
+
+function tourStateOut() {
+  const s = usePresentationStore.getState()
+  return {
+    playing: s.mode === 'playing',
+    title: s.tour?.title ?? null,
+    template: s.templateId,
+    stepIndex: s.tour ? s.stepIndex : null,
+    total: s.tour?.steps.length ?? 0,
+    // Enough to save a tour and replay it later with playTour().
+    steps: (s.tour?.steps ?? []).map((st) => ({
+      position: st.camera.position,
+      target: st.camera.target,
+      caption: st.caption ?? null,
+      modelId: st.modelId ?? null,
+      highlight: st.highlightedExpressIds ?? [],
+      isolate: st.isolatedCategories ?? [],
+    })),
+  }
+}
+
+function presentationStateOut() {
+  const s = useClipStudioStore.getState()
+  return {
+    open: s.open,
+    clips: s.project.clips.length,
+    durationSec: Math.round(projectDuration(s.project) * 10) / 10,
+    width: s.output.width,
+    height: s.output.height,
+  }
+}
+
+/**
+ * Open Cover Studio if needed, wait for it to be listening, run one command.
+ * The studio is a lazy modal that grabs the current view on open, so the
+ * first command after opening waits for that too (inside the modal).
+ */
+async function coverCommand(cmd: Omit<SdkCoverCommand, 'done'>): Promise<unknown> {
+  useCoverStudioStore.getState().setOpen(true)
+  const deadline = Date.now() + 30_000
+  while (!appBus.hasListeners('sdk:cover')) {
+    if (Date.now() > deadline) throw new Error('Cover Studio did not open in time')
+    await new Promise((r) => setTimeout(r, 50))
+  }
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Cover Studio did not finish in time')), 5 * 60_000)
+    appBus.emit('sdk:cover', {
+      ...cmd,
+      done: (ok, error, data) => { clearTimeout(timer); if (ok) resolve(data); else reject(new Error(error ?? 'Cover command failed')) },
+    })
+  })
+}
+
+function groupsOut(g: ModelGroups) {
+  return {
+    groups: g.groups.map((x) => ({
+      id: x.id, name: x.label, user: x.user, basis: x.basis,
+      modelIds: [...x.memberIds], cloudIds: [...x.cloudIds],
+    })),
+    looseCloudIds: [...g.looseCloudIds],
+  }
+}
+
+/** A group the user (or a host) created — the only kind that can be renamed, deleted or filled. */
+function findUserGroup(id: unknown): { id: string; name: string } {
+  const g = useSceneGroupStore.getState().userGroups.find((x) => x.id === id)
+  if (!g) throw new Error(`No user group "${String(id)}" — automatic groups cannot be edited; create one with createGroup()`)
+  return g
 }
 
 function measurementsOut(api: ViewerAPI) {
@@ -650,7 +738,10 @@ export default function App() {
   const viewerApiRef = useRef<ViewerAPI | null>(null)
   // The viewer frames groups for calls that carry none (SDK, embed, other
   // panels) — it needs the same grouping the Scene panel shows.
-  const { groupIdOf: sceneGroupIdOf } = useModelGroups()
+  const modelGroups = useModelGroups()
+  const sceneGroupIdOf = modelGroups.groupIdOf
+  const modelGroupsRef = useRef(modelGroups)
+  modelGroupsRef.current = modelGroups
   const hasSceneModels = useSceneStore((s) => s.models.length > 0)
   // Mirror moves the viewer makes on its own (map satellites) into sceneStore,
   // or the Scene panel and group moves keep working from the old position.
@@ -729,6 +820,8 @@ export default function App() {
   // Stores
   const { validationMode, result } = useValidationStore()
   const tourMode = usePresentationStore((s) => s.mode)
+  const clipStudioOpen = useClipStudioStore((s) => s.open)
+  const coverStudioOpen = useCoverStudioStore((s) => s.open)
   const clientMode = useUIStore((s) => s.clientMode)
   const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
 
@@ -2800,6 +2893,344 @@ export default function App() {
           })
           break
         }
+        // ── Tours (SDK 1.12) ────────────────────────────────────────────────
+        // A tour is the presentation store's tour; the TourPlayer the app
+        // already renders plays it, so a host-started tour looks and behaves
+        // exactly like one the visitor started (bar, captions, share link).
+        case 'ifcviewer:start-tour': {
+          void respond(async () => {
+            const viewer = viewerApiRef.current
+            if (!viewer || !useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const id = typeof msg.template === 'string' && msg.template in PRESENTATION_TEMPLATES
+              ? msg.template as PresentationTemplateId : 'client-walkthrough'
+            const result = useValidationStore.getState().result
+            const issues = result?.issues ?? []
+            const score = result?.qualityScore ?? null
+            if (id === 'technical-review' && issues.length === 0) {
+              throw new Error('A technical review needs validation issues — run validation first, or pick another template')
+            }
+            const ok = await applyTemplate(id, viewer, {
+              issues,
+              score,
+              includeImprovements: msg.includeImprovements === true,
+              strings: {
+                title: typeof msg.title === 'string' && msg.title
+                  ? msg.title
+                  : id === 'technical-review' ? tTourNs('autoTitle') : tTourNs('showcase.title'),
+                showcaseCaptions: [
+                  tTourNs('showcase.captions.overview'),
+                  tTourNs('showcase.captions.perspective'),
+                  tTourNs('showcase.captions.front'),
+                  tTourNs('showcase.captions.side'),
+                  tTourNs('showcase.captions.aerial'),
+                  tTourNs('showcase.captions.closing'),
+                ],
+                improvementsCaption: tTourNs('showcase.improvements'),
+                scoreHeadline: score !== null ? tTourNs('showcase.headline', { score }) : undefined,
+              },
+            })
+            if (!ok) throw new Error('Nothing to tour — the template produced no steps')
+            setSdkTourAutoplay(parseAutoplay(msg.autoplay))
+            return tourStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:play-tour': {
+          void respond(() => {
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const raw = (msg.tour && typeof msg.tour === 'object' ? msg.tour : {}) as { title?: unknown; steps?: unknown }
+            const steps = Array.isArray(raw.steps) ? raw.steps : []
+            const built: TourStep[] = []
+            steps.forEach((s, i) => {
+              const o = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>
+              const position = asVec3(o.position)
+              const target = asVec3(o.target)
+              if (!position || !target) throw new Error(`Step ${i + 1}: position and target must be { x, y, z }`)
+              const ids = Array.isArray(o.highlight) ? o.highlight.map(Number).filter((n) => Number.isFinite(n) && n > 0) : []
+              const cats = Array.isArray(o.isolate) ? o.isolate.filter((c): c is string => typeof c === 'string').map((c) => canonicalIfcType(c.toUpperCase())) : []
+              built.push({
+                id: `sdk-${i}`,
+                camera: { position, target },
+                caption: typeof o.caption === 'string' ? o.caption : undefined,
+                modelId: typeof o.modelId === 'string' ? o.modelId : undefined,
+                highlightedExpressIds: ids.length ? ids.slice(0, 500) : undefined,
+                isolatedCategories: cats.length ? cats : undefined,
+              })
+            })
+            if (built.length === 0) throw new Error('A tour needs at least one step')
+            const store = usePresentationStore.getState()
+            store.setTour({
+              id: `sdk-${Date.now().toString(36)}`,
+              title: typeof raw.title === 'string' ? raw.title : '',
+              steps: built,
+              createdFrom: 'manual',
+            })
+            store.setTemplateId(null)
+            const startAt = Number(msg.startAt)
+            store.play(Number.isInteger(startAt) && startAt >= 0 && startAt < built.length ? startAt : 0)
+            setSdkTourAutoplay(parseAutoplay(msg.autoplay))
+            return tourStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:tour-step': {
+          void respond(() => {
+            const store = usePresentationStore.getState()
+            if (store.mode !== 'playing' || !store.tour) throw new Error('No tour is playing')
+            const total = store.tour.steps.length
+            const target = typeof msg.index === 'number' ? msg.index
+              : store.stepIndex + (typeof msg.delta === 'number' ? msg.delta : 1)
+            store.setStepIndex(Math.min(total - 1, Math.max(0, Math.round(target))))
+            return tourStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:stop-tour':
+          void respond(() => {
+            setSdkTourAutoplay(null)
+            if (usePresentationStore.getState().mode === 'playing') usePresentationStore.getState().exitPlayback()
+            return tourStateOut()
+          })
+          break
+        case 'ifcviewer:set-tour-autoplay':
+          void respond(() => { setSdkTourAutoplay(parseAutoplay(msg.autoplay)); return tourStateOut() })
+          break
+        case 'ifcviewer:get-tour':
+          void respond(() => tourStateOut())
+          break
+        // ── Presentation director (SDK 1.12) ───────────────────────────────
+        // A recipe becomes a Clip Studio project the same way the studio's
+        // own "Generate" does; export renders it to a video file the host
+        // receives as bytes. Nothing is uploaded — the MP4 is encoded here.
+        case 'ifcviewer:get-recipes':
+          void respond(async () => {
+            const { BUILT_IN_RECIPES } = await import('./lib/director/recipe')
+            return BUILT_IN_RECIPES.map((r) => ({
+              id: r.id, name: r.name, format: r.format, targetSec: r.targetSec,
+              style: r.style ?? 'classic', look: r.look ?? null, sections: [...r.sections],
+            }))
+          })
+          break
+        case 'ifcviewer:create-presentation': {
+          void respond(async () => {
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const { builtInRecipe, DEFAULT_RECIPE_ID, OUTPUT_FORMATS, PACES } = await import('./lib/director/recipe')
+            const id = typeof msg.recipe === 'string' ? msg.recipe : DEFAULT_RECIPE_ID
+            const base = builtInRecipe(id)
+            if (!base) throw new Error(`No recipe "${id}" — see getPresentationRecipes()`)
+            const o = (msg.options && typeof msg.options === 'object' ? msg.options : {}) as Record<string, unknown>
+            const recipe = {
+              ...base,
+              ...(OUTPUT_FORMATS.includes(o.format as never) ? { format: o.format as typeof base.format } : {}),
+              ...(PACES.includes(o.pace as never) ? { pace: o.pace as typeof base.pace } : {}),
+              ...(typeof o.targetSec === 'number' && o.targetSec >= 5 && o.targetSec <= 180 ? { targetSec: Math.round(o.targetSec) } : {}),
+              ...(o.music === 'none' ? { music: 'none' as const } : {}),
+              ...(typeof o.watermark === 'boolean' ? { watermark: o.watermark } : {}),
+              captions: {
+                ...base.captions,
+                ...(typeof o.title === 'string' ? { title: o.title } : {}),
+                ...(typeof o.cta === 'string' ? { cta: o.cta } : {}),
+                ...(typeof o.captions === 'boolean' ? { enabled: o.captions } : {}),
+              },
+            }
+            const studio = useClipStudioStore
+            studio.getState().requestGenerate(recipe)
+            // Done = the studio took the recipe, ran its job, and stayed idle.
+            // The job drops to null for a moment between phases (plan →
+            // render → assemble), so idle only counts once it has lasted.
+            await new Promise<void>((resolve, reject) => {
+              let started = false
+              let settle: ReturnType<typeof setTimeout> | null = null
+              const finish = (err?: Error): void => {
+                off(); clearTimeout(timer); if (settle) clearTimeout(settle)
+                if (err) reject(err); else resolve()
+              }
+              const timer = setTimeout(() => finish(new Error('The presentation did not finish in time')), 15 * 60_000)
+              const check = (): void => {
+                const s = studio.getState()
+                if (!s.open) { finish(new Error('The studio was closed before the presentation finished')); return }
+                if (s.pendingRecipe !== null) return
+                if (s.job) { started = true; if (settle) { clearTimeout(settle); settle = null }; return }
+                // Never started (nothing to present is only toasted): give up
+                // after a while and let the empty-project check explain.
+                if (!settle) settle = setTimeout(() => finish(), started ? 2_500 : 10_000)
+              }
+              const off = studio.subscribe(check)
+            })
+            const s = studio.getState()
+            if (!s.project.clips.length) throw new Error('Nothing to present — the model gave the director no shots')
+            return presentationStateOut()
+          })
+          break
+        }
+        case 'ifcviewer:export-presentation': {
+          const reqId = requestId
+          void (async () => {
+            try {
+              const s = useClipStudioStore.getState()
+              if (!s.project.clips.length) throw new Error('No presentation to export — call createPresentation() first')
+              const { exportStudio } = await import('./lib/capture/studio-actions')
+              const { DEFAULT_EXPORT } = await import('./lib/capture/export-settings')
+              const res = [720, 1080, 1440].includes(Number(msg.resolution)) ? Number(msg.resolution) as 720 | 1080 | 1440 : DEFAULT_EXPORT.resolution
+              let lastPct = -1
+              const blob = await exportStudio(undefined, 'Exporting', {
+                withMusic: msg.music !== false,
+                settings: { ...DEFAULT_EXPORT, resolution: res },
+                // One event per percent: the encoder reports every frame.
+                onProgress: (f) => {
+                  const pct = Math.floor(f * 100)
+                  if (pct === lastPct) return
+                  lastPct = pct
+                  emitEmbedEvent('presentation-progress', { stage: 'export', progress: f })
+                },
+              })
+              const bytes = await blob.arrayBuffer()
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType: blob.type, sizeBytes: bytes.byteLength } }, [bytes])
+            } catch (err) {
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: false, error: err instanceof Error ? err.message : String(err) })
+            }
+          })()
+          break
+        }
+        case 'ifcviewer:close-presentation':
+          void respond(() => { useClipStudioStore.getState().closeStudio(); return null })
+          break
+        // ── Cover Studio (SDK 1.13) ────────────────────────────────────────
+        case 'ifcviewer:get-cover-options':
+          void respond(async () => {
+            const [{ RECIPE_IDS }, { COVER_TEMPLATE_IDS }, { COVER_FORMATS }, { COVER_PALETTES }] = await Promise.all([
+              import('./lib/cover/recipes'), import('./lib/cover/templates'),
+              import('./lib/cover/formats'), import('./lib/cover/palettes'),
+            ])
+            return {
+              recipes: [...RECIPE_IDS],
+              templates: [...COVER_TEMPLATE_IDS],
+              formats: Object.values(COVER_FORMATS).map((f) => ({ id: f.id, width: f.width, height: f.height, ratio: f.ratio })),
+              palettes: [...COVER_PALETTES.map((p) => p.id), 'image', 'image-dark'],
+            }
+          })
+          break
+        case 'ifcviewer:create-cover': {
+          void respond(async () => {
+            if (!useSceneStore.getState().models.length) throw new Error('Load a model first')
+            const text = msg.text && typeof msg.text === 'object' ? Object.fromEntries(
+              Object.entries(msg.text as Record<string, unknown>).filter(([, v]) => typeof v === 'string'),
+            ) as Record<string, string> : undefined
+            return coverCommand({
+              action: 'apply',
+              recipe: typeof msg.recipe === 'string' ? msg.recipe : undefined,
+              template: typeof msg.template === 'string' ? msg.template : undefined,
+              format: typeof msg.format === 'string' ? msg.format : undefined,
+              palette: typeof msg.palette === 'string' ? msg.palette : undefined,
+              text,
+            })
+          })
+          break
+        }
+        case 'ifcviewer:get-cover':
+          void respond(() => {
+            if (!useCoverStudioStore.getState().open) return null
+            return coverCommand({ action: 'state' })
+          })
+          break
+        case 'ifcviewer:export-cover': {
+          const reqId = requestId
+          void (async () => {
+            try {
+              if (!useCoverStudioStore.getState().open) throw new Error('No cover open — call createCover() first')
+              const type = ['png', 'jpeg', 'pdf', 'pptx', 'zip'].includes(msg.fileType as string) ? msg.fileType as 'png' : 'png'
+              const r = await coverCommand({ action: 'export', type, slide: typeof msg.slide === 'number' ? msg.slide : undefined }) as { blob: Blob; slides: number }
+              const bytes = await r.blob.arrayBuffer()
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType: r.blob.type, sizeBytes: bytes.byteLength, slides: r.slides } }, [bytes])
+            } catch (err) {
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: false, error: err instanceof Error ? err.message : String(err) })
+            }
+          })()
+          break
+        }
+        case 'ifcviewer:close-cover':
+          void respond(() => { useCoverStudioStore.getState().setOpen(false); return null })
+          break
+        // ── Scene groups (SDK 1.13) ────────────────────────────────────────
+        // Same store and the same inferred grouping the Scene panel shows; a
+        // group made by a host is a group the visitor can see and rename.
+        case 'ifcviewer:get-groups':
+          void respond(() => groupsOut(modelGroupsRef.current))
+          break
+        case 'ifcviewer:create-group': {
+          void respond(() => {
+            const name = typeof msg.name === 'string' ? msg.name.trim() : ''
+            if (!name) throw new Error('A group needs a name')
+            const ids = Array.isArray(msg.modelIds) ? msg.modelIds.filter((x): x is string => typeof x === 'string') : []
+            const models = useSceneStore.getState().models
+            const keys = ids.map((id) => {
+              const m = models.find((x) => x.id === id)
+              if (!m) throw new Error(`No model "${id}"`)
+              return modelFileKey(m)
+            })
+            const id = useSceneGroupStore.getState().createGroup(name, keys)
+            return { id }
+          })
+          break
+        }
+        case 'ifcviewer:rename-group': {
+          void respond(() => {
+            const g = findUserGroup(msg.groupId)
+            const name = typeof msg.name === 'string' ? msg.name.trim() : ''
+            if (!name) throw new Error('A group needs a name')
+            useSceneGroupStore.getState().renameGroup(g.id, name)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:delete-group':
+          void respond(() => { useSceneGroupStore.getState().deleteGroup(findUserGroup(msg.groupId).id); return null })
+          break
+        case 'ifcviewer:assign-group': {
+          void respond(() => {
+            const id = typeof msg.itemId === 'string' ? msg.itemId : ''
+            const to = msg.groupId === null ? null : msg.groupId === 'loose' ? LOOSE : findUserGroup(msg.groupId).id
+            const model = useSceneStore.getState().models.find((m) => m.id === id)
+            if (model) { useSceneGroupStore.getState().assignModel(modelFileKey(model), to); return null }
+            const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === id)
+            if (cloud) { useSceneGroupStore.getState().assignCloud(cloud.fileKey, to); return null }
+            throw new Error(`No model or point cloud "${id}"`)
+          })
+          break
+        }
+        case 'ifcviewer:group-visible':
+        case 'ifcviewer:isolate-group': {
+          void respond(() => {
+            const groups = modelGroupsRef.current.groups
+            const isolate = msg.type === 'ifcviewer:isolate-group'
+            const target = msg.groupId === null && isolate ? null : groups.find((g) => g.id === msg.groupId)
+            if (target === undefined) throw new Error(`No group "${String(msg.groupId)}" — see getGroups()`)
+            const scene = useSceneStore.getState()
+            const api = viewerApiRef.current
+            for (const m of scene.models) {
+              const inGroup = !!target && target.memberIds.includes(m.id)
+              const visible = isolate ? (target === null || inGroup) : (inGroup ? msg.visible !== false : m.visible)
+              if (visible !== m.visible) {
+                scene.setModelVisible(m.id, visible)
+                api?.setModelVisible(m.id, visible)
+              }
+            }
+            const f = filtersRef.current
+            api?.applyFilters(f.hidden, f.isolated, f.hiddenElements, f.isolatedElement, f.isolatedElementModel)
+            return null
+          })
+          break
+        }
+        case 'ifcviewer:frame-group': {
+          void respond(() => {
+            const g = modelGroupsRef.current.groups.find((x) => x.id === msg.groupId)
+            if (!g) throw new Error(`No group "${String(msg.groupId)}" — see getGroups()`)
+            const ok = viewerApiRef.current?.frameItems([...g.memberIds, ...g.cloudIds])
+            if (!ok) throw new Error('That group has nothing to frame')
+            return null
+          })
+          break
+        }
         case 'ifcviewer:remove-model': {
           const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
           if (modelId) void handleRemoveModel(modelId)
@@ -2922,6 +3353,63 @@ export default function App() {
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingState, sceneModels.length])
+
+  // The capture toolbar normally hands Clip Studio the viewer. When App mounts
+  // the studio itself (no toolbar: kiosk, client) it has to do the same, or
+  // every shot fails with "open a model".
+  const studioViewerOwner = useRef({})
+  const studioStandalone = clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing'
+  useEffect(() => {
+    if (!studioStandalone) return
+    const owner = studioViewerOwner.current
+    linkViewer(owner, viewerApiRef.current)
+    return () => linkViewer(owner, null)
+  }, [studioStandalone])
+
+  // ── SDK tours: autoplay and relayed progress (SDK 1.12) ───────────────────
+  // Autoplay here rather than in the TourPlayer: the player's own toggle is
+  // local UI state, and a host that asked for a self-running tour on a blog
+  // should not depend on it. Ends the tour after the last step.
+  const [sdkTourAutoplay, setSdkTourAutoplay] = useState<number | null>(null)
+  const tourStepIndex = usePresentationStore((s) => s.stepIndex)
+  useEffect(() => {
+    if (sdkTourAutoplay === null || tourMode !== 'playing') return
+    const id = window.setTimeout(() => {
+      const st = usePresentationStore.getState()
+      const total = st.tour?.steps.length ?? 0
+      if (st.stepIndex >= total - 1) { st.exitPlayback(); setSdkTourAutoplay(null) }
+      else st.setStepIndex(st.stepIndex + 1)
+    }, sdkTourAutoplay)
+    return () => window.clearTimeout(id)
+  }, [sdkTourAutoplay, tourMode, tourStepIndex])
+  useEffect(() => { if (tourMode !== 'playing') setSdkTourAutoplay(null) }, [tourMode])
+
+  useEffect(() => {
+    if (!isEmbedded()) return
+    let prev = usePresentationStore.getState()
+    const offTour = usePresentationStore.subscribe((s) => {
+      const was = prev
+      prev = s
+      const caption = (st: typeof s) => st.tour?.steps[st.stepIndex]?.caption ?? null
+      const total = s.tour?.steps.length ?? 0
+      if (s.mode === 'playing' && was.mode !== 'playing') {
+        emitEmbedEvent('tour-started', { title: s.tour?.title ?? '', total, template: s.templateId })
+        emitEmbedEvent('tour-step', { index: s.stepIndex, total, caption: caption(s) })
+      } else if (s.mode === 'playing' && (s.stepIndex !== was.stepIndex || s.tour !== was.tour)) {
+        emitEmbedEvent('tour-step', { index: s.stepIndex, total, caption: caption(s) })
+      } else if (s.mode !== 'playing' && was.mode === 'playing') {
+        emitEmbedEvent('tour-ended', { completed: was.stepIndex >= (was.tour?.steps.length ?? 0) - 1 })
+      }
+    })
+    let lastJob: string | null = null
+    const offStudio = useClipStudioStore.subscribe((s) => {
+      const key = s.job ? `${s.job.label}:${Math.round((s.job.progress ?? 0) * 100)}` : null
+      if (key === lastJob) return
+      lastJob = key
+      if (s.job) emitEmbedEvent('presentation-progress', { stage: 'generate', label: s.job.label, progress: s.job.progress })
+    })
+    return () => { offTour(); offStudio() }
+  }, [])
 
   // ── Relay walk mode and measurements to an embedding parent (SDK 1.11) ─────
   // Both change from inside the viewer (a key, a click), so a host that drew
@@ -3532,6 +4020,21 @@ export default function App() {
                       <ClientPresentationLayout viewerApiRef={viewerApiRef} canExit={!embedChrome.embed} />
                     </React.Suspense>
                   )}
+                  {/* Clip Studio normally hangs off the toolbar's capture menu (or the
+                      tour bar). With no toolbar — kiosk, client — nothing would
+                      mount it, and an SDK createPresentation() would wait forever. */}
+                  {coverStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
+                    <React.Suspense fallback={null}>
+                      <CoverStudioModal viewerApiRef={viewerApiRef} onClose={() => useCoverStudioStore.getState().setOpen(false)} />
+                    </React.Suspense>
+                  )}
+
+                  {clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
+                    <React.Suspense fallback={null}>
+                      <ClipStudio />
+                    </React.Suspense>
+                  )}
+
                   {tourMode === 'playing' && (
                     <React.Suspense fallback={null}>
                       <TourPlayer

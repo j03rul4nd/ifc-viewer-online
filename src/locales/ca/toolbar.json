@@ -156,5 +156,30 @@
     "blankKeeps": "Deixa un camp en blanc per conservar el que el fitxer ja portava.",
     "schemaNote": "L'esquema IFC no es canvia mai. Un fitxer obert com a IFC2x3 s'exporta com a IFC2x3."
   },
-  "exportSettings": "Configuració d'exportació…"
+  "exportSettings": "Configuració d'exportació…",
+  "menu": {
+    "openIfc": "Obrir fitxer IFC…",
+    "openTooltip": "Obrir — fitxers IFC, models de demostració i altres dades",
+    "addData": "Afegir a l’escena",
+    "check": "Revisar",
+    "checkTooltip": "Revisar — incidències en 3D, IDS, comparar versions",
+    "issuesIn3d": "Mostrar incidències en 3D",
+    "capture": "Capturar",
+    "captureTooltip": "Capturar — captura, repetició, estudis, fons",
+    "screenshot": "Captura de pantalla",
+    "quickCapture": "Captura ràpida",
+    "studios": "Estudis",
+    "coverStudio": "Estudi de portades",
+    "share": "Compartir",
+    "shareTooltip": "Compartir — exportar fitxers, incrustar, presentar",
+    "files": "Fitxers",
+    "publish": "Publicar",
+    "inspect": "Inspeccionar",
+    "context": "Context",
+    "navigate": "Navegar",
+    "edit": "Editar",
+    "help": "Ajuda",
+    "idsCheck": "Comprovar amb IDS…",
+    "compareVersions": "Comparar versions…"
+  }
 }

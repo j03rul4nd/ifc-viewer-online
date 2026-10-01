@@ -165,6 +165,52 @@ const viewer = await IfcViewer.create('#viewer', {
 await viewer.setSolar({ date: '12-21', time: '09:30' })
 ```
 
+## Tours and the presentation director (v1.12)
+
+Tours are played by the viewer's own tour bar, so a tour the host starts looks
+and behaves like one the visitor started: captions, arrows and the share link.
+The director turns the model into an edited video. It is rendered and encoded
+in the visitor's browser, and nothing is uploaded.
+
+| Method | Description |
+|--------|-------------|
+| `startTour(template?, { autoplay?, title?, includeImprovements? })` | Starts a built-in tour: `social` (5 views), `client-walkthrough` (up to 10, client skin) or `technical-review` (walks the validation issues, worst first; needs validation to have run). |
+| `playTour({ title?, steps }, { startAt?, autoplay? })` | Plays a tour you wrote. Each step is `{ position, target, caption?, highlight?: expressId[], isolate?: IfcClass[], modelId? }`, in scene metres with Y up. Take the positions from `getCamera()`. `autoplay: true` advances every 6 s; a number is ms per stop (1.5–120 s). The tour ends after the last stop. |
+| `nextTourStep()` / `prevTourStep()` / `goToTourStep(i)` | Moves to another stop. |
+| `setTourAutoplay(autoplay)` / `stopTour()` | Turns self-running on or off / stops the tour and gives the camera back. |
+| `getTour()` | `{ playing, title, template, stepIndex, total, steps }`. `steps` is in the shape `playTour()` takes, so you can save a tour and replay it later. |
+| `getPresentationRecipes()` | The built-in recipes: `{ id, name, format, targetSec, style, look, sections }`. |
+| `createPresentation(recipe?, { format?, targetSec?, pace?, title?, cta?, captions?, music?: 'none', watermark? })` | Generates a presentation (shots planned from the IFC, captions, music) and opens Clip Studio with it, where it stays editable. Resolves when the shots are rendered, which takes tens of seconds to minutes. It also works in `kiosk` and `client`, which have no toolbar. |
+| `exportPresentation({ resolution?: 720 \| 1080 \| 1440, music? })` | Encodes the presentation and resolves `{ bytes, mimeType, sizeBytes }`. The file is MP4, or WebM where the browser cannot encode MP4. The bytes are transferred, not copied. |
+| `closePresentation()` | Closes Clip Studio. |
+
+Events: `tour-started` `{ title, total, template }`, `tour-step` `{ index, total, caption }`,
+`tour-ended` `{ completed }`, `presentation-progress` `{ stage: 'generate' | 'export', label?, progress }`.
+
+```js
+await viewer.playTour({ title: 'Casa Poblenou', steps: savedSteps }, { autoplay: 6000 })
+
+await viewer.createPresentation('linkedin-teaser', { title: 'Casa Poblenou', targetSec: 20 })
+const { bytes, mimeType } = await viewer.exportPresentation({ resolution: 1080 })
+video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+```
+
+## Cover Studio and scene groups (v1.13)
+
+| Method | Description |
+|--------|-------------|
+| `getCoverOptions()` | `{ recipes, templates, formats: [{ id, width, height, ratio }], palettes }`. |
+| `createCover({ recipe?, template?, format?, palette?, text? })` | Opens Cover Studio (it stays editable) and runs the `recipe` if one is given (`pinterest`, `carousel`, `post`, `client`, `board`, `sheet`, `story`, `coordination`); the recipe captures the views it needs. It then applies the template, format and palette, plus `text: { title, subtitle, client, location, date, studio, tagline, concept, website }`. Resolves with `{ template, format, palette, mode, shots, slides, text }`. Also works in `kiosk` and `client`. |
+| `getCover()` | The same state, or `null` when the studio is closed. |
+| `exportCover({ type?, slide? })` | `png` / `jpeg` export one page (`slide`, 0-based). `pdf` / `pptx` export the whole document and `zip` every page. Resolves `{ bytes, mimeType, sizeBytes, slides }`; the bytes are transferred. |
+| `closeCover()` | Closes the studio. |
+| `getGroups()` | `{ groups: [{ id, name, user, basis, modelIds, cloudIds }], looseCloudIds }`. This is the same grouping the Scene panel shows: inferred from the IFC (project, site, location) plus the groups users made. |
+| `createGroup(name, modelIds?)` | Creates a user group. Resolves with its id. Groups are remembered per file name on the visitor's device. |
+| `renameGroup(id, name)` / `deleteGroup(id)` | Work on user groups only. Automatic groups reject with a reason. |
+| `assignToGroup(itemId, groupId \| null \| 'loose')` | Moves a model or point cloud into a group. `null` hands it back to automatic grouping; `'loose'` keeps it in no group. |
+| `setGroupVisible(id, visible)` / `isolateGroup(id \| null)` | Show or hide a whole group's models, or show only that group. |
+| `frameGroup(id)` | Fits the camera to a group, hidden members included. |
+
 ## Analysis: sections, measurements, federated models (v1.11)
 
 | Method | Description |

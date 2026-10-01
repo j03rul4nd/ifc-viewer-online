@@ -158,5 +158,30 @@
     "blankKeeps": "Leave a field blank to keep whatever the file already carried.",
     "schemaNote": "The IFC schema is never changed. A file opened as IFC2x3 is exported as IFC2x3."
   },
-  "exportSettings": "Export settings…"
+  "exportSettings": "Export settings…",
+  "menu": {
+    "openIfc": "Open IFC file…",
+    "openTooltip": "Open — IFC files, demo models and other data",
+    "addData": "Add to scene",
+    "check": "Check",
+    "checkTooltip": "Check — issues in 3D, IDS, compare versions",
+    "issuesIn3d": "Show issues in 3D",
+    "capture": "Capture",
+    "captureTooltip": "Capture — screenshot, replay, studios, background",
+    "screenshot": "Screenshot",
+    "quickCapture": "Quick capture",
+    "studios": "Studios",
+    "coverStudio": "Cover studio",
+    "share": "Share",
+    "shareTooltip": "Share — export files, embed, present",
+    "files": "Files",
+    "publish": "Publish",
+    "inspect": "Inspect",
+    "context": "Context",
+    "navigate": "Navigate",
+    "edit": "Edit",
+    "help": "Help",
+    "idsCheck": "Check against IDS…",
+    "compareVersions": "Compare versions…"
+  }
 }
