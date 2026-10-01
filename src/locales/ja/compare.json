@@ -17,7 +17,10 @@
     "pickFiles": "IFC ファイルを選択…",
     "use": "使用",
     "sceneLabel": "読み込み済みモデル {{date}}",
-    "filesLabel": "{{count}} ファイル"
+    "filesLabel": "{{count}} ファイル",
+    "sceneShort": "読込済み",
+    "filesShort": "ファイル",
+    "baselineShort": "基準"
   },
   "elements_other": "{{count}} 要素",
   "filesCount_other": "{{count}} ファイル",
@@ -77,12 +80,14 @@
     "anyClass": "すべてのクラス",
     "storey": "階",
     "anyStorey": "すべての階",
-    "search": "名前、GlobalId、プロパティを検索…"
+    "search": "名前、GlobalId、プロパティを検索…",
+    "toggle": "フィルター"
   },
   "export": {
     "html": "レポート（HTML）",
     "csv": "CSV",
-    "json": "JSON"
+    "json": "JSON",
+    "menu": "エクスポート"
   },
   "baseline": {
     "saveHead": "ベースラインとして保存",
@@ -182,5 +187,17 @@
     "delete": "削除",
     "confirmDelete": "ベースライン「{{label}}」を削除しますか？",
     "compareTwo": "選択した 2 つを比較"
+  },
+  "setup": {
+    "edit": "バージョンを変更",
+    "done": "結果に戻る"
+  },
+  "dock": {
+    "prev": "前の変更",
+    "next": "次の変更",
+    "expand": "パネルを開く",
+    "close": "比較を閉じる",
+    "start_one": "{{count}} 件の変更 — › で順に表示",
+    "start_other": "{{count}} 件の変更 — › で順に表示"
   }
 }

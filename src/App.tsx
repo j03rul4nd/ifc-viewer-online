@@ -47,6 +47,7 @@ const LazyEbookView = React.lazy(() => import('./components/EbookView'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
+import { MobileSheet } from './components/mobile/MobileSheet'
 import OverlayHud from './components/OverlayHud'
 import Blog from './components/Blog'
 import PrivacyPolicy from './components/legal/PrivacyPolicy'
@@ -1107,7 +1108,10 @@ export default function App() {
       setHidden((prev) => new Set(prev))
       // In embed mode the host decides whether the validation panel auto-opens
       // (the 'minimal' preset keeps it collapsed so only the 3D + score show).
-      if (embedChrome.openPanel) {
+      // On a phone the sheet covers the model the user just opened: they reach
+      // it from the bottom nav (Validar) when they want it.
+      const isPhone = window.matchMedia('(max-width: 767px)').matches
+      if (embedChrome.openPanel && !isPhone) {
         useIdsStore.getState().setPanelOpen(false) // bottom slot is exclusive with the IDS panel
         setValidationPanelOpen(true)
         trackValidationPanelOpened({ trigger: 'auto' })
@@ -1711,6 +1715,8 @@ export default function App() {
    * those; now it shows the host and says which one.
    */
   const handleRevealInTree = useCallback((expressId: number, modelId?: string): void => {
+    // On a phone the tree is a sheet: the properties sheet would sit on top of it.
+    if (window.matchMedia('(max-width: 767px)').matches) useUIStore.getState().setMobileSidebarOpen(false)
     void elementFocus.revealInTree(expressId, modelId).then((outcome) => {
       if (!outcome.ok) {
         toast(tToasts('tree.notInTree'), 'info')
@@ -3969,10 +3975,28 @@ export default function App() {
                     />
                   )}
 
+                  {/* Spatial tree on a phone: the desktop column cannot fit, so the
+                      same tree opens as a sheet (Tools → Tree). Picking an element
+                      closes it so the selection is visible in the model. */}
+                  {!isDesktop && sceneModels.length > 0 && effectiveChrome.showTree && (
+                    <MobileSheet open={treeVisible} onClose={() => setTreeVisible(false)} label={tTree('spatialTree')} snapPoints={[0.55, 0.92]}>
+                      <div className="flex flex-col h-full min-h-0 overflow-hidden">
+                        <ModelTree
+                          onSelectElement={(...args: Parameters<typeof handleSelectTreeElement>) => { handleSelectTreeElement(...args); setTreeVisible(false) }}
+                          onFocusElements={handleFocusElements}
+                          onFilterBySubtree={() => { useValidationStore.getState().setFilters({ ruleIds: [], search: '' }) }}
+                          onRemoveModel={(id) => { void handleRemoveModel(id) }}
+                          onOpenScene={(id) => { handleSetActiveModel(id); setTreeVisible(false); setScenePanelOpen(true) }}
+                          onFrameItems={(ids) => { viewerApiRef.current?.frameItems(ids) }}
+                        />
+                      </div>
+                    </MobileSheet>
+                  )}
+
                   {effectiveChrome.showHome && (
                     <button
                       onClick={handleNavigateToLanding}
-                      className="absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                     >
                       <Icons.Chevron size={12} className="rotate-180" />
                       <span className="hidden xs:inline">{tCommon('actions.home')}</span>
@@ -4041,6 +4065,8 @@ export default function App() {
                     onIsolate={handleIsolate}
                     onOpenDemoGallery={openDemoGallery}
                     onOpenExportModal={() => setShowExportModal(true)}
+                    onOpenCompare={() => setShowCompareModal(true)}
+                    onGoHome={effectiveChrome.showHome ? handleNavigateToLanding : undefined}
                     onOpenHelp={() => setShowHelp(true)}
                     viewerApiRef={viewerApiRef}
                   />
@@ -4145,7 +4171,7 @@ export default function App() {
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
-          className="fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
           style={{ bottom: `max(calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 8px), 16px)` }}
         >
           {activeFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}

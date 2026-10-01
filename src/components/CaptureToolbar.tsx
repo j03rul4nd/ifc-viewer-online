@@ -22,6 +22,7 @@ import { createLogger } from '../lib/logger'
 import { watermarkPngDataUrl } from '../lib/capture/watermark'
 import { linkViewer } from '../lib/capture/viewer-link'
 import { SceneBackgroundMenu } from './SceneBackgroundMenu'
+import { MobileActionSheet } from './mobile/MobileActionSheet'
 import {
   CAPTURE_DURATIONS, MAX_WINDOW_SECONDS, MIN_WINDOW_SECONDS, clampCaptureSeconds,
   type CaptureDuration,
@@ -79,6 +80,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
   const background = useSceneStore((s) => s.background)
   const coverOpen = useCoverStudioStore((s) => s.open)
   const setCoverOpen = useCoverStudioStore((s) => s.setOpen)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // ── Canvas acquisition ──────────────────────────────────────────────────────
   // Where this instance owns a replay buffer, it records the viewer's
@@ -504,33 +506,29 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
         )}
       </div>
       )}
-
-      {/* Mobile: screenshot + backdrop (replay unsupported / hidden — graceful
-          degrade, but the backdrop matters just as much on a phone screenshot) */}
-      <div className="flex md:hidden items-center shrink-0">
+      {/* One labelled entry instead of four bare icons: on a phone the
+          icons read as noise, and the sheet has room to say what each does. */}
+      <div className="flex md:hidden items-center gap-1 shrink-0 order-last ml-1">
+        {replay && <SceneBackgroundMenu disabled={!hasModel} />}
         <button
-          onClick={() => void handleScreenshot()}
+          onClick={() => setMobileMenuOpen(true)}
           disabled={!hasModel}
-          title={t('screenshotTooltip')}
-          className={btnBase}
+          className="h-8 px-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] text-[12px] text-[var(--text-dim)] active:bg-white/10 disabled:opacity-40"
         >
           <Icons.Camera size={14} />
+          {t('mobileMenu')}
         </button>
-        <button
-          onClick={() => setCoverOpen(true)}
-          disabled={!hasModel}
-          title={t('cover.open')}
-          aria-label={t('cover.open')}
-          className={btnBase}
-        >
-          <Icons.Sparkles size={14} />
-        </button>
-        {replay && <SceneBackgroundMenu disabled={!hasModel} />}
-        {replay && (
-          <button onClick={openStudio} disabled={!hasModel} title={t('studio.openTooltip')} aria-label={t('studio.open')} className={btnBase}>
-            <Icons.Film size={14} />
-          </button>
-        )}
+        <MobileActionSheet
+          open={mobileMenuOpen}
+          title={t('mobileMenu')}
+          closeLabel={t('close')}
+          onClose={() => setMobileMenuOpen(false)}
+          actions={[
+            { key: 'shot', icon: <Icons.Camera size={18} />, label: t('screenshot'), desc: t('screenshotTooltip'), onClick: () => { setMobileMenuOpen(false); void handleScreenshot() } },
+            { key: 'cover', icon: <Icons.Sparkles size={18} />, label: t('cover.title'), desc: t('cover.subtitle'), onClick: () => { setMobileMenuOpen(false); setCoverOpen(true) } },
+            ...(replay ? [{ key: 'studio', icon: <Icons.Film size={18} />, label: t('studio.title'), desc: t('studio.openTooltip'), onClick: () => { setMobileMenuOpen(false); openStudio() } }] : []),
+          ]}
+        />
       </div>
 
       {/* Preview modal is owned by the replay-owning instance only (avoids a

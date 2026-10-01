@@ -17,7 +17,10 @@
     "pickFiles": "เลือกไฟล์ IFC…",
     "use": "ใช้",
     "sceneLabel": "โมเดลที่โหลดอยู่ {{date}}",
-    "filesLabel": "{{count}} ไฟล์"
+    "filesLabel": "{{count}} ไฟล์",
+    "sceneShort": "ที่โหลด",
+    "filesShort": "ไฟล์",
+    "baselineShort": "ฐาน"
   },
   "elements_other": "{{count}} องค์ประกอบ",
   "filesCount_other": "{{count}} ไฟล์",
@@ -77,12 +80,14 @@
     "anyClass": "ทุกคลาส",
     "storey": "ชั้น",
     "anyStorey": "ทุกชั้น",
-    "search": "ค้นหาชื่อ, GlobalId, คุณสมบัติ…"
+    "search": "ค้นหาชื่อ, GlobalId, คุณสมบัติ…",
+    "toggle": "ตัวกรอง"
   },
   "export": {
     "html": "รายงาน (HTML)",
     "csv": "CSV",
-    "json": "JSON"
+    "json": "JSON",
+    "menu": "ส่งออก"
   },
   "baseline": {
     "saveHead": "บันทึกเป็นเบสไลน์",
@@ -182,5 +187,17 @@
     "delete": "ลบ",
     "confirmDelete": "ลบเบสไลน์ \"{{label}}\" ใช่ไหม?",
     "compareTwo": "เปรียบเทียบสองรายการที่เลือก"
+  },
+  "setup": {
+    "edit": "เปลี่ยนเวอร์ชัน",
+    "done": "กลับไปที่ผลลัพธ์"
+  },
+  "dock": {
+    "prev": "การเปลี่ยนแปลงก่อนหน้า",
+    "next": "การเปลี่ยนแปลงถัดไป",
+    "expand": "เปิดแผง",
+    "close": "ปิดการเปรียบเทียบ",
+    "start_one": "{{count}} การเปลี่ยนแปลง — แตะ › เพื่อไล่ดู",
+    "start_other": "{{count}} การเปลี่ยนแปลง — แตะ › เพื่อไล่ดู"
   }
 }

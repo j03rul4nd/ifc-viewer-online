@@ -17,7 +17,10 @@
     "pickFiles": "Choose IFC files…",
     "use": "Use",
     "sceneLabel": "Loaded models {{date}}",
-    "filesLabel": "{{count}} files"
+    "filesLabel": "{{count}} files",
+    "sceneShort": "Loaded",
+    "filesShort": "Files",
+    "baselineShort": "Baseline"
   },
   "elements_one": "{{count}} element",
   "elements_other": "{{count}} elements",
@@ -79,12 +82,14 @@
     "anyClass": "Any class",
     "storey": "Storey",
     "anyStorey": "Any storey",
-    "search": "Search name, GlobalId, property…"
+    "search": "Search name, GlobalId, property…",
+    "toggle": "Filters"
   },
   "export": {
     "html": "Report (HTML)",
     "csv": "CSV",
-    "json": "JSON"
+    "json": "JSON",
+    "menu": "Export"
   },
   "baseline": {
     "saveHead": "Save as baseline",
@@ -184,5 +189,17 @@
     "delete": "Delete",
     "confirmDelete": "Delete the baseline \"{{label}}\"?",
     "compareTwo": "Compare the two selected"
+  },
+  "setup": {
+    "edit": "Change versions",
+    "done": "Back to results"
+  },
+  "dock": {
+    "prev": "Previous change",
+    "next": "Next change",
+    "expand": "Open panel",
+    "close": "Close comparison",
+    "start_one": "{{count}} change — tap › to go through it",
+    "start_other": "{{count}} changes — tap › to go through them"
   }
 }

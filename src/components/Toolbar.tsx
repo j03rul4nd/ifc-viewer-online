@@ -547,10 +547,14 @@ export default function Toolbar({
       {/* ── Identity + model context ───────────────────────────────────────── */}
       <div className="flex items-center gap-2 min-w-0 shrink">
         <Icons.Logo size={18} className="shrink-0" />
-        {/* Name on phones (the bar is otherwise empty there) and wide screens */}
-        <span className="text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline md:hidden xl:inline">
+        {/* Name on phones without a model and on wide screens; with a model the
+            phone shows the file name instead (status lives in the dot). */}
+        <span className={`text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline md:hidden xl:inline ${fileName ? 'max-md:!hidden' : ''}`}>
           IFC Validator
         </span>
+        {fileName && (
+          <span className="md:hidden text-[12px] text-[var(--text-dim)] truncate min-w-0 max-w-[40vw]">{fileName}</span>
+        )}
         <div className="hidden lg:flex items-center gap-1.5 min-w-0" title={fileName ?? undefined}>
           {loadingState !== 'idle' && (
             <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: statusColor }} />
@@ -847,7 +851,7 @@ export default function Toolbar({
       {loadingState !== 'idle' && (
         <div className="md:hidden flex items-center gap-1.5 px-2">
           <span className="font-mono text-[12px]" style={{ color: statusColor }}>●</span>
-          <span className="hidden xs:inline text-[11px] text-[var(--text-dim)] whitespace-nowrap">
+          <span className="sr-only">
             {statusLabel}
             {loadingState === 'loaded' && elementCount > 0 && (
               <span className="font-mono text-[var(--text-faint)]"> · {elementCount.toLocaleString()}</span>
@@ -859,8 +863,9 @@ export default function Toolbar({
       {qualityScore !== null && !isRunning && loadingState === 'loaded' && (
         <div className="md:hidden flex items-center ml-1">
           <span
-            className="text-[13px] font-bold font-mono tabular-nums"
-            style={{ color: scoreColor(qualityScore) }}
+            className="h-6 px-2 inline-flex items-center rounded-full text-[12px] font-bold font-mono tabular-nums border"
+            style={{ color: scoreColor(qualityScore), borderColor: 'currentColor' }}
+            title={`Health Score: ${qualityScore}/100`}
           >
             {qualityScore}
           </span>

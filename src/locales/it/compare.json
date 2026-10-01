@@ -17,7 +17,10 @@
     "pickFiles": "Scegli file IFC…",
     "use": "Usa",
     "sceneLabel": "Modelli caricati {{date}}",
-    "filesLabel": "{{count}} file"
+    "filesLabel": "{{count}} file",
+    "sceneShort": "Caricati",
+    "filesShort": "File",
+    "baselineShort": "Baseline"
   },
   "elements_one": "{{count}} elemento",
   "elements_other": "{{count}} elementi",
@@ -79,12 +82,14 @@
     "anyClass": "Qualsiasi classe",
     "storey": "Piano",
     "anyStorey": "Qualsiasi piano",
-    "search": "Cerca nome, GlobalId, proprietà…"
+    "search": "Cerca nome, GlobalId, proprietà…",
+    "toggle": "Filtri"
   },
   "export": {
     "html": "Report (HTML)",
     "csv": "CSV",
-    "json": "JSON"
+    "json": "JSON",
+    "menu": "Esporta"
   },
   "baseline": {
     "saveHead": "Salva come baseline",
@@ -184,5 +189,17 @@
     "delete": "Elimina",
     "confirmDelete": "Eliminare la baseline \"{{label}}\"?",
     "compareTwo": "Confronta le due selezionate"
+  },
+  "setup": {
+    "edit": "Cambia versioni",
+    "done": "Torna ai risultati"
+  },
+  "dock": {
+    "prev": "Modifica precedente",
+    "next": "Modifica successiva",
+    "expand": "Apri pannello",
+    "close": "Chiudi confronto",
+    "start_one": "{{count}} modifica — tocca › per scorrerla",
+    "start_other": "{{count}} modifiche — tocca › per scorrerle"
   }
 }

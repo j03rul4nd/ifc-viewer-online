@@ -40,6 +40,12 @@ interface CompareStore {
   error: string | null
   /** Paint added/modified/removed in the 3D view. */
   highlight: boolean
+  /** Workspace minimised to the floating dock so the 3D view is visible. */
+  docked: boolean
+  /** GlobalIds of the change list as currently filtered — what the dock steps through. */
+  navList: string[]
+  /** Index into navList of the element last located. */
+  cursor: number
 
   setSide: (side: CompareSide, state: SideState) => void
   setDiff: (diff: SetDiff | null) => void
@@ -48,6 +54,9 @@ interface CompareStore {
   setBusy: (busy: boolean) => void
   setError: (error: string | null) => void
   setHighlight: (on: boolean) => void
+  setDocked: (docked: boolean) => void
+  setNavList: (ids: string[]) => void
+  setCursor: (cursor: number) => void
   /** Swap base and head (compare the other way round). */
   swap: () => void
   reset: () => void
@@ -66,6 +75,9 @@ export const useCompareStore = create<CompareStore>()(
       busy: false,
       error: null,
       highlight: false,
+      docked: false,
+      navList: [],
+      cursor: -1,
 
       // A new side invalidates everything computed from the old one.
       setSide: (side, state) => set({ [side]: state, diff: null, ids: null, highlight: false } as Partial<CompareStore>, false, `compare/setSide:${side}`),
@@ -75,8 +87,11 @@ export const useCompareStore = create<CompareStore>()(
       setBusy: (busy) => set(busy ? { busy, progress: {}, error: null } : { busy }, false, 'compare/busy'),
       setError: (error) => set({ error }, false, 'compare/error'),
       setHighlight: (highlight) => set({ highlight }, false, 'compare/highlight'),
+      setDocked: (docked) => set({ docked }, false, "compare/docked"),
+      setNavList: (navList) => set({ navList }, false, "compare/navList"),
+      setCursor: (cursor) => set({ cursor }, false, "compare/cursor"),
       swap: () => set((s) => ({ base: s.head, head: s.base, diff: null, ids: null, highlight: false }), false, 'compare/swap'),
-      reset: () => set({ base: emptySide(), head: emptySide(), diff: null, ids: null, progress: {}, busy: false, error: null, highlight: false }, false, 'compare/reset'),
+      reset: () => set({ base: emptySide(), head: emptySide(), diff: null, ids: null, progress: {}, busy: false, error: null, highlight: false, docked: false, navList: [], cursor: -1 }, false, 'compare/reset'),
     }),
     { name: 'compareStore' },
   ),

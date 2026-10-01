@@ -32,6 +32,10 @@ interface MobileBottomNavProps {
   onOpenDemoGallery: () => void
   onOpenExportModal: () => void
   onOpenHelp: () => void
+  /** Version comparison — the desktop toolbar button is hidden on phones. */
+  onOpenCompare?: () => void
+  /** Back to the landing — the floating Home button is desktop-only. */
+  onGoHome?: () => void
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   /**
    * The tool catalogue, the same list the desktop rail draws.
@@ -254,7 +258,7 @@ export default function MobileBottomNav({
   tools,
   visible, selected, canIsolate,
   onOpenSidebarTab, onReset, onUpload, onIsolate,
-  onOpenDemoGallery, onOpenExportModal, onOpenHelp,
+  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare, onGoHome,
 }: MobileBottomNavProps) {
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
@@ -408,6 +412,21 @@ export default function MobileBottomNav({
             </span>
             {idsHasFailures && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--danger)' }} />}
           </button>
+          {onOpenCompare && (
+            <button
+              onClick={() => { haptic('tick'); setActiveSheet('none'); onOpenCompare() }}
+              className="w-full mb-3 flex items-center gap-3 h-[52px] px-3 rounded-2xl active:scale-[0.98] transition-transform"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.12)', WebkitTapHighlightColor: 'transparent' }}
+            >
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(245,166,35,0.16)', color: '#F5A623' }}>
+                <Icons.GitCompare size={18} />
+              </span>
+              <span className="flex-1 min-w-0 text-left">
+                <span className="block text-[13.5px] font-semibold text-white leading-tight">{t('compare')}</span>
+                <span className="block text-[11px] leading-snug truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{t('compareTooltip')}</span>
+              </span>
+            </button>
+          )}
           {/* Every panel the app is currently rendering, from the same
               catalogue the desktop rail reads. This used to be four buttons
               written by hand here. */}
@@ -437,10 +456,10 @@ export default function MobileBottomNav({
             <SheetBtn icon={ExportSVG(22)} label={t('export')}
               active={diffs.length > 0} badge={diffs.length > 0 ? diffs.length : undefined}
               onClick={() => { closeSheet(); onOpenExportModal() }} />
-            <SheetBtn
-              icon={<span style={{ fontSize: 19, lineHeight: 1, fontWeight: 700, fontFamily: 'monospace' }}>?</span>}
-              label={tComm('shortcuts.title')}
-              onClick={() => { closeSheet(); onOpenHelp() }} />
+            {onGoHome && (
+              <SheetBtn icon={<Icons.Chevron size={20} className="rotate-180" />} label={tComm('actions.home')}
+                onClick={() => { closeSheet(); onGoHome() }} />
+            )}
           </div>
           <SheetDivider />
           <div className="flex items-center gap-3 px-1 pt-3 pb-1">
