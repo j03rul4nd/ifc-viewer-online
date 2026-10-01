@@ -219,7 +219,10 @@
     "classification": "Clasificación",
     "intensity": "Intensidad",
     "distance": "Distancia a la cámara",
-    "clear": "Limpiar"
+    "clear": "Limpiar",
+    "copy": "Copiar coordenadas",
+    "copied": "Coordenadas copiadas",
+    "sliceHere": "Cortar a esta altura"
   },
   "view": {
     "title": "Vista",
@@ -276,7 +279,8 @@
     "placement": "Posición",
     "view": "Vista",
     "samples": "Ejemplos",
-    "help": "Arreglar"
+    "help": "Arreglar",
+    "analyze": "Analizar"
   },
   "ui": {
     "loaded": "Nubes cargadas",
@@ -398,5 +402,88 @@
       "hint": "Causas habituales"
     },
     "brokenTips": "Aquí se leen LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 y los proyectos de escáner (RCP, FLS, LSPROJ) hay que exportarlos antes a LAS o PLY. Algunos LAZ usan una variante de LASzip que el navegador no puede descomprimir: guárdalos como LAS o COPC. Archivos muy grandes: recórtalos o diézmalos antes."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Casos de uso",
+      "hint": "Un clic prepara la vista para una tarea real. Todos los filtros de abajo siguen siendo editables y nada modifica el escaneo."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Corte en planta",
+        "hint": "Deja una franja de 60 cm a la altura del punto elegido (o a 1,2 m sobre el punto más bajo) y mira desde arriba: los muros se leen como un plano."
+      },
+      "terrain": {
+        "label": "Terreno y curvas de nivel",
+        "hint": "Colorea por altura, dibuja curvas de nivel y deja solo el suelo si el fichero está clasificado."
+      },
+      "vegetation": {
+        "label": "Quitar vegetación y ruido",
+        "hint": "Oculta las clases de vegetación y ruido para que destaquen edificios, viales y suelo. Requiere un fichero clasificado."
+      },
+      "slab": {
+        "label": "Planeidad de forjado",
+        "hint": "Haz clic en un punto del forjado: deja una franja fina a su alrededor y dibuja una línea cada 1 cm, así los bultos y hundimientos aparecen como anillos."
+      },
+      "scanVsBim": {
+        "label": "Escaneo vs BIM",
+        "hint": "Pinta el escaneo en un color vivo sobre el modelo translúcido: lo que no se construyó según proyecto salta a la vista. Requiere un modelo IFC."
+      },
+      "clearance": {
+        "label": "Medir un gálibo",
+        "hint": "Activa la herramienta de distancia: haz clic en dos puntos del escaneo (suelo a viga, muro a muro) para leer la holgura real construida."
+      }
+    },
+    "needsClasses": "Requiere un fichero clasificado",
+    "needsModel": "Requiere un modelo IFC",
+    "pickFirst": "Primero haz clic en un punto del escaneo: Inspeccionar está activo.",
+    "applied": "Aplicado: {{what}}",
+    "activeBanner": "Los filtros de análisis ocultan parte del escaneo.",
+    "reset": "Quitar filtros",
+    "slice": {
+      "title": "Corte por altura",
+      "toggle": "Mostrar solo una franja de altura",
+      "from": "Desde",
+      "to": "Hasta",
+      "hint": "Alturas en metros de escena. Combínalo con Medir para leer alturas libres, o con vista superior para calcar una planta."
+    },
+    "contours": {
+      "title": "Curvas de nivel",
+      "toggle": "Dibujar curvas de nivel",
+      "hint": "Pasos grandes para leer el terreno; pasos de 1–2 cm revelan un forjado que no está plano."
+    },
+    "classes": {
+      "title": "Clases",
+      "hint": "Toca una clase para ocultarla o mostrarla. Los códigos siguen el estándar ASPRS LAS.",
+      "all": "Todas",
+      "ground": "Solo suelo",
+      "noVeg": "Sin vegetación",
+      "names": {
+        "c0": "Nunca clasificado",
+        "c1": "Sin clasificar",
+        "c2": "Suelo",
+        "c3": "Vegetación baja",
+        "c4": "Vegetación media",
+        "c5": "Vegetación alta",
+        "c6": "Edificio",
+        "c7": "Ruido",
+        "c8": "Punto clave",
+        "c9": "Agua",
+        "c10": "Vía férrea",
+        "c11": "Calzada",
+        "c12": "Solape",
+        "c13": "Cable de guarda",
+        "c14": "Conductor",
+        "c15": "Torre eléctrica"
+      }
+    },
+    "measure": {
+      "title": "Medir el escaneo",
+      "hint": "Los escaneos se enganchan igual que los modelos: distancias, áreas y ángulos caen en puntos reales.",
+      "distance": "Distancia",
+      "area": "Área",
+      "angle": "Ángulo",
+      "point": "Punto"
+    }
   }
 }

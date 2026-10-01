@@ -219,7 +219,10 @@
     "classification": "Klassifizierung",
     "intensity": "Intensität",
     "distance": "Entfernung zur Kamera",
-    "clear": "Zurücksetzen"
+    "clear": "Zurücksetzen",
+    "copy": "Koordinaten kopieren",
+    "copied": "Koordinaten kopiert",
+    "sliceHere": "Auf dieser Höhe schneiden"
   },
   "view": {
     "title": "Ansicht",
@@ -276,7 +279,8 @@
     "placement": "Position",
     "view": "Ansicht",
     "samples": "Beispiele",
-    "help": "Beheben"
+    "help": "Beheben",
+    "analyze": "Analysieren"
   },
   "ui": {
     "loaded": "Geladene Scans",
@@ -398,5 +402,88 @@
       "hint": "Häufige Ursachen"
     },
     "brokenTips": "Gelesen werden LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 und Scannerprojekte (RCP, FLS, LSPROJ) zuerst als LAS oder PLY exportieren. Manche LAZ nutzen eine LASzip-Variante, die Browser nicht dekodieren – als LAS oder COPC neu speichern. Sehr große Dateien vorher zuschneiden oder ausdünnen."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Anwendungsfälle",
+      "hint": "Ein Klick richtet die Ansicht für eine echte Aufgabe ein. Alle Filter unten bleiben änderbar, der Scan selbst wird nie verändert."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Grundrissschnitt",
+        "hint": "Behält ein 60-cm-Band auf der Höhe des gewählten Punkts (oder 1,2 m über dem tiefsten Punkt) und schaut von oben – Wände lesen sich wie eine Zeichnung."
+      },
+      "terrain": {
+        "label": "Gelände & Höhenlinien",
+        "hint": "Färbt nach Höhe, zeichnet Höhenlinien und zeigt bei klassifizierten Dateien nur Bodenpunkte."
+      },
+      "vegetation": {
+        "label": "Vegetation & Rauschen ausblenden",
+        "hint": "Blendet Vegetations- und Rauschklassen aus, damit Gebäude, Straßen und Boden hervortreten. Braucht eine klassifizierte Datei."
+      },
+      "slab": {
+        "label": "Ebenheit der Decke",
+        "hint": "Klicken Sie einen Punkt auf der Decke: Ein dünnes Band bleibt stehen und alle 1 cm wird eine Linie gezeichnet – Buckel und Mulden erscheinen als Ringe."
+      },
+      "scanVsBim": {
+        "label": "Scan vs. BIM",
+        "hint": "Zeichnet den Scan in einer kräftigen Farbe über das transparente Modell – Abweichungen vom Entwurf fallen sofort auf. Braucht ein IFC-Modell."
+      },
+      "clearance": {
+        "label": "Lichtraum messen",
+        "hint": "Aktiviert das Distanzwerkzeug: Zwei Scanpunkte anklicken – Boden bis Träger, Wand bis Wand – und den gebauten Abstand ablesen."
+      }
+    },
+    "needsClasses": "Braucht eine klassifizierte Datei",
+    "needsModel": "Braucht ein IFC-Modell",
+    "pickFirst": "Zuerst einen Scanpunkt anklicken – Untersuchen ist aktiv.",
+    "applied": "Angewendet: {{what}}",
+    "activeBanner": "Analysefilter blenden einen Teil des Scans aus.",
+    "reset": "Filter zurücksetzen",
+    "slice": {
+      "title": "Höhenschnitt",
+      "toggle": "Nur ein Höhenband zeigen",
+      "from": "Von",
+      "to": "Bis",
+      "hint": "Höhen in Szenenmetern. Mit Messen für lichte Höhen kombinieren oder mit der Draufsicht einen Grundriss abnehmen."
+    },
+    "contours": {
+      "title": "Höhenlinien",
+      "toggle": "Höhenlinien zeichnen",
+      "hint": "Grobe Stufen für Gelände; 1–2 cm zeigen eine unebene Decke."
+    },
+    "classes": {
+      "title": "Klassen",
+      "hint": "Klasse antippen zum Aus- oder Einblenden. Codes nach ASPRS-LAS-Standard.",
+      "all": "Alle",
+      "ground": "Nur Boden",
+      "noVeg": "Ohne Vegetation",
+      "names": {
+        "c0": "Nie klassifiziert",
+        "c1": "Unklassifiziert",
+        "c2": "Boden",
+        "c3": "Niedrige Vegetation",
+        "c4": "Mittlere Vegetation",
+        "c5": "Hohe Vegetation",
+        "c6": "Gebäude",
+        "c7": "Rauschen",
+        "c8": "Schlüsselpunkt",
+        "c9": "Wasser",
+        "c10": "Schiene",
+        "c11": "Straßenoberfläche",
+        "c12": "Überlappung",
+        "c13": "Erdseil",
+        "c14": "Leiterseil",
+        "c15": "Strommast"
+      }
+    },
+    "measure": {
+      "title": "Scan vermessen",
+      "hint": "Scans rasten wie Modelle ein: Abstände, Flächen und Winkel liegen auf echten Punkten.",
+      "distance": "Abstand",
+      "area": "Fläche",
+      "angle": "Winkel",
+      "point": "Punkt"
+    }
   }
 }

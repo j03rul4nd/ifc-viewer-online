@@ -18,7 +18,7 @@
 //            leak here is measured in hundreds of megabytes.
 
 import * as THREE from 'three'
-import { createPointCloudMaterial, type PointCloudMaterial } from './pc-material'
+import { createPointCloudMaterial, UNCLASSIFIED_CODE, type PointCloudMaterial } from './pc-material'
 import { effectiveTransform } from './pc-align'
 import { allocateBudget, viewChanged, viewSignature, type ChunkView } from './pc-lod'
 import {
@@ -611,7 +611,8 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
             y: hit.point.y + (cloud.streaming?.frameOrigin.y ?? cloud.sourceOrigin.y),
             z: hit.point.z + (cloud.streaming?.frameOrigin.z ?? cloud.sourceOrigin.z),
           },
-          classification: cls ? (cls.array as Uint8Array)[hit.index] : null,
+          classification: cls && (cls.array as Uint8Array)[hit.index] !== UNCLASSIFIED_CODE
+            ? (cls.array as Uint8Array)[hit.index] : null,
           intensity: inten ? (inten.array as Uint8Array)[hit.index] : null,
           distance: worldT,
         }
@@ -697,9 +698,11 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       geometry.setAttribute('pcIntensity', chunk.intensity
         ? new THREE.BufferAttribute(chunk.intensity, 1, true)
         : new THREE.BufferAttribute(new Uint8Array(chunk.count).fill(255), 1, true))
+      // No classification channel → UNCLASSIFIED_CODE, so a class filter never
+      // hides a scan that carries no classes at all (pc-material).
       geometry.setAttribute('pcClass', chunk.classification
         ? new THREE.BufferAttribute(chunk.classification, 1, true)
-        : new THREE.BufferAttribute(new Uint8Array(chunk.count), 1, true))
+        : new THREE.BufferAttribute(new Uint8Array(chunk.count).fill(UNCLASSIFIED_CODE), 1, true))
       geometry.setAttribute('pcConfidence', chunk.confidence
         ? new THREE.BufferAttribute(chunk.confidence, 1, true)
         : new THREE.BufferAttribute(new Uint8Array(chunk.count).fill(255), 1, true))
