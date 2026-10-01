@@ -12,6 +12,706 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_DE_PACK: BlogPost[] = [
   {
+    slug: "ifc-sun-shadow-study-online",
+    title: "Sonnen- und Schattenstudie aus einem IFC-Modell, im Browser",
+    excerpt: "Eine Schattenstudie bedeutet meist einen Export in ein Rendering-Werkzeug und eine geschätzte Nordrichtung. Ein georeferenziertes IFC weiß bereits, wo es steht und wo Norden ist – die Sonne lässt sich also für jedes Datum und jede Uhrzeit korrekt setzen, in Sekunden und ohne den Browser zu verlassen.",
+    seoTitle: "Sonnen- und Schattenstudie aus einem IFC, online",
+    seoDescription: "Besonnungs- und Schattenstudie für ein georeferenziertes IFC im Browser: echter Standort und Norden, Ortszeit, Sonnenauf- und -untergang, Mond, Links.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Werkzeuge & Vergleiche",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "Sonnenstudie IFC",
+      "Schattenstudie BIM",
+      "Verschattungsanalyse online",
+      "Besonnung IFC Modell",
+      "geografisch Nord IFC",
+      "Sonnenstand BIM Modell",
+      "Schattenstudie im Browser",
+      "sun study IFC",
+      "shadow study BIM",
+      "shadow analysis online",
+      "solar study IFC model",
+      "true north IFC",
+      "sun path BIM model",
+      "daylight shadow study browser",
+    ],
+    faqs: [
+      {
+        q: "Kann ich eine Schattenstudie aus einer IFC-Datei ohne Rendering-Werkzeug erstellen?",
+        a: "Ja. Ist das IFC georeferenziert, stehen Standort und geografisch Nord in der Datei. IFC Viewer Online liest sie, setzt die Sonne für jedes Datum und jede Ortszeit am Standort und wirft die Schatten im Browser auf das Modell – ohne Export, ohne Plugin.",
+      },
+      {
+        q: "Warum zeigt meine Schattenstudie in die falsche Richtung?",
+        a: "Fast immer wegen des Nordens. Viele Modelle sind mit Projektnord nach oben gezeichnet, und die Drehung zum geografischen Nord ist separat gespeichert – oder gar nicht. Eine Studie, die sie ignoriert, dreht jeden Schatten um denselben Fehler. Prüfen Sie, woher das Werkzeug den Norden hat, bevor Sie dem Ergebnis trauen.",
+      },
+      {
+        q: "Und wenn mein IFC nicht georeferenziert ist?",
+        a: "Ein gutes Werkzeug sagt das, statt stillschweigend einen Standort anzunehmen. Sie können den Standort dann von Hand setzen, per Koordinaten oder Stadt – betrachten Sie das Ergebnis aber als Näherung, bis das Modell korrekt georeferenziert ist.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "„Verschattet der Neubau im Dezember den Schulhof?“ ist eine Frage, die in jeder Planungsbesprechung auftaucht, meist am Vortag. Die übliche Antwort: ein Export in ein Rendering-Werkzeug, eine Stunde Sonnen-Einstellung und eine etwas nervöse Vermutung, wo Norden ist.",
+      },
+      {
+        type: "p",
+        text: "Ein georeferenziertes IFC enthält bereits die beiden Fakten, um die sich diese Vermutung dreht: wo auf der Erde das Gebäude steht und wie das Modell zum geografischen Norden gedreht ist. Mit beidem ist der Sonnenstand zu jedem Zeitpunkt eine Berechnung, keine Einstellung.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Eine korrekte Schattenstudie braucht drei Angaben: Breiten- und Längengrad, geografisch Nord und die Zeitzone des Standorts. Ein georeferenziertes IFC liefert die ersten beiden.",
+          "Der häufigste Fehler ist der Norden. Eine Studie, die Projektnord statt geografisch Nord verwendet, liegt zu jeder Stunde um denselben Winkel daneben.",
+          "Ein Werkzeug, das stillschweigend auf einen Standardstandort zurückfällt, erzeugt überzeugende, falsche Schatten. Wählen Sie eines, das sagt, woher der Standort stammt.",
+        ],
+      },
+      { type: "h2", text: "Was die Sonne von Ihrem Modell braucht" },
+      {
+        type: "table",
+        headers: ["Angabe", "Herkunft", "Wenn sie falsch ist"],
+        rows: [
+          [
+            "Breite / Länge",
+            "Referenzkoordinaten von IfcSite oder IfcMapConversion mit bekanntem KBS",
+            "Die Sonnenhöhe stimmt nicht – Schatten zu lang oder zu kurz",
+          ],
+          [
+            "Geografisch Nord",
+            "Die in der Georeferenzierung gespeicherte Drehung",
+            "Jeder Schatten ist um den Fehler gedreht",
+          ],
+          ["Zeitzone", "Aus dem Standort abgeleitet", "Die Studie ist um eine Stunde oder mehr verschoben"],
+          ["Datum und Uhrzeit", "Wählen Sie selbst", "—"],
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Wenn Sie nicht sicher sind, ob Ihr Modell georeferenziert ist – oder warum es zwei Kilometer neben seinem Platz liegt –, beginnen Sie mit ",
+          { text: "IFC-Koordinaten und Georeferenzierung", to: "ifc-coordinates-georeferencing" },
+          ". Alles Folgende hängt davon ab.",
+        ],
+      },
+      { type: "h2", text: "Woher der Standort stammt, zählt so viel wie der Standort" },
+      {
+        type: "p",
+        text: "Eine Sonnenstudie, die richtig aussieht und falsch ist, ist schlimmer als keine, denn sie landet in einem Planungsbericht. Das Nützlichste, was ein Werkzeug tun kann, ist zu sagen, woher seine Angaben stammen.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Aus dem Modell: Die Georeferenzierung wurde gefunden und verwendet. Dieses Ergebnis können Sie vertreten.",
+          "Von Ihnen gesetzt: Koordinaten oder Stadt von Hand eingegeben. Für eine erste Prüfung in Ordnung; vermerken Sie es in allem, was Sie veröffentlichen.",
+          "Standard: Nichts wurde gefunden, und das Werkzeug hat einen Standort angenommen. Das darf nie stillschweigend geschehen – unseres zeigt einen blockierenden Hinweis, statt Schatten für eine Stadt zu werfen, in der Sie nicht sind.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Erst den Norden prüfen, dann die Schatten",
+        text: "Wechseln Sie mittags in die Draufsicht. Auf der Nordhalbkugel sollten die Schatten ungefähr nach Norden zeigen, auf der Südhalbkugel ungefähr nach Süden. Zeigen sie auf eine Fassade, nutzt die Studie den falschen Norden, und jedes daraus exportierte Bild ist um denselben Winkel falsch.",
+      },
+      { type: "h2", text: "Die Studie durchführen" },
+      {
+        type: "steps",
+        items: [
+          { title: "IFC öffnen", body: "Es wird in Ihrem Browser geladen; das Modell wird nie hochgeladen." },
+          {
+            title: "Sonnen- und Mondstudie einschalten",
+            body: "Standort und Norden werden aus dem Modell gelesen, mit einem Hinweis auf ihre Herkunft.",
+          },
+          {
+            title: "Die entscheidenden Daten wählen",
+            body: "Sonnenwenden und Tagundnachtgleichen sind der übliche Satz: der 21. Juni für den längsten Tag, der 21. Dezember für den tiefsten Sonnenstand.",
+          },
+          {
+            title: "Durch den Tag scrollen",
+            body: "Ziehen Sie die Uhrzeit; Sonnenauf- und -untergang sind auf der Zeitleiste markiert, damit Sie nie eine Sonne unter dem Horizont untersuchen.",
+          },
+          {
+            title: "Voreinstellungen pro Datei speichern",
+            body: "„Winter, 10:00“ und „Sommer, 18:30“ sind bei der nächsten Revision desselben Modells einen Klick entfernt.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: "Auch der Mond ist dabei, mit seiner Phase – für die Planung weniger wichtig, überraschend nützlich für Nachtansichten und um einem Bauherrn zu erklären, warum der Hof im Winter um 22 Uhr dunkel ist.",
+      },
+      { type: "h2", text: "Eine Sonnenstudie teilen, ohne das Modell zu verschicken" },
+      {
+        type: "p",
+        text: "Eine Studie nützt nur, wenn die Entscheider sie sehen können. Derselbe Moment lässt sich per Link öffnen: Datum und Ortszeit am Standort stehen in der URL, und die Zeitzone wird aus dem Standort des Modells selbst bestimmt – „21. Juni, 18:30“ bedeutet also 18:30 Uhr auf der Baustelle, nicht im Büro des Betrachters.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "?model=https://your-host/model.ifc&solar=06-21T18:30\n?model=https://your-host/model.ifc&solar=12-21T10:00&moon=1",
+      },
+      {
+        type: "p",
+        text: [
+          "Die Form ohne Jahr meint immer das laufende Jahr, ein Link in einem Planungsdokument bleibt also gültig. Alle Parameter und wie man die Studie in eine Webseite oder ein CDE-Panel einbindet, stehen in ",
+          { text: "einen IFC-Viewer einbetten", to: "embed-ifc-viewer-website" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Die Nachbarn hinzufügen" },
+      {
+        type: "p",
+        text: [
+          "Ein Gebäude wirft keine Schatten im luftleeren Raum, und es empfängt auch keine. Das Modell auf einer 3D-Karte mit den umliegenden Gebäuden und dem Gelände zu platzieren, macht aus „Verschattet unser Gebäude den Hof?“ ein „Verschatten ihn die bestehenden Türme schon?“. Dieser Ablauf steht in ",
+          { text: "ein IFC auf einer 3D-Karte anzeigen", to: "view-ifc-on-3d-map-online" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Eine Sonnenstudie im Browser ist eine schnelle, ehrliche Sichtprüfung. Sie ist kein zertifizierter Tageslicht- oder Verschattungsnachweis; wo einer verlangt wird, nutzen Sie sie, um zu entscheiden, welche Uhrzeiten und Fassaden die formale Analyse verdienen.",
+      },
+    ],
+    lang: "de",
+    translationKey: "ifc-sun-shadow-study-online",
+  },
+  {
+    slug: "measure-ifc-model-online",
+    title: "Ein IFC-Modell online messen: Abstände, Flächen, Winkel und Schnitte",
+    excerpt: "Messen in einem kostenlosen Viewer heißt oft: in die Nähe einer Ecke klicken und hoffen. Das Fangen an echten Punkten und Kanten, das Messen durch einen Schnitt und Bemaßungen, die im verschickten Bild erhalten bleiben, machen eine Browser-Messung zitierfähig.",
+    seoTitle: "IFC-Modell online messen: Abstände, Flächen, Schnitte",
+    seoDescription: "IFC-Modelle im Browser messen, mit Fang an Punkten und Kanten: Abstände, Flächen, Winkel, Schnittboxen und Geschossschnitte, mit Bemaßung im Export.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Werkzeuge & Vergleiche",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "IFC online messen",
+      "IFC Messwerkzeug",
+      "BIM Modell im Browser messen",
+      "IFC Schnittbox",
+      "IFC Fläche messen",
+      "IFC Grundrissschnitt",
+      "IFC Viewer Abstand messen",
+      "measure IFC online",
+      "IFC measurement tool",
+      "measure BIM model browser",
+      "IFC section box",
+      "IFC area measurement",
+      "IFC plan cut",
+      "IFC viewer measure distance",
+    ],
+    faqs: [
+      {
+        q: "Kann ich ein IFC-Modell ohne Revit oder Navisworks messen?",
+        a: "Ja. IFC Viewer Online misst Abstände, Wege, Flächen, Winkel und Punktkoordinaten direkt am IFC in Ihrem Browser, mit Fang an Endpunkten, Kantenmitten und Kanten – und nichts wird hochgeladen.",
+      },
+      {
+        q: "Warum fängt meine Messung das falsche Element?",
+        a: "Meist, weil die Auswahl Schnittebenen ignoriert und die Fassade vor dem Schnitt trifft, oder weil der Fangradius in Metern angegeben ist und aus der Distanz riesig wird. Ein Fang, der in Bildschirmpixeln kalibriert ist und aktive Schnitte respektiert, löst beides.",
+      },
+      {
+        q: "Wie erhalte ich einen Grundriss eines einzelnen Geschosses?",
+        a: "Mit einem Geschossschnitt. Die Geschosshöhen werden aus dem IFC gelesen (Höhen der IfcBuildingStorey, korrigiert um Einheiten und Bezugshöhe), und der Schnitt liegt auf Arbeitshöhe über dem Boden, wie in einem gezeichneten Grundriss.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Die meisten „Messen“-Schaltflächen in kostenlosen IFC-Viewern tun etwas leicht anderes, als der Name verspricht. Sie klicken in die Nähe einer Ecke, das Werkzeug nimmt den nächstgelegenen Punkt des Dreiecks, das zufällig unter dem Cursor lag, und liefert eine Zahl mit vier Nachkommastellen scheinbarer Genauigkeit.",
+      },
+      {
+        type: "p",
+        text: "Für eine grobe Prüfung reicht das. Für eine Zahl, die Sie einer ausführenden Firma mailen, nicht. Den Unterschied machen drei Dinge: woran das Werkzeug fängt, ob es Schnitte respektiert und ob die Messung im verschickten Bild erhalten bleibt.",
+      },
+      { type: "h2", text: "Fangen: was entscheidet, ob eine Zahl stimmt" },
+      {
+        type: "p",
+        text: "Eine Messung ist nur so gut wie ihre beiden Endpunkte. Guter Objektfang findet die Geometrie, die Sie meinten – einen Endpunkt, die Mitte einer Kante, einen Punkt auf einer Kante – und zeigt vor dem Klick an, was er gefunden hat.",
+      },
+      {
+        type: "table",
+        headers: ["Fangziel", "Einsatz", "Falle"],
+        rows: [
+          [
+            "Endpunkt",
+            "Ecken, Trägerenden, Achsschnittpunkte",
+            "Tessellierte Rundungen haben viele Punkte; zoomen Sie, um den richtigen zu treffen",
+          ],
+          [
+            "Kantenmitte",
+            "Mitte einer Wandfläche, Feldmitte",
+            "Bei schlecht tessellierten Modellen Mitte der Dreieckskante, nicht der Wand",
+          ],
+          ["Kante", "Lichte Weiten, Türöffnungen", "Ohne Lotmodus messen Sie diagonal"],
+          ["Fläche", "Flächen, Abstand zu einer Oberfläche", "Fläche der gewählten Facette, nicht des Raums"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Ein Detail zählt mehr, als es scheint: Der Fangradius sollte in Bildschirmpixeln gemessen werden, nicht in Metern. Ein Meter ist aus der Nähe eine sinnvolle Toleranz und aus fünfzig Metern absurd, wo er Punkte am falschen Element greift. Die Kalibrierung auf die Pixelgröße am Cursor hält das Verhalten bei jedem Zoom gleich.",
+      },
+      { type: "h2", text: "Die fünf Messungen, die Sie wirklich brauchen" },
+      {
+        type: "ol",
+        items: [
+          "Abstand – zwei Punkte, optional mit Lotmodus für lichte Weiten und Geschosshöhen.",
+          "Weg – eine Kette von Punkten, für eine Kabeltrasse oder eine Fluchtweglänge.",
+          "Fläche – ein Polygon oder die Fläche einer gewählten Facette.",
+          "Winkel – drei Punkte, für Dach- und Rampenneigungen.",
+          "Punkt – die Koordinaten eines einzelnen Punkts, nützlich zum Abgleich mit einem Aufmaß.",
+        ],
+      },
+      { type: "h2", text: "Innen messen: Schnitte, die die Auswahl respektiert" },
+      {
+        type: "p",
+        text: "Um einen Deckenhohlraum oder einen Schacht zu messen, muss man das Gebäude aufschneiden. Hier lauert eine Falle, in die viele Web-Viewer tappen: Der Schnitt blendet die Fassade aus, doch die Auswahl trifft sie weiterhin. Sie klicken auf den Kanal, den Sie sehen, und bekommen die Wand, die Sie nicht sehen.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        text: "Testen Sie jeden Viewer so: Legen Sie einen Schnitt durch ein Gebäude und klicken Sie auf ein Element, das nur dank des Schnitts sichtbar ist. Landet Auswahl oder Messung auf der ausgeblendeten Fassade, ignoriert die Auswahl des Werkzeugs die Schnittebenen – und jede Innenmessung ist fragwürdig.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Einzelne Ebenen entlang X, Y oder Z oder ausgerichtet an einer gewählten Fläche.",
+          "Eine Schnittbox, um einen Raum oder Schacht zu isolieren.",
+          "Geschossschnitte: Die Geschosshöhen werden aus dem IFC gelesen – korrigiert um Einheiten und Bezugshöhe –, und der Schnitt liegt auf Arbeitshöhe über dem Boden, wie in einem gezeichneten Grundriss.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Wenn Geschosshöhen falsch herauskommen – ein Grundrissschnitt, der durch eine Decke geht –, liegt die Ursache meist im Export, nicht im Viewer. ",
+          { text: "Die häufigsten Fehler in IFC-Modellen", to: "common-ifc-model-errors" },
+          " behandelt die Geschoss- und Platzierungsprobleme dahinter.",
+        ],
+      },
+      { type: "h2", text: "Bemaßungen im Versand behalten" },
+      {
+        type: "p",
+        text: "Eine Messung, die niemand sonst sieht, müssen Sie abtippen. Bemaßungen sollten in Screenshots, im Snapshot eines BCF-Themas und in aufgenommenen Videos und GIFs erscheinen – damit die Zahl mit dem Bild reist.",
+      },
+      {
+        type: "p",
+        text: [
+          "Für Issues heißt das: ein BCF-Thema, dessen Snapshot die zu schmale lichte Weite bereits zeigt. Wie solche Viewpoints in anderen Werkzeugen an der richtigen Stelle aufgehen, steht in ",
+          { text: "BCF 2.1 vs. 3.0", to: "bcf-2-1-vs-3-0-viewpoints" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Tastatur, für alle, die den ganzen Tag messen" },
+      {
+        type: "ul",
+        items: [
+          "M öffnet und schließt das Messpanel; die Zifferntasten der oberen Reihe wechseln das Werkzeug.",
+          "Rechtsklick beendet oder bricht die laufende Messung ab.",
+          "Escape geht jeweils eine Ebene zurück: Zeichnung abbrechen, Werkzeug verlassen, Panel schließen.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Eine Browser-Messung ist nur so genau wie das Modell. Wurde es mit falschen Einheiten oder grober Tessellierung exportiert, ist die Zahl getreu falsch. Validieren Sie die Datei, bevor Sie Maße daraus zitieren.",
+      },
+    ],
+    lang: "de",
+    translationKey: "measure-ifc-model-online",
+  },
+  {
+    slug: "walk-through-ifc-model-first-person",
+    title: "Ein IFC-Modell in der Ich-Perspektive begehen, im Browser",
+    excerpt: "Das Umkreisen zeigt ein Gebäude als Objekt. Die Begehung auf Augenhöhe zeigt es so, wie jemand es nutzen wird – und ist oft der schnellste Weg, die Tür zu finden, die gegen eine Stütze aufschlägt. Wie die Navigation in der Ich-Perspektive auf einem IFC funktioniert und wann sie hilft.",
+    seoTitle: "IFC-Modell in der Ich-Perspektive begehen, online",
+    seoDescription: "Begehen Sie ein IFC-Modell auf Augenhöhe im Browser: WASD und Maus, Klick zum Hingehen, Tempo, und warum die Begehung Fehler zeigt, die man sonst übersieht.",
+    date: "2026-10-02",
+    readTimeMin: 7,
+    category: "Werkzeuge & Vergleiche",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "IFC Modell begehen",
+      "BIM Viewer Ich-Perspektive",
+      "IFC Walkthrough online",
+      "Begehungsmodus BIM Browser",
+      "virtuelle Begehung IFC",
+      "im IFC Modell navigieren",
+      "walk through IFC model",
+      "first person BIM viewer",
+      "IFC walkthrough online",
+      "BIM walk mode browser",
+      "virtual walkthrough IFC",
+      "navigate IFC model",
+    ],
+    faqs: [
+      {
+        q: "Kann ich ein IFC-Modell im Webbrowser begehen?",
+        a: "Ja. Drücken Sie in IFC Viewer Online G für den Begehungsmodus: Bewegen Sie sich mit WASD oder den Pfeiltasten, schauen Sie mit der Maus umher und doppelklicken Sie auf einen Boden, um auf Augenhöhe dorthin zu gleiten. Es läuft direkt auf dem IFC, ohne Upload.",
+      },
+      {
+        q: "Warum kann ich durch Wände gehen?",
+        a: "Absichtlich. Bei der Modellprüfung will man meist durch die Wand in den Nachbarraum, statt die Tür zu suchen. Kollision würde außerdem ständige Geometrieabfragen erfordern und große Modelle verlangsamen.",
+      },
+      {
+        q: "Reicht eine Browser-Begehung für eine Präsentation beim Bauherrn?",
+        a: "Für eine Live-Besprechung ja. Für eine ausgefeilte Präsentation nehmen Sie die Begehung als Video auf und schneiden es, oder nutzen geführte Touren, die die Kamera zwischen gespeicherten Ansichten bewegen.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Umkreisen ist die Art, wie BIM-Werkzeuge uns Gebäude betrachten lassen: von außen, leicht von oben, das Modell in den Händen drehend. Hervorragend für die Koordination, nutzlos für eine Frage – wie fühlt es sich an, hindurchzugehen?",
+      },
+      {
+        type: "p",
+        text: "Die Ich-Perspektive beantwortet sie, und unterwegs einige praktischere Fragen. Die Tür, die gegen eine Stütze aufschlägt. Der Flur, der technisch breit genug ist und sich wie ein Tunnel anfühlt. Die Decke, die ohne erkennbaren Grund auf 2,10 m abfällt. All das ist auf Augenhöhe offensichtlich und von oben fast unsichtbar.",
+      },
+      { type: "h2", text: "So funktioniert die Begehung" },
+      {
+        type: "table",
+        headers: ["Aktion", "Steuerung"],
+        rows: [
+          ["Begehungsmodus starten oder beenden", "G"],
+          ["Bewegen", "W A S D oder die Pfeiltasten"],
+          ["Umschauen", "Maus (in die Ansicht klicken, um den Cursor zu fangen)"],
+          ["Tempo ändern", "Mausrad während der Begehung"],
+          [
+            "Zu einem Punkt gehen",
+            "Doppelklick auf einen Boden – die Kamera gleitet auf 1,65 m über der Fläche dorthin",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: "Bei gefangenem Cursor markiert ein Fadenkreuz die Bildmitte, und dort landen die Klicks: Wer während der Begehung ein Element auswählt, erwischt das, was er ansieht – nicht die Stelle, an der die Maus zu Beginn war.",
+      },
+      { type: "h2", text: "Warum es keine Kollision gibt" },
+      {
+        type: "p",
+        text: "Spiele halten Sie an Wänden auf. Eine Modellprüfung sollte das nicht. Wer ein Gebäude prüft, will meist in den Nebenraum, um die andere Seite einer Trennwand zu sehen, statt die Tür zu suchen. Und Kollision in einem großen IFC bedeutet Geometrieabfragen in jedem Frame – das kostet genau die Flüssigkeit, die die Begehung nützlich macht.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Kombinieren Sie die Begehung mit einer Schnittbox. Schneiden Sie das obere Geschoss weg, begehen Sie die Ebene, und Sie haben Augenhöhe und Grundrisskontext zugleich.",
+      },
+      { type: "h2", text: "Was die Begehung findet und das Umkreisen übersieht" },
+      {
+        type: "ul",
+        items: [
+          "Türaufschläge, die mit Möbeln, Stützen oder anderen Türen kollidieren.",
+          "Kopfhöhe unter Treppen, Trägern und Kanälen.",
+          "Sichtbeziehungen – sieht der Empfang den Eingang?",
+          "Orientierung – ist der Weg zur Treppe vom Aufzugsvorraum aus offensichtlich?",
+          "Proportionen – Räume, die die geforderte Fläche erfüllen und sich trotzdem falsch anfühlen.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Wenn Sie etwas finden, messen Sie es sofort – ",
+          { text: "ein IFC-Modell online messen", to: "measure-ifc-model-online" },
+          " – und legen Sie ein BCF-Thema mit dem Viewpoint an, an dem Sie gerade stehen.",
+        ],
+      },
+      { type: "h2", text: "Von der Begehung zu etwas, das man verschicken kann" },
+      {
+        type: "p",
+        text: [
+          "Eine Live-Begehung ist eine Prüfung. Für einen Bauherrn überzeugt derselbe Weg als kurzes Video oft mehr als jedes Rendering. Wie man eine Aufnahme in ein geschnittenes MP4 mit Titeln verwandelt, passend für die Plattform, auf der es läuft, steht in ",
+          { text: "ein IFC-Modell in ein Video verwandeln", to: "ifc-model-video-social-media" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "In Grundriss- oder Ansichtsdarstellung (orthografische Kamera) gibt es keine Tiefe zum Hineingehen, daher verschiebt „vorwärts“ die Ansicht auf dem Bildschirm nach oben. Wechseln Sie für eine echte Begehung zurück in die Perspektive.",
+      },
+    ],
+    lang: "de",
+    translationKey: "walk-through-ifc-model-first-person",
+  },
+  {
+    slug: "ifc-model-video-social-media",
+    title: "Ein IFC-Modell in ein Video für LinkedIn, Instagram oder den Bauherrn verwandeln",
+    excerpt: "Ein dreißigsekündiger Clip eines Modells tut mehr für ein Projekt als eine Folie voller Screenshots – wenn er im richtigen Format ankommt. Warum Plattformen WebM ablehnen, warum ein Hochformat-Zuschnitt das Gebäude halbiert und wie man aus einem IFC ein geschnittenes MP4 erstellt, ohne den Browser zu verlassen.",
+    seoTitle: "IFC-Modell als Video für LinkedIn oder Instagram",
+    seoDescription: "IFC-Modell aufnehmen und als geschnittenes MP4 für LinkedIn, Instagram oder Bauherren exportieren: Formate, Einpassen statt Zuschnitt, Titel, warum kein WebM.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Werkzeuge & Vergleiche",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "IFC zu Video",
+      "BIM Modell Video",
+      "Architekturvideo LinkedIn",
+      "BIM Animation online",
+      "3D Modell als MP4 exportieren",
+      "Architektur Reel Instagram",
+      "BIM Präsentationsvideo",
+      "IFC to video",
+      "BIM model video",
+      "architecture video LinkedIn",
+      "BIM animation online",
+      "export 3D model MP4",
+      "Instagram architecture reel",
+      "BIM presentation video",
+    ],
+    faqs: [
+      {
+        q: "Wie mache ich ein Video von einem IFC-Modell?",
+        a: "Öffnen Sie das Modell in IFC Viewer Online, nehmen Sie die Ansicht mit der Aufnahmeleiste auf, schneiden Sie den Clip – Trimmen, Titel, Übergänge, Musik – und exportieren Sie ihn als MP4 im Format der Plattform. Alles läuft im Browser.",
+      },
+      {
+        q: "Warum lehnen Instagram oder LinkedIn meine Bildschirmaufnahme ab?",
+        a: "Meist, weil sie WebM ist, das Standardformat vieler Browser-Rekorder. Die Plattformen erwarten MP4 mit H.264-Video. Exportieren Sie direkt als MP4; nachträgliches Umwandeln eines WebM verliert oft die Tonspur.",
+      },
+      {
+        q: "Wie mache ich ein Hochformatvideo von einem breiten Gebäude?",
+        a: "Passen Sie den Bildausschnitt ein, statt ihn zuzuschneiden. Ein mittiger 9:16-Zuschnitt einer Queransicht behält einen schmalen Streifen und schneidet das Gebäude beidseitig ab; Einpassen mit unscharfen Balken oben und unten behält das ganze Gebäude und lässt Platz für einen Titel.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Architekten und Ingenieure produzieren mit die visuellste Arbeit aller Branchen – und teilen sie dann als PDF voller Screenshots. Ein Modell, das sich langsam im Licht dreht, ein Schnitt, der das Tragwerk freilegt, ein Gang von der Straße ins Atrium: dreißig Sekunden davon wirken auf LinkedIn mehr als eine Seite Renderings.",
+      },
+      {
+        type: "p",
+        text: "Das Hindernis ist selten die Aufnahme. Es ist alles danach: die Datei, die die Plattform ablehnt, der Hochformat-Zuschnitt, der das Gebäude abschneidet, der Titel, den auf dem Handy niemand lesen kann.",
+      },
+      { type: "h2", text: "Formate: der Teil, der still scheitert" },
+      {
+        type: "table",
+        headers: ["Plattform", "Passendes Format", "Hinweise"],
+        rows: [
+          ["LinkedIn-Feed", "1:1 oder 4:5", "Quadrat und Hochformat belegen mehr Feed als Querformat"],
+          [
+            "Instagram Reels / TikTok",
+            "9:16",
+            "Text von oben und unten fernhalten, dort liegt die Bedienoberfläche",
+          ],
+          ["YouTube, Präsentation beim Bauherrn", "16:9", "Das native Format der Aufnahme"],
+          [
+            "E-Mail an den Bauherrn",
+            "16:9, kurz",
+            "Unter einer Minute; viele Mailsysteme begrenzen die Anhangsgröße",
+          ],
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "MP4 exportieren, nicht WebM",
+        text: "Die meisten Browser-Rekorder erzeugen WebM. Instagram, TikTok und LinkedIn lehnen es ab oder kodieren es schlecht um. Exportieren Sie direkt als MP4 (H.264). Nachträgliches Umwandeln geht, aber eine unachtsame Konvertierung verliert den Ton ohne Warnung.",
+      },
+      { type: "h2", text: "Einpassen, nicht zuschneiden" },
+      {
+        type: "p",
+        text: "Gebäude sind breit. Ein mittiger 9:16-Zuschnitt einer Queraufnahme behält einen Streifen von etwa einem Drittel der Breite, und das Gebäude verlässt beidseitig das Bild. Den ganzen Ausschnitt ins Hochformat einzupassen, hält das Gebäude intakt und lässt oben und unten Balken – die, mit einer unscharfen Kopie desselben Bilds gefüllt, gewollt wirken und genau den Platz für einen Titel bieten.",
+      },
+      { type: "pull-quote", text: "Die Balken sind kein verschenkter Platz. Dort steht der Titel." },
+      { type: "h2", text: "Vom Modell zum MP4, Schritt für Schritt" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Die Einstellung vorbereiten",
+            body: "Hintergrund, Licht und ein Schnitt oder ein isoliertes Gewerk, wenn das die Geschichte ist. Eine Sonnenstudie zur goldenen Stunde erledigt viel der Arbeit.",
+          },
+          {
+            title: "Aufnehmen",
+            body: "Langsam umkreisen, einen Weg begehen oder den Wiederholungspuffer die letzten Momente halten lassen, damit Sie die gute Einstellung nie verpassen.",
+          },
+          {
+            title: "Trimmen",
+            body: "Anfang und Ende kürzen. Die ersten zwei Sekunden entscheiden, ob jemand den Rest sieht.",
+          },
+          {
+            title: "Titel und Übergang hinzufügen",
+            body: "Eine Textzeile, groß, lange genug im Bild, um sie zweimal zu lesen. Eine Abblende am Ende.",
+          },
+          {
+            title: "Musik hinzufügen, wenn die Plattform sie abspielt",
+            body: "Optional; viele Feeds starten stumm, also muss das Video ohne Ton funktionieren.",
+          },
+          {
+            title: "Für die Plattform exportieren",
+            body: "Voreinstellung wählen – Quadrat, Porträt, Hochformat, Querformat – und als MP4 exportieren. Für Orte, die kein Video abspielen, gibt es ein GIF.",
+          },
+        ],
+      },
+      { type: "h2", text: "Was ein Modellvideo sehenswert macht" },
+      {
+        type: "ul",
+        items: [
+          "Eine Idee pro Clip: das Tragwerk, die Fassade, der Weg durchs Gebäude. Nicht alle drei.",
+          "Langsame Kamera. Was am Monitor langsam wirkt, ist auf dem Handy richtig.",
+          "Echter Kontext: das Modell auf seinem Grundstück, in seiner Stadt, mit der Sonne dort, wo sie wirklich steht.",
+          "Ein lesbarer Titel in der ersten Sekunde und nichts Wichtiges nahe den Rändern eines Hochformats.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Die Kontextaufnahmen – das Modell auf einer 3D-Karte mit Gelände und Nachbarbebauung – behandelt ",
+          { text: "ein IFC auf einer 3D-Karte anzeigen", to: "view-ifc-on-3d-map-online" },
+          ", die Sonne ",
+          { text: "Sonnen- und Schattenstudien aus einem IFC", to: "ifc-sun-shadow-study-online" },
+          ". Für Standbilder siehe ",
+          { text: "Präsentationsbilder aus einem IFC", to: "ifc-presentation-images-boards" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Aufnahme und Schnitt geschehen in Ihrem Browser; Modell und Video bleiben auf Ihrem Rechner, bis Sie sie veröffentlichen. Das zählt bei Projekten, die noch unter NDA stehen.",
+      },
+    ],
+    lang: "de",
+    translationKey: "ifc-model-video-social-media",
+  },
+  {
+    slug: "ifc-presentation-images-boards",
+    title: "Präsentationsbilder aus einem IFC-Modell: Boards, Titelbilder und Koordinationsansichten",
+    excerpt: "Die meisten Projektbilder sind Screenshots mit abgeschnittener Werkzeugleiste. Ein Modell enthält bereits, was ein gutes Präsentationsbild braucht – Schnitte, Gewerke, Geschosse, echten Norden –, und eine Vorlage macht daraus in Minuten ein Board, ein Titelbild oder eine Koordinationsansicht.",
+    seoTitle: "Präsentationsbilder aus einem IFC: Boards und Titelbilder",
+    seoDescription: "Boards, Titelbilder und gewerkweise eingefärbte Koordinationsansichten aus einem IFC-Modell im Browser: Vorlagen, Schnitte mit Poché, Licht und Export.",
+    date: "2026-10-02",
+    readTimeMin: 8,
+    category: "Werkzeuge & Vergleiche",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "BIM Präsentationsboard",
+      "IFC Modell Bild",
+      "Architektur Präsentationsvorlage",
+      "Koordinationsansicht nach Gewerk",
+      "Schnitt mit Poché",
+      "Projekt Titelbild BIM",
+      "IFC Rendering online",
+      "BIM presentation board",
+      "IFC model image",
+      "architecture presentation template",
+      "coordination view by discipline",
+      "section with poché",
+      "project cover image BIM",
+      "IFC render online",
+    ],
+    faqs: [
+      {
+        q: "Kann ich Präsentationsbilder aus einem IFC ohne Render-Engine erstellen?",
+        a: "Ja. IFC Viewer Online hat ein Cover-Studio, das Ansichten des Modells aufnimmt, Look und Licht anwendet und sie in Vorlagen setzt – Boards, Titelbilder, Datenblätter, Koordinationsansichten –, exportiert als Bilder oder Foliensatz, im Browser.",
+      },
+      {
+        q: "Wie zeige ich Architektur, Tragwerk und TGA in einem Bild?",
+        a: "Geben Sie jedem Gewerk eine konsistente Farbe und machen Sie die Architektur transluzent, damit Tragwerk und TGA hindurch lesbar sind. Gewerke lassen sich aus der ISO-19650-Dateibenennung oder dem Modellinhalt erkennen und von Hand korrigieren.",
+      },
+      {
+        q: "Was ist Poché in einem Schnitt?",
+        a: "Die Vollflächenfüllung dort, wo die Schnittebene Material durchtrennt. Sie lässt einen Schnitt als Schnitt lesen statt als Modell, dem ein Stück fehlt.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Jedes Projekt braucht Bilder lange bevor es Renderings braucht: ein Titelbild für den Phasenbericht, ein Board für die Entwurfsbesprechung, ein Bild für den Wettbewerb, einen Post zur Bauantragseinreichung. Meist sind es Screenshots mit abgeschnittener Werkzeugleiste, und das sieht man.",
+      },
+      {
+        type: "p",
+        text: "Das Modell weiß bereits viel von dem, was ein gutes Präsentationsbild braucht. Wo die Geschosse liegen. Welche Elemente Tragwerk und welche TGA sind. Wo das Grundstück liegt und wo die Sonne steht. Eine Vorlage, die dieses Wissen nutzt, erzeugt in Minuten, wofür man im Layoutprogramm einen Nachmittag bräuchte.",
+      },
+      { type: "h2", text: "Vier Bildtypen, die jedes Projekt nutzt" },
+      {
+        type: "table",
+        headers: ["Bild", "Für", "Was es wirken lässt"],
+        rows: [
+          [
+            "Titelbild",
+            "Berichte, Wettbewerbe, die Projektseite",
+            "Eine starke Ansicht, großzügiger Raum, der Projektname",
+          ],
+          [
+            "Board",
+            "Entwurfsbesprechungen",
+            "Mehrere Ansichten – außen, Schnitt, Grundriss – in einheitlichem Look",
+          ],
+          [
+            "Datenblatt",
+            "Übergabe, Bauherren-Updates",
+            "Eine Ansicht mit den Eckdaten und einem QR-Code zum Live-Modell",
+          ],
+          [
+            "Koordinationsansicht",
+            "Koordinationsbesprechungen",
+            "Gewerke in konsistenten Farben, Architektur transluzent",
+          ],
+        ],
+      },
+      { type: "h2", text: "Schnitte, die sich als Schnitte lesen" },
+      {
+        type: "p",
+        text: "Ein geschnittenes Modell ohne Poché wirkt kaputt: hohle Wände, Decken ohne Stärke, ein Gebäude, dem eine Scheibe fehlt. Das Füllen der Schnittflächen macht daraus einen Schnitt. Dieselbe Füllung sollte gelten, ob der Schnitt aus einer Präsentationsvorlage oder dem Schnittwerkzeug stammt – zwei verschiedene Looks im selben Bericht sind genau die Inkonsistenz, die Prüfern auffällt.",
+      },
+      {
+        type: "p",
+        text: [
+          "Geschossschnitte werden anhand der Geschosshöhen im IFC auf Arbeitshöhe über dem Boden gesetzt; Details in ",
+          { text: "ein IFC-Modell online messen", to: "measure-ifc-model-online" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Koordinationsbilder nach Gewerk" },
+      {
+        type: "p",
+        text: "Für eine Koordinationsbesprechung ist nicht das schönste Bild das nützliche. Sondern das, in dem jeder seine Arbeit findet: Tragwerk in einer Farbe, Lüftung in einer anderen, Elektro in einer dritten, und die Architektur zurückgenommen, damit sie Kontext gibt, ohne etwas zu verdecken.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Gewerke werden aus der ISO-19650-Dateibenennung (dem Rollencode) erkannt, dann aus dem Dateinamen, dann aus dem Inhalt.",
+          "Jede Erkennung lässt sich pro Modell überschreiben – Namenskonventionen werden nicht immer eingehalten.",
+          "Die Architektur wird automatisch transluzent, sobald Tragwerk oder TGA vorhanden sind.",
+        ],
+      },
+      { type: "h2", text: "Licht, Finish und Marke" },
+      {
+        type: "p",
+        text: "Wenige Regler machen den Großteil des Unterschieds zwischen Screenshot und Bild aus: weiches Licht aus der richtigen Richtung, ein Hintergrund, der nicht das Standardgrau ist, und eine konsistente Farbpalette. Markenfarben werden einmal festgelegt – oder aus einem vorhandenen Bild übernommen – und jede Vorlage nutzt sie.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Nutzen Sie die echte Sonne. Ein Titelbild, beleuchtet zur goldenen Stunde des echten Standorts mit dem richtigen Norden, überzeugt mehr als jedes Studiolicht – und es ist dieselbe Studie wie für die Schatten.",
+      },
+      { type: "h2", text: "Vom einzelnen Bild zum Foliensatz" },
+      {
+        type: "p",
+        text: "Dieselben Ansichten lassen sich zu einem Foliensatz zusammenstellen – Projekt, Leitidee, Ansichtsraster – und exportieren, sodass die Präsentation für die Entwurfsbesprechung aus dem Modell entsteht statt aus in Folien geklebten Screenshots. Jeder Schritt lässt sich rückgängig machen, und das Layout wird mit der Datei gespeichert, damit die nächste Revision dort beginnt, wo die letzte aufgehört hat.",
+      },
+      {
+        type: "p",
+        text: [
+          "Für bewegte Bilder werden dieselben Einstellungen zum Video: ",
+          { text: "ein IFC-Modell in ein Video verwandeln", to: "ifc-model-video-social-media" },
+          ". Für die Qualitätsnachweise, die dazugehören, siehe ",
+          { text: "was mit einem IFC-Modell übergeben werden sollte", to: "ifc-model-handover-documentation" },
+          ".",
+        ],
+      },
+    ],
+    lang: "de",
+    translationKey: "ifc-presentation-images-boards",
+  },
+  {
     slug: "ids-information-delivery-specification-guide",
     title: "IDS erklärt: So prüfen Sie ein IFC-Modell gegen eine Information Delivery Specification",
     excerpt: "IDS macht aus „das Modell muss die Feuerwiderstandsklasse enthalten“ – einem Satz in einem PDF – eine Datei, die eine Maschine prüfen kann. Was die sechs Facetten wirklich testen, wo die meisten IDS-Dateien scheitern und wie Sie eine gegen Ihr IFC im Browser ausführen.",

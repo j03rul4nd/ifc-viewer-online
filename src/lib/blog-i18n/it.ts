@@ -10,6 +10,705 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_IT: BlogPost[] = [
   {
+    slug: "ifc-sun-shadow-study-online",
+    title: "Studio di sole e ombre da un modello IFC, nel browser",
+    excerpt: "Uno studio delle ombre di solito significa esportare in uno strumento di rendering e indovinare l'angolo del nord. Un IFC georeferenziato sa già dove si trova e dov'è il nord: il sole si può quindi posizionare correttamente in qualsiasi data e ora, in pochi secondi, senza uscire dal browser.",
+    seoTitle: "Studio di sole e ombre da un IFC, online",
+    seoDescription: "Esegui uno studio di soleggiamento e ombre di un IFC georeferenziato nel browser: posizione e nord reali, ora locale, alba e tramonto, luna e link.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Strumenti e confronti",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "studio solare IFC",
+      "studio ombre BIM",
+      "analisi delle ombre online",
+      "soleggiamento modello IFC",
+      "nord geografico IFC",
+      "percorso solare modello BIM",
+      "studio ombre nel browser",
+      "sun study IFC",
+      "shadow study BIM",
+      "shadow analysis online",
+      "solar study IFC model",
+      "true north IFC",
+      "sun path BIM model",
+      "daylight shadow study browser",
+    ],
+    faqs: [
+      {
+        q: "Posso fare uno studio delle ombre da un file IFC senza strumento di rendering?",
+        a: "Sì. Se l'IFC è georeferenziato, la sua posizione e il nord geografico sono nel file. IFC Viewer Online li legge, posiziona il sole in qualsiasi data e ora locale del sito e proietta le ombre sul modello nel browser, senza esportazioni né plugin.",
+      },
+      {
+        q: "Perché il mio studio delle ombre punta nella direzione sbagliata?",
+        a: "Quasi sempre per via del nord. Molti modelli sono disegnati con il nord di progetto in alto e la rotazione verso il nord geografico è salvata a parte, oppure non lo è affatto. Uno studio che la ignora ruota tutte le ombre dello stesso errore. Controlla da dove lo strumento ha preso il nord prima di fidarti del risultato.",
+      },
+      {
+        q: "E se il mio IFC non è georeferenziato?",
+        a: "Un buon strumento lo segnala invece di presumere una posizione in silenzio. Puoi allora impostare la posizione a mano, per coordinate o per città, ma considera il risultato indicativo finché il modello non sarà georeferenziato correttamente.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "«Il nuovo edificio farà ombra al cortile della scuola a dicembre?» è una domanda che arriva a ogni riunione urbanistica, di solito il giorno prima. La risposta tradizionale è un'esportazione verso uno strumento di rendering, un'ora a impostare il sole e un'ipotesi un po' nervosa su dove sia il nord.",
+      },
+      {
+        type: "p",
+        text: "Un IFC georeferenziato contiene già i due dati che quell'ipotesi cerca di indovinare: in quale punto della Terra si trova l'edificio e come il modello è ruotato rispetto al nord geografico. Con entrambi, la posizione del sole in qualsiasi momento è un calcolo, non un'impostazione.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Uno studio delle ombre corretto richiede tre dati: latitudine e longitudine, nord geografico e il fuso orario del sito. Un IFC georeferenziato fornisce i primi due.",
+          "L'errore più comune è il nord. Uno studio che usa il nord di progetto invece di quello geografico sbaglia dello stesso angolo a ogni ora.",
+          "Uno strumento che ripiega in silenzio su una posizione predefinita produce ombre convincenti e sbagliate. Cercane uno che dica da dove arriva la posizione.",
+        ],
+      },
+      { type: "h2", text: "Cosa serve al sole dal tuo modello" },
+      {
+        type: "table",
+        headers: ["Dato", "Da dove arriva", "Se è sbagliato"],
+        rows: [
+          [
+            "Latitudine / longitudine",
+            "Coordinate di riferimento di IfcSite, o IfcMapConversion con un CRS noto",
+            "L'altezza del sole è sbagliata: ombre troppo lunghe o troppo corte",
+          ],
+          [
+            "Nord geografico",
+            "La rotazione salvata nella georeferenziazione",
+            "Ogni ombra è ruotata dell'errore",
+          ],
+          ["Fuso orario", "Ricavato dalla posizione", "Lo studio è sfasato di un'ora o più"],
+          ["Data e ora", "Le scegli tu", "—"],
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Se non sei sicuro che il tuo modello sia georeferenziato —o del perché si trovi a due chilometri da dove dovrebbe—, parti da ",
+          { text: "coordinate e georeferenziazione IFC", to: "ifc-coordinates-georeferencing" },
+          ". Tutto ciò che segue dipende da questo.",
+        ],
+      },
+      { type: "h2", text: "Da dove arriva la posizione conta quanto la posizione" },
+      {
+        type: "p",
+        text: "Uno studio solare che sembra giusto ed è sbagliato è peggio di nessuno studio, perché finisce in una relazione urbanistica. La cosa più utile che uno strumento possa fare è dire da dove ha preso i suoi dati.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Dal modello: la georeferenziazione è stata trovata e usata. È il risultato che puoi difendere.",
+          "Impostata da te: coordinate o città inserite a mano. Va bene per un primo controllo; indicalo in ciò che pubblichi.",
+          "Predefinita: non è stato trovato nulla e lo strumento ha presunto una posizione. Non dovrebbe mai avvenire in silenzio: il nostro mostra un avviso bloccante invece di proiettare ombre per una città in cui non ti trovi.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Controlla il nord prima delle ombre",
+        text: "Passa a una vista in pianta a mezzogiorno. Nell'emisfero nord le ombre dovrebbero puntare grosso modo a nord; in quello sud, grosso modo a sud. Se puntano verso una facciata, lo studio usa il nord sbagliato e ogni immagine esportata sarà sbagliata dello stesso angolo.",
+      },
+      { type: "h2", text: "Eseguire lo studio" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Apri l'IFC",
+            body: "Si carica nel browser; il modello non viene mai caricato su un server.",
+          },
+          {
+            title: "Attiva lo studio Sole e Luna",
+            body: "Posizione e nord vengono letti dal modello, con un'etichetta che ne indica la provenienza.",
+          },
+          {
+            title: "Scegli le date che contano",
+            body: "Solstizi ed equinozi sono il set abituale: il 21 giugno per il giorno più lungo, il 21 dicembre per il sole più basso.",
+          },
+          {
+            title: "Scorri la giornata",
+            body: "Trascina l'ora; alba e tramonto sono segnati sulla linea del tempo, così non studi mai un sole sotto l'orizzonte.",
+          },
+          {
+            title: "Salva preimpostazioni per file",
+            body: "«Inverno, 10:00» e «Estate, 18:30» diventano un clic sulla revisione successiva dello stesso modello.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: "C'è anche la luna, con la sua fase: meno importante per l'urbanistica, sorprendentemente utile per le immagini notturne e per spiegare a un cliente perché alle 22:00 d'inverno il cortile è buio.",
+      },
+      { type: "h2", text: "Condividere uno studio solare senza inviare il modello" },
+      {
+        type: "p",
+        text: "Uno studio è utile solo se chi decide può vederlo. Lo stesso momento si può aprire con un link: data e ora locale del sito viaggiano nell'URL, e il fuso orario si ricava dalla posizione del modello stesso, così «21 giugno, 18:30» significa le 18:30 in cantiere, non nell'ufficio di chi guarda.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "?model=https://your-host/model.ifc&solar=06-21T18:30\n?model=https://your-host/model.ifc&solar=12-21T10:00&moon=1",
+      },
+      {
+        type: "p",
+        text: [
+          "La forma senza anno indica sempre l'anno in corso, quindi un link in un documento urbanistico resta valido. Tutti i parametri, e come inserire lo studio in una pagina web o in un pannello CDE, sono in ",
+          { text: "come incorporare un visualizzatore IFC", to: "embed-ifc-viewer-website" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Aggiungere i vicini" },
+      {
+        type: "p",
+        text: [
+          "Un edificio non proietta ombre nel vuoto, né le riceve. Posizionare il modello su una mappa 3D con gli edifici e il terreno circostanti trasforma «il nostro edificio fa ombra al cortile?» in «le torri esistenti gliela fanno già?». Il flusso è spiegato in ",
+          { text: "visualizzare un IFC su una mappa 3D", to: "view-ifc-on-3d-map-online" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Uno studio solare nel browser è un controllo visivo rapido e onesto. Non è un calcolo certificato di illuminazione naturale; quando ne serve uno, usalo per decidere quali ore e quali facciate meritano l'analisi formale.",
+      },
+    ],
+    lang: "it",
+    translationKey: "ifc-sun-shadow-study-online",
+  },
+  {
+    slug: "measure-ifc-model-online",
+    title: "Come misurare un modello IFC online: distanze, aree, angoli e sezioni",
+    excerpt: "Misurare in un visualizzatore gratuito di solito significa cliccare vicino a uno spigolo e sperare. Agganciarsi a vertici e spigoli reali, misurare attraverso una sezione e mantenere le quote nell'immagine che invii è ciò che rende una misura nel browser degna di essere citata.",
+    seoTitle: "Misurare un modello IFC online: distanze, aree e sezioni",
+    seoDescription: "Misura modelli IFC nel browser con snap su vertici e spigoli: distanze, aree, angoli, box di sezione e tagli per piano, con le quote nelle immagini.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Strumenti e confronti",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "misurare IFC online",
+      "strumento di misura IFC",
+      "misurare modello BIM nel browser",
+      "box di sezione IFC",
+      "misurare aree IFC",
+      "taglio in pianta IFC",
+      "visualizzatore IFC misurare distanze",
+      "measure IFC online",
+      "IFC measurement tool",
+      "measure BIM model browser",
+      "IFC section box",
+      "IFC area measurement",
+      "IFC plan cut",
+      "IFC viewer measure distance",
+    ],
+    faqs: [
+      {
+        q: "Posso misurare un modello IFC senza Revit o Navisworks?",
+        a: "Sì. IFC Viewer Online misura distanze, percorsi, aree, angoli e coordinate di punti direttamente sull'IFC nel browser, con snap su vertici, punti medi e spigoli, senza caricare nulla.",
+      },
+      {
+        q: "Perché la mia misura si aggancia all'elemento sbagliato?",
+        a: "Di solito perché la selezione ignora i piani di sezione e colpisce la facciata davanti al taglio, oppure perché il raggio di snap è in metri e diventa enorme quando ti allontani. Uno snap calibrato in pixel dello schermo e che rispetta i tagli attivi risolve entrambi i problemi.",
+      },
+      {
+        q: "Come ottengo una pianta di un singolo piano?",
+        a: "Con un taglio in pianta per piano. Le quote dei piani vengono lette dall'IFC (quote di IfcBuildingStorey, corrette per unità e riferimento) e il taglio viene posizionato a un'altezza di lavoro sopra il pavimento, come in una pianta disegnata.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "La maggior parte dei pulsanti «misura» dei visualizzatori IFC gratuiti fa qualcosa di leggermente diverso da quello che promette il nome. Clicchi vicino a uno spigolo, lo strumento prende il punto più vicino del triangolo che si trovava sotto il cursore e ti restituisce un numero con quattro decimali di falsa precisione.",
+      },
+      {
+        type: "p",
+        text: "Per un controllo veloce va bene. Per un numero da mettere in un'email all'impresa no. La differenza sta in tre cose: a cosa si aggancia lo strumento, se rispetta le sezioni e se la misura sopravvive nell'immagine che invii.",
+      },
+      { type: "h2", text: "Lo snap: ciò che decide se un numero è reale" },
+      {
+        type: "p",
+        text: "Una misura vale quanto i suoi due estremi. Un buon snap trova la geometria che intendevi —un vertice, il punto medio di uno spigolo, un punto lungo uno spigolo— e ti dice cosa ha trovato prima che tu clicchi.",
+      },
+      {
+        type: "table",
+        headers: ["Obiettivo dello snap", "Usalo per", "Trappola"],
+        rows: [
+          [
+            "Vertice",
+            "Spigoli, estremità di travi, incroci di griglia",
+            "Le curve tassellate hanno molti vertici; avvicinati per scegliere quello giusto",
+          ],
+          [
+            "Punto medio dello spigolo",
+            "Centro di una faccia di muro, mezzeria",
+            "Nei modelli tassellati male è il punto medio dello spigolo del triangolo, non del muro",
+          ],
+          ["Spigolo", "Larghezze libere, vani porta", "Senza modalità perpendicolare misuri in diagonale"],
+          ["Faccia", "Aree, distanza da una superficie", "Area della faccia scelta, non del locale"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Un dettaglio conta più di quanto sembri: il raggio di snap andrebbe misurato in pixel dello schermo, non in metri. Un metro è una tolleranza sensata da vicino e assurda da cinquanta metri, dove aggancia punti dell'elemento sbagliato. Calibrarlo sulla dimensione del pixel sotto il cursore mantiene lo stesso comportamento a ogni zoom.",
+      },
+      { type: "h2", text: "Le cinque misure che ti servono davvero" },
+      {
+        type: "ol",
+        items: [
+          "Distanza: due punti, con modalità perpendicolare opzionale per larghezze libere e altezze di interpiano.",
+          "Percorso: una catena di punti, per il tracciato di un cavo o una distanza di esodo.",
+          "Area: un poligono, o l'area di una faccia scelta.",
+          "Angolo: tre punti, per pendenze di coperture e rampe.",
+          "Punto: le coordinate di un singolo punto, utili per confrontare un modello con un rilievo.",
+        ],
+      },
+      { type: "h2", text: "Misurare all'interno: sezioni che la selezione rispetta" },
+      {
+        type: "p",
+        text: "Per misurare un controsoffitto o un cavedio bisogna aprire l'edificio. Ed ecco una trappola in cui cadono molti visualizzatori web: la sezione nasconde la facciata alla vista, ma la selezione continua a colpirla. Clicchi sul canale che vedi e ottieni il muro che non vedi.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        text: "Prova qualsiasi visualizzatore così: inserisci una sezione che attraversa un edificio e clicca su un elemento visibile solo grazie al taglio. Se la selezione o la misura cadono sulla facciata nascosta, la selezione dello strumento ignora i piani di taglio e ogni misura interna è sospetta.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Piani singoli lungo X, Y o Z, oppure allineati a una faccia scelta.",
+          "Un box di sezione, per isolare un locale o un cavedio.",
+          "Tagli in pianta per piano: le quote dei piani vengono lette dall'IFC —quote corrette per unità e riferimento— e il taglio sta a un'altezza di lavoro sopra il pavimento, come in una pianta disegnata.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Quando le quote dei piani escono sbagliate —un taglio in pianta che attraversa un solaio—, la causa di solito è nell'esportazione, non nel visualizzatore. ",
+          { text: "Gli errori più comuni nei modelli IFC", to: "common-ifc-model-errors" },
+          " spiega i problemi di piani e posizionamento che ci sono dietro.",
+        ],
+      },
+      { type: "h2", text: "Mantenere le quote in ciò che invii" },
+      {
+        type: "p",
+        text: "Una misura che nessun altro può vedere è una misura che dovrai riscrivere. Le quote dovrebbero comparire negli screenshot, nello snapshot allegato a una issue BCF e nei video e GIF registrati, così il numero viaggia insieme all'immagine.",
+      },
+      {
+        type: "p",
+        text: [
+          "Per le issue, significa un topic BCF il cui snapshot mostra già il passaggio libero troppo stretto. Come far aprire quei viewpoint nel punto giusto in altri strumenti è spiegato in ",
+          { text: "BCF 2.1 vs 3.0", to: "bcf-2-1-vs-3-0-viewpoints" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Tastiera, per chi misura tutto il giorno" },
+      {
+        type: "ul",
+        items: [
+          "M apre e chiude il pannello di misura; i tasti numerici della riga superiore cambiano strumento.",
+          "Il clic destro termina o annulla la misura in corso.",
+          "Esc torna indietro di un livello alla volta: annulla il disegno, esce dallo strumento, chiude il pannello.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Una misura nel browser è precisa quanto il modello. Se il modello è stato esportato con unità sbagliate o una tassellazione grossolana, il numero sarà fedelmente sbagliato. Valida il file prima di citare quote ricavate da esso.",
+      },
+    ],
+    lang: "it",
+    translationKey: "measure-ifc-model-online",
+  },
+  {
+    slug: "walk-through-ifc-model-first-person",
+    title: "Percorrere un modello IFC in prima persona, nel browser",
+    excerpt: "Orbitare mostra un edificio come un oggetto. Percorrerlo ad altezza d'occhi lo mostra come lo userà qualcuno, ed è spesso il modo più rapido per trovare la porta che si apre contro un pilastro. Come funziona la navigazione in prima persona su un IFC e quando aiuta.",
+    seoTitle: "Percorrere un modello IFC in prima persona, online",
+    seoDescription: "Percorri un modello IFC ad altezza d'occhi nel browser: WASD e mouse, clic per spostarti, e perché camminare rivela problemi che l'orbita nasconde.",
+    date: "2026-10-02",
+    readTimeMin: 7,
+    category: "Strumenti e confronti",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "percorrere modello IFC",
+      "visualizzatore BIM prima persona",
+      "walkthrough IFC online",
+      "modalità cammina BIM browser",
+      "visita virtuale IFC",
+      "navigare modello IFC",
+      "walk through IFC model",
+      "first person BIM viewer",
+      "IFC walkthrough online",
+      "BIM walk mode browser",
+      "virtual walkthrough IFC",
+      "navigate IFC model",
+    ],
+    faqs: [
+      {
+        q: "Posso percorrere un modello IFC in un browser web?",
+        a: "Sì. In IFC Viewer Online premi G per passare alla modalità cammina: muoviti con WASD o le frecce, guardati intorno con il mouse e fai doppio clic su un pavimento per scivolare lì ad altezza d'occhi. Funziona direttamente sull'IFC, senza caricare nulla.",
+      },
+      {
+        q: "Perché posso attraversare i muri?",
+        a: "Di proposito. Durante la revisione di un modello di solito vuoi passare attraverso il muro nella stanza accanto, non cercare la porta. Inoltre la collisione richiede interrogazioni continue della geometria, che rallenterebbero i modelli grandi.",
+      },
+      {
+        q: "Una visita nel browser basta per una presentazione al cliente?",
+        a: "Per una revisione dal vivo sì. Per una presentazione curata, registra il percorso come video e montalo, oppure usa tour guidati che muovono la camera tra viste salvate.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Orbitare è il modo in cui gli strumenti BIM ci insegnano a guardare gli edifici: da fuori, un po' dall'alto, girando il modello tra le mani. È eccellente per il coordinamento e inutile per una domanda: come sarà camminarci dentro?",
+      },
+      {
+        type: "p",
+        text: "La navigazione in prima persona risponde a questa domanda, e ad alcune più pratiche lungo la strada. La porta che si apre contro un pilastro. Il corridoio tecnicamente abbastanza largo che sembra un tunnel. Il controsoffitto che scende a 2,10 metri senza motivo apparente. Tutto questo è ovvio ad altezza d'occhi e quasi invisibile dall'alto.",
+      },
+      { type: "h2", text: "Come funziona la camminata" },
+      {
+        type: "table",
+        headers: ["Azione", "Comando"],
+        rows: [
+          ["Entrare o uscire dalla modalità cammina", "G"],
+          ["Muoversi", "W A S D o le frecce"],
+          ["Guardarsi intorno", "Mouse (clicca la vista per catturare il cursore)"],
+          ["Cambiare velocità", "Rotella del mouse mentre cammini"],
+          [
+            "Andare in un punto",
+            "Doppio clic su un pavimento: la camera scivola lì a 1,65 m dalla superficie",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: "Con il cursore catturato, un mirino segna il centro della vista, ed è lì che arrivano i clic: selezionare un elemento mentre cammini prende ciò che stai guardando, non il punto in cui era il mouse quando hai iniziato.",
+      },
+      { type: "h2", text: "Perché non c'è collisione" },
+      {
+        type: "p",
+        text: "I videogiochi ti fermano contro i muri. Una revisione di modello non dovrebbe. Quando controlli un edificio di solito vuoi entrare nella stanza accanto per vedere l'altro lato di una tramezza, non cercare la porta. E la collisione su un IFC grande significa interrogare la geometria a ogni fotogramma, il che costa proprio la fluidità che rende utile camminare.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Combina la camminata con un box di sezione. Togli il piano di sopra, percorri il piano e avrai insieme la vista ad altezza d'occhi e il contesto della pianta.",
+      },
+      { type: "h2", text: "Cosa scopre la camminata che l'orbita non vede" },
+      {
+        type: "ul",
+        items: [
+          "Aperture delle porte che urtano arredi, pilastri o altre porte.",
+          "Altezze libere sotto scale, travi e canali.",
+          "Visuali: se dalla reception si vede l'ingresso.",
+          "Orientamento: se il percorso verso la scala è evidente dall'atrio degli ascensori.",
+          "Proporzioni: locali che rispettano la superficie richiesta e sembrano comunque sbagliati.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Quando trovi qualcosa, misuralo subito —",
+          { text: "come misurare un modello IFC online", to: "measure-ifc-model-online" },
+          "— e aprilo come issue BCF con il viewpoint in cui ti trovi.",
+        ],
+      },
+      { type: "h2", text: "Da una camminata a qualcosa da inviare" },
+      {
+        type: "p",
+        text: [
+          "Una camminata dal vivo è una revisione. Per un cliente, lo stesso percorso registrato come breve video convince spesso più di qualsiasi rendering. Trasformare una registrazione in un MP4 montato con titoli, nel formato della piattaforma su cui sarà visto, è spiegato in ",
+          { text: "trasformare un modello IFC in un video", to: "ifc-model-video-social-media" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "In una vista in pianta o prospetto (camera ortografica) non c'è profondità in cui camminare, quindi avanzare sposta la vista verso l'alto sullo schermo. Torna a una vista prospettica per una vera camminata.",
+      },
+    ],
+    lang: "it",
+    translationKey: "walk-through-ifc-model-first-person",
+  },
+  {
+    slug: "ifc-model-video-social-media",
+    title: "Trasforma un modello IFC in un video per LinkedIn, Instagram o un cliente",
+    excerpt: "Una clip di trenta secondi di un modello fa per un progetto più di una slide di screenshot, se arriva nel formato giusto. Perché le piattaforme rifiutano il WebM, perché un ritaglio verticale taglia l'edificio a metà e come produrre un MP4 montato da un IFC senza uscire dal browser.",
+    seoTitle: "Modello IFC in video per LinkedIn o Instagram",
+    seoDescription: "Registra un modello IFC ed esporta un MP4 montato per LinkedIn, Instagram o un cliente: formati, adattare o ritagliare, titoli, musica e perché il WebM non va.",
+    date: "2026-10-02",
+    readTimeMin: 9,
+    category: "Strumenti e confronti",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "IFC in video",
+      "video modello BIM",
+      "video architettura LinkedIn",
+      "animazione BIM online",
+      "esportare modello 3D in MP4",
+      "reel architettura Instagram",
+      "video di presentazione BIM",
+      "IFC to video",
+      "BIM model video",
+      "architecture video LinkedIn",
+      "BIM animation online",
+      "export 3D model MP4",
+      "Instagram architecture reel",
+      "BIM presentation video",
+    ],
+    faqs: [
+      {
+        q: "Come faccio un video di un modello IFC?",
+        a: "Apri il modello in IFC Viewer Online, registra la vista con la barra di cattura, poi monta la clip —taglio, titoli, transizioni, musica— ed esportala in MP4 nel formato della piattaforma. Tutto avviene nel browser.",
+      },
+      {
+        q: "Perché Instagram o LinkedIn rifiutano la mia registrazione dello schermo?",
+        a: "Di solito perché è WebM, il formato predefinito di molti registratori del browser. Le piattaforme si aspettano MP4 con video H.264. Esporta direttamente in MP4; convertire un WebM in seguito spesso fa perdere la traccia audio.",
+      },
+      {
+        q: "Come faccio un video verticale di un edificio largo?",
+        a: "Adatta l'inquadratura invece di ritagliarla. Un ritaglio centrale di una vista orizzontale in 9:16 tiene una striscia stretta e taglia l'edificio su entrambi i lati; adattarla, con bande sfocate sopra e sotto, mantiene l'edificio intero e lascia spazio per un titolo.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Architetti e ingegneri producono uno dei lavori più visivi di qualsiasi settore e poi lo condividono come un PDF di screenshot. Un modello che ruota lentamente nella luce, una sezione che si apre per mostrare la struttura, una camminata dalla strada all'atrio: trenta secondi di questo valgono su LinkedIn più di una pagina di rendering.",
+      },
+      {
+        type: "p",
+        text: "L'ostacolo raramente è la registrazione. È tutto quello che viene dopo: il file che la piattaforma rifiuta, il ritaglio verticale che taglia l'edificio, il titolo che nessuno riesce a leggere sul telefono.",
+      },
+      { type: "h2", text: "Formati: la parte che fallisce in silenzio" },
+      {
+        type: "table",
+        headers: ["Piattaforma", "Formato che funziona", "Note"],
+        rows: [
+          ["Feed di LinkedIn", "1:1 o 4:5", "Quadrato e verticale occupano più feed dell'orizzontale"],
+          [
+            "Reel di Instagram / TikTok",
+            "9:16",
+            "Tieni il testo lontano da sopra e sotto, dove c'è l'interfaccia",
+          ],
+          ["YouTube, presentazione al cliente", "16:9", "Il formato nativo della registrazione"],
+          [
+            "Email a un cliente",
+            "16:9, breve",
+            "Meno di un minuto; molti sistemi di posta limitano la dimensione degli allegati",
+          ],
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Esporta MP4, non WebM",
+        text: "La maggior parte dei registratori del browser produce WebM. Instagram, TikTok e LinkedIn lo rifiutano o lo ricodificano male. Esporta direttamente in MP4 (H.264). Convertire dopo funziona, ma una conversione disattenta perde l'audio senza avvisare.",
+      },
+      { type: "h2", text: "Adatta, non ritagliare" },
+      {
+        type: "p",
+        text: "Gli edifici sono larghi. Un ritaglio centrale di una registrazione orizzontale in 9:16 tiene una striscia di circa un terzo della larghezza, e l'edificio esce dall'inquadratura su entrambi i lati. Adattare l'intera inquadratura al formato verticale mantiene l'edificio intatto e lascia bande sopra e sotto che, riempite con una copia sfocata dello stesso fotogramma, sembrano volute e ti danno esattamente lo spazio per un titolo.",
+      },
+      { type: "pull-quote", text: "Le bande non sono spazio sprecato. Sono il posto del titolo." },
+      { type: "h2", text: "Dal modello all'MP4, passo per passo" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Prepara l'inquadratura",
+            body: "Sfondo, luce e una sezione o una disciplina isolata se è quella la storia. Uno studio solare all'ora d'oro fa buona parte del lavoro.",
+          },
+          {
+            title: "Registra",
+            body: "Orbita lentamente, percorri un tragitto o lascia che il buffer di replay conservi gli ultimi istanti per non perdere mai la ripresa buona.",
+          },
+          {
+            title: "Taglia",
+            body: "Taglia inizio e fine. I primi due secondi decidono se qualcuno guarderà il resto.",
+          },
+          {
+            title: "Aggiungi titoli e una transizione",
+            body: "Una riga di testo, grande, a schermo abbastanza a lungo da leggerla due volte. Una dissolvenza alla fine.",
+          },
+          {
+            title: "Aggiungi musica se la piattaforma la riproduce",
+            body: "Facoltativo; molti feed partono senza audio, quindi il video deve funzionare anche muto.",
+          },
+          {
+            title: "Esporta per la piattaforma",
+            body: "Scegli il preset —quadrato, ritratto, verticale, orizzontale— ed esporta in MP4. C'è anche la GIF per i posti che non riproducono video.",
+          },
+        ],
+      },
+      { type: "h2", text: "Cosa rende un video di modello degno di essere guardato" },
+      {
+        type: "ul",
+        items: [
+          "Un'idea per clip: la struttura, la facciata, il percorso nell'edificio. Non tutte e tre.",
+          "Camera lenta. Ciò che sembra lento su un monitor è giusto su un telefono.",
+          "Contesto reale: il modello sul suo lotto, nella sua città, con il sole dove si trova davvero.",
+          "Un titolo leggibile nel primo secondo, e niente di importante vicino ai bordi di un'inquadratura verticale.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Le riprese di contesto —il modello su una mappa 3D con terreno ed edifici vicini— sono trattate in ",
+          { text: "visualizzare un IFC su una mappa 3D", to: "view-ifc-on-3d-map-online" },
+          ", e il sole in ",
+          { text: "studi di sole e ombre da un IFC", to: "ifc-sun-shadow-study-online" },
+          ". Per le immagini fisse, vedi ",
+          { text: "immagini di presentazione da un IFC", to: "ifc-presentation-images-boards" },
+          ".",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Registrazione e montaggio avvengono nel tuo browser; il modello e il video restano sul tuo computer finché non decidi di pubblicarli. Conta per i progetti ancora coperti da NDA.",
+      },
+    ],
+    lang: "it",
+    translationKey: "ifc-model-video-social-media",
+  },
+  {
+    slug: "ifc-presentation-images-boards",
+    title: "Immagini di presentazione da un modello IFC: tavole, copertine e viste di coordinamento",
+    excerpt: "La maggior parte delle immagini di progetto sono screenshot con la barra degli strumenti tagliata. Un modello contiene già ciò che serve a una buona immagine di presentazione —sezioni, discipline, piani, nord reale— e un modello grafico può trasformarlo in una tavola, una copertina o una vista di coordinamento in pochi minuti.",
+    seoTitle: "Immagini di presentazione da un IFC: tavole e copertine",
+    seoDescription: "Crea tavole, copertine e immagini di coordinamento per disciplina da un modello IFC nel browser: modelli grafici, sezioni con campitura, luce ed export.",
+    date: "2026-10-02",
+    readTimeMin: 8,
+    category: "Strumenti e confronti",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "tavola di presentazione BIM",
+      "immagine modello IFC",
+      "template presentazione architettura",
+      "vista di coordinamento per disciplina",
+      "sezione con campitura",
+      "copertina progetto BIM",
+      "render IFC online",
+      "BIM presentation board",
+      "IFC model image",
+      "architecture presentation template",
+      "coordination view by discipline",
+      "section with poché",
+      "project cover image BIM",
+      "IFC render online",
+    ],
+    faqs: [
+      {
+        q: "Posso creare immagini di presentazione da un IFC senza motore di rendering?",
+        a: "Sì. IFC Viewer Online ha uno studio copertine che cattura viste del modello, applica uno stile e un'illuminazione e le impagina in modelli grafici —tavole, copertine, schede, viste di coordinamento— esportati come immagini o come presentazione, nel browser.",
+      },
+      {
+        q: "Come mostro architettura, strutture e impianti in un'unica immagine?",
+        a: "Colora ogni disciplina in modo coerente e rendi l'architettura traslucida, così strutture e impianti si leggono attraverso di essa. Le discipline si possono rilevare dalla nomenclatura ISO 19650 dei file o dal contenuto del modello, e correggere a mano.",
+      },
+      {
+        q: "Cos'è il poché (campitura) in una sezione?",
+        a: "Il riempimento pieno disegnato dove il piano di sezione taglia il materiale. È ciò che fa leggere una sezione come sezione e non come un modello a cui manca un pezzo.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Ogni progetto ha bisogno di immagini molto prima che di rendering: una copertina per la relazione di fase, una tavola per la revisione di progetto, un'immagine per la gara, un post quando si deposita la pratica. Di solito sono screenshot con la barra degli strumenti tagliata, e si vede.",
+      },
+      {
+        type: "p",
+        text: "Il modello sa già molto di ciò che serve a una buona immagine di presentazione. Dove sono i piani. Quali elementi sono strutture e quali impianti. Dov'è il lotto e dov'è il sole. Un modello grafico che usa queste informazioni produce in pochi minuti ciò che richiederebbe un pomeriggio in un programma di impaginazione.",
+      },
+      { type: "h2", text: "Quattro tipi di immagine che ogni progetto usa" },
+      {
+        type: "table",
+        headers: ["Immagine", "Per", "Cosa la fa funzionare"],
+        rows: [
+          [
+            "Copertina",
+            "Relazioni, gare, la pagina del progetto",
+            "Una vista forte, spazio generoso, il nome del progetto",
+          ],
+          ["Tavola", "Revisioni di progetto", "Più viste —esterno, sezione, pianta— con uno stile coerente"],
+          [
+            "Scheda",
+            "Consegna, aggiornamenti al cliente",
+            "Una vista con i dati chiave e un QR al modello live",
+          ],
+          [
+            "Vista di coordinamento",
+            "Riunioni di coordinamento",
+            "Discipline in colori coerenti, architettura traslucida",
+          ],
+        ],
+      },
+      { type: "h2", text: "Sezioni che si leggono come sezioni" },
+      {
+        type: "p",
+        text: "Un modello sezionato senza campitura sembra rotto: muri cavi, solai senza spessore, un edificio a cui manca una fetta. Riempire le facce tagliate è ciò che lo trasforma in una sezione. La stessa campitura dovrebbe valere sia per il taglio di un modello di presentazione sia per lo strumento di sezione: due stili diversi nella stessa relazione sono il tipo di incoerenza che i revisori notano.",
+      },
+      {
+        type: "p",
+        text: [
+          "I tagli in pianta per piano vengono posizionati a partire dalle quote dei piani nell'IFC, a un'altezza di lavoro sopra il pavimento; i dettagli sono in ",
+          { text: "come misurare un modello IFC online", to: "measure-ifc-model-online" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Immagini di coordinamento per disciplina" },
+      {
+        type: "p",
+        text: "Per una riunione di coordinamento l'immagine utile non è la più bella. È quella in cui ognuno trova il proprio lavoro: strutture di un colore, meccanico di un altro, elettrico di un terzo, e l'architettura attenuata per dare contesto senza nascondere nulla.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Le discipline vengono rilevate dalla nomenclatura ISO 19650 del file (il codice di ruolo), poi dal nome del file, poi dal contenuto.",
+          "Ogni rilevamento si può correggere per modello: le convenzioni di nomenclatura non sempre vengono rispettate.",
+          "L'architettura diventa traslucida automaticamente quando ci sono strutture o impianti.",
+        ],
+      },
+      { type: "h2", text: "Luce, finitura e brand" },
+      {
+        type: "p",
+        text: "Pochi controlli spiegano gran parte della differenza tra uno screenshot e un'immagine: luce morbida dalla direzione giusta, uno sfondo che non sia il grigio predefinito e una palette coerente. I colori del brand si impostano una volta —o si ricavano da un'immagine esistente— e tutti i modelli grafici li usano.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Usa il sole reale. Una copertina illuminata all'ora d'oro del sito reale, con il nord corretto, convince più di qualsiasi luce da studio, ed è lo stesso studio che faresti per le ombre.",
+      },
+      { type: "h2", text: "Da un'immagine a una presentazione" },
+      {
+        type: "p",
+        text: "Le stesse viste si possono montare in una presentazione —progetto, concept, griglia di viste— ed esportare, così la presentazione per la revisione di progetto nasce dal modello e non da screenshot incollati nelle slide. Ogni passaggio si può annullare, e l'impaginazione viene salvata con il file perché la revisione successiva riparta da dove si era fermata la precedente.",
+      },
+      {
+        type: "p",
+        text: [
+          "Per le immagini in movimento, le stesse riprese diventano un video: ",
+          { text: "trasformare un modello IFC in un video", to: "ifc-model-video-social-media" },
+          ". Per le prove di qualità da accompagnarvi, vedi ",
+          { text: "cosa consegnare insieme a un modello IFC", to: "ifc-model-handover-documentation" },
+          ".",
+        ],
+      },
+    ],
+    lang: "it",
+    translationKey: "ifc-presentation-images-boards",
+  },
+  {
     slug: "ids-information-delivery-specification-guide",
     title: "IDS spiegato: come verificare un modello IFC con una Information Delivery Specification",
     excerpt: "L'IDS trasforma «il modello deve contenere la resistenza al fuoco» da una frase in un PDF a un file che una macchina può verificare. Cosa testano davvero le sei facet, dove sbagliano la maggior parte dei file IDS e come eseguirne uno sul tuo IFC nel browser.",

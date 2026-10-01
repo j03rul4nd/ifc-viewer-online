@@ -41,8 +41,9 @@ describe('blog hub discovery', () => {
       '4d-construction-progress-ifc-temporal-point-cloud',
       'utility-tunnel-ifc-mobile-lidar-inspection',
       'view-ifc-on-3d-map-online',
+      'ifc-sun-shadow-study-online',
     ]))
-    expect(results).toHaveLength(8)
+    expect(results).toHaveLength(9)
   })
 
   it('filters by category and sorts short reads first', () => {
