@@ -10,6 +10,872 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_CA: BlogPost[] = [
   {
+    slug: "ids-information-delivery-specification-guide",
+    title: "IDS explicat: com comprovar un model IFC amb una Information Delivery Specification",
+    excerpt: "L'IDS converteix «el model ha de contenir la resistència al foc» d'una frase en un PDF en un fitxer que una màquina pot comprovar. Què comproven realment les sis facetes, on fallen la majoria de fitxers IDS i com executar-ne un contra el teu IFC al navegador.",
+    seoTitle: "IDS explicat: com validar un IFC amb un fitxer IDS",
+    seoDescription: "Què és l'IDS 1.0 de buildingSMART, què comproven les seves sis facetes, els errors que inutilitzen un IDS i com executar-lo contra un IFC al navegador.",
+    date: "2026-10-01",
+    readTimeMin: 12,
+    category: "Validació",
+    categorySlug: "validation",
+    author: "IFC Viewer Team",
+    featured: true,
+    keywords: [
+      "IDS",
+      "Information Delivery Specification",
+      "comprovador IDS",
+      "validar IFC amb IDS",
+      "buildingSMART IDS 1.0",
+      "fitxer .ids",
+      "facetes IDS",
+      "alternativa a ifctester",
+      "IDS en línia",
+      "IDS checker",
+      "validate IFC against IDS",
+      ".ids file",
+      "IDS facets",
+      "ifctester alternative",
+      "IDS online",
+    ],
+    faqs: [
+      {
+        q: "Què és un fitxer IDS?",
+        a: "Un IDS (Information Delivery Specification) és un estàndard XML de buildingSMART, publicat com a IDS 1.0, que descriu quina informació ha de contenir un model IFC; per exemple, «tot IfcWall ha de tenir la propietat FireRating a Pset_WallCommon». Com que és llegible per màquina, qualsevol eina conforme pot comprovar un model amb ell i obtenir la mateixa resposta.",
+      },
+      {
+        q: "Quines són les sis facetes de l'IDS?",
+        a: "Entity (la classe IFC i el tipus predefinit), Attribute (un atribut IFC directe com Name), Classification (una referència de classificació com Uniclass o OmniClass), Property (una propietat dins d'un property set, opcionalment amb tipus de dada i valor), Material i PartOf (una relació amb un element pare, com una planta, un conjunt o un grup). Cada faceta pot seleccionar elements (aplicabilitat) o exigir-los alguna cosa (requisits).",
+      },
+      {
+        q: "Puc comprovar un IFC amb un IDS sense instal·lar programari?",
+        a: "Sí. IFC Viewer Online llegeix el fitxer .ids i l'IFC al teu navegador, avalua localment les sis facetes de l'IDS 1.0 i ressalta o aïlla en 3D els elements que fallen. Cap dels dos fitxers es puja a cap servidor.",
+      },
+      {
+        q: "En què es diferencia l'IDS d'un conjunt de regles d'un model checker?",
+        a: "Un conjunt de regles de model checker sol ser propietat d'una eina i sovint comprova geometria (col·lisions, distàncies lliures). L'IDS és un estàndard obert que només comprova informació —classes, propietats, valors, classificacions, materials i relacions—, de manera que el client l'escriu una vegada i cada proveïdor el pot executar en qualsevol eina.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Tots els EIR que s'han escrit contenen una frase com «totes les portes hauran d'indicar la seva resistència al foc». I en tots els projectes aquesta frase es comprova igual: algú obre el model, clica unes quantes portes i decideix que probablement està bé. El requisit és precís. La comprovació és una sensació.",
+      },
+      {
+        type: "p",
+        text: "L'IDS —la Information Delivery Specification— existeix per tancar aquesta bretxa. És un format XML petit, estandarditzat per buildingSMART com a IDS 1.0, que expressa els requisits d'informació de manera que una màquina els pugui comprovar. Escrius el requisit una vegada, lliures el fitxer .ids a cada proveïdor i «probablement està bé» es converteix en «passen 412 de 418 portes; aquestes són les sis que no».",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "L'IDS comprova informació, no geometria: classes, atributs, propietats, classificacions, materials i relacions.",
+          "Cada especificació té dues meitats: a quins elements s'aplica i què han de tenir aquests elements. La majoria de fitxers IDS trencats fallen en la primera meitat.",
+          "Un IDS és un document contractual. Va al costat del BEP, versionat, i s'envia als proveïdors abans de començar a modelar, no després del primer rebuig.",
+        ],
+      },
+      { type: "h2", text: "Anatomia d'una especificació" },
+      {
+        type: "p",
+        text: "Un fitxer IDS és una llista d'especificacions. Cadascuna es llegeix com una frase amb subjecte i predicat: «per a cada element que compleixi això, exigeix allò». El subjecte és l'aplicabilitat; el predicat, els requisits.",
+      },
+      {
+        type: "code",
+        lang: "xml",
+        text: "<specification name=\"Doors carry a fire rating\" ifcVersion=\"IFC4\">\n  <applicability minOccurs=\"1\">\n    <entity><name><simpleValue>IFCDOOR</simpleValue></name></entity>\n  </applicability>\n  <requirements>\n    <property dataType=\"IFCLABEL\">\n      <propertySet><simpleValue>Pset_DoorCommon</simpleValue></propertySet>\n      <baseName><simpleValue>FireRating</simpleValue></baseName>\n    </property>\n  </requirements>\n</specification>",
+      },
+      {
+        type: "p",
+        text: "Llegeix-ho en veu alta i és exactament la frase de l'EIR: tot IfcDoor ha de tenir un FireRating a Pset_DoorCommon, desat com a label. El minOccurs=\"1\" de l'aplicabilitat afegeix una segona afirmació fàcil de passar per alt: el model ha de contenir com a mínim una porta. Sense això, un model sense cap porta passa, i això rarament és el que algú volia dir.",
+      },
+      { type: "h2", text: "Les sis facetes i què comprova realment cadascuna" },
+      {
+        type: "table",
+        headers: ["Faceta", "Comprova", "Requisit típic", "Parany habitual"],
+        rows: [
+          [
+            "Entity",
+            "Classe IFC i tipus predefinit",
+            "Els murs són IfcWall, no IfcBuildingElementProxy",
+            "Oblidar els subtipus: IfcWallStandardCase és un IfcWall a IFC2x3",
+          ],
+          [
+            "Attribute",
+            "Atributs IFC directes (Name, Description, Tag…)",
+            "Tot espai té Name i LongName",
+            "Una cadena buida és present però invàlida, no absent",
+          ],
+          [
+            "Property",
+            "Una propietat d'un property set, amb tipus de dada i valor",
+            "Pset_WallCommon.IsExternal és TRUE o FALSE",
+            "Valor correcte, tipus de dada incorrecte (un label on es demanava un booleà)",
+          ],
+          [
+            "Classification",
+            "Una referència de classificació i el seu codi",
+            "Tot element té un codi Uniclass Ss",
+            "Comprovar el codi però no el sistema al qual pertany",
+          ],
+          [
+            "Material",
+            "Un nom o categoria de material associat",
+            "Els pilars estructurals declaren un material",
+            "Materials al tipus, no a l'ocurrència",
+          ],
+          [
+            "PartOf",
+            "Una relació amb un element pare",
+            "Tot element és contingut en una planta",
+            "Confondre agregació amb contenció espacial",
+          ],
+        ],
+        caption: "Cada faceta pot aparèixer a l'aplicabilitat (per seleccionar elements) o als requisits (per exigir-los alguna cosa).",
+      },
+      {
+        type: "p",
+        text: "Dos d'aquests paranys mereixen una mirada més llarga, perquè expliquen la majoria de falsos errors que es veuen en executar un IDS per primera vegada.",
+      },
+      { type: "h3", text: "Tipus davant d'ocurrència" },
+      {
+        type: "p",
+        text: "Revit, ArchiCAD i Tekla escriuen habitualment propietats i materials a l'objecte tipus (IfcWallType) en lloc de fer-ho a cada mur. La semàntica de l'IDS és clara: la informació heretada del tipus compta per a l'ocurrència. Un comprovador que només mira l'ocurrència suspendrà tots els murs d'un model perfectament correcte. Si un IDS et diu que al 100 % dels elements els falta una propietat que veus al tauler de propietats, gairebé sempre és per això, i l'error és del comprovador, no teu.",
+      },
+      { type: "h3", text: "Tipus predefinits USERDEFINED" },
+      {
+        type: "p",
+        text: "Quan un tipus predefinit és USERDEFINED, el tipus real és a ObjectType (a les ocurrències) o a ElementType (als tipus). Una faceta entity que demani IFCWALL amb tipus predefinit PARAPET ha de coincidir amb un mur el PredefinedType del qual sigui USERDEFINED i l'ObjectType, PARAPET. Els comprovadors que comparen l'enum en brut se'ls salten tots.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Prova el teu comprovador abans de fiar-te'n",
+        text: "buildingSMART publica un conjunt oficial de casos de prova d'IDS: parells petits de .ids i .ifc amb el resultat esperat. Pregunta a qualsevol eina de què et fiïs si els executa. La nostra executa el conjunt seleccionat a cada build; un comprovador que no els ha vist mai discreparà de l'estàndard de maneres que només descobriràs en una disputa.",
+      },
+      { type: "h2", text: "Cinc errors que inutilitzen un IDS" },
+      {
+        type: "ol",
+        items: [
+          "Aplicabilitat massa àmplia. «Tots els elements han de tenir codi Uniclass» arrossega obertures, anotacions i elements espacials que ningú classifica. Limita cada especificació a les classes a què es refereix realment el requisit.",
+          "Valors sense tipus de dada. Un requisit FireRating = «EI 60» no diu res de com s'ha de desar; el mateix text desat com a descripció en un altre pset continuarà fallant. Digues el que vols dir, inclòs el tipus de dada.",
+          "Valors exactes on es volia un patró. Les dades reals porten «EI60», «EI 60» i «EI-60». Fes servir un xs:pattern o una enumeració i acordeu la forma canònica al BEP.",
+          "Una sola especificació gegant. Quaranta requisits en una especificació donen un sol aprovat o suspès per element i un informe amb què ningú pot actuar. Un requisit per especificació, amb un nom en llenguatge clar, és el que fa llegible el resultat.",
+          "Escriure l'IDS després del model. Un IDS enviat amb el primer rebuig és un requisit nou. Un IDS enviat amb l'encàrrec és un requisit. Només el segon és exigible.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "La part contractual d'aquest darrer punt —quines clàusules fan vinculant un IDS i què passa quan un lliurament no el compleix— és a ",
+          {
+            text: "clàusules del BEP que de debò eviten mals lliuraments IFC",
+            to: "bim-execution-plan-ifc-quality-clauses",
+          },
+          " i a ",
+          { text: "criteris d'acceptació IFC", to: "ifc-acceptance-criteria" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Executar un IDS contra el teu model, pas a pas" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Obre l'IFC",
+            body: "Arrossega el model al visor. Es processa al teu navegador; no es puja res.",
+          },
+          {
+            title: "Carrega el fitxer .ids",
+            body: "Obre el tauler IDS i tria el teu fitxer, o parteix d'una de les especificacions d'exemple incloses si abans vols veure el format.",
+          },
+          {
+            title: "Executa la comprovació",
+            body: "Cada especificació s'avalua amb les sis facetes. Els models grans mostren el progrés per fases i es poden cancel·lar en qualsevol moment.",
+          },
+          {
+            title: "Llegeix el resultat per especificació, element o classe",
+            body: "Agrupa els errors tal com els vulguis corregir. Cada error porta el motiu en paraules clares: falta la propietat, valor incorrecte, tipus de dada incorrecte, classe incorrecta.",
+          },
+          {
+            title: "Mira-ho en 3D",
+            body: "Ressaltar acoloreix al model els elements que fallen; Aïllar amaga tota la resta. Tots dos són a un clic, i així una llista de GlobalIds es converteix en una conversa amb qui modela.",
+          },
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Executa l'IDS i la validació estructural sobre el mateix fitxer. El Health Score et diu si el model és un IFC sa; l'IDS, si conté el que va demanar el client. Un lliurament necessita totes dues coses, i fallen per motius diferents.",
+      },
+      { type: "h2", text: "IDS entre revisions" },
+      {
+        type: "p",
+        text: [
+          "Una execució d'IDS és una fotografia fixa. El que un coordinador necessita de debò és la tendència: la revisió 7 va corregir els errors de la revisió 6? En va introduir de nous? Com que el resultat s'indexa per GlobalId, la mateixa especificació es pot comparar entre dues versions d'un model, cosa que només funciona si els teus GlobalIds són estables entre exportacions. Si no ho són, arregla això primer: ",
+          { text: "per què els GUID d'IFC canvien a cada exportació", to: "ifc-guids-changing-every-export" },
+          ". La comparació en si s'explica a ",
+          { text: "com comparar dues versions d'un model IFC", to: "compare-ifc-versions-what-changed" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "On s'atura l'IDS" },
+      {
+        type: "p",
+        text: "L'IDS no comprova geometria. No et dirà que dos conductes col·lisionen, que una porta és massa estreta per a una cadira de rodes ni que el model és a dos quilòmetres del seu punt de replanteig. Tampoc no comprova que un IFC sigui estructuralment sa: un fitxer amb GlobalIds duplicats o emplaçaments trencats pot passar un IDS perfectament.",
+      },
+      {
+        type: "p",
+        text: [
+          "Això no és una debilitat; és abast. Fes servir l'IDS per als requisits d'informació, un model checker per a l'estructura i la geometria, i lliura els dos informes junts. El flux complet és a ",
+          { text: "com validar un fitxer IFC", to: "how-to-validate-ifc-file" },
+          ".",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "ids-information-delivery-specification-guide",
+  },
+  {
+    slug: "compare-ifc-versions-what-changed",
+    title: "Com comparar dues versions d'un IFC i veure exactament què ha canviat",
+    excerpt: "«Què ha canviat des de la setmana passada?» és la pregunta que fa tot coordinador i que gairebé cap eina IFC respon bé. Comparar per GlobalId en tot un conjunt de fitxers —no un fitxer contra un altre— és el que converteix un diff en una revisió setmanal.",
+    seoTitle: "Comparar dues versions IFC: què ha canviat exactament",
+    seoDescription: "Compara revisions IFC per GlobalId en tot un conjunt de fitxers: elements afegits, eliminats i modificats, IDS entre versions i seguiment BCF.",
+    date: "2026-10-01",
+    readTimeMin: 11,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "comparar fitxers IFC",
+      "diff IFC",
+      "comparar versions IFC",
+      "què ha canviat model IFC",
+      "comparar revisions IFC",
+      "comparar models IFC en línia",
+      "detecció de canvis IFC",
+      "compare IFC files",
+      "IFC diff",
+      "IFC version comparison",
+      "what changed IFC model",
+      "IFC revision compare",
+      "compare IFC models online",
+      "IFC change detection",
+    ],
+    faqs: [
+      {
+        q: "Com comparo dos fitxers IFC?",
+        a: "Carrega les dues versions i aparella els elements pel seu GlobalId d'IFC. Els que només són a la versió nova són afegits, els que només són a l'antiga són eliminats, i els que són a totes dues es comparen atribut per atribut, propietat per propietat i per classificació, material i contenció. IFC Viewer Online ho fa al navegador i acoloreix el resultat en 3D.",
+      },
+      {
+        q: "Per què la meva comparació IFC marca tot com a canviat?",
+        a: "Gairebé sempre perquè els GlobalIds no són estables entre exportacions. Si l'eina d'autoria regenera els GUID, cada element sembla esborrat i afegit de nou. Corregeix l'exportació perquè els GUID persisteixin abans de fiar-te de cap comparació.",
+      },
+      {
+        q: "Puc comparar un conjunt d'IFC federats i no només un?",
+        a: "Sí, i és la comparació més útil. Aparellar per GlobalId en tot el conjunt vol dir que un element que ha passat d'un fitxer de disciplina a un altre es marca com a modificat —ha canviat de fitxer— i no com una eliminació més una addició.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Cada dilluns, en algun lloc, un coordinador BIM rep un nou lliurament de models de disciplina i es fa l'única pregunta que importa: què ha canviat? La resposta honesta en la majoria de projectes és «obrim els dos i mirem». Això funciona per a una casa. No funciona per a onze fitxers i quaranta mil elements.",
+      },
+      {
+        type: "p",
+        text: "Comparar versions IFC com cal no és difícil, però reposa sobre una decisió que la majoria d'eines resolen malament de manera subtil: què compta com a «el mateix element».",
+      },
+      { type: "h2", text: "La identitat és tot el problema" },
+      {
+        type: "p",
+        text: "Un element IFC té dos identificadors. L'express ID (el #1234 del fitxer) és un número de línia: es renumera a cada exportació i no vol dir res entre versions. El GlobalId és un GUID de 22 caràcters pensat per durar tota la vida de l'element. Una comparació que aparella per qualsevol cosa que no sigui el GlobalId està comparant números de línia.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Comprova això abans de res",
+        text: "Si la teva eina d'autoria regenera els GlobalIds en exportar, cada comparació dirà que tot el model s'ha esborrat i s'ha tornat a afegir. Cap algorisme de diff se'n pot recuperar. Mira la proporció d'afegits i eliminats a la primera comparació: si tots dos s'acosten al total d'elements, els teus GUID no són estables.",
+      },
+      {
+        type: "p",
+        text: [
+          "Els GUID estables són un paràmetre d'exportació, no una tasca de modelatge: ",
+          { text: "per què els GUID d'IFC canvien a cada exportació", to: "ifc-guids-changing-every-export" },
+          " explica la solució per a cada eina d'autoria. I si tens el problema contrari, el mateix GUID fet servir dues vegades en un fitxer, consulta ",
+          { text: "GUID duplicats a IFC", to: "duplicate-guids-ifc" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Compara el conjunt, no el fitxer" },
+      {
+        type: "p",
+        text: "Els projectes reals són federats: arquitectura, estructura, instal·lacions, de vegades dividits a més per edifici o planta. Comparar fitxer amb fitxer es perd el canvi més interessant que hi ha: un element que s'ha mogut entre fitxers. L'enginyer d'estructures assumeix un mur que va modelar l'arquitecte; un diff fitxer a fitxer informa d'una eliminació i d'una addició sense relació, i totes dues són falses.",
+      },
+      {
+        type: "p",
+        text: "Aparellar per GlobalId en tot el conjunt ho arregla. L'element apareix a totes dues versions, el seu fitxer és diferent, i s'informa una sola vegada, com a modificat, amb el motiu «mogut a un altre fitxer». L'aparellament per fitxer continua tenint el seu paper —el resum per fitxer—, però és un detall de presentació, no la regla d'identitat.",
+      },
+      { type: "h2", text: "Què hauria de voler dir «modificat»" },
+      {
+        type: "p",
+        text: "Una comparació útil no diu només que un element ha canviat, sinó com. Aquestes són les categories que val la pena separar, perquè cadascuna va a una persona diferent:",
+      },
+      {
+        type: "table",
+        headers: ["Canvi", "Exemple", "A qui li importa"],
+        rows: [
+          ["Afegit / eliminat", "Un envà nou; un pilar eliminat", "A tothom: és el titular"],
+          ["Canvi de classe", "Un proxy ha passat a ser IfcWall", "Coordinador, responsable d'amidaments"],
+          ["Atributs", "Nom o marca editats", "Qui mantingui les taules de planificació"],
+          [
+            "Propietats",
+            "FireRating ha passat d'EI 60 a EI 30",
+            "Enginyer de protecció contra incendis, prescriptor",
+          ],
+          ["Classificació", "Ha canviat el codi Uniclass", "Equips de costos i de FM"],
+          ["Material", "Ha canviat la classe de formigó", "Enginyer d'estructures"],
+          ["Contenció", "Mogut a una altra planta", "Coordinador"],
+          ["Fitxer", "Mogut a un altre model de disciplina", "Responsable d'informació"],
+        ],
+      },
+      {
+        type: "pull-quote",
+        text: "Un diff que només diu «canviat» és una llista de llocs on anar a mirar. Un diff que diu què ha canviat és una revisió que ja has fet.",
+      },
+      { type: "h2", text: "La revisió setmanal, en cinc passos" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Carrega el nou lliurament",
+            body: "Tots els fitxers del conjunt, com una sola escena. El processament es fa al navegador, de manera que els models confidencials no surten del teu equip.",
+          },
+          {
+            title: "Compara amb la versió anterior o amb una línia base desada",
+            body: "Una línia base és una instantània que desis en local —l'estat acceptat la setmana passada o el lligat a una fita de pagament—, així que no et cal tenir oberts els fitxers antics per comparar-hi.",
+          },
+          {
+            title: "Llegeix el resum i després el 3D",
+            body: "L'afegit d'un color, el modificat d'un altre, l'eliminat d'un tercer. El resum per fitxer et diu quina disciplina s'ha mogut; els colors, on.",
+          },
+          {
+            title: "Torna a executar l'IDS sobre les dues versions",
+            body: "La mateixa especificació avaluada sobre el model antic i el nou mostra quins requisits s'han corregit i quins han empitjorat, sense tornar a processar cap fitxer.",
+          },
+          {
+            title: "Actualitza el BCF",
+            body: "Els canvis que requereixen acció es converteixen en incidències etiquetades amb la versió de què procedeixen, perquè la comparació de la setmana següent no les obri dues vegades.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "El pas 4 és on una comparació deixa de ser una curiositat i es converteix en control de qualitat. Com preparar l'especificació és a ",
+          { text: "IDS explicat", to: "ids-information-delivery-specification-guide" },
+          "; el pas 5, a ",
+          { text: "BCF 2.1 davant de 3.0", to: "bcf-2-1-vs-3-0-viewpoints" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Llegir una comparació sense que t'enganyi" },
+      {
+        type: "ul",
+        items: [
+          "Molts canvis de propietats sense canvis de geometria solen voler dir que ha canviat un paràmetre d'exportació, no el disseny. Revisa la plantilla d'exportació abans que el modelador.",
+          "Eliminats i afegits en quantitats semblants a la mateixa classe són rotació de GUID, no redisseny. Tracta-ho com un defecte d'exportació.",
+          "Canvis de contenció en tota una planta solen voler dir que la planta s'ha tornat a crear. Els elements no s'han mogut; s'ha mogut el seu pare.",
+          "Zero canvis és un resultat que cal confirmar. Compara la línia base amb ella mateixa una vegada —ha de sortir exactament res— per saber que un diff buit és real.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Una comparació també és la manera més ràpida de decidir si una revisió nova mereix fins i tot una revisió completa. Si la mereix, ",
+          {
+            text: "com revisar un model IFC abans de lliurar-lo",
+            to: "how-to-check-ifc-model-before-delivery",
+          },
+          " és la rutina completa.",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "compare-ifc-versions-what-changed",
+  },
+  {
+    slug: "bcf-2-1-vs-3-0-viewpoints",
+    title: "BCF 2.1 davant de 3.0: per què les vistes de les incidències s'obren al lloc equivocat",
+    excerpt: "El BCF hauria de fer que una incidència sobrevisqués al viatge entre eines. A la pràctica la càmera apareix sota terra, la caixa de secció desapareix i les etiquetes es perden. Les causes són poques, concretes i corregibles, i conèixer-les et diu de quines eines fiar-te.",
+    seoTitle: "BCF 2.1 vs 3.0: per què les vistes s'obren malament",
+    seoDescription: "Diferències reals entre BCF 2.1 i 3.0, per què les vistes s'obren girades o sota terra, on es perden seccions i etiquetes i com provar una eina.",
+    date: "2026-10-01",
+    readTimeMin: 10,
+    category: "Lliurament i ISO 19650",
+    categorySlug: "delivery",
+    author: "IFC Viewer Team",
+    keywords: [
+      "BCF 2.1 vs 3.0",
+      "fitxer BCF",
+      "bcfzip",
+      "viewpoint BCF",
+      "obrir fitxer BCF en línia",
+      "BIM Collaboration Format",
+      "exportar BCF",
+      "visor BCF",
+      "BCF file",
+      "BCF viewpoint",
+      "open BCF file online",
+      "BCF export",
+      "BCF viewer",
+    ],
+    faqs: [
+      {
+        q: "Quina diferència hi ha entre BCF 2.1 i BCF 3.0?",
+        a: "El contingut és pràcticament el mateix: incidències, comentaris i vistes amb càmera, selecció, visibilitat i plans de tall. Canvia l'estructura: a la 2.1 els comentaris i les referències a vistes són germans de l'element Topic a markup.bcf; a la 3.0 van niats dins del Topic, les etiquetes i altres llistes s'embolcallen en elements contenidor, la càmera en perspectiva exigeix un AspectRatio i les extensions de projecte descriuen els valors permesos. Les eines que llegeixen un format solen descartar en silenci dades de l'altre.",
+      },
+      {
+        q: "Per què una vista BCF s'obre al lloc equivocat?",
+        a: "Normalment perquè l'eina que exporta va escriure la càmera en els eixos de la seva pròpia escena en lloc de fer-ho en coordenades del món IFC. Els visors web basats en three.js fan servir una escena amb la Y cap amunt, mentre que IFC fa servir la Z cap amunt; una càmera exportada sense tornar a convertir arriba girada 90 graus. L'altra causa habitual és un desplaçament del model aplicat per a la visualització que no es va desfer abans d'exportar.",
+      },
+      {
+        q: "Quina versió de BCF he de fer servir?",
+        a: "La que totes les eines del projecte llegeixin bé: prova-ho, no ho suposis. BCF 2.1 continua sent la més compatible; la 3.0 està més ben especificada. Una eina que escrigui totes dues et permet triar segons el destinatari.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "El BCF —el BIM Collaboration Format— té una única feina: que una incidència surti d'una eina i arribi a una altra amb el context intacte. Un comentari, una posició de càmera, un conjunt d'elements seleccionats, potser una caixa de secció. Obres la incidència a qualsevol lloc i veus exactament el que veia el seu autor.",
+      },
+      {
+        type: "p",
+        text: "Qui hagi intercanviat BCF entre tres fabricants sap amb quina freqüència falla. La càmera s'obre sota terra o mirant al cel. Falta la caixa de secció. Les etiquetes han desaparegut. Els comentaris es tallen al primer ampersand. Res d'això és un misteri, i tot surt d'un grapat d'errors d'implementació concrets.",
+      },
+      { type: "h2", text: "Què hi ha realment dins d'un .bcfzip" },
+      {
+        type: "p",
+        text: "Un fitxer BCF és un zip. A dins, una carpeta per incidència, cadascuna amb un markup.bcf (la incidència, els seus comentaris i la llista de vistes), un o més fitxers de vista .bcfv (càmera, selecció, visibilitat, plans de tall) i captures PNG opcionals. Tot és XML pla. Pots descomprimir-ne un i llegir-lo, i quan una eina es porta malament, ho hauries de fer.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "issues.bcfzip\n├── bcf.version\n├── 1f2c…/\n│   ├── markup.bcf        ← topic, comments, viewpoint references\n│   ├── viewpoint.bcfv    ← camera, components, clipping planes\n│   └── snapshot.png\n└── 7a90…/\n    └── …",
+      },
+      { type: "h2", text: "2.1 davant de 3.0: les diferències que trenquen les importacions" },
+      {
+        type: "table",
+        headers: ["Aspecte", "BCF 2.1", "BCF 3.0"],
+        rows: [
+          ["Comentaris a markup.bcf", "Germans de <Topic>", "Niats a <Topic><Comments>"],
+          ["Llista de vistes", "Germans de <Topic>", "Niats a <Topic><Viewpoints>"],
+          [
+            "Etiquetes",
+            "Elements <Labels> repetits, un per etiqueta",
+            "Un contenidor <Labels> amb fills <Label>",
+          ],
+          [
+            "Càmera en perspectiva",
+            "Posició, direcció, vector up, camp de visió",
+            "El mateix, més un AspectRatio obligatori",
+          ],
+          [
+            "Valors permesos",
+            "Implícits, acordats fora del fitxer",
+            "Declarats a les extensions del projecte",
+          ],
+          ["Suport real", "Gairebé universal", "Creixent, desigual"],
+        ],
+        caption: "El model de dades gairebé no ha canviat; l'estructura XML, sí. Un lector escrit per a un format llegeix l'altre com una incidència sense comentaris.",
+      },
+      {
+        type: "p",
+        text: "Llegeix aquesta taula com una llista de modes de fallada. Una eina que busca els comentaris al costat del Topic no en troba cap en un fitxer 3.0. Una eina que espera un contenidor Labels llegeix un fitxer 2.1 com si tingués una etiqueta, o cap. Una càmera 3.0 sense AspectRatio no és vàlida segons l'esquema, i alguns importadors rebutgen la vista sencera.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        text: "Això de les etiquetes és sorprenentment freqüent: és fàcil escriure les etiquetes 2.1 com una sola cadena separada per comes, que qualsevol lector estricte tracta després com una única etiqueta llarga. Elements repetits, un per etiqueta, és el que demana l'esquema 2.1.",
+      },
+      { type: "h2", text: "Per què la càmera apareix al lloc equivocat" },
+      {
+        type: "p",
+        text: "Les càmeres BCF es desen en coordenades del món del projecte IFC: metres, amb la Z cap amunt. La majoria de visors web renderitzen amb three.js, l'escena del qual té la Y cap amunt, i molts desplacen el model cap a l'origen perquè les coordenades georeferenciades grans no tremolin a la GPU. Totes dues són decisions de renderització assenyades. Totes dues s'han de desfer abans d'escriure una vista.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Oblida la conversió d'eixos i la càmera arriba girada 90°: mirant al cel o travessant el terra.",
+          "Oblida el desplaçament de visualització i la càmera arriba amb l'orientació correcta, a centenars de metres o quilòmetres del model.",
+          "Converteix la càmera però no els plans de tall, i la vista és correcta mentre la caixa de secció talla en un lloc completament diferent.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "El problema del desplaçament empitjora com millor és la teva georeferenciació, perquè les coordenades reals són nombres grans. El context és a ",
+          { text: "coordenades i georeferenciació IFC", to: "ifc-coordinates-georeferencing" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Una prova de deu minuts per a qualsevol eina BCF" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Crea una incidència amb tot a dins",
+            body: "Una càmera en perspectiva amb un angle oblic, dos elements seleccionats, una caixa de secció, tres etiquetes i un comentari amb un ampersand, cometes i una lletra accentuada.",
+          },
+          {
+            title: "Exporta-la com a 2.1 i com a 3.0",
+            body: "Si l'eina només escriu una versió, apunta-ho: tard o d'hora et trobaràs amb un destinatari que necessiti l'altra.",
+          },
+          {
+            title: "Importa-la en una segona eina",
+            body: "Comprova l'orientació de la càmera, la distància al model, la selecció, la caixa de secció, el nombre d'etiquetes i el text del comentari caràcter a caràcter.",
+          },
+          {
+            title: "Fes l'anada i tornada",
+            body: "Torna a exportar des de la segona eina i importa de nou a la primera. El que sobreviu a un salt però no a dos acabarà costant-te una reunió.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: "El nostre propi exportador BCF es va reescriure després d'exactament aquesta prova: les vistes s'escriuen ara en eixos del món IFC sense el desplaçament de visualització, els plans de secció viatgen amb la vista, les etiquetes 2.1 s'escriuen com a elements repetits i els comentaris importats es llegeixen sencers, amb les entitats XML descodificades. Escriu 2.1 i 3.0 perquè et puguis adaptar al destinatari.",
+      },
+      { type: "h2", text: "Convencions perquè els BCF s'atenguin" },
+      {
+        type: "ul",
+        items: [
+          "Una incidència per causa, no per element. Quatre-cents murs sense un property set són una incidència amb una vista representativa.",
+          "Posa la regla o el requisit al títol. «Falta Pset_WallCommon.FireRating — afegir a la plantilla d'exportació» es pot resoldre; «falten dades», no.",
+          "Etiqueta per revisió. Una incidència oberta a la revisió 6 ho ha de dir, perquè una comparació posterior no l'obri dues vegades.",
+          "Inclou sempre la captura. És el que el destinatari veu a la safata d'entrada abans d'obrir cap eina, i sovint és l'única cosa que mira.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "On encaixa el BCF en el paquet de lliurament complet —al costat de l'informe de validació i la nota de transmissió— s'explica a ",
+          { text: "què lliurar juntament amb un model IFC", to: "ifc-model-handover-documentation" },
+          ". Obrir incidències automàticament a partir d'una comparació de revisions és a ",
+          { text: "com comparar dues versions IFC", to: "compare-ifc-versions-what-changed" },
+          ".",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "bcf-2-1-vs-3-0-viewpoints",
+  },
+  {
+    slug: "cobie-from-ifc-fm-handover",
+    title: "COBie des d'IFC: el que el teu equip de FM necessita de debò (i com comprovar-ho abans del lliurament)",
+    excerpt: "El COBie és on el bon BIM va a morir: un full de càlcul produït l'última setmana del projecte, ple de cel·les buides, que l'equip de manteniment no obre mai. Extreure'l de l'IFC aviat —i mesurar com n'és de complet— ho canvia.",
+    seoTitle: "COBie des d'IFC: el que necessita FM abans del lliurament",
+    seoDescription: "Com s'obté el COBie des d'IFC, quins fulls fa servir de debò FM, per què la majoria de lliurables COBie són buits i com mesurar-ne la completesa a temps.",
+    date: "2026-10-01",
+    readTimeMin: 10,
+    category: "Lliurament i ISO 19650",
+    categorySlug: "delivery",
+    author: "IFC Viewer Team",
+    keywords: [
+      "COBie",
+      "COBie des d'IFC",
+      "exportar COBie",
+      "full de càlcul COBie",
+      "lliurament BIM per a FM",
+      "model d'informació d'actius",
+      "validar COBie",
+      "IFC a COBie",
+      "COBie from IFC",
+      "COBie export",
+      "COBie spreadsheet",
+      "FM handover BIM",
+      "asset information model",
+      "COBie validation",
+      "IFC to COBie",
+    ],
+    faqs: [
+      {
+        q: "Què és el COBie?",
+        a: "El COBie (Construction Operations Building information exchange) és una manera estructurada de lliurar dades d'actius —espais, productes instal·lats, els seus tipus, fabricants, garanties i informació de manteniment— a qui explotarà un edifici. Sol lliurar-se com a full de càlcul i és un subconjunt del que pot contenir un model IFC.",
+      },
+      {
+        q: "Es pot generar COBie a partir d'un fitxer IFC?",
+        a: "Sí. Instal·lacions, plantes, espais, zones, tipus i components es corresponen directament amb entitats IFC i els seus property sets. La qualitat del COBie depèn completament que el model contingui aquesta informació: una exportació no es pot inventar un fabricant o un número de sèrie que no es va modelar mai.",
+      },
+      {
+        q: "Quins fulls del COBie importen més a la gestió d'instal·lacions?",
+        a: "Component (els actius mantenibles), Space (el programa d'espais) i Type (els tipus de producte a què remeten els components). Un COBie amb Component, Space i Type complets és utilitzable; un amb Contact i Document perfectes però Components buit, no.",
+      },
+      {
+        q: "Una puntuació de completesa COBie equival al compliment COBie?",
+        a: "No. Una puntuació de completesa mesura quanta de la informació de què depèn un equip de FM és present i identificable. El compliment formal es comprova contra una especificació COBie concreta i els requisits del mateix projecte. Tracta la completesa com una alerta primerenca, no com un certificat.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Pregunta a un responsable de manteniment què va fer amb el COBie del seu últim edifici nou i la resposta més habitual és un silenci. El full de càlcul existeix. Es va lliurar, va complir el contracte, té divuit pestanyes. I el full Component —el que enumera el que cal mantenir— és mig buit, perquè ningú no el va mirar fins a la setmana del lliurament.",
+      },
+      {
+        type: "p",
+        text: "La solució no és una eina COBie millor al final. És extreure el COBie de l'IFC aviat i sovint, i mesurar el que falta mentre encara hi ha temps per modelar-ho.",
+      },
+      { type: "h2", text: "El COBie és una vista de l'IFC, no un lliurable a part" },
+      {
+        type: "p",
+        text: "Cada fila que importa al COBie correspon a alguna cosa de l'IFC. Un Floor és un IfcBuildingStorey. Un Space és un IfcSpace. Un Type és un tipus d'element com IfcDoorType. Un Component és una ocurrència d'element: una porta concreta, una bomba concreta. Els atributs que demana el COBie viuen als atributs i property sets de l'IFC.",
+      },
+      {
+        type: "table",
+        headers: ["Full COBie", "Procedeix de", "Per a què el fa servir FM"],
+        rows: [
+          ["Facility", "IfcProject, IfcSite, IfcBuilding", "Saber de quin edifici es tracta"],
+          ["Floor", "IfcBuildingStorey", "Navegar per l'inventari d'actius"],
+          ["Space", "IfcSpace (nom, nom llarg, superfície)", "Programa d'espais, neteja, gestió d'espais"],
+          ["Zone", "IfcZone i agrupacions d'espais", "Zones d'incendi, climatització i seguretat"],
+          ["Type", "Tipus d'element i els seus psets", "Dades de producte, garantia, recanvis"],
+          ["Component", "Ocurrències d'elements", "Els actius mantenibles: la raó de ser del COBie"],
+          ["System", "IfcSystem i les seves assignacions", "Quins components formen un sistema"],
+        ],
+      },
+      {
+        type: "p",
+        text: "La conseqüència és incòmoda i útil: si el COBie és pobre, el model és pobre. Arreglar el full a mà l'última setmana produeix un document que no coincideix amb el model del qual suposadament es va derivar, i el lliurament següent repeteix l'exercici.",
+      },
+      { type: "h2", text: "Per què la majoria de lliurables COBie són buits" },
+      {
+        type: "ul",
+        items: [
+          "Els espais no es van modelar mai, o es van modelar sense nom. Sense espais no hi ha full Space, i tots els Component perden la seva ubicació.",
+          "Els components no tenen un identificador estable. Si els GlobalIds canvien entre exportacions, l'inventari d'actius no es pot actualitzar des d'un model posterior; s'ha de refer.",
+          "Els tipus falten o són genèrics. Dues-centes portes que apunten a un únic tipus anomenat «Porta» són tècnicament un full Type i a la pràctica no serveixen.",
+          "Les dades de fabricant, model i garantia arriben quan el model ja està congelat, i es teclegen al full de càlcul en lloc de fer-ho al model.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "El segon punt és el que destrueix en silenci el valor de tot l'exercici. ",
+          { text: "Per què els GUID d'IFC canvien a cada exportació", to: "ifc-guids-changing-every-export" },
+          " explica la causa i la solució per a cada eina d'autoria.",
+        ],
+      },
+      { type: "h2", text: "Mesurar la completesa abans del lliurament" },
+      {
+        type: "p",
+        text: "No et cal un especialista en COBie per saber si un model va ben encaminat. Tres preguntes, fetes a cada fase des de la congelació del disseny, ho detecten gairebé tot:",
+      },
+      {
+        type: "ol",
+        items: [
+          "Components: quina fracció té alhora nom i GlobalId? Un actiu necessita una etiqueta llegible i un ID estable per poder-se lliurar.",
+          "Espais: quina fracció té nom? Un espai sense nom no el pot trobar ningú que exploti l'edifici.",
+          "Tipus: els components remeten a algun tipus?",
+        ],
+      },
+      {
+        type: "p",
+        text: "La nostra extracció COBie respon exactament aquestes tres preguntes i les combina en un indicador de preparació per a FM —amb més pes per a Components, després Spaces i després Types— al costat del desglossament per full. És deliberadament una mesura de completesa, no un certificat de compliment: et diu si hi ha les dades de què depèn un equip de FM, i ho diu amb aquestes paraules.",
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Fes l'extracció a la congelació del disseny, no al lliurament. Un 40 % de preparació a la congelació és una tasca de modelatge amb mesos per endavant. La mateixa puntuació l'última setmana és un full de càlcul omplert a mà.",
+      },
+      { type: "h2", text: "Redactar requisits COBie que el model pugui complir" },
+      {
+        type: "p",
+        text: "Els requisits COBie van a l'EIR i, idealment, en un fitxer IDS que el proveïdor pugui executar pel seu compte. «Tot IfcSpace té Name i LongName», «tot IfcDoorType inclou Manufacturer i ModelReference»: cadascun és una especificació IDS i cadascun es pot comprovar a cada revisió molt abans que ningú obri un full de càlcul.",
+      },
+      {
+        type: "p",
+        text: [
+          "Com escriure aquestes especificacions s'explica a ",
+          { text: "IDS explicat", to: "ids-information-delivery-specification-guide" },
+          ". El lloc del COBie entre la resta de documentació de lliurament és a ",
+          { text: "què lliurar juntament amb un model IFC", to: "ifc-model-handover-documentation" },
+          ".",
+        ],
+      },
+      {
+        type: "pull-quote",
+        text: "El COBie no es produeix al lliurament. Es revela al lliurament, i aleshores ja és tard per canviar el que revela.",
+      },
+    ],
+    lang: "ca",
+    translationKey: "cobie-from-ifc-fm-handover",
+  },
+  {
+    slug: "embed-ifc-viewer-website",
+    title: "Com incrustar un visor IFC en un web, un CDE o un informe de Power BI",
+    excerpt: "Un model 3D interactiu en una proposta, una pàgina de projecte, un tauler de CDE o un quadre de comandament de Power BI, amb un sol iframe, sense compilar res i sense pujar el model al servidor de ningú. Què fan els paràmetres d'URL i quan necessites l'SDK.",
+    seoTitle: "Incrustar un visor IFC en un web, un CDE o Power BI",
+    seoDescription: "Incrusta un model IFC interactiu amb un iframe: paràmetres d'URL, modes per a clients, Power BI i Notion, problemes de CORS i quan fer servir l'SDK.",
+    date: "2026-10-01",
+    readTimeMin: 9,
+    category: "Eines i comparatives",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "incrustar visor IFC",
+      "visor IFC iframe",
+      "visor IFC en un web",
+      "IFC a Power BI",
+      "inserir model BIM en un web",
+      "SDK visor IFC",
+      "web component IFC",
+      "mostrar model IFC en un web",
+      "embed IFC viewer",
+      "IFC viewer iframe",
+      "IFC viewer website",
+      "IFC Power BI",
+      "embed BIM model website",
+      "IFC viewer SDK",
+      "IFC web component",
+      "show IFC model on website",
+    ],
+    faqs: [
+      {
+        q: "Com incrusto un model IFC en un web?",
+        a: "Allotja el fitxer .ifc en una URL pública que permeti peticions d'altres orígens i afegeix un iframe que apunti al visor amb ?model=<la teva URL>&embed=1. El navegador del visitant descarrega i processa el model. El generador d'embeds gratuït crea el codi per tu amb previsualització en directe.",
+      },
+      {
+        q: "Puc mostrar un model IFC dins de Power BI?",
+        a: "Sí. Afegeix un objecte visual de contingut web o de visor HTML i enganxa el codi de l'iframe. El paràmetre accent adapta el visor als colors de l'informe.",
+      },
+      {
+        q: "Per què no carrega el meu IFC incrustat?",
+        a: "Nou de cada deu vegades és CORS: el servidor que allotja el fitxer no envia la capçalera Access-Control-Allow-Origin, així que el navegador es nega a passar el fitxer al visor. Els enllaços privats que exigeixen iniciar sessió i els enllaços compartits que retornen una pàgina HTML en lloc del fitxer són les altres causes habituals.",
+      },
+      {
+        q: "Quan he de fer servir l'SDK en lloc d'un iframe?",
+        a: "Quan la teva pàgina necessita parlar amb el model: seleccionar elements des de la teva pròpia interfície, llegir el Health Score o la llista d'incidències, executar una comprovació IDS o reaccionar als clics. L'iframe mostra un model; l'SDK permet que la teva aplicació el controli i el consulti.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Les captures d'un model BIM són una cosa estranya de posar en una proposta. La gràcia del model és que és tridimensional i ple de dades, i la captura llença totes dues coses. Un visor incrustat les conserva: el lector pot orbitar, seccionar, clicar un element i llegir-ne les propietats, en qualsevol dispositiu i sense instal·lar res.",
+      },
+      {
+        type: "p",
+        text: "Fer-ho costa un iframe. Fer-ho bé exigeix conèixer quatre paràmetres i una regla de seguretat del navegador.",
+      },
+      { type: "h2", text: "L'embed mínim" },
+      {
+        type: "code",
+        lang: "html",
+        text: "<iframe\n  src=\"https://www.ifcvieweronline.eu/?model=https://your-host.com/model.ifc&embed=1\"\n  width=\"100%\" height=\"600\"\n  style=\"border:0;border-radius:12px;max-width:100%\"\n  loading=\"lazy\" allow=\"fullscreen\"\n  title=\"3D IFC model\">\n</iframe>",
+      },
+      {
+        type: "p",
+        text: "El navegador del visitant descarrega l'IFC directament des del teu servidor i el processa en local. El model no es puja mai als nostres servidors, que sol ser la primera pregunta de qualsevol que hagi signat un NDA, i una diferència real davant dels embeds que t'obliguen a pujar abans el model al núvol d'un fabricant.",
+      },
+      {
+        type: "embed-configurator",
+        title: "Crea el teu embed",
+        description: "Enganxa una URL pública d'IFC, tria un mode i copia l'iframe. La previsualització s'actualitza en directe.",
+      },
+      { type: "h2", text: "Els paràmetres que val la pena conèixer" },
+      {
+        type: "table",
+        headers: ["Paràmetre", "Què fa", "Fes-lo servir per a"],
+        rows: [
+          ["model", "Carrega una o diverses URL d'IFC (separades per comes per a un conjunt federat)", "Tot"],
+          ["ui", "Mode d'interfície: minimal, full, kiosk o client", "Adaptar-te al públic"],
+          [
+            "validate",
+            "Executa la validació en carregar i mostra el Health Score",
+            "Mostrar qualitat, no només geometria",
+          ],
+          [
+            "isolate / select",
+            "Obre amb una classe IFC aïllada o un element seleccionat",
+            "Assenyalar allò de què estàs escrivint",
+          ],
+          [
+            "accent",
+            "Tenyeix el visor amb un color hexadecimal",
+            "Quadres de comandament i pàgines amb marca",
+          ],
+          ["lang", "Força l'idioma de la interfície", "Webs localitzats"],
+          [
+            "map",
+            "Col·loca el model sobre el mapa base a partir de la seva georeferenciació",
+            "Context de l'emplaçament en propostes",
+          ],
+        ],
+        caption: "La referència completa, inclosos els estudis solars i els núvols de punts, és a la documentació d'embeds.",
+      },
+      {
+        type: "p",
+        text: "El mode ui és el que més importa. minimal és l'adequat per a articles de blog i documentació. kiosk ho treu tot per a pantalles en un vestíbul o una oficina de vendes. client està pensat per enviar a la propietat: una vista neta i un distintiu de qualitat, sense les eines que necessita un coordinador i un client no.",
+      },
+      { type: "h2", text: "On funciona" },
+      {
+        type: "ul",
+        items: [
+          "Webs i blogs: qualsevol CMS que accepti HTML, com WordPress, Webflow, Ghost o un web estàtic.",
+          "Power BI: un objecte visual de contingut web o de visor HTML, amb accent ajustat al tema de l'informe. Un model al costat dels gràfics de cost i termini que explica.",
+          "Notion, Confluence, SharePoint: enganxa l'URL com a bloc incrustat.",
+          "Taulers de CDE i eines internes: un iframe, amb esdeveniments de cicle de vida enviats a la finestra pare perquè la plataforma reaccioni quan el model estigui llest o validat.",
+          "Propostes i licitacions: com a enllaç si el format no admet embeds. Un enllaç a un model viu en una oferta continua sent prou rar per cridar l'atenció.",
+        ],
+      },
+      { type: "h2", text: "Per què no carrega: CORS i dues causes més" },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Qui s'hi nega és el navegador, no el visor",
+        text: "Quan una pàgina demana un fitxer d'un altre domini, el navegador només l'hi dona si aquest domini respon amb la capçalera Access-Control-Allow-Origin. La majoria d'allotjaments de fitxers no ho fan per defecte. Activa CORS al bucket o servidor que allotja l'IFC —a S3, Azure Blob i Google Cloud Storage és una configuració breu— i l'embed funciona.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Enllaços compartits que retornen una pàgina web, no el fitxer. Els enllaços de Dropbox, OneDrive i Google Drive solen obrir una pàgina de previsualització; necessites la forma de descàrrega directa de l'enllaç.",
+          "Enllaços que exigeixen iniciar sessió. El navegador del visitant no té sessió al teu CDE, així que un enllaç privat retorna una pàgina d'accés.",
+          "Fitxers molt grans en servidors lents. El model es descarrega sencer abans de processar-se; allotja els conjunts federats grans en un lloc ràpid i planteja't dividir-los.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Si els models són massa grans per incrustar-los amb comoditat, ",
+          { text: "com reduir la mida d'un fitxer IFC", to: "reduce-ifc-file-size" },
+          " explica les reduccions segures.",
+        ],
+      },
+      { type: "h2", text: "Quan un iframe no n'hi ha prou: l'SDK" },
+      {
+        type: "p",
+        text: "Un iframe mostra un model. Tan bon punt la teva pàgina necessita parlar-hi —ressaltar un element en clicar una fila de la teva taula, portar el Health Score al teu quadre de comandament, executar una especificació IDS i llistar els errors a la teva pròpia interfície, llançar un recorregut guiat—, el que vols és l'SDK. Embolcalla el mateix visor amb una API tipada i bidireccional, disponible com a script o com a web component <ifc-viewer>.",
+      },
+      {
+        type: "p",
+        text: [
+          "Si prefereixes construir el teu propi visor a partir de les biblioteques de base, ",
+          { text: "veure IFC al web amb three.js i Fragments", to: "view-ifc-web-threejs-fragments" },
+          " explica què implica, i per què la majoria d'equips que comencen per aquí acaben incrustant.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "En projectes confidencials, la mateixa arquitectura al client que fa funcionar els embeds és la que manté el model fora de servidors de tercers; els detalls són a ",
+          {
+            text: "visors IFC per a projectes confidencials i amb NDA",
+            to: "ifc-viewer-confidential-nda-projects",
+          },
+          ".",
+        ],
+      },
+    ],
+    lang: "ca",
+    translationKey: "embed-ifc-viewer-website",
+  },
+  {
     slug: "view-ifc-online-free",
     title: "Visualitza fitxers IFC al navegador — Gratuït, sense instal·lació",
     excerpt: "Et falten 20 minuts per a una trucada amb un client i acabes de rebre un fitxer IFC de 200 MB. Sense Revit, sense Navisworks, sense cap programari BIM. Aquí tens com obrir-lo, inspeccionar-lo i validar-lo abans que acabi la trucada.",
