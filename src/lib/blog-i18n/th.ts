@@ -10,6 +10,438 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_TH: BlogPost[] = [
   {
+    slug: "ifc-spatial-structure-explained",
+    title: "อธิบายโครงสร้างเชิงพื้นที่ของ IFC: โครงการ ที่ตั้ง อาคาร ชั้น และพื้นที่ (พร้อมแผนภาพ)",
+    excerpt: "โมเดล IFC ทุกโมเดลแขวนอยู่บนต้นไม้เดียวกัน คือ โครงการ ที่ตั้ง อาคาร ชั้น และพื้นที่ ปัญหาส่วนใหญ่ที่มักโทษโปรแกรมดู เช่น องค์ประกอบที่ไม่อยู่ในชั้นใด ผังที่ตัดผ่านพื้น หรือโมเดลที่เพี้ยนไปสองกิโลเมตร ล้วนเป็นปัญหาของต้นไม้นี้ บทความนี้วาดมันออกมา พร้อมข้อผิดพลาดที่ทำให้มันพัง",
+    seoTitle: "อธิบายโครงสร้างเชิงพื้นที่ของ IFC พร้อมแผนภาพ",
+    seoDescription: "แผนภาพลำดับชั้นเชิงพื้นที่ของ IFC: โครงการ ที่ตั้ง อาคาร ชั้น พื้นที่ ความต่างระหว่าง aggregation กับ containment ตำแหน่งวาง และข้อผิดพลาดที่พบบ่อย",
+    date: "2026-10-02",
+    readTimeMin: 10,
+    category: "แก้ไขการส่งออก",
+    categorySlug: "export-fixes",
+    author: "IFC Viewer Team",
+    keywords: [
+      "โครงสร้างเชิงพื้นที่ IFC",
+      "ลำดับชั้น IFC",
+      "IfcBuildingStorey",
+      "IfcSpace",
+      "แผนภาพต้นไม้เชิงพื้นที่ IFC",
+      "IfcRelContainedInSpatialStructure",
+      "IfcRelAggregates",
+      "IFC โครงการ ที่ตั้ง อาคาร ชั้น",
+      "IFC spatial structure",
+      "IFC hierarchy",
+      "IFC spatial tree diagram",
+      "IFC project site building storey",
+    ],
+    faqs: [
+      {
+        q: "โครงสร้างเชิงพื้นที่ของ IFC คืออะไร",
+        a: "ต้นไม้ที่ใช้จัดระเบียบโมเดล IFC ทุกโมเดล: IfcProject หนึ่งรายการรวม (aggregate) IfcSite หนึ่งรายการขึ้นไป ซึ่งรวม IfcBuilding (หรือใน IFC4.3 อาจเป็นสิ่งก่อสร้างอื่น เช่น สะพานและถนน) ซึ่งรวม IfcBuildingStorey ซึ่งรวม IfcSpace ส่วนองค์ประกอบทางกายภาพ เช่น ผนังและประตู จะถูกบรรจุ (contain) อยู่ในองค์ประกอบเชิงพื้นที่ใดหนึ่ง ซึ่งมักเป็นชั้น",
+      },
+      {
+        q: "aggregation กับ containment ใน IFC ต่างกันอย่างไร",
+        a: "aggregation (IfcRelAggregates) สร้างต้นไม้เชิงพื้นที่เอง: อาคารประกอบด้วยชั้น ชั้นประกอบด้วยพื้นที่ ส่วน containment (IfcRelContainedInSpatialStructure) วางองค์ประกอบทางกายภาพลงในต้นไม้นั้น และแต่ละองค์ประกอบบรรจุอยู่ได้ในองค์ประกอบเชิงพื้นที่เพียงหนึ่งเดียว นอกจากนี้ยังอ้างอิงในที่อื่นได้ด้วย IfcRelReferencedInSpatialStructure เช่น เสาที่ต่อเนื่องสองชั้น",
+      },
+      {
+        q: "ทำไม IFC ของฉันจึงมีองค์ประกอบที่ไม่อยู่ในชั้นใดเลย",
+        a: "เพราะถูก export โดยไม่มีความสัมพันธ์แบบ containment หรือถูกบรรจุไว้ตรงกับอาคารหรือที่ตั้ง การตัดผังพื้น ตารางรายชั้น COBie และเครื่องมือตรวจส่วนใหญ่ทำงานทีละชั้น องค์ประกอบเหล่านี้จึงหายไปแบบเงียบ ๆ วิธีแก้มักอยู่ที่การกำหนดระดับชั้นในโปรแกรมสร้างโมเดล ไม่ใช่ที่โปรแกรมดู",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "เปิดโมเดล IFC ใดก็ได้ในโปรแกรมดูใดก็ได้ สิ่งแรกที่คุณเห็น ก่อนผนังสักแผ่น คือต้นไม้ มีโครงการอยู่บนสุด ตามด้วยที่ตั้ง อาคาร และรายการชั้น มันดูเหมือนตัวช่วยนำทาง แต่จริง ๆ แล้วคือกระดูกสันหลังของไฟล์ และปัญหาจำนวนมากอย่างน่าประหลาดใจที่ถูกโทษว่าเป็นความผิดของโปรแกรมดู การ export หรือเครื่องมือตรวจ แท้จริงคือปัญหาของต้นไม้นี้",
+      },
+      {
+        type: "p",
+        text: "บทความนี้วาดต้นไม้ออกมา อธิบายความสัมพันธ์สองแบบที่สร้างมันขึ้น และรวบรวมข้อผิดพลาดที่ทำให้มันพัง พร้อมผลกระทบของแต่ละข้อต่องานปลายทาง",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-spatial-structure-hierarchy.png",
+        alt: "แผนภาพโครงสร้างเชิงพื้นที่ของ IFC: IfcProject รวม IfcSite, IfcBuilding, IfcBuildingStorey และ IfcSpace โดยมีผนัง ประตู พื้น และเสาถูกบรรจุอยู่ในชั้น",
+        caption: "โครงสร้างเชิงพื้นที่ของ IFC เส้นสีน้ำเงินคือ aggregation (ต้นไม้เชิงพื้นที่) เส้นประสีเขียวคือ containment (แต่ละองค์ประกอบอยู่ในชั้นเดียวเท่านั้น)",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-spatial-structure-hierarchy-800.png", width: 800 },
+          { src: "blog/images/ifc-spatial-structure-hierarchy.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "ต้นไม้เชิงพื้นที่สร้างจาก aggregation: โครงการ → ที่ตั้ง → อาคาร → ชั้น → พื้นที่",
+          "องค์ประกอบทางกายภาพไม่ได้เป็นส่วนหนึ่งของต้นไม้ แต่ถูกบรรจุอยู่ในองค์ประกอบเชิงพื้นที่หนึ่ง (มักเป็นชั้น) ผ่านความสัมพันธ์อีกแบบ",
+          "องค์ประกอบที่ไม่มี containment ไม่ได้อยู่ “ที่ไหนสักแห่งในอาคาร” สำหรับการตัดผัง ตาราง COBie และการตรวจส่วนใหญ่ มันไม่มีอยู่จริง",
+        ],
+      },
+      { type: "h2", text: "ห้าระดับ และหน้าที่ของแต่ละระดับ" },
+      {
+        type: "table",
+        headers: ["Entity", "แทนอะไร", "เก็บข้อมูลอะไร"],
+        rows: [
+          ["IfcProject", "ทั้งโครงการ มีหนึ่งเดียวต่อไฟล์", "หน่วย บริบทการแสดงผล และรากของทุกอย่าง"],
+          ["IfcSite", "ที่ดิน", "ละติจูด ลองจิจูด และระดับอ้างอิง การอ้างอิงภูมิศาสตร์เริ่มที่นี่"],
+          ["IfcBuilding", "อาคารบนที่ดิน", "ชื่อ ที่อยู่ ระดับชั้นล่าง"],
+          ["IfcBuildingStorey", "ชั้น", "ระดับชั้น ซึ่งการตัดผังและตารางรายชั้นต้องพึ่งพา"],
+          ["IfcSpace", "ห้องหรือปริมาตรอากาศ", "ชื่อ ชื่อเต็ม พื้นที่ ปริมาตร คือรายการห้อง"],
+        ],
+        caption: "ใน IFC4.3 ระดับอาคารขยายเป็นสิ่งก่อสร้างทั่วไป: IfcBridge, IfcRoad, IfcRailway และ IfcMarineFacility อยู่ในตำแหน่งเดียวกับ IfcBuilding โดยมีส่วนของสิ่งก่อสร้างอยู่ด้านล่าง",
+      },
+      { type: "h2", text: "ความสัมพันธ์สองแบบ ไม่ใช่แบบเดียว" },
+      {
+        type: "p",
+        text: "สิ่งที่มีประโยชน์ที่สุดในการเข้าใจโครงสร้างเชิงพื้นที่คือ มีความสัมพันธ์สองแบบทำงานอยู่ และมีความหมายต่างกัน",
+      },
+      {
+        type: "ul",
+        items: [
+          "IfcRelAggregates สร้างต้นไม้เชิงพื้นที่ อาคารแยกเป็นชั้น ชั้นแยกเป็นพื้นที่ นี่คือความสัมพันธ์แบบส่วนรวม–ส่วนย่อย",
+          "IfcRelContainedInSpatialStructure วางองค์ประกอบทางกายภาพ เช่น ผนัง ประตู ปั๊ม ลงในต้นไม้ แต่ละองค์ประกอบบรรจุอยู่ในองค์ประกอบเชิงพื้นที่ได้เพียงหนึ่งเดียว",
+          "IfcRelReferencedInSpatialStructure เพิ่มการอ้างอิงรอง: เสาที่ต่อเนื่องสองชั้นถูกบรรจุในชั้นหนึ่งและถูกอ้างอิงในอีกชั้น",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "ถ้าจำได้กฎเดียว: พื้นที่ถูกรวม (aggregate) เข้ากับชั้น ส่วนผนังถูกบรรจุ (contain) ในชั้น ใน IFC ผนังไม่เคยเป็น “ส่วนหนึ่ง” ของชั้น และพื้นที่ก็ไม่เคยถูก “บรรจุ” อยู่ในชั้น",
+      },
+      { type: "h2", text: "โมเดลอยู่ที่ไหน: ตำแหน่งวางที่ส่งต่อลงมาตามต้นไม้" },
+      {
+        type: "p",
+        text: "ต้นไม้เชิงพื้นที่ยังเป็นตัวพาระบบพิกัดด้วย ตำแหน่งของแต่ละองค์ประกอบคือ IfcLocalPlacement ที่สัมพันธ์กับตำแหน่งขององค์ประกอบแม่ ผนังเทียบกับชั้น ชั้นเทียบกับอาคาร อาคารเทียบกับที่ตั้ง ตำแหน่งของโมเดลบนโลกถูกกำหนดเพียงครั้งเดียวที่ระดับบนสุด",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-local-placement-chain.png",
+        alt: "แผนภาพลำดับการวางตำแหน่งแบบ local ของ IFC: IfcMapConversion, IfcSite, IfcBuilding, IfcBuildingStorey และ IfcWall แต่ละรายการวางสัมพันธ์กับองค์ประกอบแม่",
+        caption: "ตำแหน่งวางสัมพันธ์กับองค์ประกอบแม่ พิกัดจริงควรอยู่ด้านบนสุดในการอ้างอิงภูมิศาสตร์ ไม่ใช่ในทุกองค์ประกอบ",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-local-placement-chain-800.png", width: 800 },
+          { src: "blog/images/ifc-local-placement-chain.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: [
+          "ถ้ากลับดันพิกัดจริงลงไปในทุกองค์ประกอบ โมเดลจะสั่นบนจอ และไฟล์ federated จะอยู่ห่างกันหลายกิโลเมตร รายละเอียดทั้งหมดอยู่ใน ",
+          { text: "พิกัดและการอ้างอิงภูมิศาสตร์ของ IFC", to: "ifc-coordinates-georeferencing" },
+        ],
+      },
+      { type: "h2", text: "ข้อผิดพลาดหกข้อที่ทำให้ต้นไม้พัง" },
+      {
+        type: "table",
+        headers: ["ข้อผิดพลาด", "สาเหตุที่พบบ่อย", "สิ่งที่พังในปลายทาง"],
+        rows: [
+          [
+            "องค์ประกอบที่ไม่อยู่ในชั้นใด",
+            "องค์ประกอบผูกกับระดับอ้างอิง หรือสร้างไว้ในกลุ่ม",
+            "การตัดผัง ตารางรายชั้น ตำแหน่งใน COBie",
+          ],
+          [
+            "องค์ประกอบถูกบรรจุตรงกับ IfcBuilding หรือ IfcSite",
+            "การตั้งค่า export หรือองค์ประกอบภายนอกอาคารที่ทำโมเดลโดยไม่ระบุระดับ",
+            "การตรวจรายชั้นข้ามองค์ประกอบเหล่านี้ไป",
+          ],
+          ["ชั้นที่ระดับผิด", "หน่วยหรือจุดฐานไม่ตรงกันตอน export", "ผังที่ตัดผ่านพื้น ระดับผิดในตาราง"],
+          [
+            "ไม่มี IfcSpace เลย",
+            "ไม่ได้ export ห้อง หรือ export เป็นเรขาคณิตธรรมดา",
+            "รายการห้อง พื้นที่ ชีต Space ของ COBie",
+          ],
+          [
+            "มี IfcBuilding สองรายการทั้งที่ควรมีหนึ่ง",
+            "ไฟล์ที่ลิงก์กันถูก export แยกกัน",
+            "ชั้นซ้ำกัน การรวมโมเดลสับสน",
+          ],
+          [
+            "ชื่อชั้นต่างกันในแต่ละสาขา",
+            "ไม่มีการตกลงเรื่องการตั้งชื่อระดับ",
+            "โมเดล federated ที่ไม่ตรงกันรายชั้น",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "ส่วนใหญ่เป็นเรื่องการตั้งค่า export ไม่ใช่การทำโมเดล และเกือบทั้งหมดเห็นได้ภายในสิบวินาทีแรกหลังเปิดไฟล์ ถ้าดูต้นไม้ก่อนดูเรขาคณิต การตรวจที่เกี่ยวข้องเป็นส่วนหนึ่งของ ",
+          { text: "วิธีตรวจสอบไฟล์ IFC", to: "how-to-validate-ifc-file" },
+          " ส่วนการตั้งค่า export ของแต่ละโปรแกรมอยู่ใน ",
+          { text: "ทำไมการ export IFC จาก Revit จึงพัง", to: "revit-ifc-export-breaks" },
+        ],
+      },
+      { type: "h2", text: "ตรวจโครงสร้างเชิงพื้นที่ในหนึ่งนาที" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "เปิดไฟล์และอ่านต้นไม้ก่อน",
+            body: "โครงการหนึ่ง ที่ตั้งหนึ่ง อาคารและชั้นตามที่คาดไว้ เรียงลำดับถูกต้องและตั้งชื่อสมเหตุสมผล",
+          },
+          {
+            title: "ตรวจระดับชั้น",
+            body: "ระดับควรสูงขึ้นตามลำดับและตรงกับแบบภายในค่าคลาดเคลื่อนที่ตกลงไว้ ถ้าคลาดไป 1000 เท่า ผู้ต้องสงสัยประจำคือหน่วย",
+          },
+          {
+            title: "หาองค์ประกอบที่ไม่อยู่ในชั้นใด",
+            body: "การตรวจสอบจะแจ้งให้เห็น กรณีที่พบบ่อยคือองค์ประกอบอยู่ในอาคารแต่ไม่อยู่ในชั้น",
+          },
+          {
+            title: "ตัดผังทีละชั้น",
+            body: "ถ้าระนาบตัดผ่านพื้นหรือไม่โดนผนัง แปลว่าระดับหรือ containment ผิด คู่มือการวัดอธิบายวิธีวางระนาบตัดรายชั้น",
+          },
+          {
+            title: "ตรวจพื้นที่",
+            body: "ถ้าโครงการต้องการรายการห้องหรือ COBie ทุกห้องควรเป็น IfcSpace ที่มีชื่อ ไม่ใช่ก้อนปริมาตรที่ระบายสีไว้",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "ขั้นตอนการตัดผังอธิบายไว้ใน ",
+          { text: "วิธีวัดโมเดล IFC ออนไลน์", to: "measure-ifc-model-online" },
+          " ส่วนเหตุผลที่พื้นที่สำคัญต่อการส่งมอบ ดู ",
+          { text: "COBie จาก IFC", to: "cobie-from-ifc-fm-handover" },
+        ],
+      },
+    ],
+    lang: "th",
+    translationKey: "ifc-spatial-structure-explained",
+  },
+  {
+    slug: "ifc-file-format-explained",
+    title: "ข้างในไฟล์ IFC มีอะไร? อธิบายรูปแบบไฟล์ด้วยแผนภาพ",
+    excerpt: "ไฟล์ .ifc เป็นข้อความธรรมดาที่เปิดในโปรแกรมแก้ไขโค้ดได้ และเมื่ออ่านเป็นแล้ว ความลึกลับของ IFC จะหายไปครึ่งหนึ่ง ทั้งส่วนหัว อินสแตนซ์ที่มีหมายเลข GlobalId และความสัมพันธ์ที่พา property มา บทความนี้วาดรูปแบบไฟล์ออกมาให้ดู",
+    seoTitle: "ข้างในไฟล์ IFC มีอะไร? อธิบายด้วยแผนภาพ",
+    seoDescription: "โครงสร้างของไฟล์ IFC: ส่วนหัว STEP และ schema อินสแตนซ์ที่มีหมายเลข GlobalId การสืบทอดของ entity และวิธีผูก property set กับองค์ประกอบ",
+    date: "2026-10-02",
+    readTimeMin: 11,
+    category: "เครื่องมือและการเปรียบเทียบ",
+    categorySlug: "tools",
+    author: "IFC Viewer Team",
+    keywords: [
+      "รูปแบบไฟล์ IFC",
+      "โครงสร้างไฟล์ IFC",
+      "ไฟล์ STEP IFC",
+      "ISO 10303-21",
+      "อธิบาย schema IFC",
+      "GlobalId IFC",
+      "ลำดับชั้น entity IFC",
+      "โครงสร้าง property set IFC",
+      "IFC file format",
+      "IFC file structure",
+      "STEP file IFC",
+      "IFC schema explained",
+      "IFC GlobalId",
+      "IFC entity hierarchy",
+      "IFC property set structure",
+    ],
+    faqs: [
+      {
+        q: "ไฟล์ .ifc เป็นรูปแบบอะไร",
+        a: "ส่วนใหญ่เป็นไฟล์ STEP (ISO 10303-21) ซึ่งเป็นข้อความธรรมดา มีส่วนหัวระบุ schema (IFC2X3, IFC4 หรือ IFC4X3) และส่วนข้อมูลที่แต่ละบรรทัดคืออินสแตนซ์ที่มีหมายเลข เช่น #245= IFCWALL(...) ข้อมูลเดียวกันยังเก็บเป็น ifcXML หรือบีบอัดเป็น ifcZIP ได้",
+      },
+      {
+        q: "express ID กับ GlobalId ต่างกันอย่างไร",
+        a: "express ID คือหมายเลขบรรทัด (#245) ใช้ได้เฉพาะในไฟล์นั้น และถูกเรียงใหม่ทุกครั้งที่ export ส่วน GlobalId คือ GUID แบบบีบอัดยาว 22 ตัวอักษร เก็บเป็น attribute แรกของทุก entity ราก ออกแบบมาให้คงที่ตลอดอายุขององค์ประกอบ และเป็นสิ่งที่การเปรียบเทียบ BCF และระบบ FM ใช้อ้างอิง",
+      },
+      {
+        q: "property ในไฟล์ IFC เก็บไว้ที่ไหน",
+        a: "ไม่ได้เก็บที่ตัวองค์ประกอบ property อยู่ใน property set (IfcPropertySet) ซึ่งผูกกับองค์ประกอบผ่าน IfcRelDefinesByProperties หรือผูกกับ type ขององค์ประกอบ และทุก occurrence ของ type จะสืบทอด property set ของ type นั้น",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "คนส่วนใหญ่เห็นไฟล์ IFC ผ่านโปรแกรมดูเท่านั้น น่าเสียดาย เพราะไฟล์ .ifc เป็นข้อความธรรมดา และการอ่านสักสิบนาทีจะอธิบายเรื่องที่ปกติยังลึกลับได้ ทั้งทำไม GUID จึงสำคัญ ทำไม property จึง “หายไป” ทั้งที่มองเห็น ทำไมไฟล์จึงใหญ่ และทำไมการตั้งค่า export ผิดเพียงจุดเดียวจึงทำให้ทุกอย่างปลายทางพัง",
+      },
+      { type: "p", text: "บทความนี้เปิดไฟล์และวาดสิ่งที่อยู่ข้างในออกมา" },
+      {
+        type: "image",
+        src: "blog/images/ifc-step-file-anatomy.png",
+        alt: "ไฟล์ IFC แบบ STEP พร้อมคำอธิบาย: ส่วนหัว ISO-10303-21 ที่มี FILE_SCHEMA IFC4 อินสแตนซ์ที่มีหมายเลข เช่น #245 IFCWALL พร้อม GlobalId ความสัมพันธ์ของ property set และ FireRating ใน Pset_WallCommon",
+        caption: "ไฟล์ IFC ในรูปแบบ STEP (ISO 10303-21): ส่วนหัวระบุ schema แล้วตามด้วยอินสแตนซ์ที่มีหมายเลขบรรทัดละหนึ่งรายการ",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-step-file-anatomy-800.png", width: 800 },
+          { src: "blog/images/ifc-step-file-anatomy.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "ไฟล์ IFC คือรายการอินสแตนซ์ที่มีหมายเลข หมายเลขใช้ได้เฉพาะในไฟล์และเปลี่ยนทุกครั้งที่ export",
+          "GlobalId ซึ่งเป็นสตริง 22 ตัวอักษรในแต่ละอินสแตนซ์ คือตัวตนที่ออกแบบมาให้คงอยู่",
+          "ข้อมูลสำคัญเกือบทั้งหมด รวมถึง property และ containment เชิงพื้นที่ ถูกผูกผ่าน entity ความสัมพันธ์ แทนที่จะเก็บไว้ที่ตัวองค์ประกอบ",
+        ],
+      },
+      { type: "h2", text: "ส่วนหัว: schema ใด มุมมองใด" },
+      { type: "p", text: "ไฟล์เริ่มต้นด้วย ISO-10303-21; และส่วน HEADER สั้น ๆ มีสามบรรทัดที่สำคัญ" },
+      {
+        type: "ul",
+        items: [
+          "FILE_DESCRIPTION ระบุ model view definition เช่น Coordination View, Reference View, Design Transfer View ซึ่งกำหนดส่วนย่อยของ IFC ที่ตัว export ตั้งใจใช้",
+          "FILE_NAME บันทึกชื่อไฟล์ เวลา ผู้สร้าง และโปรแกรมที่ใช้สร้าง",
+          "FILE_SCHEMA ระบุ schema: IFC2X3, IFC4 หรือ IFC4X3 ทุกบรรทัดถัดไปอ่านตาม schema นี้ entity เดียวกันอาจมี attribute ต่างกันในแต่ละเวอร์ชัน",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "การเลือกเวอร์ชันของ schema เป็นอีกหัวข้อหนึ่ง: ",
+          { text: "IFC2x3 กับ IFC4 ต่างกันอย่างไร", to: "ifc2x3-vs-ifc4" },
+        ],
+      },
+      { type: "h2", text: "ส่วนข้อมูล: บรรทัดละหนึ่งอินสแตนซ์" },
+      {
+        type: "p",
+        text: "หลัง DATA; ทุกบรรทัดมีรูปแบบเดียวกัน คือ หมายเลข ชื่อ entity และรายการ attribute ตามลำดับที่ schema กำหนด",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "#245= IFCWALL('1kTvXnbbzCWw8lcMd1dR4o',#2,'Basic Wall:Ext 300',$,$,#210,#240,$,.STANDARD.);",
+      },
+      {
+        type: "table",
+        headers: ["ส่วน", "ความหมาย"],
+        rows: [
+          ["#245", "หมายเลขอินสแตนซ์ (express ID) ใช้ได้เฉพาะในไฟล์นี้"],
+          ["'1kTvXnbbz…'", "GlobalId คือ GUID แบบบีบอัดยาว 22 ตัวอักษร"],
+          ["#2", "อ้างอิงไปยังอินสแตนซ์อื่น (ในที่นี้คือ owner history)"],
+          ["$", "ไม่ได้กำหนดค่า attribute"],
+          [".STANDARD.", "ค่า enumeration (predefined type)"],
+          ["#210, #240", "ตำแหน่งวางและการแสดงผลทางเรขาคณิต ซึ่งนิยามไว้ในบรรทัดอื่น"],
+        ],
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "อย่าพึ่งพาหมายเลข # ข้ามไฟล์",
+        text: "ผนังแผ่นเดียวกันอาจเป็น #245 ใน export หนึ่ง และเป็น #9810 ในครั้งถัดไป ทุกอย่างที่ต้องระบุองค์ประกอบข้ามเวอร์ชัน เช่น การเปรียบเทียบ ประเด็น BCF หรือทะเบียนสินทรัพย์ FM ต้องใช้ GlobalId",
+      },
+      {
+        type: "p",
+        text: [
+          "เมื่อ GlobalId เองเปลี่ยนทุกครั้งที่ export กระบวนการปลายทางทั้งหมดจะพังพร้อมกัน สาเหตุและวิธีแก้ของแต่ละโปรแกรมอยู่ใน ",
+          { text: "ทำไม GUID ของ IFC เปลี่ยนทุกครั้งที่ export", to: "ifc-guids-changing-every-export" },
+        ],
+      },
+      { type: "h2", text: "entity สืบทอดจากกันและกัน" },
+      {
+        type: "p",
+        text: "IFC เป็นโมเดลเชิงวัตถุ IfcWall คือ IfcBuiltElement ซึ่งเป็น IfcElement, IfcProduct, IfcObject และท้ายที่สุดคือ IfcRoot และมันพา attribute ของทั้งหมดนี้มาด้วย นี่คือเหตุผลที่ผนัง ประตู และพื้นที่ทุกชิ้นมี GlobalId และ Name เพราะมาจาก IfcRoot",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-entity-inheritance-ifcwall.png",
+        alt: "แผนภาพการสืบทอด entity ของ IFC สำหรับ IfcWall: IfcRoot, IfcObjectDefinition, IfcObject, IfcProduct, IfcElement, IfcBuiltElement, IfcWall",
+        caption: "ทุก entity สืบทอด attribute จาก supertype การตรวจที่เขียนสำหรับ IfcElement จึงใช้กับผนัง ประตู และเสาทุกชิ้นที่อยู่ด้านล่าง",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-entity-inheritance-ifcwall-800.png", width: 800 },
+          { src: "blog/images/ifc-entity-inheritance-ifcwall.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: "ชื่อเปลี่ยนไปตามเวอร์ชัน สิ่งที่ IFC4.3 เรียกว่า IfcBuiltElement เคยชื่อ IfcBuildingElement ใน IFC2x3 และ IFC4 เครื่องมือที่ฝังชื่อตายตัวไว้ในโค้ดจะพลาดอีกชื่อหนึ่ง และนี่คือเหตุผลหนึ่งที่โมเดลเดียวกันผ่านการตรวจในเครื่องมือหนึ่งแต่ไม่ผ่านในอีกเครื่องมือ",
+      },
+      { type: "h2", text: "ความสัมพันธ์ก็เป็น entity" },
+      {
+        type: "p",
+        text: "การตัดสินใจเชิงออกแบบที่ทำให้ IFC อ่านยากในตอนแรก ก็คือสิ่งที่ทำให้มันทรงพลัง ความสัมพันธ์เป็นวัตถุในตัวเอง ผนังไม่มีรายการ property ของตัวเอง แต่มีอินสแตนซ์ IfcRelDefinesByProperties ที่ชี้ไปยังผนังและ property set แทน containment เชิงพื้นที่ วัสดุ type ช่องเปิด และกลุ่ม ก็ทำงานแบบเดียวกัน",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "แผนภาพการที่ property ของ IFC ไปถึงองค์ประกอบ: IfcWall ผูกผ่าน IfcRelDefinesByProperties กับ IfcPropertySet Pset_WallCommon ที่มี FireRating และ IsExternal และสืบทอดจาก IfcWallType",
+        caption: "property อยู่ใน property set ซึ่งผูกกับองค์ประกอบหรือกับ type ของมัน property set ที่อยู่บน type ใช้กับทุก occurrence",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
+        type: "p",
+        text: [
+          "นี่คือต้นเหตุของการแจ้งเตือนผิดที่พบบ่อยที่สุดในการตรวจคุณภาพ IFC: property ที่นิยามไว้บน type ดูเหมือนหายไปสำหรับเครื่องมือที่อ่านแค่ occurrence สาเหตุที่แท้จริงอยู่ใน ",
+          { text: "property ของ IFC หายหลัง export", to: "ifc-properties-missing-after-export" },
+          " ส่วนวิธีไล่ตามความสัมพันธ์เหล่านี้ในโค้ดอยู่ใน ",
+          { text: "อ่าน property set ด้วย Python", to: "read-ifc-property-sets-python" },
+        ],
+      },
+      { type: "h2", text: "ทำไมไฟล์ IFC จึงใหญ่" },
+      {
+        type: "ul",
+        items: [
+          "เรขาคณิตกินพื้นที่มากที่สุด ผนังภายนอกที่แบ่งเป็นสามเหลี่ยมหรืออุปกรณ์งานระบบที่ละเอียดอาจยาวหลายพันบรรทัด ส่วน extrusion และเรขาคณิตแบบ mapped (instance) เล็กกว่ามาก",
+          "ข้อมูลซ้ำก็ถูกเขียนซ้ำ ตัว export ที่ไม่แชร์ property set หรือการแสดงผล จะเขียนบรรทัดเดิมซ้ำทุกองค์ประกอบ",
+          "STEP ธรรมดาไม่มีการบีบอัด ifcZIP มักลดขนาดไฟล์ได้หลายเท่า และเป็นรูปแบบส่งมอบที่เหมาะสมเมื่อเครื่องมือของผู้รับรองรับ",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "วิธีลดขนาดไฟล์อย่างปลอดภัยอยู่ใน ",
+          { text: "วิธีลดขนาดไฟล์ IFC", to: "reduce-ifc-file-size" },
+          " และเมื่อไฟล์ใหญ่จนเบราว์เซอร์ล่ม ดู ",
+          { text: "ไฟล์ IFC ขนาดใหญ่ที่ทำให้เบราว์เซอร์ล่ม", to: "large-ifc-file-browser-crash" },
+        ],
+      },
+      { type: "h2", text: "อ่านไฟล์ด้วยตัวเอง" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "เปิดในโปรแกรมแก้ไขข้อความ",
+            body: "โปรแกรมใดก็ได้ที่รับไฟล์ใหญ่ได้ ดูส่วนหัวก่อน schema และ model view จะบอกว่าควรคาดหวังอะไร",
+          },
+          {
+            title: "ค้นหา entity ที่สนใจ",
+            body: "IFCWALL(, IFCSPACE(, IFCBUILDINGSTOREY( แค่จำนวนที่พบก็เป็นการตรวจเบื้องต้นได้แล้ว",
+          },
+          {
+            title: "ไล่ตามการอ้างอิงขององค์ประกอบหนึ่ง",
+            body: "จากผนังหนึ่งแผ่น ค้นหาหมายเลข # ของมันเพื่อหาความสัมพันธ์ที่ชี้มาหา ได้แก่ containment property และ type",
+          },
+          {
+            title: "แล้วจึงเปลี่ยนไปใช้โปรแกรมดู",
+            body: "ข้อมูลเดียวกันแต่นำทางได้ ทั้งต้นไม้เชิงพื้นที่ แผง property และการตรวจสอบที่เช็กความสัมพันธ์เหล่านี้ให้คุณ",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "การจัดองค์ประกอบเป็นชั้นและพื้นที่ อธิบายไว้ใน ",
+          { text: "อธิบายโครงสร้างเชิงพื้นที่ของ IFC", to: "ifc-spatial-structure-explained" },
+        ],
+      },
+    ],
+    lang: "th",
+    translationKey: "ifc-file-format-explained",
+  },
+  {
     slug: "ifc-sun-shadow-study-online",
     title: "ศึกษาแสงแดดและเงาจากโมเดล IFC ในเบราว์เซอร์",
     excerpt: "การศึกษาเงามักหมายถึงการ export ไปโปรแกรมเรนเดอร์ แล้วกะมุมทิศเหนือเอาเอง แต่ IFC ที่อ้างอิงภูมิศาสตร์แล้วรู้อยู่แล้วว่าตั้งอยู่ที่ไหนและทิศเหนือจริงอยู่ทางไหน จึงวางดวงอาทิตย์ได้ถูกต้องทุกวันและเวลา ภายในไม่กี่วินาที โดยไม่ต้องออกจากเบราว์เซอร์",
@@ -68,6 +500,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         ],
       },
       { type: "h2", text: "ดวงอาทิตย์ต้องการอะไรจากโมเดลของคุณ" },
+      {
+        type: "image",
+        src: "blog/images/sun-study-true-north-vs-project-north.png",
+        alt: "แผนภาพทิศเหนือโครงการเทียบกับทิศเหนือจริงที่หมุน 28 องศา พร้อมข้อมูลที่การศึกษาแสงแดดและเงาต้องใช้ ได้แก่ ละติจูด ลองจิจูด ทิศเหนือจริง และเขตเวลา",
+        caption: "ทิศเหนือโครงการไม่ใช่ทิศเหนือจริง การศึกษาแสงแดดที่ไม่สนใจมุมหมุนจะทำให้เงาทุกเส้นเพี้ยนไปเท่ากัน",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/sun-study-true-north-vs-project-north-800.png", width: 800 },
+          { src: "blog/images/sun-study-true-north-vs-project-north.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "table",
         headers: ["ข้อมูล", "มาจากไหน", "ถ้าผิด"],
@@ -226,6 +672,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
       { type: "h2", text: "การ snap: สิ่งที่ตัดสินว่าตัวเลขเชื่อได้หรือไม่" },
       {
+        type: "image",
+        src: "blog/images/measure-snap-targets-vertex-edge-face.png",
+        alt: "เป้าหมายการ snap สี่แบบสำหรับวัดโมเดล IFC: จุดยอด จุดกึ่งกลางขอบ ขอบ และผิวหน้า แสดงบนมุมผนัง",
+        caption: "เป้าหมายการ snap สี่แบบ การรู้ว่าเครื่องมือจับอะไรได้ก่อนคลิก คือสิ่งที่ทำให้ตัวเลขเชื่อถือได้",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/measure-snap-targets-vertex-edge-face-800.png", width: 800 },
+          { src: "blog/images/measure-snap-targets-vertex-edge-face.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "การวัดดีได้เท่ากับจุดปลายทั้งสองจุด การ snap ที่ดีจะหาเรขาคณิตที่คุณตั้งใจ เช่น จุดยอด จุดกึ่งกลางขอบ หรือจุดบนขอบ และบอกให้รู้ก่อนคลิกว่าเจออะไร",
       },
@@ -368,6 +828,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
       { type: "h2", text: "การเดินทำงานอย่างไร" },
       {
+        type: "image",
+        src: "blog/images/ifc-walk-mode-keyboard-controls.png",
+        alt: "ปุ่มควบคุมการเดินชมโมเดล IFC แบบบุคคลที่หนึ่ง: G เข้าโหมดเดิน W A S D เคลื่อนที่ เมาส์มองรอบ ๆ ดับเบิลคลิกเพื่อไป",
+        caption: "การควบคุมโหมดเดิน: G เพื่อเริ่ม WASD เพื่อเดิน เมาส์เพื่อมองรอบ ๆ และดับเบิลคลิกที่พื้นเพื่อไปที่นั่นในระดับสายตา",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-walk-mode-keyboard-controls-800.png", width: 800 },
+          { src: "blog/images/ifc-walk-mode-keyboard-controls.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "table",
         headers: ["การกระทำ", "การควบคุม"],
         rows: [
@@ -497,6 +971,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
       { type: "h2", text: "พอดีกรอบ อย่าครอป" },
       {
+        type: "image",
+        src: "blog/images/vertical-video-fit-vs-crop-building.png",
+        alt: "เปรียบเทียบวิดีโอแนวตั้ง 9:16 ของอาคารที่กว้าง: การครอปกึ่งกลางตัดอาคารขาด การพอดีกรอบพร้อมแถบเบลอเก็บอาคารไว้ครบและเหลือที่ใส่ชื่อเรื่อง",
+        caption: "การครอปกึ่งกลางเหลือแค่หนึ่งในสามของภาพแนวนอน การพอดีกรอบเก็บอาคารไว้ครบ และแถบด้านบนล่างใช้วางชื่อเรื่อง",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/vertical-video-fit-vs-crop-building-800.png", width: 800 },
+          { src: "blog/images/vertical-video-fit-vs-crop-building.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "อาคารมักกว้าง การครอปกึ่งกลางภาพแนวนอนเป็น 9:16 จะเหลือแถบกว้างประมาณหนึ่งในสามของภาพ และอาคารหลุดออกจากกรอบทั้งสองข้าง การพอดีกรอบทั้งภาพลงในแนวตั้งจะเก็บอาคารไว้ครบ และเหลือแถบด้านบนและล่าง ซึ่งเมื่อเติมด้วยภาพเดียวกันแบบเบลอ จะดูตั้งใจและให้พื้นที่สำหรับชื่อเรื่องพอดี",
       },
@@ -609,6 +1097,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         text: "โมเดลรู้หลายอย่างที่ภาพนำเสนอดี ๆ ต้องการอยู่แล้ว ว่าชั้นอยู่ตรงไหน องค์ประกอบใดเป็นโครงสร้าง องค์ประกอบใดเป็นงานระบบ ที่ดินอยู่ตรงไหน และดวงอาทิตย์อยู่ที่ใด เทมเพลตที่ใช้ความรู้นี้สร้างงานในไม่กี่นาที ซึ่งถ้าทำในโปรแกรมจัดหน้าอาจใช้เวลาทั้งบ่าย",
       },
       { type: "h2", text: "ภาพสี่แบบที่ทุกโครงการใช้" },
+      {
+        type: "image",
+        src: "blog/images/ifc-presentation-image-types.png",
+        alt: "ภาพนำเสนอสี่แบบที่สร้างจากโมเดล IFC: ภาพปก บอร์ด แผ่นข้อมูลพร้อม QR โค้ด และมุมมองประสานงานที่แยกสีตามสาขา",
+        caption: "ภาพปก บอร์ด แผ่นข้อมูล และมุมมองประสานงาน ภาพสี่แบบที่ทุกโครงการต้องใช้ ทั้งหมดสร้างจากโมเดล",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-presentation-image-types-800.png", width: 800 },
+          { src: "blog/images/ifc-presentation-image-types.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "table",
         headers: ["ภาพ", "ใช้สำหรับ", "สิ่งที่ทำให้ได้ผล"],
@@ -746,6 +1248,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
       { type: "h2", text: "โครงสร้างของ specification" },
       {
+        type: "image",
+        src: "blog/images/ids-specification-applicability-requirements.png",
+        alt: "แผนภาพ specification ของ IDS: ขอบเขตการใช้ (entity, classification, partOf) เลือกองค์ประกอบ แล้วตรวจข้อกำหนด (property, attribute, material) กับองค์ประกอบเหล่านั้น",
+        caption: "specification ของ IDS อ่านได้เป็นหนึ่งประโยค: ทุกองค์ประกอบที่ตรงขอบเขตการใช้ ต้องผ่านข้อกำหนด",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ids-specification-applicability-requirements-800.png", width: 800 },
+          { src: "blog/images/ids-specification-applicability-requirements.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "p",
         text: "ไฟล์ IDS คือรายการของ specification แต่ละรายการอ่านได้เหมือนประโยคที่มีประธานและภาคแสดง คือ “สำหรับทุกองค์ประกอบที่ตรงกับเงื่อนไขนี้ ให้กำหนดสิ่งนั้น” ประธานคือขอบเขตการใช้ (applicability) ส่วนภาคแสดงคือข้อกำหนด (requirements)",
       },
@@ -807,6 +1323,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         text: "กับดักสองข้อในนั้นควรดูให้ละเอียดขึ้น เพราะเป็นต้นเหตุของผลตรวจผิดพลาดส่วนใหญ่ที่คนเจอเมื่อรัน IDS ครั้งแรก",
       },
       { type: "h3", text: "Type กับ occurrence" },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "แผนภาพ property set ของ IFC ที่ผูกกับ IfcWall และกับ IfcWallType ซึ่งทุก occurrence สืบทอด property ของ type",
+        caption: "property อาจอยู่ที่ type ไม่ใช่ที่ occurrence เครื่องมือตรวจ IDS ต้องตามไปที่ type ไม่เช่นนั้นจะตัดสินว่าองค์ประกอบที่ถูกต้องไม่ผ่าน",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "Revit, ArchiCAD และ Tekla มักเขียน property และวัสดุไว้ที่ออบเจ็กต์ type (IfcWallType) แทนที่จะเขียนไว้ที่ผนังแต่ละชิ้น ความหมายตาม IDS ชัดเจนว่าข้อมูลที่สืบทอดจาก type นับรวมให้ occurrence ด้วย เครื่องมือตรวจที่ดูแค่ occurrence จะทำให้ผนังทุกชิ้นในโมเดลที่ถูกต้องสมบูรณ์ไม่ผ่าน ถ้า IDS บอกว่าองค์ประกอบ 100% ขาด property ที่คุณเห็นอยู่ในแผง property เหตุผลเกือบทุกครั้งคือข้อนี้ และความผิดอยู่ที่เครื่องมือตรวจ ไม่ใช่คุณ",
@@ -952,6 +1482,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         text: "การเปรียบเทียบเวอร์ชัน IFC อย่างถูกต้องไม่ใช่เรื่องยาก แต่ขึ้นอยู่กับการตัดสินใจข้อเดียวที่เครื่องมือส่วนใหญ่พลาดแบบแนบเนียน คืออะไรนับเป็น “องค์ประกอบเดียวกัน”",
       },
       { type: "h2", text: "ตัวตนขององค์ประกอบคือหัวใจของปัญหา" },
+      {
+        type: "image",
+        src: "blog/images/ifc-version-compare-globalid.png",
+        alt: "ตารางเปรียบเทียบ IFC สองรีวิชันด้วย GlobalId: ไม่เปลี่ยน property ถูกแก้ องค์ประกอบย้ายไปไฟล์อื่น องค์ประกอบที่เพิ่มและลบ",
+        caption: "จับคู่ด้วย GlobalId ทั้งชุดไฟล์: property ที่เปลี่ยน องค์ประกอบที่ย้ายข้ามไฟล์สาขา การเพิ่ม และการลบ",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-version-compare-globalid-800.png", width: 800 },
+          { src: "blog/images/ifc-version-compare-globalid.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "องค์ประกอบ IFC มีตัวระบุสองแบบ express ID (เช่น #1234 ในไฟล์) เป็นแค่หมายเลขบรรทัด ซึ่งถูกเรียงใหม่ทุกครั้งที่ export และไม่มีความหมายข้ามเวอร์ชัน ส่วน GlobalId คือ GUID ยาว 22 ตัวอักษรที่ออกแบบมาให้คงอยู่ตลอดอายุขององค์ประกอบ การเปรียบเทียบที่จับคู่ด้วยสิ่งอื่นนอกจาก GlobalId ก็คือการเทียบหมายเลขบรรทัด",
@@ -1120,6 +1664,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
       { type: "h2", text: "2.1 กับ 3.0: ความต่างที่ทำให้การนำเข้าพัง" },
       {
+        type: "image",
+        src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png",
+        alt: "XML ของ markup.bcf ใน BCF 2.1 และ BCF 3.0 เทียบกัน แสดงตำแหน่งการซ้อนของ Comments, Viewpoints และ Labels",
+        caption: "ประเด็นเดียวกันใน BCF 2.1 และ 3.0 ความคิดเห็น viewpoint และป้ายกำกับย้ายเข้าไปใน Topic และในคอนเทนเนอร์",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure-800.png", width: 800 },
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: "table",
         headers: ["หัวข้อ", "BCF 2.1", "BCF 3.0"],
         rows: [
@@ -1146,6 +1704,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         text: "ปัญหาป้ายกำกับพบบ่อยอย่างน่าแปลกใจ การเขียนป้าย 2.1 เป็นสตริงเดียวคั่นด้วยจุลภาคทำได้ง่าย และตัวอ่านที่เคร่งครัดทุกตัวจะถือว่าเป็นป้ายยาวป้ายเดียว schema 2.1 ต้องการองค์ประกอบซ้ำ หนึ่งอันต่อหนึ่งป้าย",
       },
       { type: "h2", text: "ทำไมกล้องจึงไปโผล่ผิดที่" },
+      {
+        type: "image",
+        src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png",
+        alt: "แผนภาพแกน: พิกัดโลกของ IFC ใช้แกน Z ชี้ขึ้นแบบมือขวา ฉาก three.js ใช้แกน Y ชี้ขึ้น กล้อง BCF ต้องแปลงกลับก่อน export",
+        caption: "IFC ใช้แกน Z ชี้ขึ้น ส่วน three.js ใช้แกน Y ถ้าไม่แปลง กล้องจะหมุนไป 90° ถ้าไม่คืนค่าการเลื่อน กล้องจะไปอยู่ผิดที่",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes-800.png", width: 800 },
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "กล้อง BCF ถูกเก็บในพิกัดโลกของโครงการ IFC หน่วยเป็นเมตร และแกน Z ชี้ขึ้น โปรแกรมดูบนเว็บส่วนใหญ่เรนเดอร์ด้วย three.js ซึ่งฉากมีแกน Y ชี้ขึ้น และหลายตัวเลื่อนโมเดลเข้าใกล้จุดกำเนิด เพื่อไม่ให้พิกัดอ้างอิงภูมิศาสตร์ค่ามาก ๆ สั่นบน GPU ทั้งสองเป็นการตัดสินใจด้านการเรนเดอร์ที่สมเหตุสมผล แต่ต้องย้อนกลับทั้งคู่ก่อนเขียน viewpoint",
@@ -1270,6 +1842,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         text: "ทางแก้ไม่ใช่เครื่องมือ COBie ที่ดีกว่าในตอนท้าย แต่คือการดึง COBie จาก IFC ตั้งแต่เนิ่น ๆ และบ่อย ๆ แล้ววัดว่าขาดอะไร ในขณะที่ยังมีเวลาใส่ข้อมูลในโมเดล",
       },
       { type: "h2", text: "COBie คือมุมมองหนึ่งของ IFC ไม่ใช่งานส่งมอบแยกต่างหาก" },
+      {
+        type: "image",
+        src: "blog/images/cobie-sheets-from-ifc-entities.png",
+        alt: "แผนภาพจับคู่ชีต COBie กับ entity ของ IFC: Facility, Floor, Space, Zone, Type, Component และ System โดย Space, Type และ Component เป็นแกนหลักของงาน FM",
+        caption: "ชีต COBie แต่ละชีตคือมุมมองหนึ่งของ entity ใน IFC ข้อมูลที่งานบริหารอาคารใช้ส่วนใหญ่อยู่ใน Component, Space และ Type",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/cobie-sheets-from-ifc-entities-800.png", width: 800 },
+          { src: "blog/images/cobie-sheets-from-ifc-entities.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "p",
         text: "ทุกแถวที่สำคัญใน COBie ตรงกับบางสิ่งใน IFC Floor คือ IfcBuildingStorey, Space คือ IfcSpace, Type คือประเภทองค์ประกอบ เช่น IfcDoorType และ Component คือ occurrence ขององค์ประกอบ เช่น ประตูบานหนึ่งหรือปั๊มตัวหนึ่ง attribute ที่ COBie ต้องการอยู่ใน attribute และ property set ของ IFC",
@@ -1462,6 +2048,20 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         ],
       },
       { type: "h2", text: "ทำไมโหลดไม่ขึ้น: CORS และอีกสองสาเหตุ" },
+      {
+        type: "image",
+        src: "blog/images/ifc-embed-iframe-cors-flow.png",
+        alt: "แผนภาพการทำงานของโปรแกรมดู IFC แบบฝัง: หน้าเว็บโหลด iframe โปรแกรมดูดาวน์โหลด IFC จากที่เก็บไฟล์ของคุณ ซึ่งต้องส่ง header Access-Control-Allow-Origin",
+        caption: "โมเดลเดินทางจากที่เก็บไฟล์ของคุณไปยังเบราว์เซอร์ของผู้เข้าชม ถ้าโฮสต์ไม่มี header CORS เบราว์เซอร์จะไม่ส่งไฟล์ให้",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-embed-iframe-cors-flow-800.png", width: 800 },
+          { src: "blog/images/ifc-embed-iframe-cors-flow.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: "callout",
         variant: "warning",

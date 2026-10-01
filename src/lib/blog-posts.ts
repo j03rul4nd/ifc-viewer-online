@@ -255,6 +255,245 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: 'ifc-spatial-structure-explained',
+    title: 'IFC Spatial Structure Explained: Project, Site, Building, Storey and Space (With Diagrams)',
+    excerpt: "Every IFC model hangs from the same tree: Project, Site, Building, Storey, Space. Most of the problems people blame on viewers — elements in no storey, plans that cut through slabs, models two kilometres away — are problems in that tree. Here it is, drawn out, with the mistakes that break it.",
+    seoTitle: 'IFC Spatial Structure Explained, With Diagrams',
+    seoDescription: 'The IFC spatial hierarchy drawn out: Project, Site, Building, Storey, Space; aggregation vs containment; placements; and the errors that break the tree.',
+    date: '2026-10-02',
+    readTimeMin: 10,
+    category: 'Export fixes',
+    categorySlug: 'export-fixes',
+    author: 'IFC Viewer Team',
+    keywords: ['IFC spatial structure', 'IFC hierarchy', 'IfcBuildingStorey', 'IfcSpace', 'IFC spatial tree diagram', 'IfcRelContainedInSpatialStructure', 'IfcRelAggregates', 'IFC project site building storey'],
+    faqs: [
+      { q: 'What is the IFC spatial structure?', a: 'The tree every IFC model is organised in: one IfcProject, which aggregates one or more IfcSite, which aggregate IfcBuilding (or, in IFC4.3, other facilities such as bridges and roads), which aggregate IfcBuildingStorey, which aggregate IfcSpace. Physical elements such as walls and doors are then contained in one of those spatial elements, usually a storey.' },
+      { q: 'What is the difference between aggregation and containment in IFC?', a: 'Aggregation (IfcRelAggregates) builds the spatial tree itself: a building is made of storeys, a storey of spaces. Containment (IfcRelContainedInSpatialStructure) places a physical element in that tree, and each element can be contained in only one spatial element. An element can additionally be referenced in others with IfcRelReferencedInSpatialStructure — a column spanning two storeys, for example.' },
+      { q: 'Why does my IFC show elements outside every storey?', a: 'Because they were exported without a containment relationship, or contained directly in the building or site. Plan cuts, schedules, COBie and most checkers work storey by storey, so those elements silently drop out. The fix is usually the level assignment in the authoring tool, not the viewer.' },
+    ],
+    content: [
+      { type: 'p', text: "Open any IFC model in any viewer and the first thing you see, before a single wall, is a tree: the project at the top, a site, a building, a list of storeys. It looks like a navigation aid. It is actually the backbone of the file, and a surprising number of problems that get blamed on viewers, exports or checkers are problems in that tree." },
+      { type: 'p', text: "This guide draws the tree out, explains the two different relationships that build it, and lists the mistakes that break it — with what each one does downstream." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-spatial-structure-hierarchy.png',
+        alt: 'Diagram of the IFC spatial structure: IfcProject aggregates IfcSite, IfcBuilding, IfcBuildingStorey and IfcSpace, with walls, doors, slabs and columns contained in a storey',
+        caption: 'The IFC spatial structure. Blue lines are aggregation (the spatial tree); dashed green lines are containment (each element in exactly one storey).',
+        width: 1600,
+        height: 900,
+        srcSet: [{ src: 'blog/images/ifc-spatial-structure-hierarchy-800.png', width: 800 }, { src: 'blog/images/ifc-spatial-structure-hierarchy.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'takeaways', items: [
+        "The spatial tree is built by aggregation: Project → Site → Building → Storey → Space.",
+        "Physical elements are not part of the tree. They are contained in one spatial element — usually a storey — by a separate relationship.",
+        "An element with no containment is not \"somewhere in the building\". For plan cuts, schedules, COBie and most checks, it does not exist.",
+      ] },
+
+      { type: 'h2', text: 'The five levels, and what each one is for' },
+      {
+        type: 'table',
+        headers: ['Entity', 'What it represents', 'What it carries'],
+        rows: [
+          ['IfcProject', 'The whole project — exactly one per file', 'Units, representation contexts, the root of everything'],
+          ['IfcSite', 'The plot of land', 'Reference latitude/longitude and elevation; the georeferencing starts here'],
+          ['IfcBuilding', 'A building on the site', 'Name, address, elevation of the ground floor'],
+          ['IfcBuildingStorey', 'A level', 'Elevation — what plan cuts and level-based schedules rely on'],
+          ['IfcSpace', 'A room or zone of air', 'Name, long name, area, volume — the room programme'],
+        ],
+        caption: 'In IFC4.3 the building level generalises to facilities: IfcBridge, IfcRoad, IfcRailway and IfcMarineFacility sit where IfcBuilding sits, with facility parts below them.',
+      },
+
+      { type: 'h2', text: 'Two relationships, not one' },
+      { type: 'p', text: "The single most useful thing to understand about the spatial structure is that two different relationships are at work, and they mean different things." },
+      { type: 'ul', items: [
+        "IfcRelAggregates builds the spatial tree. A building is decomposed into storeys; a storey into spaces. This is whole–part.",
+        "IfcRelContainedInSpatialStructure puts a physical element — a wall, a door, a pump — in that tree. Each element can be contained in exactly one spatial element.",
+        "IfcRelReferencedInSpatialStructure adds secondary references: a column that spans two storeys is contained in one and referenced in the other.",
+      ] },
+      { type: 'callout', variant: 'tip', text: "If you remember one rule: spaces are aggregated into a storey; walls are contained in a storey. A wall is never \"part of\" a storey in IFC terms, and a space is never \"contained\" in one." },
+
+      { type: 'h2', text: 'Where the model is: placements down the tree' },
+      { type: 'p', text: "The spatial tree also carries the coordinate system. Each element's position is an IfcLocalPlacement relative to its parent's placement — wall relative to storey, storey relative to building, building relative to site. The model's position on Earth is decided once, at the top." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-local-placement-chain.png',
+        alt: 'Diagram of the IFC local placement chain: IfcMapConversion, IfcSite, IfcBuilding, IfcBuildingStorey and IfcWall, each placed relative to its parent',
+        caption: 'Placements are relative to their parent. Real-world coordinates belong at the top, in the georeferencing — not in every element.',
+        width: 1600,
+        height: 900,
+        srcSet: [{ src: 'blog/images/ifc-local-placement-chain-800.png', width: 800 }, { src: 'blog/images/ifc-local-placement-chain.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      {
+        type: 'p',
+        text: ['When real-world coordinates are pushed down into every element instead, models jitter on screen and federated files land kilometres apart. The full story is in ', { text: 'IFC coordinates and georeferencing', to: 'ifc-coordinates-georeferencing' }, '.'],
+      },
+
+      { type: 'h2', text: 'Six mistakes that break the tree' },
+      {
+        type: 'table',
+        headers: ['Mistake', 'Usual cause', 'What breaks downstream'],
+        rows: [
+          ['Elements contained in no storey', 'Elements hosted on a reference level, or created in a group', 'Plan cuts, level schedules, COBie locations'],
+          ['Elements contained directly in IfcBuilding or IfcSite', 'Export setting, or site elements modelled without a level', 'Storey-based checks skip them'],
+          ['Storeys with wrong elevations', 'Unit or base-point mismatch on export', 'Plan cuts through slabs, wrong levels in schedules'],
+          ['No IfcSpace at all', 'Rooms not exported, or exported as plain geometry', 'Room programme, areas, COBie Space sheet'],
+          ['Two IfcBuilding where one was meant', 'Linked files exported separately', 'Duplicate storeys, confused federation'],
+          ['Storeys named differently per discipline', 'No agreed level naming', 'Federated models that do not line up by level'],
+        ],
+      },
+      {
+        type: 'p',
+        text: ['Most of these are export settings rather than modelling, and most of them are visible in the first ten seconds of opening a file — if you look at the tree before the geometry. The checks behind them are part of ', { text: 'how to validate an IFC file', to: 'how-to-validate-ifc-file' }, ', and the per-tool export settings are in ', { text: 'why Revit IFC exports break', to: 'revit-ifc-export-breaks' }, '.'],
+      },
+
+      { type: 'h2', text: 'Checking the spatial structure in a minute' },
+      { type: 'steps', items: [
+        { title: 'Open the file and read the tree first', body: "One project, one site, the buildings you expect, the storeys you expect — in order, with sensible names." },
+        { title: 'Check storey elevations', body: "They should increase, and match the drawings within the tolerance you agreed. Units are the usual suspect when they are out by a factor of 1000." },
+        { title: 'Look for elements outside every storey', body: "Validation flags them. An element in the building but not in a storey is the common case." },
+        { title: 'Cut a plan per storey', body: "If the cut slices through a slab or misses the walls, the elevation or the containment is wrong. See how per-storey cuts are placed in the guide to measuring." },
+        { title: 'Check spaces', body: "If the project needs a room programme or COBie, every room should be an IfcSpace with a name — not a coloured volume." },
+      ] },
+      {
+        type: 'p',
+        text: ['The plan-cut step is described in ', { text: 'how to measure an IFC model online', to: 'measure-ifc-model-online' }, '; why spaces matter for handover is in ', { text: 'COBie from IFC', to: 'cobie-from-ifc-fm-handover' }, '.'],
+      },
+    ],
+  },
+
+  {
+    slug: 'ifc-file-format-explained',
+    title: "What's Inside an IFC File? The Format Explained With Diagrams",
+    excerpt: "An .ifc file is plain text you can open in a code editor — and once you know how to read it, half of the mysteries of IFC disappear. The header, the numbered instances, the GlobalId, the relationships that carry properties: here is the format, drawn out.",
+    seoTitle: "What's Inside an IFC File? Format Explained With Diagrams",
+    seoDescription: 'How an IFC file is structured: the STEP header and schema, numbered instances, GlobalIds, entity inheritance and how property sets attach to elements.',
+    date: '2026-10-02',
+    readTimeMin: 11,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['IFC file format', 'IFC file structure', 'STEP file IFC', 'ISO 10303-21', 'IFC schema explained', 'IFC GlobalId', 'IFC entity hierarchy', 'IFC property set structure'],
+    faqs: [
+      { q: 'What format is an .ifc file?', a: 'Usually a STEP physical file (ISO 10303-21): plain text with a header that names the schema (IFC2X3, IFC4 or IFC4X3) and a data section where each line is one numbered instance such as #245= IFCWALL(...). The same data can also be stored as ifcXML, or compressed as ifcZIP.' },
+      { q: 'What is the difference between an express ID and a GlobalId?', a: 'The express ID is the line number (#245): it is local to one file and renumbered on every export. The GlobalId is a 22-character compressed GUID stored as the first attribute of every rooted entity; it is meant to stay the same for the life of the element and is what comparisons, BCF and FM systems rely on.' },
+      { q: 'Where are properties stored in an IFC file?', a: 'Not on the element itself. Properties live in property sets (IfcPropertySet), which are attached to elements through IfcRelDefinesByProperties, or to element types — and every occurrence of a type inherits the type\'s property sets.' },
+    ],
+    content: [
+      { type: 'p', text: "Most people only ever see an IFC file through a viewer. That is a shame, because an .ifc file is plain text, and ten minutes spent reading one explains things that otherwise stay mysterious: why GUIDs matter, why a property can be \"missing\" when you can see it, why files get so large, why one wrong setting in an export breaks everything downstream." },
+      { type: 'p', text: "This guide opens the file and draws what is inside." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-step-file-anatomy.png',
+        alt: 'Annotated IFC STEP file: ISO-10303-21 header with FILE_SCHEMA IFC4, numbered instances such as #245 IFCWALL with its GlobalId, a property set relationship and Pset_WallCommon FireRating',
+        caption: 'An IFC file in the STEP format (ISO 10303-21): a header that names the schema, then one numbered instance per line.',
+        width: 1600,
+        height: 900,
+        srcSet: [{ src: 'blog/images/ifc-step-file-anatomy-800.png', width: 800 }, { src: 'blog/images/ifc-step-file-anatomy.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'takeaways', items: [
+        "An IFC file is a list of numbered instances. The numbers are local to the file and change on every export.",
+        "The GlobalId — the 22-character string inside each instance — is the identity that is meant to last.",
+        "Almost everything interesting, including properties and spatial containment, is attached through relationship entities rather than stored on the element.",
+      ] },
+
+      { type: 'h2', text: 'The header: which schema, which view' },
+      { type: 'p', text: "The file opens with ISO-10303-21; and a short HEADER section. Three lines in it matter:" },
+      { type: 'ul', items: [
+        "FILE_DESCRIPTION names the model view definition — Coordination View, Reference View, Design Transfer View — which defines the subset of IFC the exporter intended to use.",
+        "FILE_NAME records the file name, timestamp, author and the authoring application.",
+        "FILE_SCHEMA names the schema: IFC2X3, IFC4 or IFC4X3. Every line below it is read against that schema; the same entity can have different attributes in different versions.",
+      ] },
+      {
+        type: 'p',
+        text: ['Choosing between schema versions is its own topic: ', { text: 'IFC2x3 vs IFC4', to: 'ifc2x3-vs-ifc4' }, '.'],
+      },
+
+      { type: 'h2', text: 'The data: one instance per line' },
+      { type: 'p', text: "After DATA; every line has the same shape: a number, an entity name, and a list of attributes in the order the schema defines them." },
+      { type: 'code', lang: 'text', text: "#245= IFCWALL('1kTvXnbbzCWw8lcMd1dR4o',#2,'Basic Wall:Ext 300',$,$,#210,#240,$,.STANDARD.);" },
+      {
+        type: 'table',
+        headers: ['Token', 'Meaning'],
+        rows: [
+          ['#245', 'Instance number (express ID) — local to this file'],
+          ["'1kTvXnbbz…'", 'GlobalId — a 22-character compressed GUID'],
+          ['#2', 'Reference to another instance (here, the owner history)'],
+          ['$', 'Attribute not set'],
+          ['.STANDARD.', 'An enumeration value (the predefined type)'],
+          ['#210, #240', 'Placement and geometric representation, defined on other lines'],
+        ],
+      },
+      { type: 'callout', variant: 'warning', title: 'Never rely on # numbers across files', text: "The same wall will be #245 in one export and #9810 in the next. Anything that has to identify an element across versions — a comparison, a BCF issue, an FM asset register — must use the GlobalId." },
+      {
+        type: 'p',
+        text: ['When the GlobalId itself changes on every export, every downstream process breaks at once. The cause and the fix per authoring tool are in ', { text: 'why IFC GUIDs change on every export', to: 'ifc-guids-changing-every-export' }, '.'],
+      },
+
+      { type: 'h2', text: 'Entities inherit from each other' },
+      { type: 'p', text: "IFC is an object model. An IfcWall is an IfcBuiltElement, which is an IfcElement, an IfcProduct, an IfcObject, and ultimately an IfcRoot — and it carries the attributes of every one of them. That is why every wall, door and space has a GlobalId and a Name: they come from IfcRoot." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-entity-inheritance-ifcwall.png',
+        alt: 'IFC entity inheritance diagram for IfcWall: IfcRoot, IfcObjectDefinition, IfcObject, IfcProduct, IfcElement, IfcBuiltElement, IfcWall',
+        caption: 'Every entity inherits the attributes of its supertypes. A check written for IfcElement applies to every wall, door and column below it.',
+        width: 1600,
+        height: 900,
+        srcSet: [{ src: 'blog/images/ifc-entity-inheritance-ifcwall-800.png', width: 800 }, { src: 'blog/images/ifc-entity-inheritance-ifcwall.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'p', text: "Names change between versions: what IFC4.3 calls IfcBuiltElement was IfcBuildingElement in IFC2x3 and IFC4. A tool that hard-codes one name misses the other — which is one reason the same model can pass a check in one tool and fail it in another." },
+
+      { type: 'h2', text: 'Relationships are entities too' },
+      { type: 'p', text: "The design decision that makes IFC hard to read at first is also what makes it powerful: relationships are objects in their own right. A wall does not have a list of its properties. Instead, an IfcRelDefinesByProperties instance points at the wall and at a property set. Spatial containment, materials, types, openings and groups all work the same way." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-property-set-relationship.png',
+        alt: 'Diagram of how an IFC property reaches an element: IfcWall linked by IfcRelDefinesByProperties to IfcPropertySet Pset_WallCommon with FireRating and IsExternal, and inherited from IfcWallType',
+        caption: 'Properties live in property sets, attached to the element or to its type. A property set on the type applies to every occurrence.',
+        width: 1600,
+        height: 900,
+        srcSet: [{ src: 'blog/images/ifc-property-set-relationship-800.png', width: 800 }, { src: 'blog/images/ifc-property-set-relationship.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      {
+        type: 'p',
+        text: ['This is the root of the most common false alarm in IFC quality checks: a property that is defined on the type looks missing to a tool that only reads the occurrence. ', { text: 'IFC properties missing after export', to: 'ifc-properties-missing-after-export' }, ' covers the real causes; ', { text: 'reading property sets in Python', to: 'read-ifc-property-sets-python' }, ' shows how to follow these relationships in code.'],
+      },
+
+      { type: 'h2', text: 'Why IFC files get so large' },
+      { type: 'ul', items: [
+        "Geometry dominates. A triangulated façade or a detailed MEP fitting can take thousands of lines; extrusions and mapped (instanced) geometry are far smaller.",
+        "Repeated data is repeated. Exporters that do not share property sets or representations write the same lines once per element.",
+        "Nothing is compressed in plain STEP. ifcZIP typically shrinks a file several times over, and is a sensible delivery format when the recipient's tools accept it.",
+      ] },
+      {
+        type: 'p',
+        text: ['The safe ways to make files smaller are in ', { text: 'how to reduce IFC file size', to: 'reduce-ifc-file-size' }, '. And when a file is large enough to crash a browser, see ', { text: 'large IFC files and browser crashes', to: 'large-ifc-file-browser-crash' }, '.'],
+      },
+
+      { type: 'h2', text: 'Reading a file yourself' },
+      { type: 'steps', items: [
+        { title: 'Open it in a text editor', body: "Any editor that copes with large files. Look at the header first: schema and model view tell you what to expect." },
+        { title: 'Search for the entity you care about', body: "IFCWALL(, IFCSPACE(, IFCBUILDINGSTOREY(. The count alone is a quick sanity check." },
+        { title: 'Follow one element\'s references', body: "From a wall, search for its # number to find the relationships that point at it — containment, properties, type." },
+        { title: 'Then switch to a viewer', body: "The same information, navigable: the spatial tree, the property panel, and validation that checks these relationships for you." },
+      ] },
+      {
+        type: 'p',
+        text: ['How the elements are organised into storeys and spaces is the subject of ', { text: 'the IFC spatial structure explained', to: 'ifc-spatial-structure-explained' }, '.'],
+      },
+    ],
+  },
+
+  {
     slug: 'ifc-sun-shadow-study-online',
     title: 'Sun and Shadow Study From an IFC Model, in the Browser',
     excerpt: "A shadow study usually means exporting to a render tool and guessing the north angle. A georeferenced IFC already knows where it is and which way is north — so the sun can be placed correctly at any date and time, in seconds, without leaving the browser.",
@@ -281,6 +520,20 @@ export const BLOG_POSTS: BlogPost[] = [
       ] },
 
       { type: 'h2', text: 'What the sun needs from your model' },
+      {
+        type: "image",
+        src: "blog/images/sun-study-true-north-vs-project-north.png",
+        alt: "Diagram of project north versus true north rotated 28 degrees, with the inputs a correct sun and shadow study needs: latitude, longitude, true north and time zone",
+        caption: "Project north is not true north. A sun study that ignores the rotation turns every shadow by the same angle.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/sun-study-true-north-vs-project-north-800.png", width: 800 },
+          { src: "blog/images/sun-study-true-north-vs-project-north.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: 'table',
         headers: ['Input', 'Where it comes from', 'If it is wrong'],
@@ -354,6 +607,20 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "That is fine for a rough check. It is not fine for a number you are going to put in an email to a contractor. The difference between the two is three things: what the tool snaps to, whether it respects sections, and whether the measurement survives into the image you send." },
 
       { type: 'h2', text: 'Snapping: the part that decides whether a number is real' },
+      {
+        type: "image",
+        src: "blog/images/measure-snap-targets-vertex-edge-face.png",
+        alt: "Four snap targets for measuring an IFC model: vertex, edge midpoint, edge and face, each shown on a wall corner",
+        caption: "The four snap targets. Knowing which one the tool found, before you click, is what makes the number trustworthy.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/measure-snap-targets-vertex-edge-face-800.png", width: 800 },
+          { src: "blog/images/measure-snap-targets-vertex-edge-face.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "A measurement is only as good as its two endpoints. Good snapping finds the actual geometry you meant — a vertex, the midpoint of an edge, a point along an edge — and tells you which one it found before you click." },
       {
         type: 'table',
@@ -429,6 +696,20 @@ export const BLOG_POSTS: BlogPost[] = [
 
       { type: 'h2', text: 'How walking works' },
       {
+        type: "image",
+        src: "blog/images/ifc-walk-mode-keyboard-controls.png",
+        alt: "Keyboard controls for walking through an IFC model in first person: G to enter walk mode, W A S D to move, mouse to look, double-click to go",
+        caption: "Walk mode controls: G to start, WASD to move, the mouse to look around, double-click a floor to go there at eye height.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-walk-mode-keyboard-controls-800.png", width: 800 },
+          { src: "blog/images/ifc-walk-mode-keyboard-controls.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: 'table',
         headers: ['Action', 'Control'],
         rows: [
@@ -502,6 +783,20 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'callout', variant: 'warning', title: 'Export MP4, not WebM', text: "Most browser recorders produce WebM. Instagram, TikTok and LinkedIn reject it or re-encode it badly. Export MP4 (H.264) directly. Converting afterwards works, but a careless conversion drops the audio without telling you." },
 
       { type: 'h2', text: 'Fit, don\'t crop' },
+      {
+        type: "image",
+        src: "blog/images/vertical-video-fit-vs-crop-building.png",
+        alt: "Comparison of a 9:16 vertical video of a wide building: a centre crop cuts the building off, fitting with blurred bands keeps it whole and leaves room for a title",
+        caption: "A centre crop keeps about a third of a landscape frame. Fitting keeps the whole building, and the bands hold the title.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/vertical-video-fit-vs-crop-building-800.png", width: 800 },
+          { src: "blog/images/vertical-video-fit-vs-crop-building.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "Buildings are wide. A centre crop of a landscape recording to 9:16 keeps a strip roughly a third of the width, and the building leaves the frame on both sides. Fitting the whole frame into the vertical format keeps the building intact and leaves bands above and below — which, filled with a blurred copy of the same frame, look intentional and give you exactly the space you need for a title." },
       { type: 'pull-quote', text: "The bands are not wasted space. They are where the title goes." },
 
@@ -552,6 +847,20 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "The model already knows a great deal that a good presentation image needs. Where the storeys are. Which elements are structure and which are services. Where the site is and where the sun is. A template that uses that knowledge produces something in minutes that would take an afternoon in a layout tool." },
 
       { type: 'h2', text: 'Four image types every project uses' },
+      {
+        type: "image",
+        src: "blog/images/ifc-presentation-image-types.png",
+        alt: "Four presentation image types made from an IFC model: cover, board, data sheet with QR code, and discipline-coloured coordination view",
+        caption: "Cover, board, data sheet and coordination view — four images every project needs, all made from the model.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-presentation-image-types-800.png", width: 800 },
+          { src: "blog/images/ifc-presentation-image-types.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       {
         type: 'table',
         headers: ['Image', 'For', 'What makes it work'],
@@ -620,6 +929,20 @@ export const BLOG_POSTS: BlogPost[] = [
       ] },
 
       { type: 'h2', text: 'The anatomy of a specification' },
+      {
+        type: "image",
+        src: "blog/images/ids-specification-applicability-requirements.png",
+        alt: "Diagram of an IDS specification: applicability (entity, classification, partOf) selects elements, requirements (property, attribute, material) are tested on them",
+        caption: "An IDS specification reads as one sentence: for every element matching the applicability, require the requirements.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ids-specification-applicability-requirements-800.png", width: 800 },
+          { src: "blog/images/ids-specification-applicability-requirements.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "An IDS file is a list of specifications. Each one reads like a sentence with a subject and a predicate: \"for every element matching this, require that\". The subject is the applicability; the predicate is the requirements." },
       { type: 'code', lang: 'xml', text: "<specification name=\"Doors carry a fire rating\" ifcVersion=\"IFC4\">\n  <applicability minOccurs=\"1\">\n    <entity><name><simpleValue>IFCDOOR</simpleValue></name></entity>\n  </applicability>\n  <requirements>\n    <property dataType=\"IFCLABEL\">\n      <propertySet><simpleValue>Pset_DoorCommon</simpleValue></propertySet>\n      <baseName><simpleValue>FireRating</simpleValue></baseName>\n    </property>\n  </requirements>\n</specification>" },
       { type: 'p', text: "Read it aloud and it is exactly the EIR sentence: every IfcDoor must have a FireRating in Pset_DoorCommon, stored as a label. The minOccurs=\"1\" on the applicability adds a second, easily-missed claim — the model must contain at least one door. Without it, a model with no doors at all passes, which is rarely what anybody meant." },
@@ -640,6 +963,20 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       { type: 'p', text: "Two of those traps deserve a longer look, because they account for most of the false failures people report when they first run an IDS." },
       { type: 'h3', text: 'Type versus occurrence' },
+      {
+        type: "image",
+        src: "blog/images/ifc-property-set-relationship.png",
+        alt: "Diagram showing an IFC property set attached to an IfcWall occurrence and to its IfcWallType, whose properties every occurrence inherits",
+        caption: "Properties can sit on the type rather than the occurrence. An IDS checker must follow the type, or it fails elements that are fine.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-property-set-relationship-800.png", width: 800 },
+          { src: "blog/images/ifc-property-set-relationship.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "Revit, ArchiCAD and Tekla routinely write properties and materials on the type object (IfcWallType) rather than on each wall. The IDS semantics are clear that information inherited from the type counts for the occurrence. A checker that only looks at the occurrence will fail every wall in a perfectly good model. If an IDS run tells you that 100% of your elements are missing a property you can see in the properties panel, this is almost always the reason — and the fault is the checker's, not yours." },
       { type: 'h3', text: 'USERDEFINED predefined types' },
       { type: 'p', text: "When a predefined type is USERDEFINED, the real type lives in ObjectType (on occurrences) or ElementType (on types). An entity facet asking for IFCWALL with predefined type PARAPET should match a wall whose PredefinedType is USERDEFINED and whose ObjectType is PARAPET. Checkers that compare the raw enum miss every one of them." },
@@ -705,6 +1042,20 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "Comparing IFC versions properly is not hard, but it rests on one decision that most tools get subtly wrong: what counts as \"the same element\"." },
 
       { type: 'h2', text: 'Identity is the whole problem' },
+      {
+        type: "image",
+        src: "blog/images/ifc-version-compare-globalid.png",
+        alt: "Table comparing two IFC revisions by GlobalId: unchanged, modified property, element moved to another file, added and removed elements",
+        caption: "Matching by GlobalId across the whole set: a changed property, an element that moved between discipline files, an addition and a removal.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-version-compare-globalid-800.png", width: 800 },
+          { src: "blog/images/ifc-version-compare-globalid.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "An IFC element has two identifiers. The express ID (the #1234 in the file) is a line number — it is renumbered on every export and means nothing across versions. The GlobalId is a 22-character GUID designed to persist for the life of the element. A comparison that matches by anything other than GlobalId is comparing line numbers." },
       { type: 'callout', variant: 'warning', title: 'Check this before anything else', text: "If your authoring tool regenerates GlobalIds on export, every comparison will report the entire model as deleted and re-added. No diff algorithm can recover from that. Look at the ratio of added to removed elements on the first comparison: if both are close to the total element count, your GUIDs are not stable." },
       {
@@ -788,6 +1139,20 @@ export const BLOG_POSTS: BlogPost[] = [
 
       { type: 'h2', text: '2.1 versus 3.0: the differences that break imports' },
       {
+        type: "image",
+        src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png",
+        alt: "Side-by-side XML of markup.bcf in BCF 2.1 and BCF 3.0 showing where Comments, Viewpoints and Labels are nested",
+        caption: "The same issue in BCF 2.1 and 3.0. Comments, viewpoints and labels move inside the Topic and into containers.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure-800.png", width: 800 },
+          { src: "blog/images/bcf-2-1-vs-3-0-markup-structure.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
+      {
         type: 'table',
         headers: ['Aspect', 'BCF 2.1', 'BCF 3.0'],
         rows: [
@@ -804,6 +1169,20 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'callout', variant: 'info', text: "The labels one is surprisingly common: it is easy to write 2.1 labels as a single comma-joined string, which every strict reader then treats as one long label. Repeated elements, one per label, is what the 2.1 schema asks for." },
 
       { type: 'h2', text: 'Why the camera lands in the wrong place' },
+      {
+        type: "image",
+        src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png",
+        alt: "Axes diagram: IFC world coordinates are Z-up and right-handed, a three.js scene is Y-up; BCF cameras must be converted back before export",
+        caption: "IFC is Z-up; three.js is Y-up. Skip the conversion and the camera arrives rotated 90°; skip the offset and it arrives in the wrong place.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes-800.png", width: 800 },
+          { src: "blog/images/ifc-z-up-vs-threejs-y-up-axes.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "BCF cameras are stored in the IFC project's world coordinates: metres, Z pointing up. Most web viewers render with three.js, whose scene is Y-up, and many shift the model towards the origin so that large georeferenced coordinates do not wobble on the GPU. Both are sensible rendering choices. Both must be undone before a viewpoint is written." },
       { type: 'ul', items: [
         "Forget the axis conversion and the camera arrives rotated 90° — looking at the sky or straight down through the floor.",
@@ -861,6 +1240,20 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "The fix is not a better COBie tool at the end. It is extracting COBie from the IFC early and often, and measuring what is missing while there is still time to model it." },
 
       { type: 'h2', text: 'COBie is a view of the IFC, not a separate deliverable' },
+      {
+        type: "image",
+        src: "blog/images/cobie-sheets-from-ifc-entities.png",
+        alt: "Diagram mapping COBie sheets to IFC entities: Facility, Floor, Space, Zone, Type, Component and System, with Space, Type and Component marked as FM core",
+        caption: "Each COBie sheet is a view of IFC entities. Component, Space and Type carry most of what facilities management uses.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/cobie-sheets-from-ifc-entities-800.png", width: 800 },
+          { src: "blog/images/cobie-sheets-from-ifc-entities.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'p', text: "Every row that matters in COBie corresponds to something in the IFC. A Floor is an IfcBuildingStorey. A Space is an IfcSpace. A Type is an element type such as IfcDoorType. A Component is an element occurrence — a specific door, a specific pump. The attributes COBie asks for live in the IFC's attributes and property sets." },
       {
         type: 'table',
@@ -967,6 +1360,20 @@ export const BLOG_POSTS: BlogPost[] = [
       ] },
 
       { type: 'h2', text: 'Why it does not load: CORS, and two other causes' },
+      {
+        type: "image",
+        src: "blog/images/ifc-embed-iframe-cors-flow.png",
+        alt: "Flow diagram of an embedded IFC viewer: the page loads the iframe, the viewer fetches the IFC from your storage, which must return an Access-Control-Allow-Origin header",
+        caption: "The model travels from your storage to the visitor's browser. Without a CORS header on the host, the browser refuses to hand it over.",
+        width: 1600,
+        height: 900,
+        srcSet: [
+          { src: "blog/images/ifc-embed-iframe-cors-flow-800.png", width: 800 },
+          { src: "blog/images/ifc-embed-iframe-cors-flow.png", width: 1600 },
+        ],
+        sizes: "(max-width: 860px) 100vw, 820px",
+        credit: "IFC Viewer Online",
+      },
       { type: 'callout', variant: 'warning', title: 'The browser, not the viewer, is refusing', text: "When a page asks for a file on another domain, the browser only hands it over if that domain answers with an Access-Control-Allow-Origin header. Most file hosts do not by default. Enable CORS on the bucket or server that hosts the IFC — on S3, Azure Blob and Google Cloud Storage it is a short configuration — and the embed works." },
       { type: 'ul', items: [
         "Sharing links that return a web page, not the file. Dropbox, OneDrive and Google Drive share links usually open a preview page; you need the direct-download form of the link.",
