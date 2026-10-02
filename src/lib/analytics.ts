@@ -463,7 +463,7 @@ export function trackMapTerrainToggled(props: { enabled: boolean }): void {
 /** Georeferencing extraction finished (quality telemetry for the ladder). */
 export function trackMapGeorefExtracted(props: {
   status:   'found' | 'partial' | 'none' | 'invalid' | 'unknown'
-  rung:     1 | 2 | 3 | 4 | null
+  rung:     1 | 2 | 3 | 4 | 5 | null
   has_epsg: boolean
 }): void {
   track('map_georef_extracted', props)

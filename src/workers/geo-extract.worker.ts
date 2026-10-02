@@ -19,6 +19,7 @@ import {
   IFCSIUNIT,
 } from 'web-ifc'
 import { num, str, ref, numArray } from '../lib/geo/ifc-value'
+import { hasFarCoordinates } from '../lib/ifc-far-coordinates'
 import { runGeorefLadder, type GeorefSource, type MapConversionSource } from '../lib/geo/georef-ladder'
 import type { GeorefExtraction } from '../lib/geo/geo-types'
 import { createLogger } from '../lib/logger'
@@ -232,6 +233,7 @@ async function handleExtract(id: string, buffer: ArrayBuffer): Promise<void> {
       epsetConversion: readEpsetConversion(api, modelId),
       site: readSite(api, modelId),
       trueNorth: readTrueNorth(api, modelId),
+      farCoordinates: hasFarCoordinates(new Uint8Array(buffer)),
     }
     post({ type: 'done', id, extraction: runGeorefLadder(source) })
   } catch (e) {

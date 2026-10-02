@@ -223,6 +223,48 @@ describe('ifc-parser.worker — conversion', () => {
     expect(reply.fragmentsBuffer).not.toBe(backing.buffer)
   })
 
+  it('moves a model with UTM baked into its points to the origin (else the importer drops it all)', async () => {
+    h.script = async () => new Uint8Array(4)
+    const far = new TextEncoder().encode(IFC_HEADER + '#81=IFCCARTESIANPOINT((412706.79,4593519.10,149.27));\nENDSEC;\nEND-ISO-10303-21;\n').buffer as ArrayBuffer
+    send({ type: 'parse', id: 'far1', fileName: 'civil3d.ifc', buffer: far })
+    expect((await settle('far1')).type).toBe('result')
+    expect(h.importers[h.importers.length - 1].webIfcSettings.COORDINATE_TO_ORIGIN).toBe(true)
+  })
+
+  it('converts again moved to the origin when the importer drops far elements the scan missed', async () => {
+    const before = h.importers.length
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    h.script = async () => {
+      const imp = h.importers[h.importers.length - 1]
+      if (imp.webIfcSettings.COORDINATE_TO_ORIGIN === false) {
+        // fragments 3.x says it with console.log (scripts/far-coordinates-ifc.test.ts runs the real one).
+        console.log('Fragments: Object 42 is more than 100000 meters away from the origin and will be skipped.')
+        return new Uint8Array([1])
+      }
+      return new Uint8Array([2, 2])
+    }
+    send({ type: 'parse', id: 'far2', fileName: 'stacked.ifc', buffer: ifcBuffer() })
+    const reply = await settle('far2')
+    expect(reply.type).toBe('result')
+    expect(h.importers.length - before).toBe(2)
+    expect(h.importers[h.importers.length - 1].webIfcSettings.COORDINATE_TO_ORIGIN).toBe(true)
+    expect(new Uint8Array(reply.fragmentsBuffer!)).toEqual(new Uint8Array([2, 2]))
+    // console.warn / console.log are restored after each pass.
+    expect(console.warn).toBe(warnSpy)
+    expect(console.log).toBe(logSpy)
+    warnSpy.mockRestore()
+    logSpy.mockRestore()
+  })
+
+  it('a clean conversion runs once', async () => {
+    const before = h.importers.length
+    h.script = async () => new Uint8Array(4)
+    send({ type: 'parse', id: 'near1', fileName: 'house.ifc', buffer: ifcBuffer() })
+    expect((await settle('near1')).type).toBe('result')
+    expect(h.importers.length - before).toBe(1)
+  })
+
   it.each([
     ['RuntimeError: Aborted(OOM)', 'out-of-memory'],
     ['Cannot enlarge memory arrays to size 2147549184 bytes', 'out-of-memory'],

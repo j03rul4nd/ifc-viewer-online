@@ -10,7 +10,7 @@ import { useBcfStore }      from '../stores/bcfStore'
 import { appBus }           from './event-bus'
 import { toast }            from '../stores/toastStore'
 import { parseBcfParserMsg } from './worker-schemas'
-import { viewpointToBcf }    from './bcf-viewpoint'
+import { viewpointToBcf, shiftViewpoint, currentSceneDatum } from './bcf-viewpoint'
 import type { BcfTopic, BcfComment, BcfExportVersion, ValidationIssue } from '../types'
 
 // ── Import ────────────────────────────────────────────────────────────────────
@@ -52,7 +52,12 @@ export async function importBcf(file: File): Promise<void> {
         return
       }
 
-      store.setTopics(msg.topics)
+      // The file is in real coordinates; the scene is drawn shifted by the
+      // datum when a model carries map coordinates (bcf-viewpoint).
+      const datum = currentSceneDatum()
+      store.setTopics(datum
+        ? msg.topics.map((t) => ({ ...t, viewpoints: t.viewpoints.map((vp) => shiftViewpoint(vp, datum)) }))
+        : msg.topics)
       store.setIsParsing(false)
       useBcfStore.setState({ importedVersion: msg.version })
       appBus.emit('bcf:imported', { topicCount: msg.topics.length })

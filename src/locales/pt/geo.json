@@ -55,11 +55,12 @@
     "rung2": "ePSet_MapConversion property sets (LoGeoRef 50)",
     "rung3": "Site latitude/longitude (LoGeoRef 20–40)",
     "rung4": "No georeferencing entities found",
+    "rung5": "Map coordinates in the geometry, coordinate system not stated — choose it",
     "confidenceHigh": "high confidence",
     "confidenceApproximate": "approximate — verify the position",
     "crs": "CRS",
     "debug": "Raw values",
-    "largeOffset": "Geometry sits more than 10 km from the file origin"
+    "largeOffset": "Map coordinates in the geometry (over 100 km from the file origin): shown shifted, real coordinates kept"
   },
   "reasons": {
     "invalid": {
