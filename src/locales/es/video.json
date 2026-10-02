@@ -31,7 +31,9 @@
     "billboard": "Billboard",
     "screenHint": "Superficie vertical fija colocada en el lado del IFC que mira a la cámara.",
     "groundHint": "Overlay horizontal con una pequeña separación para evitar parpadeos con terreno o losas.",
-    "billboardHint": "Siempre mira a la cámara: ideal para una presentación de feria legible."
+    "billboardHint": "Siempre mira a la cámara: ideal para una presentación de feria legible.",
+    "camera": "Cámara",
+    "cameraHint": "Anclado al punto de vista desde el que se grabó. Visto desde ahí se superpone al modelo: atenúalo o desliza la cortina para comparar lo construido con el IFC."
   },
   "playback": {
     "play": "Reproducir",
@@ -73,5 +75,15 @@
     "permission": "No se concedió permiso para usar la cámara o compartir la pantalla.",
     "deviceUnavailable": "La cámara o pantalla seleccionada no está disponible.",
     "live": "No se pudo iniciar la fuente en directo."
+  },
+  "camera": {
+    "title": "Vista de cámara",
+    "goTo": "Ir a la vista de la cámara",
+    "pinHere": "Anclar a la vista actual",
+    "fov": "Campo de visión del vídeo",
+    "curtain": "Cortina",
+    "blend": "Comparar: fundido",
+    "split": "Comparar: cortina",
+    "hint": "Colócate donde se grabó, alinea el modelo con la imagen (órbita, campo de visión) y ancla. La pirámide naranja muestra la cámara desde cualquier otro punto."
   }
 }

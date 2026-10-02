@@ -38,7 +38,9 @@ export const DEMO_VIDEOS: DemoVideo[] = [
     durationLabel: '8 s loop',
     // A camera-facing first view is the most robust exhibition default. The
     // preset is calculated from the loaded IFC bounds on every run.
-    mode: 'billboard',
+    // A screen standing on the ground beside the pavilion, facing the camera:
+    // the billboard floated above the roof, cut off from the building it shows.
+    mode: 'screen',
     companionIfcId: 'operations-pavilion-video',
     sourceUrl: 'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-video-demo.py',
     sourceLabel: 'Synthetic asset authored with Blender + Bonsai',

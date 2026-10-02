@@ -140,26 +140,38 @@ export function placementForMode(
     })
   }
 
-  // Put a fixed screen on the camera-facing edge of the model. Looking from
-  // any orbit direction therefore produces a readable first result rather than
-  // an edge-on rectangle the user has to hunt for.
+  // A screen standing in front of the camera-facing side and off to the
+  // right, facing the camera: building and clip in one shot, the way a site
+  // board stands before the works. It used to stand on the camera's line
+  // through the model's centre, which for a long building put it at one end,
+  // oblique, cutting into the slab; placed beyond the far end instead, it was
+  // as far again from the camera and read as a stamp.
   let dx = camera ? camera.x - center.x : 0
   let dz = camera ? camera.z - center.z : 1
   const length = Math.hypot(dx, dz) || 1
   dx /= length
   dz /= length
-  const distance = footprint * 0.62 + 0.75
+  // The camera's right, on the ground.
+  const rx = dz, rz = -dx
+  // How far the model reaches along a horizontal direction from its centre.
+  const reach = (ux: number, uz: number): number => Math.abs(ux) * size.x / 2 + Math.abs(uz) * size.z / 2
+  const width = Math.max(3.2, Math.min(footprint * 0.52, Math.max(size.x, size.z) * 0.6))
+  // Clear of the façade by a few metres, and half the model's width aside.
+  const forward = reach(dx, dz) + Math.max(2, width * 0.2)
+  const aside = reach(rx, rz) * 0.55
   const yawDeg = Math.atan2(dx, dz) * 180 / Math.PI
 
   return clampVideoPlacement({
     ...current,
-    x: center.x + dx * distance,
-    y: minY + Math.max(size.y * 0.55, 1.8),
-    z: center.z + dz * distance,
+    x: center.x + rx * aside + dx * forward,
+    // Standing on the ground, not hovering: the plane's centre is half its
+    // (16:9) height above the model's base, plus a short plinth.
+    y: minY + width / (16 / 9) / 2 + 0.3,
+    z: center.z + rz * aside + dz * forward,
     yawDeg,
     pitchDeg: 0,
     rollDeg: 0,
-    width: Math.max(3.2, footprint * 0.52),
+    width,
     opacity: 1,
   })
 }

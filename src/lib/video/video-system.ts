@@ -7,6 +7,7 @@
 
 import * as THREE from 'three'
 import type {
+  VideoCameraPose,
   VideoPlacement,
   VideoPlaybackSnapshot,
   VideoSurfaceMode,
@@ -55,6 +56,14 @@ export interface VideoSystemAPI {
   add(input: AddVideoInput): Promise<AddVideoResult>
   addStream(input: AddVideoStreamInput): Promise<AddVideoResult>
   setPresentation(id: string, mode: VideoSurfaceMode, placement: VideoPlacement): void
+  /**
+   * 'camera' mode: the viewpoint the clip was filmed from. The frame then hangs
+   * just in front of that camera, filling its field of view, with the viewing
+   * pyramid drawn back to the lens.
+   */
+  setCameraPose(id: string, pose: VideoCameraPose | null): void
+  /** 'camera' mode: show the clip on the left `split` (0–1) of the frame — a comparison curtain. */
+  setSplit(id: string, split: number): void
   setVisible(id: string, visible: boolean): void
   play(id: string): Promise<boolean>
   pause(id: string): void
@@ -89,6 +98,9 @@ interface VideoRecord {
   removeStreamListeners: (() => void) | null
   mode: VideoSurfaceMode
   aspectRatio: number
+  pose: VideoCameraPose | null
+  split: { value: number }
+  frustum: THREE.LineSegments | null
 }
 
 const METADATA_TIMEOUT_MS = 15_000
@@ -138,9 +150,78 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
     return video
   }
 
+  /**
+   * Hang the frame in the camera's view: centred on the line of sight, a short
+   * way in front of the lens (past the near plane), sized to fill the field of
+   * view at that distance. From the viewpoint it covers the screen exactly as
+   * the footage covered the real camera's sensor.
+   */
+  function applyCameraPose(record: VideoRecord, pose: VideoCameraPose, opacity: number): void {
+    const eye = new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z)
+    const dir = new THREE.Vector3(pose.target.x, pose.target.y, pose.target.z).sub(eye)
+    if (dir.lengthSq() < 1e-9) dir.set(0, 0, -1)
+    dir.normalize()
+    const cam = ctx.getActiveCamera() as THREE.PerspectiveCamera
+    const depth = Math.max(0.3, (cam.near ?? 0.1) * 3)
+    const height = 2 * depth * Math.tan(THREE.MathUtils.degToRad(Math.min(170, Math.max(5, pose.fovDeg))) / 2)
+    const width = height * record.aspectRatio
+    const center = eye.clone().addScaledVector(dir, depth)
+    record.root.position.copy(center)
+    record.root.up.set(0, 1, 0)
+    // Object3D.lookAt turns +Z towards the point: the plane faces the lens.
+    record.root.lookAt(eye)
+    record.plane.scale.set(width, height, 1)
+    record.material.opacity = opacity
+    record.material.transparent = opacity < 1 || record.split.value < 1
+    record.material.needsUpdate = true
+    record.plane.renderOrder = 6
+    record.root.updateMatrixWorld(true)
+
+    // The viewing pyramid: lens to the frame's corners, and the frame's edge.
+    if (!record.frustum) {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(16 * 3), 3))
+      const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xf5a623, transparent: true, opacity: 0.9, depthTest: true }))
+      lines.name = `video:${record.id}:frustum`
+      lines.frustumCulled = false
+      ctx.scene.add(lines)
+      record.frustum = lines
+    }
+    // A pyramid long enough to read from afar: four times the frame distance.
+    const reach = 4
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => {
+      const onFrame = new THREE.Vector3(sx * width / 2, sy * height / 2, 0).applyMatrix4(record.root.matrixWorld)
+      return eye.clone().add(onFrame.sub(eye).multiplyScalar(reach))
+    })
+    const pts: number[] = []
+    for (const c of corners) pts.push(eye.x, eye.y, eye.z, c.x, c.y, c.z)
+    for (let i = 0; i < 4; i++) {
+      const a = corners[i], b = corners[(i + 1) % 4]
+      pts.push(a.x, a.y, a.z, b.x, b.y, b.z)
+    }
+    const attr = record.frustum.geometry.getAttribute('position') as THREE.BufferAttribute
+    attr.set(pts)
+    attr.needsUpdate = true
+    record.frustum.geometry.computeBoundingSphere()
+    record.frustum.visible = record.root.visible
+  }
+
+  function dropFrustum(record: VideoRecord): void {
+    if (!record.frustum) return
+    record.frustum.removeFromParent()
+    record.frustum.geometry.dispose()
+    ;(record.frustum.material as THREE.Material).dispose()
+    record.frustum = null
+  }
+
   function applyPresentation(record: VideoRecord, mode: VideoSurfaceMode, raw: VideoPlacement): void {
     const placement = clampVideoPlacement(raw)
     record.mode = mode
+    if (mode === 'camera' && record.pose) {
+      applyCameraPose(record, record.pose, placement.opacity)
+      return
+    }
+    dropFrustum(record)
     record.root.position.set(
       placement.x,
       placement.y + (mode === 'ground' ? placement.surfaceOffset : 0),
@@ -178,6 +259,7 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
     record.video.removeAttribute('src')
     try { record.video.load() } catch { /* browser teardown */ }
     record.plane.onBeforeRender = () => undefined
+    dropFrustum(record)
     record.root.removeFromParent()
     record.texture.dispose()
     record.material.dispose()
@@ -227,6 +309,16 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
       polygonOffsetUnits: -1,
       toneMapped: false,
     })
+    // The comparison curtain ('camera' mode): only the left `uSplit` of the
+    // frame is drawn, so the model shows through on the right.
+    const split = { value: 1 }
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uSplit = split
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uSplit;')
+        .replace('#include <map_fragment>', '#ifdef USE_MAP\n  if (vMapUv.x > uSplit) discard;\n#endif\n#include <map_fragment>')
+    }
+    material.customProgramCacheKey = () => 'video-split'
     const plane = new THREE.Mesh(geometry, material)
     plane.name = `video-surface:${input.id}`
     const root = new THREE.Group()
@@ -259,6 +351,9 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
       removeStreamListeners,
       mode: input.mode,
       aspectRatio,
+      pose: null,
+      split,
+      frustum: null,
     }
     plane.onBeforeRender = () => {
       if (record.mode === 'billboard') {
@@ -420,10 +515,26 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
       if (record) applyPresentation(record, mode, placement)
     },
 
+    setCameraPose(id, pose) {
+      const record = records.get(id)
+      if (!record) return
+      record.pose = pose
+      if (record.mode === 'camera' && pose) applyCameraPose(record, pose, record.material.opacity)
+    },
+
+    setSplit(id, split) {
+      const record = records.get(id)
+      if (!record) return
+      record.split.value = Math.min(1, Math.max(0, Number.isFinite(split) ? split : 1))
+      record.material.transparent = record.material.opacity < 1 || record.split.value < 1
+      record.material.needsUpdate = true
+    },
+
     setVisible(id, visible) {
       const record = records.get(id)
       if (!record) return
       record.root.visible = visible
+      if (record.frustum) record.frustum.visible = visible
       // Hidden video should not keep a hardware/software decoder busy during a
       // presentation. A local muted stream resumes when shown; file playback
       // keeps its timestamp and still uses the panel's explicit Play action.
