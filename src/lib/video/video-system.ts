@@ -27,6 +27,13 @@ export interface VideoSystemContext {
     size: { x: number; y: number; z: number }
   } | null
   frameBox(min: THREE.Vector3, max: THREE.Vector3): void
+  /**
+   * Frame a box looking ALONG `dir` (from the camera towards the box, scene
+   * axes) — a screen and the model it stands by, seen straight on.
+   */
+  frameBoxFrom?(min: THREE.Vector3, max: THREE.Vector3, dir: THREE.Vector3): void
+  /** Ask for a frame now: a change made outside any camera move must still show. */
+  requestRender?(): void
 }
 
 export interface AddVideoInput {
@@ -204,6 +211,7 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
     attr.needsUpdate = true
     record.frustum.geometry.computeBoundingSphere()
     record.frustum.visible = record.root.visible
+    ctx.requestRender?.()
   }
 
   function dropFrustum(record: VideoRecord): void {
@@ -249,6 +257,7 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
     record.material.needsUpdate = true
     record.plane.renderOrder = mode === 'ground' ? 4 : 3
     record.root.updateMatrixWorld(true)
+    ctx.requestRender?.()
   }
 
   function disposeRecord(record: VideoRecord): void {
@@ -528,6 +537,7 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
       record.split.value = Math.min(1, Math.max(0, Number.isFinite(split) ? split : 1))
       record.material.transparent = record.material.opacity < 1 || record.split.value < 1
       record.material.needsUpdate = true
+      ctx.requestRender?.()
     },
 
     setVisible(id, visible) {
@@ -612,6 +622,18 @@ export function createVideoSystem(ctx: VideoSystemContext): VideoSystemAPI {
         const centre = new THREE.Vector3(model.center.x, model.center.y, model.center.z)
         box.expandByPoint(centre.clone().sub(half))
         box.expandByPoint(centre.clone().add(half))
+      }
+      // A screen or a camera frame is read face-on: look along its normal, not
+      // from wherever the camera happened to be (which left the screen oblique).
+      const record = id ? records.get(id) : undefined
+      if (record && ctx.frameBoxFrom && (record.mode === 'screen' || record.mode === 'camera')) {
+        record.root.updateMatrixWorld(true)
+        const facing = new THREE.Vector3(0, 0, 1).applyQuaternion(record.root.getWorldQuaternion(new THREE.Quaternion()))
+        facing.y = 0
+        if (facing.lengthSq() > 1e-6) {
+          ctx.frameBoxFrom(box.min, box.max, facing.normalize().negate())
+          return
+        }
       }
       ctx.frameBox(box.min, box.max)
     },
