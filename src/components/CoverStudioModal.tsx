@@ -42,6 +42,7 @@ import type { CutMode } from '../lib/cover/cuts'
 import type { CoverImage, CoverLabels, CoverPalette, CoverSpec, CoverStats } from '../lib/cover/types'
 import type { ViewerAPI } from '../lib/viewer'
 import { useHistory } from './cover/useHistory'
+import { useFitBox } from './studio/useFitBox'
 import { useCoverCapture, dataUrlToImage, type CaptureRes } from './cover/useCoverCapture'
 import { disciplineOf, type DisciplineId } from '../lib/cover/disciplines'
 import { useGradedShots } from './cover/useGradedShots'
@@ -243,6 +244,8 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
 
   // ── Specs ────────────────────────────────────────────────────────────────────
   const fmt = COVER_FORMATS[doc.format]
+  const stageRef = useRef<HTMLDivElement>(null)
+  const fit = useFitBox(stageRef, fmt.width / fmt.height)
   const content = useMemo(() => ({ ...doc.text, logo }), [doc.text, logo])
   const baseSpec = useMemo<Omit<CoverSpec, 'kind' | 'index' | 'total' | 'shots'>>(() => ({
     width: fmt.width, height: fmt.height, palette, content, stats, labels, watermark,
@@ -607,10 +610,10 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
   // switch and undo, and it needs the full viewport.
   return (
     <Modal open onClose={onClose} title={t('cover.title')} description={t('cover.subtitle')} size="full" bare
-      className="max-w-[1440px] !bg-[var(--surface)] !rounded-[12px]">
+      className="max-w-[1440px] !bg-[var(--surface)] !rounded-[12px] max-sm:!w-screen max-sm:!max-w-none max-sm:!h-[100dvh] max-sm:!max-h-none max-sm:!rounded-none">
       <div className="h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 h-[52px] border-b border-[var(--border)] shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 min-h-[52px] pt-[env(safe-area-inset-top)] border-b border-[var(--border)] shrink-0">
           <Icons.Sparkles size={16} />
           <div className="min-w-0 hidden sm:block">
             <div className="text-[14px] font-semibold text-[var(--text)] leading-tight">{t('cover.title')}</div>
@@ -674,9 +677,12 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           </aside>
 
           {/* Preview */}
-          <main className="flex-1 min-w-0 min-h-[320px] flex flex-col bg-[var(--bg)]">
-            <div className="flex-1 min-h-0 flex items-center justify-center p-4 lg:p-6">
-              <canvas ref={previewRef} className="max-w-full max-h-full w-auto h-auto shadow-[0_20px_60px_rgba(0,0,0,0.35)] rounded-[3px]" style={{ aspectRatio: `${fmt.width} / ${fmt.height}` }} />
+          <main className="order-first lg:order-none flex-1 min-w-0 flex flex-col bg-[var(--bg)]">
+            {/* Phones: the preview comes first, at a fixed share of the screen,
+                so the cover is what you see; the galleries scroll under it. */}
+            <div ref={stageRef} className="h-[56dvh] shrink-0 lg:h-auto lg:shrink lg:flex-1 min-h-0 flex items-center justify-center p-3 sm:p-4 lg:p-6">
+              <canvas ref={previewRef} className="max-w-full max-h-full shadow-[0_20px_60px_rgba(0,0,0,0.35)] rounded-[3px]"
+                style={fit ? { width: fit.width, height: fit.height } : { aspectRatio: `${fmt.width} / ${fmt.height}`, width: 'auto', height: 'auto' }} />
             </div>
             {doc.shots.length === 0 && !busy && <div className="text-center text-[12px] text-[var(--text-dim)] pb-2">{t('cover.noShots')}</div>}
             {doc.shots.length > 0 && doc.shots.length < wantShots && doc.mode === 'cover' && (
@@ -737,10 +743,10 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
         )}
 
         {/* Export bar */}
-        <div className="shrink-0 border-t border-[var(--border)] px-4 py-2.5 flex flex-wrap items-center gap-2">
+        <div className="shrink-0 border-t border-[var(--border)] px-3 sm:px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+10px)] flex flex-wrap items-center gap-2">
           <span className="text-[11.5px] text-[var(--text-dim)] tabular-nums">{fmt.width}×{fmt.height}px{specs.length > 1 ? ` · ${t('cover.slideCount', { count: specs.length })}` : ''}</span>
           {deckSocial && <span className="text-[11.5px] text-[var(--text-dim)] hidden md:inline">· {t('cover.carouselHint')}</span>}
-          <div className="ml-auto flex flex-wrap gap-2">
+          <div className="ml-auto flex flex-wrap gap-2 max-sm:ml-0 max-sm:w-full max-sm:flex-nowrap max-sm:overflow-x-auto no-scrollbar [&>button]:shrink-0 [&>button]:whitespace-nowrap">
             <button className={cls.btn} onClick={openCaption} aria-pressed={captionOpen}><Icons.TypeTool size={13} />{t('cover.postText')}</button>
             {shareable && <button className={cls.btn} onClick={() => void share()} disabled={exporting || busy}><Icons.Share size={13} />{t('cover.share')}</button>}
             <button className={cls.btn} onClick={() => void copyPng()} disabled={exporting || busy}><Icons.Copy size={13} />{t('cover.copy')}</button>
