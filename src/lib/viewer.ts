@@ -819,6 +819,11 @@ export interface ViewerAPI {
    */
   getSolar(): Promise<import('./solar/solar-system').SolarSystemAPI>
   /**
+   * Lazily load the solar ANALYSIS (sun hours, irradiation, sensors, heatmap) —
+   * its own chunk, created once per viewer, disposed with it.
+   */
+  getSolarAnalysis(): Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI>
+  /**
    * Lazily load and return the point cloud subsystem (separate chunk, created
    * once per viewer, disposed with it). Point clouds render in THIS scene with
    * THIS camera; the IFC model is never moved to accommodate them.
@@ -1383,6 +1388,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Sun & Moon study (lazy chunk) — set by getSolar().
   let solarSystemInstance: import('./solar/solar-system').SolarSystemAPI | null = null
   let solarLoadPromise: Promise<import('./solar/solar-system').SolarSystemAPI> | null = null
+  let solarAnalysisInstance: import('./solar-analysis/analysis-system').SolarAnalysisAPI | null = null
+  let solarAnalysisPromise: Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI> | null = null
 
   // Point clouds (lazy chunk) — set by getPointClouds().
   let meshInstance: import('./mesh/mesh-system').MeshSystemAPI | null = null
@@ -4576,6 +4583,27 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return geoLoadPromise
     },
 
+    getSolarAnalysis() {
+      const self = this
+      solarAnalysisPromise ??= import('./solar-analysis/analysis-system').then((m) => {
+        solarAnalysisInstance = m.createSolarAnalysis({
+          renderer: world.renderer!.three,
+          scene: world.scene.three,
+          camera: () => world.camera.three,
+          canvas: world.renderer!.three.domElement,
+          getLoadedModelIds: () => self.getLoadedModelIds(),
+          getFragmentsModel: (id) => (modelObjects.get(id) ?? null) as never,
+          getModelObject: (id) => modelPivots.get(id) ?? null,
+          getModelBounds: (id) => self.getModelBounds(id),
+          setGridVisible: (v) => self.setGridVisible(v),
+          setPaused: (p) => self.setPaused(p),
+          getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
+        })
+        return solarAnalysisInstance
+      })
+      return solarAnalysisPromise
+    },
+
     getSolar() {
       const self = this
       solarLoadPromise ??= import('./solar/solar-system').then((m) => {
@@ -4745,6 +4773,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pointCloudInstance = null
       pointCloudLoadPromise = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
+      try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
       solarSystemInstance = null
       solarLoadPromise    = null
       try { geoSystemInstance?.dispose() } catch { /* ok */ }

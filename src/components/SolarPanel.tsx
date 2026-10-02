@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useSolarAnalysisStore } from '../stores/solarAnalysisStore'
 import { useSolarStore, saveManualLocation, loadManualLocation, type SolarLocation, type SolarPreset } from '../stores/solarStore'
 import { useGeoStore } from '../stores/geoStore'
 import { useSceneStore } from '../stores/sceneStore'
@@ -103,6 +104,80 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
     }
     return null
   }, [activeModelId, cacheKey, viewerApiRef])
+
+  // ── Day timelapse ───────────────────────────────────────────────────────────
+  const [timelapse, setTimelapse] = useState<number | null>(null)
+  const [timelapseError, setTimelapseError] = useState<string | null>(null)
+  const exportTimelapse = useCallback(async (): Promise<void> => {
+    const viewer = viewerApiRef.current
+    const st = useSolarStore.getState()
+    if (!viewer || !st.active || !st.location) return
+    setTimelapseError(null)
+    setTimelapse(0)
+    const savedTime = st.timeUTC
+    let skyWasOn = true
+    try {
+      const [{ renderShot }, solar] = await Promise.all([import('../lib/capture/media-codec'), getSolar()])
+      if (!solar) throw new Error('viewer not ready')
+      const loc = st.location
+      const day = dayTimes(new Date(st.timeUTC), loc.lat, loc.lon)
+      // Twenty minutes either side of the sun: the light comes and goes.
+      const noon = day.solarNoon.getTime()
+      const start = day.sunrise ? day.sunrise.getTime() - 20 * 60_000 : noon - 8 * 3_600_000
+      const end = day.sunset ? day.sunset.getTime() + 20 * 60_000 : noon + 8 * 3_600_000
+      const b = viewer.getModelBounds()
+      const cam = viewer.getCameraViewpoint()
+      if (!b || !cam) throw new Error('nothing to film')
+      const dx = cam.position.x - b.center.x, dy = cam.position.y - b.center.y, dz = cam.position.z - b.center.z
+      const duration = 12
+      // The sky on while filming: shadows are dark, and on the dark studio
+      // backdrop the one thing the video is about could not be seen.
+      skyWasOn = useSolarStore.getState().skyOn
+      if (!skyWasOn) solar.setSky(true)
+      const blob = await renderShot(viewer, {
+        type: 'orbit', durationSec: duration, bounds: b, aspect: 16 / 9, fovDeg: cam.fovDeg || 45,
+        headingDeg: (Math.atan2(dx, dz) * 180) / Math.PI, sweepDeg: 25,
+        elevationDeg: Math.max(15, (Math.atan2(dy, Math.hypot(dx, dz)) * 180) / Math.PI),
+        padding: 1.15, easing: 'linear',
+      }, {
+        width: 1920, height: 1080, fps: 30, warmupFrames: 4,
+        onProgress: (f) => setTimelapse(f),
+        beforeFrame: (tSec) => {
+          const utc = start + (end - start) * (tSec / duration)
+          solar.setState({ timeUTC: utc, lat: loc.lat, lon: loc.lon, yawDeg: loc.yawDeg, moonOn: false })
+        },
+      })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `sun-day.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+      setTimelapse(1)
+    } catch (err) {
+      setTimelapse(null)
+      setTimelapseError(err instanceof Error && /WebCodecs|encode/i.test(err.message) ? t('timelapse.unsupported') : String(err instanceof Error ? err.message : err))
+    } finally {
+      if (!skyWasOn) void getSolar()?.then((sol) => sol.setSky(false))
+      // Back to the instant the reader was looking at.
+      useSolarStore.getState().setTimeUTC(savedTime)
+      void pushState()
+    }
+  }, [viewerApiRef, getSolar, t]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The analysis panel works from the study's location: resolve it (the IFC's
+  // georeference, the map, a saved manual one) before opening, so the reader
+  // does not have to start the study first.
+  const openAnalysis = useCallback(async (): Promise<void> => {
+    const s = useSolarStore.getState()
+    if (!s.location) {
+      const loc = await resolveLocation()
+      if (loc) {
+        s.setLocation(loc)
+        if (!s.tzOverridden) s.setTimeZone(timezoneFor(loc.lat, loc.lon), false)
+      }
+    }
+    useSolarAnalysisStore.getState().setPanelOpen(true)
+  }, [resolveLocation])
 
   // ── Push the study state into the 3D system ─────────────────────────────────
   const pushState = useCallback(async (): Promise<void> => {
@@ -433,6 +508,17 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                 {!activeModelId && (
                   <div className="text-[10.5px] text-[var(--text-faint)]">{t('enable.noModel')}</div>
                 )}
+                {/* The analysis: where the study shows ONE instant, this measures
+                    the whole day or season. It needs the same location. */}
+                {!client && activeModelId && (
+                  <button
+                    onClick={() => { void openAnalysis() }}
+                    className="w-full px-2.5 py-2 rounded-[8px] text-left border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
+                  >
+                    <div className="text-[12px] font-semibold text-[var(--text)]">{t('analysis.open')} →</div>
+                    <div className="text-[10px] text-[var(--text-faint)]">{t('analysis.openHint')}</div>
+                  </button>
+                )}
                 {location && !client && (
                   <div className="flex flex-wrap gap-1">
                     <Badge
@@ -636,6 +722,19 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                       </div>
                     </div>
                   )}
+                  {/* The day as a video: the sun crosses the sky while the camera
+                      drifts a quarter-turn — the shot a client actually watches. */}
+                  <div className="flex flex-col gap-1">
+                    <div className="text-[10px] text-[var(--text-faint)]">{t('timelapse.title')}</div>
+                    <button
+                      disabled={timelapse !== null && timelapse < 1}
+                      onClick={() => { void exportTimelapse() }}
+                      className="w-full px-2.5 py-1.5 rounded-[8px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+                    >
+                      {timelapse !== null && timelapse < 1 ? t('timelapse.rendering', { pct: Math.round(timelapse * 100) }) : t('timelapse.export')}
+                    </button>
+                    {timelapseError && <div className="text-[10px] text-[#F5A623]">{timelapseError}</div>}
+                  </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-[var(--text-faint)]">{t('quality.label')}</span>
                     {(['standard', 'high'] as const).map((q) => (

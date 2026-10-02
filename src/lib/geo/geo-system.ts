@@ -439,6 +439,14 @@ export interface GeoSystemAPI {
   /** The frame watch — one verdict per second while the map is on. */
   setPerformanceCallback(cb: ((verdict: FrameVerdict) => void) | null): void
   isActive(): boolean
+  /**
+   * Scene Y of the ground (the terrain, or the flat map) under scene (x, z),
+   * through the same GroundFrame every map layer stands on. Null when the map
+   * is off or not built yet. For the solar analysis' site grid.
+   */
+  groundHeightAt(x: number, z: number): number | null
+  /** The map's root object (terrain, buildings, trees…): occluders for the solar analysis. Null when off. */
+  getContextRoot(): THREE.Object3D | null
   dispose(): void
 }
 
@@ -1162,6 +1170,19 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     isActive() {
       return engine !== null
+    },
+
+    groundHeightAt(x: number, z: number) {
+      if (!geoRoot || !lastLayerOpts) return null
+      geoRoot.updateMatrixWorld(true)
+      const local = geoRoot.worldToLocal(new THREE.Vector3(x, 0, z))
+      const zLocal = groundFrameFor(lastLayerOpts).groundZ(local.x, local.y)
+      if (!Number.isFinite(zLocal)) return null
+      return geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, zLocal)).y
+    },
+
+    getContextRoot() {
+      return geoRoot
     },
 
     dispose() {

@@ -93,6 +93,7 @@ import { useSolarStore } from './stores/solarStore'
 // stay out of the entry chunk. Only ever mounted when VITE_FEATURE_GIS is on.
 const GeoPanel = React.lazy(() => import('./components/GeoPanel'))
 const SolarPanel = React.lazy(() => import('./components/SolarPanel'))
+const SolarAnalysisPanel = React.lazy(() => import('./components/solar/SolarAnalysisPanel'))
 // Lazy: PointCloudPanel statically imports the point cloud engine, its shader
 // and its readers — none of that may reach the entry chunk.
 const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
@@ -4004,6 +4005,14 @@ export default function App() {
                   {isSolarEnabled() && sceneModels.length > 0 && (
                     <React.Suspense fallback={null}>
                       <SolarPanel viewerApiRef={viewerApiRef} variant={clientMode ? 'client' : 'technical'} />
+                    </React.Suspense>
+                  )}
+
+                  {/* Solar & climate analysis: sun hours, irradiation, EN 17037,
+                      the site's climate. Technical audiences only. */}
+                  {isSolarEnabled() && sceneModels.length > 0 && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <SolarAnalysisPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>
                   )}
 

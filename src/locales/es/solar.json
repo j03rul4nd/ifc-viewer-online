@@ -81,5 +81,124 @@
   },
   "errors": {
     "enableFailed": "El estudio solar no pudo iniciarse."
+  },
+  "analysis": {
+    "open": "Análisis solar y clima",
+    "openHint": "Horas de sol, radiación, EN 17037 y el clima del lugar",
+    "title": "Análisis solar y clima",
+    "close": "Cerrar",
+    "noLocation": "Indica primero la ubicación en el estudio solar: todo aquí depende de dónde está el edificio.",
+    "openStudy": "Abrir el estudio solar",
+    "locationLine": "{{lat}}, {{lon}} · {{tz}}",
+    "climate": {
+      "title": "Clima del lugar",
+      "consent": "¿Cargar 10 años de datos meteorológicos observados de este lugar desde Open-Meteo (ERA5)? Solo se envían las coordenadas, redondeadas a ~1 km.",
+      "load": "Cargar el clima",
+      "loading": "Cargando el clima…",
+      "error": "No se pudo cargar el clima: {{message}}",
+      "source": "ERA5 vía Open-Meteo, {{from}}–{{to}}",
+      "hot": "Estación cálida",
+      "cold": "Estación fría",
+      "none": "ninguna",
+      "hdd": "Grados-día de calefacción",
+      "cdd": "Grados-día de refrigeración",
+      "sunshine": "Horas de sol al día",
+      "temp": "Temperatura, °C (mín · media · máx)",
+      "wind": "Viento dominante",
+      "rain": "Lluvia, mm/año",
+      "clearness": "Proporción de cielo despejado"
+    },
+    "period": {
+      "title": "Periodo",
+      "winterSolstice": "Solsticio de invierno",
+      "summerSolstice": "Solsticio de verano",
+      "equinox": "Equinoccio",
+      "enReference": "Día EN 17037 (21 mar)",
+      "hotSeason": "Estación cálida",
+      "coldSeason": "Estación fría",
+      "year": "Todo el año",
+      "customDay": "Un día",
+      "needsClimate": "Carga el clima para conocer las estaciones"
+    },
+    "metric": {
+      "title": "Medir",
+      "sunHours": "Horas de sol",
+      "irradiation": "Radiación"
+    },
+    "kinds": {
+      "ground": "Parcela",
+      "facade": "Fachadas",
+      "window": "Ventanas",
+      "roof": "Cubiertas"
+    },
+    "useClimate": "Usar la nubosidad real",
+    "run": "Ejecutar el análisis",
+    "sensors": "Colocando sensores en el modelo…",
+    "running": "Siguiendo al sol… {{pct}} %",
+    "clear": "Quitar el mapa",
+    "error": "El análisis falló: {{message}}",
+    "legend": {
+      "sunHours": "Sol directo, horas al día",
+      "irradiation": "Radiación, kWh/m² en el periodo"
+    },
+    "results": {
+      "title": "Resultados",
+      "meta": "{{instants}} posiciones del sol · {{sensors}} sensores",
+      "average": "Media",
+      "least": "Menos sol",
+      "most": "Más sol"
+    },
+    "hover": {
+      "sun": "{{h}} h de sol al día",
+      "kwh": "{{kwh}} kWh/m²"
+    },
+    "checks": {
+      "title": "Comprobaciones",
+      "en": {
+        "title": "Exposición solar EN 17037",
+        "run": "Comprobar las ventanas",
+        "summary": "{{pass}} de {{total}} ventanas alcanzan el mínimo (1,5 h)",
+        "none": "Menos de 1,5 h",
+        "minimum": "Mínimo · 1,5 h",
+        "medium": "Medio · 3 h",
+        "high": "Alto · 4 h",
+        "minAltitude": "Contar el sol por encima de",
+        "note": "Horas de sol directo en la cara exterior de cada ventana el 21 de marzo. Es un cribado: la norma mide en un punto de referencia dentro de la estancia, con una altura solar mínima fijada en cada país."
+      },
+      "gain": {
+        "title": "Sobrecalentamiento y ganancia de invierno",
+        "run": "Analizar las dos estaciones",
+        "summer": "Ganancia de verano en vidrios",
+        "winter": "Ganancia de invierno en vidrios",
+        "high": "alta",
+        "moderate": "moderada",
+        "low": "baja",
+        "perDay": "{{v}} kWh/m²·día",
+        "noRisk": "Ningún vidrio supera 2 kWh/m²·día en la estación cálida.",
+        "note": "Radiación media diaria por m² de vidrio. Por encima de ~3,5 kWh/m²·día en verano una ventana necesita protección solar; por encima de ~2,5 en invierno aporta calefacción gratuita de verdad. Bandas orientativas, no una simulación térmica."
+      },
+      "rooms": {
+        "title": "Dónde situar cada estancia",
+        "orientation": "Orientación",
+        "winter": "Sol en invierno",
+        "summer": "Ganancia en verano",
+        "advice": "Mejor para",
+        "living": "Salón y estar",
+        "bedroom": "Dormitorios",
+        "service": "Servicios, escaleras, almacén",
+        "shade": "Prever protección solar"
+      },
+      "exportBcf": "Exportar como BCF",
+      "exportCsv": "Exportar CSV",
+      "frame": "Ver en 3D"
+    },
+    "disclaimer": "Modelo de cielo despejado ajustado a la nubosidad medida en el lugar; luz difusa del cielo que cada punto ve de verdad. Para decidir el diseño, no es un certificado energético."
+  },
+  "timelapse": {
+    "title": "Timelapse del día",
+    "export": "Exportar el día en vídeo",
+    "rendering": "Renderizando… {{pct}} %",
+    "done": "Vídeo listo",
+    "unsupported": "Este navegador no puede codificar vídeo."
   }
 }
