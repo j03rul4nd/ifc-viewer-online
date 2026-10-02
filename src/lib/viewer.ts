@@ -22,6 +22,7 @@ import { resolveFraming, presetPose, type FramingItem, type FramingResult, type 
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
 import { mintModelId } from './loading/model-id'
+import { setSceneDatumProvider, currentDatumProvider } from './bcf-viewpoint'
 import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
 import {
   isAbortError, isFragmentsLoadAborted, loadCancelledError, pickActiveAfterDiscard,
@@ -590,8 +591,16 @@ export interface ViewerAPI {
   /**
    * Return the world-space bounding box of a model after its pivot transform.
    * Returns null when the model has no geometry or is not loaded.
+   *
+   * `coordination` is the model's getModelCoordination(), carried along so a
+   * consumer that needs the box in the file's REAL coordinates (the map
+   * placement applies the IfcMapConversion to the centre) can subtract it.
    */
-  getModelBounds(modelId?: string): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
+  getModelBounds(modelId?: string): {
+    center: { x: number; y: number; z: number }
+    size: { x: number; y: number; z: number }
+    coordination?: { x: number; y: number; z: number } | null
+  } | null
   /**
    * The model's plan outline in world space, as four ORIENTED corners.
    *
@@ -1594,6 +1603,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
    * one site stay registered to each other. See coordination-datum.
    */
   let sceneDatum: DatumVec3 | null = null
+  // BCF reads and writes real coordinates; it learns the datum from here.
+  const datumProvider = (): DatumVec3 | null => sceneDatum
+  setSceneDatumProvider(datumProvider)
 
   /** Centre of a model's geometry in its pivot's space, without its object offset. */
   function drawnCentreOf(model: FRAGS.FragmentsModel): DatumVec3 | null {
@@ -3649,6 +3661,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return {
         center: { x: center.x, y: center.y, z: center.z },
         size:   { x: size.x,   y: size.y,   z: size.z   },
+        coordination: (tid ? modelCoordination.get(tid) : null) ?? null,
       }
     },
 
@@ -4598,6 +4611,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      // Hand BCF back to "no datum" unless a newer viewer already took over.
+      if (currentDatumProvider() === datumProvider) setSceneDatumProvider(() => null)
       try { sceneGizmo?.dispose() } catch { /* ok */ }
       sceneGizmo = null
       try { videoInstance?.dispose() } catch { /* ok */ }

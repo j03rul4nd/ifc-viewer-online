@@ -11,12 +11,15 @@
 // calls viewpointFromBcf right after reading, and nothing else converts. The
 // axis swap itself is measure-math's toIfcAxes / fromIfcAxes.
 //
+// THE SCENE DATUM. A model with map coordinates in its geometry (UTM from
+// Civil 3D) is drawn shifted by one scene-wide vector D (coordination-datum):
+// drawn = real + D. A .bcfv from Solibri or BIMcollab is in REAL coordinates,
+// so positions cross D here and only here — camera position and clipping-plane
+// location; directions and up vectors are free vectors and do not move. D is
+// read from the provider the viewer registers, so every writer (seven of them)
+// gets it without threading it through. Zero for ordinary models.
+//
 // NOT CONVERTED, on purpose:
-//   • The loader's coordination offset (viewer.getModelCoordination()). The IFC
-//     converter keeps the file's datum (COORDINATE_TO_ORIGIN: false), so on the
-//     normal load path the scene origin IS the IFC world origin and the offset
-//     is zero. Only the direct loadIfc path asks the loader to coordinate; a
-//     model loaded that way would export off by that offset.
 //   • Per-model pivot transforms (a model moved or rotated in the app). A moved
 //     model is drawn away from where its file puts it, and a federated scene
 //     has no single pivot to undo. The viewpoint records the scene as drawn.
@@ -73,17 +76,59 @@ function mapFrame(vp: BcfViewpoint, f: (v: Vec3Like) => Vec3Like): BcfViewpoint 
   return out
 }
 
-/** A scene-axes viewpoint → the IFC world axes a .bcfv is written in. */
-export function viewpointToBcf(vp: BcfViewpoint): BcfViewpoint {
+// ── Scene datum ───────────────────────────────────────────────────────────────
+
+let datumProvider: () => Vec3Like | null = () => null
+
+/** Registered once by the viewer: the scene datum D, or null when there is none. */
+export function setSceneDatumProvider(fn: () => Vec3Like | null): void {
+  datumProvider = fn
+}
+
+/** The registered provider, so its owner can tell whether it is still current. */
+export function currentDatumProvider(): () => Vec3Like | null {
+  return datumProvider
+}
+
+/** The current scene datum (scene axes), null when no model is shifted. */
+export function currentSceneDatum(): Vec3Like | null {
+  try {
+    return datumProvider()
+  } catch {
+    return null
+  }
+}
+
+/** Translate the POSITIONS of a viewpoint by `d`; directions are left alone. */
+export function shiftViewpoint(vp: BcfViewpoint, d: Vec3Like | null | undefined): BcfViewpoint {
+  if (!d || (d.x === 0 && d.y === 0 && d.z === 0)) return vp
+  const add = (p: Vec3Like): Vec3Like => tidy({ x: p.x + d.x, y: p.y + d.y, z: p.z + d.z })
+  const out: BcfViewpoint = { ...vp }
+  if (vp.cameraPosition) out.cameraPosition = add(vp.cameraPosition)
+  if (vp.clippingPlanes) out.clippingPlanes = vp.clippingPlanes.map((p) => ({ ...p, location: add(p.location) }))
+  return out
+}
+
+const negated = (d: Vec3Like | null): Vec3Like | null => (d ? { x: -d.x, y: -d.y, z: -d.z } : null)
+
+/**
+ * A scene-axes viewpoint → the IFC world axes a .bcfv is written in, in the
+ * file's REAL coordinates (the scene datum taken off).
+ */
+export function viewpointToBcf(vp: BcfViewpoint, datum: Vec3Like | null = currentSceneDatum()): BcfViewpoint {
   // Viewpoints captured before the up vector was recorded still carry a
   // camera, and a camera without an up is not a camera to the writer.
   const withUp = vp.cameraDirection && !vp.cameraUp ? { ...vp, cameraUp: sceneUpFor(vp.cameraDirection) } : vp
-  return mapFrame(withUp, toIfcAxes)
+  return mapFrame(shiftViewpoint(withUp, negated(datum)), toIfcAxes)
 }
 
-/** A viewpoint read from a .bcfv (IFC world axes) → scene axes. */
-export function viewpointFromBcf(vp: BcfViewpoint): BcfViewpoint {
-  return mapFrame(vp, fromIfcAxes)
+/**
+ * A viewpoint read from a .bcfv (IFC world axes, real coordinates) → scene
+ * axes. The parser worker has no scene, so it passes no datum and the main
+ * thread adds it on arrival (importBcf).
+ */
+export function viewpointFromBcf(vp: BcfViewpoint, datum: Vec3Like | null = null): BcfViewpoint {
+  return shiftViewpoint(mapFrame(vp, fromIfcAxes), datum)
 }
 
 /** Section cuts → BCF clipping planes (Direction = the side cut away). */

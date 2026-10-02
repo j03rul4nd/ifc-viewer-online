@@ -14,6 +14,7 @@ import { strToU8, zipSync } from 'fflate'
 import { buildBcfTextEntries, exportBcfZip } from './bcf'
 import {
   clippingPlanesFromCuts, cutsFromClippingPlanes, sceneUpFor, viewpointFromBcf, viewpointToBcf,
+  shiftViewpoint, setSceneDatumProvider,
 } from './bcf-viewpoint'
 import { parseBcfParserMsg } from './worker-schemas'
 import { bytesToBase64, parseBcfZip, parseViewpoint } from '../workers/bcf-parser.worker'
@@ -581,5 +582,52 @@ describe('BCF import: selected components', () => {
   it('leaves componentGuids unset when nothing is selected', () => {
     const hidden = solibriBcfv.replace(/<Selection>[\s\S]*?<\/Selection>/, '<Selection />')
     expect(parseViewpoint(hidden, 'g').componentGuids).toBeUndefined()
+  })
+})
+
+describe('BCF and the scene datum (map coordinates in the geometry)', () => {
+  // A Civil 3D model at E 412 706.8, N 4 593 519.1, H 149.3 drawn shifted to the
+  // origin: D in scene axes is (−E, −H, +N).
+  const D: Vec3Like = { x: -412706.8, y: -149.3, z: 4593519.1 }
+  const sceneVp: BcfViewpoint = {
+    guid: 'vp-datum',
+    cameraPosition: { x: 10, y: 5, z: -20 },
+    cameraDirection: { x: 0, y: 0, z: -1 },
+    cameraUp: { x: 0, y: 1, z: 0 },
+    clippingPlanes: [{ location: { x: 1, y: 2, z: 3 }, direction: { x: 0, y: -1, z: 0 } }],
+  }
+
+  it('writes the camera and planes in the file\'s real coordinates, directions untouched', () => {
+    const out = viewpointToBcf(sceneVp, D)
+    // Real = scene − D, then scene (x, y, z) → IFC (x, −z, y).
+    expect(out.cameraPosition!.x).toBeCloseTo(412716.8, 6)
+    expect(out.cameraPosition!.y).toBeCloseTo(4593539.1, 6)
+    expect(out.cameraPosition!.z).toBeCloseTo(154.3, 6)
+    expect(out.cameraDirection).toEqual({ x: 0, y: 1, z: 0 })
+    expect(out.clippingPlanes![0].location.x).toBeCloseTo(412707.8, 6)
+    expect(out.clippingPlanes![0].direction).toEqual({ x: 0, y: 0, z: -1 })
+  })
+
+  it('reads a real-coordinate viewpoint back to where it was drawn', () => {
+    const back = viewpointFromBcf(viewpointToBcf(sceneVp, D), D)
+    expect(back.cameraPosition!.x).toBeCloseTo(10, 6)
+    expect(back.cameraPosition!.y).toBeCloseTo(5, 6)
+    expect(back.cameraPosition!.z).toBeCloseTo(-20, 6)
+    expect(back.clippingPlanes![0].location.z).toBeCloseTo(3, 6)
+  })
+
+  it('takes the datum from the registered provider when none is passed', () => {
+    setSceneDatumProvider(() => D)
+    try {
+      expect(viewpointToBcf(sceneVp).cameraPosition!.x).toBeCloseTo(412716.8, 6)
+    } finally {
+      setSceneDatumProvider(() => null)
+    }
+    expect(viewpointToBcf(sceneVp).cameraPosition).toEqual({ x: 10, y: 20, z: 5 })
+  })
+
+  it('no datum changes nothing', () => {
+    expect(shiftViewpoint(sceneVp, null)).toBe(sceneVp)
+    expect(shiftViewpoint(sceneVp, { x: 0, y: 0, z: 0 })).toBe(sceneVp)
   })
 })

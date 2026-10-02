@@ -25,6 +25,12 @@ const DEG = Math.PI / 180
 export interface ModelBoundsLike {
   center: { x: number; y: number; z: number }
   size: { x: number; y: number; z: number }
+  /**
+   * The model's coordination (drawn = real + this), when it was shifted for
+   * display — a model with map coordinates in its geometry. The MapConversion
+   * applies to REAL coordinates, so it comes off the centre first.
+   */
+  coordination?: { x: number; y: number; z: number } | null
 }
 
 /**
@@ -85,11 +91,13 @@ export function placementFromExtraction(
 
   // Anchor at the building (§4.5): apply the MapConversion (rotate γ, scale s,
   // translate E₀ N₀) to the centroid's project plan coords. Scene → project:
-  // x_P = scene.x, y_P = −scene.z (the loader's IFC Z-up → three Y-up turn).
+  // x_P = scene.x − c.x, y_P = −(scene.z − c.z): undo the display shift, then
+  // the loader's IFC Z-up → three Y-up turn.
   const s = g.scale ?? 1
   const gamma = g.rotationDeg * DEG
-  const xP = bounds?.center.x ?? 0
-  const yP = bounds ? -bounds.center.z : 0
+  const c = bounds?.coordination
+  const xP = bounds ? bounds.center.x - (c?.x ?? 0) : 0
+  const yP = bounds ? -(bounds.center.z - (c?.z ?? 0)) : 0
   const eC = g.eastings + s * (xP * Math.cos(gamma) - yP * Math.sin(gamma))
   const nC = g.northings + s * (xP * Math.sin(gamma) + yP * Math.cos(gamma))
 

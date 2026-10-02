@@ -54,11 +54,12 @@
     "rung2": "Property sets ePSet_MapConversion (LoGeoRef 50)",
     "rung3": "Latitud/longitud del emplazamiento (LoGeoRef 20–40)",
     "rung4": "No se encontraron entidades de georreferenciación",
+    "rung5": "Coordenadas de mapa en la geometría, sin sistema declarado — elígelo",
     "confidenceHigh": "confianza alta",
     "confidenceApproximate": "aproximada — verifica la posición",
     "crs": "CRS",
     "debug": "Valores en bruto",
-    "largeOffset": "La geometría está a más de 10 km del origen del archivo"
+    "largeOffset": "Coordenadas de mapa en la geometría (a más de 100 km del origen del archivo): se muestra desplazado y se conservan las coordenadas reales"
   },
   "reasons": {
     "invalid": {

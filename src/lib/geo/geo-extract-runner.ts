@@ -16,6 +16,7 @@
 // terminate on completion, 60 s watchdog.
 
 import { modelRegistry } from '../model-registry'
+import { hasFarCoordinates } from '../ifc-far-coordinates'
 import { useGeoStore } from '../../stores/geoStore'
 import { createLogger } from '../logger'
 import type { GeorefExtraction, GeorefStatus } from './geo-types'
@@ -81,6 +82,11 @@ export function quickScanGeoref(buffer: ArrayBuffer, scanBytes = QUICK_SCAN_BYTE
 
   if (hasConversion) return stubExtraction('unknown', [], { quickScan: 'conversion-hint' })
   if (hasSite)       return stubExtraction('unknown', [], { quickScan: 'site-hint' })
+  // Map coordinates in the geometry are a grid without a name (rung 5): not
+  // "nothing", so the full extraction must run and offer the CRS picker.
+  if (fullCoverage && hasFarCoordinates(new Uint8Array(buffer))) {
+    return stubExtraction('unknown', [], { quickScan: 'far-coordinates' })
+  }
   if (fullCoverage)  return stubExtraction('none',    [], { quickScan: 'full-scan' })
   return stubExtraction('unknown', [], { quickScan: 'no-hint' })
 }

@@ -1,7 +1,8 @@
 # Modelos con coordenadas lejanas (UTM en la geometría)
 
-> Estado: análisis y diseño, 2026-10-02. La parte 1 (render + datum) está prototipada sobre el
-> WIP antiguo de `C:/repo/ifc` y verificada en navegador; **no está en `main`**.
+> Estado 2026-10-02: fases 1, 2 y 3 implementadas en la rama `fix/far-coordinates` (desde `main`)
+> y verificadas en el navegador con el fichero real. La fase 4 (aviso en UI, texto de la regla,
+> SDK) queda pendiente.
 
 ## 1. El problema, medido
 
@@ -16,7 +17,7 @@ Qué hace la cadena con él:
 | Paso | Qué pasa |
 |---|---|
 | web-ifc (`COORDINATE_TO_ORIGIN: false`) | Recentra cada brep sobre sí mismo y pone la posición UTM en la transformación float64 del elemento (medido: `flatTransformation` = 412 698 / 150 / −4 593 511). |
-| fragments `IfcImporter` | `distanceThreshold = 1e5`: **descarta** todo elemento cuya transformación supere 100 km en algún eje (solo `console.warn`). |
+| fragments `IfcImporter` | `distanceThreshold = 1e5`: **descarta** todo elemento cuya transformación supere 100 km en algún eje. Lo dice con un `console.log` (no `warn`) y compara `x > umbral` **sin valor absoluto**: con coordenadas negativas no descarta y dibuja a miles de km, temblando. |
 | Resultado | Árbol y propiedades sí; geometría **cero**. El usuario ve una escena vacía sin ningún error. |
 
 Aunque no se descartaran, dibujar a 4,6·10⁶ m da ~0,5 m de resolución en float32 (2⁻²³ × 4,6·10⁶): temblor y caras colapsadas.
@@ -72,7 +73,7 @@ Reglas del datum (implementadas en `coordination-datum.ts`):
 - Red de seguridad: si fragments avisa de elementos descartados, se reconvierte el fichero con el origen desplazado.
 - Datum común + `autoCoordinate=false` + leer el shift con `getCoordinates()`. **Trampa medida:** `getCoordinationMatrix()` cachea una matriz que se devuelve antes de rellenarse y, con llamadas concurrentes, da la identidad.
 - Caché OPFS: subir versión, porque los `.frag` antiguos de estos ficheros están vacíos.
-- **Pendiente: umbral sensible a unidades.** El escaneo mira números crudos; en un IFC en mm, un edificio de 150 m (150 000 mm) da falso positivo. No es grave porque el shift queda registrado, pero rompe la promesa de «solo lo lejano se mueve». Hay que leer `IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.)` y las unidades de conversión (pies) y escalar el umbral.
+- **Hecho: umbral sensible a unidades** (`lengthUnitScale`: prefijos SI y pies/pulgadas en `IfcConversionBasedUnit`). El escaneo mira números crudos; en un IFC en mm, un edificio de 150 m (150 000 mm) da falso positivo. No es grave porque el shift queda registrado, pero rompe la promesa de «solo lo lejano se mueve». Hay que leer `IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.)` y las unidades de conversión (pies) y escalar el umbral.
 
 ### Fase 2: no romper nada que use coordenadas reales (obligatorio antes de publicar)
 Todo esto da por hecho que el offset es 0, que era cierto hasta ahora:
@@ -105,7 +106,16 @@ Todo esto da por hecho que el offset es 0, que era cierto hasta ahora:
 
 Una obra lineal de 30 km dentro de un datum queda por debajo de 2–4 mm en el extremo. Si hiciera falta más, el paso siguiente sería el RTC de xeokit por tile, no agrandar el radio.
 
-## 7. Pruebas que deben existir
+## 7. Pruebas
+
+Implementadas en la rama. La de integración (`scripts/far-coordinates-ifc.test.ts`) pasa un IFC
+sintético con forma de exportación de Civil 3D por web-ifc y fragments **reales**: reproduce el
+descarte original, comprueba que con el cambio no se pierde nada y fija los dos detalles de la
+librería que ningún mock habría revelado (el aviso es `console.log` y el umbral no usa `abs`).
+La primera versión de la red de seguridad escuchaba `console.warn` y nunca habría saltado; esta
+prueba fue la que lo detectó.
+
+Lista original:
 
 - Unitarias: detector (unidades, exponentes, listas IFC4, MapConversion ignorada), resolución del datum (set/joined/separate/local/retro-join), escalera con E=N=0 y modelo lejano, BCF ida y vuelta con D ≠ 0.
 - Integración (web-ifc + fragments reales en Node, fichero pequeño en `__fixtures__`): con el cambio, 0 elementos descartados; la matriz de coordinación conservada; dos copias desplazadas que federan a la distancia real exacta.

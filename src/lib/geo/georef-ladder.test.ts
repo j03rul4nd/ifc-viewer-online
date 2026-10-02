@@ -168,3 +168,44 @@ describe('georef-ladder · rung 4', () => {
     expect(out.reasons).toEqual([])
   })
 })
+
+describe('georef-ladder · map coordinates in the geometry (far files)', () => {
+  const FAR: GeorefSource = { ...NO_SOURCE, farCoordinates: true }
+
+  it('MapConversion (0,0) + CRS is valid when the geometry is already in the grid', () => {
+    const out = runGeorefLadder({ ...FAR, mapConversion: conversion({ eastings: 0, northings: 0, crsName: 'EPSG:25831' }) })
+    expect(out.status).toBe('found')
+    expect(out.rung).toBe(1)
+    expect(out.eastings).toBe(0)
+    expect(out.northings).toBe(0)
+    expect(out.largeWcsOffset).toBe(true)
+    expect(out.reasons).not.toContain('invalid.nullIsland')
+  })
+
+  it('the same (0,0) on a model near the origin is still the authoring-tool default', () => {
+    const out = runGeorefLadder({ ...NO_SOURCE, farCoordinates: false, mapConversion: conversion({ eastings: 0, northings: 0 }) })
+    expect(out.status).toBe('invalid')
+    expect(out.largeWcsOffset).toBe(false)
+  })
+
+  it('no georeferencing at all → rung 5: a grid without a name, CRS to be chosen', () => {
+    const out = runGeorefLadder(FAR)
+    expect(out.status).toBe('partial')
+    expect(out.rung).toBe(5)
+    expect(out.eastings).toBe(0)
+    expect(out.northings).toBe(0)
+    expect(out.epsgCode).toBeNull()
+    expect(out.reasons).toContain('invalid.unknownCrs')
+  })
+
+  it('a usable site lat/lon still wins over rung 5', () => {
+    const out = runGeorefLadder({ ...FAR, site: { refLatitude: [41, 28, 30], refLongitude: [1, 57, 10], refElevation: 150 } })
+    expect(out.rung).toBe(3)
+    expect(out.largeWcsOffset).toBe(true)
+  })
+
+  it('a Null Island site on a far model falls through to rung 5', () => {
+    const out = runGeorefLadder({ ...FAR, site: { refLatitude: [0, 0, 0], refLongitude: [0, 0, 0], refElevation: 0 } })
+    expect(out.rung).toBe(5)
+  })
+})

@@ -283,3 +283,31 @@ describe('placementFromExtraction · the stated origin height', () => {
     if (r.ok) expect(r.value.heightOffsetM).toBe(0)
   })
 })
+
+describe('placementFromExtraction · model shifted for display (map coordinates in the geometry)', () => {
+  // Rung 5 after the user picked the CRS: the grid IS the file's coordinates.
+  const g = extraction({
+    status: 'partial', rung: 5, epsgCode: 'EPSG:25831',
+    eastings: 0, northings: 0, scale: 1, rotationDeg: 0,
+  })
+  // Zone 31's central meridian is 3°E at E = 500 000: put the real centre there
+  // and the answer is known without a projection library.
+  const D = { x: -500_000, y: -150, z: 4_593_500 }
+  const drawn = { center: { x: 0, y: 2, z: 0 }, size: { x: 25, y: 4, z: 21 } }
+
+  it('takes the display shift off the centre before projecting it', () => {
+    const r = placementFromExtraction(g, { ...drawn, coordination: D })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.lon).toBeCloseTo(3, 6)
+    expect(r.value.lat).toBeGreaterThan(41.4)
+    expect(r.value.lat).toBeLessThan(41.6)
+  })
+
+  it('without the coordination it would land on the false origin (the bug)', () => {
+    const r = placementFromExtraction(g, drawn)
+    // E 0 in zone 31 is outside the zone's domain, nowhere near the site.
+    if (r.ok) expect(Math.abs(r.value.lon - 3)).toBeGreaterThan(1)
+    else expect(r.ok).toBe(false)
+  })
+})

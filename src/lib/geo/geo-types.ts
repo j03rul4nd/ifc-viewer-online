@@ -61,8 +61,9 @@ export type GeorefStatus = 'unknown' | 'extracting' | 'found' | 'partial' | 'non
  *   2 — ePSet_MapConversion property sets (IFC2x3 convention)
  *   3 — IfcSite RefLatitude/RefLongitude (+ TrueNorth)  (LoGeoRef20/40)
  *   4 — nothing found
+ *   5 — map coordinates baked into the geometry, CRS not stated (the user picks it)
  */
-export type GeorefRung = 1 | 2 | 3 | 4
+export type GeorefRung = 1 | 2 | 3 | 4 | 5
 
 export interface GeorefExtraction {
   status: GeorefStatus
@@ -89,7 +90,7 @@ export interface GeorefExtraction {
   raw: Record<string, number | string | null>
   /** i18n keys (geo namespace) explaining downgrades, e.g. 'invalid.nullIsland'. */
   reasons: string[]
-  /** True when model geometry sits > 10 km from the file origin (plan §4.4 gate 6). */
+  /** True when model geometry sits > 100 km from the file origin: map coordinates in the geometry. */
   largeWcsOffset: boolean
   /**
    * Express id of the IfcSite the extraction read (or would write to). Needed

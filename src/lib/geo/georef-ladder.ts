@@ -8,7 +8,15 @@
 //   1  IfcMapConversion + IfcProjectedCRS            → found
 //   2  ePSet_MapConversion / ePSet_ProjectedCRS      → found
 //   3  IfcSite RefLatitude/RefLongitude (+TrueNorth) → partial
+//   5  map coordinates in the geometry, nothing else → partial (CRS unknown)
 //   4  nothing                                       → none
+//
+// FAR GEOMETRY (`farCoordinates`, see ifc-far-coordinates). A file whose
+// vertices already carry map coordinates (Civil 3D, Revit "shared") is its own
+// grid: a MapConversion of (0, 0) is then the correct statement "project
+// coordinates ARE grid coordinates", not an authoring-tool default, and with
+// no georeferencing at all the grid is still there, only unnamed — rung 5,
+// which the UI answers with its CRS picker.
 
 import { compoundAngleToDegrees, rotationFromXAxis, rotationFromTrueNorth, MERCATOR_MAX_LAT } from './geo-math'
 import type { GeorefExtraction } from './geo-types'
@@ -52,6 +60,8 @@ export interface GeorefSource {
   site: SiteSource | null
   /** TrueNorth direction ratios from the model representation context. */
   trueNorth: { x: number; y: number } | null
+  /** The geometry sits more than 100 km from the file origin (map coordinates). */
+  farCoordinates?: boolean
 }
 
 // ── Gates ───────────────────────────────────────────────────────────────────────
@@ -72,15 +82,35 @@ export function runGeorefLadder(src: GeorefSource): GeorefExtraction {
     // placement gets written back to.
     siteExpressId: src.site?.expressId ?? null,
   }
+  const far = src.farCoordinates === true
+  base.largeWcsOffset = far
 
   const conversion = src.mapConversion ?? src.epsetConversion
   if (conversion) {
-    return classifyConversion(conversion, src.mapConversion ? 1 : 2, base)
+    return classifyConversion(conversion, src.mapConversion ? 1 : 2, base, far)
   }
   if (src.site && (src.site.refLatitude || src.site.refLongitude)) {
-    return classifySite(src.site, src.trueNorth, base)
+    const site = classifySite(src.site, src.trueNorth, base)
+    if (site.status !== 'none' || !far) return site
   }
+  if (far) return geometryGrid(base)
   return base
+}
+
+// ── Rung 5 — map coordinates in the geometry, CRS unnamed ─────────────────────
+
+function geometryGrid(base: GeorefExtraction): GeorefExtraction {
+  return {
+    ...base,
+    status: 'partial',
+    rung: 5,
+    // The grid origin is the file origin: project coordinates are grid ones.
+    eastings: 0,
+    northings: 0,
+    scale: 1,
+    raw: { ...base.raw, geometryGrid: 'far-coordinates' },
+    reasons: [...base.reasons, 'invalid.unknownCrs'],
+  }
 }
 
 // ── Rung 1/2 — MapConversion ────────────────────────────────────────────────────
@@ -89,6 +119,7 @@ function classifyConversion(
   c: MapConversionSource,
   rung: 1 | 2,
   base: GeorefExtraction,
+  far = false,
 ): GeorefExtraction {
   const out: GeorefExtraction = {
     ...base,
@@ -123,8 +154,10 @@ function classifyConversion(
   const northings = c.northings * unit
 
   // Gate 1 variant: (0,0) grid origin — implausible for projected CRS with
-  // false eastings (UTM etc.); a common authoring-tool default.
-  if (eastings === 0 && northings === 0) {
+  // false eastings (UTM etc.); a common authoring-tool default. UNLESS the
+  // geometry itself is far from the origin: then (0,0) says the project
+  // coordinates already are grid coordinates, which is exactly right.
+  if (eastings === 0 && northings === 0 && !far) {
     out.status = 'invalid'
     out.reasons.push('invalid.nullIsland')
     return out
