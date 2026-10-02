@@ -42,8 +42,10 @@ describe('blog hub discovery', () => {
       'utility-tunnel-ifc-mobile-lidar-inspection',
       'view-ifc-on-3d-map-online',
       'ifc-sun-shadow-study-online',
+      'las-point-cloud-classification-codes',
+      'point-cloud-floor-plan-slab-flatness',
     ]))
-    expect(results).toHaveLength(9)
+    expect(results).toHaveLength(11)
   })
 
   it('filters by category and sorts short reads first', () => {

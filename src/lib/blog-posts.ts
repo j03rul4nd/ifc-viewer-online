@@ -255,6 +255,397 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: 'iso-19650-file-naming-convention',
+    title: 'ISO 19650 File Naming Convention Explained (With Examples)',
+    excerpt: "Seven fields and six hyphens decide whether a model can be found, sorted, checked and federated without anybody opening it. What each field means, the role codes, where status and revision belong instead — and the naming mistakes that quietly break a CDE.",
+    seoTitle: 'ISO 19650 File Naming Convention Explained',
+    seoDescription: 'The ISO 19650 file naming convention field by field: project, originator, volume, level, type, role and number, with role codes, examples and common mistakes.',
+    date: '2026-10-03',
+    readTimeMin: 9,
+    category: 'Delivery & ISO 19650',
+    categorySlug: 'delivery',
+    author: 'IFC Viewer Team',
+    keywords: ['ISO 19650 naming convention', 'ISO 19650 file naming', 'BIM file naming convention', 'ISO 19650 role codes', 'information container naming', 'ISO 19650 suitability codes', 'BIM naming standard example'],
+    faqs: [
+      { q: 'What is the ISO 19650 file naming convention?', a: 'A structured name for every information container, made of fields separated by hyphens: project, originator, volume or system, level or location, type, role and number — for example TWR-ARQ-Z1-03-M3-A-0001. The fields and their allowed codes are fixed for each project in its information protocol; the UK National Annex gives the most widely used set.' },
+      { q: 'Do status and revision codes go in the ISO 19650 file name?', a: 'No. Suitability (S0–S4, A1…) and revision (P01, C01…) are metadata held by the CDE alongside the file. Putting them in the name creates a new file name for every issue and breaks every link to the previous one.' },
+      { q: 'What are the ISO 19650 role codes?', a: 'Single letters for the discipline that produced the container. In the UK National Annex: A architect, B building surveyor, C civil engineer, E electrical engineer, F facilities manager, K client, L landscape architect, M mechanical engineer, P public health engineer, S structural engineer, W contractor, X subcontractor, among others.' },
+    ],
+    content: [
+      { type: 'p', text: "Every project has a folder of files called things like \"Model_final_v3_JB_NEW.ifc\". And every project eventually discovers why that is expensive: nobody can tell which discipline it belongs to, which zone or level it covers, whether it is the current version, or whether the file someone emailed yesterday is the same one in the CDE." },
+      { type: 'p', text: "ISO 19650 answers this with a naming convention that turns the file name into data. Once you can read one, you can read all of them — and so can every tool on the project." },
+      {
+        type: 'image',
+        src: 'blog/images/iso-19650-file-name-anatomy.png',
+        alt: 'Anatomy of an ISO 19650 file name TWR-ARQ-Z1-03-M3-A-0001: project, originator, volume or system, level or location, type, role and number, with common role codes',
+        caption: 'An ISO 19650 file name has seven fields. The role field is the one that tells tools which discipline a model belongs to.',
+        width: 1600, height: 900,
+        srcSet: [{ src: 'blog/images/iso-19650-file-name-anatomy-800.png', width: 800 }, { src: 'blog/images/iso-19650-file-name-anatomy.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'takeaways', items: [
+        "A file name is seven fields separated by hyphens: project, originator, volume/system, level/location, type, role, number.",
+        "The allowed codes are agreed per project in the information protocol — the standard defines the structure, the project defines the vocabulary.",
+        "Status and revision are metadata in the CDE, never part of the file name.",
+      ] },
+
+      { type: 'h2', text: 'The seven fields, one by one' },
+      {
+        type: 'table',
+        headers: ['Field', 'Example', 'Answers'],
+        rows: [
+          ['Project', 'TWR', 'Which project is this?'],
+          ['Originator', 'ARQ', 'Which organisation produced it?'],
+          ['Volume / system', 'Z1', 'Which zone, building or system does it cover?'],
+          ['Level / location', '03', 'Which floor or location? (ZZ for multiple, XX for none)'],
+          ['Type', 'M3', 'What kind of container? M3 = 3D model, DR = drawing, SP = specification…'],
+          ['Role', 'A', 'Which discipline? A = architect, S = structural, M = mechanical…'],
+          ['Number', '0001', 'Which one of several with the same fields?'],
+        ],
+        caption: 'Field lengths, separators and the code lists are fixed for each project in its information protocol.',
+      },
+      { type: 'callout', variant: 'tip', text: "ZZ and XX are the two codes everyone forgets: ZZ means \"multiple\" (a model that covers every level), XX means \"not applicable\". A federated model of the whole building is typically ZZ for both volume and level." },
+
+      { type: 'h2', text: 'Status and revision: not in the name' },
+      { type: 'p', text: "The most common mistake is adding the suitability or the revision to the name — TWR-ARQ-Z1-03-M3-A-0001-S2-P03.ifc. It looks thorough. It means every issue of the same container has a different name, every link and reference to the previous issue breaks, and the CDE can no longer show the history of one container." },
+      {
+        type: 'table',
+        headers: ['Metadata', 'Codes (UK National Annex)', 'Where it lives'],
+        rows: [
+          ['Suitability', 'S0 work in progress · S1 coordination · S2 information · S3 review and comment · S4 stage approval · A1… authorised', 'CDE metadata'],
+          ['Revision', 'P01, P02… preliminary · C01, C02… contractual', 'CDE metadata'],
+          ['Classification', 'Uniclass, OmniClass, CCI…', 'Metadata and inside the model'],
+        ],
+      },
+
+      { type: 'h2', text: 'Why naming matters to tools, not just to people' },
+      { type: 'p', text: "A good name is data a machine can read without opening the file. That matters more every year, as more of the checking and federating is done by software:" },
+      { type: 'ul', items: [
+        "Federation: a viewer can group models by role and colour them by discipline — architecture translucent, structure in one colour, MEP in another — from the name alone.",
+        "Delivery checks: the file name is the first row of most acceptance tables, because a misnamed container cannot be found, sorted or traced.",
+        "Revision tracking: when the same name always means the same container, comparing this week's drop with last week's is a matter of matching names, then GlobalIds.",
+      ] },
+      {
+        type: 'p',
+        text: ['In our viewer, the role field is what drives the discipline colours in coordination images — see ', { text: 'presentation images from an IFC', to: 'ifc-presentation-images-boards' }, '. The acceptance side is in ', { text: 'IFC acceptance criteria', to: 'ifc-acceptance-criteria' }, '.'],
+      },
+
+      { type: 'h2', text: 'Five naming mistakes that cost real time' },
+      { type: 'ol', items: [
+        "Status or revision in the name — every issue becomes a new file.",
+        "Free-text fields — \"Arch\" in one file, \"ARC\" in the next, \"A\" in a third. Agree a code list and nothing else.",
+        "Different level codes per discipline — 03 for the architect, L3 for the engineer. Federation by level stops working.",
+        "Spaces and special characters — they break scripts, URLs and some CDEs. Letters, digits and hyphens only.",
+        "Renaming on export — the authoring tool writes one name, someone renames it for the CDE, and the two drift apart.",
+      ] },
+      {
+        type: 'p',
+        text: ['Naming is one row of a wider delivery checklist; the rest is in ', { text: 'the ISO 19650 IFC checklist', to: 'iso19650-ifc-checklist' }, '.'],
+      },
+    ],
+  },
+
+  {
+    slug: 'las-point-cloud-classification-codes',
+    title: 'LAS Point Cloud Classification Codes Explained (ASPRS 0–18)',
+    excerpt: "Every point in a LAS or LAZ file can carry a class: ground, building, vegetation, water, noise. Those numbers decide what you can do with a scan — terrain models, scan-vs-BIM, clearance checks. Here is the full ASPRS table, what each code is for, and how to use them without desktop software.",
+    seoTitle: 'LAS Classification Codes Explained (ASPRS 0–18)',
+    seoDescription: 'The ASPRS LAS classification codes 0 to 18 explained: ground, vegetation, building, water, noise and more, what each is used for, and how to filter them online.',
+    date: '2026-10-03',
+    readTimeMin: 9,
+    category: 'Digital twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    keywords: ['LAS classification codes', 'ASPRS classification', 'point cloud classification', 'LAS class 2 ground', 'LiDAR classification codes', 'LAZ classification', 'point cloud ground filter'],
+    faqs: [
+      { q: 'What are LAS classification codes?', a: 'Numbers stored with each point in a LAS or LAZ file that say what the point is: 2 ground, 3–5 low, medium and high vegetation, 6 building, 7 low noise, 9 water, 17 bridge deck, 18 high noise and so on. They are defined by the ASPRS LAS specification; LAS 1.4 standardises codes 0 to 18.' },
+      { q: 'What is the difference between class 0 and class 1?', a: 'Class 0 means the point was never run through a classifier. Class 1 means a classifier looked at it and could not place it in any other class. A scan that has never been processed usually has every point in class 0 or 1, so class filters have nothing to work with.' },
+      { q: 'Can I filter a point cloud by class without desktop software?', a: 'Yes. IFC Viewer Online reads LAS, LAZ and COPC files in the browser and lets you show or hide classes 0 to 15, colour by class, and apply one-click recipes such as terrain (ground only, with contours) or removing vegetation and noise.' },
+    ],
+    content: [
+      { type: 'p', text: "A raw point cloud is millions of points with a position and maybe a colour. A classified point cloud is millions of points that also know what they are. That one extra number per point is the difference between a pretty picture and something you can measure, model and check against." },
+      { type: 'p', text: "The numbers are standardised by ASPRS in the LAS specification, and they are the same whether the file came from an airborne survey, a mobile mapping car or a terrestrial scanner that was later processed." },
+      {
+        type: 'image',
+        src: 'blog/images/las-classification-codes-asprs.png',
+        alt: 'Table of ASPRS LAS 1.4 point cloud classification codes 0 to 18 with colour swatches: ground, low, medium and high vegetation, building, noise, water, rail, road, wires, tower, bridge deck',
+        caption: 'The ASPRS LAS 1.4 standard classes. Codes 19–63 are reserved; 64–255 are free for project-specific use.',
+        width: 1600, height: 900,
+        srcSet: [{ src: 'blog/images/las-classification-codes-asprs-800.png', width: 800 }, { src: 'blog/images/las-classification-codes-asprs.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'takeaways', items: [
+        "Classification is one number per point, standardised by ASPRS: 2 is ground, 6 is building, 3–5 are vegetation, 7 and 18 are noise.",
+        "Class 0 means never classified; class 1 means classified as \"none of the above\". An unprocessed scan is all 0s and 1s.",
+        "Most useful operations on a scan — terrain, scan-vs-BIM, clearance — start by keeping some classes and hiding the rest.",
+      ] },
+
+      { type: 'h2', text: 'The classes that matter most' },
+      {
+        type: 'table',
+        headers: ['Code', 'Class', 'Typical use'],
+        rows: [
+          ['2', 'Ground', 'Terrain models, contours, cut-and-fill'],
+          ['3 / 4 / 5', 'Low / medium / high vegetation', 'Tree surveys; usually hidden for everything else'],
+          ['6', 'Building', 'Scan-vs-BIM, façade checks, massing'],
+          ['7 / 18', 'Low / high noise', 'Thrown away — reflections, birds, multipath'],
+          ['9', 'Water', 'Shorelines, drainage'],
+          ['10 / 11', 'Rail / road surface', 'Infrastructure surveys'],
+          ['13–16', 'Wires, towers, connectors', 'Power-line corridors and clearance'],
+          ['17', 'Bridge deck', 'Bridge inspection'],
+        ],
+      },
+      { type: 'callout', variant: 'info', title: 'LAS 1.4 vs older versions', text: "Codes 13 to 18 were added in LAS 1.4; in LAS 1.0–1.3, 8 meant \"model key-point\" and 12 meant \"overlap\". Both are reserved in 1.4. Old files can use them with the old meaning." },
+
+      { type: 'h2', text: 'Unclassified scans: the 0 and 1 problem' },
+      { type: 'p', text: "Terrestrial laser scans of buildings are very often not classified at all. Every point sits in class 0 or 1, and any filter by class either shows everything or nothing. That is not a fault of the viewer; the information is simply not in the file." },
+      { type: 'p', text: "For building work you can often do without classes: a horizontal slice gives you a plan, a band over a slab gives you flatness, a section gives you a profile. Those operations use height, not class — and they work on any scan." },
+      {
+        type: 'p',
+        text: ['How those height-based analyses work is in ', { text: 'floor plans, slab flatness and contours from a point cloud', to: 'point-cloud-floor-plan-slab-flatness' }, '.'],
+      },
+
+      { type: 'h2', text: 'Using classes in the browser' },
+      { type: 'steps', items: [
+        { title: 'Open the scan', body: "LAS, LAZ or COPC — together with the IFC, if you want to compare. Large clouds are streamed by level of detail, so you can start working before the whole file is loaded." },
+        { title: 'Colour by class', body: "The fastest way to see whether a file is classified at all: one colour everywhere means it is not." },
+        { title: 'Show or hide classes', body: "Classes 0 to 15 are individual toggles. Hide vegetation and noise, and the building and ground are left." },
+        { title: 'Or use a recipe', body: "Terrain keeps ground and draws contours at a sensible interval. Vegetation removes classes 3, 4, 5 and 7 in one click." },
+      ] },
+      {
+        type: 'p',
+        text: ['Putting the classified scan next to the model is covered in ', { text: 'IFC and point clouds in the browser', to: 'ifc-point-cloud-browser-scan-to-bim' }, '.'],
+      },
+    ],
+  },
+
+  {
+    slug: 'point-cloud-floor-plan-slab-flatness',
+    title: 'Floor Plans, Slab Flatness and Contours From a Point Cloud, in the Browser',
+    excerpt: "Most of what a site team needs from a scan is not a 3D view. It is a plan of what was built, a flatness check before the screed, a terrain with contours, and a clearance that can be quoted. All of them are filters on the same cloud — slices, bands and classes — and none needs desktop software.",
+    seoTitle: 'Floor Plans and Slab Flatness From a Point Cloud',
+    seoDescription: 'Turn a laser scan into a floor plan, a slab flatness map, a terrain with contours or a scan-vs-BIM check, in the browser — with slices, bands and class filters.',
+    date: '2026-10-03',
+    readTimeMin: 9,
+    category: 'Digital twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    keywords: ['floor plan from point cloud', 'slab flatness point cloud', 'point cloud contours', 'scan to plan', 'floor flatness survey', 'point cloud slice', 'scan vs BIM browser'],
+    faqs: [
+      { q: 'How do I get a floor plan from a point cloud?', a: 'Keep only the points in a thin horizontal band about 1.2 m above the floor and look at it from above. Walls, doors and windows appear as lines; most furniture is below the band. IFC Viewer Online does this in one click with its floor-plan recipe.' },
+      { q: 'Can I check slab flatness from a laser scan?', a: 'Yes, as a visual first pass: keep a narrow band around the slab level and draw contours at 1 cm. High and low spots show up as rings. For a formal tolerance report, use the scan in a dedicated surveying tool — but the browser check tells you where to look.' },
+      { q: 'Do these analyses need a classified scan?', a: 'Slices, bands and contours use height, so they work on any scan. Terrain and vegetation filtering use the ASPRS classes, so they need a classified file.' },
+    ],
+    content: [
+      { type: 'p', text: "A point cloud of a building site is impressive in 3D and almost useless as it is. Nobody on site needs to orbit forty million points. They need answers to ordinary questions: where were the walls actually built, is this slab flat enough for the screed, how far does the ground fall across the plot, does the duct clear the beam." },
+      { type: 'p', text: "Every one of those answers is a filter on the same cloud — a slice, a band, a class — plus a camera in the right place. Applied in the browser, they take seconds." },
+      {
+        type: 'image',
+        src: 'blog/images/point-cloud-floor-plan-slice.png',
+        alt: 'Diagram of a point cloud floor plan: a horizontal slice 1.2 m above the floor keeps walls and openings, removes furniture, and seen from above becomes a plan',
+        caption: 'A horizontal slice about 1.2 m above the floor, seen from above, is a plan of what was built.',
+        width: 1600, height: 900,
+        srcSet: [{ src: 'blog/images/point-cloud-floor-plan-slice-800.png', width: 800 }, { src: 'blog/images/point-cloud-floor-plan-slice.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+
+      { type: 'h2', text: 'Six analyses, one cloud' },
+      {
+        type: 'table',
+        headers: ['Analysis', 'What it does', 'Needs'],
+        rows: [
+          ['Floor plan', 'Slice 1.2 m above the floor (±0.3 m), top view', 'Any scan'],
+          ['Slab flatness', 'Band ±8 cm around a picked slab, 1 cm contours', 'Any scan'],
+          ['Terrain', 'Ground class only, coloured by elevation, contours', 'Classified scan'],
+          ['Remove vegetation', 'Hide vegetation and low noise', 'Classified scan'],
+          ['Scan vs BIM', 'Scan in one flat colour over the model', 'Scan + IFC'],
+          ['Clearance', 'Measure point-to-point on the cloud', 'Any scan'],
+        ],
+      },
+
+      { type: 'h2', text: 'A floor plan from a slice' },
+      { type: 'p', text: "Drawing convention cuts a plan about 1.2 metres above the floor: high enough to catch walls, door and window openings, low enough to pass under most furniture and over skirting. A point cloud cut the same way and seen from above is a plan of the building as built — which is exactly what you need to compare against the design, or to start a survey drawing." },
+      { type: 'callout', variant: 'tip', text: "If the plan looks noisy, the slice is probably catching a worktop or a radiator. Move it up 20 cm. If walls look broken, there are openings or the scanner did not see behind furniture — the band cannot show what was never scanned." },
+
+      { type: 'h2', text: 'Slab flatness before the screed' },
+      { type: 'p', text: "Pick a point on the slab, keep only a narrow band around that height, and draw contours every centimetre. A flat slab shows few, widely spaced rings; a slab with a dip or a hump shows tight rings exactly where the problem is. It is a fast visual first pass that tells you where to send the level — not a substitute for a formal tolerance survey, but it often saves one." },
+
+      { type: 'h2', text: 'Terrain and vegetation: where classes come in' },
+      { type: 'p', text: "Terrain uses the ASPRS ground class: keep class 2, colour by elevation, draw contours at an interval chosen from the height range. Removing vegetation hides classes 3, 4 and 5 and the low-noise class 7. Both only work on scans that were classified — an unprocessed terrestrial scan has everything in class 0 or 1." },
+      {
+        type: 'p',
+        text: ['The full class table, and how to tell whether your file is classified at all, is in ', { text: 'LAS classification codes explained', to: 'las-point-cloud-classification-codes' }, '.'],
+      },
+
+      { type: 'h2', text: 'Scan vs BIM and clearance' },
+      { type: 'p', text: "With the IFC loaded, painting the scan a single strong colour makes deviations obvious: wherever the colour shows through or stands proud of the model, the building differs from the design. When something looks wrong, measure it on the cloud — snap to points, take the distance, and keep the dimension in the screenshot you send." },
+      {
+        type: 'p',
+        text: ['Aligning a scan with a model in the first place is covered in ', { text: 'IFC and point clouds in the browser', to: 'ifc-point-cloud-browser-scan-to-bim' }, '; tracking progress over time with repeated scans in ', { text: '4D construction progress from temporal point clouds', to: '4d-construction-progress-ifc-temporal-point-cloud' }, '.'],
+      },
+    ],
+  },
+
+  {
+    slug: 'ifc-4-3-infrastructure-explained',
+    title: 'IFC 4.3 Explained: Bridges, Roads, Railways and Alignments',
+    excerpt: "IFC 4.3 is the release that took IFC out of buildings. Bridges, roads, railways and ports are now first-class facilities, positioned along alignments instead of on storeys. What changed, what it means for the models you receive, and what to check when the first IFC4X3 file lands on your desk.",
+    seoTitle: 'IFC 4.3 Explained: Bridges, Roads, Railways, Alignments',
+    seoDescription: 'What IFC 4.3 (ISO 16739-1:2024) adds: bridges, roads, railways and ports as facilities, alignments and linear placement, renamed entities, and what to check.',
+    date: '2026-10-03',
+    readTimeMin: 9,
+    category: 'Tools & comparisons',
+    categorySlug: 'tools',
+    author: 'IFC Viewer Team',
+    keywords: ['IFC 4.3', 'IFC4X3', 'IFC infrastructure', 'IfcAlignment', 'IfcBridge', 'IfcRoad', 'IfcRailway', 'ISO 16739-1:2024', 'IFC for civil engineering'],
+    faqs: [
+      { q: 'What is IFC 4.3?', a: 'The version of IFC published as ISO 16739-1:2024. It extends IFC from buildings to infrastructure: bridges, roads, railways and marine facilities become facilities in their own right, alongside IfcBuilding, and alignments let elements be positioned by distance along a route.' },
+      { q: 'What is the difference between IFC4 and IFC 4.3?', a: 'IFC 4.3 keeps IFC4 and adds infrastructure: the IfcFacility family (IfcBridge, IfcRoad, IfcRailway, IfcMarineFacility) with their parts, IfcAlignment and linear placement, new element types for civil work, and some renames — IfcBuildingElement became IfcBuiltElement. Files declare FILE_SCHEMA IFC4X3.' },
+      { q: 'Can I open an IFC 4.3 file in the browser?', a: 'Yes. IFC Viewer Online opens IFC4X3 files, shows their spatial tree and properties, runs the structural checks and IDS specifications against them, and can place a georeferenced model on a 3D map.' },
+    ],
+    content: [
+      { type: 'p', text: "For most of its life, IFC was a building format. Roads, bridges and railways were modelled in other tools, exchanged in other formats, or forced into IFC as buildings with very long storeys. IFC 4.3 — published as ISO 16739-1:2024 — ends that." },
+      { type: 'p', text: "If you work on infrastructure, it is the version that finally describes your projects. If you work on buildings, it still matters: it is the current version, and some names you rely on changed." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-4-3-facility-hierarchy.png',
+        alt: 'IFC 4.3 facility hierarchy: IfcSite aggregates IfcBuilding, IfcBridge, IfcRoad, IfcRailway and IfcMarineFacility, each with its parts, plus IfcAlignment and IfcLinearPlacement',
+        caption: 'In IFC 4.3, a building is one kind of facility. Bridges, roads, railways and marine facilities sit beside it, each with its own parts.',
+        width: 1600, height: 900,
+        srcSet: [{ src: 'blog/images/ifc-4-3-facility-hierarchy-800.png', width: 800 }, { src: 'blog/images/ifc-4-3-facility-hierarchy.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'takeaways', items: [
+        "IFC 4.3 adds infrastructure facilities — bridge, road, railway, marine — beside the building.",
+        "Alignments describe a route; linear placement positions elements by distance along it.",
+        "Files declare FILE_SCHEMA IFC4X3. Some names changed: IfcBuildingElement is now IfcBuiltElement.",
+      ] },
+
+      { type: 'h2', text: 'From storeys to facility parts' },
+      { type: 'p', text: "Buildings are organised by storeys. A road is not — it is organised by sections along its length, and a bridge by its structural parts. IFC 4.3 generalises the spatial structure so each facility has the kind of part that makes sense for it:" },
+      {
+        type: 'table',
+        headers: ['Facility', 'Parts', 'Typical elements'],
+        rows: [
+          ['IfcBuilding', 'IfcBuildingStorey', 'Walls, slabs, doors, spaces'],
+          ['IfcBridge', 'IfcBridgePart (deck, pier, abutment…)', 'Beams, bearings, piers'],
+          ['IfcRoad', 'IfcRoadPart (carriageway, shoulder…)', 'Pavement layers, kerbs, signs'],
+          ['IfcRailway', 'IfcRailwayPart (track structure…)', 'Rails, sleepers, ballast'],
+          ['IfcMarineFacility', 'IfcMarinePart', 'Quay walls, fenders, mooring'],
+        ],
+      },
+      {
+        type: 'p',
+        text: ['The general idea — aggregation for the spatial tree, containment for the elements — is the same as for buildings; it is explained with diagrams in ', { text: 'the IFC spatial structure explained', to: 'ifc-spatial-structure-explained' }, '.'],
+      },
+
+      { type: 'h2', text: 'Alignments and linear placement' },
+      { type: 'p', text: "Infrastructure is described along a route. IfcAlignment carries the horizontal geometry (lines, arcs, transition curves), the vertical profile and, for railways, the cant. Elements can then be positioned with IfcLinearPlacement — \"at chainage 1+250, 3.5 m left of the centreline\" — rather than only by x, y and z. That is how engineers think about a road, and it survives the alignment being redesigned." },
+
+      { type: 'h2', text: 'What changed for building models too' },
+      { type: 'ul', items: [
+        "IfcBuildingElement is now IfcBuiltElement. Tools and IDS specifications that hard-code the old name miss elements in IFC4X3 files.",
+        "Georeferencing matters more. Infrastructure is large and long; a model without proper IfcMapConversion is unusable at that scale.",
+        "The schema declared in the header is IFC4X3. Check it before you check anything else — the same rule set can behave differently across versions.",
+      ] },
+      {
+        type: 'p',
+        text: ['How the header, the schema and the entity names fit together in a file is shown in ', { text: "what's inside an IFC file", to: 'ifc-file-format-explained' }, '.'],
+      },
+
+      { type: 'h2', text: 'Checking the first IFC4X3 file you receive' },
+      { type: 'steps', items: [
+        { title: 'Confirm the schema', body: "FILE_SCHEMA should say IFC4X3. Some exporters still write IFC4 with infrastructure squeezed into building entities." },
+        { title: 'Read the spatial tree', body: "Facilities and their parts should be there — not one IfcBuilding with storeys named \"km 1\", \"km 2\"." },
+        { title: 'Check the georeferencing', body: "Place the model on a map. A road that lands in the sea has a coordinate problem, not a modelling one." },
+        { title: 'Run your checks against the right names', body: "IDS specifications and rule sets written for IFC4 may need IfcBuiltElement instead of IfcBuildingElement." },
+      ] },
+      {
+        type: 'p',
+        text: ['Placing a georeferenced model on a 3D map is covered in ', { text: 'viewing an IFC on a 3D map', to: 'view-ifc-on-3d-map-online' }, '; writing checks that work across versions in ', { text: 'IDS explained', to: 'ids-information-delivery-specification-guide' }, '.'],
+      },
+    ],
+  },
+
+  {
+    slug: 'ifc-classification-uniclass-omniclass',
+    title: 'IFC Classification Explained: Uniclass, OmniClass and How Codes Live in the Model',
+    excerpt: "A classification code is the bridge between a model and everything that happens after it — cost plans, specifications, asset registers. In IFC it is not a property but a relationship, which is why so many exports lose it. How it works, which system to use, and how to check it.",
+    seoTitle: 'IFC Classification: Uniclass, OmniClass and IFC Codes',
+    seoDescription: 'How classification works in IFC: IfcClassificationReference, Uniclass vs OmniClass vs CCI, why codes go missing on export, and how to check them with IDS.',
+    date: '2026-10-03',
+    readTimeMin: 9,
+    category: 'Validation',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    keywords: ['IFC classification', 'Uniclass IFC', 'OmniClass IFC', 'IfcClassificationReference', 'Uniclass vs OmniClass', 'BIM classification system', 'classification codes IFC export'],
+    faqs: [
+      { q: 'How is classification stored in an IFC file?', a: 'Through a relationship: IfcRelAssociatesClassification links one or more elements to an IfcClassificationReference, which holds the code (for example Ss_25_10_30) and points to an IfcClassification that names the system and edition (for example Uniclass 2015). It is not a property in a property set, although some exporters also write the code as one.' },
+      { q: 'Which classification system should I use, Uniclass or OmniClass?', a: 'The one your client and contract require. Uniclass 2015 is standard in the UK and on many ISO 19650 projects; OmniClass is common in North America; CCI is spreading in the Nordics and Central Europe; NL-SfB is used in the Netherlands and Belgium. Mixing systems on one project is what causes trouble.' },
+      { q: 'How can I check that every element has a classification code?', a: 'Write an IDS specification with a classification facet in its requirements — for example every IfcWall must have a Uniclass code starting with Ss_25 — and run it against the model. IFC Viewer Online evaluates the classification facet, including hierarchical codes, in the browser.' },
+    ],
+    content: [
+      { type: 'p', text: "Ask a quantity surveyor, a specification writer and a facilities manager what they need from a model, and the first answer from all three is the same: tell me what each thing is, in my terms. That is what classification does. A wall is not just an IfcWall; it is Ss_25_10_30 in Uniclass, a specific system with a cost line, a specification clause and a maintenance regime." },
+      { type: 'p', text: "IFC carries that code — but not where most people look for it, which is why so many exports arrive without it." },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-classification-reference-chain.png',
+        alt: 'Diagram of IFC classification: IfcWall linked by IfcRelAssociatesClassification to IfcClassificationReference Ss_25_10_30 and IfcClassification Uniclass 2015, with a table comparing Uniclass, OmniClass, CCI and NL-SfB',
+        caption: 'A classification code reaches an element through a relationship, not a property. The reference holds the code; the classification names the system.',
+        width: 1600, height: 900,
+        srcSet: [{ src: 'blog/images/ifc-classification-reference-chain-800.png', width: 800 }, { src: 'blog/images/ifc-classification-reference-chain.png', width: 1600 }],
+        sizes: '(max-width: 860px) 100vw, 820px',
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'takeaways', items: [
+        "In IFC, classification is a relationship to a classification reference, not a property.",
+        "A code means nothing without its system: Ss_25_10_30 is Uniclass; 21-02 10 10 is OmniClass.",
+        "Check codes with an IDS classification facet — system and code together — on every delivery.",
+      ] },
+
+      { type: 'h2', text: 'How the code is stored' },
+      { type: 'ol', items: [
+        "IfcClassification names the system and edition — Uniclass 2015, OmniClass, CCI.",
+        "IfcClassificationReference holds one code (Identification) and its name, and points to the system — directly, or through parent references for hierarchical codes.",
+        "IfcRelAssociatesClassification links that reference to one or many elements, or to element types.",
+      ] },
+      { type: 'callout', variant: 'warning', title: 'Why codes go missing on export', text: "Many authoring tools keep the classification in a parameter. Unless the export is set to map that parameter to IfcClassificationReference, the code either disappears or arrives as a plain text property — readable by people, invisible to tools that look for real classification." },
+
+      { type: 'h2', text: 'Which system?' },
+      {
+        type: 'table',
+        headers: ['System', 'Where it is common', 'Structure'],
+        rows: [
+          ['Uniclass 2015', 'UK; many ISO 19650 projects', 'Tables by prefix (Ss systems, Pr products, EF elements…) with hierarchical codes'],
+          ['OmniClass', 'North America', 'Numbered tables (21 elements, 23 products…)'],
+          ['CCI', 'Denmark, Estonia, Czechia and others', 'Classes by component and construction'],
+          ['NL-SfB', 'Netherlands and Belgium', 'Numeric element codes'],
+        ],
+        caption: 'The right answer is the one in the contract. The wrong answer is two systems on the same project.',
+      },
+
+      { type: 'h2', text: 'Hierarchy: why Ss_25 matches Ss_25_10_30' },
+      { type: 'p', text: "Codes in Uniclass and similar systems are hierarchical: Ss_25_10_30 sits under Ss_25_10, which sits under Ss_25. A requirement such as \"every wall is classified under Ss_25\" should accept the deeper code. Good checkers follow the chain of references; naive ones compare strings and fail elements that are perfectly classified." },
+
+      { type: 'h2', text: 'Checking classification on a delivery' },
+      { type: 'steps', items: [
+        { title: 'Agree system and depth in the BEP', body: "\"Uniclass 2015, Systems table, to at least level 3, on all physical elements.\"" },
+        { title: 'Write it as an IDS specification', body: "Applicability: the element classes that must be classified. Requirement: a classification facet with the system and the code pattern." },
+        { title: 'Run it on every revision', body: "Failures come back per element, with the reason — missing code, wrong system, code outside the allowed range." },
+        { title: 'Watch it across versions', body: "A comparison between revisions shows classification changes as their own category — useful when cost or FM teams depend on the codes." },
+      ] },
+      {
+        type: 'p',
+        text: ['Writing the specification is covered in ', { text: 'IDS explained', to: 'ids-information-delivery-specification-guide' }, '; comparing revisions in ', { text: 'how to compare two IFC versions', to: 'compare-ifc-versions-what-changed' }, '; and why classification matters at handover in ', { text: 'COBie from IFC', to: 'cobie-from-ifc-fm-handover' }, '.'],
+      },
+    ],
+  },
+
+  {
     slug: 'ifc-spatial-structure-explained',
     title: 'IFC Spatial Structure Explained: Project, Site, Building, Storey and Space (With Diagrams)',
     excerpt: "Every IFC model hangs from the same tree: Project, Site, Building, Storey, Space. Most of the problems people blame on viewers — elements in no storey, plans that cut through slabs, models two kilometres away — are problems in that tree. Here it is, drawn out, with the mistakes that break it.",
