@@ -168,6 +168,8 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       ].join('\n')
     case 'ifc-demo':
       return `> 💡 *${t('doc.demo')}: ${block.title} — ${block.description} ${t('doc.demoTry')} ${SITE}*\n`
+    case 'tool-demo':
+      return `> 💡 *${t('doc.demo')}: ${block.title} — ${block.description} ${t('doc.demoTry')} ${SITE}*\n`
     case 'spatial-demo':
       return `> 💡 *Live spatial example: ${block.title} — ${block.description}*\n`
     case 'video':

@@ -53,6 +53,7 @@ function skeleton(block: ContentBlock, whole: boolean): unknown {
     case 'related': return { type: block.type, to: block.to, ...(whole ? { hasSection: !!block.section } : {}) }
     case 'tool': return { type: block.type, id: block.id }
     case 'ifc-demo': return { type: block.type, modelId: block.modelId, schema: block.schema, size: block.size, height: block.height, variant: block.variant }
+    case 'tool-demo': return { type: block.type, demo: block.demo, poster: block.poster }
     case 'spatial-demo': return { type: block.type, demo: block.demo, poster: block.poster }
     case 'video': return { type: block.type, src: block.src, poster: block.poster }
     case 'stat-row': return { type: block.type, values: block.stats.map((s) => s.value) }

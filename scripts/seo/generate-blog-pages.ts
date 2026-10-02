@@ -460,6 +460,8 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
     }
     case 'spatial-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /><figcaption>${esc(block.readyLabel ?? block.title)}</figcaption></figure></section>`
+    case 'tool-demo':
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /></figure><p><a href="/${prefix}">${esc(editorialCopy(langOf(prefix)).post.openInteractiveViewer)}</a></p></section>`
     case 'video': {
       const width = block.width ?? 1280
       const height = block.height ?? 720

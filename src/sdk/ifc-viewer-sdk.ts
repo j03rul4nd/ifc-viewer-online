@@ -1599,6 +1599,16 @@ export class IfcViewer {
     return this.request<CoverState>('ifcviewer:create-cover', { ...opts }, 5 * 60_000)
   }
 
+  /**
+   * Compare two deliveries by URL and open the comparison workspace on the
+   * result. Head files that are also loaded in the scene can be framed in 3D.
+   *
+   *   await viewer.compare({ base: lastWeekUrl, head: thisWeekUrl })
+   */
+  compare(opts: { base: string | string[]; head: string | string[]; baseLabel?: string; headLabel?: string }): Promise<{ changes: number }> {
+    return this.request<{ changes: number }>('ifcviewer:compare', { ...opts }, 5 * 60_000)
+  }
+
   /** The cover as it stands, or null when Cover Studio is closed. */
   getCover(): Promise<CoverState | null> {
     return this.request<CoverState | null>('ifcviewer:get-cover', {}, 5 * 60_000)

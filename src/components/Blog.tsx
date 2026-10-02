@@ -17,6 +17,7 @@ import HealthScoreWidget, { HealthScoreRow } from './blog/HealthScoreWidget'
 import EmbedViewer from './blog/EmbedViewer'
 import EmbedConfigurator from './blog/EmbedConfigurator'
 import SpatialMediaDemo from './blog/SpatialMediaDemo'
+import ToolDemo from './blog/ToolDemo'
 import SmartTable from './blog/SmartTable'
 import { editorialCopy } from '../lib/blog-editorial-copy'
 import { serpWidth } from '../lib/serp-width'
@@ -391,6 +392,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'spatial-demo':
       return <SpatialMediaDemo {...block} />
+
+    case 'tool-demo':
+      return <ToolDemo {...block} />
 
     case 'video':
       return (
@@ -947,7 +951,7 @@ function cardBadges(post: BlogPost, read: Set<string>, copy: BlogHubCopy): Array
 }
 
 function hasDemo(post: BlogPost): boolean {
-  return post.content.some((b) => b.type === 'spatial-demo' || b.type === 'ifc-demo' || b.type === 'embed-configurator')
+  return post.content.some((b) => b.type === 'spatial-demo' || b.type === 'tool-demo' || b.type === 'ifc-demo' || b.type === 'embed-configurator')
 }
 
 function Badge({ label, tone }: { label: string; tone: 'accent' | 'ok' | 'demo' }) {

@@ -65,7 +65,7 @@ const YOUSHENG = 'https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/
 const BIM_WHALE = 'https://raw.githubusercontent.com/andrewisen/bim-whale-ifc-samples/master'
 const THATOPEN = 'https://raw.githubusercontent.com/ThatOpen/engine_components/main/resources/ifc'
 const BSMART =
-  'https://raw.githubusercontent.com/buildingSMART/Sample-Test-Files/master/IFC%204.3.2.0%20(IFC4X3_ADD2)/PCERT-Sample-Scene'
+  'https://raw.githubusercontent.com/buildingSMART/Sample-Test-Files/main/IFC%204.3.2.0%20(IFC%204.3%20ADD2)/Simple-Scene'
 
 /** Bundled copy that ships in /public — the default demo's reliable fallback. */
 const BUNDLED_DUPLEX = `${import.meta.env.BASE_URL}Ifc2x3_Duplex_Architecture.ifc`
@@ -540,8 +540,8 @@ export const DEMO_MODELS: DemoModel[] = [
     sourceUrl: 'https://github.com/buildingSMART/Sample-Test-Files',
     sourceLabel: 'buildingSMART / Sample-Test-Files',
     schema: 'IFC4x3',
-    approximateSize: '1.9 MB',
-    sizeBytes: 1_883_289,
+    approximateSize: '1.7 MB',
+    sizeBytes: 1_739_554,
   },
 ]
 
