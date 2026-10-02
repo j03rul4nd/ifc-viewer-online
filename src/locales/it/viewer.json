@@ -255,6 +255,7 @@
     "performanceHint": "Standard — rasterizzazione WebGL, prestazioni migliori",
     "qualityHint": "Qualità — occlusione ambientale SSAO + post-elaborazione con rilevamento dei contorni"
   },
+  "wheelHint": "{{key}} + rotellina per lo zoom",
   "cache": {
     "fromCache": "⚡ dalla cache",
     "cached": "{{count}} in cache",

@@ -19,9 +19,16 @@
 import { parsePanelAllowlist, type PanelId } from './ui/panel-rail'
 import { parseBackgroundSpec, type BackgroundSettings } from './scene/background'
 
-export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client'
+export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article'
 
-const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client']
+const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client', 'article']
+
+/** Named views a `?view=` deep link may ask for (the camera presets). */
+const VIEWS = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right'] as const
+export type UrlView = typeof VIEWS[number]
+
+/** How the mouse wheel behaves: always zooms, or only with Ctrl/⌘ held. */
+export type WheelMode = 'always' | 'ctrl'
 
 /** Parsed, validated view of the relevant URL query params. */
 export interface AppUrlParams {
@@ -85,6 +92,20 @@ export interface AppUrlParams {
    * says so rather than pretending.
    */
   scanUrls: string[]
+  /**
+   * `?view=iso` — once every model has loaded, frame them from this preset with
+   * a tight fit (`?fill=0.85` of the frame). The `article` preset implies
+   * `view=iso`. See camera-framing fitPose.
+   */
+  view?: UrlView
+  /** `?fill=` — share of the frame the model fills (0.2–0.98) for `view`. */
+  fill?: number
+  /**
+   * `?wheel=ctrl` — the wheel scrolls the host page and zooms only with
+   * Ctrl/⌘ held, like an embedded map. The `article` preset implies it: a
+   * reader scrolling past a figure must not get stuck zooming into it.
+   */
+  wheel?: WheelMode
   /** Granular chrome overrides. `undefined` = fall back to the preset default. */
   overrides: {
     toolbar?: boolean
@@ -93,6 +114,10 @@ export interface AppUrlParams {
     panel?: boolean
     home?: boolean
     cameraControls?: boolean
+    /** `rail=0` — the icon rail of tool panels on the right edge. */
+    rail?: boolean
+    /** `stats=0` — the model info chip (size, element count, GPU backend). */
+    stats?: boolean
     /**
      * `panels=scene,map` allows exactly those tools; `panels=-measurement`
      * subtracts. Undefined means no opinion. One parameter for all nine
@@ -122,6 +147,18 @@ export interface EmbedChrome {
   /** Show the "back to home" button. */
   showHome: boolean
   showCameraControls: boolean
+  /** The icon rail of tool panels. */
+  showRail: boolean
+  /** The model info chip (file size, element count, GPU backend). */
+  showModelInfo: boolean
+  /** The collapsed validation / IDS bar at the bottom. */
+  showValidation: boolean
+  /**
+   * Presentation quiet: no floating load indicator, no cache badge, no toasts.
+   * The host shows its own progress (the `model-progress` events) and the
+   * frame stays a picture.
+   */
+  quiet: boolean
   /**
    * Which rail panels this audience gets, or undefined for all that apply.
    *
@@ -243,6 +280,9 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     solarMoon: parseBool(p.get('moon')),
     map: parseMapParam(p.get('map')),
     scanUrls: splitList(p.getAll('scan')).filter(isLoadableUrl),
+    view: parseView(p.get('view')) ?? (preset === 'article' && embed ? 'iso' : undefined),
+    fill: parseFill(p.get('fill')),
+    wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
       tree:           parseBool(p.get('tree')),
@@ -250,6 +290,8 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
       panel:          parseBool(p.get('panel')),
       home:           parseBool(p.get('home')),
       cameraControls: parseBool(p.get('controls')),
+      rail:           parseBool(p.get('rail')),
+      stats:          parseBool(p.get('stats')),
       panels: parsePanelAllowlist(p.get('panels')),
     },
   }
@@ -279,6 +321,27 @@ function parseMapParam(v: string | null): MapDeepLink | undefined {
     if (token === 'showcase')  link.detail = 'showcase'
   }
   return link
+}
+
+function parseView(v: string | null): UrlView | undefined {
+  const raw = (v ?? '').trim().toLowerCase()
+  return (VIEWS as readonly string[]).includes(raw) ? raw as UrlView : undefined
+}
+
+function parseFill(v: string | null): number | undefined {
+  if (v === null) return undefined
+  const n = Number.parseFloat(v)
+  if (!Number.isFinite(n)) return undefined
+  // Accept a ratio (0.85) or a percentage (85).
+  const r = n > 1 ? n / 100 : n
+  return Math.min(0.98, Math.max(0.2, r))
+}
+
+function parseWheel(v: string | null): WheelMode | undefined {
+  const raw = (v ?? '').trim().toLowerCase()
+  if (raw === 'ctrl' || raw === 'modifier' || raw === 'cmd') return 'ctrl'
+  if (raw === 'always' || raw === 'zoom') return 'always'
+  return undefined
 }
 
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */
@@ -311,10 +374,21 @@ function sanitizeInviteCode(v: string | null): string | undefined {
   return /^[A-Za-z0-9_-]{1,64}$/.test(s) ? s : undefined
 }
 
+const TOOLS = { showRail: true, showModelInfo: true, showValidation: true, quiet: false } as const
+const CANVAS = { showRail: false, showModelInfo: false, showValidation: false, quiet: true } as const
+
 const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
-  minimal: { showToolbar: true,  showTree: false, showSidebar: true,  openPanel: false, showHome: false, showCameraControls: true  },
-  full:    { showToolbar: true,  showTree: true,  showSidebar: true,  openPanel: true,  showHome: false, showCameraControls: true  },
-  kiosk:   { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: false },
+  minimal: { showToolbar: true,  showTree: false, showSidebar: true,  openPanel: false, showHome: false, showCameraControls: true,  ...TOOLS },
+  full:    { showToolbar: true,  showTree: true,  showSidebar: true,  openPanel: true,  showHome: false, showCameraControls: true,  ...TOOLS },
+  // "3D canvas only", as documented. It used to keep the tool rail, the model
+  // info chip, the validation bar and the load indicator, which is what made a
+  // kiosk figure look like a screenshot of the app.
+  kiosk:   { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: false, ...CANVAS },
+  // A figure in an article (v1.14): the kiosk canvas, plus the presentation
+  // defaults a reader needs — a tight iso framing once loaded (`view=iso`) and
+  // a wheel that scrolls the page unless Ctrl/⌘ is held (`wheel=ctrl`). Tool
+  // panels a host opens over the bridge (measure, sun, walk) still mount.
+  article: { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: false, ...CANVAS },
   // Client presentation skin (D-25): show-only for non-technical audiences.
   // Camera presets stay ON (simplified navigation); everything technical is
   // hidden. uiStore.clientMode is set from this preset at boot and layers the
@@ -322,7 +396,7 @@ const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   // No `panels` list here. The client skin already decides what it mounts, and
   // a second list restating that from memory is how the rail ended up offering
   // Scene and Map in a skin that renders neither.
-  client:  { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: true  },
+  client:  { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: true,  ...TOOLS },
 }
 
 /** Resolve the final chrome flags from a parsed param set. */
@@ -337,6 +411,7 @@ export function resolveEmbedChrome(params: AppUrlParams): EmbedChrome {
       openPanel: true,
       showHome: true,
       showCameraControls: true,
+      ...TOOLS,
     }
   }
   const d = PRESET_CHROME[params.preset]
@@ -349,6 +424,10 @@ export function resolveEmbedChrome(params: AppUrlParams): EmbedChrome {
     openPanel:          o.panel          ?? d.openPanel,
     showHome:           o.home           ?? d.showHome,
     showCameraControls: o.cameraControls ?? d.showCameraControls,
+    showRail:           o.rail           ?? d.showRail,
+    showModelInfo:      o.stats          ?? d.showModelInfo,
+    showValidation:     d.showValidation,
+    quiet:              d.quiet,
     panels:             o.panels         ?? d.panels,
   }
 }

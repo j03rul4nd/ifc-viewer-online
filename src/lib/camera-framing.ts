@@ -153,3 +153,88 @@ export function presetPose(box: Box, preset: CameraPreset, fovDeg = 45, aspect =
     },
   }
 }
+
+// ── Tight framing ─────────────────────────────────────────────────────────────
+
+/** Where to look FROM, as angles: azimuth from +x towards +z, elevation above the horizon. */
+export interface FitView {
+  /** Degrees. 45 is the iso corner (+x, +z). */
+  azimuthDeg: number
+  /** Degrees above the horizon; 90 looks straight down. */
+  elevationDeg: number
+}
+
+/** The angles of each preset, for callers that want a preset with a tight fit. */
+export const PRESET_VIEW: Record<CameraPreset, FitView> = {
+  iso:    { azimuthDeg: 45,  elevationDeg: 28 },
+  top:    { azimuthDeg: 90,  elevationDeg: 89.9 },
+  bottom: { azimuthDeg: 90,  elevationDeg: -89.9 },
+  front:  { azimuthDeg: 90,  elevationDeg: 0 },
+  back:   { azimuthDeg: -90, elevationDeg: 0 },
+  left:   { azimuthDeg: 180, elevationDeg: 0 },
+  right:  { azimuthDeg: 0,   elevationDeg: 0 },
+}
+
+/** Clamp a fill ratio to something a frame can show. */
+export function clampFill(fill: number | undefined): number {
+  if (typeof fill !== 'number' || !Number.isFinite(fill)) return 0.85
+  return Math.min(0.98, Math.max(0.2, fill))
+}
+
+/**
+ * Camera pose that makes `box` fill `fill` of the frame from the given angles.
+ *
+ * presetPose fits the bounding SPHERE: right for "never clip anything", and a
+ * long low building ends up a sliver in the middle of a 16:9 frame, which is
+ * what an article or a cover cannot afford. This projects the eight corners
+ * into the view and solves, per corner, the distance at which it touches the
+ * edge of the frame scaled by `fill`; the largest of those is the shot. The
+ * target is the box centre, so the result is symmetric for a symmetric view.
+ */
+export function fitPose(
+  box: Box,
+  view: FitView,
+  fovDeg = 45,
+  aspect = 16 / 9,
+  fill = 0.85,
+): { position: Vec3; target: Vec3 } {
+  const target = {
+    x: (box.min.x + box.max.x) / 2,
+    y: (box.min.y + box.max.y) / 2,
+    z: (box.min.z + box.max.z) / 2,
+  }
+  const az = (view.azimuthDeg * Math.PI) / 180
+  const el = (Math.max(-89.9, Math.min(89.9, view.elevationDeg)) * Math.PI) / 180
+  // Unit vector from the target towards the camera.
+  const back = { x: Math.cos(el) * Math.cos(az), y: Math.sin(el), z: Math.cos(el) * Math.sin(az) }
+  // Camera basis: right = up × back, up' = back × right (world up = +y).
+  let right = { x: back.z, y: 0, z: -back.x }
+  const rl = Math.hypot(right.x, right.z)
+  right = rl > 1e-9 ? { x: right.x / rl, y: 0, z: right.z / rl } : { x: 1, y: 0, z: 0 }
+  const up = {
+    x: back.y * right.z - back.z * right.y,
+    y: back.z * right.x - back.x * right.z,
+    z: back.x * right.y - back.y * right.x,
+  }
+
+  const f = clampFill(fill)
+  const vHalf = ((fovDeg > 0 && fovDeg < 179 ? fovDeg : 45) * Math.PI) / 360
+  const tanV = Math.tan(vHalf) * f
+  const tanH = Math.tan(vHalf) * (aspect > 0 ? aspect : 1) * f
+
+  let dist = 0
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+    const d = { x: x - target.x, y: y - target.y, z: z - target.z }
+    const cx = d.x * right.x + d.y * right.y + d.z * right.z
+    const cy = d.x * up.x + d.y * up.y + d.z * up.z
+    const toward = d.x * back.x + d.y * back.y + d.z * back.z
+    // The corner sits at depth (dist − toward) in front of the camera.
+    dist = Math.max(dist, toward + Math.abs(cx) / tanH, toward + Math.abs(cy) / tanV)
+  }
+  // A degenerate box (a point) still needs somewhere to stand.
+  dist = Math.max(dist, 2)
+  return {
+    target,
+    position: { x: target.x + back.x * dist, y: target.y + back.y * dist, z: target.z + back.z * dist },
+  }
+}

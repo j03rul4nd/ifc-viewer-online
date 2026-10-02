@@ -80,7 +80,9 @@
       "kiosk": "Quiosque",
       "kioskDesc": "Somente tela 3D",
       "client": "Cliente",
-      "clientDesc": "Modo apresentação a cliente"
+      "clientDesc": "Modo apresentação a cliente",
+      "article": "Artigo",
+      "articleDesc": "Figura para um artigo: tela, enquadramento justo, scroll da página"
     },
     "optionsLabel": "Opções",
     "autoValidate": "Executar validação ao carregar",

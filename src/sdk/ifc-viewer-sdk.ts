@@ -11,7 +11,7 @@
 // The viewer auto-discovers the app URL relative to this script, so self-hosting
 // "just works". Override with the `baseUrl` option if you serve it elsewhere.
 
-export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client'
+export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article'
 export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
 
 /**
@@ -20,6 +20,21 @@ export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 
  * distant sites; `active` = the active model; `group` = its group; `all` = all.
  */
 export type CameraScope = 'auto' | 'active' | 'group' | 'all'
+
+/** Options of {@link IfcViewer.frame}. */
+export interface FrameOptions {
+  /** Preset the angles default to. Default `'iso'`. */
+  view?: CameraView
+  scope?: CameraScope
+  /** Share of the frame the model fills, 0.2–0.98. Default 0.85. */
+  fill?: number
+  /** Degrees from +x towards +z (scene axes). */
+  azimuth?: number
+  /** Degrees above the horizon. */
+  elevation?: number
+  /** Fly (default) or jump. */
+  animate?: boolean
+}
 
 export interface IfcViewerOptions {
   /** App base URL. Defaults to the parent of this script's URL. */
@@ -78,6 +93,20 @@ export interface IfcViewerOptions {
   moon?: boolean
   /** Point clouds to fetch alongside the model (CORS-enabled URLs). Since v1.11.0. */
   scans?: string[]
+  /**
+   * Once every model has loaded, frame them from this view with a tight fit —
+   * the model fills `fill` of the frame. `ui: 'article'` implies `'iso'`.
+   * See {@link IfcViewer.frame}. Since v1.14.0.
+   */
+  view?: CameraView
+  /** With `view`: share of the frame the model fills, 0.2–0.98. Default 0.85. Since v1.14.0. */
+  fill?: number
+  /**
+   * `'ctrl'`: the mouse wheel scrolls your page and zooms only with Ctrl/⌘
+   * held, like an embedded map — for a viewer in the middle of an article.
+   * `ui: 'article'` implies it. Since v1.14.0.
+   */
+  wheel?: 'always' | 'ctrl'
   /** Reject add()/addFromUrl() after this many ms. 0 disables. Default 120000. */
   loadTimeout?: number
   /** Convenience callbacks (equivalent to .on(...)). */
@@ -711,7 +740,11 @@ type Listener<T> = (payload: T) => void
 // grouped (inferred + user groups); createGroup / renameGroup / deleteGroup /
 // assignToGroup edit the user groups; setGroupVisible / isolateGroup /
 // frameGroup act on a whole group at once.
-const SDK_VERSION = '1.13.0'
+// 1.14.0: presentation in articles. ui: 'article' is the canvas alone with a
+// tight framing and a page-scrolling wheel; kiosk is now the canvas only, as
+// documented. frame() fits the model to `fill` of the frame from any angle;
+// options view / fill / wheel set the same from the constructor.
+const SDK_VERSION = '1.14.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -993,6 +1026,31 @@ export class IfcViewer {
   /** Fly to a named camera view (iso/top/front/right/left/back/bottom), optionally framing a scope. */
   setView(view: CameraView, scope?: CameraScope): void {
     this.send({ type: 'ifcviewer:view', preset: view, ...(scope ? { scope } : {}) })
+  }
+
+  /**
+   * Frame the scene for presentation (v1.14): the model FILLS the frame.
+   *
+   * `fill` is the share of the frame the model takes on its tighter axis
+   * (0.2–0.98, default 0.85), fitted to the box's corners rather than its
+   * bounding sphere. `azimuth` / `elevation` (degrees) look from any angle;
+   * they default to the `view` preset's own. Resolves once the camera is set.
+   *
+   * ```js
+   * await viewer.frame({ view: 'iso', fill: 0.9 })
+   * await viewer.frame({ azimuth: 200, elevation: 35, animate: false })
+   * ```
+   */
+  frame(options: FrameOptions = {}): Promise<{ scope: CameraScope }> {
+    const { view, scope, fill, azimuth, elevation, animate } = options
+    return this.request<{ scope: CameraScope }>('ifcviewer:view', {
+      preset: view ?? 'iso',
+      ...(scope ? { scope } : {}),
+      fill: fill ?? 0.85,
+      ...(azimuth !== undefined ? { azimuth } : {}),
+      ...(elevation !== undefined ? { elevation } : {}),
+      ...(animate !== undefined ? { animate } : {}),
+    })
   }
 
   /** Change the UI language at runtime (no-ops for unsupported codes). */
@@ -1773,6 +1831,9 @@ export class IfcViewer {
     if (this.opts.solar) url.searchParams.set('solar', this.opts.solar)
     if (this.opts.moon) url.searchParams.set('moon', '1')
     if (this.opts.scans?.length) url.searchParams.set('scan', this.opts.scans.join(','))
+    if (this.opts.view) url.searchParams.set('view', this.opts.view)
+    if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
+    if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
     return url.toString()
   }
 

@@ -80,7 +80,9 @@
       "kiosk": "信息屏",
       "kioskDesc": "仅 3D 画面",
       "client": "客户",
-      "clientDesc": "客户演示界面"
+      "clientDesc": "客户演示界面",
+      "article": "文章",
+      "articleDesc": "文章插图：仅画布、紧凑取景、页面滚动"
     },
     "optionsLabel": "选项",
     "autoValidate": "加载时运行验证",

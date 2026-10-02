@@ -80,7 +80,9 @@
       "kiosk": "キオスク",
       "kioskDesc": "3Dキャンバスのみ",
       "client": "クライアント",
-      "clientDesc": "クライアント向けプレゼン表示"
+      "clientDesc": "クライアント向けプレゼン表示",
+      "article": "記事",
+      "articleDesc": "記事用の図：キャンバスのみ、ぴったりの構図、ページスクロール"
     },
     "optionsLabel": "オプション",
     "autoValidate": "読み込み時に検証を実行",

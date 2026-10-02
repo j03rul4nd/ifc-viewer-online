@@ -80,7 +80,9 @@
       "kiosk": "Kiosco",
       "kioskDesc": "Solo lienzo 3D",
       "client": "Cliente",
-      "clientDesc": "Skin de presentación a cliente"
+      "clientDesc": "Skin de presentación a cliente",
+      "article": "Artículo",
+      "articleDesc": "Figura para un post: lienzo, encuadre ajustado y scroll de página"
     },
     "optionsLabel": "Opciones",
     "autoValidate": "Ejecutar validación al cargar",

@@ -56,6 +56,17 @@ export interface EditorialCopy {
   definition: string
   close: string
   callout: { tip: string; warning: string; info: string }
+  /** The live viewer demo inside a post (ToolDemo). */
+  toolDemo: {
+    live: string
+    loading: (percent: number) => string
+    running: string
+    retry: string
+    openFull: string
+    /** Under the frame while it is live: how to move around. */
+    controls: string
+    loadFailed: string
+  }
   /** The article page around the content: nav, header meta, closing CTA. */
   post: {
     allArticles: string
@@ -129,6 +140,15 @@ const en: EditorialCopy = {
   definition: 'Definition',
   close: 'Close',
   callout: { tip: 'Tip', warning: 'Warning', info: 'Note' },
+  toolDemo: {
+    live: 'LIVE · REAL VIEWER',
+    loading: (percent) => `Loading the model… ${percent}%`,
+    running: 'Running the tool…',
+    retry: 'Try again',
+    openFull: 'Open full viewer',
+    controls: 'Drag to orbit · right-drag to pan · Ctrl + scroll to zoom',
+    loadFailed: 'The live example could not load.',
+  },
   post: {
     allArticles: 'All articles',
     blog: 'Blog',
@@ -200,6 +220,15 @@ const es: EditorialCopy = {
   definition: 'Definición',
   close: 'Cerrar',
   callout: { tip: 'Consejo', warning: 'Atención', info: 'Nota' },
+  toolDemo: {
+    live: 'EN VIVO · VISOR REAL',
+    loading: (percent) => `Cargando el modelo… ${percent} %`,
+    running: 'Ejecutando la herramienta…',
+    retry: 'Reintentar',
+    openFull: 'Abrir el visor completo',
+    controls: 'Arrastra para orbitar · clic derecho para desplazar · Ctrl + rueda para zoom',
+    loadFailed: 'No se pudo cargar el ejemplo en vivo.',
+  },
   post: {
     allArticles: 'Todos los artículos',
     blog: 'Blog',
@@ -271,6 +300,15 @@ const de: EditorialCopy = {
   definition: 'Definition',
   close: 'Schließen',
   callout: { tip: 'Tipp', warning: 'Achtung', info: 'Hinweis' },
+  toolDemo: {
+    live: 'LIVE · ECHTER VIEWER',
+    loading: (percent) => `Modell wird geladen… ${percent} %`,
+    running: 'Werkzeug läuft…',
+    retry: 'Erneut versuchen',
+    openFull: 'Vollständigen Viewer öffnen',
+    controls: 'Ziehen zum Drehen · Rechtsklick-Ziehen zum Verschieben · Strg + Scrollen zum Zoomen',
+    loadFailed: 'Das Live-Beispiel konnte nicht geladen werden.',
+  },
   post: {
     allArticles: 'Alle Artikel',
     blog: 'Blog',
@@ -342,6 +380,15 @@ const fr: EditorialCopy = {
   definition: 'Définition',
   close: 'Fermer',
   callout: { tip: 'Astuce', warning: 'Attention', info: 'Note' },
+  toolDemo: {
+    live: 'EN DIRECT · VRAIE VISIONNEUSE',
+    loading: (percent) => `Chargement du modèle… ${percent} %`,
+    running: 'Lancement de l\'outil…',
+    retry: 'Réessayer',
+    openFull: 'Ouvrir la visionneuse complète',
+    controls: 'Glisser pour orbiter · clic droit pour déplacer · Ctrl + molette pour zoomer',
+    loadFailed: 'L\'exemple en direct n\'a pas pu se charger.',
+  },
   post: {
     allArticles: 'Tous les articles',
     blog: 'Blog',
@@ -413,6 +460,15 @@ const zh: EditorialCopy = {
   definition: '定义',
   close: '关闭',
   callout: { tip: '提示', warning: '注意', info: '说明' },
+  toolDemo: {
+    live: '实时 · 真实查看器',
+    loading: (percent) => `正在加载模型… ${percent}%`,
+    running: '正在运行工具…',
+    retry: '重试',
+    openFull: '打开完整查看器',
+    controls: '拖动旋转 · 右键拖动平移 · Ctrl + 滚轮缩放',
+    loadFailed: '实时示例无法加载。',
+  },
   post: {
     allArticles: '全部文章',
     blog: '博客',
@@ -484,6 +540,15 @@ const ja: EditorialCopy = {
   definition: '定義',
   close: '閉じる',
   callout: { tip: 'ヒント', warning: '注意', info: 'メモ' },
+  toolDemo: {
+    live: 'ライブ · 実際のビューア',
+    loading: (percent) => `モデルを読み込み中… ${percent}%`,
+    running: 'ツールを実行中…',
+    retry: '再試行',
+    openFull: 'フルビューアを開く',
+    controls: 'ドラッグで回転 · 右ドラッグで移動 · Ctrl + スクロールでズーム',
+    loadFailed: 'ライブ例を読み込めませんでした。',
+  },
   post: {
     allArticles: 'すべての記事',
     blog: 'ブログ',
@@ -555,6 +620,15 @@ const th: EditorialCopy = {
   definition: 'คำจำกัดความ',
   close: 'ปิด',
   callout: { tip: 'เคล็ดลับ', warning: 'คำเตือน', info: 'หมายเหตุ' },
+  toolDemo: {
+    live: 'สด · ตัวดูจริง',
+    loading: (percent) => `กำลังโหลดโมเดล… ${percent}%`,
+    running: 'กำลังเรียกใช้เครื่องมือ…',
+    retry: 'ลองอีกครั้ง',
+    openFull: 'เปิดตัวดูแบบเต็ม',
+    controls: 'ลากเพื่อหมุน · ลากคลิกขวาเพื่อเลื่อน · Ctrl + เลื่อนเพื่อซูม',
+    loadFailed: 'ไม่สามารถโหลดตัวอย่างสดได้',
+  },
   post: {
     allArticles: 'บทความทั้งหมด',
     blog: 'บล็อก',
@@ -626,6 +700,15 @@ const pt: EditorialCopy = {
   definition: 'Definição',
   close: 'Fechar',
   callout: { tip: 'Dica', warning: 'Atenção', info: 'Nota' },
+  toolDemo: {
+    live: 'AO VIVO · VISUALIZADOR REAL',
+    loading: (percent) => `A carregar o modelo… ${percent} %`,
+    running: 'A executar a ferramenta…',
+    retry: 'Tentar novamente',
+    openFull: 'Abrir o visualizador completo',
+    controls: 'Arraste para orbitar · botão direito para deslocar · Ctrl + roda para zoom',
+    loadFailed: 'Não foi possível carregar o exemplo ao vivo.',
+  },
   post: {
     allArticles: 'Todos os artigos',
     blog: 'Blog',
@@ -697,6 +780,15 @@ const it: EditorialCopy = {
   definition: 'Definizione',
   close: 'Chiudi',
   callout: { tip: 'Suggerimento', warning: 'Attenzione', info: 'Nota' },
+  toolDemo: {
+    live: 'DAL VIVO · VISUALIZZATORE REALE',
+    loading: (percent) => `Caricamento del modello… ${percent}%`,
+    running: 'Avvio dello strumento…',
+    retry: 'Riprova',
+    openFull: 'Apri il visualizzatore completo',
+    controls: 'Trascina per ruotare · tasto destro per spostare · Ctrl + rotellina per lo zoom',
+    loadFailed: 'Impossibile caricare l\'esempio dal vivo.',
+  },
   post: {
     allArticles: 'Tutti gli articoli',
     blog: 'Blog',
@@ -768,6 +860,15 @@ const ca: EditorialCopy = {
   definition: 'Definició',
   close: 'Tanca',
   callout: { tip: 'Consell', warning: 'Atenció', info: 'Nota' },
+  toolDemo: {
+    live: 'EN DIRECTE · VISOR REAL',
+    loading: (percent) => `Carregant el model… ${percent} %`,
+    running: 'Executant l\'eina…',
+    retry: 'Torna-ho a provar',
+    openFull: 'Obre el visor complet',
+    controls: 'Arrossega per orbitar · clic dret per desplaçar · Ctrl + roda per fer zoom',
+    loadFailed: 'No s\'ha pogut carregar l\'exemple en directe.',
+  },
   post: {
     allArticles: 'Tots els articles',
     blog: 'Blog',

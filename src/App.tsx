@@ -1989,6 +1989,12 @@ export default function App() {
       languages: ((i18n.options.supportedLngs || []) as string[]).filter((l) => l && l !== 'cimode'),
     })
 
+    // `?wheel=ctrl` (and the article preset): the wheel scrolls the host page.
+    if (urlParams.wheel === 'ctrl') {
+      const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+      viewerApiRef.current?.setWheelMode('ctrl', tViewer('wheelHint', { key: mac ? '⌘' : 'Ctrl' }))
+    }
+
     if (urlParams.modelUrls.length === 0) {
       // Embed with no model → drop straight onto an upload prompt so the host
       // user can pick a file.
@@ -1996,7 +2002,15 @@ export default function App() {
       return
     }
 
-    void loadModelsFromUrls(urlParams.modelUrls, urlParams.fileNames)
+    void loadModelsFromUrls(urlParams.modelUrls, urlParams.fileNames).then(async () => {
+      // `?view=` (and the article preset): once everything is in, frame it
+      // tightly. Two frames late, so the per-model framing of the load has
+      // landed and this is the last word on the camera.
+      const view = urlParams.view
+      if (!view) return
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+      viewerApiRef.current?.setCameraPreset(view, { fill: urlParams.fill ?? 0.85, animate: false })
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -2088,13 +2102,27 @@ export default function App() {
           handleRestoreVisibility()
           break
         case 'ifcviewer:view': {
-          const preset = typeof msg.preset === 'string' ? msg.preset : ''
-          if (CAMERA_PRESETS.includes(preset as CameraPreset)) {
-            const scope = typeof msg.scope === 'string' && ['auto', 'active', 'group', 'all'].includes(msg.scope)
-              ? msg.scope as 'auto' | 'active' | 'group' | 'all'
-              : undefined
-            viewerApiRef.current?.setCameraPreset(preset as CameraPreset, scope ? { scope } : undefined)
-          }
+          // fill / azimuth / elevation (v1.14): a tight fit for presentation —
+          // the model fills the frame instead of floating in its bounding
+          // sphere. Answers with the framed scope when asked for a result.
+          const preset = typeof msg.preset === 'string' && CAMERA_PRESETS.includes(msg.preset as CameraPreset)
+            ? msg.preset as CameraPreset
+            : 'iso'
+          const scope = typeof msg.scope === 'string' && ['auto', 'active', 'group', 'all'].includes(msg.scope)
+            ? msg.scope as 'auto' | 'active' | 'group' | 'all'
+            : undefined
+          const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined)
+          void respond(() => {
+            const framed = viewerApiRef.current?.setCameraPreset(preset, {
+              ...(scope ? { scope } : {}),
+              fill: num(msg.fill),
+              azimuthDeg: num(msg.azimuth),
+              elevationDeg: num(msg.elevation),
+              animate: msg.animate !== false,
+            })
+            if (!framed) throw new Error('Nothing to frame — load a model first')
+            return { scope: framed.scope }
+          })
           break
         }
         // ── The panel rail, from outside ─────────────────────────────────
@@ -3883,7 +3911,7 @@ export default function App() {
                   {/* Model info / weight panel — always shows the active model's data
                       (hidden while a tour plays: it sits exactly where the tour bar goes,
                       and file size / GPU stats are noise for a presentation audience) */}
-                  {sceneModels.length > 0 && tourMode !== 'playing' && !clientMode && (() => {
+                  {sceneModels.length > 0 && tourMode !== 'playing' && !clientMode && effectiveChrome.showModelInfo && (() => {
                     const displayInfo =
                       sceneModels.find((m) => m.id === activeModelId) ?? modelInfo
                     return displayInfo ? (
@@ -3902,7 +3930,7 @@ export default function App() {
                       icons on the right edge, panels opening to its left.
                       docs/PANEL_RAIL.md. Only with a model — with an empty
                       viewport there is nothing for any of them to act on. */}
-                  {sceneModels.length > 0 && tourMode !== 'playing' && (
+                  {sceneModels.length > 0 && tourMode !== 'playing' && effectiveChrome.showRail && (
                     <div className="max-md:hidden">
                       <PanelRail items={railItems} />
                     </div>
@@ -4122,7 +4150,7 @@ export default function App() {
                 </div>
 
                 {/* Coordinator/exporter panels — never mount in the client skin (D-25) */}
-                {!clientMode && (
+                {!clientMode && effectiveChrome.showValidation && (
                   <>
                     <IdsPanel viewerApiRef={viewerApiRef} onOpenLoader={() => setShowIdsModal(true)} />
                     <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
@@ -4212,10 +4240,13 @@ export default function App() {
       {route === 'viewer' && <LoadingCenter anchor={effectiveChrome.showToolbar ? 'toolbar' : 'floating'} />}
 
       {/* ── Loading indicator for presets without a toolbar (kiosk, client) ── */}
-      {route === 'viewer' && !effectiveChrome.showToolbar && <LoadingIndicator variant="floating" />}
+      {route === 'viewer' && !effectiveChrome.showToolbar && !effectiveChrome.quiet && <LoadingIndicator variant="floating" />}
 
       {/* ── OPFS cache badge (yields its corner to the floating loading indicator) ── */}
-      {opfsAvailable && cacheEntries.length > 0 && !(route === 'viewer' && !effectiveChrome.showToolbar && hasLoadHistory) && (
+      {/* Viewer only: on the blog and landing it sat in the corner of every
+          article as "2 cached", which means nothing to a reader. */}
+      {opfsAvailable && cacheEntries.length > 0 && route === 'viewer' && !effectiveChrome.quiet
+        && !(!effectiveChrome.showToolbar && hasLoadHistory) && (
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
@@ -4249,7 +4280,7 @@ export default function App() {
       )}
 
       {/* ── Global toast notifications ── */}
-      <ToastContainer />
+      {!(route === 'viewer' && effectiveChrome.quiet) && <ToastContainer />}
     </>
   )
 }

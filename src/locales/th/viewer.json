@@ -255,6 +255,7 @@
     "performanceHint": "มาตรฐาน — การแรสเตอร์ไรซ์ WebGL ประสิทธิภาพดีที่สุด",
     "qualityHint": "คุณภาพ — SSAO ambient occlusion + การประมวลผลภายหลังตรวจจับขอบ"
   },
+  "wheelHint": "กด {{key}} + เลื่อนเพื่อซูม",
   "cache": {
     "fromCache": "⚡ จากแคช",
     "cached": "{{count}} แคชแล้ว",

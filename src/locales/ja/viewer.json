@@ -255,6 +255,7 @@
     "performanceHint": "標準 — WebGL ラスタライズ、最高のパフォーマンス",
     "qualityHint": "高品質 — SSAO アンビエントオクルージョン + エッジ検出のポストプロセス"
   },
+  "wheelHint": "{{key}} + スクロールでズーム",
   "cache": {
     "fromCache": "⚡ キャッシュから",
     "cached": "{{count}} キャッシュ済み",

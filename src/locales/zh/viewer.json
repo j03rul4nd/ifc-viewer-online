@@ -255,6 +255,7 @@
     "performanceHint": "标准 — WebGL 光栅化，性能最佳",
     "qualityHint": "高质量 — SSAO 环境光遮蔽 + 边缘检测后处理"
   },
+  "wheelHint": "按住 {{key}} 并滚动以缩放",
   "cache": {
     "fromCache": "⚡ 来自缓存",
     "cached": "{{count}} 已缓存",

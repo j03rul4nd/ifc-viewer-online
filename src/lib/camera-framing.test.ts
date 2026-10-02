@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveFraming, presetPose, SPREAD_LIMIT_M, type FramingItem } from './camera-framing'
+import { resolveFraming, presetPose, fitPose, PRESET_VIEW, SPREAD_LIMIT_M, type FramingItem } from './camera-framing'
 
 function item(id: string, x: number, opts: Partial<FramingItem> = {}): FramingItem {
   return {
@@ -90,5 +90,59 @@ describe('presetPose', () => {
     const wide = presetPose(box, 'front', 45, 16 / 9)
     const tall = presetPose(box, 'front', 45, 0.5)
     expect(tall.position.z).toBeGreaterThan(wide.position.z)
+  })
+})
+
+describe('fitPose', () => {
+  // A long, low building: 60 × 12 × 20 m, centred at the origin.
+  const box = { min: { x: -30, y: -6, z: -10 }, max: { x: 30, y: 6, z: 10 } }
+
+  /** Largest |tan| of the corners seen from the pose, per screen axis. */
+  function extent(pose: ReturnType<typeof fitPose>) {
+    const f = { x: pose.target.x - pose.position.x, y: pose.target.y - pose.position.y, z: pose.target.z - pose.position.z }
+    const fl = Math.hypot(f.x, f.y, f.z)
+    const fwd = { x: f.x / fl, y: f.y / fl, z: f.z / fl }
+    let r = { x: -fwd.z, y: 0, z: fwd.x }
+    const rl = Math.hypot(r.x, r.z); r = { x: r.x / rl, y: 0, z: r.z / rl }
+    const u = { x: r.y * fwd.z - r.z * fwd.y, y: r.z * fwd.x - r.x * fwd.z, z: r.x * fwd.y - r.y * fwd.x }
+    let h = 0, v = 0
+    for (const x of [-30, 30]) for (const y of [-6, 6]) for (const z of [-10, 10]) {
+      const d = { x: x - pose.position.x, y: y - pose.position.y, z: z - pose.position.z }
+      const depth = d.x * fwd.x + d.y * fwd.y + d.z * fwd.z
+      h = Math.max(h, Math.abs(d.x * r.x + d.y * r.y + d.z * r.z) / depth)
+      v = Math.max(v, Math.abs(d.x * u.x + d.y * u.y + d.z * u.z) / depth)
+    }
+    return { h, v }
+  }
+
+  it('fills the frame to the requested ratio on the tighter axis', () => {
+    const fov = 45, aspect = 16 / 9, fill = 0.8
+    const pose = fitPose(box, PRESET_VIEW.iso, fov, aspect, fill)
+    const tanV = Math.tan((fov * Math.PI) / 360)
+    const { h, v } = extent(pose)
+    const used = Math.max(h / (tanV * aspect), v / tanV)
+    expect(used).toBeCloseTo(fill, 2)
+  })
+
+  it('is closer than the bounding-sphere preset for a long low building', () => {
+    const tight = fitPose(box, PRESET_VIEW.iso, 45, 16 / 9, 0.85)
+    const loose = presetPose(box, 'iso', 45, 16 / 9)
+    const d = (p: { position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } }) =>
+      Math.hypot(p.position.x - p.target.x, p.position.y - p.target.y, p.position.z - p.target.z)
+    expect(d(tight)).toBeLessThan(d(loose) * 0.8)
+  })
+
+  it('looks from the requested angles', () => {
+    const pose = fitPose(box, { azimuthDeg: 0, elevationDeg: 30 })
+    const dx = pose.position.x - pose.target.x, dy = pose.position.y - pose.target.y, dz = pose.position.z - pose.target.z
+    expect(Math.atan2(dy, Math.hypot(dx, dz)) * 180 / Math.PI).toBeCloseTo(30, 6)
+    expect(dz).toBeCloseTo(0, 6)
+    expect(dx).toBeGreaterThan(0)
+  })
+
+  it('a top view stays defined, and fill is clamped', () => {
+    const pose = fitPose(box, PRESET_VIEW.top, 45, 1, 5)
+    expect(Number.isFinite(pose.position.x + pose.position.y + pose.position.z)).toBe(true)
+    expect(pose.position.y).toBeGreaterThan(6)
   })
 })

@@ -20,6 +20,7 @@ const PRESETS: { id: EmbedUiPreset; label: string; desc: string }[] = [
   { id: 'minimal', label: 'Minimal', desc: '3D + categories + score' },
   { id: 'full',    label: 'Full',    desc: 'Tree + validation panel' },
   { id: 'kiosk',   label: 'Kiosk',   desc: '3D canvas only' },
+  { id: 'article', label: 'Article', desc: 'Canvas for a post: tight framing, page scroll' },
   // Shipped a while ago and never offered here, so the one preset built for a
   // non-technical audience was the one nobody could find.
   { id: 'client',  label: 'Client',  desc: 'Show-only skin for stakeholders' },

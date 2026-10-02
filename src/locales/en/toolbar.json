@@ -82,7 +82,9 @@
       "kiosk": "Kiosk",
       "kioskDesc": "3D canvas only",
       "client": "Client",
-      "clientDesc": "Client presentation skin"
+      "clientDesc": "Client presentation skin",
+      "article": "Article",
+      "articleDesc": "Figure for a post: canvas, tight framing, page scroll"
     },
     "optionsLabel": "Options",
     "autoValidate": "Run validation on load",

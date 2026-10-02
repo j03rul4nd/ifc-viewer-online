@@ -80,7 +80,9 @@
       "kiosk": "Quiosc",
       "kioskDesc": "Només el llenç 3D",
       "client": "Client",
-      "clientDesc": "Mode presentació a client"
+      "clientDesc": "Mode presentació a client",
+      "article": "Article",
+      "articleDesc": "Figura per a un article: llenç, enquadrament ajustat i scroll de pàgina"
     },
     "optionsLabel": "Opcions",
     "autoValidate": "Executa la validació en carregar",

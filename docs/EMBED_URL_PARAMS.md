@@ -34,7 +34,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `model`    | URL(s)                           | —         | Public IFC URL to load. Comma-separated or repeated for multiple (federated) models, which load as one batch (see below). Aliases: `src`, `url`. |
 | `name`     | string(s)                        | from URL  | Display file name(s), parallel to `model`. Aliases: `file`. |
 | `embed`    | `1`/`0`                          | `0`       | Embed mode — slims the chrome for iframe hosting. |
-| `ui`       | `minimal` \| `full` \| `kiosk` \| `client` | `minimal` | Chrome preset (implies `embed=1`). |
+| `ui`       | `minimal` \| `full` \| `kiosk` \| `client` \| `article` | `minimal` | Chrome preset (implies `embed=1`). |
 | `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). With several models, validation waits until none is still loading, then runs model by model. |
 | `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
@@ -45,6 +45,9 @@ live preview). This doc is the reference for the underlying parameters.
 | `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
+| `view`     | `iso` · `top` · `front` · `back` · `left` · `right` · `bottom` | — (`iso` with `ui=article`) | Once every model has loaded, frame them from this view with a **tight fit**: fitted to the box's corners, not its bounding sphere, so a long low building fills the frame. *(1.14)* |
+| `fill`     | `0.2`–`0.98` or a percentage     | `0.85`    | With `view`: share of the frame the model fills on its tighter axis. *(1.14)* |
+| `wheel`    | `always` · `ctrl`                | `always` (`ctrl` with `ui=article`) | `ctrl`: the wheel scrolls the host page and zooms only with Ctrl/⌘ held (a trackpad pinch sends Ctrl), with a short hint over the canvas — like an embedded map. *(1.14)* |
 
 ### Federated links: how several models load
 
@@ -121,18 +124,31 @@ Each overrides its preset default. Accept `1`/`0` (also `true`/`false`, `yes`/`n
 | `panel`    | Auto-open the validation panel |
 | `home`     | "Back to home" button |
 | `controls` | Camera preset overlay |
+| `rail`     | Icon rail of tool panels on the right edge *(1.14)* |
+| `stats`    | Model info chip — file size, element count, GPU backend *(1.14)* |
 
 ### Presets
 
-| Preset    | Toolbar | Tree | Sidebar | Panel auto-open | Camera | Home |
-|-----------|:------:|:----:|:-------:|:---------------:|:------:|:----:|
-| `minimal` | ✓ | — | ✓ | — | ✓ | — |
-| `full`    | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| `kiosk`   | — | — | — | — | — | — |
-| `client`  | — | — | — | — | ✓ | — |
+| Preset    | Toolbar | Tree | Sidebar | Panel auto-open | Camera | Home | Rail · info chip · validation bar | Load indicator · toasts |
+|-----------|:------:|:----:|:-------:|:---------------:|:------:|:----:|:----:|:----:|
+| `minimal` | ✓ | — | ✓ | — | ✓ | — | ✓ | ✓ |
+| `full`    | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ |
+| `kiosk`   | — | — | — | — | — | — | — | — |
+| `client`  | — | — | — | — | ✓ | — | ✓ | ✓ |
+| `article` | — | — | — | — | — | — | — | — |
 
 The collapsed validation bar (with the **Health Score** badge) shows in `minimal`/`full`
 even when the panel isn't auto-opened, so the citable number is always visible.
+
+**`kiosk` is the canvas only** (since 1.14): before, it still showed the tool rail, the
+model info chip, the validation bar and the floating load indicator.
+
+**`article`** (1.14) is the preset for a figure in a post: the kiosk canvas, plus
+`view=iso` (a tight framing once loaded) and `wheel=ctrl` (the reader keeps
+scrolling). Tool panels the host opens over the bridge — measure, sun, walk,
+Cover Studio, Clip Studio, compare — still mount, and inside an article only a
+frame under 520 px wide (or a touch screen) gets the phone layout, so a
+650 px column keeps the desktop panels.
 
 ### Shared tour links (`#tour=` fragment — D-26)
 
@@ -175,6 +191,9 @@ the loaded model and camera persist.
 
 # Themed to a dashboard's brand colour
 ?model=https://host/a.ifc&embed=1&accent=22c55e
+
+# A figure in an article: canvas only, model filling the frame, page keeps scrolling
+?model=https://host/a.ifc&ui=article&bg=paper&validate=0
 
 # A blog figure: white page, the model on its site, a solstice evening
 ?model=https://host/a.ifc&ui=client&bg=white&map=terrain,buildings&solar=06-21T19:30
@@ -239,6 +258,7 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:select`  | `expressId`, `modelId?` | Select + frame an element |
 | `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear) | Isolate a category |
 | `ifcviewer:fit`     | — | Frame the active model |
+| `ifcviewer:view`    | `preset?`, `scope?`, `fill?`, `azimuth?`, `elevation?`, `animate?` | Frames from a preset. With `fill` (0.2–0.98) or angles (degrees) it is a **tight fit** to the box's corners; answers `{ scope }` *(fill/angles: 1.14)* |
 | `ifcviewer:reset`   | — | Reset the camera |
 
 #### Commands added in SDK v1.11

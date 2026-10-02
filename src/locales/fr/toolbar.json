@@ -80,7 +80,9 @@
       "kiosk": "Kiosque",
       "kioskDesc": "Vue 3D uniquement",
       "client": "Client",
-      "clientDesc": "Habillage présentation client"
+      "clientDesc": "Habillage présentation client",
+      "article": "Article",
+      "articleDesc": "Figure pour un article : canevas, cadrage serré, défilement de la page"
     },
     "optionsLabel": "Options",
     "autoValidate": "Lancer la validation au chargement",

@@ -1,6 +1,6 @@
 // Type definitions for the IFC Viewer SDK (ifc-viewer.es.js).
 // GENERATED from src/sdk/ifc-viewer-sdk.ts by `npm run build:sdk` — do not edit.
-export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client';
+export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article';
 export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right';
 /**
  * What a view frames when several models or scans are loaded: `auto` (default)
@@ -8,6 +8,20 @@ export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 
  * distant sites; `active` = the active model; `group` = its group; `all` = all.
  */
 export type CameraScope = 'auto' | 'active' | 'group' | 'all';
+/** Options of {@link IfcViewer.frame}. */
+export interface FrameOptions {
+    /** Preset the angles default to. Default `'iso'`. */
+    view?: CameraView;
+    scope?: CameraScope;
+    /** Share of the frame the model fills, 0.2–0.98. Default 0.85. */
+    fill?: number;
+    /** Degrees from +x towards +z (scene axes). */
+    azimuth?: number;
+    /** Degrees above the horizon. */
+    elevation?: number;
+    /** Fly (default) or jump. */
+    animate?: boolean;
+}
 export interface IfcViewerOptions {
     /** App base URL. Defaults to the parent of this script's URL. */
     baseUrl?: string;
@@ -65,6 +79,20 @@ export interface IfcViewerOptions {
     moon?: boolean;
     /** Point clouds to fetch alongside the model (CORS-enabled URLs). Since v1.11.0. */
     scans?: string[];
+    /**
+     * Once every model has loaded, frame them from this view with a tight fit —
+     * the model fills `fill` of the frame. `ui: 'article'` implies `'iso'`.
+     * See {@link IfcViewer.frame}. Since v1.14.0.
+     */
+    view?: CameraView;
+    /** With `view`: share of the frame the model fills, 0.2–0.98. Default 0.85. Since v1.14.0. */
+    fill?: number;
+    /**
+     * `'ctrl'`: the mouse wheel scrolls your page and zooms only with Ctrl/⌘
+     * held, like an embedded map — for a viewer in the middle of an article.
+     * `ui: 'article'` implies it. Since v1.14.0.
+     */
+    wheel?: 'always' | 'ctrl';
     /** Reject add()/addFromUrl() after this many ms. 0 disables. Default 120000. */
     loadTimeout?: number;
     /** Convenience callbacks (equivalent to .on(...)). */
@@ -845,7 +873,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.13.0";
+    readonly version = "1.14.0";
     readonly iframe: HTMLIFrameElement;
     private readonly baseUrl;
     private readonly appOrigin;
@@ -879,6 +907,22 @@ export declare class IfcViewer {
     reset(): void;
     /** Fly to a named camera view (iso/top/front/right/left/back/bottom), optionally framing a scope. */
     setView(view: CameraView, scope?: CameraScope): void;
+    /**
+     * Frame the scene for presentation (v1.14): the model FILLS the frame.
+     *
+     * `fill` is the share of the frame the model takes on its tighter axis
+     * (0.2–0.98, default 0.85), fitted to the box's corners rather than its
+     * bounding sphere. `azimuth` / `elevation` (degrees) look from any angle;
+     * they default to the `view` preset's own. Resolves once the camera is set.
+     *
+     * ```js
+     * await viewer.frame({ view: 'iso', fill: 0.9 })
+     * await viewer.frame({ azimuth: 200, elevation: 35, animate: false })
+     * ```
+     */
+    frame(options?: FrameOptions): Promise<{
+        scope: CameraScope;
+    }>;
     /** Change the UI language at runtime (no-ops for unsupported codes). */
     setLanguage(lang: string): void;
     /** Remove all loaded models from the scene. */
@@ -1210,6 +1254,20 @@ export declare class IfcViewer {
      *   await viewer.createCover({ recipe: 'pinterest', text: { title: 'Casa Poblenou', location: 'Barcelona' } })
      */
     createCover(opts?: CoverOptions): Promise<CoverState>;
+    /**
+     * Compare two deliveries by URL and open the comparison workspace on the
+     * result. Head files that are also loaded in the scene can be framed in 3D.
+     *
+     *   await viewer.compare({ base: lastWeekUrl, head: thisWeekUrl })
+     */
+    compare(opts: {
+        base: string | string[];
+        head: string | string[];
+        baseLabel?: string;
+        headLabel?: string;
+    }): Promise<{
+        changes: number;
+    }>;
     /** The cover as it stands, or null when Cover Studio is closed. */
     getCover(): Promise<CoverState | null>;
     /**

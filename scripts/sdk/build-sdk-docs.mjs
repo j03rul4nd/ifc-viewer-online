@@ -16,6 +16,7 @@ import { SDK_DOCS_I18N } from './sdk-docs-i18n.mjs'
 import { SDK_DOCS_V111 } from './sdk-docs-v111.mjs'
 import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
 import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
+import { SDK_DOCS_V114 } from './sdk-docs-v114.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -534,6 +535,7 @@ for (const l of LANGS) if (SDK_DOCS_I18N[l]) Object.assign(T[l], SDK_DOCS_I18N[l
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V111[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V114[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -617,6 +619,7 @@ const API_GROUPS = [
   ['camera', 'grpCamera', [
     ['select(expressId, modelId?)', 'void', 'select'],
     ['setView(view)', 'void', 'setView'],
+    ['frame({ view?, fill?, azimuth?, elevation?, animate? })', 'Promise<{ scope }>', 'camFrame'],
     ['fit() · reset()', 'void', 'fitReset'],
     ['setCamera(position, direction)', 'void', 'setCamera'],
     ['getCamera()', 'Promise<CameraState | null>', 'camGet'],
@@ -742,7 +745,7 @@ const API_GROUPS = [
   ]],
 ]
 const OPTIONS = [
-  ['ui', "'minimal' | 'full' | 'kiosk' | 'client'", "'minimal'", 'optUi'],
+  ['ui', "'minimal' | 'full' | 'kiosk' | 'client' | 'article'", "'minimal'", 'optUi'],
   ['validate', 'boolean', 'true', 'optValidate'],
   ['panel', 'boolean', 'false', 'optPanel'],
   ['panels', 'PanelName[]', '—', 'optPanels'],
@@ -753,6 +756,8 @@ const OPTIONS = [
   ['map', "boolean | ('terrain' | 'buildings' | 'showcase')[]", '—', 'optMap'],
   ['solar · moon', "'MM-DDTHH:MM' · boolean", '—', 'optSolar'],
   ['scans', 'string[]', '—', 'optScans'],
+  ['view · fill', "CameraView · number", '—', 'optView'],
+  ['wheel', "'always' | 'ctrl'", "'always'", 'optWheel'],
   ['height · width', 'number | string', "'100%'", 'optSize'],
   ['baseUrl', 'string', 'auto', 'optBaseUrl'],
   ['loadTimeout', 'number', '120000', 'optTimeout'],
@@ -958,6 +963,16 @@ const REC_COVER =
 const { bytes, mimeType } = await viewer.exportCover({ type: "png" });
 img.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
 
+const REC_ARTICLE =
+`const viewer = new IfcViewer("#figure", {
+  ui: "article",          // canvas only, tight iso framing, wheel scrolls the page
+  background: "paper",
+  validate: false,
+  height: 480,
+});
+await viewer.addFromUrl("https://example.com/pavilion.ifc");
+await viewer.frame({ azimuth: 200, elevation: 32, fill: 0.8 });`
+
 const REC_THEME =
 `new IfcViewer("#viewer", { accent: "#22c55e" });
 
@@ -1146,6 +1161,7 @@ function page(lang) {
     recipe('rec9T', 'rec9B', REC_TOUR) +
     recipe('rec10T', 'rec10B', REC_VIDEO) +
     recipe('rec11T', 'rec11B', REC_COVER) +
+    recipe('rec12T', 'rec12B', REC_ARTICLE) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'

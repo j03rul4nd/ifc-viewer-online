@@ -211,6 +211,23 @@ video.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }))
 | `setGroupVisible(id, visible)` / `isolateGroup(id \| null)` | Show or hide a whole group's models, or show only that group. |
 | `frameGroup(id)` | Fits the camera to a group, hidden members included. |
 
+## Presentation in articles (v1.14)
+
+```js
+const viewer = new IfcViewer('#figure', { ui: 'article', background: 'paper', validate: false })
+await viewer.addFromUrl('https://example.com/pavilion.ifc')
+await viewer.frame({ azimuth: 200, elevation: 32, fill: 0.8 })
+```
+
+| Option / method | Description |
+|--------|-------------|
+| `ui: 'article'` | The canvas alone — no toolbar, rail, info chip, validation bar, load indicator or toasts — plus `view: 'iso'` and `wheel: 'ctrl'`. Tool panels you open over the bridge still mount. |
+| `view`, `fill` | Once every model has loaded, frame them from this view so the model fills `fill` (0.2–0.98, default 0.85) of the frame. |
+| `wheel: 'ctrl'` | The wheel scrolls your page; Ctrl/⌘ + wheel (or a pinch) zooms. |
+| `frame({ view?, scope?, fill?, azimuth?, elevation?, animate? })` | A tight fit to the box's corners, not its bounding sphere, from a preset or any angle (degrees). Resolves `{ scope }`. |
+
+`kiosk` is the canvas only since 1.14, as it was always documented.
+
 ## Analysis: sections, measurements, federated models (v1.11)
 
 | Method | Description |
