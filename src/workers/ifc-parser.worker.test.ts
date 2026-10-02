@@ -234,10 +234,12 @@ describe('ifc-parser.worker — conversion', () => {
   it('converts again moved to the origin when the importer drops far elements the scan missed', async () => {
     const before = h.importers.length
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     h.script = async () => {
       const imp = h.importers[h.importers.length - 1]
       if (imp.webIfcSettings.COORDINATE_TO_ORIGIN === false) {
-        console.warn('Fragments: Object 42 is more than 100000 meters away from the origin and will be skipped.')
+        // fragments 3.x says it with console.log (scripts/far-coordinates-ifc.test.ts runs the real one).
+        console.log('Fragments: Object 42 is more than 100000 meters away from the origin and will be skipped.')
         return new Uint8Array([1])
       }
       return new Uint8Array([2, 2])
@@ -248,9 +250,11 @@ describe('ifc-parser.worker — conversion', () => {
     expect(h.importers.length - before).toBe(2)
     expect(h.importers[h.importers.length - 1].webIfcSettings.COORDINATE_TO_ORIGIN).toBe(true)
     expect(new Uint8Array(reply.fragmentsBuffer!)).toEqual(new Uint8Array([2, 2]))
-    // console.warn is restored after each pass.
+    // console.warn / console.log are restored after each pass.
     expect(console.warn).toBe(warnSpy)
+    expect(console.log).toBe(logSpy)
     warnSpy.mockRestore()
+    logSpy.mockRestore()
   })
 
   it('a clean conversion runs once', async () => {

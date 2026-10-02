@@ -320,7 +320,11 @@ async function handleParse(msg: ParseMessage): Promise<void> {
   })
 }
 
-/** The importer's own console line for an element it drops past distanceThreshold. */
+/**
+ * The importer's own console line for an element it drops past
+ * distanceThreshold. It is a console.LOG, not a warning (fragments 3.x); both
+ * are watched so a library update that promotes it does not blind the check.
+ */
 const SKIPPED_FAR_RE = /meters away from the origin and will be skipped/
 
 /**
@@ -348,10 +352,13 @@ async function convert(
   const gate = createProgressGate()
   let skipped = 0
   const warn = console.warn
-  console.warn = (...args: unknown[]) => {
+  const info = console.log
+  const watch = (original: (...a: unknown[]) => void) => (...args: unknown[]): void => {
     if (typeof args[0] === 'string' && SKIPPED_FAR_RE.test(args[0])) { skipped++; return }
-    warn.apply(console, args)
+    original.apply(console, args)
   }
+  console.warn = watch(warn)
+  console.log = watch(info)
   try {
     const binary = await importer.process({
       bytes,
@@ -377,6 +384,7 @@ async function convert(
     return { binary, skipped }
   } finally {
     console.warn = warn
+    console.log = info
     if (skipped > 0) {
       warn.call(console, `[ifc-parser] the importer dropped ${skipped} element(s) more than 100 km from the origin` +
         (toOrigin ? '' : '; converting again, moved to the origin'))
