@@ -285,6 +285,7 @@ as "no model yet", "feature not in this build" or "model has no location".
 | `ifcviewer:close-presentation` *(1.12)* | — | Closes Clip Studio |
 | `ifcviewer:get-cover-options` *(1.13)* | — | `{ recipes, templates, formats, palettes }` |
 | `ifcviewer:create-cover` *(1.13)* | `recipe?`, `template?`, `format?`, `palette?`, `text?` | Makes a cover in Cover Studio. Returns its state |
+| `ifcviewer:compare` | `base`, `head` (URL or URL[]), `baseLabel?`, `headLabel?` | Compares two deliveries by GlobalId and opens the comparison workspace on the result. `data: { changes }` |
 | `ifcviewer:get-cover` / `ifcviewer:close-cover` *(1.13)* | — | Returns the state (or `null`) / closes the studio |
 | `ifcviewer:export-cover` *(1.13)* | `fileType?` (`png`·`jpeg`·`pdf`·`pptx`·`zip`), `slide?` | `data: { bytes (transferred), mimeType, sizeBytes, slides }`. The field is `fileType`, not `type`, which is taken by the message itself |
 | `ifcviewer:get-groups` *(1.13)* | — | `{ groups, looseCloudIds }` |

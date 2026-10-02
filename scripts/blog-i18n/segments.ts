@@ -82,6 +82,10 @@ function blockFields(b: ContentBlock, at: string, add: (path: string, value: unk
       add(`${at}.title`, b.title); add(`${at}.description`, b.description); add(`${at}.posterAlt`, b.posterAlt)
       add(`${at}.launchLabel`, b.launchLabel); add(`${at}.readyLabel`, b.readyLabel)
       break
+    case 'tool-demo':
+      add(`${at}.title`, b.title); add(`${at}.description`, b.description); add(`${at}.posterAlt`, b.posterAlt)
+      add(`${at}.launchLabel`, b.launchLabel); add(`${at}.actionLabel`, b.actionLabel); add(`${at}.hint`, b.hint)
+      break
     case 'video': add(`${at}.title`, b.title); add(`${at}.description`, b.description); add(`${at}.caption`, b.caption); break
     case 'ifc-demo': add(`${at}.title`, b.title); add(`${at}.description`, b.description); break
     case 'embed-configurator': add(`${at}.title`, b.title); add(`${at}.description`, b.description); break

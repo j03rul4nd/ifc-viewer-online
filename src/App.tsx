@@ -3127,6 +3127,54 @@ export default function App() {
           })
           break
         }
+        case 'ifcviewer:compare': {
+          // Two deliveries by URL → the comparison workspace, already run. A
+          // head file that is loaded in the scene is mapped to it, so the
+          // changes can be framed in 3D.
+          void respond(async () => {
+            const urls = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).filter((u): u is string => typeof u === 'string' && !!u)
+            const base = urls(msg.base), head = urls(msg.head)
+            if (!base.length || !head.length) throw new Error('compare needs base and head URLs')
+            const [{ snapshotMany }, { diffSnapshotSets }, { useCompareStore }] = await Promise.all([
+              import('./lib/compare/snapshot-runner'),
+              import('./lib/compare/model-diff'),
+              import('./stores/compareStore'),
+            ])
+            const fileName = (u: string): string => decodeURIComponent(u.split(/[?#]/)[0].split('/').pop() || 'model.ifc')
+            const side = async (list: string[]) => snapshotMany(
+              await Promise.all(list.map(async (u) => {
+                const res = await fetch(new URL(u, window.location.href).href)
+                if (!res.ok) throw new Error(`HTTP ${res.status} for ${u}`)
+                return { fileName: fileName(u), buffer: await res.arrayBuffer(), geometry: true }
+              })),
+              (name, pct) => useCompareStore.getState().setProgress(name, pct),
+            )
+            useCompareStore.getState().setBusy(true)
+            try {
+              const b = await side(base)
+              const h = await side(head)
+              const scene = useSceneStore.getState().models
+              const modelIds: Record<string, string> = {}
+              for (const snap of h) {
+                const m = scene.find((x) => x.fileName === snap.fileName)
+                if (m) modelIds[snap.fileName] = m.id
+              }
+              const label = (v: unknown, fallback: string) => (typeof v === 'string' && v ? v : fallback)
+              const baseLabel = label(msg.baseLabel, b.map((x) => x.fileName).join(', '))
+              const headLabel = label(msg.headLabel, h.map((x) => x.fileName).join(', '))
+              const s = useCompareStore.getState()
+              s.setSide('base', { label: baseLabel, snapshots: b, modelIds: {}, source: 'files' })
+              s.setSide('head', { label: headLabel, snapshots: h, modelIds, source: 'files' })
+              const diff = diffSnapshotSets(b, h, { base: baseLabel, head: headLabel })
+              useCompareStore.getState().setDiff(diff)
+              setShowCompareModal(true)
+              return { changes: diff.elements.length }
+            } finally {
+              useCompareStore.getState().setBusy(false)
+            }
+          })
+          break
+        }
         case 'ifcviewer:get-cover':
           void respond(() => {
             if (!useCoverStudioStore.getState().open) return null

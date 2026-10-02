@@ -695,6 +695,7 @@ const API_GROUPS = [
     ['getStats()', 'Promise<StatsResult>', 'getStats'],
     ['getIssues(opts?)', 'Promise<IssuesResult>', 'getIssues'],
     ['screenshot()', 'Promise<string>', 'screenshot'],
+    ['compare({ base, head, baseLabel?, headLabel? })', 'Promise<{ changes }>', 'cmpRun'],
   ]],
   ['panels', 'grpPanels', [
     ['openPanel(panel | null) · closePanel()', 'void', 'panelOpen'],

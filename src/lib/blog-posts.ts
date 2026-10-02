@@ -108,6 +108,31 @@ export type ContentBlock =
       readyLabel?: string
       height?: number
     }
+  /**
+   * The real viewer in an iframe, doing what the post describes: it loads the
+   * demo's models and runs the tool (compare, video, cover, walk, measure…)
+   * through the SDK commands. Models and commands live in ToolDemo.tsx.
+   */
+  | {
+      type: 'tool-demo'
+      demo:
+        | 'compare-versions'
+        | 'video-generator'
+        | 'cover-generator'
+        | 'sun-study'
+        | 'walk-mode'
+        | 'measure'
+        | 'federated-disciplines'
+        | 'ifc43-bridge'
+      title: string
+      description: string
+      poster: string
+      posterAlt: string
+      launchLabel?: string
+      actionLabel?: string
+      hint?: string
+      height?: number
+    }
   | {
       type: 'video'
       src: string
@@ -284,6 +309,16 @@ export const BLOG_POSTS: BlogPost[] = [
         sizes: '(max-width: 860px) 100vw, 820px',
         credit: 'IFC Viewer Online',
       },
+      {
+        type: 'tool-demo',
+        demo: 'federated-disciplines',
+        title: 'Try it: a federated set named by ISO 19650',
+        description: 'Three files named BCN-IVO-ZZ-XX-M3-A-0001, -S-0001 and -M-0001: architecture, structure and MEP. The role letter is all the viewer needs to tell the disciplines apart.',
+        poster: 'blog/images/iso-19650-file-name-anatomy.png',
+        posterAlt: 'Three ISO 19650 named IFC files federated in IFC Viewer Online, one per discipline',
+        launchLabel: 'Load the three disciplines',
+        hint: 'Open the file list at the bottom of the viewer to see each discipline by its ISO 19650 name.',
+      },
       { type: 'takeaways', items: [
         "A file name is seven fields separated by hyphens: project, originator, volume/system, level/location, type, role, number.",
         "The allowed codes are agreed per project in the information protocol — the standard defines the structure, the project defines the vocabulary.",
@@ -376,6 +411,16 @@ export const BLOG_POSTS: BlogPost[] = [
         sizes: '(max-width: 860px) 100vw, 820px',
         credit: 'IFC Viewer Online',
       },
+      {
+        type: 'spatial-demo',
+        demo: 'poblenou-scan-ifc',
+        title: 'Try it: a LAS scan next to its IFC',
+        description: 'A LAS site scan of the Poblenou plot loaded with the pavilion model. Open the point cloud panel to colour it by class and toggle classes on and off.',
+        poster: 'blog/images/las-classification-codes-asprs.png',
+        posterAlt: 'LAS point cloud of a site loaded next to an IFC model in IFC Viewer Online',
+        launchLabel: 'Load the scan',
+        readyLabel: 'Scan and model ready',
+      },
       { type: 'takeaways', items: [
         "Classification is one number per point, standardised by ASPRS: 2 is ground, 6 is building, 3–5 are vegetation, 7 and 18 are noise.",
         "Class 0 means never classified; class 1 means classified as \"none of the above\". An unprocessed scan is all 0s and 1s.",
@@ -451,6 +496,16 @@ export const BLOG_POSTS: BlogPost[] = [
         sizes: '(max-width: 860px) 100vw, 820px',
         credit: 'IFC Viewer Online',
       },
+      {
+        type: 'spatial-demo',
+        demo: 'poblenou-scan-ifc',
+        title: 'Try it: analyse a real scan',
+        description: 'A LAS site scan loaded with the pavilion model. In the point cloud panel, the Analyze tab has the floor plan, slab, terrain and vegetation recipes.',
+        poster: 'blog/images/point-cloud-floor-plan-slice.png',
+        posterAlt: 'LAS point cloud of a site loaded next to an IFC model in IFC Viewer Online',
+        launchLabel: 'Load the scan',
+        readyLabel: 'Scan and model ready',
+      },
 
       { type: 'h2', text: 'Six analyses, one cloud' },
       {
@@ -518,6 +573,16 @@ export const BLOG_POSTS: BlogPost[] = [
         srcSet: [{ src: 'blog/images/ifc-4-3-facility-hierarchy-800.png', width: 800 }, { src: 'blog/images/ifc-4-3-facility-hierarchy.png', width: 1600 }],
         sizes: '(max-width: 860px) 100vw, 820px',
         credit: 'IFC Viewer Online',
+      },
+      {
+        type: 'tool-demo',
+        demo: 'ifc43-bridge',
+        title: 'Try it: an IFC 4.3 bridge',
+        description: 'The buildingSMART IFC 4.3 sample bridge: a deck on piers, modelled as IfcBridge with its parts instead of storeys.',
+        poster: 'blog/images/ifc-4-3-facility-hierarchy.png',
+        posterAlt: 'IFC 4.3 bridge sample model from buildingSMART open in IFC Viewer Online',
+        launchLabel: 'Open the bridge',
+        hint: 'Click the deck, a pier or a bearing to see its IFC 4.3 class and properties.',
       },
       { type: 'takeaways', items: [
         "IFC 4.3 adds infrastructure facilities — bridge, road, railway, marine — beside the building.",
@@ -675,6 +740,16 @@ export const BLOG_POSTS: BlogPost[] = [
         srcSet: [{ src: 'blog/images/ifc-spatial-structure-hierarchy-800.png', width: 800 }, { src: 'blog/images/ifc-spatial-structure-hierarchy.png', width: 1600 }],
         sizes: '(max-width: 860px) 100vw, 820px',
         credit: 'IFC Viewer Online',
+      },
+      {
+        type: 'tool-demo',
+        demo: 'federated-disciplines',
+        title: 'Try it: explore a spatial tree',
+        description: 'Three discipline files of the same building in one scene, each with its own spatial tree from project to elements.',
+        poster: 'blog/images/ifc-spatial-structure-hierarchy.png',
+        posterAlt: 'Spatial tree of a federated IFC model in IFC Viewer Online',
+        launchLabel: 'Open the model',
+        hint: 'Click any element to see its IFC class and properties.',
       },
       { type: 'takeaways', items: [
         "The spatial tree is built by aggregation: Project → Site → Building → Storey → Space.",
@@ -926,6 +1001,17 @@ export const BLOG_POSTS: BlogPost[] = [
         credit: "IFC Viewer Online",
       },
       {
+        type: 'tool-demo',
+        demo: 'sun-study',
+        title: 'Try it: shadows on a real Barcelona plot',
+        description: 'The Poblenou pavilion, georeferenced in Barcelona, at 19:30 on the summer solstice. Step through the day to watch the shadows sweep across the plot.',
+        poster: 'blog/images/sun-study-true-north-vs-project-north.png',
+        posterAlt: 'Sun and shadow study of a georeferenced IFC model on a summer evening in IFC Viewer Online',
+        launchLabel: 'Open the sun study',
+        actionLabel: 'Next time of day',
+        hint: 'Step through 9:00, 13:00 and a winter noon, or open the full viewer for the time slider.',
+      },
+      {
         type: 'table',
         headers: ['Input', 'Where it comes from', 'If it is wrong'],
         rows: [
@@ -1011,6 +1097,17 @@ export const BLOG_POSTS: BlogPost[] = [
         ],
         sizes: "(max-width: 860px) 100vw, 820px",
         credit: "IFC Viewer Online",
+      },
+      {
+        type: 'tool-demo',
+        demo: 'measure',
+        title: 'Try it: measure a real model',
+        description: 'Opens the Poblenou pavilion with the distance tool armed. Click two points: the cursor snaps to vertices, edges and faces.',
+        poster: 'blog/images/measure-snap-targets-vertex-edge-face.png',
+        posterAlt: 'Distance measurement with vertex snapping on an IFC model in IFC Viewer Online',
+        launchLabel: 'Start measuring',
+        actionLabel: 'Measure again',
+        hint: 'Switch to area, angle or path in the Measure panel.',
       },
       { type: 'p', text: "A measurement is only as good as its two endpoints. Good snapping finds the actual geometry you meant — a vertex, the midpoint of an edge, a point along an edge — and tells you which one it found before you click." },
       {
@@ -1101,6 +1198,17 @@ export const BLOG_POSTS: BlogPost[] = [
         credit: "IFC Viewer Online",
       },
       {
+        type: 'tool-demo',
+        demo: 'walk-mode',
+        title: 'Try it: walk through a model at eye height',
+        description: 'Opens the Poblenou pavilion in walk mode. Click into the view, then use W A S D to walk and the mouse to look around.',
+        poster: 'blog/images/ifc-walk-mode-keyboard-controls.png',
+        posterAlt: 'First-person walk mode inside an IFC building model in IFC Viewer Online',
+        launchLabel: 'Start walking',
+        actionLabel: 'Walk again',
+        hint: 'Press G to leave walk mode, Esc to release the mouse.',
+      },
+      {
         type: 'table',
         headers: ['Action', 'Control'],
         rows: [
@@ -1188,6 +1296,17 @@ export const BLOG_POSTS: BlogPost[] = [
         sizes: "(max-width: 860px) 100vw, 820px",
         credit: "IFC Viewer Online",
       },
+      {
+        type: 'tool-demo',
+        demo: 'video-generator',
+        title: 'Try it: generate a vertical video from an IFC',
+        description: 'Loads a tower model and runs the Reel recipe: camera moves, captions and a 9:16 cut, ready to export as MP4 from your browser.',
+        poster: 'blog/images/vertical-video-fit-vs-crop-building.png',
+        posterAlt: 'Clip Studio in IFC Viewer Online with a generated vertical video of a tower model',
+        launchLabel: 'Generate a video',
+        actionLabel: 'Generate it again',
+        hint: 'Play it, change the recipe, or export the MP4.',
+      },
       { type: 'p', text: "Buildings are wide. A centre crop of a landscape recording to 9:16 keeps a strip roughly a third of the width, and the building leaves the frame on both sides. Fitting the whole frame into the vertical format keeps the building intact and leaves bands above and below — which, filled with a blurred copy of the same frame, look intentional and give you exactly the space you need for a title." },
       { type: 'pull-quote', text: "The bands are not wasted space. They are where the title goes." },
 
@@ -1251,6 +1370,17 @@ export const BLOG_POSTS: BlogPost[] = [
         ],
         sizes: "(max-width: 860px) 100vw, 820px",
         credit: "IFC Viewer Online",
+      },
+      {
+        type: 'tool-demo',
+        demo: 'cover-generator',
+        title: 'Try it: make a presentation board from an IFC',
+        description: 'Loads a tower model and runs the Board recipe: it captures the views it needs and lays them out with a palette and texts you can edit.',
+        poster: 'blog/images/ifc-presentation-image-types.png',
+        posterAlt: 'Cover Studio in IFC Viewer Online with a presentation board generated from an IFC model',
+        launchLabel: 'Make a board',
+        actionLabel: 'Make it again',
+        hint: 'Change the template, format or texts, then export PNG, PDF or PPTX.',
       },
       {
         type: 'table',
@@ -1446,6 +1576,17 @@ export const BLOG_POSTS: BlogPost[] = [
         ],
         sizes: "(max-width: 860px) 100vw, 820px",
         credit: "IFC Viewer Online",
+      },
+      {
+        type: 'tool-demo',
+        demo: 'compare-versions',
+        title: 'Try it: compare two revisions of a real model',
+        description: 'Two deliveries of the Poblenou pavilion architecture model, P01 and P02. The viewer pairs every element by GlobalId and lists what was added, removed, moved and edited.',
+        poster: 'blog/images/ifc-version-compare-globalid.png',
+        posterAlt: 'IFC Viewer Online comparison workspace listing the changes between two revisions of an IFC model',
+        launchLabel: 'Compare P01 with P02',
+        actionLabel: 'Run the comparison again',
+        hint: 'Click a change in the list to frame that element in 3D.',
       },
       { type: 'p', text: "An IFC element has two identifiers. The express ID (the #1234 in the file) is a line number — it is renumbered on every export and means nothing across versions. The GlobalId is a 22-character GUID designed to persist for the life of the element. A comparison that matches by anything other than GlobalId is comparing line numbers." },
       { type: 'callout', variant: 'warning', title: 'Check this before anything else', text: "If your authoring tool regenerates GlobalIds on export, every comparison will report the entire model as deleted and re-added. No diff algorithm can recover from that. Look at the ratio of added to removed elements on the first comparison: if both are close to the total element count, your GUIDs are not stable." },

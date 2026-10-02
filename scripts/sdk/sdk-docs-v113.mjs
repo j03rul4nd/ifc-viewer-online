@@ -9,6 +9,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'The cover as it stands, or null when Cover Studio is closed.',
     covExport: 'Export it: png / jpeg (one page), pdf / pptx (the whole document), zip (every page). Returns the bytes.',
     covClose: 'Close Cover Studio.',
+
+    cmpRun: "Compare two deliveries by URL (by GlobalId) and open the comparison workspace on the result.",
     grpList: 'Every group in the scene — inferred from the IFC (project, site, location) and made by users.',
     grpCreate: 'Create a group, optionally with models in it. Resolves with its id.',
     grpEdit: 'Rename or delete a user group. Automatic groups cannot be edited.',
@@ -24,6 +26,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'La portada tal como está, o null si el estudio está cerrado.',
     covExport: 'Expórtala: png / jpeg (una página), pdf / pptx (todo el documento), zip (todas las páginas). Devuelve los bytes.',
     covClose: 'Cierra el estudio de portadas.',
+
+    cmpRun: "Compara dos entregas por URL (por GlobalId) y abre el espacio de comparación con el resultado.",
     grpList: 'Todos los grupos de la escena: deducidos del IFC (proyecto, emplazamiento, ubicación) y creados por usuarios.',
     grpCreate: 'Crea un grupo, opcionalmente con modelos dentro. Devuelve su id.',
     grpEdit: 'Renombra o borra un grupo de usuario. Los automáticos no se editan.',
@@ -39,6 +43,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'Das Cover im aktuellen Stand, oder null, wenn das Studio geschlossen ist.',
     covExport: 'Exportieren: png / jpeg (eine Seite), pdf / pptx (das ganze Dokument), zip (alle Seiten). Liefert die Bytes.',
     covClose: 'Das Cover-Studio schließen.',
+
+    cmpRun: "Vergleicht zwei Lieferungen per URL (über die GlobalId) und öffnet die Vergleichsansicht mit dem Ergebnis.",
     grpList: 'Alle Gruppen der Szene — aus dem IFC abgeleitet (Projekt, Grundstück, Standort) und von Nutzern angelegt.',
     grpCreate: 'Eine Gruppe anlegen, optional mit Modellen. Liefert ihre id.',
     grpEdit: 'Eine Nutzergruppe umbenennen oder löschen. Automatische Gruppen sind nicht editierbar.',
@@ -54,6 +60,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'La couverture en l’état, ou null si le studio est fermé.',
     covExport: 'L’exporter : png / jpeg (une page), pdf / pptx (tout le document), zip (toutes les pages). Renvoie les octets.',
     covClose: 'Ferme le studio de couvertures.',
+
+    cmpRun: "Compare deux livraisons par URL (par GlobalId) et ouvre l’espace de comparaison sur le résultat.",
     grpList: 'Tous les groupes de la scène — déduits de l’IFC (projet, site, localisation) et créés par les utilisateurs.',
     grpCreate: 'Crée un groupe, éventuellement avec des modèles. Renvoie son id.',
     grpEdit: 'Renomme ou supprime un groupe utilisateur. Les groupes automatiques ne sont pas modifiables.',
@@ -69,6 +77,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'A capa tal como está, ou null se o estúdio estiver fechado.',
     covExport: 'Exporta-a: png / jpeg (uma página), pdf / pptx (todo o documento), zip (todas as páginas). Devolve os bytes.',
     covClose: 'Fecha o estúdio de capas.',
+
+    cmpRun: "Compara duas entregas por URL (por GlobalId) e abre a área de comparação com o resultado.",
     grpList: 'Todos os grupos da cena — deduzidos do IFC (projeto, local, localização) e criados pelos utilizadores.',
     grpCreate: 'Cria um grupo, opcionalmente com modelos. Devolve o seu id.',
     grpEdit: 'Muda o nome ou apaga um grupo de utilizador. Os automáticos não se editam.',
@@ -84,6 +94,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'La copertina così com’è, o null se lo studio è chiuso.',
     covExport: 'Esportala: png / jpeg (una pagina), pdf / pptx (tutto il documento), zip (tutte le pagine). Restituisce i byte.',
     covClose: 'Chiude lo studio copertine.',
+
+    cmpRun: "Confronta due consegne per URL (per GlobalId) e apre l’area di confronto sul risultato.",
     grpList: 'Tutti i gruppi della scena — dedotti dall’IFC (progetto, sito, posizione) e creati dagli utenti.',
     grpCreate: 'Crea un gruppo, eventualmente con modelli. Restituisce il suo id.',
     grpEdit: 'Rinomina o elimina un gruppo utente. I gruppi automatici non si modificano.',
@@ -99,6 +111,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'La portada tal com està, o null si l’estudi és tancat.',
     covExport: 'Exporta-la: png / jpeg (una pàgina), pdf / pptx (tot el document), zip (totes les pàgines). Retorna els bytes.',
     covClose: 'Tanca l’estudi de portades.',
+
+    cmpRun: "Compara dues entregues per URL (per GlobalId) i obre l’espai de comparació amb el resultat.",
     grpList: 'Tots els grups de l’escena: deduïts de l’IFC (projecte, emplaçament, ubicació) i creats pels usuaris.',
     grpCreate: 'Crea un grup, opcionalment amb models. Retorna el seu id.',
     grpEdit: 'Reanomena o esborra un grup d’usuari. Els automàtics no s’editen.',
@@ -114,6 +128,8 @@ export const SDK_DOCS_V113 = {
     covGet: '当前的封面；封面工作室关闭时为 null。',
     covExport: '导出：png / jpeg（单页），pdf / pptx（整份文档），zip（全部页面）。返回字节。',
     covClose: '关闭封面工作室。',
+
+    cmpRun: "按 URL 比较两次交付（按 GlobalId），并在结果上打开比较工作区。",
     grpList: '场景中的所有分组——从 IFC 推断（项目、场地、位置）以及用户创建的分组。',
     grpCreate: '创建分组，可同时放入模型。返回其 id。',
     grpEdit: '重命名或删除用户分组。自动分组不可编辑。',
@@ -129,6 +145,8 @@ export const SDK_DOCS_V113 = {
     covGet: '現在のカバー。カバースタジオが閉じていれば null。',
     covExport: 'エクスポート：png / jpeg（1 ページ）、pdf / pptx（文書全体）、zip（全ページ）。バイトを返します。',
     covClose: 'カバースタジオを閉じます。',
+
+    cmpRun: "URL で 2 つの納品を（GlobalId で）比較し、結果を比較画面で開きます。",
     grpList: 'シーン内のすべてのグループ——IFC から推定（プロジェクト、敷地、位置）されたものとユーザーが作成したもの。',
     grpCreate: 'グループを作成（モデルを入れることも可）。id を返します。',
     grpEdit: 'ユーザーグループの名前変更・削除。自動グループは編集できません。',
@@ -144,6 +162,8 @@ export const SDK_DOCS_V113 = {
     covGet: 'หน้าปกในสถานะปัจจุบัน หรือ null เมื่อปิดสตูดิโอ',
     covExport: 'ส่งออก: png / jpeg (หนึ่งหน้า), pdf / pptx (ทั้งเอกสาร), zip (ทุกหน้า) ส่งไบต์กลับมา',
     covClose: 'ปิดสตูดิโอหน้าปก',
+
+    cmpRun: "เปรียบเทียบงานส่งมอบสองชุดจาก URL (ตาม GlobalId) และเปิดพื้นที่เปรียบเทียบพร้อมผลลัพธ์",
     grpList: 'ทุกกลุ่มในฉาก — อนุมานจาก IFC (โครงการ ไซต์ ตำแหน่ง) และที่ผู้ใช้สร้าง',
     grpCreate: 'สร้างกลุ่ม ใส่โมเดลได้ตามต้องการ ส่ง id กลับมา',
     grpEdit: 'เปลี่ยนชื่อหรือลบกลุ่มของผู้ใช้ กลุ่มอัตโนมัติแก้ไขไม่ได้',

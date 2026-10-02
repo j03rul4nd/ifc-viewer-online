@@ -287,7 +287,11 @@ export default defineConfig({
     // excluded packages request it.  Without this, on a cold start the
     // excluded packages might race against three's pre-bundling and end up
     // with an unresolved dependency.
-    include: ['three'],
+    // mediabunny is only reached through the lazily imported Clip Studio, so
+    // Vite would discover it mid-session, re-optimize, and leave the page
+    // holding a stale deps URL (504 → "Failed to fetch dynamically imported
+    // module"). Pre-bundling it up front avoids that.
+    include: ['three', 'mediabunny'],
   },
   worker: {
     format: 'es',
