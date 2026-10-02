@@ -132,11 +132,12 @@ const DEMOS: Record<ToolDemoId, DemoConfig> = {
       `${POBLENOU}/BCN-IVO-ZZ-XX-M3-S-0001.ifc`,
       `${POBLENOU}/BCN-IVO-ZZ-XX-M3-M-0001.ifc`,
     ],
-    params: { tree: '1' },
+    // Nothing to run: a slow turn says "this is live, take it" (stops at the first touch).
+    params: { tree: '1', turntable: '5' },
   },
   'ifc43-bridge': {
     models: ['https://raw.githubusercontent.com/buildingSMART/Sample-Test-Files/main/IFC%204.3.2.0%20(IFC%204.3%20ADD2)/Simple-Scene/Infra-Bridge.ifc'],
-    params: { tree: '1' },
+    params: { tree: '1', turntable: '5' },
   },
 }
 
@@ -257,6 +258,21 @@ export default function ToolDemo({
     setPhase('loading')
     setAttempt((n) => n + 1)
   }, [])
+
+  // Off screen, stop painting: a post with several live figures stays light.
+  useEffect(() => {
+    const el = figureRef.current
+    if (!revealed || !el || typeof IntersectionObserver === 'undefined') return
+    let visible = true
+    const io = new IntersectionObserver((entries) => {
+      const now = entries.some((e) => e.isIntersecting)
+      if (now === visible) return
+      visible = now
+      post({ type: 'ifcviewer:set-paused', paused: !now })
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [revealed, post])
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {

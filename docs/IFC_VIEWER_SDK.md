@@ -228,6 +228,37 @@ await viewer.frame({ azimuth: 200, elevation: 32, fill: 0.8 })
 
 `kiosk` is the canvas only since 1.14, as it was always documented.
 
+## The article kit (v1.15)
+
+Everything a figure in a blog post needs, so the page around it stays light and still.
+
+```js
+const viewer = new IfcViewer('#figure', {
+  ui: 'article',
+  model: 'https://example.com/pavilion.ifc',
+  lazy: true,                 // or 'visible': boot when the figure nears the screen
+  poster: '/img/pavilion.jpg', posterTitle: 'The pavilion, live', launchLabel: 'Open the model',
+  aspectRatio: '16/10',       // poster and viewer share one box: no layout shift
+  background: 'auto',         // paper on a light page, studio on a dark one — and it follows theme switches
+  turntable: true,            // slow idle turn, stopped by the first touch
+  fullscreenButton: true,
+  validate: false,
+})
+```
+
+| Option / method | Description |
+|--------|-------------|
+| `lazy`, `poster`, `posterTitle`, `posterText`, `launchLabel` | Nothing loads until the reader presses the poster's button (`true`) or the figure nears the screen (`'visible'`). Calls made before are queued, and their timeouts only start at boot. The poster stays up until the first model is in. |
+| `aspectRatio` | Size by proportion. Without it (and without the other kit options) the iframe goes into your element bare, as before. |
+| `background: 'auto'` | Reads the first opaque background up from your element; follows `class` / `style` / `data-theme` changes and `prefers-color-scheme`. |
+| `turntable` / `setTurntable(enabled \| degPerSec)` | Idle orbit; never under `prefers-reduced-motion`. |
+| `pauseOffscreen` / `setPaused(paused)` | Stop rendering while the figure is off screen. On by default with `ui: 'article'`. |
+| `fullscreenButton` / `toggleFullscreen()` | Expand the figure to the whole screen. |
+| `activate()` | Boot a lazy viewer from your own button. |
+| `bindSteps(steps)` | Scrollytelling: each `{ el, frame?, camera?, isolate?, solar?, background?, run? }` applies while its paragraph crosses the middle of the screen; waits for the models. Returns an unbind function. |
+
+The web component takes the same as attributes: `<ifc-viewer ui="article" model="…" lazy poster="…" aspect-ratio="16/10" background="auto" turntable fullscreen-button>`.
+
 ## Analysis: sections, measurements, federated models (v1.11)
 
 | Method | Description |

@@ -60,8 +60,10 @@ export interface IfcViewerOptions {
      * Scene background from the first frame: a preset (`'white'`, `'paper'`,
      * `'blueprint'`, `'sky'`, `'studio'`), one colour (`'#f4f4f5'`) or a
      * top,bottom gradient (`'#dbeafe,#ffffff'`). Since v1.11.0.
+     * `'auto'` follows your page: paper when it is light, the dark studio when
+     * it is dark, and again when the reader switches theme. Since v1.15.0.
      */
-    background?: BackgroundSpec;
+    background?: BackgroundSpec | 'auto';
     /**
      * Put the model on the map once it loads, from its own georeference. `true`
      * for the map alone, or the layers to add. Map tiles and OpenStreetMap come
@@ -93,6 +95,32 @@ export interface IfcViewerOptions {
      * `ui: 'article'` implies it. Since v1.14.0.
      */
     wheel?: 'always' | 'ctrl';
+    /**
+     * Load nothing until it is wanted. `true`: a poster with a play button —
+     * the viewer boots on click. `'visible'`: it boots on its own when the
+     * figure scrolls near the screen. Calls made before then are queued.
+     */
+    lazy?: boolean | 'visible';
+    /** Image shown until the viewer is up (with `lazy`, until the reader starts it). */
+    poster?: string;
+    /** Title, line of text and button label on the poster. */
+    posterTitle?: string;
+    posterText?: string;
+    launchLabel?: string;
+    /**
+     * Size by proportion instead of a fixed height — `'16/10'`, `'4/3'`, `'1/1'`.
+     * Poster and viewer share the box, so starting it never moves the page.
+     */
+    aspectRatio?: string;
+    /** Slow idle orbit once the model is in (`true` = 6°/s, or degrees per second). Stops at the first touch. */
+    turntable?: boolean | number;
+    /**
+     * Stop rendering while the figure is off screen — a post with several
+     * viewers stays light. Default `true` with `ui: 'article'`.
+     */
+    pauseOffscreen?: boolean;
+    /** A small expand button in the corner (see {@link IfcViewer.toggleFullscreen}). */
+    fullscreenButton?: boolean;
     /** Reject add()/addFromUrl() after this many ms. 0 disables. Default 120000. */
     loadTimeout?: number;
     /** Convenience callbacks (equivalent to .on(...)). */
@@ -375,6 +403,25 @@ export type BackgroundSpec = BackgroundPreset | string | {
     top: string;
     bottom?: string;
 };
+/**
+ * One step of a scrolled story ({@link IfcViewer.bindSteps}): what the viewer
+ * shows while `el` is in the middle of the screen. Every field is optional;
+ * `run` gets the viewer for anything else.
+ */
+export interface StoryStep {
+    /** The paragraph (or its selector) that drives this step. */
+    el: Element | string;
+    frame?: FrameOptions;
+    camera?: {
+        position: Vec3;
+        target: Vec3;
+    };
+    /** IFC class to isolate; `null` shows everything again. */
+    isolate?: string | null;
+    solar?: SolarOptions;
+    background?: BackgroundSpec;
+    run?: (viewer: IfcViewer) => void | Promise<void>;
+}
 /** The background the viewer resolved, as returned by setBackground/getBackground. */
 export interface BackgroundState {
     preset: BackgroundPreset | 'custom';
@@ -873,8 +920,16 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.14.0";
+    readonly version = "1.15.0";
     readonly iframe: HTMLIFrameElement;
+    /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
+    readonly box: HTMLDivElement | null;
+    private readonly src;
+    private activated;
+    private mountEl;
+    private activationQueue;
+    private posterEl;
+    private cleanups;
     private readonly baseUrl;
     private readonly appOrigin;
     private readonly opts;
@@ -889,6 +944,47 @@ export declare class IfcViewer {
     private listeners;
     private disposed;
     constructor(target: string | HTMLElement, options?: IfcViewerOptions);
+    /**
+     * Boot the viewer now (with `lazy`, what the poster's button does). Calls
+     * made before were queued and run once it is ready. Safe to call twice.
+     */
+    activate(): void;
+    /** True once the viewer has been asked to boot. */
+    get isActive(): boolean;
+    /**
+     * Expand the figure to the whole screen, or back. Uses the box the article
+     * kit draws (so the expand button stays), else the iframe itself.
+     */
+    toggleFullscreen(): Promise<void>;
+    /**
+     * A slow idle orbit (degrees per second; `false` stops it). It stops at the
+     * visitor's first touch and never runs under prefers-reduced-motion.
+     */
+    setTurntable(enabled?: boolean | number): Promise<{
+        active: boolean;
+        speed: number;
+    }>;
+    /** Stop or resume painting frames. `pauseOffscreen` does this for you. */
+    setPaused(paused: boolean): Promise<{
+        paused: boolean;
+    }>;
+    /**
+     * Scrollytelling: bind steps of a story to paragraphs of your page. While a
+     * step's element crosses the middle of the screen the viewer frames, isolates,
+     * moves the sun or runs whatever the step says. Returns a function that
+     * unbinds. The first step is applied once the viewer is ready.
+     *
+     * ```js
+     * viewer.bindSteps([
+     *   { el: '#intro', frame: { view: 'iso' } },
+     *   { el: '#walls', isolate: 'IfcWall', frame: { azimuth: 200, elevation: 20 } },
+     *   { el: '#sun', isolate: null, solar: { active: true, time: '19:30' } },
+     * ])
+     * ```
+     */
+    bindSteps(steps: StoryStep[], options?: {
+        rootMargin?: string;
+    }): () => void;
     /** True once the iframe viewer has signalled readiness. */
     get isReady(): boolean;
     /** Resolves when the viewer is ready to accept commands. */
@@ -900,7 +996,9 @@ export declare class IfcViewer {
     /** Select + frame an element by its IFC expressID. */
     select(expressId: number, modelId?: string): void;
     /** Isolate a category by IFC class (e.g. "IfcWall"); omit to clear. */
-    isolate(ifcType?: string): void;
+    isolate(ifcType?: string, options?: {
+        frame?: boolean;
+    }): void;
     /** Frame the active model. */
     fit(): void;
     /** Reset the camera to its default position. */
@@ -1335,6 +1433,18 @@ export declare class IfcViewer {
     private send;
     /** Send a query and resolve with the iframe's `result` payload. */
     private request;
+    /** Run now if the viewer has been asked to boot, else when it is. */
+    private whenActive;
+    /** The poster the article kit shows until the model is in. */
+    private mountPoster;
+    /** The expand button of the article kit. */
+    private mountFullscreenButton;
+    /**
+     * `background: 'auto'`: paper on a light page, the dark studio on a dark one,
+     * read from the page itself (the first opaque background up from the mount)
+     * and followed when the reader switches theme.
+     */
+    private watchHostTheme;
     private post;
     private readonly onMessage;
     private emit;
@@ -1351,6 +1461,18 @@ export declare class IfcViewerElement extends HTMLElement {
     addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent>;
     select(expressId: number, modelId?: string): void;
     isolate(ifcType?: string): void;
+    activate(): void;
+    frame(options?: FrameOptions): Promise<{
+        scope: CameraScope;
+    }>;
+    toggleFullscreen(): Promise<void>;
+    setTurntable(enabled?: boolean | number): Promise<{
+        active: boolean;
+        speed: number;
+    }>;
+    bindSteps(steps: StoryStep[], options?: {
+        rootMargin?: string;
+    }): () => void;
     getStats(): Promise<StatsResult>;
     getIssues(opts?: {
         severity?: 'error' | 'warning' | 'info';

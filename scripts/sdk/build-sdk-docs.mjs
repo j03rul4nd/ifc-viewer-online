@@ -17,6 +17,7 @@ import { SDK_DOCS_V111 } from './sdk-docs-v111.mjs'
 import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
 import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
 import { SDK_DOCS_V114 } from './sdk-docs-v114.mjs'
+import { SDK_DOCS_V115 } from './sdk-docs-v115.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -536,6 +537,7 @@ for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V111[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V114[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V115[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -678,6 +680,13 @@ const API_GROUPS = [
     ['exportCover({ type?, slide? })', 'Promise<CoverFile>', 'covExport'],
     ['closeCover()', 'Promise<void>', 'covClose'],
   ]],
+  ['article', 'grpArticle', [
+    ['activate()', 'void', 'artActivate'],
+    ['bindSteps(steps, { rootMargin? })', '() => void', 'artSteps'],
+    ['setTurntable(enabled | degPerSec)', 'Promise<{ active, speed }>', 'artTurntable'],
+    ['toggleFullscreen()', 'Promise<void>', 'artFullscreen'],
+    ['setPaused(paused)', 'Promise<{ paused }>', 'artPaused'],
+  ]],
   ['groups', 'grpGroups', [
     ['getGroups()', 'Promise<SceneGroupsState>', 'grpList'],
     ['createGroup(name, modelIds?)', 'Promise<string>', 'grpCreate'],
@@ -758,6 +767,12 @@ const OPTIONS = [
   ['scans', 'string[]', '—', 'optScans'],
   ['view · fill', "CameraView · number", '—', 'optView'],
   ['wheel', "'always' | 'ctrl'", "'always'", 'optWheel'],
+  ['lazy', "boolean | 'visible'", 'false', 'optLazy'],
+  ['poster · posterTitle · posterText · launchLabel', 'string', '—', 'optPoster'],
+  ['aspectRatio', "string ('16/10')", '—', 'optAspect'],
+  ['turntable', 'boolean | number', 'false', 'optTurntable'],
+  ['pauseOffscreen', 'boolean', "ui === 'article'", 'optPause'],
+  ['fullscreenButton', 'boolean', 'false', 'optFullscreen'],
   ['height · width', 'number | string', "'100%'", 'optSize'],
   ['baseUrl', 'string', 'auto', 'optBaseUrl'],
   ['loadTimeout', 'number', '120000', 'optTimeout'],
@@ -965,13 +980,27 @@ img.src = URL.createObjectURL(new Blob([bytes], { type: mimeType }));`
 
 const REC_ARTICLE =
 `const viewer = new IfcViewer("#figure", {
-  ui: "article",          // canvas only, tight iso framing, wheel scrolls the page
-  background: "paper",
+  ui: "article",            // canvas only, tight iso framing, wheel scrolls the page
+  model: "https://example.com/pavilion.ifc",
+  lazy: true,               // nothing loads until the reader asks
+  poster: "/img/pavilion.jpg",
+  posterTitle: "The pavilion, live",
+  aspectRatio: "16/10",     // no layout shift from poster to viewer
+  background: "auto",       // paper on a light page, studio on a dark one
+  turntable: true,          // a slow turn until the reader takes over
+  fullscreenButton: true,
   validate: false,
-  height: 480,
-});
-await viewer.addFromUrl("https://example.com/pavilion.ifc");
-await viewer.frame({ azimuth: 200, elevation: 32, fill: 0.8 });`
+});`
+
+const REC_STORY =
+`// <div id="figure" style="position:sticky;top:1rem"></div>
+// <p id="s1">…</p> <p id="s2">…</p> <p id="s3">…</p>
+const viewer = new IfcViewer("#figure", { ui: "article", aspectRatio: "16/10", model: url });
+viewer.bindSteps([
+  { el: "#s1", frame: { view: "iso" } },
+  { el: "#s2", isolate: "IfcWall", frame: { azimuth: 225, elevation: 20 } },
+  { el: "#s3", isolate: null, solar: { active: true, date: "06-21", time: "19:30" } },
+]);`
 
 const REC_THEME =
 `new IfcViewer("#viewer", { accent: "#22c55e" });
@@ -1162,6 +1191,7 @@ function page(lang) {
     recipe('rec10T', 'rec10B', REC_VIDEO) +
     recipe('rec11T', 'rec11B', REC_COVER) +
     recipe('rec12T', 'rec12B', REC_ARTICLE) +
+    recipe('rec13T', 'rec13B', REC_STORY) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'

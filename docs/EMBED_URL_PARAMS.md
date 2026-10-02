@@ -47,6 +47,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
 | `view`     | `iso` · `top` · `front` · `back` · `left` · `right` · `bottom` | — (`iso` with `ui=article`) | Once every model has loaded, frame them from this view with a **tight fit**: fitted to the box's corners, not its bounding sphere, so a long low building fills the frame. *(1.14)* |
 | `fill`     | `0.2`–`0.98` or a percentage     | `0.85`    | With `view`: share of the frame the model fills on its tighter axis. *(1.14)* |
+| `turntable` | `1` or degrees/second          | off       | A slow idle orbit once the model is in, stopped for good by the visitor's first touch; never under `prefers-reduced-motion`. *(1.15)* |
 | `wheel`    | `always` · `ctrl`                | `always` (`ctrl` with `ui=article`) | `ctrl`: the wheel scrolls the host page and zooms only with Ctrl/⌘ held (a trackpad pinch sends Ctrl), with a short hint over the canvas — like an embedded map. *(1.14)* |
 
 ### Federated links: how several models load
@@ -256,8 +257,10 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:load-bytes` | `name`, `bytes` (transferable `ArrayBuffer`), `requestId?` | Load IFC bytes the host already has (what the SDK's `add()` sends) |
 | `ifcviewer:clear`   | — | Cancel IFC loads still in flight, then remove every model |
 | `ifcviewer:select`  | `expressId`, `modelId?` | Select + frame an element |
-| `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear) | Isolate a category |
+| `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear), `frame?` | Isolate a category; `frame: false` keeps the camera *(1.15)* |
 | `ifcviewer:fit`     | — | Frame the active model |
+| `ifcviewer:set-turntable` | `enabled?`, `speed?` (°/s, default 6) | Idle orbit; answers `{ active, speed }` *(1.15)* |
+| `ifcviewer:set-paused` | `paused` | Stops / resumes painting frames (a figure off screen); answers `{ paused }` *(1.15)* |
 | `ifcviewer:view`    | `preset?`, `scope?`, `fill?`, `azimuth?`, `elevation?`, `animate?` | Frames from a preset. With `fill` (0.2–0.98) or angles (degrees) it is a **tight fit** to the box's corners; answers `{ scope }` *(fill/angles: 1.14)* |
 | `ifcviewer:reset`   | — | Reset the camera |
 
