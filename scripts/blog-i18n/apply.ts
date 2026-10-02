@@ -6,7 +6,10 @@
 // Reads <workDir>/<lang>/*.json (see extract.ts), refuses any post that
 // check.ts would flag, and writes src/lib/blog-i18n/<lang>.ts: every English
 // post, same slug and structure, with the translated text. --partial writes
-// only the posts that are finished (for previewing mid-translation).
+// only the posts that are finished (for previewing mid-translation). --merge
+// keeps every post of the current pack that the work dir doesn't have, so a
+// work dir holding only a few new posts adds them without re-translating the
+// rest.
 //
 // A translated post keeps its English slug under the language prefix
 // (/ja/blog/<slug>/): every internal link, related block and reference in the
@@ -15,6 +18,7 @@
 // apps, where percent-encoded CJK paths do not.
 
 import { writeFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 import path from 'node:path'
 import { ALL_BLOG_POSTS, BLOG_POSTS, type BlogPost } from '../../src/lib/blog-posts'
 import { applySegments, relinkSections, retargetLinks } from './segments'
@@ -43,6 +47,12 @@ const EXPORT_NAME: Record<string, string> = { es: 'BLOG_POSTS_ES_PACK', de: 'BLO
 const [workDir, lang, ...flags] = process.argv.slice(2)
 if (!workDir || !CATEGORY[lang]) throw new Error(`usage: apply.ts <workDir> <${Object.keys(CATEGORY).join('|')}> [--partial]`)
 const partial = flags.includes('--partial')
+const merge = flags.includes('--merge')
+const name = EXPORT_NAME[lang] ?? `BLOG_POSTS_${lang.toUpperCase()}`
+const file = path.resolve('src/lib/blog-i18n', `${lang}.ts`)
+const current = new Map<string, BlogPost>(
+  merge ? ((await import(pathToFileURL(file).href))[name] as BlogPost[]).map((p) => [p.slug, p]) : [],
+)
 
 // A language may already have hand-written versions of some English posts
 // (Spanish, German, French): those stay, get no translation, and every link
@@ -61,6 +71,7 @@ const skipped: string[] = []
 for (const source of BLOG_POSTS) {
   if (writtenFor.has(source.slug)) continue
   const entry = manifest.get(source.slug)
+  if (!entry && current.has(source.slug)) { out.push(current.get(source.slug)!); continue }
   if (!entry) throw new Error(`${source.slug} is not in the manifest — re-run extract.ts`)
   const problems = postProblems(workDir, lang, entry)
   if (problems === null || problems.length > 0) {
@@ -85,7 +96,7 @@ for (const source of BLOG_POSTS) {
   out.push(post)
 }
 
-const dropped = relinkSections(out, new Map(BLOG_POSTS.map((p) => [p.slug, p])))
+const dropped = relinkSections(out.filter((p) => !current.has(p.slug) || manifest.has(p.slug)), new Map(BLOG_POSTS.map((p) => [p.slug, p])))
 
 // ── Write it as readable TypeScript ─────────────────────────────────────────
 // Small objects stay on one line, the way blog-posts.ts is written — which
@@ -104,8 +115,6 @@ function toTs(value: unknown, indent: string): string {
   return `${open.trim()}\n${entries.map((e) => `${inner}${e},`).join('\n')}\n${indent}${close.trim()}`
 }
 
-const name = EXPORT_NAME[lang] ?? `BLOG_POSTS_${lang.toUpperCase()}`
-const file = path.resolve('src/lib/blog-i18n', `${lang}.ts`)
 const note = writtenFor.size
   ? `\n// Not here: the ${writtenFor.size} posts this language already has hand-written in\n// blog-posts.ts (${[...writtenFor.values()].join(', ')}); links go to those.`
   : ''

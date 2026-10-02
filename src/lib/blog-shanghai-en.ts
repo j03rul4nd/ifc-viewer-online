@@ -1,0 +1,177 @@
+import type { BlogPost, ContentBlock } from './blog-posts'
+
+// English editions of the Spanish Shanghai series (blog-shanghai-es.ts). Each
+// slug is the Spanish post's translationKey, so the two cluster for hreflang
+// and the translated packs (src/lib/blog-i18n/) carry them to every language.
+const repo = 'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/'
+const slugs = ['shanghai-city-bim-gis', 'shanghai-pedestrian-bridges', 'shanghai-railway-stations', 'shanghai-parks-courtyards']
+const p = (text: string): ContentBlock => ({ type: 'p', text })
+const h = (text: string): ContentBlock => ({ type: 'h2', text })
+const diagram = (name: string, alt: string): ContentBlock => ({ type: 'image', src: `blog/images/shanghai-${name}.svg`, alt, caption: 'Explanatory diagram, not to scale. It does not represent measured dimensions of Shanghai.', width: 1200, height: 600 })
+const related = (index: number): ContentBlock[] => [h('Keep exploring the Shanghai case'), ...slugs.filter((_, i) => i !== index).map(to => ({ type: 'related' as const, to })), { type: 'tool', id: 'viewer', why: 'Open your IFC and check how it sits in its urban surroundings.' }]
+const base = { date: '2026-10-03', dateModified: '2026-10-03', author: 'IFC Viewer Team', category: 'Digital twins', categorySlug: 'digital-twins', readTimeMin: 6 }
+const credit = 'IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)'
+const dataCredit = 'IFC Viewer Online · data © OpenStreetMap contributors (ODbL)'
+
+export const SHANGHAI_POSTS_EN: BlogPost[] = [
+  {
+    ...base, slug: slugs[0],
+    heroImage: 'blog/images/shanghai-bridge-blender-review.jpg',
+    heroAlt: 'Review render of the Mingzhu ring: an approximate reconstruction over OSM mapping',
+    heroCredit: credit,
+    title: 'Shanghai in 3D: Combining IFC Buildings and Urban Context Without Losing Reality',
+    seoTitle: 'Shanghai in 3D: IFC Buildings and BIM/GIS Context',
+    excerpt: 'From the Oriental Pearl to the Yuyuan gardens: how we built a 3D context that keeps streets, entrances and open spaces, and where its limits lie for a BIM project.',
+    seoDescription: 'Explore Shanghai in 3D with IFC and OpenStreetMap. Tell the BIM model, the urban context and the approximations apart, with a demo and practical examples.',
+    keywords: ['Shanghai 3D', 'Shanghai 3D map', 'BIM GIS', 'IFC OpenStreetMap', 'Oriental Pearl IFC'],
+    references: [
+      { id: 'case', title: 'Shanghai: fidelity criteria for the urban context', source: 'IFC Viewer Online', url: repo + 'docs/SHANGHAI_CITY_FIDELITY.md' },
+      { id: 'model', title: 'Oriental Pearl: sources and limits of the IFC reconstruction', source: 'IFC Viewer Online', url: repo + 'docs/ORIENTAL_PEARL_RECONSTRUCTION.md' },
+    ],
+    faqs: [
+      { q: 'Is this a digital twin of all of Shanghai?', a: 'No. It is a BIM/GIS visualisation with IFC reconstructions and map context. It implies neither complete coverage nor a connection to sensors or real-time operational data.' },
+      { q: 'Is the demo the original IFC of the Oriental Pearl?', a: 'No. It is an approximate reconstruction by IFC Viewer Online, with its sources and limitations documented; it is not an as-built model.' },
+      { q: 'Can I use the map to check site distances?', a: 'The illustrative scene is not enough. Coordinates, elevations, provenance and tolerances must first be validated against control points.' },
+    ],
+    content: [
+      p('A useful 3D map does more than place buildings on an aerial image. It has to explain what connects to what, what passes over what, and which spaces stay open. Shanghai let us test those relationships: pedestrian bridges in Lujiazui, large railway stations and historic gardens inside a dense city.'),
+      { type: 'takeaways', items: ['The IFC provides the building elements; the mapping provides the context. Their accuracies are not interchangeable.', 'Continuity of entrances, tracks and courtyards matters more than adding decorative detail.', 'You can inspect an IFC reconstruction of the Oriental Pearl and see what information it contains.'] },
+      diagram('layers', 'Three separate layers: IFC building, urban mapping and approximate visual detail'),
+      h('What our 3D Shanghai actually represents'),
+      p('An IFC model organises the elements and properties of a building. The map places streets, water, parks and infrastructure around it. Combining them helps explain an entrance, how a volume fits, or how it relates to public space. The condition is that they share a consistent placement and that the reader knows where each layer comes from.'),
+      { type: 'table', headers: ['Layer', 'What it provides', 'What it does not prove'], rows: [['IFC', 'Elements and properties from the file', 'That it is an as-built model'], ['OSM mapping', 'Available footprints and tags', 'Complete coverage or survey accuracy'], ['Procedural geometry', 'Volume and detail for visualisation', 'Measurements of undocumented elements']] },
+      p('In this case we use IFC reconstructions of landmarks and map context. We do not offer a complete survey of Shanghai or a connection to its day-to-day operation. That distinction lets the scene be used for communication and visual review without attributing to it an accuracy its sources do not provide.'),
+      h('Check the placement before adding detail'),
+      p('If the whole context appears shifted by several blocks, check the coordinate system before moving individual buildings. Then check orientation and scale against recognisable features. Finally, compare elevations: resting the IFC and the map on different vertical references can make an entrance float even when the plan looks right.'),
+      { type: 'p', text: ['To set up your own file, see the ', { text: 'guide to a georeferenced IFC on a 3D map', to: 'view-ifc-on-3d-map-online' }, '. Here we focus on the quality of the Shanghai context, not on repeating the georeferencing procedure.'] },
+      h('Three mistakes Shanghai forced us to solve'),
+      p('In Lujiazui, a bridge does not end at the edge of its deck: stairs, lifts and landings matter too. At the stations, extruding the concourse as a solid block can bury the tracks. In Yuyuan, filling every polygon erases courtyards and islands and changes how the garden reads.'),
+      p('The common lesson was to keep relationships. A road can remain a road while a bridge carries it. A park can contain a hole. A roof can shelter an open space. Textures do not solve these problems: the organisation of the geometry has to work first.'),
+      { type: 'p', text: ['The criteria and limitations of the work are documented in our Shanghai case. ', { cite: 'case' }] },
+      h('Explore the Oriental Pearl: from object to context'),
+      { type: 'ifc-demo', modelId: 'oriental-pearl-tower', title: 'Oriental Pearl: IFC4 reconstruction', description: 'Approximate model, not as-built. This demo shows the building; to review the urban context, open the full viewer and turn on the map.', schema: 'IFC4', size: '21.2 MB', height: 440 },
+      { type: 'steps', items: [{ title: 'Inspect the main volumes', body: 'Load the demo and compare its silhouette from several angles before zooming in on details.' }, { title: 'Look up elements and properties', body: 'Select pieces of the IFC. Tell information in the file apart from the map geometry that will appear in Map mode.' }, { title: 'Review the relationship with the street', body: 'In the full viewer, load the same demo from the gallery and turn on Map mode. Compare an aerial view with one close to the ground.' }] },
+      { type: 'p', text: ['The file is our reconstruction; it does not come from the building’s original model. Its sources and decisions are described here. ', { cite: 'model' }] },
+      h('How to present a review without overstating its accuracy'),
+      p('Prepare an aerial view that explains the site, another at street level and a close-up of the connection you want to discuss. Note what belongs to the IFC, what comes from the map and what is approximate. If a structure is missing, check the data coverage: its absence on screen does not prove it does not exist.'),
+      p('When you reuse a capture, keep the map attribution and state that the reconstruction is approximate. The useful outcome is a clearer spatial decision. More buildings or more polygons on screen do not, on their own, prove greater fidelity.'),
+      ...related(0),
+    ],
+  },
+  {
+    ...base, slug: slugs[1],
+    heroImage: 'blog/images/shanghai-bridge-blender-review.jpg',
+    heroAlt: 'Approximate reconstruction of the Mingzhu pedestrian ring and its connections, rendered in Blender',
+    heroCredit: credit,
+    title: 'Shanghai Pedestrian Bridges in 3D: Heights, Stairs and Connections That Actually Fit',
+    seoTitle: '3D Pedestrian Bridges: Shanghai and OpenStreetMap',
+    excerpt: 'An elevated ring can look perfect from above and fail at street level. This is how we review decks, widenings, stairs and lifts in Lujiazui.',
+    seoDescription: 'How to represent Shanghai pedestrian bridges: elevations, widths, and connected stairs and lifts, without turning the OpenStreetMap layer tag into metres.',
+    keywords: ['3D pedestrian bridges', 'Shanghai bridges', 'Lujiazui 3D', 'OpenStreetMap layer', 'bridge modelling'],
+    references: [{ id: 'case', title: 'Lujiazui bridges: reconstruction, evidence and limits', source: 'IFC Viewer Online', url: repo + 'docs/SHANGHAI_BRIDGE_RENDERING.md' }, { id: 'layer', title: 'Key:layer — vertical order of features', source: 'OpenStreetMap', url: 'https://wiki.openstreetmap.org/wiki/Key:layer' }],
+    faqs: [{ q: 'Does layer=1 mean one metre high?', a: 'No. Layer expresses the vertical order of features that cross each other; it is not an elevation in metres.' }, { q: 'Does a continuous stair prove accessibility?', a: 'No. Visual continuity does not verify slopes, dimensions, whether lifts work, or accessibility requirements.' }],
+    content: [
+      p('An elevated ring can look right from above and fail as soon as the camera drops: stairs that do not reach the deck, railings cutting across an entrance, or a walkway that suddenly narrows. That is why we reviewed the Lujiazui bridges as connected routes, not isolated objects.'),
+      diagram('bridges', 'Schematic section of deck, stair, landing and lift with the connections marked'),
+      h('The question that reveals a bad connection'),
+      p('Can you visually follow the route from the pavement up to the deck, and from there to the next access? That question forces you to look at the ends and the joints. A handsome but disconnected bridge does not explain how people move through the place. The check assesses the model’s continuity; it does not certify real-world safety or accessibility.'),
+      h('Layer orders crossings: it does not measure height'),
+      { type: 'p', text: ['OpenStreetMap uses layer to describe the vertical order where features cross. It is not a metric elevation. ', { cite: 'layer' }, ' Assigning a fixed height to each value can produce a tidy picture, but it does not prove the height of any particular bridge.'] },
+      p('In our renderer we keep the route’s function separate from the structure that carries it. A way can be pedestrian and elevated; a road can run through a tunnel. When measurements are missing, the elevation used for display must stay marked as an approximation. It is not enough for the upper crossing to sit above the lower one.'),
+      h('Why width must belong to each bridge'),
+      { type: 'image', src: 'blog/images/shanghai-bridge-blender-review.jpg', alt: 'Blender render of the Mingzhu pedestrian ring with its accesses and elevated deck', caption: 'Renderer geometry exported to Blender to review Mingzhu. Surroundings hidden to study the connections; undocumented dimensions and details are approximate. Not a photograph.', credit: dataCredit, width: 1400, height: 1000 },
+      p('A narrow footbridge, a platform and a distribution ring do not share the same cross-section. Mingzhu led us to apply a correction tied to the identity of that bridge, rather than widening every footpath in Shanghai. That boundary keeps a local decision from spreading to the rest of the city.'),
+      p('At a joint, check both edges as well as the centreline. Two connected centrelines can leave a gap between surfaces, an overlap or an overly sharp corner. Changes of width need a geometric transition that looks consistent both from above and from the street. A continuous railing must also break where another route comes in.'),
+      h('Stairs, lifts and landings'),
+      p('A stair has two ends at different elevations. Its run has to arrive on a landing surface. For a lift, the map location does not automatically describe doors, car, enclosure or all of its stops. We use the documented accesses to place the connections and leave undimensioned details approximate.'),
+      p('Putting a lift tower wherever it looks convenient would add a claim about the place that the data does not support. The same goes for a stair that disappears into a building: an interior connection may exist, but its geometry cannot be deduced from an exterior view. Record that gap as an open question.'),
+      { type: 'table', headers: ['Symptom', 'Check first', 'Avoid'], rows: [['Floating access', 'Elevations at both ends', 'Moving the whole bridge by eye'], ['Narrow joint', 'Deck widths and edges', 'Connecting only the centrelines'], ['Generic lift', 'Documented location and levels', 'Inventing stops'], ['Railing across an entrance', 'Opening and landing', 'Closing the whole perimeter']] },
+      h('A reusable review sequence'),
+      { type: 'steps', items: [{ title: 'Isolate the bridge', body: 'Check the perimeter of the deck and where it meets neighbouring routes.' }, { title: 'Turn on the surroundings', body: 'Add streets, buildings and terrain to look for clashes and elevation differences.' }, { title: 'Walk each access with the camera', body: 'Look at it from above, from the side and at pedestrian height. One view is not enough.' }, { title: 'Keep the evidence', body: 'Tie each correction to the map identifier, the date and the source; tell proposed extensions apart from existing structures.' }] },
+      { type: 'p', text: ['The Lujiazui case documents which parts follow data and which are approximate. That traceability lets you review why we chose a shape, not just judge how it looks. ', { cite: 'case' }] },
+      ...related(1),
+    ],
+  },
+  {
+    ...base, slug: slugs[2],
+    heroImage: 'blog/images/shanghai-rail-blender-review.jpg',
+    heroAlt: 'Development render of the Hongqiao railway with illustrative trains, not live tracking',
+    heroCredit: credit,
+    title: 'Shanghai Railway Stations in 3D: Tracks, Platforms and Canopies Without Fake Blocks',
+    seoTitle: 'Shanghai Stations in 3D: Tracks and Platforms',
+    excerpt: 'Hongqiao and Shanghai South show why a station needs more than an extruded footprint: clear space, consistent elevations and trains that follow the track.',
+    seoDescription: 'Learn to represent Shanghai stations in 3D: tracks, platforms, open canopies and trains on curves. A practical case study with documented limits.',
+    keywords: ['Shanghai stations 3D', 'Hongqiao 3D model', '3D railway tracks', 'OpenStreetMap platforms'],
+    references: [{ id: 'case', title: 'Shanghai: railway geometry and limits of inference', source: 'IFC Viewer Online', url: repo + 'docs/SHANGHAI_RAIL_RENDERING.md' }, { id: 'gauge', title: 'Key:gauge — track gauge', source: 'OpenStreetMap', url: 'https://wiki.openstreetmap.org/wiki/Key:gauge' }],
+    faqs: [{ q: 'Do the trains show real-time positions?', a: 'No. They are illustrative elements of the scene, not a train-tracking service.' }, { q: 'Are complete underground stations included?', a: 'No. The surface scene does not reconstruct interiors or underground interchanges without specific data.' }, { q: 'Can it be used as a railway engineering model?', a: 'It is visual context. An engineering deliverable needs additional geometry, references and checks of tracks, clearances, platforms and structures.' }],
+    content: [
+      p('A station’s outline describes only part of the problem. Turning it into a block that reaches the ground can close off the track space or erase the relationship between concourse and platforms. In Shanghai we worked with building footprints, rail alignments and platforms as related pieces.'),
+      diagram('stations', 'Explanatory section with an open canopy, supports, a platform and two rails'),
+      h('A station is not a single extrusion'),
+      p('Hongqiao and Shanghai South are useful for reviewing different spatial arrangements. Their specific shapes are selected by map identity and location. That keeps any station in the world from adopting a Shanghai silhouette just because it shares a generic tag.'),
+      p('The footprint gives a plan constraint, but it does not describe every height or the internal structure. When sections or dimensions are missing, the outer form can be approximated to help people understand the place. The void beneath a concourse or a canopy is still essential: closing it changes the relationship with the tracks.'),
+      h('Build the track from its centreline'),
+      p('The centreline lets you follow the route, but it is not the width of the trackbed. The rails must keep a consistent spacing and the sleepers be spaced by distance along the alignment. Restarting their placement on every segment produces bunching and gaps on curves.'),
+      { type: 'p', text: ['The gauge tag needs its units interpreted correctly. ', { cite: 'gauge' }, ' Even when present, it does not provide the full rail profile, the drainage or the geometry of a switch mechanism. Those are separate data that should not be inferred from a single line.'] },
+      p('In our work we separate those components and keep small details for the nearby review zone. It is a representation decision: at a distance what matters is being able to follow the corridor; up close, thickness, spacing and continuity matter. Detail must not change the position of the track.'),
+      h('The platform elevation needs a reference'),
+      p('A platform has to be checked against the track it serves. A generic height above the terrain can match by chance or create an impossible difference. When data is missing, the display height must be declared as a fallback value; it does not prove that every platform in Shanghai is the same height.'),
+      p('Underground elements need an explicit decision. In the surface scene we omit underground alignments; we do not dig out an imaginary station to show them. An exterior view and an infrastructure section answer different questions. Presenting them with the same appearance can lead people to read an omission as a data error.'),
+      h('Open canopies and trains on curves'),
+      { type: 'image', src: 'blog/images/shanghai-rail-blender-review.jpg', alt: 'Blender review render with an illustrative train, rails and sleepers on Hongqiao alignments', caption: 'Development render of our railway geometry, with buildings hidden to inspect the tracks. Vehicles and supports are approximate; not a photograph or real-time tracking.', credit: dataCredit, width: 1400, height: 1000 },
+      p('A canopy needs clear space underneath. Preserving that void contributes more than dressing a closed extrusion with a metal texture. Likewise, a train must share the track’s elevation and orient its cars along the route. A row of boxes at a single angle fails as soon as it enters a curve.'),
+      { type: 'callout', variant: 'info', title: 'Illustrative trains', text: 'The vehicles in this scene provide scale and context. They do not represent operational positions or certify a replica of any specific train series.' },
+      { type: 'table', headers: ['Element', 'Key relationship', 'Data needed for engineering'], rows: [['Rails', 'Spacing and alignment', 'Detailed section and geometry'], ['Platform', 'Elevation relative to the track', 'Validated vertical reference'], ['Canopy', 'Clear space underneath', 'Measured structure and supports'], ['Illustrative train', 'Shared route and elevation', 'Fleet and operational position']] },
+      h('What to check before sharing the scene'),
+      p('Temporarily hide the buildings and follow the tracks through the station. Look for discontinuities, jumps in height, supports inside the corridor and overlapping platforms. Then turn the canopies on: check what gets covered and what still reads from outside. Keep both views to explain the arrangement without mistaking a review view for what the place really looks like.'),
+      { type: 'p', text: ['Interiors, building services, switch mechanisms and certified clearances need other sources. Our documentation records the approximations of canopies, platforms and vehicles to keep that boundary visible. ', { cite: 'case' }] },
+      ...related(2),
+    ],
+  },
+  {
+    ...base, slug: slugs[3],
+    heroImage: 'blog/images/shanghai-yuyuan-blender-review.jpg',
+    heroAlt: 'Approximate map-based reconstruction of Yuyuan reviewed in Blender',
+    heroCredit: credit,
+    title: 'Parks and Courtyards in 3D Maps: What We Learned From Yuyuan and Jing’an',
+    seoTitle: '3D Parks With OpenStreetMap: Yuyuan and Jing’an',
+    excerpt: 'Trees inside plazas, water over islands and covered courtyards: three mistakes that make a map worse however detailed it is. How we tackled them in Shanghai.',
+    seoDescription: 'Avoid trees in plazas, water over islands and covered courtyards. The Yuyuan and Jing’an case for better parks and historic buildings in 3D maps.',
+    keywords: ['3D parks OpenStreetMap', 'Yuyuan 3D', 'Jingan 3D model', 'multipolygon courtyards', 'urban rendering'],
+    references: [{ id: 'case', title: 'Shanghai parks: topology, evidence and limits', source: 'IFC Viewer Online', url: repo + 'docs/SHANGHAI_PARK_RENDERING.md' }, { id: 'rings', title: 'Multipolygon relations and inner rings', source: 'OpenStreetMap', url: 'https://wiki.openstreetmap.org/wiki/Relation:multipolygon' }, { id: 'garden', title: 'Visit Shanghai’s classical gardens', source: 'Shanghai Municipal Government', url: 'https://english.shanghai.gov.cn/en-Parks/20241118/3ab0a509201343a59102f9bc63a3aab4.html' }],
+    faqs: [{ q: 'Do more trees make a 3D park more realistic?', a: 'Not necessarily. Paths, plazas, water and holes must be respected first; density without data is still a visual decision.' }, { q: 'Do the roofs reproduce the temples exactly?', a: 'No. Footprints and mapped shapes are kept, but heights, pitches and supports without measurements remain approximate.' }],
+    content: [
+      p('In a garden, the space between objects matters as much as the objects. If the lawn covers a courtyard or the water fills an island, the place stops reading correctly even if every tree has thousands of polygons. Yuyuan and Jing’an let us review that spatial structure.'),
+      diagram('courtyards', 'Comparison between a wrongly filled polygon and one that keeps the courtyard, pond and path'),
+      h('The visual reference is not a placement plan'),
+      { type: 'p', text: ['The municipal reference describes Yuyuan through pavilions, ponds, rockeries and traditional architecture. ', { cite: 'garden' }, ' That description guides the visual comparison, but it provides no coordinates for placing rocks or inventing pavilions. To position the pieces we start from the available mapping.'] },
+      p('The difference is practical: you can aim for a more faithful composition without presenting as measured what is only plausible. A useful reconstruction makes explicit where the known footprints end and where the representation decisions begin.'),
+      h('How to keep a polygon’s holes'),
+      { type: 'p', text: ['A surface can have an outer boundary and several inner rings. ', { cite: 'rings' }, ' The renderer must generate triangles that leave those interiors open. Storing the hole in the data is not enough if it then vanishes when the mesh is built.'] },
+      p('The rule affects lawns, water and roofs with courtyards. An island’s edge must also count as a shoreline when computing how the water looks. Measuring only to the outer perimeter makes the water next to an island behave visually like the middle of the pond.'),
+      h('Vegetation that respects plazas and paths'),
+      p('A pedestrian plaza is usually a surface, not a line. Excluding trees only along its perimeter keeps the edge clear and lets vegetation fill the centre. Procedural placement must query the whole paved area, as well as buildings, water and railway corridors.'),
+      p('Holes must also be kept when seeding trees and shrubs. Fixing the lawn and leaving the vegetation generator untouched produces an open courtyard with tree trunks inside. We review both processes separately because they share data but build different geometry.'),
+      h('Fountains and furniture without inventing the garden'),
+      p('The average of the vertices of a concave fountain can fall outside its basin. To place a jet symbol you need an interior point and a size limited by the nearest edge. Distance to a vertex is not enough: an edge can pass much closer to the chosen point.'),
+      p('We removed randomly generated pergolas and limited ground furniture to suitable paths. A visually believable position is not a documented one. It is worth telling illustrative vegetation apart from structures the mapping explicitly identifies, especially when a capture is shown outside the viewer.'),
+      h('Temples: model the buildings, not the whole precinct'),
+      { type: 'image', src: 'blog/images/shanghai-yuyuan-blender-review.jpg', alt: 'Blender review render of the Yuyuan area with buildings, ponds, paths and vegetation', caption: 'Geometry review of Yuyuan during development. Map footprints, undocumented heights and vegetation are approximate. Blender materials do not reproduce the viewer’s shaders.', credit: dataCredit, width: 1400, height: 1000 },
+      p('A religious precinct can contain several buildings and open spaces. Extruding its boundary as a single volume erases the courtyards. In Jing’an we checked the precinct and the main hall’s footprint separately; in Yuyuan we kept tagged roof shapes that used to be flattened.'),
+      p('This improves how the whole reads, but it does not reconstruct exact eaves, ornament or supports. A canopy documented as an open roof needs a void beneath it. A temple, a mosque and a commercial building need different criteria: being in Shanghai does not justify giving them the same shape.'),
+      { type: 'table', headers: ['Visible error', 'Likely cause', 'Check'], rows: [['Water over an island', 'Inner ring lost', 'Triangles and inner shorelines'], ['Trees in a plaza', 'Only the perimeter was excluded', 'Whole paved area'], ['Fountain outside its basin', 'Centre computed as an average', 'Interior point and distance to the edge'], ['Temple as a block', 'Precinct mistaken for a building', 'Individual footprints and courtyards']] },
+      h('A test you can repeat in any park'),
+      p('Review the place without trees first: identify courtyards, water, plazas and buildings. Turn on vegetation and check which spaces it invades. Add furniture last. If a layer makes the earlier ones harder to read, investigate its exclusions before increasing the detail.'),
+      { type: 'p', text: ['Keep close-up and distant views. The first reveal clashes; the second show whether the organisation of the place survives. The case’s sources and limits are documented so that an attractive image is not mistaken for a survey. ', { cite: 'case' }] },
+      ...related(3),
+    ],
+  },
+]
+
+// Keep FAQ answers visible to readers as well as in the generated structured data.
+for (const post of SHANGHAI_POSTS_EN) {
+  const at = post.content.findIndex(block => block.type === 'h2' && block.text === 'Keep exploring the Shanghai case')
+  post.content.splice(at, 0, h('Frequently asked questions'), ...(post.faqs ?? []).flatMap(faq => [
+    { type: 'h3' as const, text: faq.q }, p(faq.a),
+  ]))
+}

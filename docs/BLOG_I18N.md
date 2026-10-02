@@ -69,9 +69,10 @@ convention BIM, Brazilian Portuguese for `pt`.
 **When an English post changes:** edit the translation in the pack directly
 for a small change. For a rewrite, extract that slug, translate its parts,
 check, and apply (apply rewrites the whole pack from the work dir, so keep
-the work dir of the last full run, or re-extract every language's current
-text from the pack first). **A new English post** needs its three
-translations before it ships: `blog-i18n.test.ts` fails while any language lacks
+the work dir of the last full run, or pass `--merge`, which keeps every post
+of the current pack the work dir doesn't hold). **A new English post** needs its
+translations before it ships (extract only its slug, translate, check, then
+`apply.ts <work> <lang> --merge`): `blog-i18n.test.ts` fails while any language lacks
 one, since translated posts linking to it would otherwise point at nothing.
 
 ## Search budgets
