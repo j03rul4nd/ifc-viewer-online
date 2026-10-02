@@ -31,7 +31,9 @@
     "billboard": "Billboard",
     "screenHint": "A fixed vertical surface placed on the camera-facing side of the active IFC.",
     "groundHint": "A horizontal overlay with a small lift to prevent flicker against terrain or slabs.",
-    "billboardHint": "Always faces the camera — ideal for a legible fair presentation."
+    "billboardHint": "Always faces the camera — ideal for a legible fair presentation.",
+    "camera": "Camera",
+    "cameraHint": "Pinned to the viewpoint it was filmed from. Seen from there it lies over the model: fade it or slide the curtain to compare as-built with the IFC."
   },
   "playback": {
     "play": "Play",
@@ -73,5 +75,15 @@
     "permission": "Camera or screen permission was not granted.",
     "deviceUnavailable": "The selected camera or screen source is unavailable.",
     "live": "The live source could not be started."
+  },
+  "camera": {
+    "title": "Camera match",
+    "goTo": "Go to the camera's view",
+    "pinHere": "Pin to the current view",
+    "fov": "Field of view of the footage",
+    "curtain": "Curtain",
+    "blend": "Compare: blend",
+    "split": "Compare: curtain",
+    "hint": "Stand where the footage was filmed, line the model up with it (orbit, FOV), then pin. The orange pyramid shows the camera from anywhere else."
   }
 }

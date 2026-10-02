@@ -27,6 +27,17 @@ describe('video placement', () => {
     expect(result.width).toBeCloseTo(10.4)
   })
 
+  it('stands the screen in front of the model and to the right, clear of it, on the ground', () => {
+    const result = placementForMode('screen', bounds, { x: 10, y: 9, z: 30 })
+    // Camera at +z: the screen stands beyond the south face, off to the camera's right (+x).
+    expect(result.z).toBeGreaterThan(bounds.center.z + bounds.size.z / 2 + 1.9)
+    expect(result.x).toBeGreaterThan(bounds.center.x)
+    // Bottom edge just above the base.
+    const bottom = result.y - result.width / (16 / 9) / 2
+    expect(bottom).toBeGreaterThan(0)
+    expect(bottom).toBeLessThan(0.5)
+  })
+
   it('puts billboards above the model and removes fixed rotations', () => {
     const result = placementForMode('billboard', bounds, null, {
       ...DEFAULT_VIDEO_PLACEMENT,

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
 import { useVideoStore, pendingVideo } from '../stores/videoStore'
 import { placementForMode } from '../lib/video/video-placement'
-import type { VideoPlacement, VideoSourceKind, VideoSurfaceMode } from '../lib/video/video-types'
+import type { VideoCameraPose, VideoPlacement, VideoSourceKind, VideoSurfaceMode } from '../lib/video/video-types'
 import {
   CAMERA_CONSTRAINTS,
   DISPLAY_CONSTRAINTS,
@@ -272,12 +272,55 @@ export default function VideoPanel({
     applyPresentation(id)
   }, [applyPresentation])
 
+  /** The viewer's current camera as a footage viewpoint. */
+  const currentPose = useCallback((): VideoCameraPose | null => {
+    const cam = viewerApiRef.current?.getCameraViewpoint()
+    if (!cam) return null
+    return { position: { ...cam.position }, target: { ...cam.target }, fovDeg: cam.fovDeg || 50 }
+  }, [viewerApiRef])
+
+  /** 'camera' mode: pin the clip to a viewpoint (default: where the reader stands now). */
+  const pinCamera = useCallback((pose: VideoCameraPose | null): void => {
+    const id = useVideoStore.getState().activeVideoId
+    if (!id || !pose) return
+    useVideoStore.getState().updateVideo(id, { cameraPose: pose })
+    void getSystem()?.then((system) => {
+      system.setCameraPose(id, pose)
+      const entry = useVideoStore.getState().videos.find((item) => item.id === id)
+      if (entry) system.setPresentation(id, 'camera', entry.placement)
+    })
+  }, [getSystem])
+
+  const goToCamera = useCallback((): void => {
+    const pose = useVideoStore.getState().videos.find((v) => v.id === useVideoStore.getState().activeVideoId)?.cameraPose
+    if (pose) viewerApiRef.current?.setCameraLookAt(pose.position, pose.target, true)
+  }, [viewerApiRef])
+
+  const setSplit = useCallback((split: number): void => {
+    const id = useVideoStore.getState().activeVideoId
+    if (!id) return
+    useVideoStore.getState().updateVideo(id, { split })
+    void getSystem()?.then((system) => system.setSplit(id, split))
+  }, [getSystem])
+
   const setMode = useCallback((mode: VideoSurfaceMode): void => {
     const id = useVideoStore.getState().activeVideoId
     if (!id) return
     void getSystem()?.then((system) => {
       const entry = useVideoStore.getState().videos.find((item) => item.id === id)
       if (!entry) return
+      if (mode === 'camera') {
+        // Pinned to where the reader stands: they framed the shot before
+        // switching, and moving the camera now would throw that away.
+        const pose = entry.cameraPose ?? currentPose()
+        if (!pose) return
+        useVideoStore.getState().setMode(id, mode)
+        useVideoStore.getState().updateVideo(id, { cameraPose: pose })
+        system.setCameraPose(id, pose)
+        system.setPresentation(id, mode, entry.placement)
+        system.setSplit(id, entry.split ?? 1)
+        return
+      }
       const placement = placementForMode(
         mode,
         system.getModelBounds(),
@@ -482,8 +525,8 @@ export default function VideoPanel({
           <>
             <section className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
               <div className="text-[11px] font-medium">{t('mode.title')}</div>
-              <div className="grid grid-cols-3 gap-1">
-                {(['screen', 'ground', 'billboard'] as const).map((mode) => (
+              <div className="grid grid-cols-4 gap-1">
+                {(['screen', 'ground', 'billboard', 'camera'] as const).map((mode) => (
                   <button
                     key={mode}
                     aria-pressed={active.mode === mode}
@@ -566,6 +609,29 @@ export default function VideoPanel({
               )}
             </section>
 
+            {active.mode === 'camera' && (
+              <section className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
+                <div className="text-[11px] font-medium">{t('camera.title')}</div>
+                <div className="grid grid-cols-2 gap-1">
+                  <button onClick={goToCamera} className="px-1 py-1.5 rounded-[7px] text-[10px] font-semibold border border-[var(--accent)]/60 text-[var(--accent)] hover:bg-[var(--accent)]/10">
+                    {t('camera.goTo')}
+                  </button>
+                  <button onClick={() => pinCamera(currentPose())} className="px-1 py-1.5 rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">
+                    {t('camera.pinHere')}
+                  </button>
+                </div>
+                <Slider label={t('camera.fov')} value={active.cameraPose?.fovDeg ?? 50} min={10} max={120} step={0.5} unit="°" digits={1} onChange={(fovDeg) => active.cameraPose && pinCamera({ ...active.cameraPose, fovDeg })} />
+                <Slider label={t('placement.opacity')} value={active.placement.opacity} min={0.05} max={1} step={0.01} unit="" digits={2} onChange={(opacity) => patchPlacement({ opacity })} />
+                <Slider label={t('camera.curtain')} value={active.split ?? 1} min={0} max={1} step={0.01} unit="" digits={2} onChange={setSplit} />
+                <div className="grid grid-cols-2 gap-1">
+                  <button onClick={() => { patchPlacement({ opacity: 0.5 }); setSplit(1) }} className="px-1 py-1 rounded-[6px] text-[10px] border border-[var(--border)] hover:bg-[var(--surface-2)]">{t('camera.blend')}</button>
+                  <button onClick={() => { patchPlacement({ opacity: 1 }); setSplit(0.5) }} className="px-1 py-1 rounded-[6px] text-[10px] border border-[var(--border)] hover:bg-[var(--surface-2)]">{t('camera.split')}</button>
+                </div>
+                <div className="text-[9px] text-[var(--text-faint)] leading-snug">{t('camera.hint')}</div>
+              </section>
+            )}
+
+            {active.mode !== 'camera' && (
             <section className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
               <div className="text-[11px] font-medium">{t('placement.title')}</div>
               <Slider label={t('placement.x')} value={active.placement.x} min={-250} max={250} step={0.05} unit="m" onChange={(x) => patchPlacement({ x })} />
@@ -613,6 +679,7 @@ export default function VideoPanel({
               </div>
               <div className="text-[9px] text-[var(--text-faint)] leading-snug">{t('placement.cameraHint')}</div>
             </section>
+            )}
           </>
         )}
       </div>

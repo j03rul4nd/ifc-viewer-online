@@ -2,7 +2,21 @@
 // objects deliberately stay in video-system.ts so Zustand never retains GPU or
 // browser resources after a clip is removed.
 
-export type VideoSurfaceMode = 'screen' | 'ground' | 'billboard'
+/**
+ * 'camera' (photo-match): the clip hangs in the view frustum of the camera that
+ * shot it. From that viewpoint it lies over the model — fade it or slide a
+ * curtain to compare as-built with as-designed; from anywhere else it is a
+ * framed screen with its viewing pyramid, so you see where it was filmed.
+ */
+export type VideoSurfaceMode = 'screen' | 'ground' | 'billboard' | 'camera'
+
+/** Where the clip was filmed from, in scene coordinates. */
+export interface VideoCameraPose {
+  position: { x: number; y: number; z: number }
+  target: { x: number; y: number; z: number }
+  /** Vertical field of view of the footage, degrees. */
+  fovDeg: number
+}
 export type VideoStatus = 'loading' | 'ready' | 'ended' | 'error'
 export type VideoSourceKind = 'file' | 'demo' | 'camera' | 'screen'
 
@@ -39,6 +53,10 @@ export interface VideoEntry {
   muted: boolean
   volume: number
   loadedAt: number
+  /** 'camera' mode: the viewpoint the clip was filmed from. */
+  cameraPose?: VideoCameraPose | null
+  /** 'camera' mode: the curtain, 0–1 of the frame's width shown (1 = no curtain). */
+  split?: number
 }
 
 export const DEFAULT_VIDEO_PLACEMENT: VideoPlacement = {
