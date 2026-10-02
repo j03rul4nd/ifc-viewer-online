@@ -156,9 +156,10 @@ export function placementForMode(
   // How far the model reaches along a horizontal direction from its centre.
   const reach = (ux: number, uz: number): number => Math.abs(ux) * size.x / 2 + Math.abs(uz) * size.z / 2
   const width = Math.max(3.2, Math.min(footprint * 0.52, Math.max(size.x, size.z) * 0.6))
-  // Clear of the façade by a few metres, and half the model's width aside.
+  // Clear of the façade by a few metres, and its centre past the model's side:
+  // seen face-on, the screen overlaps the building's end a little, not its middle.
   const forward = reach(dx, dz) + Math.max(2, width * 0.2)
-  const aside = reach(rx, rz) * 0.55
+  const aside = reach(rx, rz) + width * 0.2
   const yawDeg = Math.atan2(dx, dz) * 180 / Math.PI
 
   return clampVideoPlacement({

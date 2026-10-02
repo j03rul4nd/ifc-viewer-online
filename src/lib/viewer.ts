@@ -4691,6 +4691,25 @@ export function createViewer(container: HTMLElement): ViewerAPI {
               console.debug('[Viewer] video fit failed:', error instanceof Error ? error.message : error)
             }
           },
+          frameBoxFrom: (min, max, dir) => {
+            try {
+              tuneSceneToBounds(new THREE.Box3(min, max))
+              const cam = world.camera.three as THREE.PerspectiveCamera
+              // fitPose looks FROM azimuth/elevation: the opposite of `dir`, raised a little.
+              const pose = fitPose(
+                { min: { x: min.x, y: min.y, z: min.z }, max: { x: max.x, y: max.y, z: max.z } },
+                { azimuthDeg: (Math.atan2(-dir.z, -dir.x) * 180) / Math.PI, elevationDeg: 18 },
+                cam.fov ?? 45, cam.aspect ?? 16 / 9, 0.85,
+              )
+              void world.camera.controls.setLookAt(
+                pose.position.x, pose.position.y, pose.position.z,
+                pose.target.x, pose.target.y, pose.target.z, true,
+              )
+            } catch (error) {
+              console.debug('[Viewer] video face-on fit failed:', error instanceof Error ? error.message : error)
+            }
+          },
+          requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true },
         })
         return videoInstance
       })
