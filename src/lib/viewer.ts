@@ -712,6 +712,17 @@ export interface ViewerAPI {
    */
   setWheelMode(mode: 'always' | 'ctrl', hint?: string): void
   /**
+   * Stop painting frames (a figure scrolled out of view). The scene, the
+   * camera and every tool keep their state; resuming paints the next frame.
+   */
+  setPaused(paused: boolean): void
+  /**
+   * Slow idle orbit around the scene's target, in degrees per second (0 or
+   * `enabled: false` stops it). It stops for good the moment the visitor
+   * takes the camera, and never runs under prefers-reduced-motion.
+   */
+  setTurntable(enabled: boolean, degPerSec?: number): { active: boolean; speed: number }
+  /**
    * World-space merged AABB of a set of elements (serialisable, no THREE
    * objects). Reuses the same getMergedBox path as frameElements. Null when
    * the model/elements are unknown or the box is empty.
@@ -1471,6 +1482,34 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
   world.camera.controls.addEventListener('control', onCameraControl)
   world.camera.controls.addEventListener('rest', onCameraRest)
+
+  // ─── Presentation: pause and turntable (setPaused / setTurntable) ─────────
+  let paused = false
+  let turntableSpeed = 0            // deg/s; 0 = off
+  let turntableRaf = 0
+  let turntableLast = 0
+  const reducedMotion = (): boolean => {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { return false }
+  }
+  const turntableTick = (now: number): void => {
+    turntableRaf = 0
+    if (turntableSpeed <= 0) return
+    const dt = turntableLast ? Math.min(0.1, (now - turntableLast) / 1000) : 0
+    turntableLast = now
+    if (!paused && dt > 0) {
+      try { void world.camera.controls.rotate((turntableSpeed * dt * Math.PI) / 180, 0, false) } catch { /* no controls */ }
+    }
+    turntableRaf = requestAnimationFrame(turntableTick)
+  }
+  const stopTurntable = (): void => {
+    turntableSpeed = 0
+    if (turntableRaf) cancelAnimationFrame(turntableRaf)
+    turntableRaf = 0
+    turntableLast = 0
+  }
+  // The visitor's hand wins, once and for all: a figure that starts turning
+  // again after you let go fights you for the camera.
+  world.camera.controls.addEventListener('controlstart', stopTurntable)
 
   // ─── Navigation feel ───────────────────────────────────────────────────────
   //
@@ -3982,6 +4021,24 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    setPaused(p: boolean) {
+      paused = p
+      // A shot session owns the loop while it runs; it restores what it found.
+      if (!shotSession && world.renderer) world.renderer.enabled = !p
+      if (!p) fragmentUpdates.request()
+    },
+
+    setTurntable(enabled: boolean, degPerSec = 6) {
+      if (!enabled || !(degPerSec > 0) || reducedMotion()) {
+        stopTurntable()
+        return { active: false, speed: 0 }
+      }
+      turntableSpeed = Math.min(90, degPerSec)
+      turntableLast = 0
+      if (!turntableRaf) turntableRaf = requestAnimationFrame(turntableTick)
+      return { active: true, speed: turntableSpeed }
+    },
+
     setWheelMode(mode: 'always' | 'ctrl', hint?: string) {
       wheelMode = mode
       if (hint) wheelHintText = hint
@@ -4673,6 +4730,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      stopTurntable()
       // Hand BCF back to "no datum" unless a newer viewer already took over.
       if (currentDatumProvider() === datumProvider) setSceneDatumProvider(() => null)
       try { sceneGizmo?.dispose() } catch { /* ok */ }

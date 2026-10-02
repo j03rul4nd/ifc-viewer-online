@@ -1,7 +1,7 @@
-var m = Object.defineProperty;
-var w = (o, t, e) => t in o ? m(o, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[t] = e;
-var a = (o, t, e) => w(o, typeof t != "symbol" ? t + "" : t, e);
-const v = [
+var q = Object.defineProperty;
+var x = (a, t, e) => t in a ? q(a, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[t] = e;
+var u = (a, t, e) => x(a, typeof t != "symbol" ? t + "" : t, e);
+const b = [
   { code: "en", label: "English" },
   { code: "es", label: "Español" },
   { code: "de", label: "Deutsch" },
@@ -12,54 +12,83 @@ const v = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.14.0", q = 12e4, y = 3e4, c = v.map((o) => o.code);
-function b() {
+], C = "1.15.0", k = 12e4, P = 3e4, w = b.map((a) => a.code);
+function E() {
   try {
     return new URL("../", import.meta.url).href;
   } catch {
     return "/";
   }
 }
-function P(o) {
+function _(a) {
   try {
-    return new URL(o).origin;
+    return new URL(a).origin;
   } catch {
     return "";
   }
 }
-function h(o) {
-  if (o instanceof ArrayBuffer) return o;
-  if (o instanceof Uint8Array)
-    return o.byteOffset === 0 && o.byteLength === o.buffer.byteLength ? o.buffer : o.slice().buffer;
+function g(a) {
+  if (a instanceof ArrayBuffer) return a;
+  if (a instanceof Uint8Array)
+    return a.byteOffset === 0 && a.byteLength === a.buffer.byteLength ? a.buffer : a.slice().buffer;
   throw new TypeError("IfcViewer: expected an ArrayBuffer or Uint8Array");
 }
-function f(o, t) {
-  return o == null ? t : typeof o == "number" ? `${o}px` : o;
+function T(a) {
+  return a.replace(/["\\\n\r]/g, (t) => encodeURIComponent(t));
 }
-const d = class d {
+function S(a) {
+  const t = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+%?))?\s*\)/.exec(a);
+  if (!t) return null;
+  const e = t[4] === void 0 ? 1 : t[4].endsWith("%") ? parseFloat(t[4]) / 100 : parseFloat(t[4]);
+  return [parseFloat(t[1]), parseFloat(t[2]), parseFloat(t[3]), e];
+}
+function v(a) {
+  let t = a;
+  for (; t; ) {
+    const e = S(getComputedStyle(t).backgroundColor);
+    if (e && e[3] > 0.5) {
+      const [r, s, i] = e.map((n) => n / 255);
+      return 0.2126 * r + 0.7152 * s + 0.0722 * i > 0.5;
+    }
+    t = t.parentElement;
+  }
+  return !(window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? !1);
+}
+function p(a, t) {
+  return a == null ? t : typeof a == "number" ? `${a}px` : a;
+}
+const h = class h {
   constructor(t, e = {}) {
-    a(this, "version", g);
-    a(this, "iframe");
-    a(this, "baseUrl");
-    a(this, "appOrigin");
-    a(this, "opts");
-    a(this, "loadTimeout");
-    a(this, "_ready", !1);
-    a(this, "languages", []);
-    a(this, "readyResolvers", []);
+    u(this, "version", C);
+    u(this, "iframe");
+    /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
+    u(this, "box", null);
+    u(this, "src");
+    u(this, "activated", !1);
+    u(this, "mountEl", null);
+    u(this, "activationQueue", []);
+    u(this, "posterEl", null);
+    u(this, "cleanups", []);
+    u(this, "baseUrl");
+    u(this, "appOrigin");
+    u(this, "opts");
+    u(this, "loadTimeout");
+    u(this, "_ready", !1);
+    u(this, "languages", []);
+    u(this, "readyResolvers", []);
     // Correlate each load with the iframe's echoed requestId so app-initiated loads
     // (URL param, in-iframe upload) never resolve a host add() promise.
-    a(this, "pending", /* @__PURE__ */ new Map());
+    u(this, "pending", /* @__PURE__ */ new Map());
     // Generic query (request/response) correlation, keyed by requestId.
-    a(this, "requests", /* @__PURE__ */ new Map());
+    u(this, "requests", /* @__PURE__ */ new Map());
     // Serialize loads so they land in call order and each add() settles before
     // the next is sent. The viewer itself queues concurrent loads (it no longer
     // rejects a second one), so this is about predictable ordering for hosts.
-    a(this, "loadChain", Promise.resolve());
-    a(this, "reqCounter", 0);
-    a(this, "listeners", /* @__PURE__ */ new Map());
-    a(this, "disposed", !1);
-    a(this, "onMessage", (t) => {
+    u(this, "loadChain", Promise.resolve());
+    u(this, "reqCounter", 0);
+    u(this, "listeners", /* @__PURE__ */ new Map());
+    u(this, "disposed", !1);
+    u(this, "onMessage", (t) => {
       if (t.source !== this.iframe.contentWindow) return;
       const e = t.data;
       if (!(!e || e.source !== "ifc-validator" || typeof e.type != "string"))
@@ -123,16 +152,121 @@ const d = class d {
     });
     const r = typeof t == "string" ? document.querySelector(t) : t;
     if (!r) throw new Error(`IfcViewer: mount target not found: ${String(t)}`);
-    this.opts = e, this.baseUrl = e.baseUrl ?? b(), this.loadTimeout = e.loadTimeout ?? q;
+    this.opts = e, this.baseUrl = e.baseUrl ?? E(), this.loadTimeout = e.loadTimeout ?? k, this.mountEl = r;
     const s = this.buildSrc();
-    this.appOrigin = P(s);
-    const n = document.createElement("iframe");
-    n.src = s, n.style.border = "0", n.style.width = f(e.width, "100%"), n.style.height = f(e.height, "100%"), n.setAttribute("allow", "fullscreen"), n.setAttribute("loading", "lazy"), n.title = e.title ?? "IFC model viewer", e.className && (n.className = e.className), r.appendChild(n), this.iframe = n, window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
+    this.appOrigin = _(s);
+    const i = document.createElement("iframe");
+    if (i.style.border = "0", i.setAttribute("allow", "fullscreen"), i.setAttribute("loading", "lazy"), i.title = e.title ?? "IFC model viewer", e.className && (i.className = e.className), this.iframe = i, this.src = s, !!(e.lazy || e.poster || e.aspectRatio || e.fullscreenButton)) {
+      const o = document.createElement("div");
+      o.className = "ifcv-figure", Object.assign(o.style, {
+        position: "relative",
+        overflow: "hidden",
+        width: p(e.width, "100%"),
+        background: "#0d0d10",
+        borderRadius: "inherit"
+      }), e.aspectRatio ? o.style.aspectRatio = e.aspectRatio : o.style.height = p(e.height, "100%"), Object.assign(i.style, { position: "absolute", inset: "0", width: "100%", height: "100%" }), o.appendChild(i), r.appendChild(o), this.box = o, (e.poster || e.lazy) && this.mountPoster(o), e.fullscreenButton && this.mountFullscreenButton(o);
+    } else
+      i.style.width = p(e.width, "100%"), i.style.height = p(e.height, "100%"), r.appendChild(i);
+    if (e.lazy === "visible" && typeof IntersectionObserver < "u") {
+      const o = new IntersectionObserver((c) => {
+        c.some((d) => d.isIntersecting) && (o.disconnect(), this.activate());
+      }, { rootMargin: "300px 0px" });
+      o.observe(this.box ?? i), this.cleanups.push(() => o.disconnect());
+    } else e.lazy || this.activate();
+    if ((e.pauseOffscreen ?? e.ui === "article") && typeof IntersectionObserver < "u") {
+      let o = !0;
+      const c = new IntersectionObserver((d) => {
+        const f = d.some((y) => y.isIntersecting);
+        f !== o && (o = f, this._ready && this.post({ type: "ifcviewer:set-paused", paused: !f }));
+      });
+      c.observe(this.box ?? i), this.cleanups.push(() => c.disconnect());
+    }
+    e.background === "auto" && this.watchHostTheme(r), window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
   }
   /** Create a viewer and resolve once it is ready to accept commands. */
   static async create(t, e = {}) {
-    const r = new d(t, e);
+    const r = new h(t, e);
     return await r.whenReady(), r;
+  }
+  // ── Article kit (since v1.15.0) ────────────────────────────────────────────
+  /**
+   * Boot the viewer now (with `lazy`, what the poster's button does). Calls
+   * made before were queued and run once it is ready. Safe to call twice.
+   */
+  activate() {
+    if (!(this.activated || this.disposed)) {
+      if (this.activated = !0, this.iframe.src = this.src, this.posterEl) {
+        const t = this.posterEl.querySelector("button");
+        t && (t.disabled = !0, t.textContent = "…");
+      }
+      this.activationQueue.splice(0).forEach((t) => t());
+    }
+  }
+  /** True once the viewer has been asked to boot. */
+  get isActive() {
+    return this.activated;
+  }
+  /**
+   * Expand the figure to the whole screen, or back. Uses the box the article
+   * kit draws (so the expand button stays), else the iframe itself.
+   */
+  async toggleFullscreen() {
+    const t = this.box ?? this.iframe;
+    document.fullscreenElement ? await document.exitFullscreen() : await t.requestFullscreen();
+  }
+  /**
+   * A slow idle orbit (degrees per second; `false` stops it). It stops at the
+   * visitor's first touch and never runs under prefers-reduced-motion.
+   */
+  setTurntable(t = !0) {
+    const e = typeof t == "number" ? t : 6;
+    return this.request("ifcviewer:set-turntable", { enabled: t !== !1 && e > 0, speed: e });
+  }
+  /** Stop or resume painting frames. `pauseOffscreen` does this for you. */
+  setPaused(t) {
+    return this.request("ifcviewer:set-paused", { paused: t });
+  }
+  /**
+   * Scrollytelling: bind steps of a story to paragraphs of your page. While a
+   * step's element crosses the middle of the screen the viewer frames, isolates,
+   * moves the sun or runs whatever the step says. Returns a function that
+   * unbinds. The first step is applied once the viewer is ready.
+   *
+   * ```js
+   * viewer.bindSteps([
+   *   { el: '#intro', frame: { view: 'iso' } },
+   *   { el: '#walls', isolate: 'IfcWall', frame: { azimuth: 200, elevation: 20 } },
+   *   { el: '#sun', isolate: null, solar: { active: true, time: '19:30' } },
+   * ])
+   * ```
+   */
+  bindSteps(t, e = {}) {
+    if (typeof IntersectionObserver > "u" || t.length === 0) return () => {
+    };
+    const r = t.map((o) => typeof o.el == "string" ? document.querySelector(o.el) : o.el);
+    let s = -1;
+    const i = async (o) => {
+      if (o === s) return;
+      s = o;
+      const c = t[o];
+      if (await this.whenReady(), await this.loadChain, !(this.disposed || s !== o))
+        try {
+          c.isolate !== void 0 && this.isolate(c.isolate ?? void 0, { frame: !c.frame && !c.camera }), c.background !== void 0 && await this.setBackground(c.background), c.solar && await this.setSolar(c.solar), c.camera ? await this.lookAt(c.camera.position, c.camera.target) : c.frame && await this.frame(c.frame), c.run && await c.run(this);
+        } catch (d) {
+          console.warn("IfcViewer.bindSteps: step", o, "failed:", d);
+        }
+    }, n = new IntersectionObserver((o) => {
+      for (const c of o) {
+        if (!c.isIntersecting) continue;
+        const d = r.indexOf(c.target);
+        d >= 0 && i(d);
+      }
+    }, { rootMargin: e.rootMargin ?? "-45% 0px -45% 0px" });
+    r.forEach((o) => {
+      o && n.observe(o);
+    }), i(0);
+    const l = () => n.disconnect();
+    return this.cleanups.push(l), l;
   }
   // ── Public API ─────────────────────────────────────────────────────────────
   /** True once the iframe viewer has signalled readiness. */
@@ -145,7 +279,7 @@ const d = class d {
   }
   /** Load IFC bytes from the host app. Resolves once the model is rendered. */
   add(t, e) {
-    const r = h(e);
+    const r = g(e);
     return this.enqueueLoad(
       (s) => this.post({ type: "ifcviewer:load-bytes", requestId: s, name: t, bytes: r }, [r])
     );
@@ -161,8 +295,8 @@ const d = class d {
     this.send({ type: "ifcviewer:select", expressId: t, modelId: e });
   }
   /** Isolate a category by IFC class (e.g. "IfcWall"); omit to clear. */
-  isolate(t) {
-    this.send({ type: "ifcviewer:isolate", ifcType: t });
+  isolate(t, e = {}) {
+    this.send({ type: "ifcviewer:isolate", ifcType: t, ...e.frame === !1 ? { frame: !1 } : {} });
   }
   /** Frame the active model. */
   fit() {
@@ -190,14 +324,14 @@ const d = class d {
    * ```
    */
   frame(t = {}) {
-    const { view: e, scope: r, fill: s, azimuth: n, elevation: i, animate: u } = t;
+    const { view: e, scope: r, fill: s, azimuth: i, elevation: n, animate: l } = t;
     return this.request("ifcviewer:view", {
       preset: e ?? "iso",
       ...r ? { scope: r } : {},
       fill: s ?? 0.85,
-      ...n !== void 0 ? { azimuth: n } : {},
-      ...i !== void 0 ? { elevation: i } : {},
-      ...u !== void 0 ? { animate: u } : {}
+      ...i !== void 0 ? { azimuth: i } : {},
+      ...n !== void 0 ? { elevation: n } : {},
+      ...l !== void 0 ? { animate: l } : {}
     });
   }
   /** Change the UI language at runtime (no-ops for unsupported codes). */
@@ -218,7 +352,7 @@ const d = class d {
    * for code + native label pairs to build a picker.
    */
   getLanguages() {
-    return this.languages.length ? this.languages.slice() : c.slice();
+    return this.languages.length ? this.languages.slice() : w.slice();
   }
   // ── Queries (request → response) ───────────────────────────────────────────
   /** List the models currently loaded in the scene. */
@@ -260,7 +394,7 @@ const d = class d {
    * finishing would report failure on a working load.
    */
   addPointCloud(t, e) {
-    const r = h(e);
+    const r = g(e);
     return this.request(
       "ifcviewer:add-pointcloud",
       { name: t, bytes: r },
@@ -851,7 +985,12 @@ const d = class d {
   /** Tear down the viewer and remove the iframe. */
   dispose() {
     if (this.disposed) return;
-    this.disposed = !0, window.removeEventListener("message", this.onMessage), this.iframe.remove();
+    this.disposed = !0, window.removeEventListener("message", this.onMessage), this.cleanups.splice(0).forEach((e) => {
+      try {
+        e();
+      } catch {
+      }
+    }), this.iframe.remove(), this.box?.remove();
     const t = new Error("IfcViewer disposed");
     for (const e of this.pending.values())
       e.timer && clearTimeout(e.timer), e.reject(t);
@@ -865,11 +1004,13 @@ const d = class d {
     const t = new URL(this.baseUrl, typeof window < "u" ? window.location.href : void 0);
     t.search = "", t.hash = "", t.searchParams.set("embed", "1");
     const e = this.opts.ui ?? "minimal";
-    if (e !== "minimal" && t.searchParams.set("ui", e), this.opts.validate === !1 && t.searchParams.set("validate", "0"), this.opts.panel && t.searchParams.set("panel", "1"), this.opts.panels && t.searchParams.set("panels", this.opts.panels.join(",")), this.opts.lang && t.searchParams.set("lang", this.opts.lang), this.opts.accent && t.searchParams.set("accent", this.opts.accent.replace(/^#/, "")), this.opts.background) {
+    if (e !== "minimal" && t.searchParams.set("ui", e), this.opts.validate === !1 && t.searchParams.set("validate", "0"), this.opts.panel && t.searchParams.set("panel", "1"), this.opts.panels && t.searchParams.set("panels", this.opts.panels.join(",")), this.opts.lang && t.searchParams.set("lang", this.opts.lang), this.opts.accent && t.searchParams.set("accent", this.opts.accent.replace(/^#/, "")), this.opts.background === "auto")
+      t.searchParams.set("bg", this.mountEl && v(this.mountEl) ? "paper" : "studio");
+    else if (this.opts.background) {
       const r = this.opts.background, s = typeof r == "string" ? r : "preset" in r ? r.preset : r.bottom ? `${r.top},${r.bottom}` : r.top;
       t.searchParams.set("bg", s.replace(/#/g, ""));
     }
-    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), t.toString();
+    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), this.opts.turntable && t.searchParams.set("turntable", this.opts.turntable === !0 ? "1" : String(this.opts.turntable)), t.toString();
   }
   /** Queue a load so only one runs at a time; resolves with that load's result. */
   enqueueLoad(t) {
@@ -885,15 +1026,17 @@ const d = class d {
         r(new Error("IfcViewer disposed"));
         return;
       }
-      const s = this.nextRequestId(), n = this.loadTimeout > 0 ? setTimeout(() => {
-        this.pending.delete(s), r(new Error(`IfcViewer: load timed out after ${this.loadTimeout}ms`));
-      }, this.loadTimeout) : null;
-      this.pending.set(s, { resolve: e, reject: r, timer: n }), this.whenReady().then(() => {
+      const s = this.nextRequestId(), i = { resolve: e, reject: r, timer: null };
+      this.pending.set(s, i), this.loadTimeout > 0 && this.whenActive(() => {
+        i.timer = setTimeout(() => {
+          this.pending.delete(s), r(new Error(`IfcViewer: load timed out after ${this.loadTimeout}ms`));
+        }, this.loadTimeout);
+      }), this.whenReady().then(() => {
         if (!this.disposed)
           try {
             t(s);
-          } catch (i) {
-            this.settle(s, !1, i instanceof Error ? i : new Error(String(i)));
+          } catch (n) {
+            this.settle(s, !1, n instanceof Error ? n : new Error(String(n)));
           }
       });
     });
@@ -912,14 +1055,106 @@ const d = class d {
     });
   }
   /** Send a query and resolve with the iframe's `result` payload. */
-  request(t, e = {}, r = y, s = []) {
-    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((n, i) => {
-      const u = this.nextRequestId(), p = setTimeout(() => {
-        this.requests.delete(u), i(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
-      }, r);
-      this.requests.set(u, { resolve: n, reject: i, timer: p }), this.whenReady().then(() => {
-        this.disposed || this.post({ type: t, requestId: u, ...e }, s);
+  request(t, e = {}, r = P, s = []) {
+    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((i, n) => {
+      const l = this.nextRequestId(), o = { resolve: i, reject: n, timer: void 0 };
+      this.requests.set(l, o), this.whenActive(() => {
+        o.timer = setTimeout(() => {
+          this.requests.delete(l), n(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
+        }, r);
+      }), this.whenReady().then(() => {
+        this.disposed || this.post({ type: t, requestId: l, ...e }, s);
       });
+    });
+  }
+  /** Run now if the viewer has been asked to boot, else when it is. */
+  whenActive(t) {
+    this.activated ? t() : this.activationQueue.push(t);
+  }
+  /** The poster the article kit shows until the model is in. */
+  mountPoster(t) {
+    const e = this.opts, r = document.createElement("div");
+    if (r.className = "ifcv-poster", Object.assign(r.style, {
+      position: "absolute",
+      inset: "0",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      alignItems: "flex-start",
+      gap: "10px",
+      padding: "24px",
+      boxSizing: "border-box",
+      color: "#fff",
+      font: "14px/1.5 system-ui, -apple-system, Segoe UI, sans-serif",
+      transition: "opacity 400ms ease",
+      zIndex: "2",
+      background: e.poster ? `linear-gradient(to top, rgba(9,9,13,.94), rgba(9,9,13,.55) 55%, rgba(9,9,13,.1)), center / cover no-repeat url("${T(e.poster)}")` : "linear-gradient(135deg, #15151c, #0d0d10)"
+    }), e.posterTitle) {
+      const i = document.createElement("div");
+      i.textContent = e.posterTitle, Object.assign(i.style, { fontSize: "20px", fontWeight: "600", letterSpacing: "-0.01em" }), r.appendChild(i);
+    }
+    if (e.posterText) {
+      const i = document.createElement("div");
+      i.textContent = e.posterText, Object.assign(i.style, { maxWidth: "60ch", opacity: "0.85" }), r.appendChild(i);
+    }
+    if (e.lazy) {
+      const i = document.createElement("button");
+      i.type = "button", i.textContent = e.launchLabel ?? "▶ Open the 3D model", Object.assign(i.style, {
+        marginTop: "6px",
+        padding: "10px 16px",
+        border: "0",
+        borderRadius: "8px",
+        cursor: "pointer",
+        background: e.accent ?? "var(--ifcv-accent, #5e6ad2)",
+        color: "#fff",
+        font: "600 13px system-ui, sans-serif"
+      }), i.addEventListener("click", () => this.activate()), r.appendChild(i);
+    }
+    t.appendChild(r), this.posterEl = r;
+    const s = () => {
+      r.style.opacity = "0", r.style.pointerEvents = "none", setTimeout(() => r.remove(), 450), this.posterEl = null;
+    };
+    this.on("model-loaded", s), this.on("ready", () => {
+      !e.model && !e.scans?.length && setTimeout(s, 300);
+    });
+  }
+  /** The expand button of the article kit. */
+  mountFullscreenButton(t) {
+    const e = document.createElement("button");
+    e.type = "button", e.setAttribute("aria-label", "Full screen"), e.title = "Full screen", e.textContent = "⤢", Object.assign(e.style, {
+      position: "absolute",
+      top: "10px",
+      right: "10px",
+      zIndex: "3",
+      width: "32px",
+      height: "32px",
+      border: "0",
+      borderRadius: "8px",
+      cursor: "pointer",
+      color: "#fff",
+      font: "16px/1 system-ui",
+      background: "rgba(9,9,13,.6)",
+      backdropFilter: "blur(6px)"
+    }), e.addEventListener("click", () => {
+      this.toggleFullscreen();
+    }), t.appendChild(e);
+  }
+  /**
+   * `background: 'auto'`: paper on a light page, the dark studio on a dark one,
+   * read from the page itself (the first opaque background up from the mount)
+   * and followed when the reader switches theme.
+   */
+  watchHostTheme(t) {
+    let e = v(t) ? "paper" : "studio";
+    const r = () => {
+      const n = v(t) ? "paper" : "studio";
+      n !== e && (e = n, this._ready && this.setBackground(n).catch(() => {
+      }));
+    }, s = new MutationObserver(() => requestAnimationFrame(r));
+    s.observe(document.documentElement, { attributes: !0, attributeFilter: ["class", "style", "data-theme"] }), document.body && s.observe(document.body, { attributes: !0, attributeFilter: ["class", "style", "data-theme"] });
+    const i = window.matchMedia?.("(prefers-color-scheme: dark)");
+    i?.addEventListener?.("change", r), this.cleanups.push(() => {
+      s.disconnect(), i?.removeEventListener?.("change", r);
     });
   }
   post(t, e = []) {
@@ -937,10 +1172,10 @@ const d = class d {
   }
 };
 /** Languages the viewer ships with (code + native label). */
-a(d, "LANGUAGES", v), /** Just the language codes, for convenience. */
-a(d, "SUPPORTED_LANGUAGES", c);
-let l = d;
-const C = [
+u(h, "LANGUAGES", b), /** Just the language codes, for convenience. */
+u(h, "SUPPORTED_LANGUAGES", w);
+let m = h;
+const A = [
   "ready",
   "model-loaded",
   "model-error",
@@ -956,10 +1191,10 @@ const C = [
   "tour-ended",
   "presentation-progress"
 ];
-class k extends HTMLElement {
+class M extends HTMLElement {
   constructor() {
     super(...arguments);
-    a(this, "_viewer", null);
+    u(this, "_viewer", null);
   }
   static get observedAttributes() {
     return ["model", "lang", "accent", "background"];
@@ -972,14 +1207,14 @@ class k extends HTMLElement {
     if (this._viewer) return;
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
-    e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const r = (i) => this.getAttribute(i) ?? void 0, s = (i) => {
-      if (!this.hasAttribute(i)) return;
-      const u = this.getAttribute(i);
-      return u !== "false" && u !== "0" && u !== "no";
-    }, n = new l(e, {
+    e.style.cssText = this.hasAttribute("aspect-ratio") ? "width:100%" : "width:100%;height:100%", this.appendChild(e);
+    const r = (n) => this.getAttribute(n) ?? void 0, s = (n) => {
+      if (!this.hasAttribute(n)) return;
+      const l = this.getAttribute(n);
+      return l !== "false" && l !== "0" && l !== "no";
+    }, i = new m(e, {
       ui: r("ui"),
-      panels: r("panels")?.split(",").map((i) => i.trim()).filter(Boolean),
+      panels: r("panels")?.split(",").map((n) => n.trim()).filter(Boolean),
       lang: r("lang"),
       accent: r("accent"),
       validate: s("validate"),
@@ -989,19 +1224,32 @@ class k extends HTMLElement {
       background: r("background"),
       // `map` alone (or map="1") is the map; a list names the layers.
       map: this.hasAttribute("map") ? (() => {
-        const i = (this.getAttribute("map") ?? "").trim();
-        if (i === "" || i === "1" || i === "true") return !0;
-        if (!(i === "0" || i === "false"))
-          return i.split(",").map((u) => u.trim()).filter(Boolean);
+        const n = (this.getAttribute("map") ?? "").trim();
+        if (n === "" || n === "1" || n === "true") return !0;
+        if (!(n === "0" || n === "false"))
+          return n.split(",").map((l) => l.trim()).filter(Boolean);
       })() : void 0,
       solar: r("solar"),
       moon: s("moon"),
-      scans: r("scans")?.split(",").map((i) => i.trim()).filter(Boolean),
-      height: "100%"
+      scans: r("scans")?.split(",").map((n) => n.trim()).filter(Boolean),
+      // Article kit (v1.15): <ifc-viewer ui="article" lazy poster="…" aspect-ratio="16/10">
+      view: r("view"),
+      fill: r("fill") !== void 0 ? Number(r("fill")) : void 0,
+      wheel: r("wheel"),
+      lazy: r("lazy") === "visible" ? "visible" : s("lazy"),
+      poster: r("poster"),
+      posterTitle: r("poster-title"),
+      posterText: r("poster-text"),
+      launchLabel: r("launch-label"),
+      aspectRatio: r("aspect-ratio"),
+      turntable: this.hasAttribute("turntable") ? Number(this.getAttribute("turntable")) > 0 ? Number(this.getAttribute("turntable")) : s("turntable") : void 0,
+      pauseOffscreen: s("pause-offscreen"),
+      fullscreenButton: s("fullscreen-button"),
+      height: this.hasAttribute("aspect-ratio") ? void 0 : "100%"
     });
-    this._viewer = n;
-    for (const i of C)
-      n.on(i, (u) => this.dispatchEvent(new CustomEvent(`ifcviewer:${i}`, { detail: u, bubbles: !0, composed: !0 })));
+    this._viewer = i;
+    for (const n of A)
+      i.on(n, (l) => this.dispatchEvent(new CustomEvent(`ifcviewer:${n}`, { detail: l, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";
@@ -1023,6 +1271,21 @@ class k extends HTMLElement {
   }
   isolate(e) {
     this._viewer?.isolate(e);
+  }
+  activate() {
+    this._viewer?.activate();
+  }
+  frame(e) {
+    return this._viewer.frame(e);
+  }
+  toggleFullscreen() {
+    return this._viewer.toggleFullscreen();
+  }
+  setTurntable(e) {
+    return this._viewer.setTurntable(e);
+  }
+  bindSteps(e, r) {
+    return this._viewer.bindSteps(e, r);
   }
   getStats() {
     return this._viewer.getStats();
@@ -1118,18 +1381,18 @@ class k extends HTMLElement {
     return this._viewer.frameGroup(e);
   }
 }
-function _(o = "ifc-viewer") {
-  typeof customElements < "u" && !customElements.get(o) && customElements.define(o, k);
+function I(a = "ifc-viewer") {
+  typeof customElements < "u" && !customElements.get(a) && customElements.define(a, M);
 }
 if (typeof window < "u")
   try {
-    _();
+    I();
   } catch {
   }
 export {
-  l as IfcViewer,
-  k as IfcViewerElement,
-  v as LANGUAGES,
-  l as default,
-  _ as defineIfcViewerElement
+  m as IfcViewer,
+  M as IfcViewerElement,
+  b as LANGUAGES,
+  m as default,
+  I as defineIfcViewerElement
 };

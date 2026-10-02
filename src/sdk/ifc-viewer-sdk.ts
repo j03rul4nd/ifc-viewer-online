@@ -74,8 +74,10 @@ export interface IfcViewerOptions {
    * Scene background from the first frame: a preset (`'white'`, `'paper'`,
    * `'blueprint'`, `'sky'`, `'studio'`), one colour (`'#f4f4f5'`) or a
    * top,bottom gradient (`'#dbeafe,#ffffff'`). Since v1.11.0.
+   * `'auto'` follows your page: paper when it is light, the dark studio when
+   * it is dark, and again when the reader switches theme. Since v1.15.0.
    */
-  background?: BackgroundSpec
+  background?: BackgroundSpec | 'auto'
   /**
    * Put the model on the map once it loads, from its own georeference. `true`
    * for the map alone, or the layers to add. Map tiles and OpenStreetMap come
@@ -107,6 +109,35 @@ export interface IfcViewerOptions {
    * `ui: 'article'` implies it. Since v1.14.0.
    */
   wheel?: 'always' | 'ctrl'
+
+  // ── Article kit (since v1.15.0) ────────────────────────────────────────────
+  /**
+   * Load nothing until it is wanted. `true`: a poster with a play button —
+   * the viewer boots on click. `'visible'`: it boots on its own when the
+   * figure scrolls near the screen. Calls made before then are queued.
+   */
+  lazy?: boolean | 'visible'
+  /** Image shown until the viewer is up (with `lazy`, until the reader starts it). */
+  poster?: string
+  /** Title, line of text and button label on the poster. */
+  posterTitle?: string
+  posterText?: string
+  launchLabel?: string
+  /**
+   * Size by proportion instead of a fixed height — `'16/10'`, `'4/3'`, `'1/1'`.
+   * Poster and viewer share the box, so starting it never moves the page.
+   */
+  aspectRatio?: string
+  /** Slow idle orbit once the model is in (`true` = 6°/s, or degrees per second). Stops at the first touch. */
+  turntable?: boolean | number
+  /**
+   * Stop rendering while the figure is off screen — a post with several
+   * viewers stays light. Default `true` with `ui: 'article'`.
+   */
+  pauseOffscreen?: boolean
+  /** A small expand button in the corner (see {@link IfcViewer.toggleFullscreen}). */
+  fullscreenButton?: boolean
+
   /** Reject add()/addFromUrl() after this many ms. 0 disables. Default 120000. */
   loadTimeout?: number
   /** Convenience callbacks (equivalent to .on(...)). */
@@ -323,6 +354,23 @@ export type BackgroundPreset = 'studio' | 'white' | 'paper' | 'blueprint' | 'sky
  * or `{ top, bottom? }`.
  */
 export type BackgroundSpec = BackgroundPreset | string | { preset: BackgroundPreset } | { top: string; bottom?: string }
+
+/**
+ * One step of a scrolled story ({@link IfcViewer.bindSteps}): what the viewer
+ * shows while `el` is in the middle of the screen. Every field is optional;
+ * `run` gets the viewer for anything else.
+ */
+export interface StoryStep {
+  /** The paragraph (or its selector) that drives this step. */
+  el: Element | string
+  frame?: FrameOptions
+  camera?: { position: Vec3; target: Vec3 }
+  /** IFC class to isolate; `null` shows everything again. */
+  isolate?: string | null
+  solar?: SolarOptions
+  background?: BackgroundSpec
+  run?: (viewer: IfcViewer) => void | Promise<void>
+}
 
 /** The background the viewer resolved, as returned by setBackground/getBackground. */
 export interface BackgroundState {
@@ -744,7 +792,12 @@ type Listener<T> = (payload: T) => void
 // tight framing and a page-scrolling wheel; kiosk is now the canvas only, as
 // documented. frame() fits the model to `fill` of the frame from any angle;
 // options view / fill / wheel set the same from the constructor.
-const SDK_VERSION = '1.14.0'
+// 1.15.0: the article kit. lazy + poster (nothing loads until wanted, or
+// until the figure nears the screen), aspectRatio (no layout shift),
+// background: 'auto' (follows the host page's theme), turntable,
+// pauseOffscreen, fullscreenButton / toggleFullscreen(), and bindSteps() for
+// scrolled stories. isolate(type, { frame: false }) keeps the camera.
+const SDK_VERSION = '1.15.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -770,6 +823,36 @@ function toArrayBuffer(bytes: ArrayBuffer | Uint8Array): ArrayBuffer {
       : bytes.slice().buffer
   }
   throw new TypeError('IfcViewer: expected an ArrayBuffer or Uint8Array')
+}
+
+/** A URL made safe to put inside CSS url("…"). */
+function cssUrl(u: string): string {
+  return u.replace(/["\\\n\r]/g, (c) => encodeURIComponent(c))
+}
+
+/** Parse `rgb(a)` into [r, g, b, a] (0–255, alpha 0–1); null when it is not one. */
+function parseRgb(c: string): [number, number, number, number] | null {
+  const m = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+%?))?\s*\)/.exec(c)
+  if (!m) return null
+  const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4])
+  return [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3]), a]
+}
+
+/**
+ * Is the page around `el` light? The first opaque background up the tree
+ * decides (a dark card on a light page is dark); with none, the colour scheme.
+ */
+function hostIsLight(el: HTMLElement): boolean {
+  let node: HTMLElement | null = el
+  while (node) {
+    const rgb = parseRgb(getComputedStyle(node).backgroundColor)
+    if (rgb && rgb[3] > 0.5) {
+      const [r, g, b] = rgb.map((v) => v / 255)
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.5
+    }
+    node = node.parentElement
+  }
+  return !(window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false)
 }
 
 function px(v: number | string | undefined, fallback: string): string {
@@ -924,6 +1007,14 @@ export class IfcViewer {
 
   readonly version = SDK_VERSION
   readonly iframe: HTMLIFrameElement
+  /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
+  readonly box: HTMLDivElement | null = null
+  private readonly src: string
+  private activated = false
+  private mountEl: HTMLElement | null = null
+  private activationQueue: Array<() => void> = []
+  private posterEl: HTMLDivElement | null = null
+  private cleanups: Array<() => void> = []
 
   private readonly baseUrl: string
   private readonly appOrigin: string
@@ -956,20 +1047,67 @@ export class IfcViewer {
     this.baseUrl = options.baseUrl ?? resolveDefaultBaseUrl()
     this.loadTimeout = options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT
 
+    this.mountEl = mount
     const src = this.buildSrc()
     this.appOrigin = safeOrigin(src)
 
     const iframe = document.createElement('iframe')
-    iframe.src = src
     iframe.style.border = '0'
-    iframe.style.width = px(options.width, '100%')
-    iframe.style.height = px(options.height, '100%')
     iframe.setAttribute('allow', 'fullscreen')
     iframe.setAttribute('loading', 'lazy')
     iframe.title = options.title ?? 'IFC model viewer'
     if (options.className) iframe.className = options.className
-    mount.appendChild(iframe)
     this.iframe = iframe
+    this.src = src
+
+    // The article kit wraps the frame in a box it can size, cover and expand.
+    // Without any of it the iframe goes in bare, exactly as before.
+    const kit = !!(options.lazy || options.poster || options.aspectRatio || options.fullscreenButton)
+    if (kit) {
+      const box = document.createElement('div')
+      box.className = 'ifcv-figure'
+      Object.assign(box.style, {
+        position: 'relative', overflow: 'hidden', width: px(options.width, '100%'),
+        background: '#0d0d10', borderRadius: 'inherit',
+      })
+      if (options.aspectRatio) box.style.aspectRatio = options.aspectRatio
+      else box.style.height = px(options.height, '100%')
+      Object.assign(iframe.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' })
+      box.appendChild(iframe)
+      mount.appendChild(box)
+      this.box = box
+      if (options.poster || options.lazy) this.mountPoster(box)
+      if (options.fullscreenButton) this.mountFullscreenButton(box)
+    } else {
+      iframe.style.width = px(options.width, '100%')
+      iframe.style.height = px(options.height, '100%')
+      mount.appendChild(iframe)
+    }
+
+    if (options.lazy === 'visible' && typeof IntersectionObserver !== 'undefined') {
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) { io.disconnect(); this.activate() }
+      }, { rootMargin: '300px 0px' })
+      io.observe(this.box ?? iframe)
+      this.cleanups.push(() => io.disconnect())
+    } else if (!options.lazy) {
+      this.activate()
+    }
+
+    const pauseOffscreen = options.pauseOffscreen ?? options.ui === 'article'
+    if (pauseOffscreen && typeof IntersectionObserver !== 'undefined') {
+      let wasVisible = true
+      const io = new IntersectionObserver((entries) => {
+        const visible = entries.some((e) => e.isIntersecting)
+        if (visible === wasVisible) return
+        wasVisible = visible
+        if (this._ready) this.post({ type: 'ifcviewer:set-paused', paused: !visible })
+      })
+      io.observe(this.box ?? iframe)
+      this.cleanups.push(() => io.disconnect())
+    }
+
+    if (options.background === 'auto') this.watchHostTheme(mount)
 
     window.addEventListener('message', this.onMessage)
 
@@ -979,6 +1117,103 @@ export class IfcViewer {
     if (options.onProgress)    this.on('model-progress', options.onProgress)
 
     if (options.model) void this.addFromUrl(options.model)
+  }
+
+  // ── Article kit (since v1.15.0) ────────────────────────────────────────────
+
+  /**
+   * Boot the viewer now (with `lazy`, what the poster's button does). Calls
+   * made before were queued and run once it is ready. Safe to call twice.
+   */
+  activate(): void {
+    if (this.activated || this.disposed) return
+    this.activated = true
+    this.iframe.src = this.src
+    if (this.posterEl) {
+      const btn = this.posterEl.querySelector('button')
+      if (btn) { btn.disabled = true; btn.textContent = '…' }
+    }
+    this.activationQueue.splice(0).forEach((fn) => fn())
+  }
+
+  /** True once the viewer has been asked to boot. */
+  get isActive(): boolean { return this.activated }
+
+  /**
+   * Expand the figure to the whole screen, or back. Uses the box the article
+   * kit draws (so the expand button stays), else the iframe itself.
+   */
+  async toggleFullscreen(): Promise<void> {
+    const el = this.box ?? this.iframe
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await el.requestFullscreen()
+  }
+
+  /**
+   * A slow idle orbit (degrees per second; `false` stops it). It stops at the
+   * visitor's first touch and never runs under prefers-reduced-motion.
+   */
+  setTurntable(enabled: boolean | number = true): Promise<{ active: boolean; speed: number }> {
+    const speed = typeof enabled === 'number' ? enabled : 6
+    return this.request('ifcviewer:set-turntable', { enabled: enabled !== false && speed > 0, speed })
+  }
+
+  /** Stop or resume painting frames. `pauseOffscreen` does this for you. */
+  setPaused(paused: boolean): Promise<{ paused: boolean }> {
+    return this.request('ifcviewer:set-paused', { paused })
+  }
+
+  /**
+   * Scrollytelling: bind steps of a story to paragraphs of your page. While a
+   * step's element crosses the middle of the screen the viewer frames, isolates,
+   * moves the sun or runs whatever the step says. Returns a function that
+   * unbinds. The first step is applied once the viewer is ready.
+   *
+   * ```js
+   * viewer.bindSteps([
+   *   { el: '#intro', frame: { view: 'iso' } },
+   *   { el: '#walls', isolate: 'IfcWall', frame: { azimuth: 200, elevation: 20 } },
+   *   { el: '#sun', isolate: null, solar: { active: true, time: '19:30' } },
+   * ])
+   * ```
+   */
+  bindSteps(steps: StoryStep[], options: { rootMargin?: string } = {}): () => void {
+    if (typeof IntersectionObserver === 'undefined' || steps.length === 0) return () => undefined
+    const els = steps.map((s) => (typeof s.el === 'string' ? document.querySelector(s.el) : s.el))
+    let current = -1
+    const apply = async (i: number): Promise<void> => {
+      if (i === current) return
+      current = i
+      const s = steps[i]
+      // Ready AND every queued load in: framing an empty scene frames nothing.
+      await this.whenReady()
+      await this.loadChain
+      if (this.disposed || current !== i) return
+      try {
+        // The step's own shot wins: isolating must not fly the camera too.
+        if (s.isolate !== undefined) this.isolate(s.isolate ?? undefined, { frame: !s.frame && !s.camera })
+        if (s.background !== undefined) await this.setBackground(s.background)
+        if (s.solar) await this.setSolar(s.solar)
+        if (s.camera) await this.lookAt(s.camera.position, s.camera.target)
+        else if (s.frame) await this.frame(s.frame)
+        if (s.run) await s.run(this)
+      } catch (err) {
+        console.warn('IfcViewer.bindSteps: step', i, 'failed:', err)
+      }
+    }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue
+        const i = els.indexOf(e.target)
+        if (i >= 0) void apply(i)
+      }
+    }, { rootMargin: options.rootMargin ?? '-45% 0px -45% 0px' })
+    els.forEach((el) => { if (el) io.observe(el) })
+    // Something to look at before the reader reaches the first paragraph.
+    void apply(0)
+    const unbind = (): void => io.disconnect()
+    this.cleanups.push(unbind)
+    return unbind
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -1013,8 +1248,10 @@ export class IfcViewer {
   }
 
   /** Isolate a category by IFC class (e.g. "IfcWall"); omit to clear. */
-  isolate(ifcType?: string): void {
-    this.send({ type: 'ifcviewer:isolate', ifcType })
+  isolate(ifcType?: string, options: { frame?: boolean } = {}): void {
+    // frame: false (v1.15) keeps the camera where it is — for a story step
+    // that sets its own shot right after.
+    this.send({ type: 'ifcviewer:isolate', ifcType, ...(options.frame === false ? { frame: false } : {}) })
   }
 
   /** Frame the active model. */
@@ -1788,7 +2025,9 @@ export class IfcViewer {
     if (this.disposed) return
     this.disposed = true
     window.removeEventListener('message', this.onMessage)
+    this.cleanups.splice(0).forEach((fn) => { try { fn() } catch { /* already gone */ } })
     this.iframe.remove()
+    this.box?.remove()
     const err = new Error('IfcViewer disposed')
     for (const p of this.pending.values()) {
       if (p.timer) clearTimeout(p.timer)
@@ -1820,7 +2059,9 @@ export class IfcViewer {
     if (this.opts.panels) url.searchParams.set('panels', this.opts.panels.join(','))
     if (this.opts.lang) url.searchParams.set('lang', this.opts.lang)
     if (this.opts.accent) url.searchParams.set('accent', this.opts.accent.replace(/^#/, ''))
-    if (this.opts.background) {
+    if (this.opts.background === 'auto') {
+      url.searchParams.set('bg', this.mountEl && hostIsLight(this.mountEl) ? 'paper' : 'studio')
+    } else if (this.opts.background) {
       const bg = this.opts.background
       const spec = typeof bg === 'string' ? bg
         : 'preset' in bg ? bg.preset
@@ -1834,6 +2075,7 @@ export class IfcViewer {
     if (this.opts.view) url.searchParams.set('view', this.opts.view)
     if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
     if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
+    if (this.opts.turntable) url.searchParams.set('turntable', this.opts.turntable === true ? '1' : String(this.opts.turntable))
     return url.toString()
   }
 
@@ -1851,13 +2093,16 @@ export class IfcViewer {
     return new Promise<ModelLoadedEvent>((resolve, reject) => {
       if (this.disposed) { reject(new Error('IfcViewer disposed')); return }
       const requestId = this.nextRequestId()
-      const timer = this.loadTimeout > 0
-        ? setTimeout(() => {
+      const entry: PendingLoad = { resolve, reject, timer: null }
+      this.pending.set(requestId, entry)
+      if (this.loadTimeout > 0) {
+        this.whenActive(() => {
+          entry.timer = setTimeout(() => {
             this.pending.delete(requestId)
             reject(new Error(`IfcViewer: load timed out after ${this.loadTimeout}ms`))
           }, this.loadTimeout)
-        : null
-      this.pending.set(requestId, { resolve, reject, timer })
+        })
+      }
       void this.whenReady().then(() => {
         if (this.disposed) return // dispose() already rejected this pending entry
         try { send(requestId) } catch (err) {
@@ -1893,16 +2138,113 @@ export class IfcViewer {
     if (this.disposed) return Promise.reject(new Error('IfcViewer disposed'))
     return new Promise<T>((resolve, reject) => {
       const requestId = this.nextRequestId()
-      const timer = setTimeout(() => {
-        this.requests.delete(requestId)
-        reject(new Error(`IfcViewer: "${type}" timed out after ${timeoutMs}ms`))
-      }, timeoutMs)
-      this.requests.set(requestId, { resolve: resolve as (v: unknown) => void, reject, timer })
+      const entry = { resolve: resolve as (v: unknown) => void, reject, timer: undefined as unknown as ReturnType<typeof setTimeout> }
+      this.requests.set(requestId, entry)
+      // The clock starts when the viewer is asked to boot: a lazy figure the
+      // reader has not opened yet must not time its queued calls out.
+      this.whenActive(() => {
+        entry.timer = setTimeout(() => {
+          this.requests.delete(requestId)
+          reject(new Error(`IfcViewer: "${type}" timed out after ${timeoutMs}ms`))
+        }, timeoutMs)
+      })
       void this.whenReady().then(() => {
         if (this.disposed) return
         this.post({ type, requestId, ...params }, transfer)
       })
     })
+  }
+
+  /** Run now if the viewer has been asked to boot, else when it is. */
+  private whenActive(fn: () => void): void {
+    if (this.activated) fn()
+    else this.activationQueue.push(fn)
+  }
+
+  /** The poster the article kit shows until the model is in. */
+  private mountPoster(box: HTMLDivElement): void {
+    const o = this.opts
+    const poster = document.createElement('div')
+    poster.className = 'ifcv-poster'
+    Object.assign(poster.style, {
+      position: 'absolute', inset: '0', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+      alignItems: 'flex-start', gap: '10px', padding: '24px', boxSizing: 'border-box', color: '#fff',
+      font: '14px/1.5 system-ui, -apple-system, Segoe UI, sans-serif', transition: 'opacity 400ms ease', zIndex: '2',
+      background: o.poster
+        ? `linear-gradient(to top, rgba(9,9,13,.94), rgba(9,9,13,.55) 55%, rgba(9,9,13,.1)), center / cover no-repeat url("${cssUrl(o.poster)}")`
+        : 'linear-gradient(135deg, #15151c, #0d0d10)',
+    })
+    if (o.posterTitle) {
+      const h = document.createElement('div')
+      h.textContent = o.posterTitle
+      Object.assign(h.style, { fontSize: '20px', fontWeight: '600', letterSpacing: '-0.01em' })
+      poster.appendChild(h)
+    }
+    if (o.posterText) {
+      const p = document.createElement('div')
+      p.textContent = o.posterText
+      Object.assign(p.style, { maxWidth: '60ch', opacity: '0.85' })
+      poster.appendChild(p)
+    }
+    if (o.lazy) {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.textContent = o.launchLabel ?? '▶ Open the 3D model'
+      Object.assign(btn.style, {
+        marginTop: '6px', padding: '10px 16px', border: '0', borderRadius: '8px', cursor: 'pointer',
+        background: o.accent ?? 'var(--ifcv-accent, #5e6ad2)', color: '#fff', font: '600 13px system-ui, sans-serif',
+      })
+      btn.addEventListener('click', () => this.activate())
+      poster.appendChild(btn)
+    }
+    box.appendChild(poster)
+    this.posterEl = poster
+    // Down once there is something to look at: a model, or a viewer with none to load.
+    const hide = (): void => {
+      poster.style.opacity = '0'
+      poster.style.pointerEvents = 'none'
+      setTimeout(() => poster.remove(), 450)
+      this.posterEl = null
+    }
+    this.on('model-loaded', hide)
+    this.on('ready', () => { if (!o.model && !o.scans?.length) setTimeout(hide, 300) })
+  }
+
+  /** The expand button of the article kit. */
+  private mountFullscreenButton(box: HTMLDivElement): void {
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.setAttribute('aria-label', 'Full screen')
+    btn.title = 'Full screen'
+    btn.textContent = '⤢'
+    Object.assign(btn.style, {
+      position: 'absolute', top: '10px', right: '10px', zIndex: '3', width: '32px', height: '32px',
+      border: '0', borderRadius: '8px', cursor: 'pointer', color: '#fff', font: '16px/1 system-ui',
+      background: 'rgba(9,9,13,.6)', backdropFilter: 'blur(6px)',
+    })
+    btn.addEventListener('click', () => { void this.toggleFullscreen() })
+    box.appendChild(btn)
+  }
+
+  /**
+   * `background: 'auto'`: paper on a light page, the dark studio on a dark one,
+   * read from the page itself (the first opaque background up from the mount)
+   * and followed when the reader switches theme.
+   */
+  private watchHostTheme(mount: HTMLElement): void {
+    let last = hostIsLight(mount) ? 'paper' : 'studio'
+    const update = (): void => {
+      const next = hostIsLight(mount) ? 'paper' : 'studio'
+      if (next === last) return
+      last = next
+      if (this._ready) void this.setBackground(next).catch(() => undefined)
+    }
+    const mo = new MutationObserver(() => requestAnimationFrame(update))
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] })
+    if (document.body) mo.observe(document.body, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] })
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    mq?.addEventListener?.('change', update)
+    this.cleanups.push(() => { mo.disconnect(); mq?.removeEventListener?.('change', update) })
   }
 
   private post(message: Record<string, unknown>, transfer: Transferable[] = []): void {
@@ -2020,7 +2362,8 @@ export class IfcViewerElement extends HTMLElement {
     if (this._viewer) return
     if (!this.style.display) this.style.display = 'block'
     const host = document.createElement('div')
-    host.style.cssText = 'width:100%;height:100%'
+    // With aspect-ratio the figure sizes itself; otherwise it fills the element.
+    host.style.cssText = this.hasAttribute('aspect-ratio') ? 'width:100%' : 'width:100%;height:100%'
     this.appendChild(host)
 
     const attr = (n: string): string | undefined => this.getAttribute(n) ?? undefined
@@ -2052,7 +2395,22 @@ export class IfcViewerElement extends HTMLElement {
       solar: attr('solar'),
       moon: boolAttr('moon'),
       scans: attr('scans')?.split(',').map((u) => u.trim()).filter(Boolean),
-      height: '100%',
+      // Article kit (v1.15): <ifc-viewer ui="article" lazy poster="…" aspect-ratio="16/10">
+      view: attr('view') as CameraView | undefined,
+      fill: attr('fill') !== undefined ? Number(attr('fill')) : undefined,
+      wheel: attr('wheel') as 'always' | 'ctrl' | undefined,
+      lazy: attr('lazy') === 'visible' ? 'visible' : boolAttr('lazy'),
+      poster: attr('poster'),
+      posterTitle: attr('poster-title'),
+      posterText: attr('poster-text'),
+      launchLabel: attr('launch-label'),
+      aspectRatio: attr('aspect-ratio'),
+      turntable: this.hasAttribute('turntable')
+        ? (Number(this.getAttribute('turntable')) > 0 ? Number(this.getAttribute('turntable')) : boolAttr('turntable'))
+        : undefined,
+      pauseOffscreen: boolAttr('pause-offscreen'),
+      fullscreenButton: boolAttr('fullscreen-button'),
+      height: this.hasAttribute('aspect-ratio') ? undefined : '100%',
     })
     this._viewer = v
     for (const type of FORWARDED_EVENTS) {
@@ -2079,6 +2437,11 @@ export class IfcViewerElement extends HTMLElement {
   addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent> { return this._viewer!.addFromUrl(url, name) }
   select(expressId: number, modelId?: string): void { this._viewer?.select(expressId, modelId) }
   isolate(ifcType?: string): void { this._viewer?.isolate(ifcType) }
+  activate(): void { this._viewer?.activate() }
+  frame(options?: FrameOptions): Promise<{ scope: CameraScope }> { return this._viewer!.frame(options) }
+  toggleFullscreen(): Promise<void> { return this._viewer!.toggleFullscreen() }
+  setTurntable(enabled?: boolean | number): Promise<{ active: boolean; speed: number }> { return this._viewer!.setTurntable(enabled) }
+  bindSteps(steps: StoryStep[], options?: { rootMargin?: string }): () => void { return this._viewer!.bindSteps(steps, options) }
   getStats(): Promise<StatsResult> { return this._viewer!.getStats() }
   getIssues(opts?: { severity?: 'error' | 'warning' | 'info'; limit?: number }): Promise<IssuesResult> { return this._viewer!.getIssues(opts) }
   screenshot(): Promise<string> { return this._viewer!.screenshot() }

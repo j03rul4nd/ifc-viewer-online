@@ -448,3 +448,13 @@ describe('article presentation (v1.14)', () => {
     expect(c).toMatchObject({ showRail: true, showModelInfo: true })
   })
 })
+
+describe('turntable (v1.15)', () => {
+  it('reads on, off and a speed, capped', () => {
+    expect(parseAppUrlParams('?embed=1&turntable=1').turntable).toBe(6)
+    expect(parseAppUrlParams('?embed=1&turntable=12').turntable).toBe(12)
+    expect(parseAppUrlParams('?embed=1&turntable=500').turntable).toBe(90)
+    expect(parseAppUrlParams('?embed=1&turntable=0').turntable).toBeUndefined()
+    expect(parseAppUrlParams('?embed=1').turntable).toBeUndefined()
+  })
+})

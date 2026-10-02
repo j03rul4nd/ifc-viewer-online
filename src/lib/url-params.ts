@@ -106,6 +106,12 @@ export interface AppUrlParams {
    * reader scrolling past a figure must not get stuck zooming into it.
    */
   wheel?: WheelMode
+  /**
+   * `?turntable=1` (6°/s) or `?turntable=<deg/s>` — a slow idle orbit once
+   * the model is in, stopped by the visitor's first touch. Never under
+   * prefers-reduced-motion. Since v1.15.
+   */
+  turntable?: number
   /** Granular chrome overrides. `undefined` = fall back to the preset default. */
   overrides: {
     toolbar?: boolean
@@ -283,6 +289,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     view: parseView(p.get('view')) ?? (preset === 'article' && embed ? 'iso' : undefined),
     fill: parseFill(p.get('fill')),
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
+    turntable: parseTurntable(p.get('turntable')),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
       tree:           parseBool(p.get('tree')),
@@ -335,6 +342,15 @@ function parseFill(v: string | null): number | undefined {
   // Accept a ratio (0.85) or a percentage (85).
   const r = n > 1 ? n / 100 : n
   return Math.min(0.98, Math.max(0.2, r))
+}
+
+function parseTurntable(v: string | null): number | undefined {
+  if (v === null) return undefined
+  const b = parseBool(v)
+  if (b === true) return 6
+  if (b === false) return undefined
+  const n = Number.parseFloat(v)
+  return Number.isFinite(n) && n > 0 ? Math.min(90, n) : undefined
 }
 
 function parseWheel(v: string | null): WheelMode | undefined {

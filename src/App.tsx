@@ -853,7 +853,9 @@ export default function App() {
   // saved full-viewer preference.
   useEffect(() => {
     if (embedChrome.embed) {
-      useUIStore.setState({ validationPanelOpen: embedChrome.openPanel })
+      // The tree too: a host that asked for it (`tree=1`) gets it open, not
+      // folded to a strip because the reader once folded it in the app.
+      useUIStore.setState({ validationPanelOpen: embedChrome.openPanel, treeVisible: embedChrome.showTree })
     }
   }, [embedChrome])
 
@@ -970,6 +972,28 @@ export default function App() {
   // deep-link effect down on the first scan, and a paused file would block
   // ?validate and georef extraction indefinitely.
   const loadsActive = useLoadingStore((s) => s.summary.managedActive > 0)
+
+  // `?view=` / `?turntable=` (the article preset): the presentation shot,
+  // taken the first time the loads settle with something in the scene —
+  // whoever loaded it: the URL, the SDK's addFromUrl, bytes from a host.
+  // Once only: after that the camera belongs to the reader and the tools.
+  const presentationShotRef = useRef(false)
+  useEffect(() => {
+    if (loadsActive || presentationShotRef.current) return
+    if (!urlParams.view && !urlParams.turntable) return
+    if (useSceneStore.getState().models.length === 0) return
+    // A short quiet first: the SDK loads a federated set one model at a time,
+    // and the queue is briefly idle between them.
+    const timer = window.setTimeout(() => {
+      if (presentationShotRef.current) return
+      presentationShotRef.current = true
+      const api = viewerApiRef.current
+      if (!api) return
+      if (urlParams.view) api.setCameraPreset(urlParams.view, { fill: urlParams.fill ?? 0.85, animate: false })
+      if (urlParams.turntable) api.setTurntable(true, urlParams.turntable)
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [loadsActive, urlParams])
   const loadingState: 'idle' | 'loading' | 'loaded' | 'error' =
     loadsActive ? 'loading' : sceneModels.length > 0 ? 'loaded' : loadError ? 'error' : 'idle'
   // Toolbar-less presets put the loading indicator in the bottom-left corner
@@ -1401,16 +1425,20 @@ export default function App() {
   // ── Track desktop breakpoint so tree Panel is never rendered on mobile ──
   // react-resizable-panels allocates the Panel's flex share even when its
   // inner content is hidden, so we must not mount the Panel at all on mobile.
+  // An article figure is a 650–720 px frame on a desktop page: the same line
+  // as useIsMobile draws for it (520 px), or the spatial tree a post is about
+  // went into a closed phone sheet.
+  const desktopQuery = urlParams.embed && urlParams.preset === 'article' ? '(min-width: 520px)' : '(min-width: 768px)'
   const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true,
+    typeof window !== 'undefined' ? window.matchMedia(desktopQuery).matches : true,
   )
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)')
+    const mq = window.matchMedia(desktopQuery)
     const handler = (e: MediaQueryListEvent): void => setIsDesktop(e.matches)
     mq.addEventListener('change', handler)
     setIsDesktop(mq.matches)
     return () => mq.removeEventListener('change', handler)
-  }, [])
+  }, [desktopQuery])
 
   // ── Detect WebGPU availability ────────────────────────────────────────────
   useEffect(() => {
@@ -2002,15 +2030,7 @@ export default function App() {
       return
     }
 
-    void loadModelsFromUrls(urlParams.modelUrls, urlParams.fileNames).then(async () => {
-      // `?view=` (and the article preset): once everything is in, frame it
-      // tightly. Two frames late, so the per-model framing of the load has
-      // landed and this is the last word on the camera.
-      const view = urlParams.view
-      if (!view) return
-      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
-      viewerApiRef.current?.setCameraPreset(view, { fill: urlParams.fill ?? 0.85, animate: false })
-    })
+    void loadModelsFromUrls(urlParams.modelUrls, urlParams.fileNames)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -2089,7 +2109,8 @@ export default function App() {
         case 'ifcviewer:isolate': {
           const type = typeof msg.ifcType === 'string' ? msg.ifcType.toUpperCase() : null
           handleSetIsolatedCategory(type)
-          if (type) viewerRef.current?.frameCategory(type)
+          // frame: false (v1.15): a story step that sets its own shot next.
+          if (type && msg.frame !== false) viewerRef.current?.frameCategory(type)
           break
         }
         case 'ifcviewer:fit':
@@ -2101,6 +2122,24 @@ export default function App() {
         case 'ifcviewer:show-all':
           handleRestoreVisibility()
           break
+        // ── Presentation (v1.15): a figure that turns, and one that rests ──
+        case 'ifcviewer:set-turntable': {
+          void respond(() => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const speed = typeof msg.speed === 'number' && Number.isFinite(msg.speed) ? msg.speed : 6
+            return api.setTurntable(msg.enabled !== false, speed)
+          })
+          break
+        }
+        case 'ifcviewer:set-paused': {
+          // The host scrolled the figure out of view: stop painting frames.
+          void respond(() => {
+            viewerApiRef.current?.setPaused(msg.paused === true)
+            return { paused: msg.paused === true }
+          })
+          break
+        }
         case 'ifcviewer:view': {
           // fill / azimuth / elevation (v1.14): a tight fit for presentation —
           // the model fills the frame instead of floating in its bounding
@@ -4237,7 +4276,9 @@ export default function App() {
       </AnimatePresence>
 
       {/* ── Loading Center (popover on desktop, sheet on mobile; portals itself) ── */}
-      {route === 'viewer' && <LoadingCenter anchor={effectiveChrome.showToolbar ? 'toolbar' : 'floating'} />}
+      {/* Quiet presets (kiosk, article) leave progress to the host: it gets
+          model-progress events, and a figure is no place for a load panel. */}
+      {route === 'viewer' && !effectiveChrome.quiet && <LoadingCenter anchor={effectiveChrome.showToolbar ? 'toolbar' : 'floating'} />}
 
       {/* ── Loading indicator for presets without a toolbar (kiosk, client) ── */}
       {route === 'viewer' && !effectiveChrome.showToolbar && !effectiveChrome.quiet && <LoadingIndicator variant="floating" />}
