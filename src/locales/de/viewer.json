@@ -255,6 +255,7 @@
     "performanceHint": "Standard — WebGL-Rasterung, beste Leistung",
     "qualityHint": "Qualität — SSAO Ambient Occlusion + Kantenerkennung als Nachbearbeitung"
   },
+  "wheelHint": "{{key}} + Scrollen zum Zoomen",
   "cache": {
     "fromCache": "⚡ aus Cache",
     "cached": "{{count}} gecacht",

@@ -410,3 +410,41 @@ describe('parseAppUrlParams — bg', () => {
     expect(parseAppUrlParams('').background).toBeUndefined()
   })
 })
+
+describe('article presentation (v1.14)', () => {
+  it('kiosk is canvas only, as documented: no rail, info chip, validation bar or load chrome', () => {
+    const c = resolveEmbedChrome(parseAppUrlParams('?ui=kiosk'))
+    expect(c).toMatchObject({ showRail: false, showModelInfo: false, showValidation: false, quiet: true })
+  })
+
+  it('minimal, full and client keep their tools', () => {
+    for (const ui of ['minimal', 'full', 'client']) {
+      const c = resolveEmbedChrome(parseAppUrlParams(`?ui=${ui}`))
+      expect(c).toMatchObject({ showRail: true, showModelInfo: true, showValidation: true, quiet: false })
+    }
+    expect(resolveEmbedChrome(parseAppUrlParams(''))).toMatchObject({ showRail: true, quiet: false })
+  })
+
+  it('article is the kiosk canvas plus a tight iso framing and a page-scrolling wheel', () => {
+    const p = parseAppUrlParams('?ui=article')
+    expect(p.embed).toBe(true)
+    expect(p.view).toBe('iso')
+    expect(p.wheel).toBe('ctrl')
+    expect(resolveEmbedChrome(p)).toMatchObject({ showToolbar: false, showRail: false, quiet: true })
+  })
+
+  it('view, fill and wheel can be set or overridden on any preset', () => {
+    const p = parseAppUrlParams('?ui=article&view=top&fill=70&wheel=always')
+    expect(p).toMatchObject({ view: 'top', fill: 0.7, wheel: 'always' })
+    expect(parseAppUrlParams('?embed=1&view=front&fill=0.9')).toMatchObject({ view: 'front', fill: 0.9 })
+    expect(parseAppUrlParams('?embed=1').view).toBeUndefined()
+    expect(parseAppUrlParams('?embed=1&view=sideways&fill=x').view).toBeUndefined()
+    expect(parseAppUrlParams('?embed=1&fill=150').fill).toBe(0.98)
+    expect(parseAppUrlParams('?embed=1&fill=3').fill).toBe(0.2)   // read as 3 %
+  })
+
+  it('rail and stats override the preset', () => {
+    const c = resolveEmbedChrome(parseAppUrlParams('?ui=article&rail=1&stats=1'))
+    expect(c).toMatchObject({ showRail: true, showModelInfo: true })
+  })
+})

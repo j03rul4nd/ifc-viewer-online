@@ -80,7 +80,9 @@
       "kiosk": "Kiosk",
       "kioskDesc": "Nur 3D-Ansicht",
       "client": "Kunde",
-      "clientDesc": "Kundenpräsentations-Ansicht"
+      "clientDesc": "Kundenpräsentations-Ansicht",
+      "article": "Artikel",
+      "articleDesc": "Abbildung für einen Beitrag: Leinwand, enger Bildausschnitt, Seiten-Scroll"
     },
     "optionsLabel": "Optionen",
     "autoValidate": "Validierung beim Laden ausführen",

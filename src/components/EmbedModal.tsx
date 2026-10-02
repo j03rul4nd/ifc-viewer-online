@@ -22,7 +22,7 @@ interface EmbedModalProps {
   onClose: () => void
 }
 
-const PRESETS: EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client']
+const PRESETS: EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client', 'article']
 
 export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: EmbedModalProps) {
   const { t } = useTranslation('toolbar')

@@ -18,7 +18,7 @@ import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './meas
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
-import { resolveFraming, presetPose, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
+import { resolveFraming, presetPose, fitPose, PRESET_VIEW, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
 import { mintModelId } from './loading/model-id'
@@ -79,6 +79,15 @@ export interface CameraPresetOptions {
    * the old view.
    */
   animate?: boolean
+  /**
+   * Fill this share of the frame (0.2–0.98) with a tight fit on the box's
+   * corners instead of the bounding sphere. What an article or a cover wants:
+   * the sphere leaves a long, low building as a sliver. See fitPose.
+   */
+  fill?: number
+  /** Look from these angles instead of the preset's own (degrees). Implies a tight fit. */
+  azimuthDeg?: number
+  elevationDeg?: number
 }
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
@@ -697,6 +706,12 @@ export interface ViewerAPI {
    */
   setCameraLookAt(position: Vec3Like, target: Vec3Like, animate?: boolean): void
   /**
+   * `'ctrl'`: the wheel scrolls whatever hosts the viewer and zooms only with
+   * Ctrl/⌘ held (a trackpad pinch sends Ctrl too), with `hint` shown briefly
+   * over the canvas when a plain wheel arrives. `'always'` (default) zooms.
+   */
+  setWheelMode(mode: 'always' | 'ctrl', hint?: string): void
+  /**
    * World-space merged AABB of a set of elements (serialisable, no THREE
    * objects). Reuses the same getMergedBox path as frameElements. Null when
    * the model/elements are unknown or the box is empty.
@@ -1197,6 +1212,42 @@ async function paintPaletteFlat(model: FRAGS.FragmentsModel, typeMap: Map<number
 }
 
 export function createViewer(container: HTMLElement): ViewerAPI {
+  // ── Wheel: zoom, or leave it to the page (setWheelMode) ───────────────────
+  // Capture phase on the container runs before camera-controls' listener on
+  // the canvas, so stopping it there is enough. NOT preventDefault: the
+  // browser then scrolls the host page, through the iframe boundary.
+  let wheelMode: 'always' | 'ctrl' = 'always'
+  let wheelHintText = 'Ctrl + scroll to zoom'
+  let wheelHintEl: HTMLDivElement | null = null
+  let wheelHintTimer: ReturnType<typeof setTimeout> | null = null
+  const showWheelHint = (): void => {
+    if (!wheelHintEl) {
+      wheelHintEl = document.createElement('div')
+      wheelHintEl.setAttribute('role', 'status')
+      Object.assign(wheelHintEl.style, {
+        position: 'absolute', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        pointerEvents: 'none', zIndex: '40', opacity: '0', transition: 'opacity 160ms ease',
+      })
+      const pill = document.createElement('span')
+      Object.assign(pill.style, {
+        padding: '8px 14px', borderRadius: '999px', font: '500 13px/1.3 system-ui, sans-serif',
+        color: '#fff', background: 'rgba(9, 9, 13, 0.72)', backdropFilter: 'blur(6px)',
+      })
+      wheelHintEl.appendChild(pill)
+      if (getComputedStyle(container).position === 'static') container.style.position = 'relative'
+      container.appendChild(wheelHintEl)
+    }
+    ;(wheelHintEl.firstChild as HTMLSpanElement).textContent = wheelHintText
+    wheelHintEl.style.opacity = '1'
+    if (wheelHintTimer) clearTimeout(wheelHintTimer)
+    wheelHintTimer = setTimeout(() => { if (wheelHintEl) wheelHintEl.style.opacity = '0' }, 1100)
+  }
+  container.addEventListener('wheel', (e) => {
+    if (wheelMode !== 'ctrl' || e.ctrlKey || e.metaKey) return
+    e.stopPropagation()
+    showWheelHint()
+  }, { capture: true, passive: true })
+
 
   const components = new OBC.Components()
   const worlds     = components.get(OBC.Worlds)
@@ -3548,7 +3599,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const aspect = cam instanceof THREE.PerspectiveCamera
         ? cam.aspect
         : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9)
-      const { position, target } = presetPose(framing.box, preset, fov, aspect)
+      const tight = opts?.fill !== undefined || opts?.azimuthDeg !== undefined || opts?.elevationDeg !== undefined
+      const { position, target } = tight
+        ? fitPose(framing.box, {
+          azimuthDeg: opts?.azimuthDeg ?? PRESET_VIEW[preset].azimuthDeg,
+          elevationDeg: opts?.elevationDeg ?? PRESET_VIEW[preset].elevationDeg,
+        }, fov, aspect, opts?.fill)
+        : presetPose(framing.box, preset, fov, aspect)
 
       // Retune near/far/fog to the whole visible scene, not just the framed
       // part: narrowing the shot must not clip the other site out of existence.
@@ -3923,6 +3980,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       } catch {
         return null
       }
+    },
+
+    setWheelMode(mode: 'always' | 'ctrl', hint?: string) {
+      wheelMode = mode
+      if (hint) wheelHintText = hint
     },
 
     setCameraLookAt(position: Vec3Like, target: Vec3Like, animate = true) {

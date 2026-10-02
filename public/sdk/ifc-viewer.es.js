@@ -1,7 +1,7 @@
 var m = Object.defineProperty;
-var w = (i, t, e) => t in i ? m(i, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : i[t] = e;
-var n = (i, t, e) => w(i, typeof t != "symbol" ? t + "" : t, e);
-const p = [
+var w = (o, t, e) => t in o ? m(o, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[t] = e;
+var a = (o, t, e) => w(o, typeof t != "symbol" ? t + "" : t, e);
+const v = [
   { code: "en", label: "English" },
   { code: "es", label: "Español" },
   { code: "de", label: "Deutsch" },
@@ -12,7 +12,7 @@ const p = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.13.0", q = 12e4, y = 3e4, l = p.map((i) => i.code);
+], g = "1.14.0", q = 12e4, y = 3e4, c = v.map((o) => o.code);
 function b() {
   try {
     return new URL("../", import.meta.url).href;
@@ -20,46 +20,46 @@ function b() {
     return "/";
   }
 }
-function P(i) {
+function P(o) {
   try {
-    return new URL(i).origin;
+    return new URL(o).origin;
   } catch {
     return "";
   }
 }
-function h(i) {
-  if (i instanceof ArrayBuffer) return i;
-  if (i instanceof Uint8Array)
-    return i.byteOffset === 0 && i.byteLength === i.buffer.byteLength ? i.buffer : i.slice().buffer;
+function h(o) {
+  if (o instanceof ArrayBuffer) return o;
+  if (o instanceof Uint8Array)
+    return o.byteOffset === 0 && o.byteLength === o.buffer.byteLength ? o.buffer : o.slice().buffer;
   throw new TypeError("IfcViewer: expected an ArrayBuffer or Uint8Array");
 }
-function f(i, t) {
-  return i == null ? t : typeof i == "number" ? `${i}px` : i;
+function f(o, t) {
+  return o == null ? t : typeof o == "number" ? `${o}px` : o;
 }
 const d = class d {
   constructor(t, e = {}) {
-    n(this, "version", g);
-    n(this, "iframe");
-    n(this, "baseUrl");
-    n(this, "appOrigin");
-    n(this, "opts");
-    n(this, "loadTimeout");
-    n(this, "_ready", !1);
-    n(this, "languages", []);
-    n(this, "readyResolvers", []);
+    a(this, "version", g);
+    a(this, "iframe");
+    a(this, "baseUrl");
+    a(this, "appOrigin");
+    a(this, "opts");
+    a(this, "loadTimeout");
+    a(this, "_ready", !1);
+    a(this, "languages", []);
+    a(this, "readyResolvers", []);
     // Correlate each load with the iframe's echoed requestId so app-initiated loads
     // (URL param, in-iframe upload) never resolve a host add() promise.
-    n(this, "pending", /* @__PURE__ */ new Map());
+    a(this, "pending", /* @__PURE__ */ new Map());
     // Generic query (request/response) correlation, keyed by requestId.
-    n(this, "requests", /* @__PURE__ */ new Map());
+    a(this, "requests", /* @__PURE__ */ new Map());
     // Serialize loads so they land in call order and each add() settles before
     // the next is sent. The viewer itself queues concurrent loads (it no longer
     // rejects a second one), so this is about predictable ordering for hosts.
-    n(this, "loadChain", Promise.resolve());
-    n(this, "reqCounter", 0);
-    n(this, "listeners", /* @__PURE__ */ new Map());
-    n(this, "disposed", !1);
-    n(this, "onMessage", (t) => {
+    a(this, "loadChain", Promise.resolve());
+    a(this, "reqCounter", 0);
+    a(this, "listeners", /* @__PURE__ */ new Map());
+    a(this, "disposed", !1);
+    a(this, "onMessage", (t) => {
       if (t.source !== this.iframe.contentWindow) return;
       const e = t.data;
       if (!(!e || e.source !== "ifc-validator" || typeof e.type != "string"))
@@ -126,8 +126,8 @@ const d = class d {
     this.opts = e, this.baseUrl = e.baseUrl ?? b(), this.loadTimeout = e.loadTimeout ?? q;
     const s = this.buildSrc();
     this.appOrigin = P(s);
-    const a = document.createElement("iframe");
-    a.src = s, a.style.border = "0", a.style.width = f(e.width, "100%"), a.style.height = f(e.height, "100%"), a.setAttribute("allow", "fullscreen"), a.setAttribute("loading", "lazy"), a.title = e.title ?? "IFC model viewer", e.className && (a.className = e.className), r.appendChild(a), this.iframe = a, window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
+    const n = document.createElement("iframe");
+    n.src = s, n.style.border = "0", n.style.width = f(e.width, "100%"), n.style.height = f(e.height, "100%"), n.setAttribute("allow", "fullscreen"), n.setAttribute("loading", "lazy"), n.title = e.title ?? "IFC model viewer", e.className && (n.className = e.className), r.appendChild(n), this.iframe = n, window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
   }
   /** Create a viewer and resolve once it is ready to accept commands. */
   static async create(t, e = {}) {
@@ -176,6 +176,30 @@ const d = class d {
   setView(t, e) {
     this.send({ type: "ifcviewer:view", preset: t, ...e ? { scope: e } : {} });
   }
+  /**
+   * Frame the scene for presentation (v1.14): the model FILLS the frame.
+   *
+   * `fill` is the share of the frame the model takes on its tighter axis
+   * (0.2–0.98, default 0.85), fitted to the box's corners rather than its
+   * bounding sphere. `azimuth` / `elevation` (degrees) look from any angle;
+   * they default to the `view` preset's own. Resolves once the camera is set.
+   *
+   * ```js
+   * await viewer.frame({ view: 'iso', fill: 0.9 })
+   * await viewer.frame({ azimuth: 200, elevation: 35, animate: false })
+   * ```
+   */
+  frame(t = {}) {
+    const { view: e, scope: r, fill: s, azimuth: n, elevation: i, animate: u } = t;
+    return this.request("ifcviewer:view", {
+      preset: e ?? "iso",
+      ...r ? { scope: r } : {},
+      fill: s ?? 0.85,
+      ...n !== void 0 ? { azimuth: n } : {},
+      ...i !== void 0 ? { elevation: i } : {},
+      ...u !== void 0 ? { animate: u } : {}
+    });
+  }
   /** Change the UI language at runtime (no-ops for unsupported codes). */
   setLanguage(t) {
     this.send({ type: "ifcviewer:set-language", lang: t });
@@ -194,7 +218,7 @@ const d = class d {
    * for code + native label pairs to build a picker.
    */
   getLanguages() {
-    return this.languages.length ? this.languages.slice() : l.slice();
+    return this.languages.length ? this.languages.slice() : c.slice();
   }
   // ── Queries (request → response) ───────────────────────────────────────────
   /** List the models currently loaded in the scene. */
@@ -712,6 +736,15 @@ const d = class d {
   createCover(t = {}) {
     return this.request("ifcviewer:create-cover", { ...t }, 5 * 6e4);
   }
+  /**
+   * Compare two deliveries by URL and open the comparison workspace on the
+   * result. Head files that are also loaded in the scene can be framed in 3D.
+   *
+   *   await viewer.compare({ base: lastWeekUrl, head: thisWeekUrl })
+   */
+  compare(t) {
+    return this.request("ifcviewer:compare", { ...t }, 5 * 6e4);
+  }
   /** The cover as it stands, or null when Cover Studio is closed. */
   getCover() {
     return this.request("ifcviewer:get-cover", {}, 5 * 6e4);
@@ -836,7 +869,7 @@ const d = class d {
       const r = this.opts.background, s = typeof r == "string" ? r : "preset" in r ? r.preset : r.bottom ? `${r.top},${r.bottom}` : r.top;
       t.searchParams.set("bg", s.replace(/#/g, ""));
     }
-    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), t.toString();
+    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), t.toString();
   }
   /** Queue a load so only one runs at a time; resolves with that load's result. */
   enqueueLoad(t) {
@@ -852,15 +885,15 @@ const d = class d {
         r(new Error("IfcViewer disposed"));
         return;
       }
-      const s = this.nextRequestId(), a = this.loadTimeout > 0 ? setTimeout(() => {
+      const s = this.nextRequestId(), n = this.loadTimeout > 0 ? setTimeout(() => {
         this.pending.delete(s), r(new Error(`IfcViewer: load timed out after ${this.loadTimeout}ms`));
       }, this.loadTimeout) : null;
-      this.pending.set(s, { resolve: e, reject: r, timer: a }), this.whenReady().then(() => {
+      this.pending.set(s, { resolve: e, reject: r, timer: n }), this.whenReady().then(() => {
         if (!this.disposed)
           try {
             t(s);
-          } catch (o) {
-            this.settle(s, !1, o instanceof Error ? o : new Error(String(o)));
+          } catch (i) {
+            this.settle(s, !1, i instanceof Error ? i : new Error(String(i)));
           }
       });
     });
@@ -880,11 +913,11 @@ const d = class d {
   }
   /** Send a query and resolve with the iframe's `result` payload. */
   request(t, e = {}, r = y, s = []) {
-    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((a, o) => {
-      const u = this.nextRequestId(), v = setTimeout(() => {
-        this.requests.delete(u), o(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
+    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((n, i) => {
+      const u = this.nextRequestId(), p = setTimeout(() => {
+        this.requests.delete(u), i(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
       }, r);
-      this.requests.set(u, { resolve: a, reject: o, timer: v }), this.whenReady().then(() => {
+      this.requests.set(u, { resolve: n, reject: i, timer: p }), this.whenReady().then(() => {
         this.disposed || this.post({ type: t, requestId: u, ...e }, s);
       });
     });
@@ -904,9 +937,9 @@ const d = class d {
   }
 };
 /** Languages the viewer ships with (code + native label). */
-n(d, "LANGUAGES", p), /** Just the language codes, for convenience. */
-n(d, "SUPPORTED_LANGUAGES", l);
-let c = d;
+a(d, "LANGUAGES", v), /** Just the language codes, for convenience. */
+a(d, "SUPPORTED_LANGUAGES", c);
+let l = d;
 const C = [
   "ready",
   "model-loaded",
@@ -926,7 +959,7 @@ const C = [
 class k extends HTMLElement {
   constructor() {
     super(...arguments);
-    n(this, "_viewer", null);
+    a(this, "_viewer", null);
   }
   static get observedAttributes() {
     return ["model", "lang", "accent", "background"];
@@ -940,13 +973,13 @@ class k extends HTMLElement {
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
     e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const r = (o) => this.getAttribute(o) ?? void 0, s = (o) => {
-      if (!this.hasAttribute(o)) return;
-      const u = this.getAttribute(o);
+    const r = (i) => this.getAttribute(i) ?? void 0, s = (i) => {
+      if (!this.hasAttribute(i)) return;
+      const u = this.getAttribute(i);
       return u !== "false" && u !== "0" && u !== "no";
-    }, a = new c(e, {
+    }, n = new l(e, {
       ui: r("ui"),
-      panels: r("panels")?.split(",").map((o) => o.trim()).filter(Boolean),
+      panels: r("panels")?.split(",").map((i) => i.trim()).filter(Boolean),
       lang: r("lang"),
       accent: r("accent"),
       validate: s("validate"),
@@ -956,19 +989,19 @@ class k extends HTMLElement {
       background: r("background"),
       // `map` alone (or map="1") is the map; a list names the layers.
       map: this.hasAttribute("map") ? (() => {
-        const o = (this.getAttribute("map") ?? "").trim();
-        if (o === "" || o === "1" || o === "true") return !0;
-        if (!(o === "0" || o === "false"))
-          return o.split(",").map((u) => u.trim()).filter(Boolean);
+        const i = (this.getAttribute("map") ?? "").trim();
+        if (i === "" || i === "1" || i === "true") return !0;
+        if (!(i === "0" || i === "false"))
+          return i.split(",").map((u) => u.trim()).filter(Boolean);
       })() : void 0,
       solar: r("solar"),
       moon: s("moon"),
-      scans: r("scans")?.split(",").map((o) => o.trim()).filter(Boolean),
+      scans: r("scans")?.split(",").map((i) => i.trim()).filter(Boolean),
       height: "100%"
     });
-    this._viewer = a;
-    for (const o of C)
-      a.on(o, (u) => this.dispatchEvent(new CustomEvent(`ifcviewer:${o}`, { detail: u, bubbles: !0, composed: !0 })));
+    this._viewer = n;
+    for (const i of C)
+      n.on(i, (u) => this.dispatchEvent(new CustomEvent(`ifcviewer:${i}`, { detail: u, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";
@@ -1085,8 +1118,8 @@ class k extends HTMLElement {
     return this._viewer.frameGroup(e);
   }
 }
-function _(i = "ifc-viewer") {
-  typeof customElements < "u" && !customElements.get(i) && customElements.define(i, k);
+function _(o = "ifc-viewer") {
+  typeof customElements < "u" && !customElements.get(o) && customElements.define(o, k);
 }
 if (typeof window < "u")
   try {
@@ -1094,9 +1127,9 @@ if (typeof window < "u")
   } catch {
   }
 export {
-  c as IfcViewer,
+  l as IfcViewer,
   k as IfcViewerElement,
-  p as LANGUAGES,
-  c as default,
+  v as LANGUAGES,
+  l as default,
   _ as defineIfcViewerElement
 };

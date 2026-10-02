@@ -255,6 +255,7 @@
     "performanceHint": "Estàndard — rasterització WebGL, millor rendiment",
     "qualityHint": "Qualitat — oclusió ambiental SSAO + postprocés de detecció de vores"
   },
+  "wheelHint": "{{key}} + roda per fer zoom",
   "cache": {
     "fromCache": "⚡ des de la memòria cau",
     "cached": "{{count}} en memòria cau",

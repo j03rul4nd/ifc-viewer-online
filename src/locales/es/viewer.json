@@ -255,6 +255,7 @@
     "performanceHint": "Estándar — rasterización WebGL, mejor rendimiento",
     "qualityHint": "Calidad — oclusión ambiental SSAO + posprocesado de detección de bordes"
   },
+  "wheelHint": "{{key}} + rueda para hacer zoom",
   "cache": {
     "fromCache": "⚡ desde caché",
     "cached": "{{count}} en caché",
