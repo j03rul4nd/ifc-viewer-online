@@ -54,6 +54,7 @@
 import * as WEBIFC from 'web-ifc'
 import { IfcImporter } from '@thatopen/fragments'
 import { validateIfcBuffer } from '../lib/ifc-guards'
+import { hasFarCoordinates } from '../lib/ifc-far-coordinates'
 import type { LoadErrorCode } from '../lib/loading/types'
 
 // Emscripten's pthread implementation uses self.location.href as the URL for
@@ -248,8 +249,6 @@ async function handleParse(msg: ParseMessage): Promise<void> {
 
   const sizeBytes = buffer.byteLength
   try {
-    const importer = new IfcImporter()
-
     // KEEP THE MODEL'S OWN COORDINATES.
     //
     // web-ifc defaults COORDINATE_TO_ORIGIN to false; @thatopen/fragments
@@ -269,42 +268,30 @@ async function handleParse(msg: ParseMessage): Promise<void> {
     // the author to re-export with a base point offset or an IfcMapConversion —
     // so drawing it honestly beats silently moving it and breaking every
     // coordinate-based feature for every other model.
-    importer.webIfcSettings = {
-      ...importer.webIfcSettings,
-      COORDINATE_TO_ORIGIN: false,
-    }
-
-    // Use local WASM files; CDN is blocked by COEP require-corp
-    importer.wasm = import.meta.env.DEV
-      ? { path: `${import.meta.env.BASE_URL}node_modules/web-ifc/`, absolute: true }
-      : { path: import.meta.env.BASE_URL, absolute: true }
-
+    //
+    // EXCEPT past 100 km, where honesty draws nothing: the importer drops every
+    // element whose transform is further than its distanceThreshold, so a file
+    // with UTM baked into its vertices (Civil 3D, no IfcMapConversion) loads
+    // empty. Those, and only those, are moved to the origin. The shift is
+    // stored in the .frag as the coordination matrix and the viewer reads it
+    // back (modelCoordination), so real coordinates survive the move.
     const bytes = new Uint8Array(buffer)
-    const gate = createProgressGate()
+    const far = hasFarCoordinates(bytes)
 
     post({ type: 'stage', id, stage: 'converting' })
 
-    const fragmentsBinary = await importer.process({
-      bytes,
-      progressCallback: (progress: number, data?: ImporterProgressData) => {
-        const fraction = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0
-        const out: ProgressMessage = {
-          type: 'progress',
-          id,
-          phase: 'parsing',
-          percent: Math.min(99, Math.round(fraction * 100)),
-          fraction,
-        }
-        if (data) {
-          out.process = data.process
-          out.state = data.state
-          if (data.class !== undefined) out.className = data.class
-          if (data.entitiesProcessed !== undefined) out.entitiesProcessed = data.entitiesProcessed
-        }
-        for (const m of gate.offer(out)) post(m)
-      },
-    })
-    for (const m of gate.flush()) post(m)
+    const first = await convert(id, bytes, far, false)
+    let fragmentsBinary = first.binary
+
+    // The scan reads cartesian points one at a time. Placements that only add
+    // up past 100 km (a site at 60 km holding a building at 60 km) slip
+    // through it, and the importer then drops those elements without failing.
+    // It says so on the console, and that is the signal: convert again, moved
+    // to the origin. Rare, and far cheaper than a model with missing parts.
+    if (!far && first.skipped > 0) {
+      post({ type: 'stage', id, stage: 'converting' })
+      fragmentsBinary = (await convert(id, bytes, true, true)).binary
+    }
 
     // Transfer the underlying ArrayBuffer — zero-copy back to main thread.
     const transferBuffer = transferableBuffer(fragmentsBinary)
@@ -331,6 +318,70 @@ async function handleParse(msg: ParseMessage): Promise<void> {
     const gc = (globalThis as Record<string, unknown>)['gc']
     if (typeof gc === 'function') (gc as () => void)()
   })
+}
+
+/** The importer's own console line for an element it drops past distanceThreshold. */
+const SKIPPED_FAR_RE = /meters away from the origin and will be skipped/
+
+/**
+ * One IfcImporter pass. Counts the elements the importer drops for being too
+ * far from the origin; it warns about each and otherwise carries on.
+ *
+ * `retry` marks the second pass of a fallback: its progress repeats ground the
+ * job has already reported, so it posts fractions only and no per-class counts,
+ * which a consumer summing them would otherwise count twice.
+ */
+async function convert(
+  id: string, bytes: Uint8Array, toOrigin: boolean, retry: boolean,
+): Promise<{ binary: Uint8Array; skipped: number }> {
+  const importer = new IfcImporter()
+  importer.webIfcSettings = {
+    ...importer.webIfcSettings,
+    COORDINATE_TO_ORIGIN: toOrigin,
+  }
+
+  // Use local WASM files; CDN is blocked by COEP require-corp
+  importer.wasm = import.meta.env.DEV
+    ? { path: `${import.meta.env.BASE_URL}node_modules/web-ifc/`, absolute: true }
+    : { path: import.meta.env.BASE_URL, absolute: true }
+
+  const gate = createProgressGate()
+  let skipped = 0
+  const warn = console.warn
+  console.warn = (...args: unknown[]) => {
+    if (typeof args[0] === 'string' && SKIPPED_FAR_RE.test(args[0])) { skipped++; return }
+    warn.apply(console, args)
+  }
+  try {
+    const binary = await importer.process({
+      bytes,
+      progressCallback: (progress: number, data?: ImporterProgressData) => {
+        const fraction = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0
+        const out: ProgressMessage = {
+          type: 'progress',
+          id,
+          phase: 'parsing',
+          percent: Math.min(99, Math.round(fraction * 100)),
+          fraction,
+        }
+        if (data && !retry) {
+          out.process = data.process
+          out.state = data.state
+          if (data.class !== undefined) out.className = data.class
+          if (data.entitiesProcessed !== undefined) out.entitiesProcessed = data.entitiesProcessed
+        }
+        for (const m of gate.offer(out)) post(m)
+      },
+    })
+    for (const m of gate.flush()) post(m)
+    return { binary, skipped }
+  } finally {
+    console.warn = warn
+    if (skipped > 0) {
+      warn.call(console, `[ifc-parser] the importer dropped ${skipped} element(s) more than 100 km from the origin` +
+        (toOrigin ? '' : '; converting again, moved to the origin'))
+    }
+  }
 }
 
 // ── Message types (shared with the pool, embed-loader and loader.ts) ──────────

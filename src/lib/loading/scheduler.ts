@@ -264,7 +264,8 @@ export interface AttachInput {
 
 /**
  * One attach at a time. With an empty scene only the anchor may attach
- * (fragments takes the coordinate base from the first model it loads); a job
+ * (the first far-coordinate model sets the scene datum, see
+ * coordination-datum, so the order must not depend on conversion speed); a job
  * that finished converting early waits with reason `anchor` instead of
  * silently becoming the base of the federation.
  */

@@ -44,7 +44,12 @@ const DIR_NAME = 'ifc-cache'
 // metres away from its own coordinates and a registered point cloud would keep
 // missing it. The geometry is unchanged in FORMAT and wrong in PLACE, which is
 // exactly the case a version bump exists for.
-const CACHE_VERSION = 'v3'
+//
+// v4 — models with coordinates past 100 km (UTM baked into the vertices) are
+// converted with COORDINATE_TO_ORIGIN again (see ifc-far-coordinates). Under v3
+// the importer dropped every one of their elements, so their cached .frag is
+// an empty model that would keep loading as nothing.
+const CACHE_VERSION = 'v4'
 
 const FRAG = '.frag'
 const IFC  = '.ifc'

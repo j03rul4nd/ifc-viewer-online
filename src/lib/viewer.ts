@@ -22,6 +22,7 @@ import { resolveFraming, presetPose, type FramingItem, type FramingResult, type 
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
 import { mintModelId } from './loading/model-id'
+import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
 import {
   isAbortError, isFragmentsLoadAborted, loadCancelledError, pickActiveAfterDiscard,
   pollModelIdle, stageFraction, throwIfLoadAborted, type ModelIdleResult,
@@ -1539,6 +1540,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const initPromise = (async () => {
     const workerURL = await OBC.FragmentsManager.getWorker()
     fragmentsManager.init(workerURL)
+    // fragments aligns every model to the FIRST one it loaded, whatever that
+    // one is: a UTM model loaded after a local one is sent back to its
+    // 4,600 km coordinates, and a local model loaded after a UTM one is thrown
+    // that far the other way. The scene datum (reconcileCoordination) does
+    // this job with the knowledge fragments lacks — which models share a site.
+    fragmentsManager.core.settings.autoCoordinate = false
     await ifcLoader.setup()
   })()
 
@@ -1582,6 +1589,94 @@ export function createViewer(container: HTMLElement): ViewerAPI {
    * geometry we draw, in SCENE axes. See getModelCoordination.
    */
   const modelCoordination: Map<string, { x: number; y: number; z: number }> = new Map()
+  /**
+   * One shift for every model the converter moved to the origin, so files from
+   * one site stay registered to each other. See coordination-datum.
+   */
+  let sceneDatum: DatumVec3 | null = null
+
+  /** Centre of a model's geometry in its pivot's space, without its object offset. */
+  function drawnCentreOf(model: FRAGS.FragmentsModel): DatumVec3 | null {
+    try {
+      const box = pivotLocalBox(model)
+      if (box.isEmpty()) return null
+      const c = box.getCenter(new THREE.Vector3()).sub(model.object.position)
+      return Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z) ? { x: c.x, y: c.y, z: c.z } : null
+    } catch {
+      return null
+    }
+  }
+
+  function offsetModelObject(model: FRAGS.FragmentsModel, d: DatumVec3): void {
+    if (d.x === 0 && d.y === 0 && d.z === 0) return
+    model.object.position.x += d.x
+    model.object.position.y += d.y
+    model.object.position.z += d.z
+    model.object.updateMatrixWorld(true)
+  }
+
+  /**
+   * Record what the loader did to this model's datum, rather than assuming it
+   * did nothing, and draw it in the scene's shared datum when it belongs there.
+   *
+   * Normally the shift is zero: the converter keeps a model's own coordinates.
+   * It is not zero for a file with coordinates past 100 km (UTM baked into the
+   * geometry), which the converter moves to the origin so the importer does not
+   * drop every element. Each such file picks its own shift; resolveDatum makes
+   * files from one site share one, so a road and its drainage still meet.
+   */
+  async function reconcileCoordination(modelId: string, model: FRAGS.FragmentsModel): Promise<void> {
+    let own: DatumVec3
+    try {
+      // getCoordinates, not getCoordinationMatrix: the matrix is cached per
+      // model and handed out BEFORE it is filled, so a call that lands while
+      // another is in flight reads the identity. Measured: a cached model
+      // reported no shift while carrying 4.6 million metres of one.
+      const [x, y, z] = await model.getCoordinates()
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return
+      own = { x, y, z }
+    } catch {
+      // Older fragments build without the accessor. Absent beats invented:
+      // callers read null as "unknown" and leave positions alone.
+      return
+    }
+
+    const r = resolveDatum({ own, drawnCentre: drawnCentreOf(model), datum: sceneDatum })
+    offsetModelObject(model, r.objectOffset)
+    modelCoordination.set(modelId, r.coordination)
+
+    if (r.role === 'set' && r.datum) {
+      sceneDatum = r.datum
+      log.info(`"${modelId}" has coordinates far from the origin; drawn shifted by (${fmtShift(r.datum)}) m, real coordinates kept`)
+      // A model loaded earlier in local coordinates that turns out to sit on
+      // this site (real coordinates under 100 km, a little past the datum's)
+      // joins it now, or the two would be drawn kilometres apart.
+      for (const [otherId, other] of modelObjects) {
+        if (otherId === modelId || isShifted(modelCoordination.get(otherId))) continue
+        if (!withinDatum(drawnCentreOf(other), DATUM_ZERO, r.datum)) continue
+        offsetModelObject(other, r.datum)
+        modelCoordination.set(otherId, { ...r.datum })
+      }
+    } else if (r.role === 'joined') {
+      log.info(`"${modelId}" drawn in the scene datum (offset ${fmtShift(r.objectOffset)} m)`)
+    } else if (r.role === 'separate') {
+      log.warn(`"${modelId}" is more than ${DATUM_JOIN_RADIUS_M / 1000} km from the other far-coordinate models; kept on its own shift (another site or another CRS)`)
+    }
+  }
+
+  /** Forget the datum once no loaded model is drawn in it. */
+  function releaseDatumIfUnused(): void {
+    if (!sceneDatum) return
+    const d = sceneDatum
+    for (const c of modelCoordination.values()) {
+      if (c.x === d.x && c.y === d.y && c.z === d.z) return
+    }
+    sceneDatum = null
+  }
+
+  function fmtShift(v: DatumVec3): string {
+    return `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`
+  }
   const typeMapByModel:  Map<string, Map<number, string>>  = new Map()
   // Models explicitly hidden at the model level (via setModelVisible / isolateModel).
   // applyFilters skips these so element-level calls never re-show a model-hidden model.
@@ -2653,7 +2748,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     modelId: string,
     model: FRAGS.FragmentsModel,
     previousActiveId: string | null,
-    anchorsScene: boolean,
   ): Promise<void> {
     // The maps are keyed by id; only clear them if the id is still ours
     // (removeModel may have run during setup, and a later load could in
@@ -2666,6 +2760,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivotTransforms.delete(modelId)
       modelObjects.delete(modelId)
       modelCoordination.delete(modelId)
+      releaseDatumIfUnused()
       typeMapByModel.delete(modelId)
       modelHidden.delete(modelId)
       if (hoveredModelId  === modelId) { hoveredLocalId  = null; hoveredModelId  = null }
@@ -2693,16 +2788,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       log.warn(`discarding "${modelId}": dispose failed`, err)
     }
 
-    // fragments takes the scene's coordinate base from the first model it
-    // loads, and keeps it. If that was this model and nothing else is loaded,
-    // the next model would be offset against a datum no longer in the scene —
-    // so the base goes too, and the next model anchors the scene as it should.
-    try {
-      if (anchorsScene && fragmentsManager.core.models.list.size === 0) {
-        fragmentsManager.core.baseCoordinates = null
-      }
-    } catch { /* fragments internals changed — keep the base */ }
-
     void fragmentsManager.core.update()
   }
 
@@ -2724,6 +2809,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       await model.dispose()
     }
     modelObjects.clear()
+    modelCoordination.clear()
+    sceneDatum = null
     typeMapByModel.clear()
     modelHidden.clear()
 
@@ -2773,21 +2860,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       modelObjects.set(assignedId, model)
       bindClippingPlanes(model)
 
-      // Record whatever the loader did to this model's datum, rather than
-      // assuming it did nothing. The converter no longer translates models to
-      // the origin, so this is normally zero — but `loadIfc` still asks for
-      // coordination, and a library default can change under us again. Reading
-      // it once and handing it to whoever needs it is what stops that from
-      // silently misplacing every coordinate-registered thing in the scene.
-      try {
-        const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
-        if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
-          modelCoordination.set(assignedId, { x: t.x, y: t.y, z: t.z })
-        }
-      } catch {
-        // Older fragments build without the accessor. Absent beats invented:
-        // callers read null as "unknown" and leave positions alone.
-      }
+      await reconcileCoordination(assignedId, model)
       onProgress?.(60)
 
       return setupLoadedModel(model, assignedId, file.name, file.size, onProgress)
@@ -2823,7 +2896,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
       // What a cancelled or failed load has to put back.
       const previousActiveId = currentModelId
-      const anchorsScene     = fragmentsManager.core.baseCoordinates === null
 
       // fragments' own cancel: the worker checks between its stages and rejects
       // the pending load. It cannot interrupt a stage (inflate is one
@@ -2873,21 +2945,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         modelObjects.set(modelId, model)
         bindClippingPlanes(model)
 
-        // Record whatever the loader did to this model's datum, rather than
-        // assuming it did nothing. The converter no longer translates models to
-        // the origin, so this is normally zero — but `loadIfc` still asks for
-        // coordination, and a library default can change under us again. Reading
-        // it once and handing it to whoever needs it is what stops that from
-        // silently misplacing every coordinate-registered thing in the scene.
-        try {
-          const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
-          if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
-            modelCoordination.set(modelId, { x: t.x, y: t.y, z: t.z })
-          }
-        } catch {
-          // Older fragments build without the accessor. Absent beats invented:
-          // callers read null as "unknown" and leave positions alone.
-        }
+        await reconcileCoordination(modelId, model)
         throwIfLoadAborted(signal)
 
         const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress, {
@@ -2903,7 +2961,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const cancelled = signal?.aborted === true || isAbortError(err)
         if (model) {
           if (!cancelled) log.error(`loadFragments: setup of "${modelId}" failed — model discarded:`, err)
-          await discardUncommittedLoad(modelId, model, previousActiveId, anchorsScene)
+          await discardUncommittedLoad(modelId, model, previousActiveId)
         }
         if (cancelled) throw isAbortError(err) ? err : loadCancelledError()
         throw err
@@ -3762,6 +3820,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       modelObjects.delete(modelId)
       modelCoordination.delete(modelId)
+      releaseDatumIfUnused()
       typeMapByModel.delete(modelId)
       modelHidden.delete(modelId)
 
