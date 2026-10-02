@@ -1,3 +1,5 @@
+import { SHANGHAI_POSTS_ES } from './blog-shanghai-es.ts'
+
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
 // bottom are loaded with dynamic import()). All visual rendering lives in Blog.tsx.
@@ -9547,6 +9549,7 @@ Archive report → Upload to CDE`,
 // ─── Posts en español ─────────────────────────────────────────────────────────
 
 export const BLOG_POSTS_ES: BlogPost[] = [
+  ...SHANGHAI_POSTS_ES,
 
   {
     slug: 'gemelo-digital-almacen-ifc-lidar-movimiento',
