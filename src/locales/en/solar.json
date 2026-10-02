@@ -81,5 +81,124 @@
   },
   "errors": {
     "enableFailed": "The sun study could not start."
+  },
+  "analysis": {
+    "open": "Solar & climate analysis",
+    "openHint": "Sun hours, irradiation, EN 17037 and the site's climate",
+    "title": "Solar & climate analysis",
+    "close": "Close",
+    "noLocation": "Set the site's location in the sun study first: everything here depends on where the building is.",
+    "openStudy": "Open the sun study",
+    "locationLine": "{{lat}}, {{lon}} · {{tz}}",
+    "climate": {
+      "title": "Site climate",
+      "consent": "Load 10 years of observed weather for this place from Open-Meteo (ERA5)? Only the coordinates, rounded to ~1 km, are sent.",
+      "load": "Load the climate",
+      "loading": "Loading the climate…",
+      "error": "The climate could not be loaded: {{message}}",
+      "source": "ERA5 via Open-Meteo, {{from}}–{{to}}",
+      "hot": "Hot season",
+      "cold": "Cold season",
+      "none": "none",
+      "hdd": "Heating degree-days",
+      "cdd": "Cooling degree-days",
+      "sunshine": "Sunshine, h/day",
+      "temp": "Temperature, °C (min · mean · max)",
+      "wind": "Prevailing wind",
+      "rain": "Rain, mm/year",
+      "clearness": "Clear-sky share"
+    },
+    "period": {
+      "title": "Period",
+      "winterSolstice": "Winter solstice",
+      "summerSolstice": "Summer solstice",
+      "equinox": "Equinox",
+      "enReference": "EN 17037 day (21 Mar)",
+      "hotSeason": "Hot season",
+      "coldSeason": "Cold season",
+      "year": "Whole year",
+      "customDay": "A day",
+      "needsClimate": "Load the climate to know the seasons"
+    },
+    "metric": {
+      "title": "Measure",
+      "sunHours": "Sun hours",
+      "irradiation": "Irradiation"
+    },
+    "kinds": {
+      "ground": "Site",
+      "facade": "Façades",
+      "window": "Windows",
+      "roof": "Roofs"
+    },
+    "useClimate": "Use the real cloudiness",
+    "run": "Run the analysis",
+    "sensors": "Placing sensors on the model…",
+    "running": "Following the sun… {{pct}}%",
+    "clear": "Clear the map",
+    "error": "The analysis failed: {{message}}",
+    "legend": {
+      "sunHours": "Direct sun, hours per day",
+      "irradiation": "Irradiation, kWh/m² over the period"
+    },
+    "results": {
+      "title": "Results",
+      "meta": "{{instants}} sun positions · {{sensors}} sensors",
+      "average": "Average",
+      "least": "Least sun",
+      "most": "Most sun"
+    },
+    "hover": {
+      "sun": "{{h}} h of sun / day",
+      "kwh": "{{kwh}} kWh/m²"
+    },
+    "checks": {
+      "title": "Checks",
+      "en": {
+        "title": "EN 17037 sunlight exposure",
+        "run": "Check the windows",
+        "summary": "{{pass}} of {{total}} windows reach the minimum (1.5 h)",
+        "none": "Under 1.5 h",
+        "minimum": "Minimum · 1.5 h",
+        "medium": "Medium · 3 h",
+        "high": "High · 4 h",
+        "minAltitude": "Count the sun above",
+        "note": "Hours of direct sun on each window's outer face on 21 March. A screening: the standard measures at a reference point inside the room, with a minimum sun altitude set nationally."
+      },
+      "gain": {
+        "title": "Overheating and winter gain",
+        "run": "Analyse both seasons",
+        "summer": "Summer gain on glazing",
+        "winter": "Winter gain on glazing",
+        "high": "high",
+        "moderate": "moderate",
+        "low": "low",
+        "perDay": "{{v}} kWh/m²·day",
+        "noRisk": "No glazing above 2 kWh/m²·day in the hot season.",
+        "note": "Average daily irradiation per m² of glazing. Above ~3.5 kWh/m²·day in summer a window needs shading; above ~2.5 in winter it is real free heating. Indicative bands, not a thermal simulation."
+      },
+      "rooms": {
+        "title": "Where rooms belong",
+        "orientation": "Facing",
+        "winter": "Winter sun",
+        "summer": "Summer gain",
+        "advice": "Best for",
+        "living": "Living rooms",
+        "bedroom": "Bedrooms",
+        "service": "Service, stairs, storage",
+        "shade": "Plan shading first"
+      },
+      "exportBcf": "Export as BCF",
+      "exportCsv": "Export CSV",
+      "frame": "Show in 3D"
+    },
+    "disclaimer": "Clear-sky model scaled by the site's measured cloudiness; diffuse light from the sky each point can actually see. For design decisions — not an energy certificate."
+  },
+  "timelapse": {
+    "title": "Day timelapse",
+    "export": "Export the day as a video",
+    "rendering": "Rendering… {{pct}}%",
+    "done": "Video ready",
+    "unsupported": "This browser cannot encode video."
   }
 }
