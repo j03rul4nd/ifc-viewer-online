@@ -34,6 +34,7 @@ import { StudioInspector } from './StudioInspector'
 import { SoundToClip } from './SoundToClip'
 import { ExportSheet } from './ExportSheet'
 import { PreviewDirect } from './PreviewDirect'
+import { useFitBox } from './useFitBox'
 import { StudioDirector, runRecipe, useDirectorLabels } from './StudioDirector'
 import './studio.css'
 
@@ -80,6 +81,10 @@ export default function ClipStudio() {
   const fileRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const [mobileTab, setMobileTab] = useState<'media' | 'edit'>('media')
+  // Phone: the sheet starts folded to its tabs so the preview gets the screen;
+  // a tab opens it, the open tab folds it again.
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const stageRef = useRef<HTMLDivElement>(null)
   const [safeZones, setSafeZones] = useState(false)
   const duration = projectDuration(project)
 
@@ -184,6 +189,7 @@ export default function ClipStudio() {
     select({ kind: 'overlay', id: ov.id })
   }
 
+  const fit = useFitBox(stageRef, output.width / output.height, open)
   if (!open) return null
   const webcodecs = hasWebCodecs()
   const shotsOk = canRenderShots()
@@ -241,10 +247,10 @@ export default function ClipStudio() {
   return createPortal(
     <div className="studio-root lp-studio fixed inset-0 z-[80] flex flex-col bg-[var(--bg)] text-[var(--text)]" role="dialog" aria-modal="true" aria-label={t('studio.title')}>
       {/* Top bar */}
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--border)] px-3">
+      <header className="studio-header flex min-h-12 shrink-0 items-center gap-2 border-b border-[var(--border)] px-3">
         <button type="button" className="studio-icon-btn" onClick={close} aria-label={t('studio.close')}><Icons.X size={16} /></button>
-        <h2 className="text-[14px] font-semibold tracking-tight">{t('studio.title')}</h2>
-        <div className="ml-2 hidden items-center gap-1 sm:flex">
+        <h2 className="truncate text-[14px] font-semibold tracking-tight">{t('studio.title')}</h2>
+        <div className="ml-1 flex items-center gap-1 sm:ml-2">
           <button type="button" className="studio-icon-btn" disabled={!canUndo} onClick={undo} aria-label={t('studio.undo')} title={t('studio.undo')}><Icons.StepBack size={14} /></button>
           <button type="button" className="studio-icon-btn" disabled={!canRedo} onClick={redo} aria-label={t('studio.redo')} title={t('studio.redo')}><Icons.StepFwd size={14} /></button>
         </div>
@@ -261,8 +267,8 @@ export default function ClipStudio() {
 
         {/* Preview */}
         <main className="studio-stage flex min-h-0 min-w-0 flex-col">
-          <div className="relative flex min-h-0 flex-1 items-center justify-center p-3">
-            <div className="studio-canvas-wrap relative" style={{ aspectRatio: `${output.width} / ${output.height}` }}>
+          <div ref={stageRef} className="relative flex min-h-0 flex-1 items-center justify-center p-2 sm:p-3">
+            <div className="studio-canvas-wrap relative" style={fit ? { width: fit.width, height: fit.height } : { aspectRatio: `${output.width} / ${output.height}` }}>
               <canvas ref={canvasRef} width={preview.width} height={preview.height} className="block h-full w-full rounded-lg bg-black" />
               <PreviewDirect playing={engine.playing} onToggle={engine.toggle} onEditText={editSelectedText} />
               {safeZones && vertical && (output.preset === 'reel' || output.preset === 'tiktok') && (
@@ -290,13 +296,14 @@ export default function ClipStudio() {
           </div>
 
           {/* Transport */}
-          <div className="flex items-center justify-center gap-1.5 px-3 pb-2">
+          <div className="studio-transport no-scrollbar overflow-x-auto px-2 pb-2 sm:px-3">
+            <div className="mx-auto flex w-max items-center gap-1 sm:gap-1.5">
             <button type="button" className="studio-icon-btn" onClick={() => setPlayhead(0)} aria-label={t('editor.transport.toStart')}><Icons.SkipStart size={14} /></button>
-            <button type="button" className="studio-icon-btn" onClick={() => setPlayhead(Math.max(0, playhead - FRAME))} aria-label={t('editor.transport.stepBack')}><Icons.StepBack size={14} /></button>
+            <button type="button" className="studio-icon-btn studio-step" onClick={() => setPlayhead(Math.max(0, playhead - FRAME))} aria-label={t('editor.transport.stepBack')}><Icons.StepBack size={14} /></button>
             <button type="button" className="studio-play" onClick={() => engine.toggle()} aria-label={engine.playing ? t('studio.pause') : t('studio.play')} disabled={duration <= 0}>
               {engine.playing ? <Icons.Pause size={16} /> : <Icons.Play size={16} />}
             </button>
-            <button type="button" className="studio-icon-btn" onClick={() => setPlayhead(Math.min(duration, playhead + FRAME))} aria-label={t('editor.transport.stepFwd')}><Icons.StepFwd size={14} /></button>
+            <button type="button" className="studio-icon-btn studio-step" onClick={() => setPlayhead(Math.min(duration, playhead + FRAME))} aria-label={t('editor.transport.stepFwd')}><Icons.StepFwd size={14} /></button>
             <span className="mx-1 h-5 w-px bg-[var(--border)]" aria-hidden="true" />
             <button type="button" className="studio-icon-btn" onClick={() => edit((p) => splitAt(p, playhead))} disabled={clipIndexAt(project, playhead) < 0} aria-label={t('studio.split')} title={t('studio.split')}><Icons.Ruler size={14} /></button>
             <button type="button" className="studio-icon-btn" onClick={addText} disabled={duration <= 0} aria-label={t('studio.addText')} title={t('studio.addText')}><Icons.TypeTool size={14} /></button>
@@ -305,6 +312,7 @@ export default function ClipStudio() {
             {vertical && (
               <button type="button" className="studio-icon-btn" aria-pressed={safeZones} onClick={() => setSafeZones((v) => !v)} aria-label={t('studio.safeZone')} title={t('studio.safeZoneHint')}><Icons.Eye size={14} /></button>
             )}
+            </div>
           </div>
         </main>
 
@@ -319,12 +327,16 @@ export default function ClipStudio() {
       <div className="studio-sheet flex flex-col border-t border-[var(--border)] lg:hidden">
         <div className="flex" role="tablist">
           {(['media', 'edit'] as const).map((tab) => (
-            <button key={tab} type="button" role="tab" aria-selected={mobileTab === tab} className="studio-tab flex-1" onClick={() => setMobileTab(tab)}>
+            <button
+              key={tab} type="button" role="tab" aria-selected={sheetOpen && mobileTab === tab} aria-expanded={sheetOpen && mobileTab === tab}
+              className="studio-tab flex-1"
+              onClick={() => { if (sheetOpen && mobileTab === tab) setSheetOpen(false); else { setMobileTab(tab); setSheetOpen(true) } }}
+            >
               {tab === 'media' ? t('studio.media') : selection ? t(`studio.${selection.kind === 'clip' ? 'clip' : selection.kind === 'text' ? 'text' : 'overlay'}`) : t('studio.project')}
             </button>
           ))}
         </div>
-        <div className="max-h-[38dvh] overflow-y-auto">{mobileTab === 'media' ? mediaBin : <StudioInspector />}</div>
+        {sheetOpen && <div className="studio-sheet__body overflow-y-auto overscroll-contain">{mobileTab === 'media' ? mediaBin : <StudioInspector />}</div>}
       </div>
     </div>,
     document.body,
