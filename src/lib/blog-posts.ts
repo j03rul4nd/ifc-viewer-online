@@ -1,4 +1,5 @@
 import { SHANGHAI_POSTS_ES } from './blog-shanghai-es.ts'
+import { SHANGHAI_POSTS_EN } from './blog-shanghai-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -281,6 +282,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 export const BLOG_POSTS: BlogPost[] = [
+  ...SHANGHAI_POSTS_EN,
   {
     slug: 'iso-19650-file-naming-convention',
     title: 'ISO 19650 File Naming Convention Explained (With Examples)',

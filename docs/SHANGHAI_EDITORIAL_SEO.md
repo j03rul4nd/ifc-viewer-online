@@ -1,6 +1,6 @@
 # Shanghai editorial series — Spanish originals
 
-Prepared 2026-10-03. Translation is deliberately deferred to the user's Claude workflow. Source: `src/lib/blog-shanghai-es.ts`; registered in `BLOG_POSTS_ES`. Keep translation keys when translated pages are added; do not create language alternates before the translations exist.
+Prepared 2026-10-03. Spanish originals in `src/lib/blog-shanghai-es.ts` (registered in `BLOG_POSTS_ES`). English editions in `src/lib/blog-shanghai-en.ts` (registered in `BLOG_POSTS`), whose slugs are the Spanish posts' `translationKey`s — so hreflang clusters them, and the other eight languages (de, fr, pt, it, ca, zh, ja, th) carry them in the translated packs under the English slugs.
 
 ## Intent and differentiation
 
@@ -33,6 +33,15 @@ After publication, compare Search Console impressions, clicks, CTR and actual qu
 
 Editorial guidance: https://developers.google.com/search/docs/fundamentals/creating-helpful-content — original experience, clear evidence and reader utility, not keyword repetition. Technical and geographic references are attached to each article.
 
-## Handoff for translations
+## Translations
 
-Translate prose, captions, alt text, FAQs and SEO fields. Preserve demo IDs, source URLs and reconstruction limitations. Translate SVG labels into new language assets rather than relabeling the Spanish diagrams. Connect equivalent articles using the existing translationKey values. Each language should link to its corresponding articles when those exist.
+Done 2026-10-03. English edition written from the Spanish originals; the other eight languages were translated from the English through the blog pipeline (`docs/BLOG_I18N.md`: extract → check → `apply.ts --merge`), so the existing pack posts were left untouched.
+
+| Spanish | English (= translation slug) |
+| --- | --- |
+| shanghai-mapa-3d-bim-gis | shanghai-city-bim-gis |
+| puentes-peatonales-3d-openstreetmap-shanghai | shanghai-pedestrian-bridges |
+| estaciones-tren-shanghai-modelo-3d | shanghai-railway-stations |
+| parques-patios-3d-openstreetmap-shanghai | shanghai-parks-courtyards |
+
+Diagrams: `build-shanghai-diagrams.mjs` writes the Spanish SVGs and English ones (`shanghai-layers/bridges/stations/courtyards.svg`). Translations reuse the English images, like every other translated post (`blog-i18n.test.ts` pins image sources to the English post); per-language diagrams would need that rule relaxed. English covers were generated with the cover pipeline; other languages reuse them, as documented in `docs/BLOG_I18N.md`.

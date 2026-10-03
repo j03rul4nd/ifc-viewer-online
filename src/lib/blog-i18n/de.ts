@@ -12,6 +12,726 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_DE_PACK: BlogPost[] = [
   {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Digitale Zwillinge",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-city-bim-gis",
+    heroImage: "blog/images/shanghai-bridge-blender-review.jpg",
+    heroAlt: "Prüf-Rendering des Mingzhu-Rings: angenäherte Rekonstruktion auf OSM-Kartendaten",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Shanghai in 3D: IFC-Gebäude und Stadtkontext kombinieren, ohne die Realität zu verlieren",
+    seoTitle: "Shanghai in 3D: IFC-Gebäude und BIM/GIS-Kontext",
+    excerpt: "Von der Oriental Pearl bis zu den Yuyuan-Gärten: wie wir einen 3D-Kontext aufgebaut haben, der Straßen, Zugänge und Freiräume erhält, und wo seine Grenzen für ein BIM-Projekt liegen.",
+    seoDescription: "Shanghai in 3D mit IFC und OpenStreetMap: BIM-Modell, Stadtkontext und Näherungen sauber unterscheiden – mit Demo und Praxisbeispielen.",
+    keywords: [
+      "Shanghai 3D",
+      "Shanghai 3D-Karte",
+      "BIM GIS Integration",
+      "IFC OpenStreetMap",
+      "Oriental Pearl IFC",
+      "Shanghai 3D map",
+      "BIM GIS",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Shanghai: Kriterien für die Treue des Stadtkontexts",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_CITY_FIDELITY.md",
+      },
+      {
+        id: "model",
+        title: "Oriental Pearl: Quellen und Grenzen der IFC-Rekonstruktion",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/ORIENTAL_PEARL_RECONSTRUCTION.md",
+      },
+    ],
+    faqs: [
+      {
+        q: "Ist das ein digitaler Zwilling von ganz Shanghai?",
+        a: "Nein. Es ist eine BIM/GIS-Visualisierung mit IFC-Rekonstruktionen und Kartenkontext. Sie bedeutet weder vollständige Abdeckung noch eine Anbindung an Sensoren oder Betriebsdaten in Echtzeit.",
+      },
+      {
+        q: "Ist die Demo das Original-IFC der Oriental Pearl?",
+        a: "Nein. Es ist eine angenäherte Rekonstruktion von IFC Viewer Online, deren Quellen und Grenzen dokumentiert sind; kein Bestandsmodell (As-built).",
+      },
+      {
+        q: "Kann ich mit der Karte Abstände auf der Baustelle prüfen?",
+        a: "Die illustrative Szene reicht dafür nicht. Koordinaten, Höhen, Herkunft und Toleranzen müssen zuerst an Passpunkten validiert werden.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Eine nützliche 3D-Karte setzt nicht einfach Gebäude auf ein Luftbild. Sie muss zeigen, was womit verbunden ist, was worüber verläuft und welche Räume offen bleiben. In Shanghai konnten wir diese Beziehungen auf die Probe stellen: Fußgängerbrücken in Lujiazui, große Bahnhöfe und historische Gärten mitten in einer dichten Stadt.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Das IFC liefert die Bauteile, die Karte den Kontext. Ihre Genauigkeiten sind nicht austauschbar.",
+          "Durchgängige Zugänge, Gleise und Innenhöfe sind wichtiger als zusätzliches Dekordetail.",
+          "Sie können eine IFC-Rekonstruktion der Oriental Pearl untersuchen und sehen, welche Informationen sie enthält.",
+        ],
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-layers.svg",
+        alt: "Drei getrennte Ebenen: IFC-Gebäude, Stadtkartierung und angenähertes visuelles Detail",
+        caption: "Erklärende Skizze, nicht maßstäblich. Sie zeigt keine gemessenen Abmessungen von Shanghai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "Was unser 3D-Shanghai tatsächlich darstellt" },
+      {
+        type: "p",
+        text: "Ein IFC-Modell ordnet die Bauteile und Eigenschaften eines Gebäudes. Die Karte platziert Straßen, Wasser, Parks und Infrastruktur darum herum. Zusammen helfen sie, einen Eingang, die Einfügung eines Baukörpers oder seinen Bezug zum öffentlichen Raum zu erklären. Voraussetzung ist eine konsistente Platzierung – und dass der Leser weiß, woher jede Ebene stammt.",
+      },
+      {
+        type: "table",
+        headers: ["Ebene", "Was sie liefert", "Was sie nicht belegt"],
+        rows: [
+          ["IFC", "Bauteile und Eigenschaften der Datei", "Dass es ein Bestandsmodell ist"],
+          [
+            "OSM-Kartierung",
+            "Verfügbare Grundrisse und Tags",
+            "Vollständige Abdeckung oder Vermessungsgenauigkeit",
+          ],
+          [
+            "Prozedurale Geometrie",
+            "Volumen und Detail für die Visualisierung",
+            "Maße nicht dokumentierter Elemente",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: "In diesem Fall verwenden wir IFC-Rekonstruktionen von Wahrzeichen und Kartenkontext. Wir bieten weder eine vollständige Vermessung Shanghais noch eine Anbindung an den laufenden Betrieb der Stadt. Diese Unterscheidung erlaubt es, die Szene für Kommunikation und visuelle Prüfung zu nutzen, ohne ihr eine Genauigkeit zuzuschreiben, die ihre Quellen nicht hergeben.",
+      },
+      { type: "h2", text: "Erst die Platzierung prüfen, dann Details ergänzen" },
+      {
+        type: "p",
+        text: "Wenn der gesamte Kontext um mehrere Blocks verschoben erscheint, prüfen Sie das Koordinatensystem, bevor Sie einzelne Gebäude verschieben. Kontrollieren Sie danach Ausrichtung und Maßstab an markanten Elementen. Vergleichen Sie zuletzt die Höhen: Liegen IFC und Karte auf unterschiedlichen Höhenbezügen, kann ein Eingang schweben, obwohl der Grundriss stimmt.",
+      },
+      {
+        type: "p",
+        text: [
+          "Wie Sie Ihre eigene Datei einrichten, zeigt die ",
+          {
+            text: "Anleitung für ein georeferenziertes IFC auf einer 3D-Karte",
+            to: "view-ifc-on-3d-map-online",
+          },
+          ". Hier geht es um die Qualität des Shanghai-Kontexts, nicht um eine Wiederholung der Georeferenzierung.",
+        ],
+      },
+      { type: "h2", text: "Drei Fehler, die uns Shanghai lösen ließ" },
+      {
+        type: "p",
+        text: "In Lujiazui endet eine Brücke nicht an der Kante ihres Decks: Treppen, Aufzüge und Podeste zählen ebenso. An den Bahnhöfen kann eine als massiver Block extrudierte Halle die Gleise verschütten. In Yuyuan löscht das Füllen jedes Polygons Innenhöfe und Inseln und verändert, wie der Garten gelesen wird.",
+      },
+      {
+        type: "p",
+        text: "Die gemeinsame Lehre: Beziehungen erhalten. Eine Straße kann Straße bleiben, während eine Brücke sie trägt. Ein Park kann ein Loch enthalten. Ein Dach kann einen offenen Raum überdecken. Texturen lösen diese Probleme nicht – zuerst muss die Organisation der Geometrie funktionieren.",
+      },
+      {
+        type: "p",
+        text: ["Kriterien und Grenzen der Arbeit sind in unserem Shanghai-Fall dokumentiert. ", { cite: "case" }],
+      },
+      { type: "h2", text: "Die Oriental Pearl erkunden: vom Objekt zum Kontext" },
+      {
+        type: "ifc-demo",
+        modelId: "oriental-pearl-tower",
+        title: "Oriental Pearl: IFC4-Rekonstruktion",
+        description: "Angenähertes Modell, kein Bestandsmodell. Diese Demo zeigt das Gebäude; für den Stadtkontext öffnen Sie den vollständigen Viewer und schalten die Karte ein.",
+        schema: "IFC4",
+        size: "21.2 MB",
+        height: 440,
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Die großen Baukörper prüfen",
+            body: "Laden Sie die Demo und vergleichen Sie die Silhouette aus mehreren Blickwinkeln, bevor Sie in Details zoomen.",
+          },
+          {
+            title: "Bauteile und Eigenschaften abfragen",
+            body: "Wählen Sie Teile des IFC aus. Trennen Sie Informationen der Datei von der Kartengeometrie, die im Map mode erscheint.",
+          },
+          {
+            title: "Den Bezug zur Straße prüfen",
+            body: "Laden Sie im vollständigen Viewer dieselbe Demo aus der Galerie und aktivieren Sie den Map mode. Vergleichen Sie eine Luftansicht mit einer bodennahen Ansicht.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Die Datei ist unsere Rekonstruktion; sie stammt nicht aus dem Originalmodell des Gebäudes. Quellen und Entscheidungen sind hier beschrieben. ",
+          { cite: "model" },
+        ],
+      },
+      { type: "h2", text: "Eine Prüfung präsentieren, ohne ihre Genauigkeit zu übertreiben" },
+      {
+        type: "p",
+        text: "Bereiten Sie eine Luftansicht vor, die den Ort erklärt, eine auf Straßenhöhe und eine Nahaufnahme der Verbindung, die Sie besprechen wollen. Halten Sie fest, was zum IFC gehört, was aus der Karte stammt und was angenähert ist. Fehlt ein Bauwerk, prüfen Sie die Datenabdeckung: Dass es auf dem Bildschirm fehlt, beweist nicht, dass es nicht existiert.",
+      },
+      {
+        type: "p",
+        text: "Wenn Sie eine Aufnahme weiterverwenden, behalten Sie die Kartenattribution bei und weisen Sie darauf hin, dass die Rekonstruktion angenähert ist. Das nützliche Ergebnis ist eine klarere räumliche Entscheidung. Mehr Gebäude oder mehr Polygone auf dem Bildschirm belegen für sich genommen keine höhere Treue.",
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Ist das ein digitaler Zwilling von ganz Shanghai?" },
+      {
+        type: "p",
+        text: "Nein. Es ist eine BIM/GIS-Visualisierung mit IFC-Rekonstruktionen und Kartenkontext. Sie bedeutet weder vollständige Abdeckung noch eine Anbindung an Sensoren oder Betriebsdaten in Echtzeit.",
+      },
+      { type: "h3", text: "Ist die Demo das Original-IFC der Oriental Pearl?" },
+      {
+        type: "p",
+        text: "Nein. Es ist eine angenäherte Rekonstruktion von IFC Viewer Online, deren Quellen und Grenzen dokumentiert sind; kein Bestandsmodell (As-built).",
+      },
+      { type: "h3", text: "Kann ich mit der Karte Abstände auf der Baustelle prüfen?" },
+      {
+        type: "p",
+        text: "Die illustrative Szene reicht dafür nicht. Koordinaten, Höhen, Herkunft und Toleranzen müssen zuerst an Passpunkten validiert werden.",
+      },
+      { type: "h2", text: "Weiter mit dem Shanghai-Fall" },
+      { type: "related", to: "shanghai-pedestrian-bridges" },
+      { type: "related", to: "shanghai-railway-stations" },
+      { type: "related", to: "shanghai-parks-courtyards" },
+      {
+        type: "tool",
+        id: "viewer",
+        why: "Öffnen Sie Ihr IFC und prüfen Sie, wie es sich in die städtische Umgebung einfügt.",
+      },
+    ],
+    lang: "de",
+    translationKey: "shanghai-city-bim-gis",
+  },
+  {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Digitale Zwillinge",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-pedestrian-bridges",
+    heroImage: "blog/images/shanghai-bridge-blender-review.jpg",
+    heroAlt: "Angenäherte Rekonstruktion des Mingzhu-Fußgängerrings und seiner Anschlüsse, gerendert in Blender",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Fußgängerbrücken in Shanghai in 3D: Höhen, Treppen und Anschlüsse, die wirklich passen",
+    seoTitle: "3D-Fußgängerbrücken: Shanghai und OpenStreetMap",
+    excerpt: "Ein Hochring kann von oben perfekt aussehen und auf Straßenniveau scheitern. So prüfen wir Decks, Aufweitungen, Treppen und Aufzüge in Lujiazui.",
+    seoDescription: "Fußgängerbrücken in Shanghai darstellen: Höhen, Breiten, angeschlossene Treppen und Aufzüge – ohne den OpenStreetMap-Tag layer in Meter umzudeuten.",
+    keywords: [
+      "Fußgängerbrücke 3D",
+      "Brücken Shanghai",
+      "Lujiazui 3D",
+      "OpenStreetMap layer",
+      "Brücken modellieren",
+      "3D pedestrian bridges",
+      "Shanghai bridges",
+      "bridge modelling",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Brücken in Lujiazui: Rekonstruktion, Belege und Grenzen",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_BRIDGE_RENDERING.md",
+      },
+      {
+        id: "layer",
+        title: "Key:layer – vertikale Reihenfolge von Elementen",
+        source: "OpenStreetMap",
+        url: "https://wiki.openstreetmap.org/wiki/Key:layer",
+      },
+    ],
+    faqs: [
+      {
+        q: "Bedeutet layer=1 einen Meter Höhe?",
+        a: "Nein. Layer beschreibt die vertikale Reihenfolge sich kreuzender Elemente; es ist keine Höhe in Metern.",
+      },
+      {
+        q: "Beweist eine durchgehende Treppe Barrierefreiheit?",
+        a: "Nein. Visuelle Durchgängigkeit prüft weder Neigungen, Abmessungen, die Funktion der Aufzüge noch Anforderungen an die Barrierefreiheit.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Ein Hochring kann von oben richtig aussehen und versagen, sobald die Kamera sinkt: Treppen, die das Deck nicht erreichen, Geländer quer durch einen Eingang oder ein Steg, der sich abrupt verengt. Deshalb haben wir die Brücken von Lujiazui als zusammenhängende Wege geprüft, nicht als isolierte Objekte.",
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-bridges.svg",
+        alt: "Schematischer Schnitt durch Deck, Treppe, Podest und Aufzug mit markierten Anschlüssen",
+        caption: "Erklärende Skizze, nicht maßstäblich. Sie zeigt keine gemessenen Abmessungen von Shanghai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "Die Frage, die einen schlechten Anschluss verrät" },
+      {
+        type: "p",
+        text: "Können Sie den Weg vom Gehweg bis aufs Deck und von dort zum nächsten Zugang visuell verfolgen? Diese Frage zwingt dazu, Enden und Fugen anzusehen. Eine schöne, aber nicht angeschlossene Brücke erklärt nicht, wie man sich durch den Ort bewegt. Die Prüfung bewertet die Durchgängigkeit des Modells; sie bescheinigt weder reale Sicherheit noch Barrierefreiheit.",
+      },
+      { type: "h2", text: "Layer ordnet Kreuzungen – er misst keine Höhe" },
+      {
+        type: "p",
+        text: [
+          "OpenStreetMap beschreibt mit layer die vertikale Reihenfolge an Kreuzungspunkten. Das ist keine metrische Höhe. ",
+          { cite: "layer" },
+          " Jedem Wert eine feste Höhe zuzuweisen, kann ein ordentliches Bild ergeben, belegt aber nicht die Höhe einer bestimmten Brücke.",
+        ],
+      },
+      {
+        type: "p",
+        text: "In unserem Renderer trennen wir die Funktion eines Weges von der Struktur, die ihn trägt. Ein Weg kann ein Fußweg und zugleich aufgeständert sein; eine Straße kann durch einen Tunnel führen. Fehlen Maße, muss die für die Darstellung verwendete Höhe als Näherung gekennzeichnet bleiben. Es reicht nicht, dass die obere Querung über der unteren liegt.",
+      },
+      { type: "h2", text: "Warum die Breite zu jeder einzelnen Brücke gehört" },
+      {
+        type: "image",
+        src: "blog/images/shanghai-bridge-blender-review.jpg",
+        alt: "Blender-Rendering des Mingzhu-Fußgängerrings mit Zugängen und aufgeständertem Deck",
+        caption: "Renderer-Geometrie, nach Blender exportiert, um Mingzhu zu prüfen. Umgebung ausgeblendet, um die Anschlüsse zu untersuchen; nicht dokumentierte Maße und Details sind angenähert. Kein Foto.",
+        credit: "IFC Viewer Online · data © OpenStreetMap contributors (ODbL)",
+        width: 1400,
+        height: 1000,
+      },
+      {
+        type: "p",
+        text: "Ein schmaler Steg, eine Plattform und ein Verteilerring haben nicht denselben Querschnitt. Mingzhu hat uns dazu gebracht, eine Korrektur an die Identität dieser Brücke zu binden, statt alle Fußwege Shanghais zu verbreitern. Diese Grenze verhindert, dass sich eine lokale Entscheidung auf die ganze Stadt überträgt.",
+      },
+      {
+        type: "p",
+        text: "Prüfen Sie an einem Anschluss beide Ränder, nicht nur die Achse. Zwei verbundene Achsen können eine Lücke zwischen den Flächen, eine Überlappung oder eine zu spitze Ecke hinterlassen. Breitenwechsel brauchen einen geometrischen Übergang, der von oben und von der Straße aus stimmig wirkt. Auch ein durchgehendes Geländer muss dort unterbrochen werden, wo ein anderer Weg einmündet.",
+      },
+      { type: "h2", text: "Treppen, Aufzüge und Podeste" },
+      {
+        type: "p",
+        text: "Eine Treppe hat zwei Enden auf unterschiedlicher Höhe. Ihr Lauf muss auf einer Ankunftsfläche münden. Bei einem Aufzug beschreibt die Kartenposition nicht automatisch Türen, Kabine, Schacht oder alle Haltestellen. Wir platzieren die Anschlüsse anhand der dokumentierten Zugänge und lassen Details ohne Maße angenähert.",
+      },
+      {
+        type: "p",
+        text: "Einen Aufzugsturm dort zu platzieren, wo es optisch passt, wäre eine Aussage über den Ort, die die Daten nicht stützen. Dasselbe gilt für eine Treppe, die in einem Gebäude verschwindet: Eine innere Verbindung kann existieren, aber ihre Geometrie lässt sich nicht aus einer Außenansicht ableiten. Halten Sie diese Lücke als offene Frage fest.",
+      },
+      {
+        type: "table",
+        headers: ["Symptom", "Zuerst prüfen", "Vermeiden"],
+        rows: [
+          ["Schwebender Zugang", "Höhen an beiden Enden", "Die ganze Brücke nach Augenmaß verschieben"],
+          ["Schmaler Anschluss", "Breiten und Ränder des Decks", "Nur die Achsen verbinden"],
+          ["Generischer Aufzug", "Dokumentierte Lage und Ebenen", "Haltestellen erfinden"],
+          ["Geländer vor einem Eingang", "Öffnung und Podest", "Den ganzen Umfang schließen"],
+        ],
+      },
+      { type: "h2", text: "Ein wiederverwendbarer Prüfablauf" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Die Brücke isolieren",
+            body: "Prüfen Sie den Umriss des Decks und seine Anschlüsse an benachbarte Wege.",
+          },
+          {
+            title: "Die Umgebung einblenden",
+            body: "Fügen Sie Straßen, Gebäude und Gelände hinzu, um Kollisionen und Höhenunterschiede zu finden.",
+          },
+          {
+            title: "Jeden Zugang mit der Kamera abgehen",
+            body: "Betrachten Sie ihn von oben, von der Seite und auf Fußgängerhöhe. Eine einzige Ansicht genügt nicht.",
+          },
+          {
+            title: "Die Belege festhalten",
+            body: "Verknüpfen Sie jede Korrektur mit der Karten-ID, dem Datum und der Quelle; unterscheiden Sie vorgeschlagene Erweiterungen von bestehenden Bauwerken.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Der Fall Lujiazui dokumentiert, welche Teile Daten folgen und welche angenähert sind. Diese Nachvollziehbarkeit erlaubt zu prüfen, warum wir eine Form gewählt haben – nicht nur, wie sie aussieht. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Bedeutet layer=1 einen Meter Höhe?" },
+      {
+        type: "p",
+        text: "Nein. Layer beschreibt die vertikale Reihenfolge sich kreuzender Elemente; es ist keine Höhe in Metern.",
+      },
+      { type: "h3", text: "Beweist eine durchgehende Treppe Barrierefreiheit?" },
+      {
+        type: "p",
+        text: "Nein. Visuelle Durchgängigkeit prüft weder Neigungen, Abmessungen, die Funktion der Aufzüge noch Anforderungen an die Barrierefreiheit.",
+      },
+      { type: "h2", text: "Weiter mit dem Shanghai-Fall" },
+      { type: "related", to: "shanghai-city-bim-gis" },
+      { type: "related", to: "shanghai-railway-stations" },
+      { type: "related", to: "shanghai-parks-courtyards" },
+      {
+        type: "tool",
+        id: "viewer",
+        why: "Öffnen Sie Ihr IFC und prüfen Sie, wie es sich in die städtische Umgebung einfügt.",
+      },
+    ],
+    lang: "de",
+    translationKey: "shanghai-pedestrian-bridges",
+  },
+  {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Digitale Zwillinge",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-railway-stations",
+    heroImage: "blog/images/shanghai-rail-blender-review.jpg",
+    heroAlt: "Entwicklungs-Rendering der Bahnanlagen von Hongqiao mit illustrativen Zügen, keine Echtzeitverfolgung",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Bahnhöfe in Shanghai in 3D: Gleise, Bahnsteige und Dächer ohne falsche Blöcke",
+    seoTitle: "Bahnhöfe in Shanghai in 3D: Gleise und Bahnsteige",
+    excerpt: "Hongqiao und Shanghai South zeigen, warum ein Bahnhof mehr braucht als einen extrudierten Grundriss: freien Raum, stimmige Höhen und Züge, die dem Gleis folgen.",
+    seoDescription: "Bahnhöfe in Shanghai in 3D darstellen: Gleise, Bahnsteige, offene Dächer und Züge in Kurven. Ein Praxisfall mit dokumentierten Grenzen.",
+    keywords: [
+      "Bahnhöfe Shanghai 3D",
+      "Hongqiao 3D-Modell",
+      "Gleise 3D",
+      "Bahnsteige OpenStreetMap",
+      "Shanghai stations 3D",
+      "Hongqiao 3D model",
+      "3D railway tracks",
+      "OpenStreetMap platforms",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Shanghai: Bahngeometrie und Grenzen der Ableitung",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_RAIL_RENDERING.md",
+      },
+      {
+        id: "gauge",
+        title: "Key:gauge – Spurweite",
+        source: "OpenStreetMap",
+        url: "https://wiki.openstreetmap.org/wiki/Key:gauge",
+      },
+    ],
+    faqs: [
+      {
+        q: "Zeigen die Züge Positionen in Echtzeit?",
+        a: "Nein. Sie sind illustrative Elemente der Szene, kein Zugverfolgungsdienst.",
+      },
+      {
+        q: "Sind vollständige unterirdische Bahnhöfe enthalten?",
+        a: "Nein. Die Oberflächenszene rekonstruiert keine Innenräume oder unterirdischen Umsteigeknoten ohne spezifische Daten.",
+      },
+      {
+        q: "Lässt es sich als Ingenieurmodell für die Bahn verwenden?",
+        a: "Es ist visueller Kontext. Eine Ingenieurleistung erfordert zusätzliche Geometrie, Bezüge und Prüfungen von Gleisen, Lichtraum, Bahnsteigen und Tragwerken.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Der Umriss eines Bahnhofs beschreibt nur einen Teil des Problems. Wird er zu einem Block extrudiert, der bis zum Boden reicht, kann er den Gleisraum verschließen oder den Bezug zwischen Halle und Bahnsteigen auslöschen. In Shanghai haben wir Gebäudegrundrisse, Gleistrassen und Bahnsteige als zusammenhängende Teile behandelt.",
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-stations.svg",
+        alt: "Erklärender Schnitt mit offenem Dach, Stützen, Bahnsteig und zwei Schienen",
+        caption: "Erklärende Skizze, nicht maßstäblich. Sie zeigt keine gemessenen Abmessungen von Shanghai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "Ein Bahnhof ist keine einzelne Extrusion" },
+      {
+        type: "p",
+        text: "Hongqiao und Shanghai South eignen sich, um unterschiedliche räumliche Anordnungen zu prüfen. Ihre spezifischen Formen werden über Karten-ID und Lage ausgewählt. So übernimmt nicht jeder Bahnhof der Welt eine Shanghai-Silhouette, nur weil er einen generischen Tag teilt.",
+      },
+      {
+        type: "p",
+        text: "Der Grundriss liefert eine Vorgabe im Plan, beschreibt aber weder alle Höhen noch das innere Tragwerk. Fehlen Schnitte oder Maße, kann die äußere Form angenähert werden, damit man den Ort versteht. Der Hohlraum unter einer Halle oder einem Bahnsteigdach bleibt dennoch wesentlich: Ihn zu schließen, verändert den Bezug zu den Gleisen.",
+      },
+      { type: "h2", text: "Das Gleis von seiner Achse aus aufbauen" },
+      {
+        type: "p",
+        text: "Die Achse erlaubt, der Trasse zu folgen, entspricht aber nicht der Breite des Gleiskörpers. Die Schienen müssen einen konsistenten Abstand halten, und die Schwellen werden nach Strecke entlang der Trasse verteilt. Wird ihre Platzierung in jedem Segment neu gestartet, entstehen in Kurven Häufungen und Lücken.",
+      },
+      {
+        type: "p",
+        text: [
+          "Beim Tag gauge müssen die Einheiten richtig gelesen werden. ",
+          { cite: "gauge" },
+          " Selbst wenn er vorhanden ist, liefert er weder das vollständige Schienenprofil noch die Entwässerung oder die Geometrie einer Weiche. Das sind eigene Daten, die man nicht aus einer einzigen Linie ableiten sollte.",
+        ],
+      },
+      {
+        type: "p",
+        text: "In unserer Arbeit trennen wir diese Komponenten und behalten kleine Details der nahen Prüfzone vor. Das ist eine Darstellungsentscheidung: Aus der Ferne zählt, dass man dem Korridor folgen kann; aus der Nähe zählen Dicke, Abstand und Durchgängigkeit. Das Detail darf die Lage des Gleises nicht verändern.",
+      },
+      { type: "h2", text: "Die Bahnsteighöhe braucht einen Bezug" },
+      {
+        type: "p",
+        text: "Ein Bahnsteig muss gegen das Gleis geprüft werden, das er bedient. Eine generische Höhe über Gelände kann zufällig passen oder eine unmögliche Differenz erzeugen. Fehlen Daten, muss die Darstellungshöhe als Ersatzwert ausgewiesen werden; sie beweist nicht, dass alle Bahnsteige Shanghais gleich hoch sind.",
+      },
+      {
+        type: "p",
+        text: "Unterirdische Elemente brauchen eine ausdrückliche Entscheidung. In der Oberflächenszene lassen wir unterirdische Trassen weg; wir graben keinen erfundenen Bahnhof aus, um sie zu zeigen. Eine Außenansicht und ein Infrastrukturschnitt beantworten unterschiedliche Fragen. Stellt man sie gleich dar, kann eine Auslassung als Datenfehler gelesen werden.",
+      },
+      { type: "h2", text: "Offene Dächer und Züge in Kurven" },
+      {
+        type: "image",
+        src: "blog/images/shanghai-rail-blender-review.jpg",
+        alt: "Blender-Prüfrendering mit illustrativem Zug, Schienen und Schwellen auf Trassen in Hongqiao",
+        caption: "Entwicklungs-Rendering unserer Bahngeometrie, Gebäude ausgeblendet, um die Gleise zu prüfen. Fahrzeuge und Stützen sind angenähert; kein Foto und keine Echtzeitverfolgung.",
+        credit: "IFC Viewer Online · data © OpenStreetMap contributors (ODbL)",
+        width: 1400,
+        height: 1000,
+      },
+      {
+        type: "p",
+        text: "Ein Bahnsteigdach braucht freien Raum darunter. Diesen Hohlraum zu erhalten, bringt mehr, als eine geschlossene Extrusion mit einer Metalltextur zu verkleiden. Ebenso muss ein Zug die Höhe des Gleises teilen und seine Wagen entlang der Trasse ausrichten. Eine Reihe von Kästen mit einem einzigen Winkel scheitert, sobald sie in eine Kurve fährt.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Illustrative Züge",
+        text: "Die Fahrzeuge in dieser Szene geben Maßstab und Kontext. Sie stellen keine Betriebspositionen dar und sind keine geprüfte Nachbildung einer bestimmten Zugbaureihe.",
+      },
+      {
+        type: "table",
+        headers: ["Element", "Entscheidende Beziehung", "Für die Ingenieurplanung nötige Daten"],
+        rows: [
+          ["Schienen", "Abstand und Ausrichtung", "Detaillierter Querschnitt und Geometrie"],
+          ["Bahnsteig", "Höhe relativ zum Gleis", "Validierter Höhenbezug"],
+          ["Bahnsteigdach", "Freier Raum darunter", "Vermessenes Tragwerk und Stützen"],
+          ["Illustrativer Zug", "Gemeinsame Trasse und Höhe", "Flotte und Betriebsposition"],
+        ],
+      },
+      { type: "h2", text: "Was Sie vor dem Teilen der Szene prüfen sollten" },
+      {
+        type: "p",
+        text: "Blenden Sie die Gebäude vorübergehend aus und folgen Sie den Gleisen durch den Bahnhof. Suchen Sie nach Unterbrechungen, Höhensprüngen, Stützen im Korridor und überlappenden Bahnsteigen. Blenden Sie dann die Dächer ein: Prüfen Sie, was verdeckt wird und was von außen lesbar bleibt. Behalten Sie beide Ansichten, um die Anordnung zu erklären, ohne eine Prüfansicht mit dem tatsächlichen Aussehen des Ortes zu verwechseln.",
+      },
+      {
+        type: "p",
+        text: [
+          "Innenräume, Haustechnik, Weichenmechanik und zertifizierte Lichträume erfordern andere Quellen. Unsere Dokumentation hält die Näherungen bei Dächern, Bahnsteigen und Fahrzeugen fest, damit diese Grenze sichtbar bleibt. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Zeigen die Züge Positionen in Echtzeit?" },
+      { type: "p", text: "Nein. Sie sind illustrative Elemente der Szene, kein Zugverfolgungsdienst." },
+      { type: "h3", text: "Sind vollständige unterirdische Bahnhöfe enthalten?" },
+      {
+        type: "p",
+        text: "Nein. Die Oberflächenszene rekonstruiert keine Innenräume oder unterirdischen Umsteigeknoten ohne spezifische Daten.",
+      },
+      { type: "h3", text: "Lässt es sich als Ingenieurmodell für die Bahn verwenden?" },
+      {
+        type: "p",
+        text: "Es ist visueller Kontext. Eine Ingenieurleistung erfordert zusätzliche Geometrie, Bezüge und Prüfungen von Gleisen, Lichtraum, Bahnsteigen und Tragwerken.",
+      },
+      { type: "h2", text: "Weiter mit dem Shanghai-Fall" },
+      { type: "related", to: "shanghai-city-bim-gis" },
+      { type: "related", to: "shanghai-pedestrian-bridges" },
+      { type: "related", to: "shanghai-parks-courtyards" },
+      {
+        type: "tool",
+        id: "viewer",
+        why: "Öffnen Sie Ihr IFC und prüfen Sie, wie es sich in die städtische Umgebung einfügt.",
+      },
+    ],
+    lang: "de",
+    translationKey: "shanghai-railway-stations",
+  },
+  {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Digitale Zwillinge",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-parks-courtyards",
+    heroImage: "blog/images/shanghai-yuyuan-blender-review.jpg",
+    heroAlt: "Angenäherte kartenbasierte Rekonstruktion von Yuyuan, geprüft in Blender",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Parks und Innenhöfe in 3D-Karten: Was wir von Yuyuan und Jing’an gelernt haben",
+    seoTitle: "3D-Parks mit OpenStreetMap: Yuyuan und Jing’an",
+    excerpt: "Bäume auf Plätzen, Wasser über Inseln und überdeckte Innenhöfe: drei Fehler, die eine Karte verschlechtern, so detailliert sie auch ist. Wie wir sie in Shanghai angegangen sind.",
+    seoDescription: "Keine Bäume auf Plätzen, kein Wasser über Inseln, keine zugedeckten Höfe: der Fall Yuyuan und Jing’an für bessere Parks und Baudenkmäler in 3D-Karten.",
+    keywords: [
+      "Parks 3D OpenStreetMap",
+      "Yuyuan 3D",
+      "Jing’an 3D-Modell",
+      "Multipolygon Innenhöfe",
+      "Stadt-Rendering",
+      "3D parks OpenStreetMap",
+      "Jingan 3D model",
+      "multipolygon courtyards",
+      "urban rendering",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Parks in Shanghai: Topologie, Belege und Grenzen",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_PARK_RENDERING.md",
+      },
+      {
+        id: "rings",
+        title: "Multipolygon-Relationen und innere Ringe",
+        source: "OpenStreetMap",
+        url: "https://wiki.openstreetmap.org/wiki/Relation:multipolygon",
+      },
+      {
+        id: "garden",
+        title: "Visit Shanghai’s classical gardens",
+        source: "Shanghai Municipal Government",
+        url: "https://english.shanghai.gov.cn/en-Parks/20241118/3ab0a509201343a59102f9bc63a3aab4.html",
+      },
+    ],
+    faqs: [
+      {
+        q: "Machen mehr Bäume einen 3D-Park realistischer?",
+        a: "Nicht unbedingt. Zuerst müssen Wege, Plätze, Wasser und Löcher respektiert werden; Dichte ohne Daten bleibt eine visuelle Entscheidung.",
+      },
+      {
+        q: "Geben die Dächer die Tempel exakt wieder?",
+        a: "Nein. Grundrisse und kartierte Formen bleiben erhalten, aber Höhen, Neigungen und Stützen ohne Messungen sind weiterhin angenähert.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "In einem Garten zählt der Raum zwischen den Objekten so viel wie die Objekte selbst. Deckt der Rasen einen Innenhof zu oder füllt das Wasser eine Insel, ist der Ort nicht mehr richtig lesbar – auch wenn jeder Baum Tausende Polygone hat. An Yuyuan und Jing’an haben wir diese räumliche Struktur überprüft.",
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-courtyards.svg",
+        alt: "Vergleich zwischen einem falsch gefüllten Polygon und einem, das Innenhof, Teich und Weg erhält",
+        caption: "Erklärende Skizze, nicht maßstäblich. Sie zeigt keine gemessenen Abmessungen von Shanghai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "Die visuelle Referenz ist kein Platzierungsplan" },
+      {
+        type: "p",
+        text: [
+          "Die städtische Referenz beschreibt Yuyuan über Pavillons, Teiche, Steingärten und traditionelle Architektur. ",
+          { cite: "garden" },
+          " Diese Beschreibung leitet den visuellen Vergleich, liefert aber keine Koordinaten, um Felsen zu setzen oder Pavillons zu erfinden. Um die Teile zu platzieren, gehen wir von der verfügbaren Kartierung aus.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Der Unterschied ist praktisch: Sie können eine treuere Komposition anstreben, ohne als gemessen auszugeben, was nur plausibel ist. Eine nützliche Rekonstruktion macht deutlich, wo die bekannten Grundrisse enden und wo die Darstellungsentscheidungen beginnen.",
+      },
+      { type: "h2", text: "Wie man die Löcher eines Polygons erhält" },
+      {
+        type: "p",
+        text: [
+          "Eine Fläche kann einen äußeren Umriss und mehrere innere Ringe haben. ",
+          { cite: "rings" },
+          " Der Renderer muss Dreiecke erzeugen, die diese Innenbereiche offen lassen. Es reicht nicht, das Loch in den Daten zu speichern, wenn es beim Aufbau des Meshes wieder verschwindet.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Die Regel betrifft Rasen, Wasser und Dächer mit Innenhöfen. Auch der Rand einer Insel muss als Ufer zählen, wenn das Aussehen des Wassers berechnet wird. Misst man nur bis zum äußeren Umriss, verhält sich das Wasser neben einer Insel optisch wie die Mitte des Teichs.",
+      },
+      { type: "h2", text: "Vegetation, die Plätze und Wege respektiert" },
+      {
+        type: "p",
+        text: "Ein Fußgängerplatz ist meist eine Fläche, keine Linie. Werden Bäume nur entlang seines Umrisses ausgeschlossen, bleibt der Rand frei und die Mitte füllt sich mit Vegetation. Die prozedurale Verteilung muss die gesamte befestigte Fläche abfragen, dazu Gebäude, Wasser und Bahnkorridore.",
+      },
+      {
+        type: "p",
+        text: "Auch beim Setzen von Bäumen und Sträuchern müssen die Löcher erhalten bleiben. Korrigiert man den Rasen und lässt den Vegetationsgenerator unverändert, entsteht ein offener Innenhof mit Baumstämmen darin. Wir prüfen beide Prozesse getrennt, weil sie Daten teilen, aber unterschiedliche Geometrie erzeugen.",
+      },
+      { type: "h2", text: "Brunnen und Ausstattung, ohne den Garten zu erfinden" },
+      {
+        type: "p",
+        text: "Der Mittelwert der Eckpunkte eines konkaven Brunnens kann außerhalb seines Beckens liegen. Um ein Fontänensymbol zu setzen, brauchen Sie einen inneren Punkt und eine Größe, die durch den nächsten Rand begrenzt wird. Der Abstand zu einem Eckpunkt reicht nicht: Eine Kante kann viel näher am gewählten Punkt verlaufen.",
+      },
+      {
+        type: "p",
+        text: "Wir haben zufällig erzeugte Pergolen entfernt und die Bodenausstattung auf geeignete Wege beschränkt. Eine optisch glaubwürdige Position ist keine dokumentierte Position. Unterscheiden Sie illustrative Vegetation von Bauwerken, die die Kartierung ausdrücklich ausweist – vor allem, wenn eine Aufnahme außerhalb des Viewers gezeigt wird.",
+      },
+      { type: "h2", text: "Tempel: Gebäude modellieren, nicht den ganzen Bezirk" },
+      {
+        type: "image",
+        src: "blog/images/shanghai-yuyuan-blender-review.jpg",
+        alt: "Blender-Prüfrendering der Umgebung von Yuyuan mit Gebäuden, Teichen, Wegen und Vegetation",
+        caption: "Geometrieprüfung von Yuyuan während der Entwicklung. Kartengrundrisse, nicht dokumentierte Höhen und Vegetation sind angenähert. Die Blender-Materialien geben die Shader des Viewers nicht wieder.",
+        credit: "IFC Viewer Online · data © OpenStreetMap contributors (ODbL)",
+        width: 1400,
+        height: 1000,
+      },
+      {
+        type: "p",
+        text: "Ein religiöser Bezirk kann mehrere Gebäude und Freiräume enthalten. Wird seine Grenze als ein einziges Volumen extrudiert, verschwinden die Innenhöfe. In Jing’an haben wir den Bezirk und den Grundriss der Haupthalle getrennt geprüft; in Yuyuan haben wir getaggte Dachformen erhalten, die zuvor flachgedrückt wurden.",
+      },
+      {
+        type: "p",
+        text: "Das verbessert die Lesbarkeit des Ensembles, rekonstruiert aber keine exakten Traufen, Ornamente oder Stützen. Ein als offenes Dach dokumentiertes Vordach braucht einen Hohlraum darunter. Ein Tempel, eine Moschee und ein Geschäftshaus brauchen unterschiedliche Kriterien: In Shanghai zu stehen, rechtfertigt nicht, ihnen dieselbe Form zu geben.",
+      },
+      {
+        type: "table",
+        headers: ["Sichtbarer Fehler", "Wahrscheinliche Ursache", "Prüfung"],
+        rows: [
+          ["Wasser über einer Insel", "Innerer Ring verloren", "Dreiecke und innere Ufer"],
+          ["Bäume auf einem Platz", "Nur der Umriss wurde ausgeschlossen", "Gesamte befestigte Fläche"],
+          [
+            "Brunnen außerhalb des Beckens",
+            "Mitte als Mittelwert berechnet",
+            "Innerer Punkt und Abstand zum Rand",
+          ],
+          ["Tempel als Block", "Bezirk mit Gebäude verwechselt", "Einzelne Grundrisse und Innenhöfe"],
+        ],
+      },
+      { type: "h2", text: "Ein Test, den Sie in jedem Park wiederholen können" },
+      {
+        type: "p",
+        text: "Prüfen Sie den Ort zuerst ohne Bäume: Identifizieren Sie Innenhöfe, Wasser, Plätze und Gebäude. Schalten Sie die Vegetation ein und prüfen Sie, welche Räume sie besetzt. Fügen Sie die Ausstattung zuletzt hinzu. Wenn eine Ebene die vorherigen schlechter lesbar macht, untersuchen Sie ihre Ausschlüsse, bevor Sie das Detail erhöhen.",
+      },
+      {
+        type: "p",
+        text: [
+          "Behalten Sie Nah- und Fernansichten. Erstere zeigen Kollisionen, Letztere, ob die Organisation des Ortes erhalten bleibt. Quellen und Grenzen des Falls sind dokumentiert, damit ein attraktives Bild nicht mit einer Vermessung verwechselt wird. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Machen mehr Bäume einen 3D-Park realistischer?" },
+      {
+        type: "p",
+        text: "Nicht unbedingt. Zuerst müssen Wege, Plätze, Wasser und Löcher respektiert werden; Dichte ohne Daten bleibt eine visuelle Entscheidung.",
+      },
+      { type: "h3", text: "Geben die Dächer die Tempel exakt wieder?" },
+      {
+        type: "p",
+        text: "Nein. Grundrisse und kartierte Formen bleiben erhalten, aber Höhen, Neigungen und Stützen ohne Messungen sind weiterhin angenähert.",
+      },
+      { type: "h2", text: "Weiter mit dem Shanghai-Fall" },
+      { type: "related", to: "shanghai-city-bim-gis" },
+      { type: "related", to: "shanghai-pedestrian-bridges" },
+      { type: "related", to: "shanghai-railway-stations" },
+      {
+        type: "tool",
+        id: "viewer",
+        why: "Öffnen Sie Ihr IFC und prüfen Sie, wie es sich in die städtische Umgebung einfügt.",
+      },
+    ],
+    lang: "de",
+    translationKey: "shanghai-parks-courtyards",
+  },
+  {
     slug: "iso-19650-file-naming-convention",
     title: "Die ISO-19650-Dateibenennung erklärt (mit Beispielen)",
     excerpt: "Sieben Felder und sechs Bindestriche entscheiden, ob ein Modell gefunden, sortiert, geprüft und föderiert werden kann, ohne dass es jemand öffnet. Was jedes Feld bedeutet, die Rollencodes, wohin Status und Revision gehören und welche Benennungsfehler eine CDE still kaputt machen.",
@@ -3491,14 +4211,30 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         id: "clean-ifc-export-revit:settings",
         title: "Revit-IFC-Exporteinstellungen",
         items: [
-          { label: "\"Export GUIDs\": Keep Existing", hint: "Niemals „Generate New“ – das zerstört BCF-Querverweise bei jedem erneuten Export." },
-          { label: "\"Site Placement\": Shared Coordinates", hint: "Verhindert, dass Elemente 10 km vom WCS-Ursprung entfernt platziert werden." },
-          { label: "\"Include Steel Connections\": Off", hint: "Außer bei der Lieferung eines Stahlbaumodells." },
+          {
+            label: "\"Export GUIDs\": Keep Existing",
+            hint: "Niemals „Generate New“ – das zerstört BCF-Querverweise bei jedem erneuten Export.",
+          },
+          {
+            label: "\"Site Placement\": Shared Coordinates",
+            hint: "Verhindert, dass Elemente 10 km vom WCS-Ursprung entfernt platziert werden.",
+          },
+          {
+            label: "\"Include Steel Connections\": Off",
+            hint: "Außer bei der Lieferung eines Stahlbaumodells.",
+          },
           { label: "\"Export Base Quantities\": On", hint: "Erforderlich für Lieferungen ab LOD 200." },
-          { label: "\"Split Walls and Columns by Level\": On", hint: "Stellt sicher, dass Wände einzelnen Geschossen zugeordnet sind." },
+          {
+            label: "\"Split Walls and Columns by Level\": On",
+            hint: "Stellt sicher, dass Wände einzelnen Geschossen zugeordnet sind.",
+          },
         ],
       },
-      { type: "bimo-tip", emotion: "curious", text: "Speichern Sie diese Einstellungen als benanntes Export-Setup in Revit („Modify Setup…“ → duplizieren). Der nächste Export – oder die nächste Person im Team – startet dann mit den richtigen Einstellungen statt mit den Standardwerten." },
+      {
+        type: "bimo-tip",
+        emotion: "curious",
+        text: "Speichern Sie diese Einstellungen als benanntes Export-Setup in Revit („Modify Setup…“ → duplizieren). Der nächste Export – oder die nächste Person im Team – startet dann mit den richtigen Einstellungen statt mit den Standardwerten.",
+      },
       {
         type: "callout",
         variant: "warning",
@@ -3528,9 +4264,24 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         type: "bimo-quiz",
         title: "Kurzer Check",
         questions: [
-          { q: "Welche „Export GUIDs“-Option hält BCF-Themen über erneute Exporte hinweg verknüpft?", options: ["Generate New","Keep Existing","Das macht keinen Unterschied"], answer: 1, why: "Neue GUIDs bei jedem Export bedeuten, dass jedes BCF-Thema auf Elemente zeigt, die es nicht mehr gibt." },
-          { q: "Elemente landen nach dem Export ~10 km vom Ursprung entfernt. Welche Einstellung prüfen Sie zuerst?", options: ["Export Base Quantities","Site Placement","Split Walls and Columns by Level"], answer: 1, why: "Site Placement auf Shared Coordinates hält das Modell dort, wo der Vermessungspunkt es verortet." },
-          { q: "Eine Revit-Familie hat keine IFC-Zuordnung. Als was wird sie exportiert?", options: ["IfcBuildingElementProxy","IfcWall","Sie wird übersprungen"], answer: 0, why: "Nicht zugeordnete Familien fallen auf Proxys zurück – ordnen Sie gängige Familien in der Mapping-Tabelle korrekten IFC-Klassen zu." },
+          {
+            q: "Welche „Export GUIDs“-Option hält BCF-Themen über erneute Exporte hinweg verknüpft?",
+            options: ["Generate New", "Keep Existing", "Das macht keinen Unterschied"],
+            answer: 1,
+            why: "Neue GUIDs bei jedem Export bedeuten, dass jedes BCF-Thema auf Elemente zeigt, die es nicht mehr gibt.",
+          },
+          {
+            q: "Elemente landen nach dem Export ~10 km vom Ursprung entfernt. Welche Einstellung prüfen Sie zuerst?",
+            options: ["Export Base Quantities", "Site Placement", "Split Walls and Columns by Level"],
+            answer: 1,
+            why: "Site Placement auf Shared Coordinates hält das Modell dort, wo der Vermessungspunkt es verortet.",
+          },
+          {
+            q: "Eine Revit-Familie hat keine IFC-Zuordnung. Als was wird sie exportiert?",
+            options: ["IfcBuildingElementProxy", "IfcWall", "Sie wird übersprungen"],
+            answer: 0,
+            why: "Nicht zugeordnete Familien fallen auf Proxys zurück – ordnen Sie gängige Familien in der Mapping-Tabelle korrekten IFC-Klassen zu.",
+          },
         ],
       },
     ],
@@ -3812,9 +4563,36 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "bimo-quiz",
         questions: [
-          { q: "Welche Einstellung verhindert, dass Revit bei jedem Export neue GlobalIds erzeugt?", options: ["„Export IFC GUIDs“: Keep Existing","„Export IFC GUIDs“: Generate New","Export nach IFC4 statt IFC2x3"], answer: 0, why: "Keep Existing verwendet die GlobalId wieder, die Revit pro Element speichert, statt jedes Mal eine neue zu erzeugen." },
-          { q: "Eine GlobalId beginnt mit dem Zeichen „Z“. Was sagt Ihnen das?", options: ["Nichts – jedes Base-64-Zeichen ist erlaubt","Sie liegt außerhalb des gültigen Bereichs: Das erste Zeichen muss 0–3 kodieren","Sie wurde von ArchiCAD erzeugt"], answer: 1, why: "Eine 128-Bit-UUID in 22 Base-64-Zeichen lässt im ersten Zeichen nur zwei signifikante Bits übrig." },
-          { q: "Warum ist GUID-Drift so teuer zu entdecken?", options: ["Die Datei besteht die Schemavalidierung nicht","Jeder Export wirkt für sich gültig – der Schaden zeigt sich erst später in BCF und Kollisionsprüfungen","Viewer öffnen die Datei nicht"], answer: 1, why: "Eine neu erzeugte GlobalId ist kein Schemafehler; sie fällt erst beim Vergleich von Revisionen auf oder wenn ein BCF-Thema am falschen Element landet." },
+          {
+            q: "Welche Einstellung verhindert, dass Revit bei jedem Export neue GlobalIds erzeugt?",
+            options: [
+              "„Export IFC GUIDs“: Keep Existing",
+              "„Export IFC GUIDs“: Generate New",
+              "Export nach IFC4 statt IFC2x3",
+            ],
+            answer: 0,
+            why: "Keep Existing verwendet die GlobalId wieder, die Revit pro Element speichert, statt jedes Mal eine neue zu erzeugen.",
+          },
+          {
+            q: "Eine GlobalId beginnt mit dem Zeichen „Z“. Was sagt Ihnen das?",
+            options: [
+              "Nichts – jedes Base-64-Zeichen ist erlaubt",
+              "Sie liegt außerhalb des gültigen Bereichs: Das erste Zeichen muss 0–3 kodieren",
+              "Sie wurde von ArchiCAD erzeugt",
+            ],
+            answer: 1,
+            why: "Eine 128-Bit-UUID in 22 Base-64-Zeichen lässt im ersten Zeichen nur zwei signifikante Bits übrig.",
+          },
+          {
+            q: "Warum ist GUID-Drift so teuer zu entdecken?",
+            options: [
+              "Die Datei besteht die Schemavalidierung nicht",
+              "Jeder Export wirkt für sich gültig – der Schaden zeigt sich erst später in BCF und Kollisionsprüfungen",
+              "Viewer öffnen die Datei nicht",
+            ],
+            answer: 1,
+            why: "Eine neu erzeugte GlobalId ist kein Schemafehler; sie fällt erst beim Vergleich von Revisionen auf oder wenn ein BCF-Thema am falschen Element landet.",
+          },
         ],
       },
     ],
@@ -3911,10 +4689,16 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         items: [
           { label: "Leere Parameter in Revit befüllen – leere Werte werden nie exportiert." },
           { label: "„Export IFC Common Property Sets“ aktivieren, damit die Standard-Psets enthalten sind." },
-          { label: "Die benutzerdefinierte Pset-Mapping-Datei im Exportsetup auswählen (prüfen, ob sie sich nicht zurückgesetzt hat)." },
-          { label: "Sicherstellen, dass Datei der gemeinsamen Parameter und Mapping-Datei im ganzen Team identisch sind." },
+          {
+            label: "Die benutzerdefinierte Pset-Mapping-Datei im Exportsetup auswählen (prüfen, ob sie sich nicht zurückgesetzt hat).",
+          },
+          {
+            label: "Sicherstellen, dass Datei der gemeinsamen Parameter und Mapping-Datei im ganzen Team identisch sind.",
+          },
           { label: "Einheiten-Konflikte durch Neuzuordnung zu einem korrekt typisierten Parameter lösen." },
-          { label: "In einen lokalen Ordner exportieren, die IFC-Datei öffnen und prüfen, ob die Eigenschaften erhalten geblieben sind – bevor die Datei das CDE erreicht." },
+          {
+            label: "In einen lokalen Ordner exportieren, die IFC-Datei öffnen und prüfen, ob die Eigenschaften erhalten geblieben sind – bevor die Datei das CDE erreicht.",
+          },
         ],
       },
       {
@@ -4228,10 +5012,14 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         id: "how-to-validate-ifc-file:checklist",
         items: [
           { label: "Keine doppelten oder außerhalb des Bereichs liegenden GlobalIds." },
-          { label: "Jedes physische Element befindet sich innerhalb einer Geschossebene, nicht direkt unter Site oder Building." },
+          {
+            label: "Jedes physische Element befindet sich innerhalb einer Geschossebene, nicht direkt unter Site oder Building.",
+          },
           { label: "Genau ein IfcProject an der Wurzel, mit vollständiger räumlicher Hierarchie." },
           { label: "Keine verwaisten Elemente und keine defekten Aggregate." },
-          { label: "Die Koordinaten sind sinnvoll – das Modell liegt nahe am Weltursprung, nicht kilometerweit entfernt." },
+          {
+            label: "Die Koordinaten sind sinnvoll – das Modell liegt nahe am Weltursprung, nicht kilometerweit entfernt.",
+          },
           { label: "Standard-Eigenschaftssätze sind vorhanden; Elemente sind benannt." },
           { label: "Health Score ≥ 80 vor jedem CDE-Upload." },
         ],
@@ -4815,10 +5603,18 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         id: "ifc-coordinates-georeferencing:checklist",
         items: [
           { label: "Legen Sie den Vermessungspunkt auf die für das Projekt vereinbarte reale Referenz fest." },
-          { label: "Modellieren Sie in der Nähe des Projektbasispunkts / internen Ursprungs — nicht auf echten Gitterkoordinaten." },
-          { label: "Exportieren Sie mit „Freigegebene Koordinaten“ / Standortplatzierung auf „freigegeben“ gesetzt." },
-          { label: "Prüfen Sie bei IFC4-/IFC4.3-Lieferungen, dass IfcSite, IfcProjectedCRS und IfcMapConversion geschrieben und konsistent sind." },
-          { label: "Öffnen Sie das Ergebnis und prüfen Sie vor der Lieferung, ob das Modell wie erwartet sitzt." },
+          {
+            label: "Modellieren Sie in der Nähe des Projektbasispunkts / internen Ursprungs — nicht auf echten Gitterkoordinaten.",
+          },
+          {
+            label: "Exportieren Sie mit „Freigegebene Koordinaten“ / Standortplatzierung auf „freigegeben“ gesetzt.",
+          },
+          {
+            label: "Prüfen Sie bei IFC4-/IFC4.3-Lieferungen, dass IfcSite, IfcProjectedCRS und IfcMapConversion geschrieben und konsistent sind.",
+          },
+          {
+            label: "Öffnen Sie das Ergebnis und prüfen Sie vor der Lieferung, ob das Modell wie erwartet sitzt.",
+          },
         ],
       },
       {
@@ -6211,11 +7007,21 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         type: "bimo-checklist",
         id: "ifc-acceptance-criteria:checklist",
         items: [
-          { label: "Öffnen Sie den Container und führen Sie das Projekt-Regelwerk aus. Bei den meisten Gewerkemodellen unter einer Minute." },
-          { label: "Prüfen Sie zuerst die Abdeckung, dann die Ergebnisse. Wenn etwas nicht gelaufen ist, stoppen Sie – Sie haben noch keine Prüfung." },
-          { label: "Lesen Sie den Score gegen den Schwellenwert, dann die Befunde mit Schweregrad „Fehler“. Alles andere ist ein Vermerk, kein Tor." },
-          { label: "Vergleichen Sie mit der vorigen Revision. Neue Befunde sind die eigentliche Geschichte; gelöste Befunde sind der Beleg dafür, dass die letzte Prüfung Wirkung zeigte." },
-          { label: "Halten Sie das Ergebnis im Übergabeprotokoll oder im CDE-Kommentar fest – Score, Regelwerk, Abdeckung und jeden per Vereinbarung akzeptierten Befund." },
+          {
+            label: "Öffnen Sie den Container und führen Sie das Projekt-Regelwerk aus. Bei den meisten Gewerkemodellen unter einer Minute.",
+          },
+          {
+            label: "Prüfen Sie zuerst die Abdeckung, dann die Ergebnisse. Wenn etwas nicht gelaufen ist, stoppen Sie – Sie haben noch keine Prüfung.",
+          },
+          {
+            label: "Lesen Sie den Score gegen den Schwellenwert, dann die Befunde mit Schweregrad „Fehler“. Alles andere ist ein Vermerk, kein Tor.",
+          },
+          {
+            label: "Vergleichen Sie mit der vorigen Revision. Neue Befunde sind die eigentliche Geschichte; gelöste Befunde sind der Beleg dafür, dass die letzte Prüfung Wirkung zeigte.",
+          },
+          {
+            label: "Halten Sie das Ergebnis im Übergabeprotokoll oder im CDE-Kommentar fest – Score, Regelwerk, Abdeckung und jeden per Vereinbarung akzeptierten Befund.",
+          },
         ],
       },
       {

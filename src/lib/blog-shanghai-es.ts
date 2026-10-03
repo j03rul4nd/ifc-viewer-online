@@ -1,6 +1,7 @@
 import type { BlogPost, ContentBlock } from './blog-posts'
 
-// Spanish originals. Translations are intentionally left to the separate editorial workflow.
+// Spanish originals. The English editions (blog-shanghai-en.ts) use these translationKeys as
+// their slugs, and the translated packs carry them to every other language.
 const repo = 'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/'
 const slugs = ['shanghai-mapa-3d-bim-gis', 'puentes-peatonales-3d-openstreetmap-shanghai', 'estaciones-tren-shanghai-modelo-3d', 'parques-patios-3d-openstreetmap-shanghai']
 const p = (text: string): ContentBlock => ({ type: 'p', text })

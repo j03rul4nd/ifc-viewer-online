@@ -10,6 +10,699 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_CA: BlogPost[] = [
   {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Bessons digitals",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-city-bim-gis",
+    heroImage: "blog/images/shanghai-bridge-blender-review.jpg",
+    heroAlt: "Render de revisió de l’anell de Mingzhu: reconstrucció aproximada sobre cartografia OSM",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Xangai en 3D: com combinar edificis IFC i context urbà sense perdre la realitat",
+    seoTitle: "Xangai en 3D: edificis IFC i context BIM/GIS",
+    excerpt: "De la Perla d’Orient als jardins Yuyuan: com hem construït un context 3D que conserva carrers, accessos i espais oberts, i quins límits té per a un projecte BIM.",
+    seoDescription: "Explora Xangai en 3D amb IFC i OpenStreetMap. Distingeix el model BIM, el context urbà i les aproximacions amb una demo i exemples pràctics.",
+    keywords: [
+      "Xangai 3D",
+      "mapa 3D Xangai",
+      "BIM GIS",
+      "IFC OpenStreetMap",
+      "Perla d’Orient IFC",
+      "Shanghai 3D",
+      "Shanghai 3D map",
+      "Oriental Pearl IFC",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Xangai: criteris de fidelitat del context urbà",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_CITY_FIDELITY.md",
+      },
+      {
+        id: "model",
+        title: "Perla d’Orient: fonts i límits de la reconstrucció IFC",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/ORIENTAL_PEARL_RECONSTRUCTION.md",
+      },
+    ],
+    faqs: [
+      {
+        q: "És un bessó digital de tota Xangai?",
+        a: "No. És una visualització BIM/GIS amb reconstruccions IFC i context cartogràfic. No implica cobertura completa ni connexió amb sensors o dades operatives en temps real.",
+      },
+      {
+        q: "La demo és l’IFC original de la Perla d’Orient?",
+        a: "No. És una reconstrucció aproximada d’IFC Viewer Online, amb les fonts i les limitacions documentades; no és un model as-built.",
+      },
+      {
+        q: "Puc fer servir el mapa per comprovar distàncies d’obra?",
+        a: "L’escena il·lustrativa no n’hi ha prou. Primer cal validar coordenades, cotes, procedència i toleràncies amb punts de control.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Un mapa 3D útil no es limita a col·locar edificis sobre una imatge aèria. Ha d’explicar què connecta amb què, què passa per sobre de què i quins espais queden oberts. Xangai ens va permetre posar a prova aquestes relacions: ponts per a vianants a Lujiazui, grans estacions i jardins històrics dins d’una ciutat densa.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "L’IFC aporta els elements de l’edifici; la cartografia aporta el context. Les seves precisions no són intercanviables.",
+          "La continuïtat d’accessos, vies i patis importa més que afegir detall decoratiu.",
+          "Pots inspeccionar una reconstrucció IFC de la Perla d’Orient i revisar quina informació conté.",
+        ],
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-layers.svg",
+        alt: "Tres capes separades: edifici IFC, cartografia urbana i detall visual aproximat",
+        caption: "Esquema explicatiu, sense escala. No representa dimensions mesurades de Xangai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "Què representa realment la nostra Xangai en 3D" },
+      {
+        type: "p",
+        text: "Un model IFC organitza elements i propietats de l’edifici. El mapa situa al voltant carrers, aigua, parcs i infraestructura. Combinar-los ajuda a explicar una entrada, l’encaix d’un volum o la seva relació amb l’espai públic. La condició és que comparteixin una col·locació coherent i que el lector conegui la procedència de cada capa.",
+      },
+      {
+        type: "table",
+        headers: ["Capa", "Què aporta", "Què no acredita"],
+        rows: [
+          ["IFC", "Elements i propietats del fitxer", "Que sigui un model as-built"],
+          ["Cartografia OSM", "Petjades i etiquetes disponibles", "Cobertura completa o precisió topogràfica"],
+          ["Geometria procedimental", "Volum i detall per visualitzar", "Mesures d’elements no documentats"],
+        ],
+      },
+      {
+        type: "p",
+        text: "En aquest cas fem servir reconstruccions IFC de fites urbanes i context cartogràfic. No oferim un aixecament complet de Xangai ni una connexió amb la seva operació diària. Aquesta distinció permet utilitzar l’escena per comunicar i revisar visualment sense atribuir-li una exactitud que les fonts no aporten.",
+      },
+      { type: "h2", text: "Comprova la col·locació abans d’afegir detall" },
+      {
+        type: "p",
+        text: "Si tot el context apareix desplaçat diverses illes, revisa el sistema de coordenades abans de moure edificis un per un. Després comprova l’orientació i l’escala amb elements reconeixibles. Finalment compara cotes: recolzar l’IFC i el mapa sobre referències verticals diferents pot fer que un accés suri tot i que la planta sembli correcta.",
+      },
+      {
+        type: "p",
+        text: [
+          "Per configurar el teu fitxer, consulta la ",
+          { text: "guia d’IFC georeferenciat sobre un mapa 3D", to: "view-ifc-on-3d-map-online" },
+          ". Aquí ens centrem en la qualitat del context de Xangai, sense repetir el procediment de georeferenciació.",
+        ],
+      },
+      { type: "h2", text: "Tres errors que Xangai ens va obligar a resoldre" },
+      {
+        type: "p",
+        text: "A Lujiazui, el pont no s’acaba a la vora del tauler: també compten escales, ascensors i replans. A les estacions, extrudir el vestíbul com un bloc massís pot tapar les vies. A Yuyuan, omplir tots els polígons elimina patis i illes i canvia la lectura del jardí.",
+      },
+      {
+        type: "p",
+        text: "L’aprenentatge comú va ser conservar relacions. Una carretera pot continuar sent carretera mentre un pont la sosté. Un parc pot contenir un forat. Una coberta pot protegir un espai obert. Les textures no resolen aquests problemes: primer ha de funcionar l’organització de la geometria.",
+      },
+      {
+        type: "p",
+        text: [
+          "Els criteris i les limitacions del treball estan documentats en el nostre cas de Xangai. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Explora la Perla d’Orient: de l’objecte al context" },
+      {
+        type: "ifc-demo",
+        modelId: "oriental-pearl-tower",
+        title: "Perla d’Orient: reconstrucció IFC4",
+        description: "Model aproximat, no as-built. Aquesta demo mostra l’edifici; per revisar el context urbà, obre el visor complet i activa el mapa.",
+        schema: "IFC4",
+        size: "21.2 MB",
+        height: 440,
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Inspecciona els grans volums",
+            body: "Carrega la demo i compara’n la silueta des de diversos angles abans d’acostar-te als detalls.",
+          },
+          {
+            title: "Consulta elements i propietats",
+            body: "Selecciona peces de l’IFC. Diferencia la informació del fitxer de la geometria cartogràfica que apareixerà al Map mode.",
+          },
+          {
+            title: "Revisa la relació amb el carrer",
+            body: "Al visor complet, carrega la mateixa demo des de la galeria i activa el Map mode. Compara una vista aèria amb una altra a prop del terra.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "El fitxer és la nostra reconstrucció; no prové del model original de l’edifici. Les fonts i les decisions es descriuen aquí. ",
+          { cite: "model" },
+        ],
+      },
+      { type: "h2", text: "Com presentar una revisió sense exagerar-ne la precisió" },
+      {
+        type: "p",
+        text: "Prepara una vista aèria que expliqui el lloc, una altra a l’alçada del carrer i un pla proper de la connexió que vulguis discutir. Anota què pertany a l’IFC, què ve del mapa i què és aproximat. Si hi falta una estructura, comprova la cobertura de les dades: que no aparegui a la pantalla no demostra que no existeixi.",
+      },
+      {
+        type: "p",
+        text: "Quan reutilitzis una captura, conserva l’atribució cartogràfica i indica que la reconstrucció és aproximada. El resultat útil és una decisió espacial més clara. Més edificis o més polígons a la pantalla no demostren per si sols una fidelitat més gran.",
+      },
+      { type: "h2", text: "Preguntes freqüents" },
+      { type: "h3", text: "És un bessó digital de tota Xangai?" },
+      {
+        type: "p",
+        text: "No. És una visualització BIM/GIS amb reconstruccions IFC i context cartogràfic. No implica cobertura completa ni connexió amb sensors o dades operatives en temps real.",
+      },
+      { type: "h3", text: "La demo és l’IFC original de la Perla d’Orient?" },
+      {
+        type: "p",
+        text: "No. És una reconstrucció aproximada d’IFC Viewer Online, amb les fonts i les limitacions documentades; no és un model as-built.",
+      },
+      { type: "h3", text: "Puc fer servir el mapa per comprovar distàncies d’obra?" },
+      {
+        type: "p",
+        text: "L’escena il·lustrativa no n’hi ha prou. Primer cal validar coordenades, cotes, procedència i toleràncies amb punts de control.",
+      },
+      { type: "h2", text: "Continua explorant el cas de Xangai" },
+      { type: "related", to: "shanghai-pedestrian-bridges" },
+      { type: "related", to: "shanghai-railway-stations" },
+      { type: "related", to: "shanghai-parks-courtyards" },
+      { type: "tool", id: "viewer", why: "Obre el teu IFC i revisa com encaixa amb el seu entorn urbà." },
+    ],
+    lang: "ca",
+    translationKey: "shanghai-city-bim-gis",
+  },
+  {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Bessons digitals",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-pedestrian-bridges",
+    heroImage: "blog/images/shanghai-bridge-blender-review.jpg",
+    heroAlt: "Reconstrucció aproximada de l’anell per a vianants de Mingzhu i les seves connexions, renderitzada amb Blender",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Ponts per a vianants de Xangai en 3D: alçades, escales i connexions que sí que encaixen",
+    seoTitle: "Ponts per a vianants 3D: Xangai i OpenStreetMap",
+    excerpt: "Un anell elevat pot semblar perfecte des de dalt i fallar a peu de carrer. Així revisem taulers, eixamplaments, escales i ascensors a Lujiazui.",
+    seoDescription: "Com representar els ponts per a vianants de Xangai: cotes, amplades, escales i ascensors connectats, sense convertir el layer d’OpenStreetMap en metres.",
+    keywords: [
+      "ponts per a vianants 3D",
+      "ponts Xangai",
+      "Lujiazui 3D",
+      "OpenStreetMap layer",
+      "modelatge de ponts",
+      "3D pedestrian bridges",
+      "Shanghai bridges",
+      "bridge modelling",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Ponts de Lujiazui: reconstrucció, evidències i límits",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_BRIDGE_RENDERING.md",
+      },
+      {
+        id: "layer",
+        title: "Key:layer — ordre vertical dels elements",
+        source: "OpenStreetMap",
+        url: "https://wiki.openstreetmap.org/wiki/Key:layer",
+      },
+    ],
+    faqs: [
+      {
+        q: "Layer=1 vol dir un metre d’alçada?",
+        a: "No. Layer expressa l’ordre vertical entre elements que es creuen; no és una cota en metres.",
+      },
+      {
+        q: "Una escala contínua demostra accessibilitat?",
+        a: "No. La continuïtat visual no verifica pendents, dimensions, el funcionament dels ascensors ni els requisits d’accessibilitat.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Un anell elevat pot semblar correcte des de dalt i fallar quan baixes la càmera: escales que no arriben al tauler, baranes que travessen una entrada o una passarel·la que s’estreny de cop. Per això vam revisar els ponts de Lujiazui com a recorreguts connectats, no com a objectes aïllats.",
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-bridges.svg",
+        alt: "Secció esquemàtica de tauler, escala, replà i ascensor amb les connexions assenyalades",
+        caption: "Esquema explicatiu, sense escala. No representa dimensions mesurades de Xangai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "La pregunta que revela una mala connexió" },
+      {
+        type: "p",
+        text: "Pots seguir visualment el recorregut des de la vorera fins al tauler i d’allà fins al següent accés? Aquesta pregunta obliga a mirar els extrems i les unions. Un pont bonic però desconnectat no explica com es recorre el lloc. La comprovació avalua la continuïtat del model; no certifica la seguretat ni l’accessibilitat reals.",
+      },
+      { type: "h2", text: "Layer ordena encreuaments: no mesura l’alçada" },
+      {
+        type: "p",
+        text: [
+          "OpenStreetMap utilitza layer per descriure l’ordre vertical allà on es creuen elements. No és una elevació mètrica. ",
+          { cite: "layer" },
+          " Assignar una alçada fixa a cada valor pot produir una imatge endreçada, però no demostra l’alçada d’un pont concret.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Al nostre renderitzador conservem per separat la funció del recorregut i l’estructura que el suporta. Una via pot ser per a vianants i estar elevada; una carretera pot passar per un túnel. Quan falten mesures, la cota usada per visualitzar ha de continuar identificada com una aproximació. No n’hi ha prou que el pas superior quedi per sobre de l’inferior.",
+      },
+      { type: "h2", text: "Per què l’amplada ha de pertànyer a cada pont" },
+      {
+        type: "image",
+        src: "blog/images/shanghai-bridge-blender-review.jpg",
+        alt: "Render amb Blender de l’anell per a vianants de Mingzhu amb els accessos i el tauler elevat",
+        caption: "Geometria del renderitzador exportada a Blender per revisar Mingzhu. Entorn ocult per estudiar connexions; dimensions i detalls no documentats són aproximats. No és una fotografia.",
+        credit: "IFC Viewer Online · data © OpenStreetMap contributors (ODbL)",
+        width: 1400,
+        height: 1000,
+      },
+      {
+        type: "p",
+        text: "Una passarel·la estreta, una plataforma i un anell de distribució no tenen la mateixa secció. Mingzhu ens va portar a aplicar una correcció vinculada a la identitat d’aquell pont, en lloc d’eixamplar tots els camins per a vianants de Xangai. Aquest límit evita propagar una decisió local a la resta de la ciutat.",
+      },
+      {
+        type: "p",
+        text: "En una unió, revisa les dues vores a més de l’eix. Dos eixos connectats poden deixar un buit entre superfícies, un solapament o una cantonada massa aguda. Els canvis d’amplada necessiten una transició geomètrica que es vegi coherent tant des de dalt com des del carrer. Una barana contínua també s’ha d’interrompre on entra un altre recorregut.",
+      },
+      { type: "h2", text: "Escales, ascensors i replans" },
+      {
+        type: "p",
+        text: "Una escala té dos extrems amb cotes diferents. El seu traçat ha de desembocar en una superfície d’arribada. En un ascensor, la ubicació cartogràfica no descriu automàticament portes, cabina, tancament ni totes les parades. Fem servir els accessos documentats per situar les connexions i deixem aproximats els detalls sense dimensions.",
+      },
+      {
+        type: "p",
+        text: "Col·locar una torre d’ascensor on resulta estèticament convenient afegiria una afirmació sobre el lloc que les dades no sostenen. Passa el mateix amb una escala que desapareix dins d’un edifici: hi pot haver una connexió interior, però la seva geometria no es dedueix d’una vista exterior. Registra aquesta absència com una qüestió pendent.",
+      },
+      {
+        type: "table",
+        headers: ["Símptoma", "Revisar primer", "Evitar"],
+        rows: [
+          ["Accés flotant", "Cotes dels dos extrems", "Moure tot el pont a ull"],
+          ["Unió estreta", "Amplades i vores del tauler", "Connectar només els eixos"],
+          ["Ascensor genèric", "Ubicació i nivells documentats", "Inventar parades"],
+          ["Barana en una entrada", "Obertura i replà", "Tancar tot el perímetre"],
+        ],
+      },
+      { type: "h2", text: "Una seqüència de revisió reutilitzable" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Aïlla el pont",
+            body: "Comprova el perímetre del tauler i les trobades amb els recorreguts veïns.",
+          },
+          {
+            title: "Activa l’entorn",
+            body: "Afegeix carrers, edificis i terreny per buscar col·lisions i diferències de cota.",
+          },
+          {
+            title: "Recorre cada accés amb la càmera",
+            body: "Mira’l des de dalt, de costat i a l’alçada del vianant. Una sola vista no n’hi ha prou.",
+          },
+          {
+            title: "Desa l’evidència",
+            body: "Associa cada correcció amb l’identificador cartogràfic, la data i la font; distingeix les ampliacions proposades de les estructures existents.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "El cas de Lujiazui documenta quines parts segueixen dades i quines són aproximades. Aquesta traçabilitat permet revisar per què vam triar una forma, a més de valorar-ne l’aspecte. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Preguntes freqüents" },
+      { type: "h3", text: "Layer=1 vol dir un metre d’alçada?" },
+      {
+        type: "p",
+        text: "No. Layer expressa l’ordre vertical entre elements que es creuen; no és una cota en metres.",
+      },
+      { type: "h3", text: "Una escala contínua demostra accessibilitat?" },
+      {
+        type: "p",
+        text: "No. La continuïtat visual no verifica pendents, dimensions, el funcionament dels ascensors ni els requisits d’accessibilitat.",
+      },
+      { type: "h2", text: "Continua explorant el cas de Xangai" },
+      { type: "related", to: "shanghai-city-bim-gis" },
+      { type: "related", to: "shanghai-railway-stations" },
+      { type: "related", to: "shanghai-parks-courtyards" },
+      { type: "tool", id: "viewer", why: "Obre el teu IFC i revisa com encaixa amb el seu entorn urbà." },
+    ],
+    lang: "ca",
+    translationKey: "shanghai-pedestrian-bridges",
+  },
+  {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Bessons digitals",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-railway-stations",
+    heroImage: "blog/images/shanghai-rail-blender-review.jpg",
+    heroAlt: "Render de desenvolupament ferroviari d’Hongqiao amb trens il·lustratius, no seguiment real",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Estacions de tren de Xangai en 3D: vies, andanes i cobertes sense blocs falsos",
+    seoTitle: "Estacions de Xangai en 3D: vies i andanes",
+    excerpt: "Hongqiao i Shanghai South mostren per què una estació necessita alguna cosa més que una petjada extrudida: espai lliure, cotes coherents i trens que segueixin la via.",
+    seoDescription: "Aprèn a representar estacions de Xangai en 3D: vies, andanes, cobertes obertes i trens en corba. Cas pràctic amb límits documentats.",
+    keywords: [
+      "estacions Xangai 3D",
+      "Hongqiao model 3D",
+      "vies de tren 3D",
+      "andanes OpenStreetMap",
+      "Shanghai stations 3D",
+      "Hongqiao 3D model",
+      "3D railway tracks",
+      "OpenStreetMap platforms",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Xangai: geometria ferroviària i límits d’inferència",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_RAIL_RENDERING.md",
+      },
+      {
+        id: "gauge",
+        title: "Key:gauge — amplada de via",
+        source: "OpenStreetMap",
+        url: "https://wiki.openstreetmap.org/wiki/Key:gauge",
+      },
+    ],
+    faqs: [
+      {
+        q: "Els trens mostren posicions en temps real?",
+        a: "No. Són elements il·lustratius de l’escena, no un servei de seguiment ferroviari.",
+      },
+      {
+        q: "S’hi inclouen estacions subterrànies completes?",
+        a: "No. L’escena de superfície no reconstrueix interiors ni intercanviadors subterranis sense dades específiques.",
+      },
+      {
+        q: "Es pot fer servir com a model d’enginyeria ferroviària?",
+        a: "És context visual. Un lliurament d’enginyeria requereix geometria, referències i verificacions addicionals de vies, gàlibs, plataformes i estructures.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "El contorn d’una estació només descriu una part del problema. Convertir-lo en un bloc que arriba a terra pot tancar l’espai de les vies o esborrar la relació entre vestíbul i andanes. A Xangai vam treballar amb petjades d’edificis, traçats ferroviaris i plataformes com a peces relacionades.",
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-stations.svg",
+        alt: "Secció explicativa amb coberta oberta, suports, andana i dos carrils",
+        caption: "Esquema explicatiu, sense escala. No representa dimensions mesurades de Xangai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "Una estació no és una única extrusió" },
+      {
+        type: "p",
+        text: "Hongqiao i Shanghai South serveixen per revisar organitzacions espacials diferents. Les seves formes específiques se seleccionen per identitat cartogràfica i ubicació. Així evitem que qualsevol estació del món adopti una silueta de Xangai per compartir una etiqueta genèrica.",
+      },
+      {
+        type: "p",
+        text: "La petjada dona una restricció en planta, però no descriu totes les alçades ni l’estructura interior. Si falten seccions o dimensions, la forma exterior es pot aproximar per ajudar a entendre el lloc. El buit sota un vestíbul o una marquesina continua sent essencial: tancar-lo canvia la relació amb les vies.",
+      },
+      { type: "h2", text: "Construir la via des del seu eix" },
+      {
+        type: "p",
+        text: "L’eix permet seguir el recorregut, però no equival a l’amplada de la plataforma ferroviària. Els carrils han de mantenir una separació coherent i les travesses s’han de repartir per distància al llarg del traçat. Reiniciar-ne la col·locació a cada segment produeix acumulacions i buits a les corbes.",
+      },
+      {
+        type: "p",
+        text: [
+          "L’etiqueta gauge requereix interpretar correctament les unitats. ",
+          { cite: "gauge" },
+          " Fins i tot quan hi és, no aporta el perfil complet del carril, el drenatge ni la geometria del mecanisme d’un desviament. Són dades diferents que no convé deduir d’una sola línia.",
+        ],
+      },
+      {
+        type: "p",
+        text: "En el nostre treball separem aquests components i reservem els detalls petits per a la zona propera de revisió. És una decisió de representació: a distància importa poder seguir el corredor; de prop importen el gruix, la separació i la continuïtat. El detall no ha de canviar la posició de la via.",
+      },
+      { type: "h2", text: "La cota de l’andana necessita una referència" },
+      {
+        type: "p",
+        text: "Una plataforma s’ha de revisar respecte de la via a què dona servei. Una alçada genèrica sobre el terreny pot coincidir per casualitat o generar una diferència impossible. Quan falten dades, l’alçada de visualització s’ha de declarar com un valor de reserva; no demostra que totes les andanes de Xangai facin el mateix.",
+      },
+      {
+        type: "p",
+        text: "Els elements subterranis necessiten una decisió explícita. A l’escena de superfície ometem els traçats subterranis; no excavem una estació imaginària per mostrar-los. Una vista exterior i una secció d’infraestructura responen a preguntes diferents. Presentar-les amb la mateixa aparença pot fer interpretar una omissió com un error de dades.",
+      },
+      { type: "h2", text: "Cobertes obertes i trens en corba" },
+      {
+        type: "image",
+        src: "blog/images/shanghai-rail-blender-review.jpg",
+        alt: "Render de revisió amb Blender amb tren il·lustratiu, carrils i travesses sobre traçats d’Hongqiao",
+        caption: "Render de desenvolupament de la nostra geometria ferroviària, amb edificis ocults per inspeccionar les vies. Vehicles i suports aproximats; no és una fotografia ni seguiment en temps real.",
+        credit: "IFC Viewer Online · data © OpenStreetMap contributors (ODbL)",
+        width: 1400,
+        height: 1000,
+      },
+      {
+        type: "p",
+        text: "Una marquesina necessita espai lliure a sota. Preservar aquest buit aporta més que decorar una extrusió tancada amb una textura metàl·lica. De la mateixa manera, un tren ha de compartir la cota de la via i orientar els cotxes seguint el recorregut. Una filera de capses amb un únic angle falla en entrar en una corba.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Trens il·lustratius",
+        text: "Els vehicles d’aquesta escena donen escala i context. No representen posicions operatives ni certifiquen una rèplica d’una sèrie concreta de tren.",
+      },
+      {
+        type: "table",
+        headers: ["Element", "Relació clau", "Dada necessària per a enginyeria"],
+        rows: [
+          ["Carrils", "Separació i alineació", "Secció i geometria detallades"],
+          ["Andana", "Cota respecte de la via", "Referència vertical validada"],
+          ["Coberta", "Espai lliure inferior", "Estructura i suports mesurats"],
+          ["Tren il·lustratiu", "Recorregut i cota compartits", "Flota i posició operativa"],
+        ],
+      },
+      { type: "h2", text: "Què cal revisar abans de compartir l’escena" },
+      {
+        type: "p",
+        text: "Amaga temporalment els edificis i segueix les vies a través de l’estació. Busca discontinuïtats, salts d’alçada, suports dins del corredor i plataformes superposades. Després activa les cobertes: comprova què queda tapat i què s’entén des de fora. Desa les dues vistes per explicar l’organització sense confondre una vista de revisió amb l’aparença real del lloc.",
+      },
+      {
+        type: "p",
+        text: [
+          "Interiors, instal·lacions, mecanismes d’agulles i gàlibs certificats necessiten altres fonts. La nostra documentació recull les aproximacions de cobertes, plataformes i vehicles per mantenir visible aquesta frontera. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Preguntes freqüents" },
+      { type: "h3", text: "Els trens mostren posicions en temps real?" },
+      { type: "p", text: "No. Són elements il·lustratius de l’escena, no un servei de seguiment ferroviari." },
+      { type: "h3", text: "S’hi inclouen estacions subterrànies completes?" },
+      {
+        type: "p",
+        text: "No. L’escena de superfície no reconstrueix interiors ni intercanviadors subterranis sense dades específiques.",
+      },
+      { type: "h3", text: "Es pot fer servir com a model d’enginyeria ferroviària?" },
+      {
+        type: "p",
+        text: "És context visual. Un lliurament d’enginyeria requereix geometria, referències i verificacions addicionals de vies, gàlibs, plataformes i estructures.",
+      },
+      { type: "h2", text: "Continua explorant el cas de Xangai" },
+      { type: "related", to: "shanghai-city-bim-gis" },
+      { type: "related", to: "shanghai-pedestrian-bridges" },
+      { type: "related", to: "shanghai-parks-courtyards" },
+      { type: "tool", id: "viewer", why: "Obre el teu IFC i revisa com encaixa amb el seu entorn urbà." },
+    ],
+    lang: "ca",
+    translationKey: "shanghai-railway-stations",
+  },
+  {
+    date: "2026-10-03",
+    dateModified: "2026-10-03",
+    author: "IFC Viewer Team",
+    category: "Bessons digitals",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    slug: "shanghai-parks-courtyards",
+    heroImage: "blog/images/shanghai-yuyuan-blender-review.jpg",
+    heroAlt: "Reconstrucció cartogràfica aproximada de Yuyuan revisada amb Blender",
+    heroCredit: "IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)",
+    title: "Parcs i patis en mapes 3D: el que vam aprendre de Yuyuan i Jing’an",
+    seoTitle: "Parcs 3D amb OpenStreetMap: Yuyuan i Jing’an",
+    excerpt: "Arbres dins de places, aigua sobre illes i patis coberts: tres errors que empitjoren un mapa encara que tingui molt detall. Com els vam abordar a Xangai.",
+    seoDescription: "Evita arbres a les places, aigua sobre illes i patis tapats. El cas de Yuyuan i Jing’an per millorar parcs i edificis històrics en mapes 3D.",
+    keywords: [
+      "parcs 3D OpenStreetMap",
+      "Yuyuan 3D",
+      "Jing’an model 3D",
+      "patis multipolígons",
+      "renderitzat urbà",
+      "3D parks OpenStreetMap",
+      "Jingan 3D model",
+      "multipolygon courtyards",
+      "urban rendering",
+    ],
+    references: [
+      {
+        id: "case",
+        title: "Parcs de Xangai: topologia, evidències i límits",
+        source: "IFC Viewer Online",
+        url: "https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_PARK_RENDERING.md",
+      },
+      {
+        id: "rings",
+        title: "Relacions multipolígon i anells interiors",
+        source: "OpenStreetMap",
+        url: "https://wiki.openstreetmap.org/wiki/Relation:multipolygon",
+      },
+      {
+        id: "garden",
+        title: "Visit Shanghai’s classical gardens",
+        source: "Shanghai Municipal Government",
+        url: "https://english.shanghai.gov.cn/en-Parks/20241118/3ab0a509201343a59102f9bc63a3aab4.html",
+      },
+    ],
+    faqs: [
+      {
+        q: "Més arbres fan que un parc 3D sigui més realista?",
+        a: "No necessàriament. Primer cal respectar camins, places, aigua i forats; la densitat sense dades continua sent una decisió visual.",
+      },
+      {
+        q: "Les cobertes reprodueixen exactament els temples?",
+        a: "No. Es conserven petjades i formes cartogràfiques, però alçades, pendents i suports sense mesures continuen sent aproximats.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "En un jardí, l’espai entre objectes importa tant com els objectes. Si la gespa tapa un pati o l’aigua omple una illa, el lloc deixa de llegir-se correctament encara que cada arbre tingui milers de polígons. Yuyuan i Jing’an ens van servir per revisar aquesta estructura espacial.",
+      },
+      {
+        type: "image",
+        src: "blog/images/shanghai-courtyards.svg",
+        alt: "Comparació entre un polígon omplert incorrectament i un altre que conserva pati, estany i camí",
+        caption: "Esquema explicatiu, sense escala. No representa dimensions mesurades de Xangai.",
+        width: 1200,
+        height: 600,
+      },
+      { type: "h2", text: "La referència visual no és un plànol de col·locació" },
+      {
+        type: "p",
+        text: [
+          "La referència municipal descriu Yuyuan mitjançant pavellons, estanys, rocalles i arquitectura tradicional. ",
+          { cite: "garden" },
+          " Aquesta descripció orienta la comparació visual, però no aporta coordenades per col·locar roques o inventar pavellons. Per situar les peces partim de la cartografia disponible.",
+        ],
+      },
+      {
+        type: "p",
+        text: "La diferència és pràctica: pots buscar una composició més fidel sense presentar com a mesurat el que només és plausible. Una reconstrucció útil fa explícit on s’acaben les petjades conegudes i on comencen les decisions de representació.",
+      },
+      { type: "h2", text: "Com conservar els forats d’un polígon" },
+      {
+        type: "p",
+        text: [
+          "Una superfície pot tenir un contorn exterior i diversos anells interiors. ",
+          { cite: "rings" },
+          " El renderitzador ha de generar triangles deixant oberts aquests interiors. No n’hi ha prou de desar el forat a les dades si després desapareix en construir la malla.",
+        ],
+      },
+      {
+        type: "p",
+        text: "La regla afecta la gespa, l’aigua i les cobertes amb patis. La vora d’una illa també ha de comptar com a riba en calcular l’aspecte de l’aigua. Mesurar només fins al perímetre exterior fa que l’aigua al costat d’una illa es comporti visualment com el centre de l’estany.",
+      },
+      { type: "h2", text: "Vegetació que respecta places i recorreguts" },
+      {
+        type: "p",
+        text: "Una plaça per a vianants sol ser una superfície, no una línia. Excloure arbres només al llarg del perímetre deixa lliure la vora i permet omplir de vegetació el centre. La distribució procedimental ha de consultar tota l’àrea pavimentada, a més d’edificis, aigua i corredors ferroviaris.",
+      },
+      {
+        type: "p",
+        text: "Els forats també s’han de conservar en sembrar arbres i arbustos. Corregir la gespa i deixar intacte el generador de vegetació produeix un pati obert amb troncs a dins. Revisem tots dos processos per separat perquè comparteixen dades, però construeixen geometries diferents.",
+      },
+      { type: "h2", text: "Fonts i mobiliari sense inventar el jardí" },
+      {
+        type: "p",
+        text: "La mitjana dels vèrtexs d’una font còncava pot caure fora del seu vas. Per situar un símbol de dolls necessites un punt interior i una mida limitada per la vora més propera. La distància a un vèrtex no n’hi ha prou: una aresta pot passar molt més a prop del punt triat.",
+      },
+      {
+        type: "p",
+        text: "Vam retirar les pèrgoles generades a l’atzar i vam restringir el mobiliari de terra a recorreguts adequats. Una posició visualment creïble no és una posició documentada. Convé distingir la vegetació il·lustrativa de les estructures que la cartografia identifica expressament, sobretot quan una captura es mostra fora del visor.",
+      },
+      { type: "h2", text: "Temples: modelar edificis, no tot el recinte" },
+      {
+        type: "image",
+        src: "blog/images/shanghai-yuyuan-blender-review.jpg",
+        alt: "Render de revisió amb Blender de l’entorn de Yuyuan amb edificis, estanys, camins i vegetació",
+        caption: "Revisió geomètrica de Yuyuan durant el desenvolupament. Petjades cartogràfiques, alçades no documentades i vegetació aproximades. Els materials de Blender no reprodueixen els shaders del visor.",
+        credit: "IFC Viewer Online · data © OpenStreetMap contributors (ODbL)",
+        width: 1400,
+        height: 1000,
+      },
+      {
+        type: "p",
+        text: "Un recinte religiós pot contenir diversos edificis i espais oberts. Extrudir-ne el límit com un sol volum esborra els patis. A Jing’an vam comprovar per separat el recinte i la petjada de la sala principal; a Yuyuan vam conservar formes de coberta etiquetades que abans s’aplanaven.",
+      },
+      {
+        type: "p",
+        text: "Això millora la lectura del conjunt, però no reconstrueix ràfecs, ornamentació o suports exactes. Una marquesina documentada com a coberta oberta necessita buit a sota. Un temple, una mesquita i un edifici comercial requereixen criteris diferents: ser a Xangai no justifica aplicar-los una mateixa forma.",
+      },
+      {
+        type: "table",
+        headers: ["Error visible", "Causa probable", "Comprovació"],
+        rows: [
+          ["Aigua sobre una illa", "Anell interior perdut", "Triangles i ribes interiors"],
+          ["Arbres en una plaça", "Només es va excloure el perímetre", "Àrea pavimentada completa"],
+          ["Font fora del vas", "Centre calculat com a mitjana", "Punt interior i distància a la vora"],
+          ["Temple com a bloc", "Recinte confós amb edifici", "Petjades individuals i patis"],
+        ],
+      },
+      { type: "h2", text: "Una prova que pots repetir en qualsevol parc" },
+      {
+        type: "p",
+        text: "Revisa primer el lloc sense arbres: identifica patis, aigua, places i edificis. Activa la vegetació i comprova quins espais envaeix. Afegeix el mobiliari al final. Si una capa empitjora la lectura de les anteriors, investiga’n les exclusions abans d’augmentar el detall.",
+      },
+      {
+        type: "p",
+        text: [
+          "Desa vistes properes i llunyanes. Les primeres revelen col·lisions; les segones mostren si es conserva l’organització del lloc. Les fonts i els límits del cas estan documentats perquè una imatge atractiva no es confongui amb un aixecament. ",
+          { cite: "case" },
+        ],
+      },
+      { type: "h2", text: "Preguntes freqüents" },
+      { type: "h3", text: "Més arbres fan que un parc 3D sigui més realista?" },
+      {
+        type: "p",
+        text: "No necessàriament. Primer cal respectar camins, places, aigua i forats; la densitat sense dades continua sent una decisió visual.",
+      },
+      { type: "h3", text: "Les cobertes reprodueixen exactament els temples?" },
+      {
+        type: "p",
+        text: "No. Es conserven petjades i formes cartogràfiques, però alçades, pendents i suports sense mesures continuen sent aproximats.",
+      },
+      { type: "h2", text: "Continua explorant el cas de Xangai" },
+      { type: "related", to: "shanghai-city-bim-gis" },
+      { type: "related", to: "shanghai-pedestrian-bridges" },
+      { type: "related", to: "shanghai-railway-stations" },
+      { type: "tool", id: "viewer", why: "Obre el teu IFC i revisa com encaixa amb el seu entorn urbà." },
+    ],
+    lang: "ca",
+    translationKey: "shanghai-parks-courtyards",
+  },
+  {
     slug: "iso-19650-file-naming-convention",
     title: "La nomenclatura de fitxers ISO 19650 explicada (amb exemples)",
     excerpt: "Set camps i sis guions decideixen si un model es pot trobar, ordenar, comprovar i federar sense que ningú l'obri. Què vol dir cada camp, els codis de rol, on van l'estat i la revisió, i els errors de nomenclatura que trenquen un CDE sense fer soroll.",
@@ -3715,14 +4408,30 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         id: "clean-ifc-export-revit:settings",
         title: "Configuració d’exportació IFC de Revit",
         items: [
-          { label: "\"Export GUIDs\": Keep Existing", hint: "Mai “Generate New”: trenca les referències BCF a cada reexportació." },
-          { label: "\"Site Placement\": Shared Coordinates", hint: "Evita que els elements quedin a 10 km de l’origen del WCS." },
-          { label: "\"Include Steel Connections\": Off", hint: "Tret que lliuris un model d’estructura metàl·lica." },
+          {
+            label: "\"Export GUIDs\": Keep Existing",
+            hint: "Mai “Generate New”: trenca les referències BCF a cada reexportació.",
+          },
+          {
+            label: "\"Site Placement\": Shared Coordinates",
+            hint: "Evita que els elements quedin a 10 km de l’origen del WCS.",
+          },
+          {
+            label: "\"Include Steel Connections\": Off",
+            hint: "Tret que lliuris un model d’estructura metàl·lica.",
+          },
           { label: "\"Export Base Quantities\": On", hint: "Necessari per a lliuraments LOD 200+." },
-          { label: "\"Split Walls and Columns by Level\": On", hint: "Garanteix que els murs queden associats a cada planta." },
+          {
+            label: "\"Split Walls and Columns by Level\": On",
+            hint: "Garanteix que els murs queden associats a cada planta.",
+          },
         ],
       },
-      { type: "bimo-tip", emotion: "curious", text: "Desa aquesta configuració com a configuració d’exportació amb nom a Revit (“Modify Setup…” → duplicar). La propera exportació —o la propera persona de l’equip— començarà amb la configuració correcta en lloc de la per defecte." },
+      {
+        type: "bimo-tip",
+        emotion: "curious",
+        text: "Desa aquesta configuració com a configuració d’exportació amb nom a Revit (“Modify Setup…” → duplicar). La propera exportació —o la propera persona de l’equip— començarà amb la configuració correcta en lloc de la per defecte.",
+      },
       {
         type: "callout",
         variant: "warning",
@@ -3752,9 +4461,24 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         type: "bimo-quiz",
         title: "Comprovació ràpida",
         questions: [
-          { q: "Quina opció d’“Export GUIDs” manté els temes BCF enllaçats entre reexportacions?", options: ["Generate New","Keep Existing","No hi ha diferència"], answer: 1, why: "GUID nous a cada exportació fan que cada tema BCF apunti a elements que ja no existeixen." },
-          { q: "Després d’exportar, els elements apareixen a ~10 km de l’origen. Quina opció revises primer?", options: ["Export Base Quantities","Site Placement","Split Walls and Columns by Level"], answer: 1, why: "Site Placement a Shared Coordinates manté el model on el situa el punt topogràfic." },
-          { q: "Una família de Revit no té mapatge IFC. Com s’exporta?", options: ["IfcBuildingElementProxy","IfcWall","S’omet"], answer: 0, why: "Les famílies sense mapatge passen a proxies: mapeja les famílies habituals a classes IFC correctes a la taula de mapatge." },
+          {
+            q: "Quina opció d’“Export GUIDs” manté els temes BCF enllaçats entre reexportacions?",
+            options: ["Generate New", "Keep Existing", "No hi ha diferència"],
+            answer: 1,
+            why: "GUID nous a cada exportació fan que cada tema BCF apunti a elements que ja no existeixen.",
+          },
+          {
+            q: "Després d’exportar, els elements apareixen a ~10 km de l’origen. Quina opció revises primer?",
+            options: ["Export Base Quantities", "Site Placement", "Split Walls and Columns by Level"],
+            answer: 1,
+            why: "Site Placement a Shared Coordinates manté el model on el situa el punt topogràfic.",
+          },
+          {
+            q: "Una família de Revit no té mapatge IFC. Com s’exporta?",
+            options: ["IfcBuildingElementProxy", "IfcWall", "S’omet"],
+            answer: 0,
+            why: "Les famílies sense mapatge passen a proxies: mapeja les famílies habituals a classes IFC correctes a la taula de mapatge.",
+          },
         ],
       },
     ],
@@ -4036,9 +4760,36 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       {
         type: "bimo-quiz",
         questions: [
-          { q: "Quin ajust evita que Revit generi GlobalIds nous a cada exportació?", options: ["\"Export IFC GUIDs\": Keep Existing","\"Export IFC GUIDs\": Generate New","Exportar a IFC4 en lloc d’IFC2x3"], answer: 0, why: "Keep Existing reutilitza el GlobalId que Revit desa per element en lloc de crear-ne un de nou cada vegada." },
-          { q: "Un GlobalId comença pel caràcter \"Z\". Què et diu?", options: ["Res: qualsevol caràcter base-64 és vàlid","Està fora de rang: el primer caràcter ha de codificar 0–3","L’ha generat ArchiCAD"], answer: 1, why: "Un UUID de 128 bits empaquetat en 22 caràcters base-64 deixa només dos bits significatius al primer caràcter." },
-          { q: "Per què és tan car detectar la deriva de GUIDs?", options: ["El fitxer falla la validació d’esquema","Cada exportació sembla vàlida per si sola: el dany apareix després, al BCF i a les interferències","Els visors no obren el fitxer"], answer: 1, why: "Un GlobalId regenerat no és un error d’esquema; només el veus en comparar revisions o quan una incidència BCF cau en l’element equivocat." },
+          {
+            q: "Quin ajust evita que Revit generi GlobalIds nous a cada exportació?",
+            options: [
+              "\"Export IFC GUIDs\": Keep Existing",
+              "\"Export IFC GUIDs\": Generate New",
+              "Exportar a IFC4 en lloc d’IFC2x3",
+            ],
+            answer: 0,
+            why: "Keep Existing reutilitza el GlobalId que Revit desa per element en lloc de crear-ne un de nou cada vegada.",
+          },
+          {
+            q: "Un GlobalId comença pel caràcter \"Z\". Què et diu?",
+            options: [
+              "Res: qualsevol caràcter base-64 és vàlid",
+              "Està fora de rang: el primer caràcter ha de codificar 0–3",
+              "L’ha generat ArchiCAD",
+            ],
+            answer: 1,
+            why: "Un UUID de 128 bits empaquetat en 22 caràcters base-64 deixa només dos bits significatius al primer caràcter.",
+          },
+          {
+            q: "Per què és tan car detectar la deriva de GUIDs?",
+            options: [
+              "El fitxer falla la validació d’esquema",
+              "Cada exportació sembla vàlida per si sola: el dany apareix després, al BCF i a les interferències",
+              "Els visors no obren el fitxer",
+            ],
+            answer: 1,
+            why: "Un GlobalId regenerat no és un error d’esquema; només el veus en comparar revisions o quan una incidència BCF cau en l’element equivocat.",
+          },
         ],
       },
     ],
@@ -4135,10 +4886,18 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         items: [
           { label: "Emplena els paràmetres buits a Revit: els valors buits mai s'exporten." },
           { label: "Activa «Export IFC Common Property Sets» perquè els Psets estàndard s'incloguin." },
-          { label: "Selecciona el teu fitxer de mapatge de Pset personalitzat a la configuració d'exportació (comprova que no s'hagi reiniciat)." },
-          { label: "Confirma que el fitxer de paràmetres compartits i el fitxer de mapatge són idèntics a tot l'equip." },
-          { label: "Resol les incompatibilitats d'unitats tornant a mapejar a un paràmetre amb el tipus correcte." },
-          { label: "Exporta a una carpeta local, obre l'IFC i verifica que les propietats han sobreviscut, abans que el fitxer arribi al CDE." },
+          {
+            label: "Selecciona el teu fitxer de mapatge de Pset personalitzat a la configuració d'exportació (comprova que no s'hagi reiniciat).",
+          },
+          {
+            label: "Confirma que el fitxer de paràmetres compartits i el fitxer de mapatge són idèntics a tot l'equip.",
+          },
+          {
+            label: "Resol les incompatibilitats d'unitats tornant a mapejar a un paràmetre amb el tipus correcte.",
+          },
+          {
+            label: "Exporta a una carpeta local, obre l'IFC i verifica que les propietats han sobreviscut, abans que el fitxer arribi al CDE.",
+          },
         ],
       },
       {
@@ -4456,7 +5215,9 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           { label: "Cada element físic està dins d'una planta, no directament sota Site o Building." },
           { label: "Exactament un IfcProject a l'arrel, amb una jerarquia espacial completa." },
           { label: "Cap element orfe i cap agregat trencat." },
-          { label: "Les coordenades són raonables: el model és a prop de l'origen mundial, no a quilòmetres de distància." },
+          {
+            label: "Les coordenades són raonables: el model és a prop de l'origen mundial, no a quilòmetres de distància.",
+          },
           { label: "Els conjunts de propietats estàndard hi són presents; els elements tenen nom." },
           { label: "Health Score ≥ 80 abans de qualsevol pujada al CDE." },
         ],
@@ -5050,9 +5811,13 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         id: "ifc-coordinates-georeferencing:checklist",
         items: [
           { label: "Fixa el Survey Point a la referència real acordada per al projecte." },
-          { label: "Modela a prop del Project Base Point / l'origen intern —no a coordenades reals de la retícula." },
+          {
+            label: "Modela a prop del Project Base Point / l'origen intern —no a coordenades reals de la retícula.",
+          },
           { label: "Exporta amb Shared Coordinates / Site Placement establert com a compartit." },
-          { label: "Per a lliuraments IFC4 / IFC4.3, confirma que l'IfcSite, l'IfcProjectedCRS i l'IfcMapConversion es graven i són coherents." },
+          {
+            label: "Per a lliuraments IFC4 / IFC4.3, confirma que l'IfcSite, l'IfcProjectedCRS i l'IfcMapConversion es graven i són coherents.",
+          },
           { label: "Obre el resultat i comprova que el model queda on toca abans de lliurar-lo." },
         ],
       },
@@ -6432,11 +7197,21 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         type: "bimo-checklist",
         id: "ifc-acceptance-criteria:checklist",
         items: [
-          { label: "Obre el contenidor i executa el conjunt de regles del projecte. Menys d'un minut per a la majoria de models de disciplina." },
-          { label: "Comprova primer la cobertura, després els resultats. Si alguna cosa no s'ha executat, atura't: encara no tens una revisió." },
-          { label: "Llegeix la puntuació respecte al llindar, i després les troballes amb gravetat d'error. Tota la resta és una nota, no una porta." },
-          { label: "Compara-ho amb la revisió anterior. Les troballes noves són la història; les resoltes són el rebut que la darrera revisió es va tenir en compte." },
-          { label: "Registra el resultat a la nota de tramesa o al comentari del CDE — puntuació, conjunt de regles, cobertura, i qualsevol troballa acceptada per acord." },
+          {
+            label: "Obre el contenidor i executa el conjunt de regles del projecte. Menys d'un minut per a la majoria de models de disciplina.",
+          },
+          {
+            label: "Comprova primer la cobertura, després els resultats. Si alguna cosa no s'ha executat, atura't: encara no tens una revisió.",
+          },
+          {
+            label: "Llegeix la puntuació respecte al llindar, i després les troballes amb gravetat d'error. Tota la resta és una nota, no una porta.",
+          },
+          {
+            label: "Compara-ho amb la revisió anterior. Les troballes noves són la història; les resoltes són el rebut que la darrera revisió es va tenir en compte.",
+          },
+          {
+            label: "Registra el resultat a la nota de tramesa o al comentari del CDE — puntuació, conjunt de regles, cobertura, i qualsevol troballa acceptada per acord.",
+          },
         ],
       },
       {

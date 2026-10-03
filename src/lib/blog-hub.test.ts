@@ -44,8 +44,12 @@ describe('blog hub discovery', () => {
       'ifc-sun-shadow-study-online',
       'las-point-cloud-classification-codes',
       'point-cloud-floor-plan-slab-flatness',
+      'shanghai-city-bim-gis',
+      'shanghai-pedestrian-bridges',
+      'shanghai-railway-stations',
+      'shanghai-parks-courtyards',
     ]))
-    expect(results).toHaveLength(11)
+    expect(results).toHaveLength(15)
   })
 
   it('filters by category and sorts short reads first', () => {
