@@ -15,6 +15,12 @@ import { haptic } from '../lib/haptics'
 import { LanguageSelector } from './LanguageSelector'
 import * as Icons from './Icons'
 import { ToolGrid } from './mobile/ToolGrid'
+import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
+import { isMeshEnabled } from '../lib/mesh/mesh-flag'
+import { isVideoEnabled } from '../lib/video/video-flag'
+import { usePointCloudStore } from '../stores/pointCloudStore'
+import { useMeshStore } from '../stores/meshStore'
+import { useVideoStore } from '../stores/videoStore'
 import type { RailItem } from './PanelRail'
 import type { SelectedInfo } from '../types'
 import type { ViewerAPI } from '../lib/viewer'
@@ -263,6 +269,12 @@ export default function MobileBottomNav({
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
+  const { t: tPc } = useTranslation('pointcloud')
+  const { t: tMesh } = useTranslation('mesh')
+  const { t: tVideo } = useTranslation('video')
+  const cloudCount = usePointCloudStore((s) => s.clouds.length)
+  const meshCount  = useMeshStore((s) => s.meshes.length)
+  const videoCount = useVideoStore((s) => s.videos.length)
 
   const {
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -362,6 +374,20 @@ export default function MobileBottomNav({
       <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1"/>
     </svg>
   )
+  const PointCloudSVG = (s: number) => (
+    <svg width={s} height={s} viewBox="0 0 14 14" fill="currentColor" stroke="none">
+      <circle cx="3" cy="4" r="0.9" /><circle cx="6.2" cy="2.6" r="0.9" /><circle cx="9.6" cy="3.6" r="0.9" />
+      <circle cx="2.4" cy="7.6" r="0.9" /><circle cx="5.6" cy="6.4" r="0.9" /><circle cx="9" cy="7.2" r="0.9" />
+      <circle cx="12" cy="6" r="0.9" /><circle cx="4.2" cy="10.8" r="0.9" /><circle cx="7.8" cy="10.2" r="0.9" />
+      <circle cx="11.2" cy="10.8" r="0.9" />
+    </svg>
+  )
+  const MeshSVG = (s: number) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" />
+      <path d="M12 2.5v19M3 7l9 4.5L21 7" />
+    </svg>
+  )
   const TreeSVG = (s: number) => (
     <svg width={s} height={s} viewBox="0 0 14 14" fill="currentColor" opacity="0.8">
       <rect x="1" y="1" width="4" height="12" rx="1" opacity="0.5"/>
@@ -433,6 +459,33 @@ export default function MobileBottomNav({
           <div className="mb-3">
             <ToolGrid items={tools} onPick={closeSheet} />
           </div>
+          {/* Add to the scene — scans, 3D models, video. On desktop these live
+              in the Open menu's "Add to the scene" group, which a phone does
+              not have: without this row the three features had no way in. */}
+          {(isPointCloudEnabled() || isMeshEnabled() || isVideoEnabled()) && (
+            <div className="mb-3">
+              <div className="px-1 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em]" style={{ color: 'rgba(255,255,255,0.32)' }}>
+                {t('menu.addData')}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {isPointCloudEnabled() && (
+                  <SheetBtn icon={PointCloudSVG(22)} label={tPc('entry')}
+                    badge={cloudCount > 0 ? cloudCount : undefined}
+                    onClick={() => { closeSheet(); usePointCloudStore.getState().setPanelOpen(true) }} />
+                )}
+                {isMeshEnabled() && (
+                  <SheetBtn icon={MeshSVG(22)} label={tMesh('entry')}
+                    badge={meshCount > 0 ? meshCount : undefined}
+                    onClick={() => { closeSheet(); useMeshStore.getState().setPanelOpen(true) }} />
+                )}
+                {isVideoEnabled() && (
+                  <SheetBtn icon={<Icons.Film size={22} />} label={tVideo('entry')}
+                    badge={videoCount > 0 ? videoCount : undefined}
+                    onClick={() => { closeSheet(); useVideoStore.getState().setPanelOpen(true) }} />
+                )}
+              </div>
+            </div>
+          )}
           <SheetDivider />
           <div className="grid grid-cols-4 gap-2 pt-3">
             <SheetBtn icon={<Icons.Reset size={22} />} label={t('reset')} onClick={() => { closeSheet(); onReset() }} />

@@ -401,11 +401,12 @@ kbd {
     position: fixed !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 0 !important;
+    /* Above the iOS keyboard while it is up (lib/keyboard-inset). */
+    bottom: var(--kb-inset, 0px) !important;
     top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    max-height: calc(100dvh - max(28px, env(safe-area-inset-top))) !important;
+    max-height: calc(100dvh - var(--kb-inset, 0px) - max(28px, env(safe-area-inset-top))) !important;
     transform: none !important;
     border-radius: 22px 22px 0 0 !important;
     border-left: none !important;
@@ -417,8 +418,8 @@ kbd {
   /* A "full" dialog is a page, not a sheet: edge to edge, no corners. */
   .m-sheet.m-sheet-full {
     top: 0 !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
+    height: calc(100dvh - var(--kb-inset, 0px)) !important;
+    max-height: calc(100dvh - var(--kb-inset, 0px)) !important;
     border-radius: 0 !important;
     padding-top: env(safe-area-inset-top);
   }
@@ -440,6 +441,23 @@ kbd {
   .m-sheet input:not([type=checkbox]):not([type=radio]):not([type=range]),
   .m-sheet select,
   .m-sheet textarea { font-size: 16px !important; }
+}
+
+/* ── Touch: no double-tap zoom on controls ────────────────────────────────────
+   Two quick taps on a stepper (+ +) or a chip is a double-tap, and iOS Safari
+   answers it by zooming the page. `manipulation` keeps taps and panning but
+   drops double-tap zoom — on controls only, so pinch-zooming text still works.
+   No long-press callout (Copy / Look Up) on buttons and the 3D canvas either:
+   a held finger there means "context menu" (lib/camera-nav), not "select". */
+@media (pointer: coarse) {
+  button, [role="button"], [role="tab"], [role="radio"], [role="switch"], label, input[type="range"] {
+    touch-action: manipulation;
+  }
+  button, [role="button"], canvas {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 /* ── Thumb-sized range slider (mobile tool docks) ───────────────────────────

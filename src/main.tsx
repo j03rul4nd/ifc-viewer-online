@@ -8,6 +8,11 @@ import { analyticsAllowed } from './stores/consentStore'
 import { captureAttribution } from './lib/attribution'
 import { parseAppUrlParams, parseInvitePath } from './lib/url-params'
 import './index.css'
+import { installKeyboardInset } from './lib/keyboard-inset'
+
+// iOS lays the on-screen keyboard over the page instead of resizing it;
+// bottom sheets read --kb-inset to stay above it. See lib/keyboard-inset.
+installKeyboardInset()
 
 // Initialize PostHog analytics before first render — but only when the user has
 // not objected (GDPR Art. 21) and the browser is not signalling GPC/DNT.
