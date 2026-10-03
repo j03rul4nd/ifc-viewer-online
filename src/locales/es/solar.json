@@ -31,7 +31,9 @@
     "solarNoon": "Mediodía solar",
     "polarDay": "Día polar — el sol no se pone en esta fecha",
     "polarNight": "Noche polar — el sol no sale en esta fecha",
-    "timezone": "Zona horaria"
+    "timezone": "Zona horaria",
+    "play": "Reproducir el día",
+    "pause": "Pausa"
   },
   "seasons": {
     "summer": "Solsticio de verano",

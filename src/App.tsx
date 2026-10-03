@@ -23,6 +23,7 @@ import FloorPlanPanel from './components/FloorPlanPanel'
 import ExportModal from './components/ExportModal'
 import KeyboardHelpModal from './components/KeyboardHelpModal'
 import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
+import { MobileSelectionBar } from './components/mobile/MobileSelectionBar'
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import VerifyCertificateView from './components/VerifyCertificateView'
 import WelcomeView from './components/WelcomeView'
@@ -4171,6 +4172,17 @@ export default function App() {
 
                   {/* ── Mobile bottom nav (only on < md; hidden in embed and
                       while a tour is playing — the tour bar takes the stage) ── */}
+                  {!embedChrome.embed && tourMode !== 'playing' && !clientMode && sceneModels.length > 0 && (
+                  <MobileSelectionBar
+                    selected={selected}
+                    suppressed={!!ctxMenu}
+                    onFrame={handleFrameElement}
+                    onIsolate={handleIsolateElement}
+                    onHide={handleHideElement}
+                    onProps={() => { setPendingSidebarTab('props'); setMobileSidebarOpen(true) }}
+                    onMore={(info) => setCtxMenu({ x: 0, y: 0, info })}
+                  />
+                  )}
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
                     // Properties is excluded: the bottom nav already has its

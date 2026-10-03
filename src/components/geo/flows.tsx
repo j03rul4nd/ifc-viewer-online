@@ -16,6 +16,8 @@ import { WGS84_RADIUS, normalizeDeg } from '../../lib/geo/geo-math'
 import { useGeoCtl } from './useGeoController'
 import { useModelSites } from './useModelSites'
 import { Button, Field, Hint, LookSlider, Notice, NudgeBtn, Sheet } from './ui'
+import { useIsMobile } from '../../hooks/useIsMobile'
+import { Modal } from '../Modal'
 
 // Leaflet (~150 kB) loads only when a map surface is actually shown — opening
 // the panel to read a georeferencing status must not pay for it.
@@ -362,6 +364,27 @@ export function ConsentDialog() {
   const ctl = useGeoCtl()
   const open = ctl.flow?.kind === 'consent'
   const activeModelId = useSceneStore((s) => s.activeModelId)
+  const isMobile = useIsMobile()
+  // On a phone the map panel is a bottom sheet portalled to <body> at z-59;
+  // this dialog lives in the viewport at z-30, so it opened BEHIND the sheet
+  // and the map could not be switched on at all. There it is the shared Modal,
+  // which is a bottom sheet on phones and stacks above every panel sheet.
+  if (isMobile) {
+    return (
+      <Modal
+        open={open && !!activeModelId}
+        onClose={() => ctl.setFlow(null)}
+        title={t('consent.title')}
+        size="sm"
+        footer={<>
+          <Button variant="secondary" className="flex-1" onClick={() => ctl.setFlow(null)}>{t('consent.cancel')}</Button>
+          <Button variant="primary" className="flex-1" autoFocus onClick={ctl.acceptConsent}>{t('consent.accept')}</Button>
+        </>}
+      >
+        <p className="px-4 py-3 text-[13px] text-[var(--text-dim)] leading-relaxed">{t('consent.body')}</p>
+      </Modal>
+    )
+  }
   return (
     <AnimatePresence>
       {open && activeModelId && (

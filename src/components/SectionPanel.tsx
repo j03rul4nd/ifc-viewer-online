@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
 import { useUIStore } from '../stores/uiStore'
 import { useSceneStore } from '../stores/sceneStore'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { haptic } from '../lib/haptics'
 import type { ViewerAPI } from '../lib/viewer'
 import { trackFeatureUsed } from '../lib/analytics'
 import { anyModalOpen } from '../lib/ui/modal-stack'
@@ -51,7 +53,9 @@ function fromUnits(value: number, units: LengthUnit): number {
 
 // ── Dual range (section box) ──────────────────────────────────────────────────
 
-function DualRange({ limits, value, step, color, onChange, label }: {
+function DualRange({ limits, value, step, color, onChange, label, touch = false }: {
+  /** Finger-sized: a 44px hit row and 24px thumbs (mobile dock). */
+  touch?: boolean
   limits: Range
   value: Range
   step: number
@@ -94,7 +98,7 @@ function DualRange({ limits, value, step, color, onChange, label }: {
   return (
     <div
       ref={trackRef}
-      className="relative h-6 cursor-pointer touch-none"
+      className={['relative cursor-pointer touch-none', touch ? 'h-11' : 'h-6'].join(' ')}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -112,7 +116,7 @@ function DualRange({ limits, value, step, color, onChange, label }: {
           aria-valuemax={limits.max}
           aria-valuenow={value[side]}
           onKeyDown={onKey(side)}
-          className="absolute top-1/2 w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#0A0A0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          className={[touch ? 'w-6 h-6' : 'w-3.5 h-3.5', 'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#0A0A0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-white/60'].join(' ')}
           style={{ left: `${pct(value[side])}%`, background: color }}
         />
       ))}
@@ -199,6 +203,9 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
   const snap = useSectionSnapshot(system)
   const [notice, setNotice] = useState<string | null>(null)
   const tracked = useRef(false)
+  const isMobile = useIsMobile()
+  const [optionsOpen, setOptionsOpen] = useState(false)
+  const [boxAxis, setBoxAxis] = useState<IfcAxis>('z')
 
   // Length display follows the Measure panel's unit choice.
   const [units, setUnits] = useState<LengthUnit>(() => loadMeasureSettings().units)
@@ -314,6 +321,22 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
     },
   ]
   const hasCuts = snap.planes.length > 0 || !!snap.box
+
+  if (isMobile) {
+    return (
+      <ViewportPanel id="section" onClose={() => setClipPanelOpen(false)} open={clipPanelOpen}
+        label={t('section.title')} mobile="dock" widthPx={296} anchor="top">
+        <SectionMobileBody
+          snap={snap} system={system} quick={quick} hasCuts={hasCuts}
+          levels={levels} levelCut={levelCut} levelAt={levelAt} nameOf={nameOf}
+          units={units} locale={locale} notice={notice} active={active}
+          optionsOpen={optionsOpen} onToggleOptions={() => setOptionsOpen((v) => !v)}
+          boxAxis={boxAxis} setBoxAxis={setBoxAxis}
+          addBox={addBox} onClose={() => setClipPanelOpen(false)}
+        />
+      </ViewportPanel>
+    )
+  }
 
   return (
     <ViewportPanel
@@ -524,5 +547,309 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
         </div>
       )}
     </ViewportPanel>
+  )
+}
+
+// ── Mobile ────────────────────────────────────────────────────────────────────
+// The desktop palette lists every cut with its own slider, four 24px icon
+// buttons and a native select: on a phone that is a column of controls taller
+// than the screen, covering the model being cut, with targets a finger misses.
+//
+// The phone dock works on ONE cut at a time: the quick-cut row, a strip of
+// chips to pick the cut, and a focus card for it, with a thumb-sized slider,
+// the storeys as tappable chips instead of a select, and 40px actions. The look
+// options (poché, handles, clear) fold behind a toggle. The model stays in view
+// above it, which is the point of a section.
+
+type QuickCut = { id: string; label: string; hint: string; icon: React.ReactNode; onClick: () => void; active?: boolean }
+type SectionSnap = NonNullable<ReturnType<typeof useSectionSnapshot>>
+type SectionSys = ReturnType<ViewerAPI['getSections']>
+
+function MBtn({ title, onClick, children, danger, active }: {
+  title: string; onClick: () => void; children: React.ReactNode; danger?: boolean; active?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      onClick={(e) => { e.stopPropagation(); haptic('tick'); onClick() }}
+      className={[
+        'flex-none w-10 h-10 flex items-center justify-center rounded-[11px] active:scale-[0.93] transition-transform',
+        danger ? 'text-[var(--danger)] bg-[rgba(229,72,77,0.1)]'
+          : active ? 'text-[var(--accent-2)] bg-[rgba(94,106,210,0.16)]'
+            : 'text-[var(--text-dim)] bg-white/[0.05]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Chip({ on, onClick, children, disabled, dataLevel }: {
+  on: boolean; onClick: () => void; children: React.ReactNode; disabled?: boolean; dataLevel?: number
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={disabled}
+      data-level={dataLevel}
+      onClick={() => { haptic('tick'); onClick() }}
+      className={[
+        'shrink-0 h-9 px-3 rounded-full text-[12px] font-medium flex items-center gap-1.5 border whitespace-nowrap max-w-[220px] disabled:opacity-40',
+        on ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function SectionMobileBody({
+  snap, system, quick, hasCuts, levels, levelCut, levelAt, nameOf, units, locale, notice, active,
+  optionsOpen, onToggleOptions, boxAxis, setBoxAxis, addBox, onClose,
+}: {
+  snap: SectionSnap
+  system: SectionSys
+  quick: QuickCut[]
+  hasCuts: boolean
+  levels: Array<{ name: string; y: number }>
+  levelCut: (i: number) => number
+  levelAt: (offset: number) => number
+  nameOf: (p: SectionPlaneInfo) => string
+  units: LengthUnit
+  locale: string
+  notice: string | null
+  active: number
+  optionsOpen: boolean
+  onToggleOptions: () => void
+  boxAxis: IfcAxis
+  setBoxAxis: (a: IfcAxis) => void
+  addBox: (fit: 'model' | 'selection') => Promise<void>
+  onClose: () => void
+}) {
+  const { t } = useTranslation('measurement')
+  // The cut being worked on: the selected one, else the newest.
+  const newest = snap.planes[snap.planes.length - 1]
+  const selectedValid = snap.selectedId === 'box' ? !!snap.box : snap.planes.some((p) => p.id === snap.selectedId)
+  const focusId = selectedValid ? snap.selectedId : newest?.id ?? (snap.box ? 'box' : null)
+  const plane = snap.planes.find((p) => p.id === focusId) ?? null
+  const curLevel = plane && plane.axis === 'z' ? levelAt(plane.offset) : -1
+  const levelStripRef = useRef<HTMLDivElement>(null)
+
+  // Keep the current storey chip in view as the cut steps through floors.
+  useEffect(() => {
+    if (curLevel < 0) return
+    levelStripRef.current
+      ?.querySelector<HTMLElement>(`[data-level="${curLevel}"]`)
+      ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [curLevel])
+
+  const cutCount = snap.planes.length + (snap.box ? 1 : 0)
+
+  return (
+    <>
+      {/* Header */}
+      <div className="shrink-0 flex items-center gap-1.5 pl-3.5 pr-1.5 pt-1.5 pb-1">
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-[var(--text)] leading-tight">{t('section.title')}</div>
+          <div className="text-[11px] text-[var(--text-faint)] truncate">
+            {active > 0 ? t('section.active', { count: active }) : t('section.none')}
+          </div>
+        </div>
+        {hasCuts && (
+          <MBtn title={t('mobile.options')} onClick={onToggleOptions} active={optionsOpen}>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M2 4h7M12 4h2M2 12h2M7 12h7" /><circle cx="10.5" cy="4" r="1.5" /><circle cx="5.5" cy="12" r="1.5" />
+            </svg>
+          </MBtn>
+        )}
+        <MBtn title={t('panel.close')} onClick={onClose}><CloseIcon size={15} /></MBtn>
+      </div>
+
+      {/* Quick cuts */}
+      <div className="shrink-0 grid grid-cols-5 gap-1.5 px-2 pb-2">
+        {quick.map((q) => (
+          <button
+            key={q.id}
+            type="button"
+            aria-pressed={q.active}
+            aria-label={q.hint}
+            onClick={() => { haptic('tick'); q.onClick() }}
+            className={[
+              'flex flex-col items-center justify-center gap-1 h-[56px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0',
+              q.active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] bg-white/[0.04]',
+            ].join(' ')}
+          >
+            {q.icon}
+            <span className="text-[10.5px] font-medium leading-none text-center px-0.5 truncate max-w-full">{q.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {snap.placing && (
+          <div className="mx-2 mb-2 rounded-[12px] border border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.1)] px-3 py-2.5">
+            <div className="text-[13px] text-[var(--text)]">{t('section.placing')}</div>
+            <div className="mt-0.5 text-[11.5px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
+          </div>
+        )}
+
+        {!hasCuts && !snap.placing && (
+          <p className="px-4 pb-3 text-[12px] text-[var(--text-faint)] leading-relaxed text-center">{t('section.empty')}</p>
+        )}
+
+        {/* Which cut: one chip each, box first, then newest first. */}
+        {cutCount > 1 && (
+          <div className="flex gap-1.5 overflow-x-auto px-2 pb-2" style={{ scrollbarWidth: 'none' }}>
+            {snap.box && (
+              <Chip on={focusId === 'box'} onClick={() => system.select('box')}>
+                <BoxIcon size={13} />{t('section.boxShort')}
+              </Chip>
+            )}
+            {[...snap.planes].reverse().map((p) => (
+              <Chip key={p.id} on={focusId === p.id} onClick={() => system.select(p.id)}>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.axis ? AXIS_COLOR[p.axis] : '#6CE0FF', opacity: p.enabled ? 1 : 0.4 }} />
+                <span className={['truncate', p.enabled ? '' : 'line-through'].join(' ')}>{nameOf(p)}</span>
+              </Chip>
+            ))}
+          </div>
+        )}
+
+        {/* Focus card: a plane */}
+        {plane && (() => {
+          const color = plane.axis ? AXIS_COLOR[plane.axis] : '#6CE0FF'
+          const span = Math.max(1e-9, plane.range.max - plane.range.min)
+          const pctPos = Math.min(100, Math.max(0, ((plane.offset - plane.range.min) / span) * 100))
+          const rangeStyle = { '--m-range-c': color, '--m-range-p': `${pctPos}%` } as React.CSSProperties
+          return (
+            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="flex-none w-5 h-5 rounded-[5px] text-[10.5px] font-bold flex items-center justify-center text-[#0A0A0C]" style={{ background: color }}>
+                  {plane.axis ? plane.axis.toUpperCase() : '◇'}
+                </span>
+                <span className={['flex-1 min-w-0 truncate text-[13px] font-medium', plane.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>
+                  {nameOf(plane)}
+                </span>
+                <ValueField
+                  value={plane.offset} units={units} locale={locale}
+                  prefix={plane.axis ? `${plane.axis.toUpperCase()} ` : (plane.offset >= 0 ? '+' : '')}
+                  title={plane.axis ? t('section.position') : t('section.offset')}
+                  onCommit={(v) => system.setOffset(plane.id, v, true)}
+                />
+              </div>
+
+              {plane.axis === 'z' && levels.length > 0 && (
+                <div ref={levelStripRef} className="mt-2 flex gap-1.5 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: 'none' }} aria-label={t('mobile.levels')}>
+                  {levels.map((l, i) => (
+                    <Chip key={`${l.name}-${i}`} dataLevel={i} on={curLevel === i} disabled={!plane.enabled}
+                      onClick={() => system.setOffset(plane.id, levelCut(i), true)}>
+                      {l.name}
+                    </Chip>
+                  ))}
+                </div>
+              )}
+
+              <input
+                type="range"
+                className="m-range"
+                aria-label={t('mobile.position')}
+                min={plane.range.min}
+                max={plane.range.max}
+                step={plane.step}
+                value={plane.offset}
+                disabled={!plane.enabled}
+                style={rangeStyle}
+                onChange={(e) => system.setOffset(plane.id, Number(e.target.value), false)}
+                onPointerUp={(e) => system.setOffset(plane.id, Number((e.target as HTMLInputElement).value), true)}
+                onTouchEnd={(e) => system.setOffset(plane.id, Number((e.target as HTMLInputElement).value), true)}
+              />
+
+              <div className="flex items-center gap-1.5">
+                <MBtn title={t('section.view')} onClick={() => system.lookAt(plane.id)}><TargetIcon size={17} /></MBtn>
+                <MBtn title={t('section.flip')} onClick={() => system.flip(plane.id)} active={plane.flipped}><FlipIcon size={17} /></MBtn>
+                <MBtn title={plane.enabled ? t('section.disable') : t('section.enable')} onClick={() => system.setEnabled(plane.id, !plane.enabled)} active={plane.enabled}>
+                  <EyeIcon size={17} off={!plane.enabled} />
+                </MBtn>
+                <div className="flex-1" />
+                <MBtn title={t('section.delete')} onClick={() => system.remove(plane.id)} danger><TrashIcon size={17} /></MBtn>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Focus card: the box, one axis at a time */}
+        {focusId === 'box' && snap.box && (() => {
+          const box = snap.box
+          const r = box.ranges[boxAxis]
+          return (
+            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--accent-2)]"><BoxIcon size={17} /></span>
+                <span className={['flex-1 text-[13px] font-medium', box.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>{t('section.box')}</span>
+                <div className="flex p-0.5 gap-0.5 rounded-[10px] bg-[var(--surface-2)]" role="radiogroup">
+                  {(['x', 'y', 'z'] as const).map((a) => (
+                    <button key={a} type="button" role="radio" aria-checked={boxAxis === a} onClick={() => setBoxAxis(a)}
+                      className={['w-9 h-8 rounded-[8px] text-[12px] font-bold', boxAxis === a ? 'bg-white/[0.12]' : 'opacity-60'].join(' ')}
+                      style={{ color: AXIS_COLOR[a] }}>
+                      {a.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <DualRange touch label={boxAxis.toUpperCase()} limits={box.limits[boxAxis]} value={r} step={box.step}
+                color={AXIS_COLOR[boxAxis]} onChange={(range, final) => system.setBoxRange(boxAxis, range, final)} />
+              <div className="flex justify-between -mt-1 mb-1.5">
+                <ValueField value={r.min} units={units} locale={locale} title={t('section.min')}
+                  onCommit={(v) => system.setBoxRange(boxAxis, { min: v, max: r.max }, true)} />
+                <ValueField value={r.max} units={units} locale={locale} title={t('section.max')}
+                  onCommit={(v) => system.setBoxRange(boxAxis, { min: r.min, max: v }, true)} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <MBtn title={t('section.boxFitSelection')} onClick={() => void addBox('selection')}><TargetIcon size={17} /></MBtn>
+                <MBtn title={t('section.boxFitModel')} onClick={() => void addBox('model')}><BoxIcon size={17} /></MBtn>
+                <MBtn title={box.enabled ? t('section.disable') : t('section.enable')} onClick={() => system.setBoxEnabled(!box.enabled)} active={box.enabled}>
+                  <EyeIcon size={17} off={!box.enabled} />
+                </MBtn>
+                <div className="flex-1" />
+                <MBtn title={t('section.boxRemove')} onClick={() => system.removeBox()} danger><TrashIcon size={17} /></MBtn>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Look: folded away until asked for */}
+        {hasCuts && optionsOpen && (
+          <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] px-3 py-2 flex flex-col gap-2">
+            <label className="flex items-center justify-between gap-3 min-h-[40px] text-[13px] text-[var(--text)]">
+              {t('section.fill')}
+              <input type="checkbox" checked={snap.poche} onChange={(e) => system.setPoche(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
+            </label>
+            <div className="flex gap-2.5" role="radiogroup" aria-label={t('section.fillColor')}>
+              {POCHE_COLORS.map((c) => (
+                <button key={c} type="button" role="radio" aria-checked={snap.pocheColor === c} title={t('section.fillColor')}
+                  disabled={!snap.poche} onClick={() => system.setPocheColor(c)}
+                  className={['w-8 h-8 rounded-full border-2 transition disabled:opacity-30', snap.pocheColor === c ? 'border-white' : 'border-white/20'].join(' ')}
+                  style={{ background: c }} />
+              ))}
+            </div>
+            <label className="flex items-center justify-between gap-3 min-h-[40px] text-[13px] text-[var(--text)]">
+              {t('section.handles')}
+              <input type="checkbox" checked={snap.gizmos} onChange={(e) => system.setGizmosVisible(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
+            </label>
+            <button type="button" onClick={() => { haptic('select'); system.clear() }}
+              className="h-11 rounded-[11px] text-[13px] font-medium text-[var(--danger)] bg-[rgba(229,72,77,0.1)] flex items-center justify-center gap-2">
+              <TrashIcon size={15} />{t('section.clearAll')}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {notice && (
+        <div className="shrink-0 px-3.5 py-2 border-t border-[var(--border)] text-[12px] text-[var(--warn)]" role="status">{notice}</div>
+      )}
+    </>
   )
 }

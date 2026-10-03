@@ -476,9 +476,9 @@ export default function CapturePreviewModal() {
   const transportCls = 'p-1.5 rounded-[5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-35 transition-colors'
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/70" onClick={close}>
+    <div className="m-sheet-host fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/70" onClick={close}>
       <div
-        className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-2xl w-full max-w-[1120px] max-h-[95vh] overflow-y-auto flex flex-col"
+        className="m-sheet m-sheet-full bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-2xl w-full max-w-[1120px] max-h-[95vh] overflow-y-auto flex flex-col"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

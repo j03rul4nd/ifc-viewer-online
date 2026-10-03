@@ -21,6 +21,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
+import { MobileSheet } from './mobile/MobileSheet'
+import { haptic } from '../lib/haptics'
 import { useUIStore } from '../stores/uiStore'
 import { useEditorStore } from '../stores/editorStore'
 import type { ViewerAPI } from '../lib/viewer'
@@ -105,8 +107,10 @@ function Chip({ on, onClick, children, title }: { on: boolean; onClick: () => vo
   )
 }
 
-function IconButton({ title, onClick, children, danger, active }: {
+function IconButton({ title, onClick, children, danger, active, touch }: {
   title: string; onClick: (e: React.MouseEvent) => void; children: React.ReactNode; danger?: boolean; active?: boolean
+  /** Finger-sized (40px) for the phone list. */
+  touch?: boolean
 }) {
   return (
     <button
@@ -115,7 +119,8 @@ function IconButton({ title, onClick, children, danger, active }: {
       aria-label={title}
       onClick={(e) => { e.stopPropagation(); onClick(e) }}
       className={[
-        'flex-none w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors',
+        'flex-none flex items-center justify-center transition-colors',
+        touch ? 'w-10 h-10 rounded-[11px] bg-white/[0.05]' : 'w-6 h-6 rounded-[6px]',
         danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)]'
           : active ? 'text-[var(--accent-2)] hover:bg-white/[0.06]'
             : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/[0.06]',
@@ -157,6 +162,10 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
+  // Phone: the list and the settings live in a sheet, so the dock stays small
+  // enough to leave the model — the thing being tapped — in view.
+  const [listOpen, setListOpen] = useState(false)
+  useEffect(() => { if (!measurementPanelOpen) setListOpen(false) }, [measurementPanelOpen])
   const lastTool = useRef<MeasureToolId>('distance')
   const tracked = useRef(false)
   const listRef = useRef<HTMLDivElement>(null)
@@ -358,6 +367,238 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   const precisionOptions = settings.units === 'ft'
     ? [{ value: 0 as const, label: '1"' }, { value: 1 as const, label: '¼"' }, { value: 2 as const, label: '⅛"' }, { value: 3 as const, label: '1/16"' }]
     : ([0, 1, 2, 3] as const).map((p) => ({ value: p, label: p === 0 ? '0' : `0.${'0'.repeat(p)}` }))
+
+  // ── Phone ──────────────────────────────────────────────────────────────────
+  // Measuring on a phone is tapping the model, so the model must stay in view.
+  // The dock carries only what the gesture needs: the five tools, the mode,
+  // finish / undo / cancel at thumb size while a measurement is half drawn, and
+  // the latest result. Everything you do AFTER measuring (the list, the
+  // breakdown, rename, copy, CSV, units and snapping) is a resizable sheet one
+  // tap away, whose half detent still leaves the model visible above it.
+  if (isMobile) {
+    const latest = snapshot.items[snapshot.items.length - 1] ?? null
+    const drafting = snapshot.draftPoints > 0
+    const LatestIcon = latest ? TOOL_ICON[latest.kind] : null
+    const openList = (focusId?: string) => {
+      haptic('tick')
+      if (focusId) system?.select(focusId)
+      setListOpen(true)
+    }
+    return (
+      <>
+        <ViewportPanel id="measurement" onClose={() => setMeasurementPanelOpen(false)} open={measurementPanelOpen}
+          label={t('panel.title')} mobile="dock" widthPx={288} anchor="top">
+          {/* Header */}
+          <div className="shrink-0 flex items-center gap-1.5 pl-3.5 pr-1.5 pt-1.5 pb-1">
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold text-[var(--text)] leading-tight">{t('panel.title')}</div>
+              <div className="text-[11px] text-[var(--text-faint)] truncate">
+                {count > 0 ? t('panel.measurements', { count }) : t('panel.emptyShort')}
+              </div>
+            </div>
+            <button type="button" onClick={() => openList()}
+              className="h-10 px-3 rounded-[11px] bg-white/[0.05] text-[12.5px] font-medium text-[var(--text)] flex items-center gap-1.5 active:scale-[0.95] transition-transform">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+                <path d="M5 4h9M5 8h9M5 12h9" /><circle cx="2" cy="4" r=".6" fill="currentColor" /><circle cx="2" cy="8" r=".6" fill="currentColor" /><circle cx="2" cy="12" r=".6" fill="currentColor" />
+              </svg>
+              {t('mobile.list')}
+              {count > 0 && <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent)] text-white text-[10.5px] font-semibold flex items-center justify-center">{count}</span>}
+            </button>
+            <IconButton touch title={t('panel.close')} onClick={() => setMeasurementPanelOpen(false)}>
+              <CloseIcon size={15} />
+            </IconButton>
+          </div>
+
+          {/* Tools */}
+          <div className="shrink-0 grid grid-cols-5 gap-1.5 px-2 pb-2">
+            {TOOLS.map((id) => {
+              const Icon = TOOL_ICON[id]
+              const active = tool === id
+              return (
+                <button key={id} type="button" aria-pressed={active} aria-label={t(`tools.${id}Hint`)}
+                  onClick={() => { haptic('tick'); chooseTool(active ? 'none' : id) }}
+                  className={[
+                    'flex flex-col items-center justify-center gap-1 h-[56px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0',
+                    active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] bg-white/[0.04]',
+                  ].join(' ')}>
+                  <Icon size={19} />
+                  <span className="text-[10.5px] font-medium leading-none truncate max-w-full px-0.5">{t(`tools.${id}`)}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Mode */}
+          {tool === 'distance' && !drafting && (
+            <div className="shrink-0 px-2 pb-2 [&_button]:min-h-[36px] [&_button]:text-[12px]">
+              <Segmented label={t('tools.distance')} value={snapshot.distanceMode} onChange={(m) => system?.setDistanceMode(m)}
+                options={[
+                  { value: 'point', label: <><PointsIcon size={13} />{t('modes.point')}</> },
+                  { value: 'perpendicular', label: <><PerpendicularIcon size={13} />{t('modes.perpendicular')}</> },
+                ]} />
+            </div>
+          )}
+          {tool === 'area' && !drafting && (
+            <div className="shrink-0 px-2 pb-2 [&_button]:min-h-[36px] [&_button]:text-[12px]">
+              <Segmented label={t('tools.area')} value={snapshot.areaMode} onChange={(m) => system?.setAreaMode(m)}
+                options={[
+                  { value: 'polygon', label: <><PointsIcon size={13} />{t('modes.polygon')}</> },
+                  { value: 'face', label: <><FaceIcon size={13} />{t('modes.face')}</> },
+                ]} />
+            </div>
+          )}
+
+          {/* Half drawn: the three answers, at thumb size */}
+          {drafting && (
+            <div className="shrink-0 px-2 pb-2 flex gap-1.5">
+              {snapshot.canFinish && (
+                <button type="button" onClick={() => { haptic('select'); system?.finishDraft() }}
+                  className="flex-[1.4] h-11 rounded-[12px] text-[13px] font-semibold bg-[var(--accent)] text-white flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform">
+                  <CheckIcon size={15} />{t('actions.finish')}
+                </button>
+              )}
+              <button type="button" onClick={() => { haptic('tick'); system?.undoLastPoint() }}
+                className="flex-1 h-11 rounded-[12px] text-[13px] text-[var(--text)] bg-white/[0.06] flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform">
+                <UndoIcon size={15} />{t('actions.undo')}
+              </button>
+              <button type="button" aria-label={t('actions.cancel')} onClick={() => { haptic('tick'); system?.cancelDraft() }}
+                className="w-11 h-11 rounded-[12px] text-[var(--text-dim)] bg-white/[0.06] flex items-center justify-center active:scale-[0.95] transition-transform">
+                <CloseIcon size={15} />
+              </button>
+            </div>
+          )}
+
+          {/* The latest result, big — tap for its breakdown */}
+          {!drafting && latest && LatestIcon && (
+            <button type="button" onClick={() => openList(latest.id)}
+              className="shrink-0 mx-2 mb-2 rounded-[12px] border border-[var(--border)] bg-white/[0.02] px-3 py-2 flex items-center gap-2.5 text-left active:bg-white/[0.05]">
+              <span style={{ color: KIND_COLOR[latest.kind] }}><LatestIcon size={17} /></span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[10.5px] uppercase tracking-wider text-[var(--text-faint)]">{t('mobile.latest')}</span>
+                <span className="block text-[12px] text-[var(--text-dim)] truncate">{nameOf(latest)}</span>
+              </span>
+              <span className="text-[17px] font-semibold font-mono tabular-nums text-[var(--text)]">{formatItemValue(latest, settings)}</span>
+            </button>
+          )}
+
+          {flash && (
+            <div className="shrink-0 px-3.5 py-2 border-t border-[var(--border)] text-[12px] text-[var(--ok)] flex items-center gap-1.5" role="status">
+              <CheckIcon size={12} />{flash}
+            </div>
+          )}
+        </ViewportPanel>
+
+        {/* The list, the breakdown and the settings */}
+        <MobileSheet open={measurementPanelOpen && listOpen} onClose={() => setListOpen(false)}
+          label={t('panel.title')} snapPoints={[0.5, 0.92]} detentIndex={0}>
+          <div className="shrink-0 flex items-center gap-2 px-4 pb-2">
+            <div className="flex-1 min-w-0">
+              <div className="text-[15px] font-semibold text-[var(--text)]">{t('panel.title')}</div>
+              <div className="text-[11.5px] text-[var(--text-faint)]">
+                {count > 0 ? t('panel.measurements', { count }) : t('panel.emptyShort')}
+              </div>
+            </div>
+            <IconButton touch title={t('panel.settings')} onClick={() => setSettingsOpen((v) => !v)} active={settingsOpen}>
+              <GearIcon size={17} />
+            </IconButton>
+          </div>
+
+          <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-[var(--border)]">
+            {settingsOpen && (
+              <div className="border-b border-[var(--border)] px-4 py-3 flex flex-col gap-3 [&_button]:min-h-[36px] [&_button]:text-[12.5px]">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('settings.units')}</span>
+                  <Segmented label={t('settings.units')} value={settings.units}
+                    onChange={(u) => updateSettings({ units: u, precision: defaultPrecisionFor(u) })}
+                    options={UNITS.map((u) => ({ value: u, label: u === 'ft' ? t('settings.ftin') : u }))} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('settings.precision')}</span>
+                  <Segmented label={t('settings.precision')} value={settings.precision} onChange={(p) => updateSettings({ precision: p })} options={precisionOptions} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('snap.title')}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(['vertex', 'midpoint', 'edge'] as const).map((k) => (
+                      <Chip key={k} on={settings.snaps[k]} onClick={() => updateSettings({ snaps: { ...settings.snaps, [k]: !settings.snaps[k] } })}>
+                        {t(`snap.${k}`)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center justify-between gap-3 min-h-[40px] text-[13px] text-[var(--text)]">
+                  {t('settings.components')}
+                  <input type="checkbox" checked={settings.showComponents} onChange={(e) => updateSettings({ showComponents: e.target.checked })}
+                    className="w-5 h-5 accent-[var(--accent)]" />
+                </label>
+              </div>
+            )}
+            {snapshot.items.length === 0 ? (
+              <p className="px-5 py-6 text-center text-[12.5px] text-[var(--text-faint)] leading-relaxed">{t('panel.empty')}</p>
+            ) : (
+              <ul className="py-1.5">
+                {[...snapshot.items].reverse().map((item) => (
+                  <MeasureRow
+                    key={item.id}
+                    touch
+                    item={item}
+                    name={nameOf(item)}
+                    selected={item.id === selectedId}
+                    editing={editingId === item.id}
+                    settings={settings}
+                    onSelect={() => system?.select(item.id === selectedId ? null : item.id)}
+                    onHover={() => undefined}
+                    onFocus={() => { system?.focus(item.id); setListOpen(false) }}
+                    onToggleVisible={() => system?.setVisible(item.id, !item.visible)}
+                    onDelete={() => system?.remove(item.id)}
+                    onCopy={() => void copyText(toDelimited([[nameOf(item), formatItemValue(item, settings)]], '\t'), t('item.copied'))}
+                    onStartRename={() => setEditingId(item.id)}
+                    onRename={(name) => { system?.rename(item.id, name); setEditingId(null) }}
+                    onCancelRename={() => setEditingId(null)}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {snapshot.items.length > 0 && (
+            <div className="shrink-0 border-t border-[var(--border)] px-3 pt-2 flex items-center gap-1.5">
+              <button type="button" onClick={handleCopyAll}
+                className="flex-1 h-11 rounded-[12px] bg-white/[0.06] text-[12.5px] text-[var(--text)] flex items-center justify-center gap-1.5">
+                <CopyIcon size={14} />{t('actions.copyAll')}
+              </button>
+              <button type="button" onClick={handleExportCsv}
+                className="flex-1 h-11 rounded-[12px] bg-white/[0.06] text-[12.5px] text-[var(--text)] flex items-center justify-center gap-1.5">
+                <DownloadIcon size={14} />{t('actions.export')}
+              </button>
+              <IconButton touch title={allHidden ? t('actions.showAll') : t('actions.hideAll')} onClick={() => system?.setAllVisible(allHidden)}>
+                <EyeIcon size={16} off={allHidden} />
+              </IconButton>
+              {confirmClear ? (
+                <button type="button" onClick={() => { haptic('select'); system?.clear(); setConfirmClear(false) }}
+                  className="h-11 px-3 rounded-[12px] text-[12.5px] font-semibold text-white bg-[var(--danger)]">
+                  {t('actions.confirmClear', { count })}
+                </button>
+              ) : (
+                <IconButton touch danger title={t('actions.clearAll')} onClick={() => setConfirmClear(true)}>
+                  <TrashIcon size={16} />
+                </IconButton>
+              )}
+            </div>
+          )}
+          {flash && (
+            <div className="shrink-0 px-4 pt-2 text-[12px] text-[var(--ok)] flex items-center gap-1.5" role="status">
+              <CheckIcon size={12} />{flash}
+            </div>
+          )}
+        </MobileSheet>
+
+        {measurementPanelOpen && (
+          <MeasureHud snapshot={snapshot} hover={hover} canvas={viewerApiRef.current?.getCanvas() ?? null} showMarker={false} />
+        )}
+      </>
+    )
+  }
 
   return (
     <>
@@ -627,6 +868,7 @@ interface RowProps {
   onStartRename(): void
   onRename(name: string | null): void
   onCancelRename(): void
+  touch?: boolean
 }
 
 function MeasureRow(p: RowProps) {
@@ -693,7 +935,7 @@ function MeasureRow(p: RowProps) {
     >
       <div role="button" tabIndex={0} onClick={p.onSelect}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); p.onSelect() } }}
-        className="flex items-center gap-2 px-2 py-1.5 cursor-pointer outline-none">
+        className={['flex items-center gap-2 px-2 cursor-pointer outline-none', p.touch ? 'py-3' : 'py-1.5'].join(' ')}>
         <span className="flex-none" style={{ color: KIND_COLOR[item.kind], opacity: item.visible ? 1 : 0.4 }}><Icon size={14} /></span>
         {p.editing ? (
           <input
@@ -731,15 +973,15 @@ function MeasureRow(p: RowProps) {
             </div>
           )}
           {note && <p className="mt-1.5 text-[10px] text-[var(--text-faint)] leading-snug">{note}</p>}
-          <div className="mt-1.5 flex items-center gap-0.5">
-            <IconButton title={t('item.focus')} onClick={p.onFocus}><TargetIcon size={13} /></IconButton>
-            <IconButton title={item.visible ? t('item.hide') : t('item.show')} onClick={p.onToggleVisible}><EyeIcon size={13} off={!item.visible} /></IconButton>
-            <IconButton title={t('item.copy')} onClick={p.onCopy}><CopyIcon size={13} /></IconButton>
-            <IconButton title={t('item.renameAction')} onClick={p.onStartRename}>
+          <div className={['mt-1.5 flex items-center', p.touch ? 'gap-1.5' : 'gap-0.5'].join(' ')}>
+            <IconButton touch={p.touch} title={t('item.focus')} onClick={p.onFocus}><TargetIcon size={13} /></IconButton>
+            <IconButton touch={p.touch} title={item.visible ? t('item.hide') : t('item.show')} onClick={p.onToggleVisible}><EyeIcon size={13} off={!item.visible} /></IconButton>
+            <IconButton touch={p.touch} title={t('item.copy')} onClick={p.onCopy}><CopyIcon size={13} /></IconButton>
+            <IconButton touch={p.touch} title={t('item.renameAction')} onClick={p.onStartRename}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3z" /></svg>
             </IconButton>
             <div className="flex-1" />
-            <IconButton title={t('item.delete')} onClick={p.onDelete} danger><TrashIcon size={13} /></IconButton>
+            <IconButton touch={p.touch} title={t('item.delete')} onClick={p.onDelete} danger><TrashIcon size={13} /></IconButton>
           </div>
         </div>
       )}

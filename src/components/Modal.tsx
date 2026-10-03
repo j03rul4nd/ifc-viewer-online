@@ -22,6 +22,7 @@
 import React, { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useModalLayer } from '../hooks/useModalLayer'
+import { SheetGrip } from './mobile/SheetGrip'
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'full'
 
@@ -94,6 +95,9 @@ export function Modal({
             // header and the actions stay reachable however long the content is.
             size === 'full' ? '' : 'max-h-[calc(100dvh-24px)]',
             SIZE_CLASS[size],
+            // Phones: docks to the bottom edge as a sheet (or a full page for
+            // `full`). The rules are in index.css under "Dialogs become bottom sheets".
+            'm-sheet', size === 'full' ? 'm-sheet-full' : '',
             className ?? '',
           ].join(' ')}
           onEscapeKeyDown={(e) => {
@@ -106,6 +110,7 @@ export function Modal({
           onPointerDownOutside={(e) => { if (!dismissible) e.preventDefault() }}
           onInteractOutside={(e) => { if (!dismissible) e.preventDefault() }}
         >
+          {!bare && size !== 'full' && <SheetGrip onClose={() => { if (dismissible) onClose() }} />}
           {bare ? (
             // Radix requires a title for the accessible name even when nothing
             // is drawn; hiding it visually is the documented way to satisfy that
@@ -139,7 +144,7 @@ export function Modal({
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">{children}</div>
 
           {footer && (
-            <div className="flex flex-wrap items-center justify-end gap-2 px-4 py-3 border-t border-[var(--border)] shrink-0">
+            <div className="m-sheet-actions flex flex-wrap items-center justify-end gap-2 px-4 py-3 border-t border-[var(--border)] shrink-0">
               {footer}
             </div>
           )}

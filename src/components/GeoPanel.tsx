@@ -65,6 +65,9 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const panelMode = useGeoStore((s) => s.panelMode)
   const editing = useGeoStore((s) => s.editing)
   const setPanelOpen = useGeoStore((s) => s.setPanelOpen)
+  // Once the map is up, a phone's sheet steps down to its peek detent so the
+  // map is what you look at, not the form that switched it on.
+  const mapOnKey = useGeoStore((s) => (s.mapMode === 'on' ? 'on' : null))
   /**
    * Which Advanced tab is showing. Four (now five) tabs make the whole option
    * space visible at a glance and keep each body short — the old single column
@@ -97,6 +100,9 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
         onClose={close}
         label={t('panel.title')}
         mobile="sheet"
+        // Peek: header + the map's on/off and where-am-I strip, map in view.
+        peek
+        collapseKey={mapOnKey}
         widthPx={panelMode === 'advanced' ? 352 : 332}
         anchor="top"
       >

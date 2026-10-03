@@ -903,6 +903,9 @@ export default function PointCloudPanel({
   const needsTransform = !isReplayCloud &&
     (alignment?.rung === 'manual' || alignment?.rung === 'local')
   const hasClouds = store.clouds.length > 0
+  // Bumped whenever an action's result is IN THE SCENE (a recipe applied, a
+  // pick requested): on a phone the sheet steps down to peek so it is seen.
+  const [viewNonce, setViewNonce] = useState(0)
   const activePreset = matchPreset(store.display, store.renderBudget)
 
   const issues: Issue[] = activeCloud
@@ -1101,6 +1104,7 @@ export default function PointCloudPanel({
           pendingRecipeRef.current = 'slab'
           setInspecting(true)
           toast(t('analyze.pickFirst'), 'info')
+          setViewNonce((n) => n + 1) // the pick happens on the scene: show it
           return
         }
         setDisplay({ ...sliceAround(y, 0.08), contours: true, contourInterval: 0.01, colorMode: 'elevation' })
@@ -1117,6 +1121,7 @@ export default function PointCloudPanel({
         break
     }
     toast(t('analyze.applied', { what: t(`analyze.recipe.${id}.label`) }), 'success')
+    setViewNonce((n) => n + 1)
   }
   const applyRecipeRef = useRef(applyRecipe)
   applyRecipeRef.current = applyRecipe
@@ -1425,6 +1430,10 @@ export default function PointCloudPanel({
       // A sheet, not a dock: loading a scan, reading why it landed where it did
       // and nudging it are real work, not a three-button palette.
       mobile="sheet"
+      // Phone: a peek detent (header + the scan list) to look at the cloud
+      // while filtering it, and a drop to it as soon as the first scan lands.
+      peek
+      collapseKey={hasClouds ? `loaded-${viewNonce}` : null}
       widthPx={380}
       anchor="top"
     >
@@ -1571,7 +1580,7 @@ export default function PointCloudPanel({
             {/* ── Tabs ─────────────────────────────────────────────────────── */}
             {/* Sentinel: a sticky element reports its STUCK offset, not where it sits. */}
             <div ref={tablistRef} aria-hidden />
-            <div role="tablist" aria-label={t('title')} className="sticky top-0 z-10 px-3 border-b border-[var(--border)] flex gap-0.5 overflow-x-auto bg-[var(--surface)] backdrop-blur">
+            <div role="tablist" aria-label={t('title')} className="pc-tabs sticky top-0 z-10 px-3 border-b border-[var(--border)] flex gap-0.5 overflow-x-auto bg-[var(--surface)] backdrop-blur">
               {PANEL_TABS.map((id) => (
                 <button
                   key={id}
@@ -1580,9 +1589,13 @@ export default function PointCloudPanel({
                   id={`pc-tab-${id}`}
                   aria-selected={tab === id}
                   aria-controls={`pc-tabpanel-${id}`}
-                  onClick={() => selectTab(id)}
+                  onClick={(e) => {
+                    selectTab(id)
+                    // Six tabs overflow a phone: bring the one picked into view.
+                    e.currentTarget.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+                  }}
                   className={[
-                    'relative px-2.5 py-2 text-[12.5px] font-medium whitespace-nowrap transition-colors',
+                    'relative px-2.5 py-2 max-md:py-3 max-md:px-3 max-md:text-[13.5px] text-[12.5px] font-medium whitespace-nowrap transition-colors',
                     tab === id ? 'text-[var(--text)]' : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]',
                   ].join(' ')}
                 >
@@ -2159,6 +2172,13 @@ const PANEL_CSS = `
 .pc-panel .pc-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface, #fff); }
 .pc-panel .pc-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 .pc-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 767px) {
+  .pc-panel .pc-range { height: 40px; touch-action: pan-y; }
+  .pc-panel .pc-range::-webkit-slider-runnable-track { height: 6px; }
+  .pc-panel .pc-range::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -9px; }
+  .pc-panel .pc-range::-moz-range-thumb { width: 20px; height: 20px; }
+  .pc-panel .pc-tabs { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); scrollbar-width: none; }
+}
 `
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -2267,7 +2287,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="w-8 h-8 shrink-0 flex items-center justify-center rounded-[8px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+      className="w-8 h-8 max-md:w-10 max-md:h-10 shrink-0 flex items-center justify-center rounded-[8px] max-md:rounded-[10px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
     >
       {children}
     </button>
@@ -2300,7 +2320,7 @@ function SmallButton(
       disabled={disabled}
       aria-pressed={active}
       className={[
-        'flex-1 px-3 py-2 rounded-[9px] text-[12px] font-medium border disabled:opacity-40 transition-colors whitespace-nowrap',
+        'flex-1 px-3 py-2 max-md:min-h-[44px] max-md:text-[13px] rounded-[9px] text-[12px] font-medium border disabled:opacity-40 transition-colors whitespace-nowrap',
         active
           ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
           : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
@@ -2318,10 +2338,10 @@ function Switch({ label, checked, onChange }: { label: string; checked: boolean;
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className="flex items-center justify-between gap-3 py-1 text-left"
+      className="flex items-center justify-between gap-3 py-1 max-md:min-h-[44px] text-left"
     >
-      <span className="text-[12.5px] text-[var(--text-dim)]">{label}</span>
-      <span className={`relative w-8 h-[18px] rounded-full transition-colors shrink-0 ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'}`}>
+      <span className="text-[12.5px] max-md:text-[13.5px] text-[var(--text-dim)]">{label}</span>
+      <span className={`relative w-8 h-[18px] max-md:scale-125 max-md:mr-1 rounded-full transition-colors shrink-0 ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'}`}>
         <span className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-[left] ${checked ? 'left-[16px]' : 'left-[2px]'}`} />
       </span>
     </button>
@@ -2346,7 +2366,7 @@ function Segmented({ label, value, options, onChange, stretch }: {
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={[
-            'px-2.5 py-1 rounded-[7px] text-[11.5px] font-medium transition-colors',
+            'px-2.5 py-1 max-md:py-2 max-md:text-[12.5px] rounded-[7px] text-[11.5px] font-medium transition-colors',
             stretch ? 'flex-1' : '',
             value === o.value ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
           ].join(' ')}

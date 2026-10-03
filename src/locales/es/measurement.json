@@ -183,5 +183,12 @@
     "depth": "Fondo",
     "height": "Alto",
     "note": "Caja envolvente según los ejes del modelo."
+  },
+  "mobile": {
+    "list": "Lista",
+    "options": "Opciones",
+    "latest": "Última",
+    "levels": "Plantas",
+    "position": "Posición del corte"
   }
 }

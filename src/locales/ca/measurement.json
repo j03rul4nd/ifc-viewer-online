@@ -183,5 +183,12 @@
     "depth": "Fondària",
     "height": "Alçada",
     "note": "Caixa envolupant segons els eixos del model."
+  },
+  "mobile": {
+    "list": "Llista",
+    "options": "Opcions",
+    "latest": "Darrera",
+    "levels": "Plantes",
+    "position": "Posició del tall"
   }
 }

@@ -77,7 +77,7 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
     return t('recorder.stop', { n: index + 1 })
   }, [i18n.language, t])
 
-  const iconBtn = 'w-6 h-6 flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150'
+  const iconBtn = 'w-6 h-6 max-md:w-10 max-md:h-10 max-md:rounded-[10px] max-md:bg-white/[0.05] flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150'
 
   return (
     // A ViewportPanel like every other tool, rather than a panel that placed
@@ -93,14 +93,20 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
       onClose={() => setRecording(false)}
       label={t('recorder.title')}
       mobile="sheet"
+      // Phone: recording a tour IS framing the camera, so the sheet must get
+      // out of the way. It has a peek detent showing the header and the two
+      // actions, and drops to it after every stop so the next one is framed
+      // in full view.
+      peek
+      collapseKey={steps.length > 0 ? steps.length : null}
       widthPx={302}
       anchor="top"
     >
       <div className="flex flex-col min-h-0 max-h-full overflow-hidden">
 
         {/* ── Header ── */}
-        <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0">
-          <span className="text-[12px] font-semibold text-[var(--text)]">{t('recorder.title')}</span>
+        <div className="order-0 flex items-center gap-2 px-3 h-9 max-md:h-12 max-md:pr-1.5 border-b border-[var(--border)] shrink-0">
+          <span className="text-[12px] max-md:text-[14px] font-semibold text-[var(--text)]">{t('recorder.title')}</span>
           {steps.length > 0 && (
             <span className="px-1.5 py-0.5 rounded-full bg-[var(--surface-2)] text-[9px] font-mono text-[var(--text-dim)] leading-none tabular-nums">
               {steps.length}
@@ -113,10 +119,10 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
         </div>
 
         {/* ── Goal-driven templates (D-26): what is this presentation for? ── */}
-        <TemplateSelector viewerApiRef={viewerApiRef} />
+        <div className="order-2 shrink-0"><TemplateSelector viewerApiRef={viewerApiRef} /></div>
 
         {/* ── Stops list ── */}
-        <div className="flex-1 overflow-y-auto px-1.5 py-1.5 min-h-[56px]" onDragLeave={() => setDragOverIndex(null)}>
+        <div className="order-3 flex-1 overflow-y-auto px-1.5 py-1.5 min-h-[56px]" onDragLeave={() => setDragOverIndex(null)}>
           {steps.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-4 text-center">
               <Icons.Replay size={20} className="text-[var(--text-faint)] opacity-50" />
@@ -142,7 +148,7 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
                     dragId.current = null
                     setDragOverIndex(null)
                   }}
-                  className={`group relative flex items-center gap-1 px-1.5 py-1 rounded-lg transition-colors duration-150 hover:bg-[var(--surface-2)] ${justAdded === step.id ? 'bg-[var(--surface-2)] ring-1 ring-[var(--accent)]' : ''}`}
+                  className={`group relative flex items-center gap-1 px-1.5 py-1 max-md:py-1.5 max-md:gap-1.5 rounded-lg transition-colors duration-150 hover:bg-[var(--surface-2)] ${justAdded === step.id ? 'bg-[var(--surface-2)] ring-1 ring-[var(--accent)]' : ''}`}
                 >
                   {/* Drop indicator line */}
                   {dragOverIndex === i && (
@@ -155,7 +161,7 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
                     </span>
                   )}
                   <span
-                    className="w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-mono tabular-nums shrink-0"
+                    className="w-[18px] h-[18px] max-md:w-7 max-md:h-7 max-md:text-[12px] flex items-center justify-center rounded-full text-[9px] font-mono tabular-nums shrink-0"
                     style={{
                       background: step.issueSeverity ? `color-mix(in srgb, ${SEVERITY_COLOR[step.issueSeverity]} 18%, transparent)` : 'var(--surface-2)',
                       color: step.issueSeverity ? SEVERITY_COLOR[step.issueSeverity] : 'var(--text-dim)',
@@ -167,11 +173,11 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
                     value={step.caption ?? ''}
                     placeholder={stepTitle(step, i)}
                     onChange={(e) => updateCaption(step.id, e.target.value)}
-                    className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text)] placeholder-[var(--text-dim)] outline-none border-b border-transparent focus:border-[var(--border-strong)] transition-colors"
+                    className="flex-1 min-w-0 bg-transparent text-[11px] max-md:text-[16px] max-md:h-10 text-[var(--text)] placeholder-[var(--text-dim)] outline-none border-b border-transparent focus:border-[var(--border-strong)] transition-colors"
                   />
 
                   {/* Row actions — appear on hover (always visible on touch) */}
-                  <div className={`flex items-center shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity'}`}>
+                  <div className={`flex items-center shrink-0 ${isMobile ? 'gap-1' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity'}`}>
                     <button onClick={() => handlePreview(step)} title={t('recorder.preview')} className={iconBtn}>
                       <Icons.Eye size={12} />
                     </button>
@@ -192,17 +198,19 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
         </div>
 
         {/* ── Footer actions ── */}
-        <div className="flex items-center gap-1.5 px-3 py-2 border-t border-[var(--border)] shrink-0">
+        {/* Footer on desktop; on a phone, right under the header — the only
+            part the peek detent shows, and where the thumb already is. */}
+        <div className="order-4 max-md:order-1 flex items-center gap-1.5 px-3 py-2 border-t max-md:border-t-0 max-md:border-b border-[var(--border)] shrink-0">
           <button
             onClick={handleAddStop}
-            className="flex-1 h-[32px] rounded-lg bg-[var(--surface-2)] border border-[var(--border-strong)] text-[12px] font-medium text-[var(--text)] hover:brightness-110 active:scale-[0.99] transition-all whitespace-nowrap"
+            className="flex-1 h-[32px] max-md:h-12 max-md:text-[14px] max-md:rounded-[12px] rounded-lg bg-[var(--surface-2)] border border-[var(--border-strong)] text-[12px] font-medium text-[var(--text)] hover:brightness-110 active:scale-[0.99] transition-all whitespace-nowrap"
           >
             + {t('recorder.addStop')}
           </button>
           <button
             onClick={() => play(0)}
             disabled={steps.length === 0}
-            className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[12px] font-medium text-white hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+            className="flex-1 h-[32px] max-md:h-12 max-md:text-[14px] max-md:rounded-[12px] flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[12px] font-medium text-white hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z" /></svg>
             {t('recorder.play')}

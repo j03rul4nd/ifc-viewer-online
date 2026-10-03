@@ -183,5 +183,12 @@
     "depth": "奥行き",
     "height": "高さ",
     "note": "モデル軸に沿ったバウンディングボックス。"
+  },
+  "mobile": {
+    "list": "一覧",
+    "options": "オプション",
+    "latest": "最新",
+    "levels": "階",
+    "position": "断面位置"
   }
 }

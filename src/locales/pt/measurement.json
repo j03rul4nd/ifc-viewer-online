@@ -183,5 +183,12 @@
     "depth": "Profundidade",
     "height": "Altura",
     "note": "Caixa envolvente segundo os eixos do modelo."
+  },
+  "mobile": {
+    "list": "Lista",
+    "options": "Opções",
+    "latest": "Última",
+    "levels": "Pisos",
+    "position": "Posição do corte"
   }
 }

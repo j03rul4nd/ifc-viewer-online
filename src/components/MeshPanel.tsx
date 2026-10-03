@@ -10,6 +10,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { ViewportPanel } from './ViewportPanel'
 import { useMeshStore } from '../stores/meshStore'
 import { removeMesh as dropMesh, reapply } from '../lib/mesh/mesh-runner'
@@ -64,6 +65,8 @@ function followDownload(jobId: string, onFraction: (fraction: number) => void): 
 
 export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Props) {
   const { t } = useTranslation('mesh')
+  const { t: tc } = useTranslation('common')
+  const isMobile = useIsMobile()
   const store = useMeshStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -261,12 +264,33 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
       // A sheet like the point cloud panel: importing, checking what arrived and
       // placing it is real work, not a three-button palette.
       mobile="sheet"
+      // Phone: placing a mesh is judged in the scene; peek keeps it in view
+      // and the sheet drops there as soon as the mesh is ready.
+      peek
+      collapseKey={active?.status === 'ready' ? active.id : null}
       widthPx={300}
       anchor="top"
     >
-      <div className="flex flex-col gap-3 p-3 overflow-y-auto" data-testid="mesh-panel">
+      {isMobile && (
+        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
+          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tc('actions.close')}
+            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+          </button>
+        </div>
+      )}
+      {/* flex-1 + min-h-0: without them this scroller never shrinks inside the
+          mobile sheet and the placement controls at its end are unreachable.
+          On a phone with a mesh loaded, what is loaded and how it sits come
+          first; importing another sinks to the end. */}
+      <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="mesh-panel">
         {/* Import */}
-        <div>
+        <div className={isMobile && active ? 'order-5' : ''}>
           <input
             ref={fileRef}
             type="file"
@@ -281,7 +305,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
           <button
             disabled={busy}
             onClick={() => fileRef.current?.click()}
-            className="w-full px-2 py-2 rounded-[7px] text-[11px] font-medium border border-dashed border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
+            className="w-full px-2 py-2 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[11px] font-medium border border-dashed border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
           >
             {busy ? t('load.working') : t('load.drop')}
           </button>
@@ -294,7 +318,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
         </div>
 
         {/* Sample models */}
-        <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--border)]">
+        <div className={`flex flex-col gap-1.5 pt-2 border-t border-[var(--border)] ${isMobile && active ? 'order-5' : ''}`}>
           <div className="text-[11px] font-medium">{t('demos.title')}</div>
           <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('demos.hint')}</div>
           {DEMO_MESHES.map((demo) => (
@@ -302,7 +326,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
               key={demo.id}
               disabled={busy || demoBusy !== null}
               onClick={() => void handleDemo(demo)}
-              className="text-left px-2 py-1.5 rounded-[7px] border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-40"
+              className="text-left px-2 py-1.5 max-md:px-3 max-md:py-2.5 rounded-[7px] border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-40"
             >
               <div className="flex items-center gap-2">
                 <span className="flex-1 text-[11px]">{demo.name}</span>
@@ -327,7 +351,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
 
         {/* What is loaded */}
         {store.meshes.length > 0 && (
-          <div className="flex flex-col gap-1">
+          <div className={`flex flex-col gap-1 ${isMobile ? 'order-1' : ''}`}>
             {store.meshes.map((m) => (
               <div
                 key={m.id}
@@ -342,13 +366,13 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
                   <span className="flex-1 truncate text-[11px]">{m.fileName}</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleVisible(m.id, !m.visible) }}
-                    className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)]"
+                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-white/[0.05] text-[var(--text-faint)] hover:text-[var(--text)]"
                   >
                     {m.visible ? t('actions.visible') : t('actions.hidden')}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleRemove(m.id) }}
-                    className="text-[10px] text-[var(--text-faint)] hover:text-[var(--danger,#e05252)]"
+                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-white/[0.05] text-[var(--text-faint)] hover:text-[var(--danger,#e05252)]"
                   >
                     {t('actions.remove')}
                   </button>
@@ -372,7 +396,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
         {/* Source frame — the two things that are guessed */}
         {active?.frame && active.status === 'ready' && (
           <>
-            <div className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
+            <div className={`flex flex-col gap-2 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-3' : ''}`}>
               <div className="text-[11px] font-medium">{t('source.title')}</div>
 
               <div className="flex items-center gap-2">
@@ -403,7 +427,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
                         key={axis}
                         onClick={() => setUpAxis(axis)}
                         aria-pressed={active.frame!.upAxis === axis}
-                        className={`px-2 py-1 text-[10px] font-medium transition-colors ${
+                        className={`px-2 py-1 max-md:px-4 max-md:py-2.5 max-md:text-[12.5px] text-[10px] font-medium transition-colors ${
                           active.frame!.upAxis === axis
                             ? 'bg-[var(--accent)] text-[var(--accent-contrast,#fff)]'
                             : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
@@ -423,7 +447,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
             </div>
 
             {/* Placement */}
-            <div className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
+            <div className={`flex flex-col gap-2 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-2' : ''}`}>
               <div className="text-[11px] font-medium">{t('placement.title')}</div>
               <Slider label={t('placement.x')} value={active.placement.x} min={-200} max={200} step={0.05} unit="m"
                 onChange={(v) => nudge({ x: v })} />
@@ -443,13 +467,13 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
               <div className="flex gap-1">
                 <button
                   onClick={() => { useMeshStore.getState().resetPlacement(active.id); void getSystem()?.then((s) => reapply(active.id, s)) }}
-                  className="flex-1 px-2 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+                  className="flex-1 px-2 py-1.5 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                   {t('placement.reset')}
                 </button>
                 <button
                   onClick={() => void getSystem()?.then((s) => s.frame(active.id))}
-                  className="flex-1 px-2 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+                  className="flex-1 px-2 py-1.5 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                   {t('placement.fit')}
                 </button>
@@ -478,6 +502,37 @@ function Slider(props: {
   unit?: string; digits?: number; onChange: (v: number) => void
 }) {
   const { label, value, min, max, step, unit, digits = 2, onChange } = props
+  const fine = step < 0.01 ? step * 10 : step
+  const isMobile = useIsMobile()
+  // Phone: the thumb-sized range, with −/+ for the fine steps a finger
+  // cannot hit on a ±200 m track (each tap moves one fine step).
+  if (isMobile) {
+    const pct = ((value - min) / Math.max(1e-9, max - min)) * 100
+    const bump = (dir: 1 | -1): void => {
+      const n = Math.min(max, Math.max(min, Math.round((value + dir * fine) / step) * step))
+      onChange(Number(n.toFixed(6)))
+    }
+    const btn = 'w-10 h-10 shrink-0 rounded-[10px] bg-white/[0.06] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
+    return (
+      <div className="flex flex-col">
+        <span className="flex justify-between text-[12px] text-[var(--text-faint)]">
+          <span>{label}</span>
+          <span className="font-mono text-[var(--text-dim)]">{value.toFixed(digits)}{unit ?? ''}</span>
+        </span>
+        <div className="flex items-center gap-2">
+          <button type="button" className={btn} onClick={() => bump(-1)} aria-label={`${label} −`}>−</button>
+          <input
+            type="range" min={min} max={max} step={step} value={value}
+            aria-label={label}
+            onChange={(e) => onChange(parseFloat(e.target.value))}
+            className="m-range flex-1 min-w-0"
+            style={{ '--m-range-p': `${pct}%` } as React.CSSProperties}
+          />
+          <button type="button" className={btn} onClick={() => bump(1)} aria-label={`${label} +`}>+</button>
+        </div>
+      </div>
+    )
+  }
   return (
     <label className="flex flex-col gap-0.5">
       <span className="flex justify-between text-[10px] text-[var(--text-faint)]">

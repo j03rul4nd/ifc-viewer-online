@@ -183,5 +183,12 @@
     "depth": "Tiefe",
     "height": "Höhe",
     "note": "Hüllquader entlang der Modellachsen."
+  },
+  "mobile": {
+    "list": "Liste",
+    "options": "Optionen",
+    "latest": "Zuletzt",
+    "levels": "Geschosse",
+    "position": "Schnittposition"
   }
 }
