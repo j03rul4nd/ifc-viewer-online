@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createViewer, type ViewerAPI } from '../lib/viewer'
 import { useSceneStore } from '../stores/sceneStore'
 import type { SelectedInfo, ViewerHandle, ViewerStyle } from '../types'
@@ -22,9 +23,27 @@ interface ViewerProps {
 }
 
 const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref) {
+  const { t } = useTranslation('viewer')
   const mountRef = useRef<HTMLDivElement>(null)
   const apiRef   = useRef<ViewerAPI | null>(null)
   const background = useSceneStore((s) => s.background)
+
+  // The WebGL canvas is silent to VoiceOver: name it and say which gestures it
+  // takes (selections are announced by App's live region). On the canvas
+  // itself, not the mount — the mount also holds measurement labels with
+  // their own buttons, which role="img" would hide.
+  const canvasLabel = t('elementCard.canvas')
+  useEffect(() => {
+    const label = (): void => {
+      const canvas = mountRef.current?.querySelector('canvas')
+      if (!canvas) return
+      canvas.setAttribute('role', 'img')
+      canvas.setAttribute('aria-label', canvasLabel)
+    }
+    label()
+    const id = window.setTimeout(label, 1500) // the renderer mounts its canvas asynchronously
+    return () => window.clearTimeout(id)
+  }, [canvasLabel])
 
   // Keep latest props accessible inside stable callbacks without re-running effects
   const propsRef = useRef(props)

@@ -291,5 +291,23 @@
     "unlocked": "Mantén para mirar",
     "up": "Subir",
     "down": "Bajar"
+  },
+  "elementCard": {
+    "open": "Abrir ficha del elemento",
+    "allProperties": "Todas las propiedades",
+    "keyData": "Datos clave",
+    "type": "Tipo",
+    "storey": "Planta",
+    "material": "Material",
+    "quantities": "Cantidades",
+    "commonProps": "Propiedades comunes",
+    "loading": "Cargando datos…",
+    "noData": "Sin datos IFC para este elemento",
+    "close": "Cerrar",
+    "selected": "Seleccionado: {{name}}, {{type}}",
+    "deselected": "Selección borrada",
+    "canvas": "Vista 3D del modelo. Toca un elemento para seleccionarlo; mantén pulsado para ver sus acciones.",
+    "copyGlobalId": "Copiar GlobalId",
+    "more": "Más acciones"
   }
 }

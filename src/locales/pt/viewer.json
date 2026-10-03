@@ -291,5 +291,23 @@
     "unlocked": "Segure para olhar",
     "up": "Subir",
     "down": "Descer"
+  },
+  "elementCard": {
+    "open": "Abrir ficha do elemento",
+    "allProperties": "Todas as propriedades",
+    "keyData": "Dados principais",
+    "type": "Tipo",
+    "storey": "Piso",
+    "material": "Material",
+    "quantities": "Quantidades",
+    "commonProps": "Propriedades comuns",
+    "loading": "A carregar dados…",
+    "noData": "Sem dados IFC para este elemento",
+    "close": "Fechar",
+    "selected": "Selecionado: {{name}}, {{type}}",
+    "deselected": "Seleção limpa",
+    "canvas": "Vista 3D do modelo. Toque num elemento para o selecionar; mantenha premido para as ações.",
+    "copyGlobalId": "Copiar GlobalId",
+    "more": "Mais ações"
   }
 }

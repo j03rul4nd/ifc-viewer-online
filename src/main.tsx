@@ -2,6 +2,7 @@ import './i18n/config'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { MotionConfig } from 'framer-motion'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { initAnalytics } from './lib/analytics'
 import { analyticsAllowed } from './stores/consentStore'
@@ -77,10 +78,15 @@ const LazyClerkProvider = clerkPubKey
     })
   : null
 
+// iOS Settings › Accessibility › Reduce Motion (and the desktop equivalents)
+// turns every framer-motion transform animation — sheets sliding, bars
+// springing — into an instant change; opacity fades are kept.
 const app = (
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
+  <MotionConfig reducedMotion="user">
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </MotionConfig>
 )
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

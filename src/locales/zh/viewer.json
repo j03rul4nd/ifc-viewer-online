@@ -291,5 +291,23 @@
     "unlocked": "按住转向",
     "up": "上升",
     "down": "下降"
+  },
+  "elementCard": {
+    "open": "打开构件详情",
+    "allProperties": "全部属性",
+    "keyData": "关键数据",
+    "type": "类型",
+    "storey": "楼层",
+    "material": "材料",
+    "quantities": "工程量",
+    "commonProps": "通用属性",
+    "loading": "正在加载数据…",
+    "noData": "此构件没有 IFC 数据",
+    "close": "关闭",
+    "selected": "已选择：{{name}}，{{type}}",
+    "deselected": "已清除选择",
+    "canvas": "3D 模型视图。轻点构件即可选中；长按查看操作。",
+    "copyGlobalId": "复制 GlobalId",
+    "more": "更多操作"
   }
 }

@@ -85,7 +85,8 @@ export function MobileSelectionBar({
             onClick={onProps}
             className="flex-1 min-w-0 text-left py-1"
             style={TAP}
-            aria-label={tb('navProps')}
+            aria-label={t('elementCard.open')}
+            aria-haspopup="dialog"
           >
             <span className="block text-[13px] font-semibold text-[var(--text)] truncate leading-tight">{selected.name}</span>
             <span className="block text-[10.5px] font-mono text-[var(--text-faint)] truncate uppercase tracking-wide">

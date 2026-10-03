@@ -291,5 +291,23 @@
     "unlocked": "Mantén per mirar",
     "up": "Pujar",
     "down": "Baixar"
+  },
+  "elementCard": {
+    "open": "Obre la fitxa de l'element",
+    "allProperties": "Totes les propietats",
+    "keyData": "Dades clau",
+    "type": "Tipus",
+    "storey": "Planta",
+    "material": "Material",
+    "quantities": "Quantitats",
+    "commonProps": "Propietats comunes",
+    "loading": "Carregant dades…",
+    "noData": "Sense dades IFC per a aquest element",
+    "close": "Tanca",
+    "selected": "Seleccionat: {{name}}, {{type}}",
+    "deselected": "Selecció esborrada",
+    "canvas": "Vista 3D del model. Toca un element per seleccionar-lo; mantén premut per veure'n les accions.",
+    "copyGlobalId": "Copia el GlobalId",
+    "more": "Més accions"
   }
 }

@@ -25,6 +25,7 @@ import ExportModal from './components/ExportModal'
 import KeyboardHelpModal from './components/KeyboardHelpModal'
 import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
 import { MobileSelectionBar } from './components/mobile/MobileSelectionBar'
+import { MobileElementCard } from './components/mobile/MobileElementCard'
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import VerifyCertificateView from './components/VerifyCertificateView'
 import WelcomeView from './components/WelcomeView'
@@ -1420,13 +1421,30 @@ export default function App() {
     }
   }, [selected, setSceneActiveModel])
 
-  // ── Auto-open mobile sidebar when an element is selected ──────────────────
-  // On desktop (md+) the sidebar is always visible, so no action needed there.
+  // ── Phones: selecting no longer opens the full Properties sheet ───────────
+  // It used to, on every tap — the element just picked vanished behind a wall
+  // of property sets, and looking around meant closing it each time. Now a
+  // tap shows the selection bar; the bar opens the element card; the card
+  // opens the full inspector (components/mobile/MobileElementCard).
+  // The card follows the selection, and closes when nothing is selected.
+  const [elementCardOpen, setElementCardOpen] = useState(false)
+  useEffect(() => { if (!selected) setElementCardOpen(false) }, [selected])
+
+  // ── Screen readers: say what the tap selected ──────────────────────────────
+  // A tap on a canvas gives VoiceOver nothing to read. This polite live region
+  // announces the element (or that the selection was cleared).
+  const { t: tViewerA11y } = useTranslation('viewer')
+  const [selectionAnnouncement, setSelectionAnnouncement] = useState('')
+  const hadSelection = useRef(false)
   useEffect(() => {
-    if (selected && window.innerWidth < 768) {
-      setMobileSidebarOpen(true)
+    if (selected) {
+      hadSelection.current = true
+      const type = selected.type.replace(/^IFC/i, '')
+      setSelectionAnnouncement(tViewerA11y('elementCard.selected', { name: selected.name || type, type: type.charAt(0) + type.slice(1).toLowerCase() }))
+    } else if (hadSelection.current) {
+      setSelectionAnnouncement(tViewerA11y('elementCard.deselected'))
     }
-  }, [selected, setMobileSidebarOpen])
+  }, [selected, tViewerA11y])
 
   // ── Track desktop breakpoint so tree Panel is never rendered on mobile ──
   // react-resizable-panels allocates the Panel's flex share even when its
@@ -4179,14 +4197,29 @@ export default function App() {
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && sceneModels.length > 0 && (
                   <MobileSelectionBar
                     selected={selected}
-                    suppressed={!!ctxMenu}
+                    suppressed={!!ctxMenu || elementCardOpen}
                     onFrame={handleFrameElement}
                     onIsolate={handleIsolateElement}
                     onHide={handleHideElement}
-                    onProps={() => { setPendingSidebarTab('props'); setMobileSidebarOpen(true) }}
+                    onProps={() => setElementCardOpen(true)}
                     onMore={(info) => setCtxMenu({ x: 0, y: 0, info })}
                   />
                   )}
+                  {!embedChrome.embed && !clientMode && (
+                  <MobileElementCard
+                    open={elementCardOpen && !!selected}
+                    selected={selected}
+                    viewerApiRef={viewerApiRef}
+                    onClose={() => setElementCardOpen(false)}
+                    onFrame={handleFrameElement}
+                    onIsolate={handleIsolateElement}
+                    onHide={handleHideElement}
+                    onIsolateCategory={handleIsolateCategory}
+                    onReveal={(id, modelId) => { setElementCardOpen(false); handleRevealInTree(id, modelId) }}
+                    onAllProperties={() => { setElementCardOpen(false); setPendingSidebarTab('props'); setMobileSidebarOpen(true) }}
+                  />
+                  )}
+                  <div className="sr-only" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</div>
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
                     // Properties is excluded: the bottom nav already has its

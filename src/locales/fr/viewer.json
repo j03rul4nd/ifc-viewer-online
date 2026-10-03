@@ -291,5 +291,23 @@
     "unlocked": "Maintenir pour regarder",
     "up": "Monter",
     "down": "Descendre"
+  },
+  "elementCard": {
+    "open": "Ouvrir la fiche de l'élément",
+    "allProperties": "Toutes les propriétés",
+    "keyData": "Données clés",
+    "type": "Type",
+    "storey": "Niveau",
+    "material": "Matériau",
+    "quantities": "Quantités",
+    "commonProps": "Propriétés communes",
+    "loading": "Chargement des données…",
+    "noData": "Aucune donnée IFC pour cet élément",
+    "close": "Fermer",
+    "selected": "Sélectionné : {{name}}, {{type}}",
+    "deselected": "Sélection effacée",
+    "canvas": "Vue 3D du modèle. Touchez un élément pour le sélectionner ; maintenez le doigt pour ses actions.",
+    "copyGlobalId": "Copier le GlobalId",
+    "more": "Plus d'actions"
   }
 }
