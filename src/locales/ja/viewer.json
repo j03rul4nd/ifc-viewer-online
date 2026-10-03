@@ -291,5 +291,23 @@
     "unlocked": "長押しで視点",
     "up": "上へ",
     "down": "下へ"
+  },
+  "elementCard": {
+    "open": "要素の詳細を開く",
+    "allProperties": "すべてのプロパティ",
+    "keyData": "主要データ",
+    "type": "タイプ",
+    "storey": "階",
+    "material": "材料",
+    "quantities": "数量",
+    "commonProps": "共通プロパティ",
+    "loading": "データを読み込み中…",
+    "noData": "この要素の IFC データはありません",
+    "close": "閉じる",
+    "selected": "選択中: {{name}}、{{type}}",
+    "deselected": "選択を解除しました",
+    "canvas": "3D モデルビュー。要素をタップして選択、長押しで操作を表示します。",
+    "copyGlobalId": "GlobalId をコピー",
+    "more": "その他の操作"
   }
 }

@@ -303,5 +303,23 @@
     "unlocked": "Hold to look",
     "up": "Go up",
     "down": "Go down"
+  },
+  "elementCard": {
+    "open": "Open element details",
+    "allProperties": "All properties",
+    "keyData": "Key data",
+    "type": "Type",
+    "storey": "Storey",
+    "material": "Material",
+    "quantities": "Quantities",
+    "commonProps": "Common properties",
+    "loading": "Loading data…",
+    "noData": "No IFC data for this element",
+    "close": "Close",
+    "selected": "Selected: {{name}}, {{type}}",
+    "deselected": "Selection cleared",
+    "canvas": "3D model view. Tap an element to select it; touch and hold for its actions.",
+    "copyGlobalId": "Copy GlobalId",
+    "more": "More actions"
   }
 }

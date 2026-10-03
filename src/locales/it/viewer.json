@@ -291,5 +291,23 @@
     "unlocked": "Tieni premuto per guardare",
     "up": "Salire",
     "down": "Scendere"
+  },
+  "elementCard": {
+    "open": "Apri la scheda dell'elemento",
+    "allProperties": "Tutte le proprietà",
+    "keyData": "Dati chiave",
+    "type": "Tipo",
+    "storey": "Piano",
+    "material": "Materiale",
+    "quantities": "Quantità",
+    "commonProps": "Proprietà comuni",
+    "loading": "Caricamento dati…",
+    "noData": "Nessun dato IFC per questo elemento",
+    "close": "Chiudi",
+    "selected": "Selezionato: {{name}}, {{type}}",
+    "deselected": "Selezione annullata",
+    "canvas": "Vista 3D del modello. Tocca un elemento per selezionarlo; tieni premuto per le sue azioni.",
+    "copyGlobalId": "Copia GlobalId",
+    "more": "Altre azioni"
   }
 }

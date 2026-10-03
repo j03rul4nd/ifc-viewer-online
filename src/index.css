@@ -443,6 +443,31 @@ kbd {
   .m-sheet textarea { font-size: 16px !important; }
 }
 
+/* ── iOS accessibility settings ────────────────────────────────────────────────
+   Settings › Accessibility › Display & Text Size reach the page as media
+   queries in Safari:
+   • Increase Contrast → prefers-contrast: more. The faint/dim text tokens are
+     tuned for a calm dark UI (faint is ~2.6:1 on the background, under WCAG
+     AA); with the setting on they move to AA and borders get visible.
+   • Reduce Transparency → prefers-reduced-transparency. The frosted glass
+     surfaces (blurred, translucent) become solid, which is also cheaper for
+     the GPU. */
+@media (prefers-contrast: more) {
+  :root:not(.lp-light) {
+    --text-dim: #B4B6C0;
+    --text-faint: #9A9CA6;
+    --border: #3A3B46;
+    --border-strong: #565866;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-md, .mobile-pill-glass, .mobile-sheet-glass, .mobile-sidebar-sheet {
+    background: #121318 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
 /* ── Touch: no double-tap zoom on controls ────────────────────────────────────
    Two quick taps on a stepper (+ +) or a chip is a double-tap, and iOS Safari
    answers it by zooming the page. `manipulation` keeps taps and panning but
