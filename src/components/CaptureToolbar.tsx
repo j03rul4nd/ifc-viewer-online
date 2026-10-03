@@ -18,6 +18,7 @@ import { useAppEvent } from '../hooks/useAppEvent'
 import { useCanvasReplayBuffer } from '../hooks/useCanvasReplayBuffer'
 import { replayController } from '../lib/capture/replay-controller'
 import { appBus } from '../lib/event-bus'
+import { shareOrDownload } from '../lib/share-file'
 import { createLogger } from '../lib/logger'
 import { watermarkPngDataUrl } from '../lib/capture/watermark'
 import { linkViewer } from '../lib/capture/viewer-link'
@@ -179,14 +180,15 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
     if (watermark) dataUrl = await watermarkPngDataUrl(dataUrl)
     appBus.emit('capture:ready', { kind: 'screenshot' })
 
-    const a = document.createElement('a')
-    a.href = dataUrl
-    a.download = `ifc-screenshot-${timestamp()}.png`
-    a.click()
-    appBus.emit('capture:exported', { format: 'png', target: 'download' })
+    const blob = await (await fetch(dataUrl)).blob()
+    // Phones: the share sheet (Photos, WhatsApp, AirDrop) rather than a
+    // download that iOS buries in Files. Desktop: the download, as before.
+    const outcome = await shareOrDownload(blob, `ifc-screenshot-${timestamp()}.png`)
+    if (outcome === 'cancelled') return
+    appBus.emit('capture:exported', { format: 'png', target: outcome === 'shared' ? 'share' : 'download' })
+    if (outcome === 'shared') return
 
     try {
-      const blob = await (await fetch(dataUrl)).blob()
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       appBus.emit('capture:exported', { format: 'png', target: 'clipboard' })
       toast(t('screenshotCopied'), 'success')

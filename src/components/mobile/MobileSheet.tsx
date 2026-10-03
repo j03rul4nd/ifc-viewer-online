@@ -26,6 +26,7 @@ import {
   useDragControls, type PanInfo,
 } from 'framer-motion'
 import { haptic } from '../../lib/haptics'
+import { useTranslation } from 'react-i18next'
 
 interface MobileSheetProps {
   open: boolean
@@ -63,6 +64,7 @@ export function MobileSheet({
   open, onClose, children, heightDvh = 0.9, snapPoints, detentIndex, onDetentChange, suspended = false, label,
 }: MobileSheetProps) {
   const controls = useDragControls()
+  const { t: tc } = useTranslation('common')
   const y = useMotionValue(0)
   const sheetRef = useRef<HTMLDivElement>(null)
 
@@ -174,6 +176,29 @@ export function MobileSheet({
   const dimBottom = resizable ? Math.max(1, detentY(0)) : sheetH
   const scrimOpacity = useTransform(y, [0, dimBottom], [dimTop, 0])
 
+  // ── Accessibility ──────────────────────────────────────────────────────────
+  // VoiceOver cannot drag a sheet closed, and a sheet that appears without
+  // focus is not noticed: focus moves into it when it opens and back to what
+  // had it when it closes; Escape closes it (iPad keyboards).
+  const returnFocus = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!open || !rendered) return
+    if (!returnFocus.current) returnFocus.current = document.activeElement as HTMLElement | null
+    const id = setTimeout(() => {
+      const el = sheetRef.current
+      if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true })
+    }, 60)
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => { clearTimeout(id); document.removeEventListener('keydown', onKey) }
+  }, [open, rendered]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (open) return
+    const el = returnFocus.current
+    returnFocus.current = null
+    if (el && el.isConnected && typeof el.focus === 'function') el.focus({ preventScroll: true })
+  }, [open])
+
   // ── Drag-anywhere handoff ──────────────────────────────────────────────────
   const dragging = useRef(false)
   const armed = useRef(false)
@@ -249,6 +274,7 @@ export function MobileSheet({
         role="dialog"
         aria-modal={resizable ? undefined : 'true'}
         aria-label={label}
+        tabIndex={-1}
         style={{ y, height: sheetH, borderTopLeftRadius: 22, borderTopRightRadius: 22 }}
         drag="y"
         dragListener={false}
@@ -260,7 +286,7 @@ export function MobileSheet({
         onPointerMoveCapture={onRootPointerMove}
         onPointerUp={clearArm}
         onPointerCancel={clearArm}
-        className="fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y"
+        className="fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y outline-none"
       >
         {/* ── THE VISIBLE BAND ──────────────────────────────────────────────
             The sheet is always `sheetH` tall — the largest detent — and lower
@@ -276,12 +302,18 @@ export function MobileSheet({
             the sheet actually on screen. It follows `y`, so it is right while
             dragging too, and an inner scroller now overflows when it should. */}
         <motion.div
-          style={{ height: visibleH }}
+          // The keyboard (iOS lays it over the page, lib/keyboard-inset) takes
+          // the bottom of the band: the scroller shrinks and the field being
+          // typed into can scroll into view instead of sitting behind it.
+          style={{ height: visibleH, paddingBottom: 'max(12px, env(safe-area-inset-bottom), var(--kb-inset, 0px))' }}
           // The band ends at the bottom of the screen, so the home indicator is
           // over its last row. Applied here rather than by each panel: every
           // sheet has the same edge and the same problem.
           className="flex flex-col min-h-0 overflow-hidden sheet-safe-bottom"
         >
+          {/* Screen readers cannot drag: a real close button, first in order,
+              visible only to them. */}
+          <button type="button" className="sr-only" onClick={onClose}>{tc('actions.close')}</button>
           {/* Grab handle — always an immediate drag origin. */}
           <div
             onPointerDown={(e) => { dragging.current = true; setHandleDragging(true); controls.start(e) }}

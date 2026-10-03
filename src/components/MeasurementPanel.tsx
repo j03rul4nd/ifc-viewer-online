@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
 import { MobileSheet } from './mobile/MobileSheet'
 import { haptic } from '../lib/haptics'
+import { shareOrDownload } from '../lib/share-file'
 import { useUIStore } from '../stores/uiStore'
 import { useEditorStore } from '../stores/editorStore'
 import type { ViewerAPI } from '../lib/viewer'
@@ -343,15 +344,9 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
     // own convention, which makes the file open as numbers there.
     const sep = decimalSeparator(snapshot.settings.locale) === ',' ? ';' : ','
     const blob = new Blob(['﻿' + toDelimited(rows, sep)], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
     const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
-    a.href = url
-    a.download = `${t('export.filename')}-${stamp}.csv`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    // Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download.
+    void shareOrDownload(blob, `${t('export.filename')}-${stamp}.csv`)
   }, [buildRows, snapshot, t])
 
   if (!snapshot || !settings) {

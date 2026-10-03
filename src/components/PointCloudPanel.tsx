@@ -15,6 +15,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { ViewportPanel } from './ViewportPanel'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useUIStore } from '../stores/uiStore'
@@ -2459,6 +2460,15 @@ function CheckUp({ issues, onFix, t, describeError, cloud }: {
   cloud: PointCloudEntry
 }) {
   const [expanded, setExpanded] = useState(true)
+  // Phone: folded by default. Expanded, the list sat between the scan list and
+  // the tabs and took most of the half-height sheet, pushing the tools below
+  // the fold. The header still says how many issues there are, and a scan that
+  // failed to load stays open — that one has to be read.
+  const isMobile = useIsMobile()
+  const hasError = issues.some((i) => i.severity === 'error')
+  useEffect(() => {
+    if (isMobile) setExpanded(hasError)
+  }, [isMobile, hasError, cloud.id])
   if (issues.length === 0) {
     return (
       <div className="flex items-center gap-2 rounded-[10px] border border-[#30A46C44] bg-[#30A46C12] px-3 py-2">
@@ -2474,7 +2484,7 @@ function CheckUp({ issues, onFix, t, describeError, cloud }: {
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 max-md:py-3 text-left"
         style={{ background: `${SEVERITY_TINT[worst]}14` }}
       >
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: SEVERITY_TINT[worst] }} />

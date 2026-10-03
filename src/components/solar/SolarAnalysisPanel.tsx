@@ -29,6 +29,7 @@ import {
 import { northDirection } from '../../lib/geo/geo-math'
 import { issuesToBcfTopics, downloadBcfBlob } from '../../lib/bcf'
 import type { ValidationIssue } from '../../types'
+import { shareOrDownload } from '../../lib/share-file'
 
 const PointProbe = React.lazy(() => import('./PointProbe'))
 
@@ -616,13 +617,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 
 // ── Pieces ──────────────────────────────────────────────────────────────────────
 
+/** Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download. */
 function download(text: string, name: string): void {
-  const blob = new Blob([text], { type: 'text/csv' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = name
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  void shareOrDownload(new Blob([text], { type: 'text/csv' }), name)
 }
 
 type T = ReturnType<typeof useTranslation<'solar'>>['t']

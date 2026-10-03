@@ -12,6 +12,7 @@ import {
   type SkyMask, type PointSunReport,
 } from '../../lib/solar-analysis/sky-mask'
 import { solarPosition } from '../../lib/solar/solar-position'
+import { shareOrDownload } from '../../lib/share-file'
 import { wallTimeToUTC, zoneOffsetMinutes } from '../../lib/solar/sun-math'
 
 interface Props {
@@ -103,11 +104,7 @@ export default function PointProbe({ viewerApiRef, lat, lon, yawDeg, timeZone, e
     probe.report.table.forEach((row, m) => {
       lines.push([m + 1, ...row.map((v) => (v < 0 ? '' : v.toFixed(2))), probe.report.monthHours[m].toFixed(2), probe.report.monthPossible[m].toFixed(2)].join(','))
     })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }))
-    a.download = 'solar-point.csv'
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    void shareOrDownload(new Blob([lines.join('\n')], { type: 'text/csv' }), 'solar-point.csv')
   }, [probe, lat, lon, timeZone])
 
   const r = probe?.report

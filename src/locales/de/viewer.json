@@ -291,5 +291,23 @@
     "unlocked": "Halten zum Umsehen",
     "up": "Hoch",
     "down": "Runter"
+  },
+  "elementCard": {
+    "open": "Elementdetails öffnen",
+    "allProperties": "Alle Eigenschaften",
+    "keyData": "Kerndaten",
+    "type": "Typ",
+    "storey": "Geschoss",
+    "material": "Material",
+    "quantities": "Mengen",
+    "commonProps": "Allgemeine Eigenschaften",
+    "loading": "Daten werden geladen…",
+    "noData": "Keine IFC-Daten für dieses Element",
+    "close": "Schließen",
+    "selected": "Ausgewählt: {{name}}, {{type}}",
+    "deselected": "Auswahl aufgehoben",
+    "canvas": "3D-Modellansicht. Tippe auf ein Element, um es auszuwählen; halte es gedrückt für Aktionen.",
+    "copyGlobalId": "GlobalId kopieren",
+    "more": "Weitere Aktionen"
   }
 }

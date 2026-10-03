@@ -2,12 +2,18 @@ import './i18n/config'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { MotionConfig } from 'framer-motion'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { initAnalytics } from './lib/analytics'
 import { analyticsAllowed } from './stores/consentStore'
 import { captureAttribution } from './lib/attribution'
 import { parseAppUrlParams, parseInvitePath } from './lib/url-params'
 import './index.css'
+import { installKeyboardInset } from './lib/keyboard-inset'
+
+// iOS lays the on-screen keyboard over the page instead of resizing it;
+// bottom sheets read --kb-inset to stay above it. See lib/keyboard-inset.
+installKeyboardInset()
 
 // Initialize PostHog analytics before first render — but only when the user has
 // not objected (GDPR Art. 21) and the browser is not signalling GPC/DNT.
@@ -72,10 +78,15 @@ const LazyClerkProvider = clerkPubKey
     })
   : null
 
+// iOS Settings › Accessibility › Reduce Motion (and the desktop equivalents)
+// turns every framer-motion transform animation — sheets sliding, bars
+// springing — into an instant change; opacity fades are kept.
 const app = (
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
+  <MotionConfig reducedMotion="user">
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </MotionConfig>
 )
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
