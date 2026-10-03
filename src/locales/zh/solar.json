@@ -95,7 +95,7 @@
     "locationLine": "{{lat}}, {{lon}} · {{tz}}",
     "climate": {
       "title": "Site climate",
-      "consent": "Load 10 years of observed weather for this place from Open-Meteo (ERA5)? Only the coordinates, rounded to ~1 km, are sent.",
+      "consent": "Load observed weather for this place from Open-Meteo (ERA5): 10 years of daily normals and 5 years of hourly direct and diffuse radiation. Only the coordinates, rounded to ~1 km, are sent.",
       "load": "Load the climate",
       "loading": "Loading the climate…",
       "error": "The climate could not be loaded: {{message}}",
@@ -126,7 +126,9 @@
     "metric": {
       "title": "Measure",
       "sunHours": "Sun hours",
-      "irradiation": "Irradiation"
+      "irradiation": "Irradiation",
+      "probableSun": "Expected sun",
+      "skyView": "Sky view"
     },
     "kinds": {
       "ground": "Site",
@@ -142,18 +144,24 @@
     "error": "The analysis failed: {{message}}",
     "legend": {
       "sunHours": "Direct sun, hours per day",
-      "irradiation": "Irradiation, kWh/m² over the period"
+      "irradiation": "Irradiation, kWh/m² over the period",
+      "probableSun": "Expected sun, hours per day",
+      "skyView": "Sky view factor, %"
     },
     "results": {
       "title": "Results",
       "meta": "{{instants}} sun positions · {{sensors}} sensors",
       "average": "Average",
       "least": "Least sun",
-      "most": "Most sun"
+      "most": "Most sun",
+      "sky": "Sky: {{model}} · ground albedo {{albedo}}"
     },
     "hover": {
       "sun": "{{h}} h of sun / day",
-      "kwh": "{{kwh}} kWh/m²"
+      "kwh": "{{kwh}} kWh/m²",
+      "probable": "{{h}} h expected",
+      "split": "beam {{d}} % · sky {{f}} % · ground {{r}} %",
+      "sky": "sees {{pct}} % of the sky"
     },
     "checks": {
       "title": "Checks",
@@ -195,7 +203,36 @@
       "exportCsv": "Export CSV",
       "frame": "Show in 3D"
     },
-    "disclaimer": "Clear-sky model scaled by the site's measured cloudiness; diffuse light from the sky each point can actually see. For design decisions — not an energy certificate."
+    "disclaimer": "Clear-sky model scaled by the site's measured cloudiness; diffuse light from the sky each point can actually see. For design decisions — not an energy certificate.",
+    "metricHint": {
+      "sunHours": "Hours the sun is visible from each point (clear sky) — what EN 17037 counts",
+      "probableSun": "Hours of sun to expect, with the site's measured chance of sunshine at each hour",
+      "irradiation": "Solar energy received: beam + diffuse sky + light reflected by the ground",
+      "skyView": "Share of the sky a point sees, cosine-weighted (100 % = a roof under an open sky). Drives daylight and night cooling"
+    },
+    "sky": {
+      "label": "Sky",
+      "measured": "Measured, hour by hour (ERA5)",
+      "clearness": "Clear sky × monthly clearness",
+      "clear": "Clear sky",
+      "fallback": "Not loaded yet — using: {{model}}. Load the climate for the measured sky."
+    },
+    "albedo": {
+      "label": "Ground",
+      "urban": "Urban",
+      "grass": "Grass",
+      "concrete": "Concrete",
+      "lightPaving": "Light paving",
+      "snow": "Snow"
+    },
+    "precision": {
+      "label": "Precision",
+      "fast": "Fast",
+      "standard": "Standard",
+      "fine": "Fine"
+    },
+    "cancel": "Stop",
+    "exportGridHint": "Every sensor with its position, normal and all the metrics (CSV)"
   },
   "timelapse": {
     "title": "Day timelapse",
@@ -203,5 +240,45 @@
     "rendering": "Rendering… {{pct}}%",
     "done": "Video ready",
     "unsupported": "This browser cannot encode video."
+  },
+  "almanac": {
+    "title": "Almanac & sun path",
+    "diagram": "Sun-path diagram: the year's envelope, today's arc and the sun and moon now",
+    "azimuth": "Sun azimuth",
+    "altitude": "Sun altitude",
+    "shadow": "Shadow of 10 m",
+    "shadowHint": "Length of the shadow a 10 m vertical object casts on flat ground right now",
+    "noonAltitude": "Noon",
+    "dayLength": "Day length",
+    "dayDelta": "vs. yesterday",
+    "civil": "Civil twilight",
+    "nautical": "Nautical",
+    "astronomical": "Astronomical",
+    "declination": "Declination",
+    "moonrise": "Moonrise",
+    "moonset": "Moonset",
+    "moonPos": "Moon az · alt",
+    "distance": "Moon distance",
+    "allDay": "up all day",
+    "notUp": "does not rise",
+    "phases": {
+      "new": "New moon",
+      "firstQuarter": "First quarter",
+      "full": "Full moon",
+      "lastQuarter": "Last quarter"
+    },
+    "compass": {
+      "N": "N",
+      "E": "E",
+      "S": "S",
+      "W": "W"
+    },
+    "legend": {
+      "summer": "summer solstice",
+      "equinox": "equinox",
+      "winter": "winter solstice",
+      "today": "today"
+    },
+    "source": "Sun: NOAA/Meeus algorithm with refraction (±0.01°). Moon: suncalc. Times in the site's zone ({{offset}})."
   }
 }

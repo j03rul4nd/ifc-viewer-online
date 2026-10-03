@@ -94,7 +94,7 @@
     "locationLine": "{{lat}}, {{lon}} · {{tz}}",
     "climate": {
       "title": "Clima del lugar",
-      "consent": "¿Cargar 10 años de datos meteorológicos observados de este lugar desde Open-Meteo (ERA5)? Solo se envían las coordenadas, redondeadas a ~1 km.",
+      "consent": "¿Cargar el tiempo observado en este lugar desde Open-Meteo (ERA5)? 10 años de normales diarias y 5 años de radiación directa y difusa hora a hora. Solo se envían las coordenadas, redondeadas a ~1 km.",
       "load": "Cargar el clima",
       "loading": "Cargando el clima…",
       "error": "No se pudo cargar el clima: {{message}}",
@@ -125,7 +125,9 @@
     "metric": {
       "title": "Medir",
       "sunHours": "Horas de sol",
-      "irradiation": "Radiación"
+      "irradiation": "Irradiación",
+      "probableSun": "Sol esperado",
+      "skyView": "Vista de cielo"
     },
     "kinds": {
       "ground": "Parcela",
@@ -141,18 +143,24 @@
     "error": "El análisis falló: {{message}}",
     "legend": {
       "sunHours": "Sol directo, horas al día",
-      "irradiation": "Radiación, kWh/m² en el periodo"
+      "irradiation": "Irradiación, kWh/m² en el periodo",
+      "probableSun": "Sol esperado, horas al día",
+      "skyView": "Factor de vista de cielo, %"
     },
     "results": {
       "title": "Resultados",
-      "meta": "{{instants}} posiciones del sol · {{sensors}} sensores",
+      "meta": "{{instants}} posiciones del sol (de {{raw}} instantes) · {{sensors}} sensores",
       "average": "Media",
       "least": "Menos sol",
-      "most": "Más sol"
+      "most": "Más sol",
+      "sky": "Cielo: {{model}} · albedo del suelo {{albedo}}"
     },
     "hover": {
       "sun": "{{h}} h de sol al día",
-      "kwh": "{{kwh}} kWh/m²"
+      "kwh": "{{kwh}} kWh/m²",
+      "probable": "{{h}} h esperadas",
+      "split": "directa {{d}} % · cielo {{f}} % · suelo {{r}} %",
+      "sky": "ve el {{pct}} % del cielo"
     },
     "checks": {
       "title": "Comprobaciones",
@@ -194,7 +202,36 @@
       "exportCsv": "Exportar CSV",
       "frame": "Ver en 3D"
     },
-    "disclaimer": "Modelo de cielo despejado ajustado a la nubosidad medida en el lugar; luz difusa del cielo que cada punto ve de verdad. Para decidir el diseño, no es un certificado energético."
+    "disclaimer": "Modelo de cielo despejado ajustado a la nubosidad medida en el lugar; luz difusa del cielo que cada punto ve de verdad. Para decidir el diseño, no es un certificado energético.",
+    "metricHint": {
+      "sunHours": "Horas en que el sol es visible desde cada punto (cielo despejado): lo que cuenta la EN 17037",
+      "probableSun": "Horas de sol que cabe esperar, con la probabilidad de sol medida en el sitio a cada hora",
+      "irradiation": "Energía solar recibida: directa + difusa del cielo + reflejada por el suelo",
+      "skyView": "Parte del cielo que ve un punto, ponderada por el coseno (100 % = una cubierta bajo cielo abierto). Decide luz natural y enfriamiento nocturno"
+    },
+    "sky": {
+      "label": "Cielo",
+      "measured": "Medido, hora a hora (ERA5)",
+      "clearness": "Cielo claro × claridad mensual",
+      "clear": "Cielo despejado",
+      "fallback": "Aún no está cargado: se usa {{model}}. Carga el clima para el cielo medido."
+    },
+    "albedo": {
+      "label": "Suelo",
+      "urban": "Urbano",
+      "grass": "Césped",
+      "concrete": "Hormigón",
+      "lightPaving": "Pavimento claro",
+      "snow": "Nieve"
+    },
+    "precision": {
+      "label": "Precisión",
+      "fast": "Rápida",
+      "standard": "Normal",
+      "fine": "Fina"
+    },
+    "cancel": "Parar",
+    "exportGridHint": "Todos los sensores con su posición, normal y todas las métricas (CSV)"
   },
   "timelapse": {
     "title": "Timelapse del día",
@@ -202,5 +239,45 @@
     "rendering": "Renderizando… {{pct}} %",
     "done": "Vídeo listo",
     "unsupported": "Este navegador no puede codificar vídeo."
+  },
+  "almanac": {
+    "title": "Almanaque y carta solar",
+    "diagram": "Carta solar: la envolvente del año, el arco de hoy y el sol y la luna ahora",
+    "azimuth": "Azimut del sol",
+    "altitude": "Altura del sol",
+    "shadow": "Sombra de 10 m",
+    "shadowHint": "Longitud de la sombra que proyecta ahora un objeto vertical de 10 m sobre suelo plano",
+    "noonAltitude": "Mediodía",
+    "dayLength": "Duración del día",
+    "dayDelta": "frente a ayer",
+    "civil": "Crepúsculo civil",
+    "nautical": "Náutico",
+    "astronomical": "Astronómico",
+    "declination": "Declinación",
+    "moonrise": "Salida de la luna",
+    "moonset": "Puesta de la luna",
+    "moonPos": "Luna az · alt",
+    "distance": "Distancia a la luna",
+    "allDay": "todo el día",
+    "notUp": "no sale",
+    "phases": {
+      "new": "Luna nueva",
+      "firstQuarter": "Cuarto creciente",
+      "full": "Luna llena",
+      "lastQuarter": "Cuarto menguante"
+    },
+    "compass": {
+      "N": "N",
+      "E": "E",
+      "S": "S",
+      "W": "O"
+    },
+    "legend": {
+      "summer": "solsticio de verano",
+      "equinox": "equinoccio",
+      "winter": "solsticio de invierno",
+      "today": "hoy"
+    },
+    "source": "Sol: algoritmo NOAA/Meeus con refracción (±0,01°). Luna: suncalc. Horas en la zona del sitio ({{offset}})."
   }
 }

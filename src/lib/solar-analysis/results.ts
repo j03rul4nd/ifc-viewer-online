@@ -3,15 +3,22 @@
 
 import type { SensorSet, SensorElement } from './sensors'
 
-export type SolarMetric = 'sunHours' | 'irradiation'
+export type SolarMetric = 'sunHours' | 'probableSun' | 'irradiation' | 'skyView'
+export const SOLAR_METRICS: SolarMetric[] = ['sunHours', 'probableSun', 'irradiation', 'skyView']
 
 export interface ExposureResult {
-  /** Hours of direct sun over the whole period, per sensor. */
+  /** Hours the sun is geometrically visible over the period (clear sky), per sensor. */
   sunHours: Float32Array
-  /** Direct (beam) irradiation over the period, Wh/m², per sensor. */
+  /** Hours of sun to EXPECT: visible × the site's chance of sunshine at that hour. */
+  probableSunHours: Float32Array
+  /** Beam + circumsolar irradiation over the period, Wh/m², blocked by shadows. */
   directWh: Float32Array
-  /** Diffuse irradiation over the period, Wh/m², per sensor (unobstructed sky). */
+  /** Isotropic sky diffuse over the period, Wh/m², weighted by the sky the sensor sees. */
   diffuseWh: Float32Array
+  /** Ground-reflected irradiation over the period, Wh/m². */
+  reflectedWh: Float32Array
+  /** Cosine-weighted sky view factor, 0–1 (1 = a roof under an open sky). */
+  skyCos: Float32Array
   /** Days the period covers. */
   days: number
 }
@@ -23,11 +30,26 @@ export function sunHoursPerDay(r: ExposureResult, i: number): number {
 
 /** Total irradiation over the period, kWh/m². */
 export function irradiationKwh(r: ExposureResult, i: number): number {
-  return (r.directWh[i] + r.diffuseWh[i]) / 1000
+  return (r.directWh[i] + r.diffuseWh[i] + r.reflectedWh[i]) / 1000
+}
+
+/** Average hours of sun to expect per day, with the site's cloudiness. */
+export function probableSunPerDay(r: ExposureResult, i: number): number {
+  return r.days > 0 ? r.probableSunHours[i] / r.days : 0
 }
 
 export function metricValue(r: ExposureResult, metric: SolarMetric, i: number): number {
-  return metric === 'sunHours' ? sunHoursPerDay(r, i) : irradiationKwh(r, i)
+  switch (metric) {
+    case 'sunHours': return sunHoursPerDay(r, i)
+    case 'probableSun': return probableSunPerDay(r, i)
+    case 'irradiation': return irradiationKwh(r, i)
+    case 'skyView': return r.skyCos[i] * 100
+  }
+}
+
+/** Unit a metric is shown in. */
+export function metricUnit(metric: SolarMetric): string {
+  return metric === 'irradiation' ? 'kWh/m²' : metric === 'skyView' ? '%' : 'h'
 }
 
 export interface ElementStat {
@@ -38,6 +60,10 @@ export interface ElementStat {
   sunHoursPerDay: number
   /** kWh/m² over the period on that face. */
   irradiationKwh: number
+  /** Expected sun hours per day on that face, with the cloudiness. */
+  probableSunPerDay: number
+  /** Cosine-weighted sky view of that face, 0–1. */
+  skyView: number
   /** Area of that face, m². */
   area: number
   /** Mean normal of that face (scene axes). */
@@ -53,7 +79,7 @@ export interface ElementStat {
  * inside face of a wall or window, which never sees the sun, drops out.
  */
 export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Array): ElementStat[] {
-  type Acc = { area: number; hours: number; kwh: number; nx: number; ny: number; nz: number; x: number; y: number; z: number }
+  type Acc = { area: number; hours: number; kwh: number; prob: number; sky: number; nx: number; ny: number; nz: number; x: number; y: number; z: number }
   const per = new Map<number, Map<number, Acc>>()
   for (let i = 0; i < set.count; i++) {
     const e = set.element[i]
@@ -66,11 +92,13 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
     let byFacing = per.get(e)
     if (!byFacing) { byFacing = new Map(); per.set(e, byFacing) }
     let acc = byFacing.get(facing)
-    if (!acc) { acc = { area: 0, hours: 0, kwh: 0, nx: 0, ny: 0, nz: 0, x: 0, y: 0, z: 0 }; byFacing.set(facing, acc) }
+    if (!acc) { acc = { area: 0, hours: 0, kwh: 0, prob: 0, sky: 0, nx: 0, ny: 0, nz: 0, x: 0, y: 0, z: 0 }; byFacing.set(facing, acc) }
     const a = set.area[i]
     acc.area += a
     acc.hours += sunHoursPerDay(r, i) * a
     acc.kwh += irradiationKwh(r, i) * a
+    acc.prob += probableSunPerDay(r, i) * a
+    acc.sky += r.skyCos[i] * a
     acc.nx += nx * a; acc.ny += ny * a; acc.nz += nz * a
     acc.x += set.positions[i * 3] * a; acc.y += set.positions[i * 3 + 1] * a; acc.z += set.positions[i * 3 + 2] * a
   }
@@ -88,6 +116,8 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
       index,
       sunHoursPerDay: best.hours / best.area,
       irradiationKwh: best.kwh / best.area,
+      probableSunPerDay: best.prob / best.area,
+      skyView: best.sky / best.area,
       area: best.area,
       normal: { x: best.nx / nl, y: best.ny / nl, z: best.nz / nl },
       center: { x: best.x / best.area, y: best.y / best.area, z: best.z / best.area },

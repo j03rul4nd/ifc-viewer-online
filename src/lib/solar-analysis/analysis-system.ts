@@ -11,6 +11,7 @@ import {
 import { runExposure } from './exposure-engine'
 import { sunPath, type AnalysisPeriod, type SunPathOptions } from './sun-paths'
 import { elementStats, metricValue, niceRange, type ElementStat, type ExposureResult, type SolarMetric } from './results'
+import { reflectedOnSurface } from './irradiance'
 import { createHeatmap, type Heatmap } from './heatmap'
 import { createLogger } from '../logger'
 
@@ -59,10 +60,15 @@ export interface AnalysisRun {
   sensors: SensorSet
   result: ExposureResult
   stats: ElementStat[]
+  /** Shadow renders (sun positions or sky patches). */
   instants: number
+  /** Sun-up instants those stand for (every day of the period when binned). */
+  rawInstants: number
   period: AnalysisPeriod
   /** Share of the sky dome each sensor sees, 0–1 (its own surface's horizon included). */
   skyView: Float32Array
+  /** Ground albedo the reflected share was computed with. */
+  albedo: number
   /** 1 for a sensor that sees some sky; 0 for one buried inside a solid (drawn and counted nowhere). */
   open: Uint8Array
 }
@@ -71,7 +77,12 @@ export interface HoverInfo {
   sensor: number
   kind: SensorKind
   sunHoursPerDay: number
+  probableSunPerDay: number
   irradiationKwh: number
+  /** Share of the period's irradiation: beam + circumsolar, sky diffuse, ground-reflected. */
+  split: { direct: number; diffuse: number; reflected: number }
+  /** Cosine-weighted sky view, %. */
+  skyViewPct: number
   element: SensorElement | null
   clientX: number
   clientY: number
@@ -79,7 +90,7 @@ export interface HoverInfo {
 
 export interface SolarAnalysisAPI {
   buildSensors(o: SensorOptions, onProgress?: (f: number) => void): Promise<SensorSet>
-  run(sensors: SensorSet, period: AnalysisPeriod, path: SunPathOptions, o?: { onProgress?: (f: number) => void; signal?: AbortSignal }): Promise<AnalysisRun>
+  run(sensors: SensorSet, period: AnalysisPeriod, path: SunPathOptions, o?: { onProgress?: (f: number) => void; signal?: AbortSignal; albedo?: number }): Promise<AnalysisRun>
   show(run: AnalysisRun, metric: SolarMetric, kinds: ReadonlySet<SensorKind>, range?: { min: number; max: number }): { min: number; max: number }
   hide(): void
   isShown(): boolean
@@ -100,7 +111,12 @@ function hemisphere(count: number): Array<{ x: number; y: number; z: number }> {
   return out
 }
 
-const SKY_DIRECTIONS = 48
+/**
+ * Directions for the sky view. 48 left the factor visibly noisy in a street
+ * canyon (each direction was 2 % of the sky); 144 is ~0.7 % and costs a
+ * fraction of a year's run, once per sensor set.
+ */
+const SKY_DIRECTIONS = 144
 /** Below this share of sky a sensor is inside something (a slab under a roof finish). */
 const BURIED_SKY = 0.03
 
@@ -109,7 +125,7 @@ const MEASURED = /^(IFCWINDOW|IFCCURTAINWALL|IFCPLATE|IFCWALL|IFCWALLSTANDARDCAS
 export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI {
   let heatmap: Heatmap | null = null
   let gridWasVisible: boolean | null = null
-  const skyCache = new WeakMap<SensorSet, Float32Array>()
+  const skyCache = new WeakMap<SensorSet, { share: Float32Array; cos: Float32Array }>()
   let shown: AnalysisRun | null = null
   let hoverCb: ((info: HoverInfo | null) => void) | null = null
   const raycaster = new THREE.Raycaster()
@@ -125,11 +141,16 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
     const i = heatmap.sensorOf(hit.instanceId)
     const s = shown.sensors
     const e2 = s.element[i]
+    const r = shown.result
+    const total = Math.max(1e-9, r.directWh[i] + r.diffuseWh[i] + r.reflectedWh[i])
     hoverCb({
       sensor: i,
       kind: (['ground', 'facade', 'window', 'roof'] as const)[s.kind[i]],
-      sunHoursPerDay: metricValue(shown.result, 'sunHours', i),
-      irradiationKwh: metricValue(shown.result, 'irradiation', i),
+      sunHoursPerDay: metricValue(r, 'sunHours', i),
+      probableSunPerDay: metricValue(r, 'probableSun', i),
+      irradiationKwh: metricValue(r, 'irradiation', i),
+      split: { direct: r.directWh[i] / total, diffuse: r.diffuseWh[i] / total, reflected: r.reflectedWh[i] / total },
+      skyViewPct: metricValue(r, 'skyView', i),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
     })
@@ -236,7 +257,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
 
     async run(sensors, period, path, o = {}) {
       if (sensors.count === 0) throw new Error('Nothing to measure')
-      const { samples, days } = sunPath(period, path)
+      const { samples, days, rawInstants } = sunPath(period, path)
       if (samples.length === 0) throw new Error('The sun does not rise above the horizon in this period')
       const occluders: THREE.Object3D[] = []
       for (const id of ctx.getLoadedModelIds()) {
@@ -251,28 +272,40 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
         hidden: () => (heatmap ? [heatmap.object] : []),
         pauseViewer: (p: boolean) => ctx.setPaused(p),
       }
-      // The sky first (once per sensor set): what share of the dome each
-      // sensor sees. It finds the buried sensors — a structural slab under the
-      // roof finish, a wall face inside another — and it is the right weight
-      // for the diffuse sky, which an unobstructed formula overstates.
-      let skyView = skyCache.get(sensors)
-      if (!skyView) {
+      // The sky first (once per sensor set). Two figures from one pass over
+      // the dome: the plain share of directions a sensor sees, which finds the
+      // buried sensors — a structural slab under the roof finish, a wall face
+      // inside another — and the COSINE-weighted view factor, which is what
+      // the isotropic diffuse sky actually delivers to a surface.
+      let sky = skyCache.get(sensors)
+      if (!sky) {
         const dirs = hemisphere(SKY_DIRECTIONS)
-        const sky = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
+        const pass = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
           utc: 0, azimuthDeg: 0, altitudeDeg: 0, dir, hours: 1 / SKY_DIRECTIONS, month: 1,
-          irradiance: { dni: 0, dhi: 0, ghi: 0 },
-        })), 1, { signal: o.signal })
-        skyView = sky.sunHours
-        skyCache.set(sensors, skyView)
+          irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: 0, diffuseIso: 0, sunProb: 0,
+        })), 1, { signal: o.signal, skyWeight: 2 / SKY_DIRECTIONS, onProgress: (f) => o.onProgress?.(f * 0.15) })
+        sky = { share: pass.sunHours, cos: pass.skyCos }
+        skyCache.set(sensors, sky)
       }
-      const result = await runExposure(engineCtx, sensors, samples, days, { onProgress: o.onProgress, signal: o.signal })
-      const dhiTotal = samples.reduce((a, s) => a + s.irradiance.dhi * s.hours, 0)
+      const result = await runExposure(engineCtx, sensors, samples, days, {
+        onProgress: (f) => o.onProgress?.(0.15 + f * 0.85), signal: o.signal,
+      })
+      let isoWh = 0, ghiWh = 0
+      for (const sm of samples) { isoWh += sm.diffuseIso * sm.hours; ghiWh += sm.irradiance.ghi * sm.hours }
+      const albedo = o.albedo ?? 0.2
       const open = new Uint8Array(sensors.count)
       for (let i = 0; i < sensors.count; i++) {
-        open[i] = skyView[i] >= BURIED_SKY ? 1 : 0
-        result.diffuseWh[i] = dhiTotal * skyView[i]
+        open[i] = sky.share[i] >= BURIED_SKY ? 1 : 0
+        result.skyCos[i] = sky.cos[i]
+        result.diffuseWh[i] = isoWh * sky.cos[i]
+        // The ground is taken as unobstructed and uniformly lit: a façade's
+        // reflected share is an estimate, small next to the beam it sits beside.
+        result.reflectedWh[i] = reflectedOnSurface(ghiWh, sensors.normals[i * 3 + 1], albedo)
       }
-      return { sensors, result, stats: elementStats(sensors, result, open), instants: samples.length, period, skyView, open }
+      return {
+        sensors, result, stats: elementStats(sensors, result, open),
+        instants: samples.length, rawInstants, period, skyView: sky.share, open, albedo,
+      }
     },
 
     show(run, metric, kinds, range) {
