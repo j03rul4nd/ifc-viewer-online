@@ -30,6 +30,8 @@ import { northDirection } from '../../lib/geo/geo-math'
 import { issuesToBcfTopics, downloadBcfBlob } from '../../lib/bcf'
 import type { ValidationIssue } from '../../types'
 
+const PointProbe = React.lazy(() => import('./PointProbe'))
+
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
 }
@@ -580,6 +582,13 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     </div>
                   )}
                 </div>
+              </Section>
+
+              {/* One point's shading diagram */}
+              <Section title={t('probe.title')}>
+                <React.Suspense fallback={null}>
+                  <PointProbe viewerApiRef={viewerApiRef} lat={location.lat} lon={location.lon} yawDeg={location.yawDeg} timeZone={timeZone} enMinAltitudeDeg={enMinAlt} />
+                </React.Suspense>
               </Section>
 
               <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('analysis.disclaimer')}</p>

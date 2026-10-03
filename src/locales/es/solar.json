@@ -202,7 +202,7 @@
       "exportCsv": "Exportar CSV",
       "frame": "Ver en 3D"
     },
-    "disclaimer": "Modelo de cielo despejado ajustado a la nubosidad medida en el lugar; luz difusa del cielo que cada punto ve de verdad. Para decidir el diseño, no es un certificado energético.",
+    "disclaimer": "Sol con el algoritmo NOAA/SPA; cielo con las mediciones ERA5 si están cargadas (si no, cielo claro ajustado a la claridad medida); difusa Hay–Davies ponderada por el cielo que cada punto ve de verdad. Para decidir el diseño, no es un certificado energético.",
     "metricHint": {
       "sunHours": "Horas en que el sol es visible desde cada punto (cielo despejado): lo que cuenta la EN 17037",
       "probableSun": "Horas de sol que cabe esperar, con la probabilidad de sol medida en el sitio a cada hora",
@@ -279,5 +279,22 @@
       "today": "hoy"
     },
     "source": "Sol: algoritmo NOAA/Meeus con refracción (±0,01°). Luna: suncalc. Horas en la zona del sitio ({{offset}})."
+  },
+  "probe": {
+    "title": "Diagrama de sombras de un punto",
+    "pick": "Elegir un punto",
+    "picking": "Haz clic en el modelo o la parcela… (Esc)",
+    "another": "Otro punto",
+    "measuring": "Mirando el cielo…",
+    "clear": "Quitar el punto",
+    "nothing": "Ahí no hay nada que medir: haz clic en el modelo, la ciudad o el suelo.",
+    "hint": "Haz clic en una ventana, una terraza o un punto de la parcela: verás qué le tapa el cielo sobre las trayectorias del sol del año, y su sol hora a hora, mes a mes.",
+    "diagram": "Diagrama de sombras: las obstrucciones del punto sobre las trayectorias del sol del día 21 de cada mes",
+    "year": "Sol al día, año (frente a cielo abierto)",
+    "winter": "Solsticio de invierno",
+    "summer": "Solsticio de verano",
+    "en": "EN 17037 · 21 mar por encima de {{alt}}°",
+    "skyView": "Vista de cielo",
+    "table": "Sol el día 21, hora a hora (parte de cada hora)"
   }
 }

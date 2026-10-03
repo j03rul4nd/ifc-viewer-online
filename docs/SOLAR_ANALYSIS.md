@@ -53,6 +53,15 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
 
+## Shading diagram of a point
+
+Pick any point (model, OSM buildings, terrain, or the ground plane): five 90°
+renders from the point with every occluder drawn white on black give a 2° × 2°
+sky mask (`sky-mask.ts`, `renderSkyMask` in `analysis-system.ts`). Over it:
+the 21st-of-each-month sun paths and hour lines, a month × hour table of the
+share of each hour in sun, sun per day over the year vs. an open sky, EN 17037
+hours on 21 March at that exact point, and the sky view. Exports as CSV.
+
 ## Almanac (Sun & Moon panel)
 
 Sunrise/sunset with azimuth, solar noon altitude, civil/nautical/astronomical

@@ -202,7 +202,7 @@
       "exportCsv": "Export CSV",
       "frame": "Show in 3D"
     },
-    "disclaimer": "Clear-sky model scaled by the site's measured cloudiness; diffuse light from the sky each point can actually see. For design decisions — not an energy certificate.",
+    "disclaimer": "Sun from the NOAA/SPA algorithm; sky from ERA5 measurements when loaded (else a clear sky scaled by measured clearness); Hay–Davies diffuse weighted by the sky each point really sees. For design decisions — not an energy certificate.",
     "metricHint": {
       "sunHours": "Hours the sun is visible from each point (clear sky) — what EN 17037 counts",
       "probableSun": "Hours of sun to expect, with the site's measured chance of sunshine at each hour",
@@ -279,5 +279,22 @@
       "today": "today"
     },
     "source": "Sun: NOAA/Meeus algorithm with refraction (±0.01°). Moon: suncalc. Times in the site's zone ({{offset}})."
+  },
+  "probe": {
+    "title": "Shading diagram of a point",
+    "pick": "Pick a point",
+    "picking": "Click the model or the site… (Esc)",
+    "another": "Another point",
+    "measuring": "Looking at the sky…",
+    "clear": "Remove the point",
+    "nothing": "Nothing there to measure — click the model, the city or the ground.",
+    "hint": "Click a window, a terrace, a spot of the plot: see what blocks its sky over the year's sun paths, and its sun hour by hour, month by month.",
+    "diagram": "Shading diagram: the point's obstructions over the sun paths of the 21st of each month",
+    "year": "Sun per day, year (vs. open sky)",
+    "winter": "Winter solstice",
+    "summer": "Summer solstice",
+    "en": "EN 17037 · 21 Mar above {{alt}}°",
+    "skyView": "Sky view",
+    "table": "Sun on the 21st, hour by hour (share of each hour)"
   }
 }
