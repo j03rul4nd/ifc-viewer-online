@@ -26,6 +26,8 @@ import { parseAppUrlParams } from '../lib/url-params'
 import { appBus } from '../lib/event-bus'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useWakeLock } from '../hooks/useWakeLock'
+import { shareOrDownload } from '../lib/share-file'
 import { loadCities, searchCities, type City } from '../lib/solar/city-search'
 import {
   trackSolarEnabled, trackSolarDisabled, trackSolarPresetSaved,
@@ -65,6 +67,8 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
   // Phone: "play the day" — the time runs dawn to dusk so the shadows move on
   // their own while the user watches. Stops on any manual scrub.
   const [playing, setPlaying] = useState(false)
+  // The day runs on its own, so the phone must not lock halfway through it.
+  useWakeLock(playing)
   const enabledAtRef = useRef(0)
 
   const getSolar = useCallback((): Promise<SolarSystemAPI> | null => {
@@ -152,11 +156,9 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
           solar.setState({ timeUTC: utc, lat: loc.lat, lon: loc.lon, yawDeg: loc.yawDeg, moonOn: false })
         },
       })
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `sun-day.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+      // Encoding takes seconds, so on a phone the share sheet may refuse (the
+      // tap's activation has expired) — shareOrDownload then downloads instead.
+      await shareOrDownload(blob, `sun-day.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`)
       setTimelapse(1)
     } catch (err) {
       setTimelapse(null)

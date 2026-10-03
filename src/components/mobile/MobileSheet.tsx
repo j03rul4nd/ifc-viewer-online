@@ -276,7 +276,10 @@ export function MobileSheet({
             the sheet actually on screen. It follows `y`, so it is right while
             dragging too, and an inner scroller now overflows when it should. */}
         <motion.div
-          style={{ height: visibleH }}
+          // The keyboard (iOS lays it over the page, lib/keyboard-inset) takes
+          // the bottom of the band: the scroller shrinks and the field being
+          // typed into can scroll into view instead of sitting behind it.
+          style={{ height: visibleH, paddingBottom: 'max(12px, env(safe-area-inset-bottom), var(--kb-inset, 0px))' }}
           // The band ends at the bottom of the screen, so the home indicator is
           // over its last row. Applied here rather than by each panel: every
           // sheet has the same edge and the same problem.

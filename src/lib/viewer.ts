@@ -1275,6 +1275,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.camera   = new OBC.OrthoPerspectiveCamera(components)
 
   const wr = world.renderer.three
+  // ── Render density on touch devices ──
+  // ThatOpen renders at min(devicePixelRatio, 2). On a phone that is 2x: four
+  // times the pixels of 1x, on the weakest GPU the app runs on, for detail a
+  // 6-inch Retina screen barely shows. The 'standard' quality (the default)
+  // renders phones and tablets at 1.5x — ~44% fewer pixels per frame, so
+  // orbiting stays fluid and the battery lasts — and 'quality' gives them the
+  // full 2x back. Desktop is untouched.
+  const coarsePointer = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    && window.matchMedia('(pointer: coarse)').matches
+  const densityFor = (quality: 'standard' | 'quality'): number =>
+    Math.min(window.devicePixelRatio || 1, coarsePointer && quality !== 'quality' ? 1.5 : 2)
+  if (coarsePointer) wr.setPixelRatio(densityFor('standard'))
   wr.shadowMap.enabled   = true
   wr.shadowMap.type      = THREE.PCFShadowMap   // PCFSoftShadowMap deprecated in Three.js r175+
   wr.outputColorSpace    = THREE.SRGBColorSpace
@@ -4367,6 +4379,21 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // ─── Postproduction ───────────────────────────────────────────────────────
 
     setRenderQuality(quality: 'standard' | 'quality') {
+      // Touch devices also trade render density (see "Render density" above).
+      if (coarsePointer) {
+        try {
+          const three = world.renderer!.three
+          const next = densityFor(quality)
+          if (three.getPixelRatio() !== next) {
+            three.setPixelRatio(next)
+            if (postproductionReady) {
+              try { world.renderer!.postproduction.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+            }
+          }
+        } catch (err) {
+          console.warn('[Viewer] render density change failed:', err)
+        }
+      }
       if (!postproductionReady) return
       try {
         const renderer = world.renderer

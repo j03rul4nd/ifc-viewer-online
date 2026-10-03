@@ -27,6 +27,7 @@ import {
 import { northDirection } from '../../lib/geo/geo-math'
 import { issuesToBcfTopics, downloadBcfBlob } from '../../lib/bcf'
 import type { ValidationIssue } from '../../types'
+import { shareOrDownload } from '../../lib/share-file'
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -285,11 +286,8 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
       lines.push([cell(r.f.modelId), cell(g?.guid ?? ''), cell(g?.name ?? ''), r.f.category, r.f.orientation, fmt(r.en ?? NaN, 2), fmt(r.summer ?? NaN, 2), fmt(r.winter ?? NaN, 2)].join(','))
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'solar-analysis.csv'
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    // Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download.
+    void shareOrDownload(blob, 'solar-analysis.csv')
   }, [guids])
 
   const frame = useCallback((f: { modelId: string; localId: number }) => {

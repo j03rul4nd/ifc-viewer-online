@@ -11,6 +11,7 @@ import ModelTree from './components/ModelTree'
 import { ColumnStrip } from './components/ColumnStrip'
 import { PanelRail } from './components/PanelRail'
 import { usePanelRail } from './hooks/usePanelRail'
+import { useWakeLock } from './hooks/useWakeLock'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
 import CameraControls from './components/CameraControls'
@@ -998,6 +999,9 @@ export default function App() {
   }, [loadsActive, urlParams])
   const loadingState: 'idle' | 'loading' | 'loaded' | 'error' =
     loadsActive ? 'loading' : sceneModels.length > 0 ? 'loaded' : loadError ? 'error' : 'idle'
+  // Keep a phone's screen on while something runs on its own: a big model
+  // streaming in, or a tour playing. See useWakeLock.
+  useWakeLock(loadsActive || tourMode === 'playing')
   // Toolbar-less presets put the loading indicator in the bottom-left corner
   // the OPFS badge also uses; while there is anything to show there, the
   // badge (whose click clears the cache) yields the corner.
