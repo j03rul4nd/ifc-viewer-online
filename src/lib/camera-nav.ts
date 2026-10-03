@@ -276,6 +276,57 @@ export function bindNavigation<A>(
     }
   }
 
+  // ── Touch long-press → the same menu ───────────────────────────────────────
+  // Touch has no right button, and iOS Safari never fires contextmenu, so the
+  // element menu (frame, isolate, hide, reveal…) had no way in on a phone. A
+  // still finger held for LONG_PRESS_MS raises the very event a right-click
+  // does, so the viewer needs no second path. A second finger (pinch) or any
+  // travel past the drag threshold cancels it: that is an orbit, not a press.
+  const LONG_PRESS_MS = 520
+  const touches = new Set<number>()
+  let press: { id: number; x: number; y: number; target: EventTarget | null; timer: ReturnType<typeof setTimeout> } | null = null
+  const cancelPress = (): void => { if (press) { clearTimeout(press.timer); press = null } }
+
+  const onTouchDown = (event: Event): void => {
+    const e = event as PointerEvent
+    if (e.pointerType !== 'touch') return
+    touches.add(e.pointerId)
+    cancelPress()
+    if (touches.size !== 1) return
+    const target = e.target
+    const x = e.clientX, y = e.clientY
+    press = {
+      id: e.pointerId, x, y, target,
+      timer: setTimeout(() => {
+        press = null
+        const t = target as (EventTarget & { dispatchEvent?: (ev: Event) => boolean }) | null
+        if (!t?.dispatchEvent || typeof MouseEvent === 'undefined') return
+        try { (navigator as Navigator & { vibrate?: (ms: number) => boolean }).vibrate?.(12) } catch { /* unsupported */ }
+        synthetic = true
+        try {
+          t.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 2 }))
+        } finally {
+          synthetic = false
+        }
+      }, LONG_PRESS_MS),
+    }
+  }
+  const onTouchMove = (event: Event): void => {
+    const e = event as PointerEvent
+    if (!press || e.pointerId !== press.id) return
+    if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > Math.max(8, rightDragThresholdPx)) cancelPress()
+  }
+  const onTouchEnd = (event: Event): void => {
+    const e = event as PointerEvent
+    touches.delete(e.pointerId)
+    if (press && e.pointerId === press.id) cancelPress()
+  }
+
+  wheelTarget?.addEventListener('pointerdown', onTouchDown)
+  wheelTarget?.addEventListener('pointermove', onTouchMove)
+  wheelTarget?.addEventListener('pointerup', onTouchEnd)
+  wheelTarget?.addEventListener('pointercancel', onTouchEnd)
+
   keyTarget.addEventListener('keydown', onKey)
   keyTarget.addEventListener('keyup', onKey)
   keyTarget.addEventListener('blur', onBlur)
@@ -298,6 +349,11 @@ export function bindNavigation<A>(
     keyTarget.removeEventListener('contextmenu', onContextMenu, true)
     wheelTarget?.removeEventListener('wheel', onWheel, true)
     wheelTarget?.removeEventListener('pointerdown', onPointerDown, true)
+    wheelTarget?.removeEventListener('pointerdown', onTouchDown)
+    wheelTarget?.removeEventListener('pointermove', onTouchMove)
+    wheelTarget?.removeEventListener('pointerup', onTouchEnd)
+    wheelTarget?.removeEventListener('pointercancel', onTouchEnd)
+    cancelPress()
     release()
   }
 }

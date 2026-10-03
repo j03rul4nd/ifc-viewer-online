@@ -25,6 +25,7 @@ import {
 import { parseAppUrlParams } from '../lib/url-params'
 import { appBus } from '../lib/event-bus'
 import { ViewportPanel } from './ViewportPanel'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { loadCities, searchCities, type City } from '../lib/solar/city-search'
 import {
   trackSolarEnabled, trackSolarDisabled, trackSolarPresetSaved,
@@ -60,6 +61,10 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
   const [sunInfo, setSunInfo] = useState<SkyPosition | null>(null)
   const [moonInfo, setMoonInfo] = useState<MoonState | null>(null)
   const [times, setTimes] = useState<DayTimes | null>(null)
+  const isMobile = useIsMobile()
+  // Phone: "play the day" — the time runs dawn to dusk so the shadows move on
+  // their own while the user watches. Stops on any manual scrub.
+  const [playing, setPlaying] = useState(false)
   const enabledAtRef = useRef(0)
 
   const getSolar = useCallback((): Promise<SolarSystemAPI> | null => {
@@ -346,6 +351,20 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
     return () => clearInterval(iv)
   }, [active, store.follow])
 
+  useEffect(() => { if (!active || !store.panelOpen) setPlaying(false) }, [active, store.panelOpen])
+  useEffect(() => {
+    if (!playing) return
+    const iv = setInterval(() => {
+      const s = useSolarStore.getState()
+      const p = utcToWallParts(new Date(s.timeUTC), s.timeZone)
+      // ~16 s for a whole day; wraps at midnight back to dawn's side of it.
+      const next = (p.minutesOfDay + 6) % 1440
+      s.setFollow('manual')
+      s.setTimeUTC(wallTimeToUTC(p.year, p.month, p.day, Math.floor(next / 60), next % 60, s.timeZone).getTime())
+    }, 66)
+    return () => clearInterval(iv)
+  }, [playing])
+
   // ── Time helpers ─────────────────────────────────────────────────────────────
   const wall = utcToWallParts(new Date(timeUTC), timeZone)
 
@@ -371,6 +390,11 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
     s.setFollow('manual')
     s.setTimeUTC(wallTimeToUTC(p.year, month, day, p.hour, p.minute, s.timeZone).getTime())
   }, [])
+
+  const fmtWall = (d: Date): string => {
+    const p = utcToWallParts(d, timeZone)
+    return `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`
+  }
 
   const markerPct = (d: Date | null): number | null => {
     if (!d) return null
@@ -463,6 +487,8 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
         onClose={() => store.setPanelOpen(false)}
         label={t('panel.title')}
         mobile="sheet"
+        peek
+        collapseKey={active ? 'on' : null}
         widthPx={280}
         anchor="top"
         maxHeight="calc(100vh - 140px)"
@@ -471,8 +497,120 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
             does the job in both shells: it flexes inside the desktop card's
             max-height and inside the sheet's full height. */}
         <div className="flex-1 min-h-0 overflow-y-auto">
+              {/* ── Phone: the live control first ──────────────────────────────
+                  A sun study is watched, not read. On a phone the sheet rests at
+                  its peek detent with the shadows in full view above it, so the
+                  top of the sheet is the one thing you drive while watching: a
+                  thumb-sized time scrubber with the day's events on it, and a
+                  play button that runs the day. Date and seasons sit just below;
+                  everything else is a drag up. */}
+              {isMobile && (
+                <div className="shrink-0 px-3.5 pb-2">
+                  <div className="flex items-center gap-2 pb-1.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-[var(--text)] leading-tight">{t('panel.title')}</div>
+                      <div className="text-[11px] text-[var(--text-faint)] font-mono tabular-nums truncate">
+                        {String(wall.day).padStart(2, '0')}/{String(wall.month).padStart(2, '0')}/{wall.year} · {tzLabel}
+                        {active && sunInfo && (sunInfo.altitudeDeg > 0 ? ` · ☀ ${Math.round(sunInfo.altitudeDeg)}°` : ` · ${t('chip.belowHorizon')}`)}
+                      </div>
+                    </div>
+                    {active && (
+                      <span className="text-[22px] font-semibold font-mono tabular-nums text-[var(--text)]">
+                        {String(wall.hour).padStart(2, '0')}:{String(wall.minute).padStart(2, '0')}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => store.setPanelOpen(false)}
+                      aria-label={t('panel.close')}
+                      className="w-10 h-10 shrink-0 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+                    </button>
+                  </div>
+
+                  {!active ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { void handleStart() }}
+                        disabled={!activeModelId}
+                        className="w-full h-12 rounded-[12px] text-[14px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40 active:scale-[0.98] transition-transform"
+                      >
+                        {t('enable.start')}
+                      </button>
+                      {!activeModelId && <div className="mt-1.5 text-[11.5px] text-[var(--text-faint)]">{t('enable.noModel')}</div>}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setPlaying((v) => !v)}
+                          aria-label={playing ? t('time.pause') : t('time.play')}
+                          aria-pressed={playing}
+                          className={[
+                            'w-11 h-11 shrink-0 rounded-full flex items-center justify-center active:scale-[0.93] transition-transform',
+                            playing ? 'bg-[var(--accent)] text-white' : 'bg-white/[0.08] text-[var(--text)]',
+                          ].join(' ')}
+                        >
+                          {playing
+                            ? <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3" height="10" rx="1" /><rect x="8" y="2" width="3" height="10" rx="1" /></svg>
+                            : <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M4 2.2v9.6a.6.6 0 00.9.5l7.4-4.8a.6.6 0 000-1L4.9 1.7a.6.6 0 00-.9.5z" /></svg>}
+                        </button>
+                        <div className="relative flex-1 min-w-0">
+                          {/* The day's events, as ticks above the track */}
+                          <div className="absolute left-[13px] right-[13px] top-[6px] h-[6px] pointer-events-none">
+                            {times && !times.alwaysUp && !times.alwaysDown && (
+                              <>
+                                <Marker pct={markerPct(times.sunrise)} title={t('time.sunrise')} color="#F5A623" />
+                                <Marker pct={markerPct(times.solarNoon)} title={t('time.solarNoon')} color="#FFD966" />
+                                <Marker pct={markerPct(times.sunset)} title={t('time.sunset')} color="#E5484D" />
+                              </>
+                            )}
+                          </div>
+                          <input
+                            type="range" min={0} max={1439} step={1}
+                            value={wall.minutesOfDay}
+                            onChange={(e) => { setPlaying(false); setWallMinutes(parseInt(e.target.value, 10)) }}
+                            className="m-range"
+                            style={{ '--m-range-c': '#F5A623', '--m-range-p': `${(wall.minutesOfDay / 1439) * 100}%` } as React.CSSProperties}
+                            aria-label={t('time.date')}
+                            data-testid="solar-time-slider"
+                          />
+                          <div className="flex justify-between -mt-1.5 text-[10.5px] font-mono tabular-nums text-[var(--text-faint)]">
+                            <span>{times?.sunrise ? `↑ ${fmtWall(times.sunrise)}` : '00:00'}</span>
+                            <span>{times?.sunset ? `${fmtWall(times.sunset)} ↓` : '24:00'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+                        <input
+                          type="date"
+                          value={`${wall.year}-${String(wall.month).padStart(2, '0')}-${String(wall.day).padStart(2, '0')}`}
+                          onChange={(e) => setWallDate(e.target.value)}
+                          aria-label={t('time.date')}
+                          className="geo-input shrink-0 !w-auto"
+                        />
+                        {!client && ([
+                          [t('seasons.summer'), 6, 21], [t('seasons.equinox'), 3, 20], [t('seasons.winter'), 12, 21],
+                        ] as const).map(([label, m, d]) => (
+                          <button key={label} type="button" onClick={() => jumpToSeason(m, d)}
+                            className={[
+                              'shrink-0 h-10 px-3 rounded-full text-[12px] font-medium whitespace-nowrap border',
+                              wall.month === m && wall.day === d ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+                            ].join(' ')}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Header */}
-              <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)] flex items-center justify-between">
+              {!isMobile && <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)] flex items-center justify-between">
                 <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">
                   {t('panel.title')}
                 </div>
@@ -485,10 +623,10 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                     <path d="M2 2l10 10M12 2L2 12"/>
                   </svg>
                 </button>
-              </div>
+              </div>}
 
-              {/* Start/stop + badges */}
-              <div className="p-2 flex flex-col gap-1.5">
+              {/* Start/stop + badges (on a phone the start lives in the top block) */}
+              <div className={['flex flex-col gap-1.5', isMobile ? (active ? 'px-3.5 py-2' : 'hidden') : 'p-2'].join(' ')}>
                 {!active ? (
                   <button
                     onClick={() => { void handleStart() }}
@@ -505,7 +643,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                     {t('enable.stop')}
                   </button>
                 )}
-                {!activeModelId && (
+                {!activeModelId && !isMobile && (
                   <div className="text-[10.5px] text-[var(--text-faint)]">{t('enable.noModel')}</div>
                 )}
                 {/* The analysis: where the study shows ONE instant, this measures
@@ -539,8 +677,8 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
               {/* Presets first in client mode (requirement #2) */}
               {client && <PresetsBlock presets={store.presets} onApply={handleApplyPreset} onDelete={(id) => store.removePreset(id)} t={t} client />}
 
-              {/* Date + time */}
-              <div className="border-t border-[var(--border)] px-3 py-2 flex flex-col gap-1.5">
+              {/* Date + time (a phone has these in the top block) */}
+              <div className={['border-t border-[var(--border)] px-3 py-2 flex-col gap-1.5', isMobile ? 'hidden' : 'flex'].join(' ')}>
                 <div className="flex items-center gap-1.5">
                   <label className="text-[10px] text-[var(--text-faint)]">{t('time.date')}</label>
                   <input
@@ -599,6 +737,20 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                   {t('time.realtime')}
                 </label>
               </div>
+
+              {isMobile && active && (
+                <div className="border-t border-[var(--border)] px-3.5 py-1">
+                  <label className="flex items-center gap-2 text-[11.5px] text-[var(--text-dim)] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={store.follow === 'realtime'}
+                      onChange={(e) => { setPlaying(false); store.setFollow(e.target.checked ? 'realtime' : 'manual') }}
+                      className="accent-[var(--accent)]"
+                    />
+                    {t('time.realtime')}
+                  </label>
+                </div>
+              )}
 
               {/* Sky dome */}
               <div className="border-t border-[var(--border)] px-3 py-2">

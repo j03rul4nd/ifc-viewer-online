@@ -188,11 +188,11 @@ export function SceneBackgroundMenu({ disabled = false, inline = false }: SceneB
 
       {open && (
         <>
-          <div className="fixed inset-0 z-[59]" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[59] max-md:bg-black/45" onClick={() => setOpen(false)} />
           <div
             role="dialog"
             aria-label={t('background.title')}
-            className="absolute right-0 top-full mt-1.5 w-[240px] bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] p-2.5 flex flex-col gap-2.5"
+            className="m-sheet absolute right-0 top-full mt-1.5 w-[240px] bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] p-2.5 flex flex-col gap-2.5"
           >
             {body}
           </div>

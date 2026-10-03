@@ -183,5 +183,12 @@
     "depth": "Profondità",
     "height": "Altezza",
     "note": "Box di ingombro secondo gli assi del modello."
+  },
+  "mobile": {
+    "list": "Elenco",
+    "options": "Opzioni",
+    "latest": "Ultima",
+    "levels": "Piani",
+    "position": "Posizione del taglio"
   }
 }

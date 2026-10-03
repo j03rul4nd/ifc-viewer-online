@@ -68,6 +68,8 @@ export function MobileSheet({
 
   const [vh, setVh] = useState<number>(() => (typeof window !== 'undefined' ? window.innerHeight : 800))
   const [rendered, setRendered] = useState(false)
+  const openRef = useRef(open)
+  openRef.current = open
 
   // Sorted, de-duped, in-range detents. Single [heightDvh] keeps legacy behavior.
   const detents = useMemo(() => {
@@ -126,10 +128,20 @@ export function MobileSheet({
     }
     if (rendered) {
       runAnim(sheetH, { damping: 42 })
-      const done = setTimeout(() => setRendered(false), 340)
+      // Re-check at fire time. A reopen that lands in the same tick as this
+      // timer renders FIRST (a store update is a sync-lane render, this
+      // setState is not), so the open effect saw `rendered` still true and
+      // did nothing — then this committed and the sheet vanished while open.
+      const done = setTimeout(() => { if (!openRef.current) setRendered(false) }, 340)
       return () => clearTimeout(done)
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Belt and braces for the same race: open but not rendered is never a
+  // state to stay in.
+  useEffect(() => {
+    if (open && !rendered) { setRendered(true); y.set(sheetH); if (!suspended) runAnim(detentY(curIdx.current)) }
+  }, [open, rendered]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Controlled detent changes from the parent (e.g. snap to peek on element select).
   // Gated on `open` (and not suspended): a detent change that lands while the sheet

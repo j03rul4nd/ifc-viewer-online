@@ -18,6 +18,7 @@ import {
 import type { RulesConfig, ValidationCategoryType, ValidationProfile } from '../types'
 import { getCoveredCategories } from './ValidationCoverageSummary'
 import SavedRulesetPicker from './pro/SavedRulesetPicker'
+import { SheetGrip } from './mobile/SheetGrip'
 
 // The serialised shape of a synced validator_profile — name + the full rules
 // config (which already carries severityOverrides + thresholds). Kept minimal
@@ -376,13 +377,14 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
           style={{ animation: 'fadeIn 150ms ease' }}
         />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[540px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl outline-none"
+          className="m-sheet fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[540px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl outline-none"
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             boxShadow: '0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)',
           }}
         >
+          <SheetGrip onClose={() => handleOpenChange(false)} />
           {/* ── Header ── */}
           <div
             className="flex items-center gap-3 px-5 py-4 shrink-0"

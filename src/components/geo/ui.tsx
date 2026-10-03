@@ -36,7 +36,7 @@ export function Caption({ children, trailing }: { children: React.ReactNode; tra
 /** Muted explanatory line under a control. */
 export function Hint({ children, active = false }: { children: React.ReactNode; active?: boolean }) {
   return (
-    <p className={`text-[10px] leading-snug ${active ? 'text-[var(--text-dim)]' : 'text-[var(--text-faint)]'}`}>
+    <p className={`text-[10px] max-md:text-[11.5px] leading-snug ${active ? 'text-[var(--text-dim)]' : 'text-[var(--text-faint)]'}`}>
       {children}
     </p>
   )
@@ -67,7 +67,7 @@ export function Notice({ tone = 'muted', children, action }: {
       {action && (
         <button
           onClick={action.onClick}
-          className="shrink-0 -my-0.5 px-1.5 py-0.5 rounded-[5px] text-[10px] font-medium text-[var(--accent-2)] hover:bg-[rgba(94,106,210,0.14)] transition-colors"
+          className="shrink-0 -my-0.5 px-1.5 py-0.5 max-md:py-2 max-md:px-2.5 max-md:text-[12px] rounded-[5px] text-[10px] font-medium text-[var(--accent-2)] hover:bg-[rgba(94,106,210,0.14)] transition-colors"
         >
           {action.label}
         </button>
@@ -98,7 +98,7 @@ export function Sheet({ title, backLabel, onBack, children }: {
       <div className="flex items-center gap-1.5">
         <button
           onClick={onBack}
-          className="-ml-1 p-1 rounded-[6px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+          className="-ml-1 p-1 max-md:p-2.5 rounded-[6px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
           aria-label={backLabel}
           title={backLabel}
         >
@@ -135,12 +135,14 @@ export function SwitchRow({ label, checked, onChange, disabled = false, busy = f
       className={[
         'flex items-center gap-2 rounded-[7px] -mx-1 px-1 transition-colors',
         compact ? 'py-1' : 'py-1.5',
+        // A finger needs the whole row; 26x15 switches are a pointer size.
+        'max-md:min-h-[44px]',
         disabled ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer hover:bg-[var(--surface-2)]',
       ].join(' ')}
     >
       {icon && <span className="shrink-0 text-[var(--text-faint)]" aria-hidden>{icon}</span>}
       <span className="min-w-0 flex-1">
-        <span className={`block truncate ${compact ? 'text-[10.5px]' : 'text-[11.5px]'} text-[var(--text-dim)]`}>
+        <span className={`block truncate ${compact ? 'text-[10.5px]' : 'text-[11.5px]'} max-md:text-[13px] text-[var(--text-dim)]`}>
           {label}
         </span>
         {note && (
@@ -162,14 +164,14 @@ export function SwitchRow({ label, checked, onChange, disabled = false, busy = f
       <span
         aria-hidden
         className={[
-          'relative shrink-0 w-[26px] h-[15px] rounded-full transition-colors',
+          'relative shrink-0 w-[26px] h-[15px] max-md:w-[40px] max-md:h-[24px] rounded-full transition-colors',
           checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]',
           'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)] peer-focus-visible:ring-offset-1 peer-focus-visible:ring-offset-[var(--bg)]',
         ].join(' ')}
       >
         <span
-          className="absolute top-[2px] left-[2px] w-[11px] h-[11px] rounded-full bg-white transition-transform duration-150"
-          style={{ transform: checked ? 'translateX(11px)' : 'translateX(0)' }}
+          className="absolute top-[2px] left-[2px] w-[11px] h-[11px] max-md:w-[20px] max-md:h-[20px] [--sw-x:11px] max-md:[--sw-x:16px] rounded-full bg-white transition-transform duration-150"
+          style={{ transform: checked ? 'translateX(var(--sw-x))' : 'translateX(0)' }}
         />
       </span>
     </label>
@@ -210,7 +212,7 @@ export function Choices<T extends string>({ options, onSelect, minWidth = 90, la
           disabled={o.disabled}
           style={{ minWidth }}
           className={[
-            'flex-1 px-2 h-[28px] rounded-[7px] text-[10.5px] font-medium leading-tight truncate',
+            'flex-1 px-2 h-[28px] max-md:h-[40px] max-md:text-[12px] rounded-[7px] text-[10.5px] font-medium leading-tight truncate',
             'border transition-colors active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none',
             o.active
               ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
@@ -252,7 +254,7 @@ export function Segmented<T extends string>({ options, value, onChange, label, s
             onClick={() => onChange(o.id)}
             className={[
               'relative z-[1] px-2 rounded-[5px] font-medium transition-colors whitespace-nowrap',
-              size === 'xs' ? 'h-[18px] text-[9.5px]' : 'h-[22px] text-[10.5px]',
+              size === 'xs' ? 'h-[18px] text-[9.5px] max-md:h-[30px] max-md:text-[12px] max-md:px-2.5' : 'h-[22px] text-[10.5px] max-md:h-[34px] max-md:text-[12.5px]',
               active ? 'text-[var(--text)]' : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]',
             ].join(' ')}
           >
@@ -283,7 +285,7 @@ export function Expander({ open, onToggle, label, children }: {
       <button
         onClick={onToggle}
         aria-expanded={open}
-        className="flex items-center gap-1.5 -mx-1 px-1 py-1 rounded-[7px] text-[10.5px] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:bg-[var(--surface-2)] transition-colors"
+        className="flex items-center gap-1.5 -mx-1 px-1 py-1 max-md:py-2.5 max-md:text-[12.5px] rounded-[7px] text-[10.5px] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:bg-[var(--surface-2)] transition-colors"
       >
         <svg
           width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
@@ -328,12 +330,12 @@ interface LookSliderProps {
 export function LookSlider({ label, value, min, max, step, format, onChange }: LookSliderProps) {
   return (
     <label className="flex items-center gap-1.5">
-      <span className="text-[10px] text-[var(--text-faint)] w-[54px] shrink-0">{label}</span>
+      <span className="text-[10px] max-md:text-[12px] max-md:w-[72px] text-[var(--text-faint)] w-[54px] shrink-0">{label}</span>
       <input
         type="range"
         min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="flex-1 accent-[var(--accent)]"
+        className="flex-1 accent-[var(--accent)] max-md:h-[40px]"
         aria-label={label}
       />
       <span className="text-[10px] font-mono w-[34px] text-right tabular-nums text-[var(--text-dim)]">
@@ -426,7 +428,7 @@ export function NudgeBtn({ label, ariaLabel, onClick }: { label: string; ariaLab
     <button
       onClick={onClick}
       aria-label={ariaLabel ?? label}
-      className="w-6 h-6 rounded-[5px] text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:scale-95 transition-all"
+      className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:text-[14px] rounded-[5px] text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:scale-95 transition-all"
     >
       {label}
     </button>
@@ -445,7 +447,9 @@ export function Button({ variant = 'secondary', size = 'md', className = '', chi
     : variant === 'accent-outline' ? 'border border-[var(--accent)] text-[var(--accent-2)] font-medium hover:bg-[rgba(94,106,210,0.12)]'
     : variant === 'ghost' ? 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
     : 'border border-[var(--border-strong)] text-[var(--text-dim)] font-medium hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
-  const s = size === 'lg' ? 'h-[34px] rounded-[9px] text-[12.5px]' : 'h-[30px] rounded-[8px] text-[11.5px]'
+  const s = size === 'lg'
+    ? 'h-[34px] rounded-[9px] text-[12.5px] max-md:h-[46px] max-md:text-[14px] max-md:rounded-[12px]'
+    : 'h-[30px] rounded-[8px] text-[11.5px] max-md:h-[42px] max-md:text-[13px] max-md:rounded-[11px]'
   return (
     <button
       {...rest}

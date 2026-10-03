@@ -183,5 +183,12 @@
     "depth": "Depth",
     "height": "Height",
     "note": "Bounding box along the model axes."
+  },
+  "mobile": {
+    "list": "List",
+    "options": "Options",
+    "latest": "Latest",
+    "levels": "Levels",
+    "position": "Cut position"
   }
 }

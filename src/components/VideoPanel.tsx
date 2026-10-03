@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { ViewportPanel } from './ViewportPanel'
 import { useVideoStore, pendingVideo } from '../stores/videoStore'
 import { placementForMode } from '../lib/video/video-placement'
@@ -44,6 +45,8 @@ export default function VideoPanel({
   onClose,
 }: Props) {
   const { t } = useTranslation('video')
+  const { t: tc } = useTranslation('common')
+  const isMobile = useIsMobile()
   const store = useVideoStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -411,12 +414,30 @@ export default function VideoPanel({
       onClose={onClose}
       label={t('title')}
       mobile="sheet"
+      // Phone: placing a video in the scene is judged by looking at the scene.
+      // Peek shows the header and the transport; the sheet drops to it as soon
+      // as a video is ready.
+      peek
+      collapseKey={active?.status === 'ready' ? active.id : null}
       widthPx={318}
       anchor="top"
       maxHeight="calc(100vh - 140px)"
     >
-      <div className="flex flex-col gap-3 p-3 overflow-y-auto" data-testid="video-panel">
-        <section className="rounded-[9px] border border-[var(--accent)]/50 bg-[var(--surface-2)] p-2.5">
+      {isMobile && (
+        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
+          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tc('actions.close')}
+            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+          </button>
+        </div>
+      )}
+      <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="video-panel">
+        <section className={`rounded-[9px] border border-[var(--accent)]/50 bg-[var(--surface-2)] p-2.5 ${isMobile && active ? 'order-5' : ''}`}>
           <div className="flex items-start gap-2">
             <img
               src={DEMO_VIDEOS[0].posterUrl}
@@ -433,7 +454,7 @@ export default function VideoPanel({
           <button
             onClick={loadFairDemo}
             disabled={busy}
-            className="w-full mt-2 px-2 py-2 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50"
+            className="w-full mt-2 px-2 py-2 max-md:py-3 max-md:text-[13.5px] rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50"
           >
             {busy ? t('load.working') : companionLoaded ? t('fair.loadVideo') : t('fair.loadBoth')}
           </button>
@@ -442,7 +463,7 @@ export default function VideoPanel({
           </div>
         </section>
 
-        <section>
+        <section className={isMobile && active ? 'order-5' : ''}>
           <input
             ref={fileRef}
             type="file"
@@ -457,7 +478,7 @@ export default function VideoPanel({
           <button
             onClick={() => fileRef.current?.click()}
             disabled={busy}
-            className="w-full px-2 py-2 rounded-[7px] text-[11px] font-medium border border-dashed border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+            className="w-full px-2 py-2 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[11px] font-medium border border-dashed border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-50"
           >
             {t('load.file')}
           </button>
@@ -466,14 +487,14 @@ export default function VideoPanel({
             <button
               onClick={() => void loadLive('camera')}
               disabled={busy}
-              className="px-2 py-2 rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+              className="px-2 py-2 max-md:py-3 max-md:text-[12.5px] rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               {t('live.camera')}
             </button>
             <button
               onClick={() => void loadLive('screen')}
               disabled={busy}
-              className="px-2 py-2 rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+              className="px-2 py-2 max-md:py-3 max-md:text-[12.5px] rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               {t('live.screen')}
             </button>
@@ -482,7 +503,7 @@ export default function VideoPanel({
         </section>
 
         {store.videos.length > 0 && (
-          <section className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
+          <section className={`flex flex-col gap-1 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-2' : ''}`}>
             {store.videos.map((video) => (
               <div
                 key={video.id}
@@ -497,13 +518,13 @@ export default function VideoPanel({
                   <span className="flex-1 truncate text-[11px]">{video.fileName}</span>
                   <button
                     onClick={(event) => { event.stopPropagation(); setVisible(video.id, !video.visible) }}
-                    className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)]"
+                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-white/[0.05] text-[var(--text-faint)] hover:text-[var(--text)]"
                   >
                     {video.visible ? t('actions.hide') : t('actions.show')}
                   </button>
                   <button
                     onClick={(event) => { event.stopPropagation(); remove(video.id) }}
-                    className="text-[10px] text-[var(--text-faint)] hover:text-[var(--danger,#e05252)]"
+                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-white/[0.05] text-[var(--text-faint)] hover:text-[var(--danger,#e05252)]"
                   >
                     {t('actions.remove')}
                   </button>
@@ -523,7 +544,7 @@ export default function VideoPanel({
 
         {active?.status === 'ready' && (
           <>
-            <section className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
+            <section className={`flex flex-col gap-2 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-3' : ''}`}>
               <div className="text-[11px] font-medium">{t('mode.title')}</div>
               <div className="grid grid-cols-4 gap-1">
                 {(['screen', 'ground', 'billboard', 'camera'] as const).map((mode) => (
@@ -531,7 +552,7 @@ export default function VideoPanel({
                     key={mode}
                     aria-pressed={active.mode === mode}
                     onClick={() => setMode(mode)}
-                    className={`px-1 py-1.5 rounded-[7px] text-[10px] font-medium border transition-colors ${
+                    className={`px-1 py-1.5 max-md:py-3 max-md:text-[12.5px] rounded-[7px] text-[10px] font-medium border transition-colors ${
                       active.mode === mode
                         ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
                         : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-2)]'
@@ -546,14 +567,14 @@ export default function VideoPanel({
               </div>
             </section>
 
-            <section className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
+            <section className={`flex flex-col gap-2 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-1 !pt-0 !border-t-0' : ''}`}>
               {activeIsLive ? (
                 <div className="flex items-center gap-2 rounded-[7px] border border-emerald-500/40 bg-emerald-500/10 px-2 py-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
                   <span className="flex-1 text-[10px] font-semibold text-emerald-300">{t('live.active')}</span>
                   <button
                     onClick={() => remove(active.id)}
-                    className="px-2 py-1 rounded-[6px] text-[10px] border border-emerald-500/40 hover:bg-emerald-500/15"
+                    className="px-2 py-1 max-md:py-2.5 max-md:text-[12.5px] rounded-[6px] text-[10px] border border-emerald-500/40 hover:bg-emerald-500/15"
                   >
                     {t('live.stop')}
                   </button>
@@ -563,7 +584,7 @@ export default function VideoPanel({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={togglePlay}
-                      className="w-16 px-2 py-1.5 rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
+                      className="w-16 max-md:w-20 max-md:h-11 max-md:text-[13px] px-2 py-1.5 rounded-[7px] text-[10px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
                     >
                       {playback.paused ? t('playback.play') : t('playback.pause')}
                     </button>
@@ -575,7 +596,8 @@ export default function VideoPanel({
                       step={0.04}
                       value={Math.min(playback.currentTime, Math.max(0.01, playback.duration))}
                       onChange={(event) => void getSystem()?.then((system) => system.seek(active.id, Number(event.target.value)))}
-                      className="flex-1 accent-[var(--accent)]"
+                      className={isMobile ? 'm-range flex-1 min-w-0' : 'flex-1 accent-[var(--accent)]'}
+                      style={isMobile ? { '--m-range-p': `${(Math.min(playback.currentTime, playback.duration) / Math.max(0.01, playback.duration)) * 100}%` } as React.CSSProperties : undefined}
                     />
                     <span className="text-[9px] font-mono text-[var(--text-faint)]">
                       {clock(playback.currentTime)}/{clock(playback.duration)}
@@ -589,7 +611,7 @@ export default function VideoPanel({
                         void getSystem()?.then((system) => system.setLoop(active.id, loop))
                       }}
                       aria-pressed={active.loop}
-                      className={`flex-1 px-2 py-1 rounded-[6px] text-[10px] border ${active.loop ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--text-faint)]'}`}
+                      className={`flex-1 px-2 py-1 max-md:py-2.5 max-md:text-[12.5px] rounded-[6px] text-[10px] border ${active.loop ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--text-faint)]'}`}
                     >
                       {t('playback.loop')}
                     </button>
@@ -600,7 +622,7 @@ export default function VideoPanel({
                         void getSystem()?.then((system) => system.setMuted(active.id, muted))
                       }}
                       aria-pressed={active.muted}
-                      className={`flex-1 px-2 py-1 rounded-[6px] text-[10px] border ${active.muted ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--text-faint)]'}`}
+                      className={`flex-1 px-2 py-1 max-md:py-2.5 max-md:text-[12.5px] rounded-[6px] text-[10px] border ${active.muted ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--text-faint)]'}`}
                     >
                       {active.muted ? t('playback.muted') : t('playback.sound')}
                     </button>
@@ -632,7 +654,7 @@ export default function VideoPanel({
             )}
 
             {active.mode !== 'camera' && (
-            <section className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
+            <section className={`flex flex-col gap-2 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-4' : ''}`}>
               <div className="text-[11px] font-medium">{t('placement.title')}</div>
               <Slider label={t('placement.x')} value={active.placement.x} min={-250} max={250} step={0.05} unit="m" onChange={(x) => patchPlacement({ x })} />
               <Slider label={t('placement.y')} value={active.placement.y} min={-100} max={200} step={0.05} unit="m" onChange={(y) => patchPlacement({ y })} />
@@ -651,7 +673,7 @@ export default function VideoPanel({
                   <Slider label={t('placement.offset')} value={active.placement.surfaceOffset} min={0.005} max={1} step={0.005} unit="m" digits={3} onChange={(surfaceOffset) => patchPlacement({ surfaceOffset })} />
                   <button
                     onClick={snapGroundToSurface}
-                    className="w-full px-2 py-1.5 rounded-[7px] text-[10px] font-semibold border border-[var(--accent)]/60 text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                    className="w-full px-2 py-1.5 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[10px] font-semibold border border-[var(--accent)]/60 text-[var(--accent)] hover:bg-[var(--accent)]/10"
                   >
                     {t('placement.snapSurface')}
                   </button>
@@ -660,19 +682,19 @@ export default function VideoPanel({
               <div className="grid grid-cols-3 gap-1">
                 <button
                   onClick={() => setMode(active.mode)}
-                  className="px-1 py-1.5 rounded-[7px] text-[9px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
+                  className="px-1 py-1.5 max-md:py-3 max-md:text-[12px] rounded-[7px] text-[9px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
                 >
                   {t('placement.auto')}
                 </button>
                 <button
                   onClick={() => void getSystem()?.then((system) => system.frame(active.id))}
-                  className="px-1 py-1.5 rounded-[7px] text-[9px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
+                  className="px-1 py-1.5 max-md:py-3 max-md:text-[12px] rounded-[7px] text-[9px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
                 >
                   {t('placement.frame')}
                 </button>
                 <button
                   onClick={() => void getSystem()?.then((system) => system.frameWithModel(active.id))}
-                  className="px-1 py-1.5 rounded-[7px] text-[9px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
+                  className="px-1 py-1.5 max-md:py-3 max-md:text-[12px] rounded-[7px] text-[9px] font-medium border border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
                 >
                   {t('placement.frameTogether')}
                 </button>
@@ -698,6 +720,37 @@ function Slider(props: {
   onChange(value: number): void
 }) {
   const { label, value, min, max, step, unit, digits = 2, onChange } = props
+  const fine = step < 0.01 ? step * 10 : step
+  const isMobile = useIsMobile()
+  // Phone: the thumb-sized range, with −/+ for the fine steps a finger
+  // cannot hit on a ±200 m track (each tap moves one fine step).
+  if (isMobile) {
+    const pct = ((value - min) / Math.max(1e-9, max - min)) * 100
+    const bump = (dir: 1 | -1): void => {
+      const n = Math.min(max, Math.max(min, Math.round((value + dir * fine) / step) * step))
+      onChange(Number(n.toFixed(6)))
+    }
+    const btn = 'w-10 h-10 shrink-0 rounded-[10px] bg-white/[0.06] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
+    return (
+      <div className="flex flex-col">
+        <span className="flex justify-between text-[12px] text-[var(--text-faint)]">
+          <span>{label}</span>
+          <span className="font-mono text-[var(--text-dim)]">{value.toFixed(digits)}{unit ?? ''}</span>
+        </span>
+        <div className="flex items-center gap-2">
+          <button type="button" className={btn} onClick={() => bump(-1)} aria-label={`${label} −`}>−</button>
+          <input
+            type="range" min={min} max={max} step={step} value={value}
+            aria-label={label}
+            onChange={(e) => onChange(parseFloat(e.target.value))}
+            className="m-range flex-1 min-w-0"
+            style={{ '--m-range-p': `${pct}%` } as React.CSSProperties}
+          />
+          <button type="button" className={btn} onClick={() => bump(1)} aria-label={`${label} +`}>+</button>
+        </div>
+      </div>
+    )
+  }
   return (
     <label className="flex flex-col gap-0.5">
       <span className="flex justify-between text-[10px] text-[var(--text-faint)]">

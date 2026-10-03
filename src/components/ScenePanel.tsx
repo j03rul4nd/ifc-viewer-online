@@ -21,6 +21,9 @@ import type { TransformMode } from '../stores/uiStore'
 import { useUIStore } from '../stores/uiStore'
 import { ViewportPanel } from './ViewportPanel'
 import { SceneLoadingSection } from './loading'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { haptic } from '../lib/haptics'
+import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -60,6 +63,7 @@ interface NumberInputProps {
 
 function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInputProps) {
   const [draft, setDraft] = useState(value.toFixed(2))
+  const isMobile = useIsMobile()
   /** The raw text last handed to onChange — Enter then blur must not apply it twice. */
   const committed = useRef<string | null>(null)
 
@@ -82,6 +86,38 @@ function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInp
     } else {
       setDraft(value.toFixed(2))
     }
+  }
+
+  // Phone: one row per value with −/+ steppers. Nudging by the step is how a
+  // model is placed by eye on a touch screen; the decimal keyboard is the
+  // fallback, not the main road.
+  if (isMobile) {
+    const nudge = (dir: 1 | -1) => {
+      haptic('tick')
+      const n = Math.round((value + dir * step) * 1000) / 1000
+      commit(String(n))
+    }
+    const stepBtn = 'w-11 h-10 shrink-0 rounded-[10px] bg-white/[0.06] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
+    return (
+      <div className="flex items-center gap-1.5 w-full">
+        <span className="w-[64px] shrink-0 text-[10.5px] text-[var(--text-muted)] uppercase tracking-wide truncate">{label}</span>
+        <button type="button" className={stepBtn} onClick={() => nudge(-1)} aria-label={`${label} −${step}`}>−</button>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={draft}
+          step={step}
+          min={min}
+          max={max}
+          aria-label={label}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') commit((e.target as HTMLInputElement).value) }}
+          className="flex-1 min-w-0 h-10 text-center bg-[rgba(255,255,255,0.05)] border border-[var(--border)] rounded-[10px] text-[16px] text-[var(--text)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
+        />
+        <button type="button" className={stepBtn} onClick={() => nudge(1)} aria-label={`${label} +${step}`}>+</button>
+      </div>
+    )
   }
 
   return (
@@ -122,6 +158,60 @@ interface ModelRowProps {
 
 function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActivate, onVisible, onRemove, onValidate, onFrame, onIsolate, moveControl }: ModelRowProps) {
   const { t } = useTranslation('viewer')
+  const { t: tc } = useTranslation('common')
+  const isMobile = useIsMobile()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Phone: four 24px icons in a row were four guesses for a thumb. The row
+  // keeps the two things done constantly (show/hide, make active) and the
+  // rest is one "⋯" away, labelled, in an action sheet.
+  if (isMobile) {
+    const actions: SheetAction[] = [
+      { key: 'frame', label: t('scene.frameCamera'), onClick: onFrame },
+      ...(multiModel ? [{ key: 'iso', label: isIsolated ? t('scene.showAllModels') : t('scene.isolateModel'), onClick: onIsolate }] : []),
+      { key: 'validate', label: t('scene.validateModel'), onClick: onValidate },
+      { key: 'remove', label: canDelete ? t('scene.removeModel') : t('scene.cannotRemoveOnly'), disabled: !canDelete, onClick: onRemove },
+    ]
+    return (
+      <div className={`w-full flex items-center gap-1.5 pl-1 pr-1 py-1.5 rounded-[12px] ${
+        isActive ? 'bg-[rgba(94,106,210,0.18)] border border-[rgba(94,106,210,0.35)]' : 'border border-transparent'
+      }`}>
+        <button
+          onClick={() => { haptic('tick'); onVisible(!model.visible) }}
+          aria-label={model.visible ? t('scene.hideModel') : t('scene.showModel')}
+          aria-pressed={model.visible}
+          className={`flex-none w-10 h-10 flex items-center justify-center rounded-[10px] ${model.visible ? 'text-[var(--accent)] bg-[rgba(94,106,210,0.12)]' : 'text-[var(--text-muted)] bg-white/[0.04]'}`}
+        >
+          <svg width="18" height="18" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
+            {model.visible
+              ? <><path d="M1 6C2.5 3 4.5 2 6 2s3.5 1 5 4c-1.5 3-3.5 4-5 4S2.5 9 1 6Z"/><circle cx="6" cy="6" r="1.5" fill="currentColor" stroke="none"/></>
+              : <><path d="M1 1l10 10M4.5 3.5C5 3.2 5.5 3 6 3c1.5 0 3.5 1 5 3-0.7 1.4-1.6 2.4-2.5 3"/><path d="M3 5.5C2 6.5 1.3 7.5 1 8c0.8 1.2 2 2.2 3.2 2.8"/></>}
+          </svg>
+        </button>
+        <button onClick={onActivate} className="flex-1 min-w-0 text-left py-1">
+          <p className={`text-[13.5px] font-medium truncate leading-tight ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text)]'}`}>
+            {model.fileName}
+          </p>
+          <p className="text-[11px] text-[var(--text-muted)] leading-tight mt-0.5">
+            {model.elementCount.toLocaleString()} el · {formatBytes(model.fileSize)}{isIsolated ? ' · ◎' : ''}
+          </p>
+        </button>
+        {moveControl}
+        <button
+          onClick={() => { haptic('tick'); setMenuOpen(true) }}
+          aria-label={model.fileName}
+          aria-haspopup="menu"
+          className="flex-none w-10 h-10 flex items-center justify-center rounded-[10px] bg-white/[0.04] text-[var(--text-dim)]"
+        >
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <circle cx="3" cy="8" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="13" cy="8" r="1.5" />
+          </svg>
+        </button>
+        <MobileActionSheet open={menuOpen} title={model.fileName} actions={actions} onClose={() => setMenuOpen(false)} closeLabel={tc('actions.close')} />
+      </div>
+    )
+  }
+
   return (
     <div
       className={`w-full flex items-center gap-1 px-2 py-2 rounded-lg transition-colors cursor-default ${
@@ -273,7 +363,7 @@ function TransformSection({ model, placement, viewerApiRef }: TransformSectionPr
     <div className="space-y-3 pt-2">
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.position')}</p>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={pos.x} step={0.5} onChange={(v) => applyPos('x', v)} />
           <NumberInput label="Y" value={pos.y} step={0.5} onChange={(v) => applyPos('y', v)} />
           <NumberInput label="Z" value={pos.z} step={0.5} onChange={(v) => applyPos('z', v)} />
@@ -282,7 +372,7 @@ function TransformSection({ model, placement, viewerApiRef }: TransformSectionPr
 
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.rotation')}</p>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={rot.x} step={5} min={-360} max={360} onChange={(v) => applyRot('x', v)} />
           <NumberInput label="Y" value={rot.y} step={5} min={-360} max={360} onChange={(v) => applyRot('y', v)} />
           <NumberInput label="Z" value={rot.z} step={5} min={-360} max={360} onChange={(v) => applyRot('z', v)} />
@@ -291,10 +381,10 @@ function TransformSection({ model, placement, viewerApiRef }: TransformSectionPr
 
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.scale')}</p>
-        <div className="flex gap-1.5 mb-1.5">
+        <div className="flex max-md:flex-col gap-1.5 mb-1.5">
           <NumberInput label={tViewer('transform.uniform')} value={uniformScale} step={0.1} min={0.001} onChange={applyUniformScale} />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={scale.x} step={0.1} min={0.001} onChange={(v) => applyScale('x', v)} />
           <NumberInput label="Y" value={scale.y} step={0.1} min={0.001} onChange={(v) => applyScale('y', v)} />
           <NumberInput label="Z" value={scale.z} step={0.1} min={0.001} onChange={(v) => applyScale('z', v)} />
@@ -305,14 +395,14 @@ function TransformSection({ model, placement, viewerApiRef }: TransformSectionPr
         <button
           onClick={centerOnGrid}
           title={tViewer('transform.snapToGridHint')}
-          className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+          className="flex-1 h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
         >
           {tViewer('transform.snapToGrid')}
         </button>
         <button
           onClick={() => placement.reset([model.id])}
           title={tViewer('transform.resetHint')}
-          className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
+          className="flex-1 h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
         >
           {tViewer('transform.reset')}
         </button>
@@ -359,7 +449,7 @@ function RigidTransformSection({ ids, placement, containsAnchor }: {
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1 font-medium">{t('scene.rigid.pivot')}</p>
         <p className="text-[9.5px] text-[var(--text-muted)] mb-1.5 leading-snug">{t('scene.rigid.pivotHint')}</p>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={pivot.x} step={0.5} onChange={(v) => moveTo('x', v)} />
           <NumberInput label="Y" value={pivot.y} step={0.5} onChange={(v) => moveTo('y', v)} />
           <NumberInput label="Z" value={pivot.z} step={0.5} onChange={(v) => moveTo('z', v)} />
@@ -371,15 +461,15 @@ function RigidTransformSection({ ids, placement, containsAnchor }: {
         <div className="grid grid-cols-6 gap-1 mb-1.5">
           {TURN_STEPS.map((d) => (
             <button key={d} onClick={() => rotate(d)}
-              className="h-6 rounded-md border border-[var(--border)] text-[10px] tabular-nums text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors">
+              className="h-6 max-md:h-10 max-md:text-[12px] rounded-md border border-[var(--border)] text-[10px] tabular-nums text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors">
               {d > 0 ? `+${d}°` : `${d}°`}
             </button>
           ))}
         </div>
-        <div className="flex gap-1.5 items-end">
+        <div className="flex max-md:flex-col max-md:items-stretch gap-1.5 items-end">
           <NumberInput label={t('scene.rigid.degrees')} value={turn} step={1} min={-360} max={360} onChange={setTurn} />
           <button onClick={() => { rotate(turn); setTurn(0) }} disabled={!turn}
-            className="h-[26px] px-2.5 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] disabled:opacity-40 transition-colors">
+            className="h-[26px] max-md:h-11 px-2.5 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] disabled:opacity-40 transition-colors">
             {t('scene.rigid.apply')}
           </button>
         </div>
@@ -393,7 +483,7 @@ function RigidTransformSection({ ids, placement, containsAnchor }: {
           </p>
           <p className="text-[9.5px] text-[var(--text-muted)] leading-snug">{t('scene.rigid.geoHint')}</p>
           <button onClick={() => useGeoStore.getState().setPanelOpen(true)}
-            className="w-full h-6 rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors">
+            className="w-full h-6 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors">
             {t('scene.rigid.calibrate')}
           </button>
         </div>
@@ -402,7 +492,7 @@ function RigidTransformSection({ ids, placement, containsAnchor }: {
       <button
         onClick={() => placement.reset(ids)}
         title={t('scene.rigid.resetHint')}
-        className="w-full h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
+        className="w-full h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
       >
         {t('transform.reset')}
       </button>
@@ -417,7 +507,7 @@ function HistoryBar({ placement }: { placement: ScenePlacement }) {
   const canUndo = useTransformHistoryStore((s) => s.past.length > 0)
   const canRedo = useTransformHistoryStore((s) => s.future.length > 0)
   const temporary = useTransformHistoryStore((s) => s.tempBase !== null)
-  const btn = 'h-6 px-2 rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-35 disabled:cursor-not-allowed transition-colors'
+  const btn = 'h-6 max-md:h-10 max-md:px-3.5 max-md:text-[13px] px-2 rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-35 disabled:cursor-not-allowed transition-colors'
   return (
     <div className="space-y-1.5 mb-2.5">
       <div className="flex gap-1">
@@ -580,7 +670,7 @@ export default function ScenePanel({
             <button
               onClick={handleFrameAll}
               title={t('scene.frameAll')}
-              className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+              className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-white/[0.05] max-md:rounded-[10px] flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                 <path d="M1 4.5V2a1 1 0 0 1 1-1h2.5M8.5 1H11a1 1 0 0 1 1 1v2.5M12 8.5V11a1 1 0 0 1-1 1H8.5M4.5 12H2a1 1 0 0 1-1-1V8.5"/>
@@ -590,7 +680,7 @@ export default function ScenePanel({
           )}
           <button
             onClick={onClose}
-            className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-white/[0.05] max-md:rounded-[10px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
               <path d="M1 1l9 9M10 1L1 10" />

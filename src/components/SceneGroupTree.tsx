@@ -64,7 +64,7 @@ const MoveIcon = (): React.ReactElement => (
   </svg>
 )
 
-const iconBtn = 'flex-none w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors'
+const iconBtn = 'flex-none w-6 h-6 max-md:w-9 max-md:h-9 max-md:rounded-[9px] flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors'
 
 // ── Move-to control ──────────────────────────────────────────────────────────
 // A native <select> laid over an icon: one tap on a phone, keyboard and screen
@@ -385,7 +385,7 @@ export default function SceneGroupTree({
                   if (next.has(g.id)) next.delete(g.id); else next.add(g.id)
                   return next
                 })}
-                className="w-4 h-5 flex items-center justify-center text-[var(--text-dim)] hover:text-[var(--text)]"
+                className="w-4 h-5 max-md:w-8 max-md:h-9 flex items-center justify-center text-[var(--text-dim)] hover:text-[var(--text)]"
                 aria-label={isCollapsed ? t('scene.group.expand') : t('scene.group.collapse')}
                 aria-expanded={!isCollapsed}
               >

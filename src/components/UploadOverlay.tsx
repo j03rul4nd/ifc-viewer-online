@@ -20,6 +20,7 @@
 // Modal does not offer.
 
 import React, { useMemo } from 'react'
+import { SheetGrip } from './mobile/SheetGrip'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
@@ -665,7 +666,7 @@ export default function UploadOverlay(props: UploadOverlayProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-5"
+      className="m-sheet-host fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-5"
       // Close only on a click that lands directly on the backdrop. Without this
       // guard, the programmatic click from openFilePicker() on the hidden <input>
       // (a child of this backdrop) bubbles up here and closes the modal the
@@ -691,9 +692,10 @@ export default function UploadOverlay(props: UploadOverlayProps) {
         initial={{ opacity: 0, scale: 0.96, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className={`${showList ? 'w-[600px]' : 'w-[560px]'} max-w-full max-h-[calc(100dvh-2.5rem)] flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.7)]`}
+        className={`m-sheet ${showList ? 'w-[600px]' : 'w-[560px]'} max-w-full max-h-[calc(100dvh-2.5rem)] flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.7)]`}
         onClick={e => e.stopPropagation()}
       >
+        {canClose && <SheetGrip onClose={handleClose} />}
         {/* Top activity indicator while files are being checked */}
         {isActive && (
           <div className="h-0.5 flex-none bg-[var(--surface-2)] overflow-hidden">

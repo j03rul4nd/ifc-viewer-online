@@ -183,5 +183,12 @@
     "depth": "Profondeur",
     "height": "Hauteur",
     "note": "Boîte englobante selon les axes de la maquette."
+  },
+  "mobile": {
+    "list": "Liste",
+    "options": "Options",
+    "latest": "Dernière",
+    "levels": "Niveaux",
+    "position": "Position de la coupe"
   }
 }

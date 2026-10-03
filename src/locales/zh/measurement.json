@@ -183,5 +183,12 @@
     "depth": "深",
     "height": "高",
     "note": "沿模型坐标轴的包围盒。"
+  },
+  "mobile": {
+    "list": "列表",
+    "options": "选项",
+    "latest": "最新",
+    "levels": "楼层",
+    "position": "剖切位置"
   }
 }
