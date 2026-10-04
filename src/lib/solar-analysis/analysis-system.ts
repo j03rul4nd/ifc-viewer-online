@@ -49,6 +49,12 @@ export interface SolarAnalysisContext {
   getModelBounds(modelId: string): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
   /** The map, when it is on: ground heights and the context's occluders. */
   getGeo(): { groundHeightAt(x: number, z: number): number | null; getContextRoot(): THREE.Object3D | null } | null
+  /**
+   * Every element at full detail, whatever the user's camera sees (true), or
+   * back to camera-driven streaming (false). Without it the shadow pass only
+   * had the tiles the view had loaded — results moved with the camera.
+   */
+  setFullGeometry?(on: boolean): Promise<void>
 }
 
 export interface SensorOptions {
@@ -106,7 +112,7 @@ export interface SolarAnalysisAPI {
    */
   pickPoint(clientX: number, clientY: number): Promise<{ point: THREE.Vector3; back: THREE.Vector3 } | null>
   /** The sky mask at a point (and a marker there). */
-  skyMaskAt(point: THREE.Vector3, yawDeg: number): SkyMask
+  skyMaskAt(point: THREE.Vector3, yawDeg: number): Promise<SkyMask>
   clearMarker(): void
   /** Draw solar protections in the scene; they occlude every later run. null removes them. */
   setShadingDevices(boxes: DeviceBox[] | null): void
@@ -398,34 +404,39 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       // buried sensors — a structural slab under the roof finish, a wall face
       // inside another — and the COSINE-weighted view factor, which is what
       // the isotropic diffuse sky actually delivers to a surface.
-      let sky = skyCache.get(sensors)
-      if (!sky || sky.version !== shadingVersion) {
-        const dirs = hemisphere(SKY_DIRECTIONS)
-        const pass = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
-          utc: 0, azimuthDeg: 0, altitudeDeg: 0, dir, hours: 1 / SKY_DIRECTIONS, month: 1,
-          irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: 0, diffuseIso: 0, sunProb: 0,
-        })), 1, { signal: o.signal, skyWeight: 2 / SKY_DIRECTIONS, onProgress: (f) => o.onProgress?.(f * 0.15) })
-        sky = { share: pass.sunHours, cos: pass.skyCos, version: shadingVersion }
-        skyCache.set(sensors, sky)
-      }
-      const result = await runExposure(engineCtx, sensors, samples, days, {
-        onProgress: (f) => o.onProgress?.(0.15 + f * 0.85), signal: o.signal,
-      })
-      let isoWh = 0, ghiWh = 0
-      for (const sm of samples) { isoWh += sm.diffuseIso * sm.hours; ghiWh += sm.irradiance.ghi * sm.hours }
-      const albedo = o.albedo ?? 0.2
-      const open = new Uint8Array(sensors.count)
-      for (let i = 0; i < sensors.count; i++) {
-        open[i] = sky.share[i] >= BURIED_SKY ? 1 : 0
-        result.skyCos[i] = sky.cos[i]
-        result.diffuseWh[i] = isoWh * sky.cos[i]
-        // The ground is taken as unobstructed and uniformly lit: a façade's
-        // reflected share is an estimate, small next to the beam it sits beside.
-        result.reflectedWh[i] = reflectedOnSurface(ghiWh, sensors.normals[i * 3 + 1], albedo)
-      }
-      return {
-        sensors, result, stats: elementStats(sensors, result, open),
-        instants: samples.length, rawInstants, period, skyView: sky.share, open, albedo,
+      await ctx.setFullGeometry?.(true)
+      try {
+        let sky = skyCache.get(sensors)
+        if (!sky || sky.version !== shadingVersion) {
+          const dirs = hemisphere(SKY_DIRECTIONS)
+          const pass = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
+            utc: 0, azimuthDeg: 0, altitudeDeg: 0, dir, hours: 1 / SKY_DIRECTIONS, month: 1,
+            irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: 0, diffuseIso: 0, sunProb: 0,
+          })), 1, { signal: o.signal, skyWeight: 2 / SKY_DIRECTIONS, onProgress: (f) => o.onProgress?.(f * 0.15) })
+          sky = { share: pass.sunHours, cos: pass.skyCos, version: shadingVersion }
+          skyCache.set(sensors, sky)
+        }
+        const result = await runExposure(engineCtx, sensors, samples, days, {
+          onProgress: (f) => o.onProgress?.(0.15 + f * 0.85), signal: o.signal,
+        })
+        let isoWh = 0, ghiWh = 0
+        for (const sm of samples) { isoWh += sm.diffuseIso * sm.hours; ghiWh += sm.irradiance.ghi * sm.hours }
+        const albedo = o.albedo ?? 0.2
+        const open = new Uint8Array(sensors.count)
+        for (let i = 0; i < sensors.count; i++) {
+          open[i] = sky.share[i] >= BURIED_SKY ? 1 : 0
+          result.skyCos[i] = sky.cos[i]
+          result.diffuseWh[i] = isoWh * sky.cos[i]
+          // The ground is taken as unobstructed and uniformly lit: a façade's
+          // reflected share is an estimate, small next to the beam it sits beside.
+          result.reflectedWh[i] = reflectedOnSurface(ghiWh, sensors.normals[i * 3 + 1], albedo)
+        }
+        return {
+          sensors, result, stats: elementStats(sensors, result, open),
+          instants: samples.length, rawInstants, period, skyView: sky.share, open, albedo,
+        }
+      } finally {
+        await ctx.setFullGeometry?.(false)
       }
     },
 
@@ -493,7 +504,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       return { point: best.point, back: raycaster.ray.direction.clone().negate() }
     },
 
-    skyMaskAt(point, yawDeg) {
+    async skyMaskAt(point, yawDeg) {
       const occluders: THREE.Object3D[] = []
       for (const id of ctx.getLoadedModelIds()) {
         const obj = ctx.getModelObject(id)
@@ -502,7 +513,9 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       const contextRoot = ctx.getGeo()?.getContextRoot()
       if (contextRoot) occluders.push(contextRoot)
       if (shading) occluders.push(shading)
-      const mask = renderSkyMask(ctx.renderer, ctx.scene, occluders, point, yawDeg)
+      await ctx.setFullGeometry?.(true)
+      let mask: SkyMask
+      try { mask = renderSkyMask(ctx.renderer, ctx.scene, occluders, point, yawDeg) } finally { await ctx.setFullGeometry?.(false) }
       if (!marker) {
         marker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshBasicMaterial({ color: 0xffb020, depthTest: false, toneMapped: false }))
         marker.name = 'solar-analysis-probe'

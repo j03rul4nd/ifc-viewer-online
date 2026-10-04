@@ -364,5 +364,72 @@
     "monthly": "Production by month",
     "note": "Rows on flat roofs spaced so the winter noon sun clears them. Yield = irradiation on the modules × efficiency × performance ratio (inverter, temperature, soiling, wiring). A pre-design estimate — not an installer's quote.",
     "clearSky": "Clear sky: without the measured climate the yield comes out 10–20 % high. Load the climate above to use the real sky (ERA5)."
+  },
+  "report": {
+    "section": "Report",
+    "title": "Solar study",
+    "kicker": "Solar & climate study",
+    "download": "Download the PDF report",
+    "making": "Composing the report… {{pct}} %",
+    "empty": "Run an analysis, a check, a point, protections or panels first: the report gathers what has been computed.",
+    "contains": "Includes: sun path, site · {{list}}",
+    "parts": {
+      "heatmap": "heatmap",
+      "en": "EN 17037",
+      "seasons": "overheating & rooms",
+      "probe": "point diagram",
+      "shading": "protections",
+      "pv": "solar panels"
+    },
+    "location": "Location",
+    "timeZone": "Time zone",
+    "north": "North",
+    "date": "Date",
+    "enPass": "Windows meeting EN 17037",
+    "pointSun": "Sun at the point, h/day",
+    "sunTitle": "Sun and site",
+    "sunIntro": "Where the sun crosses this site's sky through the year, drawn to true north. Each curve is the 21st of a month; the dotted lines are the hours.",
+    "sunLegend": "Red: June · grey: March/September · blue: December. Centre = zenith, rim = horizon.",
+    "day": "Day",
+    "tMax": "Max. temperature, °C",
+    "radiation": "Global radiation, kWh/m²·day",
+    "heatmapTitle": "Sun on the building",
+    "heatmapIntro": "{{metric}} over {{period}}, measured on the model with every shadow — its own, the city's and the terrain's.",
+    "runMeta": "{{instants}} sun positions standing for {{raw}} instants · {{sensors}} sensors · sky: {{sky}} · ground albedo {{albedo}}",
+    "window": "Window",
+    "hours": "Sun",
+    "perDay": "kWh/m²·day",
+    "enAltitude": "Sun counted above {{alt}}°.",
+    "windows": "Windows",
+    "probeIntro": "What blocks the sky from the point ({{x}}, {{y}}, {{z}}) — grey — over the year's sun paths, and the sun it gets hour by hour.",
+    "shadingIntro": "{{devices}} on the {{facades}} façades. The same windows, sky and engine measured with and without them.",
+    "mwh": "MWh per month.",
+    "methodTitle": "Method and sources",
+    "method": {
+      "sun": {
+        "title": "Sun position",
+        "body": "NOAA / Meeus solar position algorithm with atmospheric refraction corrected for the site's pressure; within 0.02° of NREL's SPA reference. Times in the site's own time zone."
+      },
+      "sky": {
+        "title": "Sky",
+        "body": "Measured: ERA5 reanalysis (Copernicus / ECMWF) via Open-Meteo — 5 years of hourly direct, diffuse and global radiation and sunshine, and 10 years of daily climate. Without it: Ineichen–Perez clear sky, split by Erbs from the measured monthly clearness."
+      },
+      "surface": {
+        "title": "On each surface",
+        "body": "Hay–Davies: beam and circumsolar diffuse are shadowed with the sun; the isotropic sky is weighted by each point's cosine-weighted sky view; ground reflection with the chosen albedo."
+      },
+      "engine": {
+        "title": "Shadows",
+        "body": "Thousands of sensors placed on the IFC's own windows, walls, roofs and site. For every sun position the GPU renders a shadow map of everything that can block it — the model, the surrounding OSM buildings and the terrain — and tests each sensor. Seasons and years walk every day, binned into small patches of sky."
+      },
+      "checks": {
+        "title": "Checks",
+        "body": "EN 17037 sunlight exposure: hours of direct sun on 21 March above a minimum altitude (1.5 / 3 / 4 h). Solar gain on glazing: indicative bands, not a thermal simulation. Photovoltaics: irradiation on the module plane × efficiency × performance ratio."
+      },
+      "limits": {
+        "title": "Limits",
+        "body": "A design-stage study to compare options and size decisions. It is not an energy certificate, a thermal simulation or an installer's quote; EN 17037 is screened at the window's outer face, not at the room's reference point."
+      }
+    }
   }
 }

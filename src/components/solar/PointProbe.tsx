@@ -13,6 +13,7 @@ import {
 } from '../../lib/solar-analysis/sky-mask'
 import { solarPosition } from '../../lib/solar/solar-position'
 import { shareOrDownload } from '../../lib/share-file'
+import { useSolarReportStore } from '../../stores/solarReportStore'
 import { wallTimeToUTC, zoneOffsetMinutes } from '../../lib/solar/sun-math'
 
 interface Props {
@@ -50,9 +51,10 @@ export default function PointProbe({ viewerApiRef, lat, lon, yawDeg, timeZone, e
       if (!hit) { setError(t('probe.nothing')); return }
       // Lifted towards the eye: off its surface, on the side that was clicked.
       const p = hit.point.clone().addScaledVector(hit.back, LIFT_M)
-      const mask = sa.skyMaskAt(p, yawDeg)
+      const mask = await sa.skyMaskAt(p, yawDeg)
       const report = pointSunReport(mask, { lat, lon, timeZone, year: new Date().getUTCFullYear(), minAltitudeDeg: enMinAltitudeDeg })
       setProbe({ mask, report, point: { x: p.x, y: p.y, z: p.z } })
+      useSolarReportStore.getState().set({ probe: { mask, report, point: { x: p.x, y: p.y, z: p.z }, enMinAltitudeDeg } })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
