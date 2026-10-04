@@ -60,6 +60,21 @@ describe('elementStats', () => {
   })
 })
 
+describe('elementStats edges', () => {
+  it('never judges a glass plate by its sunny top edge', () => {
+    const el = { modelId: 'm', localId: 9, category: 'IFCPLATE', kind: 'window' as const }
+    const face = Array.from({ length: 12 }, () => ({ x: 0, y: 1, z: 0.1, nx: 0, ny: 0, nz: 1, area: 1 }))
+    const edge = [{ x: 0, y: 3, z: 0, nx: 0, ny: 1, nz: 0, area: 0.6 }]
+    const set = buildSensorSet([{ kind: 'window', element: el, samples: [...face, ...edge] }], { ground: 2, surface: 1 })
+    const n = set.count
+    const sun = new Float32Array(n).fill(2); sun[n - 1] = 12
+    const r: ExposureResult = { sunHours: sun, probableSunHours: new Float32Array(n), directWh: new Float32Array(n), diffuseWh: new Float32Array(n), reflectedWh: new Float32Array(n), skyCos: new Float32Array(n), days: 1 }
+    const [s] = elementStats(set, r)
+    expect(s.sunHoursPerDay).toBeCloseTo(2, 6)
+    expect(s.normal.z).toBeCloseTo(1, 6)
+  })
+})
+
 describe('findings', () => {
   const stat = (h: number, kwh: number, nz = 1, nx = 0) => ({
     element: { modelId: 'm', localId: Math.round(h * 100 + kwh), category: 'IFCWINDOW', kind: 'window' as const },

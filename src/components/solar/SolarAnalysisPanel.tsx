@@ -32,6 +32,7 @@ import type { ValidationIssue } from '../../types'
 import { shareOrDownload } from '../../lib/share-file'
 
 const PointProbe = React.lazy(() => import('./PointProbe'))
+const ShadingDesigner = React.lazy(() => import('./ShadingDesigner'))
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -179,11 +180,11 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     return ref.sensors
   }, [viewerApiRef, s])
 
-  const runPeriod = useCallback(async (period: AnalysisPeriod, minAltitudeDeg = 0): Promise<AnalysisRun> => {
+  const runPeriod = useCallback(async (period: AnalysisPeriod, minAltitudeDeg = 0, only?: SensorSet): Promise<AnalysisRun> => {
     const viewer = viewerApiRef.current
     if (!viewer) throw new Error('Viewer not ready')
     const sa = await viewer.getSolarAnalysis()
-    const sensors = await ensureSensors()
+    const sensors = only ?? await ensureSensors()
     abortRef.current?.abort()
     const ctrl = new AbortController()
     abortRef.current = ctrl
@@ -583,6 +584,25 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     </div>
                   )}
                 </div>
+              </Section>
+
+              {/* Solar protections, designed by façade and measured */}
+              <Section title={t('shading.title')}>
+                <React.Suspense fallback={null}>
+                  <ShadingDesigner
+                    viewerApiRef={viewerApiRef}
+                    lat={location.lat}
+                    north={north}
+                    enMinAltitudeDeg={enMinAlt}
+                    ensureSensors={ensureSensors}
+                    runPeriod={runPeriod}
+                    periodFor={(c) => periodFor(c, s.climate)}
+                    settingsKey={`${location.lat},${location.lon},${location.yawDeg}|${effectiveSky}|${s.precision}|${s.albedo}|${enMinAlt}|${s.climate?.years.to ?? ''}`}
+                    busy={busy}
+                    onDone={() => s.setRun({ status: ref.last ? 'done' : 'idle', progress: 1 })}
+                    onError={fail}
+                  />
+                </React.Suspense>
               </Section>
 
               {/* One point's shading diagram */}
