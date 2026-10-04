@@ -696,6 +696,15 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     runPeriod={runPeriod}
                     pathFor={(period) => pathFor(period)}
                     skyLabel={t(`analysis.sky.${effectiveSky}`)}
+                    paint={async (run, override) => {
+                      const viewer = viewerApiRef.current
+                      if (!viewer) return
+                      const sa = await viewer.getSolarAnalysis()
+                      const range = sa.show(run, 'sunHours', new Set(['ground']), undefined, override)
+                      sa.onHover(setHover)
+                      ref.last = null
+                      s.setRun({ range })
+                    }}
                     busy={busy}
                     onDone={() => s.setRun({ status: ref.last ? 'done' : 'idle', progress: 1 })}
                     onError={fail}
@@ -798,13 +807,17 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
           style={{ left: hover.clientX + 14, top: hover.clientY + 14 }}
         >
           <div>{t(`analysis.kinds.${hover.kind}`)}{hover.element ? ` · ${hover.element.category.replace(/^IFC/, '')}` : ''}</div>
-          {hover.delta !== undefined && (
+          {hover.df !== undefined && <div className="font-semibold">{t('analysis.hover.df', { v: fmt(hover.df, 2) })}</div>}
+          {hover.dfSky !== undefined && hover.df !== undefined && <div className="text-white/70">{t('analysis.hover.dfParts', { sky: fmt(hover.dfSky, 2), refl: fmt(hover.df - hover.dfSky, 2) })}</div>}
+          {hover.df === undefined && hover.delta !== undefined && (
             <div className="font-semibold">{Number.isFinite(hover.delta) ? t('analysis.hover.delta', { d: `${hover.delta > 0 ? '+' : ''}${fmt(hover.delta, s.metric === 'irradiation' && Math.abs(hover.delta) < 10 ? 2 : 1)}`, unit }) : t('analysis.hover.unpaired')}</div>
           )}
+          {hover.df === undefined && <>
           <div>{t('analysis.hover.sun', { h: fmt(hover.sunHoursPerDay) })} · {t('analysis.hover.probable', { h: fmt(hover.probableSunPerDay) })}</div>
           <div>{t('analysis.hover.kwh', { kwh: fmt(hover.irradiationKwh, hover.irradiationKwh < 10 ? 2 : 0) })}</div>
           <div className="text-white/70">{t('analysis.hover.split', { d: Math.round(hover.split.direct * 100), f: Math.round(hover.split.diffuse * 100), r: Math.round(hover.split.reflected * 100) })}</div>
           <div className="text-white/70">{t('analysis.hover.sky', { pct: fmt(hover.skyViewPct, 0) })}</div>
+          </>}
         </div>,
         document.body,
       )}

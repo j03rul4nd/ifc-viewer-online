@@ -4633,6 +4633,22 @@ export function createViewer(container: HTMLElement): ViewerAPI {
             await Promise.all([...modelObjects.values()].map((m) => m.setLodMode(mode).catch(() => undefined)))
             try { await fragmentsManager.core.update(true) } catch { /* render what is loaded */ }
           },
+          hideItems: async (modelId, ids) => {
+            const m = modelObjects.get(modelId)
+            if (!m || !ids.length) return async () => undefined
+            // Only what is visible now — and only that comes back.
+            let shown: number[] = ids
+            try { const vis = await m.getVisible(ids); shown = ids.filter((_, i) => vis[i]) } catch { /* assume all */ }
+            if (shown.length) {
+              try { await m.setVisible(shown, false) } catch { /* leave it */ }
+              try { await fragmentsManager.core.update(true) } catch { /* next frame */ }
+            }
+            return async () => {
+              if (!shown.length) return
+              try { await m.setVisible(shown, true) } catch { /* leave it */ }
+              try { await fragmentsManager.core.update(true) } catch { /* next frame */ }
+            }
+          },
         })
         return solarAnalysisInstance
       })

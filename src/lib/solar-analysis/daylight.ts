@@ -6,7 +6,8 @@
 //       DF = T · Aw · θ / (A · (1 − R²))      [%]
 //     T glazing transmittance, Aw net glazed area, θ the vertical angle of
 //     visible sky from the window centre (degrees), A all the room's inner
-//     surfaces, R their area-weighted mean reflectance. θ comes from the
+//     surfaces, R their area-weighted mean reflectance (glazing included, at
+//     0.1 — a glass wall darkens the room's reflections). θ comes from the
 //     window's MEASURED cosine-weighted sky view — the city, the terrain and
 //     the building itself in it: an unobstructed vertical window sees 0.5 of
 //     the sky and 90° of θ, so θ ≈ 180° · sky view (a screening relation, said
@@ -132,7 +133,8 @@ export function roomDaylight(
       thetaArea += thetaFromSkyView(w.skyView) * a
     }
     const theta = glazed > 0 ? thetaArea / glazed : 0
-    const df = averageDaylightFactor(T, glazed, theta, inner, R)
+    const rMean = inner > 0 ? ((inner - Math.min(inner, glazed)) * R + Math.min(inner, glazed) * 0.1) / inner : R
+    const df = averageDaylightFactor(T, glazed, theta, inner, rMean)
     // Limiting depth across the main window wall: depth along the windows' normal.
     let depth = 0, width = 0
     if (ws.length) {

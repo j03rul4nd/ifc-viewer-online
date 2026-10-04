@@ -27,9 +27,10 @@ describe('daylight', () => {
   it('room DF, level and limiting depth', () => {
     const targets = { minimum: 1.5, medium: 2.5, high: 3.8 }
     const [r] = roomDaylight([room], [win()], targets)
-    // Aw = 2·1.5·0.8 = 2.4, θ 90, A = 2(20 + 13.5 + 10.8) = 88.6
+    // Aw = 2·1.5·0.8 = 2.4, θ 90, A = 2(20 + 13.5 + 10.8) = 88.6, R with the glass at 0.1
     expect(r.glazedArea).toBeCloseTo(2.4, 6)
-    expect(r.df).toBeCloseTo((0.68 * 2.4 * 90) / (88.6 * 0.75), 3)
+    const R = ((88.6 - 2.4) * 0.5 + 2.4 * 0.1) / 88.6
+    expect(r.df).toBeCloseTo((0.68 * 2.4 * 90) / (88.6 * (1 - R * R)), 3)
     expect(r.level).toBe('minimum')
     expect(r.depth).toBe(4)
     // 2/(1−0.5) / (1/5 + 1/2.7) ≈ 7.0 m: a 4 m room is fine.
