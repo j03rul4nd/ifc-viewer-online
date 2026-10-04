@@ -160,7 +160,9 @@
       "kwh": "{{kwh}} kWh/m²",
       "probable": "{{h}} h esperadas",
       "split": "directa {{d}} % · cielo {{f}} % · suelo {{r}} %",
-      "sky": "ve el {{pct}} % del cielo"
+      "sky": "ve el {{pct}} % del cielo",
+      "delta": "Cambio frente a la variante: {{d}} {{unit}}",
+      "unpaired": "Sin pareja en la variante"
     },
     "checks": {
       "title": "Comprobaciones",
@@ -378,7 +380,8 @@
       "seasons": "sobrecalentamiento y estancias",
       "probe": "diagrama de un punto",
       "shading": "protecciones",
-      "pv": "placas solares"
+      "pv": "placas solares",
+      "compare": "variantes"
     },
     "location": "Ubicación",
     "timeZone": "Zona horaria",
@@ -429,6 +432,28 @@
         "title": "Límites",
         "body": "Un estudio de fase de diseño para comparar opciones y dimensionar decisiones. No es un certificado energético, una simulación térmica ni un presupuesto de instalador; la EN 17037 se comprueba en la cara exterior de la ventana, no en el punto de referencia de la estancia."
       }
-    }
+    },
+    "compareTitle": "Variantes de diseño",
+    "compareIntro": "«{{b}}» ({{pb}}) frente a «{{a}}» ({{pa}}), {{metric}}, punto a punto sobre el modelo. Rojo: mejor; azul: peor.",
+    "surface": "Superficie"
+  },
+  "compare": {
+    "title": "Comparar variantes de diseño",
+    "save": "Guardar como variante",
+    "namePlaceholder": "Nombre (p. ej. sin protecciones)",
+    "defaultName": "Variante {{n}}",
+    "hint": "Guarda el resultado en pantalla como variante, cambia el diseño (protecciones, otra versión del IFC, el cielo) y vuelve a calcular: después compara las dos punto a punto sobre el modelo.",
+    "delete": "Borrar",
+    "current": "Actual",
+    "moreIsBetter": "Más irradiación es mejor (placas, ganancia de invierno)",
+    "run": "Comparar {{metric}} con el resultado actual",
+    "back": "Volver al mapa normal",
+    "periodMismatch": "Ojo: la variante midió {{a}} y el resultado actual {{b}}.",
+    "legend": "Cambio de «{{a}}» al resultado actual: {{metric}}",
+    "worse": "peor",
+    "better": "mejor",
+    "split": "Mejor / peor",
+    "movers": "Elementos que más cambian",
+    "paired": "El {{pct}} % de las superficies actuales tiene pareja en la variante (las nuevas o movidas salen en gris)."
   }
 }

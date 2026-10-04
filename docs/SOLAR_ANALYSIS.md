@@ -53,6 +53,20 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
 
+## Design variants
+
+`compare.ts`, `components/solar/VariantCompare.tsx`. "Save as variant" freezes
+the run on screen (open sensors, their position/normal/area/element and all
+four metrics). After a change — protections, another IFC version, the sky —
+"Compare" pairs each current sensor with the nearest variant sensor facing the
+same way (within ¾ of the sensor spacing, normals within ~45°; spatial hash),
+paints B − A on the model with a diverging ramp (red = better, blue = worse;
+for irradiation the user says whether more is better), and reports the change
+per surface type, the share of area better/worse (> 5 %), the elements that
+moved most and the share of surfaces paired (unpaired = grey). Variants live
+for the session and survive a model change, so two IFC versions compare.
+The comparison is a page of the PDF report.
+
 ## PDF report
 
 "Download the PDF report" (analysis panel) gathers whatever has been computed

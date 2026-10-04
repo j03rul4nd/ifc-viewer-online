@@ -66,7 +66,22 @@ export interface PvSection {
   measuredSky: boolean
 }
 
+export interface CompareSection {
+  nameA: string
+  nameB: string
+  periodA: string
+  periodB: string
+  metric: SolarMetric
+  higherIsBetter: boolean
+  paired: number
+  range: number
+  kinds: Array<{ kind: SensorKind; a: number; b: number; better: number; worse: number }>
+  movers: Array<{ label: string; a: number; b: number; delta: number }>
+  image: string | null
+}
+
 interface State {
+  compare: CompareSection | null
   heatmap: HeatmapSection | null
   en: EnSection | null
   seasons: SeasonsSection | null
@@ -78,7 +93,7 @@ interface State {
 }
 
 export const useSolarReportStore = create<State>((set) => ({
-  heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null,
+  compare: null, heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null,
   set: (patch) => set(patch),
-  clear: () => set({ heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null }),
+  clear: () => set({ compare: null, heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null }),
 }))
