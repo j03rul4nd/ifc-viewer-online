@@ -33,6 +33,7 @@ import { shareOrDownload } from '../../lib/share-file'
 
 const PointProbe = React.lazy(() => import('./PointProbe'))
 const ShadingDesigner = React.lazy(() => import('./ShadingDesigner'))
+const PvDesigner = React.lazy(() => import('./PvDesigner'))
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -584,6 +585,25 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     </div>
                   )}
                 </div>
+              </Section>
+
+              {/* Photovoltaics on the roofs */}
+              <Section title={t('pv.title')}>
+                <React.Suspense fallback={null}>
+                  <PvDesigner
+                    lat={location.lat}
+                    yawDeg={location.yawDeg}
+                    albedo={s.albedo}
+                    measuredSky={effectiveSky === 'measured'}
+                    ensureSensors={ensureSensors}
+                    runPeriod={runPeriod}
+                    pathFor={(period) => pathFor(period)}
+                    display={async (r) => { useSolarAnalysisStore.getState().setMetric('irradiation'); await display(r) }}
+                    busy={busy}
+                    onDone={() => undefined}
+                    onError={fail}
+                  />
+                </React.Suspense>
               </Section>
 
               {/* Solar protections, designed by façade and measured */}

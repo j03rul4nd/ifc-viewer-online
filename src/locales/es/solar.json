@@ -335,5 +335,33 @@
       "W": "O",
       "NW": "NO"
     }
+  },
+  "pv": {
+    "title": "Placas solares",
+    "tilt": "Inclinación",
+    "auto": "volver a la óptima ({{deg}}°)",
+    "optimal": "óptima para la latitud (cubiertas planas)",
+    "efficiency": "Eficiencia del módulo",
+    "pr": "Performance ratio",
+    "threshold": "Útil desde",
+    "co2": "CO₂ por kWh",
+    "calc": "Calcular la producción",
+    "recalc": "Volver a calcular",
+    "working": "Siguiendo el sol durante el año…",
+    "onlyUsable": "Solo donde van placas",
+    "tiltChanged": "Ha cambiado la inclinación: vuelve a calcular.",
+    "noRoof": "El modelo no tiene superficies de cubierta mirando hacia arriba",
+    "hint": "Un año sobre las cubiertas con el ángulo de las propias placas (filas inclinadas en cubierta plana, coplanares en inclinada), con todas las sombras del modelo, la ciudad y el terreno. Útil: al menos el porcentaje elegido del mejor punto de la cubierta.",
+    "kWp": "Potencia pico, kWp",
+    "kWhYear": "kWh al año",
+    "specific": "kWh por kWp",
+    "modules": "Módulos",
+    "usable": "Cubierta útil",
+    "coverage": "Ocupación de filas (sin autosombra)",
+    "irradiation": "Sobre las placas",
+    "co2Saved": "CO₂ evitado al año",
+    "monthly": "Producción por mes",
+    "note": "Filas en cubierta plana separadas para que el sol de mediodía de invierno las libre. Producción = irradiación sobre los módulos × eficiencia × performance ratio (inversor, temperatura, suciedad, cableado). Estimación de anteproyecto, no un presupuesto de instalador.",
+    "clearSky": "Cielo despejado: sin el clima medido la producción sale un 10–20 % alta. Carga el clima arriba para usar el cielo real (ERA5)."
   }
 }

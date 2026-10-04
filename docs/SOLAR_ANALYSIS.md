@@ -53,6 +53,21 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
 
+## Solar panels
+
+`pv.ts`, `components/solar/PvDesigner.tsx`. Roof sensors facing up, minus
+those with another upward surface above them in plan (floor slabs under the
+storey above — they glimpse sky sideways through glass, so sky view alone
+let them in) and those under 2 m above the lowest sensor (paving, plazas).
+Flat roofs (< 10°) are re-aimed at the optimal tilt for the latitude facing the
+equator; pitches keep their own slope. One yearly run on that plane gives
+kWh/m² with every shadow. Usable: ≥ a share (default 80 %) of the roof's 98th
+percentile. Flat-roof rows are spaced for the winter-solstice noon sun
+(coverage ratio). Yield = irradiation on whole modules × efficiency × PR;
+kWp = module area × efficiency. Months from the panel plane's unshaded sky
+(CPU), scaled to the run. Efficiency, PR, threshold and CO₂ factor recompute
+without a new run. A clear sky overstates by ~10–20 %: the panel says so.
+
 ## Solar protections
 
 Designed by façade (`shading-devices.ts`, `components/solar/ShadingDesigner.tsx`):
