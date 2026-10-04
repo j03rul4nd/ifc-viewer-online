@@ -202,6 +202,25 @@ class Doc {
     } catch { /* an image that will not decode is left out */ }
   }
 
+  /** One verdict line: a coloured badge, a title, a key figure and a note. */
+  verdict(status: 'pass' | 'warn' | 'fail' | 'info', badge: string, title: string, figure: string, note: string): void {
+    const h = 96
+    this.need(h + 14)
+    const col = status === 'pass' ? C.green : status === 'warn' ? C.amber : status === 'fail' ? C.red : C.blue
+    this.ctx.fillStyle = C.soft
+    this.ctx.fillRect(M, this.y, CW, h)
+    this.ctx.fillStyle = col
+    this.ctx.fillRect(M, this.y, 10, h)
+    this.font(20, 700)
+    const bw = this.ctx.measureText(badge.toUpperCase()).width + 28
+    this.ctx.fillRect(M + 32, this.y + 18, bw, 34)
+    this.text(badge.toUpperCase(), M + 46, this.y + 42, 20, '#ffffff', 700)
+    this.text(title, M + 32 + bw + 18, this.y + 44, 28, C.ink, 600)
+    this.text(figure, M + CW - 24, this.y + 46, 34, col, 700, 'right')
+    this.text(note, M + 32, this.y + 80, 20, C.dim)
+    this.y += h + 14
+  }
+
   /** Space for a custom drawing: returns its top-left and moves the cursor. */
   block(h: number): { x: number; y: number } {
     this.need(h)
@@ -385,6 +404,75 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
   if (r.probe && headline.length < 3) headline.push({ label: t('report.pointSun'), value: `${nf(r.probe.report.yearHoursPerDay, 1)} h` })
   if (headline.length) doc.figures(headline.slice(0, 3))
   step(0.15)
+
+  // Executive summary: every check computed, one verdict each.
+  doc.newPage()
+  doc.h1(t('report.summaryTitle'))
+  doc.para(t('report.summaryIntro'))
+  doc.y += 10
+  const pct = (v: number) => `${Math.round(v * 100)} %`
+  if (r.en) {
+    const pass = r.en.windows - r.en.byLevel.none
+    const share = r.en.windows ? pass / r.en.windows : 0
+    doc.verdict(share >= 0.95 ? 'pass' : share >= 0.7 ? 'warn' : 'fail', share >= 0.95 ? t('report.ok') : t('report.review'),
+      t('report.sum.enSun'), `${pass}/${r.en.windows}`, t('report.sum.enSunNote', { alt: r.en.minAltitudeDeg }))
+  }
+  if (r.daylight) {
+    const d = r.daylight
+    const withGrid = d.rooms.filter((x) => x.grid && x.windows)
+    const okGrid = withGrid.filter((x) => x.grid!.level !== 'none').length
+    const narrow = withGrid.filter((x) => x.grid!.onReflections).length
+    if (withGrid.length) {
+      doc.verdict(okGrid === withGrid.length && !narrow ? 'pass' : okGrid === withGrid.length ? 'warn' : 'fail', okGrid === withGrid.length ? (narrow ? t('report.narrow') : t('report.ok')) : t('report.review'),
+        t('report.sum.daylight'), `${okGrid}/${withGrid.length}`, narrow ? t('report.sum.daylightNarrow', { n: narrow }) : t('report.sum.daylightNote'))
+    } else {
+      const ok = d.summary.lit - d.summary.by.none
+      doc.verdict(ok === d.summary.lit ? 'pass' : 'warn', ok === d.summary.lit ? t('report.ok') : t('report.review'), t('report.sum.daylightAvg'), `${ok}/${d.summary.lit}`, t('report.sum.daylightAvgNote'))
+    }
+    if (d.annual) {
+      const a = d.annual.rooms
+      const leed = a.filter((x) => x.sDA >= 0.55 && x.ASE <= 0.1).length
+      const glare = a.filter((x) => x.ASE > 0.1).length
+      doc.verdict(leed === a.length ? 'pass' : leed > 0 ? 'warn' : 'fail', leed === a.length ? t('report.ok') : t('report.review'),
+        t('report.sum.leed'), `${leed}/${a.length}`, glare ? t('report.sum.leedGlare', { n: glare }) : t('report.sum.leedNote'))
+    }
+    if (d.summary.deep) doc.verdict('warn', t('report.review'), t('report.sum.deep'), `${d.summary.deep}/${d.summary.rooms}`, t('report.sum.deepNote'))
+  }
+  if (r.seasons) {
+    const n = r.seasons.summerRisk.filter((f) => /high|alta|alto/i.test(f.level) || f.daily >= 3.5).length
+    doc.verdict(n === 0 ? 'pass' : 'warn', n === 0 ? t('report.ok') : t('report.review'), t('report.sum.overheat'), String(n), t('report.sum.overheatNote'))
+  }
+  if (r.shading) {
+    const all = r.shading.rows.find((x) => x.orientation === 'all')
+    if (all) {
+      const cut = all.summer[0] > 0 ? 1 - all.summer[1] / all.summer[0] : 0
+      const loss = all.winter[0] > 0 ? 1 - all.winter[1] / all.winter[0] : 0
+      doc.verdict(cut > loss ? 'pass' : 'warn', cut > loss ? t('report.ok') : t('report.review'), t('report.sum.shading'), `−${pct(cut)}`, t('report.sum.shadingNote', { loss: pct(loss) }))
+    }
+  }
+  if (r.pv) doc.verdict('info', t('report.info'), t('report.sum.pv'), `${nf(r.pv.y.kWp, 1)} kWp`, t('report.sum.pvNote', { kwh: nf(r.pv.y.kWhYear), spec: nf(r.pv.y.specificYield) }))
+  if (r.probe) doc.verdict(r.probe.report.en17037Hours >= 1.5 ? 'pass' : 'fail', r.probe.report.en17037Hours >= 1.5 ? t('report.ok') : t('report.review'),
+    t('report.sum.point'), `${nf(r.probe.report.yearHoursPerDay, 1)} h`, t('report.sum.pointNote', { en: nf(r.probe.report.en17037Hours, 1) }))
+  if (r.compare) {
+    const k = r.compare.kinds.find((x) => x.kind === 'window') ?? r.compare.kinds[0]
+    if (k) doc.verdict(k.better >= k.worse ? 'pass' : 'warn', k.better >= k.worse ? t('report.better') : t('report.worse'), t('report.sum.compare', { a: r.compare.nameA }),
+      `${nf(k.a, 1)} → ${nf(k.b, 1)}`, t('report.sum.compareNote', { metric: t(`analysis.metric.${r.compare.metric}`), better: pct(k.better), worse: pct(k.worse) }))
+  }
+  if (!r.en && !r.daylight && !r.seasons && !r.shading && !r.pv && !r.probe && !r.compare) doc.para(t('report.sum.onlyMaps'), 24, C.faint)
+  if (!r.climate) doc.para(t('report.sum.noClimate'), 22, C.amber)
+  doc.h2(t('report.contents'))
+  doc.para([
+    t('report.sunTitle'),
+    r.heatmap && t('report.heatmapTitle'),
+    (r.en || r.seasons) && t('analysis.checks.title'),
+    r.probe && t('probe.title'),
+    r.daylight && t('daylight.title'),
+    r.daylight?.annual && t('daylight.annualTitle'),
+    r.compare && t('report.compareTitle'),
+    r.shading && t('shading.title'),
+    r.pv && t('pv.title'),
+    t('report.methodTitle'),
+  ].filter(Boolean).map((x, i) => `${i + 1}. ${x}`).join('   ·   '), 22, C.dim)
 
   // Sun & climate.
   doc.newPage()
@@ -591,6 +679,33 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     doc.para(t('daylight.note'), 22, C.faint)
   }
 
+  // Daylight over the year.
+  if (r.daylight?.annual) {
+    const a = r.daylight.annual
+    doc.newPage()
+    doc.h1(t('daylight.annualTitle'))
+    doc.para(t('report.annualIntro'))
+    if (!a.measuredSky) doc.para(t('daylight.annualClearSky'), 22, C.amber)
+    const leed = a.rooms.filter((x) => x.sDA >= 0.55 && x.ASE <= 0.1).length
+    const okEn = a.rooms.filter((x) => x.level !== 'none').length
+    doc.figures([
+      { label: t('report.annualEn'), value: `${okEn}/${a.rooms.length}`, color: okEn === a.rooms.length ? C.green : C.amber },
+      { label: t('report.annualLeed'), value: `${leed}/${a.rooms.length}`, color: leed === a.rooms.length ? C.green : C.amber },
+      { label: t('report.annualMeanDa'), value: `${Math.round((a.rooms.reduce((s, x) => s + x.meanDA, 0) / Math.max(1, a.rooms.length)) * 100)} %` },
+    ])
+    if (a.image) {
+      doc.h2(t('report.annualMap'))
+      await doc.image(a.image, 760)
+      doc.para(a.imageLabel, 22, C.faint)
+      drawRamp(doc, 0, 100, '%', t('daylight.daHint'))
+    }
+    doc.table([t('daylight.room'), 'DA300', 'sDA', 'ASE', t('report.annualEnShort')],
+      a.rooms.map((x) => [x.label, `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %`, `${Math.round(x.ASE * 100)} %`, t(`daylight.levels.${x.level}`)]),
+      [2.6, 0.8, 0.8, 0.8, 1.2], 22)
+    doc.para(`DA300 — ${t('daylight.daHint')}. sDA — ${t('daylight.sdaHint')}. ASE — ${t('daylight.aseHint')}.`, 20, C.faint)
+    doc.para(t('daylight.annualNote'), 20, C.faint)
+  }
+
   // Variants.
   if (r.compare) {
     const c = r.compare
@@ -650,7 +765,7 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
   // Method.
   doc.newPage()
   doc.h1(t('report.methodTitle'))
-  for (const k of ['sun', 'sky', 'surface', 'engine', 'checks', 'limits']) {
+  for (const k of ['sun', 'sky', 'surface', 'engine', 'geometry', 'checks', 'daylight', 'annual', 'limits']) {
     doc.h2(t(`report.method.${k}.title`))
     doc.para(t(`report.method.${k}.body`), 24)
   }

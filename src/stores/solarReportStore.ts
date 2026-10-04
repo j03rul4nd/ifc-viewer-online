@@ -96,6 +96,15 @@ export interface DaylightSection {
   gridImageLabel?: string
   gridSpacing?: number
   gridPoints?: number
+  /** Climate-based (annual) results, when run. */
+  annual?: {
+    image: string | null
+    imageLabel: string
+    points: number
+    spacing: number
+    measuredSky: boolean
+    rooms: Array<{ label: string; level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; sDA: number; ASE: number; meanDA: number }>
+  }
 }
 
 interface State {

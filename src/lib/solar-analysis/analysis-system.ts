@@ -16,6 +16,7 @@ import { MASK_AZ, MASK_ALT, cellCentre, maskSkyView, type SkyMask } from './sky-
 import { sunDirectionScene } from '../solar/sun-math'
 import type { DeviceBox } from './shading-devices'
 import { overcastWeights, type Tri2 } from './daylight-grid'
+import type { Patch } from './daylight-annual'
 import { createHeatmap, type Heatmap } from './heatmap'
 import { createLogger } from '../logger'
 
@@ -89,7 +90,7 @@ export interface AnalysisRun {
 
 export interface HeatmapOverride {
   /** What the values are, for the hover card. Default 'delta' (a comparison). */
-  meaning?: 'delta' | 'df'
+  meaning?: 'delta' | 'df' | 'da'
   values: Float32Array
   /** For a daylight map: the sky component alone, %, shown beside the total. */
   secondary?: Float32Array
@@ -104,6 +105,8 @@ export interface HoverInfo {
   df?: number
   /** Its sky component, %. */
   dfSky?: number
+  /** Daylight autonomy under the cursor: share of daylight hours ≥ 300 lx, %. */
+  da?: number
   sensor: number
   kind: SensorKind
   sunHoursPerDay: number
@@ -146,6 +149,12 @@ export interface SolarAnalysisAPI {
    * `hide` (glass, room volumes) out of the way and everything else blocking.
    */
   daylightPass(points: Float32Array, hide: Array<{ modelId: string; ids: number[] }>, o?: { directions?: number; onProgress?: (f: number) => void; signal?: AbortSignal }): Promise<Float32Array>
+  /**
+   * Daylight coefficients: for every point (xyz triples) and every sky patch,
+   * Σ visible · cos θ · dω over the patch, seen on a horizontal plane through
+   * the glass (`hide` out of the way). Row-major points × patches.
+   */
+  daylightCoefficients(points: Float32Array, hide: Array<{ modelId: string; ids: number[] }>, patches: Patch[], yawDeg: number, o?: { onProgress?: (f: number) => void; signal?: AbortSignal }): Promise<Float32Array>
   /** Draw solar protections in the scene; they occlude every later run. null removes them. */
   setShadingDevices(boxes: DeviceBox[] | null): void
   dispose(): void
@@ -279,7 +288,121 @@ function renderSkyMask(
 
 const MEASURED = /^(IFCWINDOW|IFCCURTAINWALL|IFCPLATE|IFCWALL|IFCWALLSTANDARDCASE|IFCWALLELEMENTEDCASE|IFCDOOR|IFCROOF|IFCSLAB)$/i
 
+/**
+ * Never occludes: spatial containers and abstract elements (an IfcSpace is a
+ * room's air, an opening is a hole).
+ */
+const NOT_OCCLUDING = /^(IFCSPACE|IFCOPENINGELEMENT|IFCANNOTATION|IFCGRID|IFCVIRTUALELEMENT|IFCSITE|IFCBUILDING|IFCBUILDINGSTOREY|IFCZONE|IFCSPATIALZONE|IFCPROJECT)$/i
+
+interface ModelOccluders { opaque: THREE.Mesh; glass: THREE.Mesh; key: string }
+
+function occluderMesh(chunks: Float32Array[], name: string): THREE.Mesh {
+  const n = chunks.reduce((a, c) => a + c.length, 0)
+  const pos = new Float32Array(n)
+  let o = 0
+  for (const c of chunks) { pos.set(c, o); o += c.length }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+  mesh.name = name
+  mesh.matrixAutoUpdate = false
+  mesh.frustumCulled = false
+  mesh.castShadow = true
+  mesh.visible = false
+  return mesh
+}
+
 export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI {
+  // ── The analysis' own occluders ──────────────────────────────────────────
+  // Every measurement draws THIS geometry, built once per model from the
+  // IFC's own items — never the viewer's live fragments meshes, whose content
+  // follows the user's camera (tiles, LOD), whose hidden items still cast in
+  // a shadow pass, and which clipping planes cut. Two meshes per model: the
+  // glazing (out of the way when light must come THROUGH it) and the rest.
+  const occCache = new Map<string, ModelOccluders>()
+  /** "modelId:localId" of the glazing, from the last sensor set. */
+  let glassKeys = new Set<string>()
+
+  async function modelOccluders(modelId: string): Promise<ModelOccluders | null> {
+    const model = ctx.getFragmentsModel(modelId)
+    if (!model) return null
+    const glass = [...glassKeys].filter((k) => k.startsWith(`${modelId}:`)).map((k) => Number(k.slice(modelId.length + 1))).sort((a, b) => a - b)
+    const key = `${glass.length}:${glass[0] ?? ''}:${glass[glass.length - 1] ?? ''}`
+    const cached = occCache.get(modelId)
+    if (cached && cached.key === key) return cached
+    if (cached) for (const m of [cached.opaque, cached.glass]) { m.removeFromParent(); m.geometry.dispose(); (m.material as THREE.Material).dispose() }
+    const glassSet = new Set(glass)
+    const opaque: Float32Array[] = [], glassChunks: Float32Array[] = []
+    let byCategory: Record<string, number[]> = {}
+    try { byCategory = await model.getItemsOfCategories([/.*/]) } catch (err) { log.warn(`${modelId}: categories unavailable`, err) }
+    const v = new THREE.Vector3()
+    for (const [category, ids] of Object.entries(byCategory)) {
+      if (NOT_OCCLUDING.test(category)) continue
+      for (let b = 0; b < ids.length; b += 500) {
+        const batch = ids.slice(b, b + 500)
+        let geo: Awaited<ReturnType<FragmentsLike['getItemsGeometry']>>
+        try { geo = await model.getItemsGeometry(batch) } catch { continue }
+        geo.forEach((parts, j) => {
+          const target = glassSet.has(batch[j]) ? glassChunks : opaque
+          for (const part of parts) {
+            const src = part?.positions
+            if (!src?.length) continue
+            const m = part.transform ?? new THREE.Matrix4()
+            const idx = part.indices
+            const count = idx ? idx.length : src.length / 3
+            const out = new Float32Array(count * 3)
+            for (let k = 0; k < count; k++) {
+              const vi = idx ? idx[k] : k
+              v.set(src[vi * 3], src[vi * 3 + 1], src[vi * 3 + 2]).applyMatrix4(m)
+              out[k * 3] = v.x; out[k * 3 + 1] = v.y; out[k * 3 + 2] = v.z
+            }
+            target.push(out)
+          }
+        })
+      }
+    }
+    const occ: ModelOccluders = { opaque: occluderMesh(opaque, `solar-occluder-${modelId}`), glass: occluderMesh(glassChunks, `solar-occluder-glass-${modelId}`), key }
+    ctx.scene.add(occ.opaque, occ.glass)
+    occCache.set(modelId, occ)
+    return occ
+  }
+
+  /**
+   * Run `fn` with the analysis' own occluders standing in for the models:
+   * the fragments hidden, our meshes placed where the models are, the glass
+   * in or out, the map's context and any shading devices as they are.
+   */
+  async function withOccluders<T>(includeGlass: boolean, fn: (occluders: THREE.Object3D[]) => Promise<T> | T): Promise<T> {
+    const occluders: THREE.Object3D[] = []
+    const restore: Array<() => void> = []
+    try {
+      for (const id of ctx.getLoadedModelIds()) {
+        const occ = await modelOccluders(id)
+        const model = ctx.getFragmentsModel(id)
+        const pivot = ctx.getModelObject(id)
+        if (!occ || !model) continue
+        model.object.updateMatrixWorld(true)
+        for (const m of includeGlass ? [occ.opaque, occ.glass] : [occ.opaque]) {
+          m.matrix.copy(model.object.matrixWorld)
+          m.updateMatrixWorld(true)
+          m.visible = true
+          occluders.push(m)
+          restore.push(() => { m.visible = false })
+        }
+        const hideObj = pivot ?? model.object
+        const was = hideObj.visible
+        hideObj.visible = false
+        restore.push(() => { hideObj.visible = was })
+      }
+      const contextRoot = ctx.getGeo()?.getContextRoot()
+      if (contextRoot) occluders.push(contextRoot)
+      if (shading) occluders.push(shading)
+      return await fn(occluders)
+    } finally {
+      for (const r of restore.reverse()) r()
+    }
+  }
+
   let heatmap: Heatmap | null = null
   let gridWasVisible: boolean | null = null
   const skyCache = new WeakMap<SensorSet, { share: Float32Array; cos: Float32Array; version: number }>()
@@ -313,7 +436,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       irradiationKwh: metricValue(r, 'irradiation', i),
       split: { direct: r.directWh[i] / total, diffuse: r.diffuseWh[i] / total, reflected: r.reflectedWh[i] / total },
       skyViewPct: metricValue(r, 'skyView', i),
-      ...(shownOverride ? (shownOverride.meaning === 'df' ? { df: shownOverride.values[i], ...(shownOverride.secondary ? { dfSky: shownOverride.secondary[i] } : {}) } : { delta: shownOverride.values[i] }) : {}),
+      ...(shownOverride ? (shownOverride.meaning === 'da' ? { da: shownOverride.values[i] } : shownOverride.meaning === 'df' ? { df: shownOverride.values[i], ...(shownOverride.secondary ? { dfSky: shownOverride.secondary[i] } : {}) } : { delta: shownOverride.values[i] }) : {}),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
     })
@@ -431,6 +554,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
         )
         : []
       onProgress?.(1)
+      glassKeys = new Set(groups.filter((g) => g.kind === 'window').map((g) => `${g.element.modelId}:${g.element.localId}`))
       return buildSensorSet(
         [{ kind: 'ground', element: null, samples: ground }, ...groups],
         { ground: groundSpacing, surface: surfaceSpacing },
@@ -441,27 +565,18 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       if (sensors.count === 0) throw new Error('Nothing to measure')
       const { samples, days, rawInstants } = sunPath(period, path)
       if (samples.length === 0) throw new Error('The sun does not rise above the horizon in this period')
-      const occluders: THREE.Object3D[] = []
-      for (const id of ctx.getLoadedModelIds()) {
-        const obj = ctx.getModelObject(id)
-        if (obj) occluders.push(obj)
-      }
-      const contextRoot = ctx.getGeo()?.getContextRoot()
-      if (contextRoot) occluders.push(contextRoot)
-      if (shading) occluders.push(shading)
-      const engineCtx = {
-        renderer: ctx.renderer, scene: ctx.scene,
-        occluders: () => occluders,
-        hidden: () => (heatmap ? [heatmap.object] : []),
-        pauseViewer: (p: boolean) => ctx.setPaused(p),
-      }
-      // The sky first (once per sensor set). Two figures from one pass over
-      // the dome: the plain share of directions a sensor sees, which finds the
-      // buried sensors — a structural slab under the roof finish, a wall face
-      // inside another — and the COSINE-weighted view factor, which is what
-      // the isotropic diffuse sky actually delivers to a surface.
-      await ctx.setFullGeometry?.(true)
-      try {
+      return withOccluders(true, async (occluders) => {
+        const engineCtx = {
+          renderer: ctx.renderer, scene: ctx.scene,
+          occluders: () => occluders,
+          hidden: () => [...(heatmap ? [heatmap.object] : []), ...(marker ? [marker] : [])],
+          pauseViewer: (p: boolean) => ctx.setPaused(p),
+        }
+        // The sky first (once per sensor set). Two figures from one pass over
+        // the dome: the plain share of directions a sensor sees, which finds the
+        // buried sensors — a structural slab under the roof finish, a wall face
+        // inside another — and the COSINE-weighted view factor, which is what
+        // the isotropic diffuse sky actually delivers to a surface.
         let sky = skyCache.get(sensors)
         if (!sky || sky.version !== shadingVersion) {
           const dirs = hemisphere(SKY_DIRECTIONS)
@@ -491,9 +606,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
           sensors, result, stats: elementStats(sensors, result, open),
           instants: samples.length, rawInstants, period, skyView: sky.share, open, albedo,
         }
-      } finally {
-        await ctx.setFullGeometry?.(false)
-      }
+      })
     },
 
     show(run, metric, kinds, range, override) {
@@ -567,17 +680,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
     },
 
     async skyMaskAt(point, yawDeg) {
-      const occluders: THREE.Object3D[] = []
-      for (const id of ctx.getLoadedModelIds()) {
-        const obj = ctx.getModelObject(id)
-        if (obj) occluders.push(obj)
-      }
-      const contextRoot = ctx.getGeo()?.getContextRoot()
-      if (contextRoot) occluders.push(contextRoot)
-      if (shading) occluders.push(shading)
-      await ctx.setFullGeometry?.(true)
-      let mask: SkyMask
-      try { mask = renderSkyMask(ctx.renderer, ctx.scene, occluders, point, yawDeg) } finally { await ctx.setFullGeometry?.(false) }
+      const mask = await withOccluders(true, (occluders) => renderSkyMask(ctx.renderer, ctx.scene, occluders, point, yawDeg))
       if (!marker) {
         marker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshBasicMaterial({ color: 0xffb020, depthTest: false, toneMapped: false }))
         marker.name = 'solar-analysis-probe'
@@ -663,18 +766,8 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       const sensors = buildSensorSet([{ kind: 'ground', element: null, samples }], { ground: 0.5, surface: 0.5 })
       const dirs = hemisphere(o.directions ?? 400)
       const { weights, horizontal } = overcastWeights(dirs)
-      const occluders: THREE.Object3D[] = []
-      for (const id of ctx.getLoadedModelIds()) {
-        const obj = ctx.getModelObject(id)
-        if (obj) occluders.push(obj)
-      }
-      const contextRoot = ctx.getGeo()?.getContextRoot()
-      if (contextRoot) occluders.push(contextRoot)
-      if (shading) occluders.push(shading)
-      await ctx.setFullGeometry?.(true)
-      const restore: Array<() => Promise<void>> = []
-      for (const h of hide) { const r = await ctx.hideItems?.(h.modelId, h.ids); if (r) restore.push(r) }
-      try {
+      // Light comes in THROUGH the glass: occluders without it (rooms never occlude).
+      return withOccluders(hide.length === 0, async (occluders) => {
         const r = await runExposure({
           renderer: ctx.renderer, scene: ctx.scene,
           occluders: () => occluders,
@@ -687,10 +780,38 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
         const out = new Float32Array(n)
         for (let i = 0; i < n; i++) out[i] = Math.min(1, r.directWh[i] / horizontal)
         return out
-      } finally {
-        for (const r of restore) await r()
-        await ctx.setFullGeometry?.(false)
-      }
+      })
+    },
+
+    async daylightCoefficients(points, hide, patches, yawDeg, o = {}) {
+      const n = Math.floor(points.length / 3)
+      const P = patches.length
+      const out = new Float32Array(n * P)
+      if (n === 0) return out
+      const samples: PointSample[] = []
+      for (let i = 0; i < n; i++) samples.push({ x: points[i * 3], y: points[i * 3 + 1], z: points[i * 3 + 2], nx: 0, ny: 1, nz: 0, area: 1 })
+      const sensors = buildSensorSet([{ kind: 'ground', element: null, samples }], { ground: 0.5, surface: 0.5 })
+      const yaw = (yawDeg * Math.PI) / 180
+      return withOccluders(hide.length === 0, async (occluders) => {
+        const engine = {
+          renderer: ctx.renderer, scene: ctx.scene,
+          occluders: () => occluders,
+          hidden: () => [...(heatmap ? [heatmap.object] : []), ...(marker ? [marker] : [])],
+          pauseViewer: (p: boolean) => ctx.setPaused(p),
+        }
+        for (let p = 0; p < P; p++) {
+          if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+          const patch = patches[p]
+          const w = patch.omega / patch.samples.length
+          const r = await runExposure(engine, sensors, patch.samples.map((d) => ({
+            utc: 0, azimuthDeg: d.az, altitudeDeg: d.alt, dir: sunDirectionScene(d.az, d.alt, yaw), hours: 1, month: 1,
+            irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: w, diffuseIso: 0, sunProb: 0,
+          })), 1, { signal: o.signal })
+          for (let i = 0; i < n; i++) out[i * P + p] = r.directWh[i]
+          o.onProgress?.((p + 1) / P)
+        }
+        return out
+      })
     },
 
     setShadingDevices(boxes) {
@@ -740,10 +861,12 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       api.hide()
       api.clearMarker()
       api.setShadingDevices(null)
+      for (const occ of occCache.values()) for (const m of [occ.opaque, occ.glass]) { m.removeFromParent(); m.geometry.dispose(); (m.material as THREE.Material).dispose() }
+      occCache.clear()
       hoverCb = null
     },
   }
   // Dev QA: the scene and the API from the console (never in a production build).
-  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__solarAnalysis = { scene: ctx.scene, api }
+  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__solarAnalysis = { scene: ctx.scene, api, renderer: ctx.renderer, camera: ctx.camera, ctx }
   return api
 }
