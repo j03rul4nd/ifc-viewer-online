@@ -73,7 +73,8 @@ export interface ElementStat {
 }
 
 /**
- * One figure per element, from the face the weather sees. Sensors are split
+ * One figure per element, from the face the weather sees — among its real
+ * faces, not its edges. Sensors are split
  * by facing (the dominant axis and its sign of their normal); each facing is
  * averaged by area and the element takes the facing with the most sun — the
  * inside face of a wall or window, which never sees the sun, drops out.
@@ -105,7 +106,14 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
   const out: ElementStat[] = []
   for (const [index, byFacing] of per) {
     let best: Acc | null = null
+    // Only real faces compete: the thin edge of a glass plate or a wall (its
+    // top, 20 cm deep, always in the sun) would otherwise win and judge the
+    // whole window by it. A facing counts if it is at least a quarter of the
+    // element's largest one.
+    let largest = 0
+    for (const acc of byFacing.values()) largest = Math.max(largest, acc.area)
     for (const acc of byFacing.values()) {
+      if (acc.area < largest * 0.25) continue
       if (!best || acc.hours / acc.area > best.hours / best.area
         || (acc.hours / acc.area === best.hours / best.area && acc.kwh / acc.area > best.kwh / best.area)) best = acc
     }

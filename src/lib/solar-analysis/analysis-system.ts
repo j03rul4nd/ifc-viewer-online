@@ -5,7 +5,7 @@
 
 import * as THREE from 'three'
 import {
-  buildSensorSet, groundGrid, sampleTriangles, sensorKindFor,
+  buildSensorSet, groundGrid, sampleTriangles, sensorKindFor, growExtent,
   type SensorElement, type SensorKind, type SensorSet, type PointSample,
 } from './sensors'
 import { runExposure } from './exposure-engine'
@@ -14,6 +14,7 @@ import { elementStats, metricValue, niceRange, type ElementStat, type ExposureRe
 import { reflectedOnSurface } from './irradiance'
 import { MASK_AZ, MASK_ALT, cellCentre, maskSkyView, type SkyMask } from './sky-mask'
 import { sunDirectionScene } from '../solar/sun-math'
+import type { DeviceBox } from './shading-devices'
 import { createHeatmap, type Heatmap } from './heatmap'
 import { createLogger } from '../logger'
 
@@ -107,6 +108,8 @@ export interface SolarAnalysisAPI {
   /** The sky mask at a point (and a marker there). */
   skyMaskAt(point: THREE.Vector3, yawDeg: number): SkyMask
   clearMarker(): void
+  /** Draw solar protections in the scene; they occlude every later run. null removes them. */
+  setShadingDevices(boxes: DeviceBox[] | null): void
   dispose(): void
 }
 
@@ -236,10 +239,13 @@ const MEASURED = /^(IFCWINDOW|IFCCURTAINWALL|IFCPLATE|IFCWALL|IFCWALLSTANDARDCAS
 export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI {
   let heatmap: Heatmap | null = null
   let gridWasVisible: boolean | null = null
-  const skyCache = new WeakMap<SensorSet, { share: Float32Array; cos: Float32Array }>()
+  const skyCache = new WeakMap<SensorSet, { share: Float32Array; cos: Float32Array; version: number }>()
+  /** Bumped when the shading devices change: the sky every sensor sees changes with them. */
+  let shadingVersion = 0
   let shown: AnalysisRun | null = null
   let hoverCb: ((info: HoverInfo | null) => void) | null = null
   let marker: THREE.Mesh | null = null
+  let shading: THREE.InstancedMesh | null = null
   const raycaster = new THREE.Raycaster()
   const ndc = new THREE.Vector2()
 
@@ -297,6 +303,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
           const geo = await model.getItemsGeometry(batch)
           geo.forEach((parts, j) => {
             const samples: PointSample[] = []
+            let extent: Float32Array | null = null
             for (const part of parts) {
               if (!part?.positions?.length) continue
               const m = new THREE.Matrix4().multiplyMatrices(world, part.transform ?? new THREE.Matrix4())
@@ -307,8 +314,9 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
                 wp[k] = v.x; wp[k + 1] = v.y; wp[k + 2] = v.z
               }
               samples.push(...sampleTriangles(wp, part.indices ?? null, spacing, accept))
+              if (kind === 'window') extent = growExtent(extent, wp)
             }
-            if (samples.length) groups.push({ kind, element: { modelId, localId: batch[j], category, kind }, samples })
+            if (samples.length) groups.push({ kind, element: { modelId, localId: batch[j], category, kind, ...(extent ? { extent } : {}) }, samples })
           })
         }
       }
@@ -378,6 +386,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       }
       const contextRoot = ctx.getGeo()?.getContextRoot()
       if (contextRoot) occluders.push(contextRoot)
+      if (shading) occluders.push(shading)
       const engineCtx = {
         renderer: ctx.renderer, scene: ctx.scene,
         occluders: () => occluders,
@@ -390,13 +399,13 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       // inside another — and the COSINE-weighted view factor, which is what
       // the isotropic diffuse sky actually delivers to a surface.
       let sky = skyCache.get(sensors)
-      if (!sky) {
+      if (!sky || sky.version !== shadingVersion) {
         const dirs = hemisphere(SKY_DIRECTIONS)
         const pass = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
           utc: 0, azimuthDeg: 0, altitudeDeg: 0, dir, hours: 1 / SKY_DIRECTIONS, month: 1,
           irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: 0, diffuseIso: 0, sunProb: 0,
         })), 1, { signal: o.signal, skyWeight: 2 / SKY_DIRECTIONS, onProgress: (f) => o.onProgress?.(f * 0.15) })
-        sky = { share: pass.sunHours, cos: pass.skyCos }
+        sky = { share: pass.sunHours, cos: pass.skyCos, version: shadingVersion }
         skyCache.set(sensors, sky)
       }
       const result = await runExposure(engineCtx, sensors, samples, days, {
@@ -492,6 +501,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       }
       const contextRoot = ctx.getGeo()?.getContextRoot()
       if (contextRoot) occluders.push(contextRoot)
+      if (shading) occluders.push(shading)
       const mask = renderSkyMask(ctx.renderer, ctx.scene, occluders, point, yawDeg)
       if (!marker) {
         marker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshBasicMaterial({ color: 0xffb020, depthTest: false, toneMapped: false }))
@@ -503,6 +513,39 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       // A size you can see from where you look, not from the model's scale.
       marker.scale.setScalar(Math.max(0.15, ctx.camera().position.distanceTo(point) * 0.008))
       return mask
+    },
+
+    setShadingDevices(boxes) {
+      shadingVersion++
+      if (shading) {
+        shading.removeFromParent()
+        shading.geometry.dispose()
+        ;(shading.material as THREE.Material).dispose()
+        shading.dispose()
+        shading = null
+      }
+      if (!boxes || boxes.length === 0) return
+      const mesh = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshStandardMaterial({ color: 0xc9ccd3, roughness: 0.7, metalness: 0.1 }),
+        boxes.length,
+      )
+      mesh.name = 'solar-shading-devices'
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      const m = new THREE.Matrix4()
+      const x = new THREE.Vector3(), y = new THREE.Vector3(), z = new THREE.Vector3()
+      boxes.forEach((b, i) => {
+        x.set(b.ax.x, b.ax.y, b.ax.z).multiplyScalar(b.size.x)
+        y.set(b.ay.x, b.ay.y, b.ay.z).multiplyScalar(b.size.y)
+        z.set(b.az.x, b.az.y, b.az.z).multiplyScalar(b.size.z)
+        m.makeBasis(x, y, z).setPosition(b.center.x, b.center.y, b.center.z)
+        mesh.setMatrixAt(i, m)
+      })
+      mesh.instanceMatrix.needsUpdate = true
+      mesh.computeBoundingSphere()
+      ctx.scene.add(mesh)
+      shading = mesh
     },
 
     clearMarker() {
@@ -518,8 +561,11 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
     dispose() {
       api.hide()
       api.clearMarker()
+      api.setShadingDevices(null)
       hoverCb = null
     },
   }
+  // Dev QA: the scene and the API from the console (never in a production build).
+  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__solarAnalysis = { scene: ctx.scene, api }
   return api
 }

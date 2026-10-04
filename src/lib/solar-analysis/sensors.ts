@@ -21,6 +21,38 @@ export interface SensorElement {
   localId: number
   category: string
   kind: Exclude<SensorKind, 'ground'>
+  /**
+   * The element's own geometric extent: min and max of its vertices along
+   * EXTENT_DIRS horizontal directions (angle k·π/EXTENT_DIRS from +x towards
+   * +z), then min and max y. Sizes a window for its shading devices — sensors
+   * are too sparse to (a 40 cm strip may hold one).
+   */
+  extent?: Float32Array
+}
+
+export const EXTENT_DIRS = 16
+
+/** Fold world-space vertices into an element extent (create it with `null`). */
+export function growExtent(extent: Float32Array | null, positions: ArrayLike<number>): Float32Array {
+  const e = extent ?? (() => {
+    const f = new Float32Array(EXTENT_DIRS * 2 + 2)
+    for (let k = 0; k < f.length; k += 2) { f[k] = Infinity; f[k + 1] = -Infinity }
+    return f
+  })()
+  const dirs: Array<[number, number]> = []
+  for (let k = 0; k < EXTENT_DIRS; k++) dirs.push([Math.cos((k * Math.PI) / EXTENT_DIRS), Math.sin((k * Math.PI) / EXTENT_DIRS)])
+  for (let i = 0; i + 2 < positions.length; i += 3) {
+    const x = positions[i], y = positions[i + 1], z = positions[i + 2]
+    for (let k = 0; k < EXTENT_DIRS; k++) {
+      const v = x * dirs[k][0] + z * dirs[k][1]
+      if (v < e[k * 2]) e[k * 2] = v
+      if (v > e[k * 2 + 1]) e[k * 2 + 1] = v
+    }
+    const j = EXTENT_DIRS * 2
+    if (y < e[j]) e[j] = y
+    if (y > e[j + 1]) e[j + 1] = y
+  }
+  return e
 }
 
 export interface SensorSet {

@@ -53,6 +53,24 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
 
+## Solar protections
+
+Designed by façade (`shading-devices.ts`, `components/solar/ShadingDesigner.tsx`):
+choose orientations and an overhang (depth, height above the window, side
+overhang), vertical fins (depth) and/or louvres (count, depth, tilt). Every
+matching window gets the devices, sized from its own geometry (vertex extents
+along 16 horizontal directions, stored per window while sampling — sensors are
+too sparse for a 40 cm strip). They are drawn as one InstancedMesh and occlude
+every later run, the sky view included. "Measure" runs the hot season, the cold
+season and the EN 17037 day on the windows only, without and with the devices,
+and reports summer gain cut, winter gain lost and EN 17037 hours kept, per
+orientation and overall (glazed-area weighted). "Suggest depth" sizes the
+overhang to shade the window fully at summer-solstice noon.
+
+Per-element figures (all checks) now pick the sunniest of the element's REAL
+faces: a facing under a quarter of its largest one (the top edge of a glass
+plate) no longer judges the window.
+
 ## Shading diagram of a point
 
 Pick any point (model, OSM buildings, terrain, or the ground plane): five 90°
