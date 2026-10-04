@@ -132,3 +132,32 @@ export function gridLevel(values: ArrayLike<number>, t: { d100: number; d300: nu
       : s.d300 >= 0.5 && s.d100 >= 0.95 ? 'minimum' : 'none'
   return { level, share: s, median: n ? v[Math.floor(n / 2)] : 0, min: n ? v[0] : 0 }
 }
+
+export interface FloorGroup {
+  /** Floor level (lowest room floor of the group), m. */
+  y: number
+  keys: string[]
+  /** Plan extent of its rooms. */
+  min: { x: number; z: number }
+  max: { x: number; z: number }
+  /** Ceiling of its tallest room, m. */
+  top: number
+}
+
+/** Rooms grouped into floors: room floors within `tolerance` metres of each other share one. */
+export function floorsOf(spaces: Array<{ key: string; box: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } }>, tolerance = 0.6): FloorGroup[] {
+  const sorted = [...spaces].sort((a, b) => a.box.min.y - b.box.min.y)
+  const out: FloorGroup[] = []
+  for (const s of sorted) {
+    const f = out.find((g) => Math.abs(g.y - s.box.min.y) <= tolerance)
+    if (f) {
+      f.keys.push(s.key)
+      f.min.x = Math.min(f.min.x, s.box.min.x); f.min.z = Math.min(f.min.z, s.box.min.z)
+      f.max.x = Math.max(f.max.x, s.box.max.x); f.max.z = Math.max(f.max.z, s.box.max.z)
+      f.top = Math.max(f.top, s.box.max.y)
+    } else {
+      out.push({ y: s.box.min.y, keys: [s.key], min: { x: s.box.min.x, z: s.box.min.z }, max: { x: s.box.max.x, z: s.box.max.z }, top: s.box.max.y })
+    }
+  }
+  return out
+}

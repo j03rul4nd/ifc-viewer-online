@@ -87,6 +87,23 @@ Torre Poblenou (32 850 points, ~20 s): sky component 9.9 % at 0.6 m from the
 façade, 2.6 % at 5 m, 0.8 % at 18 m; typical floors pass on the sky alone, the
 podium and the entrance hall only on reflections.
 
+### Plan view
+
+"Plan view" picks a floor (rooms grouped by floor level, `floorsOf`): the
+presentation cut removes everything 1.6 m above it, only that floor's grid is
+drawn, and the camera looks straight down. The report gets an off-screen plan
+picture: the worst floor by default, the one picked after.
+
+### Two robustness fixes the plan view exposed
+
+- Clipping never reaches a measurement: every pass (sun, sky, daylight, point
+  mask) turns the renderer's clipping planes off and restores them. Before,
+  the floor cut — or the Section tool — let the sky through every slab
+  (floor centre 16.8 % instead of 0.76 %).
+- Forcing full geometry waits until no model is busy (repeated
+  `core.update(true)`), not one update: the first daylight map after a load
+  missed the slabs the camera had culled behind the façade.
+
 ## Glass or spandrel
 
 IfcPlate holds both glazed units and opaque spandrels. Plates are classified

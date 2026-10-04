@@ -500,6 +500,9 @@
     "noGrid": "No room is big enough for a grid 0.5 m off its walls.",
     "gridSummary": "Point by point: {{ok}} of {{lit}} rooms meet EN 17037 ({{points}} points every {{spacing}} m)",
     "shareHint": "Share of the room's plane at or above the 300 lx target (EN 17037 asks 50 %)",
-    "onReflections": "{{n}} rooms only pass thanks to reflected light (the simplified BRE formula, uniform over the room): on the sky their points see they would not. Treat it as a narrow pass."
+    "onReflections": "{{n}} rooms only pass thanks to reflected light (the simplified BRE formula, uniform over the room): on the sky their points see they would not. Treat it as a narrow pass.",
+    "plan": "Plan view",
+    "allFloors": "All (no cut)",
+    "floorAt": "Floor at {{y}} m"
   }
 }

@@ -499,6 +499,9 @@
     "noGrid": "Ninguna estancia es lo bastante grande para una rejilla a 0,5 m de sus muros.",
     "gridSummary": "Punto a punto: {{ok}} de {{lit}} estancias cumplen la EN 17037 ({{points}} puntos cada {{spacing}} m)",
     "shareHint": "Parte del plano de la estancia que llega al objetivo de 300 lx (la EN 17037 pide el 50 %)",
-    "onReflections": "{{n}} estancias solo cumplen gracias a la luz reflejada (fórmula BRE simplificada, uniforme en la estancia): con el cielo que ven sus puntos no llegarían. Trátalo como un aprobado justo."
+    "onReflections": "{{n}} estancias solo cumplen gracias a la luz reflejada (fórmula BRE simplificada, uniforme en la estancia): con el cielo que ven sus puntos no llegarían. Trátalo como un aprobado justo.",
+    "plan": "Ver planta",
+    "allFloors": "Todas (sin corte)",
+    "floorAt": "Planta a {{y}} m"
   }
 }

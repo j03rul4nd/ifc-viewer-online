@@ -213,6 +213,9 @@ function renderSkyMask(
   const views: Array<{ cam: THREE.PerspectiveCamera; px: Uint8Array }> = []
   const dirs: Array<[number, number]> = [[0, 90], [0, 0], [90, 0], [180, 0], [270, 0]]
   const restoreVis = isolate(scene, occluders)
+  const clip = { local: renderer.localClippingEnabled, planes: renderer.clippingPlanes }
+  renderer.localClippingEnabled = false
+  renderer.clippingPlanes = []
   const prev = {
     target: renderer.getRenderTarget(), bg: scene.background, fog: scene.fog,
     override: scene.overrideMaterial, clear: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(),
@@ -242,6 +245,8 @@ function renderSkyMask(
     }
   } finally {
     restoreVis()
+    renderer.localClippingEnabled = clip.local
+    renderer.clippingPlanes = clip.planes
     scene.background = prev.bg
     scene.fog = prev.fog
     scene.overrideMaterial = prev.override

@@ -92,6 +92,8 @@ export interface DaylightSection {
     grid?: { level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; median: number; onReflections: boolean }
   }>
   gridImage?: string | null
+  /** Which floor the picture shows. */
+  gridImageLabel?: string
   gridSpacing?: number
   gridPoints?: number
 }

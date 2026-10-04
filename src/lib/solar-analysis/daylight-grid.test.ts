@@ -55,3 +55,13 @@ describe('daylight grid', () => {
     expect(gridLevel(Array(100).fill(6), t).level).toBe('high')
   })
 })
+
+describe('floors', () => {
+  it('groups rooms whose floors sit at the same level', async () => {
+    const { floorsOf } = await import('./daylight-grid')
+    const b = (y: number, x: number) => ({ min: { x, y, z: 0 }, max: { x: x + 4, y: y + 3, z: 5 } })
+    const f = floorsOf([{ key: 'a', box: b(0, 0) }, { key: 'b', box: b(0.2, 5) }, { key: 'c', box: b(3.5, 0) }])
+    expect(f.map((g) => g.keys)).toEqual([['a', 'b'], ['c']])
+    expect(f[0].max.x).toBe(9)
+  })
+})

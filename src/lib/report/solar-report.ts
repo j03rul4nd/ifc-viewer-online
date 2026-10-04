@@ -569,6 +569,7 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     if (d.gridImage !== undefined) {
       doc.h2(t('report.gridTitle'))
       await doc.image(d.gridImage ?? null, 800)
+      if (d.gridImage && d.gridImageLabel) doc.para(d.gridImageLabel, 22, C.faint)
       {
         const top = Math.max(1, Math.ceil(d.targets.high * 1.5))
         drawRamp(doc, 0, top, '%', t('daylight.gridSummary', { ok: d.rooms.filter((x) => x.grid && x.grid.level !== 'none').length, lit: d.rooms.filter((x) => x.grid && x.windows).length, points: nf(d.gridPoints ?? 0), spacing: d.gridSpacing ?? 0 }))

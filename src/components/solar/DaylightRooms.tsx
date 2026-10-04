@@ -3,7 +3,7 @@
 // the average daylight factor, the EN 17037 level it reaches by the daylight-
 // factor method, and whether the room is too deep to be lit to the back.
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../../lib/viewer'
 import type { AnalysisRun, HeatmapOverride } from '../../lib/solar-analysis/analysis-system'
@@ -12,7 +12,7 @@ import { SENSOR_KINDS } from '../../lib/solar-analysis/sensors'
 import { sunPath, type AnalysisPeriod, type SunPathOptions } from '../../lib/solar-analysis/sun-paths'
 import { windowFrames, subsetSensors } from '../../lib/solar-analysis/shading-devices'
 import { roomDaylight, daylightTargets, type RoomDaylight, type DaylightWindow, type SpaceInfo } from '../../lib/solar-analysis/daylight'
-import { roomGrid, internalReflected, gridLevel, roomReflectance, type Tri2, type GridLevel } from '../../lib/solar-analysis/daylight-grid'
+import { roomGrid, internalReflected, gridLevel, roomReflectance, floorsOf, type Tri2, type GridLevel, type FloorGroup } from '../../lib/solar-analysis/daylight-grid'
 import { buildSensorSet } from '../../lib/solar-analysis/sensors'
 import { rampColor } from '../../lib/solar-analysis/results'
 import { shareOrDownload } from '../../lib/share-file'
@@ -45,7 +45,13 @@ export default function DaylightRooms(p: Props) {
   const { t, i18n } = useTranslation('solar')
   const [inputs, setInputs] = useState<Inputs | null>(null)
   /** Point-by-point result: per room, the share of its plane over each target and the level. */
-  const [grid, setGrid] = useState<{ byRoom: Map<string, { level: GridLevel; share: Record<'d100' | 'd300' | 'd500' | 'd750', number>; median: number; points: number; onReflections: boolean; irc: number }>; spacing: number; points: number; T: number; R: number; image: string | null } | null>(null)
+  const [grid, setGrid] = useState<{ byRoom: Map<string, { level: GridLevel; share: Record<'d100' | 'd300' | 'd500' | 'd750', number>; median: number; points: number; onReflections: boolean; irc: number }>; spacing: number; points: number; T: number; R: number; image: string | null; imageLabel: string } | null>(null)
+  /** The last map, to redraw one floor of it. */
+  const mapRef = useRef<{ run: AnalysisRun; df: Float32Array; sky: Float32Array; top: number } | null>(null)
+  const [plan, setPlan] = useState<number | null>(null)
+  /** The floor on screen, for callbacks that outlive a render. */
+  const planRef = useRef<number | null>(null)
+  const savedCamera = useRef<{ position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } } | null>(null)
   const [gridProgress, setGridProgress] = useState<number | null>(null)
   const [working, setWorking] = useState(false)
   const [T, setT] = useState(68)
@@ -79,7 +85,7 @@ export default function DaylightRooms(p: Props) {
             ...(g ? { grid: { level: g.level, share300: g.share.d300, share100: g.share.d100, median: g.median, onReflections: g.onReflections } } : {}),
           }
         }),
-        ...(grid ? { gridImage: grid.image, gridSpacing: grid.spacing, gridPoints: grid.points } : {}),
+        ...(grid ? { gridImage: grid.image, gridImageLabel: grid.imageLabel, gridSpacing: grid.spacing, gridPoints: grid.points } : {}),
       },
     })
   }, [rooms, inputs, summary, T, R, p.skyLabel, grid])
@@ -112,6 +118,7 @@ export default function DaylightRooms(p: Props) {
       const targets = daylightTargets(year.samples.map((s) => ({ dhi: s.irradiance.dhi, hours: s.hours })))
       setInputs({ spaces, windows, targets })
       setGrid(null)
+      if (planRef.current !== null) { setPlan(null); planRef.current = null; await viewer.setPresentationSection(null) }
       p.onDone()
     } catch (err) {
       p.onError(err)
@@ -119,6 +126,95 @@ export default function DaylightRooms(p: Props) {
       setWorking(false)
     }
   }, [p, t])
+
+  const floors = useMemo(() => (inputs ? floorsOf(inputs.spaces) : []), [inputs])
+  const floorLabel = useCallback((f: FloorGroup) => {
+    const names = (inputs?.spaces ?? []).filter((sp) => f.keys.includes(sp.key)).map((sp) => sp.label)
+    return `${t('daylight.floorAt', { y: nf(f.y, 1) })} · ${names[0] ?? ''}${names.length > 1 ? ` +${names.length - 1}` : ''}`
+  }, [inputs, t]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Show only one floor's points of the map (all of them with null). */
+  const paintFloor = useCallback(async (f: FloorGroup | null) => {
+    const m = mapRef.current
+    if (!m) return
+    const open = new Uint8Array(m.run.sensors.count)
+    for (let i = 0; i < open.length; i++) {
+      const y = m.run.sensors.positions[i * 3 + 1]
+      open[i] = !f || (y > f.y && y < f.top) ? 1 : 0
+    }
+    await p.paint({ ...m.run, open }, { meaning: 'df', values: m.df, secondary: m.sky, range: { min: 0, max: m.top }, color: rampColor })
+  }, [p])
+
+  /** The cut that opens a floor: everything above 1.6 m over its floor goes. */
+  const cutAt = useCallback(async (f: FloorGroup | null) => {
+    const viewer = p.viewerApiRef.current
+    if (!viewer) return
+    await viewer.setPresentationSection(f ? { normal: { x: 0, y: -1, z: 0 }, point: { x: 0, y: f.y + 1.6, z: 0 }, poche: '#3a3f4b' } : null)
+  }, [p.viewerApiRef])
+
+  /** Camera straight above a floor, framing its rooms. */
+  const planPose = (f: FloorGroup) => {
+    const cx = (f.min.x + f.max.x) / 2, cz = (f.min.z + f.max.z) / 2
+    const span = Math.max(f.max.x - f.min.x, f.max.z - f.min.z, 4)
+    const h = (span * 0.6) / Math.tan((20 * Math.PI) / 180) + 2
+    return { position: { x: cx, y: f.y + 1.6 + h, z: cz + h * 0.02 }, target: { x: cx, y: f.y, z: cz } }
+  }
+
+  /** An off-screen picture of a floor's map from above, the cut on, everything restored after. */
+  const planShot = async (f: FloorGroup, run: AnalysisRun): Promise<string | null> => {
+    const viewer = p.viewerApiRef.current
+    if (!viewer) return null
+    const m = mapRef.current ?? { run, df: new Float32Array(0), sky: new Float32Array(0), top: 1 }
+    mapRef.current = m
+    try {
+      await paintFloor(f)
+      await cutAt(f)
+      await viewer.beginShotRender(1600, 1100)
+      try {
+        const pose = planPose(f)
+        const c = await viewer.renderShotFrame({ ...pose, fovDeg: 40 })
+        return c.toDataURL('image/jpeg', 0.9)
+      } finally {
+        await viewer.endShotRender()
+      }
+    } catch {
+      return null
+    } finally {
+      // Put the screen back as it was: the open floor, or the whole map.
+      const open = planRef.current === null ? null : floors[planRef.current] ?? null
+      await cutAt(open)
+      await paintFloor(open)
+    }
+  }
+
+  const showFloor = useCallback(async (i: number | null) => {
+    const viewer = p.viewerApiRef.current
+    if (!viewer) return
+    const f = i === null ? null : floors[i]
+    if (f && !savedCamera.current) {
+      const vp = viewer.getCameraViewpoint()
+      if (vp) savedCamera.current = { position: { ...vp.position }, target: { ...vp.target } }
+    }
+    setPlan(i)
+    planRef.current = i
+    await paintFloor(f)
+    await cutAt(f)
+    if (f) {
+      const pose = planPose(f)
+      viewer.setCameraLookAt(pose.position, pose.target, true)
+      // This floor becomes the report's picture.
+      if (mapRef.current) {
+        const shot = await planShot(f, mapRef.current.run)
+        if (shot) setGrid((g) => (g ? { ...g, image: shot, imageLabel: floorLabel(f) } : g))
+      }
+    } else if (savedCamera.current) {
+      viewer.setCameraLookAt(savedCamera.current.position, savedCamera.current.target, true)
+      savedCamera.current = null
+    }
+  }, [p.viewerApiRef, floors, paintFloor, cutAt, floorLabel]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Leaving the panel (or a new model) must not leave the building cut.
+  useEffect(() => () => { void p.viewerApiRef.current?.setPresentationSection(null) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const runGrid = useCallback(async () => {
     const viewer = p.viewerApiRef.current
@@ -182,8 +278,18 @@ export default function DaylightRooms(p: Props) {
       }
       const top = Math.max(1, Math.ceil(targets.d750 * 1.5))
       await p.paint(run, { meaning: 'df', values: df, secondary: sky, range: { min: 0, max: top }, color: rampColor })
+      mapRef.current = { run, df, sky, top }
       // No picture: from outside, the façade hides a map that lies on the floors inside.
-      setGrid({ byRoom, spacing, points: sc.length, T, R, image: null })
+      // The report's picture: the plan of the floor that does worst, cut open.
+      const fl = floorsOf(inputs.spaces)
+      let worst = 0, worstShare = Infinity
+      fl.forEach((f, i) => {
+        const shares = f.keys.map((k) => byRoom.get(k)?.share.d300).filter((v): v is number => v !== undefined)
+        const m = shares.length ? Math.min(...shares) : Infinity
+        if (m < worstShare) { worstShare = m; worst = i }
+      })
+      const shot = fl.length ? await planShot(fl[worst], run) : null
+      setGrid({ byRoom, spacing, points: sc.length, T, R, image: shot, imageLabel: fl.length ? floorLabel(fl[worst]) : '' })
       p.onDone()
     } catch (err) {
       p.onError(err)
@@ -249,6 +355,16 @@ export default function DaylightRooms(p: Props) {
               {refl > 0 && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('daylight.onReflections', { n: refl })}</p>}
             </>
           })()}
+          {grid && floors.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span>{t('daylight.plan')}</span>
+              <select value={plan ?? ''} onChange={(e) => { void showFloor(e.target.value === '' ? null : Number(e.target.value)) }}
+                className="flex-1 min-w-0 px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)]">
+                <option value="">{t('daylight.allFloors')}</option>
+                {floors.map((f, i) => <option key={i} value={i}>{floorLabel(f)}</option>)}
+              </select>
+            </div>
+          )}
           <div className={`grid ${grid ? 'grid-cols-[1fr_2.6rem_3.2rem_3rem]' : 'grid-cols-[1fr_3rem_2.4rem_3.4rem]'} gap-x-2 text-[9.5px] text-[var(--text-faint)] mt-1`}>
             <span>{t('daylight.room')}</span>
             {grid ? <><span className="text-right">FLD</span><span className="text-right" title={t('daylight.shareHint')}>≥300lx</span><span className="text-right">≥100lx</span></>

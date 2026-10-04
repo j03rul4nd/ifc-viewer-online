@@ -4631,7 +4631,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           setFullGeometry: async (on) => {
             const mode = on ? FRAGS.LodMode.ALL_VISIBLE : FRAGS.LodMode.DEFAULT
             await Promise.all([...modelObjects.values()].map((m) => m.setLodMode(mode).catch(() => undefined)))
-            try { await fragmentsManager.core.update(true) } catch { /* render what is loaded */ }
+            // One update is not enough: the tiles the user's camera had culled
+            // (a slab behind the façade) stream in over several. Wait until no
+            // model is busy — measured: the first daylight map after a load
+            // missed the slabs and saw sky through every floor.
+            const deadline = performance.now() + 8000
+            for (let k = 0; performance.now() < deadline; k++) {
+              try { await fragmentsManager.core.update(true) } catch { break }
+              await new Promise((r) => setTimeout(r, 50))
+              if (k >= 2 && ![...modelObjects.values()].some((m) => (m as unknown as { isBusy?: boolean }).isBusy)) break
+            }
           },
           hideItems: async (modelId, ids) => {
             const m = modelObjects.get(modelId)
