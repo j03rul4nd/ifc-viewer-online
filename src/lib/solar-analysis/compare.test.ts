@@ -53,6 +53,13 @@ describe('compare variants', () => {
     expect(compareVariants(a, b, 'sunHours').movers[0].key).toBe('m:2')
   })
 
+  it('identical variants: no movers, a readable legend', () => {
+    const a = variant([{ x: 0, key: 'm:1', v: 4 }])
+    const c = compareVariants(a, a, 'sunHours')
+    expect(c.movers).toHaveLength(0)
+    expect(c.range).toBe(1)
+  })
+
   it('red always reads better', () => {
     expect(divergingColor(1)[0]).toBeGreaterThan(divergingColor(1)[2])
     expect(divergingColor(1, false)[2]).toBeGreaterThan(divergingColor(1, false)[0])

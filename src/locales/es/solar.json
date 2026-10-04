@@ -160,7 +160,9 @@
       "kwh": "{{kwh}} kWh/m²",
       "probable": "{{h}} h esperadas",
       "split": "directa {{d}} % · cielo {{f}} % · suelo {{r}} %",
-      "sky": "ve el {{pct}} % del cielo"
+      "sky": "ve el {{pct}} % del cielo",
+      "delta": "Cambio frente a la variante: {{d}} {{unit}}",
+      "unpaired": "Sin pareja en la variante"
     },
     "checks": {
       "title": "Comprobaciones",

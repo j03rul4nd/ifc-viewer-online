@@ -169,10 +169,12 @@ export function compareVariants(a: Variant, b: Variant, metric: SolarMetric, opt
   }
   kinds.sort((x, y) => SENSOR_KINDS.indexOf(x.kind) - SENSOR_KINDS.indexOf(y.kind))
   const movers = [...elems.entries()].map(([key, e]) => ({ key, label: e.label, a: e.a / e.area, b: e.b / e.area, delta: (e.b - e.a) / e.area }))
+    .filter((m) => Math.abs(m.delta) > 1e-6)
     .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)).slice(0, 10)
   // Legend: ± the 98th percentile of |Δ|, rounded.
   const abs = Array.from(delta).filter(Number.isFinite).map(Math.abs).sort((x, y) => x - y)
-  const p98 = abs.length ? abs[Math.min(abs.length - 1, Math.floor(abs.length * 0.98))] : 1
+  // Nothing changed: a unit range, so the legend reads 0 in the middle, not ±0.
+  const p98 = Math.max(abs.length ? abs[Math.min(abs.length - 1, Math.floor(abs.length * 0.98))] : 0, 0) || 1
   const mag = Math.pow(10, Math.floor(Math.log10(Math.max(p98, 1e-6))))
   const range = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((s) => s * mag).find((r) => r >= p98) ?? 10 * mag
   return { metric, delta, paired: total > 0 ? paired / total : 0, kinds, movers, range }
