@@ -83,7 +83,15 @@ export interface AnalysisRun {
   open: Uint8Array
 }
 
+export interface HeatmapOverride {
+  values: Float32Array
+  range: { min: number; max: number }
+  color: (t: number) => [number, number, number]
+}
+
 export interface HoverInfo {
+  /** The override's value under the cursor (a comparison's change), when one is shown. */
+  delta?: number
   sensor: number
   kind: SensorKind
   sunHoursPerDay: number
@@ -101,7 +109,11 @@ export interface HoverInfo {
 export interface SolarAnalysisAPI {
   buildSensors(o: SensorOptions, onProgress?: (f: number) => void): Promise<SensorSet>
   run(sensors: SensorSet, period: AnalysisPeriod, path: SunPathOptions, o?: { onProgress?: (f: number) => void; signal?: AbortSignal; albedo?: number }): Promise<AnalysisRun>
-  show(run: AnalysisRun, metric: SolarMetric, kinds: ReadonlySet<SensorKind>, range?: { min: number; max: number }): { min: number; max: number }
+  /**
+   * Draw a run. With `override`, the heatmap shows those values (a comparison's
+   * B − A) with their own colours instead of the metric.
+   */
+  show(run: AnalysisRun, metric: SolarMetric, kinds: ReadonlySet<SensorKind>, range?: { min: number; max: number }, override?: HeatmapOverride): { min: number; max: number }
   hide(): void
   isShown(): boolean
   onHover(cb: ((info: HoverInfo | null) => void) | null): void
@@ -249,6 +261,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
   /** Bumped when the shading devices change: the sky every sensor sees changes with them. */
   let shadingVersion = 0
   let shown: AnalysisRun | null = null
+  let shownOverride: HeatmapOverride | null = null
   let hoverCb: ((info: HoverInfo | null) => void) | null = null
   let marker: THREE.Mesh | null = null
   let shading: THREE.InstancedMesh | null = null
@@ -275,6 +288,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       irradiationKwh: metricValue(r, 'irradiation', i),
       split: { direct: r.directWh[i] / total, diffuse: r.diffuseWh[i] / total, reflected: r.reflectedWh[i] / total },
       skyViewPct: metricValue(r, 'skyView', i),
+      ...(shownOverride ? { delta: shownOverride.values[i] } : {}),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
     })
@@ -440,7 +454,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       }
     },
 
-    show(run, metric, kinds, range) {
+    show(run, metric, kinds, range, override) {
       if (!heatmap || shown?.sensors !== run.sensors) {
         heatmap?.dispose()
         heatmap = createHeatmap(run.sensors)
@@ -450,6 +464,12 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       }
       if (gridWasVisible === null) gridWasVisible = ctx.setGridVisible(false)
       shown = run
+      shownOverride = override ?? null
+      if (override) {
+        heatmap.setValues(override.values, override.range.min, override.range.max, override.color)
+        heatmap.setKinds(kinds, run.open)
+        return override.range
+      }
       const values = new Float32Array(run.sensors.count)
       for (let i = 0; i < values.length; i++) values[i] = metricValue(run.result, metric, i)
       const visible = Array.from(values).filter((_v, i) => run.open[i] === 1 && kinds.has((['ground', 'facade', 'window', 'roof'] as const)[run.sensors.kind[i]]))

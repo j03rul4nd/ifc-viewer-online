@@ -378,7 +378,8 @@
       "seasons": "overheating & rooms",
       "probe": "point diagram",
       "shading": "protections",
-      "pv": "solar panels"
+      "pv": "solar panels",
+      "compare": "variants"
     },
     "location": "Location",
     "timeZone": "Time zone",
@@ -429,6 +430,28 @@
         "title": "Limits",
         "body": "A design-stage study to compare options and size decisions. It is not an energy certificate, a thermal simulation or an installer's quote; EN 17037 is screened at the window's outer face, not at the room's reference point."
       }
-    }
+    },
+    "compareTitle": "Design variants",
+    "compareIntro": "“{{b}}” ({{pb}}) against “{{a}}” ({{pa}}), {{metric}}, point by point on the model. Red: better, blue: worse.",
+    "surface": "Surface"
+  },
+  "compare": {
+    "title": "Compare design variants",
+    "save": "Save as variant",
+    "namePlaceholder": "Name (e.g. no shading)",
+    "defaultName": "Variant {{n}}",
+    "hint": "Save the result on screen as a variant, change the design (protections, another IFC version, the sky) and run again: then compare the two point by point on the model.",
+    "delete": "Delete",
+    "current": "Current",
+    "moreIsBetter": "More irradiation is better (panels, winter gain)",
+    "run": "Compare {{metric}} with the current result",
+    "back": "Back to the normal map",
+    "periodMismatch": "Careful: the variant measured {{a}}, the current result {{b}}.",
+    "legend": "Change from “{{a}}” to the current result — {{metric}}",
+    "worse": "worse",
+    "better": "better",
+    "split": "Better / worse",
+    "movers": "Elements that changed most",
+    "paired": "{{pct}} % of the current surfaces have a partner in the variant (new or moved surfaces show grey)."
   }
 }

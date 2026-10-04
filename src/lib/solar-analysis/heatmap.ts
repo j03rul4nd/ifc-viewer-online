@@ -10,8 +10,12 @@ import { rampColor } from './results'
 
 export interface Heatmap {
   object: THREE.InstancedMesh
-  /** Recolour from per-sensor values, on [min, max]. */
-  setValues(values: ArrayLike<number>, min: number, max: number): void
+  /**
+   * Recolour from per-sensor values, on [min, max]. `color` maps t in [0, 1]
+   * (default: the sequential ramp); a NaN value is drawn neutral grey (a
+   * sensor a comparison could not pair).
+   */
+  setValues(values: ArrayLike<number>, min: number, max: number, color?: (t: number) => [number, number, number]): void
   /** Show only some kinds (ground, façades, windows, roofs), and never a buried sensor (`open[i] === 0`). */
   setKinds(kinds: ReadonlySet<SensorKind>, open?: Uint8Array): void
   /** Sensor index under an instance id (instances are sensors, one to one). */
@@ -64,11 +68,12 @@ export function createHeatmap(sensors: SensorSet): Heatmap {
   const hiddenMatrix = new THREE.Matrix4().makeScale(0, 0, 0)
   return {
     object: mesh,
-    setValues(values, min, max) {
+    setValues(values, min, max, color = rampColor) {
       const span = max - min || 1
       const c = new THREE.Color()
       for (let i = 0; i < sensors.count; i++) {
-        const [r, g, b] = rampColor((values[i] - min) / span)
+        const v = values[i]
+        const [r, g, b] = Number.isFinite(v) ? color((v - min) / span) : [0.45, 0.46, 0.5]
         c.setRGB(r, g, b, THREE.SRGBColorSpace)
         mesh.setColorAt(i, c)
       }

@@ -35,6 +35,7 @@ import { useSolarReportStore, type HeatmapSection } from '../../stores/solarRepo
 const PointProbe = React.lazy(() => import('./PointProbe'))
 const ShadingDesigner = React.lazy(() => import('./ShadingDesigner'))
 const PvDesigner = React.lazy(() => import('./PvDesigner'))
+const VariantCompare = React.lazy(() => import('./VariantCompare'))
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -65,9 +66,11 @@ const ref: {
   last: AnalysisRun | null
   /** Sky model the last displayed run used. */
   lastSky: SkyModel
+  /** What the last displayed run measured, for people. */
+  lastLabel: string
   en: { run: AnalysisRun; findings: SolarFinding[] } | null
   seasons: { summer: AnalysisRun; winter: AnalysisRun; summerFindings: SolarFinding[]; winterFindings: SolarFinding[]; rooms: OrientationRow[] } | null
-} = { sensors: null, sensorsKey: '', last: null, lastSky: 'clear', en: null, seasons: null }
+} = { sensors: null, sensorsKey: '', last: null, lastSky: 'clear', lastLabel: '', en: null, seasons: null }
 
 const fmt = (v: number, d = 1): string => (Number.isFinite(v) ? v.toFixed(d) : '—')
 
@@ -221,6 +224,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 
   /** Publish what the heatmap shows to the report. */
   const publishHeatmap = useCallback(async (run: AnalysisRun, periodLabel: string) => {
+    ref.lastLabel = periodLabel
     const st = useSolarAnalysisStore.getState()
     const range = st.range ?? { min: 0, max: 1 }
     const value = statValue(st.metric)
@@ -431,7 +435,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   // ── PDF report ───────────────────────────────────────────────────────────
   const [reportProgress, setReportProgress] = useState<number | null>(null)
   const report = useSolarReportStore()
-  const hasReport = !!(report.heatmap || report.en || report.seasons || report.probe || report.shading || report.pv)
+  const hasReport = !!(report.compare || report.heatmap || report.en || report.seasons || report.probe || report.shading || report.pv)
   const exportPdf = useCallback(async () => {
     if (!location) return
     setReportProgress(0)
@@ -450,7 +454,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
         locale: i18n.language,
         viewImage,
         climate: s.climate,
-        heatmap: r.heatmap, en: r.en, seasons: r.seasons, probe: r.probe, shading: r.shading, pv: r.pv,
+        heatmap: r.heatmap, en: r.en, seasons: r.seasons, probe: r.probe, shading: r.shading, pv: r.pv, compare: r.compare,
         t: (k, v) => String((t as unknown as (k: string, v?: Record<string, unknown>) => string)(k, v)),
         onProgress: setReportProgress,
       })
@@ -681,6 +685,26 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </div>
               </Section>
 
+              {/* Design variants, B − A on the model */}
+              <Section title={t('compare.title')}>
+                <React.Suspense fallback={null}>
+                  <VariantCompare
+                    current={() => (ref.last ? { run: ref.last, label: ref.lastLabel || t(`analysis.period.${s.period}` as 'analysis.period.year') } : null)}
+                    resultVersion={s.resultVersion}
+                    metric={s.metric}
+                    snapshot={snapshot}
+                    paint={async (override) => {
+                      const viewer = viewerApiRef.current
+                      if (!viewer || !ref.last) return
+                      const sa = await viewer.getSolarAnalysis()
+                      const st = useSolarAnalysisStore.getState()
+                      const range = sa.show(ref.last, st.metric, new Set(st.kinds), undefined, override ?? undefined)
+                      s.setRun({ range })
+                    }}
+                  />
+                </React.Suspense>
+              </Section>
+
               {/* Photovoltaics on the roofs */}
               <Section title={t('pv.title')}>
                 <React.Suspense fallback={null}>
@@ -693,7 +717,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     ensureSensors={ensureSensors}
                     runPeriod={runPeriod}
                     pathFor={(period) => pathFor(period)}
-                    display={async (r) => { useSolarAnalysisStore.getState().setMetric('irradiation'); await display(r) }}
+                    display={async (r) => { useSolarAnalysisStore.getState().setMetric('irradiation'); await display(r); ref.lastLabel = t('pv.title') }}
                     busy={busy}
                     onDone={() => undefined}
                     onError={fail}
@@ -739,7 +763,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </button>
                 <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">
                   {hasReport
-                    ? t('report.contains', { list: [report.heatmap && t('report.parts.heatmap'), report.en && t('report.parts.en'), report.seasons && t('report.parts.seasons'), report.probe && t('report.parts.probe'), report.shading && t('report.parts.shading'), report.pv && t('report.parts.pv')].filter(Boolean).join(' · ') })
+                    ? t('report.contains', { list: [report.heatmap && t('report.parts.heatmap'), report.en && t('report.parts.en'), report.seasons && t('report.parts.seasons'), report.probe && t('report.parts.probe'), report.shading && t('report.parts.shading'), report.pv && t('report.parts.pv'), report.compare && t('report.parts.compare')].filter(Boolean).join(' · ') })
                     : t('report.empty')}
                 </p>
               </Section>

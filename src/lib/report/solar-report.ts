@@ -12,10 +12,11 @@ import { solarPosition } from '../solar/solar-position'
 import { sunAlmanac } from '../solar/astronomy'
 import { wallTimeToUTC, zoneOffsetMinutes } from '../solar/sun-math'
 import { rampColor, metricUnit } from '../solar-analysis/results'
+import { divergingColor } from '../solar-analysis/compare'
 import { maskOutline, cellCentre, MASK_AZ, MASK_STEP, type SkyMask } from '../solar-analysis/sky-mask'
 import type { ClimateSummary } from '../solar-analysis/climate'
 import type {
-  HeatmapSection, EnSection, SeasonsSection, ProbeSection, ShadingSection, PvSection,
+  CompareSection, HeatmapSection, EnSection, SeasonsSection, ProbeSection, ShadingSection, PvSection,
 } from '../../stores/solarReportStore'
 
 export interface ReportInput {
@@ -36,6 +37,7 @@ export interface ReportInput {
   probe: ProbeSection | null
   shading: ShadingSection | null
   pv: PvSection | null
+  compare: CompareSection | null
   /** Translate a `report.*` (or any solar) key. */
   t: (key: string, vars?: Record<string, unknown>) => string
   onProgress?: (f: number) => void
@@ -549,6 +551,32 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     doc.para(t('shading.note'), 22, C.faint)
   }
   step(0.8)
+
+  // Variants.
+  if (r.compare) {
+    const c = r.compare
+    const unit = metricUnit(c.metric)
+    doc.newPage()
+    doc.h1(t('report.compareTitle'))
+    doc.para(t('report.compareIntro', { a: c.nameA, pa: c.periodA, b: c.nameB, pb: c.periodB, metric: t(`analysis.metric.${c.metric}`) }))
+    await doc.image(c.image, 900)
+    {
+      const { x, y } = doc.block(110)
+      for (let i = 0; i < CW; i += 2) {
+        const [rr, gg, bb] = divergingColor((i / CW) * 2 - 1, c.higherIsBetter)
+        doc.ctx.fillStyle = `rgb(${Math.round(rr * 255)},${Math.round(gg * 255)},${Math.round(bb * 255)})`
+        doc.ctx.fillRect(x + i, y + 20, 2, 26)
+      }
+      doc.text(`−${nf(c.range, 1)}`, x, y + 80, 22, C.dim)
+      doc.text('0', x + CW / 2, y + 80, 22, C.dim, 400, 'center')
+      doc.text(`+${nf(c.range, 1)} ${unit}`, x + CW, y + 80, 22, C.dim, 400, 'right')
+    }
+    doc.table([t('report.surface'), c.nameA, c.nameB, t('compare.split')],
+      c.kinds.map((k) => [t(`analysis.kinds.${k.kind}`), `${nf(k.a, 1)} ${unit}`, `${nf(k.b, 1)} ${unit}`, `${Math.round(k.better * 100)} % / ${Math.round(k.worse * 100)} %`]),
+      [1.2, 1, 1, 1.2])
+    if (c.movers.length) doc.table([t('compare.movers'), c.nameA, c.nameB], c.movers.map((m) => [m.label, `${nf(m.a, 1)}`, `${nf(m.b, 1)} ${unit}`]), [2, 1, 1])
+    doc.para(t('compare.paired', { pct: Math.round(c.paired * 100) }), 22, C.faint)
+  }
 
   // Panels.
   if (r.pv) {
