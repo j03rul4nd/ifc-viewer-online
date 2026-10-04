@@ -53,6 +53,28 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
 
+## Daylight in the rooms
+
+`daylight.ts`, `components/solar/DaylightRooms.tsx`. Every IfcSpace (world box
+and Name/LongName via `getSpaces()`) gets the windows that sit on its box's
+boundary and face out of it. Average daylight factor (BRE / CIBSE LG10):
+DF = T·Aw·θ / (A·(1−R²)), θ ≈ 180° × the window's measured cosine-weighted sky
+view (city, terrain and the building itself included). BRE limiting depth
+L/W + L/H ≤ 2/(1−Rb) flags rooms whose back half stays dim. EN 17037 by the
+daylight-factor method: targets for 300/500/750 lx from the median external
+diffuse illuminance of daylight hours, computed from the sky in use (DHI ×
+120 lm/W). One window-only run of the EN day gives the sky views. Report page
+and CSV. A curtain-wall tower comes out with a high average and every floor
+flagged too deep — the formula's honest answer for a 20 m-deep glazed plate.
+
+## Glass or spandrel
+
+IfcPlate holds both glazed units and opaque spandrels. Plates are classified
+by Name, Description, ObjectType and type name (`plateIsGlass`: "spandrel",
+"opaque", "ciego"… → façade; "glazed", "vidrio"… → window). Before this every
+spandrel was a window in EN 17037, the gain bands, shading and daylight
+(Torre Poblenou: 52 → 28 windows a floor).
+
 ## Design variants
 
 `compare.ts`, `components/solar/VariantCompare.tsx`. "Save as variant" freezes
@@ -63,8 +85,9 @@ same way (within ¾ of the sensor spacing, normals within ~45°; spatial hash),
 paints B − A on the model with a diverging ramp (red = better, blue = worse;
 for irradiation the user says whether more is better), and reports the change
 per surface type, the share of area better/worse (> 5 %), the elements that
-moved most and the share of surfaces paired (unpaired = grey). Variants live
-for the session and survive a model change, so two IFC versions compare.
+moved most and the share of surfaces paired (unpaired = grey). Variants are
+kept on the device (IndexedDB, `variant-store.ts`, the last 8) and survive a
+model change and a reload, so two IFC versions compare.
 The comparison is a page of the PDF report.
 
 ## PDF report

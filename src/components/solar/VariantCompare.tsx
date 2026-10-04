@@ -5,13 +5,14 @@
 // worse — with the change per surface type and the elements that moved most.
 // Variants outlive a model change: comparing two IFC versions is the point.
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AnalysisRun, HeatmapOverride } from '../../lib/solar-analysis/analysis-system'
 import type { SolarMetric } from '../../lib/solar-analysis/results'
 import { metricUnit } from '../../lib/solar-analysis/results'
 import { variantFromRun, compareVariants, divergingColor, divergingCss, type Variant, type Comparison } from '../../lib/solar-analysis/compare'
 import { useSolarReportStore } from '../../stores/solarReportStore'
+import { loadVariants, saveVariant, deleteVariant, MAX_VARIANTS } from '../../lib/solar-analysis/variant-store'
 
 interface Props {
   /** The run on screen and what it measured. */
@@ -24,8 +25,9 @@ interface Props {
   snapshot(): Promise<string | null>
 }
 
-// Kept across panel closes and model changes.
+// Kept across panel closes and model changes, and on the device (IndexedDB).
 const saved: Variant[] = []
+let loaded = false
 
 export default function VariantCompare(p: Props) {
   const { t, i18n } = useTranslation('solar')
@@ -35,6 +37,16 @@ export default function VariantCompare(p: Props) {
   const [higherBetter, setHigherBetter] = useState(false)
   const [cmp, setCmp] = useState<{ c: Comparison; a: Variant; label: string } | null>(null)
   const cur = p.current()
+
+  useEffect(() => {
+    if (loaded) return
+    loaded = true
+    void loadVariants().then((list) => {
+      for (const v of list) if (!saved.some((x) => x.id === v.id)) saved.push(v)
+      saved.sort((a, b) => a.createdAt - b.createdAt)
+      force((x) => x + 1)
+    })
+  }, [])
   const nf = (v: number, d = 1) => (Number.isFinite(v) ? v.toLocaleString(i18n.language, { maximumFractionDigits: d, minimumFractionDigits: d }) : '—')
 
   const save = useCallback(() => {
@@ -42,7 +54,8 @@ export default function VariantCompare(p: Props) {
     if (!c) return
     const v = variantFromRun(c.run, name.trim() || t('compare.defaultName', { n: saved.length + 1 }), c.label)
     saved.push(v)
-    if (saved.length > 6) saved.shift()
+    while (saved.length > MAX_VARIANTS) saved.shift()
+    void saveVariant(v)
     setName('')
     setPick(v.id)
     force((x) => x + 1)
@@ -51,6 +64,7 @@ export default function VariantCompare(p: Props) {
   const remove = useCallback((id: string) => {
     const i = saved.findIndex((v) => v.id === id)
     if (i >= 0) saved.splice(i, 1)
+    void deleteVariant(id)
     if (pick === id) setPick(null)
     force((x) => x + 1)
   }, [pick])
@@ -101,7 +115,7 @@ export default function VariantCompare(p: Props) {
         <label key={v.id} className="flex items-center gap-1.5 cursor-pointer">
           <input type="radio" checked={pick === v.id} onChange={() => setPick(v.id)} className="accent-[var(--accent)]" />
           <span className="truncate text-[var(--text)]">{v.name}</span>
-          <span className="truncate text-[var(--text-faint)]">· {v.periodLabel}</span>
+          <span className="truncate text-[var(--text-faint)]">· {v.periodLabel} · {new Date(v.createdAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}</span>
           <button onClick={(e) => { e.preventDefault(); remove(v.id) }} className="ml-auto text-[var(--text-faint)] hover:text-[var(--text)]" title={t('compare.delete')}>✕</button>
         </label>
       ))}

@@ -8,7 +8,9 @@ function variant(points: Array<{ x: number; y?: number; nz?: number; ny?: number
   const v: Variant = {
     id: 'x', name: 'x', periodLabel: '', createdAt: 0, count: n,
     positions: new Float32Array(n * 3), normals: new Float32Array(n * 3), area: new Float32Array(n).fill(1), kind: new Uint8Array(n),
-    elementKey: points.map((p) => p.key ?? ''), elementLabel: points.map((p) => p.key ?? ''), values, spacing: 1, source: Int32Array.from(points.map((_, i) => i)),
+    elements: points.filter((p) => p.key).map((p) => ({ key: p.key!, label: p.key! })),
+    elementIndex: Int32Array.from((() => { let k = 0; return points.map((p) => (p.key ? k++ : -1)) })()),
+    values, spacing: 1, source: Int32Array.from(points.map((_, i) => i)),
   }
   points.forEach((p, i) => {
     v.positions[i * 3] = p.x; v.positions[i * 3 + 1] = p.y ?? 0

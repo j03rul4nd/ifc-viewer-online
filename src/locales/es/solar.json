@@ -381,7 +381,8 @@
       "probe": "diagrama de un punto",
       "shading": "protecciones",
       "pv": "placas solares",
-      "compare": "variantes"
+      "compare": "variantes",
+      "daylight": "luz natural"
     },
     "location": "Ubicación",
     "timeZone": "Zona horaria",
@@ -435,7 +436,12 @@
     },
     "compareTitle": "Variantes de diseño",
     "compareIntro": "«{{b}}» ({{pb}}) frente a «{{a}}» ({{pa}}), {{metric}}, punto a punto sobre el modelo. Rojo: mejor; azul: peor.",
-    "surface": "Superficie"
+    "surface": "Superficie",
+    "daylightIntro": "Factor de luz diurna medio de cada estancia a partir de sus ventanas y el cielo que ven (cielo: {{sky}}). Transmitancia del vidrio {{T}} %, reflectancia interior {{R}} %.",
+    "daylightOk": "Estancias en el mínimo EN 17037",
+    "daylightTarget": "FLD objetivo, 300 lx",
+    "medianLux": "Luz difusa mediana",
+    "df": "FLD"
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -455,5 +461,30 @@
     "split": "Mejor / peor",
     "movers": "Elementos que más cambian",
     "paired": "El {{pct}} % de las superficies actuales tiene pareja en la variante (las nuevas o movidas salen en gris)."
+  },
+  "daylight": {
+    "title": "Luz natural en las estancias",
+    "transmittance": "Transmitancia del vidrio",
+    "reflectance": "Reflectancia interior",
+    "calc": "Calcular la luz natural",
+    "recalc": "Volver a calcular",
+    "working": "Leyendo estancias y ventanas…",
+    "noSpaces": "El modelo no tiene estancias (IfcSpace): la luz natural se mide por estancia.",
+    "hint": "Para cada IfcSpace: sus ventanas, el cielo que ven de verdad (con la ciudad y el propio edificio), el factor de luz diurna medio (BRE) y el nivel de luz natural EN 17037 que alcanza.",
+    "summary": "{{ok}} de {{lit}} estancias con ventanas alcanzan el mínimo ({{rooms}} estancias en total)",
+    "targets": "Objetivos EN 17037 aquí: {{min}} % (300 lx) · {{med}} % (500 lx) · {{high}} % (750 lx); luz difusa exterior mediana {{lux}} lx",
+    "room": "Estancia",
+    "win": "Vent.",
+    "rowHint": "Cielo visible θ {{theta}}° · fondo {{depth}} m (límite {{limit}} m)",
+    "noWindows": "sin ventanas",
+    "tooDeep": "Más profunda que el límite BRE: el fondo de la estancia se verá oscuro",
+    "deepNote": "{{n}} estancias son más profundas que el límite BRE (L/W + L/H ≤ 2/(1−Rb)): su mitad del fondo queda en penumbra sea cual sea la ventana.",
+    "note": "Factor de luz diurna medio (BRE / CIBSE LG10) con θ a partir de la vista de cielo medida de cada ventana; estancias como cajas de su IfcSpace. EN 17037 por el método del factor de luz diurna sobre la media de la estancia: es un cribado, la norma pide el objetivo en la mitad de la superficie.",
+    "levels": {
+      "none": "bajo el mínimo",
+      "minimum": "mínimo",
+      "medium": "medio",
+      "high": "alto"
+    }
   }
 }
