@@ -335,5 +335,33 @@
       "W": "W",
       "NW": "NW"
     }
+  },
+  "pv": {
+    "title": "Solar panels",
+    "tilt": "Panel tilt",
+    "auto": "back to optimal ({{deg}}°)",
+    "optimal": "optimal for the latitude (flat roofs)",
+    "efficiency": "Module efficiency",
+    "pr": "Performance ratio",
+    "threshold": "Usable from",
+    "co2": "CO₂ per kWh",
+    "calc": "Calculate the yield",
+    "recalc": "Calculate again",
+    "working": "Following the sun over the year…",
+    "onlyUsable": "Only where panels go",
+    "tiltChanged": "The tilt changed — calculate again.",
+    "noRoof": "The model has no roof surfaces facing up",
+    "hint": "A year on the roofs at the panels' own angle (tilted rows on flat roofs, flush on pitches), with every shadow from the model, the city and the terrain. Usable: at least the chosen share of the roof's best spot.",
+    "kWp": "Peak power, kWp",
+    "kWhYear": "kWh a year",
+    "specific": "kWh per kWp",
+    "modules": "Modules",
+    "usable": "Usable roof",
+    "coverage": "Row coverage (no self-shading)",
+    "irradiation": "On the panels",
+    "co2Saved": "CO₂ avoided a year",
+    "monthly": "Production by month",
+    "note": "Rows on flat roofs spaced so the winter noon sun clears them. Yield = irradiation on the modules × efficiency × performance ratio (inverter, temperature, soiling, wiring). A pre-design estimate — not an installer's quote.",
+    "clearSky": "Clear sky: without the measured climate the yield comes out 10–20 % high. Load the climate above to use the real sky (ERA5)."
   }
 }
