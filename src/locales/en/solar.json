@@ -162,7 +162,9 @@
       "split": "beam {{d}} % · sky {{f}} % · ground {{r}} %",
       "sky": "sees {{pct}} % of the sky",
       "delta": "Change vs. the variant: {{d}} {{unit}}",
-      "unpaired": "No partner in the variant"
+      "unpaired": "No partner in the variant",
+      "df": "Daylight factor: {{v}} %",
+      "dfParts": "sky {{sky}} % · reflected {{refl}} %"
     },
     "checks": {
       "title": "Checks",
@@ -372,7 +374,7 @@
     "kicker": "Solar & climate study",
     "download": "Download the PDF report",
     "making": "Composing the report… {{pct}} %",
-    "empty": "Run an analysis, a check, a point, protections or panels first: the report gathers what has been computed.",
+    "empty": "Compute something first (an analysis, a check, a point, protections, panels, daylight or a comparison): the report gathers what has been computed.",
     "contains": "Includes: sun path, site · {{list}}",
     "parts": {
       "heatmap": "heatmap",
@@ -441,7 +443,10 @@
     "daylightOk": "Rooms at the EN 17037 minimum",
     "daylightTarget": "Target DF, 300 lx",
     "medianLux": "Median diffuse light",
-    "df": "DF"
+    "df": "DF",
+    "gridTitle": "Daylight point by point",
+    "share300": "≥ 300 lx target",
+    "share100": "≥ 100 lx minimum"
   },
   "compare": {
     "title": "Compare design variants",
@@ -485,6 +490,18 @@
       "minimum": "minimum",
       "medium": "medium",
       "high": "high"
-    }
+    },
+    "grid": "Point-by-point map",
+    "gridAgain": "Map again",
+    "gridWorking": "Looking out of every room… {{pct}} %",
+    "gridHint": "A grid on each room's working plane (0.85 m, 0.5 m off the walls): the CIE overcast sky each point sees through the glass, plus inter-reflections. EN 17037 asks for the target over 50 % of the plane and the minimum over 95 %.",
+    "gridStale": "Transmittance or reflectance changed — map again to update the points.",
+    "noGrid": "No room is big enough for a grid 0.5 m off its walls.",
+    "gridSummary": "Point by point: {{ok}} of {{lit}} rooms meet EN 17037 ({{points}} points every {{spacing}} m)",
+    "shareHint": "Share of the room's plane at or above the 300 lx target (EN 17037 asks 50 %)",
+    "onReflections": "{{n}} rooms only pass thanks to reflected light (the simplified BRE formula, uniform over the room): on the sky their points see they would not. Treat it as a narrow pass.",
+    "plan": "Plan view",
+    "allFloors": "All (no cut)",
+    "floorAt": "Floor at {{y}} m"
   }
 }

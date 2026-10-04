@@ -221,6 +221,12 @@ export async function runExposure(
   const visRestore: Array<[THREE.Object3D, boolean]> = ctx.hidden().map((h) => [h, h.visible])
   for (const [h] of visRestore) h.visible = false
   const prevTarget = renderer.getRenderTarget()
+  // No cut may reach the measurement: a section box, a plan cut for a
+  // picture — clipping planes would let the sky through every slab.
+  const prevLocalClip = renderer.localClippingEnabled
+  const prevClip = renderer.clippingPlanes
+  renderer.localClippingEnabled = false
+  renderer.clippingPlanes = []
   const prevAutoUpdate = renderer.shadowMap.autoUpdate
   const prevAutoClear = renderer.autoClear
   renderer.shadowMap.autoUpdate = false
@@ -289,6 +295,8 @@ export async function runExposure(
     return result
   } finally {
     ctx.pauseViewer?.(false)
+    renderer.localClippingEnabled = prevLocalClip
+    renderer.clippingPlanes = prevClip
     renderer.shadowMap.autoUpdate = prevAutoUpdate
     renderer.shadowMap.needsUpdate = true
     renderer.autoClear = prevAutoClear

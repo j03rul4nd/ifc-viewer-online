@@ -566,9 +566,27 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     ])
     doc.para(t('daylight.targets', { min: nf(d.targets.minimum, 1), med: nf(d.targets.medium, 1), high: nf(d.targets.high, 1), lux: Math.round(d.targets.medianLux / 100) * 100 }), 22, C.faint)
     const lvl = (l: string) => t(`daylight.levels.${l}`)
-    doc.table([t('daylight.room'), 'm²', t('daylight.win'), 'θ', t('report.df'), 'EN 17037'],
-      d.rooms.map((x) => [x.label + (x.tooDeep ? ' ⚠' : ''), nf(x.floorArea, 0), String(x.windows), x.windows ? `${Math.round(x.theta)}°` : '—', x.windows ? `${nf(x.df, 2)} %` : '—', x.windows ? lvl(x.level) : t('daylight.noWindows')]),
-      [2.6, 0.8, 0.7, 0.7, 0.9, 1.4], 22)
+    if (d.gridImage !== undefined) {
+      doc.h2(t('report.gridTitle'))
+      await doc.image(d.gridImage ?? null, 800)
+      if (d.gridImage && d.gridImageLabel) doc.para(d.gridImageLabel, 22, C.faint)
+      {
+        const top = Math.max(1, Math.ceil(d.targets.high * 1.5))
+        drawRamp(doc, 0, top, '%', t('daylight.gridSummary', { ok: d.rooms.filter((x) => x.grid && x.grid.level !== 'none').length, lit: d.rooms.filter((x) => x.grid && x.windows).length, points: nf(d.gridPoints ?? 0), spacing: d.gridSpacing ?? 0 }))
+      }
+      doc.table([t('daylight.room'), 'm²', t('report.df'), t('report.share300'), t('report.share100'), 'EN 17037'],
+        d.rooms.map((x) => [x.label + (x.tooDeep ? ' ⚠' : ''), nf(x.floorArea, 0), x.windows ? `${nf(x.df, 1)} %` : '—',
+          x.grid ? `${Math.round(x.grid.share300 * 100)} %` : '—', x.grid ? `${Math.round(x.grid.share100 * 100)} %` : '—',
+          x.windows ? lvl(x.grid?.level ?? x.level) + (x.grid?.onReflections ? ' *' : '') : t('daylight.noWindows')]),
+        [2.6, 0.7, 0.8, 1.1, 1.1, 1.2], 22)
+      const refl = d.rooms.filter((x) => x.grid?.onReflections).length
+      if (refl) doc.para('* ' + t('daylight.onReflections', { n: refl }), 22, C.amber)
+      doc.para(t('daylight.gridHint'), 22, C.faint)
+    } else {
+      doc.table([t('daylight.room'), 'm²', t('daylight.win'), 'θ', t('report.df'), 'EN 17037'],
+        d.rooms.map((x) => [x.label + (x.tooDeep ? ' ⚠' : ''), nf(x.floorArea, 0), String(x.windows), x.windows ? `${Math.round(x.theta)}°` : '—', x.windows ? `${nf(x.df, 2)} %` : '—', x.windows ? lvl(x.level) : t('daylight.noWindows')]),
+        [2.6, 0.8, 0.7, 0.7, 0.9, 1.4], 22)
+    }
     if (d.summary.deep) doc.para(t('daylight.deepNote', { n: d.summary.deep }), 22, C.amber)
     doc.para(t('daylight.note'), 22, C.faint)
   }

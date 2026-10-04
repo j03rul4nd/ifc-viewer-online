@@ -162,7 +162,9 @@
       "split": "directa {{d}} % · cielo {{f}} % · suelo {{r}} %",
       "sky": "ve el {{pct}} % del cielo",
       "delta": "Cambio frente a la variante: {{d}} {{unit}}",
-      "unpaired": "Sin pareja en la variante"
+      "unpaired": "Sin pareja en la variante",
+      "df": "Factor de luz diurna: {{v}} %",
+      "dfParts": "cielo {{sky}} % · reflejada {{refl}} %"
     },
     "checks": {
       "title": "Comprobaciones",
@@ -372,7 +374,7 @@
     "kicker": "Estudio solar y climático",
     "download": "Descargar el informe PDF",
     "making": "Componiendo el informe… {{pct}} %",
-    "empty": "Primero ejecuta un análisis, una comprobación, un punto, unas protecciones o las placas: el informe recoge lo que se ha calculado.",
+    "empty": "Primero calcula algo (un análisis, una comprobación, un punto, las protecciones, las placas, la luz natural o una comparación): el informe recoge lo que se haya calculado.",
     "contains": "Incluye: carta solar, sitio · {{list}}",
     "parts": {
       "heatmap": "mapa de calor",
@@ -441,7 +443,10 @@
     "daylightOk": "Estancias en el mínimo EN 17037",
     "daylightTarget": "FLD objetivo, 300 lx",
     "medianLux": "Luz difusa mediana",
-    "df": "FLD"
+    "df": "FLD",
+    "gridTitle": "Luz natural punto a punto",
+    "share300": "≥ objetivo 300 lx",
+    "share100": "≥ mínimo 100 lx"
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -485,6 +490,18 @@
       "minimum": "mínimo",
       "medium": "medio",
       "high": "alto"
-    }
+    },
+    "grid": "Mapa punto a punto",
+    "gridAgain": "Volver a mapear",
+    "gridWorking": "Mirando afuera desde cada estancia… {{pct}} %",
+    "gridHint": "Una rejilla en el plano de trabajo de cada estancia (0,85 m, a 0,5 m de los muros): el cielo cubierto CIE que ve cada punto a través del vidrio, más las interreflexiones. La EN 17037 pide el objetivo en el 50 % del plano y el mínimo en el 95 %.",
+    "gridStale": "Ha cambiado la transmitancia o la reflectancia: vuelve a mapear para actualizar los puntos.",
+    "noGrid": "Ninguna estancia es lo bastante grande para una rejilla a 0,5 m de sus muros.",
+    "gridSummary": "Punto a punto: {{ok}} de {{lit}} estancias cumplen la EN 17037 ({{points}} puntos cada {{spacing}} m)",
+    "shareHint": "Parte del plano de la estancia que llega al objetivo de 300 lx (la EN 17037 pide el 50 %)",
+    "onReflections": "{{n}} estancias solo cumplen gracias a la luz reflejada (fórmula BRE simplificada, uniforme en la estancia): con el cielo que ven sus puntos no llegarían. Trátalo como un aprobado justo.",
+    "plan": "Ver planta",
+    "allFloors": "Todas (sin corte)",
+    "floorAt": "Planta a {{y}} m"
   }
 }

@@ -86,7 +86,16 @@ export interface DaylightSection {
   reflectance: number
   sky: string
   summary: { rooms: number; lit: number; by: Record<'none' | 'minimum' | 'medium' | 'high', number>; deep: number }
-  rooms: Array<{ label: string; floorArea: number; windows: number; df: number; theta: number; level: 'none' | 'minimum' | 'medium' | 'high'; tooDeep: boolean }>
+  rooms: Array<{
+    label: string; floorArea: number; windows: number; df: number; theta: number; level: 'none' | 'minimum' | 'medium' | 'high'; tooDeep: boolean
+    /** Point by point, when the map was run. */
+    grid?: { level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; median: number; onReflections: boolean }
+  }>
+  gridImage?: string | null
+  /** Which floor the picture shows. */
+  gridImageLabel?: string
+  gridSpacing?: number
+  gridPoints?: number
 }
 
 interface State {

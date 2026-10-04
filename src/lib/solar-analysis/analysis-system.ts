@@ -15,6 +15,7 @@ import { reflectedOnSurface } from './irradiance'
 import { MASK_AZ, MASK_ALT, cellCentre, maskSkyView, type SkyMask } from './sky-mask'
 import { sunDirectionScene } from '../solar/sun-math'
 import type { DeviceBox } from './shading-devices'
+import { overcastWeights, type Tri2 } from './daylight-grid'
 import { createHeatmap, type Heatmap } from './heatmap'
 import { createLogger } from '../logger'
 
@@ -56,6 +57,8 @@ export interface SolarAnalysisContext {
    * had the tiles the view had loaded — results moved with the camera.
    */
   setFullGeometry?(on: boolean): Promise<void>
+  /** Hide some items of a model (glass and room volumes during a daylight pass); resolves to a restorer. */
+  hideItems?(modelId: string, ids: number[]): Promise<() => Promise<void>>
 }
 
 export interface SensorOptions {
@@ -85,7 +88,11 @@ export interface AnalysisRun {
 }
 
 export interface HeatmapOverride {
+  /** What the values are, for the hover card. Default 'delta' (a comparison). */
+  meaning?: 'delta' | 'df'
   values: Float32Array
+  /** For a daylight map: the sky component alone, %, shown beside the total. */
+  secondary?: Float32Array
   range: { min: number; max: number }
   color: (t: number) => [number, number, number]
 }
@@ -93,6 +100,10 @@ export interface HeatmapOverride {
 export interface HoverInfo {
   /** The override's value under the cursor (a comparison's change), when one is shown. */
   delta?: number
+  /** A daylight factor under the cursor, %, when a daylight map is shown. */
+  df?: number
+  /** Its sky component, %. */
+  dfSky?: number
   sensor: number
   kind: SensorKind
   sunHoursPerDay: number
@@ -128,7 +139,13 @@ export interface SolarAnalysisAPI {
   skyMaskAt(point: THREE.Vector3, yawDeg: number): Promise<SkyMask>
   clearMarker(): void
   /** Every IfcSpace of the loaded models: world box and a name. */
-  getSpaces(): Promise<Array<{ key: string; modelId: string; localId: number; label: string; box: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } }>>
+  getSpaces(): Promise<Array<{ key: string; modelId: string; localId: number; label: string; box: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } }; floor: Tri2[] }>>
+  /**
+   * Sky component on horizontal points (xyz triples): the share of the CIE
+   * overcast sky's horizontal illuminance each point receives, 0–1, with
+   * `hide` (glass, room volumes) out of the way and everything else blocking.
+   */
+  daylightPass(points: Float32Array, hide: Array<{ modelId: string; ids: number[] }>, o?: { directions?: number; onProgress?: (f: number) => void; signal?: AbortSignal }): Promise<Float32Array>
   /** Draw solar protections in the scene; they occlude every later run. null removes them. */
   setShadingDevices(boxes: DeviceBox[] | null): void
   dispose(): void
@@ -196,6 +213,9 @@ function renderSkyMask(
   const views: Array<{ cam: THREE.PerspectiveCamera; px: Uint8Array }> = []
   const dirs: Array<[number, number]> = [[0, 90], [0, 0], [90, 0], [180, 0], [270, 0]]
   const restoreVis = isolate(scene, occluders)
+  const clip = { local: renderer.localClippingEnabled, planes: renderer.clippingPlanes }
+  renderer.localClippingEnabled = false
+  renderer.clippingPlanes = []
   const prev = {
     target: renderer.getRenderTarget(), bg: scene.background, fog: scene.fog,
     override: scene.overrideMaterial, clear: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(),
@@ -225,6 +245,8 @@ function renderSkyMask(
     }
   } finally {
     restoreVis()
+    renderer.localClippingEnabled = clip.local
+    renderer.clippingPlanes = clip.planes
     scene.background = prev.bg
     scene.fog = prev.fog
     scene.overrideMaterial = prev.override
@@ -291,7 +313,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       irradiationKwh: metricValue(r, 'irradiation', i),
       split: { direct: r.directWh[i] / total, diffuse: r.diffuseWh[i] / total, reflected: r.reflectedWh[i] / total },
       skyViewPct: metricValue(r, 'skyView', i),
-      ...(shownOverride ? { delta: shownOverride.values[i] } : {}),
+      ...(shownOverride ? (shownOverride.meaning === 'df' ? { df: shownOverride.values[i], ...(shownOverride.secondary ? { dfSky: shownOverride.secondary[i] } : {}) } : { delta: shownOverride.values[i] }) : {}),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
     })
@@ -592,22 +614,83 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
           const geo = await model.getItemsGeometry(batch)
           geo.forEach((parts, j) => {
             const box = new THREE.Box3()
+            const tris: Array<[THREE.Vector3, THREE.Vector3, THREE.Vector3]> = []
             for (const part of parts) {
               if (!part?.positions?.length) continue
               const m = new THREE.Matrix4().multiplyMatrices(world, part.transform ?? new THREE.Matrix4())
               const src = part.positions
-              for (let k = 0; k < src.length; k += 3) box.expandByPoint(v.set(src[k], src[k + 1], src[k + 2]).applyMatrix4(m))
+              const w: THREE.Vector3[] = []
+              for (let k = 0; k < src.length; k += 3) {
+                const p = new THREE.Vector3(src[k], src[k + 1], src[k + 2]).applyMatrix4(m)
+                w.push(p)
+                box.expandByPoint(p)
+              }
+              const idx = part.indices
+              const count = idx ? idx.length : w.length
+              for (let k = 0; k + 2 < count; k += 3) {
+                const a = w[idx ? idx[k] : k], b = w[idx ? idx[k + 1] : k + 1], c = w[idx ? idx[k + 2] : k + 2]
+                if (a && b && c) tris.push([a, b, c])
+              }
             }
             if (box.isEmpty()) return
+            // The footprint: the faces at the bottom of the volume, facing down.
+            const floor: Tri2[] = []
+            const n = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3()
+            for (const [a, b, c] of tris) {
+              n.crossVectors(e1.subVectors(b, a), e2.subVectors(c, a))
+              const len = n.length()
+              if (len < 1e-9 || n.y / len > -0.9) continue
+              if (Math.max(a.y, b.y, c.y) > box.min.y + 0.3) continue
+              floor.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z, cx: c.x, cz: c.z })
+            }
             const id = batch[j]
             out.push({
               key: `${modelId}:${id}`, modelId, localId: id, label: names.get(id) ?? `space #${id}`,
               box: { min: { x: box.min.x, y: box.min.y, z: box.min.z }, max: { x: box.max.x, y: box.max.y, z: box.max.z } },
+              floor,
             })
           })
         }
       }
       return out
+    },
+
+    async daylightPass(points, hide, o = {}) {
+      const n = Math.floor(points.length / 3)
+      if (n === 0) return new Float32Array(0)
+      const samples: PointSample[] = []
+      for (let i = 0; i < n; i++) samples.push({ x: points[i * 3], y: points[i * 3 + 1], z: points[i * 3 + 2], nx: 0, ny: 1, nz: 0, area: 1 })
+      const sensors = buildSensorSet([{ kind: 'ground', element: null, samples }], { ground: 0.5, surface: 0.5 })
+      const dirs = hemisphere(o.directions ?? 400)
+      const { weights, horizontal } = overcastWeights(dirs)
+      const occluders: THREE.Object3D[] = []
+      for (const id of ctx.getLoadedModelIds()) {
+        const obj = ctx.getModelObject(id)
+        if (obj) occluders.push(obj)
+      }
+      const contextRoot = ctx.getGeo()?.getContextRoot()
+      if (contextRoot) occluders.push(contextRoot)
+      if (shading) occluders.push(shading)
+      await ctx.setFullGeometry?.(true)
+      const restore: Array<() => Promise<void>> = []
+      for (const h of hide) { const r = await ctx.hideItems?.(h.modelId, h.ids); if (r) restore.push(r) }
+      try {
+        const r = await runExposure({
+          renderer: ctx.renderer, scene: ctx.scene,
+          occluders: () => occluders,
+          hidden: () => [...(heatmap ? [heatmap.object] : []), ...(marker ? [marker] : [])],
+          pauseViewer: (p: boolean) => ctx.setPaused(p),
+        }, sensors, dirs.map((dir, i) => ({
+          utc: 0, azimuthDeg: 0, altitudeDeg: 0, dir, hours: 1, month: 1,
+          irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: weights[i], diffuseIso: 0, sunProb: 0,
+        })), 1, { onProgress: o.onProgress, signal: o.signal })
+        const out = new Float32Array(n)
+        for (let i = 0; i < n; i++) out[i] = Math.min(1, r.directWh[i] / horizontal)
+        return out
+      } finally {
+        for (const r of restore) await r()
+        await ctx.setFullGeometry?.(false)
+      }
     },
 
     setShadingDevices(boxes) {

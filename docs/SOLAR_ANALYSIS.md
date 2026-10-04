@@ -67,6 +67,43 @@ diffuse illuminance of daylight hours, computed from the sky in use (DHI ×
 and CSV. A curtain-wall tower comes out with a high average and every floor
 flagged too deep — the formula's honest answer for a 20 m-deep glazed plate.
 
+### Point by point (EN 17037 as written)
+
+`daylight-grid.ts` + `daylightPass` in the analysis system. A grid on every
+room's working plane (0.85 m, 0.5 m off the walls) inside its REAL footprint
+(the IfcSpace's downward faces, so an L is not its box); ≤ ~25 000 points.
+Sky component: 400 hemisphere directions weighted by the CIE overcast sky
+((1 + 2 sin h)/3 × solid angle), the glass and the IfcSpace volumes hidden for
+the pass (only what was visible, restored exactly) and full geometry forced,
+normalised by the unobstructed horizontal illuminance (7π/9) × T. Internally
+reflected component: BRE split-flux, T·W·(C·Rfw + 5·Rcw)/(A(1−R)) — the 0.85
+of the textbook form IS clear glass, so T replaces it — with R counting the
+glazing at 0.1 and C from the windows' obstruction angle. Level per room:
+target over ≥ 50 % of the plane AND the minimum target (100 lx) over ≥ 95 %.
+Rooms that pass only with the reflected component are flagged (a narrow pass,
+since split-flux is uniform over the room). Hover shows DF = sky + reflected.
+
+Torre Poblenou (32 850 points, ~20 s): sky component 9.9 % at 0.6 m from the
+façade, 2.6 % at 5 m, 0.8 % at 18 m; typical floors pass on the sky alone, the
+podium and the entrance hall only on reflections.
+
+### Plan view
+
+"Plan view" picks a floor (rooms grouped by floor level, `floorsOf`): the
+presentation cut removes everything 1.6 m above it, only that floor's grid is
+drawn, and the camera looks straight down. The report gets an off-screen plan
+picture: the worst floor by default, the one picked after.
+
+### Two robustness fixes the plan view exposed
+
+- Clipping never reaches a measurement: every pass (sun, sky, daylight, point
+  mask) turns the renderer's clipping planes off and restores them. Before,
+  the floor cut — or the Section tool — let the sky through every slab
+  (floor centre 16.8 % instead of 0.76 %).
+- Forcing full geometry waits until no model is busy (repeated
+  `core.update(true)`), not one update: the first daylight map after a load
+  missed the slabs the camera had culled behind the façade.
+
 ## Glass or spandrel
 
 IfcPlate holds both glazed units and opaque spandrels. Plates are classified
