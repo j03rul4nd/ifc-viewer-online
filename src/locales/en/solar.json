@@ -381,7 +381,8 @@
       "probe": "point diagram",
       "shading": "protections",
       "pv": "solar panels",
-      "compare": "variants"
+      "compare": "variants",
+      "daylight": "daylight"
     },
     "location": "Location",
     "timeZone": "Time zone",
@@ -435,7 +436,12 @@
     },
     "compareTitle": "Design variants",
     "compareIntro": "“{{b}}” ({{pb}}) against “{{a}}” ({{pa}}), {{metric}}, point by point on the model. Red: better, blue: worse.",
-    "surface": "Surface"
+    "surface": "Surface",
+    "daylightIntro": "Average daylight factor of every room from its windows and the sky they see (sky: {{sky}}). Glass transmittance {{T}} %, room reflectance {{R}} %.",
+    "daylightOk": "Rooms at the EN 17037 minimum",
+    "daylightTarget": "Target DF, 300 lx",
+    "medianLux": "Median diffuse light",
+    "df": "DF"
   },
   "compare": {
     "title": "Compare design variants",
@@ -455,5 +461,30 @@
     "split": "Better / worse",
     "movers": "Elements that changed most",
     "paired": "{{pct}} % of the current surfaces have a partner in the variant (new or moved surfaces show grey)."
+  },
+  "daylight": {
+    "title": "Daylight in the rooms",
+    "transmittance": "Glass transmittance",
+    "reflectance": "Room reflectance",
+    "calc": "Calculate the daylight",
+    "recalc": "Calculate again",
+    "working": "Reading rooms and windows…",
+    "noSpaces": "The model has no rooms (IfcSpace): daylight is measured per room.",
+    "hint": "For every IfcSpace: its windows, the sky they really see (the city and the building included), the average daylight factor (BRE) and the EN 17037 daylight level it reaches.",
+    "summary": "{{ok}} of {{lit}} rooms with windows reach the minimum ({{rooms}} rooms in all)",
+    "targets": "EN 17037 targets here: {{min}} % (300 lx) · {{med}} % (500 lx) · {{high}} % (750 lx) — median outdoor diffuse light {{lux}} lx",
+    "room": "Room",
+    "win": "Win.",
+    "rowHint": "Visible sky θ {{theta}}° · depth {{depth}} m (limit {{limit}} m)",
+    "noWindows": "no windows",
+    "tooDeep": "Deeper than the BRE limiting depth: the back of the room will look dark",
+    "deepNote": "{{n}} rooms are deeper than the BRE limiting depth (L/W + L/H ≤ 2/(1−Rb)): their back half stays dim whatever the window.",
+    "note": "Average daylight factor (BRE / CIBSE LG10) with θ from each window's measured sky view; rooms as their IfcSpace boxes. EN 17037 by the daylight-factor method on the room average — a screening, the standard asks for the target over half of the room's area.",
+    "levels": {
+      "none": "below minimum",
+      "minimum": "minimum",
+      "medium": "medium",
+      "high": "high"
+    }
   }
 }

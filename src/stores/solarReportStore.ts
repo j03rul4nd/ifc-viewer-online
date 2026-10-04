@@ -80,7 +80,17 @@ export interface CompareSection {
   image: string | null
 }
 
+export interface DaylightSection {
+  targets: { medianLux: number; minimum: number; medium: number; high: number }
+  transmittance: number
+  reflectance: number
+  sky: string
+  summary: { rooms: number; lit: number; by: Record<'none' | 'minimum' | 'medium' | 'high', number>; deep: number }
+  rooms: Array<{ label: string; floorArea: number; windows: number; df: number; theta: number; level: 'none' | 'minimum' | 'medium' | 'high'; tooDeep: boolean }>
+}
+
 interface State {
+  daylight: DaylightSection | null
   compare: CompareSection | null
   heatmap: HeatmapSection | null
   en: EnSection | null
@@ -93,7 +103,7 @@ interface State {
 }
 
 export const useSolarReportStore = create<State>((set) => ({
-  compare: null, heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null,
+  daylight: null, compare: null, heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null,
   set: (patch) => set(patch),
-  clear: () => set({ compare: null, heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null }),
+  clear: () => set({ daylight: null, compare: null, heatmap: null, en: null, seasons: null, probe: null, shading: null, pv: null }),
 }))

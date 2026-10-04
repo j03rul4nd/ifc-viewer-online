@@ -78,6 +78,26 @@ export function sensorKindFor(category: string): Exclude<SensorKind, 'ground'> |
   return null
 }
 
+/**
+ * A curtain-wall plate is glass or not. IfcPlate covers both the glazed units
+ * and the opaque spandrels at the floor lines; counting a spandrel as a window
+ * put it in the EN 17037 check, the gain bands, the daylight factor and under
+ * a shading device. The model says which is which in the element's name,
+ * description or type name ("Spandrel Panel", "Opaque…", "PLT-300-Spandrel"
+ * vs "Glazed Unit"); an explicit glass word wins, an opaque word makes it a
+ * façade, and silence keeps the old reading (glass).
+ */
+const GLASS_WORDS = /glaz|glass|vidr|cristal|vitr|verre|glas|fenster|ventan|window|vision/i
+const OPAQUE_WORDS = /spandrel|opaque|opac|antepecho|ciego|cieca|blind|shadow ?box|cladding|panel met|metal panel|insulat|aislad|louvre|lama/i
+
+export function plateIsGlass(...texts: Array<string | null | undefined>): boolean {
+  const t = texts.filter(Boolean).join(' ')
+  if (!t) return true
+  if (OPAQUE_WORDS.test(t) && !/glazed unit|vision glass/i.test(t)) return false
+  if (GLASS_WORDS.test(t)) return true
+  return true
+}
+
 /** Lift off the surface so a sensor is not shadowed by the face it sits on. */
 export const SURFACE_LIFT_M = 0.05
 

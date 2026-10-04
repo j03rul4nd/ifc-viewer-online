@@ -16,7 +16,7 @@ import { divergingColor } from '../solar-analysis/compare'
 import { maskOutline, cellCentre, MASK_AZ, MASK_STEP, type SkyMask } from '../solar-analysis/sky-mask'
 import type { ClimateSummary } from '../solar-analysis/climate'
 import type {
-  CompareSection, HeatmapSection, EnSection, SeasonsSection, ProbeSection, ShadingSection, PvSection,
+  CompareSection, DaylightSection, HeatmapSection, EnSection, SeasonsSection, ProbeSection, ShadingSection, PvSection,
 } from '../../stores/solarReportStore'
 
 export interface ReportInput {
@@ -38,6 +38,7 @@ export interface ReportInput {
   shading: ShadingSection | null
   pv: PvSection | null
   compare: CompareSection | null
+  daylight: DaylightSection | null
   /** Translate a `report.*` (or any solar) key. */
   t: (key: string, vars?: Record<string, unknown>) => string
   onProgress?: (f: number) => void
@@ -551,6 +552,26 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     doc.para(t('shading.note'), 22, C.faint)
   }
   step(0.8)
+
+  // Daylight in the rooms.
+  if (r.daylight) {
+    const d = r.daylight
+    doc.newPage()
+    doc.h1(t('daylight.title'))
+    doc.para(t('report.daylightIntro', { T: Math.round(d.transmittance * 100), R: Math.round(d.reflectance * 100), sky: d.sky }))
+    doc.figures([
+      { label: t('report.daylightOk'), value: `${d.summary.lit - d.summary.by.none}/${d.summary.lit}`, color: d.summary.by.none ? C.amber : C.green },
+      { label: t('report.daylightTarget'), value: `${nf(d.targets.minimum, 1)} %` },
+      { label: t('report.medianLux'), value: `${nf(d.targets.medianLux / 1000, 1)} klx` },
+    ])
+    doc.para(t('daylight.targets', { min: nf(d.targets.minimum, 1), med: nf(d.targets.medium, 1), high: nf(d.targets.high, 1), lux: Math.round(d.targets.medianLux / 100) * 100 }), 22, C.faint)
+    const lvl = (l: string) => t(`daylight.levels.${l}`)
+    doc.table([t('daylight.room'), 'm²', t('daylight.win'), 'θ', t('report.df'), 'EN 17037'],
+      d.rooms.map((x) => [x.label + (x.tooDeep ? ' ⚠' : ''), nf(x.floorArea, 0), String(x.windows), x.windows ? `${Math.round(x.theta)}°` : '—', x.windows ? `${nf(x.df, 2)} %` : '—', x.windows ? lvl(x.level) : t('daylight.noWindows')]),
+      [2.6, 0.8, 0.7, 0.7, 0.9, 1.4], 22)
+    if (d.summary.deep) doc.para(t('daylight.deepNote', { n: d.summary.deep }), 22, C.amber)
+    doc.para(t('daylight.note'), 22, C.faint)
+  }
 
   // Variants.
   if (r.compare) {

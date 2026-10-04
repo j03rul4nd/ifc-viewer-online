@@ -25,10 +25,10 @@ export interface Variant {
   normals: Float32Array
   area: Float32Array
   kind: Uint8Array
-  /** "modelId:localId" per sensor, '' for the ground. */
-  elementKey: string[]
-  /** Element label per sensor (class #id), '' for the ground. */
-  elementLabel: string[]
+  /** The elements sensors belong to: "modelId:localId" and a label (class #id). */
+  elements: Array<{ key: string; label: string }>
+  /** Index into `elements` per sensor, −1 for the ground. */
+  elementIndex: Int32Array
   values: Record<SolarMetric, Float32Array>
   /** Spacing the sensors were laid at, m (sets the pairing distance). */
   spacing: number
@@ -46,18 +46,28 @@ export function variantFromRun(run: AnalysisRun, name: string, periodLabel: stri
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     name, periodLabel, createdAt: Date.now(), count: n,
     positions: new Float32Array(n * 3), normals: new Float32Array(n * 3), area: new Float32Array(n), kind: new Uint8Array(n),
-    elementKey: new Array(n), elementLabel: new Array(n),
+    elements: [], elementIndex: new Int32Array(n),
     values: Object.fromEntries(SOLAR_METRICS.map((m) => [m, new Float32Array(n)])) as Record<SolarMetric, Float32Array>,
     spacing: Math.max(S.spacing.surface, S.spacing.ground),
     source: Int32Array.from(keep),
   }
+  const seen = new Map<number, number>()
   keep.forEach((i, j) => {
     for (let k = 0; k < 3; k++) { v.positions[j * 3 + k] = S.positions[i * 3 + k]; v.normals[j * 3 + k] = S.normals[i * 3 + k] }
     v.area[j] = S.area[i]
     v.kind[j] = S.kind[i]
-    const e = S.element[i] >= 0 ? S.elements[S.element[i]] : null
-    v.elementKey[j] = e ? `${e.modelId}:${e.localId}` : ''
-    v.elementLabel[j] = e ? `${e.category.replace(/^IFC/, '').toLowerCase()} #${e.localId}` : ''
+    const ei = S.element[i]
+    if (ei < 0) v.elementIndex[j] = -1
+    else {
+      let k = seen.get(ei)
+      if (k === undefined) {
+        const e = S.elements[ei]
+        k = v.elements.length
+        v.elements.push({ key: `${e.modelId}:${e.localId}`, label: `${e.category.replace(/^IFC/, '').toLowerCase()} #${e.localId}` })
+        seen.set(ei, k)
+      }
+      v.elementIndex[j] = k
+    }
     for (const m of SOLAR_METRICS) v.values[m][j] = metricValue(run.result, m, i)
   })
   return v
@@ -156,9 +166,10 @@ export function compareVariants(a: Variant, b: Variant, metric: SolarMetric, opt
     const rel = Math.abs(va) > 1e-9 ? d / Math.abs(va) : (Math.abs(d) > 1e-9 ? Math.sign(d) : 0)
     if (Math.abs(rel) > tol) { if ((d > 0) === up) acc.better += w; else acc.worse += w }
     per.set(b.kind[j], acc)
-    const k = b.elementKey[j]
-    if (k) {
-      const e = elems.get(k) ?? { label: b.elementLabel[j], area: 0, a: 0, b: 0 }
+    const ei = b.elementIndex[j]
+    if (ei >= 0) {
+      const k = b.elements[ei].key
+      const e = elems.get(k) ?? { label: b.elements[ei].label, area: 0, a: 0, b: 0 }
       e.area += w; e.a += va * w; e.b += vb * w
       elems.set(k, e)
     }

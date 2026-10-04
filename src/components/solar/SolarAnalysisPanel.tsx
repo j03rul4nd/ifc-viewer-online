@@ -36,6 +36,7 @@ const PointProbe = React.lazy(() => import('./PointProbe'))
 const ShadingDesigner = React.lazy(() => import('./ShadingDesigner'))
 const PvDesigner = React.lazy(() => import('./PvDesigner'))
 const VariantCompare = React.lazy(() => import('./VariantCompare'))
+const DaylightRooms = React.lazy(() => import('./DaylightRooms'))
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -435,7 +436,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   // ── PDF report ───────────────────────────────────────────────────────────
   const [reportProgress, setReportProgress] = useState<number | null>(null)
   const report = useSolarReportStore()
-  const hasReport = !!(report.compare || report.heatmap || report.en || report.seasons || report.probe || report.shading || report.pv)
+  const hasReport = !!(report.daylight || report.compare || report.heatmap || report.en || report.seasons || report.probe || report.shading || report.pv)
   const exportPdf = useCallback(async () => {
     if (!location) return
     setReportProgress(0)
@@ -454,7 +455,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
         locale: i18n.language,
         viewImage,
         climate: s.climate,
-        heatmap: r.heatmap, en: r.en, seasons: r.seasons, probe: r.probe, shading: r.shading, pv: r.pv, compare: r.compare,
+        heatmap: r.heatmap, en: r.en, seasons: r.seasons, probe: r.probe, shading: r.shading, pv: r.pv, compare: r.compare, daylight: r.daylight,
         t: (k, v) => String((t as unknown as (k: string, v?: Record<string, unknown>) => string)(k, v)),
         onProgress: setReportProgress,
       })
@@ -685,6 +686,23 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </div>
               </Section>
 
+              {/* Daylight in the rooms */}
+              <Section title={t('daylight.title')}>
+                <React.Suspense fallback={null}>
+                  <DaylightRooms
+                    viewerApiRef={viewerApiRef}
+                    north={north}
+                    ensureSensors={ensureSensors}
+                    runPeriod={runPeriod}
+                    pathFor={(period) => pathFor(period)}
+                    skyLabel={t(`analysis.sky.${effectiveSky}`)}
+                    busy={busy}
+                    onDone={() => s.setRun({ status: ref.last ? 'done' : 'idle', progress: 1 })}
+                    onError={fail}
+                  />
+                </React.Suspense>
+              </Section>
+
               {/* Design variants, B − A on the model */}
               <Section title={t('compare.title')}>
                 <React.Suspense fallback={null}>
@@ -763,7 +781,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </button>
                 <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">
                   {hasReport
-                    ? t('report.contains', { list: [report.heatmap && t('report.parts.heatmap'), report.en && t('report.parts.en'), report.seasons && t('report.parts.seasons'), report.probe && t('report.parts.probe'), report.shading && t('report.parts.shading'), report.pv && t('report.parts.pv'), report.compare && t('report.parts.compare')].filter(Boolean).join(' · ') })
+                    ? t('report.contains', { list: [report.heatmap && t('report.parts.heatmap'), report.en && t('report.parts.en'), report.seasons && t('report.parts.seasons'), report.probe && t('report.parts.probe'), report.shading && t('report.parts.shading'), report.pv && t('report.parts.pv'), report.compare && t('report.parts.compare'), report.daylight && t('report.parts.daylight')].filter(Boolean).join(' · ') })
                     : t('report.empty')}
                 </p>
               </Section>

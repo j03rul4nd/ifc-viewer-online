@@ -5,7 +5,7 @@
 
 import * as THREE from 'three'
 import {
-  buildSensorSet, groundGrid, sampleTriangles, sensorKindFor, growExtent,
+  buildSensorSet, groundGrid, sampleTriangles, sensorKindFor, growExtent, plateIsGlass,
   type SensorElement, type SensorKind, type SensorSet, type PointSample,
 } from './sensors'
 import { runExposure } from './exposure-engine'
@@ -25,6 +25,7 @@ interface FragmentsLike {
   object: THREE.Object3D
   getItemsOfCategories(categories: RegExp[]): Promise<Record<string, number[]>>
   raycast?(o: { camera: THREE.Camera; mouse: THREE.Vector2; dom: HTMLElement }): Promise<unknown>
+  getItemsData?(ids: number[], o: unknown): Promise<Array<Record<string, { value?: unknown }>>>
   getItemsGeometry(localIds: number[]): Promise<Array<Array<{
     transform: THREE.Matrix4
     positions?: Float32Array | Float64Array
@@ -126,6 +127,8 @@ export interface SolarAnalysisAPI {
   /** The sky mask at a point (and a marker there). */
   skyMaskAt(point: THREE.Vector3, yawDeg: number): Promise<SkyMask>
   clearMarker(): void
+  /** Every IfcSpace of the loaded models: world box and a name. */
+  getSpaces(): Promise<Array<{ key: string; modelId: string; localId: number; label: string; box: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } }>>
   /** Draw solar protections in the scene; they occlude every later run. null removes them. */
   setShadingDevices(boxes: DeviceBox[] | null): void
   dispose(): void
@@ -314,14 +317,31 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       }
       const v = new THREE.Vector3()
       for (const [category, localIds] of Object.entries(byCategory)) {
-        const kind = sensorKindFor(category)
-        if (!kind) continue
+        const baseKind = sensorKindFor(category)
+        if (!baseKind) continue
         // Roofs and slabs: only the faces looking up. Everything else: vertical-ish and up.
-        const accept = kind === 'roof' ? (_x: number, ny: number) => ny > 0.6 : (_x: number, ny: number) => ny > -0.6
+        const accept = baseKind === 'roof' ? (_x: number, ny: number) => ny > 0.6 : (_x: number, ny: number) => ny > -0.6
         for (let b = 0; b < localIds.length; b += 200) {
           const batch = localIds.slice(b, b + 200)
           const geo = await model.getItemsGeometry(batch)
+          // Plates: glass or spandrel, from what the model calls them.
+          const opaque = new Set<number>()
+          if (/^IFCPLATE$/i.test(category) && model.getItemsData) {
+            try {
+              const data = await model.getItemsData(batch, {
+                attributesDefault: false, attributes: ['Name', 'Description', 'ObjectType'],
+                relations: { IsTypedBy: { attributes: true, relations: false } },
+              })
+              batch.forEach((id, k) => {
+                const d = data[k] as Record<string, { value?: unknown }> & { IsTypedBy?: Array<Record<string, { value?: unknown }>> }
+                const str = (v: unknown) => (typeof v === 'string' ? v : '')
+                const typeName = str(d?.IsTypedBy?.[0]?.Name?.value)
+                if (!plateIsGlass(str(d?.Name?.value), str(d?.Description?.value), str(d?.ObjectType?.value), typeName)) opaque.add(id)
+              })
+            } catch (err) { log.warn(`${modelId}: plate names unavailable`, err) }
+          }
           geo.forEach((parts, j) => {
+            const kind = opaque.has(batch[j]) ? 'facade' as const : baseKind
             const samples: PointSample[] = []
             let extent: Float32Array | null = null
             for (const part of parts) {
@@ -546,6 +566,48 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       // A size you can see from where you look, not from the model's scale.
       marker.scale.setScalar(Math.max(0.15, ctx.camera().position.distanceTo(point) * 0.008))
       return mask
+    },
+
+    async getSpaces() {
+      const out: Awaited<ReturnType<SolarAnalysisAPI['getSpaces']>> = []
+      const v = new THREE.Vector3()
+      for (const modelId of ctx.getLoadedModelIds()) {
+        const model = ctx.getFragmentsModel(modelId)
+        if (!model) continue
+        model.object.updateMatrixWorld(true)
+        const world = model.object.matrixWorld
+        let ids: number[] = []
+        try { ids = Object.values(await model.getItemsOfCategories([/^IFCSPACE$/i])).flat() } catch { continue }
+        if (!ids.length) continue
+        const names = new Map<number, string>()
+        try {
+          const data = await model.getItemsData?.(ids, { attributesDefault: false, attributes: ['Name', 'LongName'] }) ?? []
+          ids.forEach((id, i) => {
+            const n = data[i]?.LongName?.value ?? data[i]?.Name?.value
+            if (typeof n === 'string' && n.trim()) names.set(id, n.trim())
+          })
+        } catch { /* names are a nicety */ }
+        for (let b = 0; b < ids.length; b += 200) {
+          const batch = ids.slice(b, b + 200)
+          const geo = await model.getItemsGeometry(batch)
+          geo.forEach((parts, j) => {
+            const box = new THREE.Box3()
+            for (const part of parts) {
+              if (!part?.positions?.length) continue
+              const m = new THREE.Matrix4().multiplyMatrices(world, part.transform ?? new THREE.Matrix4())
+              const src = part.positions
+              for (let k = 0; k < src.length; k += 3) box.expandByPoint(v.set(src[k], src[k + 1], src[k + 2]).applyMatrix4(m))
+            }
+            if (box.isEmpty()) return
+            const id = batch[j]
+            out.push({
+              key: `${modelId}:${id}`, modelId, localId: id, label: names.get(id) ?? `space #${id}`,
+              box: { min: { x: box.min.x, y: box.min.y, z: box.min.z }, max: { x: box.max.x, y: box.max.y, z: box.max.z } },
+            })
+          })
+        }
+      }
+      return out
     },
 
     setShadingDevices(boxes) {

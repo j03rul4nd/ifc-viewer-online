@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sampleTriangles, groundGrid, buildSensorSet, orientationOf, sensorKindFor, SURFACE_LIFT_M } from './sensors'
+import { sampleTriangles, groundGrid, buildSensorSet, orientationOf, sensorKindFor, plateIsGlass, SURFACE_LIFT_M } from './sensors'
 import { elementStats, rampColor, niceRange, type ExposureResult } from './results'
 import { en17037Level, en17037Findings, summarizeEn17037, summerGainFindings, orientationTable } from './findings'
 import { aggregateClimate, seasonRun, seasonRange, climateUrl, type DailySeries } from './climate'
@@ -29,6 +29,14 @@ describe('sensors', () => {
     const g = groundGrid({ minX: 0, maxX: 10, minZ: 0, maxZ: 10 }, 5, 2, 2, (x) => x)
     expect(g.length).toBe(49)
     expect(g[0].y).toBeCloseTo(g[0].x + SURFACE_LIFT_M * 2, 6)
+  })
+
+  it('tells a glazed curtain-wall unit from an opaque spandrel', () => {
+    expect(plateIsGlass('Spandrel Panel South 01 - Ground', 'Opaque spandrel panel at the floor line', '', 'PLT-300-Spandrel')).toBe(false)
+    expect(plateIsGlass('Curtain Wall Glazing South 03', '', '', 'PLT-180-Glazed Unit')).toBe(true)
+    expect(plateIsGlass('Panel ciego')).toBe(false)
+    expect(plateIsGlass('Vidrio doble')).toBe(true)
+    expect(plateIsGlass('', '', '', '')).toBe(true)
   })
 
   it('classes map to what they measure', () => {
