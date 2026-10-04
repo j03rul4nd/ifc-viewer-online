@@ -3,7 +3,7 @@
 // rows on flat roofs, flush on pitches) with every shadow, then the usable
 // roof, kWp, kWh a year, kWh/kWp, modules, CO₂ and the months.
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AnalysisRun } from '../../lib/solar-analysis/analysis-system'
 import type { SensorSet } from '../../lib/solar-analysis/sensors'
@@ -13,6 +13,7 @@ import {
   type PvResult, type PvSensors,
 } from '../../lib/solar-analysis/pv'
 import { shareOrDownload } from '../../lib/share-file'
+import { useSolarReportStore } from '../../stores/solarReportStore'
 
 interface Props {
   lat: number
@@ -25,6 +26,8 @@ interface Props {
   pathFor(period: AnalysisPeriod): SunPathOptions
   /** Show a run as the heatmap. */
   display(run: AnalysisRun): Promise<void>
+  /** The 3D view now, for the report. */
+  snapshot(): Promise<string | null>
   busy: boolean
   onDone(): void
   onError(err: unknown): void
@@ -74,6 +77,7 @@ export default function PvDesigner(p: Props) {
       const o = { pv, run, y, months, tilt: tiltDeg }
       setOut(o)
       await show(o, onlyUsable)
+      setImage(await p.snapshot())
       p.onDone()
     } catch (err) {
       p.onError(err)
@@ -84,6 +88,20 @@ export default function PvDesigner(p: Props) {
 
   // Efficiency, PR, threshold and CO₂ need no new run: the yield is arithmetic on it.
   const y = useMemo(() => (out ? pvYield(out.pv, out.run.result, opts(out.tilt)) : null), [out, opts])
+  const [image, setImage] = useState<string | null>(null)
+
+  // The report follows the figures shown.
+  useEffect(() => {
+    if (!out || !y) return
+    const { usable: _u, ...rest } = y
+    void _u
+    useSolarReportStore.getState().set({
+      pv: {
+        y: rest, months: out.months, tiltDeg: out.tilt, efficiency: eff / 100, performanceRatio: pr / 100,
+        threshold: threshold / 100, coverage: coverageRatio(p.lat, out.tilt), image, measuredSky: p.measuredSky,
+      },
+    })
+  }, [out, y, image, eff, pr, threshold, p.lat, p.measuredSky])
 
   const nf = (v: number, d = 0) => v.toLocaleString(i18n.language, { maximumFractionDigits: d, minimumFractionDigits: d })
   const monthName = (m: number) => new Intl.DateTimeFormat(i18n.language, { month: 'narrow', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, m, 15)))

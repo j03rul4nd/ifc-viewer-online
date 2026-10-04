@@ -17,6 +17,7 @@ import {
   type ShadingDesign, type Orientation, type WindowFrame, type ShadingRow,
 } from '../../lib/solar-analysis/shading-devices'
 import { shareOrDownload } from '../../lib/share-file'
+import { useSolarReportStore } from '../../stores/solarReportStore'
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -29,6 +30,8 @@ interface Props {
   /** The analysis settings that make a baseline stale when they change. */
   settingsKey: string
   busy: boolean
+  /** A framed picture of the model, for the report. */
+  snapshot(): Promise<string | null>
   onDone(): void
   onError(err: unknown): void
 }
@@ -91,9 +94,12 @@ export default function ShadingDesigner(p: Props) {
       const summer = await p.runPeriod(summerP, 0, b.sensors)
       const winter = await p.runPeriod(winterP, 0, b.sensors)
       const en = await p.runPeriod(EN_DAY, p.enMinAltitudeDeg, b.sensors)
-      setRows(compareShading(b.frames, orient, {
+      const result = compareShading(b.frames, orient, {
         summer: [b.summer.stats, summer.stats], winter: [b.winter.stats, winter.stats], en: [b.en.stats, en.stats],
-      }, { summer: b.summer.result.days, winter: b.winter.result.days }))
+      }, { summer: b.summer.result.days, winter: b.winter.result.days })
+      setRows(result)
+      const image = await p.snapshot()
+      useSolarReportStore.getState().set({ shading: { design, orientations: [...orient], rows: result, image } })
       setMeasuredKey(designKey)
       p.onDone()
     } catch (err) {

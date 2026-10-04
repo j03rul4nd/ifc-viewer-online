@@ -73,8 +73,8 @@ export interface ElementStat {
 }
 
 /**
- * One figure per element, from the face the weather sees — among its real
- * faces, not its edges. Sensors are split
+ * One figure per element, from the face the weather sees: among its real
+ * faces (not its edges), the one with the most open sky. Sensors are split
  * by facing (the dominant axis and its sign of their normal); each facing is
  * averaged by area and the element takes the facing with the most sun — the
  * inside face of a wall or window, which never sees the sun, drops out.
@@ -114,8 +114,13 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
     for (const acc of byFacing.values()) largest = Math.max(largest, acc.area)
     for (const acc of byFacing.values()) {
       if (acc.area < largest * 0.25) continue
-      if (!best || acc.hours / acc.area > best.hours / best.area
-        || (acc.hours / acc.area === best.hours / best.area && acc.kwh / acc.area > best.kwh / best.area)) best = acc
+      // The outside face is the one that sees the most SKY. Not the sunniest:
+      // the inner face of a glass pane can catch sun through the opposite
+      // façade, but it always has the slab above it. Ties (no sky view known)
+      // fall back to the sunnier face.
+      const sky = acc.sky / acc.area, bestSky = best ? best.sky / best.area : -1
+      if (!best || sky > bestSky + 0.02
+        || (Math.abs(sky - bestSky) <= 0.02 && acc.hours / acc.area > best.hours / best.area)) best = acc
     }
     if (!best || best.area <= 0) continue
     const nl = Math.hypot(best.nx, best.ny, best.nz) || 1

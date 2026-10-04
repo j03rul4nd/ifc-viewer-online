@@ -30,6 +30,7 @@ import { northDirection } from '../../lib/geo/geo-math'
 import { issuesToBcfTopics, downloadBcfBlob } from '../../lib/bcf'
 import type { ValidationIssue } from '../../types'
 import { shareOrDownload } from '../../lib/share-file'
+import { useSolarReportStore, type HeatmapSection } from '../../stores/solarReportStore'
 
 const PointProbe = React.lazy(() => import('./PointProbe'))
 const ShadingDesigner = React.lazy(() => import('./ShadingDesigner'))
@@ -208,6 +209,42 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     s.bumpResult()
   }, [viewerApiRef, s])
 
+  /** The 3D view as it is now, once the heatmap has been drawn. */
+  const snapshot = useCallback(async (): Promise<string | null> => {
+    const viewer = viewerApiRef.current
+    if (!viewer || !location) return null
+    try {
+      const { framedShot } = await import('../../lib/report/framed-shot')
+      return await framedShot(viewer, location.lat, location.yawDeg)
+    } catch { return null }
+  }, [viewerApiRef, location])
+
+  /** Publish what the heatmap shows to the report. */
+  const publishHeatmap = useCallback(async (run: AnalysisRun, periodLabel: string) => {
+    const st = useSolarAnalysisStore.getState()
+    const range = st.range ?? { min: 0, max: 1 }
+    const value = statValue(st.metric)
+    const averages = KINDS.map((k) => {
+      let sum = 0, area = 0
+      for (let i = 0; i < run.sensors.count; i++) {
+        if (run.open[i] === 0 || KINDS[run.sensors.kind[i]] !== k) continue
+        sum += metricValue(run.result, st.metric, i) * run.sensors.area[i]
+        area += run.sensors.area[i]
+      }
+      return { kind: k, value: area > 0 ? sum / area : NaN }
+    }).filter((a) => Number.isFinite(a.value))
+    const windows = [...run.stats.filter((x) => x.element.kind === 'window')].sort((a, b) => value(a) - value(b))
+    const label = (x: ElementStat) => `${x.element.category.replace(/^IFC/, '').toLowerCase()} #${x.element.localId}`
+    const section: HeatmapSection = {
+      image: await snapshot(), metric: st.metric, periodLabel, range, averages,
+      least: windows.slice(0, 5).map((x) => ({ label: label(x), value: value(x) })),
+      most: windows.slice(-5).reverse().map((x) => ({ label: label(x), value: value(x) })),
+      instants: run.instants, rawInstants: run.rawInstants, sensors: run.open.reduce((a, b) => a + b, 0),
+      sky: effectiveSkyRef.current, albedo: run.albedo,
+    }
+    useSolarReportStore.getState().set({ heatmap: section })
+  }, [snapshot])
+
   const fail = useCallback((err: unknown) => {
     if (err instanceof DOMException && err.name === 'AbortError') {
       s.setRun({ status: ref.last ? 'done' : 'idle', progress: 0 })
@@ -218,17 +255,28 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 
   const run = useCallback(async () => {
     try {
-      await display(await runPeriod(periodFor(s.period, s.climate)))
+      const r = await runPeriod(periodFor(s.period, s.climate))
+      await display(r)
+      await publishHeatmap(r, t(`analysis.period.${s.period}` as 'analysis.period.year'))
     } catch (err) { fail(err) }
-  }, [display, runPeriod, periodFor, s.period, s.climate, fail])
+  }, [display, runPeriod, periodFor, s.period, s.climate, fail, publishHeatmap, t])
 
   const runEn = useCallback(async () => {
     try {
       const r = await runPeriod({ kind: 'day', date: { month: 3, day: 21 } }, enMinAlt)
       ref.en = { run: r, findings: en17037Findings(r.stats, north) }
       await display(r)
+      const sum = summarizeEn17037(ref.en.findings)
+      useSolarReportStore.getState().set({
+        en: {
+          minAltitudeDeg: enMinAlt, windows: sum.windows, byLevel: sum.byLevel,
+          failing: ref.en.findings.filter((f) => f.level === 'none').sort((a, b) => a.value - b.value).slice(0, 12)
+            .map((f) => ({ label: `${f.category.replace(/^IFC/, '').toLowerCase()} #${f.localId}`, hours: f.value, orientation: f.orientation })),
+        },
+      })
+      await publishHeatmap(r, t('analysis.period.enReference'))
     } catch (err) { fail(err) }
-  }, [runPeriod, enMinAlt, north, display, fail])
+  }, [runPeriod, enMinAlt, north, display, fail, publishHeatmap, t])
 
   const runSeasons = useCallback(async () => {
     try {
@@ -242,8 +290,18 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
       }
       useSolarAnalysisStore.getState().setMetric('irradiation')
       await display(summer)
+      useSolarReportStore.getState().set({
+        seasons: {
+          summerRisk: ref.seasons.summerFindings.slice(0, 12).map((f) => ({
+            label: `${f.category.replace(/^IFC/, '').toLowerCase()} #${f.localId}`, daily: f.value,
+            level: t(`analysis.checks.gain.${f.level}` as 'analysis.checks.gain.high'), orientation: f.orientation,
+          })),
+          rooms: ref.seasons.rooms.map((r) => ({ orientation: r.orientation, winterHours: r.winterHours, summerDaily: r.summerDaily, advice: t(`analysis.checks.rooms.${r.advice}`) })),
+        },
+      })
+      await publishHeatmap(summer, t('analysis.period.hotSeason'))
     } catch (err) { fail(err) }
-  }, [runPeriod, periodFor, s.climate, north, display, fail])
+  }, [runPeriod, periodFor, s.climate, north, display, fail, publishHeatmap, t])
 
   // Metric or kinds changed: recolour, no recompute.
   useEffect(() => {
@@ -270,6 +328,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     ref.sensors = null
     ref.en = null
     ref.seasons = null
+    useSolarReportStore.getState().clear()
     if (ref.last) void clear()
   }, [models.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -368,6 +427,41 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   const frame = useCallback((f: { modelId: string; localId: number }) => {
     viewerApiRef.current?.frameElements([f.localId], f.modelId)
   }, [viewerApiRef])
+
+  // ── PDF report ───────────────────────────────────────────────────────────
+  const [reportProgress, setReportProgress] = useState<number | null>(null)
+  const report = useSolarReportStore()
+  const hasReport = !!(report.heatmap || report.en || report.seasons || report.probe || report.shading || report.pv)
+  const exportPdf = useCallback(async () => {
+    if (!location) return
+    setReportProgress(0)
+    try {
+      const { composeSolarReport } = await import('../../lib/report/solar-report')
+      const viewer = viewerApiRef.current
+      const viewImage = viewer ? await snapshot() : null
+      const sc = useSceneStore.getState()
+      const active = sc.models.find((m) => m.id === sc.activeModelId) ?? sc.models[0]
+      const r = useSolarReportStore.getState()
+      const blob = await composeSolarReport({
+        title: t('report.title'),
+        modelName: active?.fileName ?? 'IFC',
+        lat: location.lat, lon: location.lon, timeZone, yawDeg: location.yawDeg,
+        northSource: t(location.northSource === 'ifc' ? 'badges.northIfc' : 'badges.northAssumed'),
+        locale: i18n.language,
+        viewImage,
+        climate: s.climate,
+        heatmap: r.heatmap, en: r.en, seasons: r.seasons, probe: r.probe, shading: r.shading, pv: r.pv,
+        t: (k, v) => String((t as unknown as (k: string, v?: Record<string, unknown>) => string)(k, v)),
+        onProgress: setReportProgress,
+      })
+      const base = (active?.fileName ?? 'model').replace(/\.ifc$/i, '')
+      await shareOrDownload(blob, `${base}-solar-report.pdf`)
+    } catch (err) {
+      fail(err)
+    } finally {
+      setReportProgress(null)
+    }
+  }, [location, timeZone, viewerApiRef, s.climate, t, i18n.language, fail, snapshot])
 
   // ── Derived views ────────────────────────────────────────────────────────
   const summary = useMemo(() => {
@@ -595,6 +689,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     yawDeg={location.yawDeg}
                     albedo={s.albedo}
                     measuredSky={effectiveSky === 'measured'}
+                    snapshot={snapshot}
                     ensureSensors={ensureSensors}
                     runPeriod={runPeriod}
                     pathFor={(period) => pathFor(period)}
@@ -619,6 +714,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     periodFor={(c) => periodFor(c, s.climate)}
                     settingsKey={`${location.lat},${location.lon},${location.yawDeg}|${effectiveSky}|${s.precision}|${s.albedo}|${enMinAlt}|${s.climate?.years.to ?? ''}`}
                     busy={busy}
+                    snapshot={snapshot}
                     onDone={() => s.setRun({ status: ref.last ? 'done' : 'idle', progress: 1 })}
                     onError={fail}
                   />
@@ -630,6 +726,22 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 <React.Suspense fallback={null}>
                   <PointProbe viewerApiRef={viewerApiRef} lat={location.lat} lon={location.lon} yawDeg={location.yawDeg} timeZone={timeZone} enMinAltitudeDeg={enMinAlt} />
                 </React.Suspense>
+              </Section>
+
+              {/* The whole study as a PDF */}
+              <Section title={t('report.section')}>
+                <button
+                  disabled={!hasReport || reportProgress !== null || busy}
+                  onClick={() => { void exportPdf() }}
+                  className="px-2.5 py-2 rounded-[8px] text-[12px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40"
+                >
+                  {reportProgress !== null ? t('report.making', { pct: Math.round(reportProgress * 100) }) : t('report.download')}
+                </button>
+                <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">
+                  {hasReport
+                    ? t('report.contains', { list: [report.heatmap && t('report.parts.heatmap'), report.en && t('report.parts.en'), report.seasons && t('report.parts.seasons'), report.probe && t('report.parts.probe'), report.shading && t('report.parts.shading'), report.pv && t('report.parts.pv')].filter(Boolean).join(' · ') })
+                    : t('report.empty')}
+                </p>
               </Section>
 
               <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('analysis.disclaimer')}</p>

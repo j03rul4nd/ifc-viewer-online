@@ -61,6 +61,21 @@ describe('elementStats', () => {
 })
 
 describe('elementStats edges', () => {
+  it('judges a north pane by its outside face even when sun reaches the inside one', () => {
+    const el = { modelId: 'm', localId: 3, category: 'IFCPLATE', kind: 'window' as const }
+    const outside = Array.from({ length: 4 }, () => ({ x: 0, y: 1, z: -0.05, nx: 0, ny: 0, nz: -1, area: 1 }))
+    const inside = Array.from({ length: 4 }, () => ({ x: 0, y: 1, z: 0.05, nx: 0, ny: 0, nz: 1, area: 1 }))
+    const set = buildSensorSet([{ kind: 'window', element: el, samples: [...outside, ...inside] }], { ground: 2, surface: 1 })
+    const n = set.count
+    // Outside: open sky, no sun (it faces north). Inside: sun through the far façade, slab overhead.
+    const sun = Float32Array.from([0, 0, 0, 0, 5, 5, 5, 5])
+    const sky = Float32Array.from([0.48, 0.48, 0.48, 0.48, 0.15, 0.15, 0.15, 0.15])
+    const r: ExposureResult = { sunHours: sun, probableSunHours: new Float32Array(n), directWh: new Float32Array(n), diffuseWh: new Float32Array(n), reflectedWh: new Float32Array(n), skyCos: sky, days: 1 }
+    const [s] = elementStats(set, r)
+    expect(s.sunHoursPerDay).toBe(0)
+    expect(s.normal.z).toBeCloseTo(-1, 6)
+  })
+
   it('never judges a glass plate by its sunny top edge', () => {
     const el = { modelId: 'm', localId: 9, category: 'IFCPLATE', kind: 'window' as const }
     const face = Array.from({ length: 12 }, () => ({ x: 0, y: 1, z: 0.1, nx: 0, ny: 0, nz: 1, area: 1 }))

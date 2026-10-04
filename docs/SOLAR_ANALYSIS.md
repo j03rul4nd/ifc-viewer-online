@@ -53,6 +53,27 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
 
+## PDF report
+
+"Download the PDF report" (analysis panel) gathers whatever has been computed
+— each part publishes its latest result to `stores/solarReportStore.ts` — and
+`lib/report/solar-report.ts` composes A4 pages on a canvas (200 dpi): cover
+with key figures, sun path and almanac table, climate, heatmap with legend,
+EN 17037 and overheating checks, point diagram with month × hour table,
+protections before/after, panels with monthly production, and method &
+sources. `lib/report/pdf-writer.ts` packs one JPEG per page into a PDF 1.4
+(no dependency; any script renders). 3D pictures come from `framed-shot.ts`:
+an off-screen aerial view from the equator side framing the model, so they do
+not depend on where the user left the camera.
+
+## Full geometry during runs
+
+Fragments streams tiles and simplifies far items for the user's camera. The
+shadow pass draws the same meshes, so before this every result depended on
+the view (measured: a roof PV run gave 128 kWp first and 54 kWp after a
+framed shot had loaded the rest). Runs and point masks now switch every model
+to `LodMode.ALL_VISIBLE` and back (`setFullGeometry` in the viewer context).
+
 ## Solar panels
 
 `pv.ts`, `components/solar/PvDesigner.tsx`. Roof sensors facing up, minus
@@ -84,7 +105,9 @@ overhang to shade the window fully at summer-solstice noon.
 
 Per-element figures (all checks) now pick the sunniest of the element's REAL
 faces: a facing under a quarter of its largest one (the top edge of a glass
-plate) no longer judges the window.
+plate) no longer judges the window, and among the real faces the outside one
+is the one that sees the most sky (the inner face of a pane can catch sun
+through the opposite façade, but has the slab above it).
 
 ## Shading diagram of a point
 

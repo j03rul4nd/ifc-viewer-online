@@ -363,5 +363,72 @@
     "monthly": "Producción por mes",
     "note": "Filas en cubierta plana separadas para que el sol de mediodía de invierno las libre. Producción = irradiación sobre los módulos × eficiencia × performance ratio (inversor, temperatura, suciedad, cableado). Estimación de anteproyecto, no un presupuesto de instalador.",
     "clearSky": "Cielo despejado: sin el clima medido la producción sale un 10–20 % alta. Carga el clima arriba para usar el cielo real (ERA5)."
+  },
+  "report": {
+    "section": "Informe",
+    "title": "Estudio solar",
+    "kicker": "Estudio solar y climático",
+    "download": "Descargar el informe PDF",
+    "making": "Componiendo el informe… {{pct}} %",
+    "empty": "Primero ejecuta un análisis, una comprobación, un punto, unas protecciones o las placas: el informe recoge lo que se ha calculado.",
+    "contains": "Incluye: carta solar, sitio · {{list}}",
+    "parts": {
+      "heatmap": "mapa de calor",
+      "en": "EN 17037",
+      "seasons": "sobrecalentamiento y estancias",
+      "probe": "diagrama de un punto",
+      "shading": "protecciones",
+      "pv": "placas solares"
+    },
+    "location": "Ubicación",
+    "timeZone": "Zona horaria",
+    "north": "Norte",
+    "date": "Fecha",
+    "enPass": "Ventanas que cumplen EN 17037",
+    "pointSun": "Sol en el punto, h/día",
+    "sunTitle": "Sol y emplazamiento",
+    "sunIntro": "Por dónde cruza el sol el cielo de este emplazamiento a lo largo del año, dibujado al norte real. Cada curva es el día 21 de un mes; las líneas de puntos son las horas.",
+    "sunLegend": "Rojo: junio · gris: marzo/septiembre · azul: diciembre. Centro = cénit, borde = horizonte.",
+    "day": "Día",
+    "tMax": "Temperatura máx., °C",
+    "radiation": "Radiación global, kWh/m²·día",
+    "heatmapTitle": "El sol sobre el edificio",
+    "heatmapIntro": "{{metric}} en {{period}}, medido sobre el modelo con todas las sombras: las propias, las de la ciudad y las del terreno.",
+    "runMeta": "{{instants}} posiciones del sol que representan {{raw}} instantes · {{sensors}} sensores · cielo: {{sky}} · albedo del suelo {{albedo}}",
+    "window": "Ventana",
+    "hours": "Sol",
+    "perDay": "kWh/m²·día",
+    "enAltitude": "Sol contado por encima de {{alt}}°.",
+    "windows": "Ventanas",
+    "probeIntro": "Lo que tapa el cielo desde el punto ({{x}}, {{y}}, {{z}}), en gris, sobre las trayectorias del sol del año, y el sol que recibe hora a hora.",
+    "shadingIntro": "{{devices}} en las fachadas {{facades}}. Las mismas ventanas, cielo y motor, medidos con y sin ellas.",
+    "mwh": "MWh por mes.",
+    "methodTitle": "Método y fuentes",
+    "method": {
+      "sun": {
+        "title": "Posición del sol",
+        "body": "Algoritmo de posición solar NOAA / Meeus con refracción atmosférica corregida por la presión del lugar; dentro de 0,02° de la referencia SPA del NREL. Horas en la zona horaria del propio emplazamiento."
+      },
+      "sky": {
+        "title": "Cielo",
+        "body": "Medido: reanálisis ERA5 (Copernicus / ECMWF) a través de Open-Meteo: 5 años de radiación directa, difusa y global y horas de sol, hora a hora, y 10 años de clima diario. Sin él: cielo claro de Ineichen–Perez, repartido con Erbs a partir de la claridad mensual medida."
+      },
+      "surface": {
+        "title": "Sobre cada superficie",
+        "body": "Hay–Davies: la radiación directa y la difusa circunsolar se sombrean con el sol; el cielo isótropo se pondera con la vista de cielo de cada punto (ponderada por el coseno); reflexión del suelo con el albedo elegido."
+      },
+      "engine": {
+        "title": "Sombras",
+        "body": "Miles de sensores sobre las propias ventanas, muros, cubiertas y parcela del IFC. Para cada posición del sol la GPU dibuja un mapa de sombras de todo lo que puede taparlo —el modelo, los edificios OSM del entorno y el terreno— y prueba cada sensor. Estaciones y años recorren todos los días, agrupados en pequeñas zonas de cielo."
+      },
+      "checks": {
+        "title": "Comprobaciones",
+        "body": "Exposición solar EN 17037: horas de sol directo el 21 de marzo por encima de una altura mínima (1,5 / 3 / 4 h). Ganancia solar en vidrios: bandas orientativas, no una simulación térmica. Fotovoltaica: irradiación en el plano del módulo × eficiencia × performance ratio."
+      },
+      "limits": {
+        "title": "Límites",
+        "body": "Un estudio de fase de diseño para comparar opciones y dimensionar decisiones. No es un certificado energético, una simulación térmica ni un presupuesto de instalador; la EN 17037 se comprueba en la cara exterior de la ventana, no en el punto de referencia de la estancia."
+      }
+    }
   }
 }

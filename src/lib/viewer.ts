@@ -4625,6 +4625,14 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           setGridVisible: (v) => self.setGridVisible(v),
           setPaused: (p) => self.setPaused(p),
           getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
+          // Fragments streams tiles and simplifies far items for the USER's
+          // camera; a shadow pass drawn from the sun must see every element at
+          // full detail, or the result depends on where the user is looking.
+          setFullGeometry: async (on) => {
+            const mode = on ? FRAGS.LodMode.ALL_VISIBLE : FRAGS.LodMode.DEFAULT
+            await Promise.all([...modelObjects.values()].map((m) => m.setLodMode(mode).catch(() => undefined)))
+            try { await fragmentsManager.core.update(true) } catch { /* render what is loaded */ }
+          },
         })
         return solarAnalysisInstance
       })
