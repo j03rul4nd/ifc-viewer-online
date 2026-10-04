@@ -48,10 +48,14 @@ describe('sunPath', () => {
     expect(high).toBeLessThan(all)
   })
 
-  it('a climate clearness scales the irradiance', () => {
+  it('a climate clearness scales the global and takes the beam first (Erbs)', () => {
     const clear = sunPath({ kind: 'day', date: KEY_DATES.juneSolstice }, BCN)
     const cloudy = sunPath({ kind: 'day', date: KEY_DATES.juneSolstice }, { ...BCN, clearness: () => 0.5 })
-    expect(cloudy.samples[10].irradiance.dni).toBeCloseTo(clear.samples[10].irradiance.dni * 0.5, 6)
+    const i = Math.floor(clear.samples.length / 2)
+    expect(cloudy.samples[i].irradiance.ghi).toBeCloseTo(clear.samples[i].irradiance.ghi * 0.5, 6)
+    // Half the global under cloud is far less than half the beam, and more diffuse.
+    expect(cloudy.samples[i].irradiance.dni).toBeLessThan(clear.samples[i].irradiance.dni * 0.5)
+    expect(cloudy.samples[i].irradiance.dhi).toBeGreaterThan(clear.samples[i].irradiance.dhi)
   })
 })
 

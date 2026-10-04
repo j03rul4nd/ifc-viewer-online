@@ -8,8 +8,10 @@
 // draws its shadow map exactly as it does for the sun study — so whatever casts
 // a shadow there (fragments, OSM buildings, terrain) casts one here. Then one
 // full-screen pass over a texture of sensors (one texel each: position, normal)
-// tests every sensor against that shadow map and adds its hours and its Wh/m²
-// to an accumulator. The accumulator is two float render targets used in turn
+// tests every sensor against that shadow map and adds to an accumulator, per
+// sensor: hours of sun (R), beam + circumsolar Wh/m² (G), a cosine-weighted
+// share of sky (B, for the sky-view runs) and the hours the sun is LIKELY out,
+// given the site's sunshine record (A). The accumulator is two float render targets used in turn
 // (ping-pong): blending into float32 needs EXT_float_blend, which is not
 // everywhere, and half floats lose the hours of a year.
 //
@@ -21,7 +23,6 @@ import * as THREE from 'three'
 import type { SensorSet } from './sensors'
 import type { SunSample } from './sun-paths'
 import type { ExposureResult } from './results'
-import { diffuseOnSurface } from './irradiance'
 
 export interface ExposureContext {
   renderer: THREE.WebGLRenderer
@@ -40,6 +41,11 @@ export interface ExposureContext {
 }
 
 export interface ExposureOptions {
+  /**
+   * Accumulate a cosine-weighted sky view in B with this weight per direction
+   * (2 / N for N directions spread evenly over the hemisphere). 0: off.
+   */
+  skyWeight?: number
   /** Shadow map resolution. Default 4096. */
   mapSize?: number
   /** How far towards the sun occluders are looked for, metres. Default 600. */
@@ -64,7 +70,9 @@ uniform sampler2DShadow uShadow;
 uniform mat4 uShadowMatrix;
 uniform vec3 uSun;
 uniform float uHours;
-uniform float uDni;
+uniform float uBeam;
+uniform float uProb;
+uniform float uSkyW;
 uniform vec2 uSize;
 uniform float uBias;
 uniform float uNormalBias;
@@ -81,9 +89,20 @@ void main() {
   vec3 s = sc.xyz / sc.w;
   float vis = 1.0;
   if (s.x > 0.0 && s.x < 1.0 && s.y > 0.0 && s.y < 1.0 && s.z < 1.0) {
-    vis = texture(uShadow, vec3(s.xy, s.z - uBias));
+    // Slope-scaled bias: a surface the sun grazes spans many depth texels and
+    // shadows itself with a fixed bias; one it faces needs almost none.
+    float slope = clamp(sqrt(max(0.0, 1.0 - c * c)) / c, 0.0, 6.0);
+    float b = uBias * (0.5 + slope);
+    // 2×2 taps of the hardware PCF: a soft, stable edge instead of a texel
+    // staircase that flips sensors in and out of shadow between sun positions.
+    vec2 px = vec2(0.5) / vec2(textureSize(uShadow, 0));
+    vis = 0.25 * (
+      texture(uShadow, vec3(s.xy + vec2(-px.x, -px.y), s.z - b)) +
+      texture(uShadow, vec3(s.xy + vec2( px.x, -px.y), s.z - b)) +
+      texture(uShadow, vec3(s.xy + vec2(-px.x,  px.y), s.z - b)) +
+      texture(uShadow, vec3(s.xy + vec2( px.x,  px.y), s.z - b)));
   }
-  outColor = prev + vec4(vis * uHours, vis * uDni * c * uHours, 0.0, 0.0);
+  outColor = prev + vec4(vis * uHours, vis * uBeam * c * uHours, vis * c * uSkyW, vis * uHours * uProb);
 }
 `
 
@@ -143,7 +162,7 @@ export async function runExposure(
     uniforms: {
       uPrev: { value: null }, uPos: { value: posTex }, uNrm: { value: nrmTex }, uShadow: { value: null },
       uShadowMatrix: { value: new THREE.Matrix4() }, uSun: { value: new THREE.Vector3() },
-      uHours: { value: 0 }, uDni: { value: 0 }, uSize: { value: new THREE.Vector2(W, H) },
+      uHours: { value: 0 }, uBeam: { value: 0 }, uProb: { value: 1 }, uSkyW: { value: 0 }, uSize: { value: new THREE.Vector2(W, H) },
       uBias: { value: 0.0005 }, uNormalBias: { value: 0.03 },
     },
     depthTest: false, depthWrite: false,
@@ -169,9 +188,13 @@ export async function runExposure(
   sc.left = -radius; sc.right = radius; sc.top = radius; sc.bottom = -radius
   sc.near = 0.5; sc.far = reach + radius * 2
   sc.updateProjectionMatrix()
-  // Depth bias in METRES, turned into the shadow map's 0–1 depth: ~20 cm keeps a
-  // surface from shadowing itself (acne) without letting a real occluder through.
-  material.uniforms.uBias.value = 0.2 / (sc.far - sc.near)
+  // Depth bias in METRES, turned into the shadow map's 0–1 depth: ~15 cm at
+  // normal incidence (scaled up with the slope in the shader) keeps a surface
+  // from shadowing itself without letting a real occluder through. The normal
+  // offset follows the texel size, so a big site's coarser map stays clean.
+  const texel = (2 * radius) / mapSize
+  material.uniforms.uBias.value = 0.15 / (sc.far - sc.near)
+  material.uniforms.uNormalBias.value = Math.max(0.03, texel * 0.75)
   light.shadow.autoUpdate = false
   scene.add(light, light.target)
   const blind = new THREE.PerspectiveCamera(1, 1, 1, 2)
@@ -210,11 +233,10 @@ export async function runExposure(
       renderer.setClearColor(0x000000, 0)
       renderer.clear(true, false, false)
     }
-    let diffuseHorizontalWh = 0
+    material.uniforms.uSkyW.value = o.skyWeight ?? 0
     for (let k = 0; k < samples.length; k++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
       const s = samples[k]
-      diffuseHorizontalWh += s.irradiance.dhi * s.hours
       light.position.set(center.x + s.dir.x * (reach + radius), center.y + s.dir.y * (reach + radius), center.z + s.dir.z * (reach + radius))
       light.target.position.copy(center)
       light.updateMatrixWorld(true)
@@ -233,7 +255,8 @@ export async function runExposure(
       u.uShadowMatrix.value.copy(light.shadow.matrix)
       u.uSun.value.set(s.dir.x, s.dir.y, s.dir.z)
       u.uHours.value = s.hours
-      u.uDni.value = s.irradiance.dni
+      u.uBeam.value = s.beamNormal
+      u.uProb.value = s.sunProb
       renderer.setRenderTarget(write)
       renderer.render(quadScene, quadCam)
       const t = read; read = write; write = t
@@ -247,16 +270,21 @@ export async function runExposure(
 
     const out = new Float32Array(W * H * 4)
     renderer.readRenderTargetPixels(read, 0, 0, W, H, out)
+    // Diffuse and reflected are filled by the caller, which knows the sky view.
     const result: ExposureResult = {
       sunHours: new Float32Array(n),
+      probableSunHours: new Float32Array(n),
       directWh: new Float32Array(n),
       diffuseWh: new Float32Array(n),
+      reflectedWh: new Float32Array(n),
+      skyCos: new Float32Array(n),
       days,
     }
     for (let i = 0; i < n; i++) {
       result.sunHours[i] = out[i * 4]
       result.directWh[i] = out[i * 4 + 1]
-      result.diffuseWh[i] = diffuseOnSurface(diffuseHorizontalWh, sensors.normals[i * 3 + 1])
+      result.skyCos[i] = Math.min(1, out[i * 4 + 2])
+      result.probableSunHours[i] = out[i * 4 + 3]
     }
     return result
   } finally {

@@ -18,31 +18,64 @@ Findings export as BCF (warnings) and CSV (every window).
 
 ## How
 
+- **Sun position** (`solar/solar-position.ts`): NOAA/Meeus with refraction
+  scaled by pressure (site elevation) and temperature — within 0.02° of NREL
+  SPA's reference case (tested). Replaced suncalc (~0.3°) for the sun; suncalc
+  stays for the moon.
 - **Sensors** (`sensors.ts`): a ground grid around the building (on the terrain
   when the map has one) and points scattered over every window, wall, door,
   roof and slab top, from the element's own triangles. Each knows its IFC
   element.
-- **Sun positions** (`sun-paths.ts`): every 10–30 min, on sampled days (every
-  7 days in a season, 14 in a year), site wall-clock time.
-- **Engine** (`exposure-engine.ts`, GPU): for each instant, three's own shadow
-  map from a dedicated directional light — so the model, the OSM buildings and
-  the terrain all occlude — then one pass over a texture of sensors adds hours
-  and Wh/m². Float ping-pong targets; the viewer's render loop is paused
-  during a run (an interleaved frame lost accumulated hours).
-- **Sky view**: the same engine over 48 hemisphere directions gives each
-  sensor's share of visible sky. It weights the diffuse sky and drops sensors
-  buried inside solids (a structural slab under a roof finish).
-- **Irradiance** (`irradiance.ts`): Kasten–Young air mass, Meinel DNI,
-  Haurwitz GHI, diffuse = GHI − DNI·sin h; scaled per month by the site's
-  measured clearness when the climate is loaded.
-- **Per element** (`results.ts`): the element is judged by its sunnier face —
-  the inside face of a wall or window never sees the sun.
+- **Sun positions** (`sun-paths.ts`): a day is walked every 2–15 min. A season
+  or a year walks EVERY day and bins the positions into ~1–3° sky patches
+  (precision Fast/Standard/Fine), one shadow render per patch carrying the
+  hours and energy of all its instants. A year at Standard: ~26 000 instants
+  → ~2 100 renders, totals exact (tested). Before: 1 day in 14, a ~5° swing.
+- **Sky** — three sources, the best one loaded wins:
+  1. *Measured*: 5 years of ERA5 hourly GHI/DNI/DHI + sunshine duration
+     (Open-Meteo archive) folded into a 12 × 24 UTC typical-hour table
+     (`climate.ts` `TypicalSky`, ~6 KB cached per place);
+  2. *Clearness*: Ineichen clear sky × the month's measured clearness, split
+     into beam/diffuse by Erbs;
+  3. *Clear sky*: Ineichen–Perez (Linke 3, site elevation).
+- **On a surface** (`irradiance.ts`): Hay–Davies — the circumsolar diffuse
+  travels with the beam and is shadowed with it; the isotropic part is
+  weighted by the sensor's cosine-weighted sky view factor; ground reflection
+  with a chosen albedo.
+- **Engine** (`exposure-engine.ts`, GPU): three's own shadow map per patch, then
+  one pass over a sensor texture: R sun hours, G beam+circumsolar Wh, B sky
+  view (sky pass), A expected sun hours (× the chance of sunshine). Slope-scaled
+  depth bias, normal offset tied to the texel size, 2×2 PCF.
+- **Sky view**: 144 hemisphere directions (was 48). The plain share finds buried
+  sensors; the cosine-weighted factor weights the diffuse and is a metric.
+- **Metrics**: sun hours (geometric, what EN 17037 counts), expected sun,
+  irradiation (beam + sky + ground), sky view %. Hover shows the split.
+- **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
+  grid CSV (position, normal, every metric).
+
+## Shading diagram of a point
+
+Pick any point (model, OSM buildings, terrain, or the ground plane): five 90°
+renders from the point with every occluder drawn white on black give a 2° × 2°
+sky mask (`sky-mask.ts`, `renderSkyMask` in `analysis-system.ts`). Over it:
+the 21st-of-each-month sun paths and hour lines, a month × hour table of the
+share of each hour in sun, sun per day over the year vs. an open sky, EN 17037
+hours on 21 March at that exact point, and the sky view. Exports as CSV.
+
+## Almanac (Sun & Moon panel)
+
+Sunrise/sunset with azimuth, solar noon altitude, civil/nautical/astronomical
+twilight, day length and its daily change, declination, shadow of a 10 m
+object, moonrise/moonset (site day, can be none), moon distance, next four
+principal phases, and a polar sun-path diagram (solstices, equinox, today with
+hours, sun and moon now) drawn to true north. `solar/astronomy.ts`: every
+event is a threshold crossing over the site's calendar day, bisected to 1 s.
 
 ## Limits (said in the UI too)
 
-- A clear-sky model scaled by measured cloudiness: right for comparing façades
-  and windows and for orders of magnitude; not an energy simulation or a
-  certificate.
+- A typical (averaged) sky, not a year of weather: right for comparing façades
+  and windows and for credible annual totals; not an energy simulation or a
+  certificate. Ground reflection assumes an unobstructed, uniformly lit ground.
 - EN 17037 is screened at the window's outer face; the standard measures at a
   reference point inside the room.
 - Gain bands (summer 2 / 3.5, winter 1 / 2.5 kWh/m²·day) are indicative.

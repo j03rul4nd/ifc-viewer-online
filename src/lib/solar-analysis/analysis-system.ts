@@ -11,6 +11,9 @@ import {
 import { runExposure } from './exposure-engine'
 import { sunPath, type AnalysisPeriod, type SunPathOptions } from './sun-paths'
 import { elementStats, metricValue, niceRange, type ElementStat, type ExposureResult, type SolarMetric } from './results'
+import { reflectedOnSurface } from './irradiance'
+import { MASK_AZ, MASK_ALT, cellCentre, maskSkyView, type SkyMask } from './sky-mask'
+import { sunDirectionScene } from '../solar/sun-math'
 import { createHeatmap, type Heatmap } from './heatmap'
 import { createLogger } from '../logger'
 
@@ -20,6 +23,7 @@ const log = createLogger('SolarAnalysis')
 interface FragmentsLike {
   object: THREE.Object3D
   getItemsOfCategories(categories: RegExp[]): Promise<Record<string, number[]>>
+  raycast?(o: { camera: THREE.Camera; mouse: THREE.Vector2; dom: HTMLElement }): Promise<unknown>
   getItemsGeometry(localIds: number[]): Promise<Array<Array<{
     transform: THREE.Matrix4
     positions?: Float32Array | Float64Array
@@ -59,10 +63,15 @@ export interface AnalysisRun {
   sensors: SensorSet
   result: ExposureResult
   stats: ElementStat[]
+  /** Shadow renders (sun positions or sky patches). */
   instants: number
+  /** Sun-up instants those stand for (every day of the period when binned). */
+  rawInstants: number
   period: AnalysisPeriod
   /** Share of the sky dome each sensor sees, 0–1 (its own surface's horizon included). */
   skyView: Float32Array
+  /** Ground albedo the reflected share was computed with. */
+  albedo: number
   /** 1 for a sensor that sees some sky; 0 for one buried inside a solid (drawn and counted nowhere). */
   open: Uint8Array
 }
@@ -71,7 +80,12 @@ export interface HoverInfo {
   sensor: number
   kind: SensorKind
   sunHoursPerDay: number
+  probableSunPerDay: number
   irradiationKwh: number
+  /** Share of the period's irradiation: beam + circumsolar, sky diffuse, ground-reflected. */
+  split: { direct: number; diffuse: number; reflected: number }
+  /** Cosine-weighted sky view, %. */
+  skyViewPct: number
   element: SensorElement | null
   clientX: number
   clientY: number
@@ -79,11 +93,20 @@ export interface HoverInfo {
 
 export interface SolarAnalysisAPI {
   buildSensors(o: SensorOptions, onProgress?: (f: number) => void): Promise<SensorSet>
-  run(sensors: SensorSet, period: AnalysisPeriod, path: SunPathOptions, o?: { onProgress?: (f: number) => void; signal?: AbortSignal }): Promise<AnalysisRun>
+  run(sensors: SensorSet, period: AnalysisPeriod, path: SunPathOptions, o?: { onProgress?: (f: number) => void; signal?: AbortSignal; albedo?: number }): Promise<AnalysisRun>
   show(run: AnalysisRun, metric: SolarMetric, kinds: ReadonlySet<SensorKind>, range?: { min: number; max: number }): { min: number; max: number }
   hide(): void
   isShown(): boolean
   onHover(cb: ((info: HoverInfo | null) => void) | null): void
+  /**
+   * The surface point under a screen position — the model, the map's
+   * buildings and terrain, or the ground plane under the model — and the way
+   * back towards the eye (to lift the point off its surface).
+   */
+  pickPoint(clientX: number, clientY: number): Promise<{ point: THREE.Vector3; back: THREE.Vector3 } | null>
+  /** The sky mask at a point (and a marker there). */
+  skyMaskAt(point: THREE.Vector3, yawDeg: number): SkyMask
+  clearMarker(): void
   dispose(): void
 }
 
@@ -100,18 +123,123 @@ function hemisphere(count: number): Array<{ x: number; y: number; z: number }> {
   return out
 }
 
-const SKY_DIRECTIONS = 48
+/**
+ * Directions for the sky view. 48 left the factor visibly noisy in a street
+ * canyon (each direction was 2 % of the sky); 144 is ~0.7 % and costs a
+ * fraction of a year's run, once per sensor set.
+ */
+const SKY_DIRECTIONS = 144
 /** Below this share of sky a sensor is inside something (a slab under a roof finish). */
 const BURIED_SKY = 0.03
+
+
+/**
+ * Hide everything in the scene except `keep` and what leads to it: what is
+ * left is exactly what can block the sky (no sky dome, grid, helpers, heatmap).
+ */
+function isolate(scene: THREE.Object3D, keep: THREE.Object3D[]): () => void {
+  const keepSet = new Set(keep)
+  const path = new Set<THREE.Object3D>()
+  for (const k of keep) for (let p = k.parent; p; p = p.parent) path.add(p)
+  const restore: Array<[THREE.Object3D, boolean]> = []
+  const walk = (o: THREE.Object3D): void => {
+    for (const c of o.children) {
+      if (keepSet.has(c)) continue
+      if (path.has(c)) { walk(c); continue }
+      restore.push([c, c.visible])
+      c.visible = false
+    }
+  }
+  walk(scene)
+  return () => { for (const [o, v] of restore) o.visible = v }
+}
+
+const MASK_RT = 384
+
+/**
+ * The sky mask of a point: the occluders drawn white on black from the point,
+ * five 90° views (up and the four sides), then every 2° cell of the hemisphere
+ * looked up in whichever view holds its direction. Five renders, ~0.25° per
+ * pixel — far finer than the cells.
+ */
+function renderSkyMask(
+  renderer: THREE.WebGLRenderer, scene: THREE.Scene, occluders: THREE.Object3D[],
+  point: THREE.Vector3, yawDeg: number,
+): SkyMask {
+  const yaw = (yawDeg * Math.PI) / 180
+  const rt = new THREE.WebGLRenderTarget(MASK_RT, MASK_RT, { depthBuffer: true })
+  const white = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, toneMapped: false })
+  const views: Array<{ cam: THREE.PerspectiveCamera; px: Uint8Array }> = []
+  const dirs: Array<[number, number]> = [[0, 90], [0, 0], [90, 0], [180, 0], [270, 0]]
+  const restoreVis = isolate(scene, occluders)
+  const prev = {
+    target: renderer.getRenderTarget(), bg: scene.background, fog: scene.fog,
+    override: scene.overrideMaterial, clear: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(),
+    autoClear: renderer.autoClear, shadows: renderer.shadowMap.enabled,
+  }
+  try {
+    scene.background = null
+    scene.fog = null
+    scene.overrideMaterial = white
+    renderer.shadowMap.enabled = false
+    renderer.autoClear = true
+    renderer.setClearColor(0x000000, 1)
+    for (const [az, alt] of dirs) {
+      const cam = new THREE.PerspectiveCamera(90, 1, 0.05, 5000)
+      cam.position.copy(point)
+      const d = sunDirectionScene(az, alt, yaw)
+      // Looking straight up needs an "up" that is not parallel to the view.
+      if (alt === 90) { const n = sunDirectionScene(0, 0, yaw); cam.up.set(n.x, n.y, n.z) } else cam.up.set(0, 1, 0)
+      cam.lookAt(point.x + d.x, point.y + d.y, point.z + d.z)
+      cam.updateMatrixWorld(true)
+      renderer.setRenderTarget(rt)
+      renderer.clear()
+      renderer.render(scene, cam)
+      const px = new Uint8Array(MASK_RT * MASK_RT * 4)
+      renderer.readRenderTargetPixels(rt, 0, 0, MASK_RT, MASK_RT, px)
+      views.push({ cam, px })
+    }
+  } finally {
+    restoreVis()
+    scene.background = prev.bg
+    scene.fog = prev.fog
+    scene.overrideMaterial = prev.override
+    renderer.shadowMap.enabled = prev.shadows
+    renderer.autoClear = prev.autoClear
+    renderer.setClearColor(prev.clear, prev.alpha)
+    renderer.setRenderTarget(prev.target)
+    rt.dispose()
+    white.dispose()
+  }
+
+  const cells = new Uint8Array(MASK_AZ * MASK_ALT)
+  const v = new THREE.Vector3()
+  for (let i = 0; i < cells.length; i++) {
+    const { azDeg, altDeg } = cellCentre(i)
+    const d = sunDirectionScene(azDeg, altDeg, yaw)
+    for (const { cam, px } of views) {
+      v.set(d.x, d.y, d.z).transformDirection(cam.matrixWorldInverse)
+      if (v.z >= 0) continue
+      const x = v.x / -v.z, y = v.y / -v.z
+      if (Math.abs(x) > 1 || Math.abs(y) > 1) continue
+      const col = Math.min(MASK_RT - 1, Math.floor(((x + 1) / 2) * MASK_RT))
+      const row = Math.min(MASK_RT - 1, Math.floor(((y + 1) / 2) * MASK_RT))
+      cells[i] = px[(row * MASK_RT + col) * 4] > 127 ? 1 : 0
+      break
+    }
+  }
+  return { cells, skyView: maskSkyView(cells) }
+}
 
 const MEASURED = /^(IFCWINDOW|IFCCURTAINWALL|IFCPLATE|IFCWALL|IFCWALLSTANDARDCASE|IFCWALLELEMENTEDCASE|IFCDOOR|IFCROOF|IFCSLAB)$/i
 
 export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI {
   let heatmap: Heatmap | null = null
   let gridWasVisible: boolean | null = null
-  const skyCache = new WeakMap<SensorSet, Float32Array>()
+  const skyCache = new WeakMap<SensorSet, { share: Float32Array; cos: Float32Array }>()
   let shown: AnalysisRun | null = null
   let hoverCb: ((info: HoverInfo | null) => void) | null = null
+  let marker: THREE.Mesh | null = null
   const raycaster = new THREE.Raycaster()
   const ndc = new THREE.Vector2()
 
@@ -125,11 +253,16 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
     const i = heatmap.sensorOf(hit.instanceId)
     const s = shown.sensors
     const e2 = s.element[i]
+    const r = shown.result
+    const total = Math.max(1e-9, r.directWh[i] + r.diffuseWh[i] + r.reflectedWh[i])
     hoverCb({
       sensor: i,
       kind: (['ground', 'facade', 'window', 'roof'] as const)[s.kind[i]],
-      sunHoursPerDay: metricValue(shown.result, 'sunHours', i),
-      irradiationKwh: metricValue(shown.result, 'irradiation', i),
+      sunHoursPerDay: metricValue(r, 'sunHours', i),
+      probableSunPerDay: metricValue(r, 'probableSun', i),
+      irradiationKwh: metricValue(r, 'irradiation', i),
+      split: { direct: r.directWh[i] / total, diffuse: r.diffuseWh[i] / total, reflected: r.reflectedWh[i] / total },
+      skyViewPct: metricValue(r, 'skyView', i),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
     })
@@ -236,7 +369,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
 
     async run(sensors, period, path, o = {}) {
       if (sensors.count === 0) throw new Error('Nothing to measure')
-      const { samples, days } = sunPath(period, path)
+      const { samples, days, rawInstants } = sunPath(period, path)
       if (samples.length === 0) throw new Error('The sun does not rise above the horizon in this period')
       const occluders: THREE.Object3D[] = []
       for (const id of ctx.getLoadedModelIds()) {
@@ -251,28 +384,40 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
         hidden: () => (heatmap ? [heatmap.object] : []),
         pauseViewer: (p: boolean) => ctx.setPaused(p),
       }
-      // The sky first (once per sensor set): what share of the dome each
-      // sensor sees. It finds the buried sensors — a structural slab under the
-      // roof finish, a wall face inside another — and it is the right weight
-      // for the diffuse sky, which an unobstructed formula overstates.
-      let skyView = skyCache.get(sensors)
-      if (!skyView) {
+      // The sky first (once per sensor set). Two figures from one pass over
+      // the dome: the plain share of directions a sensor sees, which finds the
+      // buried sensors — a structural slab under the roof finish, a wall face
+      // inside another — and the COSINE-weighted view factor, which is what
+      // the isotropic diffuse sky actually delivers to a surface.
+      let sky = skyCache.get(sensors)
+      if (!sky) {
         const dirs = hemisphere(SKY_DIRECTIONS)
-        const sky = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
+        const pass = await runExposure(engineCtx, sensors, dirs.map((dir) => ({
           utc: 0, azimuthDeg: 0, altitudeDeg: 0, dir, hours: 1 / SKY_DIRECTIONS, month: 1,
-          irradiance: { dni: 0, dhi: 0, ghi: 0 },
-        })), 1, { signal: o.signal })
-        skyView = sky.sunHours
-        skyCache.set(sensors, skyView)
+          irradiance: { dni: 0, dhi: 0, ghi: 0 }, beamNormal: 0, diffuseIso: 0, sunProb: 0,
+        })), 1, { signal: o.signal, skyWeight: 2 / SKY_DIRECTIONS, onProgress: (f) => o.onProgress?.(f * 0.15) })
+        sky = { share: pass.sunHours, cos: pass.skyCos }
+        skyCache.set(sensors, sky)
       }
-      const result = await runExposure(engineCtx, sensors, samples, days, { onProgress: o.onProgress, signal: o.signal })
-      const dhiTotal = samples.reduce((a, s) => a + s.irradiance.dhi * s.hours, 0)
+      const result = await runExposure(engineCtx, sensors, samples, days, {
+        onProgress: (f) => o.onProgress?.(0.15 + f * 0.85), signal: o.signal,
+      })
+      let isoWh = 0, ghiWh = 0
+      for (const sm of samples) { isoWh += sm.diffuseIso * sm.hours; ghiWh += sm.irradiance.ghi * sm.hours }
+      const albedo = o.albedo ?? 0.2
       const open = new Uint8Array(sensors.count)
       for (let i = 0; i < sensors.count; i++) {
-        open[i] = skyView[i] >= BURIED_SKY ? 1 : 0
-        result.diffuseWh[i] = dhiTotal * skyView[i]
+        open[i] = sky.share[i] >= BURIED_SKY ? 1 : 0
+        result.skyCos[i] = sky.cos[i]
+        result.diffuseWh[i] = isoWh * sky.cos[i]
+        // The ground is taken as unobstructed and uniformly lit: a façade's
+        // reflected share is an estimate, small next to the beam it sits beside.
+        result.reflectedWh[i] = reflectedOnSurface(ghiWh, sensors.normals[i * 3 + 1], albedo)
       }
-      return { sensors, result, stats: elementStats(sensors, result, open), instants: samples.length, period, skyView, open }
+      return {
+        sensors, result, stats: elementStats(sensors, result, open),
+        instants: samples.length, rawInstants, period, skyView: sky.share, open, albedo,
+      }
     },
 
     show(run, metric, kinds, range) {
@@ -307,10 +452,72 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
 
     isShown: () => heatmap !== null,
 
+    async pickPoint(clientX, clientY) {
+      const camera = ctx.camera()
+      let best: { point: THREE.Vector3; distance: number } | null = null
+      const mouse = new THREE.Vector2(clientX, clientY)
+      for (const id of ctx.getLoadedModelIds()) {
+        const model = ctx.getFragmentsModel(id)
+        if (!model?.raycast) continue
+        try {
+          const hit = await model.raycast({ camera, mouse, dom: ctx.canvas }) as { point?: THREE.Vector3; distance?: number } | null
+          if (hit?.point && hit.distance !== undefined && (!best || hit.distance < best.distance)) best = { point: hit.point.clone(), distance: hit.distance }
+        } catch { /* not pickable */ }
+      }
+      const rect = ctx.canvas.getBoundingClientRect()
+      ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+      raycaster.setFromCamera(ndc, camera)
+      const ctxRoot = ctx.getGeo()?.getContextRoot()
+      if (ctxRoot) {
+        const h = raycaster.intersectObject(ctxRoot, true)[0]
+        if (h && (!best || h.distance < best.distance)) best = { point: h.point.clone(), distance: h.distance }
+      }
+      if (!best) {
+        // Nothing hit: the ground plane under the model.
+        const box = sceneBox()
+        if (!box.isEmpty()) {
+          const hit = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -box.min.y), new THREE.Vector3())
+          if (hit) best = { point: hit, distance: hit.distanceTo(raycaster.ray.origin) }
+        }
+      }
+      if (!best) return null
+      return { point: best.point, back: raycaster.ray.direction.clone().negate() }
+    },
+
+    skyMaskAt(point, yawDeg) {
+      const occluders: THREE.Object3D[] = []
+      for (const id of ctx.getLoadedModelIds()) {
+        const obj = ctx.getModelObject(id)
+        if (obj) occluders.push(obj)
+      }
+      const contextRoot = ctx.getGeo()?.getContextRoot()
+      if (contextRoot) occluders.push(contextRoot)
+      const mask = renderSkyMask(ctx.renderer, ctx.scene, occluders, point, yawDeg)
+      if (!marker) {
+        marker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshBasicMaterial({ color: 0xffb020, depthTest: false, toneMapped: false }))
+        marker.name = 'solar-analysis-probe'
+        marker.renderOrder = 10
+        ctx.scene.add(marker)
+      }
+      marker.position.copy(point)
+      // A size you can see from where you look, not from the model's scale.
+      marker.scale.setScalar(Math.max(0.15, ctx.camera().position.distanceTo(point) * 0.008))
+      return mask
+    },
+
+    clearMarker() {
+      if (!marker) return
+      marker.removeFromParent()
+      marker.geometry.dispose()
+      ;(marker.material as THREE.Material).dispose()
+      marker = null
+    },
+
     onHover(cb) { hoverCb = cb },
 
     dispose() {
       api.hide()
+      api.clearMarker()
       hoverCb = null
     },
   }

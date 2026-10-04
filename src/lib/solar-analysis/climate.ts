@@ -87,7 +87,7 @@ function clearSkyByMonth(lat: number, lon: number): number[] {
     const utc = wallTimeToUTC(2026, i + 1, 15, Math.floor(minute / 60), Math.floor(minute % 60), 'UTC')
     // Solar time ≈ UTC + lon/15 h: shift so the day is centred on local noon.
     return sunAt(new Date(utc.getTime() - (lon / 15) * 3_600_000), lat, lon).altitudeDeg
-  }))
+  }, { dayOfYear: Math.round(i * 30.44 + 15) }))
 }
 
 /**
@@ -193,4 +193,134 @@ export function seasonRange(months: number[]): { from: { month: number; day: num
   const first = months[0], last = months[months.length - 1]
   const lastDay = new Date(Date.UTC(2026, last, 0)).getUTCDate()
   return { from: { month: first, day: 1 }, to: { month: last, day: lastDay } }
+}
+
+// ── The typical sky, hour by hour ───────────────────────────────────────────────
+//
+// The daily normals say how cloudy a month is; they cannot say that the
+// mornings are clear and the afternoons stormy, nor how the sun's energy splits
+// into beam and diffuse. ERA5 does, hourly: global, direct normal and diffuse
+// radiation and minutes of sunshine. Averaged over several years into a
+// 12 months × 24 hours table it is a typical sky the analysis reads at every
+// sun position — the same idea as a TMY weather file, without the file.
+//
+// Hours are UTC, so the table does not care about the site's DST. Open-Meteo
+// labels each hourly radiation value with the END of the hour it averages
+// (value at 13:00 = mean of 12:00–13:00); slot h holds [h, h+1).
+
+export interface TypicalSky {
+  lat: number
+  lon: number
+  years: { from: number; to: number }
+  /** Ground elevation of the ERA5/DEM cell, m — sets the pressure for refraction and the clear sky. */
+  elevationM: number
+  /** [month 0–11][UTC slot 0–23] means, W/m². */
+  ghi: number[][]
+  dni: number[][]
+  dhi: number[][]
+  /** Share of the hour with sunshine, 0–1: the chance the sun is out. */
+  sunProb: number[][]
+  /** °C. */
+  temp: number[][]
+}
+
+export interface HourlySeries {
+  time: string[]
+  shortwave_radiation: Array<number | null>
+  direct_normal_irradiance: Array<number | null>
+  diffuse_radiation: Array<number | null>
+  sunshine_duration: Array<number | null>
+  temperature_2m: Array<number | null>
+}
+
+const HOURLY_VARS = ['shortwave_radiation', 'direct_normal_irradiance', 'diffuse_radiation', 'sunshine_duration', 'temperature_2m'] as const
+
+export function skyUrl(lat: number, lon: number, fromYear: number, toYear: number): string {
+  const q = new URLSearchParams({
+    latitude: lat.toFixed(2),
+    longitude: lon.toFixed(2),
+    start_date: `${fromYear}-01-01`,
+    end_date: `${toYear}-12-31`,
+    hourly: HOURLY_VARS.join(','),
+    timezone: 'GMT',
+  })
+  return `https://archive-api.open-meteo.com/v1/archive?${q}`
+}
+
+const table = (): number[][] => Array.from({ length: 12 }, () => new Array(24).fill(0))
+
+export function aggregateSky(h: HourlySeries, lat: number, lon: number, elevationM = 0): TypicalSky {
+  const sums = { ghi: table(), dni: table(), dhi: table(), sunProb: table(), temp: table() }
+  const n = table()
+  const years = new Set<number>()
+  for (let i = 0; i < h.time.length; i++) {
+    const ghi = h.shortwave_radiation[i]
+    if (ghi == null) continue
+    // "2024-03-05T13:00" → the hour 12:00–13:00 UTC.
+    const t = Date.parse(`${h.time[i]}Z`) - 3_600_000
+    if (!Number.isFinite(t)) continue
+    const d = new Date(t)
+    const m = d.getUTCMonth(), slot = d.getUTCHours()
+    years.add(d.getUTCFullYear())
+    n[m][slot]++
+    sums.ghi[m][slot] += ghi
+    sums.dni[m][slot] += h.direct_normal_irradiance[i] ?? 0
+    sums.dhi[m][slot] += h.diffuse_radiation[i] ?? 0
+    sums.sunProb[m][slot] += Math.min(1, (h.sunshine_duration[i] ?? 0) / 3600)
+    sums.temp[m][slot] += h.temperature_2m[i] ?? 0
+  }
+  const mean = (t: number[][]) => t.map((row, m) => row.map((v, s) => (n[m][s] > 0 ? v / n[m][s] : 0)))
+  const ys = [...years].sort()
+  return {
+    lat, lon, elevationM,
+    years: { from: ys[0] ?? 0, to: ys[ys.length - 1] ?? 0 },
+    ghi: mean(sums.ghi), dni: mean(sums.dni), dhi: mean(sums.dhi),
+    sunProb: mean(sums.sunProb), temp: mean(sums.temp),
+  }
+}
+
+/**
+ * The typical sky at an instant: linear between the centres of the hourly
+ * slots (slot h is centred on h:30 UTC), month by the UTC calendar.
+ */
+export function skyAt(sky: TypicalSky, utcMs: number): { ghi: number; dni: number; dhi: number; sunProb: number; temp: number } {
+  const d = new Date(utcMs)
+  const m = d.getUTCMonth()
+  const x = d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600 - 0.5
+  const a = ((Math.floor(x) % 24) + 24) % 24
+  const b = (a + 1) % 24
+  const f = x - Math.floor(x)
+  const lerp = (t: number[][]) => t[m][a] * (1 - f) + t[m][b] * f
+  return { ghi: lerp(sky.ghi), dni: lerp(sky.dni), dhi: lerp(sky.dhi), sunProb: lerp(sky.sunProb), temp: lerp(sky.temp) }
+}
+
+const SKY_PREFIX = 'ifc.sky.v1.'
+/** Years of hourly data folded into the typical sky (~1 MB of JSON for 5). */
+const SKY_YEARS = 5
+
+export async function fetchTypicalSky(lat: number, lon: number, o: { signal?: AbortSignal; now?: Date } = {}): Promise<TypicalSky> {
+  const key = `${SKY_PREFIX}${lat.toFixed(2)},${lon.toFixed(2)}`
+  try {
+    const hit = localStorage.getItem(key)
+    if (hit) return JSON.parse(hit) as TypicalSky
+  } catch { /* storage unavailable: fetch */ }
+  const to = (o.now ?? new Date()).getUTCFullYear() - 1
+  const res = await fetch(skyUrl(lat, lon, to - SKY_YEARS + 1, to), { signal: o.signal })
+  if (!res.ok) throw new Error(`Climate service answered ${res.status}`)
+  const json = await res.json() as { hourly?: HourlySeries; elevation?: number }
+  if (!json.hourly?.time?.length) throw new Error('The climate service returned no hourly data for this place')
+  const sky = aggregateSky(json.hourly, lat, lon, typeof json.elevation === 'number' ? json.elevation : 0)
+  // Rounded to whole W/m² before caching: ~6 KB instead of ~20.
+  const round = (t: number[][], k = 1) => t.map((r) => r.map((v) => Math.round(v * k) / k))
+  const slim: TypicalSky = { ...sky, ghi: round(sky.ghi), dni: round(sky.dni), dhi: round(sky.dhi), sunProb: round(sky.sunProb, 100), temp: round(sky.temp, 10) }
+  try { localStorage.setItem(key, JSON.stringify(slim)) } catch { /* full: fine */ }
+  return slim
+}
+
+/** The cached typical sky of a place, if any (no network). */
+export function cachedTypicalSky(lat: number, lon: number): TypicalSky | null {
+  try {
+    const hit = localStorage.getItem(`${SKY_PREFIX}${lat.toFixed(2)},${lon.toFixed(2)}`)
+    return hit ? JSON.parse(hit) as TypicalSky : null
+  } catch { return null }
 }

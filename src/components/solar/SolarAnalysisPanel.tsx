@@ -12,14 +12,16 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from '../ViewportPanel'
 import { useSolarStore } from '../../stores/solarStore'
 import { useSceneStore } from '../../stores/sceneStore'
-import { useSolarAnalysisStore, type PeriodChoice } from '../../stores/solarAnalysisStore'
+import { useSolarAnalysisStore, type PeriodChoice, type SkyModel, type Precision } from '../../stores/solarAnalysisStore'
 import type { ViewerAPI } from '../../lib/viewer'
 import type { AnalysisRun, HoverInfo } from '../../lib/solar-analysis/analysis-system'
 import type { SensorSet, SensorKind } from '../../lib/solar-analysis/sensors'
 import type { AnalysisPeriod } from '../../lib/solar-analysis/sun-paths'
 import { KEY_DATES } from '../../lib/solar-analysis/sun-paths'
-import { fetchClimate, seasonRange, type ClimateSummary } from '../../lib/solar-analysis/climate'
-import { metricValue, rampCss, type ElementStat } from '../../lib/solar-analysis/results'
+import { fetchClimate, fetchTypicalSky, cachedTypicalSky, skyAt, seasonRange, type ClimateSummary } from '../../lib/solar-analysis/climate'
+import { metricValue, metricUnit, rampCss, SOLAR_METRICS, type ElementStat, type SolarMetric } from '../../lib/solar-analysis/results'
+import { ALBEDOS } from '../../lib/solar-analysis/irradiance'
+import { sunAlmanac } from '../../lib/solar/astronomy'
 import {
   en17037Findings, summarizeEn17037, summerGainFindings, winterGainFindings, orientationTable,
   type SolarFinding, type OrientationRow,
@@ -29,21 +31,40 @@ import { issuesToBcfTopics, downloadBcfBlob } from '../../lib/bcf'
 import type { ValidationIssue } from '../../types'
 import { shareOrDownload } from '../../lib/share-file'
 
+const PointProbe = React.lazy(() => import('./PointProbe'))
+
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
 }
 
 const KINDS: SensorKind[] = ['ground', 'facade', 'window', 'roof']
 const PERIODS: PeriodChoice[] = ['winterSolstice', 'summerSolstice', 'equinox', 'enReference', 'coldSeason', 'hotSeason', 'year', 'customDay']
+const SKY_MODELS: SkyModel[] = ['measured', 'clearness', 'clear']
+const PRECISIONS: Precision[] = ['fast', 'standard', 'fine']
+/** Minutes between instants and sky-patch size (degrees), per precision. */
+const PRECISION: Record<Precision, { dayStep: number; longStep: number; binDeg: number }> = {
+  fast: { dayStep: 15, longStep: 20, binDeg: 3 },
+  standard: { dayStep: 6, longStep: 10, binDeg: 2 },
+  fine: { dayStep: 2, longStep: 5, binDeg: 1 },
+}
+
+/** The value an element is listed by, for a metric. */
+const statValue = (metric: SolarMetric) => (x: ElementStat): number =>
+  metric === 'sunHours' ? x.sunHoursPerDay
+    : metric === 'probableSun' ? x.probableSunPerDay
+      : metric === 'irradiation' ? x.irradiationKwh
+        : x.skyView * 100
 
 // The heavy state: sensors and the last runs, outside React.
 const ref: {
   sensors: SensorSet | null
   sensorsKey: string
   last: AnalysisRun | null
+  /** Sky model the last displayed run used. */
+  lastSky: SkyModel
   en: { run: AnalysisRun; findings: SolarFinding[] } | null
   seasons: { summer: AnalysisRun; winter: AnalysisRun; summerFindings: SolarFinding[]; winterFindings: SolarFinding[]; rooms: OrientationRow[] } | null
-} = { sensors: null, sensorsKey: '', last: null, en: null, seasons: null }
+} = { sensors: null, sensorsKey: '', last: null, lastSky: 'clear', en: null, seasons: null }
 
 const fmt = (v: number, d = 1): string => (Number.isFinite(v) ? v.toFixed(d) : '—')
 
@@ -56,6 +77,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   const [hover, setHover] = useState<HoverInfo | null>(null)
   const [enMinAlt, setEnMinAlt] = useState(10)
   const abortRef = useRef<AbortController | null>(null)
+  const effectiveSkyRef = useRef<SkyModel>('clear')
 
   const south = (location?.lat ?? 0) < 0
   const north = useMemo(() => {
@@ -68,12 +90,13 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   const loadClimate = useCallback(async () => {
     if (!location) return
     s.setClimate(null, 'loading')
-    try {
-      const c = await fetchClimate(location.lat, location.lon)
-      s.setClimate(c, 'done')
-    } catch (err) {
-      s.setClimate(null, 'error', err instanceof Error ? err.message : String(err))
-    }
+    // The daily normals and the hourly sky are two requests to the same
+    // service under the same consent; the sky is a bonus — the analysis falls
+    // back to the monthly clearness without it.
+    const [c, sky] = await Promise.allSettled([fetchClimate(location.lat, location.lon), fetchTypicalSky(location.lat, location.lon)])
+    if (sky.status === 'fulfilled') s.setSky(sky.value)
+    if (c.status === 'fulfilled') s.setClimate(c.value, 'done')
+    else s.setClimate(null, 'error', c.reason instanceof Error ? c.reason.message : String(c.reason))
   }, [location, s])
 
   // A cached climate for this place shows up without asking again.
@@ -83,6 +106,8 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
       const hit = localStorage.getItem(`ifc.climate.v1.${location.lat.toFixed(2)},${location.lon.toFixed(2)}`)
       if (hit) s.setClimate(JSON.parse(hit) as ClimateSummary, 'done')
     } catch { /* no storage */ }
+    const sky = cachedTypicalSky(location.lat, location.lon)
+    if (sky) s.setSky(sky)
   }, [location, s])
 
   // ── Periods ──────────────────────────────────────────────────────────────
@@ -107,18 +132,38 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     }
   }, [south, s.customDay])
 
+  // The sky actually used: the one asked for, or the best one loaded below it.
+  const effectiveSky: SkyModel = s.skyModel === 'measured' && s.sky ? 'measured'
+    : s.skyModel !== 'clear' && s.climate ? 'clearness' : 'clear'
+  effectiveSkyRef.current = effectiveSky
+
+  // Chance of sunshine per month from the daily normals: sunshine hours ÷ the
+  // hours the sun is up mid-month. Only for the 'clearness' sky.
+  const sunshineShare = useMemo(() => {
+    if (!location || !s.climate) return null
+    return s.climate.months.map((m) => {
+      const len = sunAlmanac(2026, m.month, 15, location.lat, location.lon, timeZone).dayLengthMin / 60
+      return len > 0 ? Math.min(1, m.sunshineHours / len) : 0
+    })
+  }, [location, timeZone, s.climate])
+
   const pathFor = useCallback((period: AnalysisPeriod, minAltitudeDeg = 0) => {
     if (!location) throw new Error('No location')
-    const climate = s.useClimate ? s.climate : null
+    const pr = PRECISION[useSolarAnalysisStore.getState().precision]
+    const climate = s.climate
+    const sky = s.sky
     return {
       lat: location.lat, lon: location.lon, yawDeg: location.yawDeg, timeZone,
       year: new Date().getUTCFullYear(),
-      stepMinutes: period.kind === 'day' ? 10 : period.kind === 'range' ? 20 : 30,
-      stepDays: period.kind === 'year' ? 14 : 7,
+      stepMinutes: period.kind === 'day' ? pr.dayStep : pr.longStep,
+      binDeg: pr.binDeg,
       minAltitudeDeg,
-      clearness: climate ? (m: number) => climate.months[m - 1]?.clearness ?? 1 : undefined,
+      elevationM: sky?.elevationM ?? 0,
+      measured: effectiveSky === 'measured' && sky ? (utc: number) => skyAt(sky, utc) : undefined,
+      clearness: effectiveSky === 'clearness' && climate ? (m: number) => climate.months[m - 1]?.clearness ?? 1 : undefined,
+      sunshineShare: sunshineShare ? (m: number) => sunshineShare[m - 1] ?? 1 : undefined,
     }
-  }, [location, timeZone, s.useClimate, s.climate])
+  }, [location, timeZone, s.climate, s.sky, effectiveSky, sunshineShare])
 
   // ── Running ──────────────────────────────────────────────────────────────
   const ensureSensors = useCallback(async (): Promise<SensorSet> => {
@@ -143,7 +188,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     const ctrl = new AbortController()
     abortRef.current = ctrl
     s.setRun({ status: 'running', progress: 0, error: null })
-    return sa.run(sensors, period, pathFor(period, minAltitudeDeg), { onProgress: (f) => s.setRun({ progress: f }), signal: ctrl.signal })
+    return sa.run(sensors, period, pathFor(period, minAltitudeDeg), {
+      onProgress: (f) => s.setRun({ progress: f }), signal: ctrl.signal, albedo: useSolarAnalysisStore.getState().albedo,
+    })
   }, [viewerApiRef, ensureSensors, pathFor, s])
 
   const display = useCallback(async (run: AnalysisRun) => {
@@ -154,12 +201,16 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     const range = sa.show(run, st.metric, new Set(st.kinds))
     sa.onHover(setHover)
     ref.last = run
+    ref.lastSky = effectiveSkyRef.current
     s.setRun({ status: 'done', progress: 1, range })
     s.bumpResult()
   }, [viewerApiRef, s])
 
   const fail = useCallback((err: unknown) => {
-    if (err instanceof DOMException && err.name === 'AbortError') return
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      s.setRun({ status: ref.last ? 'done' : 'idle', progress: 0 })
+      return
+    }
     s.setRun({ status: 'error', error: err instanceof Error ? err.message : String(err) })
   }, [s])
 
@@ -279,16 +330,38 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     add(ref.seasons?.summerFindings, 'summer')
     add(ref.seasons?.winterFindings, 'winter')
     const ids = await guids([...rows.values()].map((r) => r.f))
-    const lines = ['model,globalId,name,class,orientation,en17037_sun_h,summer_kwh_m2_day,winter_kwh_m2_day']
+    // The sky view of each window, from whichever run has it (same sensors).
+    const skyOf = new Map<string, number>()
+    for (const st of (ref.en?.run ?? ref.seasons?.summer)?.stats ?? []) skyOf.set(`${st.element.modelId}:${st.element.localId}`, st.skyView)
+    const lines = ['model,globalId,name,class,orientation,en17037_sun_h,summer_kwh_m2_day,winter_kwh_m2_day,sky_view_pct']
     for (const [k, r] of rows) {
       const g = ids.get(k)
       const cell = (v: string) => `"${v.replace(/"/g, '""')}"`
-      lines.push([cell(r.f.modelId), cell(g?.guid ?? ''), cell(g?.name ?? ''), r.f.category, r.f.orientation, fmt(r.en ?? NaN, 2), fmt(r.summer ?? NaN, 2), fmt(r.winter ?? NaN, 2)].join(','))
+      lines.push([cell(r.f.modelId), cell(g?.guid ?? ''), cell(g?.name ?? ''), r.f.category, r.f.orientation, fmt(r.en ?? NaN, 2), fmt(r.summer ?? NaN, 2), fmt(r.winter ?? NaN, 2), fmt((skyOf.get(k) ?? NaN) * 100, 0)].join(','))
     }
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
-    // Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download.
-    void shareOrDownload(blob, 'solar-analysis.csv')
+    download(lines.join('\n'), 'solar-analysis.csv')
   }, [guids])
+
+  /** Every sensor of the shown run: position, normal, and every metric — for a spreadsheet or Grasshopper. */
+  const exportGrid = useCallback(() => {
+    const r = ref.last
+    if (!r) return
+    const kinds = ['ground', 'facade', 'window', 'roof']
+    const lines = ['x,y,z,nx,ny,nz,area_m2,kind,class,local_id,sun_h_day,probable_sun_h_day,kwh_m2,direct_kwh_m2,diffuse_kwh_m2,reflected_kwh_m2,sky_view_pct']
+    const S = r.sensors, R = r.result
+    for (let i = 0; i < S.count; i++) {
+      if (r.open[i] === 0) continue
+      const e = S.element[i] >= 0 ? S.elements[S.element[i]] : null
+      lines.push([
+        S.positions[i * 3].toFixed(2), S.positions[i * 3 + 1].toFixed(2), S.positions[i * 3 + 2].toFixed(2),
+        S.normals[i * 3].toFixed(3), S.normals[i * 3 + 1].toFixed(3), S.normals[i * 3 + 2].toFixed(3),
+        S.area[i].toFixed(3), kinds[S.kind[i]], e?.category ?? '', e?.localId ?? '',
+        fmt(metricValue(R, 'sunHours', i), 2), fmt(metricValue(R, 'probableSun', i), 2), fmt(metricValue(R, 'irradiation', i), 3),
+        fmt(R.directWh[i] / 1000, 3), fmt(R.diffuseWh[i] / 1000, 3), fmt(R.reflectedWh[i] / 1000, 3), fmt(R.skyCos[i] * 100, 1),
+      ].join(','))
+    }
+    download(lines.join('\n'), 'solar-sensors.csv')
+  }, [])
 
   const frame = useCallback((f: { modelId: string; localId: number }) => {
     viewerApiRef.current?.frameElements([f.localId], f.modelId)
@@ -308,7 +381,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
       return { kind: k, value: area > 0 ? sum / area : NaN }
     })
     const windows = r.stats.filter((x) => x.element.kind === 'window')
-    const value = (x: ElementStat) => (s.metric === 'sunHours' ? x.sunHoursPerDay : x.irradiationKwh)
+    const value = statValue(s.metric)
     const sorted = [...windows].sort((a, b) => value(a) - value(b))
     return { avg, least: sorted.slice(0, 4), most: sorted.slice(-4).reverse(), value }
   }, [s.resultVersion, s.metric]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -317,7 +390,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 
   // ── Render ───────────────────────────────────────────────────────────────
   const busy = s.status === 'sensors' || s.status === 'running'
-  const unit = s.metric === 'sunHours' ? 'h' : 'kWh/m²'
+  const unit = metricUnit(s.metric)
   const seasonsKnown = !!s.climate
 
   return (
@@ -393,9 +466,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
               </Section>
 
               <div className="flex flex-col gap-1.5">
-                <div className="flex gap-1">
-                  {(['sunHours', 'irradiation'] as const).map((m) => (
-                    <Chip key={m} active={s.metric === m} onClick={() => s.setMetric(m)}>{t(`analysis.metric.${m}`)}</Chip>
+                <div className="flex flex-wrap gap-1">
+                  {SOLAR_METRICS.map((m) => (
+                    <Chip key={m} active={s.metric === m} onClick={() => s.setMetric(m)} title={t(`analysis.metricHint.${m}`)}>{t(`analysis.metric.${m}`)}</Chip>
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -403,10 +476,23 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     <Chip key={k} active={s.kinds.includes(k)} onClick={() => s.toggleKind(k)}>{t(`analysis.kinds.${k}`)}</Chip>
                   ))}
                 </div>
-                <label className="flex items-center gap-1.5 text-[10.5px]">
-                  <input type="checkbox" checked={s.useClimate} disabled={!s.climate} onChange={(e) => s.setUseClimate(e.target.checked)} />
-                  {t('analysis.useClimate')}
-                </label>
+                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-[10.5px]">
+                  <span>{t('analysis.sky.label')}</span>
+                  <select value={s.skyModel} onChange={(e) => s.setSkyModel(e.target.value as SkyModel)} className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)]">
+                    {SKY_MODELS.map((m) => <option key={m} value={m}>{t(`analysis.sky.${m}`)}</option>)}
+                  </select>
+                  <span>{t('analysis.albedo.label')}</span>
+                  <select value={s.albedo} onChange={(e) => s.setAlbedo(Number(e.target.value))} className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)]">
+                    {(Object.entries(ALBEDOS) as Array<[keyof typeof ALBEDOS, number]>).map(([k, v]) => <option key={k} value={v}>{t(`analysis.albedo.${k}`)} · {v.toFixed(2)}</option>)}
+                  </select>
+                  <span>{t('analysis.precision.label')}</span>
+                  <div className="flex gap-1">
+                    {PRECISIONS.map((p) => <Chip key={p} active={s.precision === p} onClick={() => s.setPrecision(p)}>{t(`analysis.precision.${p}`)}</Chip>)}
+                  </div>
+                </div>
+                {s.skyModel !== effectiveSky && (
+                  <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('analysis.sky.fallback', { model: t(`analysis.sky.${effectiveSky}`) })}</p>
+                )}
               </div>
 
               <div className="flex gap-1.5">
@@ -414,7 +500,13 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                   {busy ? (s.status === 'sensors' ? t('analysis.sensors') : t('analysis.running', { pct: Math.round(s.progress * 100) })) : t('analysis.run')}
                 </button>
                 {ref.last && !busy && (
-                  <button onClick={() => { void clear() }} className="px-2.5 py-2 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('analysis.clear')}</button>
+                  <>
+                    <button onClick={exportGrid} title={t('analysis.exportGridHint')} className="px-2.5 py-2 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">CSV</button>
+                    <button onClick={() => { void clear() }} className="px-2.5 py-2 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('analysis.clear')}</button>
+                  </>
+                )}
+                {busy && (
+                  <button onClick={() => abortRef.current?.abort()} className="px-2.5 py-2 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('analysis.cancel')}</button>
                 )}
               </div>
               {s.status === 'error' && <p className="text-[#F5A623] text-[10.5px]">{t('analysis.error', { message: s.error ?? '' })}</p>}
@@ -426,9 +518,10 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     <div className="text-[10px] text-[var(--text-faint)]">{t(`analysis.legend.${s.metric}`)}</div>
                     <div className="h-2.5 rounded-full" style={{ background: rampCss() }} />
                     <div className="flex justify-between text-[10px] font-mono tabular-nums">
-                      <span>{fmt(s.range.min, 0)}</span><span>{fmt((s.range.min + s.range.max) / 2, 1)}</span><span>{fmt(s.range.max, 0)} {unit}</span>
+                      <span>{fmt(s.range.min, 0)}</span><span>{fmt((s.range.min + s.range.max) / 2, 1)}</span><span>{fmt(s.range.max, s.range.max < 10 ? 1 : 0)} {unit}</span>
                     </div>
-                    <div className="text-[9.5px] text-[var(--text-faint)]">{t('analysis.results.meta', { instants: ref.last.instants, sensors: ref.last.open.reduce((a, b) => a + b, 0) })}</div>
+                    <div className="text-[9.5px] text-[var(--text-faint)]">{t('analysis.results.meta', { instants: ref.last.instants, raw: ref.last.rawInstants, sensors: ref.last.open.reduce((a, b) => a + b, 0) })}</div>
+                    <div className="text-[9.5px] text-[var(--text-faint)]">{t('analysis.results.sky', { model: t(`analysis.sky.${ref.lastSky}`), albedo: ref.last.albedo.toFixed(2) })}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1.5">
                     {summary.avg.map((a) => (
@@ -492,6 +585,13 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </div>
               </Section>
 
+              {/* One point's shading diagram */}
+              <Section title={t('probe.title')}>
+                <React.Suspense fallback={null}>
+                  <PointProbe viewerApiRef={viewerApiRef} lat={location.lat} lon={location.lon} yawDeg={location.yawDeg} timeZone={timeZone} enMinAltitudeDeg={enMinAlt} />
+                </React.Suspense>
+              </Section>
+
               <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('analysis.disclaimer')}</p>
             </div>
           )}
@@ -504,8 +604,10 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
           style={{ left: hover.clientX + 14, top: hover.clientY + 14 }}
         >
           <div>{t(`analysis.kinds.${hover.kind}`)}{hover.element ? ` · ${hover.element.category.replace(/^IFC/, '')}` : ''}</div>
-          <div>{t('analysis.hover.sun', { h: fmt(hover.sunHoursPerDay) })}</div>
-          <div>{t('analysis.hover.kwh', { kwh: fmt(hover.irradiationKwh, 0) })}</div>
+          <div>{t('analysis.hover.sun', { h: fmt(hover.sunHoursPerDay) })} · {t('analysis.hover.probable', { h: fmt(hover.probableSunPerDay) })}</div>
+          <div>{t('analysis.hover.kwh', { kwh: fmt(hover.irradiationKwh, hover.irradiationKwh < 10 ? 2 : 0) })}</div>
+          <div className="text-white/70">{t('analysis.hover.split', { d: Math.round(hover.split.direct * 100), f: Math.round(hover.split.diffuse * 100), r: Math.round(hover.split.reflected * 100) })}</div>
+          <div className="text-white/70">{t('analysis.hover.sky', { pct: fmt(hover.skyViewPct, 0) })}</div>
         </div>,
         document.body,
       )}
@@ -514,6 +616,11 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 }
 
 // ── Pieces ──────────────────────────────────────────────────────────────────────
+
+/** Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download. */
+function download(text: string, name: string): void {
+  void shareOrDownload(new Blob([text], { type: 'text/csv' }), name)
+}
 
 type T = ReturnType<typeof useTranslation<'solar'>>['t']
 

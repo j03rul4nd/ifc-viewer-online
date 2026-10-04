@@ -15,6 +15,7 @@
 import * as SunCalc from 'suncalc'
 import tzlookup from 'tz-lookup'
 import { northDirection, eastDirection } from '../geo/geo-math'
+import { solarPosition } from './solar-position'
 
 const DEG = Math.PI / 180
 
@@ -35,9 +36,13 @@ export interface MoonState extends SkyPosition {
   waxing: boolean
 }
 
+/**
+ * The sun, from the NOAA/Meeus algorithm with refraction (solar-position.ts,
+ * ~0.01°) — suncalc stays for the moon and the twilight times only.
+ */
 export function sunAt(dateUTC: Date, lat: number, lon: number): SkyPosition {
-  const p = SunCalc.getPosition(dateUTC, lat, lon)
-  return { azimuthDeg: p.azimuth, altitudeDeg: p.altitude }
+  const p = solarPosition(dateUTC.getTime(), lat, lon)
+  return { azimuthDeg: p.azimuthDeg, altitudeDeg: p.altitudeDeg }
 }
 
 export function moonAt(dateUTC: Date, lat: number, lon: number): MoonState {

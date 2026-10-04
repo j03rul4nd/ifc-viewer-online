@@ -37,6 +37,8 @@ import type { ViewerAPI } from '../lib/viewer'
 import type { SolarSystemAPI } from '../lib/solar/solar-system'
 import type { SkyPosition, MoonState } from '../lib/solar/sun-math'
 
+const AlmanacBlock = React.lazy(() => import('./solar/AlmanacBlock'))
+
 interface SolarPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   /** 'client' hides numeric detail and leads with preset cards. */
@@ -788,6 +790,21 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                   </span>
                 )}
               </div>
+
+              {/* Almanac: the day's sky in numbers and a sun-path diagram */}
+              {!client && location && (
+                <details className="border-t border-[var(--border)] px-3 py-2 group">
+                  <summary className="cursor-pointer list-none flex items-center justify-between text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase">
+                    {t('almanac.title')}
+                    <span className="transition-transform group-open:rotate-90">›</span>
+                  </summary>
+                  <div className="mt-2">
+                    <React.Suspense fallback={null}>
+                      <AlmanacBlock lat={location.lat} lon={location.lon} timeZone={timeZone} timeUTC={timeUTC} />
+                    </React.Suspense>
+                  </div>
+                </details>
+              )}
 
               {/* Presets (technical position) */}
               {!client && (

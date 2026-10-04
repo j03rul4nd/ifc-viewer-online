@@ -51,7 +51,7 @@ describe('elementStats', () => {
     const out = [{ x: 0, y: 1, z: 0.1, nx: 0, ny: 0, nz: 1, area: 1 }, { x: 0, y: 1, z: 0.1, nx: 0, ny: 0, nz: 1, area: 1 }]
     const inside = [{ x: 0, y: 1, z: -0.1, nx: 0, ny: 0, nz: -1, area: 2 }]
     const set = buildSensorSet([{ kind: 'window', element: el, samples: [...out, ...inside] }], { ground: 2, surface: 1 })
-    const r: ExposureResult = { sunHours: new Float32Array([6, 4, 0]), directWh: new Float32Array([3000, 2000, 0]), diffuseWh: new Float32Array([500, 500, 400]), days: 1 }
+    const r: ExposureResult = { sunHours: new Float32Array([6, 4, 0]), probableSunHours: new Float32Array([3, 2, 0]), directWh: new Float32Array([3000, 2000, 0]), diffuseWh: new Float32Array([500, 500, 400]), reflectedWh: new Float32Array(3), skyCos: new Float32Array([0.5, 0.5, 0]), days: 1 }
     const [s] = elementStats(set, r)
     expect(s.sunHoursPerDay).toBeCloseTo(5, 6)
     expect(s.irradiationKwh).toBeCloseTo(3, 6)
@@ -63,7 +63,7 @@ describe('elementStats', () => {
 describe('findings', () => {
   const stat = (h: number, kwh: number, nz = 1, nx = 0) => ({
     element: { modelId: 'm', localId: Math.round(h * 100 + kwh), category: 'IFCWINDOW', kind: 'window' as const },
-    index: 0, sunHoursPerDay: h, irradiationKwh: kwh, area: 2,
+    index: 0, sunHoursPerDay: h, irradiationKwh: kwh, probableSunPerDay: h / 2, skyView: 0.5, area: 2,
     normal: { x: nx, y: 0, z: nz }, center: { x: 0, y: 0, z: 0 },
   })
 
