@@ -604,5 +604,51 @@
       "louvres8": "Lamas ×8 · 0,4 m · 45°",
       "louvres6fins": "Lamas ×6 + verticales 0,5 m"
     }
+  },
+  "workspace": {
+    "climateOk": "Clima ERA5 {{from}}–{{to}}",
+    "climateOkHint": "Cielo y estaciones medidos en el lugar",
+    "climateMissing": "Cielo despejado teórico",
+    "climateMissingHint": "Carga el clima (pestaña Sol) para usar el cielo medido y las estaciones reales",
+    "quick": {
+      "title": "Estudio rápido",
+      "hint": "Sol del año, EN 17037 y riesgo de sobrecalentamiento en un clic; luego el informe.",
+      "run": "Empezar",
+      "steps": {
+        "sun": "Horas de sol del año",
+        "en": "Ventanas · EN 17037",
+        "seasons": "Ganancias por estación"
+      }
+    },
+    "tabs": {
+      "sun": {
+        "label": "Sol",
+        "hint": "Mapas de horas de sol y radiación"
+      },
+      "windows": {
+        "label": "Ventanas",
+        "hint": "EN 17037 y sobrecalentamiento"
+      },
+      "daylight": {
+        "label": "Luz natural",
+        "hint": "FLD, malla, anual (sDA/ASE) y optimizador"
+      },
+      "design": {
+        "label": "Diseño",
+        "hint": "Protecciones solares y variantes"
+      },
+      "energy": {
+        "label": "Energía",
+        "hint": "Placas fotovoltaicas"
+      },
+      "point": {
+        "label": "Punto",
+        "hint": "Diagrama de sombras de un punto"
+      }
+    },
+    "advanced": "Ajustes avanzados",
+    "crashed": "Esta herramienta ha fallado; el resto sigue funcionando.",
+    "retry": "Reintentar",
+    "gpuLost": "La GPU se ha reiniciado: análisis detenido. Vuelve a lanzarlo."
   }
 }

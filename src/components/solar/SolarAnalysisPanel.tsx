@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from '../ViewportPanel'
+import { ErrorBoundary } from '../ErrorBoundary'
 import { useSolarStore } from '../../stores/solarStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useSolarAnalysisStore, type PeriodChoice, type SkyModel, type Precision } from '../../stores/solarAnalysisStore'
@@ -489,6 +490,48 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 
   const enSummary = useMemo(() => (ref.en ? summarizeEn17037(ref.en.findings) : null), [s.resultVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Workspace: one tab per task, all kept mounted so nothing is lost ─────
+  const [tab, setTabState] = useState<WorkTab>(() => {
+    try { const v = localStorage.getItem(TAB_KEY); return (TABS as readonly string[]).includes(v ?? '') ? v as WorkTab : 'sun' } catch { return 'sun' }
+  })
+  const setTab = useCallback((v: WorkTab) => { setTabState(v); try { localStorage.setItem(TAB_KEY, v) } catch { /* private mode */ } }, [])
+
+  // The GPU can go away (driver reset, tab in the background on a phone): stop
+  // whatever pass is running instead of waiting forever on a dead context.
+  useEffect(() => {
+    const lost = () => {
+      abortRef.current?.abort()
+      quickRef.current.cancelled = true
+      useSolarAnalysisStore.getState().setRun({ status: 'error', error: t('workspace.gpuLost') })
+    }
+    document.addEventListener('webglcontextlost', lost, true)
+    return () => document.removeEventListener('webglcontextlost', lost, true)
+  }, [t])
+
+  /** The essential study in one click: sun over the year, EN 17037, seasons. */
+  const quickRef = useRef<{ cancelled: boolean }>({ cancelled: false })
+  const [quick, setQuick] = useState<{ step: number; failed: number[] } | null>(null)
+  const runQuick = useCallback(async () => {
+    quickRef.current = { cancelled: false }
+    const steps: Array<{ go: () => Promise<void>; tab: WorkTab }> = [
+      { go: run, tab: 'sun' }, { go: runEn, tab: 'windows' }, { go: runSeasons, tab: 'windows' },
+    ]
+    const failed: number[] = []
+    for (let i = 0; i < steps.length; i++) {
+      if (quickRef.current.cancelled) break
+      setQuick({ step: i, failed: [...failed] })
+      setTab(steps[i].tab)
+      try { await steps[i].go() } catch { /* each step reports its own error */ }
+      const st = useSolarAnalysisStore.getState()
+      if (st.status === 'error') failed.push(i)
+      if (quickRef.current.cancelled) break
+      // Let the browser breathe between GPU passes (and the UI repaint).
+      await new Promise((r) => setTimeout(r, 30))
+    }
+    setQuick(quickRef.current.cancelled ? null : { step: steps.length, failed })
+  }, [run, runEn, runSeasons, setTab])
+  const cancelAll = useCallback(() => { quickRef.current.cancelled = true; abortRef.current?.abort() }, [])
+
   // ── Render ───────────────────────────────────────────────────────────────
   const busy = s.status === 'sensors' || s.status === 'running'
   const unit = metricUnit(s.metric)
@@ -519,12 +562,85 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
             </div>
           ) : (
             <div className="p-3 flex flex-col gap-3">
-              <div className="text-[10px] font-mono text-[var(--text-faint)]">
-                {t('analysis.locationLine', { lat: location.lat.toFixed(3), lon: location.lon.toFixed(3), tz: timeZone })}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-mono text-[var(--text-faint)] mr-auto">
+                  {t('analysis.locationLine', { lat: location.lat.toFixed(3), lon: location.lon.toFixed(3), tz: timeZone })}
+                </span>
+                <StatusChip tone={s.climate ? 'ok' : 'warn'} title={s.climate ? t('workspace.climateOkHint') : t('workspace.climateMissingHint')}>
+                  {s.climate ? t('workspace.climateOk', { from: s.climate.years.from, to: s.climate.years.to }) : t('workspace.climateMissing')}
+                </StatusChip>
               </div>
 
+              {/* Quick path: the essential study, then the report */}
+              <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)]/40 p-2.5 flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <div className="text-[12px] font-semibold text-[var(--text)]">{t('workspace.quick.title')}</div>
+                    <div className="text-[10px] leading-snug text-[var(--text-faint)]">{t('workspace.quick.hint')}</div>
+                  </div>
+                  {busy || (quick && quick.step < QUICK_STEPS) ? (
+                    <button onClick={cancelAll} className="px-2.5 py-1.5 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('analysis.cancel')}</button>
+                  ) : (
+                    <button disabled={models.length === 0} onClick={() => { void runQuick() }} className="px-3 py-1.5 rounded-[8px] text-[11.5px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40">{t('workspace.quick.run')}</button>
+                  )}
+                </div>
+                {quick && (
+                  <ol className="flex flex-col gap-0.5 text-[10.5px]">
+                    {(['sun', 'en', 'seasons'] as const).map((k, i) => {
+                      const state = quick.failed.includes(i) ? 'fail' : i < quick.step ? 'done' : i === quick.step ? 'now' : 'todo'
+                      return (
+                        <li key={k} className={`flex items-center gap-1.5 ${state === 'todo' ? 'opacity-50' : ''}`}>
+                          <span className="w-3.5 text-center">{state === 'done' ? '✓' : state === 'fail' ? '!' : state === 'now' ? '…' : '·'}</span>
+                          <span className={state === 'fail' ? 'text-[#F5A623]' : state === 'done' ? 'text-[var(--text)]' : ''}>{t(`workspace.quick.steps.${k}`)}</span>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                )}
+                {quick && quick.step >= QUICK_STEPS && hasReport && (
+                  <button disabled={reportProgress !== null || busy} onClick={() => { void exportPdf() }} className="self-start px-2.5 py-1.5 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-40">
+                    {reportProgress !== null ? t('report.making', { pct: Math.round(reportProgress * 100) }) : t('report.download')}
+                  </button>
+                )}
+              </div>
+
+              {/* Task tabs */}
+              <div role="tablist" className="grid grid-cols-3 gap-1 p-1 rounded-[10px] bg-[var(--surface-2)]/60 sticky top-0 z-10 backdrop-blur">
+                {TABS.map((k) => (
+                  <button
+                    key={k}
+                    role="tab"
+                    aria-selected={tab === k}
+                    onClick={() => setTab(k)}
+                    title={t(`workspace.tabs.${k}.hint`)}
+                    className={`px-1.5 py-1.5 rounded-[7px] text-[10.5px] font-medium flex flex-col items-center gap-0.5 transition-colors ${tab === k ? 'bg-[var(--surface)] text-[var(--text)] shadow-sm' : 'hover:text-[var(--text)]'}`}
+                  >
+                    <span aria-hidden className="text-[13px] leading-none">{TAB_ICON[k]}</span>
+                    {t(`workspace.tabs.${k}.label`)}
+                  </button>
+                ))}
+              </div>
+
+              {/* What the GPU is doing right now */}
+              {busy && (
+                <div className="flex items-center gap-2 text-[10.5px]" aria-live="polite">
+                  <div className="flex-1 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+                    <div className="h-full bg-[var(--accent)] transition-[width]" style={{ width: `${Math.round(s.progress * 100)}%` }} />
+                  </div>
+                  <span className="font-mono tabular-nums">{s.status === 'sensors' ? t('analysis.sensors') : `${Math.round(s.progress * 100)}%`}</span>
+                  <button onClick={cancelAll} className="text-[var(--text-faint)] hover:text-[var(--text)]" title={t('analysis.cancel')}>✕</button>
+                </div>
+              )}
+              {s.status === 'error' && (
+                <div className="rounded-[8px] border border-[#F5A623]/50 bg-[#F5A623]/10 px-2 py-1.5 text-[10.5px] text-[#F5A623] flex gap-2 items-start">
+                  <span className="flex-1">{t('analysis.error', { message: s.error ?? '' })}</span>
+                  <button onClick={() => s.setRun({ status: ref.last ? 'done' : 'idle', error: null })} className="hover:text-[var(--text)]">✕</button>
+                </div>
+              )}
+
+              <Pane id="sun" tab={tab} t={t}>
               {/* Climate */}
-              <Section title={t('analysis.climate.title')}>
+              <Disclosure title={t('analysis.climate.title')} defaultOpen={!s.climate}>
                 {s.climateStatus === 'done' && s.climate ? (
                   <ClimateCard c={s.climate} monthName={monthName} t={t} />
                 ) : (
@@ -536,7 +652,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     {s.climateStatus === 'error' && <p className="text-[#F5A623] text-[10.5px]">{t('analysis.climate.error', { message: s.climateError ?? '' })}</p>}
                   </div>
                 )}
-              </Section>
+              </Disclosure>
 
               {/* Setup */}
               <Section title={t('analysis.period.title')}>
@@ -577,6 +693,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     <Chip key={k} active={s.kinds.includes(k)} onClick={() => s.toggleKind(k)}>{t(`analysis.kinds.${k}`)}</Chip>
                   ))}
                 </div>
+                <Disclosure title={t('workspace.advanced')} summary={`${t(`analysis.sky.${effectiveSky}`)} · ${s.albedo.toFixed(2)} · ${t(`analysis.precision.${s.precision}`)}`}>
                 <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-[10.5px]">
                   <span>{t('analysis.sky.label')}</span>
                   <select value={s.skyModel} onChange={(e) => s.setSkyModel(e.target.value as SkyModel)} className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)]">
@@ -594,6 +711,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 {s.skyModel !== effectiveSky && (
                   <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('analysis.sky.fallback', { model: t(`analysis.sky.${effectiveSky}`) })}</p>
                 )}
+                </Disclosure>
               </div>
 
               <div className="flex gap-1.5">
@@ -610,7 +728,6 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                   <button onClick={() => abortRef.current?.abort()} className="px-2.5 py-2 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('analysis.cancel')}</button>
                 )}
               </div>
-              {s.status === 'error' && <p className="text-[#F5A623] text-[10.5px]">{t('analysis.error', { message: s.error ?? '' })}</p>}
 
               {/* Legend + results */}
               {ref.last && s.range && summary && (
@@ -638,6 +755,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </Section>
               )}
 
+              </Pane>
+
+              <Pane id="windows" tab={tab} t={t}>
               {/* Checks */}
               <Section title={t('analysis.checks.title')}>
                 <div className="flex flex-col gap-2">
@@ -686,6 +806,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </div>
               </Section>
 
+              </Pane>
+
+              <Pane id="daylight" tab={tab} t={t}>
               {/* Daylight in the rooms */}
               <Section title={t('daylight.title')}>
                 <React.Suspense fallback={null}>
@@ -715,6 +838,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </React.Suspense>
               </Section>
 
+              </Pane>
+
+              <Pane id="design" tab={tab} t={t}>
               {/* Design variants, B − A on the model */}
               <Section title={t('compare.title')}>
                 <React.Suspense fallback={null}>
@@ -735,6 +861,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </React.Suspense>
               </Section>
 
+              </Pane>
+
+              <Pane id="energy" tab={tab} t={t}>
               {/* Photovoltaics on the roofs */}
               <Section title={t('pv.title')}>
                 <React.Suspense fallback={null}>
@@ -755,6 +884,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </React.Suspense>
               </Section>
 
+              </Pane>
+
+              <Pane id="design" tab={tab} t={t}>
               {/* Solar protections, designed by façade and measured */}
               <Section title={t('shading.title')}>
                 <React.Suspense fallback={null}>
@@ -775,6 +907,9 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </React.Suspense>
               </Section>
 
+              </Pane>
+
+              <Pane id="point" tab={tab} t={t}>
               {/* One point's shading diagram */}
               <Section title={t('probe.title')}>
                 <React.Suspense fallback={null}>
@@ -782,7 +917,10 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </React.Suspense>
               </Section>
 
-              {/* The whole study as a PDF */}
+              </Pane>
+
+              {/* The whole study as a PDF — whatever tab produced it */}
+              <div className="border-t border-[var(--border)] pt-2.5">
               <Section title={t('report.section')}>
                 <button
                   disabled={!hasReport || reportProgress !== null || busy}
@@ -797,6 +935,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     : t('report.empty')}
                 </p>
               </Section>
+              </div>
 
               <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('analysis.disclaimer')}</p>
             </div>
@@ -837,6 +976,57 @@ function download(text: string, name: string): void {
 }
 
 type T = ReturnType<typeof useTranslation<'solar'>>['t']
+
+const TABS = ['sun', 'windows', 'daylight', 'design', 'energy', 'point'] as const
+type WorkTab = typeof TABS[number]
+const TAB_KEY = 'solar.workspace.tab'
+const TAB_ICON: Record<WorkTab, string> = { sun: '☀', windows: '▦', daylight: '◐', design: '⌂', energy: 'ϟ', point: '⌖' }
+const QUICK_STEPS = 3
+
+/**
+ * One task's tools. Hidden rather than unmounted, so switching tabs keeps
+ * every result and setting; each pane has its own error boundary, so a bug in
+ * one tool leaves the others (and the viewer) running.
+ */
+function Pane({ id, tab, t, order, children }: { id: WorkTab; tab: WorkTab; t: T; order?: number; children: React.ReactNode }) {
+  return (
+    <div hidden={tab !== id} className="flex flex-col gap-3" style={order !== undefined ? { order } : undefined} role="tabpanel">
+      <ErrorBoundary
+        fallback={(error, reset) => (
+          <div className="rounded-[8px] border border-[#F5A623]/50 bg-[#F5A623]/10 p-2.5 flex flex-col gap-1.5 text-[10.5px]">
+            <div className="font-semibold text-[#F5A623]">{t('workspace.crashed')}</div>
+            <div className="font-mono text-[9.5px] break-words opacity-80">{error.message}</div>
+            <button onClick={reset} className="self-start px-2 py-1 rounded-[7px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('workspace.retry')}</button>
+          </div>
+        )}
+      >
+        <div className="flex flex-col gap-3">{children}</div>
+      </ErrorBoundary>
+    </div>
+  )
+}
+
+function Disclosure({ title, summary, defaultOpen = false, children }: { title: string; summary?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-[8px] border border-[var(--border)]">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[var(--surface-2)] rounded-[8px]">
+        <span className={`text-[9px] transition-transform ${open ? 'rotate-90' : ''}`}>▶</span>
+        <span className="text-[9.5px] font-mono uppercase tracking-[0.1em] text-[var(--text-faint)]">{title}</span>
+        {summary && !open && <span className="ml-auto text-[10px] truncate text-[var(--text-faint)]">{summary}</span>}
+      </button>
+      {open && <div className="px-2.5 pb-2.5 pt-1 flex flex-col gap-1.5">{children}</div>}
+    </div>
+  )
+}
+
+function StatusChip({ tone, title, children }: { tone: 'ok' | 'warn'; title?: string; children: React.ReactNode }) {
+  return (
+    <span title={title} className={`px-1.5 py-0.5 rounded-full text-[9.5px] font-medium border ${tone === 'ok' ? 'border-[#4caf7a]/50 text-[#4caf7a]' : 'border-[#F5A623]/50 text-[#F5A623]'}`}>
+      {children}
+    </span>
+  )
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

@@ -604,5 +604,51 @@
       "louvres8": "Louvres ×8 · 0.4 m · 45°",
       "louvres6fins": "Louvres ×6 + fins 0.5 m"
     }
+  },
+  "workspace": {
+    "climateOk": "ERA5 climate {{from}}–{{to}}",
+    "climateOkHint": "Sky and seasons measured on site",
+    "climateMissing": "Theoretical clear sky",
+    "climateMissingHint": "Load the climate (Sun tab) to use the measured sky and the real seasons",
+    "quick": {
+      "title": "Quick study",
+      "hint": "Sun over the year, EN 17037 and overheating risk in one click; then the report.",
+      "run": "Start",
+      "steps": {
+        "sun": "Sun hours over the year",
+        "en": "Windows · EN 17037",
+        "seasons": "Gains by season"
+      }
+    },
+    "tabs": {
+      "sun": {
+        "label": "Sun",
+        "hint": "Sun hours and radiation maps"
+      },
+      "windows": {
+        "label": "Windows",
+        "hint": "EN 17037 and overheating"
+      },
+      "daylight": {
+        "label": "Daylight",
+        "hint": "DF, grid, annual (sDA/ASE) and optimizer"
+      },
+      "design": {
+        "label": "Design",
+        "hint": "Solar protections and variants"
+      },
+      "energy": {
+        "label": "Energy",
+        "hint": "Photovoltaics"
+      },
+      "point": {
+        "label": "Point",
+        "hint": "One point's shading diagram"
+      }
+    },
+    "advanced": "Advanced settings",
+    "crashed": "This tool failed; everything else keeps working.",
+    "retry": "Retry",
+    "gpuLost": "The GPU was reset: analysis stopped. Run it again."
   }
 }
