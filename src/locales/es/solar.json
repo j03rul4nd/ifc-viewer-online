@@ -501,7 +501,9 @@
     "annualMeanDa": "Autonomía de luz media",
     "annualMap": "Autonomía de luz diurna (DA300): la planta peor",
     "annualEnShort": "EN 17037 (h)",
-    "annualDelta": "Entre paréntesis: cambio en puntos porcentuales frente al cálculo anual anterior (por ejemplo, sin protecciones)."
+    "annualDelta": "Entre paréntesis: cambio en puntos porcentuales frente al cálculo anual anterior (por ejemplo, sin protecciones).",
+    "blindsOn": "sDA con persianas automáticas IES LM-83 (bajadas si > 2 % de la estancia recibe > 1000 lx de sol directo; cerradas transmiten el 20 % de la difusa). ASE sin persianas. «Pers.»: parte de las horas ocupadas con las persianas bajadas.",
+    "blindsOff": "Calculado sin persianas: el sDA no es el de LEED (LM-83 exige persianas operables)."
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -570,6 +572,10 @@
     "aseHint": "ASE1000,250 h: parte de la estancia con más de 1000 lx de sol directo más de 250 horas ocupadas; LEED pide ≤ 10 % (deslumbramiento, sobrecalentamiento)",
     "annualNote": "Coeficientes de luz diurna sobre las 145 zonas de Tregenza y un segundo pase con la posición real del sol de cada hora; difusa con la forma del cielo cubierto CIE escalada a la difusa de cada hora (120 lm/W), sol directo 100 lm/W, reflexiones BRE solo de la difusa (la luz solar reflejada no se cuenta: conservador). Sin persianas, 12 días tipo. Un cribado de anteproyecto, no una simulación con Radiance.",
     "annualSun": "Siguiendo el sol de cada hora… {{pct}} %",
-    "annualVsPrev": "Cambios frente al cálculo de las {{at}} (puntos porcentuales)"
+    "annualVsPrev": "Cambios frente al cálculo de las {{at}} (puntos porcentuales)",
+    "blinds": "Persianas automáticas (IES LM-83)",
+    "blindsHint": "Cada hora, en cada estancia, se bajan si más del 2 % de los puntos recibe más de 1000 lx de sol directo: sin sol, 20 % de la difusa. Así calcula LEED el sDA; el ASE se mide siempre sin ellas.",
+    "blindCol": "Pers.",
+    "blindHoursHint": "Parte de las horas ocupadas con las persianas bajadas: mucho es deslumbramiento y luz eléctrica encendida"
   }
 }

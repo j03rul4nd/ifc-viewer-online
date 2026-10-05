@@ -131,6 +131,16 @@ to 86 %; a 0.6 m overhang at ceiling level changes nothing on the working
 plane (the slab already blocks those rays) — it protects the glass, not the
 room.
 
+Operable blinds (IES LM-83, on by default — LEED's sDA requires them): each
+hour, in each room, they come down when over 2 % of its points get more than
+1000 lx of direct sun; grouped by façade, only the windows facing the sun
+close (no sun, 20 % of their diffuse), the others keep the sky coming in
+(`blindGroupFactor`). sDA with blinds, ASE without (as LM-83 asks); the share
+of occupied hours with blinds down is reported per room. Closing a whole
+four-side-glazed floor at once had taken the Torre's sDA from 100 % to 38 %;
+by façade it stays 100 %, DA300 90 % → 80 %, blinds down 81 % of the
+occupied hours.
+
 ## The analysis' own geometry (no fragments meshes in any pass)
 
 Measured: items hidden with fragments' `setVisible(false)` kept casting in a

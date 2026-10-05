@@ -103,7 +103,8 @@ export interface DaylightSection {
     points: number
     spacing: number
     measuredSky: boolean
-    rooms: Array<{ label: string; level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; sDA: number; ASE: number; meanDA: number; prevSDA?: number; prevASE?: number }>
+    blinds: boolean
+    rooms: Array<{ label: string; level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; sDA: number; ASE: number; meanDA: number; prevSDA?: number; prevASE?: number; blindHours?: number }>
   }
 }
 

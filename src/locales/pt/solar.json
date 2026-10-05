@@ -502,7 +502,9 @@
     "annualMeanDa": "Mean daylight autonomy",
     "annualMap": "Daylight autonomy (DA300) — the floor that does worst",
     "annualEnShort": "EN 17037 (h)",
-    "annualDelta": "In brackets: change in percentage points against the previous annual run (for example, without protections)."
+    "annualDelta": "In brackets: change in percentage points against the previous annual run (for example, without protections).",
+    "blindsOn": "sDA with IES LM-83 operable blinds (down when > 2 % of the room gets > 1000 lx of direct sun; closed they pass 20 % of the diffuse). ASE without blinds. “Blinds”: share of the occupied hours with them down.",
+    "blindsOff": "Computed without blinds: this sDA is not LEED's (LM-83 requires operable blinds)."
   },
   "compare": {
     "title": "Compare design variants",
@@ -571,6 +573,10 @@
     "aseHint": "ASE1000,250 h: share of the room with > 1000 lx of direct sun for > 250 occupied hours; LEED asks ≤ 10 % (glare, overheating)",
     "annualNote": "Daylight coefficients over the 145 Tregenza patches and a second pass at each hour's actual sun position; diffuse with the CIE overcast shape scaled to the hour's diffuse (120 lm/W), direct sun 100 lm/W, BRE reflections of the diffuse only (reflected sunlight is not counted: conservative). No blinds, 12 typical days. A design-stage screening, not a Radiance simulation.",
     "annualSun": "Following each hour's sun… {{pct}} %",
-    "annualVsPrev": "Change against the run at {{at}} (percentage points)"
+    "annualVsPrev": "Change against the run at {{at}} (percentage points)",
+    "blinds": "Operable blinds (IES LM-83)",
+    "blindsHint": "Each hour, in each room, they come down when over 2 % of its points get more than 1000 lx of direct sun: no sun, 20 % of the diffuse. This is how LEED computes sDA; ASE is always measured without them.",
+    "blindCol": "Blinds",
+    "blindHoursHint": "Share of the occupied hours with the blinds down: a lot means glare and the lights on"
   }
 }

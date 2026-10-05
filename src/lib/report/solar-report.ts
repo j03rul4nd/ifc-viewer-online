@@ -700,9 +700,11 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
       drawRamp(doc, 0, 100, '%', t('daylight.daHint'))
     }
     const delta = (now: number, was?: number) => (was === undefined || Math.round((now - was) * 100) === 0 ? '' : ` (${now > was ? '+' : ''}${Math.round((now - was) * 100)})`)
-    doc.table([t('daylight.room'), 'DA300', 'sDA', 'ASE', t('report.annualEnShort')],
-      a.rooms.map((x) => [x.label, `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %${delta(x.sDA, x.prevSDA)}`, `${Math.round(x.ASE * 100)} %${delta(x.ASE, x.prevASE)}`, t(`daylight.levels.${x.level}`)]),
-      [2.6, 0.8, 0.9, 0.9, 1.2], 22)
+    doc.table([t('daylight.room'), 'DA300', 'sDA', 'ASE', t('daylight.blindCol'), t('report.annualEnShort')],
+      a.rooms.map((x) => [x.label, `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %${delta(x.sDA, x.prevSDA)}`, `${Math.round(x.ASE * 100)} %${delta(x.ASE, x.prevASE)}`,
+        x.blindHours === undefined ? '—' : `${Math.round(x.blindHours * 100)} %`, t(`daylight.levels.${x.level}`)]),
+      [2.4, 0.7, 0.9, 0.9, 0.8, 1.1], 21)
+    doc.para(a.blinds ? t('report.blindsOn') : t('report.blindsOff'), 20, a.blinds ? C.faint : C.amber)
     if (a.rooms.some((x) => x.prevASE !== undefined)) doc.para(t('report.annualDelta'), 20, C.faint)
     doc.para(`DA300 — ${t('daylight.daHint')}. sDA — ${t('daylight.sdaHint')}. ASE — ${t('daylight.aseHint')}.`, 20, C.faint)
     doc.para(t('daylight.annualNote'), 20, C.faint)

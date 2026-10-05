@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { typicalSkyHours, tregenzaPatches, patchOf, diffuseLuminance, annualIlluminance, roomAnnual, type SkyHour } from './daylight-annual'
+import { blindSchedule, blindGroupFactor, typicalSkyHours, tregenzaPatches, patchOf, diffuseLuminance, annualIlluminance, roomAnnual, type SkyHour } from './daylight-annual'
 
 const D = Math.PI / 180
 
@@ -66,6 +66,35 @@ describe('annual daylight', () => {
       sunVis: new Float32Array([1]), sunHours: 1, sunIndex: new Int32Array(600).fill(0),
     })
     expect(a.sunHours1000[0]).toBe(300)
+  })
+
+  it('LM-83 blinds close when > 2 % of the room is in direct sun, and cut the light then', () => {
+    // Diffuse 20 W/m² → 2 400 lx outside, 1 680 lx through the glass, 336 lx behind a closed blind.
+    const hours = Array.from({ length: 100 }, () => hour({ dni: 600, dhi: 20 }))
+    const idx = new Int32Array(100).fill(0)
+    // Room 0: 1 of 10 points in the sun (10 % > 2 %); room 1: none.
+    const sunVis = new Float32Array(20); sunVis[0] = 1
+    const roomOf = Int32Array.from([...Array(10).fill(0), ...Array(10).fill(1)])
+    const sched = blindSchedule(sunVis, idx, 1, roomOf, 2, hours, 0.7)
+    expect(sched[0]).toBe(1)
+    expect(sched[100]).toBe(0)
+    const coef = new Float32Array(20 * 145)
+    for (let i = 0; i < 20; i++) coef.set(open, i * 145)
+    const base = { transmittance: 0.7, irc: new Float32Array([0, 0]), roomOf, patches, sunVis, sunHours: 1, sunIndex: idx }
+    const without = annualIlluminance(coef, 20, hours, base)
+    const withBlinds = annualIlluminance(coef, 20, hours, { ...base, blinds: sched })
+    // Room 0 loses light (blinds down every hour); room 1 is untouched.
+    expect(withBlinds.da750[1]).toBeLessThan(without.da750[1])
+    expect(withBlinds.da750[11]).toBe(without.da750[11])
+    // ASE is counted without blinds.
+    expect(withBlinds.sunHours1000[0]).toBe(without.sunHours1000[0])
+  })
+
+  it('blinds close by façade: a room glazed on two sides keeps the shaded side open', () => {
+    const room = [{ nx: 0, nz: 1, area: 10 }, { nx: 0, nz: -1, area: 10 }]
+    const f = blindGroupFactor([room], [{ x: 0, z: 1 }, null], 0.2)
+    expect(f[0]).toBeCloseTo(0.6, 6) // half the glass closed: 0.5 + 0.5 · 0.2
+    expect(f[1]).toBeCloseTo(0.2, 6)
   })
 
   it('reflections take a share of the diffuse only', () => {

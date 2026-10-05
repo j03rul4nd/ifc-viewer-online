@@ -15,7 +15,9 @@ import { roomDaylight, daylightTargets, type RoomDaylight, type DaylightWindow, 
 import { roomGrid, internalReflected, gridLevel, roomReflectance, floorsOf, type Tri2, type GridLevel, type FloorGroup } from '../../lib/solar-analysis/daylight-grid'
 import { buildSensorSet } from '../../lib/solar-analysis/sensors'
 import { rampColor } from '../../lib/solar-analysis/results'
-import { tregenzaPatches, typicalSkyHours, annualIlluminance, roomAnnual, type RoomAnnual, type AnnualPoint } from '../../lib/solar-analysis/daylight-annual'
+import { tregenzaPatches, typicalSkyHours, annualIlluminance, roomAnnual, blindSchedule, blindGroupFactor, type RoomAnnual, type AnnualPoint } from '../../lib/solar-analysis/daylight-annual'
+import { assignWindows } from '../../lib/solar-analysis/daylight'
+import { sunDirectionScene } from '../../lib/solar/sun-math'
 import { shareOrDownload } from '../../lib/share-file'
 import { useSolarReportStore } from '../../stores/solarReportStore'
 
@@ -52,9 +54,11 @@ export default function DaylightRooms(p: Props) {
   const [grid, setGrid] = useState<{ byRoom: Map<string, { level: GridLevel; share: Record<'d100' | 'd300' | 'd500' | 'd750', number>; median: number; points: number; onReflections: boolean; irc: number }>; spacing: number; points: number; T: number; R: number; image: string | null; imageLabel: string } | null>(null)
   /** The last map, to redraw one floor of it. */
   const mapRef = useRef<{ run: AnalysisRun; df: Float32Array; sky?: Float32Array; top: number; meaning: 'df' | 'da' } | null>(null)
-  const [annual, setAnnual] = useState<{ byRoom: Map<string, RoomAnnual>; points: number; spacing: number; image: string | null; imageLabel: string; T: number; R: number; label: string } | null>(null)
+  const [annual, setAnnual] = useState<{ byRoom: Map<string, RoomAnnual & { blindHours?: number }>; points: number; spacing: number; image: string | null; imageLabel: string; T: number; R: number; label: string; blinds: boolean } | null>(null)
   /** The previous annual result, to read a change of design (protections on, another variant) against. */
   const [annualPrev, setAnnualPrev] = useState<{ byRoom: Map<string, RoomAnnual>; label: string } | null>(null)
+  /** LM-83 operable blinds in the annual run (sDA as LEED computes it). */
+  const [blinds, setBlinds] = useState(true)
   const [annualProgress, setAnnualProgress] = useState<{ stage: 'sky' | 'sun' | 'hours'; f: number } | null>(null)
   const [plan, setPlan] = useState<number | null>(null)
   /** The floor on screen, for callbacks that outlive a render. */
@@ -97,6 +101,7 @@ export default function DaylightRooms(p: Props) {
         ...(annual ? {
           annual: {
             image: annual.image, imageLabel: annual.imageLabel, points: annual.points, spacing: annual.spacing, measuredSky: p.measuredSky,
+            blinds: annual.blinds,
             rooms: rooms.filter((r) => annual.byRoom.has(r.key)).map((r) => {
               const was = annualPrev?.byRoom.get(r.key)
               return { label: r.label, ...annual.byRoom.get(r.key)!, ...(was ? { prevSDA: was.sDA, prevASE: was.ASE } : {}) }
@@ -362,6 +367,25 @@ export default function DaylightRooms(p: Props) {
       for (let i = 0; i < roomOf.length; i++) for (let k = 0; k < S; k++) sunVis[i * S + k] = sunC[i * S + k] / Math.max(1e-3, Math.sin((sunDirs[k].alt * Math.PI) / 180))
       const n = roomOf.length
       const P = patches.length
+      const roomCount = inputs.spaces.length
+      const sched = blinds ? blindSchedule(sunVis, sunIndex, S, Int32Array.from(roomOf), roomCount, hours, T / 100) : null
+      // LM-83 blind groups by façade: each room's windows, the hour's sun in scene axes.
+      const byRoomWin = assignWindows(inputs.spaces, inputs.windows)
+      const roomWins = inputs.spaces.map((sp) => (byRoomWin.get(sp.key) ?? []).map((w) => ({ nx: w.n.x, nz: w.n.z, area: w.width * w.height * w.glassShare })))
+      const yawRad = (p.yawDeg * Math.PI) / 180
+      const hourSun = hours.map((h) => { if (h.sunAlt <= 0) return null; const d = sunDirectionScene(h.sunAz, h.sunAlt, yawRad); return { x: d.x, z: d.z } })
+      const blindFactor = sched ? blindGroupFactor(roomWins, hourSun, 0.2) : null
+      // Share of the occupied hours each room spends with its blinds down (sunny state weighted by p).
+      const blindShare = new Float32Array(roomCount)
+      if (sched) {
+        let occ = 0
+        hours.forEach((h) => { if (h.occupied && (h.sunAlt > 0 || h.dhi > 0)) occ += h.weight })
+        for (let r = 0; r < roomCount; r++) {
+          let c = 0
+          hours.forEach((h, k) => { if (h.occupied && sched[r * hours.length + k]) c += h.weight * Math.max(0, Math.min(1, h.sunProb ?? 1)) })
+          blindShare[r] = occ > 0 ? c / occ : 0
+        }
+      }
       const res: AnnualPoint = { da100: new Float32Array(n), da300: new Float32Array(n), da500: new Float32Array(n), da750: new Float32Array(n), occ300: new Float32Array(n), sunHours1000: new Float32Array(n) }
       const ro = Int32Array.from(roomOf)
       // In chunks of points, yielding between them: the page stays alive.
@@ -371,6 +395,7 @@ export default function DaylightRooms(p: Props) {
         const part = annualIlluminance(coef.subarray(a * P, b * P), b - a, hours, {
           transmittance: T / 100, irc, roomOf: ro.subarray(a, b), patches,
           sunVis: sunVis.subarray(a * S, b * S), sunIndex, sunHours: S,
+          ...(sched && blindFactor ? { blinds: sched, blindFactor } : {}),
         })
         for (const k of Object.keys(res) as Array<keyof AnnualPoint>) res[k].set(part[k], a)
         setAnnualProgress({ stage: 'hours', f: b / n })
@@ -378,7 +403,7 @@ export default function DaylightRooms(p: Props) {
       }
       const idxByRoom = new Map<string, number[]>()
       roomOf.forEach((k, i) => { const key = inputs.spaces[k].key; const l = idxByRoom.get(key) ?? []; l.push(i); idxByRoom.set(key, l) })
-      const byRoom = new Map([...idxByRoom.entries()].map(([key, idx]) => [key, roomAnnual(idx, res)]))
+      const byRoom = new Map([...idxByRoom.entries()].map(([key, idx]) => [key, { ...roomAnnual(idx, res), blindHours: sched ? blindShare[inputs.spaces.findIndex((sp) => sp.key === key)] : undefined }]))
       // The map: daylight autonomy, % of daylight hours at 300 lx.
       const sensors = buildSensorSet([{ kind: 'ground', element: null, samples: Array.from({ length: n }, (_, i) => ({ x: pts[i * 3], y: pts[i * 3 + 1], z: pts[i * 3 + 2], nx: 0, ny: 1, nz: 0, area: spacing * spacing })) }], { ground: spacing, surface: spacing })
       const zeros = () => new Float32Array(n)
@@ -399,7 +424,7 @@ export default function DaylightRooms(p: Props) {
       const shot = fl.length ? await planShot(fl[worst], run) : null
       setAnnual((prev) => {
         if (prev) setAnnualPrev({ byRoom: prev.byRoom, label: prev.label })
-        return { byRoom, points: n, spacing, image: shot, imageLabel: fl.length ? floorLabel(fl[worst]) : '', T, R, label: new Date().toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) }
+        return { blinds, byRoom, points: n, spacing, image: shot, imageLabel: fl.length ? floorLabel(fl[worst]) : '', T, R, label: new Date().toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) }
       })
       p.onDone()
     } catch (err) {
@@ -407,7 +432,7 @@ export default function DaylightRooms(p: Props) {
     } finally {
       setAnnualProgress(null)
     }
-  }, [p, inputs, rooms, T, R, t, floorLabel]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p, inputs, rooms, T, R, t, floorLabel, blinds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const frame = useCallback((key: string) => {
     const s = inputs?.spaces.find((x) => x.key === key)
@@ -456,6 +481,10 @@ export default function DaylightRooms(p: Props) {
               {annualProgress ? t(annualProgress.stage === 'sky' ? 'daylight.annualSky' : annualProgress.stage === 'sun' ? 'daylight.annualSun' : 'daylight.annualHours', { pct: Math.round(annualProgress.f * 100) }) : annual ? t('daylight.gridAgain') : t('daylight.annualRun')}
             </button>
           </div>
+          <label className="flex items-center gap-1.5 cursor-pointer" title={t('daylight.blindsHint')}>
+            <input type="checkbox" checked={blinds} onChange={(e) => setBlinds(e.target.checked)} className="accent-[var(--accent)]" />
+            {t('daylight.blinds')}
+          </label>
           {!annual && <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('daylight.annualHint')}</p>}
           {!p.measuredSky && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('daylight.annualClearSky')}</p>}
           {annual && (() => {
@@ -465,8 +494,8 @@ export default function DaylightRooms(p: Props) {
             return <>
               <div className="text-[var(--text)]">{t('daylight.annualSummary', { ok, n: list.length, leed, points: annual.points.toLocaleString(i18n.language), spacing: annual.spacing })}</div>
               {annualPrev && <div className="text-[9.5px] text-[var(--text-faint)]">{t('daylight.annualVsPrev', { at: annualPrev.label })}</div>}
-              <div className="grid grid-cols-[1fr_3.2rem_3.2rem_3.2rem] gap-x-2 text-[9.5px] text-[var(--text-faint)]">
-                <span>{t('daylight.room')}</span><span className="text-right" title={t('daylight.daHint')}>DA300</span><span className="text-right" title={t('daylight.sdaHint')}>sDA</span><span className="text-right" title={t('daylight.aseHint')}>ASE</span>
+              <div className="grid grid-cols-[1fr_2.8rem_3.2rem_3.2rem_2.6rem] gap-x-1.5 text-[9.5px] text-[var(--text-faint)]">
+                <span>{t('daylight.room')}</span><span className="text-right" title={t('daylight.daHint')}>DA300</span><span className="text-right" title={t('daylight.sdaHint')}>sDA</span><span className="text-right" title={t('daylight.aseHint')}>ASE</span><span className="text-right" title={t('daylight.blindHoursHint')}>{t('daylight.blindCol')}</span>
               </div>
               <div className="flex flex-col max-h-[180px] overflow-y-auto">
                 {list.map((r) => {
@@ -479,11 +508,12 @@ export default function DaylightRooms(p: Props) {
                     return <span className={`text-[8.5px] ml-0.5 ${(v > 0) === upGood ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{v > 0 ? '+' : ''}{v}</span>
                   }
                   return (
-                    <button key={r.key} onClick={() => frame(r.key)} className="grid grid-cols-[1fr_3.2rem_3.2rem_3.2rem] gap-x-2 text-left hover:bg-[var(--surface-2)] rounded px-0.5">
+                    <button key={r.key} onClick={() => frame(r.key)} className="grid grid-cols-[1fr_2.8rem_3.2rem_3.2rem_2.6rem] gap-x-1.5 text-left hover:bg-[var(--surface-2)] rounded px-0.5">
                       <span className="truncate flex items-center gap-1"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: LEVEL_COLOR[a.level] }} />{r.label}</span>
                       <span className="font-mono tabular-nums text-right">{Math.round(a.meanDA * 100)}%</span>
                       <span className={`font-mono tabular-nums text-right ${a.sDA >= 0.55 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.sDA * 100)}%{d(a.sDA, b?.sDA, true)}</span>
                       <span className={`font-mono tabular-nums text-right ${a.ASE <= 0.1 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.ASE * 100)}%{d(a.ASE, b?.ASE, false)}</span>
+                      <span className="font-mono tabular-nums text-right">{a.blindHours === undefined ? '—' : `${Math.round(a.blindHours * 100)}%`}</span>
                     </button>
                   )
                 })}

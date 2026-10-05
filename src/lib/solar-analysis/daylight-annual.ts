@@ -111,8 +111,54 @@ export function diffuseLuminance(patches: Patch[], horizontalLux: number): Float
   return out
 }
 
+/**
+ * IES LM-83 operable blinds: in each room, each hour, the blinds close when
+ * more than `share` of its points get more than 1000 lx of direct sun (the
+ * sunny state of the hour). Returns rooms × hours, 1 = closed.
+ */
+export function blindSchedule(
+  sunVis: Float32Array, sunIndex: Int32Array, sunHours: number,
+  roomOf: Int32Array, rooms: number, hours: SkyHour[], transmittance: number, share = 0.02,
+): Uint8Array {
+  const D = Math.PI / 180
+  const H = hours.length
+  const out = new Uint8Array(rooms * H)
+  const size = new Int32Array(rooms)
+  for (let i = 0; i < roomOf.length; i++) size[roomOf[i]]++
+  const hit = new Int32Array(rooms)
+  for (let h = 0; h < H; h++) {
+    const hr = hours[h]
+    const col = sunIndex[h]
+    const p = Math.max(0, Math.min(1, hr.sunProb ?? 1))
+    if (col < 0 || hr.sunAlt <= 0 || p <= 0.02) continue
+    const sunLux = transmittance * Math.min(1361, hr.dni / p) * BEAM_EFFICACY * Math.sin(hr.sunAlt * D)
+    if (sunLux <= 1000) continue
+    hit.fill(0)
+    for (let i = 0; i < roomOf.length; i++) {
+      if (sunLux * Math.min(1, sunVis[i * sunHours + col]) > 1000) hit[roomOf[i]]++
+    }
+    for (let r = 0; r < rooms; r++) if (size[r] > 0 && hit[r] / size[r] > share) out[r * H + h] = 1
+  }
+  return out
+}
+
 export interface AnnualOptions {
   transmittance: number
+  /**
+   * LM-83 blinds: rooms × hours (1 = closed in the sunny state of the hour),
+   * from `blindSchedule`. Closed: no direct sun, diffuse × `blindDiffuse`.
+   * ASE is always counted without them, as LM-83 asks.
+   */
+  blinds?: Uint8Array
+  /** Diffuse transmittance of a closed blind. Default 0.2. */
+  blindDiffuse?: number
+  /**
+   * Per room and hour, the factor on the diffuse when the blinds are down —
+   * LM-83 groups blinds by façade: only the windows the sun hits close, the
+   * others keep letting the sky in (`blindGroupFactor`). Overrides
+   * `blindDiffuse` when given.
+   */
+  blindFactor?: Float32Array
   /**
    * Sun visibility per point and hour, 0–1, row-major points × `sunHours`
    * (from the sun-position pass). `sunIndex[h]` is hour h's column, −1 at night.
@@ -178,7 +224,10 @@ export function annualIlluminance(coef: Float32Array, points: number, hours: Sky
       else if (sp >= 0 && open[sp] > 0) vis = Math.min(1, coef[row + sp] / open[sp])
       const sun = o.transmittance * Ebh * vis
       const covered = e + (o.irc[o.roomOf[i]] / 100) * Edh
-      const sunny = covered + sun
+      // With the blinds down (sunny state only): no sun, a fifth of the diffuse.
+      const bi = o.roomOf[i] * hours.length + hi
+      const closed = o.blinds ? o.blinds[bi] === 1 : false
+      const sunny = closed ? covered * (o.blindFactor ? o.blindFactor[bi] : (o.blindDiffuse ?? 0.2)) : covered + sun
       E[i] = covered + p * sun
       // Two states of the hour: sun out (p) or covered (1 − p).
       const ws = h.weight * (Ebh > 0 ? p : 0), wc = h.weight - ws
@@ -246,6 +295,36 @@ export function typicalSkyHours(o: SunPathOptions): SkyHour[] {
       const sky = pos.altitudeDeg > 0 ? skyTerms(utc, pos.altitudeDeg, doy, m, o).irradiance : { dni: 0, dhi: 0, ghi: 0 }
       const terms = pos.altitudeDeg > 0 ? skyTerms(utc, pos.altitudeDeg, doy, m, o) : null
       out.push({ sunAz: pos.azimuthDeg, sunAlt: pos.altitudeDeg, dni: sky.dni, dhi: sky.dhi, weight: days, occupied: local >= 8 && local < 18, sunProb: terms?.sunProb ?? 1 })
+    }
+  }
+  return out
+}
+
+/**
+ * LM-83 blind groups by façade: when a room's blinds come down, only its
+ * windows facing the sun close (outward normal towards the sun's horizontal
+ * direction). The diffuse factor is then (1 − f) + f · τ, f the glazed area
+ * share that faces the sun, τ the closed blind's diffuse transmittance.
+ * `windows[r]`: each room's windows (outward horizontal normal, area);
+ * `sunDir[h]`: the hour's sun direction in the same axes (horizontal part).
+ */
+export function blindGroupFactor(
+  windows: Array<Array<{ nx: number; nz: number; area: number }>>,
+  sunDir: Array<{ x: number; z: number } | null>,
+  tau = 0.2,
+): Float32Array {
+  const R = windows.length, H = sunDir.length
+  const out = new Float32Array(R * H).fill(1)
+  for (let r = 0; r < R; r++) {
+    const ws = windows[r]
+    const total = ws.reduce((a, w) => a + w.area, 0)
+    for (let h = 0; h < H; h++) {
+      const d = sunDir[h]
+      if (!d || total <= 0) { out[r * H + h] = tau; continue }
+      let lit = 0
+      for (const w of ws) if (w.nx * d.x + w.nz * d.z > 0) lit += w.area
+      const f = lit / total
+      out[r * H + h] = 1 - f + f * tau
     }
   }
   return out
