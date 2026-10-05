@@ -18,6 +18,7 @@
 
 import * as THREE from 'three'
 import { createLogger } from '../logger'
+import type { SkyPalette } from './map-look'
 
 const log = createLogger('SkyEnvironment')
 
@@ -26,6 +27,11 @@ export interface SkyOptions {
   sunAzimuthDeg: number
   /** Sun height above the horizon, degrees. */
   sunAltitudeDeg: number
+  /**
+   * The light preset's sky (map-look.ts). Omitted → the clear-day defaults
+   * below, which is what every caller got before looks existed.
+   */
+  palette?: SkyPalette
 }
 
 /**
@@ -64,9 +70,16 @@ export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
     -Math.cos(alt) * Math.cos(az),
   ).normalize()
 
+  const pal = opts.palette
+  const zenith = pal ? new THREE.Color(pal.zenith) : ZENITH
+  const horizon = pal ? new THREE.Color(pal.horizon) : HORIZON
+  const ground = pal ? new THREE.Color(pal.ground) : GROUND
+  const fill = pal?.intensity ?? 1
+
   // A low sun is redder and dimmer; a high one is near-white and strong.
   const lowness = 1 - Math.min(1, Math.max(0, opts.sunAltitudeDeg / 35))
-  const sunColor = SUN_HIGH.clone().lerp(SUN_LOW, lowness)
+  const sunColor = (pal ? new THREE.Color(pal.sunHigh) : SUN_HIGH.clone())
+    .lerp(pal ? new THREE.Color(pal.sunLow) : SUN_LOW, lowness)
   const sunIntensity = 22 * (0.35 + 0.65 * Math.sin(Math.max(0.05, alt)))
 
   const dir = new THREE.Vector3()
@@ -85,14 +98,14 @@ export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
         // Sky: zenith to horizon, with the horizon band compressed the way the
         // real one is — most of the gradient happens in the lowest 20°.
         const t = Math.pow(1 - up, 3)
-        colour.copy(ZENITH).lerp(HORIZON, t)
+        colour.copy(zenith).lerp(horizon, t)
         // Forward scattering: the sky brightens and warms around the sun.
         const cosGamma = Math.max(0, dir.dot(sun))
         colour.lerp(sunColor, Math.pow(cosGamma, 6) * 0.45 * (1 - up * 0.4))
       } else {
         // Below the horizon: the ground bounce. Dim, and tinted by nothing in
         // particular — this is the term that keeps undersides from going black.
-        colour.copy(GROUND).lerp(HORIZON, Math.pow(1 + up, 8) * 0.5)
+        colour.copy(ground).lerp(horizon, Math.pow(1 + up, 8) * 0.5)
       }
 
       // The sun disc itself. Half a degree across in reality; widened here
@@ -106,9 +119,9 @@ export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
       }
 
       const o = (y * WIDTH + x) * 4
-      data[o] = colour.r
-      data[o + 1] = colour.g
-      data[o + 2] = colour.b
+      data[o] = colour.r * fill
+      data[o + 1] = colour.g * fill
+      data[o + 2] = colour.b * fill
       data[o + 3] = 1
     }
   }

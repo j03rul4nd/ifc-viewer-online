@@ -14,6 +14,7 @@
 
 import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
+import { lowerQuality } from './basemap/tile-quality'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
@@ -25,7 +26,12 @@ import {
   expandPolygon, pointInPolygon,
   type FacilityKind, type SuppressionPolicy,
 } from './context-suppression'
-import { createFacadeMaterial } from './facade-shader'
+import { createModelStaging, type ModelStaging } from './model-staging'
+import { createFacadeMaterial, createUnlitFacadeMaterial, currentLightTint, setFacadeGround, setFacadeLook } from './facade-shader'
+import {
+  BUILDING_FINISHES, DEFAULT_LOOK_TUNING, LIGHT_PRESETS, clampLookTuning, easeInOut, lerpLightPreset, resolveLook,
+  skyBackdropStops, tunedLight, type LightPreset, type LookTuning, type MapLook,
+} from './map-look'
 import { buildVehicleLayer } from './props-scene'
 import { buildBarrierLayerSliced, buildFurnitureLayerSliced, buildPlacedSignalLayerSliced } from './street-furniture'
 import { buildMarinaBoatLayer, buildLakeBoatLayer } from './marina-boats'
@@ -113,6 +119,8 @@ export type BuildingsOutcome =
       truncated?: boolean
       /** Footprints added from the shipped Overture extract. Drives attribution. */
       overture?: number
+      /** Built from the basemap's vector tiles because Overpass failed. */
+      fallback?: boolean
     }
 
 /** Which scene layers are currently drawn. */
@@ -391,6 +399,23 @@ export interface GeoSystemAPI {
   getGpuBytesEstimate(): number
   /** While true, model hover/select raycasts are suppressed (editor drag). */
   setEditorPointerLock(locked: boolean): void
+  /**
+   * Art direction (map-look.ts): light colours, building finish, exposure,
+   * fog, ground tint. Instant — no rebuild. The sun's position is set through
+   * setTerrainLook so there is only ever one sun.
+   */
+  setMapLook(id: string): void
+  /** The user's multipliers on top of the look (exposure, city lights). */
+  setLookTuning(t: Partial<LookTuning>): void
+  /**
+   * Play a time-of-day transition between two looks (for presentation clips).
+   * Resolves when it lands; the caller then commits the target look so the
+   * sun is persisted where the transition left it.
+   */
+  animateLook(
+    fromId: string, toId: string, durationMs: number,
+    suns?: { from?: { azimuth: number; altitude: number } | null; to?: { azimuth: number; altitude: number } | null },
+  ): Promise<void>
   /** Subscribe to the tile-failure degraded signal (null to clear). */
   setDegradedCallback(cb: ((degraded: boolean) => void) | null): void
   /**
@@ -476,6 +501,12 @@ interface EnvSnapshot {
    * that view would explain why.
    */
   shadowFrustum: { left: number; right: number; top: number; bottom: number; far: number } | null
+  /** What a map look repaints: key light colour/intensity, exposure, fog, sky. */
+  keyColor: THREE.Color | null
+  keyIntensity: number
+  exposure: number
+  fogColor: THREE.Color | null
+  background: THREE.Scene['background']
 }
 
 export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
@@ -601,6 +632,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     counts: Record<FeatureKind, number>
     truncated: boolean
     overture: number
+    fallback: boolean
   } | null = null
   /** Built meshes per layer, so each can be added or dropped independently. */
   // A LIST per kind: a layer can be several objects — the buildings and their
@@ -753,6 +785,38 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * whole scene agrees on where the light comes from.
    */
   let skyEnvironment: THREE.Texture | null = null
+  /** The art direction in force (map-look.ts); null = the viewer's own light. */
+  let mapLook: MapLook | null = null
+  let lookTuning: LookTuning = { ...DEFAULT_LOOK_TUNING }
+  /**
+   * The light while a time-of-day transition plays (null otherwise). It wins
+   * over the look's preset AND over the terrain-look sun, so one interpolated
+   * value drives sky, key light, facades and tints in the same frame.
+   */
+  let lightOverride: LightPreset | null = null
+  let lookAnim: { raf: number; resolve: () => void } | null = null
+
+  /** The light in force: the transition frame, else the tuned look. */
+  function currentLight(): LightPreset | null {
+    if (lightOverride) return tunedLight(lightOverride, lookTuning)
+    return mapLook ? tunedLight(LIGHT_PRESETS[mapLook.light], lookTuning) : null
+  }
+  /** Where the sun is: the transition's, else the one the relief uses. */
+  function sunNow(): { az: number; alt: number } {
+    return lightOverride
+      ? { az: lightOverride.sunAzimuth, alt: lightOverride.sunAltitude }
+      : { az: terrainLook.sunAzimuth, alt: terrainLook.sunAltitude }
+  }
+  /**
+   * The viewer's fill lights and their ORIGINAL intensities, captured the first
+   * time a look dims them and put back when map mode turns off — a look must
+   * never leave the ordinary model view darker than it found it.
+   */
+  const fillLights = new Map<THREE.Light, number>()
+  /** Contact shadow + floodlight around the model (model-staging.ts). */
+  let staging: ModelStaging | null = null
+  /** The look's sky backdrop; owned here, disposed on change and on disable. */
+  let skyBackdrop: THREE.CanvasTexture | null = null
   /** Rebuilding costs a PMREM pass, so a slider drag must not do it per frame. */
   let skyTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -792,8 +856,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       engine.setCamera(ctx.getActiveCamera())
       engine.setResolution(ctx.getActiveCamera(), ctx.renderer)
 
+      staging = createModelStaging(ctx.scene)
       applyPlacement(p)
       applySky()
+      applyLook()
 
       // 4 — projection swaps must re-register the camera or LOD freezes (T9)
       unsubscribeProjection = ctx.onProjectionChanged((camera) => {
@@ -822,7 +888,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
           frameWatch.pause(now + REBUILD_GRACE_MS)
         } else {
           const verdict = frameWatch.sample(now)
-          if (verdict) perfCb?.(verdict)
+          if (verdict) {
+            if (verdict.slow) {
+              // Basemap sharpness goes first: cheapest thing on screen to lose.
+              const q = lowerQuality(engine.getQuality())
+              if (q) engine.setQuality(q)
+            }
+            perfCb?.(verdict)
+          }
         }
         rafId = requestAnimationFrame(tick)
       }
@@ -864,6 +937,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       buildingsMesh = null
       osmFeatures = null
       buildingsEnabled = false
+      stopLookAnim()
+      staging?.dispose()
+      staging = null
       engine.dispose()
       if (geoRoot) {
         geoRoot.removeFromParent()
@@ -896,6 +972,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     setProvider(p) {
       provider = p
+      engine?.setQuality('balanced')
       engine?.setProvider(p)
       // BUG-1 fix: the terrain drape follows the basemap provider. Heights are
       // untouched — redrape() only swaps the imagery texture.
@@ -959,6 +1036,49 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // layers is what keeps the two on the same surface — once the drag
       // settles, not per step of the slider.
       if (terrain && osmFeatures) void requestRebuild(SLIDER_REBUILD_MS)
+    },
+
+    setMapLook(id) {
+      mapLook = resolveLook(id)
+      applyLook()
+    },
+
+    animateLook(fromId, toId, durationMs, suns) {
+      stopLookAnim()
+      const from = resolveLook(fromId), to = resolveLook(toId)
+      // The site's real sun at each end when given (site-sun.ts), else the
+      // presets' own — the colours always come from the presets.
+      const withSun = (l: LightPreset, s: { azimuth: number; altitude: number } | null | undefined): LightPreset =>
+        s ? { ...l, sunAzimuth: s.azimuth, sunAltitude: s.altitude } : l
+      const a = withSun(LIGHT_PRESETS[from.light], suns?.from), b = withSun(LIGHT_PRESETS[to.light], suns?.to)
+      // The finish and the basemap switch at the start; only the LIGHT moves.
+      mapLook = to
+      const start = performance.now()
+      let lastSky = -Infinity
+      return new Promise<void>((resolve) => {
+        const step = (now: number): void => {
+          const t = Math.min(1, (now - start) / Math.max(1, durationMs))
+          lightOverride = lerpLightPreset(a, b, easeInOut(t))
+          applyLook()
+          aimKeyLight()
+          // PMREM is a few ms: a handful of refreshes per second is plenty
+          // for a sky that changes slowly, and keeps the clip smooth.
+          if (now - lastSky > 200 || t >= 1) { applySky(); lastSky = now }
+          if (t < 1) { if (lookAnim) lookAnim.raf = requestAnimationFrame(step) } else finish()
+        }
+        const finish = (): void => {
+          lightOverride = null
+          lookAnim = null
+          applyLook()
+          resolve()
+        }
+        lookAnim = { raf: requestAnimationFrame(step), resolve: finish }
+      })
+    },
+
+    setLookTuning(t) {
+      lookTuning = clampLookTuning(t)
+      applyLook()
     },
 
     setTerrainLook(look) {
@@ -1848,7 +1968,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
             built.geometry,
             litFacades
               ? createFacadeMaterial({ sun: opts.sun })
-              : new THREE.MeshBasicMaterial({ vertexColors: true }),
+              : createUnlitFacadeMaterial(),
           )
           mesh.name = 'osm-buildings'
           if (built.origin) mesh.position.set(built.origin.x, built.origin.y, 0)
@@ -2167,7 +2287,34 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     return { azimuthDeg: terrainLook.sunAzimuth, altitudeDeg: terrainLook.sunAltitude }
   }
 
+  /**
+   * Put a plain unlit layer (MeshBasicMaterial: simple-detail roads, parks,
+   * water…) in the look's light. Lit layers get the light from the scene; these
+   * would otherwise stay at noon under a night sky. The original colour is kept
+   * so a later look multiplies from it, not from the previous tint.
+   */
+  /** Kinds that carry traffic — tinted as lit streets rather than as ground. */
+  const STREET_KINDS: ReadonlySet<string> = new Set(['road', 'bridge'])
+  const streetTint = new THREE.Color(1, 1, 1)
+
+  function tintUnlit(object: THREE.Object3D, kind?: string): void {
+    const tint = kind && STREET_KINDS.has(kind) ? streetTint : currentLightTint()
+    object.traverse((o) => {
+      const mesh = o as THREE.Mesh
+      if (!mesh.isMesh) return
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      for (const m of materials) {
+        const basic = m as THREE.MeshBasicMaterial
+        if (!basic.isMeshBasicMaterial || basic.name === 'facade-unlit') continue
+        const base = (basic.userData.lookBase as THREE.Color | undefined) ?? basic.color.clone()
+        basic.userData.lookBase = base
+        basic.color.copy(base).multiply(tint)
+      }
+    })
+  }
+
   function addLayer(kind: FeatureKind, object: THREE.Object3D): void {
+    tintUnlit(object, kind)
     // THE ONE PLACE THE CONTEXT JOINS THE SHADOW PASS.
     //
     // Here rather than in each builder, for the reason every other cross-layer
@@ -2193,8 +2340,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (!engine) return
     aimKeyLight()
     const next = buildSkyEnvironment(ctx.renderer, {
-      sunAzimuthDeg: terrainLook.sunAzimuth,
-      sunAltitudeDeg: terrainLook.sunAltitude,
+      sunAzimuthDeg: sunNow().az,
+      sunAltitudeDeg: sunNow().alt,
+      palette: currentLight()?.sky,
     })
     if (!next) return
     skyEnvironment?.dispose()
@@ -2220,14 +2368,71 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const key = ctx.keyLight
     // Sun Study is a real solar position for a real date. It wins.
     if (!key || ctx.isSolarActive?.()) return
-    const az = (terrainLook.sunAzimuth * Math.PI) / 180
-    const alt = (terrainLook.sunAltitude * Math.PI) / 180
+    const az = (sunNow().az * Math.PI) / 180
+    const alt = (sunNow().alt * Math.PI) / 180
     const distance = key.position.length() || 100
     key.position.set(
       Math.cos(alt) * Math.sin(az),
       Math.sin(alt),
       -Math.cos(alt) * Math.cos(az),
     ).multiplyScalar(distance)
+  }
+
+  /**
+   * Apply a look's colours. The sun POSITION is not set here: it lives in the
+   * terrain look (the controller moves it), so the hillshade, the surfaces,
+   * the sky and the key light keep agreeing on one sun.
+   */
+  function applyLook(): void {
+    if (!mapLook || !engine) return
+    const light = currentLight()!
+    setFacadeLook(BUILDING_FINISHES[mapLook.finish], light)
+    engine.setTint(light.mapTint)
+    ctx.renderer.toneMappingExposure = light.exposure
+    const fog = ctx.scene.fog
+    const fogColor = new THREE.Color(light.fog)
+    if (fog instanceof THREE.Fog) fog.color.copy(fogColor)
+    // A sky that ends in the fog's own colour: the far city dissolves into
+    // haze and the haze into the sky, with no line where the world stops.
+    // 2×256 px, screen-space — a gradient needs no more.
+    const backdrop = buildSkyBackdrop(light)
+    skyBackdrop?.dispose()
+    skyBackdrop = backdrop
+    ctx.scene.background = backdrop ?? fogColor
+    restage()
+    streetTint.set(light.streetTint)
+    for (const [kind, objs] of layerObjects) for (const obj of objs) tintUnlit(obj, kind)
+    for (const obj of propObjects) tintUnlit(obj)
+    scaleFillLights(light.ambient)
+    // Sun Study owns the key light when it is on; a real date beats a mood.
+    if (ctx.keyLight && !ctx.isSolarActive?.()) {
+      ctx.keyLight.color.set(light.keyColor)
+      ctx.keyLight.intensity = light.keyIntensity
+    }
+    scheduleSky()
+  }
+
+  function buildSkyBackdrop(light: (typeof LIGHT_PRESETS)[keyof typeof LIGHT_PRESETS]): THREE.CanvasTexture | null {
+    if (typeof document === 'undefined') return null
+    const canvas = document.createElement('canvas')
+    canvas.width = 2
+    canvas.height = 256
+    const g = canvas.getContext('2d')
+    if (!g) return null
+    const grad = g.createLinearGradient(0, 0, 0, canvas.height)
+    for (const [offset, color] of skyBackdropStops(light)) grad.addColorStop(offset, color)
+    g.fillStyle = grad
+    g.fillRect(0, 0, canvas.width, canvas.height)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+  }
+
+  /** Stop a running time-of-day transition, landing on its target. */
+  function stopLookAnim(): void {
+    if (!lookAnim) return
+    cancelAnimationFrame(lookAnim.raf)
+    lookAnim.resolve()
   }
 
   /** Coalesce a burst of slider moves into one rebuild. */
@@ -2298,6 +2503,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         estimatedCount,
         truncated: osmCache.truncated,
         overture: osmCache.overture,
+        fallback: osmCache.fallback,
       }
     }
 
@@ -2309,6 +2515,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         lat: placement.lat,
         lon: placement.lon,
         halfSizeM: BUILDINGS_HALF_SIZE_M,
+        // `__geoForceFallback = true` (or localStorage 'ifc-dev-force-fallback'
+        // = '1', which survives a reload) in dev builds the city from
+        // the vector tiles as if Overpass were down — the only way to QA the
+        // fallback without waiting for the public server to fail.
+        forceFallback: import.meta.env.DEV && (
+          (globalThis as Record<string, unknown>).__geoForceFallback === true
+          || (() => { try { return localStorage.getItem('ifc-dev-force-fallback') === '1' } catch { return false } })()
+        ),
         // The model's own plan, so the Overture merge can refuse footprints
         // standing in it. Sent as plain numbers because a worker message is
         // structured-cloned and a THREE.Vector2 does not survive the trip.
@@ -2331,6 +2545,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       counts: reply.counts,
       truncated: reply.truncated,
       overture: reply.overture,
+      fallback: reply.fallback === true,
     }
     if (reply.features.length === 0) return { status: 'empty' }
 
@@ -2339,7 +2554,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
     return {
       status: 'ready', counts: reply.counts, estimatedCount,
-      truncated: reply.truncated, overture: reply.overture,
+      truncated: reply.truncated, overture: reply.overture, fallback: reply.fallback === true,
     }
   }
 
@@ -2506,6 +2721,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         : null,
       cameraPos: ctx.controls.getPosition(new THREE.Vector3()),
       cameraTarget: ctx.controls.getTarget(new THREE.Vector3()),
+      keyColor: ctx.keyLight ? ctx.keyLight.color.clone() : null,
+      keyIntensity: ctx.keyLight?.intensity ?? 0,
+      exposure: ctx.renderer.toneMappingExposure,
+      fogColor: fog ? fog.color.clone() : null,
+      background: ctx.scene.background,
     }
   }
 
@@ -2527,6 +2747,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     ctx.setGridVisible(snapshot.gridVisible)
     ctx.scene.environment = snapshot.environment
     if (ctx.keyLight && snapshot.keyLightPos) ctx.keyLight.position.copy(snapshot.keyLightPos)
+    if (ctx.keyLight && snapshot.keyColor) {
+      ctx.keyLight.color.copy(snapshot.keyColor)
+      ctx.keyLight.intensity = snapshot.keyIntensity
+    }
+    ctx.renderer.toneMappingExposure = snapshot.exposure
+    if (fog instanceof THREE.Fog && snapshot.fogColor) fog.color.copy(snapshot.fogColor)
+    ctx.scene.background = snapshot.background
+    restoreFillLights()
+    skyBackdrop?.dispose()
+    skyBackdrop = null
     if (ctx.keyLight && snapshot.shadowFrustum) {
       const c = ctx.keyLight.shadow.camera
       const s = snapshot.shadowFrustum
@@ -2633,7 +2863,39 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     placeSatellites(p, anchorScene, t.position.y, anchor?.modelId ?? null)
     // The hole planes live in WORLD space — refresh them when the root moves.
     if (terrain && engine) engine.setHole(computeHolePlanes())
+    restage()
   }
+
+  /** Scale the viewer's own fill lights (not the key light, not ours). */
+  function scaleFillLights(k: number): void {
+    for (const o of ctx.scene.children) {
+      const l = o as THREE.Light
+      if (!l.isLight || l === ctx.keyLight) continue
+      const fill = (l as THREE.HemisphereLight).isHemisphereLight || (l as THREE.AmbientLight).isAmbientLight
+        || (l as THREE.DirectionalLight).isDirectionalLight
+      if (!fill) continue
+      if (!fillLights.has(l)) fillLights.set(l, l.intensity)
+      l.intensity = fillLights.get(l)! * k
+    }
+  }
+
+  function restoreFillLights(): void {
+    for (const [l, i] of fillLights) l.intensity = i
+    fillLights.clear()
+  }
+  /** Fit the contact shadow and floodlight to the model, in the look's light. */
+  function restage(): void {
+    if (geoRoot) setFacadeGround(geoRoot.position.y)
+    if (!staging || !geoRoot) return
+    const light = currentLight()
+    const finish = mapLook ? BUILDING_FINISHES[mapLook.finish] : null
+    staging.update(
+      ctx.getActiveModelBounds(), geoRoot.position.y,
+      finish?.ao ?? BUILDING_FINISHES.natural.ao,
+      light?.floodlight ?? 0, light?.glowColor ?? '#ffc27a',
+    )
+  }
+
 
   /**
    * Send every other georeferenced model to its own coordinates on the map.
@@ -2678,5 +2940,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     void ctx.controls.setLookAt(cx + h * 0.8, cy + h, cz + h * 0.8, cx, cy, cz, true)
   }
 
+  if (import.meta.env.DEV) {
+    // Console handle for art-direction QA: `__geoSystem.setMapLook('night')`
+    // switches a look without the panel (and without refetching the city).
+    ;(globalThis as Record<string, unknown>).__geoSystem = api
+  }
   return api
 }

@@ -174,7 +174,19 @@
     "hidePickHint": "Turn this on, then click any mapped building to take it out of the view. Use it when the map and your model describe the same thing and the automatic rule above did not catch it. Nothing is deleted: everything you hide is listed here and comes back with one click.",
     "hidePickActive": "Click a building on the map to hide it. Turn this off when you are done.",
     "hiddenRestore": "Show",
-    "hiddenRestoreAll": "Show all again"
+    "hiddenRestoreAll": "Show all again",
+    "styles": {
+      "standard": "Estàndard",
+      "light": "Clar",
+      "dark": "Fosc",
+      "bim": "BIM",
+      "hybrid": "Híbrid",
+      "minimal": "Mínim",
+      "contrast": "Alt contrast"
+    },
+    "mapStyle": "Estil de mapa",
+    "buildingsFallback": "Servidor d’OpenStreetMap ocupat — creat a partir de les tessel·les del mapa, amb menys detall",
+    "vector": "Vectorial"
   },
   "placement": {
     "title": "Placement",
@@ -323,5 +335,23 @@
     "partial": "Partly georeferenced — check the position once it is on.",
     "none": "No georeferencing — you will place it on a map.",
     "invalid": "Unusable georeferencing — you will place it on a map."
+  },
+  "looks": {
+    "title": "Ambient",
+    "daylight": "Dia",
+    "maquette": "Maqueta",
+    "golden": "Hora daurada",
+    "night": "Nit",
+    "blueprint": "Plànol",
+    "dawn": "Alba",
+    "exposure": "Exposició",
+    "glow": "Llums",
+    "playToNight": "▶ Passar a la nit",
+    "playToDay": "▶ Passar al dia"
+  },
+  "readout": {
+    "scaleHint": "Escala al centre de la vista",
+    "copy": "Copia les coordenades (lat, lon)",
+    "copied": "Copiat"
   }
 }

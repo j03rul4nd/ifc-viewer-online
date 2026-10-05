@@ -60,6 +60,12 @@ export interface SdkSiteCommand {
   exaggeration?: number
   /** Decorative cars and trains. */
   vehicles?: boolean
+  /** Art direction (map-look MAP_LOOKS id): the map comes up in this look. */
+  look?: string
+  /** Once the scene is built, play a time-of-day transition to this look. */
+  lookTo?: string
+  /** Duration of that transition, ms (default 6000). */
+  lookDurationMs?: number
   done?: (ok: boolean, error?: string) => void
 }
 

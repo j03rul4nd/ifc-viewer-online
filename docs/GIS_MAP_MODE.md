@@ -122,6 +122,10 @@ byte-identical to a build without the feature. This is the kill switch.
 | Extraction→placement glue + persistence | `src/lib/geo/placement.ts` |
 | Provider registry + custom slot | `src/lib/geo/providers.ts` |
 | Tile engine seam (3d-tiles-renderer impl + T0 decision block) | `src/lib/geo/basemap-engine.ts` |
+| Basemap sharpness maths (device-pixel LOD, error target, quality ladder) | `src/lib/geo/basemap/tile-quality.ts` |
+| Cartographic style engine (palettes, knobs, ordered layer rules, zoom functions) | `src/lib/geo/basemap/map-styles.ts` |
+| Vector tile painter (geometry, casings, labels + collisions) | `src/lib/geo/basemap/vector-painter.ts` |
+| OpenMapTiles overlay (TileJSON, overzoom to z20, custom paint) | `src/lib/geo/basemap/vector-overlay.ts` |
 | Lifecycle owner (geoRoot, env snapshot/restore, camera flight, picking) | `src/lib/geo/geo-system.ts` |
 | Point elevation (terrarium) | `src/lib/geo/elevation.ts` |
 | Terrain sampling math (pure: bicubic, normals, detail synthesis, sky-view factor, hillshade, ecosystems, zoom selection) | `src/lib/geo/terrain-sampling.ts` |
@@ -208,6 +212,346 @@ times and its longest slice is ~325 ms (buildings / vertical solve / ground
 cover are still single tasks); before slicing and scheduling the road layer
 alone was one ~1.9 s block. Switching trees back on builds that layer alone
 (~0.5 s here) instead of the ~2.3 s full rebuild.
+
+## Basemap rendering (2026-10)
+
+### Why tiles looked pixelated — diagnosed, not guessed
+
+`3d-tiles-renderer` refines a tile while one of its texels covers more than
+`errorTarget` pixels of the resolution it was given. Three faults stacked:
+
+1. **`errorTarget` was 6.** A 256 px OSM tile could be stretched over
+   ~1500 px before its children were requested; a full-HD view was painted by
+   two to four tiles.
+2. **CSS pixels, not device pixels.** `setResolutionFromRenderer` reads
+   `renderer.getSize()`. On a DPR 2 screen every texel was magnified twice
+   more than LOD believed — up to 12 device px per texel.
+3. **Resolution set once.** Only at map-on and projection swaps; resizing the
+   window, opening a panel or moving to another monitor never reached LOD.
+
+No CSS or filter could fix that. The fix (`tile-quality.ts`): the engine reads
+the canvas size × DPR **every frame** and pushes it only when it changes;
+`errorTarget` is 2 *device* px (`balanced`), 1.5 (`high`, raster only), 3.5
+(`economy`). Effective DPR is capped at 2 and the LOD frame at a 4K pixel
+count — beyond that only the tile bill grows. A slow view (frame watch) steps
+the basemap down to `economy` *before* the scene's adaptive quality removes
+buildings; a provider change restores `balanced`.
+
+Loading: `loadAncestors` keeps the parent on screen until its children are
+ready, `TilesFadePlugin` cross-fades them (220 ms, up to 120 simultaneous fades
+so a fast zoom does not fall back to popping), and a **ground underlay** — one
+quad in the provider's land colour, `depthWrite:false`, drawn first, not
+pickable — means a tile still in flight shows *map colour*, never the black
+sky. Priority (in-frustum, nearest, shallowest first), request abort on
+unload, LRU + byte-target unloading are the library's and were already on.
+
+### OSM as data: the vector basemap (default for new users)
+
+`vt-<style>` providers read OpenMapTiles vector tiles from **OpenFreeMap**
+(OSM-derived, no key, no cap, commercial use allowed — attribution only; the
+URL is versioned weekly, so it is resolved from the TileJSON). They are painted
+by **our** style engine into the same 3D ground surface the rasters use, so
+terrain holes, placement, BCF, capture and every overlay work unchanged.
+
+- **Overzoom.** Data stops at z14 (~2 km tiles). The *surface* tiling goes to
+  z20 while the *content* tiling stays at z14, so a z19 surface tile repaints
+  z14 geometry over 1/32 of its span: vector-sharp at building scale, where a
+  raster would be a 32× magnified photograph.
+- **Styles are architecture, not themes.** `map-styles.ts` builds one ordered
+  layer list from *(palette, knobs)*: Standard, Light, Dark, BIM, Minimal,
+  High contrast share the hierarchy (roads widen identically, labels arrive at
+  the same zooms) and differ only where intended. Widths interpolate
+  **geometrically** between zoom stops, which is what keeps on-screen width
+  steady across a parent→children LOD swap. A new style = a palette + knobs; a
+  new kind of feature = one rule, and every style gets it.
+- **Progressive density.** Countries/cities from z2–4, towns z8, roads by class
+  (motorway z5 … minor z12, service z13, paths z15), buildings z14 (BIM) / z16
+  (Minimal), POIs z15 with per-tile budgets (8 → 40), house numbers z18. Street
+  names from z13 (primary) to z17 (service).
+- **Labels.** Greedy priority placement per tile; a label is drawn only if it
+  fits *entirely* inside the tile (no label is ever cut by a tile edge), never
+  over another, never repeated within its `repeatDistance`; line labels ride
+  the longest straight segment and are kept upright. Name in the UI language
+  when OSM has it, else the local name (what the street sign says). Font:
+  Geist, halo per style.
+- **BIM coexistence.** The BIM style keeps hue for the model and its issues:
+  roads rank by width not colour, footprints are crisp and pale like a
+  drawing's context layer, no commercial POIs, place names set as a drawing
+  sheet. Dark is for presentation; High contrast is for site tablets in glare.
+- **Fallbacks.** Vector providers keep `urlTemplate` = OSM raster, used only
+  for the terrain drape (the drape is still a photograph). The degraded banner
+  switches vector ↔ raster OSM (different hosts, so each is the other's way
+  out).
+
+### Our own map provider = a mixer in the browser (no backend, no storage, no cost)
+
+The product is browser-only and spends nothing until it earns, so "our
+provider" is not a tile server: it is `raster-sources.ts` + the vector overlay
+composing each surface tile **client-side** from public sources read directly
+(all verified `Access-Control-Allow-Origin: *`):
+
+| Source | What it gives | Where | Licence |
+|---|---|---|---|
+| OpenFreeMap (OpenMapTiles) | OSM vectors: roads, names, land use, footprints | world | ODbL / free, attribution |
+| PNOA (IGN WMTS) | orthophoto 15–25 cm | Spain | CC-BY 4.0, commercial OK |
+| Catastro INSPIRE (WMS) | cadastral parcels | Spain, z ≥ 16 | free reuse, attribution |
+| Terrarium (AWS open data) | relief (terrain patch) | world | open |
+
+A style declares the rasters it mixes (`MapStyle.rasters`, `under` the
+vectors or `over` them). **Hybrid** = PNOA under our roads and names (no land
+or footprint fills — `knobs.imagery`). **BIM** = the plan style plus the legal
+parcels over it. Pieces are fetched in parallel per tile, aborted with the
+tile, decoded to `ImageBitmap` and closed when the tile is disposed; a failed
+piece leaves the vector map, never a broken tile. Out of coverage (outside
+Spain) nothing is requested. Attribution is assembled from every source the
+style mixes. Adding a source = one `RasterSource` entry (coverage, zooms,
+URL builder) and a `rasters` line in a style.
+
+**Computed source — relief.** `HILLSHADE` reads Terrarium elevation (the same
+tiles as the 3D terrain patch, so the browser cache serves both) and computes
+shaded relief per tile in the browser: NW light at 45° (the cartographic
+convention, not the scene sun), a cool grey-violet wash drawn with `multiply`
+AFTER the ground fills and BEFORE any road (`placement: 'relief'`). z4–15 only;
+exaggerated far out, true close in. On in Standard (0.55), Light (0.38),
+Minimal (0.3); off in BIM (a plan is flat on purpose), Hybrid (the photo has
+its own shadows), Dark and Contrast.
+
+### Looks — art direction for the 3D map (2026-10)
+
+Research (what the reference products do): Mapbox Standard separates **light
+presets** (dawn/day/dusk/night: one directional + ambient light whose colour
+and angle change), **themes** (default/faded/monochrome — a colour treatment
+over everything), **fog/atmosphere** that dissolves the horizon, **ground
+occlusion** at the foot of buildings, and **lit windows / flood lights** at
+night. What makes it read as *designed* is that one choice moves all of those
+together.
+
+Ours (`src/lib/geo/map-look.ts`) is the same idea, three orthogonal parts:
+
+- **LightPreset** — sun azimuth/altitude, key colour/intensity, sky palette
+  (zenith/horizon/ground/sun → the procedural sky environment), fog colour,
+  exposure, window glow + its colour, and a **ground tint** that multiplies the
+  unlit basemap so the ground sits in the same light.
+- **BuildingFinish** — natural, clay (white-card maquette), monochrome,
+  blueprint. Applied in the facade shader as a tint that keeps the facade's own
+  light/dark relief (windows, floors, cornice).
+- **map style** — the basemap designed with it.
+
+Six curated looks (Daylight, Maquette, Golden hour, Night, Blueprint, Dawn)
+in the panel (Basic and Advanced), shown as swatches of their sky, sun and
+building colour. Switching is **instant**: shared uniforms
+(`setFacadeLook`), light parameters and a tile tint — no rebuild, no
+recompile. There is still **one sun**: the controller moves the terrain-look
+sun, so hillshade, surfaces, sky and key light keep agreeing; Sun Study (a real
+date) still wins the key light. Everything a look touches (key colour and
+intensity, exposure, fog colour, background) is in the env snapshot and
+restored when map mode turns off.
+
+Works at every detail level: `simple` buildings use `createUnlitFacadeMaterial`
+(same finish + light tint + night glow, no lighting cost) and the other unlit
+layers are multiplied by the light tint (`tintUnlit`, original colour kept in
+`userData.lookBase`).
+
+Trap found: night glow by luminance must NOT reuse `GLASS_BELOW` (0.34
+linear). Barcelona's renders sit ~0.25, so whole facades lit up orange. Glow
+uses its own band (0.05–0.13), where only the baked glazing lives.
+
+**Night windows at simple detail.** Flat-coloured buildings have no glazing to
+find, so `createUnlitFacadeMaterial` lays a window grid on every wall (never a
+roof) in world metres — storeys 3.1 m, bays 3.2 m, ~half the panes lit — and
+fades it to its average where a cell is under ~2 px (no moiré). Luminance glow
+is NOT used there: a dark-painted block would read as one huge lit window.
+
+**Finish relief must stay high (≥ 0.9).** The unlit path bakes face shading
+(`wallShade` / `roofShade`) into vertex colours; a low `relief` flattened it and
+the Maquette's white volumes vanished into a white ground. Maquette also sits
+on Standard (beige ground) for the same reason. The sky behind the map is a
+zenith → horizon → fog gradient (`skyBackdropStops`), ending in the fog colour
+so the horizon has no edge. Dev handle: `__geoSystem.setMapLook('night')`
+switches looks in the console without refetching the city.
+
+Verified in the app (Poblenou, simple detail, 2026-10-03): Night, Maquette,
+Blueprint, Dawn, Golden hour — each switch instant, no rebuild.
+
+**Model staging** (`model-staging.ts`): a contact shadow under the model (a
+blurred-rectangle quad, footprint + a margin that grows with the building,
+capped at 10 m; opacity from the finish's `ao`) — Mapbox's ground occlusion,
+with no post-processing — and, at dawn/dusk/night, a warm floodlight from the
+street side (`LightPreset.floodlight`: 0 / 0.4 / 0.9 / 1.6) so the model stays
+the most legible thing on screen after dark. Both refit on every placement
+change and look switch, and are removed with map mode.
+
+**Why no global colour grade (decided 2026-10-04).** Mapbox's themes are LUTs
+over the whole frame. Here that would (a) need a pass in ThatOpen's
+postproduction, which is off by default, and (b) miss every capture path
+(PNG, GIF, `captureStream` video) if done as a CSS filter instead — and,
+above all, (c) recolour the IFC model, whose colours carry meaning (materials,
+validation highlights). So the grade is applied to the CONTEXT only (light
+tint, finish, sky) and never to the model.
+
+**Night streets and street level** (2026-10-04). Road and bridge layers take
+`LightPreset.streetTint` instead of `groundTint`: sodium amber against a cool
+moonlit ground. Separated by TEMPERATURE, not brightness — a brighter tint
+(#b0905e) turned the pale road meshes into a daylit sand field. Facades get a
+warm wash over their first ~6 m after dark (`uGroundY`, refreshed with the
+placement): shopfronts and street lights putting the city's light on the
+ground, not only in its windows.
+
+The horizon haze already reaches every capture: the sky gradient is
+`scene.background` and the haze is `scene.fog`, both rendered in-frame.
+
+**Tower crowns.** Facade fragments above ~35 m only exist on tall buildings,
+so the fragment's own height picks the landmarks with no per-building data;
+they get a wash rising to the crown (35 → 90 m) after dark. A mid-rise block
+never receives any.
+
+**Night basemap.** Tiles take `LightPreset.mapTint`, not `groundTint`: the
+night look's basemap (Dark) is already a night map, and the full moonlight
+tint put its streets out. Dark's secondary/minor roads are warm grey now
+(sodium-lit), so the map alone — 3D surroundings off — reads as a lit city.
+
+**Landmarks by real height.** building-mesh now writes `aTopH` (the
+building's height, metres) on every vertex — filled by vertex range after each
+building, so every emission path is covered. The unlit facade floodlights
+buildings from ~40 m (smoothstep 40→80 m): a faint uplight sheen over the
+facade and a lit crown over the top quarter. Geometry without the attribute
+falls back to the fragment-height heuristic. (Lit/detailed facades do not use
+it yet.)
+
+**Street glow in the Dark style** (`knobs.streetGlow`): a wide (3× + 4 px),
+faint amber halo under motorway/trunk/primary (and secondary from z14),
+drawn before the casings. Visible when the 3D surroundings are off; with them
+on, the 3D road meshes cover the basemap and carry the street tint instead.
+
+**Both detail levels share the night light** (2026-10-04): the street-level
+wash and the landmark lighting live in one GLSL function (`NIGHT_WASH_GLSL`)
+used by the unlit facade (as colour) and the lit one (as emissive), so Simple
+and Detailed read the same after dark.
+
+**The viewer's fill lights follow the look** (`LightPreset.ambient`: day 1,
+dawn 0.75, dusk 0.6, night 0.3). The viewer's hemisphere and fill
+directionals are tuned for a model at noon; untouched, a night look's lit
+facades came out almost white. Their original intensities are captured on
+first use and restored when map mode turns off. The key light is left to the
+look's own key colour/intensity (and to Sun Study when it is on).
+
+**User fine-tuning** (Advanced → Basemap): *Exposure* (×0.6–1.6) and *City
+lights* (×0–2: windows, street wash, floodlight). Multipliers on top of the
+look, persisted (`ifc-geo-look-tuning:v1`), so they survive a look switch.
+
+**Verified at Detailed, night** (2026-10-04): lit facades in moonlight,
+windows by storey, crowns, street-level warmth — and it exposed one bug: the
+model's floodlight had `distance: 0` (unbounded), washing a whole district
+orange down its cone. It now reaches 2.2× the light→model distance.
+
+**Showcase comes in golden hour** (`ScenePreset.look`). Only Showcase has a
+look — the working views keep the user's. It is applied by the preset card,
+not part of `matchPreset`, so changing the look never turns a preset into
+"Custom".
+
+**Time-of-day transitions** (`animateLook`, panel button *Play to night / to
+day*, 6 s): `lerpLightPreset` interpolates every colour IN LINEAR LIGHT (an
+sRGB lerp from blue night to warm dusk passes through mud), every number, and
+the sun's azimuth the short way round, eased in and out. geo-system plays it
+through a temporary `lightOverride` that wins over both the look and the
+terrain-look sun, so sky, key light, facades and tints move in the same frame;
+the sky's PMREM is refreshed at most every 200 ms. On landing the controller
+commits the target look, so the sun is persisted where the transition left
+it. Map-mode off cancels a running transition.
+
+**The site's real sun** (`site-sun.ts`, SunCalc via solar/sun-math): dawn =
+sunrise + 30 min, day = solar noon + 2 h, dusk = sunset − 30 min, today, at
+the placement — so a golden hour lights the facade the real sunset lights, in
+any city and season. The preset's colours are kept; night keeps its moon;
+polar day/night and an unplaced model fall back to the preset sun. Used when a
+look is applied and at both ends of a transition.
+
+**Deep link / SDK:** `?map=1&look=night` opens in a look; `look=daylight..night`
+plays the transition once the scene is settled (`SdkSiteCommand.look / lookTo
+/ lookDurationMs`). See EMBED_URL_PARAMS.md. The transition runs on rAF, so it
+waits for the tab to be visible — a background embed shows it whole on arrival
+(and in the hidden Claude pane it only advances while the pane is shown).
+
+**Placement minimap = the same cartography** (`basemap/leaflet-vector-layer.ts`).
+The Leaflet minimap was the last raster-OSM map in the product (soft on Retina,
+another style). A Leaflet `GridLayer` now paints each 256 px tile with the
+same painter and style as the 3D basemap, at the device pixel ratio (verified:
+320 px canvases at DPR 1.25), overzooming the z14 tile above z14
+(`contentFrameFor`). A Leaflet tile at z is a style-zoom z−1 tile; pixelScale
+= DPR. It follows the panel's basemap live; raster providers stay raster (with
+`detectRetina`). TileJSON loading moved to `basemap/tilejson.ts` so the
+minimap does not pull 3d-tiles-renderer into its chunk.
+
+**The city when Overpass says no** (`omt-fallback.ts`, 2026-10-04). Overpass
+is a shared public server: it rate-limits after a few loads in minutes and
+answers "busy" at peak — and the surroundings then simply did not appear (hit
+repeatedly during this work). On ANY Overpass failure (HTTP error, timeout,
+busy `remark`) the worker now rebuilds the city from the basemap's own
+OpenMapTiles z14 tiles (OpenFreeMap: OSM data, CDN, no key): building
+footprints with `render_height`, roads by class with bridge/tunnel/ramp, rail,
+water, parks, landcover — converted to pseudo-Overpass ways with the
+equivalent OSM tags, so they flow through the SAME pipeline (as the Overture
+extract already does). ~0.8 s for Poblenou (4 tiles, clipped to the query box:
+9 732 ways, 6 257 buildings).
+
+Rules learned on the way: OMT's default height (≤ 5 m, most of untagged
+Poblenou came out at exactly 4 m) is dropped so the district height prior
+decides; heights are tagged `note:height=estimated`; culverted/intermittent
+waterways and drains are skipped (they cut blue lines across blocks); holes in
+polygons are dropped like Overpass multipolygons. The thinner city (no trees,
+furniture, facade colours, building parts) is said plainly in the panel
+(`layers.buildingsFallback`) and credited ("OpenFreeMap © OpenMapTiles").
+Dev QA: `localStorage['ifc-dev-force-fallback'] = '1'` skips Overpass.
+
+**Screen-space place names** (`basemap/screen-labels.ts`, 2026-10-04). Point
+labels — places, water names, POIs, house numbers — are no longer baked into
+the ground: the painter hands them (per-layer budgeted) to a label layer that
+draws them as sprites (`sizeAttenuation:false`, no fog, no tone mapping):
+upright, constant CSS size, collision-resolved over the WHOLE screen, fading
+in/out. Street names stay painted along their streets. Sprites, not an HTML
+overlay, so the names appear in every capture (PNG, GIF, video).
+
+- Only regions the engine is DISPLAYING contribute. GeneratedSurfacePlugin
+  never calls the overlay's `setRegionVisible`, so visibility is read from
+  `tiles.visibleTiles` → each mesh's texture → its region key.
+- The label group lives at the SCENE ROOT; positions come from the tiles'
+  matrixWorld. Under the basemap group the sprite shader would multiply by the
+  Earth-sized scale.
+- Screen quotas per layer (place 18, poi 12, water 6, housenumber 24): the
+  per-tile budgets were not enough once a 3D view shows dozens of tiles —
+  measured 32 names, mostly bus stops. Bus stops rank −45; POIs nearer the
+  viewer (lower on screen) win.
+- Sprites are rasterised only for names actually on screen (587 → 86 in the
+  Poblenou view). Dev handle: `__screenLabels.debug()`.
+
+**Presentation director:** not on this branch (`src/lib/director/` lives on
+main / the `ifc-director` worktree). When merged, a "time of day" clip step is
+`geo.animateLook(from, to, ms, suns)` — already promise-based for sequencing.
+
+Status bar (bottom-left, `MapOverlays.tsx` + `map-readout.ts`): graphic scale
+measured on the ground at the view centre (1-2-5 steps, "≈" because a tilted
+3D view has no single scale) and the cursor's lat/lon, copied on click.
+
+**Measured (Poblenou fixture, Chrome, 2026-10-03):** painting one 512 px tile
+costs median **1.3 ms**, p90 **8 ms**, worst 15 ms. Before two fixes it was
+p90 674 ms / worst 1.6 s: `closePath()` is linear in the current path's length
+in Chrome (749 ms of an 831 ms tile), and one `fill()` over 20k footprints is
+~18× slower than chunks of 256. Both are documented at the call sites.
+
+**Known limits / next steps.** Street names are still ground-baked (by design,
+they follow the street); place names moved to screen space (see below). Painting runs on the main thread (cheap now);
+moving it to an `OffscreenCanvas` worker is the scale-out. The 2D placement
+minimap now uses the vector painter too (see below).
+
+**QA trap.** The library's queues are scheduled with `requestAnimationFrame`.
+In a hidden/background pane rAF runs at ~1 Hz, so tiles appear at ~5/s and a
+view takes ~30 s — that is the harness, not the product (measured: 3 rAF in
+2 s with `visibilityState` still `visible`). Measure paint cost with
+`imageSource.redraw(...)` timings instead (`__basemapTiles.plugins` → overlay).
+
+**OSM tile policy.** Sharper raster LOD means more requests to
+`tile.openstreetmap.org` (still comparable to Leaflet at DPR 1). It is another
+reason the vector basemap is the default.
 
 ## Maintainer notes
 

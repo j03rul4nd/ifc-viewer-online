@@ -174,7 +174,19 @@
     "hidePickHint": "Turn this on, then click any mapped building to take it out of the view. Use it when the map and your model describe the same thing and the automatic rule above did not catch it. Nothing is deleted: everything you hide is listed here and comes back with one click.",
     "hidePickActive": "Click a building on the map to hide it. Turn this off when you are done.",
     "hiddenRestore": "Show",
-    "hiddenRestoreAll": "Show all again"
+    "hiddenRestoreAll": "Show all again",
+    "styles": {
+      "standard": "标准",
+      "light": "浅色",
+      "dark": "深色",
+      "bim": "BIM",
+      "hybrid": "混合",
+      "minimal": "极简",
+      "contrast": "高对比度"
+    },
+    "mapStyle": "地图样式",
+    "buildingsFallback": "OpenStreetMap 服务器繁忙 — 已用地图瓦片生成，细节较少",
+    "vector": "矢量"
   },
   "placement": {
     "title": "Placement",
@@ -323,5 +335,23 @@
     "partial": "Partly georeferenced — check the position once it is on.",
     "none": "No georeferencing — you will place it on a map.",
     "invalid": "Unusable georeferencing — you will place it on a map."
+  },
+  "looks": {
+    "title": "氛围",
+    "daylight": "白天",
+    "maquette": "模型",
+    "golden": "黄金时刻",
+    "night": "夜晚",
+    "blueprint": "蓝图",
+    "dawn": "黎明",
+    "exposure": "曝光",
+    "glow": "城市灯光",
+    "playToNight": "▶ 播放至夜晚",
+    "playToDay": "▶ 播放至白天"
+  },
+  "readout": {
+    "scaleHint": "视图中心处的比例尺",
+    "copy": "复制坐标（纬度, 经度）",
+    "copied": "已复制"
   }
 }

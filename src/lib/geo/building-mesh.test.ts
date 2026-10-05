@@ -94,6 +94,14 @@ describe('buildBuildingsGeometry', () => {
     expect(result!.geometry.getAttribute('position').count).toBeGreaterThan(0)
   })
 
+  it('tags every vertex with its own building height (night landmark lighting)', () => {
+    const r = buildBuildingsGeometry([squareFootprint('low', 20, 12), squareFootprint('tower', 20, 95)], OPTS)!
+    const tops = r.geometry.getAttribute('aTopH')
+    expect(tops.count).toBe(r.geometry.getAttribute('position').count)
+    const values = new Set(Array.from({ length: tops.count }, (_, i) => tops.getX(i)))
+    expect(values).toEqual(new Set([12, 95]))
+  })
+
   it('keeps EVERY building in a dense block, not a fraction of them', () => {
     // 200 small footprints — before the fix the vast majority were dropped.
     const many = Array.from({ length: 200 }, (_, i) => squareFootprint(`b${i}`, 12 + (i % 7)))

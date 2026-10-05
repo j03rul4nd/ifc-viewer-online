@@ -145,6 +145,8 @@ export interface GeoRootTransform {
 
 // ── Providers ──────────────────────────────────────────────────────────────────
 
+import type { MapStyleId } from './basemap/map-styles'
+
 export type MapLayerKind = 'streets' | 'satellite' | 'topo' | 'custom'
 
 export interface MapProvider {
@@ -161,6 +163,12 @@ export interface MapProvider {
   homepage: string
   /** Month the licensing terms were last manually reviewed, e.g. '2026-06'. */
   lastReviewed: string
+  /**
+   * Present → OSM as DATA: vector tiles painted by our style engine
+   * (lib/geo/basemap). `urlTemplate` then stays a RASTER fallback, used only
+   * where a photograph of the map is still needed (the terrain drape).
+   */
+  vector?: { tileJsonUrl: string; styleId: MapStyleId }
 }
 
 // ── Worker messages (geo-extract) ──────────────────────────────────────────────

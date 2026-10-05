@@ -445,7 +445,7 @@ export function trackMapModeDisabled(props: { duration_s: number }): void {
 
 /** Base layer switched. */
 export function trackMapLayerChanged(props: {
-  layer: 'osm' | 'opentopomap' | 'esri-imagery' | 'eox-s2' | 'gibs' | 'custom'
+  layer: 'osm' | 'opentopomap' | 'esri-imagery' | 'eox-s2' | 'gibs' | 'custom' | `vt-${string}`
 }): void {
   track('map_layer_changed', props)
 }

@@ -247,6 +247,17 @@ function* buildingsGeometrySteps(
     const n = positions.length
     while (facA.length < (n / 3) * 4) { facA.push(0, 0, 0, 0); facB.push(0, 0, 0, 0); facC.push(0, 0, 0, 0) }
   }
+  // Each vertex's BUILDING height (metres), so a shader can tell a tower from
+  // a block: night lighting picks landmarks with it. Filled by vertex range
+  // after each building, so every emission path (stations, arches, detailed
+  // walls) is covered without touching any of them.
+  const tops = new GrowableArray('f32')
+  let pendingTop = 0
+  const fillTops = (): void => {
+    const n = positions.length / 3
+    while (tops.length < n) tops.push(pendingTop)
+  }
+
   const party = opts.typologyAt && detailed && lit
     ? partyWallIndex(footprints, metresToNormalized)
     : null
@@ -660,11 +671,14 @@ function* buildingsGeometrySteps(
     if (b.height.estimated) estimatedCount++
   }
   for (const [bi, b] of footprints.entries()) {
+    fillTops()
+    pendingTop = b.height.heightM
     yield
     emitBuilding(bi, b)
   }
 
   if (count === 0) return null
+  fillTops()
   yield
 
   const origin = opts.localOrigin
@@ -676,6 +690,7 @@ function* buildingsGeometrySteps(
   geometry.setAttribute('position', new THREE.BufferAttribute(yield* positions.toFloat32Steps(), 3))
   geometry.setAttribute('normal', new THREE.BufferAttribute(yield* normals.toFloat32Steps(), 3))
   geometry.setAttribute('color', new THREE.BufferAttribute(yield* colors.toFloat32Steps(), 3))
+  geometry.setAttribute('aTopH', new THREE.BufferAttribute(yield* tops.toFloat32Steps(), 1))
   if (facA.length > 0) {
     padFacade()
     geometry.setAttribute('aFacA', new THREE.BufferAttribute(yield* facA.toFloat32Steps(), 4))

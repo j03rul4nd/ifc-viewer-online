@@ -751,3 +751,32 @@ runners were driven from the panels and cancelled through ONE store-wide
 ---
 
 *Last updated: 2026-09-24 · Sprints 1–9 complete · D-21/D-22 (re-audit v2) · D-23 Capture Toolkit · D-24 Tour Mode · D-25 Client Presentation Mode · D-26 Presentation Templates + Share Links · D-27 (privacy-invariant amendment, F6-gated) + D-28 (immutable Submission + append-only AuditLog) added for the conformance-CDE pivot — see `docs/CDE_ROADMAP.md` + `docs/CONFORMANCE_DOMAIN.md` · D-29 centralized model loading manager (2026-09) — see `docs/MODEL_LOADING.md`; D-30 point clouds and meshes as managed jobs; D-02/03/04/06/08/10/13/14/16/18/19 annotated*
+
+## D-31 · Basemap: OSM as data, painted by our own style engine
+
+**Date:** 2026-10-03 · **Status:** accepted
+
+**Context.** Map mode looked pixelated. Diagnosis (docs/GIS_MAP_MODE.md →
+"Basemap rendering"): LOD planned in CSS pixels with an error target of 6 and a
+resolution set once — a raster problem of our own making, plus the hard limit
+that a raster tile is someone else's photograph at someone else's zooms.
+
+**Decision.**
+1. Raster LOD is planned in device pixels, tracked every frame, with a 2 px
+   error target and a quality ladder that the frame watch can step down.
+2. The default basemap is OpenMapTiles vector data (OpenFreeMap: OSM-derived,
+   keyless, commercial use allowed) painted by `lib/geo/basemap/` into the same
+   3D ground surface, overzoomed to z20. Rasters (OSM, Topo, satellite, custom)
+   stay, behind the same `BasemapEngine` seam.
+3. Styles are (palette, knobs) → one shared ordered layer list. Six ship:
+   Standard, Light, Dark, BIM, Minimal, High contrast.
+
+**Rejected.** MapLibre GL / Mapbox GL as a second WebGL context beside the
+viewer (two depth buffers, no shared camera, the BIM scene would sit *on* a
+map instead of *in* it). Cesium (a globe engine for a site-scale problem;
+dependency weight). CSS/filters on raster tiles (cannot add texels).
+
+**Consequences.** Labels are ground-baked for now (perspective, ×0.7–1.4 size
+breathing within the LOD band); the planned next step is a screen-space label
+layer reading the same `LabelLayer` rules. The terrain drape still uses the
+raster OSM template.

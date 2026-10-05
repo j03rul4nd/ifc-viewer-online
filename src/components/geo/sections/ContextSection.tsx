@@ -35,6 +35,7 @@ export function ContextSection() {
     buildingsEstimated: st.buildingsEstimated,
     buildingsTruncated: st.buildingsTruncated,
     buildingsOverture: st.buildingsOverture,
+    buildingsFallback: st.buildingsFallback,
     featureLayers: st.featureLayers,
     contextDetail: st.contextDetail,
     contextTone: st.contextTone,
@@ -64,6 +65,9 @@ export function ContextSection() {
         ? t('layers.buildingsCountMixed', { count: s.buildingsCounts.building, overture: s.buildingsOverture })
         : t('layers.buildingsCount', { count: s.buildingsCounts.building }))
         + (s.buildingsEstimated > 0 ? ` · ${t('layers.buildingsEstimated', { count: s.buildingsEstimated })}` : '')
+        // Say plainly that this is the thinner city: Overpass was unavailable
+        // and the surroundings came from the basemap's vector tiles.
+        + (s.buildingsFallback ? ` · ${t('layers.buildingsFallback')}` : '')
       : undefined
 
   return (

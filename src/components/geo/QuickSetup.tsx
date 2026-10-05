@@ -10,7 +10,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { useGeoStore } from '../../stores/geoStore'
 import { PROP_ASSETS_KB } from '../../lib/geo/props-assets'
 import { SCENE_PRESETS, matchPreset, type ScenePreset, type ScenePresetId } from '../../lib/geo/scene-presets'
-import { SATELLITE_PROVIDERS, useGeoCtl } from './useGeoController'
+import { useGeoCtl } from './useGeoController'
+import { useBasemapOptions, MapStyleChoices } from './sections/BasemapSection'
+import { LookChoices } from './sections/LookChoices'
 import { IconBuildings, IconPlan, IconSparkle, IconTerrain } from './icons'
 import { Caption, Choices, CostDots, Group, Hint, SwitchRow } from './ui'
 
@@ -37,8 +39,8 @@ export function QuickSetup() {
     setPanelMode: st.setPanelMode,
   })))
   const mapOn = s.mapMode === 'on'
+  const basemapOptions = useBasemapOptions(false)
   const active = matchPreset(s)
-  const satellite = (SATELLITE_PROVIDERS as readonly string[]).includes(s.baseLayerId)
 
   return (
     <Group>
@@ -50,7 +52,10 @@ export function QuickSetup() {
       </Caption>
       <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label={t('quick.view')}>
         {SCENE_PRESETS.map((p) => (
-          <PresetCard key={p.id} preset={p} active={active === p.id} onSelect={() => ctl.applyPreset(p.id)} />
+          <PresetCard
+            key={p.id} preset={p} active={active === p.id}
+            onSelect={() => { ctl.applyPreset(p.id); if (p.look) ctl.applyMapLook(p.look) }}
+          />
         ))}
       </div>
       {active === 'showcase' && <Hint>{t('quick.showcaseNote')}</Hint>}
@@ -60,13 +65,11 @@ export function QuickSetup() {
       <Choices
         label={t('quick.basemap')}
         minWidth={80}
-        options={[
-          { id: 'osm', label: t('layers.streets'), active: s.baseLayerId === 'osm' },
-          { id: 'opentopomap', label: t('layers.topo'), active: s.baseLayerId === 'opentopomap' },
-          { id: 'satellite', label: t('layers.satellite'), active: satellite },
-        ]}
+        options={basemapOptions}
         onSelect={ctl.selectBasemap}
       />
+      <MapStyleChoices />
+      <LookChoices />
 
       <Caption>{t('quick.show')}</Caption>
       <div className="flex flex-col">
