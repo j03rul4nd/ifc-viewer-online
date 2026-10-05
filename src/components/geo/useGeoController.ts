@@ -25,13 +25,18 @@ import { facilityKindFromTree } from '../../lib/geo/context-suppression'
 import { ensureGeorefExtracted } from '../../lib/geo/geo-extract-runner'
 import { resolvePlacement, placementFromExtraction, savePlacement } from '../../lib/geo/placement'
 import { registerCustomProj4, resolveCrs } from '../../lib/geo/crs'
-import { DEFAULT_PROVIDER_ID, resolveProvider, saveCustomProvider } from '../../lib/geo/providers'
+import {
+  DEFAULT_PROVIDER_ID, DEFAULT_VECTOR_PROVIDER_ID, isVectorProviderId, lastVectorProviderId,
+  rememberVectorProvider, resolveProvider, saveCustomProvider, vectorProviderId,
+} from '../../lib/geo/providers'
 import { TERRARIUM_ATTRIBUTION } from '../../lib/geo/elevation'
 import { BUILDINGS_ATTRIBUTION, OVERTURE_ATTRIBUTION } from '../../lib/geo/buildings'
 import { lowerDetail } from '../../lib/geo/scene-budget'
 import { presetById, type ScenePresetId } from '../../lib/geo/scene-presets'
 import type { FeatureKind } from '../../lib/geo/osm-features'
 import type { BuildingDetail, ContextTone } from '../../lib/geo/building-mesh'
+import { LIGHT_PRESETS, resolveLook } from '../../lib/geo/map-look'
+import { siteSunFor } from '../../lib/geo/site-sun'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
   trackMapPlacementSaved, trackMapTerrainToggled, trackMapGeorefExtracted, trackMapError,
@@ -92,6 +97,11 @@ export interface GeoController {
   setFeatureLayers: (kinds: ReadonlyArray<FeatureKind>, visible: boolean) => void
   setContextDetail: (level: BuildingDetail, opts?: { auto?: boolean }) => void
   setContextTone: (tone: ContextTone) => void
+  /** One click art direction: sun, light colours, building finish, basemap. */
+  applyMapLook: (id: string) => void
+  tuneLook: (patch: { exposure?: number; glow?: number }) => void
+  /** Animate from the current look to another (time-lapse), then commit it. */
+  playLookTransition: (toId: string, durationMs?: number) => void
   setSuppressContext: (enabled: boolean) => void
   setVehicles: (enabled: boolean) => void
   applyPreset: (id: ScenePresetId) => void
@@ -158,6 +168,8 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       // follows use: a district whose extra buildings all de-duplicated away
       // is drawing nobody's data but OpenStreetMap's.
       if (s.buildingsOverture > 0) list.push(OVERTURE_ATTRIBUTION)
+      // The city came from the basemap's vector tiles (Overpass was down).
+      if (s.buildingsFallback) list.push('OpenFreeMap © OpenMapTiles')
     }
     s.setAttributions(list)
   }, [getGeo])
@@ -252,6 +264,8 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       const prefs = useGeoStore.getState()
       geo.setContextDetail(prefs.contextDetail)
       geo.setContextTone(prefs.contextTone)
+      geo.setLookTuning(prefs.lookTuning)
+      geo.setMapLook(prefs.mapLook)
       geo.setVehicles(prefs.vehicles)
       geo.setFeatureLayers(prefs.featureLayers)
       geo.setBudgetOverride(prefs.budgetLifted)
@@ -281,6 +295,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
         estimated: outcome.status === 'ready' ? outcome.estimatedCount : 0,
         truncated: outcome.status === 'ready' ? outcome.truncated : false,
         overture: outcome.status === 'ready' ? outcome.overture : 0,
+        fallback: outcome.status === 'ready' ? outcome.fallback === true : false,
       })
       if (outcome.status === 'error') trackMapError({ stage: 'buildings' })
       void refreshAttributions()
@@ -313,6 +328,13 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     // offering the old level back would now be offering something else.
     if (!opts?.auto) s.setAutoDowngrade(null)
     withGeo((geo) => geo.setContextDetail(level))
+  }, [withGeo])
+
+  /** Fine-tune the look: instant, uniforms and light values only. */
+  const tuneLook = useCallback((patch: { exposure?: number; glow?: number }): void => {
+    useGeoStore.getState().setLookTuning(patch)
+    const t = useGeoStore.getState().lookTuning
+    withGeo((geo) => geo.setLookTuning(t))
   }, [withGeo])
 
   /** How loud the context is — rebuilt from cache. */
@@ -518,8 +540,59 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     }
   }, [withGeo, refreshAttributions])
 
+  /**
+   * A look moves the ONE sun (through the terrain look, so hillshade, sky,
+   * surfaces and key light agree), recolours the light and the buildings
+   * (instant, uniforms only) and switches to the basemap designed with it.
+   */
+  const applyMapLook = useCallback((id: string): void => {
+    const look = resolveLook(id)
+    const light = LIGHT_PRESETS[look.light]
+    const st = useGeoStore.getState()
+    st.setMapLook(look.id)
+    // The real sun at this site today when the preset has a solar moment;
+    // otherwise (night, polar days, no placement) the preset's own.
+    const site = st.placement ? siteSunFor(look.light, st.placement.lat, st.placement.lon, new Date()) : null
+    st.setTerrainLook({
+      sunAzimuth: site?.azimuth ?? light.sunAzimuth,
+      sunAltitude: site?.altitude ?? light.sunAltitude,
+    })
+    const terrainLook = useGeoStore.getState().terrainLook
+    withGeo((geo) => {
+      geo.setTerrainLook(terrainLook)
+      geo.setMapLook(look.id)
+    })
+    if (look.mapStyle && isVectorProviderId(st.baseLayerId)) {
+      // Only within the vector family: a user on satellite or a custom
+      // source chose that ground on purpose, and a mood must not take it away.
+      const p = resolveProvider(vectorProviderId(look.mapStyle))
+      if (p && p.id !== st.baseLayerId) { rememberVectorProvider(p.id); applyProvider(p) }
+    }
+  }, [withGeo, applyProvider])
+
+  const playLookTransition = useCallback((toId: string, durationMs = 6000): void => {
+    const st = useGeoStore.getState()
+    const from = st.mapLook
+    if (from === toId) return
+    const p = st.placement
+    const now = new Date()
+    const suns = p ? {
+      from: siteSunFor(resolveLook(from).light, p.lat, p.lon, now),
+      to: siteSunFor(resolveLook(toId).light, p.lat, p.lon, now),
+    } : undefined
+    withGeo(async (geo) => {
+      await geo.animateLook(from, toId, durationMs, suns)
+      applyMapLook(toId)
+    })
+  }, [withGeo, applyMapLook])
+
   const selectBasemap = useCallback((id: string): void => {
     if (id === 'satellite') { setFlow({ kind: 'terms' }); return }
+    if (id === 'vector') {
+      const current = useGeoStore.getState().baseLayerId
+      id = isVectorProviderId(current) ? current : lastVectorProviderId()
+    }
+    rememberVectorProvider(id)
     if (id === 'custom') {
       const existing = resolveProvider('custom')
       if (!existing) { setFlow({ kind: 'custom' }); return }
@@ -552,7 +625,9 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
    */
   const switchProviderAfterFailure = useCallback((): void => {
     const current = useGeoStore.getState().baseLayerId
-    const next = resolveProvider(current === 'osm' ? 'opentopomap' : 'osm')
+    // Vector tiles come from another host than the rasters, so the raster
+    // OSM map is a true fallback for them, and they for it.
+    const next = resolveProvider(current === 'osm' ? DEFAULT_VECTOR_PROVIDER_ID : 'osm')
     if (next) applyProvider(next)
     useGeoStore.getState().setDegraded(false)
   }, [applyProvider])
@@ -632,7 +707,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     showOnMap, enableWithPlacement, acceptConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
     toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
-    toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone,
+    toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
     setSuppressContext, setVehicles, applyPreset,
     rebuildScene, setBudgetLifted, lowerQuality, restoreQuality,
     viewerApiRef, beginEditPlacement, finishEditPlacement,
@@ -642,7 +717,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     showOnMap, enableWithPlacement, acceptConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
     toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
-    toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone,
+    toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
     setSuppressContext, setVehicles, applyPreset,
     rebuildScene, setBudgetLifted, lowerQuality, restoreQuality,
     viewerApiRef, beginEditPlacement, finishEditPlacement,

@@ -66,6 +66,9 @@ export function useGeoEffects(
         if (cmd.exaggeration !== undefined) ctl.setExaggeration(cmd.exaggeration)
         if (cmd.detail) ctl.setContextDetail(cmd.detail)
         if (cmd.vehicles !== undefined) ctl.setVehicles(cmd.vehicles)
+        // Before the enable, like the others: it is a stored preference, so the
+        // map comes up already in the look (sun included) instead of switching.
+        if (cmd.look) ctl.applyMapLook(cmd.look)
         if (cmd.layers) {
           const on: FeatureKind[] = []
           const off: FeatureKind[] = []
@@ -105,6 +108,9 @@ export function useGeoEffects(
         // `done` means DONE: the surroundings are built, not merely requested.
         const geo = await getGeo()
         await geo?.settled()
+        // The time-lapse runs once the city is standing — a transition over a
+        // half-built scene would be a clip of tiles arriving.
+        if (cmd.lookTo) ctl.playLookTransition(cmd.lookTo, cmd.lookDurationMs)
         cmd.done?.(true)
       } catch (err) {
         cmd.done?.(false, err instanceof Error ? err.message : String(err))

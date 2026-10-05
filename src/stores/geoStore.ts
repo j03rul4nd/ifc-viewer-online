@@ -15,6 +15,7 @@ import type { FeatureKind } from '../lib/geo/osm-features'
 import type { FeatureLayerVisibility } from '../lib/geo/geo-system'
 import type { FrameVerdict, SceneReport } from '../lib/geo/scene-budget'
 import type { BuildingDetail, ContextTone } from '../lib/geo/building-mesh'
+import { clampLookTuning, DEFAULT_LOOK_TUNING, type LookTuning } from '../lib/geo/map-look'
 import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 const log = createLogger('GeoStore')
@@ -37,6 +38,7 @@ const clearedBuildingsResult = {
   buildingsEstimated: 0,
   buildingsTruncated: false,
   buildingsOverture: 0,
+  buildingsFallback: false,
 }
 
 /** The transient health of the built scene — cleared with the map. */
@@ -61,6 +63,8 @@ const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 const LS_DETAIL        = 'ifc-geo-detail:v1'
 const LS_TONE          = 'ifc-geo-context-tone:v1'
+const LS_LOOK          = 'ifc-geo-map-look:v1'
+const LS_LOOK_TUNE     = 'ifc-geo-look-tuning:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
 const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 const LS_HIDDEN        = 'ifc-geo-hidden-features:v1'
@@ -96,6 +100,14 @@ function readContextDetail(): BuildingDetail {
  * because it IS separate: a showcase view with a discreet street behind the
  * model is a perfectly ordinary thing to want.
  */
+function readLookTuning(): LookTuning {
+  try {
+    const raw = lsGet(LS_LOOK_TUNE)
+    if (raw) return clampLookTuning(JSON.parse(raw) as Partial<LookTuning>)
+  } catch { /* corrupt — defaults */ }
+  return { ...DEFAULT_LOOK_TUNING }
+}
+
 function readContextTone(): ContextTone {
   return lsGet(LS_TONE) === 'neutral' ? 'neutral' : 'natural'
 }
@@ -261,6 +273,10 @@ interface GeoStore {
   /** How much of a surrounding facade to model (persisted). */
   contextDetail: BuildingDetail
   contextTone: ContextTone
+  /** Art direction id (lib/geo/map-look.ts MAP_LOOKS). */
+  mapLook: string
+  /** User fine-tuning on top of the look: multipliers, 1 = as designed. */
+  lookTuning: LookTuning
   /** Decorative cars and trains (persisted). Invented placement — off by default. */
   vehicles: boolean
   /**
@@ -290,6 +306,8 @@ interface GeoStore {
    * nobody's data.
    */
   buildingsOverture: number
+  /** The surroundings were built from vector tiles because Overpass failed. */
+  buildingsFallback: boolean
   georefByModel: Record<string, GeorefExtraction>
   /** EFFECTIVE placement driving the geoRoot transform. */
   placement: GeoPlacement | null
@@ -357,12 +375,15 @@ interface GeoStore {
       estimated?: number
       truncated?: boolean
       overture?: number
+      fallback?: boolean
     },
   ) => void
   /** Toggle one OSM layer (persisted). */
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
   setContextDetail: (d: BuildingDetail) => void
   setContextTone: (t: ContextTone) => void
+  setMapLook: (id: string) => void
+  setLookTuning: (patch: Partial<LookTuning>) => void
   setVehicles: (v: boolean) => void
   setSuppressContext: (v: boolean) => void
   /** Strike out one mapped feature. Idempotent on id. */
@@ -402,7 +423,7 @@ export const useGeoStore = create<GeoStore>()(
       mapMode:        'off' as MapMode,
       mapErrorKey:    null,
       epoch:          0,
-      baseLayerId:    lsGet(LS_LAYER) ?? 'osm',
+      baseLayerId:    lsGet(LS_LAYER) ?? 'vt-standard',
       termsAccepted:  readTerms(),
       consentGiven:   lsGet(LS_CONSENT) === '1',
       terrainEnabled: false,
@@ -417,11 +438,14 @@ export const useGeoStore = create<GeoStore>()(
       featureLayers:      readFeatureLayers(),
       contextDetail:      readContextDetail(),
       contextTone:        readContextTone(),
+      mapLook:            lsGet(LS_LOOK) ?? 'daylight',
+      lookTuning:         readLookTuning(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       hiddenFeatures:     readHiddenFeatures(),
       buildingsTruncated: false,
       buildingsOverture: 0,
+      buildingsFallback: false,
       georefByModel:  {},
       placement:      null,
       editing:        false,
@@ -558,6 +582,7 @@ export const useGeoStore = create<GeoStore>()(
             buildingsEstimated: result.estimated ?? 0,
             buildingsTruncated: result.truncated ?? false,
             buildingsOverture: result.overture ?? 0,
+            buildingsFallback: result.fallback ?? false,
           }),
           false,
           'setBuildingsResult',
@@ -602,6 +627,15 @@ export const useGeoStore = create<GeoStore>()(
         set({ contextDetail: d }, false, 'setContextDetail')
       },
 
+      setLookTuning: (patch) => {
+        const next = clampLookTuning({ ...get().lookTuning, ...patch })
+        lsSet(LS_LOOK_TUNE, JSON.stringify(next))
+        set({ lookTuning: next }, false, 'setLookTuning')
+      },
+      setMapLook: (id) => {
+        lsSet(LS_LOOK, id)
+        set({ mapLook: id }, false, 'setMapLook')
+      },
       setContextTone: (t) => {
         lsSet(LS_TONE, t)
         set({ contextTone: t }, false, 'setContextTone')

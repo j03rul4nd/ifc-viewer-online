@@ -16,6 +16,8 @@ import type { BuildingDetail } from './building-mesh'
 
 export type ScenePresetId = 'plan' | 'relief' | 'city' | 'showcase'
 
+import type { MapLookId } from './map-look'
+
 export interface ScenePreset {
   id: ScenePresetId
   terrain: boolean
@@ -25,6 +27,12 @@ export interface ScenePreset {
   vehicles: boolean
   /** Relative weight on the device and the network, 1 (light) – 3 (heavy). */
   cost: 1 | 2 | 3
+  /**
+   * The look this view is presented in, when it has one. Only Showcase does:
+   * the working views keep whatever look the user chose. Not part of
+   * matchPreset — changing the look never turns a preset into "Custom".
+   */
+  look?: MapLookId
 }
 
 export const SCENE_PRESETS: readonly ScenePreset[] = [
@@ -35,7 +43,7 @@ export const SCENE_PRESETS: readonly ScenePreset[] = [
   // The working view: relief plus the surrounding masses, plain and fast.
   { id: 'city', terrain: true, buildings: true, detail: 'simple', vehicles: false, cost: 2 },
   // The one to bring to a client: lit facades and surfaces, authored props.
-  { id: 'showcase', terrain: true, buildings: true, detail: 'showcase', vehicles: true, cost: 3 },
+  { id: 'showcase', terrain: true, buildings: true, detail: 'showcase', vehicles: true, cost: 3, look: 'golden' },
 ]
 
 export interface PresetState {

@@ -174,7 +174,19 @@
     "hidePickHint": "Turn this on, then click any mapped building to take it out of the view. Use it when the map and your model describe the same thing and the automatic rule above did not catch it. Nothing is deleted: everything you hide is listed here and comes back with one click.",
     "hidePickActive": "Click a building on the map to hide it. Turn this off when you are done.",
     "hiddenRestore": "Show",
-    "hiddenRestoreAll": "Show all again"
+    "hiddenRestoreAll": "Show all again",
+    "styles": {
+      "standard": "Standard",
+      "light": "Clair",
+      "dark": "Sombre",
+      "bim": "BIM",
+      "hybrid": "Hybride",
+      "minimal": "Minimal",
+      "contrast": "Contraste élevé"
+    },
+    "mapStyle": "Style de carte",
+    "buildingsFallback": "Serveur OpenStreetMap occupé — construit à partir des tuiles de la carte, moins détaillé",
+    "vector": "Vectoriel"
   },
   "placement": {
     "title": "Placement",
@@ -323,5 +335,23 @@
     "partial": "Partly georeferenced — check the position once it is on.",
     "none": "No georeferencing — you will place it on a map.",
     "invalid": "Unusable georeferencing — you will place it on a map."
+  },
+  "looks": {
+    "title": "Ambiance",
+    "daylight": "Jour",
+    "maquette": "Maquette",
+    "golden": "Heure dorée",
+    "night": "Nuit",
+    "blueprint": "Plan",
+    "dawn": "Aube",
+    "exposure": "Exposition",
+    "glow": "Lumières",
+    "playToNight": "▶ Passer à la nuit",
+    "playToDay": "▶ Passer au jour"
+  },
+  "readout": {
+    "scaleHint": "Échelle au centre de la vue",
+    "copy": "Copier les coordonnées (lat, lon)",
+    "copied": "Copié"
   }
 }

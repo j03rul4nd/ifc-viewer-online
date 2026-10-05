@@ -18,6 +18,7 @@
 
 import { parsePanelAllowlist, type PanelId } from './ui/panel-rail'
 import { parseBackgroundSpec, type BackgroundSettings } from './scene/background'
+import { MAP_LOOKS } from './geo/map-look'
 
 export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article'
 
@@ -136,6 +137,12 @@ export interface AppUrlParams {
 /** What `?map=` asked for. Omitted fields leave the app's own defaults alone. */
 export interface MapDeepLink {
   enabled: boolean
+  /**
+   * `look=<id>` or `look=<from>..<to>` (map-look MAP_LOOKS ids): open in a look,
+   * or play a time-of-day transition between two once the scene is built.
+   */
+  look?: string
+  lookTo?: string
   terrain?: boolean
   buildings?: boolean
   /** `showcase` also downloads the authored props — heavier, and the nicer shot. */
@@ -284,7 +291,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     background: parseBackgroundSpec(p.get('bg') ?? '') ?? undefined,
     solar: parseSolarParam(p.get('solar')),
     solarMoon: parseBool(p.get('moon')),
-    map: parseMapParam(p.get('map')),
+    map: withLook(parseMapParam(p.get('map')), p.get('look')),
     scanUrls: splitList(p.getAll('scan')).filter(isLoadableUrl),
     view: parseView(p.get('view')) ?? (preset === 'article' && embed ? 'iso' : undefined),
     fill: parseFill(p.get('fill')),
@@ -312,6 +319,22 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
  * An unrecognised token turns the map on and is otherwise ignored, on purpose:
  * a typo in one layer should not silently cost the host the whole feature.
  */
+const LOOK_IDS: readonly string[] = MAP_LOOKS.map((l) => l.id)
+
+/**
+ * `?look=` rides on the map: it says how the site is lit, so without `?map`
+ * there is nothing to light and it is ignored. Unknown ids are dropped (a typo
+ * must not cost the host the map).
+ */
+export function withLook(map: MapDeepLink | undefined, v: string | null): MapDeepLink | undefined {
+  if (!map || !v) return map
+  const [from, to] = v.trim().toLowerCase().split('..').map((s) => s.trim())
+  const ok = (id: string | undefined) => (id && LOOK_IDS.includes(id) ? id : undefined)
+  const look = ok(from)
+  const lookTo = ok(to)
+  return { ...map, ...(look ? { look } : {}), ...(look && lookTo && lookTo !== look ? { lookTo } : {}) }
+}
+
 function parseMapParam(v: string | null): MapDeepLink | undefined {
   if (v === null) return undefined
   const raw = v.trim().toLowerCase()

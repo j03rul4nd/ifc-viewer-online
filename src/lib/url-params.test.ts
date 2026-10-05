@@ -458,3 +458,17 @@ describe('turntable (v1.15)', () => {
     expect(parseAppUrlParams('?embed=1').turntable).toBeUndefined()
   })
 })
+
+describe('?look= (map art direction)', () => {
+  it('opens in a look, or plays from one to another', async () => {
+    const { withLook } = await import('./url-params')
+    expect(withLook({ enabled: true }, 'night')).toEqual({ enabled: true, look: 'night' })
+    expect(withLook({ enabled: true }, 'Daylight..NIGHT')).toEqual({ enabled: true, look: 'daylight', lookTo: 'night' })
+  })
+  it('needs the map, and drops what it does not know', async () => {
+    const { withLook } = await import('./url-params')
+    expect(withLook(undefined, 'night')).toBeUndefined()
+    expect(withLook({ enabled: true }, 'neon')).toEqual({ enabled: true })
+    expect(withLook({ enabled: true }, 'night..night')).toEqual({ enabled: true, look: 'night' })
+  })
+})

@@ -3454,6 +3454,8 @@ export default function App() {
             terrain:   wanted.terrain,
             buildings: wanted.buildings,
             detail:    wanted.detail,
+            look:      wanted.look,
+            lookTo:    wanted.lookTo,
           }, {
             // Two different failures wearing one message cost a debugging
             // session: the build flag being off, and the panel simply not

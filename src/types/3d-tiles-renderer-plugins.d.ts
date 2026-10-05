@@ -33,4 +33,14 @@ declare module '3d-tiles-renderer/plugins' {
     getPositionFromCartographic(lat: number, lon: number, target?: Vector3): Vector3
     dispose(): void
   }
+
+  /**
+   * MVT vector-tile overlay (images/MVTOverlay.js). Exported at runtime, untyped
+   * upstream. Only what lib/geo/basemap/vector-overlay.ts touches is declared;
+   * it subclasses and reaches into `imageSource` (untyped JS) on purpose.
+   */
+  export class MVTOverlay {
+    constructor(options?: { url?: string; resolution?: number; projection?: string; levels?: number })
+    dispose(): void
+  }
 }
