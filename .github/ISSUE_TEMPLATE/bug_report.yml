@@ -1,0 +1,21 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps / sample file
+      description: Steps to reproduce. A sample IFC (or link) helps a lot.
+  - type: input
+    id: env
+    attributes:
+      label: Browser and OS
+      placeholder: e.g. Chrome 130, Windows 11
