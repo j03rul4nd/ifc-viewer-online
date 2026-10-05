@@ -31,7 +31,8 @@ import { createTerrainMaterial } from './surface-shaders'
 import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
-import type { TerrainWorkerIn, TerrainWorkerOut } from '../../workers/geo-terrain.worker'
+import type { TerrainWorkerIn, TerrainWorkerOut, VectorDrape } from '../../workers/geo-terrain.worker'
+import { loadTileJson } from './basemap/tilejson'
 
 const log = createLogger('GeoTerrain')
 
@@ -115,6 +116,25 @@ export function tileNormalizedCenter(tx: number, ty: number, zoom: number): { nx
  * The caller owns the returned group (parent it under geoRoot) and MUST call
  * dispose() when done.
  */
+/**
+ * For a vector provider, the drape is painted in its own style (worker side).
+ * A TileJSON failure falls back to the raster template — a drape that does
+ * not match is better than an untextured patch.
+ */
+async function vectorDrapeFor(provider: MapProvider | null): Promise<VectorDrape | null> {
+  if (!provider?.vector) return null
+  try {
+    const tj = await loadTileJson(provider.vector.tileJsonUrl)
+    return {
+      template: tj.tiles[0],
+      styleId: provider.vector.styleId,
+      language: (typeof document !== 'undefined' && document.documentElement.lang) || 'en',
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function buildTerrainPatch(
   placement: GeoPlacement,
   provider: MapProvider | null,
@@ -132,6 +152,7 @@ export async function buildTerrainPatch(
     grid: GRID_SEGMENTS,
     imageryTemplate: provider?.urlTemplate ?? null,
     imageryZoom,
+    vector: await vectorDrapeFor(provider),
   }, BUILD_TIMEOUT_MS)
   if (result.type !== 'done') throw new Error('unexpected terrain worker reply')
 
@@ -483,6 +504,7 @@ function assemblePatch(
         centerTx, centerTy, zoom,
         imageryTemplate: provider?.urlTemplate ?? null,
         imageryZoom,
+        vector: await vectorDrapeFor(provider),
       }, DRAPE_TIMEOUT_MS)
       if (result.type !== 'drape-done') throw new Error('unexpected drape worker reply')
       if (disposed || token !== drapeToken) {

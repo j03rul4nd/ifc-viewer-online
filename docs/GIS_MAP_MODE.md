@@ -472,6 +472,14 @@ plays the transition once the scene is settled (`SdkSiteCommand.look / lookTo
 waits for the tab to be visible — a background embed shows it whole on arrival
 (and in the hidden Claude pane it only advances while the pane is shown).
 
+**The relief drape follows the style.** With terrain on, the patch was
+draped with the raster OSM photograph whatever the style, so Dark/BIM/etc.
+switched back to a bright photo exactly where the relief began. For vector
+providers the terrain worker now paints each 256 px drape slot with the same
+painter (`paintVectorSlot`, z14 ancestor overzoom via `basemap/tile-frame.ts`,
+which is DOM-free so the worker never imports Leaflet). Place names are not
+baked into the drape — the screen-space layer already names them.
+
 **Placement minimap = the same cartography** (`basemap/leaflet-vector-layer.ts`).
 The Leaflet minimap was the last raster-OSM map in the product (soft on Retina,
 another style). A Leaflet `GridLayer` now paints each 256 px tile with the

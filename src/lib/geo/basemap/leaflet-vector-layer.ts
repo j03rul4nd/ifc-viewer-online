@@ -15,8 +15,9 @@ import L from 'leaflet'
 import { getMapStyle, type MapStyleId } from './map-styles'
 import { paintTile, toPaintTile, type PaintTile } from './vector-painter'
 import { loadTileJson } from './tilejson'
+import { contentFrameFor } from './tile-frame'
+export { contentFrameFor } from './tile-frame'
 
-const DATA_MAX_Z = 14
 const CACHE_TILES = 48
 
 export interface VectorGridOptions {
@@ -26,17 +27,6 @@ export interface VectorGridOptions {
   attribution: string
 }
 
-/**
- * Leaflet zoom → content tile and where it sits in the Leaflet tile, as a
- * fraction of the tile: at z ≤ 14 the tile itself (offset 0, scale 1); above,
- * its z14 ancestor, `k = 2^(z−14)` tiles wide, shifted so the right sub-square
- * lands in the canvas.
- */
-export function contentFrameFor(z: number, x: number, y: number) {
-  const cz = Math.min(z, DATA_MAX_Z)
-  const k = 2 ** (z - cz)
-  return { cz, cx: Math.floor(x / k), cy: Math.floor(y / k), k, ox: -(x % k), oy: -(y % k) }
-}
 
 export function createVectorGridLayer(opts: VectorGridOptions): L.GridLayer {
   const style = getMapStyle(opts.styleId)
