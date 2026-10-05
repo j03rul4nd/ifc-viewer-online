@@ -141,7 +141,7 @@
     "saved": "Desat",
     "failed": "Ha fallat",
     "ifcNotAvailable": "Buffer IFC no disponible (model carregat només des de la memòria cau de fragments)",
-    "elements": "{{count}} elements",
+    "elements": "{{n}} elements",
     "edits": "{{count}} edició",
     "edits_other": "{{count}} edicions",
     "advanced": "Avançat — capçalera del fitxer",
@@ -183,5 +183,12 @@
     "help": "Ajuda",
     "idsCheck": "Comprovar amb IDS…",
     "compareVersions": "Comparar versions…"
+  },
+  "mobileBar": {
+    "models": "{{count}} model",
+    "models_other": "{{count}} models",
+    "elements": "{{n}} elements",
+    "openScene": "Escena i models",
+    "score": "Health Score {{score}} — obre la validació"
   }
 }

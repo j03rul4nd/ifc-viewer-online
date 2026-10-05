@@ -141,7 +141,7 @@
     "saved": "已保存",
     "failed": "失败",
     "ifcNotAvailable": "IFC 缓冲区不可用（模型仅从片段缓存加载）",
-    "elements": "{{count}} 个构件",
+    "elements": "{{n}} 个构件",
     "edits": "{{count}} 处修改",
     "edits_other": "{{count}} 处修改",
     "advanced": "高级——文件头",
@@ -183,5 +183,12 @@
     "help": "帮助",
     "idsCheck": "按 IDS 检查…",
     "compareVersions": "对比版本…"
+  },
+  "mobileBar": {
+    "models": "{{count}} 个模型",
+    "models_other": "{{count}} 个模型",
+    "elements": "{{n}} 个构件",
+    "openScene": "场景与模型",
+    "score": "Health Score {{score}} — 打开验证"
   }
 }

@@ -510,15 +510,23 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
       )}
       {/* One labelled entry instead of four bare icons: on a phone the
           icons read as noise, and the sheet has room to say what each does. */}
-      <div className="flex md:hidden items-center gap-1 shrink-0 order-last ml-1">
-        {replay && <SceneBackgroundMenu disabled={!hasModel} />}
+      {/* Phones: two floating glass circles on the right of the top capsules
+          (Toolbar). Icon-only — the sheet they open names every action. */}
+      <div className="flex md:hidden items-center gap-2 shrink-0 order-last pointer-events-auto">
+        {replay && (
+          <SceneBackgroundMenu
+            disabled={!hasModel}
+            triggerClassName="mobile-pill-glass w-10 h-10 inline-flex items-center justify-center gap-1 rounded-full text-[var(--text-dim)] active:scale-[0.93] transition-transform disabled:opacity-40"
+          />
+        )}
         <button
           onClick={() => setMobileMenuOpen(true)}
           disabled={!hasModel}
-          className="h-8 px-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] text-[12px] text-[var(--text-dim)] active:bg-white/10 disabled:opacity-40"
+          aria-label={t('mobileMenu')}
+          className="mobile-pill-glass w-10 h-10 inline-flex items-center justify-center rounded-full text-[var(--text)] active:scale-[0.93] transition-transform disabled:opacity-40"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          <Icons.Camera size={14} />
-          {t('mobileMenu')}
+          <Icons.Camera size={18} />
         </button>
         <MobileActionSheet
           open={mobileMenuOpen}

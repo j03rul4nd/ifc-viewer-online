@@ -141,7 +141,7 @@
     "saved": "Enregistré",
     "failed": "Échec",
     "ifcNotAvailable": "Tampon IFC indisponible (modèle chargé depuis le cache de fragments uniquement)",
-    "elements": "{{count}} éléments",
+    "elements": "{{n}} éléments",
     "edits": "{{count}} modification",
     "edits_other": "{{count}} modifications",
     "advanced": "Avancé — en-tête du fichier",
@@ -183,5 +183,12 @@
     "help": "Aide",
     "idsCheck": "Vérifier avec un IDS…",
     "compareVersions": "Comparer des versions…"
+  },
+  "mobileBar": {
+    "models": "{{count}} modèle",
+    "models_other": "{{count}} modèles",
+    "elements": "{{n}} éléments",
+    "openScene": "Scène et modèles",
+    "score": "Health Score {{score}} — ouvrir la validation"
   }
 }

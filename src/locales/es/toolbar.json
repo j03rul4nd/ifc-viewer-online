@@ -141,7 +141,7 @@
     "saved": "Guardado",
     "failed": "Error",
     "ifcNotAvailable": "Buffer IFC no disponible (modelo cargado solo desde caché de fragmentos)",
-    "elements": "{{count}} elementos",
+    "elements": "{{n}} elementos",
     "edits": "{{count}} edición",
     "edits_other": "{{count}} ediciones",
     "advanced": "Avanzado — cabecera del archivo",
@@ -183,5 +183,12 @@
     "help": "Ayuda",
     "idsCheck": "Comprobar con IDS…",
     "compareVersions": "Comparar versiones…"
+  },
+  "mobileBar": {
+    "models": "{{count}} modelo",
+    "models_other": "{{count}} modelos",
+    "elements": "{{n}} elementos",
+    "openScene": "Escena y modelos",
+    "score": "Health Score {{score}} — abrir validación"
   }
 }

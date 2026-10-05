@@ -474,7 +474,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
       {active && (
         <button
           onClick={() => store.setPanelOpen(true)}
-          className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-auto px-2.5 py-1 rounded-full text-[10.5px] font-mono tabular-nums bg-[rgba(10,10,14,0.78)] border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+          className="absolute top-14 max-md:top-[calc(var(--mobile-top-ui)+4px)] left-1/2 -translate-x-1/2 z-20 pointer-events-auto px-2.5 py-1 rounded-full text-[10.5px] font-mono tabular-nums bg-[rgba(10,10,14,0.78)] border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
           data-testid="solar-chip"
         >
           ☀ {String(wall.day).padStart(2, '0')}/{String(wall.month).padStart(2, '0')} · {String(wall.hour).padStart(2, '0')}:{String(wall.minute).padStart(2, '0')} ({tzLabel})

@@ -143,7 +143,7 @@
     "saved": "Saved",
     "failed": "Failed",
     "ifcNotAvailable": "IFC buffer not available (model loaded from fragments cache only)",
-    "elements": "{{count}} elements",
+    "elements": "{{n}} elements",
     "edits": "{{count}} edit",
     "edits_other": "{{count}} edits",
     "advanced": "Advanced — file header",
@@ -185,5 +185,12 @@
     "help": "Help",
     "idsCheck": "Check against IDS…",
     "compareVersions": "Compare versions…"
+  },
+  "mobileBar": {
+    "models": "{{count}} model",
+    "models_other": "{{count}} models",
+    "elements": "{{n}} elements",
+    "openScene": "Scene and models",
+    "score": "Health Score {{score}} — open validation"
   }
 }

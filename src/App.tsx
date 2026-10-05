@@ -3818,7 +3818,11 @@ export default function App() {
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
           >
             {effectiveChrome.showToolbar && (
-              <div className="flex-none z-20">
+              // Phones: the toolbar floats over the scene (capsules, see
+              // Toolbar) instead of taking a 44px band; the scene gets the
+              // whole screen. Overlays anchored to the top of the viewport
+              // clear it with --mobile-top-ui (index.css).
+              <div className="flex-none z-20 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:z-[25] max-md:pointer-events-none">
                 {/* Show the active model's name; fall back to last-loaded when only one model exists */}
                 {(() => {
                   const activeEntry = sceneModels.find((m) => m.id === activeModelId)
@@ -3976,7 +3980,10 @@ export default function App() {
                   {/* Model info / weight panel — always shows the active model's data
                       (hidden while a tour plays: it sits exactly where the tour bar goes,
                       and file size / GPU stats are noise for a presentation audience) */}
-                  {sceneModels.length > 0 && tourMode !== 'playing' && !clientMode && effectiveChrome.showModelInfo && (() => {
+                  {/* Not on phones: its name/size facts now live in the top model
+                      capsule and the Scene panel it opens; GPU and memory stats
+                      are noise on a phone and the pill took a band above the nav. */}
+                  {isDesktop && sceneModels.length > 0 && tourMode !== 'playing' && !clientMode && effectiveChrome.showModelInfo && (() => {
                     const displayInfo =
                       sceneModels.find((m) => m.id === activeModelId) ?? modelInfo
                     return displayInfo ? (

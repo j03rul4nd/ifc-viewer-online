@@ -18,6 +18,9 @@
   --ok: #30A46C;
   /* Mobile floating nav (single source of truth for the pill height) */
   --mobile-nav-h: 56px;
+  /* Height of the floating top capsules on phones (0 elsewhere): overlays
+     anchored to the top of the viewport add it to stay clear of them. */
+  --mobile-top-ui: 0px;
   --mobile-nav-margin: 12px;
   /* Total clearance content needs below: nav-h + margin + safe-area (approx for padding calcs) */
   --mobile-nav-clearance: calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + 8px);
@@ -441,6 +444,10 @@ kbd {
   .m-sheet input:not([type=checkbox]):not([type=radio]):not([type=range]),
   .m-sheet select,
   .m-sheet textarea { font-size: 16px !important; }
+}
+
+@media (max-width: 767px) {
+  :root { --mobile-top-ui: calc(env(safe-area-inset-top, 0px) + 64px); }
 }
 
 /* ── iOS accessibility settings ────────────────────────────────────────────────

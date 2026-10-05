@@ -200,7 +200,7 @@ export default function ToastContainer() {
       <div
         className="fixed z-[300] flex flex-col gap-2.5 pointer-events-none
                    bottom-5 right-5 w-[340px]
-                   max-md:bottom-auto max-md:top-[calc(env(safe-area-inset-top)+52px)] max-md:right-3 max-md:left-3 max-md:w-auto"
+                   max-md:bottom-auto max-md:top-[calc(var(--mobile-top-ui)+4px)] max-md:right-3 max-md:left-3 max-md:w-auto"
         style={{
           // On very small screens, respect safe area at bottom
           paddingBottom: 'max(0px, env(safe-area-inset-bottom))',

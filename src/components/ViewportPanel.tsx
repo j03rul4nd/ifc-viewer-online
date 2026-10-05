@@ -147,7 +147,8 @@ export function ViewportPanel({
             // The desktop lane learned this already — anchor it, do not size it.
             style={{
               bottom: 'calc(var(--mobile-nav-clearance) + env(safe-area-inset-bottom, 0px))',
-              top: '3.5rem',
+              // Below the floating top capsules on phones (--mobile-top-ui).
+              top: 'calc(var(--mobile-top-ui) + 8px)',
               justifyContent: 'flex-end',
             }}
           >

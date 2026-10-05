@@ -140,7 +140,7 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
   const marker = showMarker && hover && (
     <div className="fixed z-[35] pointer-events-none select-none" style={{ left: hover.clientX, top: hover.clientY }}>
       <div className="absolute -translate-x-1/2 -translate-y-1/2"><SnapGlyph kind={hover.kind} color={color} closing={hover.closing} /></div>
-      <div className="absolute left-[16px] top-[10px] flex flex-col items-start gap-1">
+      <div className="absolute left-[16px] top-[10px] max-md:top-[calc(var(--mobile-top-ui)+4px)] flex flex-col items-start gap-1">
         {snapLabel && (
           <span className="px-1.5 py-[1px] rounded-[5px] text-[10px] font-semibold whitespace-nowrap bg-[rgba(10,10,14,0.82)] border border-white/10" style={{ color }}>
             {snapLabel}
