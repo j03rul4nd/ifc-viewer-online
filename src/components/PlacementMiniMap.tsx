@@ -39,7 +39,9 @@ function basemapLayerFor(id: string): L.Layer {
       tileJsonUrl: p.vector.tileJsonUrl,
       styleId: p.vector.styleId,
       language: () => document.documentElement.lang || 'en',
-      attribution: p.attribution,
+      // Only what the minimap paints: the vectors. The style's extra sources
+      // (relief, imagery) are drawn by the 3D basemap, not here.
+      attribution: '© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles',
     })
   }
   return L.tileLayer(p?.urlTemplate ?? TILE_URL, {

@@ -38,6 +38,9 @@ import {
   vertexSpacingM,
   imageryTileRange,
 } from '../lib/geo/terrain-sampling'
+import { getMapStyle, type MapStyleId } from '../lib/geo/basemap/map-styles'
+import { paintTile, toPaintTile, type PaintTile } from '../lib/geo/basemap/vector-painter'
+import { contentFrameFor } from '../lib/geo/basemap/tile-frame'
 
 const PATCH_TILES = 3
 const PATCH_PX = PATCH_TILES * TERRAIN_TILE_DIM // 768
@@ -61,6 +64,8 @@ export interface TerrainBuildRequest {
   imageryTemplate: string | null
   /** Pre-clamped imagery zoom (terrain-sampling.imageryZoomFor), or null. */
   imageryZoom: number | null
+  /** Paint the drape from vector tiles in this style instead (see VectorDrape). */
+  vector?: VectorDrape | null
 }
 
 export interface TerrainDrapeRequest {
@@ -71,6 +76,19 @@ export interface TerrainDrapeRequest {
   zoom: number
   imageryTemplate: string | null
   imageryZoom: number | null
+  vector?: VectorDrape | null
+}
+
+/**
+ * The relief drape in the SAME cartography as the flat basemap. Without it a
+ * vector style (Dark, BIM…) switched back to the raster OSM photograph exactly
+ * where the terrain patch begins. `template` is the resolved MVT URL (the
+ * TileJSON lookup happens on the main thread, where it is cached).
+ */
+export interface VectorDrape {
+  template: string
+  styleId: MapStyleId
+  language: string
 }
 
 export type TerrainWorkerIn = TerrainBuildRequest | TerrainDrapeRequest
@@ -218,7 +236,7 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
       (fy - (cy - 1)) * TERRAIN_TILE_DIM - 0.5,
     )
 
-    const imagery = await compositeImagery(cx, cy, req.zoom, req.imageryTemplate, req.imageryZoom)
+    const imagery = await compositeImagery(cx, cy, req.zoom, req.imageryTemplate, req.imageryZoom, req.vector)
 
     const transfers: Transferable[] = [heights.buffer, normals.buffer, detail.buffer, sky.buffer]
     if (imagery) transfers.push(imagery)
@@ -238,7 +256,7 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
 
 async function handleDrape(req: TerrainDrapeRequest): Promise<void> {
   try {
-    const imagery = await compositeImagery(req.centerTx, req.centerTy, req.zoom, req.imageryTemplate, req.imageryZoom)
+    const imagery = await compositeImagery(req.centerTx, req.centerTy, req.zoom, req.imageryTemplate, req.imageryZoom, req.vector)
     const transfers: Transferable[] = imagery ? [imagery] : []
     ;(self.postMessage as (msg: TerrainWorkerOut, transfer: Transferable[]) => void)(
       { type: 'drape-done', id: req.id, imagery },
@@ -300,8 +318,9 @@ async function fetchTilePixels(url: string): Promise<Uint8ClampedArray> {
 async function compositeImagery(
   cx: number, cy: number, zoom: number,
   template: string | null, imageryZoom: number | null,
+  vector?: VectorDrape | null,
 ): Promise<ImageBitmap | null> {
-  if (!template || imageryZoom === null) return null
+  if ((!template && !vector) || imageryZoom === null) return null
 
   const { startX, startY, count } = imageryTileRange(cx, cy, zoom, imageryZoom)
   const px = count * TERRAIN_TILE_DIM // ≤ 12·256 = 3072 (Δz capped at 2)
@@ -320,7 +339,11 @@ async function compositeImagery(
     const tx = startX + i
     const ty = startY + j
     if (tx < 0 || ty < 0 || tx > max || ty > max) return
-    const url = template
+    if (vector) {
+      await paintVectorSlot(ctx, vector, imageryZoom, tx, ty, i * TERRAIN_TILE_DIM, j * TERRAIN_TILE_DIM)
+      return
+    }
+    const url = template!
       .replace('{z}', String(imageryZoom))
       .replace('{x}', String(tx))
       .replace('{y}', String(ty))
@@ -340,6 +363,59 @@ async function compositeImagery(
   })
 
   return createImageBitmap(canvas, { imageOrientation: 'flipY' })
+}
+
+// ── Vector drape ─────────────────────────────────────────────────────────────
+
+/** Parsed vector tiles of this patch (many slots share one z14 ancestor). */
+const vectorTiles = new Map<string, Promise<PaintTile | null>>()
+
+function vectorTile(template: string, z: number, x: number, y: number): Promise<PaintTile | null> {
+  const key = `${template}|${z}/${x}/${y}`
+  let p = vectorTiles.get(key)
+  if (!p) {
+    p = (async () => {
+      const res = await fetch(template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y)))
+      if (!res.ok) return null
+      const [{ VectorTile }, { default: Pbf }] = await Promise.all([import('@mapbox/vector-tile'), import('pbf')])
+      return toPaintTile(new VectorTile(new Pbf(await res.arrayBuffer())) as unknown as Parameters<typeof toPaintTile>[0])
+    })().catch(() => null)
+    vectorTiles.set(key, p)
+    // A patch needs at most a handful of z14 tiles; keep the cache small.
+    while (vectorTiles.size > 24) vectorTiles.delete(vectorTiles.keys().next().value as string)
+  }
+  return p
+}
+
+/**
+ * Paint one 256 px drape slot (XYZ tile z/x/y) with the basemap's painter.
+ * Place names are NOT baked: the screen-space label layer already names
+ * them, and a baked copy would sit on the relief under the real one.
+ */
+async function paintVectorSlot(
+  target: OffscreenCanvasRenderingContext2D, v: VectorDrape,
+  z: number, x: number, y: number, dx: number, dy: number,
+): Promise<void> {
+  const f = contentFrameFor(z, x, y)
+  const tile = await vectorTile(v.template, f.cz, f.cx, f.cy)
+  const D = TERRAIN_TILE_DIM
+  const slot = new OffscreenCanvas(D, D)
+  const ctx = slot.getContext('2d')
+  if (!ctx) return
+  paintTile(ctx as unknown as CanvasRenderingContext2D, getMapStyle(v.styleId), tile ? [{
+    tile, left: Math.round(f.ox * D), top: Math.round(f.oy * D),
+    right: Math.round((f.ox + f.k) * D), bottom: Math.round((f.oy + f.k) * D),
+  }] : [], {
+    width: D, height: D,
+    // A 256 px XYZ slot at z is a style-zoom (512 px) tile at z − 1.
+    zoom: z - 1,
+    // The drape is seen at a grazing angle from above: a touch heavier lines
+    // keep streets readable on the relief.
+    pixelScale: 1.25,
+    language: v.language,
+    collectPoints: () => {},
+  })
+  target.drawImage(slot, dx, dy)
 }
 
 /** Minimal promise pool — keeps at most `limit` fetches in flight. */
