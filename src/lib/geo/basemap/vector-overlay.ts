@@ -16,7 +16,9 @@
 //   • TileJSON. OpenFreeMap versions its tiles weekly; the template comes from
 //     the TileJSON, never hard-coded.
 
+import * as THREE from 'three'
 import { MVTOverlay } from '3d-tiles-renderer/plugins'
+import { canPaintOffThread, createPaintPool, type PaintPool } from './paint-pool'
 import { loadTileJson } from './tilejson'
 export { loadTileJson } from './tilejson'
 import { createLogger } from '../../logger'
@@ -39,6 +41,8 @@ export interface VectorOverlayOptions {
   getLanguage: () => string
   /** Screen-space place names; omitted = all labels baked into the tiles. */
   labels?: ScreenLabelLayer
+  /** Paint in workers when the browser can (default true). */
+  offThread?: boolean
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the overlay internals are untyped JS */
@@ -88,6 +92,13 @@ export function createVectorOverlay(opts: VectorOverlayOptions): object {
 
   class StyledMVTOverlay extends (MVTOverlay as any) {
     _surfaceTiling: TilingLike | null = null
+    _paintPool: PaintPool | null = null
+
+    dispose(): void {
+      this._paintPool?.dispose()
+      this._paintPool = null
+      super.dispose()
+    }
 
     constructor(o: object) { super(o) }
 
@@ -114,6 +125,66 @@ export function createVectorOverlay(opts: VectorOverlayOptions): object {
       this._surfaceTiling = deep
 
       const source = this.imageSource
+
+      // OFF THE MAIN THREAD. The innermost fetch is replaced (the raster and
+      // label wrappers below still wrap it): workers fetch, decode, flatten and
+      // paint, and hand back an ImageBitmap — measured 17 + 18 ms per dense
+      // Barcelona tile that no longer lands on the frame. The library's own
+      // content cache and _drawToCanvas stay as the fallback path.
+      if (opts.offThread !== false && canPaintOffThread()) {
+        const pool = createPaintPool()
+        this._paintPool = pool
+        const template: string = cache.url
+        const fontBase = new URL(`${import.meta.env.BASE_URL}fonts/`, location.href).href
+        const layerById = new Map(style.layers.map((l) => [l.id, l]))
+        source.fetchItem = async (args: number[], signal?: AbortSignal) => {
+          const region = args.slice(0, 4)
+          const level = args[4]
+          const [rx0, ry0, rx1, ry1] = region
+          const W = VECTOR_TILE_PX, H = VECTOR_TILE_PX
+          const frames = contentTilesFor(content, region, level).map(([tx, ty]) => {
+            const [bx0, by0, bx1, by1] = content.getTileBounds(tx, ty, level, true, false)
+            return {
+              z: level, x: tx, y: ty,
+              left: Math.round((W * (bx0 - rx0)) / (rx1 - rx0)),
+              right: Math.round((W * (bx1 - rx0)) / (rx1 - rx0)),
+              top: Math.round((H * (ry1 - by1)) / (ry1 - ry0)),
+              bottom: Math.round((H * (ry1 - by0)) / (ry1 - ry0)),
+            }
+          })
+          const res = await pool.paint({
+            template, styleId: opts.styleId, width: W, height: H,
+            zoom: Math.round(Math.log2(1 / Math.max(1e-9, rx1 - rx0))),
+            pixelScale: opts.getPixelScale(), language: opts.getLanguage(),
+            frames, rasters: rasterByRegion.get(regionKey(region)) ?? [],
+            collect: !!opts.labels, fontBase,
+          }, signal)
+          if (opts.labels) {
+            const list: ScreenLabelCandidate[] = []
+            for (const c of res.points) {
+              const layer = layerById.get(c.layerId)
+              if (!layer || layer.type !== 'label') continue
+              const nx = rx0 + (c.x / W) * (rx1 - rx0)
+              const ny = ry1 - (c.y / H) * (ry1 - ry0)
+              list.push({
+                key: labelKey(layer.id, c.text, nx, ny), text: c.text, nx, ny,
+                priority: c.priority, cssSize: c.cssSize, layer, props: c.props,
+              })
+            }
+            opts.labels.setRegion(regionKey(region), list)
+          }
+          const tex = new THREE.Texture(res.bitmap as unknown as HTMLImageElement)
+          tex.colorSpace = THREE.SRGBColorSpace
+          tex.flipY = false // pre-flipped by the worker
+          tex.generateMipmaps = false
+          tex.needsUpdate = true
+          return tex
+        }
+        source.disposeItem = (tex: THREE.Texture | null) => {
+          ;(tex?.image as ImageBitmap | undefined)?.close?.()
+          tex?.dispose()
+        }
+      }
       // Which region a tile texture paints. GeneratedSurfacePlugin never calls
       // the overlay's setRegionVisible (only ImageOverlayPlugin does), so the
       // label layer finds the regions on screen through the visible tiles'
