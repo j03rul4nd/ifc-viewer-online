@@ -120,6 +120,17 @@ blinds), DA300 map on the floors. Torre Poblenou, clear sky: ~30 s; every
 floor passes EN 17037 by the hour and fails LEED on ASE (~64 %: an unshaded
 glazed tower lets direct sun deep in).
 
+Typical hours are means: an hour with the sun out 60 % of the time is split
+into two states — sun out (probability = ERA5 sunshine share, beam DNI / p,
+capped at 1 361 W/m²) and covered — for every threshold and for ASE. Using the
+mean beam every hour counted cloudy hours as sunny (Torre Poblenou, ERA5:
+ASE 63 % → 56 %). Each annual run is compared with the previous one, room by
+room (sDA/ASE change in points, in the panel and the report): louvres (6
+slats, 0.3 m, 30°) on every façade take ASE from 56 % to 33 %, DA300 from 90 %
+to 86 %; a 0.6 m overhang at ceiling level changes nothing on the working
+plane (the slab already blocks those rays) — it protects the glass, not the
+room.
+
 ## The analysis' own geometry (no fragments meshes in any pass)
 
 Measured: items hidden with fragments' `setVisible(false)` kept casting in a

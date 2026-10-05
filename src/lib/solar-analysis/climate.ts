@@ -261,7 +261,9 @@ export function aggregateSky(h: HourlySeries, lat: number, lon: number, elevatio
     if (!Number.isFinite(t)) continue
     const d = new Date(t)
     const m = d.getUTCMonth(), slot = d.getUTCHours()
-    years.add(d.getUTCFullYear())
+    // The year of the LABEL: the hour before 1 January 00:00 belongs to the
+    // first year asked for, not to the one before it.
+    years.add(Number(h.time[i].slice(0, 4)))
     n[m][slot]++
     sums.ghi[m][slot] += ghi
     sums.dni[m][slot] += h.direct_normal_irradiance[i] ?? 0

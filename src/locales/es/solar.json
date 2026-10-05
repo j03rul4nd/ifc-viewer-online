@@ -500,7 +500,8 @@
     "annualLeed": "Estancias que cumplen LEED sDA/ASE",
     "annualMeanDa": "Autonomía de luz media",
     "annualMap": "Autonomía de luz diurna (DA300): la planta peor",
-    "annualEnShort": "EN 17037 (h)"
+    "annualEnShort": "EN 17037 (h)",
+    "annualDelta": "Entre paréntesis: cambio en puntos porcentuales frente al cálculo anual anterior (por ejemplo, sin protecciones)."
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -568,6 +569,7 @@
     "sdaHint": "sDA300/50 %: parte de la estancia con ≥ 300 lx la mitad de las horas ocupadas (8–18 h); LEED pide ≥ 55 %",
     "aseHint": "ASE1000,250 h: parte de la estancia con más de 1000 lx de sol directo más de 250 horas ocupadas; LEED pide ≤ 10 % (deslumbramiento, sobrecalentamiento)",
     "annualNote": "Coeficientes de luz diurna sobre las 145 zonas de Tregenza y un segundo pase con la posición real del sol de cada hora; difusa con la forma del cielo cubierto CIE escalada a la difusa de cada hora (120 lm/W), sol directo 100 lm/W, reflexiones BRE solo de la difusa (la luz solar reflejada no se cuenta: conservador). Sin persianas, 12 días tipo. Un cribado de anteproyecto, no una simulación con Radiance.",
-    "annualSun": "Siguiendo el sol de cada hora… {{pct}} %"
+    "annualSun": "Siguiendo el sol de cada hora… {{pct}} %",
+    "annualVsPrev": "Cambios frente al cálculo de las {{at}} (puntos porcentuales)"
   }
 }

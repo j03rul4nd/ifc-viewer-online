@@ -52,7 +52,9 @@ export default function DaylightRooms(p: Props) {
   const [grid, setGrid] = useState<{ byRoom: Map<string, { level: GridLevel; share: Record<'d100' | 'd300' | 'd500' | 'd750', number>; median: number; points: number; onReflections: boolean; irc: number }>; spacing: number; points: number; T: number; R: number; image: string | null; imageLabel: string } | null>(null)
   /** The last map, to redraw one floor of it. */
   const mapRef = useRef<{ run: AnalysisRun; df: Float32Array; sky?: Float32Array; top: number; meaning: 'df' | 'da' } | null>(null)
-  const [annual, setAnnual] = useState<{ byRoom: Map<string, RoomAnnual>; points: number; spacing: number; image: string | null; imageLabel: string; T: number; R: number } | null>(null)
+  const [annual, setAnnual] = useState<{ byRoom: Map<string, RoomAnnual>; points: number; spacing: number; image: string | null; imageLabel: string; T: number; R: number; label: string } | null>(null)
+  /** The previous annual result, to read a change of design (protections on, another variant) against. */
+  const [annualPrev, setAnnualPrev] = useState<{ byRoom: Map<string, RoomAnnual>; label: string } | null>(null)
   const [annualProgress, setAnnualProgress] = useState<{ stage: 'sky' | 'sun' | 'hours'; f: number } | null>(null)
   const [plan, setPlan] = useState<number | null>(null)
   /** The floor on screen, for callbacks that outlive a render. */
@@ -95,12 +97,15 @@ export default function DaylightRooms(p: Props) {
         ...(annual ? {
           annual: {
             image: annual.image, imageLabel: annual.imageLabel, points: annual.points, spacing: annual.spacing, measuredSky: p.measuredSky,
-            rooms: rooms.filter((r) => annual.byRoom.has(r.key)).map((r) => ({ label: r.label, ...annual.byRoom.get(r.key)! })),
+            rooms: rooms.filter((r) => annual.byRoom.has(r.key)).map((r) => {
+              const was = annualPrev?.byRoom.get(r.key)
+              return { label: r.label, ...annual.byRoom.get(r.key)!, ...(was ? { prevSDA: was.sDA, prevASE: was.ASE } : {}) }
+            }),
           },
         } : {}),
       },
     })
-  }, [rooms, inputs, summary, T, R, p.skyLabel, grid, annual, p.measuredSky])
+  }, [rooms, inputs, summary, T, R, p.skyLabel, grid, annual, annualPrev, p.measuredSky])
 
   const calculate = useCallback(async () => {
     const viewer = p.viewerApiRef.current
@@ -131,6 +136,7 @@ export default function DaylightRooms(p: Props) {
       setInputs({ spaces, windows, targets })
       setGrid(null)
       setAnnual(null)
+      setAnnualPrev(null)
       if (planRef.current !== null) { setPlan(null); planRef.current = null; await viewer.setPresentationSection(null) }
       p.onDone()
     } catch (err) {
@@ -391,7 +397,10 @@ export default function DaylightRooms(p: Props) {
         if (v < worstV) { worstV = v; worst = i }
       })
       const shot = fl.length ? await planShot(fl[worst], run) : null
-      setAnnual({ byRoom, points: n, spacing, image: shot, imageLabel: fl.length ? floorLabel(fl[worst]) : '', T, R })
+      setAnnual((prev) => {
+        if (prev) setAnnualPrev({ byRoom: prev.byRoom, label: prev.label })
+        return { byRoom, points: n, spacing, image: shot, imageLabel: fl.length ? floorLabel(fl[worst]) : '', T, R, label: new Date().toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) }
+      })
       p.onDone()
     } catch (err) {
       p.onError(err)
@@ -455,18 +464,26 @@ export default function DaylightRooms(p: Props) {
             const leed = list.filter((r) => { const a = annual.byRoom.get(r.key)!; return a.sDA >= 0.55 && a.ASE <= 0.1 }).length
             return <>
               <div className="text-[var(--text)]">{t('daylight.annualSummary', { ok, n: list.length, leed, points: annual.points.toLocaleString(i18n.language), spacing: annual.spacing })}</div>
-              <div className="grid grid-cols-[1fr_2.6rem_2.6rem_2.6rem] gap-x-2 text-[9.5px] text-[var(--text-faint)]">
+              {annualPrev && <div className="text-[9.5px] text-[var(--text-faint)]">{t('daylight.annualVsPrev', { at: annualPrev.label })}</div>}
+              <div className="grid grid-cols-[1fr_3.2rem_3.2rem_3.2rem] gap-x-2 text-[9.5px] text-[var(--text-faint)]">
                 <span>{t('daylight.room')}</span><span className="text-right" title={t('daylight.daHint')}>DA300</span><span className="text-right" title={t('daylight.sdaHint')}>sDA</span><span className="text-right" title={t('daylight.aseHint')}>ASE</span>
               </div>
               <div className="flex flex-col max-h-[180px] overflow-y-auto">
                 {list.map((r) => {
                   const a = annual.byRoom.get(r.key)!
+                  const b = annualPrev?.byRoom.get(r.key)
+                  const d = (now: number, was: number | undefined, upGood: boolean) => {
+                    if (was === undefined) return null
+                    const v = Math.round((now - was) * 100)
+                    if (v === 0) return null
+                    return <span className={`text-[8.5px] ml-0.5 ${(v > 0) === upGood ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{v > 0 ? '+' : ''}{v}</span>
+                  }
                   return (
-                    <button key={r.key} onClick={() => frame(r.key)} className="grid grid-cols-[1fr_2.6rem_2.6rem_2.6rem] gap-x-2 text-left hover:bg-[var(--surface-2)] rounded px-0.5">
+                    <button key={r.key} onClick={() => frame(r.key)} className="grid grid-cols-[1fr_3.2rem_3.2rem_3.2rem] gap-x-2 text-left hover:bg-[var(--surface-2)] rounded px-0.5">
                       <span className="truncate flex items-center gap-1"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: LEVEL_COLOR[a.level] }} />{r.label}</span>
                       <span className="font-mono tabular-nums text-right">{Math.round(a.meanDA * 100)}%</span>
-                      <span className={`font-mono tabular-nums text-right ${a.sDA >= 0.55 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.sDA * 100)}%</span>
-                      <span className={`font-mono tabular-nums text-right ${a.ASE <= 0.1 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.ASE * 100)}%</span>
+                      <span className={`font-mono tabular-nums text-right ${a.sDA >= 0.55 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.sDA * 100)}%{d(a.sDA, b?.sDA, true)}</span>
+                      <span className={`font-mono tabular-nums text-right ${a.ASE <= 0.1 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.ASE * 100)}%{d(a.ASE, b?.ASE, false)}</span>
                     </button>
                   )
                 })}

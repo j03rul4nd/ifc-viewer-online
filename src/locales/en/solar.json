@@ -500,7 +500,8 @@
     "annualLeed": "Rooms meeting LEED sDA/ASE",
     "annualMeanDa": "Mean daylight autonomy",
     "annualMap": "Daylight autonomy (DA300) — the floor that does worst",
-    "annualEnShort": "EN 17037 (h)"
+    "annualEnShort": "EN 17037 (h)",
+    "annualDelta": "In brackets: change in percentage points against the previous annual run (for example, without protections)."
   },
   "compare": {
     "title": "Compare design variants",
@@ -568,6 +569,7 @@
     "sdaHint": "sDA300/50 %: share of the room at ≥ 300 lx for half the occupied hours (08–18 h); LEED asks ≥ 55 %",
     "aseHint": "ASE1000,250 h: share of the room with > 1000 lx of direct sun for > 250 occupied hours; LEED asks ≤ 10 % (glare, overheating)",
     "annualNote": "Daylight coefficients over the 145 Tregenza patches and a second pass at each hour's actual sun position; diffuse with the CIE overcast shape scaled to the hour's diffuse (120 lm/W), direct sun 100 lm/W, BRE reflections of the diffuse only (reflected sunlight is not counted: conservative). No blinds, 12 typical days. A design-stage screening, not a Radiance simulation.",
-    "annualSun": "Following each hour's sun… {{pct}} %"
+    "annualSun": "Following each hour's sun… {{pct}} %",
+    "annualVsPrev": "Change against the run at {{at}} (percentage points)"
   }
 }

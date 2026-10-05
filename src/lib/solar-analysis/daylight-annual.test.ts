@@ -59,6 +59,15 @@ describe('annual daylight', () => {
     expect(a.sunHours1000[1]).toBe(0)
   })
 
+  it('a typical hour with the sun out half the time: half the hours sunny, with twice the beam', () => {
+    const hours = Array.from({ length: 600 }, () => hour({ dni: 300, dhi: 80, sunProb: 0.5 }))
+    const a = annualIlluminance(new Float32Array(open), 1, hours, {
+      transmittance: 0.7, irc: new Float32Array([0]), roomOf: new Int32Array([0]), patches,
+      sunVis: new Float32Array([1]), sunHours: 1, sunIndex: new Int32Array(600).fill(0),
+    })
+    expect(a.sunHours1000[0]).toBe(300)
+  })
+
   it('reflections take a share of the diffuse only', () => {
     const dark = new Float32Array(145)
     const a = annualIlluminance(dark, 1, [hour({ dni: 800, dhi: 50 })], { transmittance: 0.7, irc: new Float32Array([3]), roomOf: new Int32Array([0]), patches })

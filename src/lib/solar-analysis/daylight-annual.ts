@@ -85,6 +85,14 @@ export interface SkyHour {
   dhi: number
   /** Hours of the year this stands for. */
   weight: number
+  /**
+   * Chance the sun is out in this hour (measured sunshine share). A typical
+   * hour is a mean: its direct radiation all arrives in the sunny share, so
+   * the hour is split — sun out (probability p, beam DNI / p) or covered —
+   * instead of a weak sun every day, which counted cloudy hours as sunny.
+   * Default 1 (clear sky).
+   */
+  sunProb?: number
   /** Inside the occupied window (08–18 h local). */
   occupied: boolean
 }
@@ -153,7 +161,9 @@ export function annualIlluminance(coef: Float32Array, points: number, hours: Sky
     dayH += h.weight
     if (h.occupied) occH += h.weight
     const Edh = h.dhi * DIFFUSE_EFFICACY
-    const Ebh = h.sunAlt > 0 ? h.dni * BEAM_EFFICACY * Math.sin(h.sunAlt * D) : 0
+    const p = Math.max(0, Math.min(1, h.sunProb ?? 1))
+    // Beam of the sunny share: the hour's mean direct, concentrated where the sun is out.
+    const Ebh = h.sunAlt > 0 && p > 0.02 ? Math.min(1361, h.dni / p) * BEAM_EFFICACY * Math.sin(h.sunAlt * D) : 0
     const L = diffuseLuminance(o.patches, Edh)
     const sp = h.sunAlt > 0 ? patchOf(h.sunAz, h.sunAlt) : -1
     for (let i = 0; i < points; i++) {
@@ -167,15 +177,19 @@ export function annualIlluminance(coef: Float32Array, points: number, hours: Sky
       if (o.sunVis && o.sunHours && col >= 0) vis = Math.min(1, Math.max(0, o.sunVis[i * o.sunHours + col]))
       else if (sp >= 0 && open[sp] > 0) vis = Math.min(1, coef[row + sp] / open[sp])
       const sun = o.transmittance * Ebh * vis
-      e += sun + (o.irc[o.roomOf[i]] / 100) * Edh
-      E[i] = e
-      if (e >= 100) out.da100[i] += h.weight
-      if (e >= 300) out.da300[i] += h.weight
-      if (e >= 500) out.da500[i] += h.weight
-      if (e >= 750) out.da750[i] += h.weight
+      const covered = e + (o.irc[o.roomOf[i]] / 100) * Edh
+      const sunny = covered + sun
+      E[i] = covered + p * sun
+      // Two states of the hour: sun out (p) or covered (1 − p).
+      const ws = h.weight * (Ebh > 0 ? p : 0), wc = h.weight - ws
+      const over = (x: number) => (sunny >= x ? ws : 0) + (covered >= x ? wc : 0)
+      out.da100[i] += over(100)
+      out.da300[i] += over(300)
+      out.da500[i] += over(500)
+      out.da750[i] += over(750)
       if (h.occupied) {
-        if (e >= 300) out.occ300[i] += h.weight
-        if (sun > 1000) out.sunHours1000[i] += h.weight
+        out.occ300[i] += over(300)
+        if (sun > 1000) out.sunHours1000[i] += ws
       }
     }
   }
@@ -230,7 +244,8 @@ export function typicalSkyHours(o: SunPathOptions): SkyHour[] {
       const pos = solarPosition(utc, o.lat, o.lon)
       const local = ((h + 0.5 + zoneOffsetMinutes(new Date(utc), o.timeZone) / 60) % 24 + 24) % 24
       const sky = pos.altitudeDeg > 0 ? skyTerms(utc, pos.altitudeDeg, doy, m, o).irradiance : { dni: 0, dhi: 0, ghi: 0 }
-      out.push({ sunAz: pos.azimuthDeg, sunAlt: pos.altitudeDeg, dni: sky.dni, dhi: sky.dhi, weight: days, occupied: local >= 8 && local < 18 })
+      const terms = pos.altitudeDeg > 0 ? skyTerms(utc, pos.altitudeDeg, doy, m, o) : null
+      out.push({ sunAz: pos.azimuthDeg, sunAlt: pos.altitudeDeg, dni: sky.dni, dhi: sky.dhi, weight: days, occupied: local >= 8 && local < 18, sunProb: terms?.sunProb ?? 1 })
     }
   }
   return out
