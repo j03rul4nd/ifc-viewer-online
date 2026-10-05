@@ -164,7 +164,8 @@
       "delta": "Cambio frente a la variante: {{d}} {{unit}}",
       "unpaired": "Sin pareja en la variante",
       "df": "Factor de luz diurna: {{v}} %",
-      "dfParts": "cielo {{sky}} % · reflejada {{refl}} %"
+      "dfParts": "cielo {{sky}} % · reflejada {{refl}} %",
+      "da": "Autonomía de luz: {{v}} % de las horas ≥ 300 lx"
     },
     "checks": {
       "title": "Comprobaciones",
@@ -434,6 +435,18 @@
       "limits": {
         "title": "Límites",
         "body": "Un estudio de fase de diseño para comparar opciones y dimensionar decisiones. No es un certificado energético, una simulación térmica ni un presupuesto de instalador; la EN 17037 se comprueba en la cara exterior de la ventana, no en el punto de referencia de la estancia."
+      },
+      "geometry": {
+        "title": "Geometría",
+        "body": "Todos los elementos con su geometría completa en cada pase, mire donde mire la cámara, y ningún plano de corte (caja de sección, corte de planta) llega a una medición. Las placas de muro cortina se distinguen por nombre, descripción y tipo: los antepechos opacos cuentan como fachada, no como vidrio. Las estancias son sus volúmenes IfcSpace, con su planta real."
+      },
+      "daylight": {
+        "title": "Luz natural en las estancias",
+        "body": "Factor de luz diurna medio (BRE / CIBSE LG10) con θ a partir de la vista de cielo medida de cada ventana; profundidad límite BRE. Punto a punto: rejilla en el plano de trabajo (0,85 m, a 0,5 m de los muros), el cielo cubierto CIE visto desde cada punto a través del vidrio (400 direcciones, GPU) más las interreflexiones BRE; objetivos EN 17037 a partir de la iluminancia difusa mediana del lugar."
+      },
+      "annual": {
+        "title": "Luz natural anual",
+        "body": "Coeficientes de luz diurna sobre las 145 zonas de cielo de Tregenza, medidos una vez por punto en la GPU; 12 × 24 horas típicas del cielo del lugar, difusa con la forma del cielo cubierto CIE (120 lm/W), el sol en su zona (100 lm/W). EN 17037 por iluminancia horaria, sDA300/50 % y ASE1000,250 h según IES LM-83 / LEED v4, sin persianas."
       }
     },
     "compareTitle": "Variantes de diseño",
@@ -446,7 +459,49 @@
     "df": "FLD",
     "gridTitle": "Luz natural punto a punto",
     "share300": "≥ objetivo 300 lx",
-    "share100": "≥ mínimo 100 lx"
+    "share100": "≥ mínimo 100 lx",
+    "summaryTitle": "Resumen",
+    "summaryIntro": "Cada comprobación calculada para este modelo, con su veredicto. Las páginas siguientes dan el detalle y el método.",
+    "ok": "cumple",
+    "review": "revisar",
+    "narrow": "aprobado justo",
+    "info": "resultado",
+    "better": "mejor",
+    "worse": "peor",
+    "contents": "Contenido",
+    "sum": {
+      "enSun": "Exposición solar EN 17037 (ventanas)",
+      "enSunNote": "Ventanas con ≥ 1,5 h de sol el 21 de marzo por encima de {{alt}}°, en su cara exterior.",
+      "daylight": "Luz natural EN 17037 (estancias, punto a punto)",
+      "daylightNote": "Objetivo en ≥ 50 % de cada estancia y mínimo en ≥ 95 %, cielo cubierto CIE.",
+      "daylightNarrow": "{{n}} estancias solo cumplen con la luz reflejada (BRE simplificado): aprobado justo.",
+      "daylightAvg": "Factor de luz diurna medio (estancias)",
+      "daylightAvgNote": "Factor medio BRE frente al objetivo EN 17037; el mapa punto a punto da la prueba de la propia norma.",
+      "leed": "Luz natural anual, LEED v4 (sDA ≥ 55 %, ASE ≤ 10 %)",
+      "leedNote": "Basado en el clima, cada hora típica del año.",
+      "leedGlare": "{{n}} estancias reciben demasiado sol directo (ASE > 10 %): riesgo de deslumbramiento y sobrecalentamiento.",
+      "deep": "Estancias más profundas que el límite BRE",
+      "deepNote": "Su mitad del fondo queda en penumbra sea cual sea la ventana.",
+      "overheat": "Vidrios con ganancia de verano alta",
+      "overheatNote": "Ventanas por encima de 3,5 kWh/m²·día en la estación cálida: necesitan protección.",
+      "shading": "Protecciones solares: reducción de la ganancia de verano",
+      "shadingNote": "Ganancia de invierno perdida: {{loss}}.",
+      "pv": "Fotovoltaica en cubierta",
+      "pvNote": "{{kwh}} kWh al año · {{spec}} kWh/kWp.",
+      "point": "Sol en el punto estudiado (media anual por día)",
+      "pointNote": "{{en}} h el 21 de marzo (EN 17037 en ese punto).",
+      "compare": "Variante frente a «{{a}}»",
+      "compareNote": "{{metric}}: mejor en el {{better}} de las ventanas, peor en el {{worse}}.",
+      "onlyMaps": "Solo se han calculado mapas: ejecuta las comprobaciones para tener veredictos.",
+      "noClimate": "No se cargó el clima medido del lugar: los resultados usan cielo despejado (más soleado que la realidad). Cárgalo para cifras basadas en ERA5."
+    },
+    "annualIntro": "Luz natural basada en el clima: cada hora típica del año con el cielo y el sol de este lugar, a través del vidrio, sobre el plano de trabajo de cada estancia.",
+    "annualEn": "Estancias EN 17037 (por horas)",
+    "annualLeed": "Estancias que cumplen LEED sDA/ASE",
+    "annualMeanDa": "Autonomía de luz media",
+    "annualMap": "Autonomía de luz diurna (DA300): la planta peor",
+    "annualEnShort": "EN 17037 (h)",
+    "annualDelta": "Entre paréntesis: cambio en puntos porcentuales frente al cálculo anual anterior (por ejemplo, sin protecciones)."
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -502,6 +557,19 @@
     "onReflections": "{{n}} estancias solo cumplen gracias a la luz reflejada (fórmula BRE simplificada, uniforme en la estancia): con el cielo que ven sus puntos no llegarían. Trátalo como un aprobado justo.",
     "plan": "Ver planta",
     "allFloors": "Todas (sin corte)",
-    "floorAt": "Planta a {{y}} m"
+    "floorAt": "Planta a {{y}} m",
+    "annualTitle": "Luz natural a lo largo del año",
+    "annualRun": "Calcular el año",
+    "annualSky": "Mirando las 145 zonas de cielo… {{pct}} %",
+    "annualHours": "Hora a hora… {{pct}} %",
+    "annualHint": "Basado en el clima: cada hora típica del año (12 meses × 24 h) con el cielo del lugar, sol incluido. EN 17037 por iluminancia horaria, sDA300/50 % y ASE1000,250 h (LEED v4 / IES LM-83).",
+    "annualClearSky": "Sin cielo medido: se usa cielo claro × claridad mensual. Carga el clima para las horas ERA5; los resultados anuales dependen de ellas.",
+    "annualSummary": "{{ok}} de {{n}} estancias cumplen la EN 17037 por horas · {{leed}} cumplen LEED (sDA ≥ 55 %, ASE ≤ 10 %); {{points}} puntos cada {{spacing}} m",
+    "daHint": "Autonomía de luz diurna: parte media de las horas de luz con ≥ 300 lx",
+    "sdaHint": "sDA300/50 %: parte de la estancia con ≥ 300 lx la mitad de las horas ocupadas (8–18 h); LEED pide ≥ 55 %",
+    "aseHint": "ASE1000,250 h: parte de la estancia con más de 1000 lx de sol directo más de 250 horas ocupadas; LEED pide ≤ 10 % (deslumbramiento, sobrecalentamiento)",
+    "annualNote": "Coeficientes de luz diurna sobre las 145 zonas de Tregenza y un segundo pase con la posición real del sol de cada hora; difusa con la forma del cielo cubierto CIE escalada a la difusa de cada hora (120 lm/W), sol directo 100 lm/W, reflexiones BRE solo de la difusa (la luz solar reflejada no se cuenta: conservador). Sin persianas, 12 días tipo. Un cribado de anteproyecto, no una simulación con Radiance.",
+    "annualSun": "Siguiendo el sol de cada hora… {{pct}} %",
+    "annualVsPrev": "Cambios frente al cálculo de las {{at}} (puntos porcentuales)"
   }
 }

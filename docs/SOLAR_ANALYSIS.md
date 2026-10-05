@@ -104,6 +104,56 @@ picture: the worst floor by default, the one picked after.
   `core.update(true)`), not one update: the first daylight map after a load
   missed the slabs the camera had culled behind the façade.
 
+### Over the year (climate-based)
+
+`daylight-annual.ts`. Daylight coefficients: for every grid point (~1 m, ≤ ~8 000
+points) and every one of the 145 Tregenza patches, Σ visible·cos·dω through the
+glass (GPU, once). A second pass at the actual sun position of each typical
+hour gives direct-sun visibility per point and hour (the sun is a point; a
+12° patch share smeared it). 12 × 24 typical hours from the sky in use (ERA5
+when loaded): diffuse with the CIE overcast shape scaled to the hour's DHI ×
+120 lm/W, sun DNI × 100 lm/W, BRE inter-reflection of the DIFFUSE only
+(reflected sunlight left out — conservative). Per room: EN 17037 by hourly
+illuminance (300/100 lx for 50 % of daylight hours over 50 %/95 % of the
+plane), sDA300/50 % (08–18 h) and ASE1000,250 h as IES LM-83 / LEED v4 (no
+blinds), DA300 map on the floors. Torre Poblenou, clear sky: ~30 s; every
+floor passes EN 17037 by the hour and fails LEED on ASE (~64 %: an unshaded
+glazed tower lets direct sun deep in).
+
+Typical hours are means: an hour with the sun out 60 % of the time is split
+into two states — sun out (probability = ERA5 sunshine share, beam DNI / p,
+capped at 1 361 W/m²) and covered — for every threshold and for ASE. Using the
+mean beam every hour counted cloudy hours as sunny (Torre Poblenou, ERA5:
+ASE 63 % → 56 %). Each annual run is compared with the previous one, room by
+room (sDA/ASE change in points, in the panel and the report): louvres (6
+slats, 0.3 m, 30°) on every façade take ASE from 56 % to 33 %, DA300 from 90 %
+to 86 %; a 0.6 m overhang at ceiling level changes nothing on the working
+plane (the slab already blocks those rays) — it protects the glass, not the
+room.
+
+## The analysis' own geometry (no fragments meshes in any pass)
+
+Measured: items hidden with fragments' `setVisible(false)` kept casting in a
+shadow pass (with all 19 241 items hidden, an interior point still could not
+see a 30° sun), on top of tiles/LOD that follow the user's camera and clipping
+planes. Every pass now draws the analysis' OWN occluders, built once per model
+from `getItemsGeometry` of every item except spatial/abstract ones (IfcSpace,
+openings…), in two meshes — glazing and the rest — placed at the model's
+world matrix; the fragments pivots are hidden for the pass. Light passing
+THROUGH the glass (daylight) uses the opaque mesh only. Checked against the
+independent sky mask: from 0.6 m inside the south façade the sun is visible
+from 10° to 60° (the ceiling cuts 75°), from 3 m up to 20°, outside always.
+Exterior results move with it (Torre Poblenou: EN 17037 windows 298/432,
+rooftop PV 36.9 kWp) — the geometry is now complete and stable.
+
+## Report
+
+Summary page after the cover: one verdict per computed check (meets /
+review / narrow pass / result) with its key figure, the no-climate warning and
+the contents; an annual daylight page (DA300 plan of the worst floor, DA,
+sDA, ASE and the hourly EN level per room); the method covers geometry,
+daylight and the annual method.
+
 ## Glass or spandrel
 
 IfcPlate holds both glazed units and opaque spandrels. Plates are classified

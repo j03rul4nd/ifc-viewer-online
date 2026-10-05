@@ -165,7 +165,8 @@
       "delta": "Change vs. the variant: {{d}} {{unit}}",
       "unpaired": "No partner in the variant",
       "df": "Daylight factor: {{v}} %",
-      "dfParts": "sky {{sky}} % · reflected {{refl}} %"
+      "dfParts": "sky {{sky}} % · reflected {{refl}} %",
+      "da": "Daylight autonomy: {{v}} % of hours ≥ 300 lx"
     },
     "checks": {
       "title": "Checks",
@@ -435,6 +436,18 @@
       "limits": {
         "title": "Limits",
         "body": "A design-stage study to compare options and size decisions. It is not an energy certificate, a thermal simulation or an installer's quote; EN 17037 is screened at the window's outer face, not at the room's reference point."
+      },
+      "geometry": {
+        "title": "Geometry",
+        "body": "Every element at full detail for every pass, whatever the camera sees, and no clipping plane (section box, plan cut) reaches a measurement. Curtain-wall plates are told apart by name, description and type: opaque spandrels count as façade, not glass. Rooms are their IfcSpace volumes, footprints included."
+      },
+      "daylight": {
+        "title": "Daylight in the rooms",
+        "body": "Average daylight factor (BRE / CIBSE LG10) with θ from each window's measured sky view; BRE limiting depth. Point by point: a grid on the working plane (0.85 m, 0.5 m off the walls), the CIE overcast sky seen from each point through the glass (400 directions, GPU) plus BRE split-flux inter-reflections; EN 17037 targets from the site's median diffuse illuminance."
+      },
+      "annual": {
+        "title": "Daylight over the year",
+        "body": "Daylight coefficients over the 145 Tregenza sky patches, measured once per point on the GPU; 12 × 24 typical hours of the site's sky, diffuse with the CIE overcast shape (120 lm/W), the sun in its patch (100 lm/W). EN 17037 by hourly illuminance, sDA300/50 % and ASE1000,250 h as IES LM-83 / LEED v4, without blinds."
       }
     },
     "compareTitle": "Design variants",
@@ -447,7 +460,49 @@
     "df": "DF",
     "gridTitle": "Daylight point by point",
     "share300": "≥ 300 lx target",
-    "share100": "≥ 100 lx minimum"
+    "share100": "≥ 100 lx minimum",
+    "summaryTitle": "Summary",
+    "summaryIntro": "Every check computed for this model, one verdict each. The pages that follow give the detail and the method.",
+    "ok": "meets",
+    "review": "review",
+    "narrow": "narrow pass",
+    "info": "result",
+    "better": "better",
+    "worse": "worse",
+    "contents": "Contents",
+    "sum": {
+      "enSun": "Sunlight exposure, EN 17037 (windows)",
+      "enSunNote": "Windows with ≥ 1.5 h of sun on 21 March above {{alt}}°, at their outer face.",
+      "daylight": "Daylight provision, EN 17037 (rooms, point by point)",
+      "daylightNote": "Target over ≥ 50 % of each room and the minimum over ≥ 95 %, CIE overcast sky.",
+      "daylightNarrow": "{{n}} rooms pass only with reflected light (simplified BRE): a narrow pass.",
+      "daylightAvg": "Average daylight factor (rooms)",
+      "daylightAvgNote": "BRE average daylight factor against the EN 17037 target — run the point-by-point map for the standard's own test.",
+      "leed": "Daylight over the year, LEED v4 (sDA ≥ 55 %, ASE ≤ 10 %)",
+      "leedNote": "Climate-based, every typical hour of the year.",
+      "leedGlare": "{{n}} rooms get too much direct sun (ASE > 10 %): glare and overheating risk.",
+      "deep": "Rooms deeper than the BRE limiting depth",
+      "deepNote": "Their back half stays dim whatever the window.",
+      "overheat": "Glazing at high summer gain",
+      "overheatNote": "Windows above 3.5 kWh/m²·day in the hot season need shading.",
+      "shading": "Solar protections: summer gain cut",
+      "shadingNote": "Winter gain lost: {{loss}}.",
+      "pv": "Rooftop photovoltaics",
+      "pvNote": "{{kwh}} kWh a year · {{spec}} kWh/kWp.",
+      "point": "Sun at the studied point (yearly mean per day)",
+      "pointNote": "{{en}} h on 21 March (EN 17037 at that point).",
+      "compare": "Variant against “{{a}}”",
+      "compareNote": "{{metric}} — better on {{better}} of the windows, worse on {{worse}}.",
+      "onlyMaps": "Only maps were computed: run the checks for verdicts.",
+      "noClimate": "The site's measured climate was not loaded: results use a clear sky (sunnier than reality). Load it for ERA5-based figures."
+    },
+    "annualIntro": "Climate-based daylight: every typical hour of the year with this site's sky and sun, through the glass, on each room's working plane.",
+    "annualEn": "Rooms at EN 17037 (hourly)",
+    "annualLeed": "Rooms meeting LEED sDA/ASE",
+    "annualMeanDa": "Mean daylight autonomy",
+    "annualMap": "Daylight autonomy (DA300) — the floor that does worst",
+    "annualEnShort": "EN 17037 (h)",
+    "annualDelta": "In brackets: change in percentage points against the previous annual run (for example, without protections)."
   },
   "compare": {
     "title": "Compare design variants",
@@ -503,6 +558,19 @@
     "onReflections": "{{n}} rooms only pass thanks to reflected light (the simplified BRE formula, uniform over the room): on the sky their points see they would not. Treat it as a narrow pass.",
     "plan": "Plan view",
     "allFloors": "All (no cut)",
-    "floorAt": "Floor at {{y}} m"
+    "floorAt": "Floor at {{y}} m",
+    "annualTitle": "Daylight over the year",
+    "annualRun": "Calculate the year",
+    "annualSky": "Seeing the 145 sky patches… {{pct}} %",
+    "annualHours": "Hour by hour… {{pct}} %",
+    "annualHint": "Climate-based: every typical hour of the year (12 months × 24 h) with the site's sky, the sun included. EN 17037 by hourly illuminance, sDA300/50 % and ASE1000,250 h (LEED v4 / IES LM-83).",
+    "annualClearSky": "No measured sky: a clear sky × the monthly clearness stands in. Load the climate for the ERA5 hours — annual results depend on them.",
+    "annualSummary": "{{ok}} of {{n}} rooms meet EN 17037 by the hour · {{leed}} meet LEED (sDA ≥ 55 %, ASE ≤ 10 %) — {{points}} points every {{spacing}} m",
+    "daHint": "Daylight autonomy: mean share of daylight hours at ≥ 300 lx",
+    "sdaHint": "sDA300/50 %: share of the room at ≥ 300 lx for half the occupied hours (08–18 h); LEED asks ≥ 55 %",
+    "aseHint": "ASE1000,250 h: share of the room with > 1000 lx of direct sun for > 250 occupied hours; LEED asks ≤ 10 % (glare, overheating)",
+    "annualNote": "Daylight coefficients over the 145 Tregenza patches and a second pass at each hour's actual sun position; diffuse with the CIE overcast shape scaled to the hour's diffuse (120 lm/W), direct sun 100 lm/W, BRE reflections of the diffuse only (reflected sunlight is not counted: conservative). No blinds, 12 typical days. A design-stage screening, not a Radiance simulation.",
+    "annualSun": "Following each hour's sun… {{pct}} %",
+    "annualVsPrev": "Change against the run at {{at}} (percentage points)"
   }
 }
