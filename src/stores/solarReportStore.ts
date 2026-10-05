@@ -96,6 +96,8 @@ export interface DaylightSection {
   gridImageLabel?: string
   gridSpacing?: number
   gridPoints?: number
+  /** The protection search, when run: every design measured over the year, best first. */
+  optimizer?: { ranked: Array<{ id: string; sDA: number; ASE: number; meanDA: number; blindHours: number }>; orientations: string[]; applied: string | null }
   /** Climate-based (annual) results, when run. */
   annual?: {
     image: string | null

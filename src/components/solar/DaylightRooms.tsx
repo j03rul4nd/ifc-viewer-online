@@ -17,6 +17,9 @@ import { buildSensorSet } from '../../lib/solar-analysis/sensors'
 import { rampColor } from '../../lib/solar-analysis/results'
 import { tregenzaPatches, typicalSkyHours, annualIlluminance, roomAnnual, blindSchedule, blindGroupFactor, type RoomAnnual, type AnnualPoint } from '../../lib/solar-analysis/daylight-annual'
 import { assignWindows } from '../../lib/solar-analysis/daylight'
+import { devicesFor, type WindowFrame, type Orientation } from '../../lib/solar-analysis/shading-devices'
+import { orientationOf } from '../../lib/solar-analysis/sensors'
+import { CANDIDATES, sunFacing, rankCandidates, aggregateRooms, ASE_TARGET, type CandidateResult } from '../../lib/solar-analysis/shading-optimizer'
 import { sunDirectionScene } from '../../lib/solar/sun-math'
 import { shareOrDownload } from '../../lib/share-file'
 import { useSolarReportStore } from '../../stores/solarReportStore'
@@ -24,6 +27,7 @@ import { useSolarReportStore } from '../../stores/solarReportStore'
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   north: { x: number; z: number }
+  lat: number
   yawDeg: number
   /** True when the sky is the measured ERA5 one (annual results mean most then). */
   measuredSky: boolean
@@ -57,6 +61,9 @@ export default function DaylightRooms(p: Props) {
   const [annual, setAnnual] = useState<{ byRoom: Map<string, RoomAnnual & { blindHours?: number }>; points: number; spacing: number; image: string | null; imageLabel: string; T: number; R: number; label: string; blinds: boolean } | null>(null)
   /** The previous annual result, to read a change of design (protections on, another variant) against. */
   const [annualPrev, setAnnualPrev] = useState<{ byRoom: Map<string, RoomAnnual>; label: string } | null>(null)
+  /** The protection search: every candidate measured over the year, best first. */
+  const [opt, setOpt] = useState<{ ranked: CandidateResult[]; orientations: Orientation[]; applied: string | null } | null>(null)
+  const [optProgress, setOptProgress] = useState<{ k: number; of: number; f: number } | null>(null)
   /** LM-83 operable blinds in the annual run (sDA as LEED computes it). */
   const [blinds, setBlinds] = useState(true)
   const [annualProgress, setAnnualProgress] = useState<{ stage: 'sky' | 'sun' | 'hours'; f: number } | null>(null)
@@ -98,6 +105,7 @@ export default function DaylightRooms(p: Props) {
           }
         }),
         ...(grid ? { gridImage: grid.image, gridImageLabel: grid.imageLabel, gridSpacing: grid.spacing, gridPoints: grid.points } : {}),
+        ...(opt ? { optimizer: { ranked: opt.ranked, orientations: opt.orientations, applied: opt.applied } } : {}),
         ...(annual ? {
           annual: {
             image: annual.image, imageLabel: annual.imageLabel, points: annual.points, spacing: annual.spacing, measuredSky: p.measuredSky,
@@ -110,7 +118,7 @@ export default function DaylightRooms(p: Props) {
         } : {}),
       },
     })
-  }, [rooms, inputs, summary, T, R, p.skyLabel, grid, annual, annualPrev, p.measuredSky])
+  }, [rooms, inputs, summary, T, R, p.skyLabel, grid, annual, annualPrev, p.measuredSky, opt])
 
   const calculate = useCallback(async () => {
     const viewer = p.viewerApiRef.current
@@ -322,15 +330,19 @@ export default function DaylightRooms(p: Props) {
     }
   }, [p, inputs, rooms, T, R, t])
 
-  const runAnnual = useCallback(async () => {
+  /**
+   * The annual calculation on whatever is in the scene now (protections
+   * included): ~`targetPoints` grid points, coefficients, sun pass, hours.
+   */
+  const computeAnnual = useCallback(async (targetPoints: number, progress: (stage: 'sky' | 'sun' | 'hours', f: number) => void) => {
     const viewer = p.viewerApiRef.current
-    if (!viewer || !inputs || !rooms) return
-    setAnnualProgress({ stage: 'sky', f: 0 })
-    try {
+    if (!viewer || !inputs || !rooms) throw new Error('not ready')
+    {
+      const setAnnualProgress = (v: { stage: 'sky' | 'sun' | 'hours'; f: number }) => progress(v.stage, v.f)
       const sa = await viewer.getSolarAnalysis()
       const totalArea = inputs.spaces.reduce((a, sp) => a + (sp.box.max.x - sp.box.min.x) * (sp.box.max.z - sp.box.min.z), 0)
       // Points × 288 hours × 145 patches: ~8 000 points keeps it to seconds.
-      const spacing = Math.max(1, Math.round(Math.sqrt(totalArea / 8000) * 4) / 4)
+      const spacing = Math.max(1, Math.round(Math.sqrt(totalArea / targetPoints) * 4) / 4)
       const pts: number[] = []
       const roomOf: number[] = []
       inputs.spaces.forEach((sp, k) => {
@@ -403,7 +415,17 @@ export default function DaylightRooms(p: Props) {
       }
       const idxByRoom = new Map<string, number[]>()
       roomOf.forEach((k, i) => { const key = inputs.spaces[k].key; const l = idxByRoom.get(key) ?? []; l.push(i); idxByRoom.set(key, l) })
-      const byRoom = new Map([...idxByRoom.entries()].map(([key, idx]) => [key, { ...roomAnnual(idx, res), blindHours: sched ? blindShare[inputs.spaces.findIndex((sp) => sp.key === key)] : undefined }]))
+      const byRoom = new Map([...idxByRoom.entries()].map(([key, idx]) => [key, { ...roomAnnual(idx, res), blindHours: sched ? blindShare[inputs.spaces.findIndex((sp) => sp.key === key)] : undefined, points: idx.length }]))
+      return { byRoom, res, pts, n, spacing, P, hours }
+    }
+  }, [p, inputs, rooms, T, R, t, blinds]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const runAnnual = useCallback(async () => {
+    const viewer = p.viewerApiRef.current
+    if (!viewer || !inputs || !rooms) return
+    setAnnualProgress({ stage: 'sky', f: 0 })
+    try {
+      const { byRoom, res, pts, n, spacing, P, hours } = await computeAnnual(8000, (stage, f) => setAnnualProgress({ stage, f }))
       // The map: daylight autonomy, % of daylight hours at 300 lx.
       const sensors = buildSensorSet([{ kind: 'ground', element: null, samples: Array.from({ length: n }, (_, i) => ({ x: pts[i * 3], y: pts[i * 3 + 1], z: pts[i * 3 + 2], nx: 0, ny: 1, nz: 0, area: spacing * spacing })) }], { ground: spacing, surface: spacing })
       const zeros = () => new Float32Array(n)
@@ -432,7 +454,55 @@ export default function DaylightRooms(p: Props) {
     } finally {
       setAnnualProgress(null)
     }
-  }, [p, inputs, rooms, T, R, t, floorLabel, blinds]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p, inputs, rooms, T, R, t, floorLabel, blinds, computeAnnual]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Find the protection: every candidate, measured over the year ─────────
+
+  /** The windows as frames for the devices (from the daylight inputs). */
+  const frames = useMemo<WindowFrame[]>(() => (inputs?.windows ?? []).map((w) => {
+    const [modelId, id] = w.key.split(':')
+    return {
+      modelId, localId: Number(id), center: w.center, u: { x: -w.n.z, y: 0, z: w.n.x }, n: { x: w.n.x, y: 0, z: w.n.z },
+      width: w.width, height: w.height, orientation: orientationOf(w.n.x, w.n.z, p.north),
+    }
+  }), [inputs, p.north])
+
+  const runOptimizer = useCallback(async () => {
+    const viewer = p.viewerApiRef.current
+    if (!viewer || !inputs || !rooms) return
+    const sa = await viewer.getSolarAnalysis()
+    const orientations = sunFacing(p.lat)
+    const set = new Set(orientations)
+    const results: CandidateResult[] = []
+    try {
+      for (let k = 0; k < CANDIDATES.length; k++) {
+        const c = CANDIDATES[k]
+        setOptProgress({ k, of: CANDIDATES.length, f: 0 })
+        sa.setShadingDevices(c.id === 'none' ? null : devicesFor(frames, c.design, set))
+        const { byRoom } = await computeAnnual(2000, (_s, f) => setOptProgress({ k, of: CANDIDATES.length, f }))
+        results.push({ id: c.id, ...aggregateRooms([...byRoom.values()].map((r) => ({ weight: r.points, sDA: r.sDA, ASE: r.ASE, meanDA: r.meanDA, blindHours: r.blindHours }))) })
+      }
+      const ranked = rankCandidates(results)
+      // The winner goes on the model; the panel can take it off or pick another.
+      const best = CANDIDATES.find((c) => c.id === ranked[0].id)!
+      sa.setShadingDevices(best.id === 'none' ? null : devicesFor(frames, best.design, set))
+      setOpt({ ranked, orientations, applied: best.id })
+      p.onDone()
+    } catch (err) {
+      sa.setShadingDevices(null)
+      p.onError(err)
+    } finally {
+      setOptProgress(null)
+    }
+  }, [p, inputs, rooms, frames, computeAnnual])
+
+  const applyCandidate = useCallback(async (id: string) => {
+    const sa = await p.viewerApiRef.current?.getSolarAnalysis()
+    if (!sa || !opt) return
+    const c = CANDIDATES.find((x) => x.id === id)!
+    sa.setShadingDevices(id === 'none' ? null : devicesFor(frames, c.design, new Set(opt.orientations)))
+    setOpt({ ...opt, applied: id })
+  }, [p.viewerApiRef, opt, frames])
 
   const frame = useCallback((key: string) => {
     const s = inputs?.spaces.find((x) => x.key === key)
@@ -521,6 +591,33 @@ export default function DaylightRooms(p: Props) {
               <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('daylight.annualNote')}</p>
             </>
           })()}
+          <div className="flex items-center gap-1.5 border-t border-[var(--border)] pt-1.5 mt-0.5">
+            <span className="font-medium text-[var(--text)]">{t('optimizer.title')}</span>
+            <button disabled={p.busy || annualProgress !== null || optProgress !== null} onClick={() => { void runOptimizer() }}
+              className="ml-auto px-2 py-1 rounded-[7px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-40">
+              {optProgress ? t('optimizer.working', { k: optProgress.k + 1, of: optProgress.of, pct: Math.round(optProgress.f * 100) }) : opt ? t('optimizer.again') : t('optimizer.run')}
+            </button>
+          </div>
+          {!opt && <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('optimizer.hint', { n: CANDIDATES.length })}</p>}
+          {opt && (
+            <>
+              <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('optimizer.facades', { list: opt.orientations.map((o) => t(`shading.compass.${o}` as 'shading.compass.N')).join(', ') })}</p>
+              <div className="grid grid-cols-[1fr_2.6rem_2.6rem_2.6rem_2.6rem] gap-x-1.5 text-[9.5px] text-[var(--text-faint)]">
+                <span>{t('optimizer.design')}</span><span className="text-right">ASE</span><span className="text-right">DA300</span><span className="text-right">sDA</span><span className="text-right">{t('daylight.blindCol')}</span>
+              </div>
+              {opt.ranked.map((r, i) => (
+                <button key={r.id} onClick={() => { void applyCandidate(r.id) }} title={t('optimizer.apply')}
+                  className={`grid grid-cols-[1fr_2.6rem_2.6rem_2.6rem_2.6rem] gap-x-1.5 text-left rounded px-0.5 ${opt.applied === r.id ? 'bg-[var(--surface-2)] text-[var(--text)]' : 'hover:bg-[var(--surface-2)]'}`}>
+                  <span className="truncate">{i === 0 ? '★ ' : ''}{t(`optimizer.c.${r.id}` as 'optimizer.c.none')}</span>
+                  <span className={`font-mono tabular-nums text-right ${r.ASE <= ASE_TARGET ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(r.ASE * 100)}%</span>
+                  <span className="font-mono tabular-nums text-right">{Math.round(r.meanDA * 100)}%</span>
+                  <span className="font-mono tabular-nums text-right">{Math.round(r.sDA * 100)}%</span>
+                  <span className="font-mono tabular-nums text-right">{Math.round(r.blindHours * 100)}%</span>
+                </button>
+              ))}
+              <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{opt.ranked[0].ASE <= ASE_TARGET ? t('optimizer.found') : t('optimizer.notFound')}</p>
+            </>
+          )}
         </div>
       )}
       {!rooms && <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('daylight.hint')}</p>}

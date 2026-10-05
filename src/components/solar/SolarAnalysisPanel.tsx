@@ -692,6 +692,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                   <DaylightRooms
                     viewerApiRef={viewerApiRef}
                     north={north}
+                    lat={location.lat}
                     yawDeg={location.yawDeg}
                     measuredSky={effectiveSky === 'measured'}
                     ensureSensors={ensureSensors}

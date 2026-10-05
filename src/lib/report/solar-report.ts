@@ -436,6 +436,12 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
       doc.verdict(leed === a.length ? 'pass' : leed > 0 ? 'warn' : 'fail', leed === a.length ? t('report.ok') : t('report.review'),
         t('report.sum.leed'), `${leed}/${a.length}`, glare ? t('report.sum.leedGlare', { n: glare }) : t('report.sum.leedNote'))
     }
+    if (d.optimizer) {
+      const best = d.optimizer.ranked[0]
+      const none = d.optimizer.ranked.find((x) => x.id === 'none')
+      doc.verdict(best.ASE <= 0.1 ? 'pass' : 'warn', best.ASE <= 0.1 ? t('report.ok') : t('report.review'), t('report.sum.opt', { design: t(`optimizer.c.${best.id}`) }),
+        `ASE ${Math.round(best.ASE * 100)} %`, t('report.sum.optNote', { from: none ? Math.round(none.ASE * 100) : '—', da: Math.round(best.meanDA * 100) }))
+    }
     if (d.summary.deep) doc.verdict('warn', t('report.review'), t('report.sum.deep'), `${d.summary.deep}/${d.summary.rooms}`, t('report.sum.deepNote'))
   }
   if (r.seasons) {
@@ -708,6 +714,28 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     if (a.rooms.some((x) => x.prevASE !== undefined)) doc.para(t('report.annualDelta'), 20, C.faint)
     doc.para(`DA300 — ${t('daylight.daHint')}. sDA — ${t('daylight.sdaHint')}. ASE — ${t('daylight.aseHint')}.`, 20, C.faint)
     doc.para(t('daylight.annualNote'), 20, C.faint)
+  }
+
+  // The protection search.
+  if (r.daylight?.optimizer) {
+    const o = r.daylight.optimizer
+    doc.newPage()
+    doc.h1(t('optimizer.title'))
+    doc.para(t('report.optIntro', { list: o.orientations.map((x) => t(`shading.compass.${x}`)).join(', '), n: o.ranked.length }))
+    const best = o.ranked[0]
+    doc.figures([
+      { label: t('report.optBest'), value: t(`optimizer.c.${best.id}`), color: best.ASE <= 0.1 ? C.green : C.amber },
+      { label: 'ASE', value: `${Math.round(best.ASE * 100)} %`, color: best.ASE <= 0.1 ? C.green : C.amber },
+      { label: 'DA300', value: `${Math.round(best.meanDA * 100)} %` },
+    ])
+    const none = o.ranked.find((x) => x.id === 'none')
+    doc.table([t('optimizer.design'), 'ASE', 'DA300', 'sDA', t('daylight.blindCol')],
+      o.ranked.map((x, i) => [(i === 0 ? '★ ' : '') + t(`optimizer.c.${x.id}`) + (x.id === o.applied ? ' ●' : ''),
+        `${Math.round(x.ASE * 100)} %${none && x.id !== 'none' ? ` (${Math.round((x.ASE - none.ASE) * 100)})` : ''}`,
+        `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %`, `${Math.round(x.blindHours * 100)} %`]),
+      [2.6, 1.1, 0.8, 0.8, 0.8], 22)
+    doc.para(best.ASE <= 0.1 ? t('optimizer.found') : t('optimizer.notFound'), 22, best.ASE <= 0.1 ? C.green : C.amber)
+    doc.para(t('report.optNote'), 20, C.faint)
   }
 
   // Variants.

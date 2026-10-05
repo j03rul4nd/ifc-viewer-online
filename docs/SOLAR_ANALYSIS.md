@@ -141,6 +141,18 @@ four-side-glazed floor at once had taken the Torre's sDA from 100 % to 38 %;
 by façade it stays 100 %, DA300 90 % → 80 %, blinds down 81 % of the
 occupied hours.
 
+### Finding the protection
+
+`shading-optimizer.ts`: 8 standard designs (none, overhangs 0.6/1.2 m, fins,
+three louvre screens, louvres + fins) put on the sun-facing façades (E–W
+through the equator side), each measured with the full annual method on a
+~2 000-point grid (~11 s each), ranked as LEED reads it — ASE ≤ 10 % first,
+then the most DA300, then sDA. The winner goes on the model; any row can be
+applied. Report page and a summary verdict. Torre Poblenou, ERA5: louvres ×8 ·
+0.4 m · 45° bring ASE from 54 % to 13 % keeping DA300 at 74 % (from 78 %) and
+blinds down 27 % of the hours instead of 73 %; overhangs and fins change
+nothing on the working plane; none reaches 10 %.
+
 ## The analysis' own geometry (no fragments meshes in any pass)
 
 Measured: items hidden with fragments' `setVisible(false)` kept casting in a
