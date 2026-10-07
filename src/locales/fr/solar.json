@@ -494,7 +494,9 @@
       "compare": "Variant against “{{a}}”",
       "compareNote": "{{metric}} — better on {{better}} of the windows, worse on {{worse}}.",
       "onlyMaps": "Only maps were computed: run the checks for verdicts.",
-      "noClimate": "The site's measured climate was not loaded: results use a clear sky (sunnier than reality). Load it for ERA5-based figures."
+      "noClimate": "The site's measured climate was not loaded: results use a clear sky (sunnier than reality). Load it for ERA5-based figures.",
+      "opt": "Best protection: {{design}}",
+      "optNote": "ASE from {{from}} % unprotected; keeps a DA300 of {{da}} %."
     },
     "annualIntro": "Climate-based daylight: every typical hour of the year with this site's sky and sun, through the glass, on each room's working plane.",
     "annualEn": "Rooms at EN 17037 (hourly)",
@@ -502,7 +504,12 @@
     "annualMeanDa": "Mean daylight autonomy",
     "annualMap": "Daylight autonomy (DA300) — the floor that does worst",
     "annualEnShort": "EN 17037 (h)",
-    "annualDelta": "In brackets: change in percentage points against the previous annual run (for example, without protections)."
+    "annualDelta": "In brackets: change in percentage points against the previous annual run (for example, without protections).",
+    "blindsOn": "sDA with IES LM-83 operable blinds (down when > 2 % of the room gets > 1000 lx of direct sun; closed they pass 20 % of the diffuse). ASE without blinds. “Blinds”: share of the occupied hours with them down.",
+    "blindsOff": "Computed without blinds: this sDA is not LEED's (LM-83 requires operable blinds).",
+    "optIntro": "{{n}} standard protections tried on the {{list}} façades, each with the full annual daylight method (blinds as set), ranked by LEED's reading: ASE ≤ 10 % first, then the most daylight.",
+    "optBest": "Best design",
+    "optNote": "In brackets: ASE change against no protection, in points. Coarser grid than the main annual run (~2 000 points): for ranking designs; run the year again with the chosen one for the final figures."
   },
   "compare": {
     "title": "Compare design variants",
@@ -571,6 +578,78 @@
     "aseHint": "ASE1000,250 h: share of the room with > 1000 lx of direct sun for > 250 occupied hours; LEED asks ≤ 10 % (glare, overheating)",
     "annualNote": "Daylight coefficients over the 145 Tregenza patches and a second pass at each hour's actual sun position; diffuse with the CIE overcast shape scaled to the hour's diffuse (120 lm/W), direct sun 100 lm/W, BRE reflections of the diffuse only (reflected sunlight is not counted: conservative). No blinds, 12 typical days. A design-stage screening, not a Radiance simulation.",
     "annualSun": "Following each hour's sun… {{pct}} %",
-    "annualVsPrev": "Change against the run at {{at}} (percentage points)"
+    "annualVsPrev": "Change against the run at {{at}} (percentage points)",
+    "blinds": "Operable blinds (IES LM-83)",
+    "blindsHint": "Each hour, in each room, they come down when over 2 % of its points get more than 1000 lx of direct sun: no sun, 20 % of the diffuse. This is how LEED computes sDA; ASE is always measured without them.",
+    "blindCol": "Blinds",
+    "blindHoursHint": "Share of the occupied hours with the blinds down: a lot means glare and the lights on"
+  },
+  "optimizer": {
+    "title": "Find the protection",
+    "run": "Try the designs",
+    "again": "Try again",
+    "working": "Design {{k}} of {{of}}… {{pct}} %",
+    "hint": "Tries {{n}} designs (none, overhangs, fins, louvres) on the sun-facing façades, each measured over the year, and ranks them: ASE ≤ 10 % first, then the most daylight. Click one to put it on the model.",
+    "facades": "On the {{list}} façades. ● applied; click a row to apply it.",
+    "design": "Design",
+    "apply": "Put this design on the model",
+    "found": "The first design brings ASE to the LEED limit (≤ 10 %) and keeps the most daylight among those that do.",
+    "notFound": "No design here reaches ASE ≤ 10 %: the first one comes closest. Deeper or denser screening, or less glass, is needed.",
+    "c": {
+      "none": "No protection",
+      "overhang60": "Overhang 0.6 m",
+      "overhang120": "Overhang 1.2 m",
+      "fins50": "Vertical fins 0.5 m",
+      "louvres4": "Louvres ×4 · 0.25 m · 20°",
+      "louvres6": "Louvres ×6 · 0.3 m · 30°",
+      "louvres8": "Louvres ×8 · 0.4 m · 45°",
+      "louvres6fins": "Louvres ×6 + fins 0.5 m"
+    }
+  },
+  "workspace": {
+    "climateOk": "ERA5 climate {{from}}–{{to}}",
+    "climateOkHint": "Sky and seasons measured on site",
+    "climateMissing": "Theoretical clear sky",
+    "climateMissingHint": "Load the climate (Sun tab) to use the measured sky and the real seasons",
+    "quick": {
+      "title": "Quick study",
+      "hint": "Sun over the year, EN 17037 and overheating risk in one click; then the report.",
+      "run": "Start",
+      "steps": {
+        "sun": "Sun hours over the year",
+        "en": "Windows · EN 17037",
+        "seasons": "Gains by season"
+      }
+    },
+    "tabs": {
+      "sun": {
+        "label": "Sun",
+        "hint": "Sun hours and radiation maps"
+      },
+      "windows": {
+        "label": "Windows",
+        "hint": "EN 17037 and overheating"
+      },
+      "daylight": {
+        "label": "Daylight",
+        "hint": "DF, grid, annual (sDA/ASE) and optimizer"
+      },
+      "design": {
+        "label": "Design",
+        "hint": "Solar protections and variants"
+      },
+      "energy": {
+        "label": "Energy",
+        "hint": "Photovoltaics"
+      },
+      "point": {
+        "label": "Point",
+        "hint": "One point's shading diagram"
+      }
+    },
+    "advanced": "Advanced settings",
+    "crashed": "This tool failed; everything else keeps working.",
+    "retry": "Retry",
+    "gpuLost": "The GPU was reset: analysis stopped. Run it again."
   }
 }

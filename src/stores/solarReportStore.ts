@@ -96,6 +96,8 @@ export interface DaylightSection {
   gridImageLabel?: string
   gridSpacing?: number
   gridPoints?: number
+  /** The protection search, when run: every design measured over the year, best first. */
+  optimizer?: { ranked: Array<{ id: string; sDA: number; ASE: number; meanDA: number; blindHours: number }>; orientations: string[]; applied: string | null }
   /** Climate-based (annual) results, when run. */
   annual?: {
     image: string | null
@@ -103,7 +105,8 @@ export interface DaylightSection {
     points: number
     spacing: number
     measuredSky: boolean
-    rooms: Array<{ label: string; level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; sDA: number; ASE: number; meanDA: number; prevSDA?: number; prevASE?: number }>
+    blinds: boolean
+    rooms: Array<{ label: string; level: 'none' | 'minimum' | 'medium' | 'high'; share300: number; share100: number; sDA: number; ASE: number; meanDA: number; prevSDA?: number; prevASE?: number; blindHours?: number }>
   }
 }
 

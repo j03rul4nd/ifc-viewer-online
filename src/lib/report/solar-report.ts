@@ -436,6 +436,12 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
       doc.verdict(leed === a.length ? 'pass' : leed > 0 ? 'warn' : 'fail', leed === a.length ? t('report.ok') : t('report.review'),
         t('report.sum.leed'), `${leed}/${a.length}`, glare ? t('report.sum.leedGlare', { n: glare }) : t('report.sum.leedNote'))
     }
+    if (d.optimizer) {
+      const best = d.optimizer.ranked[0]
+      const none = d.optimizer.ranked.find((x) => x.id === 'none')
+      doc.verdict(best.ASE <= 0.1 ? 'pass' : 'warn', best.ASE <= 0.1 ? t('report.ok') : t('report.review'), t('report.sum.opt', { design: t(`optimizer.c.${best.id}`) }),
+        `ASE ${Math.round(best.ASE * 100)} %`, t('report.sum.optNote', { from: none ? Math.round(none.ASE * 100) : '—', da: Math.round(best.meanDA * 100) }))
+    }
     if (d.summary.deep) doc.verdict('warn', t('report.review'), t('report.sum.deep'), `${d.summary.deep}/${d.summary.rooms}`, t('report.sum.deepNote'))
   }
   if (r.seasons) {
@@ -700,12 +706,36 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
       drawRamp(doc, 0, 100, '%', t('daylight.daHint'))
     }
     const delta = (now: number, was?: number) => (was === undefined || Math.round((now - was) * 100) === 0 ? '' : ` (${now > was ? '+' : ''}${Math.round((now - was) * 100)})`)
-    doc.table([t('daylight.room'), 'DA300', 'sDA', 'ASE', t('report.annualEnShort')],
-      a.rooms.map((x) => [x.label, `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %${delta(x.sDA, x.prevSDA)}`, `${Math.round(x.ASE * 100)} %${delta(x.ASE, x.prevASE)}`, t(`daylight.levels.${x.level}`)]),
-      [2.6, 0.8, 0.9, 0.9, 1.2], 22)
+    doc.table([t('daylight.room'), 'DA300', 'sDA', 'ASE', t('daylight.blindCol'), t('report.annualEnShort')],
+      a.rooms.map((x) => [x.label, `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %${delta(x.sDA, x.prevSDA)}`, `${Math.round(x.ASE * 100)} %${delta(x.ASE, x.prevASE)}`,
+        x.blindHours === undefined ? '—' : `${Math.round(x.blindHours * 100)} %`, t(`daylight.levels.${x.level}`)]),
+      [2.4, 0.7, 0.9, 0.9, 0.8, 1.1], 21)
+    doc.para(a.blinds ? t('report.blindsOn') : t('report.blindsOff'), 20, a.blinds ? C.faint : C.amber)
     if (a.rooms.some((x) => x.prevASE !== undefined)) doc.para(t('report.annualDelta'), 20, C.faint)
     doc.para(`DA300 — ${t('daylight.daHint')}. sDA — ${t('daylight.sdaHint')}. ASE — ${t('daylight.aseHint')}.`, 20, C.faint)
     doc.para(t('daylight.annualNote'), 20, C.faint)
+  }
+
+  // The protection search.
+  if (r.daylight?.optimizer) {
+    const o = r.daylight.optimizer
+    doc.newPage()
+    doc.h1(t('optimizer.title'))
+    doc.para(t('report.optIntro', { list: o.orientations.map((x) => t(`shading.compass.${x}`)).join(', '), n: o.ranked.length }))
+    const best = o.ranked[0]
+    doc.figures([
+      { label: t('report.optBest'), value: t(`optimizer.c.${best.id}`), color: best.ASE <= 0.1 ? C.green : C.amber },
+      { label: 'ASE', value: `${Math.round(best.ASE * 100)} %`, color: best.ASE <= 0.1 ? C.green : C.amber },
+      { label: 'DA300', value: `${Math.round(best.meanDA * 100)} %` },
+    ])
+    const none = o.ranked.find((x) => x.id === 'none')
+    doc.table([t('optimizer.design'), 'ASE', 'DA300', 'sDA', t('daylight.blindCol')],
+      o.ranked.map((x, i) => [(i === 0 ? '★ ' : '') + t(`optimizer.c.${x.id}`) + (x.id === o.applied ? ' ●' : ''),
+        `${Math.round(x.ASE * 100)} %${none && x.id !== 'none' ? ` (${Math.round((x.ASE - none.ASE) * 100)})` : ''}`,
+        `${Math.round(x.meanDA * 100)} %`, `${Math.round(x.sDA * 100)} %`, `${Math.round(x.blindHours * 100)} %`]),
+      [2.6, 1.1, 0.8, 0.8, 0.8], 22)
+    doc.para(best.ASE <= 0.1 ? t('optimizer.found') : t('optimizer.notFound'), 22, best.ASE <= 0.1 ? C.green : C.amber)
+    doc.para(t('report.optNote'), 20, C.faint)
   }
 
   // Variants.

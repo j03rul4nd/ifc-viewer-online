@@ -493,7 +493,9 @@
       "compare": "Variante frente a «{{a}}»",
       "compareNote": "{{metric}}: mejor en el {{better}} de las ventanas, peor en el {{worse}}.",
       "onlyMaps": "Solo se han calculado mapas: ejecuta las comprobaciones para tener veredictos.",
-      "noClimate": "No se cargó el clima medido del lugar: los resultados usan cielo despejado (más soleado que la realidad). Cárgalo para cifras basadas en ERA5."
+      "noClimate": "No se cargó el clima medido del lugar: los resultados usan cielo despejado (más soleado que la realidad). Cárgalo para cifras basadas en ERA5.",
+      "opt": "Mejor protección: {{design}}",
+      "optNote": "ASE desde {{from}} % sin protección; conserva un DA300 del {{da}} %."
     },
     "annualIntro": "Luz natural basada en el clima: cada hora típica del año con el cielo y el sol de este lugar, a través del vidrio, sobre el plano de trabajo de cada estancia.",
     "annualEn": "Estancias EN 17037 (por horas)",
@@ -501,7 +503,12 @@
     "annualMeanDa": "Autonomía de luz media",
     "annualMap": "Autonomía de luz diurna (DA300): la planta peor",
     "annualEnShort": "EN 17037 (h)",
-    "annualDelta": "Entre paréntesis: cambio en puntos porcentuales frente al cálculo anual anterior (por ejemplo, sin protecciones)."
+    "annualDelta": "Entre paréntesis: cambio en puntos porcentuales frente al cálculo anual anterior (por ejemplo, sin protecciones).",
+    "blindsOn": "sDA con persianas automáticas IES LM-83 (bajadas si > 2 % de la estancia recibe > 1000 lx de sol directo; cerradas transmiten el 20 % de la difusa). ASE sin persianas. «Pers.»: parte de las horas ocupadas con las persianas bajadas.",
+    "blindsOff": "Calculado sin persianas: el sDA no es el de LEED (LM-83 exige persianas operables).",
+    "optIntro": "{{n}} protecciones estándar probadas en las fachadas {{list}}, cada una con el cálculo anual completo de luz natural (persianas según el ajuste), ordenadas según LEED: primero ASE ≤ 10 %, después la mayor luz natural.",
+    "optBest": "Mejor diseño",
+    "optNote": "Entre paréntesis: cambio del ASE frente a sin protección, en puntos. Rejilla más gruesa que el cálculo anual principal (~2000 puntos): sirve para ordenar diseños; vuelve a calcular el año con el elegido para las cifras finales."
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -570,6 +577,78 @@
     "aseHint": "ASE1000,250 h: parte de la estancia con más de 1000 lx de sol directo más de 250 horas ocupadas; LEED pide ≤ 10 % (deslumbramiento, sobrecalentamiento)",
     "annualNote": "Coeficientes de luz diurna sobre las 145 zonas de Tregenza y un segundo pase con la posición real del sol de cada hora; difusa con la forma del cielo cubierto CIE escalada a la difusa de cada hora (120 lm/W), sol directo 100 lm/W, reflexiones BRE solo de la difusa (la luz solar reflejada no se cuenta: conservador). Sin persianas, 12 días tipo. Un cribado de anteproyecto, no una simulación con Radiance.",
     "annualSun": "Siguiendo el sol de cada hora… {{pct}} %",
-    "annualVsPrev": "Cambios frente al cálculo de las {{at}} (puntos porcentuales)"
+    "annualVsPrev": "Cambios frente al cálculo de las {{at}} (puntos porcentuales)",
+    "blinds": "Persianas automáticas (IES LM-83)",
+    "blindsHint": "Cada hora, en cada estancia, se bajan si más del 2 % de los puntos recibe más de 1000 lx de sol directo: sin sol, 20 % de la difusa. Así calcula LEED el sDA; el ASE se mide siempre sin ellas.",
+    "blindCol": "Pers.",
+    "blindHoursHint": "Parte de las horas ocupadas con las persianas bajadas: mucho es deslumbramiento y luz eléctrica encendida"
+  },
+  "optimizer": {
+    "title": "Buscar la protección",
+    "run": "Probar los diseños",
+    "again": "Volver a probar",
+    "working": "Diseño {{k}} de {{of}}… {{pct}} %",
+    "hint": "Prueba {{n}} diseños (nada, voladizos, lamas verticales y horizontales) en las fachadas que reciben sol, cada uno con el cálculo anual completo, y los ordena: primero ASE ≤ 10 %, después la mayor luz natural. Haz clic en uno para ponerlo en el modelo.",
+    "facades": "En las fachadas {{list}}. ● aplicado; haz clic en una fila para aplicarla.",
+    "design": "Diseño",
+    "apply": "Poner este diseño en el modelo",
+    "found": "El primer diseño lleva el ASE al límite de LEED (≤ 10 %) y es el que más luz natural conserva de los que lo consiguen.",
+    "notFound": "Ningún diseño llega aquí a ASE ≤ 10 %: el primero es el que más se acerca. Hace falta una protección más profunda o densa, o menos vidrio.",
+    "c": {
+      "none": "Sin protección",
+      "overhang60": "Voladizo 0,6 m",
+      "overhang120": "Voladizo 1,2 m",
+      "fins50": "Lamas verticales 0,5 m",
+      "louvres4": "Lamas ×4 · 0,25 m · 20°",
+      "louvres6": "Lamas ×6 · 0,3 m · 30°",
+      "louvres8": "Lamas ×8 · 0,4 m · 45°",
+      "louvres6fins": "Lamas ×6 + verticales 0,5 m"
+    }
+  },
+  "workspace": {
+    "climateOk": "Clima ERA5 {{from}}–{{to}}",
+    "climateOkHint": "Cielo y estaciones medidos en el lugar",
+    "climateMissing": "Cielo despejado teórico",
+    "climateMissingHint": "Carga el clima (pestaña Sol) para usar el cielo medido y las estaciones reales",
+    "quick": {
+      "title": "Estudio rápido",
+      "hint": "Sol del año, EN 17037 y riesgo de sobrecalentamiento en un clic; luego el informe.",
+      "run": "Empezar",
+      "steps": {
+        "sun": "Horas de sol del año",
+        "en": "Ventanas · EN 17037",
+        "seasons": "Ganancias por estación"
+      }
+    },
+    "tabs": {
+      "sun": {
+        "label": "Sol",
+        "hint": "Mapas de horas de sol y radiación"
+      },
+      "windows": {
+        "label": "Ventanas",
+        "hint": "EN 17037 y sobrecalentamiento"
+      },
+      "daylight": {
+        "label": "Luz natural",
+        "hint": "FLD, malla, anual (sDA/ASE) y optimizador"
+      },
+      "design": {
+        "label": "Diseño",
+        "hint": "Protecciones solares y variantes"
+      },
+      "energy": {
+        "label": "Energía",
+        "hint": "Placas fotovoltaicas"
+      },
+      "point": {
+        "label": "Punto",
+        "hint": "Diagrama de sombras de un punto"
+      }
+    },
+    "advanced": "Ajustes avanzados",
+    "crashed": "Esta herramienta ha fallado; el resto sigue funcionando.",
+    "retry": "Reintentar",
+    "gpuLost": "La GPU se ha reiniciado: análisis detenido. Vuelve a lanzarlo."
   }
 }
