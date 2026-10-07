@@ -32,9 +32,11 @@ interface SceneBackgroundMenuProps {
    * hosts that already sit inside a menu (the toolbar's Capture menu).
    */
   inline?: boolean
+  /** Replaces the trigger button's look (the phone's floating glass circle). */
+  triggerClassName?: string
 }
 
-export function SceneBackgroundMenu({ disabled = false, inline = false }: SceneBackgroundMenuProps) {
+export function SceneBackgroundMenu({ disabled = false, inline = false, triggerClassName }: SceneBackgroundMenuProps) {
   const { t } = useTranslation('capture')
   const background = useSceneStore((s) => s.background)
   const setBackground = useSceneStore((s) => s.setBackground)
@@ -174,9 +176,10 @@ export function SceneBackgroundMenu({ disabled = false, inline = false }: SceneB
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
         title={t('background.tooltip')}
+        aria-label={t('background.tooltip')}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={btnBase}
+        className={triggerClassName ?? btnBase}
       >
         <Icons.Palette size={13} />
         {/* Live swatch doubles as the "what is set right now" indicator. */}

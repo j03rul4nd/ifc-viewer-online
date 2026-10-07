@@ -141,7 +141,7 @@
     "saved": "保存済み",
     "failed": "失敗",
     "ifcNotAvailable": "IFC バッファが利用できません（フラグメントキャッシュのみから読み込まれたモデル）",
-    "elements": "{{count}} 要素",
+    "elements": "{{n}} 要素",
     "edits": "{{count}} 件の編集",
     "edits_other": "{{count}} 件の編集",
     "advanced": "詳細設定 — ファイルヘッダー",
@@ -183,5 +183,12 @@
     "help": "ヘルプ",
     "idsCheck": "IDSでチェック…",
     "compareVersions": "バージョンを比較…"
+  },
+  "mobileBar": {
+    "models": "{{count}} モデル",
+    "models_other": "{{count}} モデル",
+    "elements": "{{n}} 要素",
+    "openScene": "シーンとモデル",
+    "score": "Health Score {{score}} — 検証を開く"
   }
 }

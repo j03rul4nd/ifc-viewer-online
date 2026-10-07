@@ -6,7 +6,9 @@ import { CaptureToolbar } from './CaptureToolbar'
 import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
+import { haptic } from '../lib/haptics'
 import { useSceneStore } from '../stores/sceneStore'
+import { useModelGroups } from '../hooks/useModelGroups'
 import { toast } from '../stores/toastStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useValidationRunner } from '../hooks/useValidationRunner'
@@ -255,6 +257,15 @@ export default function Toolbar({
     setClientMode,
   } = useUIStore()
   const { models: sceneModels } = useSceneStore()
+  // Phones name the scene by its project ("Torre Poblenou") when the IFC says
+  // one, not by a file code ("BCN-IVO-ZZ-XX-M3-Z-0002"). Same grouping the
+  // Scene panel shows, so the capsule and the panel it opens agree.
+  const activeModelId = useSceneStore((s) => s.activeModelId)
+  const { groups: modelGroups, groupIdOf } = useModelGroups()
+  const activeGroup = activeModelId ? modelGroups.find((g) => g.id === groupIdOf[activeModelId]) : undefined
+  const stripExt = (n: string): string => n.replace(/\.(ifc|ifczip|ifcxml)$/i, '')
+  const projectLabel = activeGroup && activeGroup.label
+    && stripExt(activeGroup.label) !== stripExt(fileName ?? '') ? activeGroup.label : null
   const geoPanelOpen  = useGeoStore((s) => s.panelOpen)
   const mapModeOn     = useGeoStore((s) => s.mapMode === 'on')
   const tourMode         = usePresentationStore((s) => s.mode)
@@ -514,7 +525,11 @@ export default function Toolbar({
     // Structural bar — not floating. Takes space in the flex column.
     // bg-[var(--surface)] + border-b gives the same treatment as VS Code / Linear.
     // No glass, no rounded pill containers, no pointer-events trick.
-    <div className="relative flex items-center h-[44px] bg-[var(--surface)] border-b border-[var(--border)] pl-3 pr-2 select-none shrink-0">
+    // Phones: no bar at all. The scene runs edge to edge under two floating
+    // glass capsules (model on the left, score + capture on the right); the
+    // root becomes a click-through layer and only the capsules take touches.
+    <div className="relative flex items-center h-[44px] bg-[var(--surface)] border-b border-[var(--border)] pl-3 pr-2 select-none shrink-0
+      max-md:h-auto max-md:bg-transparent max-md:border-b-0 max-md:gap-2 max-md:px-2.5 max-md:pt-[calc(env(safe-area-inset-top,0px)+8px)] max-md:pointer-events-none">
 
       {/* ── Full-width validation progress track ──────────────────────────────
           Sits at the absolute bottom edge of the 44px bar. During `isRunning`
@@ -522,7 +537,7 @@ export default function Toolbar({
           they're looking. Indeterminate (sweep) when progress === 0, determinate
           otherwise. */}
       {isRunning && (
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden pointer-events-none max-md:hidden">
           {validationProgress > 0 ? (
             <div
               className="h-full bg-[var(--accent)] transition-[width] duration-300 ease-out"
@@ -545,7 +560,7 @@ export default function Toolbar({
           so an iPad in portrait or a half-width window never overflows.    */}
 
       {/* ── Identity + model context ───────────────────────────────────────── */}
-      <div className="flex items-center gap-2 min-w-0 shrink">
+      <div className="flex items-center gap-2 min-w-0 shrink max-md:hidden">
         <Icons.Logo size={18} className="shrink-0" />
         {/* Name on phones without a model and on wide screens; with a model the
             phone shows the file name instead (status lives in the dot). */}
@@ -843,33 +858,60 @@ export default function Toolbar({
         </React.Suspense>
       )}
 
-      {/* ══ MOBILE — spacer + status indicator ═══════════════════════════════
-          Mobile actions are handled by MobileBottomNav. The toolbar on mobile
-          only shows identity + current state so the user can orient themselves. */}
+      {/* ══ MOBILE — floating capsules ═══════════════════════════════════════
+          The scene is the product, so on a phone the chrome floats over it
+          instead of taking a band of it.
+          Left: the model. Name without the extension, then how many models and
+          elements are in the scene; the status dot sits on the logo. Tapping it
+          opens Scene — the model list, groups, transforms — which is also where
+          the old bottom "model info" pill's facts belong.
+          Right: the Health Score (opens validation), then the capture buttons,
+          which CaptureToolbar renders last (order-last).  */}
+      <button
+        type="button"
+        onClick={() => { haptic('tick'); toggleScenePanel() }}
+        aria-label={t('mobileBar.openScene')}
+        aria-expanded={scenePanelOpen}
+        className="md:hidden order-first pointer-events-auto mobile-pill-glass flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-112px)] active:scale-[0.98] transition-transform"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
+      >
+        <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.07] shrink-0">
+          <Icons.Logo size={18} />
+          {loadingState !== 'idle' && (
+            <span aria-hidden="true" className="absolute bottom-[3px] right-[3px] w-[9px] h-[9px] rounded-full ring-2 ring-[#0d0d12]" style={{ background: statusColor }} />
+          )}
+        </span>
+        <span className="min-w-0 text-left leading-tight">
+          <span className="block text-[13.5px] font-semibold text-[var(--text)] truncate">
+            {projectLabel ?? (fileName ? stripExt(fileName) : 'IFC Viewer')}
+          </span>
+          {loadingState === 'loaded' && (
+            <span className="block text-[11px] text-[var(--text-faint)] truncate">
+              {sceneModels.length > 1 ? `${t('mobileBar.models', { count: sceneModels.length })} · ` : ''}
+              {t('mobileBar.elements', { n: elementCount.toLocaleString() })}
+            </span>
+          )}
+          {loadingState !== 'loaded' && statusLabel && (
+            <span className="block text-[11px] truncate" style={{ color: statusColor }}>{statusLabel}</span>
+          )}
+        </span>
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+          className={`shrink-0 text-[var(--text-faint)] transition-transform ${scenePanelOpen ? 'rotate-180' : ''}`}>
+          <path d="M3 4.5l3 3 3-3" />
+        </svg>
+      </button>
+      <div className="md:hidden pointer-events-auto flex items-center"><LoadingIndicator variant="mobile" /></div>
       <div className="flex-1 md:hidden" />
-      <div className="md:hidden flex items-center"><LoadingIndicator variant="mobile" /></div>
-      {loadingState !== 'idle' && (
-        <div className="md:hidden flex items-center gap-1.5 px-2">
-          <span className="font-mono text-[12px]" style={{ color: statusColor }}>●</span>
-          <span className="sr-only">
-            {statusLabel}
-            {loadingState === 'loaded' && elementCount > 0 && (
-              <span className="font-mono text-[var(--text-faint)]"> · {elementCount.toLocaleString()}</span>
-            )}
-          </span>
-        </div>
-      )}
-      {/* Health Score on mobile (compact — just the number) */}
       {qualityScore !== null && !isRunning && loadingState === 'loaded' && (
-        <div className="md:hidden flex items-center ml-1">
-          <span
-            className="h-6 px-2 inline-flex items-center rounded-full text-[12px] font-bold font-mono tabular-nums border"
-            style={{ color: scoreColor(qualityScore), borderColor: 'currentColor' }}
-            title={`Health Score: ${qualityScore}/100`}
-          >
-            {qualityScore}
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={() => { haptic('tick'); useUIStore.getState().setValidationPanelOpen(true) }}
+          aria-label={t('mobileBar.score', { score: qualityScore })}
+          className="md:hidden pointer-events-auto mobile-pill-glass h-10 min-w-10 px-3 inline-flex items-center justify-center rounded-full text-[14px] font-bold font-mono tabular-nums active:scale-[0.95] transition-transform"
+          style={{ color: scoreColor(qualityScore), WebkitTapHighlightColor: 'transparent' }}
+        >
+          {qualityScore}
+        </button>
       )}
     </div>
   )

@@ -141,7 +141,7 @@
     "saved": "บันทึกแล้ว",
     "failed": "ล้มเหลว",
     "ifcNotAvailable": "บัฟเฟอร์ IFC ไม่พร้อมใช้งาน (โมเดลโหลดจากแคชเฟรกเมนต์เท่านั้น)",
-    "elements": "{{count}} องค์ประกอบ",
+    "elements": "{{n}} องค์ประกอบ",
     "edits": "{{count}} การแก้ไข",
     "edits_other": "{{count}} การแก้ไข",
     "advanced": "ขั้นสูง — ส่วนหัวของไฟล์",
@@ -183,5 +183,12 @@
     "help": "ความช่วยเหลือ",
     "idsCheck": "ตรวจสอบด้วย IDS…",
     "compareVersions": "เปรียบเทียบเวอร์ชัน…"
+  },
+  "mobileBar": {
+    "models": "{{count}} โมเดล",
+    "models_other": "{{count}} โมเดล",
+    "elements": "{{n}} องค์ประกอบ",
+    "openScene": "ฉากและโมเดล",
+    "score": "Health Score {{score}} — เปิดการตรวจสอบ"
   }
 }

@@ -73,7 +73,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
     t(`overlayHud.${sev}`, { defaultValue: sev === 'error' ? 'Errors' : sev === 'warning' ? 'Warnings' : 'Info' })
 
   return (
-    <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[8] select-none" style={{ pointerEvents: 'auto' }}>
+    <div className="absolute top-3 max-md:top-[calc(var(--mobile-top-ui)+4px)] left-1/2 -translate-x-1/2 z-[8] select-none" style={{ pointerEvents: 'auto' }}>
       <div className="flex flex-col items-center gap-1">
         <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[rgba(12,12,16,0.9)] backdrop-blur-[14px] border border-[var(--border)] shadow-lg">
           {/* Severity legend + filter chips (validation only) */}

@@ -141,7 +141,7 @@
     "saved": "Gespeichert",
     "failed": "Fehlgeschlagen",
     "ifcNotAvailable": "IFC-Puffer nicht verfügbar (Modell nur aus Fragment-Cache geladen)",
-    "elements": "{{count}} Elemente",
+    "elements": "{{n}} Elemente",
     "edits": "{{count}} Änderung",
     "edits_other": "{{count}} Änderungen",
     "advanced": "Erweitert — Dateikopf",
@@ -183,5 +183,12 @@
     "help": "Hilfe",
     "idsCheck": "Gegen IDS prüfen…",
     "compareVersions": "Versionen vergleichen…"
+  },
+  "mobileBar": {
+    "models": "{{count}} Modell",
+    "models_other": "{{count}} Modelle",
+    "elements": "{{n}} Elemente",
+    "openScene": "Szene und Modelle",
+    "score": "Health Score {{score}} — Prüfung öffnen"
   }
 }
