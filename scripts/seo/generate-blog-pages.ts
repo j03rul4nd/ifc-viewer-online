@@ -358,7 +358,10 @@ function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | str
       creator: { '@type': 'Organization', name: image.credit },
       copyrightNotice: image.credit,
     } : {}),
-    ...(image.license ? { license: image.license } : {}),
+    // Google's image-metadata report wants license + acquireLicensePage as a
+    // pair. Our own renders and covers fall back to the site terms.
+    license: image.license ?? `${SITE}/terms/`,
+    acquireLicensePage: `${SITE}/terms/`,
     ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
   }))
 }

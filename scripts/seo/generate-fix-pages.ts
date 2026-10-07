@@ -1331,7 +1331,7 @@ function renderCategoryPage(cat: string, rules: RuleBase[], lang: Lang, loc: Loc
   const langPath = LANG_PATH[lang]
   const appHome = APP_HOME[lang]
   const root = langPath === '' ? '../../../' : '../../../../' // page is /[lang/]fix/category/<cat>/
-  const fixRoot = langPath === '' ? '../../' : '../../../'    // up to /[lang/]fix/
+  const fixRoot = '../../' // /[lang/]fix/category/<cat>/ is always two levels below /[lang/]fix/
   const url = catUrl(langPath, cat)
   const ogImg = fixCoverUrl(lang, cat)
   const catLabel = catLabelOf(cat, loc)

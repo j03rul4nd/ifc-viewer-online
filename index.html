@@ -16,6 +16,20 @@
     <meta name="author" content="Joel Benitez" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://www.ifcvieweronline.eu/" />
+    <script>
+      // Soft-404 guard. vercel.json rewrites every unknown path to this shell,
+      // so a mistyped or broken link answers 200 with the home page and Google
+      // files it as a duplicate of "/". Paths the SPA does not own get
+      // noindex and lose the home canonical. Keep in sync with App.tsx routes.
+      (function () {
+        var p = location.pathname
+        var known = /^\/(?:index\.html)?$|^\/(?:(?:es|de|fr|pt|it|ca|zh|ja|th)\/)?blog(?:\/|$)|^\/(?:privacy|terms|verify|welcome|ebook|sign-in|sign-up|account|dashboard|admin)(?:\/|$)|^\/(?:i|invite)\/[A-Za-z0-9_-]{1,64}\/?$/
+        if (known.test(p)) return
+        document.querySelector('meta[name="robots"]').setAttribute('content', 'noindex, follow')
+        var c = document.querySelector('link[rel="canonical"]')
+        if (c) c.remove()
+      })()
+    </script>
 
     <!-- hreflang — EN at root, every other language at /<lang>/.
          ES is the hand-authored static landing in public/es/; the other eight are
