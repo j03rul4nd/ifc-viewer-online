@@ -180,7 +180,10 @@ export function normalizeEpsgCode(raw: string | null | undefined): string | null
   if (!raw) return null
   const s = raw.trim()
   // Explicit EPSG number anywhere in the string
-  const m = /EPSG[^0-9]{0,3}(\d{4,6})/i.exec(s) ?? /^(\d{4,6})$/.exec(s)
+  // OGC URL form first — "http://www.opengis.net/def/crs/EPSG/0/25831" carries a
+  // version segment ("/0/") that the loose pattern below would read as the code.
+  // It is what every INSPIRE GML (Catastro, IGN) writes in srsName.
+  const m = /EPSG\/[\d.]+\/(\d{4,6})/i.exec(s) ?? /EPSG[^0-9]{0,3}(\d{4,6})/i.exec(s) ?? /^(\d{4,6})$/.exec(s)
   if (m) return `EPSG:${m[1]}`
   // Loose prose: "ETRS89 ... UTM ... 32" → EPSG:25832 ; "WGS84 UTM 33S" → 32733
   const utm = /UTM[^0-9]{0,10}(\d{1,2})\s*([NS])?/i.exec(s)

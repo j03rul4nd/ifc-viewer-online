@@ -20,6 +20,7 @@ import { isGisEnabled } from '../lib/geo/gis-flag'
 import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { usePointCloudStore } from '../stores/pointCloudStore'
+import { useVectorLayerStore } from '../stores/vectorLayerStore'
 import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { useMeshStore } from '../stores/meshStore'
 import { isMeshEnabled } from '../lib/mesh/mesh-flag'
@@ -227,6 +228,7 @@ export default function Toolbar({
   const { t: tTour } = useTranslation('tour')
   const { t: tPointCloud } = useTranslation('pointcloud')
   const { t: tMesh } = useTranslation('mesh')
+  const { t: tLayers } = useTranslation('layers')
   const { t: tVideo } = useTranslation('video')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
@@ -281,6 +283,20 @@ export default function Toolbar({
     s.setPanelOpen(!s.panelOpen)
   }
   const meshPanelOpen = useMeshStore((s) => s.panelOpen)
+  const layersPanelOpen = useVectorLayerStore((s) => s.panelOpen)
+  const layerCount      = useVectorLayerStore((s) => s.layers.length)
+  const toggleLayersPanel = (): void => {
+    const s = useVectorLayerStore.getState()
+    s.setPanelOpen(!s.panelOpen)
+  }
+  const LayersSVG = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17l5-4 4 3 4-6 5 4" />
+      <path d="M3 21h18M3 3v18" />
+      <circle cx="16" cy="10" r="1.2" />
+    </svg>
+  )
   const meshCount     = useMeshStore((s) => s.meshes.length)
   const toggleMeshPanel = (): void => {
     const s = useMeshStore.getState()
@@ -627,6 +643,9 @@ export default function Toolbar({
               badge={meshCount > 0 ? meshCount : undefined}
               onClick={() => { toggleMeshPanel(); setOpenMenu(null) }} />
           )}
+          <MenuItem icon={LayersSVG} label={tLayers('entry')} active={layersPanelOpen || layerCount > 0}
+            badge={layerCount > 0 ? layerCount : undefined}
+            onClick={() => { toggleLayersPanel(); setOpenMenu(null) }} />
           {isVideoEnabled() && (
             <MenuItem icon={<Icons.Film size={15} />} label={tVideo('entry')} active={videoPanelOpen}
               badge={videoCount > 0 ? videoCount : undefined}

@@ -83,6 +83,7 @@ import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
+import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
 import { useModelGroups } from './hooks/useModelGroups'
@@ -103,6 +104,12 @@ const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
 // Lazy for the same reason: MeshPanel statically imports three's GLTF, OBJ and
 // MTL loaders, which nobody who never imports a model should download.
 const MeshPanel = React.lazy(() => import('./components/MeshPanel'))
+// Lazy: the data-layer panel pulls proj4 + the vector builders. Mounted only
+// once used, and kept mounted while layers exist (it owns their sync).
+const VectorLayersPanel = React.lazy(() => import('./components/VectorLayersPanel'))
+// The data legend overlay: lazy for the same reason, mounted only with data layers.
+const DataLegend = React.lazy(() => import('./components/DataLegend'))
+const TimeBar = React.lazy(() => import('./components/TimeBar'))
 // Video resources are a separate lazy chunk: no media/Three implementation is
 // downloaded until the tool is opened.
 const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
@@ -899,6 +906,12 @@ export default function App() {
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
+  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending)
+  // Layers saved on this device come back on boot. Only a flag here: the panel
+  // (and with it proj4 + the vector chunk) mounts only when there IS something.
+  useEffect(() => {
+    if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
+  }, [])
 
   // Availability, stated from the SAME conditions that render each panel below.
   // Written from memory instead, it drifted immediately: the client skin got a
@@ -1546,6 +1559,9 @@ export default function App() {
     } else {
       submitDroppedSources(r.pointcloud, r.mesh)
     }
+    // GeoJSON never waits for the IFC dialog: a layer re-anchors on its own
+    // when the model's placement arrives (vector-runner rebuilds on it).
+    if (r.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(r.vector)
     if (r.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
     if (r.other.length > 0 && routedCount(r) === 0) {
       toast(tToasts('model.dropUnsupported', { count: r.other.length }), 'warning')
@@ -3950,6 +3966,15 @@ export default function App() {
                     />
                   )}
 
+                  {/* Data legend — a chip in the corner while data layers are
+                      visible; the legend itself only when the viewer opens it. */}
+                  {vectorLayersInUse && (
+                    <React.Suspense fallback={null}>
+                      <DataLegend viewerApiRef={viewerApiRef} />
+                      <TimeBar />
+                    </React.Suspense>
+                  )}
+
                   {/* Walk mode HUD — renders itself only while walking, and
                       reads the viewer directly (the wheel and pointer lock
                       change walk state without passing through React). */}
@@ -4068,6 +4093,14 @@ export default function App() {
                         viewerApiRef={viewerApiRef}
                         activeModelId={activeModelId}
                         onClose={() => useMeshStore.getState().setPanelOpen(false)}
+                      />
+                    </React.Suspense>
+                  )}
+                  {vectorLayersInUse && (
+                    <React.Suspense fallback={null}>
+                      <VectorLayersPanel
+                        viewerApiRef={viewerApiRef}
+                        onClose={() => useVectorLayerStore.getState().setPanelOpen(false)}
                       />
                     </React.Suspense>
                   )}

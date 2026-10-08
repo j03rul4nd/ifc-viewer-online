@@ -130,6 +130,7 @@
       "map-conversion": "Georeferenced (map conversion)",
       "shared-crs": "Georeferenced (shared grid)",
       "geographic": "Geographic anchor",
+      "scene-anchor": "Scene anchor",
       "local": "Shared local coordinates",
       "manual": "Placed by hand"
     },
@@ -158,7 +159,10 @@
       "unitFeet": "Extent suggests feet — scaled by 0.3048.",
       "unitAssumed": "Unit not declared; metres assumed.",
       "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it.",
-      "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it."
+      "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it.",
+      "sceneAnchorSameGrid": "Placed by its CRS against the first georeferenced scan (same grid, no reprojection).",
+      "sceneAnchorReprojected": "Placed by its CRS against the scene anchor, reprojected through WGS84.",
+      "assumedVerticalDatum": "All scans are assumed to share one height datum — the file does not state it."
     },
     "manualWarning": "This placement is a starting point, not a measurement.",
     "recompute": "Re-run alignment",

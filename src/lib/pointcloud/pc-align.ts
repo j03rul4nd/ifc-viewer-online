@@ -20,6 +20,7 @@
 import { resolveCrs, gridToGrid, gridToWgs84, normalizeEpsgCode, type CrsDef } from '../geo/crs'
 import { WGS84_RADIUS } from '../geo/geo-math'
 import type { GeorefExtraction, GeoPlacement } from '../geo/geo-types'
+import { gridToScene, type SceneAnchor } from '../geo/scene-anchor'
 import {
   NO_OFFSET, clampOffset,
   type AlignmentOffset, type PointCloudAlignment, type SourceFrame, type UpAxis, type Vec3,
@@ -52,6 +53,13 @@ export interface AlignInput {
    * that difference is exactly how far a correctly registered scan misses by.
    */
   modelCoordination?: Vec3 | null
+  /**
+   * The scene-wide geographic anchor, when one exists without an IFC
+   * placement — typically the first georeferenced scan of the session. Lets a
+   * second scan (and every later data layer) land against the first one instead
+   * of falling to "placed by hand". See geo/scene-anchor.ts.
+   */
+  sceneAnchor?: SceneAnchor | null
 }
 
 // ── Public entry point ─────────────────────────────────────────────────────────
@@ -64,6 +72,7 @@ export function alignCloud(input: AlignInput): PointCloudAlignment {
   const alignment =
     tryMapConversion(input) ??
     tryGeographic(input) ??
+    trySceneAnchor(input) ??
     tryLocal(input) ??
     manualFallback(input)
 
@@ -80,7 +89,7 @@ export function alignCloud(input: AlignInput): PointCloudAlignment {
   // model's scene bounds, which already live in drawn space, so adding this
   // would count the same shift twice.
   const c = input.modelCoordination
-  if (c && alignment.rung !== 'manual' && (c.x !== 0 || c.y !== 0 || c.z !== 0)) {
+  if (c && alignment.rung !== 'manual' && alignment.rung !== 'scene-anchor' && (c.x !== 0 || c.y !== 0 || c.z !== 0)) {
     alignment.origin = {
       x: alignment.origin.x + c.x,
       y: alignment.origin.y + c.y,
@@ -259,6 +268,40 @@ export function enuOffset(
   return {
     east: (lon - lon0) * DEG * WGS84_RADIUS * Math.cos(phi),
     north: (lat - lat0) * DEG * WGS84_RADIUS,
+  }
+}
+
+// ── Rung 3b — the scene's own geographic anchor ────────────────────────────────
+
+/**
+ * No IFC placement, but the scene already knows where on Earth it is — because
+ * an earlier scan (or the user) anchored it. A cloud with a resolvable CRS is
+ * then placed by its absolute grid coordinates against that anchor: exact when
+ * it shares the anchor's grid, reprojected through WGS84 otherwise.
+ *
+ * A scan that IS the anchor lands at the scene origin through this same path,
+ * which is the point: the first and the tenth scan go through one formula.
+ */
+function trySceneAnchor(input: AlignInput): PointCloudAlignment | null {
+  const { frame, placement, sceneAnchor } = input
+  if (placement || !sceneAnchor || !frame.epsgCode) return null
+  const u = frame.unitScale
+  const p = gridToScene(sceneAnchor, frame.epsgCode, frame.origin.x * u, frame.origin.y * u, frame.origin.z * u)
+  if (!p) return null
+
+  const reasons = [p.sameGrid ? 'align.reason.sceneAnchorSameGrid' : 'align.reason.sceneAnchorReprojected']
+  // Heights compare only if both sides state them in the same vertical datum.
+  // Nothing in a LAS header says which datum it is, so assume and say so.
+  if (sceneAnchor.elevationM !== null) reasons.push('align.reason.assumedVerticalDatum')
+  return {
+    rung: 'scene-anchor',
+    confidence: p.sameGrid ? 'exact' : 'high',
+    origin: p.origin,
+    yawRad: p.yawRad,
+    scale: u,
+    upAxis: frame.upAxis,
+    reasons,
+    offset: { ...NO_OFFSET },
   }
 }
 

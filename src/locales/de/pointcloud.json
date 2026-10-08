@@ -130,6 +130,7 @@
       "map-conversion": "Georeferenziert (Kartenumrechnung)",
       "shared-crs": "Georeferenziert (gemeinsames Gitter)",
       "geographic": "Geografischer Ankerpunkt",
+      "scene-anchor": "Szenenanker",
       "local": "Gemeinsame lokale Koordinaten",
       "manual": "Von Hand platziert"
     },
@@ -158,7 +159,10 @@
       "unitFeet": "Die Ausdehnung deutet auf Fuß hin — mit 0,3048 skaliert.",
       "unitAssumed": "Einheit nicht angegeben; Meter angenommen.",
       "noCommonReference": "Nichts verbindet die beiden Dateien, daher wurde der Scan auf dem Modell zentriert. Platzieren Sie ihn über die Versätze unten.",
-      "cloudCrsUnknown": "Der Scan nennt ein Koordinatensystem, für das dieser Build keine Definition hat, daher konnte seine Georeferenzierung nicht genutzt werden. Fügen Sie unten eine proj4-Definition ein, um sie freizuschalten."
+      "cloudCrsUnknown": "Der Scan nennt ein Koordinatensystem, für das dieser Build keine Definition hat, daher konnte seine Georeferenzierung nicht genutzt werden. Fügen Sie unten eine proj4-Definition ein, um sie freizuschalten.",
+      "sceneAnchorSameGrid": "Über sein KBS am ersten georeferenzierten Scan ausgerichtet (gleiches Gitter, ohne Umprojektion).",
+      "sceneAnchorReprojected": "Über sein KBS am Szenenanker ausgerichtet, über WGS84 umprojiziert.",
+      "assumedVerticalDatum": "Es wird angenommen, dass alle Scans dasselbe Höhensystem nutzen – die Datei gibt es nicht an."
     },
     "manualWarning": "Diese Platzierung ist ein Ausgangspunkt, keine Messung.",
     "recompute": "Ausrichtung neu berechnen",

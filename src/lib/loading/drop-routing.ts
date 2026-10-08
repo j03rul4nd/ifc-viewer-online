@@ -51,6 +51,13 @@ export const POINTCLOUD_EXTENSIONS = [
  * is not a mesh texture — so they join the mesh bucket only when the same drop
  * carries an entry file.
  */
+/**
+ * GeoJSON data layers. Only the unambiguous extension: a bare `.json` dropped
+ * next to an IFC is far more likely a config or an export than a map layer
+ * (the Data layers panel's own picker still accepts `.json`).
+ */
+export const VECTOR_EXTENSIONS = ['.geojson'] as const
+
 export const MESH_ENTRY_EXTENSIONS = ['.glb', '.gltf', '.obj'] as const
 export const MESH_SIDECAR_EXTENSIONS = ['.mtl', '.bin'] as const
 export const MESH_TEXTURE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'] as const
@@ -64,6 +71,8 @@ export interface FileRouting {
   pointcloud: File[]
   /** Entry files, sidecars and (when an entry is present) textures — one selection for the mesh loader. */
   mesh: File[]
+  /** GeoJSON data layers (routes, zones, points) for the Data layers panel. */
+  vector: File[]
   /** Anything no subsystem opens: the caller decides whether to say so. */
   other: File[]
 }
@@ -77,6 +86,7 @@ for (const ext of BCF_EXTENSIONS) BY_EXTENSION[ext] = 'bcf'
 for (const ext of POINTCLOUD_EXTENSIONS) BY_EXTENSION[ext] = 'pointcloud'
 for (const ext of MESH_ENTRY_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of MESH_SIDECAR_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
+for (const ext of VECTOR_EXTENSIONS) BY_EXTENSION[ext] = 'vector'
 
 const TEXTURES: ReadonlySet<string> = new Set(MESH_TEXTURE_EXTENSIONS)
 const MESH_ENTRIES: ReadonlySet<string> = new Set(MESH_ENTRY_EXTENSIONS)
@@ -95,7 +105,7 @@ export function fileExtensionOf(fileName: string): string {
  * and the anchor rule (first-submitted IFC sets the coordinate base) rely on it.
  */
 export function classifyFiles(files: readonly File[]): FileRouting {
-  const out: FileRouting = { ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], other: [] }
+  const out: FileRouting = { ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], other: [] }
   const textures: File[] = []
   let hasMeshEntry = false
 
@@ -161,7 +171,7 @@ export function groupMeshFiles(files: readonly File[]): MeshImportGroup[] {
 /** Total number of files that some subsystem will open. */
 export function routedCount(routing: FileRouting): number {
   return routing.ifc.length + routing.ids.length + routing.bcf.length
-    + routing.pointcloud.length + routing.mesh.length
+    + routing.pointcloud.length + routing.mesh.length + routing.vector.length
 }
 
 // ── DataTransfer ──────────────────────────────────────────────────────────────

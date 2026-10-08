@@ -80,6 +80,7 @@ import {
   latLonToNormalized, metresToNormalized, type LatLon,
 } from './geo-math'
 import { createLogger } from '../logger'
+import { createGroundFrame } from './ground-frame'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 
 const log = createLogger('GeoSystem')
@@ -394,6 +395,12 @@ export interface GeoSystemAPI {
    */
   pickGroundScene(clientX: number, clientY: number): { x: number; z: number } | null
   /** Scene-space direction of geographic north (for the compass UI). */
+  /**
+   * World Y of the ground under a world (x, z) — the same surface the map and
+   * terrain are drawn on (relief exaggeration included). Null without a map.
+   * Data layers drape on it so a route sits on the street, not under a hill.
+   */
+  groundAtWorld(x: number, z: number): number | null
   getNorthDirection(): { x: number; y: number; z: number }
   getAttributions(): string[]
   getGpuBytesEstimate(): number
@@ -1183,6 +1190,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       return hit ? { x: hit.x, z: hit.z } : null
     },
 
+    groundAtWorld(x, z) {
+      if (!geoRoot || !placement) return null
+      const local = geoRoot.worldToLocal(new THREE.Vector3(x, 0, z))
+      const frame = createGroundFrame({
+        anchorLat: placement.lat,
+        anchorElevationM: terrain?.anchorElevation ?? 0,
+        sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
+        exaggeration: terrainExaggeration,
+      })
+      const world = geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, frame.groundZ(local.x, local.y)))
+      return Number.isFinite(world.y) ? world.y : null
+    },
     getNorthDirection() {
       // mapYawRad, not rotationDeg: this arrow has to agree with the basemap it
       // is drawn over, and the two differ by a sign.

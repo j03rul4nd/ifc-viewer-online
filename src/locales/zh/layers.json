@@ -1,0 +1,438 @@
+{
+  "entry": "数据图层",
+  "title": "数据图层",
+  "intro": "从 GeoJSON 文件、URL 或 WFS 服务导入路线、区域和点。所有内容都与模型、扫描和地图放在同一场地。",
+  "working": "加载中…",
+  "anchor": {
+    "by": "以 {{label}}（{{source}}）为基准放置",
+    "map": "以地图／模型位置为基准放置",
+    "none": "尚无锚点：第一个地理配准图层将确定场地。",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "扫描",
+      "vector": "数据图层",
+      "manual": "手动"
+    }
+  },
+  "file": {
+    "drop": "打开 GeoJSON 文件…",
+    "sample": "试用示例（合成数据，巴塞罗那）",
+    "sampleLive": "试用实时数据（模拟列车，巴塞罗那）",
+    "sampleLiveName": "模拟列车"
+  },
+  "url": {
+    "title": "来自 URL 的 GeoJSON",
+    "add": "添加"
+  },
+  "wfs": {
+    "title": "WFS 服务",
+    "connect": "连接",
+    "found": "{{title}} 中有 {{count}} 个图层",
+    "noJson": "无 GeoJSON 输出",
+    "radius": "范围",
+    "load": "加载",
+    "hint": "只请求场地周围的范围，最多 5,000 个要素。服务器必须允许跨域请求（CORS）。"
+  },
+  "list": {
+    "title": "已连接图层（{{count}}）"
+  },
+  "count": {
+    "lines_one": "{{count}} 条线",
+    "lines_other": "{{count}} 条线",
+    "polygons_one": "{{count}} 个区域",
+    "polygons_other": "{{count}} 个区域",
+    "points_one": "{{count}} 个点",
+    "points_other": "{{count}} 个点"
+  },
+  "action": {
+    "hide": "隐藏",
+    "show": "显示",
+    "frame": "缩放到图层",
+    "remove": "移除",
+    "close": "关闭"
+  },
+  "height": {
+    "title": "高度",
+    "relative": "相对地面（贴合地形）",
+    "absolute": "绝对高程",
+    "ignore": "平铺在地面",
+    "source": {
+      "coordinates": "数据带有 Z 坐标。",
+      "property": "高度字段：{{prop}}",
+      "none": "数据没有高度。"
+    }
+  },
+  "style": {
+    "color": "颜色",
+    "width": "线宽",
+    "opacity": "填充不透明度",
+    "fill": "填充区域",
+    "extrude": "拉伸区域",
+    "extrudeFallback": "拉伸无高度的区域",
+    "pointSize": "点大小"
+  },
+  "warn": {
+    "far": "该图层距场地 {{km}} 公里——请检查其坐标系。",
+    "skipped": "已跳过 {{count}} 个要素（几何为空或不受支持）。"
+  },
+  "error": {
+    "notJson": "文件不是有效的 JSON。",
+    "notGeoJson": "这不是 GeoJSON。",
+    "unknownCrs": "数据声明了此查看器未知的坐标系。",
+    "projectedWithoutCrs": "坐标以米为单位，但未声明坐标系。",
+    "empty": "图层没有要素。",
+    "noAnchor": "没有可放置图层的场地。",
+    "http": "服务器返回了错误。",
+    "network": "无法连接服务器——可能已离线或阻止跨域请求（CORS）。",
+    "aborted": "已取消。",
+    "badUrl": "该 URL 无效。",
+    "notWfs": "该地址不是 WFS 服务。",
+    "noFeatureTypes": "该服务未列出任何图层。",
+    "wfsException": "WFS 服务器拒绝了请求。",
+    "notJsonOutput": "服务器未返回 GeoJSON（可能只提供 GML）。",
+    "cors": "该数据源不允许浏览器读取（无 CORS）。请在下方配置代理。",
+    "notGbfs": "这不是 GBFS 数据源。",
+    "notGtfsRt": "这不是 GTFS-Realtime（JSON）数据源。",
+    "noGeometryInTable": "该表格没有位置列（lon/lat、WKT 或坐标）。请将其关联到图层。",
+    "noJoinBase": "没有可关联的几何。",
+    "emptyTable": "表格为空。"
+  },
+  "kind": {
+    "point": "点",
+    "line": "线",
+    "polygon": "区域"
+  },
+  "selected": {
+    "noProps": "该要素没有属性。"
+  },
+  "restore": {
+    "failed": "{{count}} 个已保存的图层无法恢复（离线，或文件过大无法保存）。"
+  },
+  "search": {
+    "title": "在孪生中搜索",
+    "placeholder": "车站、资产编号、线路、文件… 例如 code:BCN-SANTS",
+    "hint": "搜索所有已加载的图层、IFC 和扫描（{{count}} 项），包括嵌套属性。用 字段:值 过滤。",
+    "empty": "没有匹配项。",
+    "related": "与 {{label}} 相关",
+    "noRelated": "未找到相关内容。",
+    "reason": {
+      "shared": "相同 {{field}}：{{value}}",
+      "inside": "位于其内",
+      "contains": "包含它",
+      "near": "相距 {{m}} 米"
+    }
+  },
+  "symbology": {
+    "styleBy": "样式依据",
+    "single": "单一样式",
+    "others": "其他所有",
+    "all": "所有要素",
+    "hint": "字段的每个值都有自己的颜色和符号。取消勾选即可隐藏。",
+    "symbol": "符号",
+    "size": "大小（米）",
+    "visible": "显示",
+    "icons": "图标",
+    "shapes": "3D 形状",
+    "models": "我的模型",
+    "uploadModel": "上传 GLB 模型…",
+    "modelFailed": "无法读取该模型（仅支持 GLB）。",
+    "icon": {
+      "pin": "图钉",
+      "train": "火车站",
+      "metro": "地铁",
+      "tram": "有轨电车",
+      "bus": "公交",
+      "power": "电力／变电站",
+      "exit": "出口",
+      "door": "门／入口",
+      "sensor": "传感器",
+      "camera": "摄像头",
+      "wifi": "天线／Wi-Fi",
+      "warning": "警告",
+      "info": "信息",
+      "fire": "消防",
+      "water": "水",
+      "parking": "停车场",
+      "tree": "树木",
+      "building": "建筑",
+      "bike": "自行车",
+      "charger": "充电点"
+    },
+    "shape": {
+      "sphere": "球体",
+      "pin": "图钉",
+      "cube": "立方体",
+      "cylinder": "圆柱",
+      "cone": "圆锥"
+    }
+  },
+  "links": {
+    "linkTo": "链接到…",
+    "pickTarget": "现在选择 {{label}} 要链接的对象：点击一个搜索结果。",
+    "cancel": "取消",
+    "urlPlaceholder": "https://… 数据表、仪表板、文档",
+    "addUrl": "添加链接",
+    "remove": "移除链接",
+    "notLoaded": "未加载",
+    "badge": "链接"
+  },
+  "presets": {
+    "title": "公共实时数据源",
+    "hint": "可直接连接，每个都按提供方实际的更新频率设置。",
+    "connect": "连接",
+    "needsProxy": "代理",
+    "needsProxyHint": "该提供方不发送 CORS 头：浏览器只能通过代理读取（见下方代理）。",
+    "bicing": {
+      "name": "Bicing 站点",
+      "hint": "每站可用单车和空位（GBFS）· 每 30 秒"
+    },
+    "fgc": {
+      "name": "FGC 列车",
+      "hint": "实时位置、准点和拥挤度 · 有配额限制（每天 5,000 次）"
+    },
+    "rodalies": {
+      "name": "Rodalies 列车（Renfe）",
+      "hint": "实时位置（GTFS-Realtime）· 数据源每 30 秒更新"
+    },
+    "catastro": {
+      "name": "地籍地块",
+      "hint": "西班牙地籍 WFS（GML）· 场地周围 250 米 · 静态"
+    },
+    "icgc-municipis": {
+      "name": "市镇（ICGC）",
+      "hint": "加泰罗尼亚市镇边界 · 静态"
+    },
+    "bcn-traffic": {
+      "name": "巴塞罗那交通（实时）",
+      "hint": "500 多个路段的状态 · 每 5 分钟 · 双向显示，流动动画"
+    }
+  },
+  "live": {
+    "toggle": "实时更新",
+    "interval": "更新间隔",
+    "animate": "平滑移动位置变化的点",
+    "secondsAgo": "{{n}} 秒前",
+    "minutesAgo": "{{n}} 分钟前",
+    "hoursAgo": "{{n}} 小时前",
+    "dataAge": "数据时间：{{ago}}",
+    "fetched": "获取于 {{ago}}",
+    "unchanged": "无变化",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "{{s}} 秒后再次获取",
+    "sourcePaced": "按数据源节奏",
+    "quota": "今日剩余 {{n}} 次请求",
+    "viaProxy": "经代理",
+    "retrying": "第 {{n}} 次重试",
+    "identityIndex": "要素没有稳定 ID：按列表位置匹配。"
+  },
+  "proxy": {
+    "title": "无 CORS 数据源的代理",
+    "hint": "部分公共数据源（Renfe）不允许浏览器读取。由你控制的代理转发。用 {url} 代替地址。",
+    "save": "保存",
+    "saved": "代理已保存",
+    "cleared": "代理已移除",
+    "needsPlaceholder": "模板必须包含 {url}。"
+  },
+  "styleTabs": {
+    "groups": "分组",
+    "zoom": "缩放",
+    "aggregate": "聚合",
+    "alerts": "警报"
+  },
+  "groups": {
+    "summary": "{{n}} 个要素 · {{g}} 个分组",
+    "create": "创建分组",
+    "rest": "其他所有",
+    "all": "所有要素",
+    "visible": "显示",
+    "priorityHint": "要素采用其匹配的第一个分组的样式 — 用 ▲▼ 调整顺序。",
+    "count": "该分组中的要素数",
+    "up": "上移",
+    "down": "下移",
+    "name": "分组名称",
+    "delete": "删除分组"
+  },
+  "maker": {
+    "title": "按属性选择要素",
+    "field": "属性",
+    "filter": "筛选值…",
+    "all": "全选",
+    "none": "全不选",
+    "picked": "已选 {{n}} 个要素",
+    "noValues": "没有值",
+    "oneGroup": "用这些建一个分组",
+    "groupPerValue": "每个值一个分组",
+    "newGroup": "新分组",
+    "empty": "空分组"
+  },
+  "cond": {
+    "title": "条件",
+    "all": "全部满足",
+    "any": "满足任一",
+    "none": "无条件：所有要素都匹配。",
+    "add": "添加条件",
+    "remove": "移除条件"
+  },
+  "look": {
+    "points": "点",
+    "symbol": "符号",
+    "size": "大小",
+    "label": "标注",
+    "noLabel": "无标注",
+    "lines": "线",
+    "width": "宽度",
+    "opacity": "不透明度",
+    "areas": "面",
+    "fill": "填充",
+    "outline": "轮廓",
+    "height": "高度",
+    "fixedHeight": "固定高度（米）",
+    "byField": "来自 {{f}}",
+    "offset": "分离",
+    "offsetHint": "将每条线移到其行驶方向的右侧，使双向道路两个方向都可见。",
+    "flow": "流动动画",
+    "flowSpeed": "流动速度"
+  },
+  "zoom": {
+    "detail": "完整符号 + 标注直到",
+    "icon": "仅符号直到",
+    "dot": "彩色圆点直到",
+    "hint": "像网络地图一样：相机越远，每个点画得越简单，成千上万个点仍然清晰可读。",
+    "detailShort": "完整",
+    "iconShort": "图标",
+    "dotShort": "圆点",
+    "hiddenShort": "隐藏",
+    "beyond": "超过 {{d}}：不绘制。",
+    "onlyPoints": "缩放级别作用于点要素；该图层没有点。"
+  },
+  "agg": {
+    "onlyPoints": "聚合用于汇总点要素；该图层没有点。",
+    "hint": "从远处以密度或按数值（如充电桩占用率）着色的单元显示图层，而不是成千上万个标记。",
+    "value": "数值",
+    "count": "要素数量",
+    "atValue": "在数值",
+    "atFraction": "在比例 (0–1)",
+    "absolute": "按数据单位设置断点（而非 0–1）",
+    "cell": "单元大小",
+    "radius": "半径",
+    "from": "超过此距离时显示",
+    "extrude": "按数值拉伸单元",
+    "legend": "近于 {{d}} 时恢复显示单个要素。",
+    "kind": {
+      "none": "无",
+      "heatmap": "热力图",
+      "hexbin": "六边形"
+    },
+    "fn": {
+      "mean": "平均",
+      "sum": "总和",
+      "min": "最小",
+      "max": "最大"
+    },
+    "ramp": {
+      "occupancy": "占用率",
+      "traffic": "交通",
+      "heat": "密度",
+      "blues": "蓝色"
+    }
+  },
+  "op": {
+    "eq": "等于",
+    "neq": "不等于",
+    "in": "属于",
+    "notIn": "不属于",
+    "contains": "包含",
+    "startsWith": "开头为",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "介于",
+    "exists": "存在",
+    "missing": "缺失",
+    "isTrue": "为真",
+    "isFalse": "为假"
+  },
+  "legend": {
+    "title": "图例",
+    "openHint": "查看数据图层颜色和符号的含义",
+    "close": "最小化图例",
+    "restore": "显示 {{n}} 个已移除的图层",
+    "tip": "点击分组可隐藏或显示 · Alt/⌘+点击：仅显示该分组",
+    "exclude": "从图例中移除此图层",
+    "hideGroup": "在场景中隐藏",
+    "showGroup": "在场景中显示",
+    "aggregateFar": "从远处看会变为汇总显示。",
+    "density": "密度",
+    "less": "少",
+    "more": "多",
+    "zoomInForDetail": "放大以查看每个要素。",
+    "inCaptures": "包含在截图中",
+    "inCapturesHint": "图例展开时也会出现在截图、片段和 GIF 中。最小化即可不包含。",
+    "asOf": "数据 {{when}}",
+    "scale": "比例尺",
+    "scaleHint": "显示比例尺（截图中也有）。仅在视角足够俯视、比例真实时绘制。",
+    "scaleNeedsTopDown": "请将视角再向下倾斜以显示可靠的比例尺。",
+    "northHint": "显示场地真北（截图中也有）",
+    "northNeedsSite": "指北需要已定位的场地（地理配准的模型、扫描或数据图层）。",
+    "move": "移到另一个角落（截图中同样适用）"
+  },
+  "history": {
+    "bar": "时间轴",
+    "past": "历史",
+    "pastHint": "你正在查看已记录的数据，而非当前状态。",
+    "play": "播放",
+    "pause": "暂停",
+    "speed": "播放速度",
+    "when": "显示的时刻",
+    "live": "实时",
+    "liveHint": "回到当前",
+    "record": "记录历史",
+    "recordHint": "在本设备上保存该数据源的历史以便回放（只存储变化部分）。",
+    "retention": "保留",
+    "hours": "{{n}} 小时",
+    "days": "{{n}} 天",
+    "sizeHint": "本设备已用空间",
+    "view": "查看历史",
+    "nothingYet": "尚无记录：图层实时更新时会累积历史。",
+    "spanH": "已记录 {{n}} 小时",
+    "spanM": "已记录 {{n}} 分钟",
+    "clear": "删除"
+  },
+  "traffic": {
+    "veryFluid": "非常畅通",
+    "fluid": "畅通",
+    "dense": "缓慢",
+    "veryDense": "拥挤",
+    "congestion": "拥堵",
+    "closed": "封闭",
+    "noData": "无数据"
+  },
+  "join": {
+    "open": "关联实时数据…",
+    "title": "关联实时表格",
+    "hint": "定时刷新的表格（CSV、“;”、“#” 分隔记录等）的值按键关联到这些要素——例如把交通状态关联到路段。",
+    "test": "测试",
+    "headerless": "表格没有标题行",
+    "namesPlaceholder": "列名，用逗号分隔（如 id,time,state）",
+    "layerKey": "本图层中的键",
+    "tableKey": "表格中的键",
+    "timeColumn": "数据时间",
+    "apply": "关联",
+    "done": "已关联：图层将实时更新。"
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}}：{{layer}} 中 {{n}} 个",
+    "show": "查看",
+    "newName": "新警报",
+    "hint": "当要素满足条件时通知你——立即或持续几分钟后。触发的要素会以红色圆环闪烁。",
+    "notLive": "每次刷新时检查警报：请为此图层开启实时刷新。",
+    "enabled": "启用",
+    "name": "警报名称",
+    "remove": "删除警报",
+    "forMin": "持续至少",
+    "minutes": "分钟",
+    "add": "新警报",
+    "fromGroup": "从分组创建…"
+  }
+}

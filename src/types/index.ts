@@ -122,6 +122,8 @@ export interface CameraViewpoint {
   /** Vertical field of view in degrees (fallback 45 for orthographic). */
   fovDeg:    number
   aspect:    number
+  /** Orthographic camera only: world units visible vertically (zoom applied). */
+  orthoWorldHeight?: number
 }
 
 /** Serialisable camera pose stored in a tour step. */
