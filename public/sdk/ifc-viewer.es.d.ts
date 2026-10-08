@@ -82,6 +82,12 @@ export interface IfcViewerOptions {
     /** Point clouds to fetch alongside the model (CORS-enabled URLs). Since v1.11.0. */
     scans?: string[];
     /**
+     * A data-layer setup to open: the URL of a JSON exported from the Data
+     * layers panel (*Export setup*) — live sources, styles, groups, alerts.
+     * Hosted anywhere with CORS; never carries keys. Since v1.16.0.
+     */
+    layers?: string;
+    /**
      * Once every model has loaded, frame them from this view with a tight fit —
      * the model fills `fill` of the frame. `ui: 'article'` implies `'iso'`.
      * See {@link IfcViewer.frame}. Since v1.14.0.
@@ -920,7 +926,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.15.0";
+    readonly version = "1.16.0";
     readonly iframe: HTMLIFrameElement;
     /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
     readonly box: HTMLDivElement | null;

@@ -96,6 +96,12 @@ export interface IfcViewerOptions {
   /** Point clouds to fetch alongside the model (CORS-enabled URLs). Since v1.11.0. */
   scans?: string[]
   /**
+   * A data-layer setup to open: the URL of a JSON exported from the Data
+   * layers panel (*Export setup*) — live sources, styles, groups, alerts.
+   * Hosted anywhere with CORS; never carries keys. Since v1.16.0.
+   */
+  layers?: string
+  /**
    * Once every model has loaded, frame them from this view with a tight fit —
    * the model fills `fill` of the frame. `ui: 'article'` implies `'iso'`.
    * See {@link IfcViewer.frame}. Since v1.14.0.
@@ -797,7 +803,9 @@ type Listener<T> = (payload: T) => void
 // background: 'auto' (follows the host page's theme), turntable,
 // pauseOffscreen, fullscreenButton / toggleFullscreen(), and bindSteps() for
 // scrolled stories. isolate(type, { frame: false }) keeps the camera.
-const SDK_VERSION = '1.15.0'
+// 1.16.0: `layers` boot option (and <ifc-viewer layers="…">) — opens a
+// data-layer setup exported from the viewer, mirroring the `?layers=` link.
+const SDK_VERSION = '1.16.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -2072,6 +2080,7 @@ export class IfcViewer {
     if (this.opts.solar) url.searchParams.set('solar', this.opts.solar)
     if (this.opts.moon) url.searchParams.set('moon', '1')
     if (this.opts.scans?.length) url.searchParams.set('scan', this.opts.scans.join(','))
+    if (this.opts.layers) url.searchParams.set('layers', this.opts.layers)
     if (this.opts.view) url.searchParams.set('view', this.opts.view)
     if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
     if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
@@ -2395,6 +2404,7 @@ export class IfcViewerElement extends HTMLElement {
       solar: attr('solar'),
       moon: boolAttr('moon'),
       scans: attr('scans')?.split(',').map((u) => u.trim()).filter(Boolean),
+      layers: attr('layers'),
       // Article kit (v1.15): <ifc-viewer ui="article" lazy poster="…" aspect-ratio="16/10">
       view: attr('view') as CameraView | undefined,
       fill: attr('fill') !== undefined ? Number(attr('fill')) : undefined,
