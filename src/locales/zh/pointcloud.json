@@ -130,6 +130,7 @@
       "map-conversion": "已地理参照（地图转换）",
       "shared-crs": "已地理参照（共用格网）",
       "geographic": "地理锚点",
+      "scene-anchor": "场景锚点",
       "local": "共用局部坐标",
       "manual": "手动放置"
     },
@@ -158,7 +159,10 @@
       "unitFeet": "范围显示单位应为英尺——已按 0.3048 缩放。",
       "unitAssumed": "未声明单位；按米处理。",
       "noCommonReference": "两个文件之间没有任何关联，因此扫描已居中于模型之上。请用下方的偏移量来放置它。",
-      "cloudCrsUnknown": "扫描指定了本版本没有定义的坐标系，因此无法使用其地理参照信息。请在下方粘贴 proj4 定义以启用它。"
+      "cloudCrsUnknown": "扫描指定了本版本没有定义的坐标系，因此无法使用其地理参照信息。请在下方粘贴 proj4 定义以启用它。",
+      "sceneAnchorSameGrid": "已按其坐标系相对于第一个地理配准扫描定位（同一格网，无需重投影）。",
+      "sceneAnchorReprojected": "已按其坐标系相对于场景锚点定位，经 WGS84 重投影。",
+      "assumedVerticalDatum": "假定所有扫描使用同一高程基准——文件未声明。"
     },
     "manualWarning": "此放置只是一个起点，并非测量结果。",
     "recompute": "重新计算对齐",

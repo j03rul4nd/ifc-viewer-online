@@ -1,0 +1,438 @@
+{
+  "entry": "Couches de données",
+  "title": "Couches de données",
+  "intro": "Importez itinéraires, zones et points depuis des fichiers GeoJSON, des URL ou des services WFS. Tout se place sur le même site que votre maquette, vos scans et la carte.",
+  "working": "Chargement…",
+  "anchor": {
+    "by": "Placé par rapport à {{label}} ({{source}})",
+    "map": "Placé par rapport à l'emplacement de la carte / maquette",
+    "none": "Pas encore d'ancre : la première couche géoréférencée fixe le site.",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "scan",
+      "vector": "couche de données",
+      "manual": "manuel"
+    }
+  },
+  "file": {
+    "drop": "Ouvrir un fichier GeoJSON…",
+    "sample": "Essayer un exemple (synthétique, Barcelone)",
+    "sampleLive": "Essayer des données en direct (trains simulés, Barcelone)",
+    "sampleLiveName": "Trains simulés"
+  },
+  "url": {
+    "title": "GeoJSON depuis une URL",
+    "add": "Ajouter"
+  },
+  "wfs": {
+    "title": "Service WFS",
+    "connect": "Connecter",
+    "found": "{{count}} couches dans {{title}}",
+    "noJson": "pas de sortie GeoJSON",
+    "radius": "Zone",
+    "load": "Charger",
+    "hint": "Seule la zone autour du site est demandée, jusqu'à 5 000 objets. Le serveur doit autoriser les requêtes cross-origin (CORS)."
+  },
+  "list": {
+    "title": "Couches connectées ({{count}})"
+  },
+  "count": {
+    "lines_one": "{{count}} ligne",
+    "lines_other": "{{count}} lignes",
+    "polygons_one": "{{count}} zone",
+    "polygons_other": "{{count}} zones",
+    "points_one": "{{count}} point",
+    "points_other": "{{count}} points"
+  },
+  "action": {
+    "hide": "Masquer",
+    "show": "Afficher",
+    "frame": "Cadrer la couche",
+    "remove": "Retirer",
+    "close": "Fermer"
+  },
+  "height": {
+    "title": "Hauteurs",
+    "relative": "Au-dessus du sol (drapé)",
+    "absolute": "Altitude absolue",
+    "ignore": "À plat sur le sol",
+    "source": {
+      "coordinates": "Les données ont une coordonnée Z.",
+      "property": "Colonne de hauteur : {{prop}}",
+      "none": "Les données n'ont pas de hauteurs."
+    }
+  },
+  "style": {
+    "color": "Couleur",
+    "width": "Épaisseur de ligne",
+    "opacity": "Opacité du remplissage",
+    "fill": "Remplir les zones",
+    "extrude": "Extruder les zones",
+    "extrudeFallback": "Extruder les zones sans hauteur",
+    "pointSize": "Taille des points"
+  },
+  "warn": {
+    "far": "Cette couche est à {{km}} km du site : vérifiez son système de coordonnées.",
+    "skipped": "{{count}} objets ignorés (géométrie vide ou non prise en charge)."
+  },
+  "error": {
+    "notJson": "Le fichier n'est pas un JSON valide.",
+    "notGeoJson": "Ce n'est pas du GeoJSON.",
+    "unknownCrs": "Les données déclarent un système de coordonnées inconnu de ce visualiseur.",
+    "projectedWithoutCrs": "Les coordonnées sont en mètres mais aucun système de coordonnées n'est déclaré.",
+    "empty": "La couche ne contient aucun objet.",
+    "noAnchor": "Aucun site où placer la couche.",
+    "http": "Le serveur a répondu par une erreur.",
+    "network": "Impossible de joindre le serveur : il est peut-être hors ligne ou bloque les requêtes cross-origin (CORS).",
+    "aborted": "Annulé.",
+    "badUrl": "Cette URL n'est pas valide.",
+    "notWfs": "Cette adresse n'est pas un service WFS.",
+    "noFeatureTypes": "Le service ne liste aucune couche.",
+    "wfsException": "Le serveur WFS a rejeté la requête.",
+    "notJsonOutput": "Le serveur n'a pas renvoyé de GeoJSON (il ne propose peut-être que du GML).",
+    "cors": "La source n'autorise pas les navigateurs à la lire (pas de CORS). Configurez un proxy ci-dessous.",
+    "notGbfs": "Ce n'est pas un flux GBFS.",
+    "notGtfsRt": "Ce n'est pas un flux GTFS-Realtime (JSON).",
+    "noGeometryInTable": "Cette table n’a pas de colonnes de localisation (lon/lat, WKT ou coordonnées). Joignez-la à une couche.",
+    "noJoinBase": "Aucune géométrie à laquelle joindre.",
+    "emptyTable": "La table est vide."
+  },
+  "kind": {
+    "point": "Point",
+    "line": "Ligne",
+    "polygon": "Zone"
+  },
+  "selected": {
+    "noProps": "Cet objet n'a pas d'attributs."
+  },
+  "restore": {
+    "failed": "{{count}} couches enregistrées n'ont pas pu être restaurées (hors ligne, ou fichier trop volumineux pour être conservé)."
+  },
+  "search": {
+    "title": "Rechercher dans le jumeau",
+    "placeholder": "Gare, code d'actif, ligne, fichier… ex. code:BCN-SANTS",
+    "hint": "Recherche dans toutes les couches, IFC et scans chargés ({{count}} éléments), y compris les attributs imbriqués. Utilisez champ:valeur pour filtrer.",
+    "empty": "Aucun résultat.",
+    "related": "Relié à {{label}}",
+    "noRelated": "Aucun lien trouvé.",
+    "reason": {
+      "shared": "même {{field}} : {{value}}",
+      "inside": "à l'intérieur",
+      "contains": "le contient",
+      "near": "à {{m}} m"
+    }
+  },
+  "symbology": {
+    "styleBy": "Style par",
+    "single": "Un seul style",
+    "others": "Tout le reste",
+    "all": "Tous les objets",
+    "hint": "Chaque valeur du champ a sa couleur et son symbole. Décochez une valeur pour la masquer.",
+    "symbol": "Symbole",
+    "size": "Taille (m)",
+    "visible": "Afficher",
+    "icons": "Icônes",
+    "shapes": "Formes 3D",
+    "models": "Vos modèles",
+    "uploadModel": "Importer un modèle GLB…",
+    "modelFailed": "Impossible de lire ce modèle (GLB uniquement).",
+    "icon": {
+      "pin": "Punaise",
+      "train": "Gare",
+      "metro": "Métro",
+      "tram": "Tramway",
+      "bus": "Bus",
+      "power": "Électricité / poste",
+      "exit": "Sortie",
+      "door": "Porte / accès",
+      "sensor": "Capteur",
+      "camera": "Caméra",
+      "wifi": "Antenne / Wi-Fi",
+      "warning": "Alerte",
+      "info": "Information",
+      "fire": "Sécurité incendie",
+      "water": "Eau",
+      "parking": "Parking",
+      "tree": "Arbre",
+      "building": "Bâtiment",
+      "bike": "Vélo",
+      "charger": "Borne de recharge"
+    },
+    "shape": {
+      "sphere": "Sphère",
+      "pin": "Punaise",
+      "cube": "Cube",
+      "cylinder": "Cylindre",
+      "cone": "Cône"
+    }
+  },
+  "links": {
+    "linkTo": "Relier à…",
+    "pickTarget": "Choisissez maintenant à quoi relier {{label}} : cliquez sur un résultat.",
+    "cancel": "Annuler",
+    "urlPlaceholder": "https://… fiche, tableau de bord, document",
+    "addUrl": "Ajouter le lien",
+    "remove": "Retirer le lien",
+    "notLoaded": "non chargé",
+    "badge": "LIEN"
+  },
+  "presets": {
+    "title": "Sources publiques en direct",
+    "hint": "Prêtes à connecter, chacune réglée sur la fréquence réelle de mise à jour de son fournisseur.",
+    "connect": "Connecter",
+    "needsProxy": "proxy",
+    "needsProxyHint": "Ce fournisseur n'envoie pas d'en-tête CORS : un navigateur ne peut le lire que via un proxy (voir Proxy ci-dessous).",
+    "bicing": {
+      "name": "Stations Bicing",
+      "hint": "Vélos et bornes libres par station (GBFS) · toutes les 30 s"
+    },
+    "fgc": {
+      "name": "Trains FGC",
+      "hint": "Position en direct, ponctualité et occupation · quota limité (5 000/jour)"
+    },
+    "rodalies": {
+      "name": "Trains Rodalies (Renfe)",
+      "hint": "Positions en direct (GTFS-Realtime) · la source se met à jour toutes les 30 s"
+    },
+    "catastro": {
+      "name": "Parcelles cadastrales",
+      "hint": "WFS du Cadastre (GML) · 250 m autour du site · statique"
+    },
+    "icgc-municipis": {
+      "name": "Communes (ICGC)",
+      "hint": "Limites communales de Catalogne · statique"
+    },
+    "bcn-traffic": {
+      "name": "Trafic de Barcelone (en direct)",
+      "hint": "État de 500+ tronçons · toutes les 5 min · deux sens, flux animé"
+    }
+  },
+  "live": {
+    "toggle": "Mise à jour en direct",
+    "interval": "Actualiser toutes les",
+    "animate": "Faire glisser les points qui bougent",
+    "secondsAgo": "il y a {{n}} s",
+    "minutesAgo": "il y a {{n}} min",
+    "hoursAgo": "il y a {{n}} h",
+    "dataAge": "Données d'{{ago}}",
+    "fetched": "Téléchargé {{ago}}",
+    "unchanged": "aucun changement",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "prochaine dans {{s}} s",
+    "sourcePaced": "au rythme de la source",
+    "quota": "{{n}} requêtes restantes aujourd'hui",
+    "viaProxy": "via proxy",
+    "retrying": "nouvel essai {{n}}",
+    "identityIndex": "Les objets n'ont pas d'identifiant stable : appariés par leur position dans la liste."
+  },
+  "proxy": {
+    "title": "Proxy pour les sources sans CORS",
+    "hint": "Certains flux publics (Renfe) ne peuvent pas être lus par un navigateur. Un proxy que vous contrôlez les relaie. Mettez {url} à la place de l'adresse.",
+    "save": "Enregistrer",
+    "saved": "Proxy enregistré",
+    "cleared": "Proxy supprimé",
+    "needsPlaceholder": "Le modèle doit contenir {url}."
+  },
+  "styleTabs": {
+    "groups": "Groupes",
+    "zoom": "Zoom",
+    "aggregate": "Agrégation",
+    "alerts": "Alertes"
+  },
+  "groups": {
+    "summary": "{{n}} objets · {{g}} groupes",
+    "create": "Créer des groupes",
+    "rest": "Tout le reste",
+    "all": "Tous les objets",
+    "visible": "Afficher",
+    "priorityHint": "Un objet prend l’apparence du PREMIER groupe qu’il satisfait — réordonnez avec ▲▼.",
+    "count": "objets dans ce groupe",
+    "up": "Monter",
+    "down": "Descendre",
+    "name": "Nom du groupe",
+    "delete": "Supprimer le groupe"
+  },
+  "maker": {
+    "title": "Choisir des objets par une propriété",
+    "field": "Propriété",
+    "filter": "Filtrer les valeurs…",
+    "all": "Tous",
+    "none": "Aucun",
+    "picked": "{{n}} objets sélectionnés",
+    "noValues": "Aucune valeur",
+    "oneGroup": "Un groupe avec ceux-ci",
+    "groupPerValue": "Un groupe par valeur",
+    "newGroup": "Nouveau groupe",
+    "empty": "Groupe vide"
+  },
+  "cond": {
+    "title": "Conditions",
+    "all": "toutes requises",
+    "any": "une suffit",
+    "none": "Aucune condition : tous les objets correspondent.",
+    "add": "Ajouter une condition",
+    "remove": "Retirer la condition"
+  },
+  "look": {
+    "points": "Points",
+    "symbol": "Symbole",
+    "size": "Taille",
+    "label": "Étiquette",
+    "noLabel": "Sans étiquette",
+    "lines": "Lignes",
+    "width": "Épaisseur",
+    "opacity": "Opacité",
+    "areas": "Zones",
+    "fill": "Remplissage",
+    "outline": "Contour",
+    "height": "Hauteur",
+    "fixedHeight": "Hauteur fixe (m)",
+    "byField": "Depuis {{f}}",
+    "offset": "Séparer",
+    "offsetHint": "Décale chaque ligne à droite de son sens, pour voir les deux sens des rues à double sens.",
+    "flow": "Animer le flux",
+    "flowSpeed": "Vitesse du flux"
+  },
+  "zoom": {
+    "detail": "Symbole complet + texte jusqu’à",
+    "icon": "Symbole seul jusqu’à",
+    "dot": "Point coloré jusqu’à",
+    "hint": "Comme une carte web : plus la caméra est loin, plus chaque point est dessiné simplement — des milliers restent lisibles.",
+    "detailShort": "complet",
+    "iconShort": "icône",
+    "dotShort": "point",
+    "hiddenShort": "masqué",
+    "beyond": "Au-delà de {{d}} : non dessiné.",
+    "onlyPoints": "Les niveaux de zoom s’appliquent aux points ; cette couche n’en a pas."
+  },
+  "agg": {
+    "onlyPoints": "L’agrégation résume des points ; cette couche n’en a pas.",
+    "hint": "De loin, afficher la couche en densité ou en cellules colorées par une valeur — ex. occupation des bornes — plutôt que des milliers de marqueurs.",
+    "value": "Valeur",
+    "count": "Nombre d’objets",
+    "atValue": "à la valeur",
+    "atFraction": "à la fraction (0–1)",
+    "absolute": "Arrêts en unités de la donnée (pas 0–1)",
+    "cell": "Taille de cellule",
+    "radius": "Rayon",
+    "from": "Afficher au-delà de",
+    "extrude": "Extruder les cellules selon la valeur",
+    "legend": "Plus près que {{d}}, les objets individuels reviennent.",
+    "kind": {
+      "none": "Aucune",
+      "heatmap": "Carte de chaleur",
+      "hexbin": "Hexagones"
+    },
+    "fn": {
+      "mean": "moyenne",
+      "sum": "somme",
+      "min": "minimum",
+      "max": "maximum"
+    },
+    "ramp": {
+      "occupancy": "Occupation",
+      "traffic": "Trafic",
+      "heat": "Densité",
+      "blues": "Bleus"
+    }
+  },
+  "op": {
+    "eq": "est",
+    "neq": "n’est pas",
+    "in": "est l’un de",
+    "notIn": "n’est aucun de",
+    "contains": "contient",
+    "startsWith": "commence par",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "entre",
+    "exists": "existe",
+    "missing": "est absent",
+    "isTrue": "est vrai",
+    "isFalse": "est faux"
+  },
+  "legend": {
+    "title": "Légende",
+    "openHint": "Voir ce que signifient les couleurs et symboles de vos couches de données",
+    "close": "Réduire la légende",
+    "restore": "Afficher {{n}} couche(s) retirée(s)",
+    "tip": "Clic sur un groupe pour le masquer ou l’afficher · Alt/⌘-clic : ce groupe seul",
+    "exclude": "Retirer cette couche de la légende",
+    "hideGroup": "Masquer dans la scène",
+    "showGroup": "Afficher dans la scène",
+    "aggregateFar": "De loin, elle devient un résumé.",
+    "density": "Densité",
+    "less": "moins",
+    "more": "plus",
+    "zoomInForDetail": "Rapprochez-vous pour voir chaque objet.",
+    "inCaptures": "dans les captures",
+    "inCapturesHint": "Ouverte, la légende figure aussi dans les captures, clips et GIF. Réduisez-la pour l’exclure.",
+    "asOf": "données {{when}}",
+    "scale": "Échelle",
+    "scaleHint": "Afficher une barre d’échelle (aussi dans les captures). Dessinée seulement si la vue plonge assez pour être juste.",
+    "scaleNeedsTopDown": "Inclinez davantage la vue vers le bas pour une échelle fiable.",
+    "northHint": "Afficher le nord vrai du site (aussi dans les captures)",
+    "northNeedsSite": "Le nord nécessite un site localisé (maquette, scan ou couche géoréférencés).",
+    "move": "Déplacer vers un autre coin (aussi dans les captures)"
+  },
+  "history": {
+    "bar": "Barre temporelle",
+    "past": "Passé",
+    "pastHint": "Vous regardez des données enregistrées, pas le présent.",
+    "play": "Lire",
+    "pause": "Pause",
+    "speed": "Vitesse de lecture",
+    "when": "Instant affiché",
+    "live": "En direct",
+    "liveHint": "Revenir au présent",
+    "record": "Enregistrer l’historique",
+    "recordHint": "Conserver le passé de ce flux sur cet appareil pour le rembobiner (seuls les changements sont stockés).",
+    "retention": "Conserver",
+    "hours": "{{n}} h",
+    "days": "{{n}} jours",
+    "sizeHint": "Espace utilisé sur cet appareil",
+    "view": "Voir l’historique",
+    "nothingYet": "Rien d’enregistré pour l’instant : l’historique s’accumule tant que la couche est en direct.",
+    "spanH": "{{n}} h enregistrées",
+    "spanM": "{{n}} min enregistrées",
+    "clear": "Supprimer"
+  },
+  "traffic": {
+    "veryFluid": "Très fluide",
+    "fluid": "Fluide",
+    "dense": "Dense",
+    "veryDense": "Très dense",
+    "congestion": "Congestion",
+    "closed": "Fermé",
+    "noData": "Pas de données"
+  },
+  "join": {
+    "open": "Joindre des données en direct…",
+    "title": "Joindre une table en direct",
+    "hint": "Les valeurs d’une table actualisée (CSV, « ; », enregistrements « # »…) sont associées à ces objets par une clé — p. ex. l’état du trafic sur des tronçons.",
+    "test": "Tester",
+    "headerless": "La table n’a pas de ligne d’en-tête",
+    "namesPlaceholder": "Noms de colonnes, séparés par des virgules (ex. id,heure,etat)",
+    "layerKey": "Clé dans cette couche",
+    "tableKey": "Clé dans la table",
+    "timeColumn": "Heure des données",
+    "apply": "Joindre",
+    "done": "Joint : la couche s’actualise désormais en direct."
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}} : {{n}} dans {{layer}}",
+    "show": "Voir",
+    "newName": "Nouvelle alerte",
+    "hint": "Vous prévient quand des objets remplissent une condition, aussitôt ou après quelques minutes. Les objets en alerte pulsent avec un anneau rouge.",
+    "notLive": "Les alertes sont vérifiées à chaque actualisation : activez le direct pour cette couche.",
+    "enabled": "Active",
+    "name": "Nom de l’alerte",
+    "remove": "Supprimer l’alerte",
+    "forMin": "Pendant au moins",
+    "minutes": "min",
+    "add": "Nouvelle alerte",
+    "fromGroup": "À partir d’un groupe…"
+  }
+}

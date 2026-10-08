@@ -130,6 +130,7 @@
       "map-conversion": "Géoréférencé (conversion cartographique)",
       "shared-crs": "Géoréférencé (grille commune)",
       "geographic": "Ancrage géographique",
+      "scene-anchor": "Ancre de la scène",
       "local": "Coordonnées locales communes",
       "manual": "Placé à la main"
     },
@@ -158,7 +159,10 @@
       "unitFeet": "L'étendue suggère des pieds — mise à l'échelle par 0,3048.",
       "unitAssumed": "Unité non déclarée ; mètres supposés.",
       "noCommonReference": "Rien ne relie les deux fichiers, le relevé a donc été centré sur le modèle. Utilisez les décalages ci-dessous pour le placer.",
-      "cloudCrsUnknown": "Le relevé nomme un système de coordonnées dont cette version n'a pas la définition, son géoréférencement n'a donc pas pu être utilisé. Collez une définition proj4 ci-dessous pour le débloquer."
+      "cloudCrsUnknown": "Le relevé nomme un système de coordonnées dont cette version n'a pas la définition, son géoréférencement n'a donc pas pu être utilisé. Collez une définition proj4 ci-dessous pour le débloquer.",
+      "sceneAnchorSameGrid": "Placé par son SCR par rapport au premier scan géoréférencé (même grille, sans reprojection).",
+      "sceneAnchorReprojected": "Placé par son SCR par rapport à l'ancre de la scène, reprojeté via WGS84.",
+      "assumedVerticalDatum": "Tous les scans sont supposés partager le même référentiel altimétrique : le fichier ne l'indique pas."
     },
     "manualWarning": "Ce placement est un point de départ, pas une mesure.",
     "recompute": "Relancer l'alignement",

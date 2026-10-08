@@ -1,0 +1,438 @@
+{
+  "entry": "Capes de dades",
+  "title": "Capes de dades",
+  "intro": "Porta rutes, zones i punts des de fitxers GeoJSON, URLs o serveis WFS. Tot cau al mateix lloc que el model, els escanejos i el mapa.",
+  "working": "Carregant…",
+  "anchor": {
+    "by": "Situat respecte a {{label}} ({{source}})",
+    "map": "Situat respecte a la ubicació del mapa / model",
+    "none": "Encara sense àncora: la primera capa georeferenciada fixa l'emplaçament.",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "escaneig",
+      "vector": "capa de dades",
+      "manual": "manual"
+    }
+  },
+  "file": {
+    "drop": "Obrir fitxer GeoJSON…",
+    "sample": "Provar un exemple (sintètic, Barcelona)",
+    "sampleLive": "Provar dades en directe (trens simulats, Barcelona)",
+    "sampleLiveName": "Trens simulats"
+  },
+  "url": {
+    "title": "GeoJSON des d'una URL",
+    "add": "Afegir"
+  },
+  "wfs": {
+    "title": "Servei WFS",
+    "connect": "Connectar",
+    "found": "{{count}} capes a {{title}}",
+    "noJson": "sense sortida GeoJSON",
+    "radius": "Zona",
+    "load": "Carregar",
+    "hint": "Només es demana la zona al voltant de l'emplaçament, fins a 5.000 elements. El servidor ha de permetre peticions entre orígens (CORS)."
+  },
+  "list": {
+    "title": "Capes connectades ({{count}})"
+  },
+  "count": {
+    "lines_one": "{{count}} línia",
+    "lines_other": "{{count}} línies",
+    "polygons_one": "{{count}} àrea",
+    "polygons_other": "{{count}} àrees",
+    "points_one": "{{count}} punt",
+    "points_other": "{{count}} punts"
+  },
+  "action": {
+    "hide": "Amagar",
+    "show": "Mostrar",
+    "frame": "Enquadrar capa",
+    "remove": "Treure",
+    "close": "Tancar"
+  },
+  "height": {
+    "title": "Alçades",
+    "relative": "Sobre el terreny (adaptada)",
+    "absolute": "Cota absoluta",
+    "ignore": "Plana sobre el terra",
+    "source": {
+      "coordinates": "Les dades porten coordenada Z.",
+      "property": "Columna d'alçada: {{prop}}",
+      "none": "Les dades no porten alçades."
+    }
+  },
+  "style": {
+    "color": "Color",
+    "width": "Gruix de línia",
+    "opacity": "Opacitat del farciment",
+    "fill": "Omplir àrees",
+    "extrude": "Extruir àrees",
+    "extrudeFallback": "Extruir àrees sense alçada",
+    "pointSize": "Mida del punt"
+  },
+  "warn": {
+    "far": "Aquesta capa és a {{km}} km de l'emplaçament: revisa'n el sistema de coordenades.",
+    "skipped": "{{count}} elements omesos (geometria buida o no suportada)."
+  },
+  "error": {
+    "notJson": "El fitxer no és JSON vàlid.",
+    "notGeoJson": "Això no és GeoJSON.",
+    "unknownCrs": "Les dades declaren un sistema de coordenades que aquest visor no coneix.",
+    "projectedWithoutCrs": "Les coordenades són en metres però no es declara cap sistema de coordenades.",
+    "empty": "La capa no té elements.",
+    "noAnchor": "No hi ha emplaçament on situar la capa.",
+    "http": "El servidor ha respost amb un error.",
+    "network": "No s'ha pogut contactar amb el servidor: pot estar caigut o bloquejar peticions entre orígens (CORS).",
+    "aborted": "Cancel·lat.",
+    "badUrl": "Aquesta URL no és vàlida.",
+    "notWfs": "Aquesta adreça no és un servei WFS.",
+    "noFeatureTypes": "El servei no llista cap capa.",
+    "wfsException": "El servidor WFS ha rebutjat la petició.",
+    "notJsonOutput": "El servidor no ha retornat GeoJSON (potser només ofereix GML).",
+    "cors": "La font no permet que un navegador la llegeixi (sense CORS). Configura un proxy a sota.",
+    "notGbfs": "Això no és un feed GBFS.",
+    "notGtfsRt": "Això no és un feed GTFS-Realtime (JSON).",
+    "noGeometryInTable": "Aquesta taula no té columnes amb ubicació (lon/lat, WKT o coordenades). Uneix-la a una capa.",
+    "noJoinBase": "No hi ha geometria a la qual unir.",
+    "emptyTable": "La taula és buida."
+  },
+  "kind": {
+    "point": "Punt",
+    "line": "Línia",
+    "polygon": "Àrea"
+  },
+  "selected": {
+    "noProps": "Aquest element no té atributs."
+  },
+  "restore": {
+    "failed": "{{count}} capes desades no s'han pogut restaurar (sense connexió, o el fitxer era massa gran per desar-lo)."
+  },
+  "search": {
+    "title": "Cercar al bessó",
+    "placeholder": "Estació, codi d'actiu, línia, fitxer… p. ex. code:BCN-SANTS",
+    "hint": "Cerca a totes les capes, IFC i escanejos carregats ({{count}} elements), inclosos els atributs niats. Fes servir camp:valor per filtrar.",
+    "empty": "No hi ha coincidències.",
+    "related": "Connectat amb {{label}}",
+    "noRelated": "No s'ha trobat res connectat.",
+    "reason": {
+      "shared": "mateix {{field}}: {{value}}",
+      "inside": "és a dins",
+      "contains": "el conté",
+      "near": "a {{m}} m"
+    }
+  },
+  "symbology": {
+    "styleBy": "Estil per",
+    "single": "Un sol estil",
+    "others": "Tota la resta",
+    "all": "Tots els elements",
+    "hint": "Cada valor del camp té el seu color i símbol. Desmarca un valor per amagar-lo.",
+    "symbol": "Símbol",
+    "size": "Mida (m)",
+    "visible": "Mostrar",
+    "icons": "Icones",
+    "shapes": "Formes 3D",
+    "models": "Els teus models",
+    "uploadModel": "Pujar model GLB…",
+    "modelFailed": "No s'ha pogut llegir aquest model (només GLB).",
+    "icon": {
+      "pin": "Xinxeta",
+      "train": "Estació de tren",
+      "metro": "Metro",
+      "tram": "Tramvia",
+      "bus": "Autobús",
+      "power": "Electricitat / subestació",
+      "exit": "Sortida",
+      "door": "Porta / accés",
+      "sensor": "Sensor",
+      "camera": "Càmera",
+      "wifi": "Antena / Wi-Fi",
+      "warning": "Avís",
+      "info": "Informació",
+      "fire": "Protecció contra incendis",
+      "water": "Aigua",
+      "parking": "Aparcament",
+      "tree": "Arbre",
+      "building": "Edifici",
+      "bike": "Bicicleta",
+      "charger": "Punt de recàrrega"
+    },
+    "shape": {
+      "sphere": "Esfera",
+      "pin": "Xinxeta",
+      "cube": "Cub",
+      "cylinder": "Cilindre",
+      "cone": "Con"
+    }
+  },
+  "links": {
+    "linkTo": "Enllaçar amb…",
+    "pickTarget": "Ara tria amb què s'enllaça {{label}}: prem un resultat de cerca.",
+    "cancel": "Cancel·lar",
+    "urlPlaceholder": "https://… fitxa, tauler, document",
+    "addUrl": "Afegir enllaç",
+    "remove": "Treure enllaç",
+    "notLoaded": "no carregat",
+    "badge": "ENLLAÇ"
+  },
+  "presets": {
+    "title": "Fonts públiques en directe",
+    "hint": "A punt per connectar, cadascuna ajustada a cada quant actualitza de debò el seu proveïdor.",
+    "connect": "Connectar",
+    "needsProxy": "proxy",
+    "needsProxyHint": "Aquest proveïdor no envia capçalera CORS: un navegador només el pot llegir a través d'un proxy (vegeu Proxy a sota).",
+    "bicing": {
+      "name": "Estacions de Bicing",
+      "hint": "Bicis i ancoratges lliures per estació (GBFS) · cada 30 s"
+    },
+    "fgc": {
+      "name": "Trens FGC",
+      "hint": "Posició en directe, puntualitat i ocupació · quota limitada (5.000/dia)"
+    },
+    "rodalies": {
+      "name": "Trens de Rodalies (Renfe)",
+      "hint": "Posicions en directe (GTFS-Realtime) · la font s'actualitza cada 30 s"
+    },
+    "catastro": {
+      "name": "Parcel·les cadastrals",
+      "hint": "WFS del Cadastre (GML) · 250 m al voltant de l'emplaçament · estàtic"
+    },
+    "icgc-municipis": {
+      "name": "Municipis (ICGC)",
+      "hint": "Límits municipals de Catalunya · estàtic"
+    },
+    "bcn-traffic": {
+      "name": "Trànsit de Barcelona (en directe)",
+      "hint": "Estat de més de 500 trams · cada 5 min · tots dos sentits, flux animat"
+    }
+  },
+  "live": {
+    "toggle": "Actualització en directe",
+    "interval": "Actualitzar cada",
+    "animate": "Lliscar els punts que es mouen",
+    "secondsAgo": "fa {{n}} s",
+    "minutesAgo": "fa {{n}} min",
+    "hoursAgo": "fa {{n}} h",
+    "dataAge": "Dades de {{ago}}",
+    "fetched": "Descarregat {{ago}}",
+    "unchanged": "sense canvis",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "següent en {{s}} s",
+    "sourcePaced": "al ritme de la font",
+    "quota": "queden {{n}} peticions avui",
+    "viaProxy": "via proxy",
+    "retrying": "reintent {{n}}",
+    "identityIndex": "Els elements no tenen id estable: s'aparellen per la posició a la llista."
+  },
+  "proxy": {
+    "title": "Proxy per a fonts sense CORS",
+    "hint": "Alguns feeds públics (Renfe) no permeten que un navegador els llegeixi. Un proxy teu els reenvia. Fes servir {url} on va l'adreça.",
+    "save": "Desar",
+    "saved": "Proxy desat",
+    "cleared": "Proxy eliminat",
+    "needsPlaceholder": "La plantilla ha de contenir {url}."
+  },
+  "styleTabs": {
+    "groups": "Grups",
+    "zoom": "Zoom",
+    "aggregate": "Agregació",
+    "alerts": "Alertes"
+  },
+  "groups": {
+    "summary": "{{n}} elements · {{g}} grups",
+    "create": "Crear grups",
+    "rest": "Tota la resta",
+    "all": "Tots els elements",
+    "visible": "Mostrar",
+    "priorityHint": "Cada element pren l’aspecte del PRIMER grup que compleix — ordena’ls amb ▲▼.",
+    "count": "elements en aquest grup",
+    "up": "Pujar",
+    "down": "Baixar",
+    "name": "Nom del grup",
+    "delete": "Eliminar grup"
+  },
+  "maker": {
+    "title": "Tria elements per una propietat",
+    "field": "Propietat",
+    "filter": "Filtrar valors…",
+    "all": "Tots",
+    "none": "Cap",
+    "picked": "{{n}} elements seleccionats",
+    "noValues": "Sense valors",
+    "oneGroup": "Un grup amb aquests",
+    "groupPerValue": "Un grup per valor",
+    "newGroup": "Grup nou",
+    "empty": "Grup buit"
+  },
+  "cond": {
+    "title": "Condicions",
+    "all": "cal que es compleixin totes",
+    "any": "n’hi ha prou amb una",
+    "none": "Sense condicions: hi entren tots els elements.",
+    "add": "Afegir condició",
+    "remove": "Treure condició"
+  },
+  "look": {
+    "points": "Punts",
+    "symbol": "Símbol",
+    "size": "Mida",
+    "label": "Etiqueta",
+    "noLabel": "Sense etiqueta",
+    "lines": "Línies",
+    "width": "Gruix",
+    "opacity": "Opacitat",
+    "areas": "Àrees",
+    "fill": "Farciment",
+    "outline": "Contorn",
+    "height": "Alçada",
+    "fixedHeight": "Alçada fixa (m)",
+    "byField": "Des de {{f}}",
+    "offset": "Separar",
+    "offsetHint": "Desplaça cada línia a la dreta del seu sentit, perquè els carrers de doble sentit en mostrin tots dos.",
+    "flow": "Animar flux",
+    "flowSpeed": "Velocitat del flux"
+  },
+  "zoom": {
+    "detail": "Símbol complet + text fins a",
+    "icon": "Només símbol fins a",
+    "dot": "Punt de color fins a",
+    "hint": "Com un mapa web: com més lluny és la càmera, més simple es dibuixa cada punt, perquè milers continuïn sent llegibles.",
+    "detailShort": "complet",
+    "iconShort": "icona",
+    "dotShort": "punt",
+    "hiddenShort": "ocult",
+    "beyond": "Més enllà de {{d}}: no es dibuixa.",
+    "onlyPoints": "Els nivells de zoom s’apliquen a punts; aquesta capa no en té."
+  },
+  "agg": {
+    "onlyPoints": "L’agregació resumeix punts; aquesta capa no en té.",
+    "hint": "De lluny, mostra la capa com a densitat o com a cel·les acolorides per un valor —p. ex. ocupació de carregadors— en lloc de milers de marcadors.",
+    "value": "Valor",
+    "count": "Nombre d’elements",
+    "atValue": "al valor",
+    "atFraction": "a la fracció (0–1)",
+    "absolute": "Parades en unitats de la dada (no 0–1)",
+    "cell": "Mida de cel·la",
+    "radius": "Radi",
+    "from": "Mostrar a partir de",
+    "extrude": "Extruir cel·les segons el valor",
+    "legend": "Més a prop de {{d}} tornen els elements individuals.",
+    "kind": {
+      "none": "Cap",
+      "heatmap": "Mapa de calor",
+      "hexbin": "Hexàgons"
+    },
+    "fn": {
+      "mean": "mitjana",
+      "sum": "suma",
+      "min": "mínim",
+      "max": "màxim"
+    },
+    "ramp": {
+      "occupancy": "Ocupació",
+      "traffic": "Trànsit",
+      "heat": "Densitat",
+      "blues": "Blaus"
+    }
+  },
+  "op": {
+    "eq": "és",
+    "neq": "no és",
+    "in": "és un de",
+    "notIn": "no és cap de",
+    "contains": "conté",
+    "startsWith": "comença per",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "entre",
+    "exists": "existeix",
+    "missing": "no existeix",
+    "isTrue": "és cert",
+    "isFalse": "és fals"
+  },
+  "legend": {
+    "title": "Llegenda",
+    "openHint": "Veure què signifiquen els colors i símbols de les teves capes de dades",
+    "close": "Minimitzar llegenda",
+    "restore": "Mostrar {{n}} capa(es) tretes",
+    "tip": "Clic en un grup per amagar-lo o mostrar-lo · Alt/⌘-clic: només aquest grup",
+    "exclude": "Treure aquesta capa de la llegenda",
+    "hideGroup": "Amagar a l’escena",
+    "showGroup": "Mostrar a l’escena",
+    "aggregateFar": "De lluny es converteix en un resum.",
+    "density": "Densitat",
+    "less": "menys",
+    "more": "més",
+    "zoomInForDetail": "Apropa’t per veure cada element.",
+    "inCaptures": "a captures",
+    "inCapturesHint": "Mentre és oberta, la llegenda també surt a captures, clips i GIF. Minimitza-la per deixar-la fora.",
+    "asOf": "dades {{when}}",
+    "scale": "Escala",
+    "scaleHint": "Mostrar una barra d’escala (també a captures). Només es dibuixa quan la vista mira prou cap avall per ser certa.",
+    "scaleNeedsTopDown": "Inclina més la vista cap avall per mostrar una escala fiable.",
+    "northHint": "Mostrar el nord veritable de l’emplaçament (també a captures)",
+    "northNeedsSite": "El nord necessita un emplaçament ubicat (model, escaneig o capa georeferenciats).",
+    "move": "Moure a una altra cantonada (també a captures)"
+  },
+  "history": {
+    "bar": "Barra de temps",
+    "past": "Passat",
+    "pastHint": "Estàs veient dades enregistrades, no el present.",
+    "play": "Reproduir",
+    "pause": "Pausa",
+    "speed": "Velocitat de reproducció",
+    "when": "Moment mostrat",
+    "live": "En directe",
+    "liveHint": "Tornar al present",
+    "record": "Desar historial",
+    "recordHint": "Desa el passat d’aquesta font en aquest dispositiu per rebobinar-lo després (només es guarda el que canvia).",
+    "retention": "Conservar",
+    "hours": "{{n}} h",
+    "days": "{{n}} dies",
+    "sizeHint": "Espai usat en aquest dispositiu",
+    "view": "Veure historial",
+    "nothingYet": "Encara no hi ha res enregistrat: l’historial s’acumula mentre la capa és en directe.",
+    "spanH": "{{n}} h enregistrades",
+    "spanM": "{{n}} min enregistrats",
+    "clear": "Esborrar"
+  },
+  "traffic": {
+    "veryFluid": "Molt fluid",
+    "fluid": "Fluid",
+    "dense": "Dens",
+    "veryDense": "Molt dens",
+    "congestion": "Congestió",
+    "closed": "Tallat",
+    "noData": "Sense dades"
+  },
+  "join": {
+    "open": "Unir dades en directe…",
+    "title": "Unir una taula en directe",
+    "hint": "Els valors d’una taula que es refresca (CSV, “;”, registres amb “#”…) s’assignen a aquests elements per una clau — p. ex. l’estat del trànsit sobre els trams de carrer.",
+    "test": "Provar",
+    "headerless": "La taula no té fila de capçalera",
+    "namesPlaceholder": "Noms de columna, separats per comes (p. ex. id,hora,estat)",
+    "layerKey": "Clau en aquesta capa",
+    "tableKey": "Clau a la taula",
+    "timeColumn": "Hora de les dades",
+    "apply": "Unir",
+    "done": "Unit: la capa ara s’actualitza en directe."
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}}: {{n}} a {{layer}}",
+    "show": "Veure",
+    "newName": "Nova alerta",
+    "hint": "T’avisa quan els elements compleixen una condició, al moment o després de mantenir-la uns minuts. Els que alerten bateguen amb un anell vermell.",
+    "notLive": "Les alertes es comproven a cada refresc: activa l’actualització en directe d’aquesta capa.",
+    "enabled": "Activa",
+    "name": "Nom de l’alerta",
+    "remove": "Eliminar l’alerta",
+    "forMin": "Durant almenys",
+    "minutes": "min",
+    "add": "Nova alerta",
+    "fromGroup": "Des d’un grup…"
+  }
+}

@@ -241,6 +241,9 @@ export interface IFCMaterial {
 }
 
 /** Structured data returned by getItemData() */
+/** 2D overlay painted into captures (see ViewerAPI.addCapturePainter). */
+export type CapturePainter = (ctx: CanvasRenderingContext2D, width: number, height: number, s: number) => boolean
+
 export interface IFCItemData {
   /** IFC Name attribute */
   name: string | null
@@ -729,6 +732,16 @@ export interface ViewerAPI {
    */
   getElementsBox(ids: number[], modelId?: string): Promise<{ min: Vec3Like; max: Vec3Like } | null>
   /**
+   * Attributes + Psets/Qtos (same parse as getItemData) AND the world box of
+   * many elements at once — what the twin search indexes. Batched internally;
+   * entries come back in `ids` order, null where an element is unknown.
+   */
+  getElementsDetail(ids: number[], modelId: string): Promise<Array<{
+    expressId: number
+    data: IFCItemData | null
+    box: { min: Vec3Like; max: Vec3Like } | null
+  }>>
+  /**
    * The model's storeys, straight from its spatial structure (no validation
    * run needed): each with its name and every element contained under it.
    */
@@ -777,6 +790,13 @@ export interface ViewerAPI {
    * while held: call `release()` when the recording stops.
    */
   acquireRecordingCanvas(): { canvas: HTMLCanvasElement; release(): void }
+  /**
+   * Paint a 2D overlay into every capture that carries annotations — PNG
+   * snapshots, clip shots and the recording surface behind clips and GIFs. `s`
+   * is device pixels per CSS pixel, so an overlay keeps its on-screen size.
+   * Return true when something was drawn. Returns the unregister function.
+   */
+  addCapturePainter(paint: CapturePainter): () => void
   /**
    * Stable reference to the WebGL canvas (Capture Toolkit replay buffer).
    * Read-only access — callers must never mutate or re-parent the element.
@@ -829,6 +849,17 @@ export interface ViewerAPI {
    * THIS camera; the IFC model is never moved to accommodate them.
    */
   getPointClouds(): Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI>
+  /**
+   * Lazily load the vector layer subsystem (GeoJSON / WFS routes, zones,
+   * points). Separate chunk, created once per viewer.
+   */
+  getVectorLayers(): Promise<import('./layers/vector-layer-system').VectorLayerSystemAPI>
+  /**
+   * World-space ground height under (x, z) from the running map — terrain as
+   * displayed, or the basemap plane. Null when the map is off. Never creates
+   * the geo system.
+   */
+  mapGroundAt(x: number, z: number): number | null
   /**
    * The point cloud system if it is already loaded, else null. For callers that
    * must apply a change in the same tick they read it back (group moves read
@@ -1156,6 +1187,38 @@ function parseAssociations(hasAssociations: unknown): IFCMaterial[] {
 
 // ─── Helper: parse type-object property sets from IsTypedBy ──────────────────
 
+function parseItemData(raw: Record<string, unknown>): IFCItemData {
+  const { typeName, psets: typeProperties } = parseTypeProps(raw['IsTypedBy'])
+  return {
+    name:           attrStr(raw['Name']),
+    longName:       attrStr(raw['LongName']),
+    description:    attrStr(raw['Description']),
+    globalId:       attrStr(raw['GlobalId']),
+    objectType:     attrStr(raw['ObjectType']),
+    tag:            attrStr(raw['Tag']),
+    storey:         extractStorey(raw['ContainedInStructure']),
+    propertySets:   formatPsets(raw['IsDefinedBy']),
+    quantitySets:   formatQuantities(raw['IsDefinedBy']),
+    materials:      parseAssociations(raw['HasAssociations']),
+    typeProperties,
+    typeName,
+    raw,
+  }
+}
+
+/** What getItemData / getElementsDetail ask fragments for (one definition). */
+const ITEM_DATA_CONFIG = {
+  attributesDefault: false,
+  attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
+  relations: {
+    IsDefinedBy: { attributes: true, relations: true },
+    ContainedInStructure: { attributes: true, relations: false },
+    DefinesOccurrence: { attributes: false, relations: false },
+    IsTypedBy: { attributes: true, relations: true },
+    HasAssociations: { attributes: true, relations: true },
+  },
+}
+
 function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: IFCPropertySet[] } {
   if (!Array.isArray(isTypedBy) || isTypedBy.length === 0) return { typeName: null, psets: [] }
 
@@ -1410,6 +1473,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let videoLoadPromise: Promise<import('./video/video-system').VideoSystemAPI> | null = null
   let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
   let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
+  let vectorLoadPromise: Promise<import('./layers/vector-layer-system').VectorLayerSystemAPI> | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
@@ -2590,6 +2654,17 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // At most ~30 copies a second: the replay buffer samples at 24 fps, and a
   // blit per 60 Hz frame would be half wasted.
   let recording: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; holders: number; last: number } | null = null
+  /** Overlays that ride along in captures: the data legend, and whatever comes next. */
+  const capturePainters = new Set<CapturePainter>()
+  const paintCaptureOverlays = (ctx: CanvasRenderingContext2D, w: number, h: number, sc: number): boolean => {
+    let drew = false
+    for (const p of capturePainters) {
+      try { drew = p(ctx, w, h, sc) || drew } catch (err) {
+        console.debug('[Viewer] capture overlay failed:', err instanceof Error ? err.message : err)
+      }
+    }
+    return drew
+  }
   const RECORD_MIN_INTERVAL_MS = 1000 / 30
   const paintRecordingFrame = (): void => {
     const rec = recording
@@ -2605,7 +2680,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
     try {
       rec.ctx.drawImage(src, 0, 0)
-      measureSystem.paintLabels(rec.ctx, src.width, src.height, src.width / Math.max(1, src.clientWidth || src.width))
+      const sc = src.width / Math.max(1, src.clientWidth || src.width)
+      measureSystem.paintLabels(rec.ctx, src.width, src.height, sc)
+      paintCaptureOverlays(rec.ctx, src.width, src.height, sc)
     } catch (err) {
       console.debug('[Viewer] recording frame failed:', err instanceof Error ? err.message : err)
     }
@@ -2662,7 +2739,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     try {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(frame, 0, 0)
-      return measureSystem.paintLabels(ctx, canvas.width, canvas.height, s) ? canvas : frame
+      const labels = measureSystem.paintLabels(ctx, canvas.width, canvas.height, s)
+      const overlays = paintCaptureOverlays(ctx, canvas.width, canvas.height, s)
+      return labels || overlays ? canvas : frame
     } catch {
       return frame
     }
@@ -3126,62 +3205,44 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (!targetModel) return null
 
       try {
-        const [data] = await targetModel.getItemsData([expressId], {
-          attributesDefault: false,
-          attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
-          relations: {
-            // Property sets + quantity sets (IfcPropertySet + IfcElementQuantity)
-            IsDefinedBy: {
-              attributes: true,
-              relations: true,
-            },
-            // Spatial containment — to extract storey name
-            ContainedInStructure: {
-              attributes: true,
-              relations: false,
-            },
-            // Suppress inverse relations we don't need
-            DefinesOccurrence: {
-              attributes: false,
-              relations: false,
-            },
-            // IFC4: type object and its property sets
-            IsTypedBy: {
-              attributes: true,
-              relations: true,
-            },
-            // Materials via IfcRelAssociatesMaterial
-            HasAssociations: {
-              attributes: true,
-              relations: true,
-            },
-          },
-        })
+        const [data] = await targetModel.getItemsData([expressId], ITEM_DATA_CONFIG)
 
         if (!data) return null
 
-        const raw = data as Record<string, unknown>
-        const { typeName, psets: typeProperties } = parseTypeProps(raw['IsTypedBy'])
-
-        return {
-          name:           attrStr(raw['Name']),
-          longName:       attrStr(raw['LongName']),
-          description:    attrStr(raw['Description']),
-          globalId:       attrStr(raw['GlobalId']),
-          objectType:     attrStr(raw['ObjectType']),
-          tag:            attrStr(raw['Tag']),
-          storey:         extractStorey(raw['ContainedInStructure']),
-          propertySets:   formatPsets(raw['IsDefinedBy']),
-          quantitySets:   formatQuantities(raw['IsDefinedBy']),
-          materials:      parseAssociations(raw['HasAssociations']),
-          typeProperties,
-          typeName,
-          raw,
-        }
+        return parseItemData(data as Record<string, unknown>)
       } catch (err) {
         console.warn('[Viewer] getItemData error:', err)
         return null
       }
+    },
+
+    async getElementsDetail(ids, modelId) {
+      const model = modelObjects.get(modelId)
+      if (!model) return ids.map((expressId) => ({ expressId, data: null, box: null }))
+      const out: Array<{ expressId: number; data: IFCItemData | null; box: { min: Vec3Like; max: Vec3Like } | null }> = []
+      const BATCH = 400
+      for (let i = 0; i < ids.length; i += BATCH) {
+        const chunk = ids.slice(i, i + BATCH)
+        let items: unknown[] = []
+        let boxes: THREE.Box3[] = []
+        try { items = await model.getItemsData(chunk, ITEM_DATA_CONFIG) } catch (e) { console.debug('[Viewer] getElementsDetail data:', e) }
+        try { boxes = await model.getBoxes(chunk) } catch (e) { console.debug('[Viewer] getElementsDetail boxes:', e) }
+        chunk.forEach((expressId, k) => {
+          const raw = items[k] as Record<string, unknown> | undefined
+          const b = boxes[k]
+          out.push({
+            expressId,
+            data: raw ? parseItemData(raw) : null,
+            box: b && !b.isEmpty()
+              ? { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } }
+              : null,
+          })
+        })
+        // Yield between batches: indexing a 20 000-element model must not
+        // freeze the orbit controls.
+        await new Promise((r) => setTimeout(r, 0))
+      }
+      return out
     },
 
     resetCamera() {
@@ -4034,6 +4095,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           up:        { x: up.x, y: up.y, z: up.z },
           fovDeg,
           aspect,
+          ...(isPersp ? {} : {
+            orthoWorldHeight: ((cam as THREE.OrthographicCamera).top - (cam as THREE.OrthographicCamera).bottom)
+              / Math.max(1e-9, (cam as THREE.OrthographicCamera).zoom),
+          }),
         }
       } catch {
         return null
@@ -4255,7 +4320,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
               if (ctx) {
                 ctx.drawImage(frame, 0, 0)
                 const s = frame.width / Math.max(1, frame.clientWidth || frame.width)
-                if (measureSystem.paintLabels(ctx, out.width, out.height, s)) return out.toDataURL('image/png')
+                const labels = measureSystem.paintLabels(ctx, out.width, out.height, s)
+                const overlays = paintCaptureOverlays(ctx, out.width, out.height, s)
+                if (labels || overlays) return out.toDataURL('image/png')
               }
             }
             return frame.toDataURL('image/png')
@@ -4270,6 +4337,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     acquireRecordingCanvas,
+
+    addCapturePainter(paint) {
+      capturePainters.add(paint)
+      return () => { capturePainters.delete(paint) }
+    },
 
     getCanvas(): HTMLCanvasElement | null {
       try {
@@ -4780,6 +4852,35 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return pointCloudInstance
     },
 
+    getVectorLayers() {
+      const self = this
+      vectorLoadPromise ??= import('./layers/vector-layer-system').then((m) => m.createVectorLayerSystem({
+        scene: world.scene.three,
+        getActiveCamera: () => world.camera.three,
+        getCanvas: () => self.getCanvas(),
+        frameBox: (min, max) => {
+          try {
+            const box = new THREE.Box3(min, max)
+            tuneSceneToBounds(box.clone())
+            // Routes and zones are read from above: keeping the current camera
+            // direction (fitToBox) frames a 1 km route edge-on from eye level.
+            // An oblique ~55° view from the south shows the layout AND heights.
+            const c = box.getCenter(new THREE.Vector3())
+            const size = box.getSize(new THREE.Vector3())
+            const d = Math.max(size.x, size.z, size.y * 2) * 0.9
+            void world.camera.controls.setLookAt(c.x, c.y + d * 0.82, c.z + d * 0.57, c.x, c.y, c.z, true)
+          } catch (e) {
+            console.debug('[Viewer] vector layer fit failed:', e instanceof Error ? e.message : e)
+          }
+        },
+      }))
+      return vectorLoadPromise
+    },
+
+    mapGroundAt(x, z) {
+      return geoSystemInstance?.groundAtWorld(x, z) ?? null
+    },
+
     getPointClouds() {
       // Dynamic import keeps the point cloud engine, its shader and its readers
       // in their own chunk: a user who never opens a scan never downloads them.
@@ -4851,6 +4952,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       try { pointCloudInstance?.dispose() } catch { /* ok */ }
       pointCloudInstance = null
       pointCloudLoadPromise = null
+      if (vectorLoadPromise) void vectorLoadPromise.then((v) => v.dispose()).catch(() => { /* ok */ })
+      vectorLoadPromise = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
       solarSystemInstance = null

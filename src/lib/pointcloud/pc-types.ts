@@ -176,10 +176,12 @@ export interface DynamicFrameUpdate {
  *   map-conversion — both georeferenced, IFC has a full IfcMapConversion
  *   shared-crs     — both carry the same projected CRS
  *   geographic     — cloud is georeferenced, IFC only has IfcSite lat/lon
+ *   scene-anchor   — no IFC placement; cloud placed by its CRS against the
+ *                    scene's geographic anchor (geo/scene-anchor.ts)
  *   local          — neither is georeferenced, the bboxes plausibly coincide
  *   manual         — nothing known; centred on the model, user drives from there
  */
-export type AlignmentRung = 'map-conversion' | 'shared-crs' | 'geographic' | 'local' | 'manual'
+export type AlignmentRung = 'map-conversion' | 'shared-crs' | 'geographic' | 'scene-anchor' | 'local' | 'manual'
 
 export type AlignmentConfidence = 'exact' | 'high' | 'approximate' | 'manual'
 

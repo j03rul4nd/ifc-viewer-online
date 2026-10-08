@@ -130,6 +130,7 @@
       "map-conversion": "Georeferenziata (conversione cartografica)",
       "shared-crs": "Georeferenziata (griglia condivisa)",
       "geographic": "Ancoraggio geografico",
+      "scene-anchor": "Ancora della scena",
       "local": "Coordinate locali condivise",
       "manual": "Posizionata a mano"
     },
@@ -158,7 +159,10 @@
       "unitFeet": "L'estensione suggerisce piedi — scalata di 0,3048.",
       "unitAssumed": "Unità non dichiarata; presunti metri.",
       "noCommonReference": "Nulla collega i due file, quindi la scansione è stata centrata sul modello. Usa gli scostamenti qui sotto per posizionarla.",
-      "cloudCrsUnknown": "La scansione nomina un sistema di coordinate di cui questa build non ha la definizione, quindi la sua georeferenziazione non è stata utilizzabile. Incolla qui sotto una definizione proj4 per sbloccarla."
+      "cloudCrsUnknown": "La scansione nomina un sistema di coordinate di cui questa build non ha la definizione, quindi la sua georeferenziazione non è stata utilizzabile. Incolla qui sotto una definizione proj4 per sbloccarla.",
+      "sceneAnchorSameGrid": "Posizionato tramite il suo CRS rispetto alla prima scansione georeferenziata (stessa griglia, nessuna riproiezione).",
+      "sceneAnchorReprojected": "Posizionato tramite il suo CRS rispetto all'ancora della scena, riproiettato tramite WGS84.",
+      "assumedVerticalDatum": "Si assume che tutte le scansioni condividano lo stesso riferimento altimetrico: il file non lo dichiara."
     },
     "manualWarning": "Questo posizionamento è un punto di partenza, non una misura.",
     "recompute": "Ricalcola l'allineamento",

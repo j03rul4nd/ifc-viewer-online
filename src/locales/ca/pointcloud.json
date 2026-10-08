@@ -130,6 +130,7 @@
       "map-conversion": "Georeferenciat (conversió cartogràfica)",
       "shared-crs": "Georeferenciat (quadrícula compartida)",
       "geographic": "Ancoratge geogràfic",
+      "scene-anchor": "Àncora de l'escena",
       "local": "Coordenades locals compartides",
       "manual": "Col·locat a mà"
     },
@@ -158,7 +159,10 @@
       "unitFeet": "L'extensió suggereix peus — escalat per 0,3048.",
       "unitAssumed": "Unitat no declarada; se suposen metres.",
       "noCommonReference": "Res no lliga els dos fitxers, així que l'escaneig s'ha centrat al model. Fes servir els desplaçaments de sota per col·locar-lo.",
-      "cloudCrsUnknown": "L'escaneig anomena un sistema de coordenades del qual aquesta versió no té definició, així que no s'ha pogut fer servir la seva georeferenciació. Enganxa a sota una definició proj4 per desbloquejar-la."
+      "cloudCrsUnknown": "L'escaneig anomena un sistema de coordenades del qual aquesta versió no té definició, així que no s'ha pogut fer servir la seva georeferenciació. Enganxa a sota una definició proj4 per desbloquejar-la.",
+      "sceneAnchorSameGrid": "Situat pel seu CRS respecte al primer escaneig georeferenciat (mateixa quadrícula, sense reprojectar).",
+      "sceneAnchorReprojected": "Situat pel seu CRS respecte a l'àncora de l'escena, reprojectat a través de WGS84.",
+      "assumedVerticalDatum": "Se suposa que tots els escanejos fan servir la mateixa referència d'altures: el fitxer no la declara."
     },
     "manualWarning": "Aquesta col·locació és un punt de partida, no pas un mesurament.",
     "recompute": "Torna a calcular l'alineació",

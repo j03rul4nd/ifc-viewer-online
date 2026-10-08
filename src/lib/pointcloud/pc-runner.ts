@@ -22,6 +22,8 @@ import { modelRegistry } from '../model-registry'
 import { ensureGeorefExtracted } from '../geo/geo-extract-runner'
 import { resolvePlacement } from '../geo/placement'
 import { useGeoStore } from '../../stores/geoStore'
+import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
+import { anchorFromGridFrame, anchorToPlacement, type SceneAnchor } from '../geo/scene-anchor'
 import { usePointCloudStore, registerOffsetPersistence } from '../../stores/pointCloudStore'
 import { createLogger } from '../logger'
 import { detectFormat } from './pc-format'
@@ -133,6 +135,18 @@ const streamingClouds = new Set<string>()
 // Done at module load, which happens the first time anything point-cloud-shaped
 // is opened — exactly when a placement could first be made.
 registerOffsetPersistence(saveOffset, saveCloudUpAxis)
+
+// A scan-made anchor lives exactly as long as there are scans. Keeping it after
+// the last one goes would align the NEXT scan — possibly in another city —
+// against a point kilometres away, which is float32 jitter at best.
+usePointCloudStore.subscribe((s, prev) => {
+  if (s.clouds.length > 0 || prev.clouds.length === 0) return
+  const anchor = useSceneAnchorStore.getState().anchor
+  if (!anchor || anchor.source !== 'pointcloud') return
+  const geo = useGeoStore.getState()
+  if (geo.placement && isSceneAnchorPlacement(geo.placement)) geo.setPlacement(null)
+  useSceneAnchorStore.getState().clear()
+})
 
 /**
  * Run post-header work that must never be able to hang the load.
@@ -637,6 +651,7 @@ async function placeFromHeader(
     placement: geo.placement,
     modelBounds: inputs.modelBounds,
     modelCoordination: inputs.modelCoordination,
+    sceneAnchor: geo.placement ? null : claimSceneAnchor(frame, opts.file.name),
   })
   // A placement the user tuned for THIS file wins over a fresh guess — the same
   // precedence geo/placement.ts gives a saved map placement.
@@ -1180,6 +1195,7 @@ export async function realignCloud(
     placement: geo.placement,
     modelBounds: opts.modelBounds,
     modelCoordination: opts.modelCoordination,
+    sceneAnchor: geo.placement ? null : claimSceneAnchor(current.frame, current.fileName),
   })
   alignment.offset = current.alignment?.offset ?? alignment.offset
 
@@ -1187,6 +1203,30 @@ export async function realignCloud(
   usePointCloudStore.getState().updateCloud(cloudId, { alignedToModelId: opts.modelId })
   opts.system.setAlignment(cloudId, alignment)
   return true
+}
+
+// ── Scene anchor (no IFC placement) ────────────────────────────────────────────
+
+/**
+ * The anchor this cloud aligns against when no IFC placement exists: the one
+ * already in force, or — if this is the first georeferenced layer — one made
+ * from this cloud. A fresh anchor also becomes the map's placement when the map
+ * has none, so "open map" after dropping only a scan shows the scan's street.
+ */
+function claimSceneAnchor(frame: SourceFrame, label: string): SceneAnchor | null {
+  const store = useSceneAnchorStore.getState()
+  if (store.anchor) return store.anchor
+  const fresh = anchorFromGridFrame(frame, label)
+  if (!fresh) return null
+  const anchor = store.claim(fresh)
+  const geo = useGeoStore.getState()
+  if (!geo.placement) geo.setPlacement(anchorToPlacement(anchor))
+  return anchor
+}
+
+function isSceneAnchorPlacement(p: GeoPlacement): boolean {
+  const a = useSceneAnchorStore.getState().anchor
+  return !!a && a.source !== 'ifc' && p.source !== 'ifc' && p.lat === a.lat && p.lon === a.lon
 }
 
 // ── IFC side of the ladder ─────────────────────────────────────────────────────
@@ -1210,8 +1250,11 @@ async function resolveIfcGeoref(
   try {
     const georef = await ensureGeorefExtracted(modelId)
     // A placement the user already set in map mode wins, exactly as elsewhere.
+    // Except the one a scan wrote for the map (claimSceneAnchor): that describes
+    // the SCAN's centre, and reading it as the model's would land every later
+    // scan against the wrong building.
     const existing = useGeoStore.getState().placement
-    if (existing) return { georef, placement: existing }
+    if (existing && !isSceneAnchorPlacement(existing)) return { georef, placement: existing }
 
     const cacheKey = modelRegistry.get(modelId)?.opfsCacheKey ?? null
     const resolved = resolvePlacement(cacheKey, georef, modelBounds)
