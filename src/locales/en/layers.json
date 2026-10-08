@@ -440,6 +440,13 @@
       "sound": "Sound",
       "denied": "Notifications are blocked for this site. Allow them in the browser’s site settings.",
       "background": "Layers with alerts keep refreshing in the background (at most once a minute) while this tab stays open."
+    },
+    "log": {
+      "title": "Log ({{n}})",
+      "start": "{{rule}} started: {{n}}",
+      "clear": "{{rule}} cleared",
+      "export": "Export CSV",
+      "clearAll": "Clear log"
     }
   }
 }

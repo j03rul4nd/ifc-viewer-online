@@ -440,6 +440,13 @@
       "sound": "So",
       "denied": "Les notificacions estan bloquejades per a aquest lloc. Permet-les a la configuració del lloc del navegador.",
       "background": "Les capes amb alertes continuen actualitzant-se en segon pla (com a màxim un cop per minut) mentre la pestanya estigui oberta."
+    },
+    "log": {
+      "title": "Registre ({{n}})",
+      "start": "{{rule}} comença: {{n}}",
+      "clear": "{{rule}} s’esvaeix",
+      "export": "Exportar CSV",
+      "clearAll": "Buidar el registre"
     }
   }
 }
