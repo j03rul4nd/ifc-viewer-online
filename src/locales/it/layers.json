@@ -440,6 +440,13 @@
       "sound": "Suono",
       "denied": "Le notifiche sono bloccate per questo sito. Consentile nelle impostazioni del sito del browser.",
       "background": "I livelli con avvisi continuano ad aggiornarsi in background (al massimo una volta al minuto) finché la scheda resta aperta."
+    },
+    "log": {
+      "title": "Registro ({{n}})",
+      "start": "{{rule}} inizia: {{n}}",
+      "clear": "{{rule}} rientrato",
+      "export": "Esporta CSV",
+      "clearAll": "Svuota registro"
     }
   }
 }

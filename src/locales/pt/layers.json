@@ -440,6 +440,13 @@
       "sound": "Som",
       "denied": "As notificações estão bloqueadas para este site. Permita-as nas definições do site do navegador.",
       "background": "As camadas com alertas continuam a atualizar-se em segundo plano (no máximo uma vez por minuto) enquanto o separador estiver aberto."
+    },
+    "log": {
+      "title": "Registo ({{n}})",
+      "start": "{{rule}} começa: {{n}}",
+      "clear": "{{rule}} terminou",
+      "export": "Exportar CSV",
+      "clearAll": "Limpar registo"
     }
   }
 }

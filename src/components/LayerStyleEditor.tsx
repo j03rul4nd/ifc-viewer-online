@@ -19,6 +19,7 @@ import { newAlertId, type AlertRule } from '../lib/layers/alerts'
 import {
   getNotifySettings, setNotifySettings, onNotifySettings, systemPermission, enableSystemNotifications,
 } from '../lib/layers/alert-notify'
+import { getAlertLog, onAlertLog, clearAlertLog, alertLogCsv } from '../lib/layers/alert-log'
 import { inferSchema } from '../lib/twin/flatten-props'
 import {
   groupCounts, valueCounts, newGroupId, defaultGroupStyle, RAMPS,
@@ -611,6 +612,7 @@ function AlertsTab({ layer, rows, schema, t }: { layer: VectorLayer; rows: Rows;
         )
       })}
       {rules.length > 0 && <NotifyOptions t={t} />}
+      <AlertLog layer={layer} t={t} />
       <div className="flex items-center gap-1 flex-wrap">
         <button className={btn} onClick={() => add()}>+ {t('alerts.add')}</button>
         {groups.length > 0 && (
@@ -648,6 +650,55 @@ function NotifyOptions({ t }: { t: T }) {
         {t('alerts.notify.sound')}
       </label>
       {(ns.system || ns.sound) && <span className="text-[var(--text-faint)]">{t('alerts.notify.background')}</span>}
+    </div>
+  )
+}
+
+/** What alerted on this layer and when: newest first, exportable. */
+function AlertLog({ layer, t }: { layer: VectorLayer; t: T }) {
+  const all = useSyncExternalStore(onAlertLog, getAlertLog)
+  const mine = useMemo(() => all.filter((e) => e.layerId === layer.id), [all, layer.id])
+  const [open, setOpen] = useState(false)
+  if (mine.length === 0) return null
+  const today = new Date().toDateString()
+  const when = (at: number): string => {
+    const d = new Date(at)
+    const hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return d.toDateString() === today ? hm : `${d.toLocaleDateString([], { day: '2-digit', month: '2-digit' })} ${hm}`
+  }
+  const exportCsv = (): void => {
+    const url = URL.createObjectURL(new Blob([alertLogCsv(mine)], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${layer.name.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'layer'}-alerts.csv`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+  return (
+    <div className="flex flex-col gap-1" data-testid="alert-log">
+      <button className="self-start text-[10px] text-[var(--accent)] hover:underline" onClick={() => setOpen(!open)}>
+        {open ? '▾' : '▸'} {t('alerts.log.title', { n: mine.length })}
+      </button>
+      {open && (
+        <>
+          <div className="flex flex-col max-h-[180px] overflow-y-auto rounded-[6px] border border-[var(--border)]">
+            {[...mine].reverse().slice(0, 100).map((e, i) => (
+              <div key={i} className="flex items-baseline gap-1.5 px-1.5 py-1 text-[10px] border-b border-[var(--border)] last:border-b-0">
+                <span className="shrink-0 tabular-nums text-[var(--text-faint)]">{when(e.at)}</span>
+                <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${e.kind === 'start' ? 'bg-[#ff3b30]' : 'bg-[#5ce27a]'}`} />
+                <span className="min-w-0 text-[var(--text)]">
+                  {e.kind === 'start' ? t('alerts.log.start', { rule: e.rule, n: e.n }) : t('alerts.log.clear', { rule: e.rule })}
+                  {e.sample.length > 0 && <span className="text-[var(--text-dim)]"> · {e.sample.join(', ')}{e.n > e.sample.length ? '…' : ''}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            <button className={btn} onClick={exportCsv}>{t('alerts.log.export')}</button>
+            <button className={btn} onClick={() => clearAlertLog(layer.id)}>{t('alerts.log.clearAll')}</button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
