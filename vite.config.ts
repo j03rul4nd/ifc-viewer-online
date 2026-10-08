@@ -53,7 +53,9 @@ function injectLandingContent(): import('vite').Plugin {
 
       const block = [
         '<noscript>',
-        `<h1>${esc(t.hero.h1)} ${esc(t.hero.h1Accent)}</h1>`,
+        // index.html's own <noscript> already carries the page <h1>; a second
+        // one here gave the home two competing headings.
+        `<h2>${esc(t.hero.h1)} ${esc(t.hero.h1Accent)}</h2>`,
         `<p>${esc(t.hero.subtitleFull)}</p>`,
         `<section><h2>${esc(t.featuresSection.title)}</h2><p>${esc(t.featuresSection.subtitle)}</p>${featuresHtml}</section>`,
         `<section><h2>${esc(t.howItWorksSection.title)}</h2>${stepsHtml}</section>`,
