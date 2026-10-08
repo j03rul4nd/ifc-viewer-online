@@ -2,6 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/blog/ifc-model-checker-guide", "destination": "/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/blog/ifc-model-checker-guide/", "destination": "/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-guide", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-guide/", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/badge", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_badge" },
     { "source": "/r",     "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_r" },

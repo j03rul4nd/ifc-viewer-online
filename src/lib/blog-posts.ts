@@ -281,7 +281,7 @@ export interface BlogPost {
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
-export const BLOG_POSTS: BlogPost[] = [
+const EN_POSTS_SOURCE: BlogPost[] = [
   ...SHANGHAI_POSTS_EN,
   {
     slug: 'iso-19650-file-naming-convention',
@@ -10565,12 +10565,46 @@ export const BLOG_POSTS_FR: BlogPost[] = [
 
 // ─── All posts by language ────────────────────────────────────────────────────
 
-export const ALL_BLOG_POSTS: BlogPost[] = [
+// ─── Retired posts ────────────────────────────────────────────────────────────
+// Posts merged into another one because they competed for the same query.
+// Search Console showed several "IFC model checker" posts each stuck on page
+// 3–5; none of them could win. A retired post stops being published in every
+// language, internal links to it point at its replacement, and vercel.json
+// 301s the old URLs. Its data stays here so the translations are not lost.
+
+export const RETIRED_POSTS: Readonly<Record<string, string>> = {
+  'ifc-model-checker-guide': 'ifc-model-checker',
+}
+
+function relinkRetired(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(relinkRetired)
+  if (!value || typeof value !== 'object') return value
+  const retired = typeof (value as { to?: unknown }).to === 'string' && (value as { to: string }).to in RETIRED_POSTS
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(value)) {
+    // A deep link names a heading of the retired post; the replacement has its own.
+    if (retired && k === 'section') continue
+    out[k] = retired && k === 'to' ? RETIRED_POSTS[v as string] : relinkRetired(v)
+  }
+  return out
+}
+
+/** Drop retired posts and point links at their replacements. */
+export function withoutRetired(posts: BlogPost[]): BlogPost[] {
+  return posts
+    .filter((p) => !(p.slug in RETIRED_POSTS) && !((p.translationKey ?? '') in RETIRED_POSTS))
+    .map((p) => relinkRetired(p) as BlogPost)
+}
+
+/** English library as published (retired posts removed). */
+export const BLOG_POSTS: BlogPost[] = withoutRetired(EN_POSTS_SOURCE)
+
+export const ALL_BLOG_POSTS: BlogPost[] = withoutRetired([
   ...BLOG_POSTS,
   ...BLOG_POSTS_ES,
   ...BLOG_POSTS_DE,
   ...BLOG_POSTS_FR,
-]
+])
 
 // ─── Languages loaded on demand ───────────────────────────────────────────────
 // Every other language's library is a translation of the English one
@@ -10609,7 +10643,7 @@ export function loadBlogLanguage(lang: string): Promise<void> {
   let pending = pendingPacks.get(lang)
   if (!pending) {
     pending = LAZY_PACKS[lang]()
-      .then((posts) => { loadedPacks.set(lang, posts) })
+      .then((posts) => { loadedPacks.set(lang, withoutRetired(posts)) })
       .finally(() => pendingPacks.delete(lang))
     pendingPacks.set(lang, pending)
   }
@@ -10618,7 +10652,7 @@ export function loadBlogLanguage(lang: string): Promise<void> {
 
 /** Make a pack readable without fetching it — for code that imported it directly. */
 export function registerBlogPosts(lang: string, posts: BlogPost[]): void {
-  loadedPacks.set(lang, posts)
+  loadedPacks.set(lang, withoutRetired(posts))
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
