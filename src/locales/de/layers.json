@@ -501,5 +501,16 @@
     "secretsRemoved": "{{n}} Schlüssel oder Tokens aus URLs entfernt.",
     "imported": "{{n}} Ebenen hinzugefügt.",
     "importFailed": "{{n}} konnten nicht geladen werden."
+  },
+  "graduated": {
+    "title": "Nach einer Zahl einfärben",
+    "classes": "Anzahl Klassen",
+    "nClasses": "{{n}} Klassen",
+    "method": "Aufteilung",
+    "quantile": "Gleich viele je Klasse",
+    "equal": "Gleiche Schritte",
+    "ramp": "Farben",
+    "reverse": "Umkehren",
+    "create": "{{n}} Gruppen nach Bereich erstellen"
   }
 }
