@@ -418,7 +418,14 @@
     "nothingYet": "尚无记录：图层实时更新时会累积历史。",
     "spanH": "已记录 {{n}} 小时",
     "spanM": "已记录 {{n}} 分钟",
-    "clear": "删除"
+    "clear": "删除",
+    "chart": "随时间变化",
+    "chartField": "图表字段",
+    "chartRange": "时间范围",
+    "chartMinMax": "最小 {{min}} · 最大 {{max}}",
+    "chartNow": "当前 {{v}}",
+    "chartEmpty": "此范围内没有记录到变化。",
+    "chartAll": "全部"
   },
   "traffic": {
     "veryFluid": "非常畅通",

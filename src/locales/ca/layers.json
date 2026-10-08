@@ -418,7 +418,14 @@
     "nothingYet": "Encara no hi ha res enregistrat: l’historial s’acumula mentre la capa és en directe.",
     "spanH": "{{n}} h enregistrades",
     "spanM": "{{n}} min enregistrats",
-    "clear": "Esborrar"
+    "clear": "Esborrar",
+    "chart": "En el temps",
+    "chartField": "Camp a representar",
+    "chartRange": "Interval de temps",
+    "chartMinMax": "mín {{min}} · màx {{max}}",
+    "chartNow": "ara {{v}}",
+    "chartEmpty": "Sense canvis enregistrats en aquest interval.",
+    "chartAll": "Tot"
   },
   "traffic": {
     "veryFluid": "Molt fluid",

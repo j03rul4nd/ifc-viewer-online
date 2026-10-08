@@ -418,7 +418,14 @@
     "nothingYet": "Rien d’enregistré pour l’instant : l’historique s’accumule tant que la couche est en direct.",
     "spanH": "{{n}} h enregistrées",
     "spanM": "{{n}} min enregistrées",
-    "clear": "Supprimer"
+    "clear": "Supprimer",
+    "chart": "Dans le temps",
+    "chartField": "Champ à tracer",
+    "chartRange": "Plage de temps",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "maintenant {{v}}",
+    "chartEmpty": "Aucun changement enregistré sur cette plage.",
+    "chartAll": "Tout"
   },
   "traffic": {
     "veryFluid": "Très fluide",

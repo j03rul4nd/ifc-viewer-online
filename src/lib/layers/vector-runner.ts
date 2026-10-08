@@ -52,7 +52,7 @@ import { lonLatToScene } from '../geo/scene-anchor'
 import type { LiveConfig, HistoryConfig } from '../../stores/vectorLayerStore'
 import type { AlertRule } from './alerts'
 import { indexedDbBackend, createRecorder, type HistoryBackend } from './history-store'
-import { rebuildAt, type Frame } from './history-codec'
+import { rebuildAt, featureSeries, type Frame, type FeaturePoint } from './history-codec'
 
 /**
  * The data the scene shows for a layer: its rebuilt past while time-
@@ -1406,4 +1406,21 @@ export async function attachJoin(
   setLive(layerId, { enabled: true, intervalS, animate: false })
   setHistory(layerId, {})
   return { ok: true, id: layerId }
+}
+
+// ── A feature's own history (the selected-feature chart) ───────────────────────
+
+/**
+ * What the recording knows about one feature of a layer: its properties each
+ * time they changed. Null when the layer records nothing. Read from the
+ * browser's own history store — no request to the source.
+ */
+export async function featureHistory(layerId: string, featureIndex: number): Promise<FeaturePoint[] | null> {
+  const l = useVectorLayerStore.getState().layers.find((x) => x.id === layerId)
+  if (!l?.data || !l.history?.enabled) return null
+  const f = l.data.features[featureIndex]
+  if (!f) return null
+  const key = featureKey(f, featureIndex, resolveIdentity(l.data, l.live?.idField))
+  const frames = framesCache.get(seriesOf(layerId)) ?? await historyBackend.load(seriesOf(layerId))
+  return featureSeries(frames, key)
 }

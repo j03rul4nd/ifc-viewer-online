@@ -418,7 +418,14 @@
     "nothingYet": "Ainda nada gravado: o histórico acumula-se enquanto a camada está em direto.",
     "spanH": "{{n}} h gravadas",
     "spanM": "{{n}} min gravados",
-    "clear": "Apagar"
+    "clear": "Apagar",
+    "chart": "Ao longo do tempo",
+    "chartField": "Campo a representar",
+    "chartRange": "Intervalo de tempo",
+    "chartMinMax": "mín {{min}} · máx {{max}}",
+    "chartNow": "agora {{v}}",
+    "chartEmpty": "Sem alterações gravadas neste intervalo.",
+    "chartAll": "Tudo"
   },
   "traffic": {
     "veryFluid": "Muito fluido",
