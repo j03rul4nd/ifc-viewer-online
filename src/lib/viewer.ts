@@ -762,6 +762,13 @@ export interface ViewerAPI {
   setGridVisible(visible: boolean): boolean
   /** Express ids for IFC GlobalIds in one model (null where the model has no such element). */
   getIdsByGuids(guids: string[], modelId?: string): Promise<(number | null)[]>
+  /**
+   * Operational twin: paint / hide elements from live device state, in every
+   * model. `paint` = modelId → expressId → "#rrggbb:opacity"; null clears.
+   * Diffed against what is painted, so a refresh touches only what changed.
+   * Validation / IDS overlays win while on; the twin comes back when they end.
+   */
+  setTwinPaint(plan: { paint: Map<string, Map<number, string>>; hidden: Map<string, Set<number>> } | null): Promise<void>
   /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
   getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
   /**
@@ -1990,7 +1997,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     model: FRAGS.FragmentsModel, modelId: string, localId: number,
   ): Promise<void> {
     await model.resetHighlight([localId])
-    const mat = overlay.materialFor(modelId, localId)
+    const mat = overlay.materialFor(modelId, localId) ?? (overlayActive ? null : twinMaterialFor(modelId, localId))
     if (mat) {
       try { await model.highlight([localId], mat) } catch (e) {
         console.debug('[Viewer] restore overlay highlight failed:', e instanceof Error ? e.message : e)
@@ -2008,6 +2015,80 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Tracks the overlay on/off edge so we only frame the camera on a fresh enable
   // (not on every re-validation / re-paint while it's already on).
   let overlayActive = false
+
+  // ─── Operational twin channel ────────────────────────────────────────────────
+  // Live device state painted onto elements (see twin/devices.planPaint). Sits
+  // between the category palette and the validation overlay: the overlay wins
+  // while on (it ghosts everything anyway), and the twin is repainted whole
+  // when it ends or when a look/palette reset wiped every highlight.
+  type TwinPlan = { paint: Map<string, Map<number, string>>; hidden: Map<string, Set<number>> }
+  let twinWanted: TwinPlan = { paint: new Map(), hidden: new Map() }
+  let twinApplied: TwinPlan = { paint: new Map(), hidden: new Map() }
+  const twinMats = new Map<string, FRAGS.MaterialDefinition>()
+  let twinQueue: Promise<void> = Promise.resolve()
+  /** An art-directed look / palette owns the colours (hides still apply). */
+  let twinSuppressed = false
+
+  function twinMaterial(key: string): FRAGS.MaterialDefinition {
+    let m = twinMats.get(key)
+    if (!m) {
+      const [color, op] = key.split(':')
+      m = lookMaterial(color, Number(op) || 1)
+      twinMats.set(key, m)
+    }
+    return m
+  }
+
+  function twinMaterialFor(modelId: string, localId: number): FRAGS.MaterialDefinition | null {
+    const key = twinApplied.paint.get(modelId)?.get(localId)
+    return key ? twinMaterial(key) : null
+  }
+
+  async function reconcileTwin(): Promise<void> {
+    const want: TwinPlan = overlayActive || twinSuppressed ? { paint: new Map(), hidden: twinWanted.hidden } : twinWanted
+    const modelIds = new Set([...want.paint.keys(), ...want.hidden.keys(), ...twinApplied.paint.keys(), ...twinApplied.hidden.keys()])
+    const next: TwinPlan = { paint: new Map(), hidden: new Map() }
+    for (const modelId of modelIds) {
+      const model = modelObjects.get(modelId)
+      if (!model) continue
+      const before = twinApplied.paint.get(modelId) ?? new Map<number, string>()
+      const after = want.paint.get(modelId) ?? new Map<number, string>()
+      try {
+        const cleared = [...before.keys()].filter((id) => !after.has(id))
+        if (cleared.length && !overlayActive && !twinSuppressed) await model.resetHighlight(cleared)
+        const byKey = new Map<string, number[]>()
+        for (const [id, key] of after) {
+          if (before.get(id) === key) continue
+          const list = byKey.get(key)
+          if (list) list.push(id); else byKey.set(key, [id])
+        }
+        for (const [key, ids] of byKey) await model.highlight(ids, twinMaterial(key))
+        if (after.size) next.paint.set(modelId, after)
+
+        const hidBefore = twinApplied.hidden.get(modelId) ?? new Set<number>()
+        const hidAfter = want.hidden.get(modelId) ?? new Set<number>()
+        const show = [...hidBefore].filter((id) => !hidAfter.has(id))
+        const hide = [...hidAfter].filter((id) => !hidBefore.has(id))
+        if (show.length) await model.setVisible(show, true)
+        if (hide.length) await model.setVisible(hide, false)
+        if (hidAfter.size) next.hidden.set(modelId, hidAfter)
+      } catch (e) {
+        console.debug('[Viewer] twin paint failed:', e instanceof Error ? e.message : e)
+      }
+    }
+    twinApplied = next
+    // DEV: what the twin actually painted, for QA without reading pixels.
+    if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__ifcTwinPaint = next
+    if (selectedLocalId !== null && selectedModelId && next.paint.get(selectedModelId)?.has(selectedLocalId)) reassertSelection()
+  }
+
+  function scheduleTwin(forgetPainted = false): void {
+    twinQueue = twinQueue.then(async () => {
+      // Something else reset every highlight: what we "applied" is gone.
+      if (forgetPainted) twinApplied = { paint: new Map(), hidden: twinApplied.hidden }
+      await reconcileTwin()
+    }).catch(() => { /* logged inside */ })
+  }
 
   /** UX: when the overlay turns on, fly the camera to the flagged elements across
    *  the WHOLE scene (federation-aware) so the user sees their problems at once. */
@@ -2040,14 +2121,17 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   function applyOverlay(apply: () => void, enabled: boolean): void {
     if (enabled) {
       const wasActive = overlayActive
+      overlayActive = true
+      if (!wasActive) twinApplied = { paint: new Map(), hidden: twinApplied.hidden }
       apply()
       reassertSelection()
-      overlayActive = true
       if (!wasActive) frameOverlayFlags()
     } else {
+      const wasActive = overlayActive
       overlay.clear()
       reassertSelection()
       overlayActive = false
+      if (wasActive) scheduleTwin(true)
     }
   }
 
@@ -3509,6 +3593,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           if (o.modelId === modelId && o.ids.length) await model.highlight(o.ids, lookMaterial(o.color))
         }
       }
+      // Every highlight was reset: a look owns the colours; without one the twin comes back.
+      twinSuppressed = !!look
+      scheduleTwin(true)
       await fragmentsManager.core.update(true)
     },
 
@@ -4186,6 +4273,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           console.warn('[Viewer] applyModelPalette:', e)
         }
       }
+      twinSuppressed = !!palette
+      scheduleTwin(true)
       try { await fragmentsManager.core.update(true) } catch { /* next frame */ }
     },
 
@@ -4221,6 +4310,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const was = grid.visible
       grid.visible = visible
       return was
+    },
+
+    setTwinPaint(plan) {
+      twinWanted = plan ?? { paint: new Map(), hidden: new Map() }
+      scheduleTwin()
+      return twinQueue
     },
 
     async getIdsByGuids(guids: string[], modelId?: string) {

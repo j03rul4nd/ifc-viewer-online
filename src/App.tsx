@@ -107,6 +107,7 @@ const MeshPanel = React.lazy(() => import('./components/MeshPanel'))
 // Lazy: the data-layer panel pulls proj4 + the vector builders. Mounted only
 // once used, and kept mounted while layers exist (it owns their sync).
 const VectorLayersPanel = React.lazy(() => import('./components/VectorLayersPanel'))
+const TwinDevicesPanel = React.lazy(() => import('./components/TwinDevicesPanel'))
 // The data legend overlay: lazy for the same reason, mounted only with data layers.
 const DataLegend = React.lazy(() => import('./components/DataLegend'))
 const TimeBar = React.lazy(() => import('./components/TimeBar'))
@@ -163,6 +164,7 @@ import { appBus } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
 import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
 import type { GeoPlacement } from './lib/geo/geo-types'
+import { useTwinDeviceStore } from './stores/twinDeviceStore'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
@@ -907,6 +909,17 @@ export default function App() {
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
   const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending)
+  // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
+  const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
+  useEffect(() => {
+    if (!twinInUse) return
+    let stop: (() => void) | null = null
+    let cancelled = false
+    void import('./lib/twin/device-runner').then((m) => {
+      if (!cancelled) stop = m.startTwinRunner(() => viewerApiRef.current)
+    })
+    return () => { cancelled = true; stop?.() }
+  }, [twinInUse])
   // Layers saved on this device come back on boot. Only a flag here: the panel
   // (and with it proj4 + the vector chunk) mounts only when there IS something.
   useEffect(() => {
@@ -4101,6 +4114,14 @@ export default function App() {
                       <VectorLayersPanel
                         viewerApiRef={viewerApiRef}
                         onClose={() => useVectorLayerStore.getState().setPanelOpen(false)}
+                      />
+                    </React.Suspense>
+                  )}
+                  {twinInUse && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <TwinDevicesPanel
+                        selected={selected}
+                        onClose={() => useTwinDeviceStore.getState().setPanelOpen(false)}
                       />
                     </React.Suspense>
                   )}

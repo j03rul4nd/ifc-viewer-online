@@ -1,3 +1,4 @@
+import { TwinLiveSection } from './TwinLiveSection'
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -1302,6 +1303,8 @@ function PropertiesPanel({
           </AnimatePresence>
         </div>
       )}
+
+      <TwinLiveSection globalId={ifcData?.globalId} />
 
       {/* ── Property Sets ── */}
       {(psets.length > 0 || ifcState.status === 'loading') && (
