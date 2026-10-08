@@ -512,5 +512,11 @@
     "ramp": "Colours",
     "reverse": "Reverse",
     "create": "Create {{n}} groups by range"
+  },
+  "follow": {
+    "start": "Follow",
+    "on": "Following",
+    "stop": "Stop following",
+    "lost": "The followed feature left the feed."
   }
 }

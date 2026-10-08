@@ -512,5 +512,11 @@
     "ramp": "Farben",
     "reverse": "Umkehren",
     "create": "{{n}} Gruppen nach Bereich erstellen"
+  },
+  "follow": {
+    "start": "Folgen",
+    "on": "Folgt",
+    "stop": "Nicht mehr folgen",
+    "lost": "Das verfolgte Objekt ist nicht mehr im Feed."
   }
 }

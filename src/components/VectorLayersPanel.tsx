@@ -18,7 +18,7 @@ import { useGeoStore } from '../stores/geoStore'
 import { toast } from '../stores/toastStore'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
-  frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer,
+  frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
   exportLayersFile, importLayersFile, isLayersFile,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
@@ -390,14 +390,23 @@ function SelectedFeature() {
   const sel = useVectorLayerStore((s) => s.selected)
   const layer = useVectorLayerStore((s) => (s.selected ? s.layers.find((l) => l.id === s.selected!.layerId) : undefined))
   const feature = sel && layer?.data ? layer.data.features[sel.featureIndex] : undefined
+  const following = useVectorLayerStore((s) => !!s.following && s.following.layerId === sel?.layerId)
   if (!sel || !layer || !feature) return null
   const rows = flattenProperties(feature.properties)
   const stopCode = tmbStopCode(feature.properties)
+  const canFollow = !!layer.live?.enabled && feature.geometry.type === 'point'
   return (
     <div className="rounded-[7px] border border-[var(--accent)] px-2 py-1.5 flex flex-col gap-1" data-testid="layers-selected">
       <div className="flex items-center gap-1.5">
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: layer.style.color }} />
         <span className="flex-1 min-w-0 text-[11px] font-medium truncate">{layer.name} · {t(`kind.${feature.geometry.type}`)}</span>
+        {canFollow && (
+          <button onClick={() => followFeature(layer.id, following ? null : sel.featureIndex)} aria-pressed={following}
+            title={t(following ? 'follow.stop' : 'follow.start')}
+            className={`shrink-0 px-1.5 py-0.5 rounded-[5px] text-[10px] font-medium border ${following ? 'border-[var(--accent)] bg-[var(--accent)] text-white' : 'border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]'}`}>
+            {following ? '◉ ' : '◎ '}{t(following ? 'follow.on' : 'follow.start')}
+          </button>
+        )}
         <IconBtn label={t('action.close')} onClick={() => useVectorLayerStore.getState().setSelected(null)}>✕</IconBtn>
       </div>
       {rows.length === 0

@@ -512,5 +512,11 @@
     "ramp": "Cores",
     "reverse": "Inverter",
     "create": "Criar {{n}} grupos por intervalos"
+  },
+  "follow": {
+    "start": "Seguir",
+    "on": "A seguir",
+    "stop": "Deixar de seguir",
+    "lost": "O elemento seguido saiu da fonte."
   }
 }

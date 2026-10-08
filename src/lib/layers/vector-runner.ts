@@ -224,6 +224,34 @@ async function sync(): Promise<void> {
     log.debug(`layer ${layer.name}:`, stats)
   }
 
+  // ── Follow a moving feature ──
+  const fol = useVectorLayerStore.getState().following
+  if (fol) {
+    const fl = layers.find((l) => l.id === fol.layerId)
+    const data = fl ? displayData(fl) : null
+    const fKey = fl && data ? `${fol.layerId}|${fol.key}|${fl.fetchedAt}|${useVectorLayerStore.getState().historyData[fol.layerId]?.at ?? ''}` : ''
+    if (fKey && fKey !== followKey && fl && data) {
+      followKey = fKey
+      const identity = resolveIdentity(data, fl.live?.idField)
+      const i = data.features.findIndex((f, k) => featureKey(f, k, identity) === fol.key)
+      if (i < 0) {
+        // It left the feed (end of trip): stop, and say so.
+        useVectorLayerStore.getState().setFollowing(null)
+        toast(i18n.getFixedT(null, 'layers')('follow.lost'), 'info')
+      } else {
+        const p = projectLayer({ ...data, features: [data.features[i]] }, anchor, fl.heightMode)[0]?.lists[0]?.[0]
+        if (p) system.followTo({ x: p.x, y: ground(p.x, p.z), z: p.z })
+        // Keep the selection on it, wherever the feed put it this time —
+        // unless the user picked something else meanwhile: then they are done.
+        const sel = useVectorLayerStore.getState().selected
+        const stillOnIt = sel?.layerId === fol.layerId && (sel.featureIndex === followIndex || sel.featureIndex === i)
+        if (!stillOnIt) { useVectorLayerStore.getState().setFollowing(null); followIndex = -1 }
+        else if (sel.featureIndex !== i) useVectorLayerStore.getState().setSelected({ layerId: fol.layerId, featureIndex: i })
+        followIndex = i
+      }
+    }
+  } else followKey = ''
+
   // ── Alert rings ──
   const hitsNow = useVectorLayerStore.getState().alertHits
   const rewinding = !!useVectorLayerStore.getState().timeTravel
@@ -275,6 +303,21 @@ async function sync(): Promise<void> {
 }
 
 let highlightKey = ''
+let followKey = ''
+/** Index the followed feature had at the last refresh (to tell it from a new pick). */
+let followIndex = -1
+
+/** Start or stop riding with a feature (by identity, so a reordered feed is fine). */
+export function followFeature(layerId: string, featureIndex: number | null): void {
+  const st = useVectorLayerStore.getState()
+  if (featureIndex === null) { st.setFollowing(null); return }
+  const l = st.layers.find((x) => x.id === layerId)
+  const f = l?.data?.features[featureIndex]
+  if (!l?.data || !f) return
+  followKey = ''
+  followIndex = featureIndex
+  st.setFollowing({ layerId, key: featureKey(f, featureIndex, resolveIdentity(l.data, l.live?.idField)) })
+}
 
 // ── Alerts ─────────────────────────────────────────────────────────────────────
 

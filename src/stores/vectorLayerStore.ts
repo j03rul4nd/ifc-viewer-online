@@ -121,6 +121,12 @@ export interface VectorSelection {
   featureIndex: number
 }
 
+/** The camera rides with this feature (found again by identity on every refresh). */
+export interface VectorFollow {
+  layerId: string
+  key: string
+}
+
 /** localStorage key holding the persisted layer list (see vector-runner). */
 export const VECTOR_LAYERS_LS_KEY = 'ifc-vector-layers:v1'
 
@@ -136,6 +142,8 @@ interface VectorLayerState {
   layers: VectorLayer[]
   panelOpen: boolean
   selected: VectorSelection | null
+  following: VectorFollow | null
+  setFollowing: (f: VectorFollow | null) => void
   liveStatus: Record<string, LiveStatus>
   /** Legend overlay: off unless the viewer asked for it (remembered per device). */
   legendOpen: boolean
@@ -185,6 +193,8 @@ export const useVectorLayerStore = create<VectorLayerState>()(
       layers: [],
       panelOpen: false,
       selected: null,
+      following: null,
+      setFollowing: (f) => set({ following: f }, false, 'setFollowing'),
       liveStatus: {},
       legendOpen: readLegendOpen(),
       setLegendOpen: (open) => {
@@ -233,7 +243,8 @@ export const useVectorLayerStore = create<VectorLayerState>()(
         set((s) => ({ liveStatus: { ...s.liveStatus, [id]: status } }), false, 'setLiveStatus'),
       pendingFiles: [],
       restorePending: false,
-      setSelected: (sel) => set({ selected: sel }, false, 'setSelected'),
+      // Closing the selection also lets go of a followed feature.
+      setSelected: (sel) => set(sel ? { selected: sel } : { selected: null, following: null }, false, 'setSelected'),
       enqueueFiles: (files) =>
         set((s) => ({ pendingFiles: [...s.pendingFiles, ...files], panelOpen: true }), false, 'enqueueFiles'),
       takePendingFiles: () => {
@@ -259,6 +270,7 @@ export const useVectorLayerStore = create<VectorLayerState>()(
       remove: (id) => set((s) => ({
         layers: s.layers.filter((l) => l.id !== id),
         selected: s.selected?.layerId === id ? null : s.selected,
+        following: s.following?.layerId === id ? null : s.following,
       }), false, 'remove'),
       clear: () => set({ layers: [], selected: null }, false, 'clear'),
     }),

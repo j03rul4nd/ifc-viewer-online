@@ -512,5 +512,11 @@
     "ramp": "Colores",
     "reverse": "Invertir",
     "create": "Crear {{n}} grupos por rangos"
+  },
+  "follow": {
+    "start": "Seguir",
+    "on": "Siguiendo",
+    "stop": "Dejar de seguir",
+    "lost": "El elemento que seguías ha salido de la fuente."
   }
 }

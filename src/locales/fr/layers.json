@@ -512,5 +512,11 @@
     "ramp": "Couleurs",
     "reverse": "Inverser",
     "create": "Créer {{n}} groupes par plage"
+  },
+  "follow": {
+    "start": "Suivre",
+    "on": "Suivi",
+    "stop": "Arrêter le suivi",
+    "lost": "L’objet suivi a quitté le flux."
   }
 }
