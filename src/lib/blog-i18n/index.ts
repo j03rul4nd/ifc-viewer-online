@@ -6,7 +6,7 @@
 // main bundle. The app reaches the packs through loadBlogLanguage() in
 // blog-posts.ts (guarded by blog-i18n.test.ts).
 
-import { ALL_BLOG_POSTS, registerBlogPosts, type BlogPost } from '../blog-posts'
+import { ALL_BLOG_POSTS, registerBlogPosts, withoutRetired, type BlogPost } from '../blog-posts'
 import { BLOG_POSTS_CA } from './ca'
 import { BLOG_POSTS_DE_PACK } from './de'
 import { BLOG_POSTS_ES_PACK } from './es'
@@ -22,15 +22,15 @@ import { BLOG_POSTS_ZH } from './zh'
  * written directly in that language (blog-posts.ts), which they don't repeat.
  */
 export const TRANSLATED_POSTS: Record<string, BlogPost[]> = {
-  es: BLOG_POSTS_ES_PACK,
-  de: BLOG_POSTS_DE_PACK,
-  fr: BLOG_POSTS_FR_PACK,
-  pt: BLOG_POSTS_PT,
-  it: BLOG_POSTS_IT,
-  ca: BLOG_POSTS_CA,
-  zh: BLOG_POSTS_ZH,
-  ja: BLOG_POSTS_JA,
-  th: BLOG_POSTS_TH,
+  es: withoutRetired(BLOG_POSTS_ES_PACK),
+  de: withoutRetired(BLOG_POSTS_DE_PACK),
+  fr: withoutRetired(BLOG_POSTS_FR_PACK),
+  pt: withoutRetired(BLOG_POSTS_PT),
+  it: withoutRetired(BLOG_POSTS_IT),
+  ca: withoutRetired(BLOG_POSTS_CA),
+  zh: withoutRetired(BLOG_POSTS_ZH),
+  ja: withoutRetired(BLOG_POSTS_JA),
+  th: withoutRetired(BLOG_POSTS_TH),
 }
 
 // getBlogPost() & co. read the packs from here on, as they would after a load.
