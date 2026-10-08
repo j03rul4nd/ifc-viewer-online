@@ -433,6 +433,13 @@
     "forMin": "Pendant au moins",
     "minutes": "min",
     "add": "Nouvelle alerte",
-    "fromGroup": "À partir d’un groupe…"
+    "fromGroup": "À partir d’un groupe…",
+    "notify": {
+      "title": "Me prévenir même si je ne regarde pas",
+      "system": "Notification du navigateur quand l’onglet est en arrière-plan",
+      "sound": "Son",
+      "denied": "Les notifications sont bloquées pour ce site. Autorisez-les dans les paramètres du site du navigateur.",
+      "background": "Les couches avec alertes continuent de s’actualiser en arrière-plan (au plus une fois par minute) tant que l’onglet reste ouvert."
+    }
   }
 }

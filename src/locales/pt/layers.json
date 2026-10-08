@@ -433,6 +433,13 @@
     "forMin": "Durante pelo menos",
     "minutes": "min",
     "add": "Novo alerta",
-    "fromGroup": "A partir de um grupo…"
+    "fromGroup": "A partir de um grupo…",
+    "notify": {
+      "title": "Avisar-me mesmo sem estar a olhar",
+      "system": "Notificação do navegador com o separador em segundo plano",
+      "sound": "Som",
+      "denied": "As notificações estão bloqueadas para este site. Permita-as nas definições do site do navegador.",
+      "background": "As camadas com alertas continuam a atualizar-se em segundo plano (no máximo uma vez por minuto) enquanto o separador estiver aberto."
+    }
   }
 }
