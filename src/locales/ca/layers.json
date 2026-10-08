@@ -452,7 +452,14 @@
     "forMin": "Durant almenys",
     "minutes": "min",
     "add": "Nova alerta",
-    "fromGroup": "Des d’un grup…"
+    "fromGroup": "Des d’un grup…",
+    "notify": {
+      "title": "Avisa’m encara que no hi estigui mirant",
+      "system": "Notificació del navegador amb la pestanya en segon pla",
+      "sound": "So",
+      "denied": "Les notificacions estan bloquejades per a aquest lloc. Permet-les a la configuració del lloc del navegador.",
+      "background": "Les capes amb alertes continuen actualitzant-se en segon pla (com a màxim un cop per minut) mentre la pestanya estigui oberta."
+    }
   },
   "tmb": {
     "addKeys": "Afegir les teves claus de TMB",

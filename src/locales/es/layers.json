@@ -452,7 +452,14 @@
     "forMin": "Durante al menos",
     "minutes": "min",
     "add": "Nueva alerta",
-    "fromGroup": "Desde un grupo…"
+    "fromGroup": "Desde un grupo…",
+    "notify": {
+      "title": "Avisarme aunque no esté mirando",
+      "system": "Notificación del navegador con la pestaña en segundo plano",
+      "sound": "Sonido",
+      "denied": "Las notificaciones están bloqueadas para este sitio. Permítelas en los ajustes del sitio del navegador.",
+      "background": "Las capas con alertas siguen actualizándose en segundo plano (como mucho una vez por minuto) mientras la pestaña siga abierta."
+    }
   },
   "tmb": {
     "addKeys": "Añadir tus claves de TMB",

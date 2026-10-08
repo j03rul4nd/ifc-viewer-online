@@ -11,11 +11,14 @@
 //   Alerts      "tell me when…": a condition held for N minutes rings the
 //               feature in the scene and shows a notice.
 
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
 import { layerRows, focusVectorFeature } from '../lib/layers/vector-runner'
 import { newAlertId, type AlertRule } from '../lib/layers/alerts'
+import {
+  getNotifySettings, setNotifySettings, onNotifySettings, systemPermission, enableSystemNotifications,
+} from '../lib/layers/alert-notify'
 import { inferSchema } from '../lib/twin/flatten-props'
 import {
   groupCounts, valueCounts, newGroupId, defaultGroupStyle, RAMPS,
@@ -607,6 +610,7 @@ function AlertsTab({ layer, rows, schema, t }: { layer: VectorLayer; rows: Rows;
           </div>
         )
       })}
+      {rules.length > 0 && <NotifyOptions t={t} />}
       <div className="flex items-center gap-1 flex-wrap">
         <button className={btn} onClick={() => add()}>+ {t('alerts.add')}</button>
         {groups.length > 0 && (
@@ -617,6 +621,33 @@ function AlertsTab({ layer, rows, schema, t }: { layer: VectorLayer; rows: Rows;
           </select>
         )}
       </div>
+    </div>
+  )
+}
+
+/** How alerts reach someone who is not looking: per device, off by default. */
+function NotifyOptions({ t }: { t: T }) {
+  const ns = useSyncExternalStore(onNotifySettings, getNotifySettings)
+  const perm = systemPermission()
+  return (
+    <div className="flex flex-col gap-1 p-1.5 rounded-[6px] bg-[var(--surface-2)] text-[10px] text-[var(--text-dim)]">
+      <span className="font-medium text-[var(--text)]">{t('alerts.notify.title')}</span>
+      <label className="flex items-center gap-1.5">
+        <input type="checkbox" checked={ns.system && perm === 'granted'} disabled={perm === 'denied' || perm === 'unsupported'}
+          onChange={(e) => {
+            if (!e.target.checked) setNotifySettings({ system: false })
+            else void enableSystemNotifications().then((p) => {
+              if (p === 'denied') toast(t('alerts.notify.denied'), 'warning')
+            })
+          }} />
+        {t('alerts.notify.system')}
+      </label>
+      {perm === 'denied' && <span className="text-[var(--text-faint)]">{t('alerts.notify.denied')}</span>}
+      <label className="flex items-center gap-1.5">
+        <input type="checkbox" checked={ns.sound} onChange={(e) => setNotifySettings({ sound: e.target.checked })} />
+        {t('alerts.notify.sound')}
+      </label>
+      {(ns.system || ns.sound) && <span className="text-[var(--text-faint)]">{t('alerts.notify.background')}</span>}
     </div>
   )
 }

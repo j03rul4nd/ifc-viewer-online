@@ -452,7 +452,14 @@
     "forMin": "Mindestens",
     "minutes": "min",
     "add": "Neuer Alarm",
-    "fromGroup": "Aus einer Gruppe…"
+    "fromGroup": "Aus einer Gruppe…",
+    "notify": {
+      "title": "Auch benachrichtigen, wenn ich nicht hinschaue",
+      "system": "Browser-Benachrichtigung, wenn dieser Tab im Hintergrund ist",
+      "sound": "Ton",
+      "denied": "Benachrichtigungen sind für diese Website blockiert. Erlauben Sie sie in den Website-Einstellungen des Browsers.",
+      "background": "Ebenen mit Alarmen aktualisieren sich im Hintergrund weiter (höchstens einmal pro Minute), solange der Tab offen bleibt."
+    }
   },
   "tmb": {
     "addKeys": "Eigene TMB-Schlüssel hinzufügen",
