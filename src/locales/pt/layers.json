@@ -518,5 +518,10 @@
     "on": "A seguir",
     "stop": "Deixar de seguir",
     "lost": "O elemento seguido saiu da fonte."
+  },
+  "download": {
+    "title": "Descarregar dados",
+    "onlyVisible": "Só grupos visíveis",
+    "done": "Elementos exportados: {{n}}."
   }
 }

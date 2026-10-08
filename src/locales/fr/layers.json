@@ -518,5 +518,10 @@
     "on": "Suivi",
     "stop": "Arrêter le suivi",
     "lost": "L’objet suivi a quitté le flux."
+  },
+  "download": {
+    "title": "Télécharger les données",
+    "onlyVisible": "Groupes visibles seulement",
+    "done": "Objets exportés : {{n}}."
   }
 }

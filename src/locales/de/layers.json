@@ -518,5 +518,10 @@
     "on": "Folgt",
     "stop": "Nicht mehr folgen",
     "lost": "Das verfolgte Objekt ist nicht mehr im Feed."
+  },
+  "download": {
+    "title": "Daten herunterladen",
+    "onlyVisible": "Nur sichtbare Gruppen",
+    "done": "Exportierte Objekte: {{n}}."
   }
 }

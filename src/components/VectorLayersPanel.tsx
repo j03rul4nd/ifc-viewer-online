@@ -9,6 +9,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TmbArrivals } from './TmbPanels'
 import { FeatureHistory } from './FeatureHistory'
+import { exportIndices, toGeoJsonFile, toCsvFile } from '../lib/layers/layer-export'
+import { groupIndexOf } from '../lib/layers/style-groups'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -19,7 +21,7 @@ import { toast } from '../stores/toastStore'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
   frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
-  exportLayersFile, importLayersFile, importLayersFromUrl, isLayersFile,
+  exportLayersFile, importLayersFile, importLayersFromUrl, isLayersFile, layerRows,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { TwinSearch } from './TwinSearch'
@@ -360,6 +362,7 @@ function LayerRow({ layer, expanded, onToggleExpand }: { layer: VectorLayer; exp
           <LiveControls layer={layer} />
           <JoinForm layer={layer} />
           <LayerStyleEditor layer={layer} />
+          <LayerDownload layer={layer} />
           {d.skipped > 0 && <div className="text-[10px] text-[var(--text-faint)]">{t('warn.skipped', { count: d.skipped })}</div>}
           {layer.attribution && <div className="text-[10px] text-[var(--text-faint)]">© {layer.attribution}</div>}
         </div>
@@ -429,6 +432,47 @@ function SelectedFeature() {
         )}
       {stopCode && <TmbArrivals stopCode={stopCode} />}
       {layer.history?.enabled && <FeatureHistory layerId={layer.id} featureIndex={sel.featureIndex} refreshKey={layer.fetchedAt} />}
+    </div>
+  )
+}
+
+/** Take the layer's data out: what the scene shows, as GeoJSON or CSV. */
+function LayerDownload({ layer }: { layer: VectorLayer }) {
+  const { t } = useTranslation('layers')
+  const [onlyVisible, setOnlyVisible] = useState(false)
+  // While rewinding, the moment on screen is what gets exported.
+  const shown = useVectorLayerStore((s) => (s.timeTravel ? s.historyData[layer.id]?.data ?? layer.data : layer.data))
+  const hasGroups = layer.layerStyle.groups.length > 0
+  const save = (kind: 'geojson' | 'csv'): void => {
+    if (!shown) return
+    const rows = layerRows(shown)
+    const idx = exportIndices(rows, layer.layerStyle, onlyVisible && hasGroups)
+    const names = rows.map((r) => {
+      const g = groupIndexOf(r, layer.layerStyle)
+      return g < 0 ? '' : layer.layerStyle.groups[g].name
+    })
+    const text = kind === 'geojson' ? toGeoJsonFile(shown, idx, hasGroups ? names : undefined) : toCsvFile(shown, rows, idx, names)
+    const type = kind === 'geojson' ? 'application/geo+json' : 'text/csv;charset=utf-8'
+    const url = URL.createObjectURL(new Blob([text], { type }))
+    const a = document.createElement('a')
+    const stamp = new Date(useVectorLayerStore.getState().timeTravel?.t ?? Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-')
+    a.href = url
+    a.download = `${layer.name.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'layer'}-${stamp}.${kind === 'geojson' ? 'geojson' : 'csv'}`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    toast(t('download.done', { n: idx.length }), 'success')
+  }
+  const btnCls = 'px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)]'
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap pt-1.5 border-t border-[var(--border)] text-[10px]" data-testid="layer-download">
+      <span className="text-[var(--text-dim)]">{t('download.title')}</span>
+      <button className={btnCls} onClick={() => save('geojson')}>GeoJSON</button>
+      <button className={btnCls} onClick={() => save('csv')}>CSV</button>
+      {hasGroups && (
+        <label className="flex items-center gap-1 text-[var(--text-dim)]">
+          <input type="checkbox" checked={onlyVisible} onChange={(e) => setOnlyVisible(e.target.checked)} />{t('download.onlyVisible')}
+        </label>
+      )}
     </div>
   )
 }
