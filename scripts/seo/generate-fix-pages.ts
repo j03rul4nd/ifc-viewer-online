@@ -1028,7 +1028,9 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
   const catLabel = loc.catFull[base.category] ?? VALIDATION_CATEGORY_LABELS[base.category as keyof typeof VALIDATION_CATEGORY_LABELS] ?? base.category
   const sevLabel = loc.severity[base.severity] ?? base.severity
   const title = composeTitle(ui.pageTitle(label), ui.titleSuffix)
-  const metaDesc = clip(summary, 158)
+  // A one-line remediation summary makes a thin snippet (missing-storey was
+  // 51 chars); pad it with the rule description so the SERP has something to sell.
+  const metaDesc = clip(summary.length < 90 && description && description !== summary ? `${summary} ${description}` : summary, 158)
   const ogImg = fixCoverUrl(lang, base.category)
 
   const toolStepNames = new Set(tools.map((t) => ui.sFixIn(t.label)))
