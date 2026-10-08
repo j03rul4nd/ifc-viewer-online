@@ -564,6 +564,27 @@
       "cors": "Durch CORS blockiert — Proxy einrichten",
       "aborted": "Abgebrochen"
     },
-    "import": "Importieren"
+    "import": "Importieren",
+    "alertStarted": "Alarm: {{rule}} — {{name}}",
+    "alertShow": "Zeigen",
+    "alerting": "Alarm aktiv",
+    "alert": "Alarm",
+    "alertNow": "sofort",
+    "alertFor": "nach {{count}} Min.",
+    "label": "Beschriftung",
+    "labelNone": "Keine Beschriftung",
+    "query": "Auch jedes passende Element",
+    "matches": "{{count}} passend",
+    "queryAnyClass": "Jede Klasse",
+    "queryAnyStorey": "Jedes Geschoss",
+    "queryName": "Name enthält…",
+    "history": "Verlauf",
+    "retention": "Stunden an Messwerten auf diesem Gerät",
+    "historyOff": "Aus",
+    "clearHistory": "Löschen",
+    "timeLive": "Live",
+    "backToLive": "Zurück zu live",
+    "historyEmpty": "Aufzeichnung läuft… Regler nutzen, sobald Daten da sind",
+    "historyDisabled": "Aufzeichnung ist aus"
   }
 }

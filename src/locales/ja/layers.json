@@ -564,6 +564,27 @@
       "cors": "CORS によりブロック — プロキシを設定してください",
       "aborted": "キャンセル"
     },
-    "import": "インポート"
+    "import": "インポート",
+    "alertStarted": "アラート：{{rule}} — {{name}}",
+    "alertShow": "表示",
+    "alerting": "アラート中",
+    "alert": "アラート",
+    "alertNow": "即時",
+    "alertFor": "{{count}} 分後",
+    "label": "ラベル",
+    "labelNone": "ラベルなし",
+    "query": "条件に一致するすべての要素も",
+    "matches": "{{count}} 件一致",
+    "queryAnyClass": "任意のクラス",
+    "queryAnyStorey": "任意の階",
+    "queryName": "名前に含む…",
+    "history": "履歴",
+    "retention": "この端末に保存する読み取り時間",
+    "historyOff": "オフ",
+    "clearHistory": "消去",
+    "timeLive": "ライブ",
+    "backToLive": "ライブに戻る",
+    "historyEmpty": "記録中… データがあればスライダーを動かせます",
+    "historyDisabled": "記録はオフです"
   }
 }

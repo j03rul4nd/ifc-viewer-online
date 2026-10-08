@@ -564,6 +564,27 @@
       "cors": "ถูก CORS บล็อก — ตั้งค่าพร็อกซี",
       "aborted": "ยกเลิกแล้ว"
     },
-    "import": "นำเข้า"
+    "import": "นำเข้า",
+    "alertStarted": "แจ้งเตือน: {{rule}} — {{name}}",
+    "alertShow": "ดู",
+    "alerting": "กำลังแจ้งเตือน",
+    "alert": "แจ้งเตือน",
+    "alertNow": "ทันที",
+    "alertFor": "หลัง {{count}} นาที",
+    "label": "ป้าย",
+    "labelNone": "ไม่มีป้าย",
+    "query": "รวมทุกองค์ประกอบที่ตรงเงื่อนไข",
+    "matches": "ตรง {{count}} รายการ",
+    "queryAnyClass": "ทุกคลาส",
+    "queryAnyStorey": "ทุกชั้น",
+    "queryName": "ชื่อมีคำว่า…",
+    "history": "ประวัติ",
+    "retention": "จำนวนชั่วโมงที่เก็บค่าในอุปกรณ์นี้",
+    "historyOff": "ปิด",
+    "clearHistory": "ล้าง",
+    "timeLive": "สด",
+    "backToLive": "กลับสู่สด",
+    "historyEmpty": "กำลังบันทึก… เลื่อนแถบเมื่อมีข้อมูล",
+    "historyDisabled": "การบันทึกปิดอยู่"
   }
 }

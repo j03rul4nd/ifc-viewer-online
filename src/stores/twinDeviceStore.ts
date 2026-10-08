@@ -58,6 +58,16 @@ interface TwinDeviceState {
   status: Record<string, SourceStatus>
   /** Bumped on any change the painter must react to. */
   version: number
+  /** Time travel: the instant shown (ms), or null = live. */
+  timeAt: number | null
+  /** Readings at `timeAt`, rebuilt from the history (null while live). */
+  past: Map<string, Reading> | null
+  /** Recorded span over all sources, for the time slider. */
+  historySpan: { from: number; to: number } | null
+  /** Hours of readings kept on this device (0 = no recording). */
+  retentionH: number
+  /** "<bindingId>/<ruleId>" currently alerting. */
+  alerting: string[]
 
   setPanelOpen: (open: boolean) => void
   setActive: (on: boolean) => void
@@ -70,7 +80,15 @@ interface TwinDeviceState {
   ingest: (sourceId: string, readings: Reading[], at: number) => void
   setError: (sourceId: string, errorKey: string) => void
   setHeaders: (sourceId: string, headers: Record<string, string> | null) => void
+  setTimeAt: (t: number | null) => void
+  setPast: (past: Map<string, Reading> | null) => void
+  setHistorySpan: (span: { from: number; to: number } | null) => void
+  setRetentionH: (h: number) => void
+  setAlerting: (keys: string[]) => void
 }
+
+const RETENTION_KEY = 'ifc-twin-retention:v1'
+const initialRetention = (() => { try { const v = Number(localStorage.getItem(RETENTION_KEY)); return Number.isFinite(v) && localStorage.getItem(RETENTION_KEY) !== null ? v : 24 } catch { return 24 } })()
 
 const initial = load()
 
@@ -84,6 +102,20 @@ export const useTwinDeviceStore = create<TwinDeviceState>()(devtools((set, get) 
     readings: new Map(),
     status: {},
     version: 0,
+    timeAt: null,
+    past: null,
+    historySpan: null,
+    retentionH: initialRetention,
+    alerting: [],
+
+    setTimeAt: (timeAt) => set((s) => ({ timeAt, past: timeAt === null ? null : s.past, version: s.version + 1 })),
+    setPast: (past) => set((s) => ({ past, version: s.version + 1 })),
+    setHistorySpan: (historySpan) => set({ historySpan }),
+    setRetentionH: (retentionH) => {
+      try { localStorage.setItem(RETENTION_KEY, String(retentionH)) } catch { /* ignore */ }
+      set({ retentionH })
+    },
+    setAlerting: (alerting) => set({ alerting }),
 
     setPanelOpen: (panelOpen) => set({ panelOpen }),
     setActive: (active) => set((s) => ({ active, version: s.version + 1 })),
@@ -162,3 +194,6 @@ export const useTwinDeviceStore = create<TwinDeviceState>()(devtools((set, get) 
     },
   }
 }, { name: 'twinDeviceStore' }))
+
+/** What the scene shows: the past while time-travelling, else live readings. */
+export const selectShownReadings = (s: TwinDeviceState): Map<string, Reading> => s.past ?? s.readings

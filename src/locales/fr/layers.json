@@ -564,6 +564,27 @@
       "cors": "Bloqué par CORS — configurez un proxy",
       "aborted": "Annulé"
     },
-    "import": "Importer"
+    "import": "Importer",
+    "alertStarted": "Alerte : {{rule}} — {{name}}",
+    "alertShow": "Voir",
+    "alerting": "En alerte",
+    "alert": "Alerte",
+    "alertNow": "immédiatement",
+    "alertFor": "après {{count}} min",
+    "label": "Étiquette",
+    "labelNone": "Sans étiquette",
+    "query": "Aussi tout élément qui correspond",
+    "matches": "{{count}} correspondent",
+    "queryAnyClass": "Toute classe",
+    "queryAnyStorey": "Tout niveau",
+    "queryName": "Le nom contient…",
+    "history": "Historique",
+    "retention": "Heures de relevés conservées sur cet appareil",
+    "historyOff": "Désactivé",
+    "clearHistory": "Effacer",
+    "timeLive": "En direct",
+    "backToLive": "Revenir au direct",
+    "historyEmpty": "Enregistrement… déplacez le curseur dès qu'il y a des données",
+    "historyDisabled": "L'enregistrement est désactivé"
   }
 }

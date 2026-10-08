@@ -130,6 +130,22 @@ export interface TwinRule {
   match: 'all' | 'any'
   filters: Filter[]
   effect: TwinEffect
+  /** Raise an alert when this rule has applied for `forMin` minutes (null = no alert). */
+  alert?: { forMin: number } | null
+}
+
+/**
+ * Elements chosen by what they ARE rather than one by one: "every IfcSpace on
+ * Level 2", "every door whose name contains Garage". Re-resolved whenever the
+ * loaded models change, so a new file of the project joins automatically.
+ */
+export interface TargetQuery {
+  /** IFC classes (any of), case-insensitive; empty = any class. */
+  classes: string[]
+  /** Storey name contains (case-insensitive); empty = any storey. */
+  storey: string
+  /** Element name contains (case-insensitive); empty = any name. */
+  nameContains: string
 }
 
 export interface Binding {
@@ -144,6 +160,10 @@ export interface Binding {
   staleColor: string | null
   /** Seconds without a reading before the device counts as stale (0 = never). */
   staleAfterS: number
+  /** Extra targets chosen by query, on top of `targets`. */
+  query?: TargetQuery | null
+  /** Floating label over the elements with this metric's value (null = none). */
+  label?: { field: string } | null
 }
 
 let seq = 0
@@ -201,6 +221,58 @@ export function buildGuidIndex(trees: Record<string, SpatialNode[]>): Map<string
   return index
 }
 
+// ── Element catalog & queries ─────────────────────────────────────────────────
+
+export interface CatalogEntry extends ElementLoc {
+  globalId: string
+  ifcClass: string
+  name: string
+  /** Name of the IfcBuildingStorey that contains it ('' when none). */
+  storey: string
+}
+
+/** Every element of every loaded model with what a query can test. */
+export function buildCatalog(trees: Record<string, SpatialNode[]>): CatalogEntry[] {
+  const out: CatalogEntry[] = []
+  for (const [modelId, roots] of Object.entries(trees)) {
+    const visit = (n: SpatialNode, storey: string): void => {
+      const here = /^ifcbuildingstorey$/i.test(n.ifcClass) ? n.name || n.globalId : storey
+      out.push({ modelId, expressId: n.expressId, globalId: n.globalId, ifcClass: n.ifcClass, name: n.name, storey: here })
+      for (const e of n.containedElements) {
+        out.push({ modelId, expressId: e.expressId, globalId: e.globalId, ifcClass: e.ifcClass, name: e.name, storey: here })
+      }
+      n.children.forEach((c) => visit(c, here))
+    }
+    roots.forEach((r) => visit(r, ''))
+  }
+  return out
+}
+
+export const isEmptyQuery = (q: TargetQuery | null | undefined): boolean =>
+  !q || (q.classes.length === 0 && !q.storey.trim() && !q.nameContains.trim())
+
+export function queryMatches(q: TargetQuery, e: CatalogEntry): boolean {
+  if (isEmptyQuery(q)) return false
+  if (q.classes.length && !q.classes.some((c) => c.toUpperCase() === e.ifcClass.toUpperCase())) return false
+  if (q.storey.trim() && !e.storey.toLowerCase().includes(q.storey.trim().toLowerCase())) return false
+  if (q.nameContains.trim() && !e.name.toLowerCase().includes(q.nameContains.trim().toLowerCase())) return false
+  return true
+}
+
+/** Where a binding's elements are: explicit GlobalIds plus its query. */
+export function resolveLocs(b: Binding, guidIndex: Map<string, ElementLoc[]>, catalog: CatalogEntry[] = []): ElementLoc[] {
+  const out = b.targets.flatMap((t) => guidIndex.get(t.globalId) ?? [])
+  if (b.query && !isEmptyQuery(b.query)) {
+    const seen = new Set(out.map((l) => `${l.modelId}#${l.expressId}`))
+    for (const e of catalog) {
+      if (!queryMatches(b.query, e)) continue
+      const k = `${e.modelId}#${e.expressId}`
+      if (!seen.has(k)) { seen.add(k); out.push({ modelId: e.modelId, expressId: e.expressId }) }
+    }
+  }
+  return out
+}
+
 // ── Paint plan ────────────────────────────────────────────────────────────────
 
 export interface PaintPlan {
@@ -230,12 +302,13 @@ export function planPaint(
   readings: Map<string, Reading>,
   guidIndex: Map<string, ElementLoc[]>,
   now: number,
+  catalog: CatalogEntry[] = [],
 ): PaintPlan {
   const plan: PaintPlan = { paint: new Map(), hidden: new Map(), unresolved: [] }
   const claimed = new Set<string>()
   for (const b of bindings) {
-    const locs = b.targets.flatMap((t) => guidIndex.get(t.globalId) ?? [])
-    if (locs.length === 0) { if (b.targets.length > 0) plan.unresolved.push(b.id); continue }
+    const locs = resolveLocs(b, guidIndex, catalog)
+    if (locs.length === 0) { if (b.targets.length > 0 || !isEmptyQuery(b.query)) plan.unresolved.push(b.id); continue }
     const effect = effectOf(b, bindingState(b, readings.get(deviceKey(b.sourceId, b.deviceId)), now))
     if (!effect) continue
     for (const { modelId, expressId } of locs) {
@@ -261,9 +334,10 @@ export function readingsForElement(
   globalId: string,
   bindings: Binding[],
   readings: Map<string, Reading>,
+  entry?: CatalogEntry,
 ): Array<{ binding: Binding; reading: Reading | undefined }> {
   return bindings
-    .filter((b) => b.targets.some((t) => t.globalId === globalId))
+    .filter((b) => b.targets.some((t) => t.globalId === globalId) || (!!entry && !!b.query && queryMatches(b.query, entry)))
     .map((binding) => ({ binding, reading: readings.get(deviceKey(binding.sourceId, binding.deviceId)) }))
 }
 
@@ -274,4 +348,68 @@ export function sameReading(a: Reading | undefined, b: Reading): boolean {
     if (a.props[i].path !== b.props[i].path || a.props[i].value !== b.props[i].value) return false
   }
   return true
+}
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+
+export interface TwinAlertEvent { kind: 'start' | 'clear'; binding: Binding; rule: TwinRule; reading: Reading | undefined }
+
+/**
+ * Alerts on bindings: a rule with `alert` that has been THE applying rule for
+ * `forMin` minutes starts an alert; it clears when another rule (or none)
+ * applies. `since` and `active` are updated in place; keys are
+ * "<bindingId>/<ruleId>", so editing one rule does not reset the others.
+ */
+export function evaluateTwinAlerts(
+  bindings: Binding[], readings: Map<string, Reading>, now: number,
+  since: Map<string, number>, active: Set<string>,
+): TwinAlertEvent[] {
+  const events: TwinAlertEvent[] = []
+  const seen = new Set<string>()
+  for (const b of bindings) {
+    const reading = readings.get(deviceKey(b.sourceId, b.deviceId))
+    const st = bindingState(b, reading, now)
+    const rule = st.kind === 'rule' && st.rule.alert ? st.rule : null
+    if (!rule?.alert) continue
+    const key = `${b.id}/${rule.id}`
+    seen.add(key)
+    const from = since.get(key) ?? now
+    since.set(key, from)
+    if (!active.has(key) && now - from >= Math.max(0, rule.alert.forMin) * 60_000) {
+      active.add(key)
+      events.push({ kind: 'start', binding: b, rule, reading })
+    }
+  }
+  for (const key of [...since.keys()]) if (!seen.has(key)) since.delete(key)
+  for (const key of [...active]) {
+    if (seen.has(key)) continue
+    active.delete(key)
+    const [bid, rid] = key.split('/')
+    const b = bindings.find((x) => x.id === bid)
+    const rule = b?.rules.find((r) => r.id === rid)
+    if (b && rule) events.push({ kind: 'clear', binding: b, rule, reading: readings.get(deviceKey(b.sourceId, b.deviceId)) })
+  }
+  return events
+}
+
+// ── History (stored with layers/history-codec frames) ─────────────────────────
+
+export interface StoredReading { type: 'Feature'; id?: string; properties: Record<string, unknown>; geometry: unknown }
+
+/** Readings of one source as history features, keyed by device. */
+export function readingsToStored(list: Reading[]): Record<string, StoredReading> {
+  const out: Record<string, StoredReading> = {}
+  for (const r of list) {
+    const properties: Record<string, unknown> = { __at: r.at }
+    for (const p of r.props) if (!p.joined) properties[p.path] = p.value
+    out[r.deviceId] = { type: 'Feature', id: r.deviceId, properties, geometry: null }
+  }
+  return out
+}
+
+export function storedToReadings(sourceId: string, features: StoredReading[], keys: string[]): Reading[] {
+  return features.map((f, i) => {
+    const { __at, ...rest } = f.properties
+    return { sourceId, deviceId: keys[i], props: flattenProperties(rest), at: Number(__at) || 0 }
+  })
 }

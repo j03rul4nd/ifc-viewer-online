@@ -9,12 +9,13 @@
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
-import { useTwinDeviceStore, loadSecrets } from '../stores/twinDeviceStore'
+import { useTwinDeviceStore, loadSecrets, selectShownReadings } from '../stores/twinDeviceStore'
+import { clearTwinHistory } from '../lib/twin/device-runner'
 import { useValidationStore } from '../stores/validationStore'
 import { toast } from '../stores/toastStore'
 import {
-  DEFAULT_MAPPING, bindingState, buildGuidIndex, deviceKey, newTwinId,
-  type Binding, type DeviceSource, type Reading, type TwinRule,
+  DEFAULT_MAPPING, bindingState, buildCatalog, buildGuidIndex, deviceKey, newTwinId, queryMatches, resolveLocs,
+  type Binding, type CatalogEntry, type DeviceSource, type Reading, type TwinRule,
 } from '../lib/twin/devices'
 import { demoBindings, simulatedSource } from '../lib/twin/device-sim'
 import { exportTwinProject, parseTwinProject } from '../lib/twin/twin-project'
@@ -66,7 +67,9 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
   const active = useTwinDeviceStore((s) => s.active)
   const sources = useTwinDeviceStore((s) => s.sources)
   const bindings = useTwinDeviceStore((s) => s.bindings)
-  const readings = useTwinDeviceStore((s) => s.readings)
+  const readings = useTwinDeviceStore(selectShownReadings)
+  const timeAt = useTwinDeviceStore((s) => s.timeAt)
+  const alerting = useTwinDeviceStore((s) => s.alerting)
   const status = useTwinDeviceStore((s) => s.status)
   const trees = useValidationStore((s) => s.spatialTrees)
   const store = useTwinDeviceStore.getState
@@ -75,9 +78,10 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
   const [openBinding, setOpenBinding] = useState<string | null>(null)
 
   const guidIndex = useMemo(() => buildGuidIndex(trees), [trees])
+  const catalog = useMemo(() => buildCatalog(trees), [trees])
   const sel = useMemo(() => selectionRef(selected, trees), [selected, trees])
   const modelCount = Object.keys(trees).length
-  const now = Date.now()
+  const now = timeAt ?? Date.now()
 
   const startDemo = (): void => {
     const src = simulatedSource()
@@ -123,6 +127,8 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
           </label>
         </div>
         <div className="text-[10px] text-[var(--text-dim)]">{t('models', { count: modelCount })}</div>
+
+        <TimeTravel />
 
         {sources.length === 0 && (
           <div className="flex flex-col gap-1.5 p-2 rounded-[7px] bg-[var(--surface-2)]">
@@ -184,20 +190,22 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
             {bindings.map((b) => {
               const reading = readings.get(deviceKey(b.sourceId, b.deviceId))
               const state = bindingState(b, reading, now)
-              const found = b.targets.reduce((n, tg) => n + (guidIndex.get(tg.globalId)?.length ?? 0), 0)
+              const found = resolveLocs(b, guidIndex, catalog).length
+              const ringing = alerting.some((k) => k.startsWith(`${b.id}/`))
               const color = state.kind === 'rule' ? state.rule.effect.color : state.kind === 'stale' || state.kind === 'nodata' ? b.staleColor : null
               const label = state.kind === 'rule' ? state.rule.name : state.kind === 'stale' ? t('stale') : state.kind === 'nodata' ? t('nodata') : t('noRule')
               return (
-                <div key={b.id} className="flex flex-col gap-1 p-2 rounded-[7px] border border-[var(--border)]" data-testid="twin-binding">
+                <div key={b.id} className={`flex flex-col gap-1 p-2 rounded-[7px] border ${ringing ? 'border-[#ef4444]' : 'border-[var(--border)]'}`} data-testid="twin-binding">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-[var(--border)]" style={{ background: color ?? 'transparent' }} />
                     <button className="flex-1 min-w-0 text-left text-[11px] truncate" onClick={() => setOpenBinding(openBinding === b.id ? null : b.id)}>{b.name}</button>
                     <span className="text-[10px] text-[var(--text-dim)] shrink-0" data-testid="twin-binding-state">{label}</span>
                   </div>
                   <div className={`text-[10px] ${found ? 'text-[var(--text-faint)]' : 'text-[var(--warning,#f59e0b)]'}`}>
+                    {ringing && <span className="text-[#ef4444] font-medium">{t('alerting')} · </span>}
                     {b.deviceId} → {found ? t('targetsFound', { count: found }) : t('targetsMissing', { count: b.targets.length })}
                   </div>
-                  {openBinding === b.id && <BindingEditor binding={b} reading={reading} selection={sel} />}
+                  {openBinding === b.id && <BindingEditor binding={b} reading={reading} selection={sel} catalog={catalog} />}
                 </div>
               )
             })}
@@ -260,8 +268,8 @@ function SourceEditor({ source, onDone }: { source: DeviceSource; onDone: () => 
   )
 }
 
-function BindingEditor({ binding: b, reading, selection }: {
-  binding: Binding; reading: Reading | undefined; selection: { globalId: string; label: string } | null
+function BindingEditor({ binding: b, reading, selection, catalog }: {
+  binding: Binding; reading: Reading | undefined; selection: { globalId: string; label: string } | null; catalog: CatalogEntry[]
 }) {
   const { t } = useTranslation('layers', { keyPrefix: 'devices' })
   const store = useTwinDeviceStore.getState
@@ -291,6 +299,15 @@ function BindingEditor({ binding: b, reading, selection }: {
               </label>
               <button className={linkCls} onClick={() => put({ rules: b.rules.filter((x) => x.id !== r.id) })}>✕</button>
             </div>
+            <label className="flex items-center gap-1 text-[10px] text-[var(--text-dim)]">
+              <input type="checkbox" checked={!!r.alert} onChange={(e) => setRule(i, { ...r, alert: e.target.checked ? { forMin: 0 } : null })} />
+              {t('alert')}
+              {r.alert && (
+                <select className={inputCls + ' !w-auto'} value={r.alert.forMin} onChange={(e) => setRule(i, { ...r, alert: { forMin: Number(e.target.value) } })}>
+                  {[0, 1, 5, 15, 60].map((m) => <option key={m} value={m}>{m === 0 ? t('alertNow') : t('alertFor', { count: m })}</option>)}
+                </select>
+              )}
+            </label>
             {f ? (
               <div className="flex gap-1">
                 <input className={inputCls} list={`twin-fields-${b.id}`} value={f.field}
@@ -318,6 +335,14 @@ function BindingEditor({ binding: b, reading, selection }: {
           {[0, 30, 60, 300, 900, 3600].map((s) => <option key={s} value={s}>{s === 0 ? t('never') : s < 60 ? `${s} s` : `${s / 60} min`}</option>)}
         </select>
       </div>
+      <div className="flex gap-1 items-center">
+        <span className="text-[10px] text-[var(--text-dim)] shrink-0">{t('label')}</span>
+        <select className={inputCls} value={b.label?.field ?? ''} onChange={(e) => put({ label: e.target.value ? { field: e.target.value } : null })}>
+          <option value="">{t('labelNone')}</option>
+          {fields.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+      </div>
+      <QueryEditor binding={b} catalog={catalog} onChange={(query) => put({ query })} />
       <div className="text-[10px] text-[var(--text-dim)]">{t('targets', { count: b.targets.length })}</div>
       <div className="flex flex-wrap gap-1">
         {b.targets.slice(0, 12).map((tg) => (
@@ -337,6 +362,68 @@ function BindingEditor({ binding: b, reading, selection }: {
         <button className={linkCls} onClick={() => store().moveBinding(b.id, 1)} title={t('priorityDown')}>↓</button>
         <button className={linkCls} onClick={() => store().removeBinding(b.id)}>{t('remove')}</button>
       </div>
+    </div>
+  )
+}
+
+function QueryEditor({ binding: b, catalog, onChange }: {
+  binding: Binding; catalog: CatalogEntry[]; onChange: (q: Binding['query']) => void
+}) {
+  const { t } = useTranslation('layers', { keyPrefix: 'devices' })
+  const q = b.query ?? { classes: [], storey: '', nameContains: '' }
+  const classes = useMemo(() => [...new Set(catalog.map((e) => e.ifcClass))].sort(), [catalog])
+  const storeys = useMemo(() => [...new Set(catalog.map((e) => e.storey).filter(Boolean))].sort(), [catalog])
+  const count = useMemo(() => (b.query ? catalog.filter((e) => queryMatches(q, e)).length : 0), [b.query, catalog, q])
+  return (
+    <div className="flex flex-col gap-1 p-1.5 rounded-[6px] bg-[var(--surface-2)]">
+      <div className="flex items-center gap-1 text-[10px] text-[var(--text-dim)]">
+        <span className="flex-1">{t('query')}</span>
+        {b.query && <span data-testid="twin-query-count">{t('matches', { count })}</span>}
+      </div>
+      <div className="flex gap-1">
+        <select className={inputCls} value={q.classes[0] ?? ''} onChange={(e) => onChange({ ...q, classes: e.target.value ? [e.target.value] : [] })}>
+          <option value="">{t('queryAnyClass')}</option>
+          {classes.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select className={inputCls} value={q.storey} onChange={(e) => onChange({ ...q, storey: e.target.value })}>
+          <option value="">{t('queryAnyStorey')}</option>
+          {storeys.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <input className={inputCls} value={q.nameContains} placeholder={t('queryName')} onChange={(e) => onChange({ ...q, nameContains: e.target.value })} />
+    </div>
+  )
+}
+
+function TimeTravel() {
+  const { t } = useTranslation('layers', { keyPrefix: 'devices' })
+  const span = useTwinDeviceStore((s) => s.historySpan)
+  const timeAt = useTwinDeviceStore((s) => s.timeAt)
+  const retentionH = useTwinDeviceStore((s) => s.retentionH)
+  const sources = useTwinDeviceStore((s) => s.sources)
+  const store = useTwinDeviceStore.getState
+  return (
+    <div className="flex flex-col gap-1 p-2 rounded-[7px] bg-[var(--surface-2)]" data-testid="twin-history">
+      <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-dim)]">
+        <span className="flex-1">{t('history')}</span>
+        <select className={inputCls + ' !w-auto'} value={retentionH} onChange={(e) => store().setRetentionH(Number(e.target.value))} title={t('retention')}>
+          {[0, 6, 24, 72, 168].map((h) => <option key={h} value={h}>{h === 0 ? t('historyOff') : h < 48 ? `${h} h` : `${h / 24} d`}</option>)}
+        </select>
+        {span && <button className={linkCls} onClick={() => { sources.forEach((s) => void clearTwinHistory(s.id)); store().setHistorySpan(null); store().setTimeAt(null) }}>{t('clearHistory')}</button>}
+      </div>
+      {span ? (
+        <>
+          <input type="range" min={span.from} max={span.to} step={1000} value={timeAt ?? span.to} data-testid="twin-time"
+            onChange={(e) => store().setTimeAt(Number(e.target.value))} />
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <span className={timeAt === null ? 'text-[#22c55e]' : 'text-[var(--warning,#f59e0b)]'}>
+              {timeAt === null ? t('timeLive') : new Date(timeAt).toLocaleString()}
+            </span>
+            <span className="flex-1" />
+            {timeAt !== null && <button className={linkCls} onClick={() => store().setTimeAt(null)}>{t('backToLive')}</button>}
+          </div>
+        </>
+      ) : <div className="text-[10px] text-[var(--text-faint)]">{retentionH ? t('historyEmpty') : t('historyDisabled')}</div>}
     </div>
   )
 }
