@@ -40,6 +40,7 @@ import {
 import { flattenProperties, type FlatProp } from '../twin/flatten-props'
 import { assetsVersion, onAssetsChange, restoreAssets } from './vector-assets'
 import { evaluateAlerts, type AlertMemory } from './alerts'
+import { isTmbUrl, withTmbKeys, withoutTmbKeys, tmbErrorKey, getTmbKeys, setTmbKeys } from './tmb'
 import { toast } from '../../stores/toastStore'
 import i18n from '../../i18n/config'
 import {
@@ -631,11 +632,18 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
   if (url === SIMULATED_FEED_URL) {
     return { ok: true, text: simulateTrains(Date.now()), headers: new Headers(), viaProxy: false }
   }
+  // TMB: the user's own keys go on at the very last moment (never saved in the
+  // layer's URL). Without keys there is no point asking.
+  const tmb = isTmbUrl(url)
+  if (tmb) {
+    if (!getTmbKeys()) return { ok: false, errorKey: 'error.tmbKey' }
+    url = withTmbKeys(url)
+  }
   const host = (() => { try { return new URL(url).host } catch { return '' } })()
   const proxy = getLayersProxy()
   const attempt = async (target: string, viaProxy: boolean): Promise<RawResult> => {
     const res = await fetch(target, { signal, headers: { Accept: 'application/geo+json, application/json, text/xml;q=0.9, */*;q=0.5' } })
-    if (!res.ok) return { ok: false, errorKey: 'error.http' }
+    if (!res.ok) return { ok: false, errorKey: (tmb && tmbErrorKey(res.status)) || 'error.http' }
     const buf = await res.arrayBuffer()
     const ct = res.headers.get('content-type') ?? ''
     // XML declares its own encoding (Catastro: ISO-8859-1 behind a UTF-8 header).
@@ -869,6 +877,13 @@ export async function addFeedLayer(
 export async function addGeoJsonUrl(url: string, signal?: AbortSignal): Promise<AddResult> {
   let parsed: URL
   try { parsed = new URL(url) } catch { return { ok: false, errorKey: 'error.badUrl' } }
+  // A TMB URL pasted WITH its keys: keep the keys in this browser's key store
+  // (if none yet) and the URL without them — keys never live in a layer.
+  if (isTmbUrl(parsed.toString())) {
+    const id = parsed.searchParams.get('app_id'), key = parsed.searchParams.get('app_key')
+    if (id && key && !getTmbKeys()) setTmbKeys({ appId: id, appKey: key })
+    parsed = new URL(withoutTmbKeys(parsed.toString()))
+  }
   // A live protocol pasted in the plain URL box is still a live protocol.
   const kind = detectFeedKind(parsed.toString())
   if (kind === 'gbfs' || kind === 'gtfs-rt' || kind === 'ods') return addFeedLayer(parsed.toString(), { kind }, signal)
@@ -1144,6 +1159,18 @@ export function addSimulatedLiveLayer(name: string): AddResult {
 export async function addPreset(
   p: import('./feed-presets').FeedPreset, name: string, signal?: AbortSignal, t: (k: string) => string = (k) => k,
 ): Promise<AddResult> {
+  if (p.needsKey === 'tmb' && !getTmbKeys()) return { ok: false, errorKey: 'error.tmbKey' }
+  if (p.styleFromData) {
+    const r = await addGeoJsonUrl(p.url, signal)
+    if (r.ok) {
+      const l = useVectorLayerStore.getState().layers.find((x) => x.id === r.id)
+      useVectorLayerStore.getState().update(r.id, {
+        name, attribution: p.license,
+        ...(l?.data ? { layerStyle: p.styleFromData(l.data) } : {}),
+      })
+    }
+    return r
+  }
   if (p.kind === 'wfs') {
     const caps = await loadWfsCapabilities(p.url, signal)
     if (!caps.ok) return caps

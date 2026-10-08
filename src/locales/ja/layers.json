@@ -49,7 +49,8 @@
     "show": "表示",
     "frame": "レイヤーに合わせる",
     "remove": "削除",
-    "close": "閉じる"
+    "close": "閉じる",
+    "cancel": "キャンセル"
   },
   "height": {
     "title": "高さ",
@@ -95,7 +96,9 @@
     "notGtfsRt": "GTFS-Realtime（JSON）フィードではありません。",
     "noGeometryInTable": "このテーブルには位置の列（lon/lat、WKT、座標）がありません。レイヤーに結合してください。",
     "noJoinBase": "結合先のジオメトリがありません。",
-    "emptyTable": "テーブルが空です。"
+    "emptyTable": "テーブルが空です。",
+    "tmbKey": "TMB にはご自身のキーが必要です。ライブソース → TMB キーで追加してください。",
+    "quota": "プロバイダーの無料枠を使い切りました。しばらくしてから再試行してください。"
   },
   "kind": {
     "point": "ポイント",
@@ -205,6 +208,22 @@
     "bcn-traffic": {
       "name": "バルセロナの交通（ライブ）",
       "hint": "500 以上の区間の状態 · 5 分ごと · 両方向・流れのアニメーション"
+    },
+    "tmb-metro-lines": {
+      "name": "TMB · 地下鉄路線",
+      "hint": "公式カラー · TMB のキーが必要"
+    },
+    "tmb-metro-stations": {
+      "name": "TMB · 地下鉄駅",
+      "hint": "全駅（駅名付き）· TMB のキーが必要"
+    },
+    "tmb-bus-lines": {
+      "name": "TMB · バス路線",
+      "hint": "全バス路線を路線色で · TMB のキーが必要"
+    },
+    "tmb-bus-stops": {
+      "name": "TMB · バス停",
+      "hint": "バス停を選ぶと次のバスをライブ表示 · TMB のキーが必要"
     }
   },
   "live": {
@@ -434,5 +453,20 @@
     "minutes": "分",
     "add": "新しいアラート",
     "fromGroup": "グループから…"
+  },
+  "tmb": {
+    "addKeys": "TMB のキーを追加",
+    "why": "TMB のデータにはご自身の無料キー（app_id と app_key）が必要です。アプリの作成：",
+    "privacy": "このブラウザーにのみ保存され、api.tmb.cat にのみ送信されます。各ユーザーが自分の無料枠を使います。",
+    "save": "確認して保存",
+    "bad": "TMB がこのキーを受け付けませんでした。TMB アプリの app_id と app_key を確認してください。",
+    "keysSaved": "TMB のキーをこのブラウザーに保存済み",
+    "remove": "削除",
+    "needsKey": "要キー",
+    "nextBuses": "次のバス",
+    "noBuses": "現在到着予定のバスはありません",
+    "now": "まもなく",
+    "min": "{{n}} 分",
+    "arrivalsNeedKeys": "次のバスを表示するには TMB のキー（ライブソース）を追加してください。"
   }
 }

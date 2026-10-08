@@ -49,7 +49,8 @@
     "show": "Mostrar",
     "frame": "Enquadrar camada",
     "remove": "Remover",
-    "close": "Fechar"
+    "close": "Fechar",
+    "cancel": "Cancelar"
   },
   "height": {
     "title": "Alturas",
@@ -95,7 +96,9 @@
     "notGtfsRt": "Isto não é um feed GTFS-Realtime (JSON).",
     "noGeometryInTable": "Essa tabela não tem colunas com localização (lon/lat, WKT ou coordenadas). Junte-a a uma camada.",
     "noJoinBase": "Não há geometria a que juntar.",
-    "emptyTable": "A tabela está vazia."
+    "emptyTable": "A tabela está vazia.",
+    "tmbKey": "A TMB precisa das suas chaves: adicione-as em Fontes em direto → chaves TMB.",
+    "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde."
   },
   "kind": {
     "point": "Ponto",
@@ -205,6 +208,22 @@
     "bcn-traffic": {
       "name": "Trânsito de Barcelona (em direto)",
       "hint": "Estado de mais de 500 troços · a cada 5 min · ambos os sentidos, fluxo animado"
+    },
+    "tmb-metro-lines": {
+      "name": "TMB · Linhas de metro",
+      "hint": "Cores oficiais · precisa das suas chaves TMB"
+    },
+    "tmb-metro-stations": {
+      "name": "TMB · Estações de metro",
+      "hint": "Todas as estações, com nome · precisa das suas chaves TMB"
+    },
+    "tmb-bus-lines": {
+      "name": "TMB · Linhas de autocarro",
+      "hint": "Cada linha de autocarro na sua cor · precisa das suas chaves TMB"
+    },
+    "tmb-bus-stops": {
+      "name": "TMB · Paragens de autocarro",
+      "hint": "Selecione uma paragem para ver os próximos autocarros em direto · precisa das suas chaves TMB"
     }
   },
   "live": {
@@ -434,5 +453,20 @@
     "minutes": "min",
     "add": "Novo alerta",
     "fromGroup": "A partir de um grupo…"
+  },
+  "tmb": {
+    "addKeys": "Adicionar as suas chaves TMB",
+    "why": "Os dados da TMB precisam das suas próprias chaves gratuitas (app_id e app_key). Crie uma app em",
+    "privacy": "Guardadas apenas neste navegador e enviadas apenas para api.tmb.cat. Cada utilizador usa a sua própria quota gratuita.",
+    "save": "Verificar e guardar",
+    "bad": "A TMB não aceitou estas chaves. Verifique o app_id e o app_key da sua app TMB.",
+    "keysSaved": "Chaves TMB guardadas neste navegador",
+    "remove": "Remover",
+    "needsKey": "Requer chave",
+    "nextBuses": "Próximos autocarros",
+    "noBuses": "Nenhum autocarro previsto agora",
+    "now": "já",
+    "min": "{{n}} min",
+    "arrivalsNeedKeys": "Adicione as suas chaves TMB (Fontes em direto) para ver aqui os próximos autocarros."
   }
 }
