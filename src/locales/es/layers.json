@@ -497,10 +497,10 @@
     "hint": "Guarda las capas —fuentes, estilos, grupos, alertas— en un fichero que un compañero puede abrir aquí. Nunca incluye claves ni tokens.",
     "export": "Exportar configuración",
     "import": "Abrir configuración…",
-    "exported": "{{n}} capas exportadas.",
+    "exported": "Capas exportadas: {{n}}.",
     "secretsRemoved": "Se han quitado {{n}} claves o tokens de las URL.",
-    "imported": "{{n}} capas añadidas.",
-    "importFailed": "{{n}} no se pudieron cargar."
+    "imported": "Capas añadidas: {{n}}.",
+    "importFailed": "No se pudieron cargar: {{n}}."
   },
   "graduated": {
     "title": "Colorear por un número",

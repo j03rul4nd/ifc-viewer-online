@@ -13,6 +13,7 @@
 //   ?model=https://host/file.ifc&embed=1&panels=scene,map   (only those tools)
 //   ?model=https://host/file.ifc&embed=1&panels=-measurement (all but that one)
 //   ?model=https://host/file.ifc&embed=1&bg=white&solar=06-21T18:00   (look + sun)
+//   ?model=https://host/file.ifc&layers=https://host/twin-setup.json  (data layers)
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
 
@@ -93,6 +94,13 @@ export interface AppUrlParams {
    * says so rather than pretending.
    */
   scanUrls: string[]
+  /**
+   * `?layers=<url>` — a data-layer setup (exported from the Data layers panel)
+   * to open: sources, styles, groups, alerts. The JSON is hosted wherever the
+   * sharer likes (CORS needed). While it is in the URL it is what the scene
+   * shows: the visitor's own saved layers are neither restored nor touched.
+   */
+  layersUrl?: string
   /**
    * `?view=iso` — once every model has loaded, frame them from this preset with
    * a tight fit (`?fill=0.85` of the frame). The `article` preset implies
@@ -293,6 +301,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     solarMoon: parseBool(p.get('moon')),
     map: withLook(parseMapParam(p.get('map')), p.get('look')),
     scanUrls: splitList(p.getAll('scan')).filter(isLoadableUrl),
+    layersUrl: [p.get('layers') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
     view: parseView(p.get('view')) ?? (preset === 'article' && embed ? 'iso' : undefined),
     fill: parseFill(p.get('fill')),
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),

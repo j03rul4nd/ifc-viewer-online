@@ -497,10 +497,10 @@
     "hint": "将图层（数据源、样式、分组、警报）保存为文件，同事可在此打开。绝不包含密钥或令牌。",
     "export": "导出配置",
     "import": "打开配置…",
-    "exported": "已导出 {{n}} 个图层。",
+    "exported": "已导出图层：{{n}}。",
     "secretsRemoved": "已从 URL 中移除 {{n}} 个密钥或令牌。",
-    "imported": "已添加 {{n}} 个图层。",
-    "importFailed": "{{n}} 个无法加载。"
+    "imported": "已添加图层：{{n}}。",
+    "importFailed": "无法加载：{{n}}。"
   },
   "graduated": {
     "title": "按数值着色",

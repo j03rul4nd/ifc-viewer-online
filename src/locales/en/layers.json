@@ -497,10 +497,10 @@
     "hint": "Save the layers — sources, styles, groups, alerts — as a file a colleague can open here. Keys and tokens are never included.",
     "export": "Export setup",
     "import": "Open setup…",
-    "exported": "{{n}} layers exported.",
+    "exported": "Layers exported: {{n}}.",
     "secretsRemoved": "{{n}} key(s) or token(s) removed from URLs.",
-    "imported": "{{n}} layers added.",
-    "importFailed": "{{n}} could not be loaded."
+    "imported": "Layers added: {{n}}.",
+    "importFailed": "Could not be loaded: {{n}}."
   },
   "graduated": {
     "title": "Colour by a number",

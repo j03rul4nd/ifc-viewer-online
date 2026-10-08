@@ -497,10 +497,10 @@
     "hint": "Desa les capes —fonts, estils, grups, alertes— en un fitxer que un company pot obrir aquí. Mai no inclou claus ni tokens.",
     "export": "Exportar configuració",
     "import": "Obrir configuració…",
-    "exported": "{{n}} capes exportades.",
+    "exported": "Capes exportades: {{n}}.",
     "secretsRemoved": "S’han tret {{n}} claus o tokens de les URL.",
-    "imported": "{{n}} capes afegides.",
-    "importFailed": "{{n}} no s’han pogut carregar."
+    "imported": "Capes afegides: {{n}}.",
+    "importFailed": "No s’han pogut carregar: {{n}}."
   },
   "graduated": {
     "title": "Acolorir per un número",

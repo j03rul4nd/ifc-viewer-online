@@ -19,7 +19,7 @@ import { toast } from '../stores/toastStore'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
   frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
-  exportLayersFile, importLayersFile, isLayersFile,
+  exportLayersFile, importLayersFile, importLayersFromUrl, isLayersFile,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { TwinSearch } from './TwinSearch'
@@ -81,6 +81,12 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingCount])
   useEffect(() => {
+    const setup = useVectorLayerStore.getState().setupUrl
+    if (setup) {
+      useVectorLayerStore.getState().setSetupUrl(null)
+      void run(async () => reportImport(await importLayersFromUrl(setup)))
+      return
+    }
     if (!useVectorLayerStore.getState().restorePending) return
     useVectorLayerStore.getState().setRestorePending(false)
     void restoreVectorLayers().then(({ failed }) => {
