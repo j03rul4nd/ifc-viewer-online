@@ -98,7 +98,9 @@
     "noJoinBase": "Nessuna geometria a cui unire.",
     "emptyTable": "La tabella è vuota.",
     "tmbKey": "TMB richiede le tue chiavi: aggiungile in Fonti dal vivo → chiavi TMB.",
-    "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi."
+    "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi.",
+    "notLayersFile": "Questo file non è una configurazione di livelli di dati.",
+    "layersFileVersion": "Questa configurazione è di una versione più recente. Ricarica la pagina e riprova."
   },
   "kind": {
     "point": "Punto",
@@ -482,5 +484,15 @@
     "now": "ora",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Aggiungi le tue chiavi TMB (Fonti dal vivo) per vedere qui i prossimi autobus."
+  },
+  "share": {
+    "title": "Condividi questa configurazione",
+    "hint": "Salva i livelli — fonti, stili, gruppi, avvisi — in un file che un collega può aprire qui. Chiavi e token non sono mai inclusi.",
+    "export": "Esporta configurazione",
+    "import": "Apri configurazione…",
+    "exported": "{{n}} livelli esportati.",
+    "secretsRemoved": "Rimossi {{n}} chiavi o token dagli URL.",
+    "imported": "{{n}} livelli aggiunti.",
+    "importFailed": "{{n}} non sono stati caricati."
   }
 }

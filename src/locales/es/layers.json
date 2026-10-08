@@ -98,7 +98,9 @@
     "noJoinBase": "No hay geometría a la que unir.",
     "emptyTable": "La tabla está vacía.",
     "tmbKey": "TMB necesita tus propias claves: añádelas en Fuentes en vivo → claves de TMB.",
-    "quota": "Se ha agotado por ahora la cuota gratuita del proveedor. Vuelve a intentarlo más tarde."
+    "quota": "Se ha agotado por ahora la cuota gratuita del proveedor. Vuelve a intentarlo más tarde.",
+    "notLayersFile": "Este fichero no es una configuración de capas de datos.",
+    "layersFileVersion": "Esta configuración se guardó con una versión más nueva. Recarga la página e inténtalo de nuevo."
   },
   "kind": {
     "point": "Punto",
@@ -482,5 +484,15 @@
     "now": "ya",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Añade tus claves de TMB (Fuentes en vivo) para ver aquí los próximos buses."
+  },
+  "share": {
+    "title": "Compartir esta configuración",
+    "hint": "Guarda las capas —fuentes, estilos, grupos, alertas— en un fichero que un compañero puede abrir aquí. Nunca incluye claves ni tokens.",
+    "export": "Exportar configuración",
+    "import": "Abrir configuración…",
+    "exported": "{{n}} capas exportadas.",
+    "secretsRemoved": "Se han quitado {{n}} claves o tokens de las URL.",
+    "imported": "{{n}} capas añadidas.",
+    "importFailed": "{{n}} no se pudieron cargar."
   }
 }
