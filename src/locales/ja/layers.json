@@ -418,7 +418,14 @@
     "nothingYet": "まだ記録がありません。レイヤーがライブの間に履歴がたまります。",
     "spanH": "{{n}} 時間分を記録",
     "spanM": "{{n}} 分を記録",
-    "clear": "削除"
+    "clear": "削除",
+    "chart": "時間の推移",
+    "chartField": "グラフにする項目",
+    "chartRange": "期間",
+    "chartMinMax": "最小 {{min}} · 最大 {{max}}",
+    "chartNow": "現在 {{v}}",
+    "chartEmpty": "この期間に記録された変化はありません。",
+    "chartAll": "全期間"
   },
   "traffic": {
     "veryFluid": "非常に順調",

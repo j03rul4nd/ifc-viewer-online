@@ -418,7 +418,14 @@
     "nothingYet": "Noch nichts aufgezeichnet – der Verlauf wächst, solange die Ebene live ist.",
     "spanH": "{{n}} h aufgezeichnet",
     "spanM": "{{n}} min aufgezeichnet",
-    "clear": "Löschen"
+    "clear": "Löschen",
+    "chart": "Im Zeitverlauf",
+    "chartField": "Feld für das Diagramm",
+    "chartRange": "Zeitraum",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "jetzt {{v}}",
+    "chartEmpty": "Keine aufgezeichnete Änderung in diesem Zeitraum.",
+    "chartAll": "Alles"
   },
   "traffic": {
     "veryFluid": "Sehr flüssig",

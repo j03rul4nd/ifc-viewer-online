@@ -418,7 +418,14 @@
     "nothingYet": "Nothing recorded yet — history builds up while the layer is live.",
     "spanH": "{{n}} h recorded",
     "spanM": "{{n}} min recorded",
-    "clear": "Delete"
+    "clear": "Delete",
+    "chart": "Over time",
+    "chartField": "Field to chart",
+    "chartRange": "Time range",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "now {{v}}",
+    "chartEmpty": "No recorded change in this range.",
+    "chartAll": "All"
   },
   "traffic": {
     "veryFluid": "Very fluid",

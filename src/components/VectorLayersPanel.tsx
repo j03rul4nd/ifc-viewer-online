@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TmbArrivals } from './TmbPanels'
+import { FeatureHistory } from './FeatureHistory'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -412,6 +413,7 @@ function SelectedFeature() {
           </dl>
         )}
       {stopCode && <TmbArrivals stopCode={stopCode} />}
+      {layer.history?.enabled && <FeatureHistory layerId={layer.id} featureIndex={sel.featureIndex} refreshKey={layer.fetchedAt} />}
     </div>
   )
 }

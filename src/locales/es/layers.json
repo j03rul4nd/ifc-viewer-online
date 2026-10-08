@@ -418,7 +418,14 @@
     "nothingYet": "Aún no hay nada grabado: el historial se acumula mientras la capa está en vivo.",
     "spanH": "{{n}} h grabadas",
     "spanM": "{{n}} min grabados",
-    "clear": "Borrar"
+    "clear": "Borrar",
+    "chart": "En el tiempo",
+    "chartField": "Campo a graficar",
+    "chartRange": "Rango de tiempo",
+    "chartMinMax": "mín {{min}} · máx {{max}}",
+    "chartNow": "ahora {{v}}",
+    "chartEmpty": "Sin cambios grabados en este rango.",
+    "chartAll": "Todo"
   },
   "traffic": {
     "veryFluid": "Muy fluido",

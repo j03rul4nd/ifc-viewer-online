@@ -95,3 +95,34 @@ export function rebuildAt(frames: Frame[], t: number): { features: StoredFeature
 export function frameBytes(f: Frame): number {
   return JSON.stringify(f).length
 }
+
+// ── One feature through time ───────────────────────────────────────────────────
+
+export interface FeaturePoint {
+  t: number
+  /** Its properties from this instant on; null = it left the feed. */
+  properties: Record<string, unknown> | null
+}
+
+/**
+ * The recorded life of ONE feature (by identity key): a point every time a
+ * frame says something about it — a keyframe, a change, a removal. Between
+ * points its value held (deltas only store changes), so read it as steps.
+ */
+export function featureSeries(frames: Frame[], key: string): FeaturePoint[] {
+  const out: FeaturePoint[] = []
+  let last: string | null = null
+  for (const f of frames) {
+    let p: Record<string, unknown> | null | undefined
+    if (f.kind === 'key') p = f.features[key]?.properties ?? null
+    else if (key in f.upsert) p = f.upsert[key].properties
+    else if (f.remove.includes(key)) p = null
+    if (p === undefined) continue
+    const sig = p === null ? '∅' : JSON.stringify(p)
+    // A keyframe repeating what we already have is not a change.
+    if (sig === last) continue
+    last = sig
+    out.push({ t: f.t, properties: p })
+  }
+  return out
+}

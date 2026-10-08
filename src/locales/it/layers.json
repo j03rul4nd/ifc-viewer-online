@@ -418,7 +418,14 @@
     "nothingYet": "Ancora nulla di registrato: la cronologia cresce mentre il livello è dal vivo.",
     "spanH": "{{n}} h registrate",
     "spanM": "{{n}} min registrati",
-    "clear": "Elimina"
+    "clear": "Elimina",
+    "chart": "Nel tempo",
+    "chartField": "Campo da tracciare",
+    "chartRange": "Intervallo di tempo",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "ora {{v}}",
+    "chartEmpty": "Nessuna modifica registrata in questo intervallo.",
+    "chartAll": "Tutto"
   },
   "traffic": {
     "veryFluid": "Molto fluido",
