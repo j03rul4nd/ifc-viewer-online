@@ -541,8 +541,14 @@ function snapshotLayers(): PersistedLayer[] {
   return out
 }
 
+/**
+ * Off while the scene comes from a `?layers=` link: that setup belongs to the
+ * link, and the visitor's own saved layers must survive it untouched.
+ */
+let persistEnabled = true
+
 function persist(): void {
-  if (!restored) return
+  if (!restored || !persistEnabled) return
   const out = snapshotLayers()
   try {
     if (out.length === 0) localStorage.removeItem(VECTOR_LAYERS_LS_KEY)
@@ -641,6 +647,15 @@ export function exportLayersFile(): { json: string; layers: number; secretsRemov
   }))
   const json = JSON.stringify({ format: SHARE_FORMAT, v: 1, exportedAt: new Date().toISOString(), layers }, null, 1)
   return { json, layers: layers.length, secretsRemoved }
+}
+
+/** Open a setup from a link (`?layers=`). Session-only: nothing is saved. */
+export async function importLayersFromUrl(url: string): ReturnType<typeof importLayersFile> {
+  persistEnabled = false
+  restored = true
+  const r = await fetchText(url)
+  if (!r.ok) return r
+  return importLayersFile(r.text)
 }
 
 /** Cheap sniff: is this text a shared layer setup? */

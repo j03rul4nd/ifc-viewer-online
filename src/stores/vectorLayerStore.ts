@@ -173,6 +173,9 @@ interface VectorLayerState {
   pendingFiles: File[]
   /** Persisted layers exist and the panel should mount to restore them. */
   restorePending: boolean
+  /** `?layers=` setup to open once the panel mounts (wins over restoring). */
+  setupUrl: string | null
+  setSetupUrl: (url: string | null) => void
   setSelected: (sel: VectorSelection | null) => void
   enqueueFiles: (files: File[]) => void
   takePendingFiles: () => File[]
@@ -243,6 +246,8 @@ export const useVectorLayerStore = create<VectorLayerState>()(
         set((s) => ({ liveStatus: { ...s.liveStatus, [id]: status } }), false, 'setLiveStatus'),
       pendingFiles: [],
       restorePending: false,
+      setupUrl: null,
+      setSetupUrl: (url) => set({ setupUrl: url }, false, 'setSetupUrl'),
       // Closing the selection also lets go of a followed feature.
       setSelected: (sel) => set(sel ? { selected: sel } : { selected: null, following: null }, false, 'setSelected'),
       enqueueFiles: (files) =>

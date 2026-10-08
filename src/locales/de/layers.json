@@ -497,10 +497,10 @@
     "hint": "Speichert die Ebenen – Quellen, Stile, Gruppen, Alarme – als Datei, die Kolleg:innen hier öffnen können. Schlüssel und Tokens sind nie enthalten.",
     "export": "Einrichtung exportieren",
     "import": "Einrichtung öffnen…",
-    "exported": "{{n}} Ebenen exportiert.",
+    "exported": "Exportierte Ebenen: {{n}}.",
     "secretsRemoved": "{{n}} Schlüssel oder Tokens aus URLs entfernt.",
-    "imported": "{{n}} Ebenen hinzugefügt.",
-    "importFailed": "{{n}} konnten nicht geladen werden."
+    "imported": "Hinzugefügte Ebenen: {{n}}.",
+    "importFailed": "Nicht geladen: {{n}}."
   },
   "graduated": {
     "title": "Nach einer Zahl einfärben",

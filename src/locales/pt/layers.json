@@ -497,10 +497,10 @@
     "hint": "Guarda as camadas — fontes, estilos, grupos, alertas — num ficheiro que um colega pode abrir aqui. Nunca inclui chaves nem tokens.",
     "export": "Exportar configuração",
     "import": "Abrir configuração…",
-    "exported": "{{n}} camadas exportadas.",
+    "exported": "Camadas exportadas: {{n}}.",
     "secretsRemoved": "Removidas {{n}} chaves ou tokens dos URL.",
-    "imported": "{{n}} camadas adicionadas.",
-    "importFailed": "{{n}} não puderam ser carregadas."
+    "imported": "Camadas adicionadas: {{n}}.",
+    "importFailed": "Não carregadas: {{n}}."
   },
   "graduated": {
     "title": "Colorir por um número",

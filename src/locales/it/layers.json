@@ -497,10 +497,10 @@
     "hint": "Salva i livelli — fonti, stili, gruppi, avvisi — in un file che un collega può aprire qui. Chiavi e token non sono mai inclusi.",
     "export": "Esporta configurazione",
     "import": "Apri configurazione…",
-    "exported": "{{n}} livelli esportati.",
+    "exported": "Livelli esportati: {{n}}.",
     "secretsRemoved": "Rimossi {{n}} chiavi o token dagli URL.",
-    "imported": "{{n}} livelli aggiunti.",
-    "importFailed": "{{n}} non sono stati caricati."
+    "imported": "Livelli aggiunti: {{n}}.",
+    "importFailed": "Non caricati: {{n}}."
   },
   "graduated": {
     "title": "Colora per un numero",

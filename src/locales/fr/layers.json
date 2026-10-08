@@ -497,10 +497,10 @@
     "hint": "Enregistre les couches — sources, styles, groupes, alertes — dans un fichier qu’un collègue peut ouvrir ici. Jamais de clés ni de jetons.",
     "export": "Exporter la configuration",
     "import": "Ouvrir une configuration…",
-    "exported": "{{n}} couches exportées.",
+    "exported": "Couches exportées : {{n}}.",
     "secretsRemoved": "{{n}} clé(s) ou jeton(s) retirés des URL.",
-    "imported": "{{n}} couches ajoutées.",
-    "importFailed": "{{n}} n’ont pas pu être chargées."
+    "imported": "Couches ajoutées : {{n}}.",
+    "importFailed": "Non chargées : {{n}}."
   },
   "graduated": {
     "title": "Colorer selon un nombre",
