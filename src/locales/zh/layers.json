@@ -49,7 +49,8 @@
     "show": "显示",
     "frame": "缩放到图层",
     "remove": "移除",
-    "close": "关闭"
+    "close": "关闭",
+    "cancel": "取消"
   },
   "height": {
     "title": "高度",
@@ -95,7 +96,9 @@
     "notGtfsRt": "这不是 GTFS-Realtime（JSON）数据源。",
     "noGeometryInTable": "该表格没有位置列（lon/lat、WKT 或坐标）。请将其关联到图层。",
     "noJoinBase": "没有可关联的几何。",
-    "emptyTable": "表格为空。"
+    "emptyTable": "表格为空。",
+    "tmbKey": "TMB 需要你自己的密钥：请在 实时来源 → TMB 密钥 中添加。",
+    "quota": "提供方的免费额度暂时用完。请稍后再试。"
   },
   "kind": {
     "point": "点",
@@ -205,6 +208,22 @@
     "bcn-traffic": {
       "name": "巴塞罗那交通（实时）",
       "hint": "500 多个路段的状态 · 每 5 分钟 · 双向显示，流动动画"
+    },
+    "tmb-metro-lines": {
+      "name": "TMB · 地铁线路",
+      "hint": "官方颜色 · 需要你的 TMB 密钥"
+    },
+    "tmb-metro-stations": {
+      "name": "TMB · 地铁站",
+      "hint": "所有车站及名称 · 需要你的 TMB 密钥"
+    },
+    "tmb-bus-lines": {
+      "name": "TMB · 公交线路",
+      "hint": "每条公交线路按其颜色显示 · 需要你的 TMB 密钥"
+    },
+    "tmb-bus-stops": {
+      "name": "TMB · 公交站",
+      "hint": "选择站点即可实时查看下一班车 · 需要你的 TMB 密钥"
     }
   },
   "live": {
@@ -448,5 +467,20 @@
       "export": "导出 CSV",
       "clearAll": "清空日志"
     }
+  },
+  "tmb": {
+    "addKeys": "添加你的 TMB 密钥",
+    "why": "TMB 数据需要你自己的免费密钥（app_id 和 app_key）。在此创建应用：",
+    "privacy": "仅保存在此浏览器中，且只发送到 api.tmb.cat。每位用户使用自己的免费额度。",
+    "save": "验证并保存",
+    "bad": "TMB 未接受这些密钥。请检查你的 TMB 应用的 app_id 和 app_key。",
+    "keysSaved": "TMB 密钥已保存在此浏览器",
+    "remove": "移除",
+    "needsKey": "需密钥",
+    "nextBuses": "下一班公交",
+    "noBuses": "目前没有预计到站的公交",
+    "now": "即将",
+    "min": "{{n}} 分钟",
+    "arrivalsNeedKeys": "在“实时来源”中添加 TMB 密钥即可在此查看下一班公交。"
   }
 }

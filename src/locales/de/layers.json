@@ -49,7 +49,8 @@
     "show": "Einblenden",
     "frame": "Ebene einpassen",
     "remove": "Entfernen",
-    "close": "Schließen"
+    "close": "Schließen",
+    "cancel": "Abbrechen"
   },
   "height": {
     "title": "Höhen",
@@ -95,7 +96,9 @@
     "notGtfsRt": "Das ist kein GTFS-Realtime-Feed (JSON).",
     "noGeometryInTable": "Die Tabelle hat keine Ortsspalten (lon/lat, WKT oder Koordinaten). Verknüpfen Sie sie mit einer Ebene.",
     "noJoinBase": "Keine Geometrie zum Verknüpfen.",
-    "emptyTable": "Die Tabelle ist leer."
+    "emptyTable": "Die Tabelle ist leer.",
+    "tmbKey": "TMB braucht Ihre eigenen Schlüssel: unter Live-Quellen → TMB-Schlüssel hinzufügen.",
+    "quota": "Das kostenlose Kontingent des Anbieters ist vorerst aufgebraucht. Später erneut versuchen."
   },
   "kind": {
     "point": "Punkt",
@@ -205,6 +208,22 @@
     "bcn-traffic": {
       "name": "Verkehr Barcelona (live)",
       "hint": "Zustand von 500+ Abschnitten · alle 5 min · beide Richtungen, animierter Fluss"
+    },
+    "tmb-metro-lines": {
+      "name": "TMB · Metrolinien",
+      "hint": "Offizielle Farben · braucht Ihre TMB-Schlüssel"
+    },
+    "tmb-metro-stations": {
+      "name": "TMB · Metrostationen",
+      "hint": "Alle Stationen mit Namen · braucht Ihre TMB-Schlüssel"
+    },
+    "tmb-bus-lines": {
+      "name": "TMB · Buslinien",
+      "hint": "Jede Buslinie in ihrer Farbe · braucht Ihre TMB-Schlüssel"
+    },
+    "tmb-bus-stops": {
+      "name": "TMB · Bushaltestellen",
+      "hint": "Haltestelle wählen und die nächsten Busse live sehen · braucht Ihre TMB-Schlüssel"
     }
   },
   "live": {
@@ -448,5 +467,20 @@
       "export": "CSV exportieren",
       "clearAll": "Protokoll leeren"
     }
+  },
+  "tmb": {
+    "addKeys": "Eigene TMB-Schlüssel hinzufügen",
+    "why": "TMB-Daten brauchen Ihre eigenen kostenlosen Schlüssel (app_id und app_key). Legen Sie eine App an unter",
+    "privacy": "Nur in diesem Browser gespeichert und nur an api.tmb.cat gesendet. Jede Person nutzt ihr eigenes Gratiskontingent.",
+    "save": "Prüfen und speichern",
+    "bad": "TMB hat diese Schlüssel nicht akzeptiert. Prüfen Sie app_id und app_key Ihrer TMB-App.",
+    "keysSaved": "TMB-Schlüssel in diesem Browser gespeichert",
+    "remove": "Entfernen",
+    "needsKey": "Schlüssel nötig",
+    "nextBuses": "Nächste Busse",
+    "noBuses": "Derzeit keine Busse erwartet",
+    "now": "jetzt",
+    "min": "{{n}} min",
+    "arrivalsNeedKeys": "Fügen Sie Ihre TMB-Schlüssel (Live-Quellen) hinzu, um hier die nächsten Busse zu sehen."
   }
 }

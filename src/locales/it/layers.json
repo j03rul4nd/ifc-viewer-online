@@ -49,7 +49,8 @@
     "show": "Mostra",
     "frame": "Inquadra livello",
     "remove": "Rimuovi",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "cancel": "Annulla"
   },
   "height": {
     "title": "Altezze",
@@ -95,7 +96,9 @@
     "notGtfsRt": "Non è un feed GTFS-Realtime (JSON).",
     "noGeometryInTable": "La tabella non ha colonne con posizione (lon/lat, WKT o coordinate). Uniscila a un livello.",
     "noJoinBase": "Nessuna geometria a cui unire.",
-    "emptyTable": "La tabella è vuota."
+    "emptyTable": "La tabella è vuota.",
+    "tmbKey": "TMB richiede le tue chiavi: aggiungile in Fonti dal vivo → chiavi TMB.",
+    "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi."
   },
   "kind": {
     "point": "Punto",
@@ -205,6 +208,22 @@
     "bcn-traffic": {
       "name": "Traffico di Barcellona (dal vivo)",
       "hint": "Stato di oltre 500 tratti · ogni 5 min · entrambi i sensi, flusso animato"
+    },
+    "tmb-metro-lines": {
+      "name": "TMB · Linee della metro",
+      "hint": "Colori ufficiali · richiede le tue chiavi TMB"
+    },
+    "tmb-metro-stations": {
+      "name": "TMB · Stazioni della metro",
+      "hint": "Tutte le stazioni, con nome · richiede le tue chiavi TMB"
+    },
+    "tmb-bus-lines": {
+      "name": "TMB · Linee degli autobus",
+      "hint": "Ogni linea di autobus nel suo colore · richiede le tue chiavi TMB"
+    },
+    "tmb-bus-stops": {
+      "name": "TMB · Fermate degli autobus",
+      "hint": "Seleziona una fermata per vedere i prossimi autobus dal vivo · richiede le tue chiavi TMB"
     }
   },
   "live": {
@@ -448,5 +467,20 @@
       "export": "Esporta CSV",
       "clearAll": "Svuota registro"
     }
+  },
+  "tmb": {
+    "addKeys": "Aggiungi le tue chiavi TMB",
+    "why": "I dati TMB richiedono le tue chiavi gratuite (app_id e app_key). Crea un’app su",
+    "privacy": "Conservate solo in questo browser e inviate solo a api.tmb.cat. Ogni utente usa la propria quota gratuita.",
+    "save": "Verifica e salva",
+    "bad": "TMB non ha accettato queste chiavi. Controlla app_id e app_key della tua app TMB.",
+    "keysSaved": "Chiavi TMB salvate in questo browser",
+    "remove": "Rimuovi",
+    "needsKey": "Serve chiave",
+    "nextBuses": "Prossimi autobus",
+    "noBuses": "Nessun autobus previsto al momento",
+    "now": "ora",
+    "min": "{{n}} min",
+    "arrivalsNeedKeys": "Aggiungi le tue chiavi TMB (Fonti dal vivo) per vedere qui i prossimi autobus."
   }
 }

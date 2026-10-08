@@ -16,11 +16,17 @@ import type { Symbology, SymbolRule } from './symbology'
 import { defaultLayerStyle, defaultGroupStyle, newGroupId, type LayerStyle } from './style-groups'
 import type { ParseOptions as TableOptions } from './csv'
 import type { JoinSpec } from './join'
+import { TMB_URLS, tmbLines } from './tmb'
+import type { VectorLayerData } from './geojson'
 
 export interface FeedPreset {
   id: string
   /** i18n key suffix under layers:presets.<id>.{name,hint} */
   region: 'barcelona' | 'catalunya' | 'spain'
+  /** Needs the user's own keys for this provider (stored in their browser). */
+  needsKey?: 'tmb'
+  /** Static data, fetched once: styled from what it contains. */
+  styleFromData?: (data: VectorLayerData) => LayerStyle
   kind: FeedKind
   url: string
   /** WFS presets: the feature type to load. */
@@ -68,13 +74,58 @@ export function trafficStyle(t: (k: string) => string, field = 'estat'): LayerSt
   }
 }
 
+/** TMB lines: one group per line, in TMB's order and official colour. */
+function tmbLineStyle(widthM: number) {
+  return (data: VectorLayerData): LayerStyle => {
+    const base = defaultLayerStyle('#888888')
+    return {
+      ...base,
+      groups: tmbLines(data.features).map((l) => {
+        const g = defaultGroupStyle(l.color)
+        return {
+          id: newGroupId(), name: l.name, match: 'all' as const,
+          filters: [{ field: 'NOM_LINIA', op: 'eq' as const, value: l.name }],
+          style: { ...g, line: { color: l.color, widthM, opacity: 1 } },
+          visible: true,
+        }
+      }),
+    }
+  }
+}
+
+/** TMB points (stops, stations): one icon, named when close enough. */
+function tmbPointStyle(icon: 'bus' | 'metro', color: string, labelField: string) {
+  return (): LayerStyle => {
+    const base = defaultLayerStyle(color)
+    return { ...base, fallback: { ...base.fallback, point: { symbol: { kind: 'icon', icon }, color, size: 3, labelField } } }
+  }
+}
+
 const rule = (value: string, color: string, icon: SymbolRule['symbol'], label?: string): SymbolRule =>
   ({ value, color, symbol: icon, sizeM: 4, visible: true, label })
 
 const fallback = (color: string, symbol: SymbolRule['symbol']): Symbology['fallback'] =>
   ({ color, symbol, sizeM: 4, visible: true })
 
+const TMB_LICENSE = 'TMB · Transports Metropolitans de Barcelona (developer.tmb.cat)'
+
 export const FEED_PRESETS: FeedPreset[] = [
+  {
+    id: 'tmb-metro-lines', region: 'barcelona', kind: 'geojson', url: TMB_URLS.metroLines,
+    needsKey: 'tmb', license: TMB_LICENSE, styleFromData: tmbLineStyle(8),
+  },
+  {
+    id: 'tmb-metro-stations', region: 'barcelona', kind: 'geojson', url: TMB_URLS.metroStations,
+    needsKey: 'tmb', license: TMB_LICENSE, styleFromData: tmbPointStyle('metro', '#DC241F', 'NOM_ESTACIO'),
+  },
+  {
+    id: 'tmb-bus-lines', region: 'barcelona', kind: 'geojson', url: TMB_URLS.busLines,
+    needsKey: 'tmb', license: TMB_LICENSE, styleFromData: tmbLineStyle(3),
+  },
+  {
+    id: 'tmb-bus-stops', region: 'barcelona', kind: 'geojson', url: TMB_URLS.busStops,
+    needsKey: 'tmb', license: TMB_LICENSE, styleFromData: tmbPointStyle('bus', '#DC241F', 'NOM_PARADA'),
+  },
   {
     id: 'bcn-traffic', region: 'barcelona', kind: 'join',
     // The live STATUS table (every 5 min); the geometry joins onto it.
