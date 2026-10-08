@@ -501,5 +501,16 @@
     "secretsRemoved": "URL から {{n}} 件のキー／トークンを削除しました。",
     "imported": "{{n}} 件のレイヤーを追加しました。",
     "importFailed": "{{n}} 件を読み込めませんでした。"
+  },
+  "graduated": {
+    "title": "数値で色分け",
+    "classes": "クラス数",
+    "nClasses": "{{n}} クラス",
+    "method": "分け方",
+    "quantile": "各クラス同数",
+    "equal": "等間隔",
+    "ramp": "色",
+    "reverse": "反転",
+    "create": "範囲で {{n}} グループを作成"
   }
 }

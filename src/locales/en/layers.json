@@ -501,5 +501,16 @@
     "secretsRemoved": "{{n}} key(s) or token(s) removed from URLs.",
     "imported": "{{n}} layers added.",
     "importFailed": "{{n}} could not be loaded."
+  },
+  "graduated": {
+    "title": "Colour by a number",
+    "classes": "Number of classes",
+    "nClasses": "{{n}} classes",
+    "method": "How to split",
+    "quantile": "Same count each",
+    "equal": "Equal steps",
+    "ramp": "Colours",
+    "reverse": "Reverse",
+    "create": "Create {{n}} groups by range"
   }
 }

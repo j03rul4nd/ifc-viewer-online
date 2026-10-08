@@ -501,5 +501,16 @@
     "secretsRemoved": "{{n}} clé(s) ou jeton(s) retirés des URL.",
     "imported": "{{n}} couches ajoutées.",
     "importFailed": "{{n}} n’ont pas pu être chargées."
+  },
+  "graduated": {
+    "title": "Colorer selon un nombre",
+    "classes": "Nombre de classes",
+    "nClasses": "{{n}} classes",
+    "method": "Découpage",
+    "quantile": "Même effectif",
+    "equal": "Pas égaux",
+    "ramp": "Couleurs",
+    "reverse": "Inverser",
+    "create": "Créer {{n}} groupes par plage"
   }
 }

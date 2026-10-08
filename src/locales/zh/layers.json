@@ -501,5 +501,16 @@
     "secretsRemoved": "已从 URL 中移除 {{n}} 个密钥或令牌。",
     "imported": "已添加 {{n}} 个图层。",
     "importFailed": "{{n}} 个无法加载。"
+  },
+  "graduated": {
+    "title": "按数值着色",
+    "classes": "分级数",
+    "nClasses": "{{n}} 级",
+    "method": "划分方式",
+    "quantile": "每级数量相同",
+    "equal": "等间距",
+    "ramp": "颜色",
+    "reverse": "反转",
+    "create": "按区间创建 {{n}} 个分组"
   }
 }

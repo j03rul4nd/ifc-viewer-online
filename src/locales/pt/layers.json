@@ -501,5 +501,16 @@
     "secretsRemoved": "Removidas {{n}} chaves ou tokens dos URL.",
     "imported": "{{n}} camadas adicionadas.",
     "importFailed": "{{n}} não puderam ser carregadas."
+  },
+  "graduated": {
+    "title": "Colorir por um número",
+    "classes": "Número de classes",
+    "nClasses": "{{n}} classes",
+    "method": "Como dividir",
+    "quantile": "Mesmo número em cada",
+    "equal": "Passos iguais",
+    "ramp": "Cores",
+    "reverse": "Inverter",
+    "create": "Criar {{n}} grupos por intervalos"
   }
 }
