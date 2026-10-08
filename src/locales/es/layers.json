@@ -459,6 +459,13 @@
       "sound": "Sonido",
       "denied": "Las notificaciones están bloqueadas para este sitio. Permítelas en los ajustes del sitio del navegador.",
       "background": "Las capas con alertas siguen actualizándose en segundo plano (como mucho una vez por minuto) mientras la pestaña siga abierta."
+    },
+    "log": {
+      "title": "Registro ({{n}})",
+      "start": "{{rule}} empieza: {{n}}",
+      "clear": "{{rule}} se despeja",
+      "export": "Exportar CSV",
+      "clearAll": "Vaciar registro"
     }
   },
   "tmb": {

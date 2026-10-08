@@ -459,6 +459,13 @@
       "sound": "Son",
       "denied": "Les notifications sont bloquées pour ce site. Autorisez-les dans les paramètres du site du navigateur.",
       "background": "Les couches avec alertes continuent de s’actualiser en arrière-plan (au plus une fois par minute) tant que l’onglet reste ouvert."
+    },
+    "log": {
+      "title": "Journal ({{n}})",
+      "start": "{{rule}} commence : {{n}}",
+      "clear": "{{rule}} terminée",
+      "export": "Exporter en CSV",
+      "clearAll": "Vider le journal"
     }
   },
   "tmb": {

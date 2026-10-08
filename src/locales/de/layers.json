@@ -459,6 +459,13 @@
       "sound": "Ton",
       "denied": "Benachrichtigungen sind für diese Website blockiert. Erlauben Sie sie in den Website-Einstellungen des Browsers.",
       "background": "Ebenen mit Alarmen aktualisieren sich im Hintergrund weiter (höchstens einmal pro Minute), solange der Tab offen bleibt."
+    },
+    "log": {
+      "title": "Protokoll ({{n}})",
+      "start": "{{rule}} beginnt: {{n}}",
+      "clear": "{{rule}} beendet",
+      "export": "CSV exportieren",
+      "clearAll": "Protokoll leeren"
     }
   },
   "tmb": {

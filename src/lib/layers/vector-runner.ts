@@ -42,6 +42,7 @@ import { assetsVersion, onAssetsChange, restoreAssets } from './vector-assets'
 import { evaluateAlerts, type AlertMemory } from './alerts'
 import { isTmbUrl, withTmbKeys, withoutTmbKeys, tmbErrorKey, getTmbKeys, setTmbKeys } from './tmb'
 import { notifyAlert, getNotifySettings } from './alert-notify'
+import { logAlert } from './alert-log'
 import { toast } from '../../stores/toastStore'
 import i18n from '../../i18n/config'
 import {
@@ -325,8 +326,23 @@ export function evaluateLayerAlerts(id: string, now = Date.now(), force = false)
   }
   const identity = resolveIdentity(layer.data, layer.live?.idField)
   const keys = layer.data.features.map((f, i) => featureKey(f, i, identity))
-  const r = evaluateAlerts(layerRows(layer.data), keys, rules, now, mem)
+  const rows = layerRows(layer.data)
+  const r = evaluateAlerts(rows, keys, rules, now, mem)
   st.setAlertHits(id, r.active)
+  // The log: a rule starting (with a few of its features) and clearing.
+  const was = alertActiveCount.get(id) ?? new Map<string, number>()
+  const is = new Map(r.active.map((h) => [h.ruleId, h.indices.length]))
+  for (const h of r.started) {
+    const rule = rules.find((x) => x.id === h.ruleId)
+    if (rule) logAlert({ at: now, kind: 'start', layerId: id, layer: layer.name, ruleId: rule.id, rule: rule.name, n: h.indices.length, sample: h.indices.slice(0, 5).map((i) => featureLabel(rows[i], keys[i])) })
+  }
+  for (const [ruleId, n] of was) {
+    if (n > 0 && !is.has(ruleId)) {
+      const rule = rules.find((x) => x.id === ruleId)
+      if (rule) logAlert({ at: now, kind: 'clear', layerId: id, layer: layer.name, ruleId, rule: rule.name, n: 0, sample: [] })
+    }
+  }
+  alertActiveCount.set(id, is)
   for (const h of r.started) {
     const rule = rules.find((x) => x.id === h.ruleId)
     if (!rule) continue
@@ -339,6 +355,14 @@ export function evaluateLayerAlerts(id: string, now = Date.now(), force = false)
 }
 
 const alertWarming = new Set<string>()
+const alertActiveCount = new Map<string, Map<string, number>>()
+
+/** A readable name for a feature: its name / label / id property, else its key. */
+function featureLabel(props: FlatProp[], key: string): string {
+  const p = props.find((x) => x.value !== null && /(^|\.)(name|nom|nombre|label|title|titol|titulo)$/i.test(x.field))
+    ?? props.find((x) => x.value !== null && /(^|\.)(id|code|codi|codigo|station_id|tram)$/i.test(x.field))
+  return p ? String(p.display) : key
+}
 
 /** Feed the recorded frames of the last `forMin` window through the rules, silently. */
 async function warmAlertMemory(id: string, rules: AlertRule[], now: number): Promise<void> {
