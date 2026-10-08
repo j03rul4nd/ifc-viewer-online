@@ -7,6 +7,8 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TmbArrivals } from './TmbPanels'
+import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
@@ -349,6 +351,7 @@ function SelectedFeature() {
   const feature = sel && layer?.data ? layer.data.features[sel.featureIndex] : undefined
   if (!sel || !layer || !feature) return null
   const rows = flattenProperties(feature.properties)
+  const stopCode = tmbStopCode(feature.properties)
   return (
     <div className="rounded-[7px] border border-[var(--accent)] px-2 py-1.5 flex flex-col gap-1" data-testid="layers-selected">
       <div className="flex items-center gap-1.5">
@@ -368,6 +371,7 @@ function SelectedFeature() {
             ))}
           </dl>
         )}
+      {stopCode && <TmbArrivals stopCode={stopCode} />}
     </div>
   )
 }

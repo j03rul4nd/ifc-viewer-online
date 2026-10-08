@@ -49,7 +49,8 @@
     "show": "Mostrar",
     "frame": "Encuadrar capa",
     "remove": "Quitar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "cancel": "Cancelar"
   },
   "height": {
     "title": "Alturas",
@@ -95,7 +96,9 @@
     "notGtfsRt": "Eso no es un feed GTFS-Realtime (JSON).",
     "noGeometryInTable": "Esa tabla no tiene columnas con ubicación (lon/lat, WKT o coordenadas). Únela a una capa.",
     "noJoinBase": "No hay geometría a la que unir.",
-    "emptyTable": "La tabla está vacía."
+    "emptyTable": "La tabla está vacía.",
+    "tmbKey": "TMB necesita tus propias claves: añádelas en Fuentes en vivo → claves de TMB.",
+    "quota": "Se ha agotado por ahora la cuota gratuita del proveedor. Vuelve a intentarlo más tarde."
   },
   "kind": {
     "point": "Punto",
@@ -205,6 +208,22 @@
     "bcn-traffic": {
       "name": "Tráfico de Barcelona (en vivo)",
       "hint": "Estado de más de 500 tramos · cada 5 min · ambos sentidos, flujo animado"
+    },
+    "tmb-metro-lines": {
+      "name": "TMB · Líneas de metro",
+      "hint": "Colores oficiales · necesita tus claves de TMB"
+    },
+    "tmb-metro-stations": {
+      "name": "TMB · Estaciones de metro",
+      "hint": "Todas las estaciones, con nombre · necesita tus claves de TMB"
+    },
+    "tmb-bus-lines": {
+      "name": "TMB · Líneas de bus",
+      "hint": "Todas las rutas de bus con su color · necesita tus claves de TMB"
+    },
+    "tmb-bus-stops": {
+      "name": "TMB · Paradas de bus",
+      "hint": "Selecciona una parada para ver los próximos buses en vivo · necesita tus claves de TMB"
     }
   },
   "live": {
@@ -441,5 +460,20 @@
       "denied": "Las notificaciones están bloqueadas para este sitio. Permítelas en los ajustes del sitio del navegador.",
       "background": "Las capas con alertas siguen actualizándose en segundo plano (como mucho una vez por minuto) mientras la pestaña siga abierta."
     }
+  },
+  "tmb": {
+    "addKeys": "Añadir tus claves de TMB",
+    "why": "Los datos de TMB necesitan tus propias claves gratuitas (app_id y app_key). Crea una app en",
+    "privacy": "Se guardan solo en este navegador y solo se envían a api.tmb.cat. Cada usuario usa su propia cuota gratuita.",
+    "save": "Comprobar y guardar",
+    "bad": "TMB no ha aceptado estas claves. Revisa el app_id y el app_key de tu app de TMB.",
+    "keysSaved": "Claves de TMB guardadas en este navegador",
+    "remove": "Quitar",
+    "needsKey": "Requiere clave",
+    "nextBuses": "Próximos buses",
+    "noBuses": "No se esperan buses ahora mismo",
+    "now": "ya",
+    "min": "{{n}} min",
+    "arrivalsNeedKeys": "Añade tus claves de TMB (Fuentes en vivo) para ver aquí los próximos buses."
   }
 }
