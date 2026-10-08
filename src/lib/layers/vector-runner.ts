@@ -40,6 +40,7 @@ import {
 import { flattenProperties, type FlatProp } from '../twin/flatten-props'
 import { assetsVersion, onAssetsChange, restoreAssets } from './vector-assets'
 import { evaluateAlerts, type AlertMemory } from './alerts'
+import { notifyAlert, getNotifySettings } from './alert-notify'
 import { toast } from '../../stores/toastStore'
 import i18n from '../../i18n/config'
 import {
@@ -329,10 +330,10 @@ export function evaluateLayerAlerts(id: string, now = Date.now(), force = false)
     const rule = rules.find((x) => x.id === h.ruleId)
     if (!rule) continue
     const t = i18n.getFixedT(null, 'layers')
-    toast(t('alerts.fired', { rule: rule.name, n: h.indices.length, layer: layer.name }), 'warning', {
-      duration: 8000,
-      action: { label: t('alerts.show'), run: () => { void focusVectorFeature(id, h.indices[0]) } },
-    })
+    const msg = t('alerts.fired', { rule: rule.name, n: h.indices.length, layer: layer.name })
+    const show = (): void => { void focusVectorFeature(id, h.indices[0]) }
+    toast(msg, 'warning', { duration: 8000, action: { label: t('alerts.show'), run: show } })
+    notifyAlert({ title: rule.name, body: msg.replace(/^⚠\s*/, ''), tag: `${id}:${rule.id}`, onClick: show })
   }
 }
 
@@ -993,7 +994,7 @@ function perFeature(rows: FlatProp[][], ls: LayerStyle): {
 // for one layer; nothing is fetched while the tab is hidden; failures back off.
 
 const pendingMoves = new Map<string, Map<number, [number, number] | [number, number, number]>>()
-const liveTimers = new Map<string, { timer: ReturnType<typeof setTimeout> | null; inflight: AbortController | null; failures: number; config: string }>()
+const liveTimers = new Map<string, { timer: ReturnType<typeof setTimeout> | null; inflight: AbortController | null; failures: number; config: string; lastHiddenAt?: number }>()
 
 /** The request a live layer re-issues, or null when its source cannot be re-fetched. */
 export function liveUrlOf(layerId: string): string | null {
@@ -1017,8 +1018,16 @@ async function tickLive(id: string): Promise<void> {
   if (!t || !layer?.live?.enabled) return
   const url = liveUrlOf(id)
   if (!url) return
-  // Hidden tab: do not spend the user's data plan or the server's patience.
-  if (typeof document !== 'undefined' && document.hidden) { scheduleLive(id, 2000); return }
+  // Hidden tab: do not spend the user's data plan or the server's patience —
+  // unless the user asked to be told about this layer while away; then keep
+  // watching, no faster than once a minute.
+  if (typeof document !== 'undefined' && document.hidden) {
+    const ns = getNotifySettings()
+    const watching = (ns.system || ns.sound) && layer.alerts?.some((r) => r.enabled && r.filters.length)
+    if (!watching) { scheduleLive(id, 2000); return }
+    if (Date.now() - (t.lastHiddenAt ?? 0) < 60_000) { scheduleLive(id, 5000); return }
+    t.lastHiddenAt = Date.now()
+  }
   if (t.inflight) return
   const ac = new AbortController()
   t.inflight = ac

@@ -433,6 +433,13 @@
     "forMin": "For at least",
     "minutes": "min",
     "add": "New alert",
-    "fromGroup": "From a group…"
+    "fromGroup": "From a group…",
+    "notify": {
+      "title": "Tell me even when I am not looking",
+      "system": "Browser notification while this tab is in the background",
+      "sound": "Sound",
+      "denied": "Notifications are blocked for this site. Allow them in the browser’s site settings.",
+      "background": "Layers with alerts keep refreshing in the background (at most once a minute) while this tab stays open."
+    }
   }
 }

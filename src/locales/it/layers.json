@@ -433,6 +433,13 @@
     "forMin": "Per almeno",
     "minutes": "min",
     "add": "Nuovo avviso",
-    "fromGroup": "Da un gruppo…"
+    "fromGroup": "Da un gruppo…",
+    "notify": {
+      "title": "Avvisami anche se non sto guardando",
+      "system": "Notifica del browser con la scheda in background",
+      "sound": "Suono",
+      "denied": "Le notifiche sono bloccate per questo sito. Consentile nelle impostazioni del sito del browser.",
+      "background": "I livelli con avvisi continuano ad aggiornarsi in background (al massimo una volta al minuto) finché la scheda resta aperta."
+    }
   }
 }
