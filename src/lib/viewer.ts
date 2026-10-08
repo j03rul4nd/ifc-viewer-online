@@ -4858,6 +4858,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         scene: world.scene.three,
         getActiveCamera: () => world.camera.three,
         getCanvas: () => self.getCanvas(),
+        moveTarget: (x, y, z) => {
+          try { void world.camera.controls.moveTo(x, y, z, true) } catch (e) {
+            console.debug('[Viewer] follow failed:', e instanceof Error ? e.message : e)
+          }
+        },
         frameBox: (min, max) => {
           try {
             const box = new THREE.Box3(min, max)

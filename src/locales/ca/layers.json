@@ -512,5 +512,11 @@
     "ramp": "Colors",
     "reverse": "Invertir",
     "create": "Crear {{n}} grups per intervals"
+  },
+  "follow": {
+    "start": "Seguir",
+    "on": "Seguint",
+    "stop": "Deixar de seguir",
+    "lost": "L’element que seguies ha sortit de la font."
   }
 }
