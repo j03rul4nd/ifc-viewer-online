@@ -98,7 +98,9 @@
     "noJoinBase": "Não há geometria a que juntar.",
     "emptyTable": "A tabela está vazia.",
     "tmbKey": "A TMB precisa das suas chaves: adicione-as em Fontes em direto → chaves TMB.",
-    "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde."
+    "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde.",
+    "notLayersFile": "Este ficheiro não é uma configuração de camadas de dados.",
+    "layersFileVersion": "Esta configuração foi guardada numa versão mais recente. Recarregue a página e tente de novo."
   },
   "kind": {
     "point": "Ponto",
@@ -482,5 +484,15 @@
     "now": "já",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Adicione as suas chaves TMB (Fontes em direto) para ver aqui os próximos autocarros."
+  },
+  "share": {
+    "title": "Partilhar esta configuração",
+    "hint": "Guarda as camadas — fontes, estilos, grupos, alertas — num ficheiro que um colega pode abrir aqui. Nunca inclui chaves nem tokens.",
+    "export": "Exportar configuração",
+    "import": "Abrir configuração…",
+    "exported": "{{n}} camadas exportadas.",
+    "secretsRemoved": "Removidas {{n}} chaves ou tokens dos URL.",
+    "imported": "{{n}} camadas adicionadas.",
+    "importFailed": "{{n}} não puderam ser carregadas."
   }
 }

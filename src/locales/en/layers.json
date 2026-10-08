@@ -98,7 +98,9 @@
     "noJoinBase": "There is no geometry to join onto.",
     "emptyTable": "The table is empty.",
     "tmbKey": "TMB needs your own keys: add them under Live sources → TMB keys.",
-    "quota": "The provider’s free quota is used up for now. Try again later."
+    "quota": "The provider’s free quota is used up for now. Try again later.",
+    "notLayersFile": "This file is not a data-layers setup.",
+    "layersFileVersion": "This setup was saved by a newer version. Update the page and try again."
   },
   "kind": {
     "point": "Point",
@@ -482,5 +484,15 @@
     "now": "now",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Add your TMB keys (Live sources) to see the next buses here."
+  },
+  "share": {
+    "title": "Share this setup",
+    "hint": "Save the layers — sources, styles, groups, alerts — as a file a colleague can open here. Keys and tokens are never included.",
+    "export": "Export setup",
+    "import": "Open setup…",
+    "exported": "{{n}} layers exported.",
+    "secretsRemoved": "{{n}} key(s) or token(s) removed from URLs.",
+    "imported": "{{n}} layers added.",
+    "importFailed": "{{n}} could not be loaded."
   }
 }

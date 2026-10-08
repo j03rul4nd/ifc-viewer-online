@@ -98,7 +98,9 @@
     "noJoinBase": "没有可关联的几何。",
     "emptyTable": "表格为空。",
     "tmbKey": "TMB 需要你自己的密钥：请在 实时来源 → TMB 密钥 中添加。",
-    "quota": "提供方的免费额度暂时用完。请稍后再试。"
+    "quota": "提供方的免费额度暂时用完。请稍后再试。",
+    "notLayersFile": "此文件不是数据图层配置。",
+    "layersFileVersion": "此配置由更新的版本保存。请刷新页面后重试。"
   },
   "kind": {
     "point": "点",
@@ -482,5 +484,15 @@
     "now": "即将",
     "min": "{{n}} 分钟",
     "arrivalsNeedKeys": "在“实时来源”中添加 TMB 密钥即可在此查看下一班公交。"
+  },
+  "share": {
+    "title": "共享此配置",
+    "hint": "将图层（数据源、样式、分组、警报）保存为文件，同事可在此打开。绝不包含密钥或令牌。",
+    "export": "导出配置",
+    "import": "打开配置…",
+    "exported": "已导出 {{n}} 个图层。",
+    "secretsRemoved": "已从 URL 中移除 {{n}} 个密钥或令牌。",
+    "imported": "已添加 {{n}} 个图层。",
+    "importFailed": "{{n}} 个无法加载。"
   }
 }

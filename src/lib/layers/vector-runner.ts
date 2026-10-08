@@ -480,8 +480,8 @@ function hasSaved(): boolean {
   try { return !!localStorage.getItem(VECTOR_LAYERS_LS_KEY) } catch { return false }
 }
 
-function persist(): void {
-  if (!restored) return
+/** The current layers as saved records: what persistence and export share. */
+function snapshotLayers(): PersistedLayer[] {
   const out: PersistedLayer[] = []
   for (const l of useVectorLayerStore.getState().layers) {
     if (l.status !== 'ready') continue
@@ -495,6 +495,12 @@ function persist(): void {
       fetchUrl: o.fetchUrl, feed: o.feed, text, attribution: l.attribution,
     })
   }
+  return out
+}
+
+function persist(): void {
+  if (!restored) return
+  const out = snapshotLayers()
   try {
     if (out.length === 0) localStorage.removeItem(VECTOR_LAYERS_LS_KEY)
     else localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify({ v: 1, layers: out }))
@@ -515,6 +521,14 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
     if (parsed?.v === 1 && Array.isArray(parsed.layers)) saved = parsed.layers
   } catch { /* corrupt entry: start clean */ }
 
+  const r = await loadSaved(saved)
+  restored = true
+  persist()
+  return r
+}
+
+/** Rebuild layers from saved records (restore and import share this). */
+async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number }> {
   let ok = 0, failed = 0
   for (const p of saved) {
     let text = p.text
@@ -539,9 +553,67 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
       { style: p.style, heightMode: p.heightMode, visible: p.visible, symbology: p.symbology, layerStyle: p.layerStyle, live: p.live, history: p.history, alerts: p.alerts })
     if (r.ok) ok++; else failed++
   }
-  restored = true
-  persist()
   return { restored: ok, failed }
+}
+
+// ── Sharing a layer setup as a file ────────────────────────────────────────────
+
+const SHARE_FORMAT = 'ifc-viewer-data-layers'
+
+/** Query parameters that carry someone's credentials — never leave in a file. */
+const SECRET_PARAM = /^(app_?key|app_?id|api_?key|apikey|key|token|access_?token|auth|secret|password|pwd|sig|signature|client_?secret)$/i
+
+/** A URL without credential-looking parameters, and how many were removed. */
+export function scrubUrl(url: string): { url: string; removed: number } {
+  let u: URL
+  try { u = new URL(url) } catch { return { url, removed: 0 } }
+  let removed = 0
+  for (const k of [...u.searchParams.keys()]) if (SECRET_PARAM.test(k)) { u.searchParams.delete(k); removed++ }
+  return { url: removed ? u.toString() : url, removed }
+}
+
+/**
+ * The layer setup as a portable file: sources, styles, groups, zoom,
+ * aggregation, live/history settings and alerts. Never keys or tokens (TMB
+ * keys are not in URLs to begin with; anything credential-like pasted into a
+ * URL is removed), never the user's proxy, never recorded history.
+ */
+export function exportLayersFile(): { json: string; layers: number; secretsRemoved: number } {
+  let secretsRemoved = 0
+  const scrub = (u: string | undefined): string | undefined => {
+    if (!u) return u
+    const r = scrubUrl(u)
+    secretsRemoved += r.removed
+    return r.url
+  }
+  const layers = snapshotLayers().map((l) => ({
+    ...l,
+    fetchUrl: scrub(l.fetchUrl),
+    feed: l.feed ? {
+      ...l.feed, url: scrub(l.feed.url)!,
+      join: l.feed.join ? { ...l.feed.join, geomUrl: scrub(l.feed.join.geomUrl) } : undefined,
+    } : undefined,
+    source: l.source.type === 'url' ? { ...l.source, url: scrub(l.source.url)! }
+      : l.source.type === 'wfs' ? { ...l.source, endpoint: scrub(l.source.endpoint)! } : l.source,
+  }))
+  const json = JSON.stringify({ format: SHARE_FORMAT, v: 1, exportedAt: new Date().toISOString(), layers }, null, 1)
+  return { json, layers: layers.length, secretsRemoved }
+}
+
+/** Cheap sniff: is this text a shared layer setup? */
+export function isLayersFile(text: string): boolean {
+  return text.slice(0, 200).includes(`"format": "${SHARE_FORMAT}"`) || text.slice(0, 200).includes(`"format":"${SHARE_FORMAT}"`)
+}
+
+/** Add the layers of a shared file to the scene (alongside the current ones). */
+export async function importLayersFile(text: string): Promise<{ ok: true; restored: number; failed: number } | { ok: false; errorKey: string }> {
+  let parsed: { format?: string; v?: number; layers?: PersistedLayer[] }
+  try { parsed = JSON.parse(text) } catch { return { ok: false, errorKey: 'error.notLayersFile' } }
+  if (parsed?.format !== SHARE_FORMAT || !Array.isArray(parsed.layers)) return { ok: false, errorKey: 'error.notLayersFile' }
+  if (parsed.v !== 1) return { ok: false, errorKey: 'error.layersFileVersion' }
+  const r = await loadSaved(parsed.layers)
+  persist()
+  return { ok: true, ...r }
 }
 
 /** A layer-made anchor lives only while there are layers (same rule as scans). */

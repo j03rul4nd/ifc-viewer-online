@@ -18,6 +18,7 @@ import { toast } from '../stores/toastStore'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
   frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer,
+  exportLayersFile, importLayersFile, isLayersFile,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { TwinSearch } from './TwinSearch'
@@ -136,8 +137,31 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   }
 
   const onFiles = (files: FileList): void => void run(async () => {
-    for (const f of Array.from(files)) report(await addGeoJsonFile(f))
+    for (const f of Array.from(files)) {
+      // A shared layer setup (exported from here) opens as layers, not as data.
+      if (/\.json$/i.test(f.name) && f.size < 20_000_000) {
+        const text = await f.text()
+        if (isLayersFile(text)) { reportImport(await importLayersFile(text)); continue }
+      }
+      report(await addGeoJsonFile(f))
+    }
   })
+
+  const reportImport = (r: Awaited<ReturnType<typeof importLayersFile>>): void => {
+    if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
+    toast(t('share.imported', { n: r.restored }) + (r.failed ? ' ' + t('share.importFailed', { n: r.failed }) : ''), r.failed ? 'warning' : 'success')
+  }
+
+  const exportSetup = (): void => {
+    const r = exportLayersFile()
+    const url = URL.createObjectURL(new Blob([r.json], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `data-layers-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    toast(t('share.exported', { n: r.layers }) + (r.secretsRemoved ? ' ' + t('share.secretsRemoved', { n: r.secretsRemoved }) : ''), 'success')
+  }
 
   const anchorLabel = anchor
     ? t('anchor.by', { label: anchor.label, source: t(`anchor.source.${anchor.source}` as never) })
@@ -189,6 +213,22 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
             onClick={() => report(addSimulatedLiveLayer(t('file.sampleLiveName')))}>
             {t('file.sampleLive')}
           </button>
+        </div>
+
+        {/* Share the setup */}
+        <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]" data-testid="layers-share">
+          <div className="text-[11px] font-medium">{t('share.title')}</div>
+          <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('share.hint')}</div>
+          <div className="flex gap-1">
+            <button disabled={busy || layers.length === 0} onClick={exportSetup}
+              className="flex-1 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] disabled:opacity-40">
+              {t('share.export')}
+            </button>
+            <button disabled={busy} onClick={() => fileRef.current?.click()}
+              className="flex-1 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] disabled:opacity-40">
+              {t('share.import')}
+            </button>
+          </div>
         </div>
 
         <PresetSources />
