@@ -308,3 +308,18 @@ export function tableTime(values: string[], timeZone?: string): number | null {
   }
   return best
 }
+
+/**
+ * How long to wait before asking again after a TRANSIENT refusal — 429 or a
+ * 5xx — or null to stop. Measured on Barcelona's open-data portal: four
+ * requests at once from one browser (a scene opening) drew an error on one of
+ * them that a second request a few seconds later did not. Two retries, short,
+ * jittered so several layers do not come back in step; `Retry-After` is
+ * honoured when the server sends one (and is reasonable).
+ */
+export function transientRetryMs(res: { status: number; headers: Headers }, attempt: number, random = Math.random): number | null {
+  if (attempt >= 2 || !(res.status === 429 || (res.status >= 500 && res.status <= 504))) return null
+  const ra = Number(res.headers.get('retry-after'))
+  if (Number.isFinite(ra) && ra > 0 && ra <= 20) return ra * 1000
+  return Math.round(1500 * 2 ** attempt * (0.85 + random() * 0.3))
+}

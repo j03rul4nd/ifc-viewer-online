@@ -649,6 +649,44 @@ reason the vector basemap is the default.
 - **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
   calls. Low-poly on purpose; at map scale a tree is a silhouette.
 
+### How high a georeferenced IFC stands (2026-10)
+
+`vertical-frame.ts`, `dem-sources.ts`, `multi-placement.ts`, applied in
+`geo-system.applyPlacement`/`placeSatellites`.
+
+- **Elevation source by site.** `dem-sources.ts` picks the ICGC *Model d'Elevacions
+  del Terreny 5 m* inside Catalonia and the global terrarium mosaic elsewhere. ICGC
+  is bare earth, so the lower-envelope opening (meant to strip buildings from a
+  surface model) is skipped for it. Measured over Pl. Catalunya, the ICGC model
+  agreed with the stated `OrthogonalHeight` of eight surveyed IFCs within
+  ±0.5 m at their origins. The global mosaic was 7–15 m high there.
+- **A file states the height of its origin (H). The ground there has a height
+  (E).** The floor goes `H − E` above the ground **under the origin**, not under
+  the middle of the bounding box: a monument's sunken steps or a metro
+  entrance's stair put those 1–3 m apart. If H and E differ by more than 5 m
+  (`DEM_AGREEMENT_M`), the DEM is not believed and the model is stood on the
+  terrain. A model is never sunk: a DEM above the stated floor also stands it
+  on the ground. Before this, every model was raised H above the map, as if the
+  ground everywhere were at sea level, so Pl. Catalunya floated 15–19 m up.
+  The coast (Hotel Vela, H 2.5 over a quay at ~2.7) was right only by luck.
+- **The ground is the same with or without relief.** With terrain on, E comes
+  from the patch. Without it, a single DEM sample is used
+  (`elevation.sampleElevation`). Switching terrain never moves the building.
+- **Files of one project move as one.** Satellites whose georeference matches
+  the anchor's (same `IfcMapConversion`, `georefKey` from the App resolver) get
+  exactly the anchor's transform. Before this, the Hotel Vela's architecture
+  and structure were placed by their own bounding boxes and floated 8.4 and
+  9.8 m above its MEP, by the depth of their basements.
+- **Other satellites stand on their own origin**, on the terrain under it plus
+  their own `H − E` (on the flat map, level with the anchor's floor).
+- **Satellite placement is computed from the file, not from where it was
+  moved.** The resolver strips the satellite offset from the bounds before
+  `placementFromExtraction`. Reading the moved bounds as project coordinates
+  made every re-placement (a pan, a terrain rebuild) push the model one offset
+  further. Measured: 250 m per call.
+- **DEV:** `__geoVerticalDebug()` returns the last decision: stated H, the lift
+  applied, the anchor model and its origin, and the DEM values used.
+
 ### Buildings: why Overpass, and the usage rules
 
 Footprints come from the **Overpass API**, not from a free 3D-buildings tile

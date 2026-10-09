@@ -37,7 +37,7 @@
 // PURE: numbers in, numbers out. No THREE, no scene, no viewer.
 
 import {
-  WEB_MERCATOR_WORLD_M, cosLatScale, latLonToNormalized, mapYawRad,
+  WEB_MERCATOR_WORLD_M, cosLatScale, latLonToNormalized, mapYawRad, groundAnchorY,
 } from './geo-math'
 import type { GeoPlacement } from './geo-types'
 
@@ -101,6 +101,28 @@ export interface BoundsLike {
   size: { x: number; y: number; z: number }
 }
 
+export interface SatelliteOptions {
+  /**
+   * World Y of the satellite's own origin — the ground floor its file states a
+   * height for. Without it the model is stood on its bounding-box bottom,
+   * which for a building with a basement is the underside of its foundations
+   * (measured: the Hotel Vela's structure, -9.8 m deep, came out 9.8 m above
+   * its architecture).
+   */
+  originY?: number | null
+  /**
+   * World position of that origin. With it, `floorAt` is asked about the
+   * ground under the ORIGIN once moved — where the stated height applies —
+   * rather than under the middle of the bounding box.
+   */
+  origin?: { x: number; y: number; z: number } | null
+  /**
+   * Scene Y the satellite's floor should land on, given the x/z it lands at.
+   * Default: the map plane plus the file's stated height (the old rule).
+   */
+  floorAt?: (x: number, z: number, placement: GeoPlacement) => number
+}
+
 /**
  * The translation that moves a model from where the scene put it to where its
  * own georeferencing says it belongs.
@@ -109,20 +131,37 @@ export interface BoundsLike {
  * viewer's per-model transform takes, and because a delta composes with a
  * manual nudge instead of silently discarding one.
  *
- * The vertical term uses the model's own `minY`, not its centre: a building is
- * placed by the ground it stands on, and two towers of different heights
- * sharing a centre elevation would float one and bury the other.
+ * The vertical term uses the model's FLOOR — its origin when that is near the
+ * geometry (groundAnchorY, the rule the anchor already follows), else its
+ * bounding-box bottom: a building is placed by the ground it stands on, and
+ * two towers of different heights sharing a centre elevation would float one
+ * and bury the other.
  */
 export function satelliteOffset(
-  frame: AnchorFrame, placement: GeoPlacement, bounds: BoundsLike,
+  frame: AnchorFrame, placement: GeoPlacement, bounds: BoundsLike, opts: SatelliteOptions = {},
 ): ScenePoint {
   const target = sceneOfLatLon(frame, placement.lat, placement.lon, placement.heightOffsetM)
   const minY = bounds.center.y - bounds.size.y / 2
-  return {
-    x: target.x - bounds.center.x,
-    y: target.y - minY,
-    z: target.z - bounds.center.z,
-  }
+  const floor = groundAnchorY(minY, opts.originY)
+  const dx = target.x - bounds.center.x
+  const dz = target.z - bounds.center.z
+  const at = opts.origin ? { x: opts.origin.x + dx, z: opts.origin.z + dz } : target
+  const floorY = opts.floorAt ? opts.floorAt(at.x, at.z, placement) : target.y
+  return { x: dx, y: floorY - floor, z: dz }
+}
+
+/**
+ * Files of ONE project share an origin — the same IfcMapConversion (ARC, STR
+ * and MEP of a building). Their geometry already agrees in scene coordinates,
+ * so they move as one: whatever transform the anchor has, they get. Placing
+ * each by its own bounding box instead reintroduces errors the files do not
+ * have (half a metre of mercator scale between centres, and the floor rule
+ * above, applied to three different bottoms).
+ */
+export function sameOriginOffset(
+  anchorPivot: { x: number; y: number; z: number }, pivot: { x: number; y: number; z: number },
+): ScenePoint {
+  return { x: anchorPivot.x - pivot.x, y: anchorPivot.y - pivot.y, z: anchorPivot.z - pivot.z }
 }
 
 /**

@@ -8,7 +8,7 @@ import { expandUrlTemplate, hasUrlTemplate } from './url-template'
 import { parseTable, detectGeometry, tableToGeoJson } from './csv'
 import { applyJoin, uniqueByKey } from './join'
 import { parseGeoJson } from './geojson'
-import { tableTime } from './feeds'
+import { tableTime, transientRetryMs } from './feeds'
 import { FEED_PRESETS, presetsForSite } from './feed-presets'
 
 const files = import.meta.glob('./__fixtures__/*', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
@@ -244,8 +244,7 @@ describe('presets', () => {
 })
 
 describe('transient refusals', () => {
-  it('retries 429 / 5xx twice, briefly and jittered, honouring Retry-After; never 4xx', async () => {
-    const { transientRetryMs } = await import('./vector-runner')
+  it('retries 429 / 5xx twice, briefly and jittered, honouring Retry-After; never 4xx', () => {
     const r = (status: number, retryAfter?: string) => ({ status, headers: new Headers(retryAfter ? { 'retry-after': retryAfter } : {}) })
     expect(transientRetryMs(r(503), 0, () => 0.5)).toBe(1500)
     expect(transientRetryMs(r(502), 1, () => 0.5)).toBe(3000)

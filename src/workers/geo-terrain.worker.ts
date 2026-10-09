@@ -24,7 +24,7 @@
 // NO three.js here — geometry assembly happens in geo-terrain.ts.
 
 import { latLonToTileFloat } from '../lib/geo/geo-math'
-import { decodeTerrarium, terrariumTileUrl } from '../lib/geo/elevation'
+import { demSourceById, demTileUrl, type DemSource, type DemSourceId } from '../lib/geo/dem-sources'
 import { clampHeightGrid, despeckleHeightGrid } from '../lib/geo/height-grid-clamp'
 import { lowerEnvelope } from '../lib/geo/lower-envelope'
 import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
@@ -56,8 +56,10 @@ export interface TerrainBuildRequest {
   id: string
   lat: number
   lon: number
-  /** Slippy zoom of the DEM tiles. */
+  /** Slippy zoom of the DEM tiles (already capped at the source's maxZoom). */
   zoom: number
+  /** Which elevation source to read (dem-sources.ts); default the global one. */
+  dem?: DemSourceId
   /** Vertex SEGMENTS per patch side (vertices = grid+1 squared). */
   grid: number
   /** Imagery XYZ template to drape, or null for untextured terrain. */
@@ -143,7 +145,7 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
       Array.from({ length: 9 }, (_, k) => {
         const col = k % 3
         const row = Math.floor(k / 3)
-        return blitHeights(unified, cx - 1 + col, cy - 1 + row, req.zoom, col, row)
+        return blitHeights(unified, demSourceById(req.dem), cx - 1 + col, cy - 1 + row, req.zoom, col, row)
       }),
     )
 
@@ -192,7 +194,11 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
     // bicubic kernel must never see the cliff.
     const pxM = (WEB_MERCATOR_WORLD_M * Math.cos((req.lat * Math.PI) / 180))
       / (2 ** req.zoom * TERRAIN_TILE_DIM)
-    const envelope = lowerEnvelope(unified, PATCH_PX, PATCH_PX, pxM)
+    // A bare-earth source (dem-sources.ts) has no buildings to take out: the
+    // opening would only erode real ground.
+    const envelope = demSourceById(req.dem).bareEarth
+      ? { maxDropM: 0, meanDropM: 0, radiusPx: 0 }
+      : lowerEnvelope(unified, PATCH_PX, PATCH_PX, pxM)
     if (envelope.maxDropM > 1) {
       console.info(
         `[GeoTerrain] lower envelope: window ${envelope.radiusPx}px (~${pxM.toFixed(1)} m/px), ` +
@@ -277,9 +283,9 @@ function postError(id: string, err: unknown): void {
 // ── Heights ─────────────────────────────────────────────────────────────────────
 
 async function blitHeights(
-  unified: Float32Array, tx: number, ty: number, zoom: number, col: number, row: number,
+  unified: Float32Array, dem: DemSource, tx: number, ty: number, zoom: number, col: number, row: number,
 ): Promise<void> {
-  const data = await fetchTilePixels(terrariumTileUrl(zoom, tx, ty))
+  const data = await fetchTilePixels(demTileUrl(dem, zoom, tx, ty))
   const ox = col * TERRAIN_TILE_DIM
   const oy = row * TERRAIN_TILE_DIM
   for (let y = 0; y < TERRAIN_TILE_DIM; y++) {
@@ -287,7 +293,7 @@ async function blitHeights(
     const dst = (oy + y) * PATCH_PX + ox
     for (let x = 0; x < TERRAIN_TILE_DIM; x++) {
       const o = src + x * 4
-      unified[dst + x] = decodeTerrarium(data[o], data[o + 1], data[o + 2])
+      unified[dst + x] = dem.decode(data[o], data[o + 1], data[o + 2], data[o + 3])
     }
   }
 }
@@ -295,7 +301,10 @@ async function blitHeights(
 async function fetchTilePixels(url: string): Promise<Uint8ClampedArray> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`terrain tile HTTP ${res.status} (${url})`)
-  const bitmap = await createImageBitmap(await res.blob())
+  // Heights, not colours: no colour management, no premultiplied alpha (the
+  // ICGC tiles carry alpha, and premultiplying would rewrite the RGB of a
+  // half-transparent pixel — a different height).
+  const bitmap = await createImageBitmap(await res.blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' })
   try {
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
     const ctx = canvas.getContext('2d')

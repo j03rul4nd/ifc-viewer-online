@@ -143,6 +143,14 @@ export type SatelliteResolver = () => Array<{
   modelId: string
   placement: import('./geo/geo-types').GeoPlacement
   bounds: { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } }
+  /** World Y of the model's own origin (its stated ground floor). */
+  originY?: number | null
+  /** World position of the model's own origin. */
+  origin?: { x: number; y: number; z: number } | null
+  /** The model's current pivot position. */
+  pivot?: { x: number; y: number; z: number }
+  /** Same key = files of one project sharing an IfcMapConversion. */
+  georefKey?: string | null
 }> | null
 
 export const DEFAULT_HIDDEN_TYPES: readonly string[] = ['IFCSPACE']
