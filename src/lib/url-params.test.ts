@@ -472,3 +472,11 @@ describe('?look= (map art direction)', () => {
     expect(withLook({ enabled: true }, 'night..night')).toEqual({ enabled: true, look: 'night' })
   })
 })
+
+describe('?layers= (data-layer setup)', () => {
+  it('takes one loadable URL and ignores anything else', () => {
+    expect(parseAppUrlParams('?layers=https://host.org/twin.json').layersUrl).toBe('https://host.org/twin.json')
+    expect(parseAppUrlParams('?layers=javascript:alert(1)').layersUrl).toBeUndefined()
+    expect(parseAppUrlParams('?model=https://h/a.ifc').layersUrl).toBeUndefined()
+  })
+})

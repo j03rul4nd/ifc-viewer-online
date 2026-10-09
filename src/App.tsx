@@ -909,7 +909,7 @@ export default function App() {
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
-  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending)
+  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending || !!s.setupUrl)
   // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
   const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
   useEffect(() => {
@@ -923,9 +923,12 @@ export default function App() {
   }, [twinInUse])
   // Layers saved on this device come back on boot. Only a flag here: the panel
   // (and with it proj4 + the vector chunk) mounts only when there IS something.
+  // A `?layers=` link wins: it says what the scene shows, like `?model=`.
   useEffect(() => {
-    if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
-  }, [])
+    const setup = urlParams.layersUrl
+    if (setup) useVectorLayerStore.getState().setSetupUrl(setup)
+    else if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
+  }, [urlParams.layersUrl])
 
   // Availability, stated from the SAME conditions that render each panel below.
   // Written from memory instead, it drifted immediately: the client skin got a

@@ -98,7 +98,9 @@
     "noJoinBase": "Não há geometria a que juntar.",
     "emptyTable": "A tabela está vazia.",
     "tmbKey": "A TMB precisa das suas chaves: adicione-as em Fontes em direto → chaves TMB.",
-    "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde."
+    "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde.",
+    "notLayersFile": "Este ficheiro não é uma configuração de camadas de dados.",
+    "layersFileVersion": "Esta configuração foi guardada numa versão mais recente. Recarregue a página e tente de novo."
   },
   "kind": {
     "point": "Ponto",
@@ -416,7 +418,14 @@
     "nothingYet": "Ainda nada gravado: o histórico acumula-se enquanto a camada está em direto.",
     "spanH": "{{n}} h gravadas",
     "spanM": "{{n}} min gravados",
-    "clear": "Apagar"
+    "clear": "Apagar",
+    "chart": "Ao longo do tempo",
+    "chartField": "Campo a representar",
+    "chartRange": "Intervalo de tempo",
+    "chartMinMax": "mín {{min}} · máx {{max}}",
+    "chartNow": "agora {{v}}",
+    "chartEmpty": "Sem alterações gravadas neste intervalo.",
+    "chartAll": "Tudo"
   },
   "traffic": {
     "veryFluid": "Muito fluido",
@@ -482,6 +491,38 @@
     "now": "já",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Adicione as suas chaves TMB (Fontes em direto) para ver aqui os próximos autocarros."
+  },
+  "share": {
+    "title": "Partilhar esta configuração",
+    "hint": "Guarda as camadas — fontes, estilos, grupos, alertas — num ficheiro que um colega pode abrir aqui. Nunca inclui chaves nem tokens.",
+    "export": "Exportar configuração",
+    "import": "Abrir configuração…",
+    "exported": "Camadas exportadas: {{n}}.",
+    "secretsRemoved": "Removidas {{n}} chaves ou tokens dos URL.",
+    "imported": "Camadas adicionadas: {{n}}.",
+    "importFailed": "Não carregadas: {{n}}."
+  },
+  "graduated": {
+    "title": "Colorir por um número",
+    "classes": "Número de classes",
+    "nClasses": "{{n}} classes",
+    "method": "Como dividir",
+    "quantile": "Mesmo número em cada",
+    "equal": "Passos iguais",
+    "ramp": "Cores",
+    "reverse": "Inverter",
+    "create": "Criar {{n}} grupos por intervalos"
+  },
+  "follow": {
+    "start": "Seguir",
+    "on": "A seguir",
+    "stop": "Deixar de seguir",
+    "lost": "O elemento seguido saiu da fonte."
+  },
+  "download": {
+    "title": "Descarregar dados",
+    "onlyVisible": "Só grupos visíveis",
+    "done": "Elementos exportados: {{n}}."
   },
   "devices": {
     "entry": "Dispositivos ao vivo",

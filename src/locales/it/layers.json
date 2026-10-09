@@ -98,7 +98,9 @@
     "noJoinBase": "Nessuna geometria a cui unire.",
     "emptyTable": "La tabella è vuota.",
     "tmbKey": "TMB richiede le tue chiavi: aggiungile in Fonti dal vivo → chiavi TMB.",
-    "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi."
+    "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi.",
+    "notLayersFile": "Questo file non è una configurazione di livelli di dati.",
+    "layersFileVersion": "Questa configurazione è di una versione più recente. Ricarica la pagina e riprova."
   },
   "kind": {
     "point": "Punto",
@@ -416,7 +418,14 @@
     "nothingYet": "Ancora nulla di registrato: la cronologia cresce mentre il livello è dal vivo.",
     "spanH": "{{n}} h registrate",
     "spanM": "{{n}} min registrati",
-    "clear": "Elimina"
+    "clear": "Elimina",
+    "chart": "Nel tempo",
+    "chartField": "Campo da tracciare",
+    "chartRange": "Intervallo di tempo",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "ora {{v}}",
+    "chartEmpty": "Nessuna modifica registrata in questo intervallo.",
+    "chartAll": "Tutto"
   },
   "traffic": {
     "veryFluid": "Molto fluido",
@@ -482,6 +491,38 @@
     "now": "ora",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Aggiungi le tue chiavi TMB (Fonti dal vivo) per vedere qui i prossimi autobus."
+  },
+  "share": {
+    "title": "Condividi questa configurazione",
+    "hint": "Salva i livelli — fonti, stili, gruppi, avvisi — in un file che un collega può aprire qui. Chiavi e token non sono mai inclusi.",
+    "export": "Esporta configurazione",
+    "import": "Apri configurazione…",
+    "exported": "Livelli esportati: {{n}}.",
+    "secretsRemoved": "Rimossi {{n}} chiavi o token dagli URL.",
+    "imported": "Livelli aggiunti: {{n}}.",
+    "importFailed": "Non caricati: {{n}}."
+  },
+  "graduated": {
+    "title": "Colora per un numero",
+    "classes": "Numero di classi",
+    "nClasses": "{{n}} classi",
+    "method": "Come dividere",
+    "quantile": "Stesso numero per classe",
+    "equal": "Passi uguali",
+    "ramp": "Colori",
+    "reverse": "Inverti",
+    "create": "Crea {{n}} gruppi per intervalli"
+  },
+  "follow": {
+    "start": "Segui",
+    "on": "In seguito",
+    "stop": "Smetti di seguire",
+    "lost": "L’elemento seguito è uscito dal flusso."
+  },
+  "download": {
+    "title": "Scarica dati",
+    "onlyVisible": "Solo gruppi visibili",
+    "done": "Elementi esportati: {{n}}."
   },
   "devices": {
     "entry": "Dispositivi live",

@@ -52,7 +52,7 @@ import { lonLatToScene } from '../geo/scene-anchor'
 import type { LiveConfig, HistoryConfig } from '../../stores/vectorLayerStore'
 import type { AlertRule } from './alerts'
 import { indexedDbBackend, createRecorder, type HistoryBackend } from './history-store'
-import { rebuildAt, type Frame } from './history-codec'
+import { rebuildAt, featureSeries, type Frame, type FeaturePoint } from './history-codec'
 
 /**
  * The data the scene shows for a layer: its rebuilt past while time-
@@ -224,6 +224,34 @@ async function sync(): Promise<void> {
     log.debug(`layer ${layer.name}:`, stats)
   }
 
+  // ── Follow a moving feature ──
+  const fol = useVectorLayerStore.getState().following
+  if (fol) {
+    const fl = layers.find((l) => l.id === fol.layerId)
+    const data = fl ? displayData(fl) : null
+    const fKey = fl && data ? `${fol.layerId}|${fol.key}|${fl.fetchedAt}|${useVectorLayerStore.getState().historyData[fol.layerId]?.at ?? ''}` : ''
+    if (fKey && fKey !== followKey && fl && data) {
+      followKey = fKey
+      const identity = resolveIdentity(data, fl.live?.idField)
+      const i = data.features.findIndex((f, k) => featureKey(f, k, identity) === fol.key)
+      if (i < 0) {
+        // It left the feed (end of trip): stop, and say so.
+        useVectorLayerStore.getState().setFollowing(null)
+        toast(i18n.getFixedT(null, 'layers')('follow.lost'), 'info')
+      } else {
+        const p = projectLayer({ ...data, features: [data.features[i]] }, anchor, fl.heightMode)[0]?.lists[0]?.[0]
+        if (p) system.followTo({ x: p.x, y: ground(p.x, p.z), z: p.z })
+        // Keep the selection on it, wherever the feed put it this time —
+        // unless the user picked something else meanwhile: then they are done.
+        const sel = useVectorLayerStore.getState().selected
+        const stillOnIt = sel?.layerId === fol.layerId && (sel.featureIndex === followIndex || sel.featureIndex === i)
+        if (!stillOnIt) { useVectorLayerStore.getState().setFollowing(null); followIndex = -1 }
+        else if (sel.featureIndex !== i) useVectorLayerStore.getState().setSelected({ layerId: fol.layerId, featureIndex: i })
+        followIndex = i
+      }
+    }
+  } else followKey = ''
+
   // ── Alert rings ──
   const hitsNow = useVectorLayerStore.getState().alertHits
   const rewinding = !!useVectorLayerStore.getState().timeTravel
@@ -275,6 +303,21 @@ async function sync(): Promise<void> {
 }
 
 let highlightKey = ''
+let followKey = ''
+/** Index the followed feature had at the last refresh (to tell it from a new pick). */
+let followIndex = -1
+
+/** Start or stop riding with a feature (by identity, so a reordered feed is fine). */
+export function followFeature(layerId: string, featureIndex: number | null): void {
+  const st = useVectorLayerStore.getState()
+  if (featureIndex === null) { st.setFollowing(null); return }
+  const l = st.layers.find((x) => x.id === layerId)
+  const f = l?.data?.features[featureIndex]
+  if (!l?.data || !f) return
+  followKey = ''
+  followIndex = featureIndex
+  st.setFollowing({ layerId, key: featureKey(f, featureIndex, resolveIdentity(l.data, l.live?.idField)) })
+}
 
 // ── Alerts ─────────────────────────────────────────────────────────────────────
 
@@ -480,8 +523,8 @@ function hasSaved(): boolean {
   try { return !!localStorage.getItem(VECTOR_LAYERS_LS_KEY) } catch { return false }
 }
 
-function persist(): void {
-  if (!restored) return
+/** The current layers as saved records: what persistence and export share. */
+function snapshotLayers(): PersistedLayer[] {
   const out: PersistedLayer[] = []
   for (const l of useVectorLayerStore.getState().layers) {
     if (l.status !== 'ready') continue
@@ -495,6 +538,18 @@ function persist(): void {
       fetchUrl: o.fetchUrl, feed: o.feed, text, attribution: l.attribution,
     })
   }
+  return out
+}
+
+/**
+ * Off while the scene comes from a `?layers=` link: that setup belongs to the
+ * link, and the visitor's own saved layers must survive it untouched.
+ */
+let persistEnabled = true
+
+function persist(): void {
+  if (!restored || !persistEnabled) return
+  const out = snapshotLayers()
   try {
     if (out.length === 0) localStorage.removeItem(VECTOR_LAYERS_LS_KEY)
     else localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify({ v: 1, layers: out }))
@@ -515,6 +570,14 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
     if (parsed?.v === 1 && Array.isArray(parsed.layers)) saved = parsed.layers
   } catch { /* corrupt entry: start clean */ }
 
+  const r = await loadSaved(saved)
+  restored = true
+  persist()
+  return r
+}
+
+/** Rebuild layers from saved records (restore and import share this). */
+async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number }> {
   let ok = 0, failed = 0
   for (const p of saved) {
     let text = p.text
@@ -539,9 +602,76 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
       { style: p.style, heightMode: p.heightMode, visible: p.visible, symbology: p.symbology, layerStyle: p.layerStyle, live: p.live, history: p.history, alerts: p.alerts })
     if (r.ok) ok++; else failed++
   }
-  restored = true
-  persist()
   return { restored: ok, failed }
+}
+
+// ── Sharing a layer setup as a file ────────────────────────────────────────────
+
+const SHARE_FORMAT = 'ifc-viewer-data-layers'
+
+/** Query parameters that carry someone's credentials — never leave in a file. */
+const SECRET_PARAM = /^(app_?key|app_?id|api_?key|apikey|key|token|access_?token|auth|secret|password|pwd|sig|signature|client_?secret)$/i
+
+/** A URL without credential-looking parameters, and how many were removed. */
+export function scrubUrl(url: string): { url: string; removed: number } {
+  let u: URL
+  try { u = new URL(url) } catch { return { url, removed: 0 } }
+  let removed = 0
+  for (const k of [...u.searchParams.keys()]) if (SECRET_PARAM.test(k)) { u.searchParams.delete(k); removed++ }
+  return { url: removed ? u.toString() : url, removed }
+}
+
+/**
+ * The layer setup as a portable file: sources, styles, groups, zoom,
+ * aggregation, live/history settings and alerts. Never keys or tokens (TMB
+ * keys are not in URLs to begin with; anything credential-like pasted into a
+ * URL is removed), never the user's proxy, never recorded history.
+ */
+export function exportLayersFile(): { json: string; layers: number; secretsRemoved: number } {
+  let secretsRemoved = 0
+  const scrub = (u: string | undefined): string | undefined => {
+    if (!u) return u
+    const r = scrubUrl(u)
+    secretsRemoved += r.removed
+    return r.url
+  }
+  const layers = snapshotLayers().map((l) => ({
+    ...l,
+    fetchUrl: scrub(l.fetchUrl),
+    feed: l.feed ? {
+      ...l.feed, url: scrub(l.feed.url)!,
+      join: l.feed.join ? { ...l.feed.join, geomUrl: scrub(l.feed.join.geomUrl) } : undefined,
+    } : undefined,
+    source: l.source.type === 'url' ? { ...l.source, url: scrub(l.source.url)! }
+      : l.source.type === 'wfs' ? { ...l.source, endpoint: scrub(l.source.endpoint)! } : l.source,
+  }))
+  const json = JSON.stringify({ format: SHARE_FORMAT, v: 1, exportedAt: new Date().toISOString(), layers }, null, 1)
+  return { json, layers: layers.length, secretsRemoved }
+}
+
+/** Open a setup from a link (`?layers=`). Session-only: nothing is saved. */
+export async function importLayersFromUrl(url: string): ReturnType<typeof importLayersFile> {
+  persistEnabled = false
+  restored = true
+  const r = await fetchText(url)
+  if (!r.ok) return r
+  return importLayersFile(r.text)
+}
+
+/** Cheap sniff: is this text a shared layer setup? */
+export function isLayersFile(text: string): boolean {
+  return text.slice(0, 200).includes(`"format": "${SHARE_FORMAT}"`) || text.slice(0, 200).includes(`"format":"${SHARE_FORMAT}"`)
+}
+
+/** Add the layers of a shared file to the scene (alongside the current ones). */
+export async function importLayersFile(text: string): Promise<{ ok: true; restored: number; failed: number } | { ok: false; errorKey: string }> {
+  let parsed: { format?: string; v?: number; layers?: PersistedLayer[] }
+  try { parsed = JSON.parse(text) } catch { return { ok: false, errorKey: 'error.notLayersFile' } }
+  if (parsed?.format !== SHARE_FORMAT || !Array.isArray(parsed.layers)) return { ok: false, errorKey: 'error.notLayersFile' }
+  if (parsed.v !== 1) return { ok: false, errorKey: 'error.layersFileVersion' }
+  const r = await loadSaved(parsed.layers)
+  persist()
+  return { ok: true, ...r }
 }
 
 /** A layer-made anchor lives only while there are layers (same rule as scans). */
@@ -1334,4 +1464,21 @@ export async function attachJoin(
   setLive(layerId, { enabled: true, intervalS, animate: false })
   setHistory(layerId, {})
   return { ok: true, id: layerId }
+}
+
+// ── A feature's own history (the selected-feature chart) ───────────────────────
+
+/**
+ * What the recording knows about one feature of a layer: its properties each
+ * time they changed. Null when the layer records nothing. Read from the
+ * browser's own history store — no request to the source.
+ */
+export async function featureHistory(layerId: string, featureIndex: number): Promise<FeaturePoint[] | null> {
+  const l = useVectorLayerStore.getState().layers.find((x) => x.id === layerId)
+  if (!l?.data || !l.history?.enabled) return null
+  const f = l.data.features[featureIndex]
+  if (!f) return null
+  const key = featureKey(f, featureIndex, resolveIdentity(l.data, l.live?.idField))
+  const frames = framesCache.get(seriesOf(layerId)) ?? await historyBackend.load(seriesOf(layerId))
+  return featureSeries(frames, key)
 }

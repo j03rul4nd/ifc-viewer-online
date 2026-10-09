@@ -765,6 +765,7 @@ const OPTIONS = [
   ['map', "boolean | ('terrain' | 'buildings' | 'showcase')[]", '—', 'optMap'],
   ['solar · moon', "'MM-DDTHH:MM' · boolean", '—', 'optSolar'],
   ['scans', 'string[]', '—', 'optScans'],
+  ['layers', 'string', '—', 'optLayers'],
   ['view · fill', "CameraView · number", '—', 'optView'],
   ['wheel', "'always' | 'ctrl'", "'always'", 'optWheel'],
   ['lazy', "boolean | 'visible'", 'false', 'optLazy'],

@@ -98,7 +98,9 @@
     "noJoinBase": "There is no geometry to join onto.",
     "emptyTable": "The table is empty.",
     "tmbKey": "TMB needs your own keys: add them under Live sources → TMB keys.",
-    "quota": "The provider’s free quota is used up for now. Try again later."
+    "quota": "The provider’s free quota is used up for now. Try again later.",
+    "notLayersFile": "This file is not a data-layers setup.",
+    "layersFileVersion": "This setup was saved by a newer version. Update the page and try again."
   },
   "kind": {
     "point": "Point",
@@ -416,7 +418,14 @@
     "nothingYet": "Nothing recorded yet — history builds up while the layer is live.",
     "spanH": "{{n}} h recorded",
     "spanM": "{{n}} min recorded",
-    "clear": "Delete"
+    "clear": "Delete",
+    "chart": "Over time",
+    "chartField": "Field to chart",
+    "chartRange": "Time range",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "now {{v}}",
+    "chartEmpty": "No recorded change in this range.",
+    "chartAll": "All"
   },
   "traffic": {
     "veryFluid": "Very fluid",
@@ -482,6 +491,38 @@
     "now": "now",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Add your TMB keys (Live sources) to see the next buses here."
+  },
+  "share": {
+    "title": "Share this setup",
+    "hint": "Save the layers — sources, styles, groups, alerts — as a file a colleague can open here. Keys and tokens are never included.",
+    "export": "Export setup",
+    "import": "Open setup…",
+    "exported": "Layers exported: {{n}}.",
+    "secretsRemoved": "{{n}} key(s) or token(s) removed from URLs.",
+    "imported": "Layers added: {{n}}.",
+    "importFailed": "Could not be loaded: {{n}}."
+  },
+  "graduated": {
+    "title": "Colour by a number",
+    "classes": "Number of classes",
+    "nClasses": "{{n}} classes",
+    "method": "How to split",
+    "quantile": "Same count each",
+    "equal": "Equal steps",
+    "ramp": "Colours",
+    "reverse": "Reverse",
+    "create": "Create {{n}} groups by range"
+  },
+  "follow": {
+    "start": "Follow",
+    "on": "Following",
+    "stop": "Stop following",
+    "lost": "The followed feature left the feed."
+  },
+  "download": {
+    "title": "Download data",
+    "onlyVisible": "Only visible groups",
+    "done": "Features exported: {{n}}."
   },
   "devices": {
     "entry": "Live devices",

@@ -825,6 +825,12 @@ describe('IfcViewer — presentation and analysis (1.11)', () => {
     v.dispose()
   })
 
+  it('passes a data-layer setup through as ?layers= (v1.16)', () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE, layers: 'https://h/twin-setup.json' })
+    expect(new URL(v.iframe.src).searchParams.get('layers')).toBe('https://h/twin-setup.json')
+    v.dispose()
+  })
+
   it('writes map=1 for the map on its own, and a preset background by name', () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE, map: true, background: { preset: 'paper' } })
     const u = new URL(v.iframe.src)
