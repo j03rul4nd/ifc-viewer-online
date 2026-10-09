@@ -626,6 +626,71 @@
     "timeLive": "ライブ",
     "backToLive": "ライブに戻る",
     "historyEmpty": "記録中… データがあればスライダーを動かせます",
-    "historyDisabled": "記録はオフです"
+    "historyDisabled": "記録はオフです",
+    "tpl": {
+      "homeSource": "デモ住宅（シミュレーション）",
+      "communitySource": "デモ集合住宅（シミュレーション）",
+      "temperature": "温度",
+      "window": "窓",
+      "bay": "区画",
+      "alarm": "警報",
+      "doors": "ドア",
+      "solar": "太陽光パネル",
+      "water": "水道",
+      "camera": "カメラ",
+      "dwelling": "住戸",
+      "floorWater": "水道 · 階",
+      "entrance": "エントランス",
+      "lift": "エレベーター",
+      "fire": "火災警報",
+      "parkingCamera": "駐車場カメラ",
+      "windowOpen": "窓開放（熱損失）",
+      "cold": "寒い < 20 °C",
+      "warm": "暑い > 23 °C",
+      "comfort": "快適",
+      "triggered": "発報",
+      "armed": "警戒中",
+      "open": "開",
+      "producingHigh": "発電 > 2 kW",
+      "producing": "発電中",
+      "night": "夜間",
+      "leak": "漏水",
+      "flowing": "流水中",
+      "occupied": "使用中",
+      "free": "空き",
+      "charging": "EV 充電中",
+      "motion": "動きあり",
+      "offline": "オフライン",
+      "heatLoss": "熱損失",
+      "highUse": "使用量大",
+      "fault": "故障",
+      "moving": "運転中",
+      "fireAlarm": "火災警報"
+    },
+    "tplName": {
+      "home": "スマートホーム",
+      "community": "集合住宅"
+    },
+    "tplHint": {
+      "home": "メーター、太陽光、警報、ドア、水道、部屋、カメラ",
+      "community": "住戸、階ごとの水道、駐車場、エントランス、エレベーター、カメラ、火災"
+    },
+    "operatedHint": "紐付けた各要素の現在の運用状態（as operated）を GlobalId 付きで出力します。",
+    "operatedCsv": "状態 CSV",
+    "operatedJson": "状態 JSON",
+    "media": "画像",
+    "gallery": {
+      "title": "ライブ デジタルツイン",
+      "subtitle": "モデルとシミュレーション機器 — 変化を見てください",
+      "files": "IFC ファイル {{count}} 個",
+      "home": {
+        "name": "スマートホーム",
+        "description": "温度別の部屋、警報、太陽光、漏水、玄関カメラ。"
+      },
+      "community": {
+        "name": "集合住宅 · 3 ファイル",
+        "description": "意匠・構造・設備：ファイルをまたぐ階ごとの水道、住戸、駐車場、エレベーター。"
+      }
+    }
   }
 }

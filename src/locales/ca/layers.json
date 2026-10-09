@@ -626,6 +626,71 @@
     "timeLive": "En directe",
     "backToLive": "Tornar al directe",
     "historyEmpty": "Gravant… mou el control quan hi hagi dades",
-    "historyDisabled": "La gravació està apagada"
+    "historyDisabled": "La gravació està apagada",
+    "tpl": {
+      "homeSource": "Casa demo (simulada)",
+      "communitySource": "Comunitat demo (simulada)",
+      "temperature": "temperatura",
+      "window": "finestra",
+      "bay": "plaça",
+      "alarm": "Alarma",
+      "doors": "Portes",
+      "solar": "Plaques solars",
+      "water": "Aigua",
+      "camera": "Càmera",
+      "dwelling": "habitatge",
+      "floorWater": "Aigua · planta",
+      "entrance": "Portal",
+      "lift": "Ascensor",
+      "fire": "Alarma d'incendi",
+      "parkingCamera": "Càmera del pàrquing",
+      "windowOpen": "Finestra oberta (pèrdua de calor)",
+      "cold": "Fred < 20 °C",
+      "warm": "Calor > 23 °C",
+      "comfort": "Confort",
+      "triggered": "Disparada",
+      "armed": "Armada",
+      "open": "Oberta",
+      "producingHigh": "Produint > 2 kW",
+      "producing": "Produint",
+      "night": "Nit",
+      "leak": "Fuita",
+      "flowing": "Circulant",
+      "occupied": "Ocupada",
+      "free": "Lliure",
+      "charging": "Carregant VE",
+      "motion": "Moviment",
+      "offline": "Sense connexió",
+      "heatLoss": "Pèrdua de calor",
+      "highUse": "Consum alt",
+      "fault": "Avaria",
+      "moving": "En marxa",
+      "fireAlarm": "Alarma d'incendi"
+    },
+    "tplName": {
+      "home": "Casa connectada",
+      "community": "Comunitat de veïns"
+    },
+    "tplHint": {
+      "home": "Comptador, solar, alarma, portes, aigua, estances, càmera",
+      "community": "Habitatges, aigua per planta, pàrquing, portal, ascensor, càmeres, incendi"
+    },
+    "operatedHint": "Estat operatiu de cada element vinculat ara mateix (\"as operated\"), amb GlobalId.",
+    "operatedCsv": "Estat CSV",
+    "operatedJson": "Estat JSON",
+    "media": "Imatge",
+    "gallery": {
+      "title": "Bessons digitals en viu",
+      "subtitle": "Un model amb dispositius simulats — mira com canvia",
+      "files": "{{count}} fitxers IFC",
+      "home": {
+        "name": "Casa connectada",
+        "description": "Estances per temperatura, alarma, solar, fuites d'aigua i càmera d'entrada."
+      },
+      "community": {
+        "name": "Comunitat de veïns · 3 fitxers",
+        "description": "Arquitectura, estructura i instal·lacions: aigua per planta entre fitxers, habitatges, pàrquing, ascensor."
+      }
+    }
   }
 }

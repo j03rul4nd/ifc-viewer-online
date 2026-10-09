@@ -626,6 +626,71 @@
     "timeLive": "En direct",
     "backToLive": "Revenir au direct",
     "historyEmpty": "Enregistrement… déplacez le curseur dès qu'il y a des données",
-    "historyDisabled": "L'enregistrement est désactivé"
+    "historyDisabled": "L'enregistrement est désactivé",
+    "tpl": {
+      "homeSource": "Maison démo (simulée)",
+      "communitySource": "Copropriété démo (simulée)",
+      "temperature": "température",
+      "window": "fenêtre",
+      "bay": "place",
+      "alarm": "Alarme",
+      "doors": "Portes",
+      "solar": "Panneaux solaires",
+      "water": "Eau",
+      "camera": "Caméra",
+      "dwelling": "logement",
+      "floorWater": "Eau · niveau",
+      "entrance": "Entrée",
+      "lift": "Ascenseur",
+      "fire": "Alarme incendie",
+      "parkingCamera": "Caméra du parking",
+      "windowOpen": "Fenêtre ouverte (perte de chaleur)",
+      "cold": "Froid < 20 °C",
+      "warm": "Chaud > 23 °C",
+      "comfort": "Confort",
+      "triggered": "Déclenchée",
+      "armed": "Armée",
+      "open": "Ouverte",
+      "producingHigh": "Production > 2 kW",
+      "producing": "Production",
+      "night": "Nuit",
+      "leak": "Fuite",
+      "flowing": "Débit",
+      "occupied": "Occupée",
+      "free": "Libre",
+      "charging": "VE en charge",
+      "motion": "Mouvement",
+      "offline": "Hors ligne",
+      "heatLoss": "Perte de chaleur",
+      "highUse": "Forte consommation",
+      "fault": "Panne",
+      "moving": "En marche",
+      "fireAlarm": "Alarme incendie"
+    },
+    "tplName": {
+      "home": "Maison connectée",
+      "community": "Copropriété"
+    },
+    "tplHint": {
+      "home": "Compteur, solaire, alarme, portes, eau, pièces, caméra",
+      "community": "Logements, eau par niveau, parking, entrée, ascenseur, caméras, incendie"
+    },
+    "operatedHint": "État d'exploitation de chaque élément lié maintenant (« as operated »), avec GlobalId.",
+    "operatedCsv": "État CSV",
+    "operatedJson": "État JSON",
+    "media": "Image",
+    "gallery": {
+      "title": "Jumeaux numériques en direct",
+      "subtitle": "Un modèle avec des appareils simulés — regardez-le changer",
+      "files": "{{count}} fichiers IFC",
+      "home": {
+        "name": "Maison connectée",
+        "description": "Pièces par température, alarme, solaire, fuites d'eau et caméra d'entrée."
+      },
+      "community": {
+        "name": "Copropriété · 3 fichiers",
+        "description": "Architecture, structure et fluides : eau par niveau entre fichiers, logements, parking, ascenseur."
+      }
+    }
   }
 }

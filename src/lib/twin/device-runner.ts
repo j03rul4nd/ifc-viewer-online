@@ -26,7 +26,9 @@ import i18n from '../../i18n/config'
 import { SIM_PRESETS } from './device-sim'
 import type { ViewerAPI } from '../viewer'
 
-interface Poller { timer: ReturnType<typeof setTimeout> | null; failures: number; ctrl: AbortController | null; sig: string }
+interface Poller { timer: ReturnType<typeof setTimeout> | null; failures: number; ctrl: AbortController | null; sig: string; ws?: WebSocket | null }
+
+export const isStreamUrl = (url: string): boolean => /^wss?:\/\//i.test(url)
 
 type FetchResult = { ok: true; body: unknown; freshness: Freshness | null } | { ok: false; errorKey: string }
 
@@ -98,10 +100,49 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     return (ns.sound || ns.system) && store.getState().bindings.some((b) => b.rules.some((r) => r.alert))
   }
 
+  /** One response / message in: store it, and record the source's whole current state. */
+  const accept = (src: DeviceSource, body: unknown, now: number): void => {
+    const list = parseReadings(body, src, now)
+    store.getState().ingest(src.id, list, now)
+    // A stream message may carry ONE device: history keeps the source's full picture.
+    const all = [...store.getState().readings.values()].filter((x) => x.sourceId === src.id)
+    void record(src.id, all, now)
+  }
+
+  /**
+   * WebSocket sources (ws:// / wss://): every message is a JSON body read with
+   * the source's mapping, often a single device. Reconnects with backoff.
+   * Browsers cannot set headers on a WebSocket: keys go in the URL if the
+   * server takes them there.
+   */
+  const connect = (id: string): void => {
+    const p = pollers.get(id)
+    const src = store.getState().sources.find((s) => s.id === id)
+    if (!p || !src) return
+    let ws: WebSocket
+    try { ws = new WebSocket(src.url) } catch { store.getState().setError(id, 'error.url'); return }
+    p.ws = ws
+    ws.onopen = () => { p.failures = 0 }
+    ws.onmessage = (ev) => {
+      if (typeof ev.data !== 'string') return
+      let body: unknown
+      try { body = JSON.parse(ev.data) } catch { store.getState().setError(id, 'error.json'); return }
+      accept(src, body, Date.now())
+    }
+    ws.onclose = () => {
+      if (pollers.get(id) !== p || p.ws !== ws) return
+      p.ws = null
+      p.failures++
+      store.getState().setError(id, 'error.network')
+      p.timer = setTimeout(() => connect(id), nextDelayMs(Math.min(src.intervalS, 5), p.failures))
+    }
+  }
+
   const poll = async (id: string): Promise<void> => {
     const p = pollers.get(id)
     const src = store.getState().sources.find((s) => s.id === id)
     if (!p || !src) return
+    if (isStreamUrl(src.url)) { connect(id); return }
     let delay = src.intervalS * 1000
     const hidden = typeof document !== 'undefined' && document.hidden
     if (hidden && !pollHidden()) {
@@ -114,9 +155,7 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
       if (r.ok) {
         p.failures = 0
         const now = Date.now()
-        const list = parseReadings(r.body, src, now)
-        store.getState().ingest(id, list, now)
-        void record(id, list, now)
+        accept(src, r.body, now)
         delay = plannedDelayMs(src.intervalS, r.freshness)
       } else if (r.errorKey !== 'error.aborted') {
         p.failures++
@@ -134,6 +173,9 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     if (p.timer) clearTimeout(p.timer)
     p.ctrl?.abort()
     pollers.delete(id)
+    const ws = p.ws
+    p.ws = null
+    try { ws?.close() } catch { /* already closed */ }
   }
 
   const syncPollers = (): void => {

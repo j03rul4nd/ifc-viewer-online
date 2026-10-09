@@ -626,6 +626,71 @@
     "timeLive": "实时",
     "backToLive": "回到实时",
     "historyEmpty": "正在记录…有数据后拖动滑块",
-    "historyDisabled": "记录已关闭"
+    "historyDisabled": "记录已关闭",
+    "tpl": {
+      "homeSource": "演示住宅（模拟）",
+      "communitySource": "演示小区（模拟）",
+      "temperature": "温度",
+      "window": "窗户",
+      "bay": "车位",
+      "alarm": "报警",
+      "doors": "门",
+      "solar": "光伏板",
+      "water": "用水",
+      "camera": "摄像头",
+      "dwelling": "住户",
+      "floorWater": "用水 · 楼层",
+      "entrance": "入口",
+      "lift": "电梯",
+      "fire": "火灾报警",
+      "parkingCamera": "停车场摄像头",
+      "windowOpen": "窗户打开（热损失）",
+      "cold": "冷 < 20 °C",
+      "warm": "热 > 23 °C",
+      "comfort": "舒适",
+      "triggered": "已触发",
+      "armed": "已布防",
+      "open": "打开",
+      "producingHigh": "发电 > 2 kW",
+      "producing": "发电中",
+      "night": "夜间",
+      "leak": "漏水",
+      "flowing": "流动中",
+      "occupied": "已占用",
+      "free": "空闲",
+      "charging": "电动车充电",
+      "motion": "有移动",
+      "offline": "离线",
+      "heatLoss": "热损失",
+      "highUse": "高用量",
+      "fault": "故障",
+      "moving": "运行中",
+      "fireAlarm": "火灾报警"
+    },
+    "tplName": {
+      "home": "智能住宅",
+      "community": "住宅小区"
+    },
+    "tplHint": {
+      "home": "电表、光伏、报警、门、用水、房间、摄像头",
+      "community": "住户、分层用水、停车、入口、电梯、摄像头、火灾"
+    },
+    "operatedHint": "当前每个已绑定构件的运行状态（as operated），含 GlobalId。",
+    "operatedCsv": "状态 CSV",
+    "operatedJson": "状态 JSON",
+    "media": "图像",
+    "gallery": {
+      "title": "实时数字孪生",
+      "subtitle": "模型加模拟设备——看它实时变化",
+      "files": "{{count}} 个 IFC 文件",
+      "home": {
+        "name": "智能住宅",
+        "description": "按温度显示房间、报警、光伏、漏水和入口摄像头。"
+      },
+      "community": {
+        "name": "住宅小区 · 3 个文件",
+        "description": "建筑、结构与机电：跨文件分层用水、住户、停车、电梯。"
+      }
+    }
   }
 }
