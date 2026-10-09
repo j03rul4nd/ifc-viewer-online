@@ -328,3 +328,65 @@ export function rampColor(ramp: ColorStop[], t: number): [number, number, number
   }
   return hexToRgb(stops[stops.length - 1].color)
 }
+
+// ── Graduated classes (colour by a number) ─────────────────────────────────────
+
+export type ClassMethod = 'quantile' | 'equal'
+
+export interface NumericClass { lo: number; hi: number; count: number }
+
+/**
+ * Split a numeric field into up to `n` classes. Quantiles give each class a
+ * similar number of features (good for skewed data: most stations have few
+ * bikes); equal intervals keep the steps even (good for 0–100 %). Integer
+ * data gets integer, non-overlapping bounds ("0 – 2", "3 – 10"). Empty or
+ * duplicate classes are dropped, so n is a maximum.
+ */
+export function classBreaks(values: number[], n: number, method: ClassMethod): NumericClass[] {
+  const v = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b)
+  if (v.length === 0) return []
+  const ints = v.every((x) => Number.isInteger(x))
+  const min = v[0], max = v[v.length - 1]
+  if (min === max) return [{ lo: min, hi: max, count: v.length }]
+  const k = Math.max(2, Math.min(7, Math.round(n)))
+  const cuts: number[] = []
+  for (let i = 1; i < k; i++) {
+    const c = method === 'equal'
+      ? min + ((max - min) * i) / k
+      : v[Math.min(v.length - 1, Math.floor((v.length * i) / k))]
+    cuts.push(ints ? Math.round(c) : c)
+  }
+  const bounds = [...new Set([min, ...cuts, max])].sort((x, y) => x - y)
+  const out: NumericClass[] = []
+  for (let i = 1; i < bounds.length; i++) {
+    const last = i === bounds.length - 1
+    // Integers: [lo, next cut − 1], so classes never share a value.
+    // Decimals: [lo, hi), the last one closed.
+    const lo = bounds[i - 1]
+    const hi = ints && !last ? bounds[i] - 1 : bounds[i]
+    if (hi < lo) continue
+    const inside = (x: number): boolean => x >= lo && (ints || last ? x <= hi : x < hi)
+    const count = v.filter(inside).length
+    if (count > 0) out.push({ lo, hi, count })
+  }
+  return out
+}
+
+const fmtNum = (x: number): string => (Number.isInteger(x) ? String(x) : x.toFixed(Math.abs(x) < 10 ? 2 : 1))
+
+/** Groups for a numeric field, coloured along a ramp (low → high, or reversed). */
+export function graduatedGroups(field: string, classes: NumericClass[], ramp: ColorStop[], reverse = false): StyleGroup[] {
+  return classes.map((c, i) => {
+    const tt = classes.length === 1 ? 0.5 : i / (classes.length - 1)
+    const [r, g, b] = rampColor(ramp, reverse ? 1 - tt : tt)
+    const hex = `#${[r, g, b].map((x) => Math.round(x).toString(16).padStart(2, '0')).join('')}`
+    return {
+      id: newGroupId(),
+      name: c.lo === c.hi ? fmtNum(c.lo) : `${fmtNum(c.lo)} – ${fmtNum(c.hi)}`,
+      match: 'all' as const,
+      filters: [{ field, op: 'between' as const, value: [c.lo, c.hi] }],
+      style: defaultGroupStyle(hex),
+      visible: true,
+    }
+  })
+}

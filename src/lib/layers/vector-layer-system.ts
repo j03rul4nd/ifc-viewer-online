@@ -15,6 +15,8 @@ export interface VectorLayerContext {
   frameBox(min: THREE.Vector3, max: THREE.Vector3): void
   getActiveCamera(): THREE.Camera
   getCanvas(): HTMLCanvasElement | null
+  /** Slide the orbit target (and the camera with it) to a point, keeping the view. */
+  moveTarget?(x: number, y: number, z: number): void
 }
 
 /**
@@ -50,6 +52,8 @@ export interface VectorLayerSystemAPI {
   setLodListener(fn: ((id: string, aggregateOn: boolean, range: { min: number; max: number } | null) => void) | null): void
   /** Pulsing rings over a layer's alerting features (scene points). Empty clears them. */
   setAlertMarks(id: string, points: Array<{ x: number; y: number; z: number }>, color: string): void
+  /** Keep the view on a moving feature: the camera slides with it, angle and distance kept. */
+  followTo(p: { x: number; y: number; z: number }): void
   /** Move the camera to the highlighted feature. False when nothing is highlighted. */
   frameHighlight(): boolean
   /** Frame any scene box with the same oblique rule. */
@@ -282,6 +286,9 @@ export function createVectorLayerSystem(ctx: VectorLayerContext): VectorLayerSys
       box.expandByVector(new THREE.Vector3(pad, Math.min(pad, 10), pad))
       ctx.frameBox(box.min, box.max)
       return true
+    },
+    followTo(p) {
+      ctx.moveTarget?.(p.x, p.y, p.z)
     },
     frameBox(min, max) {
       ctx.frameBox(new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, max.y, max.z))

@@ -22,7 +22,7 @@ import {
 import { getAlertLog, onAlertLog, clearAlertLog, alertLogCsv } from '../lib/layers/alert-log'
 import { inferSchema } from '../lib/twin/flatten-props'
 import {
-  groupCounts, valueCounts, newGroupId, defaultGroupStyle, RAMPS,
+  groupCounts, valueCounts, newGroupId, defaultGroupStyle, RAMPS, numericRange, classBreaks, graduatedGroups, type ClassMethod,
   type LayerStyle, type StyleGroup, type GroupStyle, type Filter, type FilterOp, type ColorStop,
 } from '../lib/layers/style-groups'
 import { ICON_IDS, PRIMITIVES, guessIcon, type PointSymbol } from '../lib/layers/symbology'
@@ -95,7 +95,11 @@ function GroupsTab({ ls, set, rows, schema, kinds, t }: {
       {creating
         ? <GroupMaker rows={rows} schema={schema} t={t} existing={ls.groups.length}
           onCancel={() => setCreating(false)}
-          onCreate={(gs) => { set({ ...ls, groups: [...ls.groups, ...gs] }); setCreating(false); setOpen(gs[0]?.id ?? null) }} />
+          onCreate={(gs, top) => {
+            // Ranges go first: they are the colouring the user just asked for,
+            // and groups are first-match — below older groups they would never show.
+            set({ ...ls, groups: top ? [...gs, ...ls.groups] : [...ls.groups, ...gs] }); setCreating(false); setOpen(top ? null : gs[0]?.id ?? null)
+          }} />
         : <button className={`${btn} self-start`} onClick={() => setCreating(true)}>+ {t('groups.create')}</button>}
 
       {ls.groups.map((g, i) => (
@@ -130,7 +134,7 @@ function GroupsTab({ ls, set, rows, schema, kinds, t }: {
 
 /** The "select the 80 trains" step: a field, its values with counts, tick and create. */
 function GroupMaker({ rows, schema, existing, onCreate, onCancel, t }: {
-  rows: Rows; schema: Schema; existing: number; onCreate: (g: StyleGroup[]) => void; onCancel: () => void; t: T
+  rows: Rows; schema: Schema; existing: number; onCreate: (g: StyleGroup[], top?: boolean) => void; onCancel: () => void; t: T
 }) {
   const fields = useMemo(() => schema
     .filter((f) => f.distinct >= 1 && f.coverage >= 0.05)
@@ -141,6 +145,8 @@ function GroupMaker({ rows, schema, existing, onCreate, onCancel, t }: {
   const [q, setQ] = useState('')
   const shown = values.filter((v) => !q || v.value.toLowerCase().includes(q.toLowerCase()))
   const pickedCount = values.filter((v) => picked.has(v.value)).reduce((n, v) => n + v.count, 0)
+  // A number with more than a handful of values reads better as ranges.
+  const isNumeric = useMemo(() => !!field && values.length > 4 && numericRange(rows, field) !== null, [rows, field, values.length])
 
   const mk = (name: string, filters: Filter[], i: number, hint: string): StyleGroup => {
     const color = PALETTE[(existing + i) % PALETTE.length]
@@ -159,6 +165,7 @@ function GroupMaker({ rows, schema, existing, onCreate, onCancel, t }: {
           {fields.map((f) => <option key={f.field} value={f.field}>{f.field} ({f.distinct})</option>)}
         </select>
       </label>
+      {isNumeric && <Graduated rows={rows} field={field} onCreate={(gs) => onCreate(gs, true)} t={t} />}
       {values.length > 8 && (
         <input className={sel} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('maker.filter')} />
       )}
@@ -194,6 +201,48 @@ function GroupMaker({ rows, schema, existing, onCreate, onCancel, t }: {
         <span className="flex-1" />
         <button className="text-[10px] text-[var(--text-dim)] hover:text-[var(--text)]" onClick={onCancel}>{t('links.cancel')}</button>
       </div>
+    </div>
+  )
+}
+
+/** "Colour by a number": classes of a numeric field along a colour ramp. */
+function Graduated({ rows, field, onCreate, t }: { rows: Rows; field: string; onCreate: (g: StyleGroup[]) => void; t: T }) {
+  const [n, setN] = useState(4)
+  const [method, setMethod] = useState<ClassMethod>('quantile')
+  const [ramp, setRamp] = useState<keyof typeof RAMPS>('traffic')
+  const [reverse, setReverse] = useState(false)
+  const values = useMemo(() => rows.flatMap((r) => r.filter((p) => p.field === field && typeof p.value === 'number').map((p) => p.value as number)), [rows, field])
+  const groups = useMemo(() => graduatedGroups(field, classBreaks(values, n, method), RAMPS[ramp], reverse), [field, values, n, method, ramp, reverse])
+  const counts = useMemo(() => classBreaks(values, n, method).map((c) => c.count), [values, n, method])
+  return (
+    <div className="flex flex-col gap-1 p-1.5 rounded-[6px] bg-[var(--surface-2)]" data-testid="graduated">
+      <div className="text-[10px] font-medium text-[var(--text)]">{t('graduated.title')}</div>
+      <div className="flex items-center gap-1 flex-wrap text-[10px]">
+        <select className={sel} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label={t('graduated.classes')}>
+          {[3, 4, 5, 6, 7].map((k) => <option key={k} value={k}>{t('graduated.nClasses', { n: k })}</option>)}
+        </select>
+        <select className={sel} value={method} onChange={(e) => setMethod(e.target.value as ClassMethod)} aria-label={t('graduated.method')}>
+          <option value="quantile">{t('graduated.quantile')}</option>
+          <option value="equal">{t('graduated.equal')}</option>
+        </select>
+        <select className={sel} value={ramp} onChange={(e) => setRamp(e.target.value as keyof typeof RAMPS)} aria-label={t('graduated.ramp')}>
+          {(Object.keys(RAMPS) as Array<keyof typeof RAMPS>).map((r) => <option key={r} value={r}>{t(`agg.ramp.${r}`)}</option>)}
+        </select>
+        <label className="flex items-center gap-1 text-[var(--text-dim)]">
+          <input type="checkbox" checked={reverse} onChange={(e) => setReverse(e.target.checked)} />{t('graduated.reverse')}
+        </label>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {groups.map((g, i) => (
+          <span key={g.id} className="flex items-center gap-1 px-1 rounded text-[10px] bg-[var(--surface)] text-[var(--text)]">
+            <span className="w-2 h-2 rounded-full" style={{ background: g.style.point.color }} />{g.name}
+            <span className="font-mono text-[var(--text-faint)]">{counts[i]}</span>
+          </span>
+        ))}
+      </div>
+      <button className={`${btn} self-start`} disabled={groups.length === 0} onClick={() => onCreate(groups)}>
+        {t('graduated.create', { n: groups.length })}
+      </button>
     </div>
   )
 }

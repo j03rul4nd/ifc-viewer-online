@@ -78,6 +78,7 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `map`      | `true` \| `('terrain'\|'buildings'\|'showcase')[]` | — | Put the model on the map once it loads (v1.11). Your page declares tile consent — see [Presentation](#presentation-look-sun-map-v111). |
 | `solar` / `moon` | `'MM-DDTHH:MM'` / boolean         | —           | Open the sun study at this site-local time once loaded (v1.11). |
 | `scans`    | string[]                              | —           | Point cloud URLs to load alongside the model (v1.11). |
+| `layers`   | string                                | —           | Data-layer setup to open: URL of a JSON exported from the Data layers panel — live sources, styles, groups, alerts; never keys. Mirrors `?layers=` (v1.16). Also `<ifc-viewer layers="…">`. |
 | `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). A backstop: the viewer now answers every load it accepts with `model-loaded` or `model-error`, including parse failures and cancellations. |
 | `onReady` / `onModelLoaded` / `onModelError` / `onProgress` | function | — | Convenience callbacks (same as `.on(...)`). |
 
