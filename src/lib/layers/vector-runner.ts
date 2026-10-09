@@ -810,6 +810,15 @@ export async function importLayersSession(text: string): ReturnType<typeof impor
   return importLayersFile(text)
 }
 
+/**
+ * Layers an embedding page adds through the SDK belong to that page view:
+ * nothing is saved to, or overwritten in, the visitor's own saved layers.
+ */
+export function sessionOnlyLayers(): void {
+  persistEnabled = false
+  restored = true
+}
+
 /** Cheap sniff: is this text a shared layer setup? */
 export function isLayersFile(text: string): boolean {
   return text.slice(0, 200).includes(`"format": "${SHARE_FORMAT}"`) || text.slice(0, 200).includes(`"format":"${SHARE_FORMAT}"`)

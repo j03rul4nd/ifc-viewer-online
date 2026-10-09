@@ -45,7 +45,7 @@
         "name": "Endolla · charging locations (GELFS)",
         "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/8cdafa08-d378-4bf1-aad4-fafffe815940/resource/9febc26f-d6a7-45f2-8f73-f529ba4da930/download",
         "intervalS": 300,
-        "mapping": { "listPath": "locations", "idField": "id", "timeField": "last_updated" },
+        "mapping": { "listPath": "locations", "idField": "id", "timeField": "" },
         "enabled": true
       }
     ],

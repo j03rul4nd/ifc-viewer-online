@@ -2973,6 +2973,55 @@ export default function App() {
         case 'ifcviewer:get-site':
           void respond(() => siteStateOut())
           break
+        // ── Scenes and data (SDK 1.17) ─────────────────────────────────────
+        // The scene as a document (what Share → Digital-twin scene builds), the
+        // catalogue of live sources, data layers and the twin's state. Each runs
+        // the same code the panels do (lib/host-data-api, scene-snapshot).
+        case 'ifcviewer:get-scene': {
+          const withCamera = msg.camera !== false
+          const title = typeof msg.title === 'string' && msg.title.trim() ? msg.title.trim()
+            : useSceneStore.getState().models[0]?.fileName.replace(/\.ifc$/i, '') ?? i18n.t('layers:scene.untitled' as never)
+          const description = typeof msg.description === 'string' && msg.description.trim() ? msg.description.trim() : undefined
+          void respond(async () => {
+            const [{ snapshotScene, sceneLink }, { sceneSources }] = await Promise.all([
+              import('./lib/scene-doc/scene-snapshot'), import('./lib/scene-doc/scene-doc'),
+            ])
+            const snap = await snapshotScene({ title, description, camera: withCamera ? viewerApiRef.current?.getCameraViewpoint() ?? null : null })
+            return {
+              scene: snap.doc,
+              sources: sceneSources(snap.doc),
+              link: await sceneLink(snap.doc),
+              skippedModels: snap.localModels,
+              secretsRemoved: snap.secretsRemoved,
+            }
+          })
+          break
+        }
+        case 'ifcviewer:get-layer-presets':
+          void respond(async () => (await import('./lib/host-data-api')).layerPresets())
+          break
+        case 'ifcviewer:add-layer':
+          void respond(async () => (await import('./lib/host-data-api')).addLayer(msg.layer))
+          break
+        case 'ifcviewer:get-layers':
+          void respond(async () => (await import('./lib/host-data-api')).listLayers())
+          break
+        case 'ifcviewer:remove-layer':
+          void respond(async () => { (await import('./lib/host-data-api')).removeLayer(msg.id); return null })
+          break
+        case 'ifcviewer:layer-visible':
+          void respond(async () => (await import('./lib/host-data-api')).setLayerVisible(msg.id, msg.visible))
+          break
+        case 'ifcviewer:frame-layer':
+          void respond(async () => {
+            const framed = await (await import('./lib/host-data-api')).frameLayer(msg.id)
+            if (!framed) throw new Error('The layer has nothing to frame yet')
+            return null
+          })
+          break
+        case 'ifcviewer:get-twin':
+          void respond(async () => (await import('./lib/host-data-api')).twinState())
+          break
         // ── Analysis: sections and measurements (SDK 1.11) ─────────────────
         // Driven on the viewer's own systems, the ones the panels drive, so a
         // cut made by a host shows up in the Section panel and can be dragged.
@@ -3727,6 +3776,36 @@ export default function App() {
     return () => { offWalk(); offMeasure() }
   }, [hasSceneModels])
 
+  // Data-layer picks and alerts (SDK 1.17). Alerts of layers and of the twin
+  // are both written to the alert log, so one subscription hears them all;
+  // only entries written from now on are relayed. The payload builders (and
+  // the layer code under them) load on the first event, not with every embed.
+  useEffect(() => {
+    if (!isEmbedded()) return
+    let cancelled = false
+    let offLog: (() => void) | null = null
+    const hostApi = () => import('./lib/host-data-api')
+    void import('./lib/layers/alert-log').then((log) => {
+      if (cancelled) return
+      const seen = new WeakSet(log.getAlertLog())
+      offLog = log.onAlertLog(() => {
+        const fresh = log.getAlertLog().filter((e) => !seen.has(e))
+        if (fresh.length === 0) return
+        for (const e of fresh) seen.add(e)
+        void hostApi().then((api) => { for (const e of fresh) emitEmbedEvent('alert', { ...api.alertEvent(e) }) })
+      })
+    })
+    const offPick = useVectorLayerStore.subscribe((st, prev) => {
+      const sel = st.selected
+      if (!sel || sel === prev.selected) return
+      void hostApi().then((api) => {
+        const pick = api.pickedFeature(sel)
+        if (pick) emitEmbedEvent('layer-feature-picked', { ...pick })
+      })
+    })
+    return () => { cancelled = true; offLog?.(); offPick() }
+  }, [])
+
   // ── Relay element selection to an embedding parent (CDE integration) ───────
   useEffect(() => {
     if (!selected) return
@@ -4182,9 +4261,12 @@ export default function App() {
                   )}
 
                   {/* GIS map panel (flag-gated, lazy — pulls proj4 + geo code) */}
-                  {isGisEnabled() && sceneModels.length > 0 && !clientMode && (
+                  {/* Mounted in client mode too, without its panel: the map a link,
+                      a scene or the SDK asks for is answered by this controller
+                      (sdk:site) — without it `?map=…&ui=client` never came up. */}
+                  {isGisEnabled() && sceneModels.length > 0 && (
                     <React.Suspense fallback={null}>
-                      <GeoPanel viewerApiRef={viewerApiRef} />
+                      <GeoPanel viewerApiRef={viewerApiRef} panel={!clientMode} />
                     </React.Suspense>
                   )}
 
