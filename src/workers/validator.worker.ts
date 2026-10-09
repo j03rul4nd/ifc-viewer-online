@@ -14,6 +14,7 @@ import { IfcAPI } from 'web-ifc'
 import type { ValidationIssue, ValidationResult, SpatialNode, SpatialElement, RulesConfig } from '../types'
 import { validateIfcBuffer, assertModelId } from '../lib/ifc-guards'
 import { collectPortedElements } from '../lib/ifc-ports'
+import { ifcClassNameFromCode } from '../lib/ifc-type-names'
 import { createLogger } from '../lib/logger'
 
 const log = createLogger('ValidatorWorker')
@@ -384,7 +385,7 @@ function buildNode(
   }
 
   const typeHash  = ent.type
-  const className = TYPE_NAME[typeHash] ?? `Ifc#${typeHash}`
+  const className = TYPE_NAME[typeHash] ?? ifcClassNameFromCode(typeHash) ?? `Ifc#${typeHash}`
   const name      = getStr(ent.Name) || '(unnamed)'
   const globalId  = getStr(ent.GlobalId)
 
@@ -407,7 +408,7 @@ function buildNode(
       return {
         expressId: elemId,
         globalId:  getStr(elem.GlobalId),
-        ifcClass:  TYPE_NAME[elem.type] ?? `Ifc#${elem.type}`,
+        ifcClass:  TYPE_NAME[elem.type] ?? ifcClassNameFromCode(elem.type) ?? `Ifc#${elem.type}`,
         name:      getStr(elem.Name) || `#${elemId}`,
       }
     } catch {
@@ -454,7 +455,7 @@ async function ruleEmptyName(
             severity: 'error',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
             elementName: '(empty)',
             message: 'Element has no Name',
             path: getSpatialPath(id, idx),
@@ -565,7 +566,7 @@ async function ruleDuplicateName(
             severity: 'warning',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
             elementName: name,
             message: `Duplicate Name "${name}" among siblings`,
             path: getSpatialPath(id, idx),
@@ -598,7 +599,7 @@ async function ruleNamingConvention(
 
   const allTypes = [...ELEMENT_TYPES, IFCSPACE, IFCZONE]
   for (const typeId of allTypes) {
-    const className = TYPE_NAME[typeId] ?? ''
+    const className = TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? ''
     const matchingRules = compiled.filter(
       (r) => r.className === className || r.className === `Ifc${className}`,
     )
@@ -665,7 +666,7 @@ async function ruleMissingType(
             severity: 'warning',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
             elementName: getStr(ent.Name) || '(unnamed)',
             message: 'Element has no associated IfcTypeObject',
             path: getSpatialPath(id, idx),
@@ -702,7 +703,7 @@ async function ruleDuplicateGuid(
             severity: 'error',
             expressId: id,
             globalId: guid,
-            ifcClass: TYPE_NAME[ent.type] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[ent.type] ?? ifcClassNameFromCode(ent.type) ?? 'IfcElement',
             elementName: getStr(ent.Name) || '(unnamed)',
             message: `Duplicate GlobalId "${guid}" (first seen at #${seen.get(guid)})`,
             path: [],
@@ -812,7 +813,7 @@ async function ruleOrphanElement(
             severity: 'error',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
             elementName: getStr(ent.Name) || '(unnamed)',
             message: 'Element is not contained in any spatial structure element',
             path: [],
@@ -850,7 +851,7 @@ async function ruleWrongContainer(
             severity: 'error',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
             elementName: getStr(ent.Name) || '(unnamed)',
             message: 'Element is directly contained in IfcSite — should be inside a Building or Storey',
             path: getSpatialPath(id, idx),
@@ -930,7 +931,7 @@ async function ruleInvalidGuidFormat(
           severity: 'error',
           expressId: id,
           globalId: guid,
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
           elementName: getStr(ent.Name) || '(unnamed)',
           message: `GlobalId "${guid}" is not a valid IFC GUID — must be exactly 22 characters from the set [0-9A-Za-z_$].`,
           path: getSpatialPath(id, idx),
@@ -969,7 +970,7 @@ async function ruleSpatialHierarchy(
             severity: 'error',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? '',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? '',
             elementName: getStr(ent.Name) || '(unnamed)',
             message,
             path: getSpatialPath(id, idx),
@@ -1003,7 +1004,7 @@ async function ruleCircularReference(
     while (cur !== undefined) {
       if (visited.has(cur)) {
         confirmed.add(startId)
-        const ifcClass = TYPE_NAME[idx.entityTypes.get(startId) ?? -1] ?? 'IfcElement'
+        const ifcClass = TYPE_NAME[idx.entityTypes.get(startId) ?? -1] ?? ifcClassNameFromCode(idx.entityTypes.get(startId) ?? -1) ?? 'IfcElement'
         issues.push({
           id: newIssueId(),
           ruleId: 'RULE_CIRCULAR_REFERENCE',
@@ -1123,7 +1124,7 @@ async function ruleEmptyPropertyValue(
       severity: 'warning',
       expressId: firstElemId,
       globalId:    getStr(elem.GlobalId),
-      ifcClass:    TYPE_NAME[elem.type] ?? 'IfcElement',
+      ifcClass:    TYPE_NAME[elem.type] ?? ifcClassNameFromCode(elem.type) ?? 'IfcElement',
       elementName: count > 1 ? `(${count} elements)` : (getStr(elem.Name) || '(unnamed)'),
       message:     `Property "${propName}" in Pset "${psetName}" has an empty or null value${suffix}.`,
       path: getSpatialPath(firstElemId, idx),
@@ -1183,9 +1184,9 @@ async function ruleMissingMaterial(
           severity: 'warning',
           expressId: id,
           globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
           elementName: getStr(ent.Name) || '(unnamed)',
-          message: `${TYPE_NAME[typeId] ?? 'Element'} has no associated material (IfcRelAssociatesMaterial).`,
+          message: `${TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'Element'} has no associated material (IfcRelAssociatesMaterial).`,
           path: getSpatialPath(id, idx),
           autoFixable: false,
         })
@@ -1216,7 +1217,7 @@ async function ruleElementInBuilding(
             severity: 'error',
             expressId: id,
             globalId: getStr(ent.GlobalId),
-            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
             elementName: getStr(ent.Name) || '(unnamed)',
             message: 'Element is directly contained in IfcBuilding — it should be placed inside an IfcBuildingStorey.',
             path: getSpatialPath(id, idx),
@@ -1353,8 +1354,8 @@ async function ruleElementClash(
       if (reported.has(pairKey)) continue
       reported.add(pairKey)
 
-      const classA = TYPE_NAME[a.typeId] ?? 'IfcElement'
-      const classB = TYPE_NAME[b.typeId] ?? 'IfcElement'
+      const classA = TYPE_NAME[a.typeId] ?? ifcClassNameFromCode(a.typeId) ?? 'IfcElement'
+      const classB = TYPE_NAME[b.typeId] ?? ifcClassNameFromCode(b.typeId) ?? 'IfcElement'
       issues.push({
         id: newIssueId(),
         ruleId: 'RULE_ELEMENT_CLASH',
@@ -1735,9 +1736,9 @@ async function ruleMissingClassification(
         const ent = getLine<IfcBaseEntity>(api, modelId, id)
         issues.push({
           id: newIssueId(), ruleId: 'RULE_MISSING_CLASSIFICATION', severity: 'warning',
-          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement',
           elementName: getStr(ent.Name) || `#${id}`,
-          message: `${TYPE_NAME[typeId] ?? 'IfcElement'} has no classification reference${allowedSystems.length > 0 ? ` from ${allowedSystems.join('/')}` : ''}.`,
+          message: `${TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement'} has no classification reference${allowedSystems.length > 0 ? ` from ${allowedSystems.join('/')}` : ''}.`,
           path: getSpatialPath(id, idx), autoFixable: false,
         })
       } catch { skipCorrupt() /* corrupt */ }
@@ -1843,7 +1844,7 @@ async function ruleLodQuantityMissing(
       if (quantifiedIds.has(id)) continue
       try {
         const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        const className = TYPE_NAME[typeId] ?? 'IfcElement'
+        const className = TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement'
         issues.push({
           id: newIssueId(), ruleId: 'RULE_LOD_QUANTITY_MISSING', severity: 'warning',
           expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
@@ -1894,7 +1895,7 @@ async function ruleLodMaterialLayerMissing(
       if (layeredIds.has(id)) continue
       try {
         const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        const className = TYPE_NAME[typeId] ?? 'IfcElement'
+        const className = TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcElement'
         issues.push({
           id: newIssueId(), ruleId: 'RULE_LOD_MATERIAL_LAYER_MISSING', severity: 'warning',
           expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
@@ -1938,7 +1939,7 @@ async function ruleMepSystemMissing(
       if (assignedIds.has(id)) continue
       try {
         const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        const className = TYPE_NAME[typeId] ?? 'IfcDistributionFlowElement'
+        const className = TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcDistributionFlowElement'
         issues.push({
           id: newIssueId(), ruleId: 'RULE_MEP_SYSTEM_MISSING', severity: 'warning',
           expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
@@ -2021,8 +2022,8 @@ async function ruleClashMepStructural(
       const pairKey = `${Math.min(mep.expressId, str.expressId)}-${Math.max(mep.expressId, str.expressId)}`
       if (reported.has(pairKey)) continue
       reported.add(pairKey)
-      const mepClass  = TYPE_NAME[mep.typeId]  ?? 'IfcFlowElement'
-      const struClass = TYPE_NAME[str.typeId] ?? 'IfcElement'
+      const mepClass  = TYPE_NAME[mep.typeId]  ?? ifcClassNameFromCode(mep.typeId) ?? 'IfcFlowElement'
+      const struClass = TYPE_NAME[str.typeId] ?? ifcClassNameFromCode(str.typeId) ?? 'IfcElement'
       issues.push({
         id: newIssueId(), ruleId: 'RULE_CLASH_MEP_STRUCTURAL', severity: 'warning',
         expressId: mep.expressId, globalId: mep.guid || null, ifcClass: mepClass,
@@ -2505,7 +2506,7 @@ async function ruleConnectedMep(
       if (connectedIds.has(id)) continue
       try {
         const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        const className = TYPE_NAME[typeId] ?? 'IfcFlowSegment'
+        const className = TYPE_NAME[typeId] ?? ifcClassNameFromCode(typeId) ?? 'IfcFlowSegment'
         issues.push({
           id: newIssueId(),
           ruleId: 'RULE_CONNECTED_MEP',
