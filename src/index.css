@@ -597,3 +597,17 @@ kbd {
 .lp-light nav.lp-sticky-nav {
   background: rgba(245, 246, 250, 0.92) !important;
 }
+
+/* Data layers panel on phones: every control is a finger target (≥ 36 px),
+   without retouching dozens of desktop-dense buttons one by one. Inline text
+   links stay text, just taller to hit. Range sliders, checkboxes and colour
+   swatches keep their own size. */
+@media (max-width: 767px) {
+  [data-testid="layers-panel"] button,
+  [data-testid="layers-panel"] select,
+  [data-testid="layers-panel"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]) {
+    min-height: 36px;
+  }
+  [data-testid="layers-panel"] button { touch-action: manipulation; }
+  [data-testid="layers-panel"] input[type="checkbox"] { width: 18px; height: 18px; }
+}
