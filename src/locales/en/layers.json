@@ -711,7 +711,9 @@
       "created": "{{count}} bindings created",
       "cancel": "Cancel"
     },
-    "filterBindings": "Filter bindings…"
+    "filterBindings": "Filter bindings…",
+    "alertsActive": "{{count}} alerting",
+    "summaryFilter": "Show only these bindings"
   },
   "add": {
     "title": "Add data"

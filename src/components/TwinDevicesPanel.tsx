@@ -20,6 +20,7 @@ import {
 } from '../lib/twin/devices'
 import { applyTemplate, TWIN_TEMPLATES } from '../lib/twin/templates'
 import { bulkBindings, planBulkBind, type BulkMatchOptions } from '../lib/twin/bulk-bind'
+import { stateKeyOf, stateSummary } from '../lib/twin/series'
 import type { TwinTemplateId } from '../lib/twin/device-sim'
 import { exportTwinProject, parseTwinProject } from '../lib/twin/twin-project'
 import type { FilterOp } from '../lib/layers/style-groups'
@@ -81,6 +82,7 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
   const [openBinding, setOpenBinding] = useState<string | null>(null)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [bindingFilter, setBindingFilter] = useState('')
+  const [stateFilter, setStateFilter] = useState<string | null>(null)
 
   const guidIndex = useMemo(() => buildGuidIndex(trees), [trees])
   const catalog = useMemo(() => buildCatalog(trees), [trees])
@@ -88,11 +90,19 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
   const modelCount = Object.keys(trees).length
   // Hundreds of bindings after a bulk bind: filter by name or device, and render
   // the first 200 (the rest are still painted; the filter reaches them).
+  const summaryLabels = { stale: t('stale'), nodata: t('nodata'), none: t('noRule') }
+  const summary = useMemo(() => stateSummary(bindings, readings, timeAt ?? Date.now(), summaryLabels),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bindings, readings, timeAt, t])
   const shownBindings = useMemo(() => {
     const q = bindingFilter.trim().toLowerCase()
-    const list = q ? bindings.filter((b) => b.name.toLowerCase().includes(q) || b.deviceId.toLowerCase().includes(q)) : bindings
+    let list = q ? bindings.filter((b) => b.name.toLowerCase().includes(q) || b.deviceId.toLowerCase().includes(q)) : bindings
+    if (stateFilter) {
+      const at = timeAt ?? Date.now()
+      list = list.filter((b) => stateKeyOf(b, readings, at) === stateFilter)
+    }
     return list.slice(0, 200)
-  }, [bindings, bindingFilter])
+  }, [bindings, bindingFilter, stateFilter, readings, timeAt])
   const now = timeAt ?? Date.now()
 
   const startDemo = (id: TwinTemplateId = 'home'): void => {
@@ -218,6 +228,22 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
         {bindings.length > 0 && (
           <section className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
             <div className="text-[11px] font-medium">{t('bindings', { count: bindings.length })}</div>
+            <div className="flex flex-wrap gap-1" data-testid="twin-summary">
+              {alerting.length > 0 && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] border border-[#ef4444] text-[var(--text)]">
+                  <span aria-hidden>⚠</span>{t('alertsActive', { count: alerting.length })}
+                </span>
+              )}
+              {summary.map((c) => (
+                <button key={c.key} type="button" onClick={() => setStateFilter(stateFilter === c.key ? null : c.key)}
+                  aria-pressed={stateFilter === c.key} title={t('summaryFilter')}
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] border transition-colors ${stateFilter === c.key ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'} text-[var(--text)]`}>
+                  <span className="w-2 h-2 rounded-full border border-[var(--border)]" style={{ background: c.color ?? 'transparent' }} />
+                  {c.label}
+                  <span className="text-[var(--text-dim)] tabular-nums">{c.bindings}</span>
+                </button>
+              ))}
+            </div>
             {bindings.length > 8 && (
               <input className={inputCls} value={bindingFilter} placeholder={t('filterBindings')} data-testid="twin-binding-filter"
                 onChange={(e) => setBindingFilter(e.target.value)} />

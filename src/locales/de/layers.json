@@ -711,7 +711,9 @@
       "created": "{{count}} Verknüpfungen erstellt",
       "cancel": "Abbrechen"
     },
-    "filterBindings": "Verknüpfungen filtern…"
+    "filterBindings": "Verknüpfungen filtern…",
+    "alertsActive": "{{count}} mit Alarm",
+    "summaryFilter": "Nur diese Verknüpfungen zeigen"
   },
   "add": {
     "title": "Daten hinzufügen"

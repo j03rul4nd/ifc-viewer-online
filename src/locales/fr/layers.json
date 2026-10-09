@@ -711,7 +711,9 @@
       "created": "{{count}} liaisons créées",
       "cancel": "Annuler"
     },
-    "filterBindings": "Filtrer les liaisons…"
+    "filterBindings": "Filtrer les liaisons…",
+    "alertsActive": "{{count}} en alerte",
+    "summaryFilter": "Afficher seulement ces liaisons"
   },
   "add": {
     "title": "Ajouter des données"
