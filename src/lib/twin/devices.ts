@@ -140,7 +140,7 @@ export interface TwinRule {
  * loaded models change, so a new file of the project joins automatically.
  */
 export interface TargetQuery {
-  /** IFC classes (any of), case-insensitive; empty = any class. */
+  /** IFC classes (any of), case-insensitive, `Prefix*` allowed; empty = any class. */
   classes: string[]
   /** Storey name contains (case-insensitive); empty = any storey. */
   storey: string
@@ -164,6 +164,8 @@ export interface Binding {
   query?: TargetQuery | null
   /** Floating label over the elements with this metric's value (null = none). */
   label?: { field: string } | null
+  /** Metric holding an image URL (camera snapshot) shown in the inspector (null = none). */
+  media?: { field: string } | null
 }
 
 let seq = 0
@@ -251,9 +253,16 @@ export function buildCatalog(trees: Record<string, SpatialNode[]>): CatalogEntry
 export const isEmptyQuery = (q: TargetQuery | null | undefined): boolean =>
   !q || (q.classes.length === 0 && !q.storey.trim() && !q.nameContains.trim())
 
+/** "IfcDoor" matches exactly; "IfcDuct*" matches every class starting with IfcDuct. */
+export function classMatches(pattern: string, ifcClass: string): boolean {
+  const p = pattern.trim().toUpperCase()
+  const c = ifcClass.toUpperCase()
+  return p.endsWith('*') ? c.startsWith(p.slice(0, -1)) : c === p
+}
+
 export function queryMatches(q: TargetQuery, e: CatalogEntry): boolean {
   if (isEmptyQuery(q)) return false
-  if (q.classes.length && !q.classes.some((c) => c.toUpperCase() === e.ifcClass.toUpperCase())) return false
+  if (q.classes.length && !q.classes.some((c) => classMatches(c, e.ifcClass))) return false
   if (q.storey.trim() && !e.storey.toLowerCase().includes(q.storey.trim().toLowerCase())) return false
   if (q.nameContains.trim() && !e.name.toLowerCase().includes(q.nameContains.trim().toLowerCase())) return false
   return true
@@ -412,4 +421,62 @@ export function storedToReadings(sourceId: string, features: StoredReading[], ke
     const { __at, ...rest } = f.properties
     return { sourceId, deviceId: keys[i], props: flattenProperties(rest), at: Number(__at) || 0 }
   })
+}
+
+// ── As-operated state ─────────────────────────────────────────────────────────
+
+export interface OperatedRow {
+  modelId: string
+  globalId: string
+  element: string
+  ifcClass: string
+  storey: string
+  binding: string
+  device: string
+  state: string
+  readAt: string
+  metrics: Record<string, MetricValue>
+}
+
+/**
+ * The operational state of every bound element at `now`: one row per element
+ * and binding — what a facility manager hands over or archives ("as operated"
+ * on this date). Images (data URLs) are left out of the metrics.
+ */
+export function operatedState(
+  bindings: Binding[], readings: Map<string, Reading>, guidIndex: Map<string, ElementLoc[]>,
+  catalog: CatalogEntry[], now: number, labels: { stale: string; nodata: string; none: string },
+): OperatedRow[] {
+  const byLoc = new Map(catalog.map((e) => [`${e.modelId}#${e.expressId}`, e]))
+  const rows: OperatedRow[] = []
+  for (const b of bindings) {
+    const reading = readings.get(deviceKey(b.sourceId, b.deviceId))
+    const st = bindingState(b, reading, now)
+    const state = st.kind === 'rule' ? st.rule.name : st.kind === 'stale' ? labels.stale : st.kind === 'nodata' ? labels.nodata : labels.none
+    const metrics: Record<string, MetricValue> = {}
+    for (const p of reading?.props ?? []) {
+      if (p.joined || (typeof p.value === 'string' && p.value.startsWith('data:'))) continue
+      metrics[p.path] = p.value
+    }
+    for (const loc of resolveLocs(b, guidIndex, catalog)) {
+      const e = byLoc.get(`${loc.modelId}#${loc.expressId}`)
+      rows.push({
+        modelId: loc.modelId, globalId: e?.globalId ?? '', element: e?.name ?? '', ifcClass: e?.ifcClass ?? '', storey: e?.storey ?? '',
+        binding: b.name, device: b.deviceId, state, readAt: reading ? new Date(reading.at).toISOString() : '', metrics,
+      })
+    }
+  }
+  return rows
+}
+
+const csvCell = (v: unknown): string => {
+  const s = v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+export function operatedCsv(rows: OperatedRow[]): string {
+  const keys = [...new Set(rows.flatMap((r) => Object.keys(r.metrics)))].sort()
+  const head = ['model', 'GlobalId', 'element', 'class', 'storey', 'binding', 'device', 'state', 'read_at', ...keys]
+  const lines = rows.map((r) => [r.modelId, r.globalId, r.element, r.ifcClass, r.storey, r.binding, r.device, r.state, r.readAt, ...keys.map((k) => r.metrics[k])].map(csvCell).join(','))
+  return [head.map(csvCell).join(','), ...lines].join('\n') + '\n'
 }

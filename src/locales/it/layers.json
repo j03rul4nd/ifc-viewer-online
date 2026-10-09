@@ -585,6 +585,71 @@
     "timeLive": "Live",
     "backToLive": "Torna al live",
     "historyEmpty": "Registrazione… sposta il cursore quando ci sono dati",
-    "historyDisabled": "La registrazione è spenta"
+    "historyDisabled": "La registrazione è spenta",
+    "tpl": {
+      "homeSource": "Casa demo (simulata)",
+      "communitySource": "Condominio demo (simulato)",
+      "temperature": "temperatura",
+      "window": "finestra",
+      "bay": "posto auto",
+      "alarm": "Allarme",
+      "doors": "Porte",
+      "solar": "Pannelli solari",
+      "water": "Acqua",
+      "camera": "Telecamera",
+      "dwelling": "abitazione",
+      "floorWater": "Acqua · piano",
+      "entrance": "Ingresso",
+      "lift": "Ascensore",
+      "fire": "Allarme incendio",
+      "parkingCamera": "Telecamera parcheggio",
+      "windowOpen": "Finestra aperta (dispersione)",
+      "cold": "Freddo < 20 °C",
+      "warm": "Caldo > 23 °C",
+      "comfort": "Comfort",
+      "triggered": "Scattato",
+      "armed": "Inserito",
+      "open": "Aperta",
+      "producingHigh": "Produzione > 2 kW",
+      "producing": "Produzione",
+      "night": "Notte",
+      "leak": "Perdita",
+      "flowing": "Flusso",
+      "occupied": "Occupato",
+      "free": "Libero",
+      "charging": "Ricarica EV",
+      "motion": "Movimento",
+      "offline": "Offline",
+      "heatLoss": "Dispersione di calore",
+      "highUse": "Consumo alto",
+      "fault": "Guasto",
+      "moving": "In movimento",
+      "fireAlarm": "Allarme incendio"
+    },
+    "tplName": {
+      "home": "Casa connessa",
+      "community": "Condominio"
+    },
+    "tplHint": {
+      "home": "Contatore, solare, allarme, porte, acqua, stanze, telecamera",
+      "community": "Abitazioni, acqua per piano, parcheggio, ingresso, ascensore, telecamere, incendio"
+    },
+    "operatedHint": "Stato operativo di ogni elemento collegato adesso (\"as operated\"), con GlobalId.",
+    "operatedCsv": "Stato CSV",
+    "operatedJson": "Stato JSON",
+    "media": "Immagine",
+    "gallery": {
+      "title": "Gemelli digitali live",
+      "subtitle": "Un modello con dispositivi simulati — guardalo cambiare",
+      "files": "{{count}} file IFC",
+      "home": {
+        "name": "Casa connessa",
+        "description": "Stanze per temperatura, allarme, solare, perdite d'acqua e telecamera d'ingresso."
+      },
+      "community": {
+        "name": "Condominio · 3 file",
+        "description": "Architettura, strutture e impianti: acqua per piano tra i file, abitazioni, parcheggio, ascensore."
+      }
+    }
   }
 }

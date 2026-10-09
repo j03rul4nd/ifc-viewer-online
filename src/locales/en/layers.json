@@ -585,6 +585,71 @@
     "timeLive": "Live",
     "backToLive": "Back to live",
     "historyEmpty": "Recording… move the slider once there is data",
-    "historyDisabled": "Recording is off"
+    "historyDisabled": "Recording is off",
+    "tpl": {
+      "homeSource": "Demo home (simulated)",
+      "communitySource": "Demo community (simulated)",
+      "temperature": "temperature",
+      "window": "window",
+      "bay": "bay",
+      "alarm": "Alarm",
+      "doors": "Doors",
+      "solar": "Solar panels",
+      "water": "Water",
+      "camera": "Camera",
+      "dwelling": "dwelling",
+      "floorWater": "Water · storey",
+      "entrance": "Entrance",
+      "lift": "Lift",
+      "fire": "Fire alarm",
+      "parkingCamera": "Parking camera",
+      "windowOpen": "Window open (heat loss)",
+      "cold": "Cold < 20 °C",
+      "warm": "Warm > 23 °C",
+      "comfort": "Comfort",
+      "triggered": "Triggered",
+      "armed": "Armed",
+      "open": "Open",
+      "producingHigh": "Producing > 2 kW",
+      "producing": "Producing",
+      "night": "Night",
+      "leak": "Leak",
+      "flowing": "Flowing",
+      "occupied": "Occupied",
+      "free": "Free",
+      "charging": "EV charging",
+      "motion": "Motion",
+      "offline": "Offline",
+      "heatLoss": "Heat loss",
+      "highUse": "High use",
+      "fault": "Fault",
+      "moving": "Moving",
+      "fireAlarm": "Fire alarm"
+    },
+    "tplName": {
+      "home": "Connected home",
+      "community": "Residential community"
+    },
+    "tplHint": {
+      "home": "Meter, solar, alarm, doors, water, rooms, camera",
+      "community": "Dwellings, water per storey, parking, entrance, lift, cameras, fire"
+    },
+    "operatedHint": "Operational state of every bound element right now (\"as operated\"), with GlobalIds.",
+    "operatedCsv": "State CSV",
+    "operatedJson": "State JSON",
+    "media": "Image",
+    "gallery": {
+      "title": "Live digital twins",
+      "subtitle": "A model plus simulated devices — watch it change",
+      "files": "{{count}} IFC files",
+      "home": {
+        "name": "Connected home",
+        "description": "Rooms by temperature, alarm, solar, water leaks and an entrance camera."
+      },
+      "community": {
+        "name": "Residential community · 3 files",
+        "description": "Architecture, structure and MEP: water per storey across files, dwellings, parking, lift."
+      }
+    }
   }
 }

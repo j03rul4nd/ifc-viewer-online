@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { CATEGORY_META, type DemoCategory } from '../demo-models/categories'
-import { demoSets, activeCategories, type DemoModel, type DemoSet } from '../demo-models/models'
+import { demoSets, activeCategories, twinDemoSets, type DemoModel, type DemoSet } from '../demo-models/models'
 import { fetchDemoModel, type FetchProgress } from '../demo-models/fetchDemoModel'
 import { ModelIllustration } from '../demo-models/illustrations'
 import { createLogger } from '../lib/logger'
@@ -181,6 +181,7 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
 
             {/* Cards */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 [-webkit-overflow-scrolling:touch]">
+              {onSetSelected && filter === 'all' && <TwinDemos onPick={(s) => void handleLoad(s)} />}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                 {visible.map((s) => (
                   <DemoCard
@@ -371,5 +372,33 @@ function Spinner() {
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
       <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
     </svg>
+  )
+}
+
+/** The live digital-twin demos: a model plus simulated devices, one click. */
+function TwinDemos({ onPick }: { onPick: (set: DemoSet) => void }) {
+  const { t } = useTranslation('layers', { keyPrefix: 'devices.gallery' })
+  const sets = useMemo(() => twinDemoSets(), [])
+  if (sets.length === 0) return null
+  return (
+    <div className="mb-4 flex flex-col gap-2" data-testid="twin-demos">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[12px] font-semibold tracking-tight">{t('title')}</span>
+        <span className="text-[11px] text-[var(--text-faint)]">{t('subtitle')}</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {sets.map((s) => (
+          <button key={s.id} type="button" onClick={() => onPick(s)} data-testid={`twin-demo-card-${s.twin}`}
+            className="text-left p-3 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex gap-3 items-start">
+            <span className="mt-0.5 w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" aria-hidden />
+            <span className="min-w-0">
+              <span className="block text-[13px] font-medium">{t(`${s.twin}.name` as never)}</span>
+              <span className="block mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug">{t(`${s.twin}.description` as never)}</span>
+              <span className="block mt-1 text-[10px] text-[var(--text-dim)]">{s.models.length > 1 ? t('files', { count: s.models.length }) : s.models[0].name}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }

@@ -10,15 +10,23 @@ import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceSto
 import { useValidationStore } from '../stores/validationStore'
 import { bindingState, buildCatalog, readingsForElement } from '../lib/twin/devices'
 
-export function TwinLiveSection({ globalId }: { globalId: string | null | undefined }) {
+export function TwinLiveSection({ globalId: given, modelId, expressId }: {
+  globalId: string | null | undefined
+  /** Fallback when the attribute read has no GlobalId: resolved from the spatial tree. */
+  modelId?: string
+  expressId?: number | null
+}) {
   const { t } = useTranslation('layers', { keyPrefix: 'devices' })
   const bindings = useTwinDeviceStore((s) => s.bindings)
   const readings = useTwinDeviceStore(selectShownReadings)
   const timeAt = useTwinDeviceStore((s) => s.timeAt)
   const trees = useValidationStore((s) => s.spatialTrees)
-  const hasQueries = bindings.some((b) => b.query)
-  // Only needed when a binding targets by query (class / storey / name).
-  const entry = useMemo(() => (hasQueries && globalId ? buildCatalog(trees).find((e) => e.globalId === globalId) : undefined), [hasQueries, globalId, trees])
+  const entry = useMemo(() => {
+    if (bindings.length === 0) return undefined
+    const all = modelId ? buildCatalog({ [modelId]: trees[modelId] ?? [] }) : buildCatalog(trees)
+    return all.find((e) => (given ? e.globalId === given : e.expressId === expressId))
+  }, [bindings.length, trees, modelId, expressId, given])
+  const globalId = given || entry?.globalId
   if (!globalId) return null
   const rows = readingsForElement(globalId, bindings, readings, entry)
   if (rows.length === 0) return null
@@ -40,10 +48,11 @@ export function TwinLiveSection({ globalId }: { globalId: string | null | undefi
                 {st.kind === 'rule' ? st.rule.name : st.kind === 'stale' ? t('stale') : st.kind === 'nodata' ? t('nodata') : ''}
               </span>
             </div>
+            {reading && binding.media && <TwinMedia value={reading.props.find((p) => p.field === binding.media!.field)?.value} />}
             {reading && (
               <table className="w-full text-[10px]">
                 <tbody>
-                  {reading.props.filter((p) => !p.joined).slice(0, 12).map((p) => (
+                  {reading.props.filter((p) => !p.joined && !(typeof p.value === 'string' && p.value.startsWith('data:'))).slice(0, 12).map((p) => (
                     <tr key={p.path}>
                       <td className="pr-2 text-[var(--text-faint)] truncate max-w-[120px]">{p.path}</td>
                       <td className="text-[var(--text)] break-all">{p.display}</td>
@@ -61,4 +70,10 @@ export function TwinLiveSection({ globalId }: { globalId: string | null | undefi
       })}
     </div>
   )
+}
+
+/** A camera snapshot (http(s) or data:image URL). Anything else is not shown. */
+function TwinMedia({ value }: { value: unknown }) {
+  if (typeof value !== 'string' || !/^(https?:\/\/|data:image\/)/i.test(value)) return null
+  return <img src={value} alt="" className="w-full rounded-[6px] border border-[var(--border)] bg-black" data-testid="twin-media" />
 }

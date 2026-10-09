@@ -585,6 +585,71 @@
     "timeLive": "Live",
     "backToLive": "Zurück zu live",
     "historyEmpty": "Aufzeichnung läuft… Regler nutzen, sobald Daten da sind",
-    "historyDisabled": "Aufzeichnung ist aus"
+    "historyDisabled": "Aufzeichnung ist aus",
+    "tpl": {
+      "homeSource": "Demo-Haus (simuliert)",
+      "communitySource": "Demo-Wohnanlage (simuliert)",
+      "temperature": "Temperatur",
+      "window": "Fenster",
+      "bay": "Stellplatz",
+      "alarm": "Alarm",
+      "doors": "Türen",
+      "solar": "Solarmodule",
+      "water": "Wasser",
+      "camera": "Kamera",
+      "dwelling": "Wohnung",
+      "floorWater": "Wasser · Geschoss",
+      "entrance": "Eingang",
+      "lift": "Aufzug",
+      "fire": "Brandalarm",
+      "parkingCamera": "Parkhaus-Kamera",
+      "windowOpen": "Fenster offen (Wärmeverlust)",
+      "cold": "Kalt < 20 °C",
+      "warm": "Warm > 23 °C",
+      "comfort": "Komfort",
+      "triggered": "Ausgelöst",
+      "armed": "Scharf",
+      "open": "Offen",
+      "producingHigh": "Erzeugt > 2 kW",
+      "producing": "Erzeugt",
+      "night": "Nacht",
+      "leak": "Leck",
+      "flowing": "Durchfluss",
+      "occupied": "Belegt",
+      "free": "Frei",
+      "charging": "E-Auto lädt",
+      "motion": "Bewegung",
+      "offline": "Offline",
+      "heatLoss": "Wärmeverlust",
+      "highUse": "Hoher Verbrauch",
+      "fault": "Störung",
+      "moving": "In Fahrt",
+      "fireAlarm": "Brandalarm"
+    },
+    "tplName": {
+      "home": "Vernetztes Haus",
+      "community": "Wohnanlage"
+    },
+    "tplHint": {
+      "home": "Zähler, Solar, Alarm, Türen, Wasser, Räume, Kamera",
+      "community": "Wohnungen, Wasser je Geschoss, Parken, Eingang, Aufzug, Kameras, Brand"
+    },
+    "operatedHint": "Betriebszustand jedes verknüpften Elements jetzt (\"as operated\"), mit GlobalIds.",
+    "operatedCsv": "Zustand CSV",
+    "operatedJson": "Zustand JSON",
+    "media": "Bild",
+    "gallery": {
+      "title": "Live-Digital-Twins",
+      "subtitle": "Ein Modell mit simulierten Geräten — sieh zu, wie es sich ändert",
+      "files": "{{count}} IFC-Dateien",
+      "home": {
+        "name": "Vernetztes Haus",
+        "description": "Räume nach Temperatur, Alarm, Solar, Wasserlecks und Eingangskamera."
+      },
+      "community": {
+        "name": "Wohnanlage · 3 Dateien",
+        "description": "Architektur, Tragwerk und TGA: Wasser je Geschoss über Dateien hinweg, Wohnungen, Parken, Aufzug."
+      }
+    }
   }
 }

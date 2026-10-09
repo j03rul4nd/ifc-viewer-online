@@ -569,6 +569,8 @@ export function sortedDemoModels(): DemoModel[] {
 export interface DemoSet {
   id: string
   name: string
+  /** Operational twin demo: start this simulated template once the set has loaded. */
+  twin?: 'home' | 'community'
   /** Members in discipline order, not alphabetical. */
   models: DemoModel[]
   category: DemoCategory
@@ -624,4 +626,19 @@ export function demoSets(): DemoSet[] {
     void loose
   }
   return sets
+}
+
+/**
+ * The live digital-twin demos: an existing set loaded WITH a simulated device
+ * template on top. Home = the duplex (rooms, doors, windows, roof); community
+ * = the three-discipline Poblenou set, so the twin is seen across files.
+ */
+export function twinDemoSets(): DemoSet[] {
+  const all = demoSets()
+  const out: DemoSet[] = []
+  const duplex = all.find((x) => x.id === 'duplex-architecture')
+  if (duplex) out.push({ ...duplex, id: 'twin-home', twin: 'home', featured: true })
+  const poblenou = all.find((x) => x.id === 'poblenou')
+  if (poblenou) out.push({ ...poblenou, id: 'twin-community', twin: 'community', featured: true })
+  return out
 }

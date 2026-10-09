@@ -1304,7 +1304,7 @@ function PropertiesPanel({
         </div>
       )}
 
-      <TwinLiveSection globalId={ifcData?.globalId} />
+      <TwinLiveSection globalId={ifcData?.globalId} modelId={selected.modelId} expressId={expressId} />
 
       {/* ── Property Sets ── */}
       {(psets.length > 0 || ifcState.status === 'loading') && (

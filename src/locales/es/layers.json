@@ -585,6 +585,71 @@
     "timeLive": "En directo",
     "backToLive": "Volver al directo",
     "historyEmpty": "Grabando… mueve el deslizador cuando haya datos",
-    "historyDisabled": "La grabación está apagada"
+    "historyDisabled": "La grabación está apagada",
+    "tpl": {
+      "homeSource": "Casa demo (simulada)",
+      "communitySource": "Comunidad demo (simulada)",
+      "temperature": "temperatura",
+      "window": "ventana",
+      "bay": "plaza",
+      "alarm": "Alarma",
+      "doors": "Puertas",
+      "solar": "Placas solares",
+      "water": "Agua",
+      "camera": "Cámara",
+      "dwelling": "vivienda",
+      "floorWater": "Agua · planta",
+      "entrance": "Portal",
+      "lift": "Ascensor",
+      "fire": "Alarma de incendio",
+      "parkingCamera": "Cámara del parking",
+      "windowOpen": "Ventana abierta (pérdida de calor)",
+      "cold": "Frío < 20 °C",
+      "warm": "Calor > 23 °C",
+      "comfort": "Confort",
+      "triggered": "Disparada",
+      "armed": "Armada",
+      "open": "Abierta",
+      "producingHigh": "Produciendo > 2 kW",
+      "producing": "Produciendo",
+      "night": "Noche",
+      "leak": "Fuga",
+      "flowing": "Circulando",
+      "occupied": "Ocupada",
+      "free": "Libre",
+      "charging": "Cargando VE",
+      "motion": "Movimiento",
+      "offline": "Sin conexión",
+      "heatLoss": "Pérdida de calor",
+      "highUse": "Consumo alto",
+      "fault": "Avería",
+      "moving": "En marcha",
+      "fireAlarm": "Alarma de incendio"
+    },
+    "tplName": {
+      "home": "Casa conectada",
+      "community": "Comunidad de vecinos"
+    },
+    "tplHint": {
+      "home": "Contador, solar, alarma, puertas, agua, estancias, cámara",
+      "community": "Viviendas, agua por planta, parking, portal, ascensor, cámaras, incendio"
+    },
+    "operatedHint": "Estado operativo de cada elemento vinculado ahora mismo (\"as operated\"), con GlobalId.",
+    "operatedCsv": "Estado CSV",
+    "operatedJson": "Estado JSON",
+    "media": "Imagen",
+    "gallery": {
+      "title": "Gemelos digitales en vivo",
+      "subtitle": "Un modelo con dispositivos simulados — míralo cambiar",
+      "files": "{{count}} archivos IFC",
+      "home": {
+        "name": "Casa conectada",
+        "description": "Estancias por temperatura, alarma, solar, fugas de agua y cámara de entrada."
+      },
+      "community": {
+        "name": "Comunidad de vecinos · 3 archivos",
+        "description": "Arquitectura, estructura e instalaciones: agua por planta entre archivos, viviendas, parking, ascensor."
+      }
+    }
   }
 }

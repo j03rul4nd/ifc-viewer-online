@@ -15,9 +15,11 @@ import { useValidationStore } from '../stores/validationStore'
 import { toast } from '../stores/toastStore'
 import {
   DEFAULT_MAPPING, bindingState, buildCatalog, buildGuidIndex, deviceKey, newTwinId, queryMatches, resolveLocs,
+  operatedCsv, operatedState,
   type Binding, type CatalogEntry, type DeviceSource, type Reading, type TwinRule,
 } from '../lib/twin/devices'
-import { demoBindings, simulatedSource } from '../lib/twin/device-sim'
+import { applyTemplate, TWIN_TEMPLATES } from '../lib/twin/templates'
+import type { TwinTemplateId } from '../lib/twin/device-sim'
 import { exportTwinProject, parseTwinProject } from '../lib/twin/twin-project'
 import type { FilterOp } from '../lib/layers/style-groups'
 import type { SelectedInfo, SpatialNode } from '../types'
@@ -47,8 +49,8 @@ function selectionRef(selected: SelectedInfo | null, trees: Record<string, Spati
   return found
 }
 
-function download(name: string, text: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+function download(name: string, text: string, type = 'application/json'): void {
+  const url = URL.createObjectURL(new Blob([text], { type }))
   const a = document.createElement('a')
   a.href = url; a.download = name; a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -83,14 +85,18 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
   const modelCount = Object.keys(trees).length
   const now = timeAt ?? Date.now()
 
-  const startDemo = (): void => {
-    const src = simulatedSource()
-    src.name = t('demoName')
-    const list = demoBindings(trees, src.id)
-    store().upsertSource(src)
-    list.forEach((b) => store().upsertBinding(b))
-    store().setActive(true)
-    toast(list.length ? t('demoBound', { count: list.length }) : t('demoNoTargets'), list.length ? 'success' : 'info')
+  const startDemo = (id: TwinTemplateId = 'home'): void => {
+    const n = applyTemplate(id)
+    toast(n ? t('demoBound', { count: n }) : t('demoNoTargets'), n ? 'success' : 'info')
+  }
+
+  const exportState = (kind: 'csv' | 'json'): void => {
+    const rows = operatedState(bindings, readings, guidIndex, catalog, now, { stale: t('stale'), nodata: t('nodata'), none: t('noRule') })
+    const files = new Map(Object.keys(trees).map((id) => [id, id.replace(/-\d+$/, '')]))
+    const named = rows.map((r) => ({ ...r, modelId: files.get(r.modelId) ?? r.modelId }))
+    const stamp = new Date(now).toISOString().slice(0, 16).replace(/[:T]/g, '-')
+    if (kind === 'csv') download(`as-operated-${stamp}.csv`, operatedCsv(named), 'text/csv')
+    else download(`as-operated-${stamp}.json`, JSON.stringify({ kind: 'ifc-twin-as-operated', at: new Date(now).toISOString(), rows: named }, null, 2))
   }
 
   const addSource = (): void => {
@@ -134,7 +140,14 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
           <div className="flex flex-col gap-1.5 p-2 rounded-[7px] bg-[var(--surface-2)]">
             <div className="text-[11px] font-medium">{t('emptyTitle')}</div>
             <div className="text-[10px] text-[var(--text-dim)] leading-snug">{t('emptyHint')}</div>
-            <button className={btnCls} disabled={modelCount === 0} onClick={startDemo} data-testid="twin-demo">{t('demo')}</button>
+            <div className="flex gap-1.5">
+              {TWIN_TEMPLATES.map((id) => (
+                <button key={id} className={btnCls + ' flex-1'} disabled={modelCount === 0} onClick={() => startDemo(id)}
+                  data-testid={id === 'home' ? 'twin-demo' : `twin-demo-${id}`} title={t(`tplHint.${id}` as never)}>
+                  {t(`tplName.${id}` as never)}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -161,8 +174,12 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
               </div>
             )
           })}
-          {sources.length > 0 && sources.every((s) => !s.url.startsWith('sim:')) && (
-            <button className={linkCls} disabled={modelCount === 0} onClick={startDemo}>{t('demo')}</button>
+          {sources.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {TWIN_TEMPLATES.map((id) => (
+                <button key={id} className={linkCls} disabled={modelCount === 0} onClick={() => startDemo(id)}>+ {t(`tplName.${id}` as never)}</button>
+              ))}
+            </div>
           )}
         </section>
 
@@ -223,6 +240,11 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
             <input ref={fileRef} type="file" accept=".json,application/json" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = '' }} />
           </div>
+          <div className="text-[10px] text-[var(--text-faint)] leading-snug pt-1">{t('operatedHint')}</div>
+          <div className="flex gap-1.5">
+            <button className={btnCls} disabled={bindings.length === 0} data-testid="twin-export-csv" onClick={() => exportState('csv')}>{t('operatedCsv')}</button>
+            <button className={btnCls} disabled={bindings.length === 0} onClick={() => exportState('json')}>{t('operatedJson')}</button>
+          </div>
         </section>
       </div>
     </ViewportPanel>
@@ -243,7 +265,7 @@ function SourceEditor({ source, onDone }: { source: DeviceSource; onDone: () => 
   return (
     <div className="flex flex-col gap-1 pt-1">
       <input className={inputCls} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={t('name')} />
-      <input className={inputCls} value={draft.url} onChange={(e) => setDraft({ ...draft, url: e.target.value })} placeholder="https://…/api/devices" />
+      <input className={inputCls} value={draft.url} onChange={(e) => setDraft({ ...draft, url: e.target.value })} placeholder="https://…/api/devices · wss://…" />
       <div className="flex gap-1">
         <input className={inputCls} value={m.listPath} onChange={(e) => setDraft({ ...draft, mapping: { ...m, listPath: e.target.value } })} placeholder={t('listPath')} title={t('listPathHint')} />
         <input className={inputCls} value={m.idField} onChange={(e) => setDraft({ ...draft, mapping: { ...m, idField: e.target.value } })} placeholder={t('idField')} />
@@ -338,6 +360,13 @@ function BindingEditor({ binding: b, reading, selection, catalog }: {
       <div className="flex gap-1 items-center">
         <span className="text-[10px] text-[var(--text-dim)] shrink-0">{t('label')}</span>
         <select className={inputCls} value={b.label?.field ?? ''} onChange={(e) => put({ label: e.target.value ? { field: e.target.value } : null })}>
+          <option value="">{t('labelNone')}</option>
+          {fields.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+      </div>
+      <div className="flex gap-1 items-center">
+        <span className="text-[10px] text-[var(--text-dim)] shrink-0">{t('media')}</span>
+        <select className={inputCls} value={b.media?.field ?? ''} onChange={(e) => put({ media: e.target.value ? { field: e.target.value } : null })}>
           <option value="">{t('labelNone')}</option>
           {fields.map((f) => <option key={f} value={f}>{f}</option>)}
         </select>

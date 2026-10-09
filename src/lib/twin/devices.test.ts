@@ -183,3 +183,28 @@ describe('F2: queries, alerts, history', () => {
     expect(metricOf(back[0], 'ok')).toBe(true)
   })
 })
+
+describe('F3: templates, cameras, as-operated', () => {
+  it('community template binds water per storey by query and cameras with media', async () => {
+    const { communityBindings, simulateCommunity, simulateHome } = await import('./device-sim')
+    const bs = communityBindings(trees, 's')
+    const floor = bs.find((b) => b.deviceId === 'water-floor-0')
+    expect(floor?.query?.storey).toBe('L0')
+    expect(resolveLocs(floor!, buildGuidIndex(trees), buildCatalog(trees))).toEqual([{ modelId: 'mep', expressId: 40 }])
+    expect(bs.find((b) => b.deviceId === 'camera-entrance')?.media?.field).toBe('snapshot_url')
+    const devices = (simulateCommunity(0) as { devices: Array<{ id: string; snapshot_url?: string }> }).devices
+    expect(devices.find((d) => d.id === 'camera-entrance')?.snapshot_url?.startsWith('data:image/svg+xml')).toBe(true)
+    expect((simulateHome(0) as { devices: Array<{ id: string }> }).devices.some((d) => d.id === 'camera-1')).toBe(true)
+  })
+
+  it('exports the operated state per element, without images, as CSV', async () => {
+    const { operatedState, operatedCsv } = await import('./devices')
+    const r = parseReadings([{ id: 'room-1', temp_c: 25, snap: 'data:image/png;base64,xx', note: 'a,b' }], { id: 's1', mapping: { listPath: '', idField: 'id', timeField: '' } }, 0)[0]
+    const rows = operatedState([binding({ staleAfterS: 0 })], new Map([[deviceKey('s1', 'room-1'), r]]), buildGuidIndex(trees), buildCatalog(trees), 0, { stale: 'S', nodata: 'N', none: '-' })
+    expect(rows.map((x) => [x.modelId, x.globalId, x.state])).toEqual([['arq', 'ROOM-A', 'Hot'], ['arqV2', 'ROOM-A', 'Hot']])
+    expect(rows[0].metrics.snap).toBeUndefined()
+    const csv = operatedCsv(rows)
+    expect(csv.split('\n')[0]).toBe('model,GlobalId,element,class,storey,binding,device,state,read_at,id,note,temp_c')
+    expect(csv).toContain('"a,b"')
+  })
+})

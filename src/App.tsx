@@ -912,6 +912,12 @@ export default function App() {
   const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending)
   // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
   const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
+  // `?twin=home|community`: a shared link that opens the model with a live twin demo on it.
+  useEffect(() => {
+    const id = /[?&]twin=(home|community)\b/.exec(window.location.search)?.[1] as 'home' | 'community' | undefined
+    if (!id) return
+    void import('./lib/twin/templates').then((m) => m.applyTemplateWhenLoaded(id))
+  }, [])
   useEffect(() => {
     if (!twinInUse) return
     let stop: (() => void) | null = null
@@ -1685,6 +1691,10 @@ export default function App() {
   const handleDemoSetSelected = (set: DemoSet): void => {
     setShowDemoGallery(false)
     setRoute('viewer')
+    if (set.twin) {
+      const template = set.twin
+      void import('./lib/twin/templates').then((m) => m.applyTemplateWhenLoaded(template, set.models.length))
+    }
     void loadUrls(
       set.models.map((m) => ({ url: m.ifcUrl, fileName: m.fileName, fallbackUrl: m.fallbackUrl })),
       { origin: 'demo', batchName: set.name },
