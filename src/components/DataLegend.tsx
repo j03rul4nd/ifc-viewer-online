@@ -30,6 +30,8 @@ import { useGeoStore } from '../stores/geoStore'
 import type { LayerStyle } from '../lib/layers/style-groups'
 import { iconDataUrl } from '../lib/layers/vector-assets'
 import type { ViewerAPI } from '../lib/viewer'
+import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
+import { twinLegendLayer, TWIN_LEGEND_ID } from '../lib/twin/twin-legend'
 
 type T = (k: string, o?: Record<string, unknown>) => string
 
@@ -50,7 +52,14 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   const placementRot = useGeoStore((s) => s.placement?.rotationDeg ?? null)
   const siteRotation = anchorRot ?? placementRot
   const shown = layers.filter((l) => l.visible && l.status === 'ready' && l.data && !excluded[l.id])
+  // The operational twin explains its colours here too (a block like a layer's).
+  const twinActive = useTwinDeviceStore((s) => s.active)
+  const twinBindings = useTwinDeviceStore((s) => s.bindings)
+  const twinReadings = useTwinDeviceStore(selectShownReadings)
+  const twinTimeAt = useTwinDeviceStore((s) => s.timeAt)
+  const twinPresent = twinActive && twinBindings.length > 0
   const hiddenCount = layers.filter((l) => l.visible && l.status === 'ready' && excluded[l.id]).length
+    + (twinPresent && excluded[TWIN_LEGEND_ID] ? 1 : 0)
 
   const strings: LegendStrings = useMemo(() => ({
     rest: t('groups.rest'), density: t('legend.density'), less: t('legend.less'), more: t('legend.more'),
@@ -72,6 +81,13 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
     // The SOURCE's timestamp when the feed states one; else when we fetched it.
     dataAt: timeTravel && historyData[l.id] ? historyData[l.id]!.at : live[l.id]?.dataAt ?? live[l.id]?.lastAt ?? null,
   }, strings)), [shown, lod, folded, strings, live, timeTravel, historyData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const twin = useMemo(() => (twinPresent && !excluded[TWIN_LEGEND_ID]
+    ? twinLegendLayer(twinBindings, twinReadings, twinTimeAt ?? Date.now(), {
+      title: t('devices.title'), stale: t('devices.stale'), nodata: t('devices.nodata'), asOf: strings.asOf,
+    }, !!folded[TWIN_LEGEND_ID])
+    : null), [twinPresent, twinBindings, twinReadings, twinTimeAt, excluded, folded, strings, t])
+  const allLayers = twin ? [...model, twin] : model
 
   // North / scale follow the camera — polled only while one of them is on.
   const furniture = (cssHeight: number): LegendExtrasPaint | null => {
@@ -99,7 +115,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   // registered once per open/close rather than on every live refresh.
   const captureRef = useRef<{ layers: LegendLayer[]; title: string; furniture: (h: number) => LegendExtrasPaint | null }>(
     { layers: [], title: '', furniture: () => null })
-  captureRef.current = { layers: forCapture(model), title: t('legend.title'), furniture }
+  captureRef.current = { layers: forCapture(allLayers), title: t('legend.title'), furniture }
   useEffect(() => {
     const v = viewerApiRef.current
     if (!open || !v) return
@@ -111,7 +127,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   }, [open, viewerApiRef])
 
   // No visible data, no legend, no chip: nothing to explain.
-  if (shown.length === 0 && hiddenCount === 0) return null
+  if (shown.length === 0 && !twin && hiddenCount === 0) return null
 
   // Each corner leaves room for what already lives there: camera controls
   // (bottom-right), the floating tool rail (top-right), the breadcrumb (top-left).
@@ -163,6 +179,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
           const layer = shown.find((l) => l.id === m.id)!
           return <LayerBlock key={m.id} m={m} layer={layer} t={t} />
         })}
+        {twin && <TwinBlock m={twin} t={t} />}
         {hiddenCount > 0 && (
           <button type="button" className="self-start text-[10px] text-[var(--text-faint)] hover:text-[var(--text)]"
             onClick={() => {
@@ -263,6 +280,41 @@ function LayerBlock({ m, layer, t }: { m: LegendLayer; layer: VectorLayer; t: T 
         ))}
       {!m.folded && m.aggregatesFar && (
         <div className="text-[9px] text-[var(--text-faint)] pl-1">{t('legend.aggregateFar')}</div>
+      )}
+    </section>
+  )
+}
+
+/**
+ * The twin's block: one row per state that changes how elements look. Rows are
+ * not toggles (a state is not a layer group: hiding "Occupied" would lie about
+ * the building); the block folds and leaves the legend like any layer's.
+ */
+function TwinBlock({ m, t }: { m: LegendLayer; t: T }) {
+  return (
+    <section className="flex flex-col gap-0.5" data-testid="legend-twin">
+      <div className="flex items-center gap-1">
+        <button type="button" className="flex-1 min-w-0 flex items-center gap-1 text-left"
+          onClick={() => useVectorLayerStore.getState().toggleLegendFolded(m.id)} aria-expanded={!m.folded}>
+          <span className="text-[8px] text-[var(--text-faint)] w-2">{m.folded ? '▸' : '▾'}</span>
+          <span className="truncate text-[10px] font-semibold text-[var(--text-dim)] uppercase tracking-wide">{m.name}</span>
+          <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#5ce27a] animate-pulse" />
+        </button>
+        {m.asOf && <span className="shrink-0 text-[9px] text-[var(--text-faint)]">{m.asOf}</span>}
+        <button type="button" className="shrink-0 w-5 h-5 max-md:w-8 max-md:h-8 text-[9px] text-[var(--text-faint)] hover:text-[var(--text)]"
+          onClick={() => useVectorLayerStore.getState().toggleLegendExcluded(m.id)}
+          title={t('legend.exclude')} aria-label={t('legend.exclude')}>✕</button>
+      </div>
+      {!m.folded && (
+        <ul className="flex flex-col">
+          {m.rows.map((r) => (
+            <li key={r.groupIndex} className="flex items-center gap-1.5 px-1 py-[3px] max-md:py-1.5">
+              <Swatch sw={r.swatch} />
+              <span className="flex-1 min-w-0 truncate text-[11px]">{r.name}</span>
+              <span className="font-mono text-[10px] text-[var(--text-faint)]">{r.count}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   )

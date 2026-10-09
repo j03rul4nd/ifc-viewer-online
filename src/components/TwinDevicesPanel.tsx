@@ -9,6 +9,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { useTwinDeviceStore, loadSecrets, selectShownReadings } from '../stores/twinDeviceStore'
 import { clearTwinHistory } from '../lib/twin/device-runner'
 import { useValidationStore } from '../stores/validationStore'
@@ -30,7 +31,8 @@ const inputCls =
   'w-full min-w-0 px-2 py-1.5 max-md:py-2.5 rounded-[7px] text-[11px] max-md:text-[13px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
 const btnCls =
   'shrink-0 px-2.5 py-1.5 max-md:py-2.5 rounded-[7px] text-[11px] max-md:text-[13px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] transition-colors disabled:opacity-40'
-const linkCls = 'text-left text-[10px] text-[var(--accent)] hover:underline disabled:opacity-40 disabled:no-underline'
+// On touch, a 10 px text link is a ~14 px target: grow it to a thumb's size there.
+const linkCls = 'text-left text-[10px] max-md:text-[13px] max-md:py-2 max-md:px-1 text-[var(--accent)] hover:underline disabled:opacity-40 disabled:no-underline'
 
 const OPS: FilterOp[] = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'isTrue', 'isFalse', 'contains', 'exists', 'missing']
 const NO_VALUE: FilterOp[] = ['isTrue', 'isFalse', 'exists', 'missing']
@@ -67,6 +69,8 @@ function metricsLine(r: Reading, max = 3): string {
 
 export default function TwinDevicesPanel({ selected, onClose }: { selected: SelectedInfo | null; onClose: () => void }) {
   const { t } = useTranslation('layers', { keyPrefix: 'devices' })
+  const { t: tc } = useTranslation('common')
+  const isMobile = useIsMobile()
   const open = useTwinDeviceStore((s) => s.panelOpen)
   const active = useTwinDeviceStore((s) => s.active)
   const sources = useTwinDeviceStore((s) => s.sources)
@@ -144,6 +148,15 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
 
   return (
     <ViewportPanel id="twin-devices" open={open} onClose={onClose} label={t('title')} mobile="sheet" peek widthPx={330} anchor="top">
+      {isMobile && (
+        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
+          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+          <button type="button" onClick={onClose} aria-label={tc('actions.close')}
+            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+          </button>
+        </div>
+      )}
       <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="twin-devices-panel">
         <div className="flex items-start gap-2">
           <div className="flex-1 text-[10px] text-[var(--text-faint)] leading-snug">{t('intro')}</div>
@@ -214,7 +227,7 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
             <div className="text-[10px] text-[var(--text-faint)]">{sel ? t('bindHint', { name: sel.label }) : t('selectHint')}</div>
             <div className="flex flex-col max-h-[180px] overflow-y-auto">
               {[...readings.values()].map((r) => (
-                <div key={deviceKey(r.sourceId, r.deviceId)} className="flex items-center gap-1.5 py-0.5 text-[10px]">
+                <div key={deviceKey(r.sourceId, r.deviceId)} className="flex items-center gap-1.5 py-0.5 text-[10px] max-md:text-[12px]">
                   <span className="font-medium text-[var(--text)] shrink-0">{r.deviceId}</span>
                   <span className="flex-1 truncate text-[var(--text-dim)]">{metricsLine(r)}</span>
                   <button className={linkCls} disabled={!sel} onClick={() => bindDevice(r)} title={t('bind')}>{t('bind')}</button>

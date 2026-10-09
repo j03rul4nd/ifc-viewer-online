@@ -16,6 +16,7 @@ import { useGeoStore } from '../stores/geoStore'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useMeshStore } from '../stores/meshStore'
 import { useSolarStore } from '../stores/solarStore'
+import { useTwinDeviceStore } from '../stores/twinDeviceStore'
 import { applicablePanels, type PanelId } from '../lib/ui/panel-rail'
 import type { RailItem } from '../components/PanelRail'
 
@@ -57,16 +58,18 @@ export function usePanelRail({ icons, labels, badges, available, allow }: PanelR
   const setMesh = useMeshStore((s) => s.setPanelOpen)
   const solar = useSolarStore((s) => s.panelOpen)
   const setSolar = useSolarStore((s) => s.setPanelOpen)
+  const devices = useTwinDeviceStore((s) => s.panelOpen)
+  const setDevices = useTwinDeviceStore((s) => s.setPanelOpen)
 
   return useMemo(() => {
     const open: Record<PanelId, boolean> = {
-      properties, scene, measurement, section, plans, map, solar, pointcloud, mesh,
+      properties, scene, measurement, section, plans, map, solar, pointcloud, mesh, devices,
     }
     const set: Record<PanelId, (v: boolean) => void> = {
       properties: setProperties,
       scene: setScene, measurement: setMeasurement, section: setSection,
       plans: setPlans, map: setMap, solar: setSolar,
-      pointcloud: setPointcloud, mesh: setMesh,
+      pointcloud: setPointcloud, mesh: setMesh, devices: setDevices,
     }
     return applicablePanels({ available, allow })
       .filter((id) => icons[id])
@@ -84,6 +87,6 @@ export function usePanelRail({ icons, labels, badges, available, allow }: PanelR
     icons, labels, badges, available, allow,
     properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar,
-    pointcloud, setPointcloud, mesh, setMesh,
+    pointcloud, setPointcloud, mesh, setMesh, devices, setDevices,
   ])
 }
