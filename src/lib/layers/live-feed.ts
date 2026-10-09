@@ -37,9 +37,32 @@ export function resolveIdentity(data: VectorLayerData, preferredField?: string |
   return { source: 'index', field: null }
 }
 
+/**
+ * The same text flattenProperties would display for a top-level primitive,
+ * or null when the field is nested, absent, or a string holding JSON (those
+ * take the full path so keys never change).
+ */
+function directKey(props: Record<string, unknown>, field: string): string | null {
+  if (field.includes('.') || field.includes('[')) return null
+  const v = props[field]
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(Math.round(v * 1e6) / 1e6)
+  if (typeof v === 'boolean') return String(v)
+  if (typeof v === 'string') {
+    const t = v.trim()
+    if (t.length >= 2 && ((t[0] === '{' && t[t.length - 1] === '}') || (t[0] === '[' && t[t.length - 1] === ']'))) return null
+    return v
+  }
+  return null
+}
+
 export function featureKey(f: VectorFeature, index: number, id: Identity): string {
   if (id.source === 'featureId') return `#${f.id}`
   if (id.field) {
+    // Fast path: a plain top-level value (station_id, Tram, vehicle id) — the
+    // common case, read directly. Flattening every feature just to read one
+    // field ran four times per refresh (diff ×2, alerts, history).
+    const direct = directKey(f.properties, id.field)
+    if (direct !== null) return `${id.field}=${direct}`
     const v = flattenProperties(f.properties).find((p) => p.field === id.field && p.value !== null)
     if (v) return `${id.field}=${v.display}`
   }

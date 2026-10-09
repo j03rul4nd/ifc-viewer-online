@@ -56,3 +56,23 @@ describe('simulated feed', () => {
     expect([...statuses].sort()).toEqual(['alarm', 'delayed', 'on_time'])
   })
 })
+
+describe('featureKey fast path', () => {
+  it('gives exactly the keys the flattening path gave', async () => {
+    const { featureKey } = await import('./live-feed')
+    const { flattenProperties } = await import('../twin/flatten-props')
+    const slow = (props: Record<string, unknown>, field: string): string | null => {
+      const v = flattenProperties(props).find((p) => p.field === field && p.value !== null)
+      return v ? `${field}=${v.display}` : null
+    }
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [{ station_id: '1001' }, 'station_id'], [{ id: 42 }, 'id'], [{ id: 3.14159265 }, 'id'],
+      [{ ok: true }, 'ok'], [{ code: ' A 1 ' }, 'code'], [{ nested: { id: 7 } }, 'nested.id'],
+      [{ js: '{"a":1}' }, 'js.a'],
+    ]
+    for (const [props, field] of cases) {
+      const f = { id: 'x', geometry: { type: 'point' as const, coords: [] }, properties: props }
+      expect(featureKey(f, 0, { source: 'field', field })).toBe(slow(props, field) ?? '@0')
+    }
+  })
+})

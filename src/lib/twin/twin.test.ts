@@ -211,3 +211,12 @@ describe('TwinIndex — IFC Psets and crowded space', () => {
     expect(idx.search('SerialNumber:sn-77')[0]?.entity.label).toBe('Element 7')
   })
 })
+
+describe('norm fast path', () => {
+  it('gives the same result for ASCII and still strips accents otherwise', async () => {
+    const { norm } = await import('./twin-index')
+    expect(norm('  IN_SERVICE   Station 12 ')).toBe('in_service station 12')
+    expect(norm('Estació de Sants')).toBe('estacio de sants')
+    expect(norm('CAFÉ  Ñandú')).toBe('cafe nandu')
+  })
+})

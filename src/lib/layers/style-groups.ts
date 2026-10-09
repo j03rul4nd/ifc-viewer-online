@@ -193,6 +193,16 @@ const truthy = (v: unknown): boolean => {
   return /^(true|1|yes|si|sí|y|on|t|vrai|ja)$/i.test(String(v).trim())
 }
 
+/** A filter's own values, normalised once — not once per feature tested. */
+const keyCache = new WeakMap<Filter, { value: Filter['value']; keys: string[] }>()
+function filterKeys(f: Filter, list: Array<string | number>): string[] {
+  const c = keyCache.get(f)
+  if (c && c.value === f.value) return c.keys
+  const keys = list.map((x) => norm(String(x)))
+  keyCache.set(f, { value: f.value, keys })
+  return keys
+}
+
 export function testFilter(props: FlatProp[], f: Filter): boolean {
   const vals = valuesOf(props, f.field)
   switch (f.op) {
@@ -203,7 +213,7 @@ export function testFilter(props: FlatProp[], f: Filter): boolean {
   }
   if (vals.length === 0) return f.op === 'neq' || f.op === 'notIn'
   const list = Array.isArray(f.value) ? f.value : f.value === undefined ? [] : [f.value]
-  const keys = list.map((x) => norm(String(x)))
+  const keys = filterKeys(f, list)
   const any = (pred: (v: string | number | boolean) => boolean): boolean => vals.some(pred)
   switch (f.op) {
     case 'eq': return any((v) => norm(String(v)) === keys[0])
