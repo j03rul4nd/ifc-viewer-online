@@ -8,12 +8,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
 import { useValidationStore } from '../stores/validationStore'
-import { bindingState, buildCatalog, buildGuidIndex, deviceKey, metricOf, resolveLocs, type Binding } from '../lib/twin/devices'
+import { bindingState, buildCatalog, buildGuidIndex, deviceKey, metricOf, resolveLocs, type Binding, type Reading } from '../lib/twin/devices'
 import type { ViewerAPI } from '../lib/viewer'
+import { declutter, paintTwinLabels, type TwinLabelPaint } from '../lib/twin/label-paint'
 
 interface Anchor { bindingId: string; modelId: string; firstId: number; ids: number[]; point: { x: number; y: number; z: number } }
 
 const fmt = (v: unknown): string => (typeof v === 'number' ? (Math.abs(v) >= 100 ? v.toFixed(0) : String(Math.round(v * 10) / 10)) : String(v ?? '—'))
+
+/** Text and dot colour of a label — one definition for the screen and for captures. */
+function labelLook(b: Binding, reading: Reading | undefined, now: number): { text: string; color: string | null } {
+  const st = bindingState(b, reading, now)
+  return {
+    text: reading && b.label ? fmt(metricOf(reading, b.label.field)) : '—',
+    color: st.kind === 'rule' ? st.rule.effect.color : b.staleColor,
+  }
+}
 
 export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<ViewerAPI | null> }) {
   const active = useTwinDeviceStore((s) => s.active)
@@ -62,18 +72,52 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
       const viewer = viewerApiRef.current
       if (viewer) {
         const pts = viewer.projectToScreen(anchors.map((a) => a.point))
-        anchors.forEach((a, i) => {
-          const el = refs.current.get(a.bindingId)
+        const els = anchors.map((a) => refs.current.get(a.bindingId))
+        const keep = declutter(pts.map((p, i) => ({ ...p, text: els[i]?.textContent ?? '' })))
+        anchors.forEach((_, i) => {
+          const el = els[i]
           if (!el) return
           const p = pts[i]
-          el.style.display = p.visible ? '' : 'none'
-          el.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px) translate(-50%, -100%)`
+          el.style.display = keep[i] ? '' : 'none'
+          if (keep[i]) el.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px) translate(-50%, -100%)`
         })
       }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
+  }, [anchors, viewerApiRef])
+
+  // Captures (PNG, clips, GIF): the same pills, projected with the camera that
+  // rendered THAT frame, with the values shown at that moment. Registered once
+  // per set of anchors; values are read from the store at paint time.
+  useEffect(() => {
+    const viewer = viewerApiRef.current
+    if (!viewer || anchors.length === 0) return
+    return viewer.addCapturePainter((ctx, w, h, s) => {
+      const st = useTwinDeviceStore.getState()
+      if (!st.active) return false
+      const shown = st.past ?? st.readings
+      const at = st.timeAt ?? Date.now()
+      const byBinding = new Map(st.bindings.map((b) => [b.id, b]))
+      const pts = viewer.projectToScreen(anchors.map((a) => a.point))
+      const candidates: Array<TwinLabelPaint & { visible: boolean }> = []
+      anchors.forEach((a, i) => {
+        const b = byBinding.get(a.bindingId)
+        if (!b?.label) return
+        const reading = shown.get(deviceKey(b.sourceId, b.deviceId))
+        candidates.push({ x: pts[i].x, y: pts[i].y, visible: pts[i].visible, ...labelLook(b, reading, at) })
+      })
+      // Same decluttering as on screen: a capture shows the labels that were readable.
+      const keep = declutter(candidates)
+      const labels = candidates.filter((_, i) => keep[i])
+      const drew = paintTwinLabels(ctx, w, h, s, labels)
+      // DEV: what the last capture got, for QA without reading pixels.
+      if (import.meta.env.DEV) {
+        (globalThis as Record<string, unknown>).__ifcTwinLabelCapture = { anchors: anchors.length, painted: labels.length, drew, w, h, s, pts }
+      }
+      return drew
+    })
   }, [anchors, viewerApiRef])
 
   if (!active || anchors.length === 0) return null
@@ -85,9 +129,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
       {anchors.map((a) => {
         const b = byId.get(a.bindingId)
         if (!b?.label) return null
-        const reading = readings.get(deviceKey(b.sourceId, b.deviceId))
-        const st = bindingState(b, reading, now)
-        const color = st.kind === 'rule' ? st.rule.effect.color : b.staleColor
+        const look = labelLook(b, readings.get(deviceKey(b.sourceId, b.deviceId)), now)
         return (
           <div key={a.bindingId} ref={(el) => { if (el) refs.current.set(a.bindingId, el); else refs.current.delete(a.bindingId) }}
             className="absolute left-0 top-0 will-change-transform" data-testid="twin-label">
@@ -95,8 +137,8 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
               onClick={() => { const v = viewerApiRef.current; v?.frameElements(a.ids, a.modelId); v?.selectElement(a.firstId, a.modelId) }}
               className="pointer-events-auto flex items-center gap-1 px-1.5 py-0.5 mb-1 rounded-full text-[10px] font-medium whitespace-nowrap bg-[rgba(10,12,18,0.82)] text-white border border-white/15 shadow"
               title={`${b.name} · ${b.label.field}`}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: color ?? '#94a3b8' }} />
-              {reading ? fmt(metricOf(reading, b.label.field)) : '—'}
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: look.color ?? '#94a3b8' }} />
+              {look.text}
             </button>
           </div>
         )
