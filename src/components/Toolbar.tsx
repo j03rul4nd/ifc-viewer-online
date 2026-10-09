@@ -20,6 +20,7 @@ import { isGisEnabled } from '../lib/geo/gis-flag'
 import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { usePointCloudStore } from '../stores/pointCloudStore'
+import { useTwinDeviceStore } from '../stores/twinDeviceStore'
 import { useVectorLayerStore } from '../stores/vectorLayerStore'
 import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { useMeshStore } from '../stores/meshStore'
@@ -289,6 +290,20 @@ export default function Toolbar({
     const s = useVectorLayerStore.getState()
     s.setPanelOpen(!s.panelOpen)
   }
+  const twinPanelOpen = useTwinDeviceStore((s) => s.panelOpen)
+  const twinBindingCount = useTwinDeviceStore((s) => s.bindings.length)
+  const toggleTwinPanel = (): void => {
+    const s = useTwinDeviceStore.getState()
+    s.setPanelOpen(!s.panelOpen)
+  }
+  const TwinSVG = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11l9-7 9 7v9H3z" />
+      <path d="M9 15a4 4 0 0 1 6 0M7 12.5a7 7 0 0 1 10 0" />
+      <circle cx="12" cy="17.5" r="0.9" />
+    </svg>
+  )
   const LayersSVG = (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
       strokeLinecap="round" strokeLinejoin="round">
@@ -646,6 +661,9 @@ export default function Toolbar({
           <MenuItem icon={LayersSVG} label={tLayers('entry')} active={layersPanelOpen || layerCount > 0}
             badge={layerCount > 0 ? layerCount : undefined}
             onClick={() => { toggleLayersPanel(); setOpenMenu(null) }} />
+          <MenuItem icon={TwinSVG} label={tLayers('devices.entry')} active={twinPanelOpen || twinBindingCount > 0}
+            badge={twinBindingCount > 0 ? twinBindingCount : undefined}
+            onClick={() => { toggleTwinPanel(); setOpenMenu(null) }} />
           {isVideoEnabled() && (
             <MenuItem icon={<Icons.Film size={15} />} label={tVideo('entry')} active={videoPanelOpen}
               badge={videoCount > 0 ? videoCount : undefined}
