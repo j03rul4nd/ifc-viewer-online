@@ -474,9 +474,14 @@ const csvCell = (v: unknown): string => {
   return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
+const OPERATED_COLUMNS = ['model', 'GlobalId', 'element', 'class', 'storey', 'binding', 'device', 'state', 'read_at']
+
 export function operatedCsv(rows: OperatedRow[]): string {
   const keys = [...new Set(rows.flatMap((r) => Object.keys(r.metrics)))].sort()
-  const head = ['model', 'GlobalId', 'element', 'class', 'storey', 'binding', 'device', 'state', 'read_at', ...keys]
+  // A device metric named like a fixed column (a fire panel's own `state`) gets
+  // a `data.` prefix: two columns with one name are ambiguous in any spreadsheet.
+  const fixed = new Set(OPERATED_COLUMNS.map((c) => c.toLowerCase()))
+  const head = [...OPERATED_COLUMNS, ...keys.map((k) => (fixed.has(k.toLowerCase()) ? `data.${k}` : k))]
   const lines = rows.map((r) => [r.modelId, r.globalId, r.element, r.ifcClass, r.storey, r.binding, r.device, r.state, r.readAt, ...keys.map((k) => r.metrics[k])].map(csvCell).join(','))
   return [head.map(csvCell).join(','), ...lines].join('\n') + '\n'
 }
