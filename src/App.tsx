@@ -39,6 +39,9 @@ import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountSto
 // public, and a personal email hardcoded here would be exposed to anyone
 // (GDPR data-minimisation + a phishing-target signal). The id is pseudonymous
 // and useless without the Worker-side role.
+/** [x, y, z] (scene documents, `?camera=`) → the viewer's {x, y, z}. */
+const vec3 = (a: [number, number, number]): { x: number; y: number; z: number } => ({ x: a[0], y: a[1], z: a[2] })
+
 const ADMIN_USER_IDS = new Set(['user_3GP6gqE5WAmVzHobM0BosBk9A58'])
 
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
@@ -69,6 +72,7 @@ import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 // Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
 const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
+const SceneShareModal = React.lazy(() => import('./components/SceneShareModal'))
 const ClipStudio   = React.lazy(() => import('./components/studio/ClipStudio'))
 const CoverStudioModal = React.lazy(() => import('./components/CoverStudioModal'))
 const CompareModal = React.lazy(() => import('./components/CompareModal'))
@@ -164,7 +168,8 @@ import { appBus } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
 import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
 import type { GeoPlacement } from './lib/geo/geo-types'
-import { useTwinDeviceStore } from './stores/twinDeviceStore'
+import { useTwinDeviceStore, setTwinPersistence } from './stores/twinDeviceStore'
+import { bootedScene, sceneBootFailure } from './lib/scene-doc/scene-boot'
 import { TwinLabels } from './components/TwinLabels'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
@@ -826,6 +831,7 @@ export default function App() {
   useEffect(() => { showUploadRef.current = showUpload }, [showUpload])
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
+  const [showSceneModal, setShowSceneModal]   = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
@@ -914,7 +920,7 @@ export default function App() {
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
-  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending || !!s.setupUrl)
+  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending || !!s.setupUrl || !!s.setupText)
   // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
   const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
   // `?twin=home|community`: a shared link that opens the model with a live twin demo on it.
@@ -938,8 +944,27 @@ export default function App() {
   useEffect(() => {
     const setup = urlParams.layersUrl
     if (setup) useVectorLayerStore.getState().setSetupUrl(setup)
+    // A scene with its own layers is what the scene shows: the visitor's saved
+    // layers are neither restored nor overwritten (see the scene effect below).
+    else if ((bootedScene()?.doc.layers.length ?? 0) > 0) return
     else if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
   }, [urlParams.layersUrl])
+
+  // ── Scene document (`?scene=` / `#scene=`, scene-doc/) ──────────────────────
+  // Its models, map, background and camera came in as URL parameters before
+  // mount. What is not URL-shaped is applied here, once the models are in, so
+  // layers anchor against the models' own georeference and twin bindings find
+  // their GlobalIds.
+  const sceneAppliedRef = useRef(false)
+  useEffect(() => {
+    const fail = sceneBootFailure()
+    if (fail) toast(tToasts('scene.failed', { message: fail.errors.join(' ') }), 'error', { duration: 14000 })
+    const scene = bootedScene()
+    const bg = scene?.doc.view.background && !new URLSearchParams(window.location.search).has('bg')
+      ? parseBackgroundSpec(scene.doc.view.background) : null
+    if (bg) useSceneStore.getState().setBackground(bg, { persist: false })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Availability, stated from the SAME conditions that render each panel below.
   // Written from memory instead, it drifted immediately: the client skin got a
@@ -1029,7 +1054,9 @@ export default function App() {
   const presentationShotRef = useRef(false)
   useEffect(() => {
     if (loadsActive || presentationShotRef.current) return
-    if (!urlParams.view && !urlParams.turntable) return
+    // An exact camera with a map is applied after the map's own flight (below).
+    const camera = urlParams.map ? undefined : urlParams.camera
+    if (!urlParams.view && !urlParams.turntable && !camera) return
     if (useSceneStore.getState().models.length === 0) return
     // A short quiet first: the SDK loads a federated set one model at a time,
     // and the queue is briefly idle between them.
@@ -1038,13 +1065,31 @@ export default function App() {
       presentationShotRef.current = true
       const api = viewerApiRef.current
       if (!api) return
-      if (urlParams.view) api.setCameraPreset(urlParams.view, { fill: urlParams.fill ?? 0.85, animate: false })
+      if (camera) api.setCameraLookAt(vec3(camera.position), vec3(camera.target), false)
+      else if (urlParams.view) api.setCameraPreset(urlParams.view, { fill: urlParams.fill ?? 0.85, animate: false })
       if (urlParams.turntable) api.setTurntable(true, urlParams.turntable)
     }, 400)
     return () => window.clearTimeout(timer)
   }, [loadsActive, urlParams])
   const loadingState: 'idle' | 'loading' | 'loaded' | 'error' =
     loadsActive ? 'loading' : sceneModels.length > 0 ? 'loaded' : loadError ? 'error' : 'idle'
+  useEffect(() => {
+    const scene = bootedScene()
+    if (!scene || sceneAppliedRef.current) return
+    if (scene.doc.models.length > 0 && loadingState !== 'loaded' && loadingState !== 'error') return
+    sceneAppliedRef.current = true
+    const { doc, warnings } = scene
+    if (doc.layers.length > 0) {
+      useVectorLayerStore.getState().setSetupText(JSON.stringify({ format: 'ifc-viewer-data-layers', v: 1, layers: doc.layers }))
+    }
+    if (doc.twin && (doc.twin.sources.length > 0 || doc.twin.bindings.length > 0)) {
+      setTwinPersistence(false)
+      useTwinDeviceStore.getState().replaceAll(doc.twin.sources, doc.twin.bindings)
+    }
+    const notes = doc.meta.notes ?? []
+    if (notes.length > 0) toast(`${doc.meta.title} — ${notes.join(' ')}`, 'info', { duration: 16000 })
+    if (warnings.length > 0) console.warn('[scene] parts skipped:', warnings)
+  }, [loadingState])
   // Keep a phone's screen on while something runs on its own: a big model
   // streaming in, or a tour playing. See useWakeLock.
   useWakeLock(loadsActive || tourMode === 'playing')
@@ -3519,6 +3564,10 @@ export default function App() {
             timeoutMs: 120_000,
             subscriberTimeoutMs: 60_000,
           })
+          // Enabling the map flies to an aerial view; an exact camera from the
+          // link or scene is what the sharer chose, so it lands after that.
+          const cam = urlParams.camera
+          if (cam && !cancelled) viewerApiRef.current?.setCameraLookAt(vec3(cam.position), vec3(cam.target), false)
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err)
           console.error('[App] ?map= deep link failed:', message)
@@ -3895,6 +3944,7 @@ export default function App() {
                       onOpenDemoGallery={openDemoGallery}
                       onOpenExportModal={() => setShowExportModal(true)}
                       onOpenEmbed={() => setShowEmbedModal(true)}
+                      onOpenScene={() => setShowSceneModal(true)}
                       onOpenIds={() => setShowIdsModal(true)}
                       onOpenCompare={() => setShowCompareModal(true)}
                       onOpenHelp={() => setShowHelp(true)}
@@ -4363,6 +4413,13 @@ export default function App() {
           defaultLang={i18n.language}
           onClose={() => setShowEmbedModal(false)}
         />
+      )}
+
+      {/* ── Digital-twin scene: export / link / embed / open ── */}
+      {showSceneModal && (
+        <React.Suspense fallback={null}>
+          <SceneShareModal viewerApiRef={viewerApiRef} onClose={() => setShowSceneModal(false)} />
+        </React.Suspense>
       )}
 
       {/* ── IDS check ── */}

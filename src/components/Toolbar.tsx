@@ -56,6 +56,8 @@ interface ToolbarProps {
   onOpenDemoGallery: () => void
   onOpenExportModal: () => void
   onOpenEmbed: () => void
+  /** Share → Digital-twin scene (SceneShareModal). */
+  onOpenScene?: () => void
   onOpenIds: () => void
   /** Version comparison workspace (sets of IFCs across deliveries). */
   onOpenCompare: () => void
@@ -222,7 +224,7 @@ function scoreColor(score: number): string {
 
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
-  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenIds, onOpenCompare, onOpenHelp,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
@@ -848,6 +850,10 @@ export default function Toolbar({
           <MenuLabel>{t('menu.publish')}</MenuLabel>
           <MenuItem icon={<Icons.Code size={15} />} label={t('embed')}
             onClick={() => { onOpenEmbed(); setOpenMenu(null) }} />
+          {onOpenScene && (
+            <MenuItem icon={<Icons.Globe size={15} />} label={tLayers('scene.entry')}
+              onClick={() => { onOpenScene(); setOpenMenu(null) }} />
+          )}
           <MenuItem icon={<Icons.Eye size={15} />} label={tClient('entry')}
             onClick={() => { setClientMode(true); setOpenMenu(null) }} />
           <MenuItem icon={TourSVG} label={tTour('entry')} active={tourMode !== 'idle'}

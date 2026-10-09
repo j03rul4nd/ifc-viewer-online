@@ -879,6 +879,12 @@ export interface ViewerAPI {
    */
   mapGroundAt(x: number, z: number): number | null
   /**
+   * The map's own lat/lon ↔ scene pairing (geo-system getAnchor): what data
+   * layers project through while the map is on. Null when the map is off.
+   * Never creates the geo system.
+   */
+  mapAnchor(): { placement: import('./geo/geo-types').GeoPlacement; scene: { x: number; z: number }; floorY: number } | null
+  /**
    * The point cloud system if it is already loaded, else null. For callers that
    * must apply a change in the same tick they read it back (group moves read
    * the cloud's new bounds right after moving it).
@@ -5003,6 +5009,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     mapGroundAt(x, z) {
       return geoSystemInstance?.groundAtWorld(x, z) ?? null
+    },
+
+    mapAnchor() {
+      return geoSystemInstance?.getAnchor() ?? null
     },
 
     getPointClouds() {

@@ -242,3 +242,17 @@ describe('presets', () => {
     expect(presetsForSite(null).other).toEqual([])
   })
 })
+
+describe('transient refusals', () => {
+  it('retries 429 / 5xx twice, briefly and jittered, honouring Retry-After; never 4xx', async () => {
+    const { transientRetryMs } = await import('./vector-runner')
+    const r = (status: number, retryAfter?: string) => ({ status, headers: new Headers(retryAfter ? { 'retry-after': retryAfter } : {}) })
+    expect(transientRetryMs(r(503), 0, () => 0.5)).toBe(1500)
+    expect(transientRetryMs(r(502), 1, () => 0.5)).toBe(3000)
+    expect(transientRetryMs(r(503), 2)).toBeNull()
+    expect(transientRetryMs(r(429, '4'), 0)).toBe(4000)
+    expect(transientRetryMs(r(429, '600'), 0, () => 0.5)).toBe(1500)
+    expect(transientRetryMs(r(404), 0)).toBeNull()
+    expect(transientRetryMs(r(200), 0)).toBeNull()
+  })
+})

@@ -101,7 +101,8 @@
     "quota": "Das kostenlose Kontingent des Anbieters ist vorerst aufgebraucht. Später erneut versuchen.",
     "notLayersFile": "Diese Datei ist keine Datenebenen-Einrichtung.",
     "layersFileVersion": "Diese Einrichtung stammt aus einer neueren Version. Seite neu laden und erneut versuchen.",
-    "unknown": "konnte nicht gelesen werden."
+    "unknown": "konnte nicht gelesen werden.",
+    "timeout": "Der Server hat nicht innerhalb von 90 s geantwortet. Später erneut versuchen."
   },
   "kind": {
     "point": "Punkt",
@@ -112,7 +113,7 @@
     "noProps": "Dieses Objekt hat keine Attribute."
   },
   "restore": {
-    "failed": "{{count}} gespeicherte Ebenen konnten nicht wiederhergestellt werden (offline oder Datei zu groß zum Speichern)."
+    "failed": "{{count}} gespeicherte Ebenen konnten gerade nicht wiederhergestellt werden (offline, ein Server antwortet nicht oder eine Datei war zu groß zum Speichern). Sie bleiben gespeichert und werden beim nächsten Mal erneut versucht."
   },
   "search": {
     "title": "Im Zwilling suchen",
@@ -756,5 +757,40 @@
     "poor": "schlecht",
     "veryPoor": "sehr schlecht",
     "extremelyPoor": "extrem schlecht"
+  },
+  "scene": {
+    "entry": "Digital-Twin-Szene",
+    "title": "Szene teilen",
+    "intro": "Die ganze Szene in einer Datei: Modelle per URL, Datenebenen, Live-Geräte, Karte, Hintergrund und Ansicht. Als Link teilen, in eine Webseite einbetten oder die Datei behalten.",
+    "untitled": "Szene ohne Titel",
+    "name": "Name",
+    "description": "Beschreibung",
+    "contents": "Was enthalten ist",
+    "models": "Modelle (per URL)",
+    "localModels": "{{n}} Modell(e) von diesem Computer sind nicht enthalten: Eine Szene kann nur auf Dateien mit öffentlicher URL verweisen.",
+    "layers": "Datenebenen",
+    "devices": "Live-Geräteverknüpfungen",
+    "map": "Karte",
+    "off": "aus",
+    "keepCamera": "Mit der aktuellen Ansicht öffnen",
+    "secretsRemoved": "{{n}} Schlüssel- oder Token-Parameter wurden aus den Ebenen-URLs entfernt.",
+    "empty": "Lade zuerst ein Modell per URL oder füge eine Datenebene hinzu: Es gibt noch nichts zu teilen.",
+    "download": ".scene.json herunterladen",
+    "copyLink": "Link kopieren",
+    "copied": "Kopiert",
+    "tooBigForLink": "Zu groß für einen Link. Datei herunterladen, auf einem beliebigen statischen Host mit CORS veröffentlichen und mit ?scene=<url> öffnen.",
+    "tooBigToOpen": "Diese Szene ist zu groß, um sie hier aus einer Datei zu öffnen: veröffentlichen und mit ?scene=<url> öffnen.",
+    "embed": "In eine Webseite einbetten",
+    "ui": {
+      "client": "Kunde",
+      "full": "Vollständig",
+      "kiosk": "Nur Leinwand"
+    },
+    "hostHint": "Die Szene steckt im Link: Es wird nichts hochgeladen.",
+    "copyIframe": "Code kopieren",
+    "sources": "Datenquellen ({{n}})",
+    "live": "live",
+    "open": "Szene öffnen…",
+    "openHint": "Eine .scene.json öffnen, die dir jemand geschickt hat."
   }
 }

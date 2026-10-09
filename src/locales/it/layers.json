@@ -101,7 +101,8 @@
     "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi.",
     "notLayersFile": "Questo file non è una configurazione di livelli di dati.",
     "layersFileVersion": "Questa configurazione è di una versione più recente. Ricarica la pagina e riprova.",
-    "unknown": "non è stato possibile leggerla."
+    "unknown": "non è stato possibile leggerla.",
+    "timeout": "Il server non ha risposto entro 90 s. Riprova più tardi."
   },
   "kind": {
     "point": "Punto",
@@ -112,7 +113,7 @@
     "noProps": "Questo elemento non ha attributi."
   },
   "restore": {
-    "failed": "{{count}} livelli salvati non sono stati ripristinati (offline, o file troppo grande da conservare)."
+    "failed": "{{count}} livelli salvati non sono stati ripristinati ora (offline, un server che non risponde o un file troppo grande da conservare). Restano salvati e verranno ritentati la prossima volta."
   },
   "search": {
     "title": "Cerca nel gemello",
@@ -756,5 +757,40 @@
     "poor": "scadente",
     "veryPoor": "molto scadente",
     "extremelyPoor": "estremamente scadente"
+  },
+  "scene": {
+    "entry": "Scena di gemello digitale",
+    "title": "Condividi la scena",
+    "intro": "L'intera scena in un file: modelli per URL, livelli di dati, dispositivi in tempo reale, mappa, sfondo e vista. Condividila come link, incorporala in una pagina o conserva il file.",
+    "untitled": "Scena senza titolo",
+    "name": "Nome",
+    "description": "Descrizione",
+    "contents": "Cosa include",
+    "models": "Modelli (per URL)",
+    "localModels": "{{n}} modello/i aperto/i da questo computer non sono inclusi: una scena può puntare solo a file con un URL pubblico.",
+    "layers": "Livelli di dati",
+    "devices": "Collegamenti di dispositivi in tempo reale",
+    "map": "Mappa",
+    "off": "spenta",
+    "keepCamera": "Apri sulla vista attuale",
+    "secretsRemoved": "Rimossi {{n}} parametro/i di chiave o token dagli URL dei livelli.",
+    "empty": "Carica prima un modello da un URL o aggiungi un livello di dati: non c’è ancora niente da condividere.",
+    "download": "Scarica .scene.json",
+    "copyLink": "Copia link",
+    "copied": "Copiato",
+    "tooBigForLink": "Troppo grande per un link. Scarica il file, pubblicalo su qualsiasi hosting statico con CORS e aprilo con ?scene=<url>.",
+    "tooBigToOpen": "Questa scena è troppo grande per aprirla qui da un file: pubblicala e aprila con ?scene=<url>.",
+    "embed": "Incorpora in una pagina web",
+    "ui": {
+      "client": "Cliente",
+      "full": "Completo",
+      "kiosk": "Solo canvas"
+    },
+    "hostHint": "La scena viaggia dentro il link: non viene caricato nulla.",
+    "copyIframe": "Copia codice",
+    "sources": "Fonti di dati ({{n}})",
+    "live": "live",
+    "open": "Apri scena…",
+    "openHint": "Apri un .scene.json che ti hanno inviato."
   }
 }

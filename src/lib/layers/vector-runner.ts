@@ -17,9 +17,8 @@ import { createLogger } from '../logger'
 import { useVectorLayerStore, VECTOR_LAYERS_LS_KEY, type VectorLayer } from '../../stores/vectorLayerStore'
 import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
 import { useGeoStore } from '../../stores/geoStore'
-import {
-  anchorFromPlacement, anchorToPlacement, type SceneAnchor,
-} from '../geo/scene-anchor'
+import { anchorToPlacement, type SceneAnchor } from '../geo/scene-anchor'
+import { chooseLayerAnchor, type AnchorPairing } from './layer-anchor'
 import { parseGeoJson, projectLayer, type HeightMode, type VectorLayerData } from './geojson'
 import { buildGetCapabilitiesUrl, planGetFeature, parseCapabilities, bboxAround, type WfsCapabilities } from './wfs'
 import { parseGml, decodeXml } from './gml'
@@ -80,11 +79,27 @@ export function layerRows(data: VectorLayerData): FlatProp[][] {
 
 const log = createLogger('VectorRunner')
 
+// DEV only: the app's OWN instances, for QA from the console. After any edit,
+// `import('/src/...')` from the console resolves to a fresh copy of the module
+// (the app's imports carry ?t=), so inspecting through it reads an empty store.
+if (import.meta.env.DEV) {
+  ;(globalThis as Record<string, unknown>).__ifcLayersDebug = {
+    store: () => useVectorLayerStore.getState(),
+    importLayersFile: (text: string) => importLayersFile(text),
+    fetchFeed: (src: FeedSource) => fetchFeed(src),
+    fetchText: (url: string) => fetchText(url),
+  }
+}
+
 export interface VectorHost {
   getSystem(): Promise<VectorLayerSystemAPI>
   getModelBounds(): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
   /** World ground height from the running map, or null when the map is off. */
   mapGroundAt(x: number, z: number): number | null
+  /** The map's own lat/lon ↔ scene pairing while it is on (geo-system getAnchor). */
+  getMapAnchor?(): AnchorPairing | null
+  /** A loaded model's own georeference as a pairing, for when the map is off. */
+  getGeorefAnchor?(): AnchorPairing | null
 }
 
 let host: VectorHost | null = null
@@ -114,8 +129,9 @@ export function attachVectorHost(h: VectorHost): () => void {
   const offAnchor = useSceneAnchorStore.subscribe(schedule)
   // historyData lives in the same store, so time travel already reschedules.
   const offGeo = useGeoStore.subscribe((s, p) => {
+    // A model's georeference landing (georefByModel) can move the anchor too.
     if (s.placement !== p.placement || s.mapMode !== p.mapMode || s.terrainStatus !== p.terrainStatus ||
-      s.terrainExaggeration !== p.terrainExaggeration) schedule()
+      s.terrainExaggeration !== p.terrainExaggeration || s.georefByModel !== p.georefByModel) schedule()
   })
   schedule()
   return () => {
@@ -126,16 +142,15 @@ export function attachVectorHost(h: VectorHost): () => void {
   }
 }
 
-/** The anchor vector layers project through, without claiming one. */
+/** The anchor vector layers project through, without claiming one (see layer-anchor.ts). */
 function currentAnchor(): SceneAnchor | null {
-  const a = useSceneAnchorStore.getState().anchor
-  if (a) return a
-  const p = useGeoStore.getState().placement
-  if (!p) return null
-  const b = host?.getModelBounds() ?? null
-  const center = b ? { x: b.center.x, z: b.center.z } : { x: 0, z: 0 }
-  const floor = b ? b.center.y - b.size.y / 2 : 0
-  return anchorFromPlacement(p, center, floor, 'map')
+  return chooseLayerAnchor({
+    stored: useSceneAnchorStore.getState().anchor,
+    map: host?.getMapAnchor?.() ?? null,
+    georef: host?.getGeorefAnchor?.() ?? null,
+    placement: useGeoStore.getState().placement,
+    activeBounds: host?.getModelBounds() ?? null,
+  })
 }
 
 /** Anchor for a NEW layer: the existing one, or one made from this layer. */
@@ -584,9 +599,17 @@ function snapshotLayers(): PersistedLayer[] {
  */
 let persistEnabled = true
 
+/**
+ * Saved layers that could not be brought back this session (offline, a
+ * server down for a minute). They stay saved and are tried again on the next
+ * visit: rewriting the list without them threw away a layer — its source, its
+ * styles, its alerts — because a server was slow once.
+ */
+let unrestored: PersistedLayer[] = []
+
 function persist(): void {
   if (!restored || !persistEnabled) return
-  const out = snapshotLayers()
+  const out = [...snapshotLayers(), ...unrestored]
   try {
     if (out.length === 0) localStorage.removeItem(VECTOR_LAYERS_LS_KEY)
     else localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify({ v: 1, layers: out }))
@@ -608,6 +631,7 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
   } catch { /* corrupt entry: start clean */ }
 
   const r = await loadSaved(saved)
+  unrestored = r.failedRecords
   restored = true
   persist()
   return r
@@ -617,35 +641,63 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
 /** A layer that could not be brought back, and why (an i18n key under layers:). */
 export interface LoadProblem { name: string; errorKey: string }
 
-async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number; problems: LoadProblem[] }> {
+async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number; problems: LoadProblem[]; failedRecords: PersistedLayer[] }> {
   let ok = 0
   const problems: LoadProblem[] = []
-  for (const p of saved) {
-    let text = p.text
-    let why = 'error.unknown'
-    if (p.feed?.kind === 'join' && !p.feed.join?.geomUrl && p.text) {
-      const g = toGeoJsonText(p.text)
-      const base = g.ok ? parseGeoJson(g.text, { axisOrder: 'auto' }) : null
-      if (base && base.ok) registerJoinBase(p.feed.url, base.value)
-      text = undefined
-    }
-    if (!text && p.feed) {
-      const r = await fetchFeed(p.feed)
-      if (r.ok) text = r.text; else why = r.errorKey
-    } else if (!text && p.fetchUrl) {
-      const r = await fetchText(p.fetchUrl)
-      const g = r.ok ? toGeoJsonText(r.text) : null
-      if (g && g.ok) text = g.text; else why = !r.ok ? r.errorKey : g && !g.ok ? g.errorKey : why
-    }
+  const failedRecords: PersistedLayer[] = []
+  // Fetched in parallel (a few at a time), added in their saved order as soon
+  // as each one and all before it are in. One after another, a scene with
+  // four Open Data BCN layers took ~70 s to come back (the server answers in
+  // 15–25 s per file); in parallel it takes as long as the slowest.
+  const run = limiter(RESTORE_CONCURRENCY)
+  const pending = saved.map((p) => run(() => fetchSaved(p)))
+  for (let i = 0; i < saved.length; i++) {
+    const p = saved[i]
+    const { text, why: fetchWhy } = await pending[i]
+    let why = fetchWhy
     const parsed = text ? parseGeoJson(text, { axisOrder: 'auto' }) : null
     if (parsed && !parsed.ok) why = parseErrorKey(parsed.error)
-    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); continue }
+    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); failedRecords.push(p); continue }
     const r = addParsed(p.name, p.source, parsed.value, p.attribution,
       { text: p.text, fetchUrl: p.fetchUrl, feed: p.feed },
       { style: p.style, heightMode: p.heightMode, visible: p.visible, symbology: p.symbology, layerStyle: p.layerStyle, live: p.live, history: p.history, alerts: p.alerts })
-    if (r.ok) ok++; else problems.push({ name: p.name, errorKey: r.errorKey })
+    if (r.ok) ok++; else { problems.push({ name: p.name, errorKey: r.errorKey }); failedRecords.push(p) }
   }
-  return { restored: ok, failed: problems.length, problems }
+  return { restored: ok, failed: problems.length, problems, failedRecords }
+}
+
+const RESTORE_CONCURRENCY = 4
+
+/** At most `n` of the returned function's tasks run at once; the rest queue. */
+function limiter(n: number): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0
+  const queue: Array<() => void> = []
+  const next = (): void => { active--; queue.shift()?.() }
+  return <T>(task: () => Promise<T>): Promise<T> => new Promise<T>((resolve, reject) => {
+    const start = (): void => { active++; task().then(resolve, reject).finally(next) }
+    if (active < n) start(); else queue.push(start)
+  })
+}
+
+/** One saved layer's GeoJSON text, fetched again when it lives at a URL. */
+async function fetchSaved(p: PersistedLayer): Promise<{ text?: string; why: string }> {
+  let text = p.text
+  let why = 'error.unknown'
+  if (p.feed?.kind === 'join' && !p.feed.join?.geomUrl && p.text) {
+    const g = toGeoJsonText(p.text)
+    const base = g.ok ? parseGeoJson(g.text, { axisOrder: 'auto' }) : null
+    if (base && base.ok) registerJoinBase(p.feed.url, base.value)
+    text = undefined
+  }
+  if (!text && p.feed) {
+    const r = await fetchFeed(p.feed)
+    if (r.ok) text = r.text; else why = r.errorKey
+  } else if (!text && p.fetchUrl) {
+    const r = await fetchText(p.fetchUrl)
+    const g = r.ok ? toGeoJsonText(r.text) : null
+    if (g && g.ok) text = g.text; else why = !r.ok ? r.errorKey : g && !g.ok ? g.errorKey : why
+  }
+  return { text, why }
 }
 
 // ── Sharing a layer setup as a file ────────────────────────────────────────────
@@ -699,6 +751,13 @@ export async function importLayersFromUrl(url: string): ReturnType<typeof import
   const r = await fetchText(url)
   if (!r.ok) return r
   return importLayersFile(r.text)
+}
+
+/** Open a setup handed over as text (a scene document). Session-only, like a link. */
+export async function importLayersSession(text: string): ReturnType<typeof importLayersFile> {
+  persistEnabled = false
+  restored = true
+  return importLayersFile(text)
 }
 
 /** Cheap sniff: is this text a shared layer setup? */
@@ -826,6 +885,14 @@ export function setLayersProxy(template: string | null): void {
 interface RawOk { ok: true; text: string; headers: Headers; viaProxy: boolean }
 type RawResult = RawOk | { ok: false; errorKey: string }
 
+/**
+ * Longest wait for one source. Open-data portals can be slow (Barcelona's
+ * answers in 15–40 s under load), so this is generous — but finite: without
+ * it a server that never answers kept a whole scene import waiting forever,
+ * and every layer listed after it with it.
+ */
+const FETCH_TIMEOUT_MS = 90_000
+
 async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
   if (url === SIMULATED_FEED_URL) {
     return { ok: true, text: simulateTrains(Date.now()), headers: new Headers(), viaProxy: false }
@@ -841,8 +908,18 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
   }
   const host = (() => { try { return new URL(url).host } catch { return '' } })()
   const proxy = getLayersProxy()
+  const timeout = new AbortController()
+  const timer = setTimeout(() => timeout.abort(), FETCH_TIMEOUT_MS)
+  const onAbort = (): void => timeout.abort()
+  signal?.addEventListener('abort', onAbort, { once: true })
   const attempt = async (target: string, viaProxy: boolean): Promise<RawResult> => {
-    const res = await fetch(target, { signal, headers: { Accept: 'application/geo+json, application/json, text/xml;q=0.9, */*;q=0.5' } })
+    let res: Response
+    for (let n = 0; ; n++) {
+      res = await fetch(target, { signal: timeout.signal, headers: { Accept: 'application/geo+json, application/json, text/xml;q=0.9, */*;q=0.5' } })
+      const wait = transientRetryMs(res, n)
+      if (wait === null) break
+      await new Promise((r) => setTimeout(r, wait))
+    }
     if (!res.ok) return { ok: false, errorKey: (tmb && tmbErrorKey(res.status)) || 'error.http' }
     const buf = await res.arrayBuffer()
     const ct = res.headers.get('content-type') ?? ''
@@ -855,7 +932,7 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
     if (proxy && proxiedHosts.has(host)) return await attempt(proxy.replace('{url}', encodeURIComponent(url)), true)
     return await attempt(url, false)
   } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, errorKey: 'error.aborted' }
+    if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, errorKey: signal?.aborted ? 'error.aborted' : 'error.timeout' }
     // A TypeError from fetch is CORS or offline. With a proxy, find out which.
     if (proxy && !proxiedHosts.has(host)) {
       try {
@@ -865,7 +942,25 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
       } catch { /* fall through */ }
     }
     return { ok: false, errorKey: proxy ? 'error.network' : 'error.cors' }
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
   }
+}
+
+/**
+ * How long to wait before asking again after a TRANSIENT refusal — 429 or a
+ * 5xx — or null to stop. Measured on Barcelona's open-data portal: four
+ * requests at once from one browser (a scene opening) drew an error on one of
+ * them that a second request a few seconds later did not. Two retries, short,
+ * jittered so several layers do not come back in step; `Retry-After` is
+ * honoured when the server sends one (and is reasonable).
+ */
+export function transientRetryMs(res: { status: number; headers: Headers }, attempt: number, random = Math.random): number | null {
+  if (attempt >= 2 || !(res.status === 429 || (res.status >= 500 && res.status <= 504))) return null
+  const ra = Number(res.headers.get('retry-after'))
+  if (Number.isFinite(ra) && ra > 0 && ra <= 20) return ra * 1000
+  return Math.round(1500 * 2 ** attempt * (0.85 + random() * 0.3))
 }
 
 async function fetchText(url: string, signal?: AbortSignal): Promise<{ ok: true; text: string } | { ok: false; errorKey: string }> {

@@ -42,5 +42,8 @@
   "tree": {
     "notInTree": "Este elemento no está en el árbol espacial, ni nada por encima de él.",
     "revealedHost": "No está en el árbol por sí solo. Se ha mostrado a qué pertenece: «{{name}}»."
+  },
+  "scene": {
+    "failed": "No se pudo abrir la escena: {{message}}"
   }
 }

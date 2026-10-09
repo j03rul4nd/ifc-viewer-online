@@ -76,7 +76,7 @@ import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import {
-  composeGeoRootTransform, mapYawRad, normalizedToLatLon, northDirection, latLonToTile,
+  composeGeoRootTransform, groundAnchorY, mapYawRad, normalizedToLatLon, northDirection, latLonToTile,
   latLonToNormalized, metresToNormalized, type LatLon,
 } from './geo-math'
 import { createLogger } from '../logger'
@@ -401,6 +401,14 @@ export interface GeoSystemAPI {
    * Data layers drape on it so a route sits on the street, not under a hill.
    */
   groundAtWorld(x: number, z: number): number | null
+  /**
+   * The lat/lon ↔ scene pairing the map is aligned with right now: the
+   * placement, the scene point it lands on (the ANCHOR model's plan centre,
+   * not the active model's) and that model's floor. Null while the map is off.
+   * Anything else that projects coordinates — data layers above all — must use
+   * this pairing, or it drifts from the basemap by the distance between models.
+   */
+  getAnchor(): { placement: GeoPlacement; scene: { x: number; z: number }; floorY: number } | null
   getNorthDirection(): { x: number; y: number; z: number }
   getAttributions(): string[]
   getGpuBytesEstimate(): number
@@ -529,6 +537,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const scratchCam = new THREE.Vector3()
   const scratchTarget = new THREE.Vector3()
   let placement: GeoPlacement | null = null
+  /** What applyPlacement last aligned the map with (see getAnchor). */
+  let lastAnchor: { placement: GeoPlacement; scene: { x: number; z: number }; floorY: number } | null = null
   let provider: MapProvider | null = null
   let rafId: number | null = null
   let unsubscribeProjection: (() => void) | null = null
@@ -954,6 +964,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       }
       engine = null
       placement = null
+      lastAnchor = null
       provider = null
       lastLayerOpts = null
       verticalOverlayOpts = null
@@ -1188,6 +1199,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     pickGroundScene(clientX, clientY) {
       const hit = intersectGround(clientX, clientY)
       return hit ? { x: hit.x, z: hit.z } : null
+    },
+
+    getAnchor() {
+      return geoRoot && placement ? lastAnchor : null
     },
 
     groundAtWorld(x, z) {
@@ -2868,6 +2883,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const bounds = anchor?.bounds ?? ctx.getActiveModelBounds()
     const anchorScene = bounds ? { x: bounds.center.x, z: bounds.center.z } : { x: 0, z: 0 }
     const modelMinY = bounds ? bounds.center.y - bounds.size.y / 2 : 0
+    // floorY is the floor the map plane is measured from (origin or bbox
+    // bottom, groundAnchorY), so a pairing reproduces the map plane exactly.
+    lastAnchor = { placement: p, scene: anchorScene, floorY: groundAnchorY(modelMinY, ctx.getModelOriginY?.() ?? null) }
 
     const t = composeGeoRootTransform({
       placement: p, anchorScene, modelMinY,
