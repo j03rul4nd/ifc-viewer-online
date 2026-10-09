@@ -692,5 +692,8 @@
         "description": "Architecture, structure et fluides : eau par niveau entre fichiers, logements, parking, ascenseur."
       }
     }
+  },
+  "add": {
+    "title": "Ajouter des données"
   }
 }

@@ -692,5 +692,8 @@
         "description": "Arquitetura, estrutura e instalações: água por piso entre ficheiros, habitações, estacionamento, elevador."
       }
     }
+  },
+  "add": {
+    "title": "Adicionar dados"
   }
 }
