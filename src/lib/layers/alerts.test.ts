@@ -51,3 +51,24 @@ describe('alert warm-up from history', () => {
     expect(now.active[0].indices).toEqual([1])
   })
 })
+
+describe('alert memory across a reload', () => {
+  it('a snapshot brings back what was alerting, without starting it again', async () => {
+    const { memorySnapshot, memoryFromSnapshot } = await import('./alerts')
+    const now0 = { ...empty, forMin: 0 }
+    const mem: AlertMemory = new Map()
+    expect(evaluateAlerts(rows([0, 3]), ['a', 'b'], [now0], 1000, mem).started[0].indices).toEqual([0])
+    // "Reload": a fresh memory from the snapshot, then the first evaluation.
+    const snap = JSON.parse(JSON.stringify(memorySnapshot(mem)))
+    const r = evaluateAlerts(rows([0, 0]), ['a', 'b'], [now0], 31_000, memoryFromSnapshot(snap))
+    expect(r.active[0].indices).toEqual([0, 1])
+    expect(r.started).toEqual([{ ruleId: 'r', indices: [1] }]) // only the new one
+  })
+  it('keeps the hold time running from the real start', async () => {
+    const { memorySnapshot, memoryFromSnapshot } = await import('./alerts')
+    const mem: AlertMemory = new Map()
+    evaluateAlerts(rows([0]), ['a'], [empty], 0, mem)
+    const back = memoryFromSnapshot(JSON.parse(JSON.stringify(memorySnapshot(mem))))
+    expect(evaluateAlerts(rows([0]), ['a'], [empty], 10 * MIN, back).started[0].indices).toEqual([0])
+  })
+})

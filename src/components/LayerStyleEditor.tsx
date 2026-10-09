@@ -14,12 +14,12 @@
 import React, { useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
-import { layerRows, focusVectorFeature } from '../lib/layers/vector-runner'
+import { layerRows, focusVectorFeature, seriesOf } from '../lib/layers/vector-runner'
 import { newAlertId, type AlertRule } from '../lib/layers/alerts'
 import {
   getNotifySettings, setNotifySettings, onNotifySettings, systemPermission, enableSystemNotifications,
 } from '../lib/layers/alert-notify'
-import { getAlertLog, onAlertLog, clearAlertLog, alertLogCsv } from '../lib/layers/alert-log'
+import { getAlertLog, onAlertLog, clearAlertLog, alertLogCsv, entryOf } from '../lib/layers/alert-log'
 import { inferSchema } from '../lib/twin/flatten-props'
 import {
   groupCounts, valueCounts, newGroupId, defaultGroupStyle, RAMPS, numericRange, classBreaks, graduatedGroups, type ClassMethod,
@@ -706,7 +706,8 @@ function NotifyOptions({ t }: { t: T }) {
 /** What alerted on this layer and when: newest first, exportable. */
 function AlertLog({ layer, t }: { layer: VectorLayer; t: T }) {
   const all = useSyncExternalStore(onAlertLog, getAlertLog)
-  const mine = useMemo(() => all.filter((e) => e.layerId === layer.id), [all, layer.id])
+  const series = seriesOf(layer.id)
+  const mine = useMemo(() => all.filter((e) => entryOf(e, layer.id, series)), [all, layer.id, series])
   const [open, setOpen] = useState(false)
   if (mine.length === 0) return null
   const today = new Date().toDateString()
@@ -744,7 +745,7 @@ function AlertLog({ layer, t }: { layer: VectorLayer; t: T }) {
           </div>
           <div className="flex gap-1">
             <button className={btn} onClick={exportCsv}>{t('alerts.log.export')}</button>
-            <button className={btn} onClick={() => clearAlertLog(layer.id)}>{t('alerts.log.clearAll')}</button>
+            <button className={btn} onClick={() => clearAlertLog(layer.id, series)}>{t('alerts.log.clearAll')}</button>
           </div>
         </>
       )}

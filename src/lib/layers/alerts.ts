@@ -85,3 +85,31 @@ export function evaluateAlerts(
 
 /** When each memory was last evaluated. */
 const memoryAt = new WeakMap<AlertMemory, number>()
+
+// ── Surviving a reload ─────────────────────────────────────────────────────────
+
+/** "Which features were alerting, since when" — small enough to keep per source. */
+export interface MemorySnapshot {
+  at: number
+  rules: Record<string, Array<[string, number]>>
+}
+
+/** Cap per rule: the snapshot is for continuity, not an archive. */
+const SNAPSHOT_MAX_KEYS = 5000
+
+export function memorySnapshot(mem: AlertMemory): MemorySnapshot {
+  const rules: MemorySnapshot['rules'] = {}
+  for (const [ruleId, m] of mem) rules[ruleId] = [...m.entries()].slice(0, SNAPSHOT_MAX_KEYS)
+  return { at: memoryAt.get(mem) ?? Date.now(), rules }
+}
+
+/**
+ * A memory rebuilt from a snapshot, as if the previous evaluation had just run
+ * at `snap.at`: what was already alerting then is not "started" again.
+ */
+export function memoryFromSnapshot(snap: MemorySnapshot): AlertMemory {
+  const mem: AlertMemory = new Map()
+  for (const [ruleId, entries] of Object.entries(snap.rules)) mem.set(ruleId, new Map(entries))
+  memoryAt.set(mem, snap.at)
+  return mem
+}
