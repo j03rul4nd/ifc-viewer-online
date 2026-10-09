@@ -97,10 +97,11 @@
     "noGeometryInTable": "Essa tabela não tem colunas com localização (lon/lat, WKT ou coordenadas). Junte-a a uma camada.",
     "noJoinBase": "Não há geometria a que juntar.",
     "emptyTable": "A tabela está vazia.",
-    "tmbKey": "A TMB precisa das suas chaves: adicione-as em Fontes em direto → chaves TMB.",
+    "tmbKey": "A TMB precisa das suas chaves: adicione-as em Adicionar dados → Fontes públicas em tempo real.",
     "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde.",
     "notLayersFile": "Este ficheiro não é uma configuração de camadas de dados.",
-    "layersFileVersion": "Esta configuração foi guardada numa versão mais recente. Recarregue a página e tente de novo."
+    "layersFileVersion": "Esta configuração foi guardada numa versão mais recente. Recarregue a página e tente de novo.",
+    "unknown": "não foi possível ler."
   },
   "kind": {
     "point": "Ponto",

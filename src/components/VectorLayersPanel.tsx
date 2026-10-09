@@ -99,8 +99,8 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     }
     if (!useVectorLayerStore.getState().restorePending) return
     useVectorLayerStore.getState().setRestorePending(false)
-    void restoreVectorLayers().then(({ failed }) => {
-      if (failed > 0) toast(t('restore.failed', { count: failed }), 'warning')
+    void restoreVectorLayers().then(({ failed, problems }) => {
+      if (failed > 0) toast(t('restore.failed', { count: failed }) + ' ' + describeProblems(problems), 'warning', { duration: 12000 })
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -164,9 +164,16 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     }
   })
 
+  /** "Metro lines: TMB needs your own keys…" — which layer failed, and why, for up to three. */
+  const describeProblems = (ps: Array<{ name: string; errorKey: string }>): string => {
+    const shown = ps.slice(0, 3).map((p) => `${p.name}: ${t(p.errorKey as never)}`)
+    return shown.join(' · ') + (ps.length > 3 ? ` (+${ps.length - 3})` : '')
+  }
+
   const reportImport = (r: Awaited<ReturnType<typeof importLayersFile>>): void => {
     if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
-    toast(t('share.imported', { n: r.restored }) + (r.failed ? ' ' + t('share.importFailed', { n: r.failed }) : ''), r.failed ? 'warning' : 'success')
+    toast(t('share.imported', { n: r.restored }) + (r.failed ? ' ' + t('share.importFailed', { n: r.failed }) + ' ' + describeProblems(r.problems) : ''),
+      r.failed ? 'warning' : 'success', r.failed ? { duration: 12000 } : undefined)
   }
 
   const exportSetup = (): void => {

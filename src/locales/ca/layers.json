@@ -97,10 +97,11 @@
     "noGeometryInTable": "Aquesta taula no té columnes amb ubicació (lon/lat, WKT o coordenades). Uneix-la a una capa.",
     "noJoinBase": "No hi ha geometria a la qual unir.",
     "emptyTable": "La taula és buida.",
-    "tmbKey": "TMB necessita les teves claus: afegeix-les a Fonts en directe → claus de TMB.",
+    "tmbKey": "TMB necessita les teves claus: afegeix-les a Afegir dades → Fonts públiques en directe.",
     "quota": "S’ha esgotat per ara la quota gratuïta del proveïdor. Torna-ho a provar més tard.",
     "notLayersFile": "Aquest fitxer no és una configuració de capes de dades.",
-    "layersFileVersion": "Aquesta configuració es va desar amb una versió més nova. Recarrega la pàgina i torna-ho a provar."
+    "layersFileVersion": "Aquesta configuració es va desar amb una versió més nova. Recarrega la pàgina i torna-ho a provar.",
+    "unknown": "no s’ha pogut llegir."
   },
   "kind": {
     "point": "Punt",

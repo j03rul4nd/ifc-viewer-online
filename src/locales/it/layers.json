@@ -97,10 +97,11 @@
     "noGeometryInTable": "La tabella non ha colonne con posizione (lon/lat, WKT o coordinate). Uniscila a un livello.",
     "noJoinBase": "Nessuna geometria a cui unire.",
     "emptyTable": "La tabella è vuota.",
-    "tmbKey": "TMB richiede le tue chiavi: aggiungile in Fonti dal vivo → chiavi TMB.",
+    "tmbKey": "TMB richiede le tue chiavi: aggiungile in Aggiungi dati → Fonti pubbliche in tempo reale.",
     "quota": "La quota gratuita del fornitore è esaurita per ora. Riprova più tardi.",
     "notLayersFile": "Questo file non è una configurazione di livelli di dati.",
-    "layersFileVersion": "Questa configurazione è di una versione più recente. Ricarica la pagina e riprova."
+    "layersFileVersion": "Questa configurazione è di una versione più recente. Ricarica la pagina e riprova.",
+    "unknown": "non è stato possibile leggerla."
   },
   "kind": {
     "point": "Punto",

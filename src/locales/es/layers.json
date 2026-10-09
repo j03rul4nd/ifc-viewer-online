@@ -97,10 +97,11 @@
     "noGeometryInTable": "Esa tabla no tiene columnas con ubicación (lon/lat, WKT o coordenadas). Únela a una capa.",
     "noJoinBase": "No hay geometría a la que unir.",
     "emptyTable": "La tabla está vacía.",
-    "tmbKey": "TMB necesita tus propias claves: añádelas en Fuentes en vivo → claves de TMB.",
+    "tmbKey": "TMB necesita tus propias claves: añádelas en Añadir datos → Fuentes públicas en vivo.",
     "quota": "Se ha agotado por ahora la cuota gratuita del proveedor. Vuelve a intentarlo más tarde.",
     "notLayersFile": "Este fichero no es una configuración de capas de datos.",
-    "layersFileVersion": "Esta configuración se guardó con una versión más nueva. Recarga la página e inténtalo de nuevo."
+    "layersFileVersion": "Esta configuración se guardó con una versión más nueva. Recarga la página e inténtalo de nuevo.",
+    "unknown": "no se pudo leer."
   },
   "kind": {
     "point": "Punto",
