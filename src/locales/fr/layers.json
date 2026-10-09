@@ -97,10 +97,11 @@
     "noGeometryInTable": "Cette table n’a pas de colonnes de localisation (lon/lat, WKT ou coordonnées). Joignez-la à une couche.",
     "noJoinBase": "Aucune géométrie à laquelle joindre.",
     "emptyTable": "La table est vide.",
-    "tmbKey": "TMB nécessite vos propres clés : ajoutez-les dans Sources en direct → clés TMB.",
+    "tmbKey": "TMB nécessite vos propres clés : ajoutez-les dans Ajouter des données → Sources publiques en direct.",
     "quota": "Le quota gratuit du fournisseur est épuisé pour le moment. Réessayez plus tard.",
     "notLayersFile": "Ce fichier n’est pas une configuration de couches de données.",
-    "layersFileVersion": "Cette configuration vient d’une version plus récente. Rechargez la page et réessayez."
+    "layersFileVersion": "Cette configuration vient d’une version plus récente. Rechargez la page et réessayez.",
+    "unknown": "lecture impossible."
   },
   "kind": {
     "point": "Point",

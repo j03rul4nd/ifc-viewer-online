@@ -97,10 +97,11 @@
     "noGeometryInTable": "Die Tabelle hat keine Ortsspalten (lon/lat, WKT oder Koordinaten). Verknüpfen Sie sie mit einer Ebene.",
     "noJoinBase": "Keine Geometrie zum Verknüpfen.",
     "emptyTable": "Die Tabelle ist leer.",
-    "tmbKey": "TMB braucht Ihre eigenen Schlüssel: unter Live-Quellen → TMB-Schlüssel hinzufügen.",
+    "tmbKey": "TMB braucht Ihre eigenen Schlüssel: unter Daten hinzufügen → Öffentliche Live-Quellen hinzufügen.",
     "quota": "Das kostenlose Kontingent des Anbieters ist vorerst aufgebraucht. Später erneut versuchen.",
     "notLayersFile": "Diese Datei ist keine Datenebenen-Einrichtung.",
-    "layersFileVersion": "Diese Einrichtung stammt aus einer neueren Version. Seite neu laden und erneut versuchen."
+    "layersFileVersion": "Diese Einrichtung stammt aus einer neueren Version. Seite neu laden und erneut versuchen.",
+    "unknown": "konnte nicht gelesen werden."
   },
   "kind": {
     "point": "Punkt",

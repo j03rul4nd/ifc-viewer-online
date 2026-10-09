@@ -16,3 +16,19 @@ describe('sharing a layer setup', () => {
     expect(await importLayersFile('nope')).toEqual({ ok: false, errorKey: 'error.notLayersFile' })
   })
 })
+
+describe('import says which layers failed, and why', () => {
+  it('names a TMB layer without keys and gives the key reason', async () => {
+    const { setTmbKeys } = await import('./tmb')
+    setTmbKeys(null)
+    const file = JSON.stringify({
+      format: 'ifc-viewer-data-layers', v: 1, exportedAt: '2026-10-09T00:00:00Z',
+      layers: [{ name: 'TMB · Metro', source: { type: 'url', url: 'https://api.tmb.cat/v1/transit/linies/metro', format: 'geojson' },
+        style: { color: '#f00', opacity: 1, widthM: 3, fill: true, extrudeM: 0, pointRadiusM: 2 }, heightMode: 'ground', visible: true,
+        fetchUrl: 'https://api.tmb.cat/v1/transit/linies/metro' }],
+    })
+    const r = await importLayersFile(file)
+    expect(r.ok && r.failed).toBe(1)
+    expect(r.ok && r.problems).toEqual([{ name: 'TMB · Metro', errorKey: 'error.tmbKey' }])
+  })
+})

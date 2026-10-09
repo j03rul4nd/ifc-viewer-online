@@ -97,10 +97,11 @@
     "noGeometryInTable": "That table has no columns with a location (lon/lat, WKT or coordinates). Join it onto a layer instead.",
     "noJoinBase": "There is no geometry to join onto.",
     "emptyTable": "The table is empty.",
-    "tmbKey": "TMB needs your own keys: add them under Live sources → TMB keys.",
+    "tmbKey": "TMB needs your own keys: add them under Add data → Public live sources.",
     "quota": "The provider’s free quota is used up for now. Try again later.",
     "notLayersFile": "This file is not a data-layers setup.",
-    "layersFileVersion": "This setup was saved by a newer version. Update the page and try again."
+    "layersFileVersion": "This setup was saved by a newer version. Update the page and try again.",
+    "unknown": "it could not be read."
   },
   "kind": {
     "point": "Point",

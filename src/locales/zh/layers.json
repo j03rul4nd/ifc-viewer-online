@@ -97,10 +97,11 @@
     "noGeometryInTable": "该表格没有位置列（lon/lat、WKT 或坐标）。请将其关联到图层。",
     "noJoinBase": "没有可关联的几何。",
     "emptyTable": "表格为空。",
-    "tmbKey": "TMB 需要你自己的密钥：请在 实时来源 → TMB 密钥 中添加。",
+    "tmbKey": "TMB 需要你自己的密钥：请在 添加数据 → 公共实时数据源 中添加。",
     "quota": "提供方的免费额度暂时用完。请稍后再试。",
     "notLayersFile": "此文件不是数据图层配置。",
-    "layersFileVersion": "此配置由更新的版本保存。请刷新页面后重试。"
+    "layersFileVersion": "此配置由更新的版本保存。请刷新页面后重试。",
+    "unknown": "无法读取。"
   },
   "kind": {
     "point": "点",

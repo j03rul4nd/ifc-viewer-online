@@ -596,7 +596,7 @@ function persist(): void {
  * Bring back the layers saved on this device. Returns how many came back and
  * how many failed (offline, a server that changed, a file over the cap).
  */
-export async function restoreVectorLayers(): Promise<{ restored: number; failed: number }> {
+export async function restoreVectorLayers(): Promise<{ restored: number; failed: number; problems: LoadProblem[] }> {
   let saved: PersistedLayer[] = []
   try {
     const raw = localStorage.getItem(VECTOR_LAYERS_LS_KEY)
@@ -611,10 +611,15 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
 }
 
 /** Rebuild layers from saved records (restore and import share this). */
-async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number }> {
-  let ok = 0, failed = 0
+/** A layer that could not be brought back, and why (an i18n key under layers:). */
+export interface LoadProblem { name: string; errorKey: string }
+
+async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number; problems: LoadProblem[] }> {
+  let ok = 0
+  const problems: LoadProblem[] = []
   for (const p of saved) {
     let text = p.text
+    let why = 'error.unknown'
     if (p.feed?.kind === 'join' && !p.feed.join?.geomUrl && p.text) {
       const g = toGeoJsonText(p.text)
       const base = g.ok ? parseGeoJson(g.text, { axisOrder: 'auto' }) : null
@@ -623,20 +628,21 @@ async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; f
     }
     if (!text && p.feed) {
       const r = await fetchFeed(p.feed)
-      text = r.ok ? r.text : undefined
+      if (r.ok) text = r.text; else why = r.errorKey
     } else if (!text && p.fetchUrl) {
       const r = await fetchText(p.fetchUrl)
       const g = r.ok ? toGeoJsonText(r.text) : null
-      text = g && g.ok ? g.text : undefined
+      if (g && g.ok) text = g.text; else why = !r.ok ? r.errorKey : g && !g.ok ? g.errorKey : why
     }
     const parsed = text ? parseGeoJson(text, { axisOrder: 'auto' }) : null
-    if (!parsed || !parsed.ok) { failed++; continue }
+    if (parsed && !parsed.ok) why = parseErrorKey(parsed.error)
+    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); continue }
     const r = addParsed(p.name, p.source, parsed.value, p.attribution,
       { text: p.text, fetchUrl: p.fetchUrl, feed: p.feed },
       { style: p.style, heightMode: p.heightMode, visible: p.visible, symbology: p.symbology, layerStyle: p.layerStyle, live: p.live, history: p.history, alerts: p.alerts })
-    if (r.ok) ok++; else failed++
+    if (r.ok) ok++; else problems.push({ name: p.name, errorKey: r.errorKey })
   }
-  return { restored: ok, failed }
+  return { restored: ok, failed: problems.length, problems }
 }
 
 // ── Sharing a layer setup as a file ────────────────────────────────────────────
@@ -698,7 +704,7 @@ export function isLayersFile(text: string): boolean {
 }
 
 /** Add the layers of a shared file to the scene (alongside the current ones). */
-export async function importLayersFile(text: string): Promise<{ ok: true; restored: number; failed: number } | { ok: false; errorKey: string }> {
+export async function importLayersFile(text: string): Promise<{ ok: true; restored: number; failed: number; problems: LoadProblem[] } | { ok: false; errorKey: string }> {
   let parsed: { format?: string; v?: number; layers?: PersistedLayer[] }
   try { parsed = JSON.parse(text) } catch { return { ok: false, errorKey: 'error.notLayersFile' } }
   if (parsed?.format !== SHARE_FORMAT || !Array.isArray(parsed.layers)) return { ok: false, errorKey: 'error.notLayersFile' }

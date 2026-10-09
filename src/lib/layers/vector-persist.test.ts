@@ -33,7 +33,7 @@ describe('vector layer persistence', () => {
     localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify(saved))
     vi.useRealTimers()
     const out = await restoreVectorLayers()
-    expect(out).toEqual({ restored: 1, failed: 0 })
+    expect(out).toEqual({ restored: 1, failed: 0, problems: [] })
     const [layer] = useVectorLayerStore.getState().layers
     expect(layer.name).toBe('zone.geojson')
     expect(layer.style.color).toBe('#123456')
