@@ -4201,7 +4201,7 @@ export default function App() {
                       isolated={isolated}
                       onSetIsolated={handleSetIsolatedCategory}
                       onFrame={(id) => viewerRef.current?.frameCategory(id)}
-                      onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
+                      onSelectElement={(id, modelId) => viewerApiRef.current?.selectElement(id, modelId)}
                       onFrameElement={handleFrameElement}
                       onRevealInTree={handleRevealInTree}
                       viewerApiRef={viewerApiRef}

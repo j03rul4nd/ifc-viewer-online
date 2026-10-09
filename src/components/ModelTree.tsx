@@ -326,7 +326,7 @@ const ROW_HEIGHT = 30
 interface ModelTreeProps {
   onSelectElement?: (expressId: number, modelId?: string) => void
   onFilterBySubtree?: (expressIds: number[]) => void
-  onFocusElements?: (ids: number[]) => void
+  onFocusElements?: (ids: number[], modelId?: string) => void
   /**
    * Remove a whole model. The tree is where people already look for the model
    * they mean — hunting for a separate panel to delete the thing you are
@@ -1007,7 +1007,7 @@ function SpatialRow({
   editingField: 'Name' | 'LongName' | 'Description' | 'GlobalId'
   onToggle: (key: string) => void
   onSelect: (id: number, modelId?: string) => void
-  onFocusElements?: (ids: number[]) => void
+  onFocusElements?: (ids: number[], modelId?: string) => void
   onStartEdit: (id: number, field: 'Name' | 'LongName' | 'Description' | 'GlobalId', modelId?: string) => void
   onCommitEdit: (id: number, field: 'Name' | 'LongName' | 'Description', old: string, newVal: string, modelId?: string) => void
   onCancelEdit: () => void
@@ -1054,7 +1054,7 @@ function SpatialRow({
       onSelect={() => onSelect(node.expressId, modelId)}
       onFocus={() => {
         const ids = collectElementIds(node, decompMap)
-        if (ids.length > 0) onFocusElements?.(ids)
+        if (ids.length > 0) onFocusElements?.(ids, modelId)
       }}
       onRename={() => onStartEdit(node.expressId, 'Name')}
       onFixGuid={hasGuidIssue && node.globalId
@@ -1076,7 +1076,7 @@ function SpatialRow({
       onDoubleClick={(e) => {
         e.stopPropagation()
         const ids = collectElementIds(node, decompMap)
-        if (ids.length > 0) onFocusElements?.(ids)
+        if (ids.length > 0) onFocusElements?.(ids, modelId)
       }}
     >
       <button
@@ -1197,7 +1197,7 @@ function ElementRow({
   issues: ModelIssueIndex
   isSelected: boolean
   onSelect: (id: number, modelId?: string) => void
-  onFocusElements?: (ids: number[]) => void
+  onFocusElements?: (ids: number[], modelId?: string) => void
   onCommitRename: (expressId: number, oldName: string, newName: string) => void
 }) {
   const { t } = useTranslation('tree')
@@ -1237,7 +1237,7 @@ function ElementRow({
       globalId={element.globalId}
       displayName={element.name}
       onSelect={() => onSelect(element.expressId, modelId)}
-      onFocus={() => onFocusElements?.([element.expressId])}
+      onFocus={() => onFocusElements?.([element.expressId], modelId)}
       onRename={() => { setEditVal(element.name); setEditing(true) }}
       onFixGuid={hasGuidIssue && element.globalId
         ? () => addCommand(buildFixGuidCommand(element.expressId, element.globalId!, modelId))
@@ -1255,7 +1255,7 @@ function ElementRow({
         backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
       }}
       onClick={() => !editing && onSelect(element.expressId, modelId)}
-      onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId]) }}
+      onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId], modelId) }}
     >
       <span className="w-4 shrink-0" />
 
