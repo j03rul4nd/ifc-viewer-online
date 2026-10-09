@@ -518,5 +518,10 @@
     "on": "In seguito",
     "stop": "Smetti di seguire",
     "lost": "L’elemento seguito è uscito dal flusso."
+  },
+  "download": {
+    "title": "Scarica dati",
+    "onlyVisible": "Solo gruppi visibili",
+    "done": "Elementi esportati: {{n}}."
   }
 }

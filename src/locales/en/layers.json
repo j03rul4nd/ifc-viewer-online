@@ -518,5 +518,10 @@
     "on": "Following",
     "stop": "Stop following",
     "lost": "The followed feature left the feed."
+  },
+  "download": {
+    "title": "Download data",
+    "onlyVisible": "Only visible groups",
+    "done": "Features exported: {{n}}."
   }
 }

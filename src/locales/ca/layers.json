@@ -518,5 +518,10 @@
     "on": "Seguint",
     "stop": "Deixar de seguir",
     "lost": "L’element que seguies ha sortit de la font."
+  },
+  "download": {
+    "title": "Descarregar dades",
+    "onlyVisible": "Només grups visibles",
+    "done": "Elements exportats: {{n}}."
   }
 }
