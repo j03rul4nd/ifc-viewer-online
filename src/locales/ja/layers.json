@@ -227,7 +227,32 @@
     "tmb-bus-stops": {
       "name": "TMB · バス停",
       "hint": "バス停を選ぶと次のバスをライブ表示 · TMB のキーが必要"
-    }
+    },
+    "bcn-endolla": {
+      "name": "EV充電（Endolla）",
+      "hint": "バルセロナの公共充電器、今空いている口 · 2分ごと"
+    },
+    "bcn-air-quality": {
+      "name": "大気質（ASPB）",
+      "hint": "NO₂・PM10・O₃… 各局の直近1時間 · 1〜3時間遅れ"
+    },
+    "cat-meteocat": {
+      "name": "気象観測所（Meteocat）",
+      "hint": "気温・降水・風 · 30分ごと、カタルーニャ全域"
+    },
+    "bcn-barris": {
+      "name": "バルセロナの地区",
+      "hint": "73のバリと所属区 · 静的"
+    },
+    "madrid-air-quality": {
+      "name": "マドリード · 大気質",
+      "hint": "バルセロナと同じ時間別形式 · 各局の直近1時間"
+    },
+    "tokyo-toei-stations": {
+      "name": "東京 · 都営の駅",
+      "hint": "地下鉄と都電の駅（ODPT）· 静的、キー不要"
+    },
+    "otherPlaces": "その他の場所（{{n}}）"
   },
   "live": {
     "toggle": "ライブ更新",
@@ -718,5 +743,18 @@
   },
   "add": {
     "title": "データを追加"
+  },
+  "ev": {
+    "available": "空きあり",
+    "busy": "すべて使用中",
+    "outOfService": "使用停止"
+  },
+  "air": {
+    "good": "良好",
+    "fair": "まずまず",
+    "moderate": "普通",
+    "poor": "悪い",
+    "veryPoor": "非常に悪い",
+    "extremelyPoor": "極めて悪い"
   }
 }

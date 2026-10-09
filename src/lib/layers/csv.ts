@@ -108,7 +108,16 @@ export function detectGeometry(t: Table): GeometrySpec {
   const lon = t.columns.findIndex((c) => LON.test(c.trim()))
   const lat = t.columns.findIndex((c) => LAT.test(c.trim()))
   if (lon >= 0 && lat >= 0 && sample.every((r) => isNum(r[lon] ?? '') && isNum(r[lat] ?? ''))) return { kind: 'lonlat', lon, lat }
-  const wkt = t.columns.findIndex((c, i) => WKT.test(c.trim()) || sample.some((r) => /^\s*(MULTI)?(POINT|LINESTRING|POLYGON)\s*\(/i.test(r[i] ?? '')))
+  const wktCols = t.columns.map((_, i) => i).filter((i) =>
+    WKT.test(t.columns[i].trim()) || sample.some((r) => /^\s*(MULTI)?(POINT|LINESTRING|POLYGON)\s*\(/i.test(r[i] ?? '')))
+  // Open-data exports often carry the same shape twice — projected and in
+  // degrees (Barcelona's barris: geometria_etrs89 + geometria_wgs84). The
+  // degrees one is the one a map can use without knowing the CRS.
+  const inDegrees = (i: number): boolean => sample.some((r) => {
+    const m = /(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/.exec(r[i] ?? '')
+    return !!m && Math.abs(Number(m[1])) <= 180 && Math.abs(Number(m[2])) <= 90
+  })
+  const wkt = wktCols.find(inDegrees) ?? wktCols[0] ?? -1
   if (wkt >= 0) return { kind: 'wkt', col: wkt }
   // A cell that is a run of lon,lat pairs (degrees): the BCN tramos.
   for (let i = 0; i < t.columns.length; i++) {
@@ -153,6 +162,20 @@ function cellValue(s: string): string | number | null {
 export function tableToGeoJson(t: Table, spec: GeometrySpec = detectGeometry(t)): { type: 'FeatureCollection'; features: unknown[] } | null {
   if (spec.kind === 'none') return null
   const geomCols = new Set(spec.kind === 'lonlat' ? [spec.lon, spec.lat] : [spec.col])
+  // The OTHER copies of the shape (another CRS, or a WKT twin of lon/lat
+  // columns) are not attributes: kilobytes of coordinates per row in the
+  // inspector, the search index and the exports.
+  const sample = t.rows.slice(0, 20)
+  t.columns.forEach((_, i) => { if (sample.length && sample.every((r) => /^\s*(MULTI)?(POINT|LINESTRING|POLYGON)\s*\(/i.test(r[i] ?? ''))) geomCols.add(i) })
+  // The id is the first column whose values are all different (Barcelona's
+  // barris file starts with the DISTRICT code, shared by a dozen rows); a
+  // repeated id would merge features in search, links and live diffs.
+  const idCol = t.columns.findIndex((_, k) => {
+    if (geomCols.has(k)) return false
+    const seen = new Set<string>()
+    for (const r of t.rows) { const v = (r[k] ?? '').trim(); if (!v || seen.has(v)) return false; seen.add(v) }
+    return true
+  })
   const features = t.rows.map((r, i) => {
     let geometry: unknown = null
     if (spec.kind === 'lonlat') geometry = { type: 'Point', coordinates: [Number(r[spec.lon].replace(',', '.')), Number(r[spec.lat].replace(',', '.'))] }
@@ -167,7 +190,7 @@ export function tableToGeoJson(t: Table, spec: GeometrySpec = detectGeometry(t))
     }
     const properties: Record<string, unknown> = {}
     t.columns.forEach((c, k) => { if (!geomCols.has(k)) properties[c] = cellValue(r[k] ?? '') })
-    return { type: 'Feature', id: String(properties[t.columns.find((_, k) => !geomCols.has(k)) ?? ''] ?? i), properties, geometry }
+    return { type: 'Feature', id: idCol >= 0 ? (r[idCol] ?? '').trim() : String(i), properties, geometry }
   })
   return { type: 'FeatureCollection', features }
 }

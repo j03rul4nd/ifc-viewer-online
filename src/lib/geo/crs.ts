@@ -25,6 +25,14 @@ export interface CrsDef {
 
 // ── Static definitions (non-UTM) ───────────────────────────────────────────────
 
+/** Origins (lat, lon) of the 19 Japan Plane Rectangular zones, I to XIX (MLIT notice 2002). */
+const JAPAN_PLANE_ORIGINS: Array<[number, number]> = [
+  [33, 129.5], [33, 131], [36, 132.166666666667], [33, 133.5], [36, 134.333333333333],
+  [36, 136], [36, 137.166666666667], [36, 138.5], [36, 139.833333333333], [40, 140.833333333333],
+  [44, 140.25], [44, 142.25], [44, 144.25], [26, 142], [26, 127.5],
+  [26, 124], [26, 131], [20, 136], [26, 154],
+]
+
 const STATIC_DEFS: CrsDef[] = [
   {
     code: 'EPSG:27700',
@@ -60,11 +68,34 @@ const STATIC_DEFS: CrsDef[] = [
     domain: [zone * 3 - 2, 47, zone * 3 + 2, 55.1],
     note: 'DHDN Gauss-Krüger — legacy datum, metre-level accuracy.',
   })),
+  // Finland: ETRS-TM35FIN (national) and the ETRS-GKn zones city surveys use —
+  // Helsinki publishes everything in GK25 (EPSG:3879). Zone n → EPSG:3854+n.
+  {
+    code: 'EPSG:3067',
+    def: '+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+    domain: [19, 59, 32, 70.2],
+  },
+  ...Array.from({ length: 13 }, (_, i) => i + 19).map((zone): CrsDef => ({
+    code: `EPSG:${3854 + zone}`,
+    def: `+proj=tmerc +lat_0=0 +lon_0=${zone} +k=1 +x_0=${zone}500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs`,
+    domain: [zone - 1.5, 59, zone + 1.5, 70.2],
+  })),
+  // Japan Plane Rectangular CS I–XIX, JGD2011 (EPSG:6669–6687) and JGD2000
+  // (EPSG:2443–2461). Tokyo is zone IX. Eastings/northings in the usual order
+  // here; the EPSG axis order (X = north) only matters to tools that honour it.
+  ...JAPAN_PLANE_ORIGINS.flatMap(([lat0, lon0], i): CrsDef[] => {
+    const def = `+proj=tmerc +lat_0=${lat0} +lon_0=${lon0} +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs`
+    const domain: [number, number, number, number] = [122, 20, 154.5, 46]
+    return [
+      { code: `EPSG:${6669 + i}`, def, domain },
+      { code: `EPSG:${2443 + i}`, def, domain, note: 'JGD2000 — within ~0.1 m of JGD2011 outside the 2011 quake zone.' },
+    ]
+  }),
 ]
 
 // ── Formulaic UTM definitions ──────────────────────────────────────────────────
 
-type UtmDatum = 'wgs84' | 'etrs89' | 'nad83' | 'nad27'
+type UtmDatum = 'wgs84' | 'etrs89' | 'nad83' | 'nad27' | 'ed50'
 
 /**
  * The datum half of a UTM definition, written out per datum rather than left to
@@ -84,6 +115,9 @@ const UTM_DATUM: Record<UtmDatum, string> = {
   etrs89: '+ellps=GRS80 +towgs84=0,0,0,0,0,0,0',
   nad83:  '+ellps=GRS80 +towgs84=0,0,0,0,0,0,0',
   nad27:  '+ellps=clrk66 +towgs84=-8,160,176,0,0,0,0',
+  // ED50 via the 3-parameter mean for Western Europe (EPSG:1133): no regional
+  // grid, so a couple of metres off — the honest price of a legacy datum.
+  ed50:   '+ellps=intl +towgs84=-87,-98,-121,0,0,0,0',
 }
 
 function utmDef(zone: number, opts: { south?: boolean; datum?: UtmDatum }): string {
@@ -102,6 +136,17 @@ function resolveUtm(codeNum: number): CrsDef | null {
   if (codeNum >= 25828 && codeNum <= 25838) {
     const zone = codeNum - 25800
     return { code: `EPSG:${codeNum}`, def: utmDef(zone, { datum: 'etrs89' }), domain: utmDomain(zone, false) }
+  }
+  // ED50 / UTM (Europe): EPSG:23028–23038. Older Spanish and Catalan cartography
+  // and many municipal CAD bases are still in ED50 / UTM 31N (EPSG:23031).
+  if (codeNum >= 23028 && codeNum <= 23038) {
+    const zone = codeNum - 23000
+    return {
+      code: `EPSG:${codeNum}`,
+      def: utmDef(zone, { datum: 'ed50' }),
+      domain: utmDomain(zone, false),
+      note: 'ED50 via a 3-parameter shift, no regional grid — expect ~2-5 m error.',
+    }
   }
   // NAD83 / UTM (North America): EPSG:26901–26923, zones 1–23.
   // This is what essentially every US public LiDAR delivery is written in —

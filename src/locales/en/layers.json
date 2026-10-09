@@ -227,7 +227,32 @@
     "tmb-bus-stops": {
       "name": "TMB · Bus stops",
       "hint": "Select a stop to see the next buses live · needs your TMB keys"
-    }
+    },
+    "bcn-endolla": {
+      "name": "EV charging (Endolla)",
+      "hint": "Barcelona's public chargers, ports free right now · every 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Air quality (ASPB)",
+      "hint": "NO₂, PM10, O₃… latest hour per station · arrives 1–3 h late"
+    },
+    "cat-meteocat": {
+      "name": "Weather stations (Meteocat)",
+      "hint": "Temperature, rain, wind · half-hourly, all of Catalonia"
+    },
+    "bcn-barris": {
+      "name": "Barcelona neighbourhoods",
+      "hint": "The 73 barris with their district · static"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Air quality",
+      "hint": "Same hourly format as Barcelona · latest hour per station"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tokyo · Toei stations",
+      "hint": "Metro and tram stations (ODPT) · static, no key"
+    },
+    "otherPlaces": "Other places ({{n}})"
   },
   "live": {
     "toggle": "Live refresh",
@@ -718,5 +743,18 @@
   },
   "add": {
     "title": "Add data"
+  },
+  "ev": {
+    "available": "Ports available",
+    "busy": "All ports in use",
+    "outOfService": "Out of service"
+  },
+  "air": {
+    "good": "good",
+    "fair": "fair",
+    "moderate": "moderate",
+    "poor": "poor",
+    "veryPoor": "very poor",
+    "extremelyPoor": "extremely poor"
   }
 }

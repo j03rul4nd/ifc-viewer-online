@@ -227,7 +227,32 @@
     "tmb-bus-stops": {
       "name": "TMB · 公交站",
       "hint": "选择站点即可实时查看下一班车 · 需要你的 TMB 密钥"
-    }
+    },
+    "bcn-endolla": {
+      "name": "电动车充电（Endolla）",
+      "hint": "巴塞罗那公共充电桩，当前空闲接口 · 每 2 分钟"
+    },
+    "bcn-air-quality": {
+      "name": "空气质量（ASPB）",
+      "hint": "NO₂、PM10、O₃…各站最近一小时 · 延迟 1–3 小时"
+    },
+    "cat-meteocat": {
+      "name": "气象站（Meteocat）",
+      "hint": "气温、降雨、风 · 每半小时，覆盖整个加泰罗尼亚"
+    },
+    "bcn-barris": {
+      "name": "巴塞罗那街区",
+      "hint": "73 个街区及其所属区 · 静态"
+    },
+    "madrid-air-quality": {
+      "name": "马德里 · 空气质量",
+      "hint": "与巴塞罗那相同的小时格式 · 各站最近一小时"
+    },
+    "tokyo-toei-stations": {
+      "name": "东京 · 都营车站",
+      "hint": "地铁和有轨电车车站（ODPT）· 静态，无需密钥"
+    },
+    "otherPlaces": "其他地点（{{n}}）"
   },
   "live": {
     "toggle": "实时更新",
@@ -718,5 +743,18 @@
   },
   "add": {
     "title": "添加数据"
+  },
+  "ev": {
+    "available": "有空闲接口",
+    "busy": "全部占用",
+    "outOfService": "停止服务"
+  },
+  "air": {
+    "good": "良好",
+    "fair": "尚可",
+    "moderate": "中等",
+    "poor": "差",
+    "veryPoor": "很差",
+    "extremelyPoor": "极差"
   }
 }
