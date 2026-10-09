@@ -40,7 +40,14 @@ interface LodState {
   objects: Array<THREE.Object3D | null>
   /** Instanced primitives: base matrices, for hiding by zero-scale. */
   inst: { mesh: THREE.InstancedMesh; base: Float32Array } | null
-  labels: Array<THREE.Sprite | null>
+  /**
+   * Label sprites, made on first need: a label only shows in the detail band,
+   * and building thousands up front made every live refresh of a large layer
+   * stall (10 000 named points: ~1 s). `makeLabel` builds one when its point
+   * first comes close.
+   */
+  labels: Array<THREE.Sprite | null | undefined>
+  makeLabel: (i: number) => THREE.Sprite | null
   dots: THREE.Points
   /** Model groups swap to their icon beyond detailM (a 3D model at 2 km is noise). */
   modelFallback: Array<THREE.Object3D | null>
@@ -138,8 +145,13 @@ const primitiveGeometry = (shape: string, size: number): THREE.BufferGeometry =>
   }
 }
 
-function iconSprite(tex: THREE.Texture, px: number): THREE.Sprite {
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, sizeAttenuation: false, toneMapped: false }))
+function iconMaterial(tex: THREE.Texture): THREE.SpriteMaterial {
+  return new THREE.SpriteMaterial({ map: tex, transparent: true, sizeAttenuation: false, toneMapped: false })
+}
+
+/** `mat` is shared by every icon of a group: one material, not one per point. */
+function iconSprite(mat: THREE.SpriteMaterial, px: number): THREE.Sprite {
+  const sp = new THREE.Sprite(mat)
   sp.center.set(0.5, 0)
   sp.scale.set(px / 600, px / 600, 1)
   pinToPixels(sp, px)
@@ -167,8 +179,9 @@ export function buildPointLodGroup(input: PointGroupInput, ctx: LodContext): THR
   const template = s.kind === 'model' ? ctx.assets?.get(s.assetId) ?? null : null
 
   if (iconTex) {
+    const mat = iconMaterial(iconTex)
     points.forEach((p, i) => {
-      const sp = iconSprite(iconTex, px)
+      const sp = iconSprite(mat, px)
       sp.position.set(p.pos.x, p.pos.y + 0.3, p.pos.z)
       sp.userData.feature = p.feature
       holder.add(sp)
@@ -180,6 +193,7 @@ export function buildPointLodGroup(input: PointGroupInput, ctx: LodContext): THR
     const k = style.size / Math.max(1e-6, size.x, size.y, size.z)
     // Beyond detailM a model reads as a pin: an icon stand-in, same colour.
     const pinTex = ctx.iconTexture?.('pin', style.color) ?? null
+    const pinMat = pinTex ? iconMaterial(pinTex) : null
     points.forEach((p, i) => {
       const c = template.clone(true)
       c.scale.setScalar(k)
@@ -188,8 +202,8 @@ export function buildPointLodGroup(input: PointGroupInput, ctx: LodContext): THR
       c.userData.sharedAsset = true
       holder.add(c)
       objects[i] = c
-      if (pinTex) {
-        const sp = iconSprite(pinTex, px)
+      if (pinMat) {
+        const sp = iconSprite(pinMat, px)
         sp.position.set(p.pos.x, p.pos.y + 0.3, p.pos.z)
         sp.userData.feature = p.feature
         holder.add(sp)
@@ -209,10 +223,11 @@ export function buildPointLodGroup(input: PointGroupInput, ctx: LodContext): THR
     inst = { mesh, base: Float32Array.from(mesh.instanceMatrix.array as Float32Array) }
   }
 
-  // Labels, only where there is something to say.
-  const labels: Array<THREE.Sprite | null> = points.map((p) => {
-    if (!p.label) return null
-    const lt = labelTexture(p.label, style.color)
+  // Labels, only where there is something to say — and only once needed.
+  const labels: Array<THREE.Sprite | null | undefined> = points.map((p) => (p.label ? undefined : null))
+  const makeLabel = (i: number): THREE.Sprite | null => {
+    const p = points[i]
+    const lt = p.label ? labelTexture(p.label, style.color) : null
     if (!lt) return null
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: lt.tex, transparent: true, sizeAttenuation: false, depthTest: false, toneMapped: false }))
     // Sits just above the icon: center below the sprite by (icon / label height).
@@ -224,7 +239,7 @@ export function buildPointLodGroup(input: PointGroupInput, ctx: LodContext): THR
     sp.userData.feature = p.feature
     holder.add(sp)
     return sp
-  })
+  }
 
   // Dots: one Points draw for the whole group, refilled when membership changes.
   const dotGeom = new THREE.BufferGeometry()
@@ -240,7 +255,7 @@ export function buildPointLodGroup(input: PointGroupInput, ctx: LodContext): THR
   holder.add(dots)
 
   const state: LodState = {
-    points, bands: new Uint8Array(points.length).fill(255), objects, inst, labels, dots, modelFallback,
+    points, bands: new Uint8Array(points.length).fill(255), objects, inst, labels, makeLabel, dots, modelFallback,
   }
   holder.userData.lod = state
   return holder
@@ -273,7 +288,8 @@ export function updatePointLod(holder: THREE.Object3D, cam: THREE.Vector3, bands
     if (st.inst) st.inst.mesh.setMatrixAt(i, showSymbol
       ? new THREE.Matrix4().fromArray(st.inst.base, i * 16)
       : ZERO)
-    const label = st.labels[i]
+    let label = st.labels[i]
+    if (label === undefined && band === 0) label = st.labels[i] = st.makeLabel(i)
     if (label) label.visible = band === 0
   }
   if (changed && st.inst) st.inst.mesh.instanceMatrix.needsUpdate = true

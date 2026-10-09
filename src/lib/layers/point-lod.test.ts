@@ -68,3 +68,19 @@ describe('zoom bands', () => {
     expect(box.max.z).toBeGreaterThan(950)
   })
 })
+
+describe('labels are made on demand', () => {
+  it('builds no label up front, and only the near ones when the camera comes close', async () => {
+    const THREE = await import('three')
+    const { buildPointLodGroup, updatePointLod } = await import('./point-lod')
+    const points = Array.from({ length: 200 }, (_, i) => ({ pos: new THREE.Vector3(i * 100, 0, 0), feature: i, label: `P${i}` }))
+    const style = { symbol: { kind: 'primitive' as const, shape: 'sphere' as const }, color: '#ff0000', size: 4, labelField: 'name' }
+    const g = buildPointLodGroup({ style, points } as never, {})!
+    const labelCount = (): number => { let n = 0; g.traverse((o) => { if ((o as { isSprite?: boolean }).isSprite) n++ }); return n }
+    updatePointLod(g, points[0].pos, { detailM: 0, iconM: Infinity, dotM: Infinity })
+    expect(labelCount()).toBe(0)
+    updatePointLod(g, points[0].pos, { detailM: 150, iconM: 2500, dotM: 40000 })
+    // Points at 0 m and 100 m are in the detail band; the other 198 are not.
+    expect(labelCount()).toBeLessThanOrEqual(2)
+  })
+})
