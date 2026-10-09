@@ -227,7 +227,32 @@
     "tmb-bus-stops": {
       "name": "TMB · Paradas de bus",
       "hint": "Selecciona una parada para ver los próximos buses en vivo · necesita tus claves de TMB"
-    }
+    },
+    "bcn-endolla": {
+      "name": "Recarga de VE (Endolla)",
+      "hint": "Cargadores públicos de Barcelona, puntos libres ahora · cada 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Calidad del aire (ASPB)",
+      "hint": "NO₂, PM10, O₃… última hora por estación · llega con 1–3 h de retraso"
+    },
+    "cat-meteocat": {
+      "name": "Estaciones meteorológicas (Meteocat)",
+      "hint": "Temperatura, lluvia, viento · cada media hora, toda Cataluña"
+    },
+    "bcn-barris": {
+      "name": "Barrios de Barcelona",
+      "hint": "Los 73 barrios con su distrito · estático"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Calidad del aire",
+      "hint": "Mismo formato horario que Barcelona · última hora por estación"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tokio · Estaciones Toei",
+      "hint": "Estaciones de metro y tranvía (ODPT) · estático, sin clave"
+    },
+    "otherPlaces": "Otros lugares ({{n}})"
   },
   "live": {
     "toggle": "Actualización en vivo",
@@ -718,5 +743,18 @@
   },
   "add": {
     "title": "Añadir datos"
+  },
+  "ev": {
+    "available": "Puntos libres",
+    "busy": "Todos ocupados",
+    "outOfService": "Fuera de servicio"
+  },
+  "air": {
+    "good": "buena",
+    "fair": "razonablemente buena",
+    "moderate": "regular",
+    "poor": "desfavorable",
+    "veryPoor": "muy desfavorable",
+    "extremelyPoor": "extremadamente desfavorable"
   }
 }

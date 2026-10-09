@@ -64,3 +64,26 @@ export function applyJoin(base: VectorLayerData, table: Table, spec: JoinSpec): 
     orphanRows: [...byKey.keys()].filter((k) => !used.has(k)).length,
   }
 }
+
+/**
+ * One feature per key ("043" = "43"), for geometry tables that repeat a place
+ * per variable (ASPB lists each station once per pollutant it measures).
+ * Attributes that differ between a place's rows describe the ROW, not the
+ * place — the pollutant code — and would read as a fact about the station:
+ * they are dropped.
+ */
+export function uniqueByKey(data: VectorLayerData, key: string): VectorLayerData {
+  const norm = (v: unknown): string => String(v ?? '').trim().replace(/^0+(?=\d)/, '')
+  const first = new Map<string, VectorLayerData['features'][number]>()
+  const varying = new Set<string>()
+  for (const f of data.features) {
+    const k = norm(f.properties[key])
+    const seen = first.get(k)
+    if (!seen) { first.set(k, f); continue }
+    for (const [p, v] of Object.entries(f.properties)) if (JSON.stringify(seen.properties[p]) !== JSON.stringify(v)) varying.add(p)
+  }
+  const features = [...first.values()].map((f) => (varying.size === 0 ? f : {
+    ...f, properties: Object.fromEntries(Object.entries(f.properties).filter(([p]) => !varying.has(p))),
+  }))
+  return { ...data, features, propertyKeys: data.propertyKeys.filter((p) => !varying.has(p)) }
+}

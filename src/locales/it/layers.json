@@ -227,7 +227,32 @@
     "tmb-bus-stops": {
       "name": "TMB · Fermate degli autobus",
       "hint": "Seleziona una fermata per vedere i prossimi autobus dal vivo · richiede le tue chiavi TMB"
-    }
+    },
+    "bcn-endolla": {
+      "name": "Ricarica VE (Endolla)",
+      "hint": "Colonnine pubbliche di Barcellona, prese libere ora · ogni 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Qualità dell'aria (ASPB)",
+      "hint": "NO₂, PM10, O₃… ultima ora per stazione · arriva con 1–3 h di ritardo"
+    },
+    "cat-meteocat": {
+      "name": "Stazioni meteo (Meteocat)",
+      "hint": "Temperatura, pioggia, vento · ogni mezz'ora, tutta la Catalogna"
+    },
+    "bcn-barris": {
+      "name": "Quartieri di Barcellona",
+      "hint": "I 73 barris con il loro distretto · statico"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Qualità dell'aria",
+      "hint": "Stesso formato orario di Barcellona · ultima ora per stazione"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tokyo · Stazioni Toei",
+      "hint": "Stazioni di metro e tram (ODPT) · statico, senza chiave"
+    },
+    "otherPlaces": "Altri luoghi ({{n}})"
   },
   "live": {
     "toggle": "Aggiornamento in tempo reale",
@@ -718,5 +743,18 @@
   },
   "add": {
     "title": "Aggiungi dati"
+  },
+  "ev": {
+    "available": "Prese libere",
+    "busy": "Tutte occupate",
+    "outOfService": "Fuori servizio"
+  },
+  "air": {
+    "good": "buona",
+    "fair": "discreta",
+    "moderate": "moderata",
+    "poor": "scadente",
+    "veryPoor": "molto scadente",
+    "extremelyPoor": "estremamente scadente"
   }
 }

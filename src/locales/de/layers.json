@@ -227,7 +227,32 @@
     "tmb-bus-stops": {
       "name": "TMB · Bushaltestellen",
       "hint": "Haltestelle wählen und die nächsten Busse live sehen · braucht Ihre TMB-Schlüssel"
-    }
+    },
+    "bcn-endolla": {
+      "name": "E-Ladestationen (Endolla)",
+      "hint": "Öffentliche Ladepunkte in Barcelona, jetzt freie Anschlüsse · alle 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Luftqualität (ASPB)",
+      "hint": "NO₂, PM10, O₃… letzte Stunde je Station · kommt 1–3 h verzögert"
+    },
+    "cat-meteocat": {
+      "name": "Wetterstationen (Meteocat)",
+      "hint": "Temperatur, Regen, Wind · halbstündlich, ganz Katalonien"
+    },
+    "bcn-barris": {
+      "name": "Stadtviertel von Barcelona",
+      "hint": "Die 73 Barris mit ihrem Bezirk · statisch"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Luftqualität",
+      "hint": "Gleiches Stundenformat wie Barcelona · letzte Stunde je Station"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tokio · Toei-Stationen",
+      "hint": "U-Bahn- und Straßenbahnstationen (ODPT) · statisch, ohne Schlüssel"
+    },
+    "otherPlaces": "Andere Orte ({{n}})"
   },
   "live": {
     "toggle": "Live-Aktualisierung",
@@ -718,5 +743,18 @@
   },
   "add": {
     "title": "Daten hinzufügen"
+  },
+  "ev": {
+    "available": "Anschlüsse frei",
+    "busy": "Alle belegt",
+    "outOfService": "Außer Betrieb"
+  },
+  "air": {
+    "good": "gut",
+    "fair": "mittel",
+    "moderate": "mäßig",
+    "poor": "schlecht",
+    "veryPoor": "sehr schlecht",
+    "extremelyPoor": "extrem schlecht"
   }
 }

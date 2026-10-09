@@ -16,6 +16,8 @@
 // FRESHNESS: when the data was produced, how long it stays valid, and a
 // fingerprint to skip rebuilding when nothing changed.
 
+import { parseCellTime } from './table-transforms'
+
 export type FeedKind = 'geojson' | 'gbfs' | 'gtfs-rt' | 'ods' | 'wfs' | 'join'
 
 export interface Freshness {
@@ -285,19 +287,23 @@ export function odsGeoJsonUrl(
 /**
  * Newest timestamp in a table column, when it holds machine timestamps:
  * 14-digit compact (20261008171601, Barcelona's traffic), ISO 8601, or epoch.
- * Interpreted as LOCAL time when no zone is given — city feeds publish in
- * their own time.
+ * A time without an offset is read in `timeZone` when the source names one
+ * (its own city's zone: a viewer in Tokyo must not shift Barcelona by 7 h),
+ * else as the viewer's local time.
  */
-export function tableTime(values: string[]): number | null {
+export function tableTime(values: string[], timeZone?: string): number | null {
   let best: number | null = null
   for (const raw of values.slice(0, 2000)) {
     const v = raw.trim()
     let t = NaN
-    const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(v)
-    if (m) t = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
-    else if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(v)) t = Date.parse(v.replace(' ', 'T'))
-    else if (/^\d{10}$/.test(v)) t = Number(v) * 1000
-    else if (/^\d{13}$/.test(v)) t = Number(v)
+    if (timeZone) t = parseCellTime(v, timeZone)
+    else {
+      const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(v)
+      if (m) t = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
+      else if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(v)) t = Date.parse(v.replace(' ', 'T'))
+      else if (/^\d{10}$/.test(v)) t = Number(v) * 1000
+      else if (/^\d{13}$/.test(v)) t = Number(v)
+    }
     if (Number.isFinite(t) && (best === null || t > best)) best = t
   }
   return best

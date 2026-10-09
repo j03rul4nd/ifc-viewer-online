@@ -24,7 +24,10 @@ import { parseGeoJson, projectLayer, type HeightMode, type VectorLayerData } fro
 import { buildGetCapabilitiesUrl, planGetFeature, parseCapabilities, bboxAround, type WfsCapabilities } from './wfs'
 import { parseGml, decodeXml } from './gml'
 import { parseTable, tableToGeoJson, type ParseOptions as TableOptions } from './csv'
-import { applyJoin, type JoinSpec } from './join'
+import { applyJoin, uniqueByKey, type JoinSpec } from './join'
+import { jsonToGeoJsonText, type RecordsSpec } from './records'
+import { applyTableTransforms, type TableTransform } from './table-transforms'
+import { expandUrlTemplate } from './url-template'
 import {
   httpFreshness, plannedDelayMs, detectFeedKind, gbfsFeedUrls, gbfsToGeoJson, gbfsFreshness,
   gtfsRtToGeoJson, gtfsRtFreshness, odsDataset, odsMetaUrl, odsGeoField, odsGeoJsonUrl,
@@ -827,6 +830,8 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
   if (url === SIMULATED_FEED_URL) {
     return { ok: true, text: simulateTrains(Date.now()), headers: new Headers(), viaProxy: false }
   }
+  // Time windows ("{now-2h}") resolve at each request, never when saved.
+  url = expandUrlTemplate(url)
   // TMB: the user's own keys go on at the very last moment (never saved in the
   // layer's URL). Without keys there is no point asking.
   const tmb = isTmbUrl(url)
@@ -869,17 +874,18 @@ async function fetchText(url: string, signal?: AbortSignal): Promise<{ ok: true;
 }
 
 /**
- * Body → GeoJSON text: JSON passes through, GML is converted (WFS servers that
- * offer nothing else), an OGC ExceptionReport becomes an error.
+ * Body → GeoJSON text: GeoJSON passes through, JSON records with places become
+ * points (records.ts — Socrata, GELFS, ODPT…), GML is converted (WFS servers
+ * that offer nothing else), an OGC ExceptionReport becomes an error.
  */
-function toGeoJsonText(text: string): { ok: true; text: string; matched: number | null; returned: number | null } | { ok: false; errorKey: string } {
+function toGeoJsonText(text: string, records?: RecordsSpec | null): { ok: true; text: string; matched: number | null; returned: number | null } | { ok: false; errorKey: string } {
   const first = text.trimStart()[0]
   if (first !== '<' && first !== '{' && first !== '[') {
     // Neither XML nor JSON: a table (CSV / TSV / ';' / records).
     const gj = tableToGeoJson(parseTable(text))
     return gj ? { ok: true, text: JSON.stringify(gj), matched: null, returned: null } : { ok: false, errorKey: 'error.noGeometryInTable' }
   }
-  if (first !== '<') return { ok: true, text, matched: null, returned: null }
+  if (first !== '<') return { ok: true, text: jsonToGeoJsonText(text, records), matched: null, returned: null }
   if (/ExceptionReport|ServiceException/i.test(text.slice(0, 3000))) return { ok: false, errorKey: 'error.wfsException' }
   const g = parseGml(text)
   if (!g) return { ok: false, errorKey: 'error.notJsonOutput' }
@@ -904,7 +910,15 @@ export interface FeedSource {
     spec: JoinSpec
     /** Column with the rows' timestamps — the data's own "as of". */
     timeColumn?: string
+    /** IANA zone the time column is written in when it has no offset (default: the viewer's). */
+    timeZone?: string
+    /** Reshape the status table before joining (table-transforms.ts). */
+    transforms?: TableTransform[]
+    /** The geometry lists a place once per variable (ASPB stations): keep the first per key. */
+    geomUnique?: boolean
   }
+  /** Explicit place mapping for JSON records; without it the records are sniffed. */
+  records?: RecordsSpec
 }
 
 /** Geometry of join layers: from a URL (cached an hour) or registered from a file. */
@@ -926,8 +940,9 @@ async function joinBase(src: FeedSource, signal?: AbortSignal): Promise<VectorLa
   if (!g.ok) return c?.data ?? null
   const parsed = parseGeoJson(g.text, { axisOrder: 'auto' })
   if (!parsed.ok) return c?.data ?? null
-  joinBases.set(key, { data: parsed.value, at: Date.now() })
-  return parsed.value
+  const data = src.join.geomUnique ? uniqueByKey(parsed.value, src.join.spec.layerKey) : parsed.value
+  joinBases.set(key, { data, at: Date.now() })
+  return data
 }
 
 /** Per-source state that is expensive to fetch and rarely changes. */
@@ -1007,11 +1022,11 @@ export async function fetchFeed(src: FeedSource, signal?: AbortSignal): Promise<
     if (!base) return { ok: false, errorKey: 'error.noJoinBase' }
     const r = await fetchRaw(src.url, signal)
     if (!r.ok) return r
-    const table = parseTable(r.text, src.join.table)
+    const table = applyTableTransforms(parseTable(r.text, src.join.table), src.join.transforms)
     if (table.rows.length === 0) return { ok: false, errorKey: 'error.emptyTable' }
     const joined = applyJoin(base, table, src.join.spec)
     const ti = src.join.timeColumn ? table.columns.indexOf(src.join.timeColumn) : -1
-    const dataAt = ti >= 0 ? tableTime(table.rows.map((row) => row[ti] ?? '')) : null
+    const dataAt = ti >= 0 ? tableTime(table.rows.map((row) => row[ti] ?? ''), src.join.timeZone) : null
     const f = httpFreshness(r.headers)
     const features = joined.data.features.map((ft) => ({
       type: 'Feature', id: ft.id, properties: ft.properties,
@@ -1028,7 +1043,7 @@ export async function fetchFeed(src: FeedSource, signal?: AbortSignal): Promise<
   // Plain GeoJSON / REST, or a WFS GetFeature re-issued: content decides.
   const r = await fetchRaw(src.url, signal)
   if (!r.ok) return r
-  const g = toGeoJsonText(r.text)
+  const g = toGeoJsonText(r.text, src.records)
   if (!g.ok) return g
   const f = httpFreshness(r.headers)
   return { ok: true, text: g.text, freshness: { ...f, fingerprint: f.fingerprint ?? `h:${hash(g.text)}` }, viaProxy: r.viaProxy }
@@ -1049,11 +1064,11 @@ const DEFAULT_INTERVAL_S: Record<FeedKind, number> = { gbfs: 30, 'gtfs-rt': 30, 
  * discovery, Opendatasoft dataset, GTFS-RT vehicle positions, else GeoJSON).
  */
 export async function addFeedLayer(
-  url: string, opts: { name?: string; kind?: FeedKind; radiusM?: number; intervalS?: number; symbology?: Symbology; join?: FeedSource['join']; layerStyle?: LayerStyle } = {},
+  url: string, opts: { name?: string; kind?: FeedKind; radiusM?: number; intervalS?: number; symbology?: Symbology; join?: FeedSource['join']; records?: RecordsSpec; layerStyle?: LayerStyle } = {},
   signal?: AbortSignal,
 ): Promise<AddResult> {
   try { new URL(url) } catch { return { ok: false, errorKey: 'error.badUrl' } }
-  const src: FeedSource = { kind: opts.kind ?? detectFeedKind(url), url, radiusM: opts.radiusM ?? 30_000, join: opts.join }
+  const src: FeedSource = { kind: opts.kind ?? detectFeedKind(url), url, radiusM: opts.radiusM ?? 30_000, join: opts.join, ...(opts.records ? { records: opts.records } : {}) }
   const r = await fetchFeed(src, signal)
   if (!r.ok) return r
   const parsed = parseGeoJson(r.text, { axisOrder: 'auto' })
@@ -1383,7 +1398,7 @@ export async function addPreset(
   }
   const r = await addFeedLayer(p.url, {
     name, kind: p.kind, intervalS: p.intervalS, radiusM: p.radiusM, symbology: p.symbology,
-    join: p.join, layerStyle: p.layerStyle?.(t),
+    join: p.join, records: p.records, layerStyle: p.layerStyle?.(t),
   }, signal)
   if (r.ok) useVectorLayerStore.getState().update(r.id, { attribution: p.license })
   return r

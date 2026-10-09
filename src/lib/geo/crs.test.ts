@@ -128,6 +128,33 @@ describe('crs · gridToWgs84 control points (projection-origin invariants)', () 
     expect(out.inDomain).toBe(true)
   })
 
+  // The three below are the IfcMapConversion of real georeferenced models
+  // checked against their own IfcSite RefLatitude/RefLongitude.
+  it('ETRS-GK25FIN (EPSG:3879) puts Helsinki Cathedral on Senaatintori', () => {
+    const out = unwrap(gridToWgs84(unwrap(resolveCrs('EPSG:3879')), 25_497_345.0988, 6_673_056.2297))
+    expect(out.lat).toBeCloseTo(60.170378, 5)
+    expect(out.lon).toBeCloseTo(24.952175, 5)
+    expect(out.inDomain).toBe(true)
+  })
+
+  it('Japan Plane Rectangular IX (EPSG:6677) puts the Waseda tram stop in Shinjuku', () => {
+    const out = unwrap(gridToWgs84(unwrap(resolveCrs('EPSG:6677')), -10_329.6499, -31_967.6337))
+    expect(out.lat).toBeCloseTo(35.711807, 5)
+    expect(out.lon).toBeCloseTo(139.71917, 5)
+    // JGD2000 zone IX shares the projection.
+    expect(unwrap(resolveCrs('EPSG:2451')).def).toBe(unwrap(resolveCrs('EPSG:6677')).def)
+  })
+
+  it('ED50 / UTM 31N lands Barcelona within metres of its ETRS89 position', () => {
+    // Same point in ETRS89 / UTM 31N, shifted by the ED50→ETRS89 offset
+    // (~ +93 m E, +205 m N in Catalonia): the 3-parameter shift must undo it.
+    const etrs = unwrap(gridToWgs84(unwrap(resolveCrs('EPSG:25831')), 430_567.93, 4_582_146.80))
+    const ed50 = unwrap(gridToWgs84(unwrap(resolveCrs('EPSG:23031')), 430_567.93 + 93.3, 4_582_146.80 + 205.1))
+    expect(Math.abs(ed50.lat - etrs.lat) * 111_000).toBeLessThan(6)
+    expect(Math.abs(ed50.lon - etrs.lon) * 83_000).toBeLessThan(6)
+    expect(unwrap(resolveCrs('EPSG:23031')).note).toMatch(/ED50/)
+  })
+
   it('flags out-of-domain results (UTM32 coordinates fed to UTM18)', () => {
     const def = unwrap(resolveCrs('EPSG:32618'))
     const out = unwrap(gridToWgs84(def, 500_000, 5_000_000))
