@@ -691,7 +691,27 @@
         "name": "住宅小区 · 3 个文件",
         "description": "建筑、结构与机电：跨文件分层用水、住户、停车、电梯。"
       }
-    }
+    },
+    "bulk": {
+      "open": "批量绑定…",
+      "hint": "将数据源的每个设备与 id 或名称相同的构件配对：每个设备一个绑定。",
+      "device": "设备",
+      "deviceId": "设备 id",
+      "element": "构件",
+      "nameContains": "名称包含它",
+      "nameEquals": "名称完全等于",
+      "guidEquals": "GlobalId 完全等于",
+      "class": "类别",
+      "rules": "规则",
+      "noRules": "无规则（稍后添加）",
+      "preview": "{{total}} 个设备中 {{matched}} 个找到构件 · {{elements}} 个构件",
+      "already": "{{count}} 个已绑定",
+      "unmatched": "以下没有对应构件：{{list}}",
+      "create": "创建 {{count}} 个绑定",
+      "created": "已创建 {{count}} 个绑定",
+      "cancel": "取消"
+    },
+    "filterBindings": "筛选绑定…"
   },
   "add": {
     "title": "添加数据"

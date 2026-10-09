@@ -691,7 +691,27 @@
         "name": "Comunidad de vecinos · 3 archivos",
         "description": "Arquitectura, estructura e instalaciones: agua por planta entre archivos, viviendas, parking, ascensor."
       }
-    }
+    },
+    "bulk": {
+      "open": "Vincular en bloque…",
+      "hint": "Empareja cada dispositivo de una fuente con los elementos que comparten su id o nombre: un vínculo por dispositivo.",
+      "device": "Dispositivo",
+      "deviceId": "id del dispositivo",
+      "element": "Elemento",
+      "nameContains": "el nombre lo contiene",
+      "nameEquals": "el nombre es exactamente",
+      "guidEquals": "el GlobalId es exactamente",
+      "class": "Clase",
+      "rules": "Reglas",
+      "noRules": "sin reglas (añadir después)",
+      "preview": "{{matched}} de {{total}} dispositivos encuentran elementos · {{elements}} elementos",
+      "already": "{{count}} ya vinculados",
+      "unmatched": "Sin elemento para: {{list}}",
+      "create": "Crear {{count}} vínculos",
+      "created": "{{count}} vínculos creados",
+      "cancel": "Cancelar"
+    },
+    "filterBindings": "Filtrar vínculos…"
   },
   "add": {
     "title": "Añadir datos"

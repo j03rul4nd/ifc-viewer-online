@@ -691,7 +691,27 @@
         "name": "集合住宅 · 3 ファイル",
         "description": "意匠・構造・設備：ファイルをまたぐ階ごとの水道、住戸、駐車場、エレベーター。"
       }
-    }
+    },
+    "bulk": {
+      "open": "一括で紐付け…",
+      "hint": "ソースの各デバイスを、ID または名前が一致する要素と組み合わせます（デバイスごとに 1 件）。",
+      "device": "デバイス",
+      "deviceId": "デバイス ID",
+      "element": "要素",
+      "nameContains": "名前に含む",
+      "nameEquals": "名前が完全一致",
+      "guidEquals": "GlobalId が完全一致",
+      "class": "クラス",
+      "rules": "ルール",
+      "noRules": "ルールなし（後で追加）",
+      "preview": "{{total}} 台中 {{matched}} 台が要素を検出 · 要素 {{elements}} 件",
+      "already": "{{count}} 件は紐付け済み",
+      "unmatched": "要素が見つかりません: {{list}}",
+      "create": "{{count}} 件の紐付けを作成",
+      "created": "{{count}} 件の紐付けを作成しました",
+      "cancel": "キャンセル"
+    },
+    "filterBindings": "紐付けを絞り込み…"
   },
   "add": {
     "title": "データを追加"

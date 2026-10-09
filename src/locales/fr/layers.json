@@ -691,7 +691,27 @@
         "name": "Copropriété · 3 fichiers",
         "description": "Architecture, structure et fluides : eau par niveau entre fichiers, logements, parking, ascenseur."
       }
-    }
+    },
+    "bulk": {
+      "open": "Lier en masse…",
+      "hint": "Associe chaque appareil d'une source aux éléments qui partagent son id ou son nom : une liaison par appareil.",
+      "device": "Appareil",
+      "deviceId": "id de l'appareil",
+      "element": "Élément",
+      "nameContains": "le nom le contient",
+      "nameEquals": "le nom est exactement",
+      "guidEquals": "le GlobalId est exactement",
+      "class": "Classe",
+      "rules": "Règles",
+      "noRules": "sans règles (à ajouter)",
+      "preview": "{{matched}} sur {{total}} appareils trouvent des éléments · {{elements}} éléments",
+      "already": "{{count}} déjà liés",
+      "unmatched": "Aucun élément pour : {{list}}",
+      "create": "Créer {{count}} liaisons",
+      "created": "{{count}} liaisons créées",
+      "cancel": "Annuler"
+    },
+    "filterBindings": "Filtrer les liaisons…"
   },
   "add": {
     "title": "Ajouter des données"

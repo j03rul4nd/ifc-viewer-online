@@ -227,8 +227,13 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
       })
       if (e.kind !== 'start') continue
       const msg = t('alertStarted', { rule: e.rule.name, name: e.binding.name })
-      toast(msg, 'warning', { duration: 0, action: { label: t('alertShow'), run: () => focusBinding(e.binding.id) } })
-      notifyAlert({ title: e.rule.name, body: e.binding.name, tag: `twin:${e.binding.id}/${e.rule.id}`, onClick: () => focusBinding(e.binding.id) })
+      // "Show" only when there is something to show: a device whose elements are
+      // not loaded (another file of the project, a storey with no services) still alerts.
+      syncIndex()
+      const where = resolveLocsFor(e.binding).length > 0
+      const show = where ? () => focusBinding(e.binding.id) : undefined
+      toast(msg, 'warning', { duration: 0, action: show ? { label: t('alertShow'), run: show } : undefined })
+      notifyAlert({ title: e.rule.name, body: e.binding.name, tag: `twin:${e.binding.id}/${e.rule.id}`, onClick: show })
     }
   }
 

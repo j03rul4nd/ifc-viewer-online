@@ -691,7 +691,27 @@
         "name": "Comunitat de veïns · 3 fitxers",
         "description": "Arquitectura, estructura i instal·lacions: aigua per planta entre fitxers, habitatges, pàrquing, ascensor."
       }
-    }
+    },
+    "bulk": {
+      "open": "Vincular en bloc…",
+      "hint": "Aparella cada dispositiu d'una font amb els elements que comparteixen el seu id o nom: un vincle per dispositiu.",
+      "device": "Dispositiu",
+      "deviceId": "id del dispositiu",
+      "element": "Element",
+      "nameContains": "el nom el conté",
+      "nameEquals": "el nom és exactament",
+      "guidEquals": "el GlobalId és exactament",
+      "class": "Classe",
+      "rules": "Regles",
+      "noRules": "sense regles (afegir després)",
+      "preview": "{{matched}} de {{total}} dispositius troben elements · {{elements}} elements",
+      "already": "{{count}} ja vinculats",
+      "unmatched": "Sense element per a: {{list}}",
+      "create": "Crear {{count}} vincles",
+      "created": "{{count}} vincles creats",
+      "cancel": "Cancel·lar"
+    },
+    "filterBindings": "Filtrar vincles…"
   },
   "add": {
     "title": "Afegir dades"
