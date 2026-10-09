@@ -692,5 +692,8 @@
         "description": "Architettura, strutture e impianti: acqua per piano tra i file, abitazioni, parcheggio, ascensore."
       }
     }
+  },
+  "add": {
+    "title": "Aggiungi dati"
   }
 }

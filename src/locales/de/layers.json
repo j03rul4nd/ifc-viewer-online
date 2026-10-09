@@ -692,5 +692,8 @@
         "description": "Architektur, Tragwerk und TGA: Wasser je Geschoss über Dateien hinweg, Wohnungen, Parken, Aufzug."
       }
     }
+  },
+  "add": {
+    "title": "Daten hinzufügen"
   }
 }

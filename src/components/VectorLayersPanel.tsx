@@ -51,6 +51,14 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   const isMobile = useIsMobile()
   const open = useVectorLayerStore((s) => s.panelOpen)
   const layers = useVectorLayerStore((s) => s.layers)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  // "Add data" starts open only when there is nothing yet; after that it is the user's call.
+  const [addOpen, setAddOpen] = useState(() => useVectorLayerStore.getState().layers.length === 0 && !useVectorLayerStore.getState().restorePending)
+  // A feature picked in the scene: bring its card (top of the panel) into view.
+  const selectedKey = useVectorLayerStore((s) => (s.selected ? `${s.selected.layerId}|${s.selected.featureIndex}` : ''))
+  useEffect(() => {
+    if (selectedKey) scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [selectedKey])
   const anchor = useSceneAnchorStore((s) => s.anchor)
   const placement = useGeoStore((s) => s.placement)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -196,32 +204,115 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
           </button>
         </div>
       )}
-      <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="layers-panel">
-        <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('intro')}</div>
+      <div ref={scrollRef} className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="layers-panel">
+        {/* One file picker for data and shared setups; outside the foldable section so both always reach it. */}
+        <input ref={fileRef} type="file" multiple accept=".geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv" className="hidden"
+          onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = '' }} />
+
+        {/* What was just picked in the scene comes first: it is what the user is looking at. */}
+        <SelectedFeature />
+
+        {layers.length === 0 && (
+          <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('intro')}</div>
+        )}
 
         <TwinSearch host={twinHost} />
+
+        {/* Layers */}
+        {layers.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <div className="text-[11px] font-medium">{t('list.title', { count: layers.length })}</div>
+            {layers.map((l) => (
+              <LayerRow key={l.id} layer={l} expanded={expanded === l.id}
+                onToggleExpand={() => setExpanded(expanded === l.id ? null : l.id)} />
+            ))}
+          </div>
+        )}
 
         {/* Anchor */}
         <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-[7px] bg-[var(--surface-2)] text-[10px] text-[var(--text-dim)] leading-snug">
           <span aria-hidden>⌖</span><span data-testid="layers-anchor">{anchorLabel}</span>
         </div>
 
-        {/* File */}
-        <div className="flex flex-col gap-1">
-          <input ref={fileRef} type="file" multiple accept=".geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv" className="hidden"
-            onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = '' }} />
-          <button disabled={busy} onClick={() => fileRef.current?.click()}
-            className="w-full px-2 py-2 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[11px] font-medium border border-dashed border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50">
-            {busy ? t('working') : t('file.drop')}
+        {/* Adding data: open while there is nothing yet, folded away once there is. */}
+        <div className="flex flex-col gap-3 pt-2 border-t border-[var(--border)]" data-testid="layers-add">
+          <button className="flex items-center gap-1.5 text-left text-[11px] font-medium text-[var(--text)]" aria-expanded={addOpen}
+            onClick={() => setAddOpen(!addOpen)}>
+            <span aria-hidden className="text-[var(--text-dim)]">{addOpen ? '▾' : '▸'}</span>{t('add.title')}
           </button>
-          <button disabled={busy} className="text-left text-[10px] text-[var(--accent)] hover:underline disabled:opacity-40"
-            onClick={() => report(addGeoJsonText(SAMPLE_LAYER_NAME, JSON.stringify(SAMPLE_GEOJSON), { type: 'url', url: 'sample:passeig-de-gracia', format: 'geojson' }))}>
-            {t('file.sample')}
-          </button>
-          <button disabled={busy} className="text-left text-[10px] text-[var(--accent)] hover:underline disabled:opacity-40"
-            onClick={() => report(addSimulatedLiveLayer(t('file.sampleLiveName')))}>
-            {t('file.sampleLive')}
-          </button>
+          {addOpen && (
+            <>
+              {/* File */}
+              <div className="flex flex-col gap-1">
+                <button disabled={busy} onClick={() => fileRef.current?.click()}
+                  className="w-full px-2 py-2 max-md:py-3 max-md:text-[13px] rounded-[7px] text-[11px] font-medium border border-dashed border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50">
+                  {busy ? t('working') : t('file.drop')}
+                </button>
+                <button disabled={busy} className="text-left text-[10px] text-[var(--accent)] hover:underline disabled:opacity-40"
+                  onClick={() => report(addGeoJsonText(SAMPLE_LAYER_NAME, JSON.stringify(SAMPLE_GEOJSON), { type: 'url', url: 'sample:passeig-de-gracia', format: 'geojson' }))}>
+                  {t('file.sample')}
+                </button>
+                <button disabled={busy} className="text-left text-[10px] text-[var(--accent)] hover:underline disabled:opacity-40"
+                  onClick={() => report(addSimulatedLiveLayer(t('file.sampleLiveName')))}>
+                  {t('file.sampleLive')}
+                </button>
+              </div>
+
+              <PresetSources />
+
+              {/* URL */}
+              <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
+                <div className="text-[11px] font-medium">{t('url.title')}</div>
+                <div className="flex gap-1.5">
+                  <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/data.geojson" />
+                  <button className={btnCls} disabled={busy || !url.trim()}
+                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') })}>
+                    {t('url.add')}
+                  </button>
+                </div>
+              </div>
+
+              {/* WFS */}
+              <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
+                <div className="text-[11px] font-medium">{t('wfs.title')}</div>
+                <div className="flex gap-1.5">
+                  <input className={inputCls} value={wfsUrl} onChange={(e) => { setWfsUrl(e.target.value); setCaps(null) }} placeholder="https://…/wfs" />
+                  <button className={btnCls} disabled={busy || !wfsUrl.trim()}
+                    onClick={() => void run(async () => {
+                      const r = await loadWfsCapabilities(wfsUrl.trim())
+                      if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
+                      setCaps(r.caps)
+                      setWfsType(r.caps.featureTypes.find((f) => f.supportsJson)?.name ?? r.caps.featureTypes[0].name)
+                    })}>
+                    {t('wfs.connect')}
+                  </button>
+                </div>
+                {caps && (
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <div className="text-[10px] text-[var(--text-faint)]">{t('wfs.found', { count: caps.featureTypes.length, title: caps.title || wfsUrl })}</div>
+                    <select className={inputCls} value={wfsType} onChange={(e) => setWfsType(e.target.value)}>
+                      {caps.featureTypes.map((f) => (
+                        <option key={f.name} value={f.name}>{f.title}{f.supportsJson ? '' : ` — ${t('wfs.noJson')}`}</option>
+                      ))}
+                    </select>
+                    <div className="flex gap-1.5 items-center">
+                      <span className="text-[10px] text-[var(--text-dim)]">{t('wfs.radius')}</span>
+                      <select className={inputCls} value={radius} onChange={(e) => setRadius(Number(e.target.value))}>
+                        {RADII.map((r) => <option key={r} value={r}>{r >= 1000 ? `${r / 1000} km` : `${r} m`}</option>)}
+                      </select>
+                      <button className={btnCls} disabled={busy || !wfsType}
+                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)))}>
+                        {t('wfs.load')}
+                      </button>
+                    </div>
+                    <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('wfs.hint')}</div>
+                  </div>
+                )}
+              </div>
+
+              <ProxySetting />
+            </>
+          )}
         </div>
 
         {/* Share the setup */}
@@ -239,72 +330,6 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
             </button>
           </div>
         </div>
-
-        <PresetSources />
-
-        {/* URL */}
-        <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
-          <div className="text-[11px] font-medium">{t('url.title')}</div>
-          <div className="flex gap-1.5">
-            <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/data.geojson" />
-            <button className={btnCls} disabled={busy || !url.trim()}
-              onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') })}>
-              {t('url.add')}
-            </button>
-          </div>
-        </div>
-
-        {/* WFS */}
-        <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
-          <div className="text-[11px] font-medium">{t('wfs.title')}</div>
-          <div className="flex gap-1.5">
-            <input className={inputCls} value={wfsUrl} onChange={(e) => { setWfsUrl(e.target.value); setCaps(null) }} placeholder="https://…/wfs" />
-            <button className={btnCls} disabled={busy || !wfsUrl.trim()}
-              onClick={() => void run(async () => {
-                const r = await loadWfsCapabilities(wfsUrl.trim())
-                if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
-                setCaps(r.caps)
-                setWfsType(r.caps.featureTypes.find((f) => f.supportsJson)?.name ?? r.caps.featureTypes[0].name)
-              })}>
-              {t('wfs.connect')}
-            </button>
-          </div>
-          {caps && (
-            <div className="flex flex-col gap-1.5 mt-1">
-              <div className="text-[10px] text-[var(--text-faint)]">{t('wfs.found', { count: caps.featureTypes.length, title: caps.title || wfsUrl })}</div>
-              <select className={inputCls} value={wfsType} onChange={(e) => setWfsType(e.target.value)}>
-                {caps.featureTypes.map((f) => (
-                  <option key={f.name} value={f.name}>{f.title}{f.supportsJson ? '' : ` — ${t('wfs.noJson')}`}</option>
-                ))}
-              </select>
-              <div className="flex gap-1.5 items-center">
-                <span className="text-[10px] text-[var(--text-dim)]">{t('wfs.radius')}</span>
-                <select className={inputCls} value={radius} onChange={(e) => setRadius(Number(e.target.value))}>
-                  {RADII.map((r) => <option key={r} value={r}>{r >= 1000 ? `${r / 1000} km` : `${r} m`}</option>)}
-                </select>
-                <button className={btnCls} disabled={busy || !wfsType}
-                  onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)))}>
-                  {t('wfs.load')}
-                </button>
-              </div>
-              <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('wfs.hint')}</div>
-            </div>
-          )}
-        </div>
-
-        <SelectedFeature />
-        <ProxySetting />
-
-        {/* Layers */}
-        {layers.length > 0 && (
-          <div className={`flex flex-col gap-1.5 pt-2 border-t border-[var(--border)] ${isMobile ? 'order-first' : ''}`}>
-            <div className="text-[11px] font-medium">{t('list.title', { count: layers.length })}</div>
-            {layers.map((l) => (
-              <LayerRow key={l.id} layer={l} expanded={expanded === l.id}
-                onToggleExpand={() => setExpanded(expanded === l.id ? null : l.id)} />
-            ))}
-          </div>
-        )}
       </div>
     </ViewportPanel>
   )
