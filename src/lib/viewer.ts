@@ -732,6 +732,12 @@ export interface ViewerAPI {
    */
   getElementsBox(ids: number[], modelId?: string): Promise<{ min: Vec3Like; max: Vec3Like } | null>
   /**
+   * World points → container pixels (CSS px, origin top-left). `visible` is
+   * false behind the camera or outside the view. For HTML overlays that follow
+   * the scene (twin labels); call it per frame.
+   */
+  projectToScreen(points: Vec3Like[]): Array<{ x: number; y: number; visible: boolean }>
+  /**
    * Attributes + Psets/Qtos (same parse as getItemData) AND the world box of
    * many elements at once — what the twin search indexes. Batched internally;
    * entries come back in `ids` order, null where an element is unknown.
@@ -4310,6 +4316,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const was = grid.visible
       grid.visible = visible
       return was
+    },
+
+    projectToScreen(points) {
+      const cam = world.camera.three
+      const w = container.clientWidth
+      const h = container.clientHeight
+      const v = new THREE.Vector3()
+      return points.map((p) => {
+        v.set(p.x, p.y, p.z).project(cam)
+        const visible = v.z > -1 && v.z < 1 && Math.abs(v.x) <= 1.05 && Math.abs(v.y) <= 1.05
+        return { x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h, visible }
+      })
     },
 
     setTwinPaint(plan) {

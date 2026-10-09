@@ -165,6 +165,7 @@ import type { ViewerAPI } from './lib/viewer'
 import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
 import type { GeoPlacement } from './lib/geo/geo-types'
 import { useTwinDeviceStore } from './stores/twinDeviceStore'
+import { TwinLabels } from './components/TwinLabels'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
@@ -3984,6 +3985,7 @@ export default function App() {
 
                   {/* Data legend — a chip in the corner while data layers are
                       visible; the legend itself only when the viewer opens it. */}
+                  {twinInUse && <TwinLabels viewerApiRef={viewerApiRef} />}
                   {vectorLayersInUse && (
                     <React.Suspense fallback={null}>
                       <DataLegend viewerApiRef={viewerApiRef} />

@@ -605,6 +605,27 @@
       "cors": "Blocked by CORS — set a proxy",
       "aborted": "Cancelled"
     },
-    "import": "Import"
+    "import": "Import",
+    "alertStarted": "Alert: {{rule}} — {{name}}",
+    "alertShow": "Show",
+    "alerting": "Alerting",
+    "alert": "Alert",
+    "alertNow": "at once",
+    "alertFor": "after {{count}} min",
+    "label": "Label",
+    "labelNone": "No label",
+    "query": "Also every element that matches",
+    "matches": "{{count}} matching",
+    "queryAnyClass": "Any class",
+    "queryAnyStorey": "Any storey",
+    "queryName": "Name contains…",
+    "history": "History",
+    "retention": "Hours of readings kept on this device",
+    "historyOff": "Off",
+    "clearHistory": "Clear",
+    "timeLive": "Live",
+    "backToLive": "Back to live",
+    "historyEmpty": "Recording… move the slider once there is data",
+    "historyDisabled": "Recording is off"
   }
 }

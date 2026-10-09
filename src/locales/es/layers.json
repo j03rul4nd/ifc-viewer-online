@@ -605,6 +605,27 @@
       "cors": "Bloqueado por CORS — configura un proxy",
       "aborted": "Cancelado"
     },
-    "import": "Importar"
+    "import": "Importar",
+    "alertStarted": "Alerta: {{rule}} — {{name}}",
+    "alertShow": "Ver",
+    "alerting": "En alerta",
+    "alert": "Alerta",
+    "alertNow": "al instante",
+    "alertFor": "tras {{count}} min",
+    "label": "Etiqueta",
+    "labelNone": "Sin etiqueta",
+    "query": "También todo elemento que cumpla",
+    "matches": "{{count}} coinciden",
+    "queryAnyClass": "Cualquier clase",
+    "queryAnyStorey": "Cualquier planta",
+    "queryName": "El nombre contiene…",
+    "history": "Historial",
+    "retention": "Horas de lecturas guardadas en este dispositivo",
+    "historyOff": "Apagado",
+    "clearHistory": "Borrar",
+    "timeLive": "En directo",
+    "backToLive": "Volver al directo",
+    "historyEmpty": "Grabando… mueve el deslizador cuando haya datos",
+    "historyDisabled": "La grabación está apagada"
   }
 }

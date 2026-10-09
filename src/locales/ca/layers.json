@@ -605,6 +605,27 @@
       "cors": "Bloquejat per CORS — configura un proxy",
       "aborted": "Cancel·lat"
     },
-    "import": "Importar"
+    "import": "Importar",
+    "alertStarted": "Alerta: {{rule}} — {{name}}",
+    "alertShow": "Veure",
+    "alerting": "En alerta",
+    "alert": "Alerta",
+    "alertNow": "a l'instant",
+    "alertFor": "després de {{count}} min",
+    "label": "Etiqueta",
+    "labelNone": "Sense etiqueta",
+    "query": "També tot element que compleixi",
+    "matches": "{{count}} coincideixen",
+    "queryAnyClass": "Qualsevol classe",
+    "queryAnyStorey": "Qualsevol planta",
+    "queryName": "El nom conté…",
+    "history": "Historial",
+    "retention": "Hores de lectures desades en aquest dispositiu",
+    "historyOff": "Apagat",
+    "clearHistory": "Esborrar",
+    "timeLive": "En directe",
+    "backToLive": "Tornar al directe",
+    "historyEmpty": "Gravant… mou el control quan hi hagi dades",
+    "historyDisabled": "La gravació està apagada"
   }
 }

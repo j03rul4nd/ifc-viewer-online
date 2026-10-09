@@ -605,6 +605,27 @@
       "cors": "被 CORS 阻止——请设置代理",
       "aborted": "已取消"
     },
-    "import": "导入"
+    "import": "导入",
+    "alertStarted": "警报：{{rule}} — {{name}}",
+    "alertShow": "查看",
+    "alerting": "警报中",
+    "alert": "警报",
+    "alertNow": "立即",
+    "alertFor": "{{count}} 分钟后",
+    "label": "标签",
+    "labelNone": "无标签",
+    "query": "以及所有匹配的构件",
+    "matches": "{{count}} 个匹配",
+    "queryAnyClass": "任意类别",
+    "queryAnyStorey": "任意楼层",
+    "queryName": "名称包含…",
+    "history": "历史",
+    "retention": "本设备保存的读数时长",
+    "historyOff": "关闭",
+    "clearHistory": "清除",
+    "timeLive": "实时",
+    "backToLive": "回到实时",
+    "historyEmpty": "正在记录…有数据后拖动滑块",
+    "historyDisabled": "记录已关闭"
   }
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  bindingState, buildGuidIndex, deviceKey, parseReadings, planPaint, readingsForElement, sameReading,
+  bindingState, buildCatalog, buildGuidIndex, deviceKey, evaluateTwinAlerts, metricOf, parseReadings, planPaint, queryMatches,
+  readingsForElement, readingsToStored, resolveLocs, sameReading, storedToReadings,
   type Binding, type Reading,
 } from './devices'
 import { demoBindings, simulateHome, SIM_HOME_URL } from './device-sim'
@@ -139,5 +140,46 @@ describe('.twin.json', () => {
     expect(parseTwinProject('{"type":"FeatureCollection"}')).toBeNull()
     const doc = parseTwinProject(JSON.stringify({ v: 1, kind: 'ifc-twin', sources: [], bindings: [binding()] }))
     expect(doc?.bindings).toEqual([])
+  })
+})
+
+describe('F2: queries, alerts, history', () => {
+  const m = { id: 's1', mapping: { listPath: '', idField: 'id', timeField: '' } }
+  const read = (props: Record<string, unknown>, at = 1000) => parseReadings([{ id: 'room-1', ...props }], m, at)[0]
+
+  it('targets by class and storey across models, joining new files automatically', () => {
+    const cat = buildCatalog(trees)
+    expect(cat.find((e) => e.globalId === 'PIPE-1')?.storey).toBe('L0')
+    const b = binding({ targets: [], query: { classes: ['IfcSpace'], storey: 'l0', nameContains: '' } })
+    const locs = resolveLocs(b, buildGuidIndex(trees), cat)
+    expect(locs).toEqual([{ modelId: 'arq', expressId: 10 }, { modelId: 'arqV2', expressId: 77 }])
+    expect(queryMatches({ classes: [], storey: '', nameContains: 'front' }, cat.find((e) => e.globalId === 'DOOR-1')!)).toBe(true)
+    expect(queryMatches({ classes: [], storey: '', nameContains: '' }, cat[0])).toBe(false)
+    const plan = planPaint([b], new Map([[deviceKey('s1', 'room-1'), read({ temp_c: 30 })]]), buildGuidIndex(trees), 2000, cat)
+    expect(plan.paint.get('arqV2')?.get(77)).toBe('#ff0000:1')
+  })
+
+  it('alerts start after the hold time and clear when the rule stops applying', () => {
+    const hot = { ...binding().rules[0], alert: { forMin: 1 } }
+    const b = binding({ rules: [hot], staleAfterS: 0 })
+    const since = new Map<string, number>(); const active = new Set<string>()
+    const hotR = new Map([[deviceKey('s1', 'room-1'), read({ temp_c: 30 })]])
+    expect(evaluateTwinAlerts([b], hotR, 0, since, active)).toEqual([])
+    const started = evaluateTwinAlerts([b], hotR, 60_000, since, active)
+    expect(started.map((e) => e.kind)).toEqual(['start'])
+    expect(evaluateTwinAlerts([b], hotR, 70_000, since, active)).toEqual([])
+    const cleared = evaluateTwinAlerts([b], new Map([[deviceKey('s1', 'room-1'), read({ temp_c: 20 })]]), 80_000, since, active)
+    expect(cleared.map((e) => e.kind)).toEqual(['clear'])
+    expect(active.size).toBe(0)
+  })
+
+  it('readings round-trip through history frames', () => {
+    const r = parseReadings([{ id: 'a', power: { kw: 2 }, ok: true }], m, 5000)
+    const stored = readingsToStored(r)
+    const back = storedToReadings('s1', Object.values(stored), Object.keys(stored))
+    expect(back[0].deviceId).toBe('a')
+    expect(back[0].at).toBe(5000)
+    expect(metricOf(back[0], 'power.kw')).toBe(2)
+    expect(metricOf(back[0], 'ok')).toBe(true)
   })
 })

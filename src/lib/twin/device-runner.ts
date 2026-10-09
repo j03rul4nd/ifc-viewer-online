@@ -13,7 +13,16 @@ import { useValidationStore } from '../../stores/validationStore'
 import { httpFreshness, plannedDelayMs, type Freshness } from '../layers/feeds'
 import { nextDelayMs } from '../layers/live-feed'
 import { getLayersProxy } from '../layers/vector-runner'
-import { buildGuidIndex, parseReadings, planPaint, type DeviceSource, type ElementLoc } from './devices'
+import {
+  buildCatalog, buildGuidIndex, resolveLocs, evaluateTwinAlerts, parseReadings, planPaint, readingsToStored, storedToReadings,
+  deviceKey, type CatalogEntry, type DeviceSource, type ElementLoc, type Reading, type StoredReading,
+} from './devices'
+import { indexedDbBackend, prune, type HistoryBackend } from '../layers/history-store'
+import { nextFrame, rebuildAt, type Frame } from '../layers/history-codec'
+import { logAlert } from '../layers/alert-log'
+import { getNotifySettings, notifyAlert } from '../layers/alert-notify'
+import { toast } from '../../stores/toastStore'
+import i18n from '../../i18n/config'
 import { SIM_PRESETS } from './device-sim'
 import type { ViewerAPI } from '../viewer'
 
@@ -53,13 +62,49 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
   started = true
   const pollers = new Map<string, Poller>()
   const store = useTwinDeviceStore
+  const backend: HistoryBackend = indexedDbBackend()
+  const series = (sourceId: string): string => `twin:${sourceId}`
+
+  // ── History recording (keyframe + deltas, same codec as live layers) ────────
+  const prevStored = new Map<string, { state: Record<string, StoredReading>; lastKey: number; writes: number }>()
+  const record = async (sourceId: string, list: Reading[], t: number): Promise<void> => {
+    const hours = store.getState().retentionH
+    if (hours <= 0 || list.length === 0) return
+    const p = prevStored.get(sourceId)
+    const next = readingsToStored(list)
+    const frame = nextFrame(p?.state as never ?? null, next as never, t, p?.lastKey ?? null)
+    const writes = (p?.writes ?? 0) + (frame ? 1 : 0)
+    prevStored.set(sourceId, { state: next, lastKey: frame?.kind === 'key' ? t : p?.lastKey ?? t, writes })
+    if (!frame) return
+    await backend.put(series(sourceId), frame)
+    if (writes % 20 === 0) await prune(backend, series(sourceId), t - hours * 3_600_000)
+    void refreshSpan()
+  }
+
+  const refreshSpan = async (): Promise<void> => {
+    let from = Infinity
+    let to = -Infinity
+    for (const src of store.getState().sources) {
+      const st = await backend.stats(series(src.id))
+      if (st.from !== null) from = Math.min(from, st.from)
+      if (st.to !== null) to = Math.max(to, st.to)
+    }
+    store.getState().setHistorySpan(Number.isFinite(from) && to > from ? { from, to } : null)
+  }
+
+  /** Should polling go on in a hidden tab? Only when the user asked to be told about alerts. */
+  const pollHidden = (): boolean => {
+    const ns = getNotifySettings()
+    return (ns.sound || ns.system) && store.getState().bindings.some((b) => b.rules.some((r) => r.alert))
+  }
 
   const poll = async (id: string): Promise<void> => {
     const p = pollers.get(id)
     const src = store.getState().sources.find((s) => s.id === id)
     if (!p || !src) return
     let delay = src.intervalS * 1000
-    if (typeof document !== 'undefined' && document.hidden) {
+    const hidden = typeof document !== 'undefined' && document.hidden
+    if (hidden && !pollHidden()) {
       delay = 5000
     } else {
       p.ctrl = new AbortController()
@@ -69,13 +114,16 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
       if (r.ok) {
         p.failures = 0
         const now = Date.now()
-        store.getState().ingest(id, parseReadings(r.body, src, now), now)
+        const list = parseReadings(r.body, src, now)
+        store.getState().ingest(id, list, now)
+        void record(id, list, now)
         delay = plannedDelayMs(src.intervalS, r.freshness)
       } else if (r.errorKey !== 'error.aborted') {
         p.failures++
         store.getState().setError(id, r.errorKey)
         delay = nextDelayMs(src.intervalS, p.failures)
       }
+      if (hidden) delay = Math.max(delay, 60_000)
     }
     if (pollers.has(id)) p.timer = setTimeout(() => void poll(id), delay)
   }
@@ -99,9 +147,72 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     }
   }
 
+  // ── Time travel ─────────────────────────────────────────────────────────────
+  const framesCache = new Map<string, { at: number; frames: Frame[] }>()
+  let travelSeq = 0
+  const travel = async (t: number): Promise<void> => {
+    const seq = ++travelSeq
+    const past = new Map<string, Reading>()
+    for (const src of store.getState().sources) {
+      let c = framesCache.get(src.id)
+      // Frames are re-read at most every 10 s while scrubbing.
+      if (!c || Date.now() - c.at > 10_000) {
+        c = { at: Date.now(), frames: await backend.load(series(src.id)) }
+        framesCache.set(src.id, c)
+      }
+      const state = rebuildAt(c.frames, t)
+      if (!state) continue
+      for (const r of storedToReadings(src.id, state.features as StoredReading[], state.keys)) past.set(deviceKey(r.sourceId, r.deviceId), r)
+    }
+    if (seq === travelSeq && store.getState().timeAt !== null) store.getState().setPast(past)
+  }
+
+  // ── Alerts (live only: rewinding never re-raises the past) ──────────────────
+  const since = new Map<string, number>()
+  const alertActive = new Set<string>()
+  const evaluateAlerts = (): void => {
+    const s = store.getState()
+    if (!s.active || s.timeAt !== null) return
+    const events = evaluateTwinAlerts(s.bindings, s.readings, Date.now(), since, alertActive)
+    if (events.length === 0) return
+    s.setAlerting([...alertActive])
+    const t = i18n.getFixedT(null, 'layers', 'devices')
+    for (const e of events) {
+      logAlert({
+        at: Date.now(), kind: e.kind, layerId: `twin:${e.binding.id}`, layer: e.binding.name,
+        ruleId: e.rule.id, rule: e.rule.name, n: e.kind === 'start' ? Math.max(1, e.binding.targets.length) : 0,
+        sample: [e.binding.deviceId],
+      })
+      if (e.kind !== 'start') continue
+      const msg = t('alertStarted', { rule: e.rule.name, name: e.binding.name })
+      toast(msg, 'warning', { duration: 0, action: { label: t('alertShow'), run: () => focusBinding(e.binding.id) } })
+      notifyAlert({ title: e.rule.name, body: e.binding.name, tag: `twin:${e.binding.id}/${e.rule.id}`, onClick: () => focusBinding(e.binding.id) })
+    }
+  }
+
   // ── Painting ────────────────────────────────────────────────────────────────
   let guidIndex: Map<string, ElementLoc[]> = new Map()
+  let catalog: CatalogEntry[] = []
   let treesRef: unknown = null
+  const syncIndex = (): void => {
+    const trees = useValidationStore.getState().spatialTrees
+    if (trees !== treesRef) { treesRef = trees; guidIndex = buildGuidIndex(trees); catalog = buildCatalog(trees) }
+  }
+
+  const focusBinding = (bindingId: string): void => {
+    const viewer = getViewer()
+    const b = store.getState().bindings.find((x) => x.id === bindingId)
+    if (!viewer || !b) return
+    syncIndex()
+    const locs = resolveLocsFor(b)
+    const first = locs[0]
+    if (!first) return
+    const ids = locs.filter((l) => l.modelId === first.modelId).map((l) => l.expressId)
+    viewer.frameElements(ids, first.modelId)
+    viewer.selectElement(first.expressId, first.modelId)
+  }
+  const resolveLocsFor = (b: import('./devices').Binding): ElementLoc[] => resolveLocs(b, guidIndex, catalog)
+
   // Coalesced with a timer, not rAF: rAF is frozen in a hidden tab, and the
   // twin must be current the moment the user looks again.
   let pending: ReturnType<typeof setTimeout> | null = null
@@ -109,24 +220,30 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     if (pending) return
     pending = setTimeout(() => {
       pending = null
+      evaluateAlerts()
       const viewer = getViewer()
       if (!viewer) return
-      const trees = useValidationStore.getState().spatialTrees
-      if (trees !== treesRef) { treesRef = trees; guidIndex = buildGuidIndex(trees) }
-      const { active, bindings, readings } = store.getState()
-      void viewer.setTwinPaint(active && bindings.length ? planPaint(bindings, readings, guidIndex, Date.now()) : null)
+      syncIndex()
+      const s = store.getState()
+      const shown = s.past ?? s.readings
+      const now = s.timeAt ?? Date.now()
+      void viewer.setTwinPaint(s.active && s.bindings.length ? planPaint(s.bindings, shown, guidIndex, now, catalog) : null)
     }, 50)
   }
 
   syncPollers()
   repaint()
+  void refreshSpan()
   const unsubStore = store.subscribe((s, prev) => {
     if (s.sources !== prev.sources || s.active !== prev.active) syncPollers()
+    if (s.timeAt !== prev.timeAt && s.timeAt !== null) void travel(s.timeAt)
     if (s.version !== prev.version) repaint()
   })
   const unsubTrees = useValidationStore.subscribe((s, prev) => { if (s.spatialTrees !== prev.spatialTrees) repaint() })
-  // Stale devices turn grey without any new reading: re-evaluate on a clock.
-  const clock = setInterval(() => { if (store.getState().bindings.some((b) => b.staleAfterS > 0)) repaint() }, 10_000)
+  // Stale devices and alert hold times change without any new reading: re-evaluate on a clock.
+  const clock = setInterval(() => {
+    if (store.getState().bindings.some((b) => b.staleAfterS > 0 || b.rules.some((r) => r.alert))) repaint()
+  }, 10_000)
 
   return () => {
     unsubStore(); unsubTrees(); clearInterval(clock)
@@ -134,4 +251,9 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     for (const id of [...pollers.keys()]) stopPoller(id)
     started = false
   }
+}
+
+/** Forget a source's recorded history (panel button). */
+export async function clearTwinHistory(sourceId: string): Promise<void> {
+  await indexedDbBackend().clear(`twin:${sourceId}`)
 }

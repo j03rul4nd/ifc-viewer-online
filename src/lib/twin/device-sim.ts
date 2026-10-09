@@ -63,8 +63,8 @@ export function simulatedSource(): DeviceSource {
 
 // ── Demo bindings ─────────────────────────────────────────────────────────────
 
-const rule = (name: string, filters: TwinRule['filters'], color: string | null, opacity = 1, hide = false): TwinRule =>
-  ({ id: newTwinId('r'), name, match: 'all', filters, effect: { color, opacity, hide } })
+const rule = (name: string, filters: TwinRule['filters'], color: string | null, opacity = 1, hide = false, alertMin: number | null = null): TwinRule =>
+  ({ id: newTwinId('r'), name, match: 'all', filters, effect: { color, opacity, hide }, alert: alertMin === null ? null : { forMin: alertMin } })
 
 interface Found { ref: ElementRef; ifcClass: string }
 
@@ -99,9 +99,9 @@ function ofClass(all: Found[], ...classes: string[]): ElementRef[] {
 export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: string): Binding[] {
   const all = collect(trees)
   const out: Binding[] = []
-  const bind = (name: string, deviceId: string, targets: ElementRef[], rules: TwinRule[]): void => {
+  const bind = (name: string, deviceId: string, targets: ElementRef[], rules: TwinRule[], labelField: string | null = null): void => {
     if (targets.length === 0) return
-    out.push({ id: newTwinId('b'), name, sourceId, deviceId, targets, rules, staleColor: '#7b8494', staleAfterS: 60 })
+    out.push({ id: newTwinId('b'), name, sourceId, deviceId, targets, rules, staleColor: '#7b8494', staleAfterS: 60, label: labelField ? { field: labelField } : null })
   }
 
   const spaces = ofClass(all, 'IFCSPACE')
@@ -110,12 +110,12 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
     rule('Cold < 20 °C', [{ field: 'temp_c', op: 'lt', value: 20 }], '#3b82f6'),
     rule('Warm > 23 °C', [{ field: 'temp_c', op: 'gt', value: 23 }], '#ef4444'),
     rule('Comfort', [], '#22c55e', 0.6),
-  ]))
+  ], 'temp_c'))
 
   const doors = ofClass(all, 'IFCDOOR')
   if (doors.length) {
     bind('Alarm', 'alarm', doors.slice(0, 1), [
-      rule('Triggered', [{ field: 'state', op: 'eq', value: 'triggered' }], '#ff1f1f'),
+      rule('Triggered', [{ field: 'state', op: 'eq', value: 'triggered' }], '#ff1f1f', 1, false, 0),
       rule('Armed', [{ field: 'state', op: 'eq', value: 'armed' }], '#f59e0b'),
     ])
     bind('Doors', 'front-door', doors.slice(1, 4), [rule('Open', [{ field: 'open', op: 'isTrue' }], '#f59e0b')])
@@ -124,7 +124,7 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
   const windows = ofClass(all, 'IFCWINDOW')
   spaces.length === 0 && windows.slice(0, 6).forEach((w, i) => bind(`${w.label} · window`, `room-${i + 1}`, [w], [
     rule('Open (heat loss)', [{ field: 'window_open', op: 'isTrue' }], '#a855f7'),
-  ]))
+  ], 'temp_c'))
 
   const roofs = ofClass(all, 'IFCROOF', 'IFCSOLARDEVICE')
   const slabs = ofClass(all, 'IFCSLAB')
@@ -132,11 +132,11 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
     rule('Producing > 2 kW', [{ field: 'pv_kw', op: 'gt', value: 2 }], '#facc15'),
     rule('Producing', [{ field: 'pv_kw', op: 'gt', value: 0.1 }], '#fde68a'),
     rule('Night', [], '#334155'),
-  ])
+  ], 'pv_kw')
 
   const water = ofClass(all, 'IFCPIPE', 'IFCFLOWSEGMENT', 'IFCSANITARYTERMINAL', 'IFCFLOWTERMINAL')
   bind('Water', 'water', water.slice(0, 20), [
-    rule('Leak', [{ field: 'leak', op: 'isTrue' }], '#ff1f1f'),
+    rule('Leak', [{ field: 'leak', op: 'isTrue' }], '#ff1f1f', 1, false, 0),
     rule('Flowing', [{ field: 'flow_lpm', op: 'gt', value: 0 }], '#38bdf8'),
   ])
 
