@@ -547,6 +547,10 @@ export type EmbedEventType =
   | 'tour-ended'
   // The director is generating or exporting a presentation (SDK 1.12).
   | 'presentation-progress'
+  // A feature of a data layer was clicked (SDK 1.17): its layer and properties.
+  | 'layer-feature-picked'
+  // A layer or twin rule started or stopped alerting (SDK 1.17).
+  | 'alert'
   | 'result'
 
 /** True when the app is running inside an iframe. */

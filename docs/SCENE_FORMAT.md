@@ -23,7 +23,11 @@ kept in a repository, and published on any static host.
 
 Both URL forms combine with the usual parameters, and an explicit parameter wins.
 For example, `?scene=…&ui=client&bg=white` opens the scene with the client skin on
-a white background.
+a white background. Pasting another `#scene=` link into a tab that already shows
+a scene reloads it with the new one (a fragment change alone would not).
+
+From code, the SDK does the same: `scene` option, `openScene(url | document)` and
+`exportScene()` (v1.17, see [`IFC_VIEWER_SDK.md`](IFC_VIEWER_SDK.md#scenes-and-data-layers-v117)).
 
 In the app, **Share → Digital-twin scene** does three things:
 

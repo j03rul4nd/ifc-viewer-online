@@ -11,6 +11,7 @@ import { parseAppUrlParams, parseInvitePath } from './lib/url-params'
 import './index.css'
 import { installKeyboardInset } from './lib/keyboard-inset'
 import { bootScene, hasSceneInLocation } from './lib/scene-doc/scene-boot'
+import { sceneLinkValue } from './lib/scene-doc/scene-link'
 
 // iOS lays the on-screen keyboard over the page instead of resizing it;
 // bottom sheets read --kb-inset to stay above it. See lib/keyboard-inset.
@@ -109,3 +110,12 @@ const render = (): void => {
 // visit renders at once — the check is a regex on the address.
 if (hasSceneInLocation()) void bootScene().finally(render)
 else render()
+
+// Another `#scene=` pasted into an open tab (or set by the SDK's openScene) is
+// a hash-only navigation: the page does not reload, and a scene is resolved
+// before mount — so nothing happened. Reload to open it like any scene link.
+const bootedSceneHash = sceneLinkValue(window.location.hash)
+window.addEventListener('hashchange', () => {
+  const next = sceneLinkValue(window.location.hash)
+  if (next && next !== bootedSceneHash) window.location.reload()
+})

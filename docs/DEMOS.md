@@ -127,6 +127,21 @@ The format is documented in `docs/SCENE_FORMAT.md` and validated by
 Explicit URL parameters win over the scene's, so `&bg=paper` or
 `&camera=px,py,pz,tx,ty,tz` can restyle or reframe it for an article.
 
+With the SDK (v1.17), the page can also react to the scene:
+
+```html
+<div id="twin" style="height:600px"></div>
+<script type="module">
+  import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js";
+  const viewer = new IfcViewer("#twin", {
+    ui: "client",
+    scene: "https://www.ifcvieweronline.eu/scenes/barcelona-placa-catalunya.scene.json",
+  });
+  viewer.on("alert", (a) => console.log(a.kind, a.name, a.rule));
+  viewer.on("layer-feature-picked", (f) => console.log(f.layer, f.properties));
+</script>
+```
+
 ### Captures
 
 None are committed yet. Suggested shots, taken in the app with *Capture* (the
@@ -151,6 +166,10 @@ live values are painted into PNGs, clips and GIFs):
 - **Open Data BCN is slow**: it can take 15–40 s to answer and sometimes rejects
   concurrent requests (the app retries with backoff). Traffic and EV layers may
   appear late.
+- Endolla's `last_updated` is when a port last *changed*, not when it last
+  reported (a charger can sit unchanged all night), and the file has no feed
+  timestamp. The scene therefore times the charger's freshness by the download
+  itself: its bays turn grey only when the file could not be fetched for 2 h.
 - Air quality is published 45 min – 3 h behind real time; the layer shows the
   latest published hour, not "now".
 - The Bicing feed declares no licence; it is credited to its publisher.
