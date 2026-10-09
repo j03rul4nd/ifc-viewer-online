@@ -207,4 +207,18 @@ describe('F3: templates, cameras, as-operated', () => {
     expect(csv.split('\n')[0]).toBe('model,GlobalId,element,class,storey,binding,device,state,read_at,id,note,temp_c')
     expect(csv).toContain('"a,b"')
   })
+
+  it('never repeats a column: a device metric named like a fixed column is prefixed', async () => {
+    const { operatedState, operatedCsv } = await import('./devices')
+    const r = parseReadings([{ id: 'room-1', state: 'alarm', temp_c: 25 }], { id: 's1', mapping: { listPath: '', idField: 'id', timeField: '' } }, 0)[0]
+    const rows = operatedState([binding({ staleAfterS: 0 })], new Map([[deviceKey('s1', 'room-1'), r]]), buildGuidIndex(trees), buildCatalog(trees), 0, { stale: 'S', nodata: 'N', none: '-' })
+    const [head, first] = operatedCsv(rows).split('\n')
+    const cols = head.split(',')
+    expect(new Set(cols).size).toBe(cols.length)
+    expect(cols).toContain('data.state')
+    // The rule's state and the device's own `state` both survive, in their own columns.
+    const cells = first.split(',')
+    expect(cells[cols.indexOf('state')]).toBe('Hot')
+    expect(cells[cols.indexOf('data.state')]).toBe('alarm')
+  })
 })
