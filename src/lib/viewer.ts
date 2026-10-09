@@ -16,6 +16,7 @@ import { createSectionSystem, type SectionSystem } from './measure/section-syste
 import { toIfcAxes } from './measure/measure-math'
 import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './measure/section-math'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
+import { ownerModelId } from './element-owner'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, PRESET_VIEW, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
@@ -434,7 +435,11 @@ export interface ViewerAPI {
   resetCamera(): void
   /** Frame camera on elements of a category. Targets the active model unless modelId is given. */
   frameCategory(id: string, modelId?: string): void
-  /** Frame + zoom camera to a single element. Searches all models if modelId is omitted. */
+  /**
+   * Frame + zoom camera to a single element. Pass modelId whenever it is known:
+   * expressIDs collide across models. Without it, the active model is used when
+   * it has that id, otherwise the first loaded model that does.
+   */
   focusElement(expressId: number, modelId?: string): void
   /**
    * Programmatically select an element.
@@ -3413,8 +3418,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     focusElement(expressId, modelId) {
-      // If no modelId given, search all loaded models for the element
-      const targetId = modelId ?? [...typeMapByModel.entries()].find(([, m]) => m.has(expressId))?.[0] ?? currentModelId
+      // expressIDs collide across models; without a modelId, frame the model
+      // selectElement would pick (the active one), not the first that has the id.
+      const targetId = ownerModelId(expressId, modelId, currentModelId, typeMapByModel)
       const model = (targetId ? modelObjects.get(targetId) : null) ?? currentModel
       if (!model) return
       safeVoid(

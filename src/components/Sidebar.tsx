@@ -705,7 +705,7 @@ interface PropertiesPanelProps {
   categories: Category[]
   isolated: string | null
   viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
-  onFrame?: (expressId: number) => void
+  onFrame?: (expressId: number, modelId?: string) => void
   onRevealInTree?: (expressId: number, modelId?: string) => void
   onIsolate?: () => void
 }
@@ -1040,7 +1040,7 @@ function PropertiesPanel({
         {/* Quick actions */}
         <div className="flex gap-1.5 mt-3">
           <button
-            onClick={() => onFrame?.(expressId)}
+            onClick={() => onFrame?.(expressId, selected.modelId)}
             className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -1499,8 +1499,8 @@ function CategoryRow({
   onSetIsolated: (id: string | null) => void
   onFrame: (id: string) => void
   onToggleExpand: (id: string) => void
-  onSelectElement?: (expressId: number) => void
-  onFrameElement?: (expressId: number) => void
+  onSelectElement?: (expressId: number, modelId?: string) => void
+  onFrameElement?: (expressId: number, modelId?: string) => void
   issueCount?: number
 }) {
   const hexColor    = `#${cat.color.toString(16).padStart(6, '0')}`
@@ -1615,7 +1615,7 @@ function CategoryRow({
                         return (
                           <button
                             key={`${model.id}:${eid}`}
-                            onClick={() => { onSelectElement?.(eid); onFrameElement?.(eid) }}
+                            onClick={() => { onSelectElement?.(eid, model.id); onFrameElement?.(eid, model.id) }}
                             className="w-full flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[var(--surface-2)] transition-colors group/elem"
                           >
                             <span className="flex-1 truncate text-[11.5px] text-[var(--text-dim)] group-hover/elem:text-[var(--text)]">{name}</span>
@@ -1668,8 +1668,8 @@ function CategoryPanel({
   isolated: string | null
   onSetIsolated: (id: string | null) => void
   onFrame: (id: string) => void
-  onSelectElement?: (expressId: number) => void
-  onFrameElement?: (expressId: number) => void
+  onSelectElement?: (expressId: number, modelId?: string) => void
+  onFrameElement?: (expressId: number, modelId?: string) => void
   issuesByType: Map<string, number>
 }) {
   const { t } = useTranslation('sidebar')
@@ -2081,8 +2081,8 @@ interface SidebarProps {
   isolated: string | null
   onSetIsolated: (id: string | null) => void
   onFrame: (id: string) => void
-  onSelectElement?: (expressId: number) => void
-  onFrameElement?: (expressId: number) => void
+  onSelectElement?: (expressId: number, modelId?: string) => void
+  onFrameElement?: (expressId: number, modelId?: string) => void
   /** Called when user clicks "Reveal in tree" — parent should expand tree & scroll */
   onRevealInTree?: (expressId: number, modelId?: string) => void
   /** ViewerAPI ref — used to fetch real IFC data for the selected element */
@@ -2167,8 +2167,8 @@ export default function Sidebar({
     onMobileClose?.()
   }, [onRevealInTree, onMobileClose])
 
-  const handleFrame = useCallback((id: number) => {
-    onFrameElement?.(id)
+  const handleFrame = useCallback((id: number, modelId?: string) => {
+    onFrameElement?.(id, modelId)
   }, [onFrameElement])
 
   const handleIsolate = useCallback(() => {
