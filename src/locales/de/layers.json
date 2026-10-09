@@ -98,7 +98,9 @@
     "noJoinBase": "Keine Geometrie zum Verknüpfen.",
     "emptyTable": "Die Tabelle ist leer.",
     "tmbKey": "TMB braucht Ihre eigenen Schlüssel: unter Live-Quellen → TMB-Schlüssel hinzufügen.",
-    "quota": "Das kostenlose Kontingent des Anbieters ist vorerst aufgebraucht. Später erneut versuchen."
+    "quota": "Das kostenlose Kontingent des Anbieters ist vorerst aufgebraucht. Später erneut versuchen.",
+    "notLayersFile": "Diese Datei ist keine Datenebenen-Einrichtung.",
+    "layersFileVersion": "Diese Einrichtung stammt aus einer neueren Version. Seite neu laden und erneut versuchen."
   },
   "kind": {
     "point": "Punkt",
@@ -416,7 +418,14 @@
     "nothingYet": "Noch nichts aufgezeichnet – der Verlauf wächst, solange die Ebene live ist.",
     "spanH": "{{n}} h aufgezeichnet",
     "spanM": "{{n}} min aufgezeichnet",
-    "clear": "Löschen"
+    "clear": "Löschen",
+    "chart": "Im Zeitverlauf",
+    "chartField": "Feld für das Diagramm",
+    "chartRange": "Zeitraum",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "jetzt {{v}}",
+    "chartEmpty": "Keine aufgezeichnete Änderung in diesem Zeitraum.",
+    "chartAll": "Alles"
   },
   "traffic": {
     "veryFluid": "Sehr flüssig",
@@ -482,6 +491,38 @@
     "now": "jetzt",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Fügen Sie Ihre TMB-Schlüssel (Live-Quellen) hinzu, um hier die nächsten Busse zu sehen."
+  },
+  "share": {
+    "title": "Diese Einrichtung teilen",
+    "hint": "Speichert die Ebenen – Quellen, Stile, Gruppen, Alarme – als Datei, die Kolleg:innen hier öffnen können. Schlüssel und Tokens sind nie enthalten.",
+    "export": "Einrichtung exportieren",
+    "import": "Einrichtung öffnen…",
+    "exported": "Exportierte Ebenen: {{n}}.",
+    "secretsRemoved": "{{n}} Schlüssel oder Tokens aus URLs entfernt.",
+    "imported": "Hinzugefügte Ebenen: {{n}}.",
+    "importFailed": "Nicht geladen: {{n}}."
+  },
+  "graduated": {
+    "title": "Nach einer Zahl einfärben",
+    "classes": "Anzahl Klassen",
+    "nClasses": "{{n}} Klassen",
+    "method": "Aufteilung",
+    "quantile": "Gleich viele je Klasse",
+    "equal": "Gleiche Schritte",
+    "ramp": "Farben",
+    "reverse": "Umkehren",
+    "create": "{{n}} Gruppen nach Bereich erstellen"
+  },
+  "follow": {
+    "start": "Folgen",
+    "on": "Folgt",
+    "stop": "Nicht mehr folgen",
+    "lost": "Das verfolgte Objekt ist nicht mehr im Feed."
+  },
+  "download": {
+    "title": "Daten herunterladen",
+    "onlyVisible": "Nur sichtbare Gruppen",
+    "done": "Exportierte Objekte: {{n}}."
   },
   "devices": {
     "entry": "Live-Geräte",

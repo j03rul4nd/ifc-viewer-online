@@ -12,7 +12,7 @@ const b = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], C = "1.15.0", k = 12e4, P = 3e4, w = b.map((a) => a.code);
+], C = "1.16.0", P = 12e4, k = 3e4, w = b.map((a) => a.code);
 function E() {
   try {
     return new URL("../", import.meta.url).href;
@@ -152,7 +152,7 @@ const h = class h {
     });
     const r = typeof t == "string" ? document.querySelector(t) : t;
     if (!r) throw new Error(`IfcViewer: mount target not found: ${String(t)}`);
-    this.opts = e, this.baseUrl = e.baseUrl ?? E(), this.loadTimeout = e.loadTimeout ?? k, this.mountEl = r;
+    this.opts = e, this.baseUrl = e.baseUrl ?? E(), this.loadTimeout = e.loadTimeout ?? P, this.mountEl = r;
     const s = this.buildSrc();
     this.appOrigin = _(s);
     const i = document.createElement("iframe");
@@ -168,18 +168,18 @@ const h = class h {
     } else
       i.style.width = p(e.width, "100%"), i.style.height = p(e.height, "100%"), r.appendChild(i);
     if (e.lazy === "visible" && typeof IntersectionObserver < "u") {
-      const o = new IntersectionObserver((c) => {
-        c.some((d) => d.isIntersecting) && (o.disconnect(), this.activate());
+      const o = new IntersectionObserver((l) => {
+        l.some((d) => d.isIntersecting) && (o.disconnect(), this.activate());
       }, { rootMargin: "300px 0px" });
       o.observe(this.box ?? i), this.cleanups.push(() => o.disconnect());
     } else e.lazy || this.activate();
     if ((e.pauseOffscreen ?? e.ui === "article") && typeof IntersectionObserver < "u") {
       let o = !0;
-      const c = new IntersectionObserver((d) => {
+      const l = new IntersectionObserver((d) => {
         const f = d.some((y) => y.isIntersecting);
         f !== o && (o = f, this._ready && this.post({ type: "ifcviewer:set-paused", paused: !f }));
       });
-      c.observe(this.box ?? i), this.cleanups.push(() => c.disconnect());
+      l.observe(this.box ?? i), this.cleanups.push(() => l.disconnect());
     }
     e.background === "auto" && this.watchHostTheme(r), window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
   }
@@ -248,25 +248,25 @@ const h = class h {
     const i = async (o) => {
       if (o === s) return;
       s = o;
-      const c = t[o];
+      const l = t[o];
       if (await this.whenReady(), await this.loadChain, !(this.disposed || s !== o))
         try {
-          c.isolate !== void 0 && this.isolate(c.isolate ?? void 0, { frame: !c.frame && !c.camera }), c.background !== void 0 && await this.setBackground(c.background), c.solar && await this.setSolar(c.solar), c.camera ? await this.lookAt(c.camera.position, c.camera.target) : c.frame && await this.frame(c.frame), c.run && await c.run(this);
+          l.isolate !== void 0 && this.isolate(l.isolate ?? void 0, { frame: !l.frame && !l.camera }), l.background !== void 0 && await this.setBackground(l.background), l.solar && await this.setSolar(l.solar), l.camera ? await this.lookAt(l.camera.position, l.camera.target) : l.frame && await this.frame(l.frame), l.run && await l.run(this);
         } catch (d) {
           console.warn("IfcViewer.bindSteps: step", o, "failed:", d);
         }
     }, n = new IntersectionObserver((o) => {
-      for (const c of o) {
-        if (!c.isIntersecting) continue;
-        const d = r.indexOf(c.target);
+      for (const l of o) {
+        if (!l.isIntersecting) continue;
+        const d = r.indexOf(l.target);
         d >= 0 && i(d);
       }
     }, { rootMargin: e.rootMargin ?? "-45% 0px -45% 0px" });
     r.forEach((o) => {
       o && n.observe(o);
     }), i(0);
-    const l = () => n.disconnect();
-    return this.cleanups.push(l), l;
+    const c = () => n.disconnect();
+    return this.cleanups.push(c), c;
   }
   // ── Public API ─────────────────────────────────────────────────────────────
   /** True once the iframe viewer has signalled readiness. */
@@ -324,14 +324,14 @@ const h = class h {
    * ```
    */
   frame(t = {}) {
-    const { view: e, scope: r, fill: s, azimuth: i, elevation: n, animate: l } = t;
+    const { view: e, scope: r, fill: s, azimuth: i, elevation: n, animate: c } = t;
     return this.request("ifcviewer:view", {
       preset: e ?? "iso",
       ...r ? { scope: r } : {},
       fill: s ?? 0.85,
       ...i !== void 0 ? { azimuth: i } : {},
       ...n !== void 0 ? { elevation: n } : {},
-      ...l !== void 0 ? { animate: l } : {}
+      ...c !== void 0 ? { animate: c } : {}
     });
   }
   /** Change the UI language at runtime (no-ops for unsupported codes). */
@@ -1010,7 +1010,7 @@ const h = class h {
       const r = this.opts.background, s = typeof r == "string" ? r : "preset" in r ? r.preset : r.bottom ? `${r.top},${r.bottom}` : r.top;
       t.searchParams.set("bg", s.replace(/#/g, ""));
     }
-    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), this.opts.turntable && t.searchParams.set("turntable", this.opts.turntable === !0 ? "1" : String(this.opts.turntable)), t.toString();
+    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.layers && t.searchParams.set("layers", this.opts.layers), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), this.opts.turntable && t.searchParams.set("turntable", this.opts.turntable === !0 ? "1" : String(this.opts.turntable)), t.toString();
   }
   /** Queue a load so only one runs at a time; resolves with that load's result. */
   enqueueLoad(t) {
@@ -1055,15 +1055,15 @@ const h = class h {
     });
   }
   /** Send a query and resolve with the iframe's `result` payload. */
-  request(t, e = {}, r = P, s = []) {
+  request(t, e = {}, r = k, s = []) {
     return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((i, n) => {
-      const l = this.nextRequestId(), o = { resolve: i, reject: n, timer: void 0 };
-      this.requests.set(l, o), this.whenActive(() => {
+      const c = this.nextRequestId(), o = { resolve: i, reject: n, timer: void 0 };
+      this.requests.set(c, o), this.whenActive(() => {
         o.timer = setTimeout(() => {
-          this.requests.delete(l), n(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
+          this.requests.delete(c), n(new Error(`IfcViewer: "${t}" timed out after ${r}ms`));
         }, r);
       }), this.whenReady().then(() => {
-        this.disposed || this.post({ type: t, requestId: l, ...e }, s);
+        this.disposed || this.post({ type: t, requestId: c, ...e }, s);
       });
     });
   }
@@ -1210,8 +1210,8 @@ class M extends HTMLElement {
     e.style.cssText = this.hasAttribute("aspect-ratio") ? "width:100%" : "width:100%;height:100%", this.appendChild(e);
     const r = (n) => this.getAttribute(n) ?? void 0, s = (n) => {
       if (!this.hasAttribute(n)) return;
-      const l = this.getAttribute(n);
-      return l !== "false" && l !== "0" && l !== "no";
+      const c = this.getAttribute(n);
+      return c !== "false" && c !== "0" && c !== "no";
     }, i = new m(e, {
       ui: r("ui"),
       panels: r("panels")?.split(",").map((n) => n.trim()).filter(Boolean),
@@ -1227,11 +1227,12 @@ class M extends HTMLElement {
         const n = (this.getAttribute("map") ?? "").trim();
         if (n === "" || n === "1" || n === "true") return !0;
         if (!(n === "0" || n === "false"))
-          return n.split(",").map((l) => l.trim()).filter(Boolean);
+          return n.split(",").map((c) => c.trim()).filter(Boolean);
       })() : void 0,
       solar: r("solar"),
       moon: s("moon"),
       scans: r("scans")?.split(",").map((n) => n.trim()).filter(Boolean),
+      layers: r("layers"),
       // Article kit (v1.15): <ifc-viewer ui="article" lazy poster="…" aspect-ratio="16/10">
       view: r("view"),
       fill: r("fill") !== void 0 ? Number(r("fill")) : void 0,
@@ -1249,7 +1250,7 @@ class M extends HTMLElement {
     });
     this._viewer = i;
     for (const n of A)
-      i.on(n, (l) => this.dispatchEvent(new CustomEvent(`ifcviewer:${n}`, { detail: l, bubbles: !0, composed: !0 })));
+      i.on(n, (c) => this.dispatchEvent(new CustomEvent(`ifcviewer:${n}`, { detail: c, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";

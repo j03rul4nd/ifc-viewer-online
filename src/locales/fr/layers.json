@@ -98,7 +98,9 @@
     "noJoinBase": "Aucune géométrie à laquelle joindre.",
     "emptyTable": "La table est vide.",
     "tmbKey": "TMB nécessite vos propres clés : ajoutez-les dans Sources en direct → clés TMB.",
-    "quota": "Le quota gratuit du fournisseur est épuisé pour le moment. Réessayez plus tard."
+    "quota": "Le quota gratuit du fournisseur est épuisé pour le moment. Réessayez plus tard.",
+    "notLayersFile": "Ce fichier n’est pas une configuration de couches de données.",
+    "layersFileVersion": "Cette configuration vient d’une version plus récente. Rechargez la page et réessayez."
   },
   "kind": {
     "point": "Point",
@@ -416,7 +418,14 @@
     "nothingYet": "Rien d’enregistré pour l’instant : l’historique s’accumule tant que la couche est en direct.",
     "spanH": "{{n}} h enregistrées",
     "spanM": "{{n}} min enregistrées",
-    "clear": "Supprimer"
+    "clear": "Supprimer",
+    "chart": "Dans le temps",
+    "chartField": "Champ à tracer",
+    "chartRange": "Plage de temps",
+    "chartMinMax": "min {{min}} · max {{max}}",
+    "chartNow": "maintenant {{v}}",
+    "chartEmpty": "Aucun changement enregistré sur cette plage.",
+    "chartAll": "Tout"
   },
   "traffic": {
     "veryFluid": "Très fluide",
@@ -482,6 +491,38 @@
     "now": "maintenant",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Ajoutez vos clés TMB (Sources en direct) pour voir ici les prochains bus."
+  },
+  "share": {
+    "title": "Partager cette configuration",
+    "hint": "Enregistre les couches — sources, styles, groupes, alertes — dans un fichier qu’un collègue peut ouvrir ici. Jamais de clés ni de jetons.",
+    "export": "Exporter la configuration",
+    "import": "Ouvrir une configuration…",
+    "exported": "Couches exportées : {{n}}.",
+    "secretsRemoved": "{{n}} clé(s) ou jeton(s) retirés des URL.",
+    "imported": "Couches ajoutées : {{n}}.",
+    "importFailed": "Non chargées : {{n}}."
+  },
+  "graduated": {
+    "title": "Colorer selon un nombre",
+    "classes": "Nombre de classes",
+    "nClasses": "{{n}} classes",
+    "method": "Découpage",
+    "quantile": "Même effectif",
+    "equal": "Pas égaux",
+    "ramp": "Couleurs",
+    "reverse": "Inverser",
+    "create": "Créer {{n}} groupes par plage"
+  },
+  "follow": {
+    "start": "Suivre",
+    "on": "Suivi",
+    "stop": "Arrêter le suivi",
+    "lost": "L’objet suivi a quitté le flux."
+  },
+  "download": {
+    "title": "Télécharger les données",
+    "onlyVisible": "Groupes visibles seulement",
+    "done": "Objets exportés : {{n}}."
   },
   "devices": {
     "entry": "Appareils en direct",

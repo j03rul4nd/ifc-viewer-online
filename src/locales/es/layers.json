@@ -98,7 +98,9 @@
     "noJoinBase": "No hay geometría a la que unir.",
     "emptyTable": "La tabla está vacía.",
     "tmbKey": "TMB necesita tus propias claves: añádelas en Fuentes en vivo → claves de TMB.",
-    "quota": "Se ha agotado por ahora la cuota gratuita del proveedor. Vuelve a intentarlo más tarde."
+    "quota": "Se ha agotado por ahora la cuota gratuita del proveedor. Vuelve a intentarlo más tarde.",
+    "notLayersFile": "Este fichero no es una configuración de capas de datos.",
+    "layersFileVersion": "Esta configuración se guardó con una versión más nueva. Recarga la página e inténtalo de nuevo."
   },
   "kind": {
     "point": "Punto",
@@ -416,7 +418,14 @@
     "nothingYet": "Aún no hay nada grabado: el historial se acumula mientras la capa está en vivo.",
     "spanH": "{{n}} h grabadas",
     "spanM": "{{n}} min grabados",
-    "clear": "Borrar"
+    "clear": "Borrar",
+    "chart": "En el tiempo",
+    "chartField": "Campo a graficar",
+    "chartRange": "Rango de tiempo",
+    "chartMinMax": "mín {{min}} · máx {{max}}",
+    "chartNow": "ahora {{v}}",
+    "chartEmpty": "Sin cambios grabados en este rango.",
+    "chartAll": "Todo"
   },
   "traffic": {
     "veryFluid": "Muy fluido",
@@ -482,6 +491,38 @@
     "now": "ya",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Añade tus claves de TMB (Fuentes en vivo) para ver aquí los próximos buses."
+  },
+  "share": {
+    "title": "Compartir esta configuración",
+    "hint": "Guarda las capas —fuentes, estilos, grupos, alertas— en un fichero que un compañero puede abrir aquí. Nunca incluye claves ni tokens.",
+    "export": "Exportar configuración",
+    "import": "Abrir configuración…",
+    "exported": "Capas exportadas: {{n}}.",
+    "secretsRemoved": "Se han quitado {{n}} claves o tokens de las URL.",
+    "imported": "Capas añadidas: {{n}}.",
+    "importFailed": "No se pudieron cargar: {{n}}."
+  },
+  "graduated": {
+    "title": "Colorear por un número",
+    "classes": "Número de clases",
+    "nClasses": "{{n}} clases",
+    "method": "Cómo dividir",
+    "quantile": "Mismo número en cada una",
+    "equal": "Pasos iguales",
+    "ramp": "Colores",
+    "reverse": "Invertir",
+    "create": "Crear {{n}} grupos por rangos"
+  },
+  "follow": {
+    "start": "Seguir",
+    "on": "Siguiendo",
+    "stop": "Dejar de seguir",
+    "lost": "El elemento que seguías ha salido de la fuente."
+  },
+  "download": {
+    "title": "Descargar datos",
+    "onlyVisible": "Solo grupos visibles",
+    "done": "Elementos exportados: {{n}}."
   },
   "devices": {
     "entry": "Dispositivos en vivo",

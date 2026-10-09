@@ -8,6 +8,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TmbArrivals } from './TmbPanels'
+import { FeatureHistory } from './FeatureHistory'
+import { exportIndices, toGeoJsonFile, toCsvFile } from '../lib/layers/layer-export'
+import { groupIndexOf } from '../lib/layers/style-groups'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -17,7 +20,8 @@ import { useGeoStore } from '../stores/geoStore'
 import { toast } from '../stores/toastStore'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
-  frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer,
+  frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
+  exportLayersFile, importLayersFile, importLayersFromUrl, isLayersFile, layerRows,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { TwinSearch } from './TwinSearch'
@@ -79,6 +83,12 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingCount])
   useEffect(() => {
+    const setup = useVectorLayerStore.getState().setupUrl
+    if (setup) {
+      useVectorLayerStore.getState().setSetupUrl(null)
+      void run(async () => reportImport(await importLayersFromUrl(setup)))
+      return
+    }
     if (!useVectorLayerStore.getState().restorePending) return
     useVectorLayerStore.getState().setRestorePending(false)
     void restoreVectorLayers().then(({ failed }) => {
@@ -136,8 +146,31 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   }
 
   const onFiles = (files: FileList): void => void run(async () => {
-    for (const f of Array.from(files)) report(await addGeoJsonFile(f))
+    for (const f of Array.from(files)) {
+      // A shared layer setup (exported from here) opens as layers, not as data.
+      if (/\.json$/i.test(f.name) && f.size < 20_000_000) {
+        const text = await f.text()
+        if (isLayersFile(text)) { reportImport(await importLayersFile(text)); continue }
+      }
+      report(await addGeoJsonFile(f))
+    }
   })
+
+  const reportImport = (r: Awaited<ReturnType<typeof importLayersFile>>): void => {
+    if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
+    toast(t('share.imported', { n: r.restored }) + (r.failed ? ' ' + t('share.importFailed', { n: r.failed }) : ''), r.failed ? 'warning' : 'success')
+  }
+
+  const exportSetup = (): void => {
+    const r = exportLayersFile()
+    const url = URL.createObjectURL(new Blob([r.json], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `data-layers-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    toast(t('share.exported', { n: r.layers }) + (r.secretsRemoved ? ' ' + t('share.secretsRemoved', { n: r.secretsRemoved }) : ''), 'success')
+  }
 
   const anchorLabel = anchor
     ? t('anchor.by', { label: anchor.label, source: t(`anchor.source.${anchor.source}` as never) })
@@ -189,6 +222,22 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
             onClick={() => report(addSimulatedLiveLayer(t('file.sampleLiveName')))}>
             {t('file.sampleLive')}
           </button>
+        </div>
+
+        {/* Share the setup */}
+        <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]" data-testid="layers-share">
+          <div className="text-[11px] font-medium">{t('share.title')}</div>
+          <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('share.hint')}</div>
+          <div className="flex gap-1">
+            <button disabled={busy || layers.length === 0} onClick={exportSetup}
+              className="flex-1 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] disabled:opacity-40">
+              {t('share.export')}
+            </button>
+            <button disabled={busy} onClick={() => fileRef.current?.click()}
+              className="flex-1 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] disabled:opacity-40">
+              {t('share.import')}
+            </button>
+          </div>
         </div>
 
         <PresetSources />
@@ -313,6 +362,7 @@ function LayerRow({ layer, expanded, onToggleExpand }: { layer: VectorLayer; exp
           <LiveControls layer={layer} />
           <JoinForm layer={layer} />
           <LayerStyleEditor layer={layer} />
+          <LayerDownload layer={layer} />
           {d.skipped > 0 && <div className="text-[10px] text-[var(--text-faint)]">{t('warn.skipped', { count: d.skipped })}</div>}
           {layer.attribution && <div className="text-[10px] text-[var(--text-faint)]">© {layer.attribution}</div>}
         </div>
@@ -349,14 +399,23 @@ function SelectedFeature() {
   const sel = useVectorLayerStore((s) => s.selected)
   const layer = useVectorLayerStore((s) => (s.selected ? s.layers.find((l) => l.id === s.selected!.layerId) : undefined))
   const feature = sel && layer?.data ? layer.data.features[sel.featureIndex] : undefined
+  const following = useVectorLayerStore((s) => !!s.following && s.following.layerId === sel?.layerId)
   if (!sel || !layer || !feature) return null
   const rows = flattenProperties(feature.properties)
   const stopCode = tmbStopCode(feature.properties)
+  const canFollow = !!layer.live?.enabled && feature.geometry.type === 'point'
   return (
     <div className="rounded-[7px] border border-[var(--accent)] px-2 py-1.5 flex flex-col gap-1" data-testid="layers-selected">
       <div className="flex items-center gap-1.5">
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: layer.style.color }} />
         <span className="flex-1 min-w-0 text-[11px] font-medium truncate">{layer.name} · {t(`kind.${feature.geometry.type}`)}</span>
+        {canFollow && (
+          <button onClick={() => followFeature(layer.id, following ? null : sel.featureIndex)} aria-pressed={following}
+            title={t(following ? 'follow.stop' : 'follow.start')}
+            className={`shrink-0 px-1.5 py-0.5 rounded-[5px] text-[10px] font-medium border ${following ? 'border-[var(--accent)] bg-[var(--accent)] text-white' : 'border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]'}`}>
+            {following ? '◉ ' : '◎ '}{t(following ? 'follow.on' : 'follow.start')}
+          </button>
+        )}
         <IconBtn label={t('action.close')} onClick={() => useVectorLayerStore.getState().setSelected(null)}>✕</IconBtn>
       </div>
       {rows.length === 0
@@ -372,6 +431,48 @@ function SelectedFeature() {
           </dl>
         )}
       {stopCode && <TmbArrivals stopCode={stopCode} />}
+      {layer.history?.enabled && <FeatureHistory layerId={layer.id} featureIndex={sel.featureIndex} refreshKey={layer.fetchedAt} />}
+    </div>
+  )
+}
+
+/** Take the layer's data out: what the scene shows, as GeoJSON or CSV. */
+function LayerDownload({ layer }: { layer: VectorLayer }) {
+  const { t } = useTranslation('layers')
+  const [onlyVisible, setOnlyVisible] = useState(false)
+  // While rewinding, the moment on screen is what gets exported.
+  const shown = useVectorLayerStore((s) => (s.timeTravel ? s.historyData[layer.id]?.data ?? layer.data : layer.data))
+  const hasGroups = layer.layerStyle.groups.length > 0
+  const save = (kind: 'geojson' | 'csv'): void => {
+    if (!shown) return
+    const rows = layerRows(shown)
+    const idx = exportIndices(rows, layer.layerStyle, onlyVisible && hasGroups)
+    const names = rows.map((r) => {
+      const g = groupIndexOf(r, layer.layerStyle)
+      return g < 0 ? '' : layer.layerStyle.groups[g].name
+    })
+    const text = kind === 'geojson' ? toGeoJsonFile(shown, idx, hasGroups ? names : undefined) : toCsvFile(shown, rows, idx, names)
+    const type = kind === 'geojson' ? 'application/geo+json' : 'text/csv;charset=utf-8'
+    const url = URL.createObjectURL(new Blob([text], { type }))
+    const a = document.createElement('a')
+    const stamp = new Date(useVectorLayerStore.getState().timeTravel?.t ?? Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-')
+    a.href = url
+    a.download = `${layer.name.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'layer'}-${stamp}.${kind === 'geojson' ? 'geojson' : 'csv'}`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    toast(t('download.done', { n: idx.length }), 'success')
+  }
+  const btnCls = 'px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)]'
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap pt-1.5 border-t border-[var(--border)] text-[10px]" data-testid="layer-download">
+      <span className="text-[var(--text-dim)]">{t('download.title')}</span>
+      <button className={btnCls} onClick={() => save('geojson')}>GeoJSON</button>
+      <button className={btnCls} onClick={() => save('csv')}>CSV</button>
+      {hasGroups && (
+        <label className="flex items-center gap-1 text-[var(--text-dim)]">
+          <input type="checkbox" checked={onlyVisible} onChange={(e) => setOnlyVisible(e.target.checked)} />{t('download.onlyVisible')}
+        </label>
+      )}
     </div>
   )
 }

@@ -98,7 +98,9 @@
     "noJoinBase": "No hi ha geometria a la qual unir.",
     "emptyTable": "La taula és buida.",
     "tmbKey": "TMB necessita les teves claus: afegeix-les a Fonts en directe → claus de TMB.",
-    "quota": "S’ha esgotat per ara la quota gratuïta del proveïdor. Torna-ho a provar més tard."
+    "quota": "S’ha esgotat per ara la quota gratuïta del proveïdor. Torna-ho a provar més tard.",
+    "notLayersFile": "Aquest fitxer no és una configuració de capes de dades.",
+    "layersFileVersion": "Aquesta configuració es va desar amb una versió més nova. Recarrega la pàgina i torna-ho a provar."
   },
   "kind": {
     "point": "Punt",
@@ -416,7 +418,14 @@
     "nothingYet": "Encara no hi ha res enregistrat: l’historial s’acumula mentre la capa és en directe.",
     "spanH": "{{n}} h enregistrades",
     "spanM": "{{n}} min enregistrats",
-    "clear": "Esborrar"
+    "clear": "Esborrar",
+    "chart": "En el temps",
+    "chartField": "Camp a representar",
+    "chartRange": "Interval de temps",
+    "chartMinMax": "mín {{min}} · màx {{max}}",
+    "chartNow": "ara {{v}}",
+    "chartEmpty": "Sense canvis enregistrats en aquest interval.",
+    "chartAll": "Tot"
   },
   "traffic": {
     "veryFluid": "Molt fluid",
@@ -482,6 +491,38 @@
     "now": "ja",
     "min": "{{n}} min",
     "arrivalsNeedKeys": "Afegeix les teves claus de TMB (Fonts en directe) per veure aquí els propers busos."
+  },
+  "share": {
+    "title": "Compartir aquesta configuració",
+    "hint": "Desa les capes —fonts, estils, grups, alertes— en un fitxer que un company pot obrir aquí. Mai no inclou claus ni tokens.",
+    "export": "Exportar configuració",
+    "import": "Obrir configuració…",
+    "exported": "Capes exportades: {{n}}.",
+    "secretsRemoved": "S’han tret {{n}} claus o tokens de les URL.",
+    "imported": "Capes afegides: {{n}}.",
+    "importFailed": "No s’han pogut carregar: {{n}}."
+  },
+  "graduated": {
+    "title": "Acolorir per un número",
+    "classes": "Nombre de classes",
+    "nClasses": "{{n}} classes",
+    "method": "Com dividir",
+    "quantile": "Mateix nombre a cadascuna",
+    "equal": "Passos iguals",
+    "ramp": "Colors",
+    "reverse": "Invertir",
+    "create": "Crear {{n}} grups per intervals"
+  },
+  "follow": {
+    "start": "Seguir",
+    "on": "Seguint",
+    "stop": "Deixar de seguir",
+    "lost": "L’element que seguies ha sortit de la font."
+  },
+  "download": {
+    "title": "Descarregar dades",
+    "onlyVisible": "Només grups visibles",
+    "done": "Elements exportats: {{n}}."
   },
   "devices": {
     "entry": "Dispositius en viu",
