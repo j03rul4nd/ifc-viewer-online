@@ -79,7 +79,8 @@ These were not on the priority table but are now in `main` and verified against 
   - **Heights (#212):** models stand on the terrain (ICGC MET 5 m in Catalonia); one project moves as one.
   - **Barcelona demo (#213):** Plaça de Catalunya, 8 IFC + 4 live layers + Bicing/Endolla on IFC elements. `docs/DEMOS.md`.
   - **SDK v1.17 (#215):** scenes and data-layer API, `alert` / `layer-feature-picked` events; `ui=client` map fix.
-  - **Next:** scene embeds in the `/embed/` builder, Helsinki/Tokyo scenes, phone measurements. Server-side items are paid-tier only: `docs/TWIN_PREMIUM_ROADMAP.md`.
+  - **Embed builder:** a *Digital-twin scene* mode (`.scene.json` URL or `#scene=` link, client skin).
+  - **Next:** Helsinki/Tokyo scenes, phone measurements. Server-side items are paid-tier only: `docs/TWIN_PREMIUM_ROADMAP.md`.
 
 ---
 
