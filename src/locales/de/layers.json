@@ -718,5 +718,9 @@
   },
   "add": {
     "title": "Daten hinzufügen"
+  },
+  "wait": {
+    "server": "Warte auf {{host}}… {{s}} s",
+    "generic": "Wird bearbeitet… {{s}} s"
   }
 }

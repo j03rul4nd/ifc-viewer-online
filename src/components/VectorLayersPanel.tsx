@@ -14,7 +14,7 @@ import { groupIndexOf } from '../lib/layers/style-groups'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
+import { useVectorLayerStore, trackWait, hostLabel, type VectorLayer } from '../stores/vectorLayerStore'
 import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
 import { useGeoStore } from '../stores/geoStore'
 import { toast } from '../stores/toastStore'
@@ -94,7 +94,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     const setup = useVectorLayerStore.getState().setupUrl
     if (setup) {
       useVectorLayerStore.getState().setSetupUrl(null)
-      void run(async () => reportImport(await importLayersFromUrl(setup)))
+      void run(async () => reportImport(await importLayersFromUrl(setup)), setup)
       return
     }
     if (!useVectorLayerStore.getState().restorePending) return
@@ -148,9 +148,10 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     if (frame) setTimeout(() => void frameVectorLayer(r.id), 200)
   }
 
-  const run = async (fn: () => Promise<void>): Promise<void> => {
+  /** `server`: the URL being waited on, so the panel can say who is slow. */
+  const run = async (fn: () => Promise<void>, server?: string): Promise<void> => {
     setBusy(true)
-    try { await fn() } finally { setBusy(false) }
+    try { await (server ? trackWait(hostLabel(server), fn()) : fn()) } finally { setBusy(false) }
   }
 
   const onFiles = (files: FileList): void => void run(async () => {
@@ -216,6 +217,8 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
         <input ref={fileRef} type="file" multiple accept=".geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv" className="hidden"
           onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = '' }} />
 
+        <SlowLoadHint />
+
         {/* What was just picked in the scene comes first: it is what the user is looking at. */}
         <SelectedFeature />
 
@@ -273,7 +276,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                 <div className="flex gap-1.5">
                   <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/data.geojson" />
                   <button className={btnCls} disabled={busy || !url.trim()}
-                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') })}>
+                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') }, url.trim())}>
                     {t('url.add')}
                   </button>
                 </div>
@@ -290,7 +293,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                       if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
                       setCaps(r.caps)
                       setWfsType(r.caps.featureTypes.find((f) => f.supportsJson)?.name ?? r.caps.featureTypes[0].name)
-                    })}>
+                    }, wfsUrl.trim())}>
                     {t('wfs.connect')}
                   </button>
                 </div>
@@ -308,7 +311,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                         {RADII.map((r) => <option key={r} value={r}>{r >= 1000 ? `${r / 1000} km` : `${r} m`}</option>)}
                       </select>
                       <button className={btnCls} disabled={busy || !wfsType}
-                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)))}>
+                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)), wfsUrl.trim())}>
                         {t('wfs.load')}
                       </button>
                     </div>
@@ -505,6 +508,34 @@ function LayerDownload({ layer }: { layer: VectorLayer }) {
           <input type="checkbox" checked={onlyVisible} onChange={(e) => setOnlyVisible(e.target.checked)} />{t('download.onlyVisible')}
         </label>
       )}
+    </div>
+  )
+}
+
+/**
+ * "Waiting for ovc.catastro.meh.es… 9 s": some public servers take 10-15 s to
+ * answer, and a silent '…' for that long reads as a hang. Only after 2 s,
+ * only for loads the user started.
+ */
+function SlowLoadHint() {
+  const { t } = useTranslation('layers')
+  const waiting = useVectorLayerStore((s) => s.waiting)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!waiting) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [waiting])
+  if (!waiting) return null
+  const s = Math.floor((now - waiting.since) / 1000)
+  if (s < 2) return null
+  return (
+    <div role="status" aria-live="polite" data-testid="slow-load"
+      className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] bg-[var(--surface-2)] text-[10px] text-[var(--text-dim)]">
+      <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" aria-hidden />
+      <span className="flex-1 min-w-0 truncate">
+        {waiting.label ? t('wait.server', { host: waiting.label, s }) : t('wait.generic', { s })}
+      </span>
     </div>
   )
 }

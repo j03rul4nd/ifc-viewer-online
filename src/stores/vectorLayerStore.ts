@@ -173,6 +173,11 @@ interface VectorLayerState {
   pendingFiles: File[]
   /** Persisted layers exist and the panel should mount to restore them. */
   restorePending: boolean
+  /**
+   * A load the user started and is waiting on (not background live refreshes):
+   * which server, since when. The panel says so once it takes a while.
+   */
+  waiting: { label: string; since: number } | null
   /** `?layers=` setup to open once the panel mounts (wins over restoring). */
   setupUrl: string | null
   setSetupUrl: (url: string | null) => void
@@ -246,6 +251,7 @@ export const useVectorLayerStore = create<VectorLayerState>()(
         set((s) => ({ liveStatus: { ...s.liveStatus, [id]: status } }), false, 'setLiveStatus'),
       pendingFiles: [],
       restorePending: false,
+      waiting: null,
       setupUrl: null,
       setSetupUrl: (url) => set({ setupUrl: url }, false, 'setSetupUrl'),
       // Closing the selection also lets go of a followed feature.
@@ -282,3 +288,24 @@ export const useVectorLayerStore = create<VectorLayerState>()(
     { name: 'VectorLayerStore', enabled: import.meta.env.DEV },
   ),
 )
+
+// ── User-initiated waits ───────────────────────────────────────────────────────
+
+let waits = 0
+
+/** The server part of a URL, for "waiting for ovc.catastro.meh.es…". */
+export function hostLabel(url: string): string {
+  try { return new URL(url).host } catch { return '' }
+}
+
+/**
+ * Mark a load the user is waiting on. Nested or parallel waits keep the
+ * oldest start; the hint clears when the last one settles.
+ */
+export async function trackWait<T>(label: string, p: Promise<T>): Promise<T> {
+  const st = useVectorLayerStore.getState()
+  if (waits++ === 0 || !st.waiting) useVectorLayerStore.setState({ waiting: { label, since: Date.now() } })
+  try { return await p } finally {
+    if (--waits === 0) useVectorLayerStore.setState({ waiting: null })
+  }
+}
