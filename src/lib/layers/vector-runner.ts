@@ -172,10 +172,11 @@ async function sync(): Promise<void> {
   if (host !== h) return
 
   for (const id of [...built.keys()]) {
-    if (!live.has(id)) { system.remove(id); built.delete(id); origin.delete(id) }
+    if (!live.has(id)) { system.remove(id); built.delete(id); origin.delete(id); alertMarkKeys.delete(id) }
   }
   if (layers.length === 0) {
     system.setHighlight(null); highlightKey = ''
+    alertMarkKeys.clear()
     releaseVectorAnchor(); persist(); return
   }
 

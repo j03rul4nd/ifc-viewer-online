@@ -220,7 +220,12 @@ export function createVectorLayerSystem(ctx: VectorLayerContext): VectorLayerSys
       if (l) l.group.visible = visible
       lodDirty = true
     },
-    remove,
+    // A deleted layer takes its alert rings with it (render() rebuilds through
+    // the inner remove and must keep them).
+    remove(id) {
+      remove(id)
+      clearMarks(id)
+    },
     frame(id) {
       const l = layers.get(id)
       if (!l || l.bounds.isEmpty()) return false
