@@ -88,11 +88,15 @@ const ValidationResultSchema = z.object({
   }).optional(),
 })
 
-const SpatialElementSchema = z.object({
+const SpatialPartSchema = z.object({
   expressId: z.number().int().nonnegative(),
   globalId:  z.string(),
   ifcClass:  z.string(),
   name:      z.string(),
+})
+
+const SpatialElementSchema = SpatialPartSchema.extend({
+  parts: z.array(SpatialPartSchema).optional(),
 })
 
 // Forward declaration — SpatialNode is recursive

@@ -791,6 +791,15 @@
     "sources": "Data sources ({{n}})",
     "live": "live",
     "open": "Open scene…",
-    "openHint": "Open a .scene.json someone sent you."
+    "openHint": "Open a .scene.json someone sent you.",
+    "demos": {
+      "title": "City digital twins",
+      "subtitle": "IFC models, live open data and devices on the map",
+      "barcelona": {
+        "name": "Barcelona · Plaça de Catalunya",
+        "description": "Eight georeferenced IFC models with Bicing, EV charging, traffic and air quality live; Bicing station 65 paints its own docks."
+      },
+      "meta": "{{models}} IFC models · {{live}} live sources"
+    }
   }
 }

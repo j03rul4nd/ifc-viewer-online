@@ -140,8 +140,8 @@ export function validateSceneDoc(input: unknown): SceneValidation {
   if (input.layers !== undefined) {
     if (!Array.isArray(input.layers)) warnings.push('layers: not a list; ignored.')
     else layers = input.layers.filter((l, i) => {
-      const ok = isObj(l) && typeof l.name === 'string' && isObj(l.source)
-      if (!ok) warnings.push(`layers[${i}]: not a layer entry (needs name and source); skipped.`)
+      const ok = isObj(l) && ((typeof l.name === 'string' && isObj(l.source)) || typeof l.preset === 'string')
+      if (!ok) warnings.push(`layers[${i}]: not a layer entry (needs a preset, or name and source); skipped.`)
       return ok
     })
   }
@@ -220,6 +220,11 @@ export function sceneSources(doc: SceneDoc): SceneSource[] {
   }))
   for (const l of doc.layers) {
     if (!isObj(l)) continue
+    if (typeof l.preset === 'string' && !isObj(l.feed) && !isObj(l.source)) {
+      // Completed from the preset when opened; listed by its id here.
+      out.push({ kind: 'layer', name: typeof l.name === 'string' ? l.name : l.preset, url: `preset:${l.preset}`, attribution: null, live: true })
+      continue
+    }
     const feed = isObj(l.feed) ? l.feed : null
     const src = isObj(l.source) ? l.source : {}
     const url = (feed && typeof feed.url === 'string' ? feed.url : null)

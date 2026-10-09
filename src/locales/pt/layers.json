@@ -791,6 +791,15 @@
     "sources": "Fontes de dados ({{n}})",
     "live": "em direto",
     "open": "Abrir cena…",
-    "openHint": "Abra um .scene.json que lhe enviaram."
+    "openHint": "Abra um .scene.json que lhe enviaram.",
+    "demos": {
+      "title": "Gémeos digitais de cidade",
+      "subtitle": "Modelos IFC, dados abertos em direto e dispositivos no mapa",
+      "barcelona": {
+        "name": "Barcelona · Plaça de Catalunya",
+        "description": "Oito modelos IFC georreferenciados com Bicing, carregamento de VE, trânsito e qualidade do ar em direto; a estação Bicing 65 pinta as suas próprias docas."
+      },
+      "meta": "{{models}} modelos IFC · {{live}} fontes em direto"
+    }
   }
 }

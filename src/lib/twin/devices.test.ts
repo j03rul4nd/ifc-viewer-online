@@ -222,3 +222,27 @@ describe('F3: templates, cameras, as-operated', () => {
     expect(cells[cols.indexOf('data.state')]).toBe('alarm')
   })
 })
+
+describe('assembly parts', () => {
+  // Bicing station 65 in the Pl. Catalunya IFC: the storey contains the
+  // ASSEMBLY; its dock posts are parts (IfcRelAggregates), not contained.
+  const station: Record<string, SpatialNode[]> = {
+    hub: [node(1, 'P', 'IfcProject', 'P', [node(2, 'S', 'IfcBuildingStorey', 'Street level')])],
+  }
+  station.hub[0].children[0].containedElements = [{
+    expressId: 50, globalId: 'ST-65', ifcClass: 'IfcElementAssembly', name: 'Estació Bicing 65',
+    parts: [
+      { expressId: 51, globalId: 'POST-01', ifcClass: 'IfcBuildingElementProxy', name: "Pilona d'ancoratge 01" },
+      { expressId: 52, globalId: 'POST-02', ifcClass: 'IfcBuildingElementProxy', name: "Pilona d'ancoratge 02" },
+      { expressId: 53, globalId: 'LOCK-01', ifcClass: 'IfcDiscreteAccessory', name: 'Pany electromecànic 01' },
+    ],
+  }]
+
+  it('are found by a query, on their assembly’s storey, and by GlobalId', () => {
+    const catalog = buildCatalog(station)
+    const posts = catalog.filter((e) => queryMatches({ classes: ['IfcBuildingElementProxy'], storey: '', nameContains: 'ancoratge' }, e))
+    expect(posts.map((p) => p.expressId)).toEqual([51, 52])
+    expect(posts[0].storey).toBe('Street level')
+    expect(buildGuidIndex(station).get('LOCK-01')).toEqual([{ modelId: 'hub', expressId: 53 }])
+  })
+})

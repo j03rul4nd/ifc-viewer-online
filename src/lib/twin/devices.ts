@@ -16,6 +16,7 @@
 
 import { flattenProperties, type FlatProp } from './flatten-props'
 import { testFilter, type Filter } from '../layers/style-groups'
+import { isGelfs, gelfsRecords } from '../layers/records'
 import type { SpatialNode } from '../../types'
 
 // ── Sources & readings ─────────────────────────────────────────────────────────
@@ -84,7 +85,11 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> => !!v && typeo
 /** Turn one API response into readings. Never throws: an unusable body gives []. */
 export function parseReadings(body: unknown, source: Pick<DeviceSource, 'id' | 'mapping'>, receivedAt: number): Reading[] {
   const { listPath, idField, timeField } = source.mapping
-  const root = getPath(body, listPath)
+  // Known shapes whose answer lies deeper than a rule can reach get the same
+  // summary their data layer gets: a GELFS charging location becomes
+  // "state: available, ports_available: 2" (records.ts) instead of a status
+  // nested in stations[].ports[].port_status[].
+  const root = getPath(isGelfs(body) ? gelfsRecords(body) : body, listPath)
   let items: Array<[string, unknown]>
   if (Array.isArray(root)) items = root.map((x, i) => [String(i), x])
   else if (isPlainObject(root) && Object.values(root).length > 0 && Object.values(root).every(isPlainObject) && !idField) {
@@ -215,7 +220,10 @@ export function buildGuidIndex(trees: Record<string, SpatialNode[]>): Map<string
   for (const [modelId, roots] of Object.entries(trees)) {
     const visit = (n: SpatialNode): void => {
       add(n.globalId, { modelId, expressId: n.expressId })
-      for (const e of n.containedElements) add(e.globalId, { modelId, expressId: e.expressId })
+      for (const e of n.containedElements) {
+        add(e.globalId, { modelId, expressId: e.expressId })
+        for (const p of e.parts ?? []) add(p.globalId, { modelId, expressId: p.expressId })
+      }
       n.children.forEach(visit)
     }
     roots.forEach(visit)
@@ -242,6 +250,10 @@ export function buildCatalog(trees: Record<string, SpatialNode[]>): CatalogEntry
       out.push({ modelId, expressId: n.expressId, globalId: n.globalId, ifcClass: n.ifcClass, name: n.name, storey: here })
       for (const e of n.containedElements) {
         out.push({ modelId, expressId: e.expressId, globalId: e.globalId, ifcClass: e.ifcClass, name: e.name, storey: here })
+        // An assembly's parts belong to its storey: "the dock posts of station 65".
+        for (const p of e.parts ?? []) {
+          out.push({ modelId, expressId: p.expressId, globalId: p.globalId, ifcClass: p.ifcClass, name: p.name, storey: here })
+        }
       }
       n.children.forEach((c) => visit(c, here))
     }

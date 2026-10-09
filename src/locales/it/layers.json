@@ -791,6 +791,15 @@
     "sources": "Fonti di dati ({{n}})",
     "live": "live",
     "open": "Apri scena…",
-    "openHint": "Apri un .scene.json che ti hanno inviato."
+    "openHint": "Apri un .scene.json che ti hanno inviato.",
+    "demos": {
+      "title": "Gemelli digitali di città",
+      "subtitle": "Modelli IFC, dati aperti in tempo reale e dispositivi sulla mappa",
+      "barcelona": {
+        "name": "Barcellona · Plaça de Catalunya",
+        "description": "Otto modelli IFC georeferenziati con Bicing, ricarica VE, traffico e qualità dell’aria in tempo reale; la stazione Bicing 65 colora i propri stalli."
+      },
+      "meta": "{{models}} modelli IFC · {{live}} fonti in tempo reale"
+    }
   }
 }

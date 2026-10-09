@@ -791,6 +791,15 @@
     "sources": "Fonts de dades ({{n}})",
     "live": "en viu",
     "open": "Obrir escena…",
-    "openHint": "Obre un .scene.json que t'hagin enviat."
+    "openHint": "Obre un .scene.json que t'hagin enviat.",
+    "demos": {
+      "title": "Bessons digitals de ciutat",
+      "subtitle": "Models IFC, dades obertes en viu i dispositius sobre el mapa",
+      "barcelona": {
+        "name": "Barcelona · Plaça de Catalunya",
+        "description": "Vuit models IFC georeferenciats amb Bicing, recàrrega de VE, trànsit i qualitat de l'aire en viu; l'estació Bicing 65 pinta els seus propis ancoratges."
+      },
+      "meta": "{{models}} models IFC · {{live}} fonts en viu"
+    }
   }
 }

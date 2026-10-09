@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { CATEGORY_META, type DemoCategory } from '../demo-models/categories'
 import { demoSets, activeCategories, twinDemoSets, type DemoModel, type DemoSet } from '../demo-models/models'
+import { SCENE_DEMOS, sceneDemoUrl } from '../demo-models/scene-demos'
+import { isGisEnabled } from '../lib/geo/gis-flag'
 import { fetchDemoModel, type FetchProgress } from '../demo-models/fetchDemoModel'
 import { ModelIllustration } from '../demo-models/illustrations'
 import { createLogger } from '../lib/logger'
@@ -181,6 +183,7 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
 
             {/* Cards */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 [-webkit-overflow-scrolling:touch]">
+              {filter === 'all' && <SceneDemos />}
               {onSetSelected && filter === 'all' && <TwinDemos onPick={(s) => void handleLoad(s)} />}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                 {visible.map((s) => (
@@ -376,6 +379,37 @@ function Spinner() {
 }
 
 /** The live digital-twin demos: a model plus simulated devices, one click. */
+/**
+ * Whole digital-twin scenes (models + live data + devices + map), opened as
+ * `?scene=` — the same way a visitor opens a scene someone shared.
+ */
+function SceneDemos() {
+  const { t } = useTranslation('layers', { keyPrefix: 'scene.demos' })
+  // They stand on the map: without map mode in the build there is no scene to show.
+  if (!isGisEnabled() || SCENE_DEMOS.length === 0) return null
+  return (
+    <div className="mb-4 flex flex-col gap-2" data-testid="scene-demos">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[12px] font-semibold tracking-tight">{t('title')}</span>
+        <span className="text-[11px] text-[var(--text-faint)]">{t('subtitle')}</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {SCENE_DEMOS.map((d) => (
+          <a key={d.id} href={sceneDemoUrl(d)} data-testid={`scene-demo-card-${d.id}`}
+            className="text-left p-3 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex gap-3 items-start no-underline text-[var(--text)]">
+            <span className="mt-0.5 w-2 h-2 rounded-full bg-[#2fb7ff] animate-pulse shrink-0" aria-hidden />
+            <span className="min-w-0">
+              <span className="block text-[13px] font-medium">{t(`${d.key}.name` as never)}</span>
+              <span className="block mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug">{t(`${d.key}.description` as never)}</span>
+              <span className="block mt-1 text-[10px] text-[var(--text-dim)]">{t('meta', { models: d.models, live: d.live })}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function TwinDemos({ onPick }: { onPick: (set: DemoSet) => void }) {
   const { t } = useTranslation('layers', { keyPrefix: 'devices.gallery' })
   const sets = useMemo(() => twinDemoSets(), [])
