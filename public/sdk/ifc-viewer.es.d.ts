@@ -200,7 +200,7 @@ export interface ModelStats {
     }>;
 }
 /** Every tool that can appear on the viewer's panel rail. */
-export type PanelName = 'properties' | 'scene' | 'measurement' | 'section' | 'plans' | 'map' | 'solar' | 'devices' | 'pointcloud' | 'mesh';
+export type PanelName = 'properties' | 'scene' | 'measurement' | 'section' | 'plans' | 'map' | 'solar' | 'flood' | 'devices' | 'pointcloud' | 'mesh';
 export interface PanelsResult {
     /** The panel currently open, or null when none is. */
     open: PanelName | null;

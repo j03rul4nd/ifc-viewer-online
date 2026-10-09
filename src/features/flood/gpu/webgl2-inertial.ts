@@ -5,8 +5,8 @@
 // EXT_color_buffer_float to render into float textures (WebGL2 everywhere that
 // matters has it; without it the feature is reported unsupported).
 //
-// The CPU waits for a batch with a fence it polls between tasks, never with a
-// blocking read, so a long batch does not freeze the thread it runs on.
+// In the worker the CPU waits for a batch with a blocking read (nothing else
+// runs on that thread); on a page's main thread it polls a fence between tasks.
 
 import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '../core/grid'
 import { depthFromRates, intervalMs, ratesMs } from '../core/hyetograph'
@@ -314,8 +314,15 @@ export class WebGl2InertialSolver implements FloodSolver {
     if (e !== this.gl.NO_ERROR) throw new Error(`flood: WebGL error 0x${e.toString(16)}`)
   }
 
-  /** Waits for the GPU without blocking the thread (fence polled between tasks). */
+  /**
+   * Waits for the GPU. In a worker (the app's case) the read that follows
+   * simply blocks until the work is done — that thread has nothing else to do,
+   * and polling a fence with timers made a hidden tab crawl (timers are
+   * throttled there: measured ×46 real time instead of ×450). On a page's
+   * main thread the fence is polled between tasks so the page stays live.
+   */
   private async finish(): Promise<void> {
+    if (typeof document === 'undefined') return
     const gl = this.gl
     const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
     gl.flush()
@@ -325,7 +332,7 @@ export class WebGl2InertialSolver implements FloodSolver {
         const r = gl.clientWaitSync(sync, 0, 0)
         if (r === gl.ALREADY_SIGNALED || r === gl.CONDITION_SATISFIED) return
         if (r === gl.WAIT_FAILED) throw new Error('flood: GPU wait failed')
-        await new Promise((res) => setTimeout(res, 1))
+        await new Promise((res) => setTimeout(res, 0))
       }
     } finally {
       gl.deleteSync(sync)

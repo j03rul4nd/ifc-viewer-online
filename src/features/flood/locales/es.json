@@ -1,0 +1,129 @@
+{
+  "title": "Inundación (simulación)",
+  "close": "Cerrar",
+  "disclaimer": "Simulación simplificada y orientativa que corre en tu navegador: no es un estudio hidráulico certificado. Ningún dato del modelo sale de este dispositivo.",
+  "unsupported": "Este navegador no puede ejecutar la simulación: necesita WebGPU, o WebGL 2 con render a texturas float.",
+  "grid": {
+    "title": "Malla",
+    "cell": "Celda",
+    "margin": "Margen"
+  },
+  "ground": {
+    "title": "Terreno",
+    "order": "Se usa en este orden: el terreno del propio IFC, un DEM importado, el relieve del mapa, y los huecos restantes se rellenan con sus vecinos.",
+    "useMap": "Usar el relieve del mapa",
+    "mapOff": "Activa el mapa con relieve para usar su terreno",
+    "importDem": "Importar DEM…",
+    "removeDem": "Quitar el DEM",
+    "demFormats": ".asc o GeoTIFF",
+    "plane": {
+      "title": "Sin datos de terreno: plano de demostración",
+      "auto": "A la cota de la planta baja del proyecto",
+      "level": "Cota",
+      "slope": "Pendiente",
+      "towards": "Cae hacia"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "E",
+    "s": "S",
+    "w": "O"
+  },
+  "buildings": {
+    "title": "Edificios",
+    "map": "Los edificios del mapa son obstáculos",
+    "mapOff": "Activa el mapa para incluir los edificios del entorno",
+    "roofs": "Cubiertas",
+    "perimeter": "Vierten a la calle",
+    "drained": "Vierten a la red"
+  },
+  "rain": {
+    "title": "Lluvia",
+    "presets": {
+      "shower": "Chubasco · {{mm}} mm en {{min}} min",
+      "storm": "Tormenta · {{mm}} mm en {{min}} min",
+      "intense": "Tormenta intensa · {{mm}} mm en {{min}} min",
+      "extreme": "Episodio extremo · {{mm}} mm en {{min}} min"
+    },
+    "facts": "{{mm}} mm en {{min}} min, con un pico cercano a {{peak}} mm/h. Uniforme sobre toda el área.",
+    "after": "Después"
+  },
+  "surface": {
+    "title": "Superficie",
+    "paved": "Pavimentada (n = {{n}})",
+    "urban": "Urbana mixta (n = {{n}})",
+    "grass": "Césped (n = {{n}})",
+    "vegetation": "Vegetación densa (n = {{n}})"
+  },
+  "edges": {
+    "title": "Bordes",
+    "free": "El agua sale",
+    "closed": "Cerrados"
+  },
+  "actions": {
+    "prepare": "Preparar la malla",
+    "rebuild": "Rehacer",
+    "run": "Simular",
+    "rerun": "Repetir",
+    "pause": "Pausa",
+    "resume": "Seguir",
+    "clear": "Quitar"
+  },
+  "stage": {
+    "geometry": "Leyendo la geometría del modelo…",
+    "raster": "Dibujando la planta en la GPU…",
+    "terrain": "Montando el terreno…",
+    "layers": "Preparando la lámina de agua…"
+  },
+  "report": {
+    "title": "Lo que ve la simulación",
+    "grid": "Malla",
+    "ground": "Terreno",
+    "dem": "Relieve del mapa",
+    "obstacles": "Celdas obstáculo",
+    "canopies": "{{n}} bajo marquesinas",
+    "relief": "Cota del terreno",
+    "coarsened": "El área es grande para este tamaño de celda: celdas ampliadas a {{dx}} m.",
+    "planeWarn": "Aquí no hay datos de terreno: el suelo es un plano a Y = {{y}} m. Importa un DEM o activa el mapa con relieve para tener uno real.",
+    "coarseDem": "El relieve del mapa viene aquí del mosaico global (datos de ≈30 m): no ve calles ni bordillos. Un DEM importado da mejor resultado.",
+    "frame": "Encuadrar"
+  },
+  "source": {
+    "ifc": "Terreno del IFC",
+    "dem": "DEM importado",
+    "map": "Relieve del mapa",
+    "plane": "Plano (sin datos)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (terreno desnudo)",
+    "terrarium": "Mosaico global (≈30 m)",
+    "unknown": "Mapa"
+  },
+  "demNote": {
+    "reprojected": "El DEM se ha reproyectado al sistema de coordenadas del modelo.",
+    "sameCrs": "El DEM está en el sistema de coordenadas del modelo.",
+    "assumedSameCrs": "El DEM no indica su sistema de coordenadas (o el modelo no lo hace): se supone el del modelo.",
+    "noHeightDatum": "El modelo no indica su referencia de cotas: el DEM se ha apoyado en la planta baja del proyecto bajo el modelo.",
+    "notGeoreferenced": "El modelo no está georreferenciado, así que el DEM no se puede situar. Georreferéncialo en el panel Mapa.",
+    "outside": "El DEM no cubre el área de la simulación."
+  },
+  "speed": {
+    "title": "Velocidad",
+    "max": "Máx."
+  },
+  "live": {
+    "time": "Simulado",
+    "flooded": "Área inundada (> umbral)",
+    "maxDepth": "Calado máximo",
+    "volume": "Agua en superficie",
+    "mass": "Error de balance de masa"
+  },
+  "view": {
+    "title": "Vista",
+    "now": "Calado actual",
+    "max": "Calado máximo",
+    "threshold": "Mostrar desde",
+    "ground": "Mostrar el terreno de la simulación"
+  }
+}

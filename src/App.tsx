@@ -95,6 +95,8 @@ import { isGisEnabled } from './lib/geo/gis-flag'
 import { parsePanelTarget, parsePanelList } from './lib/ui/panel-commands'
 import { closeAllPanels } from './lib/ui/panel-registry'
 import { isSolarEnabled } from './lib/solar/solar-flag'
+import { isFloodEnabled } from './features/flood/flag'
+import { useFloodStore } from './features/flood/store'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
@@ -114,6 +116,9 @@ import { useSolarStore } from './stores/solarStore'
 const GeoPanel = React.lazy(() => import('./components/GeoPanel'))
 const SolarPanel = React.lazy(() => import('./components/SolarPanel'))
 const SolarAnalysisPanel = React.lazy(() => import('./components/solar/SolarAnalysisPanel'))
+// Lazy and flag-gated: the flood panel pulls the grid builder and the water layer;
+// the solver itself only loads in its worker when a run starts.
+const FloodPanel = React.lazy(() => import('./features/flood/ui/FloodPanel'))
 // Lazy: PointCloudPanel statically imports the point cloud engine, its shader
 // and its readers — none of that may reach the entry chunk.
 const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
@@ -902,6 +907,7 @@ export default function App() {
     plans:       <Icons.FileIfc size={15} />,
     map:         <Icons.Globe size={15} />,
     solar:       <Icons.Sparkles size={15} />,
+    flood:       <Icons.CloudRain size={15} />,
     pointcloud:  <Icons.Zap size={15} />,
     mesh:        <Icons.Building size={15} />,
     devices:     <Icons.Devices size={15} />,
@@ -914,6 +920,7 @@ export default function App() {
     plans:       tToolbar('plans'),
     map:         tToolbar('map'),
     solar:       tSolar('panel.title'),
+    flood:       tToolbar('flood'),
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
     devices:     tLayers('devices.entry'),
@@ -926,6 +933,7 @@ export default function App() {
   const railModelCount = useSceneStore((s) => s.models.length)
   const railTwinBindings = useTwinDeviceStore((s) => s.bindings.length)
   const railTwinAlerting = useTwinDeviceStore((s) => s.alerting.length > 0)
+  const railFloodRunning = useFloodStore((s) => s.status === 'running')
   const runtimePanels = useUIStore((s) => s.runtimePanels)
 
   // Content gates: these two act ON something loaded, so the tool only earns
@@ -991,11 +999,13 @@ export default function App() {
     plans:       !clientMode,
     map:         isGisEnabled() && !clientMode,
     solar:       isSolarEnabled(),
+    // Same condition as the panel below.
+    flood:       isFloodEnabled() && !clientMode && railModelCount > 0,
     pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
     mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
     // Same condition as the panel below (it mounts on open, or once a source exists).
     devices:     !clientMode,
-  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount])
+  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
   // both show it. The old mobile grid carried these and the rail did not.
@@ -1006,7 +1016,9 @@ export default function App() {
     scene:       { badge: railModelCount > 1 ? railModelCount : undefined },
     // Bindings at work, and a dot while any of them is alerting.
     devices:     { badge: railTwinBindings > 0 ? railTwinBindings : undefined, dot: railTwinAlerting },
-  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting])
+    // A run in progress keeps a dot on the parked icon.
+    flood:       { dot: railFloodRunning },
+  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting, railFloodRunning])
 
   const railItems = usePanelRail({
     icons: railIcons,
@@ -4273,6 +4285,14 @@ export default function App() {
                   {isSolarEnabled() && sceneModels.length > 0 && !clientMode && (
                     <React.Suspense fallback={null}>
                       <SolarAnalysisPanel viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
+                  )}
+
+                  {/* Rain-flood simulation (flag-gated, lazy): a 2-D storm run on
+                      the user's GPU over the model, its terrain and the map. */}
+                  {isFloodEnabled() && sceneModels.length > 0 && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <FloodPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>
                   )}
 

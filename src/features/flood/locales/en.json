@@ -1,0 +1,129 @@
+{
+  "title": "Flood (simulation)",
+  "close": "Close",
+  "disclaimer": "Simplified, indicative simulation run in your browser — not a certified hydraulic study. Nothing about the model leaves this device.",
+  "unsupported": "This browser cannot run the simulation: it needs WebGPU, or WebGL 2 with float render targets.",
+  "grid": {
+    "title": "Grid",
+    "cell": "Cell",
+    "margin": "Margin"
+  },
+  "ground": {
+    "title": "Ground",
+    "order": "Used in this order: the IFC's own terrain, an imported DEM, the map's relief, and the remaining holes filled from their neighbours.",
+    "useMap": "Use the map's relief",
+    "mapOff": "Turn on the map with relief to use its terrain",
+    "importDem": "Import DEM…",
+    "removeDem": "Remove the DEM",
+    "demFormats": ".asc or GeoTIFF",
+    "plane": {
+      "title": "No terrain data: demo plane",
+      "auto": "At the project's ground floor",
+      "level": "Level",
+      "slope": "Slope",
+      "towards": "Falls to"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "E",
+    "s": "S",
+    "w": "W"
+  },
+  "buildings": {
+    "title": "Buildings",
+    "map": "Map buildings are obstacles",
+    "mapOff": "Turn on the map to include the surrounding buildings",
+    "roofs": "Roofs",
+    "perimeter": "Drain to the street",
+    "drained": "Drain to the sewer"
+  },
+  "rain": {
+    "title": "Rain",
+    "presets": {
+      "shower": "Shower · {{mm}} mm in {{min}} min",
+      "storm": "Storm · {{mm}} mm in {{min}} min",
+      "intense": "Intense storm · {{mm}} mm in {{min}} min",
+      "extreme": "Extreme event · {{mm}} mm in {{min}} min"
+    },
+    "facts": "{{mm}} mm over {{min}} min, peaking near {{peak}} mm/h. Uniform over the area.",
+    "after": "Then"
+  },
+  "surface": {
+    "title": "Surface",
+    "paved": "Paved (n = {{n}})",
+    "urban": "Mixed urban (n = {{n}})",
+    "grass": "Grass (n = {{n}})",
+    "vegetation": "Dense vegetation (n = {{n}})"
+  },
+  "edges": {
+    "title": "Edges",
+    "free": "Water leaves",
+    "closed": "Closed"
+  },
+  "actions": {
+    "prepare": "Build the grid",
+    "rebuild": "Rebuild",
+    "run": "Simulate",
+    "rerun": "Run again",
+    "pause": "Pause",
+    "resume": "Resume",
+    "clear": "Remove"
+  },
+  "stage": {
+    "geometry": "Reading the model's geometry…",
+    "raster": "Drawing the plan view on the GPU…",
+    "terrain": "Assembling the ground…",
+    "layers": "Preparing the water layer…"
+  },
+  "report": {
+    "title": "What the simulation sees",
+    "grid": "Grid",
+    "ground": "Ground",
+    "dem": "Map relief",
+    "obstacles": "Obstacle cells",
+    "canopies": "{{n}} under canopies",
+    "relief": "Ground height",
+    "coarsened": "The area is large for this cell size: cells widened to {{dx}} m.",
+    "planeWarn": "No terrain data here: the ground is a plane at Y = {{y}} m. Import a DEM or turn on the map with relief for a real one.",
+    "coarseDem": "The map's relief here comes from the global mosaic (≈30 m data): it does not see streets or kerbs. An imported DEM gives a better result.",
+    "frame": "Frame it"
+  },
+  "source": {
+    "ifc": "IFC terrain",
+    "dem": "Imported DEM",
+    "map": "Map relief",
+    "plane": "Plane (no data)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (bare earth)",
+    "terrarium": "Global mosaic (≈30 m)",
+    "unknown": "Map"
+  },
+  "demNote": {
+    "reprojected": "The DEM was reprojected to the model's coordinate system.",
+    "sameCrs": "The DEM is in the model's coordinate system.",
+    "assumedSameCrs": "The DEM states no coordinate system (or the model does not): it is assumed to be the model's.",
+    "noHeightDatum": "The model states no height datum: the DEM was stood on the project's ground floor under the model.",
+    "notGeoreferenced": "The model is not georeferenced, so the DEM cannot be placed. Georeference it in the Map panel.",
+    "outside": "The DEM does not cover the simulation area."
+  },
+  "speed": {
+    "title": "Speed",
+    "max": "Max"
+  },
+  "live": {
+    "time": "Simulated",
+    "flooded": "Flooded area (> threshold)",
+    "maxDepth": "Deepest water",
+    "volume": "Water on the surface",
+    "mass": "Mass balance error"
+  },
+  "view": {
+    "title": "View",
+    "now": "Depth now",
+    "max": "Maximum depth",
+    "threshold": "Show from",
+    "ground": "Show the simulation ground"
+  }
+}
