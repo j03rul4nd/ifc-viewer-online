@@ -870,6 +870,12 @@ export interface ViewerAPI {
    */
   getSolarAnalysis(): Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI>
   /**
+   * Lazily load the rain-flood simulation (grid from the IFC and the map,
+   * water layer, GPU solver in a worker) — its own chunk, created once per
+   * viewer, disposed with it.
+   */
+  getFlood(): Promise<import('../features/flood/system').FloodSystemAPI>
+  /**
    * Lazily load and return the point cloud subsystem (separate chunk, created
    * once per viewer, disposed with it). Point clouds render in THIS scene with
    * THIS camera; the IFC model is never moved to accommodate them.
@@ -1496,6 +1502,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let solarSystemInstance: import('./solar/solar-system').SolarSystemAPI | null = null
   let solarLoadPromise: Promise<import('./solar/solar-system').SolarSystemAPI> | null = null
   let solarAnalysisInstance: import('./solar-analysis/analysis-system').SolarAnalysisAPI | null = null
+  let floodPromise: Promise<import('../features/flood/system').FloodSystemAPI> | null = null
+  let floodInstance: import('../features/flood/system').FloodSystemAPI | null = null
   let solarAnalysisPromise: Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI> | null = null
 
   // Point clouds (lazy chunk) — set by getPointClouds().
@@ -4869,6 +4877,33 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return solarAnalysisPromise
     },
 
+    getFlood() {
+      const self = this
+      floodPromise ??= import('../features/flood/system').then((m) => {
+        floodInstance = m.createFloodSystem({
+          renderer: world.renderer!.three,
+          scene: world.scene.three,
+          getLoadedModelIds: () => self.getLoadedModelIds(),
+          getFragmentsModel: (id) => (modelObjects.get(id) ?? null) as never,
+          getModelFootprint: (id) => self.getModelFootprint(id),
+          getModelBounds: (id) => self.getModelBounds(id),
+          getStoreyLevels: () => self.getStoreyLevels(),
+          getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
+          requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true },
+          setGridVisible: (v) => self.setGridVisible(v),
+          frameBox: (min, max) => {
+            tuneSceneToBounds(new THREE.Box3(new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, max.y, max.z)))
+            const cam = world.camera.three as THREE.PerspectiveCamera
+            // From the south-west, looking down: the whole simulated area and the depth of the water.
+            const pose = fitPose({ min, max }, { azimuthDeg: 225, elevationDeg: 38 }, cam.fov ?? 45, cam.aspect ?? 16 / 9, 0.92)
+            void world.camera.controls.setLookAt(pose.position.x, pose.position.y, pose.position.z, pose.target.x, pose.target.y, pose.target.z, true)
+          },
+        })
+        return floodInstance
+      })
+      return floodPromise
+    },
+
     getSolar() {
       const self = this
       solarLoadPromise ??= import('./solar/solar-system').then((m) => {
@@ -5098,6 +5133,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       vectorLoadPromise = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
+      try { floodInstance?.dispose() } catch { /* ok */ }
+      floodInstance = null
+      floodPromise = null
       solarSystemInstance = null
       solarLoadPromise    = null
       try { geoSystemInstance?.dispose() } catch { /* ok */ }

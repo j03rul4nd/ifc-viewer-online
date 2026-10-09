@@ -52,6 +52,7 @@ import {
 } from './osm-scene'
 import { satelliteOffset, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
+import { demSourceFor, type DemSourceId } from './dem-sources'
 import { sampleElevation } from './elevation'
 import { distanceM } from './model-sites'
 
@@ -495,6 +496,14 @@ export interface GeoSystemAPI {
    * is off or not built yet. For the solar analysis' site grid.
    */
   groundHeightAt(x: number, z: number): number | null
+  /**
+   * The same ground WITHOUT the relief exaggeration: real heights in scene Y,
+   * for analyses that run physics on the terrain (the flood simulation). Equal
+   * to groundHeightAt on the flat map or at ×1. Null when the map is off.
+   */
+  trueGroundHeightAt(x: number, z: number): number | null
+  /** The ground under the map: relief on or off, its exaggeration and the DEM it came from. Null when off. */
+  getTerrainInfo(): { relief: boolean; exaggeration: number; source: DemSourceId | null } | null
   /** The map's root object (terrain, buildings, trees…): occluders for the solar analysis. Null when off. */
   getContextRoot(): THREE.Object3D | null
   dispose(): void
@@ -1356,6 +1365,23 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const zLocal = groundFrameFor(lastLayerOpts).groundZ(local.x, local.y)
       if (!Number.isFinite(zLocal)) return null
       return geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, zLocal)).y
+    },
+
+    trueGroundHeightAt(x: number, z: number) {
+      const g = api.groundHeightAt(x, z)
+      if (g === null || !terrain || !geoRoot || terrainExaggeration === 1) return g
+      // The relief is drawn as plane + (E − E_anchor)·k (vertical-frame.absoluteGroundM).
+      const planeY = geoRoot.position.y
+      return planeY + (g - planeY) / (terrainExaggeration > 0 ? terrainExaggeration : 1)
+    },
+
+    getTerrainInfo() {
+      if (!geoRoot || !placement) return null
+      return {
+        relief: !!terrain,
+        exaggeration: terrainExaggeration,
+        source: terrain ? demSourceFor(placement.lat, placement.lon).id : null,
+      }
     },
 
     getContextRoot() {
