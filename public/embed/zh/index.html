@@ -52,15 +52,22 @@
 
     <div class="grid">
       <div class="card">
-        <label class="f">公开 IFC URL</label>
+        <label class="f" style="margin-top:0">嵌入内容</label>
+        <div class="seg" id="source">
+          <button data-v="model" class="on">IFC 模型</button>
+          <button data-v="scene">数字孪生场景</button>
+        </div>
+
+        <label class="f" id="modelLabel">公开 IFC URL</label>
         <input type="url" id="model" value="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc" spellcheck="false" />
-        <div class="help">必须可通过 HTTPS 访问并启用 CORS。</div>
+        <div class="help" id="modelHelp">必须可通过 HTTPS 访问并启用 CORS。</div>
 
         <label class="f">布局</label>
         <div class="seg" id="preset">
           <button data-v="minimal" class="on">精简</button>
           <button data-v="full">完整</button>
           <button data-v="kiosk">展台</button>
+          <button data-v="client">客户</button>
         </div>
 
         <label class="f">选项</label>
@@ -111,17 +118,23 @@
 
   <script>
     const APP = new URL("../../", location.href).href.replace(/\/$/, '') + '/';
-    const I18N = {"copy":"复制","copied":"已复制！","noUrl":"请输入有效的公开 IFC URL 以生成嵌入代码。"};
+    const I18N = {"copy":"复制","copied":"已复制！","noUrl":"请输入有效的公开 IFC URL 以生成嵌入代码。","noScene":"请输入场景 URL 或 #scene= 链接以生成嵌入代码。","model":"公开 IFC URL","modelHelp":"必须可通过 HTTPS 访问并启用 CORS。","scene":"场景 URL 或 #scene= 链接","sceneHelp":"场景文档：模型、实时数据图层、设备、地图和相机。将 .scene.json 托管在支持 CORS 的地方，或粘贴“分享 → 数字孪生场景”生成的链接。"};
+    const SAMPLES = { model: "https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc", scene: APP + "scenes/barcelona-placa-catalunya.scene.json" };
     const $ = (id) => document.getElementById(id);
-    let preset = 'minimal', tab = 'iframe';
+    let preset = 'minimal', tab = 'iframe', source = 'model';
+    // What the user typed for each kind, so switching back and forth keeps it.
+    const typed = { model: SAMPLES.model, scene: SAMPLES.scene };
 
     function isValid(u) { try { const x = new URL(u); return x.protocol === 'http:' || x.protocol === 'https:'; } catch { return false; } }
 
     function buildUrl() {
-      const model = $('model').value.trim();
-      if (!isValid(model)) return null;
+      const value = $('model').value.trim();
+      // A link from Share → Digital-twin scene carries the scene in its fragment.
+      const packed = source === 'scene' ? (/[#&]scene=([A-Za-z0-9_-]+)/.exec(value) || [])[1] : null;
+      if (!packed && !isValid(value)) return null;
       const u = new URL(APP);
-      u.searchParams.set('model', model);
+      if (packed) u.hash = 'scene=' + packed;
+      else u.searchParams.set(source === 'scene' ? 'scene' : 'model', value);
       u.searchParams.set('embed', '1');
       if (preset !== 'minimal') u.searchParams.set('ui', preset);
       if (!$('validate').checked) u.searchParams.set('validate', '0');
@@ -141,7 +154,7 @@
     function render() {
       const url = buildUrl();
       const out = $('out');
-      if (!url) { out.textContent = I18N.noUrl; return; }
+      if (!url) { out.textContent = source === 'scene' ? I18N.noScene : I18N.noUrl; return; }
       out.textContent = tab === 'iframe' ? snippet(url) : url;
     }
 
@@ -151,6 +164,24 @@
     }
 
     // wiring
+    function setPreset(v) {
+      preset = v;
+      [...$('preset').children].forEach((c) => c.classList.toggle('on', c.dataset.v === v));
+    }
+    $('source').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b || b.dataset.v === source) return;
+      typed[source] = $('model').value;
+      source = b.dataset.v;
+      [...$('source').children].forEach((c) => c.classList.toggle('on', c === b));
+      $('model').value = typed[source];
+      $('model').type = source === 'scene' ? 'text' : 'url';
+      $('modelLabel').textContent = source === 'scene' ? I18N.scene : I18N.model;
+      $('modelHelp').textContent = source === 'scene' ? I18N.sceneHelp : I18N.modelHelp;
+      // A twin is shown to clients; a model to whoever checks it.
+      setPreset(source === 'scene' ? 'client' : 'minimal');
+      render();
+      reloadPreview();
+    });
     $('preset').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       preset = b.dataset.v;

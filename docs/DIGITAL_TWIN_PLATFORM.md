@@ -80,9 +80,11 @@ visitor's browser. There is no server of ours in any of it
 - **Credit the sources.** Notes in a scene appear when it opens, so a visitor learns
   what is illustrative.
 
+- **Embed without code.** The embed builder (`/embed/`) has a *Digital-twin scene*
+  mode. It takes a `.scene.json` URL or a `#scene=` link, defaults to the client
+  skin, and previews the result live.
+
 **Gaps:**
-- **The no-code embed builder** (`/embed/`) builds model embeds, not scene embeds. The
-  share dialog covers the scene case.
 - **No guided "make a twin of my site" flow.** It is still four panels: models, map,
   data layers, devices.
 - **Mobile.** The full Barcelona scene has not been measured on a phone.

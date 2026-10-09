@@ -8,7 +8,8 @@ Everything is client-side — the visitor's browser fetches the IFC directly, so
 The in-app **Embed** button (toolbar, when a model is loaded) opens a generator that
 builds the link and the `<iframe>` snippet for you, and there's a full no-code
 **embed builder** served at **`/<base>/embed/`** (localized in 10 languages, with a
-live preview). This doc is the reference for the underlying parameters.
+live preview). It embeds an IFC model or a **digital-twin scene** (a `.scene.json`
+URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the reference for the underlying parameters.
 
 ## Quick start
 
