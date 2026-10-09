@@ -38,7 +38,7 @@ export function TwinLiveSection({ globalId: given, modelId, expressId }: {
   const now = timeAt ?? Date.now()
   return (
     <div className="border-b border-[var(--border)] px-3 py-2 flex flex-col gap-2" data-testid="twin-live-section">
-      <div className="flex items-center gap-1.5 text-[11px] font-medium">
+      <div className="flex items-center gap-1.5 text-[11px] max-md:text-[13px] font-medium">
         <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" aria-hidden />
         {t('inspectorTitle')}
         {timeAt !== null && <span className="text-[10px] font-normal text-[var(--text-dim)]">· {new Date(timeAt).toLocaleString()}</span>}
@@ -47,7 +47,7 @@ export function TwinLiveSection({ globalId: given, modelId, expressId }: {
         const st = bindingState(binding, reading, now)
         return (
           <div key={binding.id} className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[10px]">
+            <div className="flex items-center gap-1.5 text-[10px] max-md:text-[12.5px]">
               <span className="flex-1 truncate text-[var(--text-dim)]">{binding.deviceId}</span>
               <span className="shrink-0 text-[var(--text)]">
                 {st.kind === 'rule' ? st.rule.name : st.kind === 'stale' ? t('stale') : st.kind === 'nodata' ? t('nodata') : ''}
@@ -68,7 +68,7 @@ function ReadingTable({ reading, until }: { reading: Reading; until: number }) {
   const frames = useSourceFrames(reading.sourceId, reading.at)
   const rows = reading.props.filter((p) => !p.joined && !(typeof p.value === 'string' && p.value.startsWith('data:'))).slice(0, 12)
   return (
-              <table className="w-full text-[10px]">
+              <table className="w-full text-[10px] max-md:text-[12.5px] max-md:leading-relaxed">
                 <tbody>
                   {rows.map((p) => {
                     const series = frames && typeof p.value === 'number'

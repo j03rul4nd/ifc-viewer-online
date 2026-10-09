@@ -10,6 +10,7 @@ import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceSto
 import { useValidationStore } from '../stores/validationStore'
 import { bindingState, buildCatalog, buildGuidIndex, deviceKey, metricOf, resolveLocs, type Binding, type Reading } from '../lib/twin/devices'
 import type { ViewerAPI } from '../lib/viewer'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { declutter, paintTwinLabels, type TwinLabelPaint } from '../lib/twin/label-paint'
 
 interface Anchor { bindingId: string; modelId: string; firstId: number; ids: number[]; point: { x: number; y: number; z: number } }
@@ -32,6 +33,10 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
   const timeAt = useTwinDeviceStore((s) => s.timeAt)
   const trees = useValidationStore((s) => s.spatialTrees)
   const [anchors, setAnchors] = useState<Anchor[]>([])
+  // Touch: a 16 px pill is under what a thumb can hit; draw them a quarter larger
+  // there, and declutter (and capture) at that same size.
+  const isMobile = useIsMobile()
+  const k = isMobile ? 1.25 : 1
   const refs = useRef(new Map<string, HTMLDivElement>())
 
   const labelled = useMemo(() => bindings.filter((b) => b.label?.field), [bindings])
@@ -73,7 +78,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
       if (viewer) {
         const pts = viewer.projectToScreen(anchors.map((a) => a.point))
         const els = anchors.map((a) => refs.current.get(a.bindingId))
-        const keep = declutter(pts.map((p, i) => ({ ...p, text: els[i]?.textContent ?? '' })))
+        const keep = declutter(pts.map((p, i) => ({ ...p, text: els[i]?.textContent ?? '' })), 2, k)
         anchors.forEach((_, i) => {
           const el = els[i]
           if (!el) return
@@ -86,7 +91,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [anchors, viewerApiRef])
+  }, [anchors, viewerApiRef, k])
 
   // Captures (PNG, clips, GIF): the same pills, projected with the camera that
   // rendered THAT frame, with the values shown at that moment. Registered once
@@ -109,16 +114,16 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
         candidates.push({ x: pts[i].x, y: pts[i].y, visible: pts[i].visible, ...labelLook(b, reading, at) })
       })
       // Same decluttering as on screen: a capture shows the labels that were readable.
-      const keep = declutter(candidates)
+      const keep = declutter(candidates, 2, k)
       const labels = candidates.filter((_, i) => keep[i])
-      const drew = paintTwinLabels(ctx, w, h, s, labels)
+      const drew = paintTwinLabels(ctx, w, h, s, labels, k)
       // DEV: what the last capture got, for QA without reading pixels.
       if (import.meta.env.DEV) {
         (globalThis as Record<string, unknown>).__ifcTwinLabelCapture = { anchors: anchors.length, painted: labels.length, drew, w, h, s, pts }
       }
       return drew
     })
-  }, [anchors, viewerApiRef])
+  }, [anchors, viewerApiRef, k])
 
   if (!active || anchors.length === 0) return null
   const byId = new Map<string, Binding>(bindings.map((b) => [b.id, b]))
@@ -135,7 +140,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
             className="absolute left-0 top-0 will-change-transform" data-testid="twin-label">
             <button type="button"
               onClick={() => { const v = viewerApiRef.current; v?.frameElements(a.ids, a.modelId); v?.selectElement(a.firstId, a.modelId) }}
-              className="pointer-events-auto flex items-center gap-1 px-1.5 py-0.5 mb-1 rounded-full text-[10px] font-medium whitespace-nowrap bg-[rgba(10,12,18,0.82)] text-white border border-white/15 shadow"
+              className="pointer-events-auto flex items-center gap-1 px-1.5 py-0.5 max-md:px-2 max-md:py-1 mb-1 rounded-full text-[10px] max-md:text-[12.5px] font-medium whitespace-nowrap bg-[rgba(10,12,18,0.82)] text-white border border-white/15 shadow"
               title={`${b.name} · ${b.label.field}`}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: look.color ?? '#94a3b8' }} />
               {look.text}

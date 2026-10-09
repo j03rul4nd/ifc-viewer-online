@@ -476,6 +476,7 @@ export default function App() {
   // names rather than inventing a second set that could drift from the headers.
   const { t: tCloud } = useTranslation('pointcloud')
   const { t: tMesh } = useTranslation('mesh')
+  const { t: tLayers } = useTranslation('layers')
   const { t: tSolar } = useTranslation('solar')
 
 
@@ -885,6 +886,7 @@ export default function App() {
     solar:       <Icons.Sparkles size={15} />,
     pointcloud:  <Icons.Zap size={15} />,
     mesh:        <Icons.Building size={15} />,
+    devices:     <Icons.Devices size={15} />,
   }), [])
   const railLabels = useMemo(() => ({
     properties:  tSidebar('title'),
@@ -896,13 +898,16 @@ export default function App() {
     solar:       tSolar('panel.title'),
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
-  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh])
+    devices:     tLayers('devices.entry'),
+  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers])
   // Read here rather than from the destructured block below, which is declared
   // after this point in the component.
   const railMeasurementTool = useUIStore((s) => s.activeMeasurementTool)
   const railClipPlanes = useUIStore((s) => s.clipPlaneCount)
   const railPlanView = useUIStore((s) => s.activePlanViewId)
   const railModelCount = useSceneStore((s) => s.models.length)
+  const railTwinBindings = useTwinDeviceStore((s) => s.bindings.length)
+  const railTwinAlerting = useTwinDeviceStore((s) => s.alerting.length > 0)
   const runtimePanels = useUIStore((s) => s.runtimePanels)
 
   // Content gates: these two act ON something loaded, so the tool only earns
@@ -951,6 +956,8 @@ export default function App() {
     solar:       isSolarEnabled(),
     pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
     mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
+    // Same condition as the panel below (it mounts on open, or once a source exists).
+    devices:     !clientMode,
   }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
@@ -960,7 +967,9 @@ export default function App() {
     section:     { badge: railClipPlanes > 0 ? railClipPlanes : undefined },
     plans:       { dot: !!railPlanView },
     scene:       { badge: railModelCount > 1 ? railModelCount : undefined },
-  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount])
+    // Bindings at work, and a dot while any of them is alerting.
+    devices:     { badge: railTwinBindings > 0 ? railTwinBindings : undefined, dot: railTwinAlerting },
+  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting])
 
   const railItems = usePanelRail({
     icons: railIcons,
@@ -3996,10 +4005,11 @@ export default function App() {
                   {/* Data legend — a chip in the corner while data layers are
                       visible; the legend itself only when the viewer opens it. */}
                   {twinInUse && <TwinLabels viewerApiRef={viewerApiRef} />}
-                  {vectorLayersInUse && (
+                  {(vectorLayersInUse || twinInUse) && (
                     <React.Suspense fallback={null}>
+                      {/* The live twin explains its colours in the same legend. */}
                       <DataLegend viewerApiRef={viewerApiRef} />
-                      <TimeBar />
+                      {vectorLayersInUse && <TimeBar />}
                     </React.Suspense>
                   )}
 
