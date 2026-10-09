@@ -9,6 +9,7 @@ import { useUIStore } from '../stores/uiStore'
 
 type SidebarTab = 'props' | 'cats' | 'qty'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
+import { buildNameIndex, elementName, type NameIndex } from '../lib/spatial-tree'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useEditorStore, pendingEditsFor } from '../stores/editorStore'
 import { useTakeoffStore, selectTakeoffGroups, selectTakeoffStatus } from '../stores/takeoffStore'
@@ -24,19 +25,6 @@ import { IFC_DISPLAY_NAMES, IFC_PALETTE } from '../lib/viewer'
 import type { IFCItemData, IFCPropertySet, IFCQuantitySet, ViewerAPI } from '../lib/viewer'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-function buildNameMap(nodes: SpatialNode[]): Map<number, string> {
-  const map = new Map<number, string>()
-  const walk = (ns: SpatialNode[]) => {
-    for (const n of ns) {
-      map.set(n.expressId, n.name || `#${n.expressId}`)
-      for (const e of n.containedElements) map.set(e.expressId, e.name || `#${e.expressId}`)
-      walk(n.children)
-    }
-  }
-  walk(nodes)
-  return map
-}
 
 /** Returns [Site, Building, Storey, …] path to `targetId` */
 function findSpatialPath(
@@ -1486,14 +1474,15 @@ function MoreElementsText({ count }: { count: number }) {
 
 function CategoryRow({
   cat, isHidden, isIsolated, isExpanded,
-  nameMap, sceneModels = [], onToggleHidden, onSetIsolated, onFrame, onToggleExpand,
+  names, sceneModels = [], onToggleHidden, onSetIsolated, onFrame, onToggleExpand,
   onSelectElement, onFrameElement, issueCount = 0,
 }: {
   cat: Category
   isHidden: boolean
   isIsolated: boolean
   isExpanded: boolean
-  nameMap: Map<number, string>
+  /** Per model: the same expressId names a different element in each file. */
+  names: NameIndex
   sceneModels?: SceneModel[]
   onToggleHidden: (id: string) => void
   onSetIsolated: (id: string | null) => void
@@ -1505,6 +1494,7 @@ function CategoryRow({
 }) {
   const hexColor    = `#${cat.color.toString(16).padStart(6, '0')}`
   const isMultiModel = sceneModels.length > 1
+  const soleModelId  = isMultiModel ? undefined : sceneModels[0]?.id
   // Per-model breakdown: models that have this IFC type
   const modelEntries = isMultiModel
     ? sceneModels.map(m => ({ model: m, cat: m.categories.find(c => c.id === cat.id) }))
@@ -1611,7 +1601,7 @@ function CategoryRow({
                         <span className="font-mono text-[9.5px] text-[var(--text-faint)]">{mCat.count}</span>
                       </div>
                       {mVisible.map(eid => {
-                        const name = nameMap.get(eid) ?? `#${eid}`
+                        const name = elementName(names, model.id, eid) ?? `#${eid}`
                         return (
                           <button
                             key={`${model.id}:${eid}`}
@@ -1631,11 +1621,11 @@ function CategoryRow({
                 /* Single model: flat list */
                 <>
                   {visible.map(eid => {
-                    const name = nameMap.get(eid) ?? `#${eid}`
+                    const name = elementName(names, soleModelId, eid) ?? `#${eid}`
                     return (
                       <button
                         key={eid}
-                        onClick={() => { onSelectElement?.(eid); onFrameElement?.(eid) }}
+                        onClick={() => { onSelectElement?.(eid, soleModelId); onFrameElement?.(eid, soleModelId) }}
                         className="w-full flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[var(--surface-2)] transition-colors group/elem"
                       >
                         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: hexColor, opacity: 0.7 }} />
@@ -1674,8 +1664,10 @@ function CategoryPanel({
 }) {
   const { t } = useTranslation('sidebar')
   const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
-  const allNodes = useMemo(() => Object.values(spatialTreesRecord).flat(), [spatialTreesRecord])
-  const nameMap  = useMemo(() => buildNameMap(allNodes), [allNodes])
+  const names = useMemo(
+    () => buildNameIndex(Object.entries(spatialTreesRecord).map(([modelId, tree]) => ({ modelId, tree }))),
+    [spatialTreesRecord],
+  )
 
   const [expanded,     setExpanded]     = useState<Set<string>>(new Set())
   const [query,        setQuery]        = useState('')
@@ -1741,7 +1733,7 @@ function CategoryPanel({
     isHidden:    hidden.has(cat.id),
     isIsolated:  isolated === cat.id,
     isExpanded:  expanded.has(cat.id),
-    nameMap,
+    names,
     sceneModels,
     onToggleHidden, onSetIsolated: handleIsolate, onFrame: handleFrame,
     onToggleExpand: toggleExpand, onSelectElement, onFrameElement,

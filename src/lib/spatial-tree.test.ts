@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest'
 import {
   scopedElementKey, flattenTrees, flattenTreesFiltered, collectSpatialKeys,
   nextExpansion, locateElement, resolveRevealTarget, invertDecomposition,
-  buildIssueIndex, fileNameFromModelId,
+  buildIssueIndex, fileNameFromModelId, buildNameIndex, elementName,
   type ModelTreeSource,
 } from './spatial-tree'
 import { makeHiddenKey } from './visibility'
@@ -230,6 +230,36 @@ describe('buildIssueIndex', () => {
     const index = buildIssueIndex([issue(40, undefined, 'error')], twoCollidingModels())
     expect(index.get('arc-1')!.direct.size).toBe(0)
     expect(index.get('str-1')!.direct.size).toBe(0)
+  })
+})
+
+describe('buildNameIndex / elementName', () => {
+  it('names #40 after its own model in each (the legend listed one model under the other)', () => {
+    // One merged map kept whichever model was walked last: both files' #40
+    // came out as "Beam S".
+    const names = buildNameIndex(twoCollidingModels())
+    expect(elementName(names, 'arc-1', 40)).toBe('Wall A')
+    expect(elementName(names, 'str-1', 40)).toBe('Beam S')
+    expect(elementName(names, 'arc-1', 30)).toBe('Storey A')
+    expect(elementName(names, 'str-1', 30)).toBe('Storey S')
+  })
+
+  it('falls back to #id for a nameless entity', () => {
+    const names = buildNameIndex([{ modelId: 'm', tree: [node(1, '', 'IfcProject', [], [element(2, '')])] }])
+    expect(elementName(names, 'm', 1)).toBe('#1')
+    expect(elementName(names, 'm', 2)).toBe('#2')
+  })
+
+  it('without a model, answers only when one model is indexed', () => {
+    const [arc] = twoCollidingModels()
+    expect(elementName(buildNameIndex([arc]), undefined, 40)).toBe('Wall A')
+    // With two, "#40" is two different elements — no answer beats a wrong one.
+    expect(elementName(buildNameIndex(twoCollidingModels()), undefined, 40)).toBeUndefined()
+  })
+
+  it('does not borrow another model\'s name for a model it has no tree for', () => {
+    const [arc] = twoCollidingModels()
+    expect(elementName(buildNameIndex([arc]), 'str-1', 40)).toBeUndefined()
   })
 })
 
