@@ -711,7 +711,9 @@
       "created": "{{count}} vínculos creados",
       "cancel": "Cancelar"
     },
-    "filterBindings": "Filtrar vínculos…"
+    "filterBindings": "Filtrar vínculos…",
+    "alertsActive": "{{count}} en alerta",
+    "summaryFilter": "Mostrar solo estos vínculos"
   },
   "add": {
     "title": "Añadir datos"

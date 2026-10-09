@@ -711,7 +711,9 @@
       "created": "{{count}} vincles creats",
       "cancel": "Cancel·lar"
     },
-    "filterBindings": "Filtrar vincles…"
+    "filterBindings": "Filtrar vincles…",
+    "alertsActive": "{{count}} en alerta",
+    "summaryFilter": "Mostrar només aquests vincles"
   },
   "add": {
     "title": "Afegir dades"

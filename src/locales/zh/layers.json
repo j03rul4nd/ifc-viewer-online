@@ -711,7 +711,9 @@
       "created": "已创建 {{count}} 个绑定",
       "cancel": "取消"
     },
-    "filterBindings": "筛选绑定…"
+    "filterBindings": "筛选绑定…",
+    "alertsActive": "{{count}} 个警报中",
+    "summaryFilter": "只显示这些绑定"
   },
   "add": {
     "title": "添加数据"

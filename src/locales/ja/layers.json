@@ -711,7 +711,9 @@
       "created": "{{count}} 件の紐付けを作成しました",
       "cancel": "キャンセル"
     },
-    "filterBindings": "紐付けを絞り込み…"
+    "filterBindings": "紐付けを絞り込み…",
+    "alertsActive": "{{count}} 件アラート中",
+    "summaryFilter": "この紐付けのみ表示"
   },
   "add": {
     "title": "データを追加"

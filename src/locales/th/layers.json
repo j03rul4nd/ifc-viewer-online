@@ -711,7 +711,9 @@
       "created": "สร้างการผูก {{count}} รายการแล้ว",
       "cancel": "ยกเลิก"
     },
-    "filterBindings": "กรองการผูก…"
+    "filterBindings": "กรองการผูก…",
+    "alertsActive": "แจ้งเตือน {{count}} รายการ",
+    "summaryFilter": "แสดงเฉพาะการผูกเหล่านี้"
   },
   "add": {
     "title": "เพิ่มข้อมูล"
