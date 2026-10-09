@@ -691,7 +691,27 @@
         "name": "Condomínio · 3 ficheiros",
         "description": "Arquitetura, estrutura e instalações: água por piso entre ficheiros, habitações, estacionamento, elevador."
       }
-    }
+    },
+    "bulk": {
+      "open": "Ligar em bloco…",
+      "hint": "Emparelha cada dispositivo de uma fonte com os elementos que partilham o seu id ou nome: uma ligação por dispositivo.",
+      "device": "Dispositivo",
+      "deviceId": "id do dispositivo",
+      "element": "Elemento",
+      "nameContains": "o nome contém-no",
+      "nameEquals": "o nome é exatamente",
+      "guidEquals": "o GlobalId é exatamente",
+      "class": "Classe",
+      "rules": "Regras",
+      "noRules": "sem regras (adicionar depois)",
+      "preview": "{{matched}} de {{total}} dispositivos encontram elementos · {{elements}} elementos",
+      "already": "{{count}} já ligados",
+      "unmatched": "Sem elemento para: {{list}}",
+      "create": "Criar {{count}} ligações",
+      "created": "{{count}} ligações criadas",
+      "cancel": "Cancelar"
+    },
+    "filterBindings": "Filtrar ligações…"
   },
   "add": {
     "title": "Adicionar dados"

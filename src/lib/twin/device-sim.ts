@@ -12,7 +12,7 @@
 // app can hand them over in the user's language.
 
 import type { SpatialNode } from '../../types'
-import { buildCatalog, newTwinId, type Binding, type CatalogEntry, type DeviceSource, type TwinRule, type ElementRef } from './devices'
+import { buildCatalog, newTwinId, queryMatches, type Binding, type CatalogEntry, type DeviceSource, type TwinRule, type ElementRef } from './devices'
 
 export const SIM_HOME_URL = 'sim:home'
 export const SIM_COMMUNITY_URL = 'sim:community'
@@ -245,9 +245,15 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
 
   // Water per storey, by query: every element of that storey in every file.
   const storeys = [...new Set(all.filter((e) => /^ifcbuildingstorey$/i.test(e.ifcClass)).map((e) => e.name).filter(Boolean))]
-  storeys.slice(0, 8).forEach((st, i) => bind(`${n.floorWater} ${st}`, `water-floor-${i}`, [], [
-    rule(n.leak, [{ field: 'leak', op: 'isTrue' }], '#ff1f1f', 1, false, 0),
-  ], { query: { classes: ['IfcPipe*', 'IfcDuct*', 'IfcFlow*', 'IfcSanitaryTerminal', 'IfcAirTerminal', 'IfcValve'], storey: st, nameContains: '' } }))
+  // Only storeys that HAVE services: a leak alert on an empty floor points at nothing.
+  const services = ['IfcPipe*', 'IfcDuct*', 'IfcFlow*', 'IfcSanitaryTerminal', 'IfcAirTerminal', 'IfcValve']
+  storeys.slice(0, 8).forEach((st, i) => {
+    const query = { classes: services, storey: st, nameContains: '' }
+    if (!all.some((e) => queryMatches(query, e))) return
+    bind(`${n.floorWater} ${st}`, `water-floor-${i}`, [], [
+      rule(n.leak, [{ field: 'leak', op: 'isTrue' }], '#ff1f1f', 1, false, 0),
+    ], { query })
+  })
 
   const bays = all.filter((e) => PARKING_NAME.test(e.name)).map(refOf)
   bays.slice(0, 30).forEach((b, i) => bind(`${b.label} · ${n.bay}`, `bay-${i + 1}`, [b], [

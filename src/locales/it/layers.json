@@ -691,7 +691,27 @@
         "name": "Condominio · 3 file",
         "description": "Architettura, strutture e impianti: acqua per piano tra i file, abitazioni, parcheggio, ascensore."
       }
-    }
+    },
+    "bulk": {
+      "open": "Collega in blocco…",
+      "hint": "Abbina ogni dispositivo di una fonte agli elementi che ne condividono id o nome: un collegamento per dispositivo.",
+      "device": "Dispositivo",
+      "deviceId": "id del dispositivo",
+      "element": "Elemento",
+      "nameContains": "il nome lo contiene",
+      "nameEquals": "il nome è esattamente",
+      "guidEquals": "il GlobalId è esattamente",
+      "class": "Classe",
+      "rules": "Regole",
+      "noRules": "nessuna regola (da aggiungere)",
+      "preview": "{{matched}} di {{total}} dispositivi trovano elementi · {{elements}} elementi",
+      "already": "{{count}} già collegati",
+      "unmatched": "Nessun elemento per: {{list}}",
+      "create": "Crea {{count}} collegamenti",
+      "created": "{{count}} collegamenti creati",
+      "cancel": "Annulla"
+    },
+    "filterBindings": "Filtra collegamenti…"
   },
   "add": {
     "title": "Aggiungi dati"

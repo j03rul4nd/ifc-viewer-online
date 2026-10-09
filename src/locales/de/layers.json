@@ -691,7 +691,27 @@
         "name": "Wohnanlage · 3 Dateien",
         "description": "Architektur, Tragwerk und TGA: Wasser je Geschoss über Dateien hinweg, Wohnungen, Parken, Aufzug."
       }
-    }
+    },
+    "bulk": {
+      "open": "Massenverknüpfung…",
+      "hint": "Verknüpft jedes Gerät einer Quelle mit Elementen, die seine ID oder seinen Namen teilen – eine Verknüpfung pro Gerät.",
+      "device": "Gerät",
+      "deviceId": "Geräte-ID",
+      "element": "Element",
+      "nameContains": "Name enthält ihn",
+      "nameEquals": "Name ist genau",
+      "guidEquals": "GlobalId ist genau",
+      "class": "Klasse",
+      "rules": "Regeln",
+      "noRules": "keine Regeln (später hinzufügen)",
+      "preview": "{{matched}} von {{total}} Geräten finden Elemente · {{elements}} Elemente",
+      "already": "{{count}} bereits verknüpft",
+      "unmatched": "Kein Element für: {{list}}",
+      "create": "{{count}} Verknüpfungen erstellen",
+      "created": "{{count}} Verknüpfungen erstellt",
+      "cancel": "Abbrechen"
+    },
+    "filterBindings": "Verknüpfungen filtern…"
   },
   "add": {
     "title": "Daten hinzufügen"

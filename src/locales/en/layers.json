@@ -691,7 +691,27 @@
         "name": "Residential community · 3 files",
         "description": "Architecture, structure and MEP: water per storey across files, dwellings, parking, lift."
       }
-    }
+    },
+    "bulk": {
+      "open": "Bind in bulk…",
+      "hint": "Pair every device of a source with elements that share its id or name — one binding per device.",
+      "device": "Device",
+      "deviceId": "device id",
+      "element": "Element",
+      "nameContains": "name contains it",
+      "nameEquals": "name is exactly it",
+      "guidEquals": "GlobalId is exactly it",
+      "class": "Class",
+      "rules": "Rules",
+      "noRules": "no rules (add later)",
+      "preview": "{{matched}} of {{total}} devices find elements · {{elements}} elements",
+      "already": "{{count}} already bound",
+      "unmatched": "No element for: {{list}}",
+      "create": "Create {{count}} bindings",
+      "created": "{{count}} bindings created",
+      "cancel": "Cancel"
+    },
+    "filterBindings": "Filter bindings…"
   },
   "add": {
     "title": "Add data"

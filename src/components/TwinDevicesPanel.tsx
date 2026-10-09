@@ -19,6 +19,7 @@ import {
   type Binding, type CatalogEntry, type DeviceSource, type Reading, type TwinRule,
 } from '../lib/twin/devices'
 import { applyTemplate, TWIN_TEMPLATES } from '../lib/twin/templates'
+import { bulkBindings, planBulkBind, type BulkMatchOptions } from '../lib/twin/bulk-bind'
 import type { TwinTemplateId } from '../lib/twin/device-sim'
 import { exportTwinProject, parseTwinProject } from '../lib/twin/twin-project'
 import type { FilterOp } from '../lib/layers/style-groups'
@@ -78,11 +79,20 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
   const fileRef = useRef<HTMLInputElement>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [openBinding, setOpenBinding] = useState<string | null>(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bindingFilter, setBindingFilter] = useState('')
 
   const guidIndex = useMemo(() => buildGuidIndex(trees), [trees])
   const catalog = useMemo(() => buildCatalog(trees), [trees])
   const sel = useMemo(() => selectionRef(selected, trees), [selected, trees])
   const modelCount = Object.keys(trees).length
+  // Hundreds of bindings after a bulk bind: filter by name or device, and render
+  // the first 200 (the rest are still painted; the filter reaches them).
+  const shownBindings = useMemo(() => {
+    const q = bindingFilter.trim().toLowerCase()
+    const list = q ? bindings.filter((b) => b.name.toLowerCase().includes(q) || b.deviceId.toLowerCase().includes(q)) : bindings
+    return list.slice(0, 200)
+  }, [bindings, bindingFilter])
   const now = timeAt ?? Date.now()
 
   const startDemo = (id: TwinTemplateId = 'home'): void => {
@@ -186,7 +196,11 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
         {/* ── Devices ── */}
         {readings.size > 0 && (
           <section className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
-            <div className="text-[11px] font-medium">{t('devices', { count: readings.size })}</div>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-[11px] font-medium">{t('devices', { count: readings.size })}</span>
+              <button className={linkCls} disabled={timeAt !== null} onClick={() => setBulkOpen(!bulkOpen)} data-testid="twin-bulk-open">{t('bulk.open')}</button>
+            </div>
+            {bulkOpen && <BulkBind catalog={catalog} onDone={() => setBulkOpen(false)} />}
             <div className="text-[10px] text-[var(--text-faint)]">{sel ? t('bindHint', { name: sel.label }) : t('selectHint')}</div>
             <div className="flex flex-col max-h-[180px] overflow-y-auto">
               {[...readings.values()].map((r) => (
@@ -204,7 +218,11 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
         {bindings.length > 0 && (
           <section className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]">
             <div className="text-[11px] font-medium">{t('bindings', { count: bindings.length })}</div>
-            {bindings.map((b) => {
+            {bindings.length > 8 && (
+              <input className={inputCls} value={bindingFilter} placeholder={t('filterBindings')} data-testid="twin-binding-filter"
+                onChange={(e) => setBindingFilter(e.target.value)} />
+            )}
+            {shownBindings.map((b) => {
               const reading = readings.get(deviceKey(b.sourceId, b.deviceId))
               const state = bindingState(b, reading, now)
               const found = resolveLocs(b, guidIndex, catalog).length
@@ -453,6 +471,92 @@ function TimeTravel() {
           </div>
         </>
       ) : <div className="text-[10px] text-[var(--text-faint)]">{retentionH ? t('historyEmpty') : t('historyDisabled')}</div>}
+    </div>
+  )
+}
+
+function BulkBind({ catalog, onDone }: { catalog: CatalogEntry[]; onDone: () => void }) {
+  const { t } = useTranslation('layers', { keyPrefix: 'devices' })
+  const sources = useTwinDeviceStore((s) => s.sources)
+  const readings = useTwinDeviceStore((s) => s.readings)
+  const bindings = useTwinDeviceStore((s) => s.bindings)
+  const [sourceId, setSourceId] = useState(() => sources.find((s) => [...readings.values()].some((r) => r.sourceId === s.id))?.id ?? sources[0]?.id ?? '')
+  const [opts, setOpts] = useState<BulkMatchOptions>({ deviceField: '', elementKey: 'name', mode: 'contains', classes: [] })
+  const [templateId, setTemplateId] = useState('')
+
+  const list = useMemo(() => [...readings.values()].filter((r) => r.sourceId === sourceId), [readings, sourceId])
+  const fields = useMemo(() => [...new Set(list.flatMap((r) => r.props.filter((p) => !p.joined && typeof p.value === 'string').map((p) => p.field)))].sort(), [list])
+  const classes = useMemo(() => [...new Set(catalog.map((e) => e.ifcClass))].sort(), [catalog])
+  const plan = useMemo(() => planBulkBind(list, catalog, opts), [list, catalog, opts])
+  const template = bindings.find((b) => b.id === templateId) ?? null
+  const toCreate = useMemo(() => bulkBindings(plan, template, bindings), [plan, template, bindings])
+
+  const create = (): void => {
+    const store = useTwinDeviceStore.getState()
+    toCreate.forEach((b) => store.upsertBinding(b))
+    toast(t('bulk.created', { count: toCreate.length }), 'success')
+    onDone()
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 p-2 rounded-[7px] bg-[var(--surface-2)]" data-testid="twin-bulk">
+      <div className="text-[10px] text-[var(--text-dim)] leading-snug">{t('bulk.hint')}</div>
+      {sources.length > 1 && (
+        <select className={inputCls} value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
+          {sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      )}
+      <div className="flex gap-1 items-center">
+        <span className="text-[10px] text-[var(--text-dim)] shrink-0 w-[70px]">{t('bulk.device')}</span>
+        <select className={inputCls} value={opts.deviceField} data-testid="twin-bulk-field" onChange={(e) => setOpts({ ...opts, deviceField: e.target.value })}>
+          <option value="">{t('bulk.deviceId')}</option>
+          {fields.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+      </div>
+      <div className="flex gap-1 items-center">
+        <span className="text-[10px] text-[var(--text-dim)] shrink-0 w-[70px]">{t('bulk.element')}</span>
+        <select className={inputCls} value={`${opts.mode}:${opts.elementKey}`} data-testid="twin-bulk-mode"
+          onChange={(e) => { const [mode, elementKey] = e.target.value.split(':') as [BulkMatchOptions['mode'], BulkMatchOptions['elementKey']]; setOpts({ ...opts, mode, elementKey }) }}>
+          <option value="contains:name">{t('bulk.nameContains')}</option>
+          <option value="equals:name">{t('bulk.nameEquals')}</option>
+          <option value="equals:globalId">{t('bulk.guidEquals')}</option>
+        </select>
+      </div>
+      <div className="flex gap-1 items-center">
+        <span className="text-[10px] text-[var(--text-dim)] shrink-0 w-[70px]">{t('bulk.class')}</span>
+        <select className={inputCls} value={opts.classes[0] ?? ''} onChange={(e) => setOpts({ ...opts, classes: e.target.value ? [e.target.value] : [] })}>
+          <option value="">{t('queryAnyClass')}</option>
+          {classes.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <div className="flex gap-1 items-center">
+        <span className="text-[10px] text-[var(--text-dim)] shrink-0 w-[70px]">{t('bulk.rules')}</span>
+        <select className={inputCls} value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+          <option value="">{t('bulk.noRules')}</option>
+          {bindings.filter((b) => b.rules.length).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+      </div>
+      <div className="text-[10px] text-[var(--text)]" data-testid="twin-bulk-preview">
+        {t('bulk.preview', { matched: plan.matched.length, total: list.length, elements: plan.elements })}
+        {toCreate.length < plan.matched.length && <span className="text-[var(--text-dim)]"> · {t('bulk.already', { count: plan.matched.length - toCreate.length })}</span>}
+      </div>
+      {plan.matched.length > 0 && (
+        <div className="flex flex-col text-[10px] text-[var(--text-dim)] max-h-[90px] overflow-y-auto">
+          {plan.matched.slice(0, 8).map((m) => (
+            <span key={m.reading.deviceId} className="truncate">{m.value} → {m.targets.map((x) => x.label).join(', ')}</span>
+          ))}
+          {plan.matched.length > 8 && <span>+{plan.matched.length - 8}</span>}
+        </div>
+      )}
+      {plan.unmatched.length > 0 && (
+        <div className="text-[10px] text-[var(--warning,#f59e0b)] truncate" title={plan.unmatched.map((u) => u.value || u.deviceId).join(', ')}>
+          {t('bulk.unmatched', { list: plan.unmatched.slice(0, 6).map((u) => u.value || u.deviceId).join(', ') + (plan.unmatched.length > 6 ? '…' : '') })}
+        </div>
+      )}
+      <div className="flex gap-1.5">
+        <button className={btnCls} disabled={toCreate.length === 0} onClick={create} data-testid="twin-bulk-create">{t('bulk.create', { count: toCreate.length })}</button>
+        <button className={btnCls} onClick={onDone}>{t('bulk.cancel')}</button>
+      </div>
     </div>
   )
 }
