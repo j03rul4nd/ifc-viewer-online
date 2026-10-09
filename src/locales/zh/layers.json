@@ -791,6 +791,15 @@
     "sources": "数据来源（{{n}}）",
     "live": "实时",
     "open": "打开场景…",
-    "openHint": "打开别人发给你的 .scene.json。"
+    "openHint": "打开别人发给你的 .scene.json。",
+    "demos": {
+      "title": "城市数字孪生",
+      "subtitle": "地图上的 IFC 模型、实时开放数据与设备",
+      "barcelona": {
+        "name": "巴塞罗那 · 加泰罗尼亚广场",
+        "description": "八个地理参照的 IFC 模型，实时接入 Bicing、电动车充电、交通和空气质量；Bicing 65 号站会为自己的车桩着色。"
+      },
+      "meta": "{{models}} 个 IFC 模型 · {{live}} 个实时数据源"
+    }
   }
 }

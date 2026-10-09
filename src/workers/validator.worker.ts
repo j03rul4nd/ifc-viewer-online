@@ -402,7 +402,7 @@ function buildNode(
 
   // Physical elements directly contained in this spatial structure node
   const rawContained = idx.containerElements.get(expressId) ?? []
-  const containedElements: SpatialElement[] = rawContained.map((elemId) => {
+  const toElement = (elemId: number): SpatialElement => {
     try {
       const elem = getLine<IfcBaseEntity>(api, modelId, elemId)
       return {
@@ -414,6 +414,22 @@ function buildNode(
     } catch {
       return { expressId: elemId, globalId: '', ifcClass: 'IfcElement', name: `#${elemId}` }
     }
+  }
+  // An element's own parts (IfcRelAggregates below an ELEMENT, not a spatial
+  // node), flattened. `seen` guards the cycles RULE_CIRCULAR_REFERENCE reports.
+  const partsOf = (elemId: number, seen: Set<number>): SpatialElement[] => {
+    const out: SpatialElement[] = []
+    for (const k of idx.aggChildren.get(elemId) ?? []) {
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(toElement(k), ...partsOf(k, seen))
+    }
+    return out
+  }
+  const containedElements: SpatialElement[] = rawContained.map((elemId) => {
+    const e = toElement(elemId)
+    const parts = partsOf(elemId, new Set([elemId]))
+    return parts.length ? { ...e, parts } : e
   })
 
   return {

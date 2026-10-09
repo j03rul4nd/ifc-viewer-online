@@ -10,6 +10,7 @@ import { applyJoin, uniqueByKey } from './join'
 import { parseGeoJson } from './geojson'
 import { tableTime, transientRetryMs } from './feeds'
 import { FEED_PRESETS, presetsForSite } from './feed-presets'
+import { parseReadings, metricOf } from '../twin/devices'
 
 const files = import.meta.glob('./__fixtures__/*', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 const fx = (name: string): string => files[`./__fixtures__/${name}`]
@@ -253,5 +254,16 @@ describe('transient refusals', () => {
     expect(transientRetryMs(r(429, '600'), 0, () => 0.5)).toBe(1500)
     expect(transientRetryMs(r(404), 0)).toBeNull()
     expect(transientRetryMs(r(200), 0)).toBeNull()
+  })
+})
+
+describe('live devices read the same summaries', () => {
+  it('an Endolla location is a device with a state a rule can test', () => {
+    const readings = parseReadings(json('endolla-gelfs.json'), { id: 'endolla', mapping: { listPath: 'locations', idField: 'id', timeField: 'last_updated' } }, 0)
+    const pg = readings.find((r) => r.deviceId === '3762')!
+    expect(pg).toBeDefined()
+    expect(['available', 'busy', 'out_of_service', 'unknown']).toContain(metricOf(pg, 'state'))
+    expect(metricOf(pg, 'ports_total')).toBe(3)
+    expect(pg.at).toBeGreaterThan(0)
   })
 })

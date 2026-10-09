@@ -86,6 +86,11 @@ if (import.meta.env.DEV) {
   ;(globalThis as Record<string, unknown>).__ifcLayersDebug = {
     store: () => useVectorLayerStore.getState(),
     importLayersFile: (text: string) => importLayersFile(text),
+    exportLayersFile: () => exportLayersFile(),
+    addPreset: (id: string, name: string) => import('./feed-presets').then((m) => {
+      const p = m.FEED_PRESETS.find((x) => x.id === id)
+      return p ? addPreset(p, name, undefined, (k) => i18n.t(`layers:${k}` as never)) : { ok: false as const, errorKey: 'unknown preset' }
+    }),
     fetchFeed: (src: FeedSource) => fetchFeed(src),
     fetchText: (url: string) => fetchText(url),
   }
@@ -537,6 +542,13 @@ export async function pickVectorAt(clientX: number, clientY: number): Promise<bo
 const MAX_PERSISTED_TEXT = 1_500_000
 
 interface PersistedLayer {
+  /**
+   * A preset id (feed-presets.ts) this layer IS: its source, refresh,
+   * licence and look come from the preset, in the viewer's language, and any
+   * field written here wins. Lets a hand-written scene say
+   * `{ "preset": "bcn-traffic" }` instead of copying a style.
+   */
+  preset?: string
   name: string
   source: DataSource
   style: VectorStyle
@@ -650,14 +662,17 @@ async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; f
   // four Open Data BCN layers took ~70 s to come back (the server answers in
   // 15–25 s per file); in parallel it takes as long as the slowest.
   const run = limiter(RESTORE_CONCURRENCY)
-  const pending = saved.map((p) => run(() => fetchSaved(p)))
-  for (let i = 0; i < saved.length; i++) {
-    const p = saved[i]
+  const entries = await Promise.all(saved.map(fromPreset))
+  const pending = entries.map((p) => run(() => fetchSaved(p)))
+  for (let i = 0; i < entries.length; i++) {
+    const p = entries[i]
     const { text, why: fetchWhy } = await pending[i]
     let why = fetchWhy
     const parsed = text ? parseGeoJson(text, { axisOrder: 'auto' }) : null
     if (parsed && !parsed.ok) why = parseErrorKey(parsed.error)
-    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); failedRecords.push(p); continue }
+    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); failedRecords.push(saved[i]); continue }
+    // A preset styled from what it contains (TMB lines, barris) gets its look now.
+    if (p.preset && !p.layerStyle) p.layerStyle = (await presetStyleFromData(p.preset, parsed.value)) ?? undefined
     const r = addParsed(p.name, p.source, parsed.value, p.attribution,
       { text: p.text, fetchUrl: p.fetchUrl, feed: p.feed },
       { style: p.style, heightMode: p.heightMode, visible: p.visible, symbology: p.symbology, layerStyle: p.layerStyle, live: p.live, history: p.history, alerts: p.alerts })
@@ -677,6 +692,41 @@ function limiter(n: number): <T>(task: () => Promise<T>) => Promise<T> {
     const start = (): void => { active++; task().then(resolve, reject).finally(next) }
     if (active < n) start(); else queue.push(start)
   })
+}
+
+const tLayers = (k: string): string => i18n.t(`layers:${k}` as never)
+
+/**
+ * A layer entry that names a preset, completed from it. Fields written in the
+ * entry win; what it leaves out comes from the preset — which is how a short
+ * hand-written scene still gets a live source, a licence and a translated look.
+ */
+async function fromPreset(p: PersistedLayer): Promise<PersistedLayer> {
+  if (!p.preset) return p
+  const { FEED_PRESETS } = await import('./feed-presets')
+  const preset = FEED_PRESETS.find((x) => x.id === p.preset)
+  if (!preset) return p
+  const usesFeed = !preset.styleFromData && preset.kind !== 'wfs'
+  return {
+    ...p,
+    name: p.name || tLayers(`presets.${preset.id}.name`),
+    source: p.source ?? { type: 'url', url: preset.url, format: 'geojson' },
+    feed: p.feed ?? (usesFeed ? {
+      kind: preset.kind, url: preset.url, radiusM: preset.radiusM ?? 30_000,
+      ...(preset.join ? { join: preset.join } : {}), ...(preset.records ? { records: preset.records } : {}),
+    } : undefined),
+    fetchUrl: p.fetchUrl ?? (usesFeed ? undefined : preset.url),
+    attribution: p.attribution ?? preset.license,
+    layerStyle: p.layerStyle ?? preset.layerStyle?.(tLayers),
+    symbology: p.symbology ?? preset.symbology,
+    live: p.live ?? (usesFeed ? { enabled: true, intervalS: preset.intervalS ?? 60, idField: null, animate: true } : undefined),
+    visible: p.visible ?? true,
+  }
+}
+
+async function presetStyleFromData(id: string, data: VectorLayerData): Promise<LayerStyle | null> {
+  const { FEED_PRESETS } = await import('./feed-presets')
+  return FEED_PRESETS.find((x) => x.id === id)?.styleFromData?.(data) ?? null
 }
 
 /** One saved layer's GeoJSON text, fetched again when it lives at a URL. */

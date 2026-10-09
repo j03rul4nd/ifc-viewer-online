@@ -492,6 +492,13 @@ export interface SpatialElement {
   globalId: string
   ifcClass: string
   name: string
+  /**
+   * The element's own parts (IfcRelAggregates), flattened: the dock posts of
+   * a bike station, the panels of a curtain wall, the flights of a stair.
+   * Not drawn as tree rows — the tree shows the assembly — but there for
+   * anything that resolves elements by GlobalId, name or class.
+   */
+  parts?: SpatialElement[]
 }
 
 export interface SpatialNode {

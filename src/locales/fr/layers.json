@@ -791,6 +791,15 @@
     "sources": "Sources de données ({{n}})",
     "live": "en direct",
     "open": "Ouvrir une scène…",
-    "openHint": "Ouvrez un .scene.json qu'on vous a envoyé."
+    "openHint": "Ouvrez un .scene.json qu'on vous a envoyé.",
+    "demos": {
+      "title": "Jumeaux numériques de ville",
+      "subtitle": "Modèles IFC, données ouvertes en direct et appareils sur la carte",
+      "barcelona": {
+        "name": "Barcelone · Plaça de Catalunya",
+        "description": "Huit modèles IFC géoréférencés avec Bicing, recharge de VE, trafic et qualité de l’air en direct ; la station Bicing 65 colore ses propres bornes."
+      },
+      "meta": "{{models}} modèles IFC · {{live}} sources en direct"
+    }
   }
 }

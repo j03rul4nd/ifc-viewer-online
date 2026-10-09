@@ -791,6 +791,15 @@
     "sources": "Datenquellen ({{n}})",
     "live": "live",
     "open": "Szene öffnen…",
-    "openHint": "Eine .scene.json öffnen, die dir jemand geschickt hat."
+    "openHint": "Eine .scene.json öffnen, die dir jemand geschickt hat.",
+    "demos": {
+      "title": "Digitale Zwillinge von Städten",
+      "subtitle": "IFC-Modelle, offene Live-Daten und Geräte auf der Karte",
+      "barcelona": {
+        "name": "Barcelona · Plaça de Catalunya",
+        "description": "Acht georeferenzierte IFC-Modelle mit Bicing, E-Ladestationen, Verkehr und Luftqualität live; die Bicing-Station 65 färbt ihre eigenen Docks."
+      },
+      "meta": "{{models}} IFC-Modelle · {{live}} Live-Quellen"
+    }
   }
 }

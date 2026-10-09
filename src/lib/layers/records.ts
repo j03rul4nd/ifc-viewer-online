@@ -278,7 +278,7 @@ export function summarizeEvLocation(loc: GelfsLocation): Obj {
 }
 
 /** GELFS → plain records: each location with its summary on top (details kept underneath). */
-function gelfsRecords(body: { locations: unknown[] }): Obj {
+export function gelfsRecords(body: { locations: unknown[] }): Obj {
   return {
     // The summary goes last: it is what the map styles, and it must win over
     // any same-named field of the source.

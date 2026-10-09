@@ -791,6 +791,15 @@
     "sources": "データソース（{{n}}）",
     "live": "ライブ",
     "open": "シーンを開く…",
-    "openHint": "送られてきた .scene.json を開きます。"
+    "openHint": "送られてきた .scene.json を開きます。",
+    "demos": {
+      "title": "都市のデジタルツイン",
+      "subtitle": "地図上の IFC モデル、ライブのオープンデータとデバイス",
+      "barcelona": {
+        "name": "バルセロナ · カタルーニャ広場",
+        "description": "ジオリファレンス済みの IFC モデル8件と、Bicing・EV充電・交通・大気質のライブデータ。Bicing 65番ステーションが自分のドックを色分けします。"
+      },
+      "meta": "IFC モデル {{models}} 件 · ライブソース {{live}} 件"
+    }
   }
 }
