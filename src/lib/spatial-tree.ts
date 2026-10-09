@@ -457,6 +457,45 @@ export function buildIssueIndex(
   return byModel
 }
 
+// ── Names ─────────────────────────────────────────────────────────────────────
+
+/** Display names of every spatial node and contained element, per model. */
+export type NameIndex = Map<string, Map<number, string>>
+
+/**
+ * One name map per model. Merging them into one `Map<expressId, name>` let the
+ * last model walked overwrite the others: in a federated set the legend listed
+ * the structural model's #40 under the architectural file, with the services
+ * model's name on it.
+ */
+export function buildNameIndex(trees: readonly ModelTreeSource[]): NameIndex {
+  const byModel: NameIndex = new Map()
+  for (const { modelId, tree } of trees) {
+    const names = new Map<number, string>()
+    const walk = (nodes: readonly SpatialNode[]): void => {
+      for (const n of nodes) {
+        names.set(n.expressId, n.name || `#${n.expressId}`)
+        for (const e of n.containedElements) names.set(e.expressId, e.name || `#${e.expressId}`)
+        walk(n.children)
+      }
+    }
+    walk(tree)
+    byModel.set(modelId, names)
+  }
+  return byModel
+}
+
+/**
+ * The name of `expressId` in `modelId`. Without a modelId, the sole model's
+ * name when only one is indexed — and nothing when there are several, rather
+ * than whichever model happens to have that number.
+ */
+export function elementName(index: NameIndex, modelId: string | undefined, expressId: number): string | undefined {
+  if (modelId) return index.get(modelId)?.get(expressId)
+  if (index.size !== 1) return undefined
+  return index.values().next().value?.get(expressId)
+}
+
 // ── Misc ──────────────────────────────────────────────────────────────────────
 
 /** Strips the loader's `-${Date.now()}` suffix to recover the file name. */
