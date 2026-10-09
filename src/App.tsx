@@ -39,6 +39,18 @@ import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountSto
 // public, and a personal email hardcoded here would be exposed to anyone
 // (GDPR data-minimisation + a phishing-target signal). The id is pseudonymous
 // and useless without the Worker-side role.
+/**
+ * Identity of a file's georeference: two files with the same key are one
+ * project's disciplines sharing an origin (same IfcMapConversion / site).
+ */
+function georefKeyOf(g: { epsgCode: string | null; eastings: number | null; northings: number | null; heightM: number | null; rotationDeg: number; scale: number | null; lat: number | null; lon: number | null }): string | null {
+  if (g.eastings !== null && g.northings !== null) {
+    return `grid|${g.epsgCode ?? ''}|${g.eastings.toFixed(3)}|${g.northings.toFixed(3)}|${g.heightM ?? ''}|${g.rotationDeg.toFixed(6)}|${g.scale ?? 1}`
+  }
+  if (g.lat !== null && g.lon !== null) return `site|${g.lat.toFixed(7)}|${g.lon.toFixed(7)}|${g.heightM ?? ''}`
+  return null
+}
+
 /** [x, y, z] (scene documents, `?camera=`) → the viewer's {x, y, z}. */
 const vec3 = (a: [number, number, number]): { x: number; y: number; z: number } => ({ x: a[0], y: a[1], z: a[2] })
 
@@ -2039,6 +2051,10 @@ export default function App() {
         modelId: string
         placement: GeoPlacement
         bounds: NonNullable<ReturnType<typeof api.getModelBounds>>
+        originY: number
+        origin: { x: number; y: number; z: number }
+        pivot: { x: number; y: number; z: number }
+        georefKey: string | null
       }> = []
       for (const m of useSceneStore.getState().models) {
         // Placed by hand: the user's calibration wins over the file's own
@@ -2047,11 +2063,28 @@ export default function App() {
         const extraction = georefs[m.id]
         const bounds = api.getModelBounds(m.id)
         if (!extraction || !bounds) continue
-        const resolved = placementFromExtraction(extraction, bounds)
+        // Where the FILE says it is: from its bounds in its own coordinates,
+        // without the offset satellite placement has already given it. Read
+        // from the moved bounds, every re-placement (a pan, a terrain rebuild)
+        // took the last offset for project coordinates and added it again —
+        // measured: a model 250 m away walked 250 m further per call.
+        const t = api.getModelTransform(m.id)
+        const own = { ...bounds, center: { x: bounds.center.x - t.position.x, y: bounds.center.y - t.position.y, z: bounds.center.z - t.position.z } }
+        const resolved = placementFromExtraction(extraction, own)
         // A model with no usable georeferencing stays where the scene put it.
         // Inventing a location for it is the fabrication this pipeline refuses.
         if (!resolved.ok) continue
-        out.push({ modelId: m.id, placement: resolved.value, bounds })
+        // Its origin (the ground floor its height is stated for), where it is
+        // now, and which georeference it shares: files of one project carry the
+        // same IfcMapConversion and must move as one (geo-system placeSatellites).
+        const c = api.getModelCoordination(m.id)
+        out.push({
+          modelId: m.id, placement: resolved.value, bounds,
+          originY: t.position.y + (c?.y ?? 0),
+          origin: { x: t.position.x + (c?.x ?? 0), y: t.position.y + (c?.y ?? 0), z: t.position.z + (c?.z ?? 0) },
+          pivot: { x: t.position.x, y: t.position.y, z: t.position.z },
+          georefKey: georefKeyOf(extraction),
+        })
       }
         return out
       })

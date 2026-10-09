@@ -30,7 +30,7 @@ import { expandUrlTemplate } from './url-template'
 import {
   httpFreshness, plannedDelayMs, detectFeedKind, gbfsFeedUrls, gbfsToGeoJson, gbfsFreshness,
   gtfsRtToGeoJson, gtfsRtFreshness, odsDataset, odsMetaUrl, odsGeoField, odsGeoJsonUrl,
-  tableTime, type FeedKind, type Freshness,
+  tableTime, transientRetryMs, type FeedKind, type Freshness,
 } from './feeds'
 import { DEFAULT_STYLE, type VectorStyle } from './vector-mesh'
 import type { DataSource } from './connectors'
@@ -946,21 +946,6 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
     clearTimeout(timer)
     signal?.removeEventListener('abort', onAbort)
   }
-}
-
-/**
- * How long to wait before asking again after a TRANSIENT refusal — 429 or a
- * 5xx — or null to stop. Measured on Barcelona's open-data portal: four
- * requests at once from one browser (a scene opening) drew an error on one of
- * them that a second request a few seconds later did not. Two retries, short,
- * jittered so several layers do not come back in step; `Retry-After` is
- * honoured when the server sends one (and is reasonable).
- */
-export function transientRetryMs(res: { status: number; headers: Headers }, attempt: number, random = Math.random): number | null {
-  if (attempt >= 2 || !(res.status === 429 || (res.status >= 500 && res.status <= 504))) return null
-  const ra = Number(res.headers.get('retry-after'))
-  if (Number.isFinite(ra) && ra > 0 && ra <= 20) return ra * 1000
-  return Math.round(1500 * 2 ** attempt * (0.85 + random() * 0.3))
 }
 
 async function fetchText(url: string, signal?: AbortSignal): Promise<{ ok: true; text: string } | { ok: false; errorKey: string }> {

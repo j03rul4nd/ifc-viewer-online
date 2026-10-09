@@ -30,6 +30,7 @@ import {
   rememberVectorProvider, resolveProvider, saveCustomProvider, vectorProviderId,
 } from '../../lib/geo/providers'
 import { TERRARIUM_ATTRIBUTION } from '../../lib/geo/elevation'
+import { demSourceFor } from '../../lib/geo/dem-sources'
 import { BUILDINGS_ATTRIBUTION, OVERTURE_ATTRIBUTION } from '../../lib/geo/buildings'
 import { lowerDetail } from '../../lib/geo/scene-budget'
 import { presetById, type ScenePresetId } from '../../lib/geo/scene-presets'
@@ -159,7 +160,10 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     if (!geo) return
     const s = useGeoStore.getState()
     const list = [...geo.getAttributions()]
-    if (s.terrainEnabled && s.terrainStatus === 'ready') list.push(TERRARIUM_ATTRIBUTION)
+    // The elevation source in use: the regional one where it covers the site.
+    if (s.terrainEnabled && s.terrainStatus === 'ready') {
+      list.push(s.placement ? demSourceFor(s.placement.lat, s.placement.lon).attribution : TERRARIUM_ATTRIBUTION)
+    }
     // ODbL requires attributing OSM whenever its data is shown, and building
     // footprints are OSM data even when the basemap is someone else's imagery.
     if (s.buildingsEnabled && s.buildingsStatus === 'ready') {

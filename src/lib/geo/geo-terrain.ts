@@ -18,6 +18,7 @@
 // the model base keeps sitting on the ground (plan §4.5). Scene metres map to
 // normalized z through 1/(WORLD × cosφ₀).
 
+import { demSourceFor } from './dem-sources'
 import * as THREE from 'three'
 import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
@@ -140,7 +141,11 @@ export async function buildTerrainPatch(
   provider: MapProvider | null,
   opts: TerrainBuildOptions = {},
 ): Promise<TerrainPatch> {
-  const zoom = terrainZoomFor(placement.lat, opts.modelSpanM ?? null)
+  // The best elevation source for the site (dem-sources.ts), never asked for
+  // a zoom it does not serve: ICGC stops at 14, so a patch there is one level
+  // wider and coarser — still finer than the source's own 5 m.
+  const dem = demSourceFor(placement.lat, placement.lon)
+  const zoom = Math.min(terrainZoomFor(placement.lat, opts.modelSpanM ?? null), dem.maxZoom)
   const imageryZoom = provider ? imageryZoomFor(zoom, provider.id, provider.maxZoom) : null
 
   const result = await runTerrainWorker({
@@ -149,6 +154,7 @@ export async function buildTerrainPatch(
     lat: placement.lat,
     lon: placement.lon,
     zoom,
+    dem: dem.id,
     grid: GRID_SEGMENTS,
     imageryTemplate: provider?.urlTemplate ?? null,
     imageryZoom,

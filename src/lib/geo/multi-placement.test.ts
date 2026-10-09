@@ -9,7 +9,7 @@
 // end up stacked, which is the bug this module was written for.
 
 import { describe, it, expect } from 'vitest'
-import { sceneOfLatLon, satelliteOffset, shouldPlaceSatellite } from './multi-placement'
+import { sceneOfLatLon, satelliteOffset, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { distanceM } from './model-sites'
 import { composeGeoRootTransform } from './geo-math'
 import type { GeoPlacement } from './geo-types'
@@ -161,5 +161,30 @@ describe('shouldPlaceSatellite', () => {
   it('rejects a placement carrying non-finite coordinates', () => {
     expect(shouldPlaceSatellite('b', 'a', placement(NaN, 121.5))).toBe(false)
     expect(shouldPlaceSatellite('b', 'a', placement(31.2, Infinity))).toBe(false)
+  })
+})
+
+describe('satellites stand on their own floor, and one project moves as one', () => {
+  it('lands a satellite by its ORIGIN, not the underside of its foundations', () => {
+    // Hotel Vela STR: geometry from -9.8 to 98.8 m, origin (ground floor) at 0.
+    const f = frame(0, { x: 0, z: 0 }, 0)
+    const str = { center: { x: 0, y: 44.5, z: 0 }, size: { x: 30, y: 108.6, z: 30 } }
+    const byBottom = satelliteOffset(f, placement(SWFC.lat, SWFC.lon), str)
+    const byOrigin = satelliteOffset(f, placement(SWFC.lat, SWFC.lon), str, { originY: 0 })
+    expect(byBottom.y).toBeCloseTo(9.8, 6)   // the measured fault: raised by its basement depth
+    expect(byOrigin.y).toBeCloseTo(0, 6)     // its ground floor on the plane
+  })
+
+  it('takes the floor height from the ground where it lands, when given one', () => {
+    const f = frame(0, { x: 0, z: 0 }, 0)
+    const off = satelliteOffset(f, placement(SWFC.lat, SWFC.lon), bounds(0, 10, 0, 20), {
+      originY: 0, floorAt: () => 3.2,
+    })
+    expect(off.y).toBeCloseTo(3.2, 6)
+  })
+
+  it('moves files sharing an origin by exactly the anchor’s transform', () => {
+    expect(sameOriginOffset({ x: 0, y: 0, z: 0 }, { x: -0.46, y: 8.4, z: -0.24 })).toEqual({ x: 0.46, y: -8.4, z: 0.24 })
+    expect(sameOriginOffset({ x: 5, y: 1, z: 2 }, { x: 5, y: 1, z: 2 })).toEqual({ x: 0, y: 0, z: 0 })
   })
 })
