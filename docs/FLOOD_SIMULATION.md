@@ -13,12 +13,14 @@ Code: `src/features/flood/` (self-contained; lazy-loaded; gated by
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Solver (CPU reference, WebGPU, WebGL2), worker, test cases, demo grid | **done** |
-| 2 | Terrain + building rasterisation from the IFC, georeferencing, 3-D water layer | planned |
+| 2 | Terrain + building rasterisation from the IFC, georeferencing, 3-D water layer, panel | **done** (flag off) |
 | 3 | Timeline (hyetograph, flooded-area curve, scrub), live metrics, probe, flow particles, snapshots | planned |
 | 4 | Affected IFC elements in the validation panel, CSV / GeoTIFF / PNG / video export | planned |
 
-Phase 1 has no UI in the app: the solver is exercised by the dev page
-`flood-lab.html` and by `npm run test:flood-gpu`.
+With `VITE_FEATURE_FLOOD=true` the viewer gets a Flood tool (rail icon and
+Tools menu): build the grid from what is loaded, run a storm, see the water.
+The solver alone is exercised by the dev page `flood-lab.html` and by
+`npm run test:flood-gpu`.
 
 ## The scheme
 
@@ -80,11 +82,93 @@ That is the scheme, not a bug, and it is why rainfall flooding on urban terrain
 and maxima: a shock-capturing finite-volume scheme (Kurganov–Petrova, HLL) can
 replace it without touching anything else.
 
+## Building the grid from the scene (phase 2)
+
+`system.ts` (loaded through `viewer.getFlood()`), in order:
+
+1. **Geometry** — every loaded model's items, read through fragments'
+   `getItemsGeometry` into the feature's own meshes (`lib/scene/item-triangles.ts`,
+   shared with the solar analysis): the viewer's fragments meshes follow the
+   camera (tiles, LOD) and cannot be trusted off-screen. `IfcSite` and
+   `IfcGeographicElement` are terrain; spaces, openings, furniture and abstract
+   items are skipped; everything else may be an obstacle. Cached per model.
+2. **Domain** (`raster/frame.ts`) — the models' plan footprints plus a margin,
+   at the requested cell size, coarsened (never cropped) past ~1 M cells
+   (300 k on phones). A georeferenced model gets a grid rotated by −γ: cells
+   aligned to grid east / north, so an imported DEM and a future GeoTIFF export
+   need no rotated resampling.
+3. **Plan-view rasterisation on the GPU** (`raster/rasterize.ts`) — no camera:
+   the vertex shader maps world (x, z) to grid axes and writes depth = height,
+   so the depth test keeps the topmost (or, drawn from below, the lowest)
+   surface and the colour holds its world Y. Supersampled up to 4×4 per cell
+   (a 20 cm wall in a 2 m cell is still caught; envelopes stay closed) and
+   folded per cell by a reduction pass. Three passes: terrain from above (mean),
+   obstacles from below (lowest underside), obstacles from above (highest top,
+   cover). With the map on, its `osm-buildings` meshes are drawn too.
+4. **Ground** (`raster/build.ts`) per cell: IFC terrain where it covers half
+   the cell → imported DEM → the map's relief WITHOUT its exaggeration
+   (`geo.trueGroundHeightAt`) → holes filled from the nearest known cells
+   (`raster/fill.ts`). With nothing at all, a plane at the project's ground
+   floor (storey nearest ±0.00 − 15 cm), optionally sloped — and the panel says
+   so.
+5. **What stands on the ground** per cell: top within 0.75 m → it raises the
+   bed (kerbs, steps, paving, low walls: overtoppable); underside within 1 m →
+   obstacle (walls, slabs on grade, a podium on a slope); otherwise a canopy
+   (water passes under, rain does not reach the ground). Open pockets under
+   25 m² walled in by obstacles are closed (shafts, modelling gaps).
+6. **Roof rain** (`raster/rain-routing.ts`) — to the nearest open ground (a
+   discrete Voronoi split of each roof among the cells around it, conserving
+   mass exactly), or to the sewer (lost).
+
+**Imported DEM** (`raster/dem-import.ts`): ESRI ASCII grid and GeoTIFF read in
+the browser with no dependency — classic TIFF, strips or tiles, none / LZW /
+Deflate (fflate), predictors 2 and 3, 8–64-bit samples, PixelIsArea/Point,
+EPSG from the GeoKeys, GDAL nodata — tested against files written by libtiff
+(tifffile + imagecodecs). Only the tiles covering the grid are decoded. It is
+placed through the model's IfcMapConversion; a DEM in another CRS is
+reprojected (proj4, linearised over the site); without a height datum in the
+file it is stood on the project's ground floor.
+
+**Privacy**: the map's terrain is used only when the user already has the map
+on (where the tile consent lives). The feature makes no network request of its
+own.
+
+### Water layer
+
+`view/water-layer.ts`: one vertex per cell (capped at ~640 per side), lifted in
+the vertex shader to bed + depth from two textures — the bed as drawn and the
+solver's half-float display frame — so updating the water is one texture
+upload. Depth-ramp colour, Fresnel tint and a specular glint; transparent
+below the threshold (default 5 cm) with a soft shoreline; no raycast, so IFC
+hover, selection and properties work through it. `view/ground-layer.ts` draws
+the simulated ground only where the scene has none of its own (DEM or plane
+with the map off).
+
+### Traps found on the way (measured)
+
+- **three r184 GLSL3 `ShaderMaterial` declares no fragment output**: `gl_FragColor`
+  does not compile; declare `out vec4 outColor` (as `exposure-engine.ts` does).
+- **An RG32F render target fails to draw** (INVALID_OPERATION) in the viewer's
+  context; RGBA32F works and is also the format `readPixels` must accept.
+- **The viewer's grid hid the water.** It is a transparent plane at y = 0 that
+  writes depth; drawn before the water in the transparent pass, it occluded all
+  water below y = 0. The flood system hides it while its layers are shown
+  (`setGridVisible`), as the solar heatmap does.
+- **Timers are throttled in a hidden tab, workers included.** A fence polled
+  with `setTimeout` ran the solver at ×46 real time; in the worker a blocking
+  read is fine (×2 480 on the same grid) and the loop yields through a
+  `MessageChannel`.
+
 ## Architecture
 
 ```
 core/        pure TS, no DOM: grid, hyetograph, solver contract, CPU reference
              solver (float64), analytic solutions, reference cases, half floats
+raster/      domain, GPU rasterisation, grid assembly, hole filling, roof runoff,
+             DEM reader, georeference maths
+view/        water layer, simulation ground
+ui/          FloodPanel (strings in locales/, loaded with the panel)
+system.ts    the viewer-side owner (viewer.getFlood())
 gpu/         wgsl.ts + webgpu-inertial.ts · glsl.ts + webgl2-inertial.ts ·
              create.ts (WebGPU → WebGL2; CPU only by name)
 worker/      flood.worker.ts owns the solver; runner.ts is the main-thread handle

@@ -18,6 +18,7 @@ import type { DeviceBox } from './shading-devices'
 import { overcastWeights, type Tri2 } from './daylight-grid'
 import type { Patch } from './daylight-annual'
 import { createHeatmap, type Heatmap } from './heatmap'
+import { collectItemTriangles, trianglesMesh } from '../scene/item-triangles'
 import { createLogger } from '../logger'
 
 const log = createLogger('SolarAnalysis')
@@ -297,16 +298,7 @@ const NOT_OCCLUDING = /^(IFCSPACE|IFCOPENINGELEMENT|IFCANNOTATION|IFCGRID|IFCVIR
 interface ModelOccluders { opaque: THREE.Mesh; glass: THREE.Mesh; key: string }
 
 function occluderMesh(chunks: Float32Array[], name: string): THREE.Mesh {
-  const n = chunks.reduce((a, c) => a + c.length, 0)
-  const pos = new Float32Array(n)
-  let o = 0
-  for (const c of chunks) { pos.set(c, o); o += c.length }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
-  mesh.name = name
-  mesh.matrixAutoUpdate = false
-  mesh.frustumCulled = false
+  const mesh = trianglesMesh(chunks, name)
   mesh.castShadow = true
   mesh.visible = false
   return mesh
@@ -332,35 +324,13 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
     if (cached && cached.key === key) return cached
     if (cached) for (const m of [cached.opaque, cached.glass]) { m.removeFromParent(); m.geometry.dispose(); (m.material as THREE.Material).dispose() }
     const glassSet = new Set(glass)
-    const opaque: Float32Array[] = [], glassChunks: Float32Array[] = []
-    let byCategory: Record<string, number[]> = {}
-    try { byCategory = await model.getItemsOfCategories([/.*/]) } catch (err) { log.warn(`${modelId}: categories unavailable`, err) }
-    const v = new THREE.Vector3()
-    for (const [category, ids] of Object.entries(byCategory)) {
-      if (NOT_OCCLUDING.test(category)) continue
-      for (let b = 0; b < ids.length; b += 500) {
-        const batch = ids.slice(b, b + 500)
-        let geo: Awaited<ReturnType<FragmentsLike['getItemsGeometry']>>
-        try { geo = await model.getItemsGeometry(batch) } catch { continue }
-        geo.forEach((parts, j) => {
-          const target = glassSet.has(batch[j]) ? glassChunks : opaque
-          for (const part of parts) {
-            const src = part?.positions
-            if (!src?.length) continue
-            const m = part.transform ?? new THREE.Matrix4()
-            const idx = part.indices
-            const count = idx ? idx.length : src.length / 3
-            const out = new Float32Array(count * 3)
-            for (let k = 0; k < count; k++) {
-              const vi = idx ? idx[k] : k
-              v.set(src[vi * 3], src[vi * 3 + 1], src[vi * 3 + 2]).applyMatrix4(m)
-              out[k * 3] = v.x; out[k * 3 + 1] = v.y; out[k * 3 + 2] = v.z
-            }
-            target.push(out)
-          }
-        })
-      }
-    }
+    const buckets = await collectItemTriangles(model, {
+      skip: NOT_OCCLUDING,
+      bucket: (_category, id) => (glassSet.has(id) ? 'glass' : 'opaque'),
+      onWarn: (msg, err) => log.warn(`${modelId}: ${msg}`, err),
+    })
+    const opaque = buckets.get('opaque') ?? []
+    const glassChunks = buckets.get('glass') ?? []
     const occ: ModelOccluders = { opaque: occluderMesh(opaque, `solar-occluder-${modelId}`), glass: occluderMesh(glassChunks, `solar-occluder-glass-${modelId}`), key }
     ctx.scene.add(occ.opaque, occ.glass)
     occCache.set(modelId, occ)

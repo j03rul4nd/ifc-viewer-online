@@ -65,8 +65,14 @@ async function sendStats(): Promise<void> {
   post({ type: 'stats', stats, perf })
 }
 
+// Yield to the message queue (pause, frame requests) through a MessageChannel:
+// unlike setTimeout it is not throttled when the page is in the background.
+const turn = new MessageChannel()
+let turnWaiters: Array<() => void> = []
+turn.port1.onmessage = () => { const w = turnWaiters; turnWaiters = []; for (const r of w) r() }
+const yieldTurn = (): Promise<void> => new Promise((r) => { turnWaiters.push(r); turn.port2.postMessage(0) })
+
 async function loop(token: number): Promise<void> {
-  const yieldTurn = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
   while (running && token === loopToken && solver) {
     const s = solver
     const now = performance.now()
