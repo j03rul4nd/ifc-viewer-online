@@ -98,6 +98,7 @@ const LIFT_M = 0.15
 interface FeatureLook { point: PointStyle; line: LineStyle; area: AreaStyle }
 
 const ALWAYS: ZoomBands = { detailM: Infinity, iconM: Infinity, dotM: Infinity }
+const ICONS_ONLY: ZoomBands = { detailM: 0, iconM: Infinity, dotM: Infinity }
 
 function lookOf(input: BuildInput, fi: number): FeatureLook | null {
   const st = input.styles?.[fi]
@@ -262,8 +263,10 @@ export function buildVectorLayer(input: BuildInput): BuiltLayer {
     const obj = buildPointLodGroup(g, { iconTexture: input.iconTexture, assets: input.assets })
     if (!obj) continue
     obj.userData.zoom = zoom
-    // Until a camera says otherwise, everything shows in full.
-    updatePointLod(obj, g.points[0].pos, ALWAYS)
+    // Until a camera says otherwise, every symbol shows — but no labels yet:
+    // they are made on first need (point-lod.makeLabel), and starting in the
+    // detail band would build all of them on every live refresh.
+    updatePointLod(obj, g.points[0].pos, ICONS_ONLY)
     group.add(obj)
     for (const p of g.points) {
       pointBounds.expandByPoint(p.pos)
@@ -340,6 +343,7 @@ export function disposeVectorLayer(group: THREE.Object3D): void {
     // Icon and label TEXTURES are cached and shared across layers: only the
     // per-sprite material goes.
     const sprite = o as THREE.Sprite
+    // (Icons of one group share a material; disposing it twice is harmless.)
     if (sprite.isSprite) { sprite.material.dispose(); return }
     const pts = o as THREE.Points
     if (pts.isPoints) { pts.geometry.dispose(); (pts.material as THREE.Material).dispose(); return }
