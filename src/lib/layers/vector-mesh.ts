@@ -167,7 +167,7 @@ export function buildVectorLayer(input: BuildInput): BuiltLayer {
       b.ribbon.current = fi
       const ls = look.line
       for (const part of f.lists) {
-        const draped = (drape ? densify(part, step) : part).map((p) => ({ x: p.x, y: yOf(p) + LIFT_M, z: p.z }))
+        const draped = (drape ? densify(part, step, ground) : part).map((p) => ({ x: p.x, y: yOf(p) + LIFT_M, z: p.z }))
         const line = ls.offsetM ? offsetLine(draped, ls.offsetM) : draped
         addRibbon(b.ribbon, line, ls.widthM, false)
         if (ls.flow) {
@@ -188,7 +188,7 @@ export function buildVectorLayer(input: BuildInput): BuiltLayer {
     b.outline.current = b.fill.current = b.volume.current = fi
     let k = 0
     for (const count of f.ringCounts) {
-      const rings = f.lists.slice(k, k + count).map((r) => openRing(drape ? densify(r, step) : r))
+      const rings = f.lists.slice(k, k + count).map((r) => openRing(drape ? densify(r, step, ground) : r))
       k += count
       if (rings.length === 0 || rings[0].length < 3) continue
       const fieldH = input.heights?.[fi]
@@ -217,7 +217,7 @@ export function buildVectorLayer(input: BuildInput): BuiltLayer {
 
   const meshOf = (b: GeometryBuilder, mat: THREE.Material, name: string): void => {
     if (b.isEmpty()) return
-    const geom = b.build()
+    const geom = b.build(!(mat as THREE.MeshBasicMaterial).isMeshBasicMaterial)
     stats.triangles += geom.index ? geom.index.count / 3 : 0
     const mesh = new THREE.Mesh(geom, mat)
     mesh.name = name
@@ -374,12 +374,13 @@ class GeometryBuilder {
   get vertexCount(): number { return this.pos.length / 3 }
   push(x: number, y: number, z: number): number { this.pos.push(x, y, z); return this.vertexCount - 1 }
   isEmpty(): boolean { return this.idx.length === 0 }
-  build(): THREE.BufferGeometry {
+  /** `normals` only for lit materials (volumes); the flat ones never read them. */
+  build(normals = false): THREE.BufferGeometry {
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3))
     if (this.uv.length === (this.pos.length / 3) * 2 && this.uv.length) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2))
     g.setIndex(this.vertexCount > 65535 ? new THREE.Uint32BufferAttribute(this.idx, 1) : new THREE.Uint16BufferAttribute(this.idx, 1))
-    g.computeVertexNormals()
+    if (normals) g.computeVertexNormals()
     g.computeBoundingBox()
     g.computeBoundingSphere()
     g.userData.faceFeature = Int32Array.from(this.tri)
@@ -388,8 +389,21 @@ class GeometryBuilder {
 }
 
 /** Split segments longer than `step` (plan distance) so draping follows terrain. */
-export function densify(line: ScenePoint[], step: number): ScenePoint[] {
+/** How far the ground may bow away from a straight segment before it is split, metres. */
+const DRAPE_TOLERANCE_M = 0.1
+
+/**
+ * Split a line so it can follow the ground. Without `groundAt`: every `step`
+ * metres. With it: only where the ground actually bends — a segment is split
+ * (in halves, down to `step`) while the ground under its quarter points
+ * departs from the straight line between its ends by more than a few cm. On
+ * flat ground (no map, or the flat basemap) nothing is split at all: a 300 m
+ * street stays 6 vertices instead of 40, and a 2 000-street traffic layer
+ * rebuilds in a fraction of the time.
+ */
+export function densify(line: ScenePoint[], step: number, groundAt?: (x: number, z: number) => number): ScenePoint[] {
   if (line.length < 2 || step <= 0) return line
+  if (groundAt) return densifyAdaptive(line, step, groundAt)
   const out: ScenePoint[] = [line[0]]
   for (let i = 1; i < line.length; i++) {
     const a = line[i - 1], b = line[i]
@@ -399,6 +413,37 @@ export function densify(line: ScenePoint[], step: number): ScenePoint[] {
       out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t })
     }
     out.push(b)
+  }
+  return out
+}
+
+function densifyAdaptive(line: ScenePoint[], step: number, groundAt: (x: number, z: number) => number): ScenePoint[] {
+  const out: ScenePoint[] = [line[0]]
+  const lerp = (a: ScenePoint, b: ScenePoint, t: number): ScenePoint =>
+    ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t })
+  const split = (a: ScenePoint, b: ScenePoint, ga: number, gb: number): void => {
+    if (Math.hypot(b.x - a.x, b.z - a.z) > step * 1.0001) {
+      // Quarter points too: a single midpoint misses a ridge between two samples.
+      let bends = false
+      for (const t of [0.25, 0.5, 0.75]) {
+        const m = lerp(a, b, t)
+        if (Math.abs(groundAt(m.x, m.z) - (ga + (gb - ga) * t)) > DRAPE_TOLERANCE_M) { bends = true; break }
+      }
+      if (bends) {
+        const m = lerp(a, b, 0.5)
+        const gm = groundAt(m.x, m.z)
+        split(a, m, ga, gm)
+        split(m, b, gm, gb)
+        return
+      }
+    }
+    out.push(b)
+  }
+  let ga = groundAt(line[0].x, line[0].z)
+  for (let i = 1; i < line.length; i++) {
+    const gb = groundAt(line[i].x, line[i].z)
+    split(line[i - 1], line[i], ga, gb)
+    ga = gb
   }
   return out
 }
