@@ -10,6 +10,12 @@ export interface AlertLogEntry {
   at: number
   kind: 'start' | 'clear'
   layerId: string
+  /**
+   * The layer's stable identity (its source URL — history-store's series).
+   * Layer ids are new on every reload; without this a layer's log looked
+   * empty after one. Absent on entries written before it existed.
+   */
+  series?: string
   layer: string
   ruleId: string
   rule: string
@@ -46,8 +52,13 @@ export function onAlertLog(fn: () => void): () => void {
   return () => { listeners.delete(fn) }
 }
 
-export function clearAlertLog(layerId?: string): void {
-  entries = layerId ? entries.filter((e) => e.layerId !== layerId) : []
+/** Does an entry belong to this layer (by series when known, else by id)? */
+export function entryOf(e: AlertLogEntry, layerId: string, series: string): boolean {
+  return e.series ? e.series === series : e.layerId === layerId
+}
+
+export function clearAlertLog(layerId?: string, series?: string): void {
+  entries = layerId ? entries.filter((e) => !entryOf(e, layerId, series ?? '')) : []
   save()
 }
 

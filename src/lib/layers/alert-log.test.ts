@@ -25,3 +25,19 @@ describe('alert log', () => {
     expect(csv.split('\n')[1]).toBe('2026-10-08T03:00:00.000Z,start,Bicing,"Empty, 10 min",2,Pl. Catalunya | Sants')
   })
 })
+
+describe('alert log across reloads', () => {
+  it('finds a layer by its source even when its id changed', async () => {
+    const { entryOf } = await import('./alert-log')
+    const before = e({ layerId: 'vl-old', series: 'https://gbfs/x' })
+    expect(entryOf(before, 'vl-new', 'https://gbfs/x')).toBe(true)
+    expect(entryOf(before, 'vl-new', 'https://other')).toBe(false)
+    // Entries written before series existed still match by id.
+    expect(entryOf(e({ layerId: 'vl-old' }), 'vl-old', 'https://gbfs/x')).toBe(true)
+  })
+  it('clears one layer by its source', () => {
+    logAlert(e({ layerId: 'vl-old', series: 's1' })); logAlert(e({ layerId: 'x', series: 's2' }))
+    clearAlertLog('vl-new', 's1')
+    expect(getAlertLog().map((x) => x.series)).toEqual(['s2'])
+  })
+})

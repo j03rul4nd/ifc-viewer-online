@@ -39,7 +39,7 @@ import {
 } from './style-groups'
 import { flattenProperties, type FlatProp } from '../twin/flatten-props'
 import { assetsVersion, onAssetsChange, restoreAssets } from './vector-assets'
-import { evaluateAlerts, type AlertMemory } from './alerts'
+import { evaluateAlerts, memorySnapshot, memoryFromSnapshot, type AlertMemory, type MemorySnapshot } from './alerts'
 import { isTmbUrl, withTmbKeys, withoutTmbKeys, tmbErrorKey, getTmbKeys, setTmbKeys } from './tmb'
 import { notifyAlert, getNotifySettings } from './alert-notify'
 import { logAlert } from './alert-log'
@@ -358,7 +358,14 @@ export function evaluateLayerAlerts(id: string, now = Date.now(), force = false)
   alertInput.set(id, { data: layer.data, rules: layer.alerts })
   let mem = alertMemory.get(id)
   if (!mem) {
-    // After a reload: replay the recorded past first, so "empty for 10 min"
+    // After a reload, first what this browser noted a moment ago: features
+    // already alerting then are not "started" again (no repeat toast, no
+    // duplicate log line on every page load).
+    const saved = loadAlertSnapshot(seriesOf(id), now)
+    if (saved) { mem = memoryFromSnapshot(saved); alertMemory.set(id, mem) }
+  }
+  if (!mem) {
+    // After a long absence: replay the recorded past first, so "empty for 10 min"
     // keeps counting from when it really started instead of from now.
     if (layer.history?.enabled && rules.some((r) => r.forMin > 0) && !alertWarming.has(id)) {
       alertWarming.add(id)
@@ -373,17 +380,18 @@ export function evaluateLayerAlerts(id: string, now = Date.now(), force = false)
   const rows = layerRows(layer.data)
   const r = evaluateAlerts(rows, keys, rules, now, mem)
   st.setAlertHits(id, r.active)
+  saveAlertSnapshot(seriesOf(id), memorySnapshot(mem))
   // The log: a rule starting (with a few of its features) and clearing.
   const was = alertActiveCount.get(id) ?? new Map<string, number>()
   const is = new Map(r.active.map((h) => [h.ruleId, h.indices.length]))
   for (const h of r.started) {
     const rule = rules.find((x) => x.id === h.ruleId)
-    if (rule) logAlert({ at: now, kind: 'start', layerId: id, layer: layer.name, ruleId: rule.id, rule: rule.name, n: h.indices.length, sample: h.indices.slice(0, 5).map((i) => featureLabel(rows[i], keys[i])) })
+    if (rule) logAlert({ at: now, kind: 'start', layerId: id, series: seriesOf(id), layer: layer.name, ruleId: rule.id, rule: rule.name, n: h.indices.length, sample: h.indices.slice(0, 5).map((i) => featureLabel(rows[i], keys[i])) })
   }
   for (const [ruleId, n] of was) {
     if (n > 0 && !is.has(ruleId)) {
       const rule = rules.find((x) => x.id === ruleId)
-      if (rule) logAlert({ at: now, kind: 'clear', layerId: id, layer: layer.name, ruleId, rule: rule.name, n: 0, sample: [] })
+      if (rule) logAlert({ at: now, kind: 'clear', layerId: id, series: seriesOf(id), layer: layer.name, ruleId, rule: rule.name, n: 0, sample: [] })
     }
   }
   alertActiveCount.set(id, is)
@@ -399,6 +407,31 @@ export function evaluateLayerAlerts(id: string, now = Date.now(), force = false)
 }
 
 const alertWarming = new Set<string>()
+
+// The alert memory of each source, kept across reloads. Only trusted when
+// recent: after a long absence conditions may have cleared and come back,
+// and the recorded history (warmAlertMemory) is the better witness.
+const ALERT_SNAPSHOT_KEY = 'ifc-alert-memory:v1'
+const ALERT_SNAPSHOT_MAX_AGE_MS = 15 * 60_000
+
+function readSnapshots(): Record<string, MemorySnapshot> {
+  try { return JSON.parse(localStorage.getItem(ALERT_SNAPSHOT_KEY) ?? '{}') as Record<string, MemorySnapshot> } catch { return {} }
+}
+
+function loadAlertSnapshot(series: string, now: number): MemorySnapshot | null {
+  const s = readSnapshots()[series]
+  return s && now - s.at <= ALERT_SNAPSHOT_MAX_AGE_MS && now >= s.at ? s : null
+}
+
+function saveAlertSnapshot(series: string, snap: MemorySnapshot): void {
+  try {
+    const all = readSnapshots()
+    all[series] = snap
+    // Old sources do not accumulate.
+    for (const [k, v] of Object.entries(all)) if (snap.at - v.at > 24 * 3600_000) delete all[k]
+    localStorage.setItem(ALERT_SNAPSHOT_KEY, JSON.stringify(all))
+  } catch { /* full or private: continuity is a nicety */ }
+}
 const alertActiveCount = new Map<string, Map<string, number>>()
 
 /** A readable name for a feature: its name / label / id property, else its key. */
