@@ -101,7 +101,8 @@
     "quota": "提供方的免费额度暂时用完。请稍后再试。",
     "notLayersFile": "此文件不是数据图层配置。",
     "layersFileVersion": "此配置由更新的版本保存。请刷新页面后重试。",
-    "unknown": "无法读取。"
+    "unknown": "无法读取。",
+    "timeout": "服务器在 90 秒内没有响应。请稍后再试。"
   },
   "kind": {
     "point": "点",
@@ -112,7 +113,7 @@
     "noProps": "该要素没有属性。"
   },
   "restore": {
-    "failed": "{{count}} 个已保存的图层无法恢复（离线，或文件过大无法保存）。"
+    "failed": "{{count}} 个已保存的图层暂时无法恢复（离线、服务器无响应，或文件过大无法保存）。它们仍会保留，下次将重试。"
   },
   "search": {
     "title": "在孪生中搜索",
@@ -756,5 +757,40 @@
     "poor": "差",
     "veryPoor": "很差",
     "extremelyPoor": "极差"
+  },
+  "scene": {
+    "entry": "数字孪生场景",
+    "title": "分享场景",
+    "intro": "整个场景存为一个文件：按 URL 的模型、数据图层、实时设备、地图、背景和视角。可作为链接分享、嵌入网页或保存文件。",
+    "untitled": "未命名场景",
+    "name": "名称",
+    "description": "描述",
+    "contents": "包含内容",
+    "models": "模型（按 URL）",
+    "localModels": "从本机打开的 {{n}} 个模型未包含：场景只能指向有公开 URL 的文件。",
+    "layers": "数据图层",
+    "devices": "实时设备绑定",
+    "map": "地图",
+    "off": "关闭",
+    "keepCamera": "以当前视角打开",
+    "secretsRemoved": "已从图层 URL 中移除 {{n}} 个密钥或令牌参数。",
+    "empty": "请先从 URL 加载模型或添加数据图层：目前还没有可分享的内容。",
+    "download": "下载 .scene.json",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "tooBigForLink": "内容过大，无法放入链接。请下载文件，发布到任意支持 CORS 的静态主机，并用 ?scene=<url> 打开。",
+    "tooBigToOpen": "此场景过大，无法在此从文件打开：请发布后用 ?scene=<url> 打开。",
+    "embed": "嵌入网页",
+    "ui": {
+      "client": "客户",
+      "full": "完整",
+      "kiosk": "仅画布"
+    },
+    "hostHint": "场景包含在链接中：不会上传任何内容。",
+    "copyIframe": "复制代码",
+    "sources": "数据来源（{{n}}）",
+    "live": "实时",
+    "open": "打开场景…",
+    "openHint": "打开别人发给你的 .scene.json。"
   }
 }

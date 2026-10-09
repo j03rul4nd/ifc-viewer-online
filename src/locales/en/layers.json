@@ -101,7 +101,8 @@
     "quota": "The provider’s free quota is used up for now. Try again later.",
     "notLayersFile": "This file is not a data-layers setup.",
     "layersFileVersion": "This setup was saved by a newer version. Update the page and try again.",
-    "unknown": "it could not be read."
+    "unknown": "it could not be read.",
+    "timeout": "The server did not answer within 90 s. Try again later."
   },
   "kind": {
     "point": "Point",
@@ -112,7 +113,7 @@
     "noProps": "This feature has no attributes."
   },
   "restore": {
-    "failed": "{{count}} saved layers could not be restored (offline, or the file was too large to keep)."
+    "failed": "{{count}} saved layers could not be restored right now (offline, a server not answering, or a file too large to keep). They stay saved and will be tried again next time."
   },
   "search": {
     "title": "Search the twin",
@@ -756,5 +757,40 @@
     "poor": "poor",
     "veryPoor": "very poor",
     "extremelyPoor": "extremely poor"
+  },
+  "scene": {
+    "entry": "Digital-twin scene",
+    "title": "Share the scene",
+    "intro": "The whole scene in one file: models by URL, data layers, live devices, map, background and view. Share it as a link, embed it in a page or keep the file.",
+    "untitled": "Untitled scene",
+    "name": "Name",
+    "description": "Description",
+    "contents": "What it includes",
+    "models": "Models (by URL)",
+    "localModels": "{{n}} model(s) opened from this computer are not included: a scene can only point at files with a public URL.",
+    "layers": "Data layers",
+    "devices": "Live device bindings",
+    "map": "Map",
+    "off": "off",
+    "keepCamera": "Open on the current view",
+    "secretsRemoved": "{{n}} key or token parameter(s) were removed from layer URLs.",
+    "empty": "Load a model from a URL or add a data layer first: there is nothing to share yet.",
+    "download": "Download .scene.json",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "tooBigForLink": "Too large for a link. Download the file, publish it on any static host with CORS and open it with ?scene=<url>.",
+    "tooBigToOpen": "This scene is too large to open from a file here: publish it and open it with ?scene=<url>.",
+    "embed": "Embed in a web page",
+    "ui": {
+      "client": "Client",
+      "full": "Full",
+      "kiosk": "Canvas only"
+    },
+    "hostHint": "The scene travels inside the link: nothing is uploaded.",
+    "copyIframe": "Copy code",
+    "sources": "Data sources ({{n}})",
+    "live": "live",
+    "open": "Open scene…",
+    "openHint": "Open a .scene.json someone sent you."
   }
 }

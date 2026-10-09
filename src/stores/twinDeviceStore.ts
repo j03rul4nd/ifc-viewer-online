@@ -29,7 +29,16 @@ function load(): Persisted {
   return { v: 1, sources: [], bindings: [] }
 }
 
+/**
+ * Off while a shared scene supplies the twin: its sources and bindings belong
+ * to the link, and the visitor's own saved twin must survive it untouched
+ * (the same rule `?layers=` follows for data layers).
+ */
+let persistEnabled = true
+export function setTwinPersistence(enabled: boolean): void { persistEnabled = enabled }
+
 function save(sources: DeviceSource[], bindings: Binding[]): void {
+  if (!persistEnabled) return
   try {
     if (sources.length === 0 && bindings.length === 0) localStorage.removeItem(LS_KEY)
     else localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, sources, bindings }))

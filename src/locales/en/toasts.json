@@ -42,5 +42,8 @@
   "tree": {
     "notInTree": "This element is not in the spatial tree — nothing above it is either.",
     "revealedHost": "Not in the spatial tree on its own. Showed what it belongs to: “{{name}}”."
+  },
+  "scene": {
+    "failed": "The scene could not be opened: {{message}}"
   }
 }

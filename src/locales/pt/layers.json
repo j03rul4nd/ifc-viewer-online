@@ -101,7 +101,8 @@
     "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde.",
     "notLayersFile": "Este ficheiro não é uma configuração de camadas de dados.",
     "layersFileVersion": "Esta configuração foi guardada numa versão mais recente. Recarregue a página e tente de novo.",
-    "unknown": "não foi possível ler."
+    "unknown": "não foi possível ler.",
+    "timeout": "O servidor não respondeu em 90 s. Tente mais tarde."
   },
   "kind": {
     "point": "Ponto",
@@ -112,7 +113,7 @@
     "noProps": "Este elemento não tem atributos."
   },
   "restore": {
-    "failed": "{{count}} camadas guardadas não puderam ser restauradas (offline, ou ficheiro demasiado grande para guardar)."
+    "failed": "{{count}} camadas guardadas não puderam ser restauradas agora (sem ligação, um servidor que não responde ou um ficheiro demasiado grande para guardar). Continuam guardadas e serão tentadas de novo da próxima vez."
   },
   "search": {
     "title": "Pesquisar no gémeo",
@@ -756,5 +757,40 @@
     "poor": "má",
     "veryPoor": "muito má",
     "extremelyPoor": "extremamente má"
+  },
+  "scene": {
+    "entry": "Cena de gémeo digital",
+    "title": "Partilhar a cena",
+    "intro": "Toda a cena num ficheiro: modelos por URL, camadas de dados, dispositivos em direto, mapa, fundo e vista. Partilhe-a como ligação, incorpore-a numa página ou guarde o ficheiro.",
+    "untitled": "Cena sem título",
+    "name": "Nome",
+    "description": "Descrição",
+    "contents": "O que inclui",
+    "models": "Modelos (por URL)",
+    "localModels": "{{n}} modelo(s) aberto(s) a partir deste computador não estão incluídos: uma cena só pode apontar para ficheiros com URL pública.",
+    "layers": "Camadas de dados",
+    "devices": "Ligações de dispositivos em direto",
+    "map": "Mapa",
+    "off": "desligado",
+    "keepCamera": "Abrir na vista atual",
+    "secretsRemoved": "Foram removidos {{n}} parâmetro(s) de chave ou token dos URL das camadas.",
+    "empty": "Carregue primeiro um modelo a partir de um URL ou adicione uma camada de dados: ainda não há nada para partilhar.",
+    "download": "Descarregar .scene.json",
+    "copyLink": "Copiar ligação",
+    "copied": "Copiado",
+    "tooBigForLink": "Demasiado grande para uma ligação. Descarregue o ficheiro, publique-o em qualquer alojamento estático com CORS e abra-o com ?scene=<url>.",
+    "tooBigToOpen": "Esta cena é demasiado grande para abrir aqui a partir de um ficheiro: publique-a e abra-a com ?scene=<url>.",
+    "embed": "Incorporar numa página web",
+    "ui": {
+      "client": "Cliente",
+      "full": "Completo",
+      "kiosk": "Só tela"
+    },
+    "hostHint": "A cena viaja dentro da ligação: nada é enviado.",
+    "copyIframe": "Copiar código",
+    "sources": "Fontes de dados ({{n}})",
+    "live": "em direto",
+    "open": "Abrir cena…",
+    "openHint": "Abra um .scene.json que lhe enviaram."
   }
 }

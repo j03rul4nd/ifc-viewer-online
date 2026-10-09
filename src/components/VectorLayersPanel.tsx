@@ -21,7 +21,7 @@ import { toast } from '../stores/toastStore'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
   frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
-  exportLayersFile, importLayersFile, importLayersFromUrl, isLayersFile, layerRows,
+  exportLayersFile, importLayersFile, importLayersFromUrl, importLayersSession, isLayersFile, layerRows,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { TwinSearch } from './TwinSearch'
@@ -32,6 +32,9 @@ import { SAMPLE_GEOJSON, SAMPLE_LAYER_NAME } from '../lib/layers/sample-layers'
 import type { WfsCapabilities } from '../lib/layers/wfs'
 import type { HeightMode } from '../lib/layers/geojson'
 import type { ViewerAPI } from '../lib/viewer'
+import { useSceneStore } from '../stores/sceneStore'
+import { placementFromExtraction } from '../lib/geo/placement'
+import type { AnchorPairing } from '../lib/layers/layer-anchor'
 
 interface Props {
   viewerApiRef: React.RefObject<ViewerAPI | null>
@@ -44,6 +47,30 @@ const inputCls =
   'w-full min-w-0 px-2 py-1.5 max-md:py-2.5 rounded-[7px] text-[11px] max-md:text-[13px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
 const btnCls =
   'shrink-0 px-2.5 py-1.5 max-md:py-2.5 rounded-[7px] text-[11px] max-md:text-[13px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] transition-colors disabled:opacity-40'
+
+
+/**
+ * A loaded model's own georeference as a lat/lon ↔ scene pairing, the active
+ * model first — what data layers line up with while the map is off. The same
+ * resolution the map uses for satellites (App: setSatelliteResolver).
+ */
+function georefPairing(api: ViewerAPI | null): AnchorPairing | null {
+  if (!api) return null
+  const { models, activeModelId } = useSceneStore.getState()
+  const georefs = useGeoStore.getState().georefByModel
+  const order = [...models].sort((a, b) => Number(b.id === activeModelId) - Number(a.id === activeModelId))
+  for (const m of order) {
+    const g = georefs[m.id]
+    const b = api.getModelBounds(m.id)
+    if (!g || !b) continue
+    const r = placementFromExtraction(g, b)
+    if (!r.ok) continue
+    // No map plane while the map is off: the file's stated elevation has
+    // nothing to be measured against, so the ground is the model's floor.
+    return { placement: { ...r.value, heightOffsetM: 0 }, scene: { x: b.center.x, z: b.center.z }, floorY: b.center.y - b.size.y / 2 }
+  }
+  return null
+}
 
 export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   const { t } = useTranslation('layers')
@@ -79,6 +106,8 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     },
     getModelBounds: () => viewerApiRef.current?.getModelBounds() ?? null,
     mapGroundAt: (x, z) => viewerApiRef.current?.mapGroundAt(x, z) ?? null,
+    getMapAnchor: () => viewerApiRef.current?.mapAnchor() ?? null,
+    getGeorefAnchor: () => georefPairing(viewerApiRef.current),
   }), [viewerApiRef])
 
   // Dropped .geojson files and the layers saved on this device are taken over
@@ -104,6 +133,19 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // A scene document's layers arrive as text once its models are in (App);
+  // taken whenever they are set, not only at mount.
+  const setupText = useVectorLayerStore((s) => s.setupText)
+  useEffect(() => {
+    // Taken from the store, not the render's value: an effect that runs twice
+    // (StrictMode, a re-render before the clear lands) must import it once.
+    const text = useVectorLayerStore.getState().setupText
+    if (!text) return
+    useVectorLayerStore.getState().setSetupText(null)
+    void run(async () => reportImport(await importLayersSession(text)))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setupText])
 
   // Click a route, zone or point to read its attributes. Never swallows the
   // click: the IFC selection behind it still happens, the two just coexist.

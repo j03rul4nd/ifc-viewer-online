@@ -101,7 +101,8 @@
     "quota": "S’ha esgotat per ara la quota gratuïta del proveïdor. Torna-ho a provar més tard.",
     "notLayersFile": "Aquest fitxer no és una configuració de capes de dades.",
     "layersFileVersion": "Aquesta configuració es va desar amb una versió més nova. Recarrega la pàgina i torna-ho a provar.",
-    "unknown": "no s’ha pogut llegir."
+    "unknown": "no s’ha pogut llegir.",
+    "timeout": "El servidor no ha respost en 90 s. Torna-ho a provar més tard."
   },
   "kind": {
     "point": "Punt",
@@ -112,7 +113,7 @@
     "noProps": "Aquest element no té atributs."
   },
   "restore": {
-    "failed": "{{count}} capes desades no s'han pogut restaurar (sense connexió, o el fitxer era massa gran per desar-lo)."
+    "failed": "{{count}} capes desades no s'han pogut restaurar ara (sense connexió, un servidor que no respon o un fitxer massa gran per desar-lo). Continuen desades i es tornaran a provar la propera vegada."
   },
   "search": {
     "title": "Cercar al bessó",
@@ -756,5 +757,40 @@
     "poor": "desfavorable",
     "veryPoor": "molt desfavorable",
     "extremelyPoor": "extremadament desfavorable"
+  },
+  "scene": {
+    "entry": "Escena de bessó digital",
+    "title": "Compartir l'escena",
+    "intro": "Tota l'escena en un fitxer: models per URL, capes de dades, dispositius en viu, mapa, fons i vista. Comparteix-la com a enllaç, insereix-la en un web o desa el fitxer.",
+    "untitled": "Escena sense títol",
+    "name": "Nom",
+    "description": "Descripció",
+    "contents": "Què inclou",
+    "models": "Models (per URL)",
+    "localModels": "{{n}} model(s) obert(s) des d'aquest equip no s'inclouen: una escena només pot apuntar a fitxers amb URL pública.",
+    "layers": "Capes de dades",
+    "devices": "Vincles de dispositius en viu",
+    "map": "Mapa",
+    "off": "apagat",
+    "keepCamera": "Obrir en la vista actual",
+    "secretsRemoved": "S'han tret {{n}} paràmetre(s) de clau o token de les URL de les capes.",
+    "empty": "Carrega un model des d'una URL o afegeix una capa de dades primer: encara no hi ha res per compartir.",
+    "download": "Descarregar .scene.json",
+    "copyLink": "Copiar enllaç",
+    "copied": "Copiat",
+    "tooBigForLink": "Massa gran per a un enllaç. Descarrega el fitxer, publica'l en qualsevol allotjament estàtic amb CORS i obre'l amb ?scene=<url>.",
+    "tooBigToOpen": "Aquesta escena és massa gran per obrir-la aquí des d'un fitxer: publica-la i obre-la amb ?scene=<url>.",
+    "embed": "Inserir en un web",
+    "ui": {
+      "client": "Client",
+      "full": "Complet",
+      "kiosk": "Només llenç"
+    },
+    "hostHint": "L'escena viatja dins de l'enllaç: no es puja res.",
+    "copyIframe": "Copiar codi",
+    "sources": "Fonts de dades ({{n}})",
+    "live": "en viu",
+    "open": "Obrir escena…",
+    "openHint": "Obre un .scene.json que t'hagin enviat."
   }
 }

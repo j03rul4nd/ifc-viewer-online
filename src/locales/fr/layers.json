@@ -101,7 +101,8 @@
     "quota": "Le quota gratuit du fournisseur est épuisé pour le moment. Réessayez plus tard.",
     "notLayersFile": "Ce fichier n’est pas une configuration de couches de données.",
     "layersFileVersion": "Cette configuration vient d’une version plus récente. Rechargez la page et réessayez.",
-    "unknown": "lecture impossible."
+    "unknown": "lecture impossible.",
+    "timeout": "Le serveur n'a pas répondu en 90 s. Réessayez plus tard."
   },
   "kind": {
     "point": "Point",
@@ -112,7 +113,7 @@
     "noProps": "Cet objet n'a pas d'attributs."
   },
   "restore": {
-    "failed": "{{count}} couches enregistrées n'ont pas pu être restaurées (hors ligne, ou fichier trop volumineux pour être conservé)."
+    "failed": "{{count}} couches enregistrées n'ont pas pu être restaurées pour l'instant (hors ligne, un serveur qui ne répond pas ou un fichier trop volumineux pour être conservé). Elles restent enregistrées et seront réessayées la prochaine fois."
   },
   "search": {
     "title": "Rechercher dans le jumeau",
@@ -756,5 +757,40 @@
     "poor": "mauvais",
     "veryPoor": "très mauvais",
     "extremelyPoor": "extrêmement mauvais"
+  },
+  "scene": {
+    "entry": "Scène de jumeau numérique",
+    "title": "Partager la scène",
+    "intro": "Toute la scène dans un fichier : modèles par URL, couches de données, appareils en direct, carte, fond et vue. Partagez-la en lien, intégrez-la dans une page ou gardez le fichier.",
+    "untitled": "Scène sans titre",
+    "name": "Nom",
+    "description": "Description",
+    "contents": "Ce qu’elle contient",
+    "models": "Modèles (par URL)",
+    "localModels": "{{n}} modèle(s) ouvert(s) depuis cet ordinateur ne sont pas inclus : une scène ne peut pointer que vers des fichiers avec une URL publique.",
+    "layers": "Couches de données",
+    "devices": "Liaisons d’appareils en direct",
+    "map": "Carte",
+    "off": "désactivée",
+    "keepCamera": "Ouvrir sur la vue actuelle",
+    "secretsRemoved": "{{n}} paramètre(s) de clé ou de jeton ont été retirés des URL des couches.",
+    "empty": "Chargez d'abord un modèle depuis une URL ou ajoutez une couche de données : il n'y a encore rien à partager.",
+    "download": "Télécharger .scene.json",
+    "copyLink": "Copier le lien",
+    "copied": "Copié",
+    "tooBigForLink": "Trop volumineux pour un lien. Téléchargez le fichier, publiez-le sur n'importe quel hébergement statique avec CORS et ouvrez-le avec ?scene=<url>.",
+    "tooBigToOpen": "Cette scène est trop volumineuse pour être ouverte ici depuis un fichier : publiez-la et ouvrez-la avec ?scene=<url>.",
+    "embed": "Intégrer dans une page web",
+    "ui": {
+      "client": "Client",
+      "full": "Complet",
+      "kiosk": "Canevas seul"
+    },
+    "hostHint": "La scène voyage dans le lien : rien n'est envoyé.",
+    "copyIframe": "Copier le code",
+    "sources": "Sources de données ({{n}})",
+    "live": "en direct",
+    "open": "Ouvrir une scène…",
+    "openHint": "Ouvrez un .scene.json qu'on vous a envoyé."
   }
 }

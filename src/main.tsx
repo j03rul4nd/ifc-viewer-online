@@ -10,6 +10,7 @@ import { captureAttribution } from './lib/attribution'
 import { parseAppUrlParams, parseInvitePath } from './lib/url-params'
 import './index.css'
 import { installKeyboardInset } from './lib/keyboard-inset'
+import { bootScene, hasSceneInLocation } from './lib/scene-doc/scene-boot'
 
 // iOS lays the on-screen keyboard over the page instead of resizing it;
 // bottom sheets read --kb-inset to stay above it. See lib/keyboard-inset.
@@ -89,14 +90,22 @@ const app = (
   </MotionConfig>
 )
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    {LazyClerkProvider ? (
-      <React.Suspense fallback={null}>
-        <LazyClerkProvider>{app}</LazyClerkProvider>
-      </React.Suspense>
-    ) : (
-      app
-    )}
-  </React.StrictMode>,
-)
+const render = (): void => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      {LazyClerkProvider ? (
+        <React.Suspense fallback={null}>
+          <LazyClerkProvider>{app}</LazyClerkProvider>
+        </React.Suspense>
+      ) : (
+        app
+      )}
+    </React.StrictMode>,
+  )
+}
+
+// `?scene=` / `#scene=`: the scene says which models, map and camera to open
+// with, so it is resolved before the app reads its parameters. Every other
+// visit renders at once — the check is a regex on the address.
+if (hasSceneInLocation()) void bootScene().finally(render)
+else render()
