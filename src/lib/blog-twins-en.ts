@@ -40,6 +40,26 @@ const shot = (name: string, alt: string, caption: string) => ({
   credit: 'IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)',
 })
 
+/** The scene explorer's card, captured in each blog language (blog-image-lang.ts). */
+const card = (name: string, alt: string, caption: string) => ({ ...shot(name, alt, caption), localized: true })
+
+/** A diagram drawn in each blog language (scripts/og/build-twin-figures.mjs). */
+const figure = (name: string, alt: string, caption: string) => ({
+  type: 'image' as const,
+  src: `blog/images/${name}.png`,
+  alt,
+  caption,
+  width: 1600,
+  height: 900,
+  srcSet: [
+    { src: `blog/images/${name}-800.png`, width: 800 },
+    { src: `blog/images/${name}.png`, width: 1600 },
+  ],
+  sizes: '(max-width: 860px) 100vw, 820px',
+  credit: 'IFC Viewer Online',
+  localized: true,
+})
+
 export const TWIN_POSTS_EN: BlogPost[] = [
   // ── Barcelona ──────────────────────────────────────────────────────────────
   {
@@ -126,6 +146,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         { title: 'A floating value and a staleness limit', body: 'The number of available bikes floats above the docks. A reading older than the source allows turns them grey: "no recent data" never passes for "all is well".' },
       ] },
       { type: 'code', lang: 'json', text: '{\n  "sourceId": "bicing-status",\n  "deviceId": "65",\n  "query": { "classes": ["IfcBuildingElementProxy"], "nameContains": "ancoratge" },\n  "rules": [\n    { "name": "No bikes", "filters": [{ "field": "num_vehicles_available", "op": "eq", "value": 0 }],\n      "effect": { "color": "#ef4444" }, "alert": { "forMin": 15 } }\n  ]\n}' },
+      card('barcelona-digital-twin-asset-card', "The scene explorer's card for a Bicing dock post at Plaça de Catalunya: the IFC element with station 65's live GBFS readings — bikes and docks available — next to its asset data and quantities", 'Click a dock post and its card shows station 65 live, next to the IFC data of the element.'),
       { type: 'p', text: 'The Endolla charger works the same way: its two bays take the state of charging location 3762 at Passeig de Gràcia 5. The charger\'s ids in the IFC are illustrative, so that binding is matched by position (the real location next to the model) rather than by a real equipment id.' },
 
       { type: 'h2', text: 'Standing in the right place' },
@@ -158,6 +179,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
       ] },
       { type: 'code', lang: 'html', text: '<iframe\n  src="https://www.ifcvieweronline.eu/?scene=/scenes/barcelona-placa-catalunya.scene.json&embed=1"\n  width="100%" height="600" style="border:0;border-radius:12px"\n  loading="lazy" allow="fullscreen"\n  title="Plaça de Catalunya — open-data digital twin">\n</iframe>' },
       { type: 'p', text: ['The same embed works on a project website, an intranet page or a CDE panel. The full set of parameters is in ', { text: 'how to embed an IFC viewer', to: 'embed-ifc-viewer-website' }, '. The same approach with other data is in ', { text: 'live buses on an IFC bus terminal over MQTT', to: 'bus-terminal-digital-twin-mqtt' }, ' and ', { text: 'Tokyo station twins from ODPT data', to: 'tokyo-transit-digital-twin-odpt' }, '.'] },
+      { type: 'related', to: 'urban-digital-twin-live-examples', why: 'What an urban digital twin is made of, and how this one compares with Helsinki and Tokyo.' },
       { type: 'tool', id: 'embed', why: 'Generate the embed code for your own model or scene.' },
     ],
   },
@@ -222,6 +244,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
       { type: 'p', text: "GTFS-Realtime is the usual format for live transit data, and HSL publishes it. But that feed does not send the CORS headers a browser needs to read it from another site, so using it would mean running a proxy. The high-frequency positioning feed is different: it is MQTT over WebSocket, public, keyless, and reachable from any web page." },
       { type: 'p', text: ['It is also richer for this purpose. Each message is one bus, about once a second, with its line, speed, door state and the stop it is at', { cite: 'hfp' }, '. The topic says where the bus is, so a subscription can be cut to one slice of the city:'] },
       { type: 'code', lang: 'text', text: '/hfp/v2/journey/ongoing/vp/bus/+/+/+/+/+/+/+/+/60;24/19/73/#' },
+      figure('hsl-hfp-mqtt-topic-anatomy', "Diagram of the HSL MQTT topic the Helsinki twin subscribes to, level by level — feed, journeys in progress, vehicle positions, buses, eight wildcards and the geohash cell — with the grid cell around Elielinaukio highlighted", 'The subscription level by level: each + takes any value, and the geohash narrows the stream to the cell around the terminal.'),
       { type: 'p', text: 'The last part, 60;24/19/73, is a cell of HSL\'s geographic grid around the terminal. The browser receives the buses in that cell and nothing else. It reads the messages once a second and keeps the newest one per stop. A bus between stops, with no stop in its message, is skipped.' },
       { type: 'callout', variant: 'tip', title: 'Check the volume before you widen the topic', text: 'A broad subscription is easy to write and expensive to receive. During testing, a wider topic turned 69 stops into devices within 30 seconds. That is fine for a test, but a cost on a phone. Cut the topic to the area you show.' },
 
@@ -234,6 +257,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         caption: 'From HSL\'s GTFS stops list, read once when the scene was written. The other eight bays have no stop and stay grey.',
         layout: 'scroll',
       },
+      card('bus-terminal-digital-twin-bay-card', 'The scene explorer\'s card for the bay 25 pole at Elielinaukio bus terminal: no bus reporting at the bay, so the live section says there is no data, next to the pole\'s IFC data — type, material, quantities and property sets', 'A bay\'s card at night: with no bus at the bay, the live section says so instead of showing an old reading, next to the IFC data of the pole.'),
       { type: 'code', lang: 'json', text: '{\n  "id": "hsl-hfp-elielinaukio",\n  "url": "wss://mqtt.hsl.fi:443/",\n  "topics": ["/hfp/v2/journey/ongoing/vp/bus/+/+/+/+/+/+/+/+/60;24/19/73/#"],\n  "mapping": { "idField": "VP.stop", "timeField": "VP.tst" }\n}' },
       { type: 'p', text: 'This device source is all it takes to read a different fleet or a different area: a broker that speaks MQTT over WebSocket, the topics, and which field of the message identifies the device. The rest of the scene stays the same.' },
 
@@ -254,6 +278,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         'A background tab receives messages less often, because browsers slow down timers in hidden tabs.',
       ] },
       { type: 'p', text: ['The same scene format runs a city square from bike-share and charging data in ', { text: 'the Barcelona open-data twin', to: 'barcelona-digital-twin-open-data' }, ', and two Tokyo stations from train and tram data in ', { text: 'Tokyo transit twins from ODPT', to: 'tokyo-transit-digital-twin-odpt' }, '. For a twin fed by a sensor rather than a transit feed, see ', { text: 'real-time LiDAR in a web digital twin', to: 'real-time-lidar-web-digital-twin-mcap' }, '.'] },
+      { type: 'related', to: 'urban-digital-twin-live-examples', why: 'What an urban digital twin is made of, and how this one compares with Barcelona and Tokyo.' },
       { type: 'tool', id: 'sdk', why: 'Open a scene from your own page and react to its alerts and picks with the SDK.' },
     ],
   },
@@ -310,6 +335,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
           ['Bus stop pole', 'Toei bus GTFS-Realtime, every 30 s', 'A bus passed stop 都庁第一本庁舎 in the last 10 minutes'],
         ],
       },
+      card('tokyo-transit-digital-twin-stop-card', 'The scene explorer\'s card for the Toei bus stop pole at Tochōmae exit A4: the IFC element with its live state from the Toei bus GTFS-Realtime feed, still waiting for a reading, next to its asset data and property sets', 'Click the stop pole and its card shows its live state from the Toei bus GTFS-Realtime feed — here still waiting for a bus — next to the IFC data of the element.'),
       { type: 'p', text: ['The bus feed is GTFS-Realtime', { cite: 'gtfs-rt' }, ', a protocol-buffers format rather than JSON. The scene decodes it on the page with a small decoder written for the purpose. Between 470 and 540 Toei buses were in the feed whenever we looked. The train and status feeds are JSON-LD from the same public endpoint', { cite: 'odpt' }, '.'] },
 
       { type: 'h2', text: 'Waseda: the tram at the stop' },
@@ -323,7 +349,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         launchLabel: 'Open Waseda, live',
         hint: 'Click any asset to see its data; Explore takes you to each live point. Between trams the edges are grey. ODPT does not say which platform a tram uses, so both light up.',
       },
-      shot('tokyo-transit-digital-twin-waseda', 'The Waseda terminus of the Toden Arakawa line as an IFC model on the 3D map of Tokyo, between the OpenStreetMap buildings of the avenue', 'The Waseda terminus on its avenue. One OpenStreetMap outline, the stop\'s own concourse, is hidden by the scene so it does not cover the model.'),
+      shot('tokyo-transit-digital-twin-waseda-platform', 'The Waseda terminus of the Toden Arakawa line from above in IFC Viewer Online: the platforms, canopies, tracks and station sign of the IFC 4.3 railway model among the OpenStreetMap buildings of Tokyo', 'Waseda from above: the platform edges and the departure screens are what the live data drives. One OpenStreetMap outline, the stop\'s own concourse, is hidden by the scene so it does not cover the model.'),
       { type: 'p', text: 'The Arakawa line, today the Tokyo Sakura Tram, is the last of Toei\'s streetcar lines. The model of its Waseda terminus is an IFC 4.3 railway model with rails, platforms, canopies and departure screens. The tram binding reads the same train feed as Tochōmae and lights the platform edges when a tram\'s position is Waseda. The status binding colours the screens\' LED matrices.' },
 
       { type: 'h2', text: "Getting Tokyo's coordinates right" },
@@ -352,6 +378,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
       ] },
       { type: 'callout', variant: 'warning', title: 'Keys stay out of public pages', text: "This scene uses ODPT's public, keyless endpoint. Data that needs a developer key must not go into a page anyone can read the source of. That case needs a small server of your own." },
       { type: 'p', text: ['The same scene format drives a city square from bike-share and charging data in ', { text: 'the Barcelona open-data twin', to: 'barcelona-digital-twin-open-data' }, ', and live buses over MQTT in ', { text: 'the Helsinki bus terminal', to: 'bus-terminal-digital-twin-mqtt' }, '.'] },
+      { type: 'related', to: 'urban-digital-twin-live-examples', why: 'What an urban digital twin is made of, and how this one compares with Barcelona and Helsinki.' },
       { type: 'tool', id: 'viewer', why: 'Open your own georeferenced IFC on the 3D map.' },
     ],
   },

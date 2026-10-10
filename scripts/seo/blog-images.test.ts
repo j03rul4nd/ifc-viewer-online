@@ -11,6 +11,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { EVERY_BLOG_POST } from '../../src/lib/blog-i18n'
 import { heroSources } from '../../src/lib/blog-hero'
+import { localizedSrc } from '../../src/lib/blog-image-lang'
 import type { BlogPost } from '../../src/lib/blog-posts'
 import { imageFormat } from './image-metadata'
 
@@ -28,8 +29,10 @@ function referencedImages(post: BlogPost): string[] {
   for (const v of post.heroImageVariants ?? []) local(v.src)
   for (const block of post.content) {
     if (block.type === 'image') {
-      local(block.src)
-      for (const s of block.srcSet ?? []) local(s.src)
+      // A drawn-per-language picture must exist in this post's language.
+      const lang = post.lang ?? 'en'
+      local(localizedSrc(block.src, block.localized, lang))
+      for (const s of block.srcSet ?? []) local(localizedSrc(s.src, block.localized, lang))
     } else if (block.type === 'tool-demo' || block.type === 'spatial-demo' || block.type === 'video') {
       local(block.poster)
     }

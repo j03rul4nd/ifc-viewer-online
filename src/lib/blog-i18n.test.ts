@@ -48,7 +48,7 @@ const complete = (lang: string) => BLOG_POSTS.every((p) => writtenFor(lang).has(
 function skeleton(block: ContentBlock, whole: boolean): unknown {
   switch (block.type) {
     case 'code': return block
-    case 'image': return { type: block.type, src: block.src, srcSet: block.srcSet, n: block.annotations?.length, xy: block.annotations?.map((a) => [a.x, a.y]) }
+    case 'image': return { type: block.type, src: block.src, srcSet: block.srcSet, localized: block.localized, n: block.annotations?.length, xy: block.annotations?.map((a) => [a.x, a.y]) }
     // A partial pack drops deep links into posts it doesn't have yet (apply.ts).
     case 'related': return { type: block.type, to: block.to, ...(whole ? { hasSection: !!block.section } : {}) }
     case 'tool': return { type: block.type, id: block.id }
