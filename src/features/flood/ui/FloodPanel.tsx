@@ -16,7 +16,9 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from '../../../components/ViewportPanel'
 import { Notice, Segmented, SwitchRow, LookSlider, StatRow, ProgressBar, Button } from '../../../components/geo/ui'
 import { useGeoStore } from '../../../stores/geoStore'
+import { useSceneStore } from '../../../stores/sceneStore'
 import { useUIStore } from '../../../stores/uiStore'
+import { parseAppUrlParams } from '../../../lib/url-params'
 import { shareOrDownload } from '../../../lib/share-file'
 import type { ViewerAPI } from '../../../lib/viewer'
 import {
@@ -233,6 +235,42 @@ export default function FloodPanel({ viewerApiRef }: Props) {
       onError: (m) => useFloodStore.getState().set({ status: 'error', error: m }),
     })
   }, [system, analyze])
+
+  // ?flood= deep link: once every model the URL names is in (and the map's
+  // relief, when the URL turns the map on), build the grid and run the storm —
+  // the panel's own two buttons, pressed for the reader. Once per page.
+  const modelCount = useSceneStore((m) => m.models.length)
+  const deepLinkRef = useRef(false)
+  useEffect(() => {
+    if (deepLinkRef.current || !modelCount) return
+    const p = parseAppUrlParams()
+    if (!p.flood || modelCount < p.modelUrls.length) return
+    deepLinkRef.current = true
+    const link = p.flood
+    void (async () => {
+      if (p.map) {
+        // The relief, if it comes (it waits on the visitor's consent): up to a minute.
+        for (let i = 0; i < 120 && useGeoStore.getState().terrainStatus !== 'ready'; i++) {
+          await new Promise((r) => setTimeout(r, 500))
+        }
+      }
+      const st = useFloodStore.getState()
+      st.set({
+        storm: link.storm,
+        hyetograph: stormHyetograph(link.storm),
+        ...(link.cellM ? { cellM: link.cellM } : {}),
+        ...(link.boundary ? { boundary: link.boundary } : {}),
+        ...(link.infiltration ? { infiltration: link.infiltration } : {}),
+      })
+      // In an embed the host owns the frame: the water and its timeline, no panel.
+      if (!p.embed) st.setPanelOpen(true)
+      await prepare()
+      if (useFloodStore.getState().status !== 'ready') return
+      // The whole simulated area, not just the model: the water is around it.
+      sysRef.current?.frame()
+      await run()
+    })()
+  }, [modelCount, prepare, run])
 
   const clear = useCallback(() => {
     sysRef.current?.clear()

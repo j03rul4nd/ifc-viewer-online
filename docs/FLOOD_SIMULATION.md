@@ -20,6 +20,9 @@ Code: `src/features/flood/` (self-contained; lazy-loaded; gated by
 
 With `VITE_FEATURE_FLOOD=true` the viewer gets a Flood tool (rail icon and
 Tools menu): build the grid from what is loaded, run a storm, see the water.
+A link can run it too: `?flood=extreme,2m` (storm, cell, edges, soil — see
+`docs/EMBED_URL_PARAMS.md`) builds the grid and runs the storm once the models
+are in, which is how the blog's live demos start it.
 The solver alone is exercised by the dev page `flood-lab.html` and by
 `npm run test:flood-gpu`.
 
