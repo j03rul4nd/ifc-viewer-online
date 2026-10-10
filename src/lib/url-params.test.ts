@@ -220,6 +220,22 @@ describe('parseAppUrlParams · solar deep link', () => {
   })
 })
 
+// ── Rain-flood deep link (?flood=) ───────────────────────────────────────────
+
+describe('parseAppUrlParams · flood deep link', () => {
+  it('takes a storm alone, or with a cell, edges and soil in any order', () => {
+    expect(parseAppUrlParams('?flood=extreme').flood).toEqual({ storm: 'extreme' })
+    expect(parseAppUrlParams('?flood=closed,1m,storm,loam').flood).toEqual({ storm: 'storm', cellM: 1, boundary: 'closed', infiltration: 'loam' })
+    expect(parseAppUrlParams('?flood=Intense,5M,sealed').flood).toEqual({ storm: 'intense', cellM: 5, infiltration: 'none' })
+  })
+
+  it('needs a storm, and ignores what it does not know', () => {
+    expect(parseAppUrlParams('?flood=1m,closed').flood).toBeUndefined()
+    expect(parseAppUrlParams('?flood=').flood).toBeUndefined()
+    expect(parseAppUrlParams('?flood=shower,3m,muddy').flood).toEqual({ storm: 'shower' })
+  })
+})
+
 // ── Scene deep links (?map= / ?scan=) ────────────────────────────────────────
 // The two params that turn the Poblenou federated set into a single link: the
 // building on its real plot, with its survey scan on top of it.

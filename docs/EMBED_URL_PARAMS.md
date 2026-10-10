@@ -46,6 +46,7 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `bg`       | preset / `rrggbb` / `top,bottom` | saved     | Scene background for this page view: `white`, `paper`, `blueprint`, `sky`, `studio`, one colour, or a top,bottom gradient (`bg=dbeafe,ffffff`). Applied from the first frame and **not** saved as the visitor's preference. An unreadable value is ignored. |
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
 | `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
+| `flood`    | `storm[,cell][,edges][,soil]`    | —         | Run the rain-flood simulation once every model is in: a storm (`shower`, `storm`, `intense`, `extreme`), and optionally a cell (`1m`, `2m`, `5m`), the edges (`free`, `closed`) and a soil (`sealed`, `compacted`, `loam`, `sandy`), in any order. Needs a build with the simulation. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
 | `look`     | look id, or `from..to`           | user's    | Art direction of the map (needs `map`): `daylight`, `maquette`, `golden`, `night`, `blueprint`, `dawn`. `look=daylight..night` opens in the first and plays a 6 s time-of-day transition to the second once the city is built (it waits for the tab to be visible). Dawn/day/dusk use the site's real sun for today. Unknown ids are ignored. |
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
@@ -58,6 +59,20 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `turntable` | `1` or degrees/second          | off       | A slow idle orbit once the model is in, stopped for good by the visitor's first touch; never under `prefers-reduced-motion`. *(1.15)* |
 | `wheel`    | `always` · `ctrl`                | `always` (`ctrl` with `ui=article`) | `ctrl`: the wheel scrolls the host page and zooms only with Ctrl/⌘ held (a trackpad pinch sends Ctrl), with a short hint over the canvas — like an embedded map. *(1.14)* Once the reader clicks or drags inside the view, the wheel zooms without Ctrl until the pointer leaves it: scrolling past the figure still scrolls the page, exploring inside it no longer needs a held key. |
 | `explore`  | `1` · `0`                        | on with `ui=article`/`kiosk` when a scene is open | The scene explorer over the canvas. A card shows what a click picked: an IFC element (live twin values, key data, quantities, every property set, the asset-management one first), a data-layer feature (its attributes, *Follow* for live points) or a map building. An **Explore** list holds the twin's live points with their values, plus the scene's models; one click goes there and opens the card. Buttons on the left handle overview, zoom, turning, view from above and a help note. Moves keep context: going to a 30 cm dock post shows its station and street, not the post alone. `explore=1` turns it on for any embed, `explore=0` turns it off. |
+
+### Rain flood (`flood`)
+
+```
+?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc&map=terrain&flood=extreme,2m
+```
+
+Builds the flood grid and runs the extreme storm (120 mm in 2 hours) once the
+model is in, with the camera on the whole simulated area. With `map`, it first
+waits for the map's relief (up to a minute: the relief waits on the visitor's
+consent to the map's providers), so the water runs over the real ground and,
+by default, around the OpenStreetMap neighbourhood. In the full app the flood
+panel opens with the run; in an embed only the water and its timeline show.
+Builds without the simulation ignore the parameter.
 
 ### Federated links: how several models load
 

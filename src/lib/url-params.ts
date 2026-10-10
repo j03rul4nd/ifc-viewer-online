@@ -13,6 +13,7 @@
 //   ?model=https://host/file.ifc&embed=1&panels=scene,map   (only those tools)
 //   ?model=https://host/file.ifc&embed=1&panels=-measurement (all but that one)
 //   ?model=https://host/file.ifc&embed=1&bg=white&solar=06-21T18:00   (look + sun)
+//   ?model=https://host/file.ifc&flood=extreme,1m,closed               (rain-flood run)
 //   ?model=https://host/file.ifc&layers=https://host/twin-setup.json  (data layers)
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
@@ -28,6 +29,14 @@ const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client',
 /** What the compact toolbar of the `embed` preset may carry (`?tools=`). */
 export type EmbedTool = 'validate' | 'measure'
 const EMBED_TOOLS: readonly EmbedTool[] = ['validate', 'measure']
+
+/** What a `?flood=` deep link asks for (see AppUrlParams.flood). */
+export interface FloodDeepLink {
+  storm: 'shower' | 'storm' | 'intense' | 'extreme'
+  cellM?: 1 | 2 | 5
+  boundary?: 'free' | 'closed'
+  infiltration?: 'none' | 'compacted' | 'loam' | 'sandy'
+}
 
 /** Named views a `?view=` deep link may ask for (the camera presets). */
 const VIEWS = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right'] as const
@@ -79,6 +88,14 @@ export interface AppUrlParams {
   background?: BackgroundSettings
   /** `?moon=1` — enable the moon light for the solar deep link. */
   solarMoon?: boolean
+  /**
+   * Rain-flood deep link (`?flood=extreme`, `?flood=storm,1m,closed,loam`):
+   * once the models are in, build the flood grid and run that storm. Tokens in
+   * any order: a storm (shower, storm, intense, extreme), a cell size (1m, 2m,
+   * 5m), the edges (free, closed) and a soil (sealed, compacted, loam, sandy).
+   * Only the storm is required; the rest keep the panel's defaults.
+   */
+  flood?: FloodDeepLink
   /**
    * `?map=1` — drop the model onto the basemap once it loads, using its own
    * georeferencing. Extra tokens turn on the layers a demo usually wants:
@@ -376,6 +393,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     background: parseBackgroundSpec(p.get('bg') ?? '') ?? undefined,
     solar: parseSolarParam(p.get('solar')),
     solarMoon: parseBool(p.get('moon')),
+    flood: parseFloodParam(p.get('flood')),
     map: withLook(parseMapParam(p.get('map')), p.get('look')),
     scanUrls: splitList(p.getAll('scan')).filter(isLoadableUrl),
     layersUrl: [p.get('layers') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
@@ -485,6 +503,21 @@ function parseWheel(v: string | null): WheelMode | undefined {
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */
 export function canonicalIfcType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
+}
+
+/** `extreme` or `storm,1m,closed,loam` — tokens in any order, the storm required. */
+function parseFloodParam(v: string | null): FloodDeepLink | undefined {
+  if (!v) return undefined
+  const out: Partial<FloodDeepLink> = {}
+  for (const raw of v.toLowerCase().split(',')) {
+    const t = raw.trim()
+    if (t === 'shower' || t === 'storm' || t === 'intense' || t === 'extreme') out.storm = t
+    else if (t === '1m' || t === '2m' || t === '5m') out.cellM = Number(t[0]) as 1 | 2 | 5
+    else if (t === 'free' || t === 'closed') out.boundary = t
+    else if (t === 'sealed') out.infiltration = 'none'
+    else if (t === 'compacted' || t === 'loam' || t === 'sandy') out.infiltration = t
+  }
+  return out.storm ? out as FloodDeepLink : undefined
 }
 
 /** `YYYY-MM-DDTHH:MM` (exact) or `MM-DDTHH:MM` (evergreen — current year). */
