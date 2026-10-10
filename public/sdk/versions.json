@@ -1,0 +1,17 @@
+{
+  "latest": "1.17.0",
+  "versions": {
+    "1.17.0": {
+      "ifc-viewer.es.js": {
+        "path": "1.17.0/ifc-viewer.es.js",
+        "integrity": "sha384-NMU9bUC9mzy2wR+sqKAU8xeccBhLmSCWXLnAdLf8kFC1P20FZdNBGEDKjItlyei+",
+        "bytes": 61665
+      },
+      "ifc-viewer.es.d.ts": {
+        "path": "1.17.0/ifc-viewer.es.d.ts",
+        "integrity": "sha384-KyBMphXNgNhbkxR2RD8OMhllYyI9Dm5bAKetcf34CLLtE0f7DfwldNrCraYrHUtu",
+        "bytes": 71655
+      }
+    }
+  }
+}
