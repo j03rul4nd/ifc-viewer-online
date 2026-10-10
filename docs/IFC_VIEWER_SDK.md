@@ -96,7 +96,7 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 |--------|-------------|
 | `add(name, bytes)` | Load IFC `ArrayBuffer`/`Uint8Array`. Returns `Promise<ModelLoadedEvent>`; rejects with the `model-error` message if the model fails to load or the load is cancelled. The buffer is transferred (detached) for zero-copy. |
 | `addFromUrl(url, name?)` | Load a public, CORS-enabled IFC URL. Returns `Promise<ModelLoadedEvent>`, and rejects the same way. The download reports real byte progress. |
-| `select(expressId, modelId?)` | Select + frame an element by IFC expressID. |
+| `select(expressId \| globalId, modelId?)` | Select + frame an element by IFC expressID, or by GlobalId (v1.17; it also finds the model). |
 | `isolate(ifcType?)` | Isolate a category (e.g. `"IfcWall"`); omit to clear. |
 | `setView(view, scope?)` | Fly to a named view of the scene — `iso`·`front`·`back`·`left`·`right`·`top`·`bottom` — with all of it in frame. (Between v1.14 and v1.16 the viewer ignored it; fixed in v1.17.) |
 | `frame(options?)` / `frame(elementId, modelId?, options?)` | `Promise<{ scope }>` — frame the scene tightly (v1.14), or one element (v1.17): from the current angle unless a view or angles are given; rejects when the element is not in the model. |
@@ -106,7 +106,8 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `clear()` | Cancel IFC loads still in flight, then remove all loaded models. |
 | `getLanguages()` | Supported language codes (reflects the iframe once ready). |
 | `getModels()` | `Promise<ModelSummary[]>` — the loaded models (`{ id, fileName, elementCount }`). |
-| `getElement(id, modelId?)` | `Promise<IfcElementData \| null>` — attributes with the `globalId`, the element's property/quantity sets, and its **type**'s: `typeName`, `typeProperties` (with units), `effectivePropertySets`. See [Catalogue objects](#catalogue-objects-in-a-host-app-v117). |
+| `findElements({ ifcClass?, globalId?, name?, modelId?, limit? })` | `Promise<ElementSummary[]>` — `{ expressId, modelId, globalId, ifcClass, name, typeName }` per match, across the loaded models (v1.17). |
+| `getElement(expressId \| globalId, modelId?)` | `Promise<IfcElementData \| null>` — attributes with the `globalId`, the element's property/quantity sets, and its **type**'s: `typeName`, `typeProperties` (with units), `effectivePropertySets`. See [Catalogue objects](#catalogue-objects-in-a-host-app-v117). |
 | `validate(modelId?, { force? })` | `Promise<ValidationRunResult>` — validate now and resolve with that model's Health Score and counts (v1.17). |
 | `getValidation()` | `Promise<ValidationSummary \| null>` — the result on screen; see [Validation lifecycle](#validation-lifecycle-v117). |
 | `getValidationStatus()` | `Promise<ValidationStatus>` — `idle` · `running` (with progress) · `done` · `error` (v1.17). |
@@ -139,7 +140,7 @@ Inside the iframe, every load is a job in the viewer's loading queue ([`MODEL_LO
 | `validation-completed` | `{ qualityScore, errors, warnings, info, total, modelId }` — the Health Score; `modelId` is null for a federated aggregate (`total`, `modelId`: v1.17) |
 | `validation-failed` | `{ modelId, message }` — it could not run or did not finish (v1.17) |
 | `model-error` | `{ message, url?, name? }`. Sent for download failures, invalid or unparseable files, scene failures and cancelled loads (`message: 'Load cancelled'`). `url` for URL loads, `name` for byte/file loads |
-| `element-selected` | `{ expressId, modelId, ifcType, name }` |
+| `element-selected` | `{ expressId, modelId, ifcType, name, globalId }` (`globalId`: v1.17) |
 | `pointcloud-picked` | `{ cloudId, position, sourcePosition, classification, intensity, distance }` — armed with `inspectPointCloud()`. `sourcePosition` is the file's own coordinates, which is the number a survey record already holds |
 | `map-feature-picked` | `{ id, name?, label?, featureKind, heightM?, heightEstimated }` — a building in the OpenStreetMap surroundings. Context, not model: never validated, never exported, and `heightEstimated` is true far more often than not |
 | `walk-changed` | `{ active, speed }` — walk mode turned on or off, by the visitor (G / Esc) or the host (v1.11) |
@@ -309,9 +310,11 @@ manufacturer's own sets, linked by `IfcRelDefinesByType`.
 import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.17.0/ifc-viewer.es.js"
 
 const viewer = await IfcViewer.create("#product-3d", { ui: "embed", lang: "es" })
-const { modelId } = await viewer.add("V-70-PR.ifc", bytes)        // framed iso, with a margin
+await viewer.add("V-70-PR.ifc", bytes)                            // framed iso, with a margin
 
-const el = await viewer.getElement(67, modelId)
+// The product by class — or by its GlobalId, if your catalogue keeps it
+const [win] = await viewer.findElements({ ifcClass: "IfcWindow" })
+const el = await viewer.getElement(win.globalId)                  // or (win.expressId, win.modelId)
 el.globalId        // "2c161Q3PMaELK1P$GnzTUr"
 el.typeName        // "Ventana V-70 practicable"   (el.typeClass: "IFCWINDOWTYPE")
 el.typeProperties  // [{ name: "Pset_WindowCommon", properties: [{ name: "ThermalTransmittance", value: 1.2,
@@ -329,7 +332,20 @@ el.typeProperties  // [{ name: "Pset_WindowCommon", properties: [{ name: "Therma
   `typeProperties` marked `overridden: true`. The properties panel shows the
   type's sets in a **Type properties** section, overridden values struck through.
 - The same works for IFC2x3 (window and door styles) and for any other type
-  class.
+  class. Sets attached to the type with `IfcRelDefinesByProperties` (allowed
+  in IFC4) count as the type's too.
+- Windows' and doors' **pre-defined property sets** — `IfcWindowLiningProperties`,
+  `IfcWindowPanelProperties`, `IfcDoorLiningProperties`, `IfcDoorPanelProperties` —
+  appear as sets named after their class (or their `Name`), their attributes as
+  properties (`LiningDepth`, `PanelOperation`…), with the project's units.
+- `materials` is the element's own, else its type's.
+- No expressIDs to know: `findElements({ ifcClass: 'IfcWindow' })` or
+  `getElement(globalId)` / `select(globalId)`; `element-selected` carries the
+  `globalId` of what the visitor picked.
+- In `ui: 'embed'` the properties panel opens over the right of the frame; the
+  view's centre moves into the space left (a lens shift — orbiting still turns
+  about the model), and if the visitor has not moved the camera since the last
+  framing, that framing is redone to fit beside the panel.
 - Models converted and cached by an older build are converted again on their
   next load: the cache entry records the converter revision.
 
@@ -472,7 +488,10 @@ viewer.on("element-selected", (e) => {
   validates after each load now. Auto-frame after load (`autoFrame`), `fit()` /
   `frame()` with a margin for small objects, `frame(elementId, modelId?)`, and
   `setView()` moves the camera again (a no-op since 1.14). `ui: 'embed'` with
-  `toolbar` / `tools`. Pinned builds at `/sdk/<version>/`.
+  `toolbar` / `tools`, whose properties panel keeps the picked object in view.
+  `findElements()`, GlobalIds for `getElement()` / `select()` /
+  `element-selected`, window and door lining and panel sets, the type's
+  materials. Pinned builds at `/sdk/<version>/`.
 - **1.16.0** — `layers` option (data-layer setup).
 - **1.15.0** — the article kit (`lazy`, `poster`, `aspectRatio`, `turntable`, `bindSteps`…).
 - **1.14.0** — `ui: 'article'`, tight `frame()`.

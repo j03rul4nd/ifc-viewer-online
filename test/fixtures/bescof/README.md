@@ -10,7 +10,7 @@ web-ifc + fragments pipeline.
 | File | What it pins |
 |------|--------------|
 | `V-70-PR.synthetic.ifc` | Stand-in for `V-70-PR.ifc`: IFC4, millimetres, window `#67` with GlobalId `2c161Q3PMaELK1P$GnzTUr`, type *Ventana V-70 practicable* with `Pset_WindowCommon`, `Pset_DoorWindowGlazingType`, `Pset_ManufacturerTypeInformation` and `BESCOF_EN14351` (35 properties), a W/(m²·K) derived unit in the project. |
-| `PTA-EXT-80.synthetic.ifc` | Stand-in for `PTA-EXT-80.ifc`: a door whose occurrence redefines part of its type (`Pset_DoorCommon.Reference`) — occurrence-over-type precedence — plus an enumerated property, a property with its own unit, and base quantities. |
+| `PTA-EXT-80.synthetic.ifc` | Stand-in for `PTA-EXT-80.ifc`: a door whose occurrence redefines part of its type (`Pset_DoorCommon.Reference`) — occurrence-over-type precedence — plus an enumerated property, a property with its own unit, base quantities, the type's lining and panel properties, a material on the type, and a set attached to the type by `IfcRelDefinesByProperties` (IFC4 allows it). |
 | `window-ifc2x3.synthetic.ifc` | IFC2x3: a window typed by an `IfcWindowStyle` (which fragments' importer does not keep by default), with an occurrence override. |
 
 The synthetic files are hand-written STEP, generated for these tests; they

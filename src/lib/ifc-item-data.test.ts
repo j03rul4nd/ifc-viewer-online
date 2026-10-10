@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  parseItemData, parseProjectUnits, unitSymbol, mergeEffectivePropertySets, markOverridden,
+  parseItemData, parseProjectUnits, unitSymbol, mergeEffectivePropertySets, markOverridden, summarizeItem,
   type IFCPropertySet,
 } from './ifc-item-data'
 
@@ -133,6 +133,50 @@ describe('parseItemData', () => {
   it('no type, no type data — and nothing invented', () => {
     const d = parseItemData(item('IFCWALL', 5, { Name: v('W1') }))
     expect(d).toMatchObject({ typeName: null, typeId: null, typeClass: null, typeProperties: [], effectivePropertySets: [] })
+  })
+})
+
+describe('pre-defined property sets, type sets by relation, type materials', () => {
+  const units = { LENGTHUNIT: 'mm' }
+  const lining = item('IFCWINDOWLININGPROPERTIES', 170, {
+    LiningDepth: v(70, 'IFCPOSITIVELENGTHMEASURE'), LiningThickness: v(60, 'IFCNONNEGATIVELENGTHMEASURE'),
+    ShapeAspectStyle: [item('', 9)],
+  })
+  const panel = item('IFCWINDOWPANELPROPERTIES', 171, { Name: v('Hoja'), OperationType: v('SIDEHUNGRIGHTHAND', 'IFCLABEL'), FrameDepth: v(68, 'IFCPOSITIVELENGTHMEASURE') })
+  const type = item('IFCWINDOWTYPE', 80, {
+    Name: v('V-70'),
+    HasPropertySets: [lining, panel, pset(100, 'Pset_WindowCommon', [sv(106, 'ThermalTransmittance', 1.2, 'IFCTHERMALTRANSMITTANCEMEASURE')])],
+    IsDefinedBy: [pset(190, 'BESCOF_Comercial', [sv(191, 'PlazoEntregaSemanas', 3, 'IFCCOUNTMEASURE')]), pset(100, 'Pset_WindowCommon', [])],
+    HasAssociations: [item('IFCMATERIAL', 180, { Name: v('Aluminio') })],
+  })
+  const d = parseItemData(item('IFCWINDOW', 67, { IsDefinedBy: [type] }), units)
+
+  it('reads lining and panel attributes as sets, with units and no edit handle', () => {
+    const l = d.typeProperties.find((s) => s.name === 'IfcWindowLiningProperties')!
+    expect(l.properties).toEqual([
+      { expressId: 0, name: 'LiningDepth', value: 70, type: 'IFCPOSITIVELENGTHMEASURE', unit: 'mm' },
+      { expressId: 0, name: 'LiningThickness', value: 60, type: 'IFCNONNEGATIVELENGTHMEASURE', unit: 'mm' },
+    ])
+    // a named set keeps its name
+    expect(d.typeProperties.find((s) => s.name === 'Hoja')!.properties.map((p) => p.name)).toEqual(['OperationType', 'FrameDepth'])
+  })
+
+  it('adds the sets a type gets by IfcRelDefinesByProperties, each set once', () => {
+    expect(d.typeProperties.map((s) => s.name)).toEqual(['IfcWindowLiningProperties', 'Hoja', 'Pset_WindowCommon', 'BESCOF_Comercial'])
+  })
+
+  it('takes the type\'s materials when the element has none', () => {
+    expect(d.materials).toEqual([{ name: 'Aluminio' }])
+    const own = parseItemData(item('IFCWINDOW', 67, { IsDefinedBy: [type], HasAssociations: [item('IFCMATERIAL', 1, { Name: v('Madera') })] }))
+    expect(own.materials).toEqual([{ name: 'Madera' }])
+  })
+})
+
+describe('summarizeItem', () => {
+  it('a findElements row: ids, class, name and the type\'s name', () => {
+    const raw = item('IFCDOOR', 67, { _guid: v('36RSQ5m_VCNnKU83$Up2N5'), Name: v('PTA-EXT-80'), IsDefinedBy: [pset(1, 'P', []), item('IFCDOORTYPE', 80, { Name: v('Puerta PTA-EXT-80') })] })
+    expect(summarizeItem(raw, 'm1')).toEqual({ expressId: 67, modelId: 'm1', globalId: '36RSQ5m_VCNnKU83$Up2N5', ifcClass: 'IFCDOOR', name: 'PTA-EXT-80', typeName: 'Puerta PTA-EXT-80' })
+    expect(summarizeItem(item('IFCWALL', 5), 'm2').typeName).toBeNull()
   })
 })
 

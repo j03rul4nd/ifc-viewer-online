@@ -22,7 +22,10 @@ import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
-import { ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, parseItemData, parseProjectUnits, type IFCItemData, type ProjectUnits } from './ifc-item-data'
+import {
+  ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, ELEMENT_SUMMARY_CONFIG, parseItemData, parseProjectUnits, summarizeItem,
+  type IFCItemData, type IFCElementSummary, type ProjectUnits,
+} from './ifc-item-data'
 import { mintModelId } from './loading/model-id'
 import { setSceneDatumProvider, currentDatumProvider } from './bcf-viewpoint'
 import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
@@ -215,8 +218,22 @@ function prettyType(raw: string): string {
 // importers that know them from here.
 export type {
   IFCAttribute, IFCProperty, IFCPropertySet, IFCQuantitySet, IFCMaterial, IFCItemData,
-  IFCEffectiveProperty, IFCEffectivePropertySet,
+  IFCEffectiveProperty, IFCEffectivePropertySet, IFCElementSummary,
 } from './ifc-item-data'
+
+/** What findElements matches on; every given field must match. */
+export interface ElementQuery {
+  /** IFC class(es), any case: 'IfcWindow', 'IFCDOOR'. StandardCase variants count as their class. */
+  ifcClass?: string | string[]
+  /** GlobalId(s). */
+  globalId?: string | string[]
+  /** Case-insensitive substring of the Name attribute. */
+  name?: string
+  /** Only this model. */
+  modelId?: string
+  /** Default 1000. */
+  limit?: number
+}
 
 /** 2D overlay painted into captures (see ViewerAPI.addCapturePainter). */
 export type CapturePainter = (ctx: CanvasRenderingContext2D, width: number, height: number, s: number) => boolean
@@ -642,6 +659,18 @@ export interface ViewerAPI {
    * element is not in that model or has no geometry.
    */
   frameElement(expressId: number, modelId?: string, opts?: { fill?: number; view?: FitView; animate?: boolean }): Promise<boolean>
+  /**
+   * The part of the canvas a floating panel covers, in CSS pixels. The view's
+   * centre moves into the uncovered part — a lens shift of the projection,
+   * not a move of the camera, so orbiting still turns about the model — and
+   * framing fits the uncovered width. When the visitor has not moved the
+   * camera since the last framing, that framing is redone for the new space.
+   */
+  setViewportInsets(insets: { left?: number; right?: number }, opts?: { animate?: boolean }): void
+  /** Elements matching a class, GlobalId and/or name, across the loaded models (or one). */
+  findElements(query: ElementQuery): Promise<IFCElementSummary[]>
+  /** GlobalIds of elements, in order (null where unknown). */
+  getGlobalIds(expressIds: number[], modelId?: string): Promise<(string | null)[]>
   /**
    * Return the Three.js pivot Object3D for the specified model.
    * Used by the GLB exporter to get the correct mesh hierarchy.
@@ -1250,6 +1279,50 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // unless told otherwise, with near/far and the dolly limits sized first so
   // a small object can be approached at all.
   const FIT_FILL = 0.8
+
+  // ── Viewport insets: a floating panel over part of the canvas ────────────
+  // Applied as a lens shift (Camera.setViewOffset): the projection's centre
+  // moves into the uncovered part, the camera and its orbit target do not —
+  // so picking, snapping and projected labels, which all go through the
+  // projection matrix, stay exact.
+  let viewInsets = { left: 0, right: 0 }
+  let appliedShift = 0
+  let insetRaf = 0
+  // The last programmatic framing, and whether the visitor has moved the
+  // camera since: if not, a change of free space redoes it.
+  let lastFrame: (() => void) | null = null
+  let movedSinceFrame = true
+  function canvasCss(): { w: number; h: number } {
+    const el = world.renderer?.three.domElement
+    return { w: el?.clientWidth || 0, h: el?.clientHeight || 0 }
+  }
+  function applyLensShift(shift: number): void {
+    const { w, h } = canvasCss()
+    // A host can set insets as soon as the viewer exists — before the
+    // fragments engine is up, or after a dispose: neither is an error.
+    let cams: Array<THREE.PerspectiveCamera | THREE.OrthographicCamera>
+    try { cams = [world.camera.threePersp, world.camera.threeOrtho] } catch { return }
+    for (const cam of cams) {
+      if (!w || !h || Math.abs(shift) < 0.5) cam.clearViewOffset()
+      else cam.setViewOffset(w, h, shift, 0, w, h)
+    }
+    appliedShift = Math.abs(shift) < 0.5 ? 0 : shift
+    if (world.renderer) world.renderer.needsUpdate = true
+    try { void fragmentsManager.core.update(true) } catch { /* engine not initialised yet */ }
+  }
+  /** The aspect a framing should fit: the uncovered width over the height. */
+  function framingAspect(base: number): number {
+    const { w } = canvasCss()
+    const free = w - viewInsets.left - viewInsets.right
+    return w > 0 && free >= w * 0.25 ? base * (free / w) : base
+  }
+  // 'control', not 'controlstart': a click that picks an element starts a
+  // control without moving anything, and it is exactly the click that opens
+  // the panel this redo is for.
+  world.camera.controls.addEventListener('control', () => { movedSinceFrame = true })
+  // A resize re-sets the projection; the shift is in pixels of the old size.
+  world.camera.onAspectUpdated.add(() => { if (appliedShift) applyLensShift(appliedShift) })
+
   function currentView(): FitView {
     const pos = new THREE.Vector3()
     const tgt = new THREE.Vector3()
@@ -1264,9 +1337,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const cam = world.camera.three
     const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
     const el = world.renderer?.three.domElement
-    const aspect = cam instanceof THREE.PerspectiveCamera ? cam.aspect : (el?.clientWidth || 16) / (el?.clientHeight || 9)
+    const aspect = framingAspect(cam instanceof THREE.PerspectiveCamera ? cam.aspect : (el?.clientWidth || 16) / (el?.clientHeight || 9))
+    // The view is decided once: a redo after the free space changed keeps it.
+    const view = opts.view ?? currentView()
+    lastFrame = () => fitBoxWithMargin(box, { ...opts, view })
+    movedSinceFrame = false
     const { position, target } = fitPose(
-      { min: box.min, max: box.max }, opts.view ?? currentView(), fov, aspect, opts.fill ?? FIT_FILL,
+      { min: box.min, max: box.max }, view, fov, aspect, opts.fill ?? FIT_FILL,
     )
     const animate = opts.animate !== false
     void world.camera.controls.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, animate)
@@ -1330,6 +1407,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const fragmentsManager = components.get(OBC.FragmentsManager)
 
+  /** The lens shift a capture session took off, to put back after it. */
+  let shotLensShift = 0
   /** Everything beginShotRender changed, so endShotRender can put it back. */
   let shotSession: {
     width: number
@@ -3225,6 +3304,76 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return true
     },
 
+    setViewportInsets(next, opts) {
+      const prev = viewInsets
+      viewInsets = { left: Math.max(0, next.left ?? 0), right: Math.max(0, next.right ?? 0) }
+      if (prev.left === viewInsets.left && prev.right === viewInsets.right) return
+      const to = (viewInsets.right - viewInsets.left) / 2
+      const from = appliedShift
+      if (insetRaf) cancelAnimationFrame(insetRaf)
+      insetRaf = 0
+      const hidden = typeof document !== 'undefined' && document.hidden
+      if (opts?.animate === false || hidden || Math.abs(to - from) < 1) {
+        applyLensShift(to)
+      } else {
+        // rAF, not a timer: a frame-paced shift, and nothing at all in a
+        // hidden tab (handled above by jumping straight there).
+        const t0 = performance.now()
+        const step = (now: number): void => {
+          const k = Math.min(1, (now - t0) / 240)
+          applyLensShift(from + (to - from) * (1 - Math.pow(1 - k, 3)))
+          insetRaf = k < 1 ? requestAnimationFrame(step) : 0
+        }
+        insetRaf = requestAnimationFrame(step)
+      }
+      // Untouched since the last framing: redo it for the new free space.
+      if (!movedSinceFrame && lastFrame) lastFrame()
+    },
+
+    async findElements(query) {
+      const classes = query.ifcClass === undefined ? null
+        : (Array.isArray(query.ifcClass) ? query.ifcClass : [query.ifcClass]).map((c) => canonicalType(c.trim().toUpperCase()))
+      const guids = query.globalId === undefined ? null
+        : (Array.isArray(query.globalId) ? query.globalId : [query.globalId]).filter((g) => typeof g === 'string' && g)
+      const name = query.name?.trim().toLowerCase() || null
+      const limit = query.limit && query.limit > 0 ? query.limit : 1000
+      const out: IFCElementSummary[] = []
+      for (const [mid, model] of modelObjects) {
+        if (query.modelId && mid !== query.modelId) continue
+        let ids: number[]
+        if (guids) {
+          if (guids.length === 0) continue
+          try {
+            ids = (await model.getLocalIdsByGuids(guids)).filter((x): x is number => typeof x === 'number')
+          } catch { ids = [] }
+        } else {
+          ids = [...(typeMapByModel.get(mid) ?? new Map<number, string>()).entries()]
+            .filter(([, t]) => !classes || classes.includes(canonicalType(t)))
+            .map(([id]) => id)
+        }
+        for (let i = 0; i < ids.length && out.length < limit; i += 500) {
+          let items: unknown[] = []
+          try { items = await model.getItemsData(ids.slice(i, i + 500), ELEMENT_SUMMARY_CONFIG) } catch { items = [] }
+          for (const raw of items) {
+            if (!raw || typeof raw !== 'object') continue
+            const e = summarizeItem(raw as Record<string, unknown>, mid)
+            if (classes && !(e.ifcClass && classes.includes(canonicalType(e.ifcClass)))) continue
+            if (name && !(e.name ?? '').toLowerCase().includes(name)) continue
+            out.push(e)
+            if (out.length >= limit) break
+          }
+        }
+        if (out.length >= limit) break
+      }
+      return out
+    },
+
+    async getGlobalIds(expressIds, modelId) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? (modelId ? null : currentModel)
+      if (!model || expressIds.length === 0) return expressIds.map(() => null)
+      try { return await model.getGuidsByLocalIds(expressIds) } catch { return expressIds.map(() => null) }
+    },
+
     frameElements(ids, modelId) {
       const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
       if (!model || ids.length === 0) return
@@ -3608,9 +3757,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
       const cam = world.camera.three
       const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
-      const aspect = cam instanceof THREE.PerspectiveCamera
+      const aspect = framingAspect(cam instanceof THREE.PerspectiveCamera
         ? cam.aspect
-        : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9)
+        : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9))
+      const self = this
+      lastFrame = () => { self.setCameraPreset(preset, opts) }
+      movedSinceFrame = false
       const tight = opts?.fill !== undefined || opts?.azimuthDeg !== undefined || opts?.elevationDeg !== undefined
       const { position, target } = tight
         ? fitPose(framing.box, {
@@ -4267,6 +4419,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // ─── Shot rendering (Clip Studio) ─────────────────────────────────────────
 
     async beginShotRender(width: number, height: number): Promise<void> {
+      // A capture is the whole frame: no panel covers it, so no lens shift.
+      shotLensShift = appliedShift
+      if (shotLensShift) applyLensShift(0)
       if (shotSession) return
       const controls = world.camera.controls
       const pos = new THREE.Vector3()
@@ -4336,6 +4491,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     setShotExplode(explode) { shotExplode = explode },
 
     async endShotRender(): Promise<void> {
+      if (shotLensShift) { const shift = shotLensShift; shotLensShift = 0; setTimeout(() => applyLensShift(shift), 0) }
       const s = shotSession
       if (!s) return
       shotExplode = null

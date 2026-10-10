@@ -630,7 +630,7 @@ const API_GROUPS = [
     ['clear()', 'void', 'clear'],
   ]],
   ['camera', 'grpCamera', [
-    ['select(expressId, modelId?)', 'void', 'select'],
+    ['select(expressId | globalId, modelId?)', 'void', 'select'],
     ['setView(view)', 'void', 'setView'],
     ['frame({ view?, fill?, azimuth?, elevation?, animate? })', 'Promise<{ scope }>', 'camFrame'],
     ['frame(elementId, modelId?, options?)', "Promise<{ scope: 'element' }>", 'camFrameEl'],
@@ -714,7 +714,8 @@ const API_GROUPS = [
   ]],
   ['queries', 'grpQueries', [
     ['getModels()', 'Promise<ModelSummary[]>', 'getModels'],
-    ['getElement(id, modelId?)', 'Promise<IfcElementData | null>', 'getElement'],
+    ['findElements({ ifcClass?, globalId?, name?, modelId?, limit? })', 'Promise<ElementSummary[]>', 'findEl'],
+    ['getElement(expressId | globalId, modelId?)', 'Promise<IfcElementData | null>', 'getElement'],
     ['validate(modelId?, { force? })', 'Promise<ValidationRunResult>', 'valRun'],
     ['getValidation()', 'Promise<ValidationSummary | null>', 'getValidation'],
     ['getValidationStatus()', 'Promise<ValidationStatus>', 'valStatus'],
@@ -805,7 +806,7 @@ const EVENTS = [
   ['validation-completed', '{ modelId, qualityScore, errors, warnings, info, total }', 'evValidation'],
   ['validation-failed', '{ modelId, message }', 'evValFailed'],
   ['model-error', '{ message, url?, name? }', 'evError'],
-  ['element-selected', '{ expressId, modelId, ifcType, name }', 'evSelected'],
+  ['element-selected', '{ expressId, modelId, ifcType, name, globalId }', 'evSelected'],
   ['pointcloud-picked', '{ cloudId, position, sourcePosition, classification, intensity, distance }', 'evPointPicked'],
   ['map-feature-picked', '{ id, name?, label?, featureKind, heightM?, heightEstimated }', 'evMapPicked'],
   ['walk-changed', '{ active, speed }', 'evWalk'],
@@ -895,10 +896,13 @@ const viewer = await IfcViewer.create("#product-3d", {
   lang: "es",
 });
 const bytes = await fetch(product.ifcUrl).then(r => r.arrayBuffer());
-const { modelId } = await viewer.add("V-70-PR.ifc", bytes);   // framed for you
+await viewer.add("V-70-PR.ifc", bytes);                      // framed for you
+
+// The product, by class (or by its GlobalId) — no expressIDs to know
+const [win] = await viewer.findElements({ ifcClass: "IfcWindow" });
 
 // What the manufacturer put in the type (IfcWindowType → HasPropertySets)
-const el = await viewer.getElement(67, modelId);
+const el = await viewer.getElement(win.globalId);
 const pset = (name) => el.effectivePropertySets.find(s => s.name === name);
 const uw = pset("Pset_WindowCommon")?.properties.find(p => p.name === "ThermalTransmittance");
 console.log(el.typeName, el.globalId, uw?.value, uw?.unit);   // "Ventana V-70 practicable" … 1.2 "W/(m²·K)"

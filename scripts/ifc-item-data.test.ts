@@ -23,7 +23,7 @@ import { IfcImporter, SingleThreadedFragmentsModel } from '@thatopen/fragments'
 import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 import {
-  ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, parseItemData, parseProjectUnits,
+  ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, ELEMENT_SUMMARY_CONFIG, parseItemData, parseProjectUnits, summarizeItem,
   type IFCItemData, type IFCPropertySet,
 } from '../src/lib/ifc-item-data'
 import { EXTRA_IMPORTER_CLASSES, addImporterClasses } from '../src/lib/ifc-importer-classes'
@@ -192,6 +192,38 @@ describe('PTA-EXT-80 door (occurrence overrides part of its type)', () => {
     const q = data.quantitySets.find((s) => s.name === 'Qto_DoorBaseQuantities')!
     expect(q.quantities.find((x) => x.name === 'Width')).toMatchObject({ value: 1000, quantityType: 'Length', unit: 'mm' })
   })
+
+  it('reads the door\'s lining and panel (pre-defined property sets, not IfcPropertySet)', () => {
+    expect(prop(data.typeProperties, 'IfcDoorLiningProperties', 'LiningDepth')).toMatchObject({ value: 80, unit: 'mm', expressId: 0 })
+    expect(prop(data.typeProperties, 'IfcDoorLiningProperties', 'LiningThickness')?.value).toBe(60)
+    expect(prop(data.typeProperties, 'IfcDoorPanelProperties', 'PanelOperation')?.value).toBe('SWINGING')
+    expect(prop(data.typeProperties, 'IfcDoorPanelProperties', 'PanelPosition')?.value).toBe('LEFT')
+  })
+
+  it('reads a set attached to the TYPE with IfcRelDefinesByProperties (IFC4)', () => {
+    expect(prop(data.typeProperties, 'BESCOF_Comercial', 'PlazoEntregaSemanas')?.value).toBe(3)
+    // …without mistaking it for one of the element's own
+    expect(data.propertySets.map((s) => s.name)).toEqual(['Pset_DoorCommon'])
+  })
+
+  it('falls back to the type\'s material when the element has none', () => {
+    expect(data.materials).toEqual([{ name: 'Aluminio lacado RAL 7016' }])
+  })
+})
+
+describe('finding elements (ELEMENT_SUMMARY_CONFIG)', () => {
+  it('lists an element with its GlobalId, class, name and type name — cheaply', async () => {
+    const model = await convert(fixture('V-70-PR.synthetic.ifc'))
+    const [raw] = model.getItemsData([67], ELEMENT_SUMMARY_CONFIG) as Array<Record<string, unknown>>
+    expect(summarizeItem(raw, 'm1')).toEqual({
+      expressId: 67, modelId: 'm1', globalId: '2c161Q3PMaELK1P$GnzTUr', ifcClass: 'IFCWINDOW',
+      name: 'V-70-PR', typeName: 'Ventana V-70 practicable',
+    })
+    // nothing below the type is read
+    const type = (raw.IsDefinedBy as Array<Record<string, unknown>>)[0]
+    expect(type.HasPropertySets).toBeUndefined()
+    expect(model.getLocalIdsByGuids(['2c161Q3PMaELK1P$GnzTUr'])).toEqual([67])
+  }, 60_000)
 })
 
 describe('IFC2x3 window typed by an IfcWindowStyle', () => {

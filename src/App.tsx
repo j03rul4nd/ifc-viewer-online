@@ -906,6 +906,33 @@ export default function App() {
     if (!useUIStore.getState().sidebarExpanded) useUIStore.setState({ sidebarExpanded: true })
   }, [embedChrome.propertiesOnSelect, selected])
 
+  // …without covering what was picked: the panel floats over the right of
+  // the canvas, so the view's centre moves into the rest (a lens shift, see
+  // ViewerAPI.setViewportInsets) and, when the visitor has not moved the
+  // camera since the last framing, that framing is redone for the space
+  // left. A product page is mostly one object and this panel.
+  const propertiesOpen = useUIStore((s) => s.sidebarExpanded)
+  useEffect(() => {
+    if (!embedChrome.propertiesOnSelect) return
+    const update = (): void => {
+      const api = viewerApiRef.current
+      if (!api) return
+      const panel = document.querySelector<HTMLElement>('[data-properties-panel]')
+      const desktop = window.matchMedia('(min-width: 768px)').matches
+      if (!propertiesOpen || !panel || !desktop) { api.setViewportInsets({ right: 0 }); return }
+      // Layout box, not getBoundingClientRect: the panel slides in with a
+      // transform, and mid-slide it would measure as off screen.
+      const host = panel.offsetParent as HTMLElement | null
+      const width = host?.clientWidth ?? 0
+      const right = width ? Math.max(0, width - panel.offsetLeft + 12) : 0
+      // A narrow frame: shifting by most of it helps nobody.
+      api.setViewportInsets({ right: right < width * 0.6 ? right : 0 })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [embedChrome.propertiesOnSelect, propertiesOpen])
+
   // The rail's vocabulary. Icons live here rather than in the hook so the hook
   // imports no JSX and stays testable as plain logic.
   const railIcons = useMemo(() => ({
@@ -1605,6 +1632,13 @@ export default function App() {
   // The card follows the selection, and closes when nothing is selected.
   const [elementCardOpen, setElementCardOpen] = useState(false)
   useEffect(() => { if (!selected) setElementCardOpen(false) }, [selected])
+  // `embed` in a narrow frame (a phone, or a slim column of a product page):
+  // no rail and no bottom nav there, so the pick opens the element card —
+  // and from it every property — or such a visitor could never see one.
+  useEffect(() => {
+    if (!embedChrome.propertiesOnSelect || !selected) return
+    if (window.matchMedia('(max-width: 767px)').matches) setElementCardOpen(true)
+  }, [embedChrome.propertiesOnSelect, selected])
 
   // ── Screen readers: say what the tap selected ──────────────────────────────
   // A tap on a canvas gives VoiceOver nothing to read. This polite live region
@@ -2271,6 +2305,19 @@ export default function App() {
   const filtersRef = useRef({ hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel })
   filtersRef.current = { hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel }
 
+  // An element a host names by expressID, or by GlobalId (SDK 1.17). A GlobalId
+  // is unique across a federation, so it also says which model; an expressID
+  // only means something together with a model (or the active one).
+  const resolveElementRef = useCallback(async (msg: Record<string, unknown>): Promise<{ expressId: number; modelId?: string } | null> => {
+    const modelId = typeof msg.modelId === 'string' && msg.modelId ? msg.modelId : undefined
+    if (typeof msg.globalId === 'string' && msg.globalId) {
+      const [hit] = (await viewerApiRef.current?.findElements({ globalId: msg.globalId, modelId, limit: 1 })) ?? []
+      return hit ? { expressId: hit.expressId, modelId: hit.modelId } : null
+    }
+    const id = Number(msg.expressId)
+    return Number.isFinite(id) && id > 0 ? { expressId: id, modelId } : null
+  }, [])
+
   // ── Inbound postMessage commands (host CDE → iframe) ──────────────────────
   // Lets a CDE drive the embedded viewer two-way (load / select / isolate / fit).
   // Only active when running inside an iframe. Commands use the `ifcviewer:` ns.
@@ -2326,12 +2373,13 @@ export default function App() {
           break
         }
         case 'ifcviewer:select': {
-          const id = Number(msg.expressId)
-          if (Number.isFinite(id) && id > 0) {
-            const modelId = typeof msg.modelId === 'string' ? msg.modelId : undefined
-            viewerApiRef.current?.selectElement(id, modelId)
-            viewerApiRef.current?.focusElement(id, modelId)
-          }
+          // By expressID, or by GlobalId (v1.17): a catalogue knows its
+          // product by GlobalId, not by the file's line numbers.
+          void resolveElementRef(msg).then((ref) => {
+            if (!ref) return
+            viewerApiRef.current?.selectElement(ref.expressId, ref.modelId)
+            viewerApiRef.current?.focusElement(ref.expressId, ref.modelId)
+          })
           break
         }
         case 'ifcviewer:isolate': {
@@ -2468,11 +2516,29 @@ export default function App() {
           })))
           break
         case 'ifcviewer:get-element': {
-          const id = Number(msg.expressId)
-          const modelId = typeof msg.modelId === 'string' ? msg.modelId : undefined
-          void respond(() => (Number.isFinite(id) && id > 0
-            ? (viewerApiRef.current?.getItemData(id, modelId) ?? null)
-            : null))
+          void respond(async () => {
+            const ref = await resolveElementRef(msg)
+            return ref ? (await viewerApiRef.current?.getItemData(ref.expressId, ref.modelId)) ?? null : null
+          })
+          break
+        }
+        case 'ifcviewer:find-elements': {
+          const strings = (v: unknown): string | string[] | undefined =>
+            typeof v === 'string' ? v
+              : Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string')
+              : undefined
+          const limit = Number(msg.limit)
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return api.findElements({
+              ifcClass: strings(msg.ifcClass),
+              globalId: strings(msg.globalId),
+              name: typeof msg.name === 'string' ? msg.name : undefined,
+              modelId: typeof msg.modelId === 'string' ? msg.modelId : undefined,
+              limit: Number.isFinite(limit) && limit > 0 ? limit : undefined,
+            })
+          })
           break
         }
         case 'ifcviewer:get-validation':
@@ -3843,14 +3909,29 @@ export default function App() {
   }, [hasSceneModels])
 
   // ── Relay element selection to an embedding parent (CDE integration) ───────
+  // With its GlobalId (v1.17), so a host can map a pick to its own records.
+  // Looked up before sending: a worker round trip, milliseconds. A pick that
+  // a newer one replaced before the lookup returned is not sent at all —
+  // hosts read the last event as the current selection.
+  const selectionSeqRef = useRef(0)
   useEffect(() => {
     if (!selected) return
-    emitEmbedEvent('element-selected', {
-      expressId: Number(selected.id),
-      modelId:   selected.modelId ?? null,
-      ifcType:   selected.type,
-      name:      selected.name,
-    })
+    const seq = ++selectionSeqRef.current
+    const expressId = Number(selected.id)
+    const modelId = selected.modelId ?? null
+    const send = (globalId: string | null): void => {
+      if (seq !== selectionSeqRef.current) return
+      emitEmbedEvent('element-selected', {
+        expressId,
+        modelId,
+        ifcType:  selected.type,
+        name:     selected.name,
+        globalId,
+      })
+    }
+    const api = viewerApiRef.current
+    if (!api || !isEmbedded()) { send(null); return }
+    void api.getGlobalIds([expressId], modelId ?? undefined).then(([g]) => send(g ?? null), () => send(null))
   }, [selected])
 
   // ── Legend data — merged across all loaded models ────────────────────────
@@ -4508,7 +4589,7 @@ export default function App() {
                     onMore={(info) => setCtxMenu({ x: 0, y: 0, info })}
                   />
                   )}
-                  {!embedChrome.embed && !clientMode && (
+                  {(!embedChrome.embed || embedChrome.propertiesOnSelect) && !clientMode && (
                   <MobileElementCard
                     open={elementCardOpen && !!selected}
                     selected={selected}

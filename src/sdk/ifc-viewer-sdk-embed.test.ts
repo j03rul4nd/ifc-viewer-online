@@ -199,6 +199,52 @@ describe('SDK 1.17 — camera', () => {
   })
 })
 
+describe('SDK 1.17 — finding the product', () => {
+  beforeEach(mount)
+
+  it('findElements() is a query with the filters it was given', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    const p = v.findElements({ ifcClass: ['IfcWindow', 'IfcDoor'], name: 'V-70' })
+    await tick()
+    const q = postsOfType(post, 'ifcviewer:find-elements')[0]
+    expect(q).toMatchObject({ ifcClass: ['IfcWindow', 'IfcDoor'], name: 'V-70' })
+    const data = [{ expressId: 67, modelId: 'm1', globalId: '2c161Q3PMaELK1P$GnzTUr', ifcClass: 'IFCWINDOW', name: 'V-70-PR', typeName: 'Ventana V-70 practicable' }]
+    emitFromIframe(v, { type: 'result', requestId: q.requestId, ok: true, data })
+    await expect(p).resolves.toEqual(data)
+    v.dispose()
+  })
+
+  it('getElement() and select() take a GlobalId as well as an expressID', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    v.getElement('2c161Q3PMaELK1P$GnzTUr').catch(() => undefined)
+    v.getElement(67, 'm1').catch(() => undefined)
+    v.select('2c161Q3PMaELK1P$GnzTUr')
+    v.select(67, 'm1')
+    await tick()
+    const [byGuid, byId] = postsOfType(post, 'ifcviewer:get-element')
+    expect(byGuid).toMatchObject({ globalId: '2c161Q3PMaELK1P$GnzTUr' })
+    expect(byGuid.expressId).toBeUndefined()
+    expect(byId).toMatchObject({ expressId: 67, modelId: 'm1' })
+    const [selGuid, selId] = postsOfType(post, 'ifcviewer:select')
+    expect(selGuid).toMatchObject({ globalId: '2c161Q3PMaELK1P$GnzTUr' })
+    expect(selId).toMatchObject({ expressId: 67, modelId: 'm1' })
+    v.dispose()
+  })
+
+  it('element-selected carries the GlobalId', () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    let got: unknown = null
+    v.on('element-selected', (e) => { got = e })
+    emitFromIframe(v, { type: 'element-selected', expressId: 67, modelId: 'm1', ifcType: 'IFCWINDOW', name: 'V-70-PR', globalId: '2c161Q3PMaELK1P$GnzTUr' })
+    expect(got).toMatchObject({ expressId: 67, globalId: '2c161Q3PMaELK1P$GnzTUr' })
+    v.dispose()
+  })
+})
+
 describe('pinned build: the app above sdk/<version>/', () => {
   it('finds the app from the moving path and from the pinned one alike', () => {
     expect(appBaseUrlFor('https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js')).toBe('https://www.ifcvieweronline.eu/')

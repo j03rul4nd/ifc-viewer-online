@@ -90,6 +90,18 @@ export interface IFCQuantitySet {
   }>
 }
 
+/** One element, as findElements lists it. */
+export interface IFCElementSummary {
+  expressId: number
+  modelId: string
+  globalId: string | null
+  /** e.g. `IFCWINDOW` */
+  ifcClass: string | null
+  name: string | null
+  /** Name of the element's type, when it has one. */
+  typeName: string | null
+}
+
 /** A material associated to an element */
 export interface IFCMaterial {
   name: string
@@ -130,7 +142,7 @@ export interface IFCItemData {
   typeGlobalId: string | null
   /** Type and occurrence property sets merged; the occurrence's value wins. */
   effectivePropertySets: IFCEffectivePropertySet[]
-  /** Materials from HasAssociations */
+  /** Materials from HasAssociations — the element's own, else its type's */
   materials: IFCMaterial[]
   /** Raw data for debugging / future use */
   raw: Record<string, unknown>
@@ -180,6 +192,20 @@ export const ITEM_DATA_CONFIG = {
     HasPropertySets:      BOTH,
     ContainedInStructure: { attributes: true, relations: false },
     HasAssociations:      BOTH,
+  },
+}
+
+/**
+ * What findElements reads per element: its name, GlobalId and class, and its
+ * type's name — nothing nested below that, so listing every window of a
+ * federated model stays cheap.
+ */
+export const ELEMENT_SUMMARY_CONFIG = {
+  attributesDefault: false,
+  attributes: ['Name'],
+  relations: {
+    IsDefinedBy: { attributes: true, relations: false },
+    IsTypedBy:   { attributes: true, relations: false },
   },
 }
 
@@ -446,14 +472,59 @@ function readProperties(holder: Raw, units: ProjectUnits, prefix = ''): IFCPrope
   return out
 }
 
-/** Property sets among `IsDefinedBy` / `HasPropertySets` entries (quantity sets and types skipped). */
+/** IfcPreDefinedPropertySet classes, by the name a reader knows them under. */
+const PREDEFINED_SETS: Record<string, string> = {
+  IFCWINDOWLININGPROPERTIES: 'IfcWindowLiningProperties',
+  IFCWINDOWPANELPROPERTIES: 'IfcWindowPanelProperties',
+  IFCDOORLININGPROPERTIES: 'IfcDoorLiningProperties',
+  IFCDOORPANELPROPERTIES: 'IfcDoorPanelProperties',
+  IFCPERMEABLECOVERINGPROPERTIES: 'IfcPermeableCoveringProperties',
+}
+
+/**
+ * A pre-defined property set — a window's or a door's lining and panels:
+ * frame depth and thickness, panel operation and width. Its values are the
+ * entity's own attributes rather than IfcProperty entities, so a property
+ * here has no expressId of its own (0: the panel offers no edit for it).
+ */
+function readPredefinedSet(set: Raw, cls: string, units: ProjectUnits): IFCPropertySet | null {
+  const properties: IFCProperty[] = []
+  for (const [key, attr] of Object.entries(set)) {
+    if (key.startsWith('_') || key === 'Name' || key === 'Description' || key === 'GlobalId') continue
+    if (!isObj(attr) || !('value' in attr)) continue
+    const value = attrValue(attr)
+    if (value === null) continue
+    const type = attrType(attr)
+    const unitType = type ? MEASURE_UNIT_TYPE[type.toUpperCase()] : undefined
+    const unit = unitType ? units[unitType] : undefined
+    properties.push({ expressId: 0, name: key, value, ...(type ? { type } : {}), ...(unit ? { unit } : {}) })
+  }
+  if (properties.length === 0) return null
+  return { expressId: localId(set), name: attrStr(set.Name) || PREDEFINED_SETS[cls] || cls, properties }
+}
+
+/**
+ * Property sets among `IsDefinedBy` / `HasPropertySets` entries (quantity sets
+ * and types skipped): IfcPropertySet, and the pre-defined sets windows and
+ * doors carry. Each set once, even when listed twice.
+ */
 export function formatPsets(entries: unknown, units: ProjectUnits = {}): IFCPropertySet[] {
   const result: IFCPropertySet[] = []
+  const seen = new Set<number>()
   for (const pset of list(entries)) {
+    const id = localId(pset)
+    if (id && seen.has(id)) continue
+    const cls = category(pset)
+    if (cls && cls in PREDEFINED_SETS) {
+      const set = readPredefinedSet(pset, cls, units)
+      if (set) { result.push(set); if (id) seen.add(id) }
+      continue
+    }
     if (!Array.isArray(pset.HasProperties)) continue
     const name = attrStr(pset.Name)
     if (!name) continue
-    result.push({ expressId: localId(pset), name, properties: readProperties(pset, units) })
+    result.push({ expressId: id, name, properties: readProperties(pset, units) })
+    if (id) seen.add(id)
   }
   return result
 }
@@ -494,9 +565,10 @@ export interface ResolvedType {
   typeClass: string | null
   typeGlobalId: string | null
   psets: IFCPropertySet[]
+  materials: IFCMaterial[]
 }
 
-const NO_TYPE: ResolvedType = { typeId: null, typeName: null, typeClass: null, typeGlobalId: null, psets: [] }
+const NO_TYPE: ResolvedType = { typeId: null, typeName: null, typeClass: null, typeGlobalId: null, psets: [], materials: [] }
 
 /**
  * The element's type object: under `IsTypedBy` when an importer files it
@@ -512,7 +584,11 @@ export function resolveType(raw: Raw, units: ProjectUnits = {}): ResolvedType {
     typeName: attrStr(t.Name),
     typeClass: category(t),
     typeGlobalId: guidOf(t),
-    psets: formatPsets(t.HasPropertySets, units),
+    // HasPropertySets is the schema's way; IFC4 also lets an exporter attach
+    // sets to a type with IfcRelDefinesByProperties, which lands under the
+    // type's own IsDefinedBy.
+    psets: formatPsets([...list(t.HasPropertySets), ...list(t.IsDefinedBy)], units),
+    materials: parseAssociations(t.HasAssociations),
   }
 }
 
@@ -598,8 +674,10 @@ export function parseAssociations(hasAssociations: unknown): IFCMaterial[] {
 
 /** One getItemsData() record → IFCItemData. `units` from parseProjectUnits. */
 export function parseItemData(raw: Raw, units: ProjectUnits = {}): IFCItemData {
-  const propertySets = formatPsets(raw.IsDefinedBy, units)
+  // The type sits among IsDefinedBy too: keep it out of the element's own sets.
+  const propertySets = formatPsets(list(raw.IsDefinedBy).filter((e) => !isTypeObject(e)), units)
   const type = resolveType(raw, units)
+  const materials = parseAssociations(raw.HasAssociations)
   return {
     ifcClass:       category(raw),
     name:           attrStr(raw.Name),
@@ -617,7 +695,21 @@ export function parseItemData(raw: Raw, units: ProjectUnits = {}): IFCItemData {
     typeClass:      type.typeClass,
     typeGlobalId:   type.typeGlobalId,
     effectivePropertySets: mergeEffectivePropertySets(propertySets, type.psets),
-    materials:      parseAssociations(raw.HasAssociations),
+    // A catalogue object often carries its materials on the type.
+    materials:      materials.length ? materials : type.materials,
     raw,
+  }
+}
+
+/** One getItemsData() record read with ELEMENT_SUMMARY_CONFIG → a findElements row. */
+export function summarizeItem(raw: Raw, modelId: string): IFCElementSummary {
+  const type = [...list(raw.IsTypedBy), ...list(raw.IsDefinedBy).filter(isTypeObject)][0]
+  return {
+    expressId: localId(raw),
+    modelId,
+    globalId: guidOf(raw),
+    ifcClass: category(raw),
+    name: attrStr(raw.Name),
+    typeName: type ? attrStr(type.Name) : null,
   }
 }

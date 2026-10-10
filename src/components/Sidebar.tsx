@@ -290,17 +290,20 @@ function PsetRow({
   elementExpressId,
   onEditProperty,
   forceOpen = false,
+  defaultOpen = false,
   dirtyProps = new Map(),
 }: {
   pset: IFCPropertySet
   elementExpressId: number
   onEditProperty: (psetName: string, propName: string, propExpressId: number, oldValue: string, newValue: string) => void
   forceOpen?: boolean
+  /** Start expanded (the visitor can still fold it). */
+  defaultOpen?: boolean
   /** propExpressId (as string) → pending new value */
   dirtyProps?: Map<string, string>
 }) {
   const { t } = useTranslation('sidebar')
-  const [userOpen, setUserOpen] = useState(false)
+  const [userOpen, setUserOpen] = useState(defaultOpen)
   const open = forceOpen || userOpen
   const setOpen = setUserOpen
   const [editingPropId, setEditingPropId] = useState<number | null>(null)
@@ -384,7 +387,10 @@ function PsetRow({
                         </>
                       ) : (
                         <>
-                          {prop.type && (
+                          {/* The value's IFC type — unless it has a unit, which
+                              says the same thing to a reader and needs the room
+                              (the type stays in the tooltip). */}
+                          {prop.type && !prop.unit && (
                             <span className="shrink-0 text-[9px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-faint)] border border-[var(--border)] leading-none">
                               {prop.type.replace(/^IFC/i, '').replace(/MEASURE$/i, '').slice(0, 8)}
                             </span>
@@ -401,7 +407,7 @@ function PsetRow({
                             }`}
                             title={prop.overridden
                               ? t('properties.overriddenByOccurrence')
-                              : `${String(displayVal ?? '—')}${prop.unit ? ` ${prop.unit}` : ''}`}
+                              : `${String(displayVal ?? '—')}${prop.unit ? ` ${prop.unit}` : ''}${prop.type ? ` · ${prop.type}` : ''}`}
                           >
                             {formatPropValue(displayVal)}
                             {prop.unit && displayVal !== null && displayVal !== '' && (
@@ -1384,13 +1390,16 @@ function PropertiesPanel({
                       )}
                     </div>
                   )}
-                  {typeProperties.map(ps => (
+                  {typeProperties.map((ps, i) => (
                     <PsetRow
-                      key={`${expressId}:type:${ps.name}`}
+                      key={`${expressId}:type:${ps.expressId}:${ps.name}`}
                       pset={ps}
                       elementExpressId={expressId ?? 0}
                       onEditProperty={handleEditProperty}
                       dirtyProps={pendingPropDiffs}
+                      // A catalogue object keeps its data in the type: show the
+                      // first set straight away when the element has none of its own.
+                      defaultOpen={i === 0 && psets.length === 0}
                     />
                   ))}
                 </div>
@@ -2234,6 +2243,8 @@ export default function Sidebar({
           : 'md:translate-x-0',
         ].join(' ')}
         style={{ WebkitBackfaceVisibility: 'hidden' }}
+        // Measured by App to keep a picked object clear of it (embed preset).
+        data-properties-panel=""
       >
       {/* Mobile: drag handle + header row */}
       <div className="md:hidden flex flex-col items-center shrink-0">

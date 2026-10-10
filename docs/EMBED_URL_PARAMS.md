@@ -163,7 +163,10 @@ a manufacturer's product page, a catalogue, a CDE record. Its toolbar is
 **compact**: the file name, then **Validate** (with the Health Score) and
 **Measure** — no Open, Check, View, Tools, Capture, Share, help, account or
 language. The properties panel starts closed, so the model gets the whole
-frame, and opens itself when the visitor selects an element; the rail offers
+frame, and opens itself when the visitor selects an element — the view's
+centre then moves into the space beside it, so the picked object stays in
+sight (and the last framing is redone to fit, unless the visitor has moved
+the camera since); the rail offers
 properties only (`panels=` widens or narrows it). No toasts, no load chips —
 the host shows its own progress from `model-progress`. Narrow it further with
 `tools=measure` / `tools=` and `toolbar=0`. The other presets are unchanged.
@@ -245,7 +248,7 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `validation-started` | `modelId` — a queued validation (after a load with `validate=1`, or the SDK's `validate()`) began *(1.17)* |
 | `validation-completed` | `qualityScore`, `errors`, `warnings`, `info`, `total`, `modelId` (null for the aggregate of a federated scene) *(total, modelId: 1.17)* |
 | `validation-failed` | `modelId`, `message` — a queued validation could not run or did not finish *(1.17)* |
-| `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
+| `element-selected` | `expressId`, `modelId`, `ifcType`, `name`, `globalId` *(globalId: 1.17)* |
 | `walk-changed`     | `active`, `speed` |
 | `measurements-changed` | `tool`, `units`, `items` (values always SI) |
 | `tour-started` / `tour-step` / `tour-ended` | `title, total, template` / `index, total, caption` / `completed` |
@@ -275,7 +278,8 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:load`    | `url` (string or string[]), `name?` (string or string[]), `requestId?` | Load model(s) into the scene. An array loads as one batch, like a federated `?model=`. The viewer accepts a new `load` while others are still running and queues it |
 | `ifcviewer:load-bytes` | `name`, `bytes` (transferable `ArrayBuffer`), `requestId?` | Load IFC bytes the host already has (what the SDK's `add()` sends) |
 | `ifcviewer:clear`   | — | Cancel IFC loads still in flight, then remove every model |
-| `ifcviewer:select`  | `expressId`, `modelId?` | Select + frame an element |
+| `ifcviewer:select`  | `expressId` or `globalId`, `modelId?` | Select + frame an element *(globalId: 1.17)* |
+| `ifcviewer:find-elements` | `ifcClass?` (string or string[]), `globalId?` (string or string[]), `name?`, `modelId?`, `limit?`, `requestId` | Answers `[{ expressId, modelId, globalId, ifcClass, name, typeName }]` *(1.17)* |
 | `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear), `frame?` | Isolate a category; `frame: false` keeps the camera *(1.15)* |
 | `ifcviewer:fit`     | — | Frame the active model from the current angle, with a margin *(margin: 1.17)* |
 | `ifcviewer:set-turntable` | `enabled?`, `speed?` (°/s, default 6) | Idle orbit; answers `{ active, speed }` *(1.15)* |

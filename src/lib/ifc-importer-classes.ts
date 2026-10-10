@@ -14,6 +14,8 @@
 //    bounded, table, complex) and the parts of a unit (derived unit factors,
 //    conversion-based units). Catalogue psets use enumerations; a U-value's
 //    W/(m²·K) is a derived unit.
+//  • The pre-defined property sets of windows and doors (lining, panels):
+//    frame depth, panel operation — attributes, not IfcProperty entities.
 //
 // Type codes rather than imports from web-ifc: this module is read by the
 // OPFS cache on the main thread (CONVERTER_REVISION), which must not pull the
@@ -34,6 +36,12 @@ export const EXTRA_IMPORTER_CLASSES: Readonly<Record<string, number>> = {
   IFCCOMPLEXPROPERTY:         2542286263,
   IFCDERIVEDUNITELEMENT:      1045800335,
   IFCCONVERSIONBASEDUNIT:     2889183280,
+  // Windows' and doors' pre-defined property sets: lining and panels.
+  IFCWINDOWLININGPROPERTIES:  336235671,
+  IFCWINDOWPANELPROPERTIES:   512836454,
+  IFCDOORLININGPROPERTIES:    2963535650,
+  IFCDOORPANELPROPERTIES:     1714330368,
+  IFCPERMEABLECOVERINGPROPERTIES: 3566463478,
 }
 
 /**
@@ -42,7 +50,7 @@ export const EXTRA_IMPORTER_CLASSES: Readonly<Record<string, number>> = {
  * model is converted again instead of serving fragments without that data.
  *
  * 2 — EXTRA_IMPORTER_CLASSES (IFC2x3 window/door styles, non-single
- *     properties, unit parts).
+ *     properties, unit parts, window/door lining and panel properties).
  */
 export const CONVERTER_REVISION = 2
 
