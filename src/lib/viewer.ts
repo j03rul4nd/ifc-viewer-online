@@ -1231,7 +1231,10 @@ function parseItemData(raw: Record<string, unknown>): IFCItemData {
     name:           attrStr(raw['Name']),
     longName:       attrStr(raw['LongName']),
     description:    attrStr(raw['Description']),
-    globalId:       attrStr(raw['GlobalId']),
+    // Fragments hands the GlobalId back as the item's _guid, not as the
+    // attribute asked for: without the fallback every element read null here
+    // (the properties panel showed no GlobalId row at all).
+    globalId:       attrStr(raw['GlobalId']) ?? attrStr(raw['_guid']),
     objectType:     attrStr(raw['ObjectType']),
     tag:            attrStr(raw['Tag']),
     storey:         extractStorey(raw['ContainedInStructure']),
@@ -1480,6 +1483,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
   let geoPointerSuppressed = false
+  /** The flood probe owns the click (no hover, no selection) while it is armed. */
+  let floodPointerSuppressed = false
   // Move/turn handle — created on first use (lib/scene-gizmo).
   let sceneGizmo: SceneGizmo | null = null
   /** Grouping pushed by the app; the default for framing calls without one. */
@@ -2441,7 +2446,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     aimAt(e)
-    if (geoPointerSuppressed) return // map placement editor owns the pointer
+    if (geoPointerSuppressed || floodPointerSuppressed) return // the map placement editor / the flood probe owns the pointer
 
     // Section handles first (they only answer while the section panel is
     // open), then the measurement tool. Both draw their own pointer feedback,
@@ -2502,7 +2507,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerUp = (e: PointerEvent): void => {
-    if (geoPointerSuppressed) return   // map placement editor owns the pointer
+    if (geoPointerSuppressed || floodPointerSuppressed) return   // the map placement editor / the flood probe owns the pointer
     // A short click on a gizmo axis would otherwise select the element behind
     // it — and swap the active model out from under the handle being used.
     if (pressOnGizmo) { pressOnGizmo = false; return }
@@ -4891,6 +4896,29 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
           requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true },
           setGridVisible: (v) => self.setGridVisible(v),
+          camera: () => world.camera.three,
+          canvas: world.renderer!.three.domElement,
+          setPointerSuppressed: (on) => { floodPointerSuppressed = on },
+          getItemsOfClasses: async (id, classes) => {
+            const model = modelObjects.get(id)
+            if (!model) return []
+            const res = await model.getItemsOfCategories(classes.map((c) => new RegExp(`^${c}$`, 'i')))
+            return Object.entries(res).map(([k, ids]) => ({ ifcClass: k.replace(/[\^$]/g, '').toUpperCase(), ids }))
+          },
+          getBoxes: async (id, ids) => {
+            const model = modelObjects.get(id)
+            if (!model) return ids.map(() => null)
+            const out: Array<{ min: Vec3Like; max: Vec3Like } | null> = []
+            for (let i = 0; i < ids.length; i += 2000) {
+              const boxes = await model.getBoxes(ids.slice(i, i + 2000))
+              for (const b of boxes) out.push(b && !b.isEmpty() ? { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } } : null)
+            }
+            return out
+          },
+          getElementsInfo: async (id, ids) => (await self.getElementsDetail(ids, id)).map((d) => ({
+            expressId: d.expressId, name: d.data?.name ?? null, globalId: d.data?.globalId ?? null, storey: d.data?.storey ?? null,
+          })),
+          addCapturePainter: (paint) => self.addCapturePainter(paint),
           frameBox: (min, max) => {
             tuneSceneToBounds(new THREE.Box3(new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, max.y, max.z)))
             const cam = world.camera.three as THREE.PerspectiveCamera

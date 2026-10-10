@@ -47,14 +47,18 @@
       "extreme": "Episodio extremo · {{mm}} mm en {{min}} min"
     },
     "facts": "{{mm}} mm en {{min}} min, con un pico cercano a {{peak}} mm/h. Uniforme sobre toda el área.",
-    "after": "Después"
+    "after": "Después",
+    "edit": "Editar",
+    "doneEditing": "Listo",
+    "custom": "Dibujada a mano"
   },
   "surface": {
     "title": "Superficie",
     "paved": "Pavimentada (n = {{n}})",
     "urban": "Urbana mixta (n = {{n}})",
     "grass": "Césped (n = {{n}})",
-    "vegetation": "Vegetación densa (n = {{n}})"
+    "vegetation": "Vegetación densa (n = {{n}})",
+    "section": "Superficie y suelo"
   },
   "edges": {
     "title": "Bordes",
@@ -108,22 +112,115 @@
     "notGeoreferenced": "El modelo no está georreferenciado, así que el DEM no se puede situar. Georreferéncialo en el panel Mapa.",
     "outside": "El DEM no cubre el área de la simulación."
   },
-  "speed": {
-    "title": "Velocidad",
-    "max": "Máx."
-  },
   "live": {
     "time": "Simulado",
     "flooded": "Área inundada (> umbral)",
     "maxDepth": "Calado máximo",
     "volume": "Agua en superficie",
-    "mass": "Error de balance de masa"
+    "mass": "Error de balance de masa",
+    "infiltrated": "Absorbida por el suelo",
+    "outflow": "Ha salido del área"
   },
   "view": {
     "title": "Vista",
     "now": "Calado actual",
     "max": "Calado máximo",
     "threshold": "Mostrar desde",
-    "ground": "Mostrar el terreno de la simulación"
+    "ground": "Mostrar el terreno de la simulación",
+    "speed": "Velocidad",
+    "particles": "Líneas de flujo"
+  },
+  "hyeto": {
+    "label": "Intensidad de lluvia por intervalo: pulsa y arrastra para dibujarla",
+    "scale": "Escala hasta {{max}} mm/h",
+    "total": "{{mm}} mm · pico {{peak}} mm/h",
+    "interval": "Cada",
+    "duration": "Durante"
+  },
+  "infiltration": {
+    "title": "Suelo",
+    "none": "Impermeable (sin infiltración)",
+    "compacted": "Suelo compactado ({{f0}} → {{fc}} mm/h)",
+    "loam": "Franco, césped ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Suelo arenoso ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Línea de tiempo de la inundación",
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "scrub": "Tiempo simulado: arrastra para moverte",
+    "speed": "Velocidad de reproducción",
+    "speedValue": "{{n}} min/s",
+    "probe": "Sonda",
+    "probeHint": "Haz clic en la escena para leer el agua en ese punto (Esc para salir)",
+    "computing": "Calculando… {{pct}} %",
+    "live": "Volver al directo",
+    "rain": "Lluvia",
+    "flooded": "Inundado",
+    "deepest": "Calado máx.",
+    "volume": "En superficie",
+    "legend": "Escala de color"
+  },
+  "probe": {
+    "title": "Sonda",
+    "hint": "Haz clic en la escena para leer el agua en ese punto.",
+    "reading": "Leyendo…",
+    "obstacle": "Dentro de un obstáculo (un edificio): aquí no entra el agua.",
+    "depth": "Calado a las {{time}}",
+    "speed": "Velocidad",
+    "peak": "Calado máximo",
+    "arrival": "Llegada del agua",
+    "never": "nunca",
+    "ground": "Terreno",
+    "chart": "Calado durante el episodio"
+  },
+  "affected": {
+    "title": "Inundación: elementos alcanzados",
+    "panelTitle": "Elementos que alcanza el agua",
+    "summary": "Por debajo de la lámina máxima junto a ellos: {{n}} de los {{checked}} elementos revisados.",
+    "none": "Ninguno de los {{checked}} elementos revisados (puertas, ventanas, accesos, espacios, equipos) queda por debajo de la lámina máxima junto a él.",
+    "atEnd": "Máximos de todo el evento ({{t}}).",
+    "partial": "Máximos hasta ahora ({{t}}): la simulación no ha terminado.",
+    "pending": "Se listan al terminar la simulación: puertas, ventanas, accesos, espacios y equipos por debajo de la lámina máxima.",
+    "busy": "Revisando los elementos del modelo…",
+    "analyze": "Revisar ahora",
+    "reanalyze": "Revisar de nuevo",
+    "open": "Ver en Validación",
+    "group": {
+      "opening": "Puertas y ventanas",
+      "access": "Accesos (rampas, escaleras, ascensores)",
+      "space": "Espacios",
+      "equipment": "Equipos e instalaciones",
+      "below": "Bajo rasante"
+    },
+    "belowNote": "Su cota inferior está por debajo del terreno exterior (sótanos, accesos rehundidos). La cifra es el agua que hay fuera; que entre depende de huecos que la simulación no modela.",
+    "outside": "{{d}} fuera",
+    "arrives": "agua a las {{t}}",
+    "jump": "Seleccionarlo e ir a él",
+    "more": "Ver {{n}} más",
+    "capped": "Se muestran los {{n}} primeros.",
+    "note": "Orientativo: el agua junto a cada elemento frente a su cota más baja. No forma parte del resultado de validación ni del Health Score.",
+    "dismiss": "Ocultar"
+  },
+  "export": {
+    "title": "Exportar",
+    "png": "Imagen (PNG)",
+    "video": "Vídeo del evento",
+    "stop": "Detener · {{pct}} %",
+    "videoNeedsEnd": "El vídeo está disponible cuando termina la simulación.",
+    "noVideo": "Este navegador no puede grabar vídeo.",
+    "field": "Capa",
+    "fields": {
+      "hMax": "Calado máx.",
+      "vMax": "Velocidad máx.",
+      "tWet": "Llegada"
+    },
+    "rasterNote": "Ficheros SIG de toda la malla, con el norte arriba; los edificios quedan sin datos. Calado en m, velocidad en m/s, llegada en s.",
+    "crs": "Coordenadas en {{crs}}, norte arriba.",
+    "local": "El modelo no está georreferenciado: el fichero usa sus coordenadas locales en planta (metros), sin sistema de coordenadas."
+  },
+  "capture": {
+    "time": "t = {{t}} de {{end}}",
+    "disclaimer": "Simulación simplificada y orientativa: no es un estudio hidráulico certificado."
   }
 }

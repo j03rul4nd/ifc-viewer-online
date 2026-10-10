@@ -47,14 +47,18 @@
       "extreme": "Extreme event · {{mm}} mm in {{min}} min"
     },
     "facts": "{{mm}} mm over {{min}} min, peaking near {{peak}} mm/h. Uniform over the area.",
-    "after": "Then"
+    "after": "Then",
+    "edit": "Edit",
+    "doneEditing": "Done",
+    "custom": "Drawn by hand"
   },
   "surface": {
     "title": "Surface",
     "paved": "Paved (n = {{n}})",
     "urban": "Mixed urban (n = {{n}})",
     "grass": "Grass (n = {{n}})",
-    "vegetation": "Dense vegetation (n = {{n}})"
+    "vegetation": "Dense vegetation (n = {{n}})",
+    "section": "Surface and soil"
   },
   "edges": {
     "title": "Edges",
@@ -108,22 +112,115 @@
     "notGeoreferenced": "The model is not georeferenced, so the DEM cannot be placed. Georeference it in the Map panel.",
     "outside": "The DEM does not cover the simulation area."
   },
-  "speed": {
-    "title": "Speed",
-    "max": "Max"
-  },
   "live": {
     "time": "Simulated",
     "flooded": "Flooded area (> threshold)",
     "maxDepth": "Deepest water",
     "volume": "Water on the surface",
-    "mass": "Mass balance error"
+    "mass": "Mass balance error",
+    "infiltrated": "Absorbed by the ground",
+    "outflow": "Left the area"
   },
   "view": {
     "title": "View",
     "now": "Depth now",
     "max": "Maximum depth",
     "threshold": "Show from",
-    "ground": "Show the simulation ground"
+    "ground": "Show the simulation ground",
+    "speed": "Speed",
+    "particles": "Flow lines"
+  },
+  "hyeto": {
+    "label": "Rain intensity per interval: press and drag to draw it",
+    "scale": "Scale up to {{max}} mm/h",
+    "total": "{{mm}} mm · peak {{peak}} mm/h",
+    "interval": "Every",
+    "duration": "Lasting"
+  },
+  "infiltration": {
+    "title": "Soil",
+    "none": "Impervious (no infiltration)",
+    "compacted": "Compacted soil ({{f0}} → {{fc}} mm/h)",
+    "loam": "Loam, lawns ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Sandy soil ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Flood timeline",
+    "play": "Play",
+    "pause": "Pause",
+    "scrub": "Simulated time: drag to move",
+    "speed": "Replay speed",
+    "speedValue": "{{n}} min/s",
+    "probe": "Probe",
+    "probeHint": "Click the scene to read the water there (Esc to stop)",
+    "computing": "Computing… {{pct}} %",
+    "live": "Back to live",
+    "rain": "Rain",
+    "flooded": "Flooded",
+    "deepest": "Deepest",
+    "volume": "On the surface",
+    "legend": "Colour scale"
+  },
+  "probe": {
+    "title": "Probe",
+    "hint": "Click the scene to read the water at that point.",
+    "reading": "Reading…",
+    "obstacle": "Inside an obstacle (a building): water does not enter here.",
+    "depth": "Depth at {{time}}",
+    "speed": "Speed",
+    "peak": "Deepest",
+    "arrival": "Water arrived",
+    "never": "never",
+    "ground": "Ground",
+    "chart": "Depth over the event"
+  },
+  "affected": {
+    "title": "Flood: elements reached",
+    "panelTitle": "Elements the water reaches",
+    "summary": "Below the highest water next to them: {{n}} of the {{checked}} elements checked.",
+    "none": "None of the {{checked}} elements checked (doors, windows, accesses, spaces, equipment) sits below the highest water next to it.",
+    "atEnd": "Maxima of the whole event ({{t}}).",
+    "partial": "Maxima so far ({{t}}): the run has not finished.",
+    "pending": "Listed when the run finishes: doors, windows, accesses, spaces and equipment below the highest water.",
+    "busy": "Checking the model's elements…",
+    "analyze": "Check now",
+    "reanalyze": "Check again",
+    "open": "Show in Validation",
+    "group": {
+      "opening": "Doors and windows",
+      "access": "Accesses (ramps, stairs, lifts)",
+      "space": "Spaces",
+      "equipment": "Equipment and services",
+      "below": "Below ground"
+    },
+    "belowNote": "Their bottom is below the ground outside (basements, sunken accesses). The figure is the water standing outside; whether it gets in depends on openings the simulation does not model.",
+    "outside": "{{d}} outside",
+    "arrives": "water at {{t}}",
+    "jump": "Select it and fly to it",
+    "more": "Show {{n}} more",
+    "capped": "Showing the first {{n}}.",
+    "note": "Indicative: the water standing outside each element against its lowest point. Not part of the validation result or the Health Score.",
+    "dismiss": "Hide"
+  },
+  "export": {
+    "title": "Export",
+    "png": "Image (PNG)",
+    "video": "Video of the event",
+    "stop": "Stop · {{pct}} %",
+    "videoNeedsEnd": "The video is available once the run has finished.",
+    "noVideo": "This browser cannot record video.",
+    "field": "Layer",
+    "fields": {
+      "hMax": "Max depth",
+      "vMax": "Max speed",
+      "tWet": "Arrival"
+    },
+    "rasterNote": "GIS files of the whole grid, north up; buildings are no-data. Depth in m, speed in m/s, arrival in s.",
+    "crs": "Coordinates in {{crs}}, north up.",
+    "local": "The model is not georeferenced: the file uses its local plan coordinates (metres), with no coordinate system."
+  },
+  "capture": {
+    "time": "t = {{t}} of {{end}}",
+    "disclaimer": "Simplified, indicative simulation: not a certified hydraulic study."
   }
 }

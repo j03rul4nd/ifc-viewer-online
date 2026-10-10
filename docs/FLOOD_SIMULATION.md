@@ -14,8 +14,8 @@ Code: `src/features/flood/` (self-contained; lazy-loaded; gated by
 |---|---|---|
 | 1 | Solver (CPU reference, WebGPU, WebGL2), worker, test cases, demo grid | **done** |
 | 2 | Terrain + building rasterisation from the IFC, georeferencing, 3-D water layer, panel | **done** (flag off) |
-| 3 | Timeline (hyetograph, flooded-area curve, scrub), live metrics, probe, flow particles, snapshots | planned |
-| 4 | Affected IFC elements in the validation panel, CSV / GeoTIFF / PNG / video export | planned |
+| 3 | Timeline (hyetograph, flooded-area curve, scrub, replay), probe, flow particles, speed view, snapshots, infiltration, hyetograph editor | **done** (flag off) |
+| 4 | Affected IFC elements in the validation panel, CSV / GeoTIFF / ASC / PNG / video export, legend in every capture, 10 languages | **done** (flag off) |
 
 With `VITE_FEATURE_FLOOD=true` the viewer gets a Flood tool (rail icon and
 Tools menu): build the grid from what is loaded, run a storm, see the water.
@@ -159,15 +159,117 @@ with the map off).
   read is fine (×2 480 on the same grid) and the loop yields through a
   `MessageChannel`.
 
+## Timeline, probe and flow (phase 3)
+
+- **Snapshots** (`worker/snapshots.ts`): the worker records the state — per
+  cell (h, u, v, running max) as half floats, deflated — every
+  `interval` simulated seconds (~200 per event, 10 s to 10 min), on exact
+  instants of the solver's clock (a batch never runs past the next one). Over
+  a 256 MB budget every other snapshot is dropped and the interval doubles, so
+  a long event keeps its whole span. Any instant is interpolated between the
+  two snapshots around it, so the timeline scrubs and replays without solving
+  again. Measured: 211 snapshots of a 101 × 101 grid in 10 MB.
+- **Run vs replay**: a run always computes as fast as the GPU allows, showing
+  the live state; the timeline then replays from the snapshots at 1, 5 or
+  20 simulated min per second, from any instant already computed. "Back to
+  live" returns to the run while it is still computing.
+- **Timeline** (`ui/FloodTimeline.tsx`): the storm hanging from the top (as
+  hyetographs are drawn), the flooded-area curve (one reading per snapshot),
+  the part not yet computed shaded, a draggable cursor, and the readings at
+  the cursor — rain, flooded area, deepest water, water on the surface — or
+  under the pointer while hovering; the colour scale of the current view.
+- **Probe** (`setProbing` / `probe` in `system.ts`): while armed the viewer
+  neither hovers nor selects (`floodPointerSuppressed`, like the map editor's
+  flag); a click (≤ 5 px, ≤ 400 ms — a drag still orbits) meets the water or
+  the ground by iterating the camera ray on the heightfield, drops a pin, and
+  reads depth and speed at the instant on screen, the deepest so far, when the
+  water arrived and peaked, the ground's absolute elevation when the model
+  states its datum, and the depth at every snapshot (a sparkline).
+- **Views**: depth now, maximum depth, speed (coloured where deeper than the
+  threshold), and **flow lines** (`view/flow-particles.ts`): GPU particles on
+  the viewer's renderer, advected through the same display-frame texture the
+  water draws, respawned at random wet cells, drawn as streaks along the
+  velocity (at least half a cell, at most three), brighter when faster.
+- **Infiltration** (all three solvers): Horton's `f(t) = fc + (f0 − fc)·e^(−k·t)`
+  from the event start, never more than the water in the cell, the absorbed
+  depth kept per cell so the mass balance includes it. Presets: compacted soil
+  (25 → 3 mm/h), loam (75 → 13), sandy (125 → 25), or impervious.
+- **Hyetograph editor** (`ui/HyetographEditor.tsx`): draw the intensities;
+  1–30 min intervals, 15 min to 6 h; total depth and peak always shown.
+
+QA trap: after editing a module, Vite serves it as `?t=…` to the modules that
+import it; importing `/src/features/flood/store.ts` from the console then gives
+a second store. Read the importer's source for the real URL (or use
+`globalThis.__flood`, which is the system the app created).
+
+## Affected elements and exports (phase 4)
+
+- **Affected elements** (`validation/affected.ts`, pure): for every door,
+  window, space, ramp, stair, lift (`IfcTransportElement`) and piece of
+  equipment (flow terminals, energy conversion devices, boards, pumps,
+  tanks…), the highest water surface (bed + maximum depth) in a ring of open
+  cells around its plan footprint (3 m) against the element's lowest point.
+  A ring, not the cells under it: a door sits in a wall, and walls are
+  obstacles, so the cells under it are always dry; what floods it is the water
+  standing outside. An element walled in on every side (an interior door, a
+  core stair) has no reading and is not reported.
+  - **Water is what the view calls water** (the threshold, 5 cm by default).
+    During a storm a centimetre of rain film covers everything; on a step 18 cm
+    up it read as "19 cm over the entrance hall" (Poblenou A-0001) until the
+    threshold applied here too.
+  - **Below ground**: an element whose bottom is more than 0.5 m under the
+    ground outside (a basement, a sunken access) would read "3.6 m" from 5 cm
+    in the street. It is flagged, keeps the depth of the water outside, and
+    sorts after what the water reaches directly.
+  - Candidates come from fragments by class (`getItemsOfCategories`) with
+    their world boxes (`getBoxes`), cached per study; names, storeys and
+    GlobalIds only for the elements reported (≤ 1000).
+- **In the validation panel**: a group, "Flood: elements reached", above the
+  issue list (desktop) and above the issue cards (mobile sheet), lazy-loaded
+  only once a run has been analysed (`ui/FloodValidationSlot.tsx`). A row
+  selects the element and flies to it, like an issue. It never enters the
+  validation result, the counts or the Health Score: a simulated storm is not
+  a defect of the file. Analysed automatically when a run finishes; "Check
+  now" analyses the maxima so far.
+- **Exports** (`raster/dem-export.ts`, pure; `exportResult` in `system.ts`):
+  maximum depth, maximum speed or arrival time as a GeoTIFF (float32, Deflate,
+  ModelPixelScale + ModelTiepoint, the model's EPSG in the GeoKeys, GDAL
+  nodata), an ESRI ASCII grid, or a CSV of the wet cells (cell centre in the
+  CRS, ground elevation, max depth and speed, arrival and peak). North up:
+  a georeferenced grid is aligned to grid north (r = −γ), so the north-west
+  corner and the cell size are all the header needs. Buildings are no-data.
+  Without a georeference the file uses the model's local plan metres and no
+  CRS, and the panel says so. The GeoTIFF round-trips through our own reader
+  (test).
+- **Captures**: a 2-D overlay (`ui/capture-overlay.ts`) registered with the
+  viewer's capture painters, so every capture of the water — this panel's PNG
+  and video, the capture toolbar, Clip Studio — carries what the colours mean,
+  the instant and the disclaimer. The video replays the whole event from the
+  snapshots in 16 s and records the viewer's recording surface (MP4 where the
+  browser can, else WebM).
+- **Languages**: the flood namespace in all ten of the app's languages
+  (`locales/*.json`, key parity enforced by `locales.test.ts`).
+
+Measured on Poblenou A-0001 (1 m cells, 162 × 162, extreme storm, closed
+edges): the entrance hall reached by 11 cm (5 cm of water outside, from 0:43);
+the GeoTIFF reads back 162 × 162 in EPSG:25831 with 119 no-data cells; the
+video is 15.9 s, the water visibly rising frame to frame, the legend in every
+frame. On the Torre Poblenou the 16 doors are in the core, walled in, and
+none is reported — correct.
+
+QA: `globalThis.__flood.overlay()` is the capture overlay the panel set.
+
 ## Architecture
 
 ```
 core/        pure TS, no DOM: grid, hyetograph, solver contract, CPU reference
              solver (float64), analytic solutions, reference cases, half floats
 raster/      domain, GPU rasterisation, grid assembly, hole filling, roof runoff,
-             DEM reader, georeference maths
-view/        water layer, simulation ground
-ui/          FloodPanel (strings in locales/, loaded with the panel)
+             DEM reader and writer (GeoTIFF / ASC), georeference maths
+validation/  the elements the water reaches (pure)
+view/        water layer, simulation ground, flow particles
+ui/          FloodPanel, timeline, probe, hyetograph editor, the validation
+             group and its slot, the capture overlay (strings in locales/)
 system.ts    the viewer-side owner (viewer.getFlood())
 gpu/         wgsl.ts + webgpu-inertial.ts · glsl.ts + webgl2-inertial.ts ·
              create.ts (WebGPU → WebGL2; CPU only by name)
@@ -217,6 +319,7 @@ on WebGPU and WebGL2 against the CPU, then a run through the worker. Result
 | Case | Steps GPU / CPU | Relative L1 vs CPU | Mass error (GPU) |
 |---|---|---|---|
 | Lake at rest | 4101 / 4101 | 0 | 0 |
+| Closed basin with Horton infiltration | 4684 / 4684 | 4.4e-7 | ≤ 7.3e-7 |
 | Dam break | 109 / 109 | 3.6e-7 | ≤ 1.6e-8 |
 | Rain on plane | 1463 / 1463 | 1.7e-6 | 2.1e-6 |
 | City demo 96² | 3776 / 3776 | 3.0e-6 | ≤ 2.5e-8 |

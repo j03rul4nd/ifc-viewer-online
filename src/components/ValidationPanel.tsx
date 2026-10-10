@@ -51,6 +51,7 @@ import { buildShareUrl, buildBadgeMarkdown, validationResultToSharePayload } fro
 import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '../lib/benchmark'
 import { useIsMobile } from '../hooks/useIsMobile'
 import ValidationPanelMobile from './mobile/ValidationPanelMobile'
+import { FloodValidationSlot } from '../features/flood/ui/FloodValidationSlot'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
 // Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
@@ -1873,6 +1874,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     trackIssueViewed({ rule_id: issue.ruleId, severity: issue.severity })
   }, [setSelection, onJumpToElement])
 
+  // An element the simulated flood reaches (flood group): same select-and-fly as an issue.
+  const handleFloodJump = useCallback((expressId: number, modelId: string) => {
+    setSelection([{ expressId, modelId }])
+    onJumpToElement?.(expressId, modelId)
+  }, [setSelection, onJumpToElement])
+
   const handleAutoFix = useCallback((issue: ValidationIssue) => {
     if ((issue.ruleId === 'RULE_DUPLICATE_GUID' || issue.ruleId === 'RULE_INVALID_GUID_FORMAT') && issue.globalId) {
       trackGuidFixed({ guid_count: 1 })
@@ -2179,6 +2186,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           onCopyBadge: handleCopyBadge,
           onBatchFix: handleBatchFix,
           onClose: toggleValidationPanel,
+          onFloodJump: handleFloodJump,
         }}
       />
     )
@@ -2745,6 +2753,14 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 contributions={contributions}
                 language={i18n.language}
                 onJumpToRule={handleJumpToRule}
+              />
+            )}
+
+            {/* Elements a simulated flood reaches — outside the result and the score */}
+            {!isRunning && (
+              <FloodValidationSlot
+                onJump={handleFloodJump}
+                onResize={() => setListOffset(listRef.current?.offsetTop ?? 0)}
               />
             )}
 

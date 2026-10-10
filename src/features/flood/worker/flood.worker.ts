@@ -1,20 +1,25 @@
 // ─── flood worker ─────────────────────────────────────────────────────────────
-// Owns one solver and runs it in batches, off the main thread. The viewer keeps
-// its frame rate: the main thread only uploads the display frames this worker
-// posts (≤ 15 per second) and draws them.
+// Owns one solver and runs it in batches, off the main thread, keeping
+// snapshots of the run so the timeline can replay any instant without solving
+// again. The viewer keeps its frame rate: the main thread only uploads the
+// frames this worker posts and draws them.
 //
 // BATCHES. A batch is N steps recorded at once (the GPU decides each step's
 // length itself). N adapts so a batch takes ~BUDGET_MS of wall time: long
-// enough that per-batch overhead is noise, short enough to stay responsive to
-// pause and to share the GPU with the viewer's own rendering.
+// enough that per-batch overhead is noise, short enough to stay responsive and
+// to share the GPU with the viewer's own rendering.
+//
+// SNAPSHOTS land on exact instants: a batch never runs past the next one (the
+// solver's clock stops exactly at a requested time).
 //
 // PACING. At a finite speed (simulated s per wall s) the run aims each batch at
 // the simulated time the clock says it should have reached; at 'max' it aims at
-// the end of the event.
+// the next snapshot, then the next, to the end of the event.
 
 import type { FloodSolver } from '../core/solver-api'
 import { createFloodSolver } from '../gpu/create'
 import type { FromWorker, RunPerf, ToWorker } from './protocol'
+import { SnapshotStore, snapshotInterval } from './snapshots'
 
 const BUDGET_MS = 14
 const FRAME_INTERVAL_MS = 66
@@ -24,6 +29,8 @@ const MAX_BATCH = 4096
 const post = (m: FromWorker, transfer: Transferable[] = []): void => (self as unknown as Worker).postMessage(m, transfer)
 
 let solver: FloodSolver | null = null
+let store: SnapshotStore | null = null
+let nextSnap = 0
 let endS = 0
 let running = false
 let speed: number | 'max' = 'max'
@@ -53,16 +60,33 @@ const fail = (err: unknown): void => {
   post({ type: 'state', running: false, finished: false })
 }
 
+function postFrame(data: Uint16Array): void {
+  if (!solver) return
+  post({ type: 'frame', t: simT, nx: solver.grid.nx, ny: solver.grid.ny, data }, [data.buffer])
+}
+
 async function sendFrame(): Promise<void> {
   if (!solver) return
-  const data = await solver.displayFrame()
-  post({ type: 'frame', t: simT, nx: solver.grid.nx, ny: solver.grid.ny, data }, [data.buffer])
+  postFrame(await solver.displayFrame())
 }
 
 async function sendStats(): Promise<void> {
   if (!solver) return
   const stats = await solver.stats()
   post({ type: 'stats', stats, perf })
+}
+
+/** Records the current state as a snapshot, and shows it. */
+async function snapshot(): Promise<void> {
+  if (!solver || !store) return
+  const data = await solver.displayFrame()
+  store.add(simT, data)
+  // A reading per snapshot too: the timeline's curves then have one point per
+  // snapshot, not one per 100 ms of wall time (a fast run gave 29 points).
+  post({ type: 'stats', stats: await solver.stats(), perf })
+  post({ type: 'snapshots', count: store.count, lastT: store.lastT, interval: store.interval, bytes: store.bytes })
+  lastFrame = performance.now()
+  postFrame(data)
 }
 
 // Yield to the message queue (pause, frame requests) through a MessageChannel:
@@ -75,9 +99,14 @@ const yieldTurn = (): Promise<void> => new Promise((r) => { turnWaiters.push(r);
 async function loop(token: number): Promise<void> {
   while (running && token === loopToken && solver) {
     const s = solver
+    if (simT >= nextSnap - 1e-3 && simT > (store?.lastT ?? -1) + 1e-3) {
+      await exclusive(snapshot)
+      nextSnap = Math.min(endS, simT + (store?.interval ?? 60))
+    }
     const now = performance.now()
     let target = endS
     if (speed !== 'max') target = Math.min(endS, simAnchor + ((now - wallAnchor) / 1000) * speed)
+    target = Math.min(target, nextSnap)
     if (target <= simT + 1e-3) {
       if (simT >= endS - 1e-3) break
       // Ahead of the clock: wait for it.
@@ -114,8 +143,9 @@ async function loop(token: number): Promise<void> {
   if (token !== loopToken || !solver) return
   const finished = simT >= endS - 1e-3
   running = false
+  if (finished && store && store.lastT < simT - 1e-3) await exclusive(snapshot)
   await exclusive(sendStats)
-  await exclusive(sendFrame)
+  if (!finished) await exclusive(sendFrame)
   post({ type: 'state', running: false, finished })
 }
 
@@ -141,6 +171,7 @@ self.onmessage = (e: MessageEvent<ToWorker>): void => {
           pendingPlay = null
           solver?.dispose()
           solver = null
+          store?.clear()
           const made = await createFloodSolver(
             { grid: m.grid, hyetograph: m.hyetograph, params: m.params },
             { backend: m.backend, powerPreference: m.powerPreference },
@@ -149,9 +180,11 @@ self.onmessage = (e: MessageEvent<ToWorker>): void => {
           endS = m.endS
           simT = 0
           batch = 8
+          store = new SnapshotStore(made.solver.grid.nx * made.solver.grid.ny, m.snapshotEveryS ?? snapshotInterval(m.endS))
+          nextSnap = Math.min(endS, store.interval)
           post({ type: 'ready', backend: made.solver.backend, device: made.device, fallbackReason: made.fallbackReason })
           await exclusive(sendStats)
-          await exclusive(sendFrame)
+          await exclusive(snapshot)
           if (pendingPlay !== null) {
             const sp = pendingPlay
             pendingPlay = null
@@ -175,6 +208,16 @@ self.onmessage = (e: MessageEvent<ToWorker>): void => {
     case 'frame':
       void exclusive(sendFrame).catch(fail)
       break
+    case 'frameAt': {
+      const data = store?.frameAt(m.t) ?? null
+      post({ type: 'frameAt', req: m.req, t: m.t, data }, data ? [data.buffer] : [])
+      break
+    }
+    case 'cellSeries': {
+      const s = store?.cellSeries(m.cell) ?? { t: new Float32Array(0), h: new Float32Array(0), speed: new Float32Array(0) }
+      post({ type: 'cellSeries', req: m.req, series: s }, [s.t.buffer, s.h.buffer, s.speed.buffer] as ArrayBuffer[])
+      break
+    }
     case 'max':
       void exclusive(async () => {
         if (!solver) return
@@ -185,6 +228,8 @@ self.onmessage = (e: MessageEvent<ToWorker>): void => {
     case 'dispose':
       loopToken++
       running = false
+      store?.clear()
+      store = null
       void exclusive(async () => { solver?.dispose(); solver = null })
       break
   }

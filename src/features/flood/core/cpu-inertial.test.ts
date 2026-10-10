@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import { CpuInertialSolver } from './cpu-inertial'
-import { damBreak, lakeAtRest, rainOnPlane, type FloodCase } from './cases'
+import { damBreak, infiltrationBasin, lakeAtRest, rainOnPlane, type FloodCase } from './cases'
 import { kinematicEquilibriumTime, kinematicPlaneDepth, ritterDepth } from './analytic'
 import { createGrid, effectiveRainArea, inclinedPlaneDemo, blockLayout } from './grid'
 import { constantStorm, depthUpToMs, triangularStorm } from './hyetograph'
-import { nextStepMs, DEFAULT_PARAMS } from './solver-api'
+import { infiltrationRate, nextStepMs, DEFAULT_PARAMS } from './solver-api'
 
 const run = (c: FloodCase): CpuInertialSolver => {
   const s = new CpuInertialSolver({ grid: c.grid, hyetograph: c.hyetograph, params: c.params })
@@ -31,6 +31,7 @@ describe('the step rule', () => {
 })
 
 describe('lake at rest', () => {
+  // CPU-bound (~2 s alone): 30 simulated minutes on 2304 cells, ~4 s under the full suite's parallel load.
   it('stays perfectly still over a bumpy bed with islands and an obstacle', () => {
     const c = lakeAtRest(48)
     const s = run(c)
@@ -46,10 +47,11 @@ describe('lake at rest', () => {
     const st = s.statsSync()
     expect(st.t).toBe(c.durationS)
     expect(Math.abs(st.massError)).toBeLessThan(1e-12)
-  })
+  }, 30_000)
 })
 
 describe('mass balance', () => {
+  // CPU-bound (~3 s alone): 45 simulated minutes on 3000 cells, past 5 s under the full suite's parallel load.
   it('conserves water in a closed basin under rain, to round-off', () => {
     const grid = inclinedPlaneDemo({
       nx: 60, ny: 50, dx: 2, slopeX: 0.01, slopeY: 0.003, roughnessAmplitude: 0.6, seed: 3,
@@ -71,7 +73,7 @@ describe('mass balance', () => {
     expect(Math.min(...f.h)).toBeGreaterThanOrEqual(0)
     // The obstacles stayed dry.
     for (let c = 0; c < f.h.length; c++) if (grid.blocked[c]) expect(f.h[c]).toBe(0)
-  })
+  }, 30_000)
 
   it('accounts for what leaves through free edges', () => {
     const grid = inclinedPlaneDemo({ nx: 40, ny: 30, dx: 2, slopeX: 0.02 })
@@ -183,6 +185,39 @@ describe('dam break (Ritter)', () => {
     expect(front - x0).toBeLessThan(1.05 * 2 * c0 * c.durationS)
     expect(err / norm).toBeLessThan(0.2)
   })
+})
+
+describe('infiltration', () => {
+  const closedEdges = { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const
+
+  it('a ground that absorbs faster than it rains keeps the surface dry', () => {
+    const grid = inclinedPlaneDemo({ nx: 30, ny: 30, dx: 2, slopeX: 0.01 })
+    const s = new CpuInertialSolver({
+      grid, hyetograph: constantStorm(20, 30, 5),
+      params: { boundary: closedEdges, infiltration: { initialMmH: 50, finalMmH: 50, decayPerHour: 0 } },
+    })
+    s.advanceSync(40 * 60)
+    const st = s.statsSync()
+    expect(st.volume).toBeLessThan(1e-9)
+    expect(st.infiltratedVolume / st.rainVolume).toBeCloseTo(1, 9)
+    expect(Math.abs(st.massError)).toBeLessThan(1e-9)
+  }, 30_000)
+
+  it('Horton: absorbs no more than f(t) allows, and the balance closes', () => {
+    const c = infiltrationBasin(40)
+    const s = run(c)
+    const st = s.statsSync()
+    expect(st.infiltratedVolume).toBeGreaterThan(0)
+    expect(st.volume).toBeGreaterThan(0)
+    // Upper bound: every open cell absorbing f(t) for the whole event.
+    const inf = c.params.infiltration!
+    let maxDepth = 0
+    for (let t = 0; t < c.durationS; t += 1) maxDepth += infiltrationRate(inf, t + 0.5)
+    let open = 0
+    for (let k = 0; k < c.grid.blocked.length; k++) if (!c.grid.blocked[k]) open++
+    expect(st.infiltratedVolume).toBeLessThanOrEqual(maxDepth * open * c.grid.dx * c.grid.dx * 1.0001)
+    expect(Math.abs(st.massError)).toBeLessThan(1e-9)
+  }, 30_000)
 })
 
 describe('maxima and arrival times', () => {

@@ -13,7 +13,18 @@
 import * as THREE from 'three'
 import type { GridFrame } from '../core/grid'
 
-export type WaterMode = 'now' | 'max'
+/** Depth now, the maximum so far, or the speed of the water now (coloured where it is deeper than the threshold). */
+export type WaterMode = 'now' | 'max' | 'speed'
+
+/** Colour stops (value, sRGB) of each mode's ramp — shared with the legend. */
+export const DEPTH_STOPS: Array<[number, [number, number, number]]> = [
+  [0.05, [0.62, 0.81, 0.98]], [0.15, [0.38, 0.65, 0.93]], [0.3, [0.2, 0.47, 0.84]],
+  [0.6, [0.12, 0.31, 0.71]], [1.2, [0.07, 0.19, 0.51]], [2.5, [0.04, 0.1, 0.31]],
+]
+export const SPEED_STOPS: Array<[number, [number, number, number]]> = [
+  [0, [0.7, 0.9, 0.96]], [0.25, [0.42, 0.8, 0.72]], [0.5, [0.96, 0.86, 0.36]],
+  [1, [0.96, 0.52, 0.22]], [2, [0.8, 0.16, 0.26]],
+]
 
 const VS = /* glsl */`
 uniform sampler2D uBed;
@@ -48,6 +59,17 @@ in vec3 vWorld;
 out vec4 outColor;
 // Depth ramp (sRGB): shallow pale blue → deep navy.
 vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
+vec3 speedRamp(float s) {
+  vec3 c0 = srgb(vec3(0.7, 0.9, 0.96));
+  vec3 c1 = srgb(vec3(0.42, 0.8, 0.72));
+  vec3 c2 = srgb(vec3(0.96, 0.86, 0.36));
+  vec3 c3 = srgb(vec3(0.96, 0.52, 0.22));
+  vec3 c4 = srgb(vec3(0.8, 0.16, 0.26));
+  if (s < 0.25) return mix(c0, c1, s / 0.25);
+  if (s < 0.5) return mix(c1, c2, (s - 0.25) / 0.25);
+  if (s < 1.0) return mix(c2, c3, (s - 0.5) / 0.5);
+  return mix(c3, c4, clamp(s - 1.0, 0.0, 1.0));
+}
 vec3 ramp(float h) {
   vec3 c0 = srgb(vec3(0.62, 0.81, 0.98));
   vec3 c1 = srgb(vec3(0.38, 0.65, 0.93));
@@ -65,7 +87,7 @@ void main() {
   vec4 f = texture(uFrame, vUv);
   float h = uMode == 1 ? f.a : f.r;
   if (h < uThreshold) discard;
-  vec3 col = ramp(h);
+  vec3 col = uMode == 2 ? speedRamp(length(f.gb)) : ramp(h);
   vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
   if (n.y < 0.0) n = -n;
   vec3 v = normalize(cameraPosition - vWorld);
@@ -176,7 +198,12 @@ export class WaterLayer {
     this.frameTex.needsUpdate = true
   }
 
-  setMode(mode: WaterMode): void { this.mat.uniforms.uMode.value = mode === 'max' ? 1 : 0 }
+  setMode(mode: WaterMode): void { this.mat.uniforms.uMode.value = mode === 'max' ? 1 : mode === 'speed' ? 2 : 0 }
+  /** The display frame texture (h, u, v, hMax) — the flow particles read it too. */
+  get frameTexture(): THREE.DataTexture { return this.frameTex }
+  get bedTexture(): THREE.DataTexture { return this.bedTex }
+  /** The latest frame, as uploaded. */
+  get frameData(): Uint16Array { return (this.frameTex.image as { data: Uint16Array }).data }
   setThreshold(m: number): void { this.mat.uniforms.uThreshold.value = Math.max(0, m) }
   setOpacity(a: number): void { this.mat.uniforms.uOpacity.value = Math.min(1, Math.max(0, a)) }
   setVisible(v: boolean): void { this.object.visible = v }
