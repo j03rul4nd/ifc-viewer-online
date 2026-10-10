@@ -15,8 +15,12 @@
 // WHAT STANDS ON IT, per cell, from the obstacle passes:
 //   - its top within `bedRaiseM` of the ground (a kerb, a step, paving, a low
 //     wall): it raises the bed — water can overtop it, as it would;
-//   - its underside within `groundContactM` (1 m) of the ground: an obstacle
-//     (walls, a slab on grade, a basement, a podium on a slope);
+//   - its underside within `groundContactM` (1 m) of the ground, or of the
+//     project's ground floor (`floorY`): an obstacle (walls, a slab on grade,
+//     a basement, a podium on a slope). The second reference is for slopes:
+//     a bare-earth DEM runs on under a building, and on the downhill side of
+//     the Torre Poblenou it fell more than a metre below the ground-floor
+//     slab — water ran under the building there;
 //   - otherwise (a canopy, an overhang, a deck on pilotis): water flows under
 //     it, but it intercepts the rain.
 // Rain on obstacles and canopies is then routed (rain-routing.ts).
@@ -63,6 +67,12 @@ export interface BuildOptions {
    * 2.2 m or more above it.
    */
   groundContactM?: number
+  /**
+   * Scene Y of the project's ground floor (the plane level). An underside
+   * within groundContactM of it blocks the flow too, wherever the ground
+   * beneath has gone. Undefined = the local ground only.
+   */
+  floorY?: number
   /** Elements no taller than this above the ground raise the bed instead of blocking (m). Default 0.75. */
   bedRaiseM?: number
   /**
@@ -163,7 +173,7 @@ export function buildFloodGrid(o: BuildOptions): BuiltGrid {
       if (top > g) { z[c] = top; raisedCells++ }
       continue
     }
-    if (bottom <= g + contact) {
+    if (bottom <= g + contact || (o.floorY !== undefined && bottom <= o.floorY + contact)) {
       blocked[c] = 1
       roofed[c] = 1
       obstacleCells++

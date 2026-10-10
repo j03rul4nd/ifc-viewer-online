@@ -181,6 +181,9 @@ function lsSet(key: string, value: string): void {
     log.warn(`localStorage write failed for ${key}:`, e)
   }
 }
+function lsDel(key: string): void {
+  try { localStorage.removeItem(key) } catch { /* storage unavailable: nothing was kept */ }
+}
 
 function readTerms(): Record<string, boolean> {
   const raw = lsGet(LS_TERMS)
@@ -530,7 +533,10 @@ export const useGeoStore = create<GeoStore>()(
       },
 
       setConsent: (v) => {
+        // Withdrawing has to be as complete as giving: the stored '1' would
+        // have granted it again on the next visit.
         if (v) lsSet(LS_CONSENT, '1')
+        else lsDel(LS_CONSENT)
         set({ consentGiven: v }, false, 'setConsent')
       },
 

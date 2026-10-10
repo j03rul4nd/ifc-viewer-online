@@ -222,5 +222,19 @@
   "capture": {
     "time": "t = {{t}} sur {{end}}",
     "disclaimer": "Simulation simplifiée et indicative : ce n'est pas une étude hydraulique certifiée."
+  },
+  "fit": {
+    "raised": "{{source}} : {{d}} m sous le rez-de-chaussée du modèle à la cote déclarée par son IFC ; le modèle se trouvait à cette hauteur au-dessus du terrain qui l'entoure et l'eau alentour n'aurait jamais atteint ses portes. Le terrain de la simulation a été relevé jusqu'au modèle. Il convient de vérifier la cote de l'IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}} : {{d}} m au-dessus du rez-de-chaussée du modèle à la cote déclarée par son IFC ; le rez-de-chaussée était enterré. Le terrain de la simulation a été abaissé jusqu'au modèle. Il convient de vérifier la cote de l'IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}} : {{d}} m sous le rez-de-chaussée du modèle. En l'état, le modèle se trouve à cette hauteur au-dessus du terrain qui l'entoure, et l'eau alentour n'atteint pas ses portes.",
+    "loweredOff": "{{source}} : {{d}} m au-dessus du rez-de-chaussée du modèle. En l'état, le rez-de-chaussée est enterré, et toute eau alentour se trouve au-dessus de ses portes.",
+    "switch": "Caler le terrain sur le rez-de-chaussée du modèle",
+    "source": {
+      "map": "Relief de la carte",
+      "dem": "MNT importé"
+    }
+  },
+  "data": {
+    "map": "Le relief et les bâtiments sont ceux que le mode carte a téléchargés, avec votre autorisation, auprès de fournisseurs publics (relief : ICGC en Catalogne ou AWS Open Data ailleurs ; bâtiments : OpenStreetMap), qui voient la zone du site et votre adresse IP. La simulation se contente de les lire : ni le modèle ni les résultats ne quittent votre navigateur. Désactivez les deux options pour simuler avec l'IFC seul ; l'autorisation se retire dans le panneau Carte."
   }
 }

@@ -177,6 +177,7 @@ export default function FloodPanel({ viewerApiRef }: Props) {
         manning: MANNING[st.manning],
         includeMapBuildings: st.includeMapBuildings,
         useMapTerrain: st.useMapTerrain,
+        fitGround: st.fitGround,
         demFile: demRef.file,
         georef: pickGeoref(v),
         plane: { y: st.planeAuto ? null : st.planeY, slopePct: st.slopePct, towardsDeg: st.slopeTowardsDeg },
@@ -424,6 +425,9 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                   onChange={(v) => s.set({ roofRunoff: v })}
                 />
               </div>
+              {((s.useMapTerrain && reliefOn) || (s.includeMapBuildings && mapOn)) && (
+                <Notice tone="muted">{t('data.map')}</Notice>
+              )}
             </section>
 
             {/* ── Rain ─────────────────────────────────────────────────── */}
@@ -520,6 +524,18 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                 {rep.terrain === 'plane' && <Notice tone="warn">{t('report.planeWarn', { y: fmt(rep.planeY, 2) })}</Notice>}
                 {rep.mapTerrain?.source === 'terrarium' && <Notice tone="warn">{t('report.coarseDem')}</Notice>}
                 {rep.dem?.notes.map((n) => <Notice key={n} tone={n === 'reprojected' || n === 'sameCrs' ? 'muted' : 'warn'}>{t(`demNote.${n}`)}</Notice>)}
+                {rep.groundFit && (
+                  <>
+                    <Notice tone={rep.groundFit.applied ? 'info' : 'warn'}>
+                      {t(`fit.${rep.groundFit.offsetM > 0 ? 'raised' : 'lowered'}${rep.groundFit.applied ? '' : 'Off'}`, {
+                        source: t(`fit.source.${rep.groundFit.source}`),
+                        d: fmt(Math.abs(rep.groundFit.offsetM), 1),
+                      })}
+                    </Notice>
+                    <SwitchRow compact label={t('fit.switch')} checked={s.fitGround} disabled={busy || running}
+                      onChange={(v) => { s.set({ fitGround: v }); void prepare() }} />
+                  </>
+                )}
               </section>
             )}
 

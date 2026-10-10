@@ -222,5 +222,19 @@
   "capture": {
     "time": "t = {{t}} di {{end}}",
     "disclaimer": "Simulazione semplificata e indicativa: non è uno studio idraulico certificato."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m sotto il piano terra del modello alla quota dichiarata dal suo IFC; il modello restava a quell'altezza sopra il terreno circostante e l'acqua intorno non avrebbe mai raggiunto le sue porte. Il terreno della simulazione è stato alzato fino al modello. Conviene verificare la quota dell'IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m sopra il piano terra del modello alla quota dichiarata dal suo IFC; il piano terra risultava interrato. Il terreno della simulazione è stato abbassato fino al modello. Conviene verificare la quota dell'IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m sotto il piano terra del modello. Così com'è, il modello resta a quell'altezza sopra il terreno circostante e l'acqua intorno non raggiunge le sue porte.",
+    "loweredOff": "{{source}}: {{d}} m sopra il piano terra del modello. Così com'è, il piano terra è interrato e qualsiasi acqua intorno resta sopra le sue porte.",
+    "switch": "Appoggiare il terreno al piano terra del modello",
+    "source": {
+      "map": "Rilievo della mappa",
+      "dem": "DTM importato"
+    }
+  },
+  "data": {
+    "map": "Il rilievo e gli edifici sono quelli che la modalità mappa ha scaricato, con il tuo permesso, da fornitori pubblici (rilievo: ICGC in Catalogna o AWS Open Data altrove; edifici: OpenStreetMap), che vedono la zona del sito e il tuo indirizzo IP. La simulazione si limita a leggerli: né il modello né i risultati lasciano il browser. Disattiva le due opzioni per simulare solo con l'IFC; il permesso si revoca nel pannello Mappa."
   }
 }

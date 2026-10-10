@@ -5,7 +5,7 @@ import { useConsentStore } from '../../stores/consentStore'
 
 const CONTACT = 'privacy@ifcvieweronline.eu'
 const DOMAIN  = SITE_URL
-const LAST_UPDATED = '2026-06-27'
+const LAST_UPDATED = '2026-10-10'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       <UL>
         <li><code>ifc-locale</code> — your selected interface language.</li>
         <li><code>ifc-viewer:prefs</code> — UI layout preferences (panel sizes, visibility).</li>
-        <li><code>ifc-geo-*</code> — your choices for the optional map view (consent to load map tiles, selected layer).</li>
+        <li><code>ifc-geo-*</code> — your choices for the optional map view (consent to load map tiles, selected layer). Withdrawing the consent in the Map panel deletes it.</li>
         <li><code>ifc-analytics-optout</code> — your analytics opt-out choice, so we can honour it.</li>
         <li>A short, non-personal campaign tag (in <em>sessionStorage</em>) if you arrived from an invitation link — cleared when you close the tab.</li>
       </UL>
@@ -222,10 +222,20 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       <P>
         If you open a <strong>demo model</strong>, it is fetched from a public source (e.g. GitHub);
         that provider necessarily sees the request (including your IP address) as part of delivering
-        the file. If you enable the optional <strong>map view</strong>, map tiles are requested from
-        third-party tile providers only <em>after you explicitly consent</em> in the app, and those
-        providers likewise receive the request metadata. Your own IFC files are never involved in
-        either case.
+        the file. If you enable the optional <strong>map view</strong>, data for the area around
+        your model is requested from third-party providers only <em>after you explicitly
+        consent</em> in the app: basemap tiles (OpenFreeMap, OpenStreetMap), terrain elevation (the
+        Institut Cartogràfic i Geològic de Catalunya inside Catalonia, AWS Open Data elsewhere) and
+        surrounding buildings (OpenStreetMap). Those providers receive the request metadata — the
+        area requested, which reveals the approximate site location, and your IP address. Your own
+        IFC files are never involved in either case. You can withdraw the map consent at any time
+        in the Map panel (&ldquo;Data and permission&rdquo;): the map turns off, your stored choice is
+        deleted, and nothing more is requested until you consent again.
+      </P>
+      <P>
+        Analyses such as the <strong>flood simulation</strong> run entirely in your browser, on
+        your device&apos;s GPU. When they use the map&apos;s terrain or buildings they only read data
+        the map view has already loaded; neither the model nor the results are sent anywhere.
       </P>
 
       {/* Shared reports */}

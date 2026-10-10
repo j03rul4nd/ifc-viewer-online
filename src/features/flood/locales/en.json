@@ -222,5 +222,19 @@
   "capture": {
     "time": "t = {{t}} of {{end}}",
     "disclaimer": "Simplified, indicative simulation: not a certified hydraulic study."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m below the model's ground floor at the height its IFC states, so the model stood that high above the ground around it and no water there could reach its doors. The simulation's ground was raised to meet the model. Worth checking the IFC's height (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m above the model's ground floor at the height its IFC states — the ground floor was buried. The simulation's ground was lowered to meet the model. Worth checking the IFC's height (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m below the model's ground floor. As it is, the model stands that high above the ground around it, and the water there stays below its doors.",
+    "loweredOff": "{{source}}: {{d}} m above the model's ground floor. As it is, the ground floor is buried, and any water around it stands above its doors.",
+    "switch": "Stand the ground on the model's ground floor",
+    "source": {
+      "map": "Map relief",
+      "dem": "Imported DEM"
+    }
+  },
+  "data": {
+    "map": "The relief and buildings are the ones the map mode downloaded, with your permission, from public providers (relief: ICGC in Catalonia or AWS Open Data elsewhere; buildings: OpenStreetMap), which see the site's area and your IP address. The simulation only reads them: neither the model nor the results leave your browser. Turn both options off to simulate with the IFC alone; the permission is withdrawn in the Map panel."
   }
 }

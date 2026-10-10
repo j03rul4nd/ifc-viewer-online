@@ -42,6 +42,29 @@ describe('grid assembly', () => {
     expect(g.rainFactor.reduce((a, v) => a + v, 0)).toBe(n)
   })
 
+  it('keeps a ground-floor slab a wall where the ground falls away under it, and a canopy still a canopy', () => {
+    const r = emptyRaster()
+    const put = (i: number, j: number, bottom: number, top: number): void => {
+      r.obstacleBottom[idx(i, j)] = bottom
+      r.obstacleTop[idx(i, j)] = top
+      r.obstacleCover[idx(i, j)] = 1
+    }
+    // The ground drops 1 m per cell eastwards; the slab's underside stays at 4.8 m.
+    const map = (x: number): number => 5 - Math.max(0, x - 2.5)
+    for (const i of [2, 3, 4, 5]) put(i, 3, 4.8, 15)
+    put(8, 3, 8, 8.3) // a canopy 3 m above the ground floor
+    const build = (floorY?: number) => buildFloodGrid({
+      plan, raster: r, ground: { map: (x) => map(x), plane: flat }, roofRunoff: 'perimeter', manning: 0.02, minPocketM2: 0, floorY,
+    })
+    // Against the local ground only, the downhill half reads as a canopy (water under the building).
+    const local = build()
+    expect([2, 3, 4, 5].map((i) => local.grid.blocked[idx(i, 3)])).toEqual([1, 1, 0, 0])
+    // Against the ground floor too, it is a wall throughout; the canopy is not.
+    const floor = build(4.85)
+    expect([2, 3, 4, 5].map((i) => floor.grid.blocked[idx(i, 3)])).toEqual([1, 1, 1, 1])
+    expect(floor.grid.blocked[idx(8, 3)]).toBe(0)
+  })
+
   it('takes the IFC terrain first, then the DEM, then the map, and fills the rest', () => {
     const r = emptyRaster()
     for (let i = 0; i < 5; i++) for (let j = 0; j < plan.ny; j++) { r.terrainTop[idx(i, j)] = 10; r.terrainCover[idx(i, j)] = 1 }
