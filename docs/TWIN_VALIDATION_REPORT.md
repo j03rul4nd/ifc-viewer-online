@@ -52,6 +52,20 @@ under "not verified".
 | Waseda | Tram presence and line status | Tram ODPT5254 at the stop → edges green; Arakawa normal → screens green |
 | GSI terrain | DEM10B at the Tokyo models' origins | 9.76 m (Waseda) and 37.63 m (Tochōmae), as the I+D package measured; never chosen for Korea or Vladivostok |
 
+### Map alignment (2026-10-10)
+
+Each IFC element, layer point and map layer was checked against where the map draws
+its coordinates. IFC elements were compared with the OSM feature they model; the
+table and method are in `docs/GIS_MAP_MODE.md`, *Where things land in plan*.
+
+| Check | Result |
+|---|---|
+| IFC elements vs OSM, four scenes | 0.01–0.56 m for well-defined features (fountains, monument, metro entrances, a tree, the cathedral); about 1 m for station walls and tram tracks |
+| Model rotation | Barcelona models 0.0001° from true north (were −0.55°); Helsinki Cathedral 0.37° from its OSM outline (would be 3.4° unturned) |
+| Data-layer points vs the map | 687 points up to 8.2 km out: 0.00 mm (the old projection was 12–24 m off at that distance) |
+| Tiles, terrain, OSM buildings vs satellites | Same transform; 0.00 mm at points up to 5 km out |
+| Basemap vs OSM street centrelines, top-down | Barcelona, Helsinki and Waseda, relief on and off: streets on streets, after the drape fix below |
+
 ## Bugs found by this verification, and fixed
 
 These would have shipped without the checks above:
@@ -70,6 +84,16 @@ These would have shipped without the checks above:
   alert would have been dropped (#215).
 - **Endolla's `last_updated` is a port's last change**, which made a quiet charger look
   stale (#215).
+- **Data layers drifted off the basemap with distance**: 1.5–2.4 m per km at Barcelona.
+  They used a different projection from the map's.
+- **IFC models were turned by the grid's meridian convergence** (−0.55° at Barcelona),
+  because IfcMapConversion's rotation is from grid north and the map's is from true
+  north.
+- **Satellite models were never turned to their own frame.** Helsinki Cathedral showed
+  3° off its outline.
+- **With relief on, the map under it was mirrored north–south** about the relief
+  patch's centre, from 2026-08-25. Helsinki Cathedral stood on the South Harbour,
+  345 m south of it. The relief texture was flipped twice.
 
 ## Not verified
 

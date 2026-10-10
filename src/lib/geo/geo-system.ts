@@ -50,7 +50,7 @@ import { describeProfile, summariseProfiles } from './vertical-network'
 import {
   buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
-import { satelliteOffset, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
+import { satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
 import { demSourceFor, type DemSourceId } from './dem-sources'
 import { sampleElevation } from './elevation'
@@ -315,9 +315,13 @@ export interface GeoSystemContext {
     pivot?: { x: number; y: number; z: number }
     /** Same key = files of one project sharing an IfcMapConversion. */
     georefKey?: string | null
+    /** The model's current pivot yaw (radians, about +Y). */
+    yawRad?: number
   }> | null
   /** Translate one model by a scene-space delta. */
   setModelOffset?(modelId: string, offset: { x: number; y: number; z: number }): void
+  /** Turn one model to an absolute pivot yaw about a world point, which stays put. */
+  setModelYaw?(modelId: string, yawRad: number, about: { x: number; z: number }): void
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────────
@@ -3065,6 +3069,24 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     satellites: ReturnType<NonNullable<GeoSystemContext['getSatelliteModels']>> = ctx.getSatelliteModels?.() ?? null,
   ): void {
     if (!satellites || satellites.length === 0 || !ctx.setModelOffset) return
+
+    // Rotations first, then positions from fresh bounds. The anchor and its own
+    // project's files stand as drawn (the map is turned for them); every other
+    // satellite turns by its rotation against the anchor's, about its own centre
+    // — which therefore stays where the translation below expects it.
+    if (ctx.setModelYaw) {
+      const anchorKey = anchorModelId ? satellites.find((s) => s.modelId === anchorModelId)?.georefKey : null
+      let turned = false
+      for (const s of satellites) {
+        const own = s.modelId === anchorModelId || (!!anchorKey && s.georefKey === anchorKey)
+        if (!own && !shouldPlaceSatellite(s.modelId, anchorModelId, s.placement)) continue
+        const want = own ? 0 : satelliteYaw(anchor, s.placement)
+        if (Math.abs((s.yawRad ?? 0) - want) < 1e-6) continue
+        ctx.setModelYaw(s.modelId, want, { x: s.bounds.center.x, z: s.bounds.center.z })
+        turned = true
+      }
+      if (turned) satellites = ctx.getSatelliteModels?.() ?? satellites
+    }
 
     const frame = { placement: anchor, anchorScene, groundY }
     const anchorSat = anchorModelId ? satellites.find((s) => s.modelId === anchorModelId) : undefined
