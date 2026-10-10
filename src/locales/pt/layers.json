@@ -831,5 +831,11 @@
       "live_one": "{{count}} fonte em direto",
       "live_other": "{{count}} fontes em direto"
     }
+  },
+  "wait": {
+    "server": "À espera de {{host}}… {{s}} s",
+    "generic": "A processar… {{s}} s",
+    "announce": "Ainda à espera de {{host}}",
+    "announceGeneric": "Ainda a processar"
   }
 }

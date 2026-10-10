@@ -831,5 +831,11 @@
       "live_one": "{{count}} source en direct",
       "live_other": "{{count}} sources en direct"
     }
+  },
+  "wait": {
+    "server": "En attente de {{host}}… {{s}} s",
+    "generic": "En cours… {{s}} s",
+    "announce": "Toujours en attente de {{host}}",
+    "announceGeneric": "Toujours en cours"
   }
 }

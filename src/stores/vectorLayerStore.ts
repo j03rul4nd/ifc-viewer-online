@@ -173,6 +173,11 @@ interface VectorLayerState {
   pendingFiles: File[]
   /** Persisted layers exist and the panel should mount to restore them. */
   restorePending: boolean
+  /**
+   * A load the user started and is waiting on (not background live refreshes):
+   * which server, since when. The panel says so once it takes a while.
+   */
+  waiting: { label: string; since: number } | null
   /** `?layers=` setup to open once the panel mounts (wins over restoring). */
   setupUrl: string | null
   setSetupUrl: (url: string | null) => void
@@ -252,6 +257,7 @@ export const useVectorLayerStore = create<VectorLayerState>()(
         set((s) => ({ liveStatus: { ...s.liveStatus, [id]: status } }), false, 'setLiveStatus'),
       pendingFiles: [],
       restorePending: false,
+      waiting: null,
       setupUrl: null,
       setSetupUrl: (url) => set({ setupUrl: url }, false, 'setSetupUrl'),
       setupText: null,
@@ -290,3 +296,44 @@ export const useVectorLayerStore = create<VectorLayerState>()(
     { name: 'VectorLayerStore', enabled: import.meta.env.DEV },
   ),
 )
+
+// ── User-initiated waits ───────────────────────────────────────────────────────
+
+/** Every wait still pending, by id. */
+const activeWaits = new Map<number, { label: string; since: number }>()
+let nextWaitId = 1
+
+/** Show the oldest wait still pending — not the first one started, which may be done. */
+function publishWaits(): void {
+  let oldest: { label: string; since: number } | null = null
+  for (const w of activeWaits.values()) if (!oldest || w.since < oldest.since) oldest = w
+  if (useVectorLayerStore.getState().waiting !== oldest) useVectorLayerStore.setState({ waiting: oldest })
+}
+
+/**
+ * The server part of a URL, for "waiting for ovc.catastro.meh.es…". A relative
+ * URL is this site's; anything unparseable gives '' (the generic wording).
+ */
+export function hostLabel(url: string | null | undefined): string {
+  if (!url) return ''
+  try {
+    return new URL(url, typeof location === 'undefined' ? undefined : location.href).host
+  } catch { return '' }
+}
+
+/**
+ * Mark a load the user is waiting on, for as long as `p` is pending. With
+ * several at once, the panel names the oldest one still pending — so when a
+ * fast server answers first, the hint moves on to the slow one rather than
+ * going on naming the one that is done. It clears when the last one settles,
+ * whether it resolved or failed.
+ */
+export async function trackWait<T>(label: string, p: Promise<T>): Promise<T> {
+  const id = nextWaitId++
+  activeWaits.set(id, { label, since: Date.now() })
+  publishWaits()
+  try { return await p } finally {
+    activeWaits.delete(id)
+    publishWaits()
+  }
+}

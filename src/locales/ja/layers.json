@@ -831,5 +831,11 @@
       "live_one": "ライブソース {{count}} 件",
       "live_other": "ライブソース {{count}} 件"
     }
+  },
+  "wait": {
+    "server": "{{host}} の応答待ち… {{s}} 秒",
+    "generic": "処理中… {{s}} 秒",
+    "announce": "{{host}} の応答をまだ待っています",
+    "announceGeneric": "まだ処理中です"
   }
 }

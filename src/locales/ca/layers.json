@@ -831,5 +831,11 @@
       "live_one": "{{count}} font en viu",
       "live_other": "{{count}} fonts en viu"
     }
+  },
+  "wait": {
+    "server": "Esperant {{host}}… {{s}} s",
+    "generic": "Treballant… {{s}} s",
+    "announce": "Encara esperant {{host}}",
+    "announceGeneric": "Encara treballant"
   }
 }

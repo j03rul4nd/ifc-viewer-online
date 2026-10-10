@@ -831,5 +831,11 @@
       "live_one": "{{count}} live source",
       "live_other": "{{count}} live sources"
     }
+  },
+  "wait": {
+    "server": "Waiting for {{host}}… {{s}} s",
+    "generic": "Working… {{s}} s",
+    "announce": "Still waiting for {{host}}",
+    "announceGeneric": "Still working"
   }
 }
