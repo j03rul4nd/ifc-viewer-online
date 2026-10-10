@@ -109,7 +109,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "Digitaler Zwilling der Plaça de Catalunya im IFC Viewer Online, mit IFC-Modellen auf der 3D-Karte von Barcelona",
         launchLabel: "Live-Zwilling öffnen",
-        hint: "Graue Docks bedeuten, dass der Feed noch nicht geantwortet hat oder die Station außer Betrieb ist. Open Data BCN braucht mitunter 15–40 s.",
+        hint: "Klicken Sie auf ein Objekt, um seine Daten zu sehen; „Erkunden“ führt zu jedem Live-Punkt. Graue Docks bedeuten, dass der Feed noch nicht geantwortet hat oder die Station außer Betrieb ist. Open Data BCN braucht mitunter 15–40 s.",
       },
       { type: "h2", text: "Was die Szene enthält" },
       {
@@ -424,7 +424,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "Digitaler Zwilling des Busterminals von Helsinki im IFC Viewer Online, mit Live-Liniennummern über den Bussteigen",
         launchLabel: "Live-Terminal öffnen",
-        hint: "Grün: Türen offen. Blau: steht. Orange: Ein- oder Ausfahrt. Grau: kein Bus in den letzten 45 s.",
+        hint: "Klicken Sie auf ein Objekt, um seine Daten zu sehen; „Erkunden“ führt zu jedem Live-Punkt. Grün: Türen offen. Blau: steht. Orange: Ein- oder Ausfahrt. Grau: kein Bus in den letzten 45 s.",
       },
       { type: "h2", text: "Was Sie hier sehen" },
       {
@@ -669,7 +669,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "Digitaler Zwilling von Ausgang A4 der Station Tochōmae im IFC Viewer Online",
         launchLabel: "Tochōmae live öffnen",
-        hint: "Ein graues Schild bedeutet, dass gerade kein Zug am Bahnsteig steht. Warten Sie auf den nächsten oder öffnen Sie den vollständigen Viewer.",
+        hint: "Klicken Sie auf ein Objekt, um seine Daten zu sehen; „Erkunden“ führt zu jedem Live-Punkt. Ein graues Schild bedeutet, dass gerade kein Zug am Bahnsteig steht. Warten Sie auf den nächsten oder öffnen Sie den vollständigen Viewer.",
       },
       {
         type: "table",
@@ -711,7 +711,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "Digitaler Zwilling der Straßenbahnhaltestelle Waseda auf der 3D-Karte von Tokio im IFC Viewer Online",
         launchLabel: "Waseda live öffnen",
-        hint: "Zwischen zwei Bahnen sind die Kanten grau. ODPT sagt nicht, welchen Bahnsteig eine Bahn nutzt, deshalb leuchten beide.",
+        hint: "Klicken Sie auf ein Objekt, um seine Daten zu sehen; „Erkunden“ führt zu jedem Live-Punkt. Zwischen zwei Bahnen sind die Kanten grau. ODPT sagt nicht, welchen Bahnsteig eine Bahn nutzt, deshalb leuchten beide.",
       },
       {
         type: "image",

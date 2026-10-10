@@ -109,7 +109,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "Gemelo digital de la Plaça de Catalunya en IFC Viewer Online, con modelos IFC sobre el mapa 3D de Barcelona",
         launchLabel: "Abrir el gemelo en vivo",
-        hint: "Los anclajes en gris significan que el feed aún no ha respondido o que la estación está fuera de servicio. Open Data BCN puede tardar entre 15 y 40 s.",
+        hint: "Haz clic en cualquier elemento para ver sus datos; «Explorar» te lleva a cada punto en vivo. Los anclajes en gris significan que el feed aún no ha respondido o que la estación está fuera de servicio. Open Data BCN puede tardar entre 15 y 40 s.",
       },
       { type: "h2", text: "Qué hay en la escena" },
       {
@@ -420,7 +420,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "Gemelo digital de la terminal de autobuses de Helsinki en IFC Viewer Online, con números de línea en vivo sobre las dársenas",
         launchLabel: "Abrir la terminal en vivo",
-        hint: "Verde: puertas abiertas. Azul: parado. Ámbar: entrando o saliendo. Gris: ningún autobús en los últimos 45 s.",
+        hint: "Haz clic en cualquier elemento para ver sus datos; «Explorar» te lleva a cada punto en vivo. Verde: puertas abiertas. Azul: parado. Ámbar: entrando o saliendo. Gris: ningún autobús en los últimos 45 s.",
       },
       { type: "h2", text: "Qué estás viendo" },
       {
@@ -665,7 +665,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "Gemelo digital de la salida A4 de la estación de Tochōmae en IFC Viewer Online",
         launchLabel: "Abrir Tochōmae, en vivo",
-        hint: "Un letrero gris significa que ahora mismo no hay ningún tren en el andén. Espera al siguiente o abre el visor completo.",
+        hint: "Haz clic en cualquier elemento para ver sus datos; «Explorar» te lleva a cada punto en vivo. Un letrero gris significa que ahora mismo no hay ningún tren en el andén. Espera al siguiente o abre el visor completo.",
       },
       {
         type: "table",
@@ -707,7 +707,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "Gemelo digital de la parada de tranvía de Waseda sobre el mapa 3D de Tokio en IFC Viewer Online",
         launchLabel: "Abrir Waseda, en vivo",
-        hint: "Entre tranvías, los bordes están en gris. ODPT no indica qué andén usa un tranvía, así que se iluminan los dos.",
+        hint: "Haz clic en cualquier elemento para ver sus datos; «Explorar» te lleva a cada punto en vivo. Entre tranvías, los bordes están en gris. ODPT no indica qué andén usa un tranvía, así que se iluminan los dos.",
       },
       {
         type: "image",

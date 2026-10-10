@@ -128,6 +128,7 @@ const MeshPanel = React.lazy(() => import('./components/MeshPanel'))
 // Lazy: the data-layer panel pulls proj4 + the vector builders. Mounted only
 // once used, and kept mounted while layers exist (it owns their sync).
 const VectorLayersPanel = React.lazy(() => import('./components/VectorLayersPanel'))
+const SceneExplorer = React.lazy(() => import('./components/SceneExplorer'))
 const TwinDevicesPanel = React.lazy(() => import('./components/TwinDevicesPanel'))
 // The data legend overlay: lazy for the same reason, mounted only with data layers.
 const DataLegend = React.lazy(() => import('./components/DataLegend'))
@@ -986,6 +987,16 @@ export default function App() {
   const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending || !!s.setupUrl || !!s.setupText)
   // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
   const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
+  // The scene explorer: on by default where the app's panels are absent (the
+  // canvas presets a blog figure or a kiosk use) and a scene is open; ?explore=
+  // forces it either way.
+  const exploreOn = urlParams.explore ?? (embedChrome.embed && (urlParams.preset === 'article' || urlParams.preset === 'kiosk') && !!bootedScene())
+  const exploreHome = useMemo(() => {
+    const c = urlParams.camera
+    if (!c) return null
+    const v = (a: number[]) => ({ x: a[0], y: a[1], z: a[2] })
+    return { position: v(c.position), target: v(c.target) }
+  }, [urlParams.camera])
   // `?twin=home|community`: a shared link that opens the model with a live twin demo on it.
   useEffect(() => {
     const id = /[?&]twin=(home|community)\b/.exec(window.location.search)?.[1] as 'home' | 'community' | undefined
@@ -2322,7 +2333,7 @@ export default function App() {
     // `?wheel=ctrl` (and the article preset): the wheel scrolls the host page.
     if (urlParams.wheel === 'ctrl') {
       const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
-      viewerApiRef.current?.setWheelMode('ctrl', tViewer('wheelHint', { key: mac ? '⌘' : 'Ctrl' }))
+      viewerApiRef.current?.setWheelMode('ctrl', tViewer('wheelHintEngage', { key: mac ? '⌘' : 'Ctrl' }))
     }
 
     if (urlParams.modelUrls.length === 0) {
@@ -4430,6 +4441,13 @@ export default function App() {
                   {/* Data legend — a chip in the corner while data layers are
                       visible; the legend itself only when the viewer opens it. */}
                   {twinInUse && <TwinLabels viewerApiRef={viewerApiRef} />}
+                  {/* Scene explorer (canvas presets with a scene, or ?explore=1): the data of
+                      what a click picked, an Explore list of the twin, and buttons to move. */}
+                  {exploreOn && sceneModels.length > 0 && tourMode !== 'playing' && (
+                    <React.Suspense fallback={null}>
+                      <SceneExplorer viewerApiRef={viewerApiRef} selected={selected} homePose={exploreHome} />
+                    </React.Suspense>
+                  )}
                   {(vectorLayersInUse || twinInUse) && (
                     <React.Suspense fallback={null}>
                       {/* The live twin explains its colours in the same legend. */}

@@ -14,6 +14,20 @@ Nothing in a demo runs on a server of ours: the browser fetches the IFC files fr
 this site and the live data straight from each provider (`DECISIONS.md`,
 frontend-only).
 
+**Exploring a demo inside an article or a kiosk** (`ui=article` / `ui=kiosk`, no
+app panels): the *scene explorer* (`src/components/SceneExplorer.tsx`, `?explore=`)
+covers it.
+- A click opens a card with the data of what it picked: an IFC element's live
+  twin values, key data, quantities and every property set (asset management
+  first), a layer feature's attributes, or a map building.
+- *Explore* lists the twin's live points with their values, plus the scene's
+  models.
+- Buttons go to the overview, zoom, turn and look from above.
+- Going to something keeps context instead of filling the screen with it
+  (`src/lib/scene-explore/camera-moves.ts`). Clicking a live value used to put
+  the camera a metre from a 30 cm dock post.
+- The wheel zooms without Ctrl once the reader clicks in the view.
+
 ---
 
 ## Barcelona · Plaça de Catalunya — open-data digital twin

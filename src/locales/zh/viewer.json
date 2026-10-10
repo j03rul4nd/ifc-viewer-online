@@ -309,5 +309,39 @@
     "canvas": "3D 模型视图。轻点构件即可选中；长按查看操作。",
     "copyGlobalId": "复制 GlobalId",
     "more": "更多操作"
+  },
+  "wheelHintEngage": "先点击视图，再滚动滚轮缩放 · 或 {{key}} + 滚轮",
+  "explorer": {
+    "cardLabel": "所选对象详情",
+    "navLabel": "在场景中移动",
+    "home": "全景视图",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "turnLeft": "向左旋转",
+    "turnRight": "向右旋转",
+    "top": "俯视图",
+    "perspective": "返回 3D 视图",
+    "help": "如何移动",
+    "helpTitle": "在场景中移动",
+    "helpClick": "点击任意对象查看其数据。",
+    "helpDrag": "拖动以旋转。",
+    "helpPan": "右键拖动或双指拖动以平移。",
+    "helpWheel": "滚轮或双指缩放，朝指向处缩放（先点击视图）。",
+    "helpDouble": "双击某处，围绕该点旋转。",
+    "explore": "探索",
+    "liveCount_one": "{{count}} 个实时",
+    "liveCount_other": "{{count}} 个实时",
+    "live": "实时数据",
+    "models": "模型",
+    "state": {
+      "live": "实时",
+      "stale": "无近期数据",
+      "nodata": "等待数据"
+    },
+    "focus": "在视图中居中",
+    "properties": "属性",
+    "fromType": "类型",
+    "attributes": "属性字段",
+    "copied": "已复制"
   }
 }

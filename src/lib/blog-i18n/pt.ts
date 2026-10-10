@@ -107,7 +107,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "Gêmeo digital da Plaça de Catalunya no IFC Viewer Online, com modelos IFC no mapa 3D de Barcelona",
         launchLabel: "Abrir o gêmeo ao vivo",
-        hint: "Docas cinza significam que o feed ainda não respondeu ou que a estação está fora de serviço. O Open Data BCN pode levar de 15 a 40 s.",
+        hint: "Clique em qualquer elemento para ver os dados; “Explorar” leva a cada ponto ao vivo. Docas cinza significam que o feed ainda não respondeu ou que a estação está fora de serviço. O Open Data BCN pode levar de 15 a 40 s.",
       },
       { type: "h2", text: "O que há na cena" },
       {
@@ -422,7 +422,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "Gêmeo digital do terminal de ônibus de Helsinque no IFC Viewer Online, com números de linha ao vivo sobre as baias",
         launchLabel: "Abrir o terminal ao vivo",
-        hint: "Verde: portas abertas. Azul: parado. Âmbar: entrando ou saindo. Cinza: nenhum ônibus nos últimos 45 s.",
+        hint: "Clique em qualquer elemento para ver os dados; “Explorar” leva a cada ponto ao vivo. Verde: portas abertas. Azul: parado. Âmbar: entrando ou saindo. Cinza: nenhum ônibus nos últimos 45 s.",
       },
       { type: "h2", text: "O que você está vendo" },
       {
@@ -667,7 +667,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "Gêmeo digital da saída A4 da estação Tochōmae no IFC Viewer Online",
         launchLabel: "Abrir Tochōmae ao vivo",
-        hint: "Uma placa cinza significa que nenhum trem está na plataforma agora. Espere o próximo ou abra o visualizador completo.",
+        hint: "Clique em qualquer elemento para ver os dados; “Explorar” leva a cada ponto ao vivo. Uma placa cinza significa que nenhum trem está na plataforma agora. Espere o próximo ou abra o visualizador completo.",
       },
       {
         type: "table",
@@ -709,7 +709,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "Gêmeo digital da parada de bonde Waseda no mapa 3D de Tóquio, no IFC Viewer Online",
         launchLabel: "Abrir Waseda ao vivo",
-        hint: "Entre um bonde e outro, as bordas ficam cinza. O ODPT não informa qual plataforma o bonde usa, então as duas acendem.",
+        hint: "Clique em qualquer elemento para ver os dados; “Explorar” leva a cada ponto ao vivo. Entre um bonde e outro, as bordas ficam cinza. O ODPT não informa qual plataforma o bonde usa, então as duas acendem.",
       },
       {
         type: "image",

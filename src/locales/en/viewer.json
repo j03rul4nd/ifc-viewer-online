@@ -321,5 +321,39 @@
     "canvas": "3D model view. Tap an element to select it; touch and hold for its actions.",
     "copyGlobalId": "Copy GlobalId",
     "more": "More actions"
+  },
+  "wheelHintEngage": "Click the view, then scroll to zoom · or {{key}} + scroll",
+  "explorer": {
+    "cardLabel": "Details of the selection",
+    "navLabel": "Move around the scene",
+    "home": "Overview",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "turnLeft": "Turn left",
+    "turnRight": "Turn right",
+    "top": "View from above",
+    "perspective": "Back to 3D view",
+    "help": "How to move",
+    "helpTitle": "Moving around",
+    "helpClick": "Click anything to see its data.",
+    "helpDrag": "Drag to turn around.",
+    "helpPan": "Right-drag, or drag with two fingers, to move sideways.",
+    "helpWheel": "Scroll or pinch to zoom where you point (click the view first).",
+    "helpDouble": "Double-click a spot to turn around it.",
+    "explore": "Explore",
+    "liveCount_one": "{{count}} live",
+    "liveCount_other": "{{count}} live",
+    "live": "Live data",
+    "models": "Models",
+    "state": {
+      "live": "Live",
+      "stale": "No recent data",
+      "nodata": "Waiting for data"
+    },
+    "focus": "Center in view",
+    "properties": "Properties",
+    "fromType": "type",
+    "attributes": "Attributes",
+    "copied": "Copied"
   }
 }

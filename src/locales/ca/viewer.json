@@ -309,5 +309,39 @@
     "canvas": "Vista 3D del model. Toca un element per seleccionar-lo; mantén premut per veure'n les accions.",
     "copyGlobalId": "Copia el GlobalId",
     "more": "Més accions"
+  },
+  "wheelHintEngage": "Fes clic a la vista i fes servir la roda per apropar · o {{key}} + roda",
+  "explorer": {
+    "cardLabel": "Detalls de la selecció",
+    "navLabel": "Moure's per l'escena",
+    "home": "Vista general",
+    "zoomIn": "Apropar",
+    "zoomOut": "Allunyar",
+    "turnLeft": "Girar a l'esquerra",
+    "turnRight": "Girar a la dreta",
+    "top": "Vista des de dalt",
+    "perspective": "Tornar a la vista 3D",
+    "help": "Com moure's",
+    "helpTitle": "Moure's per l'escena",
+    "helpClick": "Fes clic a qualsevol cosa per veure les seves dades.",
+    "helpDrag": "Arrossega per girar.",
+    "helpPan": "Arrossega amb el botó dret, o amb dos dits, per desplaçar-te.",
+    "helpWheel": "Fes servir la roda o pessiga per apropar-te on apuntes (fes clic a la vista primer).",
+    "helpDouble": "Doble clic en un punt per girar al seu voltant.",
+    "explore": "Explorar",
+    "liveCount_one": "{{count}} en directe",
+    "liveCount_other": "{{count}} en directe",
+    "live": "Dades en directe",
+    "models": "Models",
+    "state": {
+      "live": "En directe",
+      "stale": "Sense dades recents",
+      "nodata": "Esperant dades"
+    },
+    "focus": "Centrar a la vista",
+    "properties": "Propietats",
+    "fromType": "tipus",
+    "attributes": "Atributs",
+    "copied": "Copiat"
   }
 }

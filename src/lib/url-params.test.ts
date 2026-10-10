@@ -433,6 +433,12 @@ describe('article presentation (v1.14)', () => {
     expect(resolveEmbedChrome(p)).toMatchObject({ showToolbar: false, showRail: false, quiet: true })
   })
 
+  it('explore is forced on or off by the URL, and left to the preset otherwise', () => {
+    expect(parseAppUrlParams('?ui=article').explore).toBeUndefined()
+    expect(parseAppUrlParams('?ui=article&explore=0').explore).toBe(false)
+    expect(parseAppUrlParams('?embed=1&explore=1').explore).toBe(true)
+  })
+
   it('view, fill and wheel can be set or overridden on any preset', () => {
     const p = parseAppUrlParams('?ui=article&view=top&fill=70&wheel=always')
     expect(p).toMatchObject({ view: 'top', fill: 0.7, wheel: 'always' })
