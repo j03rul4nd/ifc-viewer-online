@@ -107,7 +107,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "Bessó digital de la Plaça de Catalunya a IFC Viewer Online, amb models IFC sobre el mapa 3D de Barcelona",
         launchLabel: "Obre el bessó en viu",
-        hint: "Uns ancoratges en gris vol dir que la font de dades encara no ha respost o que l'estació està fora de servei. Open Data BCN pot trigar 15–40 s.",
+        hint: "Fes clic a qualsevol element per veure'n les dades; «Explorar» et porta a cada punt en directe. Uns ancoratges en gris vol dir que la font de dades encara no ha respost o que l'estació està fora de servei. Open Data BCN pot trigar 15–40 s.",
       },
       { type: "h2", text: "Què hi ha a l'escena" },
       {
@@ -428,7 +428,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "Bessó digital de la terminal d'autobusos d'Hèlsinki a IFC Viewer Online, amb els números de línia en viu sobre les dàrsenes",
         launchLabel: "Obre la terminal en viu",
-        hint: "Verd: portes obertes. Blau: aturat. Ambre: entrant o sortint. Gris: cap autobús en els últims 45 s.",
+        hint: "Fes clic a qualsevol element per veure'n les dades; «Explorar» et porta a cada punt en directe. Verd: portes obertes. Blau: aturat. Ambre: entrant o sortint. Gris: cap autobús en els últims 45 s.",
       },
       { type: "h2", text: "Què estàs veient" },
       {
@@ -670,7 +670,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "Bessó digital de la sortida A4 de l'estació de Tochōmae a IFC Viewer Online",
         launchLabel: "Obre Tochōmae, en viu",
-        hint: "Un rètol gris vol dir que ara mateix no hi ha cap tren a l'andana. Espera el següent, o obre el visor complet.",
+        hint: "Fes clic a qualsevol element per veure'n les dades; «Explorar» et porta a cada punt en directe. Un rètol gris vol dir que ara mateix no hi ha cap tren a l'andana. Espera el següent, o obre el visor complet.",
       },
       {
         type: "table",
@@ -712,7 +712,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "Bessó digital de la parada de tramvia de Waseda sobre el mapa 3D de Tòquio a IFC Viewer Online",
         launchLabel: "Obre Waseda, en viu",
-        hint: "Entre tramvies, les vores són grises. ODPT no diu quina andana fa servir un tramvia, així que s'il·luminen totes dues.",
+        hint: "Fes clic a qualsevol element per veure'n les dades; «Explorar» et porta a cada punt en directe. Entre tramvies, les vores són grises. ODPT no diu quina andana fa servir un tramvia, així que s'il·luminen totes dues.",
       },
       {
         type: "image",

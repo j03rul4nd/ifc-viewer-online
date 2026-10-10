@@ -309,5 +309,39 @@
     "canvas": "3D-Modellansicht. Tippe auf ein Element, um es auszuwählen; halte es gedrückt für Aktionen.",
     "copyGlobalId": "GlobalId kopieren",
     "more": "Weitere Aktionen"
+  },
+  "wheelHintEngage": "In die Ansicht klicken, dann mit dem Mausrad zoomen · oder {{key}} + Mausrad",
+  "explorer": {
+    "cardLabel": "Details der Auswahl",
+    "navLabel": "In der Szene bewegen",
+    "home": "Übersicht",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "turnLeft": "Nach links drehen",
+    "turnRight": "Nach rechts drehen",
+    "top": "Draufsicht",
+    "perspective": "Zurück zur 3D-Ansicht",
+    "help": "Navigation",
+    "helpTitle": "In der Szene bewegen",
+    "helpClick": "Auf etwas klicken, um seine Daten zu sehen.",
+    "helpDrag": "Ziehen zum Drehen.",
+    "helpPan": "Mit rechter Maustaste oder zwei Fingern ziehen, um zu verschieben.",
+    "helpWheel": "Mausrad oder Zwei-Finger-Geste zoomt dorthin, wo Sie zeigen (zuerst in die Ansicht klicken).",
+    "helpDouble": "Doppelklick auf einen Punkt, um sich um ihn zu drehen.",
+    "explore": "Erkunden",
+    "liveCount_one": "{{count}} live",
+    "liveCount_other": "{{count}} live",
+    "live": "Live-Daten",
+    "models": "Modelle",
+    "state": {
+      "live": "Live",
+      "stale": "Keine aktuellen Daten",
+      "nodata": "Warte auf Daten"
+    },
+    "focus": "In der Ansicht zentrieren",
+    "properties": "Eigenschaften",
+    "fromType": "Typ",
+    "attributes": "Attribute",
+    "copied": "Kopiert"
   }
 }

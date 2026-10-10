@@ -107,7 +107,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "IFC Viewer Online 中的加泰罗尼亚广场数字孪生，IFC 模型位于巴塞罗那 3D 地图上",
         launchLabel: "打开实时孪生",
-        hint: "停车桩呈灰色，说明数据源尚未响应，或该站点暂停服务。Open Data BCN 可能需要 15–40 秒才响应。",
+        hint: "点击任意对象即可查看其数据；“探索”可直达每个实时点位。停车桩呈灰色，说明数据源尚未响应，或该站点暂停服务。Open Data BCN 可能需要 15–40 秒才响应。",
       },
       { type: "h2", text: "场景里有什么" },
       {
@@ -357,7 +357,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "IFC Viewer Online 中的赫尔辛基公交总站数字孪生，停靠位上方显示实时线路号",
         launchLabel: "打开实时公交总站",
-        hint: "绿色：车门打开。蓝色：停靠中。琥珀色：正在进站或出站。灰色：过去 45 秒内没有公交车。",
+        hint: "点击任意对象即可查看其数据；“探索”可直达每个实时点位。绿色：车门打开。蓝色：停靠中。琥珀色：正在进站或出站。灰色：过去 45 秒内没有公交车。",
       },
       { type: "h2", text: "你看到的是什么" },
       {
@@ -588,7 +588,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "IFC Viewer Online 中的都厅前站 A4 出口数字孪生",
         launchLabel: "打开实时都厅前站",
-        hint: "标牌为灰色，表示此刻站台上没有列车。等下一班车，或者打开完整查看器。",
+        hint: "点击任意对象即可查看其数据；“探索”可直达每个实时点位。标牌为灰色，表示此刻站台上没有列车。等下一班车，或者打开完整查看器。",
       },
       {
         type: "table",
@@ -618,7 +618,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "IFC Viewer Online 中东京 3D 地图上的早稻田电车站数字孪生",
         launchLabel: "打开实时早稻田站",
-        hint: "两班电车之间，站台边缘为灰色。ODPT 不提供电车使用哪一侧站台的信息，所以两侧都会亮起。",
+        hint: "点击任意对象即可查看其数据；“探索”可直达每个实时点位。两班电车之间，站台边缘为灰色。ODPT 不提供电车使用哪一侧站台的信息，所以两侧都会亮起。",
       },
       {
         type: "image",

@@ -413,6 +413,8 @@ export interface ViewerAPI {
    * Pass modelId to target an element in a specific model (important with multiple models loaded).
    */
   selectElement(expressId: number, modelId?: string): void
+  /** Drop the selection: its highlight, its box, and the `onSelect(null)` that tells the app. */
+  clearSelection(): void
   /**
    * Apply category/element visibility.
    * `isolatedElement` (a localId) takes precedence over category/hidden-element rules
@@ -1124,8 +1126,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     if (wheelHintTimer) clearTimeout(wheelHintTimer)
     wheelHintTimer = setTimeout(() => { if (wheelHintEl) wheelHintEl.style.opacity = '0' }, 1100)
   }
+  // Engaged: the reader has clicked or dragged inside the view, so the wheel
+  // is meant for it — until the pointer leaves. Ctrl-only zoom is right for a
+  // reader scrolling PAST a figure; for one exploring a twin inside it, having
+  // to hold Ctrl on every zoom is what made the camera feel stuck.
+  let wheelEngaged = false
+  container.addEventListener('pointerdown', () => { wheelEngaged = true }, { capture: true, passive: true })
+  container.addEventListener('pointerleave', () => { wheelEngaged = false }, { passive: true })
   container.addEventListener('wheel', (e) => {
-    if (wheelMode !== 'ctrl' || e.ctrlKey || e.metaKey) return
+    if (wheelMode !== 'ctrl' || wheelEngaged || e.ctrlKey || e.metaKey) return
     e.stopPropagation()
     showWheelHint()
   }, { capture: true, passive: true })
@@ -3412,6 +3421,21 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     selectElement(expressId, modelId) {
       runSelectElement(expressId, modelId)
+    },
+
+    clearSelection() {
+      void (async () => {
+        if (selectedLocalId !== null && selectedModelId !== null) {
+          const m = modelObjects.get(selectedModelId)
+          try { if (m) await resetHighlightPreservingOverlay(m, selectedModelId, selectedLocalId) } catch (e) {
+            console.debug('[Viewer] clearSelection resetHighlight failed:', e instanceof Error ? e.message : e)
+          }
+        }
+        selectedLocalId = null
+        selectedModelId = null
+        removeSelectionBox()
+        selectCallback?.(null)
+      })()
     },
 
     setValidationHighlights(issues, enabled, options) {

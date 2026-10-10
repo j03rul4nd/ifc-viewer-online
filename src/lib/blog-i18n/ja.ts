@@ -107,7 +107,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "IFC Viewer Onlineで表示したカタルーニャ広場のデジタルツイン。バルセロナの3DマップにIFCモデルが並ぶ",
         launchLabel: "ライブのツインを開く",
-        hint: "ドックがグレーの場合は、フィードがまだ応答していないか、ステーションが休止中です。Open Data BCNは応答に15〜40秒かかることがあります。",
+        hint: "要素をクリックするとデータを表示します。「探索」から各ライブ地点へ移動できます。ドックがグレーの場合は、フィードがまだ応答していないか、ステーションが休止中です。Open Data BCNは応答に15〜40秒かかることがあります。",
       },
       { type: "h2", text: "シーンの構成" },
       {
@@ -377,7 +377,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "IFC Viewer Onlineで表示したヘルシンキのバスターミナルのデジタルツイン。乗り場の上に系統番号がライブ表示されている",
         launchLabel: "ライブのターミナルを開く",
-        hint: "緑：ドア開。青：停車中。黄色：到着・発車中。グレー：直近45秒間バスなし。",
+        hint: "要素をクリックするとデータを表示します。「探索」から各ライブ地点へ移動できます。緑：ドア開。青：停車中。黄色：到着・発車中。グレー：直近45秒間バスなし。",
       },
       { type: "h2", text: "画面に映っているもの" },
       {
@@ -615,7 +615,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "IFC Viewer Onlineで表示した都庁前駅 A4出口のデジタルツイン",
         launchLabel: "都庁前駅をライブで開く",
-        hint: "駅名標がグレーなら、今はホームに列車がいません。次の列車を待つか、フル機能のビューアーを開いてください。",
+        hint: "要素をクリックするとデータを表示します。「探索」から各ライブ地点へ移動できます。駅名標がグレーなら、今はホームに列車がいません。次の列車を待つか、フル機能のビューアーを開いてください。",
       },
       {
         type: "table",
@@ -645,7 +645,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "IFC Viewer Onlineの東京の3Dマップに表示した早稲田停留場のデジタルツイン",
         launchLabel: "早稲田停留場をライブで開く",
-        hint: "電車が来ていない間、ホーム端はグレーです。ODPTはどちらのホームを使うかを示さないため、両方が点灯します。",
+        hint: "要素をクリックするとデータを表示します。「探索」から各ライブ地点へ移動できます。電車が来ていない間、ホーム端はグレーです。ODPTはどちらのホームを使うかを示さないため、両方が点灯します。",
       },
       {
         type: "image",

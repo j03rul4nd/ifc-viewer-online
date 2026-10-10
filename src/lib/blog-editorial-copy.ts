@@ -146,7 +146,7 @@ const en: EditorialCopy = {
     running: 'Running the tool…',
     retry: 'Try again',
     openFull: 'Open full viewer',
-    controls: 'Drag to orbit · right-drag to pan · Ctrl + scroll to zoom',
+    controls: 'Drag to orbit · right-drag to pan · click the view, then scroll to zoom',
     loadFailed: 'The live example could not load.',
   },
   post: {
@@ -226,7 +226,7 @@ const es: EditorialCopy = {
     running: 'Ejecutando la herramienta…',
     retry: 'Reintentar',
     openFull: 'Abrir el visor completo',
-    controls: 'Arrastra para orbitar · clic derecho para desplazar · Ctrl + rueda para zoom',
+    controls: 'Arrastra para orbitar · clic derecho para desplazar · haz clic en la vista y usa la rueda para el zoom',
     loadFailed: 'No se pudo cargar el ejemplo en vivo.',
   },
   post: {
@@ -306,7 +306,7 @@ const de: EditorialCopy = {
     running: 'Werkzeug läuft…',
     retry: 'Erneut versuchen',
     openFull: 'Vollständigen Viewer öffnen',
-    controls: 'Ziehen zum Drehen · Rechtsklick-Ziehen zum Verschieben · Strg + Scrollen zum Zoomen',
+    controls: 'Ziehen zum Drehen · Rechtsklick-Ziehen zum Verschieben · in die Ansicht klicken, dann scrollen zum Zoomen',
     loadFailed: 'Das Live-Beispiel konnte nicht geladen werden.',
   },
   post: {
@@ -386,7 +386,7 @@ const fr: EditorialCopy = {
     running: 'Lancement de l\'outil…',
     retry: 'Réessayer',
     openFull: 'Ouvrir la visionneuse complète',
-    controls: 'Glisser pour orbiter · clic droit pour déplacer · Ctrl + molette pour zoomer',
+    controls: 'Glisser pour orbiter · clic droit pour déplacer · cliquez dans la vue, puis molette pour zoomer',
     loadFailed: 'L\'exemple en direct n\'a pas pu se charger.',
   },
   post: {
@@ -466,7 +466,7 @@ const zh: EditorialCopy = {
     running: '正在运行工具…',
     retry: '重试',
     openFull: '打开完整查看器',
-    controls: '拖动旋转 · 右键拖动平移 · Ctrl + 滚轮缩放',
+    controls: '拖动旋转 · 右键拖动平移 · 先点击视图，再用滚轮缩放',
     loadFailed: '实时示例无法加载。',
   },
   post: {
@@ -546,7 +546,7 @@ const ja: EditorialCopy = {
     running: 'ツールを実行中…',
     retry: '再試行',
     openFull: 'フルビューアを開く',
-    controls: 'ドラッグで回転 · 右ドラッグで移動 · Ctrl + スクロールでズーム',
+    controls: 'ドラッグで回転 · 右ドラッグで移動 · ビューをクリックしてからスクロールでズーム',
     loadFailed: 'ライブ例を読み込めませんでした。',
   },
   post: {
@@ -626,7 +626,7 @@ const th: EditorialCopy = {
     running: 'กำลังเรียกใช้เครื่องมือ…',
     retry: 'ลองอีกครั้ง',
     openFull: 'เปิดตัวดูแบบเต็ม',
-    controls: 'ลากเพื่อหมุน · ลากคลิกขวาเพื่อเลื่อน · Ctrl + เลื่อนเพื่อซูม',
+    controls: 'ลากเพื่อหมุน · ลากคลิกขวาเพื่อเลื่อน · คลิกที่มุมมองก่อน แล้วเลื่อนเพื่อซูม',
     loadFailed: 'ไม่สามารถโหลดตัวอย่างสดได้',
   },
   post: {
@@ -706,7 +706,7 @@ const pt: EditorialCopy = {
     running: 'A executar a ferramenta…',
     retry: 'Tentar novamente',
     openFull: 'Abrir o visualizador completo',
-    controls: 'Arraste para orbitar · botão direito para deslocar · Ctrl + roda para zoom',
+    controls: 'Arraste para orbitar · botão direito para deslocar · clique na vista e use a roda para zoom',
     loadFailed: 'Não foi possível carregar o exemplo ao vivo.',
   },
   post: {
@@ -786,7 +786,7 @@ const it: EditorialCopy = {
     running: 'Avvio dello strumento…',
     retry: 'Riprova',
     openFull: 'Apri il visualizzatore completo',
-    controls: 'Trascina per ruotare · tasto destro per spostare · Ctrl + rotellina per lo zoom',
+    controls: 'Trascina per ruotare · tasto destro per spostare · fai clic nella vista, poi rotellina per lo zoom',
     loadFailed: 'Impossibile caricare l\'esempio dal vivo.',
   },
   post: {
@@ -866,7 +866,7 @@ const ca: EditorialCopy = {
     running: 'Executant l\'eina…',
     retry: 'Torna-ho a provar',
     openFull: 'Obre el visor complet',
-    controls: 'Arrossega per orbitar · clic dret per desplaçar · Ctrl + roda per fer zoom',
+    controls: 'Arrossega per orbitar · clic dret per desplaçar · fes clic a la vista i fes servir la roda per fer zoom',
     loadFailed: 'No s\'ha pogut carregar l\'exemple en directe.',
   },
   post: {

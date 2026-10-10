@@ -12,6 +12,7 @@ import { bindingState, buildCatalog, buildGuidIndex, deviceKey, metricOf, resolv
 import type { ViewerAPI } from '../lib/viewer'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { declutter, paintTwinLabels, type TwinLabelPaint } from '../lib/twin/label-paint'
+import { focusElements } from '../lib/scene-explore/focus'
 
 interface Anchor { bindingId: string; modelId: string; firstId: number; ids: number[]; point: { x: number; y: number; z: number } }
 
@@ -139,7 +140,10 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
           <div key={a.bindingId} ref={(el) => { if (el) refs.current.set(a.bindingId, el); else refs.current.delete(a.bindingId) }}
             className="absolute left-0 top-0 will-change-transform" data-testid="twin-label">
             <button type="button"
-              onClick={() => { const v = viewerApiRef.current; v?.frameElements(a.ids, a.modelId); v?.selectElement(a.firstId, a.modelId) }}
+              // Go and look at it with its surroundings, not fill the screen with it:
+              // fitting the box of a 30 cm dock post left the camera a metre away
+              // and orbiting it (see scene-explore/camera-moves).
+              onClick={() => { const v = viewerApiRef.current; if (!v) return; void focusElements(v, a.ids, a.modelId); v.selectElement(a.firstId, a.modelId) }}
               className="pointer-events-auto flex items-center gap-1 px-1.5 py-0.5 max-md:px-2 max-md:py-1 mb-1 rounded-full text-[10px] max-md:text-[12.5px] font-medium whitespace-nowrap bg-[rgba(10,12,18,0.82)] text-white border border-white/15 shadow"
               title={`${b.name} · ${b.label.field}`}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: look.color ?? '#94a3b8' }} />

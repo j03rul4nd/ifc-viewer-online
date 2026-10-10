@@ -107,7 +107,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "Gemello digitale di Plaça de Catalunya in IFC Viewer Online, con modelli IFC sulla mappa 3D di Barcellona",
         launchLabel: "Apri il gemello in tempo reale",
-        hint: "Ancoraggi grigi significano che il feed non ha ancora risposto, oppure che la stazione è fuori servizio. Open Data BCN può impiegare 15–40 s.",
+        hint: "Fai clic su un elemento per vederne i dati; «Esplora» porta a ogni punto in diretta. Ancoraggi grigi significano che il feed non ha ancora risposto, oppure che la stazione è fuori servizio. Open Data BCN può impiegare 15–40 s.",
       },
       { type: "h2", text: "Cosa c'è nella scena" },
       {
@@ -420,7 +420,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "Gemello digitale del terminal bus di Helsinki in IFC Viewer Online, con i numeri di linea in tempo reale sopra gli stalli",
         launchLabel: "Apri il terminal in tempo reale",
-        hint: "Verde: porte aperte. Blu: in sosta. Ambra: in entrata o in uscita. Grigio: nessun autobus negli ultimi 45 s.",
+        hint: "Fai clic su un elemento per vederne i dati; «Esplora» porta a ogni punto in diretta. Verde: porte aperte. Blu: in sosta. Ambra: in entrata o in uscita. Grigio: nessun autobus negli ultimi 45 s.",
       },
       { type: "h2", text: "Cosa stai guardando" },
       {
@@ -664,7 +664,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "Gemello digitale dell'uscita A4 della stazione di Tochōmae in IFC Viewer Online",
         launchLabel: "Apri Tochōmae, in tempo reale",
-        hint: "Un cartello grigio significa che in questo momento non c'è nessun treno in banchina. Aspetta il prossimo, oppure apri il viewer completo.",
+        hint: "Fai clic su un elemento per vederne i dati; «Esplora» porta a ogni punto in diretta. Un cartello grigio significa che in questo momento non c'è nessun treno in banchina. Aspetta il prossimo, oppure apri il viewer completo.",
       },
       {
         type: "table",
@@ -706,7 +706,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "Gemello digitale della fermata del tram di Waseda sulla mappa 3D di Tokyo in IFC Viewer Online",
         launchLabel: "Apri Waseda, in tempo reale",
-        hint: "Tra un tram e l'altro i bordi sono grigi. ODPT non indica quale banchina usa un tram, quindi si illuminano entrambi.",
+        hint: "Fai clic su un elemento per vederne i dati; «Esplora» porta a ogni punto in diretta. Tra un tram e l'altro i bordi sono grigi. ODPT non indica quale banchina usa un tram, quindi si illuminano entrambi.",
       },
       {
         type: "image",
