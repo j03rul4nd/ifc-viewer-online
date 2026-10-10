@@ -1,9 +1,9 @@
 var q = Object.defineProperty;
-var P = (a, t, e) => t in a ? q(a, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[t] = e;
-var l = (a, t, e) => P(a, typeof t != "symbol" ? t + "" : t, e);
-const k = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
-function x(a) {
-  const t = new URL(a), e = t.pathname.split("/").slice(0, -1), r = e[e.length - 1] ?? "", s = k.test(r) && e[e.length - 2] === "sdk" ? "../../" : "../";
+var x = (a, t, e) => t in a ? q(a, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[t] = e;
+var l = (a, t, e) => x(a, typeof t != "symbol" ? t + "" : t, e);
+const E = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+function P(a) {
+  const t = new URL(a), e = t.pathname.split("/").slice(0, -1), r = e[e.length - 1] ?? "", s = E.test(r) && e[e.length - 2] === "sdk" ? "../../" : "../";
   return new URL(s, t).href;
 }
 const b = [
@@ -17,10 +17,10 @@ const b = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], C = "1.17.0", E = 12e4, _ = 3e4, w = b.map((a) => a.code);
+], k = "1.17.0", C = 12e4, _ = 3e4, w = b.map((a) => a.code);
 function S() {
   try {
-    return x(import.meta.url);
+    return P(import.meta.url);
   } catch {
     return "/";
   }
@@ -64,7 +64,7 @@ function p(a, t) {
 }
 const f = class f {
   constructor(t, e = {}) {
-    l(this, "version", C);
+    l(this, "version", k);
     l(this, "iframe");
     /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
     l(this, "box", null);
@@ -163,7 +163,7 @@ const f = class f {
     });
     const r = typeof t == "string" ? document.querySelector(t) : t;
     if (!r) throw new Error(`IfcViewer: mount target not found: ${String(t)}`);
-    this.opts = e, this.baseUrl = e.baseUrl ?? S(), this.loadTimeout = e.loadTimeout ?? E, this.mountEl = r;
+    this.opts = e, this.baseUrl = e.baseUrl ?? S(), this.loadTimeout = e.loadTimeout ?? C, this.mountEl = r;
     const s = this.buildSrc();
     this.appOrigin = T(s);
     const i = document.createElement("iframe");
@@ -301,9 +301,12 @@ const f = class f {
       (r) => this.post({ type: "ifcviewer:load", requestId: r, url: t, name: e })
     );
   }
-  /** Select + frame an element by its IFC expressID. */
+  /**
+   * Select + frame an element by its IFC expressID, or by its GlobalId (a
+   * 22-character string, since v1.17.0) — which also finds its model.
+   */
   select(t, e) {
-    this.send({ type: "ifcviewer:select", expressId: t, modelId: e });
+    this.send({ type: "ifcviewer:select", ...typeof t == "string" ? { globalId: t } : { expressId: t }, modelId: e });
   }
   /** Isolate a category by IFC class (e.g. "IfcWall"); omit to clear. */
   isolate(t, e = {}) {
@@ -376,7 +379,8 @@ const f = class f {
     return this.request("ifcviewer:get-models");
   }
   /**
-   * Fetch an element's IFC data, or null when there is no such element:
+   * Fetch an element's IFC data — by expressID, or by GlobalId — or null when
+   * there is no such element:
    * attributes (with the GlobalId), its own property sets and quantities,
    * and its type's — `typeName`, `typeProperties` — with units. For a
    * catalogue object the type is where the manufacturer's data lives; read
@@ -390,7 +394,24 @@ const f = class f {
    * ```
    */
   getElement(t, e) {
-    return this.request("ifcviewer:get-element", { expressId: t, modelId: e });
+    return this.request(
+      "ifcviewer:get-element",
+      typeof t == "string" ? { globalId: t, modelId: e } : { expressId: t, modelId: e }
+    );
+  }
+  /**
+   * Find elements by IFC class, GlobalId and/or name across the loaded models
+   * — for a page that knows its product as "the window" or by its GlobalId,
+   * not by the file's expressIDs. Each hit carries what getElement(), select()
+   * and frame() take. Since v1.17.0.
+   *
+   * ```js
+   * const [win] = await viewer.findElements({ ifcClass: 'IfcWindow' })
+   * const data = await viewer.getElement(win.expressId, win.modelId)
+   * ```
+   */
+  findElements(t = {}) {
+    return this.request("ifcviewer:find-elements", { ...t });
   }
   /**
    * The validation result on screen, or null.
@@ -1343,6 +1364,9 @@ class R extends HTMLElement {
   }
   select(e, r) {
     this._viewer?.select(e, r);
+  }
+  findElements(e) {
+    return this._viewer.findElements(e);
   }
   isolate(e) {
     this._viewer?.isolate(e);

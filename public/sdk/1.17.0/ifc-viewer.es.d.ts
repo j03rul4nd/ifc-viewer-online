@@ -233,6 +233,32 @@ export interface ElementSelectedEvent {
     modelId: string | null;
     ifcType: string;
     name: string;
+    /** The element's IFC GlobalId — map a pick to your own records. Since v1.17.0. */
+    globalId?: string | null;
+}
+/** An element as findElements() lists it. Since v1.17.0. */
+export interface ElementSummary {
+    expressId: number;
+    modelId: string;
+    globalId: string | null;
+    /** e.g. `IFCWINDOW` */
+    ifcClass: string | null;
+    name: string | null;
+    /** Name of its type, e.g. `'Ventana V-70 practicable'`. */
+    typeName: string | null;
+}
+/** What findElements() matches on; every field given must match. Since v1.17.0. */
+export interface ElementQuery {
+    /** IFC class(es), any case: `'IfcWindow'`, `['IfcDoor', 'IfcWindow']`. */
+    ifcClass?: string | string[];
+    /** GlobalId(s). */
+    globalId?: string | string[];
+    /** Case-insensitive part of the element's Name. */
+    name?: string;
+    /** Only this model. */
+    modelId?: string;
+    /** Default 1000. */
+    limit?: number;
 }
 /** A loaded model, as returned by getModels(). */
 export interface ModelSummary {
@@ -1158,8 +1184,11 @@ export declare class IfcViewer {
     add(name: string, bytes: ArrayBuffer | Uint8Array): Promise<ModelLoadedEvent>;
     /** Load a model from a public (CORS-enabled) URL. */
     addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent>;
-    /** Select + frame an element by its IFC expressID. */
-    select(expressId: number, modelId?: string): void;
+    /**
+     * Select + frame an element by its IFC expressID, or by its GlobalId (a
+     * 22-character string, since v1.17.0) — which also finds its model.
+     */
+    select(element: number | string, modelId?: string): void;
     /** Isolate a category by IFC class (e.g. "IfcWall"); omit to clear. */
     isolate(ifcType?: string, options?: {
         frame?: boolean;
@@ -1220,7 +1249,8 @@ export declare class IfcViewer {
     /** List the models currently loaded in the scene. */
     getModels(): Promise<ModelSummary[]>;
     /**
-     * Fetch an element's IFC data, or null when there is no such element:
+     * Fetch an element's IFC data — by expressID, or by GlobalId — or null when
+     * there is no such element:
      * attributes (with the GlobalId), its own property sets and quantities,
      * and its type's — `typeName`, `typeProperties` — with units. For a
      * catalogue object the type is where the manufacturer's data lives; read
@@ -1233,7 +1263,19 @@ export declare class IfcViewer {
      *   ?.properties.find((p) => p.name === 'ThermalTransmittance')   // { value: 1.2, unit: 'W/(m²·K)' }
      * ```
      */
-    getElement(expressId: number, modelId?: string): Promise<IfcElementData | null>;
+    getElement(element: number | string, modelId?: string): Promise<IfcElementData | null>;
+    /**
+     * Find elements by IFC class, GlobalId and/or name across the loaded models
+     * — for a page that knows its product as "the window" or by its GlobalId,
+     * not by the file's expressIDs. Each hit carries what getElement(), select()
+     * and frame() take. Since v1.17.0.
+     *
+     * ```js
+     * const [win] = await viewer.findElements({ ifcClass: 'IfcWindow' })
+     * const data = await viewer.getElement(win.expressId, win.modelId)
+     * ```
+     */
+    findElements(query?: ElementQuery): Promise<ElementSummary[]>;
     /**
      * The validation result on screen, or null.
      *
@@ -1691,14 +1733,15 @@ export declare class IfcViewerElement extends HTMLElement {
     attributeChangedCallback(name: string, _old: string | null, val: string | null): void;
     add(name: string, bytes: ArrayBuffer | Uint8Array): Promise<ModelLoadedEvent>;
     addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent>;
-    select(expressId: number, modelId?: string): void;
+    select(element: number | string, modelId?: string): void;
+    findElements(query?: ElementQuery): Promise<ElementSummary[]>;
     isolate(ifcType?: string): void;
     activate(): void;
     frame(options?: FrameOptions): Promise<{
         scope: CameraScope | 'element';
     }>;
     fit(): void;
-    getElement(expressId: number, modelId?: string): Promise<IfcElementData | null>;
+    getElement(element: number | string, modelId?: string): Promise<IfcElementData | null>;
     validate(modelId?: string, options?: {
         force?: boolean;
     }): Promise<ValidationRunResult>;
