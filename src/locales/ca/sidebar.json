@@ -80,7 +80,10 @@
     "filterProps": "Filtra les propietats…",
     "noPropsMatch": "Cap propietat coincideix",
     "ownerModel": "Pertany a {{name}} — fes clic per activar-lo",
-    "unknownModel": "Model desconegut"
+    "unknownModel": "Model desconegut",
+    "typeProperties": "Propietats del tipus",
+    "typeName": "Tipus",
+    "overriddenByOccurrence": "Substituït pel valor propi d'aquest element"
   },
   "tabs": {
     "properties": "Propietats",

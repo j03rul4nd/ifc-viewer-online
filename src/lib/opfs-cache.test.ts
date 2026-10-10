@@ -31,6 +31,7 @@ import {
   touchCacheEntry,
 } from './opfs-cache'
 import { cacheRepo } from './cache-repository'
+import { CONVERTER_REVISION } from './ifc-importer-classes'
 import type { CacheEntry } from '../types'
 
 // ── In-memory OPFS ────────────────────────────────────────────────────────────
@@ -203,7 +204,9 @@ function install(opfs: MemoryOpfs): void {
 }
 
 function meta(over: Partial<CacheEntry> = {}): Omit<CacheEntry, 'key'> {
-  return { fileName: 'tower.ifc', fileSize: 1234, fragmentsSize: 0, cachedAt: 1_700_000_000_000, ...over }
+  // Current converter revision by default, so a test about another defect is
+  // not passing for this one.
+  return { fileName: 'tower.ifc', fileSize: 1234, fragmentsSize: 0, cachedAt: 1_700_000_000_000, converter: CONVERTER_REVISION, ...over }
 }
 
 const KEY = buildCacheKey({ name: 'tower.ifc', size: 1234, lastModified: 0 })
@@ -450,12 +453,27 @@ describe('loadCacheEntry validation', () => {
     expect(opfs.names()).toEqual([])
   })
 
-  it('accepts an entry from an older build (meta without the new fields)', async () => {
+  it('accepts an entry without the optional fields (no fingerprint, no last use)', async () => {
     opfs.put(`${B}.frag`, new Uint8Array([5, 6]))
-    opfs.put(`${B}.meta.json`, JSON.stringify({ key: KEY, fileName: 'tower.ifc', fileSize: 1234, fragmentsSize: 2, cachedAt: 1 }))
+    opfs.put(`${B}.meta.json`, JSON.stringify({ key: KEY, fileName: 'tower.ifc', fileSize: 1234, fragmentsSize: 2, cachedAt: 1, converter: CONVERTER_REVISION }))
     const hit = await loadCacheEntry(KEY)
     expect(hit).not.toBeNull()
     expect(hit!.meta.contentHash).toBeUndefined()
+  })
+
+  it('an entry converted before the converter kept type styles and units is a miss, and is deleted', async () => {
+    // Written by a build without `converter` (revision 1): sound bytes, but an
+    // IFC2x3 door's IfcDoorStyle and a pset's enumerations are not in them.
+    opfs.put(`${B}.frag`, new Uint8Array([5, 6]))
+    opfs.put(`${B}.meta.json`, JSON.stringify({ key: KEY, fileName: 'tower.ifc', fileSize: 1234, fragmentsSize: 2, cachedAt: 1 }))
+    expect(await loadCacheEntry(KEY)).toBeNull()
+    expect(opfs.names()).toEqual([])
+  })
+
+  it('stamps new entries with the current converter revision', async () => {
+    const r = await saveCacheEntry(KEY, { fragments: new Uint8Array([1, 2, 3]), meta: meta() })
+    expect(r.ok).toBe(true)
+    expect((await loadCacheEntry(KEY))?.meta.converter).toBe(CONVERTER_REVISION)
   })
 
   it('leaves alone an entry of another key that sanitises to the same file name', async () => {
@@ -585,7 +603,9 @@ describe('evictForSpace', () => {
     function legacy(name: string, cachedAt: number): string {
       const key = keyOf(name)
       opfs.put(`${base(key)}.frag`, new Uint8Array(1000))
-      opfs.put(`${base(key)}.meta.json`, JSON.stringify({ key, fileName: name, fileSize: 1, fragmentsSize: 1000, cachedAt }))
+      // The converter revision is current so the final lookup tests eviction
+      // order, not the conversion check.
+      opfs.put(`${base(key)}.meta.json`, JSON.stringify({ key, fileName: name, fileSize: 1, fragmentsSize: 1000, cachedAt, converter: CONVERTER_REVISION }))
       return key
     }
     const older   = legacy('older.ifc', 10)

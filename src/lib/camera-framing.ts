@@ -111,6 +111,9 @@ export function resolveFraming({ items, activeModelId, scope }: FramingInput): F
   return all
 }
 
+/** Smallest radius a framed box is treated as having: 5 cm — a door handle frames, a point does not vanish. */
+const MIN_RADIUS_M = 0.05
+
 /** Unit-free offset direction per preset, Y up. */
 const DIRECTIONS: Record<CameraPreset, [number, number, number]> = {
   iso:    [1, 0.75, 1],
@@ -136,7 +139,10 @@ export function presetPose(box: Box, preset: CameraPreset, fovDeg = 45, aspect =
     y: (box.min.y + box.max.y) / 2,
     z: (box.min.z + box.max.z) / 2,
   }
-  const radius = Math.max(boxDiagonal(box) / 2, 2)
+  // A floor for a degenerate box only. It used to be 2 m for everything, so a
+  // 1.2 m catalogue window was framed as if it were a 4 m one — a speck in the
+  // middle of a product page — and smaller things fared worse.
+  const radius = Math.max(boxDiagonal(box) / 2, MIN_RADIUS_M)
   const vHalf = ((fovDeg > 0 && fovDeg < 179 ? fovDeg : 45) * Math.PI) / 360
   const hHalf = Math.atan(Math.tan(vHalf) * (aspect > 0 ? aspect : 1))
   // 1.2: breathing room — floating panels overlap the viewport edges.
@@ -173,6 +179,21 @@ export const PRESET_VIEW: Record<CameraPreset, FitView> = {
   back:   { azimuthDeg: -90, elevationDeg: 0 },
   left:   { azimuthDeg: 180, elevationDeg: 0 },
   right:  { azimuthDeg: 0,   elevationDeg: 0 },
+}
+
+/**
+ * The angles a camera looking along `direction` is looking FROM — so a fit can
+ * keep the visitor's point of view and change only the distance.
+ */
+export function viewFromDirection(direction: Vec3): FitView {
+  const len = Math.hypot(direction.x, direction.y, direction.z)
+  if (!(len > 1e-9)) return PRESET_VIEW.iso
+  // The camera sits opposite to where it looks.
+  const back = { x: -direction.x / len, y: -direction.y / len, z: -direction.z / len }
+  const elevationDeg = (Math.asin(Math.max(-1, Math.min(1, back.y))) * 180) / Math.PI
+  const horizontal = Math.hypot(back.x, back.z)
+  const azimuthDeg = horizontal > 1e-9 ? (Math.atan2(back.z, back.x) * 180) / Math.PI : PRESET_VIEW.top.azimuthDeg
+  return { azimuthDeg, elevationDeg }
 }
 
 /** Clamp a fill ratio to something a frame can show. */
@@ -231,8 +252,11 @@ export function fitPose(
     // The corner sits at depth (dist − toward) in front of the camera.
     dist = Math.max(dist, toward + Math.abs(cx) / tanH, toward + Math.abs(cy) / tanV)
   }
-  // A degenerate box (a point) still needs somewhere to stand.
-  dist = Math.max(dist, 2)
+  // A degenerate box (a point) still needs somewhere to stand. Only it: an
+  // absolute floor (this was 2 m) parks the camera metres away from a small
+  // object, whatever `fill` asked for.
+  if (boxDiagonal(box) < 1e-6) dist = Math.max(dist, 2)
+  dist = Math.max(dist, MIN_RADIUS_M)
   return {
     target,
     position: { x: target.x + back.x * dist, y: target.y + back.y * dist, z: target.z + back.z * dist },

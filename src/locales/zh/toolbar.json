@@ -82,7 +82,9 @@
       "client": "客户",
       "clientDesc": "客户演示界面",
       "article": "文章",
-      "articleDesc": "文章插图：仅画布、紧凑取景、页面滚动"
+      "articleDesc": "文章插图：仅画布、紧凑取景、页面滚动",
+      "embed": "嵌入应用",
+      "embedDesc": "嵌入宿主应用：3D + 属性、验证与测量，无打开/分享/账户"
     },
     "optionsLabel": "选项",
     "autoValidate": "加载时运行验证",

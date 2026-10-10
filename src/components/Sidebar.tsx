@@ -299,6 +299,7 @@ function PsetRow({
   /** propExpressId (as string) → pending new value */
   dirtyProps?: Map<string, string>
 }) {
+  const { t } = useTranslation('sidebar')
   const [userOpen, setUserOpen] = useState(false)
   const open = forceOpen || userOpen
   const setOpen = setUserOpen
@@ -392,13 +393,20 @@ function PsetRow({
                             className={`flex-1 text-[11.5px] truncate ${
                               isDirtyProp
                                 ? 'text-[var(--accent-2)]'
-                                : displayVal === null || displayVal === ''
-                                  ? 'text-[var(--text-faint)] italic'
-                                  : 'text-[var(--text)]'
+                                : prop.overridden
+                                  ? 'text-[var(--text-faint)] line-through'
+                                  : displayVal === null || displayVal === ''
+                                    ? 'text-[var(--text-faint)] italic'
+                                    : 'text-[var(--text)]'
                             }`}
-                            title={String(displayVal ?? '—')}
+                            title={prop.overridden
+                              ? t('properties.overriddenByOccurrence')
+                              : `${String(displayVal ?? '—')}${prop.unit ? ` ${prop.unit}` : ''}`}
                           >
                             {formatPropValue(displayVal)}
+                            {prop.unit && displayVal !== null && displayVal !== '' && (
+                              <span className="text-[var(--text-faint)] ml-1 text-[10px]">{prop.unit}</span>
+                            )}
                           </span>
                           {prop.expressId > 0 && (
                             <button
@@ -478,8 +486,10 @@ function QuantitySetRow({ qset, forceOpen = false }: {
                       {q.value !== null
                         ? q.value.toLocaleString(undefined, { maximumFractionDigits: 4 })
                         : <span className="text-[var(--text-faint)] italic">—</span>}
-                      {q.value !== null && QUANTITY_UNITS[q.quantityType] && (
-                        <span className="text-[var(--text-faint)] ml-0.5 text-[10px]">{QUANTITY_UNITS[q.quantityType]}</span>
+                      {/* The quantity's own unit, else the project's (a model in mm
+                          reports 1000, not 1 — the SI fallback is only a guess). */}
+                      {q.value !== null && (q.unit ?? QUANTITY_UNITS[q.quantityType]) && (
+                        <span className="text-[var(--text-faint)] ml-0.5 text-[10px]">{q.unit ?? QUANTITY_UNITS[q.quantityType]}</span>
                       )}
                     </span>
                     {q.value !== null && (
@@ -1262,36 +1272,6 @@ function PropertiesPanel({
         </AnimatePresence>
       </div>
 
-      {/* ── Property Sets ── */}
-      {/* ── Type Properties ── */}
-      {typeProperties.length > 0 && (
-        <div className="border-b border-[var(--border)]">
-          <SectionHeader
-            label="Type Properties"
-            open={sections.typeProps}
-            onToggle={() => toggle('typeProps')}
-            badge={totalTypeProps > 0 ? totalTypeProps : undefined}
-          />
-          <AnimatePresence initial={false}>
-            {sections.typeProps && (
-              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
-                <div className="pt-1 pb-2">
-                  {typeProperties.map(ps => (
-                    <PsetRow
-                      key={`${expressId}:type:${ps.name}`}
-                      pset={ps}
-                      elementExpressId={expressId ?? 0}
-                      onEditProperty={handleEditProperty}
-                      dirtyProps={pendingPropDiffs}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
       <TwinLiveSection globalId={ifcData?.globalId} modelId={selected.modelId} expressId={expressId} />
 
       {/* ── Property Sets ── */}
@@ -1370,6 +1350,50 @@ function PropertiesPanel({
                     )}
                   </div>
                 )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* ── Type properties ──
+          What the element's type (IfcRelDefinesByType → IfcWindowType,
+          IfcDoorStyle…) says about every occurrence of it: for a catalogue
+          object, the manufacturer's data. A value the element redefines in a
+          set of the same name is struck through — the element's own wins. */}
+      {typeProperties.length > 0 && (
+        <div className="border-b border-[var(--border)]">
+          <SectionHeader
+            label={t('properties.typeProperties')}
+            open={sections.typeProps}
+            onToggle={() => toggle('typeProps')}
+            badge={totalTypeProps > 0 ? totalTypeProps : undefined}
+          />
+          <AnimatePresence initial={false}>
+            {sections.typeProps && (
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
+                <div className="pt-1 pb-2">
+                  {typeName && (
+                    <div className="flex items-baseline gap-2 px-4 pb-2 min-w-0">
+                      <span className="text-[11px] text-[var(--text-dim)] shrink-0">{t('properties.typeName')}</span>
+                      <span className="text-[12px] text-[var(--text)] font-medium truncate" title={typeName}>{typeName}</span>
+                      {ifcData?.typeClass && (
+                        <span className="ml-auto shrink-0 text-[9px] font-mono text-[var(--text-faint)]">
+                          {ifcData.typeClass}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {typeProperties.map(ps => (
+                    <PsetRow
+                      key={`${expressId}:type:${ps.name}`}
+                      pset={ps}
+                      elementExpressId={expressId ?? 0}
+                      onEditProperty={handleEditProperty}
+                      dirtyProps={pendingPropDiffs}
+                    />
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

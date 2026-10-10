@@ -21,9 +21,13 @@ import { parsePanelAllowlist, type PanelId } from './ui/panel-rail'
 import { parseBackgroundSpec, type BackgroundSettings } from './scene/background'
 import { MAP_LOOKS } from './geo/map-look'
 
-export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article'
+export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article' | 'embed'
 
-const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client', 'article']
+const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client', 'article', 'embed']
+
+/** What the compact toolbar of the `embed` preset may carry (`?tools=`). */
+export type EmbedTool = 'validate' | 'measure'
+const EMBED_TOOLS: readonly EmbedTool[] = ['validate', 'measure']
 
 /** Named views a `?view=` deep link may ask for (the camera presets). */
 const VIEWS = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right'] as const
@@ -110,6 +114,12 @@ export interface AppUrlParams {
   /** `?fill=` — share of the frame the model fills (0.2–0.98) for `view`. */
   fill?: number
   /**
+   * `?autoframe=0` / `1` — frame the scene again every time a load settles,
+   * from `view` (default iso) with a margin. Default: on in the `embed`
+   * preset, off elsewhere (where the loader's own fit stays as it was).
+   */
+  autoFrame?: boolean
+  /**
    * `?wheel=ctrl` — the wheel scrolls the host page and zooms only with
    * Ctrl/⌘ held, like an embedded map. The `article` preset implies it: a
    * reader scrolling past a figure must not get stuck zooming into it.
@@ -150,6 +160,8 @@ export interface AppUrlParams {
      * panels, and for every one we add — see docs/RIGHT_EDGE.md.
      */
     panels?: PanelId[]
+    /** `tools=validate,measure` — the compact toolbar's tools (`embed`); `tools=` for none. */
+    tools?: EmbedTool[]
   }
 }
 
@@ -198,6 +210,21 @@ export interface EmbedChrome {
    * so a host must be able to scope it once and stay correct as we ship more.
    */
   panels?: PanelId[]
+  /**
+   * `full`: the app's toolbar (Open, Validate, Check, View, Tools, Capture,
+   * Share, help, account, language). `compact` (the `embed` preset): the file
+   * name and `toolbarTools` only — the host supplies the file and owns
+   * sharing and accounts, so none of those belong in its page.
+   */
+  toolbarVariant: 'full' | 'compact'
+  /** The compact toolbar's tools (`?tools=`). */
+  toolbarTools: EmbedTool[]
+  /**
+   * The properties panel starts closed and opens itself when the visitor
+   * selects an element (`embed`): the model gets the whole frame until there
+   * is something to inspect.
+   */
+  propertiesOnSelect: boolean
 }
 
 // ── Boolean param parsing ──────────────────────────────────────────────────────
@@ -341,6 +368,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     layersUrl: [p.get('layers') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
     view: parseView(p.get('view')) ?? (preset === 'article' && embed ? 'iso' : undefined),
     fill: parseFill(p.get('fill')),
+    autoFrame: parseBool(p.get('autoframe')),
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
     turntable: parseTurntable(p.get('turntable')),
     camera: parseCamera(p.get('camera')),
@@ -355,6 +383,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
       rail:           parseBool(p.get('rail')),
       stats:          parseBool(p.get('stats')),
       panels: parsePanelAllowlist(p.get('panels')),
+      tools:  parseToolList(p.get('tools')),
     },
   }
 }
@@ -399,6 +428,13 @@ function parseMapParam(v: string | null): MapDeepLink | undefined {
     if (token === 'showcase')  link.detail = 'showcase'
   }
   return link
+}
+
+/** `?tools=validate,measure`; empty means none; unknown names are ignored. */
+function parseToolList(v: string | null): EmbedTool[] | undefined {
+  if (v === null) return undefined
+  return v.split(',').map((t) => t.trim().toLowerCase())
+    .filter((t, i, all): t is EmbedTool => (EMBED_TOOLS as readonly string[]).includes(t) && all.indexOf(t) === i)
 }
 
 function parseView(v: string | null): UrlView | undefined {
@@ -461,8 +497,11 @@ function sanitizeInviteCode(v: string | null): string | undefined {
   return /^[A-Za-z0-9_-]{1,64}$/.test(s) ? s : undefined
 }
 
-const TOOLS = { showRail: true, showModelInfo: true, showValidation: true, quiet: false } as const
-const CANVAS = { showRail: false, showModelInfo: false, showValidation: false, quiet: true } as const
+const APP_TOOLBAR: Pick<EmbedChrome, 'toolbarVariant' | 'toolbarTools' | 'propertiesOnSelect'> = {
+  toolbarVariant: 'full', toolbarTools: [...EMBED_TOOLS], propertiesOnSelect: false,
+}
+const TOOLS = { showRail: true, showModelInfo: true, showValidation: true, quiet: false, ...APP_TOOLBAR } as const
+const CANVAS = { showRail: false, showModelInfo: false, showValidation: false, quiet: true, ...APP_TOOLBAR } as const
 
 const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   minimal: { showToolbar: true,  showTree: false, showSidebar: true,  openPanel: false, showHome: false, showCameraControls: true,  ...TOOLS },
@@ -476,6 +515,18 @@ const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   // a wheel that scrolls the page unless Ctrl/⌘ is held (`wheel=ctrl`). Tool
   // panels a host opens over the bridge (measure, sun, walk) still mount.
   article: { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: false, ...CANVAS },
+  // Inside a host application (v1.17, e.g. a manufacturer's product page):
+  // the host supplies the file and owns sharing and accounts. The 3D view,
+  // the properties of what the visitor clicks, and — in a compact toolbar —
+  // Validate and Measure. No Open, Share, account or language controls, no
+  // toasts or load chips (the host shows its own progress), and the rail
+  // scoped to properties. `toolbar=0`, `tools=` and `panels=` narrow it further.
+  embed:   {
+    showToolbar: true, showTree: false, showSidebar: true, openPanel: false, showHome: false, showCameraControls: true,
+    showRail: true, showModelInfo: false, showValidation: true, quiet: true,
+    panels: ['properties'],
+    toolbarVariant: 'compact', toolbarTools: [...EMBED_TOOLS], propertiesOnSelect: true,
+  },
   // Client presentation skin (D-25): show-only for non-technical audiences.
   // Camera presets stay ON (simplified navigation); everything technical is
   // hidden. uiStore.clientMode is set from this preset at boot and layers the
@@ -499,10 +550,12 @@ export function resolveEmbedChrome(params: AppUrlParams): EmbedChrome {
       showHome: true,
       showCameraControls: true,
       ...TOOLS,
+      toolbarTools: [...EMBED_TOOLS],
     }
   }
   const d = PRESET_CHROME[params.preset]
   const o = params.overrides
+  const tools = o.tools ?? d.toolbarTools
   return {
     embed: true,
     showToolbar:        o.toolbar        ?? d.showToolbar,
@@ -513,9 +566,14 @@ export function resolveEmbedChrome(params: AppUrlParams): EmbedChrome {
     showCameraControls: o.cameraControls ?? d.showCameraControls,
     showRail:           o.rail           ?? d.showRail,
     showModelInfo:      o.stats          ?? d.showModelInfo,
-    showValidation:     d.showValidation,
+    // The validation bar is where Validate's issues are listed: a compact
+    // toolbar without Validate has nothing to put there.
+    showValidation:     d.showValidation && (d.toolbarVariant === 'full' || tools.includes('validate')),
     quiet:              d.quiet,
     panels:             o.panels         ?? d.panels,
+    toolbarVariant:     d.toolbarVariant,
+    toolbarTools:       tools,
+    propertiesOnSelect: d.propertiesOnSelect,
   }
 }
 
@@ -527,6 +585,11 @@ export type EmbedEventType =
   | 'model-error'
   | 'model-progress'
   | 'validation-completed'
+  // A queued validation (auto after load, or the SDK's validate()) started on
+  // a model / failed with a reason (SDK 1.17). Without the second a host
+  // waiting for `validation-completed` would wait forever.
+  | 'validation-started'
+  | 'validation-failed'
   | 'element-selected'
   // Emitted when click-to-read is armed on a point cloud and a point is hit.
   // The payload carries the file's own coordinates alongside the scene ones,

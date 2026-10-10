@@ -82,7 +82,9 @@
       "client": "Client",
       "clientDesc": "Mode presentació a client",
       "article": "Article",
-      "articleDesc": "Figura per a un article: llenç, enquadrament ajustat i scroll de pàgina"
+      "articleDesc": "Figura per a un article: llenç, enquadrament ajustat i scroll de pàgina",
+      "embed": "En una app",
+      "embedDesc": "Dins d'una app: 3D + propietats, Validar i Mesurar, sense Obrir/Compartir/compte"
     },
     "optionsLabel": "Opcions",
     "autoValidate": "Executa la validació en carregar",

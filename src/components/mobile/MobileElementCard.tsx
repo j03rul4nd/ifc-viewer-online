@@ -119,7 +119,7 @@ export function MobileElementCard({
       for (const q of set.quantities) {
         if (q.value === null || !['Length', 'Area', 'Volume', 'Weight', 'Count'].includes(q.quantityType)) continue
         if (rows.some((r) => r.name === q.name)) continue
-        const unit = QTY_UNIT[q.quantityType] ?? ''
+        const unit = q.unit ?? QTY_UNIT[q.quantityType] ?? ''
         rows.push({ name: q.name, value: `${q.value.toLocaleString(locale, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ''}` })
         if (rows.length >= 6) return rows
       }
@@ -129,8 +129,9 @@ export function MobileElementCard({
 
   const common = useMemo(() => {
     if (!data) return []
-    const sets = [...data.propertySets, ...data.typeProperties]
-    const pset = sets.find((s) => /Common$/i.test(s.name)) ?? null
+    // The merged view: a type's Pset_WindowCommon applies unless the element
+    // redefines a property, and then the element's value is the one to show.
+    const pset = data.effectivePropertySets.find((s) => /Common$/i.test(s.name)) ?? null
     return pset ? pset.properties.filter((p) => p.value !== null && p.value !== '').slice(0, 8) : []
   }, [data])
 
@@ -239,7 +240,7 @@ export function MobileElementCard({
                 <>
                   <h3 className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)] mb-1">{t('elementCard.commonProps')}</h3>
                   <dl className="rounded-[14px] bg-white/[0.03] border border-[var(--border)] px-3 mb-4">
-                    {common.map((p) => <Row key={p.expressId} label={p.name}>{fmtValue(p.value, locale)}</Row>)}
+                    {common.map((p) => <Row key={`${p.source}:${p.expressId}`} label={p.name}>{fmtValue(p.value, locale)}{p.unit ? ` ${p.unit}` : ''}</Row>)}
                   </dl>
                 </>
               )}

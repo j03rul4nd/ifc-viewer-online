@@ -10,8 +10,12 @@ app in an `<iframe>` (embed mode) and streams your IFC bytes to it over
 WASM weight is loaded by the iframe, not your bundle.
 
 - Source: `src/sdk/ifc-viewer-sdk.ts`
-- Build: `npm run build:sdk` → `public/sdk/ifc-viewer.es.js` (also runs as part of `npm run build`)
+- Build: `npm run build:sdk` → `public/sdk/ifc-viewer.es.js`, the same file pinned at
+  `public/sdk/<version>/ifc-viewer.es.js`, and `public/sdk/versions.json` (also runs as part of `npm run build`)
 - Live demo + web docs: `/<base>/sdk/` (served from `public/sdk/index.html`)
+
+> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.17.0/ifc-viewer.es.js`.
+> See [Versions, caching and compatibility](#versions-caching-and-compatibility).
 
 ## Quick start
 
@@ -28,9 +32,10 @@ WASM weight is loaded by the iframe, not your bundle.
 </script>
 ```
 
-The SDK auto-discovers the app URL relative to its own script location
-(`new URL("../", import.meta.url)`), so self-hosting under `/<base>/sdk/` just works.
-Override with the `baseUrl` option if you serve the app elsewhere.
+The SDK auto-discovers the app URL relative to its own script location — the parent
+of `sdk/`, from `sdk/ifc-viewer.es.js` and from a pinned `sdk/<version>/ifc-viewer.es.js`
+alike — so self-hosting under `/<base>/sdk/` just works. Override with the `baseUrl`
+option if you serve the app elsewhere.
 
 ### Even easier: the `<ifc-viewer>` web component
 
@@ -43,7 +48,8 @@ Zero JavaScript — drop a tag into any page or dashboard:
             style="display:block;height:520px"></ifc-viewer>
 ```
 
-Attributes: `model`, `ui`, `lang`, `accent`, `validate`, `panel`, `base-url`. Events are
+Attributes: `model`, `ui`, `lang`, `accent`, `validate`, `panel`, `base-url`, and since
+v1.17 `toolbar`, `tools`, `auto-frame`. Events are
 re-dispatched as DOM `CustomEvent`s named `ifcviewer:<type>` (`detail` = payload), and
 the underlying `IfcViewer` is on the element's `.viewer`:
 
@@ -67,8 +73,11 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | Option     | Type                                  | Default     | Notes |
 |------------|---------------------------------------|-------------|-------|
 | `baseUrl`  | string                                | auto        | App base URL. Auto-derived from the script URL. |
-| `ui`       | `'minimal'` \| `'full'` \| `'kiosk'` \| `'client'` | `'minimal'` | Chrome preset. `client` is the stakeholder skin. |
-| `validate` | boolean                               | `true`      | Run validation on load (drives the Health Score). |
+| `ui`       | `'minimal'` \| `'full'` \| `'kiosk'` \| `'client'` \| `'article'` \| `'embed'` | `'minimal'` | Chrome preset. `client` is the stakeholder skin. `embed` (v1.17) is for a host app that supplies the file: 3D, properties on selection, a compact toolbar with Validate and Measure — no Open, Share, account or language. |
+| `toolbar`  | boolean                               | preset      | Show the toolbar. `false` leaves the 3D view and the panels (v1.17). |
+| `tools`    | `('validate' \| 'measure')[]`         | both        | The compact toolbar of `ui: 'embed'`; `[]` for none (v1.17). |
+| `autoFrame` | boolean                              | `true`      | Frame the whole scene from iso, with a margin, every time a load settles. `false` leaves the camera where the loader puts it (v1.17). |
+| `validate` | boolean                               | `true`      | Validate each model once it has loaded (drives the Health Score): `validation-started`, then `validation-completed` or `validation-failed`. Before v1.17 this flag was accepted but no validation ever ran for SDK loads. |
 | `panel`    | boolean                               | `false`     | Auto-open the validation panel. |
 | `lang`     | string                                | auto        | Force UI language (`en`, `es`, …). |
 | `accent`   | `#rrggbb`                             | brand       | Tint the viewer to match your dashboard. |
@@ -89,17 +98,20 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `addFromUrl(url, name?)` | Load a public, CORS-enabled IFC URL. Returns `Promise<ModelLoadedEvent>`, and rejects the same way. The download reports real byte progress. |
 | `select(expressId, modelId?)` | Select + frame an element by IFC expressID. |
 | `isolate(ifcType?)` | Isolate a category (e.g. `"IfcWall"`); omit to clear. |
-| `setView(view)` | Fly to a camera view: `iso`·`top`·`bottom`·`front`·`back`·`left`·`right`. |
-| `fit()` / `reset()` | Frame the active model / reset the camera. |
+| `setView(view, scope?)` | Fly to a named view of the scene — `iso`·`front`·`back`·`left`·`right`·`top`·`bottom` — with all of it in frame. (Between v1.14 and v1.16 the viewer ignored it; fixed in v1.17.) |
+| `frame(options?)` / `frame(elementId, modelId?, options?)` | `Promise<{ scope }>` — frame the scene tightly (v1.14), or one element (v1.17): from the current angle unless a view or angles are given; rejects when the element is not in the model. |
+| `fit()` / `reset()` | Frame the active model from the current angle with a margin (v1.17; it was edge to edge) / reset the camera. |
 | `showAll()` | Restore full visibility (clear hidden elements + isolation). |
 | `setLanguage(lang)` | Change UI language at runtime. |
 | `clear()` | Cancel IFC loads still in flight, then remove all loaded models. |
 | `getLanguages()` | Supported language codes (reflects the iframe once ready). |
 | `getModels()` | `Promise<ModelSummary[]>` — the loaded models (`{ id, fileName, elementCount }`). |
-| `getElement(id, modelId?)` | `Promise<IfcElementData \| null>` — attributes + property/quantity sets. |
-| `getValidation()` | `Promise<ValidationSummary \| null>` — Health Score + issue counts. |
+| `getElement(id, modelId?)` | `Promise<IfcElementData \| null>` — attributes with the `globalId`, the element's property/quantity sets, and its **type**'s: `typeName`, `typeProperties` (with units), `effectivePropertySets`. See [Catalogue objects](#catalogue-objects-in-a-host-app-v117). |
+| `validate(modelId?, { force? })` | `Promise<ValidationRunResult>` — validate now and resolve with that model's Health Score and counts (v1.17). |
+| `getValidation()` | `Promise<ValidationSummary \| null>` — the result on screen; see [Validation lifecycle](#validation-lifecycle-v117). |
+| `getValidationStatus()` | `Promise<ValidationStatus>` — `idle` · `running` (with progress) · `done` · `error` (v1.17). |
 | `getStats()` | `Promise<StatsResult>` — per-category element counts per model (for charts). |
-| `getIssues(opts?)` | `Promise<IssuesResult>` — validation issues for a table (`{ severity?, limit? }`). |
+| `getIssues(opts?)` | `Promise<IssuesResult>` — validation issues for a table (`{ severity?, limit?, modelId? }`). |
 | `checkIds(idsXml)` | `Promise<IdsResult>` — check the model against a buildingSMART **IDS** (`.ids` XML). |
 | `screenshot()` | `Promise<string>` — the current 3D view as a PNG data URL. |
 | `removeModel(modelId)` | Unload a specific model (see `getModels()`). |
@@ -123,7 +135,9 @@ Inside the iframe, every load is a job in the viewer's loading queue ([`MODEL_LO
 | `ready` | `{ languages }` — the viewer is mounted and ready |
 | `model-progress` | `{ percent, phase }`. `phase` is `reading` (download / identify / cache check), `parsing` (conversion) or `uploading` (cache write / scene attach). `percent` never goes backwards for a load, even across an automatic retry. Sent only while that load is still in progress, at most every 250 ms. It is an estimate over the load's real phases, not a timer |
 | `model-loaded` | `{ modelId, fileName, elementCount, fromCache }` |
-| `validation-completed` | `{ qualityScore, errors, warnings, info }` — the Health Score |
+| `validation-started` | `{ modelId }` — a validation began (after a load with `validate: true`, or `validate()`) (v1.17) |
+| `validation-completed` | `{ qualityScore, errors, warnings, info, total, modelId }` — the Health Score; `modelId` is null for a federated aggregate (`total`, `modelId`: v1.17) |
+| `validation-failed` | `{ modelId, message }` — it could not run or did not finish (v1.17) |
 | `model-error` | `{ message, url?, name? }`. Sent for download failures, invalid or unparseable files, scene failures and cancelled loads (`message: 'Load cancelled'`). `url` for URL loads, `name` for byte/file loads |
 | `element-selected` | `{ expressId, modelId, ifcType, name }` |
 | `pointcloud-picked` | `{ cloudId, position, sourcePosition, classification, intensity, distance }` — armed with `inspectPointCloud()`. `sourcePosition` is the file's own coordinates, which is the number a survey record already holds |
@@ -283,6 +297,62 @@ await viewer.setMeasureTool('distance')
 viewer.on('measurements-changed', ({ items }) => console.table(items))
 ```
 
+## Catalogue objects in a host app (v1.17)
+
+A manufacturer's product page, a catalogue or a CDE record usually shows one
+object — a window, a door — whose data lives in its **type**: the
+`IfcWindow` carries the geometry, its `IfcWindowType` (`IfcWindowStyle` in
+IFC2x3) carries `Pset_WindowCommon`, `Pset_ManufacturerTypeInformation` and the
+manufacturer's own sets, linked by `IfcRelDefinesByType`.
+
+```js
+import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.17.0/ifc-viewer.es.js"
+
+const viewer = await IfcViewer.create("#product-3d", { ui: "embed", lang: "es" })
+const { modelId } = await viewer.add("V-70-PR.ifc", bytes)        // framed iso, with a margin
+
+const el = await viewer.getElement(67, modelId)
+el.globalId        // "2c161Q3PMaELK1P$GnzTUr"
+el.typeName        // "Ventana V-70 practicable"   (el.typeClass: "IFCWINDOWTYPE")
+el.typeProperties  // [{ name: "Pset_WindowCommon", properties: [{ name: "ThermalTransmittance", value: 1.2,
+                   //      type: "IFCTHERMALTRANSMITTANCEMEASURE", unit: "W/(m²·K)" }, …] }, …]
+```
+
+- `propertySets` and `typeProperties` have the same shape: set name, then per
+  property `name`, `value`, IFC `type` and `unit` when there is one — the
+  property's own `Unit`, else the project's unit for that measure. Enumerated,
+  list and bounded properties also carry `values`.
+- **Occurrence over type.** Where the element defines a property its type also
+  defines (same set, same name), the element's value applies:
+  `effectivePropertySets` is that merge, each property tagged
+  `source: 'occurrence' | 'type'`, and the type's own value stays in
+  `typeProperties` marked `overridden: true`. The properties panel shows the
+  type's sets in a **Type properties** section, overridden values struck through.
+- The same works for IFC2x3 (window and door styles) and for any other type
+  class.
+- Models converted and cached by an older build are converted again on their
+  next load: the cache entry records the converter revision.
+
+## Validation lifecycle (v1.17)
+
+`validate: true` (the default) validates each model once it has loaded;
+`validate(modelId?)` does it on demand and resolves with that model's result.
+Both go through one queue — one run at a time, each answered — and emit
+`validation-started`, then `validation-completed` or `validation-failed`.
+
+| When | `getValidation()` returns |
+|------|---------------------------|
+| Before any validation | `null` — `getValidationStatus()` says `idle` |
+| While the first run is going | `null` — `getValidationStatus()` says `running`, with `progress` |
+| After a run | `{ qualityScore, errors, warnings, info, total, status: 'done', modelId }`. With several models, the aggregate of all (`modelId: null`) |
+| While a newer run is going | the previous numbers, `status: 'running'` |
+| After a run failed | the previous numbers, `status: 'error'` and `error` — or `null` if there were none; `validation-failed` fired and `validate()` rejected |
+
+`validate()` rejects with a readable reason: no model loaded, an unknown
+`modelId`, the model's IFC data not available, cancelled, or the validator's
+own failure. A model validated before resolves from the cached result unless
+`{ force: true }`.
+
 ## Querying the viewer (CDE workflows)
 
 Pull data out of the viewer to drive your own UI — element panels, model lists,
@@ -367,6 +437,46 @@ viewer.on("element-selected", (e) => {
   console.log("User picked", e.ifcType, "#", e.expressId);
 });
 ```
+
+## Versions, caching and compatibility
+
+| Path | Caching | Use |
+|------|---------|-----|
+| `/sdk/ifc-viewer.es.js` | revalidated on every load (`max-age=0, must-revalidate`) | trying things out — always the latest |
+| `/sdk/<version>/ifc-viewer.es.js` (e.g. `/sdk/1.17.0/`) | `public, max-age=31536000, immutable` | production — the code you tested is the code that runs |
+
+- Both paths serve **the same file** for the current version: `scripts/sdk/version-sdk.mjs`
+  copies the build into `public/sdk/<version>/` (with its `.d.ts`) and records its
+  Subresource Integrity hash in `public/sdk/versions.json`, so a page can pin the
+  content too (`<script type="module" src="…" integrity="sha384-…" crossorigin>`).
+  It only ever writes the current version: a published folder never changes, and
+  `scripts/sdk-versions.test.ts` fails if one does.
+- **The iframe is not versioned.** A pinned SDK opens the live viewer at the same
+  origin; it keeps its own API and behaviour while the viewer inside keeps
+  improving. The viewer must therefore answer every command any published SDK
+  sends — the same test checks every `ifcviewer:*` command of every pinned build
+  against `App.tsx`.
+- Hosting (`vercel.json`): the immutable `Cache-Control` and
+  `Access-Control-Allow-Origin: *` apply to `/sdk/<version>/…`; a version that
+  does not exist is a 404 instead of the app's HTML (the SPA fallback skips those
+  paths). Self-hosting elsewhere needs the same two rules.
+
+### Changelog
+
+- **1.17.0** — catalogue objects in a host app. `getElement()` returns the
+  `globalId` (it was always null) and the type's data (`typeName`,
+  `typeProperties` with units, `effectivePropertySets`; IFC4 types and IFC2x3
+  styles — before, `typeProperties` was always empty and even property values
+  came back null). `validate()`, `getValidationStatus()`,
+  `validation-started` / `validation-failed`, and `validate: true` really
+  validates after each load now. Auto-frame after load (`autoFrame`), `fit()` /
+  `frame()` with a margin for small objects, `frame(elementId, modelId?)`, and
+  `setView()` moves the camera again (a no-op since 1.14). `ui: 'embed'` with
+  `toolbar` / `tools`. Pinned builds at `/sdk/<version>/`.
+- **1.16.0** — `layers` option (data-layer setup).
+- **1.15.0** — the article kit (`lazy`, `poster`, `aspectRatio`, `turntable`, `bindSteps`…).
+- **1.14.0** — `ui: 'article'`, tight `frame()`.
+- Earlier: see the version notes at the top of `src/sdk/ifc-viewer-sdk.ts`.
 
 ## How it relates to the iframe embed
 

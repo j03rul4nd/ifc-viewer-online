@@ -26,11 +26,15 @@
 //     checked before the .frag is read); anything else is deleted and reported
 //     as a miss — except a meta-less set young enough to be another tab's write
 //     in progress, which is a miss left for the eviction sweep;
+//   • an entry converted under an older CONVERTER_REVISION is discarded: its
+//     .frag is sound but lacks what the converter keeps now (an IFC2x3 door's
+//     style, a pset's enumerations) — the key stays, the bytes get redone;
 //   • every failure is reported (saveCacheEntry never pretends it worked), and
 //     the files of a failed write are removed;
 //   • the cache has a budget, and least-recently-used entries make room.
 
 import type { CacheEntry } from '../types'
+import { CONVERTER_REVISION } from './ifc-importer-classes'
 import { createLogger } from './logger'
 
 const log     = createLogger('OPFS')
@@ -321,6 +325,8 @@ export async function loadCacheEntry(key: string, opts: LoadCacheEntryOptions = 
       // Same name, size and mtime, different bytes: a file re-exported over
       // itself, or a download without Last-Modified that changed on the server.
       defect = 'stale content (fingerprint differs)'
+    } else if ((meta.converter ?? 1) < CONVERTER_REVISION) {
+      defect = `converted by an older converter (revision ${meta.converter ?? 1} < ${CONVERTER_REVISION})`
     }
 
     if (defect || !meta || !fragFile) {
@@ -385,6 +391,7 @@ export async function saveCacheEntry(key: string, input: SaveCacheEntryInput): P
       ...input.meta,
       key,
       fragmentsSize: fragBytes,
+      converter: CONVERTER_REVISION,
       // Written = used: a fresh entry must not be the first one LRU evicts.
       lastUsedAt: input.meta.lastUsedAt ?? input.meta.cachedAt,
     }

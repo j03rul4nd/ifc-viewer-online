@@ -80,7 +80,10 @@
     "filterProps": "プロパティを絞り込み…",
     "noPropsMatch": "一致するプロパティがありません",
     "ownerModel": "{{name}} に属します — クリックでアクティブに",
-    "unknownModel": "不明なモデル"
+    "unknownModel": "不明なモデル",
+    "typeProperties": "タイププロパティ",
+    "typeName": "タイプ",
+    "overriddenByOccurrence": "この要素自身の値で上書きされています"
   },
   "tabs": {
     "properties": "プロパティ",
