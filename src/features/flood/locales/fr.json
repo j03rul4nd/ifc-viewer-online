@@ -1,0 +1,226 @@
+{
+  "title": "Inondation (simulation)",
+  "close": "Fermer",
+  "disclaimer": "Simulation simplifiée et indicative exécutée dans votre navigateur : ce n'est pas une étude hydraulique certifiée. Aucune donnée du modèle ne quitte cet appareil.",
+  "unsupported": "Ce navigateur ne peut pas exécuter la simulation : il nécessite WebGPU, ou WebGL 2 avec rendu vers des textures float.",
+  "grid": {
+    "title": "Grille",
+    "cell": "Cellule",
+    "margin": "Marge"
+  },
+  "ground": {
+    "title": "Terrain",
+    "order": "Utilisé dans cet ordre : le terrain propre à l'IFC, un MNT (DEM) importé, le relief de la carte, puis les vides restants comblés à partir des cellules voisines.",
+    "useMap": "Utiliser le relief de la carte",
+    "mapOff": "Activez la carte avec relief pour utiliser son terrain",
+    "importDem": "Importer un DEM…",
+    "removeDem": "Retirer le DEM",
+    "demFormats": ".asc ou GeoTIFF",
+    "plane": {
+      "title": "Pas de données de terrain : plan de démonstration",
+      "auto": "Au niveau du rez-de-chaussée du projet",
+      "level": "Niveau",
+      "slope": "Pente",
+      "towards": "Pente vers"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "E",
+    "s": "S",
+    "w": "O"
+  },
+  "buildings": {
+    "title": "Bâtiments",
+    "map": "Les bâtiments de la carte sont des obstacles",
+    "mapOff": "Activez la carte pour inclure les bâtiments environnants",
+    "roofs": "Toitures",
+    "perimeter": "Rejet vers la rue",
+    "drained": "Rejet à l'égout"
+  },
+  "rain": {
+    "title": "Pluie",
+    "presets": {
+      "shower": "Averse · {{mm}} mm en {{min}} min",
+      "storm": "Orage · {{mm}} mm en {{min}} min",
+      "intense": "Orage violent · {{mm}} mm en {{min}} min",
+      "extreme": "Événement extrême · {{mm}} mm en {{min}} min"
+    },
+    "facts": "{{mm}} mm en {{min}} min, avec un pic proche de {{peak}} mm/h. Uniforme sur toute la zone.",
+    "after": "Ensuite",
+    "edit": "Modifier",
+    "doneEditing": "Terminé",
+    "custom": "Dessinée à la main"
+  },
+  "surface": {
+    "title": "Surface",
+    "paved": "Revêtue (n = {{n}})",
+    "urban": "Urbaine mixte (n = {{n}})",
+    "grass": "Gazon (n = {{n}})",
+    "vegetation": "Végétation dense (n = {{n}})",
+    "section": "Surface et sol"
+  },
+  "edges": {
+    "title": "Bords",
+    "free": "L'eau sort",
+    "closed": "Fermés"
+  },
+  "actions": {
+    "prepare": "Construire la grille",
+    "rebuild": "Reconstruire",
+    "run": "Simuler",
+    "rerun": "Relancer",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "clear": "Retirer"
+  },
+  "stage": {
+    "geometry": "Lecture de la géométrie du modèle…",
+    "raster": "Dessin de la vue en plan sur le GPU…",
+    "terrain": "Assemblage du terrain…",
+    "layers": "Préparation de la lame d'eau…"
+  },
+  "report": {
+    "title": "Ce que voit la simulation",
+    "grid": "Grille",
+    "ground": "Terrain",
+    "dem": "Relief de la carte",
+    "obstacles": "Cellules obstacles",
+    "canopies": "{{n}} sous des auvents",
+    "relief": "Altitude du terrain",
+    "coarsened": "La zone est grande pour cette taille de cellule : cellules élargies à {{dx}} m.",
+    "planeWarn": "Pas de données de terrain ici : le sol est un plan à Y = {{y}} m. Importez un MNT ou activez la carte avec relief pour obtenir un terrain réel.",
+    "coarseDem": "Ici, le relief de la carte provient de la mosaïque mondiale (données à ≈30 m) : il ne voit ni les rues ni les bordures de trottoir. Un MNT importé donne un meilleur résultat.",
+    "frame": "Cadrer"
+  },
+  "source": {
+    "ifc": "Terrain de l'IFC",
+    "dem": "DEM importé",
+    "map": "Relief de la carte",
+    "plane": "Plan (sans données)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (sol nu)",
+    "terrarium": "Mosaïque mondiale (≈30 m)",
+    "unknown": "Carte"
+  },
+  "demNote": {
+    "reprojected": "Le MNT a été reprojeté dans le système de coordonnées du modèle.",
+    "sameCrs": "Le MNT est dans le système de coordonnées du modèle.",
+    "assumedSameCrs": "Le MNT n'indique pas de système de coordonnées (ou le modèle n'en indique pas) : il est supposé être celui du modèle.",
+    "noHeightDatum": "Le modèle n'indique pas de référence altimétrique : le MNT a été calé sur le rez-de-chaussée du projet, sous le modèle.",
+    "notGeoreferenced": "Le modèle n'est pas géoréférencé, le MNT ne peut donc pas être positionné. Géoréférencez-le dans le panneau Carte.",
+    "outside": "Le MNT ne couvre pas la zone de simulation."
+  },
+  "live": {
+    "time": "Simulé",
+    "flooded": "Surface inondée (> seuil)",
+    "maxDepth": "Hauteur d'eau maximale",
+    "volume": "Eau en surface",
+    "mass": "Erreur de bilan de masse",
+    "infiltrated": "Absorbée par le sol",
+    "outflow": "Sortie de la zone"
+  },
+  "view": {
+    "title": "Affichage",
+    "now": "Hauteur d'eau actuelle",
+    "max": "Hauteur d'eau maximale",
+    "threshold": "Afficher à partir de",
+    "ground": "Afficher le terrain de la simulation",
+    "speed": "Vitesse",
+    "particles": "Lignes d'écoulement"
+  },
+  "hyeto": {
+    "label": "Intensité de pluie par intervalle : cliquez et faites glisser pour la dessiner",
+    "scale": "Échelle jusqu'à {{max}} mm/h",
+    "total": "{{mm}} mm · pic {{peak}} mm/h",
+    "interval": "Tous les",
+    "duration": "Pendant"
+  },
+  "infiltration": {
+    "title": "Sol",
+    "none": "Imperméable (sans infiltration)",
+    "compacted": "Sol compacté ({{f0}} → {{fc}} mm/h)",
+    "loam": "Terre franche, pelouses ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Sol sableux ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Chronologie de l'inondation",
+    "play": "Lire",
+    "pause": "Pause",
+    "scrub": "Temps simulé : faites glisser pour vous déplacer",
+    "speed": "Vitesse de lecture",
+    "speedValue": "{{n}} min/s",
+    "probe": "Sonde",
+    "probeHint": "Cliquez dans la scène pour lire l'eau à cet endroit (Échap pour arrêter)",
+    "computing": "Calcul… {{pct}} %",
+    "live": "Retour au direct",
+    "rain": "Pluie",
+    "flooded": "Inondé",
+    "deepest": "Hauteur max.",
+    "volume": "En surface",
+    "legend": "Échelle de couleurs"
+  },
+  "probe": {
+    "title": "Sonde",
+    "hint": "Cliquez dans la scène pour lire l'eau en ce point.",
+    "reading": "Lecture…",
+    "obstacle": "À l'intérieur d'un obstacle (un bâtiment) : l'eau n'entre pas ici.",
+    "depth": "Hauteur d'eau à {{time}}",
+    "speed": "Vitesse",
+    "peak": "Hauteur max.",
+    "arrival": "Arrivée de l'eau",
+    "never": "jamais",
+    "ground": "Terrain",
+    "chart": "Hauteur d'eau pendant l'événement"
+  },
+  "affected": {
+    "title": "Inondation : éléments atteints",
+    "panelTitle": "Éléments atteints par l'eau",
+    "summary": "Sous le niveau d'eau maximal à leurs abords : {{n}} des {{checked}} éléments vérifiés.",
+    "none": "Aucun des {{checked}} éléments vérifiés (portes, fenêtres, accès, espaces, équipements) ne se trouve sous le niveau d'eau maximal à ses abords.",
+    "atEnd": "Maximums de tout l'événement ({{t}}).",
+    "partial": "Maximums jusqu'ici ({{t}}) : la simulation n'est pas terminée.",
+    "pending": "Listés à la fin de la simulation : portes, fenêtres, accès, espaces et équipements sous le niveau d'eau maximal.",
+    "busy": "Vérification des éléments du modèle…",
+    "analyze": "Vérifier maintenant",
+    "reanalyze": "Vérifier à nouveau",
+    "open": "Afficher dans Validation",
+    "group": {
+      "opening": "Portes et fenêtres",
+      "access": "Accès (rampes, escaliers, ascenseurs)",
+      "space": "Espaces",
+      "equipment": "Équipements et réseaux",
+      "below": "Sous le niveau du sol"
+    },
+    "belowNote": "Leur point bas est sous le terrain extérieur (sous-sols, accès en contrebas). Le chiffre indique l'eau présente à l'extérieur ; qu'elle entre ou non dépend d'ouvertures que la simulation ne modélise pas.",
+    "outside": "{{d}} à l'extérieur",
+    "arrives": "eau à {{t}}",
+    "jump": "Le sélectionner et s'y rendre",
+    "more": "Afficher {{n}} de plus",
+    "capped": "Affichage des {{n}} premiers.",
+    "note": "Indicatif : l'eau présente à l'extérieur de chaque élément, comparée à son point le plus bas. Ne fait partie ni du résultat de validation ni du Health Score.",
+    "dismiss": "Masquer"
+  },
+  "export": {
+    "title": "Exporter",
+    "png": "Image (PNG)",
+    "video": "Vidéo de l'événement",
+    "stop": "Arrêter · {{pct}} %",
+    "videoNeedsEnd": "La vidéo est disponible une fois la simulation terminée.",
+    "noVideo": "Ce navigateur ne peut pas enregistrer de vidéo.",
+    "field": "Couche",
+    "fields": {
+      "hMax": "Hauteur max.",
+      "vMax": "Vitesse max.",
+      "tWet": "Arrivée"
+    },
+    "rasterNote": "Fichiers SIG de toute la grille, nord en haut ; les bâtiments sont sans données (no-data). Hauteur d'eau en m, vitesse en m/s, arrivée en s.",
+    "crs": "Coordonnées en {{crs}}, nord en haut.",
+    "local": "Le modèle n'est pas géoréférencé : le fichier utilise ses coordonnées locales en plan (mètres), sans système de coordonnées."
+  },
+  "capture": {
+    "time": "t = {{t}} sur {{end}}",
+    "disclaimer": "Simulation simplifiée et indicative : ce n'est pas une étude hydraulique certifiée."
+  }
+}

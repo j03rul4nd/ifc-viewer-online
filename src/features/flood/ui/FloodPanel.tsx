@@ -3,7 +3,10 @@
 // is, where the ground comes from, what the buildings do with the rain, which
 // storm and how much the ground absorbs — then build the grid, look at what
 // was built, and run it. Once a run exists, the timeline along the bottom
-// replays it and the probe reads any point of it.
+// replays it and the probe reads any point of it. When it finishes, the
+// elements the water reaches are listed (here, and as a group in the
+// validation panel), and the result exports as an image, a video of the event,
+// or a GIS raster of the maximum depth.
 //
 // Lazy (React.lazy in App), gated by VITE_FEATURE_FLOOD. Strings come from the
 // feature's own locale files (i18n.ts), loaded when the panel first mounts.
@@ -13,6 +16,8 @@ import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from '../../../components/ViewportPanel'
 import { Notice, Segmented, SwitchRow, LookSlider, StatRow, ProgressBar, Button } from '../../../components/geo/ui'
 import { useGeoStore } from '../../../stores/geoStore'
+import { useUIStore } from '../../../stores/uiStore'
+import { shareOrDownload } from '../../../lib/share-file'
 import type { ViewerAPI } from '../../../lib/viewer'
 import {
   useFloodStore, MANNING, INFILTRATION,
@@ -23,8 +28,11 @@ import { detectFloodSupport, type FloodSupport } from '../gpu/create'
 import { STORM_PRESETS, stormFacts, stormHyetograph } from '../presets'
 import { rainDurationS, totalDepthMm } from '../core/hyetograph'
 import type { FloodGeoref } from '../raster/georef'
-import type { FloodSystemAPI } from '../system'
-import { FloodTimeline } from './FloodTimeline'
+import type { FloodSystemAPI, ResultField, ResultFormat } from '../system'
+import { affectedCsv, elevationFrom } from '../validation/affected'
+import { DEPTH_STOPS, SPEED_STOPS } from '../view/water-layer'
+import { FloodTimeline, fmtTime } from './FloodTimeline'
+import { floodOverlay } from './capture-overlay'
 import { FloodProbe } from './FloodProbe'
 import { HyetographEditor } from './HyetographEditor'
 
@@ -57,6 +65,20 @@ function pickGeoref(viewer: ViewerAPI): FloodGeoref | null {
   return null
 }
 
+/** Length of the exported video of the event, wall seconds. */
+const VIDEO_SECONDS = 16
+
+/** First container this browser records, or null. */
+function videoMime(): { mime: string; ext: 'mp4' | 'webm' } | null {
+  if (typeof MediaRecorder === 'undefined') return null
+  for (const mime of ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']) {
+    try { if (MediaRecorder.isTypeSupported(mime)) return { mime, ext: mime.startsWith('video/mp4') ? 'mp4' : 'webm' } } catch { /* exotic UA */ }
+  }
+  return null
+}
+
+const fmtDepthScale = (v: number): string => (v < 1 ? `${Math.round(v * 100)} cm` : `${v.toFixed(1)} m`)
+
 const caption = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]'
 const selectCls = 'h-[26px] px-1.5 rounded-[7px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-[10.5px]'
 
@@ -77,7 +99,11 @@ export default function FloodPanel({ viewerApiRef }: Props) {
   const [support, setSupport] = useState<FloodSupport | null>(null)
   const [sys, setSys] = useState<FloodSystemAPI | null>(null)
   const [editRain, setEditRain] = useState(false)
+  const [field, setField] = useState<ResultField>('hMax')
+  const [exportNote, setExportNote] = useState<string | null>(null)
+  const [recording, setRecording] = useState<number | null>(null)
   const sysRef = useRef<FloodSystemAPI | null>(null)
+  const tRef = useRef<(key: string, opts?: Record<string, unknown>) => string>(() => '')
   const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -94,8 +120,29 @@ export default function FloodPanel({ viewerApiRef }: Props) {
   // Leaving the scene (models removed, panel unmounted) takes the study with it.
   useEffect(() => () => {
     sysRef.current?.clear()
-    useFloodStore.getState().set({ status: 'idle', report: null, stats: null, perf: null, backend: null, probe: null, probing: false })
+    useFloodStore.getState().set({ status: 'idle', report: null, stats: null, perf: null, backend: null, probe: null, probing: false, affected: null })
   }, [])
+
+  // Every capture of the water carries its legend, the instant and the disclaimer.
+  tRef.current = t
+  useEffect(() => {
+    if (!sys) return
+    sys.setCaptureOverlay(floodOverlay(() => {
+      const tt = tRef.current
+      const st = useFloodStore.getState()
+      const tl = sys.getTimeline()
+      if (!tl.endS) return null
+      const speedView = st.viewMode === 'speed'
+      return {
+        title: tt(`view.${st.viewMode}`),
+        subtitle: tt('capture.time', { t: fmtTime(tl.viewT), end: fmtTime(tl.endS) }),
+        stops: speedView ? SPEED_STOPS : DEPTH_STOPS,
+        format: speedView ? (v) => `${v} m/s` : fmtDepthScale,
+        disclaimer: tt('capture.disclaimer'),
+      }
+    }))
+    return () => sys.setCaptureOverlay(null)
+  }, [sys])
 
   // The probe: while armed, a click on the scene reads the water there.
   useEffect(() => {
@@ -142,12 +189,24 @@ export default function FloodPanel({ viewerApiRef }: Props) {
     }
   }, [system, viewerApiRef])
 
+  const analyze = useCallback(async () => {
+    const sy = sysRef.current
+    if (!sy) return
+    useFloodStore.getState().set({ affectedBusy: true })
+    try {
+      const affected = await sy.analyzeAffected()
+      useFloodStore.getState().set({ affected, affectedBusy: false })
+    } catch (err) {
+      useFloodStore.getState().set({ affectedBusy: false, error: (err as Error)?.message ?? String(err) })
+    }
+  }, [])
+
   const run = useCallback(async () => {
     const sy = await system()
     if (!sy?.isPrepared()) return
     const st = useFloodStore.getState()
     const edge = st.boundary
-    st.set({ status: 'running', stats: null, perf: null, error: null, probe: null })
+    st.set({ status: 'running', stats: null, perf: null, error: null, probe: null, affected: null })
     sy.start({
       hyetograph: st.hyetograph,
       durationS: rainDurationS(st.hyetograph) + st.drainMin * 60,
@@ -161,17 +220,90 @@ export default function FloodPanel({ viewerApiRef }: Props) {
       onReady: (r) => useFloodStore.getState().set({ backend: r }),
       onStats: (stats, perf) => useFloodStore.getState().set({ stats, perf }),
       onState: (x) => {
-        if (x.finished) useFloodStore.getState().set({ status: 'finished' })
-        else if (x.running) useFloodStore.getState().set({ status: 'running' })
+        if (x.finished) {
+          useFloodStore.getState().set({ status: 'finished' })
+          void analyze()
+        } else if (x.running) useFloodStore.getState().set({ status: 'running' })
       },
       onError: (m) => useFloodStore.getState().set({ status: 'error', error: m }),
     })
-  }, [system])
+  }, [system, analyze])
 
   const clear = useCallback(() => {
     sysRef.current?.clear()
-    useFloodStore.getState().set({ status: 'idle', report: null, stats: null, perf: null, backend: null, error: null, probe: null, probing: false })
+    useFloodStore.getState().set({ status: 'idle', report: null, stats: null, perf: null, backend: null, error: null, probe: null, probing: false, affected: null })
   }, [])
+
+  const exportPng = useCallback(async () => {
+    const v = viewerApiRef.current
+    if (!v) return
+    const url = v.takeSnapshot(2)
+    if (!url) return
+    const blob = await (await fetch(url)).blob()
+    const tl = sysRef.current?.getTimeline()
+    await shareOrDownload(blob, `flood-${useFloodStore.getState().viewMode}-${fmtTime(tl?.viewT ?? 0).replace(':', 'h')}.png`)
+  }, [viewerApiRef])
+
+  const exportRaster = useCallback(async (format: ResultFormat) => {
+    const sy = sysRef.current
+    if (!sy) return
+    const f = await sy.exportResult(format, field)
+    if (!f) return
+    const tt = tRef.current
+    setExportNote(f.georeferenced && f.crs ? tt('export.crs', { crs: f.crs }) : tt('export.local'))
+    await shareOrDownload(f.blob, `flood-${field === 'hMax' ? 'max-depth' : field === 'vMax' ? 'max-speed' : 'arrival-time'}.${f.ext}`)
+  }, [field])
+
+  const exportAffected = useCallback(async () => {
+    const a = useFloodStore.getState().affected
+    if (!a) return
+    await shareOrDownload(new Blob([affectedCsv(a.elements, elevationFrom(a.datum))], { type: 'text/csv' }), 'flood-affected-elements.csv')
+  }, [])
+
+  /**
+   * The whole event replayed from the snapshots in VIDEO_SECONDS, recorded
+   * from the viewer's recording surface (the 3-D view plus every capture
+   * overlay: measurements and this feature's legend).
+   */
+  const recordVideo = useCallback(async () => {
+    const v = viewerApiRef.current
+    const sy = sysRef.current
+    const fmt = videoMime()
+    if (!v || !sy || !fmt) return
+    const tl0 = sy.getTimeline()
+    if (!tl0.finished) return
+    const rec = v.acquireRecordingCanvas()
+    const stream = rec.canvas.captureStream(30)
+    const mr = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 8_000_000 })
+    const chunks: Blob[] = []
+    mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
+    const stopped = new Promise<void>((r) => { mr.onstop = () => r() })
+    const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+    setRecording(0)
+    try {
+      sy.seek(0)
+      await wait(400)
+      mr.start(250)
+      await wait(300)
+      const endS = tl0.endS
+      await new Promise<void>((resolve) => {
+        const un = sy.subscribe((st) => {
+          setRecording(Math.round((st.viewT / endS) * 100))
+          if (!st.playing) { un(); resolve() }
+        })
+        sy.setPlayback(true, endS / VIDEO_SECONDS)
+      })
+      await wait(600) // hold the last frame
+      mr.stop()
+      await stopped
+    } finally {
+      rec.release()
+      for (const tr of stream.getTracks()) tr.stop()
+      sy.setPlayback(false, useFloodStore.getState().replaySpeed)
+      setRecording(null)
+    }
+    if (chunks.length) await shareOrDownload(new Blob(chunks, { type: fmt.mime }), `flood-event.${fmt.ext}`)
+  }, [viewerApiRef])
 
   const setView = useCallback((p: Partial<{ viewMode: ViewMode; threshold: number; showGround: boolean; particles: boolean }>) => {
     useFloodStore.getState().set(p)
@@ -188,6 +320,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
   const progress = s.stats ? Math.min(1, s.stats.t / totalS) : null
   const unsupported = support !== null && !support.supported
   const runExists = s.status === 'running' || s.status === 'paused' || s.status === 'finished'
+  const finished = s.status === 'finished'
+  const canVideo = videoMime() !== null
 
   return (
     <>
@@ -417,6 +551,62 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                 {(rep.terrain === 'plane' || rep.terrain === 'dem') && (
                   <SwitchRow compact label={t('view.ground')} checked={s.showGround} onChange={(v) => setView({ showGround: v })} />
                 )}
+              </section>
+            )}
+
+            {/* ── Elements the water reaches ───────────────────────────── */}
+            {runExists && (
+              <section className="flex flex-col gap-1.5">
+                <div className={caption}>{t('affected.panelTitle')}</div>
+                {s.affectedBusy
+                  ? <span className="text-[10.5px] text-[var(--text-faint)]">{t('affected.busy')}</span>
+                  : s.affected
+                    ? (
+                      <div className="text-[10.5px] leading-snug text-[var(--text-dim)]">
+                        {s.affected.total === 0 ? t('affected.none', { checked: s.affected.checked }) : t('affected.summary', { n: s.affected.total, checked: s.affected.checked })}
+                        {' '}{s.affected.finished ? t('affected.atEnd', { t: fmtTime(s.affected.t) }) : t('affected.partial', { t: fmtTime(s.affected.t) })}
+                      </div>
+                    )
+                    : <span className="text-[10.5px] text-[var(--text-faint)]">{t('affected.pending')}</span>}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Button disabled={s.affectedBusy || running} onClick={() => { void analyze() }}>
+                    {s.affected ? t('affected.reanalyze') : t('affected.analyze')}
+                  </Button>
+                  {s.affected && s.affected.total > 0 && (
+                    <>
+                      <Button onClick={() => useUIStore.getState().setValidationPanelOpen(true)}>{t('affected.open')}</Button>
+                      <Button onClick={() => { void exportAffected() }}>CSV</Button>
+                    </>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* ── Export ───────────────────────────────────────────────── */}
+            {runExists && (
+              <section className="flex flex-col gap-1.5">
+                <div className={caption}>{t('export.title')}</div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Button onClick={() => { void exportPng() }}>{t('export.png')}</Button>
+                  {recording === null
+                    ? <Button disabled={!finished || !canVideo} onClick={() => { void recordVideo() }}>{t('export.video')}</Button>
+                    : <Button onClick={() => sysRef.current?.setPlayback(false)}>{t('export.stop', { pct: recording })}</Button>}
+                </div>
+                {!canVideo
+                  ? <span className="text-[10px] text-[var(--text-faint)]">{t('export.noVideo')}</span>
+                  : !finished && <span className="text-[10px] text-[var(--text-faint)]">{t('export.videoNeedsEnd')}</span>}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] text-[var(--text-faint)] w-[54px]">{t('export.field')}</span>
+                  <Segmented label={t('export.field')} value={field}
+                    options={[{ id: 'hMax', label: t('export.fields.hMax') }, { id: 'vMax', label: t('export.fields.vMax') }, { id: 'tWet', label: t('export.fields.tWet') }]}
+                    onChange={(v) => setField(v)} />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button onClick={() => { void exportRaster('geotiff') }}>GeoTIFF</Button>
+                  <Button onClick={() => { void exportRaster('asc') }}>ASC</Button>
+                  <Button onClick={() => { void exportRaster('csv') }}>CSV</Button>
+                </div>
+                <span className="text-[10px] leading-snug text-[var(--text-faint)]">{exportNote ?? t('export.rasterNote')}</span>
               </section>
             )}
           </div>
