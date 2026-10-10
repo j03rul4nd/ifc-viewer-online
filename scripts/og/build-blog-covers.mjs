@@ -115,19 +115,19 @@ const REAL_CAPTURE_BY_KEY = {
   },
   'warehouse-ifc-moving-lidar-digital-twin': {
     source: 'docs/images/warehouse-ifc-moving-lidar-real-viewer.png',
-    publicCopy: 'warehouse-ifc-moving-lidar-real-viewer.png',
+    publicCopy: 'warehouse-ifc-moving-lidar-real-viewer.jpg',
     badge: { en: 'ACTUAL VIEWER · SIMULATED MOTION', es: 'VISOR REAL · MOVIMIENTO SIMULADO' },
     shortTitle: 'WAREHOUSE IFC + LIDAR',
   },
   'construction-progress-ifc-temporal-point-cloud': {
     source: 'docs/images/construction-progress-ifc-lidar-real-viewer.png',
-    publicCopy: 'construction-progress-ifc-lidar-real-viewer.png',
+    publicCopy: 'construction-progress-ifc-lidar-real-viewer.jpg',
     badge: { en: 'ACTUAL VIEWER · 4D REPLAY', es: 'VISOR REAL · REPLAY 4D' },
     shortTitle: '4D IFC + POINT CLOUD',
   },
   'utility-tunnel-ifc-mobile-lidar-inspection': {
     source: 'docs/images/utility-tunnel-ifc-lidar-real-viewer.png',
-    publicCopy: 'utility-tunnel-ifc-lidar-real-viewer.png',
+    publicCopy: 'utility-tunnel-ifc-lidar-real-viewer.jpg',
     badge: { en: 'ACTUAL VIEWER · MOBILE LIDAR REPLAY', es: 'VISOR REAL · REPLAY LIDAR MÓVIL' },
     shortTitle: 'TUNNEL IFC + MOBILE LIDAR',
   },

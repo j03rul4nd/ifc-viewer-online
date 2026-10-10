@@ -6,8 +6,9 @@
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import path from 'path'
-import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
-import { generateBlogPages, type BlogPagesResult } from './generate-blog-pages'
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, copyFileSync } from 'fs'
+import { readXmp } from './image-metadata'
+import { generateBlogPages, sourceTypeOf, type BlogPagesResult } from './generate-blog-pages'
 import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR, type BlogPost } from '../../src/lib/blog-posts'
 import { TRANSLATED_POSTS } from '../../src/lib/blog-i18n'
 import { topicsFor } from '../../src/lib/blog-topics'
@@ -44,6 +45,10 @@ const TEMPLATE_HTML = `<!DOCTYPE html>
   <meta property="og:url" content="https://www.ifcvieweronline.eu/" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="The home page's own image" />
+  <meta name="twitter:image:alt" content="The home page's own image" />
   <meta name="twitter:title" content="IFC Viewer Online" />
   <meta name="twitter:description" content="Free online IFC viewer." />
   <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/" />
@@ -76,6 +81,13 @@ beforeAll(() => {
     'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n</urlset>\n',
   )
   writeFileSync(path.join(OUT, 'llms.txt'), '# IFC Viewer Online\n\n## Related pages\n')
+
+  // The Barcelona twin post's pictures, so the hero preload and the rights
+  // metadata have real files to work on.
+  mkdirSync(path.join(OUT, 'blog', 'images'), { recursive: true })
+  for (const f of ['barcelona-digital-twin-open-data-1600x900.jpg', 'barcelona-digital-twin-open-data-800x450.jpg', 'barcelona-digital-twin-open-data-capture.jpg']) {
+    copyFileSync(path.join(process.cwd(), 'public', 'blog', 'images', f), path.join(OUT, 'blog', 'images', f))
+  }
 
   result = generateBlogPages(OUT)
 })
@@ -520,6 +532,76 @@ describe('generateBlogPages — article structured data', () => {
   it('carries a breadcrumb up to its topic hub', () => {
     expect(html()).toContain('"@type":"BreadcrumbList"')
     expect(html()).toContain(`${SITE}/blog/topic/${post.categorySlug}/`)
+  })
+})
+
+// ── Images: what Google Images reads ──────────────────────────────────────────
+
+describe('generateBlogPages — images', () => {
+  const slug = 'barcelona-digital-twin-open-data'
+  const html = () => readFileSync(path.join(OUT, 'blog', slug, 'index.html'), 'utf-8')
+  const images = () => {
+    const ld = [...html().matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      .map((m) => JSON.parse(m[1]) as { '@graph'?: Array<{ '@type': string; image?: Array<Record<string, unknown>> }> })
+    return ld.flatMap((d) => d['@graph'] ?? []).find((n) => n['@type'] === 'BlogPosting')!.image!
+  }
+
+  it("states the page's own image alt once, replacing the home's", () => {
+    expect(html().match(/property="og:image:alt"/g)).toHaveLength(1)
+    expect(html().match(/name="twitter:image:alt"/g)).toHaveLength(1)
+    expect(html()).not.toContain("The home page's own image")
+  })
+
+  it('gives og:image the size of the hero, not of the home card', () => {
+    expect(html()).toContain('<meta property="og:image:width" content="1600" />')
+    expect(html()).toContain('<meta property="og:image:height" content="900" />')
+    expect(html()).not.toContain('content="630"')
+  })
+
+  it('preloads the hero from the same set the page draws, at high priority', () => {
+    const preload = html().match(/<link rel="preload" as="image"[^>]*>/)![0]
+    expect(preload).toContain(`imagesrcset="${SITE}/blog/images/${slug}-800x450.jpg 800w, ${SITE}/blog/images/${slug}-1600x900.jpg 1600w"`)
+    expect(preload).toContain('imagesizes="100vw"')
+    expect(preload).toContain('fetchpriority="high"')
+  })
+
+  it('marks the hero as the picture of the page and names us as creator, with the OSM notice', () => {
+    const hero = images()[0]
+    expect(hero.representativeOfPage).toBe(true)
+    expect(hero.creator).toMatchObject({ '@type': 'Organization', name: 'IFC Viewer Online' })
+    expect(hero.copyrightNotice).toBe('© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)')
+    expect(images().filter((i) => i.representativeOfPage)).toHaveLength(1)
+  })
+
+  it("lists the live demo's poster, the post's capture of the whole scene", () => {
+    expect(images().map((i) => i.url)).toContain(`${SITE}/blog/images/${slug}-capture.jpg`)
+    expect(readFileSync(path.join(OUT, 'sitemap.xml'), 'utf-8')).toContain(`${SITE}/blog/images/${slug}-capture.jpg`)
+  })
+
+  it('writes the credit and rights into the published files', () => {
+    const xmp = readXmp(readFileSync(path.join(OUT, 'blog', 'images', `${slug}-1600x900.jpg`)))!
+    expect(xmp).toContain('<rdf:li>IFC Viewer Online</rdf:li>')
+    expect(xmp).toContain('OpenStreetMap contributors (ODbL)')
+    expect(xmp).toContain(`${SITE}/terms/`)
+    expect(xmp).toContain('digitalsourcetype/screenCapture')
+    // The hero, its 800 px cut (the srcset) and the demo's poster.
+    expect(result.stamped).toBeGreaterThanOrEqual(3)
+    expect(readXmp(readFileSync(path.join(OUT, 'blog', 'images', `${slug}-800x450.jpg`)))).toContain('IFC Viewer Online')
+  })
+
+  it('labels how each image was made', () => {
+    expect(sourceTypeOf('IFC Viewer Online · AI-generated conceptual illustration', `${SITE}/blog/images/a.png`)).toBe('trainedAlgorithmicMedia')
+    expect(sourceTypeOf('IFC Viewer Online · approximate Blender render · © OpenStreetMap contributors (ODbL)', `${SITE}/blog/images/a.jpg`)).toBe('digitalCreation')
+    expect(sourceTypeOf('IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)', `${SITE}/blog/images/a.jpg`)).toBe('screenCapture')
+    expect(sourceTypeOf('IFC Viewer Online', `${SITE}/blog/images/diagram.png`)).toBe('digitalCreation')
+    expect(sourceTypeOf('Abreu et al. · CRAS Labs @ FEUP', `${SITE}/blog/images/a.jpg`)).toBeUndefined()
+  })
+
+  it('gives a topic hub the picture of its first guide, and each entry its image', () => {
+    const hub = readFileSync(path.join(OUT, 'blog', 'topic', 'digital-twins', 'index.html'), 'utf-8')
+    expect(hub).not.toContain('og-image.png"')
+    expect(hub).toMatch(/"@type":"ListItem","position":1,"url":"[^"]+","name":"[^"]+","image":"https:\/\//)
+    expect(hub).toMatch(/<article><a href="[^"]+"><img src="https:\/\/[^"]+" alt="[^"]+"/)
   })
 })
 

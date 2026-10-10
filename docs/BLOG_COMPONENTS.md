@@ -126,6 +126,24 @@ phone, and "look at the panel on the right" makes the reader hunt.
   The legend is the accessible version; hotspots are a shortcut into it.
   Measure x/y on the real image — 3–5 points, only for what the text discusses.
 
+**What Google Images gets** (`scripts/seo/generate-blog-pages.ts`):
+- **Structured data:** every hero, hero crop, in-body image, demo poster and
+  cover becomes an ImageObject in the post's JSON-LD and an `<image:loc>` in
+  the sitemap.
+  - The hero is `representativeOfPage`.
+  - `creator` and `copyrightNotice` are read from the credit line. Our map
+    captures keep the OpenStreetMap notice.
+- **Inside the files:** at build time the same credit, copyright, terms URL,
+  description and how the image was made (IPTC Digital Source Type:
+  `screenCapture`, `digitalCreation`, or `trainedAlgorithmicMedia` for
+  generated pictures) are written as XMP into the files in `dist/`. This is
+  `image-metadata.ts`. The files in `public/` stay as rendered.
+- **Every image a post names must exist, and its extension must match its
+  bytes** (`blog-images.test.ts`). A missing image is a real 404
+  (`vercel.json`), not the app's HTML.
+- **Never rename a published image without a 301** in `vercel.json`. Image
+  rankings follow the URL.
+
 ## References — `post.references` + `{ cite: id }`
 
 ```ts
