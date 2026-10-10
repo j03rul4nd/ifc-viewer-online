@@ -13,6 +13,7 @@ import { SCENE_PRESETS, matchPreset, type ScenePreset, type ScenePresetId } from
 import { useGeoCtl } from './useGeoController'
 import { useBasemapOptions, MapStyleChoices } from './sections/BasemapSection'
 import { LookChoices } from './sections/LookChoices'
+import { MapPrivacy } from './sections/MapPrivacy'
 import { IconBuildings, IconPlan, IconSparkle, IconTerrain } from './icons'
 import { Caption, Choices, CostDots, Group, Hint, SwitchRow } from './ui'
 
@@ -111,6 +112,8 @@ export function QuickSetup() {
         onSelect={(level) => ctl.setContextDetail(level)}
       />
       <Hint>{t(`quick.qualityHint.${s.contextDetail}`, { kb: PROP_ASSETS_KB })}</Hint>
+
+      <MapPrivacy />
 
       <button
         onClick={() => s.setPanelMode('advanced')}

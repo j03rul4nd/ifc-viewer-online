@@ -222,5 +222,19 @@
   "capture": {
     "time": "t = {{t}} de {{end}}",
     "disclaimer": "Simulación simplificada y orientativa: no es un estudio hidráulico certificado."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m por debajo de la planta baja del modelo a la cota que declara su IFC; el modelo quedaba a esa altura sobre el terreno que lo rodea y el agua de alrededor nunca llegaría a sus puertas. Se ha subido el terreno de la simulación hasta el modelo. Conviene revisar la cota del IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m por encima de la planta baja del modelo a la cota que declara su IFC; la planta baja quedaba enterrada. Se ha bajado el terreno de la simulación hasta el modelo. Conviene revisar la cota del IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m por debajo de la planta baja del modelo. Tal cual, el modelo queda a esa altura sobre el terreno que lo rodea y el agua de alrededor no llega a sus puertas.",
+    "loweredOff": "{{source}}: {{d}} m por encima de la planta baja del modelo. Tal cual, la planta baja queda enterrada y cualquier agua a su alrededor queda por encima de sus puertas.",
+    "switch": "Apoyar el terreno en la planta baja del modelo",
+    "source": {
+      "map": "Relieve del mapa",
+      "dem": "DEM importado"
+    }
+  },
+  "data": {
+    "map": "El relieve y los edificios son los que descargó el modo mapa, con tu permiso, de proveedores públicos (relieve: ICGC en Cataluña o AWS Open Data en el resto; edificios: OpenStreetMap), que ven la zona del emplazamiento y tu dirección IP. La simulación solo los lee: ni el modelo ni los resultados salen del navegador. Desactiva las dos opciones para simular solo con el IFC; el permiso se retira en el panel Mapa."
   }
 }

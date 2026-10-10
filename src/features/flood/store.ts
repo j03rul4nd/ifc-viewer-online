@@ -40,6 +40,8 @@ export interface FloodSettings {
   infiltration: InfiltrationPreset
   includeMapBuildings: boolean
   useMapTerrain: boolean
+  /** Stand the map's relief / a DEM on the model's ground floor when they disagree (system.ts GroundFit). */
+  fitGround: boolean
   /** The preset the rain started from; null once edited by hand. */
   storm: StormPreset | null
   hyetograph: Hyetograph
@@ -85,6 +87,7 @@ export const useFloodStore = create<FloodState>()((set) => ({
   infiltration: 'none',
   includeMapBuildings: true,
   useMapTerrain: true,
+  fitGround: true,
   storm: 'storm',
   hyetograph: stormHyetograph('storm'),
   drainMin: 30,

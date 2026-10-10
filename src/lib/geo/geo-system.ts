@@ -582,6 +582,26 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let terrainStyle: TerrainStyle = 'imagery'
   let terrainExaggeration = 1
   let terrainLook: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
+  /**
+   * The ground with no context layers built (the plain map, or relief only):
+   * what groundAtWorld / groundHeightAt read then. Cached on what it depends
+   * on — the flood grid asks once per cell, up to a million times.
+   */
+  let bareGround: { terrain: TerrainPatch | null; exaggeration: number; lat: number; frame: ReturnType<typeof createGroundFrame> } | null = null
+  const bareGroundFrame = (): ReturnType<typeof createGroundFrame> | null => {
+    if (!placement) return null
+    const b = bareGround
+    if (b && b.terrain === terrain && b.exaggeration === terrainExaggeration && b.lat === placement.lat) return b.frame
+    const t = terrain
+    const frame = createGroundFrame({
+      anchorLat: placement.lat,
+      anchorElevationM: t?.anchorElevation ?? 0,
+      sampleGroundM: t ? (nx: number, ny: number) => t.sampleGroundM(nx, ny) : null,
+      exaggeration: terrainExaggeration,
+    })
+    bareGround = { terrain: t, exaggeration: terrainExaggeration, lat: placement.lat, frame }
+    return frame
+  }
   let buildings: THREE.Mesh | null = null
   /** Bumped on teardown — invalidates building fetches still in flight. */
   let buildingsToken = 0
@@ -1238,14 +1258,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     groundAtWorld(x, z) {
-      if (!geoRoot || !placement) return null
+      const frame = bareGroundFrame()
+      if (!geoRoot || !frame) return null
       const local = geoRoot.worldToLocal(new THREE.Vector3(x, 0, z))
-      const frame = createGroundFrame({
-        anchorLat: placement.lat,
-        anchorElevationM: terrain?.anchorElevation ?? 0,
-        sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
-        exaggeration: terrainExaggeration,
-      })
       const world = geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, frame.groundZ(local.x, local.y)))
       return Number.isFinite(world.y) ? world.y : null
     },
@@ -1359,10 +1374,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     groundHeightAt(x: number, z: number) {
-      if (!geoRoot || !lastLayerOpts) return null
-      geoRoot.updateMatrixWorld(true)
+      // The frame the context layers were built on when there are any; the
+      // bare map's otherwise. Reading only the former returned null for every
+      // point in the Relief view (no layers built), and the flood simulation,
+      // offered "use the map's relief" exactly there, fell back to a plane.
+      const frame = lastLayerOpts ? groundFrameFor(lastLayerOpts) : bareGroundFrame()
+      if (!geoRoot || !frame) return null
+      // Its own matrix only (parents up, no children): this runs once per
+      // flood cell, and the whole map tree under geoRoot is thousands of objects.
+      geoRoot.updateWorldMatrix(true, false)
       const local = geoRoot.worldToLocal(new THREE.Vector3(x, 0, z))
-      const zLocal = groundFrameFor(lastLayerOpts).groundZ(local.x, local.y)
+      const zLocal = frame.groundZ(local.x, local.y)
       if (!Number.isFinite(zLocal)) return null
       return geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, zLocal)).y
     },

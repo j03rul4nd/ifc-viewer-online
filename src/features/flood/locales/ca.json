@@ -222,5 +222,19 @@
   "capture": {
     "time": "t = {{t}} de {{end}}",
     "disclaimer": "Simulació simplificada i orientativa: no és un estudi hidràulic certificat."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m per sota de la planta baixa del model a la cota que declara el seu IFC; el model quedava a aquesta alçada sobre el terreny que l'envolta i l'aigua del voltant no arribaria mai a les seves portes. S'ha pujat el terreny de la simulació fins al model. Convé revisar la cota de l'IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m per sobre de la planta baixa del model a la cota que declara el seu IFC; la planta baixa quedava enterrada. S'ha baixat el terreny de la simulació fins al model. Convé revisar la cota de l'IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m per sota de la planta baixa del model. Tal com està, el model queda a aquesta alçada sobre el terreny que l'envolta i l'aigua del voltant no arriba a les seves portes.",
+    "loweredOff": "{{source}}: {{d}} m per sobre de la planta baixa del model. Tal com està, la planta baixa queda enterrada i qualsevol aigua al voltant queda per sobre de les seves portes.",
+    "switch": "Recolzar el terreny a la planta baixa del model",
+    "source": {
+      "map": "Relleu del mapa",
+      "dem": "MDT importat"
+    }
+  },
+  "data": {
+    "map": "El relleu i els edificis són els que va descarregar el mode mapa, amb el teu permís, de proveïdors públics (relleu: ICGC a Catalunya o AWS Open Data a la resta; edificis: OpenStreetMap), que veuen la zona de l'emplaçament i la teva adreça IP. La simulació només els llegeix: ni el model ni els resultats surten del navegador. Desactiva les dues opcions per simular només amb l'IFC; el permís es retira al panell Mapa."
   }
 }
