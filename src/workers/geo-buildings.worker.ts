@@ -24,6 +24,7 @@ import {
 } from '../lib/geo/overture-footprints'
 import { latLonToNormalized } from '../lib/geo/geo-math'
 import { parseOsmFeatures, buildFeaturesQuery, countByKind, type OsmFeature, type FeatureKind } from '../lib/geo/osm-features'
+import { extractHydrology, type Hydrology } from '../lib/geo/osm-hydro'
 
 /** Server-side budget. Overpass rejects the query if it cannot finish in time. */
 const QUERY_TIMEOUT_S = 25
@@ -65,6 +66,8 @@ export type BuildingsResponse =
       /** Every layer, in one payload — toggling a layer never refetches. */
       features: OsmFeature[]
       counts: Record<FeatureKind, number>
+      /** Watercourses (live, culverted and gone) and the barriers that stop water — for the flood. */
+      hydro: Hydrology
       truncated: boolean
       /** Footprints added from the shipped Overture extract. Drives attribution. */
       overture: number
@@ -159,6 +162,7 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
       id: req.id,
       features,
       counts: countByKind(features),
+      hydro: extractHydrology(json),
       overture: extra.length,
       fallback,
       // Hitting the element cap means the view is showing a partial picture.

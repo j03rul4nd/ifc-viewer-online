@@ -203,6 +203,28 @@ describe('infiltration', () => {
     expect(Math.abs(st.massError)).toBeLessThan(1e-9)
   }, 30_000)
 
+  it('a sealed half (asphalt) absorbs nothing while the other half takes the soil it was given', () => {
+    const n = 30
+    const grid = inclinedPlaneDemo({ nx: n, ny: n, dx: 2, slopeX: 0, slopeY: 0 })
+    grid.infiltration = new Float32Array(n * n)
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) grid.infiltration[j * n + i] = i < n / 2 ? 0 : 1
+    // Absorbs at 50 mm/h where open, rain 20 mm/h: the open half stays dry, the sealed half ponds.
+    const s = new CpuInertialSolver({
+      grid, hyetograph: constantStorm(20, 30, 5),
+      params: { boundary: closedEdges, infiltration: { initialMmH: 50, finalMmH: 50, decayPerHour: 0 } },
+    })
+    s.advanceSync(30 * 60)
+    const st = s.statsSync()
+    let sealed = 0, open = 0
+    const f = s.fieldsSync()
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { if (i < n / 2) sealed += f.h[j * n + i]; else open += f.h[j * n + i] }
+    expect(sealed).toBeGreaterThan(0)
+    expect(st.infiltratedVolume).toBeGreaterThan(0)
+    // The sealed half never infiltrated: absorbed volume ≤ rain on the open half (+ what flowed over from the sealed side).
+    expect(st.infiltratedVolume).toBeLessThan(st.rainVolume)
+    expect(Math.abs(st.massError)).toBeLessThan(1e-9)
+  }, 30_000)
+
   it('Horton: absorbs no more than f(t) allows, and the balance closes', () => {
     const c = infiltrationBasin(40)
     const s = run(c)
@@ -213,8 +235,9 @@ describe('infiltration', () => {
     const inf = c.params.infiltration!
     let maxDepth = 0
     for (let t = 0; t < c.durationS; t += 1) maxDepth += infiltrationRate(inf, t + 0.5)
+    // Every open cell weighted by its own soil (sealed streets take nothing).
     let open = 0
-    for (let k = 0; k < c.grid.blocked.length; k++) if (!c.grid.blocked[k]) open++
+    for (let k = 0; k < c.grid.blocked.length; k++) if (!c.grid.blocked[k]) open += c.grid.infiltration ? c.grid.infiltration[k] : 1
     expect(st.infiltratedVolume).toBeLessThanOrEqual(maxDepth * open * c.grid.dx * c.grid.dx * 1.0001)
     expect(Math.abs(st.massError)).toBeLessThan(1e-9)
   }, 30_000)

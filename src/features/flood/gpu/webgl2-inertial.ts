@@ -130,7 +130,8 @@ export class WebGl2InertialSolver implements FloodSolver {
       st[c * 4] = g.z[c]
       st[c * 4 + 1] = g.rainFactor[c]
       st[c * 4 + 2] = g.manning[c]
-      st[c * 4 + 3] = g.blocked[c]
+      // Blocked = 1; an open cell carries its infiltration factor, negated.
+      st[c * 4 + 3] = g.blocked[c] ? 1 : -(g.infiltration ? g.infiltration[c] : 1)
     }
     this.tStatic = this.texture(nx, ny, gl.RGBA32F, gl.RGBA, gl.FLOAT, st)
     const rainH = Math.max(1, Math.ceil(this.rates.length / RAIN_W))

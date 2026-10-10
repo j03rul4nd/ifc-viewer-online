@@ -86,6 +86,10 @@ export interface AffectedReport {
   finished: boolean
   /** Absolute elevation = heightM + (sceneY − sceneY0) · scale; null when the model states no datum. */
   datum: { heightM: number; sceneY0: number; scale: number } | null
+  /** Neighbouring buildings (OpenStreetMap) the water reaches, deepest first; absent without the map. */
+  neighbours?: Array<{ id: string; name?: string; label?: string; centre: { x: number; z: number }; depth: number; arrivalS: number | null }>
+  /** Where the water stood over a watercourse that is gone; null when none is mapped here. */
+  oldCourse?: { names: string[]; areaM2: number; wetAreaM2: number; maxDepth: number } | null
 }
 
 /** Scene Y → absolute elevation through a report's datum. */

@@ -16,6 +16,7 @@ Code: `src/features/flood/` (self-contained; lazy-loaded; gated by
 | 2 | Terrain + building rasterisation from the IFC, georeferencing, 3-D water layer, panel | **done** (flag off) |
 | 3 | Timeline (hyetograph, flooded-area curve, scrub, replay), probe, flow particles, speed view, snapshots, infiltration, hyetograph editor | **done** (flag off) |
 | 4 | Affected IFC elements in the validation panel, CSV / GeoTIFF / ASC / PNG / video export, legend in every capture, 10 languages | **done** (flag off) |
+| A | The neighbourhood from OpenStreetMap: land cover per cell, watercourses (live, culverted, gone), walls and dykes, neighbouring buildings and the ones the water reaches | **done** (flag off) |
 
 With `VITE_FEATURE_FLOOD=true` the viewer gets a Flood tool (rail icon and
 Tools menu): build the grid from what is loaded, run a storm, see the water.
@@ -300,15 +301,80 @@ stored choice deleted, the dialog asks again), and the consent dialog itself
 now mentions the IP address and that it can be withdrawn. The privacy policy
 lists the providers and the withdrawal.
 
+## The neighbourhood from OpenStreetMap (phase A, 2026-10-10)
+
+A model stands in a street, next to other buildings, sometimes where a river
+used to run. With the map on and "OpenStreetMap neighbourhood" ticked (default),
+the grid reads the same Overpass answer the map draws — no extra request when
+the City view already fetched it; in the Relief view `getOsmContext()` fetches
+it once. `raster/osm-surface.ts` turns it into per-cell fields:
+
+| OSM | In the grid |
+|---|---|
+| Roads on the ground (not bridges, not tunnels) | sealed (no infiltration), n 0.016 |
+| Parks, grass, forest, scrub, orchards, sand, rock, water, rail | Manning's n and an infiltration factor per class (forest 1.3, park 1, rail 0.5, rock 0.1, …) |
+| Rivers, canals, streams, ditches, drains | cut into the ground by their depth (tagged, else 2 / 1.5 / 0.6 / 0.5 m) |
+| A culvert under a street (≤ 40 m) | cut too, so the open channel stays continuous |
+| A long culvert, or a course that is gone (`disused:` / `abandoned:` / `historic:` / `was:` / `razed:` / `removed:` / `demolished:waterway`, or `disused=yes`) | not cut: a mask (how much water stood over it) and a dashed violet line |
+| Walls, city walls, retaining walls, flood walls | raised by their height (tagged, else 1.5 / 4 / 1 / 1.5 m); lines are stroked ≥ 0.71 cell so they form 8-connected chains the 4-way flux cannot cross |
+| Dykes, embankments | raised only when the ground is not a bare-earth DEM (ICGC MET 5, an imported DEM): that DEM already has them |
+| Buildings | footprints, walls; not where the IFC stands (its footprint contains the centroid); `building=roof` or min_height > 1.5 m is a canopy (roofed, water runs under) |
+
+The solver change is one number per cell: the static texture's `w` was 1 for a
+wall and −1 for open ground; it is now −(infiltration factor), so the existing
+`> 0.5` tests are untouched and the loss is `min(h, f(t)·dt·max(−w, 0))`.
+CPU = WebGPU = WebGL2 on the striped infiltration basin (4975 / 4975 steps,
+rel L1 2.2e-6).
+
+**What it reports.** Counts per kind; the old courses, by name when OSM has
+one; after the run, the wet area and the deepest water over them; and the
+neighbouring buildings the water reaches — depth against their walls (open
+cells within 3 m of the footprint itself), arrival time, outlined from amber
+(a few cm) to red (≥ 0.5 m), a click frames each one.
+
+**Traps found on the way (Torre Poblenou, ICGC relief, 2 m, extreme storm):**
+
+- **Culverted rieras read as open channels.** Barcelona's old streams (Rec
+  Comtal, the rieras) are mapped as `waterway=stream` + `tunnel=culvert` for
+  hundreds of metres under the Eixample. Cut into the ground, they became
+  canals through the city blocks. A culvert longer than 40 m is a buried
+  course now; a short one (a crossing under a road) is still cut.
+- **Courtyards filled with roof rain.** Eixample blocks close a patio on all
+  sides; the roofs around it drained into it — 88 of 93 deep cells, up to
+  2.37 m. Open regions not touching the grid edge are drained courtyards (their
+  own drains): no roof rain, their own rain lost.
+- **One-cell slits between footprints.** Two OSM footprints a cell apart left
+  a slit that collected 58 cm. `closeSlits` closes open cells walled on both
+  sides (W&E or N&S), up to 4 passes, before the pocket filling.
+- **Roof rain into one corner.** The nearest-cell routing sent a whole
+  building's roof into a 2 × 2 recess (59 cm). A neighbour's roof now spreads
+  evenly over its whole open perimeter (`buildingOf` groups); the IFC keeps the
+  nearest-cell routing.
+- **One pond, nine "neighbours".** The reach was first measured over each
+  footprint's bounding box: a 4 × 6 m recess at 51 cm was handed to every
+  building of the block around it. It is now measured from the footprint's own
+  cells: 39 → 16 neighbours, the recess on the 2 that border it.
+- **Overpass busy.** overpass-api.de answered 504 for a while, even to a
+  hydrology-only query; the map then builds from the vector tiles — buildings,
+  streets and land cover, no watercourses or walls — and the panel says so.
+  The tiles' version is cached, so `getOsmContext()` asks Overpass again over
+  it, at most once a minute ("Rebuild"), and keeps the tiles if it is still
+  busy. QA: `globalThis.__geoForceFallback = true` (dev).
+
+Measured with Overpass: 93 streets, 17 green or soil areas, 3 old or buried
+courses, 9 walls, 36 buildings.
+
 ## Architecture
 
 ```
 core/        pure TS, no DOM: grid, hyetograph, solver contract, CPU reference
              solver (float64), analytic solutions, reference cases, half floats
 raster/      domain, GPU rasterisation, grid assembly, hole filling, roof runoff,
-             DEM reader and writer (GeoTIFF / ASC), georeference maths
+             DEM reader and writer (GeoTIFF / ASC), georeference maths,
+             the OSM neighbourhood per cell (osm-surface)
 validation/  the elements the water reaches (pure)
-view/        water layer, simulation ground, flow particles
+view/        water layer, simulation ground, flow particles, OSM overlays
+             (old courses, reached neighbours)
 ui/          FloodPanel, timeline, probe, hyetograph editor, the validation
              group and its slot, the capture overlay (strings in locales/)
 system.ts    the viewer-side owner (viewer.getFlood())

@@ -59,6 +59,24 @@ describe('grid frame', () => {
 })
 
 describe('roof runoff', () => {
+  it("shares a neighbour's roof evenly along its perimeter, a recess no more than its frontage", () => {
+    // 12 × 9 grid; a 6 × 5 building (cells i 3..8, j 2..6) with a 1-cell recess cut into its north side.
+    const nx = 12, ny = 9
+    const blocked = new Uint8Array(nx * ny)
+    const roofed = new Uint8Array(nx * ny)
+    const groups = new Int32Array(nx * ny).fill(-1)
+    for (let j = 2; j <= 6; j++) for (let i = 3; i <= 8; i++) { const c = j * nx + i; blocked[c] = 1; roofed[c] = 1; groups[c] = 0 }
+    const recess = 6 * nx + 5
+    blocked[recess] = 0; roofed[recess] = 0; groups[recess] = -1
+    const r = routeRoofRain(nx, ny, roofed, blocked, 'perimeter', undefined, groups)
+    const total = r.rainFactor.reduce((a, v) => a + v, 0)
+    expect(total).toBeCloseTo(nx * ny, 4) // nothing lost
+    // 29 roof cells over the open perimeter; the recess gets one share (+ its own rain), like any frontage cell.
+    const front = 1 * nx + 5 // a cell on the south frontage
+    expect(r.rainFactor[recess] - 1).toBeCloseTo(r.rainFactor[front] - 1, 5)
+    expect(r.rainFactor[recess]).toBeLessThan(3)
+  })
+
   // 6 × 5 grid with a 2 × 2 building in the middle and a canopy cell beside it.
   const nx = 6
   const ny = 5

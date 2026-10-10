@@ -41,6 +41,7 @@ import { pointInPolygon } from './context-suppression'
 import { assembleMultipolygon } from './multipolygon'
 import { partitionBuildingParts } from './building-parts'
 import { shanghaiBridgeWidth } from './shanghai-bridges'
+import { hydrologyQueryParts } from './osm-hydro'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
@@ -2167,10 +2168,11 @@ export function buildFeaturesQuery(
       + area('["landuse"~"^(sand|quarry)$"]')
       + area('["golf"="bunker"]')
       + area('["amenity"="parking"]'),
-      // Trimmed from 0.30 to pay for the barriers below: the densest park box
-      // measured (Ciutadella) holds ~240 ground-cover polygons in 0.7 km², far
-      // inside this share of a 1.4 km box at any realistic element cap.
-      Math.round(maxElements * 0.25),
+      // Trimmed from 0.30 to pay for the barriers below, and to 0.23 for the
+      // flood's hydrology group: the densest park box measured (Ciutadella)
+      // holds ~240 ground-cover polygons in 0.7 km², far inside this share of a
+      // 1.4 km box at any realistic element cap.
+      Math.round(maxElements * 0.23),
     ],
     [area('["railway"="platform"]'), Math.round(maxElements * 0.02)],
     // THE WATERFRONT. None of this was ever requested, and at a harbour that is
@@ -2211,6 +2213,11 @@ export function buildFeaturesQuery(
     // Access must survive a dense street result cap. Duplicate ways are removed
     // by the parser; elevators were previously never requested at all.
     [`way["highway"="steps"](${b});node["highway"="elevator"](${b});`, Math.round(maxElements * 0.03)],
+    // For the flood simulation (osm-hydro): watercourses that are gone — a
+    // river culverted or filled in still shapes where water goes — and the
+    // dykes and flood walls that hold it back. A handful of ways per site; the
+    // map draws none of them, so this costs nothing it shows.
+    [hydrologyQueryParts(b), Math.round(maxElements * 0.02)],
   ]
 
   return [

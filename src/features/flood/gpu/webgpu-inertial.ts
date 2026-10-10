@@ -149,7 +149,8 @@ export class WebGpuInertialSolver implements FloodSolver {
       st[c * 4] = g.z[c]
       st[c * 4 + 1] = g.rainFactor[c]
       st[c * 4 + 2] = g.manning[c]
-      st[c * 4 + 3] = g.blocked[c]
+      // Blocked = 1; an open cell carries its infiltration factor, negated.
+      st[c * 4 + 3] = g.blocked[c] ? 1 : -(g.infiltration ? g.infiltration[c] : 1)
     }
     this.texStatic = device.createTexture({
       size: [nx, ny], format: 'rgba32float', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,

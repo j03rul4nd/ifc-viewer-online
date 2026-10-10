@@ -42,6 +42,8 @@ export interface FloodSettings {
   useMapTerrain: boolean
   /** Stand the map's relief / a DEM on the model's ground floor when they disagree (system.ts GroundFit). */
   fitGround: boolean
+  /** Read the neighbourhood from OpenStreetMap: streets, parks, watercourses (and old ones), walls (osm-surface). */
+  useOsm: boolean
   /** The preset the rain started from; null once edited by hand. */
   storm: StormPreset | null
   hyetograph: Hyetograph
@@ -88,6 +90,7 @@ export const useFloodStore = create<FloodState>()((set) => ({
   includeMapBuildings: true,
   useMapTerrain: true,
   fitGround: true,
+  useOsm: true,
   storm: 'storm',
   hyetograph: stormHyetograph('storm'),
   drainMin: 30,

@@ -79,6 +79,9 @@ function videoMime(): { mime: string; ext: 'mp4' | 'webm' } | null {
 
 const fmtDepthScale = (v: number): string => (v < 1 ? `${Math.round(v * 100)} cm` : `${v.toFixed(1)} m`)
 
+/** The locale key of an OSM label ("Sports centre" → osm.kind.sports_centre). */
+const kindKey = (label: string): string => `osm.kind.${label.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]+/g, '_')}`
+
 const caption = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]'
 const selectCls = 'h-[26px] px-1.5 rounded-[7px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-[10.5px]'
 
@@ -176,6 +179,7 @@ export default function FloodPanel({ viewerApiRef }: Props) {
         roofRunoff: st.roofRunoff,
         manning: MANNING[st.manning],
         includeMapBuildings: st.includeMapBuildings,
+        useOsm: st.useOsm,
         useMapTerrain: st.useMapTerrain,
         fitGround: st.fitGround,
         demFile: demRef.file,
@@ -416,6 +420,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
               <div className={caption}>{t('buildings.title')}</div>
               <SwitchRow compact label={t('buildings.map')} checked={s.includeMapBuildings && mapOn} disabled={!mapOn}
                 note={mapOn ? undefined : t('buildings.mapOff')} onChange={(v) => s.set({ includeMapBuildings: v })} />
+              <SwitchRow compact label={t('osm.switch')} checked={s.useOsm && mapOn} disabled={!mapOn}
+                note={mapOn ? undefined : t('osm.mapOff')} onChange={(v) => s.set({ useOsm: v })} />
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-[var(--text-faint)] w-[54px]">{t('buildings.roofs')}</span>
                 <Segmented
@@ -525,9 +531,26 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                     on the Hotel Vela's architecture model alone (176 walls, 702 canopies): its slabs
                     and basement walls live in the structural model of the set. */}
                 {rep.canopyCells > 50 && rep.canopyCells > rep.obstacleCells && <Notice tone="warn">{t('report.canopyWarn')}</Notice>}
+                {rep.courtyardCells > 0 && <Notice tone="muted">{t('report.courtyards', { area: fmt(rep.courtyardCells * rep.dx * rep.dx, 0) })}</Notice>}
                 {rep.terrain === 'plane' && <Notice tone="warn">{t('report.planeWarn', { y: fmt(rep.planeY, 2) })}</Notice>}
                 {rep.mapTerrain?.source === 'terrarium' && <Notice tone="warn">{t('report.coarseDem')}</Notice>}
                 {rep.dem?.notes.map((n) => <Notice key={n} tone={n === 'reprojected' || n === 'sameCrs' ? 'muted' : 'warn'}>{t(`demNote.${n}`)}</Notice>)}
+                {rep.osm && ('error' in rep.osm
+                  ? <Notice tone="warn">{t('osm.failed', { message: rep.osm.error })}</Notice>
+                  : (
+                    <>
+                      <StatRow label={t('osm.title')} value={t('osm.counts', rep.osm.counts)} />
+                      {rep.osm.counts.oldCourses > 0 && (
+                        <Notice tone="info">
+                          {rep.osm.oldCourseNames.length
+                            ? t('osm.oldCourse', { names: rep.osm.oldCourseNames.join(', ') })
+                            : t('osm.oldCourseUnnamed', { n: rep.osm.counts.oldCourses })}
+                        </Notice>
+                      )}
+                      {rep.osm.truncated && <Notice tone="warn">{t('osm.partial')}</Notice>}
+                      {rep.osm.fallback && <Notice tone="warn">{t('osm.fallback')}</Notice>}
+                    </>
+                  ))}
                 {rep.groundFit && (
                   <>
                     <Notice tone={rep.groundFit.applied ? 'info' : 'warn'}>
@@ -599,6 +622,29 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                     </>
                   )}
                 </div>
+                {s.affected?.oldCourse && (
+                  <Notice tone={s.affected.oldCourse.wetAreaM2 > 0 ? 'warn' : 'muted'}>
+                    {t('osm.oldCourseWet', {
+                      names: s.affected.oldCourse.names.length ? s.affected.oldCourse.names.join(', ') : t('osm.oldCourseGeneric'),
+                      wet: fmt(s.affected.oldCourse.wetAreaM2, 0), area: fmt(s.affected.oldCourse.areaM2, 0),
+                      depth: fmt(s.affected.oldCourse.maxDepth, 2),
+                    })}
+                  </Notice>
+                )}
+                {s.affected?.neighbours && s.affected.neighbours.length > 0 && (
+                  <div className="flex flex-col gap-0.5 mt-0.5">
+                    <div className="text-[10.5px] text-[var(--text-dim)]">{t('osm.neighbours', { n: s.affected.neighbours.length })}</div>
+                    <div className="text-[9.5px] leading-snug text-[var(--text-faint)]">{t('osm.neighbourHint')}</div>
+                    {s.affected.neighbours.slice(0, 8).map((nb) => (
+                      <button key={nb.id} onClick={() => sysRef.current?.focusNeighbour(nb.id)}
+                        className="flex items-center gap-2 px-1.5 py-1 rounded-[6px] hover:bg-[var(--surface-2)] text-left">
+                        <span className="shrink-0 min-w-[44px] text-center text-[10px] font-mono font-semibold text-[#ff8a3d]">{nb.depth < 1 ? `${Math.round(nb.depth * 100)} cm` : `${nb.depth.toFixed(2)} m`}</span>
+                        <span className="min-w-0 flex-1 truncate text-[10.5px] text-[var(--text)]">{nb.name ?? (nb.label ? t(kindKey(nb.label), { defaultValue: nb.label }) : t('osm.unnamed'))}</span>
+                        {nb.arrivalS !== null && <span className="shrink-0 text-[9.5px] text-[var(--text-faint)]">{fmtTime(nb.arrivalS)}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 

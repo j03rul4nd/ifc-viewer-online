@@ -23,7 +23,7 @@ precision highp usampler2D;
 `
 
 const COMMON = /* glsl */`
-uniform sampler2D uStatic;   // (z, rainFactor, n, blocked)
+uniform sampler2D uStatic;   // (z, rainFactor, n, blocked: 1, or −infiltration factor when open)
 uniform highp usampler2D uCtrl;
 uniform int uNx;
 uniform int uNy;
@@ -231,7 +231,7 @@ void main() {
   // Infiltration from the step's start time; cells.w keeps the depth absorbed so far.
   float tStart = float(c.x - c.y) * 0.001;
   float f = max(uInf.y + (uInf.x - uInf.y) * exp(-uInf.z * tStart / 3600.0), 0.0) / 3600000.0;
-  float loss = min(hn, f * dt);
+  float loss = min(hn, f * dt * max(-s.w, 0.0)); // open cell: w = −infiltration factor
   hn -= loss;
   float u = 0.0;
   float v = 0.0;
