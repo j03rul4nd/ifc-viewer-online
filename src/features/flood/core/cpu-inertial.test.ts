@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import { CpuInertialSolver } from './cpu-inertial'
-import { damBreak, lakeAtRest, rainOnPlane, type FloodCase } from './cases'
+import { damBreak, infiltrationBasin, lakeAtRest, rainOnPlane, type FloodCase } from './cases'
 import { kinematicEquilibriumTime, kinematicPlaneDepth, ritterDepth } from './analytic'
 import { createGrid, effectiveRainArea, inclinedPlaneDemo, blockLayout } from './grid'
 import { constantStorm, depthUpToMs, triangularStorm } from './hyetograph'
-import { nextStepMs, DEFAULT_PARAMS } from './solver-api'
+import { infiltrationRate, nextStepMs, DEFAULT_PARAMS } from './solver-api'
 
 const run = (c: FloodCase): CpuInertialSolver => {
   const s = new CpuInertialSolver({ grid: c.grid, hyetograph: c.hyetograph, params: c.params })
@@ -182,6 +182,39 @@ describe('dam break (Ritter)', () => {
     expect(front - x0).toBeGreaterThan(0.2 * 2 * c0 * c.durationS)
     expect(front - x0).toBeLessThan(1.05 * 2 * c0 * c.durationS)
     expect(err / norm).toBeLessThan(0.2)
+  })
+})
+
+describe('infiltration', () => {
+  const closedEdges = { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const
+
+  it('a ground that absorbs faster than it rains keeps the surface dry', () => {
+    const grid = inclinedPlaneDemo({ nx: 30, ny: 30, dx: 2, slopeX: 0.01 })
+    const s = new CpuInertialSolver({
+      grid, hyetograph: constantStorm(20, 30, 5),
+      params: { boundary: closedEdges, infiltration: { initialMmH: 50, finalMmH: 50, decayPerHour: 0 } },
+    })
+    s.advanceSync(40 * 60)
+    const st = s.statsSync()
+    expect(st.volume).toBeLessThan(1e-9)
+    expect(st.infiltratedVolume / st.rainVolume).toBeCloseTo(1, 9)
+    expect(Math.abs(st.massError)).toBeLessThan(1e-9)
+  })
+
+  it('Horton: absorbs no more than f(t) allows, and the balance closes', () => {
+    const c = infiltrationBasin(40)
+    const s = run(c)
+    const st = s.statsSync()
+    expect(st.infiltratedVolume).toBeGreaterThan(0)
+    expect(st.volume).toBeGreaterThan(0)
+    // Upper bound: every open cell absorbing f(t) for the whole event.
+    const inf = c.params.infiltration!
+    let maxDepth = 0
+    for (let t = 0; t < c.durationS; t += 1) maxDepth += infiltrationRate(inf, t + 0.5)
+    let open = 0
+    for (let k = 0; k < c.grid.blocked.length; k++) if (!c.grid.blocked[k]) open++
+    expect(st.infiltratedVolume).toBeLessThanOrEqual(maxDepth * open * c.grid.dx * c.grid.dx * 1.0001)
+    expect(Math.abs(st.massError)).toBeLessThan(1e-9)
   })
 })
 

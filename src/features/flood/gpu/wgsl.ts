@@ -17,7 +17,8 @@
 // can be recorded with a fixed number of steps and the CPU never waits on the
 // GPU in the middle of it.
 //
-// Storage buffers per pipeline: 6 (ctrl, cells, qIn, q, maxima, boundary) —
+// Storage buffers per pipeline: 7 (ctrl, cells, qIn, q, maxima, boundary,
+// infiltration) —
 // under the default limit of 8, so no adapter needs raised limits. The static
 // fields (z, rainFactor, n, blocked) are a texture for the same reason.
 
@@ -27,10 +28,11 @@ struct Params {
   rainIntervalMs: u32, implicitFriction: u32, pad0: u32, pad1: u32,
   dx: f32, g: f32, theta: f32, alpha: f32,
   hEps: f32, dtMax: f32, freeSlopeMin: f32, wetThreshold: f32,
+  infInitial: f32, infFinal: f32, infDecay: f32, pad2: f32,
 };
 `
 
-export const PARAMS_BYTES = 64
+export const PARAMS_BYTES = 80
 export const RAIN_SLOTS = 4096 // vec4 × 1024 = 16 KiB of uniform
 export const CTRL_BYTES = 32
 
@@ -50,8 +52,15 @@ struct Ctrl {
 @group(0) @binding(6) var<storage, read_write> q: array<vec2f>;
 @group(0) @binding(7) var<storage, read_write> mx: array<vec4f>;
 @group(0) @binding(8) var<storage, read_write> bnd: array<f32>;
+@group(0) @binding(9) var<storage, read_write> inf: array<f32>;
 
 const H_FLOOR: f32 = 1e-6;
+
+// Horton, from the step's start time (s): m/s.
+fn infiltrationRate(tS: f32) -> f32 {
+  let f = P.infFinal + (P.infInitial - P.infFinal) * exp(-P.infDecay * tS / 3600.0);
+  return max(f, 0.0) / 3600000.0;
+}
 
 fn st(i: u32, j: u32) -> vec4f { return textureLoad(ST, vec2u(i, j), 0); }
 fn hAt(i: u32, j: u32) -> f32 { return cells[j * P.nx + i].x; }
@@ -230,6 +239,11 @@ fn k_cont(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let cell = cells[c];
       let k = dt / P.dx;
       hn = max(cell.x + k * (qL - qR + qB - qT) + dt * C.rate * s.y, 0.0);
+      let loss = min(hn, infiltrationRate(f32(C.tMs - C.dtMs) * 0.001) * dt);
+      if (loss > 0.0) {
+        hn = hn - loss;
+        inf[c] = inf[c] + loss;
+      }
       var u = 0.0;
       var v = 0.0;
       if (hn > P.hEps) {
@@ -260,32 +274,43 @@ ${PARAMS}
 @group(0) @binding(2) var<storage, read> mx: array<vec4f>;
 @group(0) @binding(3) var<storage, read_write> partials: array<vec4f>;
 @group(0) @binding(4) var<storage, read_write> disp: array<vec2u>;
+@group(0) @binding(5) var<storage, read> inf: array<f32>;
 
 var<workgroup> red: array<vec4f, 256>;
+var<workgroup> redInf: array<f32, 256>;
 
 fn flat(wg: vec3u, nwg: vec3u, li: u32) -> u32 { return (wg.y * nwg.x + wg.x) * 256u + li; }
 
-// Per workgroup of 256 cells: (Σh, wet cells, max h, max speed of wet cells).
+// Per workgroup of 256 cells: (Σh, wet cells, max h, max speed of wet cells)
+// and (Σ infiltrated depth, 0, 0, 0) — two vec4 per workgroup.
 @compute @workgroup_size(256)
 fn k_stats(@builtin(workgroup_id) wg: vec3u, @builtin(num_workgroups) nwg: vec3u, @builtin(local_invocation_index) li: u32) {
   let gidx = flat(wg, nwg, li);
   var v = vec4f(0.0);
+  var d = 0.0;
   if (gidx < P.nx * P.ny) {
     let c = cells[gidx];
     let wet = c.x > P.wetThreshold;
     v = vec4f(c.x, select(0.0, 1.0, wet), c.x, select(0.0, length(c.yz), wet));
+    d = inf[gidx];
   }
   red[li] = v;
+  redInf[li] = d;
   workgroupBarrier();
   for (var s = 128u; s > 0u; s = s >> 1u) {
     if (li < s) {
       let a = red[li];
       let b = red[li + s];
       red[li] = vec4f(a.x + b.x, a.y + b.y, max(a.z, b.z), max(a.w, b.w));
+      redInf[li] = redInf[li] + redInf[li + s];
     }
     workgroupBarrier();
   }
-  if (li == 0u) { partials[wg.y * nwg.x + wg.x] = red[0]; }
+  if (li == 0u) {
+    let w = wg.y * nwg.x + wg.x;
+    partials[w * 2u] = red[0];
+    partials[w * 2u + 1u] = vec4f(redInf[0], 0.0, 0.0, 0.0);
+  }
 }
 
 // Display frame: (h, u) and (v, hMax) as half floats.

@@ -51,6 +51,27 @@ export interface SolverParams {
   /** Depth that counts as flooded for metrics and maximum velocity (m). */
   wetThreshold: number
   boundary: BoundaryConfig
+  /** Water the ground absorbs, or null for an impervious surface. */
+  infiltration: Infiltration | null
+}
+
+/**
+ * Horton's infiltration: f(t) = fc + (f0 − fc)·e^(−k·t), t the time since the
+ * event began (the soil wets from the first drop), in mm/h. f0 = fc is a
+ * constant rate. Applied to every open cell, never more than the water there.
+ */
+export interface Infiltration {
+  initialMmH: number
+  finalMmH: number
+  /** k, per hour. */
+  decayPerHour: number
+}
+
+/** The infiltration rate at time tS (s), m/s. */
+export function infiltrationRate(inf: Infiltration | null, tS: number): number {
+  if (!inf) return 0
+  const f = inf.finalMmH + (inf.initialMmH - inf.finalMmH) * Math.exp(-inf.decayPerHour * (tS / 3600))
+  return Math.max(0, f) / 3_600_000
 }
 
 export const DEFAULT_PARAMS: SolverParams = {
@@ -63,6 +84,7 @@ export const DEFAULT_PARAMS: SolverParams = {
   freeSlopeMin: 1e-3,
   wetThreshold: 0.05,
   boundary: { west: 'free', east: 'free', south: 'free', north: 'free' },
+  infiltration: null,
 }
 
 /** Below this, √(g·h) would be zero; the step is then limited by dtMax. */
@@ -113,8 +135,10 @@ export interface FloodStats {
   rainVolume: number
   /** Water that has left through free edges, m³. */
   outflowVolume: number
+  /** Water the ground has absorbed, m³. */
+  infiltratedVolume: number
   initialVolume: number
-  /** (stored + out − rain − initial) / (rain + initial). */
+  /** (stored + out + infiltrated − rain − initial) / (rain + initial). */
   massError: number
 }
 

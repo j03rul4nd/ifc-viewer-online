@@ -15,7 +15,8 @@
 //   2. LIMITER: a cell whose outflows would take more than the water it holds
 //      has all of them scaled down by h / outflow. Each face has one donor, so
 //      the scaling conserves mass exactly and depth never goes negative.
-//   3. CONTINUITY: h += Δt/Δx · (in − out) + Δt · rain · rainFactor.
+//   3. CONTINUITY: h += Δt/Δx · (in − out) + Δt · rain · rainFactor, then
+//      infiltration takes min(h, f(t)·Δt) (Horton, from the step's start time).
 //
 // The step itself is chosen by nextStepMs (solver-api.ts).
 
@@ -23,7 +24,7 @@ import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '
 import { intervalMs, ratesMs, type Hyetograph } from './hyetograph'
 import { packDisplay } from './half'
 import {
-  nextStepMs, resolveParams,
+  infiltrationRate, nextStepMs, resolveParams,
   type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams,
 } from './solver-api'
 
@@ -66,6 +67,8 @@ export class CpuInertialSolver implements FloodSolver {
   private readonly mv: Float64Array
   private readonly mt: Float64Array
   private readonly mw: Float64Array
+  /** Depth absorbed by the ground so far, per cell (m). */
+  private readonly inf: Float64Array
 
   private tMs = 0
   private stepCount = 0
@@ -98,6 +101,7 @@ export class CpuInertialSolver implements FloodSolver {
     this.mv = new Float64Array(nc)
     this.mt = new Float64Array(nc)
     this.mw = new Float64Array(nc).fill(-1)
+    this.inf = new Float64Array(nc)
     for (let c = 0; c < nc; c++) {
       if (this.h[c] > this.hMaxNow) this.hMaxNow = this.h[c]
       if (this.h[c] > this.params.wetThreshold) this.mw[c] = 0
@@ -244,8 +248,10 @@ export class CpuInertialSolver implements FloodSolver {
       }
     }
 
-    // 4. Continuity, velocities, maxima.
+    // 4. Continuity, velocities, maxima; then the ground takes its share
+    // (never more than the water there).
     const tEnd = (this.tMs + dtMs) / 1000
+    const loss = infiltrationRate(p.infiltration, this.tMs / 1000) * dt
     let hm = 0
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
@@ -258,6 +264,11 @@ export class CpuInertialSolver implements FloodSolver {
         const qT = qyN[f + W]
         let hn = h[c] + k * (qL - qR + qB - qT) + dt * rate * rainFactor[c]
         if (hn < 0) hn = 0
+        if (loss > 0) {
+          const l = Math.min(hn, loss)
+          hn -= l
+          this.inf[c] += l
+        }
         h[c] = hn
         let uc = 0
         let vc = 0
@@ -308,9 +319,11 @@ export class CpuInertialSolver implements FloodSolver {
     let vol = 0
     let wet = 0
     let vMax = 0
+    let infd = 0
     for (let c = 0; c < this.h.length; c++) {
       const hc = this.h[c]
       vol += hc
+      infd += this.inf[c]
       if (hc > p.wetThreshold) {
         wet++
         const sp = Math.hypot(this.u[c], this.v[c])
@@ -320,6 +333,7 @@ export class CpuInertialSolver implements FloodSolver {
     const a = g.dx * g.dx
     const volume = vol * a
     const rainVolume = this.rainDepth * this.rainArea
+    const infiltratedVolume = infd * a
     const denom = Math.max(rainVolume + this.v0, 1e-12)
     return {
       t: this.tMs / 1000,
@@ -331,8 +345,9 @@ export class CpuInertialSolver implements FloodSolver {
       floodedArea: wet * a,
       rainVolume,
       outflowVolume: this.outflow,
+      infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow - rainVolume - this.v0) / denom,
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / denom,
     }
   }
 

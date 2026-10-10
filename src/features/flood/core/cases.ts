@@ -71,6 +71,19 @@ export function rainOnPlane(L = 100, dx = 1, slope = 0.01, n = 0.03, mmH = 50, m
   }
 }
 
+/** A closed basin under a storm, the ground absorbing water (Horton). */
+export function infiltrationBasin(n = 80): FloodCase {
+  const grid = inclinedPlaneDemo({ nx: n, ny: n, dx: 2, slopeX: 0.01, slopeY: 0.004, roughnessAmplitude: 0.6, seed: 5, obstacles: blockLayout(n, n, 14, 5) })
+  return {
+    id: 'infiltration', title: 'Closed basin, Horton infiltration', grid, hyetograph: constantStorm(60, 40, 5),
+    params: {
+      boundary: { ...closed },
+      infiltration: { initialMmH: 40, finalMmH: 8, decayPerHour: 2 },
+    },
+    durationS: 70 * 60,
+  }
+}
+
 /** Rain on a sloping street grid between buildings — the demo and the benchmark. */
 export function cityDemo(n = 500, dx = 2, mmH = 90, minutes = 45): FloodCase {
   const grid = inclinedPlaneDemo({

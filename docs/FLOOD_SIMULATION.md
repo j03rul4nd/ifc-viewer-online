@@ -14,7 +14,7 @@ Code: `src/features/flood/` (self-contained; lazy-loaded; gated by
 |---|---|---|
 | 1 | Solver (CPU reference, WebGPU, WebGL2), worker, test cases, demo grid | **done** |
 | 2 | Terrain + building rasterisation from the IFC, georeferencing, 3-D water layer, panel | **done** (flag off) |
-| 3 | Timeline (hyetograph, flooded-area curve, scrub), live metrics, probe, flow particles, snapshots | planned |
+| 3 | Timeline (hyetograph, flooded-area curve, scrub, replay), probe, flow particles, speed view, snapshots, infiltration, hyetograph editor | **done** (flag off) |
 | 4 | Affected IFC elements in the validation panel, CSV / GeoTIFF / PNG / video export | planned |
 
 With `VITE_FEATURE_FLOOD=true` the viewer gets a Flood tool (rail icon and
@@ -159,6 +159,49 @@ with the map off).
   read is fine (×2 480 on the same grid) and the loop yields through a
   `MessageChannel`.
 
+## Timeline, probe and flow (phase 3)
+
+- **Snapshots** (`worker/snapshots.ts`): the worker records the state — per
+  cell (h, u, v, running max) as half floats, deflated — every
+  `interval` simulated seconds (~200 per event, 10 s to 10 min), on exact
+  instants of the solver's clock (a batch never runs past the next one). Over
+  a 256 MB budget every other snapshot is dropped and the interval doubles, so
+  a long event keeps its whole span. Any instant is interpolated between the
+  two snapshots around it, so the timeline scrubs and replays without solving
+  again. Measured: 211 snapshots of a 101 × 101 grid in 10 MB.
+- **Run vs replay**: a run always computes as fast as the GPU allows, showing
+  the live state; the timeline then replays from the snapshots at 1, 5 or
+  20 simulated min per second, from any instant already computed. "Back to
+  live" returns to the run while it is still computing.
+- **Timeline** (`ui/FloodTimeline.tsx`): the storm hanging from the top (as
+  hyetographs are drawn), the flooded-area curve (one reading per snapshot),
+  the part not yet computed shaded, a draggable cursor, and the readings at
+  the cursor — rain, flooded area, deepest water, water on the surface — or
+  under the pointer while hovering; the colour scale of the current view.
+- **Probe** (`setProbing` / `probe` in `system.ts`): while armed the viewer
+  neither hovers nor selects (`floodPointerSuppressed`, like the map editor's
+  flag); a click (≤ 5 px, ≤ 400 ms — a drag still orbits) meets the water or
+  the ground by iterating the camera ray on the heightfield, drops a pin, and
+  reads depth and speed at the instant on screen, the deepest so far, when the
+  water arrived and peaked, the ground's absolute elevation when the model
+  states its datum, and the depth at every snapshot (a sparkline).
+- **Views**: depth now, maximum depth, speed (coloured where deeper than the
+  threshold), and **flow lines** (`view/flow-particles.ts`): GPU particles on
+  the viewer's renderer, advected through the same display-frame texture the
+  water draws, respawned at random wet cells, drawn as streaks along the
+  velocity (at least half a cell, at most three), brighter when faster.
+- **Infiltration** (all three solvers): Horton's `f(t) = fc + (f0 − fc)·e^(−k·t)`
+  from the event start, never more than the water in the cell, the absorbed
+  depth kept per cell so the mass balance includes it. Presets: compacted soil
+  (25 → 3 mm/h), loam (75 → 13), sandy (125 → 25), or impervious.
+- **Hyetograph editor** (`ui/HyetographEditor.tsx`): draw the intensities;
+  1–30 min intervals, 15 min to 6 h; total depth and peak always shown.
+
+QA trap: after editing a module, Vite serves it as `?t=…` to the modules that
+import it; importing `/src/features/flood/store.ts` from the console then gives
+a second store. Read the importer's source for the real URL (or use
+`globalThis.__flood`, which is the system the app created).
+
 ## Architecture
 
 ```
@@ -217,6 +260,7 @@ on WebGPU and WebGL2 against the CPU, then a run through the worker. Result
 | Case | Steps GPU / CPU | Relative L1 vs CPU | Mass error (GPU) |
 |---|---|---|---|
 | Lake at rest | 4101 / 4101 | 0 | 0 |
+| Closed basin with Horton infiltration | 4684 / 4684 | 4.4e-7 | ≤ 7.3e-7 |
 | Dam break | 109 / 109 | 3.6e-7 | ≤ 1.6e-8 |
 | Rain on plane | 1463 / 1463 | 1.7e-6 | 2.1e-6 |
 | City demo 96² | 3776 / 3776 | 3.0e-6 | ≤ 2.5e-8 |
