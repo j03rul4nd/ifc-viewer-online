@@ -74,7 +74,13 @@ function Row({ e, t, onJump }: { e: AffectedElement; t: T; onJump: Props['onJump
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[11px] text-[var(--text)]">{label}</span>
         <span className="block truncate text-[9.5px] text-[var(--text-faint)]">
-          {[ifcName(e.ifcClass), e.storey, e.arrivalS !== null ? t('affected.arrives', { t: fmtTime(e.arrivalS) }) : null].filter(Boolean).join(' · ')}
+          {[
+            ifcName(e.ifcClass), e.storey,
+            // The chip is the level over the element's bottom; the water outside can be much
+            // shallower when it stands on a terrace or step higher than the floor.
+            !e.belowGround && e.depth - e.waterDepth > 0.02 ? t('affected.outside', { d: fmtDepth(e.waterDepth) }) : null,
+            e.arrivalS !== null ? t('affected.arrives', { t: fmtTime(e.arrivalS) }) : null,
+          ].filter(Boolean).join(' · ')}
         </span>
       </span>
     </button>
