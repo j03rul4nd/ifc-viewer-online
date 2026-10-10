@@ -83,7 +83,9 @@
       "client": "Cliente",
       "clientDesc": "Modalità presentazione cliente",
       "article": "Articolo",
-      "articleDesc": "Figura per un articolo: canvas, inquadratura stretta, scorrimento pagina"
+      "articleDesc": "Figura per un articolo: canvas, inquadratura stretta, scorrimento pagina",
+      "embed": "In un'app",
+      "embedDesc": "Dentro un'app ospite: 3D + proprietà, Valida e Misura, senza Apri/Condividi/account"
     },
     "optionsLabel": "Opzioni",
     "autoValidate": "Esegui la validazione al caricamento",

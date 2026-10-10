@@ -65,6 +65,16 @@
     "none": "0 en el modelo",
     "upper": "≤ {{count}} en el modelo"
   },
+  "where": {
+    "add": "Solo cuando…",
+    "label": "Solo cuando",
+    "remove": "Quitar condición",
+    "hint": "Comprueba solo los elementos con este valor de propiedad — cuenta también el valor del tipo del elemento. Booleanos: true / false."
+  },
+  "optional": {
+    "label": "Solo si existen",
+    "hint": "No suspende el modelo si no tiene ninguno de estos elementos (IDS optional)."
+  },
   "lint": {
     "title": "Revisa esta regla:",
     "entityNotIfc": "La entidad no parece una clase IFC (p. ej. IfcWall)",
@@ -72,7 +82,9 @@
     "badRegex": "La expresión regular no es válida",
     "numericNaN": "El valor numérico debe ser un número",
     "emptyEquals": "El valor esperado está vacío",
-    "emptyAllowed": "Los valores permitidos contienen una opción vacía"
+    "emptyAllowed": "Los valores permitidos contienen una opción vacía",
+    "whereIncomplete": "La condición necesita una propiedad y un valor",
+    "whereBoolean": "Escribe los booleanos en minúscula: true / false"
   },
   "stats": {
     "validated": "Validados",

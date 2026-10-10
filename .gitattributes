@@ -5,3 +5,11 @@ public/models/shanghai-tower/*.ifc text eol=lf
 public/models/barcelona-catalunya/*.ifc text eol=lf
 public/models/helsinki/*.ifc text eol=lf
 public/models/tokyo/*.ifc text eol=lf
+test/fixtures/**/*.ifc text eol=lf
+
+# The SDK build is served byte for byte: a pinned copy is immutable and its
+# SRI hash is recorded in public/sdk/versions.json, so no line-ending
+# conversion may ever touch it (or the moving file it must equal).
+public/sdk/ifc-viewer.es.js -text
+public/sdk/ifc-viewer.es.d.ts -text
+public/sdk/[0-9]*/** -text

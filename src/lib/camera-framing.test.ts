@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveFraming, presetPose, fitPose, PRESET_VIEW, SPREAD_LIMIT_M, type FramingItem } from './camera-framing'
+import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, SPREAD_LIMIT_M, type FramingItem } from './camera-framing'
 
 function item(id: string, x: number, opts: Partial<FramingItem> = {}): FramingItem {
   return {
@@ -144,5 +144,72 @@ describe('fitPose', () => {
     const pose = fitPose(box, PRESET_VIEW.top, 45, 1, 5)
     expect(Number.isFinite(pose.position.x + pose.position.y + pose.position.z)).toBe(true)
     expect(pose.position.y).toBeGreaterThan(6)
+  })
+})
+
+describe('small objects (a 1230 × 1480 × 70 mm catalogue window)', () => {
+  // Scene axes (Y up): 1.23 wide, 1.48 tall, 0.07 deep.
+  const win = { min: { x: 0, y: 0, z: -0.07 }, max: { x: 1.23, y: 1.48, z: 0 } }
+  const diag = Math.hypot(1.23, 1.48, 0.07)
+  const dist = (p: { position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } }) =>
+    Math.hypot(p.position.x - p.target.x, p.position.y - p.target.y, p.position.z - p.target.z)
+
+  it('presetPose stands off in proportion to the object, not at a fixed floor', () => {
+    const d = dist(presetPose(win, 'iso', 45, 16 / 9))
+    // A 2 m radius floor used to put this at ~6 m: the window a speck.
+    expect(d).toBeLessThan(diag * 2.5)
+    expect(d).toBeGreaterThan(diag / 2)
+    // and a 20 cm handle gets closer still
+    const handle = { min: { x: 0, y: 0, z: 0 }, max: { x: 0.2, y: 0.03, z: 0.05 } }
+    expect(dist(presetPose(handle, 'front'))).toBeLessThan(1)
+  })
+
+  it('fitPose scales with the object at any size (no 2 m floor)', () => {
+    const fov = 45, aspect = 16 / 9
+    const near = fitPose(win, PRESET_VIEW.iso, fov, aspect, 0.8)
+    const tenTimes = { min: { x: 0, y: 0, z: -0.7 }, max: { x: 12.3, y: 14.8, z: 0 } }
+    expect(dist(fitPose(tenTimes, PRESET_VIEW.iso, fov, aspect, 0.8)) / dist(near)).toBeCloseTo(10, 6)
+    // a 20 cm handle: the old floor parked the camera 2 m away
+    const handle = { min: { x: 0, y: 0, z: 0 }, max: { x: 0.2, y: 0.03, z: 0.05 } }
+    expect(dist(fitPose(handle, PRESET_VIEW.iso, fov, aspect, 0.8))).toBeLessThan(0.6)
+    const tighter = fitPose(win, PRESET_VIEW.iso, fov, aspect, 0.95)
+    expect(dist(tighter)).toBeLessThan(dist(near))
+  })
+
+  it('a degenerate box (a point) still gets somewhere to stand', () => {
+    const point = { min: { x: 1, y: 1, z: 1 }, max: { x: 1, y: 1, z: 1 } }
+    expect(dist(fitPose(point, PRESET_VIEW.iso))).toBeGreaterThanOrEqual(2)
+  })
+
+  it('every named view looks from where its name says', () => {
+    const c = { x: 0.615, y: 0.74, z: -0.035 }
+    const from = (v: Parameters<typeof presetPose>[1]) => {
+      const p = presetPose(win, v).position
+      return { x: p.x - c.x, y: p.y - c.y, z: p.z - c.z }
+    }
+    expect(from('front').z).toBeGreaterThan(0)
+    expect(from('back').z).toBeLessThan(0)
+    expect(from('right').x).toBeGreaterThan(0)
+    expect(from('left').x).toBeLessThan(0)
+    expect(from('top').y).toBeGreaterThan(0)
+    const iso = from('iso')
+    expect(iso.x > 0 && iso.y > 0 && iso.z > 0).toBe(true)
+  })
+})
+
+describe('viewFromDirection', () => {
+  it('round-trips the angles fitPose looks from', () => {
+    for (const v of [PRESET_VIEW.iso, { azimuthDeg: 200, elevationDeg: 35 }, PRESET_VIEW.front]) {
+      const box = { min: { x: -1, y: -1, z: -1 }, max: { x: 1, y: 1, z: 1 } }
+      const pose = fitPose(box, v)
+      const back = viewFromDirection({ x: pose.target.x - pose.position.x, y: pose.target.y - pose.position.y, z: pose.target.z - pose.position.z })
+      expect(back.elevationDeg).toBeCloseTo(v.elevationDeg, 5)
+      const da = ((back.azimuthDeg - v.azimuthDeg) % 360 + 540) % 360 - 180
+      expect(Math.abs(da)).toBeLessThan(1e-6)
+    }
+  })
+
+  it('falls back to iso for a zero direction', () => {
+    expect(viewFromDirection({ x: 0, y: 0, z: 0 })).toEqual(PRESET_VIEW.iso)
   })
 })

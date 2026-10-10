@@ -19,6 +19,7 @@ import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
 import { SDK_DOCS_V114 } from './sdk-docs-v114.mjs'
 import { SDK_DOCS_V115 } from './sdk-docs-v115.mjs'
 import { SDK_DOCS_V117 } from './sdk-docs-v117.mjs'
+import { SDK_DOCS_V118 } from './sdk-docs-v118.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -31,6 +32,15 @@ try {
   const m = src.match(/SDK_VERSION\s*=\s*'([^']+)'/)
   if (m) VERSION = m[1]
 } catch { /* keep fallback */ }
+
+// The pinned build (scripts/sdk/version-sdk.mjs) and its SRI hash, when the
+// versioning step has run before this one (it does in `npm run build:sdk`).
+const HOSTED_PINNED = 'https://www.ifcvieweronline.eu/sdk/' + VERSION + '/ifc-viewer.es.js'
+let PINNED_SRI = null
+try {
+  const versions = JSON.parse(readFileSync(resolve(ROOT, 'public/sdk/versions.json'), 'utf8'))
+  PINNED_SRI = versions.versions?.[VERSION]?.['ifc-viewer.es.js']?.integrity ?? null
+} catch { /* not versioned yet: the docs simply leave the hash out */ }
 
 const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 const LANG_LABEL = {
@@ -540,6 +550,7 @@ for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V114[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V115[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V117[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V118[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -621,9 +632,10 @@ const API_GROUPS = [
     ['clear()', 'void', 'clear'],
   ]],
   ['camera', 'grpCamera', [
-    ['select(expressId, modelId?)', 'void', 'select'],
+    ['select(expressId | globalId, modelId?)', 'void', 'select'],
     ['setView(view)', 'void', 'setView'],
     ['frame({ view?, fill?, azimuth?, elevation?, animate? })', 'Promise<{ scope }>', 'camFrame'],
+    ['frame(elementId, modelId?, options?)', "Promise<{ scope: 'element' }>", 'camFrameEl'],
     ['fit() · reset()', 'void', 'fitReset'],
     ['setCamera(position, direction)', 'void', 'setCamera'],
     ['getCamera()', 'Promise<CameraState | null>', 'camGet'],
@@ -718,10 +730,13 @@ const API_GROUPS = [
   ]],
   ['queries', 'grpQueries', [
     ['getModels()', 'Promise<ModelSummary[]>', 'getModels'],
-    ['getElement(id, modelId?)', 'Promise<IfcElementData | null>', 'getElement'],
+    ['findElements({ ifcClass?, globalId?, name?, modelId?, limit? })', 'Promise<ElementSummary[]>', 'findEl'],
+    ['getElement(expressId | globalId, modelId?)', 'Promise<IfcElementData | null>', 'getElement'],
+    ['validate(modelId?, { force? })', 'Promise<ValidationRunResult>', 'valRun'],
     ['getValidation()', 'Promise<ValidationSummary | null>', 'getValidation'],
+    ['getValidationStatus()', 'Promise<ValidationStatus>', 'valStatus'],
     ['getStats()', 'Promise<StatsResult>', 'getStats'],
-    ['getIssues(opts?)', 'Promise<IssuesResult>', 'getIssues'],
+    ['getIssues({ severity?, limit?, modelId? })', 'Promise<IssuesResult>', 'getIssues'],
     ['screenshot()', 'Promise<string>', 'screenshot'],
     ['compare({ base, head, baseLabel?, headLabel? })', 'Promise<{ changes }>', 'cmpRun'],
   ]],
@@ -770,7 +785,10 @@ const API_GROUPS = [
   ]],
 ]
 const OPTIONS = [
-  ['ui', "'minimal' | 'full' | 'kiosk' | 'client' | 'article'", "'minimal'", 'optUi'],
+  ['ui', "'minimal' | 'full' | 'kiosk' | 'client' | 'article' | 'embed'", "'minimal'", 'optUi'],
+  ['toolbar', 'boolean', 'preset', 'optToolbar'],
+  ['tools', "('validate' | 'measure')[]", "['validate', 'measure']", 'optTools'],
+  ['autoFrame', 'boolean', 'true', 'optAutoFrame'],
   ['validate', 'boolean', 'true', 'optValidate'],
   ['panel', 'boolean', 'false', 'optPanel'],
   ['panels', 'PanelName[]', '—', 'optPanels'],
@@ -801,9 +819,11 @@ const EVENTS = [
   ['ready', '{ languages }', 'evReady'],
   ['model-progress', '{ percent, phase }', 'evProgress'],
   ['model-loaded', '{ modelId, fileName, elementCount, fromCache }', 'evLoaded'],
-  ['validation-completed', '{ qualityScore, errors, warnings, info }', 'evValidation'],
+  ['validation-started', '{ modelId }', 'evValStarted'],
+  ['validation-completed', '{ modelId, qualityScore, errors, warnings, info, total }', 'evValidation'],
+  ['validation-failed', '{ modelId, message }', 'evValFailed'],
   ['model-error', '{ message, url?, name? }', 'evError'],
-  ['element-selected', '{ expressId, modelId, ifcType, name }', 'evSelected'],
+  ['element-selected', '{ expressId, modelId, ifcType, name, globalId }', 'evSelected'],
   ['pointcloud-picked', '{ cloudId, position, sourcePosition, classification, intensity, distance }', 'evPointPicked'],
   ['map-feature-picked', '{ id, name?, label?, featureKind, heightM?, heightEstimated }', 'evMapPicked'],
   ['walk-changed', '{ active, speed }', 'evWalk'],
@@ -824,6 +844,8 @@ const NAV = [
   ['concepts', 'conTitle'],
   ['api', 'apiTitle'],
   ['recipes', 'recTitle'],
+  ['validation', 'valTitle'],
+  ['versions', 'verTitle'],
   ['faq', 'faqTitle'],
 ]
 
@@ -881,6 +903,39 @@ onUnmounted(() => viewer && viewer.dispose());
 <template>
   <div ref="host" style="height: 520px" />
 </template>`
+
+// A manufacturer's product page (v1.18): the host owns the file, the viewer
+// shows it and what the type says about it.
+const REC_PRODUCT =
+`import { IfcViewer } from "${HOSTED_PINNED}";
+
+const viewer = await IfcViewer.create("#product-3d", {
+  ui: "embed",               // 3D + properties, Validate and Measure only
+  panels: ["properties"],
+  lang: "es",
+});
+const bytes = await fetch(product.ifcUrl).then(r => r.arrayBuffer());
+await viewer.add("V-70-PR.ifc", bytes);                      // framed for you
+
+// The product, by class (or by its GlobalId) — no expressIDs to know
+const [win] = await viewer.findElements({ ifcClass: "IfcWindow" });
+
+// What the manufacturer put in the type (IfcWindowType → HasPropertySets)
+const el = await viewer.getElement(win.globalId);
+const pset = (name) => el.effectivePropertySets.find(s => s.name === name);
+const uw = pset("Pset_WindowCommon")?.properties.find(p => p.name === "ThermalTransmittance");
+console.log(el.typeName, el.globalId, uw?.value, uw?.unit);   // "Ventana V-70 practicable" … 1.2 "W/(m²·K)"
+
+const { qualityScore } = await viewer.validate();             // Health Score, on demand
+
+// Declared performance per EN 14351-1: wind, water, acoustics, Uw, g / τv, DoP
+const en = await viewer.checkEir("builtin-en14351-1");
+const missing = en.specs.filter(s => s.status === "fail").map(s => s.name);`
+
+const VER_PIN =
+`<script type="module">
+  import { IfcViewer } from "${HOSTED_PINNED}";
+</script>`
 
 const CON_READY =
 `// queues commands until ready
@@ -1175,9 +1230,17 @@ function page(lang) {
     conRow('con4T', 'con4B', CON_QUERIES, 'js', 'JavaScript') +
     '</section>'
 
-  // api reference
+  // api reference — an overload (frame(options) / frame(elementId)) gets its
+  // own anchor: m-frame, m-frame-2
+  const anchorUses = new Map()
+  const methodAnchor = (sig) => {
+    const base = 'm-' + slug(sig.split(/[ (·]/)[0])
+    const n = (anchorUses.get(base) ?? 0) + 1
+    anchorUses.set(base, n)
+    return n === 1 ? base : base + '-' + n
+  }
   const apiRow = (sig, ret, key) =>
-    '<div class="api-m" id="m-' + slug(sig.split(/[ (·]/)[0]) + '">' +
+    '<div class="api-m" id="' + methodAnchor(sig) + '">' +
     '<div class="api-head"><code class="api-sig">' + esc(sig) + '</code><span class="api-ret">' + esc(ret) + '</span></div>' +
     '<p class="api-desc">' + esc(tr(key)) + '</p></div>'
   const apiGroups = API_GROUPS.map(([gid, gk, methods]) =>
@@ -1189,7 +1252,7 @@ function page(lang) {
   const evRows = EVENTS.map(([name, payload, key]) =>
     '<tr><td><code>' + esc(name) + '</code></td><td><code class="muted-code">' + esc(payload) + '</code></td><td>' + esc(tr(key)) + '</td></tr>'
   ).join('')
-  const wcChips = ['model', 'ui', 'lang', 'accent', 'validate', 'panel', 'base-url'].map((a) => '<code class="chip">' + a + '</code>').join('')
+  const wcChips = ['model', 'ui', 'lang', 'accent', 'validate', 'panel', 'base-url', 'toolbar', 'tools', 'auto-frame'].map((a) => '<code class="chip">' + a + '</code>').join('')
   const api =
     '<section id="api" class="sec">' + eyebrow(tr('apiKicker')) + h2('api', tr('apiTitle')) +
     '<p class="lede">' + esc(tr('apiLede')) + '</p>' +
@@ -1225,8 +1288,39 @@ function page(lang) {
     recipe('rec12T', 'rec12B', REC_ARTICLE) +
     recipe('rec13T', 'rec13B', REC_STORY) +
     recipe('rec14T', 'rec14B', REC_CITY) +
+    recipe('rec15T', 'rec15B', REC_PRODUCT) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
+    '</section>'
+
+  // validation lifecycle (v1.18)
+  const valRows = [
+    ['valBefore', 'valBeforeR'], ['valFirst', 'valFirstR'], ['valAfter', 'valAfterR'],
+    ['valRerun', 'valRerunR'], ['valFailed', 'valFailedR'],
+  ].map(([w, r]) => '<tr><td>' + esc(tr(w)) + '</td><td>' + esc(tr(r)) + '</td></tr>').join('')
+  const validation =
+    '<section id="validation" class="sec">' + eyebrow(tr('valKicker')) + h2('validation', tr('valTitle')) +
+    '<p class="lede">' + esc(tr('valLede')) + '</p>' +
+    '<div class="table-wrap"><table class="dt"><thead><tr><th>' + esc(tr('valColWhen')) + '</th><th>' + esc(tr('valColReturns')) + '</th></tr></thead><tbody>' + valRows + '</tbody></table></div>' +
+    '</section>'
+
+  // versions: pin, caching, compatibility, changelog (v1.18)
+  const verRows = [
+    ['/sdk/ifc-viewer.es.js', 'verMovingCache', 'verMovingUse'],
+    ['/sdk/' + VERSION + '/ifc-viewer.es.js', 'verPinnedCache', 'verPinnedUse'],
+  ].map(([path, c, u]) => '<tr><td><code>' + esc(path) + '</code></td><td>' + esc(tr(c)) + '</td><td>' + esc(tr(u)) + '</td></tr>').join('')
+  const sriSnippet = PINNED_SRI
+    ? '<script type="module" src="' + HOSTED_PINNED + '"\n        integrity="' + PINNED_SRI + '" crossorigin="anonymous"></' + 'script>'
+    : null
+  const versions =
+    '<section id="versions" class="sec">' + eyebrow(tr('verKicker')) + h2('versions', tr('verTitle')) +
+    '<p class="lede">' + esc(tr('verLede')) + '</p>' +
+    code(VER_PIN, 'html', 'HTML') +
+    '<div class="table-wrap"><table class="dt"><thead><tr><th>' + esc(tr('verColPath')) + '</th><th>' + esc(tr('verColCache')) + '</th><th>' + esc(tr('verColUse')) + '</th></tr></thead><tbody>' + verRows + '</tbody></table></div>' +
+    callout(tr('verCompatT'), tr('verCompatB')) +
+    (sriSnippet ? '<p class="card-t">' + esc(tr('verSriT')) + '</p><p class="muted">' + esc(tr('verSriB')) + '</p>' + code(sriSnippet, 'html', 'HTML') : '') +
+    '<h3 id="changelog">' + esc(tr('chgTitle')) + '</h3>' +
+    '<p>' + esc(tr('chg118') + ' ' + tr('chgEn14351')) + '</p>' +
     '</section>'
 
   // troubleshooting
@@ -1291,6 +1385,8 @@ function page(lang) {
       ${concepts}
       ${api}
       ${recipes}
+      ${validation}
+      ${versions}
       ${faq}
     </main>
   </div>

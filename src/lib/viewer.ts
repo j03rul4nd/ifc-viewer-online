@@ -22,9 +22,13 @@ import { ownerModelId } from './element-owner'
 import { pivotForYaw } from './geo/multi-placement'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
-import { resolveFraming, presetPose, fitPose, PRESET_VIEW, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
+import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
+import {
+  ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, ELEMENT_SUMMARY_CONFIG, parseItemData, parseProjectUnits, summarizeItem,
+  type IFCItemData, type IFCElementSummary, type ProjectUnits,
+} from './ifc-item-data'
 import { mintModelId } from './loading/model-id'
 import { setSceneDatumProvider, currentDatumProvider } from './bcf-viewpoint'
 import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
@@ -213,77 +217,29 @@ function prettyType(raw: string): string {
 }
 
 // ─── IFC Item Data types ─────────────────────────────────────────────────────
+// Defined with their parser in ifc-item-data.ts; re-exported for the many
+// importers that know them from here.
+export type {
+  IFCAttribute, IFCProperty, IFCPropertySet, IFCQuantitySet, IFCMaterial, IFCItemData,
+  IFCEffectiveProperty, IFCEffectivePropertySet, IFCElementSummary,
+} from './ifc-item-data'
 
-/** A single IFC attribute value from getItemsData() */
-export interface IFCAttribute {
-  type?: string
-  value: string | number | boolean | null
+/** What findElements matches on; every given field must match. */
+export interface ElementQuery {
+  /** IFC class(es), any case: 'IfcWindow', 'IFCDOOR'. StandardCase variants count as their class. */
+  ifcClass?: string | string[]
+  /** GlobalId(s). */
+  globalId?: string | string[]
+  /** Case-insensitive substring of the Name attribute. */
+  name?: string
+  /** Only this model. */
+  modelId?: string
+  /** Default 1000. */
+  limit?: number
 }
 
-/** A Property Set (Pset) with its contained properties */
-export interface IFCPropertySet {
-  /** express ID of the IfcPropertySet entity */
-  expressId: number
-  name: string
-  properties: Array<{
-    /** express ID of the IfcPropertySingleValue entity */
-    expressId: number
-    name: string
-    value: string | number | boolean | null
-    type?: string
-  }>
-}
-
-/** An Element Quantity Set (IfcElementQuantity) */
-export interface IFCQuantitySet {
-  expressId: number
-  name: string
-  quantities: Array<{
-    expressId: number
-    name: string
-    value: number | null
-    quantityType: 'Length' | 'Area' | 'Volume' | 'Count' | 'Weight' | 'Time' | 'Unknown'
-  }>
-}
-
-/** A material associated to an element */
-export interface IFCMaterial {
-  name: string
-  layerThickness?: number
-}
-
-/** Structured data returned by getItemData() */
 /** 2D overlay painted into captures (see ViewerAPI.addCapturePainter). */
 export type CapturePainter = (ctx: CanvasRenderingContext2D, width: number, height: number, s: number) => boolean
-
-export interface IFCItemData {
-  /** IFC Name attribute */
-  name: string | null
-  /** IFC LongName attribute */
-  longName: string | null
-  /** IFC Description attribute */
-  description: string | null
-  /** IFC GlobalId attribute */
-  globalId: string | null
-  /** IFC ObjectType attribute */
-  objectType: string | null
-  /** IFC Tag attribute */
-  tag: string | null
-  /** Storey name from ContainedInStructure relation */
-  storey: string | null
-  /** IfcPropertySet entries from IsDefinedBy (excludes quantities) */
-  propertySets: IFCPropertySet[]
-  /** IfcElementQuantity entries from IsDefinedBy */
-  quantitySets: IFCQuantitySet[]
-  /** Property sets from the element's type (via IsTypedBy / DefinesByType) */
-  typeProperties: IFCPropertySet[]
-  /** Name of the IFC type entity (e.g. "IfcWallType") */
-  typeName: string | null
-  /** Materials from HasAssociations */
-  materials: IFCMaterial[]
-  /** Raw data for debugging / future use */
-  raw: Record<string, unknown>
-}
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -694,10 +650,30 @@ export interface ViewerAPI {
    */
   removeModel(modelId: string): Promise<void>
   /**
-   * Fit the camera to the active model's bounding box (after pivot transform).
-   * No-ops silently if no model is active or the model has no geometry.
+   * Fit the camera to the active model's bounding box (after pivot transform),
+   * from the current viewing angle and with a margin (it fills FIT_FILL of
+   * the frame). No-ops silently if no model is active or the model has no
+   * geometry.
    */
   frameActiveModel(): void
+  /**
+   * Frame one element so it fills `fill` of the frame (default 0.75), seen
+   * from `view` (default: the current viewing angle). Resolves false when the
+   * element is not in that model or has no geometry.
+   */
+  frameElement(expressId: number, modelId?: string, opts?: { fill?: number; view?: FitView; animate?: boolean }): Promise<boolean>
+  /**
+   * The part of the canvas a floating panel covers, in CSS pixels. The view's
+   * centre moves into the uncovered part — a lens shift of the projection,
+   * not a move of the camera, so orbiting still turns about the model — and
+   * framing fits the uncovered width. When the visitor has not moved the
+   * camera since the last framing, that framing is redone for the new space.
+   */
+  setViewportInsets(insets: { left?: number; right?: number }, opts?: { animate?: boolean }): void
+  /** Elements matching a class, GlobalId and/or name, across the loaded models (or one). */
+  findElements(query: ElementQuery): Promise<IFCElementSummary[]>
+  /** GlobalIds of elements, in order (null where unknown). */
+  getGlobalIds(expressIds: number[], modelId?: string): Promise<(string | null)[]>
   /**
    * Return the Three.js pivot Object3D for the specified model.
    * Used by the GLB exporter to get the correct mesh hierarchy.
@@ -1037,246 +1013,29 @@ const OVERLAY_GHOST_MAT: FRAGS.MaterialDefinition = {
   preserveOriginalMaterial: false,
 }
 
-// ─── Helper: extract string value from IFC attribute ─────────────────────────
-
-function attrStr(attr: unknown): string | null {
-  if (!attr || typeof attr !== 'object') return null
-  const a = attr as Record<string, unknown>
-  if ('value' in a && (typeof a.value === 'string' || a.value === null)) {
-    return (a.value as string | null)
-  }
-  return null
-}
-
-// ─── Helper: format raw IsDefinedBy into IFCPropertySet[] ────────────────────
-
-function formatPsets(isDefinedBy: unknown): IFCPropertySet[] {
-  if (!Array.isArray(isDefinedBy)) return []
-
-  const result: IFCPropertySet[] = []
-
-  for (const pset of isDefinedBy) {
-    if (!pset || typeof pset !== 'object') continue
-    const p = pset as Record<string, unknown>
-
-    const psetName = attrStr(p['Name'])
-    if (!psetName) continue
-
-    const psetExpressId = typeof p['expressID'] === 'number' ? p['expressID'] : 0
-
-    const hasProperties = p['HasProperties']
-    if (!Array.isArray(hasProperties)) continue
-
-    const properties: IFCPropertySet['properties'] = []
-
-    for (const prop of hasProperties) {
-      if (!prop || typeof prop !== 'object') continue
-      const pr = prop as Record<string, unknown>
-
-      const propName = attrStr(pr['Name'])
-      if (!propName) continue
-
-      const propExpressId = typeof pr['expressID'] === 'number' ? pr['expressID'] : 0
-      const nominalAttr   = pr['NominalValue']
-
-      let propValue: string | number | boolean | null = null
-      let propType: string | undefined
-
-      if (nominalAttr && typeof nominalAttr === 'object') {
-        const n = nominalAttr as Record<string, unknown>
-        if ('value' in n) {
-          const v = n.value
-          if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || v === null) {
-            propValue = v
-          }
-        }
-        if ('type' in n && typeof n.type === 'string') propType = n.type
+/**
+ * A model's unit assignment, read once per model: a measure that names no unit
+ * is in the project's (a U-value of 1.2 in a project that assigns W/(m²·K)).
+ * Never rejects — a model without an IfcProject simply has no units to give.
+ */
+const projectUnitsByModel = new WeakMap<FRAGS.FragmentsModel, Promise<ProjectUnits>>()
+function projectUnitsOf(model: FRAGS.FragmentsModel): Promise<ProjectUnits> {
+  let units = projectUnitsByModel.get(model)
+  if (!units) {
+    units = (async () => {
+      try {
+        const ids = Object.values(await model.getItemsOfCategories([/^IFCPROJECT$/])).flat()
+        if (ids.length === 0) return {}
+        const [project] = await model.getItemsData([ids[0]], PROJECT_UNITS_CONFIG)
+        return parseProjectUnits(project)
+      } catch (err) {
+        console.debug('[Viewer] project units unavailable:', err)
+        return {}
       }
-
-      properties.push({ expressId: propExpressId, name: propName, value: propValue, type: propType })
-    }
-
-    result.push({ expressId: psetExpressId, name: psetName, properties })
+    })()
+    projectUnitsByModel.set(model, units)
   }
-
-  return result
-}
-
-// ─── Helper: extract storey name from ContainedInStructure ───────────────────
-
-function extractStorey(containedInStructure: unknown): string | null {
-  if (!Array.isArray(containedInStructure) || containedInStructure.length === 0) return null
-
-  // ContainedInStructure → array of IfcRelContainedInSpatialStructure
-  // Each has a RelatingStructure → IfcBuildingStorey with Name
-  for (const rel of containedInStructure) {
-    if (!rel || typeof rel !== 'object') continue
-    const r = rel as Record<string, unknown>
-
-    // The relation object itself might be the storey when attributes:true
-    // Its Name would be the storey name if it's an IfcBuildingStorey
-    const nameAttr = r['Name']
-    const name = attrStr(nameAttr)
-    if (name) return name
-  }
-
-  return null
-}
-
-// ─── Helper: parse IfcElementQuantity from IsDefinedBy ───────────────────────
-
-function formatQuantities(isDefinedBy: unknown): IFCQuantitySet[] {
-  if (!Array.isArray(isDefinedBy)) return []
-  const result: IFCQuantitySet[] = []
-
-  for (const entry of isDefinedBy) {
-    if (!entry || typeof entry !== 'object') continue
-    const e = entry as Record<string, unknown>
-    if (!Array.isArray(e['Quantities'])) continue  // only IfcElementQuantity
-
-    const name = attrStr(e['Name'])
-    if (!name) continue
-    const expressId = typeof e['expressID'] === 'number' ? e['expressID'] : 0
-
-    const quantities: IFCQuantitySet['quantities'] = []
-    for (const q of e['Quantities'] as unknown[]) {
-      if (!q || typeof q !== 'object') continue
-      const qo = q as Record<string, unknown>
-      const qName = attrStr(qo['Name'])
-      if (!qName) continue
-      const qId = typeof qo['expressID'] === 'number' ? qo['expressID'] : 0
-
-      let value: number | null = null
-      let quantityType: IFCQuantitySet['quantities'][number]['quantityType'] = 'Unknown'
-
-      const tryNum = (key: string): number | null => {
-        const attr = qo[key]
-        if (!attr || typeof attr !== 'object') return null
-        const a = attr as Record<string, unknown>
-        return typeof a.value === 'number' ? a.value : null
-      }
-
-      if ((value = tryNum('LengthValue')) !== null)       quantityType = 'Length'
-      else if ((value = tryNum('AreaValue')) !== null)    quantityType = 'Area'
-      else if ((value = tryNum('VolumeValue')) !== null)  quantityType = 'Volume'
-      else if ((value = tryNum('CountValue')) !== null)   quantityType = 'Count'
-      else if ((value = tryNum('WeightValue')) !== null)  quantityType = 'Weight'
-      else if ((value = tryNum('TimeValue')) !== null)    quantityType = 'Time'
-
-      quantities.push({ expressId: qId, name: qName, value, quantityType })
-    }
-
-    result.push({ expressId, name, quantities })
-  }
-
-  return result
-}
-
-// ─── Helper: parse materials from HasAssociations ────────────────────────────
-
-function parseAssociations(hasAssociations: unknown): IFCMaterial[] {
-  if (!Array.isArray(hasAssociations)) return []
-  const result: IFCMaterial[] = []
-
-  const addMaterial = (obj: unknown, layerThickness?: number): void => {
-    if (!obj || typeof obj !== 'object') return
-    const o = obj as Record<string, unknown>
-    const name = attrStr(o['Name'])
-    if (name) result.push({ name, ...(layerThickness !== undefined ? { layerThickness } : {}) })
-  }
-
-  for (const entry of hasAssociations) {
-    if (!entry || typeof entry !== 'object') continue
-    const e = entry as Record<string, unknown>
-
-    // IfcMaterial directly
-    if (attrStr(e['Name'])) { addMaterial(e); continue }
-
-    // IfcMaterialLayerSetUsage → ForLayerSet → MaterialLayers[]
-    const forLayerSet = e['ForLayerSet']
-    if (forLayerSet && typeof forLayerSet === 'object') {
-      const ls = forLayerSet as Record<string, unknown>
-      if (Array.isArray(ls['MaterialLayers'])) {
-        for (const layer of ls['MaterialLayers'] as unknown[]) {
-          if (!layer || typeof layer !== 'object') continue
-          const l = layer as Record<string, unknown>
-          const thickness = l['LayerThickness']
-          const t = thickness && typeof thickness === 'object'
-            ? (thickness as Record<string, unknown>).value
-            : undefined
-          addMaterial(l['Material'], typeof t === 'number' ? t : undefined)
-        }
-      }
-    }
-
-    // IfcMaterialList → Materials[]
-    if (Array.isArray(e['Materials'])) {
-      for (const m of e['Materials'] as unknown[]) addMaterial(m)
-    }
-
-    // IfcMaterialConstituentSet → MaterialConstituents[]
-    if (Array.isArray(e['MaterialConstituents'])) {
-      for (const mc of e['MaterialConstituents'] as unknown[]) {
-        if (!mc || typeof mc !== 'object') continue
-        addMaterial((mc as Record<string, unknown>)['Material'])
-      }
-    }
-  }
-
-  return result
-}
-
-// ─── Helper: parse type-object property sets from IsTypedBy ──────────────────
-
-function parseItemData(raw: Record<string, unknown>): IFCItemData {
-  const { typeName, psets: typeProperties } = parseTypeProps(raw['IsTypedBy'])
-  return {
-    name:           attrStr(raw['Name']),
-    longName:       attrStr(raw['LongName']),
-    description:    attrStr(raw['Description']),
-    // Fragments hands the GlobalId back as the item's _guid, not as the
-    // attribute asked for: without the fallback every element read null here
-    // (the properties panel showed no GlobalId row at all).
-    globalId:       attrStr(raw['GlobalId']) ?? attrStr(raw['_guid']),
-    objectType:     attrStr(raw['ObjectType']),
-    tag:            attrStr(raw['Tag']),
-    storey:         extractStorey(raw['ContainedInStructure']),
-    propertySets:   formatPsets(raw['IsDefinedBy']),
-    quantitySets:   formatQuantities(raw['IsDefinedBy']),
-    materials:      parseAssociations(raw['HasAssociations']),
-    typeProperties,
-    typeName,
-    raw,
-  }
-}
-
-/** What getItemData / getElementsDetail ask fragments for (one definition). */
-const ITEM_DATA_CONFIG = {
-  attributesDefault: false,
-  attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
-  relations: {
-    IsDefinedBy: { attributes: true, relations: true },
-    ContainedInStructure: { attributes: true, relations: false },
-    DefinesOccurrence: { attributes: false, relations: false },
-    IsTypedBy: { attributes: true, relations: true },
-    HasAssociations: { attributes: true, relations: true },
-  },
-}
-
-function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: IFCPropertySet[] } {
-  if (!Array.isArray(isTypedBy) || isTypedBy.length === 0) return { typeName: null, psets: [] }
-
-  const typeObj = isTypedBy[0]  // take the first (should only be one)
-  if (!typeObj || typeof typeObj !== 'object') return { typeName: null, psets: [] }
-
-  const t = typeObj as Record<string, unknown>
-  const typeName = attrStr(t['Name'])
-
-  // Type objects use HasPropertySets (not IsDefinedBy)
-  const hasPsets = t['HasPropertySets']
-  const psets = Array.isArray(hasPsets) ? formatPsets(hasPsets) : []
-
-  return { typeName, psets }
+  return units
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -1525,6 +1284,88 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
+  // ─── Fitting a box, with a margin ──────────────────────────────────────────
+  // camera-controls' fitToBox puts the box edge to edge: a 1.2 m window touched
+  // every side of the frame, and anything under a floating panel was simply
+  // hidden. Fits the SDK and the F key make go through here instead: the box's
+  // corners fill `fill` of the frame (fitPose), seen from the current angle
+  // unless told otherwise, with near/far and the dolly limits sized first so
+  // a small object can be approached at all.
+  const FIT_FILL = 0.8
+
+  // ── Viewport insets: a floating panel over part of the canvas ────────────
+  // Applied as a lens shift (Camera.setViewOffset): the projection's centre
+  // moves into the uncovered part, the camera and its orbit target do not —
+  // so picking, snapping and projected labels, which all go through the
+  // projection matrix, stay exact.
+  let viewInsets = { left: 0, right: 0 }
+  let appliedShift = 0
+  let insetRaf = 0
+  // The last programmatic framing, and whether the visitor has moved the
+  // camera since: if not, a change of free space redoes it.
+  let lastFrame: (() => void) | null = null
+  let movedSinceFrame = true
+  function canvasCss(): { w: number; h: number } {
+    const el = world.renderer?.three.domElement
+    return { w: el?.clientWidth || 0, h: el?.clientHeight || 0 }
+  }
+  function applyLensShift(shift: number): void {
+    const { w, h } = canvasCss()
+    // A host can set insets as soon as the viewer exists — before the
+    // fragments engine is up, or after a dispose: neither is an error.
+    let cams: Array<THREE.PerspectiveCamera | THREE.OrthographicCamera>
+    try { cams = [world.camera.threePersp, world.camera.threeOrtho] } catch { return }
+    for (const cam of cams) {
+      if (!w || !h || Math.abs(shift) < 0.5) cam.clearViewOffset()
+      else cam.setViewOffset(w, h, shift, 0, w, h)
+    }
+    appliedShift = Math.abs(shift) < 0.5 ? 0 : shift
+    if (world.renderer) world.renderer.needsUpdate = true
+    try { void fragmentsManager.core.update(true) } catch { /* engine not initialised yet */ }
+  }
+  /** The aspect a framing should fit: the uncovered width over the height. */
+  function framingAspect(base: number): number {
+    const { w } = canvasCss()
+    const free = w - viewInsets.left - viewInsets.right
+    return w > 0 && free >= w * 0.25 ? base * (free / w) : base
+  }
+  // 'control', not 'controlstart': a click that picks an element starts a
+  // control without moving anything, and it is exactly the click that opens
+  // the panel this redo is for.
+  world.camera.controls.addEventListener('control', () => { movedSinceFrame = true })
+  // A resize re-sets the projection; the shift is in pixels of the old size.
+  world.camera.onAspectUpdated.add(() => { if (appliedShift) applyLensShift(appliedShift) })
+
+  function currentView(): FitView {
+    const pos = new THREE.Vector3()
+    const tgt = new THREE.Vector3()
+    world.camera.controls.getPosition(pos)
+    world.camera.controls.getTarget(tgt)
+    return viewFromDirection({ x: tgt.x - pos.x, y: tgt.y - pos.y, z: tgt.z - pos.z })
+  }
+  function fitBoxWithMargin(box: THREE.Box3, opts: { fill?: number; view?: FitView; animate?: boolean } = {}): void {
+    if (box.isEmpty()) return
+    const scene = combinedModelsBox()
+    tuneSceneToBounds(scene.isEmpty() ? box : scene.clone().union(box))
+    const cam = world.camera.three
+    const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
+    const el = world.renderer?.three.domElement
+    const aspect = framingAspect(cam instanceof THREE.PerspectiveCamera ? cam.aspect : (el?.clientWidth || 16) / (el?.clientHeight || 9))
+    // The view is decided once: a redo after the free space changed keeps it.
+    const view = opts.view ?? currentView()
+    lastFrame = () => fitBoxWithMargin(box, { ...opts, view })
+    movedSinceFrame = false
+    const { position, target } = fitPose(
+      { min: box.min, max: box.max }, view, fov, aspect, opts.fill ?? FIT_FILL,
+    )
+    const animate = opts.animate !== false
+    void world.camera.controls.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, animate)
+    if (!animate) {
+      try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+      void fragmentsManager.core.update(true)
+    }
+  }
+
   // ─── Adaptive scale tuning ─────────────────────────────────────────────────
   // IFC models range from a single chair (~1 m) to a campus (hundreds of m).
   // A fixed near/far + fog hides small elements when zoomed in (near-plane
@@ -1579,6 +1420,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const fragmentsManager = components.get(OBC.FragmentsManager)
 
+  /** The lens shift a capture session took off, to put back after it. */
+  let shotLensShift = 0
   /** Everything beginShotRender changed, so endShotRender can put it back. */
   let shotSession: {
     width: number
@@ -3342,11 +3185,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (!targetModel) return null
 
       try {
+        const units = await projectUnitsOf(targetModel)
         const [data] = await targetModel.getItemsData([expressId], ITEM_DATA_CONFIG)
 
         if (!data) return null
 
-        return parseItemData(data as Record<string, unknown>)
+        return parseItemData(data as Record<string, unknown>, units)
       } catch (err) {
         console.warn('[Viewer] getItemData error:', err)
         return null
@@ -3357,6 +3201,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const model = modelObjects.get(modelId)
       if (!model) return ids.map((expressId) => ({ expressId, data: null, box: null }))
       const out: Array<{ expressId: number; data: IFCItemData | null; box: { min: Vec3Like; max: Vec3Like } | null }> = []
+      const units = await projectUnitsOf(model)
       const BATCH = 400
       for (let i = 0; i < ids.length; i += BATCH) {
         const chunk = ids.slice(i, i + BATCH)
@@ -3369,7 +3214,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           const b = boxes[k]
           out.push({
             expressId,
-            data: raw ? parseItemData(raw) : null,
+            data: raw ? parseItemData(raw, units) : null,
             box: b && !b.isEmpty()
               ? { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } }
               : null,
@@ -3467,10 +3312,91 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (!model) return
       safeVoid(
         model.getMergedBox([expressId]).then((box) => {
-          if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
+          if (!box.isEmpty()) fitBoxWithMargin(box, { fill: 0.75 })
         }),
         'focusElement',
       )
+    },
+
+    async frameElement(expressId, modelId, opts) {
+      const targetId = ownerModelId(expressId, modelId, currentModelId, typeMapByModel)
+      const model = (targetId ? modelObjects.get(targetId) : null) ?? (modelId ? null : currentModel)
+      if (!model) return false
+      let box: THREE.Box3
+      try { box = await model.getMergedBox([expressId]) } catch { return false }
+      if (box.isEmpty()) return false
+      fitBoxWithMargin(box, { fill: opts?.fill ?? 0.75, view: opts?.view, animate: opts?.animate })
+      return true
+    },
+
+    setViewportInsets(next, opts) {
+      const prev = viewInsets
+      viewInsets = { left: Math.max(0, next.left ?? 0), right: Math.max(0, next.right ?? 0) }
+      if (prev.left === viewInsets.left && prev.right === viewInsets.right) return
+      const to = (viewInsets.right - viewInsets.left) / 2
+      const from = appliedShift
+      if (insetRaf) cancelAnimationFrame(insetRaf)
+      insetRaf = 0
+      const hidden = typeof document !== 'undefined' && document.hidden
+      if (opts?.animate === false || hidden || Math.abs(to - from) < 1) {
+        applyLensShift(to)
+      } else {
+        // rAF, not a timer: a frame-paced shift, and nothing at all in a
+        // hidden tab (handled above by jumping straight there).
+        const t0 = performance.now()
+        const step = (now: number): void => {
+          const k = Math.min(1, (now - t0) / 240)
+          applyLensShift(from + (to - from) * (1 - Math.pow(1 - k, 3)))
+          insetRaf = k < 1 ? requestAnimationFrame(step) : 0
+        }
+        insetRaf = requestAnimationFrame(step)
+      }
+      // Untouched since the last framing: redo it for the new free space.
+      if (!movedSinceFrame && lastFrame) lastFrame()
+    },
+
+    async findElements(query) {
+      const classes = query.ifcClass === undefined ? null
+        : (Array.isArray(query.ifcClass) ? query.ifcClass : [query.ifcClass]).map((c) => canonicalType(c.trim().toUpperCase()))
+      const guids = query.globalId === undefined ? null
+        : (Array.isArray(query.globalId) ? query.globalId : [query.globalId]).filter((g) => typeof g === 'string' && g)
+      const name = query.name?.trim().toLowerCase() || null
+      const limit = query.limit && query.limit > 0 ? query.limit : 1000
+      const out: IFCElementSummary[] = []
+      for (const [mid, model] of modelObjects) {
+        if (query.modelId && mid !== query.modelId) continue
+        let ids: number[]
+        if (guids) {
+          if (guids.length === 0) continue
+          try {
+            ids = (await model.getLocalIdsByGuids(guids)).filter((x): x is number => typeof x === 'number')
+          } catch { ids = [] }
+        } else {
+          ids = [...(typeMapByModel.get(mid) ?? new Map<number, string>()).entries()]
+            .filter(([, t]) => !classes || classes.includes(canonicalType(t)))
+            .map(([id]) => id)
+        }
+        for (let i = 0; i < ids.length && out.length < limit; i += 500) {
+          let items: unknown[] = []
+          try { items = await model.getItemsData(ids.slice(i, i + 500), ELEMENT_SUMMARY_CONFIG) } catch { items = [] }
+          for (const raw of items) {
+            if (!raw || typeof raw !== 'object') continue
+            const e = summarizeItem(raw as Record<string, unknown>, mid)
+            if (classes && !(e.ifcClass && classes.includes(canonicalType(e.ifcClass)))) continue
+            if (name && !(e.name ?? '').toLowerCase().includes(name)) continue
+            out.push(e)
+            if (out.length >= limit) break
+          }
+        }
+        if (out.length >= limit) break
+      }
+      return out
+    },
+
+    async getGlobalIds(expressIds, modelId) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? (modelId ? null : currentModel)
+      if (!model || expressIds.length === 0) return expressIds.map(() => null)
+      try { return await model.getGuidsByLocalIds(expressIds) } catch { return expressIds.map(() => null) }
     },
 
     frameElements(ids, modelId) {
@@ -3856,9 +3782,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
       const cam = world.camera.three
       const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
-      const aspect = cam instanceof THREE.PerspectiveCamera
+      const aspect = framingAspect(cam instanceof THREE.PerspectiveCamera
         ? cam.aspect
-        : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9)
+        : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9))
+      const self = this
+      lastFrame = () => { self.setCameraPreset(preset, opts) }
+      movedSinceFrame = false
       const tight = opts?.fill !== undefined || opts?.azimuthDeg !== undefined || opts?.elevationDeg !== undefined
       const { position, target } = tight
         ? fitPose(framing.box, {
@@ -4191,9 +4120,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           new THREE.Vector3(box.max.x, box.max.y, box.max.z),
         ]
         for (const v of corners) wx.expandByPoint(v.applyMatrix4(m))
-        void world.camera.controls.fitToBox(wx, true)
+        fitBoxWithMargin(wx)
       } else {
-        void world.camera.controls.fitToBox(box, true)
+        fitBoxWithMargin(box)
       }
     },
 
@@ -4515,6 +4444,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // ─── Shot rendering (Clip Studio) ─────────────────────────────────────────
 
     async beginShotRender(width: number, height: number): Promise<void> {
+      // A capture is the whole frame: no panel covers it, so no lens shift.
+      shotLensShift = appliedShift
+      if (shotLensShift) applyLensShift(0)
       if (shotSession) return
       const controls = world.camera.controls
       const pos = new THREE.Vector3()
@@ -4584,6 +4516,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     setShotExplode(explode) { shotExplode = explode },
 
     async endShotRender(): Promise<void> {
+      if (shotLensShift) { const shift = shotLensShift; shotLensShift = 0; setTimeout(() => applyLensShift(shift), 0) }
       const s = shotSession
       if (!s) return
       shotExplode = null

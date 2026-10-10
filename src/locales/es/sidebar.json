@@ -80,7 +80,10 @@
     "filterProps": "Filtrar propiedades…",
     "noPropsMatch": "Ninguna propiedad coincide",
     "ownerModel": "Pertenece a {{name}} — haz clic para activarlo",
-    "unknownModel": "Modelo desconocido"
+    "unknownModel": "Modelo desconocido",
+    "typeProperties": "Propiedades del tipo",
+    "typeName": "Tipo",
+    "overriddenByOccurrence": "Sustituido por el valor propio de este elemento"
   },
   "tabs": {
     "properties": "Propiedades",

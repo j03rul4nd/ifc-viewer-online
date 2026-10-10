@@ -13,6 +13,8 @@ export type LintCode =
   | 'numericNaN'     // a numeric rule's value isn't a finite number
   | 'emptyEquals'    // propertyEquals compares against an empty string
   | 'emptyAllowed'   // allowedValues has an empty/blank option
+  | 'whereIncomplete' // a condition with a property but no value, or the reverse
+  | 'whereBoolean'   // a condition value "True"/"FALSE"/".T." — IDS booleans are lowercase, so it matches nothing
 
 export interface LintIssue { ruleId: string; code: LintCode }
 
@@ -27,6 +29,13 @@ export function lintProfile(profile: Pick<EirProfile, 'rules'>): LintIssue[] {
     if (r.entity && !/^Ifc[A-Za-z0-9]+$/.test(r.entity)) add('entityNotIfc')
     if ('pset' in r && hasWs(r.pset)) add('whitespace')
     else if ('property' in r && hasWs(r.property)) add('whitespace')
+    else if (r.where && (hasWs(r.where.pset) || hasWs(r.where.property))) add('whitespace')
+
+    if (r.where) {
+      // Both blank is a row just added — saving drops it; one blank is a mistake.
+      if (!r.where.property.trim() !== !r.where.value.trim()) add('whereIncomplete')
+      else if (/^(true|false|\.t\.|\.f\.)$/i.test(r.where.value.trim()) && !/^(true|false)$/.test(r.where.value.trim())) add('whereBoolean')
+    }
 
     if (r.type === 'regex') {
       try { new RegExp(r.pattern) } catch { add('badRegex') }

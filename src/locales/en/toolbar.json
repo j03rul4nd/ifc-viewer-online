@@ -85,7 +85,9 @@
       "client": "Client",
       "clientDesc": "Client presentation skin",
       "article": "Article",
-      "articleDesc": "Figure for a post: canvas, tight framing, page scroll"
+      "articleDesc": "Figure for a post: canvas, tight framing, page scroll",
+      "embed": "In an app",
+      "embedDesc": "Inside a host app: 3D + properties, Validate & Measure, no Open/Share/account"
     },
     "optionsLabel": "Options",
     "autoValidate": "Run validation on load",

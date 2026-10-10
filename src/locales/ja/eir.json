@@ -65,6 +65,16 @@
     "none": "モデル内 0 件",
     "upper": "モデル内 ≤ {{count}} 件"
   },
+  "where": {
+    "add": "条件を追加…",
+    "label": "条件",
+    "remove": "条件を削除",
+    "hint": "このプロパティ値を持つ要素だけをチェックします。要素のタイプに設定された値も対象です。ブール値: true / false。"
+  },
+  "optional": {
+    "label": "存在する場合のみ",
+    "hint": "該当する要素がモデルに1つもなくても不合格にしません（IDS optional）。"
+  },
   "lint": {
     "title": "このルールを確認してください:",
     "entityNotIfc": "エンティティが IFC クラスのようではありません（例: IfcWall）",
@@ -72,7 +82,9 @@
     "badRegex": "正規表現が無効です",
     "numericNaN": "数値は数字である必要があります",
     "emptyEquals": "期待値が空です",
-    "emptyAllowed": "許可された値に空の項目があります"
+    "emptyAllowed": "許可された値に空の項目があります",
+    "whereIncomplete": "条件にはプロパティと値の両方が必要です",
+    "whereBoolean": "ブール値は小文字で入力してください: true / false"
   },
   "stats": {
     "validated": "検証済み",

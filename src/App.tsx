@@ -78,7 +78,7 @@ import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
 import EirProfileEditor from './components/eir/EirProfileEditor'
 import { useEirStore } from './stores/eirStore'
-import { parseEirProfile, compileEirToIds } from './lib/eir'
+import { parseEirProfile, compileEirToIds, BUILTIN_EIR_PROFILES } from './lib/eir'
 import InviteRibbon from './components/InviteRibbon'
 import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
@@ -155,6 +155,8 @@ import { useLoadingStore, jobForModel } from './stores/loadingStore'
 import { useSceneGroupStore } from './stores/sceneGroupStore'
 import { LoadingCenter, LoadingIndicator, FirstLoadCard } from './components/loading'
 import { publishAggregateResult } from './lib/validator'
+import { queueValidation, getValidationQueueState, type QueuedValidationResult } from './lib/validation-queue'
+import { PRESET_VIEW } from './lib/camera-framing'
 import { useEditorHistory } from './hooks/useEditorHistory'
 import { useValidationRunner } from './hooks/useValidationRunner'
 import { useElementFocus } from './hooks/useElementFocus'
@@ -895,9 +897,48 @@ export default function App() {
     if (embedChrome.embed) {
       // The tree too: a host that asked for it (`tree=1`) gets it open, not
       // folded to a strip because the reader once folded it in the app.
-      useUIStore.setState({ validationPanelOpen: embedChrome.openPanel, treeVisible: embedChrome.showTree })
+      useUIStore.setState({
+        validationPanelOpen: embedChrome.openPanel,
+        treeVisible: embedChrome.showTree,
+        // `embed`: the model gets the whole frame until something is picked.
+        ...(embedChrome.propertiesOnSelect ? { sidebarExpanded: false } : {}),
+      })
     }
   }, [embedChrome])
+
+  // …and the properties open themselves on a pick (not saved as a preference:
+  // the iframe shares storage with the visitor's own viewer).
+  useEffect(() => {
+    if (!embedChrome.propertiesOnSelect || !selected) return
+    if (!useUIStore.getState().sidebarExpanded) useUIStore.setState({ sidebarExpanded: true })
+  }, [embedChrome.propertiesOnSelect, selected])
+
+  // …without covering what was picked: the panel floats over the right of
+  // the canvas, so the view's centre moves into the rest (a lens shift, see
+  // ViewerAPI.setViewportInsets) and, when the visitor has not moved the
+  // camera since the last framing, that framing is redone for the space
+  // left. A product page is mostly one object and this panel.
+  const propertiesOpen = useUIStore((s) => s.sidebarExpanded)
+  useEffect(() => {
+    if (!embedChrome.propertiesOnSelect) return
+    const update = (): void => {
+      const api = viewerApiRef.current
+      if (!api) return
+      const panel = document.querySelector<HTMLElement>('[data-properties-panel]')
+      const desktop = window.matchMedia('(min-width: 768px)').matches
+      if (!propertiesOpen || !panel || !desktop) { api.setViewportInsets({ right: 0 }); return }
+      // Layout box, not getBoundingClientRect: the panel slides in with a
+      // transform, and mid-slide it would measure as off screen.
+      const host = panel.offsetParent as HTMLElement | null
+      const width = host?.clientWidth ?? 0
+      const right = width ? Math.max(0, width - panel.offsetLeft + 12) : 0
+      // A narrow frame: shifting by most of it helps nobody.
+      api.setViewportInsets({ right: right < width * 0.6 ? right : 0 })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [embedChrome.propertiesOnSelect, propertiesOpen])
 
   // The rail's vocabulary. Icons live here rather than in the hook so the hook
   // imports no JSX and stays testable as plain logic.
@@ -1103,6 +1144,27 @@ export default function App() {
     }, 400)
     return () => window.clearTimeout(timer)
   }, [loadsActive, urlParams])
+  // Auto-frame (every embed, SDK 1.18): each time the loads settle with a
+  // different set of models, frame them all from iso with a margin. The
+  // loader's own fit puts the box edge to edge, head-on — a catalogue window
+  // then touched every side of the frame and read as a flat panel.
+  // `?autoframe=0` leaves the camera to the loader and the host; a `?view=` or
+  // `?camera=` shot (the article preset) is the presentation effect's above.
+  const autoFrame = urlParams.autoFrame ?? (embedChrome.embed && !urlParams.view && !urlParams.camera)
+  const autoFramedRef = useRef('')
+  useEffect(() => {
+    if (!autoFrame || loadsActive) return
+    const ids = sceneModels.map((m) => m.id).join('|')
+    if (!ids || ids === autoFramedRef.current) return
+    // The same short quiet as the presentation shot: a federated set arrives
+    // one model at a time.
+    const timer = window.setTimeout(() => {
+      autoFramedRef.current = ids
+      viewerApiRef.current?.setCameraPreset(urlParams.view ?? 'iso', { fill: urlParams.fill ?? 0.8 })
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [autoFrame, loadsActive, sceneModels, urlParams])
+
   const loadingState: 'idle' | 'loading' | 'loaded' | 'error' =
     loadsActive ? 'loading' : sceneModels.length > 0 ? 'loaded' : loadError ? 'error' : 'idle'
   useEffect(() => {
@@ -1411,13 +1473,10 @@ export default function App() {
       const ids = [...pendingAutoValidateRef.current].filter((id) => inScene.has(id) && modelRegistry.get(id))
       pendingAutoValidateRef.current.clear()
       if (ids.length === 0) return
-      // One at a time: validation is a single global run.
-      void (async () => {
-        for (const id of ids) {
-          if (!modelRegistry.get(id) || !useSceneStore.getState().models.some((m) => m.id === id)) continue
-          await validation.run(undefined, id)
-        }
-      })()
+      // Through the queue, one at a time (validation is a single global run).
+      // A failure reaches an embedding host as `validation-failed`; the app
+      // itself already toasted it.
+      for (const id of ids) void validateForHost(id).catch(() => undefined)
     },
 
     removeModel: (modelId) => handleRemoveModel(modelId),
@@ -1488,6 +1547,42 @@ export default function App() {
     }
   }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, compareHighlight, compareDiff, compareHead, compareBase])
 
+  // ── Validation for hosts: the queue, and what it tells them ───────────────
+  // Auto-validation after a load and the SDK's validate() both go through
+  // validation-queue (see why there). The queue announces its own runs with
+  // THAT model's numbers; `announcedResultRef` / `queuedRunRef` keep the
+  // result effect below from announcing the same run a second time.
+  const announcedResultRef = useRef<unknown>(null)
+  const queuedRunRef = useRef(0)
+  const validateForHost = useCallback((modelId?: string, force = false): Promise<QueuedValidationResult> => {
+    let started: string | null = null
+    return queueValidation(modelId, {
+      force,
+      onStart: (id) => {
+        started = id
+        queuedRunRef.current++
+        emitEmbedEvent('validation-started', { modelId: id })
+      },
+    }).then((r) => {
+      announcedResultRef.current = useValidationStore.getState().result
+      emitEmbedEvent('validation-completed', {
+        modelId:      r.modelId,
+        qualityScore: r.result.qualityScore ?? null,
+        errors:       r.result.stats.errors,
+        warnings:     r.result.stats.warnings,
+        info:         r.result.stats.info,
+        total:        r.result.stats.total,
+      })
+      return r
+    }, (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err)
+      emitEmbedEvent('validation-failed', { modelId: (err as { modelId?: string | null })?.modelId ?? modelId ?? null, message })
+      throw err
+    }).finally(() => {
+      if (started) queuedRunRef.current--
+    })
+  }, [])
+
   // ── Analytics: track each completed validation run ────────────────────────
   const prevResultRef = useRef<typeof result>(null)
   useEffect(() => {
@@ -1503,12 +1598,18 @@ export default function App() {
       duration_ms:   result.durationMs,
       top_rule:      topRule,
     })
-    // Surface the Health Score + counts to an embedding host (CDE dashboard, SDK).
+    // Surface the Health Score + counts to an embedding host (CDE dashboard,
+    // SDK) — for runs the visitor started; queued runs announce themselves.
+    if (result === announcedResultRef.current || queuedRunRef.current > 0) return
+    const models = useSceneStore.getState().models
     emitEmbedEvent('validation-completed', {
+      // One model: these are its numbers. Several: the aggregate of all.
+      modelId:      models.length === 1 ? models[0].id : null,
       qualityScore: result.qualityScore ?? null,
       errors:       result.stats.errors,
       warnings:     result.stats.warnings,
       info:         result.stats.info,
+      total:        result.stats.total,
     })
   }, [result])
 
@@ -1561,6 +1662,13 @@ export default function App() {
   // The card follows the selection, and closes when nothing is selected.
   const [elementCardOpen, setElementCardOpen] = useState(false)
   useEffect(() => { if (!selected) setElementCardOpen(false) }, [selected])
+  // `embed` in a narrow frame (a phone, or a slim column of a product page):
+  // no rail and no bottom nav there, so the pick opens the element card —
+  // and from it every property — or such a visitor could never see one.
+  useEffect(() => {
+    if (!embedChrome.propertiesOnSelect || !selected) return
+    if (window.matchMedia('(max-width: 767px)').matches) setElementCardOpen(true)
+  }, [embedChrome.propertiesOnSelect, selected])
 
   // ── Screen readers: say what the tap selected ──────────────────────────────
   // A tap on a canvas gives VoiceOver nothing to read. This polite live region
@@ -2237,6 +2345,19 @@ export default function App() {
   const filtersRef = useRef({ hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel })
   filtersRef.current = { hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel }
 
+  // An element a host names by expressID, or by GlobalId (SDK 1.18). A GlobalId
+  // is unique across a federation, so it also says which model; an expressID
+  // only means something together with a model (or the active one).
+  const resolveElementRef = useCallback(async (msg: Record<string, unknown>): Promise<{ expressId: number; modelId?: string } | null> => {
+    const modelId = typeof msg.modelId === 'string' && msg.modelId ? msg.modelId : undefined
+    if (typeof msg.globalId === 'string' && msg.globalId) {
+      const [hit] = (await viewerApiRef.current?.findElements({ globalId: msg.globalId, modelId, limit: 1 })) ?? []
+      return hit ? { expressId: hit.expressId, modelId: hit.modelId } : null
+    }
+    const id = Number(msg.expressId)
+    return Number.isFinite(id) && id > 0 ? { expressId: id, modelId } : null
+  }, [])
+
   // ── Inbound postMessage commands (host CDE → iframe) ──────────────────────
   // Lets a CDE drive the embedded viewer two-way (load / select / isolate / fit).
   // Only active when running inside an iframe. Commands use the `ifcviewer:` ns.
@@ -2292,12 +2413,13 @@ export default function App() {
           break
         }
         case 'ifcviewer:select': {
-          const id = Number(msg.expressId)
-          if (Number.isFinite(id) && id > 0) {
-            const modelId = typeof msg.modelId === 'string' ? msg.modelId : undefined
-            viewerApiRef.current?.selectElement(id, modelId)
-            viewerApiRef.current?.focusElement(id, modelId)
-          }
+          // By expressID, or by GlobalId (v1.18): a catalogue knows its
+          // product by GlobalId, not by the file's line numbers.
+          void resolveElementRef(msg).then((ref) => {
+            if (!ref) return
+            viewerApiRef.current?.selectElement(ref.expressId, ref.modelId)
+            viewerApiRef.current?.focusElement(ref.expressId, ref.modelId)
+          })
           break
         }
         case 'ifcviewer:isolate': {
@@ -2338,6 +2460,7 @@ export default function App() {
           // fill / azimuth / elevation (v1.14): a tight fit for presentation —
           // the model fills the frame instead of floating in its bounding
           // sphere. Answers with the framed scope when asked for a result.
+          // elementId (v1.18): frame that element instead of the scene.
           const preset = typeof msg.preset === 'string' && CAMERA_PRESETS.includes(msg.preset as CameraPreset)
             ? msg.preset as CameraPreset
             : 'iso'
@@ -2345,8 +2468,24 @@ export default function App() {
             ? msg.scope as 'auto' | 'active' | 'group' | 'all'
             : undefined
           const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined)
-          void respond(() => {
-            const framed = viewerApiRef.current?.setCameraPreset(preset, {
+          const elementId = num(msg.elementId)
+          const frameView = async (): Promise<{ scope: string }> => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            if (elementId !== undefined) {
+              const angles = num(msg.azimuth) !== undefined || num(msg.elevation) !== undefined || typeof msg.preset === 'string'
+                ? {
+                    azimuthDeg: num(msg.azimuth) ?? PRESET_VIEW[preset].azimuthDeg,
+                    elevationDeg: num(msg.elevation) ?? PRESET_VIEW[preset].elevationDeg,
+                  }
+                : undefined
+              const ok = await api.frameElement(elementId, typeof msg.modelId === 'string' ? msg.modelId : undefined, {
+                fill: num(msg.fill), view: angles, animate: msg.animate !== false,
+              })
+              if (!ok) throw new Error(`Element #${elementId} was not found in ${typeof msg.modelId === 'string' ? `model "${msg.modelId}"` : 'the active model'}, or has no geometry`)
+              return { scope: 'element' }
+            }
+            const framed = api.setCameraPreset(preset, {
               ...(scope ? { scope } : {}),
               fill: num(msg.fill),
               azimuthDeg: num(msg.azimuth),
@@ -2355,7 +2494,12 @@ export default function App() {
             })
             if (!framed) throw new Error('Nothing to frame — load a model first')
             return { scope: framed.scope }
-          })
+          }
+          // setView() sends no requestId and expects no answer — it still has
+          // to move the camera. Routing it through respond() alone (which
+          // returns at once without an id) made setView a no-op since v1.14.
+          if (requestId) void respond(frameView)
+          else void frameView().catch((err) => console.warn('[embed] view:', err instanceof Error ? err.message : err))
           break
         }
         // ── The panel rail, from outside ─────────────────────────────────
@@ -2412,22 +2556,67 @@ export default function App() {
           })))
           break
         case 'ifcviewer:get-element': {
-          const id = Number(msg.expressId)
-          const modelId = typeof msg.modelId === 'string' ? msg.modelId : undefined
-          void respond(() => (Number.isFinite(id) && id > 0
-            ? (viewerApiRef.current?.getItemData(id, modelId) ?? null)
-            : null))
+          void respond(async () => {
+            const ref = await resolveElementRef(msg)
+            return ref ? (await viewerApiRef.current?.getItemData(ref.expressId, ref.modelId)) ?? null : null
+          })
+          break
+        }
+        case 'ifcviewer:find-elements': {
+          const strings = (v: unknown): string | string[] | undefined =>
+            typeof v === 'string' ? v
+              : Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string')
+              : undefined
+          const limit = Number(msg.limit)
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            return api.findElements({
+              ifcClass: strings(msg.ifcClass),
+              globalId: strings(msg.globalId),
+              name: typeof msg.name === 'string' ? msg.name : undefined,
+              modelId: typeof msg.modelId === 'string' ? msg.modelId : undefined,
+              limit: Number.isFinite(limit) && limit > 0 ? limit : undefined,
+            })
+          })
           break
         }
         case 'ifcviewer:get-validation':
+          // null until a run has produced a result (also while the first one
+          // is still going — getValidationStatus() says so). After that, the
+          // numbers on screen, and whether a newer run is under way or failed.
           void respond(() => {
             const r = useValidationStore.getState().result
-            return r ? {
+            if (!r) return null
+            const q = getValidationQueueState()
+            const models = useSceneStore.getState().models
+            return {
               qualityScore: r.qualityScore ?? null,
               errors: r.stats.errors, warnings: r.stats.warnings, info: r.stats.info,
-            } : null
+              total: r.stats.total,
+              status: q.status === 'running' || q.status === 'error' ? q.status : 'done',
+              modelId: models.length === 1 ? models[0].id : null,
+              ...(q.status === 'error' && q.error ? { error: q.error } : {}),
+            }
           })
           break
+        case 'ifcviewer:get-validation-status':
+          void respond(() => getValidationQueueState())
+          break
+        case 'ifcviewer:validate': {
+          const mid = typeof msg.modelId === 'string' && msg.modelId ? msg.modelId : undefined
+          void respond(async () => {
+            const { modelId, result } = await validateForHost(mid, msg.force === true)
+            return {
+              modelId,
+              qualityScore: result.qualityScore ?? null,
+              errors: result.stats.errors, warnings: result.stats.warnings, info: result.stats.info,
+              total: result.stats.total,
+              durationMs: result.durationMs,
+            }
+          })
+          break
+        }
         case 'ifcviewer:screenshot':
           void respond(() => viewerApiRef.current?.takeSnapshot() ?? '')
           break
@@ -2462,6 +2651,8 @@ export default function App() {
             }))
             const sev = typeof msg.severity === 'string' ? msg.severity : null
             if (sev) issues = issues.filter((i) => i.severity === sev)
+            // One model of a federated scene (v1.18): issues carry their model.
+            if (typeof msg.modelId === 'string' && msg.modelId) issues = issues.filter((i) => i.modelId === msg.modelId)
             const limit = Number(msg.limit)
             if (Number.isFinite(limit) && limit > 0) issues = issues.slice(0, limit)
             return { qualityScore: r?.qualityScore ?? null, total: r?.issues.length ?? 0, issues }
@@ -2506,9 +2697,15 @@ export default function App() {
 
         case 'ifcviewer:check-eir':
           void respond(async () => {
-            // Accept a profile object or its JSON string (compact shorthand ok).
-            // parseEirProfile validates with Zod → a bad profile errors back to the SDK.
-            const profile = parseEirProfile(msg.profile)
+            // Accept a built-in profile id, a profile object or its JSON string
+            // (compact shorthand ok). parseEirProfile validates with Zod → a bad
+            // profile errors back to the SDK.
+            const asId = typeof msg.profile === 'string' ? msg.profile.trim() : ''
+            const builtin = asId ? BUILTIN_EIR_PROFILES.find((p) => p.id === asId) : undefined
+            if (!builtin && asId.startsWith('builtin-')) {
+              throw new Error(`Unknown built-in EIR profile "${asId}" — one of: ${BUILTIN_EIR_PROFILES.map((p) => p.id).join(', ')}`)
+            }
+            const profile = builtin ?? parseEirProfile(msg.profile)
             const mid = useSceneStore.getState().activeModelId ?? useSceneStore.getState().models[0]?.id ?? null
             const buffer = mid ? modelRegistry.getBuffer(mid) : null
             if (!mid || !buffer) throw new Error('No model buffer available — load an IFC first')
@@ -3726,7 +3923,9 @@ export default function App() {
   // the studio itself (no toolbar: kiosk, client) it has to do the same, or
   // every shot fails with "open a model".
   const studioViewerOwner = useRef({})
-  const studioStandalone = clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing'
+  // The compact toolbar (`embed`) carries no capture menu, so it owns nothing.
+  const toolbarIsFull = effectiveChrome.showToolbar && effectiveChrome.toolbarVariant === 'full'
+  const studioStandalone = clipStudioOpen && !toolbarIsFull && tourMode !== 'playing'
   useEffect(() => {
     if (!studioStandalone) return
     const owner = studioViewerOwner.current
@@ -3839,14 +4038,29 @@ export default function App() {
   }, [])
 
   // ── Relay element selection to an embedding parent (CDE integration) ───────
+  // With its GlobalId (v1.18), so a host can map a pick to its own records.
+  // Looked up before sending: a worker round trip, milliseconds. A pick that
+  // a newer one replaced before the lookup returned is not sent at all —
+  // hosts read the last event as the current selection.
+  const selectionSeqRef = useRef(0)
   useEffect(() => {
     if (!selected) return
-    emitEmbedEvent('element-selected', {
-      expressId: Number(selected.id),
-      modelId:   selected.modelId ?? null,
-      ifcType:   selected.type,
-      name:      selected.name,
-    })
+    const seq = ++selectionSeqRef.current
+    const expressId = Number(selected.id)
+    const modelId = selected.modelId ?? null
+    const send = (globalId: string | null): void => {
+      if (seq !== selectionSeqRef.current) return
+      emitEmbedEvent('element-selected', {
+        expressId,
+        modelId,
+        ifcType:  selected.type,
+        name:     selected.name,
+        globalId,
+      })
+    }
+    const api = viewerApiRef.current
+    if (!api || !isEmbedded()) { send(null); return }
+    void api.getGlobalIds([expressId], modelId ?? undefined).then(([g]) => send(g ?? null), () => send(null))
   }, [selected])
 
   // ── Legend data — merged across all loaded models ────────────────────────
@@ -4079,7 +4293,10 @@ export default function App() {
               // Toolbar) instead of taking a 44px band; the scene gets the
               // whole screen. Overlays anchored to the top of the viewport
               // clear it with --mobile-top-ui (index.css).
-              <div className="flex-none z-20 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:z-[25] max-md:pointer-events-none">
+              <div className={effectiveChrome.toolbarVariant === 'full'
+                ? 'flex-none z-20 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:z-[25] max-md:pointer-events-none'
+                // The compact bar is a plain band at every width: no capsules.
+                : 'flex-none z-20'}>
                 {/* Show the active model's name; fall back to last-loaded when only one model exists */}
                 {(() => {
                   const activeEntry = sceneModels.find((m) => m.id === activeModelId)
@@ -4104,6 +4321,8 @@ export default function App() {
                       onOpenIds={() => setShowIdsModal(true)}
                       onOpenCompare={() => setShowCompareModal(true)}
                       onOpenHelp={() => setShowHelp(true)}
+                      variant={effectiveChrome.toolbarVariant}
+                      tools={effectiveChrome.toolbarTools}
                     />
                   )
                 })()}
@@ -4475,13 +4694,13 @@ export default function App() {
                   {/* Clip Studio normally hangs off the toolbar's capture menu (or the
                       tour bar). With no toolbar — kiosk, client — nothing would
                       mount it, and an SDK createPresentation() would wait forever. */}
-                  {coverStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
+                  {coverStudioOpen && !toolbarIsFull && tourMode !== 'playing' && (
                     <React.Suspense fallback={null}>
                       <CoverStudioModal viewerApiRef={viewerApiRef} onClose={() => useCoverStudioStore.getState().setOpen(false)} />
                     </React.Suspense>
                   )}
 
-                  {clipStudioOpen && !effectiveChrome.showToolbar && tourMode !== 'playing' && (
+                  {clipStudioOpen && !toolbarIsFull && tourMode !== 'playing' && (
                     <React.Suspense fallback={null}>
                       <ClipStudio />
                     </React.Suspense>
@@ -4491,7 +4710,7 @@ export default function App() {
                     <React.Suspense fallback={null}>
                       <TourPlayer
                         viewerApiRef={viewerApiRef}
-                        ownsCaptureReplay={!effectiveChrome.showToolbar}
+                        ownsCaptureReplay={!toolbarIsFull}
                         shareModelUrls={urlParams.modelUrls}
                       />
                     </React.Suspense>
@@ -4510,7 +4729,7 @@ export default function App() {
                     onMore={(info) => setCtxMenu({ x: 0, y: 0, info })}
                   />
                   )}
-                  {!embedChrome.embed && !clientMode && (
+                  {(!embedChrome.embed || embedChrome.propertiesOnSelect) && !clientMode && (
                   <MobileElementCard
                     open={elementCardOpen && !!selected}
                     selected={selected}
@@ -4649,16 +4868,16 @@ export default function App() {
       {/* ── Loading Center (popover on desktop, sheet on mobile; portals itself) ── */}
       {/* Quiet presets (kiosk, article) leave progress to the host: it gets
           model-progress events, and a figure is no place for a load panel. */}
-      {route === 'viewer' && !effectiveChrome.quiet && <LoadingCenter anchor={effectiveChrome.showToolbar ? 'toolbar' : 'floating'} />}
+      {route === 'viewer' && !effectiveChrome.quiet && <LoadingCenter anchor={toolbarIsFull ? 'toolbar' : 'floating'} />}
 
       {/* ── Loading indicator for presets without a toolbar (kiosk, client) ── */}
-      {route === 'viewer' && !effectiveChrome.showToolbar && !effectiveChrome.quiet && <LoadingIndicator variant="floating" />}
+      {route === 'viewer' && !toolbarIsFull && !effectiveChrome.quiet && <LoadingIndicator variant="floating" />}
 
       {/* ── OPFS cache badge (yields its corner to the floating loading indicator) ── */}
       {/* Viewer only: on the blog and landing it sat in the corner of every
           article as "2 cached", which means nothing to a reader. */}
       {opfsAvailable && cacheEntries.length > 0 && route === 'viewer' && !effectiveChrome.quiet
-        && !(!effectiveChrome.showToolbar && hasLoadHistory) && (
+        && !(!toolbarIsFull && hasLoadHistory) && (
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}

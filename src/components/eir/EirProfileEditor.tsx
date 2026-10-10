@@ -63,8 +63,11 @@ const newRuleId = (): string =>
   (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? `rule-${crypto.randomUUID()}` : `rule-${Date.now()}-${_idSeq++}`
 
 /** Defaults when a rule's type changes, preserving the shared base fields. */
-function defaultsForType(type: EirRuleType, base: Pick<EirRule, 'id' | 'entity' | 'severity' | 'message' | 'predefinedType'>): EirRule {
-  const b = { id: base.id, entity: base.entity, severity: base.severity, message: base.message, predefinedType: base.predefinedType }
+function defaultsForType(type: EirRuleType, base: Pick<EirRule, 'id' | 'entity' | 'severity' | 'message' | 'predefinedType' | 'where' | 'optional'>): EirRule {
+  const b = {
+    id: base.id, entity: base.entity, severity: base.severity, message: base.message, predefinedType: base.predefinedType,
+    where: base.where, optional: base.optional,
+  }
   switch (type) {
     case 'entityExists':        return { ...b, type }
     case 'requiredProperty':    return { ...b, type, property: '' }
@@ -134,7 +137,9 @@ export default function EirProfileEditor({ onClose }: Props) {
     if (!draft) return null
     // Forking a built-in (or a never-saved draft) → derive a fresh user id.
     const id = (!draft.id || draftIsBuiltin) ? `${slug(draft.name)}-${Date.now().toString(36)}` : draft.id
-    const candidate: EirProfile = { ...draft, id, version: draft.version + (draft.id ? 1 : 0) }
+    // A condition row left blank is no condition.
+    const rules = draft.rules.map((r) => (r.where && !r.where.property.trim() && !r.where.value.trim() ? { ...r, where: undefined } : r))
+    const candidate: EirProfile = { ...draft, rules, id, version: draft.version + (draft.id ? 1 : 0) }
     const parsed = eirProfileSchema.safeParse(candidate)
     if (!parsed.success) {
       toast(t('toasts.invalidProfile', { detail: parsed.error.issues[0]?.message ?? 'check rule fields' }), 'error')
@@ -375,11 +380,12 @@ interface RuleCardProps {
 function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleCardProps) {
   const { t } = useTranslation('eir')
   const set = (patch: Partial<EirRule>): void => onChange(rule.id, patch)
-  // Applicability hint (only when a model is loaded). predefinedType narrows
-  // further than we can count here, so present it as an upper bound.
+  // Applicability hint (only when a model is loaded). predefinedType and a
+  // property condition narrow further than we can count here, so present it
+  // as an upper bound.
   const applies = classCounts.size > 0 ? applicabilityCount(classCounts, rule.entity) : null
   const appliesLabel = applies == null ? null
-    : rule.predefinedType ? t('applies.upper', { count: applies })
+    : rule.predefinedType || rule.where?.property ? t('applies.upper', { count: applies })
     : applies > 0 ? t('applies.match', { count: applies })
     : t('applies.none')
   const appliesColor = applies && applies > 0 ? 'var(--text-faint)' : '#F5A623'
@@ -404,6 +410,7 @@ function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleC
         <button onClick={() => onDelete(rule.id)} className={`${appliesLabel ? '' : 'ml-auto '}w-7 h-7 grid place-items-center rounded-md text-[var(--text-faint)] hover:text-[var(--danger)]`}><Icons.X size={12} /></button>
       </div>
       <RuleFields rule={rule} set={set} />
+      <RuleScope rule={rule} set={set} />
       {lint?.length ? (
         <div className="flex flex-col gap-0.5 pt-0.5">
           {lint.map((c) => (
@@ -467,6 +474,46 @@ function RuleFields({ rule, set }: { rule: EirRule; set: (patch: Partial<EirRule
   }
 }
 
+/**
+ * Which elements the rule checks beyond its entity: an optional property
+ * condition ("only when Pset_WindowCommon.IsExternal = true") and whether a
+ * model without any of them fails (IDS cardinality required vs optional).
+ */
+function RuleScope({ rule, set }: { rule: EirRule; set: (patch: Partial<EirRule>) => void }) {
+  const { t } = useTranslation('eir')
+  const w = rule.where
+  return (
+    <div className="flex items-end gap-1.5 flex-wrap">
+      {w ? (
+        <>
+          <span className="h-7 flex items-center text-[10.5px] text-[var(--text-faint)]" title={t('where.hint')}>{t('where.label')}</span>
+          <Field label={t('fields.propertySet')} list="eir-psets" value={w.pset ?? ''} onChange={(v) => set({ where: { ...w, pset: v || undefined } })} placeholder="(any)" />
+          <Field label={t('fields.property')} list="eir-props" value={w.property} onChange={(v) => set({ where: { ...w, property: v } })} placeholder="IsExternal" />
+          <Field label={t('fields.equals')} narrow value={w.value} onChange={(v) => set({ where: { ...w, value: v } })} placeholder="true" />
+          <button
+            onClick={() => set({ where: undefined })}
+            title={t('where.remove')}
+            aria-label={t('where.remove')}
+            className="w-7 h-7 grid place-items-center rounded-md text-[var(--text-faint)] hover:text-[var(--danger)]"
+          ><Icons.X size={12} /></button>
+        </>
+      ) : (
+        <button
+          onClick={() => set({ where: { property: '', value: '' } })}
+          title={t('where.hint')}
+          className="h-6 px-1.5 rounded-md text-[10.5px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"
+        >+ {t('where.add')}</button>
+      )}
+      {rule.type !== 'entityExists' && (
+        <label className="ml-auto h-6 flex items-center gap-1 text-[10.5px] text-[var(--text-faint)] cursor-pointer select-none" title={t('optional.hint')}>
+          <input type="checkbox" checked={!!rule.optional} onChange={(e) => set({ optional: e.target.checked || undefined })} className="accent-[var(--accent)]" />
+          {t('optional.label')}
+        </label>
+      )}
+    </div>
+  )
+}
+
 const Row = ({ children }: { children: ReactNode }) => <div className="flex items-end gap-1.5 flex-wrap">{children}</div>
 
 function PsetField({ rule, set }: { rule: { pset?: string }; set: (patch: Partial<EirRule>) => void }) {
@@ -474,11 +521,11 @@ function PsetField({ rule, set }: { rule: { pset?: string }; set: (patch: Partia
   return <Field label={t('fields.propertySet')} list="eir-psets" value={rule.pset ?? ''} onChange={(v) => set({ pset: v || undefined } as Partial<EirRule>)} placeholder="(any)" />
 }
 
-function Field({ label, value, onChange, placeholder, wide, list }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; wide?: boolean; list?: string }) {
+function Field({ label, value, onChange, placeholder, wide, narrow, list }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; wide?: boolean; narrow?: boolean; list?: string }) {
   return (
     <label className="flex flex-col gap-0.5">
       <span className="text-[9.5px] text-[var(--text-faint)] uppercase tracking-wide">{label}</span>
-      <input value={value} list={list} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`${inputCls} ${wide ? 'w-[220px]' : 'w-[130px]'}`} />
+      <input value={value} list={list} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`${inputCls} ${wide ? 'w-[220px]' : narrow ? 'w-[80px]' : 'w-[130px]'}`} />
     </label>
   )
 }

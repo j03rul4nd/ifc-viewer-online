@@ -10,7 +10,7 @@
 // editor. Pure + unit-tested.
 
 import type { IdsDocument, IdsSpecification, IdsValue, IdsRestriction } from '../ids/ids-types'
-import type { EirProfile, EirRule, EirSeverity, NumericOperator } from './eir-types'
+import type { EirCondition, EirProfile, EirRule, EirSeverity, NumericOperator } from './eir-types'
 import { slug } from './eir-schema'
 
 let _seq = 0
@@ -26,6 +26,24 @@ function entityNameOf(spec: IdsSpecification): string | null {
   // A single-value enumeration is unambiguous; anything broader can't map to one rule.
   if (e.name.restriction.enumeration?.length === 1) return e.name.restriction.enumeration[0]
   return null
+}
+
+/**
+ * A single literal property condition in the applicability (what `where`
+ * compiles to), `null` when there is none, `false` when there is something
+ * EIR cannot express (several conditions, patterns, other facet kinds).
+ */
+function conditionOf(spec: IdsSpecification): EirCondition | null | false {
+  const others = spec.applicability.filter((f) => f.kind !== 'entity')
+  if (others.length === 0) return null
+  const [f] = others
+  if (others.length > 1 || f.kind !== 'property' || !f.value) return false
+  const property = 'simpleValue' in f.baseName ? f.baseName.simpleValue : undefined
+  const value = 'simpleValue' in f.value ? f.value.simpleValue : undefined
+  const pset = 'simpleValue' in f.propertySet ? f.propertySet.simpleValue
+    : isAnyWildcard(f.propertySet) ? undefined : false
+  if (!property || value === undefined || pset === false) return false
+  return { ...(pset ? { pset } : {}), property, value }
 }
 
 function predefinedTypeOf(spec: IdsSpecification): string | undefined {
@@ -92,10 +110,25 @@ export function idsToEir(doc: IdsDocument, name = doc.title || 'Imported IDS'): 
     }
     const predefinedType = predefinedTypeOf(spec)
     const severity = severityOf(spec, 'error')
-    const base = { entity, ...(predefinedType ? { predefinedType } : {}), severity }
+    const condition = conditionOf(spec)
+    if (condition === false) {
+      // Importing it without the condition would check elements the IDS never meant to.
+      warnings.push(`"${where}": applicability has a condition EIR can't express (only one property = value) — skipped.`)
+      return
+    }
+    const optional = spec.cardinality === 'optional'
+    const base = {
+      entity, ...(predefinedType ? { predefinedType } : {}), ...(condition ? { where: condition } : {}),
+      ...(optional ? { optional: true } : {}), severity,
+    }
 
     // Entity-only spec → existence rule.
     if (spec.requirements.length === 0) {
+      if (optional) {
+        // "If any exist, nothing is required of them" checks nothing.
+        warnings.push(`"${where}": an optional specification without requirements checks nothing — skipped.`)
+        return
+      }
       rules.push({ id: newId(), type: 'entityExists', ...base })
       return
     }

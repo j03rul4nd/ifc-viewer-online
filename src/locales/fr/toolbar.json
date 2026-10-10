@@ -83,7 +83,9 @@
       "client": "Client",
       "clientDesc": "Habillage présentation client",
       "article": "Article",
-      "articleDesc": "Figure pour un article : canevas, cadrage serré, défilement de la page"
+      "articleDesc": "Figure pour un article : canevas, cadrage serré, défilement de la page",
+      "embed": "Dans une app",
+      "embedDesc": "Dans une app hôte : 3D + propriétés, Valider et Mesurer, sans Ouvrir/Partager/compte"
     },
     "optionsLabel": "Options",
     "autoValidate": "Lancer la validation au chargement",

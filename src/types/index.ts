@@ -198,6 +198,12 @@ export interface CacheEntry {
   lastUsedAt?: number
   /** Bytes of the cached `.ifc`, when one was written with the entry. */
   ifcSize?: number
+  /**
+   * CONVERTER_REVISION (ifc-importer-classes.ts) the fragments were converted
+   * under. Absent on entries written before it existed (revision 1). An older
+   * revision is a miss: those fragments lack data the converter now keeps.
+   */
+  converter?: number
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────

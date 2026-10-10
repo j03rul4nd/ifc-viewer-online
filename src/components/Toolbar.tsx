@@ -64,6 +64,14 @@ interface ToolbarProps {
   /** Version comparison workspace (sets of IFCs across deliveries). */
   onOpenCompare: () => void
   onOpenHelp: () => void
+  /**
+   * `compact` (the `embed` preset): the file name and `tools` only. The host
+   * application supplies the file and owns sharing and accounts, so Open,
+   * Check, View, Tools, Capture, Share, help, account and language are gone.
+   */
+  variant?: 'full' | 'compact'
+  /** The compact bar's tools. */
+  tools?: ReadonlyArray<'validate' | 'measure'>
 }
 
 // ── Button component ──────────────────────────────────────────────────────────
@@ -227,6 +235,7 @@ function scoreColor(score: number): string {
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
   viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
+  variant = 'full', tools = ['validate', 'measure'],
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
@@ -568,6 +577,75 @@ export default function Toolbar({
     </span>
   ) : null
 
+  // The hero action with its result attached — one glance answers "how is
+  // this model doing?". Shared by both bars.
+  const ValidatePill = (
+    <div
+      className={[
+        'flex items-center h-[28px] rounded-[6px]',
+        qualityScore !== null && !isRunning ? 'bg-[var(--surface-2)] border border-[var(--border)]' : '',
+      ].join(' ')}
+    >
+      <Btn
+        onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
+        disabled={!isRunning && !canRun}
+        variant={canRun || isRunning ? 'primary' : 'ghost'}
+        title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
+      >
+        {isRunning ? SpinSVG : ValidateSVG}
+        {isRunning
+          ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
+          : validationStatus === 'error' ? t('retry') : t('validate')}
+      </Btn>
+      {qualityScore !== null && !isRunning && (
+        <div className="flex items-center gap-1.5 pl-2 pr-2" title={`Health Score: ${qualityScore}/100`}>
+          <span
+            className="text-[13px] font-bold font-mono tabular-nums leading-none"
+            style={{ color: scoreColor(qualityScore) }}
+          >
+            {qualityScore}
+          </span>
+          {IssueChip}
+        </div>
+      )}
+    </div>
+  )
+
+  if (variant === 'compact') {
+    return (
+      // Inside a host application (`ui: 'embed'`): what the model is, and the
+      // tools the host allowed. Same height and surface as the full bar, and
+      // the same at every width — there is too little here to float.
+      <div className="relative flex items-center gap-2 h-[44px] bg-[var(--surface)] border-b border-[var(--border)] pl-3 pr-2 select-none shrink-0">
+        {isRunning && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden pointer-events-none">
+            <div
+              className="h-full bg-[var(--accent)] transition-[width] duration-300 ease-out"
+              style={{ width: `${Math.max(validationProgress, 8)}%` }}
+            />
+          </div>
+        )}
+        <Icons.Logo size={18} className="shrink-0" />
+        <span className="text-[12px] font-mono text-[var(--text-dim)] truncate min-w-0" title={fileName ?? undefined}>
+          {fileName ?? tCommon('file.noFileLoaded')}
+        </span>
+        <div className="flex-1 min-w-[8px]" />
+        {tools.includes('measure') && (
+          <Btn
+            onClick={toggleMeasurementPanel}
+            disabled={!canRun}
+            variant={measurementPanelOpen ? 'secondary' : 'ghost'}
+            title={t('measure')}
+          >
+            {MeasureSVG}
+            <span className="max-sm:hidden">{t('measure')}</span>
+          </Btn>
+        )}
+        {tools.includes('validate') && ValidatePill}
+      </div>
+    )
+  }
+
   return (
     // Structural bar — not floating. Takes space in the flex column.
     // bg-[var(--surface)] + border-b gives the same treatment as VS Code / Linear.
@@ -692,35 +770,7 @@ export default function Toolbar({
           The score and issue count sit on the same pill as the button that
           produced them: one glance answers "how is this model doing?". */}
       <div className="hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5">
-        <div
-          className={[
-            'flex items-center h-[28px] rounded-[6px]',
-            qualityScore !== null && !isRunning ? 'bg-[var(--surface-2)] border border-[var(--border)]' : '',
-          ].join(' ')}
-        >
-          <Btn
-            onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
-            disabled={!isRunning && !canRun}
-            variant={canRun || isRunning ? 'primary' : 'ghost'}
-            title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
-          >
-            {isRunning ? SpinSVG : ValidateSVG}
-            {isRunning
-              ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
-              : validationStatus === 'error' ? t('retry') : t('validate')}
-          </Btn>
-          {qualityScore !== null && !isRunning && (
-            <div className="flex items-center gap-1.5 pl-2 pr-2" title={`Health Score: ${qualityScore}/100`}>
-              <span
-                className="text-[13px] font-bold font-mono tabular-nums leading-none"
-                style={{ color: scoreColor(qualityScore) }}
-              >
-                {qualityScore}
-              </span>
-              {IssueChip}
-            </div>
-          )}
-        </div>
+        {ValidatePill}
       </div>
 
       {/* ── Check ▾ — everything that reads the model against a standard ──── */}

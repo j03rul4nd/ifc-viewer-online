@@ -10,9 +10,21 @@
 //
 // The viewer auto-discovers the app URL relative to this script, so self-hosting
 // "just works". Override with the `baseUrl` option if you serve it elsewhere.
+//
+// Pin a version in production — the file at a versioned path never changes:
+//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js"
 
-export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article'
+import { appBaseUrlFor } from './base-url'
+
+export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client' | 'article' | 'embed'
+/**
+ * Named camera views: `iso` (from the front-right corner, above), `top`,
+ * `bottom`, `front` (looking along −z, the IFC model's +y), `back`, `left`,
+ * `right`.
+ */
 export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
+/** A tool the compact toolbar of `ui: 'embed'` can carry. */
+export type EmbedTool = 'validate' | 'measure'
 
 /**
  * What a view frames when several models or scans are loaded: `auto` (default)
@@ -23,6 +35,14 @@ export type CameraScope = 'auto' | 'active' | 'group' | 'all'
 
 /** Options of {@link IfcViewer.frame}. */
 export interface FrameOptions {
+  /**
+   * Frame this element (IFC expressID) instead of the scene. Seen from `view`
+   * / `azimuth` / `elevation` when given, else from where the camera is.
+   * `fill` defaults to 0.75 for an element. Since v1.18.0.
+   */
+  elementId?: number
+  /** With `elementId`: the model it belongs to (expressIDs repeat across models). */
+  modelId?: string
   /** Preset the angles default to. Default `'iso'`. */
   view?: CameraView
   scope?: CameraScope
@@ -39,10 +59,46 @@ export interface FrameOptions {
 export interface IfcViewerOptions {
   /** App base URL. Defaults to the parent of this script's URL. */
   baseUrl?: string
-  /** Chrome preset. Default 'minimal'. */
+  /**
+   * Chrome preset. Default `'minimal'`.
+   *
+   * - `'embed'` (since v1.18.0) — for a host application that supplies the
+   *   file itself: the 3D view, the properties of what the visitor clicks
+   *   (the panel opens on selection) and a compact toolbar with the file
+   *   name, Validate and Measure. No Open, Share, account or language
+   *   controls, no toasts. Narrow it with `toolbar`, `tools` and `panels`.
+   * - `'minimal'` — the viewer's own toolbar (Open, Validate, Check, View,
+   *   Tools, Capture, Share, account, language), no tree.
+   * - `'full'` — plus the tree and the validation panel.
+   * - `'kiosk'` — the canvas only. `'article'` — a figure in a post.
+   *   `'client'` — the stakeholder skin.
+   */
   ui?: IfcViewerPreset
-  /** Run validation on load (drives the Health Score). Default true. */
+  /**
+   * Validate each model once it has loaded (drives the Health Score):
+   * `validation-started`, then `validation-completed` or `validation-failed`
+   * per model. Default true. Use {@link IfcViewer.validate} to run it on
+   * demand instead.
+   */
   validate?: boolean
+  /**
+   * Show the toolbar. Default: the preset's (`embed`, `minimal` and `full`
+   * have one). `false` leaves the 3D view and the panels. Since v1.18.0.
+   */
+  toolbar?: boolean
+  /**
+   * The tools on the compact toolbar of `ui: 'embed'`. Default
+   * `['validate', 'measure']`; `[]` for none (the validation bar goes too).
+   * Since v1.18.0.
+   */
+  tools?: EmbedTool[]
+  /**
+   * Frame the whole scene from iso with a margin every time a load settles.
+   * Default `true`; `false` leaves the camera where the loader puts it
+   * (fitted head-on to the first model, edge to edge) — for a host that sets
+   * its own shot. With `view`, that shot is taken instead. Since v1.18.0.
+   */
+  autoFrame?: boolean
   /** Open the validation panel automatically. Default false. */
   panel?: boolean
   /**
@@ -54,7 +110,7 @@ export interface IfcViewerOptions {
    * set first and then takes tools away.
    *
    * An empty array means no rail at all. Omitting it means no opinion, and the
-   * preset decides.
+   * preset decides (`ui: 'embed'`: `['properties']`).
    */
   panels?: PanelName[]
   /** Force a UI language (e.g. 'en', 'es', 'de'). */
@@ -178,23 +234,101 @@ export interface ValidationCompletedEvent {
   errors: number
   warnings: number
   info: number
+  /** All issues. Since v1.18.0. */
+  total?: number
+  /**
+   * The model these numbers are about; null for the aggregate of a federated
+   * scene (a run the visitor started with several models loaded). Since v1.18.0.
+   */
+  modelId?: string | null
 }
+/** A validation began on a model (auto after load, or validate()). Since v1.18.0. */
+export interface ValidationStartedEvent { modelId: string }
+/** A validation could not run or did not finish — the reason, in English. Since v1.18.0. */
+export interface ValidationFailedEvent { modelId: string | null; message: string }
 export interface ElementSelectedEvent {
   expressId: number
   modelId: string | null
   ifcType: string
   name: string
+  /** The element's IFC GlobalId — map a pick to your own records. Since v1.18.0. */
+  globalId?: string | null
+}
+
+/** An element as findElements() lists it. Since v1.18.0. */
+export interface ElementSummary {
+  expressId: number
+  modelId: string
+  globalId: string | null
+  /** e.g. `IFCWINDOW` */
+  ifcClass: string | null
+  name: string | null
+  /** Name of its type, e.g. `'Ventana V-70 practicable'`. */
+  typeName: string | null
+}
+
+/** What findElements() matches on; every field given must match. Since v1.18.0. */
+export interface ElementQuery {
+  /** IFC class(es), any case: `'IfcWindow'`, `['IfcDoor', 'IfcWindow']`. */
+  ifcClass?: string | string[]
+  /** GlobalId(s). */
+  globalId?: string | string[]
+  /** Case-insensitive part of the element's Name. */
+  name?: string
+  /** Only this model. */
+  modelId?: string
+  /** Default 1000. */
+  limit?: number
 }
 
 /** A loaded model, as returned by getModels(). */
 export interface ModelSummary { id: string; fileName: string; elementCount: number }
 
-/** Validation summary returned by getValidation(). */
+/**
+ * The validation result on screen, returned by getValidation() — null until a
+ * run has produced one. With several models it is the aggregate of all.
+ */
 export interface ValidationSummary {
   qualityScore: number | null
   errors: number
   warnings: number
   info: number
+  /** All issues. Since v1.18.0. */
+  total?: number
+  /**
+   * Since v1.18.0. `'done'`: these are the latest numbers. `'running'`: a
+   * newer run is under way and these are the previous one's. `'error'`: the
+   * latest run failed (`error` says why) and these are the previous one's.
+   */
+  status?: 'done' | 'running' | 'error'
+  /** The model these numbers are about; null for a federated aggregate. Since v1.18.0. */
+  modelId?: string | null
+  error?: string
+}
+
+/** What validate() resolves with: that model's own result. Since v1.18.0. */
+export interface ValidationRunResult {
+  modelId: string
+  /** Health Score 0–100. */
+  qualityScore: number | null
+  errors: number
+  warnings: number
+  info: number
+  total: number
+  durationMs: number
+}
+
+/** Where validation stands, at any moment (getValidationStatus()). Since v1.18.0. */
+export interface ValidationStatus {
+  /** `idle`: nothing validated yet; `running`; `done`; `error`: the last run failed. */
+  status: 'idle' | 'running' | 'done' | 'error'
+  /** The model validating now, or the one the last run was about. */
+  modelId: string | null
+  /** 0–100. */
+  progress: number
+  error: string | null
+  /** Runs waiting behind the current one. */
+  queued: number
 }
 
 /** Per-model stats for dashboard charts (getStats()). */
@@ -275,9 +409,32 @@ export type EirSeverity = 'error' | 'warning' | 'info' | 'ignored'
 /** Numeric comparison operator for a `numeric` rule. */
 export type EirOperator = '>' | '>=' | '<' | '<=' | '='
 
-/** A single EIR validation rule. `entity` is the IFC class it applies to. */
+/**
+ * A property value an element must have for a rule to check it — e.g.
+ * `{ pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' }`.
+ * A value the element inherits from its type counts. Booleans are written
+ * `'true'` / `'false'`. Since v1.18.0.
+ */
+export interface EirCondition { pset?: string; property: string; value: string }
+
+/**
+ * The built-in profiles checkEir() accepts by id. `builtin-en14351-1` checks
+ * the declared performance of EN 14351-1 windows and external doors (wind
+ * load, watertightness, acoustics, U-value, g / τv, manufacturer and product
+ * code) on standard IFC property sets; type properties count. Since v1.18.0.
+ */
+export type BuiltinEirProfileId =
+  | 'builtin-hospital-lod300' | 'builtin-iso19650-delivery' | 'builtin-lod200' | 'builtin-lod400'
+  | 'builtin-cobie' | 'builtin-simba21-general' | 'builtin-en14351-1'
+
+/**
+ * A single EIR validation rule. `entity` is the IFC class it applies to;
+ * `where` narrows it to the elements with a property value, and `optional`
+ * (IDS cardinality) keeps a model without any of them from failing — both
+ * since v1.18.0.
+ */
 export type EirRule =
-  & { id?: string; entity: string; predefinedType?: string; severity: EirSeverity; message?: string }
+  & { id?: string; entity: string; predefinedType?: string; where?: EirCondition; optional?: boolean; severity: EirSeverity; message?: string }
   & (
     | { type: 'entityExists' }
     | { type: 'requiredProperty'; pset?: string; property: string }
@@ -299,15 +456,67 @@ export interface EirProfile {
   rules: EirRule[]
 }
 
-/** Structured IFC data returned by getElement() (name, GlobalId, property sets…). */
+/** One property of an element's or a type's property set. */
+export interface IfcPropertyValue {
+  /** expressID of the IfcProperty. */
+  expressId: number
+  name: string
+  /** The value; for an enumerated / list / bounded property, its first one. */
+  value: string | number | boolean | null
+  /** IFC value type, e.g. `IFCTHERMALTRANSMITTANCEMEASURE`, `IFCLABEL`, `IFCBOOLEAN`. */
+  type?: string
+  /** Unit symbol (`mm`, `W/(m²·K)`): the property's own, else the project's for that measure. */
+  unit?: string
+  /** Every value of an enumerated / list / bounded property, when it has several. */
+  values?: Array<string | number | boolean | null>
+  /** In `typeProperties`: the element redefines this property, and its value wins. */
+  overridden?: boolean
+}
+
+export interface IfcPropertySetData {
+  /** expressID of the IfcPropertySet. */
+  expressId: number
+  name: string
+  properties: IfcPropertyValue[]
+}
+
+/**
+ * Structured IFC data returned by getElement(): attributes, the element's own
+ * property sets and quantities, and its TYPE — for a catalogue object
+ * (an IfcWindow typed by an IfcWindowType), where the manufacturer's data lives.
+ */
 export interface IfcElementData {
+  /** IFC class, e.g. `IFCWINDOW`. Since v1.18.0. */
+  ifcClass?: string | null
   name: string | null
+  /** The 22-character IFC GlobalId (always null before v1.18.0). */
   globalId: string | null
   objectType: string | null
   tag: string | null
   storey: string | null
-  propertySets: Array<{ name: string; properties: Array<{ name: string; value: unknown }> }>
-  quantitySets: Array<{ name: string; quantities: Array<{ name: string; value: number | null }> }>
+  /** The element's own property sets (IfcRelDefinesByProperties). */
+  propertySets: IfcPropertySetData[]
+  quantitySets: Array<{ name: string; quantities: Array<{ name: string; value: number | null; quantityType?: string; unit?: string }> }>
+  /**
+   * The type's property sets (IfcRelDefinesByType → HasPropertySets), the
+   * same shape as `propertySets`. Read from IFC4 types and IFC2x3 window and
+   * door styles alike. Since v1.18.0 (always empty before).
+   */
+  typeProperties: IfcPropertySetData[]
+  /** Name of the type, e.g. `'Ventana V-70 practicable'`. */
+  typeName: string | null
+  /** expressID of the type object. Since v1.18.0. */
+  typeId?: number | null
+  /** IFC class of the type, e.g. `IFCWINDOWTYPE`, `IFCDOORSTYLE`. Since v1.18.0. */
+  typeClass?: string | null
+  /** GlobalId of the type object. Since v1.18.0. */
+  typeGlobalId?: string | null
+  /**
+   * Element and type property sets merged — what applies to this element.
+   * Where both define a property (same set, same name), the element's value
+   * wins; `source` says which one each value came from. Since v1.18.0.
+   */
+  effectivePropertySets?: Array<{ name: string; properties: Array<IfcPropertyValue & { source: 'occurrence' | 'type' }> }>
   [k: string]: unknown
 }
 
@@ -871,6 +1080,10 @@ export interface IfcViewerEventMap {
   'model-error': ModelErrorEvent
   'model-progress': ModelProgressEvent
   'validation-completed': ValidationCompletedEvent
+  /** Since v1.18.0. */
+  'validation-started': ValidationStartedEvent
+  /** Since v1.18.0. */
+  'validation-failed': ValidationFailedEvent
   'element-selected': ElementSelectedEvent
   'pointcloud-picked': PointCloudPickedEvent
   'map-feature-picked': MapFeaturePickedEvent
@@ -975,7 +1188,23 @@ type Listener<T> = (payload: T) => void
 // setLayerVisible(), frameLayer(), removeLayer() — session-only, never the
 // visitor's saved layers. getTwin() reads the operational twin. Events:
 // `layer-feature-picked` and `alert` (layer and twin rules alike).
-const SDK_VERSION = '1.17.0'
+// 1.18.0: catalogue objects in a host application. getElement() returns the
+// GlobalId and the element's TYPE — typeName, typeProperties (IFC4 types and
+// IFC2x3 styles, window/door lining and panel sets), units, and
+// effectivePropertySets where the element's own value wins over the type's.
+// findElements(), and GlobalIds for getElement() / select() /
+// element-selected. validate() runs validation on demand and resolves with
+// the Health Score; `validate: true` really validates after each load now,
+// with validation-started / -failed events and getValidationStatus(). The
+// camera frames small objects: auto-frame after load (`autoFrame`), fit() /
+// frame() with a margin, frame({ elementId }), and setView() moves the camera
+// again (a no-op since 1.14). ui: 'embed' with `toolbar` / `tools`, whose
+// properties panel keeps the picked object in view. checkEir() takes a
+// built-in profile id — 'builtin-en14351-1' checks the declared performance
+// of EN 14351-1 windows and external doors — and EIR rules gain `where`
+// (only elements with a property value) and `optional`. Pinned builds at
+// /sdk/<version>/.
+const SDK_VERSION = '1.18.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -1013,9 +1242,10 @@ export async function packScene(doc: SceneDocument, maxChars = 16_000): Promise<
 }
 
 function resolveDefaultBaseUrl(): string {
-  // This module lives at <app>/sdk/ifc-viewer.es.js → the app is its parent dir.
+  // This module lives at <app>/sdk/ifc-viewer.es.js or, pinned, at
+  // <app>/sdk/<version>/ifc-viewer.es.js → the app is the parent of sdk/.
   try {
-    return new URL('../', import.meta.url).href
+    return appBaseUrlFor(import.meta.url)
   } catch {
     return '/'
   }
@@ -1452,9 +1682,12 @@ export class IfcViewer {
     )
   }
 
-  /** Select + frame an element by its IFC expressID. */
-  select(expressId: number, modelId?: string): void {
-    this.send({ type: 'ifcviewer:select', expressId, modelId })
+  /**
+   * Select + frame an element by its IFC expressID, or by its GlobalId (a
+   * 22-character string, since v1.18.0) — which also finds its model.
+   */
+  select(element: number | string, modelId?: string): void {
+    this.send({ type: 'ifcviewer:select', ...(typeof element === 'string' ? { globalId: element } : { expressId: element }), modelId })
   }
 
   /** Isolate a category by IFC class (e.g. "IfcWall"); omit to clear. */
@@ -1464,13 +1697,23 @@ export class IfcViewer {
     this.send({ type: 'ifcviewer:isolate', ifcType, ...(options.frame === false ? { frame: false } : {}) })
   }
 
-  /** Frame the active model. */
+  /**
+   * Frame the active model from the current angle, with a margin (it fills
+   * about 80 % of the frame) — small models included. Since v1.18.0 it no
+   * longer fits the model edge to edge.
+   */
   fit(): void { this.send({ type: 'ifcviewer:fit' }) }
 
   /** Reset the camera to its default position. */
   reset(): void { this.send({ type: 'ifcviewer:reset' }) }
 
-  /** Fly to a named camera view (iso/top/front/right/left/back/bottom), optionally framing a scope. */
+  /**
+   * Fly to a named view of the scene — `'iso'`, `'front'`, `'back'`,
+   * `'left'`, `'right'`, `'top'`, `'bottom'` — with the whole scope in frame
+   * (its bounding sphere plus a margin). Fire-and-forget; use
+   * {@link IfcViewer.frame} to await the move or frame tighter. (Between
+   * v1.14.0 and v1.17.0 this sent the command but the viewer ignored it.)
+   */
   setView(view: CameraView, scope?: CameraScope): void {
     this.send({ type: 'ifcviewer:view', preset: view, ...(scope ? { scope } : {}) })
   }
@@ -1483,13 +1726,33 @@ export class IfcViewer {
    * bounding sphere. `azimuth` / `elevation` (degrees) look from any angle;
    * they default to the `view` preset's own. Resolves once the camera is set.
    *
+   * An element (v1.18): `frame(67, modelId)` or `frame({ elementId: 67 })`
+   * frames that element — from the current angle unless a view or angles
+   * are given — and rejects when the element is not in the model.
+   *
    * ```js
    * await viewer.frame({ view: 'iso', fill: 0.9 })
    * await viewer.frame({ azimuth: 200, elevation: 35, animate: false })
+   * await viewer.frame(67, modelId)                       // one element
+   * await viewer.frame({ elementId: 67, view: 'front' })
    * ```
    */
-  frame(options: FrameOptions = {}): Promise<{ scope: CameraScope }> {
-    const { view, scope, fill, azimuth, elevation, animate } = options
+  frame(options?: FrameOptions): Promise<{ scope: CameraScope | 'element' }>
+  frame(elementId: number, modelId?: string, options?: Omit<FrameOptions, 'elementId' | 'modelId'>): Promise<{ scope: CameraScope | 'element' }>
+  frame(target: FrameOptions | number = {}, modelId?: string, more: FrameOptions = {}): Promise<{ scope: CameraScope | 'element' }> {
+    const options: FrameOptions = typeof target === 'number' ? { ...more, elementId: target, modelId } : target
+    const { view, scope, fill, azimuth, elevation, animate, elementId } = options
+    if (elementId !== undefined) {
+      return this.request<{ scope: 'element' }>('ifcviewer:view', {
+        elementId,
+        ...(options.modelId ? { modelId: options.modelId } : {}),
+        ...(view ? { preset: view } : {}),
+        ...(fill !== undefined ? { fill } : {}),
+        ...(azimuth !== undefined ? { azimuth } : {}),
+        ...(elevation !== undefined ? { elevation } : {}),
+        ...(animate !== undefined ? { animate } : {}),
+      })
+    }
     return this.request<{ scope: CameraScope }>('ifcviewer:view', {
       preset: view ?? 'iso',
       ...(scope ? { scope } : {}),
@@ -1525,14 +1788,84 @@ export class IfcViewer {
     return this.request<ModelSummary[]>('ifcviewer:get-models')
   }
 
-  /** Fetch an element's IFC data (attributes + property/quantity sets), or null. */
-  getElement(expressId: number, modelId?: string): Promise<IfcElementData | null> {
-    return this.request<IfcElementData | null>('ifcviewer:get-element', { expressId, modelId })
+  /**
+   * Fetch an element's IFC data — by expressID, or by GlobalId — or null when
+   * there is no such element:
+   * attributes (with the GlobalId), its own property sets and quantities,
+   * and its type's — `typeName`, `typeProperties` — with units. For a
+   * catalogue object the type is where the manufacturer's data lives; read
+   * `effectivePropertySets` for what applies to this element (its own value
+   * wins where both define a property).
+   *
+   * ```js
+   * const el = await viewer.getElement(67, modelId)
+   * const u = el.typeProperties.find((s) => s.name === 'Pset_WindowCommon')
+   *   ?.properties.find((p) => p.name === 'ThermalTransmittance')   // { value: 1.2, unit: 'W/(m²·K)' }
+   * ```
+   */
+  getElement(element: number | string, modelId?: string): Promise<IfcElementData | null> {
+    // A string is a GlobalId (since v1.18.0): unique, so it also finds the model.
+    return this.request<IfcElementData | null>('ifcviewer:get-element',
+      typeof element === 'string' ? { globalId: element, modelId } : { expressId: element, modelId })
   }
 
-  /** Fetch the current validation summary (Health Score + counts), or null. */
+  /**
+   * Find elements by IFC class, GlobalId and/or name across the loaded models
+   * — for a page that knows its product as "the window" or by its GlobalId,
+   * not by the file's expressIDs. Each hit carries what getElement(), select()
+   * and frame() take. Since v1.18.0.
+   *
+   * ```js
+   * const [win] = await viewer.findElements({ ifcClass: 'IfcWindow' })
+   * const data = await viewer.getElement(win.expressId, win.modelId)
+   * ```
+   */
+  findElements(query: ElementQuery = {}): Promise<ElementSummary[]> {
+    return this.request<ElementSummary[]>('ifcviewer:find-elements', { ...query })
+  }
+
+  /**
+   * The validation result on screen, or null.
+   *
+   * - Before any run has produced a result — including while the FIRST run
+   *   is still going, and after it failed — `null`. Ask
+   *   {@link IfcViewer.getValidationStatus} which of those it is.
+   * - After a run: `{ qualityScore, errors, warnings, info, total, status:
+   *   'done', modelId }`. With several models, the aggregate of all
+   *   (`modelId: null`); `validate(modelId)` gives one model's own numbers.
+   * - While a newer run is going: the previous numbers, `status: 'running'`.
+   * - After a newer run failed: the previous numbers, `status: 'error'`, `error`.
+   */
   getValidation(): Promise<ValidationSummary | null> {
     return this.request<ValidationSummary | null>('ifcviewer:get-validation')
+  }
+
+  /**
+   * Validate a model now — default the active one — and resolve with ITS
+   * result: the Health Score and the issue counts. Waits for loads still in
+   * flight and for any validation already running, so `add()` then
+   * `validate()` needs no await in between. Emits `validation-started` and
+   * `validation-completed` (or `validation-failed`, and the promise rejects
+   * with the reason: no model, unknown id, model data unavailable,
+   * cancelled, or the validator's own error). A model validated before
+   * resolves from the cached result unless `force` is set. Since v1.18.0.
+   *
+   * ```js
+   * await viewer.add('V-70-PR.ifc', bytes)
+   * const { qualityScore, errors } = await viewer.validate()
+   * ```
+   */
+  async validate(modelId?: string, options: { force?: boolean } = {}): Promise<ValidationRunResult> {
+    await this.loadChain
+    return this.request<ValidationRunResult>('ifcviewer:validate', {
+      ...(modelId ? { modelId } : {}),
+      ...(options.force ? { force: true } : {}),
+    }, 10 * 60_000)
+  }
+
+  /** Where validation stands right now: idle, running (with progress), done or error. Since v1.18.0. */
+  getValidationStatus(): Promise<ValidationStatus> {
+    return this.request<ValidationStatus>('ifcviewer:get-validation-status')
   }
 
   /** Capture the current 3D view as a PNG data URL. */
@@ -1545,8 +1878,11 @@ export class IfcViewer {
     return this.request<StatsResult>('ifcviewer:get-stats')
   }
 
-/** Validation issues for a dashboard table. Optionally filter by severity / cap count. */
-  getIssues(opts: { severity?: 'error' | 'warning' | 'info'; limit?: number } = {}): Promise<IssuesResult> {
+  /**
+   * Validation issues for a dashboard table. Optionally filter by severity or
+   * by model (`modelId`, since v1.18.0) and cap the count.
+   */
+  getIssues(opts: { severity?: 'error' | 'warning' | 'info'; limit?: number; modelId?: string } = {}): Promise<IssuesResult> {
     return this.request<IssuesResult>('ifcviewer:get-issues', opts)
   }
 
@@ -1781,10 +2117,12 @@ export class IfcViewer {
   /**
    * Check the loaded model against an EIR / BIM Validation profile (ISO 19650-style).
    * Accepts a profile object or its JSON string; the compact shorthand
-   * (`{ entity, requiredProperties: [...] }`) is also accepted. Returns the same
-   * IdsResult shape as checkIds (the profile compiles to IDS internally). Since v1.7.0.
+   * (`{ entity, requiredProperties: [...] }`) is also accepted, and so is the
+   * id of a built-in profile (`'builtin-en14351-1'`, since v1.18.0). Returns
+   * the same IdsResult shape as checkIds (the profile compiles to IDS
+   * internally). Since v1.7.0.
    */
-  checkEir(profile: EirProfile | string): Promise<IdsResult> {
+  checkEir(profile: EirProfile | BuiltinEirProfileId | string): Promise<IdsResult> {
     return this.request<IdsResult>('ifcviewer:check-eir', { profile }, 120_000)
   }
 
@@ -2353,6 +2691,10 @@ export class IfcViewer {
     if (ui !== 'minimal') url.searchParams.set('ui', ui)
     if (this.opts.validate === false) url.searchParams.set('validate', '0')
     if (this.opts.panel) url.searchParams.set('panel', '1')
+    if (this.opts.toolbar !== undefined) url.searchParams.set('toolbar', this.opts.toolbar ? '1' : '0')
+    // Serialised even when empty: `tools=` is "no tools", not "the default".
+    if (this.opts.tools) url.searchParams.set('tools', this.opts.tools.join(','))
+    if (this.opts.autoFrame === false) url.searchParams.set('autoframe', '0')
     // Serialised even when empty: `panels=` with nothing after it is a host
     // saying "no rail", which is not the same as saying nothing.
     if (this.opts.panels) url.searchParams.set('panels', this.opts.panels.join(','))
@@ -2599,6 +2941,12 @@ export class IfcViewer {
       case 'validation-completed':
         this.emit('validation-completed', data as unknown as ValidationCompletedEvent)
         break
+      case 'validation-started':
+        this.emit('validation-started', data as unknown as ValidationStartedEvent)
+        break
+      case 'validation-failed':
+        this.emit('validation-failed', data as unknown as ValidationFailedEvent)
+        break
       case 'element-selected':
         this.emit('element-selected', data as unknown as ElementSelectedEvent)
         break
@@ -2667,7 +3015,8 @@ export class IfcViewer {
 // payload). The underlying IfcViewer is available via the element's `.viewer`.
 
 const FORWARDED_EVENTS = [
-  'ready', 'model-loaded', 'model-error', 'model-progress', 'validation-completed', 'element-selected',
+  'ready', 'model-loaded', 'model-error', 'model-progress', 'validation-completed',
+  'validation-started', 'validation-failed', 'element-selected',
   'pointcloud-picked', 'map-feature-picked', 'walk-changed', 'measurements-changed',
   'tour-started', 'tour-step', 'tour-ended', 'presentation-progress',
   'layer-feature-picked', 'alert',
@@ -2703,6 +3052,12 @@ export class IfcViewerElement extends HTMLElement {
       accent: attr('accent'),
       validate: boolAttr('validate'),
       panel: boolAttr('panel'),
+      // v1.18: <ifc-viewer ui="embed" tools="measure" toolbar="false" auto-frame="false">
+      toolbar: boolAttr('toolbar'),
+      tools: this.hasAttribute('tools')
+        ? (this.getAttribute('tools') ?? '').split(',').map((t) => t.trim()).filter(Boolean) as EmbedTool[]
+        : undefined,
+      autoFrame: boolAttr('auto-frame'),
       baseUrl: attr('base-url'),
       model: attr('model'),
       background: attr('background'),
@@ -2760,15 +3115,21 @@ export class IfcViewerElement extends HTMLElement {
   // ── Convenience proxies to the underlying viewer ──────────────────────────
   add(name: string, bytes: ArrayBuffer | Uint8Array): Promise<ModelLoadedEvent> { return this._viewer!.add(name, bytes) }
   addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent> { return this._viewer!.addFromUrl(url, name) }
-  select(expressId: number, modelId?: string): void { this._viewer?.select(expressId, modelId) }
+  select(element: number | string, modelId?: string): void { this._viewer?.select(element, modelId) }
+  findElements(query?: ElementQuery): Promise<ElementSummary[]> { return this._viewer!.findElements(query) }
   isolate(ifcType?: string): void { this._viewer?.isolate(ifcType) }
   activate(): void { this._viewer?.activate() }
-  frame(options?: FrameOptions): Promise<{ scope: CameraScope }> { return this._viewer!.frame(options) }
+  frame(options?: FrameOptions): Promise<{ scope: CameraScope | 'element' }> { return this._viewer!.frame(options) }
+  fit(): void { this._viewer?.fit() }
+  getElement(element: number | string, modelId?: string): Promise<IfcElementData | null> { return this._viewer!.getElement(element, modelId) }
+  validate(modelId?: string, options?: { force?: boolean }): Promise<ValidationRunResult> { return this._viewer!.validate(modelId, options) }
+  getValidation(): Promise<ValidationSummary | null> { return this._viewer!.getValidation() }
+  getValidationStatus(): Promise<ValidationStatus> { return this._viewer!.getValidationStatus() }
   toggleFullscreen(): Promise<void> { return this._viewer!.toggleFullscreen() }
   setTurntable(enabled?: boolean | number): Promise<{ active: boolean; speed: number }> { return this._viewer!.setTurntable(enabled) }
   bindSteps(steps: StoryStep[], options?: { rootMargin?: string }): () => void { return this._viewer!.bindSteps(steps, options) }
   getStats(): Promise<StatsResult> { return this._viewer!.getStats() }
-  getIssues(opts?: { severity?: 'error' | 'warning' | 'info'; limit?: number }): Promise<IssuesResult> { return this._viewer!.getIssues(opts) }
+  getIssues(opts?: { severity?: 'error' | 'warning' | 'info'; limit?: number; modelId?: string }): Promise<IssuesResult> { return this._viewer!.getIssues(opts) }
   screenshot(): Promise<string> { return this._viewer!.screenshot() }
   addPointCloud(name: string, bytes: ArrayBuffer | Uint8Array): Promise<string> { return this._viewer!.addPointCloud(name, bytes) }
   addPointCloudFromUrl(url: string, name?: string): Promise<string> { return this._viewer!.addPointCloudFromUrl(url, name) }

@@ -480,3 +480,41 @@ describe('?layers= (data-layer setup)', () => {
     expect(parseAppUrlParams('?model=https://h/a.ifc').layersUrl).toBeUndefined()
   })
 })
+
+describe("the `embed` preset (SDK 1.18)", () => {
+  it('a compact toolbar with Validate and Measure, properties on selection, the rail scoped to properties, quiet', () => {
+    const c = resolveEmbedChrome(parseAppUrlParams('?ui=embed'))
+    expect(c).toMatchObject({
+      embed: true, showToolbar: true, toolbarVariant: 'compact', toolbarTools: ['validate', 'measure'],
+      showSidebar: true, propertiesOnSelect: true, panels: ['properties'],
+      showTree: false, showHome: false, showModelInfo: false, quiet: true, showValidation: true,
+    })
+  })
+
+  it('tools= narrows the toolbar, and without Validate the validation bar goes too', () => {
+    expect(resolveEmbedChrome(parseAppUrlParams('?ui=embed&tools=measure'))).toMatchObject({ toolbarTools: ['measure'], showValidation: false })
+    expect(resolveEmbedChrome(parseAppUrlParams('?ui=embed&tools='))).toMatchObject({ toolbarTools: [], showValidation: false })
+    // unknown names are ignored, duplicates collapse
+    expect(resolveEmbedChrome(parseAppUrlParams('?ui=embed&tools=measure,share,measure'))).toMatchObject({ toolbarTools: ['measure'] })
+  })
+
+  it('toolbar=0 and panels= still apply on top of it', () => {
+    const c = resolveEmbedChrome(parseAppUrlParams('?ui=embed&toolbar=0&panels=properties,measurement'))
+    expect(c.showToolbar).toBe(false)
+    expect(c.panels).toEqual(['properties', 'measurement'])
+  })
+
+  it('leaves the other presets with the full toolbar, as before', () => {
+    for (const q of ['', '?embed=1', '?ui=full', '?ui=kiosk', '?ui=client', '?ui=article']) {
+      const c = resolveEmbedChrome(parseAppUrlParams(q))
+      expect(c.toolbarVariant, q).toBe('full')
+      expect(c.propertiesOnSelect, q).toBe(false)
+    }
+  })
+
+  it('autoframe= is read as a boolean, absent by default', () => {
+    expect(parseAppUrlParams('?embed=1').autoFrame).toBeUndefined()
+    expect(parseAppUrlParams('?embed=1&autoframe=0').autoFrame).toBe(false)
+    expect(parseAppUrlParams('?embed=1&autoframe=1').autoFrame).toBe(true)
+  })
+})

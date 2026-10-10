@@ -36,6 +36,20 @@ export type EirRuleType =
   | 'regex'
   | 'classification'
 
+/**
+ * A property value an element must have for a rule to apply to it — e.g.
+ * `Pset_WindowCommon.IsExternal = true`: a rule for external windows that
+ * interior ones must not fail. Compiles to a property facet in the IDS
+ * applicability, so type-inherited properties count. Booleans are written
+ * `true` / `false` (lowercase, as IDS requires).
+ */
+export interface EirCondition {
+  /** Property set; omit for any. */
+  pset?: string
+  property: string
+  value: string
+}
+
 interface EirRuleBase {
   /** Stable id (used by the editor for edit/delete/duplicate). */
   id: string
@@ -44,6 +58,15 @@ interface EirRuleBase {
   entity: string
   /** Optional PredefinedType narrowing of the applicability, e.g. "FIRE_DOOR". */
   predefinedType?: string
+  /** Optional property condition narrowing the applicability (see EirCondition). */
+  where?: EirCondition
+  /**
+   * Check only the elements that exist: no failure when the model has none
+   * (IDS cardinality `optional`). By default a rule also requires that at
+   * least one such element exists. Ignored by `entityExists`, which is that
+   * requirement.
+   */
+  optional?: boolean
   severity: EirSeverity
   /** Optional human label shown in the report instead of the generated one. */
   message?: string

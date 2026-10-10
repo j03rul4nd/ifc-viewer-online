@@ -45,3 +45,21 @@ describe('lintProfile', () => {
     expect(grouped.get('b')).toEqual(['numericNaN'])
   })
 })
+
+describe('lintProfile — conditions', () => {
+  const base = { id: 'w', type: 'propertyNotEmpty' as const, entity: 'IfcWindow', property: 'WindLoadRating', severity: 'error' as const }
+
+  it('flags a condition missing its property or value', () => {
+    expect(lintProfile({ rules: [{ ...base, where: { property: 'IsExternal', value: '' } }] })).toEqual([{ ruleId: 'w', code: 'whereIncomplete' }])
+    expect(lintProfile({ rules: [{ ...base, where: { property: '', value: 'true' } }] })).toEqual([{ ruleId: 'w', code: 'whereIncomplete' }])
+    // a row just added, both blank: dropped on save, not an error yet
+    expect(lintProfile({ rules: [{ ...base, where: { property: '', value: '' } }] })).toEqual([])
+  })
+
+  it('flags a boolean that IDS would not match', () => {
+    for (const value of ['True', 'FALSE', '.T.']) {
+      expect(lintProfile({ rules: [{ ...base, where: { property: 'IsExternal', value } }] })).toEqual([{ ruleId: 'w', code: 'whereBoolean' }])
+    }
+    expect(lintProfile({ rules: [{ ...base, where: { pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' } }] })).toEqual([])
+  })
+})

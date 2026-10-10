@@ -35,7 +35,7 @@ type ProcessArgs = { bytes: Uint8Array; progressCallback?: (p: number, d?: unkno
 
 const h = vi.hoisted(() => ({
   script: null as null | ((args: ProcessArgs) => Promise<Uint8Array>),
-  importers: [] as Array<{ webIfcSettings: Record<string, unknown>; wasm: unknown; received?: Uint8Array }>,
+  importers: [] as Array<{ webIfcSettings: Record<string, unknown>; wasm: unknown; classes: { abstract: Set<number> }; received?: Uint8Array }>,
 }))
 
 vi.mock('web-ifc', () => ({
@@ -48,6 +48,7 @@ vi.mock('@thatopen/fragments', () => ({
   IfcImporter: class {
     webIfcSettings: Record<string, unknown> = { COORDINATE_TO_ORIGIN: true, OPTIMIZE_PROFILES: true }
     wasm: unknown = { path: '', absolute: false }
+    classes = { abstract: new Set<number>(), elements: new Set<number>() }
     received?: Uint8Array
     constructor() { h.importers.push(this) }
     process(args: ProcessArgs): Promise<Uint8Array> {
@@ -207,6 +208,8 @@ describe('ifc-parser.worker — conversion', () => {
     expect(imp.received?.byteLength).toBe(ifcBuffer().byteLength)
     expect(imp.webIfcSettings.COORDINATE_TO_ORIGIN).toBe(false)
     expect(imp.webIfcSettings.OPTIMIZE_PROFILES).toBe(true)
+    // …and keeps the classes the properties panel reads types and units from.
+    expect(imp.classes.abstract.has(1299126871)).toBe(true) // IFCWINDOWSTYLE
   })
 
   it('buffer path (legacy): no reading stage, and a partial view is sliced to its range', async () => {

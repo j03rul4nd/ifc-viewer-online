@@ -80,7 +80,10 @@
     "filterProps": "กรองคุณสมบัติ…",
     "noPropsMatch": "ไม่มีคุณสมบัติที่ตรงกัน",
     "ownerModel": "อยู่ใน {{name}} — คลิกเพื่อตั้งเป็นโมเดลที่ใช้งาน",
-    "unknownModel": "ไม่ทราบโมเดล"
+    "unknownModel": "ไม่ทราบโมเดล",
+    "typeProperties": "คุณสมบัติของประเภท",
+    "typeName": "ประเภท",
+    "overriddenByOccurrence": "ถูกแทนที่ด้วยค่าของชิ้นส่วนนี้เอง"
   },
   "tabs": {
     "properties": "คุณสมบัติ",

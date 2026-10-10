@@ -83,7 +83,9 @@
       "client": "Kunde",
       "clientDesc": "Kundenpräsentations-Ansicht",
       "article": "Artikel",
-      "articleDesc": "Abbildung für einen Beitrag: Leinwand, enger Bildausschnitt, Seiten-Scroll"
+      "articleDesc": "Abbildung für einen Beitrag: Leinwand, enger Bildausschnitt, Seiten-Scroll",
+      "embed": "In einer App",
+      "embedDesc": "In einer Host-App: 3D + Eigenschaften, Prüfen & Messen, ohne Öffnen/Teilen/Konto"
     },
     "optionsLabel": "Optionen",
     "autoValidate": "Validierung beim Laden ausführen",

@@ -78,4 +78,46 @@ describe('idsToEir', () => {
     const strip = (r: EirProfile['rules']) => r.map(({ id, ...rest }) => rest)
     expect(strip(back.rules)).toEqual(strip(original.rules))
   })
+
+  it('round-trips a property condition and an optional rule', () => {
+    const original: EirProfile = {
+      id: 'p', name: 'RT', version: 1,
+      rules: [
+        { id: 'a', type: 'propertyNotEmpty', entity: 'IfcWindow', where: { pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' },
+          optional: true, pset: 'Pset_WindowCommon', property: 'WindLoadRating', severity: 'error' },
+        { id: 'b', type: 'requiredProperty', entity: 'IfcDoor', where: { property: 'Status', value: 'NEW' }, property: 'FireRating', severity: 'warning' },
+      ],
+    }
+    const { profile, warnings } = idsToEir(compileEirToIds(original))
+    expect(warnings).toEqual([])
+    const strip = (r: EirProfile['rules']) => r.map(({ id, ...rest }) => rest)
+    expect(strip(profile.rules)).toEqual(strip(original.rules))
+  })
+
+  it('skips applicability it cannot express rather than widen it', () => {
+    const doc: IdsDocument = {
+      specifications: [
+        {
+          name: 'two conditions',
+          applicability: [
+            { kind: 'entity', name: { simpleValue: 'IfcWindow' } },
+            { kind: 'property', propertySet: { simpleValue: 'Pset_WindowCommon' }, baseName: { simpleValue: 'IsExternal' }, value: { simpleValue: 'true' } },
+            { kind: 'property', propertySet: { simpleValue: 'Pset_WindowCommon' }, baseName: { simpleValue: 'Status' }, value: { simpleValue: 'NEW' } },
+          ],
+          requirements: [{ facet: { kind: 'property', propertySet: { simpleValue: 'Pset_WindowCommon' }, baseName: { simpleValue: 'WindLoadRating' } }, cardinality: 'required' }],
+        },
+        {
+          name: 'optional, nothing required',
+          cardinality: 'optional',
+          applicability: [{ kind: 'entity', name: { simpleValue: 'IfcDoor' } }],
+          requirements: [],
+        },
+      ],
+    }
+    const { profile, warnings } = idsToEir(doc)
+    expect(profile.rules).toEqual([])
+    expect(warnings).toHaveLength(2)
+    expect(warnings[0]).toMatch(/condition/)
+    expect(warnings[1]).toMatch(/checks nothing/)
+  })
 })

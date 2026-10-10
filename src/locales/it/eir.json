@@ -65,6 +65,16 @@
     "none": "0 nel modello",
     "upper": "≤ {{count}} nel modello"
   },
+  "where": {
+    "add": "Solo quando…",
+    "label": "Solo quando",
+    "remove": "Rimuovi condizione",
+    "hint": "Verifica solo gli elementi con questo valore di proprietà — conta anche il valore sul tipo dell'elemento. Booleani: true / false."
+  },
+  "optional": {
+    "label": "Solo se presenti",
+    "hint": "Il modello non viene bocciato se non ha nessuno di questi elementi (IDS optional)."
+  },
   "lint": {
     "title": "Controlla questa regola:",
     "entityNotIfc": "L'entità non sembra una classe IFC (es. IfcWall)",
@@ -72,7 +82,9 @@
     "badRegex": "L'espressione regolare non è valida",
     "numericNaN": "Il valore numerico deve essere un numero",
     "emptyEquals": "Il valore atteso è vuoto",
-    "emptyAllowed": "I valori consentiti contengono un'opzione vuota"
+    "emptyAllowed": "I valori consentiti contengono un'opzione vuota",
+    "whereIncomplete": "La condizione richiede una proprietà e un valore",
+    "whereBoolean": "Scrivi i booleani in minuscolo: true / false"
   },
   "stats": {
     "validated": "Validati",

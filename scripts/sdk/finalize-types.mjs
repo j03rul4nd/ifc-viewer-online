@@ -5,7 +5,7 @@
 //
 // Runs right after `tsc -p tsconfig.sdk.json`, as part of `npm run build:sdk`.
 
-import { readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, rmSync, existsSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
@@ -26,4 +26,9 @@ const header = [
 
 writeFileSync(TARGET, header + readFileSync(EMITTED, 'utf8'), 'utf8')
 rmSync(EMITTED)
+// tsc also emits declarations for the SDK's own internal modules (base-url.ts):
+// they are bundled into the .js and nothing public refers to them.
+for (const f of readdirSync(dirname(TARGET))) {
+  if (f.endsWith('.d.ts') && f !== 'ifc-viewer.es.d.ts') rmSync(resolve(dirname(TARGET), f))
+}
 console.log('  ✓ SDK types: public/sdk/ifc-viewer.es.d.ts')

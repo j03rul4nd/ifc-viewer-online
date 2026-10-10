@@ -53,6 +53,7 @@
 
 import * as WEBIFC from 'web-ifc'
 import { IfcImporter } from '@thatopen/fragments'
+import { addImporterClasses } from '../lib/ifc-importer-classes'
 import { validateIfcBuffer } from '../lib/ifc-guards'
 import { hasFarCoordinates } from '../lib/ifc-far-coordinates'
 import type { LoadErrorCode } from '../lib/loading/types'
@@ -339,6 +340,9 @@ async function convert(
   id: string, bytes: Uint8Array, toOrigin: boolean, retry: boolean,
 ): Promise<{ binary: Uint8Array; skipped: number }> {
   const importer = new IfcImporter()
+  // IFC2x3 window/door styles, enumerated & list properties, unit parts: kept
+  // so an element's type data and units reach the properties panel.
+  addImporterClasses(importer)
   importer.webIfcSettings = {
     ...importer.webIfcSettings,
     COORDINATE_TO_ORIGIN: toOrigin,

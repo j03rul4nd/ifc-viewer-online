@@ -17,6 +17,8 @@ const ruleBase = {
   id: z.string().min(1),
   entity: z.string().min(1),
   predefinedType: z.string().optional(),
+  where: z.object({ pset: z.string().optional(), property: z.string().min(1), value: z.string() }).optional(),
+  optional: z.boolean().optional(),
   severity: severitySchema,
   message: z.string().optional(),
 }

@@ -35,7 +35,9 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `model`    | URL(s)                           | —         | Public IFC URL to load. Comma-separated or repeated for multiple (federated) models, which load as one batch (see below). Aliases: `src`, `url`. |
 | `name`     | string(s)                        | from URL  | Display file name(s), parallel to `model`. Aliases: `file`. |
 | `embed`    | `1`/`0`                          | `0`       | Embed mode — slims the chrome for iframe hosting. |
-| `ui`       | `minimal` \| `full` \| `kiosk` \| `client` \| `article` | `minimal` | Chrome preset (implies `embed=1`). |
+| `ui`       | `minimal` \| `full` \| `kiosk` \| `client` \| `article` \| `embed` | `minimal` | Chrome preset (implies `embed=1`). `embed` is for a host application that supplies the file *(1.18)* — see [Presets](#presets). |
+| `tools`    | `validate,measure` (any subset; empty for none) | `validate,measure` | The compact toolbar of `ui=embed`. Without `validate` the validation bar goes too. *(1.18)* |
+| `autoframe` | `1` / `0`                      | `1` in embeds | Each time the loads settle with a different set of models, frame them all from `view` (default `iso`) with a margin. `0` leaves the camera where the loader puts it (fitted head-on, edge to edge) — for a host that sets its own shot. Off when `view` or `camera` is given (those shots win). *(1.18)* |
 | `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). With several models, validation waits until none is still loading, then runs model by model. |
 | `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
@@ -52,7 +54,7 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `hide`     | `w123,r456,n789`                 | —         | OpenStreetMap features to hide in map mode for this page view (not saved as the visitor's own hidden features). A scene's `view.hide`. |
 | `camera`   | `px,py,pz,tx,ty,tz`              | —         | Open on this exact camera (scene metres, Y up: eye, then orbit target) once the models are in, after the map's own fly-in when `map` is set. Wins over `view`. |
 | `view`     | `iso` · `top` · `front` · `back` · `left` · `right` · `bottom` | — (`iso` with `ui=article`) | Once every model has loaded, frame them from this view with a **tight fit**: fitted to the box's corners, not its bounding sphere, so a long low building fills the frame. *(1.14)* |
-| `fill`     | `0.2`–`0.98` or a percentage     | `0.85`    | With `view`: share of the frame the model fills on its tighter axis. *(1.14)* |
+| `fill`     | `0.2`–`0.98` or a percentage     | `0.85` (`0.8` for auto-frame) | With `view` or auto-frame: share of the frame the model fills on its tighter axis. *(1.14)* |
 | `turntable` | `1` or degrees/second          | off       | A slow idle orbit once the model is in, stopped for good by the visitor's first touch; never under `prefers-reduced-motion`. *(1.15)* |
 | `wheel`    | `always` · `ctrl`                | `always` (`ctrl` with `ui=article`) | `ctrl`: the wheel scrolls the host page and zooms only with Ctrl/⌘ held (a trackpad pinch sends Ctrl), with a short hint over the canvas — like an embedded map. *(1.14)* |
 
@@ -143,6 +145,7 @@ Each overrides its preset default. Accept `1`/`0` (also `true`/`false`, `yes`/`n
 | `kiosk`   | — | — | — | — | — | — | — | — |
 | `client`  | — | — | — | — | ✓ | — | ✓ | ✓ |
 | `article` | — | — | — | — | — | — | — | — |
+| `embed`   | compact | — | ✓ (on selection) | — | ✓ | — | rail = properties · validation bar | — |
 
 The collapsed validation bar (with the **Health Score** badge) shows in `minimal`/`full`
 even when the panel isn't auto-opened, so the citable number is always visible.
@@ -156,6 +159,19 @@ scrolling). Tool panels the host opens over the bridge — measure, sun, walk,
 Cover Studio, Clip Studio, compare — still mount, and inside an article only a
 frame under 520 px wide (or a touch screen) gets the phone layout, so a
 650 px column keeps the desktop panels.
+
+**`embed`** (1.18) is for a host **application** that supplies the file itself —
+a manufacturer's product page, a catalogue, a CDE record. Its toolbar is
+**compact**: the file name, then **Validate** (with the Health Score) and
+**Measure** — no Open, Check, View, Tools, Capture, Share, help, account or
+language. The properties panel starts closed, so the model gets the whole
+frame, and opens itself when the visitor selects an element — the view's
+centre then moves into the space beside it, so the picked object stays in
+sight (and the last framing is redone to fit, unless the visitor has moved
+the camera since); the rail offers
+properties only (`panels=` widens or narrows it). No toasts, no load chips —
+the host shows its own progress from `model-progress`. Narrow it further with
+`tools=measure` / `tools=` and `toolbar=0`. The other presets are unchanged.
 
 ### Shared tour links (`#tour=` fragment — D-26)
 
@@ -231,8 +247,10 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `model-progress`   | `percent`, `phase` (`reading` · `parsing` · `uploading`). One stream per load, never decreasing, sent only while that load is in progress (≤ 4/s) |
 | `model-loaded`     | `modelId`, `fileName`, `elementCount`, `fromCache` |
 | `model-error`      | `url` (URL loads) or `name` (byte/file loads), `message`. Sent for download failures, invalid/unparseable files, scene failures and cancelled loads |
-| `validation-completed` | `qualityScore`, `errors`, `warnings`, `info` |
-| `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
+| `validation-started` | `modelId` — a queued validation (after a load with `validate=1`, or the SDK's `validate()`) began *(1.18)* |
+| `validation-completed` | `qualityScore`, `errors`, `warnings`, `info`, `total`, `modelId` (null for the aggregate of a federated scene) *(total, modelId: 1.18)* |
+| `validation-failed` | `modelId`, `message` — a queued validation could not run or did not finish *(1.18)* |
+| `element-selected` | `expressId`, `modelId`, `ifcType`, `name`, `globalId` *(globalId: 1.18)* |
 | `walk-changed`     | `active`, `speed` |
 | `measurements-changed` | `tool`, `units`, `items` (values always SI) |
 | `tour-started` / `tour-step` / `tour-ended` | `title, total, template` / `index, total, caption` / `completed` |
@@ -264,12 +282,15 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 | `ifcviewer:load`    | `url` (string or string[]), `name?` (string or string[]), `requestId?` | Load model(s) into the scene. An array loads as one batch, like a federated `?model=`. The viewer accepts a new `load` while others are still running and queues it |
 | `ifcviewer:load-bytes` | `name`, `bytes` (transferable `ArrayBuffer`), `requestId?` | Load IFC bytes the host already has (what the SDK's `add()` sends) |
 | `ifcviewer:clear`   | — | Cancel IFC loads still in flight, then remove every model |
-| `ifcviewer:select`  | `expressId`, `modelId?` | Select + frame an element |
+| `ifcviewer:select`  | `expressId` or `globalId`, `modelId?` | Select + frame an element *(globalId: 1.18)* |
+| `ifcviewer:find-elements` | `ifcClass?` (string or string[]), `globalId?` (string or string[]), `name?`, `modelId?`, `limit?`, `requestId` | Answers `[{ expressId, modelId, globalId, ifcClass, name, typeName }]` *(1.18)* |
 | `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear), `frame?` | Isolate a category; `frame: false` keeps the camera *(1.15)* |
-| `ifcviewer:fit`     | — | Frame the active model |
+| `ifcviewer:fit`     | — | Frame the active model from the current angle, with a margin *(margin: 1.18)* |
 | `ifcviewer:set-turntable` | `enabled?`, `speed?` (°/s, default 6) | Idle orbit; answers `{ active, speed }` *(1.15)* |
 | `ifcviewer:set-paused` | `paused` | Stops / resumes painting frames (a figure off screen); answers `{ paused }` *(1.15)* |
-| `ifcviewer:view`    | `preset?`, `scope?`, `fill?`, `azimuth?`, `elevation?`, `animate?` | Frames from a preset. With `fill` (0.2–0.98) or angles (degrees) it is a **tight fit** to the box's corners; answers `{ scope }` *(fill/angles: 1.14)* |
+| `ifcviewer:view`    | `preset?`, `scope?`, `fill?`, `azimuth?`, `elevation?`, `animate?`, `elementId?`, `modelId?` | Frames from a preset. With `fill` (0.2–0.98) or angles (degrees) it is a **tight fit** to the box's corners. With `elementId` it frames that element instead (from the current angle unless a preset or angles are given; fails when the element is not in the model). Answers `{ scope }` when it carries a `requestId`; without one (the SDK's `setView`) it still moves the camera — between 1.14 and 1.17 it did not *(fill/angles: 1.14; elementId, the fix: 1.18)* |
+| `ifcviewer:validate` | `modelId?`, `force?`, `requestId` | Validate a model (default: the active one) after any run queued before it; answers that model's `{ modelId, qualityScore, errors, warnings, info, total, durationMs }` or the reason it could not *(1.18)* |
+| `ifcviewer:get-validation-status` | `requestId` | Answers `{ status: idle·running·done·error, modelId, progress, error, queued }` *(1.18)* |
 | `ifcviewer:reset`   | — | Reset the camera |
 
 #### Commands added in SDK v1.11

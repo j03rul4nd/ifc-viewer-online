@@ -22,6 +22,11 @@ export interface ValidationRunnerResult {
   hasIssues:    boolean
 }
 
+function canRunNow(): boolean {
+  return useValidationStore.getState().validationStatus !== 'running'
+    && (modelRegistry.size() > 0 || !!useModelStore.getState().ifcBuffer)
+}
+
 export function useValidationRunner(): ValidationRunnerResult {
   const { validationStatus, validationError, result, progress } = useValidationStore()
   const { ifcBuffer } = useModelStore()
@@ -31,22 +36,25 @@ export function useValidationRunner(): ValidationRunnerResult {
   const canRun    = (!isRunning) && (modelRegistry.size() > 0 || !!ifcBuffer)
 
   const run = useCallback(async (rules?: RulesConfig, modelId?: string, force = false) => {
-    if (!canRun) return
+    // Decided now, not at the render this closure came from: a caller holding
+    // an older closure (a load that committed between renders) would otherwise
+    // be told "no model" about a model that is right there.
+    if (!canRunNow()) return
     try {
       await runValidation(modelId, rules, force)
     } catch {
       // validator.ts already sets status + fires toasts — nothing to do here
     }
-  }, [canRun])
+  }, [])
 
   const runAll = useCallback(async (rules?: RulesConfig, force = false) => {
-    if (!canRun) return
+    if (!canRunNow()) return
     try {
       await runValidationAll(rules, force)
     } catch {
       // validator.ts already sets status + fires toasts — nothing to do here
     }
-  }, [canRun])
+  }, [])
 
   return {
     run,
