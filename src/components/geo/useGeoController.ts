@@ -54,7 +54,8 @@ const log = createLogger('GeoPanel')
  * "open" at once, and which one you saw depended on render order.
  */
 export type GeoFlow =
-  | { kind: 'consent' }
+  /** `decide`: someone is waiting for the answer (a shared link that asks for the map). */
+  | { kind: 'consent'; decide?: (accepted: boolean) => void }
   | { kind: 'crs'; epsg: string }
   | { kind: 'manual' }
   | { kind: 'terms' }
@@ -75,6 +76,8 @@ export interface GeoController {
   /** Enable at a resolved placement — the step after the georeference ladder. */
   enableWithPlacement: (placement: GeoPlacement, g: GeorefExtraction | null) => Promise<void>
   acceptConsent: () => void
+  /** Close the consent sheet without consenting. */
+  declineConsent: () => void
   /** Withdraw the tile consent: the map turns off and asks again before any further request. */
   revokeConsent: () => Promise<void>
   disable: () => Promise<void>
@@ -480,9 +483,18 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
 
   const acceptConsent = useCallback((): void => {
     useGeoStore.getState().setConsent(true)
+    const decide = flow?.kind === 'consent' ? flow.decide : undefined
     setFlow(null)
-    void showOnMap()
-  }, [showOnMap])
+    // Asked on behalf of a link: it turns the map on itself, with its options.
+    if (decide) decide(true)
+    else void showOnMap()
+  }, [showOnMap, flow])
+
+  const declineConsent = useCallback((): void => {
+    const decide = flow?.kind === 'consent' ? flow.decide : undefined
+    setFlow(null)
+    decide?.(false)
+  }, [flow])
 
   const disable = useCallback(async (): Promise<void> => {
     const geo = await getGeo()
@@ -717,7 +729,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
 
   return useMemo<GeoController>(() => ({
     getGeo, withGeo, flow, setFlow,
-    showOnMap, enableWithPlacement, acceptConsent, revokeConsent, disable, applyCrs, applyManual,
+    showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
     toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
@@ -727,7 +739,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     saveGeorefToIfc, refreshAttributions, applyTerrain,
   }), [
     getGeo, withGeo, flow,
-    showOnMap, enableWithPlacement, acceptConsent, revokeConsent, disable, applyCrs, applyManual,
+    showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
     toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,

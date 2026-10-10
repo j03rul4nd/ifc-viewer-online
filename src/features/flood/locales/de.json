@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "Relief und Gebäude sind die, die der Kartenmodus mit Ihrer Erlaubnis von öffentlichen Anbietern geladen hat (Relief: ICGC in Katalonien bzw. AWS Open Data anderswo; Gebäude: OpenStreetMap); diese sehen den Bereich des Standorts und Ihre IP-Adresse. Die Simulation liest sie nur: Weder das Modell noch die Ergebnisse verlassen Ihren Browser. Schalten Sie beide Optionen aus, um nur mit dem IFC zu simulieren; die Erlaubnis widerrufen Sie im Bereich Karte."
+    "map": "Relief und Gebäude sind die, die der Kartenmodus mit Ihrer Erlaubnis von öffentlichen Anbietern geladen hat (Relief: ICGC in Katalonien, GSI in Japan bzw. AWS Open Data anderswo; Gebäude: OpenStreetMap über die Overpass-API); diese sehen den Bereich des Standorts und Ihre IP-Adresse. Die Simulation liest sie nur: Weder das Modell noch die Ergebnisse verlassen Ihren Browser. Schalten Sie beide Optionen aus, um nur mit dem IFC zu simulieren; die Erlaubnis widerrufen Sie im Bereich Karte."
   }
 }

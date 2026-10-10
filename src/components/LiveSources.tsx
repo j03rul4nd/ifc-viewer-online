@@ -23,6 +23,7 @@ import {
 } from '../lib/layers/vector-runner'
 import { inferSchema } from '../lib/twin/flatten-props'
 import { toast } from '../stores/toastStore'
+import { hostsIn } from '../lib/privacy/external-data'
 
 const btn =
   'shrink-0 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] transition-colors disabled:opacity-40'
@@ -55,6 +56,8 @@ export function PresetSources() {
           )}
         </div>
         <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t(`presets.${p.id}.hint` as never)}</div>
+        {/* Who is asked: the servers this source reads, before anyone presses Connect. */}
+        <div className="text-[9px] font-mono text-[var(--text-faint)] truncate" title={hostsIn(p).join(', ')}>→ {hostsIn(p).join(', ')}</div>
       </div>
       <button className={btn} disabled={busy !== null}
         onClick={async () => {
@@ -73,6 +76,7 @@ export function PresetSources() {
     <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]" data-testid="preset-sources">
       <div className="text-[11px] font-medium">{t('presets.title')}</div>
       <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('presets.hint')}</div>
+      <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('presets.privacy')}</div>
       <TmbKeysBox />
       {near.map(card)}
       {other.length > 0 && (

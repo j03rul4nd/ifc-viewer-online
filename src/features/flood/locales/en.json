@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "The relief and buildings are the ones the map mode downloaded, with your permission, from public providers (relief: ICGC in Catalonia or AWS Open Data elsewhere; buildings: OpenStreetMap), which see the site's area and your IP address. The simulation only reads them: neither the model nor the results leave your browser. Turn both options off to simulate with the IFC alone; the permission is withdrawn in the Map panel."
+    "map": "The relief and buildings are the ones the map mode downloaded, with your permission, from public providers (relief: ICGC in Catalonia, GSI in Japan or AWS Open Data elsewhere; buildings: OpenStreetMap, through the Overpass API), which see the site's area and your IP address. The simulation only reads them: neither the model nor the results leave your browser. Turn both options off to simulate with the IFC alone; the permission is withdrawn in the Map panel."
   }
 }

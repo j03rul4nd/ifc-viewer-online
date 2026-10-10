@@ -146,6 +146,13 @@ describe('geoStore · persistence', () => {
     expect(localStorage.getItem('ifc-geo-consent:v1')).toBeNull()
   })
 
+  it("keeps an embedding page's consent for the session only", () => {
+    useGeoStore.getState().setConsent(false)
+    useGeoStore.getState().setConsent(true, false)
+    expect(useGeoStore.getState().consentGiven).toBe(true)
+    expect(localStorage.getItem('ifc-geo-consent:v1')).toBeNull()
+  })
+
   it('tolerates corrupt terms JSON (falls back to empty)', () => {
     localStorage.setItem('ifc-geo-terms:v1', '{not json')
     // re-evaluate the reader through a fresh accept (merges onto parsed-empty)

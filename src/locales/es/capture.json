@@ -590,7 +590,8 @@
       "recordingTab": "Grabando la pestaña… dale al play del sonido",
       "recordingMic": "Escuchando… reproduce el sonido cerca del micrófono",
       "stopRecording": "Parar y analizar",
-      "noTabAudio": "No llegó audio. Comparte una PESTAÑA del navegador y activa “Compartir audio de la pestaña”."
+      "noTabAudio": "No llegó audio. Comparte una PESTAÑA del navegador y activa “Compartir audio de la pestaña”.",
+      "privacy": "Al pegar un enlace, la app pide a TikTok el título y la portada de ese vídeo; TikTok ve la petición y tu dirección IP."
     },
     "templates": {
       "title": "Plantillas virales",

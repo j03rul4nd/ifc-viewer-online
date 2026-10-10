@@ -265,7 +265,8 @@
     "fmi-weather": {
       "name": "Helsinki · Weather stations (FMI)",
       "hint": "Temperature, wind, humidity and rain every 10 min · no key"
-    }
+    },
+    "privacy": "Each source is read directly from its server (shown on the card), which sees your IP address and, for most, the area around the site. Nothing about the model is sent."
   },
   "live": {
     "toggle": "Live refresh",

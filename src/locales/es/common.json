@@ -336,5 +336,18 @@
       "privacyLink": "política de privacidad",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "Este enlace trae datos de otros servidores",
+    "body": {
+      "layers": "Para mostrar sus capas de datos se pedirán datos a estos servidores:",
+      "layersUrl": "Para mostrar sus capas de datos se leerá su configuración en este servidor, y después los servidores que esa configuración indique:",
+      "twin": "Para mostrar sus datos en vivo, la app se conectará con estos servidores:",
+      "scene": "Para mostrar sus capas de datos y sus datos en vivo, la app contactará con estos servidores:"
+    },
+    "sees": "Cada servidor verá tu dirección IP y, en las capas sobre el mapa, la zona del emplazamiento. Tu modelo no se envía.",
+    "load": "Cargar los datos",
+    "skip": "Ahora no",
+    "skipped": "No se han cargado los datos externos del enlace."
   }
 }

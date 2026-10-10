@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "Il rilievo e gli edifici sono quelli che la modalità mappa ha scaricato, con il tuo permesso, da fornitori pubblici (rilievo: ICGC in Catalogna o AWS Open Data altrove; edifici: OpenStreetMap), che vedono la zona del sito e il tuo indirizzo IP. La simulazione si limita a leggerli: né il modello né i risultati lasciano il browser. Disattiva le due opzioni per simulare solo con l'IFC; il permesso si revoca nel pannello Mappa."
+    "map": "Il rilievo e gli edifici sono quelli che la modalità mappa ha scaricato, con il tuo permesso, da fornitori pubblici (rilievo: ICGC in Catalogna, GSI in Giappone o AWS Open Data altrove; edifici: OpenStreetMap, tramite l'API Overpass), che vedono la zona del sito e il tuo indirizzo IP. La simulazione si limita a leggerli: né il modello né i risultati lasciano il browser. Disattiva le due opzioni per simulare solo con l'IFC; il permesso si revoca nel pannello Mappa."
   }
 }

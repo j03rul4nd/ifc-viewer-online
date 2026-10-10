@@ -265,7 +265,8 @@
     "fmi-weather": {
       "name": "Helsínquia · Estações meteorológicas (FMI)",
       "hint": "Temperatura, vento, humidade e chuva a cada 10 min · sem chave"
-    }
+    },
+    "privacy": "Cada fonte é lida diretamente do seu servidor (indicado no cartão), que vê o seu endereço IP e, na maioria, a zona à volta do local. Nada do modelo é enviado."
   },
   "live": {
     "toggle": "Atualização em tempo real",

@@ -14,7 +14,8 @@
     "batchPartial": "{{name}} — {{loaded}} carregados, {{failed}} com falha",
     "dropUnsupported_one": "{{count}} arquivo não está em um formato compatível",
     "dropUnsupported_other": "{{count}} arquivos não estão em um formato compatível",
-    "dropBcfHint": "Abra o painel BCF para importar arquivos .bcf"
+    "dropBcfHint": "Abra o painel BCF para importar arquivos .bcf",
+    "mapDeclined": "O link pedia para mostrar o mapa; fica desligado até que o permita (painel Mapa)."
   },
   "validation": {
     "complete": "Validação concluída — {{count}} problema(s) encontrado(s)",

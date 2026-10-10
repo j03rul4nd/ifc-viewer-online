@@ -590,7 +590,8 @@
       "recordingTab": "Recording the tab… press play on the sound",
       "recordingMic": "Listening… play the sound near the microphone",
       "stopRecording": "Stop and analyse",
-      "noTabAudio": "No audio came through. Share a browser TAB and turn on “Share tab audio”."
+      "noTabAudio": "No audio came through. Share a browser TAB and turn on “Share tab audio”.",
+      "privacy": "Pasting a link asks TikTok for that video's title and cover, so TikTok sees the request and your IP address."
     },
     "templates": {
       "title": "Viral templates",

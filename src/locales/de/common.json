@@ -336,5 +336,18 @@
       "privacyLink": "Datenschutzerklärung",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "Dieser Link bringt Daten von anderen Servern",
+    "body": {
+      "layers": "Um seine Datenebenen anzuzeigen, werden Daten von diesen Servern abgerufen:",
+      "layersUrl": "Um seine Datenebenen anzuzeigen, wird seine Konfiguration von diesem Server gelesen und danach von den Servern, die diese Konfiguration nennt:",
+      "twin": "Um seine Live-Daten anzuzeigen, verbindet sich die App mit diesen Servern:",
+      "scene": "Um seine Datenebenen und Live-Daten anzuzeigen, kontaktiert die App diese Server:"
+    },
+    "sees": "Jeder Server sieht Ihre IP-Adresse und, bei Ebenen auf der Karte, den Bereich des Standorts. Ihr Modell wird nicht gesendet.",
+    "load": "Daten laden",
+    "skip": "Jetzt nicht",
+    "skipped": "Die externen Daten des Links wurden nicht geladen."
   }
 }

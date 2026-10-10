@@ -14,7 +14,8 @@
     "batchPartial": "{{name}} — {{loaded}} chargés, {{failed}} en échec",
     "dropUnsupported_one": "{{count}} fichier n'est pas dans un format pris en charge",
     "dropUnsupported_other": "{{count}} fichiers ne sont pas dans un format pris en charge",
-    "dropBcfHint": "Ouvrez le panneau BCF pour importer des fichiers .bcf"
+    "dropBcfHint": "Ouvrez le panneau BCF pour importer des fichiers .bcf",
+    "mapDeclined": "Le lien demandait d'afficher la carte ; elle reste désactivée tant que vous ne l'autorisez pas (panneau Carte)."
   },
   "validation": {
     "complete": "Validation terminée — {{count}} problème(s) trouvé(s)",

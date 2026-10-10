@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "O relevo e os edifícios são os que o modo mapa descarregou, com a sua permissão, de fornecedores públicos (relevo: ICGC na Catalunha ou AWS Open Data no resto; edifícios: OpenStreetMap), que veem a zona do local e o seu endereço IP. A simulação apenas os lê: nem o modelo nem os resultados saem do navegador. Desative as duas opções para simular só com o IFC; a permissão retira-se no painel Mapa."
+    "map": "O relevo e os edifícios são os que o modo mapa descarregou, com a sua permissão, de fornecedores públicos (relevo: ICGC na Catalunha, GSI no Japão ou AWS Open Data no resto; edifícios: OpenStreetMap, através da API Overpass), que veem a zona do local e o seu endereço IP. A simulação apenas os lê: nem o modelo nem os resultados saem do navegador. Desative as duas opções para simular só com o IFC; a permissão retira-se no painel Mapa."
   }
 }

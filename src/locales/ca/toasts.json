@@ -14,7 +14,8 @@
     "batchPartial": "{{name}} — {{loaded}} carregats, {{failed}} amb error",
     "dropUnsupported_one": "{{count}} fitxer no té un format compatible",
     "dropUnsupported_other": "{{count}} fitxers no tenen un format compatible",
-    "dropBcfHint": "Obre el panell BCF per importar fitxers .bcf"
+    "dropBcfHint": "Obre el panell BCF per importar fitxers .bcf",
+    "mapDeclined": "L'enllaç demanava mostrar el mapa; continua apagat fins que ho permetis (panell Mapa)."
   },
   "validation": {
     "complete": "Validació completada — {{count}} problema(es) trobat(s)",

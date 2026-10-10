@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
+// The fragments worker, emitted with the build (served from this origin, see initPromise).
+import fragmentsWorkerUrl from '@thatopen/fragments/worker?url'
 import { createSceneGizmo, type SceneGizmo, type GizmoOptions } from './scene-gizmo'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
@@ -1766,15 +1768,27 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   views.world = world
 
   const initPromise = (async () => {
-    const workerURL = await OBC.FragmentsManager.getWorker()
-    fragmentsManager.init(workerURL)
+    // Both from this origin. The libraries' defaults fetched them from unpkg
+    // on every start: the fragments worker as code run from a blob (no
+    // integrity check), and web-ifc's WASM at `web-ifc@>=<peer>` — whatever
+    // version unpkg resolved that to, not the one installed. The worker is
+    // the package's own export, emitted with the build; the WASM is the copy
+    // the build already ships (vite.config copyWebIfcWasm), as our workers use.
+    fragmentsManager.init(fragmentsWorkerUrl)
     // fragments aligns every model to the FIRST one it loaded, whatever that
     // one is: a UTM model loaded after a local one is sent back to its
     // 4,600 km coordinates, and a local model loaded after a UTM one is thrown
     // that far the other way. The scene datum (reconcileCoordination) does
     // this job with the knowledge fragments lacks — which models share a site.
     fragmentsManager.core.settings.autoCoordinate = false
-    await ifcLoader.setup()
+    await ifcLoader.setup({
+      autoSetWasm: false,
+      wasm: {
+        ...ifcLoader.settings.wasm,
+        path: import.meta.env.DEV ? `${import.meta.env.BASE_URL}node_modules/web-ifc/` : import.meta.env.BASE_URL,
+        absolute: true,
+      },
+    })
   })()
 
   /**
