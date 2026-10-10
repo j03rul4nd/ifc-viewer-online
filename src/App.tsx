@@ -970,6 +970,12 @@ export default function App() {
     else if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
   }, [urlParams.layersUrl])
 
+  // `?hide=` (a scene's view.hide): mapped features this page view hides —
+  // session-only, alongside the visitor's own hidden ones.
+  useEffect(() => {
+    if (urlParams.hideFeatures.length) useGeoStore.getState().setSceneHidden(urlParams.hideFeatures)
+  }, [urlParams.hideFeatures])
+
   // ── Scene document (`?scene=` / `#scene=`, scene-doc/) ──────────────────────
   // Its models, map, background and camera came in as URL parameters before
   // mount. What is not URL-shaped is applied here, once the models are in, so

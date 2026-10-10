@@ -253,7 +253,19 @@
       "name": "东京 · 都营车站",
       "hint": "地铁和有轨电车车站（ODPT）· 静态，无需密钥"
     },
-    "otherPlaces": "其他地点（{{n}}）"
+    "otherPlaces": "其他地点（{{n}}）",
+    "toei-bus": {
+      "name": "东京 · 都营巴士（实时）",
+      "hint": "每辆巴士显示在其刚经过的站点（ODPT GTFS-Realtime，非 GPS）· 每 30 秒，无需密钥"
+    },
+    "fmi-air-quality": {
+      "name": "赫尔辛基 · 空气质量（FMI）",
+      "hint": "HSY 监测站的每小时空气质量指数、NO₂ 与颗粒物 · 最多延迟 40 分钟，无需密钥"
+    },
+    "fmi-weather": {
+      "name": "赫尔辛基 · 气象站（FMI）",
+      "hint": "每 10 分钟更新气温、风、湿度和降雨 · 无需密钥"
+    }
   },
   "live": {
     "toggle": "实时更新",
@@ -740,7 +752,9 @@
     },
     "filterBindings": "筛选绑定…",
     "alertsActive": "{{count}} 个警报中",
-    "summaryFilter": "只显示这些绑定"
+    "summaryFilter": "只显示这些绑定",
+    "mqttTopics": "MQTT 主题，每行一个（留空 = 普通 WebSocket，消息为 JSON）",
+    "mqttHint": "填写主题后，此地址即 MQTT 代理的 WebSocket 监听端口。每条消息按 { topic, …payload } 读取，每秒一次；没有设备 ID 的消息会被跳过。"
   },
   "add": {
     "title": "添加数据"
@@ -799,7 +813,22 @@
         "name": "巴塞罗那 · 加泰罗尼亚广场",
         "description": "八个地理参照的 IFC 模型，实时接入 Bicing、电动车充电、交通和空气质量；Bicing 65 号站会为自己的车桩着色。"
       },
-      "meta": "{{models}} 个 IFC 模型 · {{live}} 个实时数据源"
+      "helsinki": {
+        "name": "赫尔辛基 · 火车站广场",
+        "description": "中央车站、大教堂与 Elielinaukio 公交总站，实时接入 FMI 空气质量与天气；HSL 公交停靠时，对应站台会亮起（MQTT）。"
+      },
+      "tochomae": {
+        "name": "东京 · 都厅前（都营大江户线）",
+        "description": "东京都厅旁的 A4 出口，实时接入都营巴士；大江户线运行状态、站台上的列车和经过的巴士会为模型着色。"
+      },
+      "waseda": {
+        "name": "东京 · 早稻田（都电荒川线）",
+        "description": "有轨电车终点站：电车停靠时站台边缘亮起并显示车号，显示屏展示线路运行状态。"
+      },
+      "models_one": "{{count}} 个 IFC 模型",
+      "models_other": "{{count}} 个 IFC 模型",
+      "live_one": "{{count}} 个实时数据源",
+      "live_other": "{{count}} 个实时数据源"
     }
   }
 }

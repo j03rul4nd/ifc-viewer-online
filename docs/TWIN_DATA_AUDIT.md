@@ -80,10 +80,10 @@ from a browser origin instead of being taken on trust. The results are in
 
 | Opportunity | Value | Cost / blocker |
 |---|---|---|
-| Helsinki and Tokyo demo scenes | Shows the platform is not Barcelona-only. CRS and presets exist (Toei stations) | Few live sources with CORS near the Tokyo models; Helsinki sources (HSL, FMI) need adapters |
+| ~~Helsinki and Tokyo demo scenes~~ | Done: buses over MQTT and FMI in Helsinki; ODPT trains, trams, buses and status in Tokyo | — |
 | ICGC Barcelona 3D mesh (3D Tiles) as a layer | Photogrammetric city instead of OSM blocks | Ellipsoidal heights (−49.7 m to orthometric), no licence declared on the tileset, a 3D Tiles renderer to add |
 | Helsinki LOD2 3D Tiles (kartta.hel.fi) | Official city model | Same renderer cost; licence not checked yet |
-| GSI 5 m laser DEM for Japan | Correct ground under the Tokyo models | A new DEM source (text tiles, z15) |
+| GSI 5 m laser DEM for Japan | DEM10B is in (within 2–3 m); the laser model would be exact | z15 only, holes under buildings to fill |
 
 ## 5. Risks
 

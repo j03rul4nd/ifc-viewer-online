@@ -287,7 +287,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       })
       // The geo system starts with an empty set, while these were struck out in
       // a previous session and the panel already lists them as hidden.
-      geo.setHiddenFeatures(prefs.hiddenFeatures.map((h) => h.id))
+      geo.setHiddenFeatures([...new Set([...prefs.hiddenFeatures.map((h) => h.id), ...useGeoStore.getState().sceneHidden])])
       const outcome = await geo.setBuildings(true)
       // 'off' is not a result, it is "this call was superseded" — map mode went
       // down under it, or a later toggle took over. Writing it as 'idle' with

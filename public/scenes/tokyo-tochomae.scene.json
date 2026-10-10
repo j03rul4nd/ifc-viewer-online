@@ -1,0 +1,228 @@
+{
+  "$schema": "https://www.ifcvieweronline.eu/schemas/scene-v1.json",
+  "format": "ifc-viewer-scene",
+  "v": 1,
+  "meta": {
+    "title": "Tokyo · Tochōmae — Toei Ōedo line digital twin",
+    "description": "Exit A4 of Tochōmae station (Toei Ōedo line) beside the Tokyo Metropolitan Government Building, as a georeferenced IFC on GSI terrain, with Toei stations and buses live. Three live sources paint the model: the Ōedo line’s status on the Toei marks, a train at Tochōmae on the station sign, and a Toei bus passing the 都庁第一本庁舎 stop on its pole.",
+    "license": "CC BY 4.0 (this scene document). Data keep their own licences: see each layer.",
+    "tags": [
+      "tokyo",
+      "digital twin",
+      "open data",
+      "IFC 4.3",
+      "ODPT",
+      "Toei",
+      "GTFS-Realtime"
+    ],
+    "place": {
+      "name": "Tochōmae, Shinjuku, Tokyo",
+      "lat": 35.6903,
+      "lon": 139.6919
+    },
+    "createdAt": "2026-10-10T03:00:00Z",
+    "notes": [
+      "The IFC file is an illustrative model authored from OpenStreetMap (ODbL), GSI elevation and photographs; its asset values are marked as demo.",
+      "ODPT says where a train is only as \"at station A\" or \"between A and B\": the binding is keyed by the station a train is at or has just left. Line status only reports delays of 15 minutes or more.",
+      "Toei buses report the stop they last passed, not a GPS position: the stop lights up for 10 minutes after a bus has passed it."
+    ]
+  },
+  "models": [
+    {
+      "url": "/models/tokyo/tochomae-a4-entrance.ifc",
+      "name": "tochomae-a4-entrance.ifc"
+    }
+  ],
+  "layers": [
+    {
+      "preset": "tokyo-toei-stations"
+    },
+    {
+      "preset": "toei-bus"
+    }
+  ],
+  "twin": {
+    "sources": [
+      {
+        "id": "odpt-toei-status",
+        "name": "Toei line status (ODPT, live)",
+        "url": "https://api-public.odpt.org/api/v4/odpt:TrainInformation?odpt:operator=odpt.Operator:Toei",
+        "intervalS": 60,
+        "enabled": true,
+        "mapping": {
+          "listPath": "",
+          "idField": "odpt:railway",
+          "timeField": "dc:date"
+        }
+      },
+      {
+        "id": "odpt-toei-trains",
+        "name": "Toei trains and trams (ODPT, live)",
+        "url": "https://api-public.odpt.org/api/v4/odpt:Train?odpt:operator=odpt.Operator:Toei",
+        "intervalS": 30,
+        "enabled": true,
+        "mapping": {
+          "listPath": "",
+          "idField": "odpt:fromStation",
+          "timeField": "dc:date"
+        }
+      },
+      {
+        "id": "odpt-toei-bus",
+        "name": "Toei buses (ODPT GTFS-Realtime, live)",
+        "url": "https://api-public.odpt.org/api/v4/gtfs/realtime/ToeiBus",
+        "intervalS": 30,
+        "enabled": true,
+        "mapping": {
+          "listPath": "entity",
+          "idField": "vehicle.stopId",
+          "timeField": "vehicle.timestamp"
+        }
+      }
+    ],
+    "bindings": [
+      {
+        "id": "oedo-status",
+        "name": "Toei Ōedo line status — Toei marks on the exit",
+        "sourceId": "odpt-toei-status",
+        "deviceId": "odpt.Railway:Toei.Oedo",
+        "targets": [],
+        "query": {
+          "classes": [
+            "IfcSign"
+          ],
+          "storey": "",
+          "nameContains": "Marca Toei"
+        },
+        "rules": [
+          {
+            "id": "disrupted",
+            "name": "Disruption reported (delays of 15 min or more)",
+            "match": "any",
+            "filters": [
+              {
+                "field": "odpt:trainInformationStatus.ja",
+                "op": "exists"
+              },
+              {
+                "field": "odpt:trainInformationStatus",
+                "op": "exists"
+              }
+            ],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            },
+            "alert": {
+              "forMin": 5
+            }
+          },
+          {
+            "id": "normal",
+            "name": "No delays of 15 min or more",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 900
+      },
+      {
+        "id": "tochomae-train",
+        "name": "Train at Tochōmae (E-28) — station sign",
+        "sourceId": "odpt-toei-trains",
+        "deviceId": "odpt.Station:Toei.Oedo.Tochomae",
+        "targets": [],
+        "query": {
+          "classes": [
+            "IfcSign"
+          ],
+          "storey": "",
+          "nameContains": "都庁前駅"
+        },
+        "rules": [
+          {
+            "id": "at",
+            "name": "Train at the platform",
+            "match": "all",
+            "filters": [
+              {
+                "field": "odpt:toStation",
+                "op": "missing"
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "leaving",
+            "name": "Train just left Tochōmae",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 120,
+        "label": {
+          "field": "odpt:trainNumber"
+        }
+      },
+      {
+        "id": "tochomae-bus-stop",
+        "name": "Toei bus at 都庁第一本庁舎 (stop 2248-01) — stop pole",
+        "sourceId": "odpt-toei-bus",
+        "deviceId": "2248-01",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "parada"
+        },
+        "rules": [
+          {
+            "id": "passed",
+            "name": "A Toei bus passed in the last 10 minutes",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 600
+      }
+    ]
+  },
+  "view": {
+    "map": "terrain,buildings",
+    "camera": {
+      "position": [
+        -30,
+        20,
+        -34
+      ],
+      "target": [
+        0,
+        2,
+        2
+      ]
+    }
+  }
+}

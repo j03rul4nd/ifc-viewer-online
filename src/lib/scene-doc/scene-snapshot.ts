@@ -48,6 +48,8 @@ export async function snapshotScene(opts: {
   const geo = useGeoStore.getState()
   const map = mapToSpec(geo)
   const background = backgroundToSpec(useSceneStore.getState().background)
+  // What the author struck out of the mapped context travels with the scene.
+  const hide = [...new Set([...geo.hiddenFeatures.map((h) => h.id), ...geo.sceneHidden])]
   const doc = buildSceneDoc({
     meta: {
       title: opts.title,
@@ -60,6 +62,7 @@ export async function snapshotScene(opts: {
     view: {
       ...(map ? { map } : {}),
       ...(background ? { background } : {}),
+      ...(map && hide.length ? { hide } : {}),
       ...(opts.camera ? { camera: { position: roundVec(opts.camera.position), target: roundVec(opts.camera.target) } } : {}),
     },
   })

@@ -296,6 +296,11 @@ interface GeoStore {
    * deliberately struck out to come back.
    */
   hiddenFeatures: HiddenMapFeature[]
+  /**
+   * Features a scene or link hides (`?hide=`, a scene's view.hide) for this
+   * page view only: drawn hidden alongside `hiddenFeatures`, never saved.
+   */
+  sceneHidden: string[]
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   /**
@@ -388,6 +393,7 @@ interface GeoStore {
   setSuppressContext: (v: boolean) => void
   /** Strike out one mapped feature. Idempotent on id. */
   hideFeature: (f: HiddenMapFeature) => void
+  setSceneHidden: (ids: string[]) => void
   /** Put one back. */
   showFeature: (id: string) => void
   /** Put every one of them back. */
@@ -443,6 +449,7 @@ export const useGeoStore = create<GeoStore>()(
       vehicles:           lsGet(LS_VEHICLES) === '1',
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       hiddenFeatures:     readHiddenFeatures(),
+      sceneHidden:        [],
       buildingsTruncated: false,
       buildingsOverture: 0,
       buildingsFallback: false,
@@ -597,6 +604,8 @@ export const useGeoStore = create<GeoStore>()(
         lsSet(LS_SUPPRESS, v ? '1' : '0')
         set({ suppressContext: v }, false, 'setSuppressContext')
       },
+
+      setSceneHidden: (ids) => set({ sceneHidden: [...new Set(ids)] }, false, 'setSceneHidden'),
 
       hideFeature: (f) => {
         const current = get().hiddenFeatures

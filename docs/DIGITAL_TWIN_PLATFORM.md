@@ -31,7 +31,7 @@ visitor's browser. There is no server of ours in any of it
    └─────────────┴──────────┬────────────┴─────────────────────────────┘
                             ▼
                geo frame: one GeoPlacement anchor, DEM per region
-               (ICGC MET 5 m in Catalonia, Terrarium elsewhere)
+               (ICGC MET 5 m in Catalonia, GSI DEM10B in Japan, Terrarium elsewhere)
                             ▼
           panels (people)  ·  lib/host-data-api + postMessage (SDK v1.17)
 ```
@@ -55,8 +55,8 @@ visitor's browser. There is no server of ours in any of it
 | Phase | Asked for | Delivered | Where |
 |---|---|---|---|
 | A · Audit | Inventory of IFCs, docs and sources; verify CORS, auth and licences | Package audit, plus every source requested from a browser origin | [`TWIN_DATA_AUDIT.md`](TWIN_DATA_AUDIT.md), [`CITY_DATA_SOURCES.md`](CITY_DATA_SOURCES.md) |
-| B · Real demos | Barcelona urban, mobility, environment, BIM+GIS | **Barcelona · Plaça de Catalunya**: 8 IFC, traffic, Bicing, EV charging, air quality, two live bindings on IFC elements | PR #213, [`DEMOS.md`](DEMOS.md) |
-| C · Provider manager | Register, configure, transform, refresh, handle errors, reuse | Presets with bbox and "near your site" ordering; JSON records, CSV/WKT, hourly tables, joins, URL time templates; freshness-aware refresh; retry with jitter; 90 s timeout; parallel restore; export/import of setups | PR #207 (+ earlier #184–#191) |
+| B · Real demos | Barcelona urban, mobility, environment, BIM+GIS | **Barcelona · Plaça de Catalunya**: 8 IFC, traffic, Bicing, EV charging, air quality, two live bindings on IFC elements. **Helsinki · Rautatientori**: buses at their bays over MQTT, FMI air and weather. **Tokyo · Tochōmae and Waseda**: Toei trains, trams, buses and line status on the models, GSI terrain | PR #213, this PR; [`DEMOS.md`](DEMOS.md) |
+| C · Provider manager | Register, configure, transform, refresh, handle errors, reuse | Presets with bbox and "near your site" ordering; JSON records, CSV/WKT, hourly tables, joins, URL time templates, GTFS-Realtime protobuf, FMI WFS, MQTT over WebSocket for devices; freshness-aware refresh; retry with jitter; 90 s timeout; parallel restore; export/import of setups | PR #207, this PR (+ earlier #184–#191) |
 | D · Look and analysis | Visual customisation, analysis tools | Per-preset styles (traffic chevrons by state, EV, air-quality and temperature ramps), style groups, legends, alerts, history/time bar. Twin rules, colours, floating values | PR #207, #213 (+ earlier) |
 | E · Performance | Only measurable gains | Restore fetches up to 4 sources at once; an embed with no layers does not load the layer code; the SDK's event payload code loads on the first event | PR #207, #215 |
 | F · SDK | Easy init, consistent API, integrations | v1.17: `scene` option, `openScene` / `exportScene` / `packScene`, data-layer API, `getTwin`, `layer-feature-picked` / `alert` events; reference pages ×10 | PR #215 |
@@ -96,7 +96,7 @@ visitor's browser. There is no server of ours in any of it
 | Any web page, WordPress, Shopify, SharePoint (Embed web part) | `<iframe src="…/?scene=<url>&ui=client">`, or the `#scene=` link from *Share* |
 | React, Vue, Angular, plain JS | SDK module `/sdk/ifc-viewer.es.js` (`new IfcViewer(el, { scene })`) or the `<ifc-viewer scene="…">` web component |
 | A CDE or dashboard | SDK: `getTwin()`, `getLayers()`, `on('alert')`, `on('layer-feature-picked')`, `exportScene()` to save what the user built |
-| IoT | A WebSocket device source (the twin reads it live). Push ingestion such as webhooks or MQTT needs a server: [`TWIN_PREMIUM_ROADMAP.md`](TWIN_PREMIUM_ROADMAP.md) #7 |
+| IoT | A WebSocket device source, or an MQTT broker's WebSocket listener (a source with `topics`) — the twin reads both live. Webhooks, and MQTT brokers without a WebSocket listener, need a server: [`TWIN_PREMIUM_ROADMAP.md`](TWIN_PREMIUM_ROADMAP.md) #7 |
 
 The iframe and SDK paths were verified in a plain host page. The named platforms take
 an iframe through their usual means (a Custom HTML block, a theme section, the Embed web

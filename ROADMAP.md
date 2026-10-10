@@ -80,7 +80,8 @@ These were not on the priority table but are now in `main` and verified against 
   - **Barcelona demo (#213):** Plaça de Catalunya, 8 IFC + 4 live layers + Bicing/Endolla on IFC elements. `docs/DEMOS.md`.
   - **SDK v1.17 (#215):** scenes and data-layer API, `alert` / `layer-feature-picked` events; `ui=client` map fix.
   - **Embed builder:** a *Digital-twin scene* mode (`.scene.json` URL or `#scene=` link, client skin).
-  - **Next:** Helsinki/Tokyo scenes, phone measurements. Server-side items are paid-tier only: `docs/TWIN_PREMIUM_ROADMAP.md`.
+  - **Helsinki and Tokyo:** GTFS-Realtime protobuf, FMI WFS and MQTT-over-WebSocket twin sources; GSI terrain in Japan; scenes hide mapped features (`view.hide`).
+  - **Next:** phone measurements, Safari/Firefox, articles with the scenes embedded. Server-side items are paid-tier only: `docs/TWIN_PREMIUM_ROADMAP.md`.
 
 ---
 

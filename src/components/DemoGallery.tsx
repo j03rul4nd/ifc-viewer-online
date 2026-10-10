@@ -401,7 +401,7 @@ function SceneDemos() {
             <span className="min-w-0">
               <span className="block text-[13px] font-medium">{t(`${d.key}.name` as never)}</span>
               <span className="block mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug">{t(`${d.key}.description` as never)}</span>
-              <span className="block mt-1 text-[10px] text-[var(--text-dim)]">{t('meta', { models: d.models, live: d.live })}</span>
+              <span className="block mt-1 text-[10px] text-[var(--text-dim)]">{t('models', { count: d.models })} · {t('live', { count: d.live })}</span>
             </span>
           </a>
         ))}

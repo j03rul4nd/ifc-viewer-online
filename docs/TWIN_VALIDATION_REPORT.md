@@ -40,6 +40,18 @@ under "not verified".
 | Embed weight (#215) | A plain embed with no layers | The layer runner is not loaded |
 | Share dialog (#215 refactor) | *Share → Digital-twin scene* on the Barcelona scene | 8 models, 4 layers, 2 bindings, map, 16 sources, `?ui=client#scene=` iframe |
 
+### Helsinki and Tokyo (2026-10-10)
+
+| Area | Check | Result |
+|---|---|---|
+| MQTT twin source | HSL HFP over `wss://mqtt.hsl.fi`, broad topic, through the runner | 69 stops became devices in 30 s, state `ok`; a bus between stops is skipped |
+| Helsinki bays | 9 bindings; a reading in HFP's exact shape at stop 1020128 | 36 elements resolved; bay 20 green with "415N"; later a real line-431 bus showed at a bay |
+| FMI layers | Air quality and weather, simple WFS | 11 and 7 stations, live |
+| GTFS-RT protobuf | Toei buses, decoded in the browser | 517–541 vehicles; layer and twin both read it |
+| Tochōmae | Three ODPT sources | Ōedo normal → marks green; train 1523A at the platform → sign green |
+| Waseda | Tram presence and line status | Tram ODPT5254 at the stop → edges green; Arakawa normal → screens green |
+| GSI terrain | DEM10B at the Tokyo models' origins | 9.76 m (Waseda) and 37.63 m (Tochōmae), as the I+D package measured; never chosen for Korea or Vladivostok |
+
 ## Bugs found by this verification, and fixed
 
 These would have shipped without the checks above:
@@ -74,8 +86,8 @@ These would have shipped without the checks above:
   instead of pixels. Screenshots confirmed the Barcelona view, the twin pill and the
   gallery card.
 - **Accessibility** of the new gallery section and labels was not audited.
-- **Helsinki and Tokyo.** Their coordinate systems resolve in tests, but no scene
-  was built and checked on the map.
+- **Helsinki and Tokyo at every hour.** Checked at one moment each; at night the
+  Helsinki bays stay grey for long stretches (few buses).
 
 ## Known issues at the time of writing
 
