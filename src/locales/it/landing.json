@@ -269,7 +269,7 @@
   },
   "demoGallery": {
     "title": "Esplora i modelli demo",
-    "subtitle": "Scegli un modello IFC pubblico per vedere il visualizzatore e il validatore in azione. Caricati direttamente da repository pubblici: nulla lascia il tuo browser.",
+    "subtitle": "Scegli un modello IFC pubblico per vedere il visualizzatore e il validatore in azione. Caricati direttamente da repository pubblici (GitHub): nulla lascia il tuo browser.",
     "openCta": "Sfoglia i modelli demo",
     "examples": "Esempi",
     "all": "Tutti",

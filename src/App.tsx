@@ -181,7 +181,9 @@ import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
-import { appBus } from './lib/event-bus'
+import { confirmExternalData, hostsIn, layersSetupHosts } from './lib/privacy/external-data'
+import { ExternalDataPrompt } from './components/ExternalDataPrompt'
+import { appBus, MAP_CONSENT_DECLINED } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
 import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
 import type { GeoPlacement } from './lib/geo/geo-types'
@@ -1109,12 +1111,22 @@ export default function App() {
     if (scene.doc.models.length > 0 && loadingState !== 'loaded' && loadingState !== 'error') return
     sceneAppliedRef.current = true
     const { doc, warnings } = scene
-    if (doc.layers.length > 0) {
-      useVectorLayerStore.getState().setSetupText(JSON.stringify({ format: 'ifc-viewer-data-layers', v: 1, layers: doc.layers }))
-    }
-    if (doc.twin && (doc.twin.sources.length > 0 || doc.twin.bindings.length > 0)) {
-      setTwinPersistence(false)
-      useTwinDeviceStore.getState().replaceAll(doc.twin.sources, doc.twin.bindings)
+    const twin = doc.twin && (doc.twin.sources.length > 0 || doc.twin.bindings.length > 0) ? doc.twin : null
+    if (doc.layers.length > 0 || twin) {
+      // Its data layers and live sources are other people's servers: the
+      // visitor is asked once, for all of them, before any is contacted.
+      void (async () => {
+        const hosts = [...new Set([...await layersSetupHosts(doc.layers), ...hostsIn(twin?.sources ?? [])])].sort()
+        const accepted = await confirmExternalData(!twin ? 'layers' : doc.layers.length === 0 ? 'twin' : 'scene', hosts)
+        if (!accepted) { toast(tCommon('externalData.skipped'), 'info'); return }
+        if (doc.layers.length > 0) {
+          useVectorLayerStore.getState().setSetupText(JSON.stringify({ format: 'ifc-viewer-data-layers', v: 1, layers: doc.layers }))
+        }
+        if (twin) {
+          setTwinPersistence(false)
+          useTwinDeviceStore.getState().replaceAll(twin.sources, twin.bindings)
+        }
+      })()
     }
     const notes = doc.meta.notes ?? []
     if (notes.length > 0) toast(`${doc.meta.title} — ${notes.join(' ')}`, 'info', { duration: 16000 })
@@ -3680,6 +3692,10 @@ export default function App() {
           if (cam && !cancelled) viewerApiRef.current?.setCameraLookAt(vec3(cam.position), vec3(cam.target), false)
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err)
+          if (message === MAP_CONSENT_DECLINED) {
+            if (!cancelled) toast(tToasts('model.mapDeclined'), 'info')
+            return
+          }
           console.error('[App] ?map= deep link failed:', message)
           if (!cancelled) toast(tToasts('model.mapFailed', { message }), 'error')
         }
@@ -4592,6 +4608,7 @@ export default function App() {
 
       {/* ── Keyboard help modal ── */}
       <KeyboardHelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+      <ExternalDataPrompt />
 
       {/* ── Demo model gallery ── */}
       <DemoGallery

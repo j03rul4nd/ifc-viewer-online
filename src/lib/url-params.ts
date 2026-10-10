@@ -559,6 +559,23 @@ export type EmbedEventType =
   | 'alert'
   | 'result'
 
+/**
+ * True when ANOTHER website frames the app — the case where that website, not
+ * the visitor, decides what its page loads (map tiles, a link's data). A frame
+ * on this same origin (the blog's live examples) is this site talking: the
+ * visitor is asked as on any page of it.
+ */
+export function isEmbeddedByOtherSite(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.self === window.top) return false
+    return window.top!.location.origin !== window.location.origin
+  } catch {
+    // Reading the parent's location throws exactly when it is another origin.
+    return true
+  }
+}
+
 /** True when the app is running inside an iframe. */
 export function isEmbedded(): boolean {
   if (typeof window === 'undefined') return false

@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "El relleu i els edificis són els que va descarregar el mode mapa, amb el teu permís, de proveïdors públics (relleu: ICGC a Catalunya o AWS Open Data a la resta; edificis: OpenStreetMap), que veuen la zona de l'emplaçament i la teva adreça IP. La simulació només els llegeix: ni el model ni els resultats surten del navegador. Desactiva les dues opcions per simular només amb l'IFC; el permís es retira al panell Mapa."
+    "map": "El relleu i els edificis són els que va descarregar el mode mapa, amb el teu permís, de proveïdors públics (relleu: ICGC a Catalunya, GSI al Japó o AWS Open Data a la resta; edificis: OpenStreetMap, mitjançant l'API Overpass), que veuen la zona de l'emplaçament i la teva adreça IP. La simulació només els llegeix: ni el model ni els resultats surten del navegador. Desactiva les dues opcions per simular només amb l'IFC; el permís es retira al panell Mapa."
   }
 }

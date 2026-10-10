@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "Le relief et les bâtiments sont ceux que le mode carte a téléchargés, avec votre autorisation, auprès de fournisseurs publics (relief : ICGC en Catalogne ou AWS Open Data ailleurs ; bâtiments : OpenStreetMap), qui voient la zone du site et votre adresse IP. La simulation se contente de les lire : ni le modèle ni les résultats ne quittent votre navigateur. Désactivez les deux options pour simuler avec l'IFC seul ; l'autorisation se retire dans le panneau Carte."
+    "map": "Le relief et les bâtiments sont ceux que le mode carte a téléchargés, avec votre autorisation, auprès de fournisseurs publics (relief : ICGC en Catalogne, GSI au Japon ou AWS Open Data ailleurs ; bâtiments : OpenStreetMap, via l'API Overpass), qui voient la zone du site et votre adresse IP. La simulation se contente de les lire : ni le modèle ni les résultats ne quittent votre navigateur. Désactivez les deux options pour simuler avec l'IFC seul ; l'autorisation se retire dans le panneau Carte."
   }
 }

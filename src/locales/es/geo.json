@@ -355,7 +355,7 @@
   },
   "privacy": {
     "title": "Datos y permiso",
-    "body": "Con el mapa activo, el navegador pide a proveedores públicos la zona alrededor del modelo: teselas del mapa base (OpenFreeMap, OpenStreetMap), relieve (ICGC en Cataluña, AWS Open Data en el resto) y los edificios del entorno (OpenStreetMap). Cada petición muestra a ese proveedor la zona del emplazamiento y tu dirección IP. Tu modelo nunca sale del navegador.",
+    "body": "Con el mapa activo, el navegador pide a proveedores públicos la zona alrededor del modelo: teselas del mapa (OpenFreeMap y OpenStreetMap; en España, según el estilo, también ortofotos del IGN y parcelas del Catastro; OpenTopoMap, Esri, EOX o NASA si eliges esos mapas base), relieve (ICGC en Cataluña, GSI en Japón, AWS Open Data en el resto) y los edificios del entorno (OpenStreetMap, mediante la API Overpass). Cada petición muestra a ese proveedor la zona del emplazamiento y tu dirección IP. Tu modelo nunca sale del navegador.",
     "revoke": "Retirar el permiso",
     "revoked": "Permiso del mapa retirado: no se pide nada más hasta que vuelvas a activar el mapa."
   }

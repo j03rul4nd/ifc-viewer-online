@@ -214,6 +214,8 @@ export function SoundToClip({ run, busy, canRender }: {
       <input className="studio-input" type="url" inputMode="url" placeholder={t('studio.tiktok.placeholder')} value={url}
         onChange={(e) => { void takeLink(e.target.value) }} disabled={busy} />
       {url && !link && <p className="text-[11px] text-[var(--warn)]">{t('studio.tiktok.invalid')}</p>}
+      {/* The one request this step makes to a third party: TikTok's oEmbed (title, cover). */}
+      {!link && <p className="text-[10.5px] leading-snug text-[var(--text-faint)]">{t('studio.tiktok.privacy')}</p>}
       {link && (
         <div className="flex items-center gap-2 rounded-lg bg-[var(--surface-2,rgba(127,127,127,.08))] p-2">
           {link.cover ? <img src={link.cover} alt="" className="h-10 w-10 shrink-0 rounded object-cover" /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-black/30 text-[18px]" aria-hidden="true">♪</span>}

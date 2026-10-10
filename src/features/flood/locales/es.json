@@ -235,6 +235,6 @@
     }
   },
   "data": {
-    "map": "El relieve y los edificios son los que descargó el modo mapa, con tu permiso, de proveedores públicos (relieve: ICGC en Cataluña o AWS Open Data en el resto; edificios: OpenStreetMap), que ven la zona del emplazamiento y tu dirección IP. La simulación solo los lee: ni el modelo ni los resultados salen del navegador. Desactiva las dos opciones para simular solo con el IFC; el permiso se retira en el panel Mapa."
+    "map": "El relieve y los edificios son los que descargó el modo mapa, con tu permiso, de proveedores públicos (relieve: ICGC en Cataluña, GSI en Japón o AWS Open Data en el resto; edificios: OpenStreetMap, mediante la API Overpass), que ven la zona del emplazamiento y tu dirección IP. La simulación solo los lee: ni el modelo ni los resultados salen del navegador. Desactiva las dos opciones para simular solo con el IFC; el permiso se retira en el panel Mapa."
   }
 }

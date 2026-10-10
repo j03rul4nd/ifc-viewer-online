@@ -373,11 +373,11 @@ export function ConsentDialog() {
     return (
       <Modal
         open={open && !!activeModelId}
-        onClose={() => ctl.setFlow(null)}
+        onClose={() => ctl.declineConsent()}
         title={t('consent.title')}
         size="sm"
         footer={<>
-          <Button variant="secondary" className="flex-1" onClick={() => ctl.setFlow(null)}>{t('consent.cancel')}</Button>
+          <Button variant="secondary" className="flex-1" onClick={ctl.declineConsent}>{t('consent.cancel')}</Button>
           <Button variant="primary" className="flex-1" autoFocus onClick={ctl.acceptConsent}>{t('consent.accept')}</Button>
         </>}
       >
@@ -394,7 +394,7 @@ export function ConsentDialog() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="geo-consent-title"
-          onKeyDown={(e) => { if (e.key === 'Escape') ctl.setFlow(null) }}
+          onKeyDown={(e) => { if (e.key === 'Escape') ctl.declineConsent() }}
         >
           <div className="glass-md border border-[var(--border-strong)] rounded-[12px] p-4 max-w-[340px] mx-3">
             <div id="geo-consent-title" className="text-[13px] font-semibold mb-1.5">{t('consent.title')}</div>
@@ -403,7 +403,7 @@ export function ConsentDialog() {
               <Button variant="primary" className="flex-1" autoFocus onClick={ctl.acceptConsent}>
                 {t('consent.accept')}
               </Button>
-              <Button variant="secondary" className="flex-1" onClick={() => ctl.setFlow(null)}>
+              <Button variant="secondary" className="flex-1" onClick={ctl.declineConsent}>
                 {t('consent.cancel')}
               </Button>
             </div>

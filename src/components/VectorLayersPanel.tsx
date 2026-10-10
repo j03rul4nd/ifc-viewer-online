@@ -18,6 +18,7 @@ import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStor
 import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
 import { useGeoStore } from '../stores/geoStore'
 import { toast } from '../stores/toastStore'
+import { confirmExternalData, hostsIn, layersSetupHosts } from '../lib/privacy/external-data'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
   frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
@@ -123,7 +124,25 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     const setup = useVectorLayerStore.getState().setupUrl
     if (setup) {
       useVectorLayerStore.getState().setSetupUrl(null)
-      void run(async () => reportImport(await importLayersFromUrl(setup)))
+      // A link's layers live on other servers: the visitor is asked first
+      // (lib/privacy/external-data). A setup on another server is named itself
+      // (the servers it lists are known only once it has been read, from
+      // there); one on this site is read first and its servers listed.
+      void (async () => {
+        const foreign = hostsIn(new URL(setup, location.href).href)
+        let text: string | null = null
+        let hosts = foreign
+        if (foreign.length === 0) {
+          try {
+            const res = await fetch(setup)
+            if (res.ok) { text = await res.text(); hosts = await layersSetupHosts(JSON.parse(text)) }
+          } catch { /* the importer reports a bad setup */ }
+        }
+        const accepted = await confirmExternalData(foreign.length ? 'layersUrl' : 'layers', hosts)
+        if (!accepted) { toast(tc('externalData.skipped'), 'info'); return }
+        const body = text
+        void run(async () => reportImport(body !== null ? await importLayersSession(body) : await importLayersFromUrl(setup)))
+      })()
       return
     }
     if (!useVectorLayerStore.getState().restorePending) return
@@ -143,6 +162,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     const text = useVectorLayerStore.getState().setupText
     if (!text) return
     useVectorLayerStore.getState().setSetupText(null)
+    // Asked for already: the scene's question (App) covered its layers.
     void run(async () => reportImport(await importLayersSession(text)))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setupText])

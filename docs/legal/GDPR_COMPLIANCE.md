@@ -30,7 +30,7 @@ El activo sensible —los **archivos IFC del usuario**— se procesa **100% en e
 | 3 | **Atribución de campañas** | Etiqueta opaca de campaña (sin PII) | Visitantes de enlaces de invitación | Saber qué canal trae visitas | **Interés legítimo** 6(1)(f) | — (solo cliente) | `sessionStorage` (navegador) | Sesión de pestaña |
 | 4 | **Suscripción a novedades** | Email, source, locale, timestamp | Suscriptores | Enviar avisos de producto solicitados | **Consentimiento** 6(1)(a) | Resend (vía Cloudflare Worker) | EE. UU. | Hasta baja / solicitud de borrado |
 | 5 | **Reportes compartidos** | Lista de issues de validación (sin geometría) | Quien comparte y destinatarios | Compartir/indexar un reporte que el usuario eligió compartir | **Consentimiento / acción del usuario** | Cloudflare (Worker, stateless) | Edge global | Caducan a los 90 días (en la URL; nada se almacena) |
-| 6 | **Benchmark de Health Score** | Solo el número de score (sin IP, sin id) | Visitantes (opt-in implícito al calcular) | Estadística agregada del sector | Interés legítimo / dato no personal | Cloudflare KV | Edge global | Agregado permanente (no reversible a persona) |
+| 6 | **Benchmark de Health Score** | Solo el número de score (sin id; la IP llega como metadato de la petición) | Visitantes que validan, salvo oposición a la analítica o GPC/DNT (desde 2026-10-10) | Estadística agregada del sector | Interés legítimo / dato no personal | Cloudflare KV | Edge global | Agregado permanente (no reversible a persona) |
 | 7 | **Protección anti-abuso / hosting** | IP (metadato de petición) | Visitantes | Rate limiting + entrega de contenido | **Interés legítimo** 6(1)(f) | Cloudflare, Vercel | EE. UU. / edge | Logs de infraestructura del proveedor |
 
 **Categorías especiales (Art. 9):** ninguna. **Decisiones automatizadas / profiling (Art. 22):** ninguno.
@@ -45,7 +45,7 @@ Sin cookies de tracking ni de publicidad. PostHog corre en `persistence: 'memory
 |---|---|---|
 | `ifc-locale` | localStorage | Idioma de interfaz |
 | `ifc-viewer:prefs` | localStorage | Preferencias de UI (tamaños/visibilidad de paneles) |
-| `ifc-geo-*` | localStorage | Consentimiento y opciones del modo mapa (opcional) |
+| `ifc-geo-*` | localStorage | Consentimiento y opciones del modo mapa (opcional). Retirar el permiso en el panel Mapa borra `ifc-geo-consent:v1`; el permiso que concede una web que incrusta el visor dura la sesión y no se guarda. |
 | `ifc-analytics-optout:v1` | localStorage | Decisión de oposición a la analítica (para honrarla) |
 | `ifc.entry_source` / `ifc.entry_segment` / `ifc.entry_source_kind` | sessionStorage | Etiqueta de campaña no personal (se borra al cerrar pestaña) |
 | `coiReloaded`, `chunkReloaded` | sessionStorage | Técnicos (cross-origin isolation / recarga de chunks) |
@@ -61,10 +61,27 @@ Por su carácter funcional, **no requieren consentimiento previo** (ePrivacy). A
 | **PostHog** | Analítica | Eventos + IP (en ingesta) | EE. UU. | SCC / DPF — **confirmar y archivar** | **Confirmar DPA firmado** |
 | **Resend** | Envío de email | Email del suscriptor | EE. UU. | SCC / DPF — **confirmar** | **Confirmar DPA** |
 | **Cloudflare** | Worker (subscribe/report/bench) + anti-abuso | IP (metadato), email en tránsito (subscribe) | EE. UU. / edge | SCC / DPF — **confirmar** | **Confirmar DPA** |
+| **Clerk** | Inicio de sesión / cuentas (si `VITE_CLERK_PUBLISHABLE_KEY` está configurada: su script carga con cada página) | IP (metadato); datos de cuenta solo si el usuario crea una | EE. UU. | SCC / DPF — **confirmar** | **Confirmar DPA** |
 | **Vercel** | Hosting estático + CDN | IP (metadato de petición) | EE. UU. / edge | SCC / DPF — **confirmar** | **Confirmar DPA** |
 
 > ✅ La lista de encargados se publica además en la Política de Privacidad (transparencia + confianza B2B).
 > ⚠️ **Acción pendiente (operativa):** confirmar y guardar copia del DPA y del mecanismo de transferencia (SCC y/o certificación EU-US Data Privacy Framework) de cada proveedor. Ver §8.
+
+---
+
+## 4 bis. Terceros a los que llama el navegador del usuario (no son encargados)
+
+Contenido público que el navegador pide directamente a servidores de otras organizaciones. El responsable no está en medio ni recibe nada; cada proveedor ve la IP y lo pedido (en el mapa, la zona del emplazamiento) y actúa como responsable independiente. Transparencia en la Política de Privacidad («Content your browser loads from other services») y en el punto de uso:
+
+| Función | Proveedores | Qué ven | Cuándo / control |
+|---|---|---|---|
+| Modelos de demo | GitHub (raw / media) | IP, fichero pedido | Clic en la galería |
+| Enlaces `?model=` `?scan=` `?scene=` `?layers=` | El servidor del enlace | IP, fichero | Abrir el enlace. Capas y fuentes en vivo de enlaces/escenas: **aviso previo con la lista de servidores** (`lib/privacy/external-data.ts`), salvo dentro de un iframe |
+| Modo mapa | OpenFreeMap, OSM; IGN PNOA y Catastro (España, según estilo); OpenTopoMap, Esri, EOX, NASA GIBS (si se eligen); ICGC / AWS Open Data (relieve); Overpass OSM (edificios) | IP, zona | **Consentimiento previo**; retirable en Mapa → «Datos y permiso». Un `?map=`/escena abierto directamente pide el consentimiento (antes lo concedía y guardaba en silencio); embebido, decide el anfitrión solo para la sesión |
+| Capas de datos y feeds | URLs/WFS que añade el usuario; presets (Barcelona, Catalunya, Madrid open data, Bicing, FGC, Renfe, TMB con clave propia, Catastro, ICGC, IGN, ODPT) | IP, bbox | Acción del usuario; proxy opcional |
+| Gemelo (dispositivos) | Endpoints HTTP/WebSocket/MQTT que configura el usuario | IP + lo que el usuario configure | Acción del usuario; de escenas, aviso previo |
+| Estudio solar (clima) | Open-Meteo | lat/lon del emplazamiento | Botón con aviso |
+| Clip Studio | TikTok oEmbed | IP, enlace pegado | Pegar un enlace; nota en la interfaz |
 
 ---
 
@@ -136,5 +153,7 @@ La promesa de marca debe coincidir con el código:
 - "100% cliente / los IFC no se suben" → verificado (procesado en navegador, sin subida a R2/Worker).
 - "cookieless / sin cookies de tracking" → `persistence: 'memory'`.
 - "self-hosted fonts / sin Google" → Google Fonts eliminado de `index.html` y del generador de páginas `/fix/`.
-- "puedes oponerte a la analítica" → interruptor real + GPC/DNT.
+- "puedes oponerte a la analítica" → interruptor real + GPC/DNT; desde 2026-10-10 también corta el POST del benchmark.
+- "el contenido del modelo no sale del navegador" → la analítica recibe las URL saneadas (`lib/analytics-url.ts`, `before_send`): nombres de parámetros, no sus valores; sin el contenido del fragmento (`#scene=`, `#report=`).
+- "sin CDNs de terceros en tiempo de ejecución" → el worker de fragments y el WASM de web-ifc se sirven desde el propio origen (antes: unpkg.com en cada arranque, código sin SRI y WASM `web-ifc@>=<peer>`).
 Cualquier cambio futuro que afecte a flujos de datos **debe** actualizar este documento y la Política de Privacidad.

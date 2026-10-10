@@ -265,7 +265,8 @@
     "fmi-weather": {
       "name": "Hèlsinki · Estacions meteorològiques (FMI)",
       "hint": "Temperatura, vent, humitat i pluja cada 10 min · sense clau"
-    }
+    },
+    "privacy": "Cada font es llegeix directament del seu servidor (indicat a la targeta), que veu la teva adreça IP i, en la majoria, la zona al voltant de l'emplaçament. No s'envia res del model."
   },
   "live": {
     "toggle": "Actualització en directe",

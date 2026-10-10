@@ -602,9 +602,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
             variant={block.variant ?? 'inline'}
           />
 
-          {/* Footer note */}
+          {/* Footer note — accurate: the sample model IS fetched (GitHub), nothing goes up */}
           <p className="mt-2 text-[10.5px] text-[var(--text-faint)] text-center">
-            Rendered in your browser · zero bytes sent to any server
+            Rendered in your browser · sample model downloaded from GitHub, nothing uploaded
           </p>
         </div>
       )

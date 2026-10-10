@@ -366,7 +366,12 @@ interface GeoStore {
   disable: () => void
   setBaseLayer: (id: string) => void
   acceptTerms: (id: string) => void
-  setConsent: (v: boolean) => void
+  /**
+   * Give or withdraw the tile consent. `persist: false` grants it for this
+   * page session only (an embedding host's decision must not become this
+   * visitor's stored choice on the app's own origin).
+   */
+  setConsent: (v: boolean, persist?: boolean) => void
   setTerrainEnabled: (v: boolean) => void
   setTerrainStatus: (epoch: number, s: TerrainStatus) => void
   setTerrainStyle: (s: TerrainStyle) => void
@@ -539,11 +544,11 @@ export const useGeoStore = create<GeoStore>()(
         set({ termsAccepted: next }, false, 'acceptTerms')
       },
 
-      setConsent: (v) => {
+      setConsent: (v, persist = true) => {
         // Withdrawing has to be as complete as giving: the stored '1' would
         // have granted it again on the next visit.
-        if (v) lsSet(LS_CONSENT, '1')
-        else lsDel(LS_CONSENT)
+        if (v && persist) lsSet(LS_CONSENT, '1')
+        else if (!v) lsDel(LS_CONSENT)
         set({ consentGiven: v }, false, 'setConsent')
       },
 

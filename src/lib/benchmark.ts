@@ -10,6 +10,12 @@
 //
 // Both functions are defensive: if VITE_REPORT_URL isn't set, or the Worker /
 // KV isn't provisioned, they no-op silently — nothing breaks.
+//
+// A visitor who objected to analytics (or whose browser signals GPC / Do Not
+// Track) contributes nothing: the request itself carries their IP to the
+// Worker, and the score is usage statistics like any analytics event.
+
+import { analyticsAllowed } from '../stores/consentStore'
 
 /**
  * Minimum sample size before we show a comparison. A "vs avg" built on n=12 is
@@ -47,6 +53,7 @@ export function postBenchmark(score: number): void {
   const base = benchBase()
   if (!base) return
   if (!Number.isFinite(score)) return
+  if (!analyticsAllowed()) return
   const s = Math.max(0, Math.min(100, Math.round(score)))
   try {
     void fetch(base, {

@@ -297,7 +297,7 @@
   },
   "demoGallery": {
     "title": "Explore demo models",
-    "subtitle": "Pick a curated public IFC model to see the viewer and validator in action. Loaded straight from public repositories — nothing leaves your browser.",
+    "subtitle": "Pick a curated public IFC model to see the viewer and validator in action. Loaded straight from public repositories (GitHub) — nothing leaves your browser.",
     "openCta": "Browse demo models",
     "examples": "Examples",
     "all": "All",

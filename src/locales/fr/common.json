@@ -336,5 +336,18 @@
       "privacyLink": "politique de confidentialité",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "Ce lien apporte des données d'autres serveurs",
+    "body": {
+      "layers": "Pour afficher ses couches de données, des données seront demandées à ces serveurs :",
+      "layersUrl": "Pour afficher ses couches de données, sa configuration sera lue sur ce serveur, puis sur les serveurs que cette configuration indique :",
+      "twin": "Pour afficher ses données en direct, l'application se connectera à ces serveurs :",
+      "scene": "Pour afficher ses couches de données et ses données en direct, l'application contactera ces serveurs :"
+    },
+    "sees": "Chaque serveur verra votre adresse IP et, pour les couches sur la carte, la zone du site. Votre modèle n'est pas envoyé.",
+    "load": "Charger les données",
+    "skip": "Pas maintenant",
+    "skipped": "Les données externes du lien n'ont pas été chargées."
   }
 }

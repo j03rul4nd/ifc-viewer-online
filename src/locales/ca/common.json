@@ -336,5 +336,18 @@
       "privacyLink": "política de privadesa",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "Aquest enllaç porta dades d'altres servidors",
+    "body": {
+      "layers": "Per mostrar les seves capes de dades es demanaran dades a aquests servidors:",
+      "layersUrl": "Per mostrar les seves capes de dades es llegirà la seva configuració en aquest servidor, i després els servidors que aquesta configuració indiqui:",
+      "twin": "Per mostrar les seves dades en directe, l'app es connectarà amb aquests servidors:",
+      "scene": "Per mostrar les seves capes de dades i les seves dades en directe, l'app contactarà amb aquests servidors:"
+    },
+    "sees": "Cada servidor veurà la teva adreça IP i, en les capes sobre el mapa, la zona de l'emplaçament. El teu model no s'envia.",
+    "load": "Carrega les dades",
+    "skip": "Ara no",
+    "skipped": "No s'han carregat les dades externes de l'enllaç."
   }
 }
