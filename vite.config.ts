@@ -127,7 +127,8 @@ function generateBlogPageShells(): import('vite').Plugin {
       // eslint-disable-next-line no-console
       console.log(
         `\n  ✓ Blog pages: ${r.pages} shells (index + ${r.pages - 1} posts)` +
-        ` · sitemap ${r.sitemap ? 'updated' : 'unchanged'} · llms.txt ${r.llms ? 'updated' : 'unchanged'} · ${status}\n`,
+        ` · sitemap ${r.sitemap ? 'updated' : 'unchanged'} · llms.txt ${r.llms ? 'updated' : 'unchanged'}` +
+        ` · rights metadata in ${r.stamped ?? 0} images · ${status}\n`,
       )
     },
   }

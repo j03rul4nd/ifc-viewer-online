@@ -10,13 +10,14 @@
     { "source": "/blog/ifc-model-checker-guide", "destination": "/blog/ifc-model-checker/", "permanent": true },
     { "source": "/blog/ifc-model-checker-guide/", "destination": "/blog/ifc-model-checker/", "permanent": true },
     { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-guide", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
-    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-guide/", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true }
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-guide/", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/blog/images/:name(warehouse-ifc-moving-lidar-real-viewer|construction-progress-ifc-lidar-real-viewer|utility-tunnel-ifc-lidar-real-viewer).png", "destination": "/blog/images/:name.jpg", "permanent": true }
   ],
   "rewrites": [
     { "source": "/badge", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_badge" },
     { "source": "/r",     "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_r" },
     { "source": "/bench", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/bench" },
-    { "source": "/((?!assets/|sdk/[0-9]+[.][0-9]+[.][0-9]+[^/]*/).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|blog/images/|blog/covers/|sdk/[0-9]+[.][0-9]+[.][0-9]+[^/]*/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -36,6 +37,12 @@
       "source": "/mascot/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=2592000" }
+      ]
+    },
+    {
+      "source": "/blog/:dir(images|covers)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=2592000" }
       ]
     },
     {

@@ -20,6 +20,7 @@ import SpatialMediaDemo from './blog/SpatialMediaDemo'
 import ToolDemo from './blog/ToolDemo'
 import SmartTable from './blog/SmartTable'
 import { editorialCopy } from '../lib/blog-editorial-copy'
+import { HERO_SIZES, heroSources } from '../lib/blog-hero'
 import { serpWidth } from '../lib/serp-width'
 import { QuoteShare, SectionLink, SelectionShare } from './blog/ShareKit'
 import { StatRow } from './blog/EditorialBlocks'
@@ -1878,21 +1879,24 @@ function HeroCoverStrip({ slug, heroImage, alt }: { slug: string; heroImage?: st
   const [visible, setVisible] = React.useState(true)
   if (!visible) return null
   const src = heroImage ? asset(heroImage) : asset(slug)
-  const compactHero = heroImage?.replace(/-1600x900(\.[a-z0-9]+)$/i, '-800x450$1')
-  const srcSet = compactHero && compactHero !== heroImage
-    ? `${asset(compactHero)} 800w, ${src} 1600w`
+  const sources = heroImage ? heroSources(heroImage) : []
+  const srcSet = sources.length > 1
+    ? sources.map((s) => `${asset(s.src)} ${s.width}w`).join(', ')
     : undefined
   return (
     <div className="relative h-[240px] sm:h-[420px] overflow-hidden bg-[var(--surface-2)] border-b border-[var(--border)]">
       <img
         src={src}
         srcSet={srcSet}
-        sizes="100vw"
+        sizes={HERO_SIZES}
         alt={alt ?? ''}
         width={1600}
         height={900}
         className="w-full h-full object-cover object-center"
         decoding="async"
+        // The largest paint of the page, and the static shell preloads it with
+        // the same priority. React 18 passes only the lowercase attribute.
+        {...{ fetchpriority: 'high' }}
         onError={() => setVisible(false)}
       />
       <div

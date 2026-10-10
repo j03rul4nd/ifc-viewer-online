@@ -38,6 +38,8 @@ import { filterBlogPosts, getBlogHubCopy, sortBlogPosts } from '../../src/lib/bl
 import { editorialCopy } from '../../src/lib/blog-editorial-copy'
 import { bimoCopy } from '../../src/components/mascot/bimo-copy'
 import { serpWidth } from '../../src/lib/serp-width'
+import { HERO_SIZES, heroSources } from '../../src/lib/blog-hero'
+import { withRights, type DigitalSourceType, type ImageRights } from './image-metadata'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
@@ -178,6 +180,11 @@ interface PageMeta {
   jsonLd: Record<string, unknown>
   image?: string
   imageAlt?: string
+  /** Pixel size of `image`; without it the template's og:image size is dropped, not kept. */
+  imageWidth?: number
+  imageHeight?: number
+  /** The hero's responsive set, so the preload fetches the file the page draws. */
+  imageSrcSet?: string
   alternates?: Array<{ lang: string; href: string }>
   ogType?: 'website' | 'article'
   bodyFallback?: string
@@ -227,6 +234,19 @@ function tweakHtml(template: string, meta: PageMeta): string {
 
   const preferredImage = meta.image ?? OG_IMAGE
   html = html.replace(/(<meta\s+property="og:image"\s+content=")[^"]*(")/, `$1${esc(preferredImage)}$2`)
+  // The template's og:image size describes the home's 1200×630 card. Keep it
+  // only when the page still uses that image; otherwise state the real size or
+  // none — a wrong size makes previews crop the wrong way.
+  const imageSize = meta.imageWidth && meta.imageHeight
+    ? { width: meta.imageWidth, height: meta.imageHeight }
+    : preferredImage === OG_IMAGE ? { width: 1200, height: 630 } : null
+  html = html.replace(/\s*<meta\s+property="og:image:(?:width|height)"\s+content="[^"]*"\s*\/?>/g, '')
+  if (imageSize) {
+    html = html.replace(/(<meta\s+property="og:image"\s+content="[^"]*"\s*\/?>)/,
+      `$1\n    <meta property="og:image:width" content="${imageSize.width}" />\n    <meta property="og:image:height" content="${imageSize.height}" />`)
+  }
+  // The home's image alts are written for the home's image; each page states its own below.
+  html = html.replace(/\s*<meta\s+(?:property="og:image:alt"|name="twitter:image:alt")\s+content="[^"]*"\s*\/?>/g, '')
   if (/<meta\s+name="twitter:image"/.test(html)) {
     html = html.replace(/(<meta\s+name="twitter:image"\s+content=")[^"]*(")/, `$1${esc(preferredImage)}$2`)
   } else {
@@ -264,7 +284,7 @@ function tweakHtml(template: string, meta: PageMeta): string {
       ].filter(Boolean).join('\n  ')
     : ''
   const imagePreload = preferredImage !== OG_IMAGE
-    ? `<link rel="preload" as="image" href="${esc(preferredImage)}" />`
+    ? `<link rel="preload" as="image" href="${esc(preferredImage)}"${meta.imageSrcSet ? ` imagesrcset="${esc(meta.imageSrcSet)}" imagesizes="${HERO_SIZES}"` : ''} fetchpriority="high" />`
     : ''
 
   html = html.replace('</head>', `  ${hreflang}\n  ${ogAlt}\n  ${twitterAlt}\n  ${articleMeta}\n  ${imagePreload}\n  ${jsonLd}\n</head>`)
@@ -286,6 +306,33 @@ interface SearchImage {
   license?: string
   width?: number
   height?: number
+  /** The image that stands for the page: the hero. */
+  representative?: boolean
+}
+
+const OWN_CREDIT = 'IFC Viewer Online'
+
+/**
+ * Who made an image, read from its credit line. Ours start with the brand
+ * ("IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)"); a
+ * third party's start with their name ("Abreu et al. · CRAS Labs @ FEUP").
+ */
+function imageCreator(credit: string): Record<string, unknown> {
+  const own = credit.startsWith(OWN_CREDIT)
+  return own
+    ? { '@type': 'Organization', '@id': `${SITE}/#organization`, name: OWN_CREDIT, url: `${SITE}/` }
+    : { '@type': 'Organization', name: credit.split(' · ')[0] }
+}
+
+/**
+ * The copyright line for an image. Our captures of the map are ours *and*
+ * show OpenStreetMap data, whose licence asks for its notice wherever the
+ * image goes — so the notice travels in the structured data too.
+ */
+export function imageCopyright(credit: string, year: string): string {
+  if (!credit.startsWith(OWN_CREDIT)) return credit
+  const osm = /openstreetmap/i.test(credit) ? ' · map data © OpenStreetMap contributors (ODbL)' : ''
+  return `© ${year} ${OWN_CREDIT}${osm}`
 }
 
 function mediaUrl(src: string): string {
@@ -310,16 +357,18 @@ function postImages(post: BlogPost): SearchImage[] {
     add({
       url: mediaUrl(post.heroImage!),
       caption: post.heroAlt ?? post.title,
-      credit: post.heroCredit ?? heroBlock?.credit ?? 'IFC Viewer Online',
+      credit: post.heroCredit ?? heroBlock?.credit ?? OWN_CREDIT,
       width: heroVariant?.width ?? heroBlock?.width,
       height: heroVariant?.height ?? heroBlock?.height,
+      representative: true,
     })
   }
   for (const variant of post.heroImageVariants ?? []) {
     add({
       url: mediaUrl(variant.src),
       caption: post.heroAlt ?? post.title,
-      credit: 'IFC Viewer Online',
+      // Crops of the hero carry the hero's credit — the OSM notice included.
+      credit: post.heroCredit ?? OWN_CREDIT,
       width: variant.width,
       height: variant.height,
     })
@@ -332,38 +381,62 @@ function postImages(post: BlogPost): SearchImage[] {
     height: 945,
   })
   for (const block of post.content) {
-    if (block.type !== 'image') continue
-    add({
-      url: mediaUrl(block.src),
-      caption: block.caption ?? block.alt,
-      credit: block.credit,
-      license: block.license,
-      width: block.width,
-      height: block.height,
-    })
+    if (block.type === 'image') {
+      add({
+        url: mediaUrl(block.src),
+        caption: block.caption ?? block.alt,
+        credit: block.credit,
+        license: block.license,
+        width: block.width,
+        height: block.height,
+      })
+    } else if (block.type === 'tool-demo' || block.type === 'spatial-demo') {
+      // A live demo shows its poster until the reader starts it — for a
+      // crawler, the poster is the picture of the demo. The twin posts'
+      // only capture of the full scene is one of these.
+      add({ url: mediaUrl(block.poster), caption: block.posterAlt, credit: OWN_CREDIT })
+    } else if (block.type === 'video') {
+      add({ url: mediaUrl(block.poster), caption: block.caption ?? block.title, credit: OWN_CREDIT })
+    }
   }
   return images
+}
+
+/**
+ * The `imagesrcset` of the hero preload — the same set the SPA's hero draws
+ * from (heroSources), and only when every file of it was published.
+ */
+function heroSrcSet(post: BlogPost, distDir: string): string | undefined {
+  if (!post.heroImage?.includes('/')) return undefined
+  const sources = heroSources(post.heroImage)
+  if (sources.length < 2) return undefined
+  if (!sources.every((s) => existsSync(path.join(distDir, s.src)))) return undefined
+  return sources.map((s) => `${mediaUrl(s.src)} ${s.width}w`).join(', ')
 }
 
 function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | string> {
   const images = postImages(post)
   if (images.length === 0) return [OG_IMAGE]
-  return images.map((image) => ({
-    '@type': 'ImageObject',
-    url: image.url,
-    contentUrl: image.url,
-    caption: image.caption,
-    ...(image.credit ? {
-      creditText: image.credit,
-      creator: { '@type': 'Organization', name: image.credit },
-      copyrightNotice: image.credit,
-    } : {}),
-    // Google's image-metadata report wants license + acquireLicensePage as a
-    // pair. Our own renders and covers fall back to the site terms.
-    license: image.license ?? `${SITE}/terms/`,
-    acquireLicensePage: `${SITE}/terms/`,
-    ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
-  }))
+  const year = (post.dateModified ?? post.date).slice(0, 4)
+  return images.map((image) => {
+    const credit = image.credit ?? OWN_CREDIT
+    return {
+      '@type': 'ImageObject',
+      url: image.url,
+      contentUrl: image.url,
+      caption: image.caption,
+      ...(image.representative ? { representativeOfPage: true } : {}),
+      creditText: credit,
+      creator: imageCreator(credit),
+      copyrightNotice: imageCopyright(credit, year),
+      // Google's image-metadata report wants license + acquireLicensePage as a
+      // pair. Our own renders and covers fall back to the site terms; a third
+      // party's image under an open licence is licensed by that licence.
+      license: image.license ?? `${SITE}/terms/`,
+      acquireLicensePage: image.license ?? `${SITE}/terms/`,
+      ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
+    }
+  })
 }
 
 /** Keep the visible title focused on the query while preserving the brand on
@@ -554,7 +627,11 @@ function topicBodyFallback(topic: Topic, posts: BlogPost[], lang: string, prefix
         <header><h1>${esc(topic.copy.title)}</h1><p>${esc(topic.copy.intro)}</p></header>
         <section>
           <h2>${esc(copy.topicAllGuides(topic.posts.length))}</h2>
-          ${ordered.map((post) => `<article><h3><a href="${SITE}/${prefix}blog/${post.slug}/">${esc(post.title)}</a></h3><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
+          ${ordered.map((post) => {
+            const image = postImages(post)[0]
+            const picture = image ? `<img src="${esc(image.url)}" alt="${esc(image.caption)}"${image.width && image.height ? ` width="${image.width}" height="${image.height}"` : ''} loading="lazy" decoding="async" />` : ''
+            return `<article><a href="${SITE}/${prefix}blog/${post.slug}/">${picture}</a><h3><a href="${SITE}/${prefix}blog/${post.slug}/">${esc(post.title)}</a></h3><p>${esc(post.excerpt)}</p></article>`
+          }).join('\n          ')}
         </section>
         ${tools.length ? `<section><h2>${esc(copy.topicTools)}</h2><ul>${tools.map((tool) => `<li><a href="${esc(toolHref(tool, lang))}">${esc(toolCopy(tool, lang).name)}</a> — ${esc(toolCopy(tool, lang).blurb)}</li>`).join('')}</ul></section>` : ''}
       </main>
@@ -612,11 +689,12 @@ function sitemapBlogEntry(
   for (const alternate of pageAlternates) {
     lines.push(`    <xhtml:link rel="alternate" hreflang="${esc(alternate.lang)}" href="${esc(alternate.href)}" />`)
   }
+  // Only <image:loc> is read since 2022; caption, title and licence moved to
+  // the page (alt, figcaption, ImageObject) and the file (IPTC).
   for (const image of images) {
     lines.push(
       '    <image:image>',
       `      <image:loc>${esc(image.url)}</image:loc>`,
-      `      <image:caption>${esc(image.caption)}</image:caption>`,
       '    </image:image>',
     )
   }
@@ -680,6 +758,8 @@ export interface BlogPagesResult {
   sitemapAdded?: number
   /** Whether llms.txt was updated this run. */
   llms: boolean
+  /** How many image files got their rights metadata written. */
+  stamped?: number
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -712,6 +792,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
       try {
         const canonical = `${urlBase}topic/${topic.slug}/`
         const ordered = orderTopicPosts(topic, posts)
+        // The hub is shared with the picture of the guide it starts with.
+        const lead = ordered[0] ? postImages(ordered[0])[0] : undefined
         const outDir = path.join(distDir, ...cfg.prefix.split('/').filter(Boolean), 'blog', 'topic', topic.slug)
         mkdirSync(outDir, { recursive: true })
         writeFileSync(
@@ -721,6 +803,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             title: `${topic.copy.title} | IFC Viewer Blog`,
             description: topic.copy.intro,
             canonical,
+            ...(lead ? { image: lead.url, imageAlt: lead.caption, imageWidth: lead.width, imageHeight: lead.height } : {}),
             ogType: 'website',
             bodyFallback: topicBodyFallback(topic, posts, lang, cfg.prefix),
             // Topics exist per language on their own; no cross-language pairs.
@@ -743,6 +826,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
                       position: i + 1,
                       url: `${urlBase}${p.slug}/`,
                       name: p.title,
+                      image: postImages(p)[0]?.url ?? OG_IMAGE,
                     })),
                   },
                 },
@@ -837,6 +921,9 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             canonical,
             image: primaryImage.url,
             imageAlt: post.heroAlt ?? post.title,
+            imageWidth: primaryImage.width,
+            imageHeight: primaryImage.height,
+            imageSrcSet: heroSrcSet(post, distDir),
             ogType: 'article',
             bodyFallback: postBodyFallback(post, cfg.prefix, primaryImage),
             publishedTime: isoDateTime(post.date),
@@ -1009,5 +1096,74 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     }
   }
 
+  result.stamped = stampBlogImages(distDir)
   return result
+}
+
+// ── Rights metadata in the image files ────────────────────────────────────────
+
+/**
+ * How an image was made, from its credit line and file. Generative pictures
+ * say so in their credit; renders and diagrams are drawn by us; the JPEGs are
+ * captures of the viewer. A third party's image is left unlabelled.
+ */
+export function sourceTypeOf(credit: string, url: string): DigitalSourceType | undefined {
+  if (/\bAI-generated\b|generad[ao] con IA/i.test(credit)) return 'trainedAlgorithmicMedia'
+  if (!credit.startsWith(OWN_CREDIT)) return undefined
+  if (/blender|render|synthetic/i.test(credit)) return 'digitalCreation'
+  if (/capture|captura|openstreetmap|map data/i.test(credit) || /\.jpe?g$/i.test(url)) return 'screenCapture'
+  return 'digitalCreation'
+}
+
+/**
+ * Write each published blog image's credit, copyright and licence pages into
+ * the file (image-metadata.ts), from the same data as its ImageObject. A file
+ * shared by the translations of a post is described in English, the language
+ * it was made in; a post that exists only in another language describes its own.
+ */
+function stampBlogImages(distDir: string): number {
+  const rights = new Map<string, ImageRights>()
+  const ordered = [...EVERY_BLOG_POST].sort((a, b) => Number((b.lang ?? 'en') === 'en') - Number((a.lang ?? 'en') === 'en'))
+  for (const post of ordered) {
+    const year = (post.dateModified ?? post.date).slice(0, 4)
+    const describe = (image: SearchImage): ImageRights => {
+      const credit = image.credit ?? OWN_CREDIT
+      return {
+        creator: credit.startsWith(OWN_CREDIT) ? OWN_CREDIT : credit.split(' · ')[0],
+        credit,
+        copyright: imageCopyright(credit, year),
+        webStatement: image.license ?? `${SITE}/terms/`,
+        licensorUrl: image.license ?? `${SITE}/terms/`,
+        description: image.caption,
+        sourceType: sourceTypeOf(credit, image.url),
+      }
+    }
+    for (const image of postImages(post)) {
+      if (!image.url.startsWith(`${SITE}/blog/`) || rights.has(image.url)) continue
+      rights.set(image.url, describe(image))
+    }
+    // The responsive cuts the page draws (srcset) are the same picture.
+    const cuts: Array<[string, string]> = []
+    const hero = post.heroImage?.includes('/') ? mediaUrl(post.heroImage) : undefined
+    if (post.heroImage && hero) for (const s of heroSources(post.heroImage)) cuts.push([mediaUrl(s.src), hero])
+    for (const block of post.content) {
+      if (block.type === 'image') for (const s of block.srcSet ?? []) cuts.push([mediaUrl(s.src), mediaUrl(block.src)])
+    }
+    for (const [cut, of] of cuts) {
+      const parent = rights.get(of)
+      if (parent && !rights.has(cut)) rights.set(cut, parent)
+    }
+  }
+  let stamped = 0
+  for (const [url, r] of rights) {
+    const file = path.join(distDir, url.slice(SITE.length + 1))
+    if (!/\.(?:jpe?g|png)$/i.test(file) || !existsSync(file)) continue
+    try {
+      writeFileSync(file, withRights(readFileSync(file), r))
+      stamped++
+    } catch (err) {
+      console.warn(`[blog-pages] could not write rights metadata into ${file}:`, err)
+    }
+  }
+  return stamped
 }
