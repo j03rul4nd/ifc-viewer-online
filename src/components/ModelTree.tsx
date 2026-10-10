@@ -14,7 +14,7 @@ import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import {
   scopedElementKey, flattenTrees, flattenTreesFiltered, collectSpatialKeys,
   nextExpansion, locateElement, resolveRevealTarget, invertDecomposition,
-  buildIssueIndex, emptyIssueIndex, fileNameFromModelId,
+  buildIssueIndex, emptyIssueIndex, fileNameFromModelId, buildNameIndex, elementName,
   type FlatNode, type ModelIssueIndex, type ModelTreeSource,
 } from '../lib/spatial-tree'
 import { useEditorHistory } from '../hooks/useEditorHistory'
@@ -324,7 +324,13 @@ const ROW_HEIGHT = 30
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ModelTreeProps {
-  onSelectElement?: (expressId: number, modelId?: string) => void
+  /**
+   * `source` says who picked the element: the user tapping a row, or
+   * `revealElement` bringing one into view. The phone sheet closes on the
+   * first — the pick should be visible in the model — and must stay open on
+   * the second, or the reveal shuts the tree it just opened.
+   */
+  onSelectElement?: (expressId: number, modelId: string | undefined, source: 'row' | 'reveal') => void
   onFilterBySubtree?: (expressIds: number[]) => void
   onFocusElements?: (ids: number[], modelId?: string) => void
   /**
@@ -381,6 +387,8 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     const [editingKey, setEditingKey]     = useState<string | null>(null)
     const [editingField, setEditingField] = useState<'Name' | 'LongName' | 'Description' | 'GlobalId'>('Name')
     const [guidWarning, setGuidWarning]   = useState<{ expressId: number; currentGuid: string; modelId?: string } | null>(null)
+    /** The row `revealElement` asked for, until the list it opened has rendered. */
+    const [pendingReveal, setPendingReveal] = useState<{ key: string } | null>(null)
 
     const parentRef = useRef<HTMLDivElement>(null)
 
@@ -522,7 +530,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
 
     const handleSelectNode = useCallback((expressId: number, modelId?: string) => {
       setSelection([{ expressId, modelId }])
-      onSelectElement?.(expressId, modelId)
+      onSelectElement?.(expressId, modelId, 'row')
     }, [setSelection, onSelectElement])
 
     /**
@@ -571,6 +579,9 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         const target = resolveRevealTarget(allTrees, expressId, modelId, hostOf)
         if (!target) return { ok: false }
 
+        // Functional updates: on a phone the tree has only just mounted, and
+        // its first-levels auto-expansion may not have landed in the state
+        // this handle closed over. Copying that stale set dropped it.
         setQuery('')   // a filtered list may not contain the target row
         setCollapsedModels((prev) => {
           if (!prev.has(target.modelId)) return prev
@@ -578,43 +589,49 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
           next.delete(target.modelId)
           return next
         })
-        const expandedNext = new Set(expanded)
-        for (const key of target.ancestorKeys) expandedNext.add(key)
-        setExpanded(expandedNext)
-
-        // Scroll after React has rendered the newly opened rows. The list is
-        // recomputed from the state we just set rather than read back out of
-        // it, so this does not depend on the re-render having landed.
-        const collapsedNext = new Set([...collapsedModels].filter((m) => m !== target.modelId))
-        // Unfold the target's group too, and index the SAME row list the
-        // virtualiser renders (group rows included) or the scroll lands short.
-        const targetGroup = sceneGroups.find((g) => g.memberIds.includes(target.modelId))?.id
-        const collapsedGroupsNext = new Set([...collapsedGroups].filter((g) => g !== targetGroup))
-        if (collapsedGroupsNext.size !== collapsedGroups.size) setCollapsedGroups(collapsedGroupsNext)
-        const flat = withGroupRows(flattenTrees(allTrees, {
-          expanded: expandedNext, collapsedModels: collapsedNext,
-          showHeaders: showModelHeaders, fileNameOf,
-        }), sceneGroups, collapsedGroupsNext)
-        const wanted = scopedElementKey(target.modelId, target.expressId)
-        const idx = flat.findIndex((f) => (f.kind === 'spatial' || f.kind === 'element') && f.key === wanted)
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (idx !== -1) virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
-          })
+        setExpanded((prev) => {
+          const next = new Set(prev)
+          for (const key of target.ancestorKeys) next.add(key)
+          return next
         })
+        const targetGroup = sceneGroups.find((g) => g.memberIds.includes(target.modelId))?.id
+        setCollapsedGroups((prev) => {
+          if (!targetGroup || !prev.has(targetGroup)) return prev
+          const next = new Set(prev)
+          next.delete(targetGroup)
+          return next
+        })
+        // The scroll waits for the render that opens those rows — see the
+        // effect below.
+        setPendingReveal({ key: scopedElementKey(target.modelId, target.expressId) })
 
         setSelection([{ expressId: target.expressId, modelId: target.modelId }])
-        onSelectElement?.(target.expressId, target.modelId)
+        onSelectElement?.(target.expressId, target.modelId, 'reveal')
 
         if (!target.viaHost) return { ok: true, viaHost: false }
-        const row = flat[idx]
-        const hostName = row?.kind === 'spatial' ? row.node.name
-          : row?.kind === 'element' ? row.element.name
-          : `#${target.expressId}`
+        const source = allTrees.filter((m) => m.modelId === target.modelId)
+        const hostName = elementName(buildNameIndex(source), target.modelId, target.expressId)
+          ?? `#${target.expressId}`
         return { ok: true, viaHost: true, hostName }
       },
-    }), [allTrees, expanded, collapsedModels, showModelHeaders, fileNameOf, virtualizer,
-         hostOf, setSelection, onSelectElement, sceneGroups, collapsedGroups])
+    }), [allTrees, hostOf, setSelection, onSelectElement, sceneGroups])
+
+    // Scroll to a revealed row once it is actually in the list. This used to
+    // happen two animation frames after the state was set, against a list
+    // recomputed on the side — a guess at when the render would land. On a
+    // phone the tree mounts inside a sheet that is still sliding in, and the
+    // guess lost often: the virtualiser did not have the row yet and the
+    // scroll silently did nothing. An effect runs after the commit that
+    // renders the opened rows, so the row and the list's full height are
+    // both there. A new object per reveal re-runs it for the same row.
+    useEffect(() => {
+      if (!pendingReveal) return
+      setPendingReveal(null)
+      const idx = flatNodes.findIndex(
+        (f) => (f.kind === 'spatial' || f.kind === 'element') && f.key === pendingReveal.key,
+      )
+      if (idx !== -1) virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
+    }, [pendingReveal, flatNodes, virtualizer])
 
     // ────────────────────────────────────────────────────────────────────────
 

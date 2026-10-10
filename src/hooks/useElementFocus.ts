@@ -4,6 +4,9 @@ import type { ViewerAPI } from '../lib/viewer'
 import type { ModelTreeHandle, RevealOutcome } from '../App'
 import { useUIStore } from '../stores/uiStore'
 
+/** How long a reveal waits for a closed tree to mount before giving up. */
+const TREE_MOUNT_TIMEOUT_MS = 1500
+
 // Every handler forwards modelId to the viewer — to the framing call as well
 // as the selection. expressIDs collide across federated models, so dropping it
 // on one of the two framed an element in one model and selected it in another.
@@ -49,11 +52,19 @@ export function useElementFocus(
     if (!useUIStore.getState().treeVisible) {
       useUIStore.getState().setTreeVisible(true)
     }
-    // Slight delay so the tree has time to mount/expand before scrolling.
+    // Wait for the tree to exist, not for a fixed delay. A closed tree is not
+    // mounted, and on a phone it lives in a sheet that only mounts its content
+    // a render after it opens: a guessed 80 ms either found it or answered
+    // "not in the tree" for an element that is.
     return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(modelTreeRef.current?.revealElement(expressId, modelId) ?? { ok: false })
-      }, 80)
+      const started = performance.now()
+      const attempt = (): void => {
+        const tree = modelTreeRef.current
+        if (tree) resolve(tree.revealElement(expressId, modelId))
+        else if (performance.now() - started > TREE_MOUNT_TIMEOUT_MS) resolve({ ok: false })
+        else setTimeout(attempt, 16)
+      }
+      attempt()
     })
   }, [modelTreeRef])
 
