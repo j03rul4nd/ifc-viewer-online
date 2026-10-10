@@ -173,5 +173,54 @@
     "never": "never",
     "ground": "Ground",
     "chart": "Depth over the event"
+  },
+  "affected": {
+    "title": "Flood: elements reached",
+    "panelTitle": "Elements the water reaches",
+    "summary": "Below the highest water next to them: {{n}} of the {{checked}} elements checked.",
+    "none": "None of the {{checked}} elements checked (doors, windows, accesses, spaces, equipment) sits below the highest water next to it.",
+    "atEnd": "Maxima of the whole event ({{t}}).",
+    "partial": "Maxima so far ({{t}}): the run has not finished.",
+    "pending": "Listed when the run finishes: doors, windows, accesses, spaces and equipment below the highest water.",
+    "busy": "Checking the model's elements…",
+    "analyze": "Check now",
+    "reanalyze": "Check again",
+    "open": "Show in Validation",
+    "group": {
+      "opening": "Doors and windows",
+      "access": "Accesses (ramps, stairs, lifts)",
+      "space": "Spaces",
+      "equipment": "Equipment and services",
+      "below": "Below ground"
+    },
+    "belowNote": "Their bottom is below the ground outside (basements, sunken accesses). The figure is the water standing outside; whether it gets in depends on openings the simulation does not model.",
+    "outside": "{{d}} outside",
+    "arrives": "water at {{t}}",
+    "jump": "Select it and fly to it",
+    "more": "Show {{n}} more",
+    "capped": "Showing the first {{n}}.",
+    "note": "Indicative: the water standing outside each element against its lowest point. Not part of the validation result or the Health Score.",
+    "dismiss": "Hide"
+  },
+  "export": {
+    "title": "Export",
+    "png": "Image (PNG)",
+    "video": "Video of the event",
+    "stop": "Stop · {{pct}} %",
+    "videoNeedsEnd": "The video is available once the run has finished.",
+    "noVideo": "This browser cannot record video.",
+    "field": "Layer",
+    "fields": {
+      "hMax": "Max depth",
+      "vMax": "Max speed",
+      "tWet": "Arrival"
+    },
+    "rasterNote": "GIS files of the whole grid, north up; buildings are no-data. Depth in m, speed in m/s, arrival in s.",
+    "crs": "Coordinates in {{crs}}, north up.",
+    "local": "The model is not georeferenced: the file uses its local plan coordinates (metres), with no coordinate system."
+  },
+  "capture": {
+    "time": "t = {{t}} of {{end}}",
+    "disclaimer": "Simplified, indicative simulation: not a certified hydraulic study."
   }
 }

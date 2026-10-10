@@ -9,7 +9,7 @@ import { create } from 'zustand'
 import type { FloodBackend, FloodStats, Infiltration } from './core/solver-api'
 import type { Hyetograph } from './core/hyetograph'
 import type { RunPerf } from './worker/protocol'
-import type { PrepareResult, ProbeResult } from './system'
+import type { AffectedReport, PrepareResult, ProbeResult } from './system'
 import type { RoofRunoff } from './raster/rain-routing'
 import { stormHyetograph } from './presets'
 
@@ -70,6 +70,9 @@ export interface FloodState extends FloodSettings {
   probing: boolean
   probe: ProbeResult | null
   probeBusy: boolean
+  /** The elements the water reaches (shown in the validation panel); null = none analysed. */
+  affected: AffectedReport | null
+  affectedBusy: boolean
   setPanelOpen(v: boolean): void
   set(p: Partial<FloodState>): void
 }
@@ -107,6 +110,8 @@ export const useFloodStore = create<FloodState>()((set) => ({
   probing: false,
   probe: null,
   probeBusy: false,
+  affected: null,
+  affectedBusy: false,
   setPanelOpen: (v) => set({ panelOpen: v }),
   set: (p) => set(p),
 }))

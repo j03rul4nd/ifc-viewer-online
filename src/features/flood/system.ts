@@ -10,6 +10,9 @@
 //              replayed from the snapshots at a chosen speed, or the live run
 //   setProbing()  a click on the scene reads depth, speed, ground and the cell's history
 //   setView()  depth now / maximum / speed, threshold, flow particles, ground
+//   analyzeAffected()  the doors, windows, spaces and equipment the water reaches
+//   exportResult()     maximum depth (speed, arrival) as GeoTIFF / ASC / CSV
+//   setCaptureOverlay() legend, instant and disclaimer in every capture
 //   clear()    removes every layer and stops the worker
 
 import * as THREE from 'three'
@@ -28,6 +31,8 @@ import { buildFloodGrid, type BuildReport, type PlaneGround } from './raster/bui
 import type { RoofRunoff } from './raster/rain-routing'
 import { readDemFile, sampleDem, type DemRaster } from './raster/dem-import'
 import { affineFrom, elevationToSceneY, gridRotation, sceneToGrid, type FloodGeoref } from './raster/georef'
+import { northUp, writeAsc, writeGeoTiff, type RasterOut } from './raster/dem-export'
+import { AFFECTED_CLASSES, elevationFrom, findAffected, type AffectedElement, type AffectedReport, type Box3Like, type Candidate } from './validation/affected'
 import { WaterLayer, type WaterMode } from './view/water-layer'
 import { createGroundLayer } from './view/ground-layer'
 import { FlowParticles } from './view/flow-particles'
@@ -71,6 +76,32 @@ export interface FloodContext {
   canvas?: HTMLElement
   /** While true the viewer neither hovers nor selects: the probe owns the click. */
   setPointerSuppressed?(on: boolean): void
+  /** Elements of the given IFC classes in a model, per class. */
+  getItemsOfClasses?(modelId: string, classes: readonly string[]): Promise<Array<{ ifcClass: string; ids: number[] }>>
+  /** World boxes of elements, in the order asked (null: no geometry). */
+  getBoxes?(modelId: string, ids: number[]): Promise<Array<Box3Like | null>>
+  /** Name, GlobalId and storey of elements, for the affected list. */
+  getElementsInfo?(modelId: string, ids: number[]): Promise<Array<{ expressId: number; name: string | null; globalId: string | null; storey: string | null }>>
+  /** Paints a 2-D overlay into every capture (PNG, clips, recordings); returns the remover. */
+  addCapturePainter?(paint: CapturePaint): () => void
+}
+
+/** A 2-D overlay painted into captures; `s` = device pixels per CSS pixel. True when it drew. */
+export type CapturePaint = (c: CanvasRenderingContext2D, width: number, height: number, s: number) => boolean
+
+export type { AffectedReport }
+
+export const AFFECTED_LIST_MAX = 1000
+
+export type ResultField = 'hMax' | 'vMax' | 'tWet'
+export type ResultFormat = 'geotiff' | 'asc' | 'csv'
+
+export interface ResultFile {
+  blob: Blob
+  ext: 'tif' | 'asc' | 'csv'
+  /** False: local plan coordinates of the model, no CRS. */
+  georeferenced: boolean
+  crs: string | null
 }
 
 export interface PrepareOptions {
@@ -194,6 +225,12 @@ export interface FloodSystemAPI {
   /** Reads the water at a screen point (client coordinates). */
   probe(clientX: number, clientY: number): Promise<ProbeResult | null>
   clearProbe(): void
+  /** The elements the water reaches, from the maximum depths so far. */
+  analyzeAffected(): Promise<AffectedReport | null>
+  /** A per-cell result as a GIS file: GeoTIFF / ESRI ASCII grid (north up), or CSV of the wet cells. */
+  exportResult(format: ResultFormat, field?: ResultField): Promise<ResultFile | null>
+  /** The overlay painted into captures while the water is shown (the panel owns its strings). */
+  setCaptureOverlay(paint: CapturePaint | null): void
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -201,6 +238,12 @@ export interface FloodSystemAPI {
 }
 
 interface ModelMeshes { terrain: THREE.Mesh | null; obstacles: THREE.Mesh | null }
+
+/** 25831 from 'EPSG:25831' (or '25831'); null when there is no code. */
+function epsgNumber(code: string | null): number | null {
+  const m = code ? /(\d{4,6})\s*$/.exec(code) : null
+  return m ? Number(m[1]) : null
+}
 
 function median(v: number[]): number {
   if (!v.length) return NaN
@@ -237,6 +280,33 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   // ── Probe ──
   let marker: THREE.Group | null = null
   let probeHandlers: { down: (e: PointerEvent) => void; up: (e: PointerEvent) => void } | null = null
+  // ── Affected elements / exports ──
+  const candidates = new Map<string, Candidate[]>()
+  let lastAffected: AffectedReport | null = null
+  let overlay: CapturePaint | null = null
+  let removePainter: (() => void) | null = null
+
+  /** Scene Y → absolute elevation, when the model states its datum. */
+  const elevationOf = (): ((y: number) => number) | null =>
+    georef && georef.heightM !== null ? elevationFrom({ heightM: georef.heightM, sceneY0: georef.coordination.y, scale: georef.scale }) : null
+
+  /** Every element of the reported classes in a model, with its box (cached until the next prepare). */
+  async function candidatesOf(id: string): Promise<Candidate[]> {
+    const hit = candidates.get(id)
+    if (hit) return hit
+    if (!ctx.getItemsOfClasses || !ctx.getBoxes) return []
+    const out: Candidate[] = []
+    for (const g of await ctx.getItemsOfClasses(id, AFFECTED_CLASSES)) {
+      if (!g.ids.length) continue
+      const boxes = await ctx.getBoxes(id, g.ids)
+      g.ids.forEach((expressId, k) => {
+        const b = boxes[k]
+        if (b) out.push({ modelId: id, expressId, ifcClass: g.ifcClass, box: b })
+      })
+    }
+    candidates.set(id, out)
+    return out
+  }
 
   function emit(force = false): void {
     const now = performance.now()
@@ -432,6 +502,9 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       removeLayers()
       resetTimeline(0)
       georef = o.georef ?? null
+      // Boxes are world-space: a model moved since the last study has new ones.
+      candidates.clear()
+      lastAffected = null
       const ids = ctx.getLoadedModelIds()
       if (!ids.length) throw new Error('flood: no model loaded')
       // Models unloaded since the last study take their geometry with them.
@@ -639,6 +712,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       }
       resetTimeline(o.durationS)
       tl.computing = true
+      lastAffected = null
       runner = new FloodRunner({
         ...ev,
         onFrame: (f) => {
@@ -776,6 +850,94 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       removeMarker()
     },
 
+    async analyzeAffected() {
+      const r = runner, g = grid, p = plan
+      if (!r || !g || !p) return null
+      const finished = tl.finished
+      const t = finished ? tl.endS : tl.computedT
+      const mx = await r.maxFields()
+      if (r !== runner) return null
+      const bedY = new Float32Array(g.z.length)
+      for (let c = 0; c < bedY.length; c++) bedY[c] = g.z[c] + g.zRef
+      const cands: Candidate[] = []
+      for (const id of ctx.getLoadedModelIds()) {
+        try { cands.push(...await candidatesOf(id)) } catch (err) { log.warn(`affected: ${id}`, err) }
+      }
+      // Water is what the view calls water (the threshold): during a storm a
+      // centimetre of rain film covers everything, and on a step 18 cm up it
+      // read as "19 cm over the entrance hall" (Poblenou A-0001).
+      const all = findAffected(cands, { plan: p, bedY, blocked: g.blocked, hMax: mx.hMax, tWet: mx.tWet, tPeak: mx.tPeak }, { minDepthM: view.threshold })
+      const elements = all.slice(0, AFFECTED_LIST_MAX)
+      if (ctx.getElementsInfo) {
+        const byModel = new Map<string, AffectedElement[]>()
+        for (const e of elements) byModel.set(e.modelId, [...(byModel.get(e.modelId) ?? []), e])
+        for (const [id, list] of byModel) {
+          try {
+            const info = await ctx.getElementsInfo(id, list.map((e) => e.expressId))
+            const m = new Map(info.map((x) => [x.expressId, x]))
+            for (const e of list) {
+              const x = m.get(e.expressId)
+              e.name = x?.name ?? null
+              e.globalId = x?.globalId ?? null
+              e.storey = x?.storey ?? null
+            }
+          } catch (err) { log.warn(`affected names: ${id}`, err) }
+        }
+      }
+      if (r !== runner) return null
+      const datum = georef && georef.heightM !== null ? { heightM: georef.heightM, sceneY0: georef.coordination.y, scale: georef.scale } : null
+      lastAffected = { elements, total: all.length, checked: cands.length, t, finished, datum }
+      return lastAffected
+    },
+
+    async exportResult(format, field = 'hMax') {
+      const r = runner, g = grid, p = plan
+      if (!r || !g || !p) return null
+      const mx = await r.maxFields()
+      const { nx, ny, dx } = p
+      const src = mx[field]
+      const value = (c: number): number => (g.blocked[c] ? NaN : field === 'tWet' ? (src[c] >= 0 ? src[c] : NaN) : src[c])
+      // North-west corner: the grid is aligned to grid north when georeferenced
+      // (r = −γ), to the scene's −Z otherwise (r = 0).
+      const nw = fromGridLocal(p.frame, 0, ny * dx)
+      const geo = georef
+      const corner = geo ? sceneToGrid(geo, nw.x, nw.z) : { e: nw.x, n: -nw.z }
+      const px = geo ? dx * geo.scale : dx
+      const epsg = geo ? epsgNumber(geo.epsg) : null
+      const crs = epsg !== null ? `EPSG:${epsg}` : null
+      if (format === 'csv') {
+        const elev = elevationOf()
+        const head = [geo ? 'easting' : 'x', geo ? 'northing' : 'y', 'i', 'j', elev ? 'ground_elevation_m' : 'ground_y', 'max_depth_m', 'max_speed_ms', 'wet_at_s', 'peak_at_s']
+        const lines = [head.join(',')]
+        for (let j = 0; j < ny; j++) {
+          for (let i = 0; i < nx; i++) {
+            const c = j * nx + i
+            if (g.blocked[c] || !(mx.hMax[c] >= view.threshold)) continue
+            const ground = g.z[c] + g.zRef
+            lines.push([
+              (corner.e + (i + 0.5) * px).toFixed(2), (corner.n - (ny - j - 0.5) * px).toFixed(2), i, j,
+              (elev ? elev(ground) : ground).toFixed(3), mx.hMax[c].toFixed(3), mx.vMax[c].toFixed(3),
+              mx.tWet[c] >= 0 ? mx.tWet[c].toFixed(0) : '', mx.tPeak[c].toFixed(0),
+            ].join(','))
+          }
+        }
+        return { blob: new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }), ext: 'csv', georeferenced: !!geo, crs }
+      }
+      const vals = new Float32Array(nx * ny)
+      for (let c = 0; c < vals.length; c++) vals[c] = value(c)
+      const raster: RasterOut = { width: nx, height: ny, data: northUp(vals, nx, ny), x0: corner.e, y0: corner.n, px, epsg }
+      if (format === 'asc') return { blob: new Blob([writeAsc(raster)], { type: 'text/plain' }), ext: 'asc', georeferenced: !!geo, crs }
+      const tif = writeGeoTiff(raster)
+      return { blob: new Blob([tif.buffer.slice(tif.byteOffset, tif.byteOffset + tif.byteLength) as ArrayBuffer], { type: 'image/tiff' }), ext: 'tif', georeferenced: !!geo, crs }
+    },
+
+    setCaptureOverlay(paint) {
+      overlay = paint
+      if (!removePainter && ctx.addCapturePainter) {
+        removePainter = ctx.addCapturePainter((c, w, h, sc) => !!(overlay && water && view.visible && overlay(c, w, h, sc)))
+      }
+    },
+
     isPrepared() { return grid !== null },
 
     clear() {
@@ -787,12 +949,17 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       extent = null
       plan = null
       displayBed = null
+      lastAffected = null
       resetTimeline(0)
       ctx.requestRender()
     },
 
     dispose() {
       api.clear()
+      removePainter?.()
+      removePainter = null
+      overlay = null
+      candidates.clear()
       for (const m of geometry.values()) {
         for (const mesh of [m.terrain, m.obstacles]) {
           if (!mesh) continue
@@ -804,6 +971,6 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
     },
   }
   // QA handle (dev only), like the solar analysis': the scene, the API and the last grid.
-  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__flood = { api, ctx, grid: () => grid, water: () => water }
+  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__flood = { api, ctx, grid: () => grid, water: () => water, overlay: () => overlay }
   return api
 }
