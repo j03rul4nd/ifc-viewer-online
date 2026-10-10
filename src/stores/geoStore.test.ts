@@ -137,6 +137,15 @@ describe('geoStore · persistence', () => {
     expect(JSON.parse(localStorage.getItem('ifc-geo-terms:v1')!)).toEqual({ 'esri-imagery': true })
   })
 
+  it('forgets the tile consent when it is withdrawn', () => {
+    useGeoStore.getState().setConsent(true)
+    expect(localStorage.getItem('ifc-geo-consent:v1')).toBe('1')
+    useGeoStore.getState().setConsent(false)
+    expect(useGeoStore.getState().consentGiven).toBe(false)
+    // Kept, the stored '1' would have granted it again on the next visit.
+    expect(localStorage.getItem('ifc-geo-consent:v1')).toBeNull()
+  })
+
   it('tolerates corrupt terms JSON (falls back to empty)', () => {
     localStorage.setItem('ifc-geo-terms:v1', '{not json')
     // re-evaluate the reader through a fresh accept (merges onto parsed-empty)

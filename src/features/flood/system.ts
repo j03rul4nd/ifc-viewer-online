@@ -119,13 +119,39 @@ export interface PrepareOptions {
   georef?: FloodGeoref | null
   /** Ground when nothing else gives it; y null = the project's ground floor − 15 cm. */
   plane: { y: number | null; slopePct: number; towardsDeg: number }
+  /**
+   * Stand an external ground (the map's relief, a DEM with a height datum) on
+   * the model's ground floor when the two disagree by more than
+   * GROUND_FIT_TOLERANCE_M. Default true.
+   */
+  fitGround?: boolean
   onStage?(stage: 'geometry' | 'raster' | 'terrain' | 'layers'): void
 }
 
 export type DemNote = 'reprojected' | 'assumedSameCrs' | 'sameCrs' | 'noHeightDatum' | 'notGeoreferenced' | 'outside'
 
+/**
+ * An external ground that did not meet the model. A file's stated height
+ * (IfcMapConversion.OrthogonalHeight) can be off by metres: the Torre
+ * Poblenou states 12.5 m and the ICGC's bare earth under it reads 1.8 m lower.
+ * As it was, the tower classified as a canopy (water ran under it) and, once
+ * its slab was a wall again (build.ts floorY), stood 1.8 m above the street:
+ * no water could ever reach a door.
+ */
+export interface GroundFit {
+  source: 'map' | 'dem'
+  /** The plane level (ground floor − 15 cm) minus the ground under the model, m: > 0 = the ground lay below. */
+  offsetM: number
+  /** The ground was shifted by offsetM (else used as it is). */
+  applied: boolean
+}
+
+/** Disagreement tolerated before fitting: survey noise and a ground floor a step above the street. */
+export const GROUND_FIT_TOLERANCE_M = 0.5
+
 export interface PrepareResult extends BuildReport {
   georeferenced: boolean
+  groundFit: GroundFit | null
   mapTerrain: { source: string | null; exaggeration: number } | null
   mapBuildings: number
   dem: { used: boolean; notes: DemNote[] } | null
@@ -565,8 +591,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         }
       }
       const useMap = !!geo && o.useMapTerrain
-      const mapTrue = useMap ? (x: number, z: number) => (geo!.trueGroundHeightAt ?? geo!.groundHeightAt)(x, z) : null
-      const mapDrawn = useMap ? (x: number, z: number) => geo!.groundHeightAt(x, z) : null
+      let mapTrue = useMap ? (x: number, z: number) => (geo!.trueGroundHeightAt ? geo!.trueGroundHeightAt(x, z) : geo!.groundHeightAt(x, z)) : null
+      let mapDrawn = useMap ? (x: number, z: number) => geo!.groundHeightAt(x, z) : null
       if (mapTrue) {
         // The terrain can sit well below or above the models (a valley, a hill).
         for (const [i, j] of [[0, 0], [gp.nx, 0], [0, gp.ny], [gp.nx, gp.ny], [gp.nx / 2, gp.ny / 2]]) {
@@ -581,6 +607,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
 
       // An imported DEM, through the model's georeference.
       let demFn: ((x: number, z: number) => number) | null = null
+      let demHasDatum = false
       const demNotes: DemNote[] = []
       if (o.demFile) {
         const g = o.georef
@@ -630,6 +657,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
             return sampleDem(dem, p.x, p.y)
           }
           let shift: (elev: number) => number
+          demHasDatum = g.heightM !== null
           if (g.heightM !== null) shift = (elev) => elevationToSceneY(g, elev) ?? NaN
           else {
             // No height datum in the file: stand the DEM on the project's ground under the model.
@@ -645,6 +673,51 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         }
       }
 
+      // The external ground against the model's own ground floor: the median
+      // under the footprint (its corners and a 5 × 5 sample of its extent)
+      // against the plane level. A DEM without a datum was already stood there.
+      let groundFit: GroundFit | null = null
+      {
+        const xs = points.map((q) => q.x)
+        const zs = points.map((q) => q.z)
+        const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]
+        const samples: PlanPoint[] = [...points]
+        for (let a = 0; a < 5; a++) for (let b = 0; b < 5; b++) samples.push({ x: x0 + ((x1 - x0) * (a + 0.5)) / 5, z: z0 + ((z1 - z0) * (b + 0.5)) / 5 })
+        const fit = o.fitGround !== false
+        /** Plane level minus the ground under the model; null within tolerance or unreadable. */
+        const offsetOf = (fn: (x: number, z: number) => number | null): number | null => {
+          const under: number[] = []
+          for (const q of samples) {
+            const v = fn(q.x, q.z)
+            if (v !== null && Number.isFinite(v)) under.push(v)
+          }
+          if (under.length < 3) return null
+          const off = groundY - median(under)
+          return Math.abs(off) > GROUND_FIT_TOLERANCE_M ? off : null
+        }
+        if (demFn && demHasDatum) {
+          const d = offsetOf(demFn)
+          if (d !== null) {
+            groundFit = { source: 'dem', offsetM: d, applied: fit }
+            if (fit) { const f = demFn; demFn = (x, z) => f(x, z) + d }
+          }
+        }
+        if (mapTrue) {
+          const d = offsetOf(mapTrue)
+          if (d !== null) {
+            groundFit ??= { source: 'map', offsetM: d, applied: fit }
+            if (fit) {
+              const f = mapTrue
+              mapTrue = (x, z) => { const v = f(x, z); return v === null ? null : v + d }
+              // The map's own relief no longer matches: the simulation draws its
+              // ground (true heights, shifted) and the water sits on that.
+              mapDrawn = mapTrue
+            }
+          }
+        }
+      }
+      const fitted = groundFit?.applied === true
+
       o.onStage?.('raster')
       const raster = rasterize({
         renderer: ctx.renderer, plan: gp, terrain, obstacles: [...obstacles, ...proxies],
@@ -657,6 +730,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         plan: gp, raster,
         ground: { dem: demFn, map: mapTrue, mapDrawn, plane },
         roofRunoff: o.roofRunoff, manning: o.manning,
+        floorY: groundY,
       })
       if (o.demFile && demFn && built.report.terrainCells.dem === 0) demNotes.push('outside')
       const tBuild = performance.now()
@@ -681,8 +755,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       ctx.scene.add(particles.object)
       if (ctx.setGridVisible) gridWasVisible = ctx.setGridVisible(false)
       // Draw the ground only where the scene has none of its own.
-      groundWanted = built.report.terrain === 'plane' || built.report.terrain === 'dem'
-      if (groundWanted && !(info?.relief && useMap)) {
+      groundWanted = built.report.terrain === 'plane' || built.report.terrain === 'dem' || fitted
+      if (groundWanted && (fitted || !(info?.relief && useMap))) {
         const bed = new Float32Array(gp.nx * gp.ny)
         for (let c = 0; c < bed.length; c++) bed[c] = built.grid.z[c] + built.grid.zRef
         ground = createGroundLayer({ nx: gp.nx, ny: gp.ny, dx: gp.dx, frame: gp.frame, bed, blocked: built.grid.blocked })
@@ -693,6 +767,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       return {
         ...built.report,
         georeferenced: !!o.georef,
+        groundFit,
         mapTerrain: useMap && info ? { source: info.source, exaggeration: info.exaggeration } : null,
         mapBuildings: proxies.length,
         dem: o.demFile ? { used: built.report.terrainCells.dem > 0, notes: demNotes } : null,

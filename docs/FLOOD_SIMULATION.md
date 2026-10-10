@@ -259,6 +259,47 @@ none is reported — correct.
 
 QA: `globalThis.__flood.overlay()` is the capture overlay the panel set.
 
+## The map's real relief, and the data it costs (2026-10-10)
+
+First run on real terrain (Torre Poblenou, ICGC MET 5 m), after accepting the
+map's tile consent. Three findings:
+
+- **The relief was never used.** `groundHeightAt` only answered once the map
+  had built its context layers (City / Presentation views); in the Relief
+  view — the one that enables "use the map's relief" — it returned null for
+  every point and the grid fell back to the plane. The geo system now reads
+  the bare map's ground frame when no layers exist (cached: the flood grid
+  asks once per cell) and updates only geoRoot's own matrix per call.
+- **A file's stated height can be off by metres.** The tower states 12.5 m
+  (IfcMapConversion.OrthogonalHeight); the ICGC's bare earth under it reads
+  1.8 m lower. The map honours the file, so the tower floats; the simulation
+  measures the external ground (map relief, or a DEM with a datum) under the
+  footprint against the plane level (ground floor − 15 cm) and, beyond
+  `GROUND_FIT_TOLERANCE_M` (0.5 m), says so with the number and stands the
+  simulation's ground on the model (`GroundFit`, switch "Stand the ground on
+  the model's ground floor", on by default). Its own ground is then drawn,
+  since the map's relief no longer matches.
+- **A slope under a building.** A bare-earth DEM runs on under the footprint;
+  on the downhill side the ground-floor slab cleared it by more than the 1 m
+  contact and classified as a canopy — water under the building. An underside
+  within 1 m of the project's ground floor (`floorY`) is a wall too; a canopy
+  3 m up is still a canopy (test).
+
+Measured: 101 × 101 at 2 m, extreme storm. Free edges: the water runs off
+downhill, 6.5 cm at most. Closed edges: it ponds against the low edge, up to
+2.5 m, ~1 ha.
+
+**Data leaving the browser.** The simulation itself sends nothing: it reads
+what the map view already loaded. The map view requests, after the one-time
+consent, basemap tiles (OpenFreeMap / OpenStreetMap), relief (ICGC in
+Catalonia, AWS Open Data elsewhere) and surrounding buildings (OpenStreetMap
+Overpass); each provider sees the area and the IP address. The flood panel
+says so next to the two switches that use map data; the map panel's "Data and
+permission" section names the providers and withdraws the consent (map off,
+stored choice deleted, the dialog asks again), and the consent dialog itself
+now mentions the IP address and that it can be withdrawn. The privacy policy
+lists the providers and the withdrawal.
+
 ## Architecture
 
 ```

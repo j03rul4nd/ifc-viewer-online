@@ -222,5 +222,19 @@
   "capture": {
     "time": "t = {{t}} / {{end}}",
     "disclaimer": "简化的示意性模拟：并非经认证的水力计算研究。"
+  },
+  "fit": {
+    "raised": "{{source}}：按其 IFC 声明的高程，比模型首层低 {{d}} m——模型高出周围地面这么多，周围的水永远到不了它的门。已将模拟地面抬高至模型处。建议检查 IFC 的高程（IfcMapConversion.OrthogonalHeight）。",
+    "lowered": "{{source}}：按其 IFC 声明的高程，比模型首层高 {{d}} m——首层被埋在地下。已将模拟地面降低至模型处。建议检查 IFC 的高程（IfcMapConversion.OrthogonalHeight）。",
+    "raisedOff": "{{source}}：比模型首层低 {{d}} m。按现状，模型高出周围地面这么多，周围的水到不了它的门。",
+    "loweredOff": "{{source}}：比模型首层高 {{d}} m。按现状，首层被埋在地下，周围的任何积水都会高于它的门。",
+    "switch": "将地面贴合到模型首层",
+    "source": {
+      "map": "地图地形",
+      "dem": "导入的 DEM"
+    }
+  },
+  "data": {
+    "map": "地形和建筑来自地图模式在你许可后从公共数据提供方下载的数据（地形：加泰罗尼亚为 ICGC，其他地区为 AWS Open Data；建筑：OpenStreetMap），这些提供方会看到场地所在区域和你的 IP 地址。模拟只读取这些数据：模型和结果都不会离开你的浏览器。关闭这两个选项即可仅用 IFC 进行模拟；许可可在「地图」面板中撤回。"
   }
 }
