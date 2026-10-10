@@ -65,6 +65,16 @@
     "none": "0 in model",
     "upper": "≤ {{count}} in model"
   },
+  "where": {
+    "add": "Only when…",
+    "label": "Only when",
+    "remove": "Remove condition",
+    "hint": "Check only the elements with this property value — a value on the element's type counts. Booleans: true / false."
+  },
+  "optional": {
+    "label": "Only if present",
+    "hint": "Don't fail the model when it has none of these elements (IDS optional)."
+  },
   "lint": {
     "title": "Check this rule:",
     "entityNotIfc": "Entity doesn't look like an IFC class (e.g. IfcWall)",
@@ -72,7 +82,9 @@
     "badRegex": "The regular expression is invalid",
     "numericNaN": "The numeric value must be a number",
     "emptyEquals": "The expected value is empty",
-    "emptyAllowed": "Allowed values contains an empty option"
+    "emptyAllowed": "Allowed values contains an empty option",
+    "whereIncomplete": "The condition needs both a property and a value",
+    "whereBoolean": "Write booleans in lowercase: true / false"
   },
   "stats": {
     "validated": "Validated",

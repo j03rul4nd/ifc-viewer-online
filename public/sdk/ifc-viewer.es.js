@@ -679,8 +679,10 @@ const f = class f {
   /**
    * Check the loaded model against an EIR / BIM Validation profile (ISO 19650-style).
    * Accepts a profile object or its JSON string; the compact shorthand
-   * (`{ entity, requiredProperties: [...] }`) is also accepted. Returns the same
-   * IdsResult shape as checkIds (the profile compiles to IDS internally). Since v1.7.0.
+   * (`{ entity, requiredProperties: [...] }`) is also accepted, and so is the
+   * id of a built-in profile (`'builtin-en14351-1'`, since v1.17.0). Returns
+   * the same IdsResult shape as checkIds (the profile compiles to IDS
+   * internally). Since v1.7.0.
    */
   checkEir(t) {
     return this.request("ifcviewer:check-eir", { profile: t }, 12e4);

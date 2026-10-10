@@ -65,6 +65,16 @@
     "none": "0 dans le modèle",
     "upper": "≤ {{count}} dans le modèle"
   },
+  "where": {
+    "add": "Seulement si…",
+    "label": "Seulement si",
+    "remove": "Supprimer la condition",
+    "hint": "Ne vérifie que les éléments ayant cette valeur de propriété — une valeur portée par le type de l'élément compte. Booléens : true / false."
+  },
+  "optional": {
+    "label": "Seulement s'il y en a",
+    "hint": "La maquette n'échoue pas si elle n'a aucun de ces éléments (IDS optional)."
+  },
   "lint": {
     "title": "Vérifiez cette règle :",
     "entityNotIfc": "L'entité ne ressemble pas à une classe IFC (ex. IfcWall)",
@@ -72,7 +82,9 @@
     "badRegex": "L'expression régulière n'est pas valide",
     "numericNaN": "La valeur numérique doit être un nombre",
     "emptyEquals": "La valeur attendue est vide",
-    "emptyAllowed": "Les valeurs autorisées contiennent une option vide"
+    "emptyAllowed": "Les valeurs autorisées contiennent une option vide",
+    "whereIncomplete": "La condition doit avoir une propriété et une valeur",
+    "whereBoolean": "Écrivez les booléens en minuscules : true / false"
   },
   "stats": {
     "validated": "Validés",

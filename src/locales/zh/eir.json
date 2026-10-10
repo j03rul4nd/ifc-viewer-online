@@ -65,6 +65,16 @@
     "none": "模型中 0 个",
     "upper": "模型中 ≤ {{count}} 个"
   },
+  "where": {
+    "add": "仅当…",
+    "label": "仅当",
+    "remove": "删除条件",
+    "hint": "只检查具有此属性值的构件——构件类型上的值也计入。布尔值：true / false。"
+  },
+  "optional": {
+    "label": "仅在存在时",
+    "hint": "模型中没有此类构件时不判定为不通过（IDS optional）。"
+  },
   "lint": {
     "title": "请检查此规则：",
     "entityNotIfc": "实体看起来不像 IFC 类（例如 IfcWall）",
@@ -72,7 +82,9 @@
     "badRegex": "正则表达式无效",
     "numericNaN": "数值必须是数字",
     "emptyEquals": "期望值为空",
-    "emptyAllowed": "允许的值包含空选项"
+    "emptyAllowed": "允许的值包含空选项",
+    "whereIncomplete": "条件需要同时填写属性和值",
+    "whereBoolean": "布尔值请使用小写：true / false"
   },
   "stats": {
     "validated": "已验证",

@@ -114,6 +114,7 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `getStats()` | `Promise<StatsResult>` — per-category element counts per model (for charts). |
 | `getIssues(opts?)` | `Promise<IssuesResult>` — validation issues for a table (`{ severity?, limit?, modelId? }`). |
 | `checkIds(idsXml)` | `Promise<IdsResult>` — check the model against a buildingSMART **IDS** (`.ids` XML). |
+| `checkEir(profile)` | `Promise<IdsResult>` — check the model against an **EIR** profile: an object, its JSON, or a built-in id such as `'builtin-en14351-1'` (v1.17; see [Declared performance](#declared-performance-en-14351-1-v117)). Same result shape as `checkIds`. |
 | `screenshot()` | `Promise<string>` — the current 3D view as a PNG data URL. |
 | `removeModel(modelId)` | Unload a specific model (see `getModels()`). |
 | `hideElements(ids, modelId?)` / `showElements(ids, modelId?)` | Hide / show a set of elements by expressID (defaults to the active model). |
@@ -349,6 +350,45 @@ el.typeProperties  // [{ name: "Pset_WindowCommon", properties: [{ name: "Therma
 - Models converted and cached by an older build are converted again on their
   next load: the cache entry records the converter revision.
 
+### Declared performance: EN 14351-1 (v1.17)
+
+`checkEir('builtin-en14351-1')` checks that a window or external door
+**declares** the essential characteristics of EN 14351-1:2006+A2:2016
+(Annex ZA) that IFC4 has a standard property for. It checks that each value
+is present, not whether a class matches a test report. Type properties count, so a
+catalogue object that keeps everything on its `IfcWindowType` passes.
+
+```js
+const res = await viewer.checkEir("builtin-en14351-1")       // same IdsResult as checkIds
+res.specs.filter(s => s.status === "fail").map(s => s.name)
+// → ["Window: light transmittance τv declared (EN 410)"]
+```
+
+| Characteristic | Window | Door | Property |
+|---|---|---|---|
+| Scope: external (the checks below apply when `true`) | warning | info | `Pset_WindowCommon` / `Pset_DoorCommon` `.IsExternal` |
+| Thermal transmittance Uw / Ud (EN ISO 10077, 12567-1) | error | error | `…Common.ThermalTransmittance` > 0 |
+| Resistance to wind load (EN 12210) | error | error | `…Common.WindLoadRating` |
+| Watertightness (EN 12208) | error | error | `…Common.WaterTightnessRating` |
+| Acoustic performance (EN ISO 717-1) | error | error | `…Common.AcousticRating` |
+| Solar factor g (EN 410) | warning | — | `Pset_DoorWindowGlazingType.SolarHeatGainTransmittance` > 0 |
+| Light transmittance τv (EN 410) | warning | — | `Pset_DoorWindowGlazingType.VisibleLightTransmittance` > 0 |
+| Manufacturer (DoP) | error | error | `Pset_ManufacturerTypeInformation.Manufacturer` |
+| Product-type identification code (DoP) | error | error | `Pset_ManufacturerTypeInformation.ModelReference` |
+
+- Every rule is `optional`: a file with only a window is not failed for its
+  missing doors (those rules come back `na`), and an interior door
+  (`IsExternal = false`) is out of scope, not a failure.
+- **Not covered**, because no standard IFC property holds them: air
+  permeability class (EN 12207; `Infiltration` is a flow rate), impact
+  resistance, safety devices, dangerous substances, release and operating
+  forces, roof-window characteristics. Keep them in your own sets and the DoP.
+- The same profile is in the viewer's **EIR / BIM Validation profiles** list;
+  a copy you save there can be edited and passed to `checkEir()` as an
+  object. EIR rules accept `where: { pset?, property, value }` (only the
+  elements with that value; booleans are `'true'` / `'false'`) and
+  `optional: true` (no failure when the model has none).
+
 ## Validation lifecycle (v1.17)
 
 `validate: true` (the default) validates each model once it has loaded;
@@ -491,7 +531,9 @@ viewer.on("element-selected", (e) => {
   `toolbar` / `tools`, whose properties panel keeps the picked object in view.
   `findElements()`, GlobalIds for `getElement()` / `select()` /
   `element-selected`, window and door lining and panel sets, the type's
-  materials. Pinned builds at `/sdk/<version>/`.
+  materials. `checkEir('builtin-en14351-1')`, the declared performance of
+  EN 14351-1 windows and external doors; EIR rules gain `where` and
+  `optional`. Pinned builds at `/sdk/<version>/`.
 - **1.16.0** — `layers` option (data-layer setup).
 - **1.15.0** — the article kit (`lazy`, `poster`, `aspectRatio`, `turntable`, `bindSteps`…).
 - **1.14.0** — `ui: 'article'`, tight `frame()`.

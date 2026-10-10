@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { IdsElement } from '../ids/ids-types'
-import { compileEirToIds, numericValue } from './eir-compiler'
+import { compileEirToIds, defaultRuleName, numericValue } from './eir-compiler'
 import { validateElements } from './index'
 import type { EirProfile, EirRule } from './eir-types'
 
@@ -110,5 +110,61 @@ describe('validateElements (via IDS engine)', () => {
     const rule: EirRule = { id: 'ps', type: 'requiredPropertySet', entity: 'IfcWall', pset: 'Pset_WallCommon', severity: 'warning' }
     expect(validateElements([el('IfcWall', { Pset_WallCommon: { LoadBearing: true } })], profile(rule)).score).toBe(100)
     expect(validateElements([el('IfcWall', { Other: { x: 1 } })], profile(rule)).failedSpecs).toBe(1)
+  })
+})
+
+describe('where — a property condition on the applicability', () => {
+  const rule: EirRule = {
+    id: 'u', type: 'numeric', entity: 'IfcWindow',
+    where: { pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' },
+    pset: 'Pset_WindowCommon', property: 'ThermalTransmittance', operator: '>', value: 0, severity: 'error',
+  }
+
+  it('compiles to a property facet next to the entity facet', () => {
+    const [spec] = compileEirToIds(profile(rule)).specifications
+    expect(spec.applicability).toHaveLength(2)
+    expect(spec.applicability[1]).toMatchObject({
+      kind: 'property',
+      propertySet: { simpleValue: 'Pset_WindowCommon' },
+      baseName: { simpleValue: 'IsExternal' },
+      value: { simpleValue: 'true' },
+    })
+  })
+
+  it('checks only the elements that meet it — a boolean matches "true"', () => {
+    const external = el('IfcWindow', { Pset_WindowCommon: { IsExternal: true } })
+    const interior = el('IfcWindow', { Pset_WindowCommon: { IsExternal: false } })
+    const r = validateElements([external, interior], profile(rule))
+    expect(r.specs[0].applicableCount).toBe(1)
+    expect(r.specs[0].failedCount).toBe(1)                 // the external one, without Uw
+    expect(validateElements([interior], profile({ ...rule, optional: true })).specs[0].status).toBe('na')
+  })
+
+  it('names the rule with its condition', () => {
+    expect(defaultRuleName(rule)).toMatch(/\(when Pset_WindowCommon\.IsExternal = true\)$/)
+    expect(defaultRuleName({ ...rule, where: undefined })).not.toMatch(/when/)
+  })
+})
+
+describe('optional — no failure when nothing applies', () => {
+  const rule: EirRule = { id: 'd', type: 'requiredProperty', entity: 'IfcDoor', pset: 'Pset_DoorCommon', property: 'FireRating', severity: 'error' }
+
+  it('a required rule fails a model without the entity; an optional one is n/a', () => {
+    expect(validateElements([el('IfcWall')], profile(rule)).failedSpecs).toBe(1)
+    const r = validateElements([el('IfcWall')], profile({ ...rule, optional: true }))
+    expect(r.failedSpecs).toBe(0)
+    expect(r.specs[0].status).toBe('na')
+  })
+
+  it('still fails the elements that exist and break it', () => {
+    const r = validateElements([el('IfcDoor')], profile({ ...rule, optional: true }))
+    expect(r.specs[0].status).toBe('fail')
+  })
+
+  it('compiles to IDS cardinality optional, except for entityExists', () => {
+    expect(compileEirToIds(profile({ ...rule, optional: true })).specifications[0].cardinality).toBe('optional')
+    expect(compileEirToIds(profile(rule)).specifications[0].cardinality).toBe('required')
+    const exists: EirRule = { id: 'e', type: 'entityExists', entity: 'IfcDoor', severity: 'error', optional: true }
+    expect(compileEirToIds(profile(exists)).specifications[0].cardinality).toBe('required')
   })
 })

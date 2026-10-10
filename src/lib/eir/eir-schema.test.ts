@@ -54,6 +54,21 @@ describe('parseEirProfile — compact shorthand', () => {
     })).toThrow()
   })
 
+  it('keeps a rule property condition and its optional flag', () => {
+    const profile = parseEirProfile({
+      name: 'W',
+      rules: [{
+        type: 'propertyNotEmpty', entity: 'IfcWindow', pset: 'Pset_WindowCommon', property: 'WindLoadRating', severity: 'error',
+        where: { pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' }, optional: true,
+      }],
+    })
+    expect(profile.rules[0]).toMatchObject({ where: { pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' }, optional: true })
+    expect(() => parseEirProfile({
+      name: 'Bad',
+      rules: [{ type: 'entityExists', entity: 'IfcWindow', severity: 'error', where: { property: '', value: 'x' } }],
+    })).toThrow()
+  })
+
   it('round-trips through serialize', () => {
     const profile = parseEirProfile({ name: 'RT', rules: [{ entity: 'IfcDoor', requiredProperties: ['FireRating'] }] })
     const reparsed = parseEirProfile(serializeEirProfile(profile))

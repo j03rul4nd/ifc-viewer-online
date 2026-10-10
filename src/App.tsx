@@ -78,7 +78,7 @@ import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
 import EirProfileEditor from './components/eir/EirProfileEditor'
 import { useEirStore } from './stores/eirStore'
-import { parseEirProfile, compileEirToIds } from './lib/eir'
+import { parseEirProfile, compileEirToIds, BUILTIN_EIR_PROFILES } from './lib/eir'
 import InviteRibbon from './components/InviteRibbon'
 import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
@@ -2657,9 +2657,15 @@ export default function App() {
 
         case 'ifcviewer:check-eir':
           void respond(async () => {
-            // Accept a profile object or its JSON string (compact shorthand ok).
-            // parseEirProfile validates with Zod → a bad profile errors back to the SDK.
-            const profile = parseEirProfile(msg.profile)
+            // Accept a built-in profile id, a profile object or its JSON string
+            // (compact shorthand ok). parseEirProfile validates with Zod → a bad
+            // profile errors back to the SDK.
+            const asId = typeof msg.profile === 'string' ? msg.profile.trim() : ''
+            const builtin = asId ? BUILTIN_EIR_PROFILES.find((p) => p.id === asId) : undefined
+            if (!builtin && asId.startsWith('builtin-')) {
+              throw new Error(`Unknown built-in EIR profile "${asId}" — one of: ${BUILTIN_EIR_PROFILES.map((p) => p.id).join(', ')}`)
+            }
+            const profile = builtin ?? parseEirProfile(msg.profile)
             const mid = useSceneStore.getState().activeModelId ?? useSceneStore.getState().models[0]?.id ?? null
             const buffer = mid ? modelRegistry.getBuffer(mid) : null
             if (!mid || !buffer) throw new Error('No model buffer available — load an IFC first')

@@ -394,11 +394,36 @@ export interface IdsResult {
 export type EirSeverity = 'error' | 'warning' | 'info' | 'ignored';
 /** Numeric comparison operator for a `numeric` rule. */
 export type EirOperator = '>' | '>=' | '<' | '<=' | '=';
-/** A single EIR validation rule. `entity` is the IFC class it applies to. */
+/**
+ * A property value an element must have for a rule to check it — e.g.
+ * `{ pset: 'Pset_WindowCommon', property: 'IsExternal', value: 'true' }`.
+ * A value the element inherits from its type counts. Booleans are written
+ * `'true'` / `'false'`. Since v1.17.0.
+ */
+export interface EirCondition {
+    pset?: string;
+    property: string;
+    value: string;
+}
+/**
+ * The built-in profiles checkEir() accepts by id. `builtin-en14351-1` checks
+ * the declared performance of EN 14351-1 windows and external doors (wind
+ * load, watertightness, acoustics, U-value, g / τv, manufacturer and product
+ * code) on standard IFC property sets; type properties count. Since v1.17.0.
+ */
+export type BuiltinEirProfileId = 'builtin-hospital-lod300' | 'builtin-iso19650-delivery' | 'builtin-lod200' | 'builtin-lod400' | 'builtin-cobie' | 'builtin-simba21-general' | 'builtin-en14351-1';
+/**
+ * A single EIR validation rule. `entity` is the IFC class it applies to;
+ * `where` narrows it to the elements with a property value, and `optional`
+ * (IDS cardinality) keeps a model without any of them from failing — both
+ * since v1.17.0.
+ */
 export type EirRule = {
     id?: string;
     entity: string;
     predefinedType?: string;
+    where?: EirCondition;
+    optional?: boolean;
     severity: EirSeverity;
     message?: string;
 } & ({
@@ -1446,10 +1471,12 @@ export declare class IfcViewer {
     /**
      * Check the loaded model against an EIR / BIM Validation profile (ISO 19650-style).
      * Accepts a profile object or its JSON string; the compact shorthand
-     * (`{ entity, requiredProperties: [...] }`) is also accepted. Returns the same
-     * IdsResult shape as checkIds (the profile compiles to IDS internally). Since v1.7.0.
+     * (`{ entity, requiredProperties: [...] }`) is also accepted, and so is the
+     * id of a built-in profile (`'builtin-en14351-1'`, since v1.17.0). Returns
+     * the same IdsResult shape as checkIds (the profile compiles to IDS
+     * internally). Since v1.7.0.
      */
-    checkEir(profile: EirProfile | string): Promise<IdsResult>;
+    checkEir(profile: EirProfile | BuiltinEirProfileId | string): Promise<IdsResult>;
     /** Unload a specific model by id (see getModels()). */
     removeModel(modelId: string): void;
     /** Hide a set of elements (by IFC expressID). Defaults to the active model. */

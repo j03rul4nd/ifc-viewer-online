@@ -65,6 +65,16 @@
     "none": "0 im Modell",
     "upper": "≤ {{count}} im Modell"
   },
+  "where": {
+    "add": "Nur wenn…",
+    "label": "Nur wenn",
+    "remove": "Bedingung entfernen",
+    "hint": "Prüft nur Elemente mit diesem Eigenschaftswert — ein Wert am Typ des Elements zählt mit. Boolesche Werte: true / false."
+  },
+  "optional": {
+    "label": "Nur falls vorhanden",
+    "hint": "Das Modell fällt nicht durch, wenn es keines dieser Elemente enthält (IDS optional)."
+  },
   "lint": {
     "title": "Diese Regel prüfen:",
     "entityNotIfc": "Entität sieht nicht wie eine IFC-Klasse aus (z. B. IfcWall)",
@@ -72,7 +82,9 @@
     "badRegex": "Der reguläre Ausdruck ist ungültig",
     "numericNaN": "Der numerische Wert muss eine Zahl sein",
     "emptyEquals": "Der erwartete Wert ist leer",
-    "emptyAllowed": "Erlaubte Werte enthalten eine leere Option"
+    "emptyAllowed": "Erlaubte Werte enthalten eine leere Option",
+    "whereIncomplete": "Die Bedingung braucht eine Eigenschaft und einen Wert",
+    "whereBoolean": "Boolesche Werte kleinschreiben: true / false"
   },
   "stats": {
     "validated": "Geprüft",

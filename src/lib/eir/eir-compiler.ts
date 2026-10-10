@@ -67,7 +67,12 @@ export function numericValue(operator: NumericOperator, value: number): IdsValue
 export function ruleToSpec(rule: EirRule): IdsSpecification | null {
   if (rule.severity === 'ignored') return null
 
-  const applicability = [entityFacet(rule.entity, rule.predefinedType)]
+  const applicability: IdsSpecification['applicability'] = [entityFacet(rule.entity, rule.predefinedType)]
+  // Only the elements with this property value: an IDS applicability facet,
+  // so a value the element inherits from its type counts too.
+  if (rule.where?.property) {
+    applicability.push(propertyFacet(rule.where.pset || undefined, rule.where.property, { simpleValue: rule.where.value }))
+  }
   const requirements: IdsRequirement[] = []
   const req = (facet: IdsRequirement['facet']): void => {
     requirements.push({ facet, cardinality: 'required' })
@@ -121,7 +126,9 @@ export function ruleToSpec(rule: EirRule): IdsSpecification | null {
   return {
     name: rule.message ?? defaultRuleName(rule),
     identifier: `eir:${rule.severity}`,
-    cardinality: 'required',
+    // optional: n/a (and out of the score) when nothing applies — a product
+    // profile for windows and doors must not fail its door rules on a window.
+    cardinality: rule.optional && rule.type !== 'entityExists' ? 'optional' : 'required',
     applicability,
     requirements,
   }
@@ -129,6 +136,12 @@ export function ruleToSpec(rule: EirRule): IdsSpecification | null {
 
 /** A readable spec name when the rule has no custom message. */
 export function defaultRuleName(rule: EirRule): string {
+  const base = baseRuleName(rule)
+  const w = rule.where
+  return w?.property ? `${base} (when ${w.pset ? `${w.pset}.` : ''}${w.property} = ${w.value})` : base
+}
+
+function baseRuleName(rule: EirRule): string {
   const where = (r: { pset?: string; property?: string }): string =>
     r.property ? `${r.pset ? `${r.pset}.` : ''}${r.property}` : ''
   switch (rule.type) {

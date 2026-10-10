@@ -10,6 +10,7 @@ import type { IdsElement } from '../ids/ids-types'
 import { BUILTIN_EIR_PROFILES } from './eir-profiles'
 import { compileEirToIds } from './eir-compiler'
 import { validateElements } from './index'
+import type { BuiltinEirProfileId } from '../../sdk/ifc-viewer-sdk'
 
 const simba = BUILTIN_EIR_PROFILES.find((p) => p.id === 'builtin-simba21-general')!
 
@@ -65,5 +66,16 @@ describe('builtin-simba21-general (Statsbygg SIMBA 2.1 starter)', () => {
     const result = validateElements(model, simba)
     expect(result.failedSpecs).toBeGreaterThanOrEqual(3) // sb2 (no IfcSpace) + sb3 + sb5
     expect(result.score).toBeLessThan(100)
+  })
+})
+
+describe('built-in profile ids in the SDK', () => {
+  it('BuiltinEirProfileId lists exactly the built-in profiles checkEir() accepts', () => {
+    // Type-checked: a stale or misspelt id fails tsc here, a missing one fails the run.
+    const sdkIds: BuiltinEirProfileId[] = [
+      'builtin-hospital-lod300', 'builtin-iso19650-delivery', 'builtin-lod200', 'builtin-lod400',
+      'builtin-cobie', 'builtin-simba21-general', 'builtin-en14351-1',
+    ]
+    expect([...sdkIds].sort()).toEqual(BUILTIN_EIR_PROFILES.map((p) => p.id).sort())
   })
 })

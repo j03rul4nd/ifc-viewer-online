@@ -907,7 +907,11 @@ const pset = (name) => el.effectivePropertySets.find(s => s.name === name);
 const uw = pset("Pset_WindowCommon")?.properties.find(p => p.name === "ThermalTransmittance");
 console.log(el.typeName, el.globalId, uw?.value, uw?.unit);   // "Ventana V-70 practicable" … 1.2 "W/(m²·K)"
 
-const { qualityScore } = await viewer.validate();             // Health Score, on demand`
+const { qualityScore } = await viewer.validate();             // Health Score, on demand
+
+// Declared performance per EN 14351-1: wind, water, acoustics, Uw, g / τv, DoP
+const en = await viewer.checkEir("builtin-en14351-1");
+const missing = en.specs.filter(s => s.status === "fail").map(s => s.name);`
 
 const VER_PIN =
 `<script type="module">
@@ -1276,7 +1280,7 @@ function page(lang) {
     callout(tr('verCompatT'), tr('verCompatB')) +
     (sriSnippet ? '<p class="card-t">' + esc(tr('verSriT')) + '</p><p class="muted">' + esc(tr('verSriB')) + '</p>' + code(sriSnippet, 'html', 'HTML') : '') +
     '<h3 id="changelog">' + esc(tr('chgTitle')) + '</h3>' +
-    '<p>' + esc(tr('chg117')) + '</p>' +
+    '<p>' + esc(tr('chg117') + ' ' + tr('chgEn14351')) + '</p>' +
     '</section>'
 
   // troubleshooting

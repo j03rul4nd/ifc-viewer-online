@@ -52,6 +52,6 @@ export {
   LocalStorageProfileProvider, defaultProfileProvider, isBuiltinProfile,
 } from './eir-provider'
 export type {
-  EirProfile, EirRule, EirRuleType, EirSeverity, NumericOperator, EirReport,
+  EirProfile, EirRule, EirRuleType, EirSeverity, NumericOperator, EirReport, EirCondition,
   ValidationProfileProvider,
 } from './eir-types'

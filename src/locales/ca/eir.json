@@ -65,6 +65,16 @@
     "none": "0 al model",
     "upper": "≤ {{count}} al model"
   },
+  "where": {
+    "add": "Només quan…",
+    "label": "Només quan",
+    "remove": "Treu la condició",
+    "hint": "Comprova només els elements amb aquest valor de propietat — també compta el valor del tipus de l'element. Booleans: true / false."
+  },
+  "optional": {
+    "label": "Només si n'hi ha",
+    "hint": "No suspèn el model si no té cap d'aquests elements (IDS optional)."
+  },
   "lint": {
     "title": "Revisa aquesta regla:",
     "entityNotIfc": "L'entitat no sembla una classe IFC (p. ex. IfcWall)",
@@ -72,7 +82,9 @@
     "badRegex": "L'expressió regular no és vàlida",
     "numericNaN": "El valor numèric ha de ser un número",
     "emptyEquals": "El valor esperat és buit",
-    "emptyAllowed": "Els valors permesos contenen una opció buida"
+    "emptyAllowed": "Els valors permesos contenen una opció buida",
+    "whereIncomplete": "La condició necessita una propietat i un valor",
+    "whereBoolean": "Escriu els booleans en minúscula: true / false"
   },
   "stats": {
     "validated": "Validats",

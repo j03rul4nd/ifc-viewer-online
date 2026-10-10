@@ -1,10 +1,13 @@
 // ─── SDK docs — v1.17 (catalogue objects in a host app) ──────────────────────
 // Same conventions as sdk-docs-v111.mjs: ten languages, identifiers in English.
 // Merged last, so the keys it shares with earlier blocks (setView, fitReset,
-// getElement, getValidation, optUi, evValidation) are deliberate rewrites.
+// getElement, getValidation, optUi, evValidation, checkEir) are deliberate
+// rewrites.
 
 export const SDK_DOCS_V117 = {
   en: {
+    checkEir: "Check the model against an EIR / BIM Validation profile — an object, its JSON (incl. the compact shorthand) or a built-in id such as 'builtin-en14351-1'. Compiles to IDS and runs on the same engine: same IdsResult shape as checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') checks the declared performance of EN 14351-1 windows and external doors — wind load, watertightness, acoustics, U-value, g and τv, manufacturer and product code — on standard IFC property sets; EIR rules gain where (only elements with a property value) and optional.",
     setView: 'Fly to a named view of the scene — iso, front, back, left, right, top, bottom — with all of it in frame. Fire-and-forget (between 1.14 and 1.16 the viewer ignored it).',
     fitReset: 'Frame the active model from the current angle, with a margin / reset the camera.',
     camFrameEl: 'Frame one element (expressID): from the current angle unless a view is given. Rejects when it is not in the model.',
@@ -57,6 +60,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'The user picked an element — with its GlobalId, to match your own records.',
   },
   es: {
+    checkEir: "Comprueba el modelo contra un perfil de validación EIR / BIM — un objeto, su JSON (incl. el formato compacto) o el id de un perfil incorporado como 'builtin-en14351-1'. Compila a IDS y usa el mismo motor: mismo IdsResult que checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') comprueba las prestaciones declaradas de ventanas y puertas exteriores según EN 14351-1 — viento, estanqueidad al agua, acústica, transmitancia térmica, g y τv, fabricante y código de producto — en property sets estándar de IFC; las reglas EIR ganan where (solo elementos con un valor de propiedad) y optional.",
     setView: 'Vuela a una vista con nombre de la escena — iso, front, back, left, right, top, bottom — con toda ella en el encuadre. Sin respuesta (entre 1.14 y 1.16 el visor la ignoraba).',
     fitReset: 'Encuadra el modelo activo desde el ángulo actual, con margen / reinicia la cámara.',
     camFrameEl: 'Encuadra un elemento (expressID): desde el ángulo actual salvo que se indique una vista. Rechaza si no está en el modelo.',
@@ -109,6 +114,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'El usuario eligió un elemento — con su GlobalId, para cruzarlo con tus propios registros.',
   },
   de: {
+    checkEir: "Prüft das Modell gegen ein EIR-/BIM-Validierungsprofil — ein Objekt, sein JSON (auch die Kurzform) oder die Id eines eingebauten Profils wie 'builtin-en14351-1'. Wird zu IDS kompiliert und läuft auf derselben Engine: dieselbe IdsResult-Form wie checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') prüft die erklärten Leistungen von Fenstern und Außentüren nach EN 14351-1 — Windlast, Schlagregendichtheit, Schallschutz, Wärmedurchgangskoeffizient, g und τv, Hersteller und Produktcode — in Standard-IFC-Property-Sets; EIR-Regeln erhalten where (nur Elemente mit einem Eigenschaftswert) und optional.",
     setView: 'Zu einer benannten Ansicht der Szene fliegen — iso, front, back, left, right, top, bottom — mit der ganzen Szene im Bild. Ohne Antwort (von 1.14 bis 1.16 ignorierte der Viewer sie).',
     fitReset: 'Aktives Modell aus dem aktuellen Blickwinkel mit Rand einpassen / Kamera zurücksetzen.',
     camFrameEl: 'Ein Element (expressID) einpassen: aus dem aktuellen Blickwinkel, sofern keine Ansicht angegeben ist. Lehnt ab, wenn es nicht im Modell ist.',
@@ -161,6 +168,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'Der Nutzer hat ein Element gewählt — mit GlobalId, passend zu Ihren eigenen Datensätzen.',
   },
   fr: {
+    checkEir: "Vérifie la maquette avec un profil de validation EIR / BIM — un objet, son JSON (y compris la forme compacte) ou l'id d'un profil intégré comme 'builtin-en14351-1'. Compilé en IDS et exécuté par le même moteur : même IdsResult que checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') vérifie les performances déclarées des fenêtres et portes extérieures selon l'EN 14351-1 — vent, étanchéité à l'eau, acoustique, transmission thermique, g et τv, fabricant et code produit — dans les property sets IFC standard ; les règles EIR gagnent where (seulement les éléments ayant une valeur de propriété) et optional.",
     setView: 'Voler vers une vue nommée de la scène — iso, front, back, left, right, top, bottom — avec toute la scène dans le cadre. Sans réponse (de 1.14 à 1.16 la visionneuse l’ignorait).',
     fitReset: 'Cadrer le modèle actif depuis l’angle actuel, avec une marge / réinitialiser la caméra.',
     camFrameEl: 'Cadrer un élément (expressID) : depuis l’angle actuel sauf si une vue est donnée. Rejette s’il n’est pas dans le modèle.',
@@ -213,6 +222,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'L’utilisateur a choisi un élément — avec son GlobalId, pour le relier à vos propres données.',
   },
   pt: {
+    checkEir: "Verifica o modelo contra um perfil de validação EIR / BIM — um objeto, o seu JSON (incl. o formato compacto) ou o id de um perfil incorporado como 'builtin-en14351-1'. Compila para IDS e corre no mesmo motor: o mesmo IdsResult que checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') verifica o desempenho declarado de janelas e portas exteriores segundo a EN 14351-1 — vento, estanquidade à água, acústica, transmissão térmica, g e τv, fabricante e código do produto — em property sets IFC padrão; as regras EIR ganham where (só elementos com um valor de propriedade) e optional.",
     setView: 'Voar para uma vista com nome da cena — iso, front, back, left, right, top, bottom — com toda ela no enquadramento. Sem resposta (entre 1.14 e 1.16 o visualizador ignorava-a).',
     fitReset: 'Enquadrar o modelo ativo a partir do ângulo atual, com margem / repor a câmara.',
     camFrameEl: 'Enquadrar um elemento (expressID): a partir do ângulo atual, salvo se for indicada uma vista. Rejeita se não estiver no modelo.',
@@ -265,6 +276,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'O utilizador escolheu um elemento — com o seu GlobalId, para o cruzar com os seus registos.',
   },
   it: {
+    checkEir: "Verifica il modello rispetto a un profilo di validazione EIR / BIM — un oggetto, il suo JSON (incl. la forma compatta) o l'id di un profilo integrato come 'builtin-en14351-1'. Compilato in IDS ed eseguito dallo stesso motore: stesso IdsResult di checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') verifica le prestazioni dichiarate di finestre e porte esterne secondo la EN 14351-1 — vento, tenuta all'acqua, acustica, trasmittanza termica, g e τv, fabbricante e codice prodotto — nei property set IFC standard; le regole EIR acquisiscono where (solo elementi con un valore di proprietà) e optional.",
     setView: 'Vola a una vista con nome della scena — iso, front, back, left, right, top, bottom — con tutta la scena inquadrata. Senza risposta (tra 1.14 e 1.16 il viewer la ignorava).',
     fitReset: 'Inquadra il modello attivo dall’angolazione attuale, con margine / reimposta la camera.',
     camFrameEl: 'Inquadra un elemento (expressID): dall’angolazione attuale salvo che sia indicata una vista. Rifiuta se non è nel modello.',
@@ -317,6 +330,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'L’utente ha scelto un elemento — con il suo GlobalId, per collegarlo ai tuoi dati.',
   },
   ca: {
+    checkEir: "Comprova el model amb un perfil de validació EIR / BIM — un objecte, el seu JSON (incl. el format compacte) o l'id d'un perfil integrat com 'builtin-en14351-1'. Compila a IDS i fa servir el mateix motor: el mateix IdsResult que checkIds.",
+    chgEn14351: "checkEir('builtin-en14351-1') comprova les prestacions declarades de finestres i portes exteriors segons l'EN 14351-1 — vent, estanquitat a l'aigua, acústica, transmitància tèrmica, g i τv, fabricant i codi de producte — en property sets estàndard d'IFC; les regles EIR guanyen where (només elements amb un valor de propietat) i optional.",
     setView: 'Vola a una vista amb nom de l’escena — iso, front, back, left, right, top, bottom — amb tota l’escena enquadrada. Sense resposta (entre 1.14 i 1.16 el visor la ignorava).',
     fitReset: 'Enquadra el model actiu des de l’angle actual, amb marge / reinicia la càmera.',
     camFrameEl: 'Enquadra un element (expressID): des de l’angle actual tret que s’indiqui una vista. Rebutja si no és al model.',
@@ -369,6 +384,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'L’usuari ha triat un element — amb el seu GlobalId, per creuar-lo amb els teus registres.',
   },
   zh: {
+    checkEir: "按 EIR / BIM 校验配置检查模型——可传对象、其 JSON（含简写形式），或内置配置的 id，如 'builtin-en14351-1'。编译为 IDS，在同一引擎上运行：返回与 checkIds 相同的 IdsResult。",
+    chgEn14351: "checkEir('builtin-en14351-1') 检查符合 EN 14351-1 的窗和外门的声明性能——抗风压、水密性、隔声、传热系数、g 与 τv、制造商与产品型号代码——基于标准 IFC 属性集；EIR 规则新增 where（仅检查具有某属性值的构件）和 optional。",
     setView: '飞到场景的命名视图 —— iso、front、back、left、right、top、bottom —— 并让整个场景入画。无返回值（1.14 至 1.16 期间查看器会忽略它）。',
     fitReset: '从当前角度带边距地框选活动模型 / 重置相机。',
     camFrameEl: '框选单个构件（expressID）：未指定视图时保持当前角度。构件不在模型中时拒绝。',
@@ -421,6 +438,8 @@ export const SDK_DOCS_V117 = {
     evSelected: '用户选中了一个构件 —— 附带其 GlobalId，便于与你自己的数据对应。',
   },
   ja: {
+    checkEir: "EIR / BIM 検証プロファイルでモデルをチェックします。オブジェクト、その JSON（省略形も可）、または 'builtin-en14351-1' のような組み込みプロファイルの id を渡せます。IDS にコンパイルされ同じエンジンで実行されるため、checkIds と同じ IdsResult を返します。",
+    chgEn14351: "checkEir('builtin-en14351-1') は EN 14351-1 に基づく窓と外部ドアの宣言性能（耐風圧、水密性、遮音、熱貫流率、g と τv、製造者と製品型式コード）を標準 IFC プロパティセットでチェックします。EIR ルールに where（特定のプロパティ値を持つ要素のみ）と optional が加わりました。",
     setView: 'シーンの名前付きビュー（iso、front、back、left、right、top、bottom）へ移動し、シーン全体を収めます。応答なし（1.14〜1.16 ではビューアが無視していました）。',
     fitReset: '現在の角度から余白付きでアクティブなモデルを収める / カメラをリセット。',
     camFrameEl: '1 つの要素（expressID）を収めます。ビューを指定しない限り現在の角度のまま。モデルにない場合は拒否します。',
@@ -473,6 +492,8 @@ export const SDK_DOCS_V117 = {
     evSelected: 'ユーザーが要素を選択しました — 自社データと照合できるよう GlobalId 付き。',
   },
   th: {
+    checkEir: "ตรวจแบบจำลองตามโปรไฟล์การตรวจสอบ EIR / BIM — เป็นออบเจกต์ JSON ของมัน (รวมรูปแบบย่อ) หรือ id ของโปรไฟล์ในตัว เช่น 'builtin-en14351-1' คอมไพล์เป็น IDS และทำงานบนเอนจินเดียวกัน: ได้ IdsResult รูปแบบเดียวกับ checkIds",
+    chgEn14351: "checkEir('builtin-en14351-1') ตรวจสมรรถนะที่ประกาศของหน้าต่างและประตูภายนอกตาม EN 14351-1 — แรงลม การกันน้ำ เสียง ค่าการถ่ายเทความร้อน g และ τv ผู้ผลิตและรหัสผลิตภัณฑ์ — บน property set มาตรฐานของ IFC; กฎ EIR เพิ่ม where (เฉพาะองค์ประกอบที่มีค่าคุณสมบัติ) และ optional",
     setView: 'บินไปยังมุมมองที่มีชื่อของฉาก — iso, front, back, left, right, top, bottom — ให้ทั้งฉากอยู่ในเฟรม ไม่มีการตอบกลับ (ตั้งแต่ 1.14 ถึง 1.16 ตัวแสดงผลเพิกเฉยต่อคำสั่งนี้)',
     fitReset: 'จัดเฟรมโมเดลที่ใช้งานจากมุมปัจจุบันพร้อมระยะขอบ / รีเซ็ตกล้อง',
     camFrameEl: 'จัดเฟรมชิ้นส่วนเดียว (expressID): จากมุมปัจจุบัน เว้นแต่ระบุมุมมอง ปฏิเสธหากไม่อยู่ในโมเดล',

@@ -4,13 +4,13 @@
     "1.17.0": {
       "ifc-viewer.es.js": {
         "path": "1.17.0/ifc-viewer.es.js",
-        "integrity": "sha384-mI9WzZ7sbyR14aIPFh+Kug3kCJm5wQqHs4qjDLJT+MVUKy0rz/dLbiPQtEKNFKYk",
-        "bytes": 62539
+        "integrity": "sha384-GXwzVvpj8hAv8wQ+LgIaDnm5TrRUKj5GpqSKOba+PJIh01gsStoBGvXYmO8+ppMB",
+        "bytes": 62628
       },
       "ifc-viewer.es.d.ts": {
         "path": "1.17.0/ifc-viewer.es.d.ts",
-        "integrity": "sha384-kP3RUnnE7Ju0330fR9TNwUHDtXHIc/d7MhElvBYkpJdYq9xSUFvtREcDA9qtTS8S",
-        "bytes": 73369
+        "integrity": "sha384-ammqZ2/f76EtbxAjSauwPbivKR0EEHS2wjzmD/iNz4sRsZHYWXtOzNC82hd7BdOm",
+        "bytes": 74589
       }
     }
   }
