@@ -4648,12 +4648,20 @@ export default function App() {
 
                   {/* Spatial tree on a phone: the desktop column cannot fit, so the
                       same tree opens as a sheet (Tools → Tree). Picking an element
-                      closes it so the selection is visible in the model. */}
+                      closes it so the selection is visible in the model — but a
+                      reveal selects too, and must leave open the sheet it opened.
+                      The ref is the same one the desktop column takes (only one
+                      of the two is ever mounted): without it, "Reveal in tree"
+                      on a phone opened the sheet and never reached the tree. */}
                   {!isDesktop && sceneModels.length > 0 && effectiveChrome.showTree && (
                     <MobileSheet open={treeVisible} onClose={() => setTreeVisible(false)} label={tTree('spatialTree')} snapPoints={[0.55, 0.92]}>
                       <div className="flex flex-col h-full min-h-0 overflow-hidden">
                         <ModelTree
-                          onSelectElement={(...args: Parameters<typeof handleSelectTreeElement>) => { handleSelectTreeElement(...args); setTreeVisible(false) }}
+                          ref={modelTreeRef}
+                          onSelectElement={(expressId, modelId, source) => {
+                            handleSelectTreeElement(expressId, modelId)
+                            if (source === 'row') setTreeVisible(false)
+                          }}
                           onFocusElements={handleFocusElements}
                           onFilterBySubtree={() => { useValidationStore.getState().setFilters({ ruleIds: [], search: '' }) }}
                           onRemoveModel={(id) => { void handleRemoveModel(id) }}
