@@ -1,6 +1,7 @@
 import { SHANGHAI_POSTS_ES } from './blog-shanghai-es.ts'
 import { SHANGHAI_POSTS_EN } from './blog-shanghai-en.ts'
 import { TWIN_POSTS_EN } from './blog-twins-en.ts'
+import { FLOOD_POSTS_EN } from './blog-flood-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -65,6 +66,28 @@ export type ContentBlock =
   | { type: 'related'; to: string; section?: string; why?: string }
   /** A tool on this site that does what the paragraph describes (see lib/blog-tools.ts). */
   | { type: 'tool'; id: 'viewer' | 'validator' | 'guid-fixer' | 'fix-guides' | 'embed' | 'sdk' | 'handbook' | 'bim-handbook'; why?: string }
+  /**
+   * "Is this water dangerous?" Depth and speed sliders → the FD2320 hazard
+   * rating and its class, on a depth × speed chart (FloodHazard.tsx). The
+   * labels travel with the post so they are translated with it.
+   */
+  | {
+      type: 'flood-hazard'
+      title?: string
+      caption?: string
+      depth?: number
+      velocity?: number
+      labels: {
+        depth: string
+        velocity: string
+        debris: string
+        debrisModes: { precautionary: string; urban: string; woodland: string; pasture: string }
+        rating: string
+        classes: [string, string, string, string]
+        notes: [string, string, string, string]
+        dry: string
+      }
+    }
   /** Horizontal bars for magnitudes that need comparing side by side. */
   | {
       type: 'bars'
@@ -132,6 +155,7 @@ export type ContentBlock =
         | 'twin-helsinki'
         | 'twin-tochomae'
         | 'twin-waseda'
+        | 'flood-rain'
       title: string
       description: string
       poster: string
@@ -288,6 +312,7 @@ export interface BlogPost {
 
 const EN_POSTS_SOURCE: BlogPost[] = [
   ...TWIN_POSTS_EN,
+  ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,
   {
     slug: 'iso-19650-file-naming-convention',

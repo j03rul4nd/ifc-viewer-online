@@ -454,6 +454,8 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
       const t = toolCopy(tool, langOf(prefix))
       return `<aside><p><a href="${esc(toolHref(tool, langOf(prefix)))}">${esc(t.name)}</a> — ${esc(block.why ?? t.blurb)}</p></aside>`
     }
+    case 'flood-hazard':
+      return `<figure>${block.title ? `<h3>${esc(block.title)}</h3>` : ''}<p>${esc(block.labels.rating)}: HR = d × (v + 0.5) + DF</p><table><tbody>${['&lt; 0.75', '0.75–1.25', '1.25–2.0', '&gt; 2.0'].map((r, i) => `<tr><td>${r}</td><td><strong>${esc(block.labels.classes[i])}</strong></td><td>${esc(block.labels.notes[i])}</td></tr>`).join('')}</tbody></table>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
     case 'bars':
       return `<figure>${block.title ? `<h3>${esc(block.title)}</h3>` : ''}<ul>${block.items.map((item) => `<li>${esc(item.label)}: <strong>${item.value}${esc(block.unit ?? '')}</strong>${item.note ? ` — ${esc(item.note)}` : ''}</li>`).join('')}</ul>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
     case 'image': {

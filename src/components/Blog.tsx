@@ -18,6 +18,7 @@ import EmbedViewer from './blog/EmbedViewer'
 import EmbedConfigurator from './blog/EmbedConfigurator'
 import SpatialMediaDemo from './blog/SpatialMediaDemo'
 import ToolDemo from './blog/ToolDemo'
+import FloodHazard from './blog/FloodHazard'
 import SmartTable from './blog/SmartTable'
 import { editorialCopy } from '../lib/blog-editorial-copy'
 import { serpWidth } from '../lib/serp-width'
@@ -353,6 +354,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'bars':
       return <Bars title={block.title} unit={block.unit} max={block.max} caption={block.caption} items={block.items} lang={lang} />
+
+    case 'flood-hazard':
+      return <FloodHazard title={block.title} caption={block.caption} depth={block.depth} velocity={block.velocity} labels={block.labels} lang={lang} />
 
     case 'image': {
       const src = asset(block.src)

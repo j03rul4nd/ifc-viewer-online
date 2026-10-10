@@ -30,6 +30,7 @@ export type ToolDemoId =
   | 'twin-helsinki'
   | 'twin-tochomae'
   | 'twin-waseda'
+  | 'flood-rain'
 
 interface ToolDemoProps {
   demo: ToolDemoId
@@ -154,6 +155,15 @@ const DEMOS: Record<ToolDemoId, DemoConfig> = {
   'twin-helsinki': { models: [], scene: { path: 'scenes/helsinki-rautatientori.scene.json', expect: 3 } },
   'twin-tochomae': { models: [], scene: { path: 'scenes/tokyo-tochomae.scene.json', expect: 1 } },
   'twin-waseda': { models: [], scene: { path: 'scenes/tokyo-waseda.scene.json', expect: 1 } },
+  // Rain-flood simulation (docs/FLOOD_SIMULATION.md): the ?flood= deep link
+  // builds the grid and runs the storm by itself once the models are in — on
+  // the map's relief, with the neighbourhood drawn (it waits for the
+  // visitor's consent to the map's providers, which the map asks for).
+  'flood-rain': {
+    models: ['models/hotel-vela/BCN-IVO-ZZ-XX-M3-A-0002.ifc', 'models/hotel-vela/BCN-IVO-ZZ-XX-M3-S-0002.ifc'],
+    params: { map: 'terrain,buildings', flood: 'extreme,2m' },
+    bg: 'paper',
+  },
 }
 
 function absoluteAsset(path: string): string {

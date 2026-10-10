@@ -32,15 +32,34 @@ uniform sampler2D uFrame;
 uniform vec2 uGrid;
 uniform float uDx;
 uniform int uMode;
+uniform float uThreshold;
 in vec2 aCell;
 out vec2 vUv;
 out vec3 vWorld;
+float depthAt(ivec2 q) {
+  vec4 f = texelFetch(uFrame, q, 0);
+  return uMode == 1 ? f.a : f.r;
+}
 void main() {
   ivec2 c = ivec2(aCell);
   float bed = texelFetch(uBed, c, 0).r;
-  vec4 f = texelFetch(uFrame, c, 0);
-  float h = uMode == 1 ? f.a : f.r;
-  vec3 p = vec3((aCell.x + 0.5) * uDx, bed + max(h, 0.0), -(aCell.y + 0.5) * uDx);
+  float h = depthAt(c);
+  float y = bed + max(h, 0.0);
+  if (h < uThreshold) {
+    // A dry vertex next to water stays at the water's level, not on top of
+    // its own ground: a triangle climbing from the water to a wall or kerb top
+    // drew a translucent fin of water up its side.
+    ivec2 last = ivec2(uGrid) - 1;
+    float s = -1e9;
+    for (int k = 0; k < 4; k++) {
+      ivec2 d = k == 0 ? ivec2(1, 0) : k == 1 ? ivec2(-1, 0) : k == 2 ? ivec2(0, 1) : ivec2(0, -1);
+      ivec2 q = clamp(c + d, ivec2(0), last);
+      float hq = depthAt(q);
+      if (hq >= uThreshold) s = max(s, texelFetch(uBed, q, 0).r + hq);
+    }
+    if (s > -1e8) y = min(y, s);
+  }
+  vec3 p = vec3((aCell.x + 0.5) * uDx, y, -(aCell.y + 0.5) * uDx);
   vUv = (aCell + 0.5) / uGrid;
   vec4 w = modelMatrix * vec4(p, 1.0);
   vWorld = w.xyz;

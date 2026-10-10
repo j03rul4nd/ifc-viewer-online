@@ -70,6 +70,16 @@ function blockFields(b: ContentBlock, at: string, add: (path: string, value: unk
     // target's translated heading by relinkSections(), never translated here.
     case 'related': add(`${at}.why`, b.why); break
     case 'tool': add(`${at}.why`, b.why); break
+    case 'flood-hazard': {
+      add(`${at}.title`, b.title); add(`${at}.caption`, b.caption)
+      const l = b.labels
+      add(`${at}.labels.depth`, l.depth); add(`${at}.labels.velocity`, l.velocity); add(`${at}.labels.debris`, l.debris)
+      add(`${at}.labels.rating`, l.rating); add(`${at}.labels.dry`, l.dry)
+      for (const m of ['precautionary', 'urban', 'woodland', 'pasture'] as const) add(`${at}.labels.debrisModes.${m}`, l.debrisModes[m])
+      l.classes.forEach((x, i) => add(`${at}.labels.classes.${i}`, x))
+      l.notes.forEach((x, i) => add(`${at}.labels.notes.${i}`, x))
+      break
+    }
     case 'bars':
       add(`${at}.title`, b.title); add(`${at}.unit`, b.unit); add(`${at}.caption`, b.caption)
       b.items.forEach((x, i) => { add(`${at}.items.${i}.label`, x.label); add(`${at}.items.${i}.note`, x.note) })

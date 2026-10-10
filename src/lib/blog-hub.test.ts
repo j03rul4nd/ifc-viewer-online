@@ -51,8 +51,10 @@ describe('blog hub discovery', () => {
       'barcelona-digital-twin-open-data',
       'bus-terminal-digital-twin-mqtt',
       'tokyo-transit-digital-twin-odpt',
+      'flood-simulation-ifc-model-online',
+      'buried-rivers-flood-risk-openstreetmap',
     ]))
-    expect(results).toHaveLength(18)
+    expect(results).toHaveLength(20)
   })
 
   it('filters by category and sorts short reads first', () => {

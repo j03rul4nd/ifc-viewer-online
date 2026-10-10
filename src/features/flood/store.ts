@@ -121,3 +121,6 @@ export const useFloodStore = create<FloodState>()((set) => ({
   setPanelOpen: (v) => set({ panelOpen: v }),
   set: (p) => set(p),
 }))
+
+// QA (dev only): scripts/og/capture-flood-shots.mjs sets the view through it.
+if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__floodStore = useFloodStore
