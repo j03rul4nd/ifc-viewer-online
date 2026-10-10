@@ -309,5 +309,39 @@
     "canvas": "3D モデルビュー。要素をタップして選択、長押しで操作を表示します。",
     "copyGlobalId": "GlobalId をコピー",
     "more": "その他の操作"
+  },
+  "wheelHintEngage": "ビューをクリックしてからホイールでズーム・または {{key}} + ホイール",
+  "explorer": {
+    "cardLabel": "選択の詳細",
+    "navLabel": "シーン内を移動",
+    "home": "全体表示",
+    "zoomIn": "ズームイン",
+    "zoomOut": "ズームアウト",
+    "turnLeft": "左に回転",
+    "turnRight": "右に回転",
+    "top": "真上から見る",
+    "perspective": "3D 表示に戻る",
+    "help": "操作方法",
+    "helpTitle": "シーン内の移動",
+    "helpClick": "クリックするとデータを表示します。",
+    "helpDrag": "ドラッグで回転します。",
+    "helpPan": "右ボタンまたは 2 本指でドラッグすると平行移動します。",
+    "helpWheel": "ホイールまたはピンチで指した場所にズームします（先にビューをクリック）。",
+    "helpDouble": "地点をダブルクリックすると、その周りを回転します。",
+    "explore": "探索",
+    "liveCount_one": "ライブ {{count}}",
+    "liveCount_other": "ライブ {{count}}",
+    "live": "ライブデータ",
+    "models": "モデル",
+    "state": {
+      "live": "ライブ",
+      "stale": "最近のデータなし",
+      "nodata": "データ待ち"
+    },
+    "focus": "ビューの中央に表示",
+    "properties": "プロパティ",
+    "fromType": "タイプ",
+    "attributes": "属性",
+    "copied": "コピーしました"
   }
 }

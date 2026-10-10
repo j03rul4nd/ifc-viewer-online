@@ -109,7 +109,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
         posterAlt: "Jumeau numérique de la Plaça de Catalunya dans IFC Viewer Online, avec des maquettes IFC sur la carte 3D de Barcelone",
         launchLabel: "Ouvrir le jumeau en direct",
-        hint: "Des points d'ancrage gris signifient que le flux n'a pas encore répondu, ou que la station est hors service. Open Data BCN peut mettre 15–40 s.",
+        hint: "Cliquez sur un élément pour voir ses données ; « Explorer » mène à chaque point en direct. Des points d'ancrage gris signifient que le flux n'a pas encore répondu, ou que la station est hors service. Open Data BCN peut mettre 15–40 s.",
       },
       { type: "h2", text: "Ce que contient la scène" },
       {
@@ -437,7 +437,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         poster: "blog/images/bus-terminal-digital-twin-mqtt-capture.jpg",
         posterAlt: "Jumeau numérique de la gare routière d'Helsinki dans IFC Viewer Online, avec les numéros de ligne en direct au-dessus des quais",
         launchLabel: "Ouvrir la gare routière en direct",
-        hint: "Vert : portes ouvertes. Bleu : à l'arrêt. Ambre : entrée ou sortie de quai. Gris : aucun bus depuis 45 s.",
+        hint: "Cliquez sur un élément pour voir ses données ; « Explorer » mène à chaque point en direct. Vert : portes ouvertes. Bleu : à l'arrêt. Ambre : entrée ou sortie de quai. Gris : aucun bus depuis 45 s.",
       },
       { type: "h2", text: "Ce que vous voyez" },
       {
@@ -682,7 +682,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-odpt-capture.jpg",
         posterAlt: "Jumeau numérique de la sortie A4 de la station Tochōmae dans IFC Viewer Online",
         launchLabel: "Ouvrir Tochōmae en direct",
-        hint: "Une enseigne grise signifie qu'aucun train n'est à quai pour le moment. Attendez le suivant, ou ouvrez la visionneuse complète.",
+        hint: "Cliquez sur un élément pour voir ses données ; « Explorer » mène à chaque point en direct. Une enseigne grise signifie qu'aucun train n'est à quai pour le moment. Attendez le suivant, ou ouvrez la visionneuse complète.",
       },
       {
         type: "table",
@@ -724,7 +724,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         poster: "blog/images/tokyo-transit-digital-twin-waseda.jpg",
         posterAlt: "Jumeau numérique de l'arrêt de tramway de Waseda sur la carte 3D de Tokyo dans IFC Viewer Online",
         launchLabel: "Ouvrir Waseda en direct",
-        hint: "Entre deux tramways, les bords sont gris. ODPT n'indique pas quel quai un tramway utilise ; les deux s'allument donc.",
+        hint: "Cliquez sur un élément pour voir ses données ; « Explorer » mène à chaque point en direct. Entre deux tramways, les bords sont gris. ODPT n'indique pas quel quai un tramway utilise ; les deux s'allument donc.",
       },
       {
         type: "image",

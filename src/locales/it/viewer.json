@@ -309,5 +309,39 @@
     "canvas": "Vista 3D del modello. Tocca un elemento per selezionarlo; tieni premuto per le sue azioni.",
     "copyGlobalId": "Copia GlobalId",
     "more": "Altre azioni"
+  },
+  "wheelHintEngage": "Fai clic nella vista, poi usa la rotellina per lo zoom · oppure {{key}} + rotellina",
+  "explorer": {
+    "cardLabel": "Dettagli della selezione",
+    "navLabel": "Muoversi nella scena",
+    "home": "Vista generale",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Riduci",
+    "turnLeft": "Ruota a sinistra",
+    "turnRight": "Ruota a destra",
+    "top": "Vista dall'alto",
+    "perspective": "Torna alla vista 3D",
+    "help": "Come muoversi",
+    "helpTitle": "Muoversi nella scena",
+    "helpClick": "Fai clic su qualsiasi cosa per vederne i dati.",
+    "helpDrag": "Trascina per ruotare.",
+    "helpPan": "Trascina con il tasto destro, o con due dita, per spostarti.",
+    "helpWheel": "Rotellina o pizzico per lo zoom dove punti (prima fai clic nella vista).",
+    "helpDouble": "Doppio clic su un punto per ruotarvi attorno.",
+    "explore": "Esplora",
+    "liveCount_one": "{{count}} in diretta",
+    "liveCount_other": "{{count}} in diretta",
+    "live": "Dati in diretta",
+    "models": "Modelli",
+    "state": {
+      "live": "In diretta",
+      "stale": "Nessun dato recente",
+      "nodata": "In attesa di dati"
+    },
+    "focus": "Centra nella vista",
+    "properties": "Proprietà",
+    "fromType": "tipo",
+    "attributes": "Attributi",
+    "copied": "Copiato"
   }
 }

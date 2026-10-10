@@ -80,7 +80,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         poster: 'blog/images/barcelona-digital-twin-open-data-capture.jpg',
         posterAlt: 'Plaça de Catalunya digital twin in IFC Viewer Online, with IFC models on the 3D map of Barcelona',
         launchLabel: 'Open the live twin',
-        hint: 'Grey docks mean the feed has not answered yet, or the station is out of service. Open Data BCN can take 15–40 s.',
+        hint: 'Click any asset to see its data; Explore takes you to each live point. Grey docks mean the feed has not answered yet, or the station is out of service. Open Data BCN can take 15–40 s.',
       },
 
       { type: 'h2', text: 'What is in the scene' },
@@ -200,7 +200,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         poster: 'blog/images/bus-terminal-digital-twin-mqtt-capture.jpg',
         posterAlt: 'Helsinki bus terminal digital twin in IFC Viewer Online, with live line numbers over the bays',
         launchLabel: 'Open the live terminal',
-        hint: 'Green: doors open. Blue: standing. Amber: pulling in or out. Grey: no bus in the last 45 s.',
+        hint: 'Click any asset to see its data; Explore takes you to each live point. Green: doors open. Blue: standing. Amber: pulling in or out. Grey: no bus in the last 45 s.',
       },
 
       { type: 'h2', text: 'What you are looking at' },
@@ -299,7 +299,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         poster: 'blog/images/tokyo-transit-digital-twin-odpt-capture.jpg',
         posterAlt: 'Tochōmae station exit A4 digital twin in IFC Viewer Online',
         launchLabel: 'Open Tochōmae, live',
-        hint: 'A grey sign means no train is at the platform right now. Wait for the next one, or open the full viewer.',
+        hint: 'Click any asset to see its data; Explore takes you to each live point. A grey sign means no train is at the platform right now. Wait for the next one, or open the full viewer.',
       },
       {
         type: 'table',
@@ -321,7 +321,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
         poster: 'blog/images/tokyo-transit-digital-twin-waseda.jpg',
         posterAlt: 'Waseda tram stop digital twin on the 3D map of Tokyo in IFC Viewer Online',
         launchLabel: 'Open Waseda, live',
-        hint: 'Between trams the edges are grey. ODPT does not say which platform a tram uses, so both light up.',
+        hint: 'Click any asset to see its data; Explore takes you to each live point. Between trams the edges are grey. ODPT does not say which platform a tram uses, so both light up.',
       },
       shot('tokyo-transit-digital-twin-waseda', 'The Waseda terminus of the Toden Arakawa line as an IFC model on the 3D map of Tokyo, between the OpenStreetMap buildings of the avenue', 'The Waseda terminus on its avenue. One OpenStreetMap outline, the stop\'s own concourse, is hidden by the scene so it does not cover the model.'),
       { type: 'p', text: 'The Arakawa line, today the Tokyo Sakura Tram, is the last of Toei\'s streetcar lines. The model of its Waseda terminus is an IFC 4.3 railway model with rails, platforms, canopies and departure screens. The tram binding reads the same train feed as Tochōmae and lights the platform edges when a tram\'s position is Waseda. The status binding colours the screens\' LED matrices.' },

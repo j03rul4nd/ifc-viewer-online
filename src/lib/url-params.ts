@@ -126,6 +126,14 @@ export interface AppUrlParams {
    */
   wheel?: WheelMode
   /**
+   * `?explore=1` / `?explore=0` — the scene explorer over the canvas: what a
+   * click picked (element data, live values, map features), an "Explore" list
+   * of the twin's live points and models, and buttons to move around. On by
+   * default in the canvas-only presets (`article`, `kiosk`) when a scene is
+   * open; undefined = that default.
+   */
+  explore?: boolean
+  /**
    * `?turntable=1` (6°/s) or `?turntable=<deg/s>` — a slow idle orbit once
    * the model is in, stopped by the visitor's first touch. Never under
    * prefers-reduced-motion. Since v1.15.
@@ -375,6 +383,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     fill: parseFill(p.get('fill')),
     autoFrame: parseBool(p.get('autoframe')),
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
+    explore: parseBool(p.get('explore')),
     turntable: parseTurntable(p.get('turntable')),
     camera: parseCamera(p.get('camera')),
     hideFeatures: (p.get('hide') ?? '').split(',').map((x) => x.trim()).filter((x) => /^[nwr]\d{1,15}$/.test(x)).slice(0, 200),
