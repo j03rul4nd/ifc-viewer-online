@@ -1124,7 +1124,7 @@ export default function App() {
     }, 400)
     return () => window.clearTimeout(timer)
   }, [loadsActive, urlParams])
-  // Auto-frame (every embed, SDK 1.17): each time the loads settle with a
+  // Auto-frame (every embed, SDK 1.18): each time the loads settle with a
   // different set of models, frame them all from iso with a margin. The
   // loader's own fit puts the box edge to edge, head-on — a catalogue window
   // then touched every side of the frame and read as a flat panel.
@@ -2305,7 +2305,7 @@ export default function App() {
   const filtersRef = useRef({ hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel })
   filtersRef.current = { hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel }
 
-  // An element a host names by expressID, or by GlobalId (SDK 1.17). A GlobalId
+  // An element a host names by expressID, or by GlobalId (SDK 1.18). A GlobalId
   // is unique across a federation, so it also says which model; an expressID
   // only means something together with a model (or the active one).
   const resolveElementRef = useCallback(async (msg: Record<string, unknown>): Promise<{ expressId: number; modelId?: string } | null> => {
@@ -2373,7 +2373,7 @@ export default function App() {
           break
         }
         case 'ifcviewer:select': {
-          // By expressID, or by GlobalId (v1.17): a catalogue knows its
+          // By expressID, or by GlobalId (v1.18): a catalogue knows its
           // product by GlobalId, not by the file's line numbers.
           void resolveElementRef(msg).then((ref) => {
             if (!ref) return
@@ -2420,7 +2420,7 @@ export default function App() {
           // fill / azimuth / elevation (v1.14): a tight fit for presentation —
           // the model fills the frame instead of floating in its bounding
           // sphere. Answers with the framed scope when asked for a result.
-          // elementId (v1.17): frame that element instead of the scene.
+          // elementId (v1.18): frame that element instead of the scene.
           const preset = typeof msg.preset === 'string' && CAMERA_PRESETS.includes(msg.preset as CameraPreset)
             ? msg.preset as CameraPreset
             : 'iso'
@@ -2611,7 +2611,7 @@ export default function App() {
             }))
             const sev = typeof msg.severity === 'string' ? msg.severity : null
             if (sev) issues = issues.filter((i) => i.severity === sev)
-            // One model of a federated scene (v1.17): issues carry their model.
+            // One model of a federated scene (v1.18): issues carry their model.
             if (typeof msg.modelId === 'string' && msg.modelId) issues = issues.filter((i) => i.modelId === msg.modelId)
             const limit = Number(msg.limit)
             if (Number.isFinite(limit) && limit > 0) issues = issues.slice(0, limit)
@@ -3915,7 +3915,7 @@ export default function App() {
   }, [hasSceneModels])
 
   // ── Relay element selection to an embedding parent (CDE integration) ───────
-  // With its GlobalId (v1.17), so a host can map a pick to its own records.
+  // With its GlobalId (v1.18), so a host can map a pick to its own records.
   // Looked up before sending: a worker round trip, milliseconds. A pick that
   // a newer one replaced before the lookup returned is not sent at all —
   // hosts read the last event as the current selection.

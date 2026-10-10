@@ -6,7 +6,7 @@
 // and records every published version in public/sdk/versions.json with a
 // Subresource-Integrity hash, so a host can pin both the URL and the content:
 //
-//   <script type="module" src="…/sdk/1.17.0/ifc-viewer.es.js" integrity="sha384-…" crossorigin>
+//   <script type="module" src="…/sdk/1.18.0/ifc-viewer.es.js" integrity="sha384-…" crossorigin>
 //
 // Only the CURRENT version (SDK_VERSION in src/sdk/ifc-viewer-sdk.ts) is ever
 // written. Older version folders are left exactly as they are: they are

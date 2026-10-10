@@ -18,7 +18,7 @@ import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
 import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
 import { SDK_DOCS_V114 } from './sdk-docs-v114.mjs'
 import { SDK_DOCS_V115 } from './sdk-docs-v115.mjs'
-import { SDK_DOCS_V117 } from './sdk-docs-v117.mjs'
+import { SDK_DOCS_V118 } from './sdk-docs-v118.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -548,7 +548,7 @@ for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V114[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V115[l])
-for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V117[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V118[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -885,7 +885,7 @@ onUnmounted(() => viewer && viewer.dispose());
   <div ref="host" style="height: 520px" />
 </template>`
 
-// A manufacturer's product page (v1.17): the host owns the file, the viewer
+// A manufacturer's product page (v1.18): the host owns the file, the viewer
 // shows it and what the type says about it.
 const REC_PRODUCT =
 `import { IfcViewer } from "${HOSTED_PINNED}";
@@ -1253,7 +1253,7 @@ function page(lang) {
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'
 
-  // validation lifecycle (v1.17)
+  // validation lifecycle (v1.18)
   const valRows = [
     ['valBefore', 'valBeforeR'], ['valFirst', 'valFirstR'], ['valAfter', 'valAfterR'],
     ['valRerun', 'valRerunR'], ['valFailed', 'valFailedR'],
@@ -1264,7 +1264,7 @@ function page(lang) {
     '<div class="table-wrap"><table class="dt"><thead><tr><th>' + esc(tr('valColWhen')) + '</th><th>' + esc(tr('valColReturns')) + '</th></tr></thead><tbody>' + valRows + '</tbody></table></div>' +
     '</section>'
 
-  // versions: pin, caching, compatibility, changelog (v1.17)
+  // versions: pin, caching, compatibility, changelog (v1.18)
   const verRows = [
     ['/sdk/ifc-viewer.es.js', 'verMovingCache', 'verMovingUse'],
     ['/sdk/' + VERSION + '/ifc-viewer.es.js', 'verPinnedCache', 'verPinnedUse'],
@@ -1280,7 +1280,7 @@ function page(lang) {
     callout(tr('verCompatT'), tr('verCompatB')) +
     (sriSnippet ? '<p class="card-t">' + esc(tr('verSriT')) + '</p><p class="muted">' + esc(tr('verSriB')) + '</p>' + code(sriSnippet, 'html', 'HTML') : '') +
     '<h3 id="changelog">' + esc(tr('chgTitle')) + '</h3>' +
-    '<p>' + esc(tr('chg117') + ' ' + tr('chgEn14351')) + '</p>' +
+    '<p>' + esc(tr('chg118') + ' ' + tr('chgEn14351')) + '</p>' +
     '</section>'
 
   // troubleshooting

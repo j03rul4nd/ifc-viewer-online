@@ -1,14 +1,14 @@
-// ─── SDK docs — v1.17 (catalogue objects in a host app) ──────────────────────
+// ─── SDK docs — v1.18 (catalogue objects in a host app) ──────────────────────
 // Same conventions as sdk-docs-v111.mjs: ten languages, identifiers in English.
 // Merged last, so the keys it shares with earlier blocks (setView, fitReset,
 // getElement, getValidation, optUi, evValidation, checkEir) are deliberate
 // rewrites.
 
-export const SDK_DOCS_V117 = {
+export const SDK_DOCS_V118 = {
   en: {
     checkEir: "Check the model against an EIR / BIM Validation profile — an object, its JSON (incl. the compact shorthand) or a built-in id such as 'builtin-en14351-1'. Compiles to IDS and runs on the same engine: same IdsResult shape as checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') checks the declared performance of EN 14351-1 windows and external doors — wind load, watertightness, acoustics, U-value, g and τv, manufacturer and product code — on standard IFC property sets; EIR rules gain where (only elements with a property value) and optional.",
-    setView: 'Fly to a named view of the scene — iso, front, back, left, right, top, bottom — with all of it in frame. Fire-and-forget (between 1.14 and 1.16 the viewer ignored it).',
+    setView: 'Fly to a named view of the scene — iso, front, back, left, right, top, bottom — with all of it in frame. Fire-and-forget (between 1.14 and 1.17 the viewer ignored it).',
     fitReset: 'Frame the active model from the current angle, with a margin / reset the camera.',
     camFrameEl: 'Frame one element (expressID): from the current angle unless a view is given. Rejects when it is not in the model.',
     getElement: 'By expressID or GlobalId. An element’s IFC data: attributes with the GlobalId, its property sets and quantities, and its type’s — typeName, typeProperties — with units. effectivePropertySets merges both, the element’s own value winning.',
@@ -54,7 +54,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Pin the content too',
     verSriB: 'versions.json, next to the SDK, lists each version’s Subresource Integrity hash:',
     chgTitle: 'Changelog',
-    chg117: "1.17.0 — catalogue objects in a host app. getElement() returns the GlobalId and the type’s data (typeName, typeProperties with units, effectivePropertySets; IFC4 types and IFC2x3 styles). validate(), getValidationStatus(), validation-started / validation-failed, and validate: true really validates after each load. Auto-frame after load, fit() and frame() with a margin for small objects, frame(elementId), and setView() moves the camera again. ui: 'embed' with toolbar and tools. Pinned builds at /sdk/1.17.0/. findElements(), GlobalIds for getElement() / select() / element-selected, window and door lining and panel sets, and the type's materials; in ui: 'embed' the properties panel keeps the picked object in view.",
+    chg118: "1.18.0 — catalogue objects in a host app. getElement() returns the GlobalId and the type’s data (typeName, typeProperties with units, effectivePropertySets; IFC4 types and IFC2x3 styles). validate(), getValidationStatus(), validation-started / validation-failed, and validate: true really validates after each load. Auto-frame after load, fit() and frame() with a margin for small objects, frame(elementId), and setView() moves the camera again. ui: 'embed' with toolbar and tools. Pinned builds at /sdk/1.18.0/. findElements(), GlobalIds for getElement() / select() / element-selected, window and door lining and panel sets, and the type's materials; in ui: 'embed' the properties panel keeps the picked object in view.",
     findEl: 'Find elements by IFC class, GlobalId and/or name across the loaded models. Each hit has what getElement(), select() and frame() take.',
     select: 'Select and frame an element — by IFC expressID, or by GlobalId (which also finds its model).',
     evSelected: 'The user picked an element — with its GlobalId, to match your own records.',
@@ -62,7 +62,7 @@ export const SDK_DOCS_V117 = {
   es: {
     checkEir: "Comprueba el modelo contra un perfil de validación EIR / BIM — un objeto, su JSON (incl. el formato compacto) o el id de un perfil incorporado como 'builtin-en14351-1'. Compila a IDS y usa el mismo motor: mismo IdsResult que checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') comprueba las prestaciones declaradas de ventanas y puertas exteriores según EN 14351-1 — viento, estanqueidad al agua, acústica, transmitancia térmica, g y τv, fabricante y código de producto — en property sets estándar de IFC; las reglas EIR ganan where (solo elementos con un valor de propiedad) y optional.",
-    setView: 'Vuela a una vista con nombre de la escena — iso, front, back, left, right, top, bottom — con toda ella en el encuadre. Sin respuesta (entre 1.14 y 1.16 el visor la ignoraba).',
+    setView: 'Vuela a una vista con nombre de la escena — iso, front, back, left, right, top, bottom — con toda ella en el encuadre. Sin respuesta (entre 1.14 y 1.17 el visor la ignoraba).',
     fitReset: 'Encuadra el modelo activo desde el ángulo actual, con margen / reinicia la cámara.',
     camFrameEl: 'Encuadra un elemento (expressID): desde el ángulo actual salvo que se indique una vista. Rechaza si no está en el modelo.',
     getElement: 'Por expressID o por GlobalId. Los datos IFC de un elemento: atributos con el GlobalId, sus conjuntos de propiedades y cantidades, y los de su tipo — typeName, typeProperties — con unidades. effectivePropertySets combina ambos y gana el valor propio del elemento.',
@@ -108,7 +108,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Fija también el contenido',
     verSriB: 'versions.json, junto al SDK, lista el hash Subresource Integrity de cada versión:',
     chgTitle: 'Registro de cambios',
-    chg117: "1.17.0 — objetos de catálogo en una app anfitriona. getElement() devuelve el GlobalId y los datos del tipo (typeName, typeProperties con unidades, effectivePropertySets; tipos IFC4 y estilos IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, y validate: true por fin valida tras cada carga. Encuadre automático tras cargar, fit() y frame() con margen para objetos pequeños, frame(elementId), y setView() vuelve a mover la cámara. ui: 'embed' con toolbar y tools. Versiones fijas en /sdk/1.17.0/. findElements(), GlobalIds en getElement() / select() / element-selected, conjuntos de marco y hoja de ventanas y puertas, y los materiales del tipo; en ui: 'embed' el panel de propiedades deja a la vista el objeto elegido.",
+    chg118: "1.18.0 — objetos de catálogo en una app anfitriona. getElement() devuelve el GlobalId y los datos del tipo (typeName, typeProperties con unidades, effectivePropertySets; tipos IFC4 y estilos IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, y validate: true por fin valida tras cada carga. Encuadre automático tras cargar, fit() y frame() con margen para objetos pequeños, frame(elementId), y setView() vuelve a mover la cámara. ui: 'embed' con toolbar y tools. Versiones fijas en /sdk/1.18.0/. findElements(), GlobalIds en getElement() / select() / element-selected, conjuntos de marco y hoja de ventanas y puertas, y los materiales del tipo; en ui: 'embed' el panel de propiedades deja a la vista el objeto elegido.",
     findEl: 'Busca elementos por clase IFC, GlobalId y/o nombre en los modelos cargados. Cada resultado trae lo que piden getElement(), select() y frame().',
     select: 'Selecciona y encuadra un elemento — por su expressID IFC o por su GlobalId (que además encuentra su modelo).',
     evSelected: 'El usuario eligió un elemento — con su GlobalId, para cruzarlo con tus propios registros.',
@@ -116,7 +116,7 @@ export const SDK_DOCS_V117 = {
   de: {
     checkEir: "Prüft das Modell gegen ein EIR-/BIM-Validierungsprofil — ein Objekt, sein JSON (auch die Kurzform) oder die Id eines eingebauten Profils wie 'builtin-en14351-1'. Wird zu IDS kompiliert und läuft auf derselben Engine: dieselbe IdsResult-Form wie checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') prüft die erklärten Leistungen von Fenstern und Außentüren nach EN 14351-1 — Windlast, Schlagregendichtheit, Schallschutz, Wärmedurchgangskoeffizient, g und τv, Hersteller und Produktcode — in Standard-IFC-Property-Sets; EIR-Regeln erhalten where (nur Elemente mit einem Eigenschaftswert) und optional.",
-    setView: 'Zu einer benannten Ansicht der Szene fliegen — iso, front, back, left, right, top, bottom — mit der ganzen Szene im Bild. Ohne Antwort (von 1.14 bis 1.16 ignorierte der Viewer sie).',
+    setView: 'Zu einer benannten Ansicht der Szene fliegen — iso, front, back, left, right, top, bottom — mit der ganzen Szene im Bild. Ohne Antwort (von 1.14 bis 1.17 ignorierte der Viewer sie).',
     fitReset: 'Aktives Modell aus dem aktuellen Blickwinkel mit Rand einpassen / Kamera zurücksetzen.',
     camFrameEl: 'Ein Element (expressID) einpassen: aus dem aktuellen Blickwinkel, sofern keine Ansicht angegeben ist. Lehnt ab, wenn es nicht im Modell ist.',
     getElement: 'Per expressID oder GlobalId. Die IFC-Daten eines Elements: Attribute mit GlobalId, seine Eigenschafts- und Mengensätze und die seines Typs — typeName, typeProperties — mit Einheiten. effectivePropertySets führt beide zusammen, der eigene Wert des Elements gewinnt.',
@@ -162,7 +162,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Auch den Inhalt fixieren',
     verSriB: 'versions.json neben dem SDK listet den Subresource-Integrity-Hash jeder Version:',
     chgTitle: 'Änderungsprotokoll',
-    chg117: "1.17.0 — Katalogobjekte in einer Host-App. getElement() liefert die GlobalId und die Daten des Typs (typeName, typeProperties mit Einheiten, effectivePropertySets; IFC4-Typen und IFC2x3-Styles). validate(), getValidationStatus(), validation-started / validation-failed, und validate: true validiert nach jedem Laden wirklich. Automatisches Einpassen nach dem Laden, fit() und frame() mit Rand für kleine Objekte, frame(elementId), und setView() bewegt die Kamera wieder. ui: 'embed' mit toolbar und tools. Fixierte Builds unter /sdk/1.17.0/. findElements(), GlobalIds für getElement() / select() / element-selected, Rahmen- und Flügelsätze von Fenstern und Türen und die Materialien des Typs; in ui: 'embed' hält das Eigenschaftspanel das gewählte Objekt im Blick.",
+    chg118: "1.18.0 — Katalogobjekte in einer Host-App. getElement() liefert die GlobalId und die Daten des Typs (typeName, typeProperties mit Einheiten, effectivePropertySets; IFC4-Typen und IFC2x3-Styles). validate(), getValidationStatus(), validation-started / validation-failed, und validate: true validiert nach jedem Laden wirklich. Automatisches Einpassen nach dem Laden, fit() und frame() mit Rand für kleine Objekte, frame(elementId), und setView() bewegt die Kamera wieder. ui: 'embed' mit toolbar und tools. Fixierte Builds unter /sdk/1.18.0/. findElements(), GlobalIds für getElement() / select() / element-selected, Rahmen- und Flügelsätze von Fenstern und Türen und die Materialien des Typs; in ui: 'embed' hält das Eigenschaftspanel das gewählte Objekt im Blick.",
     findEl: 'Elemente nach IFC-Klasse, GlobalId und/oder Name in den geladenen Modellen finden. Jeder Treffer enthält, was getElement(), select() und frame() erwarten.',
     select: 'Ein Element auswählen und einpassen — per IFC-expressID oder per GlobalId (die auch sein Modell findet).',
     evSelected: 'Der Nutzer hat ein Element gewählt — mit GlobalId, passend zu Ihren eigenen Datensätzen.',
@@ -170,7 +170,7 @@ export const SDK_DOCS_V117 = {
   fr: {
     checkEir: "Vérifie la maquette avec un profil de validation EIR / BIM — un objet, son JSON (y compris la forme compacte) ou l'id d'un profil intégré comme 'builtin-en14351-1'. Compilé en IDS et exécuté par le même moteur : même IdsResult que checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') vérifie les performances déclarées des fenêtres et portes extérieures selon l'EN 14351-1 — vent, étanchéité à l'eau, acoustique, transmission thermique, g et τv, fabricant et code produit — dans les property sets IFC standard ; les règles EIR gagnent where (seulement les éléments ayant une valeur de propriété) et optional.",
-    setView: 'Voler vers une vue nommée de la scène — iso, front, back, left, right, top, bottom — avec toute la scène dans le cadre. Sans réponse (de 1.14 à 1.16 la visionneuse l’ignorait).',
+    setView: 'Voler vers une vue nommée de la scène — iso, front, back, left, right, top, bottom — avec toute la scène dans le cadre. Sans réponse (de 1.14 à 1.17 la visionneuse l’ignorait).',
     fitReset: 'Cadrer le modèle actif depuis l’angle actuel, avec une marge / réinitialiser la caméra.',
     camFrameEl: 'Cadrer un élément (expressID) : depuis l’angle actuel sauf si une vue est donnée. Rejette s’il n’est pas dans le modèle.',
     getElement: 'Par expressID ou GlobalId. Les données IFC d’un élément : attributs avec le GlobalId, ses jeux de propriétés et quantités, et ceux de son type — typeName, typeProperties — avec unités. effectivePropertySets fusionne les deux, la valeur propre de l’élément l’emporte.',
@@ -216,7 +216,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Figer aussi le contenu',
     verSriB: 'versions.json, à côté du SDK, liste le hash Subresource Integrity de chaque version :',
     chgTitle: 'Journal des modifications',
-    chg117: "1.17.0 — objets de catalogue dans une app hôte. getElement() renvoie le GlobalId et les données du type (typeName, typeProperties avec unités, effectivePropertySets ; types IFC4 et styles IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, et validate: true valide vraiment après chaque chargement. Cadrage automatique après chargement, fit() et frame() avec marge pour les petits objets, frame(elementId), et setView() déplace de nouveau la caméra. ui: 'embed' avec toolbar et tools. Versions figées sous /sdk/1.17.0/. findElements(), GlobalIds pour getElement() / select() / element-selected, jeux de dormant et d’ouvrant des fenêtres et portes, et matériaux du type ; en ui: 'embed' le panneau de propriétés garde l’objet choisi visible.",
+    chg118: "1.18.0 — objets de catalogue dans une app hôte. getElement() renvoie le GlobalId et les données du type (typeName, typeProperties avec unités, effectivePropertySets ; types IFC4 et styles IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, et validate: true valide vraiment après chaque chargement. Cadrage automatique après chargement, fit() et frame() avec marge pour les petits objets, frame(elementId), et setView() déplace de nouveau la caméra. ui: 'embed' avec toolbar et tools. Versions figées sous /sdk/1.18.0/. findElements(), GlobalIds pour getElement() / select() / element-selected, jeux de dormant et d’ouvrant des fenêtres et portes, et matériaux du type ; en ui: 'embed' le panneau de propriétés garde l’objet choisi visible.",
     findEl: 'Trouver des éléments par classe IFC, GlobalId et/ou nom dans les modèles chargés. Chaque résultat contient ce qu’attendent getElement(), select() et frame().',
     select: 'Sélectionner et cadrer un élément — par son expressID IFC ou par son GlobalId (qui trouve aussi son modèle).',
     evSelected: 'L’utilisateur a choisi un élément — avec son GlobalId, pour le relier à vos propres données.',
@@ -224,7 +224,7 @@ export const SDK_DOCS_V117 = {
   pt: {
     checkEir: "Verifica o modelo contra um perfil de validação EIR / BIM — um objeto, o seu JSON (incl. o formato compacto) ou o id de um perfil incorporado como 'builtin-en14351-1'. Compila para IDS e corre no mesmo motor: o mesmo IdsResult que checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') verifica o desempenho declarado de janelas e portas exteriores segundo a EN 14351-1 — vento, estanquidade à água, acústica, transmissão térmica, g e τv, fabricante e código do produto — em property sets IFC padrão; as regras EIR ganham where (só elementos com um valor de propriedade) e optional.",
-    setView: 'Voar para uma vista com nome da cena — iso, front, back, left, right, top, bottom — com toda ela no enquadramento. Sem resposta (entre 1.14 e 1.16 o visualizador ignorava-a).',
+    setView: 'Voar para uma vista com nome da cena — iso, front, back, left, right, top, bottom — com toda ela no enquadramento. Sem resposta (entre 1.14 e 1.17 o visualizador ignorava-a).',
     fitReset: 'Enquadrar o modelo ativo a partir do ângulo atual, com margem / repor a câmara.',
     camFrameEl: 'Enquadrar um elemento (expressID): a partir do ângulo atual, salvo se for indicada uma vista. Rejeita se não estiver no modelo.',
     getElement: 'Por expressID ou GlobalId. Os dados IFC de um elemento: atributos com o GlobalId, os seus conjuntos de propriedades e quantidades, e os do seu tipo — typeName, typeProperties — com unidades. effectivePropertySets junta ambos e prevalece o valor do próprio elemento.',
@@ -270,7 +270,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Fixe também o conteúdo',
     verSriB: 'versions.json, junto ao SDK, lista o hash Subresource Integrity de cada versão:',
     chgTitle: 'Registo de alterações',
-    chg117: "1.17.0 — objetos de catálogo numa app anfitriã. getElement() devolve o GlobalId e os dados do tipo (typeName, typeProperties com unidades, effectivePropertySets; tipos IFC4 e estilos IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, e validate: true valida mesmo após cada carregamento. Enquadramento automático após carregar, fit() e frame() com margem para objetos pequenos, frame(elementId), e setView() volta a mover a câmara. ui: 'embed' com toolbar e tools. Versões fixas em /sdk/1.17.0/. findElements(), GlobalIds em getElement() / select() / element-selected, conjuntos de aro e folha de janelas e portas, e os materiais do tipo; em ui: 'embed' o painel de propriedades mantém à vista o objeto escolhido.",
+    chg118: "1.18.0 — objetos de catálogo numa app anfitriã. getElement() devolve o GlobalId e os dados do tipo (typeName, typeProperties com unidades, effectivePropertySets; tipos IFC4 e estilos IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, e validate: true valida mesmo após cada carregamento. Enquadramento automático após carregar, fit() e frame() com margem para objetos pequenos, frame(elementId), e setView() volta a mover a câmara. ui: 'embed' com toolbar e tools. Versões fixas em /sdk/1.18.0/. findElements(), GlobalIds em getElement() / select() / element-selected, conjuntos de aro e folha de janelas e portas, e os materiais do tipo; em ui: 'embed' o painel de propriedades mantém à vista o objeto escolhido.",
     findEl: 'Encontrar elementos por classe IFC, GlobalId e/ou nome nos modelos carregados. Cada resultado traz o que getElement(), select() e frame() pedem.',
     select: 'Selecionar e enquadrar um elemento — pelo seu expressID IFC ou pelo GlobalId (que também encontra o modelo).',
     evSelected: 'O utilizador escolheu um elemento — com o seu GlobalId, para o cruzar com os seus registos.',
@@ -278,7 +278,7 @@ export const SDK_DOCS_V117 = {
   it: {
     checkEir: "Verifica il modello rispetto a un profilo di validazione EIR / BIM — un oggetto, il suo JSON (incl. la forma compatta) o l'id di un profilo integrato come 'builtin-en14351-1'. Compilato in IDS ed eseguito dallo stesso motore: stesso IdsResult di checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') verifica le prestazioni dichiarate di finestre e porte esterne secondo la EN 14351-1 — vento, tenuta all'acqua, acustica, trasmittanza termica, g e τv, fabbricante e codice prodotto — nei property set IFC standard; le regole EIR acquisiscono where (solo elementi con un valore di proprietà) e optional.",
-    setView: 'Vola a una vista con nome della scena — iso, front, back, left, right, top, bottom — con tutta la scena inquadrata. Senza risposta (tra 1.14 e 1.16 il viewer la ignorava).',
+    setView: 'Vola a una vista con nome della scena — iso, front, back, left, right, top, bottom — con tutta la scena inquadrata. Senza risposta (tra 1.14 e 1.17 il viewer la ignorava).',
     fitReset: 'Inquadra il modello attivo dall’angolazione attuale, con margine / reimposta la camera.',
     camFrameEl: 'Inquadra un elemento (expressID): dall’angolazione attuale salvo che sia indicata una vista. Rifiuta se non è nel modello.',
     getElement: 'Per expressID o GlobalId. I dati IFC di un elemento: attributi con il GlobalId, i suoi set di proprietà e quantità, e quelli del suo tipo — typeName, typeProperties — con unità. effectivePropertySets li unisce e vince il valore proprio dell’elemento.',
@@ -324,7 +324,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Fissa anche il contenuto',
     verSriB: 'versions.json, accanto all’SDK, elenca l’hash Subresource Integrity di ogni versione:',
     chgTitle: 'Registro delle modifiche',
-    chg117: "1.17.0 — oggetti di catalogo in un’app ospite. getElement() restituisce il GlobalId e i dati del tipo (typeName, typeProperties con unità, effectivePropertySets; tipi IFC4 e stili IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, e validate: true valida davvero dopo ogni caricamento. Inquadratura automatica dopo il caricamento, fit() e frame() con margine per oggetti piccoli, frame(elementId), e setView() muove di nuovo la camera. ui: 'embed' con toolbar e tools. Versioni fisse in /sdk/1.17.0/. findElements(), GlobalId in getElement() / select() / element-selected, set di telaio e anta di finestre e porte, e i materiali del tipo; in ui: 'embed' il pannello delle proprietà lascia in vista l’oggetto scelto.",
+    chg118: "1.18.0 — oggetti di catalogo in un’app ospite. getElement() restituisce il GlobalId e i dati del tipo (typeName, typeProperties con unità, effectivePropertySets; tipi IFC4 e stili IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, e validate: true valida davvero dopo ogni caricamento. Inquadratura automatica dopo il caricamento, fit() e frame() con margine per oggetti piccoli, frame(elementId), e setView() muove di nuovo la camera. ui: 'embed' con toolbar e tools. Versioni fisse in /sdk/1.18.0/. findElements(), GlobalId in getElement() / select() / element-selected, set di telaio e anta di finestre e porte, e i materiali del tipo; in ui: 'embed' il pannello delle proprietà lascia in vista l’oggetto scelto.",
     findEl: 'Trova elementi per classe IFC, GlobalId e/o nome nei modelli caricati. Ogni risultato ha ciò che chiedono getElement(), select() e frame().',
     select: 'Seleziona e inquadra un elemento — per expressID IFC o per GlobalId (che trova anche il suo modello).',
     evSelected: 'L’utente ha scelto un elemento — con il suo GlobalId, per collegarlo ai tuoi dati.',
@@ -332,7 +332,7 @@ export const SDK_DOCS_V117 = {
   ca: {
     checkEir: "Comprova el model amb un perfil de validació EIR / BIM — un objecte, el seu JSON (incl. el format compacte) o l'id d'un perfil integrat com 'builtin-en14351-1'. Compila a IDS i fa servir el mateix motor: el mateix IdsResult que checkIds.",
     chgEn14351: "checkEir('builtin-en14351-1') comprova les prestacions declarades de finestres i portes exteriors segons l'EN 14351-1 — vent, estanquitat a l'aigua, acústica, transmitància tèrmica, g i τv, fabricant i codi de producte — en property sets estàndard d'IFC; les regles EIR guanyen where (només elements amb un valor de propietat) i optional.",
-    setView: 'Vola a una vista amb nom de l’escena — iso, front, back, left, right, top, bottom — amb tota l’escena enquadrada. Sense resposta (entre 1.14 i 1.16 el visor la ignorava).',
+    setView: 'Vola a una vista amb nom de l’escena — iso, front, back, left, right, top, bottom — amb tota l’escena enquadrada. Sense resposta (entre 1.14 i 1.17 el visor la ignorava).',
     fitReset: 'Enquadra el model actiu des de l’angle actual, amb marge / reinicia la càmera.',
     camFrameEl: 'Enquadra un element (expressID): des de l’angle actual tret que s’indiqui una vista. Rebutja si no és al model.',
     getElement: 'Per expressID o per GlobalId. Les dades IFC d’un element: atributs amb el GlobalId, els seus conjunts de propietats i quantitats, i els del seu tipus — typeName, typeProperties — amb unitats. effectivePropertySets els combina i guanya el valor propi de l’element.',
@@ -378,7 +378,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'Fixa també el contingut',
     verSriB: 'versions.json, al costat de l’SDK, llista el hash Subresource Integrity de cada versió:',
     chgTitle: 'Registre de canvis',
-    chg117: "1.17.0 — objectes de catàleg en una app amfitriona. getElement() retorna el GlobalId i les dades del tipus (typeName, typeProperties amb unitats, effectivePropertySets; tipus IFC4 i estils IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, i validate: true valida de debò després de cada càrrega. Enquadrament automàtic després de carregar, fit() i frame() amb marge per a objectes petits, frame(elementId), i setView() torna a moure la càmera. ui: 'embed' amb toolbar i tools. Versions fixes a /sdk/1.17.0/. findElements(), GlobalIds a getElement() / select() / element-selected, conjunts de bastiment i fulla de finestres i portes, i els materials del tipus; a ui: 'embed' el panell de propietats deixa a la vista l’objecte triat.",
+    chg118: "1.18.0 — objectes de catàleg en una app amfitriona. getElement() retorna el GlobalId i les dades del tipus (typeName, typeProperties amb unitats, effectivePropertySets; tipus IFC4 i estils IFC2x3). validate(), getValidationStatus(), validation-started / validation-failed, i validate: true valida de debò després de cada càrrega. Enquadrament automàtic després de carregar, fit() i frame() amb marge per a objectes petits, frame(elementId), i setView() torna a moure la càmera. ui: 'embed' amb toolbar i tools. Versions fixes a /sdk/1.18.0/. findElements(), GlobalIds a getElement() / select() / element-selected, conjunts de bastiment i fulla de finestres i portes, i els materials del tipus; a ui: 'embed' el panell de propietats deixa a la vista l’objecte triat.",
     findEl: 'Cerca elements per classe IFC, GlobalId i/o nom als models carregats. Cada resultat porta el que demanen getElement(), select() i frame().',
     select: 'Selecciona i enquadra un element — pel seu expressID IFC o pel GlobalId (que també troba el seu model).',
     evSelected: 'L’usuari ha triat un element — amb el seu GlobalId, per creuar-lo amb els teus registres.',
@@ -386,7 +386,7 @@ export const SDK_DOCS_V117 = {
   zh: {
     checkEir: "按 EIR / BIM 校验配置检查模型——可传对象、其 JSON（含简写形式），或内置配置的 id，如 'builtin-en14351-1'。编译为 IDS，在同一引擎上运行：返回与 checkIds 相同的 IdsResult。",
     chgEn14351: "checkEir('builtin-en14351-1') 检查符合 EN 14351-1 的窗和外门的声明性能——抗风压、水密性、隔声、传热系数、g 与 τv、制造商与产品型号代码——基于标准 IFC 属性集；EIR 规则新增 where（仅检查具有某属性值的构件）和 optional。",
-    setView: '飞到场景的命名视图 —— iso、front、back、left、right、top、bottom —— 并让整个场景入画。无返回值（1.14 至 1.16 期间查看器会忽略它）。',
+    setView: '飞到场景的命名视图 —— iso、front、back、left、right、top、bottom —— 并让整个场景入画。无返回值（1.14 至 1.17 期间查看器会忽略它）。',
     fitReset: '从当前角度带边距地框选活动模型 / 重置相机。',
     camFrameEl: '框选单个构件（expressID）：未指定视图时保持当前角度。构件不在模型中时拒绝。',
     getElement: '按 expressID 或 GlobalId。构件的 IFC 数据：带 GlobalId 的属性、其属性集和工程量，以及其类型的数据 —— typeName、typeProperties —— 含单位。effectivePropertySets 合并两者，构件自身的值优先。',
@@ -432,7 +432,7 @@ export const SDK_DOCS_V117 = {
     verSriT: '同时固定内容',
     verSriB: 'SDK 旁的 versions.json 列出了每个版本的 Subresource Integrity 哈希：',
     chgTitle: '更新日志',
-    chg117: "1.17.0 —— 宿主应用中的目录对象。getElement() 返回 GlobalId 与类型数据（typeName、带单位的 typeProperties、effectivePropertySets；IFC4 类型与 IFC2x3 样式）。新增 validate()、getValidationStatus()、validation-started / validation-failed，validate: true 现在会在每次加载后真正校验。加载后自动框选，fit() 与 frame() 为小物体留出边距，frame(elementId)，setView() 重新可以移动相机。ui: 'embed' 支持 toolbar 与 tools。固定版本位于 /sdk/1.17.0/。新增 findElements()；getElement() / select() / element-selected 支持 GlobalId；门窗的框与扇属性集，以及类型的材料；在 ui: 'embed' 中属性面板会让选中的物体保持可见。",
+    chg118: "1.18.0 —— 宿主应用中的目录对象。getElement() 返回 GlobalId 与类型数据（typeName、带单位的 typeProperties、effectivePropertySets；IFC4 类型与 IFC2x3 样式）。新增 validate()、getValidationStatus()、validation-started / validation-failed，validate: true 现在会在每次加载后真正校验。加载后自动框选，fit() 与 frame() 为小物体留出边距，frame(elementId)，setView() 重新可以移动相机。ui: 'embed' 支持 toolbar 与 tools。固定版本位于 /sdk/1.18.0/。新增 findElements()；getElement() / select() / element-selected 支持 GlobalId；门窗的框与扇属性集，以及类型的材料；在 ui: 'embed' 中属性面板会让选中的物体保持可见。",
     findEl: '在已加载的模型中按 IFC 类、GlobalId 和/或名称查找构件。每个结果都包含 getElement()、select() 和 frame() 所需的信息。',
     select: '选中并框选构件 —— 按 IFC expressID，或按 GlobalId（同时找到其所属模型）。',
     evSelected: '用户选中了一个构件 —— 附带其 GlobalId，便于与你自己的数据对应。',
@@ -440,7 +440,7 @@ export const SDK_DOCS_V117 = {
   ja: {
     checkEir: "EIR / BIM 検証プロファイルでモデルをチェックします。オブジェクト、その JSON（省略形も可）、または 'builtin-en14351-1' のような組み込みプロファイルの id を渡せます。IDS にコンパイルされ同じエンジンで実行されるため、checkIds と同じ IdsResult を返します。",
     chgEn14351: "checkEir('builtin-en14351-1') は EN 14351-1 に基づく窓と外部ドアの宣言性能（耐風圧、水密性、遮音、熱貫流率、g と τv、製造者と製品型式コード）を標準 IFC プロパティセットでチェックします。EIR ルールに where（特定のプロパティ値を持つ要素のみ）と optional が加わりました。",
-    setView: 'シーンの名前付きビュー（iso、front、back、left、right、top、bottom）へ移動し、シーン全体を収めます。応答なし（1.14〜1.16 ではビューアが無視していました）。',
+    setView: 'シーンの名前付きビュー（iso、front、back、left、right、top、bottom）へ移動し、シーン全体を収めます。応答なし（1.14〜1.17 ではビューアが無視していました）。',
     fitReset: '現在の角度から余白付きでアクティブなモデルを収める / カメラをリセット。',
     camFrameEl: '1 つの要素（expressID）を収めます。ビューを指定しない限り現在の角度のまま。モデルにない場合は拒否します。',
     getElement: 'expressID または GlobalId で。要素の IFC データ：GlobalId を含む属性、プロパティセットと数量、そしてタイプのデータ（typeName、typeProperties）を単位付きで。effectivePropertySets は両者を統合し、要素自身の値が優先されます。',
@@ -486,7 +486,7 @@ export const SDK_DOCS_V117 = {
     verSriT: '内容も固定する',
     verSriB: 'SDK の隣にある versions.json に各バージョンの Subresource Integrity ハッシュがあります：',
     chgTitle: '変更履歴',
-    chg117: "1.17.0 — ホストアプリ内のカタログオブジェクト。getElement() が GlobalId とタイプのデータ（typeName、単位付き typeProperties、effectivePropertySets。IFC4 のタイプと IFC2x3 のスタイル）を返します。validate()、getValidationStatus()、validation-started / validation-failed を追加し、validate: true は読み込みごとに確実に検証します。読み込み後の自動フレーミング、小さな物体にも余白をとる fit() と frame()、frame(elementId)、setView() が再びカメラを動かします。ui: 'embed' と toolbar・tools。固定ビルドは /sdk/1.17.0/。findElements()、getElement() / select() / element-selected での GlobalId、窓とドアの枠・パネルのプロパティセット、タイプの材料を追加。ui: 'embed' ではプロパティパネルが選択したオブジェクトを隠しません。",
+    chg118: "1.18.0 — ホストアプリ内のカタログオブジェクト。getElement() が GlobalId とタイプのデータ（typeName、単位付き typeProperties、effectivePropertySets。IFC4 のタイプと IFC2x3 のスタイル）を返します。validate()、getValidationStatus()、validation-started / validation-failed を追加し、validate: true は読み込みごとに確実に検証します。読み込み後の自動フレーミング、小さな物体にも余白をとる fit() と frame()、frame(elementId)、setView() が再びカメラを動かします。ui: 'embed' と toolbar・tools。固定ビルドは /sdk/1.18.0/。findElements()、getElement() / select() / element-selected での GlobalId、窓とドアの枠・パネルのプロパティセット、タイプの材料を追加。ui: 'embed' ではプロパティパネルが選択したオブジェクトを隠しません。",
     findEl: '読み込んだモデルから IFC クラス、GlobalId、名前で要素を探します。各結果には getElement()、select()、frame() に渡す情報が含まれます。',
     select: '要素を選択して収めます — IFC の expressID、または GlobalId で（GlobalId ならモデルも特定されます）。',
     evSelected: 'ユーザーが要素を選択しました — 自社データと照合できるよう GlobalId 付き。',
@@ -494,7 +494,7 @@ export const SDK_DOCS_V117 = {
   th: {
     checkEir: "ตรวจแบบจำลองตามโปรไฟล์การตรวจสอบ EIR / BIM — เป็นออบเจกต์ JSON ของมัน (รวมรูปแบบย่อ) หรือ id ของโปรไฟล์ในตัว เช่น 'builtin-en14351-1' คอมไพล์เป็น IDS และทำงานบนเอนจินเดียวกัน: ได้ IdsResult รูปแบบเดียวกับ checkIds",
     chgEn14351: "checkEir('builtin-en14351-1') ตรวจสมรรถนะที่ประกาศของหน้าต่างและประตูภายนอกตาม EN 14351-1 — แรงลม การกันน้ำ เสียง ค่าการถ่ายเทความร้อน g และ τv ผู้ผลิตและรหัสผลิตภัณฑ์ — บน property set มาตรฐานของ IFC; กฎ EIR เพิ่ม where (เฉพาะองค์ประกอบที่มีค่าคุณสมบัติ) และ optional",
-    setView: 'บินไปยังมุมมองที่มีชื่อของฉาก — iso, front, back, left, right, top, bottom — ให้ทั้งฉากอยู่ในเฟรม ไม่มีการตอบกลับ (ตั้งแต่ 1.14 ถึง 1.16 ตัวแสดงผลเพิกเฉยต่อคำสั่งนี้)',
+    setView: 'บินไปยังมุมมองที่มีชื่อของฉาก — iso, front, back, left, right, top, bottom — ให้ทั้งฉากอยู่ในเฟรม ไม่มีการตอบกลับ (ตั้งแต่ 1.14 ถึง 1.17 ตัวแสดงผลเพิกเฉยต่อคำสั่งนี้)',
     fitReset: 'จัดเฟรมโมเดลที่ใช้งานจากมุมปัจจุบันพร้อมระยะขอบ / รีเซ็ตกล้อง',
     camFrameEl: 'จัดเฟรมชิ้นส่วนเดียว (expressID): จากมุมปัจจุบัน เว้นแต่ระบุมุมมอง ปฏิเสธหากไม่อยู่ในโมเดล',
     getElement: 'ด้วย expressID หรือ GlobalId ข้อมูล IFC ของชิ้นส่วน: แอตทริบิวต์พร้อม GlobalId ชุดคุณสมบัติและปริมาณ และของประเภท — typeName, typeProperties — พร้อมหน่วย effectivePropertySets รวมทั้งสองแบบโดยค่าของชิ้นส่วนเองมีผลเหนือกว่า',
@@ -540,7 +540,7 @@ export const SDK_DOCS_V117 = {
     verSriT: 'ตรึงเนื้อหาด้วย',
     verSriB: 'versions.json ข้าง SDK แสดงแฮช Subresource Integrity ของแต่ละเวอร์ชัน:',
     chgTitle: 'บันทึกการเปลี่ยนแปลง',
-    chg117: "1.17.0 — วัตถุแคตตาล็อกในแอปโฮสต์ getElement() คืน GlobalId และข้อมูลของประเภท (typeName, typeProperties พร้อมหน่วย, effectivePropertySets; ประเภทของ IFC4 และสไตล์ของ IFC2x3) เพิ่ม validate(), getValidationStatus(), validation-started / validation-failed และ validate: true ตรวจสอบจริงหลังการโหลดทุกครั้ง จัดเฟรมอัตโนมัติหลังโหลด fit() และ frame() มีระยะขอบสำหรับวัตถุขนาดเล็ก frame(elementId) และ setView() ขยับกล้องได้อีกครั้ง ui: 'embed' พร้อม toolbar และ tools บิลด์ที่ตรึงไว้อยู่ที่ /sdk/1.17.0/ เพิ่ม findElements(), GlobalId ใน getElement() / select() / element-selected, ชุดคุณสมบัติวงกบและบานของหน้าต่างและประตู และวัสดุของประเภท ใน ui: 'embed' แผงคุณสมบัติจะไม่บังวัตถุที่เลือก",
+    chg118: "1.18.0 — วัตถุแคตตาล็อกในแอปโฮสต์ getElement() คืน GlobalId และข้อมูลของประเภท (typeName, typeProperties พร้อมหน่วย, effectivePropertySets; ประเภทของ IFC4 และสไตล์ของ IFC2x3) เพิ่ม validate(), getValidationStatus(), validation-started / validation-failed และ validate: true ตรวจสอบจริงหลังการโหลดทุกครั้ง จัดเฟรมอัตโนมัติหลังโหลด fit() และ frame() มีระยะขอบสำหรับวัตถุขนาดเล็ก frame(elementId) และ setView() ขยับกล้องได้อีกครั้ง ui: 'embed' พร้อม toolbar และ tools บิลด์ที่ตรึงไว้อยู่ที่ /sdk/1.18.0/ เพิ่ม findElements(), GlobalId ใน getElement() / select() / element-selected, ชุดคุณสมบัติวงกบและบานของหน้าต่างและประตู และวัสดุของประเภท ใน ui: 'embed' แผงคุณสมบัติจะไม่บังวัตถุที่เลือก",
     findEl: 'ค้นหาชิ้นส่วนตามคลาส IFC, GlobalId และ/หรือชื่อ ในโมเดลที่โหลด แต่ละผลลัพธ์มีข้อมูลที่ getElement(), select() และ frame() ต้องการ',
     select: 'เลือกและจัดเฟรมชิ้นส่วน — ด้วย expressID ของ IFC หรือด้วย GlobalId (ซึ่งหาโมเดลให้ด้วย)',
     evSelected: 'ผู้ใช้เลือกชิ้นส่วน — พร้อม GlobalId เพื่อจับคู่กับข้อมูลของคุณเอง',

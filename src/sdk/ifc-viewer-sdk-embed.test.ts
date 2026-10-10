@@ -1,4 +1,4 @@
-// ─── SDK 1.17: catalogue objects in a host application ───────────────────────
+// ─── SDK 1.18: catalogue objects in a host application ───────────────────────
 // The wire side of what BESCOF-style hosts need: the `embed` preset and its
 // options, validate() and its events, framing an element, and the pinned
 // build finding the app from /sdk/<version>/.
@@ -35,12 +35,12 @@ function params(v: IfcViewer): URLSearchParams {
   return new URL(v.iframe.src).searchParams
 }
 
-describe('SDK 1.17 — embed preset and options', () => {
+describe('SDK 1.18 — embed preset and options', () => {
   beforeEach(mount)
 
-  it('is version 1.17.0', () => {
+  it('is version 1.18.0', () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
-    expect(v.version).toBe('1.17.0')
+    expect(v.version).toBe('1.18.0')
     v.dispose()
   })
 
@@ -80,7 +80,7 @@ describe('SDK 1.17 — embed preset and options', () => {
   })
 })
 
-describe('SDK 1.17 — validation', () => {
+describe('SDK 1.18 — validation', () => {
   beforeEach(mount)
 
   it('validate() asks the viewer and resolves with that model\'s result', async () => {
@@ -153,7 +153,7 @@ describe('SDK 1.17 — validation', () => {
   })
 })
 
-describe('SDK 1.17 — camera', () => {
+describe('SDK 1.18 — camera', () => {
   beforeEach(mount)
 
   it('frame(elementId, modelId) frames that element, from the current angle', async () => {
@@ -199,7 +199,7 @@ describe('SDK 1.17 — camera', () => {
   })
 })
 
-describe('SDK 1.17 — finding the product', () => {
+describe('SDK 1.18 — finding the product', () => {
   beforeEach(mount)
 
   it('findElements() is a query with the filters it was given', async () => {
@@ -248,12 +248,12 @@ describe('SDK 1.17 — finding the product', () => {
 describe('pinned build: the app above sdk/<version>/', () => {
   it('finds the app from the moving path and from the pinned one alike', () => {
     expect(appBaseUrlFor('https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js')).toBe('https://www.ifcvieweronline.eu/')
-    expect(appBaseUrlFor('https://www.ifcvieweronline.eu/sdk/1.17.0/ifc-viewer.es.js')).toBe('https://www.ifcvieweronline.eu/')
+    expect(appBaseUrlFor('https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js')).toBe('https://www.ifcvieweronline.eu/')
     expect(appBaseUrlFor('https://www.ifcvieweronline.eu/sdk/1.18.0-rc.1/ifc-viewer.es.js')).toBe('https://www.ifcvieweronline.eu/')
   })
 
   it('keeps a base path, and does not mistake other folders for versions', () => {
-    expect(appBaseUrlFor('https://cdn.host/viewer/sdk/1.17.0/ifc-viewer.es.js')).toBe('https://cdn.host/viewer/')
+    expect(appBaseUrlFor('https://cdn.host/viewer/sdk/1.18.0/ifc-viewer.es.js')).toBe('https://cdn.host/viewer/')
     expect(appBaseUrlFor('https://cdn.host/viewer/sdk/ifc-viewer.es.js')).toBe('https://cdn.host/viewer/')
     // a version-looking folder that is not under sdk/ is not the pinned layout
     expect(appBaseUrlFor('https://cdn.host/1.2.3/ifc-viewer.es.js')).toBe('https://cdn.host/')

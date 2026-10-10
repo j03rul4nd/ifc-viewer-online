@@ -481,7 +481,7 @@ describe('?layers= (data-layer setup)', () => {
   })
 })
 
-describe("the `embed` preset (SDK 1.17)", () => {
+describe("the `embed` preset (SDK 1.18)", () => {
   it('a compact toolbar with Validate and Measure, properties on selection, the rail scoped to properties, quiet', () => {
     const c = resolveEmbedChrome(parseAppUrlParams('?ui=embed'))
     expect(c).toMatchObject({

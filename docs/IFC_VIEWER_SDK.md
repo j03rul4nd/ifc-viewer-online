@@ -14,7 +14,7 @@ WASM weight is loaded by the iframe, not your bundle.
   `public/sdk/<version>/ifc-viewer.es.js`, and `public/sdk/versions.json` (also runs as part of `npm run build`)
 - Live demo + web docs: `/<base>/sdk/` (served from `public/sdk/index.html`)
 
-> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.17.0/ifc-viewer.es.js`.
+> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js`.
 > See [Versions, caching and compatibility](#versions-caching-and-compatibility).
 
 ## Quick start
@@ -49,7 +49,7 @@ Zero JavaScript — drop a tag into any page or dashboard:
 ```
 
 Attributes: `model`, `ui`, `lang`, `accent`, `validate`, `panel`, `base-url`, and since
-v1.17 `toolbar`, `tools`, `auto-frame`. Events are
+v1.18 `toolbar`, `tools`, `auto-frame`. Events are
 re-dispatched as DOM `CustomEvent`s named `ifcviewer:<type>` (`detail` = payload), and
 the underlying `IfcViewer` is on the element's `.viewer`:
 
@@ -73,11 +73,11 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | Option     | Type                                  | Default     | Notes |
 |------------|---------------------------------------|-------------|-------|
 | `baseUrl`  | string                                | auto        | App base URL. Auto-derived from the script URL. |
-| `ui`       | `'minimal'` \| `'full'` \| `'kiosk'` \| `'client'` \| `'article'` \| `'embed'` | `'minimal'` | Chrome preset. `client` is the stakeholder skin. `embed` (v1.17) is for a host app that supplies the file: 3D, properties on selection, a compact toolbar with Validate and Measure — no Open, Share, account or language. |
-| `toolbar`  | boolean                               | preset      | Show the toolbar. `false` leaves the 3D view and the panels (v1.17). |
-| `tools`    | `('validate' \| 'measure')[]`         | both        | The compact toolbar of `ui: 'embed'`; `[]` for none (v1.17). |
-| `autoFrame` | boolean                              | `true`      | Frame the whole scene from iso, with a margin, every time a load settles. `false` leaves the camera where the loader puts it (v1.17). |
-| `validate` | boolean                               | `true`      | Validate each model once it has loaded (drives the Health Score): `validation-started`, then `validation-completed` or `validation-failed`. Before v1.17 this flag was accepted but no validation ever ran for SDK loads. |
+| `ui`       | `'minimal'` \| `'full'` \| `'kiosk'` \| `'client'` \| `'article'` \| `'embed'` | `'minimal'` | Chrome preset. `client` is the stakeholder skin. `embed` (v1.18) is for a host app that supplies the file: 3D, properties on selection, a compact toolbar with Validate and Measure — no Open, Share, account or language. |
+| `toolbar`  | boolean                               | preset      | Show the toolbar. `false` leaves the 3D view and the panels (v1.18). |
+| `tools`    | `('validate' \| 'measure')[]`         | both        | The compact toolbar of `ui: 'embed'`; `[]` for none (v1.18). |
+| `autoFrame` | boolean                              | `true`      | Frame the whole scene from iso, with a margin, every time a load settles. `false` leaves the camera where the loader puts it (v1.18). |
+| `validate` | boolean                               | `true`      | Validate each model once it has loaded (drives the Health Score): `validation-started`, then `validation-completed` or `validation-failed`. Before v1.18 this flag was accepted but no validation ever ran for SDK loads. |
 | `panel`    | boolean                               | `false`     | Auto-open the validation panel. |
 | `lang`     | string                                | auto        | Force UI language (`en`, `es`, …). |
 | `accent`   | `#rrggbb`                             | brand       | Tint the viewer to match your dashboard. |
@@ -96,25 +96,25 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 |--------|-------------|
 | `add(name, bytes)` | Load IFC `ArrayBuffer`/`Uint8Array`. Returns `Promise<ModelLoadedEvent>`; rejects with the `model-error` message if the model fails to load or the load is cancelled. The buffer is transferred (detached) for zero-copy. |
 | `addFromUrl(url, name?)` | Load a public, CORS-enabled IFC URL. Returns `Promise<ModelLoadedEvent>`, and rejects the same way. The download reports real byte progress. |
-| `select(expressId \| globalId, modelId?)` | Select + frame an element by IFC expressID, or by GlobalId (v1.17; it also finds the model). |
+| `select(expressId \| globalId, modelId?)` | Select + frame an element by IFC expressID, or by GlobalId (v1.18; it also finds the model). |
 | `isolate(ifcType?)` | Isolate a category (e.g. `"IfcWall"`); omit to clear. |
-| `setView(view, scope?)` | Fly to a named view of the scene — `iso`·`front`·`back`·`left`·`right`·`top`·`bottom` — with all of it in frame. (Between v1.14 and v1.16 the viewer ignored it; fixed in v1.17.) |
-| `frame(options?)` / `frame(elementId, modelId?, options?)` | `Promise<{ scope }>` — frame the scene tightly (v1.14), or one element (v1.17): from the current angle unless a view or angles are given; rejects when the element is not in the model. |
-| `fit()` / `reset()` | Frame the active model from the current angle with a margin (v1.17; it was edge to edge) / reset the camera. |
+| `setView(view, scope?)` | Fly to a named view of the scene — `iso`·`front`·`back`·`left`·`right`·`top`·`bottom` — with all of it in frame. (Between v1.14 and v1.17 the viewer ignored it; fixed in v1.18.) |
+| `frame(options?)` / `frame(elementId, modelId?, options?)` | `Promise<{ scope }>` — frame the scene tightly (v1.14), or one element (v1.18): from the current angle unless a view or angles are given; rejects when the element is not in the model. |
+| `fit()` / `reset()` | Frame the active model from the current angle with a margin (v1.18; it was edge to edge) / reset the camera. |
 | `showAll()` | Restore full visibility (clear hidden elements + isolation). |
 | `setLanguage(lang)` | Change UI language at runtime. |
 | `clear()` | Cancel IFC loads still in flight, then remove all loaded models. |
 | `getLanguages()` | Supported language codes (reflects the iframe once ready). |
 | `getModels()` | `Promise<ModelSummary[]>` — the loaded models (`{ id, fileName, elementCount }`). |
-| `findElements({ ifcClass?, globalId?, name?, modelId?, limit? })` | `Promise<ElementSummary[]>` — `{ expressId, modelId, globalId, ifcClass, name, typeName }` per match, across the loaded models (v1.17). |
-| `getElement(expressId \| globalId, modelId?)` | `Promise<IfcElementData \| null>` — attributes with the `globalId`, the element's property/quantity sets, and its **type**'s: `typeName`, `typeProperties` (with units), `effectivePropertySets`. See [Catalogue objects](#catalogue-objects-in-a-host-app-v117). |
-| `validate(modelId?, { force? })` | `Promise<ValidationRunResult>` — validate now and resolve with that model's Health Score and counts (v1.17). |
-| `getValidation()` | `Promise<ValidationSummary \| null>` — the result on screen; see [Validation lifecycle](#validation-lifecycle-v117). |
-| `getValidationStatus()` | `Promise<ValidationStatus>` — `idle` · `running` (with progress) · `done` · `error` (v1.17). |
+| `findElements({ ifcClass?, globalId?, name?, modelId?, limit? })` | `Promise<ElementSummary[]>` — `{ expressId, modelId, globalId, ifcClass, name, typeName }` per match, across the loaded models (v1.18). |
+| `getElement(expressId \| globalId, modelId?)` | `Promise<IfcElementData \| null>` — attributes with the `globalId`, the element's property/quantity sets, and its **type**'s: `typeName`, `typeProperties` (with units), `effectivePropertySets`. See [Catalogue objects](#catalogue-objects-in-a-host-app-v118). |
+| `validate(modelId?, { force? })` | `Promise<ValidationRunResult>` — validate now and resolve with that model's Health Score and counts (v1.18). |
+| `getValidation()` | `Promise<ValidationSummary \| null>` — the result on screen; see [Validation lifecycle](#validation-lifecycle-v118). |
+| `getValidationStatus()` | `Promise<ValidationStatus>` — `idle` · `running` (with progress) · `done` · `error` (v1.18). |
 | `getStats()` | `Promise<StatsResult>` — per-category element counts per model (for charts). |
 | `getIssues(opts?)` | `Promise<IssuesResult>` — validation issues for a table (`{ severity?, limit?, modelId? }`). |
 | `checkIds(idsXml)` | `Promise<IdsResult>` — check the model against a buildingSMART **IDS** (`.ids` XML). |
-| `checkEir(profile)` | `Promise<IdsResult>` — check the model against an **EIR** profile: an object, its JSON, or a built-in id such as `'builtin-en14351-1'` (v1.17; see [Declared performance](#declared-performance-en-14351-1-v117)). Same result shape as `checkIds`. |
+| `checkEir(profile)` | `Promise<IdsResult>` — check the model against an **EIR** profile: an object, its JSON, or a built-in id such as `'builtin-en14351-1'` (v1.18; see [Declared performance](#declared-performance-en-14351-1-v118)). Same result shape as `checkIds`. |
 | `screenshot()` | `Promise<string>` — the current 3D view as a PNG data URL. |
 | `removeModel(modelId)` | Unload a specific model (see `getModels()`). |
 | `hideElements(ids, modelId?)` / `showElements(ids, modelId?)` | Hide / show a set of elements by expressID (defaults to the active model). |
@@ -137,11 +137,11 @@ Inside the iframe, every load is a job in the viewer's loading queue ([`MODEL_LO
 | `ready` | `{ languages }` — the viewer is mounted and ready |
 | `model-progress` | `{ percent, phase }`. `phase` is `reading` (download / identify / cache check), `parsing` (conversion) or `uploading` (cache write / scene attach). `percent` never goes backwards for a load, even across an automatic retry. Sent only while that load is still in progress, at most every 250 ms. It is an estimate over the load's real phases, not a timer |
 | `model-loaded` | `{ modelId, fileName, elementCount, fromCache }` |
-| `validation-started` | `{ modelId }` — a validation began (after a load with `validate: true`, or `validate()`) (v1.17) |
-| `validation-completed` | `{ qualityScore, errors, warnings, info, total, modelId }` — the Health Score; `modelId` is null for a federated aggregate (`total`, `modelId`: v1.17) |
-| `validation-failed` | `{ modelId, message }` — it could not run or did not finish (v1.17) |
+| `validation-started` | `{ modelId }` — a validation began (after a load with `validate: true`, or `validate()`) (v1.18) |
+| `validation-completed` | `{ qualityScore, errors, warnings, info, total, modelId }` — the Health Score; `modelId` is null for a federated aggregate (`total`, `modelId`: v1.18) |
+| `validation-failed` | `{ modelId, message }` — it could not run or did not finish (v1.18) |
 | `model-error` | `{ message, url?, name? }`. Sent for download failures, invalid or unparseable files, scene failures and cancelled loads (`message: 'Load cancelled'`). `url` for URL loads, `name` for byte/file loads |
-| `element-selected` | `{ expressId, modelId, ifcType, name, globalId }` (`globalId`: v1.17) |
+| `element-selected` | `{ expressId, modelId, ifcType, name, globalId }` (`globalId`: v1.18) |
 | `pointcloud-picked` | `{ cloudId, position, sourcePosition, classification, intensity, distance }` — armed with `inspectPointCloud()`. `sourcePosition` is the file's own coordinates, which is the number a survey record already holds |
 | `map-feature-picked` | `{ id, name?, label?, featureKind, heightM?, heightEstimated }` — a building in the OpenStreetMap surroundings. Context, not model: never validated, never exported, and `heightEstimated` is true far more often than not |
 | `walk-changed` | `{ active, speed }` — walk mode turned on or off, by the visitor (G / Esc) or the host (v1.11) |
@@ -299,7 +299,7 @@ await viewer.setMeasureTool('distance')
 viewer.on('measurements-changed', ({ items }) => console.table(items))
 ```
 
-## Catalogue objects in a host app (v1.17)
+## Catalogue objects in a host app (v1.18)
 
 A manufacturer's product page, a catalogue or a CDE record usually shows one
 object — a window, a door — whose data lives in its **type**: the
@@ -308,7 +308,7 @@ IFC2x3) carries `Pset_WindowCommon`, `Pset_ManufacturerTypeInformation` and the
 manufacturer's own sets, linked by `IfcRelDefinesByType`.
 
 ```js
-import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.17.0/ifc-viewer.es.js"
+import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js"
 
 const viewer = await IfcViewer.create("#product-3d", { ui: "embed", lang: "es" })
 await viewer.add("V-70-PR.ifc", bytes)                            // framed iso, with a margin
@@ -350,7 +350,7 @@ el.typeProperties  // [{ name: "Pset_WindowCommon", properties: [{ name: "Therma
 - Models converted and cached by an older build are converted again on their
   next load: the cache entry records the converter revision.
 
-### Declared performance: EN 14351-1 (v1.17)
+### Declared performance: EN 14351-1 (v1.18)
 
 `checkEir('builtin-en14351-1')` checks that a window or external door
 **declares** the essential characteristics of EN 14351-1:2006+A2:2016
@@ -389,7 +389,7 @@ res.specs.filter(s => s.status === "fail").map(s => s.name)
   elements with that value; booleans are `'true'` / `'false'`) and
   `optional: true` (no failure when the model has none).
 
-## Validation lifecycle (v1.17)
+## Validation lifecycle (v1.18)
 
 `validate: true` (the default) validates each model once it has loaded;
 `validate(modelId?)` does it on demand and resolves with that model's result.
@@ -499,7 +499,7 @@ viewer.on("element-selected", (e) => {
 | Path | Caching | Use |
 |------|---------|-----|
 | `/sdk/ifc-viewer.es.js` | revalidated on every load (`max-age=0, must-revalidate`) | trying things out — always the latest |
-| `/sdk/<version>/ifc-viewer.es.js` (e.g. `/sdk/1.17.0/`) | `public, max-age=31536000, immutable` | production — the code you tested is the code that runs |
+| `/sdk/<version>/ifc-viewer.es.js` (e.g. `/sdk/1.18.0/`) | `public, max-age=31536000, immutable` | production — the code you tested is the code that runs |
 
 - Both paths serve **the same file** for the current version: `scripts/sdk/version-sdk.mjs`
   copies the build into `public/sdk/<version>/` (with its `.d.ts`) and records its
@@ -519,7 +519,7 @@ viewer.on("element-selected", (e) => {
 
 ### Changelog
 
-- **1.17.0** — catalogue objects in a host app. `getElement()` returns the
+- **1.18.0** — catalogue objects in a host app. `getElement()` returns the
   `globalId` (it was always null) and the type's data (`typeName`,
   `typeProperties` with units, `effectivePropertySets`; IFC4 types and IFC2x3
   styles — before, `typeProperties` was always empty and even property values
@@ -534,6 +534,7 @@ viewer.on("element-selected", (e) => {
   materials. `checkEir('builtin-en14351-1')`, the declared performance of
   EN 14351-1 windows and external doors; EIR rules gain `where` and
   `optional`. Pinned builds at `/sdk/<version>/`.
+- **1.17.0** — scenes and data layers (`scene`, `openScene()`, `exportScene()`, `addLayer()`, `getTwin()`…).
 - **1.16.0** — `layers` option (data-layer setup).
 - **1.15.0** — the article kit (`lazy`, `poster`, `aspectRatio`, `turntable`, `bindSteps`…).
 - **1.14.0** — `ui: 'article'`, tight `frame()`.

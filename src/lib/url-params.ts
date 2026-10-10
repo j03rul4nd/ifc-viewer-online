@@ -515,7 +515,7 @@ const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   // a wheel that scrolls the page unless Ctrl/⌘ is held (`wheel=ctrl`). Tool
   // panels a host opens over the bridge (measure, sun, walk) still mount.
   article: { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: false, ...CANVAS },
-  // Inside a host application (v1.17, e.g. a manufacturer's product page):
+  // Inside a host application (v1.18, e.g. a manufacturer's product page):
   // the host supplies the file and owns sharing and accounts. The 3D view,
   // the properties of what the visitor clicks, and — in a compact toolbar —
   // Validate and Measure. No Open, Share, account or language controls, no
@@ -586,7 +586,7 @@ export type EmbedEventType =
   | 'model-progress'
   | 'validation-completed'
   // A queued validation (auto after load, or the SDK's validate()) started on
-  // a model / failed with a reason (SDK 1.17). Without the second a host
+  // a model / failed with a reason (SDK 1.18). Without the second a host
   // waiting for `validation-completed` would wait forever.
   | 'validation-started'
   | 'validation-failed'
