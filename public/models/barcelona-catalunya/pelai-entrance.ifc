@@ -5,10 +5,10 @@ FILE_NAME('','2026-10-01T14:11:04',(''),(''),'IfcOpenShell 0.9.0alpha0-8c614fa',
 FILE_SCHEMA(('IFC4X3_ADD2'));
 ENDSEC;
 DATA;
-#1=IFCPERSON($,$,'InGreen CDE demo',$,$,$,$,$);
-#2=IFCORGANIZATION($,'InGreen',$,$,$);
+#1=IFCPERSON($,$,'IFC Viewer Online demo',$,$,$,$,$);
+#2=IFCORGANIZATION($,'IFC Viewer Online',$,$,$);
 #3=IFCPERSONANDORGANIZATION(#1,#2,$);
-#4=IFCAPPLICATION(#2,'2.0','InGreen landmark builder (IfcOpenShell)','ingreen-landmark');
+#4=IFCAPPLICATION(#2,'2.0','Landmark builder (IfcOpenShell)','landmark-builder');
 #5=IFCOWNERHISTORY(#3,#4,$,.ADDED.,1790856664,#3,#4,1790856664);
 #6=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);
 #7=IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);

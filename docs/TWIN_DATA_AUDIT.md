@@ -7,20 +7,15 @@ worth to ifcvieweronline.eu, and what was checked rather than assumed. Audited
 
 ## 1. Where the package comes from
 
-The scripts describe themselves as tooling for another product: "CDE Scenes",
-"CDE-Frontend", a Luciad scene, connector services named `MW-TS-API-*`. Every IFC
-header names its author:
+The models and scripts were authored by the project's owner as illustrative demos for an
+earlier internal presentation. The scripts still name that presentation's tooling
+("CDE Scenes", connector services named `MW-TS-API-*`). None of it is a third party's
+model.
 
-```
-IFCPERSON($,$,'InGreen CDE demo',…)   IFCORGANIZATION($,'InGreen',…)
-IFCAPPLICATION(#2,'2.0','InGreen landmark builder (IfcOpenShell)','ingreen-landmark')
-```
-
-**Consequence.** Eight of these files are now published in `public/models/barcelona-catalunya/`
-(PR #213), header included. Whoever owns the InGreen material must be happy for it to
-be public on this site under these names. That has not been confirmed in writing. If it
-is not, the fix is mechanical: rewrite the three header entities (or remove the files
-and the Barcelona demo scene).
+The IFC headers carried that presentation's label. The copies published here name
+**IFC Viewer Online** instead (`IfcPerson`, `IfcOrganization` and `IfcApplication`;
+the three Helsinki project names lost "(… demo)" qualifiers of the old label). Nothing
+else in the files changed. Rewritten on 2026-10-10.
 
 ## 2. Inventory
 
@@ -85,14 +80,13 @@ from a browser origin instead of being taken on trust. The results are in
 
 | Opportunity | Value | Cost / blocker |
 |---|---|---|
-| Helsinki and Tokyo demo scenes | Shows the platform is not Barcelona-only. CRS and presets exist (Toei stations) | Few live sources with CORS near the Tokyo models; Helsinki sources (HSL, FMI) need adapters. Check the InGreen ownership first (§1) |
+| Helsinki and Tokyo demo scenes | Shows the platform is not Barcelona-only. CRS and presets exist (Toei stations) | Few live sources with CORS near the Tokyo models; Helsinki sources (HSL, FMI) need adapters |
 | ICGC Barcelona 3D mesh (3D Tiles) as a layer | Photogrammetric city instead of OSM blocks | Ellipsoidal heights (−49.7 m to orthometric), no licence declared on the tileset, a 3D Tiles renderer to add |
 | Helsinki LOD2 3D Tiles (kartta.hel.fi) | Official city model | Same renderer cost; licence not checked yet |
 | GSI 5 m laser DEM for Japan | Correct ground under the Tokyo models | A new DEM source (text tiles, z15) |
 
 ## 5. Risks
 
-- **Ownership of the IFCs** (§1).
 - **Provider fragility.** Every live source is a third party's free endpoint. FGC's
   Opendatasoft quota is 5 000 requests a day per IP. The BCN portal is slow. Licences
   differ, and Bicing declares none. The scene lists each source's attribution, and
