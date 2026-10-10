@@ -5,8 +5,11 @@
 // viewer.getFlood(), so none of it ships with the viewer.
 //
 //   prepare()  geometry → plan-view rasterisation → grid (+ report)
-//   start()    the worker solves; display frames update the water layer
-//   setView()  depth now / maximum, threshold, ground on/off
+//   start()    the worker solves (and keeps snapshots); live frames update the water
+//   seek() / setPlayback() / follow()   the timeline: any computed instant,
+//              replayed from the snapshots at a chosen speed, or the live run
+//   setProbing()  a click on the scene reads depth, speed, ground and the cell's history
+//   setView()  depth now / maximum / speed, threshold, flow particles, ground
 //   clear()    removes every layer and stops the worker
 
 import * as THREE from 'three'
@@ -17,7 +20,9 @@ import type { Hyetograph } from './core/hyetograph'
 import type { SolverParams } from './core/solver-api'
 import type { BackendChoice } from './gpu/create'
 import { FloodRunner, type RunnerEvents } from './worker/runner'
-import { fromGridLocal, planGrid, type PlanPoint } from './raster/frame'
+import type { SnapshotInfo } from './worker/protocol'
+import type { CellSeries } from './worker/snapshots'
+import { cellAt, fromGridLocal, planGrid, type GridPlan, type PlanPoint } from './raster/frame'
 import { proxyOf, rasterize } from './raster/rasterize'
 import { buildFloodGrid, type BuildReport, type PlaneGround } from './raster/build'
 import type { RoofRunoff } from './raster/rain-routing'
@@ -25,6 +30,8 @@ import { readDemFile, sampleDem, type DemRaster } from './raster/dem-import'
 import { affineFrom, elevationToSceneY, gridRotation, sceneToGrid, type FloodGeoref } from './raster/georef'
 import { WaterLayer, type WaterMode } from './view/water-layer'
 import { createGroundLayer } from './view/ground-layer'
+import { FlowParticles } from './view/flow-particles'
+import { fromHalf } from './core/half'
 
 const log = createLogger('Flood')
 
@@ -59,6 +66,11 @@ export interface FloodContext {
   setGridVisible?(visible: boolean): boolean
   /** Points the camera at a world box (the simulated area). */
   frameBox?(min: { x: number; y: number; z: number }, max: { x: number; y: number; z: number }): void
+  /** The viewer's camera and canvas, for the probe's clicks. */
+  camera?(): THREE.Camera
+  canvas?: HTMLElement
+  /** While true the viewer neither hovers nor selects: the probe owns the click. */
+  setPointerSuppressed?(on: boolean): void
 }
 
 export interface PrepareOptions {
@@ -104,6 +116,59 @@ export interface FloodView {
   threshold: number
   showGround: boolean
   visible: boolean
+  /** Flow streaks over the water. */
+  particles: boolean
+}
+
+/** One reading of the run, for the timeline's curves. */
+export interface TimelinePoint {
+  t: number
+  /** Area deeper than the threshold, m². */
+  area: number
+  /** Water on the surface, m³. */
+  volume: number
+  hMax: number
+}
+
+export interface TimelineState {
+  /** End of the event, s. */
+  endS: number
+  /** How far the solver has got, s. */
+  computedT: number
+  /** The instant on screen, s. */
+  viewT: number
+  /** Showing the live run (true) or a replayed instant (false). */
+  following: boolean
+  playing: boolean
+  /** Replay speed, simulated seconds per wall second. */
+  speed: number
+  computing: boolean
+  finished: boolean
+  snapshots: SnapshotInfo | null
+  /** Readings so far (shared array; read, do not keep). */
+  points: TimelinePoint[]
+}
+
+export interface ProbeResult {
+  i: number
+  j: number
+  x: number
+  z: number
+  /** The instant read, s. */
+  t: number
+  depth: number
+  speed: number
+  /** Deepest so far at that instant, m. */
+  peak: number
+  /** Scene Y of the ground as drawn. */
+  groundY: number
+  /** Absolute elevation of the ground, when the model states its datum. */
+  groundElevationM: number | null
+  obstacle: boolean
+  /** When the cell first got wet / reached its peak (whole run), s; null = never. */
+  wetAt: number | null
+  peakAt: number | null
+  series: CellSeries | null
 }
 
 export interface FloodSystemAPI {
@@ -115,6 +180,20 @@ export interface FloodSystemAPI {
   setView(v: Partial<FloodView>): void
   /** Camera on the simulated area. */
   frame(): void
+  /** Show a computed instant (stops following the live run). */
+  seek(t: number): void
+  /** Back to the live run. */
+  follow(): void
+  /** Replay from the snapshots at `speed` simulated s per wall s (or stop). */
+  setPlayback(playing: boolean, speed?: number): void
+  getTimeline(): TimelineState
+  /** Called (≤ 10 per second) when the timeline changes; returns an unsubscribe. */
+  subscribe(cb: (s: TimelineState) => void): () => void
+  /** While on, a click on the scene probes the water there. */
+  setProbing(on: boolean, onResult?: (r: ProbeResult | null) => void): void
+  /** Reads the water at a screen point (client coordinates). */
+  probe(clientX: number, clientY: number): Promise<ProbeResult | null>
+  clearProbe(): void
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -138,7 +217,88 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let groundWanted = false
   let gridWasVisible: boolean | null = null
   let extent: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null = null
-  const view: FloodView = { mode: 'now', threshold: 0.05, showGround: true, visible: true }
+  const view: FloodView = { mode: 'now', threshold: 0.05, showGround: true, visible: true, particles: true }
+  let particles: FlowParticles | null = null
+  let plan: GridPlan | null = null
+  let displayBed: Float32Array | null = null
+  let georef: FloodGeoref | null = null
+  // ── Timeline ──
+  const tl: TimelineState = {
+    endS: 0, computedT: 0, viewT: 0, following: true, playing: false, speed: 300,
+    computing: false, finished: false, snapshots: null, points: [],
+  }
+  const subscribers = new Set<(s: TimelineState) => void>()
+  let lastEmit = 0
+  let emitPending = false
+  let raf = 0
+  let lastTick = 0
+  let frameInFlight = false
+  let wantedT: number | null = null
+  // ── Probe ──
+  let marker: THREE.Group | null = null
+  let probeHandlers: { down: (e: PointerEvent) => void; up: (e: PointerEvent) => void } | null = null
+
+  function emit(force = false): void {
+    const now = performance.now()
+    if (!force && now - lastEmit < 100) {
+      if (!emitPending) {
+        emitPending = true
+        setTimeout(() => { emitPending = false; emit(true) }, 100)
+      }
+      return
+    }
+    lastEmit = now
+    for (const cb of subscribers) cb(tl)
+  }
+
+  /** Asks the worker for the frame at wantedT (one request at a time; the latest wins). */
+  function pumpFrame(): void {
+    if (frameInFlight || wantedT === null || !runner) return
+    const t = wantedT
+    wantedT = null
+    frameInFlight = true
+    void runner.frameAt(t).then((r) => {
+      frameInFlight = false
+      if (r?.data && !tl.following && water) {
+        water.setFrame(r.data)
+        ctx.requestRender()
+      }
+      pumpFrame()
+    })
+  }
+
+  function tick(now: number): void {
+    raf = 0
+    const dt = lastTick ? (now - lastTick) / 1000 : 0
+    lastTick = now
+    if (tl.playing) {
+      const limit = tl.finished ? tl.endS : tl.computedT
+      tl.viewT = Math.min(tl.viewT + dt * tl.speed, limit)
+      if (tl.viewT >= tl.endS - 1e-6 && tl.finished) tl.playing = false
+      wantedT = tl.viewT
+      pumpFrame()
+      emit()
+    }
+    if (particles && view.particles && view.visible && water) {
+      particles.step(dt)
+      ctx.requestRender()
+    }
+    if (tl.playing || (particles && view.particles && view.visible)) raf = requestAnimationFrame(tick)
+    else lastTick = 0
+  }
+
+  function wake(): void {
+    if (!raf) { lastTick = 0; raf = requestAnimationFrame(tick) }
+  }
+
+  function resetTimeline(endS: number): void {
+    Object.assign(tl, {
+      endS, computedT: 0, viewT: 0, following: true, playing: false,
+      computing: false, finished: false, snapshots: null, points: [],
+    })
+    wantedT = null
+    emit(true)
+  }
 
   async function modelMeshes(id: string): Promise<ModelMeshes | null> {
     const cached = geometry.get(id)
@@ -174,6 +334,9 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   }
 
   function removeLayers(): void {
+    particles?.dispose()
+    particles = null
+    removeMarker()
     water?.dispose()
     water = null
     if (gridWasVisible !== null) {
@@ -195,7 +358,71 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       water.setVisible(view.visible)
     }
     if (ground) ground.visible = view.visible && view.showGround && groundWanted
+    if (particles) {
+      particles.setThreshold(view.threshold)
+      particles.setVisible(view.visible && view.particles)
+    }
+    wake()
     ctx.requestRender()
+  }
+
+  function removeMarker(): void {
+    if (!marker) return
+    marker.removeFromParent()
+    marker.traverse((o) => {
+      const m = o as THREE.Mesh
+      m.geometry?.dispose()
+      ;(m.material as THREE.Material | undefined)?.dispose()
+    })
+    marker = null
+  }
+
+  function placeMarker(x: number, yGround: number, ySurface: number, z: number): void {
+    removeMarker()
+    const g = new THREE.Group()
+    g.name = 'flood-probe'
+    const top = Math.max(ySurface, yGround) + 2.5
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.95 })
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, top - yGround, 8), mat)
+    stem.position.set(x, (top + yGround) / 2, z)
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: 0x5e6ad2, depthTest: false }))
+    head.position.set(x, top, z)
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.75, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: 0.9 }))
+    ring.rotation.x = -Math.PI / 2
+    ring.position.set(x, ySurface + 0.02, z)
+    for (const m of [stem, head, ring]) { m.renderOrder = 20; m.raycast = () => { /* not pickable */ } }
+    g.add(stem, head, ring)
+    ctx.scene.add(g)
+    marker = g
+    ctx.requestRender()
+  }
+
+  /** Where a screen ray meets the grid's surface (water or ground), iterating on the heightfield. */
+  function hitGrid(clientX: number, clientY: number): { x: number; z: number; i: number; j: number } | null {
+    const cam = ctx.camera?.()
+    const canvas = ctx.canvas
+    if (!cam || !canvas || !plan || !displayBed || !water) return null
+    const rect = canvas.getBoundingClientRect()
+    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+    const ray = new THREE.Raycaster()
+    ray.setFromCamera(ndc, cam)
+    const frame = water.frameData
+    let y = displayBed[Math.floor(plan.ny / 2) * plan.nx + Math.floor(plan.nx / 2)]
+    let hit: { x: number; z: number; i: number; j: number } | null = null
+    for (let k = 0; k < 6; k++) {
+      const d = ray.ray.direction
+      if (Math.abs(d.y) < 1e-6) return null
+      const s = (y - ray.ray.origin.y) / d.y
+      if (s < 0) return null
+      const x = ray.ray.origin.x + d.x * s
+      const z = ray.ray.origin.z + d.z * s
+      const c = cellAt(plan, x, z)
+      if (!c) return hit
+      hit = { x, z, ...c }
+      const idx = c.j * plan.nx + c.i
+      y = displayBed[idx] + Math.max(0, fromHalf(frame[idx * 4]))
+    }
+    return hit
   }
 
   const api: FloodSystemAPI = {
@@ -203,6 +430,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       runner?.dispose()
       runner = null
       removeLayers()
+      resetTimeline(0)
+      georef = o.georef ?? null
       const ids = ctx.getLoadedModelIds()
       if (!ids.length) throw new Error('flood: no model loaded')
       // Models unloaded since the last study take their geometry with them.
@@ -242,10 +471,11 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       if (!points.length) throw new Error('flood: the models have no extent')
       const tGeo = performance.now()
 
-      const plan = planGrid({
+      const gp = planGrid({
         points, rotation: o.georef ? gridRotation(o.georef) : 0,
         marginM: o.marginM, cellM: o.cellM, maxCells: o.maxCells,
       })
+      plan = gp
 
       // The map: its buildings as obstacles, its terrain as ground.
       const geo = ctx.getGeo()
@@ -266,8 +496,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const mapDrawn = useMap ? (x: number, z: number) => geo!.groundHeightAt(x, z) : null
       if (mapTrue) {
         // The terrain can sit well below or above the models (a valley, a hill).
-        for (const [i, j] of [[0, 0], [plan.nx, 0], [0, plan.ny], [plan.nx, plan.ny], [plan.nx / 2, plan.ny / 2]]) {
-          const c = fromGridLocal(plan.frame, i * plan.dx, j * plan.dx)
+        for (const [i, j] of [[0, 0], [gp.nx, 0], [0, gp.ny], [gp.nx, gp.ny], [gp.nx / 2, gp.ny / 2]]) {
+          const c = fromGridLocal(gp.frame, i * gp.dx, j * gp.dx)
           const y = mapDrawn!(c.x, c.z)
           if (y !== null && Number.isFinite(y)) { yMin = Math.min(yMin, y); yMax = Math.max(yMax, y) }
         }
@@ -285,8 +515,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         else {
           const crs = await import('../../lib/geo/crs')
           const modelCrs = g.epsg ? crs.resolveCrs(g.epsg) : null
-          const corners = [[0, 0], [plan.nx, 0], [0, plan.ny], [plan.nx, plan.ny]].map(([i, j]) => {
-            const c = fromGridLocal(plan.frame, i * plan.dx, j * plan.dx)
+          const corners = [[0, 0], [gp.nx, 0], [0, gp.ny], [gp.nx, gp.ny]].map(([i, j]) => {
+            const c = fromGridLocal(gp.frame, i * gp.dx, j * gp.dx)
             return sceneToGrid(g, c.x, c.z)
           })
           const box = {
@@ -308,7 +538,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
             }, box)
           }
           let mode: ReturnType<typeof demCrsFor> = 'assumed'
-          const pad = 4 * plan.dx
+          const pad = 4 * gp.dx
           const dem: DemRaster = await readDemFile(o.demFile, (epsg) => {
             mode = demCrsFor(epsg)
             if (typeof mode === 'function') {
@@ -344,14 +574,14 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
 
       o.onStage?.('raster')
       const raster = rasterize({
-        renderer: ctx.renderer, plan, terrain, obstacles: [...obstacles, ...proxies],
+        renderer: ctx.renderer, plan: gp, terrain, obstacles: [...obstacles, ...proxies],
         yMin: Math.min(yMin, groundY) - 5, yMax: Math.max(yMax, groundY) + 5,
       })
       const tRaster = performance.now()
 
       o.onStage?.('terrain')
       const built = buildFloodGrid({
-        plan, raster,
+        plan: gp, raster,
         ground: { dem: demFn, map: mapTrue, mapDrawn, plane },
         roofRunoff: o.roofRunoff, manning: o.manning,
       })
@@ -361,21 +591,28 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       o.onStage?.('layers')
       grid = built.grid
       {
-        const cs = [[0, 0], [plan.nx, 0], [0, plan.ny], [plan.nx, plan.ny]].map(([i, j]) => fromGridLocal(plan.frame, i * plan.dx, j * plan.dx))
+        const cs = [[0, 0], [gp.nx, 0], [0, gp.ny], [gp.nx, gp.ny]].map(([i, j]) => fromGridLocal(gp.frame, i * gp.dx, j * gp.dx))
         extent = {
           min: { x: Math.min(...cs.map((c) => c.x)), y: built.report.zMin, z: Math.min(...cs.map((c) => c.z)) },
           max: { x: Math.max(...cs.map((c) => c.x)), y: Math.max(built.report.zMax, yMax), z: Math.max(...cs.map((c) => c.z)) },
         }
       }
-      water = new WaterLayer({ nx: plan.nx, ny: plan.ny, dx: plan.dx, frame: plan.frame, displayBed: built.displayBed })
+      water = new WaterLayer({ nx: gp.nx, ny: gp.ny, dx: gp.dx, frame: gp.frame, displayBed: built.displayBed })
       ctx.scene.add(water.object)
+      displayBed = built.displayBed
+      particles = new FlowParticles({
+        renderer: ctx.renderer, nx: gp.nx, ny: gp.ny, dx: gp.dx, frame: gp.frame,
+        frameTexture: water.frameTexture, bedTexture: water.bedTexture,
+        count: Math.min(65536, Math.max(8192, Math.round(gp.nx * gp.ny / 4))),
+      })
+      ctx.scene.add(particles.object)
       if (ctx.setGridVisible) gridWasVisible = ctx.setGridVisible(false)
       // Draw the ground only where the scene has none of its own.
       groundWanted = built.report.terrain === 'plane' || built.report.terrain === 'dem'
       if (groundWanted && !(info?.relief && useMap)) {
-        const bed = new Float32Array(plan.nx * plan.ny)
+        const bed = new Float32Array(gp.nx * gp.ny)
         for (let c = 0; c < bed.length; c++) bed[c] = built.grid.z[c] + built.grid.zRef
-        ground = createGroundLayer({ nx: plan.nx, ny: plan.ny, dx: plan.dx, frame: plan.frame, bed, blocked: built.grid.blocked })
+        ground = createGroundLayer({ nx: gp.nx, ny: gp.ny, dx: gp.dx, frame: gp.frame, bed, blocked: built.grid.blocked })
         ctx.scene.add(ground)
       }
       applyView()
@@ -400,16 +637,42 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const copy: FloodGrid = {
         ...g, z: g.z.slice(), blocked: g.blocked.slice(), rainFactor: g.rainFactor.slice(), manning: g.manning.slice(), h0: g.h0?.slice(),
       }
+      resetTimeline(o.durationS)
+      tl.computing = true
       runner = new FloodRunner({
         ...ev,
         onFrame: (f) => {
-          water?.setFrame(f.data)
-          ctx.requestRender()
+          tl.computedT = Math.max(tl.computedT, f.t)
+          if (tl.following) {
+            water?.setFrame(f.data)
+            tl.viewT = f.t
+            ctx.requestRender()
+          }
+          emit()
           ev.onFrame?.(f)
+        },
+        onStats: (st, perf) => {
+          const last = tl.points[tl.points.length - 1]
+          if (!last || st.t > last.t) tl.points.push({ t: st.t, area: st.floodedArea, volume: st.volume, hMax: st.hMax })
+          tl.computedT = Math.max(tl.computedT, st.t)
+          emit()
+          ev.onStats?.(st, perf)
+        },
+        onSnapshots: (info) => {
+          tl.snapshots = info
+          emit()
+          ev.onSnapshots?.(info)
+        },
+        onState: (x) => {
+          tl.computing = x.running
+          if (x.finished) { tl.finished = true; tl.computedT = tl.endS }
+          emit(true)
+          ev.onState?.(x)
         },
       })
       runner.init({ grid: copy, hyetograph: o.hyetograph, params: o.params, endS: o.durationS, backend: o.backend })
       runner.play(o.speed)
+      wake()
     },
 
     play(speed) { runner?.play(speed) },
@@ -424,14 +687,107 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       if (extent) ctx.frameBox?.(extent.min, extent.max)
     },
 
+    seek(t) {
+      tl.following = false
+      tl.viewT = Math.max(0, Math.min(t, tl.finished ? tl.endS : tl.computedT))
+      wantedT = tl.viewT
+      pumpFrame()
+      emit(true)
+    },
+
+    follow() {
+      tl.following = true
+      tl.playing = false
+      tl.viewT = tl.computedT
+      runner?.requestFrame()
+      emit(true)
+    },
+
+    setPlayback(playing, speed) {
+      if (speed !== undefined) tl.speed = speed
+      if (playing) {
+        tl.following = false
+        if (tl.finished && tl.viewT >= tl.endS - 1e-6) tl.viewT = 0
+      }
+      tl.playing = playing && !!runner
+      wake()
+      emit(true)
+    },
+
+    getTimeline() { return tl },
+
+    subscribe(cb) {
+      subscribers.add(cb)
+      return () => { subscribers.delete(cb) }
+    },
+
+    setProbing(on, onResult) {
+      const canvas = ctx.canvas
+      if (probeHandlers && canvas) {
+        canvas.removeEventListener('pointerdown', probeHandlers.down, true)
+        canvas.removeEventListener('pointerup', probeHandlers.up, true)
+        probeHandlers = null
+      }
+      ctx.setPointerSuppressed?.(on)
+      if (canvas) canvas.style.cursor = on ? 'crosshair' : ''
+      if (!on || !canvas) return
+      let down: { x: number; y: number; t: number } | null = null
+      probeHandlers = {
+        down: (e) => { if (e.button === 0) down = { x: e.clientX, y: e.clientY, t: performance.now() } },
+        up: (e) => {
+          if (!down || e.button !== 0) return
+          const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y)
+          const long = performance.now() - down.t > 400
+          down = null
+          if (moved > 5 || long) return // a camera drag, not a probe
+          void api.probe(e.clientX, e.clientY).then((r) => onResult?.(r))
+        },
+      }
+      canvas.addEventListener('pointerdown', probeHandlers.down, true)
+      canvas.addEventListener('pointerup', probeHandlers.up, true)
+    },
+
+    async probe(clientX, clientY) {
+      const hit = hitGrid(clientX, clientY)
+      if (!hit || !plan || !displayBed || !water || !grid) return null
+      const c = hit.j * plan.nx + hit.i
+      const f = water.frameData
+      const depth = Math.max(0, fromHalf(f[c * 4]))
+      const groundY = displayBed[c]
+      placeMarker(hit.x, groundY, groundY + depth, hit.z)
+      const elevation = georef && georef.heightM !== null ? georef.heightM + (grid.z[c] + grid.zRef - georef.coordination.y) * georef.scale : null
+      const r = runner
+      const [series, mx] = r ? await Promise.all([r.cellSeries(c), r.maxFields()]) : [null, null]
+      return {
+        i: hit.i, j: hit.j, x: hit.x, z: hit.z, t: tl.viewT,
+        depth,
+        speed: Math.hypot(fromHalf(f[c * 4 + 1]), fromHalf(f[c * 4 + 2])),
+        peak: Math.max(depth, fromHalf(f[c * 4 + 3])),
+        groundY,
+        groundElevationM: elevation,
+        obstacle: grid.blocked[c] === 1,
+        wetAt: mx && mx.tWet[c] >= 0 ? mx.tWet[c] : null,
+        peakAt: mx && mx.hMax[c] > 0 ? mx.tPeak[c] : null,
+        series: series && series.t.length ? series : null,
+      }
+    },
+
+    clearProbe() {
+      removeMarker()
+    },
+
     isPrepared() { return grid !== null },
 
     clear() {
+      api.setProbing(false)
       runner?.dispose()
       runner = null
       removeLayers()
       grid = null
       extent = null
+      plan = null
+      displayBed = null
+      resetTimeline(0)
       ctx.requestRender()
     },
 

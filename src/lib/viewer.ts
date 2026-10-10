@@ -1480,6 +1480,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
   let geoPointerSuppressed = false
+  /** The flood probe owns the click (no hover, no selection) while it is armed. */
+  let floodPointerSuppressed = false
   // Move/turn handle — created on first use (lib/scene-gizmo).
   let sceneGizmo: SceneGizmo | null = null
   /** Grouping pushed by the app; the default for framing calls without one. */
@@ -2441,7 +2443,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     aimAt(e)
-    if (geoPointerSuppressed) return // map placement editor owns the pointer
+    if (geoPointerSuppressed || floodPointerSuppressed) return // the map placement editor / the flood probe owns the pointer
 
     // Section handles first (they only answer while the section panel is
     // open), then the measurement tool. Both draw their own pointer feedback,
@@ -2502,7 +2504,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerUp = (e: PointerEvent): void => {
-    if (geoPointerSuppressed) return   // map placement editor owns the pointer
+    if (geoPointerSuppressed || floodPointerSuppressed) return   // the map placement editor / the flood probe owns the pointer
     // A short click on a gizmo axis would otherwise select the element behind
     // it — and swap the active model out from under the handle being used.
     if (pressOnGizmo) { pressOnGizmo = false; return }
@@ -4891,6 +4893,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
           requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true },
           setGridVisible: (v) => self.setGridVisible(v),
+          camera: () => world.camera.three,
+          canvas: world.renderer!.three.domElement,
+          setPointerSuppressed: (on) => { floodPointerSuppressed = on },
           frameBox: (min, max) => {
             tuneSceneToBounds(new THREE.Box3(new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, max.y, max.z)))
             const cam = world.camera.three as THREE.PerspectiveCamera

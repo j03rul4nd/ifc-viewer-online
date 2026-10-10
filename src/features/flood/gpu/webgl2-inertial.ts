@@ -189,7 +189,13 @@ export class WebGl2InertialSolver implements FloodSolver {
       units(u, ['uQ', 'uPrev', 'uCtrl'])
       gl.uniform1i(u.uNx, nx); gl.uniform1i(u.uNy, ny); gl.uniform1i(u.uW, this.bndW); gl.uniform1f(u.uDx, g.dx)
     })
-    set('cont', (u) => { units(u, ['uQ', 'uCells', 'uMax', 'uStatic', 'uCtrl']); geo(u); gl.uniform1f(u.uWet, p.wetThreshold) })
+    set('cont', (u) => {
+      units(u, ['uQ', 'uCells', 'uMax', 'uStatic', 'uCtrl'])
+      geo(u)
+      gl.uniform1f(u.uWet, p.wetThreshold)
+      const inf = p.infiltration
+      gl.uniform3f(u.uInf, inf?.initialMmH ?? 0, inf?.finalMmH ?? 0, inf?.decayPerHour ?? 0)
+    })
     set('reduce', (u) => { units(u, ['uSrc']); gl.uniform1f(u.uWet, p.wetThreshold) })
 
     this.reduceHmax()
@@ -405,6 +411,9 @@ export class WebGl2InertialSolver implements FloodSolver {
     const top = this.reduce(this.sLevels, this.cells[0], 2, 3)
     await this.finish()
     const s = this.readFloat(top, 4)
+    // The same levels again, for the infiltrated depth (cells.w).
+    const infTop = this.reduce(this.sLevels, this.cells[0], 4, 3)
+    const sumInf = this.readFloat(infTop, 4)[0]
     const bnd = this.readFloat(this.bnd[0], 1)
     for (let k = 0; k < this.nb; k++) this.outflow += bnd[k]
     // Restart the per-read boundary accumulators (see the WebGPU solver).
@@ -417,6 +426,7 @@ export class WebGl2InertialSolver implements FloodSolver {
     const a = this.grid.dx * this.grid.dx
     const volume = s[0] * a
     const rainVolume = depthFromRates(this.rates, this.ivMs, ctrl[0]) * this.rainArea
+    const infiltratedVolume = sumInf * a
     return {
       t: ctrl[0] / 1000,
       dt: ctrl[1] > 0 ? ctrl[1] / 1000 : this.lastDt,
@@ -425,8 +435,9 @@ export class WebGl2InertialSolver implements FloodSolver {
       floodedArea: s[1] * a,
       rainVolume,
       outflowVolume: this.outflow,
+      infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
     }
   }
 
