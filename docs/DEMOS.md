@@ -163,6 +163,13 @@ live values are painted into PNGs, clips and GIFs):
 - The Endolla binding is matched **by position**: the IFC's EVSE ids are
   illustrative, so the bays take the state of the real location 3762 next to
   them, not of a real EVSE id.
+- One OpenStreetMap outline is hidden by the scene (`view.hide`): way 909097448,
+  a 7 × 7 m car-park entrance in the square tagged only `building=yes`. With no
+  height, the district's height prior draws it at the typical 19 m of the
+  neighbourhood, a tower in the middle of the square. Small untagged buildings
+  are not reliably low in Barcelona (measured: those under 60 m² have a median
+  of 18.8 m, most of them narrow old-town buildings), so the prior was left
+  alone and this one outline is hidden instead.
 - **Open Data BCN is slow**: it can take 15–40 s to answer and sometimes rejects
   concurrent requests (the app retries with backoff). Traffic and EV layers may
   appear late.

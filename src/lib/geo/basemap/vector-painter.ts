@@ -51,6 +51,13 @@ export interface PaintOptions {
    * the screen-space label layer. Line labels (streets) stay on the ground.
    */
   collectPoints?: (cands: LabelCandidate[]) => void
+  /**
+   * Bake line labels (street names) into the tile. Default true. The relief
+   * drape turns it off: it is painted at ~2 m per pixel, so a 12 px street
+   * name lies on the ground 20 m tall, a smear across a street near the
+   * camera (Chuo-dori across Tochōmae), and no smaller size would be legible.
+   */
+  groundLabels?: boolean
 }
 
 /** One raster source's pieces for this tile, positioned in canvas fractions. */
@@ -463,6 +470,6 @@ export function paintTile(ctx: CanvasRenderingContext2D, style: MapStyle, frames
     }
     o.collectPoints(out)
   }
-  const kept = placeLabels(onGround, o.width, o.height, 2, o.pixelScale)
+  const kept = o.groundLabels === false ? [] : placeLabels(onGround, o.width, o.height, 2, o.pixelScale)
   for (const c of kept) drawLabel(ctx, c, o, family)
 }

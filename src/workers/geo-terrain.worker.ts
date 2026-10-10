@@ -398,8 +398,9 @@ function vectorTile(template: string, z: number, x: number, y: number): Promise<
 
 /**
  * Paint one 256 px drape slot (XYZ tile z/x/y) with the basemap's painter.
- * Place names are NOT baked: the screen-space label layer already names
- * them, and a baked copy would sit on the relief under the real one.
+ * No text is baked. Place names are left to the screen-space label layer,
+ * which already names them (a baked copy would sit under the real one), and
+ * street names cannot be legible at the drape's ~2 m per pixel.
  */
 async function paintVectorSlot(
   target: OffscreenCanvasRenderingContext2D, v: VectorDrape,
@@ -423,6 +424,7 @@ async function paintVectorSlot(
     pixelScale: 1.25,
     language: v.language,
     collectPoints: () => {},
+    groundLabels: false,
   })
   target.drawImage(slot, dx, dy)
 }
