@@ -91,7 +91,8 @@
     "coarsened": "La zone est grande pour cette taille de cellule : cellules élargies à {{dx}} m.",
     "planeWarn": "Pas de données de terrain ici : le sol est un plan à Y = {{y}} m. Importez un MNT ou activez la carte avec relief pour obtenir un terrain réel.",
     "coarseDem": "Ici, le relief de la carte provient de la mosaïque mondiale (données à ≈30 m) : il ne voit ni les rues ni les bordures de trottoir. Un MNT importé donne un meilleur résultat.",
-    "frame": "Cadrer"
+    "frame": "Cadrer",
+    "canopyWarn": "La plupart des bâtiments apparaissent surélevés (auvents) : rien ne touche le sol dessous, l'eau passerait donc en dessous. S'il s'agit d'une discipline d'un ensemble fédéré, comme le modèle d'architecture, chargez aussi son modèle de structure (dalles, murs de sous-sol)."
   },
   "source": {
     "ifc": "Terrain de l'IFC",

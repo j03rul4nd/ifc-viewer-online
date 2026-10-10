@@ -91,7 +91,8 @@
     "coarsened": "L'àrea és gran per a aquesta mida de cel·la: cel·les ampliades a {{dx}} m.",
     "planeWarn": "Aquí no hi ha dades de terreny: el terra és un pla a Y = {{y}} m. Importa un MDT o activa el mapa amb relleu per tenir-ne un de real.",
     "coarseDem": "Aquí el relleu del mapa ve del mosaic global (dades de ≈30 m): no veu carrers ni vorades. Un MDT importat dona un resultat millor.",
-    "frame": "Enquadra"
+    "frame": "Enquadra",
+    "canopyWarn": "La major part dels edificis es llegeix com a elevada (marquesines): res no arriba al terra sota seu, així que l'aigua hi passaria per sota. Si és una disciplina d'un conjunt federat, com el model d'arquitectura, carrega també el seu model estructural (lloses, murs de soterrani)."
   },
   "source": {
     "ifc": "Terreny de l'IFC",

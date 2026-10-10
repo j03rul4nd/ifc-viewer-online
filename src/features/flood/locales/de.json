@@ -91,7 +91,8 @@
     "coarsened": "Die Fläche ist für diese Zellgröße zu groß: Zellen auf {{dx}} m vergrößert.",
     "planeWarn": "Hier gibt es keine Geländedaten: Der Boden ist eine Ebene bei Y = {{y}} m. Importieren Sie ein DGM oder schalten Sie die Karte mit Relief ein, um ein echtes Gelände zu erhalten.",
     "coarseDem": "Das Kartenrelief stammt hier aus dem globalen Mosaik (Daten mit ≈30 m Auflösung): Straßen und Bordsteine sind darin nicht erfasst. Ein importiertes DGM liefert ein besseres Ergebnis.",
-    "frame": "Einpassen"
+    "frame": "Einpassen",
+    "canopyWarn": "Die meisten Gebäude erscheinen angehoben (Vordächer): Nichts reicht unter ihnen bis zum Boden, Wasser würde also darunter durchfließen. Ist dies eine Disziplin eines föderierten Satzes, etwa das Architekturmodell, laden Sie auch das Tragwerksmodell (Decken, Kellerwände)."
   },
   "source": {
     "ifc": "IFC-Gelände",

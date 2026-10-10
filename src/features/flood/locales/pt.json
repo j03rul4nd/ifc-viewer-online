@@ -91,7 +91,8 @@
     "coarsened": "A área é grande para este tamanho de célula: células alargadas para {{dx}} m.",
     "planeWarn": "Não há dados de terreno aqui: o solo é um plano a Y = {{y}} m. Importe um DEM ou ative o mapa com relevo para obter um terreno real.",
     "coarseDem": "O relevo do mapa vem aqui do mosaico global (dados de ≈30 m): não distingue ruas nem lancis. Um DEM importado dá um resultado melhor.",
-    "frame": "Enquadrar"
+    "frame": "Enquadrar",
+    "canopyWarn": "A maior parte dos edifícios aparece elevada (palas): nada chega ao chão por baixo deles, por isso a água passaria por baixo. Se for uma disciplina de um conjunto federado, como o modelo de arquitetura, carregue também o seu modelo estrutural (lajes, muros de cave)."
   },
   "source": {
     "ifc": "Terreno do IFC",

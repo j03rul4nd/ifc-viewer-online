@@ -91,7 +91,8 @@
     "coarsened": "The area is large for this cell size: cells widened to {{dx}} m.",
     "planeWarn": "No terrain data here: the ground is a plane at Y = {{y}} m. Import a DEM or turn on the map with relief for a real one.",
     "coarseDem": "The map's relief here comes from the global mosaic (≈30 m data): it does not see streets or kerbs. An imported DEM gives a better result.",
-    "frame": "Frame it"
+    "frame": "Frame it",
+    "canopyWarn": "Most of the buildings read as raised (canopies): nothing reaches the ground under them, so water would run beneath. If this is one discipline of a federated set, such as the architecture model, load its structural model too (slabs, basement walls)."
   },
   "source": {
     "ifc": "IFC terrain",

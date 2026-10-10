@@ -91,7 +91,8 @@
     "coarsened": "El área es grande para este tamaño de celda: celdas ampliadas a {{dx}} m.",
     "planeWarn": "Aquí no hay datos de terreno: el suelo es un plano a Y = {{y}} m. Importa un DEM o activa el mapa con relieve para tener uno real.",
     "coarseDem": "El relieve del mapa viene aquí del mosaico global (datos de ≈30 m): no ve calles ni bordillos. Un DEM importado da mejor resultado.",
-    "frame": "Encuadrar"
+    "frame": "Encuadrar",
+    "canopyWarn": "La mayor parte de los edificios se lee como elevada (marquesinas): nada llega al suelo bajo ellos, así que el agua pasaría por debajo. Si es una disciplina de un conjunto federado, como el modelo de arquitectura, carga también su modelo estructural (losas, muros de sótano)."
   },
   "source": {
     "ifc": "Terreno del IFC",

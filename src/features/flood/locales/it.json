@@ -91,7 +91,8 @@
     "coarsened": "L'area è grande per questa dimensione di cella: celle allargate a {{dx}} m.",
     "planeWarn": "Qui non ci sono dati del terreno: il suolo è un piano a Y = {{y}} m. Importa un DTM o attiva la mappa con il rilievo per averne uno reale.",
     "coarseDem": "Qui il rilievo della mappa proviene dal mosaico globale (dati a ≈30 m): non vede strade né cordoli. Un DTM importato dà un risultato migliore.",
-    "frame": "Inquadra"
+    "frame": "Inquadra",
+    "canopyWarn": "La maggior parte degli edifici risulta sollevata (pensiline): nulla tocca il suolo sotto di essi, quindi l'acqua ci passerebbe sotto. Se è una disciplina di un insieme federato, come il modello architettonico, carica anche il suo modello strutturale (solai, muri del seminterrato)."
   },
   "source": {
     "ifc": "Terreno dell'IFC",

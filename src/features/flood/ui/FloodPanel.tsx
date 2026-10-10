@@ -521,6 +521,10 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                 <StatRow label={t('report.obstacles')} value={`${rep.obstacleCells.toLocaleString()} · ${t('report.canopies', { n: rep.canopyCells.toLocaleString() })}`} />
                 <StatRow label={t('report.relief')} value={`${fmt(rep.zMin, 1)} … ${fmt(rep.zMax, 1)} m`} />
                 {rep.coarsened && <Notice tone="info">{t('report.coarsened', { dx: fmt(rep.dx, 2) })}</Notice>}
+                {/* Most of the buildings raised off the ground: water would run under them. Measured
+                    on the Hotel Vela's architecture model alone (176 walls, 702 canopies): its slabs
+                    and basement walls live in the structural model of the set. */}
+                {rep.canopyCells > 50 && rep.canopyCells > rep.obstacleCells && <Notice tone="warn">{t('report.canopyWarn')}</Notice>}
                 {rep.terrain === 'plane' && <Notice tone="warn">{t('report.planeWarn', { y: fmt(rep.planeY, 2) })}</Notice>}
                 {rep.mapTerrain?.source === 'terrarium' && <Notice tone="warn">{t('report.coarseDem')}</Notice>}
                 {rep.dem?.notes.map((n) => <Notice key={n} tone={n === 'reprojected' || n === 'sameCrs' ? 'muted' : 'warn'}>{t(`demNote.${n}`)}</Notice>)}
