@@ -37,7 +37,7 @@
 // PURE: numbers in, numbers out. No THREE, no scene, no viewer.
 
 import {
-  WEB_MERCATOR_WORLD_M, cosLatScale, latLonToNormalized, mapYawRad,
+  WEB_MERCATOR_WORLD_M, cosLatScale, latLonToNormalized, mapYawRad, groundAnchorY,
 } from './geo-math'
 import type { GeoPlacement } from './geo-types'
 
@@ -95,10 +95,63 @@ export function sceneOfLatLon(
   }
 }
 
+/**
+ * How much a satellite must turn (scene yaw about +Y, radians) to stand the
+ * way its own georeference says. The map is turned for the ANCHOR's rotation,
+ * so a model drawn in a frame rotated differently — Helsinki Cathedral sits
+ * 3° off the bus terminal next to it — would otherwise be shown turned by the
+ * difference: ~2 m at the ends of an 80 m building. Rotations are the
+ * placements' true-north ones, counter-clockwise from east.
+ */
+export function satelliteYaw(anchor: GeoPlacement, satellite: GeoPlacement): number {
+  let d = ((satellite.rotationDeg - anchor.rotationDeg) * Math.PI) / 180
+  while (d > Math.PI) d -= 2 * Math.PI
+  while (d < -Math.PI) d += 2 * Math.PI
+  return d
+}
+
+/**
+ * The pivot position that turns a model to `yawRad` about the world point
+ * `about` (x/z) while that point stays put. Pivot yaw is about the pivot's own
+ * origin; a satellite 700 m from it would otherwise swing across the city.
+ */
+export function pivotForYaw(
+  pivot: { x: number; z: number }, currentYawRad: number, yawRad: number, about: { x: number; z: number },
+): { x: number; z: number } {
+  // About +Y: x' = x cos θ + z sin θ, z' = −x sin θ + z cos θ.
+  const dx = about.x - pivot.x, dz = about.z - pivot.z
+  const c0 = Math.cos(-currentYawRad), s0 = Math.sin(-currentYawRad)
+  const lx = dx * c0 + dz * s0, lz = -dx * s0 + dz * c0
+  const c1 = Math.cos(yawRad), s1 = Math.sin(yawRad)
+  return { x: about.x - (lx * c1 + lz * s1), z: about.z - (-lx * s1 + lz * c1) }
+}
+
 /** The bit of a model's bounds this module needs. Structural, to avoid imports. */
 export interface BoundsLike {
   center: { x: number; y: number; z: number }
   size: { x: number; y: number; z: number }
+}
+
+export interface SatelliteOptions {
+  /**
+   * World Y of the satellite's own origin — the ground floor its file states a
+   * height for. Without it the model is stood on its bounding-box bottom,
+   * which for a building with a basement is the underside of its foundations
+   * (measured: the Hotel Vela's structure, -9.8 m deep, came out 9.8 m above
+   * its architecture).
+   */
+  originY?: number | null
+  /**
+   * World position of that origin. With it, `floorAt` is asked about the
+   * ground under the ORIGIN once moved — where the stated height applies —
+   * rather than under the middle of the bounding box.
+   */
+  origin?: { x: number; y: number; z: number } | null
+  /**
+   * Scene Y the satellite's floor should land on, given the x/z it lands at.
+   * Default: the map plane plus the file's stated height (the old rule).
+   */
+  floorAt?: (x: number, z: number, placement: GeoPlacement) => number
 }
 
 /**
@@ -109,20 +162,37 @@ export interface BoundsLike {
  * viewer's per-model transform takes, and because a delta composes with a
  * manual nudge instead of silently discarding one.
  *
- * The vertical term uses the model's own `minY`, not its centre: a building is
- * placed by the ground it stands on, and two towers of different heights
- * sharing a centre elevation would float one and bury the other.
+ * The vertical term uses the model's FLOOR — its origin when that is near the
+ * geometry (groundAnchorY, the rule the anchor already follows), else its
+ * bounding-box bottom: a building is placed by the ground it stands on, and
+ * two towers of different heights sharing a centre elevation would float one
+ * and bury the other.
  */
 export function satelliteOffset(
-  frame: AnchorFrame, placement: GeoPlacement, bounds: BoundsLike,
+  frame: AnchorFrame, placement: GeoPlacement, bounds: BoundsLike, opts: SatelliteOptions = {},
 ): ScenePoint {
   const target = sceneOfLatLon(frame, placement.lat, placement.lon, placement.heightOffsetM)
   const minY = bounds.center.y - bounds.size.y / 2
-  return {
-    x: target.x - bounds.center.x,
-    y: target.y - minY,
-    z: target.z - bounds.center.z,
-  }
+  const floor = groundAnchorY(minY, opts.originY)
+  const dx = target.x - bounds.center.x
+  const dz = target.z - bounds.center.z
+  const at = opts.origin ? { x: opts.origin.x + dx, z: opts.origin.z + dz } : target
+  const floorY = opts.floorAt ? opts.floorAt(at.x, at.z, placement) : target.y
+  return { x: dx, y: floorY - floor, z: dz }
+}
+
+/**
+ * Files of ONE project share an origin — the same IfcMapConversion (ARC, STR
+ * and MEP of a building). Their geometry already agrees in scene coordinates,
+ * so they move as one: whatever transform the anchor has, they get. Placing
+ * each by its own bounding box instead reintroduces errors the files do not
+ * have (half a metre of mercator scale between centres, and the floor rule
+ * above, applied to three different bottoms).
+ */
+export function sameOriginOffset(
+  anchorPivot: { x: number; y: number; z: number }, pivot: { x: number; y: number; z: number },
+): ScenePoint {
+  return { x: anchorPivot.x - pivot.x, y: anchorPivot.y - pivot.y, z: anchorPivot.z - pivot.z }
 }
 
 /**

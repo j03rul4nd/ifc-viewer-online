@@ -649,6 +649,128 @@ reason the vector basemap is the default.
 - **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
   calls. Low-poly on purpose; at map scale a tree is a silhouette.
 
+### How high a georeferenced IFC stands (2026-10)
+
+`vertical-frame.ts`, `dem-sources.ts`, `multi-placement.ts`, applied in
+`geo-system.applyPlacement`/`placeSatellites`.
+
+- **Elevation source by site.** `dem-sources.ts` picks the ICGC *Model d'Elevacions
+  del Terreny 5 m* inside Catalonia, GSI DEM10B inside Japan (six boxes that leave
+  out Korea and Vladivostok), and the global terrarium mosaic elsewhere. ICGC and
+  GSI are bare earth, so the lower-envelope opening (meant to strip buildings from a
+  surface model) is skipped for them. Measured over Pl. Catalunya, the ICGC model
+  agreed with the stated `OrthogonalHeight` of eight surveyed IFCs within
+  ±0.5 m at their origins. The global mosaic was 7–15 m high there.
+- **A file states the height of its origin (H). The ground there has a height
+  (E).** The floor goes `H − E` above the ground **under the origin**, not under
+  the middle of the bounding box: a monument's sunken steps or a metro
+  entrance's stair put those 1–3 m apart. If H and E differ by more than 5 m
+  (`DEM_AGREEMENT_M`), the DEM is not believed and the model is stood on the
+  terrain. A model is never sunk: a DEM above the stated floor also stands it
+  on the ground. Before this, every model was raised H above the map, as if the
+  ground everywhere were at sea level, so Pl. Catalunya floated 15–19 m up.
+  The coast (Hotel Vela, H 2.5 over a quay at ~2.7) was right only by luck.
+- **The ground is the same with or without relief.** With terrain on, E comes
+  from the patch. Without it, a single DEM sample is used
+  (`elevation.sampleElevation`). Switching terrain never moves the building.
+- **Files of one project move as one.** Satellites whose georeference matches
+  the anchor's (same `IfcMapConversion`, `georefKey` from the App resolver) get
+  exactly the anchor's transform. Before this, the Hotel Vela's architecture
+  and structure were placed by their own bounding boxes and floated 8.4 and
+  9.8 m above its MEP, by the depth of their basements.
+- **Other satellites stand on their own origin**, on the terrain under it plus
+  their own `H − E` (on the flat map, level with the anchor's floor).
+- **Satellite placement is computed from the file, not from where it was
+  moved.** The resolver strips the satellite offset from the bounds before
+  `placementFromExtraction`. Reading the moved bounds as project coordinates
+  made every re-placement (a pan, a terrain rebuild) push the model one offset
+  further. Measured: 250 m per call.
+- **DEV:** `__geoVerticalDebug()` returns the last decision: stated H, the lift
+  applied, the anchor model and its origin, and the DEM values used.
+
+### Where things land in plan: one projection for everything (2026-10)
+
+Everything drawn on the map has to be projected the way the map projects:
+normalized spherical Web Mercator, scaled by `W·cos φ0` at the anchor and turned
+by the anchor's rotation (`composeGeoRootTransform`). Tiles, terrain, OSM buildings,
+roads and trees live inside `geoRoot`, so they get this for free.
+`sceneOfLatLon` (satellites) and `lonLatToScene` (data layers) compute the same
+thing by hand, and a test keeps them equal to the millimetre
+(`map-alignment.test.ts`). Three things did not follow the rule before this:
+
+- **Data layers used an ellipsoidal tangent plane.** That plane is true ground
+  metres, but the map is not: away from the anchor the two part by 1.5 m/km
+  east–west and 2.4 m/km north–south at Barcelona. A point 4 km out sat 6–10 m
+  off its pavement, depending on the direction, and 12–24 m at 8 km (the far
+  Bicing stations). Now `lonLatToScene` uses
+  `mapOffsetFrom`. Scans in another grid (`gridToScene`, not the same grid) keep
+  true metres, like the IFC: both are measured, not drawn.
+- **IfcMapConversion's rotation is from grid north; the map's is from true
+  north.** The two differ by the meridian convergence of the projection at the
+  site (`gridConvergence`): −0.55° at Barcelona in UTM 31N, which is about 1 m at
+  the far end of a 100 m model. `placementFromExtraction` now subtracts it, so the
+  Barcelona demo models (whose conversions carry exactly that convergence) stand
+  at 0.0001°.
+- **Satellites were never turned.** The map turns for the ANCHOR's rotation, and
+  a satellite drawn in a frame rotated differently showed up turned by the
+  difference. Helsinki Cathedral is 3° off the bus terminal that anchors its
+  scene, which is about 2 m at its corners. `placeSatellites` now turns each
+  satellite by `satelliteYaw` (its rotation minus the anchor's) about its own
+  centre (`pivotForYaw`) before translating it. The anchor's own project files
+  (`georefKey`) stay unturned, like the anchor.
+- **The relief drape was mirrored north–south** (2026-08-25 to 2026-10-10). The
+  terrain worker sends the drape already flipped, because WebGL ignores
+  `UNPACK_FLIP_Y` for an ImageBitmap. When `applyDrape` started copying it into
+  a canvas (d0a264d, the Kyoto "black hole" fix), `CanvasTexture`'s default
+  `flipY` flipped it a second time. The map under the relief was then mirrored
+  about the patch's centre row: right near the anchor, wrong by twice the
+  distance further out. Helsinki Cathedral, 700 m from its anchor, stood on the
+  South Harbour, which is really 345 m south of it. Under Plaça Catalunya there
+  were Eixample blocks. The flat basemap tiles were always right, so it showed
+  only with relief on, which is what `map=terrain` and every demo scene use.
+  `applyDrape` now sets `flipY = false`, and `geo-terrain.test.ts` pins it.
+- **The relief drape bakes no text.** It is painted at about 2 m per pixel (GSI
+  DEM10B stops at z14, so the drape is z16), and a 12 px street name lay on
+  the ground 20 m tall: "Chuo-dori" smeared across the foreground at
+  Tochōmae. No smaller size would be legible. Place names were already left
+  to the screen-space label layer; street names are now left out of the
+  drape too (`groundLabels: false`). The flat basemap still bakes them, at
+  its own sharp resolution.
+
+How to check it, in the dev build: draw the OSM street centrelines from the
+OSM API (`/api/0.6/map.json?bbox=…`, CORS-open, unlike a rate-limited Overpass)
+as thin meshes through `sceneOfLatLon`, at `groundHeightAt` + 0.3 m, and look
+straight down with `?camera=x,h,z+0.5,x,0,z`. Every street must sit on its
+basemap street, with relief on and off. Set the line height from the ground
+under each line, not a fixed y: with the camera 170 m up, 10 m of height error
+shows as a visible scale change. `__ifcViewer` (DEV) exposes the viewer API for
+bounds, transforms and element boxes.
+
+Measured in the running app after the fix, IFC elements against the OSM
+feature they model, both projected as the map draws them:
+
+| Scene | Element | OSM | Off |
+|---|---|---|---|
+| Barcelona | Fonts Bessones | r21286243 | 0.1 m |
+| Barcelona | Canaletes fountain column | n430607924 | 0.08 m |
+| Barcelona | Macià monument | w128230182 | 0.3 m |
+| Barcelona | Pelai glass kiosk | n4582874448 (metro entrance) | 0.38 m |
+| Helsinki | Cathedral walls, centre | w1542850662 | 0.56 m, 0.37° |
+| Helsinki | Station walls, west and south faces | w122595198 | 1.3 m and 0.6 m |
+| Tokyo | Tochōmae zelkova (placed from OSM) | n1701045771 | 0.26 m |
+| Tokyo | Tochōmae exit A4, model origin | n1701108900 | 0.01 m |
+| Tokyo | Waseda tracks 1 and 2, centre | w37866121, w180140467 | 1.16 m, 0.14 m |
+
+Layer points against the map, all of them: 543 Bicing, 134 Endolla and 10 air
+quality points, up to 8.2 km from the anchor, were all 0.00 mm from where the map
+puts their coordinates. `geoRoot` against `sceneOfLatLon`, at points up to 5 km out,
+also gave 0.00 mm.
+
+What is left is the models' own accuracy. Hand-made IFCs drawn from OSM sit within
+about 1 m and 0.5° of it, and so does OSM itself against the ground. The Helsinki
+station's walls are drawn 2.40° off its local axes while the OSM outline is at
+2.85°.
+
 ### Buildings: why Overpass, and the usage rules
 
 Footprints come from the **Overpass API**, not from a free 3D-buildings tile

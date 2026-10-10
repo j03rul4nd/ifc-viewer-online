@@ -16,6 +16,8 @@
 // FRESHNESS: when the data was produced, how long it stays valid, and a
 // fingerprint to skip rebuilding when nothing changed.
 
+import { parseCellTime } from './table-transforms'
+
 export type FeedKind = 'geojson' | 'gbfs' | 'gtfs-rt' | 'ods' | 'wfs' | 'join'
 
 export interface Freshness {
@@ -94,7 +96,9 @@ export function plannedDelayMs(intervalS: number, f: Freshness | null, now = Dat
 export function detectFeedKind(url: string, body?: unknown): FeedKind {
   if (/\/gbfs(\.json)?$|gbfs\/v?[\d.]+\/gbfs/i.test(url)) return 'gbfs'
   if (/\/api\/explore\/v2(\.\d)?\/catalog\/datasets\//i.test(url)) return 'ods'
-  if (/gtfs-?rt|vehicle_?positions|tripupdates|trip_updates/i.test(url)) return 'gtfs-rt'
+  if (/gtfs-?rt|gtfs\/realtime|vehicle_?positions|tripupdates|trip_updates/i.test(url)) return 'gtfs-rt'
+  // A WFS stored query (FMI) is one fixed request, not a service to browse.
+  if (/[?&]storedquery_id=/i.test(url)) return 'geojson'
   if (/[?&]service=wfs/i.test(url) || /\/wfs\b/i.test(url)) return 'wfs'
   if (body && typeof body === 'object') {
     const b = body as Record<string, unknown>
@@ -285,20 +289,39 @@ export function odsGeoJsonUrl(
 /**
  * Newest timestamp in a table column, when it holds machine timestamps:
  * 14-digit compact (20261008171601, Barcelona's traffic), ISO 8601, or epoch.
- * Interpreted as LOCAL time when no zone is given — city feeds publish in
- * their own time.
+ * A time without an offset is read in `timeZone` when the source names one
+ * (its own city's zone: a viewer in Tokyo must not shift Barcelona by 7 h),
+ * else as the viewer's local time.
  */
-export function tableTime(values: string[]): number | null {
+export function tableTime(values: string[], timeZone?: string): number | null {
   let best: number | null = null
   for (const raw of values.slice(0, 2000)) {
     const v = raw.trim()
     let t = NaN
-    const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(v)
-    if (m) t = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
-    else if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(v)) t = Date.parse(v.replace(' ', 'T'))
-    else if (/^\d{10}$/.test(v)) t = Number(v) * 1000
-    else if (/^\d{13}$/.test(v)) t = Number(v)
+    if (timeZone) t = parseCellTime(v, timeZone)
+    else {
+      const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(v)
+      if (m) t = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime()
+      else if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(v)) t = Date.parse(v.replace(' ', 'T'))
+      else if (/^\d{10}$/.test(v)) t = Number(v) * 1000
+      else if (/^\d{13}$/.test(v)) t = Number(v)
+    }
     if (Number.isFinite(t) && (best === null || t > best)) best = t
   }
   return best
+}
+
+/**
+ * How long to wait before asking again after a TRANSIENT refusal — 429 or a
+ * 5xx — or null to stop. Measured on Barcelona's open-data portal: four
+ * requests at once from one browser (a scene opening) drew an error on one of
+ * them that a second request a few seconds later did not. Two retries, short,
+ * jittered so several layers do not come back in step; `Retry-After` is
+ * honoured when the server sends one (and is reasonable).
+ */
+export function transientRetryMs(res: { status: number; headers: Headers }, attempt: number, random = Math.random): number | null {
+  if (attempt >= 2 || !(res.status === 429 || (res.status >= 500 && res.status <= 504))) return null
+  const ra = Number(res.headers.get('retry-after'))
+  if (Number.isFinite(ra) && ra > 0 && ra <= 20) return ra * 1000
+  return Math.round(1500 * 2 ** attempt * (0.85 + random() * 0.3))
 }

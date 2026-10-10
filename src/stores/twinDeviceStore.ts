@@ -29,7 +29,16 @@ function load(): Persisted {
   return { v: 1, sources: [], bindings: [] }
 }
 
+/**
+ * Off while a shared scene supplies the twin: its sources and bindings belong
+ * to the link, and the visitor's own saved twin must survive it untouched
+ * (the same rule `?layers=` follows for data layers).
+ */
+let persistEnabled = true
+export function setTwinPersistence(enabled: boolean): void { persistEnabled = enabled }
+
 function save(sources: DeviceSource[], bindings: Binding[]): void {
+  if (!persistEnabled) return
   try {
     if (sources.length === 0 && bindings.length === 0) localStorage.removeItem(LS_KEY)
     else localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, sources, bindings }))
@@ -197,3 +206,7 @@ export const useTwinDeviceStore = create<TwinDeviceState>()(devtools((set, get) 
 
 /** What the scene shows: the past while time-travelling, else live readings. */
 export const selectShownReadings = (s: TwinDeviceState): Map<string, Reading> => s.past ?? s.readings
+
+// DEV: the live store for QA from the console — import('/src/…') can hand back a
+// second instance after an edit (see __ifcLayersDebug).
+if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__ifcTwinStore = useTwinDeviceStore

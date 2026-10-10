@@ -21,13 +21,16 @@ const BORDER = 'rgba(255,255,255,0.15)'
 const FG = '#ffffff'
 const NEUTRAL = '#94a3b8'
 
-/** Paint the pills. Returns true when at least one was drawn. */
-export function paintTwinLabels(ctx: CanvasRenderingContext2D, width: number, height: number, s: number, labels: TwinLabelPaint[]): boolean {
-  const font = 10 * s
-  const padX = 6 * s
-  const dot = 6 * s
-  const gap = 4 * s
-  const h = 16 * s
+/**
+ * Paint the pills. Returns true when at least one was drawn. `k` scales the
+ * pill like the screen does (touch devices draw them larger).
+ */
+export function paintTwinLabels(ctx: CanvasRenderingContext2D, width: number, height: number, s: number, labels: TwinLabelPaint[], k = 1): boolean {
+  const font = 10 * k * s
+  const padX = 6 * k * s
+  const dot = 6 * k * s
+  const gap = 4 * k * s
+  const h = 16 * k * s
   const lift = 4 * s // the on-screen pill has a 4 px bottom margin
   let drew = false
   ctx.save()
@@ -69,8 +72,8 @@ export function paintTwinLabels(ctx: CanvasRenderingContext2D, width: number, he
 // exactly the labels that were readable on screen.
 
 /** Approximate pill size in CSS px (matches the on-screen chip and the painter). */
-export function pillSize(text: string): { w: number; h: number } {
-  return { w: 6 + 6 + 4 + text.length * 6 + 6, h: 16 }
+export function pillSize(text: string, k = 1): { w: number; h: number } {
+  return { w: (6 + 6 + 4 + text.length * 6 + 6) * k, h: 16 * k }
 }
 
 /**
@@ -78,11 +81,11 @@ export function pillSize(text: string): { w: number; h: number } {
  * invisible points are never kept. Greedy in order, O(n²) — fine for the few
  * hundred labels a panel can hold.
  */
-export function declutter(pts: Array<{ x: number; y: number; visible: boolean; text: string }>, gapPx = 2): boolean[] {
+export function declutter(pts: Array<{ x: number; y: number; visible: boolean; text: string }>, gapPx = 2, k = 1): boolean[] {
   const placed: Array<{ l: number; t: number; r: number; b: number }> = []
   return pts.map((p) => {
     if (!p.visible || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return false
-    const { w, h } = pillSize(p.text)
+    const { w, h } = pillSize(p.text, k)
     const box = { l: p.x - w / 2 - gapPx, r: p.x + w / 2 + gapPx, t: p.y - 4 - h - gapPx, b: p.y - 4 + gapPx }
     if (placed.some((q) => box.l < q.r && box.r > q.l && box.t < q.b && box.b > q.t)) return false
     placed.push(box)

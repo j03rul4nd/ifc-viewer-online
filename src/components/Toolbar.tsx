@@ -19,6 +19,8 @@ import { usePresentationStore } from '../stores/presentationStore'
 import { isGisEnabled } from '../lib/geo/gis-flag'
 import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
+import { isFloodEnabled } from '../features/flood/flag'
+import { useFloodStore } from '../features/flood/store'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useTwinDeviceStore } from '../stores/twinDeviceStore'
 import { useVectorLayerStore } from '../stores/vectorLayerStore'
@@ -56,6 +58,8 @@ interface ToolbarProps {
   onOpenDemoGallery: () => void
   onOpenExportModal: () => void
   onOpenEmbed: () => void
+  /** Share → Digital-twin scene (SceneShareModal). */
+  onOpenScene?: () => void
   onOpenIds: () => void
   /** Version comparison workspace (sets of IFCs across deliveries). */
   onOpenCompare: () => void
@@ -222,7 +226,7 @@ function scoreColor(score: number): string {
 
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
-  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenIds, onOpenCompare, onOpenHelp,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
@@ -327,6 +331,12 @@ export default function Toolbar({
   const solarActive    = useSolarStore((s) => s.active)
   const toggleSolarPanel = (): void => {
     const s = useSolarStore.getState()
+    s.setPanelOpen(!s.panelOpen)
+  }
+  const floodPanelOpen = useFloodStore((s) => s.panelOpen)
+  const floodRunning   = useFloodStore((s) => s.status === 'running')
+  const toggleFloodPanel = (): void => {
+    const s = useFloodStore.getState()
     s.setPanelOpen(!s.panelOpen)
   }
   const {
@@ -494,6 +504,12 @@ export default function Toolbar({
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="7" cy="7" r="3" />
       <path d="M7 0.8v1.6M7 11.6v1.6M0.8 7h1.6M11.6 7h1.6M2.6 2.6l1.2 1.2M10.2 10.2l1.2 1.2M11.4 2.6l-1.2 1.2M3.8 10.2l-1.2 1.2" />
+    </svg>
+  )
+  const FloodSVG = (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8.2a2.3 2.3 0 01-.2-4.6 3.2 3.2 0 016.1.9 2 2 0 01-.1 3.7" />
+      <path d="M5 10.3l-.6 1.5M7.4 10l-.6 1.5M9.8 10.3l-.6 1.5" />
     </svg>
   )
   const MeshSVG = (
@@ -778,7 +794,7 @@ export default function Toolbar({
           <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen}
             badge={activePlanViewId ? '●' : undefined}
             onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
-          {(isGisEnabled() || isSolarEnabled()) && (
+          {(isGisEnabled() || isSolarEnabled() || isFloodEnabled()) && (
             <>
               <MenuDivider />
               <MenuLabel>{t('menu.context')}</MenuLabel>
@@ -793,6 +809,11 @@ export default function Toolbar({
             <MenuItem icon={SunSVG} label={t('sun')} active={solarPanelOpen || solarActive}
               badge={solarActive ? '●' : undefined}
               onClick={() => { toggleSolarPanel(); setOpenMenu(null) }} />
+          )}
+          {isFloodEnabled() && (
+            <MenuItem icon={FloodSVG} label={t('flood')} active={floodPanelOpen || floodRunning}
+              badge={floodRunning ? '●' : undefined}
+              onClick={() => { toggleFloodPanel(); setOpenMenu(null) }} />
           )}
         </ToolMenu>
       </div>
@@ -848,6 +869,10 @@ export default function Toolbar({
           <MenuLabel>{t('menu.publish')}</MenuLabel>
           <MenuItem icon={<Icons.Code size={15} />} label={t('embed')}
             onClick={() => { onOpenEmbed(); setOpenMenu(null) }} />
+          {onOpenScene && (
+            <MenuItem icon={<Icons.Globe size={15} />} label={tLayers('scene.entry')}
+              onClick={() => { onOpenScene(); setOpenMenu(null) }} />
+          )}
           <MenuItem icon={<Icons.Eye size={15} />} label={tClient('entry')}
             onClick={() => { setClientMode(true); setOpenMenu(null) }} />
           <MenuItem icon={TourSVG} label={tTour('entry')} active={tourMode !== 'idle'}

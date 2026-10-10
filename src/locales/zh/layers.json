@@ -101,7 +101,8 @@
     "quota": "提供方的免费额度暂时用完。请稍后再试。",
     "notLayersFile": "此文件不是数据图层配置。",
     "layersFileVersion": "此配置由更新的版本保存。请刷新页面后重试。",
-    "unknown": "无法读取。"
+    "unknown": "无法读取。",
+    "timeout": "服务器在 90 秒内没有响应。请稍后再试。"
   },
   "kind": {
     "point": "点",
@@ -112,7 +113,7 @@
     "noProps": "该要素没有属性。"
   },
   "restore": {
-    "failed": "{{count}} 个已保存的图层无法恢复（离线，或文件过大无法保存）。"
+    "failed": "{{count}} 个已保存的图层暂时无法恢复（离线、服务器无响应，或文件过大无法保存）。它们仍会保留，下次将重试。"
   },
   "search": {
     "title": "在孪生中搜索",
@@ -227,7 +228,45 @@
     "tmb-bus-stops": {
       "name": "TMB · 公交站",
       "hint": "选择站点即可实时查看下一班车 · 需要你的 TMB 密钥"
-    }
+    },
+    "bcn-endolla": {
+      "name": "电动车充电（Endolla）",
+      "hint": "巴塞罗那公共充电桩，当前空闲接口 · 每 2 分钟"
+    },
+    "bcn-air-quality": {
+      "name": "空气质量（ASPB）",
+      "hint": "NO₂、PM10、O₃…各站最近一小时 · 延迟 1–3 小时"
+    },
+    "cat-meteocat": {
+      "name": "气象站（Meteocat）",
+      "hint": "气温、降雨、风 · 每半小时，覆盖整个加泰罗尼亚"
+    },
+    "bcn-barris": {
+      "name": "巴塞罗那街区",
+      "hint": "73 个街区及其所属区 · 静态"
+    },
+    "madrid-air-quality": {
+      "name": "马德里 · 空气质量",
+      "hint": "与巴塞罗那相同的小时格式 · 各站最近一小时"
+    },
+    "tokyo-toei-stations": {
+      "name": "东京 · 都营车站",
+      "hint": "地铁和有轨电车车站（ODPT）· 静态，无需密钥"
+    },
+    "otherPlaces": "其他地点（{{n}}）",
+    "toei-bus": {
+      "name": "东京 · 都营巴士（实时）",
+      "hint": "每辆巴士显示在其刚经过的站点（ODPT GTFS-Realtime，非 GPS）· 每 30 秒，无需密钥"
+    },
+    "fmi-air-quality": {
+      "name": "赫尔辛基 · 空气质量（FMI）",
+      "hint": "HSY 监测站的每小时空气质量指数、NO₂ 与颗粒物 · 最多延迟 40 分钟，无需密钥"
+    },
+    "fmi-weather": {
+      "name": "赫尔辛基 · 气象站（FMI）",
+      "hint": "每 10 分钟更新气温、风、湿度和降雨 · 无需密钥"
+    },
+    "privacy": "每个数据源都直接从其服务器（卡片上已标明）读取，服务器会看到你的 IP 地址，多数还会看到场地周边的区域。模型的任何内容都不会发送。"
   },
   "live": {
     "toggle": "实时更新",
@@ -714,13 +753,83 @@
     },
     "filterBindings": "筛选绑定…",
     "alertsActive": "{{count}} 个警报中",
-    "summaryFilter": "只显示这些绑定"
+    "summaryFilter": "只显示这些绑定",
+    "mqttTopics": "MQTT 主题，每行一个（留空 = 普通 WebSocket，消息为 JSON）",
+    "mqttHint": "填写主题后，此地址即 MQTT 代理的 WebSocket 监听端口。每条消息按 { topic, …payload } 读取，每秒一次；没有设备 ID 的消息会被跳过。"
   },
   "add": {
     "title": "添加数据"
   },
-  "wait": {
-    "server": "正在等待 {{host}}… {{s}} 秒",
-    "generic": "处理中… {{s}} 秒"
+  "ev": {
+    "available": "有空闲接口",
+    "busy": "全部占用",
+    "outOfService": "停止服务"
+  },
+  "air": {
+    "good": "良好",
+    "fair": "尚可",
+    "moderate": "中等",
+    "poor": "差",
+    "veryPoor": "很差",
+    "extremelyPoor": "极差"
+  },
+  "scene": {
+    "entry": "数字孪生场景",
+    "title": "分享场景",
+    "intro": "整个场景存为一个文件：按 URL 的模型、数据图层、实时设备、地图、背景和视角。可作为链接分享、嵌入网页或保存文件。",
+    "untitled": "未命名场景",
+    "name": "名称",
+    "description": "描述",
+    "contents": "包含内容",
+    "models": "模型（按 URL）",
+    "localModels": "从本机打开的 {{n}} 个模型未包含：场景只能指向有公开 URL 的文件。",
+    "layers": "数据图层",
+    "devices": "实时设备绑定",
+    "map": "地图",
+    "off": "关闭",
+    "keepCamera": "以当前视角打开",
+    "secretsRemoved": "已从图层 URL 中移除 {{n}} 个密钥或令牌参数。",
+    "empty": "请先从 URL 加载模型或添加数据图层：目前还没有可分享的内容。",
+    "download": "下载 .scene.json",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "tooBigForLink": "内容过大，无法放入链接。请下载文件，发布到任意支持 CORS 的静态主机，并用 ?scene=<url> 打开。",
+    "tooBigToOpen": "此场景过大，无法在此从文件打开：请发布后用 ?scene=<url> 打开。",
+    "embed": "嵌入网页",
+    "ui": {
+      "client": "客户",
+      "full": "完整",
+      "kiosk": "仅画布"
+    },
+    "hostHint": "场景包含在链接中：不会上传任何内容。",
+    "copyIframe": "复制代码",
+    "sources": "数据来源（{{n}}）",
+    "live": "实时",
+    "open": "打开场景…",
+    "openHint": "打开别人发给你的 .scene.json。",
+    "demos": {
+      "title": "城市数字孪生",
+      "subtitle": "地图上的 IFC 模型、实时开放数据与设备",
+      "barcelona": {
+        "name": "巴塞罗那 · 加泰罗尼亚广场",
+        "description": "八个地理参照的 IFC 模型，实时接入 Bicing、电动车充电、交通和空气质量；Bicing 65 号站会为自己的车桩着色。"
+      },
+      "helsinki": {
+        "name": "赫尔辛基 · 火车站广场",
+        "description": "中央车站、大教堂与 Elielinaukio 公交总站，实时接入 FMI 空气质量与天气；HSL 公交停靠时，对应站台会亮起（MQTT）。"
+      },
+      "tochomae": {
+        "name": "东京 · 都厅前（都营大江户线）",
+        "description": "东京都厅旁的 A4 出口，实时接入都营巴士；大江户线运行状态、站台上的列车和经过的巴士会为模型着色。"
+      },
+      "waseda": {
+        "name": "东京 · 早稻田（都电荒川线）",
+        "description": "有轨电车终点站：电车停靠时站台边缘亮起并显示车号，显示屏展示线路运行状态。"
+      },
+      "models_one": "{{count}} 个 IFC 模型",
+      "models_other": "{{count}} 个 IFC 模型",
+      "live_one": "{{count}} 个实时数据源",
+      "live_other": "{{count}} 个实时数据源"
+    }
   }
 }

@@ -14,7 +14,8 @@
     "batchPartial": "{{name}} — {{loaded}} geladen, {{failed}} fehlgeschlagen",
     "dropUnsupported_one": "{{count}} Datei hat kein unterstütztes Format",
     "dropUnsupported_other": "{{count}} Dateien haben kein unterstütztes Format",
-    "dropBcfHint": "Öffnen Sie das BCF-Panel, um .bcf-Dateien zu importieren"
+    "dropBcfHint": "Öffnen Sie das BCF-Panel, um .bcf-Dateien zu importieren",
+    "mapDeclined": "Der Link wollte die Karte anzeigen; sie bleibt aus, bis Sie es erlauben (Bereich Karte)."
   },
   "validation": {
     "complete": "Validierung abgeschlossen — {{count}} Problem(e) gefunden",
@@ -42,5 +43,8 @@
   "tree": {
     "notInTree": "Dieses Element steht nicht im Strukturbaum — und nichts darüber auch nicht.",
     "revealedHost": "Nicht einzeln im Strukturbaum. Stattdessen sein Ganzes gezeigt: „{{name}}“."
+  },
+  "scene": {
+    "failed": "Die Szene konnte nicht geöffnet werden: {{message}}"
   }
 }

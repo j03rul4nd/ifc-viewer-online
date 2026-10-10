@@ -48,8 +48,11 @@ describe('blog hub discovery', () => {
       'shanghai-pedestrian-bridges',
       'shanghai-railway-stations',
       'shanghai-parks-courtyards',
+      'barcelona-digital-twin-open-data',
+      'bus-terminal-digital-twin-mqtt',
+      'tokyo-transit-digital-twin-odpt',
     ]))
-    expect(results).toHaveLength(15)
+    expect(results).toHaveLength(18)
   })
 
   it('filters by category and sorts short reads first', () => {

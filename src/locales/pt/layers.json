@@ -101,7 +101,8 @@
     "quota": "A quota gratuita do fornecedor esgotou por agora. Tente mais tarde.",
     "notLayersFile": "Este ficheiro não é uma configuração de camadas de dados.",
     "layersFileVersion": "Esta configuração foi guardada numa versão mais recente. Recarregue a página e tente de novo.",
-    "unknown": "não foi possível ler."
+    "unknown": "não foi possível ler.",
+    "timeout": "O servidor não respondeu em 90 s. Tente mais tarde."
   },
   "kind": {
     "point": "Ponto",
@@ -112,7 +113,7 @@
     "noProps": "Este elemento não tem atributos."
   },
   "restore": {
-    "failed": "{{count}} camadas guardadas não puderam ser restauradas (offline, ou ficheiro demasiado grande para guardar)."
+    "failed": "{{count}} camadas guardadas não puderam ser restauradas agora (sem ligação, um servidor que não responde ou um ficheiro demasiado grande para guardar). Continuam guardadas e serão tentadas de novo da próxima vez."
   },
   "search": {
     "title": "Pesquisar no gémeo",
@@ -227,7 +228,45 @@
     "tmb-bus-stops": {
       "name": "TMB · Paragens de autocarro",
       "hint": "Selecione uma paragem para ver os próximos autocarros em direto · precisa das suas chaves TMB"
-    }
+    },
+    "bcn-endolla": {
+      "name": "Carregamento de VE (Endolla)",
+      "hint": "Postos públicos de Barcelona, tomadas livres agora · a cada 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Qualidade do ar (ASPB)",
+      "hint": "NO₂, PM10, O₃… última hora por estação · chega com 1–3 h de atraso"
+    },
+    "cat-meteocat": {
+      "name": "Estações meteorológicas (Meteocat)",
+      "hint": "Temperatura, chuva, vento · a cada meia hora, toda a Catalunha"
+    },
+    "bcn-barris": {
+      "name": "Bairros de Barcelona",
+      "hint": "Os 73 bairros com o seu distrito · estático"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Qualidade do ar",
+      "hint": "Mesmo formato horário que Barcelona · última hora por estação"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tóquio · Estações Toei",
+      "hint": "Estações de metro e elétrico (ODPT) · estático, sem chave"
+    },
+    "otherPlaces": "Outros locais ({{n}})",
+    "toei-bus": {
+      "name": "Tóquio · Autocarros Toei (em direto)",
+      "hint": "Cada autocarro na última paragem por onde passou (GTFS-Realtime da ODPT, não é GPS) · a cada 30 s, sem chave"
+    },
+    "fmi-air-quality": {
+      "name": "Helsínquia · Qualidade do ar (FMI)",
+      "hint": "Índice horário de qualidade do ar, NO₂ e partículas nas estações da HSY · até 40 min de atraso, sem chave"
+    },
+    "fmi-weather": {
+      "name": "Helsínquia · Estações meteorológicas (FMI)",
+      "hint": "Temperatura, vento, humidade e chuva a cada 10 min · sem chave"
+    },
+    "privacy": "Cada fonte é lida diretamente do seu servidor (indicado no cartão), que vê o seu endereço IP e, na maioria, a zona à volta do local. Nada do modelo é enviado."
   },
   "live": {
     "toggle": "Atualização em tempo real",
@@ -714,13 +753,83 @@
     },
     "filterBindings": "Filtrar ligações…",
     "alertsActive": "{{count}} em alerta",
-    "summaryFilter": "Mostrar só estas ligações"
+    "summaryFilter": "Mostrar só estas ligações",
+    "mqttTopics": "Tópicos MQTT, um por linha (vazio = WebSocket simples com mensagens JSON)",
+    "mqttHint": "Com tópicos, este endereço é a escuta WebSocket de um broker MQTT. Cada mensagem é lida como { topic, …payload }, uma vez por segundo; mensagens sem id de dispositivo são ignoradas."
   },
   "add": {
     "title": "Adicionar dados"
   },
-  "wait": {
-    "server": "À espera de {{host}}… {{s}} s",
-    "generic": "A processar… {{s}} s"
+  "ev": {
+    "available": "Tomadas livres",
+    "busy": "Todas ocupadas",
+    "outOfService": "Fora de serviço"
+  },
+  "air": {
+    "good": "boa",
+    "fair": "razoável",
+    "moderate": "moderada",
+    "poor": "má",
+    "veryPoor": "muito má",
+    "extremelyPoor": "extremamente má"
+  },
+  "scene": {
+    "entry": "Cena de gémeo digital",
+    "title": "Partilhar a cena",
+    "intro": "Toda a cena num ficheiro: modelos por URL, camadas de dados, dispositivos em direto, mapa, fundo e vista. Partilhe-a como ligação, incorpore-a numa página ou guarde o ficheiro.",
+    "untitled": "Cena sem título",
+    "name": "Nome",
+    "description": "Descrição",
+    "contents": "O que inclui",
+    "models": "Modelos (por URL)",
+    "localModels": "{{n}} modelo(s) aberto(s) a partir deste computador não estão incluídos: uma cena só pode apontar para ficheiros com URL pública.",
+    "layers": "Camadas de dados",
+    "devices": "Ligações de dispositivos em direto",
+    "map": "Mapa",
+    "off": "desligado",
+    "keepCamera": "Abrir na vista atual",
+    "secretsRemoved": "Foram removidos {{n}} parâmetro(s) de chave ou token dos URL das camadas.",
+    "empty": "Carregue primeiro um modelo a partir de um URL ou adicione uma camada de dados: ainda não há nada para partilhar.",
+    "download": "Descarregar .scene.json",
+    "copyLink": "Copiar ligação",
+    "copied": "Copiado",
+    "tooBigForLink": "Demasiado grande para uma ligação. Descarregue o ficheiro, publique-o em qualquer alojamento estático com CORS e abra-o com ?scene=<url>.",
+    "tooBigToOpen": "Esta cena é demasiado grande para abrir aqui a partir de um ficheiro: publique-a e abra-a com ?scene=<url>.",
+    "embed": "Incorporar numa página web",
+    "ui": {
+      "client": "Cliente",
+      "full": "Completo",
+      "kiosk": "Só tela"
+    },
+    "hostHint": "A cena viaja dentro da ligação: nada é enviado.",
+    "copyIframe": "Copiar código",
+    "sources": "Fontes de dados ({{n}})",
+    "live": "em direto",
+    "open": "Abrir cena…",
+    "openHint": "Abra um .scene.json que lhe enviaram.",
+    "demos": {
+      "title": "Gémeos digitais de cidade",
+      "subtitle": "Modelos IFC, dados abertos em direto e dispositivos no mapa",
+      "barcelona": {
+        "name": "Barcelona · Plaça de Catalunya",
+        "description": "Oito modelos IFC georreferenciados com Bicing, carregamento de VE, trânsito e qualidade do ar em direto; a estação Bicing 65 pinta as suas próprias docas."
+      },
+      "helsinki": {
+        "name": "Helsínquia · Rautatientori",
+        "description": "A estação central, a catedral e o terminal de autocarros de Elielinaukio com a qualidade do ar e o tempo do FMI em direto; cada cais acende-se enquanto um autocarro da HSL está parado nele (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tóquio · Tochōmae (Toei Ōedo)",
+        "description": "A saída A4 junto à sede do Governo Metropolitano com os autocarros Toei em direto; o estado da linha Ōedo, um comboio na plataforma e um autocarro que passa pintam o modelo."
+      },
+      "waseda": {
+        "name": "Tóquio · Waseda (Toden Arakawa)",
+        "description": "O terminal do elétrico: as bordas das plataformas acendem-se enquanto há um elétrico na paragem, com o número por cima, e os ecrãs mostram o estado da linha."
+      },
+      "models_one": "{{count}} modelo IFC",
+      "models_other": "{{count}} modelos IFC",
+      "live_one": "{{count}} fonte em direto",
+      "live_other": "{{count}} fontes em direto"
+    }
   }
 }

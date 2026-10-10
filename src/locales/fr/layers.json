@@ -101,7 +101,8 @@
     "quota": "Le quota gratuit du fournisseur est épuisé pour le moment. Réessayez plus tard.",
     "notLayersFile": "Ce fichier n’est pas une configuration de couches de données.",
     "layersFileVersion": "Cette configuration vient d’une version plus récente. Rechargez la page et réessayez.",
-    "unknown": "lecture impossible."
+    "unknown": "lecture impossible.",
+    "timeout": "Le serveur n'a pas répondu en 90 s. Réessayez plus tard."
   },
   "kind": {
     "point": "Point",
@@ -112,7 +113,7 @@
     "noProps": "Cet objet n'a pas d'attributs."
   },
   "restore": {
-    "failed": "{{count}} couches enregistrées n'ont pas pu être restaurées (hors ligne, ou fichier trop volumineux pour être conservé)."
+    "failed": "{{count}} couches enregistrées n'ont pas pu être restaurées pour l'instant (hors ligne, un serveur qui ne répond pas ou un fichier trop volumineux pour être conservé). Elles restent enregistrées et seront réessayées la prochaine fois."
   },
   "search": {
     "title": "Rechercher dans le jumeau",
@@ -227,7 +228,45 @@
     "tmb-bus-stops": {
       "name": "TMB · Arrêts de bus",
       "hint": "Sélectionnez un arrêt pour voir les prochains bus en direct · nécessite vos clés TMB"
-    }
+    },
+    "bcn-endolla": {
+      "name": "Recharge VE (Endolla)",
+      "hint": "Bornes publiques de Barcelone, prises libres maintenant · toutes les 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Qualité de l'air (ASPB)",
+      "hint": "NO₂, PM10, O₃… dernière heure par station · arrive avec 1 à 3 h de retard"
+    },
+    "cat-meteocat": {
+      "name": "Stations météo (Meteocat)",
+      "hint": "Température, pluie, vent · toutes les demi-heures, toute la Catalogne"
+    },
+    "bcn-barris": {
+      "name": "Quartiers de Barcelone",
+      "hint": "Les 73 barris avec leur district · statique"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Qualité de l'air",
+      "hint": "Même format horaire que Barcelone · dernière heure par station"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tokyo · Stations Toei",
+      "hint": "Stations de métro et de tram (ODPT) · statique, sans clé"
+    },
+    "otherPlaces": "Autres lieux ({{n}})",
+    "toei-bus": {
+      "name": "Tokyo · Bus Toei (en direct)",
+      "hint": "Chaque bus à l’arrêt qu’il vient de passer (GTFS-Realtime ODPT, pas du GPS) · toutes les 30 s, sans clé"
+    },
+    "fmi-air-quality": {
+      "name": "Helsinki · Qualité de l’air (FMI)",
+      "hint": "Indice horaire de qualité de l’air, NO₂ et particules aux stations HSY · jusqu’à 40 min de retard, sans clé"
+    },
+    "fmi-weather": {
+      "name": "Helsinki · Stations météo (FMI)",
+      "hint": "Température, vent, humidité et pluie toutes les 10 min · sans clé"
+    },
+    "privacy": "Chaque source est lue directement sur son serveur (indiqué sur la carte), qui voit votre adresse IP et, pour la plupart, la zone autour du site. Rien du modèle n'est envoyé."
   },
   "live": {
     "toggle": "Mise à jour en direct",
@@ -714,13 +753,83 @@
     },
     "filterBindings": "Filtrer les liaisons…",
     "alertsActive": "{{count}} en alerte",
-    "summaryFilter": "Afficher seulement ces liaisons"
+    "summaryFilter": "Afficher seulement ces liaisons",
+    "mqttTopics": "Topics MQTT, un par ligne (vide = WebSocket simple avec messages JSON)",
+    "mqttHint": "Avec des topics, cette adresse est l’écoute WebSocket d’un broker MQTT. Chaque message est lu comme { topic, …payload }, une fois par seconde ; les messages sans identifiant d’appareil sont ignorés."
   },
   "add": {
     "title": "Ajouter des données"
   },
-  "wait": {
-    "server": "En attente de {{host}}… {{s}} s",
-    "generic": "En cours… {{s}} s"
+  "ev": {
+    "available": "Prises libres",
+    "busy": "Toutes occupées",
+    "outOfService": "Hors service"
+  },
+  "air": {
+    "good": "bon",
+    "fair": "moyen",
+    "moderate": "dégradé",
+    "poor": "mauvais",
+    "veryPoor": "très mauvais",
+    "extremelyPoor": "extrêmement mauvais"
+  },
+  "scene": {
+    "entry": "Scène de jumeau numérique",
+    "title": "Partager la scène",
+    "intro": "Toute la scène dans un fichier : modèles par URL, couches de données, appareils en direct, carte, fond et vue. Partagez-la en lien, intégrez-la dans une page ou gardez le fichier.",
+    "untitled": "Scène sans titre",
+    "name": "Nom",
+    "description": "Description",
+    "contents": "Ce qu’elle contient",
+    "models": "Modèles (par URL)",
+    "localModels": "{{n}} modèle(s) ouvert(s) depuis cet ordinateur ne sont pas inclus : une scène ne peut pointer que vers des fichiers avec une URL publique.",
+    "layers": "Couches de données",
+    "devices": "Liaisons d’appareils en direct",
+    "map": "Carte",
+    "off": "désactivée",
+    "keepCamera": "Ouvrir sur la vue actuelle",
+    "secretsRemoved": "{{n}} paramètre(s) de clé ou de jeton ont été retirés des URL des couches.",
+    "empty": "Chargez d'abord un modèle depuis une URL ou ajoutez une couche de données : il n'y a encore rien à partager.",
+    "download": "Télécharger .scene.json",
+    "copyLink": "Copier le lien",
+    "copied": "Copié",
+    "tooBigForLink": "Trop volumineux pour un lien. Téléchargez le fichier, publiez-le sur n'importe quel hébergement statique avec CORS et ouvrez-le avec ?scene=<url>.",
+    "tooBigToOpen": "Cette scène est trop volumineuse pour être ouverte ici depuis un fichier : publiez-la et ouvrez-la avec ?scene=<url>.",
+    "embed": "Intégrer dans une page web",
+    "ui": {
+      "client": "Client",
+      "full": "Complet",
+      "kiosk": "Canevas seul"
+    },
+    "hostHint": "La scène voyage dans le lien : rien n'est envoyé.",
+    "copyIframe": "Copier le code",
+    "sources": "Sources de données ({{n}})",
+    "live": "en direct",
+    "open": "Ouvrir une scène…",
+    "openHint": "Ouvrez un .scene.json qu'on vous a envoyé.",
+    "demos": {
+      "title": "Jumeaux numériques de ville",
+      "subtitle": "Modèles IFC, données ouvertes en direct et appareils sur la carte",
+      "barcelona": {
+        "name": "Barcelone · Plaça de Catalunya",
+        "description": "Huit modèles IFC géoréférencés avec Bicing, recharge de VE, trafic et qualité de l’air en direct ; la station Bicing 65 colore ses propres bornes."
+      },
+      "helsinki": {
+        "name": "Helsinki · Rautatientori",
+        "description": "La gare centrale, la cathédrale et le terminal de bus d’Elielinaukio avec la qualité de l’air et la météo du FMI en direct ; chaque quai s’allume tant qu’un bus HSL y est arrêté (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tokyo · Tochōmae (Toei Ōedo)",
+        "description": "La sortie A4 près du siège du gouvernement métropolitain avec les bus Toei en direct ; l’état de la ligne Ōedo, un train à quai et un bus qui passe colorent le modèle."
+      },
+      "waseda": {
+        "name": "Tokyo · Waseda (Toden Arakawa)",
+        "description": "Le terminus du tramway : les bords de quai s’allument tant qu’une rame est à l’arrêt, avec son numéro au-dessus, et les écrans affichent l’état de la ligne."
+      },
+      "models_one": "{{count}} modèle IFC",
+      "models_other": "{{count}} modèles IFC",
+      "live_one": "{{count}} source en direct",
+      "live_other": "{{count}} sources en direct"
+    }
   }
 }

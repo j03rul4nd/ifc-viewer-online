@@ -14,7 +14,8 @@
     "batchPartial": "{{name}} — {{loaded}} caricati, {{failed}} non riusciti",
     "dropUnsupported_one": "{{count}} file non è in un formato supportato",
     "dropUnsupported_other": "{{count}} file non sono in un formato supportato",
-    "dropBcfHint": "Apri il pannello BCF per importare i file .bcf"
+    "dropBcfHint": "Apri il pannello BCF per importare i file .bcf",
+    "mapDeclined": "Il link chiedeva di mostrare la mappa; resta spenta finché non lo consenti (pannello Mappa)."
   },
   "validation": {
     "complete": "Validazione completata — {{count}} problema/i trovato/i",
@@ -42,5 +43,8 @@
   "tree": {
     "notInTree": "Questo elemento non è nell'albero spaziale, e nemmeno nulla sopra di esso.",
     "revealedHost": "Non è nell'albero da solo. Mostrato ciò di cui fa parte: «{{name}}»."
+  },
+  "scene": {
+    "failed": "Impossibile aprire la scena: {{message}}"
   }
 }

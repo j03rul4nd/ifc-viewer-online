@@ -1,0 +1,240 @@
+{
+  "title": "Überflutung (Simulation)",
+  "close": "Schließen",
+  "disclaimer": "Vereinfachte, orientierende Simulation in Ihrem Browser — kein zertifiziertes hydraulisches Gutachten. Keine Daten des Modells verlassen dieses Gerät.",
+  "unsupported": "Dieser Browser kann die Simulation nicht ausführen: Er benötigt WebGPU oder WebGL 2 mit Float-Render-Targets.",
+  "grid": {
+    "title": "Raster",
+    "cell": "Zelle",
+    "margin": "Rand"
+  },
+  "ground": {
+    "title": "Gelände",
+    "order": "Verwendet in dieser Reihenfolge: das Gelände aus dem IFC selbst, ein importiertes DGM, das Relief der Karte; verbleibende Lücken werden aus den Nachbarzellen gefüllt.",
+    "useMap": "Relief der Karte verwenden",
+    "mapOff": "Schalten Sie die Karte mit Relief ein, um ihr Gelände zu verwenden",
+    "importDem": "DGM importieren…",
+    "removeDem": "DGM entfernen",
+    "demFormats": ".asc oder GeoTIFF",
+    "plane": {
+      "title": "Keine Geländedaten: Demo-Ebene",
+      "auto": "Auf Höhe des Erdgeschosses des Projekts",
+      "level": "Höhe",
+      "slope": "Gefälle",
+      "towards": "Fällt nach"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "O",
+    "s": "S",
+    "w": "W"
+  },
+  "buildings": {
+    "title": "Gebäude",
+    "map": "Gebäude der Karte sind Hindernisse",
+    "mapOff": "Schalten Sie die Karte ein, um die umliegenden Gebäude einzubeziehen",
+    "roofs": "Dächer",
+    "perimeter": "Entwässern auf die Straße",
+    "drained": "Entwässern in die Kanalisation"
+  },
+  "rain": {
+    "title": "Regen",
+    "presets": {
+      "shower": "Schauer · {{mm}} mm in {{min}} min",
+      "storm": "Gewitterregen · {{mm}} mm in {{min}} min",
+      "intense": "Starkregen · {{mm}} mm in {{min}} min",
+      "extreme": "Extremereignis · {{mm}} mm in {{min}} min"
+    },
+    "facts": "{{mm}} mm in {{min}} min, Spitze bei etwa {{peak}} mm/h. Gleichmäßig über die gesamte Fläche.",
+    "after": "Danach",
+    "edit": "Bearbeiten",
+    "doneEditing": "Fertig",
+    "custom": "Von Hand gezeichnet"
+  },
+  "surface": {
+    "title": "Oberfläche",
+    "paved": "Befestigt (n = {{n}})",
+    "urban": "Städtisch gemischt (n = {{n}})",
+    "grass": "Rasen (n = {{n}})",
+    "vegetation": "Dichte Vegetation (n = {{n}})",
+    "section": "Oberfläche und Boden"
+  },
+  "edges": {
+    "title": "Ränder",
+    "free": "Wasser fließt ab",
+    "closed": "Geschlossen"
+  },
+  "actions": {
+    "prepare": "Raster erstellen",
+    "rebuild": "Neu erstellen",
+    "run": "Simulieren",
+    "rerun": "Erneut ausführen",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "clear": "Entfernen"
+  },
+  "stage": {
+    "geometry": "Geometrie des Modells wird gelesen…",
+    "raster": "Grundriss wird auf der GPU gezeichnet…",
+    "terrain": "Gelände wird zusammengesetzt…",
+    "layers": "Wasserschicht wird vorbereitet…"
+  },
+  "report": {
+    "title": "Was die Simulation sieht",
+    "grid": "Raster",
+    "ground": "Gelände",
+    "dem": "Kartenrelief",
+    "obstacles": "Hinderniszellen",
+    "canopies": "{{n}} unter Überdachungen",
+    "relief": "Geländehöhe",
+    "coarsened": "Die Fläche ist für diese Zellgröße zu groß: Zellen auf {{dx}} m vergrößert.",
+    "planeWarn": "Hier gibt es keine Geländedaten: Der Boden ist eine Ebene bei Y = {{y}} m. Importieren Sie ein DGM oder schalten Sie die Karte mit Relief ein, um ein echtes Gelände zu erhalten.",
+    "coarseDem": "Das Kartenrelief stammt hier aus dem globalen Mosaik (Daten mit ≈30 m Auflösung): Straßen und Bordsteine sind darin nicht erfasst. Ein importiertes DGM liefert ein besseres Ergebnis.",
+    "frame": "Einpassen"
+  },
+  "source": {
+    "ifc": "IFC-Gelände",
+    "dem": "Importiertes DGM",
+    "map": "Kartenrelief",
+    "plane": "Ebene (keine Daten)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (Geländeoberfläche)",
+    "terrarium": "Globales Mosaik (≈30 m)",
+    "unknown": "Karte"
+  },
+  "demNote": {
+    "reprojected": "Das DGM wurde in das Koordinatensystem des Modells umprojiziert.",
+    "sameCrs": "Das DGM liegt im Koordinatensystem des Modells vor.",
+    "assumedSameCrs": "Das DGM gibt kein Koordinatensystem an (oder das Modell nicht): Es wird das des Modells angenommen.",
+    "noHeightDatum": "Das Modell gibt kein Höhenbezugssystem an: Das DGM wurde unter dem Modell auf Höhe des Erdgeschosses des Projekts gelegt.",
+    "notGeoreferenced": "Das Modell ist nicht georeferenziert, daher kann das DGM nicht platziert werden. Georeferenzieren Sie es im Panel Karte.",
+    "outside": "Das DGM deckt den Simulationsbereich nicht ab."
+  },
+  "live": {
+    "time": "Simuliert",
+    "flooded": "Überflutete Fläche (> Schwellenwert)",
+    "maxDepth": "Größte Wassertiefe",
+    "volume": "Wasser an der Oberfläche",
+    "mass": "Massenbilanzfehler",
+    "infiltrated": "Versickert",
+    "outflow": "Aus dem Gebiet abgeflossen"
+  },
+  "view": {
+    "title": "Ansicht",
+    "now": "Aktuelle Wassertiefe",
+    "max": "Maximale Wassertiefe",
+    "threshold": "Anzeigen ab",
+    "ground": "Simulationsgelände anzeigen",
+    "speed": "Fließgeschwindigkeit",
+    "particles": "Strömungslinien"
+  },
+  "hyeto": {
+    "label": "Regenintensität je Intervall: zum Zeichnen drücken und ziehen",
+    "scale": "Skala bis {{max}} mm/h",
+    "total": "{{mm}} mm · Spitze {{peak}} mm/h",
+    "interval": "Alle",
+    "duration": "Dauer"
+  },
+  "infiltration": {
+    "title": "Boden",
+    "none": "Undurchlässig (keine Versickerung)",
+    "compacted": "Verdichteter Boden ({{f0}} → {{fc}} mm/h)",
+    "loam": "Lehm, Rasenflächen ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Sandiger Boden ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Zeitachse der Überflutung",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "scrub": "Simulierte Zeit: zum Verschieben ziehen",
+    "speed": "Wiedergabegeschwindigkeit",
+    "speedValue": "{{n}} min/s",
+    "probe": "Sonde",
+    "probeHint": "Klicken Sie in die Szene, um dort das Wasser abzulesen (Esc zum Beenden)",
+    "computing": "Berechnung… {{pct}} %",
+    "live": "Zurück zur Live-Ansicht",
+    "rain": "Regen",
+    "flooded": "Überflutet",
+    "deepest": "Max. Tiefe",
+    "volume": "An der Oberfläche",
+    "legend": "Farbskala"
+  },
+  "probe": {
+    "title": "Sonde",
+    "hint": "Klicken Sie in die Szene, um das Wasser an diesem Punkt abzulesen.",
+    "reading": "Wird abgelesen…",
+    "obstacle": "In einem Hindernis (einem Gebäude): Hier dringt kein Wasser ein.",
+    "depth": "Wassertiefe bei {{time}}",
+    "speed": "Fließgeschwindigkeit",
+    "peak": "Größte Tiefe",
+    "arrival": "Ankunft des Wassers",
+    "never": "nie",
+    "ground": "Gelände",
+    "chart": "Wassertiefe im Verlauf des Ereignisses"
+  },
+  "affected": {
+    "title": "Überflutung: erreichte Elemente",
+    "panelTitle": "Elemente, die das Wasser erreicht",
+    "summary": "Unter dem höchsten Wasserstand daneben: {{n}} von {{checked}} geprüften Elementen.",
+    "none": "Keines der {{checked}} geprüften Elemente (Türen, Fenster, Zugänge, Räume, Anlagen) liegt unter dem höchsten Wasserstand daneben.",
+    "atEnd": "Maxima des gesamten Ereignisses ({{t}}).",
+    "partial": "Bisherige Maxima ({{t}}): Die Simulation ist noch nicht abgeschlossen.",
+    "pending": "Wird nach Abschluss der Simulation aufgelistet: Türen, Fenster, Zugänge, Räume und Anlagen unter dem höchsten Wasserstand.",
+    "busy": "Elemente des Modells werden geprüft…",
+    "analyze": "Jetzt prüfen",
+    "reanalyze": "Erneut prüfen",
+    "open": "In Validierung anzeigen",
+    "group": {
+      "opening": "Türen und Fenster",
+      "access": "Zugänge (Rampen, Treppen, Aufzüge)",
+      "space": "Räume",
+      "equipment": "Anlagen und Haustechnik",
+      "below": "Unter Geländeniveau"
+    },
+    "belowNote": "Ihre Unterkante liegt unter dem Außengelände (Keller, abgesenkte Zugänge). Der Wert ist das außen anstehende Wasser; ob es eindringt, hängt von Öffnungen ab, die die Simulation nicht modelliert.",
+    "outside": "{{d}} außen",
+    "arrives": "Wasser ab {{t}}",
+    "jump": "Auswählen und hinfliegen",
+    "more": "{{n}} weitere anzeigen",
+    "capped": "Die ersten {{n}} werden angezeigt.",
+    "note": "Orientierend: das außen an jedem Element anstehende Wasser im Vergleich zu dessen tiefstem Punkt. Nicht Teil des Validierungsergebnisses oder des Health Score.",
+    "dismiss": "Ausblenden"
+  },
+  "export": {
+    "title": "Exportieren",
+    "png": "Bild (PNG)",
+    "video": "Video des Ereignisses",
+    "stop": "Stoppen · {{pct}} %",
+    "videoNeedsEnd": "Das Video ist verfügbar, sobald die Simulation abgeschlossen ist.",
+    "noVideo": "Dieser Browser kann kein Video aufzeichnen.",
+    "field": "Layer",
+    "fields": {
+      "hMax": "Max. Tiefe",
+      "vMax": "Max. Geschw.",
+      "tWet": "Ankunft"
+    },
+    "rasterNote": "GIS-Dateien des gesamten Rasters, genordet; Gebäude sind NoData-Zellen. Tiefe in m, Geschwindigkeit in m/s, Ankunft in s.",
+    "crs": "Koordinaten in {{crs}}, genordet.",
+    "local": "Das Modell ist nicht georeferenziert: Die Datei verwendet seine lokalen Grundrisskoordinaten (Meter), ohne Koordinatensystem."
+  },
+  "capture": {
+    "time": "t = {{t}} von {{end}}",
+    "disclaimer": "Vereinfachte, orientierende Simulation: kein zertifiziertes hydraulisches Gutachten."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m unter dem Erdgeschoss des Modells auf der Höhe, die sein IFC angibt – das Modell stand um diese Höhe über dem umgebenden Gelände, und Wasser dort hätte seine Türen nie erreicht. Das Gelände der Simulation wurde bis zum Modell angehoben. Prüfen Sie die Höhe im IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m über dem Erdgeschoss des Modells auf der Höhe, die sein IFC angibt – das Erdgeschoss lag im Boden. Das Gelände der Simulation wurde bis zum Modell abgesenkt. Prüfen Sie die Höhe im IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m unter dem Erdgeschoss des Modells. So steht das Modell um diese Höhe über dem umgebenden Gelände, und das Wasser dort erreicht seine Türen nicht.",
+    "loweredOff": "{{source}}: {{d}} m über dem Erdgeschoss des Modells. So liegt das Erdgeschoss im Boden, und jedes Wasser ringsum steht über seinen Türen.",
+    "switch": "Gelände auf das Erdgeschoss des Modells setzen",
+    "source": {
+      "map": "Kartenrelief",
+      "dem": "Importiertes DGM"
+    }
+  },
+  "data": {
+    "map": "Relief und Gebäude sind die, die der Kartenmodus mit Ihrer Erlaubnis von öffentlichen Anbietern geladen hat (Relief: ICGC in Katalonien, GSI in Japan bzw. AWS Open Data anderswo; Gebäude: OpenStreetMap über die Overpass-API); diese sehen den Bereich des Standorts und Ihre IP-Adresse. Die Simulation liest sie nur: Weder das Modell noch die Ergebnisse verlassen Ihren Browser. Schalten Sie beide Optionen aus, um nur mit dem IFC zu simulieren; die Erlaubnis widerrufen Sie im Bereich Karte."
+  }
+}

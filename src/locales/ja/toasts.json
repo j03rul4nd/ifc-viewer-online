@@ -12,7 +12,8 @@
     "batchLoaded_other": "{{name}} — {{count}} 個のモデルを読み込みました",
     "batchPartial": "{{name}} — {{loaded}} 件読み込み、{{failed}} 件失敗",
     "dropUnsupported_other": "{{count}} 個のファイルは対応していない形式です",
-    "dropBcfHint": ".bcf ファイルを読み込むには BCF パネルを開いてください"
+    "dropBcfHint": ".bcf ファイルを読み込むには BCF パネルを開いてください",
+    "mapDeclined": "リンクは地図の表示を求めていましたが、許可するまでオフのままです（マップパネル）。"
   },
   "validation": {
     "complete": "検証完了 — {{count}} 件の問題が見つかりました",
@@ -40,5 +41,8 @@
   "tree": {
     "notInTree": "この要素は空間ツリーにありません。その上位もありません。",
     "revealedHost": "単体では空間ツリーにありません。所属先を表示しました:「{{name}}」"
+  },
+  "scene": {
+    "failed": "シーンを開けませんでした：{{message}}"
   }
 }

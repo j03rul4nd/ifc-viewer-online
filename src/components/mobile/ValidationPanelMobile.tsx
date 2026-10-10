@@ -25,6 +25,7 @@ import type { ValidationDiff } from '../../lib/validation-diff'
 import ValidationExportModal, { type ExportModelEntry } from '../ValidationExportModal'
 import * as Icons from '../Icons'
 import { MobileSheet } from './MobileSheet'
+import { FloodValidationSlot } from '../../features/flood/ui/FloodValidationSlot'
 import { MobileActionSheet, type SheetAction } from './MobileActionSheet'
 import {
   SheetHeaderBar, ScoreHero, StatPill, PrimaryCTA, Chip, Segmented, Strip,
@@ -87,6 +88,8 @@ export interface ValidationMobileVM {
   onCopyBadge: () => void
   onBatchFix: () => void
   onClose: () => void
+  /** Select and fly to an element a simulated flood reaches (flood group). */
+  onFloodJump?: (expressId: number, modelId: string) => void
 }
 
 // ── Local helpers (kept out of the desktop module to avoid an import cycle) ────
@@ -118,7 +121,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
     activePanel, setActivePanel, bcfTopicCount, viewer, activeProfileId, customProfiles, setActiveProfile,
     exportModels, rules, resolveProfileName,
     onRun, onJumpTo, onAutoFix, onNameFix, onMute, onAddToBcf,
-    onShareReport, onCopyForAI, onCopyBadge, onBatchFix, onClose,
+    onShareReport, onCopyForAI, onCopyBadge, onBatchFix, onClose, onFloodJump,
   } = vm
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
@@ -394,6 +397,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
             {/* Issue groups */}
             {!busy && (
               <div className="px-4 pt-3 flex flex-col gap-2.5">
+                {onFloodJump && <FloodValidationSlot mobile onJump={onFloodJump} />}
                 {issues.length === 0 ? (
                   <MobileEmpty
                     icon={<ShieldIcon size={30} />}

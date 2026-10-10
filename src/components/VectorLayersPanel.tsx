@@ -14,14 +14,15 @@ import { groupIndexOf } from '../lib/layers/style-groups'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { useVectorLayerStore, trackWait, hostLabel, type VectorLayer } from '../stores/vectorLayerStore'
+import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
 import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
 import { useGeoStore } from '../stores/geoStore'
 import { toast } from '../stores/toastStore'
+import { confirmExternalData, hostsIn, layersSetupHosts } from '../lib/privacy/external-data'
 import {
   attachVectorHost, addGeoJsonFile, addGeoJsonUrl, addGeoJsonText, loadWfsCapabilities, addWfsLayer,
   frameVectorLayer, removeVectorLayer, layerDistanceKm, pickVectorAt, restoreVectorLayers, addSimulatedLiveLayer, followFeature,
-  exportLayersFile, importLayersFile, importLayersFromUrl, isLayersFile, layerRows,
+  exportLayersFile, importLayersFile, importLayersFromUrl, importLayersSession, isLayersFile, layerRows,
 } from '../lib/layers/vector-runner'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { TwinSearch } from './TwinSearch'
@@ -32,6 +33,9 @@ import { SAMPLE_GEOJSON, SAMPLE_LAYER_NAME } from '../lib/layers/sample-layers'
 import type { WfsCapabilities } from '../lib/layers/wfs'
 import type { HeightMode } from '../lib/layers/geojson'
 import type { ViewerAPI } from '../lib/viewer'
+import { useSceneStore } from '../stores/sceneStore'
+import { placementFromExtraction } from '../lib/geo/placement'
+import type { AnchorPairing } from '../lib/layers/layer-anchor'
 
 interface Props {
   viewerApiRef: React.RefObject<ViewerAPI | null>
@@ -44,6 +48,30 @@ const inputCls =
   'w-full min-w-0 px-2 py-1.5 max-md:py-2.5 rounded-[7px] text-[11px] max-md:text-[13px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
 const btnCls =
   'shrink-0 px-2.5 py-1.5 max-md:py-2.5 rounded-[7px] text-[11px] max-md:text-[13px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] transition-colors disabled:opacity-40'
+
+
+/**
+ * A loaded model's own georeference as a lat/lon ↔ scene pairing, the active
+ * model first — what data layers line up with while the map is off. The same
+ * resolution the map uses for satellites (App: setSatelliteResolver).
+ */
+function georefPairing(api: ViewerAPI | null): AnchorPairing | null {
+  if (!api) return null
+  const { models, activeModelId } = useSceneStore.getState()
+  const georefs = useGeoStore.getState().georefByModel
+  const order = [...models].sort((a, b) => Number(b.id === activeModelId) - Number(a.id === activeModelId))
+  for (const m of order) {
+    const g = georefs[m.id]
+    const b = api.getModelBounds(m.id)
+    if (!g || !b) continue
+    const r = placementFromExtraction(g, b)
+    if (!r.ok) continue
+    // No map plane while the map is off: the file's stated elevation has
+    // nothing to be measured against, so the ground is the model's floor.
+    return { placement: { ...r.value, heightOffsetM: 0 }, scene: { x: b.center.x, z: b.center.z }, floorY: b.center.y - b.size.y / 2 }
+  }
+  return null
+}
 
 export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   const { t } = useTranslation('layers')
@@ -79,6 +107,8 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     },
     getModelBounds: () => viewerApiRef.current?.getModelBounds() ?? null,
     mapGroundAt: (x, z) => viewerApiRef.current?.mapGroundAt(x, z) ?? null,
+    getMapAnchor: () => viewerApiRef.current?.mapAnchor() ?? null,
+    getGeorefAnchor: () => georefPairing(viewerApiRef.current),
   }), [viewerApiRef])
 
   // Dropped .geojson files and the layers saved on this device are taken over
@@ -94,7 +124,25 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     const setup = useVectorLayerStore.getState().setupUrl
     if (setup) {
       useVectorLayerStore.getState().setSetupUrl(null)
-      void run(async () => reportImport(await importLayersFromUrl(setup)), setup)
+      // A link's layers live on other servers: the visitor is asked first
+      // (lib/privacy/external-data). A setup on another server is named itself
+      // (the servers it lists are known only once it has been read, from
+      // there); one on this site is read first and its servers listed.
+      void (async () => {
+        const foreign = hostsIn(new URL(setup, location.href).href)
+        let text: string | null = null
+        let hosts = foreign
+        if (foreign.length === 0) {
+          try {
+            const res = await fetch(setup)
+            if (res.ok) { text = await res.text(); hosts = await layersSetupHosts(JSON.parse(text)) }
+          } catch { /* the importer reports a bad setup */ }
+        }
+        const accepted = await confirmExternalData(foreign.length ? 'layersUrl' : 'layers', hosts)
+        if (!accepted) { toast(tc('externalData.skipped'), 'info'); return }
+        const body = text
+        void run(async () => reportImport(body !== null ? await importLayersSession(body) : await importLayersFromUrl(setup)))
+      })()
       return
     }
     if (!useVectorLayerStore.getState().restorePending) return
@@ -104,6 +152,20 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // A scene document's layers arrive as text once its models are in (App);
+  // taken whenever they are set, not only at mount.
+  const setupText = useVectorLayerStore((s) => s.setupText)
+  useEffect(() => {
+    // Taken from the store, not the render's value: an effect that runs twice
+    // (StrictMode, a re-render before the clear lands) must import it once.
+    const text = useVectorLayerStore.getState().setupText
+    if (!text) return
+    useVectorLayerStore.getState().setSetupText(null)
+    // Asked for already: the scene's question (App) covered its layers.
+    void run(async () => reportImport(await importLayersSession(text)))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setupText])
 
   // Click a route, zone or point to read its attributes. Never swallows the
   // click: the IFC selection behind it still happens, the two just coexist.
@@ -148,10 +210,9 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     if (frame) setTimeout(() => void frameVectorLayer(r.id), 200)
   }
 
-  /** `server`: the URL being waited on, so the panel can say who is slow. */
-  const run = async (fn: () => Promise<void>, server?: string): Promise<void> => {
+  const run = async (fn: () => Promise<void>): Promise<void> => {
     setBusy(true)
-    try { await (server ? trackWait(hostLabel(server), fn()) : fn()) } finally { setBusy(false) }
+    try { await fn() } finally { setBusy(false) }
   }
 
   const onFiles = (files: FileList): void => void run(async () => {
@@ -217,8 +278,6 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
         <input ref={fileRef} type="file" multiple accept=".geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv" className="hidden"
           onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = '' }} />
 
-        <SlowLoadHint />
-
         {/* What was just picked in the scene comes first: it is what the user is looking at. */}
         <SelectedFeature />
 
@@ -276,7 +335,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                 <div className="flex gap-1.5">
                   <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/data.geojson" />
                   <button className={btnCls} disabled={busy || !url.trim()}
-                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') }, url.trim())}>
+                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') })}>
                     {t('url.add')}
                   </button>
                 </div>
@@ -293,7 +352,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                       if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
                       setCaps(r.caps)
                       setWfsType(r.caps.featureTypes.find((f) => f.supportsJson)?.name ?? r.caps.featureTypes[0].name)
-                    }, wfsUrl.trim())}>
+                    })}>
                     {t('wfs.connect')}
                   </button>
                 </div>
@@ -311,7 +370,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                         {RADII.map((r) => <option key={r} value={r}>{r >= 1000 ? `${r / 1000} km` : `${r} m`}</option>)}
                       </select>
                       <button className={btnCls} disabled={busy || !wfsType}
-                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)), wfsUrl.trim())}>
+                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)))}>
                         {t('wfs.load')}
                       </button>
                     </div>
@@ -508,34 +567,6 @@ function LayerDownload({ layer }: { layer: VectorLayer }) {
           <input type="checkbox" checked={onlyVisible} onChange={(e) => setOnlyVisible(e.target.checked)} />{t('download.onlyVisible')}
         </label>
       )}
-    </div>
-  )
-}
-
-/**
- * "Waiting for ovc.catastro.meh.es… 9 s": some public servers take 10-15 s to
- * answer, and a silent '…' for that long reads as a hang. Only after 2 s,
- * only for loads the user started.
- */
-function SlowLoadHint() {
-  const { t } = useTranslation('layers')
-  const waiting = useVectorLayerStore((s) => s.waiting)
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (!waiting) return
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [waiting])
-  if (!waiting) return null
-  const s = Math.floor((now - waiting.since) / 1000)
-  if (s < 2) return null
-  return (
-    <div role="status" aria-live="polite" data-testid="slow-load"
-      className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] bg-[var(--surface-2)] text-[10px] text-[var(--text-dim)]">
-      <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" aria-hidden />
-      <span className="flex-1 min-w-0 truncate">
-        {waiting.label ? t('wait.server', { host: waiting.label, s }) : t('wait.generic', { s })}
-      </span>
     </div>
   )
 }

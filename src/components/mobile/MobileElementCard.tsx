@@ -18,6 +18,7 @@
 // control a labelled button, and the sheet gets focus when it opens so
 // VoiceOver reads it.
 
+import { TwinLiveSection } from '../TwinLiveSection'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MobileSheet } from './MobileSheet'
@@ -185,6 +186,11 @@ export function MobileElementCard({
             <Action label={t('contextMenu.revealInTree')} onClick={() => onReveal(id, modelId)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 5h6M8 12h6M8 19h6M6 5v14h2M6 12h2" /></svg>
             </Action>
+          </div>
+
+          {/* Live data: the devices bound to this element (operational twin). Renders nothing otherwise. */}
+          <div className="mb-3 rounded-[14px] overflow-hidden border border-[var(--border)] empty:hidden">
+            <TwinLiveSection globalId={data?.globalId} modelId={modelId} expressId={Number.isFinite(id) ? id : null} />
           </div>
 
           {/* Key data */}

@@ -1,7 +1,8 @@
 // ─── LiveSources ──────────────────────────────────────────────────────────────
 // Two pieces of the Data layers panel:
-//   • <PresetSources/> — public sources that work today (Bicing, FGC, Rodalies,
-//     Catastro, ICGC), each pre-configured from what it was measured to do;
+//   • <PresetSources/> — public sources that work today (see feed-presets.ts),
+//     each pre-configured from what it was measured to do, the scene's own
+//     city first and the rest folded under "Other places";
 //   • <LiveControls/>  — per layer: refresh on/off, the requested interval, and
 //     what the source actually allows (its own freshness, its quota), plus
 //     what changed on the last refresh.
@@ -10,8 +11,10 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TmbKeysBox, useTmbKeys } from './TmbPanels'
-import { useVectorLayerStore, type VectorLayer, trackWait, hostLabel } from '../stores/vectorLayerStore'
-import { FEED_PRESETS } from '../lib/layers/feed-presets'
+import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
+import { presetsForSite, type FeedPreset } from '../lib/layers/feed-presets'
+import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
+import { useGeoStore } from '../stores/geoStore'
 import { LIVE_INTERVALS_S } from '../lib/layers/live-feed'
 import {
   addPreset, frameVectorLayer, setLive, liveUrlOf, getLayersProxy, setLayersProxy,
@@ -20,6 +23,7 @@ import {
 } from '../lib/layers/vector-runner'
 import { inferSchema } from '../lib/twin/flatten-props'
 import { toast } from '../stores/toastStore'
+import { hostsIn } from '../lib/privacy/external-data'
 
 const btn =
   'shrink-0 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] transition-colors disabled:opacity-40'
@@ -31,41 +35,58 @@ export function PresetSources() {
   const { t } = useTranslation('layers')
   const [busy, setBusy] = useState<string | null>(null)
   const hasProxy = !!getLayersProxy()
+  // The scene's site, if it has one: a city's own sources go first.
+  const anchor = useSceneAnchorStore((s) => s.anchor)
+  const placement = useGeoStore((s) => s.placement)
+  const site = anchor ?? placement
+  const { near, other } = presetsForSite(site ? { lat: site.lat, lon: site.lon } : null)
+  const card = (p: FeedPreset) => (
+    <div key={p.id} className="flex items-start gap-1.5 px-2 py-1.5 rounded-[7px] border border-[var(--border)]" data-testid={`preset-${p.id}`}>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-[var(--text)] truncate">{t(`presets.${p.id}.name` as never)}</span>
+          <span className="shrink-0 px-1 rounded text-[8px] font-mono font-semibold bg-white/[0.06] text-[var(--text-dim)]">{KIND_BADGE[p.kind]}</span>
+          {p.needsKey === 'tmb' && !tmbKeys && (
+            <span className="shrink-0 px-1 rounded text-[8px] font-semibold bg-[#f5a524]/20 text-[#f5a524]"
+              title={t('tmb.why')}>{t('tmb.needsKey')}</span>
+          )}
+          {p.needsProxy && (
+            <span className={`shrink-0 px-1 rounded text-[8px] font-semibold ${hasProxy ? 'bg-white/[0.06] text-[var(--text-dim)]' : 'bg-[#f5a524]/20 text-[#f5a524]'}`}
+              title={t('presets.needsProxyHint')}>{t('presets.needsProxy')}</span>
+          )}
+        </div>
+        <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t(`presets.${p.id}.hint` as never)}</div>
+        {/* Who is asked: the servers this source reads, before anyone presses Connect. */}
+        <div className="text-[9px] font-mono text-[var(--text-faint)] truncate" title={hostsIn(p).join(', ')}>→ {hostsIn(p).join(', ')}</div>
+      </div>
+      <button className={btn} disabled={busy !== null}
+        onClick={async () => {
+          setBusy(p.id)
+          try {
+            const r = await addPreset(p, t(`presets.${p.id}.name` as never), undefined, (k) => t(k as never))
+            if (!r.ok) toast(t(r.errorKey as never), 'error')
+            else setTimeout(() => void frameVectorLayer(r.id), 300)
+          } finally { setBusy(null) }
+        }}>
+        {busy === p.id ? '…' : t('presets.connect')}
+      </button>
+    </div>
+  )
   return (
     <div className="flex flex-col gap-1 pt-2 border-t border-[var(--border)]" data-testid="preset-sources">
       <div className="text-[11px] font-medium">{t('presets.title')}</div>
       <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('presets.hint')}</div>
+      <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('presets.privacy')}</div>
       <TmbKeysBox />
-      {FEED_PRESETS.map((p) => (
-        <div key={p.id} className="flex items-start gap-1.5 px-2 py-1.5 rounded-[7px] border border-[var(--border)]">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-[var(--text)] truncate">{t(`presets.${p.id}.name` as never)}</span>
-              <span className="shrink-0 px-1 rounded text-[8px] font-mono font-semibold bg-white/[0.06] text-[var(--text-dim)]">{KIND_BADGE[p.kind]}</span>
-              {p.needsKey === 'tmb' && !tmbKeys && (
-                <span className="shrink-0 px-1 rounded text-[8px] font-semibold bg-[#f5a524]/20 text-[#f5a524]"
-                  title={t('tmb.why')}>{t('tmb.needsKey')}</span>
-              )}
-              {p.needsProxy && (
-                <span className={`shrink-0 px-1 rounded text-[8px] font-semibold ${hasProxy ? 'bg-white/[0.06] text-[var(--text-dim)]' : 'bg-[#f5a524]/20 text-[#f5a524]'}`}
-                  title={t('presets.needsProxyHint')}>{t('presets.needsProxy')}</span>
-              )}
-            </div>
-            <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t(`presets.${p.id}.hint` as never)}</div>
-          </div>
-          <button className={btn} disabled={busy !== null}
-            onClick={async () => {
-              setBusy(p.id)
-              try {
-                const r = await trackWait(hostLabel(p.url), addPreset(p, t(`presets.${p.id}.name` as never), undefined, (k) => t(k as never)))
-                if (!r.ok) toast(t(r.errorKey as never), 'error')
-                else setTimeout(() => void frameVectorLayer(r.id), 300)
-              } finally { setBusy(null) }
-            }}>
-            {busy === p.id ? '…' : t('presets.connect')}
-          </button>
-        </div>
-      ))}
+      {near.map(card)}
+      {other.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer select-none text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] py-1 max-md:py-2">
+            {t('presets.otherPlaces', { n: other.length })}
+          </summary>
+          <div className="flex flex-col gap-1">{other.map(card)}</div>
+        </details>
+      )}
     </div>
   )
 }
@@ -259,7 +280,7 @@ export function JoinForm({ layer }: { layer: VectorLayer }) {
         <button className={btn} disabled={busy || !url.trim()} onClick={async () => {
           setBusy(true)
           try {
-            const r = await trackWait(hostLabel(url.trim()), previewTable(url.trim(), tableOpts()))
+            const r = await previewTable(url.trim(), tableOpts())
             if (!r.ok) { toast(t(r.errorKey), 'error'); return }
             setCols(r.columns); setSample(r.sample)
             setTableKey(r.columns[0] ?? '')
@@ -312,9 +333,9 @@ export function JoinForm({ layer }: { layer: VectorLayer }) {
             <button className={btn} disabled={busy || !layerKey || !tableKey} onClick={async () => {
               setBusy(true)
               try {
-                const r = await trackWait(hostLabel(url.trim()), attachJoin(layer.id, url.trim(), {
+                const r = await attachJoin(layer.id, url.trim(), {
                   table: tableOpts(), spec: { layerKey, tableKey }, timeColumn: timeCol || undefined,
-                }, interval))
+                }, interval)
                 if (!r.ok) toast(t(r.errorKey), 'error')
                 else { toast(t('join.done'), 'success'); setOpen(false) }
               } finally { setBusy(false) }

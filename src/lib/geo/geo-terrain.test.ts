@@ -39,6 +39,38 @@ describe('tileNormalizedCenter', () => {
   })
 })
 
+describe('terrain drape orientation', () => {
+  afterEach(() => { vi.unstubAllGlobals() })
+
+  // The worker sends the drape already flipped (row 0 = south), because WebGL
+  // ignores UNPACK_FLIP_Y for ImageBitmaps. Uploading it with flipY again
+  // mirrored the drape north–south about the patch centre (since 2026-08-25).
+  it('uploads the pre-flipped drape without flipping it again', async () => {
+    const bitmap = { width: 4, height: 4, close: vi.fn() }
+    class DrapeWorker {
+      onmessage: ((e: { data: unknown }) => void) | null = null
+      onerror: ((e: unknown) => void) | null = null
+      postMessage(m: { id: string; zoom: number; grid: number }): void {
+        const verts = m.grid + 1
+        const zeros = () => new Float32Array(verts * verts)
+        const normals = new Float32Array(verts * verts * 3)
+        for (let k = 0; k < verts * verts; k++) normals[3 * k + 2] = 1
+        setTimeout(() => this.onmessage?.({ data: {
+          type: 'done', id: m.id, zoom: m.zoom, grid: m.grid, centerTx: 9327, centerTy: 4742,
+          anchorElevation: 10, heights: zeros(), normals, detail: zeros(), sky: zeros(), imagery: bitmap,
+        } }), 0)
+      }
+      terminate(): void {}
+    }
+    vi.stubGlobal('Worker', DrapeWorker)
+    const p = await buildTerrainPatch({ lat: 60.17, lon: 24.94 } as GeoPlacement, null, {})
+    const map = ((p.group.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial).map
+    expect(map).toBeTruthy()
+    expect(map!.flipY).toBe(false)
+    p.dispose()
+  })
+})
+
 describe('terrain patch re-bakes', () => {
   // A stand-in for geo-terrain.worker: a slope from 900 to 3 200 m with ridges
   // on it, so at 42.5°N it crosses every belt from lowland to snow, plus the

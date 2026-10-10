@@ -11,6 +11,7 @@
 // mismatch is accepted and absorbed by the user-facing height-offset slider.
 
 import { latLonToTilePixel } from './geo-math'
+import { demSourceFor, demTileUrl } from './dem-sources'
 import { createLogger } from '../logger'
 
 const log = createLogger('GeoElevation')
@@ -42,18 +43,23 @@ export function terrariumTileUrl(z: number, x: number, y: number): string {
 }
 
 /**
- * Fetch + decode the terrain elevation at a WGS84 position, in metres.
- * Throws on network/decode failure — callers treat elevation as best-effort.
+ * Fetch + decode the ground elevation at a WGS84 position, in metres, from
+ * the best source for that site (dem-sources.ts: the ICGC model in Catalonia,
+ * the global mosaic elsewhere). Throws on network/decode failure — callers
+ * treat elevation as best-effort.
  */
 export async function sampleElevation(lat: number, lon: number, zoom = SAMPLE_ZOOM): Promise<number> {
-  const { x, y, px, py } = latLonToTilePixel(lat, lon, zoom, TILE_DIM)
-  const url = terrariumTileUrl(zoom, x, y)
+  const dem = demSourceFor(lat, lon)
+  const z = Math.min(zoom, dem.maxZoom)
+  const { x, y, px, py } = latLonToTilePixel(lat, lon, z, TILE_DIM)
+  const url = demTileUrl(dem, z, x, y)
 
   const res = await fetch(url, { method: 'GET' })
   if (!res.ok) throw new Error(`terrain tile HTTP ${res.status}`)
   const blob = await res.blob()
 
-  const bitmap = await createImageBitmap(blob)
+  // Heights, not colours: no colour management, no premultiplied alpha.
+  const bitmap = await createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' })
   try {
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
     const ctx2d = canvas.getContext('2d')
@@ -61,8 +67,8 @@ export async function sampleElevation(lat: number, lon: number, zoom = SAMPLE_ZO
     ctx2d.drawImage(bitmap, 0, 0)
     const data = ctx2d.getImageData(0, 0, bitmap.width, bitmap.height).data
     const o = pixelOffset(px, py, bitmap.width)
-    const elevation = decodeTerrarium(data[o], data[o + 1], data[o + 2])
-    log.debug(`elevation @ ${lat.toFixed(5)},${lon.toFixed(5)} = ${elevation.toFixed(1)} m`)
+    const elevation = dem.decode(data[o], data[o + 1], data[o + 2], data[o + 3])
+    log.debug(`elevation @ ${lat.toFixed(5)},${lon.toFixed(5)} = ${elevation.toFixed(1)} m (${dem.id})`)
     return elevation
   } finally {
     bitmap.close()

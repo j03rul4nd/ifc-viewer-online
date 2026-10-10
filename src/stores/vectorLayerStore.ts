@@ -181,6 +181,12 @@ interface VectorLayerState {
   /** `?layers=` setup to open once the panel mounts (wins over restoring). */
   setupUrl: string | null
   setSetupUrl: (url: string | null) => void
+  /**
+   * A layers file handed over as text (a scene document's layers). Session
+   * only, like setupUrl; the panel takes it whenever it is set.
+   */
+  setupText: string | null
+  setSetupText: (text: string | null) => void
   setSelected: (sel: VectorSelection | null) => void
   enqueueFiles: (files: File[]) => void
   takePendingFiles: () => File[]
@@ -254,6 +260,8 @@ export const useVectorLayerStore = create<VectorLayerState>()(
       waiting: null,
       setupUrl: null,
       setSetupUrl: (url) => set({ setupUrl: url }, false, 'setSetupUrl'),
+      setupText: null,
+      setSetupText: (text) => set({ setupText: text }, false, 'setSetupText'),
       // Closing the selection also lets go of a followed feature.
       setSelected: (sel) => set(sel ? { selected: sel } : { selected: null, following: null }, false, 'setSelected'),
       enqueueFiles: (files) =>

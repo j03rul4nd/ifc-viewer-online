@@ -1,0 +1,188 @@
+{
+  "$schema": "https://www.ifcvieweronline.eu/schemas/scene-v1.json",
+  "format": "ifc-viewer-scene",
+  "v": 1,
+  "meta": {
+    "title": "Tokyo · Waseda — Toden Arakawa line digital twin",
+    "description": "The Waseda terminus of the Toden Arakawa line (Tokyo Sakura Tram) as a georeferenced IFC on GSI terrain, with Toei stations live. The platform edges light up while a tram stands at the stop, with its number above it, and the departure screens show the line’s status.",
+    "license": "CC BY 4.0 (this scene document). Data keep their own licences: see each layer.",
+    "tags": [
+      "tokyo",
+      "digital twin",
+      "open data",
+      "IFC 4.3",
+      "ODPT",
+      "Toei",
+      "tram"
+    ],
+    "place": {
+      "name": "Waseda, Shinjuku, Tokyo",
+      "lat": 35.7121,
+      "lon": 139.7193
+    },
+    "createdAt": "2026-10-10T03:00:00Z",
+    "notes": [
+      "The IFC file is an illustrative model authored from OpenStreetMap (ODbL), GSI elevation and photographs; its asset values are marked as demo.",
+      "ODPT says where a train is only as \"at station A\" or \"between A and B\": the binding is keyed by the station a train is at or has just left. Line status only reports delays of 15 minutes or more.",
+      "Waseda is a terminus: a tram that has arrived waits a few minutes before it leaves; ODPT does not say which of the two platforms it uses, so both edges light up.",
+      "One OpenStreetMap building (way 260395476) is hidden: it maps the stop’s own concourse, which the model replaces."
+    ]
+  },
+  "models": [
+    {
+      "url": "/models/tokyo/waseda-tram-stop.ifc",
+      "name": "waseda-tram-stop.ifc"
+    }
+  ],
+  "layers": [
+    {
+      "preset": "tokyo-toei-stations"
+    }
+  ],
+  "twin": {
+    "sources": [
+      {
+        "id": "odpt-toei-status",
+        "name": "Toei line status (ODPT, live)",
+        "url": "https://api-public.odpt.org/api/v4/odpt:TrainInformation?odpt:operator=odpt.Operator:Toei",
+        "intervalS": 60,
+        "enabled": true,
+        "mapping": {
+          "listPath": "",
+          "idField": "odpt:railway",
+          "timeField": "dc:date"
+        }
+      },
+      {
+        "id": "odpt-toei-trains",
+        "name": "Toei trains and trams (ODPT, live)",
+        "url": "https://api-public.odpt.org/api/v4/odpt:Train?odpt:operator=odpt.Operator:Toei",
+        "intervalS": 30,
+        "enabled": true,
+        "mapping": {
+          "listPath": "",
+          "idField": "odpt:fromStation",
+          "timeField": "dc:date"
+        }
+      }
+    ],
+    "bindings": [
+      {
+        "id": "waseda-tram",
+        "name": "Tram at Waseda (SA-30) — platform edges",
+        "sourceId": "odpt-toei-trains",
+        "deviceId": "odpt.Station:Toei.Arakawa.Waseda",
+        "targets": [],
+        "query": {
+          "classes": [
+            "IfcCovering"
+          ],
+          "storey": "",
+          "nameContains": "Línea naranja de borde"
+        },
+        "rules": [
+          {
+            "id": "at",
+            "name": "Tram at the stop",
+            "match": "all",
+            "filters": [
+              {
+                "field": "odpt:toStation",
+                "op": "missing"
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "leaving",
+            "name": "Tram just left Waseda",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 120,
+        "label": {
+          "field": "odpt:trainNumber"
+        }
+      },
+      {
+        "id": "arakawa-status",
+        "name": "Toden Arakawa line status — departure screens",
+        "sourceId": "odpt-toei-status",
+        "deviceId": "odpt.Railway:Toei.Arakawa",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Matriz LED"
+        },
+        "rules": [
+          {
+            "id": "disrupted",
+            "name": "Disruption reported (delays of 15 min or more)",
+            "match": "any",
+            "filters": [
+              {
+                "field": "odpt:trainInformationStatus.ja",
+                "op": "exists"
+              },
+              {
+                "field": "odpt:trainInformationStatus",
+                "op": "exists"
+              }
+            ],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            },
+            "alert": {
+              "forMin": 5
+            }
+          },
+          {
+            "id": "normal",
+            "name": "No delays of 15 min or more",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 900
+      }
+    ]
+  },
+  "view": {
+    "map": "terrain,buildings",
+    "hide": [
+      "w260395476"
+    ],
+    "camera": {
+      "position": [
+        32,
+        46,
+        58
+      ],
+      "target": [
+        -10,
+        0,
+        -5
+      ]
+    }
+  }
+}

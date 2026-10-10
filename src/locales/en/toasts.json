@@ -14,7 +14,8 @@
     "batchPartial": "{{name}} — {{loaded}} loaded, {{failed}} failed",
     "dropUnsupported_one": "{{count}} file is not a supported format",
     "dropUnsupported_other": "{{count}} files are not a supported format",
-    "dropBcfHint": "Open the BCF panel to import .bcf files"
+    "dropBcfHint": "Open the BCF panel to import .bcf files",
+    "mapDeclined": "The link asked to show the map; it stays off until you allow it (Map panel)."
   },
   "validation": {
     "complete": "Validation complete — {{count}} issues found",
@@ -42,5 +43,8 @@
   "tree": {
     "notInTree": "This element is not in the spatial tree — nothing above it is either.",
     "revealedHost": "Not in the spatial tree on its own. Showed what it belongs to: “{{name}}”."
+  },
+  "scene": {
+    "failed": "The scene could not be opened: {{message}}"
   }
 }

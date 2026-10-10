@@ -336,5 +336,18 @@
       "privacyLink": "privacy policy",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "This link brings data from other servers",
+    "body": {
+      "layers": "To show its data layers, data will be requested from these servers:",
+      "layersUrl": "To show its data layers, its configuration will be read from this server, and then the servers that configuration lists:",
+      "twin": "To show its live data, the app will connect to these servers:",
+      "scene": "To show its data layers and live data, the app will contact these servers:"
+    },
+    "sees": "Each server will see your IP address and, for layers on the map, the site's area. Your model is not sent.",
+    "load": "Load the data",
+    "skip": "Not now",
+    "skipped": "The link's external data was not loaded."
   }
 }

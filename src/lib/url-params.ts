@@ -121,6 +121,22 @@ export interface AppUrlParams {
    * prefers-reduced-motion. Since v1.15.
    */
   turntable?: number
+  /**
+   * `?camera=px,py,pz,tx,ty,tz` — open on this exact camera (scene metres, Y
+   * up: eye then orbit target), once the models are in. Wins over `view`.
+   */
+  camera?: { position: [number, number, number]; target: [number, number, number] }
+  /**
+   * `?hide=w123,w456` — OpenStreetMap features to hide in map mode for this
+   * page view (not saved as the visitor's own hidden features).
+   */
+  hideFeatures: string[]
+  /**
+   * `?scene=<url>` — a scene document (docs/SCENE_FORMAT.md) to open. It is
+   * resolved before the app mounts and contributes its own parameters (see
+   * setSceneParams); kept here so the app knows a scene is in charge.
+   */
+  sceneUrl?: string
   /** Granular chrome overrides. `undefined` = fall back to the preset default. */
   overrides: {
     toolbar?: boolean
@@ -255,10 +271,36 @@ function splitList(values: string[]): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Parameters a scene document contributes (scene-boot.ts), merged UNDER the
+ * real query string: what the visitor's URL says explicitly still wins, so
+ * `?scene=…&bg=white` opens the scene on white.
+ */
+let sceneParams: URLSearchParams | null = null
+export function setSceneParams(q: URLSearchParams | null): void { sceneParams = q }
+
+function withSceneParams(p: URLSearchParams): URLSearchParams {
+  if (!sceneParams) return p
+  const merged = new URLSearchParams(sceneParams)
+  for (const key of new Set(p.keys())) {
+    merged.delete(key)
+    for (const v of p.getAll(key)) merged.append(key, v)
+  }
+  return merged
+}
+
+/** `px,py,pz,tx,ty,tz` → a camera, or undefined when it is not six finite numbers. */
+function parseCamera(v: string | null): AppUrlParams['camera'] {
+  if (!v) return undefined
+  const n = v.split(',').map((x) => Number(x.trim()))
+  if (n.length !== 6 || !n.every(Number.isFinite)) return undefined
+  return { position: [n[0], n[1], n[2]], target: [n[3], n[4], n[5]] }
+}
+
 /** Parse the given query string (defaults to the live `window.location.search`). */
 export function parseAppUrlParams(search?: string): AppUrlParams {
   const qs = search ?? (typeof window !== 'undefined' ? window.location.search : '')
-  const p = new URLSearchParams(qs)
+  const p = search === undefined ? withSceneParams(new URLSearchParams(qs)) : new URLSearchParams(qs)
 
   const rawModels = splitList([...p.getAll('model'), ...p.getAll('src'), ...p.getAll('url')])
   const modelUrls = rawModels.filter(isLoadableUrl)
@@ -306,6 +348,9 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     fill: parseFill(p.get('fill')),
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
     turntable: parseTurntable(p.get('turntable')),
+    camera: parseCamera(p.get('camera')),
+    hideFeatures: (p.get('hide') ?? '').split(',').map((x) => x.trim()).filter((x) => /^[nwr]\d{1,15}$/.test(x)).slice(0, 200),
+    sceneUrl: [p.get('scene') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
       tree:           parseBool(p.get('tree')),
@@ -508,7 +553,28 @@ export type EmbedEventType =
   | 'tour-ended'
   // The director is generating or exporting a presentation (SDK 1.12).
   | 'presentation-progress'
+  // A feature of a data layer was clicked (SDK 1.17): its layer and properties.
+  | 'layer-feature-picked'
+  // A layer or twin rule started or stopped alerting (SDK 1.17).
+  | 'alert'
   | 'result'
+
+/**
+ * True when ANOTHER website frames the app — the case where that website, not
+ * the visitor, decides what its page loads (map tiles, a link's data). A frame
+ * on this same origin (the blog's live examples) is this site talking: the
+ * visitor is asked as on any page of it.
+ */
+export function isEmbeddedByOtherSite(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.self === window.top) return false
+    return window.top!.location.origin !== window.location.origin
+  } catch {
+    // Reading the parent's location throws exactly when it is another origin.
+    return true
+  }
+}
 
 /** True when the app is running inside an iframe. */
 export function isEmbedded(): boolean {

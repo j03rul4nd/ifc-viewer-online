@@ -1,0 +1,240 @@
+{
+  "title": "Inundació (simulació)",
+  "close": "Tanca",
+  "disclaimer": "Simulació simplificada i orientativa que s'executa al teu navegador: no és un estudi hidràulic certificat. Cap dada del model no surt d'aquest dispositiu.",
+  "unsupported": "Aquest navegador no pot executar la simulació: necessita WebGPU, o WebGL 2 amb render a textures float.",
+  "grid": {
+    "title": "Malla",
+    "cell": "Cel·la",
+    "margin": "Marge"
+  },
+  "ground": {
+    "title": "Terreny",
+    "order": "S'usa en aquest ordre: el terreny del mateix IFC, un MDT (DEM) importat, el relleu del mapa, i els buits que queden s'omplen a partir de les cel·les veïnes.",
+    "useMap": "Usa el relleu del mapa",
+    "mapOff": "Activa el mapa amb relleu per usar-ne el terreny",
+    "importDem": "Importa un DEM…",
+    "removeDem": "Treu el DEM",
+    "demFormats": ".asc o GeoTIFF",
+    "plane": {
+      "title": "Sense dades de terreny: pla de demostració",
+      "auto": "A la cota de la planta baixa del projecte",
+      "level": "Cota",
+      "slope": "Pendent",
+      "towards": "Cau cap a"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "E",
+    "s": "S",
+    "w": "O"
+  },
+  "buildings": {
+    "title": "Edificis",
+    "map": "Els edificis del mapa són obstacles",
+    "mapOff": "Activa el mapa per incloure els edificis de l'entorn",
+    "roofs": "Cobertes",
+    "perimeter": "Aboquen al carrer",
+    "drained": "Aboquen al clavegueram"
+  },
+  "rain": {
+    "title": "Pluja",
+    "presets": {
+      "shower": "Ruixat · {{mm}} mm en {{min}} min",
+      "storm": "Tempesta · {{mm}} mm en {{min}} min",
+      "intense": "Tempesta intensa · {{mm}} mm en {{min}} min",
+      "extreme": "Episodi extrem · {{mm}} mm en {{min}} min"
+    },
+    "facts": "{{mm}} mm en {{min}} min, amb un pic proper a {{peak}} mm/h. Uniforme sobre tota l'àrea.",
+    "after": "Després",
+    "edit": "Edita",
+    "doneEditing": "Fet",
+    "custom": "Dibuixada a mà"
+  },
+  "surface": {
+    "title": "Superfície",
+    "paved": "Pavimentada (n = {{n}})",
+    "urban": "Urbana mixta (n = {{n}})",
+    "grass": "Gespa (n = {{n}})",
+    "vegetation": "Vegetació densa (n = {{n}})",
+    "section": "Superfície i sòl"
+  },
+  "edges": {
+    "title": "Vores",
+    "free": "L'aigua surt",
+    "closed": "Tancades"
+  },
+  "actions": {
+    "prepare": "Prepara la malla",
+    "rebuild": "Refés",
+    "run": "Simula",
+    "rerun": "Repeteix",
+    "pause": "Pausa",
+    "resume": "Continua",
+    "clear": "Treu"
+  },
+  "stage": {
+    "geometry": "Llegint la geometria del model…",
+    "raster": "Dibuixant la planta a la GPU…",
+    "terrain": "Muntant el terreny…",
+    "layers": "Preparant la làmina d'aigua…"
+  },
+  "report": {
+    "title": "El que veu la simulació",
+    "grid": "Malla",
+    "ground": "Terreny",
+    "dem": "Relleu del mapa",
+    "obstacles": "Cel·les obstacle",
+    "canopies": "{{n}} sota marquesines",
+    "relief": "Cota del terreny",
+    "coarsened": "L'àrea és gran per a aquesta mida de cel·la: cel·les ampliades a {{dx}} m.",
+    "planeWarn": "Aquí no hi ha dades de terreny: el terra és un pla a Y = {{y}} m. Importa un MDT o activa el mapa amb relleu per tenir-ne un de real.",
+    "coarseDem": "Aquí el relleu del mapa ve del mosaic global (dades de ≈30 m): no veu carrers ni vorades. Un MDT importat dona un resultat millor.",
+    "frame": "Enquadra"
+  },
+  "source": {
+    "ifc": "Terreny de l'IFC",
+    "dem": "DEM importat",
+    "map": "Relleu del mapa",
+    "plane": "Pla (sense dades)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (terreny nu)",
+    "terrarium": "Mosaic global (≈30 m)",
+    "unknown": "Mapa"
+  },
+  "demNote": {
+    "reprojected": "L'MDT s'ha reprojectat al sistema de coordenades del model.",
+    "sameCrs": "L'MDT és en el sistema de coordenades del model.",
+    "assumedSameCrs": "L'MDT no indica el seu sistema de coordenades (o el model no l'indica): se suposa que és el del model.",
+    "noHeightDatum": "El model no indica la seva referència de cotes: l'MDT s'ha situat a la planta baixa del projecte, sota el model.",
+    "notGeoreferenced": "El model no està georeferenciat, així que l'MDT no es pot situar. Georeferencia'l al panell Mapa.",
+    "outside": "L'MDT no cobreix l'àrea de la simulació."
+  },
+  "live": {
+    "time": "Simulat",
+    "flooded": "Àrea inundada (> llindar)",
+    "maxDepth": "Calat màxim",
+    "volume": "Aigua en superfície",
+    "mass": "Error de balanç de massa",
+    "infiltrated": "Absorbida pel sòl",
+    "outflow": "Ha sortit de l'àrea"
+  },
+  "view": {
+    "title": "Vista",
+    "now": "Calat actual",
+    "max": "Calat màxim",
+    "threshold": "Mostra des de",
+    "ground": "Mostra el terreny de la simulació",
+    "speed": "Velocitat",
+    "particles": "Línies de flux"
+  },
+  "hyeto": {
+    "label": "Intensitat de pluja per interval: prem i arrossega per dibuixar-la",
+    "scale": "Escala fins a {{max}} mm/h",
+    "total": "{{mm}} mm · pic {{peak}} mm/h",
+    "interval": "Cada",
+    "duration": "Durant"
+  },
+  "infiltration": {
+    "title": "Sòl",
+    "none": "Impermeable (sense infiltració)",
+    "compacted": "Sòl compactat ({{f0}} → {{fc}} mm/h)",
+    "loam": "Sòl franc, gespa ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Sòl sorrenc ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Línia de temps de la inundació",
+    "play": "Reprodueix",
+    "pause": "Pausa",
+    "scrub": "Temps simulat: arrossega per moure't",
+    "speed": "Velocitat de reproducció",
+    "speedValue": "{{n}} min/s",
+    "probe": "Sonda",
+    "probeHint": "Fes clic a l'escena per llegir l'aigua en aquell punt (Esc per sortir)",
+    "computing": "Calculant… {{pct}} %",
+    "live": "Torna al directe",
+    "rain": "Pluja",
+    "flooded": "Inundat",
+    "deepest": "Calat màx.",
+    "volume": "En superfície",
+    "legend": "Escala de colors"
+  },
+  "probe": {
+    "title": "Sonda",
+    "hint": "Fes clic a l'escena per llegir l'aigua en aquell punt.",
+    "reading": "Llegint…",
+    "obstacle": "Dins d'un obstacle (un edifici): aquí l'aigua no hi entra.",
+    "depth": "Calat a {{time}}",
+    "speed": "Velocitat",
+    "peak": "Calat màxim",
+    "arrival": "Arribada de l'aigua",
+    "never": "mai",
+    "ground": "Terreny",
+    "chart": "Calat durant l'episodi"
+  },
+  "affected": {
+    "title": "Inundació: elements afectats",
+    "panelTitle": "Elements on arriba l'aigua",
+    "summary": "Per sota de la làmina màxima al seu costat: {{n}} dels {{checked}} elements revisats.",
+    "none": "Cap dels {{checked}} elements revisats (portes, finestres, accessos, espais, equips) no queda per sota de la làmina màxima al seu costat.",
+    "atEnd": "Màxims de tot l'episodi ({{t}}).",
+    "partial": "Màxims fins ara ({{t}}): la simulació no ha acabat.",
+    "pending": "Es llisten quan acaba la simulació: portes, finestres, accessos, espais i equips per sota de la làmina màxima.",
+    "busy": "Revisant els elements del model…",
+    "analyze": "Revisa ara",
+    "reanalyze": "Torna a revisar",
+    "open": "Mostra a Validació",
+    "group": {
+      "opening": "Portes i finestres",
+      "access": "Accessos (rampes, escales, ascensors)",
+      "space": "Espais",
+      "equipment": "Equips i instal·lacions",
+      "below": "Sota rasant"
+    },
+    "belowNote": "La seva cota inferior és per sota del terreny exterior (soterranis, accessos enfonsats). La xifra és l'aigua que hi ha a fora; que entri o no depèn d'obertures que la simulació no modela.",
+    "outside": "{{d}} a fora",
+    "arrives": "aigua a {{t}}",
+    "jump": "Selecciona'l i ves-hi",
+    "more": "Mostra'n {{n}} més",
+    "capped": "Es mostren els {{n}} primers.",
+    "note": "Orientatiu: l'aigua a fora de cada element respecte a la seva cota més baixa. No forma part del resultat de la validació ni del Health Score.",
+    "dismiss": "Amaga"
+  },
+  "export": {
+    "title": "Exporta",
+    "png": "Imatge (PNG)",
+    "video": "Vídeo de l'episodi",
+    "stop": "Atura · {{pct}} %",
+    "videoNeedsEnd": "El vídeo està disponible quan acaba la simulació.",
+    "noVideo": "Aquest navegador no pot gravar vídeo.",
+    "field": "Capa",
+    "fields": {
+      "hMax": "Calat màx.",
+      "vMax": "Velocitat màx.",
+      "tWet": "Arribada"
+    },
+    "rasterNote": "Fitxers SIG de tota la malla, amb el nord a dalt; els edificis queden sense dades. Calat en m, velocitat en m/s, arribada en s.",
+    "crs": "Coordenades en {{crs}}, nord a dalt.",
+    "local": "El model no està georeferenciat: el fitxer usa les seves coordenades locals en planta (metres), sense sistema de coordenades."
+  },
+  "capture": {
+    "time": "t = {{t}} de {{end}}",
+    "disclaimer": "Simulació simplificada i orientativa: no és un estudi hidràulic certificat."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m per sota de la planta baixa del model a la cota que declara el seu IFC; el model quedava a aquesta alçada sobre el terreny que l'envolta i l'aigua del voltant no arribaria mai a les seves portes. S'ha pujat el terreny de la simulació fins al model. Convé revisar la cota de l'IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m per sobre de la planta baixa del model a la cota que declara el seu IFC; la planta baixa quedava enterrada. S'ha baixat el terreny de la simulació fins al model. Convé revisar la cota de l'IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m per sota de la planta baixa del model. Tal com està, el model queda a aquesta alçada sobre el terreny que l'envolta i l'aigua del voltant no arriba a les seves portes.",
+    "loweredOff": "{{source}}: {{d}} m per sobre de la planta baixa del model. Tal com està, la planta baixa queda enterrada i qualsevol aigua al voltant queda per sobre de les seves portes.",
+    "switch": "Recolzar el terreny a la planta baixa del model",
+    "source": {
+      "map": "Relleu del mapa",
+      "dem": "MDT importat"
+    }
+  },
+  "data": {
+    "map": "El relleu i els edificis són els que va descarregar el mode mapa, amb el teu permís, de proveïdors públics (relleu: ICGC a Catalunya, GSI al Japó o AWS Open Data a la resta; edificis: OpenStreetMap, mitjançant l'API Overpass), que veuen la zona de l'emplaçament i la teva adreça IP. La simulació només els llegeix: ni el model ni els resultats surten del navegador. Desactiva les dues opcions per simular només amb l'IFC; el permís es retira al panell Mapa."
+  }
+}

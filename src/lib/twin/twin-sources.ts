@@ -58,7 +58,7 @@ function elementIds(roots: SpatialNode[]): number[] {
   const ids: number[] = []
   const seen = new Set<number>()
   const visit = (n: SpatialNode): void => {
-    for (const id of [n.expressId, ...n.containedElements.map((e) => e.expressId)]) {
+    for (const id of [n.expressId, ...n.containedElements.flatMap((e) => [e.expressId, ...(e.parts ?? []).map((p) => p.expressId)])]) {
       if (!seen.has(id)) { seen.add(id); ids.push(id) }
     }
     n.children.forEach(visit)
@@ -197,7 +197,10 @@ function ifcEntities(modelId: string, roots: SpatialNode[], host: TwinHost): Twi
     add(n.expressId, n.ifcClass, {
       Name: n.name, LongName: n.longName, Description: n.description, GlobalId: n.globalId,
     }, n.longName || n.name)
-    for (const el of n.containedElements) add(el.expressId, el.ifcClass, { Name: el.name, GlobalId: el.globalId }, el.name)
+    for (const el of n.containedElements) {
+      add(el.expressId, el.ifcClass, { Name: el.name, GlobalId: el.globalId }, el.name)
+      for (const p of el.parts ?? []) add(p.expressId, p.ifcClass, { Name: p.name, GlobalId: p.globalId }, p.name)
+    }
     n.children.forEach(visit)
   }
   roots.forEach(visit)

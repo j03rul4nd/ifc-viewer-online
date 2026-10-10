@@ -101,7 +101,8 @@
     "quota": "The provider’s free quota is used up for now. Try again later.",
     "notLayersFile": "This file is not a data-layers setup.",
     "layersFileVersion": "This setup was saved by a newer version. Update the page and try again.",
-    "unknown": "it could not be read."
+    "unknown": "it could not be read.",
+    "timeout": "The server did not answer within 90 s. Try again later."
   },
   "kind": {
     "point": "Point",
@@ -112,7 +113,7 @@
     "noProps": "This feature has no attributes."
   },
   "restore": {
-    "failed": "{{count}} saved layers could not be restored (offline, or the file was too large to keep)."
+    "failed": "{{count}} saved layers could not be restored right now (offline, a server not answering, or a file too large to keep). They stay saved and will be tried again next time."
   },
   "search": {
     "title": "Search the twin",
@@ -227,7 +228,45 @@
     "tmb-bus-stops": {
       "name": "TMB · Bus stops",
       "hint": "Select a stop to see the next buses live · needs your TMB keys"
-    }
+    },
+    "bcn-endolla": {
+      "name": "EV charging (Endolla)",
+      "hint": "Barcelona's public chargers, ports free right now · every 2 min"
+    },
+    "bcn-air-quality": {
+      "name": "Air quality (ASPB)",
+      "hint": "NO₂, PM10, O₃… latest hour per station · arrives 1–3 h late"
+    },
+    "cat-meteocat": {
+      "name": "Weather stations (Meteocat)",
+      "hint": "Temperature, rain, wind · half-hourly, all of Catalonia"
+    },
+    "bcn-barris": {
+      "name": "Barcelona neighbourhoods",
+      "hint": "The 73 barris with their district · static"
+    },
+    "madrid-air-quality": {
+      "name": "Madrid · Air quality",
+      "hint": "Same hourly format as Barcelona · latest hour per station"
+    },
+    "tokyo-toei-stations": {
+      "name": "Tokyo · Toei stations",
+      "hint": "Metro and tram stations (ODPT) · static, no key"
+    },
+    "otherPlaces": "Other places ({{n}})",
+    "toei-bus": {
+      "name": "Tokyo · Toei buses (live)",
+      "hint": "Each bus at the stop it last passed (ODPT GTFS-Realtime, not GPS) · every 30 s, no key"
+    },
+    "fmi-air-quality": {
+      "name": "Helsinki · Air quality (FMI)",
+      "hint": "Hourly air-quality index, NO₂ and particles at HSY stations · up to 40 min late, no key"
+    },
+    "fmi-weather": {
+      "name": "Helsinki · Weather stations (FMI)",
+      "hint": "Temperature, wind, humidity and rain every 10 min · no key"
+    },
+    "privacy": "Each source is read directly from its server (shown on the card), which sees your IP address and, for most, the area around the site. Nothing about the model is sent."
   },
   "live": {
     "toggle": "Live refresh",
@@ -714,13 +753,83 @@
     },
     "filterBindings": "Filter bindings…",
     "alertsActive": "{{count}} alerting",
-    "summaryFilter": "Show only these bindings"
+    "summaryFilter": "Show only these bindings",
+    "mqttTopics": "MQTT topics, one per line (empty = plain WebSocket with JSON messages)",
+    "mqttHint": "With topics, this address is an MQTT broker’s WebSocket listener. Each message is read as { topic, …payload }, once a second; messages without the device id are skipped."
   },
   "add": {
     "title": "Add data"
   },
-  "wait": {
-    "server": "Waiting for {{host}}… {{s}} s",
-    "generic": "Working… {{s}} s"
+  "ev": {
+    "available": "Ports available",
+    "busy": "All ports in use",
+    "outOfService": "Out of service"
+  },
+  "air": {
+    "good": "good",
+    "fair": "fair",
+    "moderate": "moderate",
+    "poor": "poor",
+    "veryPoor": "very poor",
+    "extremelyPoor": "extremely poor"
+  },
+  "scene": {
+    "entry": "Digital-twin scene",
+    "title": "Share the scene",
+    "intro": "The whole scene in one file: models by URL, data layers, live devices, map, background and view. Share it as a link, embed it in a page or keep the file.",
+    "untitled": "Untitled scene",
+    "name": "Name",
+    "description": "Description",
+    "contents": "What it includes",
+    "models": "Models (by URL)",
+    "localModels": "{{n}} model(s) opened from this computer are not included: a scene can only point at files with a public URL.",
+    "layers": "Data layers",
+    "devices": "Live device bindings",
+    "map": "Map",
+    "off": "off",
+    "keepCamera": "Open on the current view",
+    "secretsRemoved": "{{n}} key or token parameter(s) were removed from layer URLs.",
+    "empty": "Load a model from a URL or add a data layer first: there is nothing to share yet.",
+    "download": "Download .scene.json",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "tooBigForLink": "Too large for a link. Download the file, publish it on any static host with CORS and open it with ?scene=<url>.",
+    "tooBigToOpen": "This scene is too large to open from a file here: publish it and open it with ?scene=<url>.",
+    "embed": "Embed in a web page",
+    "ui": {
+      "client": "Client",
+      "full": "Full",
+      "kiosk": "Canvas only"
+    },
+    "hostHint": "The scene travels inside the link: nothing is uploaded.",
+    "copyIframe": "Copy code",
+    "sources": "Data sources ({{n}})",
+    "live": "live",
+    "open": "Open scene…",
+    "openHint": "Open a .scene.json someone sent you.",
+    "demos": {
+      "title": "City digital twins",
+      "subtitle": "IFC models, live open data and devices on the map",
+      "barcelona": {
+        "name": "Barcelona · Plaça de Catalunya",
+        "description": "Eight georeferenced IFC models with Bicing, EV charging, traffic and air quality live; Bicing station 65 paints its own docks."
+      },
+      "helsinki": {
+        "name": "Helsinki · Rautatientori",
+        "description": "The Central Station, the Cathedral and the Elielinaukio bus terminal with FMI air quality and weather live; each bus bay lights up while an HSL bus stands at it (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tokyo · Tochōmae (Toei Ōedo)",
+        "description": "Exit A4 by the Metropolitan Government Building with Toei buses live; the Ōedo line’s status, a train at the platform and a passing bus paint the model."
+      },
+      "waseda": {
+        "name": "Tokyo · Waseda (Toden Arakawa)",
+        "description": "The tram line’s terminus: the platform edges light up while a tram stands at the stop, with its number above it, and the screens show the line’s status."
+      },
+      "models_one": "{{count}} IFC model",
+      "models_other": "{{count}} IFC models",
+      "live_one": "{{count}} live source",
+      "live_other": "{{count}} live sources"
+    }
   }
 }

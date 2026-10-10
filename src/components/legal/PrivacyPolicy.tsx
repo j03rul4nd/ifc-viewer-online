@@ -5,7 +5,7 @@ import { useConsentStore } from '../../stores/consentStore'
 
 const CONTACT = 'privacy@ifcvieweronline.eu'
 const DOMAIN  = SITE_URL
-const LAST_UPDATED = '2026-06-27'
+const LAST_UPDATED = '2026-10-10'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 
@@ -161,6 +161,11 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
               basis="Strictly necessary / legitimate interest"
             />
             <TableRow
+              data="The Health Score of a validation you run (a whole number from 0 to 100, nothing else)"
+              purpose="Build the anonymous industry average shown next to your score"
+              basis="Legitimate interest (Art. 6(1)(f)) — not sent if you object to analytics (below) or your browser signals GPC / Do Not Track"
+            />
+            <TableRow
               data="Invitation / referral tag from a link (e.g. ?ref=… or /i/…)"
               purpose="See which outreach or article a visit came from, to improve it"
               basis="Legitimate interest (Art. 6(1)(f)) — a non-personal campaign label, session-only, no cookie"
@@ -173,7 +178,9 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
         We do <strong>not</strong> record the contents of your models, we do <strong>not</strong> use
         session replay, and we do <strong>not</strong> use advertising or cross-site tracking.
         PostHog analytics runs in <em>memory-only mode</em>: no cookies and no persistent identifier
-        is written to your device.
+        is written to your device. The page addresses it receives are stripped of their content:
+        which link parameters a visit used, never their values (a linked file&apos;s address, a shared
+        scene or report).
       </P>
 
       {/* Analytics choice / opt-out */}
@@ -208,7 +215,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       <UL>
         <li><code>ifc-locale</code> — your selected interface language.</li>
         <li><code>ifc-viewer:prefs</code> — UI layout preferences (panel sizes, visibility).</li>
-        <li><code>ifc-geo-*</code> — your choices for the optional map view (consent to load map tiles, selected layer).</li>
+        <li><code>ifc-geo-*</code> — your choices for the optional map view (consent to load map tiles, selected layer). Withdrawing the consent in the Map panel deletes it.</li>
         <li><code>ifc-analytics-optout</code> — your analytics opt-out choice, so we can honour it.</li>
         <li>A short, non-personal campaign tag (in <em>sessionStorage</em>) if you arrived from an invitation link — cleared when you close the tab.</li>
       </UL>
@@ -218,14 +225,59 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       </P>
 
       {/* Third-party content sources */}
-      <H2>Loading demo models and map tiles</H2>
+      <H2>Content your browser loads from other services</H2>
       <P>
-        If you open a <strong>demo model</strong>, it is fetched from a public source (e.g. GitHub);
-        that provider necessarily sees the request (including your IP address) as part of delivering
-        the file. If you enable the optional <strong>map view</strong>, map tiles are requested from
-        third-party tile providers only <em>after you explicitly consent</em> in the app, and those
-        providers likewise receive the request metadata. Your own IFC files are never involved in
-        either case.
+        Some features load public data directly from other organisations&apos; servers. We are not
+        in the middle: your browser talks to them, and like any website they receive the request
+        metadata — your IP address and what was asked for, which for anything placed on a map
+        reveals the approximate location of the site. They act as independent controllers under their
+        own privacy policies. Your IFC files are never sent to any of them.
+      </P>
+      <UL>
+        <li>
+          <strong>Demo models</strong> you open from the gallery are downloaded from public
+          repositories (GitHub).
+        </li>
+        <li>
+          <strong>Links</strong> that name a file (<code>?model=</code>, <code>?scan=</code>,{' '}
+          <code>?scene=</code>, <code>?layers=</code>) download it from the server in the link.
+          When a link or a scene also brings data layers or live data sources, the app first lists
+          the servers involved and asks you; nothing is requested from them until you agree. When a
+          link asks for the map view, you are asked for the map consent below.
+        </li>
+        <li>
+          The optional <strong>map view</strong> requests data only <em>after you explicitly
+          consent</em>: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style,
+          also orthophotos from the Instituto Geográfico Nacional and parcels from the Dirección
+          General del Catastro; OpenTopoMap, Esri, EOX or NASA GIBS if you pick those basemaps),
+          terrain elevation (the Institut Cartogràfic i Geològic de Catalunya inside Catalonia, the
+          Geospatial Information Authority of Japan in Japan, AWS Open Data elsewhere) and surrounding
+          buildings (OpenStreetMap, through the Overpass API). You can withdraw the
+          consent at any time in the Map panel (&ldquo;Data and permission&rdquo;): the map turns off,
+          your stored choice is deleted, and nothing more is requested until you consent again. When
+          the viewer is embedded in another website, that website decides whether its map is shown;
+          that decision lasts the visit only and is not stored as your choice.
+        </li>
+        <li>
+          <strong>Data layers and live feeds</strong> you add — a GeoJSON or WFS address you enter,
+          or a ready-made source such as Barcelona, Catalonia or Madrid open data, Bicing, FGC,
+          Renfe, TMB (with your own API key), Catastro, ICGC, IGN or the Tokyo ODPT feeds — are read
+          from those servers, which receive the area requested. Live device connections go to the
+          addresses you configure. If you set a proxy, requests go through it.
+        </li>
+        <li>
+          The <strong>sun study</strong> can fetch climate statistics for the site from Open-Meteo
+          when you ask for them (it sends the site&apos;s latitude and longitude).
+        </li>
+        <li>
+          In the <strong>Clip Studio</strong>, pasting a TikTok link asks TikTok for that
+          video&apos;s title and cover.
+        </li>
+      </UL>
+      <P>
+        Analyses such as the <strong>flood simulation</strong> run entirely in your browser, on
+        your device&apos;s GPU. When they use the map&apos;s terrain or buildings they only read data
+        the map view has already loaded; neither the model nor the results are sent anywhere.
       </P>
 
       {/* Shared reports */}
@@ -255,12 +307,22 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
           <strong>Resend</strong> — sending the email updates you subscribed to.
         </li>
         <li>
-          <strong>Cloudflare</strong> — running the shared-report function and basic abuse
-          protection (rate limiting by IP). Cloudflare processes request metadata (including IP
+          <strong>Cloudflare</strong> — running the shared-report function, the anonymous Health
+          Score benchmark, and basic abuse protection (rate limiting by IP). Cloudflare processes request metadata (including IP
           addresses) as part of its infrastructure; see{' '}
           <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer"
              className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
             Cloudflare's Privacy Policy
+          </a>.
+        </li>
+        <li>
+          <strong>Clerk</strong> — sign-in and accounts, where they are offered. When sign-in is
+          enabled on the site, Clerk&apos;s script loads with the page and contacts Clerk&apos;s servers
+          (request metadata, including IP addresses); your account details are processed only if you
+          create an account. See{' '}
+          <a href="https://clerk.com/legal/privacy" target="_blank" rel="noopener noreferrer"
+             className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+            Clerk&apos;s Privacy Policy
           </a>.
         </li>
         <li>
@@ -278,7 +340,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       {/* International transfers */}
       <H2>International data transfers</H2>
       <P>
-        Some processors (PostHog, Cloudflare, Vercel) process data in the United States, outside the
+        Some processors (PostHog, Cloudflare, Clerk, Vercel) process data in the United States, outside the
         EEA. Where that applies, transfers rely on appropriate safeguards such as Standard
         Contractual Clauses (SCCs) under GDPR Chapter V.
       </P>

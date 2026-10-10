@@ -4,13 +4,16 @@ import type { ViewerAPI } from '../lib/viewer'
 import type { ModelTreeHandle, RevealOutcome } from '../App'
 import { useUIStore } from '../stores/uiStore'
 
+// Every handler forwards modelId to the viewer — to the framing call as well
+// as the selection. expressIDs collide across federated models, so dropping it
+// on one of the two framed an element in one model and selected it in another.
 interface ElementFocusHandlers {
   /** Frame + select element in the viewer; modelId targets the correct model when multiple are loaded */
   jumpToElement:     (expressId: number, modelId?: string) => void
   /** Select element without reframing */
   selectElement:     (expressId: number, modelId?: string) => void
-  /** Frame a set of elements */
-  focusElements:     (ids: number[]) => void
+  /** Frame a set of elements of one model */
+  focusElements:     (ids: number[], modelId?: string) => void
   /** Frame + select a single element */
   frameElement:      (expressId: number, modelId?: string) => void
   /**
@@ -25,7 +28,7 @@ export function useElementFocus(
   modelTreeRef:  RefObject<ModelTreeHandle | null>,
 ): ElementFocusHandlers {
   const jumpToElement = useCallback((expressId: number, modelId?: string) => {
-    viewerApiRef.current?.focusElement(expressId)
+    viewerApiRef.current?.focusElement(expressId, modelId)
     viewerApiRef.current?.selectElement(expressId, modelId)
   }, [viewerApiRef])
 
@@ -33,12 +36,12 @@ export function useElementFocus(
     viewerApiRef.current?.selectElement(expressId, modelId)
   }, [viewerApiRef])
 
-  const focusElements = useCallback((ids: number[]) => {
-    viewerApiRef.current?.frameElements(ids)
+  const focusElements = useCallback((ids: number[], modelId?: string) => {
+    viewerApiRef.current?.frameElements(ids, modelId)
   }, [viewerApiRef])
 
   const frameElement = useCallback((expressId: number, modelId?: string) => {
-    viewerApiRef.current?.focusElement(expressId)
+    viewerApiRef.current?.focusElement(expressId, modelId)
     viewerApiRef.current?.selectElement(expressId, modelId)
   }, [viewerApiRef])
 

@@ -45,6 +45,7 @@
   "compare": "对比",
   "compareTooltip": "对比 IFC 文件集的版本：变更、IDS 与 BCF",
   "map": "地图",
+  "flood": "内涝",
   "mapTooltip": "在真实地图上显示模型(地理定位)",
   "embed": "嵌入",
   "embedTooltip": "获取此模型的可嵌入 iframe / 链接",

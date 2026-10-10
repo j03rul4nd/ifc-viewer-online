@@ -33,10 +33,32 @@ describe('vector layer persistence', () => {
     localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify(saved))
     vi.useRealTimers()
     const out = await restoreVectorLayers()
-    expect(out).toEqual({ restored: 1, failed: 0, problems: [] })
+    expect(out).toMatchObject({ restored: 1, failed: 0, problems: [] })
     const [layer] = useVectorLayerStore.getState().layers
     expect(layer.name).toBe('zone.geojson')
     expect(layer.style.color).toBe('#123456')
     expect(layer.data?.counts.polygon).toBe(1)
+  })
+
+  it('keeps a saved layer whose server did not answer, to try again next visit', async () => {
+    vi.useRealTimers()
+    const record = {
+      name: 'Endolla', source: { type: 'url', url: 'https://example.invalid/endolla', format: 'geojson' },
+      fetchUrl: 'https://example.invalid/endolla', visible: true, heightMode: 'relative',
+      style: { color: '#22c55e' },
+    }
+    localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify({ v: 1, layers: [record] }))
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
+    try {
+      const out = await restoreVectorLayers()
+      expect(out.failed).toBe(1)
+      expect(useVectorLayerStore.getState().layers).toHaveLength(0)
+      // Still saved — with everything the user had set on it.
+      const saved = JSON.parse(localStorage.getItem(VECTOR_LAYERS_LS_KEY)!)
+      expect(saved.layers.map((l: { name: string }) => l.name)).toEqual(['Endolla'])
+      expect(saved.layers[0].style.color).toBe('#22c55e')
+    } finally {
+      fetchSpy.mockRestore()
+    }
   })
 })

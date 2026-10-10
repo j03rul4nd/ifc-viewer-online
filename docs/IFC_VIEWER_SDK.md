@@ -79,6 +79,7 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `solar` / `moon` | `'MM-DDTHH:MM'` / boolean         | —           | Open the sun study at this site-local time once loaded (v1.11). |
 | `scans`    | string[]                              | —           | Point cloud URLs to load alongside the model (v1.11). |
 | `layers`   | string                                | —           | Data-layer setup to open: URL of a JSON exported from the Data layers panel — live sources, styles, groups, alerts; never keys. Mirrors `?layers=` (v1.16). Also `<ifc-viewer layers="…">`. |
+| `scene`    | string                                | —           | Scene document to open: URL of a `.scene.json` — models, data layers, live device bindings, map, background, camera ([`SCENE_FORMAT.md`](./SCENE_FORMAT.md)). Mirrors `?scene=` (v1.17). Also `<ifc-viewer scene="…">`. |
 | `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). A backstop: the viewer now answers every load it accepts with `model-loaded` or `model-error`, including parse failures and cancellations. |
 | `onReady` / `onModelLoaded` / `onModelError` / `onProgress` | function | — | Convenience callbacks (same as `.on(...)`). |
 
@@ -130,6 +131,8 @@ Inside the iframe, every load is a job in the viewer's loading queue ([`MODEL_LO
 | `map-feature-picked` | `{ id, name?, label?, featureKind, heightM?, heightEstimated }` — a building in the OpenStreetMap surroundings. Context, not model: never validated, never exported, and `heightEstimated` is true far more often than not |
 | `walk-changed` | `{ active, speed }` — walk mode turned on or off, by the visitor (G / Esc) or the host (v1.11) |
 | `measurements-changed` | `{ tool, units, items }` — a measurement was added, removed or renamed; carries the whole list (v1.11) |
+| `layer-feature-picked` | `{ layerId, layer, featureIndex, featureId, geometry, lonLat, properties }` — a feature of a data layer was clicked (v1.17) |
+| `alert` | `{ at, kind: 'start' \| 'clear', from: 'layer' \| 'twin', id, name, ruleId, rule, count, sample }` — a data-layer or twin rule started or stopped alerting (v1.17) |
 
 ## Presentation: look, sun, map (v1.11)
 
@@ -259,6 +262,41 @@ const viewer = new IfcViewer('#figure', {
 | `bindSteps(steps)` | Scrollytelling: each `{ el, frame?, camera?, isolate?, solar?, background?, run? }` applies while its paragraph crosses the middle of the screen; waits for the models. Returns an unbind function. |
 
 The web component takes the same as attributes: `<ifc-viewer ui="article" model="…" lazy poster="…" aspect-ratio="16/10" background="auto" turntable fullscreen-button>`.
+
+## Scenes and data layers (v1.17)
+
+A scene document holds a whole digital-twin scene — models by URL, data layers,
+live device bindings, map, background and camera — in one JSON
+([`SCENE_FORMAT.md`](./SCENE_FORMAT.md)). The SDK opens one, exports the one on
+screen, and drives the data layers and the twin underneath.
+
+```js
+const viewer = new IfcViewer('#twin', {
+  ui: 'client',
+  scene: 'https://www.ifcvieweronline.eu/scenes/barcelona-placa-catalunya.scene.json',
+})
+viewer.on('alert', (a) => { if (a.kind === 'start') notify(a.name + ': ' + a.rule) })
+viewer.on('layer-feature-picked', (f) => showCard(f.layer, f.properties))
+
+await viewer.addLayer({ url: 'https://example.org/sensors.geojson', live: 60 })
+const { scene, sources, link } = await viewer.exportScene({ title: 'Our twin' })
+```
+
+| Method | Description |
+|--------|-------------|
+| `openScene(url \| SceneDocument)` | Open another scene. A document travels packed in the frame's address (`#scene=`), so it must fit a link (about 16 000 characters compressed); host a bigger one and pass its URL. The viewer reloads: what was loaded is gone, calls still waiting are rejected, and `ready` fires again. Resolves once it has. |
+| `exportScene({ title?, description?, camera? })` | `Promise<SceneExport>`: `{ scene, sources, link, skippedModels, secretsRemoved }` — the same document *Share → Digital-twin scene* builds. Models opened from bytes cannot travel (`skippedModels`); keys never do. |
+| `packScene(doc)` | Module export: pack a document for a `#scene=` link yourself (`null` when too long). |
+| `getLayerPresets()` | `Promise<LayerPreset[]>` — the catalogue of live public sources (Bicing, Barcelona traffic, air quality, Meteocat, FGC, Tokyo…), named in the viewer's language, with `needs: 'key' \| 'proxy' \| null` and `near` (has data around the site). |
+| `addLayer(spec)` | `{ preset }`, `{ url, name?, live? }` (GeoJSON, or a GBFS / GTFS-RT / Opendatasoft feed; `live: true` or seconds) or `{ geojson, name? }`. Resolves with the layer once its data is in; rejects with the reason (CORS, not GeoJSON, unknown preset…). |
+| `getLayers()` | `Promise<DataLayerInfo[]>` — status, feature counts, extent, refresh, attribution, source URL (keys removed). |
+| `setLayerVisible(id, visible)` · `frameLayer(id)` · `removeLayer(id)` | Show / hide, fly to, remove. |
+| `getTwin()` | `Promise<TwinState>` — device sources (state, last reading) and, per binding, the matching rule and colour, the label value and whether it is alerting. |
+
+Layers a host adds belong to that page view: they are never saved into, and
+never overwrite, the visitor's own saved layers. Live sources are read by the
+visitor's browser straight from the provider — only sources that send CORS
+headers work ([`CITY_DATA_SOURCES.md`](./CITY_DATA_SOURCES.md) lists which do).
 
 ## Analysis: sections, measurements, federated models (v1.11)
 

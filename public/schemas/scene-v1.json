@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.ifcvieweronline.eu/schemas/scene-v1.json",
+  "title": "IFC Viewer Online scene document, version 1",
+  "description": "One digital-twin scene: models by URL, data layers, live device bindings and how the view opens. Open it with https://www.ifcvieweronline.eu/?scene=<url>. Reference: https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SCENE_FORMAT.md",
+  "type": "object",
+  "required": ["format", "v", "meta"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "format": { "const": "ifc-viewer-scene" },
+    "v": { "const": 1 },
+    "meta": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "license": { "type": "string", "description": "Licence of this document. Each data source keeps its own (see layers[].attribution)." },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "place": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+            "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "notes": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Shown to the visitor when the scene opens: what they must know before trusting what they see."
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": { "type": "string", "pattern": "^(https?://|/(?!/))", "description": "An http(s) URL with CORS, or a same-origin path starting with /." },
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Entries of an ifc-viewer-data-layers v1 file, as the Data layers panel exports them.",
+      "items": {
+        "type": "object",
+        "required": ["name", "source"],
+        "properties": {
+          "name": { "type": "string" },
+          "source": { "type": "object" },
+          "feed": {
+            "type": "object",
+            "properties": {
+              "kind": { "enum": ["geojson", "gbfs", "gtfs-rt", "ods", "wfs", "join"] },
+              "url": { "type": "string", "description": "May contain time windows such as {now-3h:floating}." },
+              "radiusM": { "type": "number" },
+              "join": { "type": "object" },
+              "records": { "type": "object" }
+            }
+          },
+          "fetchUrl": { "type": "string" },
+          "text": { "type": "string", "description": "Inline GeoJSON for layers made from a file (avoid in links: they get long)." },
+          "attribution": { "type": "string" },
+          "visible": { "type": "boolean" },
+          "heightMode": { "enum": ["absolute", "relative", "ignore"] },
+          "style": { "type": "object" },
+          "layerStyle": { "type": "object" },
+          "live": { "type": "object" },
+          "history": { "type": "object" },
+          "alerts": { "type": "array" }
+        }
+      }
+    },
+    "twin": {
+      "type": ["object", "null"],
+      "required": ["sources", "bindings"],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "url", "mapping"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "url": { "type": "string", "description": "http(s), ws(s) or sim:<preset>. Never put keys in it: headers stay on the device that typed them." },
+              "intervalS": { "type": "number", "minimum": 1 },
+              "enabled": { "type": "boolean" },
+              "topics": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "MQTT topic filters. With them the ws(s):// URL is an MQTT broker's WebSocket listener, and each message is { topic, ...payload }."
+              },
+              "mapping": {
+                "type": "object",
+                "properties": {
+                  "listPath": { "type": "string" },
+                  "idField": { "type": "string" },
+                  "timeField": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "sourceId", "deviceId", "targets", "rules"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "sourceId": { "type": "string" },
+              "deviceId": { "type": "string" },
+              "targets": { "type": "array", "items": { "type": "object", "required": ["globalId"], "properties": { "globalId": { "type": "string" }, "label": { "type": "string" } } } },
+              "query": { "type": ["object", "null"], "properties": { "classes": { "type": "array", "items": { "type": "string" } }, "storey": { "type": "string" }, "nameContains": { "type": "string" } } },
+              "rules": { "type": "array" },
+              "staleColor": { "type": ["string", "null"] },
+              "staleAfterS": { "type": "number" },
+              "label": { "type": ["object", "null"] },
+              "media": { "type": ["object", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "properties": {
+        "map": { "type": "string", "description": "Same grammar as ?map=: 1, terrain, terrain,buildings, showcase…" },
+        "look": { "type": "string", "description": "Same grammar as ?look= (needs map)." },
+        "background": { "type": "string", "description": "Same grammar as ?bg=: a preset or #rrggbb[,#rrggbb]." },
+        "solar": { "type": "string", "description": "Same grammar as ?solar=: [YYYY-]MM-DDTHH:MM." },
+        "view": { "type": "string", "description": "Camera preset (iso, top…) when no exact camera is given." },
+        "camera": {
+          "type": "object",
+          "required": ["position", "target"],
+          "properties": {
+            "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+            "target": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+          }
+        }
+      }
+    }
+  }
+}

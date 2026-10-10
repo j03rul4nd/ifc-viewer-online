@@ -1,5 +1,6 @@
 import { SHANGHAI_POSTS_ES } from './blog-shanghai-es.ts'
 import { SHANGHAI_POSTS_EN } from './blog-shanghai-en.ts'
+import { TWIN_POSTS_EN } from './blog-twins-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -127,6 +128,10 @@ export type ContentBlock =
         | 'measure'
         | 'federated-disciplines'
         | 'ifc43-bridge'
+        | 'twin-barcelona'
+        | 'twin-helsinki'
+        | 'twin-tochomae'
+        | 'twin-waseda'
       title: string
       description: string
       poster: string
@@ -282,6 +287,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...TWIN_POSTS_EN,
   ...SHANGHAI_POSTS_EN,
   {
     slug: 'iso-19650-file-naming-convention',

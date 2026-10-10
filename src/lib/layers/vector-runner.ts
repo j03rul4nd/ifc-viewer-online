@@ -17,18 +17,22 @@ import { createLogger } from '../logger'
 import { useVectorLayerStore, VECTOR_LAYERS_LS_KEY, type VectorLayer } from '../../stores/vectorLayerStore'
 import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
 import { useGeoStore } from '../../stores/geoStore'
-import {
-  anchorFromPlacement, anchorToPlacement, type SceneAnchor,
-} from '../geo/scene-anchor'
+import { anchorToPlacement, type SceneAnchor } from '../geo/scene-anchor'
+import { chooseLayerAnchor, type AnchorPairing } from './layer-anchor'
 import { parseGeoJson, projectLayer, type HeightMode, type VectorLayerData } from './geojson'
 import { buildGetCapabilitiesUrl, planGetFeature, parseCapabilities, bboxAround, type WfsCapabilities } from './wfs'
 import { parseGml, decodeXml } from './gml'
+import { bsWfsToGeoJson, isBsWfs } from './bswfs'
+import { decodeGtfsRt } from './gtfs-rt-pb'
 import { parseTable, tableToGeoJson, type ParseOptions as TableOptions } from './csv'
-import { applyJoin, type JoinSpec } from './join'
+import { applyJoin, uniqueByKey, type JoinSpec } from './join'
+import { jsonToGeoJsonText, type RecordsSpec } from './records'
+import { applyTableTransforms, type TableTransform } from './table-transforms'
+import { expandUrlTemplate } from './url-template'
 import {
   httpFreshness, plannedDelayMs, detectFeedKind, gbfsFeedUrls, gbfsToGeoJson, gbfsFreshness,
   gtfsRtToGeoJson, gtfsRtFreshness, odsDataset, odsMetaUrl, odsGeoField, odsGeoJsonUrl,
-  tableTime, type FeedKind, type Freshness,
+  tableTime, transientRetryMs, type FeedKind, type Freshness,
 } from './feeds'
 import { DEFAULT_STYLE, type VectorStyle } from './vector-mesh'
 import type { DataSource } from './connectors'
@@ -77,11 +81,32 @@ export function layerRows(data: VectorLayerData): FlatProp[][] {
 
 const log = createLogger('VectorRunner')
 
+// DEV only: the app's OWN instances, for QA from the console. After any edit,
+// `import('/src/...')` from the console resolves to a fresh copy of the module
+// (the app's imports carry ?t=), so inspecting through it reads an empty store.
+if (import.meta.env.DEV) {
+  ;(globalThis as Record<string, unknown>).__ifcLayersDebug = {
+    store: () => useVectorLayerStore.getState(),
+    importLayersFile: (text: string) => importLayersFile(text),
+    exportLayersFile: () => exportLayersFile(),
+    addPreset: (id: string, name: string) => import('./feed-presets').then((m) => {
+      const p = m.FEED_PRESETS.find((x) => x.id === id)
+      return p ? addPreset(p, name, undefined, (k) => i18n.t(`layers:${k}` as never)) : { ok: false as const, errorKey: 'unknown preset' }
+    }),
+    fetchFeed: (src: FeedSource) => fetchFeed(src),
+    fetchText: (url: string) => fetchText(url),
+  }
+}
+
 export interface VectorHost {
   getSystem(): Promise<VectorLayerSystemAPI>
   getModelBounds(): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
   /** World ground height from the running map, or null when the map is off. */
   mapGroundAt(x: number, z: number): number | null
+  /** The map's own lat/lon ↔ scene pairing while it is on (geo-system getAnchor). */
+  getMapAnchor?(): AnchorPairing | null
+  /** A loaded model's own georeference as a pairing, for when the map is off. */
+  getGeorefAnchor?(): AnchorPairing | null
 }
 
 let host: VectorHost | null = null
@@ -111,8 +136,9 @@ export function attachVectorHost(h: VectorHost): () => void {
   const offAnchor = useSceneAnchorStore.subscribe(schedule)
   // historyData lives in the same store, so time travel already reschedules.
   const offGeo = useGeoStore.subscribe((s, p) => {
+    // A model's georeference landing (georefByModel) can move the anchor too.
     if (s.placement !== p.placement || s.mapMode !== p.mapMode || s.terrainStatus !== p.terrainStatus ||
-      s.terrainExaggeration !== p.terrainExaggeration) schedule()
+      s.terrainExaggeration !== p.terrainExaggeration || s.georefByModel !== p.georefByModel) schedule()
   })
   schedule()
   return () => {
@@ -123,16 +149,15 @@ export function attachVectorHost(h: VectorHost): () => void {
   }
 }
 
-/** The anchor vector layers project through, without claiming one. */
+/** The anchor vector layers project through, without claiming one (see layer-anchor.ts). */
 function currentAnchor(): SceneAnchor | null {
-  const a = useSceneAnchorStore.getState().anchor
-  if (a) return a
-  const p = useGeoStore.getState().placement
-  if (!p) return null
-  const b = host?.getModelBounds() ?? null
-  const center = b ? { x: b.center.x, z: b.center.z } : { x: 0, z: 0 }
-  const floor = b ? b.center.y - b.size.y / 2 : 0
-  return anchorFromPlacement(p, center, floor, 'map')
+  return chooseLayerAnchor({
+    stored: useSceneAnchorStore.getState().anchor,
+    map: host?.getMapAnchor?.() ?? null,
+    georef: host?.getGeorefAnchor?.() ?? null,
+    placement: useGeoStore.getState().placement,
+    activeBounds: host?.getModelBounds() ?? null,
+  })
 }
 
 /** Anchor for a NEW layer: the existing one, or one made from this layer. */
@@ -519,6 +544,13 @@ export async function pickVectorAt(clientX: number, clientY: number): Promise<bo
 const MAX_PERSISTED_TEXT = 1_500_000
 
 interface PersistedLayer {
+  /**
+   * A preset id (feed-presets.ts) this layer IS: its source, refresh,
+   * licence and look come from the preset, in the viewer's language, and any
+   * field written here wins. Lets a hand-written scene say
+   * `{ "preset": "bcn-traffic" }` instead of copying a style.
+   */
+  preset?: string
   name: string
   source: DataSource
   style: VectorStyle
@@ -581,9 +613,17 @@ function snapshotLayers(): PersistedLayer[] {
  */
 let persistEnabled = true
 
+/**
+ * Saved layers that could not be brought back this session (offline, a
+ * server down for a minute). They stay saved and are tried again on the next
+ * visit: rewriting the list without them threw away a layer — its source, its
+ * styles, its alerts — because a server was slow once.
+ */
+let unrestored: PersistedLayer[] = []
+
 function persist(): void {
   if (!restored || !persistEnabled) return
-  const out = snapshotLayers()
+  const out = [...snapshotLayers(), ...unrestored]
   try {
     if (out.length === 0) localStorage.removeItem(VECTOR_LAYERS_LS_KEY)
     else localStorage.setItem(VECTOR_LAYERS_LS_KEY, JSON.stringify({ v: 1, layers: out }))
@@ -605,6 +645,7 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
   } catch { /* corrupt entry: start clean */ }
 
   const r = await loadSaved(saved)
+  unrestored = r.failedRecords
   restored = true
   persist()
   return r
@@ -614,35 +655,101 @@ export async function restoreVectorLayers(): Promise<{ restored: number; failed:
 /** A layer that could not be brought back, and why (an i18n key under layers:). */
 export interface LoadProblem { name: string; errorKey: string }
 
-async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number; problems: LoadProblem[] }> {
+async function loadSaved(saved: PersistedLayer[]): Promise<{ restored: number; failed: number; problems: LoadProblem[]; failedRecords: PersistedLayer[] }> {
   let ok = 0
   const problems: LoadProblem[] = []
-  for (const p of saved) {
-    let text = p.text
-    let why = 'error.unknown'
-    if (p.feed?.kind === 'join' && !p.feed.join?.geomUrl && p.text) {
-      const g = toGeoJsonText(p.text)
-      const base = g.ok ? parseGeoJson(g.text, { axisOrder: 'auto' }) : null
-      if (base && base.ok) registerJoinBase(p.feed.url, base.value)
-      text = undefined
-    }
-    if (!text && p.feed) {
-      const r = await fetchFeed(p.feed)
-      if (r.ok) text = r.text; else why = r.errorKey
-    } else if (!text && p.fetchUrl) {
-      const r = await fetchText(p.fetchUrl)
-      const g = r.ok ? toGeoJsonText(r.text) : null
-      if (g && g.ok) text = g.text; else why = !r.ok ? r.errorKey : g && !g.ok ? g.errorKey : why
-    }
+  const failedRecords: PersistedLayer[] = []
+  // Fetched in parallel (a few at a time), added in their saved order as soon
+  // as each one and all before it are in. One after another, a scene with
+  // four Open Data BCN layers took ~70 s to come back (the server answers in
+  // 15–25 s per file); in parallel it takes as long as the slowest.
+  const run = limiter(RESTORE_CONCURRENCY)
+  const entries = await Promise.all(saved.map(fromPreset))
+  const pending = entries.map((p) => run(() => fetchSaved(p)))
+  for (let i = 0; i < entries.length; i++) {
+    const p = entries[i]
+    const { text, why: fetchWhy } = await pending[i]
+    let why = fetchWhy
     const parsed = text ? parseGeoJson(text, { axisOrder: 'auto' }) : null
     if (parsed && !parsed.ok) why = parseErrorKey(parsed.error)
-    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); continue }
+    if (!parsed || !parsed.ok) { problems.push({ name: p.name, errorKey: why }); failedRecords.push(saved[i]); continue }
+    // A preset styled from what it contains (TMB lines, barris) gets its look now.
+    if (p.preset && !p.layerStyle) p.layerStyle = (await presetStyleFromData(p.preset, parsed.value)) ?? undefined
     const r = addParsed(p.name, p.source, parsed.value, p.attribution,
       { text: p.text, fetchUrl: p.fetchUrl, feed: p.feed },
       { style: p.style, heightMode: p.heightMode, visible: p.visible, symbology: p.symbology, layerStyle: p.layerStyle, live: p.live, history: p.history, alerts: p.alerts })
-    if (r.ok) ok++; else problems.push({ name: p.name, errorKey: r.errorKey })
+    if (r.ok) ok++; else { problems.push({ name: p.name, errorKey: r.errorKey }); failedRecords.push(p) }
   }
-  return { restored: ok, failed: problems.length, problems }
+  return { restored: ok, failed: problems.length, problems, failedRecords }
+}
+
+const RESTORE_CONCURRENCY = 4
+
+/** At most `n` of the returned function's tasks run at once; the rest queue. */
+function limiter(n: number): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0
+  const queue: Array<() => void> = []
+  const next = (): void => { active--; queue.shift()?.() }
+  return <T>(task: () => Promise<T>): Promise<T> => new Promise<T>((resolve, reject) => {
+    const start = (): void => { active++; task().then(resolve, reject).finally(next) }
+    if (active < n) start(); else queue.push(start)
+  })
+}
+
+const tLayers = (k: string): string => i18n.t(`layers:${k}` as never)
+
+/**
+ * A layer entry that names a preset, completed from it. Fields written in the
+ * entry win; what it leaves out comes from the preset — which is how a short
+ * hand-written scene still gets a live source, a licence and a translated look.
+ */
+async function fromPreset(p: PersistedLayer): Promise<PersistedLayer> {
+  if (!p.preset) return p
+  const { FEED_PRESETS } = await import('./feed-presets')
+  const preset = FEED_PRESETS.find((x) => x.id === p.preset)
+  if (!preset) return p
+  const usesFeed = !preset.styleFromData && preset.kind !== 'wfs'
+  return {
+    ...p,
+    name: p.name || tLayers(`presets.${preset.id}.name`),
+    source: p.source ?? { type: 'url', url: preset.url, format: 'geojson' },
+    feed: p.feed ?? (usesFeed ? {
+      kind: preset.kind, url: preset.url, radiusM: preset.radiusM ?? 30_000,
+      ...(preset.join ? { join: preset.join } : {}), ...(preset.records ? { records: preset.records } : {}),
+    } : undefined),
+    fetchUrl: p.fetchUrl ?? (usesFeed ? undefined : preset.url),
+    attribution: p.attribution ?? preset.license,
+    layerStyle: p.layerStyle ?? preset.layerStyle?.(tLayers),
+    symbology: p.symbology ?? preset.symbology,
+    live: p.live ?? (usesFeed ? { enabled: true, intervalS: preset.intervalS ?? 60, idField: null, animate: true } : undefined),
+    visible: p.visible ?? true,
+  }
+}
+
+async function presetStyleFromData(id: string, data: VectorLayerData): Promise<LayerStyle | null> {
+  const { FEED_PRESETS } = await import('./feed-presets')
+  return FEED_PRESETS.find((x) => x.id === id)?.styleFromData?.(data) ?? null
+}
+
+/** One saved layer's GeoJSON text, fetched again when it lives at a URL. */
+async function fetchSaved(p: PersistedLayer): Promise<{ text?: string; why: string }> {
+  let text = p.text
+  let why = 'error.unknown'
+  if (p.feed?.kind === 'join' && !p.feed.join?.geomUrl && p.text) {
+    const g = toGeoJsonText(p.text)
+    const base = g.ok ? parseGeoJson(g.text, { axisOrder: 'auto' }) : null
+    if (base && base.ok) registerJoinBase(p.feed.url, base.value)
+    text = undefined
+  }
+  if (!text && p.feed) {
+    const r = await fetchFeed(p.feed)
+    if (r.ok) text = r.text; else why = r.errorKey
+  } else if (!text && p.fetchUrl) {
+    const r = await fetchText(p.fetchUrl)
+    const g = r.ok ? toGeoJsonText(r.text) : null
+    if (g && g.ok) text = g.text; else why = !r.ok ? r.errorKey : g && !g.ok ? g.errorKey : why
+  }
+  return { text, why }
 }
 
 // ── Sharing a layer setup as a file ────────────────────────────────────────────
@@ -696,6 +803,22 @@ export async function importLayersFromUrl(url: string): ReturnType<typeof import
   const r = await fetchText(url)
   if (!r.ok) return r
   return importLayersFile(r.text)
+}
+
+/** Open a setup handed over as text (a scene document). Session-only, like a link. */
+export async function importLayersSession(text: string): ReturnType<typeof importLayersFile> {
+  persistEnabled = false
+  restored = true
+  return importLayersFile(text)
+}
+
+/**
+ * Layers an embedding page adds through the SDK belong to that page view:
+ * nothing is saved to, or overwritten in, the visitor's own saved layers.
+ */
+export function sessionOnlyLayers(): void {
+  persistEnabled = false
+  restored = true
 }
 
 /** Cheap sniff: is this text a shared layer setup? */
@@ -820,13 +943,27 @@ export function setLayersProxy(template: string | null): void {
   } catch { /* private mode */ }
 }
 
-interface RawOk { ok: true; text: string; headers: Headers; viaProxy: boolean }
+interface RawOk {
+  ok: true; text: string; headers: Headers; viaProxy: boolean
+  /** The body as it came (binary formats: GTFS-Realtime protobuf). Absent for simulated feeds. */
+  bytes?: Uint8Array
+}
 type RawResult = RawOk | { ok: false; errorKey: string }
+
+/**
+ * Longest wait for one source. Open-data portals can be slow (Barcelona's
+ * answers in 15–40 s under load), so this is generous — but finite: without
+ * it a server that never answers kept a whole scene import waiting forever,
+ * and every layer listed after it with it.
+ */
+const FETCH_TIMEOUT_MS = 90_000
 
 async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
   if (url === SIMULATED_FEED_URL) {
     return { ok: true, text: simulateTrains(Date.now()), headers: new Headers(), viaProxy: false }
   }
+  // Time windows ("{now-2h}") resolve at each request, never when saved.
+  url = expandUrlTemplate(url)
   // TMB: the user's own keys go on at the very last moment (never saved in the
   // layer's URL). Without keys there is no point asking.
   const tmb = isTmbUrl(url)
@@ -836,21 +973,31 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
   }
   const host = (() => { try { return new URL(url).host } catch { return '' } })()
   const proxy = getLayersProxy()
+  const timeout = new AbortController()
+  const timer = setTimeout(() => timeout.abort(), FETCH_TIMEOUT_MS)
+  const onAbort = (): void => timeout.abort()
+  signal?.addEventListener('abort', onAbort, { once: true })
   const attempt = async (target: string, viaProxy: boolean): Promise<RawResult> => {
-    const res = await fetch(target, { signal, headers: { Accept: 'application/geo+json, application/json, text/xml;q=0.9, */*;q=0.5' } })
+    let res: Response
+    for (let n = 0; ; n++) {
+      res = await fetch(target, { signal: timeout.signal, headers: { Accept: 'application/geo+json, application/json, text/xml;q=0.9, */*;q=0.5' } })
+      const wait = transientRetryMs(res, n)
+      if (wait === null) break
+      await new Promise((r) => setTimeout(r, wait))
+    }
     if (!res.ok) return { ok: false, errorKey: (tmb && tmbErrorKey(res.status)) || 'error.http' }
     const buf = await res.arrayBuffer()
     const ct = res.headers.get('content-type') ?? ''
     // XML declares its own encoding (Catastro: ISO-8859-1 behind a UTF-8 header).
     const looksXml = /xml/i.test(ct) || new Uint8Array(buf.slice(0, 64)).some((b, i, a) => b === 0x3c && (a[i + 1] === 0x3f || a[i + 1] === 0x77 || a[i + 1] === 0x46))
     const text = looksXml ? decodeXml(buf) : new TextDecoder('utf-8').decode(buf)
-    return { ok: true, text, headers: res.headers, viaProxy }
+    return { ok: true, text, bytes: new Uint8Array(buf), headers: res.headers, viaProxy }
   }
   try {
     if (proxy && proxiedHosts.has(host)) return await attempt(proxy.replace('{url}', encodeURIComponent(url)), true)
     return await attempt(url, false)
   } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, errorKey: 'error.aborted' }
+    if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, errorKey: signal?.aborted ? 'error.aborted' : 'error.timeout' }
     // A TypeError from fetch is CORS or offline. With a proxy, find out which.
     if (proxy && !proxiedHosts.has(host)) {
       try {
@@ -860,6 +1007,9 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
       } catch { /* fall through */ }
     }
     return { ok: false, errorKey: proxy ? 'error.network' : 'error.cors' }
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
   }
 }
 
@@ -869,18 +1019,24 @@ async function fetchText(url: string, signal?: AbortSignal): Promise<{ ok: true;
 }
 
 /**
- * Body → GeoJSON text: JSON passes through, GML is converted (WFS servers that
- * offer nothing else), an OGC ExceptionReport becomes an error.
+ * Body → GeoJSON text: GeoJSON passes through, JSON records with places become
+ * points (records.ts — Socrata, GELFS, ODPT…), GML is converted (WFS servers
+ * that offer nothing else), an OGC ExceptionReport becomes an error.
  */
-function toGeoJsonText(text: string): { ok: true; text: string; matched: number | null; returned: number | null } | { ok: false; errorKey: string } {
+function toGeoJsonText(text: string, records?: RecordsSpec | null): { ok: true; text: string; matched: number | null; returned: number | null } | { ok: false; errorKey: string } {
   const first = text.trimStart()[0]
   if (first !== '<' && first !== '{' && first !== '[') {
     // Neither XML nor JSON: a table (CSV / TSV / ';' / records).
     const gj = tableToGeoJson(parseTable(text))
     return gj ? { ok: true, text: JSON.stringify(gj), matched: null, returned: null } : { ok: false, errorKey: 'error.noGeometryInTable' }
   }
-  if (first !== '<') return { ok: true, text, matched: null, returned: null }
+  if (first !== '<') return { ok: true, text: jsonToGeoJsonText(text, records), matched: null, returned: null }
   if (/ExceptionReport|ServiceException/i.test(text.slice(0, 3000))) return { ok: false, errorKey: 'error.wfsException' }
+  // FMI's "simple" stored queries: (place, time, parameter, value) triples.
+  if (isBsWfs(text)) {
+    const gj = bsWfsToGeoJson(text)
+    return gj.features.length ? { ok: true, text: JSON.stringify(gj), matched: null, returned: null } : { ok: false, errorKey: 'error.empty' }
+  }
   const g = parseGml(text)
   if (!g) return { ok: false, errorKey: 'error.notJsonOutput' }
   return { ok: true, text: JSON.stringify(g.geojson), matched: g.numberMatched, returned: g.numberReturned }
@@ -904,7 +1060,15 @@ export interface FeedSource {
     spec: JoinSpec
     /** Column with the rows' timestamps — the data's own "as of". */
     timeColumn?: string
+    /** IANA zone the time column is written in when it has no offset (default: the viewer's). */
+    timeZone?: string
+    /** Reshape the status table before joining (table-transforms.ts). */
+    transforms?: TableTransform[]
+    /** The geometry lists a place once per variable (ASPB stations): keep the first per key. */
+    geomUnique?: boolean
   }
+  /** Explicit place mapping for JSON records; without it the records are sniffed. */
+  records?: RecordsSpec
 }
 
 /** Geometry of join layers: from a URL (cached an hour) or registered from a file. */
@@ -926,8 +1090,9 @@ async function joinBase(src: FeedSource, signal?: AbortSignal): Promise<VectorLa
   if (!g.ok) return c?.data ?? null
   const parsed = parseGeoJson(g.text, { axisOrder: 'auto' })
   if (!parsed.ok) return c?.data ?? null
-  joinBases.set(key, { data: parsed.value, at: Date.now() })
-  return parsed.value
+  const data = src.join.geomUnique ? uniqueByKey(parsed.value, src.join.spec.layerKey) : parsed.value
+  joinBases.set(key, { data, at: Date.now() })
+  return data
 }
 
 /** Per-source state that is expensive to fetch and rarely changes. */
@@ -974,12 +1139,12 @@ export async function fetchFeed(src: FeedSource, signal?: AbortSignal): Promise<
   }
 
   if (src.kind === 'gtfs-rt') {
-    // Protobuf is the canonical encoding; producers that offer a JSON twin
-    // (Renfe does) are read through it — no protobuf decoder in the bundle.
+    // Producers that offer a JSON twin (Renfe does) are read through it; the
+    // rest come as protobuf, the canonical encoding (gtfs-rt-pb.ts).
     const url = src.url.replace(/\.pb(\?|$)/, '.json$1')
     const r = await fetchRaw(url, signal)
     if (!r.ok) return r
-    const feed = json(r.text) as { entity?: unknown[] } | null
+    const feed = (r.text.trimStart().startsWith('{') ? json(r.text) : r.bytes ? decodeGtfsRt(r.bytes) : null) as { entity?: unknown[] } | null
     if (!feed || !Array.isArray(feed.entity)) return { ok: false, errorKey: 'error.notGtfsRt' }
     return {
       ok: true, text: gtfsRtToGeoJson(feed as never, siteBbox(src.radiusM)),
@@ -1007,11 +1172,11 @@ export async function fetchFeed(src: FeedSource, signal?: AbortSignal): Promise<
     if (!base) return { ok: false, errorKey: 'error.noJoinBase' }
     const r = await fetchRaw(src.url, signal)
     if (!r.ok) return r
-    const table = parseTable(r.text, src.join.table)
+    const table = applyTableTransforms(parseTable(r.text, src.join.table), src.join.transforms)
     if (table.rows.length === 0) return { ok: false, errorKey: 'error.emptyTable' }
     const joined = applyJoin(base, table, src.join.spec)
     const ti = src.join.timeColumn ? table.columns.indexOf(src.join.timeColumn) : -1
-    const dataAt = ti >= 0 ? tableTime(table.rows.map((row) => row[ti] ?? '')) : null
+    const dataAt = ti >= 0 ? tableTime(table.rows.map((row) => row[ti] ?? ''), src.join.timeZone) : null
     const f = httpFreshness(r.headers)
     const features = joined.data.features.map((ft) => ({
       type: 'Feature', id: ft.id, properties: ft.properties,
@@ -1028,7 +1193,7 @@ export async function fetchFeed(src: FeedSource, signal?: AbortSignal): Promise<
   // Plain GeoJSON / REST, or a WFS GetFeature re-issued: content decides.
   const r = await fetchRaw(src.url, signal)
   if (!r.ok) return r
-  const g = toGeoJsonText(r.text)
+  const g = toGeoJsonText(r.text, src.records)
   if (!g.ok) return g
   const f = httpFreshness(r.headers)
   return { ok: true, text: g.text, freshness: { ...f, fingerprint: f.fingerprint ?? `h:${hash(g.text)}` }, viaProxy: r.viaProxy }
@@ -1049,11 +1214,11 @@ const DEFAULT_INTERVAL_S: Record<FeedKind, number> = { gbfs: 30, 'gtfs-rt': 30, 
  * discovery, Opendatasoft dataset, GTFS-RT vehicle positions, else GeoJSON).
  */
 export async function addFeedLayer(
-  url: string, opts: { name?: string; kind?: FeedKind; radiusM?: number; intervalS?: number; symbology?: Symbology; join?: FeedSource['join']; layerStyle?: LayerStyle } = {},
+  url: string, opts: { name?: string; kind?: FeedKind; radiusM?: number; intervalS?: number; symbology?: Symbology; join?: FeedSource['join']; records?: RecordsSpec; layerStyle?: LayerStyle } = {},
   signal?: AbortSignal,
 ): Promise<AddResult> {
   try { new URL(url) } catch { return { ok: false, errorKey: 'error.badUrl' } }
-  const src: FeedSource = { kind: opts.kind ?? detectFeedKind(url), url, radiusM: opts.radiusM ?? 30_000, join: opts.join }
+  const src: FeedSource = { kind: opts.kind ?? detectFeedKind(url), url, radiusM: opts.radiusM ?? 30_000, join: opts.join, ...(opts.records ? { records: opts.records } : {}) }
   const r = await fetchFeed(src, signal)
   if (!r.ok) return r
   const parsed = parseGeoJson(r.text, { axisOrder: 'auto' })
@@ -1383,7 +1548,7 @@ export async function addPreset(
   }
   const r = await addFeedLayer(p.url, {
     name, kind: p.kind, intervalS: p.intervalS, radiusM: p.radiusM, symbology: p.symbology,
-    join: p.join, layerStyle: p.layerStyle?.(t),
+    join: p.join, records: p.records, layerStyle: p.layerStyle?.(t),
   }, signal)
   if (r.ok) useVectorLayerStore.getState().update(r.id, { attribution: p.license })
   return r

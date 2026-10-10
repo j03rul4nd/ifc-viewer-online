@@ -1,0 +1,94 @@
+{
+  "$schema": "https://www.ifcvieweronline.eu/schemas/scene-v1.json",
+  "format": "ifc-viewer-scene",
+  "v": 1,
+  "meta": {
+    "title": "Barcelona · Plaça de Catalunya — open-data digital twin",
+    "description": "Eight georeferenced IFC models of Plaça de Catalunya and Passeig de Gràcia on the ICGC terrain and OpenStreetMap city, with Bicing, Endolla EV charging, street traffic and air quality read live from their public APIs. Two live sources paint IFC elements: the docks of Bicing station 65 and the bays of the Endolla charger at Passeig de Gràcia 5.",
+    "license": "CC BY 4.0 (this scene document). Data keep their own licences: see each layer.",
+    "tags": ["barcelona", "digital twin", "open data", "IFC 4.3", "GBFS", "GELFS", "air quality", "traffic"],
+    "place": { "name": "Plaça de Catalunya, Barcelona", "lat": 41.3874, "lon": 2.1696 },
+    "createdAt": "2026-10-09T21:30:00Z",
+    "notes": [
+      "The IFC files are reconstructions authored from public sources (OpenStreetMap, ICGC 3D mesh and elevation, Wikimedia Commons); their asset-management values (Pset_CDE_AssetManagement) are illustrative, not the owners' records.",
+      "Live data come straight from the providers' public APIs: Open Data BCN can take 15–40 s to answer."
+    ]
+  },
+  "models": [
+    { "url": "/models/barcelona-catalunya/catalunya-mobility-hub.ifc", "name": "catalunya-mobility-hub.ifc" },
+    { "url": "/models/barcelona-catalunya/fonts-bessones.ifc", "name": "fonts-bessones.ifc" },
+    { "url": "/models/barcelona-catalunya/macia-monument.ifc", "name": "macia-monument.ifc" },
+    { "url": "/models/barcelona-catalunya/pelai-entrance.ifc", "name": "pelai-entrance.ifc" },
+    { "url": "/models/barcelona-catalunya/rambla-canaletes.ifc", "name": "rambla-canaletes.ifc" },
+    { "url": "/models/barcelona-catalunya/granvia-fountain.ifc", "name": "granvia-fountain.ifc" },
+    { "url": "/models/barcelona-catalunya/falques-bench-lamps.ifc", "name": "falques-bench-lamps.ifc" },
+    { "url": "/models/barcelona-catalunya/endolla-pg-gracia.ifc", "name": "endolla-pg-gracia.ifc" }
+  ],
+  "layers": [
+    { "preset": "bcn-traffic" },
+    { "preset": "bicing" },
+    { "preset": "bcn-endolla" },
+    { "preset": "bcn-air-quality" }
+  ],
+  "twin": {
+    "sources": [
+      {
+        "id": "bicing-status",
+        "name": "Bicing · station status (GBFS 3.0)",
+        "url": "https://barcelona.publicbikesystem.net/customer/gbfs/v3.0/station_status",
+        "intervalS": 60,
+        "mapping": { "listPath": "data.stations", "idField": "station_id", "timeField": "last_reported" },
+        "enabled": true
+      },
+      {
+        "id": "endolla",
+        "name": "Endolla · charging locations (GELFS)",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/8cdafa08-d378-4bf1-aad4-fafffe815940/resource/9febc26f-d6a7-45f2-8f73-f529ba4da930/download",
+        "intervalS": 300,
+        "mapping": { "listPath": "locations", "idField": "id", "timeField": "" },
+        "enabled": true
+      }
+    ],
+    "bindings": [
+      {
+        "id": "bicing-65-docks",
+        "name": "Bicing 65 · Pl. Catalunya — dock posts",
+        "sourceId": "bicing-status",
+        "deviceId": "65",
+        "targets": [],
+        "query": { "classes": ["IfcBuildingElementProxy"], "storey": "", "nameContains": "ancoratge" },
+        "rules": [
+          { "id": "r-off", "name": "Out of service", "match": "any", "filters": [{ "field": "is_renting", "op": "isFalse" }, { "field": "is_installed", "op": "isFalse" }], "effect": { "color": "#8a8f98", "opacity": 1, "hide": false } },
+          { "id": "r-empty", "name": "No bikes", "match": "all", "filters": [{ "field": "num_vehicles_available", "op": "eq", "value": 0 }], "effect": { "color": "#ef4444", "opacity": 1, "hide": false }, "alert": { "forMin": 15 } },
+          { "id": "r-full", "name": "No free docks", "match": "all", "filters": [{ "field": "num_docks_available", "op": "eq", "value": 0 }], "effect": { "color": "#2fb7ff", "opacity": 1, "hide": false } },
+          { "id": "r-low", "name": "Few bikes (≤ 2)", "match": "all", "filters": [{ "field": "num_vehicles_available", "op": "lte", "value": 2 }], "effect": { "color": "#f59e0b", "opacity": 1, "hide": false } },
+          { "id": "r-ok", "name": "Bikes available", "match": "all", "filters": [], "effect": { "color": "#22c55e", "opacity": 1, "hide": false } }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 900,
+        "label": { "field": "num_vehicles_available" }
+      },
+      {
+        "id": "endolla-3762-bays",
+        "name": "Endolla location 3762 · Pg. de Gràcia 5 — charging bays (matched by position: the IFC's EVSE ids are illustrative)",
+        "sourceId": "endolla",
+        "deviceId": "3762",
+        "targets": [],
+        "query": { "classes": ["IfcSurfaceFeature"], "storey": "", "nameContains": "EV surfacing" },
+        "rules": [
+          { "id": "r-av", "name": "Ports available", "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "available" }], "effect": { "color": "#22c55e", "opacity": 1, "hide": false } },
+          { "id": "r-busy", "name": "All ports in use", "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "busy" }], "effect": { "color": "#f59e0b", "opacity": 1, "hide": false } },
+          { "id": "r-oos", "name": "Out of service", "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "out_of_service" }], "effect": { "color": "#ef4444", "opacity": 1, "hide": false } }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 7200,
+        "label": { "field": "ports_available" }
+      }
+    ]
+  },
+  "view": {
+    "map": "terrain,buildings",
+    "hide": ["w909097448"],
+    "camera": { "position": [-95, 75, 30], "target": [30, 0, 170] }
+  }
+}

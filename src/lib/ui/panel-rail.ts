@@ -16,7 +16,7 @@
 export type PanelId =
   | 'properties'
   | 'scene' | 'measurement' | 'section' | 'plans'
-  | 'map' | 'solar' | 'pointcloud' | 'mesh'
+  | 'map' | 'solar' | 'flood' | 'devices' | 'pointcloud' | 'mesh'
 
 export interface RailContext {
   /**
@@ -43,7 +43,10 @@ export const ALL_PANEL_IDS: readonly PanelId[] = [
   // Properties leads: it is the most-used panel, and the one that used to have
   // a surface of its own on this edge. See docs/RIGHT_EDGE.md.
   'properties', 'scene', 'measurement', 'section', 'plans',
-  'map', 'solar', 'pointcloud', 'mesh',
+  // Live devices (operational twin) is always offered, so it sits before the
+  // tools that only appear once a scan or a mesh is loaded: those arrive at the
+  // end and never push an icon that was already there.
+  'map', 'solar', 'flood', 'devices', 'pointcloud', 'mesh',
 ]
 
 /**

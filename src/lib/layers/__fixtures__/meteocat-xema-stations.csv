@@ -1,0 +1,3 @@
+"codi_estacio","nom_estacio","codi_tipus","latitud","longitud","geocoded_column","emplacament","altitud","codi_municipi","nom_municipi","codi_comarca","nom_comarca","codi_provincia","nom_provincia","codi_xarxa","nom_xarxa","codi_estat_ema","nom_estat_ema","data_inici","data_fi"
+"D5","Barcelona - Observatori Fabra","A","41.41864","2.12379","POINT (2.12379 41.41864)","Observatori Fabra","410","80193","Barcelona","13","Barcelonès","8","Barcelona","1","XEMA","2","Operativa","1995-11-03T00:00:00.000",
+"X4","Barcelona - el Raval","A","41.38386","2.16774","POINT (2.16774 41.38386)","Facultat de Geografia i Història. c. Montalegre nº6, 6a","33","80193","Barcelona","13","Barcelonès","8","Barcelona","1","XEMA","2","Operativa","2006-10-11T00:00:00.000",
