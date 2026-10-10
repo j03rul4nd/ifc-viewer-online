@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TmbKeysBox, useTmbKeys } from './TmbPanels'
-import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
+import { useVectorLayerStore, type VectorLayer, trackWait, hostLabel } from '../stores/vectorLayerStore'
 import { presetsForSite, type FeedPreset } from '../lib/layers/feed-presets'
 import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
 import { useGeoStore } from '../stores/geoStore'
@@ -63,7 +63,7 @@ export function PresetSources() {
         onClick={async () => {
           setBusy(p.id)
           try {
-            const r = await addPreset(p, t(`presets.${p.id}.name` as never), undefined, (k) => t(k as never))
+            const r = await trackWait(hostLabel(p.url), addPreset(p, t(`presets.${p.id}.name` as never), undefined, (k) => t(k as never)))
             if (!r.ok) toast(t(r.errorKey as never), 'error')
             else setTimeout(() => void frameVectorLayer(r.id), 300)
           } finally { setBusy(null) }
@@ -280,7 +280,7 @@ export function JoinForm({ layer }: { layer: VectorLayer }) {
         <button className={btn} disabled={busy || !url.trim()} onClick={async () => {
           setBusy(true)
           try {
-            const r = await previewTable(url.trim(), tableOpts())
+            const r = await trackWait(hostLabel(url.trim()), previewTable(url.trim(), tableOpts()))
             if (!r.ok) { toast(t(r.errorKey), 'error'); return }
             setCols(r.columns); setSample(r.sample)
             setTableKey(r.columns[0] ?? '')
@@ -333,9 +333,9 @@ export function JoinForm({ layer }: { layer: VectorLayer }) {
             <button className={btn} disabled={busy || !layerKey || !tableKey} onClick={async () => {
               setBusy(true)
               try {
-                const r = await attachJoin(layer.id, url.trim(), {
+                const r = await trackWait(hostLabel(url.trim()), attachJoin(layer.id, url.trim(), {
                   table: tableOpts(), spec: { layerKey, tableKey }, timeColumn: timeCol || undefined,
-                }, interval)
+                }, interval))
                 if (!r.ok) toast(t(r.errorKey), 'error')
                 else { toast(t('join.done'), 'success'); setOpen(false) }
               } finally { setBusy(false) }

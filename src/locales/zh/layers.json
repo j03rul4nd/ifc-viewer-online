@@ -831,5 +831,11 @@
       "live_one": "{{count}} 个实时数据源",
       "live_other": "{{count}} 个实时数据源"
     }
+  },
+  "wait": {
+    "server": "正在等待 {{host}}… {{s}} 秒",
+    "generic": "处理中… {{s}} 秒",
+    "announce": "仍在等待 {{host}}",
+    "announceGeneric": "仍在处理"
   }
 }

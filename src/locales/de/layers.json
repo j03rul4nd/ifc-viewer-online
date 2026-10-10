@@ -831,5 +831,11 @@
       "live_one": "{{count}} Live-Quelle",
       "live_other": "{{count}} Live-Quellen"
     }
+  },
+  "wait": {
+    "server": "Warte auf {{host}}… {{s}} s",
+    "generic": "Wird bearbeitet… {{s}} s",
+    "announce": "Warte noch auf {{host}}",
+    "announceGeneric": "Wird noch bearbeitet"
   }
 }

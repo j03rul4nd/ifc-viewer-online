@@ -831,5 +831,11 @@
       "live_one": "{{count}} fuente en vivo",
       "live_other": "{{count}} fuentes en vivo"
     }
+  },
+  "wait": {
+    "server": "Esperando a {{host}}… {{s}} s",
+    "generic": "Trabajando… {{s}} s",
+    "announce": "Sigue esperando a {{host}}",
+    "announceGeneric": "Sigue trabajando"
   }
 }

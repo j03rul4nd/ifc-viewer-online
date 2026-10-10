@@ -14,7 +14,7 @@ import { groupIndexOf } from '../lib/layers/style-groups'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { useVectorLayerStore, type VectorLayer } from '../stores/vectorLayerStore'
+import { useVectorLayerStore, trackWait, hostLabel, type VectorLayer } from '../stores/vectorLayerStore'
 import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
 import { useGeoStore } from '../stores/geoStore'
 import { toast } from '../stores/toastStore'
@@ -141,7 +141,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
         const accepted = await confirmExternalData(foreign.length ? 'layersUrl' : 'layers', hosts)
         if (!accepted) { toast(tc('externalData.skipped'), 'info'); return }
         const body = text
-        void run(async () => reportImport(body !== null ? await importLayersSession(body) : await importLayersFromUrl(setup)))
+        void run(async () => reportImport(body !== null ? await importLayersSession(body) : await importLayersFromUrl(setup)), setup)
       })()
       return
     }
@@ -163,7 +163,8 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     if (!text) return
     useVectorLayerStore.getState().setSetupText(null)
     // Asked for already: the scene's question (App) covered its layers.
-    void run(async () => reportImport(await importLayersSession(text)))
+    // Several servers at once (a scene's presets): the hint says only how long.
+    void run(async () => reportImport(await importLayersSession(text)), null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setupText])
 
@@ -210,9 +211,14 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     if (frame) setTimeout(() => void frameVectorLayer(r.id), 200)
   }
 
-  const run = async (fn: () => Promise<void>): Promise<void> => {
+  /**
+   * `server`: the URL being waited on, so the panel can say who is slow once
+   * it takes a while; null when several are (the hint then says only how long);
+   * omitted for local work, which never waits on anyone.
+   */
+  const run = async (fn: () => Promise<void>, server?: string | null): Promise<void> => {
     setBusy(true)
-    try { await fn() } finally { setBusy(false) }
+    try { await (server === undefined ? fn() : trackWait(hostLabel(server), fn())) } finally { setBusy(false) }
   }
 
   const onFiles = (files: FileList): void => void run(async () => {
@@ -278,6 +284,8 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
         <input ref={fileRef} type="file" multiple accept=".geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv" className="hidden"
           onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = '' }} />
 
+        <SlowLoadHint />
+
         {/* What was just picked in the scene comes first: it is what the user is looking at. */}
         <SelectedFeature />
 
@@ -335,7 +343,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                 <div className="flex gap-1.5">
                   <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/data.geojson" />
                   <button className={btnCls} disabled={busy || !url.trim()}
-                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') })}>
+                    onClick={() => void run(async () => { const r = await addGeoJsonUrl(url.trim()); report(r); if (r.ok) setUrl('') }, url.trim())}>
                     {t('url.add')}
                   </button>
                 </div>
@@ -352,7 +360,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                       if (!r.ok) { toast(t(r.errorKey as never), 'error'); return }
                       setCaps(r.caps)
                       setWfsType(r.caps.featureTypes.find((f) => f.supportsJson)?.name ?? r.caps.featureTypes[0].name)
-                    })}>
+                    }, wfsUrl.trim())}>
                     {t('wfs.connect')}
                   </button>
                 </div>
@@ -370,7 +378,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
                         {RADII.map((r) => <option key={r} value={r}>{r >= 1000 ? `${r / 1000} km` : `${r} m`}</option>)}
                       </select>
                       <button className={btnCls} disabled={busy || !wfsType}
-                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)))}>
+                        onClick={() => void run(async () => report(await addWfsLayer(wfsUrl.trim(), caps, wfsType, radius, 5000)), wfsUrl.trim())}>
                         {t('wfs.load')}
                       </button>
                     </div>
@@ -568,5 +576,46 @@ function LayerDownload({ layer }: { layer: VectorLayer }) {
         </label>
       )}
     </div>
+  )
+}
+
+/**
+ * "Waiting for ovc.catastro.meh.es… 9 s": some public servers take 10-15 s to
+ * answer, and a silent '…' for that long reads as a hang. Only after 2 s, and
+ * only for loads the user started (background live refreshes never show it).
+ *
+ * The counter is for the eye only: a screen reader gets one announcement per
+ * wait from a live region that is always mounted (one inserted together with
+ * its text is often not read at all), not a new one every second.
+ */
+function SlowLoadHint() {
+  const { t } = useTranslation('layers')
+  const waiting = useVectorLayerStore((s) => s.waiting)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!waiting) return
+    setNow(Date.now())
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [waiting])
+  const s = waiting ? Math.max(0, Math.floor((now - waiting.since) / 1000)) : 0
+  const show = !!waiting && s >= 2
+  return (
+    <>
+      <span role="status" className="sr-only">
+        {show ? (waiting.label ? t('wait.announce', { host: waiting.label }) : t('wait.announceGeneric')) : ''}
+      </span>
+      {show && (
+        // Sticky: the button that started the load is usually further down
+        // the panel (the URL and WFS forms), and the hint must be in view there.
+        <div aria-hidden data-testid="slow-load"
+          className="sticky top-0 z-10 flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] border border-[var(--border)] bg-[var(--surface-2)] shadow-sm text-[10px] text-[var(--text-dim)]">
+          <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+          <span className="flex-1 min-w-0 truncate">
+            {waiting.label ? t('wait.server', { host: waiting.label, s }) : t('wait.generic', { s })}
+          </span>
+        </div>
+      )}
+    </>
   )
 }
