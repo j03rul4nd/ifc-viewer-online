@@ -652,6 +652,126 @@ FIGURES['point-cloud-floor-plan-slice'] = () => {
   })
 }
 
+// ── Rain-flood simulation (docs/FLOOD_SIMULATION.md) ─────────────────────────
+
+// 1. How the grid is built
+FIGURES['flood-grid-from-ifc-and-map'] = () => {
+  const col = (title, color, rows) => `
+    <div class="col card"><div class="ct" style="color:${color}">${title}</div>
+      ${rows.map(([b, s]) => `<div class="row"><i style="background:${color}"></i><div><b>${b}</b><span>${s}</span></div></div>`).join('')}
+    </div>`
+  return page({
+    kicker: 'Rain-flood simulation',
+    title: 'From an IFC and a map to a flood grid',
+    lede: 'Every cell gets a ground height, a roughness, how much it absorbs and how much rain it receives — from three sources, in this order of trust.',
+    source: 'How IFC Viewer Online builds the grid',
+    css: `
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px}
+.col{padding:20px 22px}.ct{font-size:21px;font-weight:700;margin-bottom:12px}
+.row{display:flex;gap:12px;margin:11px 0;align-items:flex-start}.row i{width:10px;height:10px;border-radius:3px;margin-top:8px;flex:none}
+.row b{display:block;font-size:17.5px;font-weight:600}.row span{display:block;font-size:15px;color:${C.sub};line-height:1.35;margin-top:2px}
+.out{margin-top:22px;display:flex;align-items:center;gap:18px;padding:16px 22px;border-radius:14px;background:${C.brandSoft};border:1.5px solid ${C.brand};font-size:18px}
+.out b{color:${C.brand}}`,
+    body: `<div class="cols">
+${col('1 · The ground', C.green, [
+  ['The IFC\'s own terrain', 'when the model has a site surface'],
+  ['An imported DEM', '.asc or GeoTIFF, with its datum'],
+  ['The map\'s relief', 'ICGC 5 m bare earth in Catalonia, ~30 m elsewhere'],
+  ['Holes filled', 'from the neighbouring cells'],
+  ['A demo plane', 'only when nothing else answers — and it says so'],
+])}
+${col('2 · What the IFC puts on it', C.brand, [
+  ['Walls', 'an underside within 1 m of the ground: water goes round'],
+  ['Canopies', 'raised: rain is caught, water runs underneath'],
+  ['Kerbs and steps', 'low: part of the ground'],
+  ['Courtyards', 'walled in: drained by their own gullies'],
+  ['Roofs', 'their rain to the street, or to the sewer'],
+])}
+${col('3 · The neighbourhood (OSM)', C.cyan, [
+  ['Streets', 'sealed and smooth'],
+  ['Parks, woods, sand', 'rougher, and they absorb'],
+  ['Streams and canals', 'cut into the ground by their depth'],
+  ['Buried or vanished rivers', 'marked, not cut — and measured'],
+  ['Walls, dykes, neighbours', 'raised, or walls the water goes round'],
+])}
+</div>
+<div class="out"><b>One grid</b> → 2-D shallow-water solver on the GPU (WebGPU or WebGL2), checked step for step against a CPU reference</div>`,
+  })
+}
+
+// 2. Watercourses in OpenStreetMap
+FIGURES['osm-watercourse-lifecycle-tags'] = () => {
+  const pill = (txt, c, soft) => `<span class="pill" style="color:${c};background:${soft}">${txt}</span>`
+  const rows = [
+    ['waterway=river · canal · stream · ditch · drain', 'An open channel', pill('Cut in by its depth', C.cyan, C.cyanSoft), '2 · 1.5 · 0.6 · 0.5 m unless depth=*'],
+    ['… + tunnel=culvert, up to 40 m', 'A crossing under a road', pill('Cut in too', C.cyan, C.cyanSoft), 'keeps the open channel continuous'],
+    ['… + tunnel=culvert, longer', 'Piped under the city', pill('Buried course', C.violet, C.violetSoft), 'marked, not cut'],
+    ['disused: · abandoned: · historic: · was: · razed: · removed: · demolished:waterway=*', 'A course that is gone', pill('Buried course', C.violet, C.violetSoft), 'dashed line; wet area measured'],
+    ['waterway=* + disused=yes / abandoned=yes', 'Same, older tagging', pill('Buried course', C.violet, C.violetSoft), ''],
+    ['barrier=wall · city_wall · retaining_wall · flood_wall', 'Walls', pill('Raised', C.amber, C.amberSoft), '1.5 · 4 · 1 · 1.5 m unless height=*'],
+    ['man_made=dyke · embankment=yes', 'Earthworks', pill('Raised*', C.amber, C.amberSoft), '*not on a bare-earth DEM: it has them'],
+  ]
+  return page({
+    kicker: 'OpenStreetMap · flood simulation',
+    title: 'How OSM records a watercourse — even one that is gone',
+    lede: 'A river that was filled in or piped under the streets stays in OpenStreetMap under a lifecycle prefix. The flood simulation reads each case differently.',
+    source: 'Tags read by IFC Viewer Online · map data © OpenStreetMap contributors',
+    css: `
+.t{width:100%;border-collapse:separate;border-spacing:0 9px}
+.t td{background:#fff;border-top:1.5px solid ${C.line};border-bottom:1.5px solid ${C.line};padding:12px 16px;font-size:17px;vertical-align:middle}
+.t td:first-child{border-left:1.5px solid ${C.line};border-radius:12px 0 0 12px;font-family:GeistMono,monospace;font-size:15.5px;color:${C.ink};width:560px}
+.t td:last-child{border-right:1.5px solid ${C.line};border-radius:0 12px 12px 0;color:${C.sub};font-size:15px}
+.t td:nth-child(2){font-weight:600}`,
+    body: `<table class="t">${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</table>`,
+  })
+}
+
+// 3. Hazard to people: depth × speed
+FIGURES['flood-hazard-rating-chart'] = () => {
+  // HR = d (v + 0.5) + DF, FD2320 debris factor (0.5 up to 0.25 m, 1 deeper).
+  const hr = (d, v) => d * (v + 0.5) + (d <= 0.25 ? 0.5 : 1)
+  const cls = (h) => (h < 0.75 ? 0 : h < 1.25 ? 1 : h <= 2 ? 2 : 3)
+  const ZC = ['#3fb37f', '#e8c13a', '#ef8a2e', '#d94040']
+  const W2 = 760, H2 = 520, DM = 2.5, VM = 4, nx = 100, ny = 80
+  let rects = ''
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const d = ((i + 0.5) / nx) * DM, v = ((j + 0.5) / ny) * VM
+      rects += `<rect x="${(i / nx) * W2}" y="${H2 - ((j + 1) / ny) * H2}" width="${W2 / nx + 0.6}" height="${H2 / ny + 0.6}" fill="${ZC[cls(hr(d, v))]}"/>`
+    }
+  }
+  const px = (d) => (d / DM) * W2, py = (v) => H2 - (v / VM) * H2
+  const mark = (d, v, label, dx = 12, dy = -10) => `<circle cx="${px(d)}" cy="${py(v)}" r="8" fill="#fff" stroke="${C.ink}" stroke-width="3"/>
+    <text x="${px(d) + dx}" y="${py(v) + dy}" font-size="17" font-weight="600" fill="${C.ink}" paint-order="stroke" stroke="#fff" stroke-width="5">${label}</text>`
+  const ticksX = [0, 0.5, 1, 1.5, 2, 2.5].map((d) => `<text x="${px(d)}" y="${H2 + 26}" font-size="15" fill="${C.sub}" text-anchor="middle">${d} m</text>`).join('')
+  const ticksY = [0, 1, 2, 3, 4].map((v) => `<text x="-12" y="${py(v) + 5}" font-size="15" fill="${C.sub}" text-anchor="end">${v} m/s</text>`).join('')
+  const legend = [
+    ['< 0.75', 'Low — caution', 'shallow flowing or deep standing water'],
+    ['0.75 – 1.25', 'Danger for some', 'children, the elderly, the infirm'],
+    ['1.25 – 2.0', 'Danger for most', 'the general public'],
+    ['> 2.0', 'Danger for all', 'including the emergency services'],
+  ].map(([r, n, w], k) => `<div class="lg"><i style="background:${ZC[k]}"></i><div><b>${n}</b><span class="mono">HR ${r}</span><span>${w}</span></div></div>`).join('')
+  return page({
+    kicker: 'Flood hazard to people',
+    title: 'Depth is half the answer: HR = d × (v + 0.5) + DF',
+    lede: 'The Defra / Environment Agency hazard rating (FD2320). d = depth (m), v = speed (m/s), DF = debris factor: 0.5 up to 0.25 m deep, 1 deeper.',
+    source: 'Source: EA / HR Wallingford (2008), note on FD2320 & FD2321',
+    css: `.wrap{display:flex;gap:56px;align-items:flex-start}.chart{margin-left:76px}
+.lg{display:flex;gap:14px;margin:0 0 18px}.lg i{width:22px;height:22px;border-radius:6px;flex:none;margin-top:3px}
+.lg b{display:block;font-size:20px}.lg span{display:block;font-size:15.5px;color:${C.sub};margin-top:2px}.lg .mono{color:${C.ink}}`,
+    body: `<div class="wrap"><div class="chart"><svg width="${W2 + 10}" height="${H2 + 44}" style="overflow:visible">
+  <g opacity="0.85">${rects}</g>
+  <rect x="0" y="0" width="${W2}" height="${H2}" fill="none" stroke="${C.line}" stroke-width="2"/>
+  ${ticksX}${ticksY}
+  <text x="${W2 / 2}" y="${H2 + 50}" font-size="16" fill="${C.ink}" text-anchor="middle" font-weight="600">Depth</text>
+  ${mark(0.15, 2, '15 cm, fast: danger for some')}
+  ${mark(0.5, 0.05, '50 cm, still: danger for most', 14, -12)}
+  ${mark(0.2, 0.6, '20 cm, slow: caution', 14, -14)}
+</svg></div>
+<div style="padding-top:8px">${legend}</div></div>`,
+  })
+}
+
 // ── Render ───────────────────────────────────────────────────────────────────
 
 const only = process.argv.slice(2)
