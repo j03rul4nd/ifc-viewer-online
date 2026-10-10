@@ -780,3 +780,41 @@ dependency weight). CSS/filters on raster tiles (cannot add texels).
 breathing within the LOD band); the planned next step is a screen-space label
 layer reading the same `LabelLayer` rules. The terrain drape still uses the
 raster OSM template.
+
+## D-32 · Digital twins in the browser: one scene document, providers as data
+
+**Date:** 2026-10-10 · **Status:** accepted
+
+**Context.** The product grew from a viewer into a place to build 3D digital
+twins: IFC models on a real map, live open data, devices that colour IFC
+elements (PRs #207, #211–#213, #215). It had to stay frontend-only — no server
+of ours, no secrets in pages — and be usable from code (SDK) as well as by
+people (panels).
+
+**Decision.**
+1. A twin is a **scene document** (`ifc-viewer-scene` v1, JSON Schema at
+   `/schemas/scene-v1.json`): models by URL, data layers, device bindings,
+   view, and notes for the visitor. It opens from a URL, a `#scene=` link, a
+   file, or the SDK, and is the contract every surface shares.
+2. **Providers are data.** A source is a `FeedPreset` (kind, URL, mapping,
+   transforms, measured refresh, licence); formats are pure adapters with
+   real-response fixtures. Adding one is data + a test, never a branch in the
+   runner. Only sources that answer a browser (CORS) are offered; the rest are
+   documented as such, reachable through a proxy the *user* runs.
+3. **Panels and SDK run one implementation** (`host-data-api.ts`,
+   `scene-snapshot.ts`). Layers a host or a link adds are session-only and
+   never overwrite the visitor's saved layers.
+4. Anything that needs a server — polling while no tab is open, server-side
+   alerts, a key vault, saved team scenes, a managed proxy — is **paid-tier
+   only**, on the existing F0–F6 backbone (`docs/TWIN_PREMIUM_ROADMAP.md`).
+
+**Rejected.** Our own proxy for non-CORS sources in the free tier (cost,
+operations, and redistribution terms we would carry). A twin format of our
+own invention per feature (layer setups, twin files and deep links each
+standing alone) — they are kept as the parts a scene embeds. Storing scenes
+server-side for free.
+
+**Consequences.** Freshness and reliability are each provider's; the app
+measures and states them (`docs/CITY_DATA_SOURCES.md`) instead of hiding
+them. A link holds about 16 000 characters, so big scenes are hosted files.
+Demo data that is illustrative must say so in the scene's notes.

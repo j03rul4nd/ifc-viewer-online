@@ -8,7 +8,8 @@ Everything is client-side — the visitor's browser fetches the IFC directly, so
 The in-app **Embed** button (toolbar, when a model is loaded) opens a generator that
 builds the link and the `<iframe>` snippet for you, and there's a full no-code
 **embed builder** served at **`/<base>/embed/`** (localized in 10 languages, with a
-live preview). This doc is the reference for the underlying parameters.
+live preview). It embeds an IFC model or a **digital-twin scene** (a `.scene.json`
+URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the reference for the underlying parameters.
 
 ## Quick start
 
@@ -235,6 +236,8 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `measurements-changed` | `tool`, `units`, `items` (values always SI) |
 | `tour-started` / `tour-step` / `tour-ended` | `title, total, template` / `index, total, caption` / `completed` |
 | `presentation-progress` | `stage` (`generate` · `export`), `label?`, `progress` |
+| `layer-feature-picked` | `layerId`, `layer`, `featureIndex`, `featureId`, `geometry`, `lonLat`, `properties` — a data-layer feature was clicked |
+| `alert`            | `at`, `kind` (`start` · `clear`), `from` (`layer` · `twin`), `id`, `name`, `ruleId`, `rule`, `count`, `sample` |
 
 Messages about a load a host started with a `requestId` (see below and the
 [SDK](./IFC_VIEWER_SDK.md)) echo that `requestId`, so a host can tell its own
@@ -290,6 +293,14 @@ as "no model yet", "feature not in this build" or "model has no location".
 | `ifcviewer:get-solar` | — | Same shape as above |
 | `ifcviewer:set-site` | `site: { enabled?, terrain?, buildings?, layers?, detail?, terrainStyle?, exaggeration?, vehicles? }` | Map mode. Resolves once it is up. Returns state + `placement` + `attributions` |
 | `ifcviewer:get-site` | — | Same shape as above |
+| `ifcviewer:get-scene` | `title?`, `description?`, `camera?` (default true) | `{ scene, sources, link, skippedModels, secretsRemoved }` — the scene on screen as a scene document |
+| `ifcviewer:get-layer-presets` | — | The catalogue of live sources: `{ id, name, description, region, kind, url, license, intervalS, needs, near, bbox }[]` |
+| `ifcviewer:add-layer` | `layer: { preset } \| { url, name?, live? } \| { geojson, name? }` | Adds a data layer (session-only, never saved into the visitor's layers). Returns the layer |
+| `ifcviewer:get-layers` | — | `{ id, name, visible, status, error, features, geometry, bbox, live, attribution, url }[]` |
+| `ifcviewer:layer-visible` | `id`, `visible` | The layer |
+| `ifcviewer:frame-layer` | `id` | Flies to the layer; errors when it has nothing to frame yet |
+| `ifcviewer:remove-layer` | `id` | — |
+| `ifcviewer:get-twin` | — | `{ active, sources, bindings }` — each binding's matching rule, colour, label value, alerting |
 | `ifcviewer:add-section` | `axis?` (`x`\|`y`\|`z`), `offset?`, `level?` (storey name or index), `flip?` | Adds a plane. Returns `{ id, planes, box, active }` |
 | `ifcviewer:update-section` | `id`, `offset?`, `enabled?`, `flipped?` | Moves, toggles or flips the plane |
 | `ifcviewer:remove-section` | `id?` | Removes one plane, or every cut when `id` is omitted |

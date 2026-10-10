@@ -73,6 +73,14 @@ These were not on the priority table but are now in `main` and verified against 
   - **Reliability:** real cancel, per-class retries, stable cache keys for fetched files, and fingerprint-based stale-cache and duplicate detection.
   - **UI:** the toolbar chip, the Loading Center (Basic/Advanced) and a multi-file import dialog. Point cloud, mesh and GIS loads appear as tracked jobs.
   - **Contract:** the SDK/embed wire format is unchanged.
+- ✅ **Digital-twin platform (2026-10, D-32)** — IFC models on the map with live open data and devices that colour IFC elements, shared as one scene document. Overview: `docs/DIGITAL_TWIN_PLATFORM.md`.
+  - **Connectors (#207):** 16 measured presets (Barcelona, Catalonia, Madrid, Tokyo), JSON-records / table / time-template adapters, CRS 3879 · JGD2011 · ED50. `docs/CITY_DATA_SOURCES.md`.
+  - **Scenes (#211):** `ifc-viewer-scene` v1 — `?scene=`, `#scene=`, *Share → Digital-twin scene*. `docs/SCENE_FORMAT.md`.
+  - **Heights (#212):** models stand on the terrain (ICGC MET 5 m in Catalonia); one project moves as one.
+  - **Barcelona demo (#213):** Plaça de Catalunya, 8 IFC + 4 live layers + Bicing/Endolla on IFC elements. `docs/DEMOS.md`.
+  - **SDK v1.17 (#215):** scenes and data-layer API, `alert` / `layer-feature-picked` events; `ui=client` map fix.
+  - **Embed builder:** a *Digital-twin scene* mode (`.scene.json` URL or `#scene=` link, client skin).
+  - **Next:** Helsinki/Tokyo scenes, phone measurements. Server-side items are paid-tier only: `docs/TWIN_PREMIUM_ROADMAP.md`.
 
 ---
 

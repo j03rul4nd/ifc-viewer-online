@@ -88,6 +88,13 @@ export interface IfcViewerOptions {
      */
     layers?: string;
     /**
+     * A scene to open: the URL of a scene document (`.scene.json`) — models,
+     * data layers, live device bindings, map, background and camera in one
+     * file, hosted anywhere with CORS. Mirrors `?scene=`. Switch scenes later
+     * with {@link IfcViewer.openScene}. Since v1.17.0.
+     */
+    scene?: string;
+    /**
      * Once every model has loaded, frame them from this view with a tight fit —
      * the model fills `fill` of the frame. `ui: 'article'` implies `'iso'`.
      * See {@link IfcViewer.frame}. Since v1.14.0.
@@ -762,6 +769,189 @@ export interface SceneGroupsState {
     /** Point clouds in no group. */
     looseCloudIds: string[];
 }
+/**
+ * A scene document (`ifc-viewer-scene` v1): the models, data layers, live
+ * device bindings, map and camera of a scene in one JSON. JSON Schema:
+ * https://www.ifcvieweronline.eu/schemas/scene-v1.json
+ */
+export interface SceneDocument {
+    $schema?: string;
+    format: 'ifc-viewer-scene';
+    v: 1;
+    meta: {
+        title: string;
+        description?: string;
+        author?: string;
+        license?: string;
+        tags?: string[];
+        place?: {
+            name?: string;
+            lat?: number;
+            lon?: number;
+        };
+        createdAt?: string;
+        /** Shown to the visitor when the scene opens. */
+        notes?: string[];
+    };
+    /** http(s) URLs, or same-origin paths starting with "/". */
+    models: Array<{
+        url: string;
+        name?: string;
+    }>;
+    /** Data-layer entries: `{ preset: 'bicing' }`, or full entries as exported. */
+    layers: Array<Record<string, unknown>>;
+    twin: {
+        sources: Array<Record<string, unknown>>;
+        bindings: Array<Record<string, unknown>>;
+    } | null;
+    view: {
+        map?: string;
+        look?: string;
+        background?: string;
+        solar?: string;
+        view?: string;
+        /** Scene metres, Y up. */
+        camera?: {
+            position: [number, number, number];
+            target: [number, number, number];
+        };
+    };
+}
+/** Something a scene reads from the network — what a publisher must credit. */
+export interface SceneSourceInfo {
+    kind: 'model' | 'layer' | 'device';
+    name: string;
+    /** `preset:<id>` for a layer that names a preset. */
+    url: string;
+    attribution: string | null;
+    live: boolean;
+}
+/** What {@link IfcViewer.exportScene} returns. */
+export interface SceneExport {
+    scene: SceneDocument;
+    sources: SceneSourceInfo[];
+    /** The app's address carrying the scene in its fragment, or null when too big for a link. */
+    link: string | null;
+    /** Models opened from bytes or files: a scene can only carry models by URL. */
+    skippedModels: number;
+    /** Credentials removed from layer URLs (keys never leave the visitor's device). */
+    secretsRemoved: number;
+}
+/** A live source from the viewer's catalogue, for {@link IfcViewer.addLayer}. */
+export interface LayerPreset {
+    id: string;
+    /** In the viewer's language. */
+    name: string;
+    description: string;
+    region: string;
+    kind: 'geojson' | 'gbfs' | 'gtfs-rt' | 'ods' | 'wfs' | 'join';
+    url: string;
+    license: string;
+    /** Seconds between refreshes; null for data fetched once. */
+    intervalS: number | null;
+    /** What it needs first: the visitor's own key, or a proxy. null = works as is. */
+    needs: 'key' | 'proxy' | null;
+    /** Has data around the scene's site (all true when no site is known). */
+    near: boolean;
+    /** [west, south, east, north], degrees. */
+    bbox: [number, number, number, number];
+}
+/** One of {@link IfcViewer.addLayer}'s three shapes. */
+export type AddLayerSpec = {
+    preset: string;
+    name?: string;
+}
+/** GeoJSON (or a GBFS / GTFS-RT / Opendatasoft feed) at a URL with CORS. `live`: refresh it (true, or seconds). */
+ | {
+    url: string;
+    name?: string;
+    live?: boolean | number;
+}
+/** A FeatureCollection, as an object or text. WGS84, or a declared CRS the viewer knows. */
+ | {
+    geojson: string | Record<string, unknown>;
+    name?: string;
+};
+/** A data layer in the scene. */
+export interface DataLayerInfo {
+    id: string;
+    name: string;
+    visible: boolean;
+    status: 'loading' | 'ready' | 'error';
+    error: string | null;
+    features: number;
+    geometry: {
+        point: number;
+        line: number;
+        polygon: number;
+    };
+    /** [west, south, east, north], WGS84. */
+    bbox: [number, number, number, number] | null;
+    live: {
+        enabled: boolean;
+        intervalS: number;
+    } | null;
+    attribution: string | null;
+    /** Where it reads from (credentials removed); null for pasted data. */
+    url: string | null;
+}
+/** A click on a data-layer feature. */
+export interface LayerFeaturePickedEvent {
+    layerId: string;
+    layer: string;
+    featureIndex: number;
+    featureId: string;
+    geometry: 'point' | 'line' | 'polygon';
+    /** A representative point, [lon, lat] WGS84. */
+    lonLat: [number, number] | null;
+    properties: Record<string, unknown>;
+}
+/** A rule of a data layer or of the twin started or stopped alerting. */
+export interface AlertEvent {
+    at: number;
+    kind: 'start' | 'clear';
+    /** A data layer's rule, or a twin binding's. */
+    from: 'layer' | 'twin';
+    /** Layer id, or twin binding id. */
+    id: string;
+    name: string;
+    ruleId: string;
+    rule: string;
+    /** Features or elements alerting; 0 when it clears. */
+    count: number;
+    sample: string[];
+}
+/** The operational twin: device sources and what each binding shows now. */
+export interface TwinState {
+    active: boolean;
+    sources: Array<{
+        id: string;
+        name: string;
+        url: string;
+        intervalS: number;
+        state: 'idle' | 'ok' | 'error';
+        lastAt: number | null;
+        devices: number;
+        error: string | null;
+    }>;
+    bindings: Array<{
+        id: string;
+        name: string;
+        sourceId: string;
+        deviceId: string;
+        /** 'rule' a rule matches · 'stale' reading too old · 'none' no rule matches · 'nodata' nothing read yet. */
+        state: 'rule' | 'stale' | 'none' | 'nodata';
+        rule: {
+            id: string;
+            name: string;
+            color: string | null;
+        } | null;
+        /** The binding's label field, when it has one. */
+        value: string | number | boolean | null;
+        readAt: number | null;
+        alerting: boolean;
+    }>;
+}
 export interface IfcViewerEventMap {
     ready: ReadyEvent;
     'model-loaded': ModelLoadedEvent;
@@ -789,6 +979,10 @@ export interface IfcViewerEventMap {
     };
     /** The director is generating or exporting a presentation. Since v1.12.0. */
     'presentation-progress': PresentationProgressEvent;
+    /** A feature of a data layer was clicked. Since v1.17.0. */
+    'layer-feature-picked': LayerFeaturePickedEvent;
+    /** A data-layer or twin rule started or stopped alerting. Since v1.17.0. */
+    alert: AlertEvent;
 }
 /** Languages the viewer ships with — code + native label, for building a picker. */
 export declare const LANGUAGES: ReadonlyArray<{
@@ -796,6 +990,12 @@ export declare const LANGUAGES: ReadonlyArray<{
     label: string;
 }>;
 type Listener<T> = (payload: T) => void;
+/**
+ * A scene document packed for `#scene=`: deflate-raw, base64url — the same
+ * encoding the viewer's Share → Digital-twin scene writes. Null when it is
+ * longer than a link should be.
+ */
+export declare function packScene(doc: SceneDocument, maxChars?: number): Promise<string | null>;
 /**
  * One loaded scan, as `listPointClouds` reports it.
  *
@@ -926,11 +1126,11 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.16.0";
+    readonly version = "1.17.0";
     readonly iframe: HTMLIFrameElement;
     /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
     readonly box: HTMLDivElement | null;
-    private readonly src;
+    private src;
     private activated;
     private mountEl;
     private activationQueue;
@@ -938,7 +1138,7 @@ export declare class IfcViewer {
     private cleanups;
     private readonly baseUrl;
     private readonly appOrigin;
-    private readonly opts;
+    private opts;
     private readonly loadTimeout;
     private _ready;
     private languages;
@@ -1252,6 +1452,41 @@ export declare class IfcViewer {
     /** Map mode's state, placement and the attributions you must display. */
     getSiteContext(): Promise<SiteContextState>;
     /**
+     * Open another scene in this viewer: the URL of a `.scene.json`, or a
+     * scene document. A document travels packed in the frame's address, so it
+     * must fit a link (about 16 000 characters compressed); host a bigger one
+     * and pass its URL. The viewer reloads with the scene: what was loaded
+     * before is gone, calls still waiting are rejected, and `ready` fires
+     * again. Resolves once it has.
+     */
+    openScene(scene: string | SceneDocument): Promise<void>;
+    /**
+     * The scene on screen as a scene document — what Share → Digital-twin
+     * scene builds — with the sources it reads and a link that carries it.
+     * Models opened from bytes cannot travel (`skippedModels`); keys never do.
+     */
+    exportScene(opts?: {
+        title?: string;
+        description?: string;
+        camera?: boolean;
+    }): Promise<SceneExport>;
+    /** The catalogue of live public sources, with what each needs to work in a browser. */
+    getLayerPresets(): Promise<LayerPreset[]>;
+    /**
+     * Add a data layer: a catalogue source (`{ preset: 'bicing' }`), GeoJSON or
+     * a live feed at a URL (`{ url, live: 60 }`), or GeoJSON you already have
+     * (`{ geojson }`). Resolves with the layer once its data is in.
+     */
+    addLayer(spec: AddLayerSpec): Promise<DataLayerInfo>;
+    /** Every data layer in the scene. */
+    getLayers(): Promise<DataLayerInfo[]>;
+    setLayerVisible(id: string, visible: boolean): Promise<DataLayerInfo>;
+    /** Fly the camera to a layer's features. */
+    frameLayer(id: string): Promise<void>;
+    removeLayer(id: string): Promise<void>;
+    /** The operational twin: device sources and what every binding shows now. */
+    getTwin(): Promise<TwinState>;
+    /**
      * Add a section plane. `{ level: 'Level 1' }` is a floor plan at that storey;
      * `{ axis: 'x', offset: 4.5 }` a section at 4.5 m. Resolves with the new
      * plane's `id` and every plane now in the scene.
@@ -1433,6 +1668,8 @@ export declare class IfcViewer {
     /** Queue a load so only one runs at a time; resolves with that load's result. */
     private enqueueLoad;
     private runLoad;
+    /** Reject every load and query still waiting (a new scene, or dispose). */
+    private abortInFlight;
     private settle;
     private nextRequestId;
     /** Fire-and-forget command, sent once the viewer is ready. */
@@ -1497,6 +1734,19 @@ export declare class IfcViewerElement extends HTMLElement {
     setBackground(background: BackgroundSpec): Promise<BackgroundState>;
     setSolar(opts?: SolarOptions): Promise<SolarState>;
     setSiteContext(opts?: SiteContextOptions): Promise<SiteContextState>;
+    openScene(scene: string | SceneDocument): Promise<void>;
+    exportScene(opts?: {
+        title?: string;
+        description?: string;
+        camera?: boolean;
+    }): Promise<SceneExport>;
+    getLayerPresets(): Promise<LayerPreset[]>;
+    addLayer(spec: AddLayerSpec): Promise<DataLayerInfo>;
+    getLayers(): Promise<DataLayerInfo[]>;
+    setLayerVisible(id: string, visible: boolean): Promise<DataLayerInfo>;
+    frameLayer(id: string): Promise<void>;
+    removeLayer(id: string): Promise<void>;
+    getTwin(): Promise<TwinState>;
     setWalkMode(enabled: boolean, opts?: {
         speed?: number;
     }): Promise<WalkState>;

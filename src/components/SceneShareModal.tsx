@@ -19,12 +19,11 @@ import * as Icons from './Icons'
 import type { ViewerAPI } from '../lib/viewer'
 import { useSceneStore } from '../stores/sceneStore'
 import { useGeoStore } from '../stores/geoStore'
-import { useLoadingStore, jobForModel } from '../stores/loadingStore'
 import { useVectorLayerStore } from '../stores/vectorLayerStore'
 import { useTwinDeviceStore } from '../stores/twinDeviceStore'
-import { buildSceneDoc, parseSceneDoc, sceneSources, type SceneDoc, type SceneModel } from '../lib/scene-doc/scene-doc'
+import { parseSceneDoc, sceneSources, type SceneDoc } from '../lib/scene-doc/scene-doc'
 import { encodeSceneLink } from '../lib/scene-doc/scene-link'
-import { backgroundToSpec, mapToSpec, portableModelUrl, roundVec } from '../lib/scene-doc/scene-capture'
+import { appBase, sceneLink, snapshotScene } from '../lib/scene-doc/scene-snapshot'
 import { buildIframeSnippet } from '../lib/url-params'
 import { toast } from '../stores/toastStore'
 
@@ -38,11 +37,6 @@ interface Props {
 const field = 'w-full px-3 h-9 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors'
 const label = 'text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider'
 const btn = 'flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg border border-[var(--border)] text-[12px] font-medium text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-40'
-
-/** The app's own address, without query or fragment: where a shared scene opens. */
-function appBase(): string {
-  return `${window.location.origin}${import.meta.env.BASE_URL ?? '/'}`
-}
 
 export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
   const { t: tRaw } = useTranslation('layers')
@@ -66,46 +60,16 @@ export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const jobs = useLoadingStore.getState().jobs
-      const origin = window.location.origin
-      const list: SceneModel[] = []
-      let local = 0
-      for (const m of useSceneStore.getState().models) {
-        const url = jobForModel(jobs, m.id)?.sourceUrl
-        if (url) list.push({ url: portableModelUrl(url, origin), name: m.fileName })
-        else local++
-      }
-      let layers: unknown[] = []
-      let secrets = 0
-      if (useVectorLayerStore.getState().layers.length > 0) {
-        const vr = await import('../lib/layers/vector-runner')
-        const r = vr.exportLayersFile()
-        layers = (JSON.parse(r.json) as { layers: unknown[] }).layers
-        secrets = r.secretsRemoved
-      }
-      const twin = useTwinDeviceStore.getState()
-      const geo = useGeoStore.getState()
-      const cam = withCamera ? viewerApiRef.current?.getCameraViewpoint() ?? null : null
-      const next = buildSceneDoc({
-        meta: {
-          title: title.trim() || t('scene.untitled'),
-          ...(description.trim() ? { description: description.trim() } : {}),
-          ...(geo.placement ? { place: { lat: +geo.placement.lat.toFixed(6), lon: +geo.placement.lon.toFixed(6) } } : {}),
-        },
-        models: list,
-        layers,
-        twin: { sources: twin.sources, bindings: twin.bindings },
-        view: {
-          ...(mapToSpec(geo) ? { map: mapToSpec(geo) } : {}),
-          ...(backgroundToSpec(useSceneStore.getState().background) ? { background: backgroundToSpec(useSceneStore.getState().background) } : {}),
-          ...(cam ? { camera: { position: roundVec(cam.position), target: roundVec(cam.target) } } : {}),
-        },
+      const snap = await snapshotScene({
+        title: title.trim() || t('scene.untitled'),
+        description: description.trim() || undefined,
+        camera: withCamera ? viewerApiRef.current?.getCameraViewpoint() ?? null : null,
       })
-      const packed = await encodeSceneLink(next)
+      const next = await sceneLink(snap.doc)
       if (cancelled) return
-      setDoc(next)
-      setStats({ local, secrets })
-      setLink(packed ? `${appBase()}#scene=${packed}` : null)
+      setDoc(snap.doc)
+      setStats({ local: snap.localModels, secrets: snap.secretsRemoved })
+      setLink(next)
     })()
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps

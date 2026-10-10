@@ -18,6 +18,7 @@ import { SDK_DOCS_V112 } from './sdk-docs-v112.mjs'
 import { SDK_DOCS_V113 } from './sdk-docs-v113.mjs'
 import { SDK_DOCS_V114 } from './sdk-docs-v114.mjs'
 import { SDK_DOCS_V115 } from './sdk-docs-v115.mjs'
+import { SDK_DOCS_V117 } from './sdk-docs-v117.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -538,6 +539,7 @@ for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V112[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V113[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V114[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V115[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V117[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -651,6 +653,20 @@ const API_GROUPS = [
   ['map', 'grpMap', [
     ['setSiteContext(opts?)', 'Promise<SiteContextState>', 'siteSet'],
     ['getSiteContext()', 'Promise<SiteContextState>', 'siteGet'],
+  ]],
+  ['scenes', 'grpScenes', [
+    ['openScene(url | SceneDocument)', 'Promise<void>', 'scnOpen'],
+    ['exportScene({ title?, description?, camera? })', 'Promise<SceneExport>', 'scnExport'],
+    ['packScene(doc)', 'Promise<string | null>', 'scnPack'],
+  ]],
+  ['data', 'grpData', [
+    ['getLayerPresets()', 'Promise<LayerPreset[]>', 'dlPresets'],
+    ['addLayer({ preset } | { url, live? } | { geojson })', 'Promise<DataLayerInfo>', 'dlAdd'],
+    ['getLayers()', 'Promise<DataLayerInfo[]>', 'dlList'],
+    ['setLayerVisible(id, visible)', 'Promise<DataLayerInfo>', 'dlVisible'],
+    ['frameLayer(id)', 'Promise<void>', 'dlFrame'],
+    ['removeLayer(id)', 'Promise<void>', 'dlRemove'],
+    ['getTwin()', 'Promise<TwinState>', 'twGet'],
   ]],
   ['sections', 'grpSections', [
     ['addSection({ axis?, offset?, level?, flip? })', 'Promise<SectionsState & { id }>', 'secAdd'],
@@ -766,6 +782,7 @@ const OPTIONS = [
   ['solar · moon', "'MM-DDTHH:MM' · boolean", '—', 'optSolar'],
   ['scans', 'string[]', '—', 'optScans'],
   ['layers', 'string', '—', 'optLayers'],
+  ['scene', 'string', '—', 'optScene'],
   ['view · fill', "CameraView · number", '—', 'optView'],
   ['wheel', "'always' | 'ctrl'", "'always'", 'optWheel'],
   ['lazy', "boolean | 'visible'", 'false', 'optLazy'],
@@ -795,6 +812,8 @@ const EVENTS = [
   ['tour-step', '{ index, total, caption }', 'evTourStep'],
   ['tour-ended', '{ completed }', 'evTourEnded'],
   ['presentation-progress', '{ stage, label?, progress }', 'evPresProgress'],
+  ['layer-feature-picked', '{ layerId, layer, featureId, geometry, lonLat, properties }', 'evLayerPicked'],
+  ['alert', '{ kind, from, id, name, rule, count, sample }', 'evAlert'],
 ]
 
 // Section nav model (id, translation key); reuses existing localized keys.
@@ -1003,6 +1022,18 @@ viewer.bindSteps([
   { el: "#s3", isolate: null, solar: { active: true, date: "06-21", time: "19:30" } },
 ]);`
 
+const REC_CITY =
+`const viewer = new IfcViewer("#twin", {
+  ui: "client",
+  scene: "https://www.ifcvieweronline.eu/scenes/barcelona-placa-catalunya.scene.json",
+});
+viewer.on("alert", (a) => { if (a.kind === "start") notify(a.name + ": " + a.rule) });
+viewer.on("layer-feature-picked", (f) => showCard(f.layer, f.properties));
+
+// Your own live source next to the scene's (GeoJSON with CORS, every 60 s)
+await viewer.addLayer({ url: "https://example.org/sensors.geojson", live: 60 });
+const { link, sources } = await viewer.exportScene({ title: "Our twin" });`
+
 const REC_THEME =
 `new IfcViewer("#viewer", { accent: "#22c55e" });
 
@@ -1193,6 +1224,7 @@ function page(lang) {
     recipe('rec11T', 'rec11B', REC_COVER) +
     recipe('rec12T', 'rec12B', REC_ARTICLE) +
     recipe('rec13T', 'rec13B', REC_STORY) +
+    recipe('rec14T', 'rec14B', REC_CITY) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'
