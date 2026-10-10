@@ -174,8 +174,6 @@ live values are painted into PNGs, clips and GIFs):
   latest published hour, not "now".
 - The Bicing feed declares no licence; it is credited to its publisher.
 - A hidden browser tab stops polling (by design) and catches up when shown.
-- The IFC headers name the authoring tool and organisation of the I+D package
-  ("InGreen landmark builder", "InGreen CDE demo").
 - Mobile performance of the full scene (8 models + 4 layers + map) has not been
   measured.
 

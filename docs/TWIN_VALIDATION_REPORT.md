@@ -79,8 +79,6 @@ These would have shipped without the checks above:
 
 ## Known issues at the time of writing
 
-- **InGreen headers.** The published Barcelona IFCs carry InGreen authorship headers
-  ([`TWIN_DATA_AUDIT.md`](TWIN_DATA_AUDIT.md) §1). Publication rights need confirming.
 - **Flaky flood test.** `src/features/flood/core/cpu-inertial.test.ts` (from #214, not
   this programme) timed out at 5 s once under full-suite load. It passes alone.
 - **Slow Open Data BCN.** It takes 15–40 s a file, so traffic and EV layers can appear
