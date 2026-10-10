@@ -39,7 +39,7 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). With several models, validation waits until none is still loading, then runs model by model. |
 | `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
-| `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
+| `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). Read before anything renders, so it wins over the browser's language and the stored choice from the first frame. |
 | `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
 | `bg`       | preset / `rrggbb` / `top,bottom` | saved     | Scene background for this page view: `white`, `paper`, `blueprint`, `sky`, `studio`, one colour, or a top,bottom gradient (`bg=dbeafe,ffffff`). Applied from the first frame and **not** saved as the visitor's preference. An unreadable value is ignored. |
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |

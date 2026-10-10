@@ -96,6 +96,12 @@ for (const source of BLOG_POSTS) {
   out.push(post)
 }
 
+// --merge keeps EVERY post the current pack holds, including those that are no
+// longer in the published list: a retired post's translation stays on purpose
+// (RETIRED_POSTS keeps the data so it is not lost), and walking BLOG_POSTS
+// alone silently deleted it from all nine packs.
+if (merge) for (const [slug, post] of current) if (!out.some((p) => p.slug === slug)) out.push(post)
+
 const dropped = relinkSections(out.filter((p) => !current.has(p.slug) || manifest.has(p.slug)), new Map(BLOG_POSTS.map((p) => [p.slug, p])))
 
 // ── Write it as readable TypeScript ─────────────────────────────────────────

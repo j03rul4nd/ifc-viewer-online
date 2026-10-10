@@ -126,7 +126,13 @@ void i18n
       // Non-locale first segments ('fix', 'blog', 'tools', 'sdk', …) are ignored
       // because supportedLngs below filters anything not in the registry, so
       // /fix/<slug>/ falls through to localStorage exactly as before.
-      order:              ['path', 'localStorage', 'navigator'],
+      //
+      // `?lang=` goes before all of them: it is a host's explicit request (an
+      // embed, a blog demo, the SDK). Applied only later, from App, it raced the
+      // namespaces the detected language had already started loading, and an
+      // `?lang=en` iframe in a Spanish browser could stay Spanish.
+      order:              ['querystring', 'path', 'localStorage', 'navigator'],
+      lookupQuerystring:  'lang',
       lookupFromPathIndex: 0,
       lookupLocalStorage: 'ifc-locale',
       caches:             ['localStorage'],

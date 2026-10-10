@@ -88,6 +88,7 @@
   },
   "view": {
     "map": "terrain,buildings",
+    "hide": ["w909097448"],
     "camera": { "position": [-95, 75, 30], "target": [30, 0, 170] }
   }
 }

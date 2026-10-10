@@ -729,6 +729,13 @@ thing by hand, and a test keeps them equal to the millimetre
   were Eixample blocks. The flat basemap tiles were always right, so it showed
   only with relief on, which is what `map=terrain` and every demo scene use.
   `applyDrape` now sets `flipY = false`, and `geo-terrain.test.ts` pins it.
+- **The relief drape bakes no text.** It is painted at about 2 m per pixel (GSI
+  DEM10B stops at z14, so the drape is z16), and a 12 px street name lay on
+  the ground 20 m tall: "Chuo-dori" smeared across the foreground at
+  Tochōmae. No smaller size would be legible. Place names were already left
+  to the screen-space label layer; street names are now left out of the
+  drape too (`groundLabels: false`). The flat basemap still bakes them, at
+  its own sharp resolution.
 
 How to check it, in the dev build: draw the OSM street centrelines from the
 OSM API (`/api/0.6/map.json?bbox=…`, CORS-open, unlike a rate-limited Overpass)

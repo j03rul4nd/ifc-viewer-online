@@ -144,8 +144,15 @@ With the SDK (v1.17), the page can also react to the scene:
 
 ### Captures
 
-None are committed yet. Suggested shots, taken in the app with *Capture* (the
-live values are painted into PNGs, clips and GIFs):
+Published with the articles (2026-10-10), taken headless on the real GPU from
+`?scene=…&embed=1&ui=article&camera=…`: `public/blog/images/barcelona-digital-twin-*`,
+`bus-terminal-digital-twin-*` and `tokyo-transit-digital-twin-*`. The posts are
+`/blog/barcelona-digital-twin-open-data/`, `/blog/bus-terminal-digital-twin-mqtt/`
+and `/blog/tokyo-transit-digital-twin-odpt/`, in all 10 languages, each with its
+scene as a live demo (`ToolDemo` ids `twin-*`).
+
+More shots worth taking in the app with *Capture* (the live values are painted
+into PNGs, clips and GIFs):
 
 1. The opening view (the scene's camera): the square from the south-west, Bicing
    markers and the fountains.
@@ -163,6 +170,13 @@ live values are painted into PNGs, clips and GIFs):
 - The Endolla binding is matched **by position**: the IFC's EVSE ids are
   illustrative, so the bays take the state of the real location 3762 next to
   them, not of a real EVSE id.
+- One OpenStreetMap outline is hidden by the scene (`view.hide`): way 909097448,
+  a 7 × 7 m car-park entrance in the square tagged only `building=yes`. With no
+  height, the district's height prior draws it at the typical 19 m of the
+  neighbourhood, a tower in the middle of the square. Small untagged buildings
+  are not reliably low in Barcelona (measured: those under 60 m² have a median
+  of 18.8 m, most of them narrow old-town buildings), so the prior was left
+  alone and this one outline is hidden instead.
 - **Open Data BCN is slow**: it can take 15–40 s to answer and sometimes rejects
   concurrent requests (the app retries with backoff). Traffic and EV layers may
   appear late.
