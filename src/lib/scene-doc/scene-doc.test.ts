@@ -102,6 +102,19 @@ describe('scene document · the deep-link half', () => {
     expect(parseAppUrlParams('?bg=white').background?.preset).toBe('white')
   })
 
+  it('carries the mapped features a scene hides, as ?hide= (only with the map)', () => {
+    const v = validateSceneDoc({ ...SCENE, view: { ...SCENE.view, hide: ['w260395476', 'r12', 'not-an-id', 7] } })
+    expect(v.ok).toBe(true)
+    if (!v.ok) return
+    expect(v.doc.view.hide).toEqual(['w260395476', 'r12'])
+    expect(v.warnings.some((w) => w.startsWith('view.hide'))).toBe(true)
+    expect(sceneToQuery(v.doc).get('hide')).toBe('w260395476,r12')
+    const noMap = validateSceneDoc({ ...SCENE, view: { hide: ['w1'] } })
+    expect(noMap.ok && sceneToQuery(noMap.doc).get('hide')).toBeNull()
+    expect(parseAppUrlParams('?hide=w260395476,%20n5,x9,r').hideFeatures).toEqual(['w260395476', 'n5'])
+    expect(parseAppUrlParams('').hideFeatures).toEqual([])
+  })
+
   it('reads ?camera= on its own, and ignores a malformed one', () => {
     expect(parseAppUrlParams('?camera=1,2,3,4,5,6').camera).toEqual({ position: [1, 2, 3], target: [4, 5, 6] })
     expect(parseAppUrlParams('?camera=1,2,3').camera).toBeUndefined()

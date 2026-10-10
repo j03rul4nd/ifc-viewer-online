@@ -51,6 +51,7 @@
  */
 
 import posthog from 'posthog-js'
+import { sanitizeAnalyticsUrl, URL_PROPERTIES } from './analytics-url'
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,17 @@ export function initAnalytics(): void {
     // No autocapture — we emit explicit, typed events only
     autocapture: false,
     persistence: 'memory',
+    // URLs reach the provider without their content: no linked file, no
+    // packed scene or report, only which parameters a visit used
+    // (analytics-url.ts). Also in $set: the initial URL and referrer.
+    before_send: (event) => {
+      if (!event) return event
+      for (const bag of [event.properties, event.$set, event.$set_once] as Array<Record<string, unknown> | undefined>) {
+        if (!bag) continue
+        for (const k of URL_PROPERTIES) if (typeof bag[k] === 'string') bag[k] = sanitizeAnalyticsUrl(bag[k] as string)
+      }
+      return event
+    },
     loaded: (ph) => {
       if (import.meta.env.DEV) ph.debug(false)
     },

@@ -158,6 +158,13 @@ export interface IfcViewerOptions {
    */
   layers?: string
   /**
+   * A scene to open: the URL of a scene document (`.scene.json`) — models,
+   * data layers, live device bindings, map, background and camera in one
+   * file, hosted anywhere with CORS. Mirrors `?scene=`. Switch scenes later
+   * with {@link IfcViewer.openScene}. Since v1.17.0.
+   */
+  scene?: string
+  /**
    * Once every model has loaded, frame them from this view with a tight fit —
    * the model fills `fill` of the frame. `ui: 'article'` implies `'iso'`.
    * See {@link IfcViewer.frame}. Since v1.14.0.
@@ -335,7 +342,7 @@ export interface ModelStats {
 /** Every tool that can appear on the viewer's panel rail. */
 export type PanelName =
   | 'properties' | 'scene' | 'measurement' | 'section' | 'plans'
-  | 'map' | 'solar' | 'devices' | 'pointcloud' | 'mesh'
+  | 'map' | 'solar' | 'flood' | 'devices' | 'pointcloud' | 'mesh'
 
 export interface PanelsResult {
   /** The panel currently open, or null when none is. */
@@ -915,6 +922,158 @@ export interface SceneGroupsState {
   looseCloudIds: string[]
 }
 
+// ── Scenes and data layers (since v1.17.0) ──────────────────────────────────
+
+/**
+ * A scene document (`ifc-viewer-scene` v1): the models, data layers, live
+ * device bindings, map and camera of a scene in one JSON. JSON Schema:
+ * https://www.ifcvieweronline.eu/schemas/scene-v1.json
+ */
+export interface SceneDocument {
+  $schema?: string
+  format: 'ifc-viewer-scene'
+  v: 1
+  meta: {
+    title: string
+    description?: string
+    author?: string
+    license?: string
+    tags?: string[]
+    place?: { name?: string; lat?: number; lon?: number }
+    createdAt?: string
+    /** Shown to the visitor when the scene opens. */
+    notes?: string[]
+  }
+  /** http(s) URLs, or same-origin paths starting with "/". */
+  models: Array<{ url: string; name?: string }>
+  /** Data-layer entries: `{ preset: 'bicing' }`, or full entries as exported. */
+  layers: Array<Record<string, unknown>>
+  twin: { sources: Array<Record<string, unknown>>; bindings: Array<Record<string, unknown>> } | null
+  view: {
+    map?: string
+    look?: string
+    background?: string
+    solar?: string
+    view?: string
+    /** Scene metres, Y up. */
+    camera?: { position: [number, number, number]; target: [number, number, number] }
+  }
+}
+
+/** Something a scene reads from the network — what a publisher must credit. */
+export interface SceneSourceInfo {
+  kind: 'model' | 'layer' | 'device'
+  name: string
+  /** `preset:<id>` for a layer that names a preset. */
+  url: string
+  attribution: string | null
+  live: boolean
+}
+
+/** What {@link IfcViewer.exportScene} returns. */
+export interface SceneExport {
+  scene: SceneDocument
+  sources: SceneSourceInfo[]
+  /** The app's address carrying the scene in its fragment, or null when too big for a link. */
+  link: string | null
+  /** Models opened from bytes or files: a scene can only carry models by URL. */
+  skippedModels: number
+  /** Credentials removed from layer URLs (keys never leave the visitor's device). */
+  secretsRemoved: number
+}
+
+/** A live source from the viewer's catalogue, for {@link IfcViewer.addLayer}. */
+export interface LayerPreset {
+  id: string
+  /** In the viewer's language. */
+  name: string
+  description: string
+  region: string
+  kind: 'geojson' | 'gbfs' | 'gtfs-rt' | 'ods' | 'wfs' | 'join'
+  url: string
+  license: string
+  /** Seconds between refreshes; null for data fetched once. */
+  intervalS: number | null
+  /** What it needs first: the visitor's own key, or a proxy. null = works as is. */
+  needs: 'key' | 'proxy' | null
+  /** Has data around the scene's site (all true when no site is known). */
+  near: boolean
+  /** [west, south, east, north], degrees. */
+  bbox: [number, number, number, number]
+}
+
+/** One of {@link IfcViewer.addLayer}'s three shapes. */
+export type AddLayerSpec =
+  | { preset: string; name?: string }
+  /** GeoJSON (or a GBFS / GTFS-RT / Opendatasoft feed) at a URL with CORS. `live`: refresh it (true, or seconds). */
+  | { url: string; name?: string; live?: boolean | number }
+  /** A FeatureCollection, as an object or text. WGS84, or a declared CRS the viewer knows. */
+  | { geojson: string | Record<string, unknown>; name?: string }
+
+/** A data layer in the scene. */
+export interface DataLayerInfo {
+  id: string
+  name: string
+  visible: boolean
+  status: 'loading' | 'ready' | 'error'
+  error: string | null
+  features: number
+  geometry: { point: number; line: number; polygon: number }
+  /** [west, south, east, north], WGS84. */
+  bbox: [number, number, number, number] | null
+  live: { enabled: boolean; intervalS: number } | null
+  attribution: string | null
+  /** Where it reads from (credentials removed); null for pasted data. */
+  url: string | null
+}
+
+/** A click on a data-layer feature. */
+export interface LayerFeaturePickedEvent {
+  layerId: string
+  layer: string
+  featureIndex: number
+  featureId: string
+  geometry: 'point' | 'line' | 'polygon'
+  /** A representative point, [lon, lat] WGS84. */
+  lonLat: [number, number] | null
+  properties: Record<string, unknown>
+}
+
+/** A rule of a data layer or of the twin started or stopped alerting. */
+export interface AlertEvent {
+  at: number
+  kind: 'start' | 'clear'
+  /** A data layer's rule, or a twin binding's. */
+  from: 'layer' | 'twin'
+  /** Layer id, or twin binding id. */
+  id: string
+  name: string
+  ruleId: string
+  rule: string
+  /** Features or elements alerting; 0 when it clears. */
+  count: number
+  sample: string[]
+}
+
+/** The operational twin: device sources and what each binding shows now. */
+export interface TwinState {
+  active: boolean
+  sources: Array<{
+    id: string; name: string; url: string; intervalS: number
+    state: 'idle' | 'ok' | 'error'; lastAt: number | null; devices: number; error: string | null
+  }>
+  bindings: Array<{
+    id: string; name: string; sourceId: string; deviceId: string
+    /** 'rule' a rule matches · 'stale' reading too old · 'none' no rule matches · 'nodata' nothing read yet. */
+    state: 'rule' | 'stale' | 'none' | 'nodata'
+    rule: { id: string; name: string; color: string | null } | null
+    /** The binding's label field, when it has one. */
+    value: string | number | boolean | null
+    readAt: number | null
+    alerting: boolean
+  }>
+}
+
 export interface IfcViewerEventMap {
   ready: ReadyEvent
   'model-loaded': ModelLoadedEvent
@@ -940,6 +1099,10 @@ export interface IfcViewerEventMap {
   'tour-ended': { completed: boolean }
   /** The director is generating or exporting a presentation. Since v1.12.0. */
   'presentation-progress': PresentationProgressEvent
+  /** A feature of a data layer was clicked. Since v1.17.0. */
+  'layer-feature-picked': LayerFeaturePickedEvent
+  /** A data-layer or twin rule started or stopped alerting. Since v1.17.0. */
+  alert: AlertEvent
 }
 
 /** Languages the viewer ships with — code + native label, for building a picker. */
@@ -1018,6 +1181,13 @@ type Listener<T> = (payload: T) => void
 // scrolled stories. isolate(type, { frame: false }) keeps the camera.
 // 1.16.0: `layers` boot option (and <ifc-viewer layers="…">) — opens a
 // data-layer setup exported from the viewer, mirroring the `?layers=` link.
+// 1.17.0: scenes and data. `scene` boot option, openScene() (a URL or a
+// document, which travels packed in the frame's address) and exportScene()
+// (the scene on screen as a document, its sources and a link). Data layers:
+// getLayerPresets(), addLayer({ preset | url | geojson }), getLayers(),
+// setLayerVisible(), frameLayer(), removeLayer() — session-only, never the
+// visitor's saved layers. getTwin() reads the operational twin. Events:
+// `layer-feature-picked` and `alert` (layer and twin rules alike).
 // 1.18.0: catalogue objects in a host application. getElement() returns the
 // GlobalId and the element's TYPE — typeName, typeProperties (IFC4 types and
 // IFC2x3 styles, window/door lining and panel sets), units, and
@@ -1038,6 +1208,38 @@ const SDK_VERSION = '1.18.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
+
+/** The message envelope's own fields, off an event payload. */
+function stripEnvelope(data: AnyEvent): Record<string, unknown> {
+  const { source: _s, type: _t, requestId: _r, ...rest } = data
+  return rest
+}
+
+/**
+ * A scene document packed for `#scene=`: deflate-raw, base64url — the same
+ * encoding the viewer's Share → Digital-twin scene writes. Null when it is
+ * longer than a link should be.
+ */
+export async function packScene(doc: SceneDocument, maxChars = 16_000): Promise<string | null> {
+  const json = new TextEncoder().encode(JSON.stringify(doc))
+  const source = new ReadableStream<Uint8Array>({ start(c) { c.enqueue(json); c.close() } })
+  const reader = source.pipeThrough(new CompressionStream('deflate-raw') as unknown as TransformStream<Uint8Array, Uint8Array>).getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    size += value.length
+  }
+  const bytes = new Uint8Array(size)
+  let at = 0
+  for (const c of chunks) { bytes.set(c, at); at += c.length }
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  const out = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return out.length <= maxChars ? out : null
+}
 
 function resolveDefaultBaseUrl(): string {
   // This module lives at <app>/sdk/ifc-viewer.es.js or, pinned, at
@@ -1247,7 +1449,7 @@ export class IfcViewer {
   readonly iframe: HTMLIFrameElement
   /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
   readonly box: HTMLDivElement | null = null
-  private readonly src: string
+  private src: string
   private activated = false
   private mountEl: HTMLElement | null = null
   private activationQueue: Array<() => void> = []
@@ -1256,7 +1458,7 @@ export class IfcViewer {
 
   private readonly baseUrl: string
   private readonly appOrigin: string
-  private readonly opts: IfcViewerOptions
+  private opts: IfcViewerOptions
   private readonly loadTimeout: number
 
   private _ready = false
@@ -2053,6 +2255,105 @@ export class IfcViewer {
     return this.request<SiteContextState>('ifcviewer:get-site')
   }
 
+  // ── Scenes (since v1.17.0) ──────────────────────────────────────────────
+  // A scene document is the whole scene — models by URL, data layers, live
+  // device bindings, map and camera — in one JSON (docs/SCENE_FORMAT.md).
+
+  /**
+   * Open another scene in this viewer: the URL of a `.scene.json`, or a
+   * scene document. A document travels packed in the frame's address, so it
+   * must fit a link (about 16 000 characters compressed); host a bigger one
+   * and pass its URL. The viewer reloads with the scene: what was loaded
+   * before is gone, calls still waiting are rejected, and `ready` fires
+   * again. Resolves once it has.
+   */
+  async openScene(scene: string | SceneDocument): Promise<void> {
+    if (this.disposed) throw new Error('IfcViewer disposed')
+    let hash = ''
+    if (typeof scene === 'string') {
+      if (!scene.trim()) throw new Error('openScene: empty URL')
+      this.opts = { ...this.opts, scene: scene.trim() }
+    } else {
+      if (!scene || scene.format !== 'ifc-viewer-scene') throw new Error('openScene: not a scene document (format "ifc-viewer-scene")')
+      const packed = await packScene(scene)
+      if (!packed) throw new Error('openScene: the scene is too big for a link — host the JSON and pass its URL')
+      this.opts = { ...this.opts, scene: undefined }
+      hash = `#scene=${packed}`
+    }
+    this.abortInFlight(new Error('IfcViewer: another scene was opened'))
+    this._ready = false
+    const ready = this.whenReady()
+    const src = this.buildSrc() + hash
+    const sameDocument = src.split('#')[0] === this.src.split('#')[0]
+    this.src = src
+    if (this.activated) {
+      if (!sameDocument) this.iframe.src = src
+      else {
+        // The same address, or one that differs only after '#', is a move
+        // within the page for the browser: the frame would not reload (and
+        // a new #scene= would never be read). Go through a blank page.
+        const onBlank = (): void => {
+          this.iframe.removeEventListener('load', onBlank)
+          if (!this.disposed && this.src === src) this.iframe.src = src
+        }
+        this.iframe.addEventListener('load', onBlank)
+        this.iframe.src = 'about:blank'
+      }
+    }
+    await ready
+  }
+
+  /**
+   * The scene on screen as a scene document — what Share → Digital-twin
+   * scene builds — with the sources it reads and a link that carries it.
+   * Models opened from bytes cannot travel (`skippedModels`); keys never do.
+   */
+  exportScene(opts: { title?: string; description?: string; camera?: boolean } = {}): Promise<SceneExport> {
+    return this.request<SceneExport>('ifcviewer:get-scene', { ...opts })
+  }
+
+  // ── Data layers (since v1.17.0) ─────────────────────────────────────────
+  // Live and static GeoJSON over the map, as the Data layers panel adds
+  // them. Layers a host adds are this page view's: they are not saved into
+  // the visitor's own layers.
+
+  /** The catalogue of live public sources, with what each needs to work in a browser. */
+  getLayerPresets(): Promise<LayerPreset[]> {
+    return this.request<LayerPreset[]>('ifcviewer:get-layer-presets')
+  }
+
+  /**
+   * Add a data layer: a catalogue source (`{ preset: 'bicing' }`), GeoJSON or
+   * a live feed at a URL (`{ url, live: 60 }`), or GeoJSON you already have
+   * (`{ geojson }`). Resolves with the layer once its data is in.
+   */
+  addLayer(spec: AddLayerSpec): Promise<DataLayerInfo> {
+    return this.request<DataLayerInfo>('ifcviewer:add-layer', { layer: spec }, 120_000)
+  }
+
+  /** Every data layer in the scene. */
+  getLayers(): Promise<DataLayerInfo[]> {
+    return this.request<DataLayerInfo[]>('ifcviewer:get-layers')
+  }
+
+  setLayerVisible(id: string, visible: boolean): Promise<DataLayerInfo> {
+    return this.request<DataLayerInfo>('ifcviewer:layer-visible', { id, visible })
+  }
+
+  /** Fly the camera to a layer's features. */
+  async frameLayer(id: string): Promise<void> {
+    await this.request<null>('ifcviewer:frame-layer', { id })
+  }
+
+  async removeLayer(id: string): Promise<void> {
+    await this.request<null>('ifcviewer:remove-layer', { id })
+  }
+
+  /** The operational twin: device sources and what every binding shows now. */
+  getTwin(): Promise<TwinState> {
+    return this.request<TwinState>('ifcviewer:get-twin')
+  }
+
   // ── Sections (since v1.11.0) ────────────────────────────────────────────
   // The same cuts the Section panel makes — a visitor can open it and drag
   // what the host placed.
@@ -2374,17 +2675,7 @@ export class IfcViewer {
     this.cleanups.splice(0).forEach((fn) => { try { fn() } catch { /* already gone */ } })
     this.iframe.remove()
     this.box?.remove()
-    const err = new Error('IfcViewer disposed')
-    for (const p of this.pending.values()) {
-      if (p.timer) clearTimeout(p.timer)
-      p.reject(err)
-    }
-    this.pending.clear()
-    for (const r of this.requests.values()) {
-      clearTimeout(r.timer)
-      r.reject(err)
-    }
-    this.requests.clear()
+    this.abortInFlight(new Error('IfcViewer disposed'))
     this.readyResolvers.splice(0).forEach((r) => r())
     this.listeners.clear()
   }
@@ -2423,6 +2714,7 @@ export class IfcViewer {
     if (this.opts.moon) url.searchParams.set('moon', '1')
     if (this.opts.scans?.length) url.searchParams.set('scan', this.opts.scans.join(','))
     if (this.opts.layers) url.searchParams.set('layers', this.opts.layers)
+    if (this.opts.scene) url.searchParams.set('scene', this.opts.scene)
     if (this.opts.view) url.searchParams.set('view', this.opts.view)
     if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
     if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
@@ -2461,6 +2753,20 @@ export class IfcViewer {
         }
       })
     })
+  }
+
+  /** Reject every load and query still waiting (a new scene, or dispose). */
+  private abortInFlight(err: Error): void {
+    for (const p of this.pending.values()) {
+      if (p.timer) clearTimeout(p.timer)
+      p.reject(err)
+    }
+    this.pending.clear()
+    for (const r of this.requests.values()) {
+      clearTimeout(r.timer)
+      r.reject(err)
+    }
+    this.requests.clear()
   }
 
   private settle(requestId: string, ok: boolean, payload: ModelLoadedEvent | Error): void {
@@ -2668,6 +2974,12 @@ export class IfcViewer {
       case 'presentation-progress':
         this.emit('presentation-progress', data as unknown as PresentationProgressEvent)
         break
+      case 'layer-feature-picked':
+        this.emit('layer-feature-picked', stripEnvelope(data) as unknown as LayerFeaturePickedEvent)
+        break
+      case 'alert':
+        this.emit('alert', stripEnvelope(data) as unknown as AlertEvent)
+        break
       case 'result': {
         const rid = data.requestId
         if (!rid) break
@@ -2697,6 +3009,7 @@ export class IfcViewer {
 //               style="display:block;height:520px"></ifc-viewer>
 //   <ifc-viewer model="https://host/a.ifc" background="white"
 //               map="terrain,buildings" solar="06-21T18:00"></ifc-viewer>
+//   <ifc-viewer scene="https://host/plaza.scene.json" ui="client"></ifc-viewer>
 //
 // Events are re-dispatched as DOM CustomEvents named `ifcviewer:<type>` (detail =
 // payload). The underlying IfcViewer is available via the element's `.viewer`.
@@ -2706,6 +3019,7 @@ const FORWARDED_EVENTS = [
   'validation-started', 'validation-failed', 'element-selected',
   'pointcloud-picked', 'map-feature-picked', 'walk-changed', 'measurements-changed',
   'tour-started', 'tour-step', 'tour-ended', 'presentation-progress',
+  'layer-feature-picked', 'alert',
 ] as const
 
 export class IfcViewerElement extends HTMLElement {
@@ -2760,6 +3074,7 @@ export class IfcViewerElement extends HTMLElement {
       moon: boolAttr('moon'),
       scans: attr('scans')?.split(',').map((u) => u.trim()).filter(Boolean),
       layers: attr('layers'),
+      scene: attr('scene'),
       // Article kit (v1.15): <ifc-viewer ui="article" lazy poster="…" aspect-ratio="16/10">
       view: attr('view') as CameraView | undefined,
       fill: attr('fill') !== undefined ? Number(attr('fill')) : undefined,
@@ -2828,6 +3143,15 @@ export class IfcViewerElement extends HTMLElement {
   setBackground(background: BackgroundSpec): Promise<BackgroundState> { return this._viewer!.setBackground(background) }
   setSolar(opts?: SolarOptions): Promise<SolarState> { return this._viewer!.setSolar(opts) }
   setSiteContext(opts?: SiteContextOptions): Promise<SiteContextState> { return this._viewer!.setSiteContext(opts) }
+  openScene(scene: string | SceneDocument): Promise<void> { return this._viewer!.openScene(scene) }
+  exportScene(opts?: { title?: string; description?: string; camera?: boolean }): Promise<SceneExport> { return this._viewer!.exportScene(opts) }
+  getLayerPresets(): Promise<LayerPreset[]> { return this._viewer!.getLayerPresets() }
+  addLayer(spec: AddLayerSpec): Promise<DataLayerInfo> { return this._viewer!.addLayer(spec) }
+  getLayers(): Promise<DataLayerInfo[]> { return this._viewer!.getLayers() }
+  setLayerVisible(id: string, visible: boolean): Promise<DataLayerInfo> { return this._viewer!.setLayerVisible(id, visible) }
+  frameLayer(id: string): Promise<void> { return this._viewer!.frameLayer(id) }
+  removeLayer(id: string): Promise<void> { return this._viewer!.removeLayer(id) }
+  getTwin(): Promise<TwinState> { return this._viewer!.getTwin() }
   setWalkMode(enabled: boolean, opts?: { speed?: number }): Promise<WalkState> { return this._viewer!.setWalkMode(enabled, opts) }
   addSection(opts?: AddSectionOptions): Promise<SectionsState & { id: string }> { return this._viewer!.addSection(opts) }
   removeSection(id?: string): Promise<SectionsState> { return this._viewer!.removeSection(id) }

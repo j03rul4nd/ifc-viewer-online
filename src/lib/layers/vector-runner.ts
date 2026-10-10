@@ -22,6 +22,8 @@ import { chooseLayerAnchor, type AnchorPairing } from './layer-anchor'
 import { parseGeoJson, projectLayer, type HeightMode, type VectorLayerData } from './geojson'
 import { buildGetCapabilitiesUrl, planGetFeature, parseCapabilities, bboxAround, type WfsCapabilities } from './wfs'
 import { parseGml, decodeXml } from './gml'
+import { bsWfsToGeoJson, isBsWfs } from './bswfs'
+import { decodeGtfsRt } from './gtfs-rt-pb'
 import { parseTable, tableToGeoJson, type ParseOptions as TableOptions } from './csv'
 import { applyJoin, uniqueByKey, type JoinSpec } from './join'
 import { jsonToGeoJsonText, type RecordsSpec } from './records'
@@ -810,6 +812,15 @@ export async function importLayersSession(text: string): ReturnType<typeof impor
   return importLayersFile(text)
 }
 
+/**
+ * Layers an embedding page adds through the SDK belong to that page view:
+ * nothing is saved to, or overwritten in, the visitor's own saved layers.
+ */
+export function sessionOnlyLayers(): void {
+  persistEnabled = false
+  restored = true
+}
+
 /** Cheap sniff: is this text a shared layer setup? */
 export function isLayersFile(text: string): boolean {
   return text.slice(0, 200).includes(`"format": "${SHARE_FORMAT}"`) || text.slice(0, 200).includes(`"format":"${SHARE_FORMAT}"`)
@@ -932,7 +943,11 @@ export function setLayersProxy(template: string | null): void {
   } catch { /* private mode */ }
 }
 
-interface RawOk { ok: true; text: string; headers: Headers; viaProxy: boolean }
+interface RawOk {
+  ok: true; text: string; headers: Headers; viaProxy: boolean
+  /** The body as it came (binary formats: GTFS-Realtime protobuf). Absent for simulated feeds. */
+  bytes?: Uint8Array
+}
 type RawResult = RawOk | { ok: false; errorKey: string }
 
 /**
@@ -976,7 +991,7 @@ async function fetchRaw(url: string, signal?: AbortSignal): Promise<RawResult> {
     // XML declares its own encoding (Catastro: ISO-8859-1 behind a UTF-8 header).
     const looksXml = /xml/i.test(ct) || new Uint8Array(buf.slice(0, 64)).some((b, i, a) => b === 0x3c && (a[i + 1] === 0x3f || a[i + 1] === 0x77 || a[i + 1] === 0x46))
     const text = looksXml ? decodeXml(buf) : new TextDecoder('utf-8').decode(buf)
-    return { ok: true, text, headers: res.headers, viaProxy }
+    return { ok: true, text, bytes: new Uint8Array(buf), headers: res.headers, viaProxy }
   }
   try {
     if (proxy && proxiedHosts.has(host)) return await attempt(proxy.replace('{url}', encodeURIComponent(url)), true)
@@ -1017,6 +1032,11 @@ function toGeoJsonText(text: string, records?: RecordsSpec | null): { ok: true; 
   }
   if (first !== '<') return { ok: true, text: jsonToGeoJsonText(text, records), matched: null, returned: null }
   if (/ExceptionReport|ServiceException/i.test(text.slice(0, 3000))) return { ok: false, errorKey: 'error.wfsException' }
+  // FMI's "simple" stored queries: (place, time, parameter, value) triples.
+  if (isBsWfs(text)) {
+    const gj = bsWfsToGeoJson(text)
+    return gj.features.length ? { ok: true, text: JSON.stringify(gj), matched: null, returned: null } : { ok: false, errorKey: 'error.empty' }
+  }
   const g = parseGml(text)
   if (!g) return { ok: false, errorKey: 'error.notJsonOutput' }
   return { ok: true, text: JSON.stringify(g.geojson), matched: g.numberMatched, returned: g.numberReturned }
@@ -1119,12 +1139,12 @@ export async function fetchFeed(src: FeedSource, signal?: AbortSignal): Promise<
   }
 
   if (src.kind === 'gtfs-rt') {
-    // Protobuf is the canonical encoding; producers that offer a JSON twin
-    // (Renfe does) are read through it — no protobuf decoder in the bundle.
+    // Producers that offer a JSON twin (Renfe does) are read through it; the
+    // rest come as protobuf, the canonical encoding (gtfs-rt-pb.ts).
     const url = src.url.replace(/\.pb(\?|$)/, '.json$1')
     const r = await fetchRaw(url, signal)
     if (!r.ok) return r
-    const feed = json(r.text) as { entity?: unknown[] } | null
+    const feed = (r.text.trimStart().startsWith('{') ? json(r.text) : r.bytes ? decodeGtfsRt(r.bytes) : null) as { entity?: unknown[] } | null
     if (!feed || !Array.isArray(feed.entity)) return { ok: false, errorKey: 'error.notGtfsRt' }
     return {
       ok: true, text: gtfsRtToGeoJson(feed as never, siteBbox(src.radiusM)),

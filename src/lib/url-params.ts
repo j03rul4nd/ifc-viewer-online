@@ -137,6 +137,11 @@ export interface AppUrlParams {
    */
   camera?: { position: [number, number, number]; target: [number, number, number] }
   /**
+   * `?hide=w123,w456` — OpenStreetMap features to hide in map mode for this
+   * page view (not saved as the visitor's own hidden features).
+   */
+  hideFeatures: string[]
+  /**
    * `?scene=<url>` — a scene document (docs/SCENE_FORMAT.md) to open. It is
    * resolved before the app mounts and contributes its own parameters (see
    * setSceneParams); kept here so the app knows a scene is in charge.
@@ -372,6 +377,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
     turntable: parseTurntable(p.get('turntable')),
     camera: parseCamera(p.get('camera')),
+    hideFeatures: (p.get('hide') ?? '').split(',').map((x) => x.trim()).filter((x) => /^[nwr]\d{1,15}$/.test(x)).slice(0, 200),
     sceneUrl: [p.get('scene') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
@@ -610,7 +616,28 @@ export type EmbedEventType =
   | 'tour-ended'
   // The director is generating or exporting a presentation (SDK 1.12).
   | 'presentation-progress'
+  // A feature of a data layer was clicked (SDK 1.17): its layer and properties.
+  | 'layer-feature-picked'
+  // A layer or twin rule started or stopped alerting (SDK 1.17).
+  | 'alert'
   | 'result'
+
+/**
+ * True when ANOTHER website frames the app — the case where that website, not
+ * the visitor, decides what its page loads (map tiles, a link's data). A frame
+ * on this same origin (the blog's live examples) is this site talking: the
+ * visitor is asked as on any page of it.
+ */
+export function isEmbeddedByOtherSite(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.self === window.top) return false
+    return window.top!.location.origin !== window.location.origin
+  } catch {
+    // Reading the parent's location throws exactly when it is another origin.
+    return true
+  }
+}
 
 /** True when the app is running inside an iframe. */
 export function isEmbedded(): boolean {

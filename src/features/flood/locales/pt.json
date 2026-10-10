@@ -1,0 +1,240 @@
+{
+  "title": "Inundação (simulação)",
+  "close": "Fechar",
+  "disclaimer": "Simulação simplificada e indicativa executada no seu navegador — não é um estudo hidráulico certificado. Nenhum dado do modelo sai deste dispositivo.",
+  "unsupported": "Este navegador não consegue executar a simulação: precisa de WebGPU, ou de WebGL 2 com destinos de renderização em vírgula flutuante.",
+  "grid": {
+    "title": "Malha",
+    "cell": "Célula",
+    "margin": "Margem"
+  },
+  "ground": {
+    "title": "Terreno",
+    "order": "Usado por esta ordem: o terreno do próprio IFC, um DEM importado, o relevo do mapa e, por fim, os vazios restantes preenchidos a partir das células vizinhas.",
+    "useMap": "Usar o relevo do mapa",
+    "mapOff": "Ative o mapa com relevo para usar o seu terreno",
+    "importDem": "Importar DEM…",
+    "removeDem": "Remover o DEM",
+    "demFormats": ".asc ou GeoTIFF",
+    "plane": {
+      "title": "Sem dados de terreno: plano de demonstração",
+      "auto": "À cota do rés-do-chão do projeto",
+      "level": "Cota",
+      "slope": "Inclinação",
+      "towards": "Desce para"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "E",
+    "s": "S",
+    "w": "O"
+  },
+  "buildings": {
+    "title": "Edifícios",
+    "map": "Os edifícios do mapa são obstáculos",
+    "mapOff": "Ative o mapa para incluir os edifícios envolventes",
+    "roofs": "Coberturas",
+    "perimeter": "Escoam para a rua",
+    "drained": "Escoam para o esgoto"
+  },
+  "rain": {
+    "title": "Chuva",
+    "presets": {
+      "shower": "Aguaceiro · {{mm}} mm em {{min}} min",
+      "storm": "Tempestade · {{mm}} mm em {{min}} min",
+      "intense": "Tempestade intensa · {{mm}} mm em {{min}} min",
+      "extreme": "Evento extremo · {{mm}} mm em {{min}} min"
+    },
+    "facts": "{{mm}} mm em {{min}} min, com pico perto de {{peak}} mm/h. Uniforme em toda a área.",
+    "after": "Depois",
+    "edit": "Editar",
+    "doneEditing": "Concluído",
+    "custom": "Desenhada à mão"
+  },
+  "surface": {
+    "title": "Superfície",
+    "paved": "Pavimentada (n = {{n}})",
+    "urban": "Urbana mista (n = {{n}})",
+    "grass": "Relva (n = {{n}})",
+    "vegetation": "Vegetação densa (n = {{n}})",
+    "section": "Superfície e solo"
+  },
+  "edges": {
+    "title": "Limites",
+    "free": "A água sai",
+    "closed": "Fechados"
+  },
+  "actions": {
+    "prepare": "Construir a malha",
+    "rebuild": "Reconstruir",
+    "run": "Simular",
+    "rerun": "Simular de novo",
+    "pause": "Pausa",
+    "resume": "Retomar",
+    "clear": "Remover"
+  },
+  "stage": {
+    "geometry": "A ler a geometria do modelo…",
+    "raster": "A desenhar a planta na GPU…",
+    "terrain": "A montar o terreno…",
+    "layers": "A preparar a lâmina de água…"
+  },
+  "report": {
+    "title": "O que a simulação vê",
+    "grid": "Malha",
+    "ground": "Terreno",
+    "dem": "Relevo do mapa",
+    "obstacles": "Células de obstáculo",
+    "canopies": "{{n}} sob palas",
+    "relief": "Cota do terreno",
+    "coarsened": "A área é grande para este tamanho de célula: células alargadas para {{dx}} m.",
+    "planeWarn": "Não há dados de terreno aqui: o solo é um plano a Y = {{y}} m. Importe um DEM ou ative o mapa com relevo para obter um terreno real.",
+    "coarseDem": "O relevo do mapa vem aqui do mosaico global (dados de ≈30 m): não distingue ruas nem lancis. Um DEM importado dá um resultado melhor.",
+    "frame": "Enquadrar"
+  },
+  "source": {
+    "ifc": "Terreno do IFC",
+    "dem": "DEM importado",
+    "map": "Relevo do mapa",
+    "plane": "Plano (sem dados)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (terreno nu)",
+    "terrarium": "Mosaico global (≈30 m)",
+    "unknown": "Mapa"
+  },
+  "demNote": {
+    "reprojected": "O DEM foi reprojetado para o sistema de coordenadas do modelo.",
+    "sameCrs": "O DEM está no sistema de coordenadas do modelo.",
+    "assumedSameCrs": "O DEM não indica sistema de coordenadas (ou o modelo não o indica): assume-se que é o do modelo.",
+    "noHeightDatum": "O modelo não indica referencial altimétrico: o DEM foi apoiado no rés-do-chão do projeto, por baixo do modelo.",
+    "notGeoreferenced": "O modelo não está georreferenciado, por isso o DEM não pode ser posicionado. Georreferencie-o no painel Mapa.",
+    "outside": "O DEM não cobre a área da simulação."
+  },
+  "live": {
+    "time": "Simulado",
+    "flooded": "Área inundada (> limiar)",
+    "maxDepth": "Altura de água máxima",
+    "volume": "Água à superfície",
+    "mass": "Erro de balanço de massa",
+    "infiltrated": "Absorvida pelo solo",
+    "outflow": "Saiu da área"
+  },
+  "view": {
+    "title": "Vista",
+    "now": "Altura de água atual",
+    "max": "Altura de água máxima",
+    "threshold": "Mostrar a partir de",
+    "ground": "Mostrar o terreno da simulação",
+    "speed": "Velocidade",
+    "particles": "Linhas de escoamento"
+  },
+  "hyeto": {
+    "label": "Hietograma (intensidade da chuva por intervalo): prima e arraste para o desenhar",
+    "scale": "Escala até {{max}} mm/h",
+    "total": "{{mm}} mm · pico {{peak}} mm/h",
+    "interval": "A cada",
+    "duration": "Durante"
+  },
+  "infiltration": {
+    "title": "Solo",
+    "none": "Impermeável (sem infiltração)",
+    "compacted": "Solo compactado ({{f0}} → {{fc}} mm/h)",
+    "loam": "Franco, relvados ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Solo arenoso ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Cronologia da inundação",
+    "play": "Reproduzir",
+    "pause": "Pausa",
+    "scrub": "Tempo simulado: arraste para avançar ou recuar",
+    "speed": "Velocidade de reprodução",
+    "speedValue": "{{n}} min/s",
+    "probe": "Sonda",
+    "probeHint": "Clique na cena para ler a água nesse ponto (Esc para sair)",
+    "computing": "A calcular… {{pct}} %",
+    "live": "Voltar ao direto",
+    "rain": "Chuva",
+    "flooded": "Inundado",
+    "deepest": "Altura máx.",
+    "volume": "À superfície",
+    "legend": "Escala de cores"
+  },
+  "probe": {
+    "title": "Sonda",
+    "hint": "Clique na cena para ler a água nesse ponto.",
+    "reading": "A ler…",
+    "obstacle": "Dentro de um obstáculo (um edifício): a água não entra aqui.",
+    "depth": "Altura de água às {{time}}",
+    "speed": "Velocidade",
+    "peak": "Altura máxima",
+    "arrival": "Chegada da água",
+    "never": "nunca",
+    "ground": "Terreno",
+    "chart": "Altura de água ao longo do evento"
+  },
+  "affected": {
+    "title": "Inundação: elementos atingidos",
+    "panelTitle": "Elementos que a água atinge",
+    "summary": "Abaixo do nível máximo da água junto a eles: {{n}} dos {{checked}} elementos verificados.",
+    "none": "Nenhum dos {{checked}} elementos verificados (portas, janelas, acessos, espaços, equipamentos) fica abaixo do nível máximo da água junto a ele.",
+    "atEnd": "Máximos de todo o evento ({{t}}).",
+    "partial": "Máximos até agora ({{t}}): a simulação ainda não terminou.",
+    "pending": "Listados quando a simulação terminar: portas, janelas, acessos, espaços e equipamentos abaixo do nível máximo da água.",
+    "busy": "A verificar os elementos do modelo…",
+    "analyze": "Verificar agora",
+    "reanalyze": "Verificar de novo",
+    "open": "Mostrar em Validação",
+    "group": {
+      "opening": "Portas e janelas",
+      "access": "Acessos (rampas, escadas, elevadores)",
+      "space": "Espaços",
+      "equipment": "Equipamentos e instalações",
+      "below": "Abaixo do terreno"
+    },
+    "belowNote": "A sua base está abaixo do terreno exterior (caves, acessos rebaixados). O valor é a água acumulada no exterior; se entra ou não depende de aberturas que a simulação não modela.",
+    "outside": "{{d}} no exterior",
+    "arrives": "água às {{t}}",
+    "jump": "Selecionar e voar até ele",
+    "more": "Mostrar mais {{n}}",
+    "capped": "A mostrar os primeiros {{n}}.",
+    "note": "Indicativo: a água acumulada no exterior de cada elemento face ao seu ponto mais baixo. Não faz parte do resultado da validação nem do Health Score.",
+    "dismiss": "Ocultar"
+  },
+  "export": {
+    "title": "Exportar",
+    "png": "Imagem (PNG)",
+    "video": "Vídeo do evento",
+    "stop": "Parar · {{pct}} %",
+    "videoNeedsEnd": "O vídeo fica disponível quando a simulação terminar.",
+    "noVideo": "Este navegador não consegue gravar vídeo.",
+    "field": "Camada",
+    "fields": {
+      "hMax": "Altura máx.",
+      "vMax": "Velocidade máx.",
+      "tWet": "Chegada"
+    },
+    "rasterNote": "Ficheiros SIG de toda a malha, com o norte para cima; os edifícios ficam sem dados. Altura de água em m, velocidade em m/s, chegada em s.",
+    "crs": "Coordenadas em {{crs}}, norte para cima.",
+    "local": "O modelo não está georreferenciado: o ficheiro usa as suas coordenadas locais em planta (metros), sem sistema de coordenadas."
+  },
+  "capture": {
+    "time": "t = {{t}} de {{end}}",
+    "disclaimer": "Simulação simplificada e indicativa: não é um estudo hidráulico certificado."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m abaixo do rés-do-chão do modelo à cota que o seu IFC declara; o modelo ficava a essa altura acima do terreno à volta e a água em redor nunca chegaria às suas portas. O terreno da simulação foi subido até ao modelo. Convém verificar a cota do IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m acima do rés-do-chão do modelo à cota que o seu IFC declara; o rés-do-chão ficava enterrado. O terreno da simulação foi descido até ao modelo. Convém verificar a cota do IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m abaixo do rés-do-chão do modelo. Tal como está, o modelo fica a essa altura acima do terreno à volta e a água em redor não chega às suas portas.",
+    "loweredOff": "{{source}}: {{d}} m acima do rés-do-chão do modelo. Tal como está, o rés-do-chão fica enterrado e qualquer água à volta fica acima das suas portas.",
+    "switch": "Assentar o terreno no rés-do-chão do modelo",
+    "source": {
+      "map": "Relevo do mapa",
+      "dem": "DEM importado"
+    }
+  },
+  "data": {
+    "map": "O relevo e os edifícios são os que o modo mapa descarregou, com a sua permissão, de fornecedores públicos (relevo: ICGC na Catalunha, GSI no Japão ou AWS Open Data no resto; edifícios: OpenStreetMap, através da API Overpass), que veem a zona do local e o seu endereço IP. A simulação apenas os lê: nem o modelo nem os resultados saem do navegador. Desative as duas opções para simular só com o IFC; a permissão retira-se no painel Mapa."
+  }
+}

@@ -206,3 +206,7 @@ export const useTwinDeviceStore = create<TwinDeviceState>()(devtools((set, get) 
 
 /** What the scene shows: the past while time-travelling, else live readings. */
 export const selectShownReadings = (s: TwinDeviceState): Map<string, Reading> => s.past ?? s.readings
+
+// DEV: the live store for QA from the console — import('/src/…') can hand back a
+// second instance after an edit (see __ifcLayersDebug).
+if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__ifcTwinStore = useTwinDeviceStore

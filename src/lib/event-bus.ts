@@ -46,6 +46,9 @@ export interface SdkSolarCommand {
 }
 
 /** `sdk:site` — drive Map mode (site context). Omitted fields are left alone. */
+/** The error a `sdk:site` command ends with when the visitor declines the map. */
+export const MAP_CONSENT_DECLINED = 'map-consent-declined'
+
 export interface SdkSiteCommand {
   enabled?: boolean
   terrain?: boolean

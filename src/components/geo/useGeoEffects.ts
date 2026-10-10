@@ -9,9 +9,9 @@
 import React, { useEffect, useRef } from 'react'
 import { useGeoStore } from '../../stores/geoStore'
 import { useSceneStore } from '../../stores/sceneStore'
-import { appBus } from '../../lib/event-bus'
+import { appBus, MAP_CONSENT_DECLINED } from '../../lib/event-bus'
 import { publishInspectorTarget } from '../../lib/inspector'
-import { emitEmbedEvent } from '../../lib/url-params'
+import { emitEmbedEvent, isEmbeddedByOtherSite } from '../../lib/url-params'
 import { modelRegistry } from '../../lib/model-registry'
 import { ensureGeorefExtracted } from '../../lib/geo/geo-extract-runner'
 import { resolvePlacement } from '../../lib/geo/placement'
@@ -28,6 +28,7 @@ export function useGeoEffects(
   const mapMode = useGeoStore((s) => s.mapMode)
   const buildingsEnabled = useGeoStore((s) => s.buildingsEnabled)
   const hiddenFeatures = useGeoStore((s) => s.hiddenFeatures)
+  const sceneHidden = useGeoStore((s) => s.sceneHidden)
   const hideMode = useGeoStore((s) => s.hideMode)
   const slow = useGeoStore((s) => s.perf?.slow ?? false)
   const adaptiveQuality = useGeoStore((s) => s.adaptiveQuality)
@@ -49,6 +50,13 @@ export function useGeoEffects(
   // consent sheet exists for people who opened the app directly; it would be
   // meaningless to show it to a visitor of someone else's dashboard. This is
   // documented on the SDK's `setSiteContext()` and on the `?site=1` param.
+  // That decision lasts this session only: stored, it became the visitor's
+  // own choice on the app's origin.
+  //
+  // Anything else — a `?map=` link or a scene opened on the app itself, or a
+  // frame of this same site (the blog's live examples) — is no host's
+  // decision: the visitor sees the consent sheet, and the map comes up only if
+  // they accept. Before, all of these granted it silently — and stored it.
   useEffect(() => appBus.on('sdk:site', (cmd) => {
     const ctl = ctlRef.current
     void (async () => {
@@ -86,7 +94,14 @@ export function useGeoEffects(
           if (!activeModelId || !viewer) {
             throw new Error('No model in the scene — site context needs a loaded model')
           }
-          useGeoStore.getState().setConsent(true)
+          if (!useGeoStore.getState().consentGiven) {
+            if (!isEmbeddedByOtherSite()) {
+              const accepted = await new Promise<boolean>((decide) => ctl.setFlow({ kind: 'consent', decide }))
+              if (!accepted) throw new Error(MAP_CONSENT_DECLINED)
+            } else {
+              useGeoStore.getState().setConsent(true, false)
+            }
+          }
           const g = await ensureGeorefExtracted(activeModelId)
           const key = modelRegistry.get(activeModelId)?.opfsCacheKey ?? null
           const resolved = resolvePlacement(key, g, viewer.getModelBounds(activeModelId))
@@ -182,9 +197,9 @@ export function useGeoEffects(
   // renders and rebuilds exactly once when the user hides or restores one.
   useEffect(() => {
     if (mapMode !== 'on') return
-    const ids = hiddenFeatures.map((h) => h.id)
+    const ids = [...new Set([...hiddenFeatures.map((h) => h.id), ...sceneHidden])]
     withGeo((geo) => geo.setHiddenFeatures(ids))
-  }, [mapMode, hiddenFeatures, withGeo])
+  }, [mapMode, hiddenFeatures, sceneHidden, withGeo])
 
   // Hide mode is only meaningful while there are surroundings to click, and a
   // mode nobody can leave is a bug. Dropping it here covers every exit —

@@ -50,8 +50,9 @@ import { describeProfile, summariseProfiles } from './vertical-network'
 import {
   buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
-import { satelliteOffset, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
+import { satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
+import { demSourceFor, type DemSourceId } from './dem-sources'
 import { sampleElevation } from './elevation'
 import { distanceM } from './model-sites'
 
@@ -314,9 +315,13 @@ export interface GeoSystemContext {
     pivot?: { x: number; y: number; z: number }
     /** Same key = files of one project sharing an IfcMapConversion. */
     georefKey?: string | null
+    /** The model's current pivot yaw (radians, about +Y). */
+    yawRad?: number
   }> | null
   /** Translate one model by a scene-space delta. */
   setModelOffset?(modelId: string, offset: { x: number; y: number; z: number }): void
+  /** Turn one model to an absolute pivot yaw about a world point, which stays put. */
+  setModelYaw?(modelId: string, yawRad: number, about: { x: number; z: number }): void
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────────
@@ -495,6 +500,14 @@ export interface GeoSystemAPI {
    * is off or not built yet. For the solar analysis' site grid.
    */
   groundHeightAt(x: number, z: number): number | null
+  /**
+   * The same ground WITHOUT the relief exaggeration: real heights in scene Y,
+   * for analyses that run physics on the terrain (the flood simulation). Equal
+   * to groundHeightAt on the flat map or at ×1. Null when the map is off.
+   */
+  trueGroundHeightAt(x: number, z: number): number | null
+  /** The ground under the map: relief on or off, its exaggeration and the DEM it came from. Null when off. */
+  getTerrainInfo(): { relief: boolean; exaggeration: number; source: DemSourceId | null } | null
   /** The map's root object (terrain, buildings, trees…): occluders for the solar analysis. Null when off. */
   getContextRoot(): THREE.Object3D | null
   dispose(): void
@@ -573,6 +586,26 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let terrainStyle: TerrainStyle = 'imagery'
   let terrainExaggeration = 1
   let terrainLook: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
+  /**
+   * The ground with no context layers built (the plain map, or relief only):
+   * what groundAtWorld / groundHeightAt read then. Cached on what it depends
+   * on — the flood grid asks once per cell, up to a million times.
+   */
+  let bareGround: { terrain: TerrainPatch | null; exaggeration: number; lat: number; frame: ReturnType<typeof createGroundFrame> } | null = null
+  const bareGroundFrame = (): ReturnType<typeof createGroundFrame> | null => {
+    if (!placement) return null
+    const b = bareGround
+    if (b && b.terrain === terrain && b.exaggeration === terrainExaggeration && b.lat === placement.lat) return b.frame
+    const t = terrain
+    const frame = createGroundFrame({
+      anchorLat: placement.lat,
+      anchorElevationM: t?.anchorElevation ?? 0,
+      sampleGroundM: t ? (nx: number, ny: number) => t.sampleGroundM(nx, ny) : null,
+      exaggeration: terrainExaggeration,
+    })
+    bareGround = { terrain: t, exaggeration: terrainExaggeration, lat: placement.lat, frame }
+    return frame
+  }
   let buildings: THREE.Mesh | null = null
   /** Bumped on teardown — invalidates building fetches still in flight. */
   let buildingsToken = 0
@@ -1229,14 +1262,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     groundAtWorld(x, z) {
-      if (!geoRoot || !placement) return null
+      const frame = bareGroundFrame()
+      if (!geoRoot || !frame) return null
       const local = geoRoot.worldToLocal(new THREE.Vector3(x, 0, z))
-      const frame = createGroundFrame({
-        anchorLat: placement.lat,
-        anchorElevationM: terrain?.anchorElevation ?? 0,
-        sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
-        exaggeration: terrainExaggeration,
-      })
       const world = geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, frame.groundZ(local.x, local.y)))
       return Number.isFinite(world.y) ? world.y : null
     },
@@ -1350,12 +1378,36 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     groundHeightAt(x: number, z: number) {
-      if (!geoRoot || !lastLayerOpts) return null
-      geoRoot.updateMatrixWorld(true)
+      // The frame the context layers were built on when there are any; the
+      // bare map's otherwise. Reading only the former returned null for every
+      // point in the Relief view (no layers built), and the flood simulation,
+      // offered "use the map's relief" exactly there, fell back to a plane.
+      const frame = lastLayerOpts ? groundFrameFor(lastLayerOpts) : bareGroundFrame()
+      if (!geoRoot || !frame) return null
+      // Its own matrix only (parents up, no children): this runs once per
+      // flood cell, and the whole map tree under geoRoot is thousands of objects.
+      geoRoot.updateWorldMatrix(true, false)
       const local = geoRoot.worldToLocal(new THREE.Vector3(x, 0, z))
-      const zLocal = groundFrameFor(lastLayerOpts).groundZ(local.x, local.y)
+      const zLocal = frame.groundZ(local.x, local.y)
       if (!Number.isFinite(zLocal)) return null
       return geoRoot.localToWorld(new THREE.Vector3(local.x, local.y, zLocal)).y
+    },
+
+    trueGroundHeightAt(x: number, z: number) {
+      const g = api.groundHeightAt(x, z)
+      if (g === null || !terrain || !geoRoot || terrainExaggeration === 1) return g
+      // The relief is drawn as plane + (E − E_anchor)·k (vertical-frame.absoluteGroundM).
+      const planeY = geoRoot.position.y
+      return planeY + (g - planeY) / (terrainExaggeration > 0 ? terrainExaggeration : 1)
+    },
+
+    getTerrainInfo() {
+      if (!geoRoot || !placement) return null
+      return {
+        relief: !!terrain,
+        exaggeration: terrainExaggeration,
+        source: terrain ? demSourceFor(placement.lat, placement.lon).id : null,
+      }
     },
 
     getContextRoot() {
@@ -3039,6 +3091,24 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     satellites: ReturnType<NonNullable<GeoSystemContext['getSatelliteModels']>> = ctx.getSatelliteModels?.() ?? null,
   ): void {
     if (!satellites || satellites.length === 0 || !ctx.setModelOffset) return
+
+    // Rotations first, then positions from fresh bounds. The anchor and its own
+    // project's files stand as drawn (the map is turned for them); every other
+    // satellite turns by its rotation against the anchor's, about its own centre
+    // — which therefore stays where the translation below expects it.
+    if (ctx.setModelYaw) {
+      const anchorKey = anchorModelId ? satellites.find((s) => s.modelId === anchorModelId)?.georefKey : null
+      let turned = false
+      for (const s of satellites) {
+        const own = s.modelId === anchorModelId || (!!anchorKey && s.georefKey === anchorKey)
+        if (!own && !shouldPlaceSatellite(s.modelId, anchorModelId, s.placement)) continue
+        const want = own ? 0 : satelliteYaw(anchor, s.placement)
+        if (Math.abs((s.yawRad ?? 0) - want) < 1e-6) continue
+        ctx.setModelYaw(s.modelId, want, { x: s.bounds.center.x, z: s.bounds.center.z })
+        turned = true
+      }
+      if (turned) satellites = ctx.getSatelliteModels?.() ?? satellites
+    }
 
     const frame = { placement: anchor, anchorScene, groundY }
     const anchorSat = anchorModelId ? satellites.find((s) => s.modelId === anchorModelId) : undefined

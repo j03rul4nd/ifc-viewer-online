@@ -45,6 +45,7 @@
   "compare": "Compara",
   "compareTooltip": "Compara versions del teu conjunt d'IFC: canvis, IDS i BCF",
   "map": "Mapa",
+  "flood": "Inundació",
   "mapTooltip": "Mostra el model en un mapa real (georeferenciat)",
   "embed": "Incrusta",
   "embedTooltip": "Obtén un iframe / enllaç incrustable per a aquest model",

@@ -210,6 +210,7 @@ uniform sampler2D uQ;
 uniform sampler2D uCells;
 uniform sampler2D uMax;
 uniform float uWet;
+uniform vec3 uInf; // Horton: initial mm/h, final mm/h, decay per hour
 layout(location = 0) out vec4 oCell;
 layout(location = 1) out vec4 oMax;
 void main() {
@@ -227,6 +228,11 @@ void main() {
   float qT = texelFetch(uQ, ivec2(i, j + 1), 0).y;
   float k = dt / uDx;
   float hn = max(cell.x + k * (qL - qR + qB - qT) + dt * uintBitsToFloat(c.w) * s.y, 0.0);
+  // Infiltration from the step's start time; cells.w keeps the depth absorbed so far.
+  float tStart = float(c.x - c.y) * 0.001;
+  float f = max(uInf.y + (uInf.x - uInf.y) * exp(-uInf.z * tStart / 3600.0), 0.0) / 3600000.0;
+  float loss = min(hn, f * dt);
+  hn -= loss;
   float u = 0.0;
   float v = 0.0;
   if (hn > uHEps) { u = 0.5 * (qL + qR) / hn; v = 0.5 * (qB + qT) / hn; }
@@ -236,7 +242,7 @@ void main() {
     m.y = max(m.y, length(vec2(u, v)));
     if (m.w < 0.0) m.w = tEnd;
   }
-  oCell = vec4(hn, u, v, 0.0);
+  oCell = vec4(hn, u, v, cell.w + loss);
   oMax = m;
 }
 `
@@ -245,7 +251,8 @@ void main() {
  * One reduction level: each output texel folds a 4×4 block of the source.
  * Mode 0 = max depth (source = cells, R channel); mode 1 = max of R (a previous
  * level); mode 2 = stats from cells (Σh, wet, max h, max wet speed); mode 3 =
- * stats from a previous level (sum, sum, max, max).
+ * stats from a previous level (sum, sum, max, max); mode 4 = Σ infiltrated
+ * depth from cells (.w), folded further by mode 3.
  */
 export const FS_REDUCE = HEAD + /* glsl */`
 uniform sampler2D uSrc;
@@ -266,6 +273,8 @@ void main() {
       else if (uMode == 2) {
         bool wet = t.x > uWet;
         acc = vec4(acc.x + t.x, acc.y + (wet ? 1.0 : 0.0), max(acc.z, t.x), max(acc.w, wet ? length(t.yz) : 0.0));
+      } else if (uMode == 4) {
+        acc.x += t.w;
       } else {
         acc = vec4(acc.x + t.x, acc.y + t.y, max(acc.z, t.z), max(acc.w, t.w));
       }

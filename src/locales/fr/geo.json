@@ -32,7 +32,7 @@
   },
   "consent": {
     "title": "Load map tiles?",
-    "body": "Map mode loads tiles from public providers (OpenStreetMap and others). Tile requests reveal the approximate site location to the provider. Your model file never leaves your browser.",
+    "body": "Map mode loads tiles from public providers (OpenStreetMap and others). Tile requests reveal the approximate site location and your IP address to the provider. Your model file never leaves your browser. You can withdraw this permission at any time in the Map panel.",
     "accept": "Enable map",
     "cancel": "Cancel"
   },
@@ -353,5 +353,11 @@
     "scaleHint": "Échelle au centre de la vue",
     "copy": "Copier les coordonnées (lat, lon)",
     "copied": "Copié"
+  },
+  "privacy": {
+    "title": "Data and permission",
+    "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
+    "revoke": "Withdraw permission",
+    "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
   }
 }

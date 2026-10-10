@@ -12,7 +12,8 @@
     "batchLoaded_other": "{{name}} — โหลดแล้ว {{count}} โมเดล",
     "batchPartial": "{{name}} — โหลดแล้ว {{loaded}} รายการ ล้มเหลว {{failed}} รายการ",
     "dropUnsupported_other": "ไฟล์ {{count}} ไฟล์มีรูปแบบที่ไม่รองรับ",
-    "dropBcfHint": "เปิดแผง BCF เพื่อนำเข้าไฟล์ .bcf"
+    "dropBcfHint": "เปิดแผง BCF เพื่อนำเข้าไฟล์ .bcf",
+    "mapDeclined": "ลิงก์นี้ขอให้แสดงแผนที่ แผนที่จะยังปิดอยู่จนกว่าคุณจะอนุญาต (แผงแผนที่)"
   },
   "validation": {
     "complete": "การตรวจสอบเสร็จสิ้น — พบ {{count}} ปัญหา",

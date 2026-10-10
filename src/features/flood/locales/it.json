@@ -1,0 +1,240 @@
+{
+  "title": "Allagamento (simulazione)",
+  "close": "Chiudi",
+  "disclaimer": "Simulazione semplificata e indicativa eseguita nel tuo browser — non è uno studio idraulico certificato. Nessun dato del modello lascia questo dispositivo.",
+  "unsupported": "Questo browser non può eseguire la simulazione: richiede WebGPU, oppure WebGL 2 con render target in virgola mobile.",
+  "grid": {
+    "title": "Griglia",
+    "cell": "Cella",
+    "margin": "Margine"
+  },
+  "ground": {
+    "title": "Terreno",
+    "order": "Usato in quest'ordine: il terreno dell'IFC stesso, un DTM importato, il rilievo della mappa; i vuoti restanti vengono riempiti dalle celle vicine.",
+    "useMap": "Usa il rilievo della mappa",
+    "mapOff": "Attiva la mappa con il rilievo per usarne il terreno",
+    "importDem": "Importa DTM…",
+    "removeDem": "Rimuovi il DTM",
+    "demFormats": ".asc o GeoTIFF",
+    "plane": {
+      "title": "Nessun dato del terreno: piano dimostrativo",
+      "auto": "Alla quota del piano terra del progetto",
+      "level": "Quota",
+      "slope": "Pendenza",
+      "towards": "Scende verso"
+    }
+  },
+  "dir": {
+    "n": "N",
+    "e": "E",
+    "s": "S",
+    "w": "O"
+  },
+  "buildings": {
+    "title": "Edifici",
+    "map": "Gli edifici della mappa sono ostacoli",
+    "mapOff": "Attiva la mappa per includere gli edifici circostanti",
+    "roofs": "Coperture",
+    "perimeter": "Scaricano in strada",
+    "drained": "Scaricano in fognatura"
+  },
+  "rain": {
+    "title": "Pioggia",
+    "presets": {
+      "shower": "Rovescio · {{mm}} mm in {{min}} min",
+      "storm": "Temporale · {{mm}} mm in {{min}} min",
+      "intense": "Temporale intenso · {{mm}} mm in {{min}} min",
+      "extreme": "Evento estremo · {{mm}} mm in {{min}} min"
+    },
+    "facts": "{{mm}} mm in {{min}} min, con un picco vicino a {{peak}} mm/h. Uniforme su tutta l'area.",
+    "after": "Poi",
+    "edit": "Modifica",
+    "doneEditing": "Fatto",
+    "custom": "Disegnata a mano"
+  },
+  "surface": {
+    "title": "Superficie",
+    "paved": "Pavimentata (n = {{n}})",
+    "urban": "Urbana mista (n = {{n}})",
+    "grass": "Prato (n = {{n}})",
+    "vegetation": "Vegetazione fitta (n = {{n}})",
+    "section": "Superficie e suolo"
+  },
+  "edges": {
+    "title": "Bordi",
+    "free": "L'acqua esce",
+    "closed": "Chiusi"
+  },
+  "actions": {
+    "prepare": "Crea la griglia",
+    "rebuild": "Ricrea",
+    "run": "Simula",
+    "rerun": "Ripeti",
+    "pause": "Pausa",
+    "resume": "Riprendi",
+    "clear": "Rimuovi"
+  },
+  "stage": {
+    "geometry": "Lettura della geometria del modello…",
+    "raster": "Disegno della pianta sulla GPU…",
+    "terrain": "Composizione del terreno…",
+    "layers": "Preparazione dello strato d'acqua…"
+  },
+  "report": {
+    "title": "Cosa vede la simulazione",
+    "grid": "Griglia",
+    "ground": "Terreno",
+    "dem": "Rilievo della mappa",
+    "obstacles": "Celle ostacolo",
+    "canopies": "{{n}} sotto pensiline",
+    "relief": "Quota del terreno",
+    "coarsened": "L'area è grande per questa dimensione di cella: celle allargate a {{dx}} m.",
+    "planeWarn": "Qui non ci sono dati del terreno: il suolo è un piano a Y = {{y}} m. Importa un DTM o attiva la mappa con il rilievo per averne uno reale.",
+    "coarseDem": "Qui il rilievo della mappa proviene dal mosaico globale (dati a ≈30 m): non vede strade né cordoli. Un DTM importato dà un risultato migliore.",
+    "frame": "Inquadra"
+  },
+  "source": {
+    "ifc": "Terreno dell'IFC",
+    "dem": "DTM importato",
+    "map": "Rilievo della mappa",
+    "plane": "Piano (nessun dato)"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m (terreno nudo)",
+    "terrarium": "Mosaico globale (≈30 m)",
+    "unknown": "Mappa"
+  },
+  "demNote": {
+    "reprojected": "Il DTM è stato riproiettato nel sistema di coordinate del modello.",
+    "sameCrs": "Il DTM è nel sistema di coordinate del modello.",
+    "assumedSameCrs": "Il DTM non indica un sistema di coordinate (o il modello non lo indica): si assume quello del modello.",
+    "noHeightDatum": "Il modello non indica un riferimento altimetrico: il DTM è stato appoggiato al piano terra del progetto, sotto il modello.",
+    "notGeoreferenced": "Il modello non è georeferenziato, quindi il DTM non può essere posizionato. Georeferenzialo nel pannello Mappa.",
+    "outside": "Il DTM non copre l'area della simulazione."
+  },
+  "live": {
+    "time": "Simulato",
+    "flooded": "Area allagata (> soglia)",
+    "maxDepth": "Tirante massimo",
+    "volume": "Acqua in superficie",
+    "mass": "Errore di bilancio di massa",
+    "infiltrated": "Infiltrata nel suolo",
+    "outflow": "Uscita dall'area"
+  },
+  "view": {
+    "title": "Vista",
+    "now": "Tirante attuale",
+    "max": "Tirante massimo",
+    "threshold": "Mostra da",
+    "ground": "Mostra il terreno della simulazione",
+    "speed": "Velocità",
+    "particles": "Linee di flusso"
+  },
+  "hyeto": {
+    "label": "Intensità di pioggia per intervallo: premi e trascina per disegnarla",
+    "scale": "Scala fino a {{max}} mm/h",
+    "total": "{{mm}} mm · picco {{peak}} mm/h",
+    "interval": "Ogni",
+    "duration": "Durata"
+  },
+  "infiltration": {
+    "title": "Suolo",
+    "none": "Impermeabile (nessuna infiltrazione)",
+    "compacted": "Suolo compattato ({{f0}} → {{fc}} mm/h)",
+    "loam": "Terreno franco, prati ({{f0}} → {{fc}} mm/h)",
+    "sandy": "Suolo sabbioso ({{f0}} → {{fc}} mm/h)"
+  },
+  "timeline": {
+    "label": "Linea temporale dell'allagamento",
+    "play": "Riproduci",
+    "pause": "Pausa",
+    "scrub": "Tempo simulato: trascina per spostarti",
+    "speed": "Velocità di riproduzione",
+    "speedValue": "{{n}} min/s",
+    "probe": "Sonda",
+    "probeHint": "Clicca sulla scena per leggere l'acqua in quel punto (Esc per uscire)",
+    "computing": "Calcolo… {{pct}} %",
+    "live": "Torna in diretta",
+    "rain": "Pioggia",
+    "flooded": "Allagato",
+    "deepest": "Tirante max",
+    "volume": "In superficie",
+    "legend": "Scala colori"
+  },
+  "probe": {
+    "title": "Sonda",
+    "hint": "Clicca sulla scena per leggere l'acqua in quel punto.",
+    "reading": "Lettura…",
+    "obstacle": "Dentro un ostacolo (un edificio): qui l'acqua non entra.",
+    "depth": "Tirante idrico a {{time}}",
+    "speed": "Velocità",
+    "peak": "Tirante massimo",
+    "arrival": "Arrivo dell'acqua",
+    "never": "mai",
+    "ground": "Terreno",
+    "chart": "Tirante durante l'evento"
+  },
+  "affected": {
+    "title": "Allagamento: elementi raggiunti",
+    "panelTitle": "Elementi raggiunti dall'acqua",
+    "summary": "Sotto il livello massimo dell'acqua accanto: {{n}} dei {{checked}} elementi verificati.",
+    "none": "Nessuno dei {{checked}} elementi verificati (porte, finestre, accessi, spazi, apparecchiature) si trova sotto il livello massimo dell'acqua accanto a sé.",
+    "atEnd": "Massimi dell'intero evento ({{t}}).",
+    "partial": "Massimi finora ({{t}}): la simulazione non è terminata.",
+    "pending": "Elencati al termine della simulazione: porte, finestre, accessi, spazi e apparecchiature sotto il livello massimo dell'acqua.",
+    "busy": "Verifica degli elementi del modello…",
+    "analyze": "Verifica ora",
+    "reanalyze": "Verifica di nuovo",
+    "open": "Mostra in Validazione",
+    "group": {
+      "opening": "Porte e finestre",
+      "access": "Accessi (rampe, scale, ascensori)",
+      "space": "Spazi",
+      "equipment": "Apparecchiature e impianti",
+      "below": "Sotto il piano campagna"
+    },
+    "belowNote": "La loro quota inferiore è sotto il terreno esterno (interrati, accessi ribassati). Il valore è l'acqua presente all'esterno; che entri o meno dipende da aperture che la simulazione non modella.",
+    "outside": "{{d}} all'esterno",
+    "arrives": "acqua a {{t}}",
+    "jump": "Selezionalo e raggiungilo",
+    "more": "Mostra altri {{n}}",
+    "capped": "Sono mostrati i primi {{n}}.",
+    "note": "Indicativo: l'acqua presente all'esterno di ogni elemento rispetto al suo punto più basso. Non fa parte del risultato di validazione né dell'Health Score.",
+    "dismiss": "Nascondi"
+  },
+  "export": {
+    "title": "Esporta",
+    "png": "Immagine (PNG)",
+    "video": "Video dell'evento",
+    "stop": "Interrompi · {{pct}} %",
+    "videoNeedsEnd": "Il video è disponibile al termine della simulazione.",
+    "noVideo": "Questo browser non può registrare video.",
+    "field": "Livello",
+    "fields": {
+      "hMax": "Tirante max",
+      "vMax": "Velocità max",
+      "tWet": "Arrivo"
+    },
+    "rasterNote": "File GIS dell'intera griglia, con il nord in alto; gli edifici sono no-data. Tirante in m, velocità in m/s, arrivo in s.",
+    "crs": "Coordinate in {{crs}}, nord in alto.",
+    "local": "Il modello non è georeferenziato: il file usa le sue coordinate locali in pianta (metri), senza sistema di coordinate."
+  },
+  "capture": {
+    "time": "t = {{t}} di {{end}}",
+    "disclaimer": "Simulazione semplificata e indicativa: non è uno studio idraulico certificato."
+  },
+  "fit": {
+    "raised": "{{source}}: {{d}} m sotto il piano terra del modello alla quota dichiarata dal suo IFC; il modello restava a quell'altezza sopra il terreno circostante e l'acqua intorno non avrebbe mai raggiunto le sue porte. Il terreno della simulazione è stato alzato fino al modello. Conviene verificare la quota dell'IFC (IfcMapConversion.OrthogonalHeight).",
+    "lowered": "{{source}}: {{d}} m sopra il piano terra del modello alla quota dichiarata dal suo IFC; il piano terra risultava interrato. Il terreno della simulazione è stato abbassato fino al modello. Conviene verificare la quota dell'IFC (IfcMapConversion.OrthogonalHeight).",
+    "raisedOff": "{{source}}: {{d}} m sotto il piano terra del modello. Così com'è, il modello resta a quell'altezza sopra il terreno circostante e l'acqua intorno non raggiunge le sue porte.",
+    "loweredOff": "{{source}}: {{d}} m sopra il piano terra del modello. Così com'è, il piano terra è interrato e qualsiasi acqua intorno resta sopra le sue porte.",
+    "switch": "Appoggiare il terreno al piano terra del modello",
+    "source": {
+      "map": "Rilievo della mappa",
+      "dem": "DTM importato"
+    }
+  },
+  "data": {
+    "map": "Il rilievo e gli edifici sono quelli che la modalità mappa ha scaricato, con il tuo permesso, da fornitori pubblici (rilievo: ICGC in Catalogna, GSI in Giappone o AWS Open Data altrove; edifici: OpenStreetMap, tramite l'API Overpass), che vedono la zona del sito e il tuo indirizzo IP. La simulazione si limita a leggerli: né il modello né i risultati lasciano il browser. Disattiva le due opzioni per simulare solo con l'IFC; il permesso si revoca nel pannello Mappa."
+  }
+}

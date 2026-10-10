@@ -269,7 +269,7 @@
   },
   "demoGallery": {
     "title": "Explora els models de demostració",
-    "subtitle": "Tria un model IFC públic per veure el visor i el validador en acció. Es carreguen directament des de repositoris públics: res no surt del teu navegador.",
+    "subtitle": "Tria un model IFC públic per veure el visor i el validador en acció. Es carreguen directament des de repositoris públics (GitHub): res no surt del teu navegador.",
     "openCta": "Mira els models de demostració",
     "examples": "Exemples",
     "all": "Tots",

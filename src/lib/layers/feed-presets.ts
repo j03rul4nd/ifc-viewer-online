@@ -35,7 +35,7 @@ import type { TableTransform } from './table-transforms'
 export interface FeedPreset {
   id: string
   /** i18n key suffix under layers:presets.<id>.{name,hint} */
-  region: 'barcelona' | 'catalunya' | 'spain' | 'madrid' | 'tokyo'
+  region: 'barcelona' | 'catalunya' | 'spain' | 'madrid' | 'tokyo' | 'helsinki'
   /** Where the source has data, [west, south, east, north] degrees. */
   bbox: [number, number, number, number]
   /** Needs the user's own keys for this provider (stored in their browser). */
@@ -134,6 +134,7 @@ const CAT_BBOX: [number, number, number, number] = [0.15, 40.5, 3.35, 42.9]
 const SPAIN_BBOX: [number, number, number, number] = [-18.2, 27.6, 4.4, 43.9]
 const MADRID_BBOX: [number, number, number, number] = [-3.89, 40.31, -3.52, 40.56]
 const TOKYO_BBOX: [number, number, number, number] = [139.5, 35.5, 140.0, 35.85]
+const HELSINKI_BBOX: [number, number, number, number] = [24.5, 60.05, 25.4, 60.4]
 
 const group = (name: string, color: string, filters: StyleGroup['filters'], point?: Partial<PointStyle>): StyleGroup => {
   const g = defaultGroupStyle(color)
@@ -175,6 +176,25 @@ function airStyle(t: (k: string) => string, field = 'NO2'): LayerStyle {
     ...base,
     groups: bands.map(([key, color, below]) => group(`${field} · ${t(key)}`, color,
       below === null ? [{ field, op: 'gte', value: 340 }] : [{ field, op: 'lt', value: below }], pt)),
+    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#8a8f98' } },
+  }
+}
+
+/**
+ * FMI's air-quality index (AQINDEX_PT1H_avg): 1 good … 5 very poor, the hourly
+ * index the Finnish Meteorological Institute computes from HSY's stations.
+ */
+function aqIndexStyle(t: (k: string) => string): LayerStyle {
+  const field = 'AQINDEX_PT1H_avg'
+  const base = defaultLayerStyle('#8a8f98')
+  const pt: Partial<PointStyle> = { symbol: { kind: 'icon', icon: 'sensor' }, size: 5, labelField: 'NO2_PT1H_avg' }
+  const bands: Array<[string, string, number]> = [
+    ['air.good', '#50f0e6', 1], ['air.fair', '#50ccaa', 2], ['air.moderate', '#f0e641', 3], ['air.poor', '#ff5050', 4], ['air.veryPoor', '#960032', 5],
+  ]
+  return {
+    ...base,
+    groups: bands.map(([key, color, v]) => group(`AQI ${v} · ${t(key)}`, color,
+      v === 5 ? [{ field, op: 'gte', value: 4.5 }] : [{ field, op: 'between', value: [v - 0.5, v + 0.49] }], pt)),
     fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#8a8f98' } },
   }
 }
@@ -370,6 +390,29 @@ export const FEED_PRESETS: FeedPreset[] = [
     url: 'https://api-public.odpt.org/api/v4/odpt:Station?odpt:operator=odpt.Operator:Toei',
     license: 'Bureau of Transportation, Tokyo Metropolitan Government, via ODPT (CC BY 4.0)',
     styleFromData: tmbPointStyle('metro', '#2e9b43', 'dc:title'),
+  },
+  {
+    // Toei buses (GTFS-Realtime, protobuf only). Not GPS: ODPT places each
+    // bus AT the stop it last passed, at the time it passed it.
+    id: 'toei-bus', region: 'tokyo', bbox: TOKYO_BBOX, kind: 'gtfs-rt',
+    url: 'https://api-public.odpt.org/api/v4/gtfs/realtime/ToeiBus',
+    intervalS: 30, radiusM: 30_000,
+    license: 'Bureau of Transportation, Tokyo Metropolitan Government, via ODPT (CC BY 4.0)',
+    symbology: { field: 'line', rules: [], fallback: fallback('#2e9b43', { kind: 'icon', icon: 'bus' }) },
+  },
+  {
+    // FMI open data, WFS stored query (bswfs.ts). Hourly means arrive up to
+    // ~40 min late, hence a 3 h window; the newest measured hour wins.
+    id: 'fmi-air-quality', region: 'helsinki', bbox: HELSINKI_BBOX, kind: 'geojson', intervalS: 900,
+    url: 'https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=getFeature&storedquery_id=urban::observations::airquality::hourly::simple&bbox=24.5,60.05,25.4,60.4&parameters=AQINDEX_PT1H_avg,NO2_PT1H_avg,PM10_PT1H_avg,PM25_PT1H_avg&starttime={now-3h}',
+    license: 'Finnish Meteorological Institute open data (CC BY 4.0) · air quality measured by HSY',
+    layerStyle: (t) => aqIndexStyle(t),
+  },
+  {
+    id: 'fmi-weather', region: 'helsinki', bbox: HELSINKI_BBOX, kind: 'geojson', intervalS: 600,
+    url: 'https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=getFeature&storedquery_id=fmi::observations::weather::simple&bbox=24.5,60.05,25.4,60.4&parameters=t2m,ws_10min,wd_10min,rh,r_1h&timestep=10&starttime={now-1h}',
+    license: 'Finnish Meteorological Institute open data (CC BY 4.0)',
+    layerStyle: () => temperatureStyle('t2m'),
   },
   {
     id: 'catastro', region: 'spain', bbox: SPAIN_BBOX, kind: 'wfs',

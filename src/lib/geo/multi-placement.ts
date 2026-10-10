@@ -95,6 +95,37 @@ export function sceneOfLatLon(
   }
 }
 
+/**
+ * How much a satellite must turn (scene yaw about +Y, radians) to stand the
+ * way its own georeference says. The map is turned for the ANCHOR's rotation,
+ * so a model drawn in a frame rotated differently — Helsinki Cathedral sits
+ * 3° off the bus terminal next to it — would otherwise be shown turned by the
+ * difference: ~2 m at the ends of an 80 m building. Rotations are the
+ * placements' true-north ones, counter-clockwise from east.
+ */
+export function satelliteYaw(anchor: GeoPlacement, satellite: GeoPlacement): number {
+  let d = ((satellite.rotationDeg - anchor.rotationDeg) * Math.PI) / 180
+  while (d > Math.PI) d -= 2 * Math.PI
+  while (d < -Math.PI) d += 2 * Math.PI
+  return d
+}
+
+/**
+ * The pivot position that turns a model to `yawRad` about the world point
+ * `about` (x/z) while that point stays put. Pivot yaw is about the pivot's own
+ * origin; a satellite 700 m from it would otherwise swing across the city.
+ */
+export function pivotForYaw(
+  pivot: { x: number; z: number }, currentYawRad: number, yawRad: number, about: { x: number; z: number },
+): { x: number; z: number } {
+  // About +Y: x' = x cos θ + z sin θ, z' = −x sin θ + z cos θ.
+  const dx = about.x - pivot.x, dz = about.z - pivot.z
+  const c0 = Math.cos(-currentYawRad), s0 = Math.sin(-currentYawRad)
+  const lx = dx * c0 + dz * s0, lz = -dx * s0 + dz * c0
+  const c1 = Math.cos(yawRad), s1 = Math.sin(yawRad)
+  return { x: about.x - (lx * c1 + lz * s1), z: about.z - (-lx * s1 + lz * c1) }
+}
+
 /** The bit of a model's bounds this module needs. Structural, to avoid imports. */
 export interface BoundsLike {
   center: { x: number; y: number; z: number }

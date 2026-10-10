@@ -19,7 +19,7 @@
 //
 // Pure: no DOM, no stores.
 
-import type { DeviceSource, Binding } from '../twin/devices'
+import { cleanTopics, portableSource, type DeviceSource, type Binding } from '../twin/devices'
 
 export const SCENE_FORMAT = 'ifc-viewer-scene'
 export const SCENE_VERSION = 1
@@ -51,6 +51,12 @@ export interface SceneView {
   /** `?view=` preset: iso, top, front… (ignored when `camera` is set). */
   view?: string
   camera?: SceneCamera
+  /**
+   * OpenStreetMap features the scene hides (`w123`, `r456`, `n789`): mapped
+   * context the models replace but the automatic suppression keeps — a station
+   * building inside a railway model, say. Session-only; `?hide=`.
+   */
+  hide?: string[]
 }
 
 export interface SceneMeta {
@@ -94,6 +100,9 @@ export interface SceneSource {
 type Obj = Record<string, unknown>
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v)
 const isUrl = (v: unknown): v is string => typeof v === 'string' && (/^https?:\/\//i.test(v) || /^\/(?!\/)/.test(v))
+/** An OpenStreetMap element id as the map names it: node, way or relation. */
+export const OSM_ID = /^[nwr]\d{1,15}$/
+const MAX_HIDDEN = 200
 const vec3 = (v: unknown): v is [number, number, number] => Array.isArray(v) && v.length === 3 && v.every((n) => typeof n === 'number' && Number.isFinite(n))
 
 export type SceneValidation =
@@ -152,7 +161,7 @@ export function validateSceneDoc(input: unknown): SceneValidation {
     if (!isObj(t) || !Array.isArray(t.sources) || !Array.isArray(t.bindings)) warnings.push('twin: needs sources and bindings lists; ignored.')
     else {
       const sources = t.sources.filter((s): s is DeviceSource => isObj(s) && typeof s.id === 'string' && typeof s.url === 'string' && isObj(s.mapping))
-        .map((s) => ({ ...s, name: String(s.name ?? s.url), intervalS: Math.max(1, Number(s.intervalS) || 30), enabled: s.enabled !== false }))
+        .map((s) => ({ ...s, name: String(s.name ?? s.url), intervalS: Math.max(1, Number(s.intervalS) || 30), enabled: s.enabled !== false, topics: cleanTopics(s.topics) }))
       const ids = new Set(sources.map((s) => s.id))
       const bindings = t.bindings.filter((b): b is Binding => isObj(b) && typeof b.id === 'string' && typeof b.sourceId === 'string'
         && ids.has(b.sourceId) && typeof b.deviceId === 'string' && Array.isArray(b.targets) && Array.isArray(b.rules))
@@ -175,6 +184,11 @@ export function validateSceneDoc(input: unknown): SceneValidation {
     const c = viewIn.camera
     if (isObj(c) && vec3(c.position) && vec3(c.target)) view.camera = { position: c.position, target: c.target }
     else warnings.push('view.camera: needs position and target as [x, y, z]; ignored.')
+  }
+  if (viewIn.hide !== undefined) {
+    const ids = Array.isArray(viewIn.hide) ? viewIn.hide.filter((x): x is string => typeof x === 'string' && OSM_ID.test(x)) : []
+    if (ids.length) view.hide = ids.slice(0, MAX_HIDDEN)
+    if (!Array.isArray(viewIn.hide) || ids.length < viewIn.hide.length) warnings.push('view.hide: expects OpenStreetMap ids like "w123"; invalid ones ignored.')
   }
 
   if (models.length === 0 && layers.length === 0) errors.push('The scene has no models and no layers: there is nothing to show.')
@@ -210,6 +224,7 @@ export function sceneToQuery(doc: SceneDoc): URLSearchParams {
   if (v.solar) q.set('solar', v.solar)
   if (v.camera) q.set('camera', [...v.camera.position, ...v.camera.target].map((n) => +n.toFixed(3)).join(','))
   else if (v.view) q.set('view', v.view)
+  if (v.map && v.hide?.length) q.set('hide', v.hide.join(','))
   return q
 }
 
@@ -258,7 +273,7 @@ export function buildSceneDoc(parts: {
     models: parts.models, layers: parts.layers,
     twin: parts.twin && (parts.twin.sources.length || parts.twin.bindings.length) ? {
       // Request headers (API keys) never leave the device that typed them.
-      sources: parts.twin.sources.map(({ id, name, url, intervalS, mapping, enabled }) => ({ id, name, url, intervalS, mapping, enabled })),
+      sources: parts.twin.sources.map(portableSource),
       bindings: parts.twin.bindings,
     } : null,
     view: parts.view,

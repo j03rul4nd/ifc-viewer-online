@@ -75,6 +75,13 @@ translations before it ships (extract only its slug, translate, check, then
 `apply.ts <work> <lang> --merge`): `blog-i18n.test.ts` fails while any language lacks
 one, since translated posts linking to it would otherwise point at nothing.
 
+`--merge` re-serialises the whole pack in the English order, so a pack that drifted
+from that order shows thousands of moved lines for three new posts. Until
+2026-10-10 it also dropped retired posts (`RETIRED_POSTS`), whose translations are
+kept on purpose; it keeps them now. For a reviewable diff, splice only the new
+posts' blocks from its output into the committed pack, and check that every old
+post is still there unchanged (this is how the three digital-twin posts went in).
+
 ## Search budgets
 
 `src/lib/serp-width.ts` measures titles and descriptions in rendered width —

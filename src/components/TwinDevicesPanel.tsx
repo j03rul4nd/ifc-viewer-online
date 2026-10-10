@@ -312,6 +312,8 @@ function SourceEditor({ source, onDone }: { source: DeviceSource; onDone: () => 
   const { t } = useTranslation('layers', { keyPrefix: 'devices' })
   const [draft, setDraft] = useState(source)
   const [header, setHeader] = useState(() => Object.entries(loadSecrets()[source.id] ?? {})[0] ?? ['', ''])
+  // The text as typed (a new empty line must survive); topics are parsed from it.
+  const [topicsText, setTopicsText] = useState(() => (source.topics ?? []).join('\n'))
   const store = useTwinDeviceStore.getState
   const m = draft.mapping
   const save = (): void => {
@@ -323,6 +325,17 @@ function SourceEditor({ source, onDone }: { source: DeviceSource; onDone: () => 
     <div className="flex flex-col gap-1 pt-1">
       <input className={inputCls} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={t('name')} />
       <input className={inputCls} value={draft.url} onChange={(e) => setDraft({ ...draft, url: e.target.value })} placeholder="https://…/api/devices · wss://…" />
+      {/^wss?:\/\//i.test(draft.url) && (
+        <>
+          <textarea className={`${inputCls} h-auto py-1 font-mono`} rows={2} spellCheck={false} data-testid="twin-mqtt-topics"
+            value={topicsText} placeholder={t('mqttTopics')}
+            onChange={(e) => {
+              setTopicsText(e.target.value)
+              setDraft({ ...draft, topics: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) })
+            }} />
+          <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('mqttHint')}</div>
+        </>
+      )}
       <div className="flex gap-1">
         <input className={inputCls} value={m.listPath} onChange={(e) => setDraft({ ...draft, mapping: { ...m, listPath: e.target.value } })} placeholder={t('listPath')} title={t('listPathHint')} />
         <input className={inputCls} value={m.idField} onChange={(e) => setDraft({ ...draft, mapping: { ...m, idField: e.target.value } })} placeholder={t('idField')} />

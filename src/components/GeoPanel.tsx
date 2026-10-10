@@ -36,6 +36,12 @@ import type { ViewerAPI } from '../lib/viewer'
 
 interface GeoPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
+  /**
+   * False in client mode (D-25): the map still comes up — from `?map=`, a
+   * scene or the SDK — with its attribution and consent, but the technical
+   * panel never shows.
+   */
+  panel?: boolean
 }
 
 /** Below this much room for the body, the panel scrolls as one piece. */
@@ -56,7 +62,7 @@ function useShortHeight(ref: React.RefObject<HTMLElement>, px: number): boolean 
   return short
 }
 
-export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
+export default function GeoPanel({ viewerApiRef, panel = true }: GeoPanelProps) {
   const { t } = useTranslation('geo')
   const ctl = useGeoController(viewerApiRef)
   useGeoEffects(ctl, viewerApiRef)
@@ -96,7 +102,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
 
       <ViewportPanel
         id="map"
-        open={panelOpen}
+        open={panel && panelOpen}
         onClose={close}
         label={t('panel.title')}
         mobile="sheet"

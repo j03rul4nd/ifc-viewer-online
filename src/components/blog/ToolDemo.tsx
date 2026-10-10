@@ -26,6 +26,10 @@ export type ToolDemoId =
   | 'measure'
   | 'federated-disciplines'
   | 'ifc43-bridge'
+  | 'twin-barcelona'
+  | 'twin-helsinki'
+  | 'twin-tochomae'
+  | 'twin-waseda'
 
 interface ToolDemoProps {
   demo: ToolDemoId
@@ -53,6 +57,12 @@ type View = 'iso' | 'top' | 'front' | 'back' | 'left' | 'right'
 
 interface DemoConfig {
   models: string[]
+  /**
+   * A scene document (public/scenes/…) instead of models: its models, live
+   * layers, device bindings, map and camera all come with it. `expect` is how
+   * many models it loads, for the progress and the reveal.
+   */
+  scene?: { path: string; expect: number }
   params?: Record<string, string>
   /** The SDK command run when the models are in (and by the action button). */
   command?: Cmd
@@ -139,6 +149,11 @@ const DEMOS: Record<ToolDemoId, DemoConfig> = {
     models: ['https://raw.githubusercontent.com/buildingSMART/Sample-Test-Files/main/IFC%204.3.2.0%20(IFC%204.3%20ADD2)/Simple-Scene/Infra-Bridge.ifc'],
     params: { tree: '1', turntable: '5' },
   },
+  // Live digital twins (docs/DEMOS.md): a scene each, on the map, with its data.
+  'twin-barcelona': { models: [], scene: { path: 'scenes/barcelona-placa-catalunya.scene.json', expect: 8 } },
+  'twin-helsinki': { models: [], scene: { path: 'scenes/helsinki-rautatientori.scene.json', expect: 3 } },
+  'twin-tochomae': { models: [], scene: { path: 'scenes/tokyo-tochomae.scene.json', expect: 1 } },
+  'twin-waseda': { models: [], scene: { path: 'scenes/tokyo-waseda.scene.json', expect: 1 } },
 }
 
 function absoluteAsset(path: string): string {
@@ -186,6 +201,7 @@ export default function ToolDemo({
     const url = new URL(BASE, window.location.origin)
     url.searchParams.set('ui', 'article')
     url.searchParams.set('validate', '0')
+    if (config.scene) url.searchParams.set('scene', absoluteAsset(config.scene.path))
     for (const m of config.models) {
       url.searchParams.append('model', absoluteAsset(m))
       url.searchParams.append('name', fileNameOf(m))
@@ -201,6 +217,7 @@ export default function ToolDemo({
   const fullViewerUrl = useMemo(() => {
     if (typeof window === 'undefined') return '#'
     const url = new URL(BASE, window.location.origin)
+    if (config.scene) url.searchParams.set('scene', absoluteAsset(config.scene.path))
     for (const m of config.models) {
       url.searchParams.append('model', absoluteAsset(m))
       url.searchParams.append('name', fileNameOf(m))
@@ -208,6 +225,9 @@ export default function ToolDemo({
     if (lang) url.searchParams.set('lang', lang)
     return url.href
   }, [config, lang])
+
+  /** Models to wait for: the scene's, or the listed ones. */
+  const expected = config.scene?.expect ?? config.models.length
 
   const post = useCallback((msg: Record<string, unknown>) => {
     frameRef.current?.contentWindow?.postMessage({ source: 'ifc-article-demo', ...msg }, window.location.origin)
@@ -284,7 +304,7 @@ export default function ToolDemo({
       if (message.type === 'model-progress') {
         // Per job, without saying which: fold it into "models done + this one".
         const pct = typeof message.percent === 'number' ? message.percent : 0
-        const total = config.models.length
+        const total = expected
         setProgress((prev) => Math.max(prev, Math.round(((loadedRef.current + pct / 100) / total) * 100)))
         return
       }
@@ -299,8 +319,8 @@ export default function ToolDemo({
         if (lang) post({ type: 'ifcviewer:set-language', lang })
         if (message.type === 'ready') return
         loadedRef.current += 1
-        setProgress(Math.round((loadedRef.current / config.models.length) * 100))
-        if (loadedRef.current === config.models.length) {
+        setProgress(Math.round((loadedRef.current / expected) * 100))
+        if (loadedRef.current === expected) {
           // A moment for the preset's own framing to land, then the tool.
           window.setTimeout(() => {
             setRevealed(true)
@@ -322,7 +342,7 @@ export default function ToolDemo({
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [config, runCommand, post, reframe, copy, lang])
+  }, [config, expected, runCommand, post, reframe, copy, lang])
 
   const live = phase !== 'idle'
   const status = phase === 'loading' ? copy.loading(progress)

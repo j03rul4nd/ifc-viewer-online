@@ -39,7 +39,7 @@ describe('applicablePanels', () => {
   it('puts properties first and keeps the model tools before the world tools', () => {
     expect(applicablePanels({ available: all() })).toEqual([
       'properties', 'scene', 'measurement', 'section', 'plans',
-      'map', 'solar', 'devices', 'pointcloud', 'mesh',
+      'map', 'solar', 'flood', 'devices', 'pointcloud', 'mesh',
     ])
   })
 

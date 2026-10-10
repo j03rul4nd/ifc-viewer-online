@@ -24,9 +24,12 @@ import { getNotifySettings, notifyAlert } from '../layers/alert-notify'
 import { toast } from '../../stores/toastStore'
 import i18n from '../../i18n/config'
 import { SIM_PRESETS } from './device-sim'
+import { decodeGtfsRt } from '../layers/gtfs-rt-pb'
+import { isBsWfs, parseBsWfs } from '../layers/bswfs'
+import { connectMqtt, messageBody } from './mqtt-ws'
 import type { ViewerAPI } from '../viewer'
 
-interface Poller { timer: ReturnType<typeof setTimeout> | null; failures: number; ctrl: AbortController | null; sig: string; ws?: WebSocket | null }
+interface Poller { timer: ReturnType<typeof setTimeout> | null; failures: number; ctrl: AbortController | null; sig: string; ws?: { close(): void } | null }
 
 export const isStreamUrl = (url: string): boolean => /^wss?:\/\//i.test(url)
 
@@ -36,12 +39,12 @@ export async function fetchDeviceSource(src: DeviceSource, signal?: AbortSignal)
   const sim = SIM_PRESETS[src.url]
   if (sim) return { ok: true, body: sim(Date.now()), freshness: null }
   if (!/^https?:\/\//i.test(src.url)) return { ok: false, errorKey: 'error.url' }
-  const headers: Record<string, string> = { Accept: 'application/json', ...(loadSecrets()[src.id] ?? {}) }
+  const headers: Record<string, string> = { Accept: 'application/json, application/x-protobuf;q=0.9, */*;q=0.5', ...(loadSecrets()[src.id] ?? {}) }
   const attempt = async (target: string): Promise<FetchResult> => {
     const res = await fetch(target, { signal, headers })
     if (!res.ok) return { ok: false, errorKey: 'error.http' }
-    const text = await res.text()
-    try { return { ok: true, body: JSON.parse(text), freshness: httpFreshness(res.headers) } } catch { return { ok: false, errorKey: 'error.json' } }
+    const body = deviceBody(new Uint8Array(await res.arrayBuffer()))
+    return body === undefined ? { ok: false, errorKey: 'error.json' } : { ok: true, body, freshness: httpFreshness(res.headers) }
   }
   try {
     return await attempt(src.url)
@@ -54,6 +57,25 @@ export async function fetchDeviceSource(src: DeviceSource, signal?: AbortSignal)
     }
     return { ok: false, errorKey: 'error.cors' }
   }
+}
+
+/**
+ * A response as the JSON the mapping reads. Besides JSON: GTFS-Realtime
+ * protobuf (its JSON mapping: `entity[].vehicle…`) and FMI's "simple" WFS
+ * (one record per station: lat, lon, observed_at, a field per parameter, and
+ * `place` = "lat,lon" as its id). Undefined = none of these.
+ */
+export function deviceBody(bytes: Uint8Array): unknown {
+  const text = new TextDecoder('utf-8').decode(bytes)
+  const head = text.trimStart()[0]
+  if (head === '{' || head === '[') {
+    try { return JSON.parse(text) } catch { return undefined }
+  }
+  if (head === '<') {
+    if (!isBsWfs(text)) return undefined
+    return parseBsWfs(text).map((st) => ({ place: `${st.lat},${st.lon}`, lat: st.lat, lon: st.lon, observed_at: st.observed_at, ...st.values }))
+  }
+  return decodeGtfsRt(bytes) ?? undefined
 }
 
 let started = false
@@ -115,10 +137,57 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
    * Browsers cannot set headers on a WebSocket: keys go in the URL if the
    * server takes them there.
    */
+  /**
+   * MQTT over WebSocket (a source with `topics`). A broker can send dozens of
+   * messages a second (HSL: one per vehicle per second), so they are read in
+   * batches: once a second, each device keeps its newest reading, the store
+   * changes once and history records once. A message without the device id
+   * (a bus between stops has no `stop`) is not a device.
+   */
+  const connectMqttSource = (id: string, src: DeviceSource, p: Poller): void => {
+    const pending: unknown[] = []
+    let flushTimer: ReturnType<typeof setInterval> | null = null
+    const flush = (): void => {
+      if (pending.length === 0) return
+      const now = Date.now()
+      const newest = new Map<string, Reading>()
+      for (const body of pending.splice(0)) {
+        for (const r of parseReadings(body, src, now, { requireId: true })) {
+          const prev = newest.get(r.deviceId)
+          if (!prev || r.at >= prev.at) newest.set(r.deviceId, r)
+        }
+      }
+      if (newest.size === 0) return
+      store.getState().ingest(src.id, [...newest.values()], now)
+      const all = [...store.getState().readings.values()].filter((x) => x.sourceId === src.id)
+      void record(src.id, all, now)
+    }
+    let client: { close(): void }
+    try {
+      client = connectMqtt(src.url, {
+        topics: src.topics ?? [],
+        onOpen: () => { p.failures = 0 },
+        onMessage: (topic, payload) => { if (pending.length < 5000) pending.push(messageBody(topic, payload)) },
+        onClose: () => {
+          if (flushTimer) clearInterval(flushTimer)
+          if (pollers.get(id) !== p || p.ws !== handle) return
+          p.ws = null
+          p.failures++
+          store.getState().setError(id, 'error.network')
+          p.timer = setTimeout(() => connect(id), nextDelayMs(Math.min(src.intervalS, 5), p.failures))
+        },
+      })
+    } catch { store.getState().setError(id, 'error.url'); return }
+    flushTimer = setInterval(flush, 1000)
+    const handle = { close: () => { if (flushTimer) clearInterval(flushTimer); flush(); client.close() } }
+    p.ws = handle
+  }
+
   const connect = (id: string): void => {
     const p = pollers.get(id)
     const src = store.getState().sources.find((s) => s.id === id)
     if (!p || !src) return
+    if (src.topics?.length) { connectMqttSource(id, src, p); return }
     let ws: WebSocket
     try { ws = new WebSocket(src.url) } catch { store.getState().setError(id, 'error.url'); return }
     p.ws = ws
@@ -180,7 +249,7 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
 
   const syncPollers = (): void => {
     const { sources, active } = store.getState()
-    const want = new Map(active ? sources.filter((s) => s.enabled).map((s) => [s.id, `${s.url}|${s.intervalS}|${JSON.stringify(s.mapping)}`]) : [])
+    const want = new Map(active ? sources.filter((s) => s.enabled).map((s) => [s.id, `${s.url}|${s.intervalS}|${JSON.stringify(s.mapping)}|${(s.topics ?? []).join(' ')}`]) : [])
     for (const [id, p] of pollers) if (want.get(id) !== p.sig) stopPoller(id)
     for (const [id, sig] of want) {
       if (pollers.has(id)) continue

@@ -6,7 +6,7 @@
 // Never carries secrets: request headers (API keys) stay on the device that
 // typed them and are stripped here.
 
-import type { Binding, DeviceSource } from './devices'
+import { cleanTopics, portableSource, type Binding, type DeviceSource } from './devices'
 
 export interface TwinProject {
   v: 1
@@ -16,7 +16,7 @@ export interface TwinProject {
 }
 
 export function exportTwinProject(sources: DeviceSource[], bindings: Binding[]): string {
-  const clean = sources.map(({ id, name, url, intervalS, mapping, enabled }) => ({ id, name, url, intervalS, mapping, enabled }))
+  const clean = sources.map(portableSource)
   const doc: TwinProject = { v: 1, kind: 'ifc-twin', sources: clean, bindings }
   return JSON.stringify(doc, null, 2)
 }
@@ -31,7 +31,7 @@ export function parseTwinProject(text: string): TwinProject | null {
   if (!Array.isArray(doc.sources) || !Array.isArray(doc.bindings)) return null
   const sources = doc.sources.filter((s): s is DeviceSource =>
     isObj(s) && typeof s.id === 'string' && typeof s.url === 'string' && isObj(s.mapping))
-    .map((s) => ({ ...s, name: String(s.name ?? s.url), intervalS: Math.max(1, Number(s.intervalS) || 30), enabled: s.enabled !== false }))
+    .map((s) => ({ ...s, name: String(s.name ?? s.url), intervalS: Math.max(1, Number(s.intervalS) || 30), enabled: s.enabled !== false, topics: cleanTopics(s.topics) }))
   const ids = new Set(sources.map((s) => s.id))
   const bindings = doc.bindings.filter((b): b is Binding =>
     isObj(b) && typeof b.id === 'string' && typeof b.sourceId === 'string' && ids.has(b.sourceId)

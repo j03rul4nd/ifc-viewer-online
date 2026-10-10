@@ -8,7 +8,8 @@ Everything is client-side — the visitor's browser fetches the IFC directly, so
 The in-app **Embed** button (toolbar, when a model is loaded) opens a generator that
 builds the link and the `<iframe>` snippet for you, and there's a full no-code
 **embed builder** served at **`/<base>/embed/`** (localized in 10 languages, with a
-live preview). This doc is the reference for the underlying parameters.
+live preview). It embeds an IFC model or a **digital-twin scene** (a `.scene.json`
+URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the reference for the underlying parameters.
 
 ## Quick start
 
@@ -40,7 +41,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). With several models, validation waits until none is still loading, then runs model by model. |
 | `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
-| `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
+| `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). Read before anything renders, so it wins over the browser's language and the stored choice from the first frame. |
 | `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
 | `bg`       | preset / `rrggbb` / `top,bottom` | saved     | Scene background for this page view: `white`, `paper`, `blueprint`, `sky`, `studio`, one colour, or a top,bottom gradient (`bg=dbeafe,ffffff`). Applied from the first frame and **not** saved as the visitor's preference. An unreadable value is ignored. |
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
@@ -50,6 +51,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
 | `layers`   | URL                              | —         | A data-layer setup exported from the Data layers panel (*Export setup*): sources, styles, groups, alerts. Host the JSON anywhere with CORS. While present it is what the scene shows; the visitor's own saved layers are neither restored nor overwritten. |
 | `scene`    | URL                              | —         | A **scene document** (see [`SCENE_FORMAT.md`](SCENE_FORMAT.md)): models, data layers, live device bindings, map, background and camera in one JSON. Same rules as `layers` (CORS, session-only). Also accepted in the fragment as `#scene=<packed>`, which carries the whole scene in the link without hosting anything. Explicit parameters in the same URL win over the scene's. |
+| `hide`     | `w123,r456,n789`                 | —         | OpenStreetMap features to hide in map mode for this page view (not saved as the visitor's own hidden features). A scene's `view.hide`. |
 | `camera`   | `px,py,pz,tx,ty,tz`              | —         | Open on this exact camera (scene metres, Y up: eye, then orbit target) once the models are in, after the map's own fly-in when `map` is set. Wins over `view`. |
 | `view`     | `iso` · `top` · `front` · `back` · `left` · `right` · `bottom` | — (`iso` with `ui=article`) | Once every model has loaded, frame them from this view with a **tight fit**: fitted to the box's corners, not its bounding sphere, so a long low building fills the frame. *(1.14)* |
 | `fill`     | `0.2`–`0.98` or a percentage     | `0.85` (`0.8` for auto-frame) | With `view` or auto-frame: share of the frame the model fills on its tighter axis. *(1.14)* |
@@ -253,6 +255,8 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `measurements-changed` | `tool`, `units`, `items` (values always SI) |
 | `tour-started` / `tour-step` / `tour-ended` | `title, total, template` / `index, total, caption` / `completed` |
 | `presentation-progress` | `stage` (`generate` · `export`), `label?`, `progress` |
+| `layer-feature-picked` | `layerId`, `layer`, `featureIndex`, `featureId`, `geometry`, `lonLat`, `properties` — a data-layer feature was clicked |
+| `alert`            | `at`, `kind` (`start` · `clear`), `from` (`layer` · `twin`), `id`, `name`, `ruleId`, `rule`, `count`, `sample` |
 
 Messages about a load a host started with a `requestId` (see below and the
 [SDK](./IFC_VIEWER_SDK.md)) echo that `requestId`, so a host can tell its own
@@ -311,6 +315,14 @@ as "no model yet", "feature not in this build" or "model has no location".
 | `ifcviewer:get-solar` | — | Same shape as above |
 | `ifcviewer:set-site` | `site: { enabled?, terrain?, buildings?, layers?, detail?, terrainStyle?, exaggeration?, vehicles? }` | Map mode. Resolves once it is up. Returns state + `placement` + `attributions` |
 | `ifcviewer:get-site` | — | Same shape as above |
+| `ifcviewer:get-scene` | `title?`, `description?`, `camera?` (default true) | `{ scene, sources, link, skippedModels, secretsRemoved }` — the scene on screen as a scene document |
+| `ifcviewer:get-layer-presets` | — | The catalogue of live sources: `{ id, name, description, region, kind, url, license, intervalS, needs, near, bbox }[]` |
+| `ifcviewer:add-layer` | `layer: { preset } \| { url, name?, live? } \| { geojson, name? }` | Adds a data layer (session-only, never saved into the visitor's layers). Returns the layer |
+| `ifcviewer:get-layers` | — | `{ id, name, visible, status, error, features, geometry, bbox, live, attribution, url }[]` |
+| `ifcviewer:layer-visible` | `id`, `visible` | The layer |
+| `ifcviewer:frame-layer` | `id` | Flies to the layer; errors when it has nothing to frame yet |
+| `ifcviewer:remove-layer` | `id` | — |
+| `ifcviewer:get-twin` | — | `{ active, sources, bindings }` — each binding's matching rule, colour, label value, alerting |
 | `ifcviewer:add-section` | `axis?` (`x`\|`y`\|`z`), `offset?`, `level?` (storey name or index), `flip?` | Adds a plane. Returns `{ id, planes, box, active }` |
 | `ifcviewer:update-section` | `id`, `offset?`, `enabled?`, `flipped?` | Moves, toggles or flips the plane |
 | `ifcviewer:remove-section` | `id?` | Removes one plane, or every cut when `id` is omitted |

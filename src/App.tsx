@@ -95,6 +95,8 @@ import { isGisEnabled } from './lib/geo/gis-flag'
 import { parsePanelTarget, parsePanelList } from './lib/ui/panel-commands'
 import { closeAllPanels } from './lib/ui/panel-registry'
 import { isSolarEnabled } from './lib/solar/solar-flag'
+import { isFloodEnabled } from './features/flood/flag'
+import { useFloodStore } from './features/flood/store'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
@@ -114,6 +116,9 @@ import { useSolarStore } from './stores/solarStore'
 const GeoPanel = React.lazy(() => import('./components/GeoPanel'))
 const SolarPanel = React.lazy(() => import('./components/SolarPanel'))
 const SolarAnalysisPanel = React.lazy(() => import('./components/solar/SolarAnalysisPanel'))
+// Lazy and flag-gated: the flood panel pulls the grid builder and the water layer;
+// the solver itself only loads in its worker when a run starts.
+const FloodPanel = React.lazy(() => import('./features/flood/ui/FloodPanel'))
 // Lazy: PointCloudPanel statically imports the point cloud engine, its shader
 // and its readers — none of that may reach the entry chunk.
 const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
@@ -178,7 +183,9 @@ import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
-import { appBus } from './lib/event-bus'
+import { confirmExternalData, hostsIn, layersSetupHosts } from './lib/privacy/external-data'
+import { ExternalDataPrompt } from './components/ExternalDataPrompt'
+import { appBus, MAP_CONSENT_DECLINED } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
 import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
 import type { GeoPlacement } from './lib/geo/geo-types'
@@ -943,6 +950,7 @@ export default function App() {
     plans:       <Icons.FileIfc size={15} />,
     map:         <Icons.Globe size={15} />,
     solar:       <Icons.Sparkles size={15} />,
+    flood:       <Icons.CloudRain size={15} />,
     pointcloud:  <Icons.Zap size={15} />,
     mesh:        <Icons.Building size={15} />,
     devices:     <Icons.Devices size={15} />,
@@ -955,6 +963,7 @@ export default function App() {
     plans:       tToolbar('plans'),
     map:         tToolbar('map'),
     solar:       tSolar('panel.title'),
+    flood:       tToolbar('flood'),
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
     devices:     tLayers('devices.entry'),
@@ -967,6 +976,7 @@ export default function App() {
   const railModelCount = useSceneStore((s) => s.models.length)
   const railTwinBindings = useTwinDeviceStore((s) => s.bindings.length)
   const railTwinAlerting = useTwinDeviceStore((s) => s.alerting.length > 0)
+  const railFloodRunning = useFloodStore((s) => s.status === 'running')
   const runtimePanels = useUIStore((s) => s.runtimePanels)
 
   // Content gates: these two act ON something loaded, so the tool only earns
@@ -1003,6 +1013,12 @@ export default function App() {
     else if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
   }, [urlParams.layersUrl])
 
+  // `?hide=` (a scene's view.hide): mapped features this page view hides —
+  // session-only, alongside the visitor's own hidden ones.
+  useEffect(() => {
+    if (urlParams.hideFeatures.length) useGeoStore.getState().setSceneHidden(urlParams.hideFeatures)
+  }, [urlParams.hideFeatures])
+
   // ── Scene document (`?scene=` / `#scene=`, scene-doc/) ──────────────────────
   // Its models, map, background and camera came in as URL parameters before
   // mount. What is not URL-shaped is applied here, once the models are in, so
@@ -1032,11 +1048,13 @@ export default function App() {
     plans:       !clientMode,
     map:         isGisEnabled() && !clientMode,
     solar:       isSolarEnabled(),
+    // Same condition as the panel below.
+    flood:       isFloodEnabled() && !clientMode && railModelCount > 0,
     pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
     mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
     // Same condition as the panel below (it mounts on open, or once a source exists).
     devices:     !clientMode,
-  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount])
+  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
   // both show it. The old mobile grid carried these and the rail did not.
@@ -1047,7 +1065,9 @@ export default function App() {
     scene:       { badge: railModelCount > 1 ? railModelCount : undefined },
     // Bindings at work, and a dot while any of them is alerting.
     devices:     { badge: railTwinBindings > 0 ? railTwinBindings : undefined, dot: railTwinAlerting },
-  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting])
+    // A run in progress keeps a dot on the parked icon.
+    flood:       { dot: railFloodRunning },
+  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting, railFloodRunning])
 
   const railItems = usePanelRail({
     icons: railIcons,
@@ -1153,12 +1173,22 @@ export default function App() {
     if (scene.doc.models.length > 0 && loadingState !== 'loaded' && loadingState !== 'error') return
     sceneAppliedRef.current = true
     const { doc, warnings } = scene
-    if (doc.layers.length > 0) {
-      useVectorLayerStore.getState().setSetupText(JSON.stringify({ format: 'ifc-viewer-data-layers', v: 1, layers: doc.layers }))
-    }
-    if (doc.twin && (doc.twin.sources.length > 0 || doc.twin.bindings.length > 0)) {
-      setTwinPersistence(false)
-      useTwinDeviceStore.getState().replaceAll(doc.twin.sources, doc.twin.bindings)
+    const twin = doc.twin && (doc.twin.sources.length > 0 || doc.twin.bindings.length > 0) ? doc.twin : null
+    if (doc.layers.length > 0 || twin) {
+      // Its data layers and live sources are other people's servers: the
+      // visitor is asked once, for all of them, before any is contacted.
+      void (async () => {
+        const hosts = [...new Set([...await layersSetupHosts(doc.layers), ...hostsIn(twin?.sources ?? [])])].sort()
+        const accepted = await confirmExternalData(!twin ? 'layers' : doc.layers.length === 0 ? 'twin' : 'scene', hosts)
+        if (!accepted) { toast(tCommon('externalData.skipped'), 'info'); return }
+        if (doc.layers.length > 0) {
+          useVectorLayerStore.getState().setSetupText(JSON.stringify({ format: 'ifc-viewer-data-layers', v: 1, layers: doc.layers }))
+        }
+        if (twin) {
+          setTwinPersistence(false)
+          useTwinDeviceStore.getState().replaceAll(twin.sources, twin.bindings)
+        }
+      })()
     }
     const notes = doc.meta.notes ?? []
     if (notes.length > 0) toast(`${doc.meta.title} — ${notes.join(' ')}`, 'info', { duration: 16000 })
@@ -2163,6 +2193,7 @@ export default function App() {
         origin: { x: number; y: number; z: number }
         pivot: { x: number; y: number; z: number }
         georefKey: string | null
+        yawRad: number
       }> = []
       for (const m of useSceneStore.getState().models) {
         // Placed by hand: the user's calibration wins over the file's own
@@ -2177,7 +2208,13 @@ export default function App() {
         // took the last offset for project coordinates and added it again —
         // measured: a model 250 m away walked 250 m further per call.
         const t = api.getModelTransform(m.id)
-        const own = { ...bounds, center: { x: bounds.center.x - t.position.x, y: bounds.center.y - t.position.y, z: bounds.center.z - t.position.z } }
+        // A turned satellite (geo-system placeSatellites) is un-turned too: its
+        // pivot yaw is about the pivot origin, so leaving it in would rotate the
+        // centre the file's coordinates are read from — metres of drift per map move.
+        const yawRad = (t.rotation.y * Math.PI) / 180
+        const rx = bounds.center.x - t.position.x, rz = bounds.center.z - t.position.z
+        const cy = Math.cos(-yawRad), sy = Math.sin(-yawRad)
+        const own = { ...bounds, center: { x: rx * cy + rz * sy, y: bounds.center.y - t.position.y, z: -rx * sy + rz * cy } }
         const resolved = placementFromExtraction(extraction, own)
         // A model with no usable georeferencing stays where the scene put it.
         // Inventing a location for it is the fabrication this pipeline refuses.
@@ -2186,12 +2223,15 @@ export default function App() {
         // now, and which georeference it shares: files of one project carry the
         // same IfcMapConversion and must move as one (geo-system placeSatellites).
         const c = api.getModelCoordination(m.id)
+        const cx = c?.x ?? 0, cz = c?.z ?? 0
+        const cw = Math.cos(yawRad), sw = Math.sin(yawRad)
         out.push({
           modelId: m.id, placement: resolved.value, bounds,
           originY: t.position.y + (c?.y ?? 0),
-          origin: { x: t.position.x + (c?.x ?? 0), y: t.position.y + (c?.y ?? 0), z: t.position.z + (c?.z ?? 0) },
+          origin: { x: t.position.x + cx * cw + cz * sw, y: t.position.y + (c?.y ?? 0), z: t.position.z - cx * sw + cz * cw },
           pivot: { x: t.position.x, y: t.position.y, z: t.position.z },
           georefKey: georefKeyOf(extraction),
+          yawRad,
         })
       }
         return out
@@ -3158,6 +3198,55 @@ export default function App() {
         case 'ifcviewer:get-site':
           void respond(() => siteStateOut())
           break
+        // ── Scenes and data (SDK 1.17) ─────────────────────────────────────
+        // The scene as a document (what Share → Digital-twin scene builds), the
+        // catalogue of live sources, data layers and the twin's state. Each runs
+        // the same code the panels do (lib/host-data-api, scene-snapshot).
+        case 'ifcviewer:get-scene': {
+          const withCamera = msg.camera !== false
+          const title = typeof msg.title === 'string' && msg.title.trim() ? msg.title.trim()
+            : useSceneStore.getState().models[0]?.fileName.replace(/\.ifc$/i, '') ?? i18n.t('layers:scene.untitled' as never)
+          const description = typeof msg.description === 'string' && msg.description.trim() ? msg.description.trim() : undefined
+          void respond(async () => {
+            const [{ snapshotScene, sceneLink }, { sceneSources }] = await Promise.all([
+              import('./lib/scene-doc/scene-snapshot'), import('./lib/scene-doc/scene-doc'),
+            ])
+            const snap = await snapshotScene({ title, description, camera: withCamera ? viewerApiRef.current?.getCameraViewpoint() ?? null : null })
+            return {
+              scene: snap.doc,
+              sources: sceneSources(snap.doc),
+              link: await sceneLink(snap.doc),
+              skippedModels: snap.localModels,
+              secretsRemoved: snap.secretsRemoved,
+            }
+          })
+          break
+        }
+        case 'ifcviewer:get-layer-presets':
+          void respond(async () => (await import('./lib/host-data-api')).layerPresets())
+          break
+        case 'ifcviewer:add-layer':
+          void respond(async () => (await import('./lib/host-data-api')).addLayer(msg.layer))
+          break
+        case 'ifcviewer:get-layers':
+          void respond(async () => (await import('./lib/host-data-api')).listLayers())
+          break
+        case 'ifcviewer:remove-layer':
+          void respond(async () => { (await import('./lib/host-data-api')).removeLayer(msg.id); return null })
+          break
+        case 'ifcviewer:layer-visible':
+          void respond(async () => (await import('./lib/host-data-api')).setLayerVisible(msg.id, msg.visible))
+          break
+        case 'ifcviewer:frame-layer':
+          void respond(async () => {
+            const framed = await (await import('./lib/host-data-api')).frameLayer(msg.id)
+            if (!framed) throw new Error('The layer has nothing to frame yet')
+            return null
+          })
+          break
+        case 'ifcviewer:get-twin':
+          void respond(async () => (await import('./lib/host-data-api')).twinState())
+          break
         // ── Analysis: sections and measurements (SDK 1.11) ─────────────────
         // Driven on the viewer's own systems, the ones the panels drive, so a
         // cut made by a host shows up in the Section panel and can be dragged.
@@ -3800,6 +3889,10 @@ export default function App() {
           if (cam && !cancelled) viewerApiRef.current?.setCameraLookAt(vec3(cam.position), vec3(cam.target), false)
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err)
+          if (message === MAP_CONSENT_DECLINED) {
+            if (!cancelled) toast(tToasts('model.mapDeclined'), 'info')
+            return
+          }
           console.error('[App] ?map= deep link failed:', message)
           if (!cancelled) toast(tToasts('model.mapFailed', { message }), 'error')
         }
@@ -3913,6 +4006,36 @@ export default function App() {
     })
     return () => { offWalk(); offMeasure() }
   }, [hasSceneModels])
+
+  // Data-layer picks and alerts (SDK 1.17). Alerts of layers and of the twin
+  // are both written to the alert log, so one subscription hears them all;
+  // only entries written from now on are relayed. The payload builders (and
+  // the layer code under them) load on the first event, not with every embed.
+  useEffect(() => {
+    if (!isEmbedded()) return
+    let cancelled = false
+    let offLog: (() => void) | null = null
+    const hostApi = () => import('./lib/host-data-api')
+    void import('./lib/layers/alert-log').then((log) => {
+      if (cancelled) return
+      const seen = new WeakSet(log.getAlertLog())
+      offLog = log.onAlertLog(() => {
+        const fresh = log.getAlertLog().filter((e) => !seen.has(e))
+        if (fresh.length === 0) return
+        for (const e of fresh) seen.add(e)
+        void hostApi().then((api) => { for (const e of fresh) emitEmbedEvent('alert', { ...api.alertEvent(e) }) })
+      })
+    })
+    const offPick = useVectorLayerStore.subscribe((st, prev) => {
+      const sel = st.selected
+      if (!sel || sel === prev.selected) return
+      void hostApi().then((api) => {
+        const pick = api.pickedFeature(sel)
+        if (pick) emitEmbedEvent('layer-feature-picked', { ...pick })
+      })
+    })
+    return () => { cancelled = true; offLog?.(); offPick() }
+  }, [])
 
   // ── Relay element selection to an embedding parent (CDE integration) ───────
   // With its GlobalId (v1.18), so a host can map a pick to its own records.
@@ -4389,9 +4512,12 @@ export default function App() {
                   )}
 
                   {/* GIS map panel (flag-gated, lazy — pulls proj4 + geo code) */}
-                  {isGisEnabled() && sceneModels.length > 0 && !clientMode && (
+                  {/* Mounted in client mode too, without its panel: the map a link,
+                      a scene or the SDK asks for is answered by this controller
+                      (sdk:site) — without it `?map=…&ui=client` never came up. */}
+                  {isGisEnabled() && sceneModels.length > 0 && (
                     <React.Suspense fallback={null}>
-                      <GeoPanel viewerApiRef={viewerApiRef} />
+                      <GeoPanel viewerApiRef={viewerApiRef} panel={!clientMode} />
                     </React.Suspense>
                   )}
 
@@ -4410,6 +4536,14 @@ export default function App() {
                   {isSolarEnabled() && sceneModels.length > 0 && !clientMode && (
                     <React.Suspense fallback={null}>
                       <SolarAnalysisPanel viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
+                  )}
+
+                  {/* Rain-flood simulation (flag-gated, lazy): a 2-D storm run on
+                      the user's GPU over the model, its terrain and the map. */}
+                  {isFloodEnabled() && sceneModels.length > 0 && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <FloodPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>
                   )}
 
@@ -4693,6 +4827,7 @@ export default function App() {
 
       {/* ── Keyboard help modal ── */}
       <KeyboardHelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+      <ExternalDataPrompt />
 
       {/* ── Demo model gallery ── */}
       <DemoGallery

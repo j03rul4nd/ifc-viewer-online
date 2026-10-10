@@ -45,6 +45,7 @@
   "compare": "Confronta",
   "compareTooltip": "Confronta versioni del tuo insieme di IFC: modifiche, IDS e BCF",
   "map": "Mappa",
+  "flood": "Allagamento",
   "mapTooltip": "Mostra il modello su una mappa reale (georeferenziato)",
   "embed": "Incorpora",
   "embedTooltip": "Ottieni un iframe / link incorporabile per questo modello",

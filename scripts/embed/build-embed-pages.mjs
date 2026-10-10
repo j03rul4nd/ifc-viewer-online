@@ -14,6 +14,8 @@ const OUT = resolve(ROOT, 'public/embed')
 const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 const LANG_LABEL = { en: 'English', es: 'Español', de: 'Deutsch', fr: 'Français', pt: 'Português', it: 'Italiano', ca: 'Català', zh: '中文', ja: '日本語', th: 'ไทย' }
 const SAMPLE = 'https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc'
+// The Barcelona demo scene, relative to the app (docs/DEMOS.md).
+const SAMPLE_SCENE = 'scenes/barcelona-placa-catalunya.scene.json'
 
 const T = {
   en: { title: 'Embed builder — present IFC models anywhere', desc: 'Build a copy-ready iframe to embed an interactive IFC viewer in a blog, CDE panel, Power BI report or dashboard. No code, no upload.', h1: 'Embed an IFC model anywhere', lede: 'Paste a public IFC URL, tune the look, and copy the iframe (or link). Works in blogs, CDE panels, Notion, Power BI and dashboards — the model is parsed in the visitor’s browser, nothing is uploaded.', model: 'Public IFC URL', modelHelp: 'Must be reachable over HTTPS with CORS enabled.', layout: 'Layout', accent: 'Accent colour', height: 'Height (px)', options: 'Options', optValidate: 'Run validation', optPanel: 'Open validation panel', language: 'Viewer language', auto: 'Auto', preview: 'Live preview', update: 'Update preview', linkTab: 'Link', iframeTab: 'iframe', copy: 'Copy', copied: 'Copied!', biTitle: 'Where can I paste this?', biHint: 'Anywhere that accepts an iframe or a web URL: blog/CMS embeds, a CDE document panel, Notion, Confluence, a Power BI “Web content” visual, SharePoint, or any dashboard.', langLabel: 'Language', presetMinimal: 'Minimal', presetFull: 'Full', presetKiosk: 'Kiosk', noUrl: 'Enter a valid public IFC URL to generate the embed.' },
@@ -27,6 +29,101 @@ const T = {
   ja: { title: '埋め込みビルダー — IFC モデルをどこにでも表示', desc: 'インタラクティブな IFC ビューアをブログ、CDE パネル、Power BI レポート、ダッシュボードに埋め込むためのコピー可能な iframe を生成。コード不要、アップロード不要。', h1: 'IFC モデルをどこにでも埋め込む', lede: '公開 IFC の URL を貼り付け、見た目を調整し、iframe（またはリンク）をコピー。ブログ、CDE パネル、Notion、Power BI、ダッシュボードで動作します。モデルは訪問者のブラウザで解析され、何もアップロードされません。', model: '公開 IFC の URL', modelHelp: 'HTTPS かつ CORS 有効でアクセスできる必要があります。', layout: 'レイアウト', accent: 'アクセントカラー', height: '高さ（px）', options: 'オプション', optValidate: '検証を実行', optPanel: '検証パネルを開く', language: 'ビューアの言語', auto: '自動', preview: 'ライブプレビュー', update: 'プレビューを更新', linkTab: 'リンク', iframeTab: 'iframe', copy: 'コピー', copied: 'コピーしました！', biTitle: 'どこに貼り付けられますか？', biHint: 'iframe または Web URL を受け付ける場所ならどこでも：ブログ/CMS の埋め込み、CDE のドキュメントパネル、Notion、Confluence、Power BI の「Web コンテンツ」ビジュアル、SharePoint、各種ダッシュボード。', langLabel: '言語', presetMinimal: 'ミニマル', presetFull: 'フル', presetKiosk: 'キオスク', noUrl: '埋め込みを生成するには、有効な公開 IFC URL を入力してください。' },
   th: { title: 'เครื่องมือสร้างการฝัง — นำเสนอโมเดล IFC ได้ทุกที่', desc: 'สร้าง iframe พร้อมคัดลอกเพื่อฝังตัวแสดงผล IFC แบบโต้ตอบในบล็อก แผง CDE รายงาน Power BI หรือแดชบอร์ด ไม่ต้องเขียนโค้ด ไม่ต้องอัปโหลด', h1: 'ฝังโมเดล IFC ได้ทุกที่', lede: 'วาง URL สาธารณะของ IFC ปรับรูปลักษณ์ แล้วคัดลอก iframe (หรือลิงก์) ใช้ได้ในบล็อก แผง CDE, Notion, Power BI และแดชบอร์ด โมเดลถูกประมวลผลในเบราว์เซอร์ของผู้เข้าชม ไม่มีการอัปโหลด', model: 'URL สาธารณะของ IFC', modelHelp: 'ต้องเข้าถึงได้ผ่าน HTTPS และเปิด CORS', layout: 'เลย์เอาต์', accent: 'สีเน้น', height: 'ความสูง (px)', options: 'ตัวเลือก', optValidate: 'รันการตรวจสอบ', optPanel: 'เปิดแผงการตรวจสอบ', language: 'ภาษาของตัวแสดงผล', auto: 'อัตโนมัติ', preview: 'ตัวอย่างสด', update: 'อัปเดตตัวอย่าง', linkTab: 'ลิงก์', iframeTab: 'iframe', copy: 'คัดลอก', copied: 'คัดลอกแล้ว!', biTitle: 'วางได้ที่ไหนบ้าง?', biHint: 'ที่ใดก็ได้ที่รองรับ iframe หรือ URL เว็บ: การฝังบล็อก/CMS, แผงเอกสาร CDE, Notion, Confluence, วิช্যువล “Web content” ของ Power BI, SharePoint หรือแดชบอร์ดใดก็ได้', langLabel: 'ภาษา', presetMinimal: 'มินิมอล', presetFull: 'เต็ม', presetKiosk: 'คีออสก์', noUrl: 'กรอก URL สาธารณะของ IFC ที่ถูกต้องเพื่อสร้างการฝัง' },
 }
+
+// Scenes (SDK 1.17 / docs/SCENE_FORMAT.md): what to embed, and the client preset.
+const T_SCENE = {
+  "en": {
+    "what": "What to embed",
+    "srcModel": "IFC model",
+    "srcScene": "Digital-twin scene",
+    "scene": "Scene URL or #scene= link",
+    "sceneHelp": "A scene document — models, live data layers, devices, map and camera. Host the .scene.json with CORS, or paste the link from Share → Digital-twin scene.",
+    "presetClient": "Client",
+    "noScene": "Enter a scene URL or a #scene= link to generate the embed."
+  },
+  "es": {
+    "what": "Qué insertar",
+    "srcModel": "Modelo IFC",
+    "srcScene": "Escena de gemelo digital",
+    "scene": "URL de la escena o enlace #scene=",
+    "sceneHelp": "Un documento de escena: modelos, capas de datos en vivo, dispositivos, mapa y cámara. Aloja el .scene.json con CORS o pega el enlace de Compartir → Escena de gemelo digital.",
+    "presetClient": "Cliente",
+    "noScene": "Introduce la URL de una escena o un enlace #scene= para generar el embed."
+  },
+  "de": {
+    "what": "Was einbetten",
+    "srcModel": "IFC-Modell",
+    "srcScene": "Digital-Twin-Szene",
+    "scene": "Szenen-URL oder #scene=-Link",
+    "sceneHelp": "Ein Szenendokument: Modelle, Live-Datenebenen, Geräte, Karte und Kamera. Die .scene.json mit CORS hosten oder den Link aus Teilen → Digital-Twin-Szene einfügen.",
+    "presetClient": "Kunde",
+    "noScene": "Gib eine Szenen-URL oder einen #scene=-Link ein, um das Embed zu erzeugen."
+  },
+  "fr": {
+    "what": "Que intégrer",
+    "srcModel": "Modèle IFC",
+    "srcScene": "Scène de jumeau numérique",
+    "scene": "URL de la scène ou lien #scene=",
+    "sceneHelp": "Un document de scène : modèles, couches de données en direct, appareils, carte et caméra. Hébergez le .scene.json avec CORS, ou collez le lien de Partager → Scène de jumeau numérique.",
+    "presetClient": "Client",
+    "noScene": "Saisissez l’URL d’une scène ou un lien #scene= pour générer l’embed."
+  },
+  "pt": {
+    "what": "O que incorporar",
+    "srcModel": "Modelo IFC",
+    "srcScene": "Cena de gémeo digital",
+    "scene": "URL da cena ou ligação #scene=",
+    "sceneHelp": "Um documento de cena: modelos, camadas de dados em direto, dispositivos, mapa e câmara. Aloje o .scene.json com CORS ou cole a ligação de Partilhar → Cena de gémeo digital.",
+    "presetClient": "Cliente",
+    "noScene": "Introduza o URL de uma cena ou uma ligação #scene= para gerar o embed."
+  },
+  "it": {
+    "what": "Cosa incorporare",
+    "srcModel": "Modello IFC",
+    "srcScene": "Scena di gemello digitale",
+    "scene": "URL della scena o link #scene=",
+    "sceneHelp": "Un documento di scena: modelli, livelli di dati in tempo reale, dispositivi, mappa e camera. Ospita il .scene.json con CORS o incolla il link da Condividi → Scena di gemello digitale.",
+    "presetClient": "Cliente",
+    "noScene": "Inserisci l’URL di una scena o un link #scene= per generare l’embed."
+  },
+  "ca": {
+    "what": "Què vols incrustar",
+    "srcModel": "Model IFC",
+    "srcScene": "Escena de bessó digital",
+    "scene": "URL de l’escena o enllaç #scene=",
+    "sceneHelp": "Un document d’escena: models, capes de dades en directe, dispositius, mapa i càmera. Allotja el .scene.json amb CORS o enganxa l’enllaç de Comparteix → Escena de bessó digital.",
+    "presetClient": "Client",
+    "noScene": "Introdueix l’URL d’una escena o un enllaç #scene= per generar l’embed."
+  },
+  "zh": {
+    "what": "嵌入内容",
+    "srcModel": "IFC 模型",
+    "srcScene": "数字孪生场景",
+    "scene": "场景 URL 或 #scene= 链接",
+    "sceneHelp": "场景文档：模型、实时数据图层、设备、地图和相机。将 .scene.json 托管在支持 CORS 的地方，或粘贴“分享 → 数字孪生场景”生成的链接。",
+    "presetClient": "客户",
+    "noScene": "请输入场景 URL 或 #scene= 链接以生成嵌入代码。"
+  },
+  "ja": {
+    "what": "埋め込む内容",
+    "srcModel": "IFC モデル",
+    "srcScene": "デジタルツインのシーン",
+    "scene": "シーンの URL または #scene= リンク",
+    "sceneHelp": "シーン文書：モデル、ライブデータレイヤー、デバイス、地図、カメラ。.scene.json を CORS 対応の場所に置くか、「共有 → デジタルツインのシーン」のリンクを貼り付けます。",
+    "presetClient": "クライアント",
+    "noScene": "埋め込みを生成するには、シーンの URL または #scene= リンクを入力してください。"
+  },
+  "th": {
+    "what": "สิ่งที่จะฝัง",
+    "srcModel": "โมเดล IFC",
+    "srcScene": "ฉากดิจิทัลทวิน",
+    "scene": "URL ของฉากหรือลิงก์ #scene=",
+    "sceneHelp": "เอกสารฉาก: โมเดล ชั้นข้อมูลสด อุปกรณ์ แผนที่ และกล้อง โฮสต์ไฟล์ .scene.json ที่รองรับ CORS หรือวางลิงก์จาก แชร์ → ฉากดิจิทัลทวิน",
+    "presetClient": "ลูกค้า",
+    "noScene": "กรอก URL ของฉากหรือลิงก์ #scene= เพื่อสร้างการฝัง"
+  }
+}
+for (const l of Object.keys(T_SCENE)) Object.assign(T[l], T_SCENE[l])
 
 // Scene background (`?bg=`, see docs/EMBED_URL_PARAMS.md). Label + preset
 // names per language; the value is the same preset id the app parses.
@@ -113,15 +210,22 @@ function page(lang) {
 
     <div class="grid">
       <div class="card">
-        <label class="f">${esc(t.model)}</label>
+        <label class="f" style="margin-top:0">${esc(t.what)}</label>
+        <div class="seg" id="source">
+          <button data-v="model" class="on">${esc(t.srcModel)}</button>
+          <button data-v="scene">${esc(t.srcScene)}</button>
+        </div>
+
+        <label class="f" id="modelLabel">${esc(t.model)}</label>
         <input type="url" id="model" value="${escAttr(SAMPLE)}" spellcheck="false" />
-        <div class="help">${esc(t.modelHelp)}</div>
+        <div class="help" id="modelHelp">${esc(t.modelHelp)}</div>
 
         <label class="f">${esc(t.layout)}</label>
         <div class="seg" id="preset">
           <button data-v="minimal" class="on">${esc(t.presetMinimal)}</button>
           <button data-v="full">${esc(t.presetFull)}</button>
           <button data-v="kiosk">${esc(t.presetKiosk)}</button>
+          <button data-v="client">${esc(t.presetClient)}</button>
         </div>
 
         <label class="f">${esc(t.options)}</label>
@@ -172,17 +276,23 @@ function page(lang) {
 
   <script>
     const APP = new URL(${JSON.stringify(appBase)}, location.href).href.replace(/\\/$/, '') + '/';
-    const I18N = ${JSON.stringify({ copy: t.copy, copied: t.copied, noUrl: t.noUrl })};
+    const I18N = ${JSON.stringify({ copy: t.copy, copied: t.copied, noUrl: t.noUrl, noScene: t.noScene, model: t.model, modelHelp: t.modelHelp, scene: t.scene, sceneHelp: t.sceneHelp })};
+    const SAMPLES = { model: ${JSON.stringify(SAMPLE)}, scene: APP + ${JSON.stringify(SAMPLE_SCENE)} };
     const $ = (id) => document.getElementById(id);
-    let preset = 'minimal', tab = 'iframe';
+    let preset = 'minimal', tab = 'iframe', source = 'model';
+    // What the user typed for each kind, so switching back and forth keeps it.
+    const typed = { model: SAMPLES.model, scene: SAMPLES.scene };
 
     function isValid(u) { try { const x = new URL(u); return x.protocol === 'http:' || x.protocol === 'https:'; } catch { return false; } }
 
     function buildUrl() {
-      const model = $('model').value.trim();
-      if (!isValid(model)) return null;
+      const value = $('model').value.trim();
+      // A link from Share → Digital-twin scene carries the scene in its fragment.
+      const packed = source === 'scene' ? (/[#&]scene=([A-Za-z0-9_-]+)/.exec(value) || [])[1] : null;
+      if (!packed && !isValid(value)) return null;
       const u = new URL(APP);
-      u.searchParams.set('model', model);
+      if (packed) u.hash = 'scene=' + packed;
+      else u.searchParams.set(source === 'scene' ? 'scene' : 'model', value);
       u.searchParams.set('embed', '1');
       if (preset !== 'minimal') u.searchParams.set('ui', preset);
       if (!$('validate').checked) u.searchParams.set('validate', '0');
@@ -202,7 +312,7 @@ function page(lang) {
     function render() {
       const url = buildUrl();
       const out = $('out');
-      if (!url) { out.textContent = I18N.noUrl; return; }
+      if (!url) { out.textContent = source === 'scene' ? I18N.noScene : I18N.noUrl; return; }
       out.textContent = tab === 'iframe' ? snippet(url) : url;
     }
 
@@ -212,6 +322,24 @@ function page(lang) {
     }
 
     // wiring
+    function setPreset(v) {
+      preset = v;
+      [...$('preset').children].forEach((c) => c.classList.toggle('on', c.dataset.v === v));
+    }
+    $('source').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b || b.dataset.v === source) return;
+      typed[source] = $('model').value;
+      source = b.dataset.v;
+      [...$('source').children].forEach((c) => c.classList.toggle('on', c === b));
+      $('model').value = typed[source];
+      $('model').type = source === 'scene' ? 'text' : 'url';
+      $('modelLabel').textContent = source === 'scene' ? I18N.scene : I18N.model;
+      $('modelHelp').textContent = source === 'scene' ? I18N.sceneHelp : I18N.modelHelp;
+      // A twin is shown to clients; a model to whoever checks it.
+      setPreset(source === 'scene' ? 'client' : 'minimal');
+      render();
+      reloadPreview();
+    });
     $('preset').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       preset = b.dataset.v;

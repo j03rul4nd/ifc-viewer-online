@@ -1,0 +1,240 @@
+{
+  "title": "内涝模拟",
+  "close": "关闭",
+  "disclaimer": "在浏览器中运行的简化示意性模拟，并非经认证的水力计算研究。模型的任何数据都不会离开此设备。",
+  "unsupported": "此浏览器无法运行模拟：需要 WebGPU，或支持浮点渲染目标的 WebGL 2。",
+  "grid": {
+    "title": "网格",
+    "cell": "单元",
+    "margin": "边距"
+  },
+  "ground": {
+    "title": "地面",
+    "order": "按以下顺序使用：IFC 自带的地形、导入的 DEM、地图的地形起伏，剩余空洞由相邻单元填补。",
+    "useMap": "使用地图的地形起伏",
+    "mapOff": "开启带地形起伏的地图后才能使用其地形",
+    "importDem": "导入 DEM…",
+    "removeDem": "移除 DEM",
+    "demFormats": ".asc 或 GeoTIFF",
+    "plane": {
+      "title": "无地形数据：演示平面",
+      "auto": "位于项目首层标高",
+      "level": "标高",
+      "slope": "坡度",
+      "towards": "坡向"
+    }
+  },
+  "dir": {
+    "n": "北",
+    "e": "东",
+    "s": "南",
+    "w": "西"
+  },
+  "buildings": {
+    "title": "建筑",
+    "map": "地图中的建筑作为障碍物",
+    "mapOff": "开启地图以纳入周边建筑",
+    "roofs": "屋面",
+    "perimeter": "排至街道",
+    "drained": "排入排水管网"
+  },
+  "rain": {
+    "title": "降雨",
+    "presets": {
+      "shower": "阵雨 · {{min}} min 内 {{mm}} mm",
+      "storm": "暴雨 · {{min}} min 内 {{mm}} mm",
+      "intense": "大暴雨 · {{min}} min 内 {{mm}} mm",
+      "extreme": "极端降雨 · {{min}} min 内 {{mm}} mm"
+    },
+    "facts": "{{min}} min 内降雨 {{mm}} mm，峰值约 {{peak}} mm/h。全区域均匀分布。",
+    "after": "之后",
+    "edit": "编辑",
+    "doneEditing": "完成",
+    "custom": "手绘"
+  },
+  "surface": {
+    "title": "地表",
+    "paved": "铺装（n = {{n}}）",
+    "urban": "混合城区（n = {{n}}）",
+    "grass": "草地（n = {{n}}）",
+    "vegetation": "茂密植被（n = {{n}}）",
+    "section": "地表与土壤"
+  },
+  "edges": {
+    "title": "边界",
+    "free": "水可流出",
+    "closed": "封闭"
+  },
+  "actions": {
+    "prepare": "生成网格",
+    "rebuild": "重新生成",
+    "run": "开始模拟",
+    "rerun": "重新运行",
+    "pause": "暂停",
+    "resume": "继续",
+    "clear": "移除"
+  },
+  "stage": {
+    "geometry": "正在读取模型几何…",
+    "raster": "正在 GPU 上绘制平面图…",
+    "terrain": "正在构建地面…",
+    "layers": "正在准备水层…"
+  },
+  "report": {
+    "title": "模拟识别到的内容",
+    "grid": "网格",
+    "ground": "地面",
+    "dem": "地图地形起伏",
+    "obstacles": "障碍单元",
+    "canopies": "其中 {{n}} 个位于雨棚下",
+    "relief": "地面高程",
+    "coarsened": "对于此单元尺寸，区域过大：单元已放大至 {{dx}} m。",
+    "planeWarn": "此处无地形数据：地面为 Y = {{y}} m 处的平面。请导入 DEM 或开启带地形起伏的地图，以使用真实地形。",
+    "coarseDem": "此处地图的地形起伏来自全球拼接数据（≈30 m 数据）：无法反映街道或路缘石。导入 DEM 可获得更好的结果。",
+    "frame": "缩放至该区域"
+  },
+  "source": {
+    "ifc": "IFC 地形",
+    "dem": "导入的 DEM",
+    "map": "地图地形起伏",
+    "plane": "平面（无数据）"
+  },
+  "demSource": {
+    "icgc-met5": "ICGC MET 5 m（裸地表）",
+    "terrarium": "全球拼接（≈30 m）",
+    "unknown": "地图"
+  },
+  "demNote": {
+    "reprojected": "DEM 已重投影至模型的坐标系。",
+    "sameCrs": "DEM 与模型使用相同的坐标系。",
+    "assumedSameCrs": "DEM（或模型）未声明坐标系：假定其与模型的坐标系相同。",
+    "noHeightDatum": "模型未声明高程基准：DEM 已置于模型下方的项目首层标高。",
+    "notGeoreferenced": "模型未进行地理配准，因此无法放置 DEM。请在「地图」面板中进行地理配准。",
+    "outside": "DEM 未覆盖模拟区域。"
+  },
+  "live": {
+    "time": "模拟时间",
+    "flooded": "淹没面积（> 阈值）",
+    "maxDepth": "最大淹没深度",
+    "volume": "地表水量",
+    "mass": "质量平衡误差",
+    "infiltrated": "已下渗",
+    "outflow": "已流出区域"
+  },
+  "view": {
+    "title": "显示",
+    "now": "当前淹没深度",
+    "max": "最大淹没深度",
+    "threshold": "显示下限",
+    "ground": "显示模拟地面",
+    "speed": "流速",
+    "particles": "流线"
+  },
+  "hyeto": {
+    "label": "雨量过程线（各时段降雨强度）：按住并拖动以绘制",
+    "scale": "刻度上限 {{max}} mm/h",
+    "total": "{{mm}} mm · 峰值 {{peak}} mm/h",
+    "interval": "间隔",
+    "duration": "历时"
+  },
+  "infiltration": {
+    "title": "土壤",
+    "none": "不透水（无下渗）",
+    "compacted": "压实土（{{f0}} → {{fc}} mm/h）",
+    "loam": "壤土、草坪（{{f0}} → {{fc}} mm/h）",
+    "sandy": "砂质土（{{f0}} → {{fc}} mm/h）"
+  },
+  "timeline": {
+    "label": "内涝时间轴",
+    "play": "播放",
+    "pause": "暂停",
+    "scrub": "模拟时间：拖动以移动",
+    "speed": "回放速度",
+    "speedValue": "{{n}} min/s",
+    "probe": "探针",
+    "probeHint": "点击场景读取该点的水情（按 Esc 退出）",
+    "computing": "计算中… {{pct}} %",
+    "live": "返回实时",
+    "rain": "降雨",
+    "flooded": "淹没面积",
+    "deepest": "最大水深",
+    "volume": "地表水量",
+    "legend": "色标"
+  },
+  "probe": {
+    "title": "探针",
+    "hint": "点击场景读取该点的水情。",
+    "reading": "读取中…",
+    "obstacle": "位于障碍物（建筑）内部：水不会进入此处。",
+    "depth": "{{time}} 时的水深",
+    "speed": "流速",
+    "peak": "最大水深",
+    "arrival": "水到达时间",
+    "never": "未到达",
+    "ground": "地面高程",
+    "chart": "整个事件过程中的水深"
+  },
+  "affected": {
+    "title": "内涝：受淹构件",
+    "panelTitle": "水淹及的构件",
+    "summary": "在已检查的 {{checked}} 个构件中，有 {{n}} 个低于其旁边的最高水位。",
+    "none": "已检查的 {{checked}} 个构件（门、窗、出入口、空间、设备）均未低于其旁边的最高水位。",
+    "atEnd": "整个事件的最大值（{{t}}）。",
+    "partial": "截至目前的最大值（{{t}}）：模拟尚未结束。",
+    "pending": "模拟结束后列出：低于最高水位的门、窗、出入口、空间和设备。",
+    "busy": "正在检查模型构件…",
+    "analyze": "立即检查",
+    "reanalyze": "重新检查",
+    "open": "在验证面板中查看",
+    "group": {
+      "opening": "门窗",
+      "access": "出入口（坡道、楼梯、电梯）",
+      "space": "空间",
+      "equipment": "设备与设施",
+      "below": "地面以下"
+    },
+    "belowNote": "其底部低于室外地面（地下室、下沉式出入口）。数值为室外积水深度；水是否进入取决于模拟未建模的开口。",
+    "outside": "室外 {{d}}",
+    "arrives": "{{t}} 时水到达",
+    "jump": "选中并飞至该处",
+    "more": "再显示 {{n}} 个",
+    "capped": "仅显示前 {{n}} 个。",
+    "note": "仅供参考：每个构件外侧的积水与其最低点的对比。不计入验证结果或 Health Score。",
+    "dismiss": "隐藏"
+  },
+  "export": {
+    "title": "导出",
+    "png": "图像（PNG）",
+    "video": "事件视频",
+    "stop": "停止 · {{pct}} %",
+    "videoNeedsEnd": "模拟结束后才能导出视频。",
+    "noVideo": "此浏览器无法录制视频。",
+    "field": "图层",
+    "fields": {
+      "hMax": "最大水深",
+      "vMax": "最大流速",
+      "tWet": "到达时间"
+    },
+    "rasterNote": "整个网格的 GIS 文件，北向朝上；建筑为无数据（NoData）。水深单位为 m，流速单位为 m/s，到达时间单位为 s。",
+    "crs": "坐标采用 {{crs}}，北向朝上。",
+    "local": "模型未进行地理配准：文件使用其本地平面坐标（米），不含坐标系。"
+  },
+  "capture": {
+    "time": "t = {{t}} / {{end}}",
+    "disclaimer": "简化的示意性模拟：并非经认证的水力计算研究。"
+  },
+  "fit": {
+    "raised": "{{source}}：按其 IFC 声明的高程，比模型首层低 {{d}} m——模型高出周围地面这么多，周围的水永远到不了它的门。已将模拟地面抬高至模型处。建议检查 IFC 的高程（IfcMapConversion.OrthogonalHeight）。",
+    "lowered": "{{source}}：按其 IFC 声明的高程，比模型首层高 {{d}} m——首层被埋在地下。已将模拟地面降低至模型处。建议检查 IFC 的高程（IfcMapConversion.OrthogonalHeight）。",
+    "raisedOff": "{{source}}：比模型首层低 {{d}} m。按现状，模型高出周围地面这么多，周围的水到不了它的门。",
+    "loweredOff": "{{source}}：比模型首层高 {{d}} m。按现状，首层被埋在地下，周围的任何积水都会高于它的门。",
+    "switch": "将地面贴合到模型首层",
+    "source": {
+      "map": "地图地形",
+      "dem": "导入的 DEM"
+    }
+  },
+  "data": {
+    "map": "地形和建筑来自地图模式在你许可后从公共数据提供方下载的数据（地形：加泰罗尼亚为 ICGC，日本为 GSI，其他地区为 AWS Open Data；建筑：通过 Overpass API 获取的 OpenStreetMap），这些提供方会看到场地所在区域和你的 IP 地址。模拟只读取这些数据：模型和结果都不会离开你的浏览器。关闭这两个选项即可仅用 IFC 进行模拟；许可可在「地图」面板中撤回。"
+  }
+}

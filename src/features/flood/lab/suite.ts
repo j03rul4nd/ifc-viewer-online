@@ -6,7 +6,7 @@
 // from scripts/flood/gpu-suite.mjs in a real Chrome (vitest has no GPU).
 
 import { CpuInertialSolver } from '../core/cpu-inertial'
-import { cityDemo, damBreak, lakeAtRest, rainOnPlane, type FloodCase } from '../core/cases'
+import { cityDemo, damBreak, infiltrationBasin, lakeAtRest, rainOnPlane, type FloodCase } from '../core/cases'
 import type { FloodBackend, FloodSolver } from '../core/solver-api'
 import { WebGpuInertialSolver } from '../gpu/webgpu-inertial'
 import { WebGl2InertialSolver } from '../gpu/webgl2-inertial'
@@ -77,6 +77,8 @@ export async function runCase(c: FloodCase, backend: FloodBackend): Promise<Case
     m.massErrorCpu = cs.massError
     m.volumeGpu = gs.volume
     m.volumeCpu = cs.volume
+    m.infiltratedGpu = gs.infiltratedVolume
+    m.infiltratedCpu = cs.infiltratedVolume
     m.maxSpeedGpu = maxV
     if (Math.abs(gs.t - c.durationS) > 1e-6) failures.push(`GPU stopped at ${gs.t} s, not ${c.durationS} s`)
 
@@ -107,6 +109,11 @@ export async function runCase(c: FloodCase, backend: FloodBackend): Promise<Case
         check(Math.abs(gs.massError) < 1e-4, `mass error ${gs.massError}`)
         break
       }
+      case 'infiltration':
+        check(m.relL1 < 1e-3, `differs from CPU: relative L1 ${m.relL1}`)
+        check(Math.abs(gs.infiltratedVolume - cs.infiltratedVolume) / Math.max(cs.infiltratedVolume, 1e-9) < 1e-4, `infiltrated ${gs.infiltratedVolume} vs CPU ${cs.infiltratedVolume}`)
+        check(Math.abs(gs.massError) < 1e-4, `mass error ${gs.massError}`)
+        break
       default:
         check(m.relL1 < 2e-2, `differs from CPU: relative L1 ${m.relL1}`)
         check(Math.abs(gs.massError) < 1e-4, `mass error ${gs.massError}`)
@@ -118,7 +125,7 @@ export async function runCase(c: FloodCase, backend: FloodBackend): Promise<Case
   return { case: c.id, backend, pass: failures.length === 0, failures, metrics: m, ms: Math.round(performance.now() - t0) }
 }
 
-export const SUITE_CASES = (): FloodCase[] => [lakeAtRest(64), damBreak(400, 0.5), rainOnPlane(100, 1, 0.01, 0.03, 50, 60), cityDemo(96, 2, 90, 30)]
+export const SUITE_CASES = (): FloodCase[] => [lakeAtRest(64), damBreak(400, 0.5), rainOnPlane(100, 1, 0.01, 0.03, 50, 60), cityDemo(96, 2, 90, 30), infiltrationBasin(80)]
 
 export async function runSuite(backends: FloodBackend[]): Promise<CaseResult[]> {
   const out: CaseResult[] = []

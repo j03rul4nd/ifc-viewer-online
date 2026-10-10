@@ -131,7 +131,28 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL VIEWER · MOBILE LIDAR REPLAY', es: 'VISOR REAL · REPLAY LIDAR MÓVIL' },
     shortTitle: 'TUNNEL IFC + MOBILE LIDAR',
   },
+  // Live open-data twins (docs/DEMOS.md). Keyed by slug: these posts have no
+  // translationKey of their own. The capture is already public (it is also the
+  // live demo's poster), so there is nothing to copy.
+  'barcelona-digital-twin-open-data': {
+    source: 'public/blog/images/barcelona-digital-twin-open-data-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · LIVE OPEN DATA', es: 'VISOR REAL · DATOS ABIERTOS EN VIVO' },
+    shortTitle: 'BARCELONA LIVE TWIN',
+  },
+  'bus-terminal-digital-twin-mqtt': {
+    source: 'public/blog/images/bus-terminal-digital-twin-mqtt-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · LIVE MQTT DATA', es: 'VISOR REAL · DATOS MQTT EN VIVO' },
+    shortTitle: 'HELSINKI LIVE TWIN',
+  },
+  'tokyo-transit-digital-twin-odpt': {
+    source: 'public/blog/images/tokyo-transit-digital-twin-odpt-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · LIVE ODPT DATA', es: 'VISOR REAL · DATOS ODPT EN VIVO' },
+    shortTitle: 'TOKYO LIVE TWIN',
+  },
 }
+
+/** A post's real capture, by its translation cluster or, failing that, its slug. */
+const realCaptureFor = (post) => REAL_CAPTURE_BY_KEY[post.translationKey ?? post.slug]
 
 // ── HTML template ──────────────────────────────────────────────────────────────
 function coverHtml({ slug, lang, title, cat }) {
@@ -209,7 +230,7 @@ function imageDataUrl(file) {
 }
 
 function realCoverHtml(post, width, height, overrideTitle) {
-  const capture = REAL_CAPTURE_BY_KEY[post.translationKey]
+  const capture = realCaptureFor(post)
   if (!capture) return coverHtml(post)
 
   const title = overrideTitle ?? post.title
@@ -272,7 +293,7 @@ mkdirSync(OUT, { recursive: true })
 mkdirSync('public/blog/images', { recursive: true })
 
 for (const capture of Object.values(REAL_CAPTURE_BY_KEY)) {
-  copyFileSync(capture.source, `public/blog/images/${capture.publicCopy}`)
+  if (capture.publicCopy) copyFileSync(capture.source, `public/blog/images/${capture.publicCopy}`)
 }
 
 const browser = await chromium.launch({
@@ -284,7 +305,7 @@ const browser = await chromium.launch({
 for (const post of posts) {
   const out = `${OUT}/${post.slug}.png`
   try {
-    const real = REAL_CAPTURE_BY_KEY[post.translationKey]
+    const real = realCaptureFor(post)
     await renderImage(browser, real ? realCoverHtml(post, W, H) : coverHtml(post), out, W, H, 1.5)
     if (real) {
       for (const [width, height] of [[1600, 900], [1200, 900], [1200, 1200], [800, 450]]) {

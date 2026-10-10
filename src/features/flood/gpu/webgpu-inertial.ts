@@ -62,6 +62,7 @@ export class WebGpuInertialSolver implements FloodSolver {
   private readonly bufQ: [GPUBuffer, GPUBuffer]
   private readonly bufMax: GPUBuffer
   private readonly bufBnd: GPUBuffer
+  private readonly bufInf: GPUBuffer
   private readonly bufPartials: GPUBuffer
   private readonly bufDisp: GPUBuffer
 
@@ -136,6 +137,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     pu[4] = this.ivMs; pu[5] = p.friction === 'implicit' ? 1 : 0
     pf[8] = g.dx; pf[9] = p.g; pf[10] = p.theta; pf[11] = p.alpha
     pf[12] = p.hEps; pf[13] = p.dtMax; pf[14] = p.freeSlopeMin; pf[15] = p.wetThreshold
+    pf[16] = p.infiltration?.initialMmH ?? 0; pf[17] = p.infiltration?.finalMmH ?? 0; pf[18] = p.infiltration?.decayPerHour ?? 0
     this.bufParams = this.buffer(PARAMS_BYTES, GPUBufferUsage.UNIFORM | CD, pb)
     const rain = new Float32Array(RAIN_SLOTS)
     rain.set(this.rates)
@@ -173,9 +175,10 @@ export class WebGpuInertialSolver implements FloodSolver {
     this.bufQ = [this.buffer(this.nf * 8, S | CS | CD), this.buffer(this.nf * 8, S | CS | CD)]
     this.bufMax = this.buffer(mx.byteLength, S | CS | CD, mx.buffer)
     this.bufBnd = this.buffer(Math.max(4, this.nb * 4), S | CS | CD)
+    this.bufInf = this.buffer(this.nc * 4, S | CS | CD)
     const groups = Math.ceil(this.nc / IO_WG)
     this.ioGroups = [Math.min(groups, MAX_DIM), Math.ceil(groups / MAX_DIM)]
-    this.bufPartials = this.buffer(this.ioGroups[0] * this.ioGroups[1] * 16, S | CS)
+    this.bufPartials = this.buffer(this.ioGroups[0] * this.ioGroups[1] * 32, S | CS)
     this.bufDisp = this.buffer(this.nc * 8, S | CS)
 
     // Pipelines.
@@ -190,6 +193,7 @@ export class WebGpuInertialSolver implements FloodSolver {
         { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
         { binding: 7, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
         { binding: 8, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+        { binding: 9, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
       ],
     })
     const ioLayout = device.createBindGroupLayout({
@@ -199,6 +203,7 @@ export class WebGpuInertialSolver implements FloodSolver {
         { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
         { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
         { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+        { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
       ],
     })
     const stepModule = device.createShaderModule({ code: STEP_WGSL, label: 'flood-step' })
@@ -229,6 +234,7 @@ export class WebGpuInertialSolver implements FloodSolver {
         { binding: 6, resource: { buffer: qOut } },
         { binding: 7, resource: { buffer: this.bufMax } },
         { binding: 8, resource: { buffer: this.bufBnd } },
+        { binding: 9, resource: { buffer: this.bufInf } },
       ],
     })
     this.stepGroups = [stepGroup(this.bufQ[0], this.bufQ[1]), stepGroup(this.bufQ[1], this.bufQ[0])]
@@ -240,6 +246,7 @@ export class WebGpuInertialSolver implements FloodSolver {
         { binding: 2, resource: { buffer: this.bufMax } },
         { binding: 3, resource: { buffer: this.bufPartials } },
         { binding: 4, resource: { buffer: this.bufDisp } },
+        { binding: 5, resource: { buffer: this.bufInf } },
       ],
     })
   }
@@ -323,7 +330,7 @@ export class WebGpuInertialSolver implements FloodSolver {
   async stats(): Promise<FloodStats> {
     this.guard()
     const nPart = this.ioGroups[0] * this.ioGroups[1]
-    const partBytes = nPart * 16
+    const partBytes = nPart * 32
     const bndBytes = Math.max(4, this.nb * 4)
     const size = partBytes + bndBytes + CTRL_BYTES
     const staging = this.device.createBuffer({ size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
@@ -342,24 +349,28 @@ export class WebGpuInertialSolver implements FloodSolver {
     staging.unmap()
     staging.destroy()
     this.guard()
-    const part = new Float32Array(raw, 0, nPart * 4)
+    const part = new Float32Array(raw, 0, nPart * 8)
     const bnd = new Float32Array(raw, partBytes, this.nb)
     const ctrlU = new Uint32Array(raw, partBytes + bndBytes, CTRL_BYTES / 4)
     let sumH = 0
     let wet = 0
     let hMax = 0
     let vMax = 0
+    let sumInf = 0
     for (let k = 0; k < nPart; k++) {
-      sumH += part[k * 4]
-      wet += part[k * 4 + 1]
-      if (part[k * 4 + 2] > hMax) hMax = part[k * 4 + 2]
-      if (part[k * 4 + 3] > vMax) vMax = part[k * 4 + 3]
+      const o = k * 8
+      sumH += part[o]
+      wet += part[o + 1]
+      if (part[o + 2] > hMax) hMax = part[o + 2]
+      if (part[o + 3] > vMax) vMax = part[o + 3]
+      sumInf += part[o + 4]
     }
     for (let k = 0; k < this.nb; k++) this.outflow += bnd[k]
     const tMs = ctrlU[0]
     const a = this.grid.dx * this.grid.dx
     const volume = sumH * a
     const rainVolume = depthFromRates(this.rates, this.ivMs, tMs) * this.rainArea
+    const infiltratedVolume = sumInf * a
     return {
       t: tMs / 1000,
       dt: ctrlU[2] > 0 ? ctrlU[2] / 1000 : this.lastAdvance.dt,
@@ -368,8 +379,9 @@ export class WebGpuInertialSolver implements FloodSolver {
       floodedArea: wet * a,
       rainVolume,
       outflowVolume: this.outflow,
+      infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
     }
   }
 
@@ -426,7 +438,7 @@ export class WebGpuInertialSolver implements FloodSolver {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    for (const b of [this.bufParams, this.bufRain, this.bufCtrl, this.bufCells, ...this.bufQ, this.bufMax, this.bufBnd, this.bufPartials, this.bufDisp]) b.destroy()
+    for (const b of [this.bufParams, this.bufRain, this.bufCtrl, this.bufCells, ...this.bufQ, this.bufMax, this.bufBnd, this.bufInf, this.bufPartials, this.bufDisp]) b.destroy()
     this.texStatic.destroy()
     if (this.ownsDevice) this.device.destroy()
   }

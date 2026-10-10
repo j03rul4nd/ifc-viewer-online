@@ -336,5 +336,18 @@
       "privacyLink": "informativa sulla privacy",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "Questo link porta dati da altri server",
+    "body": {
+      "layers": "Per mostrare i suoi livelli di dati verranno richiesti dati a questi server:",
+      "layersUrl": "Per mostrare i suoi livelli di dati verrà letta la sua configurazione su questo server, e poi sui server che quella configurazione indica:",
+      "twin": "Per mostrare i suoi dati in tempo reale, l'app si collegherà a questi server:",
+      "scene": "Per mostrare i suoi livelli di dati e i dati in tempo reale, l'app contatterà questi server:"
+    },
+    "sees": "Ogni server vedrà il tuo indirizzo IP e, per i livelli sulla mappa, la zona del sito. Il tuo modello non viene inviato.",
+    "load": "Carica i dati",
+    "skip": "Non ora",
+    "skipped": "I dati esterni del link non sono stati caricati."
   }
 }

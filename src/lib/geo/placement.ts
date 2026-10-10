@@ -15,6 +15,7 @@ import { ok, err, type Result } from '../result'
 import { createLogger } from '../logger'
 import { resolveCrs, gridToWgs84, normalizeEpsgCode, registerCustomProj4 } from './crs'
 import { MERCATOR_MAX_LAT } from './geo-math'
+import { gridConvergence } from './scene-anchor'
 import type { GeoPlacement, GeorefExtraction, PersistedPlacement } from './geo-types'
 
 const log = createLogger('GeoPlacement')
@@ -106,10 +107,15 @@ export function placementFromExtraction(
   if (!conv.value.inDomain) return err(new Error('crsOutOfDomain'))
   if (Math.abs(conv.value.lat) > MERCATOR_MAX_LAT) return err(new Error('outOfRange'))
 
+  // IfcMapConversion's rotation is measured from GRID east, the map's from true
+  // east. Away from the projection's central meridian the two differ by the
+  // meridian convergence: 0.55° at Barcelona in UTM 31N, ~1 m at the far end
+  // of a 100 m model — the IFC visibly turned against its own streets.
+  const convergenceDeg = gridConvergence(def.value, eC, nC) / DEG
   return ok({
     lat: conv.value.lat,
     lon: conv.value.lon,
-    rotationDeg: g.rotationDeg,
+    rotationDeg: g.rotationDeg - convergenceDeg,
     heightOffsetM: statedHeightOffsetM(g),
     source: 'ifc',
     confidence: 'high',

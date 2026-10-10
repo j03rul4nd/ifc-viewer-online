@@ -253,7 +253,20 @@
       "name": "Tokio · Toei-Stationen",
       "hint": "U-Bahn- und Straßenbahnstationen (ODPT) · statisch, ohne Schlüssel"
     },
-    "otherPlaces": "Andere Orte ({{n}})"
+    "otherPlaces": "Andere Orte ({{n}})",
+    "toei-bus": {
+      "name": "Tokio · Toei-Busse (live)",
+      "hint": "Jeder Bus an der zuletzt passierten Haltestelle (ODPT GTFS-Realtime, kein GPS) · alle 30 s, ohne Schlüssel"
+    },
+    "fmi-air-quality": {
+      "name": "Helsinki · Luftqualität (FMI)",
+      "hint": "Stündlicher Luftqualitätsindex, NO₂ und Feinstaub an HSY-Stationen · bis zu 40 min verzögert, ohne Schlüssel"
+    },
+    "fmi-weather": {
+      "name": "Helsinki · Wetterstationen (FMI)",
+      "hint": "Temperatur, Wind, Feuchte und Regen alle 10 min · ohne Schlüssel"
+    },
+    "privacy": "Jede Quelle wird direkt von ihrem Server gelesen (auf der Karte angegeben), der Ihre IP-Adresse und meist den Bereich um den Standort sieht. Vom Modell wird nichts gesendet."
   },
   "live": {
     "toggle": "Live-Aktualisierung",
@@ -740,7 +753,9 @@
     },
     "filterBindings": "Verknüpfungen filtern…",
     "alertsActive": "{{count}} mit Alarm",
-    "summaryFilter": "Nur diese Verknüpfungen zeigen"
+    "summaryFilter": "Nur diese Verknüpfungen zeigen",
+    "mqttTopics": "MQTT-Topics, eines pro Zeile (leer = einfacher WebSocket mit JSON-Nachrichten)",
+    "mqttHint": "Mit Topics ist diese Adresse der WebSocket-Listener eines MQTT-Brokers. Jede Nachricht wird als { topic, …payload } gelesen, einmal pro Sekunde; Nachrichten ohne Geräte-ID werden übersprungen."
   },
   "add": {
     "title": "Daten hinzufügen"
@@ -799,7 +814,22 @@
         "name": "Barcelona · Plaça de Catalunya",
         "description": "Acht georeferenzierte IFC-Modelle mit Bicing, E-Ladestationen, Verkehr und Luftqualität live; die Bicing-Station 65 färbt ihre eigenen Docks."
       },
-      "meta": "{{models}} IFC-Modelle · {{live}} Live-Quellen"
+      "helsinki": {
+        "name": "Helsinki · Rautatientori",
+        "description": "Hauptbahnhof, Dom und Busterminal Elielinaukio mit Luftqualität und Wetter von FMI live; jeder Bussteig leuchtet, solange ein HSL-Bus daran steht (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tokio · Tochōmae (Toei Ōedo)",
+        "description": "Ausgang A4 am Rathaus der Präfektur mit Toei-Bussen live; Status der Ōedo-Linie, ein Zug am Bahnsteig und ein vorbeifahrender Bus färben das Modell."
+      },
+      "waseda": {
+        "name": "Tokio · Waseda (Toden Arakawa)",
+        "description": "Die Endhaltestelle der Straßenbahn: Die Bahnsteigkanten leuchten, solange eine Bahn hält, mit ihrer Nummer darüber; die Anzeigen zeigen den Linienstatus."
+      },
+      "models_one": "{{count}} IFC-Modell",
+      "models_other": "{{count}} IFC-Modelle",
+      "live_one": "{{count}} Live-Quelle",
+      "live_other": "{{count}} Live-Quellen"
     }
   }
 }

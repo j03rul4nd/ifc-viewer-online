@@ -336,5 +336,18 @@
       "privacyLink": "política de privacidade",
       "consentAfter": "."
     }
+  },
+  "externalData": {
+    "title": "Este link traz dados de outros servidores",
+    "body": {
+      "layers": "Para mostrar as suas camadas de dados, serão pedidos dados a estes servidores:",
+      "layersUrl": "Para mostrar as suas camadas de dados, a sua configuração será lida neste servidor e, depois, nos servidores que essa configuração indicar:",
+      "twin": "Para mostrar os seus dados em tempo real, a app vai ligar-se a estes servidores:",
+      "scene": "Para mostrar as suas camadas de dados e os dados em tempo real, a app vai contactar estes servidores:"
+    },
+    "sees": "Cada servidor verá o seu endereço IP e, nas camadas sobre o mapa, a zona do local. O seu modelo não é enviado.",
+    "load": "Carregar os dados",
+    "skip": "Agora não",
+    "skipped": "Os dados externos do link não foram carregados."
   }
 }

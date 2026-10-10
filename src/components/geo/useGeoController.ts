@@ -54,7 +54,8 @@ const log = createLogger('GeoPanel')
  * "open" at once, and which one you saw depended on render order.
  */
 export type GeoFlow =
-  | { kind: 'consent' }
+  /** `decide`: someone is waiting for the answer (a shared link that asks for the map). */
+  | { kind: 'consent'; decide?: (accepted: boolean) => void }
   | { kind: 'crs'; epsg: string }
   | { kind: 'manual' }
   | { kind: 'terms' }
@@ -75,6 +76,10 @@ export interface GeoController {
   /** Enable at a resolved placement — the step after the georeference ladder. */
   enableWithPlacement: (placement: GeoPlacement, g: GeorefExtraction | null) => Promise<void>
   acceptConsent: () => void
+  /** Close the consent sheet without consenting. */
+  declineConsent: () => void
+  /** Withdraw the tile consent: the map turns off and asks again before any further request. */
+  revokeConsent: () => Promise<void>
   disable: () => Promise<void>
   applyCrs: (code: string, proj4: string) => Promise<boolean>
   applyManual: (lat: number, lon: number) => Promise<void>
@@ -287,7 +292,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       })
       // The geo system starts with an empty set, while these were struck out in
       // a previous session and the panel already lists them as hidden.
-      geo.setHiddenFeatures(prefs.hiddenFeatures.map((h) => h.id))
+      geo.setHiddenFeatures([...new Set([...prefs.hiddenFeatures.map((h) => h.id), ...useGeoStore.getState().sceneHidden])])
       const outcome = await geo.setBuildings(true)
       // 'off' is not a result, it is "this call was superseded" — map mode went
       // down under it, or a later toggle took over. Writing it as 'idle' with
@@ -478,9 +483,18 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
 
   const acceptConsent = useCallback((): void => {
     useGeoStore.getState().setConsent(true)
+    const decide = flow?.kind === 'consent' ? flow.decide : undefined
     setFlow(null)
-    void showOnMap()
-  }, [showOnMap])
+    // Asked on behalf of a link: it turns the map on itself, with its options.
+    if (decide) decide(true)
+    else void showOnMap()
+  }, [showOnMap, flow])
+
+  const declineConsent = useCallback((): void => {
+    const decide = flow?.kind === 'consent' ? flow.decide : undefined
+    setFlow(null)
+    decide?.(false)
+  }, [flow])
 
   const disable = useCallback(async (): Promise<void> => {
     const geo = await getGeo()
@@ -491,6 +505,13 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       enabledAtRef.current = 0
     }
   }, [getGeo])
+
+  const revokeConsent = useCallback(async (): Promise<void> => {
+    if (useGeoStore.getState().mapMode === 'on') await disable()
+    useGeoStore.getState().setConsent(false)
+    setFlow(null)
+    toast(t('privacy.revoked'), 'info')
+  }, [disable, t])
 
   const applyCrs = useCallback(async (codeRaw: string, proj4Raw: string): Promise<boolean> => {
     const activeModelId = useSceneStore.getState().activeModelId
@@ -708,7 +729,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
 
   return useMemo<GeoController>(() => ({
     getGeo, withGeo, flow, setFlow,
-    showOnMap, enableWithPlacement, acceptConsent, disable, applyCrs, applyManual,
+    showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
     toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
@@ -718,7 +739,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     saveGeorefToIfc, refreshAttributions, applyTerrain,
   }), [
     getGeo, withGeo, flow,
-    showOnMap, enableWithPlacement, acceptConsent, disable, applyCrs, applyManual,
+    showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
     toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,

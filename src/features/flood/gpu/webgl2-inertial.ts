@@ -5,8 +5,8 @@
 // EXT_color_buffer_float to render into float textures (WebGL2 everywhere that
 // matters has it; without it the feature is reported unsupported).
 //
-// The CPU waits for a batch with a fence it polls between tasks, never with a
-// blocking read, so a long batch does not freeze the thread it runs on.
+// In the worker the CPU waits for a batch with a blocking read (nothing else
+// runs on that thread); on a page's main thread it polls a fence between tasks.
 
 import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '../core/grid'
 import { depthFromRates, intervalMs, ratesMs } from '../core/hyetograph'
@@ -189,7 +189,13 @@ export class WebGl2InertialSolver implements FloodSolver {
       units(u, ['uQ', 'uPrev', 'uCtrl'])
       gl.uniform1i(u.uNx, nx); gl.uniform1i(u.uNy, ny); gl.uniform1i(u.uW, this.bndW); gl.uniform1f(u.uDx, g.dx)
     })
-    set('cont', (u) => { units(u, ['uQ', 'uCells', 'uMax', 'uStatic', 'uCtrl']); geo(u); gl.uniform1f(u.uWet, p.wetThreshold) })
+    set('cont', (u) => {
+      units(u, ['uQ', 'uCells', 'uMax', 'uStatic', 'uCtrl'])
+      geo(u)
+      gl.uniform1f(u.uWet, p.wetThreshold)
+      const inf = p.infiltration
+      gl.uniform3f(u.uInf, inf?.initialMmH ?? 0, inf?.finalMmH ?? 0, inf?.decayPerHour ?? 0)
+    })
     set('reduce', (u) => { units(u, ['uSrc']); gl.uniform1f(u.uWet, p.wetThreshold) })
 
     this.reduceHmax()
@@ -314,8 +320,15 @@ export class WebGl2InertialSolver implements FloodSolver {
     if (e !== this.gl.NO_ERROR) throw new Error(`flood: WebGL error 0x${e.toString(16)}`)
   }
 
-  /** Waits for the GPU without blocking the thread (fence polled between tasks). */
+  /**
+   * Waits for the GPU. In a worker (the app's case) the read that follows
+   * simply blocks until the work is done — that thread has nothing else to do,
+   * and polling a fence with timers made a hidden tab crawl (timers are
+   * throttled there: measured ×46 real time instead of ×450). On a page's
+   * main thread the fence is polled between tasks so the page stays live.
+   */
   private async finish(): Promise<void> {
+    if (typeof document === 'undefined') return
     const gl = this.gl
     const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
     gl.flush()
@@ -325,7 +338,7 @@ export class WebGl2InertialSolver implements FloodSolver {
         const r = gl.clientWaitSync(sync, 0, 0)
         if (r === gl.ALREADY_SIGNALED || r === gl.CONDITION_SATISFIED) return
         if (r === gl.WAIT_FAILED) throw new Error('flood: GPU wait failed')
-        await new Promise((res) => setTimeout(res, 1))
+        await new Promise((res) => setTimeout(res, 0))
       }
     } finally {
       gl.deleteSync(sync)
@@ -398,6 +411,9 @@ export class WebGl2InertialSolver implements FloodSolver {
     const top = this.reduce(this.sLevels, this.cells[0], 2, 3)
     await this.finish()
     const s = this.readFloat(top, 4)
+    // The same levels again, for the infiltrated depth (cells.w).
+    const infTop = this.reduce(this.sLevels, this.cells[0], 4, 3)
+    const sumInf = this.readFloat(infTop, 4)[0]
     const bnd = this.readFloat(this.bnd[0], 1)
     for (let k = 0; k < this.nb; k++) this.outflow += bnd[k]
     // Restart the per-read boundary accumulators (see the WebGPU solver).
@@ -410,6 +426,7 @@ export class WebGl2InertialSolver implements FloodSolver {
     const a = this.grid.dx * this.grid.dx
     const volume = s[0] * a
     const rainVolume = depthFromRates(this.rates, this.ivMs, ctrl[0]) * this.rainArea
+    const infiltratedVolume = sumInf * a
     return {
       t: ctrl[0] / 1000,
       dt: ctrl[1] > 0 ? ctrl[1] / 1000 : this.lastDt,
@@ -418,8 +435,9 @@ export class WebGl2InertialSolver implements FloodSolver {
       floodedArea: s[1] * a,
       rainVolume,
       outflowVolume: this.outflow,
+      infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
     }
   }
 

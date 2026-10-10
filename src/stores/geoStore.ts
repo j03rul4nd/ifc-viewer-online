@@ -181,6 +181,9 @@ function lsSet(key: string, value: string): void {
     log.warn(`localStorage write failed for ${key}:`, e)
   }
 }
+function lsDel(key: string): void {
+  try { localStorage.removeItem(key) } catch { /* storage unavailable: nothing was kept */ }
+}
 
 function readTerms(): Record<string, boolean> {
   const raw = lsGet(LS_TERMS)
@@ -296,6 +299,11 @@ interface GeoStore {
    * deliberately struck out to come back.
    */
   hiddenFeatures: HiddenMapFeature[]
+  /**
+   * Features a scene or link hides (`?hide=`, a scene's view.hide) for this
+   * page view only: drawn hidden alongside `hiddenFeatures`, never saved.
+   */
+  sceneHidden: string[]
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   /**
@@ -358,7 +366,12 @@ interface GeoStore {
   disable: () => void
   setBaseLayer: (id: string) => void
   acceptTerms: (id: string) => void
-  setConsent: (v: boolean) => void
+  /**
+   * Give or withdraw the tile consent. `persist: false` grants it for this
+   * page session only (an embedding host's decision must not become this
+   * visitor's stored choice on the app's own origin).
+   */
+  setConsent: (v: boolean, persist?: boolean) => void
   setTerrainEnabled: (v: boolean) => void
   setTerrainStatus: (epoch: number, s: TerrainStatus) => void
   setTerrainStyle: (s: TerrainStyle) => void
@@ -388,6 +401,7 @@ interface GeoStore {
   setSuppressContext: (v: boolean) => void
   /** Strike out one mapped feature. Idempotent on id. */
   hideFeature: (f: HiddenMapFeature) => void
+  setSceneHidden: (ids: string[]) => void
   /** Put one back. */
   showFeature: (id: string) => void
   /** Put every one of them back. */
@@ -443,6 +457,7 @@ export const useGeoStore = create<GeoStore>()(
       vehicles:           lsGet(LS_VEHICLES) === '1',
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       hiddenFeatures:     readHiddenFeatures(),
+      sceneHidden:        [],
       buildingsTruncated: false,
       buildingsOverture: 0,
       buildingsFallback: false,
@@ -529,8 +544,11 @@ export const useGeoStore = create<GeoStore>()(
         set({ termsAccepted: next }, false, 'acceptTerms')
       },
 
-      setConsent: (v) => {
-        if (v) lsSet(LS_CONSENT, '1')
+      setConsent: (v, persist = true) => {
+        // Withdrawing has to be as complete as giving: the stored '1' would
+        // have granted it again on the next visit.
+        if (v && persist) lsSet(LS_CONSENT, '1')
+        else if (!v) lsDel(LS_CONSENT)
         set({ consentGiven: v }, false, 'setConsent')
       },
 
@@ -597,6 +615,8 @@ export const useGeoStore = create<GeoStore>()(
         lsSet(LS_SUPPRESS, v ? '1' : '0')
         set({ suppressContext: v }, false, 'setSuppressContext')
       },
+
+      setSceneHidden: (ids) => set({ sceneHidden: [...new Set(ids)] }, false, 'setSceneHidden'),
 
       hideFeature: (f) => {
         const current = get().hiddenFeatures

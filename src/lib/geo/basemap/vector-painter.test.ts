@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { boxesOverlap, placeLabels, toPaintTile, type LabelCandidate } from './vector-painter'
+import { boxesOverlap, paintTile, placeLabels, toPaintTile, type LabelCandidate } from './vector-painter'
 import { getMapStyle, type LabelLayer } from './map-styles'
 
 const layer = getMapStyle('standard').layers.find((l) => l.id === 'place') as LabelLayer
@@ -57,5 +57,47 @@ describe('toPaintTile', () => {
     expect([f.minX, f.minY, f.maxX, f.maxY]).toEqual([0, 0, 100, 50])
     expect(Array.from(f.parts[0])).toEqual([0, 0, 100, 0, 100, 50])
     expect(toPaintTile(vt)).toBe(t)
+  })
+})
+
+describe('paintTile ground labels', () => {
+  // A canvas that records the text drawn and does nothing else.
+  function recordingCtx(): { ctx: CanvasRenderingContext2D; texts: string[] } {
+    const texts: string[] = []
+    const target: Record<string, unknown> = {
+      measureText: (t: string) => ({ width: t.length * 7, actualBoundingBoxAscent: 9, actualBoundingBoxDescent: 3 }),
+      fillText: (t: string) => { texts.push(t) },
+      strokeText: (t: string) => { texts.push(t) },
+    }
+    const ctx = new Proxy(target, {
+      get: (o, k: string) => (k in o ? o[k] : () => {}),
+      set: (o, k: string, v) => { o[k] = v; return true },
+    }) as unknown as CanvasRenderingContext2D
+    return { ctx, texts }
+  }
+  const street = toPaintTile({
+    layers: {
+      transportation_name: {
+        length: 1, extent: 4096,
+        feature: () => ({
+          type: 2, properties: { class: 'primary', name: 'Chuo-dori', 'name:en': 'Chuo-dori' },
+          loadGeometry: () => [[{ x: 200, y: 2048 }, { x: 3900, y: 2048 }]],
+        }),
+      },
+    },
+  })
+  const frames = [{ tile: street, left: 0, top: 0, right: 512, bottom: 512 }]
+  const opts = { width: 512, height: 512, zoom: 16, pixelScale: 1, language: 'en' }
+
+  it('bakes street names into a basemap tile', () => {
+    const { ctx, texts } = recordingCtx()
+    paintTile(ctx, getMapStyle('standard'), frames, opts)
+    expect(texts.join(' ')).toContain('Chuo-dori')
+  })
+
+  it('bakes no text when ground labels are off (the relief drape)', () => {
+    const { ctx, texts } = recordingCtx()
+    paintTile(ctx, getMapStyle('standard'), frames, { ...opts, groundLabels: false })
+    expect(texts).toEqual([])
   })
 })

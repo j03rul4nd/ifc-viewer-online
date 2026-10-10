@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
+// The fragments worker, emitted with the build (served from this origin, see initPromise).
+import fragmentsWorkerUrl from '@thatopen/fragments/worker?url'
 import { createSceneGizmo, type SceneGizmo, type GizmoOptions } from './scene-gizmo'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
@@ -17,6 +19,7 @@ import { toIfcAxes } from './measure/measure-math'
 import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './measure/section-math'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { ownerModelId } from './element-owner'
+import { pivotForYaw } from './geo/multi-placement'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
@@ -846,6 +849,12 @@ export interface ViewerAPI {
    */
   getSolarAnalysis(): Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI>
   /**
+   * Lazily load the rain-flood simulation (grid from the IFC and the map,
+   * water layer, GPU solver in a worker) — its own chunk, created once per
+   * viewer, disposed with it.
+   */
+  getFlood(): Promise<import('../features/flood/system').FloodSystemAPI>
+  /**
    * Lazily load and return the point cloud subsystem (separate chunk, created
    * once per viewer, disposed with it). Point clouds render in THIS scene with
    * THIS camera; the IFC model is never moved to accommodate them.
@@ -1236,6 +1245,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
   let geoPointerSuppressed = false
+  /** The flood probe owns the click (no hover, no selection) while it is armed. */
+  let floodPointerSuppressed = false
   // Move/turn handle — created on first use (lib/scene-gizmo).
   let sceneGizmo: SceneGizmo | null = null
   /** Grouping pushed by the app; the default for framing calls without one. */
@@ -1258,6 +1269,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let solarSystemInstance: import('./solar/solar-system').SolarSystemAPI | null = null
   let solarLoadPromise: Promise<import('./solar/solar-system').SolarSystemAPI> | null = null
   let solarAnalysisInstance: import('./solar-analysis/analysis-system').SolarAnalysisAPI | null = null
+  let floodPromise: Promise<import('../features/flood/system').FloodSystemAPI> | null = null
+  let floodInstance: import('../features/flood/system').FloodSystemAPI | null = null
   let solarAnalysisPromise: Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI> | null = null
 
   // Point clouds (lazy chunk) — set by getPointClouds().
@@ -1598,15 +1611,27 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   views.world = world
 
   const initPromise = (async () => {
-    const workerURL = await OBC.FragmentsManager.getWorker()
-    fragmentsManager.init(workerURL)
+    // Both from this origin. The libraries' defaults fetched them from unpkg
+    // on every start: the fragments worker as code run from a blob (no
+    // integrity check), and web-ifc's WASM at `web-ifc@>=<peer>` — whatever
+    // version unpkg resolved that to, not the one installed. The worker is
+    // the package's own export, emitted with the build; the WASM is the copy
+    // the build already ships (vite.config copyWebIfcWasm), as our workers use.
+    fragmentsManager.init(fragmentsWorkerUrl)
     // fragments aligns every model to the FIRST one it loaded, whatever that
     // one is: a UTM model loaded after a local one is sent back to its
     // 4,600 km coordinates, and a local model loaded after a UTM one is thrown
     // that far the other way. The scene datum (reconcileCoordination) does
     // this job with the knowledge fragments lacks — which models share a site.
     fragmentsManager.core.settings.autoCoordinate = false
-    await ifcLoader.setup()
+    await ifcLoader.setup({
+      autoSetWasm: false,
+      wasm: {
+        ...ifcLoader.settings.wasm,
+        path: import.meta.env.DEV ? `${import.meta.env.BASE_URL}node_modules/web-ifc/` : import.meta.env.BASE_URL,
+        absolute: true,
+      },
+    })
   })()
 
   /**
@@ -2279,7 +2304,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     aimAt(e)
-    if (geoPointerSuppressed) return // map placement editor owns the pointer
+    if (geoPointerSuppressed || floodPointerSuppressed) return // the map placement editor / the flood probe owns the pointer
 
     // Section handles first (they only answer while the section panel is
     // open), then the measurement tool. Both draw their own pointer feedback,
@@ -2340,7 +2365,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerUp = (e: PointerEvent): void => {
-    if (geoPointerSuppressed) return   // map placement editor owns the pointer
+    if (geoPointerSuppressed || floodPointerSuppressed) return   // the map placement editor / the flood probe owns the pointer
     // A short click on a gizmo axis would otherwise select the element behind
     // it — and swap the active model out from under the handle being used.
     if (pressOnGizmo) { pressOnGizmo = false; return }
@@ -4745,6 +4770,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
               z: pivot.position.z + offset.z,
             } }, modelId)
           },
+          // A satellite drawn in a frame rotated against the anchor's: turned
+          // about a world point (its centre), which stays where it is.
+          setModelYaw: (modelId, yawRad, about) => {
+            const pivot = modelPivots.get(modelId)
+            if (!pivot) return
+            const p = pivotForYaw(pivot.position, pivot.rotation.y, yawRad, about)
+            const DEG = 180 / Math.PI
+            self.setModelTransform({
+              position: { x: p.x, y: pivot.position.y, z: p.z },
+              rotation: { x: pivot.rotation.x * DEG, y: yawRad * DEG, z: pivot.rotation.z * DEG },
+            }, modelId)
+          },
         })
         return geoSystemInstance
       })
@@ -4803,6 +4840,56 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         return solarAnalysisInstance
       })
       return solarAnalysisPromise
+    },
+
+    getFlood() {
+      const self = this
+      floodPromise ??= import('../features/flood/system').then((m) => {
+        floodInstance = m.createFloodSystem({
+          renderer: world.renderer!.three,
+          scene: world.scene.three,
+          getLoadedModelIds: () => self.getLoadedModelIds(),
+          getFragmentsModel: (id) => (modelObjects.get(id) ?? null) as never,
+          getModelFootprint: (id) => self.getModelFootprint(id),
+          getModelBounds: (id) => self.getModelBounds(id),
+          getStoreyLevels: () => self.getStoreyLevels(),
+          getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
+          requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true },
+          setGridVisible: (v) => self.setGridVisible(v),
+          camera: () => world.camera.three,
+          canvas: world.renderer!.three.domElement,
+          setPointerSuppressed: (on) => { floodPointerSuppressed = on },
+          getItemsOfClasses: async (id, classes) => {
+            const model = modelObjects.get(id)
+            if (!model) return []
+            const res = await model.getItemsOfCategories(classes.map((c) => new RegExp(`^${c}$`, 'i')))
+            return Object.entries(res).map(([k, ids]) => ({ ifcClass: k.replace(/[\^$]/g, '').toUpperCase(), ids }))
+          },
+          getBoxes: async (id, ids) => {
+            const model = modelObjects.get(id)
+            if (!model) return ids.map(() => null)
+            const out: Array<{ min: Vec3Like; max: Vec3Like } | null> = []
+            for (let i = 0; i < ids.length; i += 2000) {
+              const boxes = await model.getBoxes(ids.slice(i, i + 2000))
+              for (const b of boxes) out.push(b && !b.isEmpty() ? { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } } : null)
+            }
+            return out
+          },
+          getElementsInfo: async (id, ids) => (await self.getElementsDetail(ids, id)).map((d) => ({
+            expressId: d.expressId, name: d.data?.name ?? null, globalId: d.data?.globalId ?? null, storey: d.data?.storey ?? null,
+          })),
+          addCapturePainter: (paint) => self.addCapturePainter(paint),
+          frameBox: (min, max) => {
+            tuneSceneToBounds(new THREE.Box3(new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, max.y, max.z)))
+            const cam = world.camera.three as THREE.PerspectiveCamera
+            // From the south-west, looking down: the whole simulated area and the depth of the water.
+            const pose = fitPose({ min, max }, { azimuthDeg: 225, elevationDeg: 38 }, cam.fov ?? 45, cam.aspect ?? 16 / 9, 0.92)
+            void world.camera.controls.setLookAt(pose.position.x, pose.position.y, pose.position.z, pose.target.x, pose.target.y, pose.target.z, true)
+          },
+        })
+        return floodInstance
+      })
+      return floodPromise
     },
 
     getSolar() {
@@ -5034,6 +5121,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       vectorLoadPromise = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
+      try { floodInstance?.dispose() } catch { /* ok */ }
+      floodInstance = null
+      floodPromise = null
       solarSystemInstance = null
       solarLoadPromise    = null
       try { geoSystemInstance?.dispose() } catch { /* ok */ }

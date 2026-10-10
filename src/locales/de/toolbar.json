@@ -45,6 +45,7 @@
   "compare": "Vergleichen",
   "compareTooltip": "Versionen Ihres IFC-Satzes vergleichen: Änderungen, IDS und BCF",
   "map": "Karte",
+  "flood": "Überflutung",
   "mapTooltip": "Modell auf einer echten Karte anzeigen (georeferenziert)",
   "embed": "Einbetten",
   "embedTooltip": "Einbettbares iFrame / Link für dieses Modell abrufen",

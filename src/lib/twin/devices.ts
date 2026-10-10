@@ -37,11 +37,16 @@ export interface DeviceMapping {
 export interface DeviceSource {
   id: string
   name: string
-  /** http(s) URL, or `sim:<preset>` for the built-in simulator. */
+  /** http(s) URL, ws(s):// stream, or `sim:<preset>` for the built-in simulator. */
   url: string
   intervalS: number
   mapping: DeviceMapping
   enabled: boolean
+  /**
+   * MQTT topic filters: with them, a ws(s):// URL is an MQTT broker's
+   * WebSocket listener (mqtt-ws.ts) and every message is `{ topic, …payload }`.
+   */
+  topics?: string[]
 }
 
 export type MetricValue = string | number | boolean | null
@@ -53,6 +58,17 @@ export interface Reading {
   props: FlatProp[]
   /** When the SOURCE says it measured this (ms), else when we received it. */
   at: number
+}
+
+/** MQTT topic filters as stored: non-empty strings, or nothing. */
+export function cleanTopics(v: unknown): string[] | undefined {
+  const list = Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string' && t.trim() !== '').map((t) => t.trim()) : []
+  return list.length ? list : undefined
+}
+
+/** A source as it is written to a file or a scene: no secrets, no runtime state. */
+export function portableSource({ id, name, url, intervalS, mapping, enabled, topics }: DeviceSource): DeviceSource {
+  return { id, name, url, intervalS, mapping, enabled, ...(topics?.length ? { topics } : {}) }
 }
 
 /** Key of a device across sources. */
@@ -83,7 +99,11 @@ export function parseTime(v: unknown): number | null {
 const isPlainObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 
 /** Turn one API response into readings. Never throws: an unusable body gives []. */
-export function parseReadings(body: unknown, source: Pick<DeviceSource, 'id' | 'mapping'>, receivedAt: number): Reading[] {
+export function parseReadings(
+  body: unknown, source: Pick<DeviceSource, 'id' | 'mapping'>, receivedAt: number,
+  /** Skip an item whose id field is empty instead of naming it by position (streams). */
+  opts: { requireId?: boolean } = {},
+): Reading[] {
   const { listPath, idField, timeField } = source.mapping
   // Known shapes whose answer lies deeper than a rule can reach get the same
   // summary their data layer gets: a GELFS charging location becomes
@@ -101,7 +121,9 @@ export function parseReadings(body: unknown, source: Pick<DeviceSource, 'id' | '
   for (const [fallbackId, item] of items) {
     if (!isPlainObject(item)) continue
     const rawId = idField ? getPath(item, idField) : undefined
-    const deviceId = rawId === undefined || rawId === null || rawId === '' ? fallbackId : String(rawId)
+    const noId = rawId === undefined || rawId === null || rawId === ''
+    if (noId && idField && opts.requireId) continue
+    const deviceId = noId ? fallbackId : String(rawId)
     const at = (timeField ? parseTime(getPath(item, timeField)) : null) ?? receivedAt
     out.push({ sourceId: source.id, deviceId, props: flattenProperties(item), at })
   }

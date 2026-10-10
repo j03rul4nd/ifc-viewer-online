@@ -13,6 +13,7 @@ import { isVectorProviderId, VECTOR_STYLE_IDS, vectorProviderId } from '../../..
 import { SATELLITE_PROVIDERS, useGeoCtl } from '../useGeoController'
 import { Caption, Choices, Group, Hint } from '../ui'
 import { LookChoices, LookTuningSliders } from './LookChoices'
+import { MapPrivacy } from './MapPrivacy'
 
 export function useBasemapOptions(withCustom: boolean) {
   const { t } = useTranslation('geo')
@@ -65,6 +66,7 @@ export function BasemapSection() {
       <LookTuningSliders />
       {/* What the licence pill on the canvas says, readable at panel scale. */}
       {attributions.length > 0 && <Hint>{attributions.join(' · ')}</Hint>}
+      <MapPrivacy />
     </Group>
   )
 }

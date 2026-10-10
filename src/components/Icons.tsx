@@ -53,6 +53,7 @@ export const GitCompare = (p: IconProps) => <Icon {...p}><circle cx="6" cy="6" r
 export const Shield = (p: IconProps) => <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
 /** Live devices: a building whose state arrives over the air. */
 export const Devices = (p: IconProps) => <Icon {...p}><path d="M3 11l9-7 9 7v9H3z" /><path d="M9 15a4 4 0 016 0M7 12.5a7 7 0 0110 0" /><circle cx="12" cy="17.5" r="0.9" /></Icon>
+export const CloudRain = (p: IconProps) => <Icon {...p}><path d="M7 14.5a4 4 0 01-.4-7.98A5.5 5.5 0 0117.4 7.6 3.5 3.5 0 0117 14.5" /><path d="M8.5 17.5L7.5 20M12.5 17L11.5 19.5M16.5 17.5L15.5 20" /></Icon>
 export const Globe = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" /></Icon>
 export const Comment = (p: IconProps) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 0112 3a8.38 8.38 0 019 8.5z" /></Icon>
 

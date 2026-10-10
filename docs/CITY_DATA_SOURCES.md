@@ -26,6 +26,29 @@ configures (their own, optional), or recorded here as unavailable in the browser
 | `catastro` | Dirección General del Catastro | WFS 2.0, GML only | static | Catastro terms |
 | `icgc-municipis` | ICGC | WFS 2.0 | static | CC BY 4.0 |
 | `rodalies` | Renfe GTFS-RT (JSON) | **no CORS** → only through the user's proxy | max-age 30 | CC BY 4.0 |
+| `toei-bus` | Toei buses, via ODPT (key-less endpoint) | GTFS-Realtime **protobuf** → `gtfs-rt-pb.ts` | `no-store`; polled every 30 s. ~520 vehicles. **Not GPS**: each bus is placed at the stop it last passed, at the time it passed it | CC BY 4.0 (ODPT notice) |
+| `fmi-air-quality` | Finnish Meteorological Institute open data (HSY stations) | WFS stored query, `::simple` XML → `bswfs.ts` | hourly means, up to ~40 min late; 3 h window; polled every 15 min. 11 stations in the Helsinki box | CC BY 4.0 (FMI) |
+| `fmi-weather` | Finnish Meteorological Institute open data | WFS stored query, `::simple` XML → `bswfs.ts` | 10-min observations; polled every 10 min. 7 stations in the Helsinki box | CC BY 4.0 (FMI) |
+
+FMI publishes a limit of **600 requests per 5 minutes per IP**, shared by everyone
+behind that IP; two layers polled every 10–15 min are far from it.
+
+### Device sources (live twins)
+
+Read by the operational twin (`src/lib/twin/`), not drawn as map layers. All verified
+from a browser on 2026-10-10.
+
+| Source | URL | Format | What a binding reads |
+|---|---|---|---|
+| HSL vehicle positions (HFP) | `wss://mqtt.hsl.fi:443/`, topic `/hfp/v2/journey/ongoing/vp/<mode>/…/<geohash>/#` | **MQTT over WebSocket** (`mqtt-ws.ts`), JSON `{ VP: … }`, ~1 message per vehicle per second | `VP.stop` = the HSL stop a vehicle is at (empty between stops), `VP.drst` doors, `VP.spd`, `VP.desi` line. Anonymous; a WebSocket is not subject to CORS |
+| Toei trains and trams | `https://api-public.odpt.org/api/v4/odpt:Train?odpt:operator=odpt.Operator:Toei` | JSON-LD, `no-store` | `odpt:fromStation` (the station a train is at or has just left), `odpt:toStation` (empty = at the station), `odpt:trainNumber`, `dc:date`. About 100 trains |
+| Toei line status | `https://api-public.odpt.org/api/v4/odpt:TrainInformation?odpt:operator=odpt.Operator:Toei` | JSON-LD | Free Japanese text; `odpt:trainInformationStatus` appears only for delays of **15 min or more** |
+| Toei buses | `https://api-public.odpt.org/api/v4/gtfs/realtime/ToeiBus` | GTFS-Realtime protobuf | `entity[].vehicle.stopId` (`2248-01` style, matching the Toei bus GTFS `stops.txt`) and `vehicle.timestamp` (when it passed) |
+
+What a stop id means comes from the operator's static GTFS (HSL:
+`infopalvelut.storage.hsldev.com/gtfs/hsl.zip`, 77 MB; Toei buses:
+`api-public.odpt.org/api/v4/files/Toei/data/ToeiBus-GTFS.zip`, behind a redirect).
+They are read once, offline, to pick the ids a scene binds — never by the browser.
 
 Other sources verified with CORS that have no preset yet (good next candidates):
 
@@ -47,6 +70,7 @@ Other sources verified with CORS that have no preset yet (good next candidates):
 | Source | What it gives | Status |
 |---|---|---|
 | Renfe GTFS-RT (`gtfsrt.renfe.com`) | Rodalies train positions | preset marked "proxy"; candidate for a paid-tier proxy |
+| HSL GTFS-Realtime (`realtime.hsl.fi/realtime/…/v2/hsl`) | vehicle positions, trip updates, alerts (protobuf) | no CORS; the same vehicles are reachable over HFP MQTT (above) |
 | Barcelona itineraries (`www.bcn.cat/transit/dades/dadesitineraris.dat`) | travel times on 78 itineraries | not offered |
 | ACA river gauges (`aplicacions.aca.gencat.cat/sdim2/apirest`) | river level / flow | not offered |
 | SCT incidents (`www.gencat.cat/transit/opendata/incidenciesGML.xml`) | traffic incidents (GML) | not offered |
@@ -80,6 +104,20 @@ responses captured from the real servers (`__fixtures__/`).
   drops the redundant copies from the attributes, and picks a unique id column.
 - **`join.ts` `uniqueByKey`** de-duplicates geometry tables that list a place once per
   variable, dropping the attributes that differ between those rows.
+- **`gtfs-rt-pb.ts` — GTFS-Realtime protobuf.** A small hand-written decoder (header and
+  VehiclePosition; trip updates and alerts are skipped field by field) whose output has
+  the shape of GTFS-Realtime's JSON mapping, so layers and twin bindings read protobuf
+  and JSON feeds the same way.
+- **`bswfs.ts` — FMI's "simple" WFS.** (place, time, parameter, value) triples become
+  one station per place with the newest **measured** value of each parameter: a `NaN`
+  (not yet published) never hides an older number. The answer carries no station names.
+- **`../twin/mqtt-ws.ts` — MQTT 3.1.1 over WebSocket**, subscribe-only (QoS 0, PUBACK for
+  QoS 1). A twin source with `topics` connects to a broker's WebSocket listener;
+  messages are read once a second, newest per device, and a message without the
+  device id is skipped.
+
+Twin device sources accept the same formats as layers: JSON, GTFS-Realtime protobuf
+and FMI's simple WFS (`deviceBody` in `device-runner.ts`).
 
 ## 4. Adding a provider
 
