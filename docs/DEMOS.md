@@ -144,8 +144,15 @@ With the SDK (v1.17), the page can also react to the scene:
 
 ### Captures
 
-None are committed yet. Suggested shots, taken in the app with *Capture* (the
-live values are painted into PNGs, clips and GIFs):
+Published with the articles (2026-10-10), taken headless on the real GPU from
+`?scene=…&embed=1&ui=article&camera=…`: `public/blog/images/barcelona-digital-twin-*`,
+`bus-terminal-digital-twin-*` and `tokyo-transit-digital-twin-*`. The posts are
+`/blog/barcelona-digital-twin-open-data/`, `/blog/bus-terminal-digital-twin-mqtt/`
+and `/blog/tokyo-transit-digital-twin-odpt/`, in all 10 languages, each with its
+scene as a live demo (`ToolDemo` ids `twin-*`).
+
+More shots worth taking in the app with *Capture* (the live values are painted
+into PNGs, clips and GIFs):
 
 1. The opening view (the scene's camera): the square from the south-west, Bicing
    markers and the fountains.
