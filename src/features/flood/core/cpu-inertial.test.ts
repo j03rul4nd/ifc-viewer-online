@@ -31,6 +31,7 @@ describe('the step rule', () => {
 })
 
 describe('lake at rest', () => {
+  // CPU-bound (~2 s alone): 30 simulated minutes on 2304 cells, ~4 s under the full suite's parallel load.
   it('stays perfectly still over a bumpy bed with islands and an obstacle', () => {
     const c = lakeAtRest(48)
     const s = run(c)
@@ -46,10 +47,11 @@ describe('lake at rest', () => {
     const st = s.statsSync()
     expect(st.t).toBe(c.durationS)
     expect(Math.abs(st.massError)).toBeLessThan(1e-12)
-  })
+  }, 30_000)
 })
 
 describe('mass balance', () => {
+  // CPU-bound (~3 s alone): 45 simulated minutes on 3000 cells, past 5 s under the full suite's parallel load.
   it('conserves water in a closed basin under rain, to round-off', () => {
     const grid = inclinedPlaneDemo({
       nx: 60, ny: 50, dx: 2, slopeX: 0.01, slopeY: 0.003, roughnessAmplitude: 0.6, seed: 3,
@@ -71,7 +73,7 @@ describe('mass balance', () => {
     expect(Math.min(...f.h)).toBeGreaterThanOrEqual(0)
     // The obstacles stayed dry.
     for (let c = 0; c < f.h.length; c++) if (grid.blocked[c]) expect(f.h[c]).toBe(0)
-  })
+  }, 30_000)
 
   it('accounts for what leaves through free edges', () => {
     const grid = inclinedPlaneDemo({ nx: 40, ny: 30, dx: 2, slopeX: 0.02 })
