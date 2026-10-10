@@ -252,6 +252,7 @@ export class CpuInertialSolver implements FloodSolver {
     // (never more than the water there).
     const tEnd = (this.tMs + dtMs) / 1000
     const loss = infiltrationRate(p.infiltration, this.tMs / 1000) * dt
+    const infil = this.grid.infiltration
     let hm = 0
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
@@ -265,7 +266,7 @@ export class CpuInertialSolver implements FloodSolver {
         let hn = h[c] + k * (qL - qR + qB - qT) + dt * rate * rainFactor[c]
         if (hn < 0) hn = 0
         if (loss > 0) {
-          const l = Math.min(hn, loss)
+          const l = Math.min(hn, infil ? loss * infil[c] : loss)
           hn -= l
           this.inf[c] += l
         }

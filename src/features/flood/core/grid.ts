@@ -48,6 +48,12 @@ export interface FloodGrid {
   manning: Float32Array
   /** Initial depth per cell, metres. Absent = dry. */
   h0?: Float32Array
+  /**
+   * How much of the soil's infiltration each cell takes (0 = sealed: asphalt,
+   * a roof; 1 = the soil as chosen; more where the ground is looser). Absent =
+   * 1 everywhere. Scales the Horton curve, never replaces it.
+   */
+  infiltration?: Float32Array
   frame?: GridFrame
 }
 
@@ -83,9 +89,11 @@ export function validateGrid(g: FloodGrid): FloodGrid {
     if (arr.length !== n) throw new Error(`flood grid: ${name} has ${arr.length} cells, expected ${n}`)
   }
   if (g.h0 && g.h0.length !== n) throw new Error(`flood grid: h0 has ${g.h0.length} cells, expected ${n}`)
+  if (g.infiltration && g.infiltration.length !== n) throw new Error(`flood grid: infiltration has ${g.infiltration.length} cells, expected ${n}`)
   for (let c = 0; c < n; c++) {
     if (!Number.isFinite(g.z[c])) throw new Error(`flood grid: non-finite elevation at cell ${c}`)
     if (!(g.manning[c] >= 0)) throw new Error(`flood grid: bad Manning's n at cell ${c}`)
+    if (g.infiltration && !(g.infiltration[c] >= 0)) throw new Error(`flood grid: bad infiltration factor at cell ${c}`)
     if (g.blocked[c]) {
       g.rainFactor[c] = 0
       if (g.h0) g.h0[c] = 0

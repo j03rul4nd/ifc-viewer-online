@@ -32,6 +32,9 @@ import type { RoofRunoff } from './raster/rain-routing'
 import { readDemFile, sampleDem, type DemRaster } from './raster/dem-import'
 import { affineFrom, elevationToSceneY, gridRotation, sceneToGrid, type FloodGeoref } from './raster/georef'
 import { northUp, writeAsc, writeGeoTiff, type RasterOut } from './raster/dem-export'
+import { buildOsmSurface, isBuriedCourse, osmBuildingsReached, type OsmSurface } from './raster/osm-surface'
+import { createOldCourseLines, createReachedOutlines, disposeLines } from './view/osm-overlay'
+import type { OsmContext } from '../../lib/geo/osm-hydro'
 import { AFFECTED_CLASSES, elevationFrom, findAffected, type AffectedElement, type AffectedReport, type Box3Like, type Candidate } from './validation/affected'
 import { WaterLayer, type WaterMode } from './view/water-layer'
 import { createGroundLayer } from './view/ground-layer'
@@ -50,6 +53,8 @@ export interface FloodGeoLike {
   trueGroundHeightAt?(x: number, z: number): number | null
   getTerrainInfo?(): { relief: boolean; exaggeration: number; source: string | null } | null
   getContextRoot(): THREE.Object3D | null
+  /** The map's OpenStreetMap data (features, hydrology, lat/lon → scene); fetched once by the map. */
+  getOsmContext?(): Promise<OsmContext | null>
 }
 
 export interface FloodContext {
@@ -114,6 +119,12 @@ export interface PrepareOptions {
   includeMapBuildings: boolean
   /** Use the map's terrain (when the map is on). */
   useMapTerrain: boolean
+  /**
+   * Read the neighbourhood from OpenStreetMap (when the map is on): land cover,
+   * watercourses (and the ones that are gone), walls and dykes, and — with
+   * includeMapBuildings — its buildings as footprints. Default true.
+   */
+  useOsm?: boolean
   /** An ESRI ASCII grid or GeoTIFF the user chose; read here, only the part the grid needs. */
   demFile?: File | null
   georef?: FloodGeoref | null
@@ -149,8 +160,20 @@ export interface GroundFit {
 /** Disagreement tolerated before fitting: survey noise and a ground floor a step above the street. */
 export const GROUND_FIT_TOLERANCE_M = 0.5
 
+/** What OpenStreetMap brought into the grid. */
+export interface OsmReport {
+  counts: OsmSurface['counts']
+  oldCourseNames: string[]
+  /** The Overpass answer was capped: some of the neighbourhood is missing. */
+  truncated: boolean
+  /** Overpass was down; the city came from vector tiles (no watercourse detail). */
+  fallback: boolean
+}
+
 export interface PrepareResult extends BuildReport {
   georeferenced: boolean
+  /** The neighbourhood from OSM; null when not used; `error` when it could not be read. */
+  osm: OsmReport | { error: string } | null
   groundFit: GroundFit | null
   mapTerrain: { source: string | null; exaggeration: number } | null
   mapBuildings: number
@@ -257,6 +280,8 @@ export interface FloodSystemAPI {
   exportResult(format: ResultFormat, field?: ResultField): Promise<ResultFile | null>
   /** The overlay painted into captures while the water is shown (the panel owns its strings). */
   setCaptureOverlay(paint: CapturePaint | null): void
+  /** Camera on a neighbouring building the water reached (AffectedReport.neighbours). */
+  focusNeighbour(id: string): void
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -291,6 +316,10 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let plan: GridPlan | null = null
   let displayBed: Float32Array | null = null
   let georef: FloodGeoref | null = null
+  // ── The neighbourhood (OSM) ──
+  let osmSurface: OsmSurface | null = null
+  let oldCourseOverlay: THREE.LineSegments | null = null
+  let reachedOverlay: THREE.LineSegments | null = null
   // ── Timeline ──
   const tl: TimelineState = {
     endS: 0, computedT: 0, viewT: 0, following: true, playing: false, speed: 300,
@@ -429,7 +458,18 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
     return Number.isFinite(min) ? min : 0
   }
 
+  /** Scene Y of the drawn ground under a point (the plane's level off the grid). */
+  function bedAt(x: number, z: number): number {
+    if (!plan || !displayBed) return 0
+    const c = cellAt(plan, x, z)
+    return c ? displayBed[c.j * plan.nx + c.i] : displayBed[0]
+  }
+
   function removeLayers(): void {
+    disposeLines(oldCourseOverlay)
+    oldCourseOverlay = null
+    disposeLines(reachedOverlay)
+    reachedOverlay = null
     particles?.dispose()
     particles = null
     removeMarker()
@@ -458,6 +498,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       particles.setThreshold(view.threshold)
       particles.setVisible(view.visible && view.particles)
     }
+    if (oldCourseOverlay) oldCourseOverlay.visible = view.visible
+    if (reachedOverlay) reachedOverlay.visible = view.visible
     wake()
     ctx.requestRender()
   }
@@ -579,8 +621,16 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       // The map: its buildings as obstacles, its terrain as ground.
       const geo = ctx.getGeo()
       const info = geo?.getTerrainInfo?.() ?? null
+      // The neighbourhood from OpenStreetMap: what the map already fetched (or
+      // fetches now, once — the Relief view builds no city). Its buildings come
+      // in as footprints (osm-surface); the drawn meshes are the fallback.
+      let osm: OsmContext | null = null
+      let osmError: string | null = null
+      if (geo?.getOsmContext && o.useOsm !== false) {
+        try { osm = await geo.getOsmContext() } catch (err) { osmError = (err as Error)?.message ?? String(err) }
+      }
       const proxies: THREE.Mesh[] = []
-      if (geo && o.includeMapBuildings) {
+      if (geo && o.includeMapBuildings && !osm) {
         geo.getContextRoot()?.traverseVisible((obj) => {
           if (obj.name === 'osm-buildings' && (obj as THREE.Mesh).isMesh) proxies.push(proxyOf(obj as THREE.Mesh))
         })
@@ -718,6 +768,21 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       }
       const fitted = groundFit?.applied === true
 
+      // The neighbourhood, cell by cell. Earthworks are raised only on ground
+      // that cannot show them: a bare-earth DEM (the ICGC's, an imported one)
+      // already has the dykes and embankments in it — walls it never has.
+      osmSurface = null
+      if (osm) {
+        const detailedGround = !!demFn || (useMap && info?.source === 'icgc-met5')
+        const modelPlans = ids.map((id) => ctx.getModelFootprint(id)).filter((p): p is PlanPoint[] => !!p && p.length >= 3)
+        osmSurface = buildOsmSurface({
+          plan: gp,
+          features: o.includeMapBuildings ? osm.features : osm.features.filter((f) => f.kind !== 'building'),
+          hydro: osm.hydro, toScene: osm.toScene, modelPlans,
+          raiseEarthworks: !detailedGround,
+        })
+      }
+
       o.onStage?.('raster')
       const raster = rasterize({
         renderer: ctx.renderer, plan: gp, terrain, obstacles: [...obstacles, ...proxies],
@@ -731,6 +796,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         ground: { dem: demFn, map: mapTrue, mapDrawn, plane },
         roofRunoff: o.roofRunoff, manning: o.manning,
         floorY: groundY,
+        surface: osmSurface ?? undefined,
       })
       if (o.demFile && demFn && built.report.terrainCells.dem === 0) demNotes.push('outside')
       const tBuild = performance.now()
@@ -762,11 +828,20 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         ground = createGroundLayer({ nx: gp.nx, ny: gp.ny, dx: gp.dx, frame: gp.frame, bed, blocked: built.grid.blocked })
         ctx.scene.add(ground)
       }
+      // The old and buried courses, dashed over the ground.
+      if (osm && osmSurface && osmSurface.counts.oldCourses > 0) {
+        const lines = osm.hydro.channels.filter(isBuriedCourse).map((c) => c.line.map((p) => osm!.toScene(p.lat, p.lon)))
+        oldCourseOverlay = createOldCourseLines(lines, bedAt)
+        ctx.scene.add(oldCourseOverlay)
+      }
       applyView()
 
       return {
         ...built.report,
         georeferenced: !!o.georef,
+        osm: osm && osmSurface
+          ? { counts: osmSurface.counts, oldCourseNames: osmSurface.oldCourseNames, truncated: osm.truncated, fallback: osm.fallback }
+          : osmError ? { error: osmError } : null,
         groundFit,
         mapTerrain: useMap && info ? { source: info.source, exaggeration: info.exaggeration } : null,
         mapBuildings: proxies.length,
@@ -784,6 +859,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       // The worker takes ownership of what it is sent: send a copy.
       const copy: FloodGrid = {
         ...g, z: g.z.slice(), blocked: g.blocked.slice(), rainFactor: g.rainFactor.slice(), manning: g.manning.slice(), h0: g.h0?.slice(),
+        infiltration: g.infiltration?.slice(),
       }
       resetTimeline(o.durationS)
       tl.computing = true
@@ -961,7 +1037,37 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       }
       if (r !== runner) return null
       const datum = georef && georef.heightM !== null ? { heightM: georef.heightM, sceneY0: georef.coordination.y, scale: georef.scale } : null
-      lastAffected = { elements, total: all.length, checked: cands.length, t, finished, datum }
+      // The neighbours and the old course, from the same maxima.
+      let neighbours: AffectedReport['neighbours']
+      let oldCourse: AffectedReport['oldCourse'] = null
+      const sf = osmSurface
+      if (sf) {
+        neighbours = osmBuildingsReached(sf.buildings, { nx: p.nx, ny: p.ny, dx: p.dx, blocked: g.blocked, buildingOf: sf.buildingOf, hMax: mx.hMax, tWet: mx.tWet }, { minDepthM: Math.max(view.threshold, 0.1) })
+        if (sf.counts.oldCourses > 0) {
+          let cells = 0, wet = 0, deepest = 0
+          for (let c = 0; c < sf.oldCourse.length; c++) {
+            if (!sf.oldCourse[c]) continue
+            cells++
+            if (mx.hMax[c] >= view.threshold) { wet++; deepest = Math.max(deepest, mx.hMax[c]) }
+          }
+          oldCourse = { names: sf.oldCourseNames, areaM2: cells * p.dx * p.dx, wetAreaM2: wet * p.dx * p.dx, maxDepth: deepest }
+        }
+        // Their outlines at street level, amber to red.
+        disposeLines(reachedOverlay)
+        reachedOverlay = null
+        if (neighbours.length) {
+          const byId = new Map(sf.buildings.map((b) => [b.id, b]))
+          const items = neighbours.slice(0, 200).map((nb) => ({
+            ring: byId.get(nb.id)!.ring.map((q) => fromGridLocal(p.frame, q.a, q.b)),
+            depth: nb.depth,
+          }))
+          reachedOverlay = createReachedOutlines(items, bedAt)
+          reachedOverlay.visible = view.visible
+          ctx.scene.add(reachedOverlay)
+          ctx.requestRender()
+        }
+      }
+      lastAffected = { elements, total: all.length, checked: cands.length, t, finished, datum, neighbours, oldCourse }
       return lastAffected
     },
 
@@ -1006,6 +1112,18 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       return { blob: new Blob([tif.buffer.slice(tif.byteOffset, tif.byteOffset + tif.byteLength) as ArrayBuffer], { type: 'image/tiff' }), ext: 'tif', georeferenced: !!geo, crs }
     },
 
+    focusNeighbour(id) {
+      const b = osmSurface?.buildings.find((x) => x.id === id)
+      if (!b || !plan) return
+      const pts = b.ring.map((q) => fromGridLocal(plan!.frame, q.a, q.b))
+      const y = bedAt(b.centre.x, b.centre.z)
+      const pad = 25
+      ctx.frameBox?.(
+        { x: Math.min(...pts.map((q) => q.x)) - pad, y: y - 1, z: Math.min(...pts.map((q) => q.z)) - pad },
+        { x: Math.max(...pts.map((q) => q.x)) + pad, y: y + 15, z: Math.max(...pts.map((q) => q.z)) + pad },
+      )
+    },
+
     setCaptureOverlay(paint) {
       overlay = paint
       if (!removePainter && ctx.addCapturePainter) {
@@ -1025,6 +1143,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       plan = null
       displayBed = null
       lastAffected = null
+      osmSurface = null
       resetTimeline(0)
       ctx.requestRender()
     },

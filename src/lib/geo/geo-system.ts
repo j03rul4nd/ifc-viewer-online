@@ -85,6 +85,7 @@ import {
 import { createLogger } from '../logger'
 import { createGroundFrame } from './ground-frame'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
+import type { Hydrology, OsmContext } from './osm-hydro'
 
 const log = createLogger('GeoSystem')
 
@@ -106,6 +107,19 @@ const BUILDINGS_TIMEOUT_MS = 45_000
  */
 function osmCacheKey(lat: number, lon: number): string {
   return `${lat.toFixed(4)},${lon.toFixed(4)}`
+}
+
+/**
+ * `__geoForceFallback = true` (or localStorage 'ifc-dev-force-fallback' = '1',
+ * which survives a reload) in dev builds the city from the vector tiles as if
+ * Overpass were down — the only way to QA the fallback without waiting for the
+ * public server to fail.
+ */
+function devForceFallback(): boolean {
+  return import.meta.env.DEV && (
+    (globalThis as Record<string, unknown>).__geoForceFallback === true
+    || (() => { try { return localStorage.getItem('ifc-dev-force-fallback') === '1' } catch { return false } })()
+  )
 }
 
 /** What `setBuildings` reports back, so the UI can be specific about failures. */
@@ -510,6 +524,14 @@ export interface GeoSystemAPI {
   getTerrainInfo(): { relief: boolean; exaggeration: number; source: DemSourceId | null } | null
   /** The map's root object (terrain, buildings, trees…): occluders for the solar analysis. Null when off. */
   getContextRoot(): THREE.Object3D | null
+  /**
+   * The neighbourhood's OpenStreetMap data for an analysis (the flood): the
+   * classified features, the hydrology (osm-hydro) and a lat/lon → scene
+   * mapping. Fetched once with the same query and cache as the City view —
+   * which it does not build — so asking for it in the Relief view costs one
+   * Overpass request, and nothing afterwards. Null when the map is off.
+   */
+  getOsmContext(): Promise<OsmContext | null>
   dispose(): void
 }
 
@@ -701,10 +723,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     key: string
     features: OsmFeature[]
     counts: Record<FeatureKind, number>
+    hydro: Hydrology
     truncated: boolean
     overture: number
     fallback: boolean
   } | null = null
+  /** When getOsmContext may ask Overpass again over a cached tiles fallback (ms epoch). */
+  let osmRetryAt = 0
   /** Built meshes per layer, so each can be added or dropped independently. */
   // A LIST per kind: a layer can be several objects — the buildings and their
   // rooftop kit are both 'building'. One slot per kind let the roof props
@@ -1407,6 +1432,54 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         relief: !!terrain,
         exaggeration: terrainExaggeration,
         source: terrain ? demSourceFor(placement.lat, placement.lon).id : null,
+      }
+    },
+
+    async getOsmContext() {
+      if (!geoRoot || !placement) return null
+      const key = osmCacheKey(placement.lat, placement.lon)
+      // A neighbourhood from the vector tiles (Overpass was busy) has no
+      // watercourses or walls: ask Overpass again — at most once a minute,
+      // keeping the tiles' version if it is still busy.
+      const retry = osmCache?.key === key && osmCache.fallback && Date.now() >= osmRetryAt
+      if (osmCache?.key !== key || retry) {
+        const reply = await runBuildingsWorker({
+          type: 'fetch-buildings',
+          id: crypto.randomUUID(),
+          lat: placement.lat,
+          lon: placement.lon,
+          halfSizeM: BUILDINGS_HALF_SIZE_M,
+          forceFallback: devForceFallback(),
+          modelPlan: modelPlanPolygons().map((poly) => poly.map((p) => ({ x: p.x, y: p.y }))),
+        })
+        if (!geoRoot || !placement) return null
+        if (reply.type === 'error') {
+          if (!retry) throw new Error(reply.message)
+        } else if (!retry || reply.fallback !== true) {
+          osmCache = {
+            key, features: reply.features, counts: reply.counts, hydro: reply.hydro,
+            truncated: reply.truncated, overture: reply.overture, fallback: reply.fallback === true,
+          }
+        }
+        if (osmCache?.fallback) osmRetryAt = Date.now() + 60_000
+      }
+      const root = geoRoot
+      const cache = osmCache
+      if (!cache) return null
+      root.updateWorldMatrix(true, false)
+      const v = new THREE.Vector3()
+      return {
+        features: cache.features,
+        hydro: cache.hydro,
+        truncated: cache.truncated,
+        fallback: cache.fallback,
+        toScene: (lat: number, lon: number) => {
+          // geoRoot's local frame is normalized Web Mercator (x, y) with height on z.
+          const n = latLonToNormalized(lat, lon)
+          v.set(n.nx, n.ny, 0)
+          root.localToWorld(v)
+          return { x: v.x, z: v.z }
+        },
       }
     },
 
@@ -2624,14 +2697,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         lat: placement.lat,
         lon: placement.lon,
         halfSizeM: BUILDINGS_HALF_SIZE_M,
-        // `__geoForceFallback = true` (or localStorage 'ifc-dev-force-fallback'
-        // = '1', which survives a reload) in dev builds the city from
-        // the vector tiles as if Overpass were down — the only way to QA the
-        // fallback without waiting for the public server to fail.
-        forceFallback: import.meta.env.DEV && (
-          (globalThis as Record<string, unknown>).__geoForceFallback === true
-          || (() => { try { return localStorage.getItem('ifc-dev-force-fallback') === '1' } catch { return false } })()
-        ),
+        forceFallback: devForceFallback(),
         // The model's own plan, so the Overture merge can refuse footprints
         // standing in it. Sent as plain numbers because a worker message is
         // structured-cloned and a THREE.Vector2 does not survive the trip.
@@ -2652,6 +2718,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       key,
       features: reply.features,
       counts: reply.counts,
+      hydro: reply.hydro,
       truncated: reply.truncated,
       overture: reply.overture,
       fallback: reply.fallback === true,

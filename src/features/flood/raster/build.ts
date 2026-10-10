@@ -83,6 +83,23 @@ export interface BuildOptions {
    * Poblenou). A real courtyard is larger and stays open.
    */
   minPocketM2?: number
+  /**
+   * What the neighbourhood adds, cell by cell (osm-surface.ts): buildings and
+   * canopies that are not in the raster, channels cut into the ground, walls
+   * and dykes raised on it, roughness and infiltration by land cover. Applied
+   * before roof rain is routed, so the rain on a neighbour's roof reaches the
+   * street like the model's own.
+   */
+  surface?: {
+    blocked?: Uint8Array
+    canopy?: Uint8Array
+    cut?: Float32Array
+    raise?: Float32Array
+    manning?: Float32Array
+    infiltration?: Float32Array
+    /** Which neighbouring building a cell belongs to (−1 none): its roof drains along its own perimeter. */
+    buildingOf?: Int32Array
+  }
 }
 
 export interface BuildReport {
@@ -102,6 +119,8 @@ export interface BuildReport {
   raisedCells: number
   routedCells: number
   lostRainCells: number
+  /** Open cells walled in by buildings on every side (courtyards), drained. */
+  courtyardCells: number
   zMin: number
   zMax: number
 }
@@ -183,7 +202,28 @@ export function buildFloodGrid(o: BuildOptions): BuiltGrid {
     }
   }
 
-  const pocketCells = closePockets(nx, ny, blocked, roofed, Math.max(1, Math.round((o.minPocketM2 ?? 25) / (dx * dx))))
+  // The neighbourhood: channels cut, walls raised (the drawn bed follows), its
+  // buildings and canopies — where the model has not already put something.
+  const sf = o.surface
+  const delta = new Float32Array(n)
+  if (sf) {
+    for (let c = 0; c < n; c++) {
+      if (!blocked[c]) {
+        if (sf.cut && sf.cut[c] > 0) delta[c] -= sf.cut[c]
+        if (sf.raise && sf.raise[c] > 0) delta[c] += sf.raise[c]
+        z[c] += delta[c]
+      }
+      if (sf.blocked?.[c] && !blocked[c]) { blocked[c] = 1; roofed[c] = 1; obstacleCells++ }
+      else if (sf.canopy?.[c] && !blocked[c] && !roofed[c]) { roofed[c] = 1; canopyCells++ }
+    }
+  }
+
+  // Slits first: a one-cell gap between two buildings (OSM draws party walls as
+  // two outlines with a sliver between them) is not a street. Left open, the
+  // roofs around poured into it: 58 cm in a 2 m "alley" between Overture
+  // footprints next to the Torre Poblenou, deeper than any street.
+  const slitCells = closeSlits(nx, ny, blocked, roofed)
+  const pocketCells = slitCells + closePockets(nx, ny, blocked, roofed, Math.max(1, Math.round((o.minPocketM2 ?? 25) / (dx * dx))))
   obstacleCells += pocketCells
 
   const displayBed = Float32Array.from(z)
@@ -191,11 +231,11 @@ export function buildFloodGrid(o: BuildOptions): BuiltGrid {
     for (let c = 0; c < n; c++) {
       if (src[c] !== 3) continue
       const d = ground.mapDrawn(centres[c * 2], centres[c * 2 + 1])
-      if (d !== null && Number.isFinite(d)) displayBed[c] = d
+      if (d !== null && Number.isFinite(d)) displayBed[c] = d + delta[c]
     }
   }
 
-  const routing = routeRoofRain(nx, ny, roofed, blocked, o.roofRunoff)
+  const routing = routeRoofRain(nx, ny, roofed, blocked, o.roofRunoff, enclosedOpenCells(nx, ny, blocked), sf?.buildingOf)
   const grid: FloodGrid = {
     nx, ny, dx,
     z,
@@ -204,6 +244,12 @@ export function buildFloodGrid(o: BuildOptions): BuiltGrid {
     rainFactor: routing.rainFactor,
     manning: new Float32Array(n).fill(o.manning),
     frame: plan.frame,
+  }
+  if (sf?.manning) for (let c = 0; c < n; c++) if (Number.isFinite(sf.manning[c])) grid.manning[c] = sf.manning[c]
+  if (sf?.infiltration && sf.infiltration.some(Number.isFinite)) {
+    // OSM's sealed streets and absorbing parks; the soil as chosen elsewhere.
+    grid.infiltration = new Float32Array(n)
+    for (let c = 0; c < n; c++) grid.infiltration[c] = Number.isFinite(sf.infiltration[c]) ? sf.infiltration[c] : 1
   }
   normalizeElevations(validateGrid(grid))
   let zMin = Infinity
@@ -220,10 +266,66 @@ export function buildFloodGrid(o: BuildOptions): BuiltGrid {
     report: {
       nx, ny, dx, coarsened: plan.coarsened, terrainCells: cells, filledCells, terrain,
       obstacleCells, canopyCells, raisedCells, pocketCells,
-      routedCells: routing.routedCells, lostRainCells: routing.lostCells,
+      routedCells: routing.routedCells, lostRainCells: routing.lostCells, courtyardCells: routing.courtyardCells,
       zMin: Number.isFinite(zMin) ? zMin : 0, zMax: Number.isFinite(zMax) ? zMax : 0,
     },
   }
+}
+
+/**
+ * Closes open cells pinched between obstacles on opposite sides (west and
+ * east, or south and north) — a gap one cell wide, which at the grid's
+ * resolution is a modelling sliver, not a passage. Repeated until none is
+ * left (closing one can pinch the next). Returns how many cells were closed.
+ */
+export function closeSlits(nx: number, ny: number, blocked: Uint8Array, roofed: Uint8Array): number {
+  let closed = 0
+  for (let pass = 0; pass < 4; pass++) {
+    const hits: number[] = []
+    for (let j = 1; j < ny - 1; j++) {
+      for (let i = 1; i < nx - 1; i++) {
+        const c = j * nx + i
+        if (blocked[c]) continue
+        if ((blocked[c - 1] && blocked[c + 1]) || (blocked[c - nx] && blocked[c + nx])) hits.push(c)
+      }
+    }
+    if (!hits.length) break
+    for (const c of hits) { blocked[c] = 1; roofed[c] = 1 }
+    closed += hits.length
+  }
+  return closed
+}
+
+/**
+ * Open cells walled in on every side by obstacles (4-neighbour regions that
+ * never reach the grid edge): courtyards, patios, light wells. 1 = enclosed.
+ */
+export function enclosedOpenCells(nx: number, ny: number, blocked: Uint8Array): Uint8Array {
+  const n = nx * ny
+  const out = new Uint8Array(n)
+  const seen = new Uint8Array(n)
+  const stack = new Int32Array(n)
+  const region: number[] = []
+  for (let start = 0; start < n; start++) {
+    if (blocked[start] || seen[start]) continue
+    let top = 0
+    let edge = false
+    region.length = 0
+    stack[top++] = start
+    seen[start] = 1
+    while (top > 0) {
+      const c = stack[--top]
+      region.push(c)
+      const i = c % nx
+      const j = (c - i) / nx
+      if (i === 0 || j === 0 || i === nx - 1 || j === ny - 1) edge = true
+      for (const k of [i > 0 ? c - 1 : -1, i < nx - 1 ? c + 1 : -1, j > 0 ? c - nx : -1, j < ny - 1 ? c + nx : -1]) {
+        if (k >= 0 && !blocked[k] && !seen[k]) { seen[k] = 1; stack[top++] = k }
+      }
+    }
+    if (!edge) for (const c of region) out[c] = 1
+  }
+  return out
 }
 
 /**

@@ -20,7 +20,8 @@
 // Storage buffers per pipeline: 7 (ctrl, cells, qIn, q, maxima, boundary,
 // infiltration) —
 // under the default limit of 8, so no adapter needs raised limits. The static
-// fields (z, rainFactor, n, blocked) are a texture for the same reason.
+// fields (z, rainFactor, n, blocked) are a texture for the same reason; `blocked`
+// is 1 for an obstacle and minus the cell's infiltration factor otherwise.
 
 const PARAMS = /* wgsl */`
 struct Params {
@@ -239,7 +240,8 @@ fn k_cont(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let cell = cells[c];
       let k = dt / P.dx;
       hn = max(cell.x + k * (qL - qR + qB - qT) + dt * C.rate * s.y, 0.0);
-      let loss = min(hn, infiltrationRate(f32(C.tMs - C.dtMs) * 0.001) * dt);
+      // An open cell's static w is minus its infiltration factor.
+      let loss = min(hn, infiltrationRate(f32(C.tMs - C.dtMs) * 0.001) * dt * max(-s.w, 0.0));
       if (loss > 0.0) {
         hn = hn - loss;
         inf[c] = inf[c] + loss;

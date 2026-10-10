@@ -74,6 +74,10 @@ export function rainOnPlane(L = 100, dx = 1, slope = 0.01, n = 0.03, mmH = 50, m
 /** A closed basin under a storm, the ground absorbing water (Horton). */
 export function infiltrationBasin(n = 80): FloodCase {
   const grid = inclinedPlaneDemo({ nx: n, ny: n, dx: 2, slopeX: 0.01, slopeY: 0.004, roughnessAmplitude: 0.6, seed: 5, obstacles: blockLayout(n, n, 14, 5) })
+  // Per-cell soil, as OSM land cover gives it: a sealed west third (streets),
+  // the soil as chosen in the middle, looser ground in the east third.
+  grid.infiltration = new Float32Array(n * n)
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) grid.infiltration[j * n + i] = i < n / 3 ? 0 : i < (2 * n) / 3 ? 1 : 1.5
   return {
     id: 'infiltration', title: 'Closed basin, Horton infiltration', grid, hyetograph: constantStorm(60, 40, 5),
     params: {

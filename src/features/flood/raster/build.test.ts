@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import { planGrid } from './frame'
-import { buildFloodGrid, planeHeight } from './build'
+import { buildFloodGrid, closeSlits, planeHeight } from './build'
 
 const plan = planGrid({ points: [{ x: 0, z: 0 }, { x: 20, z: -10 }], rotation: 0, marginM: 0, cellM: 1, maxCells: 1e6 })
 const n = plan.nx * plan.ny
@@ -91,6 +91,20 @@ describe('grid assembly', () => {
     expect(planeHeight(north, plan, 10, -10)).toBeLessThan(planeHeight(north, plan, 10, 0))
   })
 
+  it('closes a one-cell slit between two buildings, keeps a two-cell passage', () => {
+    const nx = 12, ny = 6
+    const blocked = new Uint8Array(nx * ny)
+    const roofed = new Uint8Array(nx * ny)
+    const wallCol = (i: number) => { for (let j = 0; j < ny; j++) blocked[j * nx + i] = 1 }
+    wallCol(2); wallCol(4)          // slit at i = 3
+    wallCol(7); wallCol(10)         // passage i = 8..9
+    const closed = closeSlits(nx, ny, blocked, roofed)
+    expect(blocked[2 * nx + 3]).toBe(1)
+    expect(blocked[2 * nx + 8]).toBe(0)
+    expect(blocked[2 * nx + 9]).toBe(0)
+    expect(closed).toBe(ny - 2) // the slit's inner cells (the edge rows are not tested)
+  })
+
   it('closes small pockets walled in by a building, and keeps courtyards', () => {
     const r = emptyRaster()
     // A building 9 × 7 cells with a 1-cell shaft and a 5 × 3 courtyard inside.
@@ -104,7 +118,11 @@ describe('grid assembly', () => {
     // 15 m² is above the 10 m² threshold given here: a courtyard, kept open.
     expect(b.grid.blocked[idx(7, 4)]).toBe(0)
     expect(b.report.pocketCells).toBe(1)
-    expect(b.grid.rainFactor.reduce((a, v) => a + v, 0)).toBe(n)
+    // The courtyard is drained: no roof rain into it (the roofs drain outwards),
+    // its own 15 cells of rain go to its drains; everything else is conserved.
+    expect(b.report.courtyardCells).toBe(15)
+    for (let i = 5; i <= 9; i++) for (let j = 3; j <= 5; j++) expect(b.grid.rainFactor[idx(i, j)]).toBe(0)
+    expect(b.grid.rainFactor.reduce((a, v) => a + v, 0)).toBe(n - 15)
   })
 })
 
