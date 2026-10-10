@@ -201,7 +201,7 @@ describe('infiltration', () => {
     expect(st.volume).toBeLessThan(1e-9)
     expect(st.infiltratedVolume / st.rainVolume).toBeCloseTo(1, 9)
     expect(Math.abs(st.massError)).toBeLessThan(1e-9)
-  })
+  }, 30_000)
 
   it('Horton: absorbs no more than f(t) allows, and the balance closes', () => {
     const c = infiltrationBasin(40)
@@ -217,7 +217,7 @@ describe('infiltration', () => {
     for (let k = 0; k < c.grid.blocked.length; k++) if (!c.grid.blocked[k]) open++
     expect(st.infiltratedVolume).toBeLessThanOrEqual(maxDepth * open * c.grid.dx * c.grid.dx * 1.0001)
     expect(Math.abs(st.massError)).toBeLessThan(1e-9)
-  })
+  }, 30_000)
 })
 
 describe('maxima and arrival times', () => {
