@@ -970,6 +970,12 @@ export default function App() {
     else if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
   }, [urlParams.layersUrl])
 
+  // `?hide=` (a scene's view.hide): mapped features this page view hides —
+  // session-only, alongside the visitor's own hidden ones.
+  useEffect(() => {
+    if (urlParams.hideFeatures.length) useGeoStore.getState().setSceneHidden(urlParams.hideFeatures)
+  }, [urlParams.hideFeatures])
+
   // ── Scene document (`?scene=` / `#scene=`, scene-doc/) ──────────────────────
   // Its models, map, background and camera came in as URL parameters before
   // mount. What is not URL-shaped is applied here, once the models are in, so
@@ -2067,6 +2073,7 @@ export default function App() {
         origin: { x: number; y: number; z: number }
         pivot: { x: number; y: number; z: number }
         georefKey: string | null
+        yawRad: number
       }> = []
       for (const m of useSceneStore.getState().models) {
         // Placed by hand: the user's calibration wins over the file's own
@@ -2081,7 +2088,13 @@ export default function App() {
         // took the last offset for project coordinates and added it again —
         // measured: a model 250 m away walked 250 m further per call.
         const t = api.getModelTransform(m.id)
-        const own = { ...bounds, center: { x: bounds.center.x - t.position.x, y: bounds.center.y - t.position.y, z: bounds.center.z - t.position.z } }
+        // A turned satellite (geo-system placeSatellites) is un-turned too: its
+        // pivot yaw is about the pivot origin, so leaving it in would rotate the
+        // centre the file's coordinates are read from — metres of drift per map move.
+        const yawRad = (t.rotation.y * Math.PI) / 180
+        const rx = bounds.center.x - t.position.x, rz = bounds.center.z - t.position.z
+        const cy = Math.cos(-yawRad), sy = Math.sin(-yawRad)
+        const own = { ...bounds, center: { x: rx * cy + rz * sy, y: bounds.center.y - t.position.y, z: -rx * sy + rz * cy } }
         const resolved = placementFromExtraction(extraction, own)
         // A model with no usable georeferencing stays where the scene put it.
         // Inventing a location for it is the fabrication this pipeline refuses.
@@ -2090,12 +2103,15 @@ export default function App() {
         // now, and which georeference it shares: files of one project carry the
         // same IfcMapConversion and must move as one (geo-system placeSatellites).
         const c = api.getModelCoordination(m.id)
+        const cx = c?.x ?? 0, cz = c?.z ?? 0
+        const cw = Math.cos(yawRad), sw = Math.sin(yawRad)
         out.push({
           modelId: m.id, placement: resolved.value, bounds,
           originY: t.position.y + (c?.y ?? 0),
-          origin: { x: t.position.x + (c?.x ?? 0), y: t.position.y + (c?.y ?? 0), z: t.position.z + (c?.z ?? 0) },
+          origin: { x: t.position.x + cx * cw + cz * sw, y: t.position.y + (c?.y ?? 0), z: t.position.z - cx * sw + cz * cw },
           pivot: { x: t.position.x, y: t.position.y, z: t.position.z },
           georefKey: georefKeyOf(extraction),
+          yawRad,
         })
       }
         return out

@@ -253,7 +253,19 @@
       "name": "Tokyo · Stations Toei",
       "hint": "Stations de métro et de tram (ODPT) · statique, sans clé"
     },
-    "otherPlaces": "Autres lieux ({{n}})"
+    "otherPlaces": "Autres lieux ({{n}})",
+    "toei-bus": {
+      "name": "Tokyo · Bus Toei (en direct)",
+      "hint": "Chaque bus à l’arrêt qu’il vient de passer (GTFS-Realtime ODPT, pas du GPS) · toutes les 30 s, sans clé"
+    },
+    "fmi-air-quality": {
+      "name": "Helsinki · Qualité de l’air (FMI)",
+      "hint": "Indice horaire de qualité de l’air, NO₂ et particules aux stations HSY · jusqu’à 40 min de retard, sans clé"
+    },
+    "fmi-weather": {
+      "name": "Helsinki · Stations météo (FMI)",
+      "hint": "Température, vent, humidité et pluie toutes les 10 min · sans clé"
+    }
   },
   "live": {
     "toggle": "Mise à jour en direct",
@@ -740,7 +752,9 @@
     },
     "filterBindings": "Filtrer les liaisons…",
     "alertsActive": "{{count}} en alerte",
-    "summaryFilter": "Afficher seulement ces liaisons"
+    "summaryFilter": "Afficher seulement ces liaisons",
+    "mqttTopics": "Topics MQTT, un par ligne (vide = WebSocket simple avec messages JSON)",
+    "mqttHint": "Avec des topics, cette adresse est l’écoute WebSocket d’un broker MQTT. Chaque message est lu comme { topic, …payload }, une fois par seconde ; les messages sans identifiant d’appareil sont ignorés."
   },
   "add": {
     "title": "Ajouter des données"
@@ -799,7 +813,22 @@
         "name": "Barcelone · Plaça de Catalunya",
         "description": "Huit modèles IFC géoréférencés avec Bicing, recharge de VE, trafic et qualité de l’air en direct ; la station Bicing 65 colore ses propres bornes."
       },
-      "meta": "{{models}} modèles IFC · {{live}} sources en direct"
+      "helsinki": {
+        "name": "Helsinki · Rautatientori",
+        "description": "La gare centrale, la cathédrale et le terminal de bus d’Elielinaukio avec la qualité de l’air et la météo du FMI en direct ; chaque quai s’allume tant qu’un bus HSL y est arrêté (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tokyo · Tochōmae (Toei Ōedo)",
+        "description": "La sortie A4 près du siège du gouvernement métropolitain avec les bus Toei en direct ; l’état de la ligne Ōedo, un train à quai et un bus qui passe colorent le modèle."
+      },
+      "waseda": {
+        "name": "Tokyo · Waseda (Toden Arakawa)",
+        "description": "Le terminus du tramway : les bords de quai s’allument tant qu’une rame est à l’arrêt, avec son numéro au-dessus, et les écrans affichent l’état de la ligne."
+      },
+      "models_one": "{{count}} modèle IFC",
+      "models_other": "{{count}} modèles IFC",
+      "live_one": "{{count}} source en direct",
+      "live_other": "{{count}} sources en direct"
     }
   }
 }

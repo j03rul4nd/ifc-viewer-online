@@ -96,7 +96,9 @@ export function plannedDelayMs(intervalS: number, f: Freshness | null, now = Dat
 export function detectFeedKind(url: string, body?: unknown): FeedKind {
   if (/\/gbfs(\.json)?$|gbfs\/v?[\d.]+\/gbfs/i.test(url)) return 'gbfs'
   if (/\/api\/explore\/v2(\.\d)?\/catalog\/datasets\//i.test(url)) return 'ods'
-  if (/gtfs-?rt|vehicle_?positions|tripupdates|trip_updates/i.test(url)) return 'gtfs-rt'
+  if (/gtfs-?rt|gtfs\/realtime|vehicle_?positions|tripupdates|trip_updates/i.test(url)) return 'gtfs-rt'
+  // A WFS stored query (FMI) is one fixed request, not a service to browse.
+  if (/[?&]storedquery_id=/i.test(url)) return 'geojson'
   if (/[?&]service=wfs/i.test(url) || /\/wfs\b/i.test(url)) return 'wfs'
   if (body && typeof body === 'object') {
     const b = body as Record<string, unknown>

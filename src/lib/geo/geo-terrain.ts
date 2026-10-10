@@ -455,6 +455,13 @@ function assemblePatch(
       const ctx = canvas.getContext('2d')
       if (ctx) ctx.drawImage(next, 0, 0)
       const tex = new THREE.CanvasTexture(ctx ? canvas : next)
+      // The worker already flipped the pixels (row 0 = SOUTH edge), because
+      // WebGL ignores UNPACK_FLIP_Y for ImageBitmaps. A canvas does honour it,
+      // so CanvasTexture's default flipY would flip them a second time and
+      // mirror the drape north–south about the patch centre: right at the
+      // anchor, hundreds of metres out a kilometre away (Helsinki Cathedral
+      // stood on the South Harbour, 345 m south of it).
+      tex.flipY = false
       tex.colorSpace = THREE.SRGBColorSpace
       tex.anisotropy = anisotropy
       texture = tex

@@ -253,7 +253,19 @@
       "name": "Tokyo · Toei stations",
       "hint": "Metro and tram stations (ODPT) · static, no key"
     },
-    "otherPlaces": "Other places ({{n}})"
+    "otherPlaces": "Other places ({{n}})",
+    "toei-bus": {
+      "name": "Tokyo · Toei buses (live)",
+      "hint": "Each bus at the stop it last passed (ODPT GTFS-Realtime, not GPS) · every 30 s, no key"
+    },
+    "fmi-air-quality": {
+      "name": "Helsinki · Air quality (FMI)",
+      "hint": "Hourly air-quality index, NO₂ and particles at HSY stations · up to 40 min late, no key"
+    },
+    "fmi-weather": {
+      "name": "Helsinki · Weather stations (FMI)",
+      "hint": "Temperature, wind, humidity and rain every 10 min · no key"
+    }
   },
   "live": {
     "toggle": "Live refresh",
@@ -740,7 +752,9 @@
     },
     "filterBindings": "Filter bindings…",
     "alertsActive": "{{count}} alerting",
-    "summaryFilter": "Show only these bindings"
+    "summaryFilter": "Show only these bindings",
+    "mqttTopics": "MQTT topics, one per line (empty = plain WebSocket with JSON messages)",
+    "mqttHint": "With topics, this address is an MQTT broker’s WebSocket listener. Each message is read as { topic, …payload }, once a second; messages without the device id are skipped."
   },
   "add": {
     "title": "Add data"
@@ -799,7 +813,22 @@
         "name": "Barcelona · Plaça de Catalunya",
         "description": "Eight georeferenced IFC models with Bicing, EV charging, traffic and air quality live; Bicing station 65 paints its own docks."
       },
-      "meta": "{{models}} IFC models · {{live}} live sources"
+      "helsinki": {
+        "name": "Helsinki · Rautatientori",
+        "description": "The Central Station, the Cathedral and the Elielinaukio bus terminal with FMI air quality and weather live; each bus bay lights up while an HSL bus stands at it (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tokyo · Tochōmae (Toei Ōedo)",
+        "description": "Exit A4 by the Metropolitan Government Building with Toei buses live; the Ōedo line’s status, a train at the platform and a passing bus paint the model."
+      },
+      "waseda": {
+        "name": "Tokyo · Waseda (Toden Arakawa)",
+        "description": "The tram line’s terminus: the platform edges light up while a tram stands at the stop, with its number above it, and the screens show the line’s status."
+      },
+      "models_one": "{{count}} IFC model",
+      "models_other": "{{count}} IFC models",
+      "live_one": "{{count}} live source",
+      "live_other": "{{count}} live sources"
     }
   }
 }

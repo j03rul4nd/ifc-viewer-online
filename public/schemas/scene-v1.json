@@ -91,6 +91,11 @@
               "url": { "type": "string", "description": "http(s), ws(s) or sim:<preset>. Never put keys in it: headers stay on the device that typed them." },
               "intervalS": { "type": "number", "minimum": 1 },
               "enabled": { "type": "boolean" },
+              "topics": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "MQTT topic filters. With them the ws(s):// URL is an MQTT broker's WebSocket listener, and each message is { topic, ...payload }."
+              },
               "mapping": {
                 "type": "object",
                 "properties": {

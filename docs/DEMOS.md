@@ -203,6 +203,149 @@ live values are painted into PNGs, clips and GIFs):
 
 ---
 
+## Helsinki · Rautatientori — buses at their bays, live over MQTT
+
+**Open it:** `https://www.ifcvieweronline.eu/?scene=/scenes/helsinki-rautatientori.scene.json`
+**Scene file:** [`public/scenes/helsinki-rautatientori.scene.json`](../public/scenes/helsinki-rautatientori.scene.json)
+
+### What it shows
+
+Helsinki Central Station (Eliel Saarinen), the Cathedral and the Elielinaukio bus
+terminal as georeferenced IFC models (EPSG:3879) on the OpenStreetMap city, with the
+Finnish Meteorological Institute's air-quality and weather stations live. The terminal
+follows HSL's buses in real time: the bay a bus stands at lights up — green with its
+doors open, blue while it waits, amber while it pulls in or out — with the line number
+floating above it. A bay with no bus for 45 s goes grey.
+
+| Model | What it is |
+|---|---|
+| `helsinki-central-station.ifc` | The station building, platform canopies and tracks (6.8 MB) |
+| `helsinki-cathedral.ifc` | Helsinki Cathedral on Senate Square |
+| `elielinaukio-bus-terminal.ifc` | The bus terminal west of the station: 17 bays (20–36) with poles and signs, canopy, kiosks |
+
+### Use case
+
+A transport operator or a city sees the state of a terminal on the asset model itself —
+which bays are in use right now — without an IoT platform: the bus fleet's own public
+feed drives the model.
+
+### Sources
+
+| Source | Provider | Format | Refresh | Licence |
+|---|---|---|---|---|
+| Bus positions (HFP) | HSL / Digitransit | MQTT over WebSocket, `wss://mqtt.hsl.fi` | ~1 message per bus per second | CC BY 4.0 |
+| Air quality (`fmi-air-quality`) | FMI open data, HSY stations | WFS `::simple` | hourly, up to 40 min late | CC BY 4.0 |
+| Weather (`fmi-weather`) | FMI open data | WFS `::simple` | every 10 min | CC BY 4.0 |
+| Bay → stop ids | HSL GTFS `stops.txt` (2026-10-10) | read once, offline | — | CC BY 4.0 |
+| City, terrain | OpenStreetMap; Mapzen Terrarium | — | static | ODbL; various |
+
+### Technology
+
+MQTT 3.1.1 over WebSocket in the browser (`mqtt-ws.ts`), subscribed to one geohash cell
+(`…/60;24/19/73/#`) so only the terminal's buses arrive; messages are read once a
+second, newest per stop, and a bus between stops (no `stop`) is skipped. Bindings match
+`VP.stop` to the bay's HSL stop id; elements are found by name (`Bay 20 …`).
+FMI's simple WFS is read by `bswfs.ts`.
+
+### Embed
+
+```html
+<iframe src="https://www.ifcvieweronline.eu/?scene=/scenes/helsinki-rautatientori.scene.json&embed=1&ui=client"
+  width="100%" height="600" style="border:0;border-radius:12px" loading="lazy" allow="fullscreen"
+  title="Helsinki · Rautatientori — open-data digital twin"></iframe>
+```
+
+### Limitations
+
+- The models are illustrative, authored from public drawings, OpenStreetMap and the City
+  of Helsinki LOD2 model — not surveys.
+- Only 9 of the 17 bays have an HSL stop today (20, 22–26, 28–30); the others stay grey.
+- The global terrain reads ~18 m above the Finnish N2000 heights here (about the geoid
+  undulation), so the models stand on the terrain's surface rather than at their stated
+  elevation; relative heights are kept (the Cathedral stands ~10 m above the station).
+- At night few buses run; the bays stay grey for long stretches.
+- A hidden browser tab reads the MQTT messages less often (browser timer throttling).
+
+### Verification (2026-10-10, dev build)
+
+- 3 models placed by their own georeference; 2 FMI layers live (11 air-quality and
+  7 weather stations).
+- 9 bindings resolved to 36 elements (pole + 3 signs per bay).
+- The MQTT chain end to end: with a broad topic, 69 stops became devices in 30 s
+  (line, speed, doors), source state `ok`.
+- A reading in HFP's exact shape at stop 1020128 painted bay 20 green with "415N"
+  above it; later, a real bus (line 431) appeared at a bay in the live view.
+
+---
+
+## Tokyo · Tochōmae — the Toei Ōedo line on its exit
+
+**Open it:** `https://www.ifcvieweronline.eu/?scene=/scenes/tokyo-tochomae.scene.json`
+**Scene file:** [`public/scenes/tokyo-tochomae.scene.json`](../public/scenes/tokyo-tochomae.scene.json)
+
+### What it shows
+
+Exit A4 of Tochōmae station (Toei Ōedo line, E-28), beside the Tokyo Metropolitan
+Government Building, as a georeferenced IFC (EPSG:6677) on GSI terrain, with Toei
+stations and buses on the map. Three live sources paint the model: the Ōedo line's
+status on the Toei marks (green: no delays of 15 min or more), a train at Tochōmae on
+the station-name sign (with its train number), and a Toei bus passing the
+都庁第一本庁舎 stop on the stop pole.
+
+### Sources
+
+| Source | Provider | Format | Refresh | Licence |
+|---|---|---|---|---|
+| Trains (`odpt:Train`), line status (`odpt:TrainInformation`) | Toei via ODPT, key-less | JSON-LD | 30 s / 60 s | CC BY 4.0 |
+| Buses (`toei-bus`, and the stop binding) | Toei via ODPT | GTFS-Realtime protobuf | 30 s | CC BY 4.0 |
+| Stations (`tokyo-toei-stations`) | Toei via ODPT | JSON-LD | static | CC BY 4.0 |
+| Terrain | 国土地理院 (GSI) DEM10B | elevation tiles | static | GSI terms |
+
+### Limitations
+
+- ODPT locates a train only as "at A" or "between A and B": the sign lights for a train
+  at Tochōmae or one that has just left it.
+- Toei buses are not GPS: each is placed at the stop it last passed. The stop lights for
+  10 minutes after a bus passed.
+- Line status only reports delays of 15 minutes or more; its text is Japanese.
+- DEM10B reads ~3 m above the 5 m laser survey here: the model stands on the terrain's
+  surface (37.6 m) rather than at its surveyed 34.6 m.
+
+### Verification (2026-10-10 16:48 JST)
+
+All three sources `ok` (93 trains, 6 lines, 541 buses). Ōedo normal → both Toei marks
+green; train 1523A at the platform → station sign green with "1523A"; no bus had passed
+2248-01 in the last 10 minutes → stop grey. Terrain source `gsi-dem10b`, credited.
+
+---
+
+## Tokyo · Waseda — the Toden Arakawa line's terminus
+
+**Open it:** `https://www.ifcvieweronline.eu/?scene=/scenes/tokyo-waseda.scene.json`
+**Scene file:** [`public/scenes/tokyo-waseda.scene.json`](../public/scenes/tokyo-waseda.scene.json)
+
+### What it shows
+
+The Waseda terminus of the Toden Arakawa line (Tokyo Sakura Tram) as a georeferenced
+IFC 4.3 railway model on GSI terrain. The platform edges light up while a tram stands at
+the stop, with its number floating above, and the departure screens' LED matrices show
+the line's status.
+
+### Limitations
+
+- ODPT does not say which platform a tram uses: both edges light up.
+- One OpenStreetMap building (way 260395476, the stop's own concourse) is hidden by the
+  scene (`view.hide`): a railway model does not suppress buildings automatically.
+- DEM10B reads ~2 m above the laser survey here (9.8 m vs 7.9 m).
+
+### Verification (2026-10-10 09:56 JST)
+
+Tram ODPT5254 at Waseda (`toStation` empty) → both platform edges green with
+"ODPT5254"; Arakawa normal → both LED matrices green. Terrain `gsi-dem10b`
+(9.76 m at the model's origin, as the I+D package measured), credited.
+
+---
+
 ## Adding a demo
 
 1. Put the scene in `public/scenes/<id>.scene.json` (models same-origin under

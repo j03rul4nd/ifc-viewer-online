@@ -57,6 +57,8 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     const api = createViewer(mount)
     apiRef.current = api
     if (props.viewerApiRef) props.viewerApiRef.current = api
+    // DEV: the live viewer for QA from the console (bounds, transforms, camera).
+    if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__ifcViewer = api
 
     api.setSelectCallback((info) => propsRef.current.onSelect(info))
     api.setContextMenuCallback((payload) => propsRef.current.onContextMenu?.(payload))

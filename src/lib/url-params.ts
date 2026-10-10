@@ -127,6 +127,11 @@ export interface AppUrlParams {
    */
   camera?: { position: [number, number, number]; target: [number, number, number] }
   /**
+   * `?hide=w123,w456` — OpenStreetMap features to hide in map mode for this
+   * page view (not saved as the visitor's own hidden features).
+   */
+  hideFeatures: string[]
+  /**
    * `?scene=<url>` — a scene document (docs/SCENE_FORMAT.md) to open. It is
    * resolved before the app mounts and contributes its own parameters (see
    * setSceneParams); kept here so the app knows a scene is in charge.
@@ -344,6 +349,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
     turntable: parseTurntable(p.get('turntable')),
     camera: parseCamera(p.get('camera')),
+    hideFeatures: (p.get('hide') ?? '').split(',').map((x) => x.trim()).filter((x) => /^[nwr]\d{1,15}$/.test(x)).slice(0, 200),
     sceneUrl: [p.get('scene') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),

@@ -253,7 +253,19 @@
       "name": "Tòquio · Estacions Toei",
       "hint": "Estacions de metro i tramvia (ODPT) · estàtic, sense clau"
     },
-    "otherPlaces": "Altres llocs ({{n}})"
+    "otherPlaces": "Altres llocs ({{n}})",
+    "toei-bus": {
+      "name": "Tòquio · Autobusos Toei (en directe)",
+      "hint": "Cada autobús a la darrera parada que ha passat (GTFS-Realtime d’ODPT, no és GPS) · cada 30 s, sense clau"
+    },
+    "fmi-air-quality": {
+      "name": "Hèlsinki · Qualitat de l’aire (FMI)",
+      "hint": "Índex horari de qualitat de l’aire, NO₂ i partícules a les estacions d’HSY · fins a 40 min de retard, sense clau"
+    },
+    "fmi-weather": {
+      "name": "Hèlsinki · Estacions meteorològiques (FMI)",
+      "hint": "Temperatura, vent, humitat i pluja cada 10 min · sense clau"
+    }
   },
   "live": {
     "toggle": "Actualització en directe",
@@ -740,7 +752,9 @@
     },
     "filterBindings": "Filtrar vincles…",
     "alertsActive": "{{count}} en alerta",
-    "summaryFilter": "Mostrar només aquests vincles"
+    "summaryFilter": "Mostrar només aquests vincles",
+    "mqttTopics": "Topics MQTT, un per línia (buit = WebSocket simple amb missatges JSON)",
+    "mqttHint": "Amb topics, aquesta adreça és l’escolta WebSocket d’un broker MQTT. Cada missatge es llegeix com { topic, …payload }, un cop per segon; els missatges sense id de dispositiu s’ignoren."
   },
   "add": {
     "title": "Afegir dades"
@@ -799,7 +813,22 @@
         "name": "Barcelona · Plaça de Catalunya",
         "description": "Vuit models IFC georeferenciats amb Bicing, recàrrega de VE, trànsit i qualitat de l'aire en viu; l'estació Bicing 65 pinta els seus propis ancoratges."
       },
-      "meta": "{{models}} models IFC · {{live}} fonts en viu"
+      "helsinki": {
+        "name": "Hèlsinki · Rautatientori",
+        "description": "L’estació central, la catedral i la terminal d’autobusos d’Elielinaukio amb la qualitat de l’aire i el temps de l’FMI en directe; cada andana s’il·lumina mentre un autobús d’HSL hi està aturat (MQTT)."
+      },
+      "tochomae": {
+        "name": "Tòquio · Tochōmae (Toei Ōedo)",
+        "description": "La sortida A4 al costat de la seu del Govern Metropolità amb els autobusos Toei en directe; l’estat de la línia Ōedo, un tren a l’andana i un autobús que passa pinten el model."
+      },
+      "waseda": {
+        "name": "Tòquio · Waseda (Toden Arakawa)",
+        "description": "La terminal del tramvia: les vores de les andanes s’il·luminen mentre hi ha un tramvia a la parada, amb el número a sobre, i les pantalles mostren l’estat de la línia."
+      },
+      "models_one": "{{count}} model IFC",
+      "models_other": "{{count}} models IFC",
+      "live_one": "{{count}} font en viu",
+      "live_other": "{{count}} fonts en viu"
     }
   }
 }

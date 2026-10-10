@@ -17,6 +17,7 @@ import { toIfcAxes } from './measure/measure-math'
 import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './measure/section-math'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { ownerModelId } from './element-owner'
+import { pivotForYaw } from './geo/multi-placement'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, PRESET_VIEW, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
@@ -4821,6 +4822,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
               y: pivot.position.y + offset.y,
               z: pivot.position.z + offset.z,
             } }, modelId)
+          },
+          // A satellite drawn in a frame rotated against the anchor's: turned
+          // about a world point (its centre), which stays where it is.
+          setModelYaw: (modelId, yawRad, about) => {
+            const pivot = modelPivots.get(modelId)
+            if (!pivot) return
+            const p = pivotForYaw(pivot.position, pivot.rotation.y, yawRad, about)
+            const DEG = 180 / Math.PI
+            self.setModelTransform({
+              position: { x: p.x, y: pivot.position.y, z: p.z },
+              rotation: { x: pivot.rotation.x * DEG, y: yawRad * DEG, z: pivot.rotation.z * DEG },
+            }, modelId)
           },
         })
         return geoSystemInstance

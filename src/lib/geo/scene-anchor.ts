@@ -26,7 +26,7 @@
 // Pure module: proj4 (through crs.ts) and plain math only — no three.js.
 
 import { resolveCrs, gridToWgs84, normalizeEpsgCode, type CrsDef } from './crs'
-import { WGS84_RADIUS } from './geo-math'
+import { WGS84_RADIUS, WEB_MERCATOR_WORLD_M, cosLatScale, latLonToNormalized } from './geo-math'
 import type { GeoPlacement } from './geo-types'
 
 const DEG = Math.PI / 180
@@ -182,8 +182,33 @@ export function sceneY(a: SceneAnchor, elevationM: number | null | undefined): n
   return a.elevationM === null ? a.scene.y + h : a.scene.y + (h - a.elevationM)
 }
 
-/** WGS84 lon/lat (+ optional elevation) → scene. Tangent-plane: sub-cm within a few km. */
+/**
+ * Offset ON THE MAP from (lat0, lon0) to (lat, lon), in the map's metres: the
+ * spherical Web Mercator the basemap tiles, the terrain and the OSM buildings
+ * are all laid out in (geo-math.composeGeoRootTransform: normalized mercator
+ * scaled by W·cos φ0 at the anchor). A layer projected any other way drifts
+ * off its own streets with distance — the ellipsoidal tangent plane this used
+ * to be put a point 4 km from the anchor 6–10 m off its pavement
+ * (1.5 m/km east–west, 2.4 m/km north–south at Barcelona).
+ */
+export function mapOffsetFrom(lat0: number, lon0: number, lat: number, lon: number): { east: number; north: number } {
+  const a = latLonToNormalized(lat0, lon0)
+  const b = latLonToNormalized(lat, lon)
+  const s = WEB_MERCATOR_WORLD_M * cosLatScale(lat0)
+  return { east: (b.nx - a.nx) * s, north: (b.ny - a.ny) * s }
+}
+
+/**
+ * WGS84 lon/lat (+ optional elevation) → scene, exactly where the MAP draws that
+ * point — so a data layer sits on its basemap street at any distance.
+ */
 export function lonLatToScene(a: SceneAnchor, lon: number, lat: number, elevationM?: number | null): ScenePoint {
+  const { east, north } = mapOffsetFrom(a.lat, a.lon, lat, lon)
+  return enuToScene(a, east, north, sceneY(a, elevationM))
+}
+
+/** Lon/lat → scene in true ground metres (scans: they and the IFC are measured, not drawn). */
+function groundLonLatToScene(a: SceneAnchor, lon: number, lat: number, elevationM: number | null): ScenePoint {
   const { east, north } = enuFrom(a.lat, a.lon, lat, lon)
   return enuToScene(a, east, north, sceneY(a, elevationM))
 }
@@ -238,7 +263,7 @@ export function gridToScene(
   if (!ll.ok) return null
   const beta = gridConvergence(crs.value, e, n)
   return {
-    origin: lonLatToScene(a, ll.value.lon, ll.value.lat, elevationM),
+    origin: groundLonLatToScene(a, ll.value.lon, ll.value.lat, elevationM),
     yawRad: -(beta + a.rotationDeg * DEG),
     sameGrid: false,
   }

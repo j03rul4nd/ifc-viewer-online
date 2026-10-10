@@ -1,0 +1,665 @@
+{
+  "$schema": "https://www.ifcvieweronline.eu/schemas/scene-v1.json",
+  "format": "ifc-viewer-scene",
+  "v": 1,
+  "meta": {
+    "title": "Helsinki · Rautatientori — open-data digital twin",
+    "description": "Helsinki Central Station, the Cathedral and the Elielinaukio bus terminal as georeferenced IFC models on the OpenStreetMap city, with the Finnish Meteorological Institute’s air-quality and weather stations live. The terminal’s bays follow HSL’s buses in real time over MQTT: a bay lights up while a bus stands at it, green when its doors are open, with the line number above it.",
+    "license": "CC BY 4.0 (this scene document). Data keep their own licences: see each layer.",
+    "tags": [
+      "helsinki",
+      "digital twin",
+      "open data",
+      "IFC",
+      "MQTT",
+      "HSL",
+      "FMI",
+      "air quality"
+    ],
+    "place": {
+      "name": "Rautatientori, Helsinki",
+      "lat": 60.1712,
+      "lon": 24.9416
+    },
+    "createdAt": "2026-10-10T01:00:00Z",
+    "notes": [
+      "The IFC files are illustrative models authored from public drawings, OpenStreetMap (ODbL) and the City of Helsinki LOD2 model; they are not surveys.",
+      "Bus bays are matched to HSL stops by their platform number (GTFS, 2026-10-10). Bays 21, 27 and 31–36 have no HSL stop today and stay unlinked.",
+      "The global terrain reads about 18 m above the Finnish N2000 heights here, so the models stand on the terrain’s surface rather than at their stated elevation."
+    ]
+  },
+  "models": [
+    {
+      "url": "/models/helsinki/helsinki-central-station.ifc",
+      "name": "helsinki-central-station.ifc"
+    },
+    {
+      "url": "/models/helsinki/helsinki-cathedral.ifc",
+      "name": "helsinki-cathedral.ifc"
+    },
+    {
+      "url": "/models/helsinki/elielinaukio-bus-terminal.ifc",
+      "name": "elielinaukio-bus-terminal.ifc"
+    }
+  ],
+  "layers": [
+    {
+      "preset": "fmi-air-quality"
+    },
+    {
+      "preset": "fmi-weather"
+    }
+  ],
+  "twin": {
+    "sources": [
+      {
+        "id": "hsl-hfp-elielinaukio",
+        "name": "HSL buses at Elielinaukio (HFP over MQTT)",
+        "url": "wss://mqtt.hsl.fi:443/",
+        "intervalS": 5,
+        "topics": [
+          "/hfp/v2/journey/ongoing/vp/bus/+/+/+/+/+/+/+/+/60;24/19/73/#"
+        ],
+        "mapping": {
+          "listPath": "",
+          "idField": "VP.stop",
+          "timeField": "VP.tst"
+        },
+        "enabled": true
+      }
+    ],
+    "bindings": [
+      {
+        "id": "elielinaukio-bay-20",
+        "name": "Elielinaukio bay 20 — HSL stop 1020128 (H2020)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020128",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 20 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-22",
+        "name": "Elielinaukio bay 22 — HSL stop 1020131 (H2022)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020131",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 22 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-23",
+        "name": "Elielinaukio bay 23 — HSL stop 1020133 (H2023)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020133",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 23 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-24",
+        "name": "Elielinaukio bay 24 — HSL stop 1020135 (H2024)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020135",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 24 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-25",
+        "name": "Elielinaukio bay 25 — HSL stop 1020132 (H2025)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020132",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 25 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-26",
+        "name": "Elielinaukio bay 26 — HSL stop 1020239 (H2026)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020239",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 26 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-28",
+        "name": "Elielinaukio bay 28 — HSL stop 1020243 (H2028)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020243",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 28 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-29",
+        "name": "Elielinaukio bay 29 — HSL stop 1020245 (H2029)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020245",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 29 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      },
+      {
+        "id": "elielinaukio-bay-30",
+        "name": "Elielinaukio bay 30 — HSL stop 1020130 (H2037)",
+        "sourceId": "hsl-hfp-elielinaukio",
+        "deviceId": "1020130",
+        "targets": [],
+        "query": {
+          "classes": [],
+          "storey": "",
+          "nameContains": "Bay 30 "
+        },
+        "rules": [
+          {
+            "id": "doors",
+            "name": "Doors open — boarding",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.drst",
+                "op": "eq",
+                "value": 1
+              }
+            ],
+            "effect": {
+              "color": "#22c55e",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "standing",
+            "name": "Bus standing at the bay",
+            "match": "all",
+            "filters": [
+              {
+                "field": "VP.spd",
+                "op": "lt",
+                "value": 0.5
+              }
+            ],
+            "effect": {
+              "color": "#2fb7ff",
+              "opacity": 1,
+              "hide": false
+            }
+          },
+          {
+            "id": "moving",
+            "name": "Bus pulling in or out",
+            "match": "all",
+            "filters": [],
+            "effect": {
+              "color": "#f59e0b",
+              "opacity": 1,
+              "hide": false
+            }
+          }
+        ],
+        "staleColor": "#8a8f98",
+        "staleAfterS": 45,
+        "label": {
+          "field": "VP.desi"
+        }
+      }
+    ]
+  },
+  "view": {
+    "map": "terrain,buildings",
+    "camera": {
+      "position": [
+        -70,
+        170,
+        250
+      ],
+      "target": [
+        130,
+        0,
+        -70
+      ]
+    }
+  }
+}

@@ -76,9 +76,11 @@ describe('scene-anchor', () => {
     if (!ll.ok) throw new Error('ll')
     const viaLonLat = lonLatToScene(a, ll.value.lon, ll.value.lat, 10)
     const viaGrid = gridToScene(a, 'EPSG:25831', E0 + 200, N0 - 150, 10)!
-    // What is left is the UTM scale factor (grid metres vs ground metres, ~0.03 %).
-    expect(Math.abs(viaLonLat.x - viaGrid.origin.x)).toBeLessThan(0.1)
-    expect(Math.abs(viaLonLat.z - viaGrid.origin.z)).toBeLessThan(0.1)
+    // Lon/lat (data layers) is drawn where the MAP draws it — spherical Web
+    // Mercator scaled at the anchor — while a scan in the anchor's own grid
+    // stays in measured metres, like the IFC. The two differ by the map's scale
+    // against the ground (0.15–0.25 % at mid latitudes): under 0.7 m at 250 m.
+    expect(Math.hypot(viaLonLat.x - viaGrid.origin.x, viaLonLat.z - viaGrid.origin.z)).toBeLessThan(0.7)
   })
 
   it('heights without an anchor elevation are read as height above the anchor ground', () => {

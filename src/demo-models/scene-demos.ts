@@ -17,6 +17,9 @@ export interface SceneDemo {
 
 export const SCENE_DEMOS: SceneDemo[] = [
   { id: 'barcelona-placa-catalunya', scene: '/scenes/barcelona-placa-catalunya.scene.json', key: 'barcelona', models: 8, live: 6 },
+  { id: 'helsinki-rautatientori', scene: '/scenes/helsinki-rautatientori.scene.json', key: 'helsinki', models: 3, live: 3 },
+  { id: 'tokyo-tochomae', scene: '/scenes/tokyo-tochomae.scene.json', key: 'tochomae', models: 1, live: 4 },
+  { id: 'tokyo-waseda', scene: '/scenes/tokyo-waseda.scene.json', key: 'waseda', models: 1, live: 2 },
 ]
 
 /** Where a scene demo opens: this app, with the scene as its only parameter. */

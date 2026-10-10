@@ -28,6 +28,7 @@ export function useGeoEffects(
   const mapMode = useGeoStore((s) => s.mapMode)
   const buildingsEnabled = useGeoStore((s) => s.buildingsEnabled)
   const hiddenFeatures = useGeoStore((s) => s.hiddenFeatures)
+  const sceneHidden = useGeoStore((s) => s.sceneHidden)
   const hideMode = useGeoStore((s) => s.hideMode)
   const slow = useGeoStore((s) => s.perf?.slow ?? false)
   const adaptiveQuality = useGeoStore((s) => s.adaptiveQuality)
@@ -182,9 +183,9 @@ export function useGeoEffects(
   // renders and rebuilds exactly once when the user hides or restores one.
   useEffect(() => {
     if (mapMode !== 'on') return
-    const ids = hiddenFeatures.map((h) => h.id)
+    const ids = [...new Set([...hiddenFeatures.map((h) => h.id), ...sceneHidden])]
     withGeo((geo) => geo.setHiddenFeatures(ids))
-  }, [mapMode, hiddenFeatures, withGeo])
+  }, [mapMode, hiddenFeatures, sceneHidden, withGeo])
 
   // Hide mode is only meaningful while there are surroundings to click, and a
   // mode nobody can leave is a bug. Dropping it here covers every exit —
