@@ -15,7 +15,7 @@ phone with an empty scene had no way in at all.
 
 | Where | What |
 | --- | --- |
-| Top bar | **Open** stays the IFC door (one click to the IFC review). Right after it, **+ Add data**: a secondary button, labelled from 1024px (lg), a 28px "+" below that. Enabled on an empty scene and during validation runs. |
+| Top bar | **Open** stays the IFC door (one click to the IFC review). Right after it, **+ Add data**: a secondary button, labelled from 1280px (xl), a 28px "+" with tooltip below that (the pre-decided fallback: at 1024px the labelled button overflowed the bar). Enabled on an empty scene and during validation runs. |
 | Open ▾ | Open IFC file…, Demo models, Open scene file…, then *Add data…* |
 | Phone | A 44px glass "+" capsule beside the model capsule, always present. |
 | Upload dialog | "Scans, video, 3D models or map layers? Add data" closes it and opens the hub. |

@@ -862,7 +862,7 @@ scan loaded with no panel open, and a phone with an empty scene had no way in.
 
 **Decision.**
 1. Open stays the IFC door. A labelled, always-enabled **+ Add data** button
-   (label from lg), an Open ▾ redirect, a phone "+" capsule and a link in the
+   (label from xl, measured: lg overflowed the bar at 1024px), an Open ▾ redirect, a phone "+" capsule and a link in the
    upload dialog all open one `Modal` hub (sheet on phones) with a drop zone and
    intent-ordered cards. Not a popover: the content does not fit the menu shell
    and Modal owns focus and Escape.

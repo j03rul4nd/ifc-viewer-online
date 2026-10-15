@@ -710,10 +710,10 @@ export default function Toolbar({
             title={t('menu.addDataTooltip')}
             aria-label={t('menu.addData')}
             aria-haspopup="dialog"
-            className="inline-flex items-center justify-center gap-1.5 h-[28px] min-w-[28px] px-1.5 lg:px-2.5 rounded-[5px] text-[12px] font-medium whitespace-nowrap bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 transition-colors duration-100"
+            className="inline-flex items-center justify-center gap-1.5 h-[28px] min-w-[28px] px-1.5 xl:px-2.5 rounded-[5px] text-[12px] font-medium whitespace-nowrap bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 transition-colors duration-100"
           >
             <Icons.Plus size={14} strokeWidth={2} className="text-[var(--accent)]" />
-            <span className="hidden lg:inline">{t('menu.addData')}</span>
+            <span className="hidden xl:inline">{t('menu.addData')}</span>
           </button>
         </div>
       )}
