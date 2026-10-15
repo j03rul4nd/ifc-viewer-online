@@ -119,6 +119,19 @@ describe('colour helpers', () => {
     expect(colorModeAvailable('flat', undefined)).toBe(true)
     expect(colorModeAvailable('rgb', undefined)).toBe(false)
   })
+
+  it('treats the per-scan modes as always drawable, and never suggests them', () => {
+    expect(colorModeAvailable('scan', undefined)).toBe(true)
+    expect(colorModeAvailable('topic', undefined)).toBe(true)
+    const all = [undefined, { color: false, intensity: false, classification: false, confidence: false },
+      { color: true, intensity: true, classification: true, confidence: true }]
+    for (const a of all) expect(['scan', 'topic']).not.toContain(bestColorMode(a))
+  })
+
+  it('judges faintness from the effective opacity it is given', () => {
+    expect(diagnoseCloud(input({ display: { colorMode: 'rgb', opacity: 0.1 } })).some((i) => i.id === 'faint')).toBe(true)
+    expect(diagnoseCloud(input({ display: { colorMode: 'rgb', opacity: 1 } })).some((i) => i.id === 'faint')).toBe(false)
+  })
 })
 
 describe('boxGap / presets', () => {

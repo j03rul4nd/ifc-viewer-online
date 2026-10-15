@@ -94,7 +94,7 @@ describe('createPointCloudSystem — scene graph', () => {
     expect(nodes).toBeLessThan(20)
   })
 
-  it('shares one material across every chunk of every cloud', () => {
+  it("one material per cloud, shared by that cloud's chunks; different clouds, identical shader source", () => {
     const ctx = makeContext()
     const system = createPointCloudSystem(ctx)
     system.create('a', alignment())
@@ -103,8 +103,14 @@ describe('createPointCloudSystem — scene graph', () => {
     system.addChunk('a', chunk('k1', 100, { x: 30, y: 0, z: 0 }))
     system.addChunk('b', chunk('k0', 100, { x: 60, y: 0, z: 0 }))
 
-    const materials = new Set(pointObjects(ctx.scene).map((p) => p.material))
-    expect(materials.size).toBe(1)
+    const [a0, a1, b0] = pointObjects(ctx.scene)
+    expect(a0.material).toBe(a1.material)
+    expect(b0.material).not.toBe(a0.material)
+    const ma = a0.material as THREE.ShaderMaterial
+    const mb = b0.material as THREE.ShaderMaterial
+    // Same source, so three compiles ONE program; a per-scan style is uniforms only.
+    expect(mb.vertexShader).toBe(ma.vertexShader)
+    expect(mb.fragmentShader).toBe(ma.fragmentShader)
   })
 
   it('uploads colour as normalized bytes, not floats', () => {
@@ -267,7 +273,7 @@ describe('createPointCloudSystem — lifecycle', () => {
     expect(system.getStats().pointCount).toBe(0)
   })
 
-  it('disposes everything, including the shared material, on dispose()', () => {
+  it("disposes everything, including every cloud's material, on dispose()", () => {
     const ctx = makeContext()
     const system = createPointCloudSystem(ctx)
     system.create('a', alignment())
@@ -275,11 +281,11 @@ describe('createPointCloudSystem — lifecycle', () => {
     system.create('b', alignment())
     system.addChunk('b', chunk('k0', 500, { x: 40, y: 0, z: 0 }))
 
-    const material = pointObjects(ctx.scene)[0].material as THREE.Material
-    const materialSpy = vi.spyOn(material, 'dispose')
+    const spies = pointObjects(ctx.scene).map((p) => vi.spyOn(p.material as THREE.Material, 'dispose'))
+    expect(spies).toHaveLength(2)
 
     system.dispose()
-    expect(materialSpy).toHaveBeenCalled()
+    for (const spy of spies) expect(spy).toHaveBeenCalled()
     expect(pointObjects(ctx.scene)).toHaveLength(0)
     expect(system.count()).toBe(0)
   })
@@ -310,18 +316,22 @@ describe('createPointCloudSystem — lifecycle', () => {
 })
 
 describe('createPointCloudSystem — display and budget', () => {
-  it('pushes display settings into the shared material uniforms', () => {
+  it("pushes display settings into every cloud's material uniforms", () => {
     const ctx = makeContext()
     const system = createPointCloudSystem(ctx)
     system.create('c1', alignment())
     system.addChunk('c1', chunk('k0', 100))
+    system.create('c2', alignment())
+    system.addChunk('c2', chunk('k0', 100, { x: 40, y: 0, z: 0 }))
     system.setDisplay({ ...DEFAULT_DISPLAY, pointSize: 7, opacity: 0.4, confidenceThreshold: 0.5, colorMode: 'intensity' })
 
-    const material = pointObjects(ctx.scene)[0].material as THREE.ShaderMaterial
-    expect(material.uniforms.uSize.value).toBe(7)
-    expect(material.uniforms.uOpacity.value).toBe(0.4)
-    expect(material.uniforms.uConfidenceMin.value).toBe(0.5)
-    expect(material.transparent).toBe(true)
+    for (const p of pointObjects(ctx.scene)) {
+      const material = p.material as THREE.ShaderMaterial
+      expect(material.uniforms.uSize.value).toBe(7)
+      expect(material.uniforms.uOpacity.value).toBe(0.4)
+      expect(material.uniforms.uConfidenceMin.value).toBe(0.5)
+      expect(material.transparent).toBe(true)
+    }
   })
 
   it('hides a cloud without discarding its buffers', () => {
@@ -645,3 +655,99 @@ describe('point-cloud-system · raycast integration', () => {
 function findRoot(scene: THREE.Scene): THREE.Object3D | null {
   return scene.children.find((c) => c.name.startsWith('point-cloud:')) ?? null
 }
+
+describe('createPointCloudSystem — per-cloud style', () => {
+  function two() {
+    const ctx = makeContext()
+    const system = createPointCloudSystem(ctx)
+    system.create('a', alignment())
+    system.addChunk('a', chunk('k0', 100))
+    system.create('b', alignment())
+    system.addChunk('b', chunk('k0', 100, { x: 40, y: 10, z: 0 }))
+    const mat = (id: string): THREE.ShaderMaterial =>
+      (ctx.scene.children.find((o) => o.name === `point-cloud:${id}`)!.children[0] as THREE.Points)
+        .material as THREE.ShaderMaterial
+    return { ctx, system, mat }
+  }
+
+  it("setCloudStyle changes only that cloud's material", () => {
+    const { system, mat } = two()
+    system.setCloudStyle('b', { colorMode: 'flat', flatColor: 0xff0000, pointSize: 6, opacity: 0.5 })
+    expect(mat('b').uniforms.uMode.value).toBe(4)
+    expect(mat('b').uniforms.uSize.value).toBe(6)
+    expect(mat('b').uniforms.uOpacity.value).toBe(0.5)
+    expect(mat('b').transparent).toBe(true)
+    expect(mat('a').uniforms.uSize.value).toBe(2)
+  })
+
+  it('setDisplay keeps analysis scene-wide and per-cloud overrides on top', () => {
+    const { system, mat } = two()
+    system.setCloudStyle('b', { colorMode: 'flat', flatColor: 0xff0000, pointSize: 6, opacity: 0.5 })
+    system.setDisplay({ ...DEFAULT_DISPLAY, sliceEnabled: true, pointSize: 3 })
+    expect(mat('a').uniforms.uSliceOn.value).toBe(1)
+    expect(mat('b').uniforms.uSliceOn.value).toBe(1)
+    expect(mat('a').uniforms.uSize.value).toBe(3)
+    expect(mat('b').uniforms.uSize.value).toBe(6)
+  })
+
+  it('applies a style set before create() at create', () => {
+    const ctx = makeContext()
+    const system = createPointCloudSystem(ctx)
+    system.setCloudStyle('c', { colorMode: 'flat', flatColor: 0x00ff00, pointSize: 9, opacity: 1 })
+    system.create('c', alignment())
+    system.addChunk('c', chunk('k0', 10))
+    expect(system.getCloudDisplay('c')?.pointSize).toBe(9)
+    expect((pointObjects(ctx.scene)[0].material as THREE.ShaderMaterial).uniforms.uSize.value).toBe(9)
+  })
+
+  it("remove('b') disposes only b's material", () => {
+    const { system, mat } = two()
+    const sa = vi.spyOn(mat('a'), 'dispose')
+    const sb = vi.spyOn(mat('b'), 'dispose')
+    system.remove('b')
+    expect(sb).toHaveBeenCalled()
+    expect(sa).not.toHaveBeenCalled()
+  })
+
+  it('returns early for the identical alignment object', () => {
+    const { ctx, system } = two()
+    const a = alignment({ origin: { x: 1, y: 0, z: 0 } })
+    system.setAlignment('a', a)
+    const root = ctx.scene.children.find((o) => o.name === 'point-cloud:a')!
+    const spy = vi.spyOn(root.position, 'set')
+    system.setAlignment('a', a)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('highlights a located cloud and restores it', () => {
+    const { system } = two()
+    const before = system.getCloudDisplay('a')
+    system.setHighlight('a')
+    expect(system.getCloudDisplay('a')).toMatchObject({ colorMode: 'flat', flatColor: 0xFF2BD6, opacity: 1 })
+    system.setHighlight(null)
+    expect(system.getCloudDisplay('a')).toEqual(before)
+  })
+
+  it('uses the union elevation range on both materials', () => {
+    const { system, mat } = two()
+    const b = system.getBounds()!
+    for (const id of ['a', 'b']) {
+      expect(mat(id).uniforms.uElevMin.value).toBeCloseTo(b.min.y)
+      expect(mat(id).uniforms.uElevMax.value).toBeCloseTo(b.max.y)
+    }
+  })
+
+  it("addDynamicBuffer uses its own cloud's material", () => {
+    const ctx = makeContext()
+    const system = createPointCloudSystem(ctx)
+    system.create('a', alignment())
+    system.addChunk('a', chunk('k0', 10))
+    system.create('live', alignment({ upAxis: 'y' }))
+    system.addDynamicBuffer('live', 8)
+    system.setCloudStyle('live', { colorMode: 'flat', flatColor: 0x123456, pointSize: 5, opacity: 1 })
+    const live = ctx.scene.children.find((o) => o.name === 'point-cloud:live')!.children[0] as THREE.Points
+    const a = ctx.scene.children.find((o) => o.name === 'point-cloud:a')!.children[0] as THREE.Points
+    expect(live.material).not.toBe(a.material)
+    expect((live.material as THREE.ShaderMaterial).uniforms.uSize.value).toBe(5)
+  })
+})

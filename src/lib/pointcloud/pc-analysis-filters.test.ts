@@ -3,7 +3,7 @@
 // shader slots, and a reload never restores a filter that hides part of a scan.
 
 import { describe, it, expect } from 'vitest'
-import { classVisibility } from './pc-material'
+import { classVisibility, POINT_COLOR_MODE_INDEX } from './pc-material'
 import { parseDisplay } from '../../stores/pointCloudStore'
 import { DEFAULT_DISPLAY } from './pc-types'
 
@@ -30,5 +30,22 @@ describe('parseDisplay and analysis filters', () => {
     expect(d.sliceEnabled).toBe(false)
     expect(d.classMask).toBe(0xffff)
     expect(d.contours).toBe(false)
+  })
+})
+
+describe('per-scan colour modes', () => {
+  it('map to the flat shader slot as a safety net', () => {
+    expect(POINT_COLOR_MODE_INDEX.scan).toBe(4)
+    expect(POINT_COLOR_MODE_INDEX.topic).toBe(4)
+  })
+
+  it('survive a reload, while filters still do not', () => {
+    for (const mode of ['scan', 'topic'] as const) {
+      const d = parseDisplay(JSON.stringify({ ...DEFAULT_DISPLAY, colorMode: mode, sliceEnabled: true, classMask: 4, contours: true }))
+      expect(d.colorMode).toBe(mode)
+      expect(d.sliceEnabled).toBe(false)
+      expect(d.classMask).toBe(0xffff)
+      expect(d.contours).toBe(false)
+    }
   })
 })

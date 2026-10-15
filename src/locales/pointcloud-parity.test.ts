@@ -82,9 +82,14 @@ describe('pointcloud locale parity', () => {
   })
 
   it('labels every colour mode the shader supports', () => {
-    for (const mode of ['rgb', 'intensity', 'elevation', 'classification', 'flat']) {
+    for (const mode of ['rgb', 'intensity', 'elevation', 'classification', 'flat', 'scan', 'topic']) {
       expect(EN[`display.mode.${mode}`], `missing colour mode label ${mode}`).toBeTruthy()
     }
+  })
+
+  it("labels and explains the 'epochs' use case", () => {
+    expect(EN['analyze.recipe.epochs.label']).toBeTruthy()
+    expect(EN['analyze.recipe.epochs.hint']).toBeTruthy()
   })
 
   it('carries every honesty disclaimer in all ten locales', () => {

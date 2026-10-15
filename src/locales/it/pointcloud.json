@@ -205,12 +205,17 @@
       "intensity": "Intensità",
       "elevation": "Altezza",
       "classification": "Classificazione",
-      "flat": "Tinta unita"
+      "flat": "Tinta unita",
+      "scan": "Un colore per scansione",
+      "topic": "Colore per argomento"
     },
     "modeUnavailable": "Non presente in questo file",
     "flatColor": "Colore",
     "confidence": "Soglia di confidenza",
-    "confidenceHint": "Nasconde i punti su cui la ricostruzione era meno sicura. Solo i file che portano una confidenza per punto ce l'hanno."
+    "confidenceHint": "Nasconde i punti su cui la ricostruzione era meno sicura. Solo i file che portano una confidenza per punto ce l'hanno.",
+    "scanModeHint": "Ogni scansione è disegnata nel proprio colore. Fai clic sul campione di colore di una scansione nell'elenco per cambiarlo.",
+    "topicModeHint": "Ogni scansione è disegnata nel colore del suo primo argomento. Le scansioni senza argomento sono grigie.",
+    "fallback": "{{name}} non ha dati per {{wanted}}, quindi è disegnato per {{mode}}."
   },
   "inspect": {
     "title": "Ispeziona",
@@ -318,7 +323,8 @@
       "xray": "Raggi X",
       "scan-vs-bim": "Nuvola vs BIM"
     },
-    "drawn": "Disegnati / caricati"
+    "drawn": "Disegnati / caricati",
+    "samplesDisclosure": "Scansioni di esempio e demo LiDAR"
   },
   "presets": {
     "title": "Stile rapido",
@@ -347,7 +353,9 @@
       "tooLarge": "La nuvola è molto più grande del previsto: probabilmente è in millimetri, centimetri o piedi.",
       "tooSmall": "La nuvola è molto più piccola del previsto: potrebbe essere in chilometri o scalata.",
       "heavy": "Molti punti al massimo dettaglio: impostazioni più leggere manterranno fluida la navigazione."
-    }
+    },
+    "titleFor": "Controllo · {{name}}",
+    "moreSymptoms": "Qualcos'altro non va?"
   },
   "fix": {
     "flipUpAxis": "Ruota asse verticale",
@@ -436,6 +444,10 @@
       "clearance": {
         "label": "Misura un franco",
         "hint": "Attiva lo strumento distanza: clicca due punti della scansione (pavimento–trave, muro–muro) per leggere lo spazio reale costruito."
+      },
+      "epochs": {
+        "label": "Confronta rilievi",
+        "hint": "Ogni argomento — o ogni scansione, se nessuna ha un argomento — nel proprio colore, tutti visibili insieme."
       }
     },
     "needsClasses": "Serve un file classificato",
@@ -488,6 +500,88 @@
       "area": "Area",
       "angle": "Angolo",
       "point": "Punto"
-    }
+    },
+    "needsTwoScans": "Servono due o più scansioni."
+  },
+  "scope": {
+    "label": "Si applica a",
+    "all": "Tutte le scansioni",
+    "selected": "Selezionate ({{count}})",
+    "allCaption": "Cambia il valore predefinito della scena per tutte le scansioni ({{count}}).",
+    "selectedCaption": "Cambia solo {{names}}. Le altre scansioni mantengono il valore predefinito della scena.",
+    "emptySelection": "Seleziona le scansioni nell'elenco per cambiare solo quelle.",
+    "analyzeCaption": "Filtri e casi d'uso si applicano a ogni scansione.",
+    "sceneWide": "Per tutta la scena",
+    "sceneWideHint": "Si applica a ogni scansione, qualunque sia la selezione.",
+    "mixed": "Misto",
+    "useDefault": "Usa il valore della scena",
+    "overridden": "Scansioni con stile proprio: {{count}}",
+    "resetAll": "Ripristina tutto al valore della scena"
+  },
+  "list": {
+    "selectAll": "Seleziona tutte le scansioni",
+    "selectRow": "Seleziona {{name}}",
+    "hint": "Clic per selezionare · Ctrl/⌘-clic per aggiungere · Maiusc-clic per un intervallo",
+    "locate": "Individua nella scena",
+    "renameHint": "Fai doppio clic o premi F2 per rinominare",
+    "renameLabel": "Nome della scansione",
+    "useFileName": "Lascia vuoto per usare il nome del file",
+    "color": "Colore di {{name}}",
+    "removeConfirm": "Rimuovere?",
+    "health": "Cose da controllare: {{count}}",
+    "healthOk": "Niente da controllare",
+    "fileDate": "Data del file {{date}}"
+  },
+  "bulk": {
+    "selected": "Selezionate: {{count}}",
+    "show": "Mostra",
+    "hide": "Nascondi",
+    "solo": "Solo questi",
+    "soloHint": "Mostra solo le scansioni selezionate. Premi di nuovo per mostrarle tutte.",
+    "frame": "Inquadra",
+    "topic": "Argomento",
+    "rename": "Rinomina",
+    "remove": "Rimuovi",
+    "removeConfirm": "Rimuovere dalla scena le scansioni selezionate ({{count}})? I file sul tuo dispositivo non vengono toccati.",
+    "removeYes": "Sì, rimuovi",
+    "keep": "Mantieni",
+    "clear": "Cancella selezione"
+  },
+  "topics": {
+    "title": "Argomenti",
+    "add": "Nuovo argomento",
+    "defaultName": "Argomento {{n}}",
+    "edit": "Modifica argomenti",
+    "done": "Fatto",
+    "name": "Nome dell'argomento",
+    "color": "Colore dell'argomento",
+    "delete": "Elimina argomento",
+    "empty": "Seleziona le scansioni, poi aggiungi un argomento per raggrupparle per data di rilievo, area o disciplina.",
+    "chipHint": "Clic: seleziona · Ctrl/⌘-clic: aggiungi · Alt-clic: mostra solo questi",
+    "show": "Mostra {{name}}",
+    "hide": "Nascondi {{name}}",
+    "assignTitle": "Argomenti delle scansioni selezionate",
+    "newFromSelection": "Nuovo argomento dalla selezione",
+    "limit": "Fino a {{max}} argomenti.",
+    "byFileDate": "Raggruppa per data del file ({{count}})",
+    "byFileDateHint": "Un argomento per ogni data scritta nell'intestazione LAS/LAZ/COPC. È quando il file è stato prodotto: spesso, ma non sempre, il giorno del rilievo.",
+    "dismiss": "Ignora"
+  },
+  "place": {
+    "alignedTo": "Allineato a {{model}}",
+    "alignedToNone": "Posizionato da solo: nessun modello IFC era caricato al suo arrivo.",
+    "fileDate": "Data del file: {{date}}",
+    "fileDateHint": "Letta dall'intestazione del file: di solito il giorno del rilievo o dell'elaborazione.",
+    "undo": "Annulla",
+    "redo": "Ripeti",
+    "historyHint": "L'annullamento è condiviso con il pannello Scena.",
+    "exact": "{{label}}, valore esatto",
+    "fieldHint": "Frecce per regolare · Maiusc ×10 · Alt ×0,1",
+    "summary": "Posizionamento delle scansioni ({{count}})",
+    "together": "Sposta insieme",
+    "togetherHint": "Sposta e ruota queste scansioni ({{count}}) come un unico blocco attorno al loro centro comune. Ognuna mantiene la propria livellazione e scala.",
+    "apply": "Applica",
+    "resetMany": "Ripristina il posizionamento delle scansioni ({{count}})",
+    "oneAtATime": "Asse verticale, unità e SR si impostano una scansione alla volta: selezionane una sola per cambiarli."
   }
 }

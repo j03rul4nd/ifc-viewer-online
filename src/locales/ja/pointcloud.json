@@ -205,12 +205,17 @@
       "intensity": "強度",
       "elevation": "高さ",
       "classification": "分類",
-      "flat": "単色"
+      "flat": "単色",
+      "scan": "スキャンごとに1色",
+      "topic": "トピック別の色"
     },
     "modeUnavailable": "このファイルにはありません",
     "flatColor": "色",
     "confidence": "信頼度のしきい値",
-    "confidenceHint": "再構成の確信度が最も低かった点を隠します。点ごとの信頼度を持つファイルにのみ有効です。"
+    "confidenceHint": "再構成の確信度が最も低かった点を隠します。点ごとの信頼度を持つファイルにのみ有効です。",
+    "scanModeHint": "各スキャンは固有の色で描画されます。変更するにはリストでスキャンの色見本をクリックします。",
+    "topicModeHint": "各スキャンは最初のトピックの色で描画されます。トピックのないスキャンはグレーで描画されます。",
+    "fallback": "{{name}} には {{wanted}} のデータがないため、{{mode}} で描画されます。"
   },
   "inspect": {
     "title": "点を調べる",
@@ -318,7 +323,8 @@
       "xray": "X線",
       "scan-vs-bim": "スキャン vs BIM"
     },
-    "drawn": "描画 / 読込"
+    "drawn": "描画 / 読込",
+    "samplesDisclosure": "サンプルスキャンと LiDAR デモ"
   },
   "presets": {
     "title": "クイックスタイル",
@@ -347,7 +353,9 @@
       "tooLarge": "想定よりはるかに大きいです。ミリ・センチ・フィート単位の可能性があります。",
       "tooSmall": "想定よりはるかに小さいです。キロメートル単位か縮小されている可能性があります。",
       "heavy": "最大詳細で点数が多すぎます。軽い設定にすると操作が滑らかになります。"
-    }
+    },
+    "titleFor": "チェック · {{name}}",
+    "moreSymptoms": "ほかにおかしな点がありますか？"
   },
   "fix": {
     "flipUpAxis": "上軸を切替",
@@ -436,6 +444,10 @@
       "clearance": {
         "label": "クリアランスを測る",
         "hint": "距離ツールを有効にします。スキャンの 2 点（床から梁、壁から壁）をクリックして実際の寸法を読み取ります。"
+      },
+      "epochs": {
+        "label": "計測を比較",
+        "hint": "各トピック（トピックがない場合は各スキャン）を固有の色で、すべて同時に表示します。"
       }
     },
     "needsClasses": "分類済みファイルが必要",
@@ -488,6 +500,88 @@
       "area": "面積",
       "angle": "角度",
       "point": "点"
-    }
+    },
+    "needsTwoScans": "2つ以上のスキャンが必要です。"
+  },
+  "scope": {
+    "label": "適用先",
+    "all": "すべてのスキャン",
+    "selected": "選択中 ({{count}})",
+    "allCaption": "すべてのスキャン ({{count}}) のシーン既定値を変更します。",
+    "selectedCaption": "{{names}} のみを変更します。他のスキャンはシーン既定値のままです。",
+    "emptySelection": "それらだけを変更するには、リストでスキャンを選択します。",
+    "analyzeCaption": "フィルターとユースケースはすべてのスキャンに適用されます。",
+    "sceneWide": "シーン全体",
+    "sceneWideHint": "選択に関係なく、すべてのスキャンに適用されます。",
+    "mixed": "混在",
+    "useDefault": "シーン既定値を使用",
+    "overridden": "独自スタイルのスキャン: {{count}}",
+    "resetAll": "すべてシーン既定値に戻す"
+  },
+  "list": {
+    "selectAll": "すべてのスキャンを選択",
+    "selectRow": "{{name}} を選択",
+    "hint": "クリックで選択 · Ctrl/⌘+クリックで追加 · Shift+クリックで範囲選択",
+    "locate": "シーン内で探す",
+    "renameHint": "ダブルクリックまたは F2 で名前を変更",
+    "renameLabel": "スキャン名",
+    "useFileName": "空欄にするとファイル名を使用します",
+    "color": "{{name}} の色",
+    "removeConfirm": "削除しますか？",
+    "health": "確認事項: {{count}}",
+    "healthOk": "確認事項なし",
+    "fileDate": "ファイル日付 {{date}}"
+  },
+  "bulk": {
+    "selected": "選択中: {{count}}",
+    "show": "表示",
+    "hide": "非表示",
+    "solo": "単独表示",
+    "soloHint": "選択したスキャンのみ表示します。もう一度押すとすべて表示します。",
+    "frame": "フレーム",
+    "topic": "トピック",
+    "rename": "名前を変更",
+    "remove": "削除",
+    "removeConfirm": "選択したスキャン ({{count}}) をシーンから削除しますか？デバイス上のファイルは変更されません。",
+    "removeYes": "はい、削除します",
+    "keep": "残す",
+    "clear": "選択を解除"
+  },
+  "topics": {
+    "title": "トピック",
+    "add": "新しいトピック",
+    "defaultName": "トピック {{n}}",
+    "edit": "トピックを編集",
+    "done": "完了",
+    "name": "トピック名",
+    "color": "トピックの色",
+    "delete": "トピックを削除",
+    "empty": "スキャンを選択してからトピックを追加すると、計測日・エリア・分野でグループ化できます。",
+    "chipHint": "クリック: 選択 · Ctrl/⌘+クリック: 追加 · Alt+クリック: これらのみ表示",
+    "show": "{{name}} を表示",
+    "hide": "{{name}} を非表示",
+    "assignTitle": "選択したスキャンのトピック",
+    "newFromSelection": "選択から新しいトピック",
+    "limit": "トピックは最大 {{max}} 件です。",
+    "byFileDate": "ファイル日付でグループ化 ({{count}})",
+    "byFileDateHint": "LAS/LAZ/COPC ヘッダーに書かれた日付ごとに1つのトピックを作成します。これはファイルが作成された日で、計測日と一致することが多いですが、常にではありません。",
+    "dismiss": "閉じる"
+  },
+  "place": {
+    "alignedTo": "{{model}} に位置合わせ済み",
+    "alignedToNone": "単独で配置 — 読み込み時に IFC モデルはありませんでした。",
+    "fileDate": "ファイル日付: {{date}}",
+    "fileDateHint": "ファイルヘッダーから読み取り — 通常は計測日または処理日です。",
+    "undo": "元に戻す",
+    "redo": "やり直す",
+    "historyHint": "元に戻す操作はシーンパネルと共有されます。",
+    "exact": "{{label}}、正確な値",
+    "fieldHint": "矢印キーで微調整 · Shift ×10 · Alt ×0.1",
+    "summary": "スキャン ({{count}}) の配置",
+    "together": "まとめて移動",
+    "togetherHint": "これらのスキャン ({{count}}) を共通の中心を軸に1つのブロックとして移動・回転します。各スキャンの水平補正とスケールは維持されます。",
+    "apply": "適用",
+    "resetMany": "スキャン ({{count}}) の配置をリセット",
+    "oneAtATime": "上方向の軸・単位・CRS はスキャンごとに設定します。変更するには1つのスキャンを選択してください。"
   }
 }

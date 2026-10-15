@@ -205,12 +205,17 @@
       "intensity": "Intensidad",
       "elevation": "Altura",
       "classification": "Clasificación",
-      "flat": "Color único"
+      "flat": "Color único",
+      "scan": "Un color por escaneo",
+      "topic": "Color por tema"
     },
     "modeUnavailable": "No está en este archivo",
     "flatColor": "Color",
     "confidence": "Umbral de confianza",
-    "confidenceHint": "Oculta los puntos de los que la reconstrucción estaba menos segura. Solo lo tienen los archivos con confianza por punto."
+    "confidenceHint": "Oculta los puntos de los que la reconstrucción estaba menos segura. Solo lo tienen los archivos con confianza por punto.",
+    "scanModeHint": "Cada escaneo se dibuja en su propio color. Haz clic en la muestra de color de un escaneo en la lista para cambiarlo.",
+    "topicModeHint": "Cada escaneo se dibuja en el color de su primer tema. Los escaneos sin tema se dibujan en gris.",
+    "fallback": "{{name}} no tiene datos de {{wanted}}, así que se dibuja por {{mode}}."
   },
   "inspect": {
     "title": "Inspeccionar",
@@ -318,7 +323,8 @@
       "xray": "Rayos X",
       "scan-vs-bim": "Nube vs BIM"
     },
-    "drawn": "Dibujados / cargados"
+    "drawn": "Dibujados / cargados",
+    "samplesDisclosure": "Escaneos de ejemplo y demos LiDAR"
   },
   "presets": {
     "title": "Estilo rápido",
@@ -347,7 +353,9 @@
       "tooLarge": "La nube es mucho más grande de lo esperado: probablemente está en milímetros, centímetros o pies.",
       "tooSmall": "La nube es mucho más pequeña de lo esperado: puede estar en kilómetros o escalada.",
       "heavy": "Muchos puntos al máximo detalle: un ajuste más ligero mantendrá la navegación fluida."
-    }
+    },
+    "titleFor": "Revisión · {{name}}",
+    "moreSymptoms": "¿Algo más no se ve bien?"
   },
   "fix": {
     "flipUpAxis": "Girar eje vertical",
@@ -436,6 +444,10 @@
       "clearance": {
         "label": "Medir un gálibo",
         "hint": "Activa la herramienta de distancia: haz clic en dos puntos del escaneo (suelo a viga, muro a muro) para leer la holgura real construida."
+      },
+      "epochs": {
+        "label": "Comparar tomas",
+        "hint": "Cada tema —o cada escaneo, si ninguno tiene tema— en su propio color, todos visibles a la vez."
       }
     },
     "needsClasses": "Requiere un fichero clasificado",
@@ -488,6 +500,88 @@
       "area": "Área",
       "angle": "Ángulo",
       "point": "Punto"
-    }
+    },
+    "needsTwoScans": "Necesita dos o más escaneos."
+  },
+  "scope": {
+    "label": "Se aplica a",
+    "all": "Todos los escaneos",
+    "selected": "Seleccionados ({{count}})",
+    "allCaption": "Cambia el valor por defecto de la escena para todos los escaneos ({{count}}).",
+    "selectedCaption": "Solo cambia {{names}}. Los demás escaneos mantienen el valor por defecto de la escena.",
+    "emptySelection": "Selecciona escaneos en la lista para cambiar solo esos.",
+    "analyzeCaption": "Los filtros y los casos de uso se aplican a todos los escaneos.",
+    "sceneWide": "Para toda la escena",
+    "sceneWideHint": "Se aplica a todos los escaneos, sea cual sea la selección.",
+    "mixed": "Varios",
+    "useDefault": "Usar el valor de la escena",
+    "overridden": "Escaneos con estilo propio: {{count}}",
+    "resetAll": "Restablecer todo al valor de la escena"
+  },
+  "list": {
+    "selectAll": "Seleccionar todos los escaneos",
+    "selectRow": "Seleccionar {{name}}",
+    "hint": "Clic para seleccionar · Ctrl/⌘+clic para añadir · Mayús+clic para un rango",
+    "locate": "Localizar en la escena",
+    "renameHint": "Haz doble clic o pulsa F2 para renombrar",
+    "renameLabel": "Nombre del escaneo",
+    "useFileName": "Déjalo vacío para usar el nombre del archivo",
+    "color": "Color de {{name}}",
+    "removeConfirm": "¿Quitar?",
+    "health": "Cosas que revisar: {{count}}",
+    "healthOk": "Nada que revisar",
+    "fileDate": "Fecha del archivo {{date}}"
+  },
+  "bulk": {
+    "selected": "Seleccionados: {{count}}",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "solo": "Solo estos",
+    "soloHint": "Muestra solo los escaneos seleccionados. Pulsa de nuevo para mostrarlos todos.",
+    "frame": "Encuadrar",
+    "topic": "Tema",
+    "rename": "Renombrar",
+    "remove": "Quitar",
+    "removeConfirm": "¿Quitar de la escena los escaneos seleccionados ({{count}})? Los archivos de tu dispositivo no se tocan.",
+    "removeYes": "Sí, quitar",
+    "keep": "Conservar",
+    "clear": "Borrar selección"
+  },
+  "topics": {
+    "title": "Temas",
+    "add": "Nuevo tema",
+    "defaultName": "Tema {{n}}",
+    "edit": "Editar temas",
+    "done": "Hecho",
+    "name": "Nombre del tema",
+    "color": "Color del tema",
+    "delete": "Eliminar tema",
+    "empty": "Selecciona escaneos y luego añade un tema para agruparlos por fecha de toma, zona o disciplina.",
+    "chipHint": "Clic: seleccionar · Ctrl/⌘+clic: añadir · Alt+clic: mostrar solo estos",
+    "show": "Mostrar {{name}}",
+    "hide": "Ocultar {{name}}",
+    "assignTitle": "Temas de los escaneos seleccionados",
+    "newFromSelection": "Nuevo tema a partir de la selección",
+    "limit": "Hasta {{max}} temas.",
+    "byFileDate": "Agrupar por fecha del archivo ({{count}})",
+    "byFileDateHint": "Un tema por cada fecha escrita en la cabecera LAS/LAZ/COPC. Es cuando se generó el archivo: a menudo, pero no siempre, el día de la toma.",
+    "dismiss": "Descartar"
+  },
+  "place": {
+    "alignedTo": "Alineado con {{model}}",
+    "alignedToNone": "Colocado por su cuenta: no había ningún modelo IFC cargado cuando llegó.",
+    "fileDate": "Fecha del archivo: {{date}}",
+    "fileDateHint": "Leída de la cabecera del archivo: normalmente el día de la toma o del procesado.",
+    "undo": "Deshacer",
+    "redo": "Rehacer",
+    "historyHint": "Deshacer se comparte con el panel Escena.",
+    "exact": "{{label}}, valor exacto",
+    "fieldHint": "Flechas para ajustar · Mayús ×10 · Alt ×0,1",
+    "summary": "Posición de los escaneos ({{count}})",
+    "together": "Mover juntos",
+    "togetherHint": "Mueve y gira estos escaneos ({{count}}) como un solo bloque alrededor de su centro común. Cada uno conserva su nivelación y escala.",
+    "apply": "Aplicar",
+    "resetMany": "Restablecer la posición de los escaneos ({{count}})",
+    "oneAtATime": "El eje vertical, las unidades y el SRC se configuran de uno en uno: selecciona un solo escaneo para cambiarlos."
   }
 }

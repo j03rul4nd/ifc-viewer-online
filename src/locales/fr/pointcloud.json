@@ -205,12 +205,17 @@
       "intensity": "Intensité",
       "elevation": "Hauteur",
       "classification": "Classification",
-      "flat": "Couleur unie"
+      "flat": "Couleur unie",
+      "scan": "Une couleur par scan",
+      "topic": "Couleur par thème"
     },
     "modeUnavailable": "Absent de ce fichier",
     "flatColor": "Couleur",
     "confidence": "Seuil de confiance",
-    "confidenceHint": "Masque les points dont la reconstruction était la moins sûre. Seuls les fichiers portant une confiance par point en disposent."
+    "confidenceHint": "Masque les points dont la reconstruction était la moins sûre. Seuls les fichiers portant une confiance par point en disposent.",
+    "scanModeHint": "Chaque scan s'affiche dans sa propre couleur. Cliquez sur la pastille d'un scan dans la liste pour la changer.",
+    "topicModeHint": "Chaque scan s'affiche dans la couleur de son premier thème. Les scans sans thème s'affichent en gris.",
+    "fallback": "{{name}} n'a pas de données pour {{wanted}}, il est donc affiché par {{mode}}."
   },
   "inspect": {
     "title": "Inspecter",
@@ -318,7 +323,8 @@
       "xray": "Rayons X",
       "scan-vs-bim": "Nuage vs BIM"
     },
-    "drawn": "Dessinés / chargés"
+    "drawn": "Dessinés / chargés",
+    "samplesDisclosure": "Scans d'exemple et démos LiDAR"
   },
   "presets": {
     "title": "Style rapide",
@@ -347,7 +353,9 @@
       "tooLarge": "Le nuage est bien plus grand que prévu : probablement en millimètres, centimètres ou pieds.",
       "tooSmall": "Le nuage est bien plus petit que prévu : peut-être en kilomètres ou mis à l'échelle.",
       "heavy": "Beaucoup de points au détail maximal : des réglages plus légers garderont la navigation fluide."
-    }
+    },
+    "titleFor": "Bilan · {{name}}",
+    "moreSymptoms": "Autre chose semble anormal ?"
   },
   "fix": {
     "flipUpAxis": "Basculer l'axe",
@@ -436,6 +444,10 @@
       "clearance": {
         "label": "Mesurer un gabarit",
         "hint": "Active l'outil distance : cliquez deux points du scan (sol à poutre, mur à mur) pour lire l'espace réel tel que construit."
+      },
+      "epochs": {
+        "label": "Comparer les relevés",
+        "hint": "Chaque thème — ou chaque scan, si aucun n'a de thème — dans sa propre couleur, tous affichés à la fois."
       }
     },
     "needsClasses": "Nécessite un fichier classifié",
@@ -488,6 +500,88 @@
       "area": "Surface",
       "angle": "Angle",
       "point": "Point"
-    }
+    },
+    "needsTwoScans": "Nécessite au moins deux scans."
+  },
+  "scope": {
+    "label": "S'applique à",
+    "all": "Tous les scans",
+    "selected": "Sélection ({{count}})",
+    "allCaption": "Modifie la valeur par défaut de la scène pour tous les scans ({{count}}).",
+    "selectedCaption": "Modifie seulement {{names}}. Les autres scans gardent la valeur par défaut de la scène.",
+    "emptySelection": "Sélectionnez des scans dans la liste pour ne modifier qu'eux.",
+    "analyzeCaption": "Les filtres et les cas d'usage s'appliquent à tous les scans.",
+    "sceneWide": "Toute la scène",
+    "sceneWideHint": "S'applique à tous les scans, quelle que soit la sélection.",
+    "mixed": "Mixte",
+    "useDefault": "Utiliser la valeur de la scène",
+    "overridden": "Scans avec leur propre style : {{count}}",
+    "resetAll": "Tout rétablir à la valeur de la scène"
+  },
+  "list": {
+    "selectAll": "Sélectionner tous les scans",
+    "selectRow": "Sélectionner {{name}}",
+    "hint": "Clic pour sélectionner · Ctrl/⌘-clic pour ajouter · Maj-clic pour une plage",
+    "locate": "Localiser dans la scène",
+    "renameHint": "Double-cliquez ou appuyez sur F2 pour renommer",
+    "renameLabel": "Nom du scan",
+    "useFileName": "Laissez vide pour utiliser le nom du fichier",
+    "color": "Couleur de {{name}}",
+    "removeConfirm": "Retirer ?",
+    "health": "Points à vérifier : {{count}}",
+    "healthOk": "Rien à vérifier",
+    "fileDate": "Date du fichier {{date}}"
+  },
+  "bulk": {
+    "selected": "Sélection : {{count}}",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "solo": "Solo",
+    "soloHint": "N'afficher que les scans sélectionnés. Appuyez de nouveau pour tout afficher.",
+    "frame": "Cadrer",
+    "topic": "Thème",
+    "rename": "Renommer",
+    "remove": "Retirer",
+    "removeConfirm": "Retirer de la scène les scans sélectionnés ({{count}}) ? Les fichiers sur votre appareil ne sont pas modifiés.",
+    "removeYes": "Oui, retirer",
+    "keep": "Conserver",
+    "clear": "Effacer la sélection"
+  },
+  "topics": {
+    "title": "Thèmes",
+    "add": "Nouveau thème",
+    "defaultName": "Thème {{n}}",
+    "edit": "Modifier les thèmes",
+    "done": "Terminé",
+    "name": "Nom du thème",
+    "color": "Couleur du thème",
+    "delete": "Supprimer le thème",
+    "empty": "Sélectionnez des scans, puis ajoutez un thème pour les regrouper par date de relevé, zone ou discipline.",
+    "chipHint": "Clic : sélectionner · Ctrl/⌘-clic : ajouter · Alt-clic : n'afficher que ceux-ci",
+    "show": "Afficher {{name}}",
+    "hide": "Masquer {{name}}",
+    "assignTitle": "Thèmes des scans sélectionnés",
+    "newFromSelection": "Nouveau thème à partir de la sélection",
+    "limit": "Jusqu'à {{max}} thèmes.",
+    "byFileDate": "Regrouper par date du fichier ({{count}})",
+    "byFileDateHint": "Un thème par date inscrite dans l'en-tête LAS/LAZ/COPC. C'est la date de production du fichier — souvent, mais pas toujours, le jour du relevé.",
+    "dismiss": "Ignorer"
+  },
+  "place": {
+    "alignedTo": "Aligné sur {{model}}",
+    "alignedToNone": "Placé seul — aucun modèle IFC n'était chargé à son arrivée.",
+    "fileDate": "Date du fichier : {{date}}",
+    "fileDateHint": "Lue dans l'en-tête du fichier — généralement le jour du relevé ou du traitement.",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "historyHint": "L'annulation est partagée avec le panneau Scène.",
+    "exact": "{{label}}, valeur exacte",
+    "fieldHint": "Flèches pour ajuster · Maj ×10 · Alt ×0,1",
+    "summary": "Placement des scans ({{count}})",
+    "together": "Déplacer ensemble",
+    "togetherHint": "Déplace et tourne ces scans ({{count}}) comme un seul bloc autour de leur centre commun. Chacun garde sa propre mise à niveau et son échelle.",
+    "apply": "Appliquer",
+    "resetMany": "Réinitialiser le placement des scans ({{count}})",
+    "oneAtATime": "L'axe vertical, les unités et le SCR se règlent scan par scan — sélectionnez un seul scan pour les modifier."
   }
 }

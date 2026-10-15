@@ -205,12 +205,17 @@
       "intensity": "Intensity",
       "elevation": "Height",
       "classification": "Classification",
-      "flat": "Single colour"
+      "flat": "Single colour",
+      "scan": "One colour per scan",
+      "topic": "Colour by topic"
     },
     "modeUnavailable": "Not in this file",
     "flatColor": "Colour",
     "confidence": "Confidence cut-off",
-    "confidenceHint": "Hides points the reconstruction was least sure about. Only files that carry a per-point confidence have this."
+    "confidenceHint": "Hides points the reconstruction was least sure about. Only files that carry a per-point confidence have this.",
+    "scanModeHint": "Each scan draws in its own colour. Click a scan's swatch in the list to change it.",
+    "topicModeHint": "Each scan draws in the colour of its first topic. Scans without a topic draw in grey.",
+    "fallback": "{{name}} has no data for {{wanted}}, so it is drawn by {{mode}}."
   },
   "inspect": {
     "title": "Inspect",
@@ -318,7 +323,8 @@
       "xray": "X-ray",
       "scan-vs-bim": "Scan vs BIM"
     },
-    "drawn": "Drawn / loaded"
+    "drawn": "Drawn / loaded",
+    "samplesDisclosure": "Sample scans and LiDAR demos"
   },
   "presets": {
     "title": "Quick look",
@@ -347,7 +353,9 @@
       "tooSmall": "The scan is far smaller than expected — it may be in kilometres or scaled down.",
       "heavy": "A lot of points at full detail — lighter settings will keep navigation smooth."
     },
-    "issueCount": "To review: {{count}}"
+    "issueCount": "To review: {{count}}",
+    "titleFor": "Check-up · {{name}}",
+    "moreSymptoms": "Something else looks wrong?"
   },
   "fix": {
     "flipUpAxis": "Flip up axis",
@@ -436,6 +444,10 @@
       "clearance": {
         "label": "Measure a clearance",
         "hint": "Turns on the distance tool: click two points of the scan — floor to beam, wall to wall — to read the real, as-built gap."
+      },
+      "epochs": {
+        "label": "Compare surveys",
+        "hint": "Every topic — or every scan, when no scan has a topic — in its own colour, all shown at once."
       }
     },
     "needsClasses": "Needs a classified file",
@@ -488,6 +500,88 @@
       "area": "Area",
       "angle": "Angle",
       "point": "Point"
-    }
+    },
+    "needsTwoScans": "Needs two or more scans."
+  },
+  "scope": {
+    "label": "Applies to",
+    "all": "All scans",
+    "selected": "Selected ({{count}})",
+    "allCaption": "Changes the scene default for all {{count}} scans.",
+    "selectedCaption": "Changes only {{names}}. Other scans keep the scene default.",
+    "emptySelection": "Select scans in the list to change only those.",
+    "analyzeCaption": "Filters and use cases apply to every scan.",
+    "sceneWide": "Scene-wide",
+    "sceneWideHint": "Applies to every scan, whatever is selected.",
+    "mixed": "Mixed",
+    "useDefault": "Use scene default",
+    "overridden": "Scans with their own style: {{count}}",
+    "resetAll": "Reset all to scene default"
+  },
+  "list": {
+    "selectAll": "Select all scans",
+    "selectRow": "Select {{name}}",
+    "hint": "Click to select · Ctrl/⌘-click to add · Shift-click for a range",
+    "locate": "Locate in the scene",
+    "renameHint": "Double-click or press F2 to rename",
+    "renameLabel": "Scan name",
+    "useFileName": "Leave empty to use the file name",
+    "color": "Colour of {{name}}",
+    "removeConfirm": "Remove?",
+    "health": "Things to check: {{count}}",
+    "healthOk": "Nothing to check",
+    "fileDate": "File date {{date}}"
+  },
+  "bulk": {
+    "selected": "Selected: {{count}}",
+    "show": "Show",
+    "hide": "Hide",
+    "solo": "Solo",
+    "soloHint": "Show only the selected scans. Press again to show every scan.",
+    "frame": "Frame",
+    "topic": "Topic",
+    "rename": "Rename",
+    "remove": "Remove",
+    "removeConfirm": "Remove the selected scans ({{count}}) from the scene? The files on your device are not touched.",
+    "removeYes": "Yes, remove",
+    "keep": "Keep",
+    "clear": "Clear selection"
+  },
+  "topics": {
+    "title": "Topics",
+    "add": "New topic",
+    "defaultName": "Topic {{n}}",
+    "edit": "Edit topics",
+    "done": "Done",
+    "name": "Topic name",
+    "color": "Topic colour",
+    "delete": "Delete topic",
+    "empty": "Select scans, then add a topic to group them by survey date, area or discipline.",
+    "chipHint": "Click: select · Ctrl/⌘-click: add · Alt-click: show only these",
+    "show": "Show {{name}}",
+    "hide": "Hide {{name}}",
+    "assignTitle": "Topics of the selected scans",
+    "newFromSelection": "New topic from the selection",
+    "limit": "Up to {{max}} topics.",
+    "byFileDate": "Group by file date ({{count}})",
+    "byFileDateHint": "One topic per date written in the LAS/LAZ/COPC header. That is when the file was produced — often, but not always, the survey day.",
+    "dismiss": "Dismiss"
+  },
+  "place": {
+    "alignedTo": "Aligned to {{model}}",
+    "alignedToNone": "Placed on its own — no IFC model was loaded when it landed.",
+    "fileDate": "File date: {{date}}",
+    "fileDateHint": "Read from the file header — usually the survey or the processing day.",
+    "undo": "Undo",
+    "redo": "Redo",
+    "historyHint": "Undo is shared with the Scene panel.",
+    "exact": "{{label}}, exact value",
+    "fieldHint": "Arrow keys nudge · Shift ×10 · Alt ×0.1",
+    "summary": "Placement of {{count}} scans",
+    "together": "Move together",
+    "togetherHint": "Moves and turns these scans ({{count}}) as one block about their shared centre. Each keeps its own levelling and scale.",
+    "apply": "Apply",
+    "resetMany": "Reset placement of {{count}} scans",
+    "oneAtATime": "Up axis, units and CRS are set one scan at a time — select a single scan to change them."
   }
 }

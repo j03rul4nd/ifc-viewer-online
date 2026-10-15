@@ -32,7 +32,7 @@ function lsSet(key: string, value: string): void {
   try { localStorage.setItem(key, value) } catch (e) { log.warn(`localStorage write failed for ${key}:`, e) }
 }
 
-const COLOR_MODES: PointColorMode[] = ['rgb', 'intensity', 'elevation', 'classification', 'flat']
+export const COLOR_MODES: PointColorMode[] = ['rgb', 'intensity', 'elevation', 'classification', 'flat', 'scan', 'topic']
 
 /** Persisted display prefs, field by field — a corrupt entry must not brick the panel. */
 export function parseDisplay(raw: string | null): PointCloudDisplay {
