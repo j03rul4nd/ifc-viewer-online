@@ -9,7 +9,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
-import { useIsMobile } from '../hooks/useIsMobile'
 import { useTwinDeviceStore, loadSecrets, selectShownReadings } from '../stores/twinDeviceStore'
 import { clearTwinHistory } from '../lib/twin/device-runner'
 import { useValidationStore } from '../stores/validationStore'
@@ -70,7 +69,6 @@ function metricsLine(r: Reading, max = 3): string {
 export default function TwinDevicesPanel({ selected, onClose }: { selected: SelectedInfo | null; onClose: () => void }) {
   const { t } = useTranslation('layers', { keyPrefix: 'devices' })
   const { t: tc } = useTranslation('common')
-  const isMobile = useIsMobile()
   const open = useTwinDeviceStore((s) => s.panelOpen)
   const active = useTwinDeviceStore((s) => s.active)
   const sources = useTwinDeviceStore((s) => s.sources)
@@ -148,15 +146,14 @@ export default function TwinDevicesPanel({ selected, onClose }: { selected: Sele
 
   return (
     <ViewportPanel id="twin-devices" open={open} onClose={onClose} label={t('title')} mobile="sheet" peek widthPx={330} anchor="top">
-      {isMobile && (
-        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
-          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
-          <button type="button" onClick={onClose} aria-label={tc('actions.close')}
-            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
-          </button>
-        </div>
-      )}
+      {/* Title + close on every viewport: the rail icon and Escape are not the only way out. */}
+      <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1 md:pt-1.5 md:pl-3 md:pr-1.5">
+        <span className="flex-1 text-[14px] md:text-[12.5px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+        <button type="button" onClick={onClose} aria-label={tc('actions.close')}
+          className="w-7 h-7 max-md:w-10 max-md:h-10 rounded-[7px] max-md:rounded-[11px] hover:text-[var(--text)] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+        </button>
+      </div>
       <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="twin-devices-panel">
         <div className="flex items-start gap-2">
           <div className="flex-1 text-[10px] text-[var(--text-faint)] leading-snug">{t('intro')}</div>

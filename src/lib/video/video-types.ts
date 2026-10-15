@@ -77,3 +77,14 @@ export interface VideoPlaybackSnapshot {
   paused: boolean
   ended: boolean
 }
+
+/**
+ * Container extensions the viewer hands to the browser's <video> decoder.
+ * drop-routing.ts imports this list (this module must stay import-free so the
+ * entry chunk does not grow). `.mov`/`.m4v` decode only when the codec inside
+ * is H.264; HEVC iPhone clips surface the panel's decode error.
+ */
+export const VIDEO_FILE_EXTENSIONS = ['.mp4', '.m4v', '.mov', '.webm', '.ogv', '.ogg'] as const
+
+/** `accept` for every video picker: the historical MIME list plus the extensions. */
+export const VIDEO_ACCEPT = 'video/mp4,video/webm,video/ogg,video/quicktime,' + VIDEO_FILE_EXTENSIONS.join(',')

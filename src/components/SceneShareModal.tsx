@@ -21,9 +21,9 @@ import { useSceneStore } from '../stores/sceneStore'
 import { useGeoStore } from '../stores/geoStore'
 import { useVectorLayerStore } from '../stores/vectorLayerStore'
 import { useTwinDeviceStore } from '../stores/twinDeviceStore'
-import { parseSceneDoc, sceneSources, type SceneDoc } from '../lib/scene-doc/scene-doc'
-import { encodeSceneLink } from '../lib/scene-doc/scene-link'
-import { appBase, sceneLink, snapshotScene } from '../lib/scene-doc/scene-snapshot'
+import { sceneSources, type SceneDoc } from '../lib/scene-doc/scene-doc'
+import { sceneLink, snapshotScene } from '../lib/scene-doc/scene-snapshot'
+import { navigateToScene, sceneUrlFromText } from '../lib/scene-doc/open-scene-file'
 import { buildIframeSnippet } from '../lib/url-params'
 import { toast } from '../stores/toastStore'
 
@@ -104,15 +104,9 @@ export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
   // Opening a scene = reloading the viewer on it: the same path a shared link
   // takes, so a file and a link can never behave differently.
   const open = async (file: File): Promise<void> => {
-    const v = parseSceneDoc(await file.text())
-    if (!v.ok) { toast(v.errors.join(' '), 'error'); return }
-    const packed = await encodeSceneLink(v.doc)
-    if (!packed) { toast(t('scene.tooBigToOpen'), 'error'); return }
-    const next = new URL(`${appBase()}#scene=${packed}`)
-    const sameDocument = next.pathname === window.location.pathname && next.search === window.location.search
-    window.location.assign(next.toString())
-    // Only the fragment changed: assigning it does not reload by itself.
-    if (sameDocument) window.location.reload()
+    const r = await sceneUrlFromText(await file.text())
+    if (!r.ok) { toast(r.reason === 'tooBig' ? t('scene.tooBigToOpen') : r.errors.join(' '), 'error'); return }
+    navigateToScene(r.url)
   }
 
   const row = (k: string, v: React.ReactNode) => (

@@ -164,8 +164,8 @@
   "exportSettings": "Export-Einstellungen…",
   "menu": {
     "openIfc": "IFC-Datei öffnen…",
-    "openTooltip": "Öffnen — IFC-Dateien, Demo-Modelle und weitere Daten",
-    "addData": "Zur Szene hinzufügen",
+    "openTooltip": "Öffnen — IFC-Dateien, Demo-Modelle und Szenendateien",
+    "addData": "Daten hinzufügen",
     "check": "Prüfen",
     "checkTooltip": "Prüfen — Probleme in 3D, IDS, Versionen vergleichen",
     "issuesIn3d": "Probleme in 3D zeigen",
@@ -185,7 +185,9 @@
     "edit": "Bearbeiten",
     "help": "Hilfe",
     "idsCheck": "Gegen IDS prüfen…",
-    "compareVersions": "Versionen vergleichen…"
+    "compareVersions": "Versionen vergleichen…",
+    "addDataTooltip": "Daten hinzufügen — Scans, Video, 3D-Modelle, Kartenebenen und Live-Geräte",
+    "openScene": "Szenendatei öffnen…"
   },
   "mobileBar": {
     "models": "{{count}} Modell",
@@ -193,5 +195,83 @@
     "elements": "{{n}} Elemente",
     "openScene": "Szene und Modelle",
     "score": "Health Score {{score}} — Prüfung öffnen"
+  },
+  "sun": "Sonne",
+  "sunTooltip": "Sonne & Mond — echte Schatten nach Datum, Uhrzeit und Ort",
+  "addData": {
+    "title": "Daten zur Szene hinzufügen",
+    "description": "Dateien werden in Ihrem Browser gelesen — nichts wird hochgeladen.",
+    "dropTitle": "Dateien hier ablegen",
+    "dropHint": "Beliebige dieser Formate mischen — jede Datei landet am richtigen Ort.",
+    "chooseFiles": "Dateien auswählen…",
+    "chooseFile": "Datei auswählen…",
+    "fromUpload": "Scans, Video, 3D-Modelle oder Kartenebenen?",
+    "groups": {
+      "capture": "Realitätserfassung",
+      "models": "Modelle",
+      "context": "Karte & Live-Daten",
+      "scenes": "Szenen"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "Punktwolke",
+        "desc": "Laserscans und Drohnen-Photogrammetrie. Sie landen auf Ihrem Modell, wenn die Datei ihre Lage angibt."
+      },
+      "video": {
+        "title": "3D-Video",
+        "desc": "Baustellen- oder Drohnenaufnahmen auf einem Bildschirm, am Boden oder passend zur aufnehmenden Kamera."
+      },
+      "ifc": {
+        "title": "IFC-Modell",
+        "desc": "Fachmodelle werden zu einer Szene zusammengeführt. Jedes wird vor dem Laden geprüft; das erste legt die Koordinaten fest."
+      },
+      "mesh": {
+        "title": "3D-Modell",
+        "desc": "Requisiten und Kontextmodelle in glTF oder OBJ, auf den Boden Ihres Modells gestellt."
+      },
+      "map": {
+        "title": "Karte & Gelände",
+        "desc": "Basiskarte, 3D-Gelände und die Gebäude rund um ein georeferenziertes Modell."
+      },
+      "layers": {
+        "title": "Datenebenen",
+        "desc": "Punkte, Routen und Zonen aus GeoJSON- oder CSV-Dateien, URLs, WFS-Diensten oder öffentlichen Live-Feeds."
+      },
+      "devices": {
+        "title": "Live-Geräte",
+        "desc": "Sensoren über REST, WebSocket oder MQTT, an IFC-Elemente gebunden."
+      },
+      "scene": {
+        "title": "Szenendatei",
+        "desc": "Eine mit Ihnen geteilte .scene.json. Beim Öffnen wird die aktuelle Szene ersetzt."
+      }
+    },
+    "pointcloudNote": "E57, ReCap oder FARO? Zuerst als LAS, LAZ oder PLY exportieren.",
+    "action": {
+      "samples": "Beispiele",
+      "liveAndDemo": "Kamera, Bildschirm & Demo",
+      "sources": "URL, WFS & Live-Feeds",
+      "connect": "Quelle verbinden",
+      "setUpMap": "Karte einrichten",
+      "openPanel": "Panel öffnen"
+    },
+    "inScene": "{{count}} in der Szene",
+    "inScene_other": "{{count}} in der Szene",
+    "needsModel": "Braucht zuerst ein IFC-Modell in der Szene"
+  },
+  "drop": {
+    "title": "Ablegen, um zur Szene hinzuzufügen",
+    "count": "{{count}} Datei",
+    "count_other": "{{count}} Dateien",
+    "legend": "Jede Datei landet am richtigen Ort:",
+    "adding": "Wird zur Szene hinzugefügt: {{names}}",
+    "afterReview": "{{names}} wird nach der IFC-Prüfung hinzugefügt",
+    "more": "{{names}} und {{n}} weitere",
+    "skipped": "{{count}} Datei übersprungen",
+    "skipped_other": "{{count}} Dateien übersprungen",
+    "show": "Anzeigen",
+    "sceneReplace": "Das Öffnen von „{{name}}“ ersetzt die aktuelle Szene.",
+    "openScene": "Szene öffnen",
+    "sceneAlone": "Eine Szenendatei wird allein geöffnet. Fügen Sie die übrigen Dateien hinzu, sobald sie geladen ist."
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { LanguageSelector } from './LanguageSelector'
@@ -21,18 +21,11 @@ import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { isFloodEnabled } from '../features/flood/flag'
 import { useFloodStore } from '../features/flood/store'
-import { usePointCloudStore } from '../stores/pointCloudStore'
-import { useTwinDeviceStore } from '../stores/twinDeviceStore'
-import { useVectorLayerStore } from '../stores/vectorLayerStore'
-import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
-import { useMeshStore } from '../stores/meshStore'
-import { isMeshEnabled } from '../lib/mesh/mesh-flag'
-import { useVideoStore } from '../stores/videoStore'
-import { isVideoEnabled } from '../lib/video/video-flag'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
 import { trackProEntryClick } from '../lib/analytics'
+import { useSceneContent } from '../hooks/useSceneContent'
 
 // Account surface (F2) — lazy so @clerk/* stays out of the eager bundle (I-1).
 const AccountModal = React.lazy(() => import('./account/AccountModal'))
@@ -56,6 +49,10 @@ interface ToolbarProps {
   onIsolate: () => void
   onUpload: () => void
   onOpenDemoGallery: () => void
+  /** "+ Add data" — the hub for scans, video, 3D models, layers and devices. */
+  onOpenAddData?: (from: 'toolbar' | 'open_menu' | 'mobile') => void
+  /** Open ▾ › Open scene file… — a picked .scene.json, opened straight away. */
+  onOpenSceneFile?: (file: File) => void
   onOpenExportModal: () => void
   onOpenEmbed: () => void
   /** Share → Digital-twin scene (SceneShareModal). */
@@ -133,6 +130,7 @@ function ToolMenu({
   return (
     <div data-toolbar-menu className="relative shrink-0">
       <button
+        data-testid={`toolbar-menu-${id}`}
         onClick={() => { if (!disabled) setOpenMenu(open ? null : id) }}
         disabled={disabled}
         title={title}
@@ -234,16 +232,13 @@ function scoreColor(score: number): string {
 
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
-  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenAddData, onOpenSceneFile, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
   variant = 'full', tools = ['validate', 'measure'],
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
-  const { t: tPointCloud } = useTranslation('pointcloud')
-  const { t: tMesh } = useTranslation('mesh')
   const { t: tLayers } = useTranslation('layers')
-  const { t: tVideo } = useTranslation('video')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
 
@@ -253,6 +248,9 @@ export default function Toolbar({
   const accountStatus = useCloudAccountStore((s) => s.status)
   const accountOpen = useCloudAccountStore((s) => s.accountModalOpen)
   const setAccountOpen = useCloudAccountStore((s) => s.setAccountModalOpen)
+
+  // Menu gates follow what is in the scene, not whether validation is idle.
+  const content = useSceneContent()
 
   const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
                       loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'
@@ -290,52 +288,6 @@ export default function Toolbar({
     const s = useGeoStore.getState()
     s.setPanelOpen(!s.panelOpen)
   }
-  const pointCloudPanelOpen = usePointCloudStore((s) => s.panelOpen)
-  const pointCloudCount     = usePointCloudStore((s) => s.clouds.length)
-  const togglePointCloudPanel = (): void => {
-    const s = usePointCloudStore.getState()
-    s.setPanelOpen(!s.panelOpen)
-  }
-  const meshPanelOpen = useMeshStore((s) => s.panelOpen)
-  const layersPanelOpen = useVectorLayerStore((s) => s.panelOpen)
-  const layerCount      = useVectorLayerStore((s) => s.layers.length)
-  const toggleLayersPanel = (): void => {
-    const s = useVectorLayerStore.getState()
-    s.setPanelOpen(!s.panelOpen)
-  }
-  const twinPanelOpen = useTwinDeviceStore((s) => s.panelOpen)
-  const twinBindingCount = useTwinDeviceStore((s) => s.bindings.length)
-  const toggleTwinPanel = (): void => {
-    const s = useTwinDeviceStore.getState()
-    s.setPanelOpen(!s.panelOpen)
-  }
-  const TwinSVG = (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
-      strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 11l9-7 9 7v9H3z" />
-      <path d="M9 15a4 4 0 0 1 6 0M7 12.5a7 7 0 0 1 10 0" />
-      <circle cx="12" cy="17.5" r="0.9" />
-    </svg>
-  )
-  const LayersSVG = (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
-      strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 17l5-4 4 3 4-6 5 4" />
-      <path d="M3 21h18M3 3v18" />
-      <circle cx="16" cy="10" r="1.2" />
-    </svg>
-  )
-  const meshCount     = useMeshStore((s) => s.meshes.length)
-  const toggleMeshPanel = (): void => {
-    const s = useMeshStore.getState()
-    s.setPanelOpen(!s.panelOpen)
-  }
-  const videoPanelOpen = useVideoStore((s) => s.panelOpen)
-  const videoCount = useVideoStore((s) => s.videos.length)
-  const toggleVideoPanel = (): void => {
-    const state = useVideoStore.getState()
-    state.setPanelOpen(!state.panelOpen)
-  }
   const solarPanelOpen = useSolarStore((s) => s.panelOpen)
   const solarActive    = useSolarStore((s) => s.active)
   const toggleSolarPanel = (): void => {
@@ -354,6 +306,7 @@ export default function Toolbar({
   } = useValidationRunner()
 
   const [openMenu, setOpenMenu]   = useState<MenuId | null>(null)
+  const sceneInputRef = useRef<HTMLInputElement>(null)
   const [exporting, setExporting] = useState(false)
 
   // Close menu on outside click or Escape
@@ -362,7 +315,9 @@ export default function Toolbar({
     const onDown = (e: MouseEvent): void => {
       if (!(e.target as Element).closest?.('[data-toolbar-menu]')) setOpenMenu(null)
     }
-    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') setOpenMenu(null) }
+    // preventDefault: the panel registry's Escape handler skips handled
+    // events, so Escape closes only the menu, not the panel behind it.
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') { e.preventDefault(); setOpenMenu(null) } }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     return () => {
@@ -521,22 +476,6 @@ export default function Toolbar({
       <path d="M5 10.3l-.6 1.5M7.4 10l-.6 1.5M9.8 10.3l-.6 1.5" />
     </svg>
   )
-  const MeshSVG = (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
-      strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" />
-      <path d="M12 2.5v19M3 7l9 4.5L21 7" />
-    </svg>
-  )
-
-  const PointCloudSVG = (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" stroke="none">
-      <circle cx="3" cy="4" r="0.9" /><circle cx="6.2" cy="2.6" r="0.9" /><circle cx="9.6" cy="3.6" r="0.9" />
-      <circle cx="2.4" cy="7.6" r="0.9" /><circle cx="5.6" cy="6.4" r="0.9" /><circle cx="9" cy="7.2" r="0.9" />
-      <circle cx="12" cy="6" r="0.9" /><circle cx="4.2" cy="10.8" r="0.9" /><circle cx="7.8" cy="10.2" r="0.9" />
-      <circle cx="11.2" cy="10.8" r="0.9" />
-    </svg>
-  )
   const ViewMenuSVG = (
     <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <rect x="1" y="1.5" width="12" height="11" rx="1.5"/>
@@ -561,7 +500,6 @@ export default function Toolbar({
     measurementPanelOpen || clipPanelOpen || plansPanelOpen || geoPanelOpen ||
     solarPanelOpen || activeMeasurementTool !== 'none' || clipPlaneCount > 0 ||
     !!activePlanViewId || mapModeOn
-  const dataActive = pointCloudPanelOpen || meshPanelOpen || videoPanelOpen
 
   // Issue count chip (reused in two places)
   const IssueChip = hasIssues && !isRunning ? (
@@ -633,7 +571,7 @@ export default function Toolbar({
         {tools.includes('measure') && (
           <Btn
             onClick={toggleMeasurementPanel}
-            disabled={!canRun}
+            disabled={content.models === 0}
             variant={measurementPanelOpen ? 'secondary' : 'ghost'}
             title={t('measure')}
           >
@@ -653,7 +591,7 @@ export default function Toolbar({
     // Phones: no bar at all. The scene runs edge to edge under two floating
     // glass capsules (model on the left, score + capture on the right); the
     // root becomes a click-through layer and only the capsules take touches.
-    <div className="relative flex items-center h-[44px] bg-[var(--surface)] border-b border-[var(--border)] pl-3 pr-2 select-none shrink-0
+    <div data-testid="toolbar" className="relative flex items-center h-[44px] bg-[var(--surface)] border-b border-[var(--border)] pl-3 pr-2 select-none shrink-0
       max-md:h-auto max-md:bg-transparent max-md:border-b-0 max-md:gap-2 max-md:px-2.5 max-md:pt-[calc(env(safe-area-inset-top,0px)+8px)] max-md:pointer-events-none">
 
       {/* ── Full-width validation progress track ──────────────────────────────
@@ -678,7 +616,7 @@ export default function Toolbar({
 
       {/* ══ LAYOUT ═══════════════════════════════════════════════════════════
           Reads left → right as the session does:
-            identity · Open ▾ · Validate [score] · Check ▾   ···   View ▾ · Tools ▾ · Capture ▾ │ Share ▾ · ? · account · lang
+            identity · Open ▾ · + Add data · Validate [score] · Check ▾   ···   View ▾ · Tools ▾ · Capture ▾ │ Share ▾ · ? · account · lang
           One filled button (Validate). Everything else is a named menu whose
           label says what job it does, so nothing is an unexplained icon.
           Labels show from lg (1024px) up; md–lg keeps icon + caret + tooltip,
@@ -715,9 +653,10 @@ export default function Toolbar({
 
       <ZoneDivider className="hidden md:block" />
 
-      {/* ── Bring data in: Open ▾ (split) ──────────────────────────────────────
-          The button opens an IFC in one click; the caret lists everything
-          else that can go into the scene. */}
+      {/* ── Bring data in: Open ▾ (split) · + Add data ─────────────────────────
+          Open is the IFC door: one click to the IFC review. Its caret adds
+          the demo gallery and scene files. Every other kind of data has one
+          labelled, always-enabled door next to it: + Add data (the hub). */}
       <div className="hidden md:flex items-center shrink-0">
         <button
           onClick={onUpload}
@@ -730,41 +669,54 @@ export default function Toolbar({
         </button>
         <ToolMenu
           id="open" openMenu={openMenu} setOpenMenu={setOpenMenu}
-          icon={null} title={t('menu.openTooltip')} split dot={dataActive}
+          icon={null} title={t('menu.openTooltip')} split
         >
           <MenuItem icon={<Icons.Upload size={15} />} label={t('menu.openIfc')}
             onClick={() => { onUpload(); setOpenMenu(null) }} />
           <MenuItem icon={<Icons.Layers size={15} />} label={t('demo')}
             onClick={() => { onOpenDemoGallery(); setOpenMenu(null) }} />
-          {(isPointCloudEnabled() || isMeshEnabled() || isVideoEnabled()) && (
+          {onOpenSceneFile && (
+            <MenuItem icon={<Icons.Globe size={15} />} label={t('menu.openScene')}
+              onClick={() => { setOpenMenu(null); sceneInputRef.current?.click() }} />
+          )}
+          {onOpenAddData && (
             <>
               <MenuDivider />
-              <MenuLabel>{t('menu.addData')}</MenuLabel>
+              <MenuItem icon={<Icons.Plus size={15} />} label={`${t('menu.addData')}…`}
+                onClick={() => { setOpenMenu(null); onOpenAddData('open_menu') }} />
             </>
-          )}
-          {isPointCloudEnabled() && (
-            <MenuItem icon={PointCloudSVG} label={tPointCloud('entry')} active={pointCloudPanelOpen}
-              badge={pointCloudCount > 0 ? pointCloudCount : undefined}
-              onClick={() => { togglePointCloudPanel(); setOpenMenu(null) }} />
-          )}
-          {isMeshEnabled() && (
-            <MenuItem icon={MeshSVG} label={tMesh('entry')} active={meshPanelOpen}
-              badge={meshCount > 0 ? meshCount : undefined}
-              onClick={() => { toggleMeshPanel(); setOpenMenu(null) }} />
-          )}
-          <MenuItem icon={LayersSVG} label={tLayers('entry')} active={layersPanelOpen || layerCount > 0}
-            badge={layerCount > 0 ? layerCount : undefined}
-            onClick={() => { toggleLayersPanel(); setOpenMenu(null) }} />
-          <MenuItem icon={TwinSVG} label={tLayers('devices.entry')} active={twinPanelOpen || twinBindingCount > 0}
-            badge={twinBindingCount > 0 ? twinBindingCount : undefined}
-            onClick={() => { toggleTwinPanel(); setOpenMenu(null) }} />
-          {isVideoEnabled() && (
-            <MenuItem icon={<Icons.Film size={15} />} label={tVideo('entry')} active={videoPanelOpen}
-              badge={videoCount > 0 ? videoCount : undefined}
-              onClick={() => { toggleVideoPanel(); setOpenMenu(null) }} />
           )}
         </ToolMenu>
       </div>
+      {/* Outside every ToolMenu: a menu unmounts on close, taking its input
+          (and the pending pick) with it. */}
+      <input
+        ref={sceneInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.currentTarget.value = ''
+          if (file) onOpenSceneFile?.(file)
+        }}
+      />
+      {onOpenAddData && (
+        <div className="hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5">
+          <button
+            type="button"
+            data-testid="toolbar-add-data"
+            onClick={() => onOpenAddData('toolbar')}
+            title={t('menu.addDataTooltip')}
+            aria-label={t('menu.addData')}
+            aria-haspopup="dialog"
+            className="inline-flex items-center justify-center gap-1.5 h-[28px] min-w-[28px] px-1.5 xl:px-2.5 rounded-[5px] text-[12px] font-medium whitespace-nowrap bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 transition-colors duration-100"
+          >
+            <Icons.Plus size={14} strokeWidth={2} className="text-[var(--accent)]" />
+            <span className="hidden xl:inline">{t('menu.addData')}</span>
+          </button>
+        </div>
+      )}
 
       {/* ── Validate — the hero action, with its result attached ──────────────
           The score and issue count sit on the same pill as the button that
@@ -802,21 +754,23 @@ export default function Toolbar({
       <div className="flex-1 min-w-[8px] hidden md:block" />
 
       {/* ── Workspace: View ▾ · Tools ▾ · Capture ▾ ───────────────────────────
-          Always rendered (no layout shift when a model loads). Disabled before
-          a model is loaded — the structure is stable, items are just not usable. */}
+          Always rendered (no layout shift when a model loads). The gates
+          follow scene content, NOT the validation run (auto-validate used to
+          grey these out right after every load): View opens for any content
+          (a scan-only scene has a Scene list), Tools and Share need an IFC. */}
       <div className="hidden md:flex items-center gap-0.5 shrink-0">
         <ToolMenu
           id="view" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={ViewMenuSVG} label={t('view')} title={t('viewMenu')}
-          dot={viewActive} disabled={!canRun} align="right"
+          dot={viewActive} disabled={!content.any} align="right"
         >
           <MenuLabel>{t('menu.navigate')}</MenuLabel>
-          <MenuItem icon={TreeSVG} label={t('tree')} active={treeVisible}
+          <MenuItem icon={TreeSVG} label={t('tree')} active={treeVisible} disabled={content.models === 0}
             onClick={() => { setTreeVisible(!treeVisible); setOpenMenu(null) }} />
           <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
             badge={sceneModels.length > 0 ? sceneModels.length : undefined}
             onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />
-          <MenuItem icon={LegendSVG(15)} label={t('legend')}
+          <MenuItem icon={LegendSVG(15)} label={t('legend')} disabled={content.models === 0}
             onClick={() => { openSidebarLegend(); setOpenMenu(null) }} />
           <MenuItem icon={<Icons.Isolate size={15} />} label={t('isolate')} disabled={!canIsolate}
             onClick={() => { onIsolate(); setOpenMenu(null) }} />
@@ -832,7 +786,7 @@ export default function Toolbar({
         <ToolMenu
           id="tools" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={ToolsMenuSVG} label={t('tools')} title={t('toolsMenu')}
-          dot={toolsActive} disabled={!canRun} align="right"
+          dot={toolsActive} disabled={content.models === 0} align="right"
         >
           <MenuLabel>{t('menu.inspect')}</MenuLabel>
           <MenuItem icon={MeasureSVG} label={t('measure')} active={measurementPanelOpen}
@@ -893,7 +847,7 @@ export default function Toolbar({
             </span>
           }
           label={t('menu.share')} title={t('menu.shareTooltip')}
-          disabled={!canRun || exporting} align="right"
+          disabled={content.models === 0 || exporting} align="right"
         >
           <MenuLabel>{t('menu.files')}</MenuLabel>
           {sceneModels.length > 1 ? (
@@ -984,7 +938,7 @@ export default function Toolbar({
         onClick={() => { haptic('tick'); toggleScenePanel() }}
         aria-label={t('mobileBar.openScene')}
         aria-expanded={scenePanelOpen}
-        className="md:hidden order-first pointer-events-auto mobile-pill-glass flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-112px)] active:scale-[0.98] transition-transform"
+        className="md:hidden order-first pointer-events-auto mobile-pill-glass flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-164px)] active:scale-[0.98] transition-transform"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.07] shrink-0">
@@ -1012,6 +966,20 @@ export default function Toolbar({
           <path d="M3 4.5l3 3 3-3" />
         </svg>
       </button>
+      {/* The phone's one door for data: present on an empty, scan-only or
+          IFC scene alike, so no state is a dead end. Same hub, as a sheet. */}
+      {onOpenAddData && (
+        <button
+          type="button"
+          data-testid="mobile-add-data"
+          onClick={() => { haptic('tick'); onOpenAddData('mobile') }}
+          aria-label={t('menu.addData')}
+          className="md:hidden order-first shrink-0 pointer-events-auto mobile-pill-glass w-11 h-11 rounded-full inline-flex items-center justify-center text-[var(--text)] active:scale-[0.95] transition-transform"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          <Icons.Plus size={20} strokeWidth={2} />
+        </button>
+      )}
       <div className="md:hidden pointer-events-auto flex items-center"><LoadingIndicator variant="mobile" /></div>
       <div className="flex-1 md:hidden" />
       {qualityScore !== null && !isRunning && loadingState === 'loaded' && (

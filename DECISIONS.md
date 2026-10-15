@@ -850,3 +850,36 @@ properties sidebar into the lane.
 drawer roots) are pinned by `scripts/viewport-lane.test.ts`. A short content
 panel still pads the drawer by its full width while open. Fewer 'auto'
 validation-panel-opened events. See docs/WINDOW_DESIGN.md R6.
+
+## D-34 · "+ Add data": one Modal hub, app-only rail ids, gates that follow content
+
+**Date:** 2026-10-15 · **Status:** accepted
+
+**Context.** Every non-IFC data type hid behind the unlabelled caret of Open.
+View, Tools and Share greyed out during every auto-validation run. Dropped
+videos, scene files and E57 scans got a generic "unsupported" toast, a dropped
+scan loaded with no panel open, and a phone with an empty scene had no way in.
+
+**Decision.**
+1. Open stays the IFC door. A labelled, always-enabled **+ Add data** button
+   (label from xl, measured: lg overflowed the bar at 1024px), an Open ▾ redirect, a phone "+" capsule and a link in the
+   upload dialog all open one `Modal` hub (sheet on phones) with a drop zone and
+   intent-ordered cards. Not a popover: the content does not fit the menu shell
+   and Modal owns focus and Escape.
+2. Drops are planned (`planDrop` / `followUp`): video, `.scene.json` (guarded;
+   handled alone) and E57/ReCap/FARO (advice) get their own routes; one kind
+   opens its panel, a mix gets one summary toast with Show.
+3. Data layers and 3D video are **app-only rail ids** appended after `mesh`;
+   PanelId and the SDK PanelName stay frozen with 1.18. The rail mounts for any
+   scene content; model tools keep a model gate.
+4. Menus follow scene content: View for any content, Tools/Share for an IFC;
+   Validate and IDS keep the validation gate.
+
+**Rejected.** An anchored mega-popover; naming every skipped file (brings back
+the README toast); promoting the new ids to the SDK now (needs 1.19); an
+empty-scene card (the always-present doors remove the dead end).
+
+**Consequences.** Opening the hub closes the open floating panel (modal stack).
+A single-kind drop auto-opens its panel and collapses Properties. Restored data
+layers now show the rail on an otherwise empty boot. Three enum-only analytics
+events measure ingest. See docs/ADD_DATA.md.

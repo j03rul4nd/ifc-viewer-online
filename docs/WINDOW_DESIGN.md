@@ -93,11 +93,15 @@ the description is backwards, and it is exactly what the discarded attempt did.
 | Docked column | Full column, resizable | A rail on its own edge, named, click to restore |
 | Floating panel | Card in the right lane | Nothing — its toolbar control is the way back |
 | Modal | Centred dialog | Nothing — modal by definition |
+| Chooser (Add data) | Modal hub, a sheet on phones | Nothing — every action closes it and hands off to a panel |
 
 A column never simply disappears: it collapses in place and leaves a strip that
 says what it is. See `ColumnStrip`.
 
 ### R5 — Anatomy, so they are recognisably the same family
+
+The data panels (3D video, 3D model, Data layers, Live devices) now render this
+header on desktop too, not only on phones.
 
 Every window: a header with its name and a close control, a body that is the
 only thing that scrolls, and an optional pinned action row. Long words wrap

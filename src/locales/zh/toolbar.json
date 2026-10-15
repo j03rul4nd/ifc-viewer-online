@@ -164,8 +164,8 @@
   "exportSettings": "导出设置…",
   "menu": {
     "openIfc": "打开 IFC 文件…",
-    "openTooltip": "打开 — IFC 文件、演示模型和其他数据",
-    "addData": "添加到场景",
+    "openTooltip": "打开 — IFC 文件、演示模型和场景文件",
+    "addData": "添加数据",
     "check": "检查",
     "checkTooltip": "检查 — 3D 问题显示、IDS、版本对比",
     "issuesIn3d": "在 3D 中显示问题",
@@ -185,7 +185,9 @@
     "edit": "编辑",
     "help": "帮助",
     "idsCheck": "按 IDS 检查…",
-    "compareVersions": "对比版本…"
+    "compareVersions": "对比版本…",
+    "addDataTooltip": "添加数据 — 扫描、视频、3D 模型、地图图层和实时设备",
+    "openScene": "打开场景文件…"
   },
   "mobileBar": {
     "models": "{{count}} 个模型",
@@ -193,5 +195,83 @@
     "elements": "{{n}} 个构件",
     "openScene": "场景与模型",
     "score": "Health Score {{score}} — 打开验证"
+  },
+  "sun": "日照",
+  "sunTooltip": "日照与月光研究 — 按日期、时间和地点生成真实阴影",
+  "addData": {
+    "title": "向场景添加数据",
+    "description": "文件在你的浏览器中读取，不会上传任何内容。",
+    "dropTitle": "将文件拖放到此处",
+    "dropHint": "可混合以下任意格式，每个文件都会自动归位。",
+    "chooseFiles": "选择文件…",
+    "chooseFile": "选择一个文件…",
+    "fromUpload": "扫描、视频、3D 模型或地图图层？",
+    "groups": {
+      "capture": "实景采集",
+      "models": "模型",
+      "context": "地图与实时数据",
+      "scenes": "场景"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "点云",
+        "desc": "激光扫描和无人机摄影测量。文件包含位置信息时会落在你的模型上。"
+      },
+      "video": {
+        "title": "3D 视频",
+        "desc": "工地或无人机视频，可放在屏幕上、地面上，或与拍摄它的相机对齐。"
+      },
+      "ifc": {
+        "title": "IFC 模型",
+        "desc": "各专业模型联合为一个场景。每个模型加载前都会审核；第一个模型确定坐标。"
+      },
+      "mesh": {
+        "title": "3D 模型",
+        "desc": "glTF 或 OBJ 格式的道具和环境模型，放置在模型的地面上。"
+      },
+      "map": {
+        "title": "地图与地形",
+        "desc": "地理配准模型周围的底图、3D 地形和建筑。"
+      },
+      "layers": {
+        "title": "数据图层",
+        "desc": "来自 GeoJSON 或 CSV 文件、URL、WFS 服务或公共实时数据源的点、路线和区域。"
+      },
+      "devices": {
+        "title": "实时设备",
+        "desc": "通过 REST、WebSocket 或 MQTT 接入的传感器，绑定到 IFC 构件。"
+      },
+      "scene": {
+        "title": "场景文件",
+        "desc": "他人分享给你的 .scene.json。打开后会替换当前场景。"
+      }
+    },
+    "pointcloudNote": "E57、ReCap 或 FARO？请先导出为 LAS、LAZ 或 PLY。",
+    "action": {
+      "samples": "示例",
+      "liveAndDemo": "摄像头、屏幕和演示",
+      "sources": "URL、WFS 和实时数据源",
+      "connect": "连接数据源",
+      "setUpMap": "设置地图",
+      "openPanel": "打开面板"
+    },
+    "inScene": "场景中有 {{count}} 个",
+    "inScene_other": "场景中有 {{count}} 个",
+    "needsModel": "需要先在场景中加载 IFC 模型"
+  },
+  "drop": {
+    "title": "拖放以添加到场景",
+    "count": "{{count}} 个文件",
+    "count_other": "{{count}} 个文件",
+    "legend": "每个文件的去向：",
+    "adding": "正在添加到场景：{{names}}",
+    "afterReview": "{{names}} 将在 IFC 审核后添加",
+    "more": "{{names}} 等另外 {{n}} 个",
+    "skipped": "已跳过 {{count}} 个文件",
+    "skipped_other": "已跳过 {{count}} 个文件",
+    "show": "显示",
+    "sceneReplace": "打开“{{name}}”将替换当前场景。",
+    "openScene": "打开场景",
+    "sceneAlone": "场景文件会单独打开。加载完成后再添加其他文件。"
   }
 }

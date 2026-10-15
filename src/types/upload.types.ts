@@ -142,6 +142,8 @@ export interface UploadOverlayProps {
   onClose:      () => void
   /** Opens the demo model gallery (closes this overlay first). Optional. */
   onOpenDemoGallery?: () => void
+  /** Closes this dialog and opens the "+ Add data" hub (scans, video, layers…). Optional. */
+  onOpenAddData?: () => void
   /**
    * Called after the dialog handed `count` files to the loading controller,
    * right before it asks to close. For analytics / first-load UI.

@@ -164,8 +164,8 @@
   "exportSettings": "書き出し設定…",
   "menu": {
     "openIfc": "IFCファイルを開く…",
-    "openTooltip": "開く — IFCファイル、デモモデル、その他のデータ",
-    "addData": "シーンに追加",
+    "openTooltip": "開く — IFCファイル、デモモデル、シーンファイル",
+    "addData": "データを追加",
     "check": "チェック",
     "checkTooltip": "チェック — 3Dでの問題表示、IDS、バージョン比較",
     "issuesIn3d": "3Dで問題を表示",
@@ -185,7 +185,9 @@
     "edit": "編集",
     "help": "ヘルプ",
     "idsCheck": "IDSでチェック…",
-    "compareVersions": "バージョンを比較…"
+    "compareVersions": "バージョンを比較…",
+    "addDataTooltip": "データを追加 — スキャン、動画、3Dモデル、地図レイヤー、ライブデバイス",
+    "openScene": "シーンファイルを開く…"
   },
   "mobileBar": {
     "models": "{{count}} モデル",
@@ -193,5 +195,83 @@
     "elements": "{{n}} 要素",
     "openScene": "シーンとモデル",
     "score": "Health Score {{score}} — 検証を開く"
+  },
+  "sun": "日照",
+  "sunTooltip": "日照・月光スタディ — 日付・時刻・場所に基づく実際の影",
+  "addData": {
+    "title": "シーンにデータを追加",
+    "description": "ファイルはブラウザー内で読み込まれ、アップロードされることはありません。",
+    "dropTitle": "ここにファイルをドロップ",
+    "dropHint": "これらの形式を混ぜても大丈夫です。各ファイルは適切な場所に振り分けられます。",
+    "chooseFiles": "ファイルを選択…",
+    "chooseFile": "ファイルを1つ選択…",
+    "fromUpload": "スキャン、動画、3Dモデル、地図レイヤーを追加しますか？",
+    "groups": {
+      "capture": "リアリティキャプチャ",
+      "models": "モデル",
+      "context": "地図とライブデータ",
+      "scenes": "シーン"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "点群",
+        "desc": "レーザースキャンやドローン写真測量。ファイルに位置情報があればモデル上に配置されます。"
+      },
+      "video": {
+        "title": "3D動画",
+        "desc": "現場やドローンの映像を、スクリーン上、地面上、または撮影したカメラの位置に合わせて表示します。"
+      },
+      "ifc": {
+        "title": "IFCモデル",
+        "desc": "各分野のモデルを1つのシーンに統合します。読み込み前に確認があり、最初のモデルが座標の基準になります。"
+      },
+      "mesh": {
+        "title": "3Dモデル",
+        "desc": "glTFまたはOBJの小物や周辺モデルを、モデルの床に配置します。"
+      },
+      "map": {
+        "title": "地図と地形",
+        "desc": "ジオリファレンスされたモデル周辺のベースマップ、3D地形、建物。"
+      },
+      "layers": {
+        "title": "データレイヤー",
+        "desc": "GeoJSONやCSVファイル、URL、WFSサービス、公開ライブフィードからのポイント、ルート、ゾーン。"
+      },
+      "devices": {
+        "title": "ライブデバイス",
+        "desc": "REST、WebSocket、MQTT経由のセンサーをIFC要素に紐付けます。"
+      },
+      "scene": {
+        "title": "シーンファイル",
+        "desc": "共有された .scene.json。開くと現在のシーンが置き換わります。"
+      }
+    },
+    "pointcloudNote": "E57、ReCap、FAROの場合は、先にLAS、LAZ、PLYでエクスポートしてください。",
+    "action": {
+      "samples": "サンプル",
+      "liveAndDemo": "カメラ・画面・デモ",
+      "sources": "URL・WFS・ライブフィード",
+      "connect": "ソースを接続",
+      "setUpMap": "地図を設定",
+      "openPanel": "パネルを開く"
+    },
+    "inScene": "シーン内に{{count}}件",
+    "inScene_other": "シーン内に{{count}}件",
+    "needsModel": "先にシーンにIFCモデルが必要です"
+  },
+  "drop": {
+    "title": "ドロップしてシーンに追加",
+    "count": "{{count}}ファイル",
+    "count_other": "{{count}}ファイル",
+    "legend": "各ファイルの振り分け先:",
+    "adding": "シーンに追加中: {{names}}",
+    "afterReview": "{{names}} はIFCの確認後に追加されます",
+    "more": "{{names}} ほか{{n}}件",
+    "skipped": "{{count}}ファイルをスキップ",
+    "skipped_other": "{{count}}ファイルをスキップ",
+    "show": "表示",
+    "sceneReplace": "「{{name}}」を開くと現在のシーンが置き換わります。",
+    "openScene": "シーンを開く",
+    "sceneAlone": "シーンファイルは単独で開きます。読み込み後に他のファイルを追加してください。"
   }
 }
