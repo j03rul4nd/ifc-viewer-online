@@ -348,7 +348,11 @@
     "sees": "Jeder Server sieht Ihre IP-Adresse und, bei Ebenen auf der Karte, den Bereich des Standorts. Ihr Modell wird nicht gesendet.",
     "load": "Daten laden",
     "skip": "Jetzt nicht",
-    "skipped": "Die externen Daten des Links wurden nicht geladen."
+    "skipped": "Die externen Daten des Links wurden nicht geladen.",
+    "combinedTitle": "Diese Live-Szene laden?",
+    "combinedMap": "Karte",
+    "combinedData": "Live-Daten von",
+    "loadBoth": "Karte und Daten laden"
   },
   "layout": {
     "resizePanel": "Panelgröße ändern",

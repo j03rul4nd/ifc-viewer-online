@@ -348,7 +348,11 @@
     "sees": "Cada servidor veurà la teva adreça IP i, en les capes sobre el mapa, la zona de l'emplaçament. El teu model no s'envia.",
     "load": "Carrega les dades",
     "skip": "Ara no",
-    "skipped": "No s'han carregat les dades externes de l'enllaç."
+    "skipped": "No s'han carregat les dades externes de l'enllaç.",
+    "combinedTitle": "Carregar aquesta escena en viu?",
+    "combinedMap": "Mapa",
+    "combinedData": "Dades en viu de",
+    "loadBoth": "Carregar mapa i dades"
   },
   "layout": {
     "resizePanel": "Redimensiona el tauler",

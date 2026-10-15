@@ -342,6 +342,16 @@
     "properties": "Propietats",
     "fromType": "tipus",
     "attributes": "Atributs",
-    "copied": "Copiat"
+    "copied": "Copiat",
+    "story": {
+      "label": "Recorregut guiat",
+      "step": "{{n}} de {{total}}",
+      "next": "Següent",
+      "back": "Enrere",
+      "close": "Tancar el recorregut",
+      "finish": "Explora pel teu compte",
+      "resume": "Recorregut guiat",
+      "now": "En viu ara"
+    }
   }
 }

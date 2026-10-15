@@ -348,7 +348,11 @@
     "sees": "Each server will see your IP address and, for layers on the map, the site's area. Your model is not sent.",
     "load": "Load the data",
     "skip": "Not now",
-    "skipped": "The link's external data was not loaded."
+    "skipped": "The link's external data was not loaded.",
+    "combinedTitle": "Load this live scene?",
+    "combinedMap": "Map",
+    "combinedData": "Live data from",
+    "loadBoth": "Load map and data"
   },
   "layout": {
     "resizePanel": "Resize panel",

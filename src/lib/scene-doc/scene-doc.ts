@@ -20,6 +20,7 @@
 // Pure: no DOM, no stores.
 
 import { cleanTopics, portableSource, type DeviceSource, type Binding } from '../twin/devices'
+import { parseStory, type SceneStory } from './scene-story'
 
 export const SCENE_FORMAT = 'ifc-viewer-scene'
 export const SCENE_VERSION = 1
@@ -85,6 +86,8 @@ export interface SceneDoc {
   layers: unknown[]
   twin: { sources: DeviceSource[]; bindings: Binding[] } | null
   view: SceneView
+  /** A guided tour of what the scene shows (scene-story.ts). */
+  story?: SceneStory
 }
 
 /** What a scene reads from the network, for "which sources does this use?". */
@@ -191,9 +194,11 @@ export function validateSceneDoc(input: unknown): SceneValidation {
     if (!Array.isArray(viewIn.hide) || ids.length < viewIn.hide.length) warnings.push('view.hide: expects OpenStreetMap ids like "w123"; invalid ones ignored.')
   }
 
+  const story = parseStory(input.story, new Set(twin?.bindings.map((b) => b.id) ?? []), warnings)
+
   if (models.length === 0 && layers.length === 0) errors.push('The scene has no models and no layers: there is nothing to show.')
   if (errors.length) return { ok: false, errors }
-  return { ok: true, doc: { format: SCENE_FORMAT, v: SCENE_VERSION, meta, models, layers, twin, view }, warnings }
+  return { ok: true, doc: { format: SCENE_FORMAT, v: SCENE_VERSION, meta, models, layers, twin, view, ...(story ? { story } : {}) }, warnings }
 }
 
 /** Parse + validate a scene from text. */

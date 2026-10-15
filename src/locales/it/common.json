@@ -348,7 +348,11 @@
     "sees": "Ogni server vedrà il tuo indirizzo IP e, per i livelli sulla mappa, la zona del sito. Il tuo modello non viene inviato.",
     "load": "Carica i dati",
     "skip": "Non ora",
-    "skipped": "I dati esterni del link non sono stati caricati."
+    "skipped": "I dati esterni del link non sono stati caricati.",
+    "combinedTitle": "Caricare questa scena in tempo reale?",
+    "combinedMap": "Mappa",
+    "combinedData": "Dati in tempo reale da",
+    "loadBoth": "Carica mappa e dati"
   },
   "layout": {
     "resizePanel": "Ridimensiona il pannello",

@@ -25,16 +25,45 @@ interface PendingRequest {
 
 interface ExternalDataPromptState {
   queue: PendingRequest[]
+  /**
+   * A question is on its way: a scene with data asks once its models are in,
+   * and the map asks earlier. Until then the map's question waits, so a
+   * visitor reads one dialog instead of two in a row.
+   */
+  expecting: boolean
+  expect(on: boolean): void
   answer(accepted: boolean): void
 }
 
 export const useExternalDataPrompt = create<ExternalDataPromptState>()((set, get) => ({
   queue: [],
+  expecting: false,
+  expect: (on) => set({ expecting: on }),
   answer: (accepted) => {
     const [first, ...rest] = get().queue
     set({ queue: rest })
     first?.resolve(accepted)
   },
+}))
+
+/**
+ * The map's own question ("Load map tiles?"), while it is waiting for an
+ * answer. A scene asks both at once, about twenty seconds in: two stacked
+ * dialogs to read before seeing anything. The data prompt shows them as one
+ * when they coincide — both disclosures, one answer for each (ExternalDataPrompt).
+ */
+interface MapConsentBridge {
+  accept: (() => void) | null
+  decline: (() => void) | null
+  set(accept: () => void, decline: () => void): void
+  clear(): void
+}
+
+export const useMapConsentBridge = create<MapConsentBridge>()((set) => ({
+  accept: null,
+  decline: null,
+  set: (accept, decline) => set({ accept, decline }),
+  clear: () => set({ accept: null, decline: null }),
 }))
 
 /** Hosts of every http(s)/ws(s) URL anywhere in a value, excluding this origin. Sorted, unique. */
@@ -89,8 +118,11 @@ export async function layersSetupHosts(doc: unknown): Promise<string[]> {
  * or another website frames the app).
  */
 export function confirmExternalData(kind: ExternalDataKind, hosts: string[]): Promise<boolean> {
-  if (hosts.length === 0 || isEmbeddedByOtherSite()) return Promise.resolve(true)
+  if (hosts.length === 0 || isEmbeddedByOtherSite()) {
+    useExternalDataPrompt.setState({ expecting: false })
+    return Promise.resolve(true)
+  }
   return new Promise((resolve) => {
-    useExternalDataPrompt.setState((s) => ({ queue: [...s.queue, { kind, hosts, resolve }] }))
+    useExternalDataPrompt.setState((s) => ({ queue: [...s.queue, { kind, hosts, resolve }], expecting: false }))
   })
 }

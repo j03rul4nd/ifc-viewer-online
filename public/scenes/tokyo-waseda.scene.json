@@ -184,5 +184,139 @@
         -5
       ]
     }
+  },
+  "story": {
+    "steps": [
+      {
+        "title": {
+          "en": "Tokyo's last streetcar line",
+          "es": "La última línea de tranvía de Tokio",
+          "ca": "L'última línia de tramvia de Tòquio",
+          "de": "Tokios letzte Straßenbahnlinie",
+          "fr": "La dernière ligne de tramway de Tokyo",
+          "it": "L'ultima linea di tram di Tokyo",
+          "pt": "A última linha de bonde de Tóquio",
+          "ja": "東京最後の路面電車",
+          "zh": "东京最后的有轨电车线",
+          "th": "รถรางสายสุดท้ายของโตเกียว"
+        },
+        "text": {
+          "en": "Waseda, terminus of the Toden Arakawa line, as an IFC 4.3 railway model on the map of Tokyo, connected to ODPT's open data.",
+          "es": "Waseda, terminal de la línea Toden Arakawa, como modelo ferroviario IFC 4.3 sobre el mapa de Tokio, conectado a los datos abiertos de ODPT.",
+          "ca": "Waseda, terminal de la línia Toden Arakawa, com a model ferroviari IFC 4.3 sobre el mapa de Tòquio, connectat a les dades obertes d'ODPT.",
+          "de": "Waseda, Endhaltestelle der Linie Toden Arakawa, als Bahnmodell in IFC 4.3 auf der Karte von Tokio, verbunden mit den offenen Daten von ODPT.",
+          "fr": "Waseda, terminus de la ligne Toden Arakawa, en maquette ferroviaire IFC 4.3 sur la carte de Tokyo, reliée aux données ouvertes d'ODPT.",
+          "it": "Waseda, capolinea della linea Toden Arakawa, come modello ferroviario IFC 4.3 sulla mappa di Tokyo, collegato ai dati aperti di ODPT.",
+          "pt": "Waseda, terminal da linha Toden Arakawa, como modelo ferroviário IFC 4.3 sobre o mapa de Tóquio, conectado aos dados abertos do ODPT.",
+          "ja": "都電荒川線の終点、早稲田。IFC 4.3の鉄道モデルとして東京の地図上に置かれ、ODPTのオープンデータに接続されています。",
+          "zh": "都电荒川线的终点站早稻田，以 IFC 4.3 铁路模型呈现在东京地图上，并接入了 ODPT 的开放数据。",
+          "th": "Waseda สถานีปลายทางของสาย Toden Arakawa ในรูปโมเดลทางรถไฟ IFC 4.3 บนแผนที่โตเกียว เชื่อมต่อกับข้อมูลเปิดของ ODPT"
+        },
+        "camera": {
+          "position": [
+            32,
+            46,
+            58
+          ],
+          "target": [
+            -10,
+            0,
+            -5
+          ]
+        }
+      },
+      {
+        "title": {
+          "en": "A tram at the stop",
+          "es": "Un tranvía en la parada",
+          "ca": "Un tramvia a la parada",
+          "de": "Eine Straßenbahn an der Haltestelle",
+          "fr": "Un tram à l'arrêt",
+          "it": "Un tram alla fermata",
+          "pt": "Um bonde na parada",
+          "ja": "停留場に停まる電車",
+          "zh": "有轨电车到站",
+          "th": "รถรางที่ป้าย"
+        },
+        "text": {
+          "en": "Both platform edges light up while a tram stands at the stop, with its number above. ODPT does not say which platform a tram uses, so both light up.",
+          "es": "Los bordes de los dos andenes se iluminan mientras hay un tranvía detenido en la parada, con su número encima. ODPT no indica qué andén usa cada tranvía, así que se iluminan los dos.",
+          "ca": "Les vores de les dues andanes s'il·luminen mentre hi ha un tramvia aturat a la parada, amb el seu número a sobre. ODPT no diu quina andana fa servir cada tramvia, així que s'il·luminen totes dues.",
+          "de": "Beide Bahnsteigkanten leuchten auf, solange eine Straßenbahn an der Haltestelle steht, mit ihrer Nummer darüber. ODPT gibt nicht an, welchen Bahnsteig eine Bahn nutzt, deshalb leuchten beide.",
+          "fr": "Les bords des deux quais s'allument tant qu'un tram est à l'arrêt, avec son numéro au-dessus. ODPT n'indique pas quel quai un tram utilise, donc les deux s'allument.",
+          "it": "I bordi di entrambe le banchine si illuminano mentre un tram è fermo alla fermata, con il suo numero sopra. ODPT non dice quale banchina usa un tram, quindi si illuminano entrambe.",
+          "pt": "As bordas das duas plataformas acendem enquanto um bonde está parado, com o número dele acima. O ODPT não diz qual plataforma um bonde usa, então as duas acendem.",
+          "ja": "電車が停留場に停まっている間、両方のホームの縁が点灯し、その上に番号が表示されます。ODPTはどちらのホームを使うかを示さないため、両方が点灯します。",
+          "zh": "有轨电车停在站内时，两个站台的边缘都会亮起，车号显示在上方。ODPT 不提供电车使用哪个站台的信息，所以两侧都会亮起。",
+          "th": "ขอบชานชาลาทั้งสองฝั่งจะสว่างขึ้นขณะที่รถรางจอดอยู่ที่ป้าย พร้อมหมายเลขอยู่ด้านบน ODPT ไม่ได้ระบุว่ารถรางใช้ชานชาลาไหน จึงสว่างทั้งสองฝั่ง"
+        },
+        "binding": "waseda-tram"
+      },
+      {
+        "title": {
+          "en": "Is the line running normally?",
+          "es": "¿Funciona la línea con normalidad?",
+          "ca": "La línia funciona amb normalitat?",
+          "de": "Läuft die Linie normal?",
+          "fr": "La ligne circule-t-elle normalement ?",
+          "it": "La linea funziona regolarmente?",
+          "pt": "A linha está operando normalmente?",
+          "ja": "平常どおり運行中？",
+          "zh": "线路运行正常吗？",
+          "th": "สายนี้เดินรถตามปกติไหม?"
+        },
+        "text": {
+          "en": "The departure screens show the line's status from the same open feed: green while there is no delay of 15 minutes or more.",
+          "es": "Las pantallas de salidas muestran el estado de la línea a partir del mismo feed abierto: verde mientras no haya ningún retraso de 15 minutos o más.",
+          "ca": "Les pantalles de sortides mostren l'estat de la línia a partir del mateix feed obert: verd mentre no hi hagi cap retard de 15 minuts o més.",
+          "de": "Die Abfahrtsanzeigen zeigen den Status der Linie aus demselben offenen Feed: grün, solange es keine Verspätung von 15 Minuten oder mehr gibt.",
+          "fr": "Les écrans de départ affichent l'état de la ligne depuis le même flux ouvert : vert tant qu'il n'y a aucun retard de 15 minutes ou plus.",
+          "it": "I display delle partenze mostrano lo stato della linea dallo stesso feed aperto: verde finché non ci sono ritardi di 15 minuti o più.",
+          "pt": "Os painéis de partidas mostram o estado da linha a partir do mesmo feed aberto: verde enquanto não houver atraso de 15 minutos ou mais.",
+          "ja": "発車案内表示が、同じオープンフィードから路線の運行状況を示します。15分以上の遅延がない間は緑です。",
+          "zh": "发车显示屏展示来自同一开放数据源的线路状态：只要没有 15 分钟及以上的延误，就显示绿色。",
+          "th": "จอแสดงเวลาออกแสดงสถานะของสายจากฟีดเปิดเดียวกัน: สีเขียวตราบที่ไม่มีความล่าช้าตั้งแต่ 15 นาทีขึ้นไป"
+        },
+        "binding": "arakawa-status"
+      },
+      {
+        "title": {
+          "en": "Your turn",
+          "es": "Te toca",
+          "ca": "Et toca",
+          "de": "Jetzt sind Sie dran",
+          "fr": "À vous de jouer",
+          "it": "Tocca a te",
+          "pt": "Sua vez",
+          "ja": "あなたの番です",
+          "zh": "轮到你了",
+          "th": "ถึงตาคุณแล้ว"
+        },
+        "text": {
+          "en": "Click the platforms or the screens to see their live data, or use Explore to jump between them.",
+          "es": "Haz clic en los andenes o en las pantallas para ver sus datos en vivo, o usa «Explorar» para saltar entre ellos.",
+          "ca": "Fes clic a les andanes o a les pantalles per veure'n les dades en viu, o fes servir «Explorar» per saltar entre elles.",
+          "de": "Klicken Sie auf die Bahnsteige oder die Anzeigen, um ihre Live-Daten zu sehen, oder springen Sie mit „Erkunden“ zwischen ihnen hin und her.",
+          "fr": "Cliquez sur les quais ou les écrans pour voir leurs données en direct, ou utilisez « Explorer » pour passer de l'un à l'autre.",
+          "it": "Clicca sulle banchine o sui display per vederne i dati in tempo reale, oppure usa «Esplora» per passare dall'uno all'altro.",
+          "pt": "Clique nas plataformas ou nos painéis para ver seus dados ao vivo, ou use “Explorar” para pular entre eles.",
+          "ja": "ホームや発車案内表示をクリックすると、ライブデータを表示します。「探索」でそれらの間を移動することもできます。",
+          "zh": "点击站台或显示屏即可查看它们的实时数据，也可以用“探索”在它们之间跳转。",
+          "th": "คลิกชานชาลาหรือจอแสดงเวลาออกเพื่อดูข้อมูลเรียลไทม์ หรือใช้ “สำรวจ” เพื่อข้ามไปมาระหว่างกัน"
+        },
+        "camera": {
+          "position": [
+            -50,
+            38,
+            25
+          ],
+          "target": [
+            -10,
+            0,
+            -5
+          ]
+        }
+      }
+    ]
   }
 }

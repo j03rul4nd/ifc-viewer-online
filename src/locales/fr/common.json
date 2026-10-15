@@ -348,7 +348,11 @@
     "sees": "Chaque serveur verra votre adresse IP et, pour les couches sur la carte, la zone du site. Votre modèle n'est pas envoyé.",
     "load": "Charger les données",
     "skip": "Pas maintenant",
-    "skipped": "Les données externes du lien n'ont pas été chargées."
+    "skipped": "Les données externes du lien n'ont pas été chargées.",
+    "combinedTitle": "Charger cette scène en direct ?",
+    "combinedMap": "Carte",
+    "combinedData": "Données en direct de",
+    "loadBoth": "Charger la carte et les données"
   },
   "layout": {
     "resizePanel": "Redimensionner le panneau",
