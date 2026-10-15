@@ -26,27 +26,27 @@
   --mobile-nav-clearance: calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + 8px);
 
   /* ── Viewport chrome reserve ──────────────────────────────────────────────
-     The bottom-right of the viewport belongs to the scene, not to windows: the
-     camera controls, the model info strip and the overlay HUD all live there at
-     z-8, UNDER the floating panels at z-20. A tall panel pinned to the right
-     edge therefore covered the camera controls completely, which is the worst
-     thing a panel can do — it hides the controls for the very scene it is
-     describing, with no hint that they are still there.
+     The bottom-right corner belongs to the scene: at rest the camera presets
+     are one 32px button at right 16-48px, bottom 16px (CameraControls). This
+     reserve (48px = button + its margin) is read ONLY by the panel rail, which
+     sits directly above that button.
 
-     Panels stop above this instead of reaching the bottom. One number, so moving
-     the camera controls moves the reserve with them.
+     Panels no longer read it. They start at the rail clearance (right 60px),
+     so they clear the button horizontally and can run to 12px above the
+     bottom. The open preset popover is z-21, above the panels, by design.
+     Content panels may even run over the results drawer: --lane-drawer-h is
+     set at runtime on [data-main-column] by useMainColumnLaneRef. See
+     docs/WINDOW_DESIGN.md R3/R6.
 
-     MEASURED, not guessed: the controls with their view presets open are 171px
-     tall. The first value here was 132px, and the panel still overlapped them by
-     38px — which is the kind of error that only a measurement finds, because
-     38px of overlap still looks roughly right in a screenshot. */
+     It was 172px, measured against the presets open by default; they are a
+     popover now, and the stale reserve cost every panel 124px. */
   /* The minimised form of a floating panel: a rail of icons on the right edge.
      Panels sit to its LEFT, so this is the width they give up. One token, so
      the rail and the lane cannot drift apart. See docs/PANEL_RAIL.md. */
   --panel-rail-w: 40px;
   --panel-rail-clearance: calc(var(--panel-rail-w) + 20px);
 
-  --viewport-chrome-h: 172px;
+  --viewport-chrome-h: 48px;
   --viewport-chrome-clearance: calc(var(--viewport-chrome-h) + 20px);
 }
 

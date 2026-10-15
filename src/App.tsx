@@ -11,6 +11,8 @@ import ModelTree from './components/ModelTree'
 import { ColumnStrip } from './components/ColumnStrip'
 import { PanelRail } from './components/PanelRail'
 import { usePanelRail } from './hooks/usePanelRail'
+import { useMainColumnLaneRef } from './hooks/useMainColumnLane'
+import { installBottomSlotRule } from './lib/ui/bottom-slot'
 import { useWakeLock } from './hooks/useWakeLock'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
@@ -907,6 +909,10 @@ export default function App() {
     }
   }, [embedChrome])
 
+  // Validation and IDS share one bottom slot, whatever opens them (a store
+  // rule; see lib/ui/bottom-slot). Idempotent, so StrictMode's double mount is fine.
+  useEffect(() => installBottomSlotRule(), [])
+
   // …and the properties open themselves on a pick (not saved as a preference:
   // the iframe shares storage with the visitor's own viewer).
   useEffect(() => {
@@ -1346,8 +1352,11 @@ export default function App() {
       // (the 'minimal' preset keeps it collapsed so only the 3D + score show).
       // On a phone the sheet covers the model the user just opened: they reach
       // it from the bottom nav (Validar) when they want it.
+      // First model into an empty scene only: a drawer the user collapsed is
+      // not reopened by later loads (the strip still shows the score and
+      // counts). A panel that reappears on its own reads as a bug.
       const isPhone = window.matchMedia('(max-width: 767px)').matches
-      if (embedChrome.openPanel && !isPhone) {
+      if (embedChrome.openPanel && !isPhone && firstInScene) {
         useIdsStore.getState().setPanelOpen(false) // bottom slot is exclusive with the IDS panel
         setValidationPanelOpen(true)
         trackValidationPanelOpened({ trigger: 'auto' })
@@ -1703,6 +1712,9 @@ export default function App() {
   // An article figure is a 650–720 px frame on a desktop page: the same line
   // as useIsMobile draws for it (520 px), or the spatial tree a post is about
   // went into a closed phone sheet.
+  // The main column's lane geometry (--lane-drawer-h + column width). A stable
+  // callback ref that sets no React state, so App never re-renders for it.
+  const mainColumnLaneRef = useMainColumnLaneRef()
   const desktopQuery = urlParams.embed && urlParams.preset === 'article' ? '(min-width: 520px)' : '(min-width: 768px)'
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia(desktopQuery).matches : true,
@@ -4400,9 +4412,14 @@ export default function App() {
                 id="main"
                 style={{ overflow: 'hidden' }}
               >
-              <div className="flex flex-col overflow-hidden relative h-full">
+              {/* No `style` prop: --lane-drawer-h is written imperatively here. */}
+              <div ref={mainColumnLaneRef} data-main-column="" className="flex flex-col overflow-hidden relative h-full">
 
-                <div className="flex-1 relative">
+                {/* Content panels overflow this box downward, over the drawers
+                    below it. It must never get overflow-*, z-*, isolation,
+                    transform or contain (docs/WINDOW_DESIGN.md R6;
+                    pinned by scripts/viewport-lane.test.ts). */}
+                <div data-viewer-area="" className="flex-1 relative">
                   <Viewer
                     ref={viewerRef}
                     viewerApiRef={viewerApiRef}
@@ -4702,7 +4719,10 @@ export default function App() {
 
                   {/* ── Tour Mode (D-24): recorder panel + playback bar.
                       Mounted INSIDE the viewer container so they position
-                      relative to the 3D viewport (never over tree/sidebar). ── */}
+                      relative to the 3D viewport. The recorder card may run
+                      down over the results drawer (it is a content panel),
+                      but it stays inside Panel 'main', never over the tree
+                      or the sidebar. ── */}
                   {tourMode === 'recording' && (
                     <React.Suspense fallback={null}>
                       <TourRecorder viewerApiRef={viewerApiRef} />

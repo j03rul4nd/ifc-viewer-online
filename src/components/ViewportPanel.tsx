@@ -28,11 +28,13 @@
 //
 // Desktop rendering is untouched in both cases.
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { MobileSheet } from './mobile/MobileSheet'
 import { useViewportPanel } from '../hooks/useViewportPanel'
+import { useLaneStore } from '../stores/laneStore'
+import { canExtendOverDrawer, laneBottomCss } from '../lib/ui/lane'
 
 export type ViewportPanelMobile = 'sheet' | 'dock'
 
@@ -103,6 +105,20 @@ export function ViewportPanel({
   // each panel remembering to wire them. The rules live in lib/ui/panel-registry;
   // the hook is the only part that knows about mounting.
   useViewportPanel(id, open, onClose)
+
+  // The lane claim. Only content panels ('sheet' on phones) run down over the
+  // results drawer, and only while it keeps MIN_DRAWER_CONTENT_PX of width; the
+  // drawer reads the claim to pad its content clear of the card. A layout
+  // effect, so the padding lands before paint. Release is owner-only, which is
+  // what makes the registry's open-B-then-close-A order safe.
+  const columnAllows = useLaneStore((s) => canExtendOverDrawer(s.columnWidthPx, widthPx))
+  const isContent = mobile === 'sheet'
+  const overDrawer = !isMobile && isContent && columnAllows
+  useLayoutEffect(() => {
+    if (!open || isMobile || !isContent) return
+    useLaneStore.getState().claimLane(id, widthPx, overDrawer)
+    return () => useLaneStore.getState().releaseLane(id)
+  }, [open, isMobile, isContent, id, widthPx, overDrawer])
   // Half height by default: glancing at the state is the common errand, and
   // opening full every time buries the model the panel is describing.
   // With a peek detent, half is index 1: open on half, collapse to peek.
@@ -165,35 +181,32 @@ export function ViewportPanel({
     )
   }
 
-  // ── THE RIGHT LANE, SHARED VERTICALLY ───────────────────────────────────────
+  // ── THE LANE IS THE MAIN COLUMN ─────────────────────────────────────────────
   //
-  // Measured on a real session: the viewport is 1168x546 once the tree and the
-  // validation panel have taken their share, while `100dvh` is 950. Panels sized
-  // against dvh were therefore 585px tall in a 546px viewport — they hung out of
-  // the bottom of the scene and over the panel below it.
+  // The card is anchored TOP AND BOTTOM rather than given a height: it cannot
+  // overflow a container it is measured against, and needs no magic number.
   //
-  // So the card is anchored TOP AND BOTTOM inside the viewport instead of being
-  // given a height. It cannot overflow a container it is measured against, and
-  // it needs no magic number to stay inside one.
+  // Content panels ('sheet') run to 12px above the bottom of the MAIN COLUMN —
+  // over the right side of an open Validation/IDS drawer, which yields WIDTH
+  // (it pads its content by this card's width + 68px), never height. The
+  // distance is `--lane-drawer-h`, written on [data-main-column] by
+  // useMainColumnLaneRef. This only works because the viewer area is unclipped
+  // and has no z-index, and the drawer roots are unpositioned — see
+  // docs/WINDOW_DESIGN.md R3/R6 and scripts/viewport-lane.test.ts. When the
+  // drawer would keep less than 460px, the panel stops above it instead.
   //
-  // The bottom anchor also leaves the scene its own corner. The camera and
-  // position controls live bottom-right at z-8, UNDER these panels: a panel that
-  // reaches the bottom edge buries the controls for the very scene it describes.
-  // Earlier I made the controls move aside instead, and measuring showed why
-  // that was wrong — with no room in the lane they ended up over the middle of
-  // the model. The scene is the subject; the window yields to it, not the
-  // reverse.
+  // Palettes ('dock') stop 12px above the bottom of the viewer. Neither form
+  // reaches the camera button: it sits right of the lane (right 16-48px), and
+  // the lane starts at the rail clearance (right 60px).
   const style: React.CSSProperties = {
-    width: `min(${widthPx}px, calc(100vw - 24px))`,
+    // Measured against the container, not the viewport: the viewer is narrower
+    // than the window whenever the tree is open.
+    width: `min(${widthPx}px, calc(100% - var(--panel-rail-clearance) - 12px))`,
     // To the LEFT of the rail, which is the panel's own minimised form. Sharing
     // the edge with it would put the card on top of the control that closes it.
     right: 'var(--panel-rail-clearance)',
-    top: anchor === 'top' ? '3.5rem' : undefined,
-    bottom: 'var(--viewport-chrome-clearance)',
-  }
-  if (anchor === 'center') {
-    // Centre what is left of the lane, never the whole viewport.
-    style.top = '3.5rem'
+    top: '3.5rem',
+    bottom: laneBottomCss(overDrawer),
   }
   if (maxHeight) style.maxHeight = maxHeight
 
@@ -205,12 +218,17 @@ export function ViewportPanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
-          className="absolute z-20 pointer-events-auto select-none flex flex-col"
+          // The wrapper spans the whole lane while the card hugs its content,
+          // so the wrapper must not take clicks: its transparent part used to
+          // swallow clicks on the model (and now would on the drawer).
+          className="absolute z-20 pointer-events-none select-none flex flex-col"
+          data-viewport-panel={id}
+          data-lane={overDrawer ? 'column' : 'viewer'}
           style={style}
         >
           {/* `max-h-full` rather than a height: a short panel stays short, and a
               long one stops at the lane and scrolls inside. */}
-          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col min-h-0 max-h-full">
+          <div className="glass-md pointer-events-auto border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col min-h-0 max-h-full">
             {children}
           </div>
         </motion.div>

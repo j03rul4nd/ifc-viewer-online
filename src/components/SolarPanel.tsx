@@ -495,7 +495,6 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
         collapseKey={active ? 'on' : null}
         widthPx={280}
         anchor="top"
-        maxHeight="calc(100vh - 140px)"
       >
         {/* The scroller lives here rather than on the card, so the SAME element
             does the job in both shells: it flexes inside the desktop card's
