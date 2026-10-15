@@ -21,6 +21,12 @@ interface VideoStore {
   setMode(id: string, mode: VideoSurfaceMode): void
   setPlacement(id: string, patch: Partial<VideoPlacement>): void
   clearVideos(): void
+  /** Files dropped or picked elsewhere (drop routing, Add data hub) that the panel loads. Session-only. */
+  pendingFiles: File[]
+  /** Append to the queue. Deliberately does NOT open the panel: VideoPanel is mounted while closed and drains it. */
+  enqueueFiles(files: File[]): void
+  /** Return and clear the queue atomically. */
+  takePendingFiles(): File[]
 }
 
 export const useVideoStore = create<VideoStore>()(
@@ -56,7 +62,15 @@ export const useVideoStore = create<VideoStore>()(
           ? { ...item, placement: clampVideoPlacement({ ...item.placement, ...patch }) }
           : item),
       }), false, 'setPlacement'),
-      clearVideos: () => set({ videos: [], activeVideoId: null }, false, 'clearVideos'),
+      clearVideos: () => set({ videos: [], activeVideoId: null, pendingFiles: [] }, false, 'clearVideos'),
+      pendingFiles: [],
+      enqueueFiles: (files) =>
+        set((s) => ({ pendingFiles: [...s.pendingFiles, ...files] }), false, 'enqueueFiles'),
+      takePendingFiles: () => {
+        let taken: File[] = []
+        set((s) => { taken = s.pendingFiles; return { pendingFiles: [] } }, false, 'takePendingFiles')
+        return taken
+      },
     }),
     { name: 'VideoStore' },
   ),

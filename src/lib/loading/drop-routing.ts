@@ -19,6 +19,13 @@
 // module here would drag the point-cloud runtime into the entry chunk just to
 // compare five-letter strings. drop-routing.test.ts imports both modules and
 // fails the moment the lists drift, which is the cheap half of that trade.
+//
+// Only reader-heavy modules are copied. Import-free modules — pc-types.ts
+// (DEFERRED_EXTENSIONS) and video-types.ts (VIDEO_FILE_EXTENSIONS) — are
+// imported directly; drop-routing.test.ts guards that they stay import-free.
+
+import { VIDEO_FILE_EXTENSIONS } from '../video/video-types'
+import { DEFERRED_EXTENSIONS } from '../pointcloud/pc-types'
 
 // ── Extension tables ──────────────────────────────────────────────────────────
 
@@ -58,6 +65,16 @@ export const POINTCLOUD_EXTENSIONS = [
  */
 export const VECTOR_EXTENSIONS = ['.geojson'] as const
 
+/** A shared scene document. Checked on the full name, before the extension lookup. */
+export const SCENE_FILE_SUFFIX = '.scene.json'
+
+export function isSceneFileName(name: string): boolean {
+  return name.trim().toLowerCase().endsWith(SCENE_FILE_SUFFIX)
+}
+
+/** `accept` of every Data layers picker (the panel's own and the Add data hub's). */
+export const LAYER_FILE_ACCEPT = '.geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv'
+
 export const MESH_ENTRY_EXTENSIONS = ['.glb', '.gltf', '.obj'] as const
 export const MESH_SIDECAR_EXTENSIONS = ['.mtl', '.bin'] as const
 export const MESH_TEXTURE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'] as const
@@ -73,6 +90,12 @@ export interface FileRouting {
   mesh: File[]
   /** GeoJSON data layers (routes, zones, points) for the Data layers panel. */
   vector: File[]
+  /** Video clips for the 3D video panel. */
+  video: File[]
+  /** `*.scene.json` documents — opening one replaces the scene. */
+  scene: File[]
+  /** Scanner formats we recognise but do not decode (E57, ReCap, FARO): specific advice, not "unsupported". */
+  deferred: File[]
   /** Anything no subsystem opens: the caller decides whether to say so. */
   other: File[]
 }
@@ -87,6 +110,8 @@ for (const ext of POINTCLOUD_EXTENSIONS) BY_EXTENSION[ext] = 'pointcloud'
 for (const ext of MESH_ENTRY_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of MESH_SIDECAR_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of VECTOR_EXTENSIONS) BY_EXTENSION[ext] = 'vector'
+for (const ext of VIDEO_FILE_EXTENSIONS) BY_EXTENSION[ext] = 'video'
+for (const ext of Object.keys(DEFERRED_EXTENSIONS)) BY_EXTENSION[ext] = 'deferred'
 
 const TEXTURES: ReadonlySet<string> = new Set(MESH_TEXTURE_EXTENSIONS)
 const MESH_ENTRIES: ReadonlySet<string> = new Set(MESH_ENTRY_EXTENSIONS)
@@ -105,11 +130,14 @@ export function fileExtensionOf(fileName: string): string {
  * and the anchor rule (first-submitted IFC sets the coordinate base) rely on it.
  */
 export function classifyFiles(files: readonly File[]): FileRouting {
-  const out: FileRouting = { ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], other: [] }
+  const out: FileRouting = {
+    ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], video: [], scene: [], deferred: [], other: [],
+  }
   const textures: File[] = []
   let hasMeshEntry = false
 
   for (const file of files) {
+    if (isSceneFileName(file.name)) { out.scene.push(file); continue }
     const ext = fileExtensionOf(file.name)
     if (TEXTURES.has(ext)) { textures.push(file); continue }
     const bucket = BY_EXTENSION[ext]
@@ -127,7 +155,8 @@ export function classifyFiles(files: readonly File[]): FileRouting {
   // stay scans when the drop is only them, or carries other scans.
   const ambiguous = out.pointcloud.filter((f) => AMBIGUOUS_TEXT.has(fileExtensionOf(f.name)))
   const hasRealScan = out.pointcloud.length > ambiguous.length
-  if (ambiguous.length > 0 && !hasRealScan && (out.ifc.length > 0 || hasMeshEntry)) {
+  if (ambiguous.length > 0 && !hasRealScan
+    && (out.ifc.length > 0 || hasMeshEntry || out.video.length > 0 || out.scene.length > 0)) {
     out.pointcloud = out.pointcloud.filter((f) => !AMBIGUOUS_TEXT.has(fileExtensionOf(f.name)))
     out.other.push(...ambiguous)
   }
@@ -172,6 +201,7 @@ export function groupMeshFiles(files: readonly File[]): MeshImportGroup[] {
 export function routedCount(routing: FileRouting): number {
   return routing.ifc.length + routing.ids.length + routing.bcf.length
     + routing.pointcloud.length + routing.mesh.length + routing.vector.length
+    + routing.video.length + routing.scene.length
 }
 
 // ── DataTransfer ──────────────────────────────────────────────────────────────
