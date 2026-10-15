@@ -93,8 +93,12 @@ Anatomy, fixed, so nine panels read as one family:
 | Footer | The primary action, pinned. Absent when there is no primary action. |
 
 And the sizing rules already established: the card is anchored top and bottom in
-the lane, hugs its content when short, scrolls internally when long, and stops
-above the camera controls.
+the lane, hugs its content when short and scrolls internally when long. Content
+panels are anchored 56px from the top and 12px from the bottom of the MAIN
+COLUMN, running over the results drawer (which reserves their width) while at
+least 460px of drawer remain; palettes stop 12px above the bottom of the 3D view.
+Neither reaches the camera button, which sits right of the lane. See
+WINDOW_DESIGN R6.
 
 Density follows what these tools settled on — 11–13px labels, ~30px rows,
 ~292–360px of width. Ours is already in that band; what it lacked was the rail.
@@ -109,5 +113,6 @@ removing it would break every habit and every keyboard path at once.
 
 **Dragging and free positioning.** It is the first thing family 1 offers and the
 reason family 1 lost. A panel that can be anywhere is a panel that is in the way
-somewhere, and this viewport is 1168x546 with the tree and validation open —
-there is nowhere to drag it to.
+somewhere. A content panel already takes the whole lane — 788px tall at 1440x900
+with the validation drawer open, running down over it — so there is nowhere
+better to drag it to.

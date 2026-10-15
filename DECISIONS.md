@@ -818,3 +818,35 @@ server-side for free.
 measures and states them (`docs/CITY_DATA_SOURCES.md`) instead of hiding
 them. A link holds about 16 000 characters, so big scenes are hosted files.
 Demo data that is illustrative must say so in the scene's notes.
+
+## D-33 · Content panels run over the results drawer; one bottom slot
+
+**Date:** 2026-10-15 · **Status:** accepted
+
+**Context.** With the Validation or IDS drawer open, floating content panels
+(point cloud, scene, map, video, solar, flood…) were squeezed into what was
+left of the 3D view, minus a stale 172px camera reserve: 248px at 1440x900,
+0px at 1366x643. The two drawers had different, unremembered heights and could
+both be expanded at once.
+
+**Decision.**
+1. Content panels (`ViewportPanel mobile="sheet"`) run to 12px above the main
+   column's bottom, over the drawer's right side, through a CSS variable
+   (`--lane-drawer-h`) rather than a portal. The drawer yields **width**
+   (padding = panel + 68px), never height, and only while 460px of it remain.
+   Palettes stay in the 3D view. The camera reserve is 48px.
+2. Validation and IDS share **one bottom slot** (a store rule, last opened
+   wins) and **one height**: 40% of the column by default, remembered under
+   `ifc-ui-drawer:v1`, never written on phones or in embeds, with an
+   accessible grip (detents 25/40/60%).
+3. Validation auto-opens only when the first model enters an empty scene; a
+   drawer the user collapsed is not reopened by later loads.
+
+**Rejected.** A lane-host portal (moves every panel's DOM parent and remounts
+open panels). Measured, sticky per-card reservation (follow-up). Moving the
+properties sidebar into the lane.
+
+**Consequences.** Two structural invariants (unclipped viewer area, unpositioned
+drawer roots) are pinned by `scripts/viewport-lane.test.ts`. A short content
+panel still pads the drawer by its full width while open. Fewer 'auto'
+validation-panel-opened events. See docs/WINDOW_DESIGN.md R6.

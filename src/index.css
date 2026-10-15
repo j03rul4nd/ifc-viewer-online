@@ -158,6 +158,28 @@ body {
   * { scrollbar-width: none; }
 }
 
+/* Floating panels and the results drawers: a thumb you can actually see
+   (#6B6D79 is about 3.7:1 on the glass at rgba(16,16,20,.94); the global
+   --border-strong was about 1.3:1). Above .no-scrollbar, which still wins. */
+@media (pointer: fine) {
+  .glass-md ::-webkit-scrollbar-thumb,
+  [data-bottom-drawer] ::-webkit-scrollbar-thumb { background: #6B6D79; }
+  .glass-md ::-webkit-scrollbar-thumb:hover,
+  [data-bottom-drawer] ::-webkit-scrollbar-thumb:hover { background: #8B8D98; }
+}
+/* Firefox only: Chrome 121+ drops ::-webkit-scrollbar styling once
+   scrollbar-color is set (and it inherits), so scope it to engines without it. */
+@supports not selector(::-webkit-scrollbar) {
+  @media (pointer: fine) {
+    .glass-md:not(.no-scrollbar),
+    .glass-md :not(.no-scrollbar),
+    [data-bottom-drawer] :not(.no-scrollbar) {
+      scrollbar-width: thin;
+      scrollbar-color: #6B6D79 transparent;
+    }
+  }
+}
+
 /* ── Toolbar progress sweep (indeterminate animation) ───────────────────────── */
 @keyframes toolbar-sweep {
   0%   { transform: translateX(-150%); }

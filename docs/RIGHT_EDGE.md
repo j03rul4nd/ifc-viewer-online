@@ -97,6 +97,11 @@ So:
 > edge strips, on their own edges. That is a different pattern for a different
 > job and it should stay different.
 
+The bottom results column coexists with an open content panel by giving up
+**width** on its right, never height: the panel runs down over it and the drawer
+pads its content clear of the card. Validation and IDS share that one slot,
+exclusively. See WINDOW_DESIGN R6.
+
 ### What this fixes right now
 
 - The properties strip is deleted. Properties becomes the **first rail icon** —
@@ -116,8 +121,9 @@ The test is one question: **is it a persistent view of something in the scene?**
   why the rail is worth 40px.
 - No → it is a topbar command or a `Cmd-K` action, and it does not get an icon.
 
-The rail has room for roughly twelve icons before the camera-controls clearance
-starts biting. Past that, the answer is Blender's: **group by kind**, with a
+The rail is bounded at the viewer height − 124px (10 icons at 1440x900 with the
+drawer open, 6 at 1366x643) and scrolls beyond that. Past that, the answer is
+Blender's: **group by kind**, with a
 separator, before anyone reaches for a scroll or a customisation UI. We are at
 nine.
 
