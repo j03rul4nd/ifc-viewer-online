@@ -421,7 +421,6 @@ export default function VideoPanel({
       collapseKey={active?.status === 'ready' ? active.id : null}
       widthPx={318}
       anchor="top"
-      maxHeight="calc(100vh - 140px)"
     >
       {isMobile && (
         <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">

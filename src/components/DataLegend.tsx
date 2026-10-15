@@ -31,6 +31,7 @@ import type { LayerStyle } from '../lib/layers/style-groups'
 import { iconDataUrl } from '../lib/layers/vector-assets'
 import type { ViewerAPI } from '../lib/viewer'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
+import { useLaneStore, selectOverlayReservePx } from '../stores/laneStore'
 import { twinLegendLayer, TWIN_LEGEND_ID } from '../lib/twin/twin-legend'
 
 type T = (k: string, o?: Record<string, unknown>) => string
@@ -128,6 +129,9 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   // Map mode puts its scale and coordinate readout in the bottom-left corner.
   const mapReadout = useGeoStore((s) => s.mapMode === 'on')
 
+  // An open content panel reaches the bottom now; the 'br' corner moves left of it.
+  const reserve = useLaneStore(selectOverlayReservePx)
+
   // No visible data, no legend, no chip: nothing to explain.
   if (shown.length === 0 && !twin && hiddenCount === 0) return null
 
@@ -136,17 +140,19 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   // and on the map its scale readout (bottom-left).
   const POS: Record<typeof extras.corner, string> = {
     bl: mapReadout ? 'left-4 bottom-[76px] sm:bottom-12' : 'left-4 bottom-[76px] sm:bottom-4',
-    br: 'right-4 bottom-[132px] sm:bottom-[64px]',
+    br: 'bottom-[132px] sm:bottom-[64px]',
     tl: 'left-4 top-14',
     tr: 'right-16 top-3',
   }
   const pos = `absolute ${POS[extras.corner]} z-[20] select-none`
+  const posStyle: React.CSSProperties | undefined = extras.corner === 'br' ? { right: 16 + reserve } : undefined
   const NEXT = { bl: 'br', br: 'tr', tr: 'tl', tl: 'bl' } as const
 
   if (!open) {
     return (
       <button type="button" className={`${pos} flex items-center gap-1.5 px-2.5 py-1.5 max-md:py-2 rounded-full text-[11px] font-medium
         bg-[rgba(16,18,24,0.72)] text-[var(--text-dim)] hover:text-[var(--text)] border border-white/10 backdrop-blur-md shadow-lg`}
+        style={posStyle}
         onClick={() => useVectorLayerStore.getState().setLegendOpen(true)}
         title={t('legend.openHint')} data-testid="legend-chip">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
@@ -162,7 +168,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   return (
     <div className={`${pos} w-[224px] max-w-[calc(100%-32px)] max-h-[min(46vh,calc(100%-120px))] flex flex-col rounded-[10px]
       bg-[rgba(16,18,24,0.82)] border border-white/10 backdrop-blur-md shadow-xl text-[var(--text)]`}
-      role="region" aria-label={t('legend.title')} data-testid="data-legend">
+      style={posStyle} role="region" aria-label={t('legend.title')} data-testid="data-legend">
       <div className="shrink-0 flex items-center gap-1.5 pl-2.5 pr-1 pt-1.5 pb-1">
         <span className="flex-1 text-[11px] font-semibold">{t('legend.title')}</span>
         <span className="text-[9px] text-[var(--text-faint)]" title={t('legend.inCapturesHint')}>{t('legend.inCaptures')}</span>

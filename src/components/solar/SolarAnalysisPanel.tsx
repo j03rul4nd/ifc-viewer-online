@@ -547,7 +547,6 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
         mobile="sheet"
         widthPx={340}
         anchor="top"
-        maxHeight="calc(100vh - 140px)"
       >
         <div className="flex-1 min-h-0 overflow-y-auto text-[11.5px] text-[var(--text-dim)]">
           <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)] flex items-center justify-between">

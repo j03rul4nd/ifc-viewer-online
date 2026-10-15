@@ -23,6 +23,9 @@ import { localizeReasons, localizeRemediation } from './ids/reasons'
 import { localizeIdsError, idsErrorDetail } from './ids/error-text'
 import { diffIdsResults } from '../lib/ids/ids-diff'
 import * as Icons from './Icons'
+import { drawerHeightCss, IDS_DRAWER_MIN_PX } from '../lib/ui/lane'
+import { useLaneStore, selectDrawerReservePx } from '../stores/laneStore'
+import { DrawerResizeGrip } from './DrawerResizeGrip'
 import type { TFunction } from 'i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { IdsReason, IdsResult, IdsSpecResult } from '../lib/ids/ids-types'
@@ -208,6 +211,11 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
 
   const hasAnything = !!doc || !!result || busy
 
+  // One drawer share for Validation and IDS (uiStore); the reserve is the
+  // width an open content panel takes over the drawer (lib/ui/lane).
+  const drawerRatio = useUIStore((s) => s.bottomDrawerRatio)
+  const drawerReserve = useLaneStore(selectDrawerReservePx)
+
   // ── Mobile: dedicated bottom-sheet variant (desktop render path untouched) ──
   if (isMobile) {
     return <IdsPanelMobile viewerApiRef={viewerApiRef} onOpenLoader={onOpenLoader} />
@@ -248,16 +256,28 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
   }
 
   // ── Expanded panel ─────────────────────────────────────────────────────────
+  // Unpositioned on purpose (no relative / z-*): content panels paint over
+  // this drawer's right side, and it yields that width with padding.
   return (
     <div
       ref={containerRef}
       tabIndex={0}
       onKeyDown={onKeyDown}
+      data-bottom-drawer="ids"
       className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0 outline-none"
-      style={{ height: 'min(44dvh, 520px)', minHeight: 220 }}
+      style={{
+        height: drawerHeightCss(drawerRatio, IDS_DRAWER_MIN_PX),
+        minHeight: IDS_DRAWER_MIN_PX,
+        paddingRight: drawerReserve || undefined,
+      }}
     >
+      <DrawerResizeGrip drawerRef={containerRef} minPx={IDS_DRAWER_MIN_PX} />
+
       {/* Header */}
       <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0">
+        {/* Labels clip before controls do. The actions are not wrapped: the
+            export menu's dropdown is absolute and an overflow wrapper would clip it. */}
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
         <Icons.Shield size={13} className="text-[var(--accent)] shrink-0" />
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">{t('title')}</span>
         {fileName && <span className="text-[10px] font-mono text-[var(--text-faint)] truncate max-w-[160px]">{fileName}</span>}
@@ -279,7 +299,7 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
             )}
           </>
         )}
-        <div className="flex-1" />
+        </div>
         {busy ? (
           <button onClick={cancel} disabled={status === 'cancelling'} className="h-6 px-2 rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-40">
             {status === 'cancelling' ? t('run.cancelling') : t('run.cancel')}

@@ -349,5 +349,9 @@
     "load": "Carica i dati",
     "skip": "Non ora",
     "skipped": "I dati esterni del link non sono stati caricati."
+  },
+  "layout": {
+    "resizePanel": "Ridimensiona il pannello",
+    "resizePanelHint": "Trascina o usa i tasti freccia per ridimensionare. Doppio clic per cambiare dimensione."
   }
 }

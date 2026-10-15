@@ -12,6 +12,7 @@ import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVectorLayerStore } from '../stores/vectorLayerStore'
 import { showMoment, stopTimeTravel } from '../lib/layers/vector-runner'
+import { useLaneStore, selectOverlayReservePx } from '../stores/laneStore'
 
 const SPEEDS = [1, 10, 60, 300, 1800]
 
@@ -43,13 +44,18 @@ export default function TimeBar() {
     return () => cancelAnimationFrame(raf.current)
   }, [tt?.playing])
 
+  // An open content panel now reaches the bottom of the column: centre the bar
+  // in the width it leaves free instead of drawing over it. 0 on phones.
+  const reserve = useLaneStore(selectOverlayReservePx)
+
   if (!tt) return null
   const set = (patch: Partial<typeof tt>): void => useVectorLayerStore.getState().setTimeTravel({ ...tt, ...patch })
   const span = Math.max(1, tt.to - tt.from)
 
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 bottom-[132px] sm:bottom-[60px] z-[21] w-[min(560px,calc(100%-32px))]
+    <div className="absolute -translate-x-1/2 bottom-[132px] sm:bottom-[60px] z-[21]
       flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] bg-[rgba(16,18,24,0.88)] border border-[#ffd23f]/40 backdrop-blur-md shadow-xl text-[var(--text)]"
+      style={{ left: `calc((100% - ${reserve}px) / 2)`, width: `min(560px, calc(100% - 32px - ${reserve}px))` }}
       role="group" aria-label={t('history.bar')} data-testid="time-bar">
       <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#ffd23f]" title={t('history.pastHint')}>{t('history.past')}</span>
       <button type="button" className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/15"

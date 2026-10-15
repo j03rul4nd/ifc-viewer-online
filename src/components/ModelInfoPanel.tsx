@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import type { ModelInfo, MemoryStats } from '../types'
 import type { GpuBackend } from '../stores/uiStore'
 import { useCobieStore } from '../stores/cobieStore'
+import { useLaneStore, selectOverlayReservePx } from '../stores/laneStore'
 import type { FmTier } from '../lib/cobie/fm-readiness'
 
 interface ModelInfoPanelProps {
@@ -87,6 +88,8 @@ function Row({ label, value, sub, badge }: {
 export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFromCache, qualityScore, gpuBackend }: ModelInfoPanelProps) {
   const { t } = useTranslation('viewer')
   const [expanded, setExpanded] = useState(false)
+  // Centred in the width an open content panel leaves free (0 when none).
+  const reserve = useLaneStore(selectOverlayReservePx)
 
   // FM-readiness: present only once a COBie export has been run for this model
   // (the extraction is cached in cobieStore — no eager worker pass).
@@ -114,8 +117,8 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
 
   return (
     <div
-      className="absolute bottom-[76px] sm:bottom-4 left-1/2 -translate-x-1/2 z-[8] select-none pointer-events-auto"
-      style={{ maxWidth: 'min(320px, calc(100vw - 120px))', minWidth: 200 }}
+      className="absolute bottom-[76px] sm:bottom-4 -translate-x-1/2 z-[8] select-none pointer-events-auto"
+      style={{ left: `calc((100% - ${reserve}px) / 2)`, maxWidth: 'min(320px, calc(100vw - 120px))', minWidth: 200 }}
     >
       {/* Collapsed pill */}
       <button

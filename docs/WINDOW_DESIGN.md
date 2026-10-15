@@ -52,6 +52,12 @@ all. A box cannot overflow a container it is anchored to, and it needs no magic
 number to stay inside one. `100dvh` is the screen; the viewport is what is left
 after the chrome, and those are not the same number.
 
+The container depends on the kind of window. **Content panels** (every
+`ViewportPanel` with `mobile="sheet"`) are measured against the **main column**:
+the 3D view plus the results drawer below it (R6). **Palettes** (`mobile="dock"`:
+Measure, Section, Plans) are measured against the 3D view. Widths follow the same
+rule: `min(width, 100% of the container - rail clearance - 12px)`, never `100vw`.
+
 ### R2 — The right edge is one lane, and it holds one window
 
 The selection sidebar and the floating panels are both pinned right. Opening a
@@ -61,14 +67,20 @@ outranks ours. It is stepped aside, not closed: the rail is still the way back.
 
 ### R3 — The scene keeps its own corner; the window yields
 
-The bottom-right of the viewport belongs to the camera and position controls.
-Panels stop above them, via one clearance token, so the reserve moves when the
-controls do.
+The bottom-right of the viewport belongs to the camera controls. At rest they
+are one 32px button at right 16-48px, bottom 16px (`CameraControls`); the view
+presets are a popover that opens at z-21, above the panels, by design.
 
-The token is **measured**: the controls are 171px tall with their view presets
-open. The first value written here was 132px, and the panel still overlapped
-them by 38px — small enough to look roughly right in a screenshot and be wrong
-in fact. Numbers in this file come from the DOM.
+The scene keeps that corner by **horizontal separation**: panels start at the
+rail clearance (right 60px or more), so they never cover the button and may run
+to 12px above the bottom. The reserve token `--viewport-chrome-h` (48px, the
+button plus its margin) now bounds only the rail, which sits directly above the
+button.
+
+It used to be 172px, measured when the presets were open by default. Once they
+became a popover nobody re-measured, and every panel paid 124px for a control
+that was no longer there. Numbers in this file come from the DOM — and have to be
+taken again when the thing they measure changes.
 
 **The window yields to the scene, not the other way round.** The scene is the
 subject; a panel describes it. Moving the subject's controls to make room for
@@ -92,6 +104,44 @@ only thing that scrolls, and an optional pinned action row. Long words wrap
 rather than widening the card past the screen. The header and the actions stay
 reachable however long the content is, which is what "the body scrolls" buys.
 
+### R6 — Checking never squeezes the data tools
+
+The bottom of the main column is **one slot**: Validation XOR IDS. A store rule
+(`lib/ui/bottom-slot`) enforces it whatever opens them; the last one opened wins.
+
+Its share is one value for both: 40% of the column by default, as
+`clamp(180px | 220px for IDS, ratio, column - 240px)`, remembered under
+`ifc-ui-drawer:v1` (not on phones, not in embeds). The grip is a
+`role="separator"`: drag (snaps within 16px of 25/40/60%), double-click to cycle
+those, Arrow keys ±24px (±96 with Shift), PageUp/PageDown between detents,
+Home/End for minimum/maximum.
+
+Content panels run **over** the drawer's right side, to 12px above the column
+bottom (`--lane-drawer-h`, written on `[data-main-column]`). The drawer yields
+**width, never height**: it pads its content by the panel's width + 68px (rail
+clearance + an 8px gap), so its actions and collapse button stay visible beside
+the card. A panel only does this while at least 460px of drawer remain;
+otherwise it stops above the drawer. Overlays that share the bottom (time bar,
+the bottom-right legend, the model-info pill) move clear of an open content panel.
+
+Two structural invariants make this work, and `scripts/viewport-lane.test.ts`
+pins them: the viewer area (`[data-viewer-area]`) has no overflow clip,
+z-index, isolation, transform or contain; and the drawer roots
+(`[data-bottom-drawer]`) are unpositioned.
+
+The properties sidebar stays in the viewer on purpose: it never coexists with a
+content panel (R2), and in the lane it would permanently take ~408px from the
+validation list in the click-an-issue-then-read-properties flow.
+
+### Glossary
+
+- **Content panel** — any `ViewportPanel` with `mobile="sheet"`: scene, map,
+  pointcloud, mesh, layers, video, twin-devices, solar, solar-analysis, flood,
+  tour. Runs the full lane, over the drawer.
+- **Palette** — `mobile="dock"`: measurement, section, plans. Stays in the 3D view.
+- **Data panel** — (add-data work) pointcloud, mesh, video, layers, devices and
+  map; all of them content panels.
+
 ## After
 
 Same session, same window size, after the rules:
@@ -106,10 +156,15 @@ Vistas (camera controls)    245 x 171  @ (907, 360)         6px below the panel
 The panel ends at y 354; the controls start at y 360. Nothing overlaps, the
 model is unobstructed, and the panel scrolls internally instead of growing.
 
-## What this does not settle
+## The lane over the drawer (R6), measured
 
-The viewport is 546px tall in this configuration, and a 298px lane is tight for
-a panel with transform fields in it. That is an honest consequence of the tree,
-the validation panel and the scene chrome all being open at once — not something
-a window rule can fix. The lever, if it matters, is the validation panel's share
-of the height, and that is a separate decision.
+The 298px lane above was still too tight once real content (scans, several
+models, a solar study) lived in it, and with the validation drawer open it was
+worse: 248px at 1440x900, 0px at 1366x643. The decision is R6 — content panels
+run over the drawer, which gives up width instead of height. With the default
+40% drawer:
+
+| Window | Content panel | Palette | Rail |
+| --- | --- | --- | --- |
+| 1440x900 | 248 → 788px | 248 → 446px | 248 → 390px (10 icons) |
+| 1366x643 | 0 → 531px | — | 0 → 235px (6 icons) |

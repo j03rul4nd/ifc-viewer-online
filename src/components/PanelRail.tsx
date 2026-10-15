@@ -14,8 +14,9 @@
 //
 // Not draggable, deliberately. Free positioning is what the 3ds Max / Rhino
 // generation offered and the reason that generation lost: a panel that can be
-// anywhere is in the way somewhere. This viewport is 1168x546 with the tree and
-// the validation panel open; there is nowhere to drag it to.
+// anywhere is in the way somewhere. Content panels already take the whole lane:
+// at 1440x900 with the validation drawer open a panel is 788px tall, running
+// from the toolbar down over the drawer. There is nowhere better to drag it to.
 
 import React from 'react'
 
@@ -52,10 +53,11 @@ export function PanelRail({ items }: PanelRailProps) {
     <div
       role="toolbar"
       aria-orientation="vertical"
-      // Bounded by the same clearance the panels obey, so a rail that grows —
-      // loading a scan and a mesh adds two icons — can never reach down into the
-      // camera controls. Measured: 8 icons would end at y=394 with the view
-      // cube starting at 354. It scrolls instead, which is what the panels do.
+      // Bounded by the camera-button reserve (--viewport-chrome-clearance, now
+      // 68px): the rail sits right above that button, so a rail that grows —
+      // loading a scan and a mesh adds two icons — can never reach down into
+      // it. It scrolls instead. Panels no longer read this token: they sit
+      // left of the button, so only the rail needs the reserve.
       className="absolute top-14 right-3 z-[19] flex flex-col gap-1 p-1 rounded-xl glass-md border border-[var(--border)] pointer-events-auto select-none overflow-y-auto no-scrollbar max-h-[calc(100%-3.5rem-var(--viewport-chrome-clearance))]"
     >
       {items.map((item) => (

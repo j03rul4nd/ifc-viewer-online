@@ -349,5 +349,9 @@
     "load": "Load the data",
     "skip": "Not now",
     "skipped": "The link's external data was not loaded."
+  },
+  "layout": {
+    "resizePanel": "Resize panel",
+    "resizePanelHint": "Drag or use the arrow keys to resize. Double-click to switch size."
   }
 }

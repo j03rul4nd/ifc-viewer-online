@@ -349,5 +349,9 @@
     "load": "Carrega les dades",
     "skip": "Ara no",
     "skipped": "No s'han carregat les dades externes de l'enllaç."
+  },
+  "layout": {
+    "resizePanel": "Redimensiona el tauler",
+    "resizePanelHint": "Arrossega o fes servir les tecles de fletxa per redimensionar. Fes doble clic per canviar la mida."
   }
 }
