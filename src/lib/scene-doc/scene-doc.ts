@@ -20,6 +20,7 @@
 // Pure: no DOM, no stores.
 
 import { cleanTopics, portableSource, type DeviceSource, type Binding } from '../twin/devices'
+import { cleanNames } from '../twin/localize'
 import { parseStory, type SceneStory } from './scene-story'
 
 export const SCENE_FORMAT = 'ifc-viewer-scene'
@@ -108,6 +109,15 @@ export const OSM_ID = /^[nwr]\d{1,15}$/
 const MAX_HIDDEN = 200
 const vec3 = (v: unknown): v is [number, number, number] => Array.isArray(v) && v.length === 3 && v.every((n) => typeof n === 'number' && Number.isFinite(n))
 
+/** Translated names (`names`) of a binding or rule, kept only when well formed (twin/localize.ts). */
+function withNames<T extends { names?: Record<string, string> }>(o: T): T {
+  const out = { ...o }
+  const names = cleanNames(o.names)
+  if (names) out.names = names
+  else delete out.names
+  return out
+}
+
 export type SceneValidation =
   | { ok: true; doc: SceneDoc; warnings: string[] }
   | { ok: false; errors: string[] }
@@ -168,7 +178,8 @@ export function validateSceneDoc(input: unknown): SceneValidation {
       const ids = new Set(sources.map((s) => s.id))
       const bindings = t.bindings.filter((b): b is Binding => isObj(b) && typeof b.id === 'string' && typeof b.sourceId === 'string'
         && ids.has(b.sourceId) && typeof b.deviceId === 'string' && Array.isArray(b.targets) && Array.isArray(b.rules))
-        .map((b) => ({ ...b, staleColor: b.staleColor ?? null, staleAfterS: Number(b.staleAfterS) || 0 }))
+        .map((b) => withNames({ ...b, staleColor: b.staleColor ?? null, staleAfterS: Number(b.staleAfterS) || 0,
+          rules: b.rules.map((r) => (isObj(r) ? withNames(r) : r)) }))
       if (sources.length < t.sources.length) warnings.push(`twin.sources: ${t.sources.length - sources.length} invalid source(s) skipped.`)
       if (bindings.length < t.bindings.length) warnings.push(`twin.bindings: ${t.bindings.length - bindings.length} binding(s) without a valid source skipped.`)
       twin = { sources, bindings }

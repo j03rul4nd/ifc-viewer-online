@@ -26,6 +26,7 @@ import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceSto
 import { useValidationStore } from '../stores/validationStore'
 import { buildCatalog, buildGuidIndex, resolveLocs } from '../lib/twin/devices'
 import { bindingItems } from '../lib/scene-explore/explore-items'
+import { localizeBindings } from '../lib/twin/localize'
 import { focusElements } from '../lib/scene-explore/focus'
 import { useLoadingStore } from '../stores/loadingStore'
 import { useSceneStore } from '../stores/sceneStore'
@@ -49,12 +50,12 @@ export default function SceneStory({ viewerApiRef, story, cardOpen }: Props) {
   const timeAt = useTwinDeviceStore((s) => s.timeAt)
   const trees = useValidationStore((s) => s.spatialTrees)
   const now = timeAt ?? Date.now()
-  const items = useMemo(() => bindingItems(bindings, readings, now), [bindings, readings, now])
+  const lang = i18n.language || 'en'
+  const items = useMemo(() => bindingItems(localizeBindings(bindings, lang), readings, now), [bindings, lang, readings, now])
 
   const steps = story.steps
   const step = steps[Math.min(index, steps.length - 1)]
   const item = step.binding ? items.find((it) => it.id === step.binding) ?? null : null
-  const lang = i18n.language || 'en'
 
   const loadsActive = useLoadingStore((s) => s.summary.managedActive > 0)
   const hasModels = useSceneStore((s) => s.models.length > 0)

@@ -75,5 +75,12 @@ describe('scene story', () => {
       }
       expect(step.camera ?? step.binding).toBeTruthy()
     }
+    // What the tour, the explorer and the legend name — bindings and their
+    // rules — reads in the same languages (twin/localize.ts).
+    for (const b of res.doc.twin?.bindings ?? []) {
+      for (const item of [b, ...b.rules]) {
+        for (const lang of LANGS.filter((l) => l !== 'en')) expect(item.names?.[lang], `${item.name} → ${lang}`).toBeTruthy()
+      }
+    }
   })
 })

@@ -69,7 +69,7 @@
     "bindings": [
       {
         "id": "waseda-tram",
-        "name": "Tram at Waseda (SA-30) — platform edges",
+        "name": "Tram at Waseda (SA-30) — platform edges", "names": {"es":"Tranvía en Waseda (SA-30) — bordes del andén","ca":"Tramvia a Waseda (SA-30) — vores de l'andana","de":"Straßenbahn in Waseda (SA-30) — Bahnsteigkanten","fr":"Tram à Waseda (SA-30) — bords de quai","it":"Tram a Waseda (SA-30) — bordi delle banchine","pt":"Bonde em Waseda (SA-30) — bordas da plataforma","ja":"早稲田停留場（SA-30）の電車 — ホーム端","zh":"早稻田（SA-30）的有轨电车 — 站台边缘","th":"รถรางที่ Waseda (SA-30) — ขอบชานชาลา"},
         "sourceId": "odpt-toei-trains",
         "deviceId": "odpt.Station:Toei.Arakawa.Waseda",
         "targets": [],
@@ -83,7 +83,7 @@
         "rules": [
           {
             "id": "at",
-            "name": "Tram at the stop",
+            "name": "Tram at the stop", "names": {"es":"Tranvía en la parada","ca":"Tramvia a la parada","de":"Straßenbahn an der Haltestelle","fr":"Tram à l'arrêt","it":"Tram alla fermata","pt":"Bonde na parada","ja":"電車が停留場に停車中","zh":"有轨电车停靠在站","th":"รถรางจอดอยู่ที่ป้าย"},
             "match": "all",
             "filters": [
               {
@@ -99,7 +99,7 @@
           },
           {
             "id": "leaving",
-            "name": "Tram just left Waseda",
+            "name": "Tram just left Waseda", "names": {"es":"El tranvía acaba de salir de Waseda","ca":"El tramvia acaba de sortir de Waseda","de":"Straßenbahn hat Waseda gerade verlassen","fr":"Tram tout juste parti de Waseda","it":"Tram appena partito da Waseda","pt":"O bonde acabou de sair de Waseda","ja":"電車が早稲田を発車直後","zh":"有轨电车刚刚驶离早稻田","th":"รถรางเพิ่งออกจาก Waseda"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -117,7 +117,7 @@
       },
       {
         "id": "arakawa-status",
-        "name": "Toden Arakawa line status — departure screens",
+        "name": "Toden Arakawa line status — departure screens", "names": {"es":"Estado de la línea Toden Arakawa — pantallas de salidas","ca":"Estat de la línia Toden Arakawa — pantalles de sortides","de":"Status der Linie Toden Arakawa — Abfahrtsanzeigen","fr":"État de la ligne Toden Arakawa — écrans de départ","it":"Stato della linea Toden Arakawa — display delle partenze","pt":"Estado da linha Toden Arakawa — painéis de partidas","ja":"都電荒川線の運行状況 — 発車案内表示","zh":"都电荒川线运行状态 — 发车显示屏","th":"สถานะการเดินรถสาย Toden Arakawa — จอแสดงเวลาออก"},
         "sourceId": "odpt-toei-status",
         "deviceId": "odpt.Railway:Toei.Arakawa",
         "targets": [],
@@ -129,7 +129,7 @@
         "rules": [
           {
             "id": "disrupted",
-            "name": "Disruption reported (delays of 15 min or more)",
+            "name": "Disruption reported (delays of 15 min or more)", "names": {"es":"Incidencia notificada (retrasos de 15 min o más)","ca":"Incidència notificada (retards de 15 min o més)","de":"Störung gemeldet (Verspätungen ab 15 Min.)","fr":"Perturbation signalée (retards de 15 min ou plus)","it":"Disservizio segnalato (ritardi di 15 min o più)","pt":"Ocorrência informada (atrasos de 15 min ou mais)","ja":"運行の乱れあり（15分以上の遅延）","zh":"已报告运行异常（延误 15 分钟及以上）","th":"มีรายงานเหตุขัดข้อง (ล่าช้าตั้งแต่ 15 นาทีขึ้นไป)"},
             "match": "any",
             "filters": [
               {
@@ -152,7 +152,7 @@
           },
           {
             "id": "normal",
-            "name": "No delays of 15 min or more",
+            "name": "No delays of 15 min or more", "names": {"es":"Sin retrasos de 15 min o más","ca":"Sense retards de 15 min o més","de":"Keine Verspätungen ab 15 Min.","fr":"Aucun retard de 15 min ou plus","it":"Nessun ritardo di 15 min o più","pt":"Sem atrasos de 15 min ou mais","ja":"15分以上の遅延なし","zh":"无 15 分钟及以上的延误","th":"ไม่มีความล่าช้าตั้งแต่ 15 นาทีขึ้นไป"},
             "match": "all",
             "filters": [],
             "effect": {

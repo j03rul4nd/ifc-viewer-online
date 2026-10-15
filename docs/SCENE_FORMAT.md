@@ -158,6 +158,18 @@ articles and kiosks, wherever the scene explorer runs.
   - on a phone it steps aside while an element's card is open.
 - Up to 12 steps. Invalid steps are dropped with a warning that names them.
 
+### Names in other languages — `names`
+
+A twin binding and each of its rules may carry `names` next to `name`: the same name per language code.
+
+```json
+{ "id": "r-few", "name": "Few bikes (≤ 2)", "names": { "es": "Pocas bicicletas (≤ 2)", "ja": "2台以下" }, … }
+```
+
+- **Where it shows:** the explorer, the tour's live chip, the legend, the element card's live section and alert notices. Each picks the reader's language, then its base language, then `name`.
+- **Where it doesn't:** the twin editor shows and edits `name`, and the alert log keeps `name`, so exports stay stable.
+- Values that are not strings, and keys that are not language codes, are dropped when the scene loads.
+
 ## What a scene does not (yet) carry
 
 - **Point clouds and meshes.** `?scan=` exists as a URL parameter but is not part of

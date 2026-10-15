@@ -33,6 +33,7 @@ import { useInspectorStore } from '../lib/inspector'
 import { buildCatalog, buildGuidIndex, resolveLocs } from '../lib/twin/devices'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { bindingItems, modelItems } from '../lib/scene-explore/explore-items'
+import { localizeBindings } from '../lib/twin/localize'
 import { isTopPose, orbitPose, topPose, zoomPose, type Pose } from '../lib/scene-explore/camera-moves'
 import { currentPose, focusBox, focusElements, stepCamera } from '../lib/scene-explore/focus'
 import { TwinLiveSection } from './TwinLiveSection'
@@ -206,7 +207,7 @@ function NavDock({ viewerApiRef, onHome }: { viewerApiRef: React.MutableRefObjec
 // ── Explore: the twin's live points and the scene's models ───────────────────
 
 function ExploreMenu({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<ViewerAPI | null> }) {
-  const { t } = useTranslation('viewer')
+  const { t, i18n } = useTranslation('viewer')
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const close = React.useCallback(() => setOpen(false), [])
@@ -217,7 +218,9 @@ function ExploreMenu({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<Vi
   const models = useSceneStore((s) => s.models)
   const trees = useValidationStore((s) => s.spatialTrees)
   const now = timeAt ?? Date.now()
-  const live = useMemo(() => bindingItems(bindings, readings, now), [bindings, readings, now])
+  // Names in the reader's language: a scene's bindings and rules may carry `names`.
+  const lang = i18n.language || 'en'
+  const live = useMemo(() => bindingItems(localizeBindings(bindings, lang), readings, now), [bindings, lang, readings, now])
   const modelRows = useMemo(() => modelItems(models), [models])
   if (live.length === 0 && modelRows.length < 2) return null
 

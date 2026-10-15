@@ -83,7 +83,7 @@
     "bindings": [
       {
         "id": "oedo-status",
-        "name": "Toei Ōedo line status — Toei marks on the exit",
+        "name": "Toei Ōedo line status — Toei marks on the exit", "names": {"es":"Estado de la línea Ōedo de Toei — marcas de Toei en la salida","ca":"Estat de la línia Ōedo de Toei — marques de Toei a la sortida","de":"Status der Toei-Ōedo-Linie — Toei-Zeichen am Ausgang","fr":"État de la ligne Toei Ōedo — emblèmes Toei de la sortie","it":"Stato della linea Toei Ōedo — marchi Toei dell'uscita","pt":"Estado da linha Ōedo da Toei — marcas da Toei na saída","ja":"都営大江戸線の運行状況 — 出口の都営マーク","zh":"都营大江户线运行状态 — 出口处的都营标志","th":"สถานะการเดินรถสาย Toei Ōedo — สัญลักษณ์ Toei ที่ทางออก"},
         "sourceId": "odpt-toei-status",
         "deviceId": "odpt.Railway:Toei.Oedo",
         "targets": [],
@@ -97,7 +97,7 @@
         "rules": [
           {
             "id": "disrupted",
-            "name": "Disruption reported (delays of 15 min or more)",
+            "name": "Disruption reported (delays of 15 min or more)", "names": {"es":"Incidencia notificada (retrasos de 15 min o más)","ca":"Incidència notificada (retards de 15 min o més)","de":"Störung gemeldet (Verspätungen ab 15 Min.)","fr":"Perturbation signalée (retards de 15 min ou plus)","it":"Disservizio segnalato (ritardi di 15 min o più)","pt":"Ocorrência informada (atrasos de 15 min ou mais)","ja":"運行の乱れあり（15分以上の遅延）","zh":"已报告运行异常（延误 15 分钟及以上）","th":"มีรายงานเหตุขัดข้อง (ล่าช้าตั้งแต่ 15 นาทีขึ้นไป)"},
             "match": "any",
             "filters": [
               {
@@ -120,7 +120,7 @@
           },
           {
             "id": "normal",
-            "name": "No delays of 15 min or more",
+            "name": "No delays of 15 min or more", "names": {"es":"Sin retrasos de 15 min o más","ca":"Sense retards de 15 min o més","de":"Keine Verspätungen ab 15 Min.","fr":"Aucun retard de 15 min ou plus","it":"Nessun ritardo di 15 min o più","pt":"Sem atrasos de 15 min ou mais","ja":"15分以上の遅延なし","zh":"无 15 分钟及以上的延误","th":"ไม่มีความล่าช้าตั้งแต่ 15 นาทีขึ้นไป"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -135,7 +135,7 @@
       },
       {
         "id": "tochomae-train",
-        "name": "Train at Tochōmae (E-28) — station sign",
+        "name": "Train at Tochōmae (E-28) — station sign", "names": {"es":"Tren en Tochōmae (E-28) — letrero de la estación","ca":"Tren a Tochōmae (E-28) — rètol de l'estació","de":"Zug in Tochōmae (E-28) — Stationsschild","fr":"Train à Tochōmae (E-28) — enseigne de la station","it":"Treno a Tochōmae (E-28) — cartello della stazione","pt":"Trem em Tochōmae (E-28) — placa da estação","ja":"都庁前駅（E-28）の列車 — 駅名標","zh":"都厅前站（E-28）的列车 — 站名标牌","th":"ขบวนรถที่ Tochōmae (E-28) — ป้ายสถานี"},
         "sourceId": "odpt-toei-trains",
         "deviceId": "odpt.Station:Toei.Oedo.Tochomae",
         "targets": [],
@@ -149,7 +149,7 @@
         "rules": [
           {
             "id": "at",
-            "name": "Train at the platform",
+            "name": "Train at the platform", "names": {"es":"Tren en el andén","ca":"Tren a l'andana","de":"Zug am Bahnsteig","fr":"Train à quai","it":"Treno in banchina","pt":"Trem na plataforma","ja":"ホームに列車あり","zh":"列车停靠站台","th":"มีขบวนรถอยู่ที่ชานชาลา"},
             "match": "all",
             "filters": [
               {
@@ -165,7 +165,7 @@
           },
           {
             "id": "leaving",
-            "name": "Train just left Tochōmae",
+            "name": "Train just left Tochōmae", "names": {"es":"El tren acaba de salir de Tochōmae","ca":"El tren acaba de sortir de Tochōmae","de":"Zug hat Tochōmae gerade verlassen","fr":"Train tout juste parti de Tochōmae","it":"Treno appena partito da Tochōmae","pt":"O trem acabou de sair de Tochōmae","ja":"列車が都庁前駅を発車直後","zh":"列车刚刚驶离都厅前站","th":"ขบวนรถเพิ่งออกจาก Tochōmae"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -183,7 +183,7 @@
       },
       {
         "id": "tochomae-bus-stop",
-        "name": "Toei bus at 都庁第一本庁舎 (stop 2248-01) — stop pole",
+        "name": "Toei bus at 都庁第一本庁舎 (stop 2248-01) — stop pole", "names": {"es":"Autobús de Toei en 都庁第一本庁舎 (parada 2248-01) — poste de la parada","ca":"Autobús de Toei a 都庁第一本庁舎 (parada 2248-01) — pal de la parada","de":"Toei-Bus an 都庁第一本庁舎 (Haltestelle 2248-01) — Haltestellenmast","fr":"Bus Toei à 都庁第一本庁舎 (arrêt 2248-01) — poteau d'arrêt","it":"Autobus Toei a 都庁第一本庁舎 (fermata 2248-01) — palo della fermata","pt":"Ônibus da Toei em 都庁第一本庁舎 (parada 2248-01) — poste da parada","ja":"都庁第一本庁舎（停留所 2248-01）の都営バス — バス停の標柱","zh":"都庁第一本庁舎（站点 2248-01）的都营公交 — 公交站牌杆","th":"รถบัส Toei ที่ 都庁第一本庁舎 (ป้าย 2248-01) — เสาป้ายรถเมล์"},
         "sourceId": "odpt-toei-bus",
         "deviceId": "2248-01",
         "targets": [],
@@ -195,7 +195,7 @@
         "rules": [
           {
             "id": "passed",
-            "name": "A Toei bus passed in the last 10 minutes",
+            "name": "A Toei bus passed in the last 10 minutes", "names": {"es":"Ha pasado un autobús de Toei en los últimos 10 minutos","ca":"Un autobús de Toei ha passat en els últims 10 minuts","de":"Ein Toei-Bus ist in den letzten 10 Minuten vorbeigefahren","fr":"Un bus Toei est passé au cours des 10 dernières minutes","it":"Un autobus Toei è passato negli ultimi 10 minuti","pt":"Um ônibus da Toei passou nos últimos 10 minutos","ja":"直近10分以内に都営バスが通過","zh":"过去 10 分钟内有都营公交经过","th":"มีรถบัส Toei ผ่านไปในช่วง 10 นาทีที่ผ่านมา"},
             "match": "all",
             "filters": [],
             "effect": {

@@ -52,17 +52,17 @@
     "bindings": [
       {
         "id": "bicing-65-docks",
-        "name": "Bicing 65 · Pl. Catalunya — dock posts",
+        "name": "Bicing 65 · Pl. Catalunya — dock posts", "names": {"es":"Bicing 65 · Pl. Catalunya — postes de anclaje","ca":"Bicing 65 · Pl. Catalunya — pals d'ancoratge","de":"Bicing 65 · Pl. Catalunya — Dock-Pfosten","fr":"Bicing 65 · Pl. Catalunya — points d'ancrage","it":"Bicing 65 · Pl. Catalunya — colonnine degli ancoraggi","pt":"Bicing 65 · Pl. Catalunya — postes das docas","ja":"Bicing 65 · Pl. Catalunya — ドック支柱","zh":"Bicing 65 · Pl. Catalunya — 停车桩","th":"Bicing 65 · Pl. Catalunya — เสาแท่นจอด"},
         "sourceId": "bicing-status",
         "deviceId": "65",
         "targets": [],
         "query": { "classes": ["IfcBuildingElementProxy"], "storey": "", "nameContains": "ancoratge" },
         "rules": [
-          { "id": "r-off", "name": "Out of service", "match": "any", "filters": [{ "field": "is_renting", "op": "isFalse" }, { "field": "is_installed", "op": "isFalse" }], "effect": { "color": "#8a8f98", "opacity": 1, "hide": false } },
-          { "id": "r-empty", "name": "No bikes", "match": "all", "filters": [{ "field": "num_vehicles_available", "op": "eq", "value": 0 }], "effect": { "color": "#ef4444", "opacity": 1, "hide": false }, "alert": { "forMin": 15 } },
-          { "id": "r-full", "name": "No free docks", "match": "all", "filters": [{ "field": "num_docks_available", "op": "eq", "value": 0 }], "effect": { "color": "#2fb7ff", "opacity": 1, "hide": false } },
-          { "id": "r-low", "name": "Few bikes (≤ 2)", "match": "all", "filters": [{ "field": "num_vehicles_available", "op": "lte", "value": 2 }], "effect": { "color": "#f59e0b", "opacity": 1, "hide": false } },
-          { "id": "r-ok", "name": "Bikes available", "match": "all", "filters": [], "effect": { "color": "#22c55e", "opacity": 1, "hide": false } }
+          { "id": "r-off", "name": "Out of service", "names": {"es":"Fuera de servicio","ca":"Fora de servei","de":"Außer Betrieb","fr":"Hors service","it":"Fuori servizio","pt":"Fora de serviço","ja":"休止中","zh":"暂停服务","th":"ปิดให้บริการ"}, "match": "any", "filters": [{ "field": "is_renting", "op": "isFalse" }, { "field": "is_installed", "op": "isFalse" }], "effect": { "color": "#8a8f98", "opacity": 1, "hide": false } },
+          { "id": "r-empty", "name": "No bikes", "names": {"es":"Sin bicicletas","ca":"Sense bicicletes","de":"Keine Fahrräder","fr":"Aucun vélo","it":"Nessuna bici","pt":"Sem bicicletas","ja":"自転車なし","zh":"没有单车","th":"ไม่มีจักรยาน"}, "match": "all", "filters": [{ "field": "num_vehicles_available", "op": "eq", "value": 0 }], "effect": { "color": "#ef4444", "opacity": 1, "hide": false }, "alert": { "forMin": 15 } },
+          { "id": "r-full", "name": "No free docks", "names": {"es":"Sin anclajes libres","ca":"Sense ancoratges lliures","de":"Keine freien Docks","fr":"Aucun point d'ancrage libre","it":"Nessun ancoraggio libero","pt":"Sem docas livres","ja":"満車","zh":"满桩","th":"แท่นจอดเต็ม"}, "match": "all", "filters": [{ "field": "num_docks_available", "op": "eq", "value": 0 }], "effect": { "color": "#2fb7ff", "opacity": 1, "hide": false } },
+          { "id": "r-low", "name": "Few bikes (≤ 2)", "names": {"es":"Pocas bicicletas (≤ 2)","ca":"Poques bicicletes (≤ 2)","de":"Wenige Fahrräder (≤ 2)","fr":"Peu de vélos (≤ 2)","it":"Poche bici (≤ 2)","pt":"Poucas bicicletas (≤ 2)","ja":"自転車わずか（≤ 2台）","zh":"单车较少（≤ 2 辆）","th":"จักรยานเหลือน้อย (≤ 2 คัน)"}, "match": "all", "filters": [{ "field": "num_vehicles_available", "op": "lte", "value": 2 }], "effect": { "color": "#f59e0b", "opacity": 1, "hide": false } },
+          { "id": "r-ok", "name": "Bikes available", "names": {"es":"Bicicletas disponibles","ca":"Bicicletes disponibles","de":"Fahrräder verfügbar","fr":"Vélos disponibles","it":"Bici disponibili","pt":"Bicicletas disponíveis","ja":"自転車あり","zh":"有可借单车","th":"มีจักรยานว่าง"}, "match": "all", "filters": [], "effect": { "color": "#22c55e", "opacity": 1, "hide": false } }
         ],
         "staleColor": "#8a8f98",
         "staleAfterS": 900,
@@ -70,15 +70,15 @@
       },
       {
         "id": "endolla-3762-bays",
-        "name": "Endolla location 3762 · Pg. de Gràcia 5 — charging bays (matched by position: the IFC's EVSE ids are illustrative)",
+        "name": "Endolla location 3762 · Pg. de Gràcia 5 — charging bays (matched by position: the IFC's EVSE ids are illustrative)", "names": {"es":"Ubicación Endolla 3762 · Pg. de Gràcia 5 — plazas de recarga (asociadas por posición: los ids EVSE del IFC son ilustrativos)","ca":"Ubicació Endolla 3762 · Pg. de Gràcia 5 — places de recàrrega (vinculades per posició: els identificadors EVSE de l'IFC són il·lustratius)","de":"Endolla-Ladestandort 3762 · Pg. de Gràcia 5 — Ladeplätze (über die Position zugeordnet: die EVSE-IDs im IFC sind illustrativ)","fr":"Point de recharge Endolla 3762 · Pg. de Gràcia 5 — emplacements de recharge (liaison établie par position : les identifiants EVSE de l'IFC sont illustratifs)","it":"Punto di ricarica Endolla 3762 · Pg. de Gràcia 5 — stalli di ricarica (abbinamento per posizione: gli id EVSE dell'IFC sono illustrativi)","pt":"Ponto de recarga Endolla 3762 · Pg. de Gràcia 5 — vagas de recarga (associadas por posição: os ids EVSE do IFC são ilustrativos)","ja":"Endollaの充電ロケーション3762 · Pg. de Gràcia 5 — 駐車区画（位置で照合：IFCのEVSE IDは説明用）","zh":"Endolla 3762 号充电点 · Pg. de Gràcia 5 — 车位（按位置匹配：IFC 中的 EVSE ID 仅为示意）","th":"จุดชาร์จ Endolla หมายเลข 3762 · Pg. de Gràcia 5 — ช่องจอดชาร์จ (จับคู่ด้วยตำแหน่ง: รหัส EVSE ใน IFC เป็นค่าสำหรับอธิบายเท่านั้น)"},
         "sourceId": "endolla",
         "deviceId": "3762",
         "targets": [],
         "query": { "classes": ["IfcSurfaceFeature"], "storey": "", "nameContains": "EV surfacing" },
         "rules": [
-          { "id": "r-av", "name": "Ports available", "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "available" }], "effect": { "color": "#22c55e", "opacity": 1, "hide": false } },
-          { "id": "r-busy", "name": "All ports in use", "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "busy" }], "effect": { "color": "#f59e0b", "opacity": 1, "hide": false } },
-          { "id": "r-oos", "name": "Out of service", "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "out_of_service" }], "effect": { "color": "#ef4444", "opacity": 1, "hide": false } }
+          { "id": "r-av", "name": "Ports available", "names": {"es":"Conectores disponibles","ca":"Connectors disponibles","de":"Anschlüsse frei","fr":"Connecteurs disponibles","it":"Connettori disponibili","pt":"Conectores disponíveis","ja":"空きポートあり","zh":"有空闲充电口","th":"มีหัวชาร์จว่าง"}, "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "available" }], "effect": { "color": "#22c55e", "opacity": 1, "hide": false } },
+          { "id": "r-busy", "name": "All ports in use", "names": {"es":"Todos los conectores en uso","ca":"Tots els connectors en ús","de":"Alle Anschlüsse belegt","fr":"Tous les connecteurs occupés","it":"Tutti i connettori in uso","pt":"Todos os conectores em uso","ja":"全ポート使用中","zh":"充电口全部使用中","th":"หัวชาร์จกำลังใช้งานทั้งหมด"}, "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "busy" }], "effect": { "color": "#f59e0b", "opacity": 1, "hide": false } },
+          { "id": "r-oos", "name": "Out of service", "names": {"es":"Fuera de servicio","ca":"Fora de servei","de":"Außer Betrieb","fr":"Hors service","it":"Fuori servizio","pt":"Fora de serviço","ja":"利用停止中","zh":"暂停服务","th":"ใช้งานไม่ได้"}, "match": "all", "filters": [{ "field": "state", "op": "eq", "value": "out_of_service" }], "effect": { "color": "#ef4444", "opacity": 1, "hide": false } }
         ],
         "staleColor": "#8a8f98",
         "staleAfterS": 7200,
