@@ -11,7 +11,7 @@ When you reach someone 1:1 (a LinkedIn DM, a Medium article, a warm intro), you 
 
 1. **captures** the tag (first-touch), **strips it from the URL** (so it never leaks via the address bar, a screenshot, or the `Referer` header), and **stores it for the session** (sessionStorage, **not a cookie**);
 2. registers it on **PostHog** as the super-properties `entry_source`, `entry_segment`, `entry_source_kind`, so **every** later event is attributed automatically;
-3. shows a **subtractive, segment-tuned founder touch** — a slim ribbon, or (for referral/standards) a dedicated welcome — and, after the first validation, a one-time **Mom-Test feedback nudge**.
+3. shows a **subtractive, segment-tuned founder touch** — a slim ribbon, or (for referral/standards) a dedicated welcome — and, after their first aha (the first validation; for the climate segment, the first solar analysis), a one-time **Mom-Test feedback nudge**.
 
 The personalization is by **role/source, never by name**. The thoughtfulness is in your DM; the link just honors the promise and tells you which DM worked.
 
@@ -40,6 +40,7 @@ Codes are defined in [`src/lib/invite-registry.ts`](../src/lib/invite-registry.t
 | `li_ignacy`, `li_fugas`, `li_majcher`, `li_carlos` (→ `pt`), `li_bimpure` | `coordinator` | `linkedin` | Ribbon (handoff/triage copy) |
 | `li_dion`, `li_louis`, `li_antonio` | `dev` | `linkedin` | Ribbon ("runs on web-ifc, check the network tab") |
 | `li_noardo`, `li_plannerly` | `standards` | `linkedin` | **Dedicated view** ("on-ramp, not a replacement for bSI") |
+| `li_solarch` | `climate` | `linkedin` | Ribbon ("a solar & climate analysis on your GPU — drop an IFC and an EPW"); the nudge waits for the solar analysis |
 | `hn`, `reddit` | (dev/coord) | `public` | **Nothing** — public sources punish funnels |
 | `md_<slug>` (prefix) | `coordinator` | `medium` | Ribbon ("thanks for coming from the article") |
 | `warm_<x>` (prefix) | `coordinator` | `referral` | **Dedicated view** ("you were pointed here for a reason") |
@@ -49,7 +50,18 @@ Unknown codes → attribution is still captured (you'll see the raw tag in PostH
 ### Which surface appears (the adaptive policy)
 - **Dedicated view** (`InviteView`) — only `referral` **or** `standards`, and not on `public`. One-time, skippable.
 - **Ribbon** (`InviteRibbon`) — everyone else, **desktop only** (suppressed on mobile and on `public`), unless the dedicated view is showing (they're mutually exclusive).
-- **Feedback nudge** (`InviteFeedbackNudge`) — any non-`public` invited visitor, **once**, **after** their first validation, in the viewer.
+- **Feedback nudge** (`InviteFeedbackNudge`) — any non-`public` invited visitor, **once**, **after** their first aha, in the viewer. Which aha is `inviteFeedbackTrigger(ctx)`:
+  - every segment but `climate`: the first validation result (it runs on its own after load unless the link says `validate=0`);
+  - `climate`: the first solar analysis run that reaches `done` — never the validation, and never while a tour is playing (it waits for the tour to end). The question is about the passive-impact map, so it must not be asked before that map has been seen.
+
+### The `climate` segment
+Solar, climate and environmental analysts: people who judge a building by its sun and weather, not its schema. `li_solarch` names the field (solar-architecture visualisation), not a person. Their link usually carries the analysis with it, e.g.
+
+```
+…/i/li_solarch?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc&analysis=year:passive&site=43.88,-79.44&validate=0
+```
+
+(`analysis` / `site`: see [`EMBED_URL_PARAMS.md`](EMBED_URL_PARAMS.md#solar-analysis-analysis--site)). `validate=0` is optional for this segment — the nudge ignores validation either way — but keeps the Health Score out of a solar demo. The analysis panel is not mounted in `ui=client`, so do not send this segment a client-skin link.
 
 ---
 
@@ -61,6 +73,7 @@ Unknown codes → attribution is still captured (you'll see the raw tag in PostH
    li_newperson: { segment: 'coordinator', sourceKind: 'linkedin' },
    ```
    For a one-off article use the `md_` prefix (no registry entry needed): just send `?ref=md_your-slug`. Same for a warm intro: `?ref=warm_whoever`.
+   A **new segment** is a little more: add it to `InviteSegment`, add `ribbon.<segment>` and `feedback.q.<segment>` to both key unions (type-checking fails until you do) and to **all 10** `invite.json` files (parity test), add it to `SEGMENTS` in `invite-registry.test.ts`, and decide its aha in `inviteFeedbackTrigger` (the default is the first validation). A dedicated view stays reserved for referral and standards (`inviteViewKey` is binary).
 3. Hand them `…/i/li_newperson`.
 4. (Optional, by hand, Tier-2) a **named note** or **Loom** for a hot target — set `noteKey`/`loomUrl` on that entry. The `noteKey` points to an `invite` i18n string you author yourself (so no names ship by default). **Verify every personal detail before sending** — a wrong detail reads as fake.
 
@@ -79,6 +92,7 @@ invite_link_opened → file_opened → validation_completed → share_report_cli
 - `share_report_clicked` by `entry_source` is the **north-star** — which outreach produced the loop.
 - `invite_feedback_prompted` / `invite_feedback_dismissed` tell you whether the Mom-Test nudge reached people and landed.
 - For **devs** (Segment B), don't judge by the loop — they critique, they don't hand reports to exporters. Judge them on mentions/backlinks.
+- For **climate** (Segment D), the loop is `invite_link_opened → solar_analysis_completed → invite_feedback_prompted` (and `solar_weather_file_loaded` when they bring their own EPW).
 
 Companion: `content/launch/posthog-funnel-setup.md`.
 

@@ -94,7 +94,7 @@
     "locationLine": "{{lat}}, {{lon}} · {{tz}}",
     "climate": {
       "title": "Clima del lugar",
-      "consent": "¿Cargar el tiempo observado en este lugar desde Open-Meteo (ERA5)? 10 años de normales diarias y 5 años de radiación directa y difusa hora a hora. Solo se envían las coordenadas, redondeadas a ~1 km.",
+      "consent": "¿Cargar el tiempo observado en este lugar desde Open-Meteo (ERA5)? 10 años de normales diarias y 5 años de radiación y temperatura del aire hora a hora, que se guardan en este dispositivo para la próxima visita. Solo se envían las coordenadas, redondeadas a ~1 km.",
       "load": "Cargar el clima",
       "loading": "Cargando el clima…",
       "error": "No se pudo cargar el clima: {{message}}",
@@ -108,7 +108,18 @@
       "temp": "Temperatura, °C (mín · media · máx)",
       "wind": "Viento dominante",
       "rain": "Lluvia, mm/año",
-      "clearness": "Proporción de cielo despejado"
+      "clearness": "Proporción de cielo despejado",
+      "loadFile": "Cargar un archivo climático (.epw, .zip)",
+      "fileHint": "Un año EPW —CWEC, TMYx, IWEC; climate.onebuilding.org tiene uno para casi todas las estaciones meteorológicas— se lee en este dispositivo y nunca se sube.",
+      "reading": "Leyendo el archivo climático…",
+      "sourceEpw": "Archivo climático {{file}} · {{station}} · {{years}}",
+      "hourlyEra5": "Hora a hora: ERA5 {{years}}",
+      "loadHours": "Cargar las horas reales",
+      "loadHoursHint": "En este dispositivo solo hay horas típicas (una media por mes y hora). Carga las reales para que el sol de cada hora se cruce con el aire de esa misma hora: una petición a Open-Meteo, solo se envían las coordenadas redondeadas.",
+      "hoursError": "No se pudieron cargar las horas reales: {{message}}",
+      "epwActive": "Archivo climático en uso: {{station}} ({{file}}).",
+      "backToEra5": "Volver a ERA5",
+      "anotherFile": "Otro archivo"
     },
     "period": {
       "title": "Periodo",
@@ -127,7 +138,8 @@
       "sunHours": "Horas de sol",
       "irradiation": "Irradiación",
       "probableSun": "Sol esperado",
-      "skyView": "Vista de cielo"
+      "skyView": "Vista de cielo",
+      "passive": "Impacto pasivo"
     },
     "kinds": {
       "ground": "Parcela",
@@ -145,7 +157,8 @@
       "sunHours": "Sol directo, horas al día",
       "irradiation": "Irradiación, kWh/m² en el periodo",
       "probableSun": "Sol esperado, horas al día",
-      "skyView": "Factor de vista de cielo, %"
+      "skyView": "Factor de vista de cielo, %",
+      "passive": "Impacto pasivo, kWh·°C/m² al día (azul: sol con frío · rojo: sol con calor)"
     },
     "results": {
       "title": "Resultados",
@@ -212,14 +225,17 @@
       "sunHours": "Horas en que el sol es visible desde cada punto (cielo despejado): lo que cuenta la EN 17037",
       "probableSun": "Horas de sol que cabe esperar, con la probabilidad de sol medida en el sitio a cada hora",
       "irradiation": "Energía solar recibida: directa + difusa del cielo + reflejada por el suelo",
-      "skyView": "Parte del cielo que ve un punto, ponderada por el coseno (100 % = una cubierta bajo cielo abierto). Decide luz natural y enfriamiento nocturno"
+      "skyView": "Parte del cielo que ve un punto, ponderada por el coseno (100 % = una cubierta bajo cielo abierto). Decide luz natural y enfriamiento nocturno",
+      "passive": "La vista pasiva de SOLARCHVISION: el sol de cada hora ponderado por lo lejos que está el aire de una temperatura base; azul donde llega cuando hace frío, rojo donde llega cuando hace calor"
     },
     "sky": {
       "label": "Cielo",
-      "measured": "Medido, hora a hora (ERA5)",
+      "measured": "Medido (ERA5 o un archivo climático)",
       "clearness": "Cielo claro × claridad mensual",
       "clear": "Cielo despejado",
-      "fallback": "Aún no está cargado: se usa {{model}}. Carga el clima para el cielo medido."
+      "fallback": "Aún no está cargado: se usa {{model}}. Carga el clima o un archivo climático para el cielo medido.",
+      "measuredHourly": "Medido, hora a hora ({{source}})",
+      "measuredTypical": "Medido, horas típicas ({{source}})"
     },
     "albedo": {
       "label": "Suelo",
@@ -236,7 +252,57 @@
       "fine": "Fina"
     },
     "cancel": "Parar",
-    "exportGridHint": "Todos los sensores con su posición, normal y todas las métricas (CSV)"
+    "exportGridHint": "Todos los sensores con su posición, normal y todas las métricas (CSV)",
+    "weather": {
+      "far": "{{label}} está a {{km}} km del emplazamiento del modelo: sus horas no cuadrarían con el sol de aquí.",
+      "farHint": "Estudia el modelo en la estación para usar este archivo, o carga uno de una estación cercana al emplazamiento.",
+      "noSite": "El modelo aún no tiene ubicación. ¿Estudiarlo en la estación de {{label}}?",
+      "studyAtStation": "Estudiar el modelo en la estación",
+      "cancel": "Cancelar",
+      "errors": {
+        "tooLarge": "Este archivo pesa más de 30 MB: no es un archivo climático horario.",
+        "badZip": "No se pudo abrir este zip.",
+        "noEpwInZip": "Este zip no contiene ningún archivo climático .epw.",
+        "notEpw": "Esto no es un archivo climático EPW.",
+        "notFullYear": "Este archivo climático tiene {{hours}} horas; hace falta un año completo (8760).",
+        "other": "No se pudo leer el archivo climático: {{message}}"
+      }
+    },
+    "passive": {
+      "title": "Impacto solar-climático",
+      "active": "Activo",
+      "activeHint": "Activo: el sol como energía que captar — la irradiación tal cual, más es más",
+      "passive": "Pasivo",
+      "base": "Temperatura base",
+      "preset15": "Estudio de Montreal (Samimi y Nasrollahi, 2014)",
+      "preset18": "Valor por defecto de SOLARCHVISION-BIM",
+      "preset21": "Libro de la TU Berlin: la temperatura base requerida",
+      "custom": "Temperatura base, °C (de −10 a 40)",
+      "tempEra5": "Temperatura del aire: ERA5, hora a hora, {{years}}.",
+      "tempEpw": "Temperatura del aire: {{station}}, hora a hora (archivo climático).",
+      "tempTypical": "Temperatura del aire: medias de horas típicas, ERA5 {{years}}. Carga las horas reales para emparejar el sol de cada hora con su propio aire.",
+      "tempNone": "Aún no hay temperatura del aire: carga el clima o un archivo climático. Hasta entonces el mapa pasivo queda en gris.",
+      "explain": "El sol de cada hora sobre una superficie se pondera por la diferencia entre la temperatura base y el aire exterior: sol × (base − °C exterior). Azul es sol que llega cuando hace frío: déjalo entrar. Rojo es sol que llega cuando hace calor: sombréalo. Bloquear el sol no deseado cuenta como beneficio, y bloquear el deseado como perjuicio. La puntuación es el efecto neto, escalado por lo descompensado que está: (beneficio − perjuicio) × |beneficio − perjuicio| ÷ (beneficio + perjuicio).",
+      "credit": "Método: Mojtaba Samimi, SOLARCHVISION — Intelligent Design using Solar-Climatic Vision (TU Berlin, 2014). Reimplementado aquí; las cifras no coincidirán con las de SOLARCHVISION-BIM.",
+      "creditLink": "SOLARCHVISION-BIM en GitHub",
+      "stale": "Ha cambiado la temperatura base: vuelve a calcular",
+      "noTemps": "El cálculo en pantalla no tenía temperatura del aire, así que no tiene mapa pasivo. Carga el clima o un archivo climático y vuelve a calcular.",
+      "legendCaption": "El rojo no significa calor ni el azul frío: rojo es sol cuando hace calor (sombréalo), azul es sol cuando hace frío (déjalo entrar).",
+      "unwanted": "Sol más perjudicial",
+      "welcome": "Sol más beneficioso",
+      "baseShort": "base {{v}} °C",
+      "unitDay": "kWh·°C/m²·día",
+      "hoverScore": "Impacto pasivo: {{v}} kWh·°C/m²·día",
+      "hoverParts": "beneficio {{b}} · perjuicio {{h}} · neto {{n}}",
+      "typicalSource": "medias de horas típicas, {{label}}"
+    },
+    "link": {
+      "title": "Este enlace ejecuta un análisis solar",
+      "what": "{{metric}} · {{period}} · en {{place}}",
+      "needs": "Necesita el clima del lugar: ERA5 hora a hora desde Open-Meteo; solo se envían las coordenadas redondeadas.",
+      "run": "Cargar el clima y calcular",
+      "later": "Ahora no"
+    }
   },
   "timelapse": {
     "title": "Timelapse del día",
@@ -447,6 +513,14 @@
       "annual": {
         "title": "Luz natural anual",
         "body": "Coeficientes de luz diurna sobre las 145 zonas de cielo de Tregenza, medidos una vez por punto en la GPU; 12 × 24 horas típicas del cielo del lugar, difusa con la forma del cielo cubierto CIE (120 lm/W), el sol en su zona (100 lm/W). EN 17037 por iluminancia horaria, sDA300/50 % y ASE1000,250 h según IES LM-83 / LEED v4, sin persianas."
+      },
+      "passive": {
+        "title": "Impacto pasivo (solar-climático)",
+        "body": "Según SOLARCHVISION de Mojtaba Samimi (TU Berlin, 2014), reimplementado: la luz directa, del cielo y del suelo de cada hora en un punto, ponderada por la temperatura base menos el aire exterior; el sol recibido cuando se desea y el bloqueado cuando no se desea son beneficio, lo contrario es perjuicio, en todos los días del periodo. Las horas se clasifican por el signo de la diferencia de temperatura; la vista de cielo se pondera por el coseno y la luz circunsolar viaja con la directa, así que las cifras difieren de las de SOLARCHVISION-BIM."
+      },
+      "weatherFile": {
+        "title": "Archivo climático",
+        "body": "Un archivo climático de EnergyPlus (EPW: un año típico o real, 8760 horas) leído en el dispositivo: la radiación global, directa y difusa y la temperatura del aire de cada hora, pasadas de la hora estándar de la estación a UTC. Las estaciones del año, los grados-día y la ficha del clima salen de esas mismas horas."
       }
     },
     "compareTitle": "Variantes de diseño",
@@ -508,7 +582,13 @@
     "blindsOff": "Calculado sin persianas: el sDA no es el de LEED (LM-83 exige persianas operables).",
     "optIntro": "{{n}} protecciones estándar probadas en las fachadas {{list}}, cada una con el cálculo anual completo de luz natural (persianas según el ajuste), ordenadas según LEED: primero ASE ≤ 10 %, después la mayor luz natural.",
     "optBest": "Mejor diseño",
-    "optNote": "Entre paréntesis: cambio del ASE frente a sin protección, en puntos. Rejilla más gruesa que el cálculo anual principal (~2000 puntos): sirve para ordenar diseños; vuelve a calcular el año con el elegido para las cifras finales."
+    "optNote": "Entre paréntesis: cambio del ASE frente a sin protección, en puntos. Rejilla más gruesa que el cálculo anual principal (~2000 puntos): sirve para ordenar diseños; vuelve a calcular el año con el elegido para las cifras finales.",
+    "passiveLegend": "Azul: sol cuando hace frío (déjalo entrar) · rojo: sol cuando hace calor (sombréalo) · claro: poco efecto en uno u otro sentido.",
+    "passiveMethod": "Impacto pasivo (el «grado de necesidad de sombra o de sol» de SOLARCHVISION): el sol de cada hora en cada punto × (base {{base}} °C − el aire exterior). El sol recibido cuando hace frío y el bloqueado cuando hace calor cuentan como beneficio; lo contrario, como perjuicio. Puntuación = (beneficio − perjuicio) × |beneficio − perjuicio| ÷ (beneficio + perjuicio), kWh·°C/m² al día. Temperatura del aire: {{source}}, {{temperature}}.",
+    "tempHourly": "hora a hora",
+    "tempTypical": "medias de horas típicas",
+    "passiveCredit": "Método: Mojtaba Samimi, SOLARCHVISION — Intelligent Design using Solar-Climatic Vision (TU Berlin, 2014); github.com/archmoj/solarchvision_bim. Reimplementado aquí; las cifras no coincidirán con las de SOLARCHVISION-BIM.",
+    "compareIntroPassive": "«{{b}}» ({{pb}}) frente a «{{a}}» ({{pa}}), {{metric}}, punto a punto sobre el modelo. Azul: mejor; rojo: peor, los colores del propio mapa pasivo."
   },
   "compare": {
     "title": "Comparar variantes de diseño",
@@ -527,7 +607,8 @@
     "better": "mejor",
     "split": "Mejor / peor",
     "movers": "Elementos que más cambian",
-    "paired": "El {{pct}} % de las superficies actuales tiene pareja en la variante (las nuevas o movidas salen en gris)."
+    "paired": "El {{pct}} % de las superficies actuales tiene pareja en la variante (las nuevas o movidas salen en gris).",
+    "noValues": "«{{name}}» no tiene valores de {{metric}} (se guardó antes de que existiera esta medida o se calculó sin temperatura del aire): vuelve a calcularla y guárdala."
   },
   "daylight": {
     "title": "Luz natural en las estancias",
@@ -649,6 +730,9 @@
     "advanced": "Ajustes avanzados",
     "crashed": "Esta herramienta ha fallado; el resto sigue funcionando.",
     "retry": "Reintentar",
-    "gpuLost": "La GPU se ha reiniciado: análisis detenido. Vuelve a lanzarlo."
+    "gpuLost": "La GPU se ha reiniciado: análisis detenido. Vuelve a lanzarlo.",
+    "climateEpw": "EPW · {{station}}",
+    "climateEpwHint": "Archivo climático {{file}} ({{years}}), leído en este dispositivo: cielo, estaciones y aire, hora a hora",
+    "climateOkHourlyHint": "Cielo y estaciones medidos en el lugar; las horas reales {{years}} emparejan el sol de cada hora con su aire"
   }
 }

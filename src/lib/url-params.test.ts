@@ -10,6 +10,8 @@ import {
   emitEmbedEvent,
   rememberHostOrigin,
   __resetHostOrigin,
+  analysisParam,
+  siteParam,
 } from './url-params'
 
 const MODEL = 'https://host.example/model.ifc'
@@ -233,6 +235,86 @@ describe('parseAppUrlParams · flood deep link', () => {
     expect(parseAppUrlParams('?flood=1m,closed').flood).toBeUndefined()
     expect(parseAppUrlParams('?flood=').flood).toBeUndefined()
     expect(parseAppUrlParams('?flood=shower,3m,muddy').flood).toEqual({ storm: 'shower' })
+  })
+})
+
+// ── Solar-analysis deep link (?analysis=) and study site (?site=) ────────────
+
+describe('parseAppUrlParams · analysis deep link', () => {
+  it('reads a period and a metric in any order, with : or , between them', () => {
+    expect(parseAppUrlParams('?analysis=year:passive').analysis).toEqual({ period: 'year', metric: 'passive' })
+    expect(parseAppUrlParams('?analysis=passive,hot').analysis).toEqual({ period: 'hotSeason', metric: 'passive' })
+    expect(parseAppUrlParams('?analysis=Cold:Active').analysis).toEqual({ period: 'coldSeason', metric: 'irradiation' })
+    expect(parseAppUrlParams('?analysis=winter:sun').analysis).toEqual({ period: 'winterSolstice', metric: 'sunHours' })
+    expect(parseAppUrlParams('?analysis=summer,probable').analysis).toEqual({ period: 'summerSolstice', metric: 'probableSun' })
+    expect(parseAppUrlParams('?analysis=equinox:sky').analysis).toEqual({ period: 'equinox', metric: 'skyView' })
+  })
+
+  it("accepts the panel's own ids as aliases", () => {
+    expect(parseAppUrlParams('?analysis=hotSeason:irradiation').analysis).toEqual({ period: 'hotSeason', metric: 'irradiation' })
+    expect(parseAppUrlParams('?analysis=coldSeason:sunHours').analysis).toEqual({ period: 'coldSeason', metric: 'sunHours' })
+    expect(parseAppUrlParams('?analysis=winterSolstice:probableSun').analysis).toEqual({ period: 'winterSolstice', metric: 'probableSun' })
+    expect(parseAppUrlParams('?analysis=summerSolstice:skyView').analysis).toEqual({ period: 'summerSolstice', metric: 'skyView' })
+  })
+
+  it('defaults to the year, and `1` (or a bare flag) means just that', () => {
+    expect(parseAppUrlParams('?analysis=1').analysis).toEqual({ period: 'year' })
+    expect(parseAppUrlParams('?analysis').analysis).toEqual({ period: 'year' })
+    expect(parseAppUrlParams('?analysis=passive').analysis).toEqual({ period: 'year', metric: 'passive' })
+    expect(parseAppUrlParams('?analysis=fine').analysis).toEqual({ period: 'year', precision: 'fine' })
+  })
+
+  it('reads the base temperature in either spelling, decimals and below zero included', () => {
+    expect(parseAppUrlParams('?analysis=hot:base21').analysis).toEqual({ period: 'hotSeason', baseC: 21 })
+    expect(parseAppUrlParams('?analysis=year:passive:base=15').analysis).toEqual({ period: 'year', metric: 'passive', baseC: 15 })
+    expect(parseAppUrlParams('?analysis=base18.5,passive').analysis).toEqual({ period: 'year', metric: 'passive', baseC: 18.5 })
+    expect(parseAppUrlParams('?analysis=base-5').analysis).toEqual({ period: 'year', baseC: -5 })
+    expect(parseAppUrlParams('?analysis=base=-10:base40').analysis?.baseC).toBe(40)
+  })
+
+  it('drops a base outside −10…40 or not a number, and ignores what it does not know', () => {
+    expect(parseAppUrlParams('?analysis=passive:base41').analysis).toEqual({ period: 'year', metric: 'passive' })
+    expect(parseAppUrlParams('?analysis=passive:base-11').analysis).toEqual({ period: 'year', metric: 'passive' })
+    expect(parseAppUrlParams('?analysis=passive:basewarm:base:base1e3').analysis).toEqual({ period: 'year', metric: 'passive' })
+    expect(parseAppUrlParams('?analysis=year:glare:ultra:standard').analysis).toEqual({ period: 'year', precision: 'standard' })
+    expect(parseAppUrlParams('?analysis=constructor:toString:__proto__').analysis).toEqual({ period: 'year' })
+  })
+
+  it('stays off when absent or turned off', () => {
+    expect(parseAppUrlParams('').analysis).toBeUndefined()
+    expect(parseAppUrlParams('?analysis=0').analysis).toBeUndefined()
+    expect(parseAppUrlParams('?analysis=off').analysis).toBeUndefined()
+  })
+})
+
+describe('parseAppUrlParams · site override', () => {
+  it('reads lat,lon', () => {
+    expect(parseAppUrlParams('?site=43.87,-79.44').site).toEqual({ lat: 43.87, lon: -79.44 })
+    expect(parseAppUrlParams('?site=%2043.87%20,%20-79.44%20').site).toEqual({ lat: 43.87, lon: -79.44 })
+    expect(parseAppUrlParams('?site=-90,180').site).toEqual({ lat: -90, lon: 180 })
+  })
+
+  it('rejects anything that is not two finite numbers on the globe', () => {
+    for (const bad of ['', 'toronto', '43.87', '43.87,', ',-79.44', '43.87,-79.44,10', '91,0', '0,181', '-90.5,0', 'NaN,0', 'Infinity,0', '43.87;-79.44']) {
+      expect(parseAppUrlParams(`?site=${bad}`).site).toBeUndefined()
+    }
+    expect(parseAppUrlParams('').site).toBeUndefined()
+  })
+})
+
+describe('analysisParam / siteParam', () => {
+  it('write what the parser reads back, for every period and metric', () => {
+    const periods = ['year', 'hotSeason', 'coldSeason', 'winterSolstice', 'summerSolstice', 'equinox'] as const
+    const metrics = ['passive', 'irradiation', 'sunHours', 'probableSun', 'skyView'] as const
+    for (const period of periods) {
+      for (const metric of metrics) {
+        const link = { period, metric, baseC: -2.5, precision: 'fine' as const }
+        expect(parseAppUrlParams(`?analysis=${encodeURIComponent(analysisParam(link))}`).analysis).toEqual(link)
+      }
+      expect(parseAppUrlParams(`?analysis=${analysisParam({ period })}`).analysis).toEqual({ period })
+    }
+    const site = { lat: 43.87, lon: -79.44 }
+    expect(parseAppUrlParams(`?site=${encodeURIComponent(siteParam(site))}`).site).toEqual(site)
   })
 })
 

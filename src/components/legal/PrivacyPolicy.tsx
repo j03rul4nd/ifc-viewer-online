@@ -5,7 +5,7 @@ import { useConsentStore } from '../../stores/consentStore'
 
 const CONTACT = 'privacy@ifcvieweronline.eu'
 const DOMAIN  = SITE_URL
-const LAST_UPDATED = '2026-10-10'
+const LAST_UPDATED = '2026-10-16'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 
@@ -217,6 +217,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
         <li><code>ifc-viewer:prefs</code> — UI layout preferences (panel sizes, visibility).</li>
         <li><code>ifc-geo-*</code> — your choices for the optional map view (consent to load map tiles, selected layer). Withdrawing the consent in the Map panel deletes it.</li>
         <li><code>ifc-analytics-optout</code> — your analytics opt-out choice, so we can honour it.</li>
+        <li><code>ifc.climate.v1.*</code>, <code>ifc.sky.v1.*</code> and the <code>ifc-weather</code> database (IndexedDB) — the site climate the solar analysis loaded when you asked for it (daily normals and a typical sky per place, and the ERA5 hours, air temperature included, for the last four places; keyed by coordinates rounded to about 1 km), so it is not requested again. Weather files (.epw) you load are read on your device and never uploaded.</li>
         <li>A short, non-personal campaign tag (in <em>sessionStorage</em>) if you arrived from an invitation link — cleared when you close the tab.</li>
       </UL>
       <P>

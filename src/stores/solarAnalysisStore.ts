@@ -5,6 +5,7 @@
 
 import { create } from 'zustand'
 import type { ClimateSummary, TypicalSky } from '../lib/solar-analysis/climate'
+import type { HourlyWeather } from '../lib/solar-analysis/weather'
 import type { SolarMetric } from '../lib/solar-analysis/results'
 import type { SensorKind } from '../lib/solar-analysis/sensors'
 
@@ -24,6 +25,14 @@ export type Precision = 'fast' | 'standard' | 'fine'
 
 export type RunStatus = 'idle' | 'sensors' | 'running' | 'done' | 'error'
 
+/** Where the loaded climate came from. */
+export type ClimateSource =
+  | { kind: 'era5' }
+  | { kind: 'epw'; fileName: string; station: string }
+
+/** SOLARCHVISION-BIM's own default base temperature (its code: 18 − T). */
+export const PASSIVE_BASE_DEFAULT_C = 18
+
 export interface SolarAnalysisState {
   panelOpen: boolean
   setPanelOpen: (v: boolean) => void
@@ -35,6 +44,18 @@ export interface SolarAnalysisState {
   /** The typical hourly sky (12 × 24), loaded with the climate. */
   sky: TypicalSky | null
   setSky: (sky: TypicalSky | null) => void
+  /** Hour-by-hour weather (an EPW, or ERA5's real years). Null: typical hours only. */
+  hourly: HourlyWeather | null
+  setHourly: (w: HourlyWeather | null) => void
+  climateSource: ClimateSource | null
+  setClimateSource: (v: ClimateSource | null) => void
+  /** A weather file dropped on the viewer, waiting for the panel to read it. */
+  pendingWeatherFile: File | null
+  setPendingWeatherFile: (f: File | null) => void
+
+  /** Base temperature of the passive impact, °C (Degree of Need to Shade/Shine = base − outdoor). */
+  passiveBaseC: number
+  setPassiveBaseC: (v: number) => void
 
   period: PeriodChoice
   customDay: { month: number; day: number }
@@ -73,6 +94,15 @@ export const useSolarAnalysisStore = create<SolarAnalysisState>((set) => ({
   setClimate: (c, status, error = null) => set({ climate: c, climateStatus: status, climateError: error }),
   sky: null,
   setSky: (sky) => set({ sky }),
+  hourly: null,
+  setHourly: (w) => set({ hourly: w }),
+  climateSource: null,
+  setClimateSource: (v) => set({ climateSource: v }),
+  pendingWeatherFile: null,
+  setPendingWeatherFile: (f) => set({ pendingWeatherFile: f }),
+
+  passiveBaseC: PASSIVE_BASE_DEFAULT_C,
+  setPassiveBaseC: (v) => set({ passiveBaseC: Number.isFinite(v) ? Math.max(-10, Math.min(40, v)) : PASSIVE_BASE_DEFAULT_C }),
 
   period: 'winterSolstice',
   customDay: { month: 3, day: 21 },

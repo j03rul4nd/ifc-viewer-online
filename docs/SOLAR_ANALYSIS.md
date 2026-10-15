@@ -10,6 +10,7 @@ year on the IFC itself, with the city around it when map mode is on.
 | What is the climate here? Which months are hot, which cold? | Climate card — 10 years of ERA5 daily data (Open-Meteo), monthly normals, degree-days, wind, rain, clearness |
 | Where does the sun reach, and for how long? | Heatmap of direct-sun hours per day on the site, façades, windows and roofs |
 | Where does it heat up? | Heatmap of irradiation (kWh/m²) over the period |
+| Where is the sun welcome, and where is it a harm? | Passive impact (SOLARCHVISION's method): each hour's sun × (base − outdoor °C), kWh·°C/m² per day — blue let it in, red shade it |
 | Do the windows get enough sun? | EN 17037 sunlight exposure screening per window (1.5 / 3 / 4 h on 21 March, minimum sun altitude selectable) |
 | Which glazing will overheat, which earns winter heat? | Average daily irradiation per m² of glazing over the site's hot and cold seasons |
 | Where does each room belong? | Façade orientations ranked by winter sun and summer gain, with the passive-design reading |
@@ -34,7 +35,9 @@ Findings export as BCF (warnings) and CSV (every window).
 - **Sky** — three sources, the best one loaded wins:
   1. *Measured*: 5 years of ERA5 hourly GHI/DNI/DHI + sunshine duration
      (Open-Meteo archive) folded into a 12 × 24 UTC typical-hour table
-     (`climate.ts` `TypicalSky`, ~6 KB cached per place);
+     (`climate.ts` `TypicalSky`, ~6 KB cached per place) — and, when the
+     hours themselves are loaded (ERA5's real years or an EPW file), hour by
+     hour (see "Weather" below);
   2. *Clearness*: Ineichen clear sky × the month's measured clearness, split
      into beam/diffuse by Erbs;
   3. *Clear sky*: Ineichen–Perez (Linke 3, site elevation).
@@ -52,6 +55,226 @@ Findings export as BCF (warnings) and CSV (every window).
   irradiation (beam + sky + ground), sky view %. Hover shows the split.
 - **Exports**: BCF, per-window CSV (now with sky view), and the full sensor
   grid CSV (position, normal, every metric).
+
+## Solar-climatic impact (SOLARCHVISION's active and passive views)
+
+Mojtaba Samimi's method, reimplemented from its published math (not from his
+code): *Intelligent Design using Solar-Climatic Vision* (Samimi & Nasrollahi,
+TU Berlin, 2014), the "Degree of Need to Shade/Shine" (Samimi & Tahbaz, 2007),
+and his open-source SOLARCHVISION-BIM
+(<https://github.com/archmoj/solarchvision_bim>). The Sun tab's
+"Solar-climatic impact" block switches between his two views:
+
+- **Active** — the sun as energy to collect: the plain `irradiation` metric.
+  More is more.
+- **Passive** — the sun as something a building wants in some hours and not
+  in others: every hour's sun on a surface weighted by how far the outdoor
+  air is from a base temperature.
+
+### The method
+
+Per hour h and surface point, with T the outdoor air (°C) and Tb the base
+temperature: w = Tb − T(h). w ≥ 0 is a cold hour (sun welcome), w < 0 a warm
+one (sun unwelcome). B0 is the beam the point would get unobstructed (our
+beam is Hay–Davies beam + circumsolar, `beamNormal` × max(0, n·s)), B = vis ·
+B0 the beam it does get, F the diffuse sky + ground-reflected light it
+receives (isotropic diffuse × its cosine-weighted sky view + reflected).
+
+| Hour | Benefit P gets | Harm N gets |
+|---|---|---|
+| w ≥ 0 (cold) | w · (B + F) — welcome sun received | w · (B0 − B) — welcome sun blocked |
+| w < 0 (warm) | \|w\| · (B0 − B) — unwelcome sun blocked | \|w\| · (B + F) — unwelcome sun received |
+
+Blocking unwanted sun counts as a benefit and blocking wanted sun as a harm:
+a shading device is judged by both seasons at once. The four cases collapse
+exactly, hour by hour, so they hold for any sum of hours:
+
+```
+P − N = Σ w · (2B + F − B0)        P + N = Σ |w| · (B0 + F)
+```
+
+So the GPU needs ONE extra accumulator, Σ w · vis · beam · cos · h — the only
+shaded term with a sign. It rides in channel B of the sun pass, which that
+pass did not use (no extra shadow render, `exposure-engine.ts`, read before
+the clamp). B0 depends on the normal alone (CPU, `composePassive` in
+`passive.ts`, cached per normal rounded to 1e-3: a façade facing four ways
+costs four passes over the samples), F on the sky view (scalars × the view
+factor). P and N come back as ((P+N) ± (P−N)) / 2. The weights are computed
+per INSTANT in `sun-paths.ts` (exact UTC and month, before binning) and
+binned like the energy — conserved exactly (tested against a brute-force
+per-hour reference).
+
+**Score** — his "Ratio · Total": S = (P − N) · |P − N| / (P + N), 0 when
+P + N ≤ 1e-6: the net effect, scaled by how one-sided it is. S(kP, kN) = k·S,
+so the score of the period's totals ÷ days equals the score of the daily
+means — how his app aggregates a period (days first, score after). An
+element's (and a surface kind's) figure is the score of its AREA-SUMMED P and
+N, never a mean of scores — in the Sun pane, the report and the variant
+comparison alike (a variant keeps each sensor's P and N for that). The window
+lists keep to their sign: "Most unwanted sun" holds only negative scores and
+"Most welcome sun" only positive ones, so in a one-sided climate one of them
+can be empty rather than list a blue window as unwanted.
+
+**Units** — kWh·°C/m² per day (the period's Wh·°C/m² ÷ 1000 ÷ days), his
+own unit. The hover card shows the score, the benefit, the harm and the net
+received effect Σ w · (B + F) (his "effect" layers, on the surface).
+
+**Base temperature** — default **18 °C**, SOLARCHVISION-BIM's own value (its
+code weighs the sun by 18 − T), so a reader comparing with his app gets the
+same question. Presets: **15 °C** (his Montréal study, Jean-Brébeuf, in the
+book) and **21 °C** (the book's "required base temperature", the middle of an
+18–24 °C comfort band); any value from −10 to 40 °C can be typed. The book
+notes the base may follow the season, internal gains or local habits; it is
+held constant so places and designs compare. A run records its base: when the
+base changes the panel says "run again", a variant keeps it (a passive
+comparison warns when the two bases differ; the other metrics ignore it), and
+the CSV and the PDF print it.
+
+**Colours** — his diverging palette, harm to benefit: dark red (63,0,0) →
+red → yellow → near-white (245,245,240) at zero → cyan → blue → dark blue
+(0,0,63). The stops sit where his ramp breaks (±1, ±2, ±2.75 of 2.75), so the
+strong colours keep most of the range; the legend is symmetric, ± a round
+number at the 98th percentile of |S|. In his words, red does not mean hot and
+blue does not mean cold: **red is sun when it is warm (shade it), blue is sun
+when it is cold (let it in)**. A run without air temperature draws grey.
+
+**Where the air comes from** — the real hours when loaded (ERA5's five years,
+each year a layer, or an EPW's one): the weight at an instant is the mean over
+the layers of each layer's w × that layer's own sun, an expectation over real
+hours — a cold cloudy morning and a warm clear one stay what they were.
+Without the hours, the typical sky's hour-of-month mean (the average sun with
+the average air: an approximation, said in the panel). Without either, no
+passive map, and the panel says to load the climate or a weather file.
+
+### What we do differently from SOLARCHVISION-BIM
+
+Numbers will not match his app to the decimal; the method is his. On purpose:
+
+- **Sky view** — the diffuse sky is weighted by each point's cosine-weighted
+  sky view (144 directions, the rest of the analysis' view factor); his vertex
+  shading averages sky directions without the cosine (about half the
+  isotropic value).
+- **Circumsolar** — Hay–Davies: circumsolar diffuse travels with the beam and
+  is shadowed with it.
+- **Reflected light** — ground reflection with the chosen albedo (his albedo
+  is 0).
+- **Classification** — an hour is cold or warm by the sign of Tb − T, not of
+  (Tb − T) · DNI: an hour with no beam but warm air is a warm hour, and its
+  diffuse counts as unwanted.
+- **Period** — every day of the period (binned into sky patches), not 12
+  representative days, one per ±15-day window; no first sunlit hour dropped.
+- **Statistic** — the mean over every real hour of every weather layer, each
+  with its own air, instead of the one day per window that comes closest to a
+  chosen statistic (his default: the median). Without the real hours the
+  typical-hour means stand in, and the panel says so.
+- **Sun** — NOAA/Meeus with refraction at the site's longitude and time zone.
+- **Geometry** — the IFC's own openings are cut, and glazing casts shadows
+  like any other surface (in his importer glass casts none).
+
+### Where
+
+`lib/solar-analysis/passive.ts` (score, colours, range, `composePassive`),
+`sun-paths.ts` (weights per instant, binning), `exposure-engine.ts` (signed
+beam in channel B), `analysis-system.ts` (`result.passive`, hover),
+`results.ts` (`metricValue('passive')`, element stats from sums),
+`compare.ts` (variants: higher is better, an absolute 5 % tolerance of the
+reference's p98 |S|, per-kind and per-element figures scored from summed P and
+N, each element judged on its outside face as the element lists do; older
+variants without the metric count as unpaired). The composition runs after
+the GPU pass in slices, so the page and Cancel stay alive on a meshed shell
+whose every sensor faces its own way.
+UI: `components/solar/SolarAnalysisPanel.tsx` (the block, the legend, "Most
+unwanted sun" / "Most welcome sun", the hover), `VariantCompare.tsx` (the
+change drawn in the passive colours: blue better, red worse). The sensor CSV
+adds `passive_kwhC_m2_day, passive_benefit, passive_harm, passive_net,
+passive_base_c`; the PDF draws the diverging ramp, the method and the credit.
+A link can open it: `?analysis=year:passive:base18` (see
+`docs/EMBED_URL_PARAMS.md`) — it runs at once when the device already holds
+the weather its metric needs (sun hours and sky view need none), and
+otherwise asks for the one click the climate needs, in the panel or, when the
+panel stays closed (an embed, a tour), in a card over the view. If the hours
+fail while the daily climate comes, the card and the "Load the real hours"
+button say so instead of going quiet.
+
+Sources: M. Samimi, M. Nasrollahi, *Intelligent Design using Solar-Climatic
+Vision — Energy and Comfort Improvement in Architecture and Urban Planning
+using SOLARCHVISION*, Young Cities Research Paper Series 9, TU Berlin, 2014,
+DOI 10.14279/depositonce-3946 (ch. I.5–I.6, the base temperatures, the
+palette); *Weather Data and Solar Orientations*, Springer, 2015, DOI
+10.1007/978-3-319-15030-7_12; SOLARCHVISION-BIM (GPL-2.0; read as
+documentation only, nothing copied).
+
+## Weather: hour by hour (ERA5) and weather files (EPW)
+
+### ERA5, hour by hour
+
+The one hourly request (Open-Meteo archive, 5 years, after the "Load the
+climate" click) is now kept two ways (`climate.ts` `fetchEra5Weather`):
+
+- the 12 × 24 UTC typical sky, as before (localStorage, ~6 KB a place) — what
+  the daylight's typical year and the panels' monthly shape read;
+- the hours themselves, year by year (`weather.ts` `HourlyWeather`, IndexedDB
+  `ifc-weather` via `weather-store.ts`, ~0.9 MB a place, the 4 most recent
+  places): every layer is 8 760 hours of a non-leap UTC year.
+
+Open-Meteo labels radiation with the END of its hour, so each value goes to
+the hour before its label; temperature is the air AT its label, so an hour's
+air is the mean of the values at its start and its end (the typical table now
+splits each temperature half and half between the slots around its label,
+and a missing temperature no longer counts as 0 °C). 29 February is dropped;
+an analysis instant on 29 February reads the 28th. With the hours, the
+analysis evaluates every layer at every instant (`SunPathOptions.hourly`):
+the Hay–Davies terms per layer, averaged — the passive weights pair each
+layer's sun with its own air. A climate cached before the hours were kept
+offers "Load the real hours" (one request).
+
+The climate belongs to a place: when the study moves more than ~10 km (another
+model, a manual location, a link's `?site=`) the ERA5 climate, sky and hours
+of the old place are dropped, and the new place's come back from the device
+if they are there — no request without a click.
+
+### Weather files
+
+"Load a weather file (.epw, .zip)" in the Sun tab's climate, or a drop on the
+viewer (App routes `.epw`, and zips named like a weather set — `TMYx`,
+`CWEC`, `IWEC`, `EPW` as a token — to the panel). Read on the device
+(`epw.ts`), never uploaded and never fetched by us: climate.onebuilding.org
+(CWEC, TMYx, IWEC for most stations) sends no CORS headers, so the user
+downloads the zip and drops it. A zip is opened with fflate (already in the
+bundle): the first `.epw` inside, `__MACOSX` and `._` entries skipped, 30 MB
+cap per file and per entry.
+
+- **Format** — 8 header lines, LOCATION first (city, region, country, source,
+  WMO, latitude, longitude, time zone in hours from GMT, elevation), then one
+  row per hour: dry bulb (field 6), GHI/DNI/DHI (13–15, Wh/m² over the hour
+  before the timestamp), wind direction and speed (20–21), liquid
+  precipitation (33, often absent). Missing codes become NaN. A file needs
+  exactly 8 760 distinct hours after dropping 29 February (a leap file has
+  8 784 rows); a design day, a month or a sub-hourly file is refused with a
+  message that says why.
+- **Time zone** — rows are hour-ENDING in local STANDARD time (never daylight
+  saving); the file's own offset moves them onto the UTC grid (Toronto −5: its
+  first local hour of 1 January lands at 05:00 UTC; a typical year wraps).
+  Zones a half hour off average the two neighbouring local hours. The air at
+  an hour's middle is the mean of the timestamps around it.
+- **Sunshine** — an EPW records none: the WMO counts sunshine while the beam
+  exceeds 120 W/m², so an hour's share is min(1, DNI / 120).
+- **One file, every tool** — the hours drive the radiation and the passive
+  weights; `typicalFromHourly` gives the 12 × 24 sky the daylight and PV
+  tools read; `climateFromHourly` gives the daily normals the climate card,
+  the seasons and the degree-days read (days cut at the station's local
+  midnight). Rows a file does not record (rain, wind) are left off the card
+  and the PDF rather than shown as zero.
+- **Far-station rule** — a weather file is another place's sun clock and
+  clouds: a station more than 100 km from the site would pair this site's sun
+  with hours that do not line up with it. The panel asks first: "Study the
+  model at the station" moves the SOLAR location to the station (never the
+  map), keeps the model's north (yaw and its source) and sets the station's
+  time zone (unless one was picked by hand); "Cancel" changes nothing. A model
+  with no location yet gets the same offer. "Back to ERA5" drops the file.
+- **Status** — the chip and the climate card name the source in use (ERA5
+  years, or the station, the file and its years); the run's sky line says
+  "Measured, hour by hour (…)" when real hours drove it.
 
 ## Daylight in the rooms
 
@@ -187,12 +410,15 @@ spandrel was a window in EN 17037, the gain bands, shading and daylight
 ## Design variants
 
 `compare.ts`, `components/solar/VariantCompare.tsx`. "Save as variant" freezes
-the run on screen (open sensors, their position/normal/area/element and all
-four metrics). After a change — protections, another IFC version, the sky —
+the run on screen (open sensors, their position/normal/area/element and
+every metric). After a change — protections, another IFC version, the sky —
 "Compare" pairs each current sensor with the nearest variant sensor facing the
 same way (within ¾ of the sensor spacing, normals within ~45°; spatial hash),
 paints B − A on the model with a diverging ramp (red = better, blue = worse;
-for irradiation the user says whether more is better), and reports the change
+for irradiation the user says whether more is better; the passive impact keeps
+its own map's colours — blue better, red worse — and a variant keeps its base
+temperature, `Variant.passiveBaseC`, shown next to its period when the
+passive impact is compared), and reports the change
 per surface type, the share of area better/worse (> 5 %), the elements that
 moved most and the share of surfaces paired (unpaired = grey). Variants are
 kept on the device (IndexedDB, `variant-store.ts`, the last 8) and survive a
@@ -275,9 +501,14 @@ event is a threshold crossing over the site's calendar day, bisected to 1 s.
 
 ## Limits (said in the UI too)
 
-- A typical (averaged) sky, not a year of weather: right for comparing façades
-  and windows and for credible annual totals; not an energy simulation or a
-  certificate. Ground reflection assumes an unobstructed, uniformly lit ground.
+- Measured weather (ERA5's real years, or a typical/real year from an EPW
+  file), not a simulation of the building's thermal response: right for
+  comparing façades, windows and protections and for credible annual totals;
+  not an energy simulation or a certificate. Ground reflection assumes an
+  unobstructed, uniformly lit ground.
+- The passive impact weighs the sun by the OUTDOOR air against a fixed base
+  temperature — SOLARCHVISION's screening, not a heat balance (no internal
+  gains, inertia or ventilation).
 - EN 17037 is screened at the window's outer face; the standard measures at a
   reference point inside the room.
 - Gain bands (summer 2 / 3.5, winter 1 / 2.5 kWh/m²·day) are indicative.

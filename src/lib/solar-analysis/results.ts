@@ -2,9 +2,31 @@
 // PURE: what a run measured, per sensor and per element, and how it is drawn.
 
 import type { SensorSet, SensorElement } from './sensors'
+import { passiveScore } from './passive'
 
-export type SolarMetric = 'sunHours' | 'probableSun' | 'irradiation' | 'skyView'
-export const SOLAR_METRICS: SolarMetric[] = ['sunHours', 'probableSun', 'irradiation', 'skyView']
+export type SolarMetric = 'sunHours' | 'probableSun' | 'irradiation' | 'skyView' | 'passive'
+export const SOLAR_METRICS: SolarMetric[] = ['sunHours', 'probableSun', 'irradiation', 'skyView', 'passive']
+
+/**
+ * The passive (shade/shine) side of a run — Mojtaba Samimi's SOLARCHVISION
+ * method, reimplemented: every hour's sun is weighted by w = base − outdoor
+ * temperature. Sun RECEIVED while w ≥ 0 (cold) is a benefit, received while
+ * w < 0 (warm) a harm; sun BLOCKED is the reverse — blocking unwanted sun
+ * counts as a benefit, blocking wanted sun as a harm. Period totals, Wh·°C/m².
+ * The score per sensor is S = (P − N)·|P − N| / (P + N).
+ */
+export interface PassiveResult {
+  /** P: welcome sun received + unwelcome sun blocked, Wh·°C/m² over the period. */
+  benefitWh: Float32Array
+  /** N: unwelcome sun received + welcome sun blocked, Wh·°C/m² over the period. */
+  harmWh: Float32Array
+  /** Σ w·(beam + diffuse + reflected) RECEIVED, Wh·°C/m² (SOLARCHVISION's "effect" layers, on the surface). */
+  netWh: Float32Array
+  /** Base temperature the run used, °C. */
+  baseC: number
+  /** Where the air temperature came from: real hours (an EPW, ERA5 years) or typical-hour means. */
+  temperature: 'hourly' | 'typical'
+}
 
 export interface ExposureResult {
   /** Hours the sun is geometrically visible over the period (clear sky), per sensor. */
@@ -21,6 +43,8 @@ export interface ExposureResult {
   skyCos: Float32Array
   /** Days the period covers. */
   days: number
+  /** The passive impact, when the run knew the air temperature. */
+  passive?: PassiveResult
 }
 
 /** Average hours of direct sun per day. */
@@ -38,18 +62,30 @@ export function probableSunPerDay(r: ExposureResult, i: number): number {
   return r.days > 0 ? r.probableSunHours[i] / r.days : 0
 }
 
+/**
+ * The passive score per day, kWh·°C/m² — the score of the period's benefit
+ * and harm per day (the same as the period's score ÷ days: the score scales
+ * with its inputs). NaN when the run had no air temperature.
+ */
+export function passivePerDayScore(r: ExposureResult, i: number): number {
+  const p = r.passive
+  if (!p || r.days <= 0) return NaN
+  return passiveScore(p.benefitWh[i], p.harmWh[i]) / (1000 * r.days)
+}
+
 export function metricValue(r: ExposureResult, metric: SolarMetric, i: number): number {
   switch (metric) {
     case 'sunHours': return sunHoursPerDay(r, i)
     case 'probableSun': return probableSunPerDay(r, i)
     case 'irradiation': return irradiationKwh(r, i)
     case 'skyView': return r.skyCos[i] * 100
+    case 'passive': return passivePerDayScore(r, i)
   }
 }
 
-/** Unit a metric is shown in. */
+/** Unit a metric is shown in (the passive score is per day, like the hours). */
 export function metricUnit(metric: SolarMetric): string {
-  return metric === 'irradiation' ? 'kWh/m²' : metric === 'skyView' ? '%' : 'h'
+  return metric === 'irradiation' ? 'kWh/m²' : metric === 'skyView' ? '%' : metric === 'passive' ? 'kWh·°C/m²' : 'h'
 }
 
 export interface ElementStat {
@@ -64,6 +100,11 @@ export interface ElementStat {
   probableSunPerDay: number
   /** Cosine-weighted sky view of that face, 0–1. */
   skyView: number
+  /**
+   * The passive impact of that face, kWh·°C/m² per day: the score from the
+   * face's area-summed benefit and harm (never a mean of scores).
+   */
+  passive?: { score: number; benefit: number; harm: number }
   /** Area of that face, m². */
   area: number
   /** Mean normal of that face (scene axes). */
@@ -80,7 +121,8 @@ export interface ElementStat {
  * inside face of a wall or window, which never sees the sun, drops out.
  */
 export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Array): ElementStat[] {
-  type Acc = { area: number; hours: number; kwh: number; prob: number; sky: number; nx: number; ny: number; nz: number; x: number; y: number; z: number }
+  type Acc = { area: number; hours: number; kwh: number; prob: number; sky: number; benefit: number; harm: number; nx: number; ny: number; nz: number; x: number; y: number; z: number }
+  const passive = r.passive
   const per = new Map<number, Map<number, Acc>>()
   for (let i = 0; i < set.count; i++) {
     const e = set.element[i]
@@ -93,13 +135,16 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
     let byFacing = per.get(e)
     if (!byFacing) { byFacing = new Map(); per.set(e, byFacing) }
     let acc = byFacing.get(facing)
-    if (!acc) { acc = { area: 0, hours: 0, kwh: 0, prob: 0, sky: 0, nx: 0, ny: 0, nz: 0, x: 0, y: 0, z: 0 }; byFacing.set(facing, acc) }
+    if (!acc) { acc = { area: 0, hours: 0, kwh: 0, prob: 0, sky: 0, benefit: 0, harm: 0, nx: 0, ny: 0, nz: 0, x: 0, y: 0, z: 0 }; byFacing.set(facing, acc) }
     const a = set.area[i]
     acc.area += a
     acc.hours += sunHoursPerDay(r, i) * a
     acc.kwh += irradiationKwh(r, i) * a
     acc.prob += probableSunPerDay(r, i) * a
     acc.sky += r.skyCos[i] * a
+    // Benefit and harm are summed by area, period totals: the face's score
+    // comes from the sums, never from a mean of its sensors' scores.
+    if (passive) { acc.benefit += passive.benefitWh[i] * a; acc.harm += passive.harmWh[i] * a }
     acc.nx += nx * a; acc.ny += ny * a; acc.nz += nz * a
     acc.x += set.positions[i * 3] * a; acc.y += set.positions[i * 3 + 1] * a; acc.z += set.positions[i * 3 + 2] * a
   }
@@ -124,6 +169,8 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
     }
     if (!best || best.area <= 0) continue
     const nl = Math.hypot(best.nx, best.ny, best.nz) || 1
+    // kWh·°C/m² per day: the face's Wh·°C (Wh·°C/m² × m²) ÷ its area ÷ 1000 ÷ days.
+    const perDay = 1 / (best.area * 1000 * (r.days > 0 ? r.days : 1))
     out.push({
       element: set.elements[index],
       index,
@@ -131,6 +178,7 @@ export function elementStats(set: SensorSet, r: ExposureResult, open?: Uint8Arra
       irradiationKwh: best.kwh / best.area,
       probableSunPerDay: best.prob / best.area,
       skyView: best.sky / best.area,
+      ...(passive ? { passive: { score: passiveScore(best.benefit * perDay, best.harm * perDay), benefit: best.benefit * perDay, harm: best.harm * perDay } } : {}),
       area: best.area,
       normal: { x: best.nx / nl, y: best.ny / nl, z: best.nz / nl },
       center: { x: best.x / best.area, y: best.y / best.area, z: best.z / best.area },

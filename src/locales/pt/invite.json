@@ -3,6 +3,7 @@
     "coordinator": "Criei isto para triar exports de IFC com problemas. Arraste um e veja o que ele aponta — nada é enviado, nada para comprar.",
     "dev": "Um pequeno health-check de IFC sobre web-ifc — 100% no navegador. Arraste um arquivo ou veja a aba de rede.",
     "standards": "Uma porta de entrada para checagens no estilo IDS, não um substituto do bSI. Arraste um IFC para ver a pontuação.",
+    "climate": "Uma análise solar e climática que roda na sua GPU, no navegador. Arraste um IFC e um EPW — nada é enviado.",
     "referral": "Alguém achou que isto seria útil para você. Arraste um IFC — ele nunca sai do seu navegador, e não há nada para comprar.",
     "medium": "Obrigado por vir pelo artigo. Arraste um IFC para ver o que ele aponta — nada é enviado."
   },
@@ -28,7 +29,8 @@
     "q": {
       "coordinator": "Um relatório como este é algo que você realmente enviaria de volta para quem exportou o modelo — ou não?",
       "dev": "Resumir toda a validação em um único número 0–100 parece útil, ou esconde demais para ser confiável?",
-      "standards": "Um único número 0–100 funciona como porta de entrada, ou distorce o que significa a conformidade real com IDS/bSI?"
+      "standards": "Um único número 0–100 funciona como porta de entrada, ou distorce o que significa a conformidade real com IDS/bSI?",
+      "climate": "O mapa de impacto passivo faz sentido para o seu clima — o que você verificaria primeiro?"
     },
     "aside": "Sem formulário — é só responder à minha mensagem. Crítica brutal é exatamente o que eu quero.",
     "dismiss": "Fechar",

@@ -13,6 +13,7 @@
     "batchPartial": "{{name}} — 已加载 {{loaded}} 个，{{failed}} 个失败",
     "dropUnsupported_other": "{{count}} 个文件的格式不受支持",
     "dropBcfHint": "请打开 BCF 面板以导入 .bcf 文件",
+    "dropWeatherNoModel": "请先打开一个模型，再将 .epw 气象文件拖放到模型上",
     "mapDeclined": "该链接请求显示地图；在你允许之前，地图保持关闭（「地图」面板）。"
   },
   "validation": {

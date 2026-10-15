@@ -3,6 +3,7 @@
     "coordinator": "Ich habe das gebaut, um kaputte IFC-Exporte zu sichten. Zieh eine Datei rein und sieh, was auffällt – nichts wird hochgeladen, nichts zu kaufen.",
     "dev": "Ein kleiner IFC-Health-Check auf Basis von web-ifc – komplett im Browser. Zieh eine Datei rein oder schau in den Network-Tab.",
     "standards": "Ein Einstieg in IDS-artige Prüfungen, kein Ersatz für bSI. Zieh eine IFC rein, um den Score zu sehen.",
+    "climate": "Eine Solar- und Klimaanalyse, die auf deiner GPU im Browser läuft. Zieh eine IFC und eine EPW rein – nichts wird hochgeladen.",
     "referral": "Jemand dachte, das wäre nützlich für dich. Zieh eine IFC rein – sie verlässt nie deinen Browser, und es gibt nichts zu kaufen.",
     "medium": "Danke, dass du über den Artikel hergekommen bist. Zieh eine IFC rein und sieh, was auffällt – nichts wird hochgeladen."
   },
@@ -28,7 +29,8 @@
     "q": {
       "coordinator": "Würdest du einen Bericht wie diesen tatsächlich an die Person zurückschicken, die das Modell exportiert hat – oder nicht?",
       "dev": "Fühlt sich das Eindampfen der gesamten Validierung auf eine einzige 0–100-Zahl nützlich an, oder verbirgt es zu viel, um vertrauenswürdig zu sein?",
-      "standards": "Funktioniert eine einzelne 0–100-Zahl als Einstieg, oder verzerrt sie, was echte IDS/bSI-Konformität bedeutet?"
+      "standards": "Funktioniert eine einzelne 0–100-Zahl als Einstieg, oder verzerrt sie, was echte IDS/bSI-Konformität bedeutet?",
+      "climate": "Passt die Karte der passiven Wirkung zu deinem Klima – was würdest du zuerst prüfen?"
     },
     "aside": "Kein Formular – antworte einfach auf meine Nachricht. Schonungslose Ehrlichkeit ist genau der Punkt.",
     "dismiss": "Schließen",

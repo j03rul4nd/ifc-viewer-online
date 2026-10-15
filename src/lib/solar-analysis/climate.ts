@@ -16,6 +16,10 @@
 
 import { sunAt, wallTimeToUTC } from '../solar/sun-math'
 import { clearSkyDailyGhi } from './irradiance'
+// weather.ts reads aggregateClimate back from here; both only call each other
+// inside functions, so the cycle never runs at load time.
+import { hourlyFromEra5, type HourlyWeather } from './weather'
+import { era5Key, loadHourly, saveHourly } from './weather-store'
 
 export interface MonthNormal {
   month: number
@@ -206,7 +210,14 @@ export function seasonRange(months: number[]): { from: { month: number; day: num
 //
 // Hours are UTC, so the table does not care about the site's DST. Open-Meteo
 // labels each hourly radiation value with the END of the hour it averages
-// (value at 13:00 = mean of 12:00–13:00); slot h holds [h, h+1).
+// (value at 13:00 = mean of 12:00–13:00); slot h holds [h, h+1). Temperature
+// is not a mean but the air at its label, so a slot's temperature is the
+// air at the slot's middle: half of each value goes to the slot ending at its
+// label, half to the one starting there.
+//
+// The same request also keeps the hours themselves, year by year
+// (`fetchEra5Weather`): the passive impact pairs each hour's sun with that
+// hour's air, which a table of means cannot (weather.ts says why).
 
 export interface TypicalSky {
   lat: number
@@ -252,14 +263,27 @@ const table = (): number[][] => Array.from({ length: 12 }, () => new Array(24).f
 export function aggregateSky(h: HourlySeries, lat: number, lon: number, elevationM = 0): TypicalSky {
   const sums = { ghi: table(), dni: table(), dhi: table(), sunProb: table(), temp: table() }
   const n = table()
+  // Temperatures are counted on their own: an hour with radiation but no air
+  // must not pull the slot towards 0 °C, nor an hour with air but no
+  // radiation lose its air.
+  const nTemp = table()
+  const addTemp = (at: number, tc: number) => {
+    const d = new Date(at)
+    const m = d.getUTCMonth(), slot = d.getUTCHours()
+    sums.temp[m][slot] += tc / 2
+    nTemp[m][slot] += 0.5
+  }
   const years = new Set<number>()
   for (let i = 0; i < h.time.length; i++) {
+    const label = Date.parse(`${h.time[i]}Z`)
+    if (!Number.isFinite(label)) continue
+    // The air AT 13:00: half to 12:00–13:00, half to 13:00–14:00.
+    const tc = h.temperature_2m[i]
+    if (tc != null && Number.isFinite(tc)) { addTemp(label - 3_600_000, tc); addTemp(label, tc) }
     const ghi = h.shortwave_radiation[i]
     if (ghi == null) continue
     // "2024-03-05T13:00" → the hour 12:00–13:00 UTC.
-    const t = Date.parse(`${h.time[i]}Z`) - 3_600_000
-    if (!Number.isFinite(t)) continue
-    const d = new Date(t)
+    const d = new Date(label - 3_600_000)
     const m = d.getUTCMonth(), slot = d.getUTCHours()
     // The year of the LABEL: the hour before 1 January 00:00 belongs to the
     // first year asked for, not to the one before it.
@@ -269,15 +293,14 @@ export function aggregateSky(h: HourlySeries, lat: number, lon: number, elevatio
     sums.dni[m][slot] += h.direct_normal_irradiance[i] ?? 0
     sums.dhi[m][slot] += h.diffuse_radiation[i] ?? 0
     sums.sunProb[m][slot] += Math.min(1, (h.sunshine_duration[i] ?? 0) / 3600)
-    sums.temp[m][slot] += h.temperature_2m[i] ?? 0
   }
-  const mean = (t: number[][]) => t.map((row, m) => row.map((v, s) => (n[m][s] > 0 ? v / n[m][s] : 0)))
+  const mean = (t: number[][], c = n) => t.map((row, m) => row.map((v, s) => (c[m][s] > 0 ? v / c[m][s] : 0)))
   const ys = [...years].sort()
   return {
     lat, lon, elevationM,
     years: { from: ys[0] ?? 0, to: ys[ys.length - 1] ?? 0 },
     ghi: mean(sums.ghi), dni: mean(sums.dni), dhi: mean(sums.dhi),
-    sunProb: mean(sums.sunProb), temp: mean(sums.temp),
+    sunProb: mean(sums.sunProb), temp: mean(sums.temp, nTemp),
   }
 }
 
@@ -300,29 +323,61 @@ const SKY_PREFIX = 'ifc.sky.v1.'
 /** Years of hourly data folded into the typical sky (~1 MB of JSON for 5). */
 const SKY_YEARS = 5
 
-export async function fetchTypicalSky(lat: number, lon: number, o: { signal?: AbortSignal; now?: Date } = {}): Promise<TypicalSky> {
-  const key = `${SKY_PREFIX}${lat.toFixed(2)},${lon.toFixed(2)}`
-  try {
-    const hit = localStorage.getItem(key)
-    if (hit) return JSON.parse(hit) as TypicalSky
-  } catch { /* storage unavailable: fetch */ }
+const skyKey = (lat: number, lon: number) => `${SKY_PREFIX}${lat.toFixed(2)},${lon.toFixed(2)}`
+
+type FetchOptions = { signal?: AbortSignal; now?: Date }
+
+/**
+ * The one hourly request, folded both ways: the 12 × 24 typical sky (cached
+ * in localStorage) and the hours year by year (cached in IndexedDB).
+ */
+async function fetchEra5(lat: number, lon: number, o: FetchOptions): Promise<{ sky: TypicalSky; hourly: HourlyWeather }> {
   const to = (o.now ?? new Date()).getUTCFullYear() - 1
   const res = await fetch(skyUrl(lat, lon, to - SKY_YEARS + 1, to), { signal: o.signal })
   if (!res.ok) throw new Error(`Climate service answered ${res.status}`)
   const json = await res.json() as { hourly?: HourlySeries; elevation?: number }
   if (!json.hourly?.time?.length) throw new Error('The climate service returned no hourly data for this place')
-  const sky = aggregateSky(json.hourly, lat, lon, typeof json.elevation === 'number' ? json.elevation : 0)
-  // Rounded to whole W/m² before caching: ~6 KB instead of ~20.
+  const elevationM = typeof json.elevation === 'number' ? json.elevation : 0
+  const sky = aggregateSky(json.hourly, lat, lon, elevationM)
+  // Rounded to whole W/m² before caching: ~6 KB instead of ~20. The fresh
+  // sky is the rounded one too, so a cached and a fetched run agree.
   const round = (t: number[][], k = 1) => t.map((r) => r.map((v) => Math.round(v * k) / k))
   const slim: TypicalSky = { ...sky, ghi: round(sky.ghi), dni: round(sky.dni), dhi: round(sky.dhi), sunProb: round(sky.sunProb, 100), temp: round(sky.temp, 10) }
-  try { localStorage.setItem(key, JSON.stringify(slim)) } catch { /* full: fine */ }
-  return slim
+  try { localStorage.setItem(skyKey(lat, lon), JSON.stringify(slim)) } catch { /* full: fine */ }
+  const hourly = hourlyFromEra5(json.hourly, lat, lon, elevationM)
+  await saveHourly(era5Key(lat, lon), hourly)
+  return { sky: slim, hourly }
+}
+
+export async function fetchTypicalSky(lat: number, lon: number, o: FetchOptions = {}): Promise<TypicalSky> {
+  const hit = cachedTypicalSky(lat, lon)
+  if (hit) return hit
+  return (await fetchEra5(lat, lon, o)).sky
 }
 
 /** The cached typical sky of a place, if any (no network). */
 export function cachedTypicalSky(lat: number, lon: number): TypicalSky | null {
   try {
-    const hit = localStorage.getItem(`${SKY_PREFIX}${lat.toFixed(2)},${lon.toFixed(2)}`)
+    const hit = localStorage.getItem(skyKey(lat, lon))
     return hit ? JSON.parse(hit) as TypicalSky : null
   } catch { return null }
+}
+
+/**
+ * The typical sky AND the real hours of a place, from the device when both
+ * are there, else from one request (the same as `fetchTypicalSky`'s) that
+ * refreshes both caches.
+ */
+export async function fetchEra5Weather(lat: number, lon: number, o: FetchOptions = {}): Promise<{ sky: TypicalSky; hourly: HourlyWeather }> {
+  const sky = cachedTypicalSky(lat, lon)
+  if (sky) {
+    const hourly = await loadHourly(era5Key(lat, lon))
+    if (hourly) return { sky, hourly }
+  }
+  return fetchEra5(lat, lon, o)
+}
+
+/** The cached ERA5 hours of a place, if any (IndexedDB only, no network). */
+export function cachedEra5Hourly(lat: number, lon: number): Promise<HourlyWeather | null> {
+  return loadHourly(era5Key(lat, lon))
 }

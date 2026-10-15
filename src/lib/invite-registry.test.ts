@@ -6,10 +6,11 @@ import {
   inviteRibbonKey,
   inviteViewKey,
   inviteFeedbackKey,
+  inviteFeedbackTrigger,
   type InviteContext,
 } from './invite-registry'
 
-const SEGMENTS = new Set(['coordinator', 'dev', 'standards'])
+const SEGMENTS = new Set(['coordinator', 'dev', 'standards', 'climate'])
 const KINDS = new Set(['linkedin', 'medium', 'referral', 'public'])
 
 describe('resolveInvite', () => {
@@ -18,6 +19,7 @@ describe('resolveInvite', () => {
     expect(resolveInvite('li_dion')).toMatchObject({ segment: 'dev', sourceKind: 'linkedin' })
     expect(resolveInvite('li_noardo')).toMatchObject({ segment: 'standards', sourceKind: 'linkedin' })
     expect(resolveInvite('hn')).toMatchObject({ segment: 'dev', sourceKind: 'public' })
+    expect(resolveInvite('li_solarch')).toMatchObject({ segment: 'climate', sourceKind: 'linkedin' })
   })
 
   it('carries the per-code locale (Carlos → pt)', () => {
@@ -38,7 +40,7 @@ describe('resolveInvite', () => {
   it('every seeded entry is categorical-only (no free-text PII)', () => {
     // Guard: resolved context must only ever carry enum/locale values, never a
     // human name/employer string.
-    for (const code of ['li_ignacy', 'li_carlos', 'li_dion', 'li_antonio', 'li_plannerly', 'hn', 'reddit']) {
+    for (const code of ['li_ignacy', 'li_carlos', 'li_dion', 'li_antonio', 'li_plannerly', 'li_solarch', 'hn', 'reddit']) {
       const ctx = resolveInvite(code)!
       expect(SEGMENTS.has(ctx.segment)).toBe(true)
       expect(KINDS.has(ctx.sourceKind)).toBe(true)
@@ -68,6 +70,7 @@ describe('inviteRibbonKey', () => {
     expect(inviteRibbonKey({ code: 'x', segment: 'coordinator', sourceKind: 'linkedin' })).toBe('ribbon.coordinator')
     expect(inviteRibbonKey({ code: 'x', segment: 'dev', sourceKind: 'linkedin' })).toBe('ribbon.dev')
     expect(inviteRibbonKey({ code: 'x', segment: 'standards', sourceKind: 'linkedin' })).toBe('ribbon.standards')
+    expect(inviteRibbonKey({ code: 'x', segment: 'climate', sourceKind: 'linkedin' })).toBe('ribbon.climate')
     expect(inviteRibbonKey({ code: 'x', segment: 'coordinator', sourceKind: 'referral' })).toBe('ribbon.referral')
     expect(inviteRibbonKey({ code: 'x', segment: 'coordinator', sourceKind: 'medium' })).toBe('ribbon.medium')
   })
@@ -82,6 +85,7 @@ describe('shouldShowInviteView', () => {
   it('does not show for coordinators/devs, public, dismissed, or unknown', () => {
     expect(shouldShowInviteView({ code: 'x', segment: 'coordinator', sourceKind: 'linkedin' }, { dismissed: false })).toBe(false)
     expect(shouldShowInviteView({ code: 'x', segment: 'dev', sourceKind: 'linkedin' }, { dismissed: false })).toBe(false)
+    expect(shouldShowInviteView({ code: 'x', segment: 'climate', sourceKind: 'linkedin' }, { dismissed: false })).toBe(false)
     expect(shouldShowInviteView({ code: 'x', segment: 'standards', sourceKind: 'public' }, { dismissed: false })).toBe(false)
     expect(shouldShowInviteView({ code: 'x', segment: 'standards', sourceKind: 'linkedin' }, { dismissed: true })).toBe(false)
     expect(shouldShowInviteView(null, { dismissed: false })).toBe(false)
@@ -104,5 +108,22 @@ describe('inviteViewKey / inviteFeedbackKey', () => {
     expect(inviteFeedbackKey({ code: 'x', segment: 'coordinator', sourceKind: 'linkedin' })).toBe('feedback.q.coordinator')
     expect(inviteFeedbackKey({ code: 'x', segment: 'dev', sourceKind: 'linkedin' })).toBe('feedback.q.dev')
     expect(inviteFeedbackKey({ code: 'x', segment: 'standards', sourceKind: 'referral' })).toBe('feedback.q.standards')
+    expect(inviteFeedbackKey({ code: 'x', segment: 'climate', sourceKind: 'linkedin' })).toBe('feedback.q.climate')
+  })
+})
+
+describe('climate segment (li_solarch)', () => {
+  const climate = resolveInvite('li_solarch')!
+
+  it('gets the ribbon on desktop (no dedicated view)', () => {
+    expect(shouldShowInviteView(climate, { dismissed: false })).toBe(false)
+    expect(shouldShowInviteRibbon(climate, { isMobile: false, dismissed: false })).toBe(true)
+  })
+
+  it('asks its question after the solar analysis, every other segment after validation', () => {
+    expect(inviteFeedbackTrigger(climate)).toBe('solarAnalysis')
+    for (const code of ['li_ignacy', 'li_dion', 'li_noardo', 'md_x', 'warm_x']) {
+      expect(inviteFeedbackTrigger(resolveInvite(code)!)).toBe('validation')
+    }
   })
 })

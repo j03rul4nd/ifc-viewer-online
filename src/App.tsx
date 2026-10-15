@@ -185,6 +185,7 @@ import { projectDuration } from './lib/capture/project'
 import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
+import { useSolarAnalysisStore } from './stores/solarAnalysisStore'
 import { toast } from './stores/toastStore'
 import { confirmExternalData, hostsIn, layersSetupHosts } from './lib/privacy/external-data'
 import { ExternalDataPrompt } from './components/ExternalDataPrompt'
@@ -207,7 +208,7 @@ import {
   rememberHostOrigin,
 } from './lib/url-params'
 import { fetchIfcFromUrl } from './lib/fetch-ifc-url'
-import { resolveInvite, shouldShowInviteRibbon, shouldShowInviteView } from './lib/invite-registry'
+import { resolveInvite, shouldShowInviteRibbon, shouldShowInviteView, inviteFeedbackTrigger } from './lib/invite-registry'
 import { getStoredEntrySource } from './lib/attribution'
 import { runIds, cancelActiveIdsRuns, IdsCheckError } from './lib/ids/ids-runner'
 import { parseIds, IdsParseError } from './lib/ids/ids-parser'
@@ -579,8 +580,9 @@ export default function App() {
     setInviteViewDismissed(true)
   }, [])
 
-  // Post-aha Mom-Test nudge (Phase 2 — once per session, after first validation,
-  // invited non-public visitors only).
+  // Post-aha Mom-Test nudge (Phase 2 — once per session, after the first aha:
+  // a validation, or a solar analysis for the climate segment; invited
+  // non-public visitors only).
   const [feedbackNudgeOpen, setFeedbackNudgeOpen] = useState(false)
   const [feedbackNudgeSpent, setFeedbackNudgeSpent] = useState<boolean>(() => {
     try { return sessionStorage.getItem('ifc.invite.feedbackSpent') === '1' } catch { return false }
@@ -1634,13 +1636,36 @@ export default function App() {
   }, [result])
 
   // ── Post-aha invite nudge: surface the Mom-Test question once, after the ──
-  // first validation completes, to an invited (non-public) visitor.
+  // visitor's first aha, to an invited (non-public) visitor. For most segments
+  // that is the first validation to complete.
+  const feedbackTrigger = invite ? inviteFeedbackTrigger(invite) : null
   useEffect(() => {
     if (!result) return
     if (!invite || invite.sourceKind === 'public') return
+    if (feedbackTrigger !== 'validation') return
     if (feedbackNudgeSpent || feedbackNudgeOpen) return
     setFeedbackNudgeOpen(true)
-  }, [result, invite, feedbackNudgeSpent, feedbackNudgeOpen])
+  }, [result, invite, feedbackTrigger, feedbackNudgeSpent, feedbackNudgeOpen])
+
+  // The climate segment's aha is the solar analysis, not the Health Score that
+  // validates itself seconds after load: wait for the first run to reach
+  // 'done'. Keyed on the status TRANSITION — clear() bumps resultVersion too,
+  // with status 'idle' — and held while a tour plays (the analysis may finish
+  // under a presenter's walkthrough; the question waits for it to end).
+  const [solarAnalysisDone, setSolarAnalysisDone] = useState(false)
+  useEffect(() => {
+    if (feedbackTrigger !== 'solarAnalysis' || solarAnalysisDone) return
+    if (useSolarAnalysisStore.getState().status === 'done') { setSolarAnalysisDone(true); return }
+    return useSolarAnalysisStore.subscribe((s, prev) => {
+      if (s.status === 'done' && prev.status !== 'done') setSolarAnalysisDone(true)
+    })
+  }, [feedbackTrigger, solarAnalysisDone])
+  useEffect(() => {
+    if (!solarAnalysisDone || tourMode === 'playing') return
+    if (!invite || invite.sourceKind === 'public') return
+    if (feedbackNudgeSpent || feedbackNudgeOpen) return
+    setFeedbackNudgeOpen(true)
+  }, [solarAnalysisDone, tourMode, invite, feedbackNudgeSpent, feedbackNudgeOpen])
 
   // ── Analytics: SPA route transitions (virtual pageviews) ─────────────────
   useEffect(() => {
@@ -1813,6 +1838,23 @@ export default function App() {
     // when the model's placement arrives (vector-runner rebuilds on it).
     if (r.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(r.vector)
     if (r.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
+    // A weather file belongs to the solar analysis: it waits in the store for
+    // the panel to read, and the panel opens. It needs a building to stand on —
+    // one in the scene, or an IFC in this same drop ("drop an IFC and an EPW").
+    // The upload dialog keeps its IFCs and hands only the rest here, so an
+    // open dialog counts as an IFC on its way (as it does for scans above).
+    // Builds and skins without the analysis panel cannot open it at all.
+    if (r.weather.length > 0) {
+      if (!isSolarEnabled() || useUIStore.getState().clientMode) {
+        toast(tToasts('model.dropUnsupported', { count: r.weather.length }), 'warning')
+      } else if (r.ifc.length === 0 && !showUploadRef.current && useSceneStore.getState().models.length === 0) {
+        toast(tToasts('model.dropWeatherNoModel'), 'info')
+      } else {
+        const sa = useSolarAnalysisStore.getState()
+        sa.setPendingWeatherFile(r.weather[0])
+        sa.setPanelOpen(true)
+      }
+    }
     if (r.other.length > 0 && routedCount(r) === 0) {
       toast(tToasts('model.dropUnsupported', { count: r.other.length }), 'warning')
     }

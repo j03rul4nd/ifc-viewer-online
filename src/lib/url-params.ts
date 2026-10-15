@@ -14,6 +14,7 @@
 //   ?model=https://host/file.ifc&embed=1&panels=-measurement (all but that one)
 //   ?model=https://host/file.ifc&embed=1&bg=white&solar=06-21T18:00   (look + sun)
 //   ?model=https://host/file.ifc&flood=extreme,1m,closed               (rain-flood run)
+//   ?model=https://host/file.ifc&analysis=year:passive&site=43.87,-79.44 (solar analysis, elsewhere)
 //   ?model=https://host/file.ifc&layers=https://host/twin-setup.json  (data layers)
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
@@ -36,6 +37,21 @@ export interface FloodDeepLink {
   cellM?: 1 | 2 | 5
   boundary?: 'free' | 'closed'
   infiltration?: 'none' | 'compacted' | 'loam' | 'sandy'
+}
+
+/** What an `?analysis=` deep link asks for (see AppUrlParams.analysis). */
+export interface AnalysisDeepLink {
+  period: 'year' | 'hotSeason' | 'coldSeason' | 'winterSolstice' | 'summerSolstice' | 'equinox'
+  metric?: 'passive' | 'irradiation' | 'sunHours' | 'probableSun' | 'skyView'
+  /** Base temperature of the passive impact, °C. */
+  baseC?: number
+  precision?: 'fast' | 'standard' | 'fine'
+}
+
+/** A study location a link asks for (`?site=lat,lon`). */
+export interface SiteOverride {
+  lat: number
+  lon: number
 }
 
 /** Named views a `?view=` deep link may ask for (the camera presets). */
@@ -96,6 +112,22 @@ export interface AppUrlParams {
    * Only the storm is required; the rest keep the panel's defaults.
    */
   flood?: FloodDeepLink
+  /**
+   * Solar-analysis deep link (`?analysis=year:passive`, `?analysis=hot:base21`):
+   * once every `?model=` is in, open the analysis and run that period, showing
+   * that metric. Tokens in any order, `:` or `,` between them: a period (year,
+   * hot, cold, winter, summer, equinox; default year), a metric (passive,
+   * active = irradiation, sun, probable, sky), `base<°C>` and a precision (fast,
+   * standard, fine). Unknown tokens are ignored. The climate is never fetched
+   * without a click: without a cached one the panel asks first.
+   */
+  analysis?: AnalysisDeepLink
+  /**
+   * `?site=43.87,-79.44` — study the model's sun and climate AT this place
+   * (the solar location only, never the map), keeping the model's own north.
+   * Lets a link ask "this building, in that climate".
+   */
+  site?: SiteOverride
   /**
    * `?map=1` — drop the model onto the basemap once it loads, using its own
    * georeferencing. Extra tokens turn on the layers a demo usually wants:
@@ -394,6 +426,8 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     solar: parseSolarParam(p.get('solar')),
     solarMoon: parseBool(p.get('moon')),
     flood: parseFloodParam(p.get('flood')),
+    analysis: parseAnalysisParam(p.get('analysis')),
+    site: parseSiteParam(p.get('site')),
     map: withLook(parseMapParam(p.get('map')), p.get('look')),
     scanUrls: splitList(p.getAll('scan')).filter(isLoadableUrl),
     layersUrl: [p.get('layers') ?? ''].map((u) => u.trim()).find(isLoadableUrl),
@@ -518,6 +552,92 @@ function parseFloodParam(v: string | null): FloodDeepLink | undefined {
     else if (t === 'compacted' || t === 'loam' || t === 'sandy') out.infiltration = t
   }
   return out.storm ? out as FloodDeepLink : undefined
+}
+
+// The words a link may use for each part of `?analysis=`. Short ones first —
+// they are what a person types — and the panel's own ids as aliases, so a link
+// built from the store's state reads back the same.
+const ANALYSIS_PERIODS: Record<string, AnalysisDeepLink['period']> = {
+  year: 'year', annual: 'year',
+  hot: 'hotSeason', hotseason: 'hotSeason',
+  cold: 'coldSeason', coldseason: 'coldSeason',
+  winter: 'winterSolstice', wintersolstice: 'winterSolstice',
+  summer: 'summerSolstice', summersolstice: 'summerSolstice',
+  equinox: 'equinox',
+}
+const ANALYSIS_METRICS: Record<string, NonNullable<AnalysisDeepLink['metric']>> = {
+  passive: 'passive',
+  // SOLARCHVISION's "active" view is plain irradiation: what a collector sees.
+  active: 'irradiation', irradiation: 'irradiation',
+  sun: 'sunHours', sunhours: 'sunHours',
+  probable: 'probableSun', probablesun: 'probableSun',
+  sky: 'skyView', skyview: 'skyView',
+}
+/** The range the panel accepts for the passive base temperature, °C. */
+const ANALYSIS_BASE_MIN_C = -10
+const ANALYSIS_BASE_MAX_C = 40
+
+/**
+ * `year:passive`, `hot,base21`, `cold:active:fast`, or `1` — tokens in any
+ * order, `:` or `,` between them. The period defaults to the year; a metric
+ * left out keeps the panel's own. `base<°C>` / `base=<°C>` (decimals and a
+ * minus sign allowed) outside −10…40 is dropped rather than clamped: a typo
+ * should not silently weigh the sun against a base nobody asked for.
+ */
+function parseAnalysisParam(v: string | null): AnalysisDeepLink | undefined {
+  if (v === null) return undefined
+  const raw = v.trim().toLowerCase()
+  const bool = parseBool(raw)
+  if (bool === false) return undefined
+  const out: AnalysisDeepLink = { period: 'year' }
+  if (bool === true) return out
+  for (const part of raw.split(/[:,]/)) {
+    const t = part.trim()
+    if (!t) continue
+    // Own keys only: `constructor` or `toString` in a link must not reach the store.
+    if (Object.prototype.hasOwnProperty.call(ANALYSIS_PERIODS, t)) { out.period = ANALYSIS_PERIODS[t]; continue }
+    if (Object.prototype.hasOwnProperty.call(ANALYSIS_METRICS, t)) { out.metric = ANALYSIS_METRICS[t]; continue }
+    if (t === 'fast' || t === 'standard' || t === 'fine') { out.precision = t; continue }
+    const base = /^base=?(-?\d+(?:\.\d+)?)$/.exec(t)
+    if (base) {
+      const c = Number(base[1])
+      if (Number.isFinite(c) && c >= ANALYSIS_BASE_MIN_C && c <= ANALYSIS_BASE_MAX_C) out.baseC = c
+    }
+  }
+  return out
+}
+
+/**
+ * An `?analysis=` value that reads back as `link` — what a link built by the
+ * app (a copied walkthrough) carries forward. The ids lower-cased are the
+ * parser's own aliases.
+ */
+export function analysisParam(link: AnalysisDeepLink): string {
+  const parts: string[] = [link.period.toLowerCase()]
+  if (link.metric) parts.push(link.metric.toLowerCase())
+  if (link.baseC !== undefined && Number.isFinite(link.baseC)) parts.push(`base${link.baseC}`)
+  if (link.precision) parts.push(link.precision)
+  return parts.join(':')
+}
+
+/** A `?site=` value that reads back as `site`. */
+export function siteParam(site: SiteOverride): string {
+  return `${site.lat},${site.lon}`
+}
+
+/**
+ * `43.87,-79.44` → a study location, or undefined unless both are finite and
+ * on the globe. Anything else (one number, three, a city name) is ignored: a
+ * link that cannot say where must leave the model where it is.
+ */
+function parseSiteParam(v: string | null): SiteOverride | undefined {
+  if (!v) return undefined
+  const parts = v.split(',').map((x) => x.trim())
+  if (parts.length !== 2 || parts.some((x) => x === '')) return undefined
+  const [lat, lon] = parts.map(Number)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return undefined
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return undefined
+  return { lat, lon }
 }
 
 /** `YYYY-MM-DDTHH:MM` (exact) or `MM-DDTHH:MM` (evergreen — current year). */

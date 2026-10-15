@@ -58,6 +58,29 @@ export const POINTCLOUD_EXTENSIONS = [
  */
 export const VECTOR_EXTENSIONS = ['.geojson'] as const
 
+/**
+ * Hour-by-hour weather for the solar analysis (EnergyPlus `.epw`). Weather
+ * files are mostly published zipped (climate.onebuilding.org, the CWEC set),
+ * but a `.zip` says nothing about what it holds — so a zip joins this bucket
+ * only when its NAME says weather (see isWeatherZipName). Anything else zipped
+ * stays unrouted; the analysis panel's own picker takes any zip and looks.
+ */
+export const WEATHER_EXTENSIONS = ['.epw'] as const
+
+/**
+ * The dataset tags weather archives carry in their names: TMY / TMYx / TMY3
+ * (typical meteorological years), CWEC (Canada), IWEC (international), or
+ * "epw" itself — `CAN_ON_Toronto.Intl.AP.716240_TMYx.2009-2023.zip`. A tag
+ * must stand as its own token, so a project called "Tmyrsk" does not match.
+ */
+const WEATHER_ZIP_TAG = /(?:^|[^a-z])(?:tmy[a-z0-9]?|cwec|iwec2?|epw)(?:[^a-z]|$)/i
+
+/** Is this a zipped weather file, by its name alone? */
+export function isWeatherZipName(fileName: string): boolean {
+  if (fileExtensionOf(fileName) !== '.zip') return false
+  return WEATHER_ZIP_TAG.test(fileName.trim().slice(0, -'.zip'.length))
+}
+
 export const MESH_ENTRY_EXTENSIONS = ['.glb', '.gltf', '.obj'] as const
 export const MESH_SIDECAR_EXTENSIONS = ['.mtl', '.bin'] as const
 export const MESH_TEXTURE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'] as const
@@ -73,6 +96,8 @@ export interface FileRouting {
   mesh: File[]
   /** GeoJSON data layers (routes, zones, points) for the Data layers panel. */
   vector: File[]
+  /** Weather files (`.epw`, a weather-named `.zip`) for the solar analysis. */
+  weather: File[]
   /** Anything no subsystem opens: the caller decides whether to say so. */
   other: File[]
 }
@@ -87,6 +112,7 @@ for (const ext of POINTCLOUD_EXTENSIONS) BY_EXTENSION[ext] = 'pointcloud'
 for (const ext of MESH_ENTRY_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of MESH_SIDECAR_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of VECTOR_EXTENSIONS) BY_EXTENSION[ext] = 'vector'
+for (const ext of WEATHER_EXTENSIONS) BY_EXTENSION[ext] = 'weather'
 
 const TEXTURES: ReadonlySet<string> = new Set(MESH_TEXTURE_EXTENSIONS)
 const MESH_ENTRIES: ReadonlySet<string> = new Set(MESH_ENTRY_EXTENSIONS)
@@ -105,13 +131,14 @@ export function fileExtensionOf(fileName: string): string {
  * and the anchor rule (first-submitted IFC sets the coordinate base) rely on it.
  */
 export function classifyFiles(files: readonly File[]): FileRouting {
-  const out: FileRouting = { ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], other: [] }
+  const out: FileRouting = { ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], weather: [], other: [] }
   const textures: File[] = []
   let hasMeshEntry = false
 
   for (const file of files) {
     const ext = fileExtensionOf(file.name)
     if (TEXTURES.has(ext)) { textures.push(file); continue }
+    if (isWeatherZipName(file.name)) { out.weather.push(file); continue }
     const bucket = BY_EXTENSION[ext]
     if (!bucket) { out.other.push(file); continue }
     if (bucket === 'mesh' && MESH_ENTRIES.has(ext)) hasMeshEntry = true
@@ -172,6 +199,7 @@ export function groupMeshFiles(files: readonly File[]): MeshImportGroup[] {
 export function routedCount(routing: FileRouting): number {
   return routing.ifc.length + routing.ids.length + routing.bcf.length
     + routing.pointcloud.length + routing.mesh.length + routing.vector.length
+    + routing.weather.length
 }
 
 // ── DataTransfer ──────────────────────────────────────────────────────────────

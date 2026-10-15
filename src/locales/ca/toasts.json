@@ -15,6 +15,7 @@
     "dropUnsupported_one": "{{count}} fitxer no té un format compatible",
     "dropUnsupported_other": "{{count}} fitxers no tenen un format compatible",
     "dropBcfHint": "Obre el panell BCF per importar fitxers .bcf",
+    "dropWeatherNoModel": "Obre primer un model i després deixa-hi anar el fitxer climàtic .epw",
     "mapDeclined": "L'enllaç demanava mostrar el mapa; continua apagat fins que ho permetis (panell Mapa)."
   },
   "validation": {

@@ -1,7 +1,9 @@
 // ─── InviteFeedbackNudge ──────────────────────────────────────────────────────
 // Phase 2 — the post-aha Mom-Test nudge. Shown ONCE per session to an invited
-// visitor, AFTER their first validation run (never before the aha, never modal,
-// always dismissible). Poses one segment-tuned honest question — the same Q1/Q2
+// visitor, AFTER their first aha — the first validation run, or for the climate
+// segment the first finished solar analysis (inviteFeedbackTrigger; App.tsx
+// decides when) — never before it, never modal, always dismissible. Poses one
+// segment-tuned honest question — the same Q1/Q2
 // from the outreach kit — so when the founder follows up in the DM it resonates,
 // and so PostHog can tie "prompted" to share_report_clicked by entry_source.
 //

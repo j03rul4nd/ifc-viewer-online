@@ -9,7 +9,12 @@
 // private outreach tracker (content/launch/linkedin-outreach-kit.md), never in
 // the client bundle. The ribbon is therefore tuned by ROLE, not identity.
 
-export type InviteSegment = 'coordinator' | 'dev' | 'standards'
+/**
+ * `climate`: solar, climate and environmental analysts — people who judge a
+ * building by its sun and weather rather than its schema. Their aha is the
+ * solar analysis, not the Health Score (see inviteFeedbackTrigger).
+ */
+export type InviteSegment = 'coordinator' | 'dev' | 'standards' | 'climate'
 export type InviteSourceKind = 'linkedin' | 'medium' | 'referral' | 'public'
 
 /**
@@ -66,6 +71,9 @@ const REGISTRY: Record<string, RegistryEntry> = {
   // ── Segment C — standards / IDS (LinkedIn) ──
   li_noardo:   { segment: 'standards', sourceKind: 'linkedin' },
   li_plannerly:{ segment: 'standards', sourceKind: 'linkedin' },
+  // ── Segment D — solar / climate / environmental analysis (LinkedIn) ──
+  // Named after the field (solar-architecture visualisation), not a person.
+  li_solarch:  { segment: 'climate', sourceKind: 'linkedin' },
   // ── Public launches (near-zero personalization; ribbon suppressed) ──
   hn:          { segment: 'dev', sourceKind: 'public' },
   reddit:      { segment: 'coordinator', sourceKind: 'public' },
@@ -106,6 +114,7 @@ export type InviteRibbonKey =
   | 'ribbon.coordinator'
   | 'ribbon.dev'
   | 'ribbon.standards'
+  | 'ribbon.climate'
   | 'ribbon.referral'
   | 'ribbon.medium'
 
@@ -149,8 +158,21 @@ export type InviteFeedbackKey =
   | 'feedback.q.coordinator'
   | 'feedback.q.dev'
   | 'feedback.q.standards'
+  | 'feedback.q.climate'
 
-/** The segment-tuned Mom-Test question shown after the first validation run. */
+/** The segment-tuned Mom-Test question shown after the visitor's first aha. */
 export function inviteFeedbackKey(ctx: InviteContext): InviteFeedbackKey {
   return `feedback.q.${ctx.segment}`
+}
+
+/**
+ * What the visitor has to have SEEN before the nudge asks its question — the
+ * aha the question is about. Asking a climate analyst about the passive map
+ * while only the Health Score has run (validation is on by default, and fires
+ * seconds after load) asks about something they have not looked at yet.
+ */
+export type InviteFeedbackTrigger = 'validation' | 'solarAnalysis'
+
+export function inviteFeedbackTrigger(ctx: InviteContext): InviteFeedbackTrigger {
+  return ctx.segment === 'climate' ? 'solarAnalysis' : 'validation'
 }

@@ -47,6 +47,8 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
 | `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
 | `flood`    | `storm[,cell][,edges][,soil]`    | —         | Run the rain-flood simulation once every model is in: a storm (`shower`, `storm`, `intense`, `extreme`), and optionally a cell (`1m`, `2m`, `5m`), the edges (`free`, `closed`) and a soil (`sealed`, `compacted`, `loam`, `sandy`), in any order. Needs a build with the simulation. |
+| `analysis` | `period[:metric][:base<°C>][:precision]` or `1` | — | Run the solar & climate analysis once every model is in: a period (`year`, `hot`, `cold`, `winter`, `summer`, `equinox`; default `year`), and optionally a metric (`passive`, `active` = `irradiation`, `sun`, `probable`, `sky`), a base temperature for the passive impact (`base18`, `base=21`, −10…40 °C) and a precision (`fast`, `standard`, `fine`), in any order, `:` or `,` between them. See [below](#solar-analysis-analysis--site). |
+| `site`     | `lat,lon`                        | the model's | Study the sun and climate **at this place** — the solar location only, never the map — keeping the model's own north. Used by `solar` and `analysis` alike. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
 | `look`     | look id, or `from..to`           | user's    | Art direction of the map (needs `map`): `daylight`, `maquette`, `golden`, `night`, `blueprint`, `dawn`. `look=daylight..night` opens in the first and plays a 6 s time-of-day transition to the second once the city is built (it waits for the tab to be visible). Dawn/day/dusk use the site's real sun for today. Unknown ids are ignored. |
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
@@ -73,6 +75,50 @@ consent to the map's providers), so the water runs over the real ground and,
 by default, around the OpenStreetMap neighbourhood. In the full app the flood
 panel opens with the run; in an embed only the water and its timeline show.
 Builds without the simulation ignore the parameter.
+
+### Solar analysis (`analysis` / `site`)
+
+```
+?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc&analysis=year:passive&site=43.88,-79.44
+```
+
+Runs a year of the solar & climate analysis on the tower and shows the
+**passive impact** (the SOLARCHVISION method: each hour's sun weighted by how
+far the air is from a base temperature — blue where it arrives when it is cold,
+red where it arrives when it is warm), with the tower studied in Richmond Hill,
+Ontario instead of Barcelona.
+
+`analysis` tokens, in any order with `:` or `,` between them:
+
+| Token | Meaning |
+|-------|---------|
+| `year` · `hot` · `cold` · `winter` · `summer` · `equinox` | The period: the whole year, the hot or the cold season, the winter or summer solstice, the equinox. Default `year`. The panel's own ids (`hotSeason`, `winterSolstice`…) work too. |
+| `passive` · `active` · `irradiation` · `sun` · `probable` · `sky` | The metric shown. `active` is plain irradiation (what a collector sees). Left out, the panel keeps its own. |
+| `base<°C>` / `base=<°C>` | Base temperature of the passive impact, −10…40 °C, decimals and a minus sign allowed (`base-2.5`). Out of range is ignored, not clamped. Default 18 °C. |
+| `fast` · `standard` · `fine` | Precision of the run. |
+
+`?analysis=1` runs the year with the panel's metric. Unknown tokens are ignored;
+`analysis=0` turns the link off.
+
+Two things the link never does on its own:
+
+- **Fetch the climate.** The measured sky (Open-Meteo's ERA5 archive) is a
+  third-party request and waits for the visitor's click; without the weather
+  the metric needs cached in their browser, a card asks first — in the panel,
+  or floating over the view when the panel stays closed (an embed, a tour
+  playing). Sun hours and sky view are geometry and run at once. A weather
+  file the visitor drops (`.epw`) needs no request at all, and runs a waiting
+  link as soon as it is read.
+- **Run in `ui=client`.** The client skin does not mount the analysis panel,
+  so the parameter has nobody to answer it there.
+
+`site=lat,lon` moves the **study** — sun positions, time zone and climate —
+and nothing else: the map and its OpenStreetMap context stay where the model's
+georeferencing puts them (they would be some other city's), and the model keeps
+its own north, so the façades still face the way they were drawn. It wins over
+the model's georeferencing and any location saved in the visitor's browser,
+and it applies to `solar` as well. Both numbers must be finite and on the
+globe; anything else is ignored.
 
 ### Federated links: how several models load
 
@@ -200,6 +246,27 @@ invalid fragments show a clear error toast and fall back to the normal viewer.
 Links can only be generated for models that are themselves loadable by URL —
 disk-loaded models get an honest "no public URL" notice instead.
 
+The payload is JSON `{ v: 1, t?, tpl?, steps: [{ c, n?, r?, s?, k?, h?, b?, am? }] }`
+in base64 (base64url without padding is accepted too). Per step: `c` is the
+camera `[px,py,pz,tx,ty,tz]`, `n` the one-line caption (≤ 140 characters), `h`
+up to 10 highlighted express ids, and `r` / `s` / `k` the validation issue the
+stop shows. Two optional keys narrate an analysis walkthrough:
+
+| Key | Meaning |
+|-----|---------|
+| `b` | A short paragraph under the caption, ≤ 280 characters, shown in up to three lines. |
+| `am` | The solar-analysis metric this stop shows (`passive`, `irradiation`, `sunHours`, `probableSun`, `skyView`). The player only switches the heatmap's colours to it — nothing recomputes — and a stop without one keeps the previous stop's metric. Pair it with `analysis=` so there is a result to colour. |
+
+Both are additive at `v: 1`: older links still decode, and an older build plays
+a newer link's cameras and captions and ignores what it does not know. A body
+longer than three lines opens with a tap. The player's "Copy link" keeps the
+`analysis=` and `site=` of the link being played, so a copied walkthrough
+starts the same analysis in the same place. While a tour plays, the analysis
+panel stays closed (on a phone it would cover the tour bar) and a stop's `am`
+wins over the link's metric. Wrong
+types are dropped key by key. A fragment that was percent-encoded on its way
+through a chat app or a mail client (`%2B`, `%3D`) still decodes.
+
 `client` is the **client presentation skin** (D-25): a show-only layer for
 non-technical audiences. On top of the kiosk-like chrome it renders a large
 semantic Health Score badge (with a one-click "verify" CTA when validation
@@ -236,6 +303,9 @@ the loaded model and camera persist.
 
 # A blog figure: white page, the model on its site, a solstice evening
 ?model=https://host/a.ifc&ui=client&bg=white&map=terrain,buildings&solar=06-21T19:30
+
+# The same building in another climate: a year of passive solar impact, base 21 °C
+?model=https://host/a.ifc&site=45.51,-73.59&analysis=year:passive:base21&validate=0
 ```
 
 ## Present in dashboards & BI tools

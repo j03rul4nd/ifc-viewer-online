@@ -94,7 +94,7 @@
     "locationLine": "{{lat}}, {{lon}} · {{tz}}",
     "climate": {
       "title": "Site climate",
-      "consent": "Load observed weather for this place from Open-Meteo (ERA5): 10 years of daily normals and 5 years of hourly direct and diffuse radiation. Only the coordinates, rounded to ~1 km, are sent.",
+      "consent": "Load observed weather for this place from Open-Meteo (ERA5): 10 years of daily normals and 5 years of hourly radiation and air temperature, kept on this device for the next visit. Only the coordinates, rounded to ~1 km, are sent.",
       "load": "Load the climate",
       "loading": "Loading the climate…",
       "error": "The climate could not be loaded: {{message}}",
@@ -108,7 +108,18 @@
       "temp": "Temperature, °C (min · mean · max)",
       "wind": "Prevailing wind",
       "rain": "Rain, mm/year",
-      "clearness": "Clear-sky share"
+      "clearness": "Clear-sky share",
+      "loadFile": "Load a weather file (.epw, .zip)",
+      "fileHint": "An EPW year — CWEC, TMYx, IWEC; climate.onebuilding.org has one for most weather stations — is read on this device and never uploaded.",
+      "reading": "Reading the weather file…",
+      "sourceEpw": "Weather file {{file}} · {{station}} · {{years}}",
+      "hourlyEra5": "Hour by hour: ERA5 {{years}}",
+      "loadHours": "Load the real hours",
+      "loadHoursHint": "Only typical hours are on this device (a mean per month and hour). Load the real ones so each hour's sun meets that hour's air: one request to Open-Meteo, only the rounded coordinates are sent.",
+      "hoursError": "The real hours could not be loaded: {{message}}",
+      "epwActive": "Weather file in use: {{station}} ({{file}}).",
+      "backToEra5": "Back to ERA5",
+      "anotherFile": "Another file"
     },
     "period": {
       "title": "Period",
@@ -127,7 +138,8 @@
       "sunHours": "Sun hours",
       "irradiation": "Irradiation",
       "probableSun": "Expected sun",
-      "skyView": "Sky view"
+      "skyView": "Sky view",
+      "passive": "Passive impact"
     },
     "kinds": {
       "ground": "Site",
@@ -145,7 +157,8 @@
       "sunHours": "Direct sun, hours per day",
       "irradiation": "Irradiation, kWh/m² over the period",
       "probableSun": "Expected sun, hours per day",
-      "skyView": "Sky view factor, %"
+      "skyView": "Sky view factor, %",
+      "passive": "Passive impact, kWh·°C/m² per day (blue: sun when cold · red: sun when warm)"
     },
     "results": {
       "title": "Results",
@@ -212,14 +225,17 @@
       "sunHours": "Hours the sun is visible from each point (clear sky) — what EN 17037 counts",
       "probableSun": "Hours of sun to expect, with the site's measured chance of sunshine at each hour",
       "irradiation": "Solar energy received: beam + diffuse sky + light reflected by the ground",
-      "skyView": "Share of the sky a point sees, cosine-weighted (100 % = a roof under an open sky). Drives daylight and night cooling"
+      "skyView": "Share of the sky a point sees, cosine-weighted (100 % = a roof under an open sky). Drives daylight and night cooling",
+      "passive": "SOLARCHVISION's passive view: each hour's sun weighted by how far the air is from a base temperature — blue where it arrives when it is cold, red where it arrives when it is warm"
     },
     "sky": {
       "label": "Sky",
-      "measured": "Measured, hour by hour (ERA5)",
+      "measured": "Measured (ERA5 or a weather file)",
       "clearness": "Clear sky × monthly clearness",
       "clear": "Clear sky",
-      "fallback": "Not loaded yet — using: {{model}}. Load the climate for the measured sky."
+      "fallback": "Not loaded yet — using: {{model}}. Load the climate or a weather file for the measured sky.",
+      "measuredHourly": "Measured, hour by hour ({{source}})",
+      "measuredTypical": "Measured, typical hours ({{source}})"
     },
     "albedo": {
       "label": "Ground",
@@ -236,7 +252,57 @@
       "fine": "Fine"
     },
     "cancel": "Stop",
-    "exportGridHint": "Every sensor with its position, normal and all the metrics (CSV)"
+    "exportGridHint": "Every sensor with its position, normal and all the metrics (CSV)",
+    "weather": {
+      "far": "{{label}} is {{km}} km from the model's site — its hours would not line up with the sun here.",
+      "farHint": "Study the model at the station to use this file, or load one from a station near the site.",
+      "noSite": "The model has no location yet. Study it at the station of {{label}}?",
+      "studyAtStation": "Study the model at the station",
+      "cancel": "Cancel",
+      "errors": {
+        "tooLarge": "This file is larger than 30 MB: it is not an hourly weather file.",
+        "badZip": "This zip could not be opened.",
+        "noEpwInZip": "There is no .epw weather file in this zip.",
+        "notEpw": "This is not an EPW weather file.",
+        "notFullYear": "This weather file holds {{hours}} hours; a full year (8 760) is needed.",
+        "other": "The weather file could not be read: {{message}}"
+      }
+    },
+    "passive": {
+      "title": "Solar-climatic impact",
+      "active": "Active",
+      "activeHint": "Active: the sun as energy to collect — the plain irradiation, more is more",
+      "passive": "Passive",
+      "base": "Base temperature",
+      "preset15": "Montréal study (Samimi & Nasrollahi, 2014)",
+      "preset18": "SOLARCHVISION-BIM default",
+      "preset21": "TU Berlin book: the required base temperature",
+      "custom": "Base temperature, °C (−10 to 40)",
+      "tempEra5": "Air temperature: ERA5, hour by hour, {{years}}.",
+      "tempEpw": "Air temperature: {{station}}, hour by hour (weather file).",
+      "tempTypical": "Air temperature: typical-hour means, ERA5 {{years}} — load the real hours to pair each hour's sun with its own air.",
+      "tempNone": "No air temperature yet: load the climate or a weather file. Until then the passive map stays grey.",
+      "explain": "Each hour's sun on a surface is weighed by the gap between the base temperature and the air outside: sun × (base − outdoor °C). Blue is sun that comes when it is cold — let it in. Red is sun that comes when it is warm — shade it. Blocking unwanted sun counts as a benefit, and blocking wanted sun as a harm. The score is the net effect, scaled by how one-sided it is: (benefit − harm) × |benefit − harm| ÷ (benefit + harm).",
+      "credit": "Method: Mojtaba Samimi, SOLARCHVISION — Intelligent Design using Solar-Climatic Vision (TU Berlin, 2014). Reimplemented here; numbers will differ from SOLARCHVISION-BIM.",
+      "creditLink": "SOLARCHVISION-BIM on GitHub",
+      "stale": "Base temperature changed — run again",
+      "noTemps": "The run on screen had no air temperature, so it has no passive map. Load the climate or a weather file, then run again.",
+      "legendCaption": "Red does not mean hot, nor blue cold: red is sun when it is warm (shade it), blue is sun when it is cold (let it in).",
+      "unwanted": "Most unwanted sun",
+      "welcome": "Most welcome sun",
+      "baseShort": "base {{v}} °C",
+      "unitDay": "kWh·°C/m²·day",
+      "hoverScore": "Passive impact: {{v}} kWh·°C/m²·day",
+      "hoverParts": "benefit {{b}} · harm {{h}} · net {{n}}",
+      "typicalSource": "typical-hour means, {{label}}"
+    },
+    "link": {
+      "title": "This link runs a solar analysis",
+      "what": "{{metric}} · {{period}} · at {{place}}",
+      "needs": "It needs the site's climate: ERA5 hourly from Open-Meteo; only the rounded coordinates are sent.",
+      "run": "Load the climate and run",
+      "later": "Not now"
+    }
   },
   "timelapse": {
     "title": "Day timelapse",
@@ -447,6 +513,14 @@
       "annual": {
         "title": "Daylight over the year",
         "body": "Daylight coefficients over the 145 Tregenza sky patches, measured once per point on the GPU; 12 × 24 typical hours of the site's sky, diffuse with the CIE overcast shape (120 lm/W), the sun in its patch (100 lm/W). EN 17037 by hourly illuminance, sDA300/50 % and ASE1000,250 h as IES LM-83 / LEED v4, without blinds."
+      },
+      "passive": {
+        "title": "Passive impact (solar-climatic)",
+        "body": "After Mojtaba Samimi's SOLARCHVISION (TU Berlin, 2014), reimplemented: each hour's beam, sky and ground light on a point, weighted by the base temperature minus the outdoor air; sun received when it is wanted and sun blocked when it is not are benefit, the reverse is harm, over every day of the period. Hours are classified by the sign of the temperature gap; the sky view is cosine-weighted and the circumsolar light travels with the beam, so the numbers differ from SOLARCHVISION-BIM's."
+      },
+      "weatherFile": {
+        "title": "Weather file",
+        "body": "An EnergyPlus weather file (EPW: a typical or a real year, 8 760 hours) read on the device: the global, direct and diffuse radiation and the air temperature of every hour, moved from the station's standard time to UTC. Seasons, degree-days and the climate card come from the same hours."
       }
     },
     "compareTitle": "Design variants",
@@ -508,7 +582,13 @@
     "blindsOff": "Computed without blinds: this sDA is not LEED's (LM-83 requires operable blinds).",
     "optIntro": "{{n}} standard protections tried on the {{list}} façades, each with the full annual daylight method (blinds as set), ranked by LEED's reading: ASE ≤ 10 % first, then the most daylight.",
     "optBest": "Best design",
-    "optNote": "In brackets: ASE change against no protection, in points. Coarser grid than the main annual run (~2 000 points): for ranking designs; run the year again with the chosen one for the final figures."
+    "optNote": "In brackets: ASE change against no protection, in points. Coarser grid than the main annual run (~2 000 points): for ranking designs; run the year again with the chosen one for the final figures.",
+    "passiveLegend": "Blue: sun when it is cold (let it in) · red: sun when it is warm (shade it) · pale: little effect either way.",
+    "passiveMethod": "Passive impact (SOLARCHVISION's Degree of Need to Shade/Shine): every hour's sun on each point × (base {{base}} °C − the outdoor air). Sun received while it is cold and sun blocked while it is warm count as benefit; the reverse as harm. Score = (benefit − harm) × |benefit − harm| ÷ (benefit + harm), kWh·°C/m² per day. Air temperature: {{source}}, {{temperature}}.",
+    "tempHourly": "hour by hour",
+    "tempTypical": "typical-hour means",
+    "passiveCredit": "Method: Mojtaba Samimi, SOLARCHVISION — Intelligent Design using Solar-Climatic Vision (TU Berlin, 2014); github.com/archmoj/solarchvision_bim. Reimplemented here; numbers will differ from SOLARCHVISION-BIM.",
+    "compareIntroPassive": "“{{b}}” ({{pb}}) against “{{a}}” ({{pa}}), {{metric}}, point by point on the model. Blue: better, red: worse — the passive map's own colours."
   },
   "compare": {
     "title": "Compare design variants",
@@ -527,7 +607,8 @@
     "better": "better",
     "split": "Better / worse",
     "movers": "Elements that changed most",
-    "paired": "{{pct}} % of the current surfaces have a partner in the variant (new or moved surfaces show grey)."
+    "paired": "{{pct}} % of the current surfaces have a partner in the variant (new or moved surfaces show grey).",
+    "noValues": "“{{name}}” has no {{metric}} values (saved before this measure existed, or run without the air temperature): run it again and save it."
   },
   "daylight": {
     "title": "Daylight in the rooms",
@@ -649,6 +730,9 @@
     "advanced": "Advanced settings",
     "crashed": "This tool failed; everything else keeps working.",
     "retry": "Retry",
-    "gpuLost": "The GPU was reset: analysis stopped. Run it again."
+    "gpuLost": "The GPU was reset: analysis stopped. Run it again.",
+    "climateEpw": "EPW · {{station}}",
+    "climateEpwHint": "Weather file {{file}} ({{years}}), read on this device: sky, seasons and the air, hour by hour",
+    "climateOkHourlyHint": "Sky and seasons measured on site; the real hours {{years}} pair each hour's sun with its air"
   }
 }

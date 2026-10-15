@@ -12,7 +12,7 @@ const OTHER_ONLY = new Set(['ja', 'th', 'zh'])
 
 const files = import.meta.glob('./*/toasts.json', { eager: true, import: 'default' }) as Record<string, { model: Record<string, string> }>
 
-const KEYS = ['loadFailedNamed', 'batchLoaded', 'batchPartial', 'dropUnsupported', 'dropBcfHint'] as const
+const KEYS = ['loadFailedNamed', 'batchLoaded', 'batchPartial', 'dropUnsupported', 'dropBcfHint', 'dropWeatherNoModel'] as const
 const PLURAL = new Set(['batchLoaded', 'dropUnsupported'])
 
 function params(s: string): string[] {

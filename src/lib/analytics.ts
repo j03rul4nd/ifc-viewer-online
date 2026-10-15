@@ -560,6 +560,24 @@ export function trackSolarError(props: { stage: 'enable' | 'location' }): void {
   track('solar_error', props)
 }
 
+/**
+ * A solar analysis run finished. Categories only: which metric was on screen,
+ * the period kind, where the weather came from and whether a link started it.
+ */
+export function trackSolarAnalysisCompleted(props: {
+  metric: 'sunHours' | 'probableSun' | 'irradiation' | 'skyView' | 'passive'
+  period: 'day' | 'range' | 'year'
+  weather: 'era5_hourly' | 'era5_typical' | 'epw' | 'clearness' | 'clear'
+  from_link: boolean
+}): void {
+  track('solar_analysis_completed', props)
+}
+
+/** A weather file was read for the solar analysis (never its name or place). */
+export function trackSolarWeatherFileLoaded(props: { format: 'epw' | 'zip'; far_from_site: boolean }): void {
+  track('solar_weather_file_loaded', props)
+}
+
 // ── Virality ──────────────────────────────────────────────────────────────────
 
 /**
