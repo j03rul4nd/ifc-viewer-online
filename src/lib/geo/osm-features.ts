@@ -42,6 +42,10 @@ import { assembleMultipolygon } from './multipolygon'
 import { partitionBuildingParts } from './building-parts'
 import { shanghaiBridgeWidth } from './shanghai-bridges'
 import { hydrologyQueryParts } from './osm-hydro'
+import {
+  buildHydroNetwork, joinPatches, structureOf, waterRegimeOf,
+  type HydroStructure, type JoinPatch, type WaterRegime,
+} from './hydro-network'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
@@ -133,6 +137,18 @@ export interface OsmFeature {
    * hanging in the air. See `waterLevelM` in osm-scene.
    */
   isSea?: boolean
+  /**
+   * The CENTRELINE of a watercourse drawn from a line, in flow direction, and
+   * the width it was buffered to. The scene reads it to slope the surface
+   * along the course instead of laying the whole ribbon level (hydro-network).
+   */
+  waterCourse?: { line: LatLonPoint[]; widthM: number }
+  /**
+   * A polygon that stitches the network: a junction pad, a river's mouth into
+   * its lake or the sea, or the white water at a weir/waterfall/dam. `nodeKey`
+   * names the network node whose water level it takes.
+   */
+  waterJoin?: { nodeKey: string; role: JoinPatch['role']; structure?: HydroStructure }
 }
 
 export interface FeatureStyle {
@@ -174,6 +190,8 @@ export interface FeatureStyle {
   stepCount?: number
   /** Preserve basin semantics; a lake must never acquire invented fountain jets. */
   waterKind?: 'fountain' | 'pond' | 'lake' | 'river' | 'other'
+  /** Flowing (river, canal), still (lake, pond, reservoir) or tidal (lagoon). */
+  waterRegime?: WaterRegime
   /** '#rrggbb' from `building:colour` / `roof:colour`, when parseable. */
   wallColor?: string
   /**
@@ -1287,7 +1305,8 @@ export function resolveFeatureStyle(
   if (kind === 'water') {
     const water = t['water']
     return { roofShape: 'flat', roofHeightM: 0, waterKind: t['amenity'] === 'fountain'
-      ? 'fountain' : water === 'pond' || water === 'lake' || water === 'river' ? water : 'other' }
+      ? 'fountain' : water === 'pond' || water === 'lake' || water === 'river' ? water : 'other',
+      waterRegime: WATERWAY_LINEAR.has(t['waterway'] ?? '') ? 'flowing' : waterRegimeOf(t) }
   }
   if (kind === 'pier') {
     return {
@@ -1583,6 +1602,8 @@ export function parseOsmFeatures(
   const seenElements = new Set<string>()
   /** Shoreline ways, held back to be turned into the sea once all are known. */
   const coastline: LatLonPoint[][] = []
+  /** Waterfalls, weirs, dams and lock gates: drops on the course (hydro-network). */
+  const structures: HydroStructure[] = []
 
   const drop = (
     el: OverpassEl, stage: LossStage, reason: string,
@@ -1631,6 +1652,27 @@ export function parseOsmFeatures(
     // classifies to null a few lines below and is dropped exactly as before,
     // so this costs nothing where the shoreline is only a shoreline.
     let consumedAsShore = false
+    // A DROP ON THE COURSE. Mapped as a node on the river (waterfall, weir,
+    // lock gate) or as a way across it sharing a node with it (weir, dam).
+    // Not drawn as a thing of its own: it is where the water level falls, and
+    // the network turns it into a step and a band of white water.
+    if (el.tags && /^(waterfall|weir|dam|lock_gate|rapids)$/.test(el.tags['waterway'] ?? '')) {
+      const tag = el.type === 'node' ? 'n' : 'w'
+      if (el.type === 'node' && Number.isFinite(el.lat) && Number.isFinite(el.lon)) {
+        const s = structureOf(`${tag}${el.id}`, el.tags, { lat: el.lat!, lon: el.lon! })
+        if (s) structures.push(s)
+      } else if (Array.isArray(el.geometry)) {
+        el.geometry.forEach((q, i) => {
+          if (!q || !Number.isFinite(q.lat)) return
+          const s = structureOf(`${tag}${el.id}-${i}`, el.tags!, { lat: q.lat, lon: q.lon })
+          if (s) structures.push(s)
+        })
+      }
+      if (el.tags['waterway'] !== 'dam' || el.type === 'node') {
+        drop(el, 'classify', 'hydro-structure-consumed-into-network')
+        continue
+      }
+    }
     if (el.tags?.['natural'] === 'coastline'
       && el.type === 'way' && Array.isArray(el.geometry)) {
       const pts = el.geometry.filter((q) => q && Number.isFinite(q.lat) && Number.isFinite(q.lon))
@@ -1787,8 +1829,14 @@ export function parseOsmFeatures(
       // here, so everything downstream — triangulation, terrain draping, the
       // water material — treats it exactly like a lake and needs no new path.
       if (kind === 'water' && !closed && WATERWAY_LINEAR.has(el.tags?.['waterway'] ?? '')) {
-        const ring = bufferWaterway(pts, waterwayWidth(el.tags))
-        if (ring) out.push({ id: `w${el.id}`, kind, ring, height, style })
+        const widthM = waterwayWidth(el.tags)
+        const ring = bufferWaterway(pts, widthM)
+        if (ring) {
+          out.push({
+            id: `w${el.id}`, kind, ring, height, style,
+            waterCourse: { line: pts.map((q) => ({ lat: q.lat, lon: q.lon })), widthM },
+          })
+        }
         else drop(el, 'geometry', 'waterway-buffer-collapsed')
         continue
       }
@@ -1900,7 +1948,43 @@ export function parseOsmFeatures(
     })
   }
 
+  out.push(...stitchWaterNetwork(out, structures))
+
   return supersedeOutlinesWithParts(out)
+}
+
+/**
+ * The polygons that join the watercourses to each other and to the water they
+ * end in — see `hydro-network`. Emitted as ordinary water features carrying
+ * `waterJoin`, so the layer, material and toggle need nothing new.
+ */
+export function stitchWaterNetwork(
+  features: ReadonlyArray<OsmFeature>, structures: ReadonlyArray<HydroStructure>,
+): OsmFeature[] {
+  const lines = features.filter((f) => f.kind === 'water' && f.waterCourse)
+    .map((f) => ({ id: f.id, line: f.waterCourse!.line, widthM: f.waterCourse!.widthM }))
+  if (lines.length === 0) return []
+  const bodies = features.filter((f) => f.kind === 'water' && !f.waterCourse && f.ring && f.ring.length >= 3
+    && (f.isSea || f.style.waterRegime !== 'flowing'))
+    .map((f) => ({ id: f.id, ring: f.ring!, isSea: f.isSea === true }))
+  const net = buildHydroNetwork(lines, structures, bodies)
+  const flowing = resolveFeatureStyle('water', { natural: 'water', water: 'river' })
+  return joinPatches(net).map((p) => ({
+    id: p.id,
+    kind: 'water' as const,
+    ring: p.ring,
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    style: p.role === 'whitewater'
+      ? { ...flowing, tone: [0.86, 0.91, 0.93] as [number, number, number], roughness: 0 }
+      : flowing,
+    label: p.structure ? STRUCTURE_LABEL[p.structure.kind] : undefined,
+    name: p.structure?.name,
+    waterJoin: { nodeKey: p.nodeKey, role: p.role, structure: p.structure },
+  }))
+}
+
+const STRUCTURE_LABEL: Record<HydroStructure['kind'], string> = {
+  waterfall: 'Waterfall', weir: 'Weir', dam: 'Dam', lock_gate: 'Lock gate', rapids: 'Rapids',
 }
 
 /**
@@ -2159,6 +2243,8 @@ export function buildFeaturesQuery(
       + `nwr["amenity"="fountain"](${b});`
       + area('["waterway"="riverbank"]')
       + `way["waterway"~"^(river|stream|canal|ditch|drain)$"](${b});`
+      + `node["waterway"~"^(waterfall|weir|dam|lock_gate|rapids)$"](${b});`
+      + `way["waterway"~"^(weir|dam)$"](${b});`
       + area('["landuse"~"^(reservoir|basin)$"]')
       + area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve|playground)$"]')
       + area('["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|allotments|orchard|vineyard|cemetery)$"]')

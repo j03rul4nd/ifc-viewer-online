@@ -22,7 +22,7 @@
 import type { LatLonPoint, OsmFeature } from './osm-features'
 
 export type ChannelClass = 'river' | 'canal' | 'stream' | 'ditch' | 'drain'
-export type WaterBarrierClass = 'wall' | 'city_wall' | 'retaining_wall' | 'flood_wall' | 'dyke' | 'embankment'
+export type WaterBarrierClass = 'wall' | 'city_wall' | 'retaining_wall' | 'flood_wall' | 'dyke' | 'embankment' | 'weir' | 'dam'
 
 export interface HydroChannel {
   id: string
@@ -72,6 +72,9 @@ const DEFAULT_WIDTH: Record<ChannelClass, number> = { river: 22, canal: 12, stre
 const DEFAULT_DEPTH: Record<ChannelClass, number> = { river: 2, canal: 1.5, stream: 0.6, ditch: 0.5, drain: 0.5 }
 const DEFAULT_HEIGHT: Record<WaterBarrierClass, number> = {
   wall: 1.5, city_wall: 4, retaining_wall: 1, flood_wall: 1.5, dyke: 2, embankment: 1.5,
+  // A weir's crest holds the river back by about its own height; a dam by far
+  // more — both are where a flood overtops or does not.
+  weir: 1, dam: 8,
 }
 
 /** A length tag in metres ("3", "3 m", "2.5m"); null when unreadable. */
@@ -95,6 +98,7 @@ export function channelOf(tags: Record<string, string>): { cls: ChannelClass; hi
 
 /** The barrier class of a way that stops water, or null (fences and hedges do not). */
 export function waterBarrierOf(tags: Record<string, string>): WaterBarrierClass | null {
+  if (tags['waterway'] === 'weir' || tags['waterway'] === 'dam') return tags['waterway'] as 'weir' | 'dam'
   const b = tags['barrier']
   if (b === 'wall' || b === 'city_wall' || b === 'retaining_wall') return b
   if (b === 'flood_wall' || tags['flood_prone'] === 'flood_wall') return 'flood_wall'

@@ -73,6 +73,7 @@ import { appendBridgeRailing } from './bridge-railing'
 import { solveAccessProfiles, appendAccessFlight, appendAccessElevator, accessPoint, connectedDeck, railingOutsideElevators } from './bridge-access'
 import { placePiers, type ProfilePoint } from './deck-supports'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
+import { buildHydroNetwork, solveWaterLevels, nodeKey, type HydroStructure, type LL } from './hydro-network'
 import {
   ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, COVER_SPACING_M, SURFACE_ROUGHNESS,
   type OsmFeature, type LatLonPoint, type RoadClass, type GreenCover,
@@ -353,6 +354,7 @@ function* buildSimpleSurface(
     // Water: one level for the whole polygon, taken as the MINIMUM ground under
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
+    const course = layer === 'water' ? waterSurfacesFor(features, frame).get(f.id) : undefined
     if (layer === 'water') {
       flatZ = frame.zAtElevationM(waterLevelM(ring, frame, f.isSea === true) + lift)
     }
@@ -368,7 +370,9 @@ function* buildSimpleSurface(
     for (const [a, b, c] of faces) {
       for (const tri of subdivideOnGround([vertices[a], vertices[b], vertices[c]], frame)) {
         for (const p of tri) {
-          const z = layer === 'water' ? flatZ : frame.groundZ(p.x, p.y) + lift * mToN
+          const z = layer === 'water'
+            ? (course ? frame.zAtElevationM(course(p.x, p.y) + lift) : flatZ)
+            : frame.groundZ(p.x, p.y) + lift * mToN
           positions.push(p.x, p.y, z)
           if (tone) colors.push(tone[0], tone[1], tone[2])
         }
@@ -450,6 +454,86 @@ function* buildSimpleSurface(
  * `buildPierLayer` has always used the sea datum. This is the other half of
  * that decision, and until now the two halves disagreed.
  */
+/**
+ * Sloped water for the river NETWORK (hydro-network).
+ *
+ * A ribbon drawn from a centreline used to be one level, the floor of its own
+ * banks: a mountain stream lay flat along its valley, and two rivers that met
+ * stepped against each other. Here every watercourse gets a level that falls
+ * along its course, matches its tributaries where they join, never sinks below
+ * the lake or the sea it ends in, and drops at a mapped weir, waterfall or dam.
+ * Junction pads, mouths and white water take the level of their node.
+ *
+ * Returns, per feature id, the water level in metres at a normalized (x, y).
+ * Features not in the map keep the single level of `waterLevelM`. Cached per
+ * feature list and frame — both surface paths ask.
+ */
+const waterSurfaceCache = new WeakMap<ReadonlyArray<OsmFeature>, { frame: GroundFrame; map: Map<string, (nx: number, ny: number) => number> }>()
+
+export function waterSurfacesFor(
+  features: ReadonlyArray<OsmFeature>, frame: GroundFrame,
+): Map<string, (nx: number, ny: number) => number> {
+  const hit = waterSurfaceCache.get(features)
+  if (hit && hit.frame === frame) return hit.map
+  const map = new Map<string, (nx: number, ny: number) => number>()
+  waterSurfaceCache.set(features, { frame, map })
+
+  const courses = features.filter((f) => f.kind === 'water' && f.waterCourse)
+  if (courses.length === 0) return map
+  const toN = (p: LL) => latLonToNormalized(p.lat, p.lon)
+  const groundM = (p: LL): number => { const n = toN(p); return frame.groundM(n.nx, n.ny) }
+  const bodies = features.filter((f) => f.kind === 'water' && !f.waterCourse && !f.waterJoin
+    && f.ring && f.ring.length >= 3 && (f.isSea || f.style.waterRegime !== 'flowing'))
+  const bodyLevel = new Map<string, number>()
+  for (const b of bodies) {
+    const ring = b.ring!.map((p) => { const n = toN(p); return new THREE.Vector2(n.nx, n.ny) })
+    bodyLevel.set(b.id, waterLevelM(ring, frame, b.isSea === true))
+  }
+  const structures: HydroStructure[] = []
+  for (const f of features) if (f.waterJoin?.structure) structures.push(f.waterJoin.structure)
+
+  const net = buildHydroNetwork(
+    courses.map((f) => ({ id: f.id, line: f.waterCourse!.line, widthM: f.waterCourse!.widthM })),
+    structures,
+    bodies.map((b) => ({ id: b.id, ring: b.ring!, isSea: b.isSea === true })),
+  )
+  const profiles = solveWaterLevels(net, groundM, (id) => bodyLevel.get(id))
+
+  const nodeLevel = new Map<string, number>()
+  const keep = (k: string, v: number) => {
+    const prev = nodeLevel.get(k)
+    nodeLevel.set(k, prev === undefined ? v : Math.min(prev, v))
+  }
+  for (const prof of profiles.values()) {
+    const line = prof.line.map(toN)
+    prof.line.forEach((p, i) => keep(nodeKey(p), prof.levelsM[i]))
+    map.set(prof.lineId, (nx, ny) => levelAlong(line, prof.levelsM, nx, ny))
+  }
+  for (const f of features) {
+    if (!f.waterJoin) continue
+    const lv = nodeLevel.get(f.waterJoin.nodeKey)
+    if (lv !== undefined) map.set(f.id, () => lv)
+  }
+  return map
+}
+
+/** Level from the nearest point on a centreline given in normalized units. */
+function levelAlong(
+  line: ReadonlyArray<{ nx: number; ny: number }>, levels: ReadonlyArray<number>, x: number, y: number,
+): number {
+  let best = Infinity
+  let lv = levels[0]
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1], b = line[i]
+    const dx = b.nx - a.nx, dy = b.ny - a.ny
+    const len2 = dx * dx + dy * dy
+    const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - a.nx) * dx + (y - a.ny) * dy) / len2)) : 0
+    const d = (a.nx + t * dx - x) ** 2 + (a.ny + t * dy - y) ** 2
+    if (d < best) { best = d; lv = levels[i - 1] + t * (levels[i] - levels[i - 1]) }
+  }
+  return lv
+}
+
 export function waterLevelM(
   ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame, isSea: boolean,
 ): number {
@@ -718,7 +802,10 @@ function* buildDetailedSurface(
       !f.isSea && f.style.waterKind !== 'river' && areaM2 < 150000
     const tone = parkWater ? [0.12, 0.29, 0.25] : f.style.tone ?? FALLBACK_TONE[layer]
     // Water uses the otherwise-unused roughness channel for shelter from wind.
-    const roughness = parkWater ? 1 : f.style.roughness ?? 0.4
+    // STANDING WATER is calm: a pond or a small lake has no fetch for the wind
+    // to raise a chop on, and no current to drift it. A big lake still does.
+    const still = !f.isSea && f.style.waterRegime === 'still' && areaM2 < 1_000_000
+    const roughness = parkWater ? 1 : still ? 0.8 : f.style.roughness ?? 0.4
     // Water is level across the whole polygon; the rest follows the ground.
     const flatZ = isWater
       ? frame.zAtElevationM(waterLevelM(
@@ -727,13 +814,14 @@ function* buildDetailedSurface(
         ) + lift)
       : 0
     const shoreDist = isWater ? distanceToRings(mesh.points, boundaries) : null
+    const course = isWater ? waterSurfacesFor(features, frame).get(f.id) : undefined
 
     for (let i = 0; i < mesh.points.length; i++) {
       const p = mesh.points[i]
       const nx = originX + p.x * mToN
       const ny = originY + p.y * mToN
       const z = isWater
-        ? flatZ
+        ? (course ? frame.zAtElevationM(course(nx, ny) + lift) : flatZ)
         : frame.groundZ(originX + p.x * mToN, originY + p.y * mToN) + lift * mToN
       positions.push(nx, ny, z)
 
