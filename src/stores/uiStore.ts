@@ -3,6 +3,8 @@ import { devtools } from 'zustand/middleware'
 import { clamp } from '../lib/utils'
 import { appBus } from '../lib/event-bus'
 import type { PanelId } from '../lib/ui/panel-rail'
+import { DRAWER_DEFAULT_RATIO, clampRatio, parseDrawerRatio } from '../lib/ui/lane'
+import { isEmbedded } from '../lib/url-params'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -83,9 +85,33 @@ function saveColumns(state: ColumnState): void {
   try { localStorage.setItem(LS_COLUMNS, JSON.stringify(state)) } catch { /* private mode */ }
 }
 
+// The share of the main column the expanded Validation/IDS drawer takes. A key
+// of its own, so the shape of ifc-ui-columns:v1 stays exactly what older builds
+// (and uiStore.columns.test.ts) expect.
+const LS_DRAWER = 'ifc-ui-drawer:v1'
+
+function loadDrawerRatio(): number {
+  if (typeof localStorage === 'undefined') return DRAWER_DEFAULT_RATIO
+  try { return parseDrawerRatio(localStorage.getItem(LS_DRAWER)) } catch { return DRAWER_DEFAULT_RATIO }
+}
+
+function saveDrawerRatio(r: number): void {
+  // A phone has no drawer, and an embed must not rewrite the visitor's own app
+  // layout (same reasoning as the embed column effect in App.tsx).
+  if (isPhone() || isEmbedded()) return
+  if (typeof localStorage === 'undefined') return
+  try { localStorage.setItem(LS_DRAWER, JSON.stringify({ ratio: r })) } catch { /* private mode */ }
+}
+
 interface UIStore {
   validationPanelOpen:     boolean
   validationPanelFloating: boolean
+  /**
+   * Share of the main column given to the expanded Validation/IDS drawer; one
+   * value for both; persisted separately from the column flags.
+   */
+  bottomDrawerRatio:       number
+  setBottomDrawerRatio:    (ratio: number, opts?: { persist?: boolean }) => void
   treeWidth:               number
   treeVisible:             boolean
   /** Pending tab to activate in the sidebar — consumed by Sidebar on mount or change. null = no pending request. */
@@ -194,6 +220,13 @@ export const useUIStore = create<UIStore>()(
       // the model, so it starts closed there.
       validationPanelOpen:     loadColumns().validation && !isPhone(),
       validationPanelFloating: false,
+      bottomDrawerRatio:       loadDrawerRatio(),
+      setBottomDrawerRatio: (ratio, opts) => {
+        if (!Number.isFinite(ratio)) return
+        const r = clampRatio(ratio)
+        if (opts?.persist !== false) saveDrawerRatio(r)
+        set({ bottomDrawerRatio: r }, false, 'setBottomDrawerRatio')
+      },
       treeWidth:               300,
       treeVisible:             loadColumns().tree && !isPhone(),
       mobileSidebarOpen:       false,
