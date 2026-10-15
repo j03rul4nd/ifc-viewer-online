@@ -286,9 +286,6 @@
   "tabs": {
     "appearance": "Darstellung",
     "placement": "Position",
-    "view": "Ansicht",
-    "samples": "Beispiele",
-    "help": "Beheben",
     "analyze": "Analysieren"
   },
   "ui": {

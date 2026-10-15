@@ -286,9 +286,6 @@
   "tabs": {
     "appearance": "表示",
     "placement": "配置",
-    "view": "ビュー",
-    "samples": "サンプル",
-    "help": "修正",
     "analyze": "解析"
   },
   "ui": {

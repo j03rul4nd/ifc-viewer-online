@@ -33,9 +33,11 @@ describe('openDataPanel', () => {
 })
 
 describe('openDataSamples', () => {
-  it('opens the point-cloud panel', () => {
+  it('opens the point-cloud panel on its samples', () => {
+    usePointCloudStore.getState().setSamplesOpen(false)
     openDataSamples('pointcloud')
     expect(open.pointcloud()).toBe(true)
+    expect(usePointCloudStore.getState().samplesOpen).toBe(true)
   })
   it('opens the mesh panel', () => {
     openDataSamples('mesh')

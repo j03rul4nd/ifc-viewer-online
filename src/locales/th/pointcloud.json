@@ -286,9 +286,6 @@
   "tabs": {
     "appearance": "การแสดงผล",
     "placement": "ตำแหน่ง",
-    "view": "มุมมอง",
-    "samples": "ตัวอย่าง",
-    "help": "แก้ไข",
     "analyze": "วิเคราะห์"
   },
   "ui": {

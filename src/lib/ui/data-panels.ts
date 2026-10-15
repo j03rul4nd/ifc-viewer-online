@@ -26,10 +26,11 @@ export function openDataPanel(kind: DataPanelKind): void {
 }
 
 /**
- * The hub's "Samples" action. Today it opens the panel, whose empty state lists
- * the samples; the point-cloud branch is the hook for a panel that can scroll
- * straight to its samples section.
+ * The hub's "Samples" action. The point cloud panel opens with its 'Sample
+ * scans and LiDAR demos' disclosure unfolded and in view; the mesh panel's
+ * empty state lists its samples.
  */
 export function openDataSamples(kind: 'pointcloud' | 'mesh'): void {
-  openDataPanel(kind)
+  if (kind === 'pointcloud') usePointCloudStore.getState().openSamples()
+  else openDataPanel(kind)
 }

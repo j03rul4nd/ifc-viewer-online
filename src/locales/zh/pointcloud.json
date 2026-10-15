@@ -286,9 +286,6 @@
   "tabs": {
     "appearance": "外观",
     "placement": "位置",
-    "view": "视图",
-    "samples": "示例",
-    "help": "修复",
     "analyze": "分析"
   },
   "ui": {
