@@ -4487,6 +4487,8 @@ export default function App() {
                       onIsolate={handleIsolate}
                       onUpload={openUploadModal}
                       onOpenDemoGallery={openDemoGallery}
+                      onOpenAddData={openAddData}
+                      onOpenSceneFile={(file) => void openSceneFromFile(file, 'menu')}
                       onOpenExportModal={() => setShowExportModal(true)}
                       onOpenEmbed={() => setShowEmbedModal(true)}
                       onOpenScene={() => setShowSceneModal(true)}
