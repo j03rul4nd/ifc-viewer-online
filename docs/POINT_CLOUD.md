@@ -95,7 +95,8 @@ evidence, contract and gates.
 
 ## 2. Loading a cloud
 
-**Tools → Point cloud**, then drop a file on the panel or click to browse. You do
+**+ Add data → Point cloud** (or drop the file anywhere; E57/ReCap/FARO drops
+explain the export step), then drop a file on the panel or click to browse. You do
 not need an IFC open first — a scan on its own is a valid thing to look at.
 
 ### Sample scans
