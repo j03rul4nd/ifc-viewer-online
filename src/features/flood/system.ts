@@ -1165,6 +1165,6 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
     },
   }
   // QA handle (dev only), like the solar analysis': the scene, the API and the last grid.
-  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__flood = { api, ctx, grid: () => grid, water: () => water, overlay: () => overlay }
+  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__flood = { api, ctx, grid: () => grid, plan: () => plan, bedAt, water: () => water, overlay: () => overlay }
   return api
 }

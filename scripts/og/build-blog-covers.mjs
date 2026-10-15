@@ -166,6 +166,22 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL VIEWER · IFC AMONG LOD1 BLOCKS', es: 'VISOR REAL · IFC ENTRE BLOQUES LOD1' },
     shortTitle: 'LOD: BIM VS CITYGML',
   },
+  // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
+  'flood-simulation-ifc-model-online': {
+    source: 'public/blog/images/flood-simulation-ifc-max-depth.jpg',
+    badge: { en: 'ACTUAL VIEWER · FLOOD SIMULATION', es: 'VISOR REAL · SIMULACIÓN DE INUNDACIÓN' },
+    shortTitle: 'IFC FLOOD SIMULATION',
+  },
+  'buried-rivers-flood-risk-openstreetmap': {
+    source: 'public/blog/images/flood-buried-river-neighbours.jpg',
+    badge: { en: 'ACTUAL VIEWER · OSM WATERCOURSES', es: 'VISOR REAL · CAUCES DE OSM' },
+    shortTitle: 'BURIED RIVERS',
+  },
+  'flood-hazard-depth-velocity-explained': {
+    source: 'public/blog/images/flood-speed-flow-lines.jpg',
+    badge: { en: 'ACTUAL VIEWER · WATER SPEED', es: 'VISOR REAL · VELOCIDAD DEL AGUA' },
+    shortTitle: 'FLOOD HAZARD',
+  },
 }
 
 /** A post's real capture, by its translation cluster or, failing that, its slug. */

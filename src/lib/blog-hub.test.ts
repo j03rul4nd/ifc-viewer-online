@@ -54,8 +54,10 @@ describe('blog hub discovery', () => {
       'urban-digital-twin-live-examples',
       'bim-vs-digital-twin',
       'lod-bim-vs-citygml-level-of-detail',
+      'flood-simulation-ifc-model-online',
+      'buried-rivers-flood-risk-openstreetmap',
     ]))
-    expect(results).toHaveLength(21)
+    expect(results).toHaveLength(23)
   })
 
   it('filters by category and sorts short reads first', () => {

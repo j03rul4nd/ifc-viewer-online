@@ -367,6 +367,26 @@ cells within 3 m of the footprint itself), arrival time, outlined from amber
 Measured with Overpass: 93 streets, 17 green or soil areas, 3 old or buried
 courses, 9 walls, 36 buildings.
 
+## On the blog (2026-10-10)
+
+Three articles, in all ten languages: the setup guide
+(`flood-simulation-ifc-model-online`), buried rivers and OpenStreetMap
+(`buried-rivers-flood-risk-openstreetmap`) and the hazard rating
+(`flood-hazard-depth-velocity-explained`, with the `flood-hazard` calculator
+block). The guide's live demo is `ToolDemo` `flood-rain`: the Hotel Vela on the
+ICGC relief in the City view, started by `?flood=extreme,2m`.
+
+Every image is the running viewer: `node scripts/og/capture-flood-shots.mjs
+[--url http://localhost:3210/] [run|shot…]` drives the dev server headless on
+the real GPU (the `__flood` / `__floodStore` / `__ifcViewer` QA handles exist in
+dev only), waits for the run to finish, retries while Overpass is busy, and
+renders each shot at 1600×900 through the viewer's shot renderer with the
+legend painted in; interface shots are 2× DOM screenshots. Two things the
+captures showed and the app now does: the simulation's ground is drawn without
+holes, footprints darker (a raised ground showed the map metres below through
+them, and the water seemed to go round nothing), and a dry vertex next to water
+stays at the water's level in the water layer.
+
 ## Architecture
 
 ```

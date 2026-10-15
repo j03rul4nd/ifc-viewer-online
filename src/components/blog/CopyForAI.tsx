@@ -149,6 +149,14 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       return block.why ? `> 🛠 ${block.why}\n` : ''
     case 'bars':
       return [block.title ? `**${block.title}**` : '', ...block.items.map((i) => `- ${i.label}: ${i.value}${block.unit ?? ''}${i.note ? ` (${i.note})` : ''}`), ''].join('\n')
+    case 'flood-hazard':
+      return [
+        block.title ? `**${block.title}**` : '',
+        `${block.labels.rating}: HR = d × (v + 0.5) + DF`,
+        ...['< 0.75', '0.75–1.25', '1.25–2.0', '> 2.0'].map((r, i) => `- ${r}: ${block.labels.classes[i]} — ${block.labels.notes[i]}`),
+        block.caption ?? '',
+        '',
+      ].filter((x, i, all) => x !== '' || i === all.length - 1).join('\n')
     case 'feature-grid':
       return (
         block.items.map((i) => `**${i.icon} ${i.title}:** ${i.body}`).join('\n') + '\n'

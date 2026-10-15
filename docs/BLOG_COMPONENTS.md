@@ -99,6 +99,22 @@ bars grow once on first view (off with reduced motion). One highlighted item
 at most. Used in `browser-vs-cloud-ifc-validation`. Use `stat-row` for
 independent headline numbers, `bars` only when they share a unit and scale.
 
+## Flood hazard — `type: 'flood-hazard'`
+```ts
+{ type: 'flood-hazard', title?, caption?, depth?: 0.2, velocity?: 0.5,
+  labels: { depth, velocity, debris, debrisModes: { precautionary, urban, woodland, pasture },
+            rating, classes: [4], notes: [4], dry } }
+```
+**Problem:** a flood map says how deep the water is, and readers take depth for
+danger. Two sliders (depth 0–2.5 m, speed 0–4 m/s) and a debris-factor choice
+give the hazard rating of Defra / EA research FD2320 (`HR = d × (v + 0.5) + DF`)
+and its class, in an `aria-live` region, over a depth × speed chart of the four
+zones (decoration, `aria-hidden`). The maths is `src/lib/flood-hazard.ts`,
+tested against the published table; the labels travel with the post, so the
+translation pipeline translates them (`segments.ts`). Used in
+`flood-hazard-depth-velocity-explained`. A first parametric calculator — the
+"Considered and not built" entry below was waiting for one.
+
 ## Inline term — `{ text, def }` inside any `RichText`
 ```ts
 { type: 'p', text: ['Never straight to the ', { text: 'CDE', def: 'Common Data Environment — …' }, '.'] }
@@ -330,7 +346,7 @@ Shared CSS lives in `src/components/blog/editorial.css`; control copy in
 | Before/after image slider (still) | No post has paired before/after images. Build it with the first post that does. |
 | Interactive charts library | `bars` covers the only chartable data in the corpus; no dependency needed. |
 | Accordion / tabs block | Hiding article prose behind tabs hurts scanning and in-page search; `<details>` in steps/records covers the real need. |
-| Calculator | The obvious one (upload time) is answered by a static `bars`. Revisit with a genuinely parametric question. |
+| Calculator | The obvious one (upload time) is answered by a static `bars`. Built for the first genuinely parametric question: `flood-hazard` (depth × speed → hazard). |
 | New TOC / reading progress | Already exist (`TableOfContents`, `ReadingProgress`). |
 | Claps / likes / view counters | Vanity signals with no reader benefit and they need a backend. |
 | Callout `key` variant | Overlapped with `info`; dropped during review. |
