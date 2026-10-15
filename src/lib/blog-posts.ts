@@ -1,6 +1,7 @@
 import { SHANGHAI_POSTS_ES } from './blog-shanghai-es.ts'
 import { SHANGHAI_POSTS_EN } from './blog-shanghai-en.ts'
 import { TWIN_POSTS_EN } from './blog-twins-en.ts'
+import { TWIN_CLUSTER_POSTS_EN } from './blog-twin-cluster-en.ts'
 import { FLOOD_POSTS_EN } from './blog-flood-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
@@ -110,6 +111,12 @@ export type ContentBlock =
       sizes?: string
       credit?: string
       license?: string
+      /**
+       * The picture is drawn in each language, as `<name>-<lang>.<ext>` next
+       * to the English `src` (blog-image-lang.ts). `true` for every language,
+       * or the list of those that have their own file.
+       */
+      localized?: boolean | string[]
       /**
        * Numbered hotspots over the image (x/y in % from top-left). Each opens
        * its note in place and is listed in a legend below — use them to point
@@ -311,6 +318,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...TWIN_CLUSTER_POSTS_EN,
   ...TWIN_POSTS_EN,
   ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,

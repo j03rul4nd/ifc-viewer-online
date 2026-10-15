@@ -125,14 +125,17 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
       return paintLegend(ctx, w, h, s, c.layers, c.title, c.furniture(h / s), useVectorLayerStore.getState().legendExtras.corner)
     })
   }, [open, viewerApiRef])
+  // Map mode puts its scale and coordinate readout in the bottom-left corner.
+  const mapReadout = useGeoStore((s) => s.mapMode === 'on')
 
   // No visible data, no legend, no chip: nothing to explain.
   if (shown.length === 0 && !twin && hiddenCount === 0) return null
 
   // Each corner leaves room for what already lives there: camera controls
-  // (bottom-right), the floating tool rail (top-right), the breadcrumb (top-left).
+  // (bottom-right), the floating tool rail (top-right), the breadcrumb (top-left),
+  // and on the map its scale readout (bottom-left).
   const POS: Record<typeof extras.corner, string> = {
-    bl: 'left-4 bottom-[76px] sm:bottom-4',
+    bl: mapReadout ? 'left-4 bottom-[76px] sm:bottom-12' : 'left-4 bottom-[76px] sm:bottom-4',
     br: 'right-4 bottom-[132px] sm:bottom-[64px]',
     tl: 'left-4 top-14',
     tr: 'right-16 top-3',

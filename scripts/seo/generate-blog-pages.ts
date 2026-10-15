@@ -39,6 +39,7 @@ import { editorialCopy } from '../../src/lib/blog-editorial-copy'
 import { bimoCopy } from '../../src/components/mascot/bimo-copy'
 import { serpWidth } from '../../src/lib/serp-width'
 import { HERO_SIZES, heroSources } from '../../src/lib/blog-hero'
+import { localizedSrc } from '../../src/lib/blog-image-lang'
 import { withRights, type DigitalSourceType, type ImageRights } from './image-metadata'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
@@ -383,7 +384,7 @@ function postImages(post: BlogPost): SearchImage[] {
   for (const block of post.content) {
     if (block.type === 'image') {
       add({
-        url: mediaUrl(block.src),
+        url: mediaUrl(localizedSrc(block.src, block.localized, post.lang ?? 'en')),
         caption: block.caption ?? block.alt,
         credit: block.credit,
         license: block.license,
@@ -534,7 +535,7 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
     case 'image': {
       const width = block.width ? ` width="${block.width}"` : ''
       const height = block.height ? ` height="${block.height}"` : ''
-      return `<figure><img src="${esc(mediaUrl(block.src))}" alt="${esc(block.alt)}"${width}${height} loading="lazy" decoding="async" />${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
+      return `<figure><img src="${esc(mediaUrl(localizedSrc(block.src, block.localized, langOf(prefix))))}" alt="${esc(block.alt)}"${width}${height} loading="lazy" decoding="async" />${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
     }
     case 'spatial-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /><figcaption>${esc(block.readyLabel ?? block.title)}</figcaption></figure></section>`
@@ -1149,7 +1150,7 @@ function stampBlogImages(distDir: string): number {
     const hero = post.heroImage?.includes('/') ? mediaUrl(post.heroImage) : undefined
     if (post.heroImage && hero) for (const s of heroSources(post.heroImage)) cuts.push([mediaUrl(s.src), hero])
     for (const block of post.content) {
-      if (block.type === 'image') for (const s of block.srcSet ?? []) cuts.push([mediaUrl(s.src), mediaUrl(block.src)])
+      if (block.type === 'image') for (const s of block.srcSet ?? []) cuts.push([mediaUrl(localizedSrc(s.src, block.localized, post.lang ?? 'en')), mediaUrl(localizedSrc(block.src, block.localized, post.lang ?? 'en'))])
     }
     for (const [cut, of] of cuts) {
       const parent = rights.get(of)

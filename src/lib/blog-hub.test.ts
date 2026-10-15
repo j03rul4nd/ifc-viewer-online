@@ -51,10 +51,13 @@ describe('blog hub discovery', () => {
       'barcelona-digital-twin-open-data',
       'bus-terminal-digital-twin-mqtt',
       'tokyo-transit-digital-twin-odpt',
+      'urban-digital-twin-live-examples',
+      'bim-vs-digital-twin',
+      'lod-bim-vs-citygml-level-of-detail',
       'flood-simulation-ifc-model-online',
       'buried-rivers-flood-risk-openstreetmap',
     ]))
-    expect(results).toHaveLength(20)
+    expect(results).toHaveLength(23)
   })
 
   it('filters by category and sorts short reads first', () => {

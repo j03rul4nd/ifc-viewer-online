@@ -149,6 +149,23 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL VIEWER · LIVE ODPT DATA', es: 'VISOR REAL · DATOS ODPT EN VIVO' },
     shortTitle: 'TOKYO LIVE TWIN',
   },
+  // The cluster around them (blog-twin-cluster-en.ts). Two heroes are
+  // triptychs of real captures: three cities, and one square in three steps.
+  'urban-digital-twin-live-examples': {
+    source: 'public/blog/images/urban-digital-twin-live-examples-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · THREE LIVE CITIES', es: 'VISOR REAL · TRES CIUDADES EN VIVO' },
+    shortTitle: 'URBAN DIGITAL TWIN',
+  },
+  'bim-vs-digital-twin': {
+    source: 'public/blog/images/bim-vs-digital-twin-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · BIM → CITY → LIVE', es: 'VISOR REAL · BIM → CIUDAD → EN VIVO' },
+    shortTitle: 'BIM VS DIGITAL TWIN',
+  },
+  'lod-bim-vs-citygml-level-of-detail': {
+    source: 'public/blog/images/lod-bim-vs-citygml-level-of-detail-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · IFC AMONG LOD1 BLOCKS', es: 'VISOR REAL · IFC ENTRE BLOQUES LOD1' },
+    shortTitle: 'LOD: BIM VS CITYGML',
+  },
   // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
   'flood-simulation-ifc-model-online': {
     source: 'public/blog/images/flood-simulation-ifc-max-depth.jpg',

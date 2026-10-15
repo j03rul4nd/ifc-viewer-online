@@ -160,6 +160,25 @@ phone, and "look at the panel on the right" makes the reader hunt.
 - **Never rename a published image without a 301** in `vercel.json`. Image
   rankings follow the URL.
 
+**Images drawn per language — `localized`** (`src/lib/blog-image-lang.ts`):
+- **Why:** a diagram with English labels on the Spanish page doesn't serve the
+  Spanish reader. And to image search, one file shared by ten pages is credited
+  to only one of them.
+- **How:** the signature diagrams and the scene-explorer cards are drawn in
+  every blog language:
+  - `blog/images/<name>.png` is the English one, and it is the `src` that every
+    pack keeps, so the structure test still holds;
+  - `<name>-<lang>.png` and `<name>-<lang>-800.png` sit next to it;
+  - `localized: true` on the block, or a list of languages, makes the SPA, the
+    static page, the ImageObject, the sitemap and the rights metadata use the
+    language's file.
+- **Making them:**
+  - diagrams: `node scripts/og/build-twin-figures.mjs [figure…] [lang…]`, with
+    the copy for each language in the script;
+  - cards: captured from the running scene, switching the language through
+    the SDK.
+- `blog-images.test.ts` checks that every language has its file.
+
 ## References — `post.references` + `{ cite: id }`
 
 ```ts

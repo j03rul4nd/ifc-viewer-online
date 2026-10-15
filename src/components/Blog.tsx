@@ -22,6 +22,7 @@ import FloodHazard from './blog/FloodHazard'
 import SmartTable from './blog/SmartTable'
 import { editorialCopy } from '../lib/blog-editorial-copy'
 import { HERO_SIZES, heroSources } from '../lib/blog-hero'
+import { localizedSrc } from '../lib/blog-image-lang'
 import { serpWidth } from '../lib/serp-width'
 import { QuoteShare, SectionLink, SelectionShare } from './blog/ShareKit'
 import { StatRow } from './blog/EditorialBlocks'
@@ -360,8 +361,8 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
       return <FloodHazard title={block.title} caption={block.caption} depth={block.depth} velocity={block.velocity} labels={block.labels} lang={lang} />
 
     case 'image': {
-      const src = asset(block.src)
-      const srcSet = block.srcSet?.map((item) => `${asset(item.src)} ${item.width}w`).join(', ')
+      const src = asset(localizedSrc(block.src, block.localized, lang))
+      const srcSet = block.srcSet?.map((item) => `${asset(localizedSrc(item.src, block.localized, lang))} ${item.width}w`).join(', ')
       const ui = editorialCopy(lang)
       return (
         <AnnotatedImage
