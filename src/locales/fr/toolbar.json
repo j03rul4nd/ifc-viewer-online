@@ -164,8 +164,8 @@
   "exportSettings": "Paramètres d'export…",
   "menu": {
     "openIfc": "Ouvrir un fichier IFC…",
-    "openTooltip": "Ouvrir — fichiers IFC, modèles de démo et autres données",
-    "addData": "Ajouter à la scène",
+    "openTooltip": "Ouvrir — fichiers IFC, modèles de démo et fichiers de scène",
+    "addData": "Ajouter des données",
     "check": "Vérifier",
     "checkTooltip": "Vérifier — problèmes en 3D, IDS, comparer des versions",
     "issuesIn3d": "Afficher les problèmes en 3D",
@@ -185,7 +185,9 @@
     "edit": "Modifier",
     "help": "Aide",
     "idsCheck": "Vérifier avec un IDS…",
-    "compareVersions": "Comparer des versions…"
+    "compareVersions": "Comparer des versions…",
+    "addDataTooltip": "Ajouter des données — scans, vidéo, modèles 3D, couches cartographiques et appareils en direct",
+    "openScene": "Ouvrir un fichier de scène…"
   },
   "mobileBar": {
     "models": "{{count}} modèle",
@@ -193,5 +195,83 @@
     "elements": "{{n}} éléments",
     "openScene": "Scène et modèles",
     "score": "Health Score {{score}} — ouvrir la validation"
+  },
+  "sun": "Soleil",
+  "sunTooltip": "Étude soleil et lune — ombres réelles selon la date, l’heure et le lieu",
+  "addData": {
+    "title": "Ajouter des données à la scène",
+    "description": "Les fichiers sont lus dans votre navigateur : rien n’est envoyé.",
+    "dropTitle": "Déposez des fichiers ici",
+    "dropHint": "Mélangez ces formats à volonté : chaque fichier va à sa place.",
+    "chooseFiles": "Choisir des fichiers…",
+    "chooseFile": "Choisir un fichier…",
+    "fromUpload": "Scans, vidéo, modèles 3D ou couches cartographiques ?",
+    "groups": {
+      "capture": "Capture de la réalité",
+      "models": "Modèles",
+      "context": "Carte et données en direct",
+      "scenes": "Scènes"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "Nuage de points",
+        "desc": "Scans laser et photogrammétrie par drone. Ils se posent sur votre modèle quand le fichier indique où ils se trouvent."
+      },
+      "video": {
+        "title": "Vidéo 3D",
+        "desc": "Images de chantier ou de drone sur un écran, au sol ou calées sur la caméra qui les a filmées."
+      },
+      "ifc": {
+        "title": "Modèle IFC",
+        "desc": "Les modèles de chaque discipline se fédèrent en une scène. Chacun est vérifié avant chargement ; le premier fixe les coordonnées."
+      },
+      "mesh": {
+        "title": "Modèle 3D",
+        "desc": "Accessoires et modèles de contexte en glTF ou OBJ, posés au sol de votre modèle."
+      },
+      "map": {
+        "title": "Carte et terrain",
+        "desc": "Fond de carte, terrain 3D et bâtiments autour d’un modèle géoréférencé."
+      },
+      "layers": {
+        "title": "Couches de données",
+        "desc": "Points, itinéraires et zones depuis des fichiers GeoJSON ou CSV, des URL, des services WFS ou des flux publics en direct."
+      },
+      "devices": {
+        "title": "Appareils en direct",
+        "desc": "Capteurs via REST, WebSocket ou MQTT, liés à des éléments IFC."
+      },
+      "scene": {
+        "title": "Fichier de scène",
+        "desc": "Un .scene.json que l’on vous a partagé. L’ouvrir remplace la scène actuelle."
+      }
+    },
+    "pointcloudNote": "E57, ReCap ou FARO ? Exportez d’abord en LAS, LAZ ou PLY.",
+    "action": {
+      "samples": "Exemples",
+      "liveAndDemo": "Caméra, écran et démo",
+      "sources": "URL, WFS et flux en direct",
+      "connect": "Connecter une source",
+      "setUpMap": "Configurer la carte",
+      "openPanel": "Ouvrir le panneau"
+    },
+    "inScene": "{{count}} dans la scène",
+    "inScene_other": "{{count}} dans la scène",
+    "needsModel": "Nécessite d’abord un modèle IFC dans la scène"
+  },
+  "drop": {
+    "title": "Déposez pour ajouter à la scène",
+    "count": "{{count}} fichier",
+    "count_other": "{{count}} fichiers",
+    "legend": "Chaque fichier va à sa place :",
+    "adding": "Ajout à la scène : {{names}}",
+    "afterReview": "{{names}} sera ajouté après la vérification de l’IFC",
+    "more": "{{names}} et {{n}} de plus",
+    "skipped": "{{count}} fichier ignoré",
+    "skipped_other": "{{count}} fichiers ignorés",
+    "show": "Afficher",
+    "sceneReplace": "Ouvrir « {{name}} » remplace la scène actuelle.",
+    "openScene": "Ouvrir la scène",
+    "sceneAlone": "Un fichier de scène s’ouvre seul. Ajoutez les autres fichiers une fois qu’il est chargé."
   }
 }
