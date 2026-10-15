@@ -203,7 +203,9 @@
         "projectName": "Same project and site",
         "proximity": "Geographic proximity",
         "single": "Single file"
-      }
+      },
+      "editScan": "Edit in Point cloud panel",
+      "topics": "Topics: {{names}}"
     },
     "scope": {
       "label": "Scope",

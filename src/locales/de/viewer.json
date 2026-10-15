@@ -191,7 +191,9 @@
         "projectName": "Gleiches Projekt und Grundstück",
         "proximity": "Geografische Nähe",
         "single": "Einzelne Datei"
-      }
+      },
+      "editScan": "Im Punktwolken-Panel bearbeiten",
+      "topics": "Themen: {{names}}"
     },
     "scope": {
       "label": "Bereich",

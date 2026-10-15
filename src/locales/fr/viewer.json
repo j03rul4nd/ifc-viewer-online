@@ -191,7 +191,9 @@
         "projectName": "Même projet et site",
         "proximity": "Proximité géographique",
         "single": "Fichier unique"
-      }
+      },
+      "editScan": "Modifier dans le panneau Nuage de points",
+      "topics": "Thèmes : {{names}}"
     },
     "scope": {
       "label": "Portée",

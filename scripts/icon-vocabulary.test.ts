@@ -57,3 +57,15 @@ describe('data icons', () => {
     }
   })
 })
+
+describe('point cloud surfaces', () => {
+  it('never borrow Film, Zap or Building', () => {
+    const dir = join(ROOT, 'src/components/pointcloud')
+    const files = [
+      'src/components/PointCloudPanel.tsx',
+      ...(existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.tsx')).map((f) => `src/components/pointcloud/${f}`) : []),
+    ]
+    expect(files.length).toBeGreaterThan(1)
+    for (const f of files) expect(read(f), f).not.toMatch(/Icons\.(Film|Zap|Building)\b/)
+  })
+})

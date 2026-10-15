@@ -191,7 +191,9 @@
         "projectName": "同一项目和场地",
         "proximity": "地理邻近",
         "single": "单个文件"
-      }
+      },
+      "editScan": "在点云面板中编辑",
+      "topics": "主题：{{names}}"
     },
     "scope": {
       "label": "范围",
