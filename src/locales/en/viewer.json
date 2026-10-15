@@ -354,6 +354,16 @@
     "properties": "Properties",
     "fromType": "type",
     "attributes": "Attributes",
-    "copied": "Copied"
+    "copied": "Copied",
+    "story": {
+      "label": "Guided tour",
+      "step": "{{n}} of {{total}}",
+      "next": "Next",
+      "back": "Back",
+      "close": "Close the tour",
+      "finish": "Explore on your own",
+      "resume": "Guided tour",
+      "now": "Live now"
+    }
   }
 }

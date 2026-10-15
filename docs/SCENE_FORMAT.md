@@ -125,11 +125,44 @@ why a scene stores its models in order and applies its camera last.
 When there is no host at all, the `#scene=` link works without one, within its size
 limit.
 
+## A guided tour — `story`
+
+A live twin is easy to open and hard to read: a 3D model with coloured posts
+says nothing to someone who doesn't know what the colours mean, where the data
+comes from or why it matters. A scene can carry a short tour that says it.
+`src/lib/scene-doc/scene-story.ts` parses it, and `SceneStory.tsx` shows it in
+articles and kiosks, wherever the scene explorer runs.
+
+```json
+"story": { "steps": [
+  { "title": { "en": "A bike station that reports itself", "es": "Una estación que se informa sola" },
+    "text":  { "en": "…Right now: {value} bikes available.", "es": "…Ahora mismo: {value} bicis disponibles." },
+    "binding": "bicing-65-docks" },
+  { "title": "Your turn", "text": "Click any asset…",
+    "camera": { "position": [-95, 75, 30], "target": [30, 0, 170] } }
+] }
+```
+
+**Fields:**
+- **`title` and `text`:**
+  - Either one string per language code, or a single plain string that serves every language.
+  - The viewer picks the reader's language, then its base language, then English.
+- **`binding`:** the step frames that binding's elements and shows its live value and state. `{value}` in the text quotes the value, or an ellipsis until it arrives.
+- **`camera`:** scene coordinates, as in `view.camera`. When present, it wins over `binding` for where the camera goes.
+
+**Behaviour:**
+- The tour never takes over:
+  - the first step keeps the view the scene opened with;
+  - the camera moves only when the reader presses Next;
+  - × folds the tour into a pill;
+  - on a phone it steps aside while an element's card is open.
+- Up to 12 steps. Invalid steps are dropped with a warning that names them.
+
 ## What a scene does not (yet) carry
 
 - **Point clouds and meshes.** `?scan=` exists as a URL parameter but is not part of
   v1.
-- **Sections, measurements, model groups, tours.** A tour has its own `#tour=` link.
+- **Sections, measurements, model groups, issue tours.** An issue tour has its own `#tour=` link (the guided `story` above is something else: it explains the scene).
 - **Recorded history of live layers.** It stays on the device that recorded it.
 - **Per-model visibility or opacity.**
 

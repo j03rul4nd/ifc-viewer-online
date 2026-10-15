@@ -186,7 +186,7 @@ import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
-import { confirmExternalData, hostsIn, layersSetupHosts } from './lib/privacy/external-data'
+import { confirmExternalData, hostsIn, layersSetupHosts, useExternalDataPrompt } from './lib/privacy/external-data'
 import { ExternalDataPrompt } from './components/ExternalDataPrompt'
 import { appBus, MAP_CONSENT_DECLINED } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
@@ -1049,6 +1049,14 @@ export default function App() {
     const bg = scene?.doc.view.background && !new URLSearchParams(window.location.search).has('bg')
       ? parseBackgroundSpec(scene.doc.view.background) : null
     if (bg) useSceneStore.getState().setBackground(bg, { persist: false })
+    // Its data question comes once the models are in (below); the map's would
+    // come first, and the visitor would read two dialogs in a row. The map's
+    // waits for it, so both are one — unless the models never settle.
+    const asksForData = !!scene && (scene.doc.layers.length > 0 || (scene.doc.twin?.sources.length ?? 0) > 0)
+    if (!asksForData) return
+    useExternalDataPrompt.getState().expect(true)
+    const release = window.setTimeout(() => useExternalDataPrompt.getState().expect(false), 60_000)
+    return () => window.clearTimeout(release)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

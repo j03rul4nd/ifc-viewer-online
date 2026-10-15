@@ -166,6 +166,22 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL VIEWER · IFC AMONG LOD1 BLOCKS', es: 'VISOR REAL · IFC ENTRE BLOQUES LOD1' },
     shortTitle: 'LOD: BIM VS CITYGML',
   },
+  // Second wave (blog-twin-cluster2-en.ts).
+  'digital-twin-maturity-levels': {
+    source: 'public/blog/images/digital-twin-maturity-levels-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · GUIDED TOUR, LIVE DATA', es: 'VISOR REAL · RECORRIDO GUIADO EN VIVO' },
+    shortTitle: 'DIGITAL TWIN MATURITY',
+  },
+  'citygml-vs-ifc-vs-3d-tiles': {
+    source: 'public/blog/images/citygml-vs-ifc-vs-3d-tiles-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · IFC IN THE CITY MODEL', es: 'VISOR REAL · IFC EN EL MODELO DE CIUDAD' },
+    shortTitle: 'CITYGML VS IFC VS 3D TILES',
+  },
+  'city-open-data-browser-test': {
+    source: 'public/blog/images/city-open-data-browser-test-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · OPEN DATA ON THE MAP', es: 'VISOR REAL · DATOS ABIERTOS EN EL MAPA' },
+    shortTitle: 'CITY OPEN DATA TEST',
+  },
   // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
   'flood-simulation-ifc-model-online': {
     source: 'public/blog/images/flood-simulation-ifc-max-depth.jpg',

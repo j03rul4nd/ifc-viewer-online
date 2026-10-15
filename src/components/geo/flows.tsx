@@ -18,6 +18,7 @@ import { useModelSites } from './useModelSites'
 import { Button, Field, Hint, LookSlider, Notice, NudgeBtn, Sheet } from './ui'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { Modal } from '../Modal'
+import { useExternalDataPrompt, useMapConsentBridge } from '../../lib/privacy/external-data'
 
 // Leaflet (~150 kB) loads only when a map surface is actually shown — opening
 // the panel to read a georeferencing status must not pay for it.
@@ -362,9 +363,20 @@ function NumberInput({ value, onCommit, step }: { value: number; onCommit: (v: n
 export function ConsentDialog() {
   const { t } = useTranslation('geo')
   const ctl = useGeoCtl()
-  const open = ctl.flow?.kind === 'consent'
+  const asking = ctl.flow?.kind === 'consent'
   const activeModelId = useSceneStore((s) => s.activeModelId)
   const isMobile = useIsMobile()
+  // While a link's live-data question is up too, both are asked as one
+  // (ExternalDataPrompt): this question waits there, and steps aside. It also
+  // waits for one that is on its way (a scene asks once its models are in).
+  const dataAsking = useExternalDataPrompt((s) => s.queue.length > 0 || s.expecting)
+  const { acceptConsent, declineConsent } = ctl
+  useEffect(() => {
+    if (!asking || !activeModelId) return
+    useMapConsentBridge.getState().set(acceptConsent, declineConsent)
+    return () => useMapConsentBridge.getState().clear()
+  }, [asking, activeModelId, acceptConsent, declineConsent])
+  const open = asking && !dataAsking
   // On a phone the map panel is a bottom sheet portalled to <body> at z-59;
   // this dialog lives in the viewport at z-30, so it opened BEHIND the sheet
   // and the map could not be switched on at all. There it is the shared Modal,

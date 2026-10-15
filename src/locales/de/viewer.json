@@ -342,6 +342,16 @@
     "properties": "Eigenschaften",
     "fromType": "Typ",
     "attributes": "Attribute",
-    "copied": "Kopiert"
+    "copied": "Kopiert",
+    "story": {
+      "label": "Geführte Tour",
+      "step": "{{n}} von {{total}}",
+      "next": "Weiter",
+      "back": "Zurück",
+      "close": "Tour schließen",
+      "finish": "Selbst erkunden",
+      "resume": "Geführte Tour",
+      "now": "Jetzt live"
+    }
   }
 }

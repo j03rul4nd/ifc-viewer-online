@@ -342,6 +342,16 @@
     "properties": "Propriétés",
     "fromType": "type",
     "attributes": "Attributs",
-    "copied": "Copié"
+    "copied": "Copié",
+    "story": {
+      "label": "Visite guidée",
+      "step": "{{n}} sur {{total}}",
+      "next": "Suivant",
+      "back": "Retour",
+      "close": "Fermer la visite",
+      "finish": "Explorer librement",
+      "resume": "Visite guidée",
+      "now": "En direct"
+    }
   }
 }

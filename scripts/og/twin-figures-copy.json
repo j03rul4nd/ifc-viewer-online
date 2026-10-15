@@ -1,0 +1,1272 @@
+{
+  "en": {
+    "maturity": {
+      "kicker": "Digital twin maturity",
+      "title": "Five levels of a digital twin, and where these examples stand",
+      "lede": "The ladder Autodesk and Verdantix describe, each step shown on a real model, or marked plainly where it is not here.",
+      "levels": [
+        [
+          "Descriptive",
+          "A live, editable model of the asset, in its place",
+          "IFC models on the real terrain of Barcelona"
+        ],
+        [
+          "Informative",
+          "Operational and sensor data on the model",
+          "Bike docks, bus bays and stations coloured by live open data"
+        ],
+        [
+          "Predictive",
+          "Insights and forecasts from the data collected",
+          "Readings are recorded as trends, not forecast"
+        ],
+        [
+          "Comprehensive",
+          "What-if scenarios run on the model",
+          "Sun and shadow studies, rain-flood simulation"
+        ],
+        [
+          "Autonomous",
+          "Learns, decides and acts on its own",
+          "On purpose: a public demo should not switch anything"
+        ]
+      ],
+      "here": "Here",
+      "notHere": "Not here",
+      "tag": "Most useful twins live at levels 2 and 4. Level 5 is rare, and needs far more than a model.",
+      "source": "Levels: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Open data for digital twins",
+      "title": "Which city feeds can a web page read?",
+      "lede": "28 public endpoints in 20 cities, requested as a browser would. Green: the publisher allows it (CORS). Red: only a server could read it.",
+      "cols": [
+        "Bike share",
+        "Transit",
+        "City data"
+      ],
+      "readable": "Readable",
+      "blocked": "Blocked",
+      "untested": "Not tested",
+      "viaMqtt": "MQTT stream readable",
+      "tag": "25 of 28 are readable from a browser. Bike share is the most open: every GBFS feed but one.",
+      "source": "Tested 15 Oct 2026 · data: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcelona",
+        "Madrid": "Madrid",
+        "Spain": "Spain (national)",
+        "Paris": "Paris",
+        "London": "London",
+        "Oslo": "Oslo",
+        "Helsinki": "Helsinki",
+        "Vienna": "Vienna",
+        "Berlin": "Berlin",
+        "Zurich": "Zurich",
+        "Tokyo": "Tokyo",
+        "Singapore": "Singapore",
+        "New York": "New York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Montreal",
+        "Mexico City": "Mexico City",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formats for city digital twins",
+      "title": "CityGML, IFC and 3D Tiles: three jobs, not three rivals",
+      "lede": "Each answers a different question. A city twin often uses all three.",
+      "rows": [
+        [
+          "What it describes",
+          "City objects: buildings, roads, terrain, vegetation",
+          "One built asset, element by element",
+          "Any 3D content, cut into tiles for streaming"
+        ],
+        [
+          "Typical scale",
+          "A district to a whole country",
+          "One building, bridge or station",
+          "Anything, up to the whole planet"
+        ],
+        [
+          "Meaning",
+          "Classes and attributes per city object",
+          "Types, properties, relationships, systems",
+          "Whatever metadata the tiles carry"
+        ],
+        [
+          "Geometry",
+          "Surfaces, at levels of detail LOD0–3",
+          "Precise solids, one per element",
+          "Meshes (glTF) and point clouds"
+        ],
+        [
+          "Real-world position",
+          "Built in: a coordinate system per dataset",
+          "Optional: IfcMapConversion",
+          "Built in: Earth-centred or local frame"
+        ],
+        [
+          "Delivery",
+          "Files or a database; CityJSON for the web",
+          "One file per model",
+          "Streamed tile by tile, coarse to fine"
+        ],
+        [
+          "Standard",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "OGC Community Standard"
+        ]
+      ],
+      "tag": "CityGML for the city, IFC for the assets that matter, 3D Tiles to stream either to a browser.",
+      "source": "Sources: OGC, buildingSMART, ISO"
+    }
+  },
+  "es": {
+    "maturity": {
+      "kicker": "Madurez del gemelo digital",
+      "title": "Cinco niveles de un gemelo digital y dónde se sitúan estos ejemplos",
+      "lede": "La escala que describen Autodesk y Verdantix, cada nivel sobre un modelo real o marcado claramente donde aquí no lo hay.",
+      "levels": [
+        [
+          "Descriptivo",
+          "Un modelo vivo y editable del activo, en su lugar",
+          "Modelos IFC sobre el terreno real de Barcelona"
+        ],
+        [
+          "Informativo",
+          "Datos operativos y de sensores en el modelo",
+          "Anclajes, dársenas y estaciones coloreados con datos abiertos en vivo"
+        ],
+        [
+          "Predictivo",
+          "Conclusiones y previsiones a partir de los datos",
+          "Lecturas guardadas como tendencias, sin previsión"
+        ],
+        [
+          "Integral",
+          "Escenarios hipotéticos sobre el modelo",
+          "Estudios de sol y sombras; inundación por lluvia"
+        ],
+        [
+          "Autónomo",
+          "Aprende, decide y actúa por sí solo",
+          "A propósito: una demo pública no debe accionar nada"
+        ]
+      ],
+      "here": "Aquí",
+      "notHere": "Aquí no",
+      "tag": "Casi todos los gemelos útiles están en los niveles 2 y 4. El 5 es raro y exige mucho más que un modelo.",
+      "source": "Niveles: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Datos abiertos para gemelos digitales",
+      "title": "¿Qué feeds urbanos puede leer una página web?",
+      "lede": "28 endpoints públicos en 20 ciudades, solicitados como lo haría un navegador. Verde: el proveedor lo permite (CORS). Rojo: solo un servidor podría leerlo.",
+      "cols": [
+        "Bicicleta compartida",
+        "Transporte",
+        "Datos urbanos"
+      ],
+      "readable": "Legible",
+      "blocked": "Bloqueado",
+      "untested": "No probado",
+      "viaMqtt": "Flujo MQTT legible",
+      "tag": "25 de 28 se leen desde un navegador. Lo más abierto, la bicicleta compartida: todos los feeds GBFS menos uno.",
+      "source": "Probado el 15 oct. 2026 · datos: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcelona",
+        "Madrid": "Madrid",
+        "Spain": "España (nacional)",
+        "Paris": "París",
+        "London": "Londres",
+        "Oslo": "Oslo",
+        "Helsinki": "Helsinki",
+        "Vienna": "Viena",
+        "Berlin": "Berlín",
+        "Zurich": "Zúrich",
+        "Tokyo": "Tokio",
+        "Singapore": "Singapur",
+        "New York": "Nueva York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Montreal",
+        "Mexico City": "Ciudad de México",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formatos para gemelos digitales urbanos",
+      "title": "CityGML, IFC y 3D Tiles: tres trabajos, no tres rivales",
+      "lede": "Cada uno responde a una pregunta distinta. Un gemelo urbano suele usar los tres.",
+      "rows": [
+        [
+          "Qué describe",
+          "Objetos de ciudad: edificios, calles, terreno, vegetación",
+          "Un activo construido, elemento a elemento",
+          "Cualquier contenido 3D, en teselas para streaming"
+        ],
+        [
+          "Escala habitual",
+          "De un barrio a un país entero",
+          "Un edificio, puente o estación",
+          "Cualquiera, hasta el planeta entero"
+        ],
+        [
+          "Significado",
+          "Clases y atributos por objeto de ciudad",
+          "Tipos, propiedades, relaciones, sistemas",
+          "Los metadatos que lleven las teselas"
+        ],
+        [
+          "Geometría",
+          "Superficies en niveles de detalle LOD0–3",
+          "Sólidos precisos, uno por elemento",
+          "Mallas (glTF) y nubes de puntos"
+        ],
+        [
+          "Posición real",
+          "Integrada: un CRS por conjunto de datos",
+          "Opcional: IfcMapConversion",
+          "Integrada: marco geocéntrico o local"
+        ],
+        [
+          "Distribución",
+          "Archivos o base de datos; CityJSON para la web",
+          "Un archivo por modelo",
+          "En streaming por teselas, de menos a más detalle"
+        ],
+        [
+          "Estándar",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "Estándar comunitario del OGC"
+        ]
+      ],
+      "tag": "CityGML para la ciudad, IFC para los activos clave y 3D Tiles para llevar ambos al navegador.",
+      "source": "Fuentes: OGC, buildingSMART, ISO"
+    }
+  },
+  "ca": {
+    "maturity": {
+      "kicker": "Maduresa del bessó digital",
+      "title": "Cinc nivells d’un bessó digital, i on són aquests exemples",
+      "lede": "L’escala que descriuen Autodesk i Verdantix, cada graó sobre un model real, o marcat clarament quan aquí no hi és.",
+      "levels": [
+        [
+          "Descriptiu",
+          "Un model viu i editable de l’actiu, al seu lloc",
+          "Models IFC sobre el terreny real de Barcelona"
+        ],
+        [
+          "Informatiu",
+          "Dades operatives i de sensors sobre el model",
+          "Ancoratges, dàrsenes i estacions acolorits per dades obertes en viu"
+        ],
+        [
+          "Predictiu",
+          "Conclusions i previsions de les dades recollides",
+          "Lectures desades com a tendències, sense previsions"
+        ],
+        [
+          "Integral",
+          "Escenaris hipotètics sobre el model",
+          "Estudis de sol i ombres, inundació per pluja"
+        ],
+        [
+          "Autònom",
+          "Aprèn, decideix i actua pel seu compte",
+          "Expressament: una demostració pública no ha d’accionar res"
+        ]
+      ],
+      "here": "Aquí",
+      "notHere": "Aquí no",
+      "tag": "La majoria de bessons útils són als nivells 2 i 4. El 5 és rar i necessita molt més que un model.",
+      "source": "Nivells: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Dades obertes i bessons digitals",
+      "title": "Quines fonts urbanes pot llegir un web?",
+      "lede": "28 punts d’accés públics en 20 ciutats, consultats com un navegador. Verd: el publicador ho permet (CORS). Vermell: només ho llegeix un servidor.",
+      "cols": [
+        "Bici compartida",
+        "Transport",
+        "Dades urbanes"
+      ],
+      "readable": "Llegible",
+      "blocked": "Bloquejat",
+      "untested": "No provat",
+      "viaMqtt": "Flux MQTT llegible",
+      "tag": "25 de 28 es llegeixen des d’un navegador. La bici compartida és la més oberta: tots els GBFS menys un.",
+      "source": "Provat el 15 oct. 2026 · dades: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcelona",
+        "Madrid": "Madrid",
+        "Spain": "Espanya (estatal)",
+        "Paris": "París",
+        "London": "Londres",
+        "Oslo": "Oslo",
+        "Helsinki": "Hèlsinki",
+        "Vienna": "Viena",
+        "Berlin": "Berlín",
+        "Zurich": "Zuric",
+        "Tokyo": "Tòquio",
+        "Singapore": "Singapur",
+        "New York": "Nova York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Mont-real",
+        "Mexico City": "Ciutat de Mèxic",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formats per al bessó digital urbà",
+      "title": "CityGML, IFC i 3D Tiles: tres feines, no tres rivals",
+      "lede": "Cadascun respon una pregunta diferent; un bessó urbà sovint els usa tots tres.",
+      "rows": [
+        [
+          "Què descriu",
+          "Objectes urbans: edificis, carrers, terreny, vegetació",
+          "Un actiu construït, element per element",
+          "Tot contingut 3D, en tessel·les per a streaming"
+        ],
+        [
+          "Escala habitual",
+          "D’un districte a tot un país",
+          "Un edifici, pont o estació",
+          "Qualsevol, fins a tot el planeta"
+        ],
+        [
+          "Significat",
+          "Classes i atributs per objecte urbà",
+          "Tipus, propietats, relacions, sistemes",
+          "Les metadades que porti cada tessel·la"
+        ],
+        [
+          "Geometria",
+          "Superfícies, en nivells de detall LOD0–3",
+          "Sòlids precisos, un per element",
+          "Malles (glTF) i núvols de punts"
+        ],
+        [
+          "Posició al món real",
+          "Integrada: un CRS per conjunt de dades",
+          "Opcional: IfcMapConversion",
+          "Integrada: geocèntrica o marc local"
+        ],
+        [
+          "Lliurament",
+          "Fitxers o base de dades; CityJSON per al web",
+          "Un fitxer per model",
+          "Per tessel·les, de menys a més detall"
+        ],
+        [
+          "Estàndard",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "Estàndard comunitari OGC"
+        ]
+      ],
+      "tag": "CityGML per a la ciutat, IFC per als actius que importen, 3D Tiles per portar-los al navegador.",
+      "source": "Fonts: OGC, buildingSMART, ISO"
+    }
+  },
+  "de": {
+    "maturity": {
+      "kicker": "Reifegrade digitaler Zwillinge",
+      "title": "Fünf Stufen eines digitalen Zwillings und wo diese Beispiele stehen",
+      "lede": "Das Stufenmodell von Autodesk und Verdantix, jede Stufe an einem echten Modell gezeigt oder klar markiert, wo sie hier fehlt.",
+      "levels": [
+        [
+          "Deskriptiv",
+          "Aktuelles, bearbeitbares Modell des Assets an seinem Ort",
+          "IFC-Modelle auf dem realen Gelände von Barcelona"
+        ],
+        [
+          "Informativ",
+          "Betriebs- und Sensordaten am Modell",
+          "Docks, Bussteige, Bahnhöfe, gefärbt von offenen Live-Daten"
+        ],
+        [
+          "Prädiktiv",
+          "Erkenntnisse und Prognosen aus den gesammelten Daten",
+          "Messwerte als Verläufe aufgezeichnet, ohne Prognose"
+        ],
+        [
+          "Umfassend",
+          "Was-wäre-wenn-Szenarien am Modell",
+          "Sonnen- und Schattenstudien, Starkregen-Simulation"
+        ],
+        [
+          "Autonom",
+          "Lernt, entscheidet, handelt eigenständig",
+          "Bewusst: Eine öffentliche Demo darf nichts schalten"
+        ]
+      ],
+      "here": "Hier",
+      "notHere": "Nicht hier",
+      "tag": "Nützliche Zwillinge stehen meist auf Stufe 2 und 4. Stufe 5 ist selten und braucht weit mehr als ein Modell.",
+      "source": "Stufen: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Open Data für digitale Zwillinge",
+      "title": "Welche Stadt-Feeds kann eine Webseite lesen?",
+      "lede": "28 öffentliche Endpunkte in 20 Städten, abgefragt wie von einem Browser. Grün: Der Herausgeber erlaubt es (CORS). Rot: Nur ein Server könnte ihn lesen.",
+      "cols": [
+        "Bikesharing",
+        "ÖPNV",
+        "Stadtdaten"
+      ],
+      "readable": "Lesbar",
+      "blocked": "Blockiert",
+      "untested": "Nicht getestet",
+      "viaMqtt": "MQTT-Stream lesbar",
+      "tag": "25 von 28 sind aus dem Browser lesbar. Bikesharing ist am offensten: jeder GBFS-Feed bis auf einen.",
+      "source": "Getestet am 15. Okt. 2026 · Daten: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcelona",
+        "Madrid": "Madrid",
+        "Spain": "Spanien (national)",
+        "Paris": "Paris",
+        "London": "London",
+        "Oslo": "Oslo",
+        "Helsinki": "Helsinki",
+        "Vienna": "Wien",
+        "Berlin": "Berlin",
+        "Zurich": "Zürich",
+        "Tokyo": "Tokio",
+        "Singapore": "Singapur",
+        "New York": "New York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Montreal",
+        "Mexico City": "Mexiko-Stadt",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formate für digitale Stadtzwillinge",
+      "title": "CityGML, IFC und 3D Tiles: drei Aufgaben, keine drei Rivalen",
+      "lede": "Jedes beantwortet eine andere Frage. Ein Stadtzwilling nutzt oft alle drei.",
+      "rows": [
+        [
+          "Was es beschreibt",
+          "Stadtobjekte: Gebäude, Straßen, Gelände, Vegetation",
+          "Ein Bauwerk, Element für Element",
+          "Beliebige 3D-Inhalte, in Kacheln zum Streamen"
+        ],
+        [
+          "Typischer Maßstab",
+          "Vom Quartier bis zum ganzen Land",
+          "Gebäude, Brücke oder Bahnhof",
+          "Alles, bis hin zum ganzen Planeten"
+        ],
+        [
+          "Semantik",
+          "Klassen und Attribute je Stadtobjekt",
+          "Typen, Eigenschaften, Beziehungen, Systeme",
+          "Was die Kacheln an Metadaten mitführen"
+        ],
+        [
+          "Geometrie",
+          "Flächen in Detaillierungsgraden LOD0–3",
+          "Präzise Volumenkörper je Element",
+          "Meshes (glTF) und Punktwolken"
+        ],
+        [
+          "Reale Position",
+          "Integriert: ein Koordinatensystem je Datensatz",
+          "Optional: IfcMapConversion",
+          "Integriert: erdzentriert oder lokal"
+        ],
+        [
+          "Auslieferung",
+          "Dateien oder Datenbank; CityJSON fürs Web",
+          "Eine Datei je Modell",
+          "Kachelweise gestreamt, von grob nach fein"
+        ],
+        [
+          "Standard",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "OGC Community Standard"
+        ]
+      ],
+      "tag": "CityGML für die Stadt, IFC für die wichtigen Assets, 3D Tiles, um beides in einen Browser zu streamen.",
+      "source": "Quellen: OGC, buildingSMART, ISO"
+    }
+  },
+  "fr": {
+    "maturity": {
+      "kicker": "Maturité du jumeau numérique",
+      "title": "Cinq niveaux de jumeau numérique, et où en sont ces exemples",
+      "lede": "L’échelle d’Autodesk et Verdantix : chaque marche illustrée par une maquette réelle, ou signalée clairement quand elle manque.",
+      "levels": [
+        [
+          "Descriptif",
+          "Maquette vivante et modifiable de l’actif, en place",
+          "Maquettes IFC sur le terrain réel de Barcelone"
+        ],
+        [
+          "Informatif",
+          "Données d’exploitation et capteurs sur la maquette",
+          "Points d’ancrage, quais et stations colorés par l’open data en direct"
+        ],
+        [
+          "Prédictif",
+          "Analyses et prévisions tirées des données collectées",
+          "Lectures enregistrées en tendances, sans prévision"
+        ],
+        [
+          "Complet",
+          "Scénarios de simulation sur la maquette",
+          "Ensoleillement et ombres, inondation pluviale"
+        ],
+        [
+          "Autonome",
+          "Apprend, décide et agit seul",
+          "Choix délibéré : une démo publique ne doit rien actionner"
+        ]
+      ],
+      "here": "Ici",
+      "notHere": "Pas ici",
+      "tag": "Les jumeaux utiles sont surtout aux niveaux 2 et 4. Le 5 est rare et exige bien plus qu’une maquette.",
+      "source": "Niveaux : Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Open data pour jumeaux numériques",
+      "title": "Quels flux urbains une page web peut-elle lire ?",
+      "lede": "28 points d’accès publics dans 20 villes, interrogés comme par un navigateur. Vert : l’éditeur l’autorise (CORS). Rouge : seul un serveur peut le lire.",
+      "cols": [
+        "Vélopartage",
+        "Transports",
+        "Données urbaines"
+      ],
+      "readable": "Lisible",
+      "blocked": "Bloqué",
+      "untested": "Non testé",
+      "viaMqtt": "Flux MQTT lisible",
+      "tag": "25 sur 28 lisibles depuis un navigateur. Le vélopartage est le plus ouvert : tous les flux GBFS sauf un.",
+      "source": "Testé le 15 oct. 2026 · données : ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcelone",
+        "Madrid": "Madrid",
+        "Spain": "Espagne (national)",
+        "Paris": "Paris",
+        "London": "Londres",
+        "Oslo": "Oslo",
+        "Helsinki": "Helsinki",
+        "Vienna": "Vienne",
+        "Berlin": "Berlin",
+        "Zurich": "Zurich",
+        "Tokyo": "Tokyo",
+        "Singapore": "Singapour",
+        "New York": "New York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Montréal",
+        "Mexico City": "Mexico",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formats pour jumeaux de ville",
+      "title": "CityGML, IFC et 3D Tiles : trois rôles, pas trois rivaux",
+      "lede": "Chacun répond à sa question. Un jumeau de ville utilise souvent les trois.",
+      "rows": [
+        [
+          "Ce qu’il décrit",
+          "Objets urbains : bâtiments, voirie, terrain, végétation",
+          "Un ouvrage, élément par élément",
+          "Tout contenu 3D, découpé en tuiles à diffuser"
+        ],
+        [
+          "Échelle typique",
+          "Du quartier au pays entier",
+          "Un bâtiment, un pont ou une gare",
+          "Tout, jusqu’à la planète entière"
+        ],
+        [
+          "Sémantique",
+          "Classes et attributs par objet urbain",
+          "Types, propriétés, relations, systèmes",
+          "Métadonnées portées par les tuiles"
+        ],
+        [
+          "Géométrie",
+          "Surfaces, aux niveaux de détail LOD0–3",
+          "Solides précis, un par élément",
+          "Maillages (glTF) et nuages de points"
+        ],
+        [
+          "Position réelle",
+          "Intégrée : un repère par jeu de données",
+          "Facultative : IfcMapConversion",
+          "Intégrée : repère géocentrique ou local"
+        ],
+        [
+          "Diffusion",
+          "Fichiers ou BDD ; CityJSON pour le web",
+          "Un fichier par maquette",
+          "Tuile par tuile, du grossier au fin"
+        ],
+        [
+          "Standard",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "Standard communautaire OGC"
+        ]
+      ],
+      "tag": "CityGML pour la ville, IFC pour les actifs clés, 3D Tiles pour diffuser l’un ou l’autre au navigateur.",
+      "source": "Sources : OGC, buildingSMART, ISO"
+    }
+  },
+  "it": {
+    "maturity": {
+      "kicker": "Digital twin: maturità",
+      "title": "Cinque livelli del gemello digitale e a che punto sono questi esempi",
+      "lede": "La scala descritta da Autodesk e Verdantix: ogni gradino su un modello reale, o segnalato chiaramente dove qui non c'è.",
+      "levels": [
+        [
+          "Descrittivo",
+          "Un modello vivo e modificabile dell'asset, nel suo luogo",
+          "Modelli IFC sul terreno reale di Barcellona"
+        ],
+        [
+          "Informativo",
+          "Dati operativi e dei sensori sul modello",
+          "Ancoraggi bici, stalli bus e stazioni colorati da open data live"
+        ],
+        [
+          "Predittivo",
+          "Analisi e previsioni dai dati raccolti",
+          "Letture registrate come andamenti, senza previsioni"
+        ],
+        [
+          "Completo",
+          "Scenari what-if eseguiti sul modello",
+          "Studi di sole e ombre, simulazione di allagamento"
+        ],
+        [
+          "Autonomo",
+          "Impara, decide e agisce da solo",
+          "Di proposito: una demo pubblica non deve azionare nulla"
+        ]
+      ],
+      "here": "Qui",
+      "notHere": "Non qui",
+      "tag": "Quasi tutti i gemelli utili stanno ai livelli 2 e 4. Il livello 5 è raro: serve molto più di un modello.",
+      "source": "Livelli: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Open data per gemelli digitali",
+      "title": "Quali feed urbani legge una pagina web?",
+      "lede": "28 endpoint pubblici in 20 città, richiesti come farebbe un browser. Verde: chi pubblica lo consente (CORS). Rosso: solo un server potrebbe leggerlo.",
+      "cols": [
+        "Bike sharing",
+        "Trasporti",
+        "Dati urbani"
+      ],
+      "readable": "Leggibile",
+      "blocked": "Bloccato",
+      "untested": "Non testato",
+      "viaMqtt": "Flusso MQTT leggibile",
+      "tag": "25 su 28 sono leggibili da un browser. Il bike sharing è il più aperto: tutti i feed GBFS tranne uno.",
+      "source": "Test del 15 ott 2026 · dati: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcellona",
+        "Madrid": "Madrid",
+        "Spain": "Spagna (nazionale)",
+        "Paris": "Parigi",
+        "London": "Londra",
+        "Oslo": "Oslo",
+        "Helsinki": "Helsinki",
+        "Vienna": "Vienna",
+        "Berlin": "Berlino",
+        "Zurich": "Zurigo",
+        "Tokyo": "Tokyo",
+        "Singapore": "Singapore",
+        "New York": "New York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Montréal",
+        "Mexico City": "Città del Messico",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formati per il gemello urbano",
+      "title": "CityGML, IFC e 3D Tiles: tre compiti, non tre rivali",
+      "lede": "Ognuno risponde a un'altra domanda. Spesso un gemello urbano li usa tutti.",
+      "rows": [
+        [
+          "Cosa descrive",
+          "Oggetti urbani: edifici, strade, terreno, vegetazione",
+          "Un solo asset, elemento per elemento",
+          "Qualsiasi contenuto 3D, in tile per lo streaming"
+        ],
+        [
+          "Scala tipica",
+          "Da un quartiere a un intero paese",
+          "Un edificio, ponte o stazione",
+          "Qualsiasi, fino all'intero pianeta"
+        ],
+        [
+          "Significato",
+          "Classi e attributi per oggetto urbano",
+          "Tipi, proprietà, relazioni, sistemi",
+          "Solo i metadati presenti nei tile"
+        ],
+        [
+          "Geometria",
+          "Superfici, a livelli di dettaglio LOD0–3",
+          "Solidi precisi, uno per elemento",
+          "Mesh (glTF) e nuvole di punti"
+        ],
+        [
+          "Posizione reale",
+          "Integrata: un sistema di coordinate per dataset",
+          "Opzionale: IfcMapConversion",
+          "Integrata: geocentrica o sistema locale"
+        ],
+        [
+          "Distribuzione",
+          "File o un database; CityJSON per il web",
+          "Un file per modello",
+          "Streaming per tile, dal grossolano al fine"
+        ],
+        [
+          "Standard",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "Standard comunitario OGC"
+        ]
+      ],
+      "tag": "CityGML per la città, IFC per gli asset che contano, 3D Tiles per portarli in streaming nel browser.",
+      "source": "Fonti: OGC, buildingSMART, ISO"
+    }
+  },
+  "pt": {
+    "maturity": {
+      "kicker": "Maturidade do gêmeo digital",
+      "title": "Cinco níveis de um gêmeo digital, e onde estão estes exemplos",
+      "lede": "A escala da Autodesk e da Verdantix, cada degrau mostrado em um modelo real, ou marcado com clareza quando não está aqui.",
+      "levels": [
+        [
+          "Descritivo",
+          "Um modelo vivo e editável do ativo, no seu lugar",
+          "Modelos IFC sobre o terreno real de Barcelona"
+        ],
+        [
+          "Informativo",
+          "Dados operacionais e de sensores no modelo",
+          "Docas, baias e estações coloridas por dados abertos ao vivo"
+        ],
+        [
+          "Preditivo",
+          "Insights e previsões a partir dos dados coletados",
+          "Leituras registradas como tendências, sem previsão"
+        ],
+        [
+          "Abrangente",
+          "Cenários hipotéticos rodados no modelo",
+          "Estudos de sol e sombra, inundação por chuva"
+        ],
+        [
+          "Autônomo",
+          "Aprende, decide e age por conta própria",
+          "De propósito: uma demonstração pública não deve acionar nada"
+        ]
+      ],
+      "here": "Aqui",
+      "notHere": "Aqui não",
+      "tag": "Os gêmeos úteis ficam quase todos nos níveis 2 e 4. O nível 5 é raro e exige bem mais que um modelo.",
+      "source": "Níveis: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "Dados abertos para gêmeos digitais",
+      "title": "Quais feeds urbanos uma página web pode ler?",
+      "lede": "28 endpoints públicos em 20 cidades, testados como um navegador faria. Verde: o publicador permite (CORS). Vermelho: só um servidor lê.",
+      "cols": [
+        "Bicicletas",
+        "Transporte",
+        "Dados urbanos"
+      ],
+      "readable": "Legível",
+      "blocked": "Bloqueado",
+      "untested": "Não testado",
+      "viaMqtt": "Fluxo MQTT legível",
+      "tag": "25 de 28 são legíveis no navegador. As bicicletas são as mais abertas: todos os feeds GBFS menos um.",
+      "source": "Testado em 15/10/2026 · dados: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "Barcelona",
+        "Madrid": "Madri",
+        "Spain": "Espanha (nacional)",
+        "Paris": "Paris",
+        "London": "Londres",
+        "Oslo": "Oslo",
+        "Helsinki": "Helsinque",
+        "Vienna": "Viena",
+        "Berlin": "Berlim",
+        "Zurich": "Zurique",
+        "Tokyo": "Tóquio",
+        "Singapore": "Singapura",
+        "New York": "Nova York",
+        "Boston": "Boston",
+        "Chicago": "Chicago",
+        "San Francisco": "San Francisco",
+        "Toronto": "Toronto",
+        "Montreal": "Montreal",
+        "Mexico City": "Cidade do México",
+        "Melbourne": "Melbourne"
+      }
+    },
+    "formats": {
+      "kicker": "Formatos para gêmeos urbanos",
+      "title": "CityGML, IFC e 3D Tiles: três funções, não três rivais",
+      "lede": "Cada um responde a uma pergunta diferente. Um gêmeo de cidade costuma usar os três.",
+      "rows": [
+        [
+          "O que descreve",
+          "Objetos urbanos: edifícios, ruas, terreno, vegetação",
+          "Um ativo construído, elemento a elemento",
+          "Qualquer conteúdo 3D, em tiles para streaming"
+        ],
+        [
+          "Escala típica",
+          "Do bairro a um país inteiro",
+          "Um edifício, ponte ou estação",
+          "Qualquer uma, até o planeta inteiro"
+        ],
+        [
+          "Significado",
+          "Classes e atributos por objeto urbano",
+          "Tipos, propriedades, relações, sistemas",
+          "Os metadados que os tiles trouxerem"
+        ],
+        [
+          "Geometria",
+          "Superfícies, em níveis de detalhe LOD0–3",
+          "Sólidos precisos, um por elemento",
+          "Malhas (glTF) e nuvens de pontos"
+        ],
+        [
+          "Posição no mundo real",
+          "Nativa: um sistema de coordenadas por conjunto de dados",
+          "Opcional: IfcMapConversion",
+          "Nativa: referencial geocêntrico ou local"
+        ],
+        [
+          "Entrega",
+          "Arquivos ou banco de dados; CityJSON na web",
+          "Um arquivo por modelo",
+          "Streaming tile a tile, do grosseiro ao fino"
+        ],
+        [
+          "Padrão",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "Padrão comunitário do OGC"
+        ]
+      ],
+      "tag": "CityGML para a cidade, IFC para os ativos que importam, 3D Tiles para levar ambos ao navegador.",
+      "source": "Fontes: OGC, buildingSMART, ISO"
+    }
+  },
+  "ja": {
+    "maturity": {
+      "kicker": "デジタルツインの成熟度",
+      "title": "デジタルツインの5つのレベルと、ここでの事例の位置",
+      "lede": "AutodeskとVerdantixが示す段階モデル。各段階を実際のモデルで示し、ここにない段階ははっきりそう示しています。",
+      "levels": [
+        [
+          "記述的",
+          "実際の場所にある、常に最新で編集できるアセットのモデル",
+          "バルセロナの実際の地形に置いたIFCモデル"
+        ],
+        [
+          "情報的",
+          "モデル上の運用データとセンサーデータ",
+          "自転車のドック、バスの乗り場、駅をライブのオープンデータで色分け"
+        ],
+        [
+          "予測的",
+          "蓄積したデータからの知見と予測",
+          "計測値はトレンドとして記録、予測はしない"
+        ],
+        [
+          "包括的",
+          "モデル上で実行するWhat-ifシナリオ",
+          "日照・日影の検討、降雨浸水シミュレーション"
+        ],
+        [
+          "自律的",
+          "自ら学習し、判断し、行動する",
+          "意図的に非対応：公開デモは何も操作しない"
+        ]
+      ],
+      "here": "実例あり",
+      "notHere": "実例なし",
+      "tag": "役立つツインの多くはレベル2と4にあります。レベル5はまれで、モデル以外に必要なものがはるかに多くなります。",
+      "source": "レベル：Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "デジタルツインのためのオープンデータ",
+      "title": "Webページから読める都市フィードは？",
+      "lede": "20都市の公開エンドポイント28件に、ブラウザーと同じ方法でリクエスト。緑：提供元が許可（CORS）。赤：サーバーからしか読めない。",
+      "cols": [
+        "シェアサイクル",
+        "公共交通",
+        "都市データ"
+      ],
+      "readable": "読める",
+      "blocked": "不可",
+      "untested": "未テスト",
+      "viaMqtt": "MQTTストリームは読める",
+      "tag": "28件中25件がブラウザーから読めます。最もオープンなのはシェアサイクルで、GBFSフィードは1件を除きすべて読めます。",
+      "source": "2026年10月15日テスト · データ：ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "バルセロナ",
+        "Madrid": "マドリード",
+        "Spain": "スペイン（国）",
+        "Paris": "パリ",
+        "London": "ロンドン",
+        "Oslo": "オスロ",
+        "Helsinki": "ヘルシンキ",
+        "Vienna": "ウィーン",
+        "Berlin": "ベルリン",
+        "Zurich": "チューリッヒ",
+        "Tokyo": "東京",
+        "Singapore": "シンガポール",
+        "New York": "ニューヨーク",
+        "Boston": "ボストン",
+        "Chicago": "シカゴ",
+        "San Francisco": "サンフランシスコ",
+        "Toronto": "トロント",
+        "Montreal": "モントリオール",
+        "Mexico City": "メキシコシティ",
+        "Melbourne": "メルボルン"
+      }
+    },
+    "formats": {
+      "kicker": "都市デジタルツインのデータ形式",
+      "title": "CityGML、IFC、3D Tiles：競合ではなく3つの役割",
+      "lede": "それぞれが別の問いに答えます。都市のツインでは3つすべてを使うことがよくあります。",
+      "rows": [
+        [
+          "記述する対象",
+          "都市オブジェクト：建物、道路、地形、植生",
+          "1つの建設アセットを要素単位で",
+          "あらゆる3Dコンテンツをタイルに分割して配信"
+        ],
+        [
+          "一般的なスケール",
+          "地区から国全体まで",
+          "1棟の建物、1本の橋、1つの駅",
+          "地球全体まで何でも"
+        ],
+        [
+          "意味情報",
+          "都市オブジェクトごとのクラスと属性",
+          "タイプ、プロパティ、関係、システム",
+          "タイルが持つメタデータのみ"
+        ],
+        [
+          "形状",
+          "詳細度LOD0〜3のサーフェス",
+          "要素ごとの正確なソリッド",
+          "メッシュ（glTF）と点群"
+        ],
+        [
+          "現実世界での位置",
+          "標準で保持：データセットごとの座標系",
+          "任意：IfcMapConversion",
+          "標準で保持：地球中心またはローカル座標系"
+        ],
+        [
+          "配信",
+          "ファイルまたはデータベース。WebにはCityJSON",
+          "モデルごとに1ファイル",
+          "タイル単位で、粗から細へストリーミング"
+        ],
+        [
+          "標準",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "OGCコミュニティ標準"
+        ]
+      ],
+      "tag": "都市にはCityGML、重要なアセットにはIFC、どちらもブラウザーへ届けるには3D Tiles。",
+      "source": "出典：OGC、buildingSMART、ISO"
+    }
+  },
+  "zh": {
+    "maturity": {
+      "kicker": "数字孪生成熟度",
+      "title": "数字孪生的五个等级，以及这些案例处在哪一级",
+      "lede": "Autodesk 与 Verdantix 描述的分级阶梯：每一级都用真实模型展示，没有的就直接标明。",
+      "levels": [
+        [
+          "描述型",
+          "资产的实时、可编辑模型，位于真实位置",
+          "巴塞罗那真实地形上的 IFC 模型"
+        ],
+        [
+          "信息型",
+          "模型上的运营数据和传感器数据",
+          "单车停车桩、公交停靠位和车站按实时开放数据着色"
+        ],
+        [
+          "预测型",
+          "从采集的数据中得出洞察和预测",
+          "读数记录为趋势，但不做预测"
+        ],
+        [
+          "综合型",
+          "在模型上运行假设情景",
+          "日照与阴影分析、降雨内涝模拟"
+        ],
+        [
+          "自主型",
+          "自行学习、决策并采取行动",
+          "有意不做：公开演示不应开关任何设备"
+        ]
+      ],
+      "here": "已展示",
+      "notHere": "未展示",
+      "tag": "大多数有用的孪生处在第 2 级和第 4 级。第 5 级很少见，需要的远不止一个模型。",
+      "source": "等级划分：Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "数字孪生的开放数据",
+      "title": "网页能读取哪些城市数据源？",
+      "lede": "20 个城市的 28 个公开端点，按浏览器的方式请求。绿色：发布方允许读取（CORS）。红色：只有服务器能读取。",
+      "cols": [
+        "共享单车",
+        "公共交通",
+        "城市数据"
+      ],
+      "readable": "可读取",
+      "blocked": "被拦截",
+      "untested": "未测试",
+      "viaMqtt": "MQTT 数据流可读取",
+      "tag": "28 个中有 25 个可从浏览器读取。共享单车最开放：GBFS 数据源只有一个例外。",
+      "source": "测试于 2026 年 10 月 15 日 · 数据：ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "巴塞罗那",
+        "Madrid": "马德里",
+        "Spain": "西班牙（全国）",
+        "Paris": "巴黎",
+        "London": "伦敦",
+        "Oslo": "奥斯陆",
+        "Helsinki": "赫尔辛基",
+        "Vienna": "维也纳",
+        "Berlin": "柏林",
+        "Zurich": "苏黎世",
+        "Tokyo": "东京",
+        "Singapore": "新加坡",
+        "New York": "纽约",
+        "Boston": "波士顿",
+        "Chicago": "芝加哥",
+        "San Francisco": "旧金山",
+        "Toronto": "多伦多",
+        "Montreal": "蒙特利尔",
+        "Mexico City": "墨西哥城",
+        "Melbourne": "墨尔本"
+      }
+    },
+    "formats": {
+      "kicker": "城市数字孪生的数据格式",
+      "title": "CityGML、IFC 和 3D Tiles：三种分工，不是三个对手",
+      "lede": "每种格式回答不同的问题。城市孪生往往三种都用。",
+      "rows": [
+        [
+          "描述对象",
+          "城市对象：建筑、道路、地形、植被",
+          "单个建成资产，逐个构件",
+          "任意 3D 内容，切分成瓦片以便流式传输"
+        ],
+        [
+          "典型尺度",
+          "从一个街区到整个国家",
+          "一栋建筑、一座桥或一个车站",
+          "任意范围，最大可达全球"
+        ],
+        [
+          "语义",
+          "每个城市对象的类和属性",
+          "类型、属性、关系、系统",
+          "瓦片携带的元数据"
+        ],
+        [
+          "几何",
+          "表面，细节层次 LOD0–3",
+          "精确的实体，每个构件一个",
+          "网格（glTF）和点云"
+        ],
+        [
+          "真实世界中的位置",
+          "内置：每个数据集一个坐标系",
+          "可选：IfcMapConversion",
+          "内置：地心坐标系或局部坐标系"
+        ],
+        [
+          "传输方式",
+          "文件或数据库；网页用 CityJSON",
+          "每个模型一个文件",
+          "逐个瓦片流式传输，由粗到细"
+        ],
+        [
+          "标准",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "OGC 社区标准"
+        ]
+      ],
+      "tag": "CityGML 描述城市，IFC 描述关键资产，3D Tiles 把两者流式传输到浏览器。",
+      "source": "来源：OGC、buildingSMART、ISO"
+    }
+  },
+  "th": {
+    "maturity": {
+      "kicker": "ระดับวุฒิภาวะของดิจิทัลทวิน",
+      "title": "ดิจิทัลทวิน 5 ระดับ และตัวอย่างเหล่านี้อยู่ตรงไหน",
+      "lede": "ลำดับขั้นที่ Autodesk และ Verdantix อธิบาย แต่ละขั้นแสดงบนโมเดลจริง หรือบอกไว้ตรง ๆ เมื่อไม่มีในที่นี้",
+      "levels": [
+        [
+          "เชิงพรรณนา",
+          "โมเดลทรัพย์สินที่เป็นปัจจุบัน แก้ไขได้ อยู่ในตำแหน่งจริง",
+          "บาร์เซโลนา: โมเดล IFC บนภูมิประเทศจริง"
+        ],
+        [
+          "เชิงให้ข้อมูล",
+          "ข้อมูลการปฏิบัติงานและเซนเซอร์บนโมเดล",
+          "แท่นจอดจักรยาน ช่องจอดรถบัส และสถานี ระบายสีด้วยข้อมูลเปิดเรียลไทม์"
+        ],
+        [
+          "เชิงคาดการณ์",
+          "ข้อมูลเชิงลึกและการพยากรณ์จากข้อมูลที่เก็บมา",
+          "บันทึกค่าที่อ่านได้เป็นแนวโน้ม แต่ไม่พยากรณ์"
+        ],
+        [
+          "เชิงครอบคลุม",
+          "สถานการณ์ what-if ที่รันบนโมเดล",
+          "ศึกษาแสงแดดและเงา จำลองน้ำท่วมขังจากฝน"
+        ],
+        [
+          "อัตโนมัติ",
+          "เรียนรู้ ตัดสินใจ และลงมือทำได้เอง",
+          "ตั้งใจไว้: เดโมสาธารณะไม่ควรสั่งเปิดปิดสิ่งใด"
+        ]
+      ],
+      "here": "มีในที่นี้",
+      "notHere": "ไม่มีในที่นี้",
+      "tag": "ทวินที่มีประโยชน์ส่วนใหญ่อยู่ที่ระดับ 2 และ 4 ระดับ 5 พบได้ยาก และต้องการมากกว่าโมเดลอีกมาก",
+      "source": "ระดับ: Autodesk / Verdantix"
+    },
+    "atlas": {
+      "kicker": "ข้อมูลเปิดสำหรับดิจิทัลทวิน",
+      "title": "หน้าเว็บอ่านฟีดของเมืองใดได้บ้าง",
+      "lede": "เอนด์พอยต์สาธารณะ 28 แห่งใน 20 เมือง ส่งคำขอแบบเดียวกับเบราว์เซอร์ สีเขียว: ผู้เผยแพร่อนุญาต (CORS) สีแดง: มีเพียงเซิร์ฟเวอร์ที่อ่านได้",
+      "cols": [
+        "จักรยานสาธารณะ",
+        "ขนส่งสาธารณะ",
+        "ข้อมูลเมือง"
+      ],
+      "readable": "อ่านได้",
+      "blocked": "ถูกบล็อก",
+      "untested": "ไม่ได้ทดสอบ",
+      "viaMqtt": "อ่านสตรีม MQTT ได้",
+      "tag": "25 จาก 28 แห่งอ่านได้จากเบราว์เซอร์ จักรยานสาธารณะเปิดกว้างที่สุด: ฟีด GBFS ทุกแหล่ง ยกเว้นหนึ่ง",
+      "source": "ทดสอบ 15 ต.ค. 2026 · ข้อมูล: ifcvieweronline.eu/blog/data",
+      "cities": {
+        "Barcelona": "บาร์เซโลนา",
+        "Madrid": "มาดริด",
+        "Spain": "สเปน (ระดับชาติ)",
+        "Paris": "ปารีส",
+        "London": "ลอนดอน",
+        "Oslo": "ออสโล",
+        "Helsinki": "เฮลซิงกิ",
+        "Vienna": "เวียนนา",
+        "Berlin": "เบอร์ลิน",
+        "Zurich": "ซูริก",
+        "Tokyo": "โตเกียว",
+        "Singapore": "สิงคโปร์",
+        "New York": "นิวยอร์ก",
+        "Boston": "บอสตัน",
+        "Chicago": "ชิคาโก",
+        "San Francisco": "ซานฟรานซิสโก",
+        "Toronto": "โทรอนโต",
+        "Montreal": "มอนทรีออล",
+        "Mexico City": "เม็กซิโกซิตี",
+        "Melbourne": "เมลเบิร์น"
+      }
+    },
+    "formats": {
+      "kicker": "รูปแบบไฟล์สำหรับดิจิทัลทวินเมือง",
+      "title": "CityGML, IFC และ 3D Tiles: สามหน้าที่ ไม่ใช่สามคู่แข่ง",
+      "lede": "แต่ละแบบตอบคำถามคนละข้อ ทวินเมืองมักใช้ทั้งสามแบบ",
+      "rows": [
+        [
+          "บรรยายอะไร",
+          "วัตถุในเมือง: อาคาร ถนน ภูมิประเทศ พืชพรรณ",
+          "สิ่งปลูกสร้างหนึ่งแห่ง ทีละองค์ประกอบ",
+          "เนื้อหา 3D ใดก็ได้ ตัดเป็นไทล์เพื่อสตรีม"
+        ],
+        [
+          "ขนาดพื้นที่โดยทั่วไป",
+          "ตั้งแต่ย่านไปจนถึงทั้งประเทศ",
+          "อาคาร สะพาน หรือสถานีหนึ่งแห่ง",
+          "อะไรก็ได้ ไปจนถึงทั้งโลก"
+        ],
+        [
+          "ความหมายเชิงข้อมูล",
+          "คลาสและแอตทริบิวต์ของแต่ละวัตถุในเมือง",
+          "ชนิด คุณสมบัติ ความสัมพันธ์ ระบบ",
+          "เมทาดาทาเท่าที่ไทล์พกมา"
+        ],
+        [
+          "เรขาคณิต",
+          "พื้นผิว ตามระดับรายละเอียด LOD0–3",
+          "รูปทรงตันที่แม่นยำ หนึ่งชิ้นต่อองค์ประกอบ",
+          "เมช (glTF) และพอยต์คลาวด์"
+        ],
+        [
+          "ตำแหน่งในโลกจริง",
+          "มีในตัว: ระบบพิกัดของแต่ละชุดข้อมูล",
+          "ไม่บังคับ: IfcMapConversion",
+          "มีในตัว: พิกัดศูนย์กลางโลกหรือกรอบท้องถิ่น"
+        ],
+        [
+          "การส่งข้อมูล",
+          "ไฟล์หรือฐานข้อมูล ใช้ CityJSON บนเว็บ",
+          "หนึ่งไฟล์ต่อโมเดล",
+          "สตรีมทีละไทล์ จากหยาบไปละเอียด"
+        ],
+        [
+          "มาตรฐาน",
+          "OGC CityGML 3.0 · CityJSON",
+          "buildingSMART · ISO 16739-1",
+          "มาตรฐานชุมชนของ OGC"
+        ]
+      ],
+      "tag": "CityGML สำหรับเมือง IFC สำหรับทรัพย์สินที่สำคัญ และ 3D Tiles สำหรับสตรีมทั้งสองไปยังเบราว์เซอร์",
+      "source": "แหล่งที่มา: OGC, buildingSMART, ISO"
+    }
+  }
+}

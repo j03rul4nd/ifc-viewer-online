@@ -90,5 +90,177 @@
     "map": "terrain,buildings",
     "hide": ["w909097448"],
     "camera": { "position": [-95, 75, 30], "target": [30, 0, 170] }
+  },
+  "story": {
+    "steps": [
+      {
+        "title": {
+          "en": "Plaça de Catalunya, live",
+          "es": "Plaça de Catalunya, en vivo",
+          "ca": "Plaça de Catalunya, en viu",
+          "de": "Plaça de Catalunya, live",
+          "fr": "Plaça de Catalunya, en direct",
+          "it": "Plaça de Catalunya, in tempo reale",
+          "pt": "Plaça de Catalunya, ao vivo",
+          "ja": "Plaça de Catalunyaをライブで",
+          "zh": "Plaça de Catalunya 实时动态",
+          "th": "Plaça de Catalunya แบบเรียลไทม์"
+        },
+        "text": {
+          "en": "Eight IFC models of the square stand on Barcelona's real terrain, and the city's open data colours them as it changes. All of it runs in your browser: no platform, no server in between.",
+          "es": "Ocho modelos IFC de la plaza se alzan sobre el terreno real de Barcelona, y los datos abiertos de la ciudad los colorean a medida que cambian. Todo funciona en tu navegador: sin plataforma ni servidor de por medio.",
+          "ca": "Vuit models IFC de la plaça s'alcen sobre el terreny real de Barcelona, i les dades obertes de la ciutat els acoloreixen a mesura que canvien. Tot funciona al teu navegador: sense plataforma ni cap servidor entremig.",
+          "de": "Acht IFC-Modelle des Platzes stehen auf dem realen Gelände Barcelonas, und die offenen Daten der Stadt färben sie fortlaufend neu ein. Alles läuft in Ihrem Browser: keine Plattform, kein Server dazwischen.",
+          "fr": "Huit maquettes IFC de la place reposent sur le terrain réel de Barcelone, et les données ouvertes de la ville les colorent au fil de leurs changements. Tout tourne dans votre navigateur : ni plateforme, ni serveur entre les deux.",
+          "it": "Otto modelli IFC della piazza poggiano sul terreno reale di Barcellona, e i dati aperti della città li colorano man mano che cambiano. Tutto gira nel tuo browser: nessuna piattaforma, nessun server in mezzo.",
+          "pt": "Oito modelos IFC da praça estão sobre o terreno real de Barcelona, e os dados abertos da cidade os colorem à medida que mudam. Tudo roda no seu navegador: sem plataforma, sem servidor no meio.",
+          "ja": "広場の8つのIFCモデルがバルセロナの実際の地形の上に立ち、市のオープンデータが変化に合わせて色を付けます。すべてブラウザ内で動作し、間にプラットフォームもサーバーも介しません。",
+          "zh": "广场的八个 IFC 模型立在巴塞罗那的真实地形上，城市开放数据随着变化为它们着色。一切都在你的浏览器中运行：没有平台，中间也没有服务器。",
+          "th": "โมเดล IFC แปดชิ้นของจัตุรัสตั้งอยู่บนภูมิประเทศจริงของบาร์เซโลนา และข้อมูลเปิดของเมืองจะระบายสีโมเดลตามที่ข้อมูลเปลี่ยนไป ทั้งหมดทำงานในเบราว์เซอร์ของคุณ ไม่มีแพลตฟอร์มหรือเซิร์ฟเวอร์ใดคั่นกลาง"
+        },
+        "camera": {
+          "position": [
+            -95,
+            75,
+            30
+          ],
+          "target": [
+            30,
+            0,
+            170
+          ]
+        }
+      },
+      {
+        "title": {
+          "en": "A bike station that reports itself",
+          "es": "Una estación de bicis que informa de sí misma",
+          "ca": "Una estació de bicis que informa de si mateixa",
+          "de": "Eine Leihradstation, die sich selbst meldet",
+          "fr": "Une station de vélos qui publie son état",
+          "it": "Una stazione bici che segnala il suo stato",
+          "pt": "Estação de bicicletas que informa seu estado",
+          "ja": "自ら状態を伝える自転車ステーション",
+          "zh": "会自己报告状态的单车站点",
+          "th": "สถานีจักรยานที่รายงานสถานะตัวเอง"
+        },
+        "text": {
+          "en": "These 21 dock posts belong to Bicing station 65. Their colour follows the station's live feed: green with bikes, amber with a few, red with none. Bikes available right now: {value}.",
+          "es": "Estos 21 anclajes son de la estación Bicing 65. Su color sigue el feed en vivo de la estación: verde con bicis, ámbar con pocas, rojo sin ninguna. Bicis disponibles ahora mismo: {value}.",
+          "ca": "Aquests 21 ancoratges són de l'estació Bicing 65. El seu color segueix el feed en viu de l'estació: verd amb bicis, ambre amb poques, vermell sense cap. Bicis disponibles ara mateix: {value}.",
+          "de": "Diese 21 Dock-Pfosten gehören zur Bicing-Station 65. Ihre Farbe folgt dem Live-Feed der Station: grün mit Fahrrädern, orange mit wenigen, rot ohne. Gerade verfügbare Fahrräder: {value}.",
+          "fr": "Ces 21 bornes appartiennent à la station Bicing 65. Leur couleur suit le flux en direct de la station : vert s'il y a des vélos, ambre s'il en reste peu, rouge s'il n'y en a plus. Vélos disponibles en ce moment : {value}.",
+          "it": "Queste 21 colonnine appartengono alla stazione Bicing 65. Il loro colore segue il feed in tempo reale della stazione: verde con bici, ambra con poche, rosso con nessuna. Bici disponibili in questo momento: {value}.",
+          "pt": "Estes 21 postes de doca pertencem à estação Bicing 65. A cor deles segue o feed ao vivo da estação: verde com bicicletas, âmbar com poucas, vermelho sem nenhuma. Bicicletas disponíveis neste momento: {value}.",
+          "ja": "この21基の駐輪ドックはBicingステーション65のものです。色はステーションのライブフィードに従い、自転車があれば緑、少なければ琥珀色、なければ赤になります。現在、{value}台の自転車が利用できます。",
+          "zh": "这 21 个车桩属于 Bicing 65 号站点。它们的颜色跟随站点的实时数据源：有车为绿色，车少为琥珀色，无车为红色。当前可借单车：{value} 辆。",
+          "th": "เสาจอด 21 ต้นนี้เป็นของสถานี Bicing หมายเลข 65 สีของเสาเป็นไปตามฟีดเรียลไทม์ของสถานี: สีเขียวเมื่อมีจักรยาน สีอำพันเมื่อเหลือน้อย สีแดงเมื่อไม่มีเลย ขณะนี้มีจักรยานว่าง {value} คัน"
+        },
+        "binding": "bicing-65-docks"
+      },
+      {
+        "title": {
+          "en": "An EV charger, bay by bay",
+          "es": "Un punto de recarga, plaza a plaza",
+          "ca": "Un punt de recàrrega, plaça a plaça",
+          "de": "Eine Ladesäule, Platz für Platz",
+          "fr": "Une borne de recharge, place par place",
+          "it": "Una colonnina di ricarica, stallo per stallo",
+          "pt": "Um carregador elétrico, vaga por vaga",
+          "ja": "EV充電器を区画ごとに",
+          "zh": "逐个车位查看充电桩",
+          "th": "จุดชาร์จรถ EV ทีละช่องจอด"
+        },
+        "text": {
+          "en": "The on-street charger's two bays take the state Barcelona publishes for charging point 3762, so the model tells you whether a bay is free, in use or out of service.",
+          "es": "Las dos plazas del cargador en la calle toman el estado que Barcelona publica para el punto de recarga 3762, así que el modelo te dice si una plaza está libre, en uso o fuera de servicio.",
+          "ca": "Les dues places del carregador del carrer prenen l'estat que Barcelona publica per al punt de recàrrega 3762, de manera que el model et diu si una plaça és lliure, en ús o fora de servei.",
+          "de": "Die zwei Ladeplätze der Ladesäule am Straßenrand übernehmen den Status, den Barcelona für den Ladestandort 3762 veröffentlicht. So zeigt das Modell, ob ein Platz frei, belegt oder außer Betrieb ist.",
+          "fr": "Les deux places de la borne de recharge sur voirie reprennent l'état que Barcelone publie pour le point de recharge 3762 : la maquette vous dit donc si une place est libre, occupée ou hors service.",
+          "it": "I due stalli della colonnina su strada prendono lo stato che Barcellona pubblica per il punto di ricarica 3762, così il modello ti dice se uno stallo è libero, in uso o fuori servizio.",
+          "pt": "As duas vagas do carregador de rua assumem o estado que Barcelona publica para o ponto de recarga 3762, então o modelo mostra se uma vaga está livre, em uso ou fora de serviço.",
+          "ja": "路上充電器の2つの駐車区画は、バルセロナが充電ロケーション3762について公開している状態を反映します。そのため、各区画が空き・使用中・利用停止中のどれなのかがモデルでわかります。",
+          "zh": "这个路边充电桩的两个车位反映巴塞罗那为 3762 号充电点发布的状态，因此模型会告诉你每个车位是空闲、使用中还是暂停服务。",
+          "th": "ช่องจอดทั้งสองช่องของเครื่องชาร์จริมถนนรับสถานะที่บาร์เซโลนาเผยแพร่สำหรับจุดชาร์จหมายเลข 3762 โมเดลจึงบอกได้ว่าแต่ละช่องว่าง กำลังใช้งาน หรือใช้งานไม่ได้"
+        },
+        "binding": "endolla-3762-bays"
+      },
+      {
+        "title": {
+          "en": "The city around it",
+          "es": "La ciudad alrededor",
+          "ca": "La ciutat del voltant",
+          "de": "Die Stadt rundherum",
+          "fr": "La ville autour",
+          "it": "La città intorno",
+          "pt": "A cidade ao redor",
+          "ja": "周辺の街",
+          "zh": "周边的城市",
+          "th": "เมืองโดยรอบ"
+        },
+        "text": {
+          "en": "Traffic on the surrounding streets, every Bicing station and the air quality arrive as map layers from Barcelona's open data, each at its own pace: bikes every minute, chargers every five, air every fifteen.",
+          "es": "El tráfico de las calles de alrededor, todas las estaciones de Bicing y la calidad del aire llegan como capas del mapa desde los datos abiertos de Barcelona, cada una a su ritmo: las bicis cada minuto, los cargadores cada cinco y el aire cada quince.",
+          "ca": "El trànsit dels carrers del voltant, totes les estacions de Bicing i la qualitat de l'aire arriben com a capes del mapa des de les dades obertes de Barcelona, cadascuna al seu ritme: les bicis cada minut, els carregadors cada cinc i l'aire cada quinze.",
+          "de": "Verkehr in den umliegenden Straßen, alle Bicing-Stationen und die Luftqualität kommen als Kartenebenen aus den offenen Daten Barcelonas, jede in ihrem eigenen Takt: Fahrräder jede Minute, Ladesäulen alle fünf, Luft alle fünfzehn.",
+          "fr": "Le trafic des rues voisines, toutes les stations Bicing et la qualité de l'air arrivent en couches cartographiques depuis les données ouvertes de Barcelone, chacune à son rythme : les vélos chaque minute, les bornes de recharge toutes les cinq, l'air toutes les quinze.",
+          "it": "Il traffico delle strade vicine, tutte le stazioni Bicing e la qualità dell'aria arrivano come livelli della mappa dai dati aperti di Barcellona, ognuno al suo ritmo: bici ogni minuto, colonnine di ricarica ogni cinque, aria ogni quindici.",
+          "pt": "O trânsito das ruas ao redor, todas as estações do Bicing e a qualidade do ar chegam como camadas do mapa a partir dos dados abertos de Barcelona, cada uma no seu ritmo: bicicletas a cada minuto, carregadores a cada cinco, ar a cada quinze.",
+          "ja": "周辺道路の交通、すべてのBicingステーション、大気質は、バルセロナのオープンデータから地図レイヤーとして届きます。更新間隔はそれぞれ異なり、自転車は1分ごと、充電器は5分ごと、大気は15分ごとです。",
+          "zh": "周边街道的交通、所有 Bicing 站点和空气质量，都以地图图层的形式来自巴塞罗那的开放数据，各有各的更新节奏：单车每分钟一次，充电桩每五分钟，空气每十五分钟。",
+          "th": "การจราจรบนถนนโดยรอบ สถานี Bicing ทุกแห่ง และคุณภาพอากาศ เข้ามาเป็นเลเยอร์แผนที่จากข้อมูลเปิดของบาร์เซโลนา แต่ละเลเยอร์มีจังหวะของตัวเอง: จักรยานทุกนาที เครื่องชาร์จทุกห้านาที และอากาศทุกสิบห้านาที"
+        },
+        "camera": {
+          "position": [
+            -345,
+            225,
+            -250
+          ],
+          "target": [
+            30,
+            0,
+            170
+          ]
+        }
+      },
+      {
+        "title": {
+          "en": "Your turn",
+          "es": "Te toca",
+          "ca": "Et toca",
+          "de": "Jetzt sind Sie dran",
+          "fr": "À vous de jouer",
+          "it": "Tocca a te",
+          "pt": "Sua vez",
+          "ja": "あなたの番です",
+          "zh": "轮到你了",
+          "th": "ถึงตาคุณแล้ว"
+        },
+        "text": {
+          "en": "Click any asset to see its data and its live readings, or use Explore to jump between the live points. The whole scene is one JSON file you can copy and reuse.",
+          "es": "Haz clic en cualquier elemento para ver sus datos y sus lecturas en vivo, o usa «Explorar» para saltar entre los puntos en vivo. Toda la escena es un único archivo JSON que puedes copiar y reutilizar.",
+          "ca": "Fes clic a qualsevol element per veure'n les dades i les lectures en viu, o fes servir «Explorar» per saltar entre els punts en viu. Tota l'escena és un únic fitxer JSON que pots copiar i reutilitzar.",
+          "de": "Klicken Sie auf ein beliebiges Objekt, um seine Daten und Live-Messwerte zu sehen, oder springen Sie mit „Erkunden“ zwischen den Live-Punkten. Die ganze Szene ist eine einzige JSON-Datei, die Sie kopieren und wiederverwenden können.",
+          "fr": "Cliquez sur n'importe quel élément pour voir ses données et ses mesures en direct, ou utilisez « Explorer » pour passer d'un point en direct à l'autre. Toute la scène tient dans un seul fichier JSON que vous pouvez copier et réutiliser.",
+          "it": "Clicca su qualsiasi elemento per vederne i dati e le letture in tempo reale, oppure usa «Esplora» per passare da un punto in tempo reale all'altro. L'intera scena è un unico file JSON che puoi copiare e riutilizzare.",
+          "pt": "Clique em qualquer elemento para ver seus dados e leituras ao vivo, ou use “Explorar” para pular entre os pontos ao vivo. A cena inteira é um único arquivo JSON que você pode copiar e reutilizar.",
+          "ja": "要素をクリックすると、そのデータとライブの計測値を表示します。「探索」でライブのポイント間を移動することもできます。シーン全体が1つのJSONファイルなので、コピーして再利用できます。",
+          "zh": "点击任意构件即可查看它的数据和实时读数，也可以用“探索”在各个实时点之间跳转。整个场景就是一个 JSON 文件，你可以复制并重复使用。",
+          "th": "คลิกองค์ประกอบใดก็ได้เพื่อดูข้อมูลและค่าที่อ่านได้แบบเรียลไทม์ หรือใช้ “สำรวจ” เพื่อข้ามไปมาระหว่างจุดข้อมูลสด ทั้งฉากคือไฟล์ JSON ไฟล์เดียวที่คุณคัดลอกและนำไปใช้ซ้ำได้"
+        },
+        "camera": {
+          "position": [
+            -95,
+            75,
+            30
+          ],
+          "target": [
+            30,
+            0,
+            170
+          ]
+        }
+      }
+    ]
   }
 }

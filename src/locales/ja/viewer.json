@@ -342,6 +342,16 @@
     "properties": "プロパティ",
     "fromType": "タイプ",
     "attributes": "属性",
-    "copied": "コピーしました"
+    "copied": "コピーしました",
+    "story": {
+      "label": "ガイドツアー",
+      "step": "{{n}} / {{total}}",
+      "next": "次へ",
+      "back": "戻る",
+      "close": "ツアーを閉じる",
+      "finish": "自由に探索する",
+      "resume": "ガイドツアー",
+      "now": "現在のライブ値"
+    }
   }
 }
