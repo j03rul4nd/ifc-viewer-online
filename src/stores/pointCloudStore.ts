@@ -17,8 +17,12 @@ import { createLogger } from '../lib/logger'
 import {
   clampOffset, DEFAULT_DISPLAY, MAX_POINTS_DEFAULT, RENDER_BUDGET_DEFAULT,
   type AlignmentOffset, type PointCloudAlignment, type PointCloudDisplay, type UpAxis,
-  type PointCloudEntry, type PointColorMode,
+  type PointCloudEntry, type PointColorMode, type CloudStyleOverride,
+  CLOUD_STYLE_KEYS,
 } from '../lib/pointcloud/pc-types'
+import { pickIdentityColor } from '../lib/pointcloud/pc-style'
+import { readCloudPrefs, writeCloudPrefs } from '../lib/pointcloud/pc-prefs'
+import { nextSelection, type ClickMode } from '../lib/selection'
 
 const log = createLogger('PointCloudStore')
 
@@ -92,6 +96,27 @@ export function registerOffsetPersistence(
   if (upAxisFn) onUpAxisPersist = upAxisFn
 }
 
+/** A style override validated like parseDisplay; undefined keys dropped; {} → null. */
+function cleanStyle(style: CloudStyleOverride | null | undefined): CloudStyleOverride | null {
+  if (!style) return null
+  const out: CloudStyleOverride = {}
+  if (style.colorMode !== undefined && COLOR_MODES.includes(style.colorMode)) out.colorMode = style.colorMode
+  if (typeof style.flatColor === 'number' && Number.isFinite(style.flatColor)) {
+    out.flatColor = Math.min(0xFFFFFF, Math.max(0, Math.round(style.flatColor)))
+  }
+  if (typeof style.pointSize === 'number' && Number.isFinite(style.pointSize)) {
+    out.pointSize = Math.min(20, Math.max(0.5, style.pointSize))
+  }
+  if (typeof style.opacity === 'number' && Number.isFinite(style.opacity)) {
+    out.opacity = Math.min(1, Math.max(0.05, style.opacity))
+  }
+  return Object.keys(out).length ? out : null
+}
+
+function scopeFor(ids: string[], clouds: PointCloudEntry[]): 'all' | 'selection' {
+  return ids.length > 0 && clouds.length >= 2 ? 'selection' : 'all'
+}
+
 function readBudget(): number {
   const v = parseInt(lsGet(LS_BUDGET) ?? '', 10)
   return Number.isFinite(v) && v >= 250_000 && v <= 20_000_000 ? v : RENDER_BUDGET_DEFAULT
@@ -104,8 +129,15 @@ interface PointCloudStore {
   /** Which cloud the transform controls operate on. */
   activeCloudId: string | null
   panelOpen: boolean
-  /** Display settings, shared by every cloud (persisted). */
+  /** Scene default display (persisted). Scans may override CLOUD_STYLE_KEYS (entry.style). */
   display: PointCloudDisplay
+  /** Session selection, in clouds order. May be empty. */
+  selectedCloudIds: string[]
+  selectionAnchorId: string | null
+  /** What style edits target; see selectEffectiveScope for the effective one. */
+  editScope: 'all' | 'selection'
+  /** The 'Sample scans and LiDAR demos' disclosure. */
+  samplesOpen: boolean
   /** Points drawn per frame at density 1 (persisted). */
   renderBudget: number
   /** Hard ceiling on resident points across all clouds. */
@@ -140,6 +172,23 @@ interface PointCloudStore {
   setRenderBudget: (budget: number) => void
   /** Drop every cloud — called on navigate-to-landing. */
   clearClouds: () => void
+
+  /** List click with Explorer rules, over `order` (default: load order). */
+  clickCloud: (id: string, mode: ClickMode, order?: readonly string[]) => void
+  selectClouds: (ids: string[], anchor?: string | null) => void
+  clearSelection: () => void
+  setEditScope: (scope: 'all' | 'selection') => void
+  /** Display name, persisted per file; '' or null → the file name. */
+  renameCloud: (id: string, name: string | null) => void
+  /** Identity colour, persisted per file. */
+  setCloudColor: (id: string, color: number) => void
+  /** Merge per-scan overrides (null clears), persisted per file. */
+  setCloudStyle: (ids: readonly string[], patch: CloudStyleOverride | null) => void
+  /** Scene default AND strip those fields from every scan: 'All' means all. */
+  setDisplayAll: (patch: Partial<PointCloudDisplay>) => void
+  clearCloudStyles: () => void
+  openSamples: () => void
+  setSamplesOpen: (open: boolean) => void
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────────
@@ -154,15 +203,34 @@ export const usePointCloudStore = create<PointCloudStore>()(
       renderBudget: readBudget(),
       maxPoints: MAX_POINTS_DEFAULT,
       epoch: 0,
+      selectedCloudIds: [],
+      selectionAnchorId: null,
+      editScope: 'all',
+      samplesOpen: false,
 
       setPanelOpen: (open) => set({ panelOpen: open }, false, 'setPanelOpen'),
 
+      // Never touches the selection: an auto-selected new scan would silently
+      // turn the next style edit into an override. It still becomes the active
+      // cloud (the SDK's default target).
       addCloud: (entry) =>
         set(
-          (s) => ({
-            clouds: [...s.clouds.filter((c) => c.id !== entry.id), entry],
-            activeCloudId: entry.id,
-          }),
+          (s) => {
+            const others = s.clouds.filter((c) => c.id !== entry.id)
+            const prefs = readCloudPrefs(entry.fileKey)
+            let color = entry.color ?? prefs.color
+            if (color === undefined) {
+              color = pickIdentityColor(others.map((c) => c.color).filter((c): c is number => c !== undefined))
+              writeCloudPrefs(entry.fileKey, { color })
+            }
+            const next: PointCloudEntry = {
+              ...entry,
+              name: entry.name ?? prefs.name ?? null,
+              color,
+              style: entry.style ?? cleanStyle(prefs.style),
+            }
+            return { clouds: [...others, next], activeCloudId: entry.id }
+          },
           false,
           'addCloud',
         ),
@@ -182,8 +250,12 @@ export const usePointCloudStore = create<PointCloudStore>()(
             // dropped a cancelled row) from notifying every subscriber.
             if (!s.clouds.some((c) => c.id === id)) return s
             const clouds = s.clouds.filter((c) => c.id !== id)
+            const selectedCloudIds = s.selectedCloudIds.filter((x) => x !== id)
             return {
               clouds,
+              selectedCloudIds,
+              selectionAnchorId: s.selectionAnchorId === id ? null : s.selectionAnchorId,
+              editScope: selectedCloudIds.length === 0 || clouds.length < 2 ? 'all' : s.editScope,
               // No epoch bump: see the header. The runner of THIS cloud notices
               // its entry is gone; its siblings must not notice anything.
               activeCloudId: s.activeCloudId === id ? (clouds[clouds.length - 1]?.id ?? null) : s.activeCloudId,
@@ -270,7 +342,140 @@ export const usePointCloudStore = create<PointCloudStore>()(
       // Display settings are a device preference: they deliberately survive a
       // clear, so the next cloud opens in the look the user chose.
       clearClouds: () =>
-        set((s) => ({ clouds: [], activeCloudId: null, epoch: s.epoch + 1 }), false, 'clearClouds'),
+        set((s) => ({
+          clouds: [], activeCloudId: null, epoch: s.epoch + 1,
+          selectedCloudIds: [], selectionAnchorId: null, editScope: 'all', samplesOpen: false,
+        }), false, 'clearClouds'),
+
+      clickCloud: (id, mode, order) =>
+        set(
+          (s) => {
+            const ids = s.clouds.map((c) => c.id)
+            if (!ids.includes(id)) return s
+            const next = nextSelection(
+              { ids: s.selectedCloudIds, anchor: s.selectionAnchorId }, id, mode,
+              (order ?? ids).filter((x) => ids.includes(x)),
+            )
+            // Keep the clouds order whatever surface was clicked.
+            const selected = ids.filter((x) => next.ids.includes(x))
+            const activeCloudId = selected.includes(id) ? id
+              : s.activeCloudId && selected.includes(s.activeCloudId) ? s.activeCloudId
+                : selected[selected.length - 1] ?? s.activeCloudId
+            return {
+              selectedCloudIds: selected, selectionAnchorId: next.anchor, activeCloudId,
+              editScope: scopeFor(selected, s.clouds),
+            }
+          },
+          false,
+          'clickCloud',
+        ),
+
+      selectClouds: (ids, anchor) =>
+        set(
+          (s) => {
+            const want = new Set(ids)
+            const selected = s.clouds.map((c) => c.id).filter((x) => want.has(x))
+            return {
+              selectedCloudIds: selected,
+              selectionAnchorId: anchor !== undefined ? anchor : (selected[0] ?? null),
+              activeCloudId: selected.length ? (s.activeCloudId && want.has(s.activeCloudId) ? s.activeCloudId : selected[selected.length - 1]) : s.activeCloudId,
+              editScope: scopeFor(selected, s.clouds),
+            }
+          },
+          false,
+          'selectClouds',
+        ),
+
+      clearSelection: () =>
+        set({ selectedCloudIds: [], selectionAnchorId: null, editScope: 'all' }, false, 'clearSelection'),
+
+      setEditScope: (scope) =>
+        set((s) => ({ editScope: s.selectedCloudIds.length === 0 ? 'all' : scope }), false, 'setEditScope'),
+
+      renameCloud: (id, name) =>
+        set(
+          (s) => {
+            const clean = (name ?? '').trim().slice(0, 80) || null
+            return {
+              clouds: s.clouds.map((c) => {
+                if (c.id !== id) return c
+                writeCloudPrefs(c.fileKey, { name: clean })
+                return { ...c, name: clean }
+              }),
+            }
+          },
+          false,
+          'renameCloud',
+        ),
+
+      setCloudColor: (id, color) =>
+        set(
+          (s) => {
+            const clean = Math.min(0xFFFFFF, Math.max(0, Math.round(Number.isFinite(color) ? color : 0)))
+            return {
+              clouds: s.clouds.map((c) => {
+                if (c.id !== id) return c
+                writeCloudPrefs(c.fileKey, { color: clean })
+                return { ...c, color: clean }
+              }),
+            }
+          },
+          false,
+          'setCloudColor',
+        ),
+
+      setCloudStyle: (ids, patch) =>
+        set(
+          (s) => {
+            const want = new Set(ids)
+            return {
+              clouds: s.clouds.map((c) => {
+                if (!want.has(c.id)) return c
+                const style = patch === null ? null : cleanStyle({ ...(c.style ?? {}), ...patch })
+                writeCloudPrefs(c.fileKey, { style })
+                return { ...c, style }
+              }),
+            }
+          },
+          false,
+          'setCloudStyle',
+        ),
+
+      setDisplayAll: (patch) => {
+        get().setDisplay(patch)
+        const keys = CLOUD_STYLE_KEYS.filter((k) => k in patch)
+        if (keys.length === 0) return
+        set(
+          (s) => ({
+            clouds: s.clouds.map((c) => {
+              if (!c.style || !keys.some((k) => k in c.style!)) return c
+              const rest = { ...c.style }
+              for (const k of keys) delete rest[k]
+              const style = cleanStyle(rest)
+              writeCloudPrefs(c.fileKey, { style })
+              return { ...c, style }
+            }),
+          }),
+          false,
+          'setDisplayAll',
+        )
+      },
+
+      clearCloudStyles: () =>
+        set(
+          (s) => ({
+            clouds: s.clouds.map((c) => {
+              if (!c.style) return c
+              writeCloudPrefs(c.fileKey, { style: null })
+              return { ...c, style: null }
+            }),
+          }),
+          false,
+          'clearCloudStyles',
+        ),
+
+      openSamples: () => set({ panelOpen: true, samplesOpen: true }, false, 'openSamples'),
+      setSamplesOpen: (open) => set({ samplesOpen: open }, false, 'setSamplesOpen'),
     }),
     { name: 'PointCloudStore', enabled: import.meta.env.DEV },
   ),
@@ -286,3 +491,30 @@ export const selectActiveCloud  = (s: PointCloudStore): PointCloudEntry | null =
 /** Points resident across every cloud — the number the memory badge shows. */
 export const selectTotalPoints  = (s: PointCloudStore): number =>
   s.clouds.reduce((sum, c) => sum + c.pointCount, 0)
+
+export const selectCloudById = (id: string) => (s: PointCloudStore): PointCloudEntry | null =>
+  s.clouds.find((c) => c.id === id) ?? null
+
+/** 'all' whenever there are fewer than 2 scans or nothing is selected. */
+export const selectEffectiveScope = (s: PointCloudStore): 'all' | 'selection' =>
+  s.clouds.length < 2 || s.selectedCloudIds.length === 0 ? 'all' : s.editScope
+
+/** The ids a scoped edit writes to, in clouds order. Use with useShallow. */
+export const selectScopeTargets = (s: PointCloudStore): string[] =>
+  selectEffectiveScope(s) === 'all' ? s.clouds.map((c) => c.id) : s.selectedCloudIds
+
+/**
+ * A flat projection of everything the panel body renders, WITHOUT progress,
+ * pointCount and declaredCount — so a streamed chunk re-renders only its own
+ * row and the list header. Use with useShallow.
+ */
+export const selectPanelStructure = (s: PointCloudStore): unknown[] =>
+  s.clouds.flatMap((c) => [
+    c.id, c.status, c.visible, c.fileName, c.fileKey, c.format, c.sourceKind, c.errorKey,
+    c.streamErrorKey, c.truncated, c.frame, c.attributes, c.alignment, c.alignedToModelId,
+    c.name, c.color, c.style, c.fileDate,
+  ])
+
+/** What a scan is called in the UI: its given name, else its file name. */
+export const cloudLabel = (c: Pick<PointCloudEntry, 'name' | 'fileName'>): string =>
+  c.name?.trim() || c.fileName

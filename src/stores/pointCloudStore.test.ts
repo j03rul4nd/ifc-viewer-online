@@ -1,7 +1,11 @@
 // ─── pointCloudStore tests ────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { usePointCloudStore, parseDisplay } from './pointCloudStore'
+import { shallow } from 'zustand/shallow'
+import {
+  usePointCloudStore, parseDisplay, selectEffectiveScope, selectPanelStructure, selectCloudById, cloudLabel,
+} from './pointCloudStore'
+import { __resetCloudPrefsForTests, flushCloudPrefs, LS_ITEMS } from '../lib/pointcloud/pc-prefs'
 import { DEFAULT_DISPLAY, type PointCloudEntry, type PointCloudAlignment } from '../lib/pointcloud/pc-types'
 
 function entry(id: string, patch: Partial<PointCloudEntry> = {}): PointCloudEntry {
@@ -25,6 +29,131 @@ const ALIGNMENT: PointCloudAlignment = {
 beforeEach(() => {
   usePointCloudStore.setState({
     clouds: [], activeCloudId: null, panelOpen: false, display: { ...DEFAULT_DISPLAY }, epoch: 0,
+    selectedCloudIds: [], selectionAnchorId: null, editScope: 'all', samplesOpen: false,
+  })
+  localStorage.clear()
+  __resetCloudPrefsForTests()
+})
+
+describe('pointCloudStore — sets', () => {
+  const s = () => usePointCloudStore.getState()
+  const three = () => { s().addCloud(entry('a')); s().addCloud(entry('b')); s().addCloud(entry('c')) }
+
+  it('clickCloud selects and scopes with 2+ clouds; toggling the last off goes back to all', () => {
+    three()
+    s().clickCloud('a', 'replace')
+    expect(s().selectedCloudIds).toEqual(['a'])
+    expect(s().activeCloudId).toBe('a')
+    expect(selectEffectiveScope(s())).toBe('selection')
+    s().clickCloud('a', 'toggle')
+    expect(s().selectedCloudIds).toEqual([])
+    expect(selectEffectiveScope(s())).toBe('all')
+  })
+
+  it('keeps the scope at all with one cloud', () => {
+    s().addCloud(entry('a'))
+    s().clickCloud('a', 'replace')
+    expect(s().selectedCloudIds).toEqual(['a'])
+    expect(selectEffectiveScope(s())).toBe('all')
+  })
+
+  it('cannot scope to an empty selection', () => {
+    three()
+    s().setEditScope('selection')
+    expect(selectEffectiveScope(s())).toBe('all')
+  })
+
+  it('removeCloud prunes the selection without an epoch bump; clearClouds resets it', () => {
+    three()
+    s().selectClouds(['a', 'b'])
+    s().removeCloud('a')
+    expect(s().selectedCloudIds).toEqual(['b'])
+    expect(s().epoch).toBe(0)
+    s().openSamples()
+    s().clearClouds()
+    expect(s().selectedCloudIds).toEqual([])
+    expect(s().editScope).toBe('all')
+    expect(s().samplesOpen).toBe(false)
+  })
+
+  it('addCloud keeps the selection but activates the new cloud', () => {
+    s().addCloud(entry('a')); s().addCloud(entry('b'))
+    s().selectClouds(['a'])
+    s().addCloud(entry('c'))
+    expect(s().selectedCloudIds).toEqual(['a'])
+    expect(s().activeCloudId).toBe('c')
+  })
+
+  it('gives three adds three distinct persisted colours', () => {
+    three()
+    const colours = s().clouds.map((c) => c.color)
+    expect(new Set(colours).size).toBe(3)
+    flushCloudPrefs()
+    const items = JSON.parse(localStorage.getItem(LS_ITEMS)!).items
+    expect(Object.values(items).map((i) => (i as { color: number }).color).sort()).toEqual([...colours].sort())
+  })
+
+  it('hydrates name, colour and style for a known file', () => {
+    s().addCloud(entry('a'))
+    s().renameCloud('a', 'North wing')
+    s().setCloudColor('a', 0x123456)
+    s().setCloudStyle(['a'], { pointSize: 5 })
+    s().removeCloud('a')
+    s().addCloud(entry('a2', { fileKey: 'a.las:1024:1' }))
+    const a = s().clouds[0]
+    expect(a.name).toBe('North wing')
+    expect(a.color).toBe(0x123456)
+    expect(a.style).toEqual({ pointSize: 5 })
+  })
+
+  it('renameCloud trims, maps empty to null and falls back to the file name', () => {
+    s().addCloud(entry('a'))
+    s().renameCloud('a', '  CRAS  ')
+    expect(s().clouds[0].name).toBe('CRAS')
+    s().renameCloud('a', '   ')
+    expect(s().clouds[0].name).toBeNull()
+    expect(cloudLabel(s().clouds[0])).toBe('a.las')
+  })
+
+  it("'All' edits strip the overrides they touch", () => {
+    three()
+    s().setCloudStyle(['a'], { pointSize: 4 })
+    expect(s().clouds[0].style).toEqual({ pointSize: 4 })
+    s().setDisplayAll({ pointSize: 2 })
+    expect(s().clouds[0].style).toBeNull()
+    expect(s().display.pointSize).toBe(2)
+    s().setCloudStyle(['a', 'b'], { opacity: 0.5 })
+    s().setCloudStyle(['a'], null)
+    expect(s().clouds[0].style).toBeNull()
+    s().clearCloudStyles()
+    expect(s().clouds.every((c) => !c.style)).toBe(true)
+  })
+
+  it('openSamples opens the panel and the disclosure', () => {
+    s().openSamples()
+    expect(s().panelOpen).toBe(true)
+    expect(s().samplesOpen).toBe(true)
+  })
+
+  it('projects structure without per-chunk fields', () => {
+    three()
+    const before = selectPanelStructure(s())
+    s().updateCloud('a', { pointCount: 1000, progress: 50 })
+    expect(shallow(before, selectPanelStructure(s()))).toBe(true)
+    s().setVisible('a', false)
+    expect(shallow(before, selectPanelStructure(s()))).toBe(false)
+  })
+
+  it('keeps untouched entries identical', () => {
+    three()
+    const b = selectCloudById('b')(s())
+    s().updateCloud('a', { pointCount: 5 })
+    expect(selectCloudById('b')(s())).toBe(b)
+  })
+
+  it("parseDisplay accepts 'scan' and 'topic'", () => {
+    expect(parseDisplay(JSON.stringify({ colorMode: 'scan' })).colorMode).toBe('scan')
+    expect(parseDisplay(JSON.stringify({ colorMode: 'topic' })).colorMode).toBe('topic')
   })
 })
 
