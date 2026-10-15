@@ -256,6 +256,13 @@
               "name": {
                 "type": "string"
               },
+              "names": {
+                "type": "object",
+                "description": "`name` in other languages, by language code (\"es\", \"pt-BR\"…). What visitors see picks their language and falls back to `name`.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
               "sourceId": {
                 "type": "string"
               },
@@ -300,7 +307,22 @@
                 }
               },
               "rules": {
-                "type": "array"
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "names": {
+                      "type": "object",
+                      "description": "`name` in other languages, by language code (\"es\", \"pt-BR\"…). What visitors see picks their language and falls back to `name`.",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
               },
               "staleColor": {
                 "type": [

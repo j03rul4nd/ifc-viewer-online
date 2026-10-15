@@ -20,6 +20,7 @@ import {
 import { indexedDbBackend, prune, type HistoryBackend } from '../layers/history-store'
 import { nextFrame, rebuildAt, type Frame } from '../layers/history-codec'
 import { logAlert } from '../layers/alert-log'
+import { localName } from './localize'
 import { getNotifySettings, notifyAlert } from '../layers/alert-notify'
 import { toast } from '../../stores/toastStore'
 import i18n from '../../i18n/config'
@@ -295,14 +296,18 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
         sample: [e.binding.deviceId],
       })
       if (e.kind !== 'start') continue
-      const msg = t('alertStarted', { rule: e.rule.name, name: e.binding.name })
+      // What the visitor reads is in their language; the log keeps the scene's own names.
+      const lang = i18n.language || 'en'
+      const ruleName = localName(e.rule, lang)
+      const bindingName = localName(e.binding, lang)
+      const msg = t('alertStarted', { rule: ruleName, name: bindingName })
       // "Show" only when there is something to show: a device whose elements are
       // not loaded (another file of the project, a storey with no services) still alerts.
       syncIndex()
       const where = resolveLocsFor(e.binding).length > 0
       const show = where ? () => focusBinding(e.binding.id) : undefined
       toast(msg, 'warning', { duration: 0, action: show ? { label: t('alertShow'), run: show } : undefined })
-      notifyAlert({ title: e.rule.name, body: e.binding.name, tag: `twin:${e.binding.id}/${e.rule.id}`, onClick: show })
+      notifyAlert({ title: ruleName, body: bindingName, tag: `twin:${e.binding.id}/${e.rule.id}`, onClick: show })
     }
   }
 

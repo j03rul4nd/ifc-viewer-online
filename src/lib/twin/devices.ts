@@ -154,6 +154,8 @@ export interface TwinEffect {
 export interface TwinRule {
   id: string
   name: string
+  /** `name` in other languages, by language code (`{ "es": "Pocas bicis" }`); see localize.ts. */
+  names?: Record<string, string>
   match: 'all' | 'any'
   filters: Filter[]
   effect: TwinEffect
@@ -178,6 +180,8 @@ export interface TargetQuery {
 export interface Binding {
   id: string
   name: string
+  /** `name` in other languages, by language code; see localize.ts. */
+  names?: Record<string, string>
   sourceId: string
   deviceId: string
   targets: ElementRef[]
