@@ -19,7 +19,7 @@
 // Radix owns focus, escape and aria. Re-implementing those by hand is how you
 // get a focus trap that works until someone puts a select in a portal inside it.
 
-import React, { useState } from 'react'
+import React, { useLayoutEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useModalLayer } from '../hooks/useModalLayer'
 import { SheetGrip } from './mobile/SheetGrip'
@@ -71,6 +71,21 @@ export function Modal({
   // Membership in the stack, and the layer that follows from it. The ordering
   // rules are pure and live in lib/ui/modal-stack.
   const { z, isTop } = useModalLayer(id, open, onClose)
+  // Radix hands focus back only when `open` flips to false. Most callers
+  // unmount the Modal instead, and then focus fell to <body>: a keyboard user
+  // closing "Add data" with Escape lost their place in the toolbar. Remember
+  // the opener and restore it, unless the closing action already moved focus.
+  useLayoutEffect(() => {
+    if (!open) return
+    const opener = document.activeElement as HTMLElement | null
+    return () => {
+      // A task, not rAF: rAF never fires in a background tab.
+      setTimeout(() => {
+        const now = document.activeElement
+        if ((!now || now === document.body) && opener?.isConnected) opener.focus()
+      })
+    }
+  }, [open])
 
   return (
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose() }}>
