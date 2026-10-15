@@ -18,7 +18,11 @@ import {
   MESH_SIDECAR_EXTENSIONS,
   MESH_TEXTURE_EXTENSIONS,
   POINTCLOUD_EXTENSIONS,
+  isSceneFileName,
 } from './drop-routing'
+import { VIDEO_ACCEPT, VIDEO_FILE_EXTENSIONS } from '../video/video-types'
+import pcTypesSource from '../pointcloud/pc-types.ts?raw'
+import videoTypesSource from '../video/video-types.ts?raw'
 import { acceptAttribute } from '../pointcloud/pc-format'
 import { MESH_EXTENSIONS } from '../mesh/mesh-types'
 
@@ -185,5 +189,53 @@ describe('extension parity with the importers', () => {
   it('meshes match mesh-types MESH_EXTENSIONS', () => {
     const mirrored = [...MESH_ENTRY_EXTENSIONS, ...MESH_SIDECAR_EXTENSIONS, ...MESH_TEXTURE_EXTENSIONS]
     expect(mirrored.sort()).toEqual([...MESH_EXTENSIONS].sort())
+  })
+})
+
+describe('classifyFiles — video, scene and deferred buckets', () => {
+  it('routes every video container to video, in arrival order, and counts it', () => {
+    const r = classifyFiles(['clip.MP4', 'drone.mov', 'a.webm', 'b.ogv', 'c.ogg', 'd.m4v'].map(file))
+    expect(names(r.video)).toEqual(['clip.MP4', 'drone.mov', 'a.webm', 'b.ogv', 'c.ogg', 'd.m4v'])
+    expect(routedCount(r)).toBe(6)
+  })
+
+  it('recognises *.scene.json by suffix and leaves a plain .json in other', () => {
+    expect(names(classifyFiles([file('Plaza.SCENE.JSON')]).scene)).toEqual(['Plaza.SCENE.JSON'])
+    expect(names(classifyFiles([file('config.json')]).other)).toEqual(['config.json'])
+    expect(isSceneFileName('  a.scene.json ')).toBe(true)
+    expect(isSceneFileName('scene.json')).toBe(false)
+  })
+
+  it('puts scanner formats it cannot decode in deferred — never pointcloud or other, never counted', () => {
+    const r = classifyFiles(['a.e57', 'b.rcp', 'c.rcs', 'd.fls', 'e.zfs'].map(file))
+    expect(names(r.deferred)).toEqual(['a.e57', 'b.rcp', 'c.rcs', 'd.fls', 'e.zfs'])
+    expect(r.pointcloud).toEqual([])
+    expect(r.other).toEqual([])
+    expect(routedCount(r)).toBe(0)
+  })
+
+  it('treats text next to a video or a scene file as the README it is', () => {
+    expect(names(classifyFiles([file('clip.mp4'), file('notes.txt')]).other)).toEqual(['notes.txt'])
+    expect(names(classifyFiles([file('x.scene.json'), file('README.txt')]).other)).toEqual(['README.txt'])
+    expect(names(classifyFiles([file('a.xyz'), file('b.csv')]).pointcloud)).toEqual(['a.xyz', 'b.csv'])
+  })
+})
+
+describe('import-free extension modules', () => {
+  // drop-routing.ts lives in the entry chunk and imports these two modules for
+  // their extension tables. A value import in either would pull its target
+  // into the entry chunk; types and `as const` tables only.
+  it.each([
+    ['pc-types.ts', pcTypesSource],
+    ['video-types.ts', videoTypesSource],
+  ])('%s has no value imports', (_name, source) => {
+    const offending = source.split(/\r?\n/).filter((line) => /^import (?!type)/.test(line))
+    expect(offending).toEqual([])
+  })
+
+  it('VIDEO_ACCEPT keeps the old MIME list and names every routed extension', () => {
+    expect(VIDEO_ACCEPT.startsWith('video/mp4,video/webm,video/ogg')).toBe(true)
+    const parts = VIDEO_ACCEPT.split(',')
+    for (const ext of VIDEO_FILE_EXTENSIONS) expect(parts).toContain(ext)
   })
 })

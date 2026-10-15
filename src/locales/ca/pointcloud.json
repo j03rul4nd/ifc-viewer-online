@@ -205,12 +205,17 @@
       "intensity": "Intensitat",
       "elevation": "Alçada",
       "classification": "Classificació",
-      "flat": "Color pla"
+      "flat": "Color pla",
+      "scan": "Un color per escaneig",
+      "topic": "Color per tema"
     },
     "modeUnavailable": "No hi és, en aquest fitxer",
     "flatColor": "Color",
     "confidence": "Llindar de confiança",
-    "confidenceHint": "Amaga els punts sobre els quals la reconstrucció estava menys segura. Només ho tenen els fitxers que porten confiança per punt."
+    "confidenceHint": "Amaga els punts sobre els quals la reconstrucció estava menys segura. Només ho tenen els fitxers que porten confiança per punt.",
+    "scanModeHint": "Cada escaneig es dibuixa amb el seu propi color. Fes clic a la mostra de color d'un escaneig a la llista per canviar-lo.",
+    "topicModeHint": "Cada escaneig es dibuixa amb el color del seu primer tema. Els escanejos sense tema es dibuixen en gris.",
+    "fallback": "{{name}} no té dades per a {{wanted}}, així que es dibuixa per {{mode}}."
   },
   "inspect": {
     "title": "Inspecciona",
@@ -281,9 +286,6 @@
   "tabs": {
     "appearance": "Aspecte",
     "placement": "Posició",
-    "view": "Vista",
-    "samples": "Exemples",
-    "help": "Arreglar",
     "analyze": "Analitzar"
   },
   "ui": {
@@ -318,7 +320,8 @@
       "xray": "Raigs X",
       "scan-vs-bim": "Núvol vs BIM"
     },
-    "drawn": "Dibuixats / carregats"
+    "drawn": "Dibuixats / carregats",
+    "samplesDisclosure": "Escanejos de mostra i demos LiDAR"
   },
   "presets": {
     "title": "Estil ràpid",
@@ -347,7 +350,9 @@
       "tooLarge": "El núvol és molt més gran del que s'esperava: probablement és en mil·límetres, centímetres o peus.",
       "tooSmall": "El núvol és molt més petit del que s'esperava: pot ser en quilòmetres o escalat.",
       "heavy": "Molts punts al màxim detall: un ajust més lleuger mantindrà la navegació fluida."
-    }
+    },
+    "titleFor": "Revisió · {{name}}",
+    "moreSymptoms": "Alguna altra cosa no es veu bé?"
   },
   "fix": {
     "flipUpAxis": "Gira l'eix vertical",
@@ -436,6 +441,10 @@
       "clearance": {
         "label": "Mesurar un gàlib",
         "hint": "Activa l'eina de distància: fes clic en dos punts de l'escaneig (terra a biga, mur a mur) per llegir el buit real construït."
+      },
+      "epochs": {
+        "label": "Compara preses",
+        "hint": "Cada tema —o cada escaneig, si cap no en té— amb el seu propi color, tots visibles alhora."
       }
     },
     "needsClasses": "Cal un fitxer classificat",
@@ -488,6 +497,88 @@
       "area": "Àrea",
       "angle": "Angle",
       "point": "Punt"
-    }
+    },
+    "needsTwoScans": "Calen dos o més escanejos."
+  },
+  "scope": {
+    "label": "S'aplica a",
+    "all": "Tots els escanejos",
+    "selected": "Seleccionats ({{count}})",
+    "allCaption": "Canvia el valor per defecte de l'escena per a tots els escanejos ({{count}}).",
+    "selectedCaption": "Només canvia {{names}}. Els altres escanejos mantenen el valor per defecte de l'escena.",
+    "emptySelection": "Selecciona escanejos a la llista per canviar només aquests.",
+    "analyzeCaption": "Els filtres i els casos d'ús s'apliquen a tots els escanejos.",
+    "sceneWide": "Per a tota l'escena",
+    "sceneWideHint": "S'aplica a tots els escanejos, sigui quina sigui la selecció.",
+    "mixed": "Diversos",
+    "useDefault": "Fes servir el valor de l'escena",
+    "overridden": "Escanejos amb estil propi: {{count}}",
+    "resetAll": "Restableix-ho tot al valor de l'escena"
+  },
+  "list": {
+    "selectAll": "Selecciona tots els escanejos",
+    "selectRow": "Selecciona {{name}}",
+    "hint": "Clic per seleccionar · Ctrl/⌘+clic per afegir · Maj+clic per a un interval",
+    "locate": "Localitza a l'escena",
+    "renameHint": "Fes doble clic o prem F2 per canviar el nom",
+    "renameLabel": "Nom de l'escaneig",
+    "useFileName": "Deixa-ho buit per fer servir el nom del fitxer",
+    "color": "Color de {{name}}",
+    "removeConfirm": "Vols treure-ho?",
+    "health": "Coses a revisar: {{count}}",
+    "healthOk": "Res a revisar",
+    "fileDate": "Data del fitxer {{date}}"
+  },
+  "bulk": {
+    "selected": "Seleccionats: {{count}}",
+    "show": "Mostra",
+    "hide": "Amaga",
+    "solo": "Només aquests",
+    "soloHint": "Mostra només els escanejos seleccionats. Torna a prémer per mostrar-los tots.",
+    "frame": "Enquadra",
+    "topic": "Tema",
+    "rename": "Canvia el nom",
+    "remove": "Treu",
+    "removeConfirm": "Vols treure de l'escena els escanejos seleccionats ({{count}})? Els fitxers del teu dispositiu no es toquen.",
+    "removeYes": "Sí, treu-los",
+    "keep": "Conserva",
+    "clear": "Esborra la selecció"
+  },
+  "topics": {
+    "title": "Temes",
+    "add": "Tema nou",
+    "defaultName": "Tema {{n}}",
+    "edit": "Edita els temes",
+    "done": "Fet",
+    "name": "Nom del tema",
+    "color": "Color del tema",
+    "delete": "Suprimeix el tema",
+    "empty": "Selecciona escanejos i després afegeix un tema per agrupar-los per data de presa, zona o disciplina.",
+    "chipHint": "Clic: selecciona · Ctrl/⌘+clic: afegeix · Alt+clic: mostra només aquests",
+    "show": "Mostra {{name}}",
+    "hide": "Amaga {{name}}",
+    "assignTitle": "Temes dels escanejos seleccionats",
+    "newFromSelection": "Tema nou a partir de la selecció",
+    "limit": "Fins a {{max}} temes.",
+    "byFileDate": "Agrupa per data del fitxer ({{count}})",
+    "byFileDateHint": "Un tema per cada data escrita a la capçalera LAS/LAZ/COPC. És quan es va generar el fitxer: sovint, però no sempre, el dia de la presa.",
+    "dismiss": "Descarta"
+  },
+  "place": {
+    "alignedTo": "Alineat amb {{model}}",
+    "alignedToNone": "Col·locat pel seu compte: no hi havia cap model IFC carregat quan va arribar.",
+    "fileDate": "Data del fitxer: {{date}}",
+    "fileDateHint": "Llegida de la capçalera del fitxer: normalment el dia de la presa o del processament.",
+    "undo": "Desfés",
+    "redo": "Refés",
+    "historyHint": "El desfer es comparteix amb el panell Escena.",
+    "exact": "{{label}}, valor exacte",
+    "fieldHint": "Fletxes per ajustar · Maj ×10 · Alt ×0,1",
+    "summary": "Posició dels escanejos ({{count}})",
+    "together": "Mou junts",
+    "togetherHint": "Mou i gira aquests escanejos ({{count}}) com un sol bloc al voltant del seu centre comú. Cadascun conserva la seva anivellació i escala.",
+    "apply": "Aplica",
+    "resetMany": "Restableix la posició dels escanejos ({{count}})",
+    "oneAtATime": "L'eix vertical, les unitats i el SRC es configuren d'un en un: selecciona un sol escaneig per canviar-los."
   }
 }

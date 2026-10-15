@@ -648,3 +648,15 @@ Behaviour verified in the running app (same session):
   (coordinate base)" for the members that converted ahead of the anchor.
 - `?validate` validates all three models once the queue is idle (Health
   Score 93 across the set).
+
+## 17. Drop buckets, follow-up and the scene guard
+
+The global drop now plans with `planDrop` (lib/loading/drop-plan.ts) on top of
+`classifyFiles`, which gained three buckets: `video` (.mp4 .m4v .mov .webm .ogv
+.ogg → the 3D video queue, held with scans and meshes while the IFC review is
+open), `scene` (`*.scene.json`, opened alone; guarded by a confirm toast when the
+scene has content) and `deferred` (E57 / ReCap / FARO → specific export advice).
+After a drop, `followUp` opens the single kind's panel or shows one "Adding to
+the scene" toast with Show, only in the interactive full chrome. A route-level
+overlay shows the format legend while files are dragged. Details and tables:
+`ADD_DATA.md`.

@@ -96,6 +96,7 @@ describe('what has been migrated stays migrated', () => {
   const migrated = [
     'pro/ProUpsellModal.tsx', 'KeyboardHelpModal.tsx',
     'ExportModal.tsx', 'EmbedModal.tsx', 'IdsModal.tsx',
+    'data/AddDataHub.tsx',
   ]
 
   for (const file of migrated) {

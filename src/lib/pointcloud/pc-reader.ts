@@ -34,6 +34,11 @@ export interface ReaderHeader {
    * header. The exact box is measured during read() and reported at the end.
    */
   boundsEstimated: boolean
+  /**
+   * LAS-family header 'file creation' date as YYYY-MM-DD — often the
+   * processing day. Other formats leave it undefined.
+   */
+  fileDate?: string | null
 }
 
 export interface ReadOptions {

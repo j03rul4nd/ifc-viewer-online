@@ -191,7 +191,9 @@
         "projectName": "Stesso progetto e sito",
         "proximity": "Vicinanza geografica",
         "single": "File singolo"
-      }
+      },
+      "editScan": "Modifica nel pannello Nuvola di punti",
+      "topics": "Argomenti: {{names}}"
     },
     "scope": {
       "label": "Ambito",
@@ -342,6 +344,16 @@
     "properties": "Proprietà",
     "fromType": "tipo",
     "attributes": "Attributi",
-    "copied": "Copiato"
+    "copied": "Copiato",
+    "story": {
+      "label": "Visita guidata",
+      "step": "{{n}} di {{total}}",
+      "next": "Avanti",
+      "back": "Indietro",
+      "close": "Chiudi la visita",
+      "finish": "Esplora da solo",
+      "resume": "Visita guidata",
+      "now": "In diretta ora"
+    }
   }
 }

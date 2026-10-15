@@ -663,6 +663,8 @@ async function placeFromHeader(
     declaredCount: header.declaredCount,
     alignment,
     alignedToModelId: inputs.modelId,
+    // An entry field, not a frame field: the frame is rebuilt at 'done'.
+    fileDate: header.fileDate ?? null,
   })
   opts.system.create(cloudId, alignment, frame.origin)
   onPlaced()

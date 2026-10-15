@@ -70,7 +70,10 @@ piece — the minimised state that was never designed.
 A vertical rail on the right edge, one icon per panel that is currently
 applicable:
 
-- **Always visible** while a model is loaded. Not a mode, not behind a menu.
+- **Always visible** while the scene has content — an IFC, a scan, a 3D model,
+  a clip or a data layer. Not a mode, not behind a menu. The model tools
+  (Measure, Section, Plans, Map, Sun) carry the model gate their panels mount
+  with, so a scan-only scene shows Properties, Scene, Live devices, Point cloud.
 - **The open panel's icon is marked.** So the rail also answers "which one am I
   in".
 - **Click an icon** → that panel opens (and the previous one closes, which is
@@ -116,3 +119,24 @@ reason family 1 lost. A panel that can be anywhere is a panel that is in the way
 somewhere. A content panel already takes the whole lane — 788px tall at 1440x900
 with the validation drawer open, running down over it — so there is nowhere
 better to drag it to.
+
+## Rail order, app-only entries and icons
+
+`RAIL_ORDER` is `ALL_PANEL_IDS` (the host vocabulary, frozen with SDK 1.18)
+followed by two **app-only** entries, `layers` (Data layers) and `video`
+(3D video). They appear once a layer or a clip exists, always after every host
+panel, so they never move an earlier icon. Host allowlists (`panels=`,
+`set-panels`, the embed preset's `['properties']`) never include them,
+`get-panels` filters them out and `open-panel` ignores them; promoting them is an
+SDK version bump. One glyph per data concept: `Icons.PointCloud`, `Icons.Mesh`,
+`Icons.Video`, `Icons.DataLayers`, `Icons.Devices` (scripts/icon-vocabulary.test.ts).
+
+## Overflow cue
+
+The rail is `36n + 6` px tall (32px buttons, 4px gap, padding and border). A
+scene with an IFC, a scan, a layer and a clip has 11 items (402px) against a
+390px rail at 1440x900 with the default drawer, and only about 6 fit at
+1366x643. The rail keeps `no-scrollbar` and scrolls; a mask fade on the clipped
+edge (top and/or bottom, from the pure `overflowEdges` helper, measured with a
+ResizeObserver and on scroll) says there is more. With an IFC only (8 items) at
+1440x900 there is no fade.

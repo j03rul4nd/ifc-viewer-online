@@ -56,8 +56,11 @@ describe('blog hub discovery', () => {
       'lod-bim-vs-citygml-level-of-detail',
       'flood-simulation-ifc-model-online',
       'buried-rivers-flood-risk-openstreetmap',
+      'digital-twin-maturity-levels',
+      'citygml-vs-ifc-vs-3d-tiles',
+      'city-open-data-browser-test',
     ]))
-    expect(results).toHaveLength(23)
+    expect(results).toHaveLength(26)
   })
 
   it('filters by category and sorts short reads first', () => {

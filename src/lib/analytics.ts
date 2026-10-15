@@ -45,6 +45,11 @@
  *   certificate_verified_view → a /verify visitor ran the local signature check
  *   certificate_deep_verified → a /verify visitor checked the actual file (hash/rerun)
  *
+ * Data integration (enum-only: categories and bucketed counts, never names)
+ *   add_data_opened        → the "+ Add data" hub opened {from}
+ *   data_added             → files handed to a loader or the IFC review {kind, via, files}
+ *   data_refused           → a drop or pick nothing could open {reason, via}
+ *
  * Usage:
  *   import { trackFileOpened } from '@/lib/analytics'
  *   trackFileOpened({ file_size_mb: 4.2, element_count: 3100, source: 'demo', from_cache: false })
@@ -436,6 +441,36 @@ export function trackFeatureUsed(props: {
     | 'ebook_download'
 }): void {
   track('feature_used', props)
+}
+
+// ── Data integration ─────────────────────────────────────────────────────────
+// INV-5: categories and bucketed counts only — never file names, sizes, URLs
+// or coordinates. `data_added` means "handed to a loader or the IFC review",
+// not "loaded"; a scene file reloads the page, so its event is best-effort.
+
+export type AddDataFrom = 'toolbar' | 'open_menu' | 'mobile' | 'upload_dialog'
+export type DataVia = 'drop' | 'hub' | 'menu'
+export type DataKindEvent = 'ifc' | 'pointcloud' | 'mesh' | 'video' | 'layers' | 'scene' | 'ids'
+export type FileCountBucket = '1' | '2-5' | '6+'
+
+export function fileCountBucket(n: number): FileCountBucket {
+  if (n <= 1) return '1'
+  return n <= 5 ? '2-5' : '6+'
+}
+
+export function trackAddDataOpened(props: { from: AddDataFrom }): void {
+  track('add_data_opened', { from: props.from })
+}
+
+export function trackDataAdded(props: { kind: DataKindEvent; via: DataVia; files: FileCountBucket }): void {
+  track('data_added', { kind: props.kind, via: props.via, files: props.files })
+}
+
+export function trackDataRefused(props: {
+  reason: 'e57' | 'proprietary' | 'unsupported' | 'flag_off'
+  via: DataVia
+}): void {
+  track('data_refused', { reason: props.reason, via: props.via })
 }
 
 // ── GIS / Map mode ────────────────────────────────────────────────────────────

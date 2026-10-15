@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
 import { useValidationStore } from '../stores/validationStore'
 import { bindingState, buildCatalog, readingsForElement, type Reading } from '../lib/twin/devices'
+import { localizeBindings } from '../lib/twin/localize'
 import { metricSeries, thinSeries, type SeriesPoint } from '../lib/twin/series'
 import type { Frame } from '../lib/layers/history-codec'
 
@@ -21,8 +22,11 @@ export function TwinLiveSection({ globalId: given, modelId, expressId }: {
   modelId?: string
   expressId?: number | null
 }) {
-  const { t } = useTranslation('layers', { keyPrefix: 'devices' })
-  const bindings = useTwinDeviceStore((s) => s.bindings)
+  const { t, i18n } = useTranslation('layers', { keyPrefix: 'devices' })
+  const rawBindings = useTwinDeviceStore((s) => s.bindings)
+  // Rule names in the reader's language (a scene's rules may carry `names`).
+  const lang = i18n.language || 'en'
+  const bindings = useMemo(() => localizeBindings(rawBindings, lang), [rawBindings, lang])
   const readings = useTwinDeviceStore(selectShownReadings)
   const timeAt = useTwinDeviceStore((s) => s.timeAt)
   const trees = useValidationStore((s) => s.spatialTrees)

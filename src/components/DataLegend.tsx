@@ -33,12 +33,14 @@ import type { ViewerAPI } from '../lib/viewer'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
 import { useLaneStore, selectOverlayReservePx } from '../stores/laneStore'
 import { twinLegendLayer, TWIN_LEGEND_ID } from '../lib/twin/twin-legend'
+import { localizeBindings } from '../lib/twin/localize'
 
 type T = (k: string, o?: Record<string, unknown>) => string
 
 export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefObject<ViewerAPI | null> }) {
-  const { t: tRaw } = useTranslation('layers')
+  const { t: tRaw, i18n } = useTranslation('layers')
   const t = tRaw as unknown as T
+  const lang = i18n.language || 'en'
   const layers = useVectorLayerStore((s) => s.layers)
   const open = useVectorLayerStore((s) => s.legendOpen)
   const excluded = useVectorLayerStore((s) => s.legendExcluded)
@@ -84,10 +86,11 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   }, strings)), [shown, lod, folded, strings, live, timeTravel, historyData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const twin = useMemo(() => (twinPresent && !excluded[TWIN_LEGEND_ID]
-    ? twinLegendLayer(twinBindings, twinReadings, twinTimeAt ?? Date.now(), {
+    // Rows are rule names: in the reader's language when the scene gives them.
+    ? twinLegendLayer(localizeBindings(twinBindings, lang), twinReadings, twinTimeAt ?? Date.now(), {
       title: t('devices.title'), stale: t('devices.stale'), nodata: t('devices.nodata'), asOf: strings.asOf,
     }, !!folded[TWIN_LEGEND_ID])
-    : null), [twinPresent, twinBindings, twinReadings, twinTimeAt, excluded, folded, strings, t])
+    : null), [twinPresent, twinBindings, lang, twinReadings, twinTimeAt, excluded, folded, strings, t])
   const allLayers = twin ? [...model, twin] : model
 
   // North / scale follow the camera — polled only while one of them is on.

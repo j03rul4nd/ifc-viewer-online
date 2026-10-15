@@ -205,12 +205,17 @@
       "intensity": "Intensität",
       "elevation": "Höhe",
       "classification": "Klassifizierung",
-      "flat": "Einfarbig"
+      "flat": "Einfarbig",
+      "scan": "Eine Farbe pro Scan",
+      "topic": "Farbe nach Thema"
     },
     "modeUnavailable": "Nicht in dieser Datei",
     "flatColor": "Farbe",
     "confidence": "Konfidenzschwelle",
-    "confidenceHint": "Blendet die Punkte aus, bei denen die Rekonstruktion am unsichersten war. Nur Dateien mit punktweiser Konfidenz haben das."
+    "confidenceHint": "Blendet die Punkte aus, bei denen die Rekonstruktion am unsichersten war. Nur Dateien mit punktweiser Konfidenz haben das.",
+    "scanModeHint": "Jeder Scan wird in seiner eigenen Farbe gezeichnet. Klicke in der Liste auf das Farbfeld eines Scans, um sie zu ändern.",
+    "topicModeHint": "Jeder Scan wird in der Farbe seines ersten Themas gezeichnet. Scans ohne Thema erscheinen grau.",
+    "fallback": "{{name}} enthält keine Daten für {{wanted}} und wird daher nach {{mode}} gezeichnet."
   },
   "inspect": {
     "title": "Untersuchen",
@@ -281,9 +286,6 @@
   "tabs": {
     "appearance": "Darstellung",
     "placement": "Position",
-    "view": "Ansicht",
-    "samples": "Beispiele",
-    "help": "Beheben",
     "analyze": "Analysieren"
   },
   "ui": {
@@ -318,7 +320,8 @@
       "xray": "Röntgen",
       "scan-vs-bim": "Scan vs. BIM"
     },
-    "drawn": "Gezeichnet / geladen"
+    "drawn": "Gezeichnet / geladen",
+    "samplesDisclosure": "Beispiel-Scans und LiDAR-Demos"
   },
   "presets": {
     "title": "Schnellstil",
@@ -347,7 +350,9 @@
       "tooLarge": "Der Scan ist viel größer als erwartet – vermutlich in Millimetern, Zentimetern oder Fuß.",
       "tooSmall": "Der Scan ist viel kleiner als erwartet – eventuell in Kilometern oder skaliert.",
       "heavy": "Sehr viele Punkte bei voller Detailstufe – leichtere Einstellungen halten die Navigation flüssig."
-    }
+    },
+    "titleFor": "Check-up · {{name}}",
+    "moreSymptoms": "Sieht noch etwas falsch aus?"
   },
   "fix": {
     "flipUpAxis": "Hochachse drehen",
@@ -436,6 +441,10 @@
       "clearance": {
         "label": "Lichtraum messen",
         "hint": "Aktiviert das Distanzwerkzeug: Zwei Scanpunkte anklicken – Boden bis Träger, Wand bis Wand – und den gebauten Abstand ablesen."
+      },
+      "epochs": {
+        "label": "Aufnahmen vergleichen",
+        "hint": "Jedes Thema — oder jeder Scan, wenn keiner ein Thema hat — in eigener Farbe, alle gleichzeitig sichtbar."
       }
     },
     "needsClasses": "Braucht eine klassifizierte Datei",
@@ -488,6 +497,88 @@
       "area": "Fläche",
       "angle": "Winkel",
       "point": "Punkt"
-    }
+    },
+    "needsTwoScans": "Benötigt zwei oder mehr Scans."
+  },
+  "scope": {
+    "label": "Gilt für",
+    "all": "Alle Scans",
+    "selected": "Ausgewählt ({{count}})",
+    "allCaption": "Ändert die Szenen-Standardwerte für alle Scans ({{count}}).",
+    "selectedCaption": "Ändert nur {{names}}. Andere Scans behalten die Szenen-Standardwerte.",
+    "emptySelection": "Wähle Scans in der Liste aus, um nur diese zu ändern.",
+    "analyzeCaption": "Filter und Anwendungsfälle gelten für jeden Scan.",
+    "sceneWide": "Szenenweit",
+    "sceneWideHint": "Gilt für jeden Scan, unabhängig von der Auswahl.",
+    "mixed": "Gemischt",
+    "useDefault": "Szenen-Standard verwenden",
+    "overridden": "Scans mit eigenem Stil: {{count}}",
+    "resetAll": "Alle auf Szenen-Standard zurücksetzen"
+  },
+  "list": {
+    "selectAll": "Alle Scans auswählen",
+    "selectRow": "{{name}} auswählen",
+    "hint": "Klicken zum Auswählen · Strg/⌘-Klick zum Hinzufügen · Umschalt-Klick für einen Bereich",
+    "locate": "In der Szene finden",
+    "renameHint": "Doppelklicken oder F2 drücken zum Umbenennen",
+    "renameLabel": "Scan-Name",
+    "useFileName": "Leer lassen, um den Dateinamen zu verwenden",
+    "color": "Farbe von {{name}}",
+    "removeConfirm": "Entfernen?",
+    "health": "Zu prüfen: {{count}}",
+    "healthOk": "Nichts zu prüfen",
+    "fileDate": "Dateidatum {{date}}"
+  },
+  "bulk": {
+    "selected": "Ausgewählt: {{count}}",
+    "show": "Zeigen",
+    "hide": "Ausblenden",
+    "solo": "Solo",
+    "soloHint": "Nur die ausgewählten Scans zeigen. Erneut drücken, um alle Scans zu zeigen.",
+    "frame": "Einpassen",
+    "topic": "Thema",
+    "rename": "Umbenennen",
+    "remove": "Entfernen",
+    "removeConfirm": "Die ausgewählten Scans ({{count}}) aus der Szene entfernen? Die Dateien auf deinem Gerät bleiben unverändert.",
+    "removeYes": "Ja, entfernen",
+    "keep": "Behalten",
+    "clear": "Auswahl aufheben"
+  },
+  "topics": {
+    "title": "Themen",
+    "add": "Neues Thema",
+    "defaultName": "Thema {{n}}",
+    "edit": "Themen bearbeiten",
+    "done": "Fertig",
+    "name": "Themenname",
+    "color": "Themenfarbe",
+    "delete": "Thema löschen",
+    "empty": "Wähle Scans aus und füge dann ein Thema hinzu, um sie nach Aufnahmedatum, Bereich oder Gewerk zu gruppieren.",
+    "chipHint": "Klick: auswählen · Strg/⌘-Klick: hinzufügen · Alt-Klick: nur diese zeigen",
+    "show": "{{name}} zeigen",
+    "hide": "{{name}} ausblenden",
+    "assignTitle": "Themen der ausgewählten Scans",
+    "newFromSelection": "Neues Thema aus der Auswahl",
+    "limit": "Bis zu {{max}} Themen.",
+    "byFileDate": "Nach Dateidatum gruppieren ({{count}})",
+    "byFileDateHint": "Ein Thema pro Datum im LAS/LAZ/COPC-Header. Das ist der Tag, an dem die Datei erzeugt wurde — oft, aber nicht immer, der Aufnahmetag.",
+    "dismiss": "Ausblenden"
+  },
+  "place": {
+    "alignedTo": "Ausgerichtet an {{model}}",
+    "alignedToNone": "Eigenständig platziert — beim Laden war kein IFC-Modell geöffnet.",
+    "fileDate": "Dateidatum: {{date}}",
+    "fileDateHint": "Aus dem Datei-Header gelesen — meist der Aufnahme- oder Verarbeitungstag.",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "historyHint": "Rückgängig wird mit dem Szenen-Panel geteilt.",
+    "exact": "{{label}}, genauer Wert",
+    "fieldHint": "Pfeiltasten verschieben · Umschalt ×10 · Alt ×0,1",
+    "summary": "Platzierung der Scans ({{count}})",
+    "together": "Gemeinsam bewegen",
+    "togetherHint": "Bewegt und dreht diese Scans ({{count}}) als einen Block um ihren gemeinsamen Mittelpunkt. Jeder behält seine eigene Nivellierung und Skalierung.",
+    "apply": "Anwenden",
+    "resetMany": "Platzierung der Scans zurücksetzen ({{count}})",
+    "oneAtATime": "Hochachse, Einheiten und KBS werden je Scan festgelegt — wähle einen einzelnen Scan, um sie zu ändern."
   }
 }

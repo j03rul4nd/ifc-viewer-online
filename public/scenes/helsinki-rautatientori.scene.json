@@ -71,7 +71,7 @@
     "bindings": [
       {
         "id": "elielinaukio-bay-20",
-        "name": "Elielinaukio bay 20 — HSL stop 1020128 (H2020)",
+        "name": "Elielinaukio bay 20 — HSL stop 1020128 (H2020)", "names": {"es":"Dársena 20 de Elielinaukio — parada de HSL 1020128 (H2020)","ca":"Dàrsena 20 d'Elielinaukio — parada d'HSL 1020128 (H2020)","de":"Elielinaukio, Bussteig 20 — HSL-Haltestelle 1020128 (H2020)","fr":"Elielinaukio, quai 20 — arrêt HSL 1020128 (H2020)","it":"Elielinaukio, stallo 20 — fermata HSL 1020128 (H2020)","pt":"Baia 20 de Elielinaukio — parada da HSL 1020128 (H2020)","ja":"Elielinaukio 20番乗り場 — HSLの停留所 1020128（H2020）","zh":"Elielinaukio 20 号停靠位 — HSL 站点 1020128（H2020）","th":"ช่องจอด 20 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020128 (H2020)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020128",
         "targets": [],
@@ -83,7 +83,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -100,7 +100,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -117,7 +117,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -135,7 +135,7 @@
       },
       {
         "id": "elielinaukio-bay-22",
-        "name": "Elielinaukio bay 22 — HSL stop 1020131 (H2022)",
+        "name": "Elielinaukio bay 22 — HSL stop 1020131 (H2022)", "names": {"es":"Dársena 22 de Elielinaukio — parada de HSL 1020131 (H2022)","ca":"Dàrsena 22 d'Elielinaukio — parada d'HSL 1020131 (H2022)","de":"Elielinaukio, Bussteig 22 — HSL-Haltestelle 1020131 (H2022)","fr":"Elielinaukio, quai 22 — arrêt HSL 1020131 (H2022)","it":"Elielinaukio, stallo 22 — fermata HSL 1020131 (H2022)","pt":"Baia 22 de Elielinaukio — parada da HSL 1020131 (H2022)","ja":"Elielinaukio 22番乗り場 — HSLの停留所 1020131（H2022）","zh":"Elielinaukio 22 号停靠位 — HSL 站点 1020131（H2022）","th":"ช่องจอด 22 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020131 (H2022)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020131",
         "targets": [],
@@ -147,7 +147,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -164,7 +164,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -181,7 +181,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -199,7 +199,7 @@
       },
       {
         "id": "elielinaukio-bay-23",
-        "name": "Elielinaukio bay 23 — HSL stop 1020133 (H2023)",
+        "name": "Elielinaukio bay 23 — HSL stop 1020133 (H2023)", "names": {"es":"Dársena 23 de Elielinaukio — parada de HSL 1020133 (H2023)","ca":"Dàrsena 23 d'Elielinaukio — parada d'HSL 1020133 (H2023)","de":"Elielinaukio, Bussteig 23 — HSL-Haltestelle 1020133 (H2023)","fr":"Elielinaukio, quai 23 — arrêt HSL 1020133 (H2023)","it":"Elielinaukio, stallo 23 — fermata HSL 1020133 (H2023)","pt":"Baia 23 de Elielinaukio — parada da HSL 1020133 (H2023)","ja":"Elielinaukio 23番乗り場 — HSLの停留所 1020133（H2023）","zh":"Elielinaukio 23 号停靠位 — HSL 站点 1020133（H2023）","th":"ช่องจอด 23 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020133 (H2023)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020133",
         "targets": [],
@@ -211,7 +211,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -228,7 +228,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -245,7 +245,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -263,7 +263,7 @@
       },
       {
         "id": "elielinaukio-bay-24",
-        "name": "Elielinaukio bay 24 — HSL stop 1020135 (H2024)",
+        "name": "Elielinaukio bay 24 — HSL stop 1020135 (H2024)", "names": {"es":"Dársena 24 de Elielinaukio — parada de HSL 1020135 (H2024)","ca":"Dàrsena 24 d'Elielinaukio — parada d'HSL 1020135 (H2024)","de":"Elielinaukio, Bussteig 24 — HSL-Haltestelle 1020135 (H2024)","fr":"Elielinaukio, quai 24 — arrêt HSL 1020135 (H2024)","it":"Elielinaukio, stallo 24 — fermata HSL 1020135 (H2024)","pt":"Baia 24 de Elielinaukio — parada da HSL 1020135 (H2024)","ja":"Elielinaukio 24番乗り場 — HSLの停留所 1020135（H2024）","zh":"Elielinaukio 24 号停靠位 — HSL 站点 1020135（H2024）","th":"ช่องจอด 24 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020135 (H2024)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020135",
         "targets": [],
@@ -275,7 +275,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -292,7 +292,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -309,7 +309,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -327,7 +327,7 @@
       },
       {
         "id": "elielinaukio-bay-25",
-        "name": "Elielinaukio bay 25 — HSL stop 1020132 (H2025)",
+        "name": "Elielinaukio bay 25 — HSL stop 1020132 (H2025)", "names": {"es":"Dársena 25 de Elielinaukio — parada de HSL 1020132 (H2025)","ca":"Dàrsena 25 d'Elielinaukio — parada d'HSL 1020132 (H2025)","de":"Elielinaukio, Bussteig 25 — HSL-Haltestelle 1020132 (H2025)","fr":"Elielinaukio, quai 25 — arrêt HSL 1020132 (H2025)","it":"Elielinaukio, stallo 25 — fermata HSL 1020132 (H2025)","pt":"Baia 25 de Elielinaukio — parada da HSL 1020132 (H2025)","ja":"Elielinaukio 25番乗り場 — HSLの停留所 1020132（H2025）","zh":"Elielinaukio 25 号停靠位 — HSL 站点 1020132（H2025）","th":"ช่องจอด 25 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020132 (H2025)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020132",
         "targets": [],
@@ -339,7 +339,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -356,7 +356,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -373,7 +373,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -391,7 +391,7 @@
       },
       {
         "id": "elielinaukio-bay-26",
-        "name": "Elielinaukio bay 26 — HSL stop 1020239 (H2026)",
+        "name": "Elielinaukio bay 26 — HSL stop 1020239 (H2026)", "names": {"es":"Dársena 26 de Elielinaukio — parada de HSL 1020239 (H2026)","ca":"Dàrsena 26 d'Elielinaukio — parada d'HSL 1020239 (H2026)","de":"Elielinaukio, Bussteig 26 — HSL-Haltestelle 1020239 (H2026)","fr":"Elielinaukio, quai 26 — arrêt HSL 1020239 (H2026)","it":"Elielinaukio, stallo 26 — fermata HSL 1020239 (H2026)","pt":"Baia 26 de Elielinaukio — parada da HSL 1020239 (H2026)","ja":"Elielinaukio 26番乗り場 — HSLの停留所 1020239（H2026）","zh":"Elielinaukio 26 号停靠位 — HSL 站点 1020239（H2026）","th":"ช่องจอด 26 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020239 (H2026)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020239",
         "targets": [],
@@ -403,7 +403,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -420,7 +420,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -437,7 +437,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -455,7 +455,7 @@
       },
       {
         "id": "elielinaukio-bay-28",
-        "name": "Elielinaukio bay 28 — HSL stop 1020243 (H2028)",
+        "name": "Elielinaukio bay 28 — HSL stop 1020243 (H2028)", "names": {"es":"Dársena 28 de Elielinaukio — parada de HSL 1020243 (H2028)","ca":"Dàrsena 28 d'Elielinaukio — parada d'HSL 1020243 (H2028)","de":"Elielinaukio, Bussteig 28 — HSL-Haltestelle 1020243 (H2028)","fr":"Elielinaukio, quai 28 — arrêt HSL 1020243 (H2028)","it":"Elielinaukio, stallo 28 — fermata HSL 1020243 (H2028)","pt":"Baia 28 de Elielinaukio — parada da HSL 1020243 (H2028)","ja":"Elielinaukio 28番乗り場 — HSLの停留所 1020243（H2028）","zh":"Elielinaukio 28 号停靠位 — HSL 站点 1020243（H2028）","th":"ช่องจอด 28 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020243 (H2028)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020243",
         "targets": [],
@@ -467,7 +467,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -484,7 +484,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -501,7 +501,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -519,7 +519,7 @@
       },
       {
         "id": "elielinaukio-bay-29",
-        "name": "Elielinaukio bay 29 — HSL stop 1020245 (H2029)",
+        "name": "Elielinaukio bay 29 — HSL stop 1020245 (H2029)", "names": {"es":"Dársena 29 de Elielinaukio — parada de HSL 1020245 (H2029)","ca":"Dàrsena 29 d'Elielinaukio — parada d'HSL 1020245 (H2029)","de":"Elielinaukio, Bussteig 29 — HSL-Haltestelle 1020245 (H2029)","fr":"Elielinaukio, quai 29 — arrêt HSL 1020245 (H2029)","it":"Elielinaukio, stallo 29 — fermata HSL 1020245 (H2029)","pt":"Baia 29 de Elielinaukio — parada da HSL 1020245 (H2029)","ja":"Elielinaukio 29番乗り場 — HSLの停留所 1020245（H2029）","zh":"Elielinaukio 29 号停靠位 — HSL 站点 1020245（H2029）","th":"ช่องจอด 29 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020245 (H2029)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020245",
         "targets": [],
@@ -531,7 +531,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -548,7 +548,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -565,7 +565,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -583,7 +583,7 @@
       },
       {
         "id": "elielinaukio-bay-30",
-        "name": "Elielinaukio bay 30 — HSL stop 1020130 (H2037)",
+        "name": "Elielinaukio bay 30 — HSL stop 1020130 (H2037)", "names": {"es":"Dársena 30 de Elielinaukio — parada de HSL 1020130 (H2037)","ca":"Dàrsena 30 d'Elielinaukio — parada d'HSL 1020130 (H2037)","de":"Elielinaukio, Bussteig 30 — HSL-Haltestelle 1020130 (H2037)","fr":"Elielinaukio, quai 30 — arrêt HSL 1020130 (H2037)","it":"Elielinaukio, stallo 30 — fermata HSL 1020130 (H2037)","pt":"Baia 30 de Elielinaukio — parada da HSL 1020130 (H2037)","ja":"Elielinaukio 30番乗り場 — HSLの停留所 1020130（H2037）","zh":"Elielinaukio 30 号停靠位 — HSL 站点 1020130（H2037）","th":"ช่องจอด 30 ที่ Elielinaukio — ป้ายหยุดรถ HSL 1020130 (H2037)"},
         "sourceId": "hsl-hfp-elielinaukio",
         "deviceId": "1020130",
         "targets": [],
@@ -595,7 +595,7 @@
         "rules": [
           {
             "id": "doors",
-            "name": "Doors open — boarding",
+            "name": "Doors open — boarding", "names": {"es":"Puertas abiertas — embarque","ca":"Portes obertes — pujada de passatgers","de":"Türen offen — Fahrgastwechsel","fr":"Portes ouvertes — embarquement","it":"Porte aperte — salita dei passeggeri","pt":"Portas abertas — embarque","ja":"ドア開 — 乗降中","zh":"车门打开 — 上客","th":"ประตูเปิด — ผู้โดยสารกำลังขึ้นรถ"},
             "match": "all",
             "filters": [
               {
@@ -612,7 +612,7 @@
           },
           {
             "id": "standing",
-            "name": "Bus standing at the bay",
+            "name": "Bus standing at the bay", "names": {"es":"Autobús parado en la dársena","ca":"Autobús aturat a la dàrsena","de":"Bus steht am Bussteig","fr":"Bus à l'arrêt au quai","it":"Autobus in sosta allo stallo","pt":"Ônibus parado na baia","ja":"バスが乗り場に停車中","zh":"公交车停在停靠位上","th":"รถบัสจอดนิ่งอยู่ที่ช่องจอด"},
             "match": "all",
             "filters": [
               {
@@ -629,7 +629,7 @@
           },
           {
             "id": "moving",
-            "name": "Bus pulling in or out",
+            "name": "Bus pulling in or out", "names": {"es":"Autobús entrando o saliendo","ca":"Autobús entrant o sortint","de":"Bus fährt ein oder aus","fr":"Bus en entrée ou sortie de quai","it":"Autobus in entrata o in uscita","pt":"Ônibus entrando ou saindo","ja":"バスが到着・発車中","zh":"公交车正在进站或出站","th":"รถบัสกำลังเข้าหรือออกจากช่องจอด"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -661,5 +661,150 @@
         -70
       ]
     }
+  },
+  "story": {
+    "steps": [
+      {
+        "title": {
+          "en": "A bus terminal, live",
+          "es": "Una terminal de autobuses, en vivo",
+          "ca": "Una terminal d'autobusos, en viu",
+          "de": "Ein Busterminal, live",
+          "fr": "Une gare routière, en direct",
+          "it": "Un terminal bus, in tempo reale",
+          "pt": "Um terminal de ônibus, ao vivo",
+          "ja": "バスターミナルをライブで",
+          "zh": "公交总站实时动态",
+          "th": "สถานีขนส่งรถบัสแบบเรียลไทม์"
+        },
+        "text": {
+          "en": "Elielinaukio, beside Helsinki Central Station: three IFC models, the station, the Cathedral and the terminal, on the real city. Nine of its bays are connected to HSL's live bus positions.",
+          "es": "Elielinaukio, junto a la estación central de Helsinki: tres modelos IFC (la estación, la catedral y la terminal) sobre la ciudad real. Nueve de sus dársenas están conectadas a las posiciones en vivo de los autobuses de HSL.",
+          "ca": "Elielinaukio, al costat de l'estació central d'Hèlsinki: tres models IFC (l'estació, la catedral i la terminal) sobre la ciutat real. Nou de les seves dàrsenes estan connectades a les posicions en viu dels autobusos d'HSL.",
+          "de": "Elielinaukio neben dem Hauptbahnhof Helsinki: drei IFC-Modelle – der Bahnhof, der Dom und das Terminal – in der realen Stadt. Neun seiner Bussteige sind mit den Live-Buspositionen von HSL verbunden.",
+          "fr": "Elielinaukio, à côté de la gare centrale d'Helsinki : trois maquettes IFC (la gare, la cathédrale et la gare routière) posées sur la ville réelle. Neuf de ses quais sont reliés aux positions en direct des bus HSL.",
+          "it": "Elielinaukio, accanto alla stazione centrale di Helsinki: tre modelli IFC (la stazione, la cattedrale e il terminal) sulla città reale. Nove dei suoi stalli sono collegati alle posizioni in tempo reale degli autobus HSL.",
+          "pt": "Elielinaukio, ao lado da Estação Central de Helsinque: três modelos IFC (a estação, a catedral e o terminal) sobre a cidade real. Nove das suas baias estão conectadas às posições ao vivo dos ônibus da HSL.",
+          "ja": "ヘルシンキ中央駅に隣接するElielinaukio。駅、大聖堂、ターミナルの3つのIFCモデルが実際の街の上に置かれています。そのうち9つの乗り場が、HSLのバスのライブ位置情報に接続されています。",
+          "zh": "Elielinaukio 紧邻赫尔辛基中央火车站：车站、大教堂和公交总站三个 IFC 模型立在真实的城市之上。其中九个停靠位接入了 HSL 的公交车实时位置。",
+          "th": "Elielinaukio ข้างสถานีกลางเฮลซิงกิ: โมเดล IFC สามชิ้น ได้แก่ สถานี มหาวิหาร และสถานีขนส่ง วางอยู่บนเมืองจริง ช่องจอดเก้าแห่งของที่นี่เชื่อมต่อกับตำแหน่งรถบัสแบบเรียลไทม์ของ HSL"
+        },
+        "camera": {
+          "position": [
+            -70,
+            170,
+            250
+          ],
+          "target": [
+            130,
+            0,
+            -70
+          ]
+        }
+      },
+      {
+        "title": {
+          "en": "Buses report every second",
+          "es": "Los autobuses informan cada segundo",
+          "ca": "Els autobusos informen cada segon",
+          "de": "Busse melden sich jede Sekunde",
+          "fr": "Les bus se signalent chaque seconde",
+          "it": "Gli autobus si segnalano ogni secondo",
+          "pt": "Os ônibus informam a cada segundo",
+          "ja": "バスは毎秒、位置を送信",
+          "zh": "公交车每秒报告一次",
+          "th": "รถบัสรายงานตำแหน่งทุกวินาที"
+        },
+        "text": {
+          "en": "Each bay is bound to its HSL stop. Every bus sends its position about once a second, and the bay changes colour as its bus pulls in, waits and opens its doors.",
+          "es": "Cada dársena está vinculada a su parada de HSL. Cada autobús envía su posición aproximadamente una vez por segundo, y la dársena cambia de color cuando su autobús entra, espera y abre las puertas.",
+          "ca": "Cada dàrsena està vinculada a la seva parada d'HSL. Cada autobús envia la seva posició aproximadament un cop per segon, i la dàrsena canvia de color quan el seu autobús hi entra, espera i obre les portes.",
+          "de": "Jeder Bussteig ist an seine HSL-Haltestelle gebunden. Jeder Bus sendet etwa einmal pro Sekunde seine Position, und der Bussteig wechselt die Farbe, während sein Bus einfährt, wartet und die Türen öffnet.",
+          "fr": "Chaque quai est lié à son arrêt HSL. Chaque bus envoie sa position environ une fois par seconde, et le quai change de couleur quand son bus arrive, attend et ouvre ses portes.",
+          "it": "Ogni stallo è associato alla sua fermata HSL. Ogni autobus invia la sua posizione circa una volta al secondo, e lo stallo cambia colore quando il suo autobus entra, attende e apre le porte.",
+          "pt": "Cada baia está vinculada ao seu ponto da HSL. Cada ônibus envia sua posição cerca de uma vez por segundo, e a baia muda de cor conforme o seu ônibus encosta, espera e abre as portas.",
+          "ja": "各乗り場はHSLの停留所に紐付けられています。各バスはおよそ1秒に1回位置を送信し、バスが到着し、停車し、ドアを開けるのに合わせて乗り場の色が変わります。",
+          "zh": "每个停靠位都绑定到对应的 HSL 站点。每辆公交车大约每秒发送一次位置，停靠位会随着公交车进站、停靠和开门而变色。",
+          "th": "ช่องจอดแต่ละแห่งผูกกับป้ายหยุดรถของ HSL รถบัสแต่ละคันส่งตำแหน่งประมาณวินาทีละครั้ง และช่องจอดจะเปลี่ยนสีเมื่อรถบัสเข้าจอด รอ และเปิดประตู"
+        },
+        "binding": "elielinaukio-bay-22"
+      },
+      {
+        "title": {
+          "en": "Grey means no bus, not old data",
+          "es": "Gris significa sin autobús, no datos antiguos",
+          "ca": "Gris vol dir sense autobús, no dades antigues",
+          "de": "Grau bedeutet kein Bus – nicht veraltete Daten",
+          "fr": "Gris : aucun bus, et non des données périmées",
+          "it": "Grigio vuol dire nessun bus, non dati vecchi",
+          "pt": "Cinza significa sem ônibus, não dados antigos",
+          "ja": "グレーはバスなし、古いデータではない",
+          "zh": "灰色表示没车，而非旧数据",
+          "th": "สีเทาคือไม่มีรถ ไม่ใช่ข้อมูลเก่า"
+        },
+        "text": {
+          "en": "A bay without a bus stays grey instead of showing the last position it had. A twin should never pass old data off as current: at night, most bays are grey.",
+          "es": "Una dársena sin autobús se queda en gris en lugar de mostrar la última posición que tuvo. Un gemelo digital nunca debería hacer pasar datos antiguos por actuales: de noche, la mayoría de las dársenas están en gris.",
+          "ca": "Una dàrsena sense autobús es queda en gris en lloc de mostrar l'última posició que tenia. Un bessó digital no hauria de fer passar mai dades antigues per actuals: de nit, la majoria de dàrsenes són grises.",
+          "de": "Ein Bussteig ohne Bus bleibt grau, statt die letzte Position anzuzeigen, die er hatte. Ein digitaler Zwilling sollte veraltete Daten nie als aktuell ausgeben: Nachts sind die meisten Bussteige grau.",
+          "fr": "Un quai sans bus reste gris au lieu d'afficher la dernière position qu'il avait. Un jumeau numérique ne devrait jamais faire passer des données périmées pour actuelles : la nuit, la plupart des quais sont gris.",
+          "it": "Uno stallo senza autobus resta grigio invece di mostrare l'ultima posizione che aveva. Un gemello digitale non dovrebbe mai spacciare dati vecchi per attuali: di notte, la maggior parte degli stalli è grigia.",
+          "pt": "Uma baia sem ônibus fica cinza em vez de mostrar a última posição que teve. Um gêmeo digital nunca deveria fazer dados antigos passarem por atuais: à noite, a maioria das baias fica cinza.",
+          "ja": "バスのいない乗り場は、最後の位置を表示し続けるのではなくグレーのままになります。デジタルツインは古いデータを最新のように見せるべきではありません。夜間はほとんどの乗り場がグレーです。",
+          "zh": "没有公交车的停靠位保持灰色，而不是显示它最后的位置。数字孪生绝不应把旧数据冒充为当前数据：夜间，大多数停靠位都是灰色。",
+          "th": "ช่องจอดที่ไม่มีรถบัสจะคงเป็นสีเทา แทนที่จะแสดงตำแหน่งล่าสุดที่เคยมี ดิจิทัลทวินไม่ควรนำข้อมูลเก่ามาแสดงเหมือนเป็นข้อมูลปัจจุบัน ตอนกลางคืน ช่องจอดส่วนใหญ่เป็นสีเทา"
+        },
+        "camera": {
+          "position": [
+            -20,
+            95,
+            110
+          ],
+          "target": [
+            -8,
+            4,
+            -20
+          ]
+        }
+      },
+      {
+        "title": {
+          "en": "Your turn",
+          "es": "Te toca",
+          "ca": "Et toca",
+          "de": "Jetzt sind Sie dran",
+          "fr": "À vous de jouer",
+          "it": "Tocca a te",
+          "pt": "Sua vez",
+          "ja": "あなたの番です",
+          "zh": "轮到你了",
+          "th": "ถึงตาคุณแล้ว"
+        },
+        "text": {
+          "en": "Click a bay pole to see the live message of the bus at it: line, speed, heading, doors. Explore lists the bays with a bus right now.",
+          "es": "Haz clic en el poste de una dársena para ver el mensaje en vivo del autobús que está en ella: línea, velocidad, rumbo y puertas. «Explorar» muestra las dársenas que tienen un autobús ahora mismo.",
+          "ca": "Fes clic al pal d'una dàrsena per veure el missatge en viu de l'autobús que hi ha: línia, velocitat, rumb i portes. «Explorar» llista les dàrsenes que ara mateix tenen un autobús.",
+          "de": "Klicken Sie auf den Mast eines Bussteigs, um die Live-Meldung des Busses dort zu sehen: Linie, Geschwindigkeit, Richtung, Türen. „Erkunden“ listet die Bussteige, an denen gerade ein Bus steht.",
+          "fr": "Cliquez sur le poteau d'un quai pour voir le message en direct du bus qui s'y trouve : ligne, vitesse, cap, portes. « Explorer » liste les quais où se trouve un bus en ce moment.",
+          "it": "Clicca sul palo di uno stallo per vedere il messaggio in tempo reale dell'autobus che vi sosta: linea, velocità, direzione, porte. «Esplora» elenca gli stalli con un autobus in questo momento.",
+          "pt": "Clique no poste de uma baia para ver a mensagem ao vivo do ônibus que está nela: linha, velocidade, direção, portas. “Explorar” lista as baias com um ônibus agora.",
+          "ja": "乗り場のポールをクリックすると、そこにいるバスのライブメッセージ（系統、速度、進行方向、ドア）を表示します。「探索」には、今バスがいる乗り場が一覧表示されます。",
+          "zh": "点击停靠位的站杆，查看停在那里的公交车的实时消息：线路、速度、方向、车门。“探索”会列出此刻有公交车的停靠位。",
+          "th": "คลิกเสาของช่องจอดเพื่อดูข้อความเรียลไทม์จากรถบัสที่จอดอยู่: สาย ความเร็ว ทิศทาง และประตู “สำรวจ” จะแสดงรายการช่องจอดที่มีรถบัสอยู่ในขณะนี้"
+        },
+        "camera": {
+          "position": [
+            -70,
+            170,
+            250
+          ],
+          "target": [
+            130,
+            0,
+            -70
+          ]
+        }
+      }
+    ]
   }
 }

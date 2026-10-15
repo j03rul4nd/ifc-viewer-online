@@ -857,10 +857,107 @@ FIGURES['hsl-hfp-mqtt-topic-anatomy'] = (t, lang) => {
   })
 }
 
+// ── Second series: copy in twin-figures-copy.json ────────────────────────────
+// The diagrams of the second wave of articles keep their words in a JSON file
+// (one object per language), so translations are filled in without touching
+// this script.
+
+const COPY = JSON.parse(readFileSync('scripts/og/twin-figures-copy.json', 'utf8'))
+for (const lang of LANGS) Object.assign(T[lang], COPY[lang] ?? COPY.en)
+
+/** A published picture as a data: URL (the page is rendered from a string, without file access). */
+const picture = (name) => {
+  try { return `data:image/jpeg;base64,${readFileSync(path.join(OUT, name)).toString('base64')}` } catch { return null }
+}
+
+FIGURES['digital-twin-maturity-levels'] = (t, lang) => {
+  const m = t.maturity
+  const shots = [
+    picture('bim-model-in-city-context-800.jpg'),
+    picture(lang === 'en' ? 'barcelona-digital-twin-asset-card-800.jpg' : `barcelona-digital-twin-asset-card-${lang}-800.jpg`),
+    null,
+    picture('flood-simulation-ifc-max-depth-800.jpg'),
+    null,
+  ]
+  const colors = [C.brand, C.green, C.faint, C.cyan, C.faint]
+  const steps = m.levels.map(([name, what, here], i) => {
+    const has = shots[i] !== null
+    return `<div class="st" style="left:${i * 290}px;bottom:${i * 62}px;border-top-color:${colors[i]}">
+      <div class="lv" style="color:${colors[i]}">${i + 1} · ${name}</div>
+      <div class="wh">${what}</div>
+      ${has ? `<img src="${shots[i]}">` : `<div class="none">${i === 2 ? '<svg width="120" height="44" viewBox="0 0 120 44"><path d="M4 36 L28 28 L50 31 L72 18 L94 22 L116 8" fill="none" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/></svg>' : '<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#94a3b8" stroke-width="3"/><path d="M10 34 L34 10" stroke="#94a3b8" stroke-width="3"/></svg>'}</div>`}
+      <div class="hr"><b style="color:${has ? colors[i] : C.sub}">${has ? m.here : m.notHere}</b> · ${here}</div>
+    </div>`
+  }).join('')
+  return page(lang, {
+    kicker: m.kicker, title: m.title, lede: m.lede, source: m.source,
+    css: `.stairs{position:absolute;left:0;right:0;bottom:44px;height:560px}
+      .st{position:absolute;width:274px;background:#fff;border:1.5px solid ${C.line};border-top:6px solid;border-radius:12px;padding:12px 14px 12px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+      .lv{font-weight:700;font-size:20px}.wh{font-size:15px;color:${C.ink};margin-top:4px;line-height:1.3;min-height:40px}
+      .st img{display:block;width:100%;height:132px;object-fit:cover;border-radius:8px;margin-top:8px}
+      .none{height:132px;margin-top:8px;border-radius:8px;border:2px dashed ${C.line};display:flex;align-items:center;justify-content:center;background:#fafbfd}
+      .hr{font-size:13.5px;color:${C.sub};margin-top:8px;line-height:1.3}
+      .tag{position:absolute;left:0;bottom:0;font-size:18px;font-weight:600;color:${C.ink}}`,
+    body: `<div class="stairs">${steps}</div><p class="tag">${m.tag}</p>`,
+  })
+}
+
+FIGURES['city-open-data-browser-scorecard'] = (t, lang) => {
+  const a = t.atlas
+  const lines = readFileSync('public/blog/data/city-open-data-cors-2026-10.csv', 'utf8').split('\n').filter((l) => l && !l.startsWith('#')).slice(1)
+  const rows = lines.map((l) => l.match(/("[^"]*"|[^,]+)/g).map((c) => c.replace(/^"|"$/g, '')))
+  const kindCol = (k) => (k === 'bike share' ? 0 : k === 'transit' ? 1 : 2)
+  const cities = [...new Set(rows.map((r) => r[0]))]
+  const cell = (city, col) => {
+    const hits = rows.filter((r) => r[0] === city && kindCol(r[1]) === col)
+    if (!hits.length) return `<td class="u">—</td>`
+    const ok = hits.filter((r) => r[4] !== 'none' && r[3] === '200').length
+    const all = hits.length
+    const cls = ok === all ? 'ok' : ok === 0 ? 'no' : 'mix'
+    const mark = ok === all ? '✓' : ok === 0 ? '✕' : '◐'
+    const note = city === 'Helsinki' && col === 1 ? `<small>${a.viaMqtt}</small>` : ''
+    return `<td class="${cls}"><span>${mark}</span>${all > 1 ? `<i>${ok}/${all}</i>` : ''}${note}</td>`
+  }
+  const half = Math.ceil(cities.length / 2)
+  const table = (list) => `<table><tr><th></th>${a.cols.map((c) => `<th>${c}</th>`).join('')}</tr>${list.map((c) => `<tr><td class="c">${a.cities[c] ?? c}</td>${[0, 1, 2].map((k) => cell(c, k)).join('')}</tr>`).join('')}</table>`
+  return page(lang, {
+    kicker: a.kicker, title: a.title, lede: a.lede, source: a.source,
+    css: `.two{display:flex;gap:36px}
+      table{border-collapse:separate;border-spacing:0 5px;flex:1}
+      th{font-size:14px;font-weight:600;color:${C.sub};text-align:center;padding:0 6px 2px;text-transform:uppercase;letter-spacing:.06em}
+      td{height:40px;text-align:center;font-size:20px;font-weight:700;border-radius:8px}
+      td.c{text-align:left;font-size:17px;font-weight:600;color:${C.ink};padding-right:10px;white-space:nowrap}
+      td.ok{background:${C.greenSoft};color:${C.green}}td.no{background:${C.redSoft};color:${C.red}}td.mix{background:${C.amberSoft};color:${C.amber}}td.u{color:${C.faint};font-weight:400}
+      td i{font-style:normal;font-size:12px;font-weight:600;margin-left:6px;opacity:.8}
+      td small{display:block;font-size:11px;font-weight:600;color:${C.green};line-height:1.1}
+      .legend{display:flex;gap:22px;margin-top:10px;font-size:15px;color:${C.sub}}.legend b{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:6px;vertical-align:-2px}
+      .tag{margin-top:8px;font-size:17px;font-weight:600;color:${C.ink}}`,
+    body: `<div class="two">${table(cities.slice(0, half))}${table(cities.slice(half))}</div>
+      <div class="legend"><span><b style="background:${C.greenSoft};border:1.5px solid ${C.green}"></b>${a.readable}</span><span><b style="background:${C.redSoft};border:1.5px solid ${C.red}"></b>${a.blocked}</span><span>— ${a.untested}</span></div>
+      <p class="tag">${a.tag}</p>`,
+  })
+}
+
+FIGURES['citygml-ifc-3d-tiles-comparison'] = (t, lang) => {
+  const f = t.formats
+  const heads = [['CityGML', C.cyan], ['IFC', C.brand], ['3D Tiles', C.violet]]
+  return page(lang, {
+    kicker: f.kicker, title: f.title, lede: f.lede, source: f.source,
+    css: `.g{display:grid;grid-template-columns:230px repeat(3,1fr);gap:6px}
+      .h{font-weight:700;font-size:24px;text-align:center;padding:10px 0;border-radius:10px 10px 0 0;color:#fff}
+      .l{font-size:16px;font-weight:600;color:${C.sub};text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;padding-right:8px}
+      .v{background:#fff;border:1.5px solid ${C.line};border-radius:8px;padding:15px 14px;font-size:18px;line-height:1.3;color:${C.ink};display:flex;align-items:center}
+      .tag{margin-top:14px;font-size:18px;font-weight:600;color:${C.ink}}`,
+    body: `<div class="g"><div></div>${heads.map(([h, c]) => `<div class="h" style="background:${c}">${h}</div>`).join('')}
+      ${f.rows.map(([label, ...vals]) => `<div class="l">${label}</div>${vals.map((v) => `<div class="v">${v}</div>`).join('')}`).join('')}</div>
+      <p class="tag">${f.tag}</p>`,
+  })
+}
+
 // ── Render ───────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2)
-const shortNames = { anatomy: 'urban-digital-twin-anatomy', flow: 'browser-digital-twin-data-flow', bimdt: 'bim-vs-digital-twin-comparison', lod: 'lod-citygml-vs-bim-level-of-development', mqtt: 'hsl-hfp-mqtt-topic-anatomy' }
+const shortNames = { anatomy: 'urban-digital-twin-anatomy', flow: 'browser-digital-twin-data-flow', bimdt: 'bim-vs-digital-twin-comparison', lod: 'lod-citygml-vs-bim-level-of-development', mqtt: 'hsl-hfp-mqtt-topic-anatomy', maturity: 'digital-twin-maturity-levels', atlas: 'city-open-data-browser-scorecard', formats: 'citygml-ifc-3d-tiles-comparison' }
 const names = args.filter((a) => !LANGS.includes(a)).map((a) => shortNames[a] ?? a)
 const langs = args.filter((a) => LANGS.includes(a))
 const figs = names.length ? names : Object.keys(FIGURES)

@@ -47,6 +47,22 @@ export interface LasHeader {
   min: { x: number; y: number; z: number }
   max: { x: number; y: number; z: number }
   compressed: boolean
+  /** Header bytes 90/92: the file-creation day of year and year (0 when unset). */
+  creationDayOfYear: number
+  creationYear: number
+}
+
+/**
+ * The LAS-family 'file creation' date as YYYY-MM-DD, or null when the header
+ * leaves it unset or out of range. Often the processing day rather than the
+ * survey day — the UI calls it 'File date' for that reason.
+ */
+export function lasFileDate(year: number, dayOfYear: number, now = new Date()): string | null {
+  if (!Number.isInteger(year) || !Number.isInteger(dayOfYear)) return null
+  if (year < 1990 || year > now.getUTCFullYear() + 1) return null
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+  if (dayOfYear < 1 || dayOfYear > (leap ? 366 : 365)) return null
+  return new Date(Date.UTC(year, 0, dayOfYear)).toISOString().slice(0, 10)
 }
 
 /**
@@ -188,6 +204,8 @@ export function parseLasHeader(buffer: ArrayBuffer): LasHeader {
   return {
     versionMinor, pointFormat, recordLength, offsetToPointData,
     numberOfPoints, numberOfVlrs, headerSize, compressed,
+    creationDayOfYear: view.getUint16(90, true),
+    creationYear: view.getUint16(92, true),
     scale:  { x: view.getFloat64(131, true), y: view.getFloat64(139, true), z: view.getFloat64(147, true) },
     offset: { x: view.getFloat64(155, true), y: view.getFloat64(163, true), z: view.getFloat64(171, true) },
     min:    { x: view.getFloat64(187, true), y: view.getFloat64(203, true), z: view.getFloat64(219, true) },
@@ -365,6 +383,7 @@ export class LasReader implements PointReader {
         confidence: false,
       },
       declaredCount: header.numberOfPoints > 0 ? header.numberOfPoints : null,
+      fileDate: lasFileDate(header.creationYear, header.creationDayOfYear),
       boundsEstimated: false,
     }
   }

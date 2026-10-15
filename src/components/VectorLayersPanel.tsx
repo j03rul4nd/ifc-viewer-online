@@ -13,7 +13,7 @@ import { exportIndices, toGeoJsonFile, toCsvFile } from '../lib/layers/layer-exp
 import { groupIndexOf } from '../lib/layers/style-groups'
 import { tmbStopCode } from '../lib/layers/tmb'
 import { ViewportPanel } from './ViewportPanel'
-import { useIsMobile } from '../hooks/useIsMobile'
+import { LAYER_FILE_ACCEPT } from '../lib/loading/drop-routing'
 import { useVectorLayerStore, trackWait, hostLabel, type VectorLayer } from '../stores/vectorLayerStore'
 import { useSceneAnchorStore } from '../stores/sceneAnchorStore'
 import { useGeoStore } from '../stores/geoStore'
@@ -76,7 +76,6 @@ function georefPairing(api: ViewerAPI | null): AnchorPairing | null {
 export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
   const { t } = useTranslation('layers')
   const { t: tc } = useTranslation('common')
-  const isMobile = useIsMobile()
   const open = useVectorLayerStore((s) => s.panelOpen)
   const layers = useVectorLayerStore((s) => s.layers)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -111,13 +110,14 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     getGeorefAnchor: () => georefPairing(viewerApiRef.current),
   }), [viewerApiRef])
 
-  // Dropped .geojson files and the layers saved on this device are taken over
-  // here, AFTER the runner is attached — so they anchor against the model.
+  // Dropped .geojson files, the Add data hub's picks and the layers saved on
+  // this device are taken over here, AFTER the runner is attached — so they
+  // anchor against the model. Queued files go through onFiles, so a shared
+  // layer setup picked from the hub imports as a setup, as from this panel.
   const pendingCount = useVectorLayerStore((s) => s.pendingFiles.length)
   useEffect(() => {
     if (pendingCount === 0) return
-    const files = useVectorLayerStore.getState().takePendingFiles()
-    void run(async () => { for (const f of files) report(await addGeoJsonFile(f)) })
+    onFiles(useVectorLayerStore.getState().takePendingFiles())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingCount])
   useEffect(() => {
@@ -221,7 +221,7 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
     try { await (server === undefined ? fn() : trackWait(hostLabel(server), fn())) } finally { setBusy(false) }
   }
 
-  const onFiles = (files: FileList): void => void run(async () => {
+  const onFiles = (files: FileList | readonly File[]): void => void run(async () => {
     for (const f of Array.from(files)) {
       // A shared layer setup (exported from here) opens as layers, not as data.
       if (/\.json$/i.test(f.name) && f.size < 20_000_000) {
@@ -270,18 +270,17 @@ export default function VectorLayersPanel({ viewerApiRef, onClose }: Props) {
       widthPx={310}
       anchor="top"
     >
-      {isMobile && (
-        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
-          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
-          <button type="button" onClick={onClose} aria-label={tc('actions.close')}
-            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
-          </button>
-        </div>
-      )}
+      {/* Title + close on every viewport: the rail icon and Escape are not the only way out. */}
+      <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1 md:pt-1.5 md:pl-3 md:pr-1.5">
+        <span className="flex-1 text-[14px] md:text-[12.5px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+        <button type="button" onClick={onClose} aria-label={tc('actions.close')}
+          className="w-7 h-7 max-md:w-10 max-md:h-10 rounded-[7px] max-md:rounded-[11px] hover:text-[var(--text)] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+        </button>
+      </div>
       <div ref={scrollRef} className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="layers-panel">
         {/* One file picker for data and shared setups; outside the foldable section so both always reach it. */}
-        <input ref={fileRef} type="file" multiple accept=".geojson,.json,.csv,.tsv,.txt,application/geo+json,application/json,text/csv" className="hidden"
+        <input ref={fileRef} type="file" multiple accept={LAYER_FILE_ACCEPT} className="hidden"
           onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = '' }} />
 
         <SlowLoadHint />

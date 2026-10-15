@@ -164,8 +164,8 @@
   "exportSettings": "Impostazioni di esportazione…",
   "menu": {
     "openIfc": "Apri file IFC…",
-    "openTooltip": "Apri — file IFC, modelli demo e altri dati",
-    "addData": "Aggiungi alla scena",
+    "openTooltip": "Apri — file IFC, modelli demo e file di scena",
+    "addData": "Aggiungi dati",
     "check": "Verifica",
     "checkTooltip": "Verifica — problemi in 3D, IDS, confronta versioni",
     "issuesIn3d": "Mostra problemi in 3D",
@@ -185,7 +185,9 @@
     "edit": "Modifica",
     "help": "Aiuto",
     "idsCheck": "Verifica con IDS…",
-    "compareVersions": "Confronta versioni…"
+    "compareVersions": "Confronta versioni…",
+    "addDataTooltip": "Aggiungi dati — scansioni, video, modelli 3D, livelli di mappa e dispositivi live",
+    "openScene": "Apri file di scena…"
   },
   "mobileBar": {
     "models": "{{count}} modello",
@@ -193,5 +195,83 @@
     "elements": "{{n}} elementi",
     "openScene": "Scena e modelli",
     "score": "Health Score {{score}} — apri la validazione"
+  },
+  "sun": "Sole",
+  "sunTooltip": "Studio sole e luna — ombre reali per data, ora e luogo",
+  "addData": {
+    "title": "Aggiungi dati alla scena",
+    "description": "I file vengono letti nel tuo browser: non viene caricato nulla.",
+    "dropTitle": "Trascina qui i file",
+    "dropHint": "Mescola questi formati come vuoi: ogni file va al suo posto.",
+    "chooseFiles": "Scegli file…",
+    "chooseFile": "Scegli un file…",
+    "fromUpload": "Scansioni, video, modelli 3D o livelli di mappa?",
+    "groups": {
+      "capture": "Rilievo della realtà",
+      "models": "Modelli",
+      "context": "Mappa e dati live",
+      "scenes": "Scene"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "Nuvola di punti",
+        "desc": "Scansioni laser e fotogrammetria da drone. Si posano sul modello quando il file indica dove si trovano."
+      },
+      "video": {
+        "title": "Video 3D",
+        "desc": "Riprese di cantiere o da drone su uno schermo, a terra o allineate alla telecamera che le ha girate."
+      },
+      "ifc": {
+        "title": "Modello IFC",
+        "desc": "I modelli delle discipline si federano in una scena. Ognuno viene verificato prima del caricamento; il primo fissa le coordinate."
+      },
+      "mesh": {
+        "title": "Modello 3D",
+        "desc": "Oggetti di scena e modelli di contesto in glTF o OBJ, posati sul pavimento del modello."
+      },
+      "map": {
+        "title": "Mappa e terreno",
+        "desc": "Mappa di base, terreno 3D e gli edifici intorno a un modello georeferenziato."
+      },
+      "layers": {
+        "title": "Livelli di dati",
+        "desc": "Punti, percorsi e zone da file GeoJSON o CSV, URL, servizi WFS o feed pubblici in tempo reale."
+      },
+      "devices": {
+        "title": "Dispositivi live",
+        "desc": "Sensori via REST, WebSocket o MQTT, collegati a elementi IFC."
+      },
+      "scene": {
+        "title": "File di scena",
+        "desc": "Un .scene.json che qualcuno ha condiviso con te. Aprirlo sostituisce la scena attuale."
+      }
+    },
+    "pointcloudNote": "E57, ReCap o FARO? Esporta prima in LAS, LAZ o PLY.",
+    "action": {
+      "samples": "Esempi",
+      "liveAndDemo": "Telecamera, schermo e demo",
+      "sources": "URL, WFS e feed live",
+      "connect": "Collega una sorgente",
+      "setUpMap": "Configura la mappa",
+      "openPanel": "Apri pannello"
+    },
+    "inScene": "{{count}} nella scena",
+    "inScene_other": "{{count}} nella scena",
+    "needsModel": "Serve prima un modello IFC nella scena"
+  },
+  "drop": {
+    "title": "Rilascia per aggiungere alla scena",
+    "count": "{{count}} file",
+    "count_other": "{{count}} file",
+    "legend": "Ogni file va al suo posto:",
+    "adding": "Aggiunta alla scena: {{names}}",
+    "afterReview": "{{names}} verrà aggiunto dopo la verifica dell’IFC",
+    "more": "{{names}} e altri {{n}}",
+    "skipped": "{{count}} file ignorato",
+    "skipped_other": "{{count}} file ignorati",
+    "show": "Mostra",
+    "sceneReplace": "Aprire «{{name}}» sostituisce la scena attuale.",
+    "openScene": "Apri scena",
+    "sceneAlone": "Un file di scena si apre da solo. Aggiungi gli altri file quando è stato caricato."
   }
 }

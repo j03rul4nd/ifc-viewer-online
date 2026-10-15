@@ -164,8 +164,8 @@
   "exportSettings": "Definições de exportação…",
   "menu": {
     "openIfc": "Abrir ficheiro IFC…",
-    "openTooltip": "Abrir — ficheiros IFC, modelos demo e outros dados",
-    "addData": "Adicionar à cena",
+    "openTooltip": "Abrir — ficheiros IFC, modelos demo e ficheiros de cena",
+    "addData": "Adicionar dados",
     "check": "Verificar",
     "checkTooltip": "Verificar — problemas em 3D, IDS, comparar versões",
     "issuesIn3d": "Mostrar problemas em 3D",
@@ -185,7 +185,9 @@
     "edit": "Editar",
     "help": "Ajuda",
     "idsCheck": "Verificar com IDS…",
-    "compareVersions": "Comparar versões…"
+    "compareVersions": "Comparar versões…",
+    "addDataTooltip": "Adicionar dados — digitalizações, vídeo, modelos 3D, camadas de mapa e dispositivos ao vivo",
+    "openScene": "Abrir ficheiro de cena…"
   },
   "mobileBar": {
     "models": "{{count}} modelo",
@@ -193,5 +195,83 @@
     "elements": "{{n}} elementos",
     "openScene": "Cena e modelos",
     "score": "Health Score {{score}} — abrir validação"
+  },
+  "sun": "Sol",
+  "sunTooltip": "Estudo de sol e lua — sombras reais por data, hora e local",
+  "addData": {
+    "title": "Adicionar dados à cena",
+    "description": "Os ficheiros são lidos no seu navegador — nada é carregado para servidores.",
+    "dropTitle": "Largue os ficheiros aqui",
+    "dropHint": "Misture qualquer destes formatos — cada ficheiro vai para o sítio certo.",
+    "chooseFiles": "Escolher ficheiros…",
+    "chooseFile": "Escolher um ficheiro…",
+    "fromUpload": "Digitalizações, vídeo, modelos 3D ou camadas de mapa?",
+    "groups": {
+      "capture": "Captura da realidade",
+      "models": "Modelos",
+      "context": "Mapa e dados ao vivo",
+      "scenes": "Cenas"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "Nuvem de pontos",
+        "desc": "Digitalizações laser e fotogrametria com drone. São colocadas sobre o modelo quando o ficheiro indica onde estão."
+      },
+      "video": {
+        "title": "Vídeo 3D",
+        "desc": "Imagens de obra ou de drone num ecrã, no chão ou alinhadas com a câmara que as filmou."
+      },
+      "ifc": {
+        "title": "Modelo IFC",
+        "desc": "Os modelos de cada disciplina federam-se numa cena. Cada um é revisto antes de carregar; o primeiro fixa as coordenadas."
+      },
+      "mesh": {
+        "title": "Modelo 3D",
+        "desc": "Adereços e modelos de contexto em glTF ou OBJ, colocados no chão do seu modelo."
+      },
+      "map": {
+        "title": "Mapa e terreno",
+        "desc": "Mapa base, terreno 3D e os edifícios em redor de um modelo georreferenciado."
+      },
+      "layers": {
+        "title": "Camadas de dados",
+        "desc": "Pontos, rotas e zonas a partir de ficheiros GeoJSON ou CSV, URL, serviços WFS ou fontes públicas ao vivo."
+      },
+      "devices": {
+        "title": "Dispositivos ao vivo",
+        "desc": "Sensores via REST, WebSocket ou MQTT, ligados a elementos IFC."
+      },
+      "scene": {
+        "title": "Ficheiro de cena",
+        "desc": "Um .scene.json que alguém partilhou consigo. Abri-lo substitui a cena atual."
+      }
+    },
+    "pointcloudNote": "E57, ReCap ou FARO? Exporte primeiro como LAS, LAZ ou PLY.",
+    "action": {
+      "samples": "Exemplos",
+      "liveAndDemo": "Câmara, ecrã e demo",
+      "sources": "URL, WFS e fontes ao vivo",
+      "connect": "Ligar uma fonte",
+      "setUpMap": "Configurar o mapa",
+      "openPanel": "Abrir painel"
+    },
+    "inScene": "{{count}} na cena",
+    "inScene_other": "{{count}} na cena",
+    "needsModel": "Precisa primeiro de um modelo IFC na cena"
+  },
+  "drop": {
+    "title": "Largue para adicionar à cena",
+    "count": "{{count}} ficheiro",
+    "count_other": "{{count}} ficheiros",
+    "legend": "Cada ficheiro vai para o sítio certo:",
+    "adding": "A adicionar à cena: {{names}}",
+    "afterReview": "{{names}} será adicionado após a revisão do IFC",
+    "more": "{{names}} e mais {{n}}",
+    "skipped": "{{count}} ficheiro ignorado",
+    "skipped_other": "{{count}} ficheiros ignorados",
+    "show": "Mostrar",
+    "sceneReplace": "Abrir «{{name}}» substitui a cena atual.",
+    "openScene": "Abrir cena",
+    "sceneAlone": "Um ficheiro de cena abre-se sozinho. Adicione os outros ficheiros depois de carregar."
   }
 }

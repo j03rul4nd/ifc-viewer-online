@@ -1,5 +1,6 @@
 // ─── pc-material ──────────────────────────────────────────────────────────────
-// One ShaderMaterial for every point cloud in the scene, shared by every chunk.
+// One ShaderMaterial PER CLOUD, every one built from this same source, so three
+// compiles one program and a per-scan style is a uniform write.
 //
 // Why not THREE.PointsMaterial: colour modes (intensity ramp, elevation ramp,
 // ASPRS classification palette), a confidence cut-off, round sprites and a
@@ -16,6 +17,8 @@ import type { PointCloudDisplay, PointColorMode } from './pc-types'
 
 const MODE_INDEX: Record<PointColorMode, number> = {
   rgb: 0, intensity: 1, elevation: 2, classification: 3, flat: 4,
+  // Resolved to 'flat' by pc-style before they get here; a safety net only.
+  scan: 4, topic: 4,
 }
 
 /**

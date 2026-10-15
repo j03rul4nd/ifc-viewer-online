@@ -17,6 +17,9 @@
 //   • "Where are the interesting bits?" Explore lists the twin's live points,
 //     with their values, and the scene's models: one click goes there and
 //     opens its card.
+//   • "What am I looking at, and why does it matter?" A scene with a `story`
+//     opens with a guided tour (SceneStory): a few steps, each next to the
+//     thing it explains, quoting its live value.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,9 +33,12 @@ import { useInspectorStore } from '../lib/inspector'
 import { buildCatalog, buildGuidIndex, resolveLocs } from '../lib/twin/devices'
 import { flattenProperties } from '../lib/twin/flatten-props'
 import { bindingItems, modelItems } from '../lib/scene-explore/explore-items'
+import { localizeBindings } from '../lib/twin/localize'
 import { isTopPose, orbitPose, topPose, zoomPose, type Pose } from '../lib/scene-explore/camera-moves'
 import { currentPose, focusBox, focusElements, stepCamera } from '../lib/scene-explore/focus'
 import { TwinLiveSection } from './TwinLiveSection'
+import SceneStory from './SceneStory'
+import { bootedScene } from '../lib/scene-doc/scene-boot'
 import { ifcClassLabel } from '../lib/scene-explore/ifc-class-label'
 
 interface Props {
@@ -83,12 +89,15 @@ export default function SceneExplorer({ viewerApiRef, selected, homePose }: Prop
     else v.frameAllModels()
   }
 
+  const story = bootedScene()?.doc.story ?? null
+
   return (
     <>
       <div className="absolute left-2 top-2 z-[22] flex flex-col items-start gap-1.5 pointer-events-none" data-testid="scene-explorer">
         <ExploreMenu viewerApiRef={viewerApiRef} />
         <NavDock viewerApiRef={viewerApiRef} onHome={goHome} />
       </div>
+      {story && <SceneStory viewerApiRef={viewerApiRef} story={story} cardOpen={pick !== null} />}
       {pick && (
         <aside
           className="absolute z-[23] right-2 top-2 w-[330px] max-h-[calc(100%-3.5rem)] max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-9 max-sm:w-auto max-sm:max-h-[52%]
@@ -198,7 +207,7 @@ function NavDock({ viewerApiRef, onHome }: { viewerApiRef: React.MutableRefObjec
 // ── Explore: the twin's live points and the scene's models ───────────────────
 
 function ExploreMenu({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<ViewerAPI | null> }) {
-  const { t } = useTranslation('viewer')
+  const { t, i18n } = useTranslation('viewer')
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const close = React.useCallback(() => setOpen(false), [])
@@ -209,7 +218,9 @@ function ExploreMenu({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<Vi
   const models = useSceneStore((s) => s.models)
   const trees = useValidationStore((s) => s.spatialTrees)
   const now = timeAt ?? Date.now()
-  const live = useMemo(() => bindingItems(bindings, readings, now), [bindings, readings, now])
+  // Names in the reader's language: a scene's bindings and rules may carry `names`.
+  const lang = i18n.language || 'en'
+  const live = useMemo(() => bindingItems(localizeBindings(bindings, lang), readings, now), [bindings, lang, readings, now])
   const modelRows = useMemo(() => modelItems(models), [models])
   if (live.length === 0 && modelRows.length < 2) return null
 

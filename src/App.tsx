@@ -11,6 +11,17 @@ import ModelTree from './components/ModelTree'
 import { ColumnStrip } from './components/ColumnStrip'
 import { PanelRail } from './components/PanelRail'
 import { usePanelRail } from './hooks/usePanelRail'
+import { useSceneContent } from './hooks/useSceneContent'
+import { isHostPanel, type RailId } from './lib/ui/panel-rail'
+import { planDrop, followUp, holdsForReview, listNames, plannedCount, type DropPlan, type FollowUpKind } from './lib/loading/drop-plan'
+import type { AddDataKind } from './lib/loading/add-data-catalogue'
+import { openDataPanel, openDataSamples } from './lib/ui/data-panels'
+import { readSceneContent } from './lib/ui/scene-content'
+import { DropOverlay } from './components/data/DropOverlay'
+import {
+  trackAddDataOpened, trackDataAdded, trackDataRefused, fileCountBucket,
+  type AddDataFrom, type DataVia, type DataKindEvent,
+} from './lib/analytics'
 import { useMainColumnLaneRef } from './hooks/useMainColumnLane'
 import { installBottomSlotRule } from './lib/ui/bottom-slot'
 import { useWakeLock } from './hooks/useWakeLock'
@@ -87,6 +98,21 @@ import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 // Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
 const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
 const SceneShareModal = React.lazy(() => import('./components/SceneShareModal'))
+const AddDataHub = React.lazy(() => import('./components/data/AddDataHub'))
+
+/** The files a mesh selection is named by: its entry files (not .bin/.mtl/textures). */
+function meshEntries(mesh: File[]): File[] {
+  return groupMeshFiles(mesh).map((g) => g.entry)
+}
+
+/** One enum-only data_added per kind a drop or pick handed on (INV-5: no names). */
+function trackPlan(plan: DropPlan, via: DataVia): void {
+  const counts: [DataKindEvent, number][] = [
+    ['ifc', plan.ifc.length], ['ids', plan.ids ? 1 : 0], ['pointcloud', plan.pointcloud.length],
+    ['mesh', meshEntries(plan.mesh).length], ['video', plan.video.length], ['layers', plan.vector.length],
+  ]
+  for (const [kind, n] of counts) if (n > 0) trackDataAdded({ kind, via, files: fileCountBucket(n) })
+}
 const ClipStudio   = React.lazy(() => import('./components/studio/ClipStudio'))
 const CoverStudioModal = React.lazy(() => import('./components/CoverStudioModal'))
 const CompareModal = React.lazy(() => import('./components/CompareModal'))
@@ -150,7 +176,7 @@ import {
 } from './lib/loading'
 import { legacyPhase } from './lib/loading/phases'
 import {
-  classifyFiles, groupMeshFiles, hasFilePayload, routedCount, fileExtensionOf, MESH_ENTRY_EXTENSIONS,
+  groupMeshFiles, hasFilePayload, fileExtensionOf, MESH_ENTRY_EXTENSIONS,
 } from './lib/loading/drop-routing'
 import { ACTIVE_STATUSES, type JobOrigin, type JobOutcome, type LoadSource } from './lib/loading/types'
 import { fetchFileFromUrl } from './lib/fetch-ifc-url'
@@ -187,7 +213,7 @@ import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { useSolarAnalysisStore } from './stores/solarAnalysisStore'
 import { toast } from './stores/toastStore'
-import { confirmExternalData, hostsIn, layersSetupHosts } from './lib/privacy/external-data'
+import { confirmExternalData, hostsIn, layersSetupHosts, useExternalDataPrompt } from './lib/privacy/external-data'
 import { ExternalDataPrompt } from './components/ExternalDataPrompt'
 import { appBus, MAP_CONSENT_DECLINED } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
@@ -507,6 +533,7 @@ export default function App() {
   const { t: tCloud } = useTranslation('pointcloud')
   const { t: tMesh } = useTranslation('mesh')
   const { t: tLayers } = useTranslation('layers')
+  const { t: tVideo } = useTranslation('video')
   const { t: tSolar } = useTranslation('solar')
 
 
@@ -826,9 +853,9 @@ export default function App() {
   const progressRelayRef = useRef<Map<string, { at: number; percent: number }>>(new Map())
   // IFC files dropped on the viewer, handed to the upload dialog for review.
   const [uploadInitial, setUploadInitial] = useState<File[] | null>(null)
-  // Scans / meshes of a drop whose IFCs are still in the upload dialog (see
-  // routeDroppedFiles), and whether that dialog is open right now.
-  const deferredDropRef = useRef<{ pointcloud: File[]; mesh: File[] } | null>(null)
+  // Scans / meshes / clips of a drop whose IFCs are still in the upload dialog
+  // (see routeDroppedFiles), and whether that dialog is open right now.
+  const deferredDropRef = useRef<{ pointcloud: File[]; mesh: File[]; video: File[] } | null>(null)
   const showUploadRef = useRef(false)
 
   // ── Shared-report route — decode on mount if URL hash contains #report=... ──
@@ -858,6 +885,8 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
   const [showSceneModal, setShowSceneModal]   = useState(false)
+  // The "+ Add data" hub (components/data/AddDataHub, docs/ADD_DATA.md).
+  const [showAddData, setShowAddData]         = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
@@ -960,9 +989,11 @@ export default function App() {
     map:         <Icons.Globe size={15} />,
     solar:       <Icons.Sparkles size={15} />,
     flood:       <Icons.CloudRain size={15} />,
-    pointcloud:  <Icons.Zap size={15} />,
-    mesh:        <Icons.Building size={15} />,
+    pointcloud:  <Icons.PointCloud size={15} />,
+    mesh:        <Icons.Mesh size={15} />,
     devices:     <Icons.Devices size={15} />,
+    layers:      <Icons.DataLayers size={15} />,
+    video:       <Icons.Video size={15} />,
   }), [])
   const railLabels = useMemo(() => ({
     properties:  tSidebar('title'),
@@ -976,13 +1007,17 @@ export default function App() {
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
     devices:     tLayers('devices.entry'),
-  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers])
+    layers:      tLayers('title'),
+    video:       tVideo('title'),
+  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers, tVideo])
   // Read here rather than from the destructured block below, which is declared
   // after this point in the component.
   const railMeasurementTool = useUIStore((s) => s.activeMeasurementTool)
   const railClipPlanes = useUIStore((s) => s.clipPlaneCount)
   const railPlanView = useUIStore((s) => s.activePlanViewId)
   const railModelCount = useSceneStore((s) => s.models.length)
+  // Anything in the scene (IFC, scan, 3D model, video, data layer): the rail's mount gate.
+  const sceneContent = useSceneContent()
   const railTwinBindings = useTwinDeviceStore((s) => s.bindings.length)
   const railTwinAlerting = useTwinDeviceStore((s) => s.alerting.length > 0)
   const railFloodRunning = useFloodStore((s) => s.status === 'running')
@@ -992,7 +1027,11 @@ export default function App() {
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
-  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending || !!s.setupUrl || !!s.setupText)
+  const layerCount = useVectorLayerStore((s) => s.layers.length)
+  const videoCount = useVideoStore((s) => s.videos.length)
+  // pendingFiles: a drop or a hub pick queued layers; the panel must mount to
+  // read them even if another panel took the one-at-a-time slot meanwhile.
+  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.pendingFiles.length > 0 || s.restorePending || !!s.setupUrl || !!s.setupText)
   // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
   const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
   // The scene explorer: on by default where the app's panels are absent (the
@@ -1051,6 +1090,14 @@ export default function App() {
     const bg = scene?.doc.view.background && !new URLSearchParams(window.location.search).has('bg')
       ? parseBackgroundSpec(scene.doc.view.background) : null
     if (bg) useSceneStore.getState().setBackground(bg, { persist: false })
+    // Its data question comes once the models are in (below); the map's would
+    // come first, and the visitor would read two dialogs in a row. The map's
+    // waits for it, so both are one — unless the models never settle.
+    const asksForData = !!scene && (scene.doc.layers.length > 0 || (scene.doc.twin?.sources.length ?? 0) > 0)
+    if (!asksForData) return
+    useExternalDataPrompt.getState().expect(true)
+    const release = window.setTimeout(() => useExternalDataPrompt.getState().expect(false), 60_000)
+    return () => window.clearTimeout(release)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -1059,21 +1106,26 @@ export default function App() {
   // rail offering Scene and Map, neither of which it mounts, so two of three
   // icons did nothing when pressed. If you change a panel's render condition,
   // change its line here.
-  const railAvailable = useMemo(() => ({
+  // The rail now also shows for scan-, layer- and video-only scenes, so the
+  // model tools carry the model gate their panels mount with.
+  const railAvailable = useMemo((): Partial<Record<RailId, boolean>> => ({
     properties:  effectiveChrome.showSidebar,
     scene:       !clientMode,
-    measurement: !clientMode || clientAdvancedTools,
-    section:     !clientMode || clientAdvancedTools,
-    plans:       !clientMode,
-    map:         isGisEnabled() && !clientMode,
-    solar:       isSolarEnabled(),
+    measurement: (!clientMode || clientAdvancedTools) && railModelCount > 0,
+    section:     (!clientMode || clientAdvancedTools) && railModelCount > 0,
+    plans:       !clientMode && railModelCount > 0,
+    map:         isGisEnabled() && !clientMode && railModelCount > 0,
+    solar:       isSolarEnabled() && railModelCount > 0,
     // Same condition as the panel below.
     flood:       isFloodEnabled() && !clientMode && railModelCount > 0,
     pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
     mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
     // Same condition as the panel below (it mounts on open, or once a source exists).
     devices:     !clientMode,
-  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount])
+    // App-only entries (not host PanelIds): once there is a layer or a clip.
+    layers:      !clientMode && layerCount > 0,
+    video:       isVideoEnabled() && !clientMode && videoCount > 0,
+  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount, layerCount, videoCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
   // both show it. The old mobile grid carried these and the rail did not.
@@ -1086,7 +1138,9 @@ export default function App() {
     devices:     { badge: railTwinBindings > 0 ? railTwinBindings : undefined, dot: railTwinAlerting },
     // A run in progress keeps a dot on the parked icon.
     flood:       { dot: railFloodRunning },
-  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting, railFloodRunning])
+    layers:      { badge: layerCount > 1 ? layerCount : undefined },
+    video:       { badge: videoCount > 1 ? videoCount : undefined },
+  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting, railFloodRunning, layerCount, videoCount])
 
   const railItems = usePanelRail({
     icons: railIcons,
@@ -1810,76 +1864,144 @@ export default function App() {
   // One drop can carry a federation plus its survey: IFCs go to the upload
   // dialog (validation, duplicates, review → the loading queue), scans and
   // meshes straight to the loading queue as jobs of their own (one per scan,
-  // one per model — a multi-file glTF is ONE model), an .ids to the IDS flow.
-  // `classifyFiles` works on extensions only, so none of the point cloud /
-  // mesh code is pulled into the entry chunk to decide. Scans and meshes do
-  // not need their panels any more: they load in client mode too.
-  const routeDroppedFiles = useCallback((files: File[]): void => {
-    const r = classifyFiles(files)
-    if (r.ifc.length > 0) {
-      setUploadInitial(r.ifc)
+  // one per model — a multi-file glTF is ONE model), clips to the 3D video
+  // queue, an .ids to the IDS flow, a .scene.json to the scene opener.
+  // planDrop (lib/loading/drop-plan) works on extensions only, so none of the
+  // point cloud / mesh / video code is pulled into the entry chunk to decide.
+  // Scans and meshes do not need their panels to load: they load in client
+  // mode too. What the user SEES afterwards (one panel, or one summary toast)
+  // is followUp's decision, and only in the interactive full chrome.
+  const namesOf = useCallback((files: readonly File[]): string => {
+    const { names, more } = listNames(files, 3)
+    return more > 0 ? tToolbar('drop.more', { names, n: more }) : names
+  }, [tToolbar])
+
+  /** Open a scene document now: it reloads the viewer on it (same path as a shared link). */
+  const openSceneFromFile = useCallback(async (file: File, via: DataVia): Promise<void> => {
+    const m = await import('./lib/scene-doc/open-scene-file')
+    const r = await m.sceneUrlFromText(await file.text())
+    if (!r.ok) {
+      toast(r.reason === 'tooBig' ? tLayers('scene.tooBigToOpen') : r.errors.join(' '), 'error')
+      return
+    }
+    // Best-effort: the page reloads right after.
+    trackDataAdded({ kind: 'scene', via, files: '1' })
+    m.navigateToScene(r.url)
+  }, [tLayers])
+
+  /** A dropped scene file never wipes a populated scene by accident: it asks first. */
+  const offerScene = useCallback((file: File, via: DataVia): void => {
+    if (!readSceneContent().any && !showUploadRef.current) { void openSceneFromFile(file, via); return }
+    toast(tToolbar('drop.sceneReplace', { name: file.name }), 'warning', {
+      duration: 0,
+      action: { label: tToolbar('drop.openScene'), run: () => void openSceneFromFile(file, via) },
+    })
+  }, [openSceneFromFile, tToolbar])
+
+  const routeDroppedFiles = useCallback((files: File[], opts: { via?: DataVia } = {}): void => {
+    const via = opts.via ?? 'drop'
+    setShowAddData(false)
+    // Computed here, not read from toolbarIsFull (declared further down).
+    const interactive = effectiveChrome.showToolbar && effectiveChrome.toolbarVariant === 'full'
+      && !clientMode && !effectiveChrome.quiet
+    const plan = planDrop(files, {
+      pointcloud: canLoadKind('pointcloud'),
+      mesh: canLoadKind('mesh'),
+      video: isVideoEnabled() && !clientMode,
+      scene: !embedChrome.embed,
+      // The analysis panel reads weather files; it is not mounted in client mode.
+      weather: isSolarEnabled() && !clientMode,
+    })
+    // A scene replaces everything, so it is handled alone: loading the other
+    // files first and then reloading would throw them away silently.
+    if (plan.scene) {
+      if (plannedCount(plan) > 1) toast(tToolbar('drop.sceneAlone'), 'info')
+      offerScene(plan.scene, via)
+      return
+    }
+    const skippedSuffix = plan.unsupported.length > 0
+      ? ` · ${tToolbar('drop.skipped', { count: plan.unsupported.length })}` : ''
+    if (plan.ifc.length > 0) {
+      setUploadInitial(plan.ifc)
       setShowUpload(true)
     }
-    if (r.ids.length > 0) void handleIdsFile(r.ids[0])
-    // Scans and meshes that arrive WITH IFCs wait for the upload dialog: it
-    // reviews the IFCs before they become jobs, and a scan that started
+    if (plan.ids) void handleIdsFile(plan.ids)
+    // Scans, meshes and clips that arrive WITH IFCs wait for the upload dialog:
+    // it reviews the IFCs before they become jobs, and a scan that started
     // meanwhile found no model to align against (nor an anchor job to wait
     // for) and landed at its own coordinates. Held here until the dialog
     // closes — after its submit, so the IFC is queued and anchors the scene.
-    if ((r.ifc.length > 0 || showUploadRef.current) && (r.pointcloud.length > 0 || r.mesh.length > 0)) {
-      const held = deferredDropRef.current ?? { pointcloud: [], mesh: [] }
-      held.pointcloud.push(...r.pointcloud)
-      held.mesh.push(...r.mesh)
-      deferredDropRef.current = held
+    const held = holdsForReview(plan, showUploadRef.current)
+    if (held) {
+      const queue = deferredDropRef.current ?? { pointcloud: [], mesh: [], video: [] }
+      queue.pointcloud.push(...plan.pointcloud)
+      queue.mesh.push(...plan.mesh)
+      queue.video.push(...plan.video)
+      deferredDropRef.current = queue
+      if (interactive) {
+        const heldNames = [...plan.pointcloud, ...meshEntries(plan.mesh), ...plan.video]
+        toast(tToolbar('drop.afterReview', { names: namesOf(heldNames) }) + skippedSuffix, 'info')
+      }
     } else {
-      submitDroppedSources(r.pointcloud, r.mesh)
+      submitDroppedSources(plan.pointcloud, plan.mesh)
+      if (plan.video.length > 0) useVideoStore.getState().enqueueFiles(plan.video)
     }
     // GeoJSON never waits for the IFC dialog: a layer re-anchors on its own
     // when the model's placement arrives (vector-runner rebuilds on it).
-    if (r.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(r.vector)
-    if (r.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
+    if (plan.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(plan.vector)
+    if (plan.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
+    // Scanner formats we recognise but cannot decode get specific advice.
+    for (const d of plan.deferred) {
+      void i18n.loadNamespaces('pointcloud').then(() => {
+        toast(`${namesOf(d.files)}: ${i18n.t(`pointcloud:${d.reasonKey}` as never)}`, 'warning', { duration: 9000 })
+      })
+      trackDataRefused({ reason: d.reasonKey === 'unsupported.e57' ? 'e57' : 'proprietary', via })
+    }
     // A weather file belongs to the solar analysis: it waits in the store for
     // the panel to read, and the panel opens. It needs a building to stand on —
     // one in the scene, or an IFC in this same drop ("drop an IFC and an EPW").
     // The upload dialog keeps its IFCs and hands only the rest here, so an
     // open dialog counts as an IFC on its way (as it does for scans above).
-    // Builds and skins without the analysis panel cannot open it at all.
-    if (r.weather.length > 0) {
-      if (!isSolarEnabled() || useUIStore.getState().clientMode) {
-        toast(tToasts('model.dropUnsupported', { count: r.weather.length }), 'warning')
-      } else if (r.ifc.length === 0 && !showUploadRef.current && useSceneStore.getState().models.length === 0) {
+    // planDrop already sent it to `unsupported` where the panel cannot mount.
+    if (plan.weather.length > 0) {
+      if (plan.ifc.length === 0 && !showUploadRef.current && useSceneStore.getState().models.length === 0) {
         toast(tToasts('model.dropWeatherNoModel'), 'info')
       } else {
         const sa = useSolarAnalysisStore.getState()
-        sa.setPendingWeatherFile(r.weather[0])
+        sa.setPendingWeatherFile(plan.weather[0])
         sa.setPanelOpen(true)
       }
     }
-    if (r.other.length > 0 && routedCount(r) === 0) {
-      toast(tToasts('model.dropUnsupported', { count: r.other.length }), 'warning')
+    if (!held) {
+      const f = followUp(plan, { interactive })
+      if (f.open) openDataPanel(f.open)
+      if (f.summary.length > 0) {
+        const show = f.show
+        toast(tToolbar('drop.adding', { names: namesOf(f.summary) }) + skippedSuffix, 'info',
+          show ? { action: { label: tToolbar('drop.show'), run: () => openDataPanel(show) } } : undefined)
+      }
     }
-  }, [handleIdsFile, tToasts])
+    // Nothing routed at all: today's one warning (a README next to an IFC is
+    // not worth a toast — classifyFiles moves it to `other` for that reason).
+    if (plannedCount(plan) === 0 && plan.deferred.length === 0 && plan.unsupported.length > 0) {
+      toast(tToasts('model.dropUnsupported', { count: plan.unsupported.length }), 'warning')
+      trackDataRefused({ reason: 'unsupported', via })
+    }
+    trackPlan(plan, via)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleIdsFile, tToasts, tToolbar, clientMode, effectiveChrome, embedChrome.embed, namesOf, offerScene])
 
   /** Dropped scans and meshes → the loading queue (one job per scan, one per model). */
   function submitDroppedSources(pointcloud: File[], mesh: File[]): void {
+    // planDrop already turned flag-off kinds and sidecar-only selections into
+    // `unsupported`, so what arrives here is loadable.
     if (pointcloud.length > 0) {
-      if (canLoadKind('pointcloud')) {
-        // A scan already in the scene is not decoded again (see loadPointCloudsOnce).
-        void loadPointCloudsOnce(pointcloud.map((file) => ({ source: { type: 'file', file } })), { origin: 'drop' })
-      } else {
-        toast(tToasts('model.dropUnsupported', { count: pointcloud.length }), 'warning')
-      }
+      // A scan already in the scene is not decoded again (see loadPointCloudsOnce).
+      void loadPointCloudsOnce(pointcloud.map((file) => ({ source: { type: 'file', file } })), { origin: 'drop' })
     }
-    if (mesh.length > 0) {
-      const groups = groupMeshFiles(mesh)
-      if (!canLoadKind('mesh')) {
-        toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
-      } else if (groups.length === 0) {
-        // Only sidecars (.bin, .mtl): nothing to decode. Said, not swallowed.
-        toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
-      } else {
-        void loadMeshesOnce(groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })), { origin: 'drop' })
-      }
+    const groups = groupMeshFiles(mesh)
+    if (groups.length > 0) {
+      void loadMeshesOnce(groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })), { origin: 'drop' })
     }
   }
 
@@ -1887,8 +2009,41 @@ export default function App() {
   const releaseDeferredDrop = (): void => {
     const held = deferredDropRef.current
     deferredDropRef.current = null
-    if (held) submitDroppedSources(held.pointcloud, held.mesh)
+    if (!held) return
+    submitDroppedSources(held.pointcloud, held.mesh)
+    if (held.video.length > 0) useVideoStore.getState().enqueueFiles(held.video)
+    const interactive = effectiveChrome.showToolbar && effectiveChrome.toolbarVariant === 'full'
+      && !clientMode && !effectiveChrome.quiet
+    const names = [...held.pointcloud, ...meshEntries(held.mesh), ...held.video]
+    if (interactive && names.length > 0) {
+      const first: FollowUpKind = held.pointcloud.length > 0 ? 'pointcloud' : groupMeshFiles(held.mesh).length > 0 ? 'mesh' : 'video'
+      toast(tToolbar('drop.adding', { names: namesOf(names) }), 'info', {
+        action: { label: tToolbar('drop.show'), run: () => openDataPanel(first) },
+      })
+    }
   }
+
+  /** "+ Add data", from the toolbar, Open ▾, the phone capsule or the upload dialog. */
+  const openAddData = useCallback((from: AddDataFrom): void => {
+    // Non-Modal overlays that would sit over the hub.
+    setShowDemoGallery(false)
+    setShowAddData(true)
+    trackAddDataOpened({ from })
+  }, [])
+
+  /** A pick in the hub: Data layers and Scene file route by intent, everything else as a drop. */
+  const addFromHub = useCallback((kind: AddDataKind | 'any', files: File[]): void => {
+    setShowAddData(false)
+    if (files.length === 0) return
+    if (kind === 'layers') {
+      // CSV and plain .json would route elsewhere (or nowhere) by extension.
+      useVectorLayerStore.getState().enqueueFiles(files)
+      trackDataAdded({ kind: 'layers', via: 'hub', files: fileCountBucket(files.length) })
+      return
+    }
+    if (kind === 'scene') { void openSceneFromFile(files[0], 'hub'); return }
+    routeDroppedFiles(files, { via: 'hub' })
+  }, [openSceneFromFile, routeDroppedFiles])
 
   // Global drop over the viewer. Only OS file drags count (`hasFilePayload`):
   // the scene tree's own row drag-and-drop must pass straight through. While the
@@ -2585,8 +2740,10 @@ export default function App() {
         }
         case 'ifcviewer:get-panels': {
           void respond(() => ({
-            open: railItemsRef.current.find((i) => i.open)?.id ?? null,
-            available: railItemsRef.current.map((i) => ({ id: i.id, label: i.label, open: i.open })),
+            // App-only rail entries (Data layers, 3D video) are not in the
+            // SDK's PanelName vocabulary, so a host never sees them.
+            open: railItemsRef.current.find((i) => i.open && isHostPanel(i.id))?.id ?? null,
+            available: railItemsRef.current.filter((i) => isHostPanel(i.id)).map((i) => ({ id: i.id, label: i.label, open: i.open })),
           }))
           break
         }
@@ -4380,6 +4537,8 @@ export default function App() {
                       onIsolate={handleIsolate}
                       onUpload={openUploadModal}
                       onOpenDemoGallery={openDemoGallery}
+                      onOpenAddData={openAddData}
+                      onOpenSceneFile={(file) => void openSceneFromFile(file, 'menu')}
                       onOpenExportModal={() => setShowExportModal(true)}
                       onOpenEmbed={() => setShowEmbedModal(true)}
                       onOpenScene={() => setShowSceneModal(true)}
@@ -4565,9 +4724,10 @@ export default function App() {
 
                   {/* The minimised form of every floating panel: a rail of
                       icons on the right edge, panels opening to its left.
-                      docs/PANEL_RAIL.md. Only with a model — with an empty
-                      viewport there is nothing for any of them to act on. */}
-                  {sceneModels.length > 0 && tourMode !== 'playing' && effectiveChrome.showRail && (
+                      docs/PANEL_RAIL.md. Only with scene content — with an
+                      empty viewport there is nothing for any of them to act
+                      on. The model tools carry their own model gate. */}
+                  {sceneContent.any && tourMode !== 'playing' && effectiveChrome.showRail && (
                     <div className="max-md:hidden">
                       <PanelRail items={railItems} />
                     </div>
@@ -4868,6 +5028,10 @@ export default function App() {
               </div>
               </Panel>
             </PanelGroup>
+            {/* Window-wide "drop to add" affordance. Route-level (this
+                motion.div is fixed inset-0), never inside [data-viewer-area]:
+                purely visual, pointer-events-none, it never handles the drop. */}
+            <DropOverlay enabled={isDesktop && toolbarIsFull && !clientMode && !effectiveChrome.quiet && !showUpload && !showAddData && !showDemoGallery} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -4893,6 +5057,19 @@ export default function App() {
       {showSceneModal && (
         <React.Suspense fallback={null}>
           <SceneShareModal viewerApiRef={viewerApiRef} onClose={() => setShowSceneModal(false)} />
+        </React.Suspense>
+      )}
+
+      {/* ── "+ Add data": one hub for every kind of data (docs/ADD_DATA.md) ── */}
+      {showAddData && (
+        <React.Suspense fallback={null}>
+          <AddDataHub
+            onClose={() => setShowAddData(false)}
+            onPick={addFromHub}
+            onOpenPanel={(kind) => { setShowAddData(false); openDataPanel(kind) }}
+            onOpenSamples={(kind) => { setShowAddData(false); openDataSamples(kind) }}
+            onOpenDemos={() => { setShowAddData(false); openDemoGallery() }}
+          />
         </React.Suspense>
       )}
 
@@ -4946,6 +5123,7 @@ export default function App() {
           <UploadOverlay
             onClose={() => { setShowUpload(false); setUploadInitial(null); releaseDeferredDrop() }}
             onOpenDemoGallery={openDemoGallery}
+            onOpenAddData={() => { setShowUpload(false); setUploadInitial(null); releaseDeferredDrop(); openAddData('upload_dialog') }}
             initialFiles={uploadInitial ?? undefined}
             initialOrigin={uploadInitial ? 'drop' : undefined}
             onNonIfcFiles={routeDroppedFiles}

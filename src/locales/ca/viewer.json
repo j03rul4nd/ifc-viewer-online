@@ -191,7 +191,9 @@
         "projectName": "Mateix projecte i emplaçament",
         "proximity": "Proximitat geogràfica",
         "single": "Fitxer únic"
-      }
+      },
+      "editScan": "Edita al panell Núvol de punts",
+      "topics": "Temes: {{names}}"
     },
     "scope": {
       "label": "Àmbit",
@@ -342,6 +344,16 @@
     "properties": "Propietats",
     "fromType": "tipus",
     "attributes": "Atributs",
-    "copied": "Copiat"
+    "copied": "Copiat",
+    "story": {
+      "label": "Recorregut guiat",
+      "step": "{{n}} de {{total}}",
+      "next": "Següent",
+      "back": "Enrere",
+      "close": "Tancar el recorregut",
+      "finish": "Explora pel teu compte",
+      "resume": "Recorregut guiat",
+      "now": "En viu ara"
+    }
   }
 }

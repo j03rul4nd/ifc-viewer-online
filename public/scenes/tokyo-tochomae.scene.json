@@ -83,7 +83,7 @@
     "bindings": [
       {
         "id": "oedo-status",
-        "name": "Toei Ōedo line status — Toei marks on the exit",
+        "name": "Toei Ōedo line status — Toei marks on the exit", "names": {"es":"Estado de la línea Ōedo de Toei — marcas de Toei en la salida","ca":"Estat de la línia Ōedo de Toei — marques de Toei a la sortida","de":"Status der Toei-Ōedo-Linie — Toei-Zeichen am Ausgang","fr":"État de la ligne Toei Ōedo — emblèmes Toei de la sortie","it":"Stato della linea Toei Ōedo — marchi Toei dell'uscita","pt":"Estado da linha Ōedo da Toei — marcas da Toei na saída","ja":"都営大江戸線の運行状況 — 出口の都営マーク","zh":"都营大江户线运行状态 — 出口处的都营标志","th":"สถานะการเดินรถสาย Toei Ōedo — สัญลักษณ์ Toei ที่ทางออก"},
         "sourceId": "odpt-toei-status",
         "deviceId": "odpt.Railway:Toei.Oedo",
         "targets": [],
@@ -97,7 +97,7 @@
         "rules": [
           {
             "id": "disrupted",
-            "name": "Disruption reported (delays of 15 min or more)",
+            "name": "Disruption reported (delays of 15 min or more)", "names": {"es":"Incidencia notificada (retrasos de 15 min o más)","ca":"Incidència notificada (retards de 15 min o més)","de":"Störung gemeldet (Verspätungen ab 15 Min.)","fr":"Perturbation signalée (retards de 15 min ou plus)","it":"Disservizio segnalato (ritardi di 15 min o più)","pt":"Ocorrência informada (atrasos de 15 min ou mais)","ja":"運行の乱れあり（15分以上の遅延）","zh":"已报告运行异常（延误 15 分钟及以上）","th":"มีรายงานเหตุขัดข้อง (ล่าช้าตั้งแต่ 15 นาทีขึ้นไป)"},
             "match": "any",
             "filters": [
               {
@@ -120,7 +120,7 @@
           },
           {
             "id": "normal",
-            "name": "No delays of 15 min or more",
+            "name": "No delays of 15 min or more", "names": {"es":"Sin retrasos de 15 min o más","ca":"Sense retards de 15 min o més","de":"Keine Verspätungen ab 15 Min.","fr":"Aucun retard de 15 min ou plus","it":"Nessun ritardo di 15 min o più","pt":"Sem atrasos de 15 min ou mais","ja":"15分以上の遅延なし","zh":"无 15 分钟及以上的延误","th":"ไม่มีความล่าช้าตั้งแต่ 15 นาทีขึ้นไป"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -135,7 +135,7 @@
       },
       {
         "id": "tochomae-train",
-        "name": "Train at Tochōmae (E-28) — station sign",
+        "name": "Train at Tochōmae (E-28) — station sign", "names": {"es":"Tren en Tochōmae (E-28) — letrero de la estación","ca":"Tren a Tochōmae (E-28) — rètol de l'estació","de":"Zug in Tochōmae (E-28) — Stationsschild","fr":"Train à Tochōmae (E-28) — enseigne de la station","it":"Treno a Tochōmae (E-28) — cartello della stazione","pt":"Trem em Tochōmae (E-28) — placa da estação","ja":"都庁前駅（E-28）の列車 — 駅名標","zh":"都厅前站（E-28）的列车 — 站名标牌","th":"ขบวนรถที่ Tochōmae (E-28) — ป้ายสถานี"},
         "sourceId": "odpt-toei-trains",
         "deviceId": "odpt.Station:Toei.Oedo.Tochomae",
         "targets": [],
@@ -149,7 +149,7 @@
         "rules": [
           {
             "id": "at",
-            "name": "Train at the platform",
+            "name": "Train at the platform", "names": {"es":"Tren en el andén","ca":"Tren a l'andana","de":"Zug am Bahnsteig","fr":"Train à quai","it":"Treno in banchina","pt":"Trem na plataforma","ja":"ホームに列車あり","zh":"列车停靠站台","th":"มีขบวนรถอยู่ที่ชานชาลา"},
             "match": "all",
             "filters": [
               {
@@ -165,7 +165,7 @@
           },
           {
             "id": "leaving",
-            "name": "Train just left Tochōmae",
+            "name": "Train just left Tochōmae", "names": {"es":"El tren acaba de salir de Tochōmae","ca":"El tren acaba de sortir de Tochōmae","de":"Zug hat Tochōmae gerade verlassen","fr":"Train tout juste parti de Tochōmae","it":"Treno appena partito da Tochōmae","pt":"O trem acabou de sair de Tochōmae","ja":"列車が都庁前駅を発車直後","zh":"列车刚刚驶离都厅前站","th":"ขบวนรถเพิ่งออกจาก Tochōmae"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -183,7 +183,7 @@
       },
       {
         "id": "tochomae-bus-stop",
-        "name": "Toei bus at 都庁第一本庁舎 (stop 2248-01) — stop pole",
+        "name": "Toei bus at 都庁第一本庁舎 (stop 2248-01) — stop pole", "names": {"es":"Autobús de Toei en 都庁第一本庁舎 (parada 2248-01) — poste de la parada","ca":"Autobús de Toei a 都庁第一本庁舎 (parada 2248-01) — pal de la parada","de":"Toei-Bus an 都庁第一本庁舎 (Haltestelle 2248-01) — Haltestellenmast","fr":"Bus Toei à 都庁第一本庁舎 (arrêt 2248-01) — poteau d'arrêt","it":"Autobus Toei a 都庁第一本庁舎 (fermata 2248-01) — palo della fermata","pt":"Ônibus da Toei em 都庁第一本庁舎 (parada 2248-01) — poste da parada","ja":"都庁第一本庁舎（停留所 2248-01）の都営バス — バス停の標柱","zh":"都庁第一本庁舎（站点 2248-01）的都营公交 — 公交站牌杆","th":"รถบัส Toei ที่ 都庁第一本庁舎 (ป้าย 2248-01) — เสาป้ายรถเมล์"},
         "sourceId": "odpt-toei-bus",
         "deviceId": "2248-01",
         "targets": [],
@@ -195,7 +195,7 @@
         "rules": [
           {
             "id": "passed",
-            "name": "A Toei bus passed in the last 10 minutes",
+            "name": "A Toei bus passed in the last 10 minutes", "names": {"es":"Ha pasado un autobús de Toei en los últimos 10 minutos","ca":"Un autobús de Toei ha passat en els últims 10 minuts","de":"Ein Toei-Bus ist in den letzten 10 Minuten vorbeigefahren","fr":"Un bus Toei est passé au cours des 10 dernières minutes","it":"Un autobus Toei è passato negli ultimi 10 minuti","pt":"Um ônibus da Toei passou nos últimos 10 minutos","ja":"直近10分以内に都営バスが通過","zh":"过去 10 分钟内有都营公交经过","th":"มีรถบัส Toei ผ่านไปในช่วง 10 นาทีที่ผ่านมา"},
             "match": "all",
             "filters": [],
             "effect": {
@@ -224,5 +224,166 @@
         2
       ]
     }
+  },
+  "story": {
+    "steps": [
+      {
+        "title": {
+          "en": "A station entrance, live",
+          "es": "La entrada de una estación, en vivo",
+          "ca": "L'entrada d'una estació, en viu",
+          "de": "Ein Stationseingang, live",
+          "fr": "Une entrée de station, en direct",
+          "it": "L'ingresso di una stazione, in tempo reale",
+          "pt": "A entrada de uma estação, ao vivo",
+          "ja": "駅の出入口をライブで",
+          "zh": "车站出入口实时动态",
+          "th": "ทางเข้าสถานีแบบเรียลไทม์"
+        },
+        "text": {
+          "en": "Exit A4 of Tochōmae station on the Ōedo line, beside the Tokyo Metropolitan Government Building, connected to three open feeds from ODPT, Tokyo's public transport data.",
+          "es": "La salida A4 de la estación de Tochōmae, en la línea Ōedo, junto al Edificio del Gobierno Metropolitano de Tokio, conectada a tres feeds abiertos de ODPT, los datos de transporte público de Tokio.",
+          "ca": "La sortida A4 de l'estació de Tochōmae, a la línia Ōedo, al costat de l'Edifici del Govern Metropolità de Tòquio, connectada a tres feeds oberts d'ODPT, les dades de transport públic de Tòquio.",
+          "de": "Ausgang A4 der Station Tochōmae an der Ōedo-Linie, neben dem Tokyo Metropolitan Government Building, verbunden mit drei offenen Feeds von ODPT, den Daten des öffentlichen Verkehrs in Tokio.",
+          "fr": "La sortie A4 de la station Tochōmae, sur la ligne Ōedo, à côté du bâtiment du gouvernement métropolitain de Tokyo, reliée à trois flux ouverts d'ODPT, les données de transport public de Tokyo.",
+          "it": "L'uscita A4 della stazione di Tochōmae, sulla linea Ōedo, accanto al Tokyo Metropolitan Government Building, collegata a tre feed aperti di ODPT, i dati del trasporto pubblico di Tokyo.",
+          "pt": "A saída A4 da estação Tochōmae, na linha Ōedo, ao lado do Edifício do Governo Metropolitano de Tóquio, conectada a três feeds abertos do ODPT, os dados de transporte público de Tóquio.",
+          "ja": "東京都庁に隣接する大江戸線都庁前駅のA4出口。東京の公共交通データであるODPTの3つのオープンフィードに接続されています。",
+          "zh": "大江户线都厅前站 A4 出口，紧邻东京都厅，接入了 ODPT（东京公共交通数据）的三个开放数据源。",
+          "th": "ทางออก A4 ของสถานี Tochōmae บนสาย Ōedo ข้างศาลาว่าการกรุงโตเกียว เชื่อมต่อกับฟีดเปิดสามรายการจาก ODPT ซึ่งเป็นข้อมูลขนส่งสาธารณะของโตเกียว"
+        },
+        "camera": {
+          "position": [
+            -30,
+            20,
+            -34
+          ],
+          "target": [
+            0,
+            2,
+            2
+          ]
+        }
+      },
+      {
+        "title": {
+          "en": "Is the line running normally?",
+          "es": "¿Funciona la línea con normalidad?",
+          "ca": "La línia funciona amb normalitat?",
+          "de": "Läuft die Linie normal?",
+          "fr": "La ligne circule-t-elle normalement ?",
+          "it": "La linea funziona regolarmente?",
+          "pt": "A linha está operando normalmente?",
+          "ja": "平常どおり運行中？",
+          "zh": "线路运行正常吗？",
+          "th": "สายนี้เดินรถตามปกติไหม?"
+        },
+        "text": {
+          "en": "The Toei marks turn green while the Ōedo line reports no delay of 15 minutes or more, from the operator's own status feed.",
+          "es": "Las marcas de Toei se ponen en verde mientras la línea Ōedo no notifique ningún retraso de 15 minutos o más, según el feed de estado del propio operador.",
+          "ca": "Les marques de Toei es tornen verdes mentre la línia Ōedo no informi de cap retard de 15 minuts o més, segons el feed d'estat del mateix operador.",
+          "de": "Die Toei-Zeichen werden grün, solange die Ōedo-Linie keine Verspätung von 15 Minuten oder mehr meldet – laut dem Status-Feed des Betreibers selbst.",
+          "fr": "Les emblèmes Toei passent au vert tant que la ligne Ōedo ne signale aucun retard de 15 minutes ou plus, d'après le flux d'état de l'exploitant lui-même.",
+          "it": "I marchi Toei diventano verdi finché la linea Ōedo non segnala ritardi di 15 minuti o più, secondo il feed di stato dell'operatore stesso.",
+          "pt": "As marcas da Toei ficam verdes enquanto a linha Ōedo não informa nenhum atraso de 15 minutos ou mais, segundo o feed de estado da própria operadora.",
+          "ja": "大江戸線で15分以上の遅延が報告されていない間、都営マークが緑になります。事業者自身の運行情報フィードに基づいています。",
+          "zh": "只要大江户线没有报告 15 分钟及以上的延误，都营标志就会显示绿色，依据是运营方自己的运行状态数据源。",
+          "th": "สัญลักษณ์ Toei จะเป็นสีเขียวตราบที่สาย Ōedo ไม่มีรายงานความล่าช้าตั้งแต่ 15 นาทีขึ้นไป โดยอิงจากฟีดสถานะของผู้ให้บริการเอง"
+        },
+        "binding": "oedo-status"
+      },
+      {
+        "title": {
+          "en": "A train at the platform",
+          "es": "Un tren en el andén",
+          "ca": "Un tren a l'andana",
+          "de": "Ein Zug am Bahnsteig",
+          "fr": "Un train à quai",
+          "it": "Un treno in banchina",
+          "pt": "Um trem na plataforma",
+          "ja": "ホームにいる列車",
+          "zh": "列车停靠站台",
+          "th": "รถไฟที่ชานชาลา"
+        },
+        "text": {
+          "en": "The station sign lights up when a train is at Tochōmae or has just left it, and the train's number floats above it.",
+          "es": "El letrero de la estación se ilumina cuando hay un tren en Tochōmae o acaba de salir de allí, y el número del tren flota encima.",
+          "ca": "El rètol de l'estació s'il·lumina quan hi ha un tren a Tochōmae o n'acaba de sortir, i el número del tren sura a sobre.",
+          "de": "Das Stationsschild leuchtet auf, wenn ein Zug in Tochōmae steht oder gerade abgefahren ist, und die Zugnummer schwebt darüber.",
+          "fr": "L'enseigne de la station s'allume quand un train est à Tochōmae ou vient d'en partir, et le numéro du train flotte au-dessus.",
+          "it": "Il cartello della stazione si illumina quando un treno è a Tochōmae o ne è appena partito, e il numero del treno fluttua sopra di esso.",
+          "pt": "A placa da estação acende quando há um trem em Tochōmae ou quando ele acabou de sair, e o número do trem flutua acima dela.",
+          "ja": "列車が都庁前駅にいるとき、または発車した直後に駅名標が点灯し、その上に列車番号が浮かびます。",
+          "zh": "当有列车停在都厅前站或刚刚驶离时，站名标牌会亮起，列车编号浮在上方。",
+          "th": "ป้ายสถานีจะสว่างขึ้นเมื่อมีรถไฟอยู่ที่ Tochōmae หรือเพิ่งออกจากสถานี และหมายเลขขบวนจะลอยอยู่เหนือป้าย"
+        },
+        "binding": "tochomae-train"
+      },
+      {
+        "title": {
+          "en": "A bus at the stop",
+          "es": "Un autobús en la parada",
+          "ca": "Un autobús a la parada",
+          "de": "Ein Bus an der Haltestelle",
+          "fr": "Un bus à l'arrêt",
+          "it": "Un autobus alla fermata",
+          "pt": "Um ônibus no ponto",
+          "ja": "バス停に来たバス",
+          "zh": "公交车到站",
+          "th": "รถบัสที่ป้ายรถเมล์"
+        },
+        "text": {
+          "en": "The stop pole lights up when a Toei bus has passed in the last ten minutes. That feed is GTFS-Realtime, a binary format this page decodes itself.",
+          "es": "El poste de la parada se ilumina cuando ha pasado un autobús de Toei en los últimos diez minutos. Ese feed es GTFS-Realtime, un formato binario que esta página decodifica por sí misma.",
+          "ca": "El pal de la parada s'il·lumina quan hi ha passat un autobús de Toei en els últims deu minuts. Aquest feed és GTFS-Realtime, un format binari que aquesta pàgina descodifica tota sola.",
+          "de": "Der Haltestellenmast leuchtet auf, wenn in den letzten zehn Minuten ein Toei-Bus vorbeigefahren ist. Dieser Feed ist GTFS-Realtime, ein Binärformat, das diese Seite selbst dekodiert.",
+          "fr": "Le poteau d'arrêt s'allume quand un bus Toei est passé dans les dix dernières minutes. Ce flux est en GTFS-Realtime, un format binaire que cette page décode elle-même.",
+          "it": "Il palo della fermata si illumina quando un autobus Toei è passato negli ultimi dieci minuti. Quel feed è GTFS-Realtime, un formato binario che questa pagina decodifica da sola.",
+          "pt": "O poste do ponto acende quando um ônibus da Toei passou nos últimos dez minutos. Esse feed é GTFS-Realtime, um formato binário que esta página decodifica sozinha.",
+          "ja": "直近10分以内に都営バスが通過すると、バス停の標柱が点灯します。このフィードはGTFS-Realtimeというバイナリ形式で、このページ自身がデコードしています。",
+          "zh": "过去十分钟内有都营公交经过时，公交站牌杆会亮起。该数据源采用 GTFS-Realtime，这是一种由本页面自行解码的二进制格式。",
+          "th": "เสาป้ายรถเมล์จะสว่างขึ้นเมื่อมีรถบัส Toei ผ่านไปในช่วงสิบนาทีที่ผ่านมา ฟีดนี้เป็น GTFS-Realtime ซึ่งเป็นรูปแบบไบนารีที่หน้านี้ถอดรหัสเอง"
+        },
+        "binding": "tochomae-bus-stop"
+      },
+      {
+        "title": {
+          "en": "Your turn",
+          "es": "Te toca",
+          "ca": "Et toca",
+          "de": "Jetzt sind Sie dran",
+          "fr": "À vous de jouer",
+          "it": "Tocca a te",
+          "pt": "Sua vez",
+          "ja": "あなたの番です",
+          "zh": "轮到你了",
+          "th": "ถึงตาคุณแล้ว"
+        },
+        "text": {
+          "en": "Click the marks, the sign or the pole to see their live data. The same scene format runs the Waseda tram stop and the Barcelona and Helsinki twins.",
+          "es": "Haz clic en las marcas, el letrero o el poste para ver sus datos en vivo. El mismo formato de escena mueve la parada de tranvía de Waseda y los gemelos digitales de Barcelona y Helsinki.",
+          "ca": "Fes clic a les marques, al rètol o al pal per veure'n les dades en viu. El mateix format d'escena fa funcionar la parada de tramvia de Waseda i els bessons digitals de Barcelona i Hèlsinki.",
+          "de": "Klicken Sie auf die Zeichen, das Schild oder den Mast, um ihre Live-Daten zu sehen. Mit demselben Szenenformat laufen auch die Straßenbahnhaltestelle Waseda und die digitalen Zwillinge in Barcelona und Helsinki.",
+          "fr": "Cliquez sur les emblèmes, l'enseigne ou le poteau pour voir leurs données en direct. Le même format de scène fait tourner l'arrêt de tram de Waseda et les jumeaux numériques de Barcelone et d'Helsinki.",
+          "it": "Clicca sui marchi, sul cartello o sul palo per vederne i dati in tempo reale. Lo stesso formato di scena fa funzionare la fermata del tram di Waseda e i gemelli digitali di Barcellona e Helsinki.",
+          "pt": "Clique nas marcas, na placa ou no poste para ver seus dados ao vivo. O mesmo formato de cena roda a parada de bonde de Waseda e os gêmeos digitais de Barcelona e Helsinque.",
+          "ja": "都営マーク、駅名標、標柱をクリックすると、ライブデータを表示します。同じシーン形式で、早稲田の停留場や、バルセロナとヘルシンキのデジタルツインも動いています。",
+          "zh": "点击都营标志、站名标牌或站牌杆，即可查看它们的实时数据。同样的场景格式也驱动着早稻田有轨电车站，以及巴塞罗那和赫尔辛基的数字孪生。",
+          "th": "คลิกสัญลักษณ์ ป้ายสถานี หรือเสาป้ายรถเมล์ เพื่อดูข้อมูลเรียลไทม์ รูปแบบฉากเดียวกันนี้ยังใช้กับป้ายรถรางที่ Waseda และดิจิทัลทวินของบาร์เซโลนาและเฮลซิงกิด้วย"
+        },
+        "camera": {
+          "position": [
+            60,
+            110,
+            -120
+          ],
+          "target": [
+            0,
+            0,
+            10
+          ]
+        }
+      }
+    ]
   }
 }

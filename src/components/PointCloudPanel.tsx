@@ -11,12 +11,29 @@
 // determine itself. The XYZ/rotation/scale controls only appear when the
 // alignment rung is a guess ('local' / 'manual') or the user asks for them.
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { ViewportPanel } from './ViewportPanel'
-import { useIsMobile } from '../hooks/useIsMobile'
-import { usePointCloudStore } from '../stores/pointCloudStore'
+import {
+  usePointCloudStore, selectPanelStructure, selectScopeTargets, selectEffectiveScope, cloudLabel,
+} from '../stores/pointCloudStore'
+import { useTopicStore } from '../stores/topicStore'
+import { useTransformHistoryStore } from '../stores/transformHistoryStore'
+import { useScenePlacement } from '../hooks/useScenePlacement'
+import { soloPlan } from '../lib/selection'
+import { itemKey, primaryTopicColor } from '../lib/topics'
+import {
+  effectiveColorMode, mixedValue, requestedStyle, resolveCloudStyle,
+} from '../lib/pointcloud/pc-style'
+import { ScanList } from './pointcloud/ScanList'
+import { TopicBar } from './pointcloud/TopicBar'
+import { ScopeBar } from './pointcloud/ScopeBar'
+import {
+  SectionTitle, Group, Hint, Note, Badge, DemoChip, Chip, Field, Stat, IconButton, PrimaryButton,
+  SmallButton, Switch, Segmented, Disclosure, Slider, PlacementField, ScopeTag, formatCount, formatUnit,
+} from './pointcloud/pc-ui'
 import { useSceneStore } from '../stores/sceneStore'
 import { useUIStore } from '../stores/uiStore'
 import { cancelPointCloud, realignCloud, budgetUsage } from '../lib/pointcloud/pc-runner'
@@ -50,8 +67,9 @@ import {
 import type { ViewerAPI } from '../lib/viewer'
 import type { PointCloudSystemAPI, CloudStats, PickedPoint } from '../lib/pointcloud/point-cloud-system'
 import type {
-  PointCloudEntry, PointColorMode, PointCloudDisplay,
+  AlignmentOffset, CloudStyleOverride, PointCloudEntry, PointColorMode, PointCloudDisplay,
 } from '../lib/pointcloud/pc-types'
+import { applyCloudOffset, startPointCloudGpuSync } from '../lib/pointcloud/pc-gpu-sync'
 
 interface PointCloudPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -60,17 +78,30 @@ interface PointCloudPanelProps {
 
 const log = createLogger('PointCloudPanel')
 
+/** Shader colour modes, always offered. 'scan' and 'topic' are gated on what is loaded. */
 const COLOR_MODES: PointColorMode[] = ['rgb', 'intensity', 'elevation', 'classification', 'flat']
-type PanelTab = 'appearance' | 'placement' | 'view' | 'analyze' | 'samples' | 'help'
-const PANEL_TABS: PanelTab[] = ['appearance', 'placement', 'view', 'analyze', 'samples', 'help']
+type PanelTab = 'appearance' | 'placement' | 'analyze'
+const PANEL_TABS: PanelTab[] = ['appearance', 'placement', 'analyze']
+/** Placement fields, in panel order. */
+const PLACE_FIELDS = [
+  { key: 'x', label: 'transform.x', min: -200, max: 200, step: 0.05, unit: 'm', digits: 2 },
+  { key: 'y', label: 'transform.y', min: -100, max: 100, step: 0.05, unit: 'm', digits: 2 },
+  { key: 'z', label: 'transform.z', min: -200, max: 200, step: 0.05, unit: 'm', digits: 2 },
+  { key: 'yawDeg', label: 'transform.rotation', min: -180, max: 180, step: 0.5, unit: '°', digits: 1 },
+  { key: 'pitchDeg', label: 'transform.pitch', min: -45, max: 45, step: 0.25, unit: '°', digits: 2 },
+  { key: 'rollDeg', label: 'transform.roll', min: -45, max: 45, step: 0.25, unit: '°', digits: 2 },
+  { key: 'scaleMul', label: 'transform.scale', min: 0.1, max: 3, step: 0.001, unit: '×', digits: 3 },
+] as const
+/** Locate flash length, ms. */
+const LOCATE_MS = 1200
 /**
  * One-click analysis set-ups. Each is a combination of the shader filters
  * (slice / classes / contours), a colour mode, a camera and — for the
  * clearance — the measurement tool, so a task starts from a readable view
  * instead of from six sliders. Every one is undone by "Clear filters".
  */
-type RecipeId = 'floorPlan' | 'terrain' | 'vegetation' | 'slab' | 'scanVsBim' | 'clearance'
-const RECIPES: RecipeId[] = ['floorPlan', 'terrain', 'vegetation', 'slab', 'scanVsBim', 'clearance']
+type RecipeId = 'floorPlan' | 'terrain' | 'vegetation' | 'slab' | 'scanVsBim' | 'clearance' | 'epochs'
+const RECIPES: RecipeId[] = ['floorPlan', 'terrain', 'vegetation', 'slab', 'scanVsBim', 'clearance', 'epochs']
 /** ASPRS classes shown in the filter, in the order people look for them. */
 const FILTER_CLASSES = [2, 6, 3, 4, 5, 11, 9, 7, 1, 10, 13, 14, 15, 0, 8, 12]
 const VEGETATION_NOISE_MASK = (1 << 3) | (1 << 4) | (1 << 5) | (1 << 7)
@@ -130,6 +161,109 @@ function followDownload(jobId: string, onFraction: (fraction: number) => void): 
   })
 }
 
+interface CloudBoxes {
+  key: string
+  /** World box of each cloud, by id. */
+  cloud: Record<string, BoxCS | null>
+  /** World box of each model a cloud is compared against ('' = the active one). */
+  model: Record<string, BoxCS | null>
+  /** Height range the slice and the elevation ramp work in (all scans, scene Y). */
+  elevRange: { min: number; max: number } | null
+}
+
+const toBox = (b: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } }): BoxCS => ({
+  center: { x: (b.min.x + b.max.x) / 2, y: (b.min.y + b.max.y) / 2, z: (b.min.z + b.max.z) / 2 },
+  size: { x: b.max.x - b.min.x, y: b.max.y - b.min.y, z: b.max.z - b.min.z },
+})
+
+/** The model a cloud's check-up compares it with: the one it was aligned to, else the active one. */
+const modelKeyOf = (c: Pick<PointCloudEntry, 'alignedToModelId'>, activeModelId: string | null): string =>
+  c.alignedToModelId ?? activeModelId ?? ''
+
+/**
+ * Every cloud's box and its model's box, once a second while the panel is
+ * open. Only while OPEN: the panel stays mounted when closed (it owns the SDK
+ * bridge). State only changes when a rounded value moved, so an idle scene
+ * does not re-render. Never instantiates the point cloud system (peek only).
+ */
+function useCloudBoxes(
+  viewerApiRef: React.MutableRefObject<ViewerAPI | null>, open: boolean, count: number,
+): CloudBoxes | null {
+  const [state, setState] = useState<CloudBoxes | null>(null)
+  useEffect(() => {
+    if (count === 0) { setState(null); return }
+    if (!open) return
+    const read = (): void => {
+      if (typeof document !== 'undefined' && document.hidden) return
+      const viewer = viewerApiRef.current
+      const system = viewer?.peekPointClouds()
+      if (!viewer || !system) return
+      const scene = useSceneStore.getState()
+      const cloud: Record<string, BoxCS | null> = {}
+      const model: Record<string, BoxCS | null> = {}
+      for (const c of usePointCloudStore.getState().clouds) {
+        const b = system.getBounds(c.id)
+        cloud[c.id] = b ? toBox(b) : null
+        const mk = modelKeyOf(c, scene.activeModelId)
+        if (scene.models.length > 0 && !(mk in model)) {
+          model[mk] = (mk ? viewer.getModelBounds(mk) : viewer.getModelBounds()) ?? null
+        }
+      }
+      const all = system.getBounds()
+      const elevRange = all ? { min: Math.round(all.min.y * 100) / 100, max: Math.round(all.max.y * 100) / 100 } : null
+      const key = JSON.stringify([cloud, model, elevRange], (_k, v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v)
+      setState((prev) => prev?.key === key ? prev : { key, cloud, model, elevRange })
+    }
+    read()
+    const iv = setInterval(read, 1000)
+    return () => clearInterval(iv)
+  }, [viewerApiRef, open, count])
+  return state
+}
+
+/** Render stats + the resident-point budget, polled on their own once a second. */
+function PanelStats({ viewerApiRef, t }: {
+  viewerApiRef: React.MutableRefObject<ViewerAPI | null>
+  t: TFunction<'pointcloud'>
+}) {
+  const [stats, setStats] = useState<CloudStats | null>(null)
+  // The resident-point budget as the runner's ledger sees it (whole-file scans
+  // and the reservations of the ones still loading) — why a scan waits or
+  // comes out truncated, shown before it happens rather than after.
+  const [budget, setBudget] = useState<{ resident: number; reserved: number; max: number } | null>(null)
+  useEffect(() => {
+    const read = (): void => {
+      if (typeof document !== 'undefined' && document.hidden) return
+      const system = viewerApiRef.current?.peekPointClouds()
+      if (system) {
+        const next = system.getStats()
+        setStats((prev) => prev && prev.pointCount === next.pointCount && prev.drawnCount === next.drawnCount &&
+          prev.chunkCount === next.chunkCount && prev.gpuBytes === next.gpuBytes ? prev : next)
+      }
+      const nextBudget = budgetUsage()
+      setBudget((prev) => prev && prev.resident === nextBudget.resident && prev.reserved === nextBudget.reserved &&
+        prev.max === nextBudget.max ? prev : nextBudget)
+    }
+    read()
+    const iv = setInterval(read, 1000)
+    return () => clearInterval(iv)
+  }, [viewerApiRef])
+  if (!stats || stats.pointCount === 0) return null
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[12px] text-[var(--text-dim)]">{t('ui.stats')}</span>
+      <div className="grid grid-cols-2 gap-1.5">
+        <Stat label={t('ui.drawn')} value={`${formatCount(stats.drawnCount)} / ${formatCount(stats.pointCount)}`} />
+        <Stat label="GPU" value={`${Math.round(stats.gpuBytes / 1048576)} MB`} />
+      </div>
+      <Hint>{t('status.chunks', { count: stats.chunkCount })}</Hint>
+      {budget && budget.resident + budget.reserved > 0 && (
+        <PointBudgetMeter {...budget} t={t} format={formatCount} />
+      )}
+    </div>
+  )
+}
+
 export default function PointCloudPanel({
   viewerApiRef, onLoadCompanionModel,
 }: PointCloudPanelProps) {
@@ -154,25 +288,37 @@ export default function PointCloudPanel({
     log.warn(`unmapped point cloud error key: ${key}`)
     return t('error.parseFailed')
   }, [t])
-  const store = usePointCloudStore()
+  // Narrow subscriptions: the body re-renders on STRUCTURE (status, visibility,
+  // alignment, style…), never on a streamed chunk's progress or point count.
+  const structure = usePointCloudStore(useShallow(selectPanelStructure))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const clouds = useMemo(() => usePointCloudStore.getState().clouds, [structure])
+  const panelOpen = usePointCloudStore((s) => s.panelOpen)
+  const activeCloudId = usePointCloudStore((s) => s.activeCloudId)
+  const display = usePointCloudStore((s) => s.display)
+  const renderBudget = usePointCloudStore((s) => s.renderBudget)
+  const samplesOpen = usePointCloudStore((s) => s.samplesOpen)
+  const targetIds = usePointCloudStore(useShallow(selectScopeTargets))
+  const scope = usePointCloudStore(selectEffectiveScope)
+  const topicState = useTopicStore(useShallow((s) => ({ topics: s.topics, members: s.members })))
+  const historyPast = useTransformHistoryStore((s) => s.past.length)
+  const historyFuture = useTransformHistoryStore((s) => s.future.length)
+  const placement = useScenePlacement(viewerApiRef)
   const sceneModels = useSceneStore((s) => s.models)
   const activeModelId = useSceneStore((s) => s.activeModelId)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const tablistRef = useRef<HTMLDivElement>(null)
-  const [stats, setStats] = useState<CloudStats | null>(null)
-  // The resident-point budget as the runner's ledger sees it (whole-file scans
-  // and the reservations of the ones still loading) — why a scan waits or
-  // comes out truncated, shown before it happens rather than after.
-  const [budget, setBudget] = useState<{ resident: number; reserved: number; max: number } | null>(null)
   const [showTransform, setShowTransform] = useState(false)
-  // Height range the shader's slice and elevation ramp work in (all scans, scene Y).
-  const [elevRange, setElevRange] = useState<{ min: number; max: number } | null>(null)
   // A recipe that needs a height (slab flatness) waits here for the next pick.
   const pendingRecipeRef = useRef<RecipeId | null>(null)
-  const [boxes, setBoxes] = useState<{ key: string; cloudBox: BoxCS | null; modelBox: BoxCS | null } | null>(null)
+  const boxes = useCloudBoxes(viewerApiRef, panelOpen, clouds.length)
+  const elevRange = boxes?.elevRange ?? null
   const [tab, setTab] = useState<PanelTab>('appearance')
+  const samplesRef = useRef<HTMLDivElement>(null)
+  const locateTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [together, setTogether] = useState({ x: 0, y: 0, z: 0, yaw: 0 })
   const [showAllSamples, setShowAllSamples] = useState(false)
   const [replayOpen, setReplayOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState<HelpSymptom | null>(null)
@@ -202,7 +348,8 @@ export default function PointCloudPanel({
   const [selectedReplayId, setSelectedReplayId] = useState<TemporalShowcaseId>('operations-pavilion')
   const [runningReplayId, setRunningReplayId] = useState<TemporalShowcaseId | null>(null)
 
-  const activeCloud = store.clouds.find((c) => c.id === store.activeCloudId) ?? null
+  const activeCloud = clouds.find((c) => c.id === activeCloudId) ?? null
+  const targetClouds = useMemo(() => clouds.filter((c) => targetIds.includes(c.id)), [clouds, targetIds])
   const selectedShowcase = getTemporalLidarShowcase(selectedReplayId)
   const activeShowcase = runningReplayId
     ? getTemporalLidarShowcase(runningReplayId)
@@ -214,75 +361,19 @@ export default function PointCloudPanel({
     return viewer ? viewer.getPointClouds() : null
   }, [viewerApiRef])
 
-  // ── Push display settings into the shader whenever they change ──────────────
-  useEffect(() => {
-    if (store.clouds.length === 0) return
-    void getSystem()?.then((system) => {
-      system.setDisplay(store.display)
-      system.setRenderBudget(store.renderBudget)
-    })
-  }, [store.display, store.renderBudget, store.clouds.length, getSystem])
+  // ── Store → GPU: one owner pushes display, budget, alignment, visibility and
+  //    per-scan style for every writer (panel, Scene tree, SDK, undo). Lazy:
+  //    it never creates the point cloud system before a scan exists.
+  useEffect(() => startPointCloudGpuSync(() => viewerApiRef.current), [viewerApiRef])
 
-  // ── Poll the render stats while the panel is open ──────────────────────────
-  // Only while it is OPEN: the panel stays mounted when closed (it owns the SDK
-  // bridge), and a once-a-second re-render of every section nobody can see was
-  // pure waste. Each read only sets state when a value actually moved, so an
-  // idle scene does not re-render at all. The same tick gathers the boxes the
-  // check-up compares (scan size, distance to the model).
+  // The samples disclosure can be opened from outside (openSamples): show it.
   useEffect(() => {
-    if (store.clouds.length === 0) { setStats(null); setBudget(null); setBoxes(null); return }
-    if (!store.panelOpen) return
-    let cancelled = false
-    const read = (): void => {
-      if (typeof document !== 'undefined' && document.hidden) return
-      void getSystem()?.then((system) => {
-        if (cancelled) return
-        const next = system.getStats()
-        setStats((prev) => prev && prev.pointCount === next.pointCount && prev.drawnCount === next.drawnCount &&
-          prev.chunkCount === next.chunkCount && prev.gpuBytes === next.gpuBytes ? prev : next)
-        const id = usePointCloudStore.getState().activeCloudId
-        const b = id ? system.getBounds(id) : null
-        const viewer = viewerApiRef.current
-        const modelId = useSceneStore.getState().activeModelId
-        const cloudBox: BoxCS | null = b ? {
-          center: { x: (b.min.x + b.max.x) / 2, y: (b.min.y + b.max.y) / 2, z: (b.min.z + b.max.z) / 2 },
-          size: { x: b.max.x - b.min.x, y: b.max.y - b.min.y, z: b.max.z - b.min.z },
-        } : null
-        const modelBox = viewer && useSceneStore.getState().models.length > 0
-          ? (modelId ? viewer.getModelBounds(modelId) : viewer.getModelBounds()) : null
-        const key = JSON.stringify([cloudBox, modelBox], (_k, v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v)
-        setBoxes((prev) => prev?.key === key ? prev : { key, cloudBox, modelBox })
-        const all = system.getBounds()
-        if (all) {
-          const next = { min: Math.round(all.min.y * 100) / 100, max: Math.round(all.max.y * 100) / 100 }
-          setElevRange((prev) => prev && prev.min === next.min && prev.max === next.max ? prev : next)
-        }
-      })
-      const nextBudget = budgetUsage()
-      setBudget((prev) => prev && prev.resident === nextBudget.resident && prev.reserved === nextBudget.reserved &&
-        prev.max === nextBudget.max ? prev : nextBudget)
+    if (samplesOpen && panelOpen) {
+      requestAnimationFrame(() => samplesRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
     }
-    read()
-    const iv = setInterval(read, 1000)
-    return () => { cancelled = true; clearInterval(iv) }
-  }, [store.clouds.length, store.panelOpen, store.activeCloudId, getSystem, viewerApiRef])
+  }, [samplesOpen, panelOpen])
 
-  // ── Colour fallback ─────────────────────────────────────────────────────────
-  // Display settings are shared and persisted, so a scan with no RGB used to
-  // open in "Scan colour" and draw as one flat blob — the single most common
-  // "my point cloud looks broken" report. When a scan lands, switch to the most
-  // informative mode it actually carries. Once per scan: after that the user's
-  // choice stands.
-  const colourCheckedRef = useRef(new Set<string>())
-  useEffect(() => {
-    const cloud = store.clouds.find((c) => c.id === store.activeCloudId)
-    if (!cloud || cloud.status !== 'ready' || colourCheckedRef.current.has(cloud.id)) return
-    colourCheckedRef.current.add(cloud.id)
-    const mode = usePointCloudStore.getState().display.colorMode
-    if (!colorModeAvailable(mode, cloud.attributes)) {
-      usePointCloudStore.getState().setDisplay({ colorMode: bestColorMode(cloud.attributes) })
-    }
-  }, [store.clouds, store.activeCloudId])
+  useEffect(() => () => { if (locateTimer.current) clearTimeout(locateTimer.current) }, [])
 
   // ── Loading ─────────────────────────────────────────────────────────────────
   // Every scan is a job in the loading queue, one per file — the same path a
@@ -402,11 +493,10 @@ export default function PointCloudPanel({
         viewer.setModelOpacity(model.fileName === showcase.modelFileName ? showcase.modelOpacity : 0.18, model.id)
         useSceneStore.getState().setModelVisible(model.id, true)
       }
-      usePointCloudStore.getState().setDisplay({
+      usePointCloudStore.getState().setDisplayAll({
         colorMode: 'rgb', pointSize: showcase.pointSize, opacity: 0.94,
         density: 1, attenuate: false, round: true,
       })
-      system.setDisplay(usePointCloudStore.getState().display)
 
       const controller = new TemporalReplayController({
         durationMs: showcase.durationMs,
@@ -544,14 +634,54 @@ export default function PointCloudPanel({
     usePointCloudStore.getState().removeCloud(cloud.id)
   }, [getSystem, stopReplay])
 
-  const handleVisible = useCallback((cloud: PointCloudEntry, visible: boolean): void => {
-    if (TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === cloud.id) && !visible) {
+  /** Store only: the GPU sync pushes it. Hiding a running replay pauses it. */
+  const setCloudsVisible = useCallback((ids: readonly string[], visible: boolean): void => {
+    if (!visible && ids.some((id) => TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === id))) {
       replayControllerRef.current?.pause()
       if (replayControllerRef.current) setReplayState(replayControllerRef.current.snapshot())
     }
-    usePointCloudStore.getState().setVisible(cloud.id, visible)
-    void getSystem()?.then((system) => system.setVisible(cloud.id, visible))
-  }, [getSystem])
+    for (const id of ids) usePointCloudStore.getState().setVisible(id, visible)
+  }, [])
+
+  const removeClouds = useCallback((ids: readonly string[]): void => {
+    for (const id of ids) {
+      const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === id)
+      if (cloud) handleRemove(cloud)
+    }
+  }, [handleRemove])
+
+  /** Show only these (press again with the same set visible: show all). */
+  const soloClouds = useCallback((ids: readonly string[]): void => {
+    const all = usePointCloudStore.getState().clouds
+    const plan = soloPlan(all.map((c) => ({ id: c.id, visible: c.visible })), new Set(ids))
+    const show = all.filter((c) => plan[c.id] && !c.visible).map((c) => c.id)
+    const hide = all.filter((c) => !plan[c.id] && c.visible).map((c) => c.id)
+    if (show.length) setCloudsVisible(show, true)
+    if (hide.length) setCloudsVisible(hide, false)
+  }, [setCloudsVisible])
+
+  // Bumped whenever an action's result is IN THE SCENE (a recipe applied, a
+  // pick requested): on a phone the sheet steps down to peek so it is seen.
+  const [viewNonce, setViewNonce] = useState(0)
+
+  const frameClouds = useCallback((ids: readonly string[]): void => {
+    if (ids.length === 0) return
+    viewerApiRef.current?.frameItems([...ids])
+    setViewNonce((n) => n + 1)
+  }, [viewerApiRef])
+
+  /** Frame one scan and flash it magenta, so 'which one is this?' has an answer. */
+  const locate = useCallback((id: string): void => {
+    frameClouds([id])
+    const system = viewerApiRef.current?.peekPointClouds()
+    if (!system) return
+    if (locateTimer.current) clearTimeout(locateTimer.current)
+    system.setHighlight(id)
+    locateTimer.current = setTimeout(() => {
+      locateTimer.current = null
+      viewerApiRef.current?.peekPointClouds()?.setHighlight(null)
+    }, LOCATE_MS)
+  }, [frameClouds, viewerApiRef])
 
   // ── SDK bridge: `sdk:pointcloud` from the embed postMessage handler ─────────
   // Display, placement, inspection and replay live here, so the embed bridge
@@ -626,7 +756,10 @@ export default function PointCloudPanel({
             if (!target) throw new Error('No point cloud loaded')
             // clampOffset in the store is what keeps a host from tipping a scan
             // somewhere only a reset escapes from.
-            usePointCloudStore.getState().setOffset(target, (cmd.placement ?? {}) as never)
+            // Store AND GPU: writing the store alone left the scan where it was.
+            if (!applyCloudOffset(system, target, (cmd.placement ?? {}) as Partial<AlignmentOffset>)) {
+              throw new Error('Point cloud not placed yet')
+            }
             break
           }
           case 'upAxis': {
@@ -649,10 +782,12 @@ export default function PointCloudPanel({
             break
           }
           case 'display': {
-            // The effect above pushes store changes into the shader, so writing
-            // the store is enough — no second code path to keep in sync.
+            // The GPU sync pushes store changes into the shaders, so writing
+            // the store is enough. setDisplayAll keeps the published meaning
+            // ('Appearance controls shared by every loaded scan'): it also
+            // clears the per-scan overrides of the fields it sets.
             if (cmd.display) {
-              usePointCloudStore.getState().setDisplay(cmd.display as Partial<PointCloudDisplay>)
+              usePointCloudStore.getState().setDisplayAll(cmd.display as Partial<PointCloudDisplay>)
             }
             if (typeof cmd.renderBudget === 'number') {
               usePointCloudStore.getState().setRenderBudget(cmd.renderBudget)
@@ -670,26 +805,26 @@ export default function PointCloudPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [viewerApiRef, activeModelId, sceneModels.length, stopReplay, handleStartReplay, describeError])
 
-  const handleOffset = useCallback((patch: Parameters<typeof store.setOffset>[1]): void => {
-    const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === store.activeCloudId)
-    if (!cloud) return
-    usePointCloudStore.getState().setOffset(cloud.id, patch)
-    const next = usePointCloudStore.getState().clouds.find((c) => c.id === cloud.id)
-    if (next?.alignment) void getSystem()?.then((system) => system.setAlignment(cloud.id, next.alignment!))
-  }, [store.activeCloudId, getSystem])
+  /** Through the shared placement history (one undo step per gesture). */
+  const handleOffset = useCallback((cloudId: string, patch: Partial<AlignmentOffset>, gesture?: string): void => {
+    placement.editCloudOffset([cloudId], patch, gesture)
+  }, [placement])
+
+  const handleResetOffset = useCallback((ids: readonly string[]): void => {
+    placement.resetCloudOffset(ids)
+  }, [placement])
 
   /**
    * Re-derive the placement against whatever model is active now. The common
    * case is a scan opened before the IFC, which had nothing to align to.
    */
-  const handleRealign = useCallback(async (): Promise<void> => {
+  const handleRealign = useCallback(async (cloudId: string): Promise<void> => {
     const viewer = viewerApiRef.current
-    const id = store.activeCloudId
-    if (!viewer || !id) return
+    if (!viewer || !cloudId) return
     setRealigning(true)
     try {
       const system = await viewer.getPointClouds()
-      await realignCloud(id, {
+      await realignCloud(cloudId, {
         system,
         modelId: activeModelId,
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
@@ -698,15 +833,15 @@ export default function PointCloudPanel({
     } finally {
       setRealigning(false)
     }
-  }, [viewerApiRef, store.activeCloudId, activeModelId])
+  }, [viewerApiRef, activeModelId])
 
   /**
    * Accept a proj4 definition for a CRS this build has no entry for, then
    * re-derive the placement. Reuses the map's CRS registry rather than adding a
    * second one — a definition registered here resolves everywhere.
    */
-  const handleProj4Apply = useCallback(async (): Promise<void> => {
-    const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === store.activeCloudId)
+  const handleProj4Apply = useCallback(async (cloudId: string): Promise<void> => {
+    const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === cloudId)
     const code = cloud?.frame?.epsgCode
     const def = proj4Text.trim()
     if (!cloud || !code || !def) return
@@ -717,8 +852,8 @@ export default function PointCloudPanel({
 
     saveCloudProj4(cloud.fileKey, code, def)
     setProj4Text('')
-    await handleRealign()
-  }, [store.activeCloudId, proj4Text])
+    await handleRealign(cloud.id)
+  }, [proj4Text, handleRealign])
 
   /**
    * Flip which axis the scan treats as up, and re-derive the placement.
@@ -728,9 +863,8 @@ export default function PointCloudPanel({
    * through a rotation control would be asking the user to find a right angle by
    * dragging, and they would land on 89.5°.
    */
-  const handleUpAxis = useCallback((axis: 'y' | 'z'): void => {
-    const cloud = usePointCloudStore.getState().clouds
-      .find((c) => c.id === usePointCloudStore.getState().activeCloudId)
+  const handleUpAxis = useCallback((cloudId: string, axis: 'y' | 'z'): void => {
+    const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === cloudId)
     if (!cloud) return
     usePointCloudStore.getState().setUpAxis(cloud.id, axis)
     // Re-run the ladder rather than patching the transform: the up axis feeds
@@ -749,16 +883,15 @@ export default function PointCloudPanel({
     })()
   }, [viewerApiRef, activeModelId])
 
-  const handleResetOffset = useCallback((): void => {
-    const id = store.activeCloudId
-    if (!id) return
-    usePointCloudStore.getState().resetOffset(id)
-    const next = usePointCloudStore.getState().clouds.find((c) => c.id === id)
-    if (next?.alignment) void getSystem()?.then((system) => system.setAlignment(id, next.alignment!))
-  }, [store.activeCloudId, getSystem])
-
+  /** Scene-wide writes (recipes, filters, compare, presets): 'All' means all. */
   const setDisplay = (patch: Partial<PointCloudDisplay>): void =>
-    usePointCloudStore.getState().setDisplay(patch)
+    usePointCloudStore.getState().setDisplayAll(patch)
+
+  /** Appearance writes follow the scope bar. */
+  const writeStyle = (patch: CloudStyleOverride): void => {
+    if (scope === 'all') usePointCloudStore.getState().setDisplayAll(patch)
+    else usePointCloudStore.getState().setCloudStyle(targetIds, patch)
+  }
 
   // ── Inspect: click one point and read what the file recorded there ──────────
   useEffect(() => {
@@ -790,7 +923,7 @@ export default function PointCloudPanel({
           publishInspectorTarget({
             kind: 'point',
             cloudId: hit.cloudId,
-            cloudName: cloud?.fileName ?? hit.cloudId,
+            cloudName: cloud ? cloudLabel(cloud) : hit.cloudId,
             // The FILE's coordinates, not the scene's: the scene position has
             // the alignment transform baked in and matches nothing anybody has
             // on paper.
@@ -836,14 +969,8 @@ export default function PointCloudPanel({
       // models as visible while they are hidden.
       useSceneStore.getState().setModelVisible(model.id, modelsVisible)
     }
-    void getSystem()?.then((system) => {
-      for (const cloud of usePointCloudStore.getState().clouds) {
-        const visible = mode !== 'model'
-        usePointCloudStore.getState().setVisible(cloud.id, visible)
-        system.setVisible(cloud.id, visible)
-      }
-    })
-  }, [viewerApiRef, sceneModels, getSystem])
+    setCloudsVisible(usePointCloudStore.getState().clouds.map((c) => c.id), mode !== 'model')
+  }, [viewerApiRef, sceneModels, setCloudsVisible])
 
   /** Presentation presets only change visibility/material opacity. The measured
    * point-cloud→IFC transform remains untouched across every mode. */
@@ -888,37 +1015,43 @@ export default function PointCloudPanel({
       useSceneStore.getState().setModelVisible(model.id, showModels)
     }
     setDisplay({ opacity: Math.max(0.05, 1 - value) })
-    void getSystem()?.then((system) => {
-      for (const cloud of usePointCloudStore.getState().clouds) {
-        usePointCloudStore.getState().setVisible(cloud.id, showClouds)
-        system.setVisible(cloud.id, showClouds)
-      }
-    })
+    setCloudsVisible(usePointCloudStore.getState().clouds.map((c) => c.id), showClouds)
   // setDisplay is a stable store write wrapper and deliberately not a dependency.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewerApiRef, sceneModels, getSystem])
+  }, [viewerApiRef, sceneModels, setCloudsVisible])
 
-  const attributes = activeCloud?.attributes
-  const alignment = activeCloud?.alignment ?? null
-  const isReplayCloud = activeCloud?.sourceKind === 'temporal-replay'
-  const needsTransform = !isReplayCloud &&
-    (alignment?.rung === 'manual' || alignment?.rung === 'local')
-  const hasClouds = store.clouds.length > 0
-  // Bumped whenever an action's result is IN THE SCENE (a recipe applied, a
-  // pick requested): on a phone the sheet steps down to peek so it is seen.
-  const [viewNonce, setViewNonce] = useState(0)
-  const activePreset = matchPreset(store.display, store.renderBudget)
+  // The scan the Check-up, Placement and inspector talk about: the one target,
+  // else the active one.
+  const focusCloud = targetClouds.length === 1 ? targetClouds[0] : activeCloud
+  const attributes = focusCloud?.attributes
+  const hasClouds = clouds.length > 0
+  const activePreset = matchPreset(display, renderBudget)
+  const anyTopicLoaded = clouds.some((c) => primaryTopicColor(topicState, itemKey('cloud', c.fileKey)) !== null)
+  const overriddenCount = clouds.filter((c) => c.style).length
 
-  const issues: Issue[] = activeCloud
-    ? diagnoseCloud({
-        cloud: activeCloud,
-        display: store.display,
-        cloudBox: boxes?.cloudBox ?? null,
-        modelBox: sceneModels.length > 0 ? boxes?.modelBox ?? null : null,
-        totalPoints: stats?.pointCount ?? store.clouds.reduce((n, c) => n + c.pointCount, 0),
-        density: store.display.density,
+  // Health for EVERY scan, judged with that scan's own effective look.
+  const issuesById = useMemo(() => {
+    const out: Record<string, Issue[]> = {}
+    const total = usePointCloudStore.getState().clouds.reduce((n, c) => n + c.pointCount, 0)
+    for (const c of clouds) {
+      const resolved = resolveCloudStyle({ display, style: c.style, identityColor: c.color, attributes: c.attributes })
+      out[c.id] = diagnoseCloud({
+        cloud: c,
+        display: { colorMode: resolved.colorMode, opacity: resolved.opacity },
+        cloudBox: boxes?.cloud[c.id] ?? null,
+        modelBox: sceneModels.length > 0 ? boxes?.model[modelKeyOf(c, activeModelId)] ?? null : null,
+        totalPoints: total,
+        density: display.density,
       })
-    : []
+    }
+    return out
+  }, [clouds, display, boxes, sceneModels.length, activeModelId])
+  const issueCountById = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const [id, list] of Object.entries(issuesById)) out[id] = list.filter((i) => i.severity !== 'info').length
+    return out
+  }, [issuesById])
+  const issues: Issue[] = focusCloud ? issuesById[focusCloud.id] ?? [] : []
 
   // Featured samples first, then the rest in catalogue order.
   const orderedSamples = [
@@ -931,6 +1064,10 @@ export default function PointCloudPanel({
     const preset = APPEARANCE_PRESETS[id]
     setDisplay(preset.display)
     usePointCloudStore.getState().setRenderBudget(preset.renderBudget)
+  }
+  const resetLook = (): void => {
+    applyPreset('balanced')
+    usePointCloudStore.getState().clearCloudStyles()
   }
 
   /**
@@ -948,47 +1085,47 @@ export default function PointCloudPanel({
     if (scroller.scrollTop > natural) scroller.scrollTop = natural
   }
 
-  const fitActive = (): void => {
-    void getSystem()?.then((s) => s.frame(usePointCloudStore.getState().activeCloudId ?? undefined))
+  const fitCloud = (id: string | undefined): void => {
+    void getSystem()?.then((s) => s.frame(id))
   }
 
   /** What each fix DOES. The diagnostics only name them. */
-  const applyFix = (fix: FixId, cloud: PointCloudEntry | null = activeCloud): void => {
-    if (cloud && cloud.id !== usePointCloudStore.getState().activeCloudId) {
-      usePointCloudStore.getState().setActiveCloud(cloud.id)
-    }
+  const applyFix = (fix: FixId, cloud: PointCloudEntry | null = focusCloud): void => {
     switch (fix) {
       case 'flipUpAxis':
-        if (cloud?.frame) handleUpAxis(cloud.frame.upAxis === 'z' ? 'y' : 'z')
+        if (cloud?.frame) handleUpAxis(cloud.id, cloud.frame.upAxis === 'z' ? 'y' : 'z')
         break
       case 'bestColor':
-        setDisplay({ colorMode: bestColorMode(cloud?.attributes) })
+        if (cloud) usePointCloudStore.getState().setCloudStyle([cloud.id], { colorMode: bestColorMode(cloud.attributes) })
         break
       case 'showAll':
-        for (const c of usePointCloudStore.getState().clouds) if (!c.visible) handleVisible(c, true)
+        setCloudsVisible(usePointCloudStore.getState().clouds.filter((c) => !c.visible).map((c) => c.id), true)
         if (usePointCloudStore.getState().display.opacity < 0.2) setDisplay({ opacity: 1 })
-        fitActive()
+        if (cloud) frameClouds([cloud.id])
         break
       case 'opacityFull':
-        setDisplay({ opacity: 1 })
+        if (cloud?.style?.opacity !== undefined) usePointCloudStore.getState().setCloudStyle([cloud.id], { opacity: 1 })
+        else setDisplay({ opacity: 1 })
         break
       case 'fitCloud':
-        fitActive()
+        if (cloud) frameClouds([cloud.id])
         break
       case 'fitBoth':
         void getSystem()?.then((s) => s.frameWithModel())
         break
       case 'realign':
-        void handleRealign()
+        if (cloud) void handleRealign(cloud.id)
         break
       case 'openPlacement':
+        if (cloud) usePointCloudStore.getState().selectClouds([cloud.id])
         selectTab('placement')
         setShowTransform(true)
         return
       case 'unitMm': case 'unitCm': case 'unitFt': case 'scaleUp':
-        handleOffset({ scaleMul: UNIT_FIX_SCALE[fix] })
+        if (!cloud) break
+        handleOffset(cloud.id, { scaleMul: UNIT_FIX_SCALE[fix] })
         // Framing after the new scale reaches the GPU, not before.
-        setTimeout(fitActive, 50)
+        setTimeout(() => fitCloud(cloud.id), 50)
         break
       case 'performance':
         applyPreset('performance')
@@ -1007,7 +1144,7 @@ export default function PointCloudPanel({
       case 'sideways': applyFix('flipUpAxis'); return
       case 'invisible': applyFix('showAll'); return
       case 'misplaced':
-        if (sceneModels.length > 0) void handleRealign()
+        if (sceneModels.length > 0 && focusCloud) void handleRealign(focusCloud.id)
         applyFix('openPlacement')
         return
       case 'slow': applyFix('performance'); return
@@ -1038,9 +1175,9 @@ export default function PointCloudPanel({
   const toFraction = (y: number): number =>
     elevRange ? Math.max(0, Math.min(1, (y - elevRange.min) / elevSpan)) : 0
   const toHeight = (f: number): number => (elevRange ? elevRange.min + f * elevSpan : f)
-  const disp = store.display
+  const disp = display
   const filtersActive = disp.sliceEnabled || disp.classMask !== ALL_CLASSES_MASK || disp.contours
-  const hasClasses = store.clouds.some((c) => c.attributes?.classification)
+  const hasClasses = clouds.some((c) => c.attributes?.classification)
 
   /** Keep a band of `half` metres either side of scene height `y`. */
   const sliceAround = (y: number, half: number): Partial<PointCloudDisplay> => ({
@@ -1055,6 +1192,7 @@ export default function PointCloudPanel({
   const recipeUnavailable = (id: RecipeId): string | null => {
     if (id === 'vegetation' && !hasClasses) return t('analyze.needsClasses')
     if (id === 'scanVsBim' && sceneModels.length === 0) return t('analyze.needsModel')
+    if (id === 'epochs' && clouds.length < 2) return t('analyze.needsTwoScans')
     return null
   }
 
@@ -1120,6 +1258,15 @@ export default function PointCloudPanel({
         useUIStore.getState().setActiveMeasurementTool('distance')
         useUIStore.getState().setMeasurementPanelOpen(true)
         break
+      case 'epochs': {
+        // Each survey (topic) — or each scan, when nothing has a topic — in its
+        // own colour, all shown, framed together.
+        setDisplay({ colorMode: anyTopicLoaded ? 'topic' : 'scan', opacity: 1 })
+        const all = usePointCloudStore.getState().clouds.map((c) => c.id)
+        setCloudsVisible(all, true)
+        frameClouds(all)
+        break
+      }
     }
     toast(t('analyze.applied', { what: t(`analyze.recipe.${id}.label`) }), 'success')
     setViewNonce((n) => n + 1)
@@ -1422,11 +1569,53 @@ export default function PointCloudPanel({
     },
   }
 
+  // ── Appearance, scoped ─────────────────────────────────────────────────────
+  // All: the scene default (and 'All' strips the overrides it touches).
+  // Selected: each target's requested style (override ?? default), mixed when
+  // they disagree.
+  const requested = scope === 'all' ? [requestedStyle(display)] : targetClouds.map((c) => requestedStyle(display, c.style))
+  const modeMix = mixedValue(requested.map((r) => r.colorMode))
+  const flatMix = mixedValue(requested.map((r) => r.flatColor))
+  const sizeMix = mixedValue(requested.map((r) => r.pointSize))
+  const opacityMix = mixedValue(requested.map((r) => r.opacity))
+  const styleTargets = scope === 'all' ? clouds : targetClouds
+  const offeredModes: PointColorMode[] = [
+    ...COLOR_MODES,
+    ...(clouds.length >= 2 || modeMix.value === 'scan' ? ['scan' as const] : []),
+    ...(anyTopicLoaded || modeMix.value === 'topic' ? ['topic' as const] : []),
+  ]
+  const targetsOverride = scope === 'selection' && targetClouds.some((c) => c.style)
+  // Honesty: a scan that cannot draw what was asked says what it draws instead.
+  const fallbacks = styleTargets.flatMap((c) => {
+    const want = requestedStyle(display, c.style).colorMode
+    const got = effectiveColorMode(want, c.attributes)
+    return c.status === 'ready' && got !== want ? [{ id: c.id, name: cloudLabel(c), want, got }] : []
+  }).slice(0, 3)
+  const isMulti = clouds.length >= 2
+
+  // ── Placement targets ──────────────────────────────────────────────────────
+  const placeCloud = targetClouds.length === 1 ? targetClouds[0] : (clouds.length === 1 ? clouds[0] : null)
+  const alignment = placeCloud?.alignment ?? null
+  const isReplayCloud = placeCloud?.sourceKind === 'temporal-replay'
+  const needsTransform = !isReplayCloud && (alignment?.rung === 'manual' || alignment?.rung === 'local')
+  const placeMany = placeCloud ? [] : targetClouds.filter((c) => c.sourceKind !== 'temporal-replay' && c.alignment)
+  const alignedModel = placeCloud?.alignedToModelId
+    ? sceneModels.find((m) => m.id === placeCloud.alignedToModelId) ?? null : null
+  const replayRunning = clouds.some((c) => c.sourceKind === 'temporal-replay') && replayState
+
+  const historyRow = (
+    <div className="flex items-center gap-1.5">
+      <SmallButton testId="pc-place-undo" disabled={historyPast === 0} onClick={placement.undo}>{t('place.undo')}</SmallButton>
+      <SmallButton testId="pc-place-redo" disabled={historyFuture === 0} onClick={placement.redo}>{t('place.redo')}</SmallButton>
+    </div>
+  )
+
+
   return (
     <ViewportPanel
       id="pointcloud"
-      open={store.panelOpen}
-      onClose={() => store.setPanelOpen(false)}
+      open={panelOpen}
+      onClose={() => usePointCloudStore.getState().setPanelOpen(false)}
       label={t('title')}
       // A sheet, not a dock: loading a scan, reading why it landed where it did
       // and nudging it are real work, not a three-button palette.
@@ -1458,7 +1647,7 @@ export default function PointCloudPanel({
               {t('ui.add')}
             </button>
           )}
-          <IconButton label={t('close')} onClick={() => store.setPanelOpen(false)}>
+          <IconButton label={t('close')} onClick={() => usePointCloudStore.getState().setPanelOpen(false)}>
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
               <path d="M2 2l10 10M12 2L2 12" />
             </svg>
@@ -1519,38 +1708,23 @@ export default function PointCloudPanel({
              viewport (the validation drawer open takes half of it); the tab bar
              sticks instead, so it is always reachable without eating height. */
           <div key="loaded" ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
-            {/* ── Loaded scans ─────────────────────────────────────────────── */}
-            <div className="px-4 pt-3 pb-2 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <SectionTitle>{t('ui.loaded')}</SectionTitle>
-                {stats && stats.pointCount > 0 && (
-                  <span className="text-[11px] font-mono text-[var(--text-faint)]">
-                    {t('status.points', { count: formatCount(stats.pointCount) })}
-                  </span>
-                )}
-              </div>
-              {store.clouds.map((cloud) => (
-                <CloudRow
-                  key={cloud.id}
-                  cloud={cloud}
-                  active={cloud.id === store.activeCloudId}
-                  issueCount={cloud.id === store.activeCloudId ? issues.filter((i) => i.severity !== 'info').length : 0}
-                  onSelect={() => usePointCloudStore.getState().setActiveCloud(cloud.id)}
-                  onToggleVisible={() => handleVisible(cloud, !cloud.visible)}
-                  onFrame={() => {
-                    usePointCloudStore.getState().setActiveCloud(cloud.id)
-                    void getSystem()?.then((s) => s.frame(cloud.id))
-                  }}
-                  onRemove={() => handleRemove(cloud)}
-                  t={t}
-                  describeError={describeError}
-                />
-              ))}
+            {/* ── Topics + loaded scans ────────────────────────────────────── */}
+            <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
+              <TopicBar onVisible={setCloudsVisible} onSolo={soloClouds} />
+              <ScanList
+                describeError={describeError}
+                issueCountById={issueCountById}
+                onVisible={setCloudsVisible}
+                onSolo={soloClouds}
+                onFrame={frameClouds}
+                onLocate={locate}
+                onRemove={removeClouds}
+              />
               {sceneModels.length === 0 && <Note>{t('status.noModel')}</Note>}
             </div>
 
             {/* ── Replay transport while a temporal demo runs ─────────────── */}
-            {isReplayCloud && replayState && (
+            {replayRunning && replayState && (
               <div className="px-4 pb-2 flex items-center gap-2" aria-live="polite">
                 <SmallButton onClick={handleReplayToggle}>
                   {replayState.status === 'playing' ? t('replay.pause') : t('replay.play')}
@@ -1571,42 +1745,97 @@ export default function PointCloudPanel({
               </div>
             )}
 
-            {/* ── Check-up: what looks wrong, and the one-click fix ─────────── */}
-            {activeCloud && activeCloud.status !== 'parsing' && (
+            {/* ── Check-up for the focus scan ──────────────────────────────── */}
+            {focusCloud && focusCloud.status !== 'parsing' && (
               <div className="px-4 pb-3">
-                <CheckUp issues={issues} onFix={applyFix} t={t} describeError={describeError} cloud={activeCloud} />
+                <CheckUp
+                  issues={issues}
+                  onFix={(fix) => applyFix(fix, focusCloud)}
+                  t={t}
+                  describeError={describeError}
+                  cloud={focusCloud}
+                  title={isMulti ? t('diag.titleFor', { name: cloudLabel(focusCloud) }) : t('diag.title')}
+                >
+                  <Disclosure title={t('diag.moreSymptoms')}>
+                    <div className="flex flex-col gap-1.5">
+                      <Hint>{t('help.hint')}</Hint>
+                      {HELP_SYMPTOMS.map((symptom) => {
+                        const needsCloud = symptom !== 'broken'
+                        const focusReplay = focusCloud.sourceKind === 'temporal-replay'
+                        const disabled = (needsCloud && focusCloud.status !== 'ready') ||
+                          (symptom === 'sideways' && (!focusCloud.frame || focusReplay)) ||
+                          (symptom === 'wrongSize' && focusReplay)
+                        const focusAlignment = focusCloud.alignment
+                        return (
+                          <div key={symptom} className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={disabled}
+                              aria-expanded={symptom === 'wrongSize' || symptom === 'broken' ? helpOpen === symptom : undefined}
+                              onClick={() => applySymptom(symptom)}
+                              className="w-full flex items-center gap-3 rounded-[10px] border border-[var(--border)] px-3 py-2.5 text-left hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <span className="flex-1 min-w-0">
+                                <span className="block text-[12.5px] font-medium text-[var(--text)]">{t(`help.${symptom}.label`)}</span>
+                                <span className="block text-[11px] text-[var(--text-faint)] mt-0.5">{t(`help.${symptom}.hint`)}</span>
+                              </span>
+                              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-[var(--text-faint)] shrink-0">
+                                <path d={helpOpen === symptom ? 'M3 9l4-4 4 4' : 'M5 3l4 4-4 4'} />
+                              </svg>
+                            </button>
+                            {helpOpen === symptom && symptom === 'wrongSize' && focusAlignment && (
+                              <div className="flex flex-wrap gap-1.5 px-1 pt-2 pb-1">
+                                {(['unitMm', 'unitCm', 'unitFt', 'scaleUp'] as const).map((fix) => (
+                                  <Chip key={fix} active={focusAlignment.offset.scaleMul === UNIT_FIX_SCALE[fix]} onClick={() => applyFix(fix, focusCloud)}>
+                                    {t(`fix.${fix}`)}
+                                  </Chip>
+                                ))}
+                                <Chip active={focusAlignment.offset.scaleMul === 1} onClick={() => { handleOffset(focusCloud.id, { scaleMul: 1 }); setTimeout(() => fitCloud(focusCloud.id), 50) }}>
+                                  ×1
+                                </Chip>
+                              </div>
+                            )}
+                            {helpOpen === symptom && symptom === 'broken' && (
+                              <div className="px-1 pt-2 pb-1 text-[12px] leading-relaxed text-[var(--text-dim)] select-text">
+                                {t('help.brokenTips')}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Disclosure>
+                </CheckUp>
               </div>
             )}
 
-            {/* ── Tabs ─────────────────────────────────────────────────────── */}
+            {/* ── Tabs + scope (sticky) ────────────────────────────────────── */}
             {/* Sentinel: a sticky element reports its STUCK offset, not where it sits. */}
             <div ref={tablistRef} aria-hidden />
-            <div role="tablist" aria-label={t('title')} className="pc-tabs sticky top-0 z-10 px-3 border-b border-[var(--border)] flex gap-0.5 overflow-x-auto bg-[var(--surface)] backdrop-blur">
-              {PANEL_TABS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  id={`pc-tab-${id}`}
-                  aria-selected={tab === id}
-                  aria-controls={`pc-tabpanel-${id}`}
-                  onClick={(e) => {
-                    selectTab(id)
-                    // Six tabs overflow a phone: bring the one picked into view.
-                    e.currentTarget.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
-                  }}
-                  className={[
-                    'relative px-2.5 py-2 max-md:py-3 max-md:px-3 max-md:text-[13.5px] text-[12.5px] font-medium whitespace-nowrap transition-colors',
-                    tab === id ? 'text-[var(--text)]' : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]',
-                  ].join(' ')}
-                >
-                  {t(`tabs.${id}`)}
-                  {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-[var(--accent)]" />}
-                </button>
-              ))}
+            <div className="sticky top-0 z-10 bg-[var(--surface)] backdrop-blur">
+              <div role="tablist" aria-label={t('title')} className="pc-tabs px-3 border-b border-[var(--border)] flex gap-0.5 overflow-x-auto">
+                {PANEL_TABS.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    id={`pc-tab-${id}`}
+                    aria-selected={tab === id}
+                    aria-controls={`pc-tabpanel-${id}`}
+                    onClick={() => selectTab(id)}
+                    className={[
+                      'relative flex-1 px-2.5 py-2 max-md:py-3 max-md:px-3 max-md:text-[13.5px] text-[12.5px] font-medium whitespace-nowrap transition-colors',
+                      tab === id ? 'text-[var(--text)]' : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]',
+                    ].join(' ')}
+                  >
+                    {t(`tabs.${id}`)}
+                    {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-[var(--accent)]" />}
+                  </button>
+                ))}
+              </div>
+              <ScopeBar locked={tab === 'analyze'} />
             </div>
 
-            {/* ── Everything below scrolls ─────────────────────────────────── */}
             <div
               role="tabpanel"
               id={`pc-tabpanel-${tab}`}
@@ -1615,7 +1844,92 @@ export default function PointCloudPanel({
             >
               {tab === 'appearance' && (
                 <>
-                  <Group title={t('presets.title')}>
+                  <Group title={t('display.colorMode')}>
+                    <div className="flex flex-wrap gap-1.5">
+                      {offeredModes.map((mode) => {
+                        const available = styleTargets.length === 0 || styleTargets.some((c) => colorModeAvailable(mode, c.attributes))
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            disabled={!available}
+                            aria-pressed={!modeMix.mixed && modeMix.value === mode}
+                            title={available ? undefined : t('display.modeUnavailable')}
+                            onClick={() => writeStyle({ colorMode: mode })}
+                            className={[
+                              'px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors',
+                              !modeMix.mixed && modeMix.value === mode
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                                : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
+                              available ? '' : 'opacity-35 cursor-not-allowed',
+                            ].join(' ')}
+                          >
+                            {t(`display.mode.${mode}`)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {modeMix.mixed && <Hint>{t('scope.mixed')}</Hint>}
+                    {modeMix.value === 'flat' && (
+                      <label className="flex items-center justify-between gap-2 mt-1">
+                        <span className="text-[12px] text-[var(--text-dim)]">
+                          {t('display.flatColor')}{flatMix.mixed ? ` · ${t('scope.mixed')}` : ''}
+                        </span>
+                        <input
+                          type="color"
+                          value={`#${(flatMix.value ?? requested[0]?.flatColor ?? 0xffffff).toString(16).padStart(6, '0')}`}
+                          onChange={(e) => writeStyle({ flatColor: parseInt(e.target.value.slice(1), 16) })}
+                          className="h-7 w-10 rounded-[6px] border border-[var(--border-strong)] bg-transparent cursor-pointer"
+                        />
+                      </label>
+                    )}
+                    {modeMix.value === 'scan' && <Hint>{t('display.scanModeHint')}</Hint>}
+                    {modeMix.value === 'topic' && <Hint>{t('display.topicModeHint')}</Hint>}
+                    {fallbacks.map((f) => (
+                      <Note key={f.id}>
+                        {t('display.fallback', { name: f.name, wanted: t(`display.mode.${f.want}`), mode: t(`display.mode.${f.got}`) })}
+                      </Note>
+                    ))}
+                  </Group>
+
+                  <Group title={t('display.pointSize')}>
+                    <Slider label={t('display.pointSize')} hideLabel value={sizeMix.value ?? requested[0]?.pointSize ?? display.pointSize}
+                      min={0.5} max={10} step={0.1} unit="px" onChange={(v) => writeStyle({ pointSize: v })} />
+                    {sizeMix.mixed && <Hint>{t('scope.mixed')}</Hint>}
+                  </Group>
+
+                  <Group title={t('display.opacity')}>
+                    <Slider label={t('display.opacity')} hideLabel value={opacityMix.value ?? requested[0]?.opacity ?? display.opacity}
+                      min={0.05} max={1} step={0.01} digits={2} onChange={(v) => writeStyle({ opacity: v })} />
+                    {opacityMix.mixed && <Hint>{t('scope.mixed')}</Hint>}
+                  </Group>
+
+                  {targetsOverride && (
+                    <button
+                      type="button"
+                      data-testid="pc-use-default"
+                      onClick={() => usePointCloudStore.getState().setCloudStyle(targetIds, null)}
+                      className="self-start text-[12px] text-[var(--accent)] hover:underline underline-offset-2"
+                    >
+                      {t('scope.useDefault')}
+                    </button>
+                  )}
+                  {scope === 'all' && overriddenCount > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap text-[11.5px] text-[var(--text-dim)]" data-testid="pc-overridden">
+                      <span>{t('scope.overridden', { count: overriddenCount })}</span>
+                      <button type="button" onClick={() => usePointCloudStore.getState().clearCloudStyles()}
+                        className="text-[var(--accent)] hover:underline underline-offset-2">
+                        {t('scope.resetAll')}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Scene-wide: the selection does not apply here ──────── */}
+                  <section className="flex flex-col gap-3 border-t border-[var(--border)] pt-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <SectionTitle>{t('presets.title')}</SectionTitle>
+                      {isMulti && <ScopeTag label={t('scope.sceneWide')} hint={t('scope.sceneWideHint')} />}
+                    </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {PRESET_IDS.map((id) => (
                         <button
@@ -1635,61 +1949,16 @@ export default function PointCloudPanel({
                       ))}
                     </div>
                     {activePreset === null && <Hint>{t('presets.custom')}</Hint>}
-                  </Group>
-
-                  <Group title={t('display.colorMode')}>
-                    <div className="flex flex-wrap gap-1.5">
-                      {COLOR_MODES.map((mode) => {
-                        const available = colorModeAvailable(mode, attributes)
-                        return (
-                          <button
-                            key={mode}
-                            type="button"
-                            disabled={!available}
-                            aria-pressed={store.display.colorMode === mode}
-                            title={available ? undefined : t('display.modeUnavailable')}
-                            onClick={() => setDisplay({ colorMode: mode })}
-                            className={[
-                              'px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors',
-                              store.display.colorMode === mode
-                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
-                                : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-                              available ? '' : 'opacity-35 cursor-not-allowed',
-                            ].join(' ')}
-                          >
-                            {t(`display.mode.${mode}`)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                    {store.display.colorMode === 'flat' && (
-                      <label className="flex items-center justify-between gap-2 mt-1">
-                        <span className="text-[12px] text-[var(--text-dim)]">{t('display.flatColor')}</span>
-                        <input
-                          type="color"
-                          value={`#${store.display.flatColor.toString(16).padStart(6, '0')}`}
-                          onChange={(e) => setDisplay({ flatColor: parseInt(e.target.value.slice(1), 16) })}
-                          className="h-7 w-10 rounded-[6px] border border-[var(--border-strong)] bg-transparent cursor-pointer"
-                        />
-                      </label>
-                    )}
-                  </Group>
-
-                  <Group title={t('display.pointSize')}>
-                    <Slider label={t('display.pointSize')} hideLabel value={store.display.pointSize} min={0.5} max={10} step={0.1}
-                      unit="px" onChange={(v) => setDisplay({ pointSize: v })} />
-                    <Switch label={t('display.round')} checked={store.display.round}
-                      onChange={() => setDisplay({ round: !store.display.round })} />
-                    <Switch label={t('display.attenuate')} checked={store.display.attenuate}
-                      onChange={() => setDisplay({ attenuate: !store.display.attenuate })} />
-                  </Group>
+                    <Switch label={t('display.round')} checked={display.round}
+                      onChange={() => setDisplay({ round: !display.round })} />
+                    <Switch label={t('display.attenuate')} checked={display.attenuate}
+                      onChange={() => setDisplay({ attenuate: !display.attenuate })} />
+                  </section>
 
                   <Disclosure title={t('ui.advanced')}>
                     <div className="flex flex-col gap-3">
-                      <Slider label={t('display.opacity')} value={store.display.opacity} min={0.05} max={1} step={0.01}
-                        digits={2} onChange={(v) => setDisplay({ opacity: v })} />
                       <div>
-                        <Slider label={t('display.density')} value={store.display.density} min={0.05} max={1} step={0.01}
+                        <Slider label={t('display.density')} value={display.density} min={0.05} max={1} step={0.01}
                           digits={2} onChange={(v) => setDisplay({ density: v })} />
                         <Hint>{t('display.densityHint')}</Hint>
                       </div>
@@ -1697,7 +1966,7 @@ export default function PointCloudPanel({
                         <span className="text-[12px] text-[var(--text-dim)]">{t('ui.quality')}</span>
                         <Segmented
                           label={t('ui.quality')}
-                          value={QUALITY_LEVELS.find((q) => q.budget === store.renderBudget)?.id ?? ''}
+                          value={QUALITY_LEVELS.find((q) => q.budget === renderBudget)?.id ?? ''}
                           options={QUALITY_LEVELS.map((q) => ({ value: q.id, label: t(`ui.qualityLevel.${q.id}`) }))}
                           onChange={(v) => {
                             const level = QUALITY_LEVELS.find((q) => q.id === v)
@@ -1707,20 +1976,21 @@ export default function PointCloudPanel({
                         />
                         <Hint>{t('ui.qualityHint')}</Hint>
                       </div>
-                      {attributes?.confidence && (
+                      {clouds.some((c) => c.attributes?.confidence) && (
                         <div>
-                          <Slider label={t('display.confidence')} value={store.display.confidenceThreshold}
+                          <Slider label={t('display.confidence')} value={display.confidenceThreshold}
                             min={0} max={1} step={0.01} digits={2}
                             onChange={(v) => setDisplay({ confidenceThreshold: v })} />
                           <Hint>{t('display.confidenceHint')}</Hint>
                         </div>
                       )}
+                      <PanelStats viewerApiRef={viewerApiRef} t={t} />
                     </div>
                   </Disclosure>
 
                   <button
                     type="button"
-                    onClick={() => applyPreset('balanced')}
+                    onClick={resetLook}
                     className="self-start text-[12px] text-[var(--text-faint)] hover:text-[var(--text)] underline underline-offset-2"
                   >
                     {t('presets.reset')}
@@ -1728,11 +1998,12 @@ export default function PointCloudPanel({
                 </>
               )}
 
-              {tab === 'placement' && activeCloud && (
+              {tab === 'placement' && placeCloud && (
                 alignment ? (
                   <>
                     <Group title={t('align.title')}>
                       <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-1.5">
+                        {isMulti && <div className="text-[12px] font-semibold text-[var(--text)] truncate select-text">{cloudLabel(placeCloud)}</div>}
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-[13px] font-medium text-[var(--text)]">{t(`align.rung.${alignment.rung}`)}</span>
                           <Badge tint={CONFIDENCE_TINT[alignment.confidence] ?? '#888'}>
@@ -1741,16 +2012,24 @@ export default function PointCloudPanel({
                         </div>
                         {!isReplayCloud && (
                           <>
-                            <div className="text-[11.5px] font-mono text-[var(--text-faint)]">
-                              {activeCloud.frame?.epsgCode
-                                ? t('align.crs', { code: activeCloud.frame.epsgCode })
+                            <div className="text-[11.5px] text-[var(--text-dim)] select-text">
+                              {alignedModel ? t('place.alignedTo', { model: alignedModel.fileName }) : t('place.alignedToNone')}
+                            </div>
+                            <div className="text-[11.5px] font-mono text-[var(--text-faint)] select-text">
+                              {placeCloud.frame?.epsgCode
+                                ? t('align.crs', { code: placeCloud.frame.epsgCode })
                                 : t('align.crsNone')}
                             </div>
-                            {activeCloud.frame && (
-                              <div className="text-[11.5px] font-mono text-[var(--text-faint)]">
-                                {t('align.unit', { unit: formatUnit(activeCloud.frame.unitScale) })}
+                            {placeCloud.frame && (
+                              <div className="text-[11.5px] font-mono text-[var(--text-faint)] select-text">
+                                {t('align.unit', { unit: formatUnit(placeCloud.frame.unitScale) })}
                                 {' · '}
-                                {t(activeCloud.frame.unitSource === 'declared' ? 'align.unitDeclared' : 'align.unitAssumed')}
+                                {t(placeCloud.frame.unitSource === 'declared' ? 'align.unitDeclared' : 'align.unitAssumed')}
+                              </div>
+                            )}
+                            {placeCloud.fileDate && (
+                              <div className="text-[11.5px] text-[var(--text-dim)] select-text" title={t('place.fileDateHint')}>
+                                {t('place.fileDate', { date: placeCloud.fileDate })}
                               </div>
                             )}
                           </>
@@ -1766,41 +2045,41 @@ export default function PointCloudPanel({
                         )}
                         {alignment.confidence === 'manual' && <Note tone="warn">{t('align.manualWarning')}</Note>}
                       </div>
-                      {!isReplayCloud && sceneModels.length > 0 && activeCloud.status === 'ready' && (
-                        <SmallButton onClick={() => { void handleRealign() }} disabled={realigning}>
+                      {!isReplayCloud && sceneModels.length > 0 && placeCloud.status === 'ready' && (
+                        <SmallButton onClick={() => { void handleRealign(placeCloud.id) }} disabled={realigning}>
                           {t('align.recompute')}
                         </SmallButton>
                       )}
                     </Group>
 
-                    {activeCloud.frame && activeCloud.frame.upAxisSource !== 'declared' && !isReplayCloud && (
+                    {placeCloud.frame && placeCloud.frame.upAxisSource !== 'declared' && !isReplayCloud && (
                       <Group title={t('align.upAxis')}>
                         <Segmented
                           label={t('align.upAxis')}
-                          value={activeCloud.frame.upAxis}
+                          value={placeCloud.frame.upAxis}
                           options={[{ value: 'z', label: t('align.upAxisZ') }, { value: 'y', label: t('align.upAxisY') }]}
-                          onChange={(v) => handleUpAxis(v as 'y' | 'z')}
+                          onChange={(v) => handleUpAxis(placeCloud.id, v as 'y' | 'z')}
                           stretch
                         />
-                        {activeCloud.frame.upAxisSource === 'assumed' && <Hint>{t('align.upAxisGuessed')}</Hint>}
+                        {placeCloud.frame.upAxisSource === 'assumed' && <Hint>{t('align.upAxisGuessed')}</Hint>}
                       </Group>
                     )}
 
                     {/* Actionable CRS gap: the file names a system we have no
                         definition for. Offer the fix instead of only the diagnosis. */}
-                    {alignment.reasons.includes('align.reason.cloudCrsUnknown') && activeCloud.frame?.epsgCode && (
+                    {alignment.reasons.includes('align.reason.cloudCrsUnknown') && placeCloud.frame?.epsgCode && (
                       <Group title={t('align.crsForm.title')}>
-                        <Hint>{t('align.crsForm.hint', { code: activeCloud.frame.epsgCode })}</Hint>
+                        <Hint>{t('align.crsForm.hint', { code: placeCloud.frame.epsgCode })}</Hint>
                         <input
                           value={proj4Text}
                           onChange={(e) => { setProj4Text(e.target.value); setProj4Error(false) }}
                           placeholder={t('align.crsForm.placeholder')}
                           aria-label={t('align.crsForm.title')}
                           spellCheck={false}
-                          className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]"
+                          className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)] select-text"
                         />
                         {proj4Error && <Note tone="warn">{t('align.crsForm.invalid')}</Note>}
-                        <SmallButton onClick={() => { void handleProj4Apply() }} disabled={!proj4Text.trim() || realigning}>
+                        <SmallButton onClick={() => { void handleProj4Apply(placeCloud.id) }} disabled={!proj4Text.trim() || realigning}>
                           {t('align.crsForm.apply')}
                         </SmallButton>
                       </Group>
@@ -1810,11 +2089,11 @@ export default function PointCloudPanel({
                       <Group title={t('help.wrongSize.label')}>
                         <div className="flex flex-wrap gap-1.5">
                           {(['unitMm', 'unitCm', 'unitFt'] as const).map((fix) => (
-                            <Chip key={fix} active={alignment.offset.scaleMul === UNIT_FIX_SCALE[fix]} onClick={() => applyFix(fix)}>
+                            <Chip key={fix} active={alignment.offset.scaleMul === UNIT_FIX_SCALE[fix]} onClick={() => applyFix(fix, placeCloud)}>
                               {t(`fix.${fix}`)}
                             </Chip>
                           ))}
-                          <Chip active={alignment.offset.scaleMul === 1} onClick={() => { handleOffset({ scaleMul: 1 }); setTimeout(fitActive, 50) }}>
+                          <Chip active={alignment.offset.scaleMul === 1} onClick={() => { handleOffset(placeCloud.id, { scaleMul: 1 }); setTimeout(() => fitCloud(placeCloud.id), 50) }}>
                             ×1
                           </Chip>
                         </div>
@@ -1828,43 +2107,123 @@ export default function PointCloudPanel({
                         onToggle={setShowTransform}
                       >
                         <div className="flex flex-col gap-3">
-                          <Slider label={t('transform.x')} value={alignment.offset.x} min={-200} max={200} step={0.05}
-                            unit="m" digits={2} onChange={(v) => handleOffset({ x: v })} />
-                          <Slider label={t('transform.y')} value={alignment.offset.y} min={-100} max={100} step={0.05}
-                            unit="m" digits={2} onChange={(v) => handleOffset({ y: v })} />
-                          <Slider label={t('transform.z')} value={alignment.offset.z} min={-200} max={200} step={0.05}
-                            unit="m" digits={2} onChange={(v) => handleOffset({ z: v })} />
-                          <Slider label={t('transform.rotation')} value={alignment.offset.yawDeg} min={-180} max={180} step={0.5}
-                            unit="°" onChange={(v) => handleOffset({ yawDeg: v })} />
-                          <Slider label={t('transform.pitch')} value={alignment.offset.pitchDeg} min={-45} max={45} step={0.25}
-                            unit="°" digits={2} onChange={(v) => handleOffset({ pitchDeg: v })} />
-                          <Slider label={t('transform.roll')} value={alignment.offset.rollDeg} min={-45} max={45} step={0.25}
-                            unit="°" digits={2} onChange={(v) => handleOffset({ rollDeg: v })} />
-                          <Slider label={t('transform.scale')} value={alignment.offset.scaleMul}
-                            min={Math.min(0.1, alignment.offset.scaleMul)} max={Math.max(3, alignment.offset.scaleMul)} step={0.001}
-                            unit="×" digits={3} onChange={(v) => handleOffset({ scaleMul: v })} />
-                          <SmallButton onClick={handleResetOffset}>{t('transform.reset')}</SmallButton>
+                          {historyRow}
+                          <Hint>{t('place.historyHint')}</Hint>
+                          {PLACE_FIELDS.map((f) => (
+                            <PlacementField
+                              key={f.key}
+                              label={t(f.label)}
+                              value={alignment.offset[f.key]}
+                              min={f.key === 'scaleMul' ? Math.min(0.1, alignment.offset.scaleMul) : f.min}
+                              max={f.key === 'scaleMul' ? Math.max(3, alignment.offset.scaleMul) : f.max}
+                              step={f.step}
+                              unit={f.unit}
+                              digits={f.digits}
+                              testId={`pc-place-field-${f.key}`}
+                              cloudId={placeCloud.id}
+                              field={f.key}
+                              exactLabel={t('place.exact', { label: t(f.label) })}
+                              hint={t('place.fieldHint')}
+                              onChange={(v, gesture) => handleOffset(placeCloud.id, { [f.key]: v }, gesture)}
+                            />
+                          ))}
+                          <SmallButton onClick={() => handleResetOffset([placeCloud.id])}>{t('transform.reset')}</SmallButton>
                           <Hint>{t('transform.hint')}</Hint>
                         </div>
                       </Disclosure>
                     )}
                   </>
                 ) : (
-                  <Hint>{activeCloud.status === 'parsing' ? t('load.parsingShort') : describeError(activeCloud.errorKey)}</Hint>
+                  <Hint>{placeCloud.status === 'parsing' ? t('load.parsingShort') : describeError(placeCloud.errorKey)}</Hint>
                 )
               )}
 
-              {tab === 'view' && (
+              {tab === 'placement' && !placeCloud && (
                 <>
+                  <Group title={t('place.summary', { count: placeMany.length })}>
+                    <div className="flex flex-col gap-1">
+                      {placeMany.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => usePointCloudStore.getState().selectClouds([c.id])}
+                          className="flex items-center gap-2 rounded-[8px] border border-[var(--border)] px-2.5 py-1.5 max-md:min-h-[44px] text-left hover:bg-[var(--surface-2)]"
+                        >
+                          <span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: `#${(c.color ?? 0x888888).toString(16).padStart(6, '0')}` }} />
+                          <span className="flex-1 min-w-0 truncate text-[12px] text-[var(--text)]">{cloudLabel(c)}</span>
+                          <Badge tint={CONFIDENCE_TINT[c.alignment!.confidence] ?? '#888'}>{t(`align.rung.${c.alignment!.rung}`)}</Badge>
+                        </button>
+                      ))}
+                    </div>
+                    {historyRow}
+                    <Hint>{t('place.historyHint')}</Hint>
+                  </Group>
+                  {placeMany.length > 0 && (
+                    <Group title={t('place.together')}>
+                      <Hint>{t('place.togetherHint', { count: placeMany.length })}</Hint>
+                      <div className="grid grid-cols-2 gap-2" data-testid="pc-place-together">
+                        {([['x', 'transform.x', 'm'], ['y', 'transform.y', 'm'], ['z', 'transform.z', 'm'], ['yaw', 'transform.rotation', '°']] as const).map(([k, label, unit]) => (
+                          <label key={k} className="flex flex-col gap-0.5">
+                            <span className="text-[11px] text-[var(--text-dim)]">Δ {t(label)} ({unit})</span>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              data-testid={`pc-together-${k}`}
+                              value={together[k]}
+                              onChange={(e) => setTogether((v) => ({ ...v, [k]: Number(e.target.value) || 0 }))}
+                              className="px-2 py-1 max-md:py-2 rounded-[6px] text-[12px] font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] select-text"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <SmallButton
+                        testId="pc-place-apply"
+                        disabled={!together.x && !together.y && !together.z && !together.yaw}
+                        onClick={() => {
+                          const ids = placeMany.map((c) => c.id)
+                          placement.moveRigid(ids, {
+                            delta: { x: together.x, y: together.y, z: together.z },
+                            yawDeg: together.yaw,
+                            pivot: placement.pivotOf(ids) ?? undefined,
+                          })
+                          setTogether({ x: 0, y: 0, z: 0, yaw: 0 })
+                        }}
+                      >
+                        {t('place.apply')}
+                      </SmallButton>
+                      <SmallButton onClick={() => handleResetOffset(placeMany.map((c) => c.id))}>
+                        {t('place.resetMany', { count: placeMany.length })}
+                      </SmallButton>
+                      <Hint>{t('place.oneAtATime')}</Hint>
+                    </Group>
+                  )}
+                </>
+              )}
+
+              {tab === 'analyze' && (
+                <>
+                  {isMulti && <Hint>{t('scope.analyzeCaption')}</Hint>}
+                  {filtersActive && (
+                    <div className="flex items-center gap-2 rounded-[10px] border border-[#F5A62355] bg-[#F5A62314] px-3 py-2">
+                      <span className="w-2 h-2 rounded-full bg-[#F5A623] shrink-0" />
+                      <span className="flex-1 text-[12px] text-[var(--text-dim)]">{t('analyze.activeBanner')}</span>
+                      <button type="button" onClick={clearAnalysis}
+                        className="text-[12px] font-medium text-[var(--accent)] hover:underline underline-offset-2 whitespace-nowrap">
+                        {t('analyze.reset')}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Scan ↔ model: framing and comparison ────────────────── */}
                   <Group title={t('view.title')}>
                     <div className="flex gap-1.5">
-                      <SmallButton onClick={fitActive}>{t('view.fitCloud')}</SmallButton>
+                      <SmallButton onClick={() => fitCloud(focusCloud?.id)}>{t('view.fitCloud')}</SmallButton>
                       <SmallButton onClick={() => { void getSystem()?.then((s) => s.frameWithModel()) }}>
                         {t('view.fitBoth')}
                       </SmallButton>
                     </div>
                   </Group>
-
                   {sceneModels.length > 0 && (
                     <Group title={t('ui.compare')}>
                       <div className="grid grid-cols-3 gap-1.5" data-testid="scan-bim-demo-modes">
@@ -1900,35 +2259,6 @@ export default function PointCloudPanel({
                         />
                       </div>
                     </Group>
-                  )}
-
-                  {stats && stats.pointCount > 0 && (
-                    <Group title={t('ui.stats')}>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Stat label={t('ui.drawn')}
-                          value={`${formatCount(stats.drawnCount)} / ${formatCount(stats.pointCount)}`} />
-                        <Stat label="GPU" value={`${Math.round(stats.gpuBytes / 1048576)} MB`} />
-                      </div>
-                      <Hint>{t('status.chunks', { count: stats.chunkCount })}</Hint>
-                      {budget && budget.resident + budget.reserved > 0 && (
-                        <PointBudgetMeter {...budget} t={t} format={formatCount} />
-                      )}
-                    </Group>
-                  )}
-                </>
-              )}
-
-              {tab === 'analyze' && (
-                <>
-                  {filtersActive && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-[#F5A62355] bg-[#F5A62314] px-3 py-2">
-                      <span className="w-2 h-2 rounded-full bg-[#F5A623] shrink-0" />
-                      <span className="flex-1 text-[12px] text-[var(--text-dim)]">{t('analyze.activeBanner')}</span>
-                      <button type="button" onClick={clearAnalysis}
-                        className="text-[12px] font-medium text-[var(--accent)] hover:underline underline-offset-2 whitespace-nowrap">
-                        {t('analyze.reset')}
-                      </button>
-                    </div>
                   )}
 
                   {/* ── Use cases: one click to a task-ready view ───────────── */}
@@ -2092,67 +2422,26 @@ export default function PointCloudPanel({
                 </>
               )}
 
-              {tab === 'samples' && (
-                <>
-                  <Group title={t('demos.title')}>
-                    <Hint>{t('demos.hint')}</Hint>
-                    {samplesBlock}
-                  </Group>
-                  <Group title={t('replay.title')}>
-                    {replayBlock}
-                  </Group>
-                </>
-              )}
 
-              {tab === 'help' && (
-                <Group title={t('help.title')}>
-                  <Hint>{t('help.hint')}</Hint>
-                  <div className="flex flex-col gap-1.5">
-                    {HELP_SYMPTOMS.map((symptom) => {
-                      const needsCloud = symptom !== 'broken'
-                      const disabled = (needsCloud && (!activeCloud || activeCloud.status !== 'ready')) ||
-                        (symptom === 'sideways' && (!activeCloud?.frame || isReplayCloud)) ||
-                        (symptom === 'wrongSize' && isReplayCloud)
-                      return (
-                        <div key={symptom} className="flex flex-col">
-                          <button
-                            type="button"
-                            disabled={disabled}
-                            aria-expanded={symptom === 'wrongSize' || symptom === 'broken' ? helpOpen === symptom : undefined}
-                            onClick={() => applySymptom(symptom)}
-                            className="w-full flex items-center gap-3 rounded-[10px] border border-[var(--border)] px-3 py-2.5 text-left hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <span className="flex-1 min-w-0">
-                              <span className="block text-[12.5px] font-medium text-[var(--text)]">{t(`help.${symptom}.label`)}</span>
-                              <span className="block text-[11px] text-[var(--text-faint)] mt-0.5">{t(`help.${symptom}.hint`)}</span>
-                            </span>
-                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-[var(--text-faint)] shrink-0">
-                              <path d={helpOpen === symptom ? 'M3 9l4-4 4 4' : 'M5 3l4 4-4 4'} />
-                            </svg>
-                          </button>
-                          {helpOpen === symptom && symptom === 'wrongSize' && alignment && (
-                            <div className="flex flex-wrap gap-1.5 px-1 pt-2 pb-1">
-                              {(['unitMm', 'unitCm', 'unitFt', 'scaleUp'] as const).map((fix) => (
-                                <Chip key={fix} active={alignment.offset.scaleMul === UNIT_FIX_SCALE[fix]} onClick={() => applyFix(fix)}>
-                                  {t(`fix.${fix}`)}
-                                </Chip>
-                              ))}
-                              <Chip active={alignment.offset.scaleMul === 1} onClick={() => { handleOffset({ scaleMul: 1 }); setTimeout(fitActive, 50) }}>
-                                ×1
-                              </Chip>
-                            </div>
-                          )}
-                          {helpOpen === symptom && symptom === 'broken' && (
-                            <div className="px-1 pt-2 pb-1 text-[12px] leading-relaxed text-[var(--text-dim)]">
-                              {t('help.brokenTips')}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+              {/* ── Samples and LiDAR demos, folded at the bottom ──────────── */}
+              <div ref={samplesRef}>
+                <Disclosure
+                  title={t('ui.samplesDisclosure')}
+                  open={samplesOpen}
+                  onToggle={(open) => usePointCloudStore.getState().setSamplesOpen(open)}
+                  testId="pc-samples-disclosure"
+                >
+                  <div className="flex flex-col gap-5">
+                    <Group title={t('demos.title')}>
+                      <Hint>{t('demos.hint')}</Hint>
+                      {samplesBlock}
+                    </Group>
+                    <Group title={t('replay.title')}>
+                      {replayBlock}
+                    </Group>
                   </div>
-                </Group>
-              )}
+                </Disclosure>
+              </div>
             </div>
           </div>
         )}
@@ -2182,71 +2471,6 @@ const PANEL_CSS = `
 }
 `
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <div className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.06em]">{children}</div>
-}
-
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <SectionTitle>{title}</SectionTitle>
-      {children}
-    </section>
-  )
-}
-
-function Hint({ children }: { children: React.ReactNode }) {
-  return <div className="text-[11.5px] leading-snug text-[var(--text-dim)] opacity-90">{children}</div>
-}
-
-function Badge({ tint, children }: { tint: string; children: React.ReactNode }) {
-  return (
-    <span
-      className="px-1.5 py-0.5 rounded-[6px] text-[10.5px] font-medium border whitespace-nowrap"
-      style={{ color: tint, borderColor: `${tint}55`, background: `${tint}18` }}
-    >
-      {children}
-    </span>
-  )
-}
-
-/** Compact fact chip on a sample-scan card — every value read from the file. */
-function DemoChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="px-1.5 py-[1px] rounded-[5px] text-[10.5px] font-mono text-[var(--text-faint)] border border-[var(--border)]">
-      {children}
-    </span>
-  )
-}
-
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={[
-        'px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors',
-        active
-          ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
-          : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-      ].join(' ')}
-    >
-      {children}
-    </button>
-  )
-}
-
-/** Label + value row for the inspect read-out. */
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-[var(--text-faint)] shrink-0">{label}</span>
-      <span className="text-[var(--text)] text-right break-all">{value}</span>
-    </div>
-  )
-}
-
 /** Small line glyph per analysis recipe — enough to scan the grid by shape. */
 function RecipeIcon({ id }: { id: RecipeId }) {
   const paths: Record<RecipeId, React.ReactNode> = {
@@ -2256,6 +2480,7 @@ function RecipeIcon({ id }: { id: RecipeId }) {
     slab: <><path d="M2 12l8-4 8 4-8 4z" /><path d="M6 12l4-2 4 2-4 2z" /></>,
     scanVsBim: <><path d="M4 6h8v10H4z" /><circle cx="12" cy="5" r=".8" /><circle cx="15" cy="8" r=".8" /><circle cx="14" cy="12" r=".8" /><circle cx="16" cy="15" r=".8" /></>,
     clearance: <><path d="M4 3v14M16 3v14" /><path d="M4 10h12M7 8l-3 2 3 2M13 8l3 2-3 2" /></>,
+    epochs: <><circle cx="7" cy="8" r="4" /><circle cx="13" cy="12" r="4" /><path d="M3 17h14" /></>,
   }
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" strokeWidth="1.4"
@@ -2265,237 +2490,48 @@ function RecipeIcon({ id }: { id: RecipeId }) {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
-      <div className="text-[10.5px] text-[var(--text-faint)] truncate">{label}</div>
-      <div className="text-[13px] font-mono tabular-nums text-[var(--text)]">{value}</div>
-    </div>
-  )
-}
-
-function Note({ children, tone = 'info' }: { children: React.ReactNode; tone?: 'info' | 'warn' }) {
-  const color = tone === 'warn' ? '#F5A623' : 'var(--text-dim)'
-  return (
-    <div className="text-[11.5px] leading-snug" style={{ color }}>{children}</div>
-  )
-}
-
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-      className="w-8 h-8 max-md:w-10 max-md:h-10 shrink-0 flex items-center justify-center rounded-[8px] max-md:rounded-[10px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-    >
-      {children}
-    </button>
-  )
-}
-
-function PrimaryButton(
-  { onClick, children, disabled, testId }: { onClick: () => void; children: React.ReactNode; disabled?: boolean; testId?: string },
-) {
-  return (
-    <button
-      type="button"
-      data-testid={testId}
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full px-3 py-2.5 rounded-[10px] text-[13px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 transition"
-    >
-      {children}
-    </button>
-  )
-}
-
-function SmallButton(
-  { onClick, children, disabled, active }: { onClick: () => void; children: React.ReactNode; disabled?: boolean; active?: boolean },
-) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={active}
-      className={[
-        'flex-1 px-3 py-2 max-md:min-h-[44px] max-md:text-[13px] rounded-[9px] text-[12px] font-medium border disabled:opacity-40 transition-colors whitespace-nowrap',
-        active
-          ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
-          : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-      ].join(' ')}
-    >
-      {children}
-    </button>
-  )
-}
-
-function Switch({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={onChange}
-      className="flex items-center justify-between gap-3 py-1 max-md:min-h-[44px] text-left"
-    >
-      <span className="text-[12.5px] max-md:text-[13.5px] text-[var(--text-dim)]">{label}</span>
-      <span className={`relative w-8 h-[18px] max-md:scale-125 max-md:mr-1 rounded-full transition-colors shrink-0 ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'}`}>
-        <span className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-[left] ${checked ? 'left-[16px]' : 'left-[2px]'}`} />
-      </span>
-    </button>
-  )
-}
-
-function Segmented({ label, value, options, onChange, stretch }: {
-  label: string
-  value: string
-  options: { value: string; label: string }[]
-  onChange: (value: string) => void
-  stretch?: boolean
-}) {
-  return (
-    <div role="radiogroup" aria-label={label}
-      className={`flex rounded-[9px] border border-[var(--border-strong)] p-0.5 gap-0.5 ${stretch ? 'w-full' : ''}`}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={[
-            'px-2.5 py-1 max-md:py-2 max-md:text-[12.5px] rounded-[7px] text-[11.5px] font-medium transition-colors',
-            stretch ? 'flex-1' : '',
-            value === o.value ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-          ].join(' ')}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function Disclosure({ title, subtitle, badge, open: controlledOpen, onToggle, card, children }: {
-  title: string
-  subtitle?: string
-  badge?: React.ReactNode
-  open?: boolean
-  onToggle?: (open: boolean) => void
-  card?: boolean
-  children: React.ReactNode
-}) {
-  const [localOpen, setLocalOpen] = useState(false)
-  const open = controlledOpen ?? localOpen
-  const toggle = (): void => {
-    if (onToggle) onToggle(!open)
-    else setLocalOpen(!open)
-  }
-  return (
-    <div className={card ? 'rounded-[12px] border border-[var(--border)] p-3' : 'border-t border-[var(--border)] pt-3'}>
-      <button type="button" aria-expanded={open} onClick={toggle} className="w-full flex items-center gap-2 text-left">
-        <span className="flex-1 min-w-0">
-          <span className="block text-[12.5px] font-semibold text-[var(--text)]">{title}</span>
-          {subtitle && <span className="block text-[11.5px] text-[var(--text-faint)] mt-0.5">{subtitle}</span>}
-        </span>
-        {badge}
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
-          className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
-          <path d="M3 5l4 4 4-4" />
-        </svg>
-      </button>
-      {open && <div className="mt-3">{children}</div>}
-    </div>
-  )
-}
-
-interface SliderProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  unit?: string
-  digits?: number
-  hideLabel?: boolean
-  onChange: (v: number) => void
-}
-
-function Slider({ label, value, min, max, step, unit, digits = 1, hideLabel, onChange }: SliderProps) {
-  const readout = (
-    <span className="text-[11.5px] font-mono tabular-nums text-[var(--text-faint)] whitespace-nowrap">
-      {value.toFixed(digits)}{unit ? ` ${unit}` : ''}
-    </span>
-  )
-  const input = (
-    <input
-      type="range"
-      min={min} max={max} step={step} value={value}
-      aria-label={hideLabel ? label : undefined}
-      onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="pc-range w-full"
-    />
-  )
-  // Without a label the readout sits beside the track instead of on a line of its own.
-  if (hideLabel) return <div className="flex items-center gap-3">{input}{readout}</div>
-  return (
-    <label className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[12px] text-[var(--text-dim)]">{label}</span>
-        {readout}
-      </div>
-      {input}
-    </label>
-  )
-}
-
-function CheckUp({ issues, onFix, t, describeError, cloud }: {
+function CheckUp({ issues, onFix, t, describeError, cloud, title, children }: {
   issues: Issue[]
   onFix: (fix: FixId) => void
   t: TFunction<'pointcloud'>
   describeError: (key: string | null | undefined) => string
   cloud: PointCloudEntry
+  /** Names the scan when several are loaded. */
+  title: string
+  /** The 'Something else looks wrong?' symptoms, at the foot. */
+  children?: React.ReactNode
 }) {
-  const [expanded, setExpanded] = useState(true)
-  // Phone: folded by default. Expanded, the list sat between the scan list and
-  // the tabs and took most of the half-height sheet, pushing the tools below
-  // the fold. The header still says how many issues there are, and a scan that
-  // failed to load stays open — that one has to be read.
-  const isMobile = useIsMobile()
+  // Folded by default: the per-row dots already say which scan needs a look,
+  // and expanded the list pushed the tools below the fold. A scan that failed
+  // to load opens — that one has to be read.
   const hasError = issues.some((i) => i.severity === 'error')
-  useEffect(() => {
-    if (isMobile) setExpanded(hasError)
-  }, [isMobile, hasError, cloud.id])
-  if (issues.length === 0) {
-    return (
-      <div className="flex items-center gap-2 rounded-[10px] border border-[#30A46C44] bg-[#30A46C12] px-3 py-2">
-        <span className="w-2 h-2 rounded-full bg-[#30A46C] shrink-0" />
-        <span className="text-[12px] text-[var(--text-dim)]">{t('diag.allGood')}</span>
-      </div>
-    )
-  }
-  const worst = issues[0].severity
+  const [expanded, setExpanded] = useState(hasError)
+  useEffect(() => { setExpanded(hasError) }, [hasError, cloud.id])
+  const worst = issues[0]?.severity ?? 'info'
+  const tint = issues.length === 0 ? '#30A46C' : SEVERITY_TINT[worst]
   return (
-    <div className="rounded-[12px] border overflow-hidden" style={{ borderColor: `${SEVERITY_TINT[worst]}55` }}>
+    <div className="rounded-[12px] border overflow-hidden" style={{ borderColor: `${tint}55` }} data-testid="pc-checkup">
       <button
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-2 px-3 py-2 max-md:py-3 text-left"
-        style={{ background: `${SEVERITY_TINT[worst]}14` }}
+        style={{ background: `${tint}14` }}
       >
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: SEVERITY_TINT[worst] }} />
-        <span className="flex-1 text-[12.5px] font-semibold text-[var(--text)]">{t('diag.title')}</span>
-        <span className="text-[11.5px] text-[var(--text-faint)]">{t('diag.issueCount', { count: issues.length })}</span>
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: tint }} />
+        <span className="flex-1 min-w-0 truncate text-[12.5px] font-semibold text-[var(--text)]">{title}</span>
+        <span className="text-[11.5px] text-[var(--text-faint)] shrink-0">
+          {issues.length === 0 ? t('list.healthOk') : t('diag.issueCount', { count: issues.length })}
+        </span>
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
           className={`text-[var(--text-faint)] transition-transform ${expanded ? 'rotate-180' : ''}`}>
           <path d="M3 5l4 4 4-4" />
         </svg>
       </button>
-      {expanded && (
+      {expanded && issues.length === 0 && (
+        <div className="px-3 py-2 text-[12px] text-[var(--text-dim)]">{t('diag.allGood')}</div>
+      )}
+      {expanded && issues.length > 0 && (
         <ul className="flex flex-col divide-y divide-[var(--border)]">
           {issues.map((issue) => (
             <li key={issue.id} className="px-3 py-2.5 flex flex-col gap-2">
@@ -2504,7 +2540,7 @@ function CheckUp({ issues, onFix, t, describeError, cloud }: {
                 <div className="text-[12px] leading-snug text-[var(--text-dim)]">
                   {t(`diag.issue.${issue.id}`)}
                   {issue.id === 'failed' && cloud.errorKey && (
-                    <span className="block mt-0.5 text-[var(--text-faint)]">{describeError(cloud.errorKey)}</span>
+                    <span className="block mt-0.5 text-[var(--text-faint)] select-text">{describeError(cloud.errorKey)}</span>
                   )}
                   {issue.id === 'partial' && cloud.streamErrorKey && (
                     <span className="block mt-0.5 text-[var(--text-faint)]">{describeError(cloud.streamErrorKey)}</span>
@@ -2539,108 +2575,12 @@ function CheckUp({ issues, onFix, t, describeError, cloud }: {
           ))}
         </ul>
       )}
+      {expanded && children && <div className="px-3 pb-3">{children}</div>}
     </div>
-  )
-}
-
-interface CloudRowProps {
-  cloud: PointCloudEntry
-  active: boolean
-  issueCount: number
-  onSelect: () => void
-  onToggleVisible: () => void
-  onFrame: () => void
-  onRemove: () => void
-  t: TFunction<'pointcloud'>
-  describeError: (key: string | null | undefined) => string
-}
-
-function CloudRow({ cloud, active, issueCount, onSelect, onToggleVisible, onFrame, onRemove, t, describeError }: CloudRowProps) {
-  const parsing = cloud.status === 'parsing'
-  const failed = cloud.status === 'error'
-  const dot = failed ? '#E5484D' : parsing ? 'var(--accent)' : issueCount > 0 ? '#F5A623' : '#30A46C'
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-pressed={active}
-      onClick={onSelect}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() } }}
-      className={[
-        'rounded-[10px] border px-3 py-2 cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]',
-        active ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]',
-        !cloud.visible && !failed ? 'opacity-60' : '',
-      ].join(' ')}
-    >
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full shrink-0 ${parsing ? 'animate-pulse' : ''}`} style={{ background: dot }} />
-        <div className="flex-1 min-w-0">
-          <div className="text-[12.5px] font-medium text-[var(--text)] truncate" title={cloud.fileName}>{cloud.fileName}</div>
-          <div className={`text-[11px] font-mono ${failed ? 'text-[#E5484D]' : 'text-[var(--text-faint)]'} truncate`}>
-            {failed
-              ? describeError(cloud.errorKey)
-              : parsing
-                ? `${t('load.parsingShort')} ${cloud.progress}%`
-                : cloud.sourceKind === 'temporal-replay'
-                  ? t('replay.rowStatus')
-                  : `${t('status.points', { count: formatCount(cloud.pointCount) })} · ${cloud.format.toUpperCase()}`}
-          </div>
-        </div>
-        {!failed && !parsing && (
-          <RowIcon label={t('view.fitCloud')} onClick={onFrame}>
-            <path d="M2 5V2h3M9 2h3v3M12 9v3H9M5 12H2V9" />
-          </RowIcon>
-        )}
-        {!failed && (
-          <RowIcon label={cloud.visible ? t('actions.visible') : t('actions.hidden')} onClick={onToggleVisible} pressed={cloud.visible}>
-            {cloud.visible
-              ? <><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" /><circle cx="7" cy="7" r="1.8" /></>
-              : <><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" /><path d="M2 12L12 2" /></>}
-          </RowIcon>
-        )}
-        <RowIcon label={parsing ? t('actions.cancel') : t('actions.remove')} onClick={onRemove} danger>
-          <path d="M3 3l8 8M11 3L3 11" />
-        </RowIcon>
-      </div>
-
-      {parsing && (
-        <div className="mt-2 h-[3px] rounded-full bg-[var(--border)] overflow-hidden">
-          <div className="h-full bg-[var(--accent)] transition-[width]" style={{ width: `${cloud.progress}%` }} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function RowIcon({ label, onClick, children, danger, pressed }: {
-  label: string; onClick: () => void; children: React.ReactNode; danger?: boolean; pressed?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onClick() }}
-      title={label}
-      aria-label={label}
-      aria-pressed={pressed}
-      className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-[7px] text-[var(--text-faint)] hover:bg-[var(--surface)] transition-colors ${
-        danger ? 'hover:text-[#E5484D]' : 'hover:text-[var(--text)]'
-      }`}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        {children}
-      </svg>
-    </button>
   )
 }
 
 // ── Formatting ─────────────────────────────────────────────────────────────────
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)} M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)} k`
-  return String(n)
-}
 
 function formatReplayTime(milliseconds: number): string {
   const seconds = Math.max(0, Math.floor(milliseconds / 1000))
@@ -2648,10 +2588,3 @@ function formatReplayTime(milliseconds: number): string {
   return `${minutes}:${String(seconds % 60).padStart(2, '0')}`
 }
 
-function formatUnit(unitScale: number): string {
-  if (Math.abs(unitScale - 1) < 1e-9) return 'm'
-  if (Math.abs(unitScale - 0.001) < 1e-9) return 'mm'
-  if (Math.abs(unitScale - 0.01) < 1e-9) return 'cm'
-  if (Math.abs(unitScale - 0.3048) < 1e-6) return 'ft'
-  return `${unitScale} m`
-}

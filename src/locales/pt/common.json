@@ -348,7 +348,11 @@
     "sees": "Cada servidor verá o seu endereço IP e, nas camadas sobre o mapa, a zona do local. O seu modelo não é enviado.",
     "load": "Carregar os dados",
     "skip": "Agora não",
-    "skipped": "Os dados externos do link não foram carregados."
+    "skipped": "Os dados externos do link não foram carregados.",
+    "combinedTitle": "Carregar esta cena ao vivo?",
+    "combinedMap": "Mapa",
+    "combinedData": "Dados ao vivo de",
+    "loadBoth": "Carregar mapa e dados"
   },
   "layout": {
     "resizePanel": "Redimensionar o painel",

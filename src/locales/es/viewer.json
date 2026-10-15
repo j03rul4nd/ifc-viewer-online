@@ -191,7 +191,9 @@
         "projectName": "Mismo proyecto y emplazamiento",
         "proximity": "Cercanía geográfica",
         "single": "Archivo único"
-      }
+      },
+      "editScan": "Editar en el panel Nube de puntos",
+      "topics": "Temas: {{names}}"
     },
     "scope": {
       "label": "Ámbito",
@@ -342,6 +344,16 @@
     "properties": "Propiedades",
     "fromType": "tipo",
     "attributes": "Atributos",
-    "copied": "Copiado"
+    "copied": "Copiado",
+    "story": {
+      "label": "Recorrido guiado",
+      "step": "{{n}} de {{total}}",
+      "next": "Siguiente",
+      "back": "Atrás",
+      "close": "Cerrar el recorrido",
+      "finish": "Explorar por tu cuenta",
+      "resume": "Recorrido guiado",
+      "now": "En vivo ahora"
+    }
   }
 }

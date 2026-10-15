@@ -164,8 +164,8 @@
   "exportSettings": "Configuració d'exportació…",
   "menu": {
     "openIfc": "Obrir fitxer IFC…",
-    "openTooltip": "Obrir — fitxers IFC, models de demostració i altres dades",
-    "addData": "Afegir a l’escena",
+    "openTooltip": "Obrir — fitxers IFC, models de demostració i fitxers d’escena",
+    "addData": "Afegeix dades",
     "check": "Revisar",
     "checkTooltip": "Revisar — incidències en 3D, IDS, comparar versions",
     "issuesIn3d": "Mostrar incidències en 3D",
@@ -185,7 +185,9 @@
     "edit": "Editar",
     "help": "Ajuda",
     "idsCheck": "Comprovar amb IDS…",
-    "compareVersions": "Comparar versions…"
+    "compareVersions": "Comparar versions…",
+    "addDataTooltip": "Afegeix dades — escanejos, vídeo, models 3D, capes de mapa i dispositius en directe",
+    "openScene": "Obre un fitxer d’escena…"
   },
   "mobileBar": {
     "models": "{{count}} model",
@@ -193,5 +195,83 @@
     "elements": "{{n}} elements",
     "openScene": "Escena i models",
     "score": "Health Score {{score}} — obre la validació"
+  },
+  "sun": "Sol",
+  "sunTooltip": "Estudi de sol i lluna — ombres reals per data, hora i ubicació",
+  "addData": {
+    "title": "Afegeix dades a l’escena",
+    "description": "Els fitxers es llegeixen al teu navegador: no es puja res.",
+    "dropTitle": "Deixa anar els fitxers aquí",
+    "dropHint": "Barreja qualsevol d’aquests formats: cada fitxer va al seu lloc.",
+    "chooseFiles": "Tria fitxers…",
+    "chooseFile": "Tria un fitxer…",
+    "fromUpload": "Escanejos, vídeo, models 3D o capes de mapa?",
+    "groups": {
+      "capture": "Captura de la realitat",
+      "models": "Models",
+      "context": "Mapa i dades en directe",
+      "scenes": "Escenes"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "Núvol de punts",
+        "desc": "Escanejos làser i fotogrametria amb dron. Es col·loquen sobre el model quan el fitxer indica on són."
+      },
+      "video": {
+        "title": "Vídeo 3D",
+        "desc": "Enregistraments d’obra o de dron en una pantalla, sobre el terra o alineats amb la càmera que els va filmar."
+      },
+      "ifc": {
+        "title": "Model IFC",
+        "desc": "Els models de cada disciplina es federen en una escena. Cadascun es revisa abans de carregar-se; el primer fixa les coordenades."
+      },
+      "mesh": {
+        "title": "Model 3D",
+        "desc": "Atrezzo i models de context en glTF o OBJ, col·locats sobre el terra del teu model."
+      },
+      "map": {
+        "title": "Mapa i terreny",
+        "desc": "Mapa base, terreny 3D i els edificis que envolten un model georeferenciat."
+      },
+      "layers": {
+        "title": "Capes de dades",
+        "desc": "Punts, rutes i zones des de fitxers GeoJSON o CSV, URL, serveis WFS o fonts públiques en directe."
+      },
+      "devices": {
+        "title": "Dispositius en directe",
+        "desc": "Sensors per REST, WebSocket o MQTT, vinculats a elements IFC."
+      },
+      "scene": {
+        "title": "Fitxer d’escena",
+        "desc": "Un .scene.json que algú ha compartit amb tu. En obrir-lo se substitueix l’escena actual."
+      }
+    },
+    "pointcloudNote": "E57, ReCap o FARO? Exporta’l abans com a LAS, LAZ o PLY.",
+    "action": {
+      "samples": "Exemples",
+      "liveAndDemo": "Càmera, pantalla i demo",
+      "sources": "URL, WFS i fonts en directe",
+      "connect": "Connecta una font",
+      "setUpMap": "Configura el mapa",
+      "openPanel": "Obre el tauler"
+    },
+    "inScene": "{{count}} a l’escena",
+    "inScene_other": "{{count}} a l’escena",
+    "needsModel": "Primer cal un model IFC a l’escena"
+  },
+  "drop": {
+    "title": "Deixa anar per afegir a l’escena",
+    "count": "{{count}} fitxer",
+    "count_other": "{{count}} fitxers",
+    "legend": "Cada fitxer va al seu lloc:",
+    "adding": "S’està afegint a l’escena: {{names}}",
+    "afterReview": "{{names}} s’afegirà després de la revisió de l’IFC",
+    "more": "{{names}} i {{n}} més",
+    "skipped": "{{count}} fitxer omès",
+    "skipped_other": "{{count}} fitxers omesos",
+    "show": "Mostra",
+    "sceneReplace": "Obrir «{{name}}» substitueix l’escena actual.",
+    "openScene": "Obre l’escena",
+    "sceneAlone": "Un fitxer d’escena s’obre sol. Afegeix els altres fitxers quan s’hagi carregat."
   }
 }

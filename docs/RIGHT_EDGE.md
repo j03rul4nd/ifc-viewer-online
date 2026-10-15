@@ -186,3 +186,12 @@ second route; the rail becomes the first.
 
 **Making the rail customisable.** That is Adobe's mistake, downstream of having
 too many panels to begin with. The fix for too many icons is fewer icons.
+
+## The data command: + Add data
+
+The topbar's one command for bringing data in besides the IFC is **+ Add data**,
+right after Open. It is a command that opens a chooser (a Modal hub, a sheet on
+phones), not a view, so it lives on the topbar, not on the rail. Data layers and
+3D video, which until now had no rail icon, are rail views through app-only ids
+(`'layers'`, `'video'`) until an SDK version bump promotes them into the host
+`PanelId` vocabulary. See `ADD_DATA.md`.

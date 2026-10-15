@@ -191,7 +191,9 @@
         "projectName": "Mesmo projeto e local",
         "proximity": "Proximidade geográfica",
         "single": "Ficheiro único"
-      }
+      },
+      "editScan": "Editar no painel Nuvem de pontos",
+      "topics": "Temas: {{names}}"
     },
     "scope": {
       "label": "Âmbito",
@@ -342,6 +344,16 @@
     "properties": "Propriedades",
     "fromType": "tipo",
     "attributes": "Atributos",
-    "copied": "Copiado"
+    "copied": "Copiado",
+    "story": {
+      "label": "Tour guiado",
+      "step": "{{n}} de {{total}}",
+      "next": "Próximo",
+      "back": "Voltar",
+      "close": "Fechar o tour",
+      "finish": "Explorar por conta própria",
+      "resume": "Tour guiado",
+      "now": "Ao vivo agora"
+    }
   }
 }
