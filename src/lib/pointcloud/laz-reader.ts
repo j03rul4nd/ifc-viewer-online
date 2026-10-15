@@ -16,7 +16,7 @@
 // with las-reader.ts rather than reimplemented.
 
 import {
-  parseLasHeader, parseLasCrs, makeRecordLayout, decodeRecord, sampleRecordRanges,
+  parseLasHeader, parseLasCrs, lasFileDate, makeRecordLayout, decodeRecord, sampleRecordRanges,
   type LasHeader, type LasCrsInfo, type RecordLayout,
 } from './las-reader'
 import {
@@ -157,6 +157,7 @@ export class LazReader implements PointReader {
         confidence: false,
       },
       declaredCount: this.pointCount > 0 ? this.pointCount : null,
+      fileDate: lasFileDate(header.creationYear, header.creationDayOfYear),
       // LAZ carries the same header bounding box LAS does.
       boundsEstimated: false,
     }

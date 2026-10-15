@@ -107,6 +107,7 @@ async function streamOpen(req: PointCloudStreamOpenRequest): Promise<void> {
     frame: header.frame,
     attributes: header.attributes,
     declaredCount: header.declaredCount,
+    fileDate: header.fileDate ?? null,
   })
   post({ type: 'index', id: req.id, root: reader.octreeRoot, nodes: reader.octreeNodes })
 }
@@ -230,6 +231,7 @@ async function run(req: PointCloudParseRequest): Promise<void> {
     frame: header.frame,
     attributes: header.attributes,
     declaredCount: header.declaredCount,
+    fileDate: header.fileDate ?? null,
   })
 
   // Park until the runner decides how many points this file may keep. Nothing

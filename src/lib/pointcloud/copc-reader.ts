@@ -20,7 +20,7 @@
 // the first VLR at offset 375, and an `copc` hierarchy EVLR of 32-byte entries.
 
 import {
-  parseLasHeader, parseLasCrs, makeRecordLayout, decodeRecord, sampleRecordRanges,
+  parseLasHeader, parseLasCrs, lasFileDate, makeRecordLayout, decodeRecord, sampleRecordRanges,
   type LasHeader, type LasCrsInfo, type RecordLayout,
 } from './las-reader'
 import { loadLazPerf, type LazPerfModule } from './laz-reader'
@@ -217,6 +217,7 @@ export class CopcReader implements PointReader {
         confidence: false,
       },
       declaredCount: this.totalPoints > 0 ? this.totalPoints : null,
+      fileDate: lasFileDate(header.creationYear, header.creationDayOfYear),
       boundsEstimated: false,
     }
   }

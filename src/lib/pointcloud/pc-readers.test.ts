@@ -5,7 +5,7 @@
 // offset shows up here rather than as a cloud in the wrong hemisphere.
 
 import { describe, it, expect } from 'vitest'
-import { parseLasHeader, parseLasCrs, LasReader } from './las-reader'
+import { parseLasHeader, parseLasCrs, LasReader, lasFileDate } from './las-reader'
 import { LazReader } from './laz-reader'
 import { parsePlyHeader, PlyReader } from './ply-reader'
 import { sniffXyzLayout, XyzReader } from './xyz-reader'
@@ -128,6 +128,29 @@ describe('LAS reader', () => {
     expect(header.min).toEqual({ x: 1, y: 2, z: 3 })
     expect(header.max).toEqual({ x: 4, y: 5, z: 6 })
     expect(header.compressed).toBe(false)
+  })
+
+  it('reads the file-creation day and year at bytes 90/92', async () => {
+    const buffer = buildLas([{ x: 1, y: 2, z: 3 }, { x: 4, y: 5, z: 6 }])
+    const view = new DataView(buffer)
+    view.setUint16(90, 221, true)
+    view.setUint16(92, 2026, true)
+    const header = parseLasHeader(buffer)
+    expect(header.creationYear).toBe(2026)
+    expect(header.creationDayOfYear).toBe(221)
+    const reader = new LasReader(new File([buffer], 'dated.las'))
+    const opened = await reader.open()
+    expect(opened.fileDate).toBe('2026-08-09')
+  })
+
+  it('turns a header day/year into an honest date, or nothing', () => {
+    const now = new Date(Date.UTC(2026, 9, 15))
+    expect(lasFileDate(2026, 221, now)).toBe('2026-08-09')
+    expect(lasFileDate(2024, 366, now)).toBe('2024-12-31')
+    expect(lasFileDate(2023, 366, now)).toBeNull()
+    expect(lasFileDate(0, 0, now)).toBeNull()
+    expect(lasFileDate(1985, 10, now)).toBeNull()
+    expect(lasFileDate(2028, 10, now)).toBeNull()
   })
 
   it('rejects a non-LAS buffer', () => {
