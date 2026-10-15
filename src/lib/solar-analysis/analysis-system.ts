@@ -11,6 +11,7 @@ import {
 import { runExposure } from './exposure-engine'
 import { sunPath, type AnalysisPeriod, type SunPathOptions } from './sun-paths'
 import { elementStats, metricValue, niceRange, type ElementStat, type ExposureResult, type SolarMetric } from './results'
+import { composePassiveAsync, passiveColor, passivePerDay, symmetricRange } from './passive'
 import { reflectedOnSurface } from './irradiance'
 import { MASK_AZ, MASK_ALT, cellCentre, maskSkyView, type SkyMask } from './sky-mask'
 import { sunDirectionScene } from '../solar/sun-math'
@@ -117,6 +118,12 @@ export interface HoverInfo {
   split: { direct: number; diffuse: number; reflected: number }
   /** Cosine-weighted sky view, %. */
   skyViewPct: number
+  /**
+   * The passive impact under the cursor, kWh·°C/m² per day, when the run knew
+   * the air temperature: the score, the benefit (P), the harm (N) and the net
+   * effect received, Σ (base − outdoor) × sun.
+   */
+  passive?: { score: number; benefit: number; harm: number; net: number }
   element: SensorElement | null
   clientX: number
   clientY: number
@@ -182,6 +189,20 @@ function hemisphere(count: number): Array<{ x: number; y: number; z: number }> {
 const SKY_DIRECTIONS = 144
 /** Below this share of sky a sensor is inside something (a slab under a roof finish). */
 const BURIED_SKY = 0.03
+
+/**
+ * Hand the browser a turn between two slices of CPU work. A message, not a
+ * timer: a timer in a background tab waits a second or more, and a run left
+ * to finish behind another tab would crawl through its slices.
+ */
+function yieldTurn(): Promise<void> {
+  if (typeof MessageChannel === 'undefined') return new Promise((r) => setTimeout(r, 0))
+  return new Promise((r) => {
+    const ch = new MessageChannel()
+    ch.port1.onmessage = () => { ch.port1.close(); r() }
+    ch.port2.postMessage(0)
+  })
+}
 
 
 /**
@@ -406,6 +427,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       irradiationKwh: metricValue(r, 'irradiation', i),
       split: { direct: r.directWh[i] / total, diffuse: r.diffuseWh[i] / total, reflected: r.reflectedWh[i] / total },
       skyViewPct: metricValue(r, 'skyView', i),
+      ...(r.passive ? { passive: passivePerDay(r.passive, r.days, i) } : {}),
       ...(shownOverride ? (shownOverride.meaning === 'da' ? { da: shownOverride.values[i] } : shownOverride.meaning === 'df' ? { df: shownOverride.values[i], ...(shownOverride.secondary ? { dfSky: shownOverride.secondary[i] } : {}) } : { delta: shownOverride.values[i] }) : {}),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
@@ -535,7 +557,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       if (sensors.count === 0) throw new Error('Nothing to measure')
       const { samples, days, rawInstants } = sunPath(period, path)
       if (samples.length === 0) throw new Error('The sun does not rise above the horizon in this period')
-      return withOccluders(true, async (occluders) => {
+      const pass = await withOccluders(true, async (occluders) => {
         const engineCtx = {
           renderer: ctx.renderer, scene: ctx.scene,
           occluders: () => occluders,
@@ -557,8 +579,10 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
           sky = { share: pass.sunHours, cos: pass.skyCos, version: shadingVersion }
           skyCache.set(sensors, sky)
         }
-        const result = await runExposure(engineCtx, sensors, samples, days, {
-          onProgress: (f) => o.onProgress?.(0.15 + f * 0.85), signal: o.signal,
+        // The bar's last 5 % is the passive impact's CPU work, when the run has one.
+        const passiveShare = samples.some((sm) => sm.passive) ? 0.05 : 0
+        const { signedBeamWh, ...result } = await runExposure(engineCtx, sensors, samples, days, {
+          onProgress: (f) => o.onProgress?.(0.15 + f * (0.85 - passiveShare)), signal: o.signal,
         })
         let isoWh = 0, ghiWh = 0
         for (const sm of samples) { isoWh += sm.diffuseIso * sm.hours; ghiWh += sm.irradiance.ghi * sm.hours }
@@ -572,11 +596,27 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
           // reflected share is an estimate, small next to the beam it sits beside.
           result.reflectedWh[i] = reflectedOnSurface(ghiWh, sensors.normals[i * 3 + 1], albedo)
         }
-        return {
-          sensors, result, stats: elementStats(sensors, result, open),
-          instants: samples.length, rawInstants, period, skyView: sky.share, open, albedo,
-        }
+        return { result, signedBeamWh, skyCos: sky.cos, skyShare: sky.share, open, albedo, passiveShare }
       })
+      // The passive impact: the sun pass carried its one shaded term (the
+      // signed beam); the unshaded beam, the diffuse and the reflected share
+      // are the CPU's, on the same sky view and ground as the irradiation.
+      // After the model is back on screen, and in slices: a meshed shell with
+      // a normal per sensor costs one pass over the samples per sensor, and
+      // the page (and Cancel) must stay alive meanwhile.
+      const { result, signedBeamWh, skyCos, skyShare, open, albedo, passiveShare } = pass
+      if (signedBeamWh) {
+        result.passive = await composePassiveAsync({
+          normals: sensors.normals, skyCos, samples, signedBeamWh, albedo,
+          baseC: path.passiveBaseC ?? NaN,
+          temperature: path.hourly ? 'hourly' : 'typical',
+        }, { signal: o.signal, yieldTurn, onProgress: (f) => o.onProgress?.(1 - passiveShare + f * passiveShare) })
+        o.onProgress?.(1)
+      }
+      return {
+        sensors, result, stats: elementStats(sensors, result, open),
+        instants: samples.length, rawInstants, period, skyView: skyShare, open, albedo,
+      }
     },
 
     show(run, metric, kinds, range, override) {
@@ -598,8 +638,12 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       const values = new Float32Array(run.sensors.count)
       for (let i = 0; i < values.length; i++) values[i] = metricValue(run.result, metric, i)
       const visible = Array.from(values).filter((_v, i) => run.open[i] === 1 && kinds.has((['ground', 'facade', 'window', 'roof'] as const)[run.sensors.kind[i]]))
-      const r = range ?? niceRange(visible)
-      heatmap.setValues(values, r.min, r.max)
+      // The passive score is signed: zero in the pale middle of a diverging
+      // ramp, harm and benefit on the same scale either side. A run without
+      // it draws grey (NaN) everywhere.
+      const passive = metric === 'passive'
+      const r = range ?? (passive ? symmetricRange(visible) : niceRange(visible))
+      heatmap.setValues(values, r.min, r.max, passive ? passiveColor : undefined)
       heatmap.setKinds(kinds, run.open)
       return r
     },

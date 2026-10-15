@@ -10,7 +10,7 @@
 // mobile bottom nav yields while a tour is playing (gated in App.tsx).
 // Lazy-loaded; works in normal mode and embed kiosk alike.
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import * as Icons from './Icons'
@@ -19,9 +19,11 @@ import { usePresentationStore } from '../stores/presentationStore'
 import { useValidationStore } from '../stores/validationStore'
 import { useCaptureStore } from '../stores/captureStore'
 import { useUIStore } from '../stores/uiStore'
+import { useSolarAnalysisStore } from '../stores/solarAnalysisStore'
 import { toast } from '../stores/toastStore'
 import { appBus } from '../lib/event-bus'
 import { buildTourShareUrl } from '../lib/share/tourShareLink'
+import { parseAppUrlParams } from '../lib/url-params'
 import { replayController } from '../lib/capture/replay-controller'
 import { PRESENTATION_TEMPLATES } from '../lib/templates/presentationTemplates'
 import { tourVideoRecipe, type OutputFormat } from '../lib/director/recipe'
@@ -32,6 +34,7 @@ import { createTimeline } from '../lib/capture/timeline'
 import { downloadBlob } from '../lib/diffStore'
 import { createLogger } from '../lib/logger'
 import { getRuleLabel, type ValidationIssue, type TourStep } from '../types'
+import { SOLAR_METRICS, type SolarMetric } from '../lib/solar-analysis/results'
 import { getRuleRemediation, AUTHORING_TOOLS, type AuthoringTool } from '../i18n/rule-remediation'
 import type { ViewerAPI } from '../lib/viewer'
 
@@ -133,13 +136,42 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
   const total = tour?.steps.length ?? 0
   const step = tour?.steps[stepIndex] ?? null
 
-  // ── Give the stage to the tour: collapse the docked validation panel while
-  //    presenting; put it back exactly as it was on exit. ────────────────────
+  // A stop's narration shows three lines; a tap opens the rest (a scrolling
+  // box, like the remediation) — a `title` tooltip never shows on a phone.
+  // The element by state, not a ref: each stop's text mounts anew after the
+  // previous one's exit animation, and the measure must follow it.
+  const [bodyEl, setBodyEl] = useState<HTMLParagraphElement | null>(null)
+  const [bodyOpen, setBodyOpen] = useState(false)
+  const [bodyClamped, setBodyClamped] = useState(false)
+  const stepBody = step?.body
+  useEffect(() => { setBodyOpen(false) }, [step?.id])
+  useLayoutEffect(() => {
+    if (!bodyEl || bodyOpen) return
+    const measure = (): void => setBodyClamped(bodyEl.scrollHeight > bodyEl.clientHeight + 1)
+    measure()
+    // The bar's width follows the window: a rotated phone may need no clamp.
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(bodyEl)
+    return () => ro.disconnect()
+  }, [bodyEl, stepBody, bodyOpen])
+  const bodyToggles = bodyClamped || bodyOpen
+
+  // ── Give the stage to the tour: collapse the docked validation panel and
+  //    the solar analysis panel while presenting (on a phone the analysis is
+  //    a bottom sheet over this bar); put them back exactly as they were on
+  //    exit. The analysis heatmap stays on the model either way. ───────────
   useEffect(() => {
     const ui = useUIStore.getState()
     const wasOpen = ui.validationPanelOpen
     ui.setValidationPanelOpen(false)
-    return () => { useUIStore.getState().setValidationPanelOpen(wasOpen) }
+    const sa = useSolarAnalysisStore.getState()
+    const analysisWasOpen = sa.panelOpen
+    sa.setPanelOpen(false)
+    return () => {
+      useUIStore.getState().setValidationPanelOpen(wasOpen)
+      if (analysisWasOpen) useSolarAnalysisStore.getState().setPanelOpen(true)
+    }
   }, [])
 
   // ── Lifecycle events (D-13) ────────────────────────────────────────────────
@@ -165,6 +197,18 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
     if (issues.length > 0) viewer.setValidationHighlights(issues, true)
     else viewer.setValidationHighlights([], false)
   }, [viewerApiRef, step])
+
+  // ── A stop that names an analysis metric switches the heatmap to it ────────
+  // Only the metric: the analysis panel's own effect recolours what already
+  // ran (cheap), and nothing recomputes. A stop without one leaves the metric
+  // where the previous stop put it, like a keyframe.
+  const stepId = step?.id
+  const stepMetric = step?.analysisMetric
+  useEffect(() => {
+    if (!stepMetric || !(SOLAR_METRICS as readonly string[]).includes(stepMetric)) return
+    const sa = useSolarAnalysisStore.getState()
+    if (sa.metric !== stepMetric) sa.setMetric(stepMetric as SolarMetric)
+  }, [stepId, stepMetric])
 
   // ── Isolate toggle (re-applied per step while active) ──────────────────────
   useEffect(() => {
@@ -205,7 +249,11 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
   // ── Share link (D-26 — extends the D-21 mechanism, #tour= hash fragment) ────
   const handleCopyLink = useCallback(async () => {
     if (!tour) return
-    const r = buildTourShareUrl(tour, { modelUrls: shareModelUrls, clientMode, templateId })
+    // The solar analysis this walkthrough plays over travels with it: without
+    // the link's `?analysis=` the receiver runs nothing and every stop's
+    // metric recolours nothing; without its `?site=` it studies elsewhere.
+    const live = parseAppUrlParams()
+    const r = buildTourShareUrl(tour, { modelUrls: shareModelUrls, clientMode, templateId, analysis: live.analysis, site: live.site })
     if (!r.ok) {
       // Honest limit: a disk-loaded model cannot travel in a link (D-26).
       toast(r.reason === 'no-model-url' ? t('share.noModelUrl') : t('share.tooLong'), 'warning', { duration: 6000 })
@@ -353,6 +401,24 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
                 </button>
               )}
             </div>
+
+            {/* The stop's narration (a shared link's `b`): three lines, so the
+                bar never climbs over the model on a phone; a tap (or Enter)
+                opens the rest in a small scrolling box and closes it again. */}
+            {step.body && (
+              <p
+                ref={setBodyEl}
+                role={bodyToggles ? 'button' : undefined}
+                tabIndex={bodyToggles ? 0 : undefined}
+                aria-expanded={bodyToggles ? bodyOpen : undefined}
+                onClick={bodyToggles ? () => setBodyOpen((v) => !v) : undefined}
+                onKeyDown={bodyToggles ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBodyOpen((v) => !v) } } : undefined}
+                className={`mt-1 pl-4 text-[12px] leading-[1.45] text-[var(--text-dim)] break-words ${bodyOpen ? 'max-h-[96px] md:max-h-[120px] overflow-y-auto pr-1' : 'line-clamp-3'} ${bodyToggles ? 'cursor-pointer' : ''}`}
+                title={bodyClamped && !bodyOpen ? step.body : undefined}
+              >
+                {step.body}
+              </p>
+            )}
 
             {/* Collapsible remediation — the model gets room to breathe when closed */}
             <AnimatePresence initial={false}>

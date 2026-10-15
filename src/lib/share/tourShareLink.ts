@@ -13,6 +13,8 @@
 //     surfaced by `buildTourShareUrl` returning `no-model-url`).
 
 import type { Tour, TourStep, ValidationRuleId } from '../../types'
+import { SOLAR_METRICS, type SolarMetric } from '../solar-analysis/results'
+import { analysisParam, siteParam, type AnalysisDeepLink, type SiteOverride } from '../url-params'
 
 export const TOUR_SHARE_VERSION = 1
 
@@ -23,8 +25,17 @@ export const MAX_TOUR_URL_LEN = 8000
 export const MAX_SHARE_STEPS = 30
 export const MAX_SHARE_HIGHLIGHTS = 10
 export const MAX_SHARE_CAPTION = 140
+/** A step's narration paragraph: a few sentences, not an essay in a URL. */
+export const MAX_SHARE_BODY = 280
 
-/** Compact wire form of one step: c = [px,py,pz,tx,ty,tz] (2-decimal). */
+/**
+ * Compact wire form of one step: c = [px,py,pz,tx,ty,tz] (2-decimal).
+ *
+ * `b` and `am` came later (the solar walkthrough). They are optional keys at
+ * the SAME version on purpose: a build that predates them ignores unknown keys
+ * and still plays the cameras, whereas a version bump would make every new
+ * link fail on it outright.
+ */
 export interface TourShareStep {
   c: number[]
   r?: string
@@ -32,7 +43,14 @@ export interface TourShareStep {
   k?: number
   n?: string
   h?: number[]
+  /** Body: a short paragraph shown under the caption. */
+  b?: string
+  /** Analysis metric this stop shows (a SolarMetric id); the player only recolours. */
+  am?: SolarMetric
 }
+
+const isSolarMetric = (v: unknown): v is SolarMetric =>
+  typeof v === 'string' && (SOLAR_METRICS as readonly string[]).includes(v)
 
 export interface TourSharePayload {
   v: number
@@ -54,7 +72,14 @@ export function encodeTourPayload(payload: TourSharePayload): string {
 
 export function decodeTourPayload(encoded: string): TourSharePayload | null {
   try {
-    let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
+    // Links get mangled on their way through chat apps and mail clients: the
+    // fragment percent-encoded (`%2B`, `%3D`), a `+` turned into a space.
+    // base64 never holds `%` or a space, so undoing both is safe. base64url
+    // (`-`, `_`, no padding) is accepted as well.
+    let text = encoded
+    if (text.includes('%')) text = decodeURIComponent(text)
+    // (No trim: a `+` at either end that became a space is still a `+`.)
+    let b64 = text.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/')
     while (b64.length % 4) b64 += '='
     const json = decodeURIComponent(escape(atob(b64)))
     const raw: unknown = JSON.parse(json)
@@ -86,6 +111,8 @@ function sanitizePayload(raw: unknown): TourSharePayload | null {
       const ids = st.h.filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n > 0)
       if (ids.length > 0) out.h = ids.slice(0, MAX_SHARE_HIGHLIGHTS)
     }
+    if (typeof st.b === 'string' && st.b.trim()) out.b = st.b.trim().slice(0, MAX_SHARE_BODY)
+    if (isSolarMetric(st.am)) out.am = st.am
     steps.push(out)
   }
 
@@ -114,6 +141,9 @@ export function tourToPayload(tour: Tour, templateId?: string | null): TourShare
       if (step.issueCount) out.k = step.issueCount
       if (step.caption) out.n = step.caption.slice(0, MAX_SHARE_CAPTION)
       if (step.highlightedExpressIds?.length) out.h = step.highlightedExpressIds.slice(0, MAX_SHARE_HIGHLIGHTS)
+      const body = step.body?.trim()
+      if (body) out.b = body.slice(0, MAX_SHARE_BODY)
+      if (isSolarMetric(step.analysisMetric)) out.am = step.analysisMetric
       return out
     }),
   }
@@ -140,6 +170,8 @@ export function payloadToTour(payload: TourSharePayload): Tour {
       ...(s.k ? { issueCount: s.k } : {}),
       ...(s.n ? { caption: s.n } : {}),
       ...(s.h?.length ? { highlightedExpressIds: s.h } : {}),
+      ...(s.b ? { body: s.b } : {}),
+      ...(s.am ? { analysisMetric: s.am } : {}),
     })),
   }
 }
@@ -157,6 +189,14 @@ export interface TourShareUrlOptions {
   /** Open the receiver in the client presentation skin (D-25). */
   clientMode: boolean
   templateId?: string | null
+  /**
+   * The solar analysis the walkthrough plays over (the live link's
+   * `?analysis=`): without it the receiver runs nothing, and every stop's
+   * `am` has nothing to recolour.
+   */
+  analysis?: AnalysisDeepLink
+  /** Where that analysis stands (the live link's `?site=`). */
+  site?: SiteOverride
   /** Override for tests; defaults to the live origin + BASE_URL. */
   appBase?: string
 }
@@ -174,6 +214,8 @@ export function buildTourShareUrl(tour: Tour, options: TourShareUrlOptions): Tou
   const params = new URLSearchParams()
   params.set('model', urls.join(','))
   if (options.clientMode) params.set('ui', 'client')
+  if (options.analysis) params.set('analysis', analysisParam(options.analysis))
+  if (options.site) params.set('site', siteParam(options.site))
 
   const b64 = encodeTourPayload(tourToPayload(tour, options.templateId))
   const url = `${appBase}?${params.toString()}#tour=${b64}`

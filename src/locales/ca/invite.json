@@ -3,6 +3,7 @@
     "coordinator": "Vaig fer això per triar exports d'IFC trencats. Arrossega'n un i mira què detecta — no es puja res, no hi ha res a comprar.",
     "dev": "Un petit health-check d'IFC sobre web-ifc — 100% al navegador. Arrossega un fitxer o mira la pestanya de xarxa.",
     "standards": "Una porta d'entrada a comprovacions tipus IDS, no un substitut de bSI. Arrossega un IFC per veure la puntuació.",
+    "climate": "Una anàlisi solar i climàtica que s'executa a la teva GPU, al navegador. Arrossega un IFC i un EPW — no es puja res.",
     "referral": "Algú ha pensat que això et seria útil. Arrossega un IFC — mai surt del teu navegador, i no hi ha res a comprar.",
     "medium": "Gràcies per venir des de l'article. Arrossega un IFC per veure què detecta — no es puja res."
   },
@@ -28,7 +29,8 @@
     "q": {
       "coordinator": "Un informe com aquest, l'enviaries de debò a qui va exportar el model — o no?",
       "dev": "Reduir tota la validació a un sol número 0–100, et sembla útil o amaga massa per fiar-te'n?",
-      "standards": "Un sol número 0–100 funciona com a porta d'entrada, o tergiversa què significa la conformitat real amb IDS/bSI?"
+      "standards": "Un sol número 0–100 funciona com a porta d'entrada, o tergiversa què significa la conformitat real amb IDS/bSI?",
+      "climate": "El mapa d'impacte passiu quadra amb el teu clima — què comprovaries primer?"
     },
     "aside": "Sense formularis — només respon al meu missatge. La crítica brutal és justament el que busco.",
     "dismiss": "Tanca",

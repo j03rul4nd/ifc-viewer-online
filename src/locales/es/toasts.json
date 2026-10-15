@@ -15,6 +15,7 @@
     "dropUnsupported_one": "{{count}} archivo no tiene un formato compatible",
     "dropUnsupported_other": "{{count}} archivos no tienen un formato compatible",
     "dropBcfHint": "Abre el panel BCF para importar archivos .bcf",
+    "dropWeatherNoModel": "Abre primero un modelo y luego suelta encima el archivo climático .epw",
     "mapDeclined": "El enlace pedía mostrar el mapa; sigue apagado hasta que lo permitas (panel Mapa)."
   },
   "validation": {

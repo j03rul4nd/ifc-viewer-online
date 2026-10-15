@@ -5,8 +5,9 @@ import type { Tour } from '../../types'
 import {
   encodeTourPayload, decodeTourPayload, tourToPayload, payloadToTour,
   buildTourShareUrl, parseTourHash,
-  MAX_SHARE_STEPS, MAX_SHARE_HIGHLIGHTS, MAX_SHARE_CAPTION, TOUR_SHARE_VERSION,
+  MAX_SHARE_STEPS, MAX_SHARE_HIGHLIGHTS, MAX_SHARE_CAPTION, MAX_SHARE_BODY, TOUR_SHARE_VERSION,
 } from './tourShareLink'
+import { parseAppUrlParams } from '../url-params'
 
 function makeTour(stepCount = 2): Tour {
   return {
@@ -91,6 +92,109 @@ describe('tour share codec roundtrip', () => {
   })
 })
 
+describe('tour share codec · narration and analysis metric (b / am)', () => {
+  it('carries a body and a metric through the round trip', () => {
+    const tour = makeTour(2)
+    tour.steps[0].body = '  Red is sun when it is warm: shade it. Blue is sun when it is cold: let it in.  '
+    tour.steps[0].analysisMetric = 'passive'
+    tour.steps[1].analysisMetric = 'irradiation'
+    const payload = tourToPayload(tour)
+    expect(payload.v).toBe(1) // additive keys, same version
+    expect(payload.steps[0].b).toBe('Red is sun when it is warm: shade it. Blue is sun when it is cold: let it in.')
+    expect(payload.steps[0].am).toBe('passive')
+    const rebuilt = payloadToTour(decodeTourPayload(encodeTourPayload(payload))!)
+    expect(rebuilt.steps[0].body).toBe('Red is sun when it is warm: shade it. Blue is sun when it is cold: let it in.')
+    expect(rebuilt.steps[0].analysisMetric).toBe('passive')
+    expect(rebuilt.steps[1].body).toBeUndefined()
+    expect(rebuilt.steps[1].analysisMetric).toBe('irradiation')
+  })
+
+  it('caps the body and drops a blank one or an unknown metric on encode', () => {
+    const tour = makeTour(2)
+    tour.steps[0].body = 'y'.repeat(1000)
+    tour.steps[1].body = '   '
+    tour.steps[1].analysisMetric = 'glare'
+    const payload = tourToPayload(tour)
+    expect(payload.steps[0].b!.length).toBe(MAX_SHARE_BODY)
+    expect(payload.steps[1].b).toBeUndefined()
+    expect(payload.steps[1].am).toBeUndefined()
+  })
+
+  it('sanitizes hostile b / am values instead of trusting them', () => {
+    const hostile = btoa(JSON.stringify({
+      v: 1,
+      steps: [
+        { c: [0, 0, 0, 1, 1, 1], b: { html: '<img onerror=x>' }, am: 'constructor' },
+        { c: [0, 0, 0, 1, 1, 1], b: 42, am: ['passive'] },
+        { c: [0, 0, 0, 1, 1, 1], b: '   ', am: 'PASSIVE' },
+        { c: [0, 0, 0, 1, 1, 1], b: 'z'.repeat(5000), am: 'skyView' },
+      ],
+    }))
+    const p = decodeTourPayload(hostile)
+    expect(p).not.toBeNull()
+    for (const s of p!.steps.slice(0, 3)) {
+      expect(s.b).toBeUndefined()
+      expect(s.am).toBeUndefined()
+    }
+    expect(p!.steps[3].b!.length).toBe(MAX_SHARE_BODY)
+    expect(p!.steps[3].am).toBe('skyView')
+  })
+
+  it('still decodes a link made before b / am existed', () => {
+    // Built by hand in the old shape, exactly as an old build's encoder wrote it.
+    const old = encodeTourPayload({ v: 1, t: 'Old tour', steps: [{ c: [1, 2, 3, 4, 5, 6], n: 'Hall', r: 'RULE_EMPTY_NAME', s: 'error', k: 3, h: [9] }] })
+    const rebuilt = payloadToTour(parseTourHash(`#tour=${old}`)!)
+    expect(rebuilt.title).toBe('Old tour')
+    expect(rebuilt.steps[0]).toMatchObject({ caption: 'Hall', issueRuleId: 'RULE_EMPTY_NAME', issueSeverity: 'error', issueCount: 3, highlightedExpressIds: [9] })
+    expect(rebuilt.steps[0].body).toBeUndefined()
+    expect(rebuilt.steps[0].analysisMetric).toBeUndefined()
+  })
+
+  it('buildTourShareUrl carries them in the fragment', () => {
+    const tour = makeTour(1)
+    tour.steps[0].body = 'Winter sun on the south face.'
+    tour.steps[0].analysisMetric = 'passive'
+    const r = buildTourShareUrl(tour, { modelUrls: ['https://host/a.ifc'], clientMode: false, appBase: 'https://www.ifcvieweronline.eu/' })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const step = parseTourHash(new URL(r.url).hash)!.steps[0]
+    expect(step.b).toBe('Winter sun on the south face.')
+    expect(step.am).toBe('passive')
+  })
+})
+
+describe('tour share codec · mangled links', () => {
+  // A payload whose standard base64 holds `+`, `/` and `=` padding, so every
+  // mangling below has something to break.
+  const payload = { v: 1, t: '>>>???', steps: [{ c: [1, 2, 3, 4, 5, 6], n: 'é>?~' }] }
+  const b64 = encodeTourPayload(payload)
+
+  it('the fixture really holds the characters that get mangled', () => {
+    expect(b64).toMatch(/[+/]/)
+    expect(b64).toMatch(/=$/)
+  })
+
+  it('accepts a percent-encoded fragment', () => {
+    const encoded = encodeURIComponent(b64)
+    expect(encoded).toContain('%')
+    expect(parseTourHash(`#tour=${encoded}`)?.t).toBe('>>>???')
+  })
+
+  it('accepts base64url without padding', () => {
+    const url = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    expect(parseTourHash(`#tour=${url}`)?.steps[0].n).toBe('é>?~')
+  })
+
+  it('accepts a + that became a space', () => {
+    expect(decodeTourPayload(b64.replace(/\+/g, ' '))?.t).toBe('>>>???')
+  })
+
+  it('a broken percent sequence is still just an invalid link', () => {
+    expect(parseTourHash('#tour=%E0%A4%A')).toBeNull()
+    expect(decodeTourPayload(`${b64}%`)).toBeNull()
+  })
+})
+
 describe('buildTourShareUrl', () => {
   const base = 'https://www.ifcvieweronline.eu/'
 
@@ -127,6 +231,24 @@ describe('buildTourShareUrl', () => {
     }
     const r = buildTourShareUrl(tour, { modelUrls: ['https://host/a.ifc'], clientMode: false, appBase: base })
     expect(r).toEqual({ ok: false, reason: 'too-long' })
+  })
+
+  it('carries the solar analysis and its site the walkthrough plays over', () => {
+    const tour = makeTour()
+    tour.steps[0].analysisMetric = 'passive'
+    const r = buildTourShareUrl(tour, {
+      modelUrls: ['https://host/a.ifc'], clientMode: false, appBase: base,
+      analysis: { period: 'year', metric: 'passive', baseC: 18 }, site: { lat: 43.88, lon: -79.44 },
+    })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const p = parseAppUrlParams(new URL(r.url).search)
+    expect(p.analysis).toEqual({ period: 'year', metric: 'passive', baseC: 18 })
+    expect(p.site).toEqual({ lat: 43.88, lon: -79.44 })
+    expect(p.modelUrls).toEqual(['https://host/a.ifc'])
+    // Without them the link stays as before.
+    const plain = buildTourShareUrl(tour, { modelUrls: ['https://host/a.ifc'], clientMode: false, appBase: base })
+    expect(plain.ok && new URL(plain.url).searchParams.has('analysis')).toBe(false)
   })
 
   it('refuses an empty tour', () => {

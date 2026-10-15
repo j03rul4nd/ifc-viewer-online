@@ -12,6 +12,7 @@ import {
   fileExtensionOf,
   groupMeshFiles,
   hasFilePayload,
+  isWeatherZipName,
   routedCount,
   MESH_ENTRY_EXTENSIONS,
   MESH_SIDECAR_EXTENSIONS,
@@ -87,6 +88,43 @@ describe('classifyFiles', () => {
     const r = classifyFiles([])
     expect(routedCount(r)).toBe(0)
     expect(r.other).toEqual([])
+    expect(r.weather).toEqual([])
+  })
+})
+
+describe('classifyFiles — weather files', () => {
+  it('routes an .epw to the weather bucket, next to its IFC', () => {
+    const r = classifyFiles([file('Tower.ifc'), file('CAN_ON_Toronto.Intl.AP.716240_CWEC2020.EPW')])
+    expect(names(r.ifc)).toEqual(['Tower.ifc'])
+    expect(names(r.weather)).toEqual(['CAN_ON_Toronto.Intl.AP.716240_CWEC2020.EPW'])
+    expect(routedCount(r)).toBe(2)
+  })
+
+  it('takes a zip only when its name says weather', () => {
+    const r = classifyFiles([
+      file('CAN_ON_Toronto.Intl.AP.716240_TMYx.2009-2023.zip'),
+      file('USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.zip'),
+      file('project-files.zip'),
+    ])
+    expect(names(r.weather)).toEqual([
+      'CAN_ON_Toronto.Intl.AP.716240_TMYx.2009-2023.zip',
+      'USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.zip',
+    ])
+    expect(names(r.other)).toEqual(['project-files.zip'])
+  })
+})
+
+describe('isWeatherZipName', () => {
+  it('knows the dataset tags as tokens of their own', () => {
+    for (const n of ['x_TMYx.zip', 'x_TMY3.zip', 'x_tmy.zip', 'CAN_ON_Ottawa_CWEC.zip', 'ESP_Madrid_IWEC2.zip', 'site epw.zip', 'EPW.ZIP']) {
+      expect(isWeatherZipName(n), n).toBe(true)
+    }
+  })
+
+  it('does not guess from a substring, and only for zips', () => {
+    for (const n of ['Tmyrsk.zip', 'weather.zip', 'models.zip', 'x_TMYx.epw', 'x_TMYx.zip.txt', 'x_TMYx']) {
+      expect(isWeatherZipName(n), n).toBe(false)
+    }
   })
 })
 

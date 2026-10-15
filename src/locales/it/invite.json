@@ -3,6 +3,7 @@
     "coordinator": "Ho creato questo per smistare gli export IFC rotti. Trascinane uno e guarda cosa segnala — niente viene caricato, niente da comprare.",
     "dev": "Un piccolo health-check IFC basato su web-ifc — tutto nel browser. Trascina un file o guarda la scheda di rete.",
     "standards": "Una rampa d'accesso ai controlli in stile IDS, non un sostituto di bSI. Trascina un IFC per vedere il punteggio.",
+    "climate": "Un'analisi solare e climatica che gira sulla tua GPU, nel browser. Trascina un IFC e un EPW — niente viene caricato.",
     "referral": "Qualcuno ha pensato che ti sarebbe stato utile. Trascina un IFC — non lascia mai il tuo browser, e non c'è niente da comprare.",
     "medium": "Grazie per essere arrivato dall'articolo. Trascina un IFC per vedere cosa segnala — niente viene caricato."
   },
@@ -28,7 +29,8 @@
     "q": {
       "coordinator": "Un report come questo lo rimanderesti davvero a chi ha esportato il modello — oppure no?",
       "dev": "Ridurre tutta la validazione a un singolo numero 0–100 ti sembra utile, o nasconde troppo per fidarsene?",
-      "standards": "Un singolo numero 0–100 funziona come rampa d'accesso, o travisa cosa significhi la vera conformità IDS/bSI?"
+      "standards": "Un singolo numero 0–100 funziona come rampa d'accesso, o travisa cosa significhi la vera conformità IDS/bSI?",
+      "climate": "La mappa dell'impatto passivo ha senso per il tuo clima — cosa controlleresti per prima cosa?"
     },
     "aside": "Nessun modulo — rispondi semplicemente al mio messaggio. Una critica brutale è proprio quello che cerco.",
     "dismiss": "Chiudi",

@@ -3,6 +3,7 @@
     "coordinator": "J'ai créé ça pour trier les exports IFC cassés. Glissez-en un et voyez ce qu'il repère — rien n'est envoyé, rien à acheter.",
     "dev": "Un petit health-check IFC basé sur web-ifc — entièrement dans le navigateur. Glissez un fichier ou regardez l'onglet réseau.",
     "standards": "Une porte d'entrée vers des contrôles type IDS, pas un remplacement de bSI. Glissez un IFC pour voir le score.",
+    "climate": "Une analyse solaire et climatique qui tourne sur votre GPU, dans le navigateur. Glissez un IFC et un EPW — rien n'est envoyé.",
     "referral": "Quelqu'un a pensé que ça vous serait utile. Glissez un IFC — il ne quitte jamais votre navigateur, et il n'y a rien à acheter.",
     "medium": "Merci d'être venu via l'article. Glissez un IFC pour voir ce qu'il repère — rien n'est envoyé."
   },
@@ -28,7 +29,8 @@
     "q": {
       "coordinator": "Un rapport comme celui-ci, le renverriez-vous vraiment à la personne qui a exporté le modèle — ou pas ?",
       "dev": "Réduire toute la validation à un seul nombre 0–100, est-ce utile, ou est-ce que ça cache trop pour être fiable ?",
-      "standards": "Un seul nombre 0–100 fonctionne-t-il comme porte d'entrée, ou déforme-t-il ce que signifie une vraie conformité IDS/bSI ?"
+      "standards": "Un seul nombre 0–100 fonctionne-t-il comme porte d'entrée, ou déforme-t-il ce que signifie une vraie conformité IDS/bSI ?",
+      "climate": "La carte d'impact passif tient-elle la route pour votre climat — que vérifieriez-vous en premier ?"
     },
     "aside": "Pas de formulaire — répondez simplement à mon message. Une honnêteté brutale est précisément ce que je cherche.",
     "dismiss": "Fermer",

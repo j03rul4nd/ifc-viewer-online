@@ -155,6 +155,13 @@ export interface TourStep {
   /** How many issue instances this step groups (auto-tour). */
   issueCount?: number
   caption?: string
+  /** A short paragraph under the caption (a shared link's narration). */
+  body?: string
+  /**
+   * The solar-analysis metric this stop shows (`'passive'`, `'irradiation'`…):
+   * the player recolours the heatmap, no recompute. Ignored when nothing ran.
+   */
+  analysisMetric?: string
 }
 
 export interface Tour {

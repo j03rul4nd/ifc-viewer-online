@@ -25,7 +25,15 @@ export interface HeatmapSection {
   rawInstants: number
   sensors: number
   sky: SkyModel
+  /** The sky said for people, with the hours it came from ("Measured, hour by hour (ERA5 2021–2025)"). */
+  skyLabel?: string
   albedo: number
+  /**
+   * When the map is the passive impact: the base temperature it was weighed
+   * against, °C, whether the air was real hours or typical-hour means, and
+   * where it came from ("ERA5 2021–2025", a weather station).
+   */
+  passive?: { baseC: number; temperature: 'hourly' | 'typical'; source: string }
 }
 
 export interface EnSection {

@@ -13,6 +13,7 @@ import { sunAlmanac } from '../solar/astronomy'
 import { wallTimeToUTC, zoneOffsetMinutes } from '../solar/sun-math'
 import { rampColor, metricUnit } from '../solar-analysis/results'
 import { divergingColor } from '../solar-analysis/compare'
+import { passiveColor } from '../solar-analysis/passive'
 import { maskOutline, cellCentre, MASK_AZ, MASK_STEP, type SkyMask } from '../solar-analysis/sky-mask'
 import type { ClimateSummary } from '../solar-analysis/climate'
 import type {
@@ -31,6 +32,12 @@ export interface ReportInput {
   /** The 3D view at export time (cover fallback). */
   viewImage: string | null
   climate: ClimateSummary | null
+  /**
+   * Where the climate came from, for people (the ERA5 years, or the weather
+   * file and its station), and whether it knows rain and wind — a file often
+   * records neither. Omitted: ERA5, everything known.
+   */
+  climateSource?: { label: string; rain: boolean; wind: boolean; epw: boolean }
   heatmap: HeatmapSection | null
   en: EnSection | null
   seasons: SeasonsSection | null
@@ -356,14 +363,33 @@ function drawBars(ctx: CanvasRenderingContext2D, x: number, y: number, w: number
   ctx.restore()
 }
 
-function drawRamp(doc: Doc, min: number, max: number, unit: string, label: string): void {
+/** A signed figure with a real minus: "+1.2", "−0.4". */
+function signed(v: number, d: number): string {
+  if (!Number.isFinite(v)) return '—'
+  const s = Math.abs(v).toFixed(d)
+  return Number(s) === 0 ? s : `${v > 0 ? '+' : '−'}${s}`
+}
+
+/**
+ * A legend bar. Sequential by default (0 → max); `diverging` draws a ramp
+ * centred on zero with signed ends — the passive impact's.
+ */
+function drawRamp(doc: Doc, min: number, max: number, unit: string, label: string, o: { color?: (t: number) => [number, number, number]; diverging?: boolean } = {}): void {
   const { x, y } = doc.block(110)
   const ctx = doc.ctx
+  const color = o.color ?? rampColor
   doc.text(label, x, y + 26, 24, C.dim)
   for (let i = 0; i < CW; i += 2) {
-    const [r, g, b] = rampColor(i / CW)
+    const [r, g, b] = color(i / CW)
     ctx.fillStyle = `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`
     ctx.fillRect(x + i, y + 40, 2, 26)
+  }
+  if (o.diverging) {
+    const d = Math.abs(max) < 1 ? 2 : Math.abs(max) < 10 ? 1 : 0
+    doc.text(signed(min, d), x, y + 100, 22, C.dim)
+    doc.text('0', x + CW / 2, y + 100, 22, C.dim, 400, 'center')
+    doc.text(`${signed(max, d)} ${unit}`, x + CW, y + 100, 22, C.dim, 400, 'right')
+    return
   }
   const f = (v: number) => (max < 10 ? v.toFixed(1) : v.toFixed(0))
   doc.text(f(min), x, y + 100, 22, C.dim)
@@ -514,12 +540,15 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     doc.text(t('report.radiation'), x + CW / 2 + 30, y - 6, 20, C.faint)
     const sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
     const top = c.windRose.indexOf(Math.max(...c.windRose))
-    doc.kv([
-      [t('analysis.climate.hdd'), nf(c.hdd)], [t('analysis.climate.cdd'), nf(c.cdd)],
-      [t('analysis.climate.rain'), nf(c.months.reduce((a, m) => a + m.precipitationMm, 0))], [t('analysis.climate.wind'), `${sectors[top]} · ${Math.round(c.windRose[top] * 100)} %`],
-      [t('analysis.climate.hot'), c.hotMonths.map((m) => monthShort(m - 1)).join(' ')], [t('analysis.climate.cold'), c.coldMonths.map((m) => monthShort(m - 1)).join(' ')],
-    ], 2, 24)
-    doc.para(t('analysis.climate.source', { from: c.years.from, to: c.years.to }), 20, C.faint)
+    // A weather file that records no rain or wind leaves those rows out
+    // rather than printing a dry, windless site.
+    const known = r.climateSource ?? { rain: true, wind: true }
+    const rows: Array<[string, string]> = [[t('analysis.climate.hdd'), nf(c.hdd)], [t('analysis.climate.cdd'), nf(c.cdd)]]
+    if (known.rain) rows.push([t('analysis.climate.rain'), nf(c.months.reduce((a, m) => a + m.precipitationMm, 0))])
+    if (known.wind) rows.push([t('analysis.climate.wind'), `${sectors[top]} · ${Math.round(c.windRose[top] * 100)} %`])
+    rows.push([t('analysis.climate.hot'), c.hotMonths.map((m) => monthShort(m - 1)).join(' ')], [t('analysis.climate.cold'), c.coldMonths.map((m) => monthShort(m - 1)).join(' ')])
+    doc.kv(rows, 2, 24)
+    doc.para(r.climateSource?.label ?? t('analysis.climate.source', { from: c.years.from, to: c.years.to }), 20, C.faint)
   }
   step(0.3)
 
@@ -530,14 +559,33 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
     doc.h1(t('report.heatmapTitle'))
     doc.para(t('report.heatmapIntro', { period: h.periodLabel, metric: t(`analysis.metric.${h.metric}`) }))
     await doc.image(h.image, 1050)
-    drawRamp(doc, h.range.min, h.range.max, metricUnit(h.metric), t(`analysis.legend.${h.metric}`))
-    doc.kv(h.averages.map((a) => [t(`analysis.kinds.${a.kind}`), `${nf(a.value, 1)} ${metricUnit(h.metric)}`]), 2)
-    if (h.least.length) {
-      doc.table([t('analysis.results.least'), '', t('analysis.results.most'), ''],
-        h.least.map((l, i) => [l.label, `${nf(l.value, 1)} ${metricUnit(h.metric)}`, h.most[i]?.label ?? '', h.most[i] ? `${nf(h.most[i].value, 1)} ${metricUnit(h.metric)}` : '']),
+    // The passive impact is signed and per day: its own diverging ramp
+    // (SOLARCHVISION's colours), signed figures, its own list titles.
+    const passive = h.metric === 'passive'
+    const unit = passive ? t('analysis.passive.unitDay') : metricUnit(h.metric)
+    const val = (v: number) => (passive ? signed(v, 2) : nf(v, 1))
+    drawRamp(doc, h.range.min, h.range.max, unit, t(`analysis.legend.${h.metric}`), passive ? { color: passiveColor, diverging: true } : {})
+    if (passive) doc.para(t('report.passiveLegend'), 22, C.dim)
+    doc.kv(h.averages.map((a) => [t(`analysis.kinds.${a.kind}`), `${val(a.value)} ${unit}`]), 2)
+    // The passive lists keep to their sign (harm, benefit), so either can be
+    // empty — a cold climate may have no unwanted sun at all.
+    if (h.least.length || h.most.length) {
+      const rows = Math.max(h.least.length, h.most.length)
+      doc.table([passive ? t('analysis.passive.unwanted') : t('analysis.results.least'), '', passive ? t('analysis.passive.welcome') : t('analysis.results.most'), ''],
+        Array.from({ length: rows }, (_v, i) => [
+          h.least[i]?.label ?? (i === 0 ? '—' : ''), h.least[i] ? `${val(h.least[i].value)} ${unit}` : '',
+          h.most[i]?.label ?? (i === 0 ? '—' : ''), h.most[i] ? `${val(h.most[i].value)} ${unit}` : '',
+        ]),
         [1.5, 1, 1.5, 1])
     }
-    doc.para(t('report.runMeta', { instants: nf(h.instants), raw: nf(h.rawInstants), sensors: nf(h.sensors), sky: t(`analysis.sky.${h.sky}`), albedo: h.albedo.toFixed(2) }), 20, C.faint)
+    if (passive && h.passive) {
+      doc.para(t('report.passiveMethod', {
+        base: nf(h.passive.baseC, 1), source: h.passive.source,
+        temperature: t(h.passive.temperature === 'hourly' ? 'report.tempHourly' : 'report.tempTypical'),
+      }), 22)
+      doc.para(t('report.passiveCredit'), 20, C.faint)
+    }
+    doc.para(t('report.runMeta', { instants: nf(h.instants), raw: nf(h.rawInstants), sensors: nf(h.sensors), sky: h.skyLabel ?? t(`analysis.sky.${h.sky}`), albedo: h.albedo.toFixed(2) }), 20, C.faint)
   }
   step(0.45)
 
@@ -742,25 +790,29 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
   if (r.compare) {
     const c = r.compare
     const unit = metricUnit(c.metric)
+    // A passive change keeps the passive map's colours: blue better, red
+    // worse; its figures are fractions of a kWh·°C/m² a day (two decimals).
+    const passive = c.metric === 'passive'
+    const d = passive ? 2 : 1
     doc.newPage()
     doc.h1(t('report.compareTitle'))
-    doc.para(t('report.compareIntro', { a: c.nameA, pa: c.periodA, b: c.nameB, pb: c.periodB, metric: t(`analysis.metric.${c.metric}`) }))
+    doc.para(t(passive ? 'report.compareIntroPassive' : 'report.compareIntro', { a: c.nameA, pa: c.periodA, b: c.nameB, pb: c.periodB, metric: t(`analysis.metric.${c.metric}`) }))
     await doc.image(c.image, 900)
     {
       const { x, y } = doc.block(110)
       for (let i = 0; i < CW; i += 2) {
-        const [rr, gg, bb] = divergingColor((i / CW) * 2 - 1, c.higherIsBetter)
+        const [rr, gg, bb] = passive ? passiveColor(i / CW) : divergingColor((i / CW) * 2 - 1, c.higherIsBetter)
         doc.ctx.fillStyle = `rgb(${Math.round(rr * 255)},${Math.round(gg * 255)},${Math.round(bb * 255)})`
         doc.ctx.fillRect(x + i, y + 20, 2, 26)
       }
-      doc.text(`−${nf(c.range, 1)}`, x, y + 80, 22, C.dim)
+      doc.text(`−${nf(c.range, d)}`, x, y + 80, 22, C.dim)
       doc.text('0', x + CW / 2, y + 80, 22, C.dim, 400, 'center')
-      doc.text(`+${nf(c.range, 1)} ${unit}`, x + CW, y + 80, 22, C.dim, 400, 'right')
+      doc.text(`+${nf(c.range, d)} ${unit}`, x + CW, y + 80, 22, C.dim, 400, 'right')
     }
     doc.table([t('report.surface'), c.nameA, c.nameB, t('compare.split')],
-      c.kinds.map((k) => [t(`analysis.kinds.${k.kind}`), `${nf(k.a, 1)} ${unit}`, `${nf(k.b, 1)} ${unit}`, `${Math.round(k.better * 100)} % / ${Math.round(k.worse * 100)} %`]),
+      c.kinds.map((k) => [t(`analysis.kinds.${k.kind}`), `${nf(k.a, d)} ${unit}`, `${nf(k.b, d)} ${unit}`, `${Math.round(k.better * 100)} % / ${Math.round(k.worse * 100)} %`]),
       [1.2, 1, 1, 1.2])
-    if (c.movers.length) doc.table([t('compare.movers'), c.nameA, c.nameB], c.movers.map((m) => [m.label, `${nf(m.a, 1)}`, `${nf(m.b, 1)} ${unit}`]), [2, 1, 1])
+    if (c.movers.length) doc.table([t('compare.movers'), c.nameA, c.nameB], c.movers.map((m) => [m.label, `${nf(m.a, d)}`, `${nf(m.b, d)} ${unit}`]), [2, 1, 1])
     doc.para(t('compare.paired', { pct: Math.round(c.paired * 100) }), 22, C.faint)
   }
 
@@ -797,7 +849,9 @@ export async function composeSolarReport(r: ReportInput): Promise<Blob> {
   // Method.
   doc.newPage()
   doc.h1(t('report.methodTitle'))
-  for (const k of ['sun', 'sky', 'surface', 'engine', 'geometry', 'checks', 'daylight', 'annual', 'limits']) {
+  // The weather file and the passive impact explain themselves only when used.
+  const methods = ['sun', 'sky', ...(r.climateSource?.epw ? ['weatherFile'] : []), 'surface', 'engine', 'geometry', ...(r.heatmap?.metric === 'passive' ? ['passive'] : []), 'checks', 'daylight', 'annual', 'limits']
+  for (const k of methods) {
     doc.h2(t(`report.method.${k}.title`))
     doc.para(t(`report.method.${k}.body`), 24)
   }

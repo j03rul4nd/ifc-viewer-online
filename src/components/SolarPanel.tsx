@@ -12,14 +12,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useSolarAnalysisStore } from '../stores/solarAnalysisStore'
-import { useSolarStore, saveManualLocation, loadManualLocation, type SolarLocation, type SolarPreset } from '../stores/solarStore'
+import { useSolarStore, saveManualLocation, type SolarLocation, type SolarPreset } from '../stores/solarStore'
 import { useGeoStore } from '../stores/geoStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { modelRegistry } from '../lib/model-registry'
-import { ensureGeorefExtracted } from '../lib/geo/geo-extract-runner'
-import { resolvePlacement } from '../lib/geo/placement'
+import { resolveSolarLocation, applySolarLocation } from '../lib/solar/resolve-location'
 import {
-  timezoneFor, zoneOffsetMinutes, wallTimeToUTC, utcToWallParts, dayTimes,
+  zoneOffsetMinutes, wallTimeToUTC, utcToWallParts, dayTimes,
   moonPhaseIndex, type DayTimes,
 } from '../lib/solar/sun-math'
 import { parseAppUrlParams } from '../lib/url-params'
@@ -86,35 +85,24 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
   }, [cacheKey])
 
   // ── Location resolution (plan D3 ladder — reuses the GIS stack) ─────────────
-  const resolveLocation = useCallback(async (): Promise<SolarLocation | null> => {
-    const geoPlacement = useGeoStore.getState().placement
-    if (geoPlacement) {
-      const fromIfc = geoPlacement.source === 'ifc'
-      return {
-        lat: geoPlacement.lat, lon: geoPlacement.lon, yawDeg: geoPlacement.rotationDeg,
-        source: fromIfc ? 'ifc' : 'map',
-        northSource: fromIfc ? 'ifc' : 'assumed',
-      }
-    }
-    if (activeModelId && viewerApiRef.current) {
-      const g = await ensureGeorefExtracted(activeModelId)
-      const bounds = viewerApiRef.current.getModelBounds(activeModelId)
-      const r = resolvePlacement(cacheKey, g, bounds)
-      if (r.ok) {
-        const fromIfc = r.value.source === 'ifc'
-        return {
-          lat: r.value.lat, lon: r.value.lon, yawDeg: r.value.rotationDeg,
-          source: fromIfc ? 'ifc' : 'map',
-          northSource: fromIfc ? 'ifc' : 'assumed',
-        }
-      }
-    }
-    if (cacheKey) {
-      const m = loadManualLocation(cacheKey)
-      if (m) return { lat: m.lat, lon: m.lon, yawDeg: 0, source: 'manual', northSource: 'assumed' }
-    }
-    return null
-  }, [activeModelId, cacheKey, viewerApiRef])
+  // Shared with the analysis's deep link (lib/solar/resolve-location): a
+  // `?site=` in the link first, then the map, the IFC, a saved manual place.
+  const resolveLocation = useCallback(
+    (): Promise<SolarLocation | null> => resolveSolarLocation(viewerApiRef.current, activeModelId),
+    [activeModelId, viewerApiRef],
+  )
+
+  // Where (re)starting the study stands. A place set by hand in this session
+  // — the form, "study the model at the station" of a weather file, a link's
+  // `?site=`, a host's location — stays: the ladder would put the study back
+  // on the model's own georeference, and the analysis would then drop the
+  // weather file chosen for that place without a word. A scene change clears
+  // the location, so this never outlives the model it was set for.
+  const studyLocation = useCallback(async (): Promise<SolarLocation | null> => {
+    const current = useSolarStore.getState().location
+    if (current?.source === 'manual') return current
+    return resolveLocation()
+  }, [resolveLocation])
 
   // ── Day timelapse ───────────────────────────────────────────────────────────
   const [timelapse, setTimelapse] = useState<number | null>(null)
@@ -180,10 +168,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
     const s = useSolarStore.getState()
     if (!s.location) {
       const loc = await resolveLocation()
-      if (loc) {
-        s.setLocation(loc)
-        if (!s.tzOverridden) s.setTimeZone(timezoneFor(loc.lat, loc.lon), false)
-      }
+      if (loc) applySolarLocation(loc)
     }
     useSolarAnalysisStore.getState().setPanelOpen(true)
   }, [resolveLocation])
@@ -206,9 +191,8 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
 
   const startWith = useCallback(async (loc: SolarLocation): Promise<void> => {
     try {
+      applySolarLocation(loc)
       const s = useSolarStore.getState()
-      s.setLocation(loc)
-      if (!s.tzOverridden) s.setTimeZone(timezoneFor(loc.lat, loc.lon), false)
       // First run: land on today 12:00 site time (a readable starting shadow).
       if (!s.active) {
         const tz = useSolarStore.getState().timeZone
@@ -231,13 +215,13 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
 
   const handleStart = useCallback(async (): Promise<void> => {
     if (!activeModelId) return
-    const loc = await resolveLocation()
+    const loc = await studyLocation()
     if (!loc) {
       setShowDefaultNotice(true) // requirement #1: never a silent default
       return
     }
     await startWith(loc)
-  }, [activeModelId, resolveLocation, startWith])
+  }, [activeModelId, studyLocation, startWith])
 
   const handleStop = useCallback(async (): Promise<void> => {
     const solar = await getSolar()
@@ -314,7 +298,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
         if (!s0.active || cmd.location) {
           const loc: SolarLocation | null = cmd.location
             ? { lat: cmd.location.lat, lon: cmd.location.lon, yawDeg: 0, source: 'manual', northSource: 'assumed' }
-            : await resolveLocation()
+            : await studyLocation()
           if (!loc) throw new Error('The model carries no location — pass location: { lat, lon }')
           await startWith(loc)
           if (!useSolarStore.getState().active) throw new Error('The sun study could not start')
@@ -344,7 +328,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
         cmd.done?.(false, err instanceof Error ? err.message : String(err))
       }
     })()
-  }), [handleStop, resolveLocation, startWith])
+  }), [handleStop, studyLocation, startWith])
 
   // Realtime follow.
   useEffect(() => {

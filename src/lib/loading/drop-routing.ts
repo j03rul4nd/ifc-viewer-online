@@ -65,6 +65,29 @@ export const POINTCLOUD_EXTENSIONS = [
  */
 export const VECTOR_EXTENSIONS = ['.geojson'] as const
 
+/**
+ * Hour-by-hour weather for the solar analysis (EnergyPlus `.epw`). Weather
+ * files are mostly published zipped (climate.onebuilding.org, the CWEC set),
+ * but a `.zip` says nothing about what it holds — so a zip joins this bucket
+ * only when its NAME says weather (see isWeatherZipName). Anything else zipped
+ * stays unrouted; the analysis panel's own picker takes any zip and looks.
+ */
+export const WEATHER_EXTENSIONS = ['.epw'] as const
+
+/**
+ * The dataset tags weather archives carry in their names: TMY / TMYx / TMY3
+ * (typical meteorological years), CWEC (Canada), IWEC (international), or
+ * "epw" itself — `CAN_ON_Toronto.Intl.AP.716240_TMYx.2009-2023.zip`. A tag
+ * must stand as its own token, so a project called "Tmyrsk" does not match.
+ */
+const WEATHER_ZIP_TAG = /(?:^|[^a-z])(?:tmy[a-z0-9]?|cwec|iwec2?|epw)(?:[^a-z]|$)/i
+
+/** Is this a zipped weather file, by its name alone? */
+export function isWeatherZipName(fileName: string): boolean {
+  if (fileExtensionOf(fileName) !== '.zip') return false
+  return WEATHER_ZIP_TAG.test(fileName.trim().slice(0, -'.zip'.length))
+}
+
 /** A shared scene document. Checked on the full name, before the extension lookup. */
 export const SCENE_FILE_SUFFIX = '.scene.json'
 
@@ -90,6 +113,8 @@ export interface FileRouting {
   mesh: File[]
   /** GeoJSON data layers (routes, zones, points) for the Data layers panel. */
   vector: File[]
+  /** Weather files (`.epw`, a weather-named `.zip`) for the solar analysis. */
+  weather: File[]
   /** Video clips for the 3D video panel. */
   video: File[]
   /** `*.scene.json` documents — opening one replaces the scene. */
@@ -110,6 +135,7 @@ for (const ext of POINTCLOUD_EXTENSIONS) BY_EXTENSION[ext] = 'pointcloud'
 for (const ext of MESH_ENTRY_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of MESH_SIDECAR_EXTENSIONS) BY_EXTENSION[ext] = 'mesh'
 for (const ext of VECTOR_EXTENSIONS) BY_EXTENSION[ext] = 'vector'
+for (const ext of WEATHER_EXTENSIONS) BY_EXTENSION[ext] = 'weather'
 for (const ext of VIDEO_FILE_EXTENSIONS) BY_EXTENSION[ext] = 'video'
 for (const ext of Object.keys(DEFERRED_EXTENSIONS)) BY_EXTENSION[ext] = 'deferred'
 
@@ -131,7 +157,7 @@ export function fileExtensionOf(fileName: string): string {
  */
 export function classifyFiles(files: readonly File[]): FileRouting {
   const out: FileRouting = {
-    ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], video: [], scene: [], deferred: [], other: [],
+    ifc: [], ids: [], bcf: [], pointcloud: [], mesh: [], vector: [], weather: [], video: [], scene: [], deferred: [], other: [],
   }
   const textures: File[] = []
   let hasMeshEntry = false
@@ -140,6 +166,7 @@ export function classifyFiles(files: readonly File[]): FileRouting {
     if (isSceneFileName(file.name)) { out.scene.push(file); continue }
     const ext = fileExtensionOf(file.name)
     if (TEXTURES.has(ext)) { textures.push(file); continue }
+    if (isWeatherZipName(file.name)) { out.weather.push(file); continue }
     const bucket = BY_EXTENSION[ext]
     if (!bucket) { out.other.push(file); continue }
     if (bucket === 'mesh' && MESH_ENTRIES.has(ext)) hasMeshEntry = true
@@ -201,7 +228,7 @@ export function groupMeshFiles(files: readonly File[]): MeshImportGroup[] {
 export function routedCount(routing: FileRouting): number {
   return routing.ifc.length + routing.ids.length + routing.bcf.length
     + routing.pointcloud.length + routing.mesh.length + routing.vector.length
-    + routing.video.length + routing.scene.length
+    + routing.weather.length + routing.video.length + routing.scene.length
 }
 
 // ── DataTransfer ──────────────────────────────────────────────────────────────

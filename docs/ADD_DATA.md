@@ -74,6 +74,7 @@ imports as a setup) and Scene file (opened directly: picking one is deliberate).
 | mesh | .glb .gltf .obj + .bin .mtl + textures | loading queue (flag) |
 | video | .mp4 .m4v .mov .webm .ogv .ogg | 3D video queue (flag, not client mode) |
 | vector | .geojson | Data layers queue |
+| weather | .epw, a `.zip` whose name carries TMY/CWEC/IWEC/EPW | solar analysis panel (flag, not client mode; needs a model or an IFC in the drop) |
 | scene | `*.scene.json` (suffix, checked first) | scene opener (not in embeds) |
 | deferred | .e57 → `pointcloud:unsupported.e57`; .rcp .rcs .fls .zfs → `unsupported.proprietary` | specific advice toast |
 

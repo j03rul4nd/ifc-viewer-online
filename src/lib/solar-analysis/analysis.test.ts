@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { sampleTriangles, groundGrid, buildSensorSet, orientationOf, sensorKindFor, plateIsGlass, SURFACE_LIFT_M } from './sensors'
-import { elementStats, rampColor, niceRange, type ExposureResult } from './results'
+import { elementStats, rampColor, niceRange, metricValue, metricUnit, type ExposureResult } from './results'
+import { passiveScore } from './passive'
 import { en17037Level, en17037Findings, summarizeEn17037, summerGainFindings, orientationTable } from './findings'
 import { aggregateClimate, seasonRun, seasonRange, climateUrl, type DailySeries } from './climate'
 
@@ -65,6 +66,46 @@ describe('elementStats', () => {
     expect(s.irradiationKwh).toBeCloseTo(3, 6)
     expect(s.normal.z).toBeCloseTo(1, 6)
     expect(s.area).toBe(2)
+  })
+})
+
+describe('passive impact per sensor and per element', () => {
+  const el = { modelId: 'm', localId: 11, category: 'IFCWINDOW', kind: 'window' as const }
+  // One facing, two sensors of different areas: one mostly helped, one mostly harmed.
+  const face = [{ x: 0, y: 1, z: 0.1, nx: 0, ny: 0, nz: 1, area: 1 }, { x: 1, y: 1, z: 0.1, nx: 0, ny: 0, nz: 1, area: 3 }]
+  const set = buildSensorSet([{ kind: 'window', element: el, samples: face }], { ground: 2, surface: 1 })
+  const base = (): ExposureResult => ({
+    sunHours: new Float32Array([4, 4]), probableSunHours: new Float32Array(2), directWh: new Float32Array(2), diffuseWh: new Float32Array(2),
+    reflectedWh: new Float32Array(2), skyCos: new Float32Array([0.5, 0.5]), days: 10,
+  })
+  const withPassive = (): ExposureResult => ({
+    ...base(),
+    passive: {
+      benefitWh: new Float32Array([90_000, 10_000]), harmWh: new Float32Array([10_000, 50_000]), netWh: new Float32Array([80_000, -40_000]),
+      baseC: 18, temperature: 'hourly',
+    },
+  })
+
+  it('the metric is the score per day, kWh·°C/m²; unknown without the air temperature', () => {
+    const r = withPassive()
+    expect(metricValue(r, 'passive', 0)).toBeCloseTo(passiveScore(9, 1), 6)
+    expect(metricValue(r, 'passive', 1)).toBeCloseTo(passiveScore(1, 5), 6)
+    expect(metricValue(r, 'passive', 1)).toBeLessThan(0)
+    expect(Number.isNaN(metricValue(base(), 'passive', 0))).toBe(true)
+    expect(metricUnit('passive')).toBe('kWh·°C/m²')
+    expect(metricUnit('irradiation')).toBe('kWh/m²')
+    expect(metricUnit('sunHours')).toBe('h')
+  })
+
+  it('an element scores its face from the area-summed benefit and harm, not from a mean of scores', () => {
+    const [s] = elementStats(set, withPassive())
+    // Area-weighted per day: P = (9·1 + 1·3) / 4 = 3, N = (1·1 + 5·3) / 4 = 4.
+    expect(s.passive!.benefit).toBeCloseTo(3, 6)
+    expect(s.passive!.harm).toBeCloseTo(4, 6)
+    expect(s.passive!.score).toBeCloseTo(passiveScore(3, 4), 6)
+    const meanOfScores = (passiveScore(9, 1) * 1 + passiveScore(1, 5) * 3) / 4
+    expect(Math.abs(s.passive!.score - meanOfScores)).toBeGreaterThan(0.2)
+    expect(elementStats(set, base())[0].passive).toBeUndefined()
   })
 })
 

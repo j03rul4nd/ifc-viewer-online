@@ -13,6 +13,7 @@
     "batchPartial": "{{name}} — {{loaded}} 件読み込み、{{failed}} 件失敗",
     "dropUnsupported_other": "{{count}} 個のファイルは対応していない形式です",
     "dropBcfHint": ".bcf ファイルを読み込むには BCF パネルを開いてください",
+    "dropWeatherNoModel": "先にモデルを開いてから、.epw 気象ファイルをその上にドロップしてください",
     "mapDeclined": "リンクは地図の表示を求めていましたが、許可するまでオフのままです（マップパネル）。"
   },
   "validation": {

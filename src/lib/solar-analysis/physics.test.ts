@@ -108,6 +108,33 @@ describe('sun paths', () => {
     expect(sum(binned.samples, () => 1)).toBeLessThan(4500)
   })
 
+  it('binning keeps the passive weights exactly, each taken at its own instant', () => {
+    // An air temperature that swings with the season and the hour: a patch
+    // mixes March and September mornings, so a weight from its month would drift.
+    const temp = (utc: number) => {
+      const d = new Date(utc)
+      return 14 - 10 * Math.cos(((d.getUTCMonth() + 0.5) / 12) * 2 * Math.PI) + 4 * Math.sin(((d.getUTCHours() - 9) / 24) * 2 * Math.PI)
+    }
+    const o = { ...base, temperatures: (utc: number) => [temp(utc), temp(utc) + 3], passiveBaseC: 18 }
+    const raw = sunPath({ kind: 'year' }, { ...o, stepDays: 1 })
+    const binned = sunPath({ kind: 'year' }, { ...o, binDeg: 2 })
+    type P = NonNullable<typeof raw.samples[0]['passive']>
+    const sum = (xs: typeof raw.samples, k: keyof P) => xs.reduce((a, s) => a + (s.passive ? s.passive[k] * s.hours : 0), 0)
+    const mag = (xs: typeof raw.samples, k: keyof P) => xs.reduce((a, s) => a + (s.passive ? Math.abs(s.passive[k]) * s.hours : 0), 0)
+    expect(raw.samples.every((s) => s.passive)).toBe(true)
+    expect(binned.samples.every((s) => s.passive)).toBe(true)
+    for (const k of ['wBeam', 'aBeam', 'wIso', 'aIso', 'wGhi', 'aGhi'] as const) {
+      // Signed sums cancel: compare against the sum of magnitudes.
+      expect(Math.abs(sum(binned.samples, k) - sum(raw.samples, k)) / mag(raw.samples, k)).toBeLessThan(1e-9)
+    }
+    // Both signs are there (cold winters, warm summers), so the test means something.
+    expect(raw.samples.some((s) => s.passive!.wBeam < 0) && raw.samples.some((s) => s.passive!.wBeam > 0)).toBe(true)
+    // A patch with no weighted instant carries none.
+    const mixed = binSamples([...raw.samples.slice(0, 3), { ...raw.samples[3], passive: undefined }], 90)
+    const total = (xs: typeof raw.samples) => xs.reduce((a, s) => a + (s.passive?.aBeam ?? 0) * s.hours, 0)
+    expect(total(mixed)).toBeCloseTo(total(raw.samples.slice(0, 3)), 6)
+  })
+
   it('patch directions stay unit vectors close to their instants', () => {
     const raw = sunPath({ kind: 'range', from: { month: 6, day: 1 }, to: { month: 6, day: 30 } }, { ...base, stepDays: 1 })
     for (const b of binSamples(raw.samples, 2)) {

@@ -47,6 +47,7 @@ Sin cookies de tracking ni de publicidad. PostHog corre en `persistence: 'memory
 | `ifc-viewer:prefs` | localStorage | Preferencias de UI (tamaños/visibilidad de paneles) |
 | `ifc-geo-*` | localStorage | Consentimiento y opciones del modo mapa (opcional). Retirar el permiso en el panel Mapa borra `ifc-geo-consent:v1`; el permiso que concede una web que incrusta el visor dura la sesión y no se guarda. |
 | `ifc-analytics-optout:v1` | localStorage | Decisión de oposición a la analítica (para honrarla) |
+| `ifc.climate.v1.*`, `ifc.sky.v1.*` / IndexedDB `ifc-weather` | localStorage / IndexedDB | Clima del emplazamiento del análisis solar, solo tras pulsar «Cargar el clima»: normales diarias y cielo típico por lugar, y las horas ERA5 (temperatura incluida) de los 4 últimos lugares; claves por coordenadas redondeadas (~1 km), para no volver a pedirlas. Los ficheros climáticos EPW que carga el usuario se leen en el dispositivo y nunca se suben. |
 | `ifc.entry_source` / `ifc.entry_segment` / `ifc.entry_source_kind` | sessionStorage | Etiqueta de campaña no personal (se borra al cerrar pestaña) |
 | `coiReloaded`, `chunkReloaded` | sessionStorage | Técnicos (cross-origin isolation / recarga de chunks) |
 

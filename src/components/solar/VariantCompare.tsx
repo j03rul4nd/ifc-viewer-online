@@ -3,6 +3,8 @@
 // the design (protections, another IFC version, a different sky), run again,
 // and see B − A on the model — red where it got better, blue where it got
 // worse — with the change per surface type and the elements that moved most.
+// The passive impact is the exception: its own map already says blue = good,
+// red = bad, so its change keeps those colours (more is always better).
 // Variants outlive a model change: comparing two IFC versions is the point.
 
 import React, { useCallback, useEffect, useState } from 'react'
@@ -11,6 +13,7 @@ import type { AnalysisRun, HeatmapOverride } from '../../lib/solar-analysis/anal
 import type { SolarMetric } from '../../lib/solar-analysis/results'
 import { metricUnit } from '../../lib/solar-analysis/results'
 import { variantFromRun, compareVariants, divergingColor, divergingCss, type Variant, type Comparison } from '../../lib/solar-analysis/compare'
+import { passiveColor, passiveCss } from '../../lib/solar-analysis/passive'
 import { useSolarReportStore } from '../../stores/solarReportStore'
 import { loadVariants, saveVariant, deleteVariant, MAX_VARIANTS } from '../../lib/solar-analysis/variant-store'
 
@@ -35,7 +38,7 @@ export default function VariantCompare(p: Props) {
   const [name, setName] = useState('')
   const [pick, setPick] = useState<string | null>(null)
   const [higherBetter, setHigherBetter] = useState(false)
-  const [cmp, setCmp] = useState<{ c: Comparison; a: Variant; label: string } | null>(null)
+  const [cmp, setCmp] = useState<{ c: Comparison; a: Variant; b: Variant; label: string } | null>(null)
   const cur = p.current()
 
   useEffect(() => {
@@ -48,6 +51,14 @@ export default function VariantCompare(p: Props) {
     })
   }, [])
   const nf = (v: number, d = 1) => (Number.isFinite(v) ? v.toLocaleString(i18n.language, { maximumFractionDigits: d, minimumFractionDigits: d }) : '—')
+  // A passive score per day is a fraction of a kWh·°C/m²: two decimals.
+  const nd = (m: SolarMetric) => (m === 'passive' ? 2 : 1)
+  // What a variant measured, for people. Its passive base belongs to the
+  // passive impact only: two passive maps weighed against different bases
+  // answer different questions, two sun-hour maps do not care.
+  const measured = (label: string, v: Variant | undefined, m: SolarMetric) => (
+    m === 'passive' && v?.passiveBaseC !== undefined ? `${label} · ${t('analysis.passive.baseShort', { v: v.passiveBaseC })}` : label
+  )
 
   const save = useCallback(() => {
     const c = p.current()
@@ -74,16 +85,21 @@ export default function VariantCompare(p: Props) {
     const a = saved.find((v) => v.id === pick)
     if (!c || !a) return
     const b = variantFromRun(c.run, t('compare.current'), c.label)
+    // Only irradiation asks which way is good; a higher passive score is
+    // always better (more welcome sun, less unwelcome).
     const up = p.metric === 'irradiation' ? higherBetter : true
     const result = compareVariants(a, b, p.metric, { higherIsBetter: up })
     // The change drawn on the run on screen: B's sensors map back to it.
     const values = new Float32Array(c.run.sensors.count).fill(NaN)
     b.source.forEach((src, j) => { values[src] = result.delta[j] })
-    await p.paint({ values, range: { min: -result.range, max: result.range }, color: (x) => divergingColor(x * 2 - 1, up) })
-    setCmp({ c: result, a, label: c.label })
+    // The passive change in the passive map's colours (blue better, red
+    // worse), so the two maps never contradict each other.
+    const color = p.metric === 'passive' ? passiveColor : (x: number) => divergingColor(x * 2 - 1, up)
+    await p.paint({ values, range: { min: -result.range, max: result.range }, color })
+    setCmp({ c: result, a, b, label: c.label })
     useSolarReportStore.getState().set({
       compare: {
-        nameA: a.name, nameB: t('compare.current'), periodA: a.periodLabel, periodB: c.label, metric: p.metric, higherIsBetter: up,
+        nameA: a.name, nameB: t('compare.current'), periodA: measured(a.periodLabel, a, p.metric), periodB: measured(c.label, b, p.metric), metric: p.metric, higherIsBetter: up,
         paired: result.paired, range: result.range,
         kinds: result.kinds.map((k) => ({ kind: k.kind, a: k.a, b: k.b, better: k.better, worse: k.worse })),
         movers: result.movers.map((m) => ({ label: m.label, a: m.a, b: m.b, delta: m.delta })),
@@ -103,6 +119,17 @@ export default function VariantCompare(p: Props) {
 
   const unit = metricUnit(p.metric)
   const up = cmp?.c && (cmp.c.metric === 'irradiation' ? higherBetter : true)
+  // A variant saved before a measure existed (or run without the air
+  // temperature, for the passive impact) has nothing to pair: say which.
+  const lacks = (v: Variant | undefined, m: SolarMetric) => {
+    const arr = v?.values[m] as Float32Array | undefined
+    return !!v && (!arr || !arr.some(Number.isFinite))
+  }
+  const empty = cmp ? (lacks(cmp.a, cmp.c.metric) ? cmp.a.name : lacks(cmp.b, cmp.c.metric) ? t('compare.current') : null) : null
+  // Measured over another period (or, for the passive impact, another base).
+  const ma = cmp ? measured(cmp.a.periodLabel, cmp.a, cmp.c.metric) : ''
+  const mb = cur && cmp ? measured(cur.label, cmp.b, cmp.c.metric) : ''
+  const mismatch = cur && cmp && ma !== mb ? { a: ma, b: mb } : null
   return (
     <div className="flex flex-col gap-1.5 text-[10.5px]">
       <div className="flex gap-1.5">
@@ -115,7 +142,7 @@ export default function VariantCompare(p: Props) {
         <label key={v.id} className="flex items-center gap-1.5 cursor-pointer">
           <input type="radio" checked={pick === v.id} onChange={() => setPick(v.id)} className="accent-[var(--accent)]" />
           <span className="truncate text-[var(--text)]">{v.name}</span>
-          <span className="truncate text-[var(--text-faint)]">· {v.periodLabel} · {new Date(v.createdAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}</span>
+          <span className="truncate text-[var(--text-faint)]">· {measured(v.periodLabel, v, p.metric)} · {new Date(v.createdAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}</span>
           <button onClick={(e) => { e.preventDefault(); remove(v.id) }} className="ml-auto text-[var(--text-faint)] hover:text-[var(--text)]" title={t('compare.delete')}>✕</button>
         </label>
       ))}
@@ -133,15 +160,15 @@ export default function VariantCompare(p: Props) {
             </button>
             {cmp && <button onClick={() => { void back() }} className="px-2 py-1 rounded-[7px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('compare.back')}</button>}
           </div>
-          {cur && cmp?.a && cmp.a.periodLabel !== cur.label && <p className="text-[9.5px] text-[#F5A623]">{t('compare.periodMismatch', { a: cmp.a.periodLabel, b: cur.label })}</p>}
+          {mismatch && <p className="text-[9.5px] text-[#F5A623]">{t('compare.periodMismatch', mismatch)}</p>}
         </>
       )}
       {cmp && (
         <div className="flex flex-col gap-1">
           <div className="text-[10px] text-[var(--text-faint)]">{t('compare.legend', { a: cmp.a.name, metric: t(`analysis.metric.${cmp.c.metric}`) })}</div>
-          <div className="h-2.5 rounded-full" style={{ background: divergingCss(!!up) }} />
+          <div className="h-2.5 rounded-full" style={{ background: cmp.c.metric === 'passive' ? passiveCss() : divergingCss(!!up) }} />
           <div className="flex justify-between font-mono tabular-nums text-[10px]">
-            <span>−{nf(cmp.c.range)}</span><span>0</span><span>+{nf(cmp.c.range)} {unit}</span>
+            <span>−{nf(cmp.c.range, nd(cmp.c.metric))}</span><span>0</span><span>+{nf(cmp.c.range, nd(cmp.c.metric))} {unit}</span>
           </div>
           <div className="flex justify-between text-[9.5px] text-[var(--text-faint)]"><span>{t('compare.worse')}</span><span>{t('compare.better')}</span></div>
           <div className="grid grid-cols-[4.2rem_1fr_1fr_1fr] gap-x-2 text-[9.5px] text-[var(--text-faint)] mt-1">
@@ -150,8 +177,8 @@ export default function VariantCompare(p: Props) {
           {cmp.c.kinds.map((k) => (
             <div key={k.kind} className="grid grid-cols-[4.2rem_1fr_1fr_1fr] gap-x-2 font-mono tabular-nums">
               <span className="font-sans truncate">{t(`analysis.kinds.${k.kind}`)}</span>
-              <span>{nf(k.a)}</span>
-              <span className={k.b === k.a ? '' : (k.b > k.a) === up ? 'text-[#4caf7a]' : 'text-[#e2603a]'}>{nf(k.b)}</span>
+              <span>{nf(k.a, nd(cmp.c.metric))}</span>
+              <span className={k.b === k.a ? '' : (k.b > k.a) === up ? 'text-[#4caf7a]' : 'text-[#e2603a]'}>{nf(k.b, nd(cmp.c.metric))}</span>
               <span><span className="text-[#4caf7a]">{Math.round(k.better * 100)}%</span> / <span className="text-[#e2603a]">{Math.round(k.worse * 100)}%</span></span>
             </div>
           ))}
@@ -161,11 +188,12 @@ export default function VariantCompare(p: Props) {
               {cmp.c.movers.slice(0, 6).map((m) => (
                 <div key={m.label + m.a} className="flex justify-between gap-2">
                   <span className="truncate">{m.label}</span>
-                  <span className={['font-mono tabular-nums shrink-0', (m.delta > 0) === up ? 'text-[#4caf7a]' : 'text-[#e2603a]'].join(' ')}>{nf(m.a)} → {nf(m.b)} {unit}</span>
+                  <span className={['font-mono tabular-nums shrink-0', (m.delta > 0) === up ? 'text-[#4caf7a]' : 'text-[#e2603a]'].join(' ')}>{nf(m.a, nd(cmp.c.metric))} → {nf(m.b, nd(cmp.c.metric))} {unit}</span>
                 </div>
               ))}
             </div>
           )}
+          {empty && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('compare.noValues', { name: empty, metric: t(`analysis.metric.${cmp.c.metric}`) })}</p>}
           <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('compare.paired', { pct: Math.round(cmp.c.paired * 100) })}</p>
         </div>
       )}

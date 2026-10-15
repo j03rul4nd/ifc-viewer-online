@@ -11,7 +11,10 @@
 // tests every sensor against that shadow map and adds to an accumulator, per
 // sensor: hours of sun (R), beam + circumsolar Wh/m² (G), a cosine-weighted
 // share of sky (B, for the sky-view runs) and the hours the sun is LIKELY out,
-// given the site's sunshine record (A). The accumulator is two float render targets used in turn
+// given the site's sunshine record (A). In a sun run B is otherwise idle, so it
+// carries the passive impact's one shaded term: the beam weighted by each
+// instant's need for sun (base − outdoor temperature), SIGNED — float targets
+// add negatives as well as positives. The accumulator is two float render targets used in turn
 // (ping-pong): blending into float32 needs EXT_float_blend, which is not
 // everywhere, and half floats lose the hours of a year.
 //
@@ -73,6 +76,7 @@ uniform float uHours;
 uniform float uBeam;
 uniform float uProb;
 uniform float uSkyW;
+uniform float uBeamW;
 uniform vec2 uSize;
 uniform float uBias;
 uniform float uNormalBias;
@@ -102,9 +106,19 @@ void main() {
       texture(uShadow, vec3(s.xy + vec2(-px.x,  px.y), s.z - b)) +
       texture(uShadow, vec3(s.xy + vec2( px.x,  px.y), s.z - b)));
   }
-  outColor = prev + vec4(vis * uHours, vis * uBeam * c * uHours, vis * c * uSkyW, vis * uHours * uProb);
+  outColor = prev + vec4(vis * uHours, vis * uBeam * c * uHours, vis * c * (uSkyW + uBeamW * uHours), vis * uHours * uProb);
 }
 `
+
+/** What a run measured, plus the sun pass' signed beam when its samples carried passive weights. */
+export interface SunPassResult extends ExposureResult {
+  /**
+   * Σ vis · cos θ · wBeam · hours per sensor, Wh·°C/m² (channel B, unclamped):
+   * the shaded, need-weighted beam of the passive impact. Only when a sample
+   * had `passive` weights and no sky weight shared the channel.
+   */
+  signedBeamWh?: Float32Array
+}
 
 /** Hand the browser a turn without rAF (it freezes in a hidden tab). */
 const yieldTurn = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
@@ -115,7 +129,7 @@ export async function runExposure(
   samples: SunSample[],
   days: number,
   o: ExposureOptions = {},
-): Promise<ExposureResult> {
+): Promise<SunPassResult> {
   const { renderer, scene } = ctx
   const gl = renderer.getContext()
   if (!renderer.capabilities.isWebGL2 && !(gl as WebGL2RenderingContext).texStorage2D) {
@@ -162,7 +176,7 @@ export async function runExposure(
     uniforms: {
       uPrev: { value: null }, uPos: { value: posTex }, uNrm: { value: nrmTex }, uShadow: { value: null },
       uShadowMatrix: { value: new THREE.Matrix4() }, uSun: { value: new THREE.Vector3() },
-      uHours: { value: 0 }, uBeam: { value: 0 }, uProb: { value: 1 }, uSkyW: { value: 0 }, uSize: { value: new THREE.Vector2(W, H) },
+      uHours: { value: 0 }, uBeam: { value: 0 }, uProb: { value: 1 }, uSkyW: { value: 0 }, uBeamW: { value: 0 }, uSize: { value: new THREE.Vector2(W, H) },
       uBias: { value: 0.0005 }, uNormalBias: { value: 0.03 },
     },
     depthTest: false, depthWrite: false,
@@ -240,6 +254,9 @@ export async function runExposure(
       renderer.clear(true, false, false)
     }
     material.uniforms.uSkyW.value = o.skyWeight ?? 0
+    // B holds the signed beam only in a sun run whose samples carry weights;
+    // a sky-view pass keeps it for the view factor (its samples carry none).
+    const signed = !o.skyWeight && samples.some((s) => s.passive)
     for (let k = 0; k < samples.length; k++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
       const s = samples[k]
@@ -263,6 +280,7 @@ export async function runExposure(
       u.uHours.value = s.hours
       u.uBeam.value = s.beamNormal
       u.uProb.value = s.sunProb
+      u.uBeamW.value = signed ? (s.passive?.wBeam ?? 0) : 0
       renderer.setRenderTarget(write)
       renderer.render(quadScene, quadCam)
       const t = read; read = write; write = t
@@ -277,7 +295,7 @@ export async function runExposure(
     const out = new Float32Array(W * H * 4)
     renderer.readRenderTargetPixels(read, 0, 0, W, H, out)
     // Diffuse and reflected are filled by the caller, which knows the sky view.
-    const result: ExposureResult = {
+    const result: SunPassResult = {
       sunHours: new Float32Array(n),
       probableSunHours: new Float32Array(n),
       directWh: new Float32Array(n),
@@ -286,12 +304,18 @@ export async function runExposure(
       skyCos: new Float32Array(n),
       days,
     }
+    // The signed beam is read raw: the view factor's clamp to 1 would cut it,
+    // and its negatives with it. A sun run's B held no sky view, so skyCos
+    // stays 0 there, as it always was.
+    const signedBeamWh = signed ? new Float32Array(n) : null
     for (let i = 0; i < n; i++) {
       result.sunHours[i] = out[i * 4]
       result.directWh[i] = out[i * 4 + 1]
-      result.skyCos[i] = Math.min(1, out[i * 4 + 2])
+      if (signedBeamWh) signedBeamWh[i] = out[i * 4 + 2]
+      else result.skyCos[i] = Math.min(1, out[i * 4 + 2])
       result.probableSunHours[i] = out[i * 4 + 3]
     }
+    if (signedBeamWh) result.signedBeamWh = signedBeamWh
     return result
   } finally {
     ctx.pauseViewer?.(false)

@@ -3,6 +3,7 @@
     "coordinator": "I built this to triage broken IFC exports. Drag one in and see what it flags — nothing uploads, nothing to buy.",
     "dev": "A tiny IFC health-check built on web-ifc — runs entirely in your browser. Drag a file in, or watch the network tab.",
     "standards": "An on-ramp to IDS-style checks, not a replacement for bSI. Drag an IFC in to see the score.",
+    "climate": "A solar & climate analysis that runs on your GPU, in the browser. Drop an IFC and an EPW — nothing uploads.",
     "referral": "Someone thought you'd find this useful. Drag an IFC in — it never leaves your browser, and there's nothing to buy.",
     "medium": "Thanks for coming from the article. Drag an IFC in to see what it flags — nothing uploads."
   },
@@ -28,7 +29,8 @@
     "q": {
       "coordinator": "Is a report like this something you'd actually send back to whoever exported the model — or not?",
       "dev": "Does collapsing all the validation into a single 0–100 number feel useful, or does it hide too much to trust?",
-      "standards": "Does one 0–100 number work as an on-ramp, or does it misrepresent what real IDS/bSI conformance means?"
+      "standards": "Does one 0–100 number work as an on-ramp, or does it misrepresent what real IDS/bSI conformance means?",
+      "climate": "Does the passive-impact map read right for your climate — what would you check first?"
     },
     "aside": "No form — just reply to my message. Brutally honest is the point.",
     "dismiss": "Dismiss",

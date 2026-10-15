@@ -20,6 +20,19 @@ describe('planDrop + followUp', () => {
     expect(plannedCount(p)).toBe(0)
   })
 
+  it('hands weather files to the solar analysis only where it can open them', () => {
+    const p = plan(['CAN_ON_Toronto.716240_CWEC2020.epw', 'x.ifc'], { weather: true })
+    expect(names(p.weather)).toEqual(['CAN_ON_Toronto.716240_CWEC2020.epw'])
+    expect(plannedCount(p)).toBe(2)
+    // Off by default (the Add data hub does not offer them): unsupported, not lost.
+    const off = plan(['CAN_ON_Toronto.716240_CWEC2020.epw'])
+    expect(off.weather).toEqual([])
+    expect(names(off.unsupported)).toEqual(['CAN_ON_Toronto.716240_CWEC2020.epw'])
+    // A zip only counts when its name says weather.
+    expect(names(plan(['ESP_CT_Barcelona.081810_TMYx.2009-2023.zip', 'photos.zip'], { weather: true }).weather))
+      .toEqual(['ESP_CT_Barcelona.081810_TMYx.2009-2023.zip'])
+  })
+
   it('summarises a mixed drop and shows the first kind', () => {
     const f = followUp(plan(['scan.las', 'clip.mp4']), on)
     expect(f.open).toBeNull()

@@ -21,6 +21,8 @@ export interface DropCaps {
   video: boolean
   /** Scene documents (off inside embeds: a host owns that page). */
   scene: boolean
+  /** Weather files for the solar analysis (off where its panel cannot mount). Default off. */
+  weather?: boolean
 }
 
 export type DeferredReasonKey = 'unsupported.e57' | 'unsupported.proprietary'
@@ -34,6 +36,8 @@ export interface DropPlan {
   mesh: File[]
   video: File[]
   vector: File[]
+  /** Weather files (`.epw`, a weather-named zip) for the solar analysis panel. */
+  weather: File[]
   scene: File | null
   /** Recognised but not decoded; one group per reason key, in arrival order. */
   deferred: { reasonKey: DeferredReasonKey; files: File[] }[]
@@ -69,6 +73,9 @@ export function planDrop(files: readonly File[], caps: DropCaps): DropPlan {
   const video = caps.video ? r.video : []
   if (!caps.video) unsupported.push(...r.video)
 
+  const weather = caps.weather ? r.weather : []
+  if (!caps.weather) unsupported.push(...r.weather)
+
   const deferred: DropPlan['deferred'] = []
   for (const file of r.deferred) {
     const reasonKey = (DEFERRED_EXTENSIONS[fileExtensionOf(file.name)] ?? 'unsupported.proprietary') as DeferredReasonKey
@@ -77,13 +84,13 @@ export function planDrop(files: readonly File[], caps: DropCaps): DropPlan {
     else deferred.push({ reasonKey, files: [file] })
   }
 
-  return { ifc: r.ifc, ids, bcf: r.bcf, pointcloud, mesh, video, vector: r.vector, scene, deferred, unsupported }
+  return { ifc: r.ifc, ids, bcf: r.bcf, pointcloud, mesh, video, vector: r.vector, weather, scene, deferred, unsupported }
 }
 
 /** Number of files some subsystem will open (mesh counts its entry files). */
 export function plannedCount(plan: DropPlan): number {
   return plan.ifc.length + (plan.ids ? 1 : 0) + plan.bcf.length + plan.pointcloud.length
-    + groupMeshFiles(plan.mesh).length + plan.video.length + plan.vector.length + (plan.scene ? 1 : 0)
+    + groupMeshFiles(plan.mesh).length + plan.video.length + plan.vector.length + plan.weather.length + (plan.scene ? 1 : 0)
 }
 
 /**
