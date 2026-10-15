@@ -9,7 +9,7 @@
 
 import { useVectorLayerStore, type VectorLayer } from '../../stores/vectorLayerStore'
 import { useValidationStore } from '../../stores/validationStore'
-import { usePointCloudStore } from '../../stores/pointCloudStore'
+import { usePointCloudStore, cloudLabel } from '../../stores/pointCloudStore'
 import { modelRegistry } from '../model-registry'
 import { flattenProperties, inferSchema, labelOf, type FlatProp } from './flatten-props'
 import { TwinIndex, entityKey, type TwinEntity, type TwinRef, type TwinShape, type PlanPoint } from './twin-index'
@@ -215,7 +215,7 @@ function cloudEntities(host: TwinHost): TwinEntity[] {
       return {
         ref: { source: 'pointcloud', sourceId: c.id, localId: '' } as TwinRef,
         stableKey: `pointcloud::${c.fileName}`,
-        label: c.fileName, kind: 'pointcloud', sourceLabel: c.fileName,
+        label: cloudLabel(c), kind: 'pointcloud', sourceLabel: cloudLabel(c),
         props: flattenProperties({ format: c.format, points: c.pointCount, crs: c.frame?.epsgCode ?? null }),
         shape: b ? { type: 'box', pts: [{ x: b.min.x, z: b.min.z }, { x: b.max.x, z: b.max.z }] } : undefined,
       } satisfies TwinEntity
@@ -230,7 +230,7 @@ function versionKey(): string {
     .map((l) => `${l.id}:${l.status}:${l.heightMode}:${l.data ? l.data.features.length : 0}:${Math.floor(l.fetchedAt / 10_000)}`).join('|')
   const trees = useValidationStore.getState().spatialTrees
   const treeKey = Object.keys(trees).map((k) => `${k}:${trees[k]?.length ?? 0}`).join('|')
-  const clouds = usePointCloudStore.getState().clouds.map((c) => `${c.id}:${c.status}`).join('|')
+  const clouds = usePointCloudStore.getState().clouds.map((c) => `${c.id}:${c.status}:${c.name ?? ''}`).join('|')
   return `${layers}#${treeKey}#${clouds}#${detailVersion}`
 }
 

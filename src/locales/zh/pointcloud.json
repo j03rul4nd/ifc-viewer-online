@@ -205,12 +205,17 @@
       "intensity": "强度",
       "elevation": "高度",
       "classification": "分类",
-      "flat": "单一颜色"
+      "flat": "单一颜色",
+      "scan": "每个扫描一种颜色",
+      "topic": "按主题着色"
     },
     "modeUnavailable": "此文件中没有",
     "flatColor": "颜色",
     "confidence": "置信度阈值",
-    "confidenceHint": "隐藏重建过程中最不确定的点。只有带逐点置信度的文件才有此项。"
+    "confidenceHint": "隐藏重建过程中最不确定的点。只有带逐点置信度的文件才有此项。",
+    "scanModeHint": "每个扫描以自己的颜色绘制。在列表中点击扫描的色块即可更改。",
+    "topicModeHint": "每个扫描以其第一个主题的颜色绘制。没有主题的扫描以灰色绘制。",
+    "fallback": "{{name}} 没有 {{wanted}} 数据，因此按 {{mode}} 绘制。"
   },
   "inspect": {
     "title": "查看点",
@@ -281,9 +286,6 @@
   "tabs": {
     "appearance": "外观",
     "placement": "位置",
-    "view": "视图",
-    "samples": "示例",
-    "help": "修复",
     "analyze": "分析"
   },
   "ui": {
@@ -318,7 +320,8 @@
       "xray": "X 光",
       "scan-vs-bim": "扫描 vs BIM"
     },
-    "drawn": "已绘制 / 已加载"
+    "drawn": "已绘制 / 已加载",
+    "samplesDisclosure": "示例扫描和 LiDAR 演示"
   },
   "presets": {
     "title": "快速样式",
@@ -347,7 +350,9 @@
       "tooLarge": "扫描比预期大得多——文件可能以毫米、厘米或英尺为单位。",
       "tooSmall": "扫描比预期小得多——可能以千米为单位或被缩放过。",
       "heavy": "全细节下点数很多——更轻的设置能让浏览更流畅。"
-    }
+    },
+    "titleFor": "检查 · {{name}}",
+    "moreSymptoms": "还有其他看起来不对的地方？"
   },
   "fix": {
     "flipUpAxis": "切换竖直轴",
@@ -436,6 +441,10 @@
       "clearance": {
         "label": "测量净空",
         "hint": "开启距离工具：点击扫描中的两点（地面到梁、墙到墙），读取实际建成的净空。"
+      },
+      "epochs": {
+        "label": "比较测量",
+        "hint": "每个主题（若没有扫描带主题，则每个扫描）以各自的颜色同时显示。"
       }
     },
     "needsClasses": "需要已分类的文件",
@@ -488,6 +497,88 @@
       "area": "面积",
       "angle": "角度",
       "point": "点"
-    }
+    },
+    "needsTwoScans": "需要两个或更多扫描。"
+  },
+  "scope": {
+    "label": "应用于",
+    "all": "所有扫描",
+    "selected": "已选 ({{count}})",
+    "allCaption": "更改全部扫描（{{count}}）的场景默认值。",
+    "selectedCaption": "仅更改 {{names}}。其他扫描保持场景默认值。",
+    "emptySelection": "在列表中选择扫描，即可只更改它们。",
+    "analyzeCaption": "筛选和用例适用于每个扫描。",
+    "sceneWide": "全场景",
+    "sceneWideHint": "无论选择了什么，都适用于每个扫描。",
+    "mixed": "混合",
+    "useDefault": "使用场景默认值",
+    "overridden": "有自定样式的扫描：{{count}}",
+    "resetAll": "全部重置为场景默认值"
+  },
+  "list": {
+    "selectAll": "选择所有扫描",
+    "selectRow": "选择 {{name}}",
+    "hint": "单击选择 · Ctrl/⌘+单击添加 · Shift+单击选择范围",
+    "locate": "在场景中定位",
+    "renameHint": "双击或按 F2 重命名",
+    "renameLabel": "扫描名称",
+    "useFileName": "留空则使用文件名",
+    "color": "{{name}} 的颜色",
+    "removeConfirm": "移除？",
+    "health": "需检查的事项：{{count}}",
+    "healthOk": "无需检查",
+    "fileDate": "文件日期 {{date}}"
+  },
+  "bulk": {
+    "selected": "已选：{{count}}",
+    "show": "显示",
+    "hide": "隐藏",
+    "solo": "单独显示",
+    "soloHint": "只显示所选扫描。再按一次显示所有扫描。",
+    "frame": "取景",
+    "topic": "主题",
+    "rename": "重命名",
+    "remove": "移除",
+    "removeConfirm": "从场景中移除所选扫描（{{count}}）？设备上的文件不会受影响。",
+    "removeYes": "是，移除",
+    "keep": "保留",
+    "clear": "清除选择"
+  },
+  "topics": {
+    "title": "主题",
+    "add": "新主题",
+    "defaultName": "主题 {{n}}",
+    "edit": "编辑主题",
+    "done": "完成",
+    "name": "主题名称",
+    "color": "主题颜色",
+    "delete": "删除主题",
+    "empty": "先选择扫描，再添加主题，即可按测量日期、区域或专业分组。",
+    "chipHint": "单击：选择 · Ctrl/⌘+单击：添加 · Alt+单击：仅显示这些",
+    "show": "显示 {{name}}",
+    "hide": "隐藏 {{name}}",
+    "assignTitle": "所选扫描的主题",
+    "newFromSelection": "用所选内容新建主题",
+    "limit": "最多 {{max}} 个主题。",
+    "byFileDate": "按文件日期分组（{{count}}）",
+    "byFileDateHint": "按 LAS/LAZ/COPC 文件头中写入的每个日期各建一个主题。这是文件生成的日期——通常是但并不总是测量当天。",
+    "dismiss": "忽略"
+  },
+  "place": {
+    "alignedTo": "已对齐到 {{model}}",
+    "alignedToNone": "独立放置——加载时没有 IFC 模型。",
+    "fileDate": "文件日期：{{date}}",
+    "fileDateHint": "读取自文件头——通常是测量日或处理日。",
+    "undo": "撤销",
+    "redo": "重做",
+    "historyHint": "撤销与场景面板共享。",
+    "exact": "{{label}}，精确值",
+    "fieldHint": "方向键微调 · Shift ×10 · Alt ×0.1",
+    "summary": "扫描的位置（{{count}}）",
+    "together": "一起移动",
+    "togetherHint": "将这些扫描（{{count}}）作为一个整体绕其共同中心移动和旋转。各扫描保留自己的调平和比例。",
+    "apply": "应用",
+    "resetMany": "重置扫描的位置（{{count}}）",
+    "oneAtATime": "向上轴、单位和坐标系需逐个扫描设置——请只选择一个扫描来更改。"
   }
 }

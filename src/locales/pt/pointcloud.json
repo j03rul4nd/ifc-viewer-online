@@ -205,12 +205,17 @@
       "intensity": "Intensidade",
       "elevation": "Altura",
       "classification": "Classificação",
-      "flat": "Cor única"
+      "flat": "Cor única",
+      "scan": "Uma cor por varrimento",
+      "topic": "Cor por tema"
     },
     "modeUnavailable": "Não existe neste ficheiro",
     "flatColor": "Cor",
     "confidence": "Limiar de confiança",
-    "confidenceHint": "Esconde os pontos sobre os quais a reconstrução esteve menos segura. Só os ficheiros que trazem confiança por ponto têm isto."
+    "confidenceHint": "Esconde os pontos sobre os quais a reconstrução esteve menos segura. Só os ficheiros que trazem confiança por ponto têm isto.",
+    "scanModeHint": "Cada varrimento é desenhado na sua própria cor. Clique na amostra de cor de um varrimento na lista para a alterar.",
+    "topicModeHint": "Cada varrimento é desenhado na cor do seu primeiro tema. Varrimentos sem tema são desenhados a cinzento.",
+    "fallback": "{{name}} não tem dados para {{wanted}}, por isso é desenhado por {{mode}}."
   },
   "inspect": {
     "title": "Inspecionar",
@@ -281,9 +286,6 @@
   "tabs": {
     "appearance": "Aparência",
     "placement": "Posição",
-    "view": "Vista",
-    "samples": "Exemplos",
-    "help": "Corrigir",
     "analyze": "Analisar"
   },
   "ui": {
@@ -318,7 +320,8 @@
       "xray": "Raio X",
       "scan-vs-bim": "Nuvem vs BIM"
     },
-    "drawn": "Desenhados / carregados"
+    "drawn": "Desenhados / carregados",
+    "samplesDisclosure": "Varrimentos de exemplo e demos LiDAR"
   },
   "presets": {
     "title": "Estilo rápido",
@@ -347,7 +350,9 @@
       "tooLarge": "A nuvem é muito maior do que o esperado: provavelmente está em milímetros, centímetros ou pés.",
       "tooSmall": "A nuvem é muito menor do que o esperado: pode estar em quilómetros ou escalada.",
       "heavy": "Muitos pontos no detalhe máximo: definições mais leves mantêm a navegação fluida."
-    }
+    },
+    "titleFor": "Verificação · {{name}}",
+    "moreSymptoms": "Mais alguma coisa parece errada?"
   },
   "fix": {
     "flipUpAxis": "Rodar eixo vertical",
@@ -436,6 +441,10 @@
       "clearance": {
         "label": "Medir um gabarito",
         "hint": "Ativa a ferramenta de distância: clique em dois pontos do scan (chão a viga, parede a parede) para ler a folga real construída."
+      },
+      "epochs": {
+        "label": "Comparar levantamentos",
+        "hint": "Cada tema — ou cada varrimento, quando nenhum tem tema — na sua própria cor, todos visíveis ao mesmo tempo."
       }
     },
     "needsClasses": "Requer um ficheiro classificado",
@@ -488,6 +497,88 @@
       "area": "Área",
       "angle": "Ângulo",
       "point": "Ponto"
-    }
+    },
+    "needsTwoScans": "Precisa de dois ou mais varrimentos."
+  },
+  "scope": {
+    "label": "Aplica-se a",
+    "all": "Todos os varrimentos",
+    "selected": "Selecionados ({{count}})",
+    "allCaption": "Altera o valor predefinido da cena para todos os varrimentos ({{count}}).",
+    "selectedCaption": "Altera apenas {{names}}. Os outros varrimentos mantêm o valor predefinido da cena.",
+    "emptySelection": "Selecione varrimentos na lista para alterar apenas esses.",
+    "analyzeCaption": "Os filtros e os casos de uso aplicam-se a todos os varrimentos.",
+    "sceneWide": "Toda a cena",
+    "sceneWideHint": "Aplica-se a todos os varrimentos, seja qual for a seleção.",
+    "mixed": "Misto",
+    "useDefault": "Usar o valor da cena",
+    "overridden": "Varrimentos com estilo próprio: {{count}}",
+    "resetAll": "Repor tudo para o valor da cena"
+  },
+  "list": {
+    "selectAll": "Selecionar todos os varrimentos",
+    "selectRow": "Selecionar {{name}}",
+    "hint": "Clique para selecionar · Ctrl/⌘+clique para adicionar · Shift+clique para um intervalo",
+    "locate": "Localizar na cena",
+    "renameHint": "Faça duplo clique ou prima F2 para mudar o nome",
+    "renameLabel": "Nome do varrimento",
+    "useFileName": "Deixe vazio para usar o nome do ficheiro",
+    "color": "Cor de {{name}}",
+    "removeConfirm": "Remover?",
+    "health": "Coisas a verificar: {{count}}",
+    "healthOk": "Nada a verificar",
+    "fileDate": "Data do ficheiro {{date}}"
+  },
+  "bulk": {
+    "selected": "Selecionados: {{count}}",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "solo": "Só estes",
+    "soloHint": "Mostra apenas os varrimentos selecionados. Prima de novo para mostrar todos.",
+    "frame": "Enquadrar",
+    "topic": "Tema",
+    "rename": "Mudar o nome",
+    "remove": "Remover",
+    "removeConfirm": "Remover da cena os varrimentos selecionados ({{count}})? Os ficheiros no seu dispositivo não são alterados.",
+    "removeYes": "Sim, remover",
+    "keep": "Manter",
+    "clear": "Limpar seleção"
+  },
+  "topics": {
+    "title": "Temas",
+    "add": "Novo tema",
+    "defaultName": "Tema {{n}}",
+    "edit": "Editar temas",
+    "done": "Concluído",
+    "name": "Nome do tema",
+    "color": "Cor do tema",
+    "delete": "Eliminar tema",
+    "empty": "Selecione varrimentos e depois adicione um tema para os agrupar por data de levantamento, zona ou disciplina.",
+    "chipHint": "Clique: selecionar · Ctrl/⌘+clique: adicionar · Alt+clique: mostrar só estes",
+    "show": "Mostrar {{name}}",
+    "hide": "Ocultar {{name}}",
+    "assignTitle": "Temas dos varrimentos selecionados",
+    "newFromSelection": "Novo tema a partir da seleção",
+    "limit": "Até {{max}} temas.",
+    "byFileDate": "Agrupar por data do ficheiro ({{count}})",
+    "byFileDateHint": "Um tema por cada data escrita no cabeçalho LAS/LAZ/COPC. É quando o ficheiro foi produzido — muitas vezes, mas nem sempre, o dia do levantamento.",
+    "dismiss": "Dispensar"
+  },
+  "place": {
+    "alignedTo": "Alinhado com {{model}}",
+    "alignedToNone": "Colocado sozinho — nenhum modelo IFC estava carregado quando chegou.",
+    "fileDate": "Data do ficheiro: {{date}}",
+    "fileDateHint": "Lida do cabeçalho do ficheiro — normalmente o dia do levantamento ou do processamento.",
+    "undo": "Anular",
+    "redo": "Refazer",
+    "historyHint": "Anular é partilhado com o painel Cena.",
+    "exact": "{{label}}, valor exato",
+    "fieldHint": "Setas para ajustar · Shift ×10 · Alt ×0,1",
+    "summary": "Posição dos varrimentos ({{count}})",
+    "together": "Mover em conjunto",
+    "togetherHint": "Move e roda estes varrimentos ({{count}}) como um só bloco em torno do seu centro comum. Cada um mantém o seu nivelamento e escala.",
+    "apply": "Aplicar",
+    "resetMany": "Repor a posição dos varrimentos ({{count}})",
+    "oneAtATime": "O eixo vertical, as unidades e o SRC definem-se um varrimento de cada vez — selecione um só para os alterar."
   }
 }

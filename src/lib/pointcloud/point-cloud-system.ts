@@ -1,7 +1,7 @@
 // ─── point-cloud-system ───────────────────────────────────────────────────────
 // Point cloud lifecycle owner — the third sibling of geo-system.ts and
 // solar-system.ts. This module owns EVERY Three.js resource point clouds touch
-// (root groups, geometries, the shared material, the LOD loop); pointCloudStore
+// (root groups, geometries, one material per cloud, the LOD loop); pointCloudStore
 // owns the product state; the viewer carries only a lazy getPointClouds() hook.
 //
 // Loaded via dynamic import — never import it statically from entry-path code.
@@ -20,6 +20,7 @@
 import * as THREE from 'three'
 import { createPointCloudMaterial, UNCLASSIFIED_CODE, type PointCloudMaterial } from './pc-material'
 import { effectiveTransform } from './pc-align'
+import { HIGHLIGHT_COLOR } from './pc-style'
 import { allocateBudget, viewChanged, viewSignature, type ChunkView } from './pc-lod'
 import {
   selectNodes, planResidency,
@@ -30,7 +31,7 @@ import { createLogger } from '../logger'
 import {
   BYTES_PER_POINT, DEFAULT_DISPLAY, MAX_POINTS_DEFAULT, RENDER_BUDGET_DEFAULT,
   type DynamicFrameUpdate, type DynamicPointFrame, type PointChunk,
-  type PointCloudAlignment, type PointCloudDisplay,
+  type PointCloudAlignment, type PointCloudDisplay, type CloudStyle,
 } from './pc-types'
 
 const log = createLogger('PointCloud')
@@ -128,8 +129,17 @@ export interface PointCloudSystemAPI {
   /** Re-apply an alignment (manual nudges call this on every slider move). */
   setAlignment(cloudId: string, alignment: PointCloudAlignment): void
   setVisible(cloudId: string, visible: boolean): void
-  /** Display settings are global — one material, every cloud. */
+  /** Scene default; per-cloud style on top; one program. */
   setDisplay(display: PointCloudDisplay): void
+  /**
+   * A cloud's resolved style (pc-style), or null for the scene default. Safe to
+   * call before create(): it is applied when the cloud is created.
+   */
+  setCloudStyle(cloudId: string, style: CloudStyle | null): void
+  /** Flash one cloud in HIGHLIGHT_COLOR (Locate); null clears. */
+  setHighlight(cloudId: string | null): void
+  /** The display a cloud actually draws with — tests and DEV checks. */
+  getCloudDisplay(cloudId: string): PointCloudDisplay | null
   /** Points drawn per frame at density 1. */
   setRenderBudget(budget: number): void
   /** Temporarily lower draw pressure while the camera is moving. */
@@ -219,6 +229,10 @@ interface CloudRecord {
   /** Points per resident node, so the hard ceiling can be enforced. */
   nodePointCounts: Map<string, number>
   lastStreamAt: number
+  /** This cloud's own material — same shader source as every other cloud's. */
+  material: PointCloudMaterial
+  /** Resolved per-scan style, or null for the scene default. */
+  style: CloudStyle | null
 }
 
 export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystemAPI {
@@ -226,7 +240,9 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   let display: PointCloudDisplay = { ...DEFAULT_DISPLAY }
   let renderBudget = RENDER_BUDGET_DEFAULT
   let interactionActive = false
-  let material: PointCloudMaterial | null = null
+  /** Styles that arrived before their cloud was created. */
+  const pendingStyles = new Map<string, CloudStyle | null>()
+  let highlightId: string | null = null
   let disposed = false
 
   let rafId: number | null = null
@@ -241,9 +257,22 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   const tmpVec = new THREE.Vector3()
   const tmpSphere = new THREE.Sphere()
 
-  function getMaterial(): PointCloudMaterial {
-    material ??= createPointCloudMaterial(display, ctx.renderer.getPixelRatio())
-    return material
+  /**
+   * What one cloud draws with: the scene default, its own style on top, and the
+   * Locate flash over both. Analysis fields always come from `display`, because
+   * CloudStyle cannot carry them — that keeps epochs comparable.
+   */
+  function effectiveFor(cloudId: string, style: CloudStyle | null): PointCloudDisplay {
+    const merged: PointCloudDisplay = { ...display, ...(style ?? {}) }
+    if (cloudId !== highlightId) return merged
+    return { ...merged, colorMode: 'flat', flatColor: HIGHLIGHT_COLOR, pointSize: merged.pointSize + 1.5, opacity: 1 }
+  }
+
+  function applyCloudMaterial(cloud: CloudRecord): void {
+    cloud.material.applyDisplay(effectiveFor(cloud.id, cloud.style), ctx.renderer.getPixelRatio())
+    const bounds = worldBounds()
+    if (bounds) cloud.material.setElevationRange(bounds.min.y, bounds.max.y)
+    invalidateLod()
   }
 
   // ── Transform ────────────────────────────────────────────────────────────────
@@ -287,7 +316,8 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   /** Elevation ramp domain = the union of every resident cloud, in world Y. */
   function refreshElevationRange(): void {
     const bounds = worldBounds()
-    if (bounds && material) material.setElevationRange(bounds.min.y, bounds.max.y)
+    if (!bounds) return
+    for (const c of clouds.values()) c.material.setElevationRange(bounds.min.y, bounds.max.y)
   }
 
   // ── Bounds ───────────────────────────────────────────────────────────────────
@@ -505,6 +535,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   function disposeCloud(cloud: CloudRecord): void {
     for (const chunk of cloud.chunks) disposeChunk(chunk)
     cloud.chunks.length = 0
+    cloud.material.dispose()
     // Withdraw from the shared raycaster BEFORE leaving the scene. The registry
     // is a Set held elsewhere, so a root left in it survives removal from the
     // scene graph entirely — the closure keeps its chunks and their GPU buffers
@@ -671,8 +702,10 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       // keeps the pre-existing behaviour where clouds are inspect-only.
       ctx.registerRaycastTarget?.(root)
 
+      const style = pendingStyles.get(cloudId) ?? null
       const record: CloudRecord = {
         id: cloudId, root, chunks: [], alignment,
+        style, material: createPointCloudMaterial(effectiveFor(cloudId, style), ctx.renderer.getPixelRatio()),
         pointCount: 0, drawnCount: 0, localBox: new THREE.Box3(),
         sourceOrigin: sourceOrigin ?? { x: 0, y: 0, z: 0 },
         streaming: null, residentNodes: new Set(),
@@ -712,7 +745,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), chunk.radius || 1e-3)
       geometry.setDrawRange(0, chunk.count)
 
-      const points = new THREE.Points(geometry, getMaterial())
+      const points = new THREE.Points(geometry, cloud.material)
       points.position.set(chunk.origin.x, chunk.origin.y, chunk.origin.z)
       points.frustumCulled = true
       // Never intercept a model click: the IFC selection raycast must behave
@@ -777,7 +810,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e-3)
       geometry.setDrawRange(0, 0)
 
-      const points = new THREE.Points(geometry, getMaterial())
+      const points = new THREE.Points(geometry, cloud.material)
       points.frustumCulled = true
       points.visible = false
       points.raycast = () => { /* routed through the cloud root */ }
@@ -867,6 +900,9 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
     setAlignment(cloudId, alignment) {
       const cloud = clouds.get(cloudId)
       if (!cloud) return
+      // The store always writes a new object; the same one means nothing moved
+      // (the GPU sync and the synchronous applies both push it).
+      if (cloud.alignment === alignment) return
       cloud.alignment = alignment
       applyAlignment(cloud)
       invalidateLod()
@@ -882,8 +918,32 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
 
     setDisplay(next) {
       display = next
-      material?.applyDisplay(next, ctx.renderer.getPixelRatio())
+      for (const cloud of clouds.values()) applyCloudMaterial(cloud)
       invalidateLod()
+    },
+
+    setCloudStyle(cloudId, style) {
+      if (disposed) return
+      pendingStyles.set(cloudId, style)
+      const cloud = clouds.get(cloudId)
+      if (!cloud) return
+      cloud.style = style
+      applyCloudMaterial(cloud)
+    },
+
+    setHighlight(cloudId) {
+      if (disposed || highlightId === cloudId) return
+      const previous = highlightId
+      highlightId = cloudId
+      for (const id of [previous, cloudId]) {
+        const cloud = id ? clouds.get(id) : undefined
+        if (cloud) applyCloudMaterial(cloud)
+      }
+    },
+
+    getCloudDisplay(cloudId) {
+      const cloud = clouds.get(cloudId)
+      return cloud ? effectiveFor(cloud.id, cloud.style) : null
     },
 
     setRenderBudget(budget) {
@@ -1002,6 +1062,8 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       if (!cloud) return
       disposeCloud(cloud)
       clouds.delete(cloudId)
+      pendingStyles.delete(cloudId)
+      if (highlightId === cloudId) highlightId = null
       if (clouds.size === 0) stopLoop()
       refreshElevationRange()
     },
@@ -1016,8 +1078,8 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       stopLoop()
       for (const cloud of clouds.values()) disposeCloud(cloud)
       clouds.clear()
-      material?.dispose()
-      material = null
+      pendingStyles.clear()
+      highlightId = null
     },
   }
 

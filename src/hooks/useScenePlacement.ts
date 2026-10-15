@@ -18,6 +18,7 @@ import { useTransformHistoryStore, type PlacementSnapshot } from '../stores/tran
 import { applyRigidMotion, groundPivot, type Member, type RigidMotion, type Vec3 } from '../lib/rigid-move'
 import { effectiveTransform } from '../lib/pointcloud/pc-align'
 import { NO_OFFSET, type AlignmentOffset } from '../lib/pointcloud/pc-types'
+import { applyCloudOffset } from '../lib/pointcloud/pc-gpu-sync'
 
 const V0: Vec3 = { x: 0, y: 0, z: 0 }
 
@@ -54,6 +55,13 @@ export interface ScenePlacement {
   setModelTransform: (id: string, t: ModelTransform) => void
   /** Restore identity for these models and zero these clouds' offsets. Recorded. */
   reset: (ids: ReadonlyArray<string>) => void
+  /**
+   * Patch these clouds' offsets. Recorded for undo; a `gesture` key (slider or
+   * arrow burst) coalesces repeated edits into one step.
+   */
+  editCloudOffset: (ids: ReadonlyArray<string>, patch: Partial<AlignmentOffset>, gesture?: string) => void
+  /** FULL reset of these clouds' offsets, levelling and scale included. Recorded. */
+  resetCloudOffset: (ids: ReadonlyArray<string>) => void
   undo: () => void
   redo: () => void
   beginTemporary: () => void
@@ -70,19 +78,13 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
   }, [viewerApiRef])
 
   const applyCloud = useCallback((id: string, offset: Partial<AlignmentOffset>) => {
-    const store = usePointCloudStore.getState()
-    store.setOffset(id, offset)
-    const next = usePointCloudStore.getState().clouds.find((c) => c.id === id)
-    if (next?.alignment) {
-      const alignment = next.alignment
-      // Synchronously when the system is loaded (it is, if a cloud exists): the
-      // pivot is read back from the cloud's bounds right after this, and a
-      // deferred apply made it read the OLD box — each turn then used a stale
-      // pivot and the set drifted.
-      const system = viewerApiRef.current?.peekPointClouds()
-      if (system) system.setAlignment(id, alignment)
-      else void viewerApiRef.current?.getPointClouds().then((s) => s.setAlignment(id, alignment))
-    }
+    // Synchronously when the system is loaded (it is, if a cloud exists): the
+    // pivot is read back from the cloud's bounds right after this, and a
+    // deferred apply made it read the OLD box — each turn then used a stale
+    // pivot and the set drifted.
+    const system = viewerApiRef.current?.peekPointClouds() ?? null
+    const alignment = applyCloudOffset(system, id, offset)
+    if (alignment && !system) void viewerApiRef.current?.getPointClouds().then((s) => s.setAlignment(id, alignment))
   }, [viewerApiRef])
 
   const applySnapshot = useCallback((snap: PlacementSnapshot) => {
@@ -92,7 +94,7 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
     for (const [id, o] of Object.entries(snap.clouds)) if (loadedClouds.has(id)) applyCloud(id, o)
   }, [applyModel, applyCloud])
 
-  const record = useCallback(() => useTransformHistoryStore.getState().record(snapshot()), [])
+  const record = useCallback((key?: string) => useTransformHistoryStore.getState().record(snapshot(), key), [])
 
   const membersOf = useCallback((ids: ReadonlyArray<string>): Member[] => {
     const want = new Set(ids)
@@ -171,6 +173,22 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
     }
   }, [record, viewerApiRef, applyCloud])
 
+  const editCloudOffset = useCallback((ids: ReadonlyArray<string>, patch: Partial<AlignmentOffset>, gesture?: string) => {
+    const want = new Set(ids)
+    const targets = usePointCloudStore.getState().clouds.filter((c) => want.has(c.id) && c.alignment)
+    if (targets.length === 0) return
+    record(gesture)
+    for (const c of targets) applyCloud(c.id, patch)
+  }, [record, applyCloud])
+
+  const resetCloudOffset = useCallback((ids: ReadonlyArray<string>) => {
+    const want = new Set(ids)
+    const targets = usePointCloudStore.getState().clouds.filter((c) => want.has(c.id) && c.alignment)
+    if (targets.length === 0) return
+    record()
+    for (const c of targets) applyCloud(c.id, NO_OFFSET)
+  }, [record, applyCloud])
+
   const undo = useCallback(() => {
     const prev = useTransformHistoryStore.getState().undo(snapshot())
     if (prev) applySnapshot(prev)
@@ -194,5 +212,8 @@ export function useScenePlacement(viewerApiRef: React.MutableRefObject<ViewerAPI
     }
   }, [applySnapshot])
 
-  return { membersOf, pivotOf, moveRigid, beginDrag, setModelTransform, reset, undo, redo, beginTemporary, endTemporary }
+  return {
+    membersOf, pivotOf, moveRigid, beginDrag, setModelTransform, reset,
+    editCloudOffset, resetCloudOffset, undo, redo, beginTemporary, endTemporary,
+  }
 }

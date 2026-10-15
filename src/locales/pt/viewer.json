@@ -191,7 +191,9 @@
         "projectName": "Mesmo projeto e local",
         "proximity": "Proximidade geográfica",
         "single": "Ficheiro único"
-      }
+      },
+      "editScan": "Editar no painel Nuvem de pontos",
+      "topics": "Temas: {{names}}"
     },
     "scope": {
       "label": "Âmbito",

@@ -414,6 +414,14 @@ describe('offset persistence', () => {
     expect(loadOffset(key)).toBeNull()
   })
 
+  it('keeps a levelling-only correction', () => {
+    const key = cloudFileKey(file)
+    saveOffset(key, clampOffset({ pitchDeg: 1.5 }))
+    expect(loadOffset(key)?.pitchDeg).toBe(1.5)
+    saveOffset(key, clampOffset({ rollDeg: -2 }))
+    expect(loadOffset(key)?.rollDeg).toBe(-2)
+  })
+
   it('returns null for an unknown file and for corrupt storage', () => {
     expect(loadOffset('never-seen')).toBeNull()
     localStorage.setItem('ifc-pc-offset:v1:broken', '{not json')

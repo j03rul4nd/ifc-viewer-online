@@ -191,7 +191,9 @@
         "projectName": "同一プロジェクトと敷地",
         "proximity": "地理的な近さ",
         "single": "単一ファイル"
-      }
+      },
+      "editScan": "点群パネルで編集",
+      "topics": "トピック: {{names}}"
     },
     "scope": {
       "label": "範囲",

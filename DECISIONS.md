@@ -883,3 +883,33 @@ empty-scene card (the always-present doors remove the dead end).
 A single-kind drop auto-opens its panel and collapses Properties. Restored data
 layers now show the rail on an otherwise empty boot. Three enum-only analytics
 events measure ingest. See docs/ADD_DATA.md.
+
+## D-35 · Point cloud sets: per-scan style, real selection, generic topics
+
+**Date:** 2026-10-15 · **Status:** accepted
+
+**Context.** Every look was global (one shared material), a colour fallback for
+a newly landed scan repainted the others, scans could not be selected together,
+renamed or grouped by survey, and the SDK placement command moved the store but
+not the GPU.
+
+**Decision.**
+1. A scene default plus a 4-field per-scan style (`CLOUD_STYLE_KEYS`: colour
+   mode, single colour, point size, opacity) on **per-cloud materials** built
+   from one shader source (one program). Analysis stays scene-wide.
+2. A selection-derived scope bar where **All means all**: an All edit strips the
+   overrides of the fields it sets; the SDK display command is an All edit.
+3. Generic many-to-many topics keyed `kind:stableKey` (`ifcv.topics.v1`); per-file
+   prefs in `ifc-pc-items:v1`, whose style part is not hydrated when framed.
+4. One store → GPU sync (`pc-gpu-sync`), attached lazily, for every writer.
+5. Placement through the shared undo stack, coalesced per gesture in the store.
+
+**Rejected.** Swapping uniforms on a shared material in `onBeforeRender` (order
+dependent with transparency); topics inside `sceneGroupStore` (single-membership
+containers pinned by the SDK); auto-selecting new scans (silent overrides);
+`fileDate` on SourceFrame (rebuilt at 'done'); an in-panel gizmo (one viewer
+gizmo slot, and `useSceneGizmo` clears it on id changes).
+
+**Consequences.** Persisted styles can make a scan look different on return;
+the row swatch, *Use scene default* and *Reset all* make that visible. Style,
+topic and rename edits are not undoable. See docs/POINT_CLOUD.md §4.

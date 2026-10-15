@@ -99,7 +99,12 @@ export interface PointAttributesPresent {
   confidence: boolean
 }
 
-export type PointColorMode = 'rgb' | 'intensity' | 'elevation' | 'classification' | 'flat'
+/**
+ * 'scan' (each scan in its identity colour) and 'topic' (each scan in its first
+ * topic's colour) are resolved per cloud by pc-style to 'flat' and never reach
+ * the shader.
+ */
+export type PointColorMode = 'rgb' | 'intensity' | 'elevation' | 'classification' | 'flat' | 'scan' | 'topic'
 
 // ── Chunks ─────────────────────────────────────────────────────────────────────
 
@@ -308,9 +313,18 @@ export interface PointCloudEntry {
   /** Stable per-file identity — the key a manual placement is persisted under. */
   fileKey: string
   loadedAt: number
+  /** User-given display name (≤80 chars); null/undefined → the file name. */
+  name?: string | null
+  /** Identity colour, 0xRRGGBB — the row swatch and 'One colour per scan'. */
+  color?: number
+  /** Per-scan overrides of CLOUD_STYLE_KEYS; everything else is scene-wide. */
+  style?: CloudStyleOverride | null
+  /** 'YYYY-MM-DD' from a LAS-family header's file-creation date, when present. */
+  fileDate?: string | null
 }
 
-// ── Display settings (one set, applies to every loaded cloud) ──────────────────
+// ── Display settings — the SCENE DEFAULT. CLOUD_STYLE_KEYS may be overridden ───
+//    per scan; everything else is scene-wide.
 
 export interface PointCloudDisplay {
   /** Point size. Pixels when attenuate is off; scene metres when on. */
@@ -355,6 +369,14 @@ export interface PointCloudDisplay {
   /** Contour spacing, scene metres. */
   contourInterval: number
 }
+
+/** The only display fields a single scan may override. */
+export const CLOUD_STYLE_KEYS = ['colorMode', 'flatColor', 'pointSize', 'opacity'] as const
+export type CloudStyleKey = typeof CLOUD_STYLE_KEYS[number]
+/** A scan's own overrides; a missing key inherits the scene default. */
+export type CloudStyleOverride = Partial<Pick<PointCloudDisplay, CloudStyleKey>>
+/** Resolved per-scan style. colorMode is a shader mode: never 'scan'/'topic'. */
+export type CloudStyle = Pick<PointCloudDisplay, CloudStyleKey>
 
 export const DEFAULT_DISPLAY: PointCloudDisplay = {
   pointSize: 2,
@@ -486,7 +508,7 @@ export type PointCloudWorkerIn =
   | { type: 'cancel' }
 
 export type PointCloudWorkerOut =
-  | { type: 'header'; id: string; frame: SourceFrame; attributes: PointAttributesPresent; declaredCount: number | null }
+  | { type: 'header'; id: string; frame: SourceFrame; attributes: PointAttributesPresent; declaredCount: number | null; fileDate?: string | null }
   | { type: 'chunk'; id: string; chunk: PointChunk; progress: number }
   /**
    * Read progress, independent of chunks: `fraction` 0-1 as the reader reports

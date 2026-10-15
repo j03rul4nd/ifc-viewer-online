@@ -20,7 +20,12 @@ import type { SceneTreeGroup } from '../lib/scene-tree'
 import { LOOSE } from '../lib/scene-tree'
 import type { GroupBasis } from '../lib/model-grouping'
 import { useSceneGroupStore } from '../stores/sceneGroupStore'
-import { usePointCloudStore } from '../stores/pointCloudStore'
+import { useShallow } from 'zustand/react/shallow'
+import { usePointCloudStore, cloudLabel } from '../stores/pointCloudStore'
+import { useTopicStore } from '../stores/topicStore'
+import { itemKey, topicsOf } from '../lib/topics'
+import { modeFromEvent } from '../lib/selection'
+import { Sliders } from './Icons'
 import { modelFileKey } from '../hooks/useModelGroups'
 import type { PointCloudEntry } from '../lib/pointcloud/pc-types'
 
@@ -128,6 +133,11 @@ export default function SceneGroupTree({
   const store = useSceneGroupStore()
   const clouds = usePointCloudStore((s) => s.clouds)
   const cloudsById = useMemo(() => new Map(clouds.map((c) => [c.id, c])), [clouds])
+  // Cloud rows share the point cloud panel's selection, ranged in THIS tree's order.
+  const selectedClouds = usePointCloudStore(useShallow((s) => s.selectedCloudIds))
+  const topicState = useTopicStore(useShallow((s) => ({ topics: s.topics, members: s.members })))
+  const treeCloudOrder = useMemo(
+    () => [...groups.flatMap((g) => g.cloudIds), ...looseCloudIds], [groups, looseCloudIds])
 
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -172,7 +182,8 @@ export default function SceneGroupTree({
 
   const setCloudVisible = useCallback((cloud: PointCloudEntry, v: boolean) => {
     usePointCloudStore.getState().setVisible(cloud.id, v)
-    void viewerApiRef.current?.getPointClouds().then((s) => s.setVisible(cloud.id, v))
+    // Directly too: the panel's GPU sync is not running in every skin.
+    viewerApiRef.current?.peekPointClouds()?.setVisible(cloud.id, v)
   }, [viewerApiRef])
 
   const groupVisible = (g: SceneTreeGroup): boolean =>
@@ -307,12 +318,22 @@ export default function SceneGroupTree({
     />
   )
 
-  const cloudRow = (c: PointCloudEntry): React.ReactNode => (
+  const cloudRow = (c: PointCloudEntry): React.ReactNode => {
+    const selected = selectedClouds.includes(c.id)
+    const topics = topicsOf(topicState, itemKey('cloud', c.fileKey))
+    return (
     <div
       key={c.id}
       {...dragProps({ kind: 'cloud', id: c.id })}
+      aria-selected={selected}
+      data-testid="scene-cloud-row"
+      onClick={(e) => {
+        if ((e.target as Element).closest('button,select,input')) return
+        usePointCloudStore.getState().clickCloud(c.id, modeFromEvent(e), treeCloudOrder)
+      }}
       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border hover:bg-[rgba(255,255,255,0.04)] ${
-        touchDraggingId === c.id ? 'opacity-60 border-[var(--accent)]' : 'border-transparent'
+        touchDraggingId === c.id ? 'opacity-60 border-[var(--accent)]'
+          : selected ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-transparent'
       }`}
     >
       <button
@@ -322,13 +343,35 @@ export default function SceneGroupTree({
       >
         <EyeIcon on={c.visible} />
       </button>
+      <span className="flex-none w-2 h-2 rounded-[2px]" style={{ background: `#${(c.color ?? 0x888888).toString(16).padStart(6, '0')}` }} aria-hidden />
       <span className="flex-none text-[8.5px] font-semibold px-1 py-px rounded bg-[rgba(64,196,160,0.14)] text-[rgb(90,210,170)]">PC</span>
       <span className="flex-1 min-w-0">
-        <span className="block truncate text-[11.5px] text-[var(--text)] cursor-default" title={`${c.fileName} · ${t('scene.frameOnDoubleClick')}`} onDoubleClick={() => frame([c.id])}>{c.fileName}</span>
+        <span className="flex items-center gap-1 min-w-0">
+          <span className="block truncate text-[11.5px] text-[var(--text)] cursor-default" title={`${c.fileName} · ${t('scene.frameOnDoubleClick')}`} onDoubleClick={() => frame([c.id])}>{cloudLabel(c)}</span>
+          {topics.length > 0 && (
+            <span className="flex-none flex gap-0.5" title={t('scene.tree.topics', { names: topics.map((x) => x.name).join(', ') })}>
+              {topics.slice(0, 3).map((x) => (
+                <span key={x.id} className="w-1.5 h-1.5 rounded-full" style={{ background: `#${x.color.toString(16).padStart(6, '0')}` }} />
+              ))}
+            </span>
+          )}
+        </span>
         <span className="block text-[10px] text-[var(--text-muted)] tabular-nums">
           {t('scene.tree.points', { count: c.pointCount, formatted: c.pointCount.toLocaleString() })}
         </span>
       </span>
+      <button
+        onClick={() => {
+          usePointCloudStore.getState().selectClouds([c.id])
+          usePointCloudStore.getState().setPanelOpen(true)
+        }}
+        title={t('scene.tree.editScan')}
+        aria-label={t('scene.tree.editScan')}
+        data-testid="scene-cloud-edit"
+        className={iconBtn}
+      >
+        <Sliders size={12} />
+      </button>
       <button onClick={() => frame([c.id])} title={t('scene.frameCamera')} className={iconBtn}><FrameIcon /></button>
       <MoveToControl
         groups={groups}
@@ -339,7 +382,8 @@ export default function SceneGroupTree({
         label={t('scene.tree.moveTo')}
       />
     </div>
-  )
+    )
+  }
 
   const basisLabel = (b: GroupBasis): string => t(`scene.tree.basis.${b}`)
 

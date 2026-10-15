@@ -67,7 +67,8 @@ const SEVERITY_ORDER: Record<IssueSeverity, number> = { error: 0, warn: 1, info:
 
 /** Does the file carry the data a colour mode draws? */
 export function colorModeAvailable(mode: PointColorMode, attributes: PointAttributesPresent | undefined): boolean {
-  if (mode === 'flat' || mode === 'elevation') return true
+  // 'scan'/'topic' resolve to flat colours, which every file can draw.
+  if (mode === 'flat' || mode === 'elevation' || mode === 'scan' || mode === 'topic') return true
   if (!attributes) return false
   if (mode === 'rgb') return attributes.color
   if (mode === 'intensity') return attributes.intensity

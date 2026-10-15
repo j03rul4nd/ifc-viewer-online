@@ -217,10 +217,11 @@ class FakeWorker {
     if (this.terminated) return   // a terminated worker says nothing more
     this.onmessage?.({ data: { id: this.cloudId, ...data } } as MessageEvent)
   }
-  header(declaredCount: number | null, frame: SourceFrame = FRAME): void {
+  header(declaredCount: number | null, frame: SourceFrame = FRAME, extra: Record<string, unknown> = {}): void {
     this.emit({
       type: 'header', frame, declaredCount,
       attributes: { color: true, intensity: false, classification: false, confidence: false },
+      ...extra,
     })
   }
   chunk(count: number, progress = 0, id = `k${count}`): void {
@@ -364,6 +365,21 @@ describe('point cloud loads — worker lifecycle', () => {
     expect(cloud(id)!.status).toBe('ready')
     expect(progress[progress.length - 1]).toEqual({ fraction: 1, points: 1_000, totalPoints: 1_000 })
     expect(worker.terminated).toBe(true)
+  })
+
+  it('keeps the header file date on the entry through done', async () => {
+    const { load, worker, system, id } = await start()
+    worker.header(10, FRAME, { fileDate: '2026-08-09' })
+    await until(() => system.create.mock.calls.length === 1, 'the cloud to be placed')
+    worker.chunk(10, 100)
+    worker.done(10)
+    await until(() => load.settled, 'the load to settle')
+    expect(cloud(id)!.fileDate).toBe('2026-08-09')
+
+    const other = await start()
+    other.worker.header(10)
+    await until(() => other.system.create.mock.calls.length === 1, 'the second cloud to be placed')
+    expect(cloud(other.id)!.fileDate).toBeNull()
   })
 
   it('buffers chunks that beat the alignment instead of dropping them', async () => {

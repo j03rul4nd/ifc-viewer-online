@@ -191,7 +191,9 @@
         "projectName": "Mateix projecte i emplaçament",
         "proximity": "Proximitat geogràfica",
         "single": "Fitxer únic"
-      }
+      },
+      "editScan": "Edita al panell Núvol de punts",
+      "topics": "Temes: {{names}}"
     },
     "scope": {
       "label": "Àmbit",
