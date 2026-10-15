@@ -345,5 +345,9 @@
     "load": "加载数据",
     "skip": "暂不",
     "skipped": "未加载该链接的外部数据。"
+  },
+  "layout": {
+    "resizePanel": "调整面板大小",
+    "resizePanelHint": "拖动或使用方向键调整大小。双击切换尺寸。"
   }
 }

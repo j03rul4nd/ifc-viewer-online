@@ -64,3 +64,24 @@ describe('the main column', () => {
     expect(app).toContain('data-main-column')
   })
 })
+
+describe('the results drawers', () => {
+  for (const file of ['components/ValidationPanel.tsx', 'components/IdsPanel.tsx']) {
+    it(`${file} uses the shared grip and height`, () => {
+      const src = read(file)
+      expect(src).toContain('<DrawerResizeGrip')
+      expect(src).not.toContain('min(44dvh')
+      expect(src).not.toContain('DEFAULT_PANEL_H')
+      expect(src).not.toContain('title="Drag to resize"')
+    })
+
+    it(`${file} keeps its drawer root unpositioned`, () => {
+      const src = read(file)
+      const at = src.indexOf('data-bottom-drawer=')
+      expect(at).toBeGreaterThan(-1)
+      const cls = src.slice(at).match(/className="([^"]*)"/)
+      expect(cls).not.toBeNull()
+      expect(cls![1]).not.toMatch(/\b(relative|absolute|fixed|sticky)\b|\bz-/)
+    })
+  }
+})

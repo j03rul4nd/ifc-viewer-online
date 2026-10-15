@@ -52,6 +52,9 @@ import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '
 import { useIsMobile } from '../hooks/useIsMobile'
 import ValidationPanelMobile from './mobile/ValidationPanelMobile'
 import { FloodValidationSlot } from '../features/flood/ui/FloodValidationSlot'
+import { DRAWER_MIN_PX, drawerHeightCss } from '../lib/ui/lane'
+import { useLaneStore, selectDrawerReservePx } from '../stores/laneStore'
+import { DrawerResizeGrip } from './DrawerResizeGrip'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
 // Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
@@ -66,11 +69,6 @@ function localizedProfileName(p: { id: string; name: string }, t: TFunction<'val
 function localizedProfileDescription(p: { id: string; description: string }, t: TFunction<'validation'>): string {
   return t(`profile.${p.id}.description`, { defaultValue: p.description })
 }
-
-// ── Resize constants ──────────────────────────────────────────────────────────
-
-const MIN_PANEL_H = 180
-const DEFAULT_PANEL_H = 360
 
 // Total number of validation rules in the catalogue. Uses the canonical
 // RULE_COUNT (same derivation as the signed certificate's `+rN` suffix);
@@ -1676,73 +1674,13 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const [showRunDiff, setShowRunDiff] = useState(true)
   useEffect(() => { setShowPhantomNotice(true); setShowRunDiff(true) }, [result])
 
-  // ── Resize state ──────────────────────────────────────────────────────
-
-  // Lazy initializer: on mobile start at MIN_PANEL_H so the 3D canvas keeps
-  // as much vertical space as possible when the panel is first opened.
-  // On desktop clamp to 82 dvh so we never start taller than the viewport.
-  const [panelHeight, setPanelHeight] = useState<number>(() => {
-    if (typeof window === 'undefined') return DEFAULT_PANEL_H
-    if (window.innerWidth < 768) return MIN_PANEL_H
-    return Math.min(DEFAULT_PANEL_H, Math.floor(window.innerHeight * 0.82))
-  })
-  const [isDragging,   setIsDragging]   = useState(false)
-  const [gripHovered,  setGripHovered]  = useState(false)
-  const panelHRef   = useRef(panelHeight)
-  const mountedRef  = useRef(true)
-  const rafRef      = useRef<number>(0)
-  const pendingHRef = useRef<number>(0)
-
-  useEffect(() => {
-    mountedRef.current = true              // reset after StrictMode double-invoke
-    return () => { mountedRef.current = false }
-  }, [])
-
-  const updatePanelHeight = useCallback((h: number) => {
-    if (!mountedRef.current) return
-    const maxH = Math.floor(window.innerHeight * 0.82)
-    const clamped = Math.max(MIN_PANEL_H, Math.min(maxH, h))
-    panelHRef.current = clamped
-    setPanelHeight(clamped)
-  }, [])
-
-  // ── Resize grip ──────────────────────────────────────────────────────────
-  // Using React onPointerDown so no timing/ref issues; move+up go to
-  // document so they always fire even when the pointer leaves the grip.
-  const handleGripPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button > 0) return
-    e.preventDefault()
-    e.stopPropagation()
-
-    const startY = e.clientY
-    const startH = panelHRef.current
-
-    setIsDragging(true)
-    document.body.style.userSelect = 'none'
-    document.body.style.cursor     = 'ns-resize'
-
-    const handleMove = (ev: PointerEvent): void => {
-      pendingHRef.current = startH + (startY - ev.clientY)
-      if (rafRef.current) return
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = 0
-        updatePanelHeight(pendingHRef.current)
-      })
-    }
-    const handleUp = (): void => {
-      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
-      setIsDragging(false)
-      document.removeEventListener('pointermove',   handleMove)
-      document.removeEventListener('pointerup',     handleUp)
-      document.removeEventListener('pointercancel', handleUp)
-      document.body.style.userSelect = ''
-      document.body.style.cursor     = ''
-    }
-
-    document.addEventListener('pointermove',   handleMove)
-    document.addEventListener('pointerup',     handleUp)
-    document.addEventListener('pointercancel', handleUp)
-  }, [updatePanelHeight])
+  // ── Drawer height ─────────────────────────────────────────────────
+  // One share of the main column for Validation and IDS (uiStore), resized by
+  // the shared grip. The reserve is the width an open content panel takes
+  // over this drawer's right side (lib/ui/lane, WINDOW_DESIGN R6).
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const drawerRatio = useUIStore((s) => s.bottomDrawerRatio)
+  const drawerReserve = useLaneStore(selectDrawerReservePx)
 
   // ── Data ──────────────────────────────────────────────────────────────
 
@@ -2251,44 +2189,24 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // ── Expanded state ────────────────────────────────────────────────────
 
   return (
+    // Unpositioned on purpose (no relative / z-*): content panels paint over
+    // this drawer's right side, and it yields that width with padding.
     <div
+      ref={drawerRef}
+      data-bottom-drawer="validation"
       className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0"
       style={{
-        height:     panelHeight,
-        minHeight:  MIN_PANEL_H,
-        maxHeight:  'min(82dvh, calc(100% - 120px))',
-        willChange: isDragging ? 'height' : 'auto',
+        height:       drawerHeightCss(drawerRatio, DRAWER_MIN_PX),
+        minHeight:    DRAWER_MIN_PX,
+        paddingRight: drawerReserve || undefined,
       }}
     >
-      {/* ── Resize grip ── */}
-      <div
-        onPointerDown={handleGripPointerDown}
-        onMouseEnter={() => setGripHovered(true)}
-        onMouseLeave={() => setGripHovered(false)}
-        className="h-5 shrink-0 cursor-ns-resize flex items-center justify-center select-none touch-none"
-        style={{
-          background: isDragging
-            ? 'var(--accent)33'
-            : gripHovered
-              ? 'var(--accent)1a'
-              : 'var(--surface-2)',
-          borderBottom: '1px solid var(--border)',
-        }}
-        title="Drag to resize"
-      >
-        <div className="flex gap-[4px] items-center">
-          {[0,1,2,3,4,5,6].map((i) => (
-            <div
-              key={i}
-              className="w-[4px] h-[4px] rounded-full"
-              style={{ background: (isDragging || gripHovered) ? 'var(--accent)' : 'var(--text-faint)' }}
-            />
-          ))}
-        </div>
-      </div>
+      <DrawerResizeGrip drawerRef={drawerRef} minPx={DRAWER_MIN_PX} />
 
       {/* ── Row 1: identity + stats + actions ── */}
       <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0 overflow-hidden">
+        {/* Labels clip before controls do when a panel takes part of the width. */}
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
           {t('panel.title')}
         </span>
@@ -2353,8 +2271,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             )}
           </div>
         )}
-
-        <div className="flex-1" />
+        </div>
 
         {/* Batch auto-fix */}
         {autoFixableCount > 0 && (
@@ -2459,6 +2376,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         {/* Collapse */}
         <button
           onClick={toggleValidationPanel}
+          aria-label={t('actions.collapsePanel')}
+          title={t('actions.collapsePanel')}
           className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
