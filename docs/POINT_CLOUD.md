@@ -101,8 +101,10 @@ not need an IFC open first — a scan on its own is a valid thing to look at.
 
 ### Sample scans
 
-With nothing loaded the panel lists four **public LiDAR samples** you can open in
-one click — the point cloud counterpart of the demo IFC gallery. They are fetched
+With nothing loaded the panel lists the **public LiDAR samples** you can open in
+one click; once a scan is loaded they live in the folded **Sample scans and LiDAR
+demos** disclosure at the bottom of the panel, which the hub's *Samples* action
+opens directly (`pointCloudStore.openSamples()`). They are fetched
 straight from `raw.githubusercontent.com` into the browser and go through the
 exact same loader a dropped file does, so what you see is what you would get with
 your own scan. Registry: `src/demo-models/point-clouds.ts`.
@@ -215,6 +217,16 @@ guess** (the bottom two rungs), or on request. Offsets apply *on top of* the
 derived transform and are never folded into it, so **Reset placement** always
 returns to what the files actually say.
 
+Every field has a slider for coarse moves and an **exact-value box** (Enter
+commits; ↑/↓ nudge one step, Shift ×10, Alt ×0.1; no ±200 m cap). Edits go
+through the **shared undo history** — Undo/Redo in the panel and in the Scene
+panel are the same stack — and a slider drag or an arrow-key burst is **one
+undo step** (same gesture key within 800 ms, `transformHistoryStore.record`).
+With several scans selected, **Move together** shifts and turns them as one
+rigid block about their shared centre, and **Reset placement of N scans** resets
+them all. A levelling-only correction (pitch/roll with everything else at zero)
+is persisted like any other.
+
 A placement you tune is **persisted per file** (keyed by name, size and
 modification time, in `localStorage`, device-local and never uploaded) and
 restored the next time you open that same scan — it takes precedence over a
@@ -269,11 +281,66 @@ axis is right the sliders behave the way a person expects. With both at zero the
 composition reduces exactly to what it always was — pinned by a test, because
 adding two angles must not move a single existing scan.
 
-## 4. Display controls
+## 4. Scans, selection and scope
+
+**The list.** Click selects a scan; Ctrl/⌘-click adds or removes; Shift-click
+selects a range (`lib/selection.ts`, Explorer rules). With two or more scans a
+checkbox column and a tri-state select-all appear (44 px on phones); Ctrl/⌘+A in
+the list selects all. **Esc** clears the selection and stops there; a second Esc
+closes the panel. Each row has an identity swatch (click to recolour), a health
+dot computed for *that* scan, topic dots, the file date when the header has one,
+**Locate** (frames the scan and flashes it magenta for 1.2 s), eye and a remove
+that asks first. Double-click or F2 renames; the name is remembered per file.
+
+**Bulk bar** (shown with a selection): Show · Hide · Solo (again: show all) ·
+Frame · Topic · Rename (one scan) · Remove with an inline confirm. Confirms and
+the topic picker render in the panel flow — a Modal would close the panel.
+
+**Scope.** Under the tabs, *Applies to: All scans | Selected (N)* follows the
+selection (shown with 2+ scans). With fewer than two scans, or nothing selected,
+the scope is always All. **All really means all**: an All edit writes the scene
+default and strips that field from every scan's override; *Reset all to scene
+default* clears every override.
+
+| Per scan (overridable) | Scene-wide (always) |
+|---|---|
+| Colour by, single colour, point size, opacity (`CLOUD_STYLE_KEYS`) | presets, round points, shrink with distance, detail, draw budget, confidence, slice, classes, contours |
+
+Scene-wide analysis keeps epochs comparable (one height ramp, one filter), and
+stays shader-only: each scan has its own material built from the same shader
+source, so three compiles one program and a per-scan style is a uniform write.
+
+**One colour per scan** draws each scan in its identity colour; **Colour by
+topic** in its first topic's colour (grey without one). Both resolve on the CPU
+(`pc-style.resolveCloudStyle`) to a flat colour. A scan that has no data for the
+chosen mode **falls back per scan at resolve time** to its own best mode, and
+Appearance says so — loading scan B never repaints scan A.
+
+Per-file names, identity colours and styles persist in `ifc-pc-items:v1`
+(keyed by `fileKey`, capped at 300). Styles are **not** restored when the app
+runs inside an iframe, so a device-local look never defeats a host's
+`setPointCloudDisplay`; the SDK display command is an All-scope write.
+
+### Topics and file dates
+
+Topics are generic many-to-many labels (`src/stores/topicStore.ts`, persisted in
+`ifcv.topics.v1`), keyed `kind:stableKey` — this release writes only
+`cloud:<fileKey>`, but models, meshes, videos and layers can join without a
+migration. Chips show topics with loaded members: click selects them, Ctrl/⌘ adds,
+Alt shows only them, the eye hides/shows. Memberships survive removing a scan and
+come back when the same file is reloaded.
+
+LAS, LAZ and COPC headers carry a file-creation day/year (bytes 90/92). It is read
+into `entry.fileDate` and offered as **Group by file date (N)** — a suggestion,
+never automatic, and topics are named with the bare date. It is labelled *File
+date* because it is when the file was produced: often, but not always, the survey
+day.
+
+## 4b. Display controls
 
 | Control | Effect |
 |---|---|
-| **Colour by** | Scan colour (RGB) · Intensity · Height · Classification (ASPRS palette) · Single colour. Modes the file has no data for are disabled rather than shown empty. |
+| **Colour by** | Scan colour (RGB) · Intensity · Height · Classification (ASPRS palette) · Single colour · One colour per scan · Colour by topic. Modes none of the targeted scans has data for are disabled. |
 | **Point size** + **Shrink with distance** | Constant pixels, or world-sized sprites. |
 | **Opacity**, **Round points** | Round sprites read far better at low density. |
 | **Detail** | Scales the render budget (points drawn per frame). Lower it if navigation stutters — it changes density, not coverage. |
@@ -579,7 +646,7 @@ LoadManager ── pointcloud-source (adapter: download · identify · place · 
               │
               └── viewer.getPointClouds() → point-cloud-system   (lazy chunk)
                                               ├── pc-align     (the ladder)
-                                              ├── pc-material  (one ShaderMaterial)
+                                              ├── pc-material  (one material per cloud, one program)
                                               └── pc-lod       (budget allocation)
 ```
 
@@ -606,6 +673,12 @@ LoadManager ── pointcloud-source (adapter: download · identify · place · 
 | `src/lib/pointcloud/mcap-point-recording.ts` | Lazy MCAP writer/indexed reader for the application payload; message bodies are iterated by chunk. |
 | `src/workers/point-cloud.worker.ts` | Off-thread parse, streams transferable chunks. |
 | `src/stores/pointCloudStore.ts` | Product state, display prefs, and the scene-clear `epoch` (bumped by `clearClouds` only). Cancellation is per load, in `pc-runner`: a load is stale when its own signal aborts, its own entry is removed (by any path — each load watches its entry) or the scene is cleared, so removing one cloud never cancels a sibling's parse or freezes a streaming COPC. |
+| `src/lib/pointcloud/pc-style.ts` | Pure per-scan style resolution: override ?? scene default, 'scan'/'topic' → flat, per-scan colour fallback, identity palette. |
+| `src/lib/pointcloud/pc-prefs.ts` | Per-file name/colour/style in `ifc-pc-items:v1`; style skipped when framed. |
+| `src/lib/pointcloud/pc-gpu-sync.ts` | The single store → GPU bridge (display, budget, alignment, visibility, style), attached lazily; `applyCloudOffset` for synchronous moves. |
+| `src/lib/selection.ts` | Generic list selection rules and solo semantics. Pure. |
+| `src/lib/topics.ts` · `src/stores/topicStore.ts` | Generic topics keyed `kind:stableKey`, file-date suggestions. |
+| `src/components/pointcloud/*` | ScanList, TopicBar, ScopeBar and the panel's shared primitives (`pc-ui`). |
 | `src/components/PointCloudPanel.tsx` | The UI (its picker and demos submit jobs; it no longer runs loads itself). Uses the shared `ViewportPanel` shell, so it is a right-hand card on desktop and a two-detent bottom sheet on a phone, like the map and solar panels. |
 
 **What it reuses rather than reinvents:** the scene, camera and renderer
@@ -638,7 +711,8 @@ conventions.
   for the one-paste fix.
 * No eviction: a loaded cloud stays in VRAM until removed. The 20 M cap is what
   protects the tab.
-* Clouds are not included in exports (IFC/GLB/BCF) or in the SDK surface.
+* Clouds are not included in exports (IFC/GLB/BCF). Names, styles and topics are
+  device-local and are not carried in scene documents or share links.
 
 ---
 

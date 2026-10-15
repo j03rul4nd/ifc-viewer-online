@@ -107,5 +107,7 @@ Estado a 2026-09-24. **F1–F3 construidas** (gizmo 3D incluido); F4 medida y ce
   en worker con transferables, no re-subir buffers al cambiar color/tamaño
   (uniforms en vez de atributos).
 
+- Cloud rows select the scan in the Point cloud panel (Ctrl/Shift), show identity colour, name and topic dots; Edit in Point cloud panel opens it (PR3).
+
 ## Orden recomendado
 F3 (pequeño, puro, testeable, arregla un bug visible) → F1 → F2 → F4.
