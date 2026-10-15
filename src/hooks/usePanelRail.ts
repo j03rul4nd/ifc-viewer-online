@@ -18,7 +18,9 @@ import { useMeshStore } from '../stores/meshStore'
 import { useSolarStore } from '../stores/solarStore'
 import { useTwinDeviceStore } from '../stores/twinDeviceStore'
 import { useFloodStore } from '../features/flood/store'
-import { applicablePanels, type PanelId } from '../lib/ui/panel-rail'
+import { useVectorLayerStore } from '../stores/vectorLayerStore'
+import { useVideoStore } from '../stores/videoStore'
+import { applicablePanels, type PanelId, type RailId } from '../lib/ui/panel-rail'
 import type { RailItem } from '../components/PanelRail'
 
 export interface PanelRailSource {
@@ -26,16 +28,16 @@ export interface PanelRailSource {
    * Which panels the app is actually rendering, stated by the caller from the
    * same conditions as the JSX. See panel-rail.ts for why it is not derived.
    */
-  available: Partial<Record<PanelId, boolean>>
+  available: Partial<Record<RailId, boolean>>
   /** Icons, supplied by the caller so this hook imports no JSX. */
-  icons: Partial<Record<PanelId, React.ReactNode>>
+  icons: Partial<Record<RailId, React.ReactNode>>
   /** Labels, already translated. */
-  labels: Partial<Record<PanelId, string>>
+  labels: Partial<Record<RailId, string>>
   /**
    * Counts and activity dots, so a parked tool can still say it is doing
    * something — three clip planes, two models, a measurement in progress.
    */
-  badges?: Partial<Record<PanelId, { badge?: number; dot?: boolean }>>
+  badges?: Partial<Record<RailId, { badge?: number; dot?: boolean }>>
   /** Host allowlist from the embed chrome; undefined means "all available". */
   allow?: readonly PanelId[]
 }
@@ -63,16 +65,21 @@ export function usePanelRail({ icons, labels, badges, available, allow }: PanelR
   const setDevices = useTwinDeviceStore((s) => s.setPanelOpen)
   const flood = useFloodStore((s) => s.panelOpen)
   const setFlood = useFloodStore((s) => s.setPanelOpen)
+  const layers = useVectorLayerStore((s) => s.panelOpen)
+  const setLayers = useVectorLayerStore((s) => s.setPanelOpen)
+  const video = useVideoStore((s) => s.panelOpen)
+  const setVideo = useVideoStore((s) => s.setPanelOpen)
 
   return useMemo(() => {
-    const open: Record<PanelId, boolean> = {
-      properties, scene, measurement, section, plans, map, solar, flood, pointcloud, mesh, devices,
+    const open: Record<RailId, boolean> = {
+      properties, scene, measurement, section, plans, map, solar, flood, pointcloud, mesh, devices, layers, video,
     }
-    const set: Record<PanelId, (v: boolean) => void> = {
+    const set: Record<RailId, (v: boolean) => void> = {
       properties: setProperties,
       scene: setScene, measurement: setMeasurement, section: setSection,
       plans: setPlans, map: setMap, solar: setSolar, flood: setFlood,
       pointcloud: setPointcloud, mesh: setMesh, devices: setDevices,
+      layers: setLayers, video: setVideo,
     }
     return applicablePanels({ available, allow })
       .filter((id) => icons[id])
@@ -91,5 +98,6 @@ export function usePanelRail({ icons, labels, badges, available, allow }: PanelR
     properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar, flood, setFlood,
     pointcloud, setPointcloud, mesh, setMesh, devices, setDevices,
+    layers, setLayers, video, setVideo,
   ])
 }

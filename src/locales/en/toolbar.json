@@ -166,8 +166,8 @@
   "exportSettings": "Export settings…",
   "menu": {
     "openIfc": "Open IFC file…",
-    "openTooltip": "Open — IFC files, demo models and other data",
-    "addData": "Add to scene",
+    "openTooltip": "Open — IFC files, demo models and scene files",
+    "addData": "Add data",
     "check": "Check",
     "checkTooltip": "Check — issues in 3D, IDS, compare versions",
     "issuesIn3d": "Show issues in 3D",
@@ -187,7 +187,9 @@
     "edit": "Edit",
     "help": "Help",
     "idsCheck": "Check against IDS…",
-    "compareVersions": "Compare versions…"
+    "compareVersions": "Compare versions…",
+    "addDataTooltip": "Add data — scans, video, 3D models, map layers and live devices",
+    "openScene": "Open scene file…"
   },
   "mobileBar": {
     "models": "{{count}} model",
@@ -195,5 +197,81 @@
     "elements": "{{n}} elements",
     "openScene": "Scene and models",
     "score": "Health Score {{score}} — open validation"
+  },
+  "addData": {
+    "title": "Add data to the scene",
+    "description": "Files are read in your browser — nothing is uploaded.",
+    "dropTitle": "Drop files here",
+    "dropHint": "Mix any of these formats — each file goes where it belongs.",
+    "chooseFiles": "Choose files…",
+    "chooseFile": "Choose a file…",
+    "fromUpload": "Scans, video, 3D models or map layers?",
+    "groups": {
+      "capture": "Reality capture",
+      "models": "Models",
+      "context": "Map & live data",
+      "scenes": "Scenes"
+    },
+    "cards": {
+      "pointcloud": {
+        "title": "Point cloud",
+        "desc": "Laser scans and drone photogrammetry. They land on your model when the file says where they are."
+      },
+      "video": {
+        "title": "3D video",
+        "desc": "Site or drone footage on a screen, on the ground, or matched to the camera that filmed it."
+      },
+      "ifc": {
+        "title": "IFC model",
+        "desc": "Discipline models federate into one scene. Each is reviewed before it loads; the first sets the coordinates."
+      },
+      "mesh": {
+        "title": "3D model",
+        "desc": "Props and context models in glTF or OBJ, placed on your model's floor."
+      },
+      "map": {
+        "title": "Map & terrain",
+        "desc": "Basemap, 3D terrain and the buildings around a georeferenced model."
+      },
+      "layers": {
+        "title": "Data layers",
+        "desc": "Points, routes and zones from GeoJSON or CSV files, URLs, WFS services or public live feeds."
+      },
+      "devices": {
+        "title": "Live devices",
+        "desc": "Sensors over REST, WebSocket or MQTT, bound to IFC elements."
+      },
+      "scene": {
+        "title": "Scene file",
+        "desc": "A .scene.json someone shared with you. Opening it replaces the current scene."
+      }
+    },
+    "pointcloudNote": "E57, ReCap or FARO? Export as LAS, LAZ or PLY first.",
+    "action": {
+      "samples": "Samples",
+      "liveAndDemo": "Camera, screen & demo",
+      "sources": "URL, WFS & live feeds",
+      "connect": "Connect a source",
+      "setUpMap": "Set up the map",
+      "openPanel": "Open panel"
+    },
+    "inScene": "{{count}} in the scene",
+    "inScene_other": "{{count}} in the scene",
+    "needsModel": "Needs an IFC model in the scene first"
+  },
+  "drop": {
+    "title": "Drop to add to the scene",
+    "count": "{{count}} file",
+    "count_other": "{{count}} files",
+    "legend": "Each file goes where it belongs:",
+    "adding": "Adding to the scene: {{names}}",
+    "afterReview": "{{names}} will be added after the IFC review",
+    "more": "{{names}} and {{n}} more",
+    "skipped": "{{count}} file skipped",
+    "skipped_other": "{{count}} files skipped",
+    "show": "Show",
+    "sceneReplace": "Opening “{{name}}” replaces the current scene.",
+    "openScene": "Open scene",
+    "sceneAlone": "A scene file opens on its own. Add the other files once it has loaded."
   }
 }

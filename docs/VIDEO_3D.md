@@ -9,7 +9,7 @@ nubes de puntos y los recursos GLB/OBJ.
 
 ## Demo de feria incluida
 
-1. Abre cualquier IFC y entra en **Tools → 3D video**.
+1. Abre cualquier IFC y entra en **+ Añadir datos → Vídeo 3D**, o suelta el archivo en el visor.
 2. Pulsa **Load IFC + video demo**.
 3. El visor carga `Operations Pavilion — IFC + Video` y el loop local de ocho
    segundos. No depende de Internet.

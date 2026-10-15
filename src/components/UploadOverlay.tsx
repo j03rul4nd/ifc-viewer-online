@@ -118,14 +118,17 @@ function IdleView({
   onClose,
   openFilePicker,
   onOpenDemoGallery,
+  onOpenAddData,
 }: {
   isDragging:     boolean
   onClose:        () => void
   openFilePicker: () => void
   onOpenDemoGallery?: () => void
+  onOpenAddData?: () => void
 }) {
   const { t } = useTranslation('common')
   const { t: tLanding } = useTranslation('landing')
+  const { t: tToolbar } = useTranslation('toolbar')
   return (
     <motion.div key="idle" {...VIEW_MOTION} className="p-5 sm:p-8 min-h-0 overflow-y-auto">
       {/* Header */}
@@ -179,6 +182,16 @@ function IdleView({
           >
             <Icons.Layers size={13} />
             {tLanding('demoGallery.openCta')}
+          </button>
+        </div>
+      )}
+
+      {/* This dialog takes IFC only; everything else has one door. */}
+      {onOpenAddData && (
+        <div className="mt-2 text-center text-[12px] text-[var(--text-dim)]">
+          {tToolbar('addData.fromUpload')}{' '}
+          <button type="button" onClick={onOpenAddData} className="text-[var(--accent-2)] hover:underline">
+            {tToolbar('menu.addData')}
           </button>
         </div>
       )}
@@ -718,6 +731,7 @@ export default function UploadOverlay(props: UploadOverlayProps) {
               onClose={handleClose}
               openFilePicker={openFilePicker}
               onOpenDemoGallery={props.onOpenDemoGallery}
+              onOpenAddData={props.onOpenAddData}
             />
           )}
 

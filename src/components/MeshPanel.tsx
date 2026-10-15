@@ -271,19 +271,18 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
       widthPx={300}
       anchor="top"
     >
-      {isMobile && (
-        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
-          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={tc('actions.close')}
-            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
-          </button>
-        </div>
-      )}
+      {/* Title + close on every viewport: the rail icon and Escape are not the only way out. */}
+      <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1 md:pt-1.5 md:pl-3 md:pr-1.5">
+        <span className="flex-1 text-[14px] md:text-[12.5px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={tc('actions.close')}
+          className="w-7 h-7 max-md:w-10 max-md:h-10 rounded-[7px] max-md:rounded-[11px] hover:text-[var(--text)] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+        </button>
+      </div>
       {/* flex-1 + min-h-0: without them this scroller never shrinks inside the
           mobile sheet and the placement controls at its end are unreachable.
           On a phone with a mesh loaded, what is loaded and how it sits come

@@ -18,6 +18,17 @@ export type PanelId =
   | 'scene' | 'measurement' | 'section' | 'plans'
   | 'map' | 'solar' | 'flood' | 'devices' | 'pointcloud' | 'mesh'
 
+/**
+ * Rail entries the app offers but a host cannot name (yet): Data layers and
+ * 3D video. PanelId is the host vocabulary, frozen with the published SDK
+ * (PanelName in ifc-viewer-sdk.ts and public/sdk/ifc-viewer.es.d.ts); these
+ * are promoted into it only with an SDK version bump.
+ */
+export type AppOnlyPanelId = 'layers' | 'video'
+
+/** Everything the rail can show: host panels plus app-only entries. */
+export type RailId = PanelId | AppOnlyPanelId
+
 export interface RailContext {
   /**
    * Which panels are mounted right now, keyed by id.
@@ -26,7 +37,7 @@ export interface RailContext {
    * key means unavailable — a new panel is invisible until it is stated, which
    * fails in the safe direction.
    */
-  available: Partial<Record<PanelId, boolean>>
+  available: Partial<Record<RailId, boolean>>
   /**
    * A host allowlist, or undefined for "everything available".
    *
@@ -50,6 +61,17 @@ export const ALL_PANEL_IDS: readonly PanelId[] = [
 ]
 
 /**
+ * Rail order: the host panels, then the app-only entries. Appending keeps every
+ * earlier icon where it was when a layer or a clip arrives.
+ */
+export const RAIL_ORDER: readonly RailId[] = [...ALL_PANEL_IDS, 'layers', 'video']
+
+/** True for ids a host may name (panels=, openPanel, get-panels). */
+export function isHostPanel(id: string): id is PanelId {
+  return (ALL_PANEL_IDS as readonly string[]).includes(id)
+}
+
+/**
  * The panels to put on the rail, in rail order.
  *
  * A panel that does not apply is OMITTED rather than disabled: on a 40px rail a
@@ -57,11 +79,12 @@ export const ALL_PANEL_IDS: readonly PanelId[] = [
  * it. An icon whose panel is not mounted is worse still — a control that does
  * nothing when pressed.
  */
-export function applicablePanels(ctx: RailContext): PanelId[] {
-  return ALL_PANEL_IDS.filter((id) => ctx.available[id] === true)
+export function applicablePanels(ctx: RailContext): RailId[] {
+  return RAIL_ORDER.filter((id) => ctx.available[id] === true)
     // The allowlist narrows what is available; it never adds. A host cannot
-    // conjure a panel the app is not rendering by naming it.
-    .filter((id) => !ctx.allow || ctx.allow.includes(id))
+    // conjure a panel the app is not rendering by naming it — and it cannot
+    // name an app-only entry at all, so any allowlist leaves those out.
+    .filter((id) => !ctx.allow || (isHostPanel(id) && ctx.allow.includes(id)))
 }
 
 /**
@@ -86,4 +109,27 @@ export function parsePanelAllowlist(raw: string | null | undefined): PanelId[] |
     return ALL_PANEL_IDS.filter((id) => !denied.has(id))
   }
   return ALL_PANEL_IDS.filter((id) => entries.includes(id))
+}
+
+// ── Overflow cue ──────────────────────────────────────────────────────────────
+
+export interface OverflowEdges {
+  /** Content is scrolled past the top edge. */
+  top: boolean
+  /** Content continues below the bottom edge. */
+  bottom: boolean
+}
+
+/** Which edges of a scroller hide content (1px slack for subpixel layouts). */
+export function overflowEdges(m: { scrollTop: number; scrollHeight: number; clientHeight: number }): OverflowEdges {
+  if (m.scrollHeight <= m.clientHeight + 1) return { top: false, bottom: false }
+  return { top: m.scrollTop > 1, bottom: m.scrollTop + m.clientHeight < m.scrollHeight - 1 }
+}
+
+/** CSS mask that fades the clipped edges, or null when nothing is clipped. */
+export function overflowMask(e: OverflowEdges): string | null {
+  if (!e.top && !e.bottom) return null
+  const top = e.top ? 'transparent 0, #000 20px' : '#000 0'
+  const bottom = e.bottom ? '#000 calc(100% - 20px), transparent 100%' : '#000 100%'
+  return `linear-gradient(to bottom, ${top}, ${bottom})`
 }

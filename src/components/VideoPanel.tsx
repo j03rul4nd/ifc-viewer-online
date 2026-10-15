@@ -4,7 +4,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { ViewportPanel } from './ViewportPanel'
 import { useVideoStore, pendingVideo } from '../stores/videoStore'
 import { placementForMode } from '../lib/video/video-placement'
-import type { VideoCameraPose, VideoPlacement, VideoSourceKind, VideoSurfaceMode } from '../lib/video/video-types'
+import { VIDEO_ACCEPT, type VideoCameraPose, type VideoPlacement, type VideoSourceKind, type VideoSurfaceMode } from '../lib/video/video-types'
 import {
   CAMERA_CONSTRAINTS,
   DISPLAY_CONSTRAINTS,
@@ -132,6 +132,16 @@ export default function VideoPanel({
       revokeSrcOnDispose: true,
     })
   }, [loadSource])
+
+  // Clips dropped on the viewer or picked in the Add data hub. This panel is
+  // mounted while closed (flag on, not client mode), so the queue drains
+  // without opening it; the drop follow-up decides whether to open it.
+  const pendingCount = useVideoStore((s) => s.pendingFiles.length)
+  useEffect(() => {
+    if (pendingCount === 0 || !viewerApiRef.current) return
+    const files = useVideoStore.getState().takePendingFiles()
+    void (async () => { for (const f of files) await loadFile(f) })()
+  }, [pendingCount, loadFile, viewerApiRef])
 
   const loadDemo = useCallback(async (demo: DemoVideo): Promise<void> => {
     await loadSource({
@@ -422,19 +432,18 @@ export default function VideoPanel({
       widthPx={318}
       anchor="top"
     >
-      {isMobile && (
-        <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1">
-          <span className="flex-1 text-[14px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={tc('actions.close')}
-            className="w-10 h-10 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
-          </button>
-        </div>
-      )}
+      {/* Title + close on every viewport: the rail icon and Escape are not the only way out. */}
+      <div className="shrink-0 flex items-center gap-2 pl-3.5 pr-1.5 pb-1 md:pt-1.5 md:pl-3 md:pr-1.5">
+        <span className="flex-1 text-[14px] md:text-[12.5px] font-semibold text-[var(--text)] truncate">{t('title')}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={tc('actions.close')}
+          className="w-7 h-7 max-md:w-10 max-md:h-10 rounded-[7px] max-md:rounded-[11px] hover:text-[var(--text)] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
+        </button>
+      </div>
       <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 max-md:pt-1 overflow-y-auto overscroll-contain" data-testid="video-panel">
         <section className={`rounded-[9px] border border-[var(--accent)]/50 bg-[var(--surface-2)] p-2.5 ${isMobile && active ? 'order-5' : ''}`}>
           <div className="flex items-start gap-2">
@@ -466,7 +475,7 @@ export default function VideoPanel({
           <input
             ref={fileRef}
             type="file"
-            accept="video/mp4,video/webm,video/ogg,.mp4,.webm,.ogv,.ogg"
+            accept={VIDEO_ACCEPT}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0]

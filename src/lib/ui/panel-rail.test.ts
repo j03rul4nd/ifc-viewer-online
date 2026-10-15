@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  applicablePanels, parsePanelAllowlist, ALL_PANEL_IDS, type PanelId,
+  applicablePanels, parsePanelAllowlist, isHostPanel, overflowEdges, overflowMask, ALL_PANEL_IDS, type PanelId,
 } from './panel-rail'
 
 /** Everything mounted — the plain desktop app with a scan and a mesh loaded. */
@@ -119,5 +119,47 @@ describe('parsePanelAllowlist', () => {
 
   it('treats an empty value as an explicit no', () => {
     expect(parsePanelAllowlist('')).toEqual([])
+  })
+})
+
+describe('app-only rail entries (Data layers, 3D video)', () => {
+  const withData = () => ({ ...all(), layers: true, video: true })
+
+  it('come after every host panel', () => {
+    expect(applicablePanels({ available: withData() }).slice(-4)).toEqual(['pointcloud', 'mesh', 'layers', 'video'])
+  })
+
+  it('never move an earlier icon when they appear', () => {
+    const before = applicablePanels({ available: all() })
+    const after = applicablePanels({ available: withData() })
+    expect(after.slice(0, before.length)).toEqual(before)
+  })
+
+  it('never pass a host allowlist, additive or subtractive', () => {
+    for (const allow of [parsePanelAllowlist('-measurement')!, ['properties'] as PanelId[], [...ALL_PANEL_IDS]]) {
+      const ids = applicablePanels({ available: withData(), allow })
+      expect(ids).not.toContain('layers')
+      expect(ids).not.toContain('video')
+    }
+  })
+
+  it('are not host panels', () => {
+    expect(isHostPanel('layers')).toBe(false)
+    expect(isHostPanel('video')).toBe(false)
+    expect(isHostPanel('scene')).toBe(true)
+  })
+})
+
+describe('rail overflow cue', () => {
+  it('fades the bottom when an 11-icon rail is clipped at the top of its scroll', () => {
+    expect(overflowEdges({ scrollTop: 0, scrollHeight: 402, clientHeight: 390 })).toEqual({ top: false, bottom: true })
+  })
+  it('fades the top once scrolled to the end', () => {
+    expect(overflowEdges({ scrollTop: 12, scrollHeight: 402, clientHeight: 390 })).toEqual({ top: true, bottom: false })
+  })
+  it('shows nothing when everything fits', () => {
+    expect(overflowEdges({ scrollTop: 0, scrollHeight: 294, clientHeight: 294 })).toEqual({ top: false, bottom: false })
+    expect(overflowMask({ top: false, bottom: false })).toBeNull()
+    expect(overflowMask({ top: false, bottom: true })).toMatch(/transparent 100%/)
   })
 })

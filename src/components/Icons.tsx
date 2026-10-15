@@ -53,6 +53,19 @@ export const GitCompare = (p: IconProps) => <Icon {...p}><circle cx="6" cy="6" r
 export const Shield = (p: IconProps) => <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
 /** Live devices: a building whose state arrives over the air. */
 export const Devices = (p: IconProps) => <Icon {...p}><path d="M3 11l9-7 9 7v9H3z" /><path d="M9 15a4 4 0 016 0M7 12.5a7 7 0 0110 0" /><circle cx="12" cy="17.5" r="0.9" /></Icon>
+// ── Data concepts ───────────────────────────────────────────────────────────────
+// One glyph per data concept, used on the rail, in the Add data hub, the drop
+// overlay and the phone UI alike (scripts/icon-vocabulary.test.ts). Film is for
+// Clip Studio only; Zap and Building are not data icons.
+/** Point cloud: a scan, drawn as the points it is made of. */
+export const PointCloud = (p: IconProps) => <Icon {...p} fill="currentColor" strokeWidth={0}><circle cx="5.1" cy="6.9" r="1.5" /><circle cx="10.6" cy="4.5" r="1.5" /><circle cx="16.5" cy="6.2" r="1.5" /><circle cx="4.1" cy="13" r="1.5" /><circle cx="9.6" cy="11" r="1.5" /><circle cx="15.4" cy="12.3" r="1.5" /><circle cx="20.6" cy="10.3" r="1.5" /><circle cx="7.2" cy="18.5" r="1.5" /><circle cx="13.4" cy="17.5" r="1.5" /><circle cx="19.2" cy="18.5" r="1.5" /></Icon>
+/** 3D model: an imported mesh (glTF / OBJ), drawn as a cube. */
+export const Mesh = (p: IconProps) => <Icon {...p}><path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" /><path d="M3 7l9 4.5L21 7M12 11.5V21.5" /></Icon>
+/** 3D video: a clip placed in the scene, drawn as a camcorder. */
+export const Video = (p: IconProps) => <Icon {...p}><rect x="2.5" y="6" width="13" height="12" rx="2" /><path d="M15.5 10.5 21.5 7v10l-6-3.5z" /></Icon>
+/** Data layers: GeoJSON / CSV / WFS layers, drawn as a folded map. */
+export const DataLayers = (p: IconProps) => <Icon {...p}><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5z" /><path d="M9 4v13.5M15 6.5V20" /></Icon>
+
 export const CloudRain = (p: IconProps) => <Icon {...p}><path d="M7 14.5a4 4 0 01-.4-7.98A5.5 5.5 0 0117.4 7.6 3.5 3.5 0 0117 14.5" /><path d="M8.5 17.5L7.5 20M12.5 17L11.5 19.5M16.5 17.5L15.5 20" /></Icon>
 export const Globe = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" /></Icon>
 export const Comment = (p: IconProps) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 0112 3a8.38 8.38 0 019 8.5z" /></Icon>

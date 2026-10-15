@@ -132,3 +132,12 @@ because the second one drifted.
 **Moving the panels themselves.** Mobile panels already have their own sheet
 presentation with snap points. This changes how a tool is *reached*, not how it
 looks once open.
+
+## Adding data on a phone
+
+The Tools sheet's old "Add to scene" row (Point cloud, 3D model, 3D video) is
+gone. The phone's single entry is a 44px glass **+** capsule beside the model
+capsule, always present — empty scene, scan-only or IFC — which opens the same
+Add data hub as desktop, as an `m-sheet` bottom sheet. Data layers and 3D video
+reach the ToolGrid for free through the rail catalogue once they exist.
+MobileBottomNav itself stays IFC-gated. See `ADD_DATA.md`.

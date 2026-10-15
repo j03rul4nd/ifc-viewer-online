@@ -59,3 +59,11 @@ describe('parsePanelList', () => {
     expect(parsePanelList([...ALL_PANEL_IDS])).toEqual([...ALL_PANEL_IDS])
   })
 })
+
+describe('app-only rail ids stay out of the host vocabulary', () => {
+  it('ignores layers and video as targets and in lists', () => {
+    expect(parsePanelTarget('layers')).toBeUndefined()
+    expect(parsePanelTarget('video')).toBeUndefined()
+    expect(parsePanelList(['layers', 'scene'])).toEqual(['scene'])
+  })
+})
