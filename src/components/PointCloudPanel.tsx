@@ -50,8 +50,9 @@ import {
 import type { ViewerAPI } from '../lib/viewer'
 import type { PointCloudSystemAPI, CloudStats, PickedPoint } from '../lib/pointcloud/point-cloud-system'
 import type {
-  PointCloudEntry, PointColorMode, PointCloudDisplay,
+  AlignmentOffset, PointCloudEntry, PointColorMode, PointCloudDisplay,
 } from '../lib/pointcloud/pc-types'
+import { applyCloudOffset } from '../lib/pointcloud/pc-gpu-sync'
 
 interface PointCloudPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -626,7 +627,10 @@ export default function PointCloudPanel({
             if (!target) throw new Error('No point cloud loaded')
             // clampOffset in the store is what keeps a host from tipping a scan
             // somewhere only a reset escapes from.
-            usePointCloudStore.getState().setOffset(target, (cmd.placement ?? {}) as never)
+            // Store AND GPU: writing the store alone left the scan where it was.
+            if (!applyCloudOffset(system, target, (cmd.placement ?? {}) as Partial<AlignmentOffset>)) {
+              throw new Error('Point cloud not placed yet')
+            }
             break
           }
           case 'upAxis': {

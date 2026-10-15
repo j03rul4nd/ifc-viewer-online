@@ -486,7 +486,10 @@ export function cloudFileKey(
 
 /** An offset equal to identity is the absence of a placement — drop the entry. */
 function isIdentity(o: AlignmentOffset): boolean {
-  return o.x === 0 && o.y === 0 && o.z === 0 && o.yawDeg === 0 && o.scaleMul === 1
+  // Every field counts: a levelling-only correction (pitch/roll with everything
+  // else at zero) is a real placement and must survive a reload.
+  return o.x === 0 && o.y === 0 && o.z === 0 && o.yawDeg === 0
+    && (o.pitchDeg ?? 0) === 0 && (o.rollDeg ?? 0) === 0 && o.scaleMul === 1
 }
 
 export function saveOffset(fileKey: string, offset: AlignmentOffset): void {
