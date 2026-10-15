@@ -18,7 +18,8 @@
 // at 1440x900 with the validation drawer open a panel is 788px tall, running
 // from the toolbar down over the drawer. There is nowhere better to drag it to.
 
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { overflowEdges, overflowMask, type OverflowEdges } from '../lib/ui/panel-rail'
 
 /**
  * One tool, in the form both surfaces read.
@@ -45,12 +46,35 @@ interface PanelRailProps {
 }
 
 export function PanelRail({ items }: PanelRailProps) {
+  // The rail scrolls under `no-scrollbar` once it holds more icons than fit
+  // (an IFC + scan + layer + clip scene has 11; at 1366x643 only ~6 show).
+  // A fade on the clipped edge is the cue that there is more.
+  const ref = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState<OverflowEdges>({ top: false, bottom: false })
+  const hasItems = items.length > 0
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = (): void => {
+      const next = overflowEdges(el)
+      setEdges((prev) => (prev.top === next.top && prev.bottom === next.bottom ? prev : next))
+    }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    ro?.observe(el)
+    el.addEventListener('scroll', measure, { passive: true })
+    return () => { ro?.disconnect(); el.removeEventListener('scroll', measure) }
+  }, [hasItems, items.length])
+
   // Nothing applicable means no rail at all, rather than an empty strip that
   // costs width and says nothing.
-  if (items.length === 0) return null
+  if (!hasItems) return null
 
+  const mask = overflowMask(edges)
   return (
     <div
+      ref={ref}
+      style={mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined}
       role="toolbar"
       aria-orientation="vertical"
       // Bounded by the camera-button reserve (--viewport-chrome-clearance, now

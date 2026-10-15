@@ -11,6 +11,8 @@ import ModelTree from './components/ModelTree'
 import { ColumnStrip } from './components/ColumnStrip'
 import { PanelRail } from './components/PanelRail'
 import { usePanelRail } from './hooks/usePanelRail'
+import { useSceneContent } from './hooks/useSceneContent'
+import { isHostPanel, type RailId } from './lib/ui/panel-rail'
 import { useMainColumnLaneRef } from './hooks/useMainColumnLane'
 import { installBottomSlotRule } from './lib/ui/bottom-slot'
 import { useWakeLock } from './hooks/useWakeLock'
@@ -506,6 +508,7 @@ export default function App() {
   const { t: tCloud } = useTranslation('pointcloud')
   const { t: tMesh } = useTranslation('mesh')
   const { t: tLayers } = useTranslation('layers')
+  const { t: tVideo } = useTranslation('video')
   const { t: tSolar } = useTranslation('solar')
 
 
@@ -958,9 +961,11 @@ export default function App() {
     map:         <Icons.Globe size={15} />,
     solar:       <Icons.Sparkles size={15} />,
     flood:       <Icons.CloudRain size={15} />,
-    pointcloud:  <Icons.Zap size={15} />,
-    mesh:        <Icons.Building size={15} />,
+    pointcloud:  <Icons.PointCloud size={15} />,
+    mesh:        <Icons.Mesh size={15} />,
     devices:     <Icons.Devices size={15} />,
+    layers:      <Icons.DataLayers size={15} />,
+    video:       <Icons.Video size={15} />,
   }), [])
   const railLabels = useMemo(() => ({
     properties:  tSidebar('title'),
@@ -974,13 +979,17 @@ export default function App() {
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
     devices:     tLayers('devices.entry'),
-  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers])
+    layers:      tLayers('title'),
+    video:       tVideo('title'),
+  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers, tVideo])
   // Read here rather than from the destructured block below, which is declared
   // after this point in the component.
   const railMeasurementTool = useUIStore((s) => s.activeMeasurementTool)
   const railClipPlanes = useUIStore((s) => s.clipPlaneCount)
   const railPlanView = useUIStore((s) => s.activePlanViewId)
   const railModelCount = useSceneStore((s) => s.models.length)
+  // Anything in the scene (IFC, scan, 3D model, video, data layer): the rail's mount gate.
+  const sceneContent = useSceneContent()
   const railTwinBindings = useTwinDeviceStore((s) => s.bindings.length)
   const railTwinAlerting = useTwinDeviceStore((s) => s.alerting.length > 0)
   const railFloodRunning = useFloodStore((s) => s.status === 'running')
@@ -990,7 +999,11 @@ export default function App() {
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
-  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending || !!s.setupUrl || !!s.setupText)
+  const layerCount = useVectorLayerStore((s) => s.layers.length)
+  const videoCount = useVideoStore((s) => s.videos.length)
+  // pendingFiles: a drop or a hub pick queued layers; the panel must mount to
+  // read them even if another panel took the one-at-a-time slot meanwhile.
+  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.pendingFiles.length > 0 || s.restorePending || !!s.setupUrl || !!s.setupText)
   // Operational twin: the runner (polling + painting) loads only once a source exists or the panel opens.
   const twinInUse = useTwinDeviceStore((s) => s.panelOpen || s.sources.length > 0)
   // The scene explorer: on by default where the app's panels are absent (the
@@ -1057,21 +1070,26 @@ export default function App() {
   // rail offering Scene and Map, neither of which it mounts, so two of three
   // icons did nothing when pressed. If you change a panel's render condition,
   // change its line here.
-  const railAvailable = useMemo(() => ({
+  // The rail now also shows for scan-, layer- and video-only scenes, so the
+  // model tools carry the model gate their panels mount with.
+  const railAvailable = useMemo((): Partial<Record<RailId, boolean>> => ({
     properties:  effectiveChrome.showSidebar,
     scene:       !clientMode,
-    measurement: !clientMode || clientAdvancedTools,
-    section:     !clientMode || clientAdvancedTools,
-    plans:       !clientMode,
-    map:         isGisEnabled() && !clientMode,
-    solar:       isSolarEnabled(),
+    measurement: (!clientMode || clientAdvancedTools) && railModelCount > 0,
+    section:     (!clientMode || clientAdvancedTools) && railModelCount > 0,
+    plans:       !clientMode && railModelCount > 0,
+    map:         isGisEnabled() && !clientMode && railModelCount > 0,
+    solar:       isSolarEnabled() && railModelCount > 0,
     // Same condition as the panel below.
     flood:       isFloodEnabled() && !clientMode && railModelCount > 0,
     pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
     mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
     // Same condition as the panel below (it mounts on open, or once a source exists).
     devices:     !clientMode,
-  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount])
+    // App-only entries (not host PanelIds): once there is a layer or a clip.
+    layers:      !clientMode && layerCount > 0,
+    video:       isVideoEnabled() && !clientMode && videoCount > 0,
+  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount, layerCount, videoCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
   // both show it. The old mobile grid carried these and the rail did not.
@@ -1084,7 +1102,9 @@ export default function App() {
     devices:     { badge: railTwinBindings > 0 ? railTwinBindings : undefined, dot: railTwinAlerting },
     // A run in progress keeps a dot on the parked icon.
     flood:       { dot: railFloodRunning },
-  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting, railFloodRunning])
+    layers:      { badge: layerCount > 1 ? layerCount : undefined },
+    video:       { badge: videoCount > 1 ? videoCount : undefined },
+  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount, railTwinBindings, railTwinAlerting, railFloodRunning, layerCount, videoCount])
 
   const railItems = usePanelRail({
     icons: railIcons,
@@ -2543,8 +2563,10 @@ export default function App() {
         }
         case 'ifcviewer:get-panels': {
           void respond(() => ({
-            open: railItemsRef.current.find((i) => i.open)?.id ?? null,
-            available: railItemsRef.current.map((i) => ({ id: i.id, label: i.label, open: i.open })),
+            // App-only rail entries (Data layers, 3D video) are not in the
+            // SDK's PanelName vocabulary, so a host never sees them.
+            open: railItemsRef.current.find((i) => i.open && isHostPanel(i.id))?.id ?? null,
+            available: railItemsRef.current.filter((i) => isHostPanel(i.id)).map((i) => ({ id: i.id, label: i.label, open: i.open })),
           }))
           break
         }
@@ -4523,9 +4545,10 @@ export default function App() {
 
                   {/* The minimised form of every floating panel: a rail of
                       icons on the right edge, panels opening to its left.
-                      docs/PANEL_RAIL.md. Only with a model — with an empty
-                      viewport there is nothing for any of them to act on. */}
-                  {sceneModels.length > 0 && tourMode !== 'playing' && effectiveChrome.showRail && (
+                      docs/PANEL_RAIL.md. Only with scene content — with an
+                      empty viewport there is nothing for any of them to act
+                      on. The model tools carry their own model gate. */}
+                  {sceneContent.any && tourMode !== 'playing' && effectiveChrome.showRail && (
                     <div className="max-md:hidden">
                       <PanelRail items={railItems} />
                     </div>

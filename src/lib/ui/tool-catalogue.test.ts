@@ -11,13 +11,13 @@
 // list, so neither can fall behind the other.
 
 import { describe, it, expect } from 'vitest'
-import { applicablePanels, ALL_PANEL_IDS, type PanelId } from './panel-rail'
+import { applicablePanels, ALL_PANEL_IDS, type PanelId, type RailId } from './panel-rail'
 
 const all = (): Record<PanelId, boolean> =>
   Object.fromEntries(ALL_PANEL_IDS.map((id) => [id, true])) as Record<PanelId, boolean>
 
 /** What the mobile sheet shows: the catalogue, minus the one device difference. */
-function mobileTools(ids: PanelId[]): PanelId[] {
+function mobileTools(ids: RailId[]): RailId[] {
   return ids.filter((id) => id !== 'properties')
 }
 
@@ -60,5 +60,15 @@ describe('the mobile sheet and the rail agree', () => {
     // Otherwise a kiosk locked down for a client leaks its tools on a phone.
     const rail = applicablePanels({ available: all(), allow: ['scene', 'solar'] })
     expect(mobileTools(rail)).toEqual(['scene', 'solar'])
+  })
+
+  it('carries the app-only Data layers and 3D video entries, never through a host allowlist', () => {
+    // The phone's first entry point to Data layers: the sheet reads the rail.
+    const mobile = mobileTools(applicablePanels({ available: { ...all(), layers: true, video: true } }))
+    expect(mobile).toContain('layers')
+    expect(mobile).toContain('video')
+    const allowed = mobileTools(applicablePanels({ available: { ...all(), layers: true, video: true }, allow: ['scene', 'solar'] }))
+    expect(allowed).not.toContain('layers')
+    expect(allowed).not.toContain('video')
   })
 })
