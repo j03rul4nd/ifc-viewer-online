@@ -139,13 +139,8 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   // (bottom-right), the floating tool rail (top-right), the breadcrumb (top-left),
   // and on the map its scale readout (bottom-left).
   const POS: Record<typeof extras.corner, string> = {
-<<<<<<< HEAD
     bl: mapReadout ? 'left-4 bottom-[76px] sm:bottom-12' : 'left-4 bottom-[76px] sm:bottom-4',
-    br: 'right-4 bottom-[132px] sm:bottom-[64px]',
-=======
-    bl: 'left-4 bottom-[76px] sm:bottom-4',
     br: 'bottom-[132px] sm:bottom-[64px]',
->>>>>>> d81b4aa (feat(layout): let content panels run over the validation drawer)
     tl: 'left-4 top-14',
     tr: 'right-16 top-3',
   }
