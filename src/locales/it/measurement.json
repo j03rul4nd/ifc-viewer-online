@@ -293,5 +293,27 @@
     "no-element": "Fai clic su un elemento del modello",
     "same-element": "È lo stesso elemento: fai clic su un altro",
     "no-geometry": "Questo elemento non ha geometria da misurare"
+  },
+  "session": {
+    "open": "Apri",
+    "openHint": "Apri un file di misure (.json) e aggiungilo all’elenco",
+    "save": "Salva",
+    "saveHint": "Salva tutte le misure — con requisiti, altezze e note — in un .json da riaprire o condividere",
+    "offer_one": "{{count}} misura dalla tua ultima sessione su questi modelli",
+    "offer_other": "{{count}} misure dalla tua ultima sessione su questi modelli",
+    "restore": "Ripristina",
+    "dismiss": "Ignora",
+    "restored_one": "{{count}} misura ripristinata",
+    "restored_other": "{{count}} misure ripristinate",
+    "opened_one": "{{count}} misura aperta",
+    "opened_other": "{{count}} misure aperte",
+    "missing": "Prese su modelli non caricati: {{models}}. Le loro quote possono restare sospese nel vuoto.",
+    "skipped_one": "{{count}} voce danneggiata è stata saltata.",
+    "skipped_other": "{{count}} voci danneggiate sono state saltate.",
+    "error": {
+      "not-json": "Il file non è un JSON valido.",
+      "not-measurements": "Il file non è un file di misure.",
+      "newer-version": "Il file è stato salvato da una versione più recente: ricarica la pagina e riprova."
+    }
   }
 }

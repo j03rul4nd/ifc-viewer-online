@@ -293,5 +293,27 @@
     "no-element": "モデルの要素をクリックしてください",
     "same-element": "同じ要素です。別の要素をクリックしてください",
     "no-geometry": "この要素には計測できる形状がありません"
+  },
+  "session": {
+    "open": "開く",
+    "openHint": "計測ファイル（.json）を開いてリストに追加",
+    "save": "保存",
+    "saveHint": "すべての計測を要件・高さ・メモごと .json に保存し、再度開いたり共有したりできます",
+    "offer_one": "これらのモデルでの前回のセッションの計測 {{count}} 件",
+    "offer_other": "これらのモデルでの前回のセッションの計測 {{count}} 件",
+    "restore": "復元",
+    "dismiss": "閉じる",
+    "restored_one": "{{count}} 件の計測を復元しました",
+    "restored_other": "{{count}} 件の計測を復元しました",
+    "opened_one": "{{count}} 件の計測を開きました",
+    "opened_other": "{{count}} 件の計測を開きました",
+    "missing": "読み込まれていないモデルで計測されています：{{models}}。寸法が宙に浮く場合があります。",
+    "skipped_one": "破損した {{count}} 件をスキップしました。",
+    "skipped_other": "破損した {{count}} 件をスキップしました。",
+    "error": {
+      "not-json": "このファイルは有効な JSON ではありません。",
+      "not-measurements": "このファイルは計測ファイルではありません。",
+      "newer-version": "このファイルは新しいバージョンで保存されています。ページを再読み込みしてやり直してください。"
+    }
   }
 }

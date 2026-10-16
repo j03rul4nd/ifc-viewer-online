@@ -293,5 +293,27 @@
     "no-element": "Haz clic sobre un elemento del modelo",
     "same-element": "Es el mismo elemento: haz clic en otro",
     "no-geometry": "Este elemento no tiene geometría que medir"
+  },
+  "session": {
+    "open": "Abrir",
+    "openHint": "Abre un archivo de mediciones (.json) y lo añade a la lista",
+    "save": "Guardar",
+    "saveHint": "Guarda todas las mediciones —con requisitos, alturas y notas— en un .json para reabrirlas o compartirlas",
+    "offer_one": "{{count}} medición de tu última sesión con estos modelos",
+    "offer_other": "{{count}} mediciones de tu última sesión con estos modelos",
+    "restore": "Restaurar",
+    "dismiss": "Descartar",
+    "restored_one": "{{count}} medición restaurada",
+    "restored_other": "{{count}} mediciones restauradas",
+    "opened_one": "{{count}} medición abierta",
+    "opened_other": "{{count}} mediciones abiertas",
+    "missing": "Tomadas sobre modelos que no están cargados: {{models}}. Sus cotas pueden quedar en el aire.",
+    "skipped_one": "Se omitió {{count}} entrada dañada.",
+    "skipped_other": "Se omitieron {{count}} entradas dañadas.",
+    "error": {
+      "not-json": "El archivo no es un JSON válido.",
+      "not-measurements": "El archivo no es un archivo de mediciones.",
+      "newer-version": "El archivo se guardó con una versión más nueva: recarga la página y vuelve a intentarlo."
+    }
   }
 }

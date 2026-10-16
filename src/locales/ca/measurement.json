@@ -293,5 +293,27 @@
     "no-element": "Fes clic sobre un element del model",
     "same-element": "És el mateix element: fes clic en un altre",
     "no-geometry": "Aquest element no té geometria per mesurar"
+  },
+  "session": {
+    "open": "Obre",
+    "openHint": "Obre un fitxer de mesures (.json) i l’afegeix a la llista",
+    "save": "Desa",
+    "saveHint": "Desa totes les mesures —amb requisits, alçades i notes— en un .json per reobrir-les o compartir-les",
+    "offer_one": "{{count}} mesura de la teva darrera sessió amb aquests models",
+    "offer_other": "{{count}} mesures de la teva darrera sessió amb aquests models",
+    "restore": "Restaura",
+    "dismiss": "Descarta",
+    "restored_one": "{{count}} mesura restaurada",
+    "restored_other": "{{count}} mesures restaurades",
+    "opened_one": "{{count}} mesura oberta",
+    "opened_other": "{{count}} mesures obertes",
+    "missing": "Preses sobre models que no estan carregats: {{models}}. Les seves cotes poden quedar a l’aire.",
+    "skipped_one": "S’ha omès {{count}} entrada malmesa.",
+    "skipped_other": "S’han omès {{count}} entrades malmeses.",
+    "error": {
+      "not-json": "El fitxer no és un JSON vàlid.",
+      "not-measurements": "El fitxer no és un fitxer de mesures.",
+      "newer-version": "El fitxer es va desar amb una versió més nova: recarrega la pàgina i torna-ho a provar."
+    }
   }
 }
