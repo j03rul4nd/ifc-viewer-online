@@ -349,6 +349,9 @@
     "runup": "Abast de l'onatge",
     "runupAbove": "+{{m}} m de remuntada",
     "typical": "Valors típics d'aquest tipus de costa, no una previsió ni un període de retorn d'aquest lloc.",
+    "tidal": "Marea al llarg del temps",
+    "tidalNote": "El mar puja i baixa amb la marea durant la simulació; la plenamar i el temporal coincideixen amb el pic de pluja.",
+    "range": "Mar durant la simulació {{min}} … {{max}}",
     "noSea": "No hi ha mar a la malla: la línia de costa en queda fora o OpenStreetMap està desactivat.",
     "result": "Mar {{sea}} m² · terra que inunda {{land}} m² · batuda per l'onatge {{runup}} m²"
   }

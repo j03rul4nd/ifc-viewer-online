@@ -6,7 +6,7 @@
 // from scripts/flood/gpu-suite.mjs in a real Chrome (vitest has no GPU).
 
 import { CpuInertialSolver } from '../core/cpu-inertial'
-import { cityDemo, damBreak, infiltrationBasin, lakeAtRest, rainOnPlane, type FloodCase } from '../core/cases'
+import { cityDemo, damBreak, infiltrationBasin, lakeAtRest, rainOnPlane, tidalBeach, type FloodCase } from '../core/cases'
 import type { FloodBackend, FloodSolver } from '../core/solver-api'
 import { WebGpuInertialSolver } from '../gpu/webgpu-inertial'
 import { WebGl2InertialSolver } from '../gpu/webgl2-inertial'
@@ -23,7 +23,7 @@ export interface CaseResult {
 type GpuSolver = FloodSolver & { faces(): Promise<{ qx: Float32Array; qy: Float32Array }> }
 
 async function makeGpu(backend: FloodBackend, c: FloodCase): Promise<GpuSolver> {
-  const init = { grid: cloneGrid(c.grid), hyetograph: c.hyetograph, params: c.params }
+  const init = { grid: cloneGrid(c.grid), hyetograph: c.hyetograph, params: c.params, tide: c.tide }
   if (backend === 'webgpu') return WebGpuInertialSolver.create(init)
   return WebGl2InertialSolver.create(init)
 }
@@ -32,7 +32,7 @@ function cloneGrid<T extends FloodCase['grid']>(g: T): T {
   return {
     ...g,
     z: g.z.slice(), blocked: g.blocked.slice(), rainFactor: g.rainFactor.slice(), manning: g.manning.slice(),
-    h0: g.h0?.slice(),
+    h0: g.h0?.slice(), sea: g.sea?.slice(),
   }
 }
 
@@ -48,7 +48,7 @@ export async function runCase(c: FloodCase, backend: FloodBackend): Promise<Case
   const t0 = performance.now()
   const failures: string[] = []
   const m: Record<string, number> = {}
-  const cpu = new CpuInertialSolver({ grid: cloneGrid(c.grid), hyetograph: c.hyetograph, params: c.params })
+  const cpu = new CpuInertialSolver({ grid: cloneGrid(c.grid), hyetograph: c.hyetograph, params: c.params, tide: c.tide })
   cpu.advanceSync(c.durationS)
   const gpu = await makeGpu(backend, c)
   try {
@@ -114,6 +114,15 @@ export async function runCase(c: FloodCase, backend: FloodBackend): Promise<Case
         check(Math.abs(gs.infiltratedVolume - cs.infiltratedVolume) / Math.max(cs.infiltratedVolume, 1e-9) < 1e-4, `infiltrated ${gs.infiltratedVolume} vs CPU ${cs.infiltratedVolume}`)
         check(Math.abs(gs.massError) < 1e-4, `mass error ${gs.massError}`)
         break
+      case 'tidal-beach':
+        // The GPU's sea exchange is its balance's residual; the CPU counts it
+        // exactly. Agreeing is the GPU's mass check.
+        m.seaGpu = gs.seaVolume
+        m.seaCpu = cs.seaVolume
+        check(m.relL1 < 2e-3, `differs from CPU: relative L1 ${m.relL1}`)
+        check(Math.abs(cs.massError) < 1e-9, `CPU mass error ${cs.massError}`)
+        check(Math.abs(gs.seaVolume - cs.seaVolume) / Math.max(Math.abs(cs.seaVolume), 1e-9) < 1e-3, `sea exchange ${gs.seaVolume} vs CPU ${cs.seaVolume}`)
+        break
       default:
         check(m.relL1 < 2e-2, `differs from CPU: relative L1 ${m.relL1}`)
         check(Math.abs(gs.massError) < 1e-4, `mass error ${gs.massError}`)
@@ -125,7 +134,7 @@ export async function runCase(c: FloodCase, backend: FloodBackend): Promise<Case
   return { case: c.id, backend, pass: failures.length === 0, failures, metrics: m, ms: Math.round(performance.now() - t0) }
 }
 
-export const SUITE_CASES = (): FloodCase[] => [lakeAtRest(64), damBreak(400, 0.5), rainOnPlane(100, 1, 0.01, 0.03, 50, 60), cityDemo(96, 2, 90, 30), infiltrationBasin(80)]
+export const SUITE_CASES = (): FloodCase[] => [lakeAtRest(64), damBreak(400, 0.5), rainOnPlane(100, 1, 0.01, 0.03, 50, 60), cityDemo(96, 2, 90, 30), infiltrationBasin(80), tidalBeach(80)]
 
 export async function runSuite(backends: FloodBackend[]): Promise<CaseResult[]> {
   const out: CaseResult[] = []

@@ -5,7 +5,7 @@
 
 import { createGrid, inclinedPlaneDemo, blockLayout, validateGrid, type FloodGrid } from './grid'
 import { constantStorm, type Hyetograph } from './hyetograph'
-import type { SolverParams } from './solver-api'
+import type { SolverParams, TideSeries } from './solver-api'
 
 export interface FloodCase {
   id: string
@@ -15,6 +15,8 @@ export interface FloodCase {
   params: Partial<SolverParams>
   /** Simulated duration to run, s. */
   durationS: number
+  /** The sea's level over time for the grid's sea cells. */
+  tide?: TideSeries
 }
 
 const closed = { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const
@@ -85,6 +87,30 @@ export function infiltrationBasin(n = 80): FloodCase {
       infiltration: { initialMmH: 40, finalMmH: 8, decayPerHour: 2 },
     },
     durationS: 70 * 60,
+  }
+}
+
+/**
+ * A beach on a tide: sea along the west edge, ground rising 4 cm per cell
+ * between blocks, rain on top. The tide rises 1.2 m over 20 min and falls
+ * back by 40 — flooding the low streets from the sea and draining them.
+ */
+export function tidalBeach(n = 80): FloodCase {
+  const grid = inclinedPlaneDemo({ nx: n, ny: n, dx: 2, slopeX: 0, slopeY: 0, roughnessAmplitude: 0.3, seed: 7, obstacles: blockLayout(n, n, 12, 4) })
+  grid.sea = new Uint8Array(n * n)
+  grid.h0 = new Float32Array(n * n)
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const c = j * n + i
+      grid.z[c] += Math.max(0, i - 6) * 0.04
+      if (i < 6) { grid.sea[c] = 1; grid.blocked[c] = 0; grid.h0[c] = Math.max(0, 0.3 - grid.z[c]) }
+    }
+  }
+  return {
+    id: 'tidal-beach', title: 'Beach on a rising and falling tide', grid, hyetograph: constantStorm(30, 30, 5),
+    params: { boundary: { ...closed } },
+    durationS: 40 * 60,
+    tide: { intervalMs: 20 * 60_000, levels: [0.3, 1.5, 0.3] },
   }
 }
 

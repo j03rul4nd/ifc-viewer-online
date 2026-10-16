@@ -24,8 +24,8 @@ import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '
 import { intervalMs, ratesMs, type Hyetograph } from './hyetograph'
 import { packDisplay } from './half'
 import {
-  infiltrationRate, nextStepMs, resolveParams,
-  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams,
+  infiltrationRate, nextStepMs, resolveParams, tideLevelAt,
+  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams, type TideSeries,
 } from './solver-api'
 
 /**
@@ -78,6 +78,9 @@ export class CpuInertialSolver implements FloodSolver {
   private outflow = 0
   private readonly rainArea: number
   private readonly v0: number
+  private readonly tide: TideSeries | null
+  /** Depth the sea cells gained net, summed (× dx² = seaVolume). */
+  private seaDepth = 0
 
   constructor(init: SolverInit) {
     const g = validateGrid(init.grid)
@@ -108,6 +111,7 @@ export class CpuInertialSolver implements FloodSolver {
     }
     this.rainArea = effectiveRainArea(g)
     this.v0 = initialVolume(g)
+    this.tide = g.sea && init.tide && init.tide.levels.length > 0 ? init.tide : null
   }
 
   /** One step; false when there was nothing left to do before tStopMs. */
@@ -251,6 +255,9 @@ export class CpuInertialSolver implements FloodSolver {
     // 4. Continuity, velocities, maxima; then the ground takes its share
     // (never more than the water there).
     const tEnd = (this.tMs + dtMs) / 1000
+    // The sea's level at the END of the step (NaN = no sea), like the shaders.
+    const sea = g.sea
+    const seaLevel = this.tide ? tideLevelAt(this.tide, this.tMs + dtMs) : NaN
     const loss = infiltrationRate(p.infiltration, this.tMs / 1000) * dt
     const infil = this.grid.infiltration
     let hm = 0
@@ -265,7 +272,14 @@ export class CpuInertialSolver implements FloodSolver {
         const qT = qyN[f + W]
         let hn = h[c] + k * (qL - qR + qB - qT) + dt * rate * rainFactor[c]
         if (hn < 0) hn = 0
-        if (loss > 0) {
+        if (seaLevel === seaLevel && sea![c]) {
+          // The sea is held at the tide: whatever the fluxes did, the cell is
+          // set back to it, and the difference is the sea's exchange.
+          const forced = Math.max(0, seaLevel - z[c])
+          this.seaDepth += forced - hn
+          hn = forced
+        }
+        if (loss > 0 && !(sea && sea[c])) {
           const l = Math.min(hn, infil ? loss * infil[c] : loss)
           hn -= l
           this.inf[c] += l
@@ -335,7 +349,8 @@ export class CpuInertialSolver implements FloodSolver {
     const volume = vol * a
     const rainVolume = this.rainDepth * this.rainArea
     const infiltratedVolume = infd * a
-    const denom = Math.max(rainVolume + this.v0, 1e-12)
+    const seaVolume = this.seaDepth * a
+    const denom = Math.max(rainVolume + this.v0 + Math.abs(seaVolume), 1e-12)
     return {
       t: this.tMs / 1000,
       dt: this.lastDtMs / 1000,
@@ -348,7 +363,8 @@ export class CpuInertialSolver implements FloodSolver {
       outflowVolume: this.outflow,
       infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / denom,
+      seaVolume,
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0 - seaVolume) / denom,
     }
   }
 

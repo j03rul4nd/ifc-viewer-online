@@ -65,6 +65,8 @@ export interface FloodSettings {
   coastWaveHsM: number
   coastExposure: Exposure
   coastRiseM: number
+  /** The sea follows the tide over the run (peaking with the rain) instead of standing still. */
+  coastTidal: boolean
 }
 
 export interface FloodState extends FloodSettings {
@@ -119,6 +121,7 @@ export const useFloodStore = create<FloodState>()((set) => ({
   coastWaveHsM: 2,
   coastExposure: 'open',
   coastRiseM: 0,
+  coastTidal: true,
   coastReport: null,
   panelOpen: false,
   status: 'idle',

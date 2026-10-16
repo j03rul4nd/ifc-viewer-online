@@ -349,6 +349,9 @@
     "runup": "Portée des vagues",
     "runupAbove": "+{{m}} m de jet de rive",
     "typical": "Valeurs typiques de ce type de côte, ni une prévision ni une période de retour pour ce lieu.",
+    "tidal": "Marée au fil du temps",
+    "tidalNote": "La mer monte et descend avec la marée pendant le calcul ; la pleine mer et la surcote coïncident avec le pic de pluie.",
+    "range": "Mer pendant le calcul {{min}} … {{max}}",
     "noSea": "Pas de mer sur la grille : le trait de côte est en dehors ou OpenStreetMap est désactivé.",
     "result": "Mer {{sea}} m² · terre submergée {{land}} m² · battue par les vagues {{runup}} m²"
   }

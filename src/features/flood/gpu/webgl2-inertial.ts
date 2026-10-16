@@ -12,8 +12,8 @@ import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '
 import { depthFromRates, intervalMs, ratesMs } from '../core/hyetograph'
 import { packDisplay } from '../core/half'
 import {
-  edgeBits, resolveParams,
-  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams,
+  edgeBits, resolveParams, seaBalance,
+  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams, type TideSeries,
 } from '../core/solver-api'
 import { FS_BND, FS_CONT, FS_DT, FS_FLUX, FS_LIMIT, FS_REDUCE, FS_SCALE, VS } from './glsl'
 
@@ -50,6 +50,7 @@ export class WebGl2InertialSolver implements FloodSolver {
 
   private readonly gl: GL
   private readonly rates: Float32Array
+  private readonly tide: TideSeries | null
   private readonly ivMs: number
   private readonly rainArea: number
   private readonly v0: number
@@ -97,6 +98,7 @@ export class WebGl2InertialSolver implements FloodSolver {
     this.rates = ratesMs(init.hyetograph)
     this.ivMs = intervalMs(init.hyetograph)
     if (this.ivMs * (this.rates.length + 1) >= 2 ** 31) throw new Error('flood: rain event too long for the millisecond clock')
+    this.tide = g.sea && init.tide && init.tide.levels.length > 0 ? init.tide : null
     this.rainArea = effectiveRainArea(g)
     this.v0 = initialVolume(g)
     const { nx, ny } = g
@@ -128,15 +130,20 @@ export class WebGl2InertialSolver implements FloodSolver {
     const st = new Float32Array(nx * ny * 4)
     for (let c = 0; c < nx * ny; c++) {
       st[c * 4] = g.z[c]
-      st[c * 4 + 1] = g.rainFactor[c]
+      // A sea cell (held at the tide) is marked by a rain factor of −1: it
+      // takes no rain, so the channel is free to say so.
+      const isSea = !!g.sea?.[c] && !g.blocked[c]
+      st[c * 4 + 1] = isSea ? -1 : g.rainFactor[c]
       st[c * 4 + 2] = g.manning[c]
-      // Blocked = 1; an open cell carries its infiltration factor, negated.
-      st[c * 4 + 3] = g.blocked[c] ? 1 : -(g.infiltration ? g.infiltration[c] : 1)
+      // Blocked = 1; an open cell carries its infiltration factor, negated (0 at sea).
+      st[c * 4 + 3] = g.blocked[c] ? 1 : isSea ? 0 : -(g.infiltration ? g.infiltration[c] : 1)
     }
     this.tStatic = this.texture(nx, ny, gl.RGBA32F, gl.RGBA, gl.FLOAT, st)
-    const rainH = Math.max(1, Math.ceil(this.rates.length / RAIN_W))
+    const slots = this.rates.length + (this.tide?.levels.length ?? 0)
+    const rainH = Math.max(1, Math.ceil(slots / RAIN_W))
     const rain = new Float32Array(RAIN_W * rainH)
     rain.set(this.rates)
+    if (this.tide) rain.set(this.tide.levels, this.rates.length)
     this.tRain = this.texture(RAIN_W, rainH, gl.R32F, gl.RED, gl.FLOAT, rain)
 
     // State.
@@ -191,9 +198,13 @@ export class WebGl2InertialSolver implements FloodSolver {
       gl.uniform1i(u.uNx, nx); gl.uniform1i(u.uNy, ny); gl.uniform1i(u.uW, this.bndW); gl.uniform1f(u.uDx, g.dx)
     })
     set('cont', (u) => {
-      units(u, ['uQ', 'uCells', 'uMax', 'uStatic', 'uCtrl'])
+      units(u, ['uQ', 'uCells', 'uMax', 'uStatic', 'uCtrl', 'uRain'])
       geo(u)
       gl.uniform1f(u.uWet, p.wetThreshold)
+      gl.uniform1i(u.uRainW, RAIN_W)
+      gl.uniform1ui(u.uTideOff, this.rates.length)
+      gl.uniform1ui(u.uTideCount, this.tide?.levels.length ?? 0)
+      gl.uniform1ui(u.uTideIv, Math.max(1, Math.round(this.tide?.intervalMs ?? 1)))
       const inf = p.infiltration
       gl.uniform3f(u.uInf, inf?.initialMmH ?? 0, inf?.finalMmH ?? 0, inf?.decayPerHour ?? 0)
     })
@@ -392,8 +403,8 @@ export class WebGl2InertialSolver implements FloodSolver {
       this.draw('bnd', this.bnd[1].fbo, this.bndW, bndH, [this.q.tex, this.bnd[0].tex, C])
       this.unbindAll(3)
       this.bnd = [this.bnd[1], this.bnd[0]]
-      this.draw('cont', this.contFbo[1], nx, ny, [this.q.tex, this.cells[0].tex, this.maxf[0].tex, this.tStatic, C])
-      this.unbindAll(5)
+      this.draw('cont', this.contFbo[1], nx, ny, [this.q.tex, this.cells[0].tex, this.maxf[0].tex, this.tStatic, C, this.tRain])
+      this.unbindAll(6)
       this.cells = [this.cells[1], this.cells[0]]
       this.maxf = [this.maxf[1], this.maxf[0]]
       this.contFbo = [this.contFbo[1], this.contFbo[0]]
@@ -438,7 +449,7 @@ export class WebGl2InertialSolver implements FloodSolver {
       outflowVolume: this.outflow,
       infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
+      ...seaBalance(volume + this.outflow + infiltratedVolume - rainVolume - this.v0, rainVolume + this.v0, !!this.tide),
     }
   }
 

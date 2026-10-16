@@ -134,6 +134,58 @@ export function coastLevels(p: CoastProfile, s: CoastScenario): CoastLevels {
   return { tideM, surgeM, setupM, riseM, stillM: tideM + surgeM + setupM + riseM, runupM }
 }
 
+/** Semidiurnal lunar period (M2), the tide most coasts follow: 12 h 25 min. */
+export const M2_PERIOD_S = 44_712
+
+export interface TideCurveOptions {
+  /** Length of the run, s. */
+  durationS: number
+  /**
+   * When the worst moment falls, s from the start: high water and the top of
+   * the surge both peak here. Default the middle of the run. Put it on the
+   * rain's peak to ask "what if the storm hits at high tide".
+   */
+  peakAtS?: number
+  /** Spacing of the series, s (default 5 min). */
+  stepS?: number
+  /** How long the surge lasts around its peak (half-width), s; default 6 h. */
+  surgeHalfS?: number
+}
+
+/**
+ * The sea's level over a run, metres above mean sea level, one value every
+ * `stepS`.
+ *
+ * The tide is a cosine of the M2 period whose high water is the chosen tide
+ * stage's level at `peakAtS`; the surge and the wave set-up rise and fall as
+ * a bell around the same moment (a storm builds and passes in hours); the
+ * sea-level rise is constant. 'low' and 'mean' stages put LOW or mean water at
+ * the peak instead, so a run can also ask what the same storm does at low
+ * tide. The amplitude is half the spring range — neap tides are smaller,
+ * and that is what the stage choice is for.
+ */
+export function tideCurve(p: CoastProfile, s: CoastScenario, o: TideCurveOptions): number[] {
+  const step = Math.max(1, o.stepS ?? 300)
+  const peak = o.peakAtS ?? o.durationS / 2
+  const half = Math.max(600, o.surgeHalfS ?? 6 * 3600)
+  const lv = coastLevels(p, s)
+  const amp = p.springRangeM / 2
+  // Where in the tidal cycle the peak sits: high water for high/spring, low
+  // water for low, mid-tide rising for mean.
+  const phase = s.tide === 'low' ? Math.PI : s.tide === 'mean' ? -Math.PI / 2 : 0
+  // Spring high water reaches the full amplitude; an ordinary high, 80 %.
+  const a = s.tide === 'high' ? amp * 0.8 : amp
+  const n = Math.max(2, Math.ceil(o.durationS / step) + 1)
+  const out: number[] = []
+  for (let k = 0; k < n; k++) {
+    const t = k * step
+    const tide = a * Math.cos((2 * Math.PI * (t - peak)) / M2_PERIOD_S + phase)
+    const bell = Math.exp(-(((t - peak) / half) ** 2))
+    out.push(tide + (lv.surgeM + lv.setupM) * bell + lv.riseM)
+  }
+  return out
+}
+
 export interface SeaFill {
   /** Initial depth per cell, metres (the sea standing at the still level). */
   h0: Float32Array

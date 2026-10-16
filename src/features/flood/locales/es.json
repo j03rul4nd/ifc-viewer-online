@@ -349,6 +349,9 @@
     "runup": "Alcance del oleaje",
     "runupAbove": "+{{m}} m de remonte",
     "typical": "Valores típicos de este tipo de costa, no una previsión ni un periodo de retorno de este lugar.",
+    "tidal": "Marea a lo largo del tiempo",
+    "tidalNote": "El mar sube y baja con la marea durante la simulación; la pleamar y el temporal coinciden con el pico de lluvia.",
+    "range": "Mar durante la simulación {{min}} … {{max}}",
     "noSea": "No hay mar en la malla: la línea de costa queda fuera o OpenStreetMap está desactivado.",
     "result": "Mar {{sea}} m² · tierra que inunda {{land}} m² · batida por el oleaje {{runup}} m²"
   }

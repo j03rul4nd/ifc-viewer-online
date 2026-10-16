@@ -349,6 +349,9 @@
     "runup": "Alcance das ondas",
     "runupAbove": "+{{m}} m de espraiamento",
     "typical": "Valores típicos deste tipo de costa, não uma previsão nem um período de retorno deste local.",
+    "tidal": "Maré ao longo do tempo",
+    "tidalNote": "O mar sobe e desce com a maré durante a simulação; a preia-mar e a sobre-elevação coincidem com o pico de chuva.",
+    "range": "Mar durante a simulação {{min}} … {{max}}",
     "noSea": "Sem mar na grelha: a linha de costa está fora ou o OpenStreetMap está desligado.",
     "result": "Mar {{sea}} m² · terra inundada {{land}} m² · batida pelas ondas {{runup}} m²"
   }
