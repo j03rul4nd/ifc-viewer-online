@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { parseOsmFeatures } from './osm-features'
-import { islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving } from './plaza-paving'
+import { capSquareKiosks, islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving, SQUARE_KIOSK_HEIGHT_M } from './plaza-paving'
 import { applyGroundDepthNudge, nudgeVertexShader, GROUND_EYE_NUDGE } from './ground-depth-nudge'
 
 type OverpassElement = Record<string, unknown>
@@ -139,5 +139,43 @@ describe('ground depth nudge', () => {
     expect(seen).toEqual(['prev'])
     expect(shader.vertexShader).toContain('mvPosition.xyz *')
     expect(m.customProgramCacheKey()).toBe('mine|ground-nudge')
+  })
+})
+
+describe('capSquareKiosks', () => {
+  const features = parseOsmFeatures({ elements: [plaza] })
+  const box = (x: number, y: number, s: number) => closed([x, y], [x + s, y], [x + s, y + s], [x, y + s]).slice(0, -1)
+  it('brings an unmeasured lift house on the square down to kiosk height', () => {
+    const [b] = capSquareKiosks([{ ring: box(0.5, 0.5, 0.07), height: { heightM: 19.2, basis: 'guess' } }], features)
+    expect(b.height.heightM).toBe(SQUARE_KIOSK_HEIGHT_M)
+  })
+  it('leaves surveyed heights, large buildings and buildings off the square alone', () => {
+    const out = capSquareKiosks([
+      { ring: box(0.5, 0.5, 0.07), height: { heightM: 12, basis: 'height' } },
+      { ring: box(0.3, 0.3, 0.3), height: { heightM: 19.2, basis: 'guess' } },
+      { ring: box(1.5, 1.5, 0.07), height: { heightM: 19.2, basis: 'guess' } },
+    ], features)
+    expect(out.map((b) => b.height.heightM)).toEqual([12, 19.2, 19.2])
+  })
+})
+
+describe('compass rose inlay', () => {
+  it('recognises a wind rose floor by name, not any mosaic', async () => {
+    const { compassInlay } = await import('./osm-features')
+    expect(compassInlay({ tourism: 'artwork', artwork_type: 'tilework', name: 'Rosa dels Vents' })).toBe('compass')
+    expect(compassInlay({ tourism: 'artwork', artwork_type: 'mosaic', name: 'El Drac' })).toBeUndefined()
+    expect(compassInlay({ tourism: 'artwork', artwork_type: 'statue', name: 'Rosa dels Vents' })).toBeUndefined()
+  })
+  it('lays the rose inside the floor, pointing north', async () => {
+    const { compassRose, inlayCircle } = await import('./plaza-paving')
+    const ring = Array.from({ length: 36 }, (_, i) => ({ x: 10 + 30 * Math.cos(i / 36 * Math.PI * 2), y: 20 + 30 * Math.sin(i / 36 * Math.PI * 2) }))
+    const c = inlayCircle(ring)!
+    expect(c.cx).toBeCloseTo(10, 6); expect(c.cy).toBeCloseTo(20, 6)
+    const tris = compassRose(c.cx, c.cy, c.r)
+    const pts = tris.flatMap((t) => [t.a, t.b, t.c])
+    expect(Math.max(...pts.map((p) => Math.hypot(p.x - 10, p.y - 20)))).toBeLessThanOrEqual(30)
+    // The northernmost point is the long cardinal tip, straight up.
+    const north = pts.reduce((a, b) => (b.y > a.y ? b : a))
+    expect(north.x).toBeCloseTo(10, 6)
   })
 })

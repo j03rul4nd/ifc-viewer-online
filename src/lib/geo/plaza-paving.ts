@@ -150,6 +150,44 @@ export function islandsInFloor(
   return out.filter((r, i) => !out.some((o, j) => j !== i && ringArea(o) > ringArea(r) && pointInLatLonRing(r[0], o)))
 }
 
+/** A kiosk nobody measured: one storey and its roof. */
+export const SQUARE_KIOSK_HEIGHT_M = 4
+/** Above this, a building in a square is a building, not a kiosk. */
+const SQUARE_KIOSK_MAX_M2 = 150
+
+/**
+ * Bring a small, unmeasured building standing ON a square down to kiosk height.
+ *
+ * Measured on Plaça de Catalunya: way 909097448 is the 7 × 7 m car-park lift
+ * house in the middle of the square, tagged `building=yes` and nothing else.
+ * The district's height prior gave it 19 m — a thin tower that, seen in
+ * perspective from the square, read as a building leaning over the street.
+ * The prior is right for the narrow old-town buildings it was measured on, so
+ * it is left alone; what makes this one different is where it stands. Nothing
+ * small that a square's paving surrounds is a 19 m building: it is a lift
+ * house, a metro canopy, a newsstand. A surveyed height or level count always
+ * wins, as does a building part.
+ */
+export function capSquareKiosks<B extends {
+  ring: ReadonlyArray<LatLonPoint>
+  height: { heightM: number; basis?: string }
+  isBuildingPart?: boolean
+}>(buildings: ReadonlyArray<B>, features: ReadonlyArray<OsmFeature>): B[] {
+  const floors = features.filter(isPedestrianFloor).map(floorOf)
+  if (floors.length === 0) return buildings.slice()
+  return buildings.map((b) => {
+    if (b.isBuildingPart || b.height.basis !== 'guess' || b.height.heightM <= SQUARE_KIOSK_HEIGHT_M) return b
+    if (b.ring.length < 3) return b
+    // ringArea is already scaled by cos(lat), so one factor makes it m².
+    if (ringArea(b.ring) * 111_320 ** 2 > SQUARE_KIOSK_MAX_M2) return b
+    let lat = 0; let lon = 0
+    for (const p of b.ring) { lat += p.lat; lon += p.lon }
+    const centre = { lat: lat / b.ring.length, lon: lon / b.ring.length }
+    if (!onFloor(centre, floors)) return b
+    return { ...b, height: { ...b.height, heightM: SQUARE_KIOSK_HEIGHT_M } }
+  })
+}
+
 /** Planar area of a lat/lon ring, in square degrees scaled by cos(lat). */
 function ringArea(ring: ReadonlyArray<LatLonPoint>): number {
   if (ring.length < 3) return 0
@@ -227,4 +265,76 @@ function edgeNormal(a: XY, b: XY, s: number): XY {
   const l = Math.hypot(dx, dy)
   if (l < 1e-15) return { x: 0, y: 0 }
   return { x: (s * dy) / l, y: (-s * dx) / l }
+}
+
+/** One flat triangle of a floor inlay, in the caller's planar frame, with its tone. */
+export interface InlayTriangle { a: XY; b: XY; c: XY; tone: [number, number, number] }
+
+const ROSE_LIGHT: [number, number, number] = [0.90, 0.88, 0.84]
+const ROSE_DARK: [number, number, number] = [0.20, 0.20, 0.23]
+const ROSE_MID: [number, number, number] = [0.52, 0.48, 0.42]
+
+/**
+ * A wind rose laid in the floor: an outer ring, four long cardinal points and
+ * four short intercardinal ones, every point split light and dark down its
+ * spine the way a mosaic rose is set. North is +y. `r` is the radius of the
+ * ring, in the same units as the centre.
+ *
+ * A figure, not a survey: OSM says THAT the floor is a wind rose, never how it
+ * is drawn, so this draws the one everybody recognises.
+ */
+export function compassRose(cx: number, cy: number, r: number): InlayTriangle[] {
+  const out: InlayTriangle[] = []
+  const at = (angle: number, radius: number): XY => ({
+    x: cx + Math.sin(angle) * radius, y: cy + Math.cos(angle) * radius,
+  })
+  // The ring: a thin dark band just inside the rim.
+  const seg = 64
+  for (let i = 0; i < seg; i++) {
+    const a0 = (i / seg) * Math.PI * 2
+    const a1 = ((i + 1) / seg) * Math.PI * 2
+    const o0 = at(a0, r); const o1 = at(a1, r)
+    const i0 = at(a0, r * 0.93); const i1 = at(a1, r * 0.93)
+    out.push({ a: o0, b: o1, c: i1, tone: ROSE_DARK }, { a: o0, b: i1, c: i0, tone: ROSE_DARK })
+  }
+  // Points: intercardinal first so the cardinal ones lie over them.
+  const point = (angle: number, length: number, waist: number, light: typeof ROSE_LIGHT, dark: typeof ROSE_DARK) => {
+    const tip = at(angle, length)
+    const left = at(angle - Math.PI / 4, waist)
+    const right = at(angle + Math.PI / 4, waist)
+    const centre = { x: cx, y: cy }
+    out.push({ a: centre, b: left, c: tip, tone: light }, { a: centre, b: tip, c: right, tone: dark })
+  }
+  for (let k = 0; k < 4; k++) point(Math.PI / 4 + (k * Math.PI) / 2, r * 0.62, r * 0.13, ROSE_LIGHT, ROSE_MID)
+  for (let k = 0; k < 4; k++) point((k * Math.PI) / 2, r * 0.90, r * 0.17, ROSE_LIGHT, ROSE_DARK)
+  return out
+}
+
+/** Centre and inscribed radius of a ring, for laying a round inlay in it. */
+export function inlayCircle(ring: ReadonlyArray<XY>): { cx: number; cy: number; r: number } | null {
+  if (ring.length < 3) return null
+  let cx = 0; let cy = 0
+  for (const p of ring) { cx += p.x; cy += p.y }
+  cx /= ring.length; cy /= ring.length
+  let r = Infinity
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[j]; const b = ring[i]
+    const dx = b.x - a.x; const dy = b.y - a.y
+    const l2 = dx * dx + dy * dy
+    const t = l2 > 0 ? Math.max(0, Math.min(1, ((cx - a.x) * dx + (cy - a.y) * dy) / l2)) : 0
+    r = Math.min(r, Math.hypot(a.x + t * dx - cx, a.y + t * dy - cy))
+  }
+  return Number.isFinite(r) && r > 0 ? { cx, cy, r: r * 0.96 } : null
+}
+
+/** Split a triangle into four until no edge is longer than `maxEdge`. */
+export function splitTriangle(a: XY, b: XY, c: XY, maxEdge: number): Array<[XY, XY, XY]> {
+  const len = (p: XY, q: XY) => Math.hypot(p.x - q.x, p.y - q.y)
+  if (Math.max(len(a, b), len(b, c), len(c, a)) <= maxEdge || maxEdge <= 0) return [[a, b, c]]
+  const mid = (p: XY, q: XY): XY => ({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 })
+  const ab = mid(a, b); const bc = mid(b, c); const ca = mid(c, a)
+  return [
+    ...splitTriangle(a, ab, ca, maxEdge), ...splitTriangle(ab, b, bc, maxEdge),
+    ...splitTriangle(ca, bc, c, maxEdge), ...splitTriangle(ab, bc, ca, maxEdge),
+  ]
 }

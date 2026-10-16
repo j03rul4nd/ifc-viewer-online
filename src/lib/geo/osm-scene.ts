@@ -53,7 +53,7 @@ import {
   subdivideMesh, distanceToRing, longestEdge, type Vec2, type Face,
 } from './surface-tessellation'
 import { applyGroundDepthNudge } from './ground-depth-nudge'
-import { islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving } from './plaza-paving'
+import { compassRose, inlayCircle, splitTriangle, islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving } from './plaza-paving'
 import {
   createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
 } from './surface-shaders'
@@ -2082,6 +2082,9 @@ function* linearLayerSteps(
   // Walkways drawn across a square only to route over it are not paths
   // anybody can see — the square is one floor. See plaza-paving.
   const routing = kind === 'road' ? routingOverPaving(features) : null
+  /** Figures laid into floors — see buildInlayMesh. Absolute frame, like `positions`. */
+  const inlayPositions: number[] = []
+  const inlayColors: number[] = []
   const groundCover = kind === 'road'
     ? features.filter((f) => (f.kind === 'green' || f.kind === 'water') && f.ring && !f.isSea)
     : []
@@ -2169,6 +2172,7 @@ function* linearLayerSteps(
         // last. Naming the constant here removes an ordering dependency that
         // would otherwise be invisible until somebody moved a loop.
         const areaZ = baseLift + PAVED_AREA_LIFT_M * mToN
+        const areaStart = positions.length / 3
         for (const [i0, i1, i2] of refined.faces) {
           if(buriedHere([i0,i1,i2].map(i=>new THREE.Vector2(refined.points[i].x,refined.points[i].y)))) continue
           for (const idx of [i0, i1, i2]) {
@@ -2176,6 +2180,33 @@ function* linearLayerSteps(
             positions.push(v.x, v.y, structuralZ(v.x, v.y) + areaZ)
             colors.push(tone[0], tone[1], tone[2])
           }
+        }
+        // A wind rose set into the floor. Its own mesh, drawn after the whole
+        // road layer: emission order inside one draw call did not hold it over
+        // its floor in the app, and a separate render order always does.
+        const rose = f.style.inlay === 'compass' ? inlayCircle(line) : null
+        if (rose) {
+          // Split to the floor's own grain: a 20 m point drawn as one flat
+          // triangle sags under the relief between its corners and the terrain,
+          // which does write depth, paints it out.
+          const maxEdge = PAVED_AREA_EDGE_M * 0.25 * mToN
+          for (const t of compassRose(rose.cx, rose.cy, rose.r)) {
+            for (const [a, b, c] of splitTriangle(t.a, t.b, t.c, maxEdge)) {
+              for (const v of [a, b, c]) {
+                inlayPositions.push(v.x, v.y, structuralZ(v.x, v.y) + areaZ)
+                inlayColors.push(t.tone[0], t.tone[1], t.tone[2])
+              }
+            }
+          }
+        }
+        // The floor's own material drives the shader's grain, as a way's does:
+        // a square tagged `paving_stones` is laid in slabs, not poured like
+        // tarmac. A pedestrian floor that says nothing is paved, the commonest
+        // answer for a square by far.
+        const areaSurface = f.style.surface
+          ?? (f.style.roadClass === 'pedestrian' && !f.style.court ? 'paving_stones' : undefined)
+        if (areaSurface) {
+          surfaceBands.push({ start: areaStart, end: positions.length / 3, value: SURFACE_ROUGHNESS[areaSurface] })
         }
         count++
         continue
@@ -2783,7 +2814,10 @@ function* linearLayerSteps(
     paved.name = `osm-${kind}`
     paved.position.set(linearOrigin.nx, linearOrigin.ny, 0)
     paved.renderOrder = 4
-    return finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
+    return withInlays(
+      finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped),
+      buildInlayMesh(inlayPositions, inlayColors, linearOrigin, mToN, true),
+    )
   }
 
   const surface = new THREE.Mesh(geometry, applyGroundDepthNudge(new THREE.MeshBasicMaterial({
@@ -2802,7 +2836,10 @@ function* linearLayerSteps(
   // tramway shares a street the track lands on top of the asphalt.
   surface.renderOrder = 4
 
-  return finishLinear(surface, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
+  return withInlays(
+    finishLinear(surface, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped),
+    buildInlayMesh(inlayPositions, inlayColors, linearOrigin, mToN, false),
+  )
 }
 
 /** Triangles per step when the linear layer's normals are computed. */
@@ -2834,6 +2871,55 @@ function* vertexNormalSteps(geometry: THREE.BufferGeometry): Steps<void> {
   const normal = new THREE.BufferAttribute(normals, 3)
   normal.needsUpdate = true
   geometry.setAttribute('normal', normal)
+}
+
+/**
+ * The figures laid into paved floors — a wind rose — as one mesh of their own.
+ *
+ * Drawn one step after the road layer (render order 4.5) so it lands on the
+ * floor it is set into whatever the floor's triangulation is doing. Same
+ * material family as the floor, so it takes the same light and grain.
+ */
+function buildInlayMesh(
+  positions: number[], colors: number[], origin: { nx: number; ny: number }, mToN: number, detailed: boolean,
+): THREE.Mesh | null {
+  if (positions.length === 0) return null
+  const local = new Float32Array(positions.length)
+  for (let i = 0; i < positions.length; i += 3) {
+    local[i] = positions[i] - origin.nx
+    local[i + 1] = positions[i + 1] - origin.ny
+    local[i + 2] = positions[i + 2]
+  }
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.BufferAttribute(local, 3))
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.computeVertexNormals()
+  geometry.computeBoundingSphere()
+  let material: THREE.Material
+  if (detailed) {
+    metricAttributes(geometry, mToN, SURFACE_ROUGHNESS.paving_stones, [])
+    material = applyGroundDepthNudge(createSurfaceMaterial('asphalt', { opacity: 1 }))
+  } else {
+    material = applyGroundDepthNudge(new THREE.MeshBasicMaterial({
+      vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    }))
+  }
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.name = 'osm-inlays'
+  mesh.position.set(origin.nx, origin.ny, 0)
+  mesh.renderOrder = 4.5
+  return mesh
+}
+
+/** Hang the inlay mesh off a built linear layer, keeping its contract. */
+function withInlays(layer: LayerMesh<THREE.Object3D>, inlays: THREE.Mesh | null): LayerMesh<THREE.Object3D> {
+  if (!inlays) return layer
+  if (layer.object instanceof THREE.Group) { layer.object.add(inlays); return layer }
+  const group = new THREE.Group()
+  group.name = layer.object.name
+  group.renderOrder = layer.object.renderOrder
+  group.add(layer.object, inlays)
+  return { ...layer, object: group }
 }
 
 /**
