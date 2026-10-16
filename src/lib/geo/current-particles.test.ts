@@ -36,3 +36,29 @@ describe('buildCurrentParticles', () => {
     expect(currentSpeedMS(40)).toBeGreaterThan(currentSpeedMS(10))
   })
 })
+
+describe('the sea swings with the tide', () => {
+  // A sea box east of a coast running north–south at lon 2.2, closed against a straight box edge.
+  const sea = (lat: number, lon: number): OsmFeature => ({
+    id: 'sea-0', kind: 'water', isSea: true, height: H, style: S,
+    ring: [
+      { lat: lat - 0.004, lon }, { lat: lat - 0.002, lon: lon + 0.0003 }, { lat, lon: lon - 0.0002 },
+      { lat: lat + 0.002, lon: lon + 0.0002 }, { lat: lat + 0.004, lon },
+      { lat: lat + 0.004, lon: lon + 0.01 }, { lat: lat - 0.004, lon: lon + 0.01 },
+    ],
+  })
+  it('seeds swinging specks along the shore only, wider on a macrotidal coast', () => {
+    const med = buildCurrentParticles([sea(41.38, 2.2)], { anchorLat: 41.38, anchorLon: 2.2 })!
+    const malo = buildCurrentParticles([sea(48.65, -2.02)], { anchorLat: 48.65, anchorLon: -2.02 })!
+    for (const p of [med, malo]) {
+      const mode = p.geometry.getAttribute('aMode')
+      expect(mode.count).toBeGreaterThan(20)
+      for (let i = 0; i < mode.count; i++) expect(mode.getX(i)).toBe(1)
+    }
+    const swing = (p: typeof med) => {
+      const a = p.geometry.getAttribute('aA'), b = p.geometry.getAttribute('aB')
+      return Math.hypot(b.getX(0) - a.getX(0), b.getY(0) - a.getY(0))
+    }
+    expect(swing(malo)).toBeGreaterThan(swing(med) * 3)
+  })
+})
