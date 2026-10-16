@@ -88,7 +88,8 @@ import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo
 import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
 import { waterExposureAt, type WaterExposure } from './water-exposure'
-import { buildCurrentParticles } from './current-particles'
+import { buildCurrentParticles, setLiveCurrent } from './current-particles'
+import { fetchMarine, marineAt, type MarineNow } from './marine-feed'
 
 const log = createLogger('GeoSystem')
 
@@ -551,6 +552,11 @@ export interface GeoSystemAPI {
   getWaterCrossings(): WaterCrossing[]
   /** The water nearest the model and what it is like (water-exposure); null when none is near. */
   getWaterExposure(): WaterExposure | null
+  /**
+   * The sea off the site NOW (marine-feed: Copernicus Marine via Open-Meteo),
+   * interpolated to this minute; null before it has loaded, inland, or off.
+   */
+  getMarineNow(): (NonNullable<ReturnType<typeof marineAt>> & { cell: MarineNow['cell']; source: MarineNow['source'] }) | null
   /** Aim the camera at a map point from above, `spanM` of ground in view. */
   flyToLatLon(lat: number, lon: number, spanM: number): void
   dispose(): void
@@ -753,6 +759,41 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let osmRetryAt = 0
   /** Crossings derived from the cached features, recomputed when they change. */
   let crossingsCache: { features: unknown; list: WaterCrossing[] } | null = null
+  /** The current specks, and the live sea that drives them (marine-feed). */
+  let currentPoints: THREE.Points | null = null
+  let marine: MarineNow | null = null
+  let marineKey = ''
+  let marineTimer: ReturnType<typeof setInterval> | null = null
+  const applyMarine = (): void => {
+    if (!currentPoints) return
+    const now = marine ? marineAt(marine, Date.now()) : null
+    setLiveCurrent(currentPoints, now)
+  }
+  /** Fetch the sea off the site (cached an hour on the device) and follow it every five minutes. */
+  const startMarine = (): void => {
+    if (!placement) return
+    const p = placement
+    const key = `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`
+    const load = () => {
+      void fetchMarine(p.lat, p.lon).then((m) => {
+        if (key !== `${placement?.lat.toFixed(2)},${placement?.lon.toFixed(2)}`) return
+        marine = m
+        applyMarine()
+      }).catch((err: unknown) => {
+        // Offline or the service is down: the specks keep the coast's typical tide.
+        console.warn('marine feed unavailable:', err instanceof Error ? err.message : err)
+      })
+    }
+    if (marineKey !== key) { marine = null; marineKey = key; load() } else applyMarine()
+    if (!marineTimer) {
+      marineTimer = setInterval(() => {
+        if (!placement) return
+        // Past the cached hour, fetch again; in between, follow the hours already held.
+        if (!marine || Date.now() - marine.fetchedAt > 60 * 60_000) load()
+        applyMarine()
+      }, 5 * 60_000)
+    }
+  }
   /** Built meshes per layer, so each can be added or dropped independently. */
   // A LIST per kind: a layer can be several objects — the buildings and their
   // rooftop kit are both 'building'. One slot per kind let the roof props
@@ -1325,7 +1366,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     getAttributions() {
-      return engine?.getAttributions() ?? []
+      const list = engine?.getAttributions() ?? []
+      // Copernicus asks to be credited wherever its data is shown; Open-Meteo is CC BY 4.0.
+      return marine ? [...list, 'Ocean currents: E.U. Copernicus Marine Service Information · Open-Meteo (CC BY 4.0)'] : list
     },
 
     getGpuBytesEstimate() {
@@ -1540,6 +1583,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         return api.trueGroundHeightAt(v.x, v.z)
       }
       return waterExposureAt({ lat: placement.lat, lon: placement.lon }, osmCache.features, groundM)
+    },
+
+    getMarineNow() {
+      if (!marine) return null
+      const now = marineAt(marine, Date.now())
+      return now ? { ...now, cell: marine.cell, source: marine.source } : null
     },
 
     flyToLatLon(lat, lon, spanM) {
@@ -2251,10 +2300,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         const group = new THREE.Group()
         if (built) group.add(built.object)
         if (detail) group.add(detail)
-        // The rivers' current, drifting on the water (current-particles).
+        // The rivers' current, drifting on the water (current-particles),
+        // and the sea's, from the live marine feed when the site has a sea.
         if (key === 'water' && built) {
           const flow = buildCurrentParticles(features, opts)
-          if (flow) group.add(flow)
+          if (flow) {
+            group.add(flow)
+            currentPoints = flow
+            if (features.some((f) => f.isSea)) startMarine()
+            else applyMarine()
+          }
         }
         return { objects: [group] }
       }
@@ -2704,6 +2759,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const [, objs] of layerObjects) for (const obj of objs) disposeLayer(obj)
     layerObjects.clear()
     animatedLayers.length = 0
+    // The specks go with the water; the feed's clock stops with them.
+    currentPoints = null
+    if (marineTimer) { clearInterval(marineTimer); marineTimer = null }
     // The scenery goes with the layers. It used to survive `setBuildings(false)`
     // and leak across `disable()`, standing in a district that was gone.
     for (const o of propObjects.splice(0)) disposeLayer(o)

@@ -399,6 +399,9 @@
     "salinity": "Water",
     "coast": "Coast",
     "hint": "Typical values for this kind of water, estimated from OpenStreetMap and the terrain — not a survey.",
+    "liveTitle": "Now · Copernicus Marine",
+    "wavesNow": "Waves now",
+    "liveCell": "Model cell {{km}} km off the site — the open water there, not inside a dock. Via Open-Meteo, updated hourly.",
     "cls": {
       "river": "River",
       "stream": "Stream",

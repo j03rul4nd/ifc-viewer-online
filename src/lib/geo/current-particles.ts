@@ -62,21 +62,37 @@ attribute vec3 aA;
 attribute vec3 aB;
 attribute float aPhase;
 attribute float aRate;
-// 0 = drift downstream (a river), 1 = swing to and fro with the tide (sea, estuary).
+// 0 = drift downstream (a river), 1 = swing with the tide (estuary),
+// 2 = the sea: swing with the tide, or — with a live current — drift with it.
 attribute float aMode;
 uniform float uTime;
+// The sea's live current (marine-feed), when there is one: direction in the
+// map's plane, the drift's rate (cycles/s) and its length (map units).
+uniform float uLive;
+uniform vec2 uSeaDir;
+uniform float uSeaRate;
+uniform float uSeaLen;
 uniform float uWorldSize;
 uniform float uViewportH;
 uniform float uPixelRatio;
 uniform float uPull;
 varying float vFade;
 void main() {
-  float f = aMode < 0.5
-    ? fract(aPhase + uTime * aRate)
-    : 0.5 + 0.5 * sin(6.2831853 * aPhase + uTime * aRate);
-  vec3 p = mix(aA, aB, f);
-  // Never fully out: a speck that vanishes for half its life reads as noise.
-  vFade = aMode < 0.5 ? 0.35 + 0.65 * sin(3.14159265 * f) : 0.75;
+  vec3 p;
+  if (aMode > 1.5 && uLive > 0.5) {
+    // The real current: every speck drifts the same way, looping over a
+    // short run about its place, like the river's.
+    float g = fract(aPhase * 7.0 + uTime * uSeaRate);
+    p = 0.5 * (aA + aB) + vec3(uSeaDir * (g - 0.5) * uSeaLen, 0.0);
+    vFade = 0.35 + 0.65 * sin(3.14159265 * g);
+  } else {
+    float f = aMode < 0.5
+      ? fract(aPhase + uTime * aRate)
+      : 0.5 + 0.5 * sin(6.2831853 * aPhase + uTime * aRate);
+    p = mix(aA, aB, f);
+    // Never fully out: a speck that vanishes for half its life reads as noise.
+    vFade = aMode < 0.5 ? 0.35 + 0.65 * sin(3.14159265 * f) : 0.75;
+  }
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   // Pulled uPull scene metres toward the eye along its own line of sight:
   // the same place on screen, a few metres ahead in depth. The surface a
@@ -245,7 +261,7 @@ export function buildCurrentParticles(
         // little jitter so the band does not move like one rigid sheet.
         phase.push(rand() * 0.08)
         rate.push((2 * Math.PI) / TIDE_SWING_S)
-        mode.push(1)
+        mode.push(2)
       }
       continue
     }
@@ -293,6 +309,10 @@ export function buildCurrentParticles(
     uWorldSize: { value: 1.6 },
     uViewportH: { value: 800 },
     uPull: { value: 4 },
+    uLive: { value: 0 },
+    uSeaDir: { value: new THREE.Vector2(1, 0) },
+    uSeaRate: { value: 0 },
+    uSeaLen: { value: REACH_M * mToN },
     uOpacity: { value: 0.95 },
     uPixelRatio: { value: typeof devicePixelRatio === 'number' ? Math.min(2, devicePixelRatio) : 1 },
   }
@@ -309,6 +329,7 @@ export function buildCurrentParticles(
   points.onBeforeRender = (renderer) => { uniforms.uViewportH.value = renderer.domElement.height }
   points.position.set(origin.x, origin.y, 0)
   points.name = 'current-particles'
+  points.userData.mToN = mToN
   points.renderOrder = 3
   points.frustumCulled = true
   return points
@@ -329,4 +350,20 @@ function inRing(x: number, y: number, ring: ReadonlyArray<{ x: number; y: number
     if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside
   }
   return inside
+}
+
+/**
+ * The sea's specks follow a LIVE current (marine-feed) — or, with null, go
+ * back to swinging with the coast's typical tide. Uniforms only: no rebuild,
+ * so it can follow the current hour by hour.
+ */
+export function setLiveCurrent(points: THREE.Points, live: { currentMS: number; currentToDeg: number } | null): void {
+  const u = (points.material as THREE.ShaderMaterial).uniforms
+  if (!u?.uLive) return
+  if (!live || !Number.isFinite(live.currentMS) || !Number.isFinite(live.currentToDeg)) { u.uLive.value = 0; return }
+  const a = (live.currentToDeg * Math.PI) / 180
+  // Normalized Web Mercator: +x east, +y north.
+  ;(u.uSeaDir.value as THREE.Vector2).set(Math.sin(a), Math.cos(a))
+  u.uSeaRate.value = (Math.max(0.02, live.currentMS) * CURRENT_SPEEDUP) / REACH_M
+  u.uLive.value = 1
 }

@@ -400,6 +400,9 @@
     "salinity": "水质",
     "coast": "海岸",
     "hint": "此类水体的典型值,由 OpenStreetMap 和地形估算,并非测量数据。",
+    "liveTitle": "当前 · Copernicus Marine",
+    "wavesNow": "当前浪高",
+    "liveCell": "模型网格距此 {{km}} 公里:那里的开阔水域,而非港池内部。经 Open-Meteo,每小时更新。",
     "cls": {
       "river": "河流",
       "stream": "溪流",

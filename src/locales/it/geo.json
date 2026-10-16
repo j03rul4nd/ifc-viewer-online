@@ -400,6 +400,9 @@
     "salinity": "Acqua",
     "coast": "Costa",
     "hint": "Valori tipici di questo tipo d'acqua, stimati da OpenStreetMap e dal terreno: non è un rilievo.",
+    "liveTitle": "Ora · Copernicus Marine",
+    "wavesNow": "Onde ora",
+    "liveCell": "Cella del modello a {{km}} km: il mare aperto lì, non l'interno di una darsena. Tramite Open-Meteo, ogni ora.",
     "cls": {
       "river": "Fiume",
       "stream": "Torrente",

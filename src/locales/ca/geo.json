@@ -400,6 +400,9 @@
     "salinity": "Aigua",
     "coast": "Costa",
     "hint": "Valors típics d'aquest tipus d'aigua, estimats a partir d'OpenStreetMap i el terreny; no és un aixecament.",
+    "liveTitle": "Ara · Copernicus Marine",
+    "wavesNow": "Onatge ara",
+    "liveCell": "Cel·la del model a {{km}} km: el mar obert d'allà, no l'interior d'una dàrsena. Via Open-Meteo, cada hora.",
     "cls": {
       "river": "Riu",
       "stream": "Rierol",

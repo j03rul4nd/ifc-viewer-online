@@ -400,6 +400,9 @@
     "salinity": "Água",
     "coast": "Costa",
     "hint": "Valores típicos deste tipo de água, estimados a partir do OpenStreetMap e do terreno — não é um levantamento.",
+    "liveTitle": "Agora · Copernicus Marine",
+    "wavesNow": "Ondas agora",
+    "liveCell": "Célula do modelo a {{km}} km: o mar aberto ali, não o interior de uma doca. Via Open-Meteo, a cada hora.",
     "cls": {
       "river": "Rio",
       "stream": "Ribeiro",

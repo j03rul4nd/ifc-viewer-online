@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { WaterExposure as Exposure } from '../../../lib/geo/water-exposure'
+import type { GeoSystemAPI } from '../../../lib/geo/geo-system'
 import { useGeoCtl } from '../useGeoController'
 import { Caption, Hint } from '../ui'
 
@@ -16,11 +17,20 @@ export function WaterExposure({ revision }: { revision: unknown }) {
   const { t } = useTranslation('geo')
   const ctl = useGeoCtl()
   const [e, setE] = useState<Exposure | null>(null)
+  const [now, setNow] = useState<ReturnType<GeoSystemAPI['getMarineNow']>>(null)
 
   useEffect(() => {
     let live = true
-    void ctl.getGeo()?.then((geo) => { if (live) setE(geo.getWaterExposure()) }).catch(() => {})
-    return () => { live = false }
+    const read = () => void ctl.getGeo()?.then((geo) => {
+      if (!live) return
+      setE(geo.getWaterExposure())
+      setNow(geo.getMarineNow())
+    }).catch(() => {})
+    read()
+    // The live sea arrives after the map and moves with the hours.
+    const timer = setInterval(read, 60_000)
+    const first = setTimeout(read, 4000)
+    return () => { live = false; clearInterval(timer); clearTimeout(first) }
   }, [ctl, revision])
 
   if (!e) return null
@@ -47,6 +57,16 @@ export function WaterExposure({ revision }: { revision: unknown }) {
         {row(t('waterExposure.salinity'), t(`waterExposure.salt.${e.salinity}`))}
         {e.coast && e.cls !== 'river' && e.cls !== 'stream' && e.cls !== 'canal' && e.cls !== 'lake' && e.cls !== 'pond'
           && row(t('waterExposure.coast'), t(`waterExposure.coasts.${e.coast}`))}
+        {now && (e.cls === 'sea' || e.cls === 'ocean' || e.cls === 'beach' || e.cls === 'estuary' || e.cls === 'lagoon') && (
+          <div className="mt-1 rounded-[7px] bg-[var(--surface-2)] px-1.5 py-1 flex flex-col gap-0.5">
+            <div className="text-[9.5px] font-mono uppercase tracking-[0.08em] text-[rgb(56,189,248)]">{t('waterExposure.liveTitle')}</div>
+            {row(t('waterExposure.current'), `${now.currentMS.toFixed(2)} m/s · ${t('waterExposure.towards', { dir: COMPASS[Math.round(now.currentToDeg / 45) % 8] })}`)}
+            {Number.isFinite(now.waveHsM) && row(t('waterExposure.wavesNow'), `${now.waveHsM.toFixed(1)} m`)}
+            <div className="text-[9.5px] leading-snug text-[var(--text-faint)]">
+              {t('waterExposure.liveCell', { km: Math.round(now.cell.distanceKm) })}
+            </div>
+          </div>
+        )}
         <ul className="mt-0.5 flex flex-col gap-0.5">
           {e.issues.map((k) => (
             <li key={k} className="text-[10px] leading-snug text-[var(--text-dim)]">· {t(`waterExposure.issue.${k}`)}</li>

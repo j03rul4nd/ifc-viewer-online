@@ -400,6 +400,9 @@
     "salinity": "Wasser",
     "coast": "Küste",
     "hint": "Typische Werte dieser Gewässerart, geschätzt aus OpenStreetMap und dem Gelände – keine Vermessung.",
+    "liveTitle": "Jetzt · Copernicus Marine",
+    "wavesNow": "Wellen jetzt",
+    "liveCell": "Modellzelle {{km}} km entfernt — offenes Wasser dort, nicht das Innere eines Hafenbeckens. Über Open-Meteo, stündlich.",
     "cls": {
       "river": "Fluss",
       "stream": "Bach",
