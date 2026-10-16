@@ -51,6 +51,13 @@ export interface HeightSample {
    * metres per storey, which is otherwise a constant we assume.
    */
   levels?: number | null
+  /**
+   * True when `heightM` is NOT measured: the building states only a storey
+   * count, carried in `levels`. The prior converts it with the storey height
+   * it learns from the buildings that state both, instead of a constant — a
+   * Lujiazui tower counted in storeys is 4.4 m a floor, not 3.2.
+   */
+  fromLevels?: boolean
 }
 
 /**
@@ -83,6 +90,8 @@ export const PRIOR_SIZE_SPLIT_M2 = 1000
  * repair it.
  */
 export const MIN_STOREY_M = 1.5
+/** Metres per storey when the district measures none: a European average. */
+export const FALLBACK_STOREY_M = 3.2
 export const MAX_STOREY_M = 12
 
 /**
@@ -162,8 +171,14 @@ export function buildHeightPrior(samples: ReadonlyArray<HeightSample>): HeightPr
   const storeyByType = new Map<string, number[]>()
   const storeyAll: number[] = []
 
+  // Two passes. The measured buildings first: they alone can say how tall a
+  // storey is here. Then the ones that only count storeys, converted with
+  // that — see HeightSample.fromLevels.
+  const measured = samples.filter((s) => !s.fromLevels)
+  const counted = samples.filter((s) => s.fromLevels && s.levels != null && s.levels > 0)
+
   let used = 0
-  for (const s of samples) {
+  for (const s of measured) {
     if (!Number.isFinite(s.heightM) || s.heightM <= 0) continue
     if (!Number.isFinite(s.areaM2) || s.areaM2 <= 0) continue
     const type = (s.type ?? '').toLowerCase()
@@ -195,6 +210,22 @@ export function buildHeightPrior(samples: ReadonlyArray<HeightSample>): HeightPr
   const pick = (m: Map<string, number[]>, k: string): number | null => {
     const list = m.get(k)
     return list && list.length >= MIN_PRIOR_SAMPLES ? median(list) : null
+  }
+  const storeyFor = (type: string): number =>
+    pick(storeyByType, type) ?? (storeyAll.length >= MIN_PRIOR_SAMPLES ? median(storeyAll) : FALLBACK_STOREY_M)
+
+  for (const s of counted) {
+    if (!Number.isFinite(s.areaM2) || s.areaM2 <= 0) continue
+    const type = (s.type ?? '').toLowerCase()
+    if (LOCALLY_INVARIANT_TYPES.has(type)) continue
+    const heightM = s.levels! * storeyFor(type)
+    used++
+    const band = bandOf(s.areaM2)
+    for (const [m, k] of [[byTypeBand, `${type}|${band}`], [byBand, band]] as const) {
+      const list = m.get(k)
+      if (list) list.push(heightM)
+      else m.set(k, [heightM])
+    }
   }
 
   return {

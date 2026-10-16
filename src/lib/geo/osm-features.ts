@@ -16,7 +16,7 @@
 
 import {
   resolveBuildingHeight, parseLengthM, approximateAreaM2,
-  DEFAULT_STOREY_HEIGHT_M,
+  DEFAULT_STOREY_HEIGHT_M, heightIsFlaggedEstimated, ROOF_LEVEL_M,
 } from './buildings'
 import { buildHeightPrior, type HeightSample } from './height-prior'
 import type { BuildingHeight } from './buildings'
@@ -1440,7 +1440,10 @@ export function resolveFeatureStyle(
   }
 
   const roofShape = parseRoofShape(t['roof:shape'])
+  const roofLevels = parseFloat(t['roof:levels'] ?? '')
+  // A counted attic gives the roof its height when nobody measured it.
   const tagged = parseLengthM(t['roof:height'])
+    ?? (Number.isFinite(roofLevels) && roofLevels > 0 ? roofLevels * ROOF_LEVEL_M : null)
   return {
     // `roof:orientation=across` puts the ridge on the SHORT axis — the opposite
     // of the longest-axis rule we otherwise assume. 8 of the 10 tagged in
@@ -1613,13 +1616,20 @@ function collectHeightSamples(elements: ReadonlyArray<unknown>): HeightSample[] 
     // A surveyed height is the only thing that can measure the local metres per
     // storey, so `levels` travels only alongside one. Deriving the height FROM
     // the levels and then dividing it back out would just recover the constant.
-    const surveyed = parseLengthM(t['height'])
-    const heightM = surveyed ?? (levels !== null ? levels * DEFAULT_STOREY_HEIGHT_M : null)
-    if (heightM === null || !(heightM > 0)) continue
+    // A height the mapper — or a converter — flagged as a guess teaches the
+    // prior nothing but the guess. That is every OpenMapTiles fallback height
+    // and 42 % of the heights in the Lujiazui patch.
+    const tagged = parseLengthM(t['height'])
+    const surveyed = tagged !== null && tagged > 0 && !heightIsFlaggedEstimated(t) ? tagged : null
 
     const areaM2 = safeAreaM2(el.geometry)
     if (areaM2 === null) continue
-    out.push({ type, areaM2, heightM, levels: surveyed !== null ? levels : null })
+    if (surveyed !== null) {
+      out.push({ type, areaM2, heightM: surveyed, levels })
+    } else if (levels !== null) {
+      // Converted by the prior with the storey height it learns here.
+      out.push({ type, areaM2, heightM: levels * DEFAULT_STOREY_HEIGHT_M, levels, fromLevels: true })
+    }
   }
   return out
 }

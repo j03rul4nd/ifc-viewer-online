@@ -16,7 +16,7 @@
 //
 // No three.js here — the mesh is extruded in geo-system.
 
-import { bboxAround, OVERPASS_ENDPOINT, overpassRemarkError } from '../lib/geo/buildings'
+import { bboxAround, DATA_SOURCE_TAG, OVERPASS_ENDPOINT, overpassRemarkError } from '../lib/geo/buildings'
 import { fetchOmtFallback } from '../lib/geo/omt-fallback'
 import {
   newFootprints, extractCovers, clearsModelPlan,
@@ -330,7 +330,7 @@ async function overtureExtras(
       // `building=yes` and nothing else: Overture's China heights are
       // OSM-derived, so these carry none, and inventing a tag here would put a
       // guess beyond the reach of the audit.
-      tags: { building: 'yes' },
+      tags: { building: 'yes', [DATA_SOURCE_TAG]: 'overture' },
       geometry: f.ring,
     }))
   } catch {

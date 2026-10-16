@@ -170,7 +170,7 @@ const SQUARE_KIOSK_MAX_M2 = 150
  */
 export function capSquareKiosks<B extends {
   ring: ReadonlyArray<LatLonPoint>
-  height: { heightM: number; basis?: string }
+  height: { heightM: number; basis?: string; source?: string }
   isBuildingPart?: boolean
 }>(buildings: ReadonlyArray<B>, features: ReadonlyArray<OsmFeature>): B[] {
   const floors = features.filter(isPedestrianFloor).map(floorOf)
@@ -184,7 +184,7 @@ export function capSquareKiosks<B extends {
     for (const p of b.ring) { lat += p.lat; lon += p.lon }
     const centre = { lat: lat / b.ring.length, lon: lon / b.ring.length }
     if (!onFloor(centre, floors)) return b
-    return { ...b, height: { ...b.height, heightM: SQUARE_KIOSK_HEIGHT_M } }
+    return { ...b, height: { ...b.height, heightM: SQUARE_KIOSK_HEIGHT_M, source: 'rule' as const } }
   })
 }
 
