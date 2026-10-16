@@ -386,5 +386,60 @@
     },
     "more": "altri {{count}}",
     "less": "Mostra meno"
+  },
+  "waterExposure": {
+    "title": "L'acqua vicino al modello",
+    "over": "sull'acqua",
+    "away": "a {{m}} m",
+    "current": "Corrente",
+    "currentValue": "{{typ}} m/s tipica · {{max}} m/s in eventi severi",
+    "towards": "verso {{dir}}",
+    "slope": "Pendenza del fiume",
+    "tide": "Escursione di marea",
+    "waves": "Onde di tempesta",
+    "salinity": "Acqua",
+    "coast": "Costa",
+    "hint": "Valori tipici di questo tipo d'acqua, stimati da OpenStreetMap e dal terreno: non è un rilievo.",
+    "cls": {
+      "river": "Fiume",
+      "stream": "Torrente",
+      "canal": "Canale",
+      "lake": "Lago",
+      "pond": "Stagno",
+      "lagoon": "Laguna",
+      "estuary": "Estuario",
+      "sea": "Mare",
+      "ocean": "Oceano aperto",
+      "beach": "Spiaggia"
+    },
+    "salt": {
+      "fresh": "Dolce",
+      "brackish": "Salmastra",
+      "salt": "Salata"
+    },
+    "coasts": {
+      "mediterranean": "Mediterraneo",
+      "adriatic": "Adriatico",
+      "atlantic": "Atlantico",
+      "macrotidal": "Macrotidale",
+      "north-sea": "Mare del Nord",
+      "baltic": "Baltico",
+      "black-sea": "Mar Nero",
+      "estuary-east-asia": "Estuario dell'Asia orientale",
+      "ocean": "Oceano aperto"
+    },
+    "issue": {
+      "scour": "Erosione localizzata di pile e fondazioni dovuta alla corrente",
+      "debris": "Le piene trascinano detriti: tronchi e veicoli contro ciò che sta in acqua",
+      "flood-rise": "Il livello sale di metri in piena: verifica ciò che sta sotto",
+      "ice": "Ghiaccio d'inverno: carichi su pali ed elementi galleggianti",
+      "corrosion": "Acqua salata: corrosione di acciaio e armature, zona degli spruzzi",
+      "tidal-range": "Escursione di marea: impalcati, parabordi e accessi devono funzionare con bassa e alta marea",
+      "storm-waves": "Onde di tempesta: impatti e tracimazioni su ciò che guarda il mare",
+      "rip-current": "Correnti di risacca nella zona dei frangenti",
+      "tidal-current": "Forti correnti di marea: ormeggi ed erosione",
+      "still-water": "Acqua ferma: ristagno, sedimenti e alghe; poca autodepurazione",
+      "longshore-drift": "La deriva litoranea sposta la sabbia delle fondazioni"
+    }
   }
 }

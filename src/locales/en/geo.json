@@ -385,5 +385,60 @@
     },
     "more": "{{count}} more",
     "less": "Show fewer"
+  },
+  "waterExposure": {
+    "title": "Water by the model",
+    "over": "over the water",
+    "away": "{{m}} m away",
+    "current": "Current",
+    "currentValue": "{{typ}} m/s typical · {{max}} m/s severe",
+    "towards": "runs {{dir}}",
+    "slope": "River slope",
+    "tide": "Tide range",
+    "waves": "Storm waves",
+    "salinity": "Water",
+    "coast": "Coast",
+    "hint": "Typical values for this kind of water, estimated from OpenStreetMap and the terrain — not a survey.",
+    "cls": {
+      "river": "River",
+      "stream": "Stream",
+      "canal": "Canal",
+      "lake": "Lake",
+      "pond": "Pond",
+      "lagoon": "Lagoon",
+      "estuary": "Estuary",
+      "sea": "Sea",
+      "ocean": "Open ocean",
+      "beach": "Beach"
+    },
+    "salt": {
+      "fresh": "Fresh",
+      "brackish": "Brackish",
+      "salt": "Salt"
+    },
+    "coasts": {
+      "mediterranean": "Mediterranean",
+      "adriatic": "Adriatic",
+      "atlantic": "Atlantic",
+      "macrotidal": "Macrotidal",
+      "north-sea": "North Sea",
+      "baltic": "Baltic",
+      "black-sea": "Black Sea",
+      "estuary-east-asia": "East Asian estuary",
+      "ocean": "Open ocean"
+    },
+    "issue": {
+      "scour": "Scour at piers and foundations from the current",
+      "debris": "Floods carry debris: trees and vehicles against what stands in the water",
+      "flood-rise": "The level rises metres in a flood: check what is below it",
+      "ice": "Ice in winter: loads on piles and floating parts",
+      "corrosion": "Salt water: corrosion of steel and reinforcement, splash zone",
+      "tidal-range": "Tide range: decks, fenders and access must work at low and high water",
+      "storm-waves": "Storm waves: impact and overtopping on what faces the sea",
+      "rip-current": "Rip currents through the surf zone",
+      "tidal-current": "Strong tidal currents: moorings and scour",
+      "still-water": "Still water: stagnation, sediment and algae; little self-cleaning",
+      "longshore-drift": "Drift along the shore moves the sand foundations stand on"
+    }
   }
 }

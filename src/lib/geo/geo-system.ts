@@ -87,6 +87,7 @@ import { createGroundFrame } from './ground-frame'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
+import { waterExposureAt, type WaterExposure } from './water-exposure'
 
 const log = createLogger('GeoSystem')
 
@@ -539,6 +540,8 @@ export interface GeoSystemAPI {
    * when the map or its context is off; never triggers a fetch of its own.
    */
   getWaterCrossings(): WaterCrossing[]
+  /** The water nearest the model and what it is like (water-exposure); null when none is near. */
+  getWaterExposure(): WaterExposure | null
   /** Aim the camera at a map point from above, `spanM` of ground in view. */
   flyToLatLon(lat: number, lon: number, spanM: number): void
   dispose(): void
@@ -1507,6 +1510,20 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         }
       }
       return crossingsCache.list
+    },
+
+    getWaterExposure() {
+      if (!osmCache || !placement || !geoRoot) return null
+      const root = geoRoot
+      root.updateWorldMatrix(true, false)
+      const v = new THREE.Vector3()
+      const groundM = (p: { lat: number; lon: number }): number | null => {
+        const n = latLonToNormalized(p.lat, p.lon)
+        v.set(n.nx, n.ny, 0)
+        root.localToWorld(v)
+        return api.trueGroundHeightAt(v.x, v.z)
+      }
+      return waterExposureAt({ lat: placement.lat, lon: placement.lon }, osmCache.features, groundM)
     },
 
     flyToLatLon(lat, lon, spanM) {

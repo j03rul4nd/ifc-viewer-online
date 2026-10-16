@@ -386,5 +386,60 @@
     },
     "more": "{{count}} més",
     "less": "Mostra'n menys"
+  },
+  "waterExposure": {
+    "title": "L'aigua al costat del model",
+    "over": "sobre l'aigua",
+    "away": "a {{m}} m",
+    "current": "Corrent",
+    "currentValue": "{{typ}} m/s típic · {{max}} m/s en episodis severs",
+    "towards": "cap al {{dir}}",
+    "slope": "Pendent del riu",
+    "tide": "Carrera de marea",
+    "waves": "Onatge de temporal",
+    "salinity": "Aigua",
+    "coast": "Costa",
+    "hint": "Valors típics d'aquest tipus d'aigua, estimats a partir d'OpenStreetMap i el terreny; no és un aixecament.",
+    "cls": {
+      "river": "Riu",
+      "stream": "Rierol",
+      "canal": "Canal",
+      "lake": "Llac",
+      "pond": "Estany",
+      "lagoon": "Llacuna",
+      "estuary": "Estuari",
+      "sea": "Mar",
+      "ocean": "Oceà obert",
+      "beach": "Platja"
+    },
+    "salt": {
+      "fresh": "Dolça",
+      "brackish": "Salobre",
+      "salt": "Salada"
+    },
+    "coasts": {
+      "mediterranean": "Mediterrani",
+      "adriatic": "Adriàtic",
+      "atlantic": "Atlàntic",
+      "macrotidal": "Macromareal",
+      "north-sea": "Mar del Nord",
+      "baltic": "Bàltic",
+      "black-sea": "Mar Negra",
+      "estuary-east-asia": "Estuari d'Àsia oriental",
+      "ocean": "Oceà obert"
+    },
+    "issue": {
+      "scour": "Soscavació de piles i fonaments pel corrent",
+      "debris": "Les riuades arrosseguen troncs i vehicles contra el que és a l'aigua",
+      "flood-rise": "El nivell puja metres en una crescuda: revisa el que queda per sota",
+      "ice": "Gel a l'hivern: càrregues sobre pilots i elements flotants",
+      "corrosion": "Aigua salada: corrosió de l'acer i les armadures, zona d'esquitxada",
+      "tidal-range": "Carrera de marea: taulers, defenses i accessos han de funcionar amb baixamar i plenamar",
+      "storm-waves": "Onatge de temporal: impactes i ultrapassaments en el que dona al mar",
+      "rip-current": "Corrents de ressaca a la zona de trencants",
+      "tidal-current": "Corrents de marea forts: amarratges i soscavació",
+      "still-water": "Aigua quieta: estancament, sediments i algues; poca autoneteja",
+      "longshore-drift": "La deriva litoral mou la sorra on es fonamenta"
+    }
   }
 }

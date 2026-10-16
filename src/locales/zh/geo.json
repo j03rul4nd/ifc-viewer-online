@@ -386,5 +386,60 @@
     },
     "more": "还有 {{count}} 个",
     "less": "收起"
+  },
+  "waterExposure": {
+    "title": "模型旁的水体",
+    "over": "位于水上",
+    "away": "距离 {{m}} 米",
+    "current": "水流",
+    "currentValue": "常见 {{typ}} 米/秒 · 极端 {{max}} 米/秒",
+    "towards": "流向{{dir}}",
+    "slope": "河道坡度",
+    "tide": "潮差",
+    "waves": "风暴浪",
+    "salinity": "水质",
+    "coast": "海岸",
+    "hint": "此类水体的典型值,由 OpenStreetMap 和地形估算,并非测量数据。",
+    "cls": {
+      "river": "河流",
+      "stream": "溪流",
+      "canal": "运河",
+      "lake": "湖泊",
+      "pond": "池塘",
+      "lagoon": "潟湖",
+      "estuary": "河口",
+      "sea": "海",
+      "ocean": "开阔大洋",
+      "beach": "海滩"
+    },
+    "salt": {
+      "fresh": "淡水",
+      "brackish": "咸淡水",
+      "salt": "咸水"
+    },
+    "coasts": {
+      "mediterranean": "地中海",
+      "adriatic": "亚得里亚海",
+      "atlantic": "大西洋",
+      "macrotidal": "强潮海岸",
+      "north-sea": "北海",
+      "baltic": "波罗的海",
+      "black-sea": "黑海",
+      "estuary-east-asia": "东亚河口",
+      "ocean": "开阔大洋"
+    },
+    "issue": {
+      "scour": "水流冲刷桥墩和基础",
+      "debris": "洪水裹挟树木、车辆等漂浮物撞击水中结构",
+      "flood-rise": "洪水时水位上涨数米:检查其下方的部分",
+      "ice": "冬季结冰:对桩和浮动构件的荷载",
+      "corrosion": "咸水:钢材和钢筋腐蚀,浪溅区",
+      "tidal-range": "潮差:桥面、护舷和出入口需在低潮和高潮时均可使用",
+      "storm-waves": "风暴浪:对临海部分的冲击和越浪",
+      "rip-current": "破波带的离岸流",
+      "tidal-current": "强潮流:系泊与冲刷",
+      "still-water": "静水:滞流、淤积和藻类,自净能力弱",
+      "longshore-drift": "沿岸输沙移动基础所在的沙层"
+    }
   }
 }
