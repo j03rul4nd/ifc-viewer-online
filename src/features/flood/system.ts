@@ -204,6 +204,9 @@ export interface CoastReport {
   rangeM: { min: number; max: number }
   /** True when the level follows the tide over the run. */
   tidal: boolean
+  /** The sea's level over the run, metres above mean sea level, every `stepS` (one value when held). */
+  curveM: number[]
+  stepS: number
   /** m² under the still level and connected to the sea; of that, land the sea takes. */
   seaAreaM2: number
   landTakenM2: number
@@ -1211,7 +1214,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const cell = g.dx * g.dx
       if (!seaMask || !seaMask.some((v) => v === 1) || seaY === null) {
         off()
-        return { profile: c.profile, levels, rangeM, tidal: !!c.timeline, seaAreaM2: 0, landTakenM2: 0, runupAreaM2: 0, noSea: true }
+        return { profile: c.profile, levels, rangeM, tidal: !!c.timeline, curveM: curve, stepS, seaAreaM2: 0, landTakenM2: 0, runupAreaM2: 0, noSea: true }
       }
       // The run STARTS from the sea at its first level, spread over the low
       // ground it connects to; from there the sea cells follow the curve and
@@ -1227,7 +1230,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       g.h0 = h0
       coastOn = true
       return {
-        profile: c.profile, levels, rangeM, tidal: !!c.timeline,
+        profile: c.profile, levels, rangeM, tidal: !!c.timeline, curveM: curve, stepS,
         seaAreaM2: fill.seaCells * cell, landTakenM2: fill.landTaken * cell, runupAreaM2: fill.runupCells * cell,
         noSea: false,
       }

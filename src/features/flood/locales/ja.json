@@ -161,6 +161,7 @@
     "flooded": "浸水面積",
     "deepest": "最大浸水深",
     "volume": "地表の水量",
+    "sea": "海面",
     "legend": "カラースケール"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "時間変化する潮位",
     "tidalNote": "計算中、海面は潮に合わせて上下します。満潮と高潮は降雨のピークに重なります。",
     "range": "計算中の海面 {{min}} … {{max}}",
+    "port": "検潮所: {{port}}",
+    "rangeLabel": "潮差",
+    "rangeAuto": "{{m}} m を使う (海岸 / 港)",
+    "highWater": "満潮",
+    "withRain": "降雨と同時",
+    "preview": "計算中の海面",
     "noSea": "格子内に海がありません: 海岸線が範囲外か、OpenStreetMap がオフです。",
     "result": "海 {{sea}} m² · 浸水する陸 {{land}} m² · 波が洗う範囲 {{runup}} m²"
   }

@@ -23,6 +23,7 @@ import type { LatLonPoint, OsmFeature } from './osm-features'
 
 export type ChannelClass = 'river' | 'canal' | 'stream' | 'ditch' | 'drain'
 export type WaterBarrierClass = 'wall' | 'city_wall' | 'retaining_wall' | 'flood_wall' | 'dyke' | 'embankment' | 'weir' | 'dam'
+  | 'sea_wall' | 'breakwater'
 
 export interface HydroChannel {
   id: string
@@ -77,6 +78,10 @@ const DEFAULT_HEIGHT: Record<WaterBarrierClass, number> = {
   // A weir's crest holds the river back by about its own height; a dam by far
   // more — both are where a flood overtops or does not.
   weir: 1, dam: 8,
+  // What stands between a coast and the sea. A coarse DEM averages a 3 m
+  // promenade wall into the beach below it, which is how Saint-Malo came out
+  // drowned behind walls that hold every spring tide.
+  sea_wall: 3, breakwater: 3,
 }
 
 /** A length tag in metres ("3", "3 m", "2.5m"); null when unreadable. */
@@ -101,6 +106,8 @@ export function channelOf(tags: Record<string, string>): { cls: ChannelClass; hi
 /** The barrier class of a way that stops water, or null (fences and hedges do not). */
 export function waterBarrierOf(tags: Record<string, string>): WaterBarrierClass | null {
   if (tags['waterway'] === 'weir' || tags['waterway'] === 'dam') return tags['waterway'] as 'weir' | 'dam'
+  if (tags['man_made'] === 'sea_wall' || tags['wall'] === 'sea_wall' || tags['wall'] === 'seawall') return 'sea_wall'
+  if (tags['man_made'] === 'breakwater' || tags['man_made'] === 'groyne') return 'breakwater'
   const b = tags['barrier']
   if (b === 'wall' || b === 'city_wall' || b === 'retaining_wall') return b
   if (b === 'flood_wall' || tags['flood_prone'] === 'flood_wall') return 'flood_wall'
@@ -165,4 +172,5 @@ export function hydrologyQueryParts(b: string): string {
     + `way["man_made"~"^(dyke|embankment|flood_wall)$"](${b});way["embankment"~"^(yes|dyke)$"](${b});`
     + `way["barrier"="flood_wall"](${b});`
     + `way["route"="ferry"](${b});`
+    + `way["man_made"~"^(sea_wall|breakwater|groyne)$"](${b});way["wall"~"^(sea_wall|seawall)$"](${b});`
 }

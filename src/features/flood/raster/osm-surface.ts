@@ -288,7 +288,8 @@ export function buildOsmSurface(o: OsmSurfaceInput): OsmSurface {
   } else {
     // Walls are never in a bare-earth DEM; only the earthworks are.
     for (const bar of o.hydro.barriers) {
-      if (bar.cls === 'dyke' || bar.cls === 'embankment') continue
+      // Earthworks and the bulk of a breakwater are in a bare-earth DEM; walls never are.
+      if (bar.cls === 'dyke' || bar.cls === 'embankment' || bar.cls === 'breakwater') continue
       const line = local(bar.line)
       if (outside(line, 5)) continue
       strokeLine(line, 0, (c) => { raise[c] = Math.max(raise[c], bar.heightM) })

@@ -161,6 +161,7 @@
     "flooded": "淹没面积",
     "deepest": "最大水深",
     "volume": "地表水量",
+    "sea": "海面",
     "legend": "色标"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "随时间变化的潮位",
     "tidalNote": "模拟期间海面随潮汐涨落;高潮与风暴增水和降雨峰值同时出现。",
     "range": "模拟期间海面 {{min}} … {{max}}",
+    "port": "验潮站:{{port}}",
+    "rangeLabel": "潮差",
+    "rangeAuto": "使用 {{m}} 米(海岸 / 港口)",
+    "highWater": "高潮",
+    "withRain": "与降雨同时",
+    "preview": "模拟期间海面",
     "noSea": "网格内没有海:海岸线在范围外,或 OpenStreetMap 已关闭。",
     "result": "海 {{sea}} m² · 被淹陆地 {{land}} m² · 波浪冲刷 {{runup}} m²"
   }

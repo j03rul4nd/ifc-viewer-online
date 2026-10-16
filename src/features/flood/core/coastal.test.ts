@@ -93,3 +93,23 @@ describe('tideCurve', () => {
     expect(low[0]).toBeCloseTo(-3.75, 5)
   })
 })
+
+describe('port tide ranges', () => {
+  it('uses the nearest port inside its radius, the region beyond', () => {
+    const malo = coastProfileAt(48.6508, -2.0138)
+    expect(malo.kind).toBe('macrotidal')
+    expect(malo.port).toBe('Saint-Malo')
+    expect(malo.springRangeM).toBe(11)
+    const bristol = coastProfileAt(51.45, -2.6)
+    expect(bristol.port).toBe('Avonmouth')
+    expect(coastProfileAt(31.24, 121.5).port).toBe('Shanghai Wusong')
+    // Mid-Biscay coast with no gauge within 60 km keeps the region's figure.
+    const open = coastProfileAt(44.5, -1.25)
+    expect(open.port).toBeUndefined()
+  })
+  it('a scenario can override the range', () => {
+    const p = coastProfile('mediterranean')
+    const l = coastLevels(p, { tide: 'spring', surgeM: 0, waveHsM: 0, exposure: 'open', riseM: 0, rangeM: 2 })
+    expect(l.tideM).toBeCloseTo(1)
+  })
+})

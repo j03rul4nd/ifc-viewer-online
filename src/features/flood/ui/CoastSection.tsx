@@ -7,7 +7,7 @@
 import { useShallow } from 'zustand/react/shallow'
 import { LookSlider, Notice, Segmented, StatRow, SwitchRow } from '../../../components/geo/ui'
 import {
-  coastLevels, coastProfile, coastProfileAt,
+  coastLevels, coastProfile, coastProfileAt, tideCurve,
   type CoastKind, type CoastProfile, type CoastScenario,
 } from '../core/coastal'
 import { useFloodStore, type FloodSettings } from '../store'
@@ -19,7 +19,7 @@ const KINDS: CoastKind[] = [
   'mediterranean', 'adriatic', 'atlantic', 'macrotidal', 'north-sea', 'baltic', 'black-sea', 'estuary-east-asia', 'ocean',
 ]
 
-type CoastSettings = Pick<FloodSettings, 'coast' | 'coastKind' | 'coastTide' | 'coastSurgeM' | 'coastWaveHsM' | 'coastExposure' | 'coastRiseM' | 'coastTidal'>
+type CoastSettings = Pick<FloodSettings, 'coast' | 'coastKind' | 'coastTide' | 'coastSurgeM' | 'coastWaveHsM' | 'coastExposure' | 'coastRiseM' | 'coastTidal' | 'coastPeakOffsetH' | 'coastRangeM'>
 
 function profileOf(s: CoastSettings, place: { lat: number; lon: number } | null): CoastProfile {
   if (s.coastKind) return coastProfile(s.coastKind)
@@ -27,8 +27,18 @@ function profileOf(s: CoastSettings, place: { lat: number; lon: number } | null)
 }
 
 function scenarioOf(s: CoastSettings): CoastScenario {
-  return { tide: s.coastTide, surgeM: s.coastSurgeM, waveHsM: s.coastWaveHsM, exposure: s.coastExposure, riseM: s.coastRiseM }
+  return { tide: s.coastTide, surgeM: s.coastSurgeM, waveHsM: s.coastWaveHsM, exposure: s.coastExposure, riseM: s.coastRiseM, rangeM: s.coastRangeM }
 }
+
+/** The run's length and where its worst moment falls, s. */
+function runTiming(s: CoastSettings & { hyetograph: Hyetograph; drainMin: number }): { durationS: number; peakAtS: number } {
+  const durationS = rainDurationS(s.hyetograph) + s.drainMin * 60
+  const peak = s.hyetograph.intensityMmH.indexOf(Math.max(...s.hyetograph.intensityMmH))
+  const rainPeakS = (Math.max(0, peak) + 0.5) * s.hyetograph.intervalS
+  return { durationS, peakAtS: rainPeakS + s.coastPeakOffsetH * 3600 }
+}
+
+const PEAK_OFFSETS = [-2, 0, 2, 4] as const
 
 /** What the run should stand the sea at, or null when the coast is off. */
 /**
@@ -41,12 +51,9 @@ export function coastFor(
   place: { lat: number; lon: number } | null,
 ): CoastRequest | null {
   if (!s.coast) return null
-  const durationS = rainDurationS(s.hyetograph) + s.drainMin * 60
-  const peak = s.hyetograph.intensityMmH.indexOf(Math.max(...s.hyetograph.intensityMmH))
-  const peakAtS = (Math.max(0, peak) + 0.5) * s.hyetograph.intervalS
   return {
     profile: profileOf(s, place), scenario: scenarioOf(s),
-    timeline: s.coastTidal ? { durationS, peakAtS } : null,
+    timeline: s.coastTidal ? runTiming(s) : null,
   }
 }
 
@@ -58,6 +65,7 @@ export function CoastSection({ t, caption, selectCls, mapOn }: { t: T; caption: 
   const s = useFloodStore(useShallow((st) => ({
     coast: st.coast, coastKind: st.coastKind, coastTide: st.coastTide, coastSurgeM: st.coastSurgeM,
     coastWaveHsM: st.coastWaveHsM, coastExposure: st.coastExposure, coastRiseM: st.coastRiseM, coastTidal: st.coastTidal,
+    coastPeakOffsetH: st.coastPeakOffsetH, coastRangeM: st.coastRangeM, hyetograph: st.hyetograph, drainMin: st.drainMin,
     report: st.coastReport, set: st.set,
   })))
   const place = useFloodPlace()
@@ -91,7 +99,15 @@ export function CoastSection({ t, caption, selectCls, mapOn }: { t: T; caption: 
           </div>
           <div className="text-[10px] leading-snug text-[var(--text-faint)]">
             {t('coast.facts', { range: profile.springRangeM.toFixed(1), surge: profile.surgeM.toFixed(1), hs: profile.stormHsM.toFixed(0) })}
+            {profile.port && <> · {t('coast.port', { port: profile.port })}</>}
           </div>
+          <LookSlider label={t('coast.rangeLabel')} value={s.coastRangeM ?? profile.springRangeM} min={0} max={15} step={0.1}
+            format={(v) => `${v.toFixed(1)} m`} onChange={(v) => s.set({ coastRangeM: v })} />
+          {s.coastRangeM !== null && (
+            <button className="self-start text-[10px] text-[var(--accent-2)] hover:underline" onClick={() => s.set({ coastRangeM: null })}>
+              {t('coast.rangeAuto', { m: profile.springRangeM.toFixed(1) })}
+            </button>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-[var(--text-faint)] w-[54px]">{t('coast.tide')}</span>
             <Segmented label={t('coast.tide')} value={s.coastTide}
@@ -109,6 +125,17 @@ export function CoastSection({ t, caption, selectCls, mapOn }: { t: T; caption: 
           </div>
           <SwitchRow compact label={t('coast.tidal')} checked={s.coastTidal}
             note={t('coast.tidalNote')} onChange={(v) => s.set({ coastTidal: v })} />
+          {s.coastTidal && (
+            <>
+              <div className="flex items-center gap-2 max-md:flex-col max-md:items-stretch">
+                <span className="text-[10px] max-md:text-[12px] text-[var(--text-faint)] w-[54px] max-md:w-auto">{t('coast.highWater')}</span>
+                <Segmented label={t('coast.highWater')} value={String(s.coastPeakOffsetH) as `${(typeof PEAK_OFFSETS)[number]}`}
+                  options={PEAK_OFFSETS.map((h) => ({ id: String(h) as `${typeof h}`, label: h === 0 ? t('coast.withRain') : `${h > 0 ? '+' : '−'}${Math.abs(h)} h` }))}
+                  onChange={(v) => s.set({ coastPeakOffsetH: Number(v) })} />
+              </div>
+              <TidePreview profile={profile} scenario={scenarioOf(s)} timing={runTiming(s)} label={t('coast.preview')} />
+            </>
+          )}
           <StatRow label={t('coast.still')} value={sign(lv.stillM)} />
           <StatRow label={t('coast.runup')} value={`${sign(lv.stillM + lv.runupM)} (${t('coast.runupAbove', { m: lv.runupM.toFixed(2) })})`} />
           <div className="text-[10px] leading-snug text-[var(--text-faint)]">{t('coast.typical')}</div>
@@ -126,6 +153,30 @@ export function CoastSection({ t, caption, selectCls, mapOn }: { t: T; caption: 
         </>
       )}
     </section>
+  )
+}
+
+/** The sea over the run before it is run: where high water falls against the rain. */
+function TidePreview({ profile, scenario, timing, label }: {
+  profile: CoastProfile; scenario: CoastScenario; timing: { durationS: number; peakAtS: number }; label: string
+}) {
+  const stepS = Math.max(60, Math.round(timing.durationS / 120))
+  const curve = tideCurve(profile, scenario, { ...timing, stepS })
+  const lo = Math.min(...curve), hi = Math.max(...curve)
+  const span = Math.max(hi - lo, 0.05)
+  const W = 100, H = 28
+  const d = curve.map((v, k) => `${k ? 'L' : 'M'}${((k * stepS) / timing.durationS * W).toFixed(2)},${(H - 2 - ((v - lo) / span) * (H - 4)).toFixed(2)}`).join('')
+  const px = Math.min(W, Math.max(0, (timing.peakAtS / timing.durationS) * W))
+  return (
+    <figure className="flex flex-col gap-0.5" aria-label={label}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-[36px] max-md:h-[48px] rounded-[6px] bg-[var(--surface-2)]">
+        <line x1={px} x2={px} y1={0} y2={H} stroke="var(--text-faint)" strokeDasharray="1.5 1.5" vectorEffect="non-scaling-stroke" />
+        <path d={d} fill="none" stroke="rgb(56,189,248)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <figcaption className="flex justify-between text-[9.5px] font-mono tabular-nums text-[var(--text-faint)]">
+        <span>{sign(curve[0])}</span><span>{label}</span><span>{sign(hi)}</span>
+      </figcaption>
+    </figure>
   )
 }
 

@@ -67,6 +67,10 @@ export interface FloodSettings {
   coastRiseM: number
   /** The sea follows the tide over the run (peaking with the rain) instead of standing still. */
   coastTidal: boolean
+  /** Hours from the rain's peak to high water (negative = before it). */
+  coastPeakOffsetH: number
+  /** A measured spring tidal range, metres; null = the coast's or the near port's. */
+  coastRangeM: number | null
 }
 
 export interface FloodState extends FloodSettings {
@@ -122,6 +126,8 @@ export const useFloodStore = create<FloodState>()((set) => ({
   coastExposure: 'open',
   coastRiseM: 0,
   coastTidal: true,
+  coastPeakOffsetH: 0,
+  coastRangeM: null,
   coastReport: null,
   panelOpen: false,
   status: 'idle',

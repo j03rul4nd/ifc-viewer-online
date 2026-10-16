@@ -34,6 +34,8 @@ export interface CoastProfile {
   stormHsM: number
   /** Typical beach slope (tan β) for run-up. */
   beachSlope: number
+  /** The tide gauge whose range this is, when a known port is near (PORTS). */
+  port?: string
 }
 
 const PROFILES: Record<CoastKind, Omit<CoastProfile, 'kind'>> = {
@@ -62,14 +64,47 @@ const REGIONS: Array<[CoastKind, Box[]]> = [
   ['atlantic', [[35.5, -12.0, 50.0, -1.0]]],
 ]
 
-/** The kind of coast at a place, by region; open ocean where none matches. */
+/**
+ * Mean spring tidal range at tide gauges, metres, from the national tide
+ * tables (SHOM, Puertos del Estado, UKHO, BSH, NOAA, CHS, JMA, the Hong Kong
+ * Observatory…), rounded. A region's single figure is badly wrong inside it:
+ * the Channel runs from 5 m at Cherbourg to 11 m at Saint-Malo, the Bristol
+ * Channel to 12 m. Within PORT_RADIUS_KM of one of these, its range is used.
+ */
+const PORTS: Array<[name: string, lat: number, lon: number, rangeM: number]> = [
+  ['Saint-Malo', 48.64, -2.03, 11.0], ['Granville', 48.83, -1.6, 11.4], ['Brest', 48.38, -4.49, 6.1],
+  ['Cherbourg', 49.65, -1.62, 5.3], ['Le Havre', 49.48, 0.11, 6.8], ['Calais', 50.97, 1.85, 6.0],
+  ['Bilbao', 43.35, -3.04, 3.9], ['Santander', 43.46, -3.79, 4.0], ['A Coruña', 43.36, -8.39, 3.6],
+  ['Vigo', 42.24, -8.72, 3.3], ['Lisboa', 38.69, -9.14, 3.4], ['Cádiz', 36.53, -6.29, 3.0],
+  ['Huelva', 37.13, -6.83, 3.0], ['Gibraltar', 36.14, -5.35, 0.9],
+  ['Barcelona', 41.35, 2.17, 0.25], ['València', 39.45, -0.32, 0.25], ['Marseille', 43.3, 5.35, 0.25],
+  ['Genova', 44.4, 8.93, 0.3], ['Venezia', 45.42, 12.43, 1.0], ['Trieste', 45.65, 13.76, 1.0],
+  ['Hamburg', 53.54, 9.97, 3.7], ['Hoek van Holland', 51.98, 4.12, 2.0], ['IJmuiden', 52.46, 4.58, 1.9],
+  ['London Bridge', 51.51, -0.09, 6.6], ['Liverpool', 53.4, -3.0, 8.4], ['Avonmouth', 51.51, -2.71, 12.3],
+  ['Dublin', 53.35, -6.21, 3.7], ['New York', 40.7, -74.01, 1.6], ['Boston', 42.35, -71.05, 3.2],
+  ['Halifax', 44.66, -63.57, 1.8], ['Saint John', 45.27, -66.06, 8.4], ['Shanghai Wusong', 31.39, 121.5, 3.4],
+  ['Hong Kong', 22.3, 114.17, 2.0], ['Tokyo', 35.65, 139.77, 1.6], ['Singapore', 1.26, 103.82, 2.6],
+  ['Sydney', -33.85, 151.23, 1.6],
+]
+export const PORT_RADIUS_KM = 60
+
+/** The kind of coast at a place, by region (open ocean where none matches), with a near port's tide range. */
 export function coastProfileAt(lat: number, lon: number): CoastProfile {
+  let base: CoastProfile = { kind: 'ocean', ...PROFILES.ocean }
   for (const [kind, boxes] of REGIONS) {
     if (boxes.some(([s, w, n, e]) => lat >= s && lat <= n && lon >= w && lon <= e)) {
-      return { kind, ...PROFILES[kind] }
+      base = { kind, ...PROFILES[kind] }
+      break
     }
   }
-  return { kind: 'ocean', ...PROFILES.ocean }
+  let best: (typeof PORTS)[number] | null = null
+  let bestKm = PORT_RADIUS_KM
+  for (const p of PORTS) {
+    const k = Math.cos(((lat + p[1]) / 2) * Math.PI / 180)
+    const km = Math.hypot((lat - p[1]) * 111.132, (lon - p[2]) * 111.32 * k)
+    if (km < bestKm) { bestKm = km; best = p }
+  }
+  return best ? { ...base, springRangeM: best[3], port: best[0] } : base
 }
 
 export function coastProfile(kind: CoastKind): CoastProfile {
@@ -89,6 +124,8 @@ export interface CoastScenario {
   exposure: Exposure
   /** Sea-level rise to add, metres (a climate horizon). */
   riseM: number
+  /** The spring tidal range to use instead of the coast's, metres (a measured one). */
+  rangeM?: number | null
 }
 
 export interface CoastLevels {
@@ -104,6 +141,11 @@ export interface CoastLevels {
   runupM: number
 }
 
+/** The tide range a scenario runs with: its own override, else the coast's. */
+export function rangeOf(p: CoastProfile, s: CoastScenario): number {
+  return s.rangeM !== undefined && s.rangeM !== null && s.rangeM >= 0 ? s.rangeM : p.springRangeM
+}
+
 const TIDE_FRACTION: Record<TideStage, number> = { low: -0.5, mean: 0, high: 0.4, spring: 0.5 }
 
 /**
@@ -115,7 +157,7 @@ const TIDE_FRACTION: Record<TideStage, number> = { low: -0.5, mean: 0, high: 0.4
  * reaches a harbour quay is not the one offshore.
  */
 export function coastLevels(p: CoastProfile, s: CoastScenario): CoastLevels {
-  const tideM = TIDE_FRACTION[s.tide] * p.springRangeM
+  const tideM = TIDE_FRACTION[s.tide] * rangeOf(p, s)
   const shelter = s.exposure === 'harbour' ? 0.2 : 1
   const hs = Math.max(0, s.waveHsM)
   const setupM = 0.2 * hs * shelter
@@ -169,7 +211,7 @@ export function tideCurve(p: CoastProfile, s: CoastScenario, o: TideCurveOptions
   const peak = o.peakAtS ?? o.durationS / 2
   const half = Math.max(600, o.surgeHalfS ?? 6 * 3600)
   const lv = coastLevels(p, s)
-  const amp = p.springRangeM / 2
+  const amp = rangeOf(p, s) / 2
   // Where in the tidal cycle the peak sits: high water for high/spring, low
   // water for low, mid-tide rising for mean.
   const phase = s.tide === 'low' ? Math.PI : s.tide === 'mean' ? -Math.PI / 2 : 0
