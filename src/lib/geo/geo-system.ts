@@ -39,6 +39,7 @@ import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
 import { landmarksIn, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
 import { barcelonaFabricSliced, barcelonaFacadeAt } from './barcelona-fabric'
 import { capSquareKiosks } from './plaza-paving'
+import { buildPigeonLayer } from './pigeons'
 import { isBarcelona } from './barcelona-barris'
 import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropAsset } from './props-assets'
 import { isShanghai } from './shanghai-region'
@@ -2382,6 +2383,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         })
         if (lakeBoats) objects.push(lakeBoats.object)
         if (s.parkDetails?.scenery.children.length) objects.push(s.parkDetails.scenery)
+        // Pigeons on the squares — invented, like the cars. See pigeons.ts.
+        const pigeons = buildPigeonLayer(features, opts)
+        if (pigeons) objects.push(pigeons.object)
         return { objects }
       }
 
