@@ -189,13 +189,15 @@ describe('buildSurfaceLayer', () => {
     expect(uniforms.uOpacity.value).toBe(1)
   })
 
-  it('leaves the blending layers alone', () => {
-    // The opacity change is water-only: greenery still sits a hair under one so
-    // its seam with the tiles does not read as a hard cutout.
+  it('draws greenery opaque, still ordered in the transparent pass', () => {
+    // At 0.92 the raster tile printed its paths and labels through every park.
+    // It stays in the transparent pass only so render order can stack it, and
+    // is nudged toward the eye so the terrain under it never wins the depth test.
     const material = (buildSurfaceLayer([area('green', 'g1')], 'green', OPTS)!
       .object.material as THREE.MeshBasicMaterial)
     expect(material.transparent).toBe(true)
-    expect(material.opacity).toBeCloseTo(0.92, 5)
+    expect(material.opacity).toBe(1)
+    expect(material.userData.groundNudge).toBe(true)
   })
 })
 

@@ -77,6 +77,19 @@ export function omtTags(f: Pick<OmtFeature, 'layer' | 'type' | 'props'>): Record
       }
     }
     case 'transportation': {
+      // AREAS too. OpenMapTiles carries a mapped square — `highway=pedestrian`
+      // + `area=yes`, `area:highway=*` — as a POLYGON in this layer, class
+      // `path` with the highway in `subclass`, and a pier as class `pier`.
+      // Dropping them left Plaça de Catalunya with no floor at all in the
+      // fallback: just the routing footways radiating over the raster tile.
+      if (f.type === 3) {
+        if (cls === 'pier') return { man_made: 'pier', ...name }
+        const sub = String(p.subclass ?? '')
+        if (cls === 'path' && (sub === 'pedestrian' || sub === 'footway' || sub === '')) {
+          return { highway: 'pedestrian', area: 'yes', ...name }
+        }
+        return null
+      }
       if (f.type !== 2) return null
       const tags: Record<string, string> = { ...name }
       if (cls === 'rail' || cls === 'transit') tags.railway = p.subclass === 'tram' ? 'tram' : 'rail'

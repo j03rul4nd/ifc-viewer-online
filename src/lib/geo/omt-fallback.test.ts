@@ -32,6 +32,13 @@ describe('omtTags', () => {
     expect(omtTags({ layer: 'waterway', type: 2, props: { class: 'drain' } })).toBeNull()
     expect(omtTags({ layer: 'waterway', type: 2, props: { class: 'river' } })).toMatchObject({ waterway: 'river' })
   })
+  it('keeps a mapped square as a paved area, and a pier as a pier', () => {
+    expect(omtTags({ layer: 'transportation', type: 3, props: { class: 'path', subclass: 'pedestrian', name: 'Plaça de Catalunya' } }))
+      .toEqual({ highway: 'pedestrian', area: 'yes', name: 'Plaça de Catalunya' })
+    expect(omtTags({ layer: 'transportation', type: 3, props: { class: 'pier' } })).toEqual({ man_made: 'pier' })
+    expect(omtTags({ layer: 'transportation', type: 3, props: { class: 'path', subclass: 'platform' } })).toBeNull()
+    expect(omtTags({ layer: 'transportation', type: 3, props: { class: 'primary' } })).toBeNull()
+  })
   it('skips what it cannot map honestly', () => {
     expect(omtTags({ layer: 'transportation', type: 2, props: { class: 'ferry' } })).toBeNull()
     expect(omtTags({ layer: 'poi', type: 1, props: {} })).toBeNull()

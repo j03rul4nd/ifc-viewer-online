@@ -52,6 +52,8 @@ import {
 import {
   subdivideMesh, distanceToRing, longestEdge, type Vec2, type Face,
 } from './surface-tessellation'
+import { applyGroundDepthNudge } from './ground-depth-nudge'
+import { islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving } from './plaza-paving'
 import {
   createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
 } from './surface-shaders'
@@ -409,13 +411,16 @@ function* buildSimpleSurface(
   //
   // Nothing was drawn over the water. The water was drawn over a map.
   const isWaterLayer = layer === 'water'
-  const material = new THREE.MeshBasicMaterial({
+  const material = applyGroundDepthNudge(new THREE.MeshBasicMaterial({
     color: isWaterLayer ? WATER_COLOR : 0xffffff,
     vertexColors: colors.length > 0,
+    // Still in the transparent pass, which is what lets render order stack the
+    // ground layers; but fully opaque. At 0.92 the raster tile under every park
+    // printed its paths and labels through the grass — the same correction the
+    // road layer and the water already made, see the notes above and in
+    // buildLinearLayer.
     transparent: !isWaterLayer,
-    // A hair under one keeps the seam with the tiles from reading as a hard
-    // cutout, for the layers that still blend.
-    opacity: isWaterLayer ? 1 : 0.92,
+    opacity: 1,
     // An opaque sea must write depth, or the tiles it covers z-fight through it.
     depthWrite: isWaterLayer,
     side: THREE.DoubleSide,
@@ -426,7 +431,7 @@ function* buildSimpleSurface(
     polygonOffset: true,
     polygonOffsetFactor: -4,
     polygonOffsetUnits: -8,
-  })
+  }))
   const mesh = new THREE.Mesh(geometry, material)
   mesh.name = `osm-${layer}`
   mesh.renderOrder = SURFACE_RENDER_ORDER[layer]
@@ -865,9 +870,11 @@ function* buildDetailedSurface(
   geometry.setIndex(indices)
   geometry.computeBoundingSphere()
 
-  const material = createSurfaceMaterial(SURFACE_MATERIAL[layer], {
+  // Nudged toward the eye so the terrain it is draped on never wins the depth
+  // test — see ground-depth-nudge.
+  const material = applyGroundDepthNudge(createSurfaceMaterial(SURFACE_MATERIAL[layer], {
     sun: opts.sun ?? FALLBACK_SUN,
-  })
+  }))
   const mesh = new THREE.Mesh(geometry, material)
   mesh.name = `osm-${layer}`
   mesh.renderOrder = SURFACE_RENDER_ORDER[layer]
@@ -2072,7 +2079,15 @@ function* linearLayerSteps(
     if (f.style.surface) surfaceOf.set(f.id, SURFACE_ROUGHNESS[f.style.surface])
   }
 
-  const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
+  // Walkways drawn across a square only to route over it are not paths
+  // anybody can see — the square is one floor. See plaza-paving.
+  const routing = kind === 'road' ? routingOverPaving(features) : null
+  const groundCover = kind === 'road'
+    ? features.filter((f) => (f.kind === 'green' || f.kind === 'water') && f.ring && !f.isSea)
+    : []
+  const wanted = pavedAreaOrder(
+    features.filter((f) => f.kind === kind && f.ring && !routing?.has(f.id)).slice(0, MAX_LINEAR),
+  )
   const railSegments = kind==='rail' ? wanted.filter(f=>f.style.railKind!=='platform' && f.vertical?.structure!=='tunnel').flatMap(f=>{
     const line=projectRing(f.ring!)
     return line.slice(1).map((b,i)=>({a:line[i],b,id:f.id}))
@@ -2109,13 +2124,31 @@ function* linearLayerSteps(
         // surface in the scene already gets — see buildSurfaceLayer — and it
         // costs nothing on the flat map, where `subdivideOnGround` returns the
         // triangle it was given.
-        const dense = frame.densify(line)
-        const holes = (f.holes ?? []).map(h=>frame.densify(projectRing(h)))
+        // Over relief, grow the floor a little so it OVERLAPS its neighbours.
+        // Each floor is refined on its own budget, so two that share an edge do
+        // not share its vertices and their edges sit at different heights: a
+        // hairline crack to the terrain, seen at an angle. Overlap closes it;
+        // on the flat map there is no crack and the outline stays exact.
+        const outline = frame.hasTerrain
+          ? outsetRing(line, PAVED_AREA_OUTSET_M * mToN, (x, y) => new THREE.Vector2(x, y))
+          : line
+        const dense = frame.densify(outline)
+        const mapped = (f.holes ?? []).map(h=>frame.densify(projectRing(h)))
+        // Gardens and basins set into the square are cut out of its floor, or
+        // it paints them out — see islandsInFloor.
+        const islands = islandsInFloor(f, groundCover).map(h=>frame.densify(projectRing(h)))
+        const metric=(r:THREE.Vector2[])=>r.map(p=>new THREE.Vector2(p.x/mToN,p.y/mToN))
+        const cut=(holes:THREE.Vector2[][]):number[][]|null=>{
+          try { return THREE.ShapeUtils.triangulateShape(metric(dense),holes.map(metric)) }
+          catch { return null }
+        }
+        let holes = [...mapped, ...islands]
         let faces: number[][] | null
         if(holes.length){
-          const metric=(r:THREE.Vector2[])=>r.map(p=>new THREE.Vector2(p.x/mToN,p.y/mToN))
-          try { faces=THREE.ShapeUtils.triangulateShape(metric(dense),holes.map(metric)) }
-          catch { faces=null }
+          faces=cut(holes)
+          // An island that touches the outline can defeat the triangulator; the
+          // floor without it beats no floor at all.
+          if(!faces?.length && islands.length){ holes=mapped; faces=holes.length ? cut(holes) : triangulate(dense, mToN) }
           dense.push(...holes.flat())
         } else faces = triangulate(dense, mToN)
         if (!faces) { dropped++; continue }
@@ -2715,9 +2748,9 @@ function* linearLayerSteps(
     // covers everything and each way that knows better overrides its own run.
     metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind], [...roughBands, ...surfaceBands])
     yield
-    const groundMaterial = createSurfaceMaterial('asphalt', {
-      opacity: kind === 'road' ? 0.94 : 0.96,
-    })
+    // OPAQUE, like the flat-map branch below. At 0.94 the raster tile under a
+    // plaza printed its footpaths through the paving as a web of grey lines.
+    const groundMaterial = applyGroundDepthNudge(createSurfaceMaterial('asphalt', { opacity: 1 }))
     let materials: THREE.Material | THREE.Material[] = groundMaterial
     if (solidRanges.length) {
       // Ground overlays need ordering; a bridge needs depth occlusion. Drawing
@@ -2753,7 +2786,7 @@ function* linearLayerSteps(
     return finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
   }
 
-  const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+  const surface = new THREE.Mesh(geometry, applyGroundDepthNudge(new THREE.MeshBasicMaterial({
     vertexColors: true,
     // OPAQUE: asphalt is a surface, not a tint over the map underneath, and
     // letting the raster street show through was what made these read as a
@@ -2762,7 +2795,7 @@ function* linearLayerSteps(
     // buffer at city scale, so the stack is ordered by renderOrder instead.
     depthWrite: false,
     side: THREE.DoubleSide,
-  }))
+  })))
   surface.name = `osm-${kind}`
   surface.position.set(linearOrigin.nx, linearOrigin.ny, 0)
   // Above greenery (2) and water (3). Rail is added after road, so where a
@@ -2868,6 +2901,13 @@ const CLASS_LIFT_M: Record<RoadClass, number> = {
  * so no carriageway moves.
  */
 const PAVED_AREA_LIFT_M = -0.03
+
+/**
+ * How far a paved area is grown over relief so neighbouring floors overlap,
+ * metres. Wider than any step their independent refinements leave between
+ * them on city slopes, and narrower than a kerb, so no outline visibly moves.
+ */
+const PAVED_AREA_OUTSET_M = 0.35
 
 /**
  * Attach the overhead line masts, if any, and hand back the layer.
