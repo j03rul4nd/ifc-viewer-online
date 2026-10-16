@@ -216,7 +216,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
     seoTitle: "Comprovar distàncies lliures en un IFC: Compleix/No compleix",
     seoDescription: "Mesura passadissos, portes, alçada lliure i pendents de rampa en un IFC al navegador i marca cada mesura com a Compleix o No compleix. Exporta-ho.",
     excerpt: "Una revisió de projecte poques vegades pregunta «quant fa d'ample aquest passadís?». Pregunta «fa com a mínim 1,20 m?». Lligar el requisit a la mesura, i veure Compleix o No compleix a l'etiqueta, a la captura i a l'exportació, converteix una cota en una comprovació sobre la qual es pot actuar.",
-    readTimeMin: 8,
+    readTimeMin: 10,
     keywords: [
       "comprovar distàncies lliures IFC",
       "comprovació d'accessibilitat BIM",
@@ -226,6 +226,8 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       "mesura per a revisió de projecte IFC",
       "comprovació de normativa BIM gratuïta",
       "amplada lliure de porta IFC",
+      "alçada lliure IFC",
+      "distància entre elements BIM",
       "check clearances IFC",
       "accessibility check BIM",
       "corridor width check",
@@ -234,6 +236,8 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       "IFC design review measurement",
       "BIM compliance check free",
       "door clear width IFC",
+      "clear height IFC",
+      "clearance between elements BIM",
     ],
     faqs: [
       {
@@ -252,6 +256,14 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         q: "Puc enviar a l'equip les comprovacions que no compleixen?",
         a: "Sí. Les marques de Compleix i No compleix es pinten a les captures de pantalla i a les instantànies BCF, i l'exportació CSV té columnes de requisit i de comprovació, de manera que una distància lliure que no compleix pot esdevenir una incidència BCF amb l'evidència ja a la imatge.",
       },
+      {
+        q: "Com mesuro l'alçada lliure sota un conducte o una biga?",
+        a: "Tria Distància → Alçada lliure i clica el terra que hi ha a sota. Un raig vertical troba la superfície següent per sobre (forjat, biga, conducte o cel ras) i la mesura va del terra fins a la seva cara inferior. Si cliques un sostre, mesura cap avall fins al terra; si cliques un mur, mesura de terra a sostre en aquell punt.",
+      },
+      {
+        q: "Com trobo la distància lliure entre un conducte i una biga?",
+        a: "Tria Distància → Entre elements i clica els dos elements. La distància més curta es calcula a partir de la geometria real, no de les capses envolupants, i es dibuixa entre els dos punts més propers. Si es toquen o es creuen, indica 0 i es marca com a col·lisió.",
+      },
     ],
     content: [
       {
@@ -266,6 +278,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         type: "takeaways",
         items: [
           "Mesura les amplades lliures a escaire de la cara: eina de distància, mode perpendicular.",
+          "L'alçada lliure és un sol clic al terra; la distància entre dos elements són dos clics, calculada a partir de la seva geometria.",
           "Afegeix un requisit (com a mínim, com a màxim o entre dos valors) o fes clic en un predefinit: passadís, porta, alçada lliure, rampa, cercle de gir, angle recte.",
           "Comprova la magnitud adequada: el valor, l'alçada (ΔZ), el pendent en percentatge o un volum.",
           "Compleix o No compleix es mostra a l'etiqueta 3D (amb ✓ o ✗, no només amb color), a les captures, a les instantànies BCF i al CSV.",
@@ -296,6 +309,43 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           " tracta amb detall la captura i les seccions.",
         ],
       },
+      { type: "h2", text: "Alçada lliure amb un sol clic" },
+      {
+        type: "p",
+        text: "Mesurar l'alçada lliure a mà vol dir dos clics (un al terra i un a qualsevol cosa que hi hagi a sobre), i el segon és el que la gent encerta menys: el costat del conducte en lloc de la cara inferior, un punt lleugerament fora de la vertical. El mode Alçada lliure ho elimina. Tria Distància → Alçada lliure i clica el terra: un raig vertical puja fins a la superfície següent, sigui quina sigui (el forjat, una biga, un conducte, un cel ras) i la mesura es dibuixa del terra a la cara inferior, exactament vertical.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Clica un terra: mesura cap amunt fins a la primera superfície de sobre.",
+          "Clica un sostre o la cara inferior d'un conducte: mesura cap avall fins al terra de sota.",
+          "Clica un mur o un pilar: mesura de terra a sostre en aquell punt.",
+          "Amb un tall de secció aplicat, el raig ignora el que el tall ha eliminat, com qualsevol altra selecció.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Com que pren la primera superfície de sobre, respon la pregunta que es fa en una visita d'obra: quant d'espai queda sota l'element més baix d'aquí. Clica sota el conducte i obtens l'alçada fins al conducte; clica un metre més enllà i obtens l'alçada fins al forjat.",
+      },
+      { type: "h2", text: "La distància entre dos elements" },
+      {
+        type: "p",
+        text: "Algunes distàncies lliures no són entre un punt i una cara, sinó entre dos objectes: un conducte i la biga sota la qual passa, una canonada i un mur, la fulla d'una porta i un pilar. Clicar a ull els dos punts més propers és endevinar. Tria Distància → Entre elements, clica el primer element i després el segon, i es calcula la distància més curta entre la seva geometria real i es dibuixa entre els dos punts més propers.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Fa servir els triangles dels dos elements, no les seves capses envolupants: dues capses se solapen tan bon punt un conducte passa sota una biga inclinada, i no diuen res de la distància que queda.",
+          "Si els elements es toquen o es creuen, el resultat és 0 i es marca com a col·lisió, no com a distància lliure.",
+          "Funciona amb elements de models diferents: un conducte del model MEP contra una biga de l'estructural.",
+          "El resultat és una distància normal: hi pots afegir un requisit com «com a mínim 0,10 m» per a una distància de manteniment o d'aïllament.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Els murs units i els forjats que es troben en una aresta donen 0: al model es toquen. És correcte, no un error: mesura entre els elements que haurien de tenir una distància lliure.",
+      },
       { type: "h2", text: "Afegeix el requisit" },
       {
         type: "p",
@@ -325,7 +375,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       { type: "h2", text: "Alçada i pendent: comprovar el número adequat" },
       {
         type: "p",
-        text: "Una mesura té més d'un número. Una distància des del terra fins a la cara inferior d'un conducte té una longitud i un component vertical; una distància al llarg d'una rampa té una longitud, un desnivell i un pendent. El requisit tria quin comprova: el valor mateix, l'alçada (ΔZ) o el pendent en percentatge. Per a l'alçada lliure, mesura des del terra fins a l'obstacle i comprova l'alçada, perquè un clic lleugerament esbiaixat no l'infli. Per a una rampa, clica la part baixa i l'alta del tram i comprova el pendent.",
+        text: "Una mesura té més d'un número. Una distància des del terra fins a la cara inferior d'un conducte té una longitud i un component vertical; una distància al llarg d'una rampa té una longitud, un desnivell i un pendent. El requisit tria quin comprova: el valor mateix, l'alçada (ΔZ) o el pendent en percentatge. Per a l'alçada lliure, fes servir el mode Alçada lliure o, si mesures a mà des del terra fins a l'obstacle, comprova l'alçada, perquè un clic lleugerament esbiaixat no l'infli. Per a una rampa, clica la part baixa i l'alta del tram i comprova el pendent.",
       },
       { type: "h2", text: "Llegir Compleix i No compleix" },
       {

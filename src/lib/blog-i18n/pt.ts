@@ -216,7 +216,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
     seoTitle: "Verificar folgas em modelo IFC: medições Cumpre/Não cumpre",
     seoDescription: "Meça corredores, vãos de porta, pé-direito livre e inclinação de rampas em um IFC no navegador e marque Cumpre ou Não cumpre. Exporte as verificações.",
     excerpt: "Uma revisão de projeto raramente pergunta “qual a largura deste corredor?”. Ela pergunta “tem pelo menos 1,20 m?”. Associar o requisito à medição — e ver Cumpre ou Não cumpre no rótulo, na captura de tela e na exportação — transforma uma dimensão em uma verificação que alguém pode acionar.",
-    readTimeMin: 8,
+    readTimeMin: 10,
     keywords: [
       "verificar folgas IFC",
       "verificação de acessibilidade BIM",
@@ -226,6 +226,8 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       "medição IFC revisão de projeto",
       "verificação de conformidade BIM grátis",
       "largura livre de porta IFC",
+      "altura livre IFC",
+      "folga entre elementos BIM",
       "check clearances IFC",
       "accessibility check BIM",
       "corridor width check",
@@ -234,6 +236,8 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       "IFC design review measurement",
       "BIM compliance check free",
       "door clear width IFC",
+      "clear height IFC",
+      "clearance between elements BIM",
     ],
     faqs: [
       {
@@ -252,6 +256,14 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         q: "Posso enviar as verificações reprovadas para a equipe?",
         a: "Sim. As marcas de Cumpre / Não cumpre são pintadas nas capturas de tela e nos snapshots BCF, e a exportação em CSV tem colunas de requisito e verificação; assim, uma folga reprovada pode virar um tópico BCF com a evidência já na imagem.",
       },
+      {
+        q: "Como meço a altura livre sob um duto ou uma viga?",
+        a: "Escolha Distância → Altura livre e clique no piso sob o elemento. Um raio vertical encontra a próxima superfície acima — laje, viga, duto ou forro — e a medição vai do piso até a face inferior dela. Clicar em um forro mede para baixo até o piso; clicar em uma parede mede do piso ao forro naquele ponto.",
+      },
+      {
+        q: "Como encontro a folga entre um duto e uma viga?",
+        a: "Escolha Distância → Entre elementos e clique nos dois elementos. A menor distância é calculada a partir da geometria real deles, não das caixas envolventes, e desenhada entre os dois pontos mais próximos. Se eles se tocam ou se cruzam, o valor é 0 e é marcado como conflito.",
+      },
     ],
     content: [
       {
@@ -266,6 +278,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         type: "takeaways",
         items: [
           "Meça larguras livres em esquadro com a face: ferramenta de distância, modo perpendicular.",
+          "A altura livre é um clique no piso; a folga entre dois elementos são dois cliques, calculada a partir da geometria deles.",
           "Adicione um requisito — no mínimo, no máximo ou entre — ou clique em uma predefinição: corredor, porta, pé-direito livre, rampa, giro, ângulo reto.",
           "Verifique a grandeza certa: o valor, a altura (ΔZ), a inclinação em porcentagem ou um volume.",
           "Cumpre ou Não cumpre aparece no rótulo 3D (com ✓ ou ✗, não só pela cor), nas capturas de tela, nos snapshots BCF e no CSV.",
@@ -296,6 +309,43 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           " trata de snap e cortes em detalhe.",
         ],
       },
+      { type: "h2", text: "Altura livre em um clique" },
+      {
+        type: "p",
+        text: "Medir o pé-direito livre à mão exige dois cliques — um no piso, outro no que estiver acima — e o segundo é o que as pessoas erram: a lateral do duto em vez da face inferior, um ponto levemente fora da vertical. O modo Altura livre elimina isso. Escolha Distância → Altura livre e clique no piso: um raio vertical sobe até a próxima superfície, seja ela qual for — a laje, uma viga, um duto, um forro suspenso — e a medição é desenhada do piso até a face inferior, exatamente na vertical.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Clique em um piso: mede para cima até a primeira superfície acima.",
+          "Clique em um forro ou na face inferior de um duto: mede para baixo até o piso abaixo.",
+          "Clique em uma parede ou em um pilar: mede do piso ao forro naquele ponto.",
+          "Com um corte de seção ativo, o raio ignora o que o corte removeu, como todas as outras seleções.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Como ele toma a primeira superfície acima, responde à pergunta de uma visita à obra: quanto espaço sobra sob a coisa mais baixa daqui. Clique sob o duto e você obtém a altura até o duto; clique um metro adiante e você obtém a altura até a laje.",
+      },
+      { type: "h2", text: "A folga entre dois elementos" },
+      {
+        type: "p",
+        text: "Algumas folgas não são entre um ponto e uma face, e sim entre dois objetos: um duto e a viga sob a qual ele passa, um tubo e uma parede, uma folha de porta e um pilar. Clicar a olho nos dois pontos mais próximos é adivinhação. Escolha Distância → Entre elementos, clique no primeiro elemento e depois no segundo, e a menor distância entre a geometria real deles é calculada e desenhada entre os dois pontos mais próximos.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Usa os triângulos dos dois elementos, não suas caixas envolventes — duas caixas já se sobrepõem assim que um duto passa sob uma viga inclinada, e nada dizem sobre a folga que resta.",
+          "Se os elementos se tocam ou se cruzam, o resultado é 0 e é marcado como conflito, não como folga.",
+          "Funciona com elementos de modelos diferentes: um duto do modelo de MEP contra uma viga do modelo estrutural.",
+          "O resultado é uma distância comum: adicione um requisito como “no mínimo 0,10 m” para uma folga de manutenção ou de isolamento.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Paredes e lajes unidas que se encontram em uma aresta resultam em 0: no modelo, elas se tocam. Isso está correto, não é um erro — meça entre os elementos que deveriam ter uma folga.",
+      },
       { type: "h2", text: "Adicione o requisito" },
       {
         type: "p",
@@ -325,7 +375,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "Altura e inclinação: verificar o número certo" },
       {
         type: "p",
-        text: "Uma medição tem mais de um número. Uma distância do piso até a face inferior de um duto tem um comprimento e uma componente vertical; uma distância ao longo de uma rampa tem comprimento, desnível e inclinação. O requisito escolhe qual deles verifica: o próprio valor, a altura (ΔZ) ou a inclinação em porcentagem. Para o pé-direito livre, meça do piso até o obstáculo e verifique a altura, para que um clique levemente inclinado não a infle. Para uma rampa, clique na base e no topo do trecho e verifique a inclinação.",
+        text: "Uma medição tem mais de um número. Uma distância do piso até a face inferior de um duto tem um comprimento e uma componente vertical; uma distância ao longo de uma rampa tem comprimento, desnível e inclinação. O requisito escolhe qual deles verifica: o próprio valor, a altura (ΔZ) ou a inclinação em porcentagem. Para o pé-direito livre, use o modo Altura livre — ou, quando medir à mão do piso até o obstáculo, verifique a altura, para que um clique levemente inclinado não a infle. Para uma rampa, clique na base e no topo do trecho e verifique a inclinação.",
       },
       { type: "h2", text: "Como ler Cumpre e Não cumpre" },
       {

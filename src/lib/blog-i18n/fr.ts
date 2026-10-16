@@ -219,7 +219,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
     seoTitle: "Vérifier les dégagements IFC : mesures conformes ou non",
     seoDescription: "Mesurez largeurs de circulation, passages de porte, hauteurs libres et pentes de rampe d'un IFC dans le navigateur, et jugez chaque mesure Conforme ou non.",
     excerpt: "Une revue de conception demande rarement « quelle est la largeur de cette circulation ? ». Elle demande « fait-elle au moins 1,20 m ? ». Rattacher l'exigence à la mesure, et voir Conforme ou Non conforme sur l'étiquette, dans la capture et dans l'export, transforme une cote en contrôle exploitable.",
-    readTimeMin: 8,
+    readTimeMin: 10,
     keywords: [
       "vérifier dégagements IFC",
       "contrôle accessibilité BIM",
@@ -229,6 +229,8 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       "mesure revue de conception IFC",
       "contrôle conformité BIM gratuit",
       "largeur de passage de porte IFC",
+      "hauteur libre IFC",
+      "dégagement entre éléments BIM",
       "check clearances IFC",
       "accessibility check BIM",
       "corridor width check",
@@ -237,6 +239,8 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       "IFC design review measurement",
       "BIM compliance check free",
       "door clear width IFC",
+      "clear height IFC",
+      "clearance between elements BIM",
     ],
     faqs: [
       {
@@ -255,6 +259,14 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         q: "Puis-je transmettre les contrôles non conformes à l'équipe ?",
         a: "Oui. Les marques Conforme / Non conforme sont dessinées dans les captures et les instantanés BCF, et l'export CSV comporte des colonnes d'exigence et de contrôle : un dégagement insuffisant peut ainsi devenir une demande BCF avec la preuve déjà dans l'image.",
       },
+      {
+        q: "Comment mesurer la hauteur libre sous une gaine ou une poutre ?",
+        a: "Choisissez Distance → Hauteur libre et cliquez sur le sol en dessous. Un rayon vertical trouve la surface suivante au-dessus (dalle, poutre, gaine ou plafond) et la mesure va du sol à sa sous-face. Un clic sur un plafond mesure jusqu'au sol ; un clic sur un mur mesure du sol au plafond à cet endroit.",
+      },
+      {
+        q: "Comment trouver l'écart entre une gaine et une poutre ?",
+        a: "Choisissez Distance → Entre éléments et cliquez sur les deux éléments. La plus courte distance est calculée sur leur géométrie réelle, pas sur leurs boîtes englobantes, et tracée entre les deux points les plus proches. S'ils se touchent ou se croisent, elle vaut 0 et est signalée comme conflit.",
+      },
     ],
     content: [
       {
@@ -269,6 +281,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         type: "takeaways",
         items: [
           "Mesurez les largeurs libres d'équerre à la face : outil de distance, mode perpendiculaire.",
+          "La hauteur libre se mesure d'un clic sur le sol ; l'écart entre deux éléments, de deux clics, calculé à partir de leur géométrie.",
           "Ajoutez une exigence (au moins, au plus ou entre) ou cliquez sur un préréglage : circulation, porte, hauteur libre, rampe, giration, angle droit.",
           "Contrôlez la bonne grandeur : la valeur, la hauteur (ΔZ), la pente en pourcentage ou un volume.",
           "Conforme ou Non conforme s'affiche sur l'étiquette 3D (avec ✓ ou ✗, pas seulement en couleur), dans les captures, dans les instantanés BCF et dans le CSV.",
@@ -299,6 +312,43 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           " détaille l'accrochage et les coupes.",
         ],
       },
+      { type: "h2", text: "La hauteur libre en un clic" },
+      {
+        type: "p",
+        text: "Mesurer une hauteur libre à la main demande deux clics, un sur le sol et un sur ce qui se trouve au-dessus, et c'est le second que l'on rate : le côté de la gaine au lieu de sa sous-face, un point légèrement hors de la verticale. Le mode Hauteur libre supprime ce problème. Choisissez Distance → Hauteur libre et cliquez sur le sol : un rayon vertical monte jusqu'à la surface suivante, quelle qu'elle soit (la dalle, une poutre, une gaine, un faux plafond), et la mesure est tracée du sol à la sous-face, parfaitement verticale.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Clic sur un sol : mesure jusqu'à la première surface au-dessus.",
+          "Clic sur un plafond ou sur la sous-face d'une gaine : mesure jusqu'au sol en dessous.",
+          "Clic sur un mur ou un poteau : mesure du sol au plafond à cet endroit.",
+          "Avec une coupe en place, le rayon ignore ce que la coupe a retiré, comme tout autre pointage.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Comme il prend la première surface au-dessus, il répond à la question d'une visite de chantier : combien reste-t-il de place sous le plus bas des obstacles ici. Cliquez sous la gaine et vous obtenez la hauteur jusqu'à la gaine ; cliquez un mètre plus loin et vous obtenez la hauteur jusqu'à la dalle.",
+      },
+      { type: "h2", text: "L'écart entre deux éléments" },
+      {
+        type: "p",
+        text: "Certains dégagements ne se mesurent pas entre un point et une face mais entre deux objets : une gaine et la poutre sous laquelle elle passe, une conduite et un mur, un vantail de porte et un poteau. Cliquer à l'œil sur les deux points les plus proches, c'est deviner. Choisissez Distance → Entre éléments, cliquez sur le premier élément puis sur le second, et la plus courte distance entre leur géométrie réelle est calculée et tracée entre les deux points les plus proches.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Il utilise les triangles des deux éléments, pas leurs boîtes englobantes : deux boîtes se chevauchent dès qu'une gaine passe sous une poutre inclinée, et ne disent rien de l'écart qui reste.",
+          "Si les éléments se touchent ou se croisent, le résultat est 0 et il est signalé comme un conflit, pas comme un dégagement.",
+          "Les éléments de modèles différents fonctionnent : une gaine de la maquette MEP contre une poutre de la maquette structure.",
+          "Le résultat est une distance ordinaire : ajoutez une exigence telle que « au moins 0,10 m » pour un écart de maintenance ou d'isolation.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Les murs et les dalles joints qui se rejoignent par une arête donnent 0 : dans la maquette, ils se touchent. C'est normal, pas un bogue ; mesurez entre les éléments qui doivent avoir un écart.",
+      },
       { type: "h2", text: "Ajouter l'exigence" },
       {
         type: "p",
@@ -328,7 +378,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       { type: "h2", text: "Hauteur et pente : contrôler le bon chiffre" },
       {
         type: "p",
-        text: "Une mesure comporte plus d'un nombre. Une distance entre le sol et le dessous d'une gaine a une longueur et une composante verticale ; une distance le long d'une rampe a une longueur, une dénivelée et une pente. L'exigence choisit celui qu'elle contrôle : la valeur elle-même, la hauteur (ΔZ) ou la pente en pourcentage. Pour une hauteur libre, mesurez du sol à l'obstacle et contrôlez la hauteur, afin qu'un clic légèrement de biais ne la gonfle pas. Pour une rampe, cliquez en bas et en haut de la volée et contrôlez la pente.",
+        text: "Une mesure comporte plus d'un nombre. Une distance entre le sol et le dessous d'une gaine a une longueur et une composante verticale ; une distance le long d'une rampe a une longueur, une dénivelée et une pente. L'exigence choisit celui qu'elle contrôle : la valeur elle-même, la hauteur (ΔZ) ou la pente en pourcentage. Pour une hauteur libre, utilisez le mode Hauteur libre ; ou, si vous mesurez à la main du sol à l'obstacle, contrôlez la hauteur, afin qu'un clic légèrement de biais ne la gonfle pas. Pour une rampe, cliquez en bas et en haut de la volée et contrôlez la pente.",
       },
       { type: "h2", text: "Lire Conforme et Non conforme" },
       {
