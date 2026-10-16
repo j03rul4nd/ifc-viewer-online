@@ -38,6 +38,8 @@ export interface SampleJob {
   startedAt: string
   durationS?: number
   result?: string
+  /** Real progress for running jobs: step text + percentage (no fake pulses). */
+  progress?: { step: string; pct: number }
 }
 
 export interface SampleCertificate {
@@ -107,7 +109,7 @@ export const SAMPLE_JOBS: SampleJob[] = [
   { id: 'j-1041', feature: 'certificate', file: 'LesMoreres_ARQ_v2.ifc', sizeMb: 24, project: 'school', status: 'done', credits: 20, startedAt: '2026-10-09 17:40', durationS: 12, result: 'Certificate CERT-7F3A issued' },
   { id: 'j-1040', feature: 'clash', file: 'HCA_MEP_v3.ifc + HCA_EST_v3.ifc', sizeMb: 312, project: 'hospital', status: 'failed', credits: 60, refunded: true, startedAt: '2026-10-03 11:05', durationS: 380, result: 'Worker ran out of memory — credits returned' },
   { id: 'j-1039', feature: 'server_validation', file: 'ZF_EST_v1.ifc', sizeMb: 412, project: 'warehouse', status: 'done', credits: 50, startedAt: '2026-10-11 08:30', durationS: 96, result: 'Score 58 · 233 issues' },
-  { id: 'j-1043', feature: 'geometry_deep', file: 'HCA_ARQ_v4.ifc', sizeMb: 86, project: 'hospital', status: 'running', credits: 30, startedAt: '2026-10-16 16:02' },
+  { id: 'j-1043', feature: 'geometry_deep', file: 'HCA_ARQ_v4.ifc', sizeMb: 86, project: 'hospital', status: 'running', credits: 30, startedAt: '2026-10-16 16:02', progress: { step: 'Step 2 of 3 · checking solid closure', pct: 54 } },
 ]
 
 export const SAMPLE_CERTIFICATES: SampleCertificate[] = [
@@ -143,4 +145,54 @@ export function estimateCredits(feature: PaidFeatureId, sizeMb: number): number 
     case 'certificate': return 20
     case 'version_compare': return 0
   }
+}
+
+// ── Review scenarios ──────────────────────────────────────────────────────────
+// Every screen must be designed for empty, sparse, dense and error states
+// (docs-planning/10). The preview switches between these so each one can be
+// reviewed without a backend.
+
+export type Scenario = 'active' | 'new' | 'low_credits' | 'out_of_credits'
+
+export const SCENARIOS: { id: Scenario; label: string }[] = [
+  { id: 'active', label: 'Active account' },
+  { id: 'new', label: 'Just subscribed (empty)' },
+  { id: 'low_credits', label: 'Low credits' },
+  { id: 'out_of_credits', label: 'Out of credits' },
+]
+
+export interface WorkspaceData {
+  account: typeof SAMPLE_ACCOUNT
+  projects: SampleProject[]
+  jobs: SampleJob[]
+  certificates: SampleCertificate[]
+  ledger: LedgerEntry[]
+  invoices: SampleInvoice[]
+}
+
+export function scenarioData(s: Scenario): WorkspaceData {
+  const base: WorkspaceData = {
+    account: SAMPLE_ACCOUNT, projects: SAMPLE_PROJECTS, jobs: SAMPLE_JOBS,
+    certificates: SAMPLE_CERTIFICATES, ledger: SAMPLE_LEDGER, invoices: SAMPLE_INVOICES,
+  }
+  const withCredits = (planUsed: number, packs: number) => ({
+    ...SAMPLE_ACCOUNT,
+    credits: { ...SAMPLE_ACCOUNT.credits, planUsed, packs, balance: SAMPLE_ACCOUNT.credits.planMonthly - planUsed + packs },
+  })
+  switch (s) {
+    case 'active': return base
+    case 'new': return {
+      account: withCredits(0, 0), projects: [], jobs: [], certificates: [],
+      ledger: [{ date: '2026-10-16', kind: 'plan_grant', description: 'Pro — monthly credits', credits: 200 }],
+      invoices: [SAMPLE_INVOICES[0]],
+    }
+    case 'low_credits': return { ...base, account: withCredits(170, 0) }
+    case 'out_of_credits': return { ...base, account: withCredits(200, 0) }
+  }
+}
+
+/** Share of the period's credits still available — drives the 20 % / 0 % warnings. */
+export function creditsLeftRatio(c: typeof SAMPLE_ACCOUNT.credits): number {
+  const total = c.planMonthly + c.packs
+  return total === 0 ? 0 : c.balance / total
 }
