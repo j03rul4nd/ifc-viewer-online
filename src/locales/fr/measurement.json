@@ -27,7 +27,11 @@
     "perpendicularHint": "D'une face à un point, perpendiculairement à la face — pour les dégagements",
     "polygon": "Par points",
     "face": "Par face",
-    "faceHint": "Un clic mesure une face entière"
+    "faceHint": "Un clic mesure une face entière",
+    "elements": "Entre éléments",
+    "elementsHint": "Écart minimal entre deux éléments, d’après leur géométrie — pour les dégagements et les conflits",
+    "headroom": "Hauteur libre",
+    "headroomHint": "Un clic sur un sol : la distance verticale jusqu’à la surface au-dessus (depuis un plafond : jusqu’au sol)"
   },
   "steps": {
     "idle": "Choisissez un outil",
@@ -40,7 +44,11 @@
     "angle-end": "Cliquez sur un point du second côté",
     "pick-plane-face": "Cliquez sur la face depuis laquelle mesurer",
     "perpendicular-target": "Cliquez sur le point jusqu'auquel mesurer",
-    "point": "Cliquez sur un point pour lire ses coordonnées"
+    "point": "Cliquez sur un point pour lire ses coordonnées",
+    "element-a": "Cliquez sur le premier élément",
+    "element-b": "Cliquez sur le second élément",
+    "headroom-point": "Cliquez sur un sol (ou un plafond) pour mesurer la hauteur libre",
+    "computing": "Mesure en cours…"
   },
   "keys": {
     "axisLock": "verrouiller l'axe",
@@ -92,7 +100,11 @@
     "nonPlanar": "Les points ne sont pas dans un même plan : il s'agit de la surface projetée.",
     "fromFace": "Surface d'une face, mesurée le long de son contour extérieur.",
     "modelFrame": "Coordonnées dans le repère IFC propre au modèle.",
-    "sceneFrame": "Coordonnées de la scène (aucun modèle sous le point)."
+    "sceneFrame": "Coordonnées de la scène (aucun modèle sous le point).",
+    "elementsNote": "Écart minimal entre les deux éléments, d’après leur géométrie.",
+    "clashNote": "Les éléments se touchent ou se croisent : c’est un conflit, pas un dégagement.",
+    "approximateNote": "Éléments très détaillés : la valeur est un majorant.",
+    "headroomNote": "Hauteur libre verticale jusqu’à la surface suivante."
   },
   "actions": {
     "finish": "Terminer",
@@ -275,5 +287,11 @@
     "note": "Une valeur par élément, net avant brut. * = tous les éléments ne l'ont pas.",
     "refresh": "Recalculer",
     "filename": "metre"
+  },
+  "notice": {
+    "no-surface": "Rien au-dessus ni au-dessous de ce point",
+    "no-element": "Cliquez sur un élément de la maquette",
+    "same-element": "C’est le même élément : cliquez sur un autre",
+    "no-geometry": "Cet élément n’a pas de géométrie à mesurer"
   }
 }

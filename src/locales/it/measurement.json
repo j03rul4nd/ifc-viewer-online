@@ -27,7 +27,11 @@
     "perpendicularHint": "Da una faccia a un punto, perpendicolare alla faccia — per le distanze di rispetto",
     "polygon": "Per punti",
     "face": "Per faccia",
-    "faceHint": "Un clic misura un'intera faccia"
+    "faceHint": "Un clic misura un'intera faccia",
+    "elements": "Tra elementi",
+    "elementsHint": "Distanza minima tra due elementi, dalla loro geometria — per spazi liberi e interferenze",
+    "headroom": "Altezza libera",
+    "headroomHint": "Un clic su un pavimento: la distanza verticale dalla superficie sopra (da un soffitto: fino al pavimento)"
   },
   "steps": {
     "idle": "Scegli uno strumento",
@@ -40,7 +44,11 @@
     "angle-end": "Clicca un punto sul secondo lato",
     "pick-plane-face": "Clicca la faccia da cui misurare",
     "perpendicular-target": "Clicca il punto fino a cui misurare",
-    "point": "Clicca un punto per leggerne le coordinate"
+    "point": "Clicca un punto per leggerne le coordinate",
+    "element-a": "Fai clic sul primo elemento",
+    "element-b": "Fai clic sul secondo elemento",
+    "headroom-point": "Fai clic su un pavimento (o un soffitto) per misurare l’altezza libera",
+    "computing": "Misurazione…"
   },
   "keys": {
     "axisLock": "blocca asse",
@@ -92,7 +100,11 @@
     "nonPlanar": "I punti non giacciono su un unico piano: questa è l'area proiettata.",
     "fromFace": "Area di una faccia, misurata lungo il suo contorno esterno.",
     "modelFrame": "Coordinate nel sistema IFC proprio del modello.",
-    "sceneFrame": "Coordinate della scena (nessun modello sotto il punto)."
+    "sceneFrame": "Coordinate della scena (nessun modello sotto il punto).",
+    "elementsNote": "Distanza minima tra i due elementi, dalla loro geometria.",
+    "clashNote": "Gli elementi si toccano o si intersecano: è un’interferenza, non uno spazio libero.",
+    "approximateNote": "Elementi molto dettagliati: il valore è un limite superiore.",
+    "headroomNote": "Altezza libera verticale fino alla superficie successiva."
   },
   "actions": {
     "finish": "Termina",
@@ -275,5 +287,11 @@
     "note": "Un valore per elemento, netto prima del lordo. * = non tutti gli elementi lo hanno.",
     "refresh": "Ricalcola",
     "filename": "computo"
+  },
+  "notice": {
+    "no-surface": "Non c’è nulla sopra o sotto questo punto",
+    "no-element": "Fai clic su un elemento del modello",
+    "same-element": "È lo stesso elemento: fai clic su un altro",
+    "no-geometry": "Questo elemento non ha geometria da misurare"
   }
 }

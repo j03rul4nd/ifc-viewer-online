@@ -32,6 +32,14 @@ export const PointIcon = (p: IconProps) => (
 export const PerpendicularIcon = (p: IconProps) => (
   <Svg {...p}><path d="M2 13.5h12M8 13.5V2.5" /><path d="M8 10.5h3v3" /></Svg>
 )
+/** Two blocks and the gap between them. */
+export const GapIcon = (p: IconProps) => (
+  <Svg {...p}><rect x="1.5" y="3" width="4.5" height="10" rx="0.5" /><rect x="10" y="3" width="4.5" height="10" rx="0.5" /><path d="M6.5 8h3M7.5 7l-1 1 1 1M8.5 7l1 1-1 1" /></Svg>
+)
+/** Floor, ceiling and the vertical between them. */
+export const HeadroomIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M1.5 2.5h13M1.5 13.5h13" /><path d="M8 4.5v7M6.5 6L8 4.5 9.5 6M6.5 10L8 11.5 9.5 10" /></Svg>
+)
 export const FaceIcon = (p: IconProps) => (
   <Svg {...p}><path d="M2.5 5l5.5-3 5.5 3v6L8 14l-5.5-3z" /><path d="M2.5 5L8 8l5.5-3M8 8v6" fill="none" /><path d="M8 8l5.5-3v6L8 14z" fill="currentColor" fillOpacity="0.25" stroke="none" /></Svg>
 )

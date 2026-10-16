@@ -27,7 +27,11 @@
     "perpendicularHint": "From a face to a point, square to the face — for clearances",
     "polygon": "By points",
     "face": "By face",
-    "faceHint": "One click measures a whole face"
+    "faceHint": "One click measures a whole face",
+    "elements": "Between elements",
+    "elementsHint": "Shortest gap between two elements, from their geometry — for clearances and clashes",
+    "headroom": "Clear height",
+    "headroomHint": "One click on a floor: the vertical distance to the surface above (from a ceiling: down to the floor)"
   },
   "steps": {
     "idle": "Pick a tool",
@@ -40,7 +44,11 @@
     "angle-end": "Click a point on the second side",
     "pick-plane-face": "Click the face to measure from",
     "perpendicular-target": "Click the point to measure to",
-    "point": "Click a point to read its coordinates"
+    "point": "Click a point to read its coordinates",
+    "element-a": "Click the first element",
+    "element-b": "Click the second element",
+    "headroom-point": "Click a floor (or a ceiling) to measure the clear height",
+    "computing": "Measuring…"
   },
   "keys": {
     "axisLock": "lock axis",
@@ -92,7 +100,11 @@
     "nonPlanar": "The points are not on one plane: this is the projected area.",
     "fromFace": "Area of one face, measured along its outer edge.",
     "modelFrame": "Coordinates in the model's own IFC frame.",
-    "sceneFrame": "Scene coordinates (no model under the point)."
+    "sceneFrame": "Scene coordinates (no model under the point).",
+    "elementsNote": "Shortest gap between the two elements, from their geometry.",
+    "clashNote": "The elements touch or cross: a clash, not a clearance.",
+    "approximateNote": "Very detailed elements: the value is an upper bound.",
+    "headroomNote": "Vertical clear height to the next surface."
   },
   "actions": {
     "finish": "Finish",
@@ -275,5 +287,11 @@
     "note": "One value per element, net before gross. * = not every element has it.",
     "refresh": "Recompute",
     "filename": "takeoff"
+  },
+  "notice": {
+    "no-surface": "Nothing above or below this point",
+    "no-element": "Click on an element of a model",
+    "same-element": "That is the same element — click another one",
+    "no-geometry": "This element has no geometry to measure"
   }
 }

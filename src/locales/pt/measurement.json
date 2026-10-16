@@ -27,7 +27,11 @@
     "perpendicularHint": "De uma face até um ponto, perpendicular à face — para folgas e gabaritos",
     "polygon": "Por pontos",
     "face": "Por face",
-    "faceHint": "Um clique mede uma face inteira"
+    "faceHint": "Um clique mede uma face inteira",
+    "elements": "Entre elementos",
+    "elementsHint": "Menor folga entre dois elementos, a partir da geometria — para folgas e interferências",
+    "headroom": "Altura livre",
+    "headroomHint": "Um clique num piso: a distância vertical até a superfície acima (de um teto: até o piso)"
   },
   "steps": {
     "idle": "Escolha uma ferramenta",
@@ -40,7 +44,11 @@
     "angle-end": "Clique num ponto do segundo lado",
     "pick-plane-face": "Clique na face a partir da qual medir",
     "perpendicular-target": "Clique no ponto até onde medir",
-    "point": "Clique num ponto para ver as coordenadas"
+    "point": "Clique num ponto para ver as coordenadas",
+    "element-a": "Clique no primeiro elemento",
+    "element-b": "Clique no segundo elemento",
+    "headroom-point": "Clique num piso (ou teto) para medir a altura livre",
+    "computing": "Medindo…"
   },
   "keys": {
     "axisLock": "bloquear eixo",
@@ -92,7 +100,11 @@
     "nonPlanar": "Os pontos não estão num mesmo plano: esta é a área projetada.",
     "fromFace": "Área de uma face, medida pelo seu contorno exterior.",
     "modelFrame": "Coordenadas no próprio sistema IFC do modelo.",
-    "sceneFrame": "Coordenadas da cena (não há modelo sob o ponto)."
+    "sceneFrame": "Coordenadas da cena (não há modelo sob o ponto).",
+    "elementsNote": "Menor folga entre os dois elementos, segundo a geometria.",
+    "clashNote": "Os elementos se tocam ou se cruzam: é uma interferência, não uma folga.",
+    "approximateNote": "Elementos muito detalhados: o valor é um limite superior.",
+    "headroomNote": "Altura livre vertical até a próxima superfície."
   },
   "actions": {
     "finish": "Concluir",
@@ -275,5 +287,11 @@
     "note": "Um valor por elemento, líquido antes de bruto. * = nem todos os elementos o têm.",
     "refresh": "Recalcular",
     "filename": "medicoes"
+  },
+  "notice": {
+    "no-surface": "Não há nada acima nem abaixo deste ponto",
+    "no-element": "Clique num elemento do modelo",
+    "same-element": "É o mesmo elemento: clique em outro",
+    "no-geometry": "Este elemento não tem geometria para medir"
   }
 }

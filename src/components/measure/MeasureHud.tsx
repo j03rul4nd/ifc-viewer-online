@@ -126,7 +126,9 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
           {t(`tools.${tool}`)}
         </span>
         <span className="w-px h-3.5 bg-white/15" />
-        <span className="text-[11.5px] text-white/90 whitespace-nowrap truncate">{t(`steps.${step}`)}</span>
+        <span className={['text-[11.5px] whitespace-nowrap truncate', snapshot.notice ? 'text-[#FFB224]' : 'text-white/90'].join(' ')}>
+          {snapshot.busy ? t('steps.computing') : snapshot.notice ? t(`notice.${snapshot.notice}`) : t(`steps.${step}`)}
+        </span>
         <span className="hidden sm:flex items-center gap-2 text-[10.5px] text-white/55 whitespace-nowrap">
           {lockable && <span className="flex items-center gap-1"><Kbd>Shift</Kbd>{t('keys.axisLock')}</span>}
           {snapshot.canFinish && <span className="flex items-center gap-1"><Kbd>↵</Kbd>{t('keys.finish')}</span>}

@@ -78,6 +78,14 @@ export interface ScenePicker {
   worldPerPixel(point: THREE.Vector3): number
   /** Client (viewport) pixels of a world point; null when behind the camera. */
   project(point: THREE.Vector3): { x: number; y: number } | null
+  /**
+   * First visible surface along a world ray (models, meshes, clouds), at least
+   * `minDistance` from the origin so the surface the ray starts on is skipped.
+   * Used for clear heights: a vertical ray from a floor point to the ceiling.
+   */
+  castRay(origin: THREE.Vector3, direction: THREE.Vector3, minDistance?: number): Promise<{ point: THREE.Vector3; modelId: string | null; localId: number | null } | null>
+  /** The element's triangles in world space (flat xyz, 9 per triangle), or null. */
+  elementTriangles(modelId: string, localId: number): Promise<Float32Array | null>
 }
 
 interface RawHit {
@@ -96,6 +104,7 @@ const CLIP_EPS = 1e-4
 // A pick that has not answered in time is a miss (see async.ts).
 export const PICK_TIMEOUT_MS = 1500
 export const SNAP_TIMEOUT_MS = 800
+export const CAST_TIMEOUT_MS = 3000
 
 export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
   const raycaster = new THREE.Raycaster()
@@ -347,5 +356,69 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     return result
   }
 
-  return { pick, worldPerPixel, project }
+  async function castRay(origin: THREE.Vector3, direction: THREE.Vector3, minDistance = 0.01) {
+    const dir = direction.clone().normalize()
+    const planes = deps.getClippingPlanes()
+    // Fragments only raycast from a camera and a pixel. A throwaway camera at
+    // the origin looking along the ray, picked at the canvas centre, IS that ray.
+    const r = rect()
+    const cam = new THREE.PerspectiveCamera(10, Math.max(1e-3, r.width / Math.max(1, r.height)), 1e-3, 1e5)
+    cam.position.copy(origin)
+    const up = Math.abs(dir.y) > 0.99 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0)
+    cam.up.copy(up)
+    cam.lookAt(origin.clone().add(dir))
+    cam.updateMatrixWorld(true)
+    cam.updateProjectionMatrix()
+    const mouse = new THREE.Vector2(r.left + r.width / 2, r.top + r.height / 2)
+    let best: { point: THREE.Vector3; modelId: string | null; localId: number | null; d: number } | null = null
+    const consider = (point: THREE.Vector3, modelId: string | null, localId: number | null) => {
+      const d = point.clone().sub(origin).dot(dir)
+      if (d < minDistance || !isVisibleToCut(point, planes)) return
+      if (!best || d < best.d) best = { point: point.clone(), modelId, localId, d }
+    }
+    await Promise.all([...deps.getModels()].map(async ([modelId, model]) => {
+      try {
+        // One deliberate click, not a hover: worth waiting for a model whose ray data is still warming up.
+        const list = await withTimeout(model.raycastAll({ camera: cam, mouse, dom: deps.canvas }), CAST_TIMEOUT_MS, null)
+        for (const hit of list ?? []) if (hit?.point) consider(hit.point, modelId, hit.localId ?? null)
+      } catch { /* a model that cannot be cast against simply has no hit */ }
+    }))
+    const targets = deps.getExtraTargets()
+    if (targets.length) {
+      raycaster.set(origin, dir)
+      try {
+        for (const hit of raycaster.intersectObjects(targets, true)) if (isShown(hit.object)) consider(hit.point, null, null)
+      } catch { /* ignore */ }
+    }
+    const b = best as { point: THREE.Vector3; modelId: string | null; localId: number | null } | null
+    return b ? { point: b.point, modelId: b.modelId, localId: b.localId } : null
+  }
+
+  async function elementTriangles(modelId: string, localId: number): Promise<Float32Array | null> {
+    const model = [...deps.getModels()].find(([id]) => id === modelId)?.[1]
+    if (!model) return null
+    let meshes: FRAGS.MeshData[][] = []
+    try { meshes = await withTimeout(model.getItemsGeometry([localId]), PICK_TIMEOUT_MS * 2, []) ?? [] } catch { return null }
+    const world = (model as unknown as { object: THREE.Object3D }).object.matrixWorld
+    const m = new THREE.Matrix4()
+    const v = new THREE.Vector3()
+    const out: number[] = []
+    for (const mesh of meshes.flat()) {
+      const pos = mesh.positions
+      if (!pos) continue
+      m.multiplyMatrices(world, mesh.transform)
+      const idx = mesh.indices
+      const count = idx ? idx.length : pos.length / 3
+      for (let i = 0; i + 2 < count; i += 3) {
+        for (let k = 0; k < 3; k++) {
+          const vi = idx ? idx[i + k] : i + k
+          v.set(pos[vi * 3], pos[vi * 3 + 1], pos[vi * 3 + 2]).applyMatrix4(m)
+          out.push(v.x, v.y, v.z)
+        }
+      }
+    }
+    return out.length ? new Float32Array(out) : null
+  }
+
+  return { pick, worldPerPixel, project, castRay, elementTriangles }
 }
