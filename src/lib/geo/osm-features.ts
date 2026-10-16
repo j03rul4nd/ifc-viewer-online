@@ -838,6 +838,7 @@ const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
  */
 export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
+  if (isPavedArtwork(t)) return true
   if (t['area:highway'] && t['area:highway'] !== 'no') return true
   if (t['area'] === 'yes') return true
   if (t['area'] === 'no') return false
@@ -866,7 +867,22 @@ export function isHardPitch(t: Record<string, string>): boolean {
 }
 
 /** The paint of a court or the floor of a playground. */
+/**
+ * Artwork that IS the floor: a mosaic, a tiled compass rose, a pavement
+ * design. Mapped as an area with `tourism=artwork`, and the only honest way to
+ * draw one is as paving in its own tone — it is not an object to stand on a
+ * plinth. The Rosa dels Vents in the middle of Plaça de Catalunya is one.
+ */
+export function isPavedArtwork(t: Record<string, string>): boolean {
+  return t['tourism'] === 'artwork' && !t['building']
+    && /^(tilework|mosaic|pavement)$/.test((t['artwork_type'] ?? '').toLowerCase())
+}
+
+/** Warm stone: what a mosaic floor reads as from street level. */
+const PAVED_ARTWORK_TONE: [number, number, number] = [0.70, 0.62, 0.50]
+
 export function courtTone(t: Record<string, string>): [number, number, number] | undefined {
+  if (isPavedArtwork(t)) return PAVED_ARTWORK_TONE
   if (t['leisure'] === 'playground') {
     const s = (t['surface'] ?? '').toLowerCase()
     if (s === 'rubber' || s === 'tartan') return [0.55, 0.31, 0.25]
@@ -1178,6 +1194,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (t['public_transport'] === 'platform' && t['railway'] !== undefined) return 'rail'
 
   if (ROAD_VALUES.has(t['highway'] ?? '') || (t['area:highway'] && t['area:highway'] !== 'no')) return 'road'
+  if (isPavedArtwork(t)) return 'road'
   if (isSurfaceParking(t)) return 'road'
   if (t['leisure'] === 'playground' || isHardPitch(t)) return 'road'
 
@@ -1727,7 +1744,13 @@ export function parseOsmFeatures(
       // promenades in the Port Vell box. One post every 1.5 m, like the real row.
       if (el.type === 'way' && Array.isArray(el.geometry)) {
         const pts = el.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
-        const along = style.furniture === 'bollard' ? spaceAlong(pts, 1.5) : spaceAlong(pts, Infinity)
+        // A statue mapped by its plinth's OUTLINE — all twelve figures round
+        // Plaça de Catalunya are — stands in the middle of that outline. The
+        // midpoint of the way is a corner of the plinth.
+        const closedArea = style.furniture !== 'bollard' && pts.length >= 4
+          && pts[0].lat === pts[pts.length - 1].lat && pts[0].lon === pts[pts.length - 1].lon
+        const along = style.furniture === 'bollard' ? spaceAlong(pts, 1.5)
+          : closedArea ? [ringCentre(pts)] : spaceAlong(pts, Infinity)
         if (along.length === 0 && pts.length > 0) along.push(pts[Math.floor(pts.length / 2)])
         if (along.length === 0) { drop(el, 'geometry', 'fewer-than-two-points'); continue }
         along.forEach((point, k) => out.push({
@@ -2113,6 +2136,15 @@ export function barrierThicknessM(kind: BarrierKind | undefined): number {
 const TREE_ROW_SPACING_M = 7
 
 /** Points every `stepM` along a polyline, starting half a step in. */
+/** Mean of a closed ring's distinct vertices — the plinth centre of a statue. */
+function ringCentre(pts: ReadonlyArray<LatLonPoint>): LatLonPoint {
+  const ring = pts.slice(0, -1)
+  let lat = 0
+  let lon = 0
+  for (const p of ring) { lat += p.lat; lon += p.lon }
+  return { lat: lat / ring.length, lon: lon / ring.length }
+}
+
 function spaceAlong(pts: ReadonlyArray<LatLonPoint>, stepM: number): LatLonPoint[] {
   if (pts.length < 2) return []
   const out: LatLonPoint[] = []
@@ -2293,6 +2325,8 @@ export function buildFeaturesQuery(
       `node["amenity"~"^(bench|waste_basket|drinking_water)$"](${b});`
       + `node["highway"="street_lamp"](${b});node["barrier"="bollard"](${b});`
       + `node["tourism"="artwork"](${b});node["historic"="memorial"](${b});`
+      // Statues mapped by their plinth outline, and floors that are artwork.
+      + `way["tourism"="artwork"](${b});`
       + `node["playground"](${b});node["amenity"="shelter"](${b});`,
       Math.round(maxElements * 0.12),
     ],
