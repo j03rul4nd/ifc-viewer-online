@@ -218,7 +218,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
     seoTitle: "Comprobar anchos libres en IFC: Cumple / No cumple",
     seoDescription: "Mide anchos de pasillo, huecos de puerta, altura libre y pendientes de rampa en un IFC y marca cada una como cumple o no cumple. Exporta las comprobaciones.",
     excerpt: "Una revisión de proyecto casi nunca pregunta «¿cuánto mide este pasillo?». Pregunta «¿llega a 1,20 m?». Asociar el requisito a la medición, y ver Cumple o No cumple en la etiqueta, en la captura y en la exportación, convierte una cota en una comprobación sobre la que alguien puede actuar.",
-    readTimeMin: 8,
+    readTimeMin: 10,
     keywords: [
       "comprobar anchos libres IFC",
       "comprobación de accesibilidad BIM",
@@ -228,6 +228,8 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
       "medición revisión de proyecto IFC",
       "comprobación normativa BIM gratis",
       "ancho libre de puerta IFC",
+      "altura libre IFC",
+      "distancia libre entre elementos BIM",
       "check clearances IFC",
       "accessibility check BIM",
       "corridor width check",
@@ -236,6 +238,8 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
       "IFC design review measurement",
       "BIM compliance check free",
       "door clear width IFC",
+      "clear height IFC",
+      "clearance between elements BIM",
     ],
     faqs: [
       {
@@ -254,6 +258,14 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         q: "¿Puedo enviar al equipo las comprobaciones que no cumplen?",
         a: "Sí. Las marcas de cumple y no cumple se pintan en las capturas y en las instantáneas BCF, y la exportación CSV tiene columnas de requisito y comprobación, de modo que un ancho libre insuficiente puede convertirse en una incidencia BCF con la evidencia ya en la imagen.",
       },
+      {
+        q: "¿Cómo mido la altura libre bajo un conducto o una viga?",
+        a: "Elige Distancia → Altura libre y haz clic en el suelo bajo el elemento. Un rayo vertical busca la siguiente superficie por encima (forjado, viga, conducto o techo) y la medición va desde el suelo hasta su cara inferior. Si haces clic en un techo, mide hacia abajo hasta el suelo; si lo haces en un muro, mide de suelo a techo en ese punto.",
+      },
+      {
+        q: "¿Cómo averiguo la holgura entre un conducto y una viga?",
+        a: "Elige Distancia → Entre elementos y haz clic en los dos elementos. La distancia más corta se calcula a partir de su geometría real, no de sus cajas envolventes, y se dibuja entre los dos puntos más cercanos. Si se tocan o se cruzan, marca 0 y se señala como colisión.",
+      },
     ],
     content: [
       {
@@ -268,6 +280,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         type: "takeaways",
         items: [
           "Mide los anchos libres a escuadra con la cara: herramienta de distancia, modo perpendicular.",
+          "La altura libre es un clic en el suelo; la holgura entre dos elementos son dos clics, calculada a partir de su geometría.",
           "Añade un requisito (como mínimo, como máximo o entre dos valores) o haz clic en un preajuste: pasillo, puerta, altura libre, rampa, círculo de giro, ángulo recto.",
           "Comprueba la magnitud correcta: el valor, la altura (ΔZ), la pendiente en porcentaje o un volumen.",
           "Cumple o No cumple aparece en la etiqueta 3D (con ✓ o ✗, no solo con color), en las capturas, en las instantáneas BCF y en el CSV.",
@@ -298,6 +311,43 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
           " explica con detalle el ajuste y las secciones.",
         ],
       },
+      { type: "h2", text: "Altura libre con un clic" },
+      {
+        type: "p",
+        text: "Medir la altura libre a mano exige dos clics (uno en el suelo y otro en lo que haya encima), y el segundo es el que la gente suele fallar: el lateral del conducto en lugar de su cara inferior, un punto algo desviado de la vertical. El modo Altura libre lo evita. Elige Distancia → Altura libre y haz clic en el suelo: un rayo vertical sube hasta la siguiente superficie, sea la que sea (el forjado, una viga, un conducto, un falso techo), y la medición se dibuja del suelo a la cara inferior, exactamente vertical.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Clic en un suelo: mide hacia arriba hasta la primera superficie.",
+          "Clic en un techo o en la cara inferior de un conducto: mide hacia abajo hasta el suelo.",
+          "Clic en un muro o en un pilar: mide de suelo a techo en ese punto.",
+          "Con un corte de sección activo, el rayo ignora lo que el corte ha quitado, igual que cualquier otra selección.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Como toma la primera superficie por encima, responde a la pregunta de una visita de obra: cuánto espacio queda bajo lo más bajo que hay aquí. Haz clic bajo el conducto y obtienes la altura hasta el conducto; haz clic un metro más allá y obtienes la altura hasta el forjado.",
+      },
+      { type: "h2", text: "La holgura entre dos elementos" },
+      {
+        type: "p",
+        text: "Algunas holguras no se dan entre un punto y una cara, sino entre dos objetos: un conducto y la viga bajo la que pasa, una tubería y un muro, la hoja de una puerta y un pilar. Hacer clic a ojo en los dos puntos más cercanos es adivinar. Elige Distancia → Entre elementos, haz clic en el primer elemento y luego en el segundo, y la distancia más corta entre su geometría real se calcula y se dibuja entre los dos puntos más cercanos.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Usa los triángulos de ambos elementos, no sus cajas envolventes: dos cajas se solapan en cuanto un conducto pasa bajo una viga inclinada, y no dicen nada de la holgura que queda.",
+          "Si los elementos se tocan o se cruzan, el resultado es 0 y se señala como colisión, no como holgura.",
+          "Funciona con elementos de modelos distintos: un conducto del modelo de instalaciones frente a una viga del de estructura.",
+          "El resultado es una distancia normal: añade un requisito como «como mínimo 0,10 m» para una holgura de mantenimiento o de aislamiento.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Los muros y forjados unidos que se encuentran en una arista marcan 0: en el modelo se tocan. Es correcto, no un error: mide entre los elementos que deberían tener holgura.",
+      },
       { type: "h2", text: "Añade el requisito" },
       {
         type: "p",
@@ -327,7 +377,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
       { type: "h2", text: "Altura y pendiente: comprobar el número correcto" },
       {
         type: "p",
-        text: "Una medición tiene más de un número. Una distancia desde el suelo hasta la cara inferior de un conducto tiene una longitud y una componente vertical; una distancia a lo largo de una rampa tiene una longitud, un desnivel y una pendiente. El requisito elige cuál comprobar: el propio valor, la altura (ΔZ) o la pendiente en porcentaje. Para la altura libre, mide desde el suelo hasta el obstáculo y comprueba la altura, de modo que un clic algo inclinado no la infle. Para una rampa, haz clic en la parte inferior y en la superior del tramo y comprueba la pendiente.",
+        text: "Una medición tiene más de un número. Una distancia desde el suelo hasta la cara inferior de un conducto tiene una longitud y una componente vertical; una distancia a lo largo de una rampa tiene una longitud, un desnivel y una pendiente. El requisito elige cuál comprobar: el propio valor, la altura (ΔZ) o la pendiente en porcentaje. Para la altura libre, usa el modo Altura libre; o, si mides a mano desde el suelo hasta el obstáculo, comprueba la altura, de modo que un clic algo inclinado no la infle. Para una rampa, haz clic en la parte inferior y en la superior del tramo y comprueba la pendiente.",
       },
       { type: "h2", text: "Cómo leer Cumple y No cumple" },
       {

@@ -104,19 +104,22 @@ export const MEASURE_POSTS_EN: BlogPost[] = [
     seoTitle: 'Check Clearances in an IFC Model: Pass/Fail Measurements',
     seoDescription: 'Measure corridor widths, door openings, headroom and ramp slopes on an IFC in the browser and mark each pass or fail against a requirement. Export the checks.',
     excerpt: 'A design review rarely asks "how wide is this corridor?". It asks "is it at least 1.20 m?". Attaching the requirement to the measurement — and seeing pass or fail on the label, in the screenshot and in the export — turns a dimension into a check somebody can act on.',
-    readTimeMin: 8,
-    keywords: ['check clearances IFC', 'accessibility check BIM', 'corridor width check', 'headroom clearance BIM', 'ramp slope check', 'IFC design review measurement', 'BIM compliance check free', 'door clear width IFC'],
+    readTimeMin: 10,
+    keywords: ['check clearances IFC', 'accessibility check BIM', 'corridor width check', 'headroom clearance BIM', 'ramp slope check', 'IFC design review measurement', 'BIM compliance check free', 'door clear width IFC', 'clear height IFC', 'clearance between elements BIM'],
     faqs: [
       { q: 'How do I check a minimum corridor width on an IFC model?', a: 'Measure the clear width with the distance tool in perpendicular mode (square to the wall face), then add a requirement of at least the required width — or click the "Corridor ≥ 1.20" preset. The label in the 3D view gets a green tick or a red cross, and the panel says by how much it fails.' },
       { q: 'Which requirements can a measurement carry?', a: 'At least, at most or between, on the measured value, on the height difference (ΔZ), on the slope in percent, or on the volume of an extruded area. Presets cover the common ones: corridor 1.20 m, door 0.80 m, headroom 2.10 m, ramp at most 8 %, wheelchair turning 1.50 m and square angles.' },
       { q: 'Are the presets the legal values for my country?', a: 'No. They are common reference values, not your code. Accessibility and building regulations differ by country, building type and edition; edit the number to the one your regulation, client brief or EIR sets, and cite that source in the note.' },
       { q: 'Can I send the failed checks to the team?', a: 'Yes. The pass/fail marks are painted into screenshots and BCF snapshots, and the CSV export has requirement and check columns, so a failed clearance can become a BCF issue with the evidence already in the image.' },
+      { q: 'How do I measure the clear height under a duct or a beam?', a: 'Choose Distance → Clear height and click the floor under it. A vertical ray finds the next surface above — slab, beam, duct or ceiling — and the measurement goes from the floor to its underside. Clicking a ceiling measures down to the floor; clicking a wall measures floor to ceiling at that spot.' },
+      { q: 'How do I find the gap between a duct and a beam?', a: 'Choose Distance → Between elements and click the two elements. The shortest distance is computed from their actual geometry, not their bounding boxes, and drawn between the two closest points. If they touch or cross, it reads 0 and is marked as a clash.' },
     ],
     content: [
       { type: 'p', text: 'The dimension is rarely the point. A reviewer measuring a corridor wants to know whether it meets the brief; a site manager measuring headroom under a duct wants to know whether a person or a pallet truck gets through. Writing "1.14 m" in a comment leaves the comparison to whoever reads it — and they may not know the requirement.' },
       { type: 'p', text: 'So the measurement carries its requirement. You state "at least 1.20 m" once, the label in the model shows a tick or a cross, the panel says "fails by 6 cm", and the export has a column that says Fail. That is what a check looks like when it leaves your screen.' },
       { type: 'takeaways', items: [
         'Measure clear widths square to the face: distance tool, perpendicular mode.',
+        'Clear height is one click on the floor; the gap between two elements is two clicks, computed from their geometry.',
         'Add a requirement — at least, at most or between — or click a preset: corridor, door, headroom, ramp, turning circle, right angle.',
         'Check the right quantity: the value, the height (ΔZ), the slope in percent or a volume.',
         'Pass or fail shows on the 3D label (with ✓ or ✗, not only colour), in screenshots, in BCF snapshots and in the CSV.',
@@ -127,6 +130,26 @@ export const MEASURE_POSTS_EN: BlogPost[] = [
       { type: 'h2', text: 'Measure the clear dimension, not a diagonal' },
       { type: 'p', text: 'A clearance measured corner to corner across a corridor is always a little longer than the corridor is wide — and always in the direction that makes a failing corridor look compliant. Use the perpendicular mode: click the face of one wall, then the other wall, and the distance is taken square to the first face. For a door, measure between the frames (or the leaf and the stop), not between the wall openings.' },
       { type: 'p', text: ['If the space you need is inside the building, cut it open first. A section box around one corridor, or a plan cut at working height on the storey, makes the walls you need clickable — and the picker respects the cut, so you do not measure the façade by accident. ', { text: 'How to measure an IFC model online', to: 'measure-ifc-model-online' }, ' covers snapping and sections in detail.'] },
+
+      { type: 'h2', text: 'Clear height in one click' },
+      { type: 'p', text: 'Headroom measured by hand means two clicks — one on the floor, one on whatever is above — and the second click is the one people get wrong: the side of the duct instead of its underside, a point slightly off the vertical. The Clear height mode removes it. Choose Distance → Clear height and click the floor: a vertical ray goes up to the next surface, whatever it is — the slab, a beam, a duct, a suspended ceiling — and the measurement is drawn floor to underside, exactly vertical.' },
+      { type: 'ul', items: [
+        'Click a floor: measures up to the first surface above.',
+        'Click a ceiling or the underside of a duct: measures down to the floor below.',
+        'Click a wall or a column: measures floor to ceiling at that spot.',
+        'With a section cut in place, the ray ignores whatever the cut removed, like every other pick.',
+      ] },
+      { type: 'p', text: 'Because it takes the first surface above, it answers the question a site walk asks: how much room is left under the lowest thing here. Click under the duct and you get the height to the duct; click a metre away and you get the height to the slab.' },
+
+      { type: 'h2', text: 'The gap between two elements' },
+      { type: 'p', text: 'Some clearances are not between a point and a face but between two objects: a duct and the beam it passes under, a pipe and a wall, a door leaf and a column. Clicking the two closest points by eye is guesswork. Choose Distance → Between elements, click the first element, then the second, and the shortest distance between their actual geometry is computed and drawn between the two closest points.' },
+      { type: 'ul', items: [
+        'It uses the triangles of both elements, not their bounding boxes — two boxes overlap as soon as a duct runs under a sloping beam, and say nothing about the gap that is left.',
+        'If the elements touch or cross, the result is 0 and it is marked as a clash, not as a clearance.',
+        'Elements from different models work: a duct from the MEP model against a beam from the structural one.',
+        'The result is an ordinary distance: add a requirement such as "at least 0.10 m" for a maintenance or insulation gap.',
+      ] },
+      { type: 'callout', variant: 'tip', text: 'Joined walls and slabs that meet at an edge read as 0: in the model they touch. That is correct, not a bug — measure between the elements that should have a gap.' },
 
       { type: 'h2', text: 'Add the requirement' },
       { type: 'p', text: 'Select the measurement in the panel. Under its breakdown there is a Requirement row with presets for the checks people repeat, and a "+ Requirement" button for anything else.' },
@@ -142,7 +165,7 @@ export const MEASURE_POSTS_EN: BlogPost[] = [
       { type: 'p', text: 'Values are typed in the unit you display (metres, centimetres, millimetres or feet) and stored in metres, so switching units later does not change the requirement. A tiny tolerance absorbs rounding: a corridor shown as 1.20 m does not fail a 1.20 m minimum because it is 1.1999 underneath.' },
 
       { type: 'h2', text: 'Height and slope: checking the right number' },
-      { type: 'p', text: 'A measurement has more than one number. A distance from floor to the underside of a duct has a length and a vertical component; a distance along a ramp has a length, a rise and a slope. The requirement chooses which one it checks: the value itself, the height (ΔZ), or the slope in percent. For headroom, measure from floor to obstruction and check the height, so a slightly slanted click does not inflate it. For a ramp, click the bottom and the top of the run and check the slope.' },
+      { type: 'p', text: 'A measurement has more than one number. A distance from floor to the underside of a duct has a length and a vertical component; a distance along a ramp has a length, a rise and a slope. The requirement chooses which one it checks: the value itself, the height (ΔZ), or the slope in percent. For headroom, use the Clear height mode — or, when you measure by hand from floor to obstruction, check the height, so a slightly slanted click does not inflate it. For a ramp, click the bottom and the top of the run and check the slope.' },
 
       { type: 'h2', text: 'Reading pass and fail' },
       { type: 'ul', items: [

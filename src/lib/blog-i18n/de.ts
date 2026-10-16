@@ -218,7 +218,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
     seoTitle: "Abstände im IFC-Modell prüfen: Erfüllt / Nicht erfüllt",
     seoDescription: "Flurbreiten, Türöffnungen, Durchgangshöhen und Rampenneigungen in einer IFC im Browser messen und gegen eine Anforderung prüfen: erfüllt oder nicht.",
     excerpt: "Eine Planungsprüfung fragt selten „Wie breit ist dieser Flur?“, sondern „Sind es mindestens 1,20 m?“. Wer die Anforderung an die Messung heftet – und Erfüllt oder Nicht erfüllt am Label, im Screenshot und im Export sieht –, macht aus einem Maß eine Prüfung, auf die jemand reagieren kann.",
-    readTimeMin: 8,
+    readTimeMin: 10,
     keywords: [
       "Abstände IFC prüfen",
       "Barrierefreiheit prüfen BIM",
@@ -228,6 +228,8 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       "IFC Planungsprüfung Messung",
       "BIM Regelprüfung kostenlos",
       "lichte Türbreite IFC",
+      "lichte Höhe IFC",
+      "Abstand zwischen Bauteilen BIM",
       "check clearances IFC",
       "accessibility check BIM",
       "corridor width check",
@@ -236,6 +238,8 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       "IFC design review measurement",
       "BIM compliance check free",
       "door clear width IFC",
+      "clear height IFC",
+      "clearance between elements BIM",
     ],
     faqs: [
       {
@@ -254,6 +258,14 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         q: "Kann ich die nicht erfüllten Prüfungen an das Team schicken?",
         a: "Ja. Die Erfüllt-/Nicht-erfüllt-Markierungen werden in Screenshots und BCF-Snapshots eingezeichnet, und der CSV-Export hat Spalten für Anforderung und Prüfung, sodass aus einem verfehlten Abstand ein BCF-Issue werden kann, dessen Beleg bereits im Bild steckt.",
       },
+      {
+        q: "Wie messe ich die lichte Höhe unter einem Kanal oder einem Unterzug?",
+        a: "Wählen Sie Abstand → Lichte Höhe und klicken Sie auf den Boden darunter. Ein senkrechter Strahl findet die nächste Fläche darüber – Decke, Unterzug, Kanal oder abgehängte Decke –, und die Messung reicht vom Boden bis zu deren Unterseite. Ein Klick auf eine Decke misst nach unten bis zum Boden; ein Klick auf eine Wand misst an dieser Stelle von Boden bis Decke.",
+      },
+      {
+        q: "Wie finde ich den Abstand zwischen einem Kanal und einem Unterzug?",
+        a: "Wählen Sie Abstand → Zwischen Bauteilen und klicken Sie die beiden Bauteile an. Der kürzeste Abstand wird aus ihrer tatsächlichen Geometrie berechnet, nicht aus ihren Hüllquadern, und zwischen den beiden nächstgelegenen Punkten eingezeichnet. Berühren oder durchdringen sie sich, steht dort 0, und die Messung wird als Kollision markiert.",
+      },
     ],
     content: [
       {
@@ -268,6 +280,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         type: "takeaways",
         items: [
           "Lichte Breiten rechtwinklig zur Fläche messen: Abstandswerkzeug, senkrechter Modus.",
+          "Die lichte Höhe ist ein Klick auf den Boden; der Abstand zwischen zwei Bauteilen sind zwei Klicks, berechnet aus ihrer Geometrie.",
           "Eine Anforderung hinzufügen – mindestens, höchstens oder zwischen – oder eine Voreinstellung anklicken: Flur, Tür, Durchgangshöhe, Rampe, Wendekreis, rechter Winkel.",
           "Die richtige Größe prüfen: den Wert, die Höhe (ΔZ), die Neigung in Prozent oder ein Volumen.",
           "Erfüllt oder Nicht erfüllt erscheint am 3D-Label (mit ✓ oder ✗, nicht nur farbig), in Screenshots, in BCF-Snapshots und in der CSV.",
@@ -298,6 +311,43 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
           " behandelt Einrasten und Schnitte im Detail.",
         ],
       },
+      { type: "h2", text: "Lichte Höhe mit einem Klick" },
+      {
+        type: "p",
+        text: "Eine von Hand gemessene Durchgangshöhe bedeutet zwei Klicks – einen auf den Boden, einen auf alles, was darüber liegt –, und der zweite Klick ist der, bei dem man sich vertut: die Seite des Kanals statt seiner Unterseite, ein Punkt, der leicht neben der Senkrechten liegt. Der Modus Lichte Höhe beseitigt das. Wählen Sie Abstand → Lichte Höhe und klicken Sie auf den Boden: Ein senkrechter Strahl geht bis zur nächsten Fläche, was auch immer es ist – die Decke, ein Unterzug, ein Kanal, eine abgehängte Decke –, und die Messung wird vom Boden bis zur Unterseite eingezeichnet, exakt senkrecht.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Klick auf einen Boden: misst nach oben bis zur ersten Fläche darüber.",
+          "Klick auf eine Decke oder die Unterseite eines Kanals: misst nach unten bis zum Boden darunter.",
+          "Klick auf eine Wand oder eine Stütze: misst an dieser Stelle von Boden bis Decke.",
+          "Ist ein Schnitt gesetzt, ignoriert der Strahl alles, was der Schnitt entfernt hat – wie jede andere Auswahl.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Weil der Strahl die erste Fläche darüber nimmt, beantwortet er die Frage eines Baustellenrundgangs: Wie viel Platz bleibt unter dem tiefsten Teil an dieser Stelle? Klicken Sie unter den Kanal, erhalten Sie die Höhe bis zum Kanal; klicken Sie einen Meter daneben, erhalten Sie die Höhe bis zur Decke.",
+      },
+      { type: "h2", text: "Der Abstand zwischen zwei Bauteilen" },
+      {
+        type: "p",
+        text: "Manche Abstände liegen nicht zwischen einem Punkt und einer Fläche, sondern zwischen zwei Objekten: einem Kanal und dem Unterzug, unter dem er läuft, einem Rohr und einer Wand, einem Türblatt und einer Stütze. Die beiden nächstgelegenen Punkte nach Augenmaß anzuklicken ist Raten. Wählen Sie Abstand → Zwischen Bauteilen, klicken Sie das erste Bauteil an, dann das zweite, und der kürzeste Abstand zwischen ihrer tatsächlichen Geometrie wird berechnet und zwischen den beiden nächstgelegenen Punkten eingezeichnet.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Es nutzt die Dreiecke beider Bauteile, nicht ihre Hüllquader – zwei Quader überlappen sich schon, sobald ein Kanal unter einem geneigten Unterzug durchläuft, und sagen nichts über den verbleibenden Abstand.",
+          "Berühren oder durchdringen sich die Bauteile, ist das Ergebnis 0 und wird als Kollision markiert, nicht als Abstand.",
+          "Bauteile aus verschiedenen Modellen funktionieren: ein Kanal aus dem TGA-Modell gegen einen Unterzug aus dem Tragwerksmodell.",
+          "Das Ergebnis ist ein gewöhnlicher Abstand: Fügen Sie eine Anforderung wie „mindestens 0,10 m“ für einen Wartungs- oder Dämmabstand hinzu.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Verbundene Wände und Decken, die sich an einer Kante treffen, ergeben 0: Im Modell berühren sie sich. Das ist korrekt, kein Fehler – messen Sie zwischen den Bauteilen, die einen Abstand haben sollen.",
+      },
       { type: "h2", text: "Die Anforderung hinzufügen" },
       {
         type: "p",
@@ -327,7 +377,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       { type: "h2", text: "Höhe und Neigung: die richtige Zahl prüfen" },
       {
         type: "p",
-        text: "Eine Messung hat mehr als eine Zahl. Ein Abstand vom Boden bis zur Unterkante eines Kanals hat eine Länge und eine vertikale Komponente; ein Abstand entlang einer Rampe hat eine Länge, einen Höhenunterschied und eine Neigung. Die Anforderung bestimmt, welche davon geprüft wird: der Wert selbst, die Höhe (ΔZ) oder die Neigung in Prozent. Messen Sie für die Durchgangshöhe vom Boden bis zum Hindernis und prüfen Sie die Höhe, damit ein leicht schräger Klick sie nicht aufbläht. Klicken Sie bei einer Rampe auf Anfang und Ende des Laufs und prüfen Sie die Neigung.",
+        text: "Eine Messung hat mehr als eine Zahl. Ein Abstand vom Boden bis zur Unterkante eines Kanals hat eine Länge und eine vertikale Komponente; ein Abstand entlang einer Rampe hat eine Länge, einen Höhenunterschied und eine Neigung. Die Anforderung bestimmt, welche davon geprüft wird: der Wert selbst, die Höhe (ΔZ) oder die Neigung in Prozent. Nutzen Sie für die Durchgangshöhe den Modus Lichte Höhe – oder prüfen Sie, wenn Sie von Hand vom Boden bis zum Hindernis messen, die Höhe, damit ein leicht schräger Klick sie nicht aufbläht. Klicken Sie bei einer Rampe auf Anfang und Ende des Laufs und prüfen Sie die Neigung.",
       },
       { type: "h2", text: "Erfüllt und Nicht erfüllt lesen" },
       {

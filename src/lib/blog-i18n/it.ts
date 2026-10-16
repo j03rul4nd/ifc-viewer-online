@@ -216,7 +216,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
     seoTitle: "Verifica distanze libere IFC: misure Conforme/Non conforme",
     seoDescription: "Misura corridoi, luci delle porte, altezza libera e pendenza delle rampe in un IFC nel browser e segna ogni misura Conforme o Non conforme a un requisito.",
     excerpt: "Una revisione di progetto raramente chiede «quanto è largo questo corridoio?». Chiede «è almeno 1,20 m?». Collegare il requisito alla misura, e vedere Conforme o Non conforme sull'etichetta, nello screenshot e nell'export, trasforma una quota in una verifica su cui qualcuno può agire.",
-    readTimeMin: 8,
+    readTimeMin: 10,
     keywords: [
       "verifica distanze libere IFC",
       "verifica accessibilità BIM",
@@ -226,6 +226,8 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       "misure revisione progetto IFC",
       "verifica conformità BIM gratis",
       "luce netta porta IFC",
+      "altezza libera IFC",
+      "distanza tra elementi BIM",
       "check clearances IFC",
       "accessibility check BIM",
       "corridor width check",
@@ -234,6 +236,8 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       "IFC design review measurement",
       "BIM compliance check free",
       "door clear width IFC",
+      "clear height IFC",
+      "clearance between elements BIM",
     ],
     faqs: [
       {
@@ -252,6 +256,14 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         q: "Posso inviare al team le verifiche non conformi?",
         a: "Sì. I segni di conformità sono disegnati negli screenshot e negli snapshot BCF, e l'export CSV ha le colonne requisito e verifica, quindi una distanza libera non conforme può diventare una segnalazione BCF con la prova già nell'immagine.",
       },
+      {
+        q: "Come misuro l'altezza libera sotto un canale o una trave?",
+        a: "Scegli Distanza → Altezza libera e clicca il pavimento sotto l'elemento. Un raggio verticale trova la superficie successiva sopra di te (solaio, trave, canale o controsoffitto) e la misura va dal pavimento al suo intradosso. Cliccando un soffitto si misura fino al pavimento; cliccando un muro si misura da pavimento a soffitto in quel punto.",
+      },
+      {
+        q: "Come trovo la distanza libera tra un canale e una trave?",
+        a: "Scegli Distanza → Tra elementi e clicca i due elementi. La distanza minima è calcolata sulla loro geometria reale, non sui riquadri di ingombro, e disegnata tra i due punti più vicini. Se si toccano o si intersecano, vale 0 ed è segnalata come interferenza.",
+      },
     ],
     content: [
       {
@@ -266,6 +278,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         type: "takeaways",
         items: [
           "Misura le larghezze libere ortogonalmente alla faccia: strumento distanza, modalità perpendicolare.",
+          "L'altezza libera si ottiene con un clic sul pavimento; la distanza tra due elementi con due clic, calcolata sulla loro geometria.",
           "Aggiungi un requisito (almeno, al massimo o compreso tra due valori) oppure clicca un preset: corridoio, porta, altezza libera, rampa, spazio di manovra, angolo retto.",
           "Verifica la grandezza giusta: il valore, la quota (ΔZ), la pendenza in percentuale o un volume.",
           "Conforme o Non conforme compare sull'etichetta 3D (con ✓ o ✗, non solo con il colore), negli screenshot, negli snapshot BCF e nel CSV.",
@@ -296,6 +309,43 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           " tratta nel dettaglio snap e sezioni.",
         ],
       },
+      { type: "h2", text: "Altezza libera con un clic" },
+      {
+        type: "p",
+        text: "Misurare l'altezza libera a mano richiede due clic, uno sul pavimento e uno su ciò che sta sopra, e il secondo è quello che si sbaglia: il fianco del canale invece del suo intradosso, un punto leggermente fuori dalla verticale. La modalità Altezza libera elimina il problema. Scegli Distanza → Altezza libera e clicca il pavimento: un raggio verticale sale fino alla superficie successiva, qualunque sia (il solaio, una trave, un canale, un controsoffitto) e la misura è disegnata dal pavimento all'intradosso, esattamente verticale.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Clicca un pavimento: misura fino alla prima superficie sopra.",
+          "Clicca un soffitto o l'intradosso di un canale: misura fino al pavimento sotto.",
+          "Clicca un muro o un pilastro: misura da pavimento a soffitto in quel punto.",
+          "Con un taglio di sezione attivo, il raggio ignora ciò che il taglio ha rimosso, come ogni altra selezione.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Poiché prende la prima superficie sopra, risponde alla domanda di un sopralluogo: quanto spazio resta sotto l'elemento più basso di qui. Clicca sotto il canale e ottieni l'altezza fino al canale; clicca un metro più in là e ottieni l'altezza fino al solaio.",
+      },
+      { type: "h2", text: "La distanza tra due elementi" },
+      {
+        type: "p",
+        text: "Alcune distanze libere non sono tra un punto e una faccia ma tra due oggetti: un canale e la trave sotto cui passa, un tubo e un muro, un'anta di porta e un pilastro. Cliccare a occhio i due punti più vicini è un tiro a indovinare. Scegli Distanza → Tra elementi, clicca il primo elemento, poi il secondo: la distanza minima tra la loro geometria reale viene calcolata e disegnata tra i due punti più vicini.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Usa i triangoli di entrambi gli elementi, non i loro riquadri di ingombro: due riquadri si sovrappongono appena un canale passa sotto una trave inclinata, e non dicono nulla sulla distanza che rimane.",
+          "Se gli elementi si toccano o si intersecano, il risultato è 0 ed è segnalato come interferenza, non come distanza libera.",
+          "Funziona con elementi di modelli diversi: un canale del modello MEP contro una trave di quello strutturale.",
+          "Il risultato è una normale distanza: aggiungi un requisito come «almeno 0,10 m» per una distanza di manutenzione o di isolamento.",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "tip",
+        text: "Muri e solai uniti che si incontrano su uno spigolo risultano 0: nel modello si toccano. È corretto, non un errore: misura tra gli elementi che dovrebbero avere uno spazio.",
+      },
       { type: "h2", text: "Aggiungi il requisito" },
       {
         type: "p",
@@ -325,7 +375,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       { type: "h2", text: "Quota e pendenza: verificare il numero giusto" },
       {
         type: "p",
-        text: "Una misura ha più di un numero. Una distanza dal pavimento all'intradosso di un canale ha una lunghezza e una componente verticale; una distanza lungo una rampa ha una lunghezza, un dislivello e una pendenza. Il requisito sceglie quale controllare: il valore stesso, la quota (ΔZ) o la pendenza in percentuale. Per l'altezza libera, misura dal pavimento all'ostacolo e verifica la quota, così un clic leggermente inclinato non la gonfia. Per una rampa, clicca la base e la sommità della rampa e verifica la pendenza.",
+        text: "Una misura ha più di un numero. Una distanza dal pavimento all'intradosso di un canale ha una lunghezza e una componente verticale; una distanza lungo una rampa ha una lunghezza, un dislivello e una pendenza. Il requisito sceglie quale controllare: il valore stesso, la quota (ΔZ) o la pendenza in percentuale. Per l'altezza libera, usa la modalità Altezza libera oppure, se misuri a mano dal pavimento all'ostacolo, verifica la quota, così un clic leggermente inclinato non la gonfia. Per una rampa, clicca la base e la sommità della rampa e verifica la pendenza.",
       },
       { type: "h2", text: "Leggere Conforme e Non conforme" },
       {
