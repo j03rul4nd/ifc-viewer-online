@@ -361,5 +361,25 @@
     "preview": "Sea over the run",
     "noSea": "No sea mapped on the grid: the coastline is outside it, or OpenStreetMap is off.",
     "result": "Sea {{sea}} m² · land it takes {{land}} m² · washed by waves {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Rivers",
+    "switch": "Water coming down {{n}} river(s)",
+    "note": "Each river enters the grid at the depth its discharge needs (Manning) and follows a flood hydrograph.",
+    "peak": "Peak",
+    "base": "Base",
+    "lag": "Peak after rain",
+    "rise": "Rise time",
+    "more": "{{n}} more use their class's typical flow",
+    "typical": "Typical discharges by class until you set them; a gauged value (an agency's flood peak) is far better.",
+    "result": "{{q}} m³/s · {{h}} m deep at its peak",
+    "none": "No watercourse crosses into the grid (or OpenStreetMap is off).",
+    "cls": {
+      "river": "River",
+      "canal": "Canal",
+      "stream": "Stream",
+      "ditch": "Ditch",
+      "drain": "Drain"
+    }
   }
 }

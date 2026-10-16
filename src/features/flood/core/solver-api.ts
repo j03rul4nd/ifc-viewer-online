@@ -145,6 +145,12 @@ export interface FloodStats {
    * — the backends run the same steps, which the parity suite checks.
    */
   seaVolume: number
+  /**
+   * Net water the rivers brought onto the grid at their entries, m³. Exact on
+   * the CPU; on the GPUs the balance's residual when there is no sea (with a
+   * sea too, the residual is reported as the sea's and this is 0).
+   */
+  inflowVolume: number
   /** (stored + out + infiltrated − rain − initial − sea) / (rain + initial + |sea|). */
   massError: number
 }
@@ -207,6 +213,8 @@ export interface SolverInit {
   params?: Partial<SolverParams>
   /** The level the grid's sea cells are held at over time; absent = no sea. */
   tide?: TideSeries | null
+  /** The DEPTH above their bed the grid's river-entry cells are held at over time. */
+  stage?: TideSeries | null
 }
 
 /**
@@ -226,9 +234,12 @@ export interface TideSeries {
  * exactly, is what the parity suite holds the GPUs to. Without a tide the
  * residual is the error, as before.
  */
-export function seaBalance(residual: number, inputs: number, tide: boolean): { seaVolume: number; massError: number } {
-  if (tide) return { seaVolume: residual, massError: 0 }
-  return { seaVolume: 0, massError: residual / Math.max(inputs, 1e-12) }
+export function seaBalance(
+  residual: number, inputs: number, tide: boolean, stage = false,
+): { seaVolume: number; inflowVolume: number; massError: number } {
+  if (tide) return { seaVolume: residual, inflowVolume: 0, massError: 0 }
+  if (stage) return { seaVolume: 0, inflowVolume: residual, massError: 0 }
+  return { seaVolume: 0, inflowVolume: 0, massError: residual / Math.max(inputs, 1e-12) }
 }
 
 /** The tide's level at tMs (ms); NaN when there is none. Mirrored in the shaders. */

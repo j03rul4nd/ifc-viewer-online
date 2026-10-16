@@ -57,6 +57,15 @@ export interface FloodGrid {
    */
   sea?: Uint8Array
   /**
+   * > 0 where a RIVER enters the grid: an open cell held at its bed plus the
+   * river's depth at that moment — SolverInit.stage (the main river's depth,
+   * from its discharge) times this factor (0..1], so a tributary entering
+   * beside the main river runs at its own, shallower depth. The water then
+   * runs down the channel through the ordinary scheme. No rain, no
+   * infiltration. Absent or 0 = no river inflow.
+   */
+  inflow?: Float32Array
+  /**
    * How much of the soil's infiltration each cell takes (0 = sealed: asphalt,
    * a roof; 1 = the soil as chosen; more where the ground is looser). Absent =
    * 1 everywhere. Scales the Horton curve, never replaces it.
@@ -99,6 +108,7 @@ export function validateGrid(g: FloodGrid): FloodGrid {
   if (g.h0 && g.h0.length !== n) throw new Error(`flood grid: h0 has ${g.h0.length} cells, expected ${n}`)
   if (g.infiltration && g.infiltration.length !== n) throw new Error(`flood grid: infiltration has ${g.infiltration.length} cells, expected ${n}`)
   if (g.sea && g.sea.length !== n) throw new Error(`flood grid: sea has ${g.sea.length} cells, expected ${n}`)
+  if (g.inflow && g.inflow.length !== n) throw new Error(`flood grid: inflow has ${g.inflow.length} cells, expected ${n}`)
   for (let c = 0; c < n; c++) {
     if (!Number.isFinite(g.z[c])) throw new Error(`flood grid: non-finite elevation at cell ${c}`)
     if (!(g.manning[c] >= 0)) throw new Error(`flood grid: bad Manning's n at cell ${c}`)
@@ -107,7 +117,12 @@ export function validateGrid(g: FloodGrid): FloodGrid {
       g.rainFactor[c] = 0
       if (g.h0) g.h0[c] = 0
       if (g.sea) g.sea[c] = 0
+      if (g.inflow) g.inflow[c] = 0
     }
+    // A cell is the sea or a river's entry, not both: the sea wins.
+    if (g.inflow?.[c] && g.sea?.[c]) g.inflow[c] = 0
+    if (g.inflow) g.inflow[c] = Math.min(1, Math.max(0, g.inflow[c] || 0))
+    if (g.inflow?.[c]) g.rainFactor[c] = 0
     // Rain on the sea is the sea's business: it is held at the tide anyway.
     if (g.sea?.[c]) g.rainFactor[c] = 0
   }

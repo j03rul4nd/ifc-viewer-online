@@ -361,5 +361,25 @@
     "preview": "Mare nella simulazione",
     "noSea": "Nessun mare nella griglia: la linea di costa è fuori o OpenStreetMap è spento.",
     "result": "Mare {{sea}} m² · terra sommersa {{land}} m² · battuta dalle onde {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Fiumi",
+    "switch": "Acqua da {{n}} corso/i d'acqua",
+    "note": "Ogni fiume entra nella griglia alla profondità richiesta dalla sua portata (Manning) e segue un idrogramma di piena.",
+    "peak": "Picco",
+    "base": "Base",
+    "lag": "Picco dopo la pioggia",
+    "rise": "Salita",
+    "more": "altri {{n}} usano la portata tipica della loro classe",
+    "typical": "Portate tipiche per classe finché non le indichi; un valore misurato (il picco dell'autorità) è molto meglio.",
+    "result": "{{q}} m³/s · {{h}} m di tirante al picco",
+    "none": "Nessun corso d'acqua entra nella griglia (o OpenStreetMap è spento).",
+    "cls": {
+      "river": "Fiume",
+      "canal": "Canale",
+      "stream": "Torrente",
+      "ditch": "Fosso",
+      "drain": "Scolo"
+    }
   }
 }

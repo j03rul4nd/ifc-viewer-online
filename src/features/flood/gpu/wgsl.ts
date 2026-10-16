@@ -30,10 +30,11 @@ struct Params {
   dx: f32, g: f32, theta: f32, alpha: f32,
   hEps: f32, dtMax: f32, freeSlopeMin: f32, wetThreshold: f32,
   infInitial: f32, infFinal: f32, infDecay: f32, pad2: f32,
+  stageCount: u32, stageIntervalMs: u32, pad3: u32, pad4: u32,
 };
 `
 
-export const PARAMS_BYTES = 80
+export const PARAMS_BYTES = 96
 export const RAIN_SLOTS = 4096 // vec4 × 1024 = 16 KiB of uniform
 export const CTRL_BYTES = 32
 
@@ -66,6 +67,15 @@ fn infiltrationRate(tS: f32) -> f32 {
 fn st(i: u32, j: u32) -> vec4f { return textureLoad(ST, vec2u(i, j), 0); }
 fn hAt(i: u32, j: u32) -> f32 { return cells[j * P.nx + i].x; }
 fn rainAt(idx: u32) -> f32 { return RAIN[idx >> 2u][idx & 3u]; }
+
+// A series of count values every iv ms from slot off, linear, held after the last.
+fn seriesAt(off: u32, count: u32, iv: u32, t: u32) -> f32 {
+  let idx = t / iv;
+  if (idx + 1u >= count) { return rainAt(off + count - 1u); }
+  let f = f32(t - idx * iv) / f32(iv);
+  let a = rainAt(off + idx);
+  return a + (rainAt(off + idx + 1u) - a) * f;
+}
 
 // The tide's level at t (ms), from the slots after the rain — solver-api tideLevelAt.
 fn tideAt(t: u32) -> f32 {
@@ -256,7 +266,11 @@ fn k_cont(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         inf[c] = inf[c] + loss;
       }
       // The sea, held at the tide's level at the end of the step.
-      if (s.y < -0.5 && P.tideCount > 0u) { hn = max(tideAt(C.tMs) - s.x, 0.0); }
+      if (s.y < -0.5 && s.y > -1.5 && P.tideCount > 0u) { hn = max(tideAt(C.tMs) - s.x, 0.0); }
+      // A river's entry, held at its depth: the stage's slots follow the tide's.
+      if (s.y < -1.5 && P.stageCount > 0u) {
+        hn = max(seriesAt(P.rainCount + P.tideCount, P.stageCount, P.stageIntervalMs, C.tMs) * (-s.y - 2.0), 0.0);
+      }
       var u = 0.0;
       var v = 0.0;
       if (hn > P.hEps) {

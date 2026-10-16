@@ -36,6 +36,8 @@ export type ToWorker =
       params?: Partial<SolverParams>
       /** The sea's level over time for the grid's sea cells. */
       tide?: TideSeries | null
+      /** River entries' depth over time. */
+      stage?: TideSeries | null
       backend: BackendChoice
       powerPreference?: 'low-power' | 'high-performance'
       /** Simulated time at which the run ends, s. */
@@ -71,5 +73,6 @@ export function gridTransferables(g: FloodGrid): ArrayBuffer[] {
   if (g.h0) out.push(g.h0.buffer)
   if (g.infiltration) out.push(g.infiltration.buffer)
   if (g.sea) out.push(g.sea.buffer)
+  if (g.inflow) out.push(g.inflow.buffer)
   return out.filter((b): b is ArrayBuffer => b instanceof ArrayBuffer)
 }

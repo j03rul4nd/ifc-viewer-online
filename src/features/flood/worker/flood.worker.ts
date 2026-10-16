@@ -173,7 +173,7 @@ self.onmessage = (e: MessageEvent<ToWorker>): void => {
           solver = null
           store?.clear()
           const made = await createFloodSolver(
-            { grid: m.grid, hyetograph: m.hyetograph, params: m.params, tide: m.tide },
+            { grid: m.grid, hyetograph: m.hyetograph, params: m.params, tide: m.tide, stage: m.stage },
             { backend: m.backend, powerPreference: m.powerPreference },
           )
           solver = made.solver

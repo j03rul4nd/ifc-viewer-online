@@ -38,6 +38,7 @@ import { floodOverlay } from './capture-overlay'
 import { FloodProbe } from './FloodProbe'
 import { HyetographEditor } from './HyetographEditor'
 import { CoastSection, coastFor } from './CoastSection'
+import { RiversSection, riversFor } from './RiversSection'
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -216,7 +217,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
     const edge = st.boundary
     const coast = coastFor(st, useGeoStore.getState().placement)
     const coastReport = sy.setCoast(coast)
-    st.set({ status: 'running', stats: null, perf: null, error: null, probe: null, affected: null, coastReport })
+    const riversReport = sy.setRivers(riversFor(st))
+    st.set({ status: 'running', stats: null, perf: null, error: null, probe: null, affected: null, coastReport, riversReport })
     sy.start({
       hyetograph: st.hyetograph,
       durationS: rainDurationS(st.hyetograph) + st.drainMin * 60,
@@ -534,6 +536,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                   onChange={(v) => s.set({ boundary: v })} />
               </div>
             </section>
+
+            <RiversSection t={t} caption={caption} />
 
             <CoastSection t={t} caption={caption} selectCls={selectCls} mapOn={mapOn} />
 

@@ -361,5 +361,25 @@
     "preview": "Mar na simulação",
     "noSea": "Sem mar na grelha: a linha de costa está fora ou o OpenStreetMap está desligado.",
     "result": "Mar {{sea}} m² · terra inundada {{land}} m² · batida pelas ondas {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Rios",
+    "switch": "Água descendo {{n}} curso(s) de água",
+    "note": "Cada rio entra na grelha à profundidade que o seu caudal pede (Manning) e segue um hidrograma de cheia.",
+    "peak": "Pico",
+    "base": "Base",
+    "lag": "Pico após a chuva",
+    "rise": "Subida",
+    "more": "mais {{n}} usam o caudal típico da sua classe",
+    "typical": "Caudais típicos por classe até os indicar; um valor medido (o pico da agência) é muito melhor.",
+    "result": "{{q}} m³/s · {{h}} m de altura no pico",
+    "none": "Nenhum curso de água entra na grelha (ou o OpenStreetMap está desligado).",
+    "cls": {
+      "river": "Rio",
+      "canal": "Canal",
+      "stream": "Ribeiro",
+      "ditch": "Vala",
+      "drain": "Dreno"
+    }
   }
 }

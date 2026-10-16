@@ -361,5 +361,25 @@
     "preview": "Mer pendant le calcul",
     "noSea": "Pas de mer sur la grille : le trait de côte est en dehors ou OpenStreetMap est désactivé.",
     "result": "Mer {{sea}} m² · terre submergée {{land}} m² · battue par les vagues {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Rivières",
+    "switch": "Eau descendant {{n}} cours d'eau",
+    "note": "Chaque rivière entre dans la grille à la profondeur que demande son débit (Manning) et suit un hydrogramme de crue.",
+    "peak": "Pointe",
+    "base": "Base",
+    "lag": "Pointe après la pluie",
+    "rise": "Montée",
+    "more": "{{n}} autres utilisent le débit typique de leur classe",
+    "typical": "Débits typiques par classe tant que vous ne les donnez pas ; une valeur jaugée (la pointe de crue officielle) est bien meilleure.",
+    "result": "{{q}} m³/s · {{h}} m de profondeur à la pointe",
+    "none": "Aucun cours d'eau n'entre dans la grille (ou OpenStreetMap est désactivé).",
+    "cls": {
+      "river": "Rivière",
+      "canal": "Canal",
+      "stream": "Ruisseau",
+      "ditch": "Fossé",
+      "drain": "Drain"
+    }
   }
 }

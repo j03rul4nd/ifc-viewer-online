@@ -216,8 +216,17 @@ uniform int uRainW;
 uniform uint uTideOff;
 uniform uint uTideCount;
 uniform uint uTideIv;
+uniform uint uStageCount;
+uniform uint uStageIv;
 layout(location = 0) out vec4 oCell;
 float slot(uint k) { return texelFetch(uRain, ivec2(int(k) % uRainW, int(k) / uRainW), 0).x; }
+float seriesAt(uint off, uint count, uint iv, uint t) {
+  uint idx = t / iv;
+  if (idx + 1u >= count) return slot(off + count - 1u);
+  float f = float(t - idx * iv) / float(iv);
+  float a = slot(off + idx);
+  return a + (slot(off + idx + 1u) - a) * f;
+}
 float tideAt(uint t) {
   uint idx = t / uTideIv;
   if (idx + 1u >= uTideCount) return slot(uTideOff + uTideCount - 1u);
@@ -247,7 +256,9 @@ void main() {
   float loss = min(hn, f * dt * max(-s.w, 0.0)); // open cell: w = −infiltration factor
   hn -= loss;
   // The sea (rain factor −1), held at the tide's level at the end of the step.
-  if (s.y < -0.5 && uTideCount > 0u) hn = max(tideAt(c.x) - s.x, 0.0);
+  if (s.y < -0.5 && s.y > -1.5 && uTideCount > 0u) hn = max(tideAt(c.x) - s.x, 0.0);
+  // A river's entry (rain factor −2), held at its depth; the stage follows the tide in the table.
+  if (s.y < -1.5 && uStageCount > 0u) hn = max(seriesAt(uTideOff + uTideCount, uStageCount, uStageIv, c.x) * (-s.y - 2.0), 0.0);
   float u = 0.0;
   float v = 0.0;
   if (hn > uHEps) { u = 0.5 * (qL + qR) / hn; v = 0.5 * (qB + qT) / hn; }

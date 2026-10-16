@@ -25,7 +25,8 @@ import type { BackendChoice } from './gpu/create'
 import { FloodRunner, type RunnerEvents } from './worker/runner'
 import type { SnapshotInfo } from './worker/protocol'
 import type { CellSeries } from './worker/snapshots'
-import { cellAt, fromGridLocal, planGrid, type GridPlan, type PlanPoint } from './raster/frame'
+import { cellAt, fromGridLocal, planGrid, toGridLocal, type GridPlan, type PlanPoint } from './raster/frame'
+import { findRiverEntries, normalDepth, stageSeries, TYPICAL_FLOW, type RiverEntry } from './core/river-inflow'
 import { proxyOf, rasterize } from './raster/rasterize'
 import { buildFloodGrid, type BuildReport, type PlaneGround } from './raster/build'
 import type { RoofRunoff } from './raster/rain-routing'
@@ -175,6 +176,8 @@ export interface OsmReport {
 
 export interface PrepareResult extends BuildReport {
   georeferenced: boolean
+  /** Watercourses coming into the grid across its edge (for the river inflow). */
+  rivers: RiverInfo[]
   /** The neighbourhood from OSM; null when not used; `error` when it could not be read. */
   osm: OsmReport | { error: string } | null
   groundFit: GroundFit | null
@@ -195,6 +198,32 @@ export interface CoastRequest {
    * scenario's still level for the whole run.
    */
   timeline?: { durationS: number; peakAtS: number } | null
+}
+
+/** A river the grid found coming in, for the panel. */
+export interface RiverInfo {
+  id: string
+  name?: string
+  cls: RiverEntry['cls']
+  widthM: number
+  /** Ground slope along the course near the entry (m/m), from the grid's bed. */
+  slope: number
+  /** Typical base and flood discharge for its class, m³/s. */
+  typical: { base: number; peak: number }
+}
+
+export interface RiversRequest {
+  /** Discharge per river id, m³/s; rivers left out use their class's typical values. */
+  flows?: Record<string, { base: number; peak: number }>
+  /** When the flood peak passes the entries, s from the start. */
+  peakAtS: number
+  /** Base to peak, s. */
+  riseS: number
+  durationS: number
+}
+
+export interface RiversReport {
+  rivers: Array<RiverInfo & { peakM3s: number; peakDepthM: number }>
 }
 
 export interface CoastReport {
@@ -322,6 +351,12 @@ export interface FloodSystemAPI {
    * out of them). Null switches it off. Needs a prepared grid with OSM sea.
    */
   setCoast(c: CoastRequest | null): CoastReport | null
+  /**
+   * The rivers that flow INTO the grid (river-inflow): each entry held at the
+   * depth its discharge needs, following a flood hydrograph. Null switches it
+   * off. Needs a prepared grid with OSM watercourses crossing its edge.
+   */
+  setRivers(r: RiversRequest | null): RiversReport | null
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -364,6 +399,9 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let coastOn = false
   /** The sea's level over the run in the grid's frame (z units); null = no sea. */
   let tide: TideSeries | null = null
+  /** The main river's depth over the run; null = no inflow. */
+  let stage: TideSeries | null = null
+  let riverEntries: Array<RiverEntry & { slope: number }> = []
   /**
    * Scene Y of mean sea level on the ground the grid was built from, or null
    * when that ground has no datum (a plane, an IFC terrain without a height
@@ -865,6 +903,46 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       baseH0 = grid.h0?.slice()
       coastOn = false
       tide = null
+      stage = null
+      riverEntries = []
+      if (osm) {
+        const g0 = grid
+        const channels = osm.hydro.channels
+          .filter((c) => !c.historic && !c.culvert)
+          .map((c) => ({
+            id: c.id, name: c.name, cls: c.cls, widthM: c.widthM,
+            line: c.line.map((p) => { const s = osm!.toScene(p.lat, p.lon); return toGridLocal(gp.frame, s.x, s.z) }),
+          }))
+        riverEntries = findRiverEntries(channels, g0.nx, g0.ny, g0.dx, g0.blocked).map((e) => {
+          // Slope of the bed along the course from the entry, over up to ~300 m of it.
+          const ch = channels.find((c) => c.id === e.id)!
+          // The channel is the LOW ground near its centreline: a coarse DEM
+          // smears the banks over it, so take the lowest bed within half the
+          // width (and two cells) of each point rather than the one under it.
+          const r = Math.max(2, Math.ceil(e.widthM / 2 / g0.dx))
+          const zAt = (p: { a: number; b: number }) => {
+            const i0 = Math.floor(p.a / g0.dx), j0 = Math.floor(p.b / g0.dx)
+            let m = Infinity
+            for (let j = j0 - r; j <= j0 + r; j++) for (let i = i0 - r; i <= i0 + r; i++) {
+              if (i < 0 || j < 0 || i >= g0.nx || j >= g0.ny) continue
+              const c = j * g0.nx + i
+              if (!g0.blocked[c]) m = Math.min(m, g0.z[c])
+            }
+            return Number.isFinite(m) ? m : NaN
+          }
+          let far = e.at, run = 0
+          for (let k = 1; k < ch.line.length && run < 300; k++) {
+            const p = ch.line[k]
+            if (!Number.isFinite(zAt(p))) continue
+            run = Math.hypot(p.a - e.at.a, p.b - e.at.b)
+            far = p
+          }
+          const dz = zAt(e.at) - zAt(far)
+          // Rivers rarely fall more than 1 % through a town; streams can, to 5 %.
+          const cap = e.cls === 'river' || e.cls === 'canal' ? 0.01 : 0.05
+          return { ...e, slope: run > 30 && Number.isFinite(dz) ? Math.max(1e-4, Math.min(cap, dz / run)) : 3e-4 }
+        })
+      }
       {
         const src = built.report.terrain
         seaY = src === 'map' ? seaYMap
@@ -908,6 +986,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
 
       return {
         ...built.report,
+        rivers: riverEntries.map((e) => ({ id: e.id, name: e.name, cls: e.cls, widthM: e.widthM, slope: e.slope, typical: TYPICAL_FLOW[e.cls] })),
         georeferenced: !!o.georef,
         osm: osm && osmSurface
           ? { counts: osmSurface.counts, oldCourseNames: osmSurface.oldCourseNames, truncated: osm.truncated, fallback: osm.fallback }
@@ -929,7 +1008,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       // The worker takes ownership of what it is sent: send a copy.
       const copy: FloodGrid = {
         ...g, z: g.z.slice(), blocked: g.blocked.slice(), rainFactor: g.rainFactor.slice(), manning: g.manning.slice(), h0: g.h0?.slice(),
-        sea: g.sea?.slice(),
+        sea: g.sea?.slice(), inflow: g.inflow?.slice(),
         infiltration: g.infiltration?.slice(),
       }
       resetTimeline(o.durationS)
@@ -970,7 +1049,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const params = coastOn
         ? { ...o.params, boundary: { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const }
         : o.params
-      runner.init({ grid: copy, hyetograph: o.hyetograph, params, tide, endS: o.durationS, backend: o.backend })
+      runner.init({ grid: copy, hyetograph: o.hyetograph, params, tide, stage, endS: o.durationS, backend: o.backend })
       runner.play(o.speed)
       wake()
     },
@@ -1197,6 +1276,36 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         { x: Math.min(...pts.map((q) => q.x)) - pad, y: y - 1, z: Math.min(...pts.map((q) => q.z)) - pad },
         { x: Math.max(...pts.map((q) => q.x)) + pad, y: y + 15, z: Math.max(...pts.map((q) => q.z)) + pad },
       )
+    },
+
+    setRivers(r) {
+      if (!grid) return null
+      const g = grid
+      if (!r || riverEntries.length === 0) { g.inflow = undefined; stage = null; return r ? { rivers: [] } : null }
+      const stepS = 300
+      const rows = riverEntries.map((e) => {
+        const q = r.flows?.[e.id] ?? TYPICAL_FLOW[e.cls]
+        const hyd = { baseM3s: q.base, peakM3s: Math.max(q.base, q.peak), peakAtS: r.peakAtS, riseS: r.riseS }
+        return { e, hyd, peakDepth: normalDepth(hyd.peakM3s, e.widthM, e.slope) }
+      })
+      // The deepest river carries the series; each entry runs at its share of it.
+      const main = rows.reduce((m, x) => (x.peakDepth > m.peakDepth ? x : m), rows[0])
+      const inflow = new Float32Array(g.nx * g.ny)
+      for (const x of rows) {
+        const share = main.peakDepth > 0 ? Math.min(1, x.peakDepth / main.peakDepth) : 0
+        for (const c of x.e.cells) if (!g.sea?.[c]) inflow[c] = Math.max(inflow[c], share)
+      }
+      g.inflow = inflow
+      stage = {
+        intervalMs: stepS * 1000,
+        levels: stageSeries(main.hyd, main.e.widthM, main.e.slope, r.durationS, stepS),
+      }
+      return {
+        rivers: rows.map((x) => ({
+          id: x.e.id, name: x.e.name, cls: x.e.cls, widthM: x.e.widthM, slope: x.e.slope,
+          typical: TYPICAL_FLOW[x.e.cls], peakM3s: x.hyd.peakM3s, peakDepthM: x.peakDepth,
+        })),
+      }
     },
 
     setCoast(c) {
