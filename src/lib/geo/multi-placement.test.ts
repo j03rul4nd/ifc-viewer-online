@@ -9,7 +9,7 @@
 // end up stacked, which is the bug this module was written for.
 
 import { describe, it, expect } from 'vitest'
-import { sceneOfLatLon, satelliteOffset, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
+import { pickAnchorModel, sceneOfLatLon, satelliteOffset, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { distanceM } from './model-sites'
 import { composeGeoRootTransform } from './geo-math'
 import type { GeoPlacement } from './geo-types'
@@ -186,5 +186,36 @@ describe('satellites stand on their own floor, and one project moves as one', ()
   it('moves files sharing an origin by exactly the anchor’s transform', () => {
     expect(sameOriginOffset({ x: 0, y: 0, z: 0 }, { x: -0.46, y: 8.4, z: -0.24 })).toEqual({ x: 0.46, y: -8.4, z: 0.24 })
     expect(sameOriginOffset({ x: 5, y: 1, z: 2 }, { x: 5, y: 1, z: 2 })).toEqual({ x: 0, y: 0, z: 0 })
+  })
+})
+
+describe('pickAnchorModel', () => {
+  const at = (lat: number, lon: number): GeoPlacement => ({
+    lat, lon, rotationDeg: 0, heightOffsetM: 0, source: 'ifc', confidence: 'high',
+  })
+  /** Endolla, Passeig de Gràcia, where its file puts it. */
+  const gracia = { modelId: 'endolla', placement: at(41.3884, 2.1695) }
+  const other = { modelId: 'pelai', placement: at(41.3853, 2.1683) }
+  /** Barceloneta, typed by hand: ~2.2 km from the file's own coordinates. */
+  const manual = { lat: 41.3788, lon: 2.1928 }
+
+  it('anchors a manual placement far from every file on the ACTIVE model, so it is never moved as a satellite', () => {
+    const r = pickAnchorModel(manual, [gracia, other], 'endolla', distanceM, 250)
+    expect(r.modelId).toBe('endolla')
+    expect(r.model).toBe(gracia)
+    // The regression: with no anchor id the active model was a satellite and
+    // was sent back to Gràcia, away from the map and its OSM features.
+    expect(shouldPlaceSatellite('endolla', r.modelId, gracia.placement)).toBe(false)
+    expect(shouldPlaceSatellite('pelai', r.modelId, other.placement)).toBe(true)
+  })
+
+  it('anchors on the model whose own coordinates match the placement', () => {
+    const r = pickAnchorModel({ lat: 41.38531, lon: 2.16831 }, [gracia, other], 'endolla', distanceM, 250)
+    expect(r.modelId).toBe('pelai')
+  })
+
+  it('keeps the active id when that model is not in the list (placed by hand, no georeference)', () => {
+    expect(pickAnchorModel(manual, [other], 'endolla', distanceM, 250)).toEqual({ model: null, modelId: 'endolla' })
+    expect(pickAnchorModel(manual, [other], null, distanceM, 250)).toEqual({ model: null, modelId: null })
   })
 })

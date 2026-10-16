@@ -211,3 +211,33 @@ export function shouldPlaceSatellite(
   if (anchorModelId !== null && modelId === anchorModelId) return false
   return Number.isFinite(placement.lat) && Number.isFinite(placement.lon)
 }
+
+/**
+ * Which loaded model the map is aligned to for a placement.
+ *
+ * The model whose own coordinates lie within `matchM` of it; otherwise — a
+ * placement typed or picked by hand, or deep-linked, away from where the file
+ * says it is — the ACTIVE model, which is the one the user just placed. That
+ * fallback has to carry the model's id: without it the active model was not
+ * recognised as the anchor, placeSatellites sent it back to its file's own
+ * coordinates (kilometres from the map it had just been placed on), and the
+ * flood grid built around it found no OSM features (measured: a Gràcia model
+ * placed by hand at the Barceloneta stood 2.1 km away from its own map).
+ */
+export function pickAnchorModel<M extends { modelId: string; placement: GeoPlacement }>(
+  p: Pick<GeoPlacement, 'lat' | 'lon'>,
+  models: readonly M[],
+  activeModelId: string | null,
+  distance: (aLat: number, aLon: number, bLat: number, bLon: number) => number,
+  matchM: number,
+): { model: M | null; modelId: string | null } {
+  let best: M | null = null
+  let bestD = Infinity
+  for (const m of models) {
+    const d = distance(p.lat, p.lon, m.placement.lat, m.placement.lon)
+    if (d < bestD) { bestD = d; best = m }
+  }
+  if (best && bestD <= matchM) return { model: best, modelId: best.modelId }
+  if (activeModelId === null) return { model: null, modelId: null }
+  return { model: models.find((m) => m.modelId === activeModelId) ?? null, modelId: activeModelId }
+}
