@@ -12,6 +12,7 @@
 // GeoSystem holds GPU state, and this hook is the only thing that talks to
 // both. Sections read the store and call these actions — nothing else.
 
+import type { SubsurfaceMode } from '../../lib/geo/subsurface'
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '../../stores/geoStore'
@@ -94,6 +95,10 @@ export interface GeoController {
   toggleTerrain: (enabled: boolean) => void
   setTerrainStyle: (style: TerrainStyle) => void
   setExaggeration: (k: number) => void
+  /** Surface / x-ray / cut view of what is under the map (subsurface.ts). */
+  setSubsurfaceMode: (mode: SubsurfaceMode) => void
+  /** Measure how much of the active model is under the ground, into the store. */
+  measureBurial: () => void
   setTerrainLook: (patch: Partial<TerrainLook>) => void
   resetTerrainLook: () => void
 
@@ -199,6 +204,8 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       await geo.setTerrain(enabled)
       useGeoStore.getState().setTerrainStatus(epoch, enabled ? 'ready' : 'idle')
       void refreshAttributions()
+      // The relief moves the ground under the model: measure the burial against it.
+      useGeoStore.getState().setBurial(geo.assessSubsurface())
     } catch {
       useGeoStore.getState().setTerrainStatus(epoch, 'error')
       trackMapError({ stage: 'terrain' })
@@ -221,6 +228,15 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     // The store clamps; the scene gets the clamped value.
     const clamped = useGeoStore.getState().terrainExaggeration
     withGeo((geo) => geo.setTerrainExaggeration(clamped))
+  }, [withGeo])
+
+  const setSubsurfaceMode = useCallback((mode: SubsurfaceMode): void => {
+    useGeoStore.getState().setSubsurfaceMode(mode)
+    withGeo((geo) => geo.setSubsurfaceMode(mode))
+  }, [withGeo])
+
+  const measureBurial = useCallback((): void => {
+    withGeo((geo) => useGeoStore.getState().setBurial(geo.assessSubsurface()))
   }, [withGeo])
 
   const setTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
@@ -439,6 +455,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       s.setPlacement(placement)
       s.confirmEnabled(epoch)
       enabledAtRef.current = Date.now()
+      s.setBurial(geo.assessSubsurface())
       trackMapModeEnabled({ georef_status: g?.status ?? 'none', source: placement.source })
       void refreshAttributions()
       // Re-apply the persisted toggles. Both survive in the store, so without
@@ -731,7 +748,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     getGeo, withGeo, flow, setFlow,
     showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
-    toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
+    toggleTerrain, setTerrainStyle, setExaggeration, setSubsurfaceMode, measureBurial, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
     setSuppressContext, setVehicles, applyPreset,
     rebuildScene, setBudgetLifted, lowerQuality, restoreQuality,
@@ -741,7 +758,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     getGeo, withGeo, flow,
     showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
-    toggleTerrain, setTerrainStyle, setExaggeration, setTerrainLook, resetTerrainLook,
+    toggleTerrain, setTerrainStyle, setExaggeration, setSubsurfaceMode, measureBurial, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
     setSuppressContext, setVehicles, applyPreset,
     rebuildScene, setBudgetLifted, lowerQuality, restoreQuality,

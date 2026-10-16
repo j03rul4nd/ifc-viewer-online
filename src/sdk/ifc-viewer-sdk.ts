@@ -666,6 +666,12 @@ export interface SiteContextOptions {
   terrainStyle?: 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem'
   /** Terrain vertical exaggeration, 1–3. */
   exaggeration?: number
+  /**
+   * Underground view, for tunnels, metro stations and buried utilities:
+   * `xray` makes the ground see-through, `cut` opens a pit over the model.
+   * Either lets the camera orbit below the surface. Default `surface`.
+   */
+  subsurface?: 'surface' | 'xray' | 'cut'
   /** Decorative cars and trains. */
   vehicles?: boolean
 }
@@ -679,6 +685,7 @@ export interface SiteContextState {
   detail: 'simple' | 'detailed' | 'showcase'
   terrainStyle: string
   exaggeration: number
+  subsurface: 'surface' | 'xray' | 'cut'
   vehicles: boolean
   placement: { lat: number; lon: number; rotationDeg: number; source: string; confidence: 'high' | 'approximate' } | null
   /** Credits for what is on screen. Show them wherever you show the map. */

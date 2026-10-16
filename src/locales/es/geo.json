@@ -443,5 +443,15 @@
       "still-water": "Agua quieta: estancamiento, sedimentos y algas; poca autolimpieza",
       "longshore-drift": "La deriva litoral mueve la arena sobre la que se cimenta"
     }
+  },
+  "subsurface": {
+    "title": "Vista bajo tierra",
+    "surface": "Superficie",
+    "xray": "Rayos X",
+    "cut": "Corte",
+    "show": "Ver bajo tierra",
+    "buriedNotice": "Unos {{depth}} m de este modelo están bajo tierra, así que el mapa lo tapa.",
+    "xrayHint": "El suelo se vuelve translúcido. Gira por debajo de la superficie para ver el modelo desde abajo.",
+    "cutHint": "Se abre un hueco en el mapa sobre el modelo. Gira por debajo de la superficie para verlo desde abajo."
   }
 }

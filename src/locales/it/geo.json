@@ -444,5 +444,15 @@
       "still-water": "Acqua ferma: ristagno, sedimenti e alghe; poca autodepurazione",
       "longshore-drift": "La deriva litoranea sposta la sabbia delle fondazioni"
     }
+  },
+  "subsurface": {
+    "title": "Vista sotterranea",
+    "surface": "Superficie",
+    "xray": "Raggi X",
+    "cut": "Taglio",
+    "show": "Mostra sottosuolo",
+    "buriedNotice": "Circa {{depth}} m di questo modello sono sottoterra, quindi la mappa lo nasconde.",
+    "xrayHint": "Il terreno diventa trasparente. Ruota sotto la superficie per vedere il modello dal basso.",
+    "cutHint": "Nella mappa si apre uno scavo sopra il modello. Ruota sotto la superficie per vederlo dal basso."
   }
 }

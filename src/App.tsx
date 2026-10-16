@@ -391,6 +391,7 @@ function siteStateOut() {
     detail: g.contextDetail,
     terrainStyle: g.terrainStyle,
     exaggeration: g.terrainExaggeration,
+    subsurface: g.subsurfaceMode,
     vehicles: g.vehicles,
     placement: g.placement
       ? { lat: g.placement.lat, lon: g.placement.lon, rotationDeg: g.placement.rotationDeg, source: g.placement.source, confidence: g.placement.confidence }
@@ -3418,6 +3419,7 @@ export default function App() {
               detail:       pick(cmd.detail, ['simple', 'detailed', 'showcase'] as const),
               terrainStyle: pick(cmd.terrainStyle, ['imagery', 'shaded', 'hypsometric', 'slope', 'ecosystem'] as const),
               exaggeration: typeof cmd.exaggeration === 'number' ? Math.min(3, Math.max(1, cmd.exaggeration)) : undefined,
+              subsurface:   pick(cmd.subsurface, ['surface', 'xray', 'cut'] as const),
             }, { unavailable: 'Map mode did not come up in time', subscriberTimeoutMs: 60_000, timeoutMs: 180_000 })
             return siteStateOut()
           })
@@ -4100,6 +4102,7 @@ export default function App() {
             detail:    wanted.detail,
             look:      wanted.look,
             lookTo:    wanted.lookTo,
+            subsurface: wanted.subsurface,
           }, {
             // Two different failures wearing one message cost a debugging
             // session: the build flag being off, and the panel simply not

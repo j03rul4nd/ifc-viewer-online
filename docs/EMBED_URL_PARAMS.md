@@ -49,7 +49,7 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `flood`    | `storm[,cell][,edges][,soil]`    | —         | Run the rain-flood simulation once every model is in: a storm (`shower`, `storm`, `intense`, `extreme`), and optionally a cell (`1m`, `2m`, `5m`), the edges (`free`, `closed`) and a soil (`sealed`, `compacted`, `loam`, `sandy`), in any order. Needs a build with the simulation. |
 | `analysis` | `period[:metric][:base<°C>][:precision]` or `1` | — | Run the solar & climate analysis once every model is in: a period (`year`, `hot`, `cold`, `winter`, `summer`, `equinox`; default `year`), and optionally a metric (`passive`, `active` = `irradiation`, `sun`, `probable`, `sky`), a base temperature for the passive impact (`base18`, `base=21`, −10…40 °C) and a precision (`fast`, `standard`, `fine`), in any order, `:` or `,` between them. See [below](#solar-analysis-analysis--site). |
 | `site`     | `lat,lon`                        | the model's | Study the sun and climate **at this place** — the solar location only, never the map — keeping the model's own north. Used by `solar` and `analysis` alike. |
-| `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
+| `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`; `map=terrain,cut` opens an underground model in the cut view. Naming a layer implies the map. |
 | `look`     | look id, or `from..to`           | user's    | Art direction of the map (needs `map`): `daylight`, `maquette`, `golden`, `night`, `blueprint`, `dawn`. `look=daylight..night` opens in the first and plays a 6 s time-of-day transition to the second once the city is built (it waits for the tab to be visible). Dawn/day/dusk use the site's real sun for today. Unknown ids are ignored. |
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
 | `layers`   | URL                              | —         | A data-layer setup exported from the Data layers panel (*Export setup*): sources, styles, groups, alerts. Host the JSON anywhere with CORS. While present it is what the scene shows; the visitor's own saved layers are neither restored nor overwritten. |
@@ -155,7 +155,10 @@ that is the first URL, which always lands first.
 ```
 
 `map` layers: `terrain` (3D relief), `buildings` (OpenStreetMap surroundings),
-`showcase` (presentation-grade context — also downloads the authored props). An
+`showcase` (presentation-grade context — also downloads the authored props),
+`xray` or `cut` (underground view, for tunnels, metro stations and buried
+utilities: `xray` makes the ground see-through, `cut` opens a pit over the
+model; both let the camera orbit below the surface). An
 unrecognised layer turns the map on and is otherwise ignored, so a typo costs
 you that layer rather than the whole feature.
 
