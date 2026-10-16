@@ -453,6 +453,9 @@
     "show": "Voir le sous-sol",
     "buriedNotice": "Environ {{depth}} m de ce modèle sont sous terre : la carte le masque.",
     "xrayHint": "Le sol devient translucide. Passez sous la surface pour voir le modèle par en dessous.",
-    "cutHint": "Une fosse est découpée dans la carte au-dessus du modèle. Passez sous la surface pour le voir par en dessous."
+    "cutHint": "Une fosse est découpée dans la carte au-dessus du modèle. Passez sous la surface pour le voir par en dessous.",
+    "osmEstimated": "Depuis OpenStreetMap : {{metro}} tronçons de métro, {{tunnels}} tunnels et {{platforms}} quais, à profondeur estimée — OSM ne cartographie pas la profondeur.",
+    "markers": "Marquer le souterrain en surface",
+    "markersNote": "Contour d'un modèle enterré, et lignes de métro et tunnels tracés au sol."
   }
 }

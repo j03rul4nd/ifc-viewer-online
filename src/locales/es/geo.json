@@ -452,6 +452,9 @@
     "show": "Ver bajo tierra",
     "buriedNotice": "Unos {{depth}} m de este modelo están bajo tierra, así que el mapa lo tapa.",
     "xrayHint": "El suelo se vuelve translúcido. Gira por debajo de la superficie para ver el modelo desde abajo.",
-    "cutHint": "Se abre un hueco en el mapa sobre el modelo. Gira por debajo de la superficie para verlo desde abajo."
+    "cutHint": "Se abre un hueco en el mapa sobre el modelo. Gira por debajo de la superficie para verlo desde abajo.",
+    "osmEstimated": "De OpenStreetMap: {{metro}} tramos de metro, {{tunnels}} túneles y {{platforms}} andenes, a profundidad estimada: OSM no registra la profundidad.",
+    "markers": "Marcar lo subterráneo en superficie",
+    "markersNote": "Contorno del modelo enterrado, y líneas de metro y túneles dibujados sobre el suelo."
   }
 }

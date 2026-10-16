@@ -97,6 +97,8 @@ export interface GeoController {
   setExaggeration: (k: number) => void
   /** Surface / x-ray / cut view of what is under the map (subsurface.ts). */
   setSubsurfaceMode: (mode: SubsurfaceMode) => void
+  /** Show what is under the ground as marks on the ground ("from above"). */
+  setSubsurfaceMarkers: (on: boolean) => void
   /** Measure how much of the active model is under the ground, into the store. */
   measureBurial: () => void
   setTerrainLook: (patch: Partial<TerrainLook>) => void
@@ -233,6 +235,11 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
   const setSubsurfaceMode = useCallback((mode: SubsurfaceMode): void => {
     useGeoStore.getState().setSubsurfaceMode(mode)
     withGeo((geo) => geo.setSubsurfaceMode(mode))
+  }, [withGeo])
+
+  const setSubsurfaceMarkers = useCallback((on: boolean): void => {
+    useGeoStore.getState().setSubsurfaceMarkers(on)
+    withGeo((geo) => geo.setSubsurfaceMarkers(on))
   }, [withGeo])
 
   const measureBurial = useCallback((): void => {
@@ -449,6 +456,8 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
         useGeoStore.getState().setDegraded(d)
         if (d) trackMapError({ stage: 'tiles' })
       })
+      geo.setSubsurfaceMarkers(useGeoStore.getState().subsurfaceMarkers)
+      geo.setUndergroundCallback((c) => useGeoStore.getState().setUndergroundCounts(c))
       await geo.enable(placement, provider)
       const s = useGeoStore.getState()
       if (epoch !== s.epoch) { geo.disable(); return } // cancelled mid-flight
@@ -748,7 +757,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     getGeo, withGeo, flow, setFlow,
     showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
-    toggleTerrain, setTerrainStyle, setExaggeration, setSubsurfaceMode, measureBurial, setTerrainLook, resetTerrainLook,
+    toggleTerrain, setTerrainStyle, setExaggeration, setSubsurfaceMode, setSubsurfaceMarkers, measureBurial, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
     setSuppressContext, setVehicles, applyPreset,
     rebuildScene, setBudgetLifted, lowerQuality, restoreQuality,
@@ -758,7 +767,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     getGeo, withGeo, flow,
     showOnMap, enableWithPlacement, acceptConsent, declineConsent, revokeConsent, disable, applyCrs, applyManual,
     selectBasemap, acceptTerms, saveCustomSource, switchProviderAfterFailure,
-    toggleTerrain, setTerrainStyle, setExaggeration, setSubsurfaceMode, measureBurial, setTerrainLook, resetTerrainLook,
+    toggleTerrain, setTerrainStyle, setExaggeration, setSubsurfaceMode, setSubsurfaceMarkers, measureBurial, setTerrainLook, resetTerrainLook,
     toggleBuildings, setFeatureLayer, setFeatureLayers, setContextDetail, setContextTone, applyMapLook, tuneLook, playLookTransition,
     setSuppressContext, setVehicles, applyPreset,
     rebuildScene, setBudgetLifted, lowerQuality, restoreQuality,

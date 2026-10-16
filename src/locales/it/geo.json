@@ -453,6 +453,9 @@
     "show": "Mostra sottosuolo",
     "buriedNotice": "Circa {{depth}} m di questo modello sono sottoterra, quindi la mappa lo nasconde.",
     "xrayHint": "Il terreno diventa trasparente. Ruota sotto la superficie per vedere il modello dal basso.",
-    "cutHint": "Nella mappa si apre uno scavo sopra il modello. Ruota sotto la superficie per vederlo dal basso."
+    "cutHint": "Nella mappa si apre uno scavo sopra il modello. Ruota sotto la superficie per vederlo dal basso.",
+    "osmEstimated": "Da OpenStreetMap: {{metro}} tratte di metro, {{tunnels}} gallerie e {{platforms}} banchine, a profondità stimata: OSM non mappa la profondità.",
+    "markers": "Segna il sottosuolo in superficie",
+    "markersNote": "Contorno di un modello interrato, e linee della metro e gallerie disegnate sul terreno."
   }
 }

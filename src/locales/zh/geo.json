@@ -453,6 +453,9 @@
     "show": "显示地下",
     "buriedNotice": "该模型约 {{depth}} 米位于地下，因此被地图遮挡。",
     "xrayHint": "地面变为半透明。旋转到地表以下即可从下方查看模型。",
-    "cutHint": "在模型上方的地图中切出基坑。旋转到地表以下即可从下方查看。"
+    "cutHint": "在模型上方的地图中切出基坑。旋转到地表以下即可从下方查看。",
+    "osmEstimated": "来自 OpenStreetMap：{{metro}} 段地铁、{{tunnels}} 条隧道、{{platforms}} 个站台，深度为估算值（OSM 不记录深度）。",
+    "markers": "在地表标记地下设施",
+    "markersNote": "在地面上绘制地下模型的轮廓以及地铁线路和隧道。"
   }
 }

@@ -78,6 +78,8 @@ const POBLENOU = `${import.meta.env.BASE_URL}models/poblenou`
 const TORRE = `${import.meta.env.BASE_URL}models/torre-poblenou`
 /** The map-mode model: on the Passeig de Lluís Companys, by the Arc de Triomf. */
 const HOTEL_VELA = `${import.meta.env.BASE_URL}models/hotel-vela`
+/** The underground model: a metro station box under La Rambla, for the subsurface view. */
+const METRO_DRASSANES = `${import.meta.env.BASE_URL}models/metro-drassanes`
 const CIUTADELLA = `${import.meta.env.BASE_URL}models/ciutadella`
 const CRAS = `${import.meta.env.BASE_URL}models/cras`
 const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
@@ -351,6 +353,21 @@ export const DEMO_MODELS: DemoModel[] = [
     schema: 'IFC4',
     approximateSize: '234 KB',
     sizeBytes: 233_578,
+  },
+  {
+    id: 'metro-drassanes',
+    name: 'Drassanes metro station (L3) — underground',
+    description:
+      'Cut-and-cover station box under La Rambla, about 11 m deep: the real OpenStreetMap platforms, access stairs from the mapped entrances, slab track and vestibule. Levels and structure are assumed. Open it in Map mode and switch on the underground view.',
+    category: 'Infrastructure',
+    fileName: 'BCN-IVO-DRS-XX-M3-A-0001.ifc',
+    ifcUrl: `${METRO_DRASSANES}/BCN-IVO-DRS-XX-M3-A-0001.ifc?v=20261017`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-metro-drassanes.py',
+    sourceLabel: 'Authored with Blender + Bonsai · plan © OpenStreetMap contributors',
+    schema: 'IFC4',
+    approximateSize: '37 KB',
+    sizeBytes: 38_359,
   },
   {
     id: 'ciutadella-pavilion',

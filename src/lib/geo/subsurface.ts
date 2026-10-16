@@ -158,7 +158,7 @@ function stratumColor(bandIndex: number, depthBelowTopM: number): THREE.Color {
  * site is. A repeating texture was tried first and sampled black past its
  * first repeat on the WebGPU renderer; colours draw the same on both.
  *
- * The floor faces UP and is single-sided: from above it closes the pit (the
+ * The walls face INTO the pit (see pitMaterial). The floor faces UP and is single-sided: from above it closes the pit (the
  * hole showed the empty background), from below it is culled, so orbiting
  * under the ground still sees the model.
  */
@@ -228,7 +228,10 @@ export function buildPitWalls(
  * shading.
  */
 export function pitMaterial(): THREE.MeshBasicMaterial[] {
-  const walls = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })
+  // Walls face INTO the pit and draw one side only: from inside or above you
+  // see the earth, and from beside or under the pit — where the camera goes to
+  // look at the model — they are culled instead of boxing the model in.
+  const walls = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.FrontSide })
   const floor = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.FrontSide })
   return [walls, floor]
 }
@@ -298,4 +301,44 @@ export function applyMode(m: THREE.Material, mode: SubsurfaceMode, planes: THREE
     return true
   }
   return false
+}
+
+/**
+ * The outline of a buried model ON THE GROUND, in world space: where the
+ * station box is, seen from the street. Each plan ring is draped on the ground
+ * a little above it, so it reads over the map from any height.
+ */
+export function buildSurfaceOutline(
+  footprints: Array<Array<{ x: number; z: number }>>,
+  groundAt: (x: number, z: number) => number | null,
+  fallbackY: number,
+): THREE.LineSegments | null {
+  const positions: number[] = []
+  const y = (x: number, z: number): number => {
+    const g = groundAt(x, z)
+    return (g !== null && Number.isFinite(g) ? g : fallbackY) + 0.5
+  }
+  for (const ring of footprints) {
+    if (ring.length < 2) continue
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length]
+      // Densify every ~2 m so the outline follows a sloping street.
+      const steps = Math.min(64, Math.max(1, Math.round(Math.hypot(b.x - a.x, b.z - a.z) / 2)))
+      for (let k = 0; k < steps; k++) {
+        const t0 = k / steps, t1 = (k + 1) / steps
+        const x0 = a.x + (b.x - a.x) * t0, z0 = a.z + (b.z - a.z) * t0
+        const x1 = a.x + (b.x - a.x) * t1, z1 = a.z + (b.z - a.z) * t1
+        positions.push(x0, y(x0, z0), z0, x1, y(x1, z1), z1)
+      }
+    }
+  }
+  if (positions.length === 0) return null
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  const material = new THREE.LineBasicMaterial({ color: 0xff8a3d, depthTest: false, transparent: true })
+  material.userData.subsurfaceOwned = true
+  const lines = new THREE.LineSegments(geometry, material)
+  lines.name = 'subsurface-outline'
+  lines.renderOrder = 21
+  return lines
 }

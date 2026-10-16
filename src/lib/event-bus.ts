@@ -65,6 +65,8 @@ export interface SdkSiteCommand {
   vehicles?: boolean
   /** Underground view: `surface`, `xray` (see-through ground) or `cut` (pit over the model). */
   subsurface?: 'surface' | 'xray' | 'cut'
+  /** Mark buried models and OSM metro/tunnels on the ground ("from above"). */
+  subsurfaceMarkers?: boolean
   /** Art direction (map-look MAP_LOOKS id): the map comes up in this look. */
   look?: string
   /** Once the scene is built, play a time-of-day transition to this look. */
