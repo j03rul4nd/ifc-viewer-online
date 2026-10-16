@@ -93,7 +93,7 @@ export function initAnalytics(): void {
   if (!key || _initialized || _optedOut || isLocalTraffic()) return
 
   posthog.init(key, {
-    api_host:        host ?? 'https://us.i.posthog.com',
+    api_host:        host ?? 'https://eu.i.posthog.com',
     // Only create person profiles for identified users (keeps costs near zero)
     person_profiles: 'identified_only',
     // Automatic pageview capture (fires once on SPA load; route_changed covers transitions)
