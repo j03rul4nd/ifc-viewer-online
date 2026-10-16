@@ -2455,6 +2455,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       {result && (
         <ScoreUpsell
           score={result.qualityScore ?? 0}
+          modelId={result.issues.find((i) => i.modelId)?.modelId}
           topRule={Object.entries(result.stats?.byRule ?? {}).sort((x, y) => y[1] - x[1])[0]?.[0]}
         />
       )}
