@@ -182,6 +182,11 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL VIEWER · OPEN DATA ON THE MAP', es: 'VISOR REAL · DATOS ABIERTOS EN EL MAPA' },
     shortTitle: 'CITY OPEN DATA TEST',
   },
+  'real-time-city-data-freshness-test': {
+    source: 'public/blog/images/real-time-city-data-freshness-test-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · LIVE ODPT DATA, MEASURED', es: 'VISOR REAL · DATOS ODPT EN VIVO, MEDIDOS' },
+    shortTitle: 'REAL-TIME DATA FRESHNESS',
+  },
   // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
   'flood-simulation-ifc-model-online': {
     source: 'public/blog/images/flood-simulation-ifc-max-depth.jpg',

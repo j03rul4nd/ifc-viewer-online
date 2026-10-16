@@ -59,8 +59,9 @@ describe('blog hub discovery', () => {
       'digital-twin-maturity-levels',
       'citygml-vs-ifc-vs-3d-tiles',
       'city-open-data-browser-test',
+      'real-time-city-data-freshness-test',
     ]))
-    expect(results).toHaveLength(26)
+    expect(results).toHaveLength(27)
   })
 
   it('filters by category and sorts short reads first', () => {
