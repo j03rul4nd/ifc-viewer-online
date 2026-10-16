@@ -60,6 +60,7 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 
 - Online IFC Validation / IFC Validator (EN): https://www.ifcvieweronline.eu/ifc-validator/
 - Cloud IFC Validator (no upload) (EN): https://www.ifcvieweronline.eu/cloud-ifc-validator/
+- On-premise / air-gapped IFC validation (EN): https://www.ifcvieweronline.eu/on-premise-ifc-validator/
 - Solibri Alternative (EN): https://www.ifcvieweronline.eu/solibri-alternative/
 - Solibri WebChecker Alternative (EN): https://www.ifcvieweronline.eu/solibri-webchecker-alternative/
 - IFC Viewer for Mac (EN): https://www.ifcvieweronline.eu/ifc-viewer-mac/

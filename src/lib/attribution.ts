@@ -40,6 +40,7 @@ export type EntrySourceCategory =
 const SEO_LANDING_SLUGS = new Set([
   'ifc-validator',
   'cloud-ifc-validator',
+  'on-premise-ifc-validator',
   'ifc-viewer-mac',
   'solibri-alternative',
   'solibri-webchecker-alternative',

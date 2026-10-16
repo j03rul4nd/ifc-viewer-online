@@ -414,6 +414,14 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
   </url>
 
+  <!-- Niche: On-premise / air-gapped IFC validation (EN) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/on-premise-ifc-validator/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Niche: Cloud IFC Validator (EN) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/cloud-ifc-validator/</loc>
