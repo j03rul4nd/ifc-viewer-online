@@ -349,6 +349,9 @@
     "runup": "Wave reach",
     "runupAbove": "+{{m}} m run-up",
     "typical": "Typical values for this kind of coast, not a forecast or a return period for this place.",
+    "tidal": "Tide over time",
+    "tidalNote": "The sea rises and falls with the tide during the run; high water and the surge peak with the rain.",
+    "range": "Sea over the run {{min}} … {{max}}",
     "noSea": "No sea mapped on the grid: the coastline is outside it, or OpenStreetMap is off.",
     "result": "Sea {{sea}} m² · land it takes {{land}} m² · washed by waves {{runup}} m²"
   }

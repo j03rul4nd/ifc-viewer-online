@@ -349,6 +349,9 @@
     "runup": "Portata delle onde",
     "runupAbove": "+{{m}} m di risalita",
     "typical": "Valori tipici di questo tipo di costa, non una previsione né un tempo di ritorno per questo luogo.",
+    "tidal": "Marea nel tempo",
+    "tidalNote": "Il mare sale e scende con la marea durante la simulazione; alta marea e sovralzo coincidono con il picco di pioggia.",
+    "range": "Mare durante la simulazione {{min}} … {{max}}",
     "noSea": "Nessun mare nella griglia: la linea di costa è fuori o OpenStreetMap è spento.",
     "result": "Mare {{sea}} m² · terra sommersa {{land}} m² · battuta dalle onde {{runup}} m²"
   }

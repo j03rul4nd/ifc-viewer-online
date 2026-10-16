@@ -49,6 +49,14 @@ export interface FloodGrid {
   /** Initial depth per cell, metres. Absent = dry. */
   h0?: Float32Array
   /**
+   * 1 = the SEA: an open cell whose water surface is held at the tide's level
+   * for the whole run (SolverInit.tide), whatever the fluxes say. The land is
+   * flooded and drained through the ordinary scheme from these cells; the
+   * water they gain or give is the sea's exchange (FloodStats.seaVolume).
+   * Absent = no sea. Takes no rain and no infiltration.
+   */
+  sea?: Uint8Array
+  /**
    * How much of the soil's infiltration each cell takes (0 = sealed: asphalt,
    * a roof; 1 = the soil as chosen; more where the ground is looser). Absent =
    * 1 everywhere. Scales the Horton curve, never replaces it.
@@ -90,6 +98,7 @@ export function validateGrid(g: FloodGrid): FloodGrid {
   }
   if (g.h0 && g.h0.length !== n) throw new Error(`flood grid: h0 has ${g.h0.length} cells, expected ${n}`)
   if (g.infiltration && g.infiltration.length !== n) throw new Error(`flood grid: infiltration has ${g.infiltration.length} cells, expected ${n}`)
+  if (g.sea && g.sea.length !== n) throw new Error(`flood grid: sea has ${g.sea.length} cells, expected ${n}`)
   for (let c = 0; c < n; c++) {
     if (!Number.isFinite(g.z[c])) throw new Error(`flood grid: non-finite elevation at cell ${c}`)
     if (!(g.manning[c] >= 0)) throw new Error(`flood grid: bad Manning's n at cell ${c}`)
@@ -97,7 +106,10 @@ export function validateGrid(g: FloodGrid): FloodGrid {
     if (g.blocked[c]) {
       g.rainFactor[c] = 0
       if (g.h0) g.h0[c] = 0
+      if (g.sea) g.sea[c] = 0
     }
+    // Rain on the sea is the sea's business: it is held at the tide anyway.
+    if (g.sea?.[c]) g.rainFactor[c] = 0
   }
   return g
 }

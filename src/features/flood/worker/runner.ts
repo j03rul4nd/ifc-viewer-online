@@ -5,7 +5,7 @@
 
 import type { FloodGrid } from '../core/grid'
 import type { Hyetograph } from '../core/hyetograph'
-import type { FloodBackend, FloodStats, MaxFields, SolverParams } from '../core/solver-api'
+import type { FloodBackend, FloodStats, MaxFields, SolverParams, TideSeries } from '../core/solver-api'
 import type { BackendChoice } from '../gpu/create'
 import type { CellSeries } from './snapshots'
 import { gridTransferables, type FromWorker, type RunPerf, type SnapshotInfo, type ToWorker } from './protocol'
@@ -24,6 +24,7 @@ export interface RunnerInit {
   grid: FloodGrid
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
+  tide?: TideSeries | null
   backend?: BackendChoice
   powerPreference?: 'low-power' | 'high-performance'
   endS: number
@@ -85,7 +86,7 @@ export class FloodRunner {
    */
   init(r: RunnerInit): void {
     this.send({
-      type: 'init', grid: r.grid, hyetograph: r.hyetograph, params: r.params,
+      type: 'init', grid: r.grid, hyetograph: r.hyetograph, params: r.params, tide: r.tide,
       backend: r.backend ?? 'auto', powerPreference: r.powerPreference, endS: r.endS, snapshotEveryS: r.snapshotEveryS,
     }, gridTransferables(r.grid))
   }

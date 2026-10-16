@@ -11,13 +11,15 @@ import {
   type CoastKind, type CoastProfile, type CoastScenario,
 } from '../core/coastal'
 import { useFloodStore, type FloodSettings } from '../store'
+import { rainDurationS, type Hyetograph } from '../core/hyetograph'
+import type { CoastRequest } from '../system'
 import { useGeoStore } from '../../../stores/geoStore'
 
 const KINDS: CoastKind[] = [
   'mediterranean', 'adriatic', 'atlantic', 'macrotidal', 'north-sea', 'baltic', 'black-sea', 'estuary-east-asia', 'ocean',
 ]
 
-type CoastSettings = Pick<FloodSettings, 'coast' | 'coastKind' | 'coastTide' | 'coastSurgeM' | 'coastWaveHsM' | 'coastExposure' | 'coastRiseM'>
+type CoastSettings = Pick<FloodSettings, 'coast' | 'coastKind' | 'coastTide' | 'coastSurgeM' | 'coastWaveHsM' | 'coastExposure' | 'coastRiseM' | 'coastTidal'>
 
 function profileOf(s: CoastSettings, place: { lat: number; lon: number } | null): CoastProfile {
   if (s.coastKind) return coastProfile(s.coastKind)
@@ -29,10 +31,23 @@ function scenarioOf(s: CoastSettings): CoastScenario {
 }
 
 /** What the run should stand the sea at, or null when the coast is off. */
+/**
+ * What the run should do with the sea, or null when the coast is off. With the
+ * tide on, the worst moment — high water and the top of the surge — is put on
+ * the rain's peak: the case of a storm that hits at high tide.
+ */
 export function coastFor(
-  s: CoastSettings, place: { lat: number; lon: number } | null,
-): { profile: CoastProfile; scenario: CoastScenario } | null {
-  return s.coast ? { profile: profileOf(s, place), scenario: scenarioOf(s) } : null
+  s: CoastSettings & { hyetograph: Hyetograph; drainMin: number },
+  place: { lat: number; lon: number } | null,
+): CoastRequest | null {
+  if (!s.coast) return null
+  const durationS = rainDurationS(s.hyetograph) + s.drainMin * 60
+  const peak = s.hyetograph.intensityMmH.indexOf(Math.max(...s.hyetograph.intensityMmH))
+  const peakAtS = (Math.max(0, peak) + 0.5) * s.hyetograph.intervalS
+  return {
+    profile: profileOf(s, place), scenario: scenarioOf(s),
+    timeline: s.coastTidal ? { durationS, peakAtS } : null,
+  }
 }
 
 const sign = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)} m`
@@ -42,7 +57,7 @@ type T = (key: string, opts?: Record<string, unknown>) => string
 export function CoastSection({ t, caption, selectCls, mapOn }: { t: T; caption: string; selectCls: string; mapOn: boolean }) {
   const s = useFloodStore(useShallow((st) => ({
     coast: st.coast, coastKind: st.coastKind, coastTide: st.coastTide, coastSurgeM: st.coastSurgeM,
-    coastWaveHsM: st.coastWaveHsM, coastExposure: st.coastExposure, coastRiseM: st.coastRiseM,
+    coastWaveHsM: st.coastWaveHsM, coastExposure: st.coastExposure, coastRiseM: st.coastRiseM, coastTidal: st.coastTidal,
     report: st.coastReport, set: st.set,
   })))
   const place = useFloodPlace()
@@ -92,12 +107,15 @@ export function CoastSection({ t, caption, selectCls, mapOn }: { t: T; caption: 
               options={[{ id: 'open', label: t('coast.open') }, { id: 'harbour', label: t('coast.harbour') }]}
               onChange={(v) => s.set({ coastExposure: v })} />
           </div>
+          <SwitchRow compact label={t('coast.tidal')} checked={s.coastTidal}
+            note={t('coast.tidalNote')} onChange={(v) => s.set({ coastTidal: v })} />
           <StatRow label={t('coast.still')} value={sign(lv.stillM)} />
           <StatRow label={t('coast.runup')} value={`${sign(lv.stillM + lv.runupM)} (${t('coast.runupAbove', { m: lv.runupM.toFixed(2) })})`} />
           <div className="text-[10px] leading-snug text-[var(--text-faint)]">{t('coast.typical')}</div>
           {s.report?.noSea && <Notice tone="warn">{t('coast.noSea')}</Notice>}
           {s.report && !s.report.noSea && (
             <Notice tone="info">
+              {s.report.tidal && <>{t('coast.range', { min: sign(s.report.rangeM.min), max: sign(s.report.rangeM.max) })}<br /></>}
               {t('coast.result', {
                 sea: Math.round(s.report.seaAreaM2).toLocaleString(),
                 land: Math.round(s.report.landTakenM2).toLocaleString(),

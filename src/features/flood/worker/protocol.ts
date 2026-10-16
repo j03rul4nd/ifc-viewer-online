@@ -4,7 +4,7 @@
 
 import type { FloodGrid } from '../core/grid'
 import type { Hyetograph } from '../core/hyetograph'
-import type { FloodBackend, FloodStats, MaxFields, SolverParams } from '../core/solver-api'
+import type { FloodBackend, FloodStats, MaxFields, SolverParams, TideSeries } from '../core/solver-api'
 import type { BackendChoice } from '../gpu/create'
 import type { CellSeries } from './snapshots'
 
@@ -34,6 +34,8 @@ export type ToWorker =
       grid: FloodGrid
       hyetograph: Hyetograph
       params?: Partial<SolverParams>
+      /** The sea's level over time for the grid's sea cells. */
+      tide?: TideSeries | null
       backend: BackendChoice
       powerPreference?: 'low-power' | 'high-performance'
       /** Simulated time at which the run ends, s. */
@@ -68,5 +70,6 @@ export function gridTransferables(g: FloodGrid): ArrayBuffer[] {
   const out = [g.z.buffer, g.blocked.buffer, g.rainFactor.buffer, g.manning.buffer]
   if (g.h0) out.push(g.h0.buffer)
   if (g.infiltration) out.push(g.infiltration.buffer)
+  if (g.sea) out.push(g.sea.buffer)
   return out.filter((b): b is ArrayBuffer => b instanceof ArrayBuffer)
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createGrid } from './grid'
-import { coastLevels, coastProfile, coastProfileAt, seaFill } from './coastal'
+import { coastLevels, coastProfile, coastProfileAt, seaFill, tideCurve } from './coastal'
 
 describe('coastProfileAt', () => {
   it('knows the seas by region', () => {
@@ -71,5 +71,25 @@ describe('seaFill', () => {
     const f = seaFill(g, sea, 0, 0)
     expect(f.h0[3]).toBe(0)
     expect(f.h0[1]).toBe(1)
+  })
+})
+
+describe('tideCurve', () => {
+  const med = coastProfile('mediterranean')
+  const brittany = coastProfile('macrotidal')
+  it('peaks at the chosen moment with tide + surge + set-up + rise', () => {
+    const s = { tide: 'spring' as const, surgeM: 0.6, waveHsM: 4, exposure: 'open' as const, riseM: 0.2 }
+    const c = tideCurve(med, s, { durationS: 7200, peakAtS: 3600, stepS: 600 })
+    expect(c).toHaveLength(13)
+    const top = Math.max(...c)
+    expect(c.indexOf(top)).toBe(6)
+    expect(top).toBeCloseTo(coastLevels(med, s).stillM, 5)
+  })
+  it('a macrotidal coast swings metres over a day; low stage puts low water at the peak', () => {
+    const calm = { tide: 'spring' as const, surgeM: 0, waveHsM: 0, exposure: 'open' as const, riseM: 0 }
+    const day = tideCurve(brittany, calm, { durationS: 86400, peakAtS: 0, stepS: 900 })
+    expect(Math.max(...day) - Math.min(...day)).toBeCloseTo(7.5, 1)
+    const low = tideCurve(brittany, { ...calm, tide: 'low' }, { durationS: 3600, peakAtS: 0, stepS: 900 })
+    expect(low[0]).toBeCloseTo(-3.75, 5)
   })
 })

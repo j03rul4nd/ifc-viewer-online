@@ -26,7 +26,7 @@
 const PARAMS = /* wgsl */`
 struct Params {
   nx: u32, ny: u32, edges: u32, rainCount: u32,
-  rainIntervalMs: u32, implicitFriction: u32, pad0: u32, pad1: u32,
+  rainIntervalMs: u32, implicitFriction: u32, tideCount: u32, tideIntervalMs: u32,
   dx: f32, g: f32, theta: f32, alpha: f32,
   hEps: f32, dtMax: f32, freeSlopeMin: f32, wetThreshold: f32,
   infInitial: f32, infFinal: f32, infDecay: f32, pad2: f32,
@@ -66,6 +66,15 @@ fn infiltrationRate(tS: f32) -> f32 {
 fn st(i: u32, j: u32) -> vec4f { return textureLoad(ST, vec2u(i, j), 0); }
 fn hAt(i: u32, j: u32) -> f32 { return cells[j * P.nx + i].x; }
 fn rainAt(idx: u32) -> f32 { return RAIN[idx >> 2u][idx & 3u]; }
+
+// The tide's level at t (ms), from the slots after the rain — solver-api tideLevelAt.
+fn tideAt(t: u32) -> f32 {
+  let idx = t / P.tideIntervalMs;
+  if (idx + 1u >= P.tideCount) { return rainAt(P.rainCount + P.tideCount - 1u); }
+  let f = f32(t - idx * P.tideIntervalMs) / f32(P.tideIntervalMs);
+  let a = rainAt(P.rainCount + idx);
+  return a + (rainAt(P.rainCount + idx + 1u) - a) * f;
+}
 
 // q⁺·(1 + a·|q⁺|) = b (implicit) or q⁺ = b / (1 + a·|q_old|) (Bates).
 fn friction(b: f32, a: f32, qOld: f32) -> f32 {
@@ -239,13 +248,15 @@ fn k_cont(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let qT = q[f + W].y;
       let cell = cells[c];
       let k = dt / P.dx;
-      hn = max(cell.x + k * (qL - qR + qB - qT) + dt * C.rate * s.y, 0.0);
+      hn = max(cell.x + k * (qL - qR + qB - qT) + dt * C.rate * max(s.y, 0.0), 0.0);
       // An open cell's static w is minus its infiltration factor.
       let loss = min(hn, infiltrationRate(f32(C.tMs - C.dtMs) * 0.001) * dt * max(-s.w, 0.0));
       if (loss > 0.0) {
         hn = hn - loss;
         inf[c] = inf[c] + loss;
       }
+      // The sea, held at the tide's level at the end of the step.
+      if (s.y < -0.5 && P.tideCount > 0u) { hn = max(tideAt(C.tMs) - s.x, 0.0); }
       var u = 0.0;
       var v = 0.0;
       if (hn > P.hEps) {

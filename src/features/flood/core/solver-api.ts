@@ -138,7 +138,14 @@ export interface FloodStats {
   /** Water the ground has absorbed, m³. */
   infiltratedVolume: number
   initialVolume: number
-  /** (stored + out + infiltrated − rain − initial) / (rain + initial). */
+  /**
+   * Net water the sea cells put on the grid, m³ (+ the sea came in, − it took
+   * water away). 0 without a tide. The CPU counts it exactly; the GPUs, which
+   * do not read their cells back each step, take it as the balance's residual
+   * — the backends run the same steps, which the parity suite checks.
+   */
+  seaVolume: number
+  /** (stored + out + infiltrated − rain − initial − sea) / (rain + initial + |sea|). */
   massError: number
 }
 
@@ -198,6 +205,41 @@ export interface SolverInit {
   grid: FloodGrid
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
+  /** The level the grid's sea cells are held at over time; absent = no sea. */
+  tide?: TideSeries | null
+}
+
+/**
+ * The sea's level through the event, in the GRID's frame (metres above
+ * `zRef`, like `z`): one value every `intervalMs`, linear in between, held at
+ * the last one after it. Shares the GPU's rain table, after the rain.
+ */
+export interface TideSeries {
+  intervalMs: number
+  levels: number[]
+}
+
+/**
+ * The sea's share of a GPU balance. A GPU does not read its sea cells back
+ * each step, so with a tide the residual of the balance IS the sea's exchange
+ * and the error is reported as 0; the CPU backend, which counts the exchange
+ * exactly, is what the parity suite holds the GPUs to. Without a tide the
+ * residual is the error, as before.
+ */
+export function seaBalance(residual: number, inputs: number, tide: boolean): { seaVolume: number; massError: number } {
+  if (tide) return { seaVolume: residual, massError: 0 }
+  return { seaVolume: 0, massError: residual / Math.max(inputs, 1e-12) }
+}
+
+/** The tide's level at tMs (ms); NaN when there is none. Mirrored in the shaders. */
+export function tideLevelAt(tide: TideSeries | null | undefined, tMs: number): number {
+  if (!tide || tide.levels.length === 0) return NaN
+  const n = tide.levels.length
+  const iv = Math.max(1, tide.intervalMs)
+  const idx = Math.floor(tMs / iv)
+  if (idx >= n - 1) return tide.levels[n - 1]
+  const f = (tMs - idx * iv) / iv
+  return tide.levels[idx] + (tide.levels[idx + 1] - tide.levels[idx]) * f
 }
 
 export function resolveParams(p?: Partial<SolverParams>): SolverParams {

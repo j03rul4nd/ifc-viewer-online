@@ -20,7 +20,7 @@ import { collectItemTriangles, trianglesMesh, type ItemGeometrySource } from '..
 import { createLogger } from '../../lib/logger'
 import type { FloodGrid } from './core/grid'
 import type { Hyetograph } from './core/hyetograph'
-import type { SolverParams } from './core/solver-api'
+import type { SolverParams, TideSeries } from './core/solver-api'
 import type { BackendChoice } from './gpu/create'
 import { FloodRunner, type RunnerEvents } from './worker/runner'
 import type { SnapshotInfo } from './worker/protocol'
@@ -40,7 +40,7 @@ import { WaterLayer, type WaterMode } from './view/water-layer'
 import { createGroundLayer } from './view/ground-layer'
 import { FlowParticles } from './view/flow-particles'
 import { fromHalf } from './core/half'
-import { coastLevels, seaFill, type CoastLevels, type CoastProfile, type CoastScenario } from './core/coastal'
+import { coastLevels, seaFill, tideCurve, type CoastLevels, type CoastProfile, type CoastScenario } from './core/coastal'
 
 const log = createLogger('Flood')
 
@@ -186,9 +186,24 @@ export interface PrepareResult extends BuildReport {
   ms: { geometry: number; raster: number; build: number }
 }
 
+export interface CoastRequest {
+  profile: CoastProfile
+  scenario: CoastScenario
+  /**
+   * The tide over the run (coastal.tideCurve): the sea rises and falls with
+   * the tide and the storm, peaking at `peakAtS`. Absent = the sea held at the
+   * scenario's still level for the whole run.
+   */
+  timeline?: { durationS: number; peakAtS: number } | null
+}
+
 export interface CoastReport {
   profile: CoastProfile
   levels: CoastLevels
+  /** The sea's range over the run, metres above mean sea level (equal when held still). */
+  rangeM: { min: number; max: number }
+  /** True when the level follows the tide over the run. */
+  tidal: boolean
   /** m² under the still level and connected to the sea; of that, land the sea takes. */
   seaAreaM2: number
   landTakenM2: number
@@ -303,7 +318,7 @@ export interface FloodSystemAPI {
    * run (the grid's edges are closed while it is on, or the sea would drain
    * out of them). Null switches it off. Needs a prepared grid with OSM sea.
    */
-  setCoast(c: { profile: CoastProfile; scenario: CoastScenario } | null): CoastReport | null
+  setCoast(c: CoastRequest | null): CoastReport | null
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -344,6 +359,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let baseH0: Float32Array | undefined
   /** A coastal sea is standing on the grid: the run keeps its edges closed. */
   let coastOn = false
+  /** The sea's level over the run in the grid's frame (z units); null = no sea. */
+  let tide: TideSeries | null = null
   /**
    * Scene Y of mean sea level on the ground the grid was built from, or null
    * when that ground has no datum (a plane, an IFC terrain without a height
@@ -844,6 +861,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       grid = built.grid
       baseH0 = grid.h0?.slice()
       coastOn = false
+      tide = null
       {
         const src = built.report.terrain
         seaY = src === 'map' ? seaYMap
@@ -908,6 +926,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       // The worker takes ownership of what it is sent: send a copy.
       const copy: FloodGrid = {
         ...g, z: g.z.slice(), blocked: g.blocked.slice(), rainFactor: g.rainFactor.slice(), manning: g.manning.slice(), h0: g.h0?.slice(),
+        sea: g.sea?.slice(),
         infiltration: g.infiltration?.slice(),
       }
       resetTimeline(o.durationS)
@@ -948,7 +967,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const params = coastOn
         ? { ...o.params, boundary: { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const }
         : o.params
-      runner.init({ grid: copy, hyetograph: o.hyetograph, params, endS: o.durationS, backend: o.backend })
+      runner.init({ grid: copy, hyetograph: o.hyetograph, params, tide, endS: o.durationS, backend: o.backend })
       runner.play(o.speed)
       wake()
     },
@@ -1180,27 +1199,35 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
     setCoast(c) {
       if (!grid) return null
       const g = grid
-      if (!c) {
-        g.h0 = baseH0?.slice()
-        coastOn = false
-        return null
-      }
+      const off = () => { g.h0 = baseH0?.slice(); g.sea = undefined; tide = null; coastOn = false }
+      if (!c) { off(); return null }
       const levels = coastLevels(c.profile, c.scenario)
+      const stepS = 300
+      const curve = c.timeline
+        ? tideCurve(c.profile, c.scenario, { durationS: c.timeline.durationS, peakAtS: c.timeline.peakAtS, stepS })
+        : [levels.stillM]
+      const rangeM = { min: Math.min(...curve), max: Math.max(...curve) }
       const seaMask = osmSurface?.sea
       const cell = g.dx * g.dx
       if (!seaMask || !seaMask.some((v) => v === 1) || seaY === null) {
-        g.h0 = baseH0?.slice()
-        coastOn = false
-        return { profile: c.profile, levels, seaAreaM2: 0, landTakenM2: 0, runupAreaM2: 0, noSea: true }
+        off()
+        return { profile: c.profile, levels, rangeM, tidal: !!c.timeline, seaAreaM2: 0, landTakenM2: 0, runupAreaM2: 0, noSea: true }
       }
-      // Metres above mean sea level → the grid's scene heights.
-      const fill = seaFill(g, seaMask, seaY + levels.stillM, levels.runupM)
+      // The run STARTS from the sea at its first level, spread over the low
+      // ground it connects to; from there the sea cells follow the curve and
+      // the scheme moves the water onto and off the land. The figures below
+      // are for the peak, which is what the area at risk is.
+      const sea0 = seaY + curve[0]
+      const start = seaFill(g, seaMask, sea0, 0)
+      const fill = seaFill(g, seaMask, seaY + rangeM.max, levels.runupM)
+      tide = { intervalMs: stepS * 1000, levels: curve.map((v) => seaY! + v - g.zRef) }
+      g.sea = Uint8Array.from(seaMask)
       const h0 = baseH0 ? baseH0.slice() : new Float32Array(g.nx * g.ny)
-      for (let k = 0; k < h0.length; k++) h0[k] = Math.max(h0[k], fill.h0[k])
+      for (let k = 0; k < h0.length; k++) h0[k] = Math.max(h0[k], start.h0[k])
       g.h0 = h0
       coastOn = true
       return {
-        profile: c.profile, levels,
+        profile: c.profile, levels, rangeM, tidal: !!c.timeline,
         seaAreaM2: fill.seaCells * cell, landTakenM2: fill.landTaken * cell, runupAreaM2: fill.runupCells * cell,
         noSea: false,
       }

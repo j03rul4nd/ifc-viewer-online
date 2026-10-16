@@ -211,7 +211,20 @@ uniform sampler2D uCells;
 uniform sampler2D uMax;
 uniform float uWet;
 uniform vec3 uInf; // Horton: initial mm/h, final mm/h, decay per hour
+uniform sampler2D uRain;  // the rain, then the tide's levels (solver-api TideSeries)
+uniform int uRainW;
+uniform uint uTideOff;
+uniform uint uTideCount;
+uniform uint uTideIv;
 layout(location = 0) out vec4 oCell;
+float slot(uint k) { return texelFetch(uRain, ivec2(int(k) % uRainW, int(k) / uRainW), 0).x; }
+float tideAt(uint t) {
+  uint idx = t / uTideIv;
+  if (idx + 1u >= uTideCount) return slot(uTideOff + uTideCount - 1u);
+  float f = float(t - idx * uTideIv) / float(uTideIv);
+  float a = slot(uTideOff + idx);
+  return a + (slot(uTideOff + idx + 1u) - a) * f;
+}
 layout(location = 1) out vec4 oMax;
 void main() {
   int i = int(gl_FragCoord.x);
@@ -227,12 +240,14 @@ void main() {
   float qB = texelFetch(uQ, ivec2(i, j), 0).y;
   float qT = texelFetch(uQ, ivec2(i, j + 1), 0).y;
   float k = dt / uDx;
-  float hn = max(cell.x + k * (qL - qR + qB - qT) + dt * uintBitsToFloat(c.w) * s.y, 0.0);
+  float hn = max(cell.x + k * (qL - qR + qB - qT) + dt * uintBitsToFloat(c.w) * max(s.y, 0.0), 0.0);
   // Infiltration from the step's start time; cells.w keeps the depth absorbed so far.
   float tStart = float(c.x - c.y) * 0.001;
   float f = max(uInf.y + (uInf.x - uInf.y) * exp(-uInf.z * tStart / 3600.0), 0.0) / 3600000.0;
   float loss = min(hn, f * dt * max(-s.w, 0.0)); // open cell: w = −infiltration factor
   hn -= loss;
+  // The sea (rain factor −1), held at the tide's level at the end of the step.
+  if (s.y < -0.5 && uTideCount > 0u) hn = max(tideAt(c.x) - s.x, 0.0);
   float u = 0.0;
   float v = 0.0;
   if (hn > uHEps) { u = 0.5 * (qL + qR) / hn; v = 0.5 * (qB + qT) / hn; }

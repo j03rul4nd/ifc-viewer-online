@@ -349,6 +349,9 @@
     "runup": "波浪到达",
     "runupAbove": "爬高 +{{m}} 米",
     "typical": "此类海岸的典型值,不是预报,也不是此地的重现期。",
+    "tidal": "随时间变化的潮位",
+    "tidalNote": "模拟期间海面随潮汐涨落;高潮与风暴增水和降雨峰值同时出现。",
+    "range": "模拟期间海面 {{min}} … {{max}}",
     "noSea": "网格内没有海:海岸线在范围外,或 OpenStreetMap 已关闭。",
     "result": "海 {{sea}} m² · 被淹陆地 {{land}} m² · 波浪冲刷 {{runup}} m²"
   }
