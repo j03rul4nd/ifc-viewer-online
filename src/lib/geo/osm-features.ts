@@ -39,7 +39,11 @@ import {
 import { buildSeaPolygons, type CoastlineBbox } from './coastline'
 import { pointInPolygon } from './context-suppression'
 import { assembleMultipolygon } from './multipolygon'
-import { partitionBuildingParts } from './building-parts'
+import { partitionBuildingPartsByOverlap } from './building-parts'
+import { outsetRing } from './plaza-paving'
+
+/** How far a partly-described outline is set back inside itself, metres. */
+const OUTLINE_INSET_M = 0.25
 import { shanghaiBridgeWidth } from './shanghai-bridges'
 import { hydrologyQueryParts } from './osm-hydro'
 import {
@@ -2140,16 +2144,33 @@ function supersedeOutlinesWithParts(features: OsmFeature[]): OsmFeature[] {
   const parts = features.filter((f) => f.kind === 'building' && f.isBuildingPart && f.ring)
   if (parts.length === 0) return features
 
+  // Planar metres about the parts' own latitude: an area test in raw degrees
+  // would weigh east-west a third heavier than north-south at Barcelona.
+  const k = Math.cos((parts[0].ring![0].lat * Math.PI) / 180)
+  const plan = (r: ReadonlyArray<LatLonPoint>) => r.map((p) => ({ x: p.lon * k, y: p.lat }))
   const outlines = features
     .filter((f) => f.kind === 'building' && !f.isBuildingPart && f.ring)
-    .map((f) => ({ id: f.id, ring: f.ring!.map((p) => ({ x: p.lon, y: p.lat })) }))
+    .map((f) => ({ id: f.id, ring: plan(f.ring!) }))
 
-  const { supersededOutlines } = partitionBuildingParts(
+  const { supersededOutlines, cappedOutlines } = partitionBuildingPartsByOverlap(
     outlines,
-    parts.map((f) => ({ id: f.id, ring: f.ring!.map((p) => ({ x: p.lon, y: p.lat })) })),
+    parts.map((f) => ({ id: f.id, ring: plan(f.ring!), heightM: f.height.heightM })),
   )
-  if (supersededOutlines.size === 0) return features
-  return features.filter((f) => !supersededOutlines.has(f.id))
+  if (supersededOutlines.size === 0 && cappedOutlines.size === 0) return features
+  return features.filter((f) => !supersededOutlines.has(f.id)).map((f) => {
+    const cap = cappedOutlines.get(f.id)
+    if (cap === undefined) return f
+    // Partly described: kept for the area no part covers, but never in the
+    // same plane as a part — half a metre under the cap, and its walls
+    // set 25 cm inside its own outline, so where a part's wall runs along the
+    // outline the part's is the one you see.
+    const inset = outsetRing(plan(f.ring!), -OUTLINE_INSET_M / 111_320, (x, y) => ({ x, y }))
+      .map((q) => ({ lat: q.y, lon: q.x / k }))
+    return {
+      ...f, ring: inset,
+      height: { ...f.height, heightM: Math.max(2, Math.min(f.height.heightM, cap - 0.5)), minHeightM: 0, source: 'rule' as const },
+    }
+  })
 }
 
 /**
