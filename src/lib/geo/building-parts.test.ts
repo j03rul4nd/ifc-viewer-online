@@ -115,3 +115,42 @@ describe('partitionBuildingParts', () => {
     expect(partitionBuildingParts([{ id: 'a', ring: square(0, 0, 5) }], []).matched).toBe(0)
   })
 })
+
+describe('partitionBuildingPartsByOverlap', () => {
+  const sq = (x0: number, y0: number, x1: number, y1: number) => [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }]
+  it('matches an L-shaped part whose centroid falls outside it', async () => {
+    const { partitionBuildingPartsByOverlap } = await import('./building-parts')
+    // Outline: an L. Part: the same L. The L's vertex centroid is in the notch.
+    const L = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 2 }, { x: 2, y: 2 }, { x: 2, y: 10 }, { x: 0, y: 10 }]
+    const r = partitionBuildingPartsByOverlap([{ id: 'o', ring: L }], [{ id: 'p', ring: L, heightM: 20 }])
+    expect(r.orphans).toEqual([])
+    expect([...r.supersededOutlines]).toEqual(['o'])
+  })
+  it('keeps an outline its parts cover only partly, capped at their median height', async () => {
+    const { partitionBuildingPartsByOverlap } = await import('./building-parts')
+    const r = partitionBuildingPartsByOverlap(
+      [{ id: 'o', ring: sq(0, 0, 20, 10) }],
+      [{ id: 'tower', ring: sq(0, 0, 5, 10), heightM: 60 }, { id: 'wing', ring: sq(5, 0, 8, 10), heightM: 15 }],
+    )
+    expect(r.supersededOutlines.size).toBe(0)
+    expect(r.cappedOutlines.get('o')).toBe(37.5)
+  })
+  it('stands an outline down when parts cover it, even stacked', async () => {
+    const { partitionBuildingPartsByOverlap } = await import('./building-parts')
+    const r = partitionBuildingPartsByOverlap(
+      [{ id: 'o', ring: sq(0, 0, 20, 10) }],
+      [{ id: 'podium', ring: sq(0, 0, 20, 10), heightM: 12 }, { id: 'shaft', ring: sq(5, 2, 15, 8), heightM: 90 }],
+    )
+    expect([...r.supersededOutlines]).toEqual(['o'])
+    expect(r.matched).toBe(2)
+  })
+  it('does not hand a part to a neighbour it only grazes', async () => {
+    const { partitionBuildingPartsByOverlap } = await import('./building-parts')
+    const r = partitionBuildingPartsByOverlap(
+      [{ id: 'a', ring: sq(0, 0, 10, 10) }, { id: 'b', ring: sq(10, 0, 20, 10) }],
+      [{ id: 'p', ring: sq(1, 0, 11, 10), heightM: 9 }],
+    )
+    expect(r.cappedOutlines.has('b')).toBe(false)
+    expect(r.supersededOutlines.has('b')).toBe(false)
+  })
+})

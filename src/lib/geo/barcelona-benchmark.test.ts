@@ -59,15 +59,20 @@ describe('Barcelona benchmark · the Eixample block', () => {
     // are the ones in this crop. Before, every one was drawn filled. All but
     // one are `building:part` relations: the survey maps the courtyards on
     // the parts, and parts of relations are now kept as parts.
+    // Four more since parts are matched by area (building-parts): block
+    // outlines whose parts cover under 60 % of them used to vanish with every
+    // unmapped building in them; they are now kept, courtyards included, for
+    // the area no part describes.
     const withHoles = E.features.filter((f) => f.kind === 'building' && f.holes?.length)
-    expect(withHoles.length).toBe(17)
-    expect(withHoles.filter((f) => !f.isBuildingPart).length).toBe(1)
+    expect(withHoles.length).toBe(21)
+    expect(withHoles.filter((f) => !f.isBuildingPart).length).toBe(5)
   })
 
   it('recognises the perimeter blocks and hollows out their interiors', () => {
     const interior = fabric.filter((b) => b.interior)
-    // Measured: 134 deep plots split front/back across 14 recognised blocks.
-    expect(interior.length).toBe(133)
+    // Measured: 134 deep plots split front/back across 14 recognised blocks
+    // (one more since a partly-described block outline is kept, see above).
+    expect(interior.length).toBe(134)
     // The back of a plot is a ground floor, never the 20 m the prior guessed.
     for (const b of interior) expect(b.height.heightM).toBeLessThanOrEqual(4.5 + 1e-9)
     // And the fronts keep a whole Eixample street height.
