@@ -45,6 +45,20 @@ export interface OvertureFootprint {
   id: string
   /** Outer ring, degrees. Not closed — the last point does not repeat. */
   ring: Array<{ lat: number; lon: number }>
+  /**
+   * Attributes Overture holds from a NON-OSM source, already as the OSM tags
+   * the viewer reads (`height`, `building:levels`, `roof:shape`…). Absent when
+   * it holds none, which is most ML detections.
+   */
+  tags?: Record<string, string>
+  /** The dataset(s) those attributes came from — the provenance shown. */
+  src?: string[]
+}
+
+/** Overture's enrichment of a building whose geometry is OSM's, by OSM id. */
+export interface OvertureOsmAttributes {
+  tags: Record<string, string>
+  src?: string[]
 }
 
 /** The file `scripts/overture-footprints.py` writes. */
@@ -56,6 +70,8 @@ export interface OvertureExtract {
   /** [west, south, east, north] the extract covers. */
   bbox: [number, number, number, number]
   footprints: OvertureFootprint[]
+  /** Keyed `w123` / `r456`: enrichment for buildings OSM already maps. */
+  osm?: Record<string, OvertureOsmAttributes>
 }
 
 /**
@@ -232,4 +248,65 @@ function pointInPolygon(
     }
   }
   return inside
+}
+
+// ── Field-level fusion ─────────────────────────────────────────────────────────
+
+/** Tag a donated height carries so the building reports Overture as its source. */
+export const HEIGHT_SOURCE_TAG = '_src:height'
+
+/** Groups of tags that are ONE answer: OSM stating any member owns the group. */
+const FUSION_GROUPS: ReadonlyArray<ReadonlyArray<string>> = [
+  // The height: a measured height OR a storey count is OSM's answer to "how
+  // tall", and a donated number must not override either.
+  ['height', 'building:levels'],
+  ['min_height', 'building:min_level'],
+  ['roof:shape'], ['roof:height'], ['roof:direction'], ['roof:orientation'],
+  ['building:colour'], ['roof:colour'], ['building:material'], ['roof:material'],
+]
+
+/**
+ * Fill the gaps in an OSM building's tags from Overture's enrichment of the
+ * same building. OSM wins every field it states; Overture only answers what
+ * OSM left blank. Returns the tags added (empty when none), and MUTATES `tags`.
+ *
+ * A donated height is marked as Overture's and as estimated: it was not
+ * surveyed by the mapper of this building, and it must not teach the district
+ * height prior (see collectHeightSamples).
+ */
+export function fuseOvertureAttributes(
+  tags: Record<string, string>, enrichment: OvertureOsmAttributes,
+): Record<string, string> {
+  const added: Record<string, string> = {}
+  for (const group of FUSION_GROUPS) {
+    if (group.some((k) => tags[k] !== undefined && tags[k] !== '')) continue
+    for (const k of group) {
+      const v = enrichment.tags[k]
+      if (v === undefined || v === '') continue
+      tags[k] = v
+      added[k] = v
+    }
+  }
+  if (added['height'] !== undefined || added['building:levels'] !== undefined) {
+    tags[HEIGHT_SOURCE_TAG] = 'overture'
+    if (added['height'] !== undefined) tags['note:height'] = tags['note:height'] ?? 'estimated'
+  }
+  if (Object.keys(added).length && enrichment.src?.length) {
+    tags['source:overture'] = enrichment.src.join(';')
+  }
+  return added
+}
+
+/**
+ * The tags of a footprint OSM does not have, from Overture's own attributes.
+ * Its heights are flagged estimated for the same reason as above.
+ */
+export function overtureFootprintTags(f: OvertureFootprint): Record<string, string> {
+  const t: Record<string, string> = { building: 'yes', ...(f.tags ?? {}) }
+  // A `class` that is not a building type OSM would write (Overture uses its
+  // own vocabulary in places) still means "a building".
+  if (!t['building']) t['building'] = 'yes'
+  if (t['height'] !== undefined) t['note:height'] = 'estimated'
+  if (f.src?.length) t['source:overture'] = f.src.join(';')
+  return t
 }

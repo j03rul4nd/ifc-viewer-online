@@ -106,7 +106,9 @@ export function resolveBuildingHeight(
   const explicit = parseLengthM(t['height'])
   // `building:min_height` is the older spelling and still common on parts.
   const minExplicit = parseLengthM(t['min_height']) ?? parseLengthM(t['building:min_height']) ?? 0
-  const source = dataSourceOf(t)
+  // A height fused in from another feed says so on its own tag; see
+  // overture-footprints `fuseOvertureAttributes`.
+  const source: HeightSource = t['_src:height'] === 'overture' ? 'overture' : dataSourceOf(t)
 
   if (explicit !== null && explicit > 0) {
     return {
