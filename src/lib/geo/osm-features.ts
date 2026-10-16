@@ -1888,6 +1888,8 @@ export function parseOsmFeatures(
           name: el.tags?.['name'], label: featureLabel(el.tags),
           isBuildingPart: isBuildingPartTag(el.tags),
           vertical: kind==='rail' || kind==='road' ? readVerticalTags(el.tags) : undefined,
+          // The tiles fallback's sea (omt-fallback): an area, not a coastline.
+          ...(kind === 'water' && el.tags?.['water'] === 'sea' ? { isSea: true } : {}),
         })
       } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
