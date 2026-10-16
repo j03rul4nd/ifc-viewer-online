@@ -400,6 +400,9 @@
     "salinity": "Eau",
     "coast": "Côte",
     "hint": "Valeurs typiques de ce type d'eau, estimées d'après OpenStreetMap et le terrain — pas un relevé.",
+    "liveTitle": "Maintenant · Copernicus Marine",
+    "wavesNow": "Vagues maintenant",
+    "liveCell": "Maille du modèle à {{km}} km : l'eau libre là-bas, pas l'intérieur d'un bassin. Via Open-Meteo, toutes les heures.",
     "cls": {
       "river": "Rivière",
       "stream": "Ruisseau",

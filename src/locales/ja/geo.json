@@ -400,6 +400,9 @@
     "salinity": "水質",
     "coast": "海岸",
     "hint": "この種の水域の代表値で、OpenStreetMap と地形から推定したものです。測量値ではありません。",
+    "liveTitle": "現在 · Copernicus Marine",
+    "wavesNow": "現在の波",
+    "liveCell": "モデル格子は {{km}} km 先 — その沖合の値で、港内の値ではありません。Open-Meteo 経由、毎時更新。",
     "cls": {
       "river": "河川",
       "stream": "小川",

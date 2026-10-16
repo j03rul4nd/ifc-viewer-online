@@ -399,6 +399,9 @@
     "salinity": "Agua",
     "coast": "Costa",
     "hint": "Valores típicos de este tipo de agua, estimados a partir de OpenStreetMap y el terreno; no es un levantamiento.",
+    "liveTitle": "Ahora · Copernicus Marine",
+    "wavesNow": "Oleaje ahora",
+    "liveCell": "Celda del modelo a {{km}} km: el mar abierto de allí, no el interior de una dársena. Vía Open-Meteo, cada hora.",
     "cls": {
       "river": "Río",
       "stream": "Arroyo",

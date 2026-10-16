@@ -271,6 +271,12 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
           when you ask for them (it sends the site&apos;s latitude and longitude).
         </li>
         <li>
+          With the map on and the sea near the site, the viewer fetches the <strong>current sea
+          conditions</strong> (surface current, waves) from Open-Meteo&apos;s marine service, which
+          republishes the E.U. Copernicus Marine Service model. It sends only the site&apos;s
+          latitude and longitude rounded to about 1 km; the answer is kept on your device for an hour.
+        </li>
+        <li>
           In the <strong>Clip Studio</strong>, pasting a TikTok link asks TikTok for that
           video&apos;s title and cover.
         </li>

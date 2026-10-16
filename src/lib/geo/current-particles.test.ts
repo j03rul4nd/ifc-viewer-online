@@ -53,7 +53,7 @@ describe('the sea swings with the tide', () => {
     for (const p of [med, malo]) {
       const mode = p.geometry.getAttribute('aMode')
       expect(mode.count).toBeGreaterThan(20)
-      for (let i = 0; i < mode.count; i++) expect(mode.getX(i)).toBe(1)
+      for (let i = 0; i < mode.count; i++) expect(mode.getX(i)).toBe(2)
     }
     const swing = (p: typeof med) => {
       const a = p.geometry.getAttribute('aA'), b = p.geometry.getAttribute('aB')
