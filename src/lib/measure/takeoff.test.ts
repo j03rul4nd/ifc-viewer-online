@@ -61,3 +61,11 @@ describe('prettyIfcClass', () => {
     expect(prettyIfcClass(null)).toBeNull()
   })
 })
+
+describe('takeoff by model', () => {
+  it('splits a federated selection by file', () => {
+    const els = [{ ...wall(1, 1), model: 'A.ifc' }, { ...wall(2, 2), model: 'S.ifc' }, { ...wall(3, 3), model: 'S.ifc' }]
+    const r = computeTakeoff(els, 'model')
+    expect(r.rows.map((x) => [x.label, x.count, x.measures.area?.total])).toEqual([['S.ifc', 2, 5], ['A.ifc', 1, 1]])
+  })
+})

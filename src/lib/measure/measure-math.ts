@@ -308,3 +308,36 @@ export function lengthInUnits(metres: number, units: LengthUnit): number {
 export function areaInUnits(m2: number, units: LengthUnit): number {
   return units === 'ft' ? m2 * SQ_FT_PER_M2 : m2
 }
+
+/**
+ * Elevation profile of a path (scene points, Y up): plan length, total climb
+ * and descent, and the steepest segment's slope (percent, by plan run). What a
+ * route over terrain or a ramp sequence needs beyond its 3-D length.
+ */
+export interface PathProfile {
+  plan: number
+  climb: number
+  descent: number
+  /** Steepest segment, percent; null when every segment is vertical or zero-length. */
+  maxSlopePct: number | null
+  /** End height minus start height. */
+  net: number
+}
+
+export function pathProfile(points: readonly Vec3[]): PathProfile {
+  let plan = 0, climb = 0, descent = 0
+  let maxSlopePct: number | null = null
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i]
+    const run = Math.hypot(b.x - a.x, b.z - a.z)
+    const rise = b.y - a.y
+    plan += run
+    if (rise > 0) climb += rise; else descent -= rise
+    if (run > 1e-6) {
+      const s = Math.abs(rise) / run * 100
+      if (maxSlopePct === null || s > maxSlopePct) maxSlopePct = s
+    }
+  }
+  const net = points.length > 1 ? points[points.length - 1].y - points[0].y : 0
+  return { plan, climb, descent, maxSlopePct, net }
+}

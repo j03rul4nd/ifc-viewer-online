@@ -16,7 +16,7 @@
 import type { IFCQuantitySet } from '../ifc-item-data'
 
 export type TakeoffKind = 'count' | 'length' | 'area' | 'volume' | 'weight'
-export type TakeoffGroupBy = 'class' | 'type' | 'storey'
+export type TakeoffGroupBy = 'class' | 'type' | 'storey' | 'model'
 
 /** Priority per kind, net before gross: what an estimator prices is the net. */
 export const TAKEOFF_PRIORITY: Record<Exclude<TakeoffKind, 'count'>, readonly string[]> = {
@@ -37,6 +37,8 @@ export interface TakeoffElement {
   ifcClass: string | null
   typeName: string | null
   storey: string | null
+  /** The model's file, for a federated set: quantities per discipline. */
+  model?: string | null
   quantitySets: readonly IFCQuantitySet[]
 }
 
@@ -109,6 +111,7 @@ function groupKey(el: TakeoffElement, by: TakeoffGroupBy): string | null {
     case 'class': return el.ifcClass ? el.ifcClass.toUpperCase() : null
     case 'type': return el.typeName?.trim() || (el.ifcClass ? `(${prettyIfcClass(el.ifcClass)})` : null)
     case 'storey': return el.storey?.trim() || null
+    case 'model': return el.model?.trim() || null
   }
 }
 

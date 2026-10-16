@@ -35,7 +35,7 @@ import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
   type MeasureKind, type MeasureSettings, type MeasureSnapshot, type MeasureStep, type MeasureTool,
-  type Vec3, type DistanceItem, type MeasureNotice,
+  type Vec3, type DistanceItem, type MeasureNotice, type Anchor, type GeoPoint,
 } from './measure-types'
 
 export interface MeasureSystemDeps {
@@ -47,6 +47,10 @@ export interface MeasureSystemDeps {
   toModelCoordinates(point: THREE.Vector3, modelId: string | null): { coords: Vec3; frame: 'model' | 'scene' }
   /** Fly the camera to a box. */
   frameBox(box: THREE.Box3): void
+  /** File name of a model, for the anchors of a measurement. */
+  modelName?(modelId: string): string
+  /** Latitude, longitude and elevation of a scene point when a map is placed. */
+  geoOf?(p: THREE.Vector3, onTerrain: boolean): GeoPoint | null
   /** Client coordinates the pointer is aiming at (canvas centre under pointer lock). */
   aim(e: { clientX: number; clientY: number }): { x: number; y: number }
 }
@@ -165,7 +169,9 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     /** Perpendicular mode: the reference face's plane. */
     plane: null as { point: THREE.Vector3; normal: THREE.Vector3; face: THREE.Vector3[] | null } | null,
     /** Between-elements mode: the first element clicked. */
-    element: null as { modelId: string; localId: number; point: THREE.Vector3 } | null,
+    element: null as { modelId: string | null; localId: number | null; mapId: string | null; anchor: Anchor | null; point: THREE.Vector3 } | null,
+    /** Anchors of the points placed so far (parallel to `points`). */
+    anchors: [] as (Anchor | null)[],
   }
   let notice: MeasureNotice | null = null
   let busy = false
@@ -675,10 +681,12 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   }
 
   function createDistance(a: THREE.Vector3, b: THREE.Vector3, perpendicular: boolean,
-    extra: Partial<Pick<DistanceItem, 'source' | 'clash' | 'approximate'>> = {}): void {
+    extra: Partial<Pick<DistanceItem, 'source' | 'clash' | 'approximate'>> = {},
+    anchors: (Anchor | null)[] | null = null): void {
     const base = newBase('distance', [a, b])
     addItem({
       ...base, kind: 'distance',
+      ...(anchors && anchors.some(Boolean) ? { anchors } : {}),
       value: a.distanceTo(b),
       components: M.distanceComponents(plain(a), plain(b)),
       perpendicular,
@@ -695,11 +703,13 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     busy = true; emit()
     try {
       let lo: THREE.Vector3, hi: THREE.Vector3
+      let ends: (Anchor | null)[] = []
       if (n && Math.abs(n.y) < 0.5) {
         // A wall or a column: the clear height at this spot, floor to ceiling.
         const [floor, ceiling] = await Promise.all([deps.picker.castRay(start, DOWN, 0), deps.picker.castRay(start, UP, 0)])
         if (!floor || !ceiling) { notice = 'no-surface'; return }
         lo = floor.point; hi = ceiling.point
+        ends = [rayAnchor(floor), rayAnchor(ceiling)]
       } else {
         // A floor measures up; a face looking down is a ceiling seen from below: down to the floor.
         const dir = n && n.y < -0.5 ? DOWN : UP
@@ -707,31 +717,50 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         if (!hit) { notice = 'no-surface'; return }
         const from = h.pick.surfacePoint
         ;[lo, hi] = dir === UP ? [from, hit.point] : [hit.point, from]
+        ends = dir === UP ? [anchorOf(h.pick), rayAnchor(hit)] : [rayAnchor(hit), anchorOf(h.pick)]
       }
       // Exactly vertical: the ray is, the hit point may drift by float noise.
-      createDistance(lo, new THREE.Vector3(lo.x, hi.y, lo.z), false, { source: 'headroom' })
+      createDistance(lo, new THREE.Vector3(lo.x, hi.y, lo.z), false, { source: 'headroom' }, ends)
     } finally { busy = false }
   }
 
   /** Clear gap between two elements: the closest points of their geometry. */
   async function placeElement(h: HoverState): Promise<void> {
     const { modelId, localId } = h.pick
-    if (!modelId || localId === null) { notice = 'no-element'; return }
+    // An IFC element, or a whole OSM building on the map (the neighbour, the plot next door).
+    const mapId = h.pick.map?.kind === 'building' ? h.pick.map.id : null
+    const isModel = !!modelId && localId !== null
+    if (!isModel && !mapId) { notice = 'no-element'; return }
+    const here = { modelId: isModel ? modelId : null, localId: isModel ? localId : null, mapId, anchor: anchorOf(h.pick), point: h.pick.surfacePoint.clone() }
     if (!draft.element) {
-      draft.element = { modelId, localId, point: h.pick.surfacePoint.clone() }
-      draft.points = [draft.element.point]
+      draft.element = here
+      draft.points = [here.point]
       return
     }
     const a = draft.element
-    if (a.modelId === modelId && a.localId === localId) { notice = 'same-element'; return }
+    const same = a.mapId ? a.mapId === here.mapId : a.modelId === here.modelId && a.localId === here.localId
+    if (same) { notice = 'same-element'; return }
     busy = true; emit()
     try {
-      const [ta, tb] = await Promise.all([deps.picker.elementTriangles(a.modelId, a.localId), deps.picker.elementTriangles(modelId, localId)])
+      const tris = (e: typeof here) => e.mapId ? Promise.resolve(deps.picker.mapTriangles(e.mapId)) : deps.picker.elementTriangles(e.modelId!, e.localId!)
+      const [ta, tb] = await Promise.all([tris(a), tris(here)])
       const r = ta && tb ? minDistance(ta, tb) : null
       if (!r) { notice = 'no-geometry'; return }
-      createDistance(v3(r.a), v3(r.b), false, { source: 'elements', clash: r.intersecting, approximate: r.truncated })
+      createDistance(v3(r.a), v3(r.b), false, { source: 'elements', clash: r.intersecting, approximate: r.truncated }, [a.anchor, here.anchor])
       resetDraft()
     } finally { busy = false }
+  }
+
+  function rayAnchor(hit: { modelId: string | null; map?: Anchor['map'] | null }): Anchor | null {
+    if (hit.modelId) return { model: deps.modelName ? deps.modelName(hit.modelId) : hit.modelId }
+    return hit.map ? { map: hit.map } : null
+  }
+
+  /** What the picked point stands on: the model's file, or the map's building / relief. */
+  function anchorOf(pick: PickResult): Anchor | null {
+    if (pick.modelId) return { model: deps.modelName ? deps.modelName(pick.modelId) : pick.modelId }
+    if (pick.map) return { map: pick.map }
+    return null
   }
 
   function createPath(points: THREE.Vector3[]): void {
@@ -756,10 +785,12 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     addItem({ ...base, kind: 'angle', value: M.angleAt(plain(a), plain(vertex), plain(c)) })
   }
 
-  function createPoint(p: THREE.Vector3, modelId: string | null): void {
+  function createPoint(p: THREE.Vector3, pick: PickResult): void {
     const base = newBase('point', [p])
-    const { coords, frame } = deps.toModelCoordinates(p, modelId)
-    addItem({ ...base, kind: 'point', coords, frame })
+    const { coords, frame } = deps.toModelCoordinates(p, pick.modelId)
+    const geo = deps.geoOf ? deps.geoOf(p, pick.map?.kind === 'terrain') : null
+    const anchor = anchorOf(pick)
+    addItem({ ...base, kind: 'point', coords, frame, ...(geo ? { geo } : {}), ...(anchor ? { anchors: [anchor] } : {}) })
   }
 
   // ── Placing points ───────────────────────────────────────────────────────────
@@ -768,6 +799,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     draft.points = []
     draft.plane = null
     draft.element = null
+    draft.anchors = []
   }
 
   function isDuplicate(p: THREE.Vector3): boolean {
@@ -784,7 +816,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     notice = null
     switch (tool) {
       case 'point':
-        createPoint(p, h.pick.modelId)
+        createPoint(p, h.pick)
         break
       case 'distance':
         if (distanceMode === 'headroom' || distanceMode === 'elements') {
@@ -794,6 +826,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         if (distanceMode === 'perpendicular') {
           if (!draft.plane) {
             if (!h.pick.normal) return
+            draft.anchors = [anchorOf(h.pick)]
             draft.plane = {
               point: h.pick.surfacePoint.clone(),
               normal: h.pick.normal.clone().normalize(),
@@ -801,15 +834,16 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
             }
           } else {
             const foot = v3(M.perpendicularFoot(p, draft.plane.point, draft.plane.normal))
-            createDistance(foot, p, true)
+            createDistance(foot, p, true, {}, [draft.anchors[0] ?? null, anchorOf(h.pick)])
             resetDraft()
           }
           break
         }
         if (isDuplicate(p)) return
         draft.points.push(p)
+        draft.anchors.push(anchorOf(h.pick))
         if (draft.points.length === 2) {
-          createDistance(draft.points[0], draft.points[1], false)
+          createDistance(draft.points[0], draft.points[1], false, {}, draft.anchors)
           resetDraft()
         }
         break
@@ -1105,7 +1139,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
             // The coordinates as they were read on the model; recomputing them
             // would need the model under the point, which may not be loaded.
             const fallback = deps.toModelCoordinates(pts[0], null)
-            addItem({ ...base, kind: 'point', coords: s.coords ?? fallback.coords, frame: s.coords ? s.frame ?? 'scene' : fallback.frame })
+            addItem({ ...base, kind: 'point', coords: s.coords ?? fallback.coords, frame: s.coords ? s.frame ?? 'scene' : fallback.frame, ...(s.geo ? { geo: s.geo } : {}) })
             break
           }
         }
@@ -1115,6 +1149,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         entry.item = {
           ...entry.item, name: s.name, visible: s.visible,
           requirement: s.requirement ?? null, note: s.note ?? null,
+          ...(s.anchors ? { anchors: s.anchors } : {}),
           ...(entry.item.kind === 'area' ? { extrusion: s.extrusion ?? null } : {}),
         } as MeasureItem
         added++

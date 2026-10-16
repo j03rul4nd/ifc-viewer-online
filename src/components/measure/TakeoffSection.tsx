@@ -17,6 +17,7 @@ import {
 import { decimalSeparator, exportNumber, formatNumber, toDelimited } from '../../lib/measure/measure-math'
 import { shareOrDownload } from '../../lib/share-file'
 import { trackFeatureUsed } from '../../lib/analytics'
+import { fileNameOfModelId } from '../../lib/loading/model-id'
 
 type Kind = Exclude<TakeoffKind, 'count'>
 const KINDS: readonly Kind[] = ['length', 'area', 'volume', 'weight']
@@ -56,7 +57,7 @@ export function TakeoffSection({ selection, viewerApiRef, settings, onFlash }: {
         const rows = await api.getElementsDetail(ids, modelId)
         for (const r of rows) {
           if (!r.data) continue
-          out.push({ ifcClass: r.data.ifcClass, typeName: r.data.typeName, storey: r.data.storey, quantitySets: r.data.quantitySets })
+          out.push({ ifcClass: r.data.ifcClass, typeName: r.data.typeName, storey: r.data.storey, model: fileNameOfModelId(modelId), quantitySets: r.data.quantitySets })
         }
       }
       setElements(out)
@@ -119,7 +120,7 @@ export function TakeoffSection({ selection, viewerApiRef, settings, onFlash }: {
       {result && (
         <>
           <div className="mt-1 flex items-center gap-1" role="radiogroup" aria-label={t('takeoff.groupLabel')}>
-            {(['class', 'type', 'storey'] as const).map((g) => (
+            {(['class', 'type', 'storey', 'model'] as const).map((g) => (
               <button key={g} type="button" role="radio" aria-checked={groupBy === g} onClick={() => setGroupBy(g)}
                 className={['px-1.5 py-0.5 rounded-full text-[10px] border', groupBy === g ? 'border-[var(--accent)] text-[var(--text)] bg-[rgba(94,106,210,0.12)]' : 'border-[var(--border)] text-[var(--text-dim)]'].join(' ')}>
                 {t(`takeoff.groupBy.${g}`)}

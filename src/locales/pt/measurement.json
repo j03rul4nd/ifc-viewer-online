@@ -104,7 +104,14 @@
     "elementsNote": "Menor folga entre os dois elementos, segundo a geometria.",
     "clashNote": "Os elementos se tocam ou se cruzam: é uma interferência, não uma folga.",
     "approximateNote": "Elementos muito detalhados: o valor é um limite superior.",
-    "headroomNote": "Altura livre vertical até a próxima superfície."
+    "headroomNote": "Altura livre vertical até a próxima superfície.",
+    "on": "Sobre",
+    "crossModel": "Entre modelos",
+    "climb": "Subida · descida",
+    "maxSlope": "Inclinação máxima",
+    "latLon": "Lat, lon",
+    "elevation": "Cota",
+    "asl": "acima do nível do mar"
   },
   "actions": {
     "finish": "Concluir",
@@ -133,7 +140,9 @@
     "volume": "Volume",
     "requirement": "Requisito",
     "check": "Verificação",
-    "note": "Nota"
+    "note": "Nota",
+    "on": "Sobre",
+    "elevation": "Cota (m)"
   },
   "section": {
     "title": "Corte",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Classe",
       "type": "Tipo",
-      "storey": "Piso"
+      "storey": "Piso",
+      "model": "Modelo"
     },
     "count": "Un.",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "O arquivo não é um arquivo de medições.",
       "newer-version": "O arquivo foi salvo por uma versão mais nova: recarregue a página e tente de novo."
     }
+  },
+  "anchor": {
+    "terrain": "Terreno",
+    "building": "Edifício"
   }
 }

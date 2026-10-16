@@ -104,7 +104,14 @@
     "elementsNote": "Distanza minima tra i due elementi, dalla loro geometria.",
     "clashNote": "Gli elementi si toccano o si intersecano: è un’interferenza, non uno spazio libero.",
     "approximateNote": "Elementi molto dettagliati: il valore è un limite superiore.",
-    "headroomNote": "Altezza libera verticale fino alla superficie successiva."
+    "headroomNote": "Altezza libera verticale fino alla superficie successiva.",
+    "on": "Su",
+    "crossModel": "Tra modelli",
+    "climb": "Salita · discesa",
+    "maxSlope": "Pendenza massima",
+    "latLon": "Lat, lon",
+    "elevation": "Quota",
+    "asl": "s.l.m."
   },
   "actions": {
     "finish": "Termina",
@@ -133,7 +140,9 @@
     "volume": "Volume",
     "requirement": "Requisito",
     "check": "Verifica",
-    "note": "Nota"
+    "note": "Nota",
+    "on": "Su",
+    "elevation": "Quota (m s.l.m.)"
   },
   "section": {
     "title": "Sezione",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Classe",
       "type": "Tipo",
-      "storey": "Piano"
+      "storey": "Piano",
+      "model": "Modello"
     },
     "count": "N.",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "Il file non è un file di misure.",
       "newer-version": "Il file è stato salvato da una versione più recente: ricarica la pagina e riprova."
     }
+  },
+  "anchor": {
+    "terrain": "Terreno",
+    "building": "Edificio"
   }
 }
