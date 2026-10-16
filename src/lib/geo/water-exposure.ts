@@ -139,7 +139,7 @@ function slopeAlong(line: ReadonlyArray<LatLonPoint>, i: number, groundM: (p: La
   return Math.max(1e-4, Math.min(0.05, (za - zb) / run))
 }
 
-const SEA_CURRENT: Record<CoastKind, { typical: number; severe: number }> = {
+export const SEA_CURRENT: Record<CoastKind, { typical: number; severe: number }> = {
   mediterranean: { typical: 0.1, severe: 0.6 },
   adriatic: { typical: 0.15, severe: 0.6 },
   atlantic: { typical: 0.3, severe: 1.2 },
