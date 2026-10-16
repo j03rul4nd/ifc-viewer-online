@@ -918,8 +918,19 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * a model is added, removed or re-placed, and a stale footprint deletes the
    * wrong block. It is a handful of vector maths against one box.
    */
+  /** The footprints the scene was last filtered against (see refreshSatellites). */
+  let builtFootprintKey = ''
+  /** A cheap signature of every model's plan, rounded to ~10 cm. */
+  function footprintKey(): string {
+    return modelPlanPolygons()
+      .map((poly) => poly.map((v) => `${Math.round(v.x * 1e8)},${Math.round(v.y * 1e8)}`).join(';'))
+      .sort()
+      .join('|')
+  }
+
   function modelSuppressor(): (f: OsmFeature) => boolean {
     if (!geoRoot || !placement) return () => true
+    builtFootprintKey = footprintKey()
     const polys = modelPlanPolygons()
     if (polys.length === 0) return () => true
     const marginN = DEFAULT_MARGIN_M * metresToNormalized(placement.lat)
@@ -1386,6 +1397,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // from it. Idempotent — the same placement resolves to the same transform.
       if (!geoRoot || !placement) return
       applyPlacement(placement)
+      // A model arriving, leaving or moving changes WHICH mapped context it
+      // replaces. The scene was filtered against the models present when it
+      // was built: open the Oriental Pearl after the Shanghai Tower and the
+      // mapped Pearl stood through the new model, because nothing asked the
+      // suppressor again. Rebuild when the set of footprints has changed.
+      const key = footprintKey()
+      if (key !== builtFootprintKey && osmFeatures && suppressContext) {
+        builtFootprintKey = key
+        void requestRebuild()
+      }
     },
 
     setEditorPointerLock(locked) {
