@@ -88,6 +88,7 @@ import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo
 import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
 import { waterExposureAt, type WaterExposure } from './water-exposure'
+import { buildCurrentParticles } from './current-particles'
 
 const log = createLogger('GeoSystem')
 
@@ -2250,6 +2251,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         const group = new THREE.Group()
         if (built) group.add(built.object)
         if (detail) group.add(detail)
+        // The rivers' current, drifting on the water (current-particles).
+        if (key === 'water' && built) {
+          const flow = buildCurrentParticles(features, opts)
+          if (flow) group.add(flow)
+        }
         return { objects: [group] }
       }
 
