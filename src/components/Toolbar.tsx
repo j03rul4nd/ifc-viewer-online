@@ -24,7 +24,7 @@ import { useFloodStore } from '../features/flood/store'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
-import { trackProEntryClick } from '../lib/analytics'
+import { trackProEntryClick, trackExportClicked } from '../lib/analytics'
 import { useSceneContent } from '../hooks/useSceneContent'
 
 // Account surface (F2) — lazy so @clerk/* stays out of the eager bundle (I-1).
@@ -348,6 +348,7 @@ export default function Toolbar({
       const bytes = await exportAsIfc(buffer, modelDiffs, prefsToExportOptions(loadExportPrefs()))
       const stem  = model.fileName.replace(/\.ifc$/i, '')
       await downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: 'application/x-step' }), `${stem}-exported.ifc`)
+      trackExportClicked({ format: 'ifc', model_count: sceneModels.length, source: 'toolbar' })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       log.error('IFC export failed:', msg)

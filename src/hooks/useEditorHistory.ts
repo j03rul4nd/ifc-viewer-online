@@ -12,12 +12,24 @@ export interface UseEditorHistoryResult {
   pendingCount: number
 }
 
+/**
+ * Key events one of the hook's listeners has already acted on. Several
+ * components mount this hook at once (App, Toolbar, Sidebar, ModelTree, the
+ * validation panel), each with its own window listener — without this, one
+ * Ctrl+Z undid one step per mounted copy. `defaultPrevented` cannot stand in
+ * for it: other handlers may prevent the default on Ctrl+Z for their own reasons.
+ */
+const handled = new WeakSet<KeyboardEvent>()
+
 export function useEditorHistory(): UseEditorHistoryResult {
   const { undo, redo, addCommand, history, canUndo, canRedo, diffs } = useEditorStore()
 
   // Global keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
+      if (handled.has(e)) return
+      handled.add(e)
+
       const ctrl = e.ctrlKey || e.metaKey
       if (!ctrl) return
 
@@ -29,17 +41,20 @@ export function useEditorHistory(): UseEditorHistoryResult {
         target.isContentEditable
       ) return
 
+      // Read the store now, not the values captured at render: a listener
+      // registered before the last change would otherwise act on stale state.
+      const state = useEditorStore.getState()
       if (e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        if (canUndo) undo()
+        if (state.canUndo) state.undo()
       } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
         e.preventDefault()
-        if (canRedo) redo()
+        if (state.canRedo) state.redo()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [canUndo, canRedo, undo, redo])
+  }, [])
 
   return {
     undo:         useCallback(undo, [undo]),

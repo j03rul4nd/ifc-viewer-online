@@ -31,6 +31,27 @@ export function buildRenameCommand(
   }
 }
 
+/**
+ * One command holding a whole batch of renames for one model. A batch that
+ * spans several models is one command per model, all sharing `batchId`, so
+ * undo and redo step over them together.
+ */
+export function buildBatchRenameCommand(
+  diffs: Extract<EditDiff, { type: 'RENAME' }>[],
+  modelId: string | undefined,
+  batchId: string,
+  description: string,
+): EditorCommand {
+  return {
+    id:          crypto.randomUUID(),
+    timestamp:   Date.now(),
+    description,
+    diffs,
+    modelId,
+    batchId,
+  }
+}
+
 export function buildFixGuidCommand(
   expressId: number,
   oldGuid: string,
@@ -93,6 +114,29 @@ export function getDiffsForModel(modelId: string): EditDiff[] {
     .flatMap((cmd) => cmd.diffs)
 }
 
+/**
+ * Fingerprint of the applied history as one model's export sees it. Any edit,
+ * undo, redo or discard that could change that model's exported bytes changes
+ * it — which is how a fixed-file check knows its result has gone stale.
+ */
+export function commandSignatureForModel(modelId: string): string {
+  const { history, historyIndex } = useEditorStore.getState()
+  return history
+    .slice(0, historyIndex + 1)
+    .filter((c) => !c.modelId || c.modelId === modelId)
+    .map((c) => `${c.id}:${c.diffs.length}`)
+    .join('|')
+}
+
+/** expressId → pending new Name for one model. The last rename of an element wins. */
+export function pendingNamesForModel(modelId: string): Map<number, string> {
+  const names = new Map<number, string>()
+  for (const d of getDiffsForModel(modelId)) {
+    if (d.type === 'RENAME' && d.field === 'Name') names.set(d.expressId, d.newValue)
+  }
+  return names
+}
+
 /** Total number of active diffs across all models. */
 export function getTotalDiffCount(): number {
   const { diffs } = useEditorStore.getState()
@@ -133,7 +177,7 @@ export interface IfcExportResult {
   bytes: Uint8Array
   /** What the exported file declares — 'IFC4', 'IFC2X3', 'IFC4X3_ADD2'… */
   schema: string | null
-  /** Diffs web-ifc refused. Already surfaced as a toast; returned for callers. */
+  /** Diffs web-ifc refused. `exportAsIfc` toasts them; `exportAsIfcDetailed` leaves that to the caller. */
   skippedDiffs: number
 }
 
@@ -144,11 +188,17 @@ export function getLastExportSchema(): string | null {
   return lastExportSchema
 }
 
-export async function exportAsIfc(
+/**
+ * Write the diffs into a copy of the IFC and report what happened: the bytes,
+ * how many diffs web-ifc refused, and the schema the file declares. No toast
+ * and no shared state — callers that show the result their own way (the
+ * fixed-file check) use this; `exportAsIfc` wraps it for the export menus.
+ */
+export async function exportAsIfcDetailed(
   buffer: ArrayBuffer,
   diffs: EditDiff[],
   options: IfcExportOptions = {},
-): Promise<Uint8Array> {
+): Promise<IfcExportResult> {
   if (!buffer || buffer.byteLength === 0) throw new Error('No IFC buffer provided')
 
   log.info('Exporting IFC via worker — applying', diffs.length, 'diffs')
@@ -165,7 +215,7 @@ export async function exportAsIfc(
   const id         = crypto.randomUUID()
   const bufferCopy = buffer.slice(0)
 
-  return new Promise<Uint8Array>((resolve, reject) => {
+  return new Promise<IfcExportResult>((resolve, reject) => {
     worker.onmessage = (e: MessageEvent): void => {
       const msg = e.data as {
         type: string; id: string; result?: Uint8Array; message?: string
@@ -174,20 +224,11 @@ export async function exportAsIfc(
       if (msg.id !== id) return
       worker.terminate()
       if (msg.type === 'done' && msg.result) {
-        if ((msg.skippedDiffs ?? 0) > 0) {
-          const s = msg.skippedDiffs!
-          log.warn(`IFC export: ${s} diff${s > 1 ? 's' : ''} could not be applied and were skipped`)
-          toast(
-            `Exported with ${s} skipped edit${s > 1 ? 's' : ''} — some changes could not be applied to the IFC.`,
-            'warning',
-          )
-        }
         log.info(
           'IFC export complete, size:', msg.result.byteLength,
           'schema:', msg.schema ?? 'unknown',
         )
-        lastExportSchema = msg.schema ?? null
-        resolve(msg.result)
+        resolve({ bytes: msg.result, skippedDiffs: msg.skippedDiffs ?? 0, schema: msg.schema ?? null })
       } else {
         reject(new Error(msg.message ?? 'Export worker failed'))
       }
@@ -214,6 +255,28 @@ export async function exportAsIfc(
       [bufferCopy],
     )
   })
+}
+
+/**
+ * Apply diffs to an IFC buffer via a dedicated export worker and return the
+ * new file. Tells the user when web-ifc refused some edits, and records the
+ * schema for `getLastExportSchema`.
+ */
+export async function exportAsIfc(
+  buffer: ArrayBuffer,
+  diffs: EditDiff[],
+  options: IfcExportOptions = {},
+): Promise<Uint8Array> {
+  const { bytes, skippedDiffs: s, schema } = await exportAsIfcDetailed(buffer, diffs, options)
+  if (s > 0) {
+    log.warn(`IFC export: ${s} diff${s > 1 ? 's' : ''} could not be applied and were skipped`)
+    toast(
+      `Exported with ${s} skipped edit${s > 1 ? 's' : ''} — some changes could not be applied to the IFC.`,
+      'warning',
+    )
+  }
+  lastExportSchema = schema
+  return bytes
 }
 
 /**

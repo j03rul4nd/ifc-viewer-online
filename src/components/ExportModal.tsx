@@ -74,7 +74,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
   }
 
   const handleExportIfc = async (modelId: string, fileName: string): Promise<boolean> => {
-    trackExportClicked({ format: 'ifc', model_count: models.length })
+    trackExportClicked({ format: 'ifc', model_count: models.length, source: 'export_modal' })
     setStatus(modelId, 'ifc', 'exporting')
     try {
       const entry = modelRegistry.get(modelId)
