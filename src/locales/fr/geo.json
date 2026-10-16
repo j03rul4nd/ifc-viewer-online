@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "Franchissements",
+    "hint": "Comment l'eau est franchie ici. Touchez-en un pour y aller.",
+    "mode": {
+      "bridge": "Pont",
+      "tunnel": "Tunnel",
+      "ferry": "Bac",
+      "pontoon": "Flottant",
+      "at-grade": "Gué / à niveau"
+    },
+    "carries": {
+      "road": "route",
+      "rail": "rail",
+      "path": "chemin",
+      "ferry": "passagers"
+    },
+    "over": "sur {{water}}",
+    "clearance": "{{m}} m de tirant d'air",
+    "risk": {
+      "deck-above": "Tablier au-dessus de l'eau : utilisable tant que la crue ne l'atteint pas",
+      "portal-inflow": "Tunnel : l'eau entre par les têtes sur les berges",
+      "submerged": "Au niveau de l'eau : inondé en premier",
+      "service-stops": "Bac : service suspendu en crue ou par fort courant"
+    },
+    "more": "{{count}} de plus",
+    "less": "Afficher moins"
   }
 }

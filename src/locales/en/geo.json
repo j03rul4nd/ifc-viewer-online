@@ -358,5 +358,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "Water crossings",
+    "hint": "How the water here is crossed. Tap one to fly there.",
+    "mode": {
+      "bridge": "Bridge",
+      "tunnel": "Tunnel",
+      "ferry": "Ferry",
+      "pontoon": "Floating",
+      "at-grade": "Ford / at grade"
+    },
+    "carries": {
+      "road": "road",
+      "rail": "rail",
+      "path": "path",
+      "ferry": "passengers"
+    },
+    "over": "over {{water}}",
+    "clearance": "{{m}} m clearance",
+    "risk": {
+      "deck-above": "Deck above the water: stays usable unless the flood reaches it",
+      "portal-inflow": "Tunnel: water enters at the portals on the banks",
+      "submerged": "At water level: goes under first",
+      "service-stops": "Ferry: service stops in high water or strong current"
+    },
+    "more": "{{count}} more",
+    "less": "Show fewer"
   }
 }

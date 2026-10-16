@@ -86,6 +86,7 @@ import { createLogger } from '../logger'
 import { createGroundFrame } from './ground-frame'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 import type { Hydrology, OsmContext } from './osm-hydro'
+import { findWaterCrossings, type WaterCrossing } from './water-crossings'
 
 const log = createLogger('GeoSystem')
 
@@ -532,6 +533,14 @@ export interface GeoSystemAPI {
    * Overpass request, and nothing afterwards. Null when the map is off.
    */
   getOsmContext(): Promise<OsmContext | null>
+  /**
+   * How the site's water is crossed — bridges, tunnels, ferries, fords — read
+   * from the OSM already fetched for the City view (water-crossings). Empty
+   * when the map or its context is off; never triggers a fetch of its own.
+   */
+  getWaterCrossings(): WaterCrossing[]
+  /** Aim the camera at a map point from above, `spanM` of ground in view. */
+  flyToLatLon(lat: number, lon: number, spanM: number): void
   dispose(): void
 }
 
@@ -730,6 +739,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   } | null = null
   /** When getOsmContext may ask Overpass again over a cached tiles fallback (ms epoch). */
   let osmRetryAt = 0
+  /** Crossings derived from the cached features, recomputed when they change. */
+  let crossingsCache: { features: unknown; list: WaterCrossing[] } | null = null
   /** Built meshes per layer, so each can be added or dropped independently. */
   // A LIST per kind: a layer can be several objects — the buildings and their
   // rooftop kit are both 'building'. One slot per kind let the roof props
@@ -1485,6 +1496,28 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     getContextRoot() {
       return geoRoot
+    },
+
+    getWaterCrossings() {
+      if (!osmCache || !placement) return []
+      if (crossingsCache?.features !== osmCache.features) {
+        crossingsCache = {
+          features: osmCache.features,
+          list: findWaterCrossings(osmCache.features, osmCache.hydro?.ferries ?? []),
+        }
+      }
+      return crossingsCache.list
+    },
+
+    flyToLatLon(lat, lon, spanM) {
+      if (!geoRoot) return
+      geoRoot.updateWorldMatrix(true, false)
+      const n = latLonToNormalized(lat, lon)
+      const v = new THREE.Vector3(n.nx, n.ny, 0)
+      geoRoot.localToWorld(v)
+      const d = Math.min(Math.max(spanM * 1.2, 150), MAP_MAX_DISTANCE_M * 0.8)
+      const h = d * 0.7071
+      void ctx.controls.setLookAt(v.x + h * 0.6, v.y + h, v.z + h * 0.6, v.x, v.y, v.z, true)
     },
 
     dispose() {

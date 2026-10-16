@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "Gewässerquerungen",
+    "hint": "Wie das Wasser hier überquert wird. Antippen, um hinzufliegen.",
+    "mode": {
+      "bridge": "Brücke",
+      "tunnel": "Tunnel",
+      "ferry": "Fähre",
+      "pontoon": "Schwimmend",
+      "at-grade": "Furt / ebenerdig"
+    },
+    "carries": {
+      "road": "Straße",
+      "rail": "Bahn",
+      "path": "Weg",
+      "ferry": "Fahrgäste"
+    },
+    "over": "über {{water}}",
+    "clearance": "{{m}} m Durchfahrtshöhe",
+    "risk": {
+      "deck-above": "Fahrbahn über dem Wasser: nutzbar, solange das Hochwasser sie nicht erreicht",
+      "portal-inflow": "Tunnel: Wasser dringt an den Portalen am Ufer ein",
+      "submerged": "Auf Wasserniveau: wird zuerst überflutet",
+      "service-stops": "Fähre: Betrieb ruht bei Hochwasser oder starker Strömung"
+    },
+    "more": "{{count}} weitere",
+    "less": "Weniger anzeigen"
   }
 }

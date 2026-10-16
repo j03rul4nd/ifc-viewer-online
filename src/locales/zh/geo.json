@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "跨水通道",
+    "hint": "这里如何跨越水域。点击即可飞到该处。",
+    "mode": {
+      "bridge": "桥梁",
+      "tunnel": "隧道",
+      "ferry": "轮渡",
+      "pontoon": "浮桥",
+      "at-grade": "涉水 / 平交"
+    },
+    "carries": {
+      "road": "道路",
+      "rail": "铁路",
+      "path": "步道",
+      "ferry": "乘客"
+    },
+    "over": "跨越{{water}}",
+    "clearance": "净空 {{m}} 米",
+    "risk": {
+      "deck-above": "桥面高于水面:洪水未及桥面时仍可通行",
+      "portal-inflow": "隧道:水从岸边洞口涌入",
+      "submerged": "与水面齐平:最先被淹",
+      "service-stops": "轮渡:涨水或水流湍急时停航"
+    },
+    "more": "还有 {{count}} 个",
+    "less": "收起"
   }
 }

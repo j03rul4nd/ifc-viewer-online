@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "水域の横断",
+    "hint": "ここで水域をどう渡るか。タップで移動。",
+    "mode": {
+      "bridge": "橋",
+      "tunnel": "トンネル",
+      "ferry": "フェリー",
+      "pontoon": "浮き橋",
+      "at-grade": "徒渉 / 平面"
+    },
+    "carries": {
+      "road": "道路",
+      "rail": "鉄道",
+      "path": "歩道",
+      "ferry": "旅客"
+    },
+    "over": "{{water}}を横断",
+    "clearance": "桁下 {{m}} m",
+    "risk": {
+      "deck-above": "水面上の橋面:洪水が達しない限り使用可能",
+      "portal-inflow": "トンネル:岸の坑口から浸水",
+      "submerged": "水面と同じ高さ:最初に冠水",
+      "service-stops": "フェリー:増水や強い流れで運休"
+    },
+    "more": "他 {{count}} 件",
+    "less": "表示を減らす"
   }
 }

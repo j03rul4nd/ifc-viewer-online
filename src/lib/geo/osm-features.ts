@@ -1874,6 +1874,9 @@ export function parseOsmFeatures(
           // so a way on a bridge is still a road everywhere downstream.
           vertical: readVerticalTags(el.tags),
           functional: functionalType(kind, style.roadClass),
+          // Named so a crossing reads "Nanpu Bridge" (water-crossings); a
+          // metro tunnel is often named only by its line's ref.
+          name: el.tags?.['name'] ?? el.tags?.['ref'],
         })
         continue
       }
