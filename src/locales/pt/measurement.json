@@ -117,7 +117,11 @@
     "value": "Valor",
     "unit": "Unidade",
     "perimeter": "Perímetro",
-    "filename": "medições"
+    "filename": "medições",
+    "volume": "Volume",
+    "requirement": "Requisito",
+    "check": "Verificação",
+    "note": "Nota"
   },
   "section": {
     "title": "Corte",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Comprimento total",
-    "area": "Área total"
+    "area": "Área total",
+    "volume": "Volume total",
+    "checks": "Requisitos cumpridos",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Elemento selecionado",
@@ -190,5 +197,83 @@
     "latest": "Última",
     "levels": "Pisos",
     "position": "Posição do corte"
+  },
+  "rules": {
+    "extrusion": "Altura → volume",
+    "extrusionHint": "Espessura ou profundidade: transforma a área num prisma (laje, betonilha, escavação, volume da sala)",
+    "volume": "Volume",
+    "add": "Requisito",
+    "preset": {
+      "corridor": "Corredor ≥ 1,20",
+      "door": "Porta ≥ 0,80",
+      "headroom": "Pé-direito livre ≥ 2,10",
+      "ramp": "Rampa ≤ 8 %",
+      "turning": "Rotação ⌀ 1,50",
+      "right": "Esquadria 90°"
+    },
+    "presetHint": {
+      "corridor": "Largura livre do corredor de pelo menos 1,20 m",
+      "door": "Vão livre da porta de pelo menos 0,80 m",
+      "headroom": "Altura livre vertical (ΔZ) de pelo menos 2,10 m",
+      "ramp": "Inclinação de no máximo 8 %",
+      "turning": "Círculo de rotação de cadeira de rodas de pelo menos 1,50 m",
+      "right": "Ângulo entre 89,5° e 90,5°"
+    },
+    "target": "Valor verificado",
+    "targets": {
+      "value": "Valor",
+      "slope": "Inclinação",
+      "height": "Altura (ΔZ)",
+      "volume": "Volume"
+    },
+    "op": "Regra",
+    "ops": {
+      "min": "pelo menos",
+      "max": "no máximo",
+      "range": "entre"
+    },
+    "min": "Mínimo",
+    "max": "Máximo",
+    "remove": "Remover requisito",
+    "fail": "Falha por {{by}}",
+    "na": "Este valor não se aplica a esta medição",
+    "note": "Nota",
+    "notePlaceholder": "Adicionar uma nota…",
+    "status": {
+      "pass": "Cumpre",
+      "fail": "Não cumpre"
+    },
+    "pass": "Cumpre o requisito"
+  },
+  "takeoff": {
+    "title": "Medição de quantidades",
+    "run_one": "Medir {{count}} elemento",
+    "run_other": "Medir {{count}} elementos",
+    "loading": "A ler quantidades…",
+    "hint": "Soma as quantidades IFC (Qto) da seleção: unidades, comprimento, área, volume, peso.",
+    "groupLabel": "Agrupar por",
+    "groupBy": {
+      "class": "Classe",
+      "type": "Tipo",
+      "storey": "Piso"
+    },
+    "count": "Un.",
+    "kinds": {
+      "length": "Comprimento",
+      "area": "Área",
+      "volume": "Volume",
+      "weight": "Peso"
+    },
+    "coverage": "Cobertura",
+    "source": "Quantidade usada",
+    "none": "(nenhum)",
+    "mixed": "unidades mistas",
+    "coverageOf": "{{covered}} de {{count}} elementos têm-na",
+    "partial": "Falta esta quantidade a alguns elementos",
+    "missing_one": "{{count}} de {{total}} elementos não tem quantidades IFC: não entra nas somas.",
+    "missing_other": "{{count}} de {{total}} elementos não têm quantidades IFC: não entram nas somas.",
+    "note": "Um valor por elemento, líquido antes de bruto. * = nem todos os elementos o têm.",
+    "refresh": "Recalcular",
+    "filename": "medicoes"
   }
 }

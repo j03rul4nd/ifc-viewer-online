@@ -117,7 +117,11 @@
     "value": "Valeur",
     "unit": "Unité",
     "perimeter": "Périmètre",
-    "filename": "mesures"
+    "filename": "mesures",
+    "volume": "Volume",
+    "requirement": "Exigence",
+    "check": "Contrôle",
+    "note": "Note"
   },
   "section": {
     "title": "Coupe",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Longueur totale",
-    "area": "Surface totale"
+    "area": "Surface totale",
+    "volume": "Volume total",
+    "checks": "Exigences respectées",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Élément sélectionné",
@@ -190,5 +197,83 @@
     "latest": "Dernière",
     "levels": "Niveaux",
     "position": "Position de la coupe"
+  },
+  "rules": {
+    "extrusion": "Hauteur → volume",
+    "extrusionHint": "Épaisseur ou profondeur : transforme la surface en prisme (dalle, chape, fouille, volume de pièce)",
+    "volume": "Volume",
+    "add": "Exigence",
+    "preset": {
+      "corridor": "Couloir ≥ 1,20",
+      "door": "Porte ≥ 0,80",
+      "headroom": "Hauteur libre ≥ 2,10",
+      "ramp": "Rampe ≤ 8 %",
+      "turning": "Giration ⌀ 1,50",
+      "right": "Équerre 90°"
+    },
+    "presetHint": {
+      "corridor": "Largeur libre de couloir d'au moins 1,20 m",
+      "door": "Passage libre de porte d'au moins 0,80 m",
+      "headroom": "Hauteur libre verticale (ΔZ) d'au moins 2,10 m",
+      "ramp": "Pente d'au plus 8 %",
+      "turning": "Aire de giration fauteuil d'au moins 1,50 m",
+      "right": "Angle entre 89,5° et 90,5°"
+    },
+    "target": "Valeur contrôlée",
+    "targets": {
+      "value": "Valeur",
+      "slope": "Pente",
+      "height": "Hauteur (ΔZ)",
+      "volume": "Volume"
+    },
+    "op": "Règle",
+    "ops": {
+      "min": "au moins",
+      "max": "au plus",
+      "range": "entre"
+    },
+    "min": "Minimum",
+    "max": "Maximum",
+    "remove": "Retirer l'exigence",
+    "fail": "Non conforme de {{by}}",
+    "na": "Cette valeur ne s'applique pas à cette mesure",
+    "note": "Note",
+    "notePlaceholder": "Ajouter une note…",
+    "status": {
+      "pass": "Conforme",
+      "fail": "Non conforme"
+    },
+    "pass": "Exigence respectée"
+  },
+  "takeoff": {
+    "title": "Métré",
+    "run_one": "Métrer {{count}} élément",
+    "run_other": "Métrer {{count}} éléments",
+    "loading": "Lecture des quantités…",
+    "hint": "Additionne les quantités IFC (Qto) de la sélection : nombre, longueur, surface, volume, poids.",
+    "groupLabel": "Grouper par",
+    "groupBy": {
+      "class": "Classe",
+      "type": "Type",
+      "storey": "Niveau"
+    },
+    "count": "Nb",
+    "kinds": {
+      "length": "Longueur",
+      "area": "Surface",
+      "volume": "Volume",
+      "weight": "Poids"
+    },
+    "coverage": "Couverture",
+    "source": "Quantité utilisée",
+    "none": "(aucun)",
+    "mixed": "unités mélangées",
+    "coverageOf": "{{covered}} sur {{count}} éléments l'ont",
+    "partial": "Certains éléments n'ont pas cette quantité",
+    "missing_one": "{{count}} élément sur {{total}} n'a pas de quantités IFC : il n'est pas dans les sommes.",
+    "missing_other": "{{count}} éléments sur {{total}} n'ont pas de quantités IFC : ils ne sont pas dans les sommes.",
+    "note": "Une valeur par élément, net avant brut. * = tous les éléments ne l'ont pas.",
+    "refresh": "Recalculer",
+    "filename": "metre"
   }
 }

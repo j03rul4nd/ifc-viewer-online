@@ -117,7 +117,11 @@
     "value": "Valore",
     "unit": "Unità",
     "perimeter": "Perimetro",
-    "filename": "misurazioni"
+    "filename": "misurazioni",
+    "volume": "Volume",
+    "requirement": "Requisito",
+    "check": "Verifica",
+    "note": "Nota"
   },
   "section": {
     "title": "Sezione",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Lunghezza totale",
-    "area": "Area totale"
+    "area": "Area totale",
+    "volume": "Volume totale",
+    "checks": "Requisiti soddisfatti",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Elemento selezionato",
@@ -190,5 +197,83 @@
     "latest": "Ultima",
     "levels": "Piani",
     "position": "Posizione del taglio"
+  },
+  "rules": {
+    "extrusion": "Altezza → volume",
+    "extrusionHint": "Spessore o profondità: trasforma l'area in un prisma (solaio, massetto, scavo, volume del locale)",
+    "volume": "Volume",
+    "add": "Requisito",
+    "preset": {
+      "corridor": "Corridoio ≥ 1,20",
+      "door": "Porta ≥ 0,80",
+      "headroom": "Altezza libera ≥ 2,10",
+      "ramp": "Rampa ≤ 8 %",
+      "turning": "Rotazione ⌀ 1,50",
+      "right": "Squadra 90°"
+    },
+    "presetHint": {
+      "corridor": "Larghezza libera del corridoio di almeno 1,20 m",
+      "door": "Luce netta della porta di almeno 0,80 m",
+      "headroom": "Altezza libera verticale (ΔZ) di almeno 2,10 m",
+      "ramp": "Pendenza al massimo dell'8 %",
+      "turning": "Cerchio di rotazione carrozzina di almeno 1,50 m",
+      "right": "Angolo tra 89,5° e 90,5°"
+    },
+    "target": "Valore verificato",
+    "targets": {
+      "value": "Valore",
+      "slope": "Pendenza",
+      "height": "Altezza (ΔZ)",
+      "volume": "Volume"
+    },
+    "op": "Regola",
+    "ops": {
+      "min": "almeno",
+      "max": "al massimo",
+      "range": "tra"
+    },
+    "min": "Minimo",
+    "max": "Massimo",
+    "remove": "Rimuovi requisito",
+    "fail": "Non conforme di {{by}}",
+    "na": "Questo valore non si applica a questa misura",
+    "note": "Nota",
+    "notePlaceholder": "Aggiungi una nota…",
+    "status": {
+      "pass": "Conforme",
+      "fail": "Non conforme"
+    },
+    "pass": "Requisito soddisfatto"
+  },
+  "takeoff": {
+    "title": "Computo quantità",
+    "run_one": "Computa {{count}} elemento",
+    "run_other": "Computa {{count}} elementi",
+    "loading": "Lettura delle quantità…",
+    "hint": "Somma le quantità IFC (Qto) della selezione: numero, lunghezza, superficie, volume, peso.",
+    "groupLabel": "Raggruppa per",
+    "groupBy": {
+      "class": "Classe",
+      "type": "Tipo",
+      "storey": "Piano"
+    },
+    "count": "N.",
+    "kinds": {
+      "length": "Lunghezza",
+      "area": "Superficie",
+      "volume": "Volume",
+      "weight": "Peso"
+    },
+    "coverage": "Copertura",
+    "source": "Quantità usata",
+    "none": "(nessuno)",
+    "mixed": "unità miste",
+    "coverageOf": "{{covered}} di {{count}} elementi la hanno",
+    "partial": "Ad alcuni elementi manca questa quantità",
+    "missing_one": "{{count}} di {{total}} elementi non ha quantità IFC: non è nelle somme.",
+    "missing_other": "{{count}} di {{total}} elementi non hanno quantità IFC: non sono nelle somme.",
+    "note": "Un valore per elemento, netto prima del lordo. * = non tutti gli elementi lo hanno.",
+    "refresh": "Ricalcola",
+    "filename": "computo"
   }
 }

@@ -117,7 +117,11 @@
     "value": "Valor",
     "unit": "Unitat",
     "perimeter": "Perímetre",
-    "filename": "mesures"
+    "filename": "mesures",
+    "volume": "Volum",
+    "requirement": "Requisit",
+    "check": "Comprovació",
+    "note": "Nota"
   },
   "section": {
     "title": "Secció",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Longitud total",
-    "area": "Àrea total"
+    "area": "Àrea total",
+    "volume": "Volum total",
+    "checks": "Requisits complerts",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Element seleccionat",
@@ -190,5 +197,83 @@
     "latest": "Darrera",
     "levels": "Plantes",
     "position": "Posició del tall"
+  },
+  "rules": {
+    "extrusion": "Alçada → volum",
+    "extrusionHint": "Gruix o fondària: converteix l'àrea en un prisma (forjat, solera, excavació, volum de sala)",
+    "volume": "Volum",
+    "add": "Requisit",
+    "preset": {
+      "corridor": "Passadís ≥ 1,20",
+      "door": "Porta ≥ 0,80",
+      "headroom": "Alçada lliure ≥ 2,10",
+      "ramp": "Rampa ≤ 8 %",
+      "turning": "Gir ⌀ 1,50",
+      "right": "Escaire 90°"
+    },
+    "presetHint": {
+      "corridor": "Amplada lliure de passadís d'almenys 1,20 m",
+      "door": "Pas lliure de porta d'almenys 0,80 m",
+      "headroom": "Alçada lliure vertical (ΔZ) d'almenys 2,10 m",
+      "ramp": "Pendent de com a màxim 8 %",
+      "turning": "Cercle de gir de cadira de rodes d'almenys 1,50 m",
+      "right": "Angle entre 89,5° i 90,5°"
+    },
+    "target": "Valor comprovat",
+    "targets": {
+      "value": "Valor",
+      "slope": "Pendent",
+      "height": "Alçada (ΔZ)",
+      "volume": "Volum"
+    },
+    "op": "Regla",
+    "ops": {
+      "min": "com a mínim",
+      "max": "com a màxim",
+      "range": "entre"
+    },
+    "min": "Mínim",
+    "max": "Màxim",
+    "remove": "Treu el requisit",
+    "fail": "No compleix per {{by}}",
+    "na": "Aquest valor no s'aplica a aquesta mesura",
+    "note": "Nota",
+    "notePlaceholder": "Afegeix una nota…",
+    "status": {
+      "pass": "Compleix",
+      "fail": "No compleix"
+    },
+    "pass": "Compleix el requisit"
+  },
+  "takeoff": {
+    "title": "Amidaments",
+    "run_one": "Amida {{count}} element",
+    "run_other": "Amida {{count}} elements",
+    "loading": "Llegint quantitats…",
+    "hint": "Suma les quantitats IFC (Qto) de la selecció: unitats, longitud, superfície, volum, pes.",
+    "groupLabel": "Agrupa per",
+    "groupBy": {
+      "class": "Classe",
+      "type": "Tipus",
+      "storey": "Planta"
+    },
+    "count": "Uts.",
+    "kinds": {
+      "length": "Longitud",
+      "area": "Superfície",
+      "volume": "Volum",
+      "weight": "Pes"
+    },
+    "coverage": "Cobertura",
+    "source": "Quantitat usada",
+    "none": "(cap)",
+    "mixed": "unitats barrejades",
+    "coverageOf": "{{covered}} de {{count}} elements la tenen",
+    "partial": "A alguns elements els falta aquesta quantitat",
+    "missing_one": "{{count}} de {{total}} elements no porta quantitats IFC: no entra a les sumes.",
+    "missing_other": "{{count}} de {{total}} elements no porten quantitats IFC: no entren a les sumes.",
+    "note": "Un valor per element, net abans que brut. * = no tots els elements el tenen.",
+    "refresh": "Recalcula",
+    "filename": "amidaments"
   }
 }

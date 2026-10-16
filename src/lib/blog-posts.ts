@@ -4,6 +4,7 @@ import { TWIN_POSTS_EN } from './blog-twins-en.ts'
 import { TWIN_CLUSTER_POSTS_EN } from './blog-twin-cluster-en.ts'
 import { TWIN_CLUSTER2_POSTS_EN } from './blog-twin-cluster2-en.ts'
 import { FLOOD_POSTS_EN } from './blog-flood-en.ts'
+import { MEASURE_POSTS_EN } from './blog-measure-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -322,6 +323,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
   ...TWIN_CLUSTER2_POSTS_EN,
   ...TWIN_CLUSTER_POSTS_EN,
   ...TWIN_POSTS_EN,
+  ...MEASURE_POSTS_EN,
   ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,
   {

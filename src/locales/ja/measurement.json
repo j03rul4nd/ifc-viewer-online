@@ -117,7 +117,11 @@
     "value": "値",
     "unit": "単位",
     "perimeter": "周長",
-    "filename": "計測結果"
+    "filename": "計測結果",
+    "volume": "体積",
+    "requirement": "要件",
+    "check": "判定",
+    "note": "メモ"
   },
   "section": {
     "title": "断面",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "合計長さ",
-    "area": "合計面積"
+    "area": "合計面積",
+    "volume": "合計体積",
+    "checks": "満たした要件",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "選択中の要素",
@@ -190,5 +197,83 @@
     "latest": "最新",
     "levels": "階",
     "position": "断面位置"
+  },
+  "rules": {
+    "extrusion": "高さ → 体積",
+    "extrusionHint": "厚さまたは深さ：面積を角柱にします（スラブ、モルタル、掘削、室容積）",
+    "volume": "体積",
+    "add": "要件",
+    "preset": {
+      "corridor": "廊下 ≥ 1.20",
+      "door": "扉 ≥ 0.80",
+      "headroom": "有効高さ ≥ 2.10",
+      "ramp": "スロープ ≤ 8 %",
+      "turning": "回転 ⌀ 1.50",
+      "right": "直角 90°"
+    },
+    "presetHint": {
+      "corridor": "廊下の有効幅 1.20 m 以上",
+      "door": "扉の有効開口 0.80 m 以上",
+      "headroom": "垂直方向の有効高さ（ΔZ）2.10 m 以上",
+      "ramp": "勾配 8 % 以下",
+      "turning": "車椅子の回転円 1.50 m 以上",
+      "right": "角度 89.5°〜90.5°"
+    },
+    "target": "確認する値",
+    "targets": {
+      "value": "値",
+      "slope": "勾配",
+      "height": "高さ（ΔZ）",
+      "volume": "体積"
+    },
+    "op": "ルール",
+    "ops": {
+      "min": "以上",
+      "max": "以下",
+      "range": "範囲"
+    },
+    "min": "最小",
+    "max": "最大",
+    "remove": "要件を削除",
+    "fail": "{{by}} 外れています",
+    "na": "この値はこの計測には適用されません",
+    "note": "メモ",
+    "notePlaceholder": "メモを追加…",
+    "status": {
+      "pass": "適合",
+      "fail": "不適合"
+    },
+    "pass": "要件を満たしています"
+  },
+  "takeoff": {
+    "title": "数量拾い",
+    "run_one": "{{count}} 要素を拾う",
+    "run_other": "{{count}} 要素を拾う",
+    "loading": "数量を読み込み中…",
+    "hint": "選択の IFC 数量（Qto）を集計します：個数、長さ、面積、体積、重量。",
+    "groupLabel": "グループ化",
+    "groupBy": {
+      "class": "クラス",
+      "type": "タイプ",
+      "storey": "階"
+    },
+    "count": "個数",
+    "kinds": {
+      "length": "長さ",
+      "area": "面積",
+      "volume": "体積",
+      "weight": "重量"
+    },
+    "coverage": "カバー率",
+    "source": "使用した数量",
+    "none": "（なし）",
+    "mixed": "単位が混在",
+    "coverageOf": "{{count}} 要素中 {{covered}} 要素が保持",
+    "partial": "この数量を持たない要素があります",
+    "missing_one": "{{total}} 要素中 {{count}} 要素に IFC 数量がなく、集計に含まれません。",
+    "missing_other": "{{total}} 要素中 {{count}} 要素に IFC 数量がなく、集計に含まれません。",
+    "note": "要素ごとに1つの値、総量より正味を優先。* = 全要素が持つわけではありません。",
+    "refresh": "再計算",
+    "filename": "takeoff"
   }
 }

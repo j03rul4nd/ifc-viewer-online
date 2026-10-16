@@ -117,7 +117,11 @@
     "value": "Wert",
     "unit": "Einheit",
     "perimeter": "Umfang",
-    "filename": "messungen"
+    "filename": "messungen",
+    "volume": "Volumen",
+    "requirement": "Anforderung",
+    "check": "Prüfung",
+    "note": "Notiz"
   },
   "section": {
     "title": "Schnitt",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Gesamtlänge",
-    "area": "Gesamtfläche"
+    "area": "Gesamtfläche",
+    "volume": "Gesamtvolumen",
+    "checks": "Erfüllte Anforderungen",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Ausgewähltes Element",
@@ -190,5 +197,83 @@
     "latest": "Zuletzt",
     "levels": "Geschosse",
     "position": "Schnittposition"
+  },
+  "rules": {
+    "extrusion": "Höhe → Volumen",
+    "extrusionHint": "Dicke oder Tiefe: macht aus der Fläche ein Prisma (Decke, Estrich, Aushub, Raumvolumen)",
+    "volume": "Volumen",
+    "add": "Anforderung",
+    "preset": {
+      "corridor": "Flur ≥ 1,20",
+      "door": "Tür ≥ 0,80",
+      "headroom": "Durchgangshöhe ≥ 2,10",
+      "ramp": "Rampe ≤ 8 %",
+      "turning": "Wendekreis ⌀ 1,50",
+      "right": "Rechter Winkel 90°"
+    },
+    "presetHint": {
+      "corridor": "Lichte Flurbreite mindestens 1,20 m",
+      "door": "Lichte Türbreite mindestens 0,80 m",
+      "headroom": "Lichte Höhe (ΔZ) mindestens 2,10 m",
+      "ramp": "Neigung höchstens 8 %",
+      "turning": "Rollstuhl-Wendekreis mindestens 1,50 m",
+      "right": "Winkel zwischen 89,5° und 90,5°"
+    },
+    "target": "Geprüfter Wert",
+    "targets": {
+      "value": "Wert",
+      "slope": "Neigung",
+      "height": "Höhe (ΔZ)",
+      "volume": "Volumen"
+    },
+    "op": "Regel",
+    "ops": {
+      "min": "mindestens",
+      "max": "höchstens",
+      "range": "zwischen"
+    },
+    "min": "Minimum",
+    "max": "Maximum",
+    "remove": "Anforderung entfernen",
+    "fail": "Verfehlt um {{by}}",
+    "na": "Dieser Wert gilt für diese Messung nicht",
+    "note": "Notiz",
+    "notePlaceholder": "Notiz hinzufügen…",
+    "status": {
+      "pass": "Erfüllt",
+      "fail": "Nicht erfüllt"
+    },
+    "pass": "Anforderung erfüllt"
+  },
+  "takeoff": {
+    "title": "Mengenermittlung",
+    "run_one": "{{count}} Element ermitteln",
+    "run_other": "{{count}} Elemente ermitteln",
+    "loading": "Mengen werden gelesen…",
+    "hint": "Summiert die IFC-Mengen (Qto) der Auswahl: Anzahl, Länge, Fläche, Volumen, Gewicht.",
+    "groupLabel": "Gruppieren nach",
+    "groupBy": {
+      "class": "Klasse",
+      "type": "Typ",
+      "storey": "Geschoss"
+    },
+    "count": "Anz.",
+    "kinds": {
+      "length": "Länge",
+      "area": "Fläche",
+      "volume": "Volumen",
+      "weight": "Gewicht"
+    },
+    "coverage": "Abdeckung",
+    "source": "Verwendete Menge",
+    "none": "(keine)",
+    "mixed": "gemischte Einheiten",
+    "coverageOf": "{{covered}} von {{count}} Elementen haben sie",
+    "partial": "Einigen Elementen fehlt diese Menge",
+    "missing_one": "{{count}} von {{total}} Elementen hat keine IFC-Mengen – nicht in den Summen.",
+    "missing_other": "{{count}} von {{total}} Elementen haben keine IFC-Mengen – nicht in den Summen.",
+    "note": "Ein Wert pro Element, netto vor brutto. * = nicht alle Elemente haben ihn.",
+    "refresh": "Neu berechnen",
+    "filename": "mengen"
   }
 }

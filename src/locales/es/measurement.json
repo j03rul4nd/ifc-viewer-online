@@ -117,7 +117,11 @@
     "value": "Valor",
     "unit": "Unidad",
     "perimeter": "Perímetro",
-    "filename": "mediciones"
+    "filename": "mediciones",
+    "volume": "Volumen",
+    "requirement": "Requisito",
+    "check": "Comprobación",
+    "note": "Nota"
   },
   "section": {
     "title": "Sección",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Longitud total",
-    "area": "Área total"
+    "area": "Área total",
+    "volume": "Volumen total",
+    "checks": "Requisitos cumplidos",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Elemento seleccionado",
@@ -190,5 +197,83 @@
     "latest": "Última",
     "levels": "Plantas",
     "position": "Posición del corte"
+  },
+  "rules": {
+    "extrusion": "Altura → volumen",
+    "extrusionHint": "Espesor o profundidad: convierte el área en un prisma (forjado, solera, excavación, volumen de sala)",
+    "volume": "Volumen",
+    "add": "Requisito",
+    "preset": {
+      "corridor": "Pasillo ≥ 1,20",
+      "door": "Puerta ≥ 0,80",
+      "headroom": "Altura libre ≥ 2,10",
+      "ramp": "Rampa ≤ 8 %",
+      "turning": "Giro ⌀ 1,50",
+      "right": "Escuadra 90°"
+    },
+    "presetHint": {
+      "corridor": "Ancho libre de pasillo de al menos 1,20 m",
+      "door": "Paso libre de puerta de al menos 0,80 m",
+      "headroom": "Altura libre vertical (ΔZ) de al menos 2,10 m",
+      "ramp": "Pendiente de como máximo 8 %",
+      "turning": "Círculo de giro de silla de ruedas de al menos 1,50 m",
+      "right": "Ángulo entre 89,5° y 90,5°"
+    },
+    "target": "Valor comprobado",
+    "targets": {
+      "value": "Valor",
+      "slope": "Pendiente",
+      "height": "Altura (ΔZ)",
+      "volume": "Volumen"
+    },
+    "op": "Regla",
+    "ops": {
+      "min": "como mínimo",
+      "max": "como máximo",
+      "range": "entre"
+    },
+    "min": "Mínimo",
+    "max": "Máximo",
+    "remove": "Quitar requisito",
+    "fail": "No cumple por {{by}}",
+    "na": "Este valor no aplica a esta medición",
+    "note": "Nota",
+    "notePlaceholder": "Añade una nota…",
+    "status": {
+      "pass": "Cumple",
+      "fail": "No cumple"
+    },
+    "pass": "Cumple el requisito"
+  },
+  "takeoff": {
+    "title": "Mediciones",
+    "run_one": "Medir {{count}} elemento",
+    "run_other": "Medir {{count}} elementos",
+    "loading": "Leyendo cantidades…",
+    "hint": "Suma las cantidades IFC (Qto) de la selección: unidades, longitud, superficie, volumen, peso.",
+    "groupLabel": "Agrupar por",
+    "groupBy": {
+      "class": "Clase",
+      "type": "Tipo",
+      "storey": "Planta"
+    },
+    "count": "Uds.",
+    "kinds": {
+      "length": "Longitud",
+      "area": "Superficie",
+      "volume": "Volumen",
+      "weight": "Peso"
+    },
+    "coverage": "Cobertura",
+    "source": "Cantidad usada",
+    "none": "(ninguno)",
+    "mixed": "unidades mezcladas",
+    "coverageOf": "{{covered}} de {{count}} elementos la tienen",
+    "partial": "A algunos elementos les falta esta cantidad",
+    "missing_one": "{{count}} de {{total}} elementos no lleva cantidades IFC: no entra en las sumas.",
+    "missing_other": "{{count}} de {{total}} elementos no llevan cantidades IFC: no entran en las sumas.",
+    "note": "Un valor por elemento, neto antes que bruto. * = no todos los elementos lo tienen.",
+    "refresh": "Recalcular",
+    "filename": "mediciones"
   }
 }
