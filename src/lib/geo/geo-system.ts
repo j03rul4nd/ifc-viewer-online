@@ -522,6 +522,12 @@ export interface GeoSystemAPI {
    * to groundHeightAt on the flat map or at ×1. Null when the map is off.
    */
   trueGroundHeightAt(x: number, z: number): number | null
+  /**
+   * Scene Y, in the same TRUE heights as trueGroundHeightAt, of an absolute
+   * elevation (metres above the DEM's datum ≈ mean sea level): where the sea
+   * stands for the flood's coast. Null when the map is off.
+   */
+  sceneYOfElevation(elevationM: number): number | null
   /** The ground under the map: relief on or off, its exaggeration and the DEM it came from. Null when off. */
   getTerrainInfo(): { relief: boolean; exaggeration: number; source: DemSourceId | null } | null
   /** The map's root object (terrain, buildings, trees…): occluders for the solar analysis. Null when off. */
@@ -1438,6 +1444,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // The relief is drawn as plane + (E − E_anchor)·k (vertical-frame.absoluteGroundM).
       const planeY = geoRoot.position.y
       return planeY + (g - planeY) / (terrainExaggeration > 0 ? terrainExaggeration : 1)
+    },
+
+    sceneYOfElevation(elevationM: number) {
+      if (!geoRoot || !placement) return null
+      // The inverse of vertical-frame.absoluteGroundM at ×1: the relief is the
+      // plane plus (E − E_anchor); on the flat map the anchor is at 0 m.
+      return geoRoot.position.y + (elevationM - (terrain?.anchorElevation ?? 0))
     },
 
     getTerrainInfo() {

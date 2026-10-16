@@ -56,6 +56,8 @@ export interface FloodGeoLike {
   getContextRoot(): THREE.Object3D | null
   /** The map's OpenStreetMap data (features, hydrology, lat/lon → scene); fetched once by the map. */
   getOsmContext?(): Promise<OsmContext | null>
+  /** Scene Y (true heights) of an absolute elevation on the map's datum: where the sea stands. */
+  sceneYOfElevation?(elevationM: number): number | null
 }
 
 export interface FloodContext {
@@ -342,6 +344,14 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let baseH0: Float32Array | undefined
   /** A coastal sea is standing on the grid: the run keeps its edges closed. */
   let coastOn = false
+  /**
+   * Scene Y of mean sea level on the ground the grid was built from, or null
+   * when that ground has no datum (a plane, an IFC terrain without a height
+   * reference). The grid's beds are SCENE heights — 0 is the model's ground
+   * floor, and fitting the map to the model shifts them again — so a coastal
+   * level in metres above the sea has to be carried into that frame.
+   */
+  let seaY: number | null = null
   let oldCourseOverlay: THREE.LineSegments | null = null
   let reachedOverlay: THREE.LineSegments | null = null
   // ── Timeline ──
@@ -751,6 +761,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       // under the footprint (its corners and a 5 × 5 sample of its extent)
       // against the plane level. A DEM without a datum was already stood there.
       let groundFit: GroundFit | null = null
+      let seaYDem: number | null = null
+      let seaYMap: number | null = null
       {
         const xs = points.map((q) => q.x)
         const zs = points.map((q) => q.z)
@@ -769,11 +781,13 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
           const off = groundY - median(under)
           return Math.abs(off) > GROUND_FIT_TOLERANCE_M ? off : null
         }
+        if (demFn && demHasDatum && o.georef) seaYDem = elevationToSceneY(o.georef, 0)
+        if (useMap && geo?.sceneYOfElevation) seaYMap = geo.sceneYOfElevation(0)
         if (demFn && demHasDatum) {
           const d = offsetOf(demFn)
           if (d !== null) {
             groundFit = { source: 'dem', offsetM: d, applied: fit }
-            if (fit) { const f = demFn; demFn = (x, z) => f(x, z) + d }
+            if (fit) { const f = demFn; demFn = (x, z) => f(x, z) + d; if (seaYDem !== null) seaYDem += d }
           }
         }
         if (mapTrue) {
@@ -783,6 +797,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
             if (fit) {
               const f = mapTrue
               mapTrue = (x, z) => { const v = f(x, z); return v === null ? null : v + d }
+              if (seaYMap !== null) seaYMap += d
               // The map's own relief no longer matches: the simulation draws its
               // ground (true heights, shifted) and the water sits on that.
               mapDrawn = mapTrue
@@ -829,6 +844,14 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       grid = built.grid
       baseH0 = grid.h0?.slice()
       coastOn = false
+      {
+        const src = built.report.terrain
+        seaY = src === 'map' ? seaYMap
+          : src === 'dem' ? seaYDem
+          : src === 'ifc' && o.georef ? elevationToSceneY(o.georef, 0)
+          : null
+        if (seaY !== null && !Number.isFinite(seaY)) seaY = null
+      }
       {
         const cs = [[0, 0], [gp.nx, 0], [0, gp.ny], [gp.nx, gp.ny]].map(([i, j]) => fromGridLocal(gp.frame, i * gp.dx, j * gp.dx))
         extent = {
@@ -1165,13 +1188,13 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const levels = coastLevels(c.profile, c.scenario)
       const seaMask = osmSurface?.sea
       const cell = g.dx * g.dx
-      if (!seaMask || !seaMask.some((v) => v === 1)) {
+      if (!seaMask || !seaMask.some((v) => v === 1) || seaY === null) {
         g.h0 = baseH0?.slice()
         coastOn = false
         return { profile: c.profile, levels, seaAreaM2: 0, landTakenM2: 0, runupAreaM2: 0, noSea: true }
       }
-      // The scene's datum: the map puts mean sea level at 0 m.
-      const fill = seaFill(g, seaMask, levels.stillM, levels.runupM)
+      // Metres above mean sea level → the grid's scene heights.
+      const fill = seaFill(g, seaMask, seaY + levels.stillM, levels.runupM)
       const h0 = baseH0 ? baseH0.slice() : new Float32Array(g.nx * g.ny)
       for (let k = 0; k < h0.length; k++) h0[k] = Math.max(h0[k], fill.h0[k])
       g.h0 = h0
