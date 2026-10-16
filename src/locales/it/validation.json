@@ -317,5 +317,17 @@
     "fmtCobieDesc": "Cartella COBie strutturale per la consegna FM — spazi, tipi, componenti, contatti",
     "cobieBusy": "Estrazione…",
     "cobieFailed": "Estrazione COBie non riuscita — ricarica il modello e riprova."
+  },
+  "upsell": {
+    "fixTitle": "Correggi automaticamente questi problemi",
+    "fixDesc": "Stiamo preparando correzioni con un clic per tipi mancanti, nomi duplicati o vuoti e proxy: ricevi un IFC pulito.",
+    "certTitle": "Dimostra questo punteggio al tuo cliente",
+    "certDesc": "Stiamo preparando certificati verificabili: il tuo cliente controlla il risultato con un solo link.",
+    "cta": "Accesso anticipato",
+    "label": "Lasciaci la tua email e ti scriveremo una sola volta, quando sarà pronto. Niente spam.",
+    "submit": "Avvisami",
+    "thanks": "Grazie: ti scriveremo una sola volta, al lancio.",
+    "error": "Impossibile salvare. Riprova.",
+    "dismiss": "Chiudi"
   }
 }

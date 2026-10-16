@@ -317,5 +317,17 @@
     "fmtCobieDesc": "Livro COBie estrutural para a entrega FM — espaços, tipos, componentes, contactos",
     "cobieBusy": "A extrair…",
     "cobieFailed": "A extração COBie falhou — recarregue o modelo e tente novamente."
+  },
+  "upsell": {
+    "fixTitle": "Corrija estes problemas automaticamente",
+    "fixDesc": "Estamos a preparar correções com um clique para tipos em falta, nomes duplicados ou vazios e proxies: recebe um IFC limpo.",
+    "certTitle": "Comprove esta pontuação ao seu cliente",
+    "certDesc": "Estamos a preparar certificados verificáveis: o seu cliente confirma o resultado com um único link.",
+    "cta": "Acesso antecipado",
+    "label": "Deixe o seu email e escrevemos uma única vez, quando estiver pronto. Sem spam.",
+    "submit": "Avisar-me",
+    "thanks": "Obrigado: escrevemos uma única vez, no lançamento.",
+    "error": "Não foi possível guardar. Tente novamente.",
+    "dismiss": "Fechar"
   }
 }

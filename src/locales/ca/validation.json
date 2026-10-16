@@ -317,5 +317,17 @@
     "fmtCobieDesc": "Llibre COBie estructural per al lliurament FM — espais, tipus, components, contactes",
     "cobieBusy": "Extraient…",
     "cobieFailed": "L'extracció COBie ha fallat — recarrega el model i torna-ho a provar."
+  },
+  "upsell": {
+    "fixTitle": "Corregeix aquests problemes automàticament",
+    "fixDesc": "Estem preparant correccions amb un clic per a tipus absents, noms duplicats o buits i proxies: reps un IFC net.",
+    "certTitle": "Demostra aquesta puntuació al teu client",
+    "certDesc": "Estem preparant certificats verificables: el teu client comprova el resultat amb un sol enllaç.",
+    "cta": "Accés anticipat",
+    "label": "Deixa'ns el teu correu i t'escriurem una sola vegada, quan estigui llest. Sense spam.",
+    "submit": "Avisa'm",
+    "thanks": "Gràcies: t'escriurem una sola vegada, quan es llanci.",
+    "error": "No s'ha pogut desar. Torna-ho a provar.",
+    "dismiss": "Tanca"
   }
 }
