@@ -293,5 +293,27 @@
     "no-element": "Click on an element of a model",
     "same-element": "That is the same element — click another one",
     "no-geometry": "This element has no geometry to measure"
+  },
+  "session": {
+    "open": "Open",
+    "openHint": "Open a measurements file (.json) and add it to the list",
+    "save": "Save",
+    "saveHint": "Save every measurement — with requirements, heights and notes — as a .json file to reopen or share",
+    "offer_one": "{{count}} measurement from your last session on these models",
+    "offer_other": "{{count}} measurements from your last session on these models",
+    "restore": "Restore",
+    "dismiss": "Dismiss",
+    "restored_one": "Restored {{count}} measurement",
+    "restored_other": "Restored {{count}} measurements",
+    "opened_one": "Opened {{count}} measurement",
+    "opened_other": "Opened {{count}} measurements",
+    "missing": "Taken on models that are not loaded: {{models}}. Their dimensions may float in the air.",
+    "skipped_one": "{{count}} broken entry was skipped.",
+    "skipped_other": "{{count}} broken entries were skipped.",
+    "error": {
+      "not-json": "That file is not valid JSON.",
+      "not-measurements": "That file is not a measurements file.",
+      "newer-version": "That file was saved by a newer version — reload the page and try again."
+    }
   }
 }

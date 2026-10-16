@@ -293,5 +293,27 @@
     "no-element": "Auf ein Bauteil des Modells klicken",
     "same-element": "Das ist dasselbe Bauteil – ein anderes anklicken",
     "no-geometry": "Dieses Bauteil hat keine messbare Geometrie"
+  },
+  "session": {
+    "open": "Öffnen",
+    "openHint": "Messungsdatei (.json) öffnen und zur Liste hinzufügen",
+    "save": "Speichern",
+    "saveHint": "Alle Messungen – mit Anforderungen, Höhen und Notizen – als .json speichern, um sie wieder zu öffnen oder zu teilen",
+    "offer_one": "{{count}} Messung aus Ihrer letzten Sitzung mit diesen Modellen",
+    "offer_other": "{{count}} Messungen aus Ihrer letzten Sitzung mit diesen Modellen",
+    "restore": "Wiederherstellen",
+    "dismiss": "Verwerfen",
+    "restored_one": "{{count}} Messung wiederhergestellt",
+    "restored_other": "{{count}} Messungen wiederhergestellt",
+    "opened_one": "{{count}} Messung geöffnet",
+    "opened_other": "{{count}} Messungen geöffnet",
+    "missing": "Auf Modellen gemessen, die nicht geladen sind: {{models}}. Ihre Maße können in der Luft hängen.",
+    "skipped_one": "{{count}} beschädigter Eintrag wurde übersprungen.",
+    "skipped_other": "{{count}} beschädigte Einträge wurden übersprungen.",
+    "error": {
+      "not-json": "Die Datei ist kein gültiges JSON.",
+      "not-measurements": "Die Datei ist keine Messungsdatei.",
+      "newer-version": "Die Datei wurde mit einer neueren Version gespeichert – Seite neu laden und erneut versuchen."
+    }
   }
 }

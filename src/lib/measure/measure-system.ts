@@ -28,6 +28,7 @@ import type { ScenePicker, PickResult, PickOptions } from './picker'
 import { Stroke, Dots, Fill, Label, OVERLAY_COLORS, paintLabel } from './overlay'
 import { checkItem, volumeOf } from './checks'
 import { minDistance } from './clearance-math'
+import type { SavedMeasurement } from './measure-file'
 import * as M from './measure-math'
 import { createTaskQueue } from './async'
 import {
@@ -88,6 +89,12 @@ export interface MeasureSystem {
   rename(id: string, name: string | null): void
   /** Attach a requirement, an extrusion height or a note to an item (null clears). */
   annotate(id: string, patch: Partial<Pick<MeasureItem, 'requirement' | 'extrusion' | 'note'>>): void
+  /**
+   * Add saved measurements back (from a file or the last session). Values are
+   * recomputed from the points. `replace` clears the list first. Returns how
+   * many were added.
+   */
+  restore(saved: readonly SavedMeasurement[], options?: { replace?: boolean }): number
   focus(id: string): void
   /**
    * Paint every visible measurement label into a 2D canvas that holds the
@@ -1079,6 +1086,43 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       const clean = name?.trim() || null
       entry.item = { ...entry.item, name: clean }
       emit()
+    },
+    restore(saved, options) {
+      if (options?.replace) clear()
+      let added = 0
+      for (const s of saved) {
+        const pts = s.points.map(v3)
+        const before = selectedId
+        switch (s.kind) {
+          case 'distance':
+            createDistance(pts[0], pts[1], !!s.perpendicular, { source: s.source, clash: s.clash, approximate: s.approximate })
+            break
+          case 'path': createPath(pts); break
+          case 'area': createArea(pts, s.areaSource ?? 'polygon'); break
+          case 'angle': createAngle(pts[0], pts[1], pts[2]); break
+          case 'point': {
+            const base = newBase('point', pts)
+            // The coordinates as they were read on the model; recomputing them
+            // would need the model under the point, which may not be loaded.
+            const fallback = deps.toModelCoordinates(pts[0], null)
+            addItem({ ...base, kind: 'point', coords: s.coords ?? fallback.coords, frame: s.coords ? s.frame ?? 'scene' : fallback.frame })
+            break
+          }
+        }
+        if (selectedId === before || !selectedId) continue
+        const entry = entries.get(selectedId)
+        if (!entry) continue
+        entry.item = {
+          ...entry.item, name: s.name, visible: s.visible,
+          requirement: s.requirement ?? null, note: s.note ?? null,
+          ...(entry.item.kind === 'area' ? { extrusion: s.extrusion ?? null } : {}),
+        } as MeasureItem
+        added++
+      }
+      selectedId = null
+      refreshAll()
+      emit()
+      return added
     },
     annotate(id, patch) {
       const entry = entries.get(id)

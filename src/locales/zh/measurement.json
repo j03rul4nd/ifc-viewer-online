@@ -293,5 +293,27 @@
     "no-element": "请点击模型中的构件",
     "same-element": "这是同一个构件，请点击另一个",
     "no-geometry": "此构件没有可测量的几何"
+  },
+  "session": {
+    "open": "打开",
+    "openHint": "打开测量文件（.json）并添加到列表",
+    "save": "保存",
+    "saveHint": "将所有测量（含要求、高度和备注）保存为 .json，便于再次打开或分享",
+    "offer_one": "这些模型上次会话中的 {{count}} 个测量",
+    "offer_other": "这些模型上次会话中的 {{count}} 个测量",
+    "restore": "恢复",
+    "dismiss": "忽略",
+    "restored_one": "已恢复 {{count}} 个测量",
+    "restored_other": "已恢复 {{count}} 个测量",
+    "opened_one": "已打开 {{count}} 个测量",
+    "opened_other": "已打开 {{count}} 个测量",
+    "missing": "测量所用的模型未加载：{{models}}。其尺寸可能悬在空中。",
+    "skipped_one": "已跳过 {{count}} 个损坏的条目。",
+    "skipped_other": "已跳过 {{count}} 个损坏的条目。",
+    "error": {
+      "not-json": "该文件不是有效的 JSON。",
+      "not-measurements": "该文件不是测量文件。",
+      "newer-version": "该文件由更新的版本保存：请刷新页面后重试。"
+    }
   }
 }

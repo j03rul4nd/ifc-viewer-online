@@ -293,5 +293,27 @@
     "no-element": "Cliquez sur un élément de la maquette",
     "same-element": "C’est le même élément : cliquez sur un autre",
     "no-geometry": "Cet élément n’a pas de géométrie à mesurer"
+  },
+  "session": {
+    "open": "Ouvrir",
+    "openHint": "Ouvrir un fichier de mesures (.json) et l’ajouter à la liste",
+    "save": "Enregistrer",
+    "saveHint": "Enregistrer toutes les mesures — avec exigences, hauteurs et notes — en .json pour les rouvrir ou les partager",
+    "offer_one": "{{count}} mesure de votre dernière session sur ces maquettes",
+    "offer_other": "{{count}} mesures de votre dernière session sur ces maquettes",
+    "restore": "Restaurer",
+    "dismiss": "Ignorer",
+    "restored_one": "{{count}} mesure restaurée",
+    "restored_other": "{{count}} mesures restaurées",
+    "opened_one": "{{count}} mesure ouverte",
+    "opened_other": "{{count}} mesures ouvertes",
+    "missing": "Prises sur des maquettes non chargées : {{models}}. Leurs cotes peuvent flotter dans le vide.",
+    "skipped_one": "{{count}} entrée endommagée a été ignorée.",
+    "skipped_other": "{{count}} entrées endommagées ont été ignorées.",
+    "error": {
+      "not-json": "Ce fichier n’est pas un JSON valide.",
+      "not-measurements": "Ce fichier n’est pas un fichier de mesures.",
+      "newer-version": "Ce fichier a été enregistré par une version plus récente : rechargez la page et réessayez."
+    }
   }
 }

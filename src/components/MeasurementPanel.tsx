@@ -44,6 +44,7 @@ import {
 import { checkItem, volumeOf } from '../lib/measure/checks'
 import { CheckBadge, MeasureRules, formatRequirement } from './measure/MeasureRules'
 import { TakeoffSection } from './measure/TakeoffSection'
+import { MeasureSession, useLoadedModelNames, useMeasureAutosave } from './measure/MeasureSession'
 import { defaultPrecisionFor, loadMeasureSettings, saveMeasureSettings } from '../lib/measure/measure-settings'
 import { isTypingTarget, useMeasureHover, useMeasureSnapshot } from './measure/useMeasureStores'
 import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
@@ -164,6 +165,9 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
 
   const system = viewerApiRef.current?.getMeasure() ?? null
   const snapshot = useMeasureSnapshot(system)
+  const modelNames = useLoadedModelNames()
+  // The last session of these models, kept in this browser (MeasureSession offers it back).
+  useMeasureAutosave(snapshot?.items, modelNames)
   const hover = useMeasureHover(system)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -551,6 +555,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 </label>
               </div>
             )}
+            <MeasureSession system={system} items={snapshot.items} modelNames={modelNames} onFlash={setFlash} touch />
             {snapshot.items.length === 0 ? (
               <p className="px-5 py-6 text-center text-[12.5px] text-[var(--text-faint)] leading-relaxed">{t('panel.empty')}</p>
             ) : (
@@ -789,6 +794,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             </div>
           )}
           <TakeoffSection selection={selection} viewerApiRef={viewerApiRef} settings={settings} onFlash={setFlash} />
+          <MeasureSession system={system} items={snapshot.items} modelNames={modelNames} onFlash={setFlash} />
           {snapshot.items.length === 0 ? (
             <div className="px-3 py-4 text-center">
               <p className="text-[11px] text-[var(--text-faint)] leading-relaxed">{t('panel.empty')}</p>
