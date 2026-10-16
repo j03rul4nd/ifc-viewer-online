@@ -22,6 +22,7 @@ import {
   defaultRoofShape, defaultRoofFraction, hashId, variate, type FacadeContext,
 } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
+import { subdivideMesh } from './surface-tessellation'
 import { GrowableArray, type NumberSink } from './growable-array'
 import { runToEnd, type Steps } from './steps'
 import { runSliced, type SliceOptions } from './render-scheduler'
@@ -406,8 +407,14 @@ function* buildingsGeometrySteps(
       try { faces = THREE.ShapeUtils.triangulateShape(metricRing, []) } catch { return }
     }
     const wallSpanM = Math.max(0, topM - baseM)
+    // `roof:angle` with the half-span across the ridge IS a height, and it
+    // outranks the 3 m placeholder an untagged `roof:height` falls back to.
+    const angleRoofM = b.style?.roofAngleDeg !== undefined && roofShape !== 'flat'
+      ? Math.tan((b.style.roofAngleDeg * Math.PI) / 180)
+        * (roofFrame(ring2d, centroid, ridgeAxis(ring2d, b.style?.roofAcross === true)).halfAcross / metresToNormalized)
+      : null
     const roofWantedM = stated
-      ? (b.style?.roofHeightM ?? 0)
+      ? (b.style?.roofHeightTagged ? (b.style?.roofHeightM ?? 0) : angleRoofM ?? (b.style?.roofHeightM ?? 0))
       : wallSpanM * defaultRoofFraction(facade)
     const roofM = roofShape === 'flat' ? 0 : Math.min(roofWantedM, wallSpanM * 0.5)
     const eaveZ = topZ - roofM * metresToNormalized
@@ -509,13 +516,88 @@ function* buildingsGeometrySteps(
             zOf(k), zOf(k + 1), zOf(k + 1), 0, 0, 1, tinted(shade, roofTint))
         }
       }
+    } else if (roofShape === 'hipped') {
+      // HIPPED, exactly. The roof of the footprint's ridge-aligned box is four
+      // planes; each plane owns a convex region of that box (two trapezoids
+      // and two triangles meeting at the ridge). Clipping the real footprint
+      // against each region and lifting every clipped piece onto its own plane
+      // gives the true ridge and hips over ANY outline — no fan to fake them,
+      // and an L-shaped house still gets one continuous roof.
+      const axis = ridgeAxis(ring2d, b.style?.roofAcross === true)
+      const frame = roofFrame(ring2d, centroid, axis)
+      const fill = Math.abs(ringAreaXY(ring2d)) / Math.max(1e-30, 4 * frame.halfAlong * frame.halfAcross)
+      if (fill < HIPPED_BOX_FILL) {
+        // NOT A BOX: an L, a T, a bent terrace. The box's four planes would
+        // leave the inside corner standing open, so the roof is the footprint's
+        // own distance field instead — height grows with the distance to the
+        // nearest eave, which IS the hipped roof on every straight run and
+        // the right valley in every inside corner (the straight skeleton,
+        // rounded by the mesh only where a reflex corner throws a cone).
+        const tris = THREE.ShapeUtils.triangulateShape(ring2d, [])
+        const spanN = Math.max(frame.halfAlong, frame.halfAcross) * 2
+        const fine = subdivideMesh(ring2d.map((p) => ({ x: p.x, y: p.y })),
+          tris.map((t) => [t[0], t[1], t[2]] as [number, number, number]),
+          { maxEdgeM: spanN / 32, maxPoints: ring2d.length + 1000 })
+        const depth = fine.points.map((p) => distanceToRingXY(p, ring2d))
+        // Equal slopes everywhere, so the deepest point is the ridge.
+        const scale = Math.max(1e-30, ...depth)
+        const z = (i: number) => eaveZ + (topZ - eaveZ) * Math.min(1, depth[i] / scale)
+        for (const [ia, ib, ic] of fine.faces) {
+          const pa = fine.points[ia]; const pb = fine.points[ib]; const pc = fine.points[ic]
+          const va = new THREE.Vector2(pa.x, pa.y); const vb = new THREE.Vector2(pb.x, pb.y); const vc = new THREE.Vector2(pc.x, pc.y)
+          const n = new THREE.Vector3(vb.x - va.x, vb.y - va.y, z(ib) - z(ia))
+            .cross(new THREE.Vector3(vc.x - va.x, vc.y - va.y, z(ic) - z(ia))).normalize()
+          if (n.z < 0) n.negate()
+          pushTriangle(positions, normals, colors, va, vb, vc, z(ia), z(ib), z(ic), n.x, n.y, n.z,
+            tinted(roofBase * (0.84 + 0.16 * Math.max(0, n.y * 0.6 - n.x * 0.4 + 0.6)), roofTint))
+        }
+      } else for (const facet of hippedFacets(ring2d, centroid, axis, eaveZ, topZ)) {
+        const piece = clipConvex(ring2d, facet.region)
+        if (piece.length < 3) continue
+        let tris: number[][]
+        try { tris = THREE.ShapeUtils.triangulateShape(piece, []) } catch { continue }
+        const shade = roofBase * facet.shade
+        for (const [ia, ib, ic] of tris) {
+          const pa = piece[ia]; const pb = piece[ib]; const pc = piece[ic]
+          pushTriangle(positions, normals, colors, pa, pb, pc,
+            facet.z(pa), facet.z(pb), facet.z(pc), facet.n.x, facet.n.y, facet.n.z, tinted(shade, roofTint))
+        }
+      }
+    } else if (roofShape === 'gambrel') {
+      // GAMBREL: the gabled fan with a knee. Each eave point climbs steeply to
+      // a break 45 % of the way to the ridge, three quarters of the roof's
+      // height up, then gently to the ridge. On the end walls the same fan
+      // stands vertical and draws the five-sided gable a gambrel is known by.
+      const axis = ridgeAxis(ring2d, b.style?.roofAcross === true)
+      const half = ring2d.map((p) => signedOffset(p, centroid, axis))
+      const kneeZ = eaveZ + (topZ - eaveZ) * 0.75
+      const knee = (p: THREE.Vector2, r: THREE.Vector2) => new THREE.Vector2(p.x + (r.x - p.x) * 0.45, p.y + (r.y - p.y) * 0.45)
+      for (let i = 0; i < ring2d.length; i++) {
+        const j = (i + 1) % ring2d.length
+        const p0 = ring2d[i]; const p1 = ring2d[j]
+        const r0 = projectToAxis(p0, centroid, axis); const r1 = projectToAxis(p1, centroid, axis)
+        const k0 = knee(p0, r0); const k1 = knee(p1, r1)
+        const side = half[i] + half[j] > 0
+        const steep = tinted(roofBase * (side ? 0.94 : 0.80), roofTint)
+        const gentle = tinted(roofBase * (side ? 1.0 : 0.88), roofTint)
+        pushTriangle(positions, normals, colors, p0, p1, k1, eaveZ, eaveZ, kneeZ, 0, 0, 1, steep)
+        pushTriangle(positions, normals, colors, p0, k1, k0, eaveZ, kneeZ, kneeZ, 0, 0, 1, steep)
+        pushTriangle(positions, normals, colors, k0, k1, r1, kneeZ, kneeZ, topZ, 0, 0, 1, gentle)
+        pushTriangle(positions, normals, colors, k0, r1, r0, kneeZ, topZ, topZ, 0, 0, 1, gentle)
+      }
     } else if (roofShape === 'skillion') {
       // A mono-pitch: ONE tilted plane over the whole footprint, low on one
       // side and high on the other. Reuses the cap triangulation rather than
       // fanning to an apex, because a skillion has no ridge to fan from — every
       // vertex simply gets its own height across the short axis.
       const axis = ridgeAxis(ring2d, b.style?.roofAcross === true)
-      const across = ring2d.map((p) => signedOffset(p, centroid, axis))
+      // `roof:direction` is the bearing the slope FACES, so the LOW eave is on
+      // that side. +x is east and +y north in this frame; the offset is taken
+      // against the uphill direction so 0..1 still runs low eave to high edge.
+      const dir = b.style?.roofDirectionDeg
+      const across = dir !== undefined
+        ? ring2d.map((p) => -((p.x - centroid.x) * Math.sin((dir * Math.PI) / 180) + (p.y - centroid.y) * Math.cos((dir * Math.PI) / 180)))
+        : ring2d.map((p) => signedOffset(p, centroid, axis))
       const span = Math.max(...across.map(Math.abs)) || 1
       // Normalised 0 at the low eave, 1 at the high edge.
       const zAt = (i: number): number =>
@@ -1221,20 +1303,169 @@ function pushArch(
   }
 }
 
-/** Unit vector along the footprint's longest extent — the natural ridge line. */
-function longestAxis(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: number } {
+/**
+ * Unit vector along the footprint's LONG SIDE — the natural ridge line.
+ *
+ * Not the longest distance between two vertices: on a rectangle that is the
+ * DIAGONAL, and every ridge in the city ran corner to corner across its roof.
+ * The long side of the minimum-area enclosing rectangle is what a builder
+ * means by "along the building"; it is found by trying each edge direction
+ * (rotating calipers without the hull — footprints are a few dozen vertices).
+ */
+export function longestAxis(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: number } {
   let best = { x: 1, y: 0 }
-  let bestLen = -1
+  let bestArea = Infinity
   for (let i = 0; i < ring.length; i++) {
-    for (let j = i + 1; j < ring.length; j++) {
-      const dx = ring[j].x - ring[i].x
-      const dy = ring[j].y - ring[i].y
-      const len = dx * dx + dy * dy
-      if (len > bestLen) { bestLen = len; best = { x: dx, y: dy } }
+    const p = ring[i]; const q = ring[(i + 1) % ring.length]
+    const len = Math.hypot(q.x - p.x, q.y - p.y)
+    if (len === 0) continue
+    const ux = (q.x - p.x) / len; const uy = (q.y - p.y) / len
+    let uMin = Infinity; let uMax = -Infinity; let vMin = Infinity; let vMax = -Infinity
+    for (const r of ring) {
+      const u = r.x * ux + r.y * uy; const v = -r.x * uy + r.y * ux
+      if (u < uMin) uMin = u; if (u > uMax) uMax = u
+      if (v < vMin) vMin = v; if (v > vMax) vMax = v
+    }
+    const area = (uMax - uMin) * (vMax - vMin)
+    // Strictly smaller by a hair, so a rectangle's two equal answers do not
+    // flip with float noise between rebuilds.
+    if (area < bestArea * (1 - 1e-9)) {
+      bestArea = area
+      best = uMax - uMin >= vMax - vMin ? { x: ux, y: uy } : { x: -uy, y: ux }
     }
   }
-  const n = Math.hypot(best.x, best.y)
-  return n === 0 ? { x: 1, y: 0 } : { x: best.x / n, y: best.y / n }
+  return best
+}
+
+/** Below this share of its ridge-aligned box, a footprint is not a box. */
+const HIPPED_BOX_FILL = 0.88
+
+function ringAreaXY(r: ReadonlyArray<{ x: number; y: number }>): number {
+  let a = 0
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j].x * r[i].y - r[i].x * r[j].y
+  return a / 2
+}
+
+/** Distance from p to the nearest edge of a closed ring. */
+function distanceToRingXY(p: { x: number; y: number }, r: ReadonlyArray<{ x: number; y: number }>): number {
+  let best = Infinity
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const a = r[j]; const b = r[i]
+    const dx = b.x - a.x; const dy = b.y - a.y
+    const l2 = dx * dx + dy * dy
+    const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0
+    best = Math.min(best, Math.hypot(a.x + t * dx - p.x, a.y + t * dy - p.y))
+  }
+  return best
+}
+
+/**
+ * The footprint's box in the ridge frame: half-lengths along and across the
+ * ridge axis, and the box's centre (which is not the centroid on an L).
+ */
+export function roofFrame(
+  ring: ReadonlyArray<THREE.Vector2>, centre: { x: number; y: number }, axis: { x: number; y: number },
+): { cx: number; cy: number; halfAlong: number; halfAcross: number } {
+  let uMin = Infinity; let uMax = -Infinity; let vMin = Infinity; let vMax = -Infinity
+  for (const p of ring) {
+    const dx = p.x - centre.x; const dy = p.y - centre.y
+    const u = dx * axis.x + dy * axis.y
+    const v = -dx * axis.y + dy * axis.x
+    uMin = Math.min(uMin, u); uMax = Math.max(uMax, u); vMin = Math.min(vMin, v); vMax = Math.max(vMax, v)
+  }
+  const uc = (uMin + uMax) / 2; const vc = (vMin + vMax) / 2
+  return {
+    cx: centre.x + axis.x * uc - axis.y * vc,
+    cy: centre.y + axis.y * uc + axis.x * vc,
+    halfAlong: (uMax - uMin) / 2, halfAcross: (vMax - vMin) / 2,
+  }
+}
+
+/** One plane of a hipped roof: the convex region it owns, its height and normal. */
+export interface RoofFacet {
+  region: THREE.Vector2[]
+  z: (p: THREE.Vector2) => number
+  n: THREE.Vector3
+  shade: number
+}
+
+/**
+ * The four planes of a hipped roof over the footprint's ridge-aligned box.
+ * Sides (long faces) are trapezoids, ends (hips) triangles; slopes are equal,
+ * so the ridge is the box's length less its width. Regions are padded past the
+ * box so clipping never shaves the footprint's own corners.
+ */
+export function hippedFacets(
+  ring: ReadonlyArray<THREE.Vector2>, centroid: { x: number; y: number },
+  axis: { x: number; y: number }, eaveZ: number, topZ: number,
+): RoofFacet[] {
+  const f = roofFrame(ring, centroid, axis)
+  const a = Math.max(f.halfAlong, 1e-12); const b = Math.max(f.halfAcross, 1e-12)
+  const m = Math.min(a, b)
+  const h = topZ - eaveZ
+  const pad = 1 + 1e-6
+  const P = (u: number, v: number) => new THREE.Vector2(
+    f.cx + (axis.x * u - axis.y * v), f.cy + (axis.y * u + axis.x * v))
+  const local = (p: THREE.Vector2) => {
+    const dx = p.x - f.cx; const dy = p.y - f.cy
+    return { u: dx * axis.x + dy * axis.y, v: -dx * axis.y + dy * axis.x }
+  }
+  const A = a * pad; const B = b * pad
+  const ra = a - m; const rb = b - m
+  // Normal of a plane rising inward from an edge whose outward unit (ox, oy)
+  // and slope h/m: (ox*h/m, oy*h/m, 1) normalised.
+  const normal = (ox: number, oy: number) => new THREE.Vector3(ox * (h / m), oy * (h / m), 1).normalize()
+  const world = (u: number, v: number) => ({ x: axis.x * u - axis.y * v, y: axis.y * u + axis.x * v })
+  const facets: RoofFacet[] = []
+  for (const s of [1, -1]) {
+    const o = world(0, s)
+    facets.push({
+      region: s > 0 ? [P(-A, B), P(-ra, rb), P(ra, rb), P(A, B)] : [P(A, -B), P(ra, -rb), P(-ra, -rb), P(-A, -B)],
+      z: (p) => eaveZ + h * Math.max(0, b - s * local(p).v) / m,
+      n: normal(o.x, o.y), shade: s > 0 ? 1.0 : 0.84,
+    })
+    const e = world(s, 0)
+    facets.push({
+      region: s > 0 ? [P(A, B), P(ra, rb), P(ra, -rb), P(A, -B)] : [P(-A, -B), P(-ra, -rb), P(-ra, rb), P(-A, B)],
+      z: (p) => eaveZ + h * Math.max(0, a - s * local(p).u) / m,
+      n: normal(e.x, e.y), shade: 0.92,
+    })
+  }
+  return facets
+}
+
+/**
+ * Sutherland–Hodgman: clip any simple polygon (concave allowed) to a CONVEX
+ * clip polygon. Either winding for both.
+ */
+export function clipConvex(subject: ReadonlyArray<THREE.Vector2>, clip: ReadonlyArray<THREE.Vector2>): THREE.Vector2[] {
+  let area = 0
+  for (let i = 0, j = clip.length - 1; i < clip.length; j = i++) area += clip[j].x * clip[i].y - clip[i].x * clip[j].y
+  const ccw = area > 0
+  let out: THREE.Vector2[] = subject.slice()
+  for (let i = 0; i < clip.length && out.length; i++) {
+    const c0 = clip[i]; const c1 = clip[(i + 1) % clip.length]
+    const inside = (p: THREE.Vector2) => {
+      const cr = (c1.x - c0.x) * (p.y - c0.y) - (c1.y - c0.y) * (p.x - c0.x)
+      return ccw ? cr >= 0 : cr <= 0
+    }
+    const cut = (p: THREE.Vector2, q: THREE.Vector2) => {
+      const dx = q.x - p.x; const dy = q.y - p.y
+      const ex = c1.x - c0.x; const ey = c1.y - c0.y
+      const den = dx * ey - dy * ex
+      const t = den === 0 ? 0 : ((c0.x - p.x) * ey - (c0.y - p.y) * ex) / den
+      return new THREE.Vector2(p.x + dx * t, p.y + dy * t)
+    }
+    const input = out
+    out = []
+    for (let k = 0; k < input.length; k++) {
+      const p = input[k]; const q = input[(k + 1) % input.length]
+      const pin = inside(p); const qin = inside(q)
+      if (pin) out.push(p)
+      if (pin !== qin) out.push(cut(p, q))
+    }
+  }
+  return out
 }
 
 /** How many bands a dome is built from. Enough to read as curved, few enough

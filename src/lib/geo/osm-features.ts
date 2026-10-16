@@ -292,6 +292,18 @@ export interface FeatureStyle {
   /** `roof:orientation=across`: the ridge runs on the SHORT axis, not the long. */
   roofAcross?: boolean
   /**
+   * `roof:angle`, degrees from horizontal. With the footprint's span it IS
+   * the roof's height, so it answers when `roof:height` does not.
+   */
+  roofAngleDeg?: number
+  /** True when `roofHeightM` was stated (`roof:height` / `roof:levels`), not the placeholder. */
+  roofHeightTagged?: boolean
+  /**
+   * `roof:direction`: the compass bearing a roof's slope FACES (downhill).
+   * Decides which side of a mono-pitch is low.
+   */
+  roofDirectionDeg?: number
+  /**
    * `oneway=-1`: one-way AGAINST the way's own direction.
    *
    * Nothing in the measured district uses it, so it earns its place here only
@@ -374,7 +386,7 @@ export function parseCrossingMarkings(raw: string | undefined): CrossingMarkings
   }
 }
 
-export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion' | 'dome' | 'mansard'
+export type RoofShape = 'flat' | 'gabled' | 'hipped' | 'gambrel' | 'pyramidal' | 'skillion' | 'dome' | 'mansard'
 
 /**
  * What a building is FOR, in the few categories that change how it looks.
@@ -1243,10 +1255,18 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
     case 'mansard':
       return 'mansard'
     case 'gabled':
-    case 'hipped':      // close enough at this scale; both read as a ridge
-    case 'half-hipped':
-    case 'gambrel':
+    case 'saltbox':
       return 'gabled'
+    // Four slopes and a short ridge — the commonest pitched roof in southern
+    // Europe. Drawn as gabled it grew a gable wall on every end, the single
+    // most visible wrong thing on a Mediterranean roofscape.
+    case 'hipped':
+    case 'half-hipped':
+    case 'side_hipped':
+      return 'hipped'
+    // Two pitches a side: the barn and the Dutch canal house.
+    case 'gambrel':
+      return 'gambrel'
     case 'pyramidal':
     case 'conical':
       return 'pyramidal'
@@ -1452,6 +1472,11 @@ export function resolveFeatureStyle(
     // data. `along` is the default and needs no flag.
     openCanopy: t['building'] === 'roof' || t['building:part'] === 'roof',
     roofAcross: (t['roof:orientation'] ?? '').trim().toLowerCase() === 'across',
+    roofAngleDeg: (() => {
+      const a = parseFloat(t['roof:angle'] ?? '')
+      return Number.isFinite(a) && a > 0 && a < 85 ? a : undefined
+    })(),
+    roofDirectionDeg: parseDirectionDeg(t['roof:direction']),
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
     wallMaterial: (t['building:material'] ?? '').toLowerCase() || undefined,
@@ -1461,6 +1486,7 @@ export function resolveFeatureStyle(
     use: buildingUse(t),
     monument: monumentShape(t),
     roofHeightM: roofShape === 'flat' ? 0 : (tagged && tagged > 0 ? tagged : 3),
+    roofHeightTagged: tagged !== null && tagged > 0,
   }
 }
 

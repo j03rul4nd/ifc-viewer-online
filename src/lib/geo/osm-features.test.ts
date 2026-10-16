@@ -88,10 +88,11 @@ describe('parseOsmColor', () => {
 })
 
 describe('parseRoofShape', () => {
-  it('maps ridged shapes to gabled and pointed ones to pyramidal', () => {
-    for (const s of ['gabled', 'hipped', 'half-hipped', 'gambrel']) {
-      expect(parseRoofShape(s)).toBe('gabled')
-    }
+  it('maps ridged shapes to their own builders and pointed ones to pyramidal', () => {
+    // Hipped and gambrel used to collapse into gabled; the mesh builds them now.
+    expect(parseRoofShape('gabled')).toBe('gabled')
+    for (const s of ['hipped', 'half-hipped']) expect(parseRoofShape(s)).toBe('hipped')
+    expect(parseRoofShape('gambrel')).toBe('gambrel')
     // `dome` used to land here; it now has a shape of its own.
     for (const s of ['pyramidal', 'conical']) {
       expect(parseRoofShape(s)).toBe('pyramidal')
@@ -1208,7 +1209,7 @@ describe('parseRoofShape — a mono-pitch is not a flat roof', () => {
 
   it('leaves the shapes it already knew alone', () => {
     expect(parseRoofShape('gabled')).toBe('gabled')
-    expect(parseRoofShape('hipped')).toBe('gabled')
+    expect(parseRoofShape('hipped')).toBe('hipped')
     expect(parseRoofShape('pyramidal')).toBe('pyramidal')
     expect(parseRoofShape('flat')).toBe('flat')
   })
