@@ -50,7 +50,43 @@ export interface BuildingHeight {
    * prior's 20 m is a guess about all of it.
    */
   basis?: 'height' | 'levels' | 'guess'
+  /**
+   * WHO said so — the provenance `basis` cannot carry. A `height` from a
+   * surveyor and one OpenMapTiles invented are both `basis: 'height'`; a guess
+   * from the district's own buildings and the global constant are both
+   * `'guess'`. Every stage that rewrites a height stamps itself here, so any
+   * building can answer "where does this number come from".
+   */
+  source?: HeightSource
 }
+
+/** Where a building's height came from, best first. See `BuildingHeight.source`. */
+export type HeightSource =
+  | 'osm'           // tagged in OpenStreetMap
+  | 'overture'      // the Overture Maps footprint feed
+  | 'openmaptiles'  // the vector-tile fallback's render height
+  | 'fabric'        // a regional typology rule (Barcelona's barris)
+  | 'rule'          // a placement rule (a kiosk on a square, a park pavilion)
+  | 'prior'         // the median of this district's measured buildings
+  | 'default'       // a global per-type constant
+
+/**
+ * Tag a pseudo-element carries to say which feed made it. Not an OSM key:
+ * the leading underscore keeps it out of every real namespace.
+ */
+export const DATA_SOURCE_TAG = '_src'
+
+/** The feed a tag set came from, `osm` unless a converter said otherwise. */
+export function dataSourceOf(t: Record<string, string>): HeightSource {
+  const s = t[DATA_SOURCE_TAG]
+  return s === 'overture' || s === 'openmaptiles' ? s : 'osm'
+}
+
+/**
+ * Metres a counted roof storey adds, when the district has not measured one.
+ * Lower than a full storey: an attic is under a slope.
+ */
+export const ROOF_LEVEL_M = 2.6
 
 /**
  * Resolve a building's height from OSM tags, most trustworthy source first:
@@ -68,7 +104,9 @@ export function resolveBuildingHeight(
   const t = tags ?? {}
 
   const explicit = parseLengthM(t['height'])
-  const minExplicit = parseLengthM(t['min_height']) ?? 0
+  // `building:min_height` is the older spelling and still common on parts.
+  const minExplicit = parseLengthM(t['min_height']) ?? parseLengthM(t['building:min_height']) ?? 0
+  const source = dataSourceOf(t)
 
   if (explicit !== null && explicit > 0) {
     return {
@@ -82,11 +120,18 @@ export function resolveBuildingHeight(
       // number there already told us not to.
       estimated: heightIsFlaggedEstimated(t),
       basis: 'height',
+      source,
     }
   }
 
   const levels = parseLevels(t['building:levels'])
-  const minLevels = parseLevels(t['building:min_level']) ?? 0
+  // `min_level` is the Simple-3D-Buildings key on parts; `building:min_level`
+  // the outline's. Same meaning, both seen in the wild.
+  const minLevels = parseLevels(t['building:min_level']) ?? parseLevels(t['min_level']) ?? 0
+  // `building:levels` counts the storeys UNDER the roof; an attic or a pitched
+  // roof's storeys are `roof:levels`, and leaving them out drew every
+  // Haussmann block a mansard short.
+  const roofLevels = parseLevels(t['roof:levels']) ?? 0
   if (levels !== null && levels > 0) {
     // Metres per storey is REGIONAL and the constant never said so. Measured on
     // buildings carrying both a height and a storey count, Barcelona runs
@@ -95,13 +140,14 @@ export function resolveBuildingHeight(
     // district first; it answers only where enough buildings state both.
     const perStorey = prior?.storeyHeightFor(t['building'] ?? t['building:part'])
       ?? DEFAULT_STOREY_HEIGHT_M
-    const h = Math.min(levels * perStorey, MAX_BUILDING_HEIGHT_M)
+    const h = Math.min(levels * perStorey + roofLevels * Math.min(perStorey, ROOF_LEVEL_M), MAX_BUILDING_HEIGHT_M)
     return {
       heightM: h,
       minHeightM: Math.max(0, Math.min(minLevels * perStorey, h - 0.5)),
       // A level count IS data, but the metres are still not surveyed.
       estimated: true,
       basis: 'levels',
+      source,
     }
   }
 
@@ -121,6 +167,7 @@ export function resolveBuildingHeight(
     // "wrong everywhere" to "typical of here"; it does not make it surveyed.
     estimated: true,
     basis: 'guess',
+    source: local != null ? 'prior' : 'default',
   }
 }
 
@@ -133,7 +180,7 @@ export function resolveBuildingHeight(
  * because a false positive here only costs a building its "surveyed" badge,
  * while a false negative presents somebody's guess as a survey.
  */
-function heightIsFlaggedEstimated(t: Record<string, string>): boolean {
+export function heightIsFlaggedEstimated(t: Record<string, string>): boolean {
   const notes = [t['note:height'], t['source:height'], t['height:source'], t['source']]
   return notes.some((v) => /estimat/i.test(v ?? ''))
 }

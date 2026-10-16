@@ -132,7 +132,7 @@ function* barcelonaFabricSteps<T extends FabricBuilding>(
     return {
       ...b,
       pavilion: true,
-      height: guessed ? { ...b.height, heightM: Math.min(b.height.heightM, PAVILION_HEIGHT_M) } : b.height,
+      height: guessed ? { ...b.height, heightM: Math.min(b.height.heightM, PAVILION_HEIGHT_M), source: 'rule' as const } : b.height,
     }
   })
 
@@ -144,7 +144,7 @@ function* barcelonaFabricSteps<T extends FabricBuilding>(
     if (areaM2(b.ring) < MIN_FABRIC_AREA_M2) return b
     const t = typOf(b.ring[0])
     if (!t) return b
-    return { ...b, height: { ...b.height, heightM: fabricHeightM(b.id, t) } }
+    return { ...b, height: { ...b.height, heightM: fabricHeightM(b.id, t), source: 'fabric' as const } }
   })
 
   // 2. The block interiors.

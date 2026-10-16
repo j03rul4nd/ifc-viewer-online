@@ -19,6 +19,7 @@
 // instead of no city.
 
 import { OPENFREEMAP_TILEJSON } from './providers'
+import { DATA_SOURCE_TAG } from './buildings'
 import { loadTileJson } from './basemap/tilejson'
 
 export interface LatLon { lat: number; lon: number }
@@ -64,6 +65,8 @@ export function omtTags(f: Pick<OmtFeature, 'layer' | 'type' | 'props'>): Record
       const min = num(p.render_min_height)
       return {
         building: 'yes',
+        // Provenance: this is OpenMapTiles' building, not a mapper's.
+        [DATA_SOURCE_TAG]: 'openmaptiles',
         // OMT fills a missing height with a low default (measured: most of
         // Poblenou came out at exactly 4 m). Passing it on would override the
         // district height prior, which guesses far better — so only a height
