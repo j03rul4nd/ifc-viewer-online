@@ -67,6 +67,17 @@ export interface DistanceComponents {
   horizontal: number
 }
 
+/** What a requirement compares against (see checks.ts). */
+export type CheckTarget = 'value' | 'slope' | 'height' | 'volume'
+
+/** "≥ 1,20 m", "≤ 8 %", "89,5–90,5°". SI: metres, m², m³, degrees or percent. */
+export interface Requirement {
+  op: 'min' | 'max' | 'range'
+  min: number | null
+  max: number | null
+  target: CheckTarget
+}
+
 interface ItemBase {
   id: string
   /** 1-based number within its kind, fixed at creation — "Distance 3" stays 3. */
@@ -76,6 +87,12 @@ interface ItemBase {
   visible: boolean
   /** Scene-space points (three axes). */
   points: Vec3[]
+  /** A rule the value must meet; the panel shows pass/fail and exports it. */
+  requirement?: Requirement | null
+  /** Areas only: height of the prism (slab, excavation, room) → volume. Metres. */
+  extrusion?: number | null
+  /** Free text the person attaches (where, why, to whom). */
+  note?: string | null
 }
 
 export interface DistanceItem extends ItemBase {

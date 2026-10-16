@@ -12,6 +12,10 @@
 //   LIST       Every measurement with its value; select one for its
 //              breakdown (X/Y/Z legs, slope, perimeter, coordinates), zoom to
 //              it, rename it, hide it, copy it, delete it.
+//   RULES      A requirement per measurement (≥ 1,20 m, ≤ 8 %…) with
+//              pass/fail in the row, on the 3D label and in the export; a
+//              height that turns an area into a volume; a note.
+//   TAKEOFF    Qto quantities of the selection, grouped by class/type/storey.
 //   EXPORT     The whole list to the clipboard as a table, or to CSV.
 //
 // Keyboard (while open, not typing): 1–5 tools, Shift axis lock, Enter finish,
@@ -35,8 +39,11 @@ import type {
 } from '../lib/measure/measure-types'
 import {
   angleAt, areaInUnits, decimalSeparator, exportNumber, formatAngle, formatArea,
-  formatCoordinate, formatItemValue, formatLength, lengthInUnits, slopePercent, toDelimited,
+  formatCoordinate, formatItemValue, formatLength, formatVolume, lengthInUnits, slopePercent, toDelimited, volumeInUnits,
 } from '../lib/measure/measure-math'
+import { checkItem, volumeOf } from '../lib/measure/checks'
+import { CheckBadge, MeasureRules, formatRequirement } from './measure/MeasureRules'
+import { TakeoffSection } from './measure/TakeoffSection'
 import { defaultPrecisionFor, loadMeasureSettings, saveMeasureSettings } from '../lib/measure/measure-settings'
 import { isTypingTarget, useMeasureHover, useMeasureSnapshot } from './measure/useMeasureStores'
 import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
@@ -296,8 +303,17 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
     const au = s.units === 'ft' ? 'ft²' : 'm²'
     const d = s.units === 'ft' ? 3 : s.precision
     const n = (v: number) => exportNumber(v, d, s.locale)
-    const header = [t('export.name'), t('export.type'), t('export.value'), t('export.unit'), 'X / ΔX', 'Y / ΔY', 'Z / ΔZ', t('export.perimeter')]
+    const header = [t('export.name'), t('export.type'), t('export.value'), t('export.unit'), 'X / ΔX', 'Y / ΔY', 'Z / ΔZ', t('export.perimeter'),
+      t('export.volume'), t('export.requirement'), t('export.check'), t('export.note')]
     const rows: string[][] = [header]
+    // The compliance columns, appended to whatever the kind wrote.
+    const extra = (it: MeasureItem): string[] => {
+      const ext = it.kind === 'area' ? it.extrusion ?? null : null
+      const vol = ext !== null && it.kind === 'area' ? exportNumber(volumeInUnits(volumeOf(it.value, ext), s.units), 3, s.locale) : ''
+      const req = it.requirement ?? null
+      const res = req ? checkItem(it, req, ext) : null
+      return [vol, req ? formatRequirement(req, it, s) : '', res && res.status !== 'na' ? t(`rules.status.${res.status}`) : '', it.note ?? '']
+    }
     for (const it of snapshot.items) {
       const type = t(`tools.${it.kind}`)
       switch (it.kind) {
@@ -319,6 +335,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           break
       }
     }
+    for (let i = 1; i < rows.length; i++) rows[i].push(...extra(snapshot.items[i - 1]))
     return rows
   }, [snapshot, t, nameOf])
 
@@ -550,6 +567,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                     onStartRename={() => setEditingId(item.id)}
                     onRename={(name) => { system?.rename(item.id, name); setEditingId(null) }}
                     onCancelRename={() => setEditingId(null)}
+                    onAnnotate={(patch) => system?.annotate(item.id, patch)}
                   />
                 ))}
               </ul>
@@ -753,6 +771,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               <div className="mt-1 text-[9.5px] leading-snug text-[var(--text-faint)]">{t('selection.note')}</div>
             </div>
           )}
+          <TakeoffSection selection={selection} viewerApiRef={viewerApiRef} settings={settings} onFlash={setFlash} />
           {snapshot.items.length === 0 ? (
             <div className="px-3 py-4 text-center">
               <p className="text-[11px] text-[var(--text-faint)] leading-relaxed">{t('panel.empty')}</p>
@@ -777,6 +796,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   onStartRename={() => setEditingId(item.id)}
                   onRename={(name) => { system?.rename(item.id, name); setEditingId(null) }}
                   onCancelRename={() => setEditingId(null)}
+                  onAnnotate={(patch) => system?.annotate(item.id, patch)}
                 />
               ))}
             </ul>
@@ -787,12 +807,25 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
         {(() => {
           const lengths = snapshot.items.filter((i) => i.kind === 'distance' || i.kind === 'path')
           const areas = snapshot.items.filter((i) => i.kind === 'area')
-          if (lengths.length < 2 && areas.length < 2) return null
+          const checked = snapshot.items.map((i) => (i.requirement ? checkItem(i, i.requirement, i.kind === 'area' ? i.extrusion ?? null : null) : null))
+            .filter((r) => r && r.status !== 'na')
+          const failed = checked.filter((r) => r!.status === 'fail').length
+          const volumes = snapshot.items.filter((i) => i.kind === 'area' && i.extrusion)
+          if (lengths.length < 2 && areas.length < 2 && checked.length === 0 && volumes.length < 2) return null
           const sum = (xs: typeof snapshot.items) => xs.reduce((acc, i) => acc + (i.kind === 'point' ? 0 : i.value), 0)
           return (
             <div className="shrink-0 border-t border-[var(--border)] px-3 py-1.5 flex flex-col gap-0.5 text-[11px]">
               {lengths.length > 1 && (
                 <div className="flex justify-between text-[var(--text-dim)]"><span>{t('totals.length')}</span><span className="font-mono tabular-nums text-[var(--text)]">{formatLength(sum(lengths), settings)}</span></div>
+              )}
+              {volumes.length > 1 && (
+                <div className="flex justify-between text-[var(--text-dim)]"><span>{t('totals.volume')}</span><span className="font-mono tabular-nums text-[var(--text)]">{formatVolume(volumes.reduce((a, i) => a + (i.kind === 'area' && i.extrusion ? volumeOf(i.value, i.extrusion) : 0), 0), settings)}</span></div>
+              )}
+              {checked.length > 0 && (
+                <div className={['flex justify-between', failed ? 'text-[#FF5A5A]' : 'text-[#3DD68C]'].join(' ')}>
+                  <span>{t('totals.checks')}</span>
+                  <span className="font-mono tabular-nums">{t('totals.checksValue', { pass: checked.length - failed, count: checked.length })}</span>
+                </div>
               )}
               {areas.length > 1 && (
                 <div className="flex justify-between text-[var(--text-dim)]"><span>{t('totals.area')}</span><span className="font-mono tabular-nums text-[var(--text)]">{formatArea(sum(areas), settings)}</span></div>
@@ -863,6 +896,7 @@ interface RowProps {
   onStartRename(): void
   onRename(name: string | null): void
   onCancelRename(): void
+  onAnnotate(patch: Partial<Pick<MeasureItem, 'requirement' | 'extrusion' | 'note'>>): void
   touch?: boolean
 }
 
@@ -917,6 +951,8 @@ function MeasureRow(p: RowProps) {
           : null
 
   const commit = () => p.onRename(draftName.trim() || null)
+  const checkResult = item.requirement ? checkItem(item, item.requirement, item.kind === 'area' ? item.extrusion ?? null : null) : null
+  const check = checkResult && checkResult.status !== 'na' ? checkResult.status : null
 
   return (
     <li
@@ -959,6 +995,7 @@ function MeasureRow(p: RowProps) {
         <span className={['flex-none text-[12px] font-semibold font-mono tabular-nums', item.visible ? 'text-[var(--text)]' : 'text-[var(--text-faint)]'].join(' ')}>
           {formatItemValue(item, s)}
         </span>
+        {check && <CheckBadge status={check} title={`${t(`rules.status.${check}`)} · ${formatRequirement(item.requirement!, item, s)}`} />}
       </div>
       {p.selected && (
         <div className="px-2.5 pb-2">
@@ -968,6 +1005,7 @@ function MeasureRow(p: RowProps) {
             </div>
           )}
           {note && <p className="mt-1.5 text-[10px] text-[var(--text-faint)] leading-snug">{note}</p>}
+          <MeasureRules item={item} settings={s} onAnnotate={p.onAnnotate} />
           <div className={['mt-1.5 flex items-center', p.touch ? 'gap-1.5' : 'gap-0.5'].join(' ')}>
             <IconButton touch={p.touch} title={t('item.focus')} onClick={p.onFocus}><TargetIcon size={13} /></IconButton>
             <IconButton touch={p.touch} title={item.visible ? t('item.hide') : t('item.show')} onClick={p.onToggleVisible}><EyeIcon size={13} off={!item.visible} /></IconButton>

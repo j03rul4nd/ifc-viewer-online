@@ -428,6 +428,17 @@ export class Label {
     this.element.classList.toggle('is-muted', !!state.muted)
   }
 
+  /** Requirement status: a green or red rim and a ✓/✗ — in captures too. */
+  setCheck(status: 'pass' | 'fail' | null): void {
+    if (status) this.element.dataset.check = status
+    else delete this.element.dataset.check
+  }
+
+  get check(): 'pass' | 'fail' | null {
+    const c = this.element.dataset.check
+    return c === 'pass' || c === 'fail' ? c : null
+  }
+
   setDeleteTitle(title: string): void {
     if (!this.deleteEl) return
     this.deleteEl.title = title
@@ -466,6 +477,8 @@ const LABEL_INK: Record<string, string> = {
  * Paint `label` with its anchor at canvas pixel (x, y). `s` is canvas pixels
  * per CSS pixel, so the tag keeps its on-screen size in a hi-res capture.
  */
+const CHECK_INK = { pass: '#3DD68C', fail: '#FF5A5A' } as const
+
 export function paintLabel(ctx: CanvasRenderingContext2D, label: Label, x: number, y: number, s: number): void {
   const text = label.text
   if (!text) return
@@ -494,7 +507,9 @@ export function paintLabel(ctx: CanvasRenderingContext2D, label: Label, x: numbe
   ctx.fillStyle = sub ? 'rgba(10,10,14,0.74)' : 'rgba(10,10,14,0.86)'
   ctx.fill()
   ctx.lineWidth = Math.max(1, s)
-  ctx.strokeStyle = label.isSelected ? ink : 'rgba(255,255,255,0.12)'
+  const check = label.check
+  ctx.lineWidth = check ? Math.max(1.5, 1.5 * s) : Math.max(1, s)
+  ctx.strokeStyle = check ? CHECK_INK[check] : label.isSelected ? ink : 'rgba(255,255,255,0.12)'
   ctx.stroke()
   if (!sub) {
     ctx.beginPath()

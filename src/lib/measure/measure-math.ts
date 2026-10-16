@@ -234,6 +234,19 @@ export function formatArea(m2: number, s: Pick<MeasureSettings, 'units' | 'preci
   return `${formatNumber(m2, decimals, s.locale)} m²`
 }
 
+const CU_FT_PER_M3 = 35.31466672148859
+
+/** Volumes in m³ (ft³ in imperial), three decimals at least below 10 m³. */
+export function formatVolume(m3: number, s: Pick<MeasureSettings, 'units' | 'precision' | 'locale'>): string {
+  const decimals = Math.abs(m3) < 10 ? Math.max(3, s.precision) : Math.max(2, s.precision)
+  if (s.units === 'ft') return `${formatNumber(m3 * CU_FT_PER_M3, decimals, s.locale)} ft³`
+  return `${formatNumber(m3, decimals, s.locale)} m³`
+}
+
+export function volumeInUnits(m3: number, units: LengthUnit): number {
+  return units === 'ft' ? m3 * CU_FT_PER_M3 : m3
+}
+
 export function formatAngle(deg: number, s: Pick<MeasureSettings, 'locale'>): string {
   return `${formatNumber(deg, 1, s.locale)}°`
 }

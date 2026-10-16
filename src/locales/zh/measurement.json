@@ -117,7 +117,11 @@
     "value": "数值",
     "unit": "单位",
     "perimeter": "周长",
-    "filename": "测量结果"
+    "filename": "测量结果",
+    "volume": "体积",
+    "requirement": "要求",
+    "check": "检查",
+    "note": "备注"
   },
   "section": {
     "title": "剖切",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "总长度",
-    "area": "总面积"
+    "area": "总面积",
+    "volume": "总体积",
+    "checks": "满足的要求",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "所选构件",
@@ -190,5 +197,83 @@
     "latest": "最新",
     "levels": "楼层",
     "position": "剖切位置"
+  },
+  "rules": {
+    "extrusion": "高度 → 体积",
+    "extrusionHint": "厚度或深度：把面积变成棱柱（楼板、找平层、开挖、房间体积）",
+    "volume": "体积",
+    "add": "要求",
+    "preset": {
+      "corridor": "走廊 ≥ 1.20",
+      "door": "门 ≥ 0.80",
+      "headroom": "净高 ≥ 2.10",
+      "ramp": "坡道 ≤ 8 %",
+      "turning": "回转 ⌀ 1.50",
+      "right": "直角 90°"
+    },
+    "presetHint": {
+      "corridor": "走廊净宽至少 1.20 m",
+      "door": "门净宽至少 0.80 m",
+      "headroom": "垂直净高（ΔZ）至少 2.10 m",
+      "ramp": "坡度不超过 8 %",
+      "turning": "轮椅回转圆至少 1.50 m",
+      "right": "角度在 89.5° 到 90.5° 之间"
+    },
+    "target": "检查的值",
+    "targets": {
+      "value": "数值",
+      "slope": "坡度",
+      "height": "高度（ΔZ）",
+      "volume": "体积"
+    },
+    "op": "规则",
+    "ops": {
+      "min": "至少",
+      "max": "至多",
+      "range": "介于"
+    },
+    "min": "最小",
+    "max": "最大",
+    "remove": "移除要求",
+    "fail": "相差 {{by}}",
+    "na": "该值不适用于此测量",
+    "note": "备注",
+    "notePlaceholder": "添加备注…",
+    "status": {
+      "pass": "合格",
+      "fail": "不合格"
+    },
+    "pass": "满足要求"
+  },
+  "takeoff": {
+    "title": "工程量统计",
+    "run_one": "统计 {{count}} 个构件",
+    "run_other": "统计 {{count}} 个构件",
+    "loading": "正在读取工程量…",
+    "hint": "汇总所选构件的 IFC 工程量（Qto）：数量、长度、面积、体积、重量。",
+    "groupLabel": "分组依据",
+    "groupBy": {
+      "class": "类别",
+      "type": "类型",
+      "storey": "楼层"
+    },
+    "count": "数量",
+    "kinds": {
+      "length": "长度",
+      "area": "面积",
+      "volume": "体积",
+      "weight": "重量"
+    },
+    "coverage": "覆盖率",
+    "source": "使用的工程量",
+    "none": "（无）",
+    "mixed": "单位不一致",
+    "coverageOf": "{{count}} 个构件中有 {{covered}} 个具有该值",
+    "partial": "部分构件缺少此工程量",
+    "missing_one": "{{total}} 个构件中有 {{count}} 个没有 IFC 工程量，未计入合计。",
+    "missing_other": "{{total}} 个构件中有 {{count}} 个没有 IFC 工程量，未计入合计。",
+    "note": "每个构件取一个值，净量优先于毛量。* = 并非所有构件都有。",
+    "refresh": "重新计算",
+    "filename": "takeoff"
   }
 }

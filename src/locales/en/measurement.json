@@ -117,7 +117,11 @@
     "value": "Value",
     "unit": "Unit",
     "perimeter": "Perimeter",
-    "filename": "measurements"
+    "filename": "measurements",
+    "volume": "Volume",
+    "requirement": "Requirement",
+    "check": "Check",
+    "note": "Note"
   },
   "section": {
     "title": "Section",
@@ -174,7 +178,10 @@
   },
   "totals": {
     "length": "Total length",
-    "area": "Total area"
+    "area": "Total area",
+    "volume": "Total volume",
+    "checks": "Requirements met",
+    "checksValue": "{{pass}} / {{count}}"
   },
   "selection": {
     "title_one": "Selected element",
@@ -190,5 +197,83 @@
     "latest": "Latest",
     "levels": "Levels",
     "position": "Cut position"
+  },
+  "rules": {
+    "extrusion": "Height → volume",
+    "extrusionHint": "Thickness or depth: turns the area into a prism (slab, screed, excavation, room volume)",
+    "volume": "Volume",
+    "add": "Requirement",
+    "preset": {
+      "corridor": "Corridor ≥ 1.20",
+      "door": "Door ≥ 0.80",
+      "headroom": "Headroom ≥ 2.10",
+      "ramp": "Ramp ≤ 8 %",
+      "turning": "Turning ⌀ 1.50",
+      "right": "Square 90°"
+    },
+    "presetHint": {
+      "corridor": "Clear corridor width of at least 1.20 m",
+      "door": "Clear door opening of at least 0.80 m",
+      "headroom": "Vertical clearance (ΔZ) of at least 2.10 m",
+      "ramp": "Slope of at most 8 %",
+      "turning": "Wheelchair turning circle of at least 1.50 m",
+      "right": "Angle between 89.5° and 90.5°"
+    },
+    "target": "Checked value",
+    "targets": {
+      "value": "Value",
+      "slope": "Slope",
+      "height": "Height (ΔZ)",
+      "volume": "Volume"
+    },
+    "op": "Rule",
+    "ops": {
+      "min": "at least",
+      "max": "at most",
+      "range": "between"
+    },
+    "min": "Minimum",
+    "max": "Maximum",
+    "remove": "Remove requirement",
+    "fail": "Fails by {{by}}",
+    "na": "This value does not apply to this measurement",
+    "note": "Note",
+    "notePlaceholder": "Add a note…",
+    "status": {
+      "pass": "Pass",
+      "fail": "Fail"
+    },
+    "pass": "Meets the requirement"
+  },
+  "takeoff": {
+    "title": "Quantity takeoff",
+    "run_one": "Take off {{count}} element",
+    "run_other": "Take off {{count}} elements",
+    "loading": "Reading quantities…",
+    "hint": "Sums the IFC quantities (Qto) of the selection: count, length, area, volume, weight.",
+    "groupLabel": "Group by",
+    "groupBy": {
+      "class": "Class",
+      "type": "Type",
+      "storey": "Storey"
+    },
+    "count": "Count",
+    "kinds": {
+      "length": "Length",
+      "area": "Area",
+      "volume": "Volume",
+      "weight": "Weight"
+    },
+    "coverage": "Coverage",
+    "source": "Quantity used",
+    "none": "(none)",
+    "mixed": "mixed units",
+    "coverageOf": "{{covered}} of {{count}} elements have it",
+    "partial": "Some elements lack this quantity",
+    "missing_one": "{{count}} of {{total}} elements carries no IFC quantities — it is not in the sums.",
+    "missing_other": "{{count}} of {{total}} elements carry no IFC quantities — they are not in the sums.",
+    "note": "One value per element, net before gross. * = not every element has it.",
+    "refresh": "Recompute",
+    "filename": "takeoff"
   }
 }

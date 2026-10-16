@@ -93,3 +93,7 @@
      is big enough for a finger. */
   .pv-mlabel__del { width: 22px; height: 22px; font-size: 15px; }
 }
+
+/* Requirement status: the rim says pass/fail without opening the panel. */
+.pv-mlabel[data-check='pass'] { border-color: rgba(61, 214, 140, 0.9); box-shadow: 0 0 0 1px rgba(61, 214, 140, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45); }
+.pv-mlabel[data-check='fail'] { border-color: rgba(255, 90, 90, 0.95); box-shadow: 0 0 0 1px rgba(255, 90, 90, 0.4), 0 4px 14px rgba(0, 0, 0, 0.45); }

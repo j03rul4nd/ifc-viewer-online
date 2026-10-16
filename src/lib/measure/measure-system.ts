@@ -26,6 +26,7 @@ import * as THREE from 'three'
 import './measure.css'
 import type { ScenePicker, PickResult, PickOptions } from './picker'
 import { Stroke, Dots, Fill, Label, OVERLAY_COLORS, paintLabel } from './overlay'
+import { checkItem, volumeOf } from './checks'
 import * as M from './measure-math'
 import { createTaskQueue } from './async'
 import {
@@ -84,6 +85,8 @@ export interface MeasureSystem {
   setVisible(id: string, visible: boolean): void
   setAllVisible(visible: boolean): void
   rename(id: string, name: string | null): void
+  /** Attach a requirement, an extrusion height or a note to an item (null clears). */
+  annotate(id: string, patch: Partial<Pick<MeasureItem, 'requirement' | 'extrusion' | 'note'>>): void
   focus(id: string): void
   /**
    * Paint every visible measurement label into a 2D canvas that holds the
@@ -480,6 +483,22 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   }
 
   function labelText(item: MeasureItem): string {
+    let text = baseLabelText(item)
+    // A glyph as well as the colour: red/green alone fails one reader in twelve.
+    const check = checkStatus(item)
+    if (check) text = text.replace(/^[^\n]*/, (first) => `${first} ${check === 'pass' ? '✓' : '✗'}`)
+    if (item.kind === 'area' && item.extrusion) text += `\n${M.formatVolume(volumeOf(item.value, item.extrusion), settings)}`
+    if (item.note) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
+    return text
+  }
+
+  function checkStatus(item: MeasureItem): 'pass' | 'fail' | null {
+    if (!item.requirement) return null
+    const r = checkItem(item, item.requirement, item.kind === 'area' ? item.extrusion ?? null : null)
+    return r.status === 'na' ? null : r.status
+  }
+
+  function baseLabelText(item: MeasureItem): string {
     switch (item.kind) {
       case 'distance':
         return `${item.perpendicular ? '⊥ ' : ''}${M.formatLength(item.value, settings)}`
@@ -606,6 +625,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     visuals.fill?.setOpacity(selected ? 0.3 : highlighted ? 0.26 : 0.2)
     visuals.label.setState({ selected, hovered: highlighted })
     visuals.label.setText(labelText(item))
+    visuals.label.setCheck(checkStatus(item))
     visuals.label.setDeleteTitle(deleteTitle)
 
     const wantExtras = item.visible && (selected || (settings.showComponents && item.kind === 'distance'))
@@ -988,6 +1008,13 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       if (!entry) return
       const clean = name?.trim() || null
       entry.item = { ...entry.item, name: clean }
+      emit()
+    },
+    annotate(id, patch) {
+      const entry = entries.get(id)
+      if (!entry) return
+      entry.item = { ...entry.item, ...patch } as MeasureItem
+      refreshVisual(entry)
       emit()
     },
     focus(id) {
