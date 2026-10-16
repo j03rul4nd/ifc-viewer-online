@@ -22,12 +22,23 @@ second, geometric pass is required — and it deliberately lives at RUNTIME in
 `src/lib/geo/overture-footprints.ts`, not here. OSM grows; a de-duplication
 baked in at build time goes stale against exactly the data it complements.
 
-HEIGHTS ARE NOT TAKEN
-=====================
-Overture's China heights are OSM-derived, so its ML footprints carry almost
-none: 7 of 287 in the core bbox. Reading a height here would import a guess we
-cannot inspect. These buildings arrive with no height and are given the
-district's own measured median by the local height prior, flagged estimated.
+ATTRIBUTES, WITH THEIR SOURCE
+============================
+Overture says WHICH dataset supplied each property (`sources[].property`), so
+attributes are taken only where that source is not OpenStreetMap — anything
+OSM-sourced we already read, first-hand, from Overpass. Each shipped attribute
+set carries the dataset it came from, and the viewer stamps it as the
+building's provenance, so an Overture height is never mistaken for a survey.
+
+Two kinds of record are shipped:
+
+  footprints  buildings whose GEOMETRY is not from OSM (ML detections, cadastre
+              imports): the shape, plus whatever attributes they carry.
+  osm         buildings whose geometry IS OSM's but which Overture enriched from
+              elsewhere — a height, a storey count, a roof. Keyed by the OSM id
+              Overture records (`w123`, `r456`), so the viewer fuses them onto
+              the very building Overpass returned, exactly, with no geometric
+              matching. The viewer only lets them fill what OSM left empty.
 
 Usage:
     pip install duckdb
@@ -65,7 +76,51 @@ DISTRICTS = [
     ("lujiazui",       31.2397,   121.4998,   "Lujiazui, Pudong"),
     ("poblenou",       41.4064,     2.1900,   "Poblenou, Barcelona"),
     ("barceloneta",    41.3687,     2.1900,   "Barceloneta / Port Vell"),
+    ("placa-catalunya", 41.3870,    2.1700,   "Plaça de Catalunya, Barcelona"),
 ]
+
+# Overture property -> the OSM tag the viewer already understands.
+ATTRS = {
+    "height": "height", "min_height": "min_height", "num_floors": "building:levels",
+    "min_floor": "building:min_level", "roof_shape": "roof:shape", "roof_height": "roof:height",
+    "roof_direction": "roof:direction", "roof_orientation": "roof:orientation",
+    "facade_color": "building:colour", "roof_color": "roof:colour",
+    "facade_material": "building:material", "roof_material": "roof:material",
+    "class": "building",
+}
+
+
+def osm_key(record_id):
+    """`w123@4` / `w123` -> `w123`; anything that is not an OSM element id -> None."""
+    if not record_id:
+        return None
+    rid = str(record_id).split("@")[0]
+    return rid if rid[:1] in ("w", "r") and rid[1:].isdigit() else None
+
+
+def attributes(row, sources):
+    """Tags from the row's properties whose source is NOT OpenStreetMap."""
+    whole = None
+    by_prop = {}
+    for src in sources or []:
+        prop = (src.get("property") or "").strip()
+        if prop in ("", "/"):
+            whole = src.get("dataset")
+        else:
+            by_prop[prop.rsplit("/", 1)[-1]] = src.get("dataset")
+    tags, datasets = {}, set()
+    for prop, tag in ATTRS.items():
+        value = row.get(prop)
+        if value is None or value == "":
+            continue
+        dataset = by_prop.get(prop, whole)
+        if dataset == "OpenStreetMap" or dataset is None:
+            continue
+        if isinstance(value, float):
+            value = round(value, 2)
+        tags[tag] = str(value)
+        datasets.add(dataset)
+    return tags, sorted(datasets)
 
 OUT_DIR = os.path.join("public", "geo", "overture")
 
@@ -81,20 +136,35 @@ def extract(con, slug: str, lat: float, lon: float, label: str) -> dict:
     t0 = time.time()
     rows = con.execute(
         f"""
-        SELECT id, ST_AsGeoJSON(geometry) AS gj, sources[1].dataset AS src
+        SELECT id, ST_AsGeoJSON(geometry) AS gj, to_json(sources) AS srcs,
+               height, min_height, num_floors, min_floor, roof_shape, roof_height,
+               roof_direction, roof_orientation, facade_color, roof_color,
+               facade_material, roof_material, class, is_underground
         FROM read_parquet('{S3}')
         WHERE bbox.xmin > {west} AND bbox.xmax < {east}
           AND bbox.ymin > {south} AND bbox.ymax < {north}
         """
     ).fetchall()
+    names = [d[0] for d in con.description]
     took = time.time() - t0
 
-    kept, from_osm, unusable = [], 0, 0
-    for bid, gj, src in rows:
-        # The provenance filter. OSM-sourced rows are ones we already fetch, and
-        # hand-mapped with tags, so ours are strictly better.
-        if src == "OpenStreetMap":
+    kept, osm_attrs, from_osm, unusable = [], {}, 0, 0
+    for raw in rows:
+        row = dict(zip(names, raw))
+        if row.get("is_underground"):
+            continue
+        bid, gj = row["id"], row["gj"]
+        sources = json.loads(row["srcs"]) if row.get("srcs") else []
+        geometry_src = sources[0] if sources else {}
+        tags, datasets = attributes(row, sources)
+        # The provenance filter. An OSM-shaped row is one we already fetch, and
+        # hand-mapped with tags — but Overture may have ENRICHED it from
+        # elsewhere, and that enrichment is worth shipping, keyed by OSM id.
+        if geometry_src.get("dataset") == "OpenStreetMap":
             from_osm += 1
+            key = osm_key(geometry_src.get("record_id"))
+            if key and tags:
+                osm_attrs[key] = {"tags": tags, "src": datasets}
             continue
         try:
             geom = json.loads(gj)
@@ -114,11 +184,16 @@ def extract(con, slug: str, lat: float, lon: float, label: str) -> dict:
             continue
         # GeoJSON closes its rings; the viewer's model does not.
         ring = [{"lat": round(c[1], 7), "lon": round(c[0], 7)} for c in coords[:-1]]
-        kept.append({"id": str(bid), "ring": ring})
+        entry = {"id": str(bid), "ring": ring}
+        if tags:
+            entry["tags"] = tags
+            entry["src"] = datasets
+        kept.append(entry)
 
     print(
         f"  {slug:14s} {len(rows):5d} rows in {took:5.0f}s"
-        f"  ->  {from_osm:4d} already OSM, {unusable:3d} unusable, {len(kept):4d} shipped"
+        f"  ->  {from_osm:4d} already OSM ({len(osm_attrs)} enriched), {unusable:3d} unusable,"
+        f" {len(kept):4d} shipped, {sum(1 for k in kept if 'tags' in k)} with attributes"
     )
     return {
         "release": RELEASE,
@@ -126,6 +201,7 @@ def extract(con, slug: str, lat: float, lon: float, label: str) -> dict:
         "label": label,
         "bbox": [round(west, 6), round(south, 6), round(east, 6), round(north, 6)],
         "footprints": kept,
+        "osm": osm_attrs,
     }
 
 

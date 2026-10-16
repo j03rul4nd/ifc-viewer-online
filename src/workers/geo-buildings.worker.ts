@@ -20,7 +20,7 @@ import { bboxAround, DATA_SOURCE_TAG, OVERPASS_ENDPOINT, overpassRemarkError } f
 import { fetchOmtFallback } from '../lib/geo/omt-fallback'
 import {
   newFootprints, extractCovers, clearsModelPlan,
-  type OvertureExtract, type OvertureFootprint,
+  type OvertureExtract, type OvertureFootprint, fuseOvertureAttributes, overtureFootprintTags,
 } from '../lib/geo/overture-footprints'
 import { latLonToNormalized } from '../lib/geo/geo-math'
 import { parseOsmFeatures, buildFeaturesQuery, countByKind, type OsmFeature, type FeatureKind } from '../lib/geo/osm-features'
@@ -276,7 +276,22 @@ async function overtureExtras(
     const data = await fetchJsonWithin<OvertureExtract>(
       `/geo/overture/${encodeURIComponent(district.slug)}.json`, OVERTURE_TIMEOUT_MS,
     )
-    if (!data || !Array.isArray(data.footprints) || data.footprints.length === 0) return []
+    if (!data || !Array.isArray(data.footprints)) return []
+
+    // FUSION, field by field, by OSM id. Overture records which OSM element a
+    // building's geometry came from, so its enrichment lands on that exact
+    // element — no geometric matching — and only where OSM said nothing.
+    if (data.osm) {
+      for (const raw of elements ?? []) {
+        const el = raw as { type?: string; id?: number; tags?: Record<string, string> }
+        if (!el?.tags || el.id === undefined) continue
+        if (!('building' in el.tags) && !('building:part' in el.tags)) continue
+        const key = `${el.type === 'relation' ? 'r' : 'w'}${el.id}`
+        const enrichment = data.osm[key]
+        if (enrichment) fuseOvertureAttributes(el.tags, enrichment)
+      }
+    }
+    if (data.footprints.length === 0) return []
 
     // Compare against what OSM already gave us for this same bbox.
     const osmRings: Array<{ ring: Array<{ lat: number; lon: number }> }> = []
@@ -327,10 +342,9 @@ async function overtureExtras(
       // Namespaced so nothing can collide with an OSM way id, and so a picked
       // feature says plainly where it came from.
       id: `ovt-${f.id}`,
-      // `building=yes` and nothing else: Overture's China heights are
-      // OSM-derived, so these carry none, and inventing a tag here would put a
-      // guess beyond the reach of the audit.
-      tags: { building: 'yes', [DATA_SOURCE_TAG]: 'overture' },
+      // What Overture holds from a non-OSM source, as OSM tags, flagged as
+      // Overture's — see overtureFootprintTags.
+      tags: { ...overtureFootprintTags(f), [DATA_SOURCE_TAG]: 'overture' },
       geometry: f.ring,
     }))
   } catch {
