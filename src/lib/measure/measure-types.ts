@@ -19,7 +19,7 @@ export type MeasureTool = 'none' | MeasureToolId
  * picked face. The second is the one a clearance check actually needs: two
  * walls are never measured at exactly opposite points by hand.
  */
-export type DistanceMode = 'point' | 'perpendicular'
+export type DistanceMode = 'point' | 'perpendicular' | 'elements' | 'headroom'
 
 /** An area traced vertex by vertex, or the area of one face in a single click. */
 export type AreaMode = 'polygon' | 'face'
@@ -101,6 +101,16 @@ export interface DistanceItem extends ItemBase {
   components: DistanceComponents
   /** Measured to the plane of a face rather than point to point. */
   perpendicular: boolean
+  /**
+   * How the two points were found, when not clicked: `elements` = the closest
+   * points between two elements' geometry (the clear gap); `headroom` = a
+   * vertical ray from a floor (or ceiling) to the next surface.
+   */
+  source?: 'elements' | 'headroom'
+  /** Elements only: they touch or cross — a clash, distance 0. */
+  clash?: boolean
+  /** Elements only: the search hit its budget; the value is an upper bound. */
+  approximate?: boolean
 }
 
 export interface PathItem extends ItemBase {
@@ -146,6 +156,9 @@ export type MeasureStep =
   | 'angle-end'
   | 'pick-plane-face'
   | 'perpendicular-target'
+  | 'element-a'
+  | 'element-b'
+  | 'headroom-point'
 
 export interface MeasureSnapshot {
   tool: MeasureTool
@@ -159,7 +172,13 @@ export interface MeasureSnapshot {
   items: readonly MeasureItem[]
   selectedId: string | null
   settings: MeasureSettings
+  /** Why the last click made nothing, for the panel to say — cleared on the next one. */
+  notice: MeasureNotice | null
+  /** An asynchronous measurement (element gap, clear height) is being computed. */
+  busy: boolean
 }
+
+export type MeasureNotice = 'no-surface' | 'no-element' | 'same-element' | 'no-geometry'
 
 /** The cursor's lock, at pointer-move rate. Kept apart from the snapshot. */
 export interface MeasureHover {

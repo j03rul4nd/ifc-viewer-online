@@ -48,7 +48,7 @@ import { defaultPrecisionFor, loadMeasureSettings, saveMeasureSettings } from '.
 import { isTypingTarget, useMeasureHover, useMeasureSnapshot } from './measure/useMeasureStores'
 import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
 import {
-  CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GearIcon, PerpendicularIcon,
+  CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GapIcon, GearIcon, HeadroomIcon, PerpendicularIcon,
   PointsIcon, TargetIcon, TrashIcon, UndoIcon,
 } from './measure/icons'
 
@@ -448,6 +448,12 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   { value: 'point', label: <><PointsIcon size={13} />{t('modes.point')}</> },
                   { value: 'perpendicular', label: <><PerpendicularIcon size={13} />{t('modes.perpendicular')}</> },
                 ]} />
+              <div className="mt-1" />
+              <Segmented label={t('tools.distance')} value={snapshot.distanceMode} onChange={(m) => system?.setDistanceMode(m)}
+                options={[
+                  { value: 'elements', label: <><GapIcon size={13} />{t('modes.elements')}</> },
+                  { value: 'headroom', label: <><HeadroomIcon size={13} />{t('modes.headroom')}</> },
+                ]} />
             </div>
           )}
           {tool === 'area' && !drafting && (
@@ -684,6 +690,17 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 options={[
                   { value: 'point', label: <><PointsIcon size={12} />{t('modes.point')}</> },
                   { value: 'perpendicular', label: <><PerpendicularIcon size={12} />{t('modes.perpendicular')}</>, title: t('modes.perpendicularHint') },
+                ]}
+              />
+            )}
+            {tool === 'distance' && (
+              <Segmented
+                label={t('tools.distance')}
+                value={snapshot.distanceMode}
+                onChange={(m) => system?.setDistanceMode(m)}
+                options={[
+                  { value: 'elements', label: <><GapIcon size={12} />{t('modes.elements')}</>, title: t('modes.elementsHint') },
+                  { value: 'headroom', label: <><HeadroomIcon size={12} />{t('modes.headroom')}</>, title: t('modes.headroomHint') },
                 ]}
               />
             )}
@@ -944,7 +961,10 @@ function MeasureRow(p: RowProps) {
     return rows
   }, [item, s, t])
 
-  const note = item.kind === 'distance' && item.perpendicular ? t('item.perpendicularNote')
+  const note = item.kind === 'distance' && item.source === 'elements'
+    ? [item.clash ? t('item.clashNote') : t('item.elementsNote'), item.approximate ? t('item.approximateNote') : ''].filter(Boolean).join(' ')
+    : item.kind === 'distance' && item.source === 'headroom' ? t('item.headroomNote')
+    : item.kind === 'distance' && item.perpendicular ? t('item.perpendicularNote')
     : item.kind === 'area' && !item.planar ? t('item.nonPlanar')
       : item.kind === 'area' && item.source === 'face' ? t('item.fromFace')
         : item.kind === 'point' ? (item.frame === 'model' ? t('item.modelFrame') : t('item.sceneFrame'))

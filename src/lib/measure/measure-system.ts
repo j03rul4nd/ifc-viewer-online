@@ -27,13 +27,14 @@ import './measure.css'
 import type { ScenePicker, PickResult, PickOptions } from './picker'
 import { Stroke, Dots, Fill, Label, OVERLAY_COLORS, paintLabel } from './overlay'
 import { checkItem, volumeOf } from './checks'
+import { minDistance } from './clearance-math'
 import * as M from './measure-math'
 import { createTaskQueue } from './async'
 import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
   type MeasureKind, type MeasureSettings, type MeasureSnapshot, type MeasureStep, type MeasureTool,
-  type Vec3,
+  type Vec3, type DistanceItem, type MeasureNotice,
 } from './measure-types'
 
 export interface MeasureSystemDeps {
@@ -156,7 +157,11 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     points: [] as THREE.Vector3[],
     /** Perpendicular mode: the reference face's plane. */
     plane: null as { point: THREE.Vector3; normal: THREE.Vector3; face: THREE.Vector3[] | null } | null,
+    /** Between-elements mode: the first element clicked. */
+    element: null as { modelId: string; localId: number; point: THREE.Vector3 } | null,
   }
+  let notice: MeasureNotice | null = null
+  let busy = false
 
   interface HoverState {
     pick: PickResult
@@ -207,6 +212,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       items: [...entries.values()].map((e) => e.item),
       selectedId,
       settings,
+      notice,
+      busy,
     }
   }
 
@@ -226,6 +233,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'point': return 'first-point'
       case 'distance':
         if (distanceMode === 'perpendicular') return draft.plane ? 'perpendicular-target' : 'pick-plane-face'
+        if (distanceMode === 'elements') return draft.element ? 'element-b' : 'element-a'
+        if (distanceMode === 'headroom') return 'headroom-point'
         return n === 0 ? 'first-point' : 'second-point'
       case 'path': return n === 0 ? 'first-point' : 'next-point'
       case 'area':
@@ -255,6 +264,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   function pickOptions(): PickOptions {
     if (tool === 'area' && areaMode === 'face') return { snaps: null, wantFace: true }
     if (tool === 'distance' && distanceMode === 'perpendicular' && !draft.plane) return { snaps: null, wantFace: true }
+    // Gap and headroom start from a surface, not from a snapped vertex.
+    if (tool === 'distance' && (distanceMode === 'elements' || distanceMode === 'headroom')) return { snaps: null }
     return { snaps: settings.snaps }
   }
 
@@ -500,8 +511,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
 
   function baseLabelText(item: MeasureItem): string {
     switch (item.kind) {
-      case 'distance':
-        return `${item.perpendicular ? '⊥ ' : ''}${M.formatLength(item.value, settings)}`
+      case 'distance': {
+        const mark = item.source === 'headroom' ? '↕ ' : item.source === 'elements' ? (item.clash ? '⚠ ' : '↔ ') : item.perpendicular ? '⊥ ' : ''
+        return `${mark}${item.approximate ? '≤ ' : ''}${M.formatLength(item.value, settings)}`
+      }
       case 'path':
         return `Σ ${M.formatLength(item.value, settings)}`
       case 'point':
@@ -654,14 +667,64 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     return { id: nextId(), seq: seq[kind], name: null, visible: true, points: points.map(plain) }
   }
 
-  function createDistance(a: THREE.Vector3, b: THREE.Vector3, perpendicular: boolean): void {
+  function createDistance(a: THREE.Vector3, b: THREE.Vector3, perpendicular: boolean,
+    extra: Partial<Pick<DistanceItem, 'source' | 'clash' | 'approximate'>> = {}): void {
     const base = newBase('distance', [a, b])
     addItem({
       ...base, kind: 'distance',
       value: a.distanceTo(b),
       components: M.distanceComponents(plain(a), plain(b)),
       perpendicular,
+      ...extra,
     })
+  }
+
+  /** Clear height: from the clicked surface to the next one straight above (or below, from a ceiling). */
+  async function placeHeadroom(h: HoverState): Promise<void> {
+    const n = h.pick.normal
+    // Start a centimetre off the face, so a ray along a wall does not graze it.
+    const start = h.pick.surfacePoint.clone().addScaledVector(n ?? new THREE.Vector3(0, 1, 0), 0.01)
+    const UP = new THREE.Vector3(0, 1, 0), DOWN = new THREE.Vector3(0, -1, 0)
+    busy = true; emit()
+    try {
+      let lo: THREE.Vector3, hi: THREE.Vector3
+      if (n && Math.abs(n.y) < 0.5) {
+        // A wall or a column: the clear height at this spot, floor to ceiling.
+        const [floor, ceiling] = await Promise.all([deps.picker.castRay(start, DOWN, 0), deps.picker.castRay(start, UP, 0)])
+        if (!floor || !ceiling) { notice = 'no-surface'; return }
+        lo = floor.point; hi = ceiling.point
+      } else {
+        // A floor measures up; a face looking down is a ceiling seen from below: down to the floor.
+        const dir = n && n.y < -0.5 ? DOWN : UP
+        const hit = await deps.picker.castRay(start, dir, 0.01)
+        if (!hit) { notice = 'no-surface'; return }
+        const from = h.pick.surfacePoint
+        ;[lo, hi] = dir === UP ? [from, hit.point] : [hit.point, from]
+      }
+      // Exactly vertical: the ray is, the hit point may drift by float noise.
+      createDistance(lo, new THREE.Vector3(lo.x, hi.y, lo.z), false, { source: 'headroom' })
+    } finally { busy = false }
+  }
+
+  /** Clear gap between two elements: the closest points of their geometry. */
+  async function placeElement(h: HoverState): Promise<void> {
+    const { modelId, localId } = h.pick
+    if (!modelId || localId === null) { notice = 'no-element'; return }
+    if (!draft.element) {
+      draft.element = { modelId, localId, point: h.pick.surfacePoint.clone() }
+      draft.points = [draft.element.point]
+      return
+    }
+    const a = draft.element
+    if (a.modelId === modelId && a.localId === localId) { notice = 'same-element'; return }
+    busy = true; emit()
+    try {
+      const [ta, tb] = await Promise.all([deps.picker.elementTriangles(a.modelId, a.localId), deps.picker.elementTriangles(modelId, localId)])
+      const r = ta && tb ? minDistance(ta, tb) : null
+      if (!r) { notice = 'no-geometry'; return }
+      createDistance(v3(r.a), v3(r.b), false, { source: 'elements', clash: r.intersecting, approximate: r.truncated })
+      resetDraft()
+    } finally { busy = false }
   }
 
   function createPath(points: THREE.Vector3[]): void {
@@ -697,6 +760,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   function resetDraft(): void {
     draft.points = []
     draft.plane = null
+    draft.element = null
   }
 
   function isDuplicate(p: THREE.Vector3): boolean {
@@ -708,13 +772,18 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     return !!a && !!b && Math.hypot(a.x - b.x, a.y - b.y) < DUPLICATE_PX
   }
 
-  function place(h: HoverState): void {
+  async function place(h: HoverState): Promise<void> {
     const p = h.point.clone()
+    notice = null
     switch (tool) {
       case 'point':
         createPoint(p, h.pick.modelId)
         break
       case 'distance':
+        if (distanceMode === 'headroom' || distanceMode === 'elements') {
+          await (distanceMode === 'headroom' ? placeHeadroom(h) : placeElement(h))
+          break
+        }
         if (distanceMode === 'perpendicular') {
           if (!draft.plane) {
             if (!h.pick.normal) return
@@ -788,7 +857,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         lastPick = result ? { pick: result, cursor: at, camera: cameraSignature() } : null
         applyHover()
       }
-      if (hover) place(hover)
+      if (hover) await place(hover)
+      else if (tool === 'distance' && (distanceMode === 'headroom' || distanceMode === 'elements')) { notice = 'no-element'; emit() }
     })
   }
 

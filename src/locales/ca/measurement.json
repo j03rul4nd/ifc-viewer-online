@@ -27,7 +27,11 @@
     "perpendicularHint": "D'una cara a un punt, en perpendicular a la cara — per a folgances i gàlibs",
     "polygon": "Per punts",
     "face": "Per cara",
-    "faceHint": "Un clic mesura una cara sencera"
+    "faceHint": "Un clic mesura una cara sencera",
+    "elements": "Entre elements",
+    "elementsHint": "Distància mínima entre dos elements, a partir de la seva geometria — per a holgures i interferències",
+    "headroom": "Alçada lliure",
+    "headroomHint": "Un clic en un terra: la distància vertical a la superfície de sobre (des d’un sostre: fins al terra)"
   },
   "steps": {
     "idle": "Tria una eina",
@@ -40,7 +44,11 @@
     "angle-end": "Clica un punt del segon costat",
     "pick-plane-face": "Clica la cara des de la qual vols mesurar",
     "perpendicular-target": "Clica el punt fins al qual vols mesurar",
-    "point": "Clica un punt per veure'n les coordenades"
+    "point": "Clica un punt per veure'n les coordenades",
+    "element-a": "Fes clic al primer element",
+    "element-b": "Fes clic al segon element",
+    "headroom-point": "Fes clic en un terra (o un sostre) per mesurar l’alçada lliure",
+    "computing": "Mesurant…"
   },
   "keys": {
     "axisLock": "bloqueja l'eix",
@@ -92,7 +100,11 @@
     "nonPlanar": "Els punts no són en un mateix pla: és l'àrea projectada.",
     "fromFace": "Àrea d'una cara, mesurada pel seu contorn exterior.",
     "modelFrame": "Coordenades en el sistema IFC del mateix model.",
-    "sceneFrame": "Coordenades de l'escena (no hi ha cap model sota el punt)."
+    "sceneFrame": "Coordenades de l'escena (no hi ha cap model sota el punt).",
+    "elementsNote": "Distància mínima entre els dos elements, segons la seva geometria.",
+    "clashNote": "Els elements es toquen o es creuen: és una interferència, no una holgura.",
+    "approximateNote": "Elements molt detallats: el valor és una cota superior.",
+    "headroomNote": "Alçada lliure vertical fins a la superfície següent."
   },
   "actions": {
     "finish": "Acaba",
@@ -275,5 +287,11 @@
     "note": "Un valor per element, net abans que brut. * = no tots els elements el tenen.",
     "refresh": "Recalcula",
     "filename": "amidaments"
+  },
+  "notice": {
+    "no-surface": "No hi ha res damunt ni sota d’aquest punt",
+    "no-element": "Fes clic sobre un element del model",
+    "same-element": "És el mateix element: fes clic en un altre",
+    "no-geometry": "Aquest element no té geometria per mesurar"
   }
 }

@@ -27,7 +27,11 @@
     "perpendicularHint": "从面到点，垂直于该面测量 — 用于净空检查",
     "polygon": "按点",
     "face": "按面",
-    "faceHint": "单击即可测量整个面"
+    "faceHint": "单击即可测量整个面",
+    "elements": "构件之间",
+    "elementsHint": "根据几何计算两个构件之间的最小间距 — 用于净距和碰撞检查",
+    "headroom": "净高",
+    "headroomHint": "点击一次楼面：到上方表面的垂直距离（从顶棚点击：向下到楼面）"
   },
   "steps": {
     "idle": "选择工具",
@@ -40,7 +44,11 @@
     "angle-end": "点击第二条边上的点",
     "pick-plane-face": "点击作为测量起点的面",
     "perpendicular-target": "点击要测量到的点",
-    "point": "点击一个点以读取其坐标"
+    "point": "点击一个点以读取其坐标",
+    "element-a": "点击第一个构件",
+    "element-b": "点击第二个构件",
+    "headroom-point": "点击楼面（或顶棚）测量净高",
+    "computing": "正在测量…"
   },
   "keys": {
     "axisLock": "锁定轴",
@@ -92,7 +100,11 @@
     "nonPlanar": "这些点不在同一平面上：此为投影面积。",
     "fromFace": "单个面的面积，沿其外轮廓测量。",
     "modelFrame": "模型自身 IFC 坐标系中的坐标。",
-    "sceneFrame": "场景坐标（点下方没有模型）。"
+    "sceneFrame": "场景坐标（点下方没有模型）。",
+    "elementsNote": "根据几何计算的两个构件之间的最小间距。",
+    "clashNote": "构件相互接触或交叉：这是碰撞，不是净距。",
+    "approximateNote": "构件非常精细：该值为上限。",
+    "headroomNote": "到下一表面的垂直净高。"
   },
   "actions": {
     "finish": "完成",
@@ -275,5 +287,11 @@
     "note": "每个构件取一个值，净量优先于毛量。* = 并非所有构件都有。",
     "refresh": "重新计算",
     "filename": "takeoff"
+  },
+  "notice": {
+    "no-surface": "此点上方和下方都没有表面",
+    "no-element": "请点击模型中的构件",
+    "same-element": "这是同一个构件，请点击另一个",
+    "no-geometry": "此构件没有可测量的几何"
   }
 }

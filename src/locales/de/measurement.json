@@ -27,7 +27,11 @@
     "perpendicularHint": "Von einer Fläche zu einem Punkt, rechtwinklig zur Fläche — für Abstände und Lichtmaße",
     "polygon": "Nach Punkten",
     "face": "Nach Fläche",
-    "faceHint": "Ein Klick misst eine ganze Fläche"
+    "faceHint": "Ein Klick misst eine ganze Fläche",
+    "elements": "Zwischen Bauteilen",
+    "elementsHint": "Kürzester Abstand zwischen zwei Bauteilen, aus ihrer Geometrie – für Freiräume und Kollisionen",
+    "headroom": "Lichte Höhe",
+    "headroomHint": "Ein Klick auf einen Boden: der senkrechte Abstand zur Fläche darüber (von einer Decke: nach unten zum Boden)"
   },
   "steps": {
     "idle": "Werkzeug wählen",
@@ -40,7 +44,11 @@
     "angle-end": "Punkt auf dem zweiten Schenkel anklicken",
     "pick-plane-face": "Fläche anklicken, von der aus gemessen wird",
     "perpendicular-target": "Punkt anklicken, bis zu dem gemessen wird",
-    "point": "Punkt anklicken, um seine Koordinaten zu sehen"
+    "point": "Punkt anklicken, um seine Koordinaten zu sehen",
+    "element-a": "Erstes Bauteil anklicken",
+    "element-b": "Zweites Bauteil anklicken",
+    "headroom-point": "Boden (oder Decke) anklicken, um die lichte Höhe zu messen",
+    "computing": "Wird gemessen…"
   },
   "keys": {
     "axisLock": "Achse sperren",
@@ -92,7 +100,11 @@
     "nonPlanar": "Die Punkte liegen nicht in einer Ebene: Dies ist die projizierte Fläche.",
     "fromFace": "Inhalt einer einzelnen Fläche, entlang ihres Außenrands gemessen.",
     "modelFrame": "Koordinaten im eigenen IFC-Koordinatensystem des Modells.",
-    "sceneFrame": "Szenenkoordinaten (kein Modell unter dem Punkt)."
+    "sceneFrame": "Szenenkoordinaten (kein Modell unter dem Punkt).",
+    "elementsNote": "Kürzester Abstand zwischen den beiden Bauteilen, aus ihrer Geometrie.",
+    "clashNote": "Die Bauteile berühren oder durchdringen sich: eine Kollision, kein Freiraum.",
+    "approximateNote": "Sehr detaillierte Bauteile: der Wert ist eine Obergrenze.",
+    "headroomNote": "Senkrechte lichte Höhe bis zur nächsten Fläche."
   },
   "actions": {
     "finish": "Fertig",
@@ -275,5 +287,11 @@
     "note": "Ein Wert pro Element, netto vor brutto. * = nicht alle Elemente haben ihn.",
     "refresh": "Neu berechnen",
     "filename": "mengen"
+  },
+  "notice": {
+    "no-surface": "Über oder unter diesem Punkt ist nichts",
+    "no-element": "Auf ein Bauteil des Modells klicken",
+    "same-element": "Das ist dasselbe Bauteil – ein anderes anklicken",
+    "no-geometry": "Dieses Bauteil hat keine messbare Geometrie"
   }
 }
