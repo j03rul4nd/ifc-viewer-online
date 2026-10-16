@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { featureForRule } from '../../lib/pricing/catalog'
 import { trackPricingIntent } from '../../lib/analytics'
 import NotifyMeForm from './NotifyMeForm'
+import AutoFixPreview from './AutoFixPreview'
+import { isPricingPreview } from '../../lib/pricing/pricing-preview'
 
 // Next step after the Health Score — the funnel's biggest hole (≈230 scores a
 // day, ~1 % act on them). Public, but price-free: it only measures interest in
 // auto-fix / certificates and captures an email to tell people at launch.
 
-export default function ScoreUpsell({ score, topRule }: { score: number; topRule?: string }) {
+export default function ScoreUpsell({ score, topRule, modelId }: { score: number; topRule?: string; modelId?: string }) {
   const { t } = useTranslation('validation')
   const feature = featureForRule(topRule)
   const fix = feature === 'auto_fix'
@@ -39,6 +41,7 @@ export default function ScoreUpsell({ score, topRule }: { score: number; topRule
           ×
         </button>
       </div>
+      {fix && isPricingPreview() && <AutoFixPreview modelId={modelId} />}
       {open && (
         <div className="mt-2">
           <NotifyMeForm
