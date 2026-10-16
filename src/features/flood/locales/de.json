@@ -313,5 +313,43 @@
       "university": "Universität",
       "warehouse": "Lagerhalle"
     }
+  },
+  "coast": {
+    "title": "Küste",
+    "switch": "Meer auf Sturmniveau",
+    "note": "Setzt das Meer für den Lauf auf Gezeit + Sturmflut + Wellenstau; die Gitterränder werden geschlossen, damit es bleibt.",
+    "kind": "Küste",
+    "auto": "Auto: {{kind}}",
+    "kinds": {
+      "mediterranean": "Mittelmeer",
+      "adriatic": "Adria",
+      "atlantic": "Atlantik",
+      "macrotidal": "Makrotidal (Ärmelkanal, Fundy)",
+      "north-sea": "Nordsee",
+      "baltic": "Ostsee",
+      "black-sea": "Schwarzes Meer",
+      "estuary-east-asia": "Ostasiatisches Ästuar",
+      "ocean": "Offener Ozean"
+    },
+    "facts": "Typisch: Springtidenhub {{range}} m · schwere Sturmflut {{surge}} m · Sturmwellen {{hs}} m",
+    "tide": "Gezeit",
+    "tides": {
+      "low": "Niedrig",
+      "mean": "Mittel",
+      "high": "Hoch",
+      "spring": "Springtide"
+    },
+    "surge": "Sturmflut",
+    "waves": "Wellen (Hs)",
+    "rise": "Meeresanstieg",
+    "exposure": "Ufer",
+    "open": "Offene Küste",
+    "harbour": "Hafen",
+    "still": "Ruhewasser",
+    "runup": "Wellenreichweite",
+    "runupAbove": "+{{m}} m Wellenauflauf",
+    "typical": "Typische Werte dieser Küstenart, keine Vorhersage und keine Wiederkehrperiode für diesen Ort.",
+    "noSea": "Kein Meer im Gitter: Die Küstenlinie liegt außerhalb oder OpenStreetMap ist aus.",
+    "result": "Meer {{sea}} m² · überflutetes Land {{land}} m² · von Wellen überspült {{runup}} m²"
   }
 }

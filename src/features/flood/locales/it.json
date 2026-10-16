@@ -313,5 +313,43 @@
       "university": "Università",
       "warehouse": "Magazzino"
     }
+  },
+  "coast": {
+    "title": "Costa",
+    "switch": "Mare a livello di mareggiata",
+    "note": "Porta il mare a marea + sovralzo + set-up del moto ondoso durante la simulazione; i bordi si chiudono perché resti.",
+    "kind": "Costa",
+    "auto": "Auto: {{kind}}",
+    "kinds": {
+      "mediterranean": "Mediterraneo",
+      "adriatic": "Adriatico",
+      "atlantic": "Atlantico",
+      "macrotidal": "Macrotidale (Manica, Fundy)",
+      "north-sea": "Mare del Nord",
+      "baltic": "Baltico",
+      "black-sea": "Mar Nero",
+      "estuary-east-asia": "Estuario dell'Asia orientale",
+      "ocean": "Oceano aperto"
+    },
+    "facts": "Tipico: escursione di sizigia {{range}} m · sovralzo severo {{surge}} m · onde di tempesta {{hs}} m",
+    "tide": "Marea",
+    "tides": {
+      "low": "Bassa",
+      "mean": "Media",
+      "high": "Alta",
+      "spring": "Sizigia"
+    },
+    "surge": "Sovralzo",
+    "waves": "Onde (Hs)",
+    "rise": "Innalzamento",
+    "exposure": "Riva",
+    "open": "Costa aperta",
+    "harbour": "Porto",
+    "still": "Livello del mare",
+    "runup": "Portata delle onde",
+    "runupAbove": "+{{m}} m di risalita",
+    "typical": "Valori tipici di questo tipo di costa, non una previsione né un tempo di ritorno per questo luogo.",
+    "noSea": "Nessun mare nella griglia: la linea di costa è fuori o OpenStreetMap è spento.",
+    "result": "Mare {{sea}} m² · terra sommersa {{land}} m² · battuta dalle onde {{runup}} m²"
   }
 }

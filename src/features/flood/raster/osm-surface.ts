@@ -70,6 +70,8 @@ export interface OsmSurface {
   raise: Float32Array
   /** 1 = over a watercourse that is gone. */
   oldCourse: Uint8Array
+  /** 1 = the sea, as OSM's coastline builds it (coastal.ts fills from here). */
+  sea: Uint8Array
   buildings: OsmBuilding[]
   /** Names of the old courses found (for the report). */
   oldCourseNames: string[]
@@ -132,6 +134,7 @@ export function buildOsmSurface(o: OsmSurfaceInput): OsmSurface {
   const cut = new Float32Array(n)
   const raise = new Float32Array(n)
   const oldCourse = new Uint8Array(n)
+  const sea = new Uint8Array(n)
   const counts = { roads: 0, paved: 0, green: 0, water: 0, channels: 0, culverts: 0, oldCourses: 0, barriers: 0, buildings: 0 }
   const buildings: OsmBuilding[] = []
   const oldCourseNames = new Set<string>()
@@ -213,7 +216,11 @@ export function buildOsmSurface(o: OsmSurfaceInput): OsmSurface {
         fillPolygon(ring, holes, (c) => cover(c, g)); counts.green++
       } else if (kind === 'sand') { fillPolygon(ring, holes, (c) => cover(c, SAND)); counts.green++ }
       else if (kind === 'rock') { fillPolygon(ring, holes, (c) => cover(c, ROCK)); counts.green++ }
-      else if (kind === 'water') { fillPolygon(ring, holes, (c) => cover(c, WATER)); counts.water++ }
+      else if (kind === 'water') {
+        const isSea = f.isSea === true
+        fillPolygon(ring, holes, (c) => { cover(c, WATER); if (isSea) sea[c] = 1 })
+        counts.water++
+      }
     }
   }
 
@@ -289,7 +296,7 @@ export function buildOsmSurface(o: OsmSurfaceInput): OsmSurface {
     }
   }
 
-  return { manning, infiltration, blocked, canopy, buildingOf, cut, raise, oldCourse, buildings, oldCourseNames: [...oldCourseNames], counts }
+  return { manning, infiltration, blocked, canopy, buildingOf, cut, raise, oldCourse, sea, buildings, oldCourseNames: [...oldCourseNames], counts }
 }
 
 /** The elements of a neighbourhood the water reaches: OSM buildings, by the deepest water at their walls. */
