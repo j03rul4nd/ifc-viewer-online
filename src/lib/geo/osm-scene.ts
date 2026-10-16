@@ -365,6 +365,8 @@ function* buildSimpleSurface(
     // lawn, shingle is not dune sand, and OSM already tells us. Painting them
     // all one colour per layer throws that away.
     const tone = layer === 'water' ? null : (f.style.tone ?? FALLBACK_TONE[layer])
+    // The shore of a beach: how far each vertex is from the sea, in metres.
+    const shoreOf = layer === 'sand' ? seaDistanceFor(features, frame) : null
 
     // A triangle spanning a whole park is a flat lid over the hill under it, so
     // on real terrain each face is split until its edges are shorter than the
@@ -376,7 +378,10 @@ function* buildSimpleSurface(
             ? (course ? frame.zAtElevationM(course(p.x, p.y) + lift) : flatZ)
             : frame.groundZ(p.x, p.y) + lift * mToN
           positions.push(p.x, p.y, z)
-          if (tone) colors.push(tone[0], tone[1], tone[2])
+          if (tone && shoreOf) {
+            const t = shoreTone(tone, shoreOf(p.x, p.y), p.x / mToN, p.y / mToN)
+            colors.push(t[0], t[1], t[2])
+          } else if (tone) colors.push(tone[0], tone[1], tone[2])
         }
       }
     }
@@ -537,6 +542,74 @@ function levelAlong(
     if (d < best) { best = d; lv = levels[i - 1] + t * (levels[i] - levels[i - 1]) }
   }
   return lv
+}
+
+/**
+ * THE SHORE OF A BEACH, in its colour. Sand within a few metres of the sea is
+ * wet — darker, a shade cooler — where the swash runs up and back; a little
+ * higher up the waves leave a line of wrack (seaweed, shells, the day's
+ * debris) where the last high water reached. Both read from far away and are
+ * most of what makes a strip of sand look like a beach and not a sandpit.
+ *
+ * Distances in metres from the sea's edge; `mx, my` in metres for the noise
+ * that keeps the line from being ruled. Typical Mediterranean beach widths:
+ * wet band ~6 m, wrack ~10 m up.
+ */
+export function shoreTone(
+  tone: ReadonlyArray<number>, dM: number, mx: number, my: number,
+): [number, number, number] {
+  if (!(dM < 30)) return [tone[0], tone[1], tone[2]]
+  const wobble = Math.sin(mx * 0.21 + my * 0.13) * 1.4 + Math.sin(mx * 0.047 - my * 0.071) * 2.2
+  const d = Math.max(0, dM + wobble)
+  // Wet: full at the water, gone by ~7 m.
+  const wet = 1 - Math.min(1, Math.max(0, (d - 1.5) / 5.5))
+  // Wrack: a thin, broken, darker line ~10 m up.
+  const band = Math.exp(-(((d - 10.5) / 1.1) ** 2))
+  const broken = 0.5 + 0.5 * Math.sin(mx * 0.9 + Math.sin(my * 0.37) * 3)
+  const wrack = band * (0.35 + 0.65 * broken) * 0.22
+  const k = 1 - 0.38 * wet - wrack
+  return [tone[0] * k * (1 - 0.06 * wet), tone[1] * k * (1 - 0.02 * wet), tone[2] * k * (1 + 0.05 * wet)]
+}
+
+/**
+ * Distance to the nearest SEA edge (OSM's sea rings), in metres, at a
+ * normalized point; null when the scene has no sea. Cached per feature list:
+ * both surface paths ask, per vertex.
+ */
+const seaDistanceCache = new WeakMap<ReadonlyArray<OsmFeature>, ((nx: number, ny: number) => number) | null>()
+
+export function seaDistanceFor(
+  features: ReadonlyArray<OsmFeature>, frame: GroundFrame,
+): ((nx: number, ny: number) => number) | null {
+  if (seaDistanceCache.has(features)) return seaDistanceCache.get(features)!
+  const edges: number[] = []
+  for (const f of features) {
+    if (f.kind !== 'water' || !f.isSea || !f.ring) continue
+    const r = f.ring.map((p) => latLonToNormalized(p.lat, p.lon))
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i], b = r[(i + 1) % r.length]
+      edges.push(a.nx, a.ny, b.nx, b.ny)
+    }
+  }
+  if (edges.length === 0) { seaDistanceCache.set(features, null); return null }
+  const mToN = frame.mToN
+  const cut = 30 * mToN
+  const fn = (x: number, y: number): number => {
+    let best = Infinity
+    for (let k = 0; k < edges.length; k += 4) {
+      const ax = edges[k], ay = edges[k + 1], bx = edges[k + 2], by = edges[k + 3]
+      // Cheap reject: outside the segment's box grown by the band.
+      if (x < Math.min(ax, bx) - cut || x > Math.max(ax, bx) + cut || y < Math.min(ay, by) - cut || y > Math.max(ay, by) + cut) continue
+      const dx = bx - ax, dy = by - ay
+      const l2 = dx * dx + dy * dy
+      const t = l2 > 0 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)) : 0
+      const d = Math.hypot(ax + t * dx - x, ay + t * dy - y)
+      if (d < best) best = d
+    }
+    return best / mToN
+  }
+  seaDistanceCache.set(features, fn)
+  return fn
 }
 
 export function waterLevelM(
@@ -819,6 +892,7 @@ function* buildDetailedSurface(
         ) + lift)
       : 0
     const shoreDist = isWater ? distanceToRings(mesh.points, boundaries) : null
+    const shoreOfSand = layer === 'sand' ? seaDistanceFor(features, frame) : null
     const course = isWater ? waterSurfacesFor(features, frame).get(f.id) : undefined
 
     for (let i = 0; i < mesh.points.length; i++) {
@@ -844,7 +918,10 @@ function* buildDetailedSurface(
         normals.push(-dzx / len, -dzy / len, 1 / len)
       }
 
-      colors.push(tone[0], tone[1], tone[2])
+      if (shoreOfSand) {
+        const t = shoreTone(tone, shoreOfSand(nx, ny), p.x, p.y)
+        colors.push(t[0], t[1], t[2])
+      } else colors.push(tone[0], tone[1], tone[2])
       surf.push(p.x, p.y)
       rough.push(roughness)
       if (shoreDist) shore.push(shoreDist[i])
