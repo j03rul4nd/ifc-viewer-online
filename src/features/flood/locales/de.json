@@ -361,5 +361,25 @@
     "preview": "Meer im Lauf",
     "noSea": "Kein Meer im Gitter: Die Küstenlinie liegt außerhalb oder OpenStreetMap ist aus.",
     "result": "Meer {{sea}} m² · überflutetes Land {{land}} m² · von Wellen überspült {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Flüsse",
+    "switch": "Wasser aus {{n}} Gewässer(n)",
+    "note": "Jeder Fluss tritt mit der Tiefe ins Gitter, die sein Abfluss braucht (Manning), und folgt einer Hochwasserganglinie.",
+    "peak": "Scheitel",
+    "base": "Basis",
+    "lag": "Scheitel nach Regen",
+    "rise": "Anstieg",
+    "more": "{{n}} weitere nutzen den typischen Abfluss ihrer Klasse",
+    "typical": "Typische Abflüsse je Klasse, bis Sie sie angeben; ein Pegelwert (Hochwasserscheitel der Behörde) ist viel besser.",
+    "result": "{{q}} m³/s · {{h}} m tief im Scheitel",
+    "none": "Kein Gewässer fließt ins Gitter (oder OpenStreetMap ist aus).",
+    "cls": {
+      "river": "Fluss",
+      "canal": "Kanal",
+      "stream": "Bach",
+      "ditch": "Graben",
+      "drain": "Abzugsgraben"
+    }
   }
 }

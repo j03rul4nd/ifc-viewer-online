@@ -183,6 +183,15 @@ export function waterExposureAt(
   const { f, d } = waters[0]
   const coast = coastProfileAt(at.lat, at.lon)
   let cls = classOf(f)
+  // A RIVERBANK POLYGON WITHOUT ITS TAGS. The vector-tile fallback gives a
+  // river's area as plain water, which reads as a still lake; a mapped course
+  // running through it says otherwise, and lends its direction.
+  let course = f.waterCourse?.line
+  if (!f.isSea && !f.waterCourse && f.style.waterRegime !== 'flowing') {
+    const through = features.find((x) => x.waterCourse && x.waterCourse.widthM >= 8
+      && crosses(x.waterCourse.line, f.ring!))
+    if (through) { cls = through.waterCourse!.widthM >= 15 ? 'river' : 'canal'; course = through.waterCourse!.line }
+  }
   const issues: DesignIssue[] = []
 
   // A river on a tidal coast that is wide (a tidal reach: the Huangpu, the
@@ -210,7 +219,6 @@ export function waterExposureAt(
 
   switch (cls) {
     case 'river': case 'stream': case 'canal': {
-      const course = f.waterCourse?.line
       if (course && course.length >= 2) {
         const b = bearingNear(course, at)
         flowBearingDeg = Math.round(b.deg)
@@ -266,6 +274,18 @@ export function waterExposureAt(
     cls, name: f.name, distanceM: Math.round(d), coast: coast.kind, salinity,
     currentMS, flowBearingDeg, slope, tideRangeM, waveHsM, issues,
   }
+}
+
+/** True when a line passes through a ring: a straight reach can cross it with no vertex inside. */
+function crosses(line: ReadonlyArray<LatLonPoint>, ring: ReadonlyArray<LatLonPoint>): boolean {
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1], b = line[i]
+    for (let k = 0; k <= 8; k++) {
+      const t = k / 8
+      if (inRing({ lat: a.lat + (b.lat - a.lat) * t, lon: a.lon + (b.lon - a.lon) * t }, ring)) return true
+    }
+  }
+  return false
 }
 
 function round(v: number): number { return Math.round(v * 100) / 100 }

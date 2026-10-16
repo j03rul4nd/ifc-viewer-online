@@ -13,7 +13,7 @@ import type { AffectedReport, PrepareResult, ProbeResult } from './system'
 import type { RoofRunoff } from './raster/rain-routing'
 import { stormHyetograph } from './presets'
 import type { CoastKind, Exposure, TideStage } from './core/coastal'
-import type { CoastReport } from './system'
+import type { CoastReport, RiversReport } from './system'
 
 export type FloodStatus = 'idle' | 'preparing' | 'ready' | 'running' | 'paused' | 'finished' | 'error'
 export type PrepareStage = 'geometry' | 'raster' | 'terrain' | 'layers'
@@ -71,6 +71,14 @@ export interface FloodSettings {
   coastPeakOffsetH: number
   /** A measured spring tidal range, metres; null = the coast's or the near port's. */
   coastRangeM: number | null
+  /** Bring the rivers' discharge in across the grid's edge (river-inflow). */
+  rivers: boolean
+  /** Discharge per river id, m³/s; absent = its class's typical values. */
+  riverFlows: Record<string, { base: number; peak: number }>
+  /** Hours from the rain's peak to the river's flood peak at the grid. */
+  riverLagH: number
+  /** Hours from base flow to the peak. */
+  riverRiseH: number
 }
 
 export interface FloodState extends FloodSettings {
@@ -96,6 +104,8 @@ export interface FloodState extends FloodSettings {
   affectedBusy: boolean
   /** The sea of the last run's coastal scenario; null when off. */
   coastReport: CoastReport | null
+  /** The rivers of the last run; null when off. */
+  riversReport: RiversReport | null
   setPanelOpen(v: boolean): void
   set(p: Partial<FloodState>): void
 }
@@ -128,6 +138,11 @@ export const useFloodStore = create<FloodState>()((set) => ({
   coastTidal: true,
   coastPeakOffsetH: 0,
   coastRangeM: null,
+  rivers: false,
+  riverFlows: {},
+  riverLagH: 3,
+  riverRiseH: 3,
+  riversReport: null,
   coastReport: null,
   panelOpen: false,
   status: 'idle',

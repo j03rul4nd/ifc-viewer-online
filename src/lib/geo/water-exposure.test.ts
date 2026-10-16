@@ -67,3 +67,14 @@ describe('waterExposureAt', () => {
     expect(waterExposureAt({ lat: 46.1, lon: 7 }, [lake])).toBeNull()
   })
 })
+
+describe('a riverbank polygon without tags', () => {
+  it('is a river when a mapped course runs through it', () => {
+    const area: OsmFeature = { id: 'w-1', kind: 'water', ring: box(41.98, 2.82, 0.002), height: H, style: { ...S, waterRegime: 'still' } }
+    const line = [{ lat: 41.976, lon: 2.82 }, { lat: 41.984, lon: 2.82 }]
+    const course: OsmFeature = { id: 'w2', kind: 'water', ring: box(41.98, 2.82, 0.0001), height: H, style: { ...S, waterRegime: 'flowing' }, waterCourse: { line, widthM: 22 } }
+    const e = waterExposureAt({ lat: 41.9805, lon: 2.8205 }, [area, course])!
+    expect(e.cls).toBe('river')
+    expect(e.flowBearingDeg).toBe(0)
+  })
+})

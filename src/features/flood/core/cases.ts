@@ -17,6 +17,8 @@ export interface FloodCase {
   durationS: number
   /** The sea's level over time for the grid's sea cells. */
   tide?: TideSeries
+  /** The main river's depth over time at the grid's inflow cells. */
+  stage?: TideSeries
 }
 
 const closed = { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const
@@ -111,6 +113,35 @@ export function tidalBeach(n = 80): FloodCase {
     params: { boundary: { ...closed } },
     durationS: 40 * 60,
     tide: { intervalMs: 20 * 60_000, levels: [0.3, 1.5, 0.3] },
+  }
+}
+
+/**
+ * A flood wave down a river: a 12 m channel cut 1.5 m into a valley falling
+ * 2 ‰ eastward, entering at the west edge. The entry rises from 0.6 m to
+ * 3 m deep and back — the wave fills the channel, overtops the banks, and
+ * drains out of the free east edge. A tributary enters from the south at a
+ * third of the main river's depth.
+ */
+export function riverFlood(nx = 120, ny = 40): FloodCase {
+  // No buildings: a flood wave over blocks is chaotic enough that float32 and
+  // float64 part ways (see city-demo); this case is about the inflow itself.
+  const grid = inclinedPlaneDemo({ nx, ny, dx: 2, slopeX: 0.002, slopeY: 0, roughnessAmplitude: 0.2, seed: 3 })
+  grid.inflow = new Float32Array(nx * ny)
+  const mid = Math.floor(ny / 2)
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const c = j * nx + i
+      if (Math.abs(j - mid) <= 3) { grid.z[c] -= 1.5; grid.blocked[c] = 0 }
+      if (i === 0 && Math.abs(j - mid) <= 3) grid.inflow[c] = 1
+      if (j === 0 && i >= 60 && i <= 61) { grid.inflow[c] = 0.33; grid.blocked[c] = 0 }
+    }
+  }
+  return {
+    id: 'river-flood', title: 'Flood wave down a river with a tributary', grid, hyetograph: constantStorm(10, 30, 5),
+    params: { boundary: { west: 'closed', east: 'free', south: 'closed', north: 'closed' } },
+    durationS: 60 * 60,
+    stage: { intervalMs: 15 * 60_000, levels: [0.6, 3, 1.2, 0.6, 0.6] },
   }
 }
 

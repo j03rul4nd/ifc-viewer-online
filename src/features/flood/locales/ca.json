@@ -361,5 +361,25 @@
     "preview": "Mar durant la simulació",
     "noSea": "No hi ha mar a la malla: la línia de costa en queda fora o OpenStreetMap està desactivat.",
     "result": "Mar {{sea}} m² · terra que inunda {{land}} m² · batuda per l'onatge {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Rius",
+    "switch": "Aigua baixant per {{n}} llera(es)",
+    "note": "Cada riu entra a la malla a la profunditat que demana el seu cabal (Manning) i segueix un hidrograma de crescuda.",
+    "peak": "Pic",
+    "base": "Base",
+    "lag": "Pic després de la pluja",
+    "rise": "Pujada",
+    "more": "{{n}} més fan servir el cabal típic de la seva classe",
+    "typical": "Cabals típics per classe fins que els indiquis; un valor aforat (el pic de l'agència) és molt millor.",
+    "result": "{{q}} m³/s · {{h}} m de calat al pic",
+    "none": "Cap llera entra a la malla (o OpenStreetMap està desactivat).",
+    "cls": {
+      "river": "Riu",
+      "canal": "Canal",
+      "stream": "Rierol",
+      "ditch": "Sèquia",
+      "drain": "Desguàs"
+    }
   }
 }

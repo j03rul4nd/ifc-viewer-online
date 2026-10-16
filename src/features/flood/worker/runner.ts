@@ -25,6 +25,7 @@ export interface RunnerInit {
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
   tide?: TideSeries | null
+  stage?: TideSeries | null
   backend?: BackendChoice
   powerPreference?: 'low-power' | 'high-performance'
   endS: number
@@ -86,7 +87,7 @@ export class FloodRunner {
    */
   init(r: RunnerInit): void {
     this.send({
-      type: 'init', grid: r.grid, hyetograph: r.hyetograph, params: r.params, tide: r.tide,
+      type: 'init', grid: r.grid, hyetograph: r.hyetograph, params: r.params, tide: r.tide, stage: r.stage,
       backend: r.backend ?? 'auto', powerPreference: r.powerPreference, endS: r.endS, snapshotEveryS: r.snapshotEveryS,
     }, gridTransferables(r.grid))
   }

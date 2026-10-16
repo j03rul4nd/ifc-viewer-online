@@ -361,5 +361,25 @@
     "preview": "Mar durante la simulación",
     "noSea": "No hay mar en la malla: la línea de costa queda fuera o OpenStreetMap está desactivado.",
     "result": "Mar {{sea}} m² · tierra que inunda {{land}} m² · batida por el oleaje {{runup}} m²"
+  },
+  "rivers": {
+    "title": "Ríos",
+    "switch": "Agua bajando por {{n}} cauce(s)",
+    "note": "Cada río entra en la malla a la profundidad que pide su caudal (Manning) y sigue un hidrograma de crecida.",
+    "peak": "Pico",
+    "base": "Base",
+    "lag": "Pico tras la lluvia",
+    "rise": "Subida",
+    "more": "{{n}} más usan el caudal típico de su clase",
+    "typical": "Caudales típicos por clase hasta que los indiques; un dato aforado (el pico de la confederación) es mucho mejor.",
+    "result": "{{q}} m³/s · {{h}} m de calado en el pico",
+    "none": "Ningún cauce entra en la malla (o OpenStreetMap está desactivado).",
+    "cls": {
+      "river": "Río",
+      "canal": "Canal",
+      "stream": "Arroyo",
+      "ditch": "Acequia",
+      "drain": "Desagüe"
+    }
   }
 }

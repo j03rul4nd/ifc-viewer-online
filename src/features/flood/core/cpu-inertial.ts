@@ -81,6 +81,9 @@ export class CpuInertialSolver implements FloodSolver {
   private readonly tide: TideSeries | null
   /** Depth the sea cells gained net, summed (× dx² = seaVolume). */
   private seaDepth = 0
+  private readonly stage: TideSeries | null
+  /** Depth the river entries gained net, summed (× dx² = inflowVolume). */
+  private inflowDepth = 0
 
   constructor(init: SolverInit) {
     const g = validateGrid(init.grid)
@@ -112,6 +115,7 @@ export class CpuInertialSolver implements FloodSolver {
     this.rainArea = effectiveRainArea(g)
     this.v0 = initialVolume(g)
     this.tide = g.sea && init.tide && init.tide.levels.length > 0 ? init.tide : null
+    this.stage = g.inflow && init.stage && init.stage.levels.length > 0 ? init.stage : null
   }
 
   /** One step; false when there was nothing left to do before tStopMs. */
@@ -258,6 +262,8 @@ export class CpuInertialSolver implements FloodSolver {
     // The sea's level at the END of the step (NaN = no sea), like the shaders.
     const sea = g.sea
     const seaLevel = this.tide ? tideLevelAt(this.tide, this.tMs + dtMs) : NaN
+    const inflow = g.inflow
+    const riverDepth = this.stage ? tideLevelAt(this.stage, this.tMs + dtMs) : NaN
     const loss = infiltrationRate(p.infiltration, this.tMs / 1000) * dt
     const infil = this.grid.infiltration
     let hm = 0
@@ -278,8 +284,13 @@ export class CpuInertialSolver implements FloodSolver {
           const forced = Math.max(0, seaLevel - z[c])
           this.seaDepth += forced - hn
           hn = forced
+        } else if (riverDepth === riverDepth && inflow![c]) {
+          // A river's entry, held at its depth for the discharge right now.
+          const forced = Math.max(0, riverDepth * inflow![c])
+          this.inflowDepth += forced - hn
+          hn = forced
         }
-        if (loss > 0 && !(sea && sea[c])) {
+        if (loss > 0 && !(sea && sea[c]) && !(inflow && inflow[c])) {
           const l = Math.min(hn, infil ? loss * infil[c] : loss)
           hn -= l
           this.inf[c] += l
@@ -350,7 +361,8 @@ export class CpuInertialSolver implements FloodSolver {
     const rainVolume = this.rainDepth * this.rainArea
     const infiltratedVolume = infd * a
     const seaVolume = this.seaDepth * a
-    const denom = Math.max(rainVolume + this.v0 + Math.abs(seaVolume), 1e-12)
+    const inflowVolume = this.inflowDepth * a
+    const denom = Math.max(rainVolume + this.v0 + Math.abs(seaVolume) + Math.abs(inflowVolume), 1e-12)
     return {
       t: this.tMs / 1000,
       dt: this.lastDtMs / 1000,
@@ -364,7 +376,8 @@ export class CpuInertialSolver implements FloodSolver {
       infiltratedVolume,
       initialVolume: this.v0,
       seaVolume,
-      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0 - seaVolume) / denom,
+      inflowVolume,
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0 - seaVolume - inflowVolume) / denom,
     }
   }
 
