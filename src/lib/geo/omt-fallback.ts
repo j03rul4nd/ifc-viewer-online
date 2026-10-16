@@ -88,7 +88,11 @@ export function omtTags(f: Pick<OmtFeature, 'layer' | 'type' | 'props'>): Record
       return tags
     }
     case 'water':
-      return f.type === 3 ? { natural: 'water' } : null
+      // OpenMapTiles fills the sea as `class=ocean` polygons — the only sea
+      // the tiles have, since they carry no coastline. Said so, or the sea
+      // would come out as a lake at the floor of its own DEM samples.
+      if (f.type !== 3) return null
+      return cls === 'ocean' ? { natural: 'water', water: 'sea' } : { natural: 'water' }
     case 'waterway':
       // Culverted streams and storm drains run UNDER the city; drawn on the
       // surface they cut blue lines across streets and blocks (seen on the

@@ -191,7 +191,12 @@ export function waterExposureAt(
   const wide = !f.waterCourse || f.waterCourse.widthM >= 150
   if ((cls === 'river' || cls === 'canal') && coast.springRangeM >= 1.5 && (wide || features.some((x) => x.isSea))) cls = 'estuary'
   if (cls === 'sea') {
-    const beach = sands.find((s) => waters.some((w) => w.f.isSea && distanceToRing(s.f.ring![0], w.f.ring!) < 60))
+    // A beach is sand that touches the sea: any of its vertices within a few
+    // tens of metres of a sea ring (a tile-clipped beach may start inland).
+    const seas = waters.filter((w) => w.f.isSea)
+    const touches = (ring: ReadonlyArray<LatLonPoint>) => ring.some((q, i) =>
+      i % 3 === 0 && seas.some((w) => distanceToRing(q, w.f.ring!) < 60))
+    const beach = sands.find((s) => touches(s.f.ring!))
     if (beach && beach.d < 150) cls = 'beach'
     else if (coast.kind === 'ocean' || coast.kind === 'atlantic' || coast.kind === 'macrotidal') cls = 'ocean'
   }

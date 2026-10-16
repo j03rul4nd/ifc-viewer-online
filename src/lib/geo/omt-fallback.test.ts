@@ -23,6 +23,10 @@ describe('omtTags', () => {
       .toMatchObject({ highway: 'secondary', bridge: 'yes', layer: '1' })
     expect(omtTags({ layer: 'transportation', type: 2, props: { class: 'rail' } })).toMatchObject({ railway: 'rail' })
   })
+  it('marks the ocean polygons as the sea, other water as water', () => {
+    expect(omtTags({ layer: 'water', type: 3, props: { class: 'ocean' } })).toEqual({ natural: 'water', water: 'sea' })
+    expect(omtTags({ layer: 'water', type: 3, props: { class: 'lake' } })).toEqual({ natural: 'water' })
+  })
   it('never draws a culverted watercourse on the surface', () => {
     expect(omtTags({ layer: 'waterway', type: 2, props: { class: 'stream', brunnel: 'tunnel' } })).toBeNull()
     expect(omtTags({ layer: 'waterway', type: 2, props: { class: 'drain' } })).toBeNull()

@@ -117,7 +117,8 @@ export function waterRegimeOf(tags: Record<string, string>): WaterRegime {
   const w = tags['water']
   if (tags['waterway'] === 'riverbank' || w === 'river' || w === 'canal' || w === 'stream'
     || w === 'rapids' || w === 'ditch' || w === 'fish_pass') return 'flowing'
-  if (w === 'lagoon' || w === 'tidal' || tags['tidal'] === 'yes' || tags['natural'] === 'bay') return 'tidal'
+  if (w === 'lagoon' || w === 'tidal' || w === 'sea' || w === 'harbour' || tags['tidal'] === 'yes'
+    || tags['natural'] === 'bay') return 'tidal'
   return 'still'
 }
 
