@@ -317,5 +317,17 @@
     "fmtCobieDesc": "Strukturelle COBie-Arbeitsmappe für die FM-Übergabe — Räume, Typen, Komponenten, Kontakte",
     "cobieBusy": "Wird extrahiert…",
     "cobieFailed": "COBie-Extraktion fehlgeschlagen — Modell neu laden und erneut versuchen."
+  },
+  "upsell": {
+    "fixTitle": "Diese Probleme automatisch beheben",
+    "fixDesc": "Wir entwickeln Korrekturen per Klick für fehlende Typen, doppelte oder leere Namen und Proxys – Sie erhalten ein sauberes IFC zurück.",
+    "certTitle": "Belegen Sie diesen Score gegenüber Ihrem Auftraggeber",
+    "certDesc": "Wir entwickeln überprüfbare Zertifikate: Ihr Auftraggeber prüft das Ergebnis über einen einzigen Link.",
+    "cta": "Frühzeitig Zugang erhalten",
+    "label": "Hinterlassen Sie Ihre E-Mail – wir schreiben Ihnen einmal, sobald es fertig ist. Kein Spam.",
+    "submit": "Benachrichtigen",
+    "thanks": "Danke – wir schreiben Ihnen einmal, zum Start.",
+    "error": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+    "dismiss": "Schließen"
   }
 }

@@ -4,12 +4,15 @@ import { subscribeEmail } from '../../lib/subscribe'
 import { trackEmailCaptured } from '../../lib/analytics'
 
 /** "Not available yet — tell me when it is" capture behind every fake door. */
-export default function NotifyMeForm({ source, label, compact = false }: {
+export default function NotifyMeForm({ source, label, compact = false, text }: {
   /** Subscriber source tag, e.g. `pricing:pro` — lets us segment the list later. */
   source: string
   label: string
   compact?: boolean
+  /** Translated strings; the team-only pricing preview keeps the English defaults. */
+  text?: { submit: string; thanks: string; error: string }
 }) {
+  const copy = text ?? { submit: 'Notify me', thanks: "Thanks — we'll email you once, when it launches.", error: 'Could not save it. Try again.' }
   const { i18n } = useTranslation()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
@@ -29,7 +32,7 @@ export default function NotifyMeForm({ source, label, compact = false }: {
   }
 
   if (status === 'done') {
-    return <p className="text-[12.5px] text-[var(--ok,#3fb950)]" role="status">Thanks — we'll email you once, when it launches.</p>
+    return <p className="text-[12.5px] text-[var(--ok,#3fb950)]" role="status">{copy.thanks}</p>
   }
 
   return (
@@ -50,10 +53,10 @@ export default function NotifyMeForm({ source, label, compact = false }: {
           disabled={status === 'loading'}
           className="h-[32px] px-3 text-[12.5px] font-medium rounded-[7px] bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-60"
         >
-          Notify me
+          {copy.submit}
         </button>
       </div>
-      {status === 'error' && <p className="text-[11.5px] text-[var(--error,#f85149)]" role="alert">Could not save it. Try again.</p>}
+      {status === 'error' && <p className="text-[11.5px] text-[var(--error,#f85149)]" role="alert">{copy.error}</p>}
     </form>
   )
 }

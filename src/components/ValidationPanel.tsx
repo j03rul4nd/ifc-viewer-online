@@ -52,7 +52,6 @@ import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '
 import { useIsMobile } from '../hooks/useIsMobile'
 import ValidationPanelMobile from './mobile/ValidationPanelMobile'
 import ScoreUpsell from './pricing/ScoreUpsell'
-import { isPricingPreview } from '../lib/pricing/pricing-preview'
 import { FloodValidationSlot } from '../features/flood/ui/FloodValidationSlot'
 import { DRAWER_MIN_PX, drawerHeightCss } from '../lib/ui/lane'
 import { useLaneStore, selectDrawerReservePx } from '../stores/laneStore'
@@ -2452,8 +2451,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         />
       )}
 
-      {/* ── Next step after the score (team-only fake door until paid plans launch) ── */}
-      {result && isPricingPreview() && (
+      {/* ── Next step after the score: price-free interest capture, shown to everyone ── */}
+      {result && (
         <ScoreUpsell
           score={result.qualityScore ?? 0}
           topRule={Object.entries(result.stats?.byRule ?? {}).sort((x, y) => y[1] - x[1])[0]?.[0]}

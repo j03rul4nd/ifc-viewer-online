@@ -411,5 +411,17 @@
     "fmtCobieDesc": "Structural COBie workbook for FM handover — spaces, types, components, contacts",
     "cobieBusy": "Extracting…",
     "cobieFailed": "COBie extraction failed — reload the model and try again."
+  },
+  "upsell": {
+    "fixTitle": "Fix these issues automatically",
+    "fixDesc": "We're building one-click fixes for missing types, duplicate or empty names and proxies — you get a clean IFC back.",
+    "certTitle": "Prove this score to your client",
+    "certDesc": "We're building verifiable certificates: your client checks the result with a single link.",
+    "cta": "Get early access",
+    "label": "Leave your email and we'll write once, when it's ready. No spam.",
+    "submit": "Notify me",
+    "thanks": "Thanks — we'll email you once, when it launches.",
+    "error": "Could not save it. Try again.",
+    "dismiss": "Dismiss"
   }
 }

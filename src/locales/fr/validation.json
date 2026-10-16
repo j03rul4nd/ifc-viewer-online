@@ -317,5 +317,17 @@
     "fmtCobieDesc": "Classeur COBie structurel pour la remise FM — espaces, types, composants, contacts",
     "cobieBusy": "Extraction…",
     "cobieFailed": "L'extraction COBie a échoué — rechargez le modèle et réessayez."
+  },
+  "upsell": {
+    "fixTitle": "Corrigez ces problèmes automatiquement",
+    "fixDesc": "Nous préparons des corrections en un clic pour les types manquants, les noms dupliqués ou vides et les proxys : vous récupérez un IFC propre.",
+    "certTitle": "Prouvez ce score à votre client",
+    "certDesc": "Nous préparons des certificats vérifiables : votre client vérifie le résultat avec un simple lien.",
+    "cta": "Accès anticipé",
+    "label": "Laissez votre e-mail, nous vous écrirons une seule fois, quand ce sera prêt. Pas de spam.",
+    "submit": "Me prévenir",
+    "thanks": "Merci : nous vous écrirons une seule fois, au lancement.",
+    "error": "Enregistrement impossible. Réessayez.",
+    "dismiss": "Fermer"
   }
 }
