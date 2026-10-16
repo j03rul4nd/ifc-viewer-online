@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "Passos d'aigua",
+    "hint": "Com es travessa l'aigua aquí. Toca'n un per anar-hi.",
+    "mode": {
+      "bridge": "Pont",
+      "tunnel": "Túnel",
+      "ferry": "Transbordador",
+      "pontoon": "Flotant",
+      "at-grade": "Gual / a nivell"
+    },
+    "carries": {
+      "road": "carretera",
+      "rail": "ferrocarril",
+      "path": "camí",
+      "ferry": "passatgers"
+    },
+    "over": "sobre {{water}}",
+    "clearance": "{{m}} m de gàlib",
+    "risk": {
+      "deck-above": "Tauler sobre l'aigua: es manté en ús llevat que la riuada hi arribi",
+      "portal-inflow": "Túnel: l'aigua entra per les boques de les ribes",
+      "submerged": "A nivell de l'aigua: és el primer que s'inunda",
+      "service-stops": "Transbordador: el servei s'atura amb crescuda o corrent fort"
+    },
+    "more": "{{count}} més",
+    "less": "Mostra'n menys"
   }
 }

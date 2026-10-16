@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "จุดข้ามน้ำ",
+    "hint": "วิธีข้ามน้ำในบริเวณนี้ แตะเพื่อบินไปที่นั่น",
+    "mode": {
+      "bridge": "สะพาน",
+      "tunnel": "อุโมงค์",
+      "ferry": "เรือข้ามฟาก",
+      "pontoon": "ทุ่นลอย",
+      "at-grade": "ทางข้ามระดับน้ำ"
+    },
+    "carries": {
+      "road": "ถนน",
+      "rail": "ราง",
+      "path": "ทางเดิน",
+      "ferry": "ผู้โดยสาร"
+    },
+    "over": "ข้าม{{water}}",
+    "clearance": "ช่องลอด {{m}} ม.",
+    "risk": {
+      "deck-above": "พื้นสะพานอยู่เหนือน้ำ: ใช้ได้จนกว่าน้ำท่วมจะถึง",
+      "portal-inflow": "อุโมงค์: น้ำไหลเข้าทางปากอุโมงค์ริมฝั่ง",
+      "submerged": "อยู่ระดับน้ำ: ท่วมก่อน",
+      "service-stops": "เรือข้ามฟาก: หยุดให้บริการเมื่อน้ำขึ้นสูงหรือกระแสแรง"
+    },
+    "more": "อีก {{count}} รายการ",
+    "less": "แสดงน้อยลง"
   }
 }

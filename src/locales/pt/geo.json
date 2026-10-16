@@ -359,5 +359,32 @@
     "body": "With the map on, your browser asks public providers for the area around the model: map tiles (OpenFreeMap and OpenStreetMap; in Spain, depending on the style, also IGN orthophotos and Catastro parcels; OpenTopoMap, Esri, EOX or NASA if you pick those basemaps), relief (ICGC in Catalonia, GSI in Japan, AWS Open Data elsewhere) and the buildings around it (OpenStreetMap, through the Overpass API). Each request shows that provider the site's area and your IP address. Your model never leaves the browser.",
     "revoke": "Withdraw permission",
     "revoked": "Map permission withdrawn: nothing more is requested until you turn the map on again."
+  },
+  "crossings": {
+    "title": "Travessias",
+    "hint": "Como se atravessa a água aqui. Toque para ir lá.",
+    "mode": {
+      "bridge": "Ponte",
+      "tunnel": "Túnel",
+      "ferry": "Ferry",
+      "pontoon": "Flutuante",
+      "at-grade": "Vau / ao nível"
+    },
+    "carries": {
+      "road": "estrada",
+      "rail": "ferrovia",
+      "path": "caminho",
+      "ferry": "passageiros"
+    },
+    "over": "sobre {{water}}",
+    "clearance": "{{m}} m de gabarito",
+    "risk": {
+      "deck-above": "Tabuleiro acima da água: utilizável enquanto a cheia não o alcança",
+      "portal-inflow": "Túnel: a água entra pelas bocas nas margens",
+      "submerged": "Ao nível da água: é o primeiro a inundar",
+      "service-stops": "Ferry: serviço suspenso com cheia ou corrente forte"
+    },
+    "more": "mais {{count}}",
+    "less": "Mostrar menos"
   }
 }

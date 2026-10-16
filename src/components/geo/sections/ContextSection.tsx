@@ -17,6 +17,7 @@ import type { FeatureKind } from '../../../lib/geo/osm-features'
 import type { SceneLayerStat } from '../../../lib/geo/scene-budget'
 import { useGeoCtl } from '../useGeoController'
 import { DETAIL_ONLY_KINDS, LAYER_GROUPS } from '../labels'
+import { WaterCrossings } from './WaterCrossings'
 import { Caption, Choices, Group, Hint, MoreInfo, Notice, SwitchRow } from '../ui'
 
 /** Shanghai's extra park kit is only fetched inside this box. */
@@ -211,6 +212,7 @@ export function ContextSection() {
           </button>
         </div>
       )}
+      {ready && <WaterCrossings revision={s.buildingsCounts} />}
     </Group>
   )
 }

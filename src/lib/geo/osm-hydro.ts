@@ -51,6 +51,8 @@ export interface HydroBarrier {
 export interface Hydrology {
   channels: HydroChannel[]
   barriers: HydroBarrier[]
+  /** `route=ferry` lines: crossings that are neither a bridge nor a tunnel (water-crossings). */
+  ferries?: Array<{ id: string; line: LatLonPoint[]; name?: string }>
 }
 
 /** A neighbourhood's OSM data as an analysis reads it (geo-system getOsmContext). */
@@ -120,14 +122,20 @@ export function extractHydrology(json: unknown): Hydrology {
   const elements = (json as { elements?: RawElement[] } | null)?.elements
   const channels: HydroChannel[] = []
   const barriers: HydroBarrier[] = []
+  const ferries: NonNullable<Hydrology['ferries']> = []
   const seen = new Set<number>()
-  if (!Array.isArray(elements)) return { channels, barriers }
+  if (!Array.isArray(elements)) return { channels, barriers, ferries }
   for (const el of elements) {
     if (el?.type !== 'way' || !el.tags || !Array.isArray(el.geometry) || el.id === undefined) continue
     if (seen.has(el.id)) continue // groups of one query can return a way twice
     const line = el.geometry.filter((p): p is LatLonPoint => !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
     if (line.length < 2) continue
     const t = el.tags
+    if (t['route'] === 'ferry') {
+      seen.add(el.id)
+      ferries.push({ id: `w${el.id}`, line, name: t['name'] })
+      continue
+    }
     const ch = channelOf(t)
     if (ch) {
       seen.add(el.id)
@@ -147,7 +155,7 @@ export function extractHydrology(json: unknown): Hydrology {
       barriers.push({ id: `w${el.id}`, cls: b, line, heightM: Math.min(20, metres(t['height']) ?? DEFAULT_HEIGHT[b]), name: t['name'] })
     }
   }
-  return { channels, barriers }
+  return { channels, barriers, ferries }
 }
 
 /** The Overpass selectors for what osm-features does not already ask for. */
@@ -156,4 +164,5 @@ export function hydrologyQueryParts(b: string): string {
     + `way["waterway"]["disused"="yes"](${b});way["waterway"]["abandoned"="yes"](${b});`
     + `way["man_made"~"^(dyke|embankment|flood_wall)$"](${b});way["embankment"~"^(yes|dyke)$"](${b});`
     + `way["barrier"="flood_wall"](${b});`
+    + `way["route"="ferry"](${b});`
 }
