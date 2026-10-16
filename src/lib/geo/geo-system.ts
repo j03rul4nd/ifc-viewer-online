@@ -2261,6 +2261,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         const built = await buildBuildingsGeometrySliced(footprints, {
           ...opts, detail: contextDetail, lit: litFacades, contextTone, localOrigin: true,
           typologyAt: s.inBarcelona ? barcelonaFacadeAt : null,
+          // Everywhere else — and in Barcelona outside the mapped barris —
+          // the procedural facade by use, height and region.
+          genericFacades: true,
         }, { alive })
         if (built === undefined) return undefined
         const objects: THREE.Object3D[] = []
