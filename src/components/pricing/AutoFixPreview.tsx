@@ -7,8 +7,13 @@ import { useState } from 'react'
 import { modelRegistry } from '../../lib/model-registry'
 import { downloadBlob } from '../../lib/diffStore'
 import { runAutoFix, type AutoFixResult } from '../../lib/autofix/run'
+import { compareRuns, type FixComparison } from '../../lib/autofix/compare'
+import { runStandaloneValidation } from '../../lib/certify/deep-verify'
 
-type State = { phase: 'idle' } | { phase: 'running' } | { phase: 'done'; result: AutoFixResult; ms: number } | { phase: 'error'; message: string }
+type Compare = { status: 'running' } | { status: 'done'; c: FixComparison } | { status: 'failed' }
+type State = { phase: 'idle' } | { phase: 'running' } | { phase: 'done'; result: AutoFixResult; ms: number; compare: Compare } | { phase: 'error'; message: string }
+
+const RULE_LABEL = (id: string) => id.replace(/^RULE_/, '').toLowerCase().replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())
 
 const CLASS_LABEL = (c: string) => `Ifc${c.charAt(3)}${c.slice(4).toLowerCase()}`
 
@@ -23,7 +28,19 @@ export default function AutoFixPreview({ modelId }: { modelId?: string }) {
     const t = performance.now()
     try {
       const result = await runAutoFix(buffer)
-      setState({ phase: 'done', result, ms: Math.round(performance.now() - t) })
+      const ms = Math.round(performance.now() - t)
+      if (result.report.changes.length === 0) { setState({ phase: 'done', result, ms, compare: { status: 'failed' } }); return }
+      setState({ phase: 'done', result, ms, compare: { status: 'running' } })
+      // Same engine and default profile on both files → an honest before/after.
+      try {
+        const [before, after] = await Promise.all([
+          runStandaloneValidation(buffer),
+          runStandaloneValidation(result.bytes.buffer.slice(0) as ArrayBuffer),
+        ])
+        setState({ phase: 'done', result, ms, compare: { status: 'done', c: compareRuns(before, after) } })
+      } catch {
+        setState({ phase: 'done', result, ms, compare: { status: 'failed' } })
+      }
     } catch (err) {
       setState({ phase: 'error', message: err instanceof Error ? err.message : String(err) })
     }
@@ -53,6 +70,23 @@ export default function AutoFixPreview({ modelId }: { modelId?: string }) {
         {nothing ? 'Nothing to fix for these rules.' : `${report.missingType.elementsLinked} elements typed · ${report.duplicateName.renamed} names made unique`}
         <span className="text-[var(--text-faint)] font-normal"> · {report.schema} · {state.ms} ms</span>
       </p>
+      {!nothing && state.compare.status === 'running' && <p className="mt-1.5 text-[var(--text-dim)]">Re-checking the fixed file…</p>}
+      {!nothing && state.compare.status === 'done' && (() => {
+        const c = state.compare.c
+        const up = c.scoreAfter - c.scoreBefore
+        return (
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <p className="text-[18px] font-semibold tabular-nums text-[var(--text)]">
+              {c.scoreBefore} <span className="text-[var(--text-faint)] font-normal">→</span> {c.scoreAfter}
+              <span className="ml-1.5 text-[12px] font-medium" style={{ color: up > 0 ? 'var(--ok)' : 'var(--text-dim)' }}>{up > 0 ? `+${up}` : up}</span>
+            </p>
+            <p className="text-[var(--text-dim)] tabular-nums">{c.issuesBefore} → {c.issuesAfter} issues</p>
+            <ul className="w-full text-[var(--text-dim)] tabular-nums">
+              {c.rules.slice(0, 4).map((d) => <li key={d.ruleId}>{RULE_LABEL(d.ruleId)}: {d.before} → {d.after}</li>)}
+            </ul>
+          </div>
+        )
+      })()}
       {!nothing && (
         <ul className="mt-1.5 space-y-0.5 text-[var(--text-dim)] max-h-[120px] overflow-y-auto">
           {report.changes.map((c, i) => <li key={i}>· {c}</li>)}
@@ -68,7 +102,7 @@ export default function AutoFixPreview({ modelId }: { modelId?: string }) {
           Download fixed IFC
         </button>
       )}
-      <p className="mt-1.5 text-[var(--text-faint)]">Open the downloaded file to see its new Health Score. Your original file is unchanged.</p>
+      <p className="mt-1.5 text-[var(--text-faint)]">Scores use the default rule profile on both files. Your original file is unchanged.</p>
     </div>
   )
 }
