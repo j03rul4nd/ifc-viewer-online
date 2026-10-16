@@ -158,6 +158,7 @@ const yawOfBearing = (deg: number): number => Math.PI / 2 - (deg * Math.PI) / 18
 export type FurnitureSlot =
   | 'bench' | 'bin' | 'fountain' | 'bollard' | 'lamp-street' | 'lamp-park'
   | 'statue' | 'bust' | 'sculpture' | 'slide' | 'springy' | 'swing' | 'pergola'
+  | 'shower' | 'lifeguard' | 'volleyball'
 
 export interface FurniturePlan { slot: FurnitureSlot; at: Placed }
 
@@ -212,6 +213,23 @@ function* furniturePlanSteps(
         const yaw = tagged ?? (path ? Math.atan2(path.at.y - p.y, path.at.x - p.x) : variate(seed, 2) * Math.PI * 2)
         out.push({ slot: 'lamp-park', at: { ...p, z: 0, yaw, seed } })
       }
+      continue
+    }
+
+    // THE BEACH. A shower stands where it was surveyed, its tray facing the
+    // ramp it serves; a lifeguard tower turns its back on the promenade, which
+    // is the nearest path, and so faces the water; a volleyball net runs the
+    // way its court says (osm-features courtNet).
+    if (kind === 'shower' || kind === 'lifeguard' || kind === 'beach_volleyball') {
+      const slot: FurnitureSlot = kind === 'shower' ? 'shower' : kind === 'lifeguard' ? 'lifeguard' : 'volleyball'
+      if (tagged !== null) { out.push({ slot, at: { ...p, z: 0, yaw: tagged, seed } }); continue }
+      const path = net.nearest(p, 60, (s) => !s.vehicular) ?? net.nearest(p, 90, () => true)
+      let yaw = variate(seed, 5) * Math.PI * 2
+      if (path && path.dist > 0.2) {
+        const toPath = Math.atan2(path.at.y - p.y, path.at.x - p.x)
+        yaw = kind === 'lifeguard' ? toPath + Math.PI : toPath
+      }
+      out.push({ slot, at: { ...p, z: 0, yaw, seed } })
       continue
     }
 
@@ -469,6 +487,35 @@ const PROCEDURAL: Record<FurnitureSlot | 'signal-vehicle' | 'signal-pedestrian',
   slide: () => mergeAll([boxAt(1.2, 1.2, 1.5, -0.8, 0, 0, WOOD), boxAt(2.2, 0.5, 0.08, 0.9, 0, 0.7, [0.7, 0.2, 0.15])]),
   springy: () => mergeAll([cyl(0.06, 0.06, 0.4, 0, 0, 0, IRON, 6), boxAt(0.7, 0.25, 0.4, 0, 0, 0.4, [0.25, 0.55, 0.3])]),
   swing: () => mergeAll([boxAt(0.08, 0.08, 2.3, 0, -1.5, 0, IRON), boxAt(0.08, 0.08, 2.3, 0, 1.5, 0, IRON), boxAt(0.08, 3.1, 0.08, 0, 0, 2.3, IRON)]),
+  // A beach shower: a steel column with the rose overhead and a push button,
+  // on a wooden or concrete tray — Barcelona's and the Costa Daurada's look so.
+  shower: () => mergeAll([
+    boxAt(1.0, 1.0, 0.08, 0, 0, 0, [0.62, 0.5, 0.36]),
+    cyl(0.06, 0.06, 2.4, 0, 0, 0.08, [0.72, 0.74, 0.76]),
+    boxAt(0.45, 0.08, 0.06, 0.2, 0, 2.38, [0.72, 0.74, 0.76]),
+    cyl(0.1, 0.1, 0.05, 0.42, 0, 2.3, [0.72, 0.74, 0.76], 10),
+    boxAt(0.08, 0.1, 0.1, 0.07, 0, 1.15, [0.2, 0.55, 0.85]),
+  ]),
+  // A lifeguard tower: a chair raised on four legs with a ladder, a platform
+  // rail and the red-and-white flag mast; facing +X, the water.
+  lifeguard: () => mergeAll([
+    boxAt(0.1, 0.1, 2.0, -0.6, -0.6, 0, [0.92, 0.92, 0.9]), boxAt(0.1, 0.1, 2.0, 0.6, -0.6, 0, [0.92, 0.92, 0.9]),
+    boxAt(0.1, 0.1, 2.0, -0.6, 0.6, 0, [0.92, 0.92, 0.9]), boxAt(0.1, 0.1, 2.0, 0.6, 0.6, 0, [0.92, 0.92, 0.9]),
+    boxAt(1.5, 1.5, 0.1, 0, 0, 2.0, [0.85, 0.2, 0.15]),
+    boxAt(0.5, 0.7, 0.45, -0.2, 0, 2.1, [0.92, 0.92, 0.9]), boxAt(0.08, 0.7, 0.7, -0.45, 0, 2.55, [0.92, 0.92, 0.9]),
+    boxAt(0.06, 1.5, 0.06, 0.72, 0, 2.95, [0.92, 0.92, 0.9]),
+    // Ladder at the back, landward.
+    boxAt(0.05, 0.05, 2.1, -1.05, -0.25, 0, [0.6, 0.45, 0.3]), boxAt(0.05, 0.05, 2.1, -1.05, 0.25, 0, [0.6, 0.45, 0.3]),
+    ...[0.4, 0.8, 1.2, 1.6].map((z) => boxAt(0.05, 0.5, 0.04, -1.05, 0, z, [0.6, 0.45, 0.3])),
+    cyl(0.03, 0.03, 2.6, 0.6, 0.6, 2.0, [0.72, 0.74, 0.76], 6),
+    boxAt(0.02, 0.6, 0.4, 0.6, 0.9, 4.15, [0.85, 0.2, 0.15]),
+  ]),
+  // Two posts and a net across the court (the net runs along local Y).
+  volleyball: () => mergeAll([
+    cyl(0.05, 0.05, 2.55, 0, -4.8, 0, [0.85, 0.85, 0.82], 8), cyl(0.05, 0.05, 2.55, 0, 4.8, 0, [0.85, 0.85, 0.82], 8),
+    boxAt(0.02, 9.5, 0.9, 0, 0, 1.53, [0.18, 0.18, 0.2]),
+    boxAt(0.03, 9.5, 0.06, 0, 0, 2.43, [0.95, 0.95, 0.95]),
+  ]),
   pergola: () => mergeAll([
     boxAt(0.12, 0.12, 2.7, -1.8, -1.4, 0, WOOD), boxAt(0.12, 0.12, 2.7, 1.8, -1.4, 0, WOOD),
     boxAt(0.12, 0.12, 2.7, -1.8, 1.4, 0, WOOD), boxAt(0.12, 0.12, 2.7, 1.8, 1.4, 0, WOOD),
@@ -503,6 +550,7 @@ function assetFor(slot: keyof typeof PROCEDURAL, bcn: boolean): string[] {
     case 'springy': return ['playground-springy']
     case 'swing': return ['playground-swing']
     case 'pergola': return ['pergola-bcn']
+    case 'shower': case 'lifeguard': case 'volleyball': return []
   }
 }
 

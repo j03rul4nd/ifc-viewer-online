@@ -63,6 +63,9 @@ export const FEATURE_KINDS: readonly FeatureKind[] =
  */
 export type FurnitureKind =
   | 'bench' | 'waste_basket' | 'drinking_water' | 'street_lamp' | 'bollard'
+  // What a beach is furnished with, as surveyed: showers at the foot of the
+  // access ramps, lifeguard towers on the sand, the posts of a volleyball net.
+  | 'shower' | 'lifeguard' | 'beach_volleyball'
   // Park furniture: a statue or bust on its pedestal, a piece of play
   // equipment, a pergola. Ciutadella alone maps 25 artworks and 14 memorials.
   | 'artwork' | 'playground' | 'shelter'
@@ -1091,10 +1094,39 @@ export function playKindOf(t: Record<string, string>): PlayKind | undefined {
   return undefined
 }
 
+/**
+ * Where a court's net stands and which way it runs: across the middle of the
+ * ring, along its SHORT axis (a volleyball court is 16 × 8 m; the net divides
+ * it into two squares). Bearing in degrees from north.
+ */
+export function courtNet(ring: ReadonlyArray<LatLonPoint>): { at: LatLonPoint; bearingDeg: number } | null {
+  if (ring.length < 3) return null
+  let lat = 0, lon = 0
+  for (const p of ring) { lat += p.lat; lon += p.lon }
+  lat /= ring.length; lon /= ring.length
+  const k = Math.cos((lat * Math.PI) / 180)
+  // The longest edge gives the court's long axis.
+  let best = 0, bx = 1, by = 0
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length]
+    const x = (b.lon - a.lon) * 111_320 * k, y = (b.lat - a.lat) * 111_132
+    const l = Math.hypot(x, y)
+    if (l > best) { best = l; bx = x / l; by = y / l }
+  }
+  if (best < 4) return null
+  // The net runs perpendicular to the long axis.
+  const nx = -by, ny = bx
+  return { at: { lat, lon }, bearingDeg: ((Math.atan2(nx, ny) * 180) / Math.PI + 360) % 360 }
+}
+
 /** The furniture a node IS, or undefined. */
 export function furnitureKindOf(t: Record<string, string>): FurnitureKind | undefined {
   const a = t['amenity']
   if (a === 'bench' || a === 'waste_basket' || a === 'drinking_water') return a
+  if (a === 'shower') return 'shower'
+  // A lifeguard BASE is usually a hut or a room under the promenade (mapped
+  // with level=-1 at Barceloneta); the tower is the chair on the sand.
+  if (t['emergency'] === 'lifeguard' && t['lifeguard'] !== 'base' && !t['building']) return 'lifeguard'
   if (artworkKindOf(t)) return 'artwork'
   if (playKindOf(t)) return 'playground'
   if (a === 'shelter' && /^(pergola|sun_shelter)$/.test(t['shelter_type'] ?? '') && !t['building']) return 'shelter'
@@ -1208,6 +1240,9 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
 
   // A court is paved before it is green; see isHardPitch.
   if (isHardPitch(t)) return 'road'
+  // A SAND court is sand, not lawn: a beach-volleyball pitch drawn with the
+  // grass material put a green rectangle on the beach at Salou.
+  if (t['leisure'] === 'pitch' && ((t['surface'] ?? '') === 'sand' || /^beach_?volleyball|beach_soccer|beach_tennis/.test(t['sport'] ?? ''))) return 'sand'
   if (
     GREEN_LEISURE.has(t['leisure'] ?? '') ||
     GREEN_LANDUSE.has(t['landuse'] ?? '') ||
@@ -1966,6 +2001,18 @@ export function parseOsmFeatures(
           // The tiles fallback's sea (omt-fallback): an area, not a coastline.
           ...(kind === 'water' && el.tags?.['water'] === 'sea' ? { isSea: true } : {}),
         })
+        // A beach-volleyball court: its net, across the middle, along the
+        // court's short side — the court itself is drawn as the sand it is.
+        if (el.tags?.['sport'] === 'beachvolleyball' || el.tags?.['sport'] === 'volleyball' && el.tags?.['surface'] === 'sand') {
+          const net = courtNet(ring)
+          if (net) {
+            out.push({
+              id: `w${el.id}-net`, kind: 'furniture', point: net.at,
+              height: { heightM: 0, minHeightM: 0, estimated: true },
+              style: { roofShape: 'flat', roofHeightM: 0, furniture: 'beach_volleyball', directionDeg: net.bearingDeg },
+            })
+          }
+        }
       } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
     }
@@ -2374,7 +2421,8 @@ export function buildFeaturesQuery(
     // Nodes, and short ways: cheap next to the building budget, and in a city
     // that surveys them — Barcelona does — they are what a street is made of.
     [
-      `node["amenity"~"^(bench|waste_basket|drinking_water)$"](${b});`
+      `node["amenity"~"^(bench|waste_basket|drinking_water|shower)$"](${b});`
+      + `node["emergency"="lifeguard"](${b});`
       + `node["highway"="street_lamp"](${b});node["barrier"="bollard"](${b});`
       + `node["tourism"="artwork"](${b});node["historic"="memorial"](${b});`
       // Statues mapped by their plinth outline, and floors that are artwork.
