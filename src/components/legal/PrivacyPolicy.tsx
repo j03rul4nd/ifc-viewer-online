@@ -297,7 +297,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       </P>
       <UL>
         <li>
-          <strong>PostHog</strong> — product analytics. Hosted in the United States.
+          <strong>PostHog</strong> — product analytics. Hosted in the European Union (Frankfurt, Germany).
           See{' '}
           <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer"
              className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
@@ -341,7 +341,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       {/* International transfers */}
       <H2>International data transfers</H2>
       <P>
-        Some processors (PostHog, Cloudflare, Clerk, Vercel) process data in the United States, outside the
+        Some processors (Cloudflare, Clerk, Vercel) process data in the United States, outside the
         EEA. Where that applies, transfers rely on appropriate safeguards such as Standard
         Contractual Clauses (SCCs) under GDPR Chapter V.
       </P>
