@@ -79,6 +79,8 @@ export interface FloodSettings {
   riverLagH: number
   /** Hours from base flow to the peak. */
   riverRiseH: number
+  /** River slope at the entry per river id (m/m); absent = from the ground. */
+  riverSlopes: Record<string, number>
 }
 
 export interface FloodState extends FloodSettings {
@@ -142,6 +144,7 @@ export const useFloodStore = create<FloodState>()((set) => ({
   riverFlows: {},
   riverLagH: 3,
   riverRiseH: 3,
+  riverSlopes: {},
   riversReport: null,
   coastReport: null,
   panelOpen: false,

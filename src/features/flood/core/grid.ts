@@ -57,14 +57,14 @@ export interface FloodGrid {
    */
   sea?: Uint8Array
   /**
-   * > 0 where a RIVER enters the grid: an open cell held at its bed plus the
-   * river's depth at that moment — SolverInit.stage (the main river's depth,
-   * from its discharge) times this factor (0..1], so a tributary entering
-   * beside the main river runs at its own, shallower depth. The water then
-   * runs down the channel through the ordinary scheme. No rain, no
-   * infiltration. Absent or 0 = no river inflow.
+   * k + 1 where RIVER k enters the grid (0 = none): an open cell whose water
+   * surface is held at that river's LEVEL at the moment (SolverInit.stage,
+   * one series per river) — the level its discharge needs across the whole
+   * cross-section, channel and floodplain. Cells above the level stay dry.
+   * The water then runs on through the ordinary scheme. No rain, no
+   * infiltration. At most MAX_RIVERS rivers.
    */
-  inflow?: Float32Array
+  inflow?: Uint8Array
   /**
    * How much of the soil's infiltration each cell takes (0 = sealed: asphalt,
    * a roof; 1 = the soil as chosen; more where the ground is looser). Absent =
@@ -121,7 +121,6 @@ export function validateGrid(g: FloodGrid): FloodGrid {
     }
     // A cell is the sea or a river's entry, not both: the sea wins.
     if (g.inflow?.[c] && g.sea?.[c]) g.inflow[c] = 0
-    if (g.inflow) g.inflow[c] = Math.min(1, Math.max(0, g.inflow[c] || 0))
     if (g.inflow?.[c]) g.rainFactor[c] = 0
     // Rain on the sea is the sea's business: it is held at the tide anyway.
     if (g.sea?.[c]) g.rainFactor[c] = 0

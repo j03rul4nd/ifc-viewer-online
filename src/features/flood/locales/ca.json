@@ -370,6 +370,8 @@
     "base": "Base",
     "lag": "Pic després de la pluja",
     "rise": "Pujada",
+    "slope": "Pendent",
+    "slopeAuto": "Fes servir la del terreny ({{v}} ‰)",
     "more": "{{n}} més fan servir el cabal típic de la seva classe",
     "typical": "Cabals típics per classe fins que els indiquis; un valor aforat (el pic de l'agència) és molt millor.",
     "result": "{{q}} m³/s · {{h}} m de calat al pic",

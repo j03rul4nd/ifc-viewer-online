@@ -30,6 +30,8 @@ export interface RiverEntry {
   cells: number[]
   /** Where it enters, grid-local metres. */
   at: { a: number; b: number }
+  /** Its direction of flow there (grid-local, not normalised). */
+  dir: { a: number; b: number }
 }
 
 /** Typical discharges by class, m³/s — base flow and a flood peak — before the user says more. */
@@ -94,7 +96,7 @@ export function findRiverEntries(
       }
     }
     if (cells.size === 0) continue
-    out.push({ id: ch.id, name: ch.name, cls: ch.cls, widthM: ch.widthM, cells: [...cells], at })
+    out.push({ id: ch.id, name: ch.name, cls: ch.cls, widthM: ch.widthM, cells: [...cells], at, dir })
   }
   // Widest first: the first is the main river, whose depth the series carries.
   return out.sort((x, y) => y.widthM - x.widthM)
@@ -131,6 +133,95 @@ export function dischargeAt(h: Hydrograph, tS: number): number {
   // A smooth crest: a triangle squared would be too sharp, a sine is close to gauged waves.
   f = Math.sin((f * Math.PI) / 2) ** 2
   return h.baseM3s + (h.peakM3s - h.baseM3s) * f
+}
+
+/**
+ * A river's CROSS-SECTION at its entry: the grid's bed along a line across
+ * the flow through the entry point, as far as `halfM` either side. Blocked
+ * cells (buildings) are NaN — the water cannot cross them. `centre` is the
+ * cell nearest the channel's centreline.
+ */
+export interface Transect {
+  cells: number[]
+  z: number[]
+  centre: number
+}
+
+export function entryTransect(
+  at: { a: number; b: number }, dir: { a: number; b: number },
+  g: { nx: number; ny: number; dx: number; z: ArrayLike<number>; blocked: ArrayLike<number> },
+  halfM = 300,
+): Transect {
+  const d = Math.hypot(dir.a, dir.b) || 1
+  const nrm = { a: -dir.b / d, b: dir.a / d }
+  const cells: number[] = [], z: number[] = []
+  let centre = 0, best = Infinity
+  const seen = new Set<number>()
+  for (let s = -halfM; s <= halfM; s += g.dx / 2) {
+    const i = Math.floor((at.a + nrm.a * s) / g.dx), j = Math.floor((at.b + nrm.b * s) / g.dx)
+    if (i < 0 || j < 0 || i >= g.nx || j >= g.ny) continue
+    const c = j * g.nx + i
+    if (seen.has(c)) continue
+    seen.add(c)
+    if (Math.abs(s) < best) { best = Math.abs(s); centre = cells.length }
+    cells.push(c)
+    z.push(g.blocked[c] ? NaN : g.z[c])
+  }
+  return { cells, z, centre: Math.min(centre, Math.max(0, cells.length - 1)) }
+}
+
+/**
+ * The contiguous wet part of a transect at a level: outwards from the lowest
+ * open cell near the centre while the ground is below the level — a hollow
+ * behind a bank higher than the water is NOT part of the section.
+ */
+export function wetSpan(level: number, t: Transect, searchCells = 6): [number, number] | null {
+  let c0 = -1, zmin = Infinity
+  for (let k = Math.max(0, t.centre - searchCells); k <= Math.min(t.z.length - 1, t.centre + searchCells); k++) {
+    if (Number.isFinite(t.z[k]) && t.z[k] < zmin) { zmin = t.z[k]; c0 = k }
+  }
+  if (c0 < 0 || !(level > zmin)) return null
+  let lo = c0, hi = c0
+  while (lo - 1 >= 0 && Number.isFinite(t.z[lo - 1]) && t.z[lo - 1] < level) lo--
+  while (hi + 1 < t.z.length && Number.isFinite(t.z[hi + 1]) && t.z[hi + 1] < level) hi++
+  return [lo, hi]
+}
+
+/** Lowest open bed near the transect's centre. */
+export function transectBed(t: Transect, searchCells = 6): number {
+  let m = Infinity
+  for (let k = Math.max(0, t.centre - searchCells); k <= Math.min(t.z.length - 1, t.centre + searchCells); k++) {
+    if (Number.isFinite(t.z[k])) m = Math.min(m, t.z[k])
+  }
+  return m
+}
+
+/**
+ * Discharge through a transect at a level: the section split into vertical
+ * strips one cell wide, each a wide channel of its own depth — Q = Σ (1/n)
+ * h^(5/3) √S · dx. The standard way a compound channel (river and its
+ * floodplain) is treated; the floodplain's shallow strips carry little.
+ */
+export function sectionDischarge(level: number, t: Transect, dx: number, slope: number, n = 0.035): number {
+  const span = wetSpan(level, t)
+  if (!span) return 0
+  const k = Math.sqrt(Math.max(1e-4, slope)) / n * dx
+  let q = 0
+  for (let i = span[0]; i <= span[1]; i++) q += k * Math.pow(level - t.z[i], 5 / 3)
+  return q
+}
+
+/** The level a discharge needs through a transect (bisection on sectionDischarge). */
+export function levelForDischarge(qM3s: number, t: Transect, dx: number, slope: number, n = 0.035): number {
+  const bed = transectBed(t)
+  if (!Number.isFinite(bed) || !(qM3s > 0)) return bed
+  let lo = bed, hi = bed + 1
+  while (sectionDischarge(hi, t, dx, slope, n) < qM3s && hi - bed < 60) hi = bed + (hi - bed) * 2
+  for (let it = 0; it < 50; it++) {
+    const mid = (lo + hi) / 2
+    if (sectionDischarge(mid, t, dx, slope, n) < qM3s) lo = mid; else hi = mid
+  }
+  return (lo + hi) / 2
 }
 
 /** The main river's depth over the run, every stepS: the solver's stage series. */

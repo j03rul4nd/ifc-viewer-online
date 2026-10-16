@@ -370,6 +370,8 @@
     "base": "Base",
     "lag": "Pico tras la lluvia",
     "rise": "Subida",
+    "slope": "Pendiente",
+    "slopeAuto": "Usar la del terreno ({{v}} ‰)",
     "more": "{{n}} más usan el caudal típico de su clase",
     "typical": "Caudales típicos por clase hasta que los indiques; un dato aforado (el pico de la confederación) es mucho mejor.",
     "result": "{{q}} m³/s · {{h}} m de calado en el pico",

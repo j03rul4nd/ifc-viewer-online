@@ -5,7 +5,7 @@
 
 import { createGrid, inclinedPlaneDemo, blockLayout, validateGrid, type FloodGrid } from './grid'
 import { constantStorm, type Hyetograph } from './hyetograph'
-import type { SolverParams, TideSeries } from './solver-api'
+import type { SolverParams, StageSeries, TideSeries } from './solver-api'
 
 export interface FloodCase {
   id: string
@@ -17,8 +17,8 @@ export interface FloodCase {
   durationS: number
   /** The sea's level over time for the grid's sea cells. */
   tide?: TideSeries
-  /** The main river's depth over time at the grid's inflow cells. */
-  stage?: TideSeries
+  /** Each river's level over time at the grid's inflow cells. */
+  stage?: StageSeries
 }
 
 const closed = { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const
@@ -127,21 +127,25 @@ export function riverFlood(nx = 120, ny = 40): FloodCase {
   // No buildings: a flood wave over blocks is chaotic enough that float32 and
   // float64 part ways (see city-demo); this case is about the inflow itself.
   const grid = inclinedPlaneDemo({ nx, ny, dx: 2, slopeX: 0.002, slopeY: 0, roughnessAmplitude: 0.2, seed: 3 })
-  grid.inflow = new Float32Array(nx * ny)
+  const inflow = new Uint8Array(nx * ny)
+  grid.inflow = inflow
   const mid = Math.floor(ny / 2)
+  let bedMain = Infinity, bedTrib = Infinity
   for (let j = 0; j < ny; j++) {
     for (let i = 0; i < nx; i++) {
       const c = j * nx + i
       if (Math.abs(j - mid) <= 3) { grid.z[c] -= 1.5; grid.blocked[c] = 0 }
-      if (i === 0 && Math.abs(j - mid) <= 3) grid.inflow[c] = 1
-      if (j === 0 && i >= 60 && i <= 61) { grid.inflow[c] = 0.33; grid.blocked[c] = 0 }
+      if (i === 0 && Math.abs(j - mid) <= 3) { inflow[c] = 1; bedMain = Math.min(bedMain, grid.z[c]) }
+      if (j === 0 && i >= 60 && i <= 61) { inflow[c] = 2; grid.blocked[c] = 0; bedTrib = Math.min(bedTrib, grid.z[c]) }
     }
   }
+  const depths = [0.6, 3, 1.2, 0.6, 0.6]
   return {
     id: 'river-flood', title: 'Flood wave down a river with a tributary', grid, hyetograph: constantStorm(10, 30, 5),
     params: { boundary: { west: 'closed', east: 'free', south: 'closed', north: 'closed' } },
     durationS: 60 * 60,
-    stage: { intervalMs: 15 * 60_000, levels: [0.6, 3, 1.2, 0.6, 0.6] },
+    // LEVELS: the main river's bed plus its depth, the tributary's at a third.
+    stage: { intervalMs: 15 * 60_000, count: 5, levels: [...depths.map((d) => bedMain + d), ...depths.map((d) => bedTrib + d / 3)] },
   }
 }
 

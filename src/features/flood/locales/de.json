@@ -370,6 +370,8 @@
     "base": "Basis",
     "lag": "Scheitel nach Regen",
     "rise": "Anstieg",
+    "slope": "Gefälle",
+    "slopeAuto": "Gelände-Gefälle nutzen ({{v}} ‰)",
     "more": "{{n}} weitere nutzen den typischen Abfluss ihrer Klasse",
     "typical": "Typische Abflüsse je Klasse, bis Sie sie angeben; ein Pegelwert (Hochwasserscheitel der Behörde) ist viel besser.",
     "result": "{{q}} m³/s · {{h}} m tief im Scheitel",

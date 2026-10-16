@@ -213,8 +213,27 @@ export interface SolverInit {
   params?: Partial<SolverParams>
   /** The level the grid's sea cells are held at over time; absent = no sea. */
   tide?: TideSeries | null
-  /** The DEPTH above their bed the grid's river-entry cells are held at over time. */
-  stage?: TideSeries | null
+  /** The LEVEL each river's entry cells are held at over time (grid frame, like z). */
+  stage?: StageSeries | null
+}
+
+/** Rivers allowed per run: their index lives in the GPU's static texture. */
+export const MAX_RIVERS = 8
+
+/**
+ * One level series per river, all on the same clock: river k's values are
+ * levels[k * count .. (k + 1) * count). Shares the GPU's rain table, after the tide.
+ */
+export interface StageSeries {
+  intervalMs: number
+  count: number
+  levels: number[]
+}
+
+/** River k's level at tMs; NaN when there is none. Mirrored in the shaders. */
+export function stageLevelAt(st: StageSeries | null | undefined, k: number, tMs: number): number {
+  if (!st || st.count === 0 || k < 0 || (k + 1) * st.count > st.levels.length) return NaN
+  return tideLevelAt({ intervalMs: st.intervalMs, levels: st.levels.slice(k * st.count, (k + 1) * st.count) }, tMs)
 }
 
 /**

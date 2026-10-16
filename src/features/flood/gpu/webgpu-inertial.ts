@@ -12,7 +12,7 @@ import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '
 import { depthFromRates, intervalMs, ratesMs } from '../core/hyetograph'
 import {
   edgeBits, resolveParams, seaBalance,
-  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams, type TideSeries,
+  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams, type StageSeries, type TideSeries,
 } from '../core/solver-api'
 import { CTRL_BYTES, IO_WGSL, PARAMS_BYTES, RAIN_SLOTS, STEP_WGSL } from './wgsl'
 
@@ -48,7 +48,7 @@ export class WebGpuInertialSolver implements FloodSolver {
   private readonly ownsDevice: boolean
   private readonly rates: Float32Array
   private readonly tide: TideSeries | null
-  private readonly stage: TideSeries | null
+  private readonly stage: StageSeries | null
   private readonly ivMs: number
   private readonly nc: number
   private readonly nf: number
@@ -118,7 +118,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     this.rates = ratesMs(init.hyetograph)
     this.ivMs = intervalMs(init.hyetograph)
     this.tide = g.sea && init.tide && init.tide.levels.length > 0 ? init.tide : null
-    this.stage = g.inflow && init.stage && init.stage.levels.length > 0 ? init.stage : null
+    this.stage = g.inflow && init.stage && init.stage.count > 0 ? init.stage : null
     checkRain(this.ivMs, this.rates.length + (this.tide?.levels.length ?? 0) + (this.stage?.levels.length ?? 0))
     const { nx, ny } = g
     this.nc = nx * ny
@@ -140,7 +140,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     pu[0] = nx; pu[1] = ny; pu[2] = edgeBits(p.boundary); pu[3] = this.rates.length
     pu[4] = this.ivMs; pu[5] = p.friction === 'implicit' ? 1 : 0
     pu[6] = this.tide?.levels.length ?? 0; pu[7] = Math.max(1, Math.round(this.tide?.intervalMs ?? 1))
-    pu[20] = this.stage?.levels.length ?? 0; pu[21] = Math.max(1, Math.round(this.stage?.intervalMs ?? 1))
+    pu[20] = this.stage?.count ?? 0; pu[21] = Math.max(1, Math.round(this.stage?.intervalMs ?? 1))
     pf[8] = g.dx; pf[9] = p.g; pf[10] = p.theta; pf[11] = p.alpha
     pf[12] = p.hEps; pf[13] = p.dtMax; pf[14] = p.freeSlopeMin; pf[15] = p.wetThreshold
     pf[16] = p.infiltration?.initialMmH ?? 0; pf[17] = p.infiltration?.finalMmH ?? 0; pf[18] = p.infiltration?.decayPerHour ?? 0
@@ -160,8 +160,8 @@ export class WebGpuInertialSolver implements FloodSolver {
       // A river's entry (held at bed + stage) by −2.
       const isSea = !!g.sea?.[c] && !g.blocked[c]
       const isRiver = !isSea && !!g.inflow?.[c] && !g.blocked[c]
-      // −2 − f, f the entry's share of the main river's depth (0..1].
-      st[c * 4 + 1] = isSea ? -1 : isRiver ? -2 - g.inflow![c] : g.rainFactor[c]
+      // −2 − k for river k's entry (its level series is the k-th after the tide).
+      st[c * 4 + 1] = isSea ? -1 : isRiver ? -2 - (g.inflow![c] - 1) : g.rainFactor[c]
       st[c * 4 + 2] = g.manning[c]
       // Blocked = 1; an open cell carries its infiltration factor, negated (0 when forced).
       st[c * 4 + 3] = g.blocked[c] ? 1 : isSea || isRiver ? 0 : -(g.infiltration ? g.infiltration[c] : 1)

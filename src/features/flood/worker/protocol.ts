@@ -4,7 +4,7 @@
 
 import type { FloodGrid } from '../core/grid'
 import type { Hyetograph } from '../core/hyetograph'
-import type { FloodBackend, FloodStats, MaxFields, SolverParams, TideSeries } from '../core/solver-api'
+import type { FloodBackend, FloodStats, MaxFields, SolverParams, StageSeries, TideSeries } from '../core/solver-api'
 import type { BackendChoice } from '../gpu/create'
 import type { CellSeries } from './snapshots'
 
@@ -37,7 +37,7 @@ export type ToWorker =
       /** The sea's level over time for the grid's sea cells. */
       tide?: TideSeries | null
       /** River entries' depth over time. */
-      stage?: TideSeries | null
+      stage?: StageSeries | null
       backend: BackendChoice
       powerPreference?: 'low-power' | 'high-performance'
       /** Simulated time at which the run ends, s. */
