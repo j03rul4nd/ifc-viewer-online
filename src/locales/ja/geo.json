@@ -386,5 +386,60 @@
     },
     "more": "他 {{count}} 件",
     "less": "表示を減らす"
+  },
+  "waterExposure": {
+    "title": "モデル近くの水域",
+    "over": "水上",
+    "away": "{{m}} m 先",
+    "current": "流れ",
+    "currentValue": "通常 {{typ}} m/s · 激しい時 {{max}} m/s",
+    "towards": "{{dir}} へ流れる",
+    "slope": "河床勾配",
+    "tide": "潮差",
+    "waves": "暴風波",
+    "salinity": "水質",
+    "coast": "海岸",
+    "hint": "この種の水域の代表値で、OpenStreetMap と地形から推定したものです。測量値ではありません。",
+    "cls": {
+      "river": "河川",
+      "stream": "小川",
+      "canal": "運河",
+      "lake": "湖",
+      "pond": "池",
+      "lagoon": "潟湖",
+      "estuary": "河口",
+      "sea": "海",
+      "ocean": "外洋",
+      "beach": "砂浜"
+    },
+    "salt": {
+      "fresh": "淡水",
+      "brackish": "汽水",
+      "salt": "海水"
+    },
+    "coasts": {
+      "mediterranean": "地中海",
+      "adriatic": "アドリア海",
+      "atlantic": "大西洋",
+      "macrotidal": "大潮差海岸",
+      "north-sea": "北海",
+      "baltic": "バルト海",
+      "black-sea": "黒海",
+      "estuary-east-asia": "東アジアの河口",
+      "ocean": "外洋"
+    },
+    "issue": {
+      "scour": "流れによる橋脚・基礎の洗掘",
+      "debris": "洪水は流木や車両を運び、水中の構造物に衝突",
+      "flood-rise": "洪水で水位が数メートル上昇: その下にあるものを確認",
+      "ice": "冬季の結氷: 杭や浮体への荷重",
+      "corrosion": "海水: 鋼材・鉄筋の腐食、飛沫帯",
+      "tidal-range": "潮差: 床版・防舷材・アクセスは干潮と満潮の両方で機能する必要",
+      "storm-waves": "暴風波: 海に面した部分への衝撃と越波",
+      "rip-current": "砕波帯の離岸流",
+      "tidal-current": "強い潮流: 係留と洗掘",
+      "still-water": "滞留水: 停滞・堆積・藻類、自浄作用が小さい",
+      "longshore-drift": "沿岸漂砂が基礎の砂を移動させる"
+    }
   }
 }

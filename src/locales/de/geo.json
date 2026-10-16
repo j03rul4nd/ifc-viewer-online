@@ -386,5 +386,60 @@
     },
     "more": "{{count}} weitere",
     "less": "Weniger anzeigen"
+  },
+  "waterExposure": {
+    "title": "Wasser am Modell",
+    "over": "über dem Wasser",
+    "away": "{{m}} m entfernt",
+    "current": "Strömung",
+    "currentValue": "{{typ}} m/s typisch · {{max}} m/s bei Extremereignissen",
+    "towards": "fließt nach {{dir}}",
+    "slope": "Flussgefälle",
+    "tide": "Tidenhub",
+    "waves": "Sturmwellen",
+    "salinity": "Wasser",
+    "coast": "Küste",
+    "hint": "Typische Werte dieser Gewässerart, geschätzt aus OpenStreetMap und dem Gelände – keine Vermessung.",
+    "cls": {
+      "river": "Fluss",
+      "stream": "Bach",
+      "canal": "Kanal",
+      "lake": "See",
+      "pond": "Teich",
+      "lagoon": "Lagune",
+      "estuary": "Ästuar",
+      "sea": "Meer",
+      "ocean": "Offener Ozean",
+      "beach": "Strand"
+    },
+    "salt": {
+      "fresh": "Süß",
+      "brackish": "Brackig",
+      "salt": "Salzig"
+    },
+    "coasts": {
+      "mediterranean": "Mittelmeer",
+      "adriatic": "Adria",
+      "atlantic": "Atlantik",
+      "macrotidal": "Makrotidal",
+      "north-sea": "Nordsee",
+      "baltic": "Ostsee",
+      "black-sea": "Schwarzes Meer",
+      "estuary-east-asia": "Ostasiatisches Ästuar",
+      "ocean": "Offener Ozean"
+    },
+    "issue": {
+      "scour": "Kolkbildung an Pfeilern und Gründungen durch die Strömung",
+      "debris": "Hochwasser führt Treibgut mit: Bäume und Fahrzeuge gegen alles im Wasser",
+      "flood-rise": "Der Pegel steigt bei Hochwasser um Meter: prüfen, was darunter liegt",
+      "ice": "Eis im Winter: Lasten auf Pfähle und schwimmende Teile",
+      "corrosion": "Salzwasser: Korrosion von Stahl und Bewehrung, Spritzwasserzone",
+      "tidal-range": "Tidenhub: Decks, Fender und Zugänge müssen bei Niedrig- und Hochwasser funktionieren",
+      "storm-waves": "Sturmwellen: Wellenschlag und Überspülung an allem, was zum Meer zeigt",
+      "rip-current": "Brandungsrückströmungen in der Brandungszone",
+      "tidal-current": "Starke Gezeitenströmungen: Festmacher und Kolk",
+      "still-water": "Stehendes Wasser: Stagnation, Sedimente und Algen; kaum Selbstreinigung",
+      "longshore-drift": "Küstenlängstransport verlagert den Sand, auf dem gegründet wird"
+    }
   }
 }

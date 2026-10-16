@@ -385,5 +385,60 @@
     },
     "more": "{{count}} más",
     "less": "Mostrar menos"
+  },
+  "waterExposure": {
+    "title": "El agua junto al modelo",
+    "over": "sobre el agua",
+    "away": "a {{m}} m",
+    "current": "Corriente",
+    "currentValue": "{{typ}} m/s típica · {{max}} m/s en episodios severos",
+    "towards": "hacia el {{dir}}",
+    "slope": "Pendiente del río",
+    "tide": "Carrera de marea",
+    "waves": "Oleaje de temporal",
+    "salinity": "Agua",
+    "coast": "Costa",
+    "hint": "Valores típicos de este tipo de agua, estimados a partir de OpenStreetMap y el terreno; no es un levantamiento.",
+    "cls": {
+      "river": "Río",
+      "stream": "Arroyo",
+      "canal": "Canal",
+      "lake": "Lago",
+      "pond": "Estanque",
+      "lagoon": "Laguna",
+      "estuary": "Estuario",
+      "sea": "Mar",
+      "ocean": "Océano abierto",
+      "beach": "Playa"
+    },
+    "salt": {
+      "fresh": "Dulce",
+      "brackish": "Salobre",
+      "salt": "Salada"
+    },
+    "coasts": {
+      "mediterranean": "Mediterráneo",
+      "adriatic": "Adriático",
+      "atlantic": "Atlántico",
+      "macrotidal": "Macromareal",
+      "north-sea": "Mar del Norte",
+      "baltic": "Báltico",
+      "black-sea": "Mar Negro",
+      "estuary-east-asia": "Estuario de Asia oriental",
+      "ocean": "Océano abierto"
+    },
+    "issue": {
+      "scour": "Socavación de pilas y cimentaciones por la corriente",
+      "debris": "Las riadas arrastran troncos y vehículos contra lo que está en el agua",
+      "flood-rise": "El nivel sube metros en una crecida: revisa lo que queda por debajo",
+      "ice": "Hielo en invierno: cargas sobre pilotes y elementos flotantes",
+      "corrosion": "Agua salada: corrosión del acero y las armaduras, zona de salpicadura",
+      "tidal-range": "Carrera de marea: tableros, defensas y accesos deben funcionar en bajamar y pleamar",
+      "storm-waves": "Oleaje de temporal: impactos y rebases en lo que da al mar",
+      "rip-current": "Corrientes de resaca en la zona de rompientes",
+      "tidal-current": "Corrientes de marea fuertes: amarres y socavación",
+      "still-water": "Agua quieta: estancamiento, sedimentos y algas; poca autolimpieza",
+      "longshore-drift": "La deriva litoral mueve la arena sobre la que se cimenta"
+    }
   }
 }

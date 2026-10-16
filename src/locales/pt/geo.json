@@ -386,5 +386,60 @@
     },
     "more": "mais {{count}}",
     "less": "Mostrar menos"
+  },
+  "waterExposure": {
+    "title": "A água junto ao modelo",
+    "over": "sobre a água",
+    "away": "a {{m}} m",
+    "current": "Corrente",
+    "currentValue": "{{typ}} m/s típica · {{max}} m/s em eventos severos",
+    "towards": "para {{dir}}",
+    "slope": "Declive do rio",
+    "tide": "Amplitude de maré",
+    "waves": "Ondas de tempestade",
+    "salinity": "Água",
+    "coast": "Costa",
+    "hint": "Valores típicos deste tipo de água, estimados a partir do OpenStreetMap e do terreno — não é um levantamento.",
+    "cls": {
+      "river": "Rio",
+      "stream": "Ribeiro",
+      "canal": "Canal",
+      "lake": "Lago",
+      "pond": "Charco",
+      "lagoon": "Laguna",
+      "estuary": "Estuário",
+      "sea": "Mar",
+      "ocean": "Oceano aberto",
+      "beach": "Praia"
+    },
+    "salt": {
+      "fresh": "Doce",
+      "brackish": "Salobra",
+      "salt": "Salgada"
+    },
+    "coasts": {
+      "mediterranean": "Mediterrâneo",
+      "adriatic": "Adriático",
+      "atlantic": "Atlântico",
+      "macrotidal": "Macromareal",
+      "north-sea": "Mar do Norte",
+      "baltic": "Báltico",
+      "black-sea": "Mar Negro",
+      "estuary-east-asia": "Estuário da Ásia Oriental",
+      "ocean": "Oceano aberto"
+    },
+    "issue": {
+      "scour": "Erosão de pilares e fundações pela corrente",
+      "debris": "As cheias arrastam detritos: troncos e veículos contra o que está na água",
+      "flood-rise": "O nível sobe metros numa cheia: verifique o que fica abaixo",
+      "ice": "Gelo no inverno: cargas em estacas e elementos flutuantes",
+      "corrosion": "Água salgada: corrosão do aço e das armaduras, zona de salpicos",
+      "tidal-range": "Amplitude de maré: tabuleiros, defensas e acessos devem funcionar na baixa-mar e na preia-mar",
+      "storm-waves": "Ondas de tempestade: impactos e galgamentos no que dá para o mar",
+      "rip-current": "Correntes de retorno na zona de rebentação",
+      "tidal-current": "Correntes de maré fortes: amarrações e erosão",
+      "still-water": "Água parada: estagnação, sedimentos e algas; pouca autolimpeza",
+      "longshore-drift": "A deriva litoral desloca a areia das fundações"
+    }
   }
 }

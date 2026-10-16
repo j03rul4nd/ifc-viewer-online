@@ -386,5 +386,60 @@
     },
     "more": "{{count}} de plus",
     "less": "Afficher moins"
+  },
+  "waterExposure": {
+    "title": "L'eau près du modèle",
+    "over": "sur l'eau",
+    "away": "à {{m}} m",
+    "current": "Courant",
+    "currentValue": "{{typ}} m/s typique · {{max}} m/s en épisode sévère",
+    "towards": "vers le {{dir}}",
+    "slope": "Pente du cours d'eau",
+    "tide": "Marnage",
+    "waves": "Vagues de tempête",
+    "salinity": "Eau",
+    "coast": "Côte",
+    "hint": "Valeurs typiques de ce type d'eau, estimées d'après OpenStreetMap et le terrain — pas un relevé.",
+    "cls": {
+      "river": "Rivière",
+      "stream": "Ruisseau",
+      "canal": "Canal",
+      "lake": "Lac",
+      "pond": "Étang",
+      "lagoon": "Lagune",
+      "estuary": "Estuaire",
+      "sea": "Mer",
+      "ocean": "Océan ouvert",
+      "beach": "Plage"
+    },
+    "salt": {
+      "fresh": "Douce",
+      "brackish": "Saumâtre",
+      "salt": "Salée"
+    },
+    "coasts": {
+      "mediterranean": "Méditerranée",
+      "adriatic": "Adriatique",
+      "atlantic": "Atlantique",
+      "macrotidal": "Macrotidale",
+      "north-sea": "Mer du Nord",
+      "baltic": "Baltique",
+      "black-sea": "Mer Noire",
+      "estuary-east-asia": "Estuaire d'Asie de l'Est",
+      "ocean": "Océan ouvert"
+    },
+    "issue": {
+      "scour": "Affouillement des piles et des fondations par le courant",
+      "debris": "Les crues charrient des embâcles : arbres et véhicules contre ce qui est dans l'eau",
+      "flood-rise": "Le niveau monte de plusieurs mètres en crue : vérifier ce qui est en dessous",
+      "ice": "Glace en hiver : efforts sur les pieux et les éléments flottants",
+      "corrosion": "Eau salée : corrosion de l'acier et des armatures, zone d'éclaboussures",
+      "tidal-range": "Marnage : tabliers, défenses et accès doivent fonctionner à basse et pleine mer",
+      "storm-waves": "Vagues de tempête : chocs et franchissements sur ce qui fait face à la mer",
+      "rip-current": "Courants d'arrachement dans la zone de déferlement",
+      "tidal-current": "Forts courants de marée : amarrages et affouillement",
+      "still-water": "Eau stagnante : sédiments et algues ; peu d'autonettoyage",
+      "longshore-drift": "La dérive littorale déplace le sable des fondations"
+    }
   }
 }
