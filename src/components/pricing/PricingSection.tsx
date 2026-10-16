@@ -22,7 +22,9 @@ export default function PricingSection() {
   return (
     <section id="pricing" className="border-t border-[var(--border)] py-14 sm:py-[90px] px-4 sm:px-7" aria-labelledby="pricing-heading">
       <div className="max-w-[1200px] mx-auto">
-        <p className="text-center text-[11px] uppercase tracking-[0.12em] text-[var(--text-faint)] mb-2">Internal preview · not public</p>
+        <p className="text-center text-[11px] uppercase tracking-[0.12em] text-[var(--text-faint)] mb-2">
+          Internal preview · not public · <a href={`${import.meta.env.BASE_URL}workspace`} className="underline normal-case tracking-normal">open the paid workspace design →</a>
+        </p>
         <h2 id="pricing-heading" className="font-semibold tracking-[-0.03em] text-center mb-3" style={{ fontSize: 'clamp(22px, 6vw, 36px)' }}>
           Free in your browser. Pay only for the heavy lifting.
         </h2>
