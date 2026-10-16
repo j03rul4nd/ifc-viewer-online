@@ -104,6 +104,11 @@ export interface GeorefExtraction {
 
 export type PlacementSource = 'ifc' | 'manual'
 
+/** What a measurement landed on, on the map (geo-system.describeMapHit). */
+export type MapMeasureHit =
+  | { kind: 'building'; id: string | null; name?: string; label?: string; heightM?: number; heightBasis?: 'height' | 'levels' | 'guess' }
+  | { kind: 'terrain' }
+
 export interface GeoPlacement {
   /** WGS84 latitude of the model anchor (building plan centroid), degrees. */
   lat: number

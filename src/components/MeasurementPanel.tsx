@@ -39,11 +39,12 @@ import type {
 } from '../lib/measure/measure-types'
 import {
   angleAt, areaInUnits, decimalSeparator, exportNumber, formatAngle, formatArea,
-  formatCoordinate, formatItemValue, formatLength, formatVolume, lengthInUnits, slopePercent, toDelimited, volumeInUnits,
+  formatCoordinate, formatItemValue, formatLength, formatVolume, pathProfile, lengthInUnits, slopePercent, toDelimited, volumeInUnits,
 } from '../lib/measure/measure-math'
 import { checkItem, volumeOf } from '../lib/measure/checks'
 import { CheckBadge, MeasureRules, formatRequirement } from './measure/MeasureRules'
 import { TakeoffSection } from './measure/TakeoffSection'
+import { anchorsLine, crossesModels, formatLatLon } from './measure/anchors'
 import { MeasureSession, useLoadedModelNames, useMeasureAutosave } from './measure/MeasureSession'
 import { defaultPrecisionFor, loadMeasureSettings, saveMeasureSettings } from '../lib/measure/measure-settings'
 import { isTypingTarget, useMeasureHover, useMeasureSnapshot } from './measure/useMeasureStores'
@@ -308,7 +309,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
     const d = s.units === 'ft' ? 3 : s.precision
     const n = (v: number) => exportNumber(v, d, s.locale)
     const header = [t('export.name'), t('export.type'), t('export.value'), t('export.unit'), 'X / ΔX', 'Y / ΔY', 'Z / ΔZ', t('export.perimeter'),
-      t('export.volume'), t('export.requirement'), t('export.check'), t('export.note')]
+      t('export.volume'), t('export.requirement'), t('export.check'), t('export.note'), t('export.on'), 'Lat', 'Lon', t('export.elevation')]
     const rows: string[][] = [header]
     // The compliance columns, appended to whatever the kind wrote.
     const extra = (it: MeasureItem): string[] => {
@@ -316,7 +317,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
       const vol = ext !== null && it.kind === 'area' ? exportNumber(volumeInUnits(volumeOf(it.value, ext), s.units), 3, s.locale) : ''
       const req = it.requirement ?? null
       const res = req ? checkItem(it, req, ext) : null
-      return [vol, req ? formatRequirement(req, it, s) : '', res && res.status !== 'na' ? t(`rules.status.${res.status}`) : '', it.note ?? '']
+      const geo = it.kind === 'point' ? it.geo ?? null : null
+      return [vol, req ? formatRequirement(req, it, s) : '', res && res.status !== 'na' ? t(`rules.status.${res.status}`) : '', it.note ?? '',
+        anchorsLine(it, t, s) ?? '',
+        geo ? geo.lat.toFixed(7) : '', geo ? geo.lon.toFixed(7) : '',
+        geo && geo.elevationM !== null ? exportNumber(geo.elevationM, 2, s.locale) : '']
     }
     for (const it of snapshot.items) {
       const type = t(`tools.${it.kind}`)
@@ -946,9 +951,17 @@ function MeasureRow(p: RowProps) {
         }
         break
       }
-      case 'path':
+      case 'path': {
+        // Over terrain or a ramp sequence, the length is not the question — the climb is.
+        const pr = pathProfile(item.points)
+        rows.push({ label: t('item.plan'), value: formatLength(pr.plan, s) })
+        if (pr.climb + pr.descent > 0.01) {
+          rows.push({ label: t('item.climb'), value: `↑ ${formatLength(pr.climb, s)} · ↓ ${formatLength(pr.descent, s)}` })
+          if (pr.maxSlopePct !== null) rows.push({ label: t('item.maxSlope'), value: `${pr.maxSlopePct.toLocaleString(s.locale, { maximumFractionDigits: 1 })} %` })
+        }
         item.segments.slice(0, 12).forEach((seg, i) => rows.push({ label: t('item.segment', { n: i + 1 }), value: formatLength(seg, s) }))
         break
+      }
       case 'area':
         rows.push({ label: t('item.perimeter'), value: formatLength(item.perimeter, s) })
         rows.push({ label: t('item.vertices'), value: String(item.points.length) })
@@ -962,6 +975,10 @@ function MeasureRow(p: RowProps) {
         rows.push({ label: 'X', value: formatCoordinate(item.coords.x, s), color: '#FF5A5A' })
         rows.push({ label: 'Y', value: formatCoordinate(item.coords.y, s), color: '#4CD964' })
         rows.push({ label: 'Z', value: formatCoordinate(item.coords.z, s), color: '#4C8DFF' })
+        if (item.geo) {
+          rows.push({ label: t('item.latLon'), value: formatLatLon(item.geo, s.locale) })
+          if (item.geo.elevationM !== null) rows.push({ label: t('item.elevation'), value: `${formatLength(item.geo.elevationM, s)} ${t('item.asl')}` })
+        }
         break
     }
     return rows
@@ -977,6 +994,7 @@ function MeasureRow(p: RowProps) {
           : null
 
   const commit = () => p.onRename(draftName.trim() || null)
+  const anchors = anchorsLine(item, t, s)
   const checkResult = item.requirement ? checkItem(item, item.requirement, item.kind === 'area' ? item.extrusion ?? null : null) : null
   const check = checkResult && checkResult.status !== 'na' ? checkResult.status : null
 
@@ -1029,6 +1047,13 @@ function MeasureRow(p: RowProps) {
             <div className="rounded-[7px] bg-[var(--surface)] border border-[var(--border)] px-2 py-1">
               {details.map((d) => <DetailRow key={d.label} {...d} />)}
             </div>
+          )}
+          {anchors && (
+            <p className="mt-1.5 text-[10px] leading-snug text-[var(--text-dim)] flex items-start gap-1">
+              <span className="text-[var(--text-faint)] shrink-0">{t('item.on')}</span>
+              <span className="min-w-0 break-words">{anchors}</span>
+              {crossesModels(item) && <span className="shrink-0 px-1 rounded bg-[rgba(94,106,210,0.15)] text-[var(--accent-2)]">{t('item.crossModel')}</span>}
+            </p>
           )}
           {note && <p className="mt-1.5 text-[10px] text-[var(--text-faint)] leading-snug">{note}</p>}
           <MeasureRules item={item} settings={s} onAnnotate={p.onAnnotate} />

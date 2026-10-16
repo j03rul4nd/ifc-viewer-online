@@ -104,7 +104,14 @@
     "elementsNote": "Shortest gap between the two elements, from their geometry.",
     "clashNote": "The elements touch or cross: a clash, not a clearance.",
     "approximateNote": "Very detailed elements: the value is an upper bound.",
-    "headroomNote": "Vertical clear height to the next surface."
+    "headroomNote": "Vertical clear height to the next surface.",
+    "on": "On",
+    "crossModel": "Across models",
+    "climb": "Climb · descent",
+    "maxSlope": "Steepest slope",
+    "latLon": "Lat, lon",
+    "elevation": "Elevation",
+    "asl": "above sea level"
   },
   "actions": {
     "finish": "Finish",
@@ -133,7 +140,9 @@
     "volume": "Volume",
     "requirement": "Requirement",
     "check": "Check",
-    "note": "Note"
+    "note": "Note",
+    "on": "On",
+    "elevation": "Elevation (m a.s.l.)"
   },
   "section": {
     "title": "Section",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Class",
       "type": "Type",
-      "storey": "Storey"
+      "storey": "Storey",
+      "model": "Model"
     },
     "count": "Count",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "That file is not a measurements file.",
       "newer-version": "That file was saved by a newer version — reload the page and try again."
     }
+  },
+  "anchor": {
+    "terrain": "Ground",
+    "building": "Building"
   }
 }

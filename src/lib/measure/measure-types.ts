@@ -78,6 +78,25 @@ export interface Requirement {
   target: CheckTarget
 }
 
+/** What a hit on the map was (mirrors geo-types.MapMeasureHit; no geo import here). */
+export type MapRef =
+  | { kind: 'building'; id: string | null; name?: string; label?: string; heightM?: number; heightBasis?: 'height' | 'levels' | 'guess' }
+  | { kind: 'terrain' }
+
+/**
+ * What one end of a measurement stands on — so a list over three federated
+ * models and a city says "Structure → OSM: Torre Mapfre", not just a number.
+ */
+export interface Anchor {
+  /** File name of the IFC model under the point. */
+  model?: string
+  /** The OSM building or the relief under the point. */
+  map?: MapRef
+}
+
+/** WGS84 position of a point on a georeferenced scene, and its elevation when known. */
+export interface GeoPoint { lat: number; lon: number; elevationM: number | null }
+
 interface ItemBase {
   id: string
   /** 1-based number within its kind, fixed at creation — "Distance 3" stays 3. */
@@ -93,6 +112,8 @@ interface ItemBase {
   extrusion?: number | null
   /** Free text the person attaches (where, why, to whom). */
   note?: string | null
+  /** What each point stands on, parallel to `points` (absent when unknown). */
+  anchors?: (Anchor | null)[]
 }
 
 export interface DistanceItem extends ItemBase {
@@ -140,6 +161,8 @@ export interface PointItem extends ItemBase {
   coords: Vec3
   /** Which frame `coords` is in — decides the caption the panel shows. */
   frame: 'model' | 'scene'
+  /** On a georeferenced scene: latitude, longitude and elevation above sea level. */
+  geo?: GeoPoint | null
 }
 
 export type MeasureItem = DistanceItem | PathItem | AreaItem | AngleItem | PointItem

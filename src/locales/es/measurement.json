@@ -104,7 +104,14 @@
     "elementsNote": "Holgura mínima entre los dos elementos, según su geometría.",
     "clashNote": "Los elementos se tocan o se cruzan: es una interferencia, no una holgura.",
     "approximateNote": "Elementos muy detallados: el valor es una cota superior.",
-    "headroomNote": "Altura libre vertical hasta la siguiente superficie."
+    "headroomNote": "Altura libre vertical hasta la siguiente superficie.",
+    "on": "Sobre",
+    "crossModel": "Entre modelos",
+    "climb": "Subida · bajada",
+    "maxSlope": "Pendiente máxima",
+    "latLon": "Lat, lon",
+    "elevation": "Cota",
+    "asl": "s. n. m."
   },
   "actions": {
     "finish": "Terminar",
@@ -133,7 +140,9 @@
     "volume": "Volumen",
     "requirement": "Requisito",
     "check": "Comprobación",
-    "note": "Nota"
+    "note": "Nota",
+    "on": "Sobre",
+    "elevation": "Cota (m s. n. m.)"
   },
   "section": {
     "title": "Sección",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Clase",
       "type": "Tipo",
-      "storey": "Planta"
+      "storey": "Planta",
+      "model": "Modelo"
     },
     "count": "Uds.",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "El archivo no es un archivo de mediciones.",
       "newer-version": "El archivo se guardó con una versión más nueva: recarga la página y vuelve a intentarlo."
     }
+  },
+  "anchor": {
+    "terrain": "Terreno",
+    "building": "Edificio"
   }
 }

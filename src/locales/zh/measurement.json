@@ -104,7 +104,14 @@
     "elementsNote": "根据几何计算的两个构件之间的最小间距。",
     "clashNote": "构件相互接触或交叉：这是碰撞，不是净距。",
     "approximateNote": "构件非常精细：该值为上限。",
-    "headroomNote": "到下一表面的垂直净高。"
+    "headroomNote": "到下一表面的垂直净高。",
+    "on": "位于",
+    "crossModel": "跨模型",
+    "climb": "上升 · 下降",
+    "maxSlope": "最大坡度",
+    "latLon": "纬度, 经度",
+    "elevation": "高程",
+    "asl": "海拔"
   },
   "actions": {
     "finish": "完成",
@@ -133,7 +140,9 @@
     "volume": "体积",
     "requirement": "要求",
     "check": "检查",
-    "note": "备注"
+    "note": "备注",
+    "on": "位于",
+    "elevation": "高程 (m)"
   },
   "section": {
     "title": "剖切",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "类别",
       "type": "类型",
-      "storey": "楼层"
+      "storey": "楼层",
+      "model": "模型"
     },
     "count": "数量",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "该文件不是测量文件。",
       "newer-version": "该文件由更新的版本保存：请刷新页面后重试。"
     }
+  },
+  "anchor": {
+    "terrain": "地形",
+    "building": "建筑"
   }
 }

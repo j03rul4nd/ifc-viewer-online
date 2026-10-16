@@ -104,7 +104,14 @@
     "elementsNote": "Distància mínima entre els dos elements, segons la seva geometria.",
     "clashNote": "Els elements es toquen o es creuen: és una interferència, no una holgura.",
     "approximateNote": "Elements molt detallats: el valor és una cota superior.",
-    "headroomNote": "Alçada lliure vertical fins a la superfície següent."
+    "headroomNote": "Alçada lliure vertical fins a la superfície següent.",
+    "on": "Sobre",
+    "crossModel": "Entre models",
+    "climb": "Pujada · baixada",
+    "maxSlope": "Pendent màxim",
+    "latLon": "Lat, lon",
+    "elevation": "Cota",
+    "asl": "s. n. m."
   },
   "actions": {
     "finish": "Acaba",
@@ -133,7 +140,9 @@
     "volume": "Volum",
     "requirement": "Requisit",
     "check": "Comprovació",
-    "note": "Nota"
+    "note": "Nota",
+    "on": "Sobre",
+    "elevation": "Cota (m s. n. m.)"
   },
   "section": {
     "title": "Secció",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Classe",
       "type": "Tipus",
-      "storey": "Planta"
+      "storey": "Planta",
+      "model": "Model"
     },
     "count": "Uts.",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "El fitxer no és un fitxer de mesures.",
       "newer-version": "El fitxer es va desar amb una versió més nova: recarrega la pàgina i torna-ho a provar."
     }
+  },
+  "anchor": {
+    "terrain": "Terreny",
+    "building": "Edifici"
   }
 }

@@ -104,7 +104,14 @@
     "elementsNote": "Écart minimal entre les deux éléments, d’après leur géométrie.",
     "clashNote": "Les éléments se touchent ou se croisent : c’est un conflit, pas un dégagement.",
     "approximateNote": "Éléments très détaillés : la valeur est un majorant.",
-    "headroomNote": "Hauteur libre verticale jusqu’à la surface suivante."
+    "headroomNote": "Hauteur libre verticale jusqu’à la surface suivante.",
+    "on": "Sur",
+    "crossModel": "Entre maquettes",
+    "climb": "Montée · descente",
+    "maxSlope": "Pente maximale",
+    "latLon": "Lat, lon",
+    "elevation": "Altitude",
+    "asl": "NGF"
   },
   "actions": {
     "finish": "Terminer",
@@ -133,7 +140,9 @@
     "volume": "Volume",
     "requirement": "Exigence",
     "check": "Contrôle",
-    "note": "Note"
+    "note": "Note",
+    "on": "Sur",
+    "elevation": "Altitude (m)"
   },
   "section": {
     "title": "Coupe",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Classe",
       "type": "Type",
-      "storey": "Niveau"
+      "storey": "Niveau",
+      "model": "Maquette"
     },
     "count": "Nb",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "Ce fichier n’est pas un fichier de mesures.",
       "newer-version": "Ce fichier a été enregistré par une version plus récente : rechargez la page et réessayez."
     }
+  },
+  "anchor": {
+    "terrain": "Terrain",
+    "building": "Bâtiment"
   }
 }

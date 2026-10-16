@@ -86,7 +86,7 @@ import {
 } from './geo-math'
 import { createLogger } from '../logger'
 import { createGroundFrame } from './ground-frame'
-import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
+import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook, MapMeasureHit } from './geo-types'
 import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
 import { waterExposureAt, type WaterExposure } from './water-exposure'
@@ -440,6 +440,24 @@ export interface GeoSystemAPI {
    * Data layers drape on it so a route sits on the street, not under a hill.
    */
   groundAtWorld(x: number, z: number): number | null
+  // ── Measuring on the map (lib/measure) ───────────────────────────────────
+  /** What the measurement tools may land on: the OSM buildings and the relief. */
+  measureTargets(): THREE.Object3D[]
+  /** What a measurement hit on the map is: an OSM building (whole) or the ground. */
+  describeMapHit(object: THREE.Object3D, faceIndex: number | null | undefined): MapMeasureHit | null
+  /**
+   * Where the cursor meets the map's ground when nothing drawn is under it —
+   * the flat map has no mesh to hit, and a street is still somewhere to measure.
+   * With relief loaded the relief is hit instead (measureTargets), so null.
+   */
+  groundHitAt(clientX: number, clientY: number): THREE.Vector3 | null
+  /** One OSM building's triangles in world space (flat xyz, 9 per triangle). */
+  featureTriangles(id: string): Float32Array | null
+  /**
+   * WGS84 position of a scene point, and its elevation above sea level when
+   * the map can say (relief loaded or flat map at the anchor's elevation).
+   */
+  geoOfScenePoint(p: THREE.Vector3, onTerrain: boolean): { lat: number; lon: number; elevationM: number | null } | null
   /**
    * The lat/lon ↔ scene pairing the map is aligned with right now: the
    * placement, the scene point it lands on (the ANCHOR model's plan centre,
@@ -999,6 +1017,70 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 
   const api: GeoSystemAPI = {
+    measureTargets() {
+      const out: THREE.Object3D[] = []
+      if (buildingsMesh && buildingsMesh.visible) out.push(buildingsMesh)
+      if (terrain && terrain.group.visible) out.push(terrain.group)
+      return out
+    },
+
+    describeMapHit(object, faceIndex) {
+      if (buildingsMesh && object === buildingsMesh) {
+        const f = featureAtFace(faceIndex)
+        if (!f) return { kind: 'building', id: null }
+        return {
+          kind: 'building', id: f.id, name: f.name, label: f.label,
+          heightM: Number.isFinite(f.height?.heightM) ? f.height.heightM : undefined,
+          heightBasis: f.height?.basis,
+        }
+      }
+      for (let o: THREE.Object3D | null = object; o; o = o.parent) {
+        if (terrain && o === terrain.group) return { kind: 'terrain' }
+      }
+      return null
+    },
+
+    groundHitAt(clientX, clientY) {
+      if (terrain && terrain.group.visible) return null
+      return intersectGround(clientX, clientY)
+    },
+
+    featureTriangles(id) {
+      if (!buildingsMesh) return null
+      const r = buildingRanges.find((x) => x.id === id)
+      const pos = buildingsMesh.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
+      if (!r || !pos) return null
+      buildingsMesh.updateMatrixWorld()
+      const m = buildingsMesh.matrixWorld
+      const idx = buildingsMesh.geometry.index
+      const v = new THREE.Vector3()
+      const out = new Float32Array((r.end - r.start) * 3)
+      for (let i = r.start, k = 0; i < r.end; i++, k += 3) {
+        const vi = idx ? idx.getX(i) : i
+        v.fromBufferAttribute(pos, vi).applyMatrix4(m)
+        out[k] = v.x; out[k + 1] = v.y; out[k + 2] = v.z
+      }
+      return out
+    },
+
+    geoOfScenePoint(p, onTerrain) {
+      if (!geoRoot || !placement) return null
+      geoRoot.updateMatrixWorld()
+      const local = geoRoot.worldToLocal(p.clone())
+      const { lat, lon } = normalizedToLatLon(local.x, local.y)
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+      // Scene metres above the map plane, read as metres above the anchor's
+      // elevation. On exaggerated relief only a point ON the relief can be
+      // undone (vertical-frame.absoluteGroundM); a roof's height cannot.
+      const anchorElev = terrain?.anchorElevation ?? null
+      let elevationM: number | null = null
+      if (anchorElev !== null) {
+        if (terrainExaggeration === 1) elevationM = anchorElev + (p.y - geoRoot.position.y)
+        else if (onTerrain) elevationM = absoluteGroundM(p.y, geoRoot.position.y, anchorElev, terrainExaggeration)
+      }
+      return { lat, lon, elevationM }
+    },
+
     async enable(p, prov) {
       if (disposed || engine) return
       placement = p
@@ -2999,6 +3081,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * back: the hit triangle's first vertex index binary-searches to the building
    * that owns that slice of the buffer.
    */
+  /** The OSM feature that owns a face of the merged buildings mesh (binary search over its ranges). */
+  function featureAtFace(face: number | null | undefined): OsmFeature | null {
+    if (face === undefined || face === null || !osmFeatures) return null
+    const vertex = face * 3
+    let lo = 0
+    let hi = buildingRanges.length - 1
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      const r = buildingRanges[mid]
+      if (vertex < r.start) hi = mid - 1
+      else if (vertex >= r.end) lo = mid + 1
+      else return osmFeatures.find((x) => x.id === r.id) ?? null
+    }
+    return null
+  }
+
   function pickFeatureAt(clientX: number, clientY: number): OsmFeature | null {
     if (!buildingsMesh || buildingRanges.length === 0 || !osmFeatures) return null
 
