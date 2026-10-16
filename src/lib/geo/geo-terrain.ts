@@ -99,6 +99,16 @@ export interface TerrainPatch {
    * detail blend changes. No refetch in either case.
    */
   setLook(look: TerrainLook): void
+  /**
+   * Correct the measured ground where the map KNOWS better than the DEM — the
+   * sand of a beach lies below its promenade wall, a step a grid of a few
+   * metres smears into a ramp (beach-carve). `fn` gets each vertex's
+   * normalized position and measured height (m) and returns the height to
+   * show; null restores the measurement. The mesh, its shading and
+   * sampleGroundM all follow, so anything sat on the ground afterwards sits on
+   * the corrected one.
+   */
+  setGroundOverride(fn: ((nx: number, ny: number, measuredM: number) => number) | null): void
   dispose(): void
 }
 
@@ -241,6 +251,7 @@ function assemblePatch(
   let quality: SurfaceQuality = 'simple'
   let exaggeration = 1
   let look: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
+  let groundOverride: ((nx: number, ny: number, measuredM: number) => number) | null = null
 
   /**
    * Re-displace the mesh from measured heights + the synthetic detail blend,
@@ -251,8 +262,13 @@ function assemblePatch(
   function applyHeights(): void {
     minH = Infinity
     maxH = -Infinity
+    const x0 = centre.nx - patchSize / 2, y0 = centre.ny + patchSize / 2, step = patchSize / grid
     for (let idx = 0; idx < verts * verts; idx++) {
-      const h = heights[idx] + detail[idx] * look.detail
+      const measured = heights[idx] + detail[idx] * look.detail
+      // Row 0 is the north edge (see sampleGroundM).
+      const h = groundOverride
+        ? groundOverride(x0 + (idx % verts) * step, y0 - Math.floor(idx / verts) * step, measured)
+        : measured
       effective[idx] = h
       if (h < minH) minH = h
       if (h > maxH) maxH = h
@@ -263,7 +279,7 @@ function assemblePatch(
 
     // Skip the recompute when nothing synthetic is blended in — the worker's
     // normals already describe the measured surface exactly.
-    effectiveNormals = look.detail > 0 ? computeNormals(effective, verts, spacingM) : normals
+    effectiveNormals = look.detail > 0 || groundOverride ? computeNormals(effective, verts, spacingM) : normals
     beltTintValid = false
     beltGroundValid = false
     for (let idx = 0; idx < verts * verts; idx++) {
@@ -563,6 +579,13 @@ function assemblePatch(
       // Nothing to re-aim here any more: the procedural surface is lit by the
       // scene and by the sky environment, and geo-system rebuilds that sky when
       // the sun moves.
+    },
+
+    setGroundOverride(fn) {
+      if (disposed) return
+      groundOverride = fn
+      applyHeights()
+      recolor()
     },
 
     dispose() {

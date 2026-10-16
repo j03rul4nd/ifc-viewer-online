@@ -13,7 +13,7 @@
 // THE SAME FORMAT keeps the last session in localStorage, keyed by the set of
 // models loaded, so a reload offers the measurements back.
 
-import type { MeasureItem, MeasureKind, Requirement, Vec3 } from './measure-types'
+import type { Anchor, GeoPoint, MeasureItem, MeasureKind, Requirement, Vec3 } from './measure-types'
 
 export const MEASURE_FILE_FORMAT = 'ifcviewer-measurements'
 export const MEASURE_FILE_VERSION = 1
@@ -35,6 +35,8 @@ export interface SavedMeasurement {
   requirement?: Requirement | null
   extrusion?: number | null
   note?: string | null
+  anchors?: (Anchor | null)[]
+  geo?: GeoPoint | null
 }
 
 export interface MeasureFile {
@@ -62,6 +64,7 @@ export function toSaved(item: MeasureItem): SavedMeasurement {
   }
   if (item.requirement) s.requirement = item.requirement
   if (item.note) s.note = item.note
+  if (item.anchors?.some(Boolean)) s.anchors = item.anchors
   switch (item.kind) {
     case 'distance':
       if (item.perpendicular) s.perpendicular = true
@@ -76,6 +79,7 @@ export function toSaved(item: MeasureItem): SavedMeasurement {
     case 'point':
       s.coords = { ...item.coords }
       s.frame = item.frame
+      if (item.geo) s.geo = item.geo
       break
   }
   return s
@@ -106,6 +110,23 @@ function requirement(v: unknown): Requirement | null {
   if (o.target !== 'value' && o.target !== 'slope' && o.target !== 'height' && o.target !== 'volume') return null
   const num = (x: unknown) => (isNum(x) ? x : null)
   return { op: o.op, target: o.target, min: num(o.min), max: num(o.max) }
+}
+
+function anchor(v: unknown): Anchor | null {
+  if (!v || typeof v !== 'object') return null
+  const o = v as Record<string, unknown>
+  if (typeof o.model === 'string' && o.model) return { model: o.model.slice(0, 200) }
+  const m = o.map as Record<string, unknown> | undefined
+  if (m?.kind === 'terrain') return { map: { kind: 'terrain' } }
+  if (m?.kind === 'building') {
+    const str = (x: unknown) => (typeof x === 'string' ? x.slice(0, 120) : undefined)
+    return { map: {
+      kind: 'building', id: str(m.id) ?? null, name: str(m.name), label: str(m.label),
+      heightM: isNum(m.heightM) ? m.heightM : undefined,
+      heightBasis: m.heightBasis === 'height' || m.heightBasis === 'levels' || m.heightBasis === 'guess' ? m.heightBasis : undefined,
+    } }
+  }
+  return null
 }
 
 const text = (v: unknown, max: number): string | null => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null)
@@ -152,6 +173,14 @@ export function parseMeasurements(raw: string): ParseResult {
     if (kind === 'point') {
       s.coords = vec(m.coords) ?? undefined
       s.frame = m.frame === 'model' ? 'model' : 'scene'
+      const g = m.geo as Record<string, unknown> | undefined
+      if (g && isNum(g.lat) && isNum(g.lon) && Math.abs(g.lat) <= 90 && Math.abs(g.lon) <= 180) {
+        s.geo = { lat: g.lat, lon: g.lon, elevationM: isNum(g.elevationM) ? g.elevationM : null }
+      }
+    }
+    if (Array.isArray(m.anchors)) {
+      const list = (m.anchors as unknown[]).slice(0, pts.length).map(anchor)
+      if (list.some(Boolean)) s.anchors = list
     }
     out.push(s)
   }

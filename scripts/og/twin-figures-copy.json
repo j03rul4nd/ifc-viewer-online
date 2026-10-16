@@ -124,6 +124,48 @@
       ],
       "tag": "CityGML for the city, IFC for the assets that matter, 3D Tiles to stream either to a browser.",
       "source": "Sources: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Live data, measured",
+      "title": "How old is \"real-time\" city data when it arrives?",
+      "lede": "Six public feeds, polled every 15 to 30 seconds (Endolla every 5 minutes) for 24 hours. Each dot: half the vehicles or stations in a typical response were younger. The bar runs to 90%.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "HSL buses · HFP over MQTT",
+          "Helsinki · pushed as it happens"
+        ],
+        "hel-hsl-gtfsrt": [
+          "HSL vehicles · GTFS-Realtime",
+          "Helsinki · polled every 15 s · no CORS: server only"
+        ],
+        "tyo-toei-train-odpt": [
+          "Toei trains · ODPT",
+          "Tokyo · polled every 30 s"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Toei buses · GTFS-Realtime",
+          "Tokyo · polled every 30 s"
+        ],
+        "bcn-bicing-gbfs": [
+          "Bicing stations · GBFS 3.0",
+          "Barcelona · polled every 30 s"
+        ],
+        "bcn-endolla-gelfs": [
+          "Endolla chargers · GELFS",
+          "Barcelona · polled every 5 min"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "under 1 s",
+      "readout": "{median} · 90% under {p90}",
+      "feedClock": "the file's own timestamp: {v} old",
+      "noClock": "No report time per charger, only when each last changed. Freshness cannot be shown.",
+      "legendMedian": "Median age",
+      "legendRange": "Up to 90% of items",
+      "legendClock": "Timestamp of the whole file",
+      "tag": "Same word, “real-time”: from under a second to a minute and a half. All 14,329 requests were answered.",
+      "source": "Logged 15–16 Oct 2026 · data: ifcvieweronline.eu/blog/data"
     }
   },
   "es": {
@@ -251,6 +293,48 @@
       ],
       "tag": "CityGML para la ciudad, IFC para los activos clave y 3D Tiles para llevar ambos al navegador.",
       "source": "Fuentes: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Medimos datos en vivo",
+      "title": "¿Con qué antigüedad llegan los datos «en tiempo real»?",
+      "lede": "Seis feeds públicos, consultados cada 15 a 30 s (Endolla, cada 5 min) durante 24 horas. Cada punto: la mitad de los vehículos o estaciones de una respuesta típica eran más recientes. La barra llega al 90 %.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "Autobuses HSL · HFP por MQTT",
+          "Helsinki · enviado al instante"
+        ],
+        "hel-hsl-gtfsrt": [
+          "Vehículos HSL · GTFS-Realtime",
+          "Helsinki · consultado cada 15 s · sin CORS: solo servidor"
+        ],
+        "tyo-toei-train-odpt": [
+          "Trenes Toei · ODPT",
+          "Tokio · consultado cada 30 s"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Autobuses Toei · GTFS-Realtime",
+          "Tokio · consultado cada 30 s"
+        ],
+        "bcn-bicing-gbfs": [
+          "Estaciones Bicing · GBFS 3.0",
+          "Barcelona · consultado cada 30 s"
+        ],
+        "bcn-endolla-gelfs": [
+          "Cargadores Endolla · GELFS",
+          "Barcelona · consultado cada 5 min"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "menos de 1 s",
+      "readout": "{median} · 90 % hasta {p90}",
+      "feedClock": "marca de tiempo del archivo: hace {v}",
+      "noClock": "Sin hora de informe por cargador; solo la del último cambio. No se puede mostrar su antigüedad.",
+      "legendMedian": "Antigüedad mediana",
+      "legendRange": "Hasta el 90 % de los elementos",
+      "legendClock": "Marca de tiempo del archivo",
+      "tag": "La misma expresión, «tiempo real»: de menos de un segundo a minuto y medio. Se respondieron las 14 329 peticiones.",
+      "source": "Registro: 15–16 oct. 2026 · datos: ifcvieweronline.eu/blog/data"
     }
   },
   "ca": {
@@ -378,6 +462,48 @@
       ],
       "tag": "CityGML per a la ciutat, IFC per als actius que importen, 3D Tiles per portar-los al navegador.",
       "source": "Fonts: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Dades en viu, mesurades",
+      "title": "Quin retard tenen les dades urbanes «en temps real»?",
+      "lede": "Sis feeds públics, consultats cada 15 o 30 segons (Endolla, cada 5 minuts) durant 24 hores. Cada punt: la meitat dels vehicles o estacions d’una resposta típica eren més recents. La barra arriba fins al 90%.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "Autobusos HSL · HFP per MQTT",
+          "Hèlsinki · enviat a l’instant"
+        ],
+        "hel-hsl-gtfsrt": [
+          "Vehicles HSL · GTFS-Realtime",
+          "Hèlsinki · consulta cada 15 s · sense CORS: només servidor"
+        ],
+        "tyo-toei-train-odpt": [
+          "Trens Toei · ODPT",
+          "Tòquio · consulta cada 30 s"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Autobusos Toei · GTFS-Realtime",
+          "Tòquio · consulta cada 30 s"
+        ],
+        "bcn-bicing-gbfs": [
+          "Estacions Bicing · GBFS 3.0",
+          "Barcelona · consulta cada 30 s"
+        ],
+        "bcn-endolla-gelfs": [
+          "Carregadors Endolla · GELFS",
+          "Barcelona · consulta cada 5 min"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "menys d’1 s",
+      "readout": "{median} · 90% fins a {p90}",
+      "feedClock": "la marca de temps del fitxer: fa {v}",
+      "noClock": "Cap carregador diu quan va informar, només l’últim canvi. No se’n pot mostrar l’antiguitat.",
+      "legendMedian": "Antiguitat mediana",
+      "legendRange": "Fins al 90% dels elements",
+      "legendClock": "Marca de temps del fitxer",
+      "tag": "La mateixa etiqueta, «en temps real»: de menys d’un segon a un minut i mig. Les 14.329 peticions van tenir resposta.",
+      "source": "Registrat el 15–16 oct. 2026 · dades: ifcvieweronline.eu/blog/data"
     }
   },
   "de": {
@@ -505,6 +631,48 @@
       ],
       "tag": "CityGML für die Stadt, IFC für die wichtigen Assets, 3D Tiles, um beides in einen Browser zu streamen.",
       "source": "Quellen: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Live-Daten, gemessen",
+      "title": "Wie alt sind „Echtzeit“-Stadtdaten bei Ankunft?",
+      "lede": "Sechs öffentliche Feeds, 24 Stunden lang alle 15–30 s abgefragt (Endolla alle 5 min). Jeder Punkt: Die Hälfte der Fahrzeuge oder Stationen einer typischen Antwort war jünger. Der Balken reicht bis 90 %.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "HSL-Busse · HFP über MQTT",
+          "Helsinki · sofort per Push"
+        ],
+        "hel-hsl-gtfsrt": [
+          "HSL-Fahrzeuge · GTFS-Realtime",
+          "Helsinki · alle 15 s abgefragt · kein CORS: nur Server"
+        ],
+        "tyo-toei-train-odpt": [
+          "Toei-Züge · ODPT",
+          "Tokio · alle 30 s abgefragt"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Toei-Busse · GTFS-Realtime",
+          "Tokio · alle 30 s abgefragt"
+        ],
+        "bcn-bicing-gbfs": [
+          "Bicing-Stationen · GBFS 3.0",
+          "Barcelona · alle 30 s abgefragt"
+        ],
+        "bcn-endolla-gelfs": [
+          "Endolla-Ladepunkte · GELFS",
+          "Barcelona · alle 5 min abgefragt"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "unter 1 s",
+      "readout": "{median} · 90 % unter {p90}",
+      "feedClock": "Zeitstempel der Datei: {v} alt",
+      "noClock": "Keine Meldezeit pro Ladepunkt, nur die letzte Änderung. Aktualität nicht darstellbar.",
+      "legendMedian": "Medianalter",
+      "legendRange": "Bis 90 % der Einträge",
+      "legendClock": "Zeitstempel der ganzen Datei",
+      "tag": "Dasselbe Wort, „Echtzeit“: von unter einer Sekunde bis anderthalb Minuten. Alle 14.329 Anfragen wurden beantwortet.",
+      "source": "Erfasst 15.–16. Okt. 2026 · Daten: ifcvieweronline.eu/blog/data"
     }
   },
   "fr": {
@@ -632,6 +800,48 @@
       ],
       "tag": "CityGML pour la ville, IFC pour les actifs clés, 3D Tiles pour diffuser l’un ou l’autre au navigateur.",
       "source": "Sources : OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Temps réel, mesuré",
+      "title": "Données urbaines « temps réel » : quel âge à l’arrivée ?",
+      "lede": "Six flux publics, interrogés toutes les 15 à 30 s (Endolla toutes les 5 min) pendant 24 heures. Point : la moitié des véhicules ou stations d’une réponse type étaient plus récents. La barre va jusqu’à 90 %.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "Bus HSL · HFP via MQTT",
+          "Helsinki · envoi immédiat (push)"
+        ],
+        "hel-hsl-gtfsrt": [
+          "Véhicules HSL · GTFS-Realtime",
+          "Helsinki · lu toutes les 15 s · sans CORS : serveur requis"
+        ],
+        "tyo-toei-train-odpt": [
+          "Trains Toei · ODPT",
+          "Tokyo · lu toutes les 30 s"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Bus Toei · GTFS-Realtime",
+          "Tokyo · lu toutes les 30 s"
+        ],
+        "bcn-bicing-gbfs": [
+          "Stations Bicing · GBFS 3.0",
+          "Barcelone · lu toutes les 30 s"
+        ],
+        "bcn-endolla-gelfs": [
+          "Bornes Endolla · GELFS",
+          "Barcelone · lu toutes les 5 min"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "sous 1 s",
+      "readout": "{median} · 90 % sous {p90}",
+      "feedClock": "horodatage du fichier : il y a {v}",
+      "noClock": "Pas d’heure de transmission par borne, juste son dernier changement. Fraîcheur non affichable.",
+      "legendMedian": "Âge médian",
+      "legendRange": "90 % des éléments",
+      "legendClock": "Horodatage du fichier entier",
+      "tag": "Même mot, « temps réel » : de moins d’une seconde à une minute et demie. Les 14 329 requêtes ont toutes abouti.",
+      "source": "Relevé 15–16 oct. 2026 · données : ifcvieweronline.eu/blog/data"
     }
   },
   "it": {
@@ -759,6 +969,48 @@
       ],
       "tag": "CityGML per la città, IFC per gli asset che contano, 3D Tiles per portarli in streaming nel browser.",
       "source": "Fonti: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Dati live, misurati",
+      "title": "Che età hanno i dati urbani «in tempo reale» all'arrivo?",
+      "lede": "Sei feed pubblici, interrogati ogni 15–30 secondi (Endolla ogni 5 minuti) per 24 ore. Ogni punto: metà dei veicoli o delle stazioni di una risposta tipica era più recente. La barra arriva al 90%.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "Autobus HSL · HFP via MQTT",
+          "Helsinki · in push, all'istante"
+        ],
+        "hel-hsl-gtfsrt": [
+          "Veicoli HSL · GTFS-Realtime",
+          "Helsinki · polling ogni 15 s · senza CORS: solo server"
+        ],
+        "tyo-toei-train-odpt": [
+          "Treni Toei · ODPT",
+          "Tokyo · polling ogni 30 s"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Autobus Toei · GTFS-Realtime",
+          "Tokyo · polling ogni 30 s"
+        ],
+        "bcn-bicing-gbfs": [
+          "Stazioni Bicing · GBFS 3.0",
+          "Barcellona · polling ogni 30 s"
+        ],
+        "bcn-endolla-gelfs": [
+          "Colonnine Endolla · GELFS",
+          "Barcellona · polling ogni 5 min"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "sotto 1 s",
+      "readout": "{median} · 90% entro {p90}",
+      "feedClock": "timestamp del file stesso: {v} fa",
+      "noClock": "Nessun orario di comunicazione per colonnina, solo l'ultimo cambio: età non visualizzabile.",
+      "legendMedian": "Età mediana",
+      "legendRange": "Fino al 90% dei dati",
+      "legendClock": "Timestamp dell'intero file",
+      "tag": "Stessa parola, «in tempo reale»: da meno di un secondo a un minuto e mezzo. Risposta a tutte le 14.329 richieste.",
+      "source": "Misurato il 15–16 ott 2026 · dati: ifcvieweronline.eu/blog/data"
     }
   },
   "pt": {
@@ -886,6 +1138,48 @@
       ],
       "tag": "CityGML para a cidade, IFC para os ativos que importam, 3D Tiles para levar ambos ao navegador.",
       "source": "Fontes: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "Dados ao vivo, medidos",
+      "title": "Com que idade chegam os dados urbanos “em tempo real”?",
+      "lede": "Seis feeds públicos, consultados a cada 15 a 30 segundos (o Endolla, a cada 5 minutos) durante 24 horas. Cada ponto: metade dos veículos ou estações de uma resposta típica era mais recente. A barra vai até 90%.",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "Ônibus da HSL · HFP via MQTT",
+          "Helsinque · push, assim que ocorre"
+        ],
+        "hel-hsl-gtfsrt": [
+          "Veículos da HSL · GTFS-Realtime",
+          "Helsinque · consulta a cada 15 s · sem CORS: só servidor"
+        ],
+        "tyo-toei-train-odpt": [
+          "Trens da Toei · ODPT",
+          "Tóquio · consulta a cada 30 s"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "Ônibus da Toei · GTFS-Realtime",
+          "Tóquio · consulta a cada 30 s"
+        ],
+        "bcn-bicing-gbfs": [
+          "Estações Bicing · GBFS 3.0",
+          "Barcelona · consulta a cada 30 s"
+        ],
+        "bcn-endolla-gelfs": [
+          "Carregadores Endolla · GELFS",
+          "Barcelona · consulta a cada 5 min"
+        ]
+      },
+      "s": "s",
+      "min": "min",
+      "under1": "menos de 1 s",
+      "readout": "{median} · 90% abaixo de {p90}",
+      "feedClock": "o timestamp do próprio arquivo: há {v}",
+      "noClock": "Sem horário de reporte por carregador, só o da última mudança. A atualidade não pode ser mostrada.",
+      "legendMedian": "Idade mediana",
+      "legendRange": "Até 90% dos itens",
+      "legendClock": "Timestamp do arquivo inteiro",
+      "tag": "Mesmo rótulo, “tempo real”: de menos de um segundo a um minuto e meio. Todas as 14.329 requisições foram respondidas.",
+      "source": "Registrado em 15–16/10/2026 · dados: ifcvieweronline.eu/blog/data"
     }
   },
   "ja": {
@@ -1013,6 +1307,48 @@
       ],
       "tag": "都市にはCityGML、重要なアセットにはIFC、どちらもブラウザーへ届けるには3D Tiles。",
       "source": "出典：OGC、buildingSMART、ISO"
+    },
+    "freshness": {
+      "kicker": "ライブデータを計測",
+      "title": "「リアルタイム」な都市データ、届いたときの古さは？",
+      "lede": "公開フィード6件を15〜30秒ごと（Endollaは5分ごと）に24時間ポーリング。点：典型的なレスポンスで、車両やステーションの半数がこれより新しい値。バーは90%まで。",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "HSLのバス · MQTTのHFP",
+          "ヘルシンキ · 発生と同時にプッシュ"
+        ],
+        "hel-hsl-gtfsrt": [
+          "HSLの車両 · GTFS-Realtime",
+          "ヘルシンキ · 15秒ごとにポーリング · CORSなし：サーバーのみ"
+        ],
+        "tyo-toei-train-odpt": [
+          "都営の列車 · ODPT",
+          "東京 · 30秒ごとにポーリング"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "都営バス · GTFS-Realtime",
+          "東京 · 30秒ごとにポーリング"
+        ],
+        "bcn-bicing-gbfs": [
+          "Bicingのステーション · GBFS 3.0",
+          "バルセロナ · 30秒ごとにポーリング"
+        ],
+        "bcn-endolla-gelfs": [
+          "Endollaの充電器 · GELFS",
+          "バルセロナ · 5分ごとにポーリング"
+        ]
+      },
+      "s": "秒",
+      "min": "分",
+      "under1": "1秒未満",
+      "readout": "{median} · 90%が{p90}未満",
+      "feedClock": "ファイル自体のタイムスタンプ：{v}前",
+      "noClock": "充電器ごとの報告時刻はなく、最後に変化した時刻のみ。鮮度は示せません。",
+      "legendMedian": "経過時間の中央値",
+      "legendRange": "項目の90%まで",
+      "legendClock": "ファイル全体のタイムスタンプ",
+      "tag": "同じ「リアルタイム」でも、1秒未満から1分半まで。14,329件のリクエストはすべて応答あり。",
+      "source": "2026年10月15〜16日に記録 · データ：ifcvieweronline.eu/blog/data"
     }
   },
   "zh": {
@@ -1140,6 +1476,48 @@
       ],
       "tag": "CityGML 描述城市，IFC 描述关键资产，3D Tiles 把两者流式传输到浏览器。",
       "source": "来源：OGC、buildingSMART、ISO"
+    },
+    "freshness": {
+      "kicker": "实时数据实测",
+      "title": "城市“实时”数据到达时有多旧？",
+      "lede": "六个公开数据源，每 15 到 30 秒轮询一次（Endolla 每 5 分钟），持续 24 小时。圆点：典型响应中有一半车辆或站点的滞后低于此值。横条延伸至 90%。",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "HSL 公交 · HFP（MQTT）",
+          "赫尔辛基 · 即时推送"
+        ],
+        "hel-hsl-gtfsrt": [
+          "HSL 车辆 · GTFS-Realtime",
+          "赫尔辛基 · 每 15 秒轮询 · 无 CORS：仅限服务器"
+        ],
+        "tyo-toei-train-odpt": [
+          "都营列车 · ODPT",
+          "东京 · 每 30 秒轮询"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "都营公交 · GTFS-Realtime",
+          "东京 · 每 30 秒轮询"
+        ],
+        "bcn-bicing-gbfs": [
+          "Bicing 站点 · GBFS 3.0",
+          "巴塞罗那 · 每 30 秒轮询"
+        ],
+        "bcn-endolla-gelfs": [
+          "Endolla 充电桩 · GELFS",
+          "巴塞罗那 · 每 5 分钟轮询"
+        ]
+      },
+      "s": "秒",
+      "min": "分钟",
+      "under1": "不到 1 秒",
+      "readout": "{median} · 90% 低于 {p90}",
+      "feedClock": "文件自身的时间戳：滞后 {v}",
+      "noClock": "每个充电桩没有报告时间，只有最后一次状态变化的时间。无法显示新鲜度。",
+      "legendMedian": "中位滞后",
+      "legendRange": "90% 的条目以内",
+      "legendClock": "整个文件的时间戳",
+      "tag": "同样号称“实时”：从不到 1 秒到一分半钟。全部 14,329 次请求都得到了响应。",
+      "source": "记录于 2026 年 10 月 15–16 日 · 数据：ifcvieweronline.eu/blog/data"
     }
   },
   "th": {
@@ -1267,6 +1645,48 @@
       ],
       "tag": "CityGML สำหรับเมือง IFC สำหรับทรัพย์สินที่สำคัญ และ 3D Tiles สำหรับสตรีมทั้งสองไปยังเบราว์เซอร์",
       "source": "แหล่งที่มา: OGC, buildingSMART, ISO"
+    },
+    "freshness": {
+      "kicker": "วัดข้อมูลสดจริง",
+      "title": "ข้อมูลเมือง “เรียลไทม์” เก่าแค่ไหนเมื่อมาถึง",
+      "lede": "ฟีดสาธารณะ 6 แหล่ง ดึงข้อมูลทุก 15 ถึง 30 วินาที (Endolla ทุก 5 นาที) ตลอด 24 ชั่วโมง จุด: ยานพาหนะหรือสถานีครึ่งหนึ่งในผลตอบกลับทั่วไปมีอายุน้อยกว่านี้ แถบยาวไปถึง 90%",
+      "feeds": {
+        "hel-hsl-hfp-mqtt": [
+          "รถบัส HSL · HFP ผ่าน MQTT",
+          "เฮลซิงกิ · ส่งมาทันทีที่เกิดขึ้น"
+        ],
+        "hel-hsl-gtfsrt": [
+          "ยานพาหนะ HSL · GTFS-Realtime",
+          "เฮลซิงกิ · ดึงทุก 15 วินาที · ไม่มี CORS: เซิร์ฟเวอร์เท่านั้น"
+        ],
+        "tyo-toei-train-odpt": [
+          "รถไฟ Toei · ODPT",
+          "โตเกียว · ดึงทุก 30 วินาที"
+        ],
+        "tyo-toei-bus-gtfsrt": [
+          "รถบัส Toei · GTFS-Realtime",
+          "โตเกียว · ดึงทุก 30 วินาที"
+        ],
+        "bcn-bicing-gbfs": [
+          "สถานี Bicing · GBFS 3.0",
+          "บาร์เซโลนา · ดึงทุก 30 วินาที"
+        ],
+        "bcn-endolla-gelfs": [
+          "เครื่องชาร์จ Endolla · GELFS",
+          "บาร์เซโลนา · ดึงทุก 5 นาที"
+        ]
+      },
+      "s": "วินาที",
+      "min": "นาที",
+      "under1": "ไม่ถึง 1 วินาที",
+      "readout": "{median} · 90% ต่ำกว่า {p90}",
+      "feedClock": "เวลาประทับของตัวไฟล์: อายุ {v}",
+      "noClock": "ไม่มีเวลารายงานของเครื่องชาร์จแต่ละเครื่อง มีเพียงเวลาที่เปลี่ยนสถานะครั้งล่าสุด จึงแสดงความสดใหม่ไม่ได้",
+      "legendMedian": "อายุมัธยฐาน",
+      "legendRange": "ครอบคลุม 90% ของรายการ",
+      "legendClock": "เวลาประทับของทั้งไฟล์",
+      "tag": "คำเดียวกัน “เรียลไทม์”: ตั้งแต่ไม่ถึงหนึ่งวินาทีถึงหนึ่งนาทีครึ่ง คำขอทั้ง 14,329 ครั้งได้รับการตอบกลับ",
+      "source": "บันทึก 15–16 ต.ค. 2026 · ข้อมูล: ifcvieweronline.eu/blog/data"
     }
   }
 }

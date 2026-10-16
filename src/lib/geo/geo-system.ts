@@ -50,7 +50,7 @@ import {
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
-  buildRoofPropLayer, groundFrameFor,
+  buildRoofPropLayer, groundFrameFor, seaDistanceFor,
 } from './osm-scene'
 import { pickAnchorModel, satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
@@ -86,11 +86,13 @@ import {
 } from './geo-math'
 import { createLogger } from '../logger'
 import { createGroundFrame } from './ground-frame'
-import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
+import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook, MapMeasureHit } from './geo-types'
 import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
 import { waterExposureAt, type WaterExposure } from './water-exposure'
 import { buildCurrentParticles, setLiveCurrent } from './current-particles'
+import { buildBeachEdgeLayer, pavedNearFor, seaBeaches } from './beach-edge'
+import { carveGround, planBeachWalls } from './beach-carve'
 import { fetchMarine, marineAt, type MarineNow } from './marine-feed'
 
 const log = createLogger('GeoSystem')
@@ -438,6 +440,24 @@ export interface GeoSystemAPI {
    * Data layers drape on it so a route sits on the street, not under a hill.
    */
   groundAtWorld(x: number, z: number): number | null
+  // ── Measuring on the map (lib/measure) ───────────────────────────────────
+  /** What the measurement tools may land on: the OSM buildings and the relief. */
+  measureTargets(): THREE.Object3D[]
+  /** What a measurement hit on the map is: an OSM building (whole) or the ground. */
+  describeMapHit(object: THREE.Object3D, faceIndex: number | null | undefined): MapMeasureHit | null
+  /**
+   * Where the cursor meets the map's ground when nothing drawn is under it —
+   * the flat map has no mesh to hit, and a street is still somewhere to measure.
+   * With relief loaded the relief is hit instead (measureTargets), so null.
+   */
+  groundHitAt(clientX: number, clientY: number): THREE.Vector3 | null
+  /** One OSM building's triangles in world space (flat xyz, 9 per triangle). */
+  featureTriangles(id: string): Float32Array | null
+  /**
+   * WGS84 position of a scene point, and its elevation above sea level when
+   * the map can say (relief loaded or flat map at the anchor's elevation).
+   */
+  geoOfScenePoint(p: THREE.Vector3, onTerrain: boolean): { lat: number; lon: number; elevationM: number | null } | null
   /**
    * The lat/lon ↔ scene pairing the map is aligned with right now: the
    * placement, the scene point it lands on (the ANCHOR model's plan centre,
@@ -916,8 +936,19 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * a model is added, removed or re-placed, and a stale footprint deletes the
    * wrong block. It is a handful of vector maths against one box.
    */
+  /** The footprints the scene was last filtered against (see refreshSatellites). */
+  let builtFootprintKey = ''
+  /** A cheap signature of every model's plan, rounded to ~10 cm. */
+  function footprintKey(): string {
+    return modelPlanPolygons()
+      .map((poly) => poly.map((v) => `${Math.round(v.x * 1e8)},${Math.round(v.y * 1e8)}`).join(';'))
+      .sort()
+      .join('|')
+  }
+
   function modelSuppressor(): (f: OsmFeature) => boolean {
     if (!geoRoot || !placement) return () => true
+    builtFootprintKey = footprintKey()
     const polys = modelPlanPolygons()
     if (polys.length === 0) return () => true
     const marginN = DEFAULT_MARGIN_M * metresToNormalized(placement.lat)
@@ -986,6 +1017,70 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 
   const api: GeoSystemAPI = {
+    measureTargets() {
+      const out: THREE.Object3D[] = []
+      if (buildingsMesh && buildingsMesh.visible) out.push(buildingsMesh)
+      if (terrain && terrain.group.visible) out.push(terrain.group)
+      return out
+    },
+
+    describeMapHit(object, faceIndex) {
+      if (buildingsMesh && object === buildingsMesh) {
+        const f = featureAtFace(faceIndex)
+        if (!f) return { kind: 'building', id: null }
+        return {
+          kind: 'building', id: f.id, name: f.name, label: f.label,
+          heightM: Number.isFinite(f.height?.heightM) ? f.height.heightM : undefined,
+          heightBasis: f.height?.basis,
+        }
+      }
+      for (let o: THREE.Object3D | null = object; o; o = o.parent) {
+        if (terrain && o === terrain.group) return { kind: 'terrain' }
+      }
+      return null
+    },
+
+    groundHitAt(clientX, clientY) {
+      if (terrain && terrain.group.visible) return null
+      return intersectGround(clientX, clientY)
+    },
+
+    featureTriangles(id) {
+      if (!buildingsMesh) return null
+      const r = buildingRanges.find((x) => x.id === id)
+      const pos = buildingsMesh.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
+      if (!r || !pos) return null
+      buildingsMesh.updateMatrixWorld()
+      const m = buildingsMesh.matrixWorld
+      const idx = buildingsMesh.geometry.index
+      const v = new THREE.Vector3()
+      const out = new Float32Array((r.end - r.start) * 3)
+      for (let i = r.start, k = 0; i < r.end; i++, k += 3) {
+        const vi = idx ? idx.getX(i) : i
+        v.fromBufferAttribute(pos, vi).applyMatrix4(m)
+        out[k] = v.x; out[k + 1] = v.y; out[k + 2] = v.z
+      }
+      return out
+    },
+
+    geoOfScenePoint(p, onTerrain) {
+      if (!geoRoot || !placement) return null
+      geoRoot.updateMatrixWorld()
+      const local = geoRoot.worldToLocal(p.clone())
+      const { lat, lon } = normalizedToLatLon(local.x, local.y)
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+      // Scene metres above the map plane, read as metres above the anchor's
+      // elevation. On exaggerated relief only a point ON the relief can be
+      // undone (vertical-frame.absoluteGroundM); a roof's height cannot.
+      const anchorElev = terrain?.anchorElevation ?? null
+      let elevationM: number | null = null
+      if (anchorElev !== null) {
+        if (terrainExaggeration === 1) elevationM = anchorElev + (p.y - geoRoot.position.y)
+        else if (onTerrain) elevationM = absoluteGroundM(p.y, geoRoot.position.y, anchorElev, terrainExaggeration)
+      }
+      return { lat, lon, elevationM }
+    },
+
     async enable(p, prov) {
       if (disposed || engine) return
       placement = p
@@ -1384,6 +1479,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // from it. Idempotent — the same placement resolves to the same transform.
       if (!geoRoot || !placement) return
       applyPlacement(placement)
+      // A model arriving, leaving or moving changes WHICH mapped context it
+      // replaces. The scene was filtered against the models present when it
+      // was built: open the Oriental Pearl after the Shanghai Tower and the
+      // mapped Pearl stood through the new model, because nothing asked the
+      // suppressor again. Rebuild when the set of footprints has changed.
+      const key = footprintKey()
+      if (key !== builtFootprintKey && osmFeatures && suppressContext) {
+        builtFootprintKey = key
+        void requestRebuild()
+      }
     },
 
     setEditorPointerLock(locked) {
@@ -2098,6 +2203,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const replaced = replacedFeatureIds(loadedLandmarks.map((l) => l.landmark))
     const features = replaced.size > 0 ? suppressed.filter((f) => !replaced.has(f.id)) : suppressed
 
+    // THE SAND BELOW ITS WALL (beach-carve): the ground the layers will sit on
+    // is corrected first, so the sand, the roads and every prop follow it.
+    if (terrain) applyBeachCarve(terrain, features, p.lat)
+
     // Captured, not read through the closure: a partial build reuses this
     // prelude later, and must sample the ground it was solved against.
     const ground = terrain
@@ -2310,6 +2419,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         if (detail) group.add(detail)
         // The rivers' current, drifting on the water (current-particles),
         // and the sea's, from the live marine feed when the site has a sea.
+        // The step down from the promenade to the sand (beach-edge).
+        if (key === 'sand' && built) {
+          const walls = buildBeachEdgeLayer(features, opts, seaDistanceFor(features, groundFrameFor(opts)))
+          if (walls) group.add(walls)
+        }
         if (key === 'water' && built) {
           const flow = buildCurrentParticles(features, opts)
           if (flow) {
@@ -2967,6 +3081,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * back: the hit triangle's first vertex index binary-searches to the building
    * that owns that slice of the buffer.
    */
+  /** The OSM feature that owns a face of the merged buildings mesh (binary search over its ranges). */
+  function featureAtFace(face: number | null | undefined): OsmFeature | null {
+    if (face === undefined || face === null || !osmFeatures) return null
+    const vertex = face * 3
+    let lo = 0
+    let hi = buildingRanges.length - 1
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      const r = buildingRanges[mid]
+      if (vertex < r.start) hi = mid - 1
+      else if (vertex >= r.end) lo = mid + 1
+      else return osmFeatures.find((x) => x.id === r.id) ?? null
+    }
+    return null
+  }
+
   function pickFeatureAt(clientX: number, clientY: number): OsmFeature | null {
     if (!buildingsMesh || buildingRanges.length === 0 || !osmFeatures) return null
 
@@ -3341,6 +3471,34 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         originY: s.origin?.y ?? s.originY ?? null, origin: s.origin ?? null, floorAt,
       }))
     }
+  }
+
+  /**
+   * Lower the sand in front of every promenade wall the DEM smeared into a
+   * ramp (beach-carve). Measured from the UNCORRECTED ground each time, so a
+   * rebuild does not carve twice.
+   */
+  function applyBeachCarve(t: TerrainPatch, features: ReadonlyArray<OsmFeature>, anchorLat: number): void {
+    // A patch without the hook (tests' stand-ins) is left as measured.
+    if (typeof t.setGroundOverride !== 'function') return
+    t.setGroundOverride(null)
+    const mToN = metresToNormalized(anchorLat)
+    const sea = seaDistanceFor(features, { mToN } as Parameters<typeof seaDistanceFor>[1])
+    if (!sea) return
+    const beaches = seaBeaches(features, sea)
+    if (beaches.length === 0) return
+    const o = latLonToNormalized(beaches[0].ring![0].lat, beaches[0].ring![0].lon)
+    const toLocal = (q: { lat: number; lon: number }) => {
+      const n = latLonToNormalized(q.lat, q.lon)
+      return { x: (n.nx - o.nx) / mToN, y: (n.ny - o.ny) / mToN }
+    }
+    const rings = beaches.map((f) => f.ring!.map(toLocal))
+    const groundM = (x: number, y: number) => t.sampleGroundM(o.nx + x * mToN, o.ny + y * mToN)
+    const seaM = (x: number, y: number) => sea(o.nx + x * mToN, o.ny + y * mToN)
+    const walls = planBeachWalls(rings, groundM, seaM, pavedNearFor(features, toLocal))
+    if (walls.length === 0) return
+    const carve = carveGround(walls, rings)
+    t.setGroundOverride((nx, ny, h) => carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h))
   }
 
   function flyToAerial(): void {

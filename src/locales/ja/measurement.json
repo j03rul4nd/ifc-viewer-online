@@ -104,7 +104,14 @@
     "elementsNote": "2つの要素の形状から求めた最短距離です。",
     "clashNote": "要素が接触または交差しています：クリアランスではなく干渉です。",
     "approximateNote": "非常に詳細な要素：値は上限値です。",
-    "headroomNote": "次の面までの鉛直方向の有効高さです。"
+    "headroomNote": "次の面までの鉛直方向の有効高さです。",
+    "on": "対象",
+    "crossModel": "モデル間",
+    "climb": "上り・下り",
+    "maxSlope": "最大勾配",
+    "latLon": "緯度・経度",
+    "elevation": "標高",
+    "asl": "海抜"
   },
   "actions": {
     "finish": "完了",
@@ -133,7 +140,9 @@
     "volume": "体積",
     "requirement": "要件",
     "check": "判定",
-    "note": "メモ"
+    "note": "メモ",
+    "on": "対象",
+    "elevation": "標高 (m)"
   },
   "section": {
     "title": "断面",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "クラス",
       "type": "タイプ",
-      "storey": "階"
+      "storey": "階",
+      "model": "モデル"
     },
     "count": "個数",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "このファイルは計測ファイルではありません。",
       "newer-version": "このファイルは新しいバージョンで保存されています。ページを再読み込みしてやり直してください。"
     }
+  },
+  "anchor": {
+    "terrain": "地形",
+    "building": "建物"
   }
 }

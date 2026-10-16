@@ -8,7 +8,7 @@ import { estimateCredits } from './sample-data'
 
 const RUNNABLE: PaidFeatureId[] = ['auto_fix', 'certificate', 'server_validation', 'clash', 'geometry_deep', 'cobie']
 
-export default function CloudJobDialog({ balance, onClose }: { balance: number; onClose: () => void }) {
+export default function CloudJobDialog({ balance, onClose, onTopUp }: { balance: number; onClose: () => void; onTopUp?: () => void }) {
   const [feature, setFeature] = useState<PaidFeatureId>('auto_fix')
   const [sizeMb, setSizeMb] = useState(86)
   const cost = estimateCredits(feature, sizeMb)
@@ -50,7 +50,7 @@ export default function CloudJobDialog({ balance, onClose }: { balance: number; 
             <span className="text-[22px] font-semibold">{cost} credits</span>
           </div>
           <p className="text-[12px] text-[var(--text-dim)] mt-1">
-            Balance after: {balance - cost}. If the job fails on our side, the credits come back automatically.
+            {enough ? `Balance after: ${balance - cost}.` : `You have ${balance}.`} If the job fails on our side, the credits come back automatically.
           </p>
         </div>
 
@@ -63,11 +63,10 @@ export default function CloudJobDialog({ balance, onClose }: { balance: number; 
         <div className="mt-6 flex justify-end gap-2">
           <button onClick={onClose} className="h-[34px] px-4 rounded-[9px] text-[13px] border border-[var(--border)]">Cancel</button>
           <button
-            onClick={onClose}
-            disabled={!enough}
-            className="h-[34px] px-4 rounded-[9px] text-[13px] font-medium bg-[var(--accent)] text-white disabled:opacity-50"
+            onClick={enough ? onClose : onTopUp}
+            className="h-[34px] px-4 rounded-[9px] text-[13px] font-medium bg-[var(--accent)] text-white"
           >
-            {enough ? `Run for ${cost} credits` : 'Not enough credits'}
+            {enough ? `Run for ${cost} credits` : `Top up — ${cost - balance} more needed`}
           </button>
         </div>
       </div>

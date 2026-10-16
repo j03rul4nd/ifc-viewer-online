@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import {
   angleAt, distanceComponents, dominantAxis, formatArea, formatFeetInches, formatLength,
   formatNumber, isPlanar, lockToAxis, pathLength, perpendicularFoot, polygonArea,
-  polygonPerimeter, slopePercent, toDelimited, toIfcAxes, fromIfcAxes, decimalSeparator,
+  polygonPerimeter, slopePercent, toDelimited, toIfcAxes, fromIfcAxes, decimalSeparator, pathProfile,
 } from './measure-math'
 
 const v = (x: number, y: number, z: number) => ({ x, y, z })
@@ -141,5 +141,16 @@ describe('export', () => {
   it('knows which locales write a decimal comma', () => {
     expect(decimalSeparator('es')).toBe(',')
     expect(decimalSeparator('en')).toBe('.')
+  })
+})
+
+describe('pathProfile', () => {
+  it('splits climb and descent and finds the steepest run', () => {
+    const r = pathProfile([{ x: 0, y: 0, z: 0 }, { x: 10, y: 0.5, z: 0 }, { x: 10, y: 0.5, z: 4 }, { x: 10, y: 0.2, z: 10 }])
+    expect(r.plan).toBeCloseTo(20)
+    expect(r.climb).toBeCloseTo(0.5)
+    expect(r.descent).toBeCloseTo(0.3)
+    expect(r.net).toBeCloseTo(0.2)
+    expect(r.maxSlopePct).toBeCloseTo(5)
   })
 })

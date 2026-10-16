@@ -29,7 +29,7 @@ import {
   ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, ELEMENT_SUMMARY_CONFIG, parseItemData, parseProjectUnits, summarizeItem,
   type IFCItemData, type IFCElementSummary, type ProjectUnits,
 } from './ifc-item-data'
-import { mintModelId } from './loading/model-id'
+import { fileNameOfModelId, mintModelId } from './loading/model-id'
 import { setSceneDatumProvider, currentDatumProvider } from './bcf-viewpoint'
 import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
 import {
@@ -2486,10 +2486,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     getExtraTargets: () => {
       const roots = new Set<THREE.Object3D>()
       for (const m of modelObjects.values()) roots.add(m.object)
-      return [...world.meshes].filter((o) => !roots.has(o)) as THREE.Object3D[]
+      const extra = [...world.meshes].filter((o) => !roots.has(o)) as THREE.Object3D[]
+      // The map's OSM buildings and relief: measure to the neighbour, on the street, up a slope.
+      const geo = geoSystemInstance?.isActive() ? geoSystemInstance : null
+      return geo ? [...extra, ...geo.measureTargets()] : extra
     },
     getClippingPlanes: () => wr.clippingPlanes,
     getSnapResolver: () => snapResolver,
+    describeMapHit: (object, faceIndex) => (geoSystemInstance?.isActive() ? geoSystemInstance.describeMapHit(object, faceIndex) : null),
+    mapFeatureTriangles: (id) => (geoSystemInstance?.isActive() ? geoSystemInstance.featureTriangles(id) : null),
+    mapGroundAt: (x, y) => (geoSystemInstance?.isActive() ? geoSystemInstance.groundHitAt(x, y) : null),
   })
 
   const measureSystem: MeasureSystem = createMeasureSystem({
@@ -2514,6 +2520,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
     aim: aimClient,
+    modelName: (modelId) => fileNameOfModelId(modelId),
+    geoOf: (p, onTerrain) => (geoSystemInstance?.isActive() ? geoSystemInstance.geoOfScenePoint(p, onTerrain) : null),
   })
 
   // ── Poché: flat-filled cut solids ─────────────────────────────────────────

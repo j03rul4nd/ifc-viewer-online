@@ -22,6 +22,11 @@ export function mintModelId(fileName: string, now: number = Date.now()): string 
   return `${fileName}-${stamp}`
 }
 
+/** The file name a model id was minted from (`<file>-<stamp>`), for labels. */
+export function fileNameOfModelId(modelId: string): string {
+  return modelId.replace(/-\d{10,}$/, '')
+}
+
 /** Test hook: forget the last stamp. */
 export function resetModelIdClock(): void {
   lastStamp = 0

@@ -104,7 +104,14 @@
     "elementsNote": "Kürzester Abstand zwischen den beiden Bauteilen, aus ihrer Geometrie.",
     "clashNote": "Die Bauteile berühren oder durchdringen sich: eine Kollision, kein Freiraum.",
     "approximateNote": "Sehr detaillierte Bauteile: der Wert ist eine Obergrenze.",
-    "headroomNote": "Senkrechte lichte Höhe bis zur nächsten Fläche."
+    "headroomNote": "Senkrechte lichte Höhe bis zur nächsten Fläche.",
+    "on": "Auf",
+    "crossModel": "Modellübergreifend",
+    "climb": "Anstieg · Gefälle",
+    "maxSlope": "Größte Neigung",
+    "latLon": "Breite, Länge",
+    "elevation": "Höhe",
+    "asl": "ü. NN"
   },
   "actions": {
     "finish": "Fertig",
@@ -133,7 +140,9 @@
     "volume": "Volumen",
     "requirement": "Anforderung",
     "check": "Prüfung",
-    "note": "Notiz"
+    "note": "Notiz",
+    "on": "Auf",
+    "elevation": "Höhe (m ü. NN)"
   },
   "section": {
     "title": "Schnitt",
@@ -267,7 +276,8 @@
     "groupBy": {
       "class": "Klasse",
       "type": "Typ",
-      "storey": "Geschoss"
+      "storey": "Geschoss",
+      "model": "Modell"
     },
     "count": "Anz.",
     "kinds": {
@@ -315,5 +325,9 @@
       "not-measurements": "Die Datei ist keine Messungsdatei.",
       "newer-version": "Die Datei wurde mit einer neueren Version gespeichert – Seite neu laden und erneut versuchen."
     }
+  },
+  "anchor": {
+    "terrain": "Gelände",
+    "building": "Gebäude"
   }
 }

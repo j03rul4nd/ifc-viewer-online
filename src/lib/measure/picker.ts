@@ -27,7 +27,7 @@
 import * as THREE from 'three'
 import type * as FRAGS from '@thatopen/fragments'
 import * as OBC from '@thatopen/components'
-import type { SnapKind, SnapSettings } from './measure-types'
+import type { MapRef, SnapKind, SnapSettings } from './measure-types'
 import { withTimeout } from './async'
 
 /** Pixel radii for each snap tier. */
@@ -50,6 +50,8 @@ export interface PickResult {
   localId: number | null
   /** Distance from the camera. */
   depth: number
+  /** On the map: which OSM building, or the relief. Null on models, meshes and clouds. */
+  map: MapRef | null
 }
 
 export interface PickOptions {
@@ -70,6 +72,12 @@ export interface ScenePickerDeps {
   getClippingPlanes(): readonly THREE.Plane[]
   /** @thatopen's snap resolver, or null when unavailable. */
   getSnapResolver(): OBC.SnapResolver | null
+  /** What a hit on an extra target is when it belongs to the map (geo-system.describeMapHit). */
+  describeMapHit?(object: THREE.Object3D, faceIndex: number | null | undefined): MapRef | null
+  /** One OSM building's triangles in world space. */
+  mapFeatureTriangles?(id: string): Float32Array | null
+  /** The map's ground under the cursor when nothing else is (flat map). */
+  mapGroundAt?(clientX: number, clientY: number): THREE.Vector3 | null
 }
 
 export interface ScenePicker {
@@ -83,9 +91,11 @@ export interface ScenePicker {
    * `minDistance` from the origin so the surface the ray starts on is skipped.
    * Used for clear heights: a vertical ray from a floor point to the ceiling.
    */
-  castRay(origin: THREE.Vector3, direction: THREE.Vector3, minDistance?: number): Promise<{ point: THREE.Vector3; modelId: string | null; localId: number | null } | null>
+  castRay(origin: THREE.Vector3, direction: THREE.Vector3, minDistance?: number): Promise<{ point: THREE.Vector3; modelId: string | null; localId: number | null; map: MapRef | null } | null>
   /** The element's triangles in world space (flat xyz, 9 per triangle), or null. */
   elementTriangles(modelId: string, localId: number): Promise<Float32Array | null>
+  /** An OSM building's triangles in world space, or null. */
+  mapTriangles(featureId: string): Float32Array | null
 }
 
 interface RawHit {
@@ -257,7 +267,16 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     const hit = modelHit && extraHit
       ? (modelHit.depth <= extraHit.depth ? modelHit : extraHit)
       : (modelHit ?? extraHit)
-    if (!hit) return null
+    if (!hit) {
+      // The flat map's ground: nothing drawn to hit, but the street is there.
+      const g = deps.mapGroundAt?.(clientX, clientY) ?? null
+      if (!g || !isVisibleToCut(g, planes)) return null
+      return {
+        point: g.clone(), surfacePoint: g.clone(), normal: new THREE.Vector3(0, 1, 0),
+        kind: 'surface', edge: null, face: null, modelId: null, localId: null,
+        depth: camera.position.distanceTo(g), map: { kind: 'terrain' },
+      }
+    }
 
     const result: PickResult = {
       point: hit.point.clone(),
@@ -269,6 +288,8 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
       modelId: hit.modelId,
       localId: hit.localId,
       depth: hit.depth,
+      map: hit.intersection && deps.describeMapHit
+        ? deps.describeMapHit(hit.intersection.object, hit.intersection.faceIndex) : null,
     }
 
     // ── Imported mesh / point cloud ───────────────────────────────────────────
@@ -370,11 +391,11 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     cam.updateMatrixWorld(true)
     cam.updateProjectionMatrix()
     const mouse = new THREE.Vector2(r.left + r.width / 2, r.top + r.height / 2)
-    let best: { point: THREE.Vector3; modelId: string | null; localId: number | null; d: number } | null = null
-    const consider = (point: THREE.Vector3, modelId: string | null, localId: number | null) => {
+    let best: { point: THREE.Vector3; modelId: string | null; localId: number | null; map: MapRef | null; d: number } | null = null
+    const consider = (point: THREE.Vector3, modelId: string | null, localId: number | null, map: MapRef | null = null) => {
       const d = point.clone().sub(origin).dot(dir)
       if (d < minDistance || !isVisibleToCut(point, planes)) return
-      if (!best || d < best.d) best = { point: point.clone(), modelId, localId, d }
+      if (!best || d < best.d) best = { point: point.clone(), modelId, localId, map, d }
     }
     await Promise.all([...deps.getModels()].map(async ([modelId, model]) => {
       try {
@@ -387,11 +408,11 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     if (targets.length) {
       raycaster.set(origin, dir)
       try {
-        for (const hit of raycaster.intersectObjects(targets, true)) if (isShown(hit.object)) consider(hit.point, null, null)
+        for (const hit of raycaster.intersectObjects(targets, true)) if (isShown(hit.object)) consider(hit.point, null, null, deps.describeMapHit?.(hit.object, hit.faceIndex) ?? null)
       } catch { /* ignore */ }
     }
-    const b = best as { point: THREE.Vector3; modelId: string | null; localId: number | null } | null
-    return b ? { point: b.point, modelId: b.modelId, localId: b.localId } : null
+    const b = best as { point: THREE.Vector3; modelId: string | null; localId: number | null; map: MapRef | null } | null
+    return b ? { point: b.point, modelId: b.modelId, localId: b.localId, map: b.map } : null
   }
 
   async function elementTriangles(modelId: string, localId: number): Promise<Float32Array | null> {
@@ -420,5 +441,9 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     return out.length ? new Float32Array(out) : null
   }
 
-  return { pick, worldPerPixel, project, castRay, elementTriangles }
+  function mapTriangles(featureId: string): Float32Array | null {
+    try { return deps.mapFeatureTriangles?.(featureId) ?? null } catch { return null }
+  }
+
+  return { pick, worldPerPixel, project, castRay, elementTriangles, mapTriangles }
 }
