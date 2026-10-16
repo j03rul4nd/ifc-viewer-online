@@ -302,6 +302,15 @@
       "needs": "It needs the site's climate: ERA5 hourly from Open-Meteo; only the rounded coordinates are sent.",
       "run": "Load the climate and run",
       "later": "Not now"
+    },
+    "overlay": {
+      "sensors": "Placing sensors on the model…",
+      "running": "Solar analysis on your GPU · {{pct}}%",
+      "paused": "The 3D view pauses until it is done — usually well under a minute.",
+      "failed": "The analysis stopped: {{message}}",
+      "open": "Open the analysis",
+      "done": "Map ready: {{metric}}",
+      "inspect": "Tap or hover a surface to read its figures."
     }
   },
   "timelapse": {
