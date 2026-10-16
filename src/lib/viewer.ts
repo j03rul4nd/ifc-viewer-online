@@ -4759,6 +4759,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           // Read through the lazy instance rather than importing the solar
           // module: map mode must not drag the sun-study chunk in with it.
           isSolarActive: () => solarSystemInstance?.isActive() ?? false,
+          getActiveModelId: () => currentModelId ?? null,
           getActiveModelBounds: () => self.getModelBounds(),
           getActiveModelFootprint: () => self.getModelFootprint(),
           // EVERY model, not just the active one. A federated delivery is one

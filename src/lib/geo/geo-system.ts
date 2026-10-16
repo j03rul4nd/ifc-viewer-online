@@ -50,7 +50,7 @@ import { describeProfile, summariseProfiles } from './vertical-network'
 import {
   buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
-import { satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
+import { pickAnchorModel, satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
 import { demSourceFor, type DemSourceId } from './dem-sources'
 import { sampleElevation } from './elevation'
@@ -273,6 +273,8 @@ export interface GeoSystemContext {
    * real solar position beats a cartographic one, and the user asked for it.
    */
   isSolarActive?: () => boolean
+  /** Id of the active model: the one a manual placement belongs to. */
+  getActiveModelId?(): string | null
   /** World-space bounds of the active model (viewer.getModelBounds shape). */
   getActiveModelBounds(): {
     center: { x: number; y: number; z: number }
@@ -3067,19 +3069,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     modelId: string
     bounds: { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } }
   } | null {
-    const models = ctx.getSatelliteModels?.()
-    if (!models || models.length === 0) return null
-    let best: (typeof models)[number] | null = null
-    let bestD = Infinity
-    for (const m of models) {
-      const d = distanceM(p.lat, p.lon, m.placement.lat, m.placement.lon)
-      if (d < bestD) { bestD = d; best = m }
-    }
+    const models = ctx.getSatelliteModels?.() ?? []
     // A placement nowhere near any loaded model is a manual or deep-linked one.
     // Anchoring on the least-distant model would drag the map to a building it
-    // has nothing to do with, so fall back to the active model instead.
-    if (!best || bestD > ANCHOR_MATCH_M) return null
-    return { modelId: best.modelId, bounds: best.bounds }
+    // has nothing to do with, so it anchors on the active model instead.
+    const { model, modelId } = pickAnchorModel(p, models, ctx.getActiveModelId?.() ?? null, distanceM, ANCHOR_MATCH_M)
+    if (!modelId) return null
+    const bounds = model?.bounds ?? ctx.getActiveModelBounds()
+    return bounds ? { modelId, bounds } : null
   }
 
   /**
