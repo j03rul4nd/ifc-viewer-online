@@ -127,6 +127,8 @@ export interface HoverInfo {
   element: SensorElement | null
   clientX: number
   clientY: number
+  /** Asked by a tap (a finger is under that point): draw the card above it, not beside it. */
+  touch?: boolean
 }
 
 export interface SolarAnalysisAPI {
@@ -407,7 +409,8 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
   const raycaster = new THREE.Raycaster()
   const ndc = new THREE.Vector2()
 
-  const onMove = (e: PointerEvent): void => {
+  /** The heatmap's figures under a screen point, to whoever listens. */
+  const inspect = (e: { clientX: number; clientY: number }, touch: boolean): void => {
     if (!hoverCb || !heatmap || !shown) return
     const rect = ctx.canvas.getBoundingClientRect()
     ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
@@ -431,9 +434,42 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       ...(shownOverride ? (shownOverride.meaning === 'da' ? { da: shownOverride.values[i] } : shownOverride.meaning === 'df' ? { df: shownOverride.values[i], ...(shownOverride.secondary ? { dfSky: shownOverride.secondary[i] } : {}) } : { delta: shownOverride.values[i] }) : {}),
       element: e2 >= 0 ? s.elements[e2] : null,
       clientX: e.clientX, clientY: e.clientY,
+      ...(touch ? { touch: true } : {}),
     })
   }
-  const onLeave = (): void => hoverCb?.(null)
+  // A mouse inspects what it hovers. A finger has no hover: on touch (and a
+  // pen) a TAP inspects the point under it — a press that barely moved and let
+  // go quickly — and the card stays until the next tap; a drag is an orbit and
+  // clears it. Touch pointers also send pointermove while dragging and a
+  // pointerleave right after every lift, so neither may answer for them.
+  const onMove = (e: PointerEvent): void => { if (e.pointerType === 'mouse') inspect(e, false) }
+  const onLeave = (e: PointerEvent): void => { if (e.pointerType === 'mouse') hoverCb?.(null) }
+  let tap: { id: number; x: number; y: number; t: number } | null = null
+  const onDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse') return
+    tap = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
+  }
+  const onUp = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' || !tap || tap.id !== e.pointerId) return
+    const still = Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 8 && performance.now() - tap.t < 450
+    tap = null
+    if (still) inspect(e, true)
+    else hoverCb?.(null)
+  }
+  const listen = (on: boolean): void => {
+    const c = ctx.canvas
+    if (on) {
+      c.addEventListener('pointermove', onMove)
+      c.addEventListener('pointerleave', onLeave)
+      c.addEventListener('pointerdown', onDown)
+      c.addEventListener('pointerup', onUp)
+    } else {
+      c.removeEventListener('pointermove', onMove)
+      c.removeEventListener('pointerleave', onLeave)
+      c.removeEventListener('pointerdown', onDown)
+      c.removeEventListener('pointerup', onUp)
+    }
+  }
 
   /** Surface samples of every measured element of every loaded model, in world space. */
   async function surfaceSamples(spacing: number, onProgress?: (f: number) => void): Promise<Array<{ kind: SensorKind; element: SensorElement; samples: PointSample[] }>> {
@@ -624,8 +660,7 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
         heatmap?.dispose()
         heatmap = createHeatmap(run.sensors)
         ctx.scene.add(heatmap.object)
-        ctx.canvas.addEventListener('pointermove', onMove)
-        ctx.canvas.addEventListener('pointerleave', onLeave)
+        listen(true)
       }
       if (gridWasVisible === null) gridWasVisible = ctx.setGridVisible(false)
       shown = run
@@ -654,8 +689,8 @@ export function createSolarAnalysis(ctx: SolarAnalysisContext): SolarAnalysisAPI
       shown = null
       // The grid drew its lines over the map; it comes back as it was.
       if (gridWasVisible !== null) { ctx.setGridVisible(gridWasVisible); gridWasVisible = null }
-      ctx.canvas.removeEventListener('pointermove', onMove)
-      ctx.canvas.removeEventListener('pointerleave', onLeave)
+      listen(false)
+      tap = null
       hoverCb?.(null)
     },
 

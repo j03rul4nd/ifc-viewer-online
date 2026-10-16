@@ -44,6 +44,7 @@ import { northDirection } from '../../lib/geo/geo-math'
 import { issuesToBcfTopics, downloadBcfBlob } from '../../lib/bcf'
 import type { ValidationIssue } from '../../types'
 import { shareOrDownload } from '../../lib/share-file'
+import { isAppleTouch } from '../../lib/platform'
 import { useSolarReportStore, type HeatmapSection } from '../../stores/solarReportStore'
 import { usePresentationStore } from '../../stores/presentationStore'
 
@@ -255,6 +256,13 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   const timeZone = useSolarStore((x) => x.timeZone)
   const models = useSceneStore((x) => x.models)
   const [hover, setHover] = useState<HoverInfo | null>(null)
+  // A tap's card has no mouse leaving to clear it: it goes by itself, so it
+  // never sits over the next tour stop or a view the finger has moved on from.
+  useEffect(() => {
+    if (!hover?.touch) return
+    const id = window.setTimeout(() => setHover(null), 5000)
+    return () => window.clearTimeout(id)
+  }, [hover])
   const [enMinAlt, setEnMinAlt] = useState(10)
   const abortRef = useRef<AbortController | null>(null)
   const effectiveSkyRef = useRef<SkyModel>('clear')
@@ -536,6 +544,15 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     return r
   }, [viewerApiRef, ensureSensors, pathFor, s])
 
+  // "The map is ready, and how to read it" — said only where the panel is
+  // closed (its own results say it otherwise), for a few seconds.
+  const [runNote, setRunNote] = useState<SolarMetric | null>(null)
+  useEffect(() => {
+    if (!runNote) return
+    const id = window.setTimeout(() => setRunNote(null), 6000)
+    return () => window.clearTimeout(id)
+  }, [runNote])
+
   const display = useCallback(async (run: AnalysisRun, fromLink = false) => {
     const viewer = viewerApiRef.current
     if (!viewer) return
@@ -548,6 +565,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
     ref.lastSky = ref.lastWeather?.sky ?? effectiveSkyRef.current
     s.setRun({ status: 'done', progress: 1, range })
     s.bumpResult()
+    if (!useSolarAnalysisStore.getState().panelOpen) setRunNote(st.metric)
     trackSolarAnalysisCompleted({ metric: st.metric, period: run.period.kind, weather: weatherKind(ref.lastWeather), from_link: fromLink })
   }, [viewerApiRef, s])
 
@@ -1119,7 +1137,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
           <input
             ref={fileRef}
             type="file"
-            accept=".epw,.zip"
+            accept={WEATHER_ACCEPT}
             hidden
             onChange={(e) => {
               const f = e.target.files?.[0]
@@ -1627,10 +1645,51 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
         document.body,
       )}
 
+      {/* The run, seen from a closed panel (a tour playing, an embed, a phone
+          where the sheet stays down): the view freezes while the GPU works, so
+          without this a visitor sees a still model and nothing else. */}
+      {!s.panelOpen && !linkCard && (busy || runNote || s.status === 'error') && createPortal(
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed z-[59] left-1/2 -translate-x-1/2 w-[min(340px,calc(100%-24px))] rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_12px_32px_rgba(0,0,0,0.45)] px-3 py-2 flex items-start gap-2 text-[11.5px] text-[var(--text-dim)]"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
+        >
+          <span aria-hidden className="text-[14px] leading-none mt-0.5">☀</span>
+          <div className="flex-1 min-w-0">
+            {busy ? (
+              <>
+                <div className="text-[var(--text)] font-medium">
+                  {s.status === 'sensors' ? t('analysis.overlay.sensors') : t('analysis.overlay.running', { pct: Math.round(s.progress * 100) })}
+                </div>
+                <div className="mt-1 h-1 rounded-full bg-[var(--surface-2)] overflow-hidden">
+                  <div className="h-full bg-[var(--accent)] transition-[width]" style={{ width: `${Math.round(s.progress * 100)}%` }} />
+                </div>
+                <div className="mt-1 text-[10px] leading-snug text-[var(--text-faint)]">{t('analysis.overlay.paused')}</div>
+              </>
+            ) : s.status === 'error' ? (
+              <>
+                <div className="text-[#F5A623]">{t('analysis.overlay.failed', { message: s.error ?? '' })}</div>
+                <button onClick={() => s.setPanelOpen(true)} className="mt-1 text-[var(--accent)] font-medium">{t('analysis.overlay.open')}</button>
+              </>
+            ) : runNote ? (
+              <>
+                <div className="text-[var(--text)] font-medium">{t('analysis.overlay.done', { metric: t(`analysis.metric.${runNote}`) })}</div>
+                <div className="mt-0.5 text-[10px] leading-snug text-[var(--text-faint)]">{t('analysis.overlay.inspect')}</div>
+              </>
+            ) : null}
+          </div>
+          {busy
+            ? <button onClick={cancelAll} aria-label={t('analysis.cancel')} title={t('analysis.cancel')} className="w-7 h-7 -mr-1 -mt-0.5 flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)]">✕</button>
+            : <button onClick={() => { setRunNote(null); if (s.status === 'error') s.setRun({ status: ref.last ? 'done' : 'idle', error: null }) }} aria-label={t('analysis.close')} title={t('analysis.close')} className="w-7 h-7 -mr-1 -mt-0.5 flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)]">✕</button>}
+        </div>,
+        document.body,
+      )}
+
       {hover && createPortal(
         <div
           className="fixed z-[60] pointer-events-none px-2 py-1 rounded-md text-[11px] bg-[rgba(10,10,14,0.88)] text-white border border-[var(--border-strong)] font-mono tabular-nums"
-          style={{ left: hover.clientX + 14, top: hover.clientY + 14 }}
+          style={hoverCardStyle(hover)}
         >
           <div>{t(`analysis.kinds.${hover.kind}`)}{hover.element ? ` · ${hover.element.category.replace(/^IFC/, '')}` : ''}</div>
           {hover.da !== undefined && <div className="font-semibold">{t('analysis.hover.da', { v: fmt(hover.da, 0) })}</div>}
@@ -1657,6 +1716,27 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 }
 
 // ── Pieces ──────────────────────────────────────────────────────────────────────
+
+/**
+ * What the weather picker offers. iOS greys out every file whose extension it
+ * has no type for — an .epw — so there the picker takes any file and the
+ * reader says when it is not a weather file.
+ */
+const WEATHER_ACCEPT = isAppleTouch() ? undefined : '.epw,.zip'
+
+/**
+ * Where the figures card goes: beside a mouse cursor; above the finger for a
+ * tap (the finger hides what is under it), or below it near the top. Never
+ * past the screen's edge — on a phone the cursor's right is often off it.
+ */
+function hoverCardStyle(h: HoverInfo): React.CSSProperties {
+  const w = Math.min(300, window.innerWidth - 16)
+  const left = Math.max(8, Math.min(h.clientX + (h.touch ? -w / 2 : 14), window.innerWidth - w - 8))
+  if (!h.touch) return { left, top: h.clientY + 14 }
+  return h.clientY > 180
+    ? { left, top: h.clientY - 28, transform: 'translateY(-100%)' }
+    : { left, top: h.clientY + 36 }
+}
 
 /** Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download. */
 function download(text: string, name: string): void {

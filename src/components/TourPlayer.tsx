@@ -10,7 +10,7 @@
 // mobile bottom nav yields while a tour is playing (gated in App.tsx).
 // Lazy-loaded; works in normal mode and embed kiosk alike.
 
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import * as Icons from './Icons'
@@ -35,6 +35,7 @@ import { downloadBlob } from '../lib/diffStore'
 import { createLogger } from '../lib/logger'
 import { getRuleLabel, type ValidationIssue, type TourStep } from '../types'
 import { SOLAR_METRICS, type SolarMetric } from '../lib/solar-analysis/results'
+import { fitStopToScreen } from '../lib/tour/fit-stop'
 import { getRuleRemediation, AUTHORING_TOOLS, type AuthoringTool } from '../i18n/rule-remediation'
 import type { ViewerAPI } from '../lib/viewer'
 
@@ -189,14 +190,42 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
   }, [stepIndex])
 
   // ── Apply the step to the viewer: camera + highlight overlay ──────────────
+  // On a phone the stop is re-framed for the screen (fit-stop): backed off a
+  // little and lifted clear of this bar, which covers the bottom of the view.
+  const barRef = useRef<HTMLDivElement | null>(null)
+  const flyToStop = useRef<() => void>(() => {})
   useEffect(() => {
     const viewer = viewerApiRef.current
     if (!viewer || !step) return
-    viewer.setCameraLookAt(step.camera.position, step.camera.target)
+    flyToStop.current = () => flyTo(viewer, step)
+    flyTo(viewer, step)
     const issues = stepHighlightIssues(step)
     if (issues.length > 0) viewer.setValidationHighlights(issues, true)
     else viewer.setValidationHighlights([], false)
-  }, [viewerApiRef, step])
+  }, [viewerApiRef, step]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The solar analysis pauses the viewer while its GPU passes run, and a
+  // camera flight under way when it started (a stop shown, then "Load the
+  // climate and run" pressed at once) stays frozen half-way. A run that ends
+  // on this stop finishes the flight.
+  useEffect(() => useSolarAnalysisStore.subscribe((sa, prev) => {
+    if (prev.status === 'running' && sa.status === 'done') flyToStop.current()
+  }), [])
+
+  function flyTo(viewer: ViewerAPI, step: TourStep): void {
+    const bar = barRef.current?.getBoundingClientRect()
+    const stage = barRef.current?.parentElement?.offsetParent?.getBoundingClientRect()
+    const cam = stage && bar
+      ? fitStopToScreen({
+        position: step.camera.position, target: step.camera.target,
+        fovDeg: viewer.getCameraViewpoint()?.fovDeg ?? 60,
+        viewW: stage.width, viewH: stage.height,
+        coverBottomPx: Math.max(0, stage.bottom - bar.top),
+        authoredAspect: step.aspect,
+      })
+      : step.camera
+    viewer.setCameraLookAt(cam.position, cam.target)
+  }
 
   // ── A stop that names an analysis metric switches the heatmap to it ────────
   // Only the metric: the analysis panel's own effect recolours what already
@@ -364,7 +393,7 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
       className="absolute bottom-2 md:bottom-3 left-1/2 z-[30] w-[calc(100%-12px)] md:w-[calc(100%-32px)] max-w-[720px] pointer-events-none"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="pointer-events-auto bg-[rgba(12,12,16,0.92)] backdrop-blur-[18px] border border-[var(--border-strong)] rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.55)] overflow-hidden">
+      <div ref={barRef} className="pointer-events-auto bg-[rgba(12,12,16,0.92)] backdrop-blur-[18px] border border-[var(--border-strong)] rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.55)] overflow-hidden">
 
         {/* ── Step content — crossfades between steps ── */}
         <AnimatePresence mode="wait" initial={false}>
