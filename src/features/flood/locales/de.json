@@ -161,6 +161,7 @@
     "flooded": "Überflutet",
     "deepest": "Max. Tiefe",
     "volume": "An der Oberfläche",
+    "sea": "Meer",
     "legend": "Farbskala"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "Gezeiten im Zeitverlauf",
     "tidalNote": "Das Meer steigt und fällt während des Laufs mit der Gezeit; Hochwasser und Sturmflut fallen mit dem Regenmaximum zusammen.",
     "range": "Meer während des Laufs {{min}} … {{max}}",
+    "port": "Pegel: {{port}}",
+    "rangeLabel": "Tidenhub",
+    "rangeAuto": "{{m}} m verwenden (Küste / Hafen)",
+    "highWater": "Hochwasser",
+    "withRain": "Mit dem Regen",
+    "preview": "Meer im Lauf",
     "noSea": "Kein Meer im Gitter: Die Küstenlinie liegt außerhalb oder OpenStreetMap ist aus.",
     "result": "Meer {{sea}} m² · überflutetes Land {{land}} m² · von Wellen überspült {{runup}} m²"
   }

@@ -169,6 +169,8 @@ describe('hydrology from Overpass', () => {
   it('tells water barriers from fences', () => {
     expect(waterBarrierOf({ barrier: 'wall' })).toBe('wall')
     expect(waterBarrierOf({ barrier: 'hedge' })).toBeNull()
+    expect(waterBarrierOf({ man_made: 'sea_wall' })).toBe('sea_wall')
+    expect(waterBarrierOf({ man_made: 'breakwater' })).toBe('breakwater')
     expect(waterBarrierOf({ highway: 'primary', embankment: 'yes' })).toBe('embankment')
     expect(channelOf({ 'was:waterway': 'stream' })).toEqual({ cls: 'stream', historic: true })
     expect(channelOf({ waterway: 'riverbank' })).toBeNull()

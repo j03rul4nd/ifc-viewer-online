@@ -161,6 +161,7 @@
     "flooded": "Inundat",
     "deepest": "Calat màx.",
     "volume": "En superfície",
+    "sea": "Mar",
     "legend": "Escala de colors"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "Marea al llarg del temps",
     "tidalNote": "El mar puja i baixa amb la marea durant la simulació; la plenamar i el temporal coincideixen amb el pic de pluja.",
     "range": "Mar durant la simulació {{min}} … {{max}}",
+    "port": "Mareògraf: {{port}}",
+    "rangeLabel": "Carrera marea",
+    "rangeAuto": "Fes servir {{m}} m (costa / port)",
+    "highWater": "Plenamar",
+    "withRain": "Amb la pluja",
+    "preview": "Mar durant la simulació",
     "noSea": "No hi ha mar a la malla: la línia de costa en queda fora o OpenStreetMap està desactivat.",
     "result": "Mar {{sea}} m² · terra que inunda {{land}} m² · batuda per l'onatge {{runup}} m²"
   }

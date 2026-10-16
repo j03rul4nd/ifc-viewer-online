@@ -161,6 +161,7 @@
     "flooded": "Inundado",
     "deepest": "Calado máx.",
     "volume": "En superficie",
+    "sea": "Mar",
     "legend": "Escala de color"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "Marea a lo largo del tiempo",
     "tidalNote": "El mar sube y baja con la marea durante la simulación; la pleamar y el temporal coinciden con el pico de lluvia.",
     "range": "Mar durante la simulación {{min}} … {{max}}",
+    "port": "Mareógrafo: {{port}}",
+    "rangeLabel": "Carrera marea",
+    "rangeAuto": "Usar {{m}} m (costa / puerto)",
+    "highWater": "Pleamar",
+    "withRain": "Con la lluvia",
+    "preview": "Mar durante la simulación",
     "noSea": "No hay mar en la malla: la línea de costa queda fuera o OpenStreetMap está desactivado.",
     "result": "Mar {{sea}} m² · tierra que inunda {{land}} m² · batida por el oleaje {{runup}} m²"
   }

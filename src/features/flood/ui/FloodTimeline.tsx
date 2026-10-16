@@ -105,6 +105,22 @@ export function FloodTimeline({ system, t }: { system: FloodSystemAPI | null; t:
     area += `L${((points[points.length - 1].t / endS) * W).toFixed(1)} ${H}Z`
   }
   const cursorX = (tl.viewT / endS) * W
+  // The sea's level over the run (coast on): a dashed line over the area
+  // curve, scaled to its own range, and its value at the instant on screen.
+  const coast = useFloodStore((s) => s.coastReport)
+  const seaAt = (tS: number): number => {
+    if (!coast || coast.curveM.length === 0) return 0
+    const k = tS / coast.stepS
+    const i = Math.min(coast.curveM.length - 1, Math.floor(k))
+    const j = Math.min(coast.curveM.length - 1, i + 1)
+    return coast.curveM[i] + (coast.curveM[j] - coast.curveM[i]) * Math.min(1, k - i)
+  }
+  const seaPath = useMemo(() => {
+    if (!coast || coast.noSea || !coast.tidal || coast.curveM.length < 2) return null
+    const lo = Math.min(...coast.curveM), hi = Math.max(...coast.curveM)
+    const span = Math.max(hi - lo, 0.05)
+    return coast.curveM.map((v, k) => `${k ? 'L' : 'M'}${((k * coast.stepS) / endS) * W},${H - 3 - ((v - lo) / span) * (H - 6)}`).join('')
+  }, [coast, endS])
   const computedX = ((tl.finished ? endS : tl.computedT) / endS) * W
   const shownT = hoverT ?? tl.viewT
   const r = readingAt(points, shownT)
@@ -176,6 +192,7 @@ export function FloodTimeline({ system, t }: { system: FloodSystemAPI | null; t:
           {area && <path d={area} fill="rgba(94,106,210,0.35)" stroke="rgba(140,150,240,0.95)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
           {computedX < W && <rect x={computedX} y="0" width={W - computedX} height={H} fill="rgba(0,0,0,0.35)" />}
           {hoverT !== null && <line x1={(hoverT / endS) * W} x2={(hoverT / endS) * W} y1="0" y2={H} stroke="rgba(255,255,255,0.35)" strokeWidth="1" vectorEffect="non-scaling-stroke" />}
+          {seaPath && <path d={seaPath} fill="none" stroke="rgb(56,189,248)" strokeWidth="1.5" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />}
           <line x1={cursorX} x2={cursorX} y1="0" y2={H} stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
         </svg>
       </div>
@@ -188,6 +205,9 @@ export function FloodTimeline({ system, t }: { system: FloodSystemAPI | null; t:
         <span>{t('timeline.flooded')} <b className="text-[var(--text)] font-mono">{((r?.area ?? 0) / 10_000).toFixed(2)}</b> ha</span>
         <span>{t('timeline.deepest')} <b className="text-[var(--text)] font-mono">{(r?.hMax ?? 0).toFixed(2)}</b> m</span>
         <span>{t('timeline.volume')} <b className="text-[var(--text)] font-mono">{Math.round(r?.volume ?? 0).toLocaleString()}</b> m³</span>
+        {coast && !coast.noSea && (
+          <span className="text-[rgb(56,189,248)]">{t('timeline.sea')} <b className="font-mono">{seaAt(shownT) >= 0 ? '+' : '−'}{Math.abs(seaAt(shownT)).toFixed(2)}</b> m</span>
+        )}
         <span className="ml-auto flex items-center gap-1.5" aria-label={t('timeline.legend')}>
           <span className="font-mono text-[9.5px] text-[var(--text-faint)]">{viewMode === 'speed' ? '0' : '0.05'}</span>
           <span className="inline-block w-[90px] h-[7px] rounded-full" style={{ background: rampCss(stops) }} />

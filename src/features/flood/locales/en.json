@@ -161,6 +161,7 @@
     "flooded": "Flooded",
     "deepest": "Deepest",
     "volume": "On the surface",
+    "sea": "Sea",
     "legend": "Colour scale"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "Tide over time",
     "tidalNote": "The sea rises and falls with the tide during the run; high water and the surge peak with the rain.",
     "range": "Sea over the run {{min}} … {{max}}",
+    "port": "Tide gauge: {{port}}",
+    "rangeLabel": "Tide range",
+    "rangeAuto": "Use {{m}} m (coast / port)",
+    "highWater": "High water",
+    "withRain": "With rain",
+    "preview": "Sea over the run",
     "noSea": "No sea mapped on the grid: the coastline is outside it, or OpenStreetMap is off.",
     "result": "Sea {{sea}} m² · land it takes {{land}} m² · washed by waves {{runup}} m²"
   }

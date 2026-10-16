@@ -338,7 +338,7 @@ export function LookSlider({ label, value, min, max, step, format, onChange }: L
         className="flex-1 accent-[var(--accent)] max-md:h-[40px]"
         aria-label={label}
       />
-      <span className="text-[10px] font-mono w-[34px] text-right tabular-nums text-[var(--text-dim)]">
+      <span className="text-[10px] font-mono min-w-[34px] whitespace-nowrap text-right tabular-nums text-[var(--text-dim)]">
         {format(value)}
       </span>
     </label>

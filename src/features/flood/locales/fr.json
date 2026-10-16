@@ -161,6 +161,7 @@
     "flooded": "Inondé",
     "deepest": "Hauteur max.",
     "volume": "En surface",
+    "sea": "Mer",
     "legend": "Échelle de couleurs"
   },
   "probe": {
@@ -352,6 +353,12 @@
     "tidal": "Marée au fil du temps",
     "tidalNote": "La mer monte et descend avec la marée pendant le calcul ; la pleine mer et la surcote coïncident avec le pic de pluie.",
     "range": "Mer pendant le calcul {{min}} … {{max}}",
+    "port": "Marégraphe : {{port}}",
+    "rangeLabel": "Marnage",
+    "rangeAuto": "Utiliser {{m}} m (côte / port)",
+    "highWater": "Pleine mer",
+    "withRain": "Avec la pluie",
+    "preview": "Mer pendant le calcul",
     "noSea": "Pas de mer sur la grille : le trait de côte est en dehors ou OpenStreetMap est désactivé.",
     "result": "Mer {{sea}} m² · terre submergée {{land}} m² · battue par les vagues {{runup}} m²"
   }
