@@ -23,6 +23,7 @@ import {
 } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
 import { subdivideMesh } from './surface-tessellation'
+import { genericFacadeTypology } from './facade-typologies'
 import { GrowableArray, type NumberSink } from './growable-array'
 import { runToEnd, type Steps } from './steps'
 import { runSliced, type SliceOptions } from './render-scheduler'
@@ -176,6 +177,12 @@ export interface BuildingMeshOptions {
    * only on the detailed lit path — the procedural facade is a shader feature.
    */
   typologyAt?: ((lat: number, lon: number) => FacadeTypology | null) | null
+  /**
+   * Give every building the procedural facade suited to its use, height and
+   * region where `typologyAt` has no answer — see facade-typologies. Off by
+   * default so a caller that never asked keeps the banded walls.
+   */
+  genericFacades?: boolean
 }
 
 /**
@@ -259,7 +266,7 @@ function* buildingsGeometrySteps(
     while (tops.length < n) tops.push(pendingTop)
   }
 
-  const party = opts.typologyAt && detailed && lit
+  const party = (opts.typologyAt || opts.genericFacades) && detailed && lit
     ? partyWallIndex(footprints, metresToNormalized)
     : null
 
@@ -388,8 +395,9 @@ function* buildingsGeometrySteps(
     // almost always. A tagged `roof:shape` is the mapper's own answer and still
     // wins outright; `roofTagged` is what lets the two be told apart.
     const facade: FacadeContext = { use: b.style?.use, region, tone: contextTone }
-    const typ = party && !neutral && opts.typologyAt && !b.pavilion
-      ? opts.typologyAt(b.ring[0].lat, b.ring[0].lon)
+    const typ = party && !neutral && !b.pavilion
+      ? (opts.typologyAt?.(b.ring[0].lat, b.ring[0].lon)
+        ?? (opts.genericFacades ? genericFacadeTypology(b.style?.use, b.height.heightM, region) : null))
       : null
     // Only a building nobody has said anything about gets a shape invented for
     // it. An explicit `roof:shape` says so through `roofTagged`; a caller that
