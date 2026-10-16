@@ -16,6 +16,8 @@
 // the multi-pulse patterns become one or two ticks. Older iOS ignores the
 // `switch` attribute and the click is silent, which is the old behaviour.
 
+import { isAppleTouch } from './platform'
+
 type HapticKind =
   | 'tick'     // lightest — selection / chip / tab change
   | 'light'    // a hair firmer — expand/collapse, row press
@@ -47,13 +49,6 @@ if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
 
 function vibrateSupported(): boolean {
   return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
-}
-
-/** iOS / iPadOS Safari (iPadOS reports as Mac, but has touch points). */
-function isAppleTouch(): boolean {
-  if (typeof navigator === 'undefined') return false
-  const ua = navigator.userAgent
-  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
 }
 
 function supported(): boolean {

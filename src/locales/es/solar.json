@@ -302,6 +302,15 @@
       "needs": "Necesita el clima del lugar: ERA5 hora a hora desde Open-Meteo; solo se envían las coordenadas redondeadas.",
       "run": "Cargar el clima y calcular",
       "later": "Ahora no"
+    },
+    "overlay": {
+      "sensors": "Colocando sensores en el modelo…",
+      "running": "Análisis solar en tu GPU · {{pct}} %",
+      "paused": "La vista 3D se detiene hasta que termine; suele tardar bastante menos de un minuto.",
+      "failed": "El análisis se ha detenido: {{message}}",
+      "open": "Abrir el análisis",
+      "done": "Mapa listo: {{metric}}",
+      "inspect": "Toca o pasa el ratón por una superficie para ver sus valores."
     }
   },
   "timelapse": {
