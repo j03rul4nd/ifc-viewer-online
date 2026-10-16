@@ -222,6 +222,10 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 // Languages that ship localized fix pages under a /<lang>/ prefix. EN lives at
 // the site root. Mirrors LANG_PATH in scripts/seo/generate-fix-pages.ts.
 import { validatorPath, solibriPath } from '../lib/localized-landings'
+import { isPricingPreview } from '../lib/pricing/pricing-preview'
+
+// Team-only until launch: its own chunk, never fetched by real visitors.
+const PricingSection = React.lazy(() => import('./pricing/PricingSection'))
 
 const FIX_LANG_PREFIXES = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 
@@ -258,6 +262,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
   // has the correct language because useSyncExternalStore re-reads getSnapshot
   // on the same React flush that applies the state update.
   const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0)
+  const [showPricing] = useState(() => isPricingPreview())
 
   // ── Email capture form state ──────────────────────────────────────────────
   const [emailValue,   setEmailValue]   = useState('')
@@ -1246,6 +1251,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             )}
           </div>
         </section>
+
+        {showPricing && (
+          <React.Suspense fallback={null}>
+            <PricingSection />
+          </React.Suspense>
+        )}
 
         {/* ── FAQ ── */}
         <section
