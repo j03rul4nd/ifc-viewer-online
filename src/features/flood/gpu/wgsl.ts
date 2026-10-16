@@ -269,7 +269,8 @@ fn k_cont(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (s.y < -0.5 && s.y > -1.5 && P.tideCount > 0u) { hn = max(tideAt(C.tMs) - s.x, 0.0); }
       // A river's entry, held at its depth: the stage's slots follow the tide's.
       if (s.y < -1.5 && P.stageCount > 0u) {
-        hn = max(seriesAt(P.rainCount + P.tideCount, P.stageCount, P.stageIntervalMs, C.tMs) * (-s.y - 2.0), 0.0);
+        let k = u32(round(-s.y - 2.0));
+        hn = max(seriesAt(P.rainCount + P.tideCount + k * P.stageCount, P.stageCount, P.stageIntervalMs, C.tMs) - s.x, 0.0);
       }
       var u = 0.0;
       var v = 0.0;

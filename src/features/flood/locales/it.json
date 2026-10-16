@@ -370,6 +370,8 @@
     "base": "Base",
     "lag": "Picco dopo la pioggia",
     "rise": "Salita",
+    "slope": "Pendenza",
+    "slopeAuto": "Usa quella del terreno ({{v}} ‰)",
     "more": "altri {{n}} usano la portata tipica della loro classe",
     "typical": "Portate tipiche per classe finché non le indichi; un valore misurato (il picco dell'autorità) è molto meglio.",
     "result": "{{q}} m³/s · {{h}} m di tirante al picco",

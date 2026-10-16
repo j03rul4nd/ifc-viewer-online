@@ -370,6 +370,8 @@
     "base": "Base",
     "lag": "Pointe après la pluie",
     "rise": "Montée",
+    "slope": "Pente",
+    "slopeAuto": "Pente du terrain ({{v}} ‰)",
     "more": "{{n}} autres utilisent le débit typique de leur classe",
     "typical": "Débits typiques par classe tant que vous ne les donnez pas ; une valeur jaugée (la pointe de crue officielle) est bien meilleure.",
     "result": "{{q}} m³/s · {{h}} m de profondeur à la pointe",

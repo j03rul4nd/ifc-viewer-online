@@ -5,7 +5,7 @@
 
 import type { FloodGrid } from '../core/grid'
 import type { Hyetograph } from '../core/hyetograph'
-import type { FloodBackend, FloodStats, MaxFields, SolverParams, TideSeries } from '../core/solver-api'
+import type { FloodBackend, FloodStats, MaxFields, SolverParams, StageSeries, TideSeries } from '../core/solver-api'
 import type { BackendChoice } from '../gpu/create'
 import type { CellSeries } from './snapshots'
 import { gridTransferables, type FromWorker, type RunPerf, type SnapshotInfo, type ToWorker } from './protocol'
@@ -25,7 +25,7 @@ export interface RunnerInit {
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
   tide?: TideSeries | null
-  stage?: TideSeries | null
+  stage?: StageSeries | null
   backend?: BackendChoice
   powerPreference?: 'low-power' | 'high-performance'
   endS: number

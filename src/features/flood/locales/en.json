@@ -370,6 +370,8 @@
     "base": "Base",
     "lag": "Peak after rain",
     "rise": "Rise time",
+    "slope": "Slope",
+    "slopeAuto": "Use the ground's {{v}} ‰",
     "more": "{{n}} more use their class's typical flow",
     "typical": "Typical discharges by class until you set them; a gauged value (an agency's flood peak) is far better.",
     "result": "{{q}} m³/s · {{h}} m deep at its peak",

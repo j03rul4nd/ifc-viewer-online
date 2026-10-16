@@ -20,13 +20,13 @@ import { collectItemTriangles, trianglesMesh, type ItemGeometrySource } from '..
 import { createLogger } from '../../lib/logger'
 import type { FloodGrid } from './core/grid'
 import type { Hyetograph } from './core/hyetograph'
-import type { SolverParams, TideSeries } from './core/solver-api'
+import { MAX_RIVERS, type SolverParams, type StageSeries, type TideSeries } from './core/solver-api'
 import type { BackendChoice } from './gpu/create'
 import { FloodRunner, type RunnerEvents } from './worker/runner'
 import type { SnapshotInfo } from './worker/protocol'
 import type { CellSeries } from './worker/snapshots'
 import { cellAt, fromGridLocal, planGrid, toGridLocal, type GridPlan, type PlanPoint } from './raster/frame'
-import { findRiverEntries, normalDepth, stageSeries, TYPICAL_FLOW, type RiverEntry } from './core/river-inflow'
+import { dischargeAt, entryTransect, findRiverEntries, levelForDischarge, transectBed, TYPICAL_FLOW, wetSpan, type RiverEntry } from './core/river-inflow'
 import { proxyOf, rasterize } from './raster/rasterize'
 import { buildFloodGrid, type BuildReport, type PlaneGround } from './raster/build'
 import type { RoofRunoff } from './raster/rain-routing'
@@ -220,10 +220,12 @@ export interface RiversRequest {
   /** Base to peak, s. */
   riseS: number
   durationS: number
+  /** The river's slope at the entry (m/m) per river id, when the DEM's is not to be trusted. */
+  slopes?: Record<string, number>
 }
 
 export interface RiversReport {
-  rivers: Array<RiverInfo & { peakM3s: number; peakDepthM: number }>
+  rivers: Array<RiverInfo & { peakM3s: number; peakDepthM: number; wetWidthM: number }>
 }
 
 export interface CoastReport {
@@ -400,7 +402,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   /** The sea's level over the run in the grid's frame (z units); null = no sea. */
   let tide: TideSeries | null = null
   /** The main river's depth over the run; null = no inflow. */
-  let stage: TideSeries | null = null
+  let stage: StageSeries | null = null
   let riverEntries: Array<RiverEntry & { slope: number }> = []
   /**
    * Scene Y of mean sea level on the ground the grid was built from, or null
@@ -1283,27 +1285,40 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const g = grid
       if (!r || riverEntries.length === 0) { g.inflow = undefined; stage = null; return r ? { rivers: [] } : null }
       const stepS = 300
-      const rows = riverEntries.map((e) => {
+      const count = Math.max(2, Math.ceil(r.durationS / stepS) + 1)
+      // Each river through its own CROSS-SECTION at the entry: the level its
+      // discharge needs across channel and floodplain (a compound channel),
+      // not a depth piled up in a channel as wide as OSM's tag.
+      const rows = riverEntries.slice(0, MAX_RIVERS).map((e) => {
         const q = r.flows?.[e.id] ?? TYPICAL_FLOW[e.cls]
+        const slope = Math.max(1e-4, Math.min(0.05, r.slopes?.[e.id] ?? e.slope))
         const hyd = { baseM3s: q.base, peakM3s: Math.max(q.base, q.peak), peakAtS: r.peakAtS, riseS: r.riseS }
-        return { e, hyd, peakDepth: normalDepth(hyd.peakM3s, e.widthM, e.slope) }
+        const t = entryTransect(e.at, e.dir, g, 300)
+        const levels: number[] = []
+        for (let k = 0; k < count; k++) levels.push(levelForDischarge(dischargeAt(hyd, k * stepS), t, g.dx, slope))
+        const peak = Math.max(...levels)
+        const bed = transectBed(t)
+        const span = wetSpan(peak, t)
+        return { e, hyd, slope, t, levels, peak, bed, span }
       })
-      // The deepest river carries the series; each entry runs at its share of it.
-      const main = rows.reduce((m, x) => (x.peakDepth > m.peakDepth ? x : m), rows[0])
-      const inflow = new Float32Array(g.nx * g.ny)
-      for (const x of rows) {
-        const share = main.peakDepth > 0 ? Math.min(1, x.peakDepth / main.peakDepth) : 0
-        for (const c of x.e.cells) if (!g.sea?.[c]) inflow[c] = Math.max(inflow[c], share)
-      }
+      const inflow = new Uint8Array(g.nx * g.ny)
+      rows.forEach((x, k) => {
+        // Every cell of the section the peak wets is held at the river's level
+        // (dry until the level reaches its own ground).
+        if (!x.span) return
+        for (let i = x.span[0]; i <= x.span[1]; i++) {
+          const c = x.t.cells[i]
+          if (!g.sea?.[c] && !g.blocked[c] && !inflow[c]) inflow[c] = k + 1
+        }
+      })
       g.inflow = inflow
-      stage = {
-        intervalMs: stepS * 1000,
-        levels: stageSeries(main.hyd, main.e.widthM, main.e.slope, r.durationS, stepS),
-      }
+      stage = { intervalMs: stepS * 1000, count, levels: rows.flatMap((x) => x.levels) }
       return {
         rivers: rows.map((x) => ({
-          id: x.e.id, name: x.e.name, cls: x.e.cls, widthM: x.e.widthM, slope: x.e.slope,
-          typical: TYPICAL_FLOW[x.e.cls], peakM3s: x.hyd.peakM3s, peakDepthM: x.peakDepth,
+          id: x.e.id, name: x.e.name, cls: x.e.cls, widthM: x.e.widthM, slope: x.slope,
+          typical: TYPICAL_FLOW[x.e.cls], peakM3s: x.hyd.peakM3s,
+          peakDepthM: Number.isFinite(x.bed) ? x.peak - x.bed : 0,
+          wetWidthM: x.span ? (x.span[1] - x.span[0] + 1) * g.dx : 0,
         })),
       }
     },

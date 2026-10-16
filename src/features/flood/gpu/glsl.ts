@@ -258,7 +258,10 @@ void main() {
   // The sea (rain factor −1), held at the tide's level at the end of the step.
   if (s.y < -0.5 && s.y > -1.5 && uTideCount > 0u) hn = max(tideAt(c.x) - s.x, 0.0);
   // A river's entry (rain factor −2), held at its depth; the stage follows the tide in the table.
-  if (s.y < -1.5 && uStageCount > 0u) hn = max(seriesAt(uTideOff + uTideCount, uStageCount, uStageIv, c.x) * (-s.y - 2.0), 0.0);
+  if (s.y < -1.5 && uStageCount > 0u) {
+    uint k = uint(round(-s.y - 2.0));
+    hn = max(seriesAt(uTideOff + uTideCount + k * uStageCount, uStageCount, uStageIv, c.x) - s.x, 0.0);
+  }
   float u = 0.0;
   float v = 0.0;
   if (hn > uHEps) { u = 0.5 * (qL + qR) / hn; v = 0.5 * (qB + qT) / hn; }

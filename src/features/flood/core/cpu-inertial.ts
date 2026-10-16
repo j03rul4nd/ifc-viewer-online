@@ -24,8 +24,8 @@ import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '
 import { intervalMs, ratesMs, type Hyetograph } from './hyetograph'
 import { packDisplay } from './half'
 import {
-  infiltrationRate, nextStepMs, resolveParams, tideLevelAt,
-  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams, type TideSeries,
+  infiltrationRate, nextStepMs, resolveParams, stageLevelAt, tideLevelAt,
+  type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams, type StageSeries, type TideSeries,
 } from './solver-api'
 
 /**
@@ -81,7 +81,9 @@ export class CpuInertialSolver implements FloodSolver {
   private readonly tide: TideSeries | null
   /** Depth the sea cells gained net, summed (× dx² = seaVolume). */
   private seaDepth = 0
-  private readonly stage: TideSeries | null
+  private readonly stage: StageSeries | null
+  /** Each river's level at the end of the current step. */
+  private readonly riverLevel: Float64Array
   /** Depth the river entries gained net, summed (× dx² = inflowVolume). */
   private inflowDepth = 0
 
@@ -115,7 +117,8 @@ export class CpuInertialSolver implements FloodSolver {
     this.rainArea = effectiveRainArea(g)
     this.v0 = initialVolume(g)
     this.tide = g.sea && init.tide && init.tide.levels.length > 0 ? init.tide : null
-    this.stage = g.inflow && init.stage && init.stage.levels.length > 0 ? init.stage : null
+    this.stage = g.inflow && init.stage && init.stage.count > 0 ? init.stage : null
+    this.riverLevel = new Float64Array(this.stage ? Math.floor(this.stage.levels.length / this.stage.count) : 0)
   }
 
   /** One step; false when there was nothing left to do before tStopMs. */
@@ -263,7 +266,8 @@ export class CpuInertialSolver implements FloodSolver {
     const sea = g.sea
     const seaLevel = this.tide ? tideLevelAt(this.tide, this.tMs + dtMs) : NaN
     const inflow = g.inflow
-    const riverDepth = this.stage ? tideLevelAt(this.stage, this.tMs + dtMs) : NaN
+    const rivers = this.riverLevel
+    for (let k = 0; k < rivers.length; k++) rivers[k] = stageLevelAt(this.stage, k, this.tMs + dtMs)
     const loss = infiltrationRate(p.infiltration, this.tMs / 1000) * dt
     const infil = this.grid.infiltration
     let hm = 0
@@ -284,9 +288,9 @@ export class CpuInertialSolver implements FloodSolver {
           const forced = Math.max(0, seaLevel - z[c])
           this.seaDepth += forced - hn
           hn = forced
-        } else if (riverDepth === riverDepth && inflow![c]) {
-          // A river's entry, held at its depth for the discharge right now.
-          const forced = Math.max(0, riverDepth * inflow![c])
+        } else if (inflow && inflow[c] && inflow[c] <= rivers.length) {
+          // A river's entry, held at the level its discharge needs right now.
+          const forced = Math.max(0, rivers[inflow[c] - 1] - z[c])
           this.inflowDepth += forced - hn
           hn = forced
         }

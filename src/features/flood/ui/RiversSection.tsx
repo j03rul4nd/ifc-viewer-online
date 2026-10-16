@@ -20,12 +20,13 @@ const fromSlider = (v: number) => {
 }
 
 /** What the run should bring down the rivers, or null when off. */
-export function riversFor(s: Pick<FloodState, 'rivers' | 'riverFlows' | 'riverLagH' | 'riverRiseH' | 'hyetograph' | 'drainMin'>): RiversRequest | null {
+export function riversFor(s: Pick<FloodState, 'rivers' | 'riverFlows' | 'riverLagH' | 'riverRiseH' | 'riverSlopes' | 'hyetograph' | 'drainMin'>): RiversRequest | null {
   if (!s.rivers) return null
   const peak = s.hyetograph.intensityMmH.indexOf(Math.max(...s.hyetograph.intensityMmH))
   const rainPeakS = (Math.max(0, peak) + 0.5) * s.hyetograph.intervalS
   return {
     flows: s.riverFlows,
+    slopes: s.riverSlopes,
     peakAtS: rainPeakS + s.riverLagH * 3600,
     riseS: s.riverRiseH * 3600,
     durationS: rainDurationS(s.hyetograph) + s.drainMin * 60,
@@ -34,7 +35,7 @@ export function riversFor(s: Pick<FloodState, 'rivers' | 'riverFlows' | 'riverLa
 
 export function RiversSection({ t, caption }: { t: T; caption: string }) {
   const s = useFloodStore(useShallow((st) => ({
-    rivers: st.rivers, flows: st.riverFlows, lag: st.riverLagH, rise: st.riverRiseH,
+    rivers: st.rivers, flows: st.riverFlows, lag: st.riverLagH, rise: st.riverRiseH, slopes: st.riverSlopes,
     found: st.report?.rivers ?? null, report: st.riversReport, set: st.set,
   })))
   if (!s.found) return null
@@ -64,6 +65,15 @@ export function RiversSection({ t, caption }: { t: T; caption: string }) {
                       <LookSlider label={t('rivers.peak')} value={toSlider(q.peak)} min={-1} max={4} step={0.01}
                         format={(v) => `${fromSlider(v)} m³/s`}
                         onChange={(v) => s.set({ riverFlows: { ...s.flows, [r.id]: { base: Math.min(q.base, fromSlider(v)), peak: fromSlider(v) } } })} />
+                      <LookSlider label={t('rivers.slope')} value={(s.slopes[r.id] ?? r.slope) * 1000} min={0.1} max={20} step={0.1}
+                        format={(v) => `${v.toFixed(1)} ‰`}
+                        onChange={(v) => s.set({ riverSlopes: { ...s.slopes, [r.id]: v / 1000 } })} />
+                      {s.slopes[r.id] !== undefined && (
+                        <button className="self-start text-[10px] text-[var(--accent-2)] hover:underline"
+                          onClick={() => { const { [r.id]: _, ...rest } = s.slopes; void _; s.set({ riverSlopes: rest }) }}>
+                          {t('rivers.slopeAuto', { v: (r.slope * 1000).toFixed(1) })}
+                        </button>
+                      )}
                       <LookSlider label={t('rivers.base')} value={toSlider(q.base)} min={-2} max={3.5} step={0.01}
                         format={(v) => `${fromSlider(v)} m³/s`}
                         onChange={(v) => s.set({ riverFlows: { ...s.flows, [r.id]: { base: fromSlider(v), peak: Math.max(q.peak, fromSlider(v)) } } })} />
@@ -78,7 +88,7 @@ export function RiversSection({ t, caption }: { t: T; caption: string }) {
                 <div className="text-[10px] leading-snug text-[var(--text-faint)]">{t('rivers.typical')}</div>
                 {s.report?.rivers.map((r) => (
                   <StatRow key={r.id} label={r.name ?? t(`rivers.cls.${r.cls}`)}
-                    value={t('rivers.result', { q: Math.round(r.peakM3s), h: r.peakDepthM.toFixed(2) })} />
+                    value={`${t('rivers.result', { q: Math.round(r.peakM3s), h: r.peakDepthM.toFixed(2) })} · ${Math.round(r.wetWidthM)} m`} />
                 ))}
                 {s.report && s.report.rivers.length === 0 && <Notice tone="warn">{t('rivers.none')}</Notice>}
               </>

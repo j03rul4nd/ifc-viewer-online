@@ -370,6 +370,8 @@
     "base": "Base",
     "lag": "Pico após a chuva",
     "rise": "Subida",
+    "slope": "Declive",
+    "slopeAuto": "Usar o do terreno ({{v}} ‰)",
     "more": "mais {{n}} usam o caudal típico da sua classe",
     "typical": "Caudais típicos por classe até os indicar; um valor medido (o pico da agência) é muito melhor.",
     "result": "{{q}} m³/s · {{h}} m de altura no pico",
