@@ -44,6 +44,7 @@ const figure = (name: string, alt: string, caption: string) => ({
 })
 
 const SURVEY_CSV = '/blog/data/city-open-data-cors-2026-10.csv'
+const FRESHNESS_CSV = '/blog/data/city-feed-freshness-2026-10.csv'
 
 export const TWIN_CLUSTER2_POSTS_EN: BlogPost[] = [
   // ── Maturity levels ─────────────────────────────────────────────────────────
@@ -259,6 +260,90 @@ export const TWIN_CLUSTER2_POSTS_EN: BlogPost[] = [
       ] },
       { type: 'p', text: ['How the live examples on this blog read their feeds, and where each one comes from, is in ', { text: 'what an urban digital twin is', to: 'urban-digital-twin-live-examples' }, ' and ', { text: 'the Barcelona open-data twin', to: 'barcelona-digital-twin-open-data' }, '.'] },
       { type: 'tool', id: 'embed', why: 'Put a live twin built from readable feeds on your own site.' },
+    ],
+  },
+
+  // ── How fresh is "real-time" city data? ─────────────────────────────────────
+  {
+    ...base,
+    ...hero('real-time-city-data-freshness-test'),
+    slug: 'real-time-city-data-freshness-test',
+    title: 'How Fresh Is Real-Time City Data? Six Feeds, Measured for 24 Hours',
+    seoTitle: 'How Fresh Is Real-Time City Data? 6 Feeds Measured',
+    seoDescription: 'We timed six live open-data feeds in Barcelona, Helsinki and Tokyo for 24 hours: from under a second to a minute and a half old, and one that cannot say.',
+    excerpt: '"Real-time" says nothing about how old the data is when it reaches you. We logged six public feeds that live digital twins read, for 24 hours, and measured the age of every vehicle and station in them. The answer ranges from under a second to a minute and a half, and the feed\'s own timestamp can hide it.',
+    heroAlt: 'The Tochōmae station exit digital twin in IFC Viewer Online: the IFC model of exit A4 on the Tokyo map, with the live number of the Toei train at the platform floating over it',
+    readTimeMin: 8,
+    keywords: ['real-time open data latency', 'GTFS-Realtime latency', 'GBFS last_reported', 'digital twin data freshness', 'MQTT vs polling', 'real-time transit data delay', 'how real-time is open data'],
+    faqs: [
+      { q: 'How real-time is GTFS-Realtime data?', a: 'It depends on the publisher. In our 24-hour log, HSL\'s vehicle positions in Helsinki were about 2 seconds old when they arrived; Toei\'s bus positions in Tokyo were about 1.5 minutes old at the median and up to about 3 minutes for 90% of buses.' },
+      { q: 'Is MQTT faster than polling an HTTP feed?', a: 'In this test, yes: HSL\'s MQTT messages arrived less than a second after the bus wrote them. Polling adds up to one interval of waiting on top of however old the data already is, and downloads the whole file each time.' },
+      { q: 'When should a digital twin treat data as stale?', a: 'Above the feed\'s normal age, or the twin greys out half the time. Measure it first: a few seconds is normal for HSL vehicles, a few minutes for Bicing stations or Toei buses.' },
+    ],
+    references: [
+      { id: 'log', title: 'The 24-hour log, as CSV', source: 'IFC Viewer Online', url: `https://www.ifcvieweronline.eu${FRESHNESS_CSV}`, note: 'Every poll of every feed (and every minute of the MQTT stream), with the age distribution of the vehicles or stations in it. 15–16 October 2026.' },
+      { id: 'gtfsrt', title: 'GTFS Realtime reference', source: 'MobilityData', url: 'https://gtfs.org/documentation/realtime/reference/', note: 'VehiclePosition.timestamp: the moment the vehicle\'s position was measured.' },
+      { id: 'gbfs', title: 'General Bikeshare Feed Specification', source: 'MobilityData', url: 'https://github.com/MobilityData/gbfs/blob/master/gbfs.md', note: 'last_reported: the last time a station reported its status to the operator\'s backend.' },
+      { id: 'hfp', title: 'High-frequency positioning (HFP)', source: 'Digitransit / HSL', url: 'https://digitransit.fi/en/developers/apis/5-realtime-api/vehicle-positions/high-frequency-positioning/', note: 'HSL\'s vehicle positions over MQTT, with a timestamp per message.' },
+    ],
+    content: [
+      { type: 'p', text: 'Every live feed calls itself real-time. For a digital twin, that word hides the one number that decides what its colours mean: how old the data is when it arrives. A bike dock painted red because it had no bikes three minutes ago is not the same as one that has none now.' },
+      { type: 'p', text: ['So we measured it. For 24 hours we logged six public feeds that live twins read in Barcelona, Helsinki and Tokyo, and for every vehicle or station in every response we compared the time the publisher wrote with the time the data arrived. The full log is published', { cite: 'log' }, '.'] },
+      { type: 'takeaways', items: [
+        'HSL\'s MQTT stream arrived in under a second. The same fleet as GTFS-Realtime was about 2 seconds old, but browsers cannot read that feed.',
+        'Toei train positions were about half a minute old. Toei bus positions and Bicing stations were about a minute and a half old at the median, up to about three minutes for 90% of them.',
+        'A feed\'s own timestamp can mislead: Bicing\'s file was a third of a second old while the stations inside had reported about 95 seconds earlier.',
+        'Endolla\'s charger feed has no time of report at all, only when each charger last changed, so how current it is cannot be shown.',
+        'All 14,329 requests were answered, and the MQTT stream carried messages every minute of the day.',
+      ] },
+      figure('city-feed-freshness-chart', 'Chart of how old six public real-time feeds were when they arrived over 24 hours: HSL buses over MQTT under 1 second, HSL GTFS-Realtime 1.9 seconds, Toei trains 28 seconds, Toei buses 88 seconds (90% under 3.1 minutes), Bicing stations 95 seconds (90% under 2.8 minutes) while the file\'s own timestamp was 0.3 seconds old, and Endolla chargers with no report time', 'Median age of the vehicles or stations in a typical response, and how far 90% of them reach.'),
+
+      { type: 'h2', text: 'How we measured' },
+      { type: 'ul', items: [
+        'From 21:15 UTC on 15 October to 21:15 UTC on 16 October 2026, on one computer in Europe with a synchronised clock.',
+        'HSL GTFS-Realtime was polled every 15 seconds; Bicing and both Toei feeds every 30 seconds; Endolla every 5 minutes. HSL\'s MQTT stream was subscribed for the Helsinki area and summarised per minute.',
+        'Per response we took the median and the 90th percentile over its vehicles or stations; the figure shows the typical value of those over the 24 hours.',
+      ] },
+      { type: 'p', text: ['Age is the arrival time minus the timestamp the publisher wrote for each item: the moment a vehicle\'s position was measured in GTFS-Realtime', { cite: 'gtfsrt' }, ', the last time a station reported in GBFS', { cite: 'gbfs' }, ', each message\'s own time in HSL\'s stream', { cite: 'hfp' }, ', and each train\'s record time in ODPT.'] },
+      { type: 'callout', variant: 'info', title: 'What this does not measure', text: 'One machine, one day, one place. Clock precision is about a second, which is why HSL\'s stream reads as a fraction of a second either side of zero. Distance adds its own delay (each Tokyo request took about a second from Europe), and an item\'s age depends on how often the vehicle or station reports, not only on the publisher.' },
+
+      { type: 'h2', text: 'Feed by feed' },
+      {
+        type: 'table',
+        headers: ['Feed', 'How it arrives', 'Median age', '90% of items under', 'Items per response'],
+        rows: [
+          ['HSL buses, HFP (Helsinki)', 'MQTT, pushed', 'under 1 s', 'under 1 s', '~28,000 messages a minute'],
+          ['HSL vehicles, GTFS-Realtime (Helsinki)', 'HTTP, every 15 s; no CORS', '1.9 s', '1.9 s', '843 vehicles'],
+          ['Toei trains, ODPT (Tokyo)', 'HTTP, every 30 s', '28 s', '30 s', '92 trains'],
+          ['Toei buses, GTFS-Realtime (Tokyo)', 'HTTP, every 30 s', '88 s', '3.1 min', '490 buses'],
+          ['Bicing stations, GBFS 3.0 (Barcelona)', 'HTTP, every 30 s', '95 s', '2.8 min', '543 stations'],
+          ['Endolla chargers, GELFS (Barcelona)', 'HTTP, every 5 min', 'not stated', 'not stated', '1,366 connectors'],
+        ],
+        caption: 'Typical values over 24 hours, 15–16 October 2026. Item counts are medians; Toei runs no trains or buses in the small hours.',
+      },
+      { type: 'p', text: 'Three groups come out. HSL publishes what each bus says as it says it, so the age is close to zero over MQTT and about two seconds through its batched GTFS-Realtime file. Toei\'s train records were typically about half a minute old. Toei\'s buses and Bicing\'s stations report every few minutes each, so at any moment about half of them are older than a minute and a half: 49% of buses and 52% of stations were over 90 seconds old.' },
+
+      { type: 'h2', text: 'The timestamp that says "fresh"' },
+      { type: 'p', text: 'Bicing\'s station status file carries a last_updated time, and it was always within a second of now: the file is stamped when it is served. The 543 stations inside it had reported a median 95 seconds earlier. A twin that trusted the file\'s time would show "updated 0 s ago" over data a minute and a half old. Toei\'s bus feed shows the same pattern, milder: the file\'s timestamp was about 16 seconds old, its buses about 88.' },
+      { type: 'p', text: 'The lesson is simple: age is a property of each item, not of the file. Read the time each vehicle or station reports, and show that.' },
+
+      { type: 'h2', text: 'The feed that cannot say' },
+      { type: 'p', text: 'The size of Endolla\'s charging-point file changed in 262 of 286 five-minute intervals, so it is clearly maintained. But each connector carries only the time its state last changed: half of them had not changed in about 21 hours, a tenth in more than 10 days. That may be perfectly accurate, a charger nobody used overnight, or a charger that stopped reporting; the feed cannot tell the two apart. A twin can show such data as "as published", never as live.' },
+
+      { type: 'h2', text: 'Push versus poll' },
+      { type: 'p', text: 'HSL\'s two channels carry the same buses. Over MQTT each position arrives as it happens; through the polled file it waits for the next batch, and the browser waits for its next poll on top of that. Polling also costs: the Bicing file is about 268 KB before compression for all 543 stations, so a twin that needs one station still downloads all of them on every poll. Polling faster than the source changes only spends that bandwidth twice.' },
+
+      { type: 'h2', text: 'What it means for a twin' },
+      { type: 'ul', items: [
+        'Show the age next to the value, from the item\'s own timestamp, not the file\'s.',
+        'Set the stale threshold above the feed\'s normal age. The live examples here use 45 seconds for HSL bus bays, 2 minutes for Toei trains, 10 minutes for the Toei bus stop and 15 minutes for Bicing.',
+        'Grey means "no recent data", never the last value dressed as current.',
+        'Prefer push where the publisher offers it; poll no faster than the source changes.',
+        'A feed without a time per item can be shown, but not called live.',
+      ] },
+      { type: 'p', text: ['Whether a web page may read each of these feeds at all is the other half of the question: ', { text: 'which city open data a web page can read', to: 'city-open-data-browser-test' }, '. How the Helsinki twin uses the MQTT stream is in ', { text: 'the bus terminal twin over MQTT', to: 'bus-terminal-digital-twin-mqtt' }, '.'] },
+      { type: 'related', to: 'urban-digital-twin-live-examples', why: 'The live examples these feeds drive, to open and explore.' },
+      { type: 'tool', id: 'embed', why: 'Put a live twin on your own site, with its data age shown.' },
     ],
   },
 ]

@@ -954,10 +954,74 @@ FIGURES['citygml-ifc-3d-tiles-comparison'] = (t, lang) => {
   })
 }
 
+// How old the live data is when it arrives: one row per feed, the median age
+// (dot) and how far 90% of the items reach (bar), on a log time axis. Values
+// come from the published log (public/blog/data/city-feed-freshness-2026-10.csv):
+// per poll, p50/p90 over the vehicles or stations in that response; the figure
+// shows the median of those over the 24 hours.
+FIGURES['city-feed-freshness-chart'] = (t, lang) => {
+  const f = t.freshness ?? COPY.en.freshness
+  const lines = readFileSync('public/blog/data/city-feed-freshness-2026-10.csv', 'utf8').split('\n').filter((l) => l && !l.startsWith('#'))
+  const head = lines[0].split(',')
+  const rows = lines.slice(1).map((l) => Object.fromEntries(l.split(',').map((v, i) => [head[i], v])))
+  const median = (xs) => { const s = xs.filter(Number.isFinite).sort((a, b) => a - b); return s.length ? s[Math.floor((s.length - 1) / 2)] : NaN }
+  const stat = (feed, col) => median(rows.filter((r) => r.feed === feed && r[col] !== '').map((r) => Number(r[col])))
+  const ORDER = ['hel-hsl-hfp-mqtt', 'hel-hsl-gtfsrt', 'tyo-toei-train-odpt', 'tyo-toei-bus-gtfsrt', 'bcn-bicing-gbfs', 'bcn-endolla-gelfs']
+  // Log axis, 0.5 s … 400 s; anything under 1 s sits at the floor and says so.
+  const X0 = 430, X1 = 1090, LO = Math.log10(0.5), HI = Math.log10(400)
+  const x = (s) => X0 + (X1 - X0) * (Math.log10(Math.max(0.5, s)) - LO) / (HI - LO)
+  // Decimals as the language writes them (1,9 s in es/de/fr…, 1.9 s in en/ja/zh/th).
+  const one = new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format
+  const fmt = (s) => (s < 1 ? f.under1 : s < 10 ? `${one(s)} ${f.s}` : s < 120 ? `${Math.round(s)} ${f.s}` : `${one(s / 60)} ${f.min}`)
+  const ROW = 76, TOP = 64
+  const ticks = [[1, `1 ${f.s}`], [10, `10 ${f.s}`], [30, `30 ${f.s}`], [60, `1 ${f.min}`], [120, `2 ${f.min}`], [300, `5 ${f.min}`]]
+  const H_PLOT = TOP + ROW * ORDER.length
+  const svg = [`<svg width="1456" height="${H_PLOT + 40}" viewBox="0 0 1456 ${H_PLOT + 40}">`]
+  for (const [s, label] of ticks) {
+    svg.push(`<line x1="${x(s)}" y1="${TOP - 12}" x2="${x(s)}" y2="${H_PLOT}" stroke="${C.line}" stroke-width="1.5"/>`,
+      `<text x="${x(s)}" y="${H_PLOT + 26}" text-anchor="middle" font-size="16" fill="${C.sub}">${label}</text>`)
+  }
+  ORDER.forEach((id, i) => {
+    const cy = TOP + ROW * i + ROW / 2
+    const [name, sub] = f.feeds[id]
+    if (i > 0) svg.push(`<line x1="0" y1="${TOP + ROW * i}" x2="1456" y2="${TOP + ROW * i}" stroke="${C.line}" stroke-width="1"/>`)
+    svg.push(`<text x="0" y="${cy - 4}" font-size="19" font-weight="700" fill="${C.ink}">${name}</text>`,
+      `<text x="0" y="${cy + 20}" font-size="14.5" fill="${C.sub}">${sub}</text>`)
+    if (id === 'bcn-endolla-gelfs') {
+      svg.push(`<foreignObject x="${X0}" y="${cy - 24}" width="${1456 - X0}" height="52"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:16px;line-height:1.3;color:${C.sub};font-style:italic">${f.noClock}</div></foreignObject>`)
+      return
+    }
+    const p50 = stat(id, 'p50_age_s'), p90 = Math.max(p50, stat(id, 'p90_age_s'))
+    if (p90 > p50) svg.push(`<line x1="${x(p50)}" y1="${cy}" x2="${x(p90)}" y2="${cy}" stroke="${C.brand}" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>`)
+    svg.push(`<circle cx="${x(p50)}" cy="${cy}" r="8" fill="${C.brand}" stroke="#fff" stroke-width="2"/>`)
+    // Items that all share one age (a batch) need no range: the median says it.
+    const readout = p90 < 1 ? f.under1 : p90 - p50 < 1 ? fmt(p50) : f.readout.replace('{median}', fmt(p50)).replace('{p90}', fmt(p90))
+    svg.push(`<text x="${X1 + 24}" y="${cy + 6}" font-size="18" font-weight="600" fill="${C.ink}">${readout}</text>`)
+    if (id === 'bcn-bicing-gbfs') {
+      // The trap: the file says it is fresh, the stations inside are not.
+      const clock = stat(id, 'header_age_s')
+      svg.push(`<circle cx="${x(clock)}" cy="${cy}" r="7" fill="#fff" stroke="${C.ink}" stroke-width="2"/>`,
+        `<text x="${x(clock) + 14}" y="${cy - 12}" font-size="14" fill="${C.ink}">${f.feedClock.replace('{v}', `${one(clock)} ${f.s}`)}</text>`)
+    }
+  })
+  svg.push('</svg>')
+  const key = `<div class="key"><span><b class="dot"></b>${f.legendMedian}</span><span><b class="bar"></b>${f.legendRange}</span><span><b class="ring"></b>${f.legendClock}</span></div>`
+  return page(lang, {
+    kicker: f.kicker, title: f.title, lede: f.lede, source: f.source,
+    css: `.chart{position:relative}.key{position:absolute;right:0;top:0;display:flex;gap:22px;font-size:15px;color:${C.sub}}
+      .key b{display:inline-block;vertical-align:-2px;margin-right:7px}
+      .key .dot{width:14px;height:14px;border-radius:50%;background:${C.brand}}
+      .key .bar{width:30px;height:5px;border-radius:3px;background:${C.brand};opacity:.45;vertical-align:3px}
+      .key .ring{width:13px;height:13px;border-radius:50%;border:2px solid ${C.ink};background:#fff}
+      .tag{margin-top:4px;font-size:18px;font-weight:600;color:${C.ink}}`,
+    body: `<div class="chart">${key}${svg.join('')}</div><p class="tag">${f.tag}</p>`,
+  })
+}
+
 // ── Render ───────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2)
-const shortNames = { anatomy: 'urban-digital-twin-anatomy', flow: 'browser-digital-twin-data-flow', bimdt: 'bim-vs-digital-twin-comparison', lod: 'lod-citygml-vs-bim-level-of-development', mqtt: 'hsl-hfp-mqtt-topic-anatomy', maturity: 'digital-twin-maturity-levels', atlas: 'city-open-data-browser-scorecard', formats: 'citygml-ifc-3d-tiles-comparison' }
+const shortNames = { anatomy: 'urban-digital-twin-anatomy', flow: 'browser-digital-twin-data-flow', bimdt: 'bim-vs-digital-twin-comparison', lod: 'lod-citygml-vs-bim-level-of-development', mqtt: 'hsl-hfp-mqtt-topic-anatomy', maturity: 'digital-twin-maturity-levels', atlas: 'city-open-data-browser-scorecard', formats: 'citygml-ifc-3d-tiles-comparison', freshness: 'city-feed-freshness-chart' }
 const names = args.filter((a) => !LANGS.includes(a)).map((a) => shortNames[a] ?? a)
 const langs = args.filter((a) => LANGS.includes(a))
 const figs = names.length ? names : Object.keys(FIGURES)
