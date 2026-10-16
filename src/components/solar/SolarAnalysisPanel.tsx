@@ -256,6 +256,13 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
   const timeZone = useSolarStore((x) => x.timeZone)
   const models = useSceneStore((x) => x.models)
   const [hover, setHover] = useState<HoverInfo | null>(null)
+  // A tap's card has no mouse leaving to clear it: it goes by itself, so it
+  // never sits over the next tour stop or a view the finger has moved on from.
+  useEffect(() => {
+    if (!hover?.touch) return
+    const id = window.setTimeout(() => setHover(null), 5000)
+    return () => window.clearTimeout(id)
+  }, [hover])
   const [enMinAlt, setEnMinAlt] = useState(10)
   const abortRef = useRef<AbortController | null>(null)
   const effectiveSkyRef = useRef<SkyModel>('clear')

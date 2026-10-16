@@ -193,9 +193,26 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
   // On a phone the stop is re-framed for the screen (fit-stop): backed off a
   // little and lifted clear of this bar, which covers the bottom of the view.
   const barRef = useRef<HTMLDivElement | null>(null)
+  const flyToStop = useRef<() => void>(() => {})
   useEffect(() => {
     const viewer = viewerApiRef.current
     if (!viewer || !step) return
+    flyToStop.current = () => flyTo(viewer, step)
+    flyTo(viewer, step)
+    const issues = stepHighlightIssues(step)
+    if (issues.length > 0) viewer.setValidationHighlights(issues, true)
+    else viewer.setValidationHighlights([], false)
+  }, [viewerApiRef, step]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The solar analysis pauses the viewer while its GPU passes run, and a
+  // camera flight under way when it started (a stop shown, then "Load the
+  // climate and run" pressed at once) stays frozen half-way. A run that ends
+  // on this stop finishes the flight.
+  useEffect(() => useSolarAnalysisStore.subscribe((sa, prev) => {
+    if (prev.status === 'running' && sa.status === 'done') flyToStop.current()
+  }), [])
+
+  function flyTo(viewer: ViewerAPI, step: TourStep): void {
     const bar = barRef.current?.getBoundingClientRect()
     const stage = barRef.current?.parentElement?.offsetParent?.getBoundingClientRect()
     const cam = stage && bar
@@ -208,10 +225,7 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
       })
       : step.camera
     viewer.setCameraLookAt(cam.position, cam.target)
-    const issues = stepHighlightIssues(step)
-    if (issues.length > 0) viewer.setValidationHighlights(issues, true)
-    else viewer.setValidationHighlights([], false)
-  }, [viewerApiRef, step])
+  }
 
   // ── A stop that names an analysis metric switches the heatmap to it ────────
   // Only the metric: the analysis panel's own effect recolours what already
