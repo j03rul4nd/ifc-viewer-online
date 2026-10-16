@@ -50,7 +50,7 @@ import {
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
-  buildRoofPropLayer, groundFrameFor,
+  buildRoofPropLayer, groundFrameFor, seaDistanceFor,
 } from './osm-scene'
 import { pickAnchorModel, satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
 import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
@@ -91,6 +91,8 @@ import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
 import { waterExposureAt, type WaterExposure } from './water-exposure'
 import { buildCurrentParticles, setLiveCurrent } from './current-particles'
+import { buildBeachEdgeLayer, pavedNearFor, seaBeaches } from './beach-edge'
+import { carveGround, planBeachWalls } from './beach-carve'
 import { fetchMarine, marineAt, type MarineNow } from './marine-feed'
 
 const log = createLogger('GeoSystem')
@@ -2098,6 +2100,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const replaced = replacedFeatureIds(loadedLandmarks.map((l) => l.landmark))
     const features = replaced.size > 0 ? suppressed.filter((f) => !replaced.has(f.id)) : suppressed
 
+    // THE SAND BELOW ITS WALL (beach-carve): the ground the layers will sit on
+    // is corrected first, so the sand, the roads and every prop follow it.
+    if (terrain) applyBeachCarve(terrain, features, p.lat)
+
     // Captured, not read through the closure: a partial build reuses this
     // prelude later, and must sample the ground it was solved against.
     const ground = terrain
@@ -2310,6 +2316,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         if (detail) group.add(detail)
         // The rivers' current, drifting on the water (current-particles),
         // and the sea's, from the live marine feed when the site has a sea.
+        // The step down from the promenade to the sand (beach-edge).
+        if (key === 'sand' && built) {
+          const walls = buildBeachEdgeLayer(features, opts, seaDistanceFor(features, groundFrameFor(opts)))
+          if (walls) group.add(walls)
+        }
         if (key === 'water' && built) {
           const flow = buildCurrentParticles(features, opts)
           if (flow) {
@@ -3341,6 +3352,34 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         originY: s.origin?.y ?? s.originY ?? null, origin: s.origin ?? null, floorAt,
       }))
     }
+  }
+
+  /**
+   * Lower the sand in front of every promenade wall the DEM smeared into a
+   * ramp (beach-carve). Measured from the UNCORRECTED ground each time, so a
+   * rebuild does not carve twice.
+   */
+  function applyBeachCarve(t: TerrainPatch, features: ReadonlyArray<OsmFeature>, anchorLat: number): void {
+    // A patch without the hook (tests' stand-ins) is left as measured.
+    if (typeof t.setGroundOverride !== 'function') return
+    t.setGroundOverride(null)
+    const mToN = metresToNormalized(anchorLat)
+    const sea = seaDistanceFor(features, { mToN } as Parameters<typeof seaDistanceFor>[1])
+    if (!sea) return
+    const beaches = seaBeaches(features, sea)
+    if (beaches.length === 0) return
+    const o = latLonToNormalized(beaches[0].ring![0].lat, beaches[0].ring![0].lon)
+    const toLocal = (q: { lat: number; lon: number }) => {
+      const n = latLonToNormalized(q.lat, q.lon)
+      return { x: (n.nx - o.nx) / mToN, y: (n.ny - o.ny) / mToN }
+    }
+    const rings = beaches.map((f) => f.ring!.map(toLocal))
+    const groundM = (x: number, y: number) => t.sampleGroundM(o.nx + x * mToN, o.ny + y * mToN)
+    const seaM = (x: number, y: number) => sea(o.nx + x * mToN, o.ny + y * mToN)
+    const walls = planBeachWalls(rings, groundM, seaM, pavedNearFor(features, toLocal))
+    if (walls.length === 0) return
+    const carve = carveGround(walls, rings)
+    t.setGroundOverride((nx, ny, h) => carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h))
   }
 
   function flyToAerial(): void {
