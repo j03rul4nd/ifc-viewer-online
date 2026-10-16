@@ -313,5 +313,43 @@
       "university": "Universidad",
       "warehouse": "Almacén"
     }
+  },
+  "coast": {
+    "title": "Costa",
+    "switch": "Mar a nivel de temporal",
+    "note": "Coloca el mar a marea + temporal + sobreelevación por oleaje durante la simulación; los bordes se cierran para que se mantenga.",
+    "kind": "Costa",
+    "auto": "Auto: {{kind}}",
+    "kinds": {
+      "mediterranean": "Mediterráneo",
+      "adriatic": "Adriático",
+      "atlantic": "Atlántico",
+      "macrotidal": "Macromareal (Canal de la Mancha, Fundy)",
+      "north-sea": "Mar del Norte",
+      "baltic": "Báltico",
+      "black-sea": "Mar Negro",
+      "estuary-east-asia": "Estuario de Asia oriental",
+      "ocean": "Océano abierto"
+    },
+    "facts": "Típico: carrera de marea viva {{range}} m · temporal severo {{surge}} m · oleaje de tormenta {{hs}} m",
+    "tide": "Marea",
+    "tides": {
+      "low": "Baja",
+      "mean": "Media",
+      "high": "Alta",
+      "spring": "Viva"
+    },
+    "surge": "Temporal",
+    "waves": "Oleaje (Hs)",
+    "rise": "Subida del mar",
+    "exposure": "Orilla",
+    "open": "Costa abierta",
+    "harbour": "Puerto",
+    "still": "Nivel del mar",
+    "runup": "Alcance del oleaje",
+    "runupAbove": "+{{m}} m de remonte",
+    "typical": "Valores típicos de este tipo de costa, no una previsión ni un periodo de retorno de este lugar.",
+    "noSea": "No hay mar en la malla: la línea de costa queda fuera o OpenStreetMap está desactivado.",
+    "result": "Mar {{sea}} m² · tierra que inunda {{land}} m² · batida por el oleaje {{runup}} m²"
   }
 }

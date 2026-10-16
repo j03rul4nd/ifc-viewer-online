@@ -313,5 +313,43 @@
       "university": "大学",
       "warehouse": "仓库"
     }
+  },
+  "coast": {
+    "title": "海岸",
+    "switch": "风暴潮海平面",
+    "note": "模拟期间将海面保持在潮位 + 风暴增水 + 波浪增水;网格边界关闭以保持海水。",
+    "kind": "海岸",
+    "auto": "自动:{{kind}}",
+    "kinds": {
+      "mediterranean": "地中海",
+      "adriatic": "亚得里亚海",
+      "atlantic": "大西洋",
+      "macrotidal": "强潮海岸(英吉利海峡、芬迪湾)",
+      "north-sea": "北海",
+      "baltic": "波罗的海",
+      "black-sea": "黑海",
+      "estuary-east-asia": "东亚河口",
+      "ocean": "开阔大洋"
+    },
+    "facts": "典型值:大潮潮差 {{range}} 米 · 严重风暴增水 {{surge}} 米 · 风暴浪 {{hs}} 米",
+    "tide": "潮位",
+    "tides": {
+      "low": "低潮",
+      "mean": "平均",
+      "high": "高潮",
+      "spring": "大潮"
+    },
+    "surge": "风暴增水",
+    "waves": "波高 (Hs)",
+    "rise": "海平面上升",
+    "exposure": "岸线",
+    "open": "开敞海岸",
+    "harbour": "港内",
+    "still": "静水位",
+    "runup": "波浪到达",
+    "runupAbove": "爬高 +{{m}} 米",
+    "typical": "此类海岸的典型值,不是预报,也不是此地的重现期。",
+    "noSea": "网格内没有海:海岸线在范围外,或 OpenStreetMap 已关闭。",
+    "result": "海 {{sea}} m² · 被淹陆地 {{land}} m² · 波浪冲刷 {{runup}} m²"
   }
 }

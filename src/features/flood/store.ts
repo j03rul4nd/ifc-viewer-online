@@ -12,6 +12,8 @@ import type { RunPerf } from './worker/protocol'
 import type { AffectedReport, PrepareResult, ProbeResult } from './system'
 import type { RoofRunoff } from './raster/rain-routing'
 import { stormHyetograph } from './presets'
+import type { CoastKind, Exposure, TideStage } from './core/coastal'
+import type { CoastReport } from './system'
 
 export type FloodStatus = 'idle' | 'preparing' | 'ready' | 'running' | 'paused' | 'finished' | 'error'
 export type PrepareStage = 'geometry' | 'raster' | 'terrain' | 'layers'
@@ -54,6 +56,15 @@ export interface FloodSettings {
   planeY: number
   slopePct: number
   slopeTowardsDeg: number
+  /** Stand the sea at a coastal scenario's level for the run (coastal.ts). */
+  coast: boolean
+  /** The kind of coast; null = from the site's position. */
+  coastKind: CoastKind | null
+  coastTide: TideStage
+  coastSurgeM: number
+  coastWaveHsM: number
+  coastExposure: Exposure
+  coastRiseM: number
 }
 
 export interface FloodState extends FloodSettings {
@@ -77,6 +88,8 @@ export interface FloodState extends FloodSettings {
   /** The elements the water reaches (shown in the validation panel); null = none analysed. */
   affected: AffectedReport | null
   affectedBusy: boolean
+  /** The sea of the last run's coastal scenario; null when off. */
+  coastReport: CoastReport | null
   setPanelOpen(v: boolean): void
   set(p: Partial<FloodState>): void
 }
@@ -99,6 +112,14 @@ export const useFloodStore = create<FloodState>()((set) => ({
   planeY: 0,
   slopePct: 1,
   slopeTowardsDeg: 0,
+  coast: false,
+  coastKind: null,
+  coastTide: 'spring',
+  coastSurgeM: 0.6,
+  coastWaveHsM: 2,
+  coastExposure: 'open',
+  coastRiseM: 0,
+  coastReport: null,
   panelOpen: false,
   status: 'idle',
   stage: null,

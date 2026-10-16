@@ -40,6 +40,7 @@ import { WaterLayer, type WaterMode } from './view/water-layer'
 import { createGroundLayer } from './view/ground-layer'
 import { FlowParticles } from './view/flow-particles'
 import { fromHalf } from './core/half'
+import { coastLevels, seaFill, type CoastLevels, type CoastProfile, type CoastScenario } from './core/coastal'
 
 const log = createLogger('Flood')
 
@@ -183,6 +184,18 @@ export interface PrepareResult extends BuildReport {
   ms: { geometry: number; raster: number; build: number }
 }
 
+export interface CoastReport {
+  profile: CoastProfile
+  levels: CoastLevels
+  /** m² under the still level and connected to the sea; of that, land the sea takes. */
+  seaAreaM2: number
+  landTakenM2: number
+  /** m² washed by wave run-up above the still level. */
+  runupAreaM2: number
+  /** No OSM sea on the grid: nothing to fill from. */
+  noSea: boolean
+}
+
 export interface RunOptions {
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
@@ -282,6 +295,13 @@ export interface FloodSystemAPI {
   setCaptureOverlay(paint: CapturePaint | null): void
   /** Camera on a neighbouring building the water reached (AffectedReport.neighbours). */
   focusNeighbour(id: string): void
+  /**
+   * The sea standing at a coastal scenario's still-water level (coastal.ts):
+   * spread from OSM's sea through the open, lower cells, and kept there for the
+   * run (the grid's edges are closed while it is on, or the sea would drain
+   * out of them). Null switches it off. Needs a prepared grid with OSM sea.
+   */
+  setCoast(c: { profile: CoastProfile; scenario: CoastScenario } | null): CoastReport | null
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -318,6 +338,10 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let georef: FloodGeoref | null = null
   // ── The neighbourhood (OSM) ──
   let osmSurface: OsmSurface | null = null
+  /** The grid's own initial water, before any sea was added (setCoast). */
+  let baseH0: Float32Array | undefined
+  /** A coastal sea is standing on the grid: the run keeps its edges closed. */
+  let coastOn = false
   let oldCourseOverlay: THREE.LineSegments | null = null
   let reachedOverlay: THREE.LineSegments | null = null
   // ── Timeline ──
@@ -803,6 +827,8 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
 
       o.onStage?.('layers')
       grid = built.grid
+      baseH0 = grid.h0?.slice()
+      coastOn = false
       {
         const cs = [[0, 0], [gp.nx, 0], [0, gp.ny], [gp.nx, gp.ny]].map(([i, j]) => fromGridLocal(gp.frame, i * gp.dx, j * gp.dx))
         extent = {
@@ -895,7 +921,11 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
           ev.onState?.(x)
         },
       })
-      runner.init({ grid: copy, hyetograph: o.hyetograph, params: o.params, endS: o.durationS, backend: o.backend })
+      // A standing sea must not drain out of the grid's edges.
+      const params = coastOn
+        ? { ...o.params, boundary: { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const }
+        : o.params
+      runner.init({ grid: copy, hyetograph: o.hyetograph, params, endS: o.durationS, backend: o.backend })
       runner.play(o.speed)
       wake()
     },
@@ -1122,6 +1152,35 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         { x: Math.min(...pts.map((q) => q.x)) - pad, y: y - 1, z: Math.min(...pts.map((q) => q.z)) - pad },
         { x: Math.max(...pts.map((q) => q.x)) + pad, y: y + 15, z: Math.max(...pts.map((q) => q.z)) + pad },
       )
+    },
+
+    setCoast(c) {
+      if (!grid) return null
+      const g = grid
+      if (!c) {
+        g.h0 = baseH0?.slice()
+        coastOn = false
+        return null
+      }
+      const levels = coastLevels(c.profile, c.scenario)
+      const seaMask = osmSurface?.sea
+      const cell = g.dx * g.dx
+      if (!seaMask || !seaMask.some((v) => v === 1)) {
+        g.h0 = baseH0?.slice()
+        coastOn = false
+        return { profile: c.profile, levels, seaAreaM2: 0, landTakenM2: 0, runupAreaM2: 0, noSea: true }
+      }
+      // The scene's datum: the map puts mean sea level at 0 m.
+      const fill = seaFill(g, seaMask, levels.stillM, levels.runupM)
+      const h0 = baseH0 ? baseH0.slice() : new Float32Array(g.nx * g.ny)
+      for (let k = 0; k < h0.length; k++) h0[k] = Math.max(h0[k], fill.h0[k])
+      g.h0 = h0
+      coastOn = true
+      return {
+        profile: c.profile, levels,
+        seaAreaM2: fill.seaCells * cell, landTakenM2: fill.landTaken * cell, runupAreaM2: fill.runupCells * cell,
+        noSea: false,
+      }
     },
 
     setCaptureOverlay(paint) {

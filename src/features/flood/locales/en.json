@@ -313,5 +313,43 @@
       "university": "University",
       "warehouse": "Warehouse"
     }
+  },
+  "coast": {
+    "title": "Coast",
+    "switch": "Sea at a storm level",
+    "note": "Stands the sea at tide + surge + wave set-up for the run; the grid's edges close so it stays.",
+    "kind": "Coast",
+    "auto": "Auto: {{kind}}",
+    "kinds": {
+      "mediterranean": "Mediterranean",
+      "adriatic": "Adriatic",
+      "atlantic": "Atlantic",
+      "macrotidal": "Macrotidal (Channel, Fundy)",
+      "north-sea": "North Sea",
+      "baltic": "Baltic",
+      "black-sea": "Black Sea",
+      "estuary-east-asia": "East Asian estuary",
+      "ocean": "Open ocean"
+    },
+    "facts": "Typical: spring tide range {{range}} m · severe surge {{surge}} m · storm waves {{hs}} m",
+    "tide": "Tide",
+    "tides": {
+      "low": "Low",
+      "mean": "Mean",
+      "high": "High",
+      "spring": "Spring"
+    },
+    "surge": "Surge",
+    "waves": "Waves (Hs)",
+    "rise": "Sea rise",
+    "exposure": "Shore",
+    "open": "Open coast",
+    "harbour": "Harbour",
+    "still": "Still water",
+    "runup": "Wave reach",
+    "runupAbove": "+{{m}} m run-up",
+    "typical": "Typical values for this kind of coast, not a forecast or a return period for this place.",
+    "noSea": "No sea mapped on the grid: the coastline is outside it, or OpenStreetMap is off.",
+    "result": "Sea {{sea}} m² · land it takes {{land}} m² · washed by waves {{runup}} m²"
   }
 }

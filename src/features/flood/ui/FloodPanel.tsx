@@ -37,6 +37,7 @@ import { FloodTimeline, fmtTime } from './FloodTimeline'
 import { floodOverlay } from './capture-overlay'
 import { FloodProbe } from './FloodProbe'
 import { HyetographEditor } from './HyetographEditor'
+import { CoastSection, coastFor } from './CoastSection'
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -213,7 +214,9 @@ export default function FloodPanel({ viewerApiRef }: Props) {
     if (!sy?.isPrepared()) return
     const st = useFloodStore.getState()
     const edge = st.boundary
-    st.set({ status: 'running', stats: null, perf: null, error: null, probe: null, affected: null })
+    const coast = coastFor(st, useGeoStore.getState().placement)
+    const coastReport = sy.setCoast(coast)
+    st.set({ status: 'running', stats: null, perf: null, error: null, probe: null, affected: null, coastReport })
     sy.start({
       hyetograph: st.hyetograph,
       durationS: rainDurationS(st.hyetograph) + st.drainMin * 60,
@@ -531,6 +534,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                   onChange={(v) => s.set({ boundary: v })} />
               </div>
             </section>
+
+            <CoastSection t={t} caption={caption} selectCls={selectCls} mapOn={mapOn} />
 
             {/* ── Build and run ────────────────────────────────────────── */}
             <div className="flex items-center gap-2">

@@ -313,5 +313,43 @@
       "university": "大学",
       "warehouse": "倉庫"
     }
+  },
+  "coast": {
+    "title": "海岸",
+    "switch": "高潮時の海面",
+    "note": "計算中、海面を潮位+高潮+波浪セットアップに保ちます。保持するため格子の境界を閉じます。",
+    "kind": "海岸",
+    "auto": "自動: {{kind}}",
+    "kinds": {
+      "mediterranean": "地中海",
+      "adriatic": "アドリア海",
+      "atlantic": "大西洋",
+      "macrotidal": "大潮差 (英仏海峡、ファンディ湾)",
+      "north-sea": "北海",
+      "baltic": "バルト海",
+      "black-sea": "黒海",
+      "estuary-east-asia": "東アジアの河口",
+      "ocean": "外洋"
+    },
+    "facts": "代表値: 大潮差 {{range}} m · 強い高潮 {{surge}} m · 暴風波 {{hs}} m",
+    "tide": "潮位",
+    "tides": {
+      "low": "干潮",
+      "mean": "平均",
+      "high": "満潮",
+      "spring": "大潮"
+    },
+    "surge": "高潮",
+    "waves": "波高 (Hs)",
+    "rise": "海面上昇",
+    "exposure": "岸",
+    "open": "開放海岸",
+    "harbour": "港内",
+    "still": "静水位",
+    "runup": "波の到達",
+    "runupAbove": "遡上 +{{m}} m",
+    "typical": "この種の海岸の代表値であり、予報やこの地点の再現期間ではありません。",
+    "noSea": "格子内に海がありません: 海岸線が範囲外か、OpenStreetMap がオフです。",
+    "result": "海 {{sea}} m² · 浸水する陸 {{land}} m² · 波が洗う範囲 {{runup}} m²"
   }
 }

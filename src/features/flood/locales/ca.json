@@ -313,5 +313,43 @@
       "university": "Universitat",
       "warehouse": "Magatzem"
     }
+  },
+  "coast": {
+    "title": "Costa",
+    "switch": "Mar a nivell de temporal",
+    "note": "Situa el mar a marea + temporal + sobreelevació per onatge durant la simulació; les vores es tanquen perquè s'hi mantingui.",
+    "kind": "Costa",
+    "auto": "Auto: {{kind}}",
+    "kinds": {
+      "mediterranean": "Mediterrani",
+      "adriatic": "Adriàtic",
+      "atlantic": "Atlàntic",
+      "macrotidal": "Macromareal (Canal de la Mànega, Fundy)",
+      "north-sea": "Mar del Nord",
+      "baltic": "Bàltic",
+      "black-sea": "Mar Negra",
+      "estuary-east-asia": "Estuari d'Àsia oriental",
+      "ocean": "Oceà obert"
+    },
+    "facts": "Típic: carrera de marea viva {{range}} m · temporal sever {{surge}} m · onatge de tempesta {{hs}} m",
+    "tide": "Marea",
+    "tides": {
+      "low": "Baixa",
+      "mean": "Mitjana",
+      "high": "Alta",
+      "spring": "Viva"
+    },
+    "surge": "Temporal",
+    "waves": "Onatge (Hs)",
+    "rise": "Pujada del mar",
+    "exposure": "Riba",
+    "open": "Costa oberta",
+    "harbour": "Port",
+    "still": "Nivell del mar",
+    "runup": "Abast de l'onatge",
+    "runupAbove": "+{{m}} m de remuntada",
+    "typical": "Valors típics d'aquest tipus de costa, no una previsió ni un període de retorn d'aquest lloc.",
+    "noSea": "No hi ha mar a la malla: la línia de costa en queda fora o OpenStreetMap està desactivat.",
+    "result": "Mar {{sea}} m² · terra que inunda {{land}} m² · batuda per l'onatge {{runup}} m²"
   }
 }

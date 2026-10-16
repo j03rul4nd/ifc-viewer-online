@@ -313,5 +313,43 @@
       "university": "Université",
       "warehouse": "Entrepôt"
     }
+  },
+  "coast": {
+    "title": "Côte",
+    "switch": "Mer au niveau de tempête",
+    "note": "Place la mer à marée + surcote + surélévation due aux vagues pendant le calcul ; les bords se ferment pour qu'elle reste.",
+    "kind": "Côte",
+    "auto": "Auto : {{kind}}",
+    "kinds": {
+      "mediterranean": "Méditerranée",
+      "adriatic": "Adriatique",
+      "atlantic": "Atlantique",
+      "macrotidal": "Macrotidale (Manche, Fundy)",
+      "north-sea": "Mer du Nord",
+      "baltic": "Baltique",
+      "black-sea": "Mer Noire",
+      "estuary-east-asia": "Estuaire d'Asie de l'Est",
+      "ocean": "Océan ouvert"
+    },
+    "facts": "Typique : marnage de vives-eaux {{range}} m · forte surcote {{surge}} m · vagues de tempête {{hs}} m",
+    "tide": "Marée",
+    "tides": {
+      "low": "Basse",
+      "mean": "Moyenne",
+      "high": "Haute",
+      "spring": "Vives-eaux"
+    },
+    "surge": "Surcote",
+    "waves": "Vagues (Hs)",
+    "rise": "Hausse du niveau",
+    "exposure": "Rivage",
+    "open": "Côte ouverte",
+    "harbour": "Port",
+    "still": "Niveau d'eau",
+    "runup": "Portée des vagues",
+    "runupAbove": "+{{m}} m de jet de rive",
+    "typical": "Valeurs typiques de ce type de côte, ni une prévision ni une période de retour pour ce lieu.",
+    "noSea": "Pas de mer sur la grille : le trait de côte est en dehors ou OpenStreetMap est désactivé.",
+    "result": "Mer {{sea}} m² · terre submergée {{land}} m² · battue par les vagues {{runup}} m²"
   }
 }

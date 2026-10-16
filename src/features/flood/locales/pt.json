@@ -313,5 +313,43 @@
       "university": "Universidade",
       "warehouse": "Armazém"
     }
+  },
+  "coast": {
+    "title": "Costa",
+    "switch": "Mar em nível de temporal",
+    "note": "Coloca o mar em maré + sobre-elevação + set-up das ondas durante a simulação; as bordas fecham para que se mantenha.",
+    "kind": "Costa",
+    "auto": "Auto: {{kind}}",
+    "kinds": {
+      "mediterranean": "Mediterrâneo",
+      "adriatic": "Adriático",
+      "atlantic": "Atlântico",
+      "macrotidal": "Macromareal (Mancha, Fundy)",
+      "north-sea": "Mar do Norte",
+      "baltic": "Báltico",
+      "black-sea": "Mar Negro",
+      "estuary-east-asia": "Estuário da Ásia Oriental",
+      "ocean": "Oceano aberto"
+    },
+    "facts": "Típico: amplitude de maré viva {{range}} m · sobre-elevação severa {{surge}} m · ondas de tempestade {{hs}} m",
+    "tide": "Maré",
+    "tides": {
+      "low": "Baixa",
+      "mean": "Média",
+      "high": "Alta",
+      "spring": "Viva"
+    },
+    "surge": "Sobre-elevação",
+    "waves": "Ondas (Hs)",
+    "rise": "Subida do mar",
+    "exposure": "Margem",
+    "open": "Costa aberta",
+    "harbour": "Porto",
+    "still": "Nível do mar",
+    "runup": "Alcance das ondas",
+    "runupAbove": "+{{m}} m de espraiamento",
+    "typical": "Valores típicos deste tipo de costa, não uma previsão nem um período de retorno deste local.",
+    "noSea": "Sem mar na grelha: a linha de costa está fora ou o OpenStreetMap está desligado.",
+    "result": "Mar {{sea}} m² · terra inundada {{land}} m² · batida pelas ondas {{runup}} m²"
   }
 }
