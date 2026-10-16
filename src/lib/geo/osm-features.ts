@@ -307,6 +307,11 @@ export interface FeatureStyle {
    */
   roundabout?: boolean
   /**
+   * A figure laid into a paved floor. `compass` is a wind rose — the commonest
+   * floor mosaic there is, and the heart of Plaça de Catalunya.
+   */
+  inlay?: 'compass'
+  /**
    * Carriageway, footpath or track. Decides which NETWORK the way is solved in
    * as well as how it is surfaced — see RoadClass.
    */
@@ -878,8 +883,17 @@ export function isPavedArtwork(t: Record<string, string>): boolean {
     && /^(tilework|mosaic|pavement)$/.test((t['artwork_type'] ?? '').toLowerCase())
 }
 
-/** Warm stone: what a mosaic floor reads as from street level. */
-const PAVED_ARTWORK_TONE: [number, number, number] = [0.70, 0.62, 0.50]
+/** Pale stone: the ground a floor mosaic is laid in. */
+const PAVED_ARTWORK_TONE: [number, number, number] = [0.80, 0.77, 0.71]
+
+/** A floor mosaic that is a wind rose, by its name in the languages mapped. */
+export function compassInlay(t: Record<string, string>): 'compass' | undefined {
+  if (!isPavedArtwork(t)) return undefined
+  const names = Object.entries(t).filter(([k]) => k === 'name' || k.startsWith('name:') || k === 'description')
+    .map(([, v]) => v).join(' ')
+  return /\b(rosa dels vents|rosa de los vientos|rosa dos ventos|rosa dei venti|wind ?rose|compass ?rose|rose des vents|windrose|compass)\b/i.test(names)
+    ? 'compass' : undefined
+}
 
 export function courtTone(t: Record<string, string>): [number, number, number] | undefined {
   if (isPavedArtwork(t)) return PAVED_ARTWORK_TONE
@@ -1385,10 +1399,12 @@ export function resolveFeatureStyle(
     const oneway = (t['oneway'] ?? '').toLowerCase()
     return {
       roofShape: 'flat', roofHeightM: 0, tone: courtTone(t) ?? roadTone(t),
+      inlay: compassInlay(t),
       accessKind: t['highway'] === 'elevator' ? 'elevator' : t['highway'] === 'steps'
         ? (t['conveying'] && t['conveying'] !== 'no' ? 'escalator' : 'stairs') : undefined,
       stepCount: /^\d+$/.test(t['step_count'] ?? '') ? Math.min(1000, Number(t['step_count'])) : undefined,
-      surface: normalizeSurface(t['surface']),
+      // A floor mosaic is laid stone even when nobody tagged its surface.
+      surface: normalizeSurface(t['surface']) ?? (isPavedArtwork(t) ? 'paving_stones' : undefined),
       roadClass: roadClass(t),
       parking: isSurfaceParking(t) || undefined,
       court: isHardPitch(t) || t['leisure'] === 'playground' || undefined,

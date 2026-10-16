@@ -299,6 +299,24 @@ Surface asphaltSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
 
   vec4 d = hexSample(detail, p / mix(1.1, 3.0, rough));
   albedo *= 1.0 + (d.a - 0.5) * 0.32;
+
+  // PAVING IS LAID, NOT POURED. Slabs, setts and cobbles (the grain band from
+  // 0.5 to 0.85, see SURFACE_ROUGHNESS) get joints in a running bond and a
+  // tone per stone — what tells a square from a car park at a glance. Slabs
+  // are 60 cm, setts and cobbles 22 cm. Faded out by the joint's own screen
+  // size, so a distant square is an even tone instead of a moiré.
+  float laid = smoothstep(0.45, 0.52, rough) * (1.0 - smoothstep(0.86, 0.90, rough));
+  float stoneM = mix(0.60, 0.22, smoothstep(0.62, 0.78, rough));
+  vec2 sq = p / stoneM;
+  sq.x += step(1.0, mod(floor(sq.y), 2.0)) * 0.5;
+  vec2 cellF = fract(sq);
+  float toEdge = min(min(cellF.x, 1.0 - cellF.x), min(cellF.y, 1.0 - cellF.y));
+  float px = max(fwidth(sq.x), fwidth(sq.y));
+  float joint = 1.0 - smoothstep(0.035, 0.035 + px * 1.5, toEdge);
+  float near = 1.0 - smoothstep(0.12, 0.40, px);
+  float stone = fract(sin(dot(floor(sq), vec2(127.1, 311.7))) * 43758.5453);
+  albedo *= mix(1.0, (0.94 + 0.12 * stone) * (1.0 - 0.30 * joint * near), laid * mix(0.5, 1.0, near));
+
   // Gentle: chippings are a millimetre-scale relief and a strong normal here
   // turns tarmac into gravel.
   return Surface(albedo, detailSlope(d, mix(0.25, 0.6, rough)), d.b);
