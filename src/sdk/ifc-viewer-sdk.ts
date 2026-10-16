@@ -672,6 +672,11 @@ export interface SiteContextOptions {
    * Either lets the camera orbit below the surface. Default `surface`.
    */
   subsurface?: 'surface' | 'xray' | 'cut'
+  /**
+   * Mark what is under the ground ON the ground, in every mode: a buried
+   * model's outline and OpenStreetMap metro lines and tunnels. Default true.
+   */
+  subsurfaceMarkers?: boolean
   /** Decorative cars and trains. */
   vehicles?: boolean
 }
@@ -686,6 +691,12 @@ export interface SiteContextState {
   terrainStyle: string
   exaggeration: number
   subsurface: 'surface' | 'xray' | 'cut'
+  subsurfaceMarkers: boolean
+  /**
+   * What the underground view draws from OpenStreetMap, at ESTIMATED depth
+   * (OSM maps no depth). Null when nothing is drawn.
+   */
+  underground: { road: number; rail: number; metro: number; platform: number } | null
   vehicles: boolean
   placement: { lat: number; lon: number; rotationDeg: number; source: string; confidence: 'high' | 'approximate' } | null
   /** Credits for what is on screen. Show them wherever you show the map. */

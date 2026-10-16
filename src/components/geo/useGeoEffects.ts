@@ -128,6 +128,7 @@ export function useGeoEffects(
         if (cmd.lookTo) ctl.playLookTransition(cmd.lookTo, cmd.lookDurationMs)
         // Last of all: the cut follows the ground, so it waits for the relief.
         if (cmd.subsurface) ctl.setSubsurfaceMode(cmd.subsurface)
+        if (cmd.subsurfaceMarkers !== undefined) ctl.setSubsurfaceMarkers(cmd.subsurfaceMarkers)
         cmd.done?.(true)
       } catch (err) {
         cmd.done?.(false, err instanceof Error ? err.message : String(err))

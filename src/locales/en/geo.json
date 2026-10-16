@@ -452,6 +452,9 @@
     "show": "Show underground",
     "buriedNotice": "About {{depth}} m of this model is under the ground, so the map hides it.",
     "xrayHint": "The ground turns see-through. Orbit below the surface to look up at the model.",
-    "cutHint": "A pit is cut out of the map over the model. Orbit below the surface to look up at it."
+    "cutHint": "A pit is cut out of the map over the model. Orbit below the surface to look up at it.",
+    "osmEstimated": "From OpenStreetMap: {{metro}} metro sections, {{tunnels}} tunnels and {{platforms}} platforms, at estimated depth — OSM does not map depth.",
+    "markers": "Mark underground on the surface",
+    "markersNote": "Outline of a buried model, and metro lines and tunnels drawn on the ground."
   }
 }

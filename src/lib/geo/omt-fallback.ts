@@ -95,7 +95,12 @@ export function omtTags(f: Pick<OmtFeature, 'layer' | 'type' | 'props'>): Record
       }
       if (f.type !== 2) return null
       const tags: Record<string, string> = { ...name }
-      if (cls === 'rail' || cls === 'transit') tags.railway = p.subclass === 'tram' ? 'tram' : 'rail'
+      // OpenMapTiles keeps the OSM railway value in `subclass`; a metro left as
+      // generic rail lost the one thing the underground view needs to know.
+      if (cls === 'rail' || cls === 'transit') {
+        const sub = String(p.subclass ?? '')
+        tags.railway = sub === 'tram' || sub === 'subway' || sub === 'light_rail' || sub === 'narrow_gauge' || sub === 'monorail' ? sub : 'rail'
+      }
       else if (HIGHWAY_OF_CLASS[cls]) tags.highway = HIGHWAY_OF_CLASS[cls]
       else return null
       if (p.brunnel === 'bridge') { tags.bridge = 'yes'; tags.layer = '1' }

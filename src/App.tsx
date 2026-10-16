@@ -392,6 +392,8 @@ function siteStateOut() {
     terrainStyle: g.terrainStyle,
     exaggeration: g.terrainExaggeration,
     subsurface: g.subsurfaceMode,
+    subsurfaceMarkers: g.subsurfaceMarkers,
+    underground: g.undergroundCounts,
     vehicles: g.vehicles,
     placement: g.placement
       ? { lat: g.placement.lat, lon: g.placement.lon, rotationDeg: g.placement.rotationDeg, source: g.placement.source, confidence: g.placement.confidence }
@@ -3420,6 +3422,7 @@ export default function App() {
               terrainStyle: pick(cmd.terrainStyle, ['imagery', 'shaded', 'hypsometric', 'slope', 'ecosystem'] as const),
               exaggeration: typeof cmd.exaggeration === 'number' ? Math.min(3, Math.max(1, cmd.exaggeration)) : undefined,
               subsurface:   pick(cmd.subsurface, ['surface', 'xray', 'cut'] as const),
+              subsurfaceMarkers: typeof cmd.subsurfaceMarkers === 'boolean' ? cmd.subsurfaceMarkers : undefined,
             }, { unavailable: 'Map mode did not come up in time', subscriberTimeoutMs: 60_000, timeoutMs: 180_000 })
             return siteStateOut()
           })

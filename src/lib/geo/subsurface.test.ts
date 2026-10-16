@@ -83,6 +83,20 @@ describe('buildPitWalls', () => {
     const n = new THREE.Vector3().crossVectors(v(1).sub(v(0)), v(2).sub(v(0)))
     expect(n.y).toBeGreaterThan(0)
   })
+
+  it('every wall faces into the pit', () => {
+    const geo = buildPitWalls({ minX: 0, maxX: 10, minZ: 0, maxZ: 6 }, -9, () => 0, 0)
+    const pos = geo.getAttribute('position')
+    const end = geo.groups[1].start
+    for (let i = 0; i < end; i += 3) {
+      const a = new THREE.Vector3().fromBufferAttribute(pos, i)
+      const b = new THREE.Vector3().fromBufferAttribute(pos, i + 1)
+      const c = new THREE.Vector3().fromBufferAttribute(pos, i + 2)
+      const n = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a))
+      const toCentre = new THREE.Vector3(5, a.y, 3).sub(a)
+      expect(n.dot(toCentre)).toBeGreaterThan(0)
+    }
+  })
 })
 
 describe('materials', () => {

@@ -9,7 +9,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useGeoStore } from '../../../stores/geoStore'
 import type { SubsurfaceMode } from '../../../lib/geo/subsurface'
 import { useGeoCtl } from '../useGeoController'
-import { Caption, Hint, Notice, Segmented } from '../ui'
+import { Caption, Hint, Notice, Segmented, SwitchRow } from '../ui'
 
 export function SubsurfaceControl() {
   const { t } = useTranslation('geo')
@@ -18,6 +18,8 @@ export function SubsurfaceControl() {
     mapMode: st.mapMode,
     mode: st.subsurfaceMode,
     burial: st.burial,
+    markers: st.subsurfaceMarkers,
+    counts: st.undergroundCounts,
   })))
   const mapOn = s.mapMode === 'on'
   const { measureBurial } = ctl
@@ -51,6 +53,21 @@ export function SubsurfaceControl() {
         ]}
       />
       {s.mode !== 'surface' && <Hint>{t(s.mode === 'cut' ? 'subsurface.cutHint' : 'subsurface.xrayHint')}</Hint>}
+      {s.mode !== 'surface' && s.counts && (s.counts.metro + s.counts.road + s.counts.rail + s.counts.platform) > 0 && (
+        // Non-negotiable: estimated depth must say so (OSM maps no depth).
+        <Notice tone="warn">
+          {t('subsurface.osmEstimated', {
+            metro: s.counts.metro, tunnels: s.counts.road + s.counts.rail, platforms: s.counts.platform,
+          })}
+        </Notice>
+      )}
+      <SwitchRow
+        label={t('subsurface.markers')}
+        checked={s.markers}
+        onChange={ctl.setSubsurfaceMarkers}
+        note={t('subsurface.markersNote')}
+        compact
+      />
     </>
   )
 }

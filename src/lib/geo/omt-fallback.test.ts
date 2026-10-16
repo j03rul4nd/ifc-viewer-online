@@ -23,6 +23,12 @@ describe('omtTags', () => {
       .toMatchObject({ highway: 'secondary', bridge: 'yes', layer: '1' })
     expect(omtTags({ layer: 'transportation', type: 2, props: { class: 'rail' } })).toMatchObject({ railway: 'rail' })
   })
+  it('keeps a metro a metro, so the underground view can tell it from mainline rail', () => {
+    expect(omtTags({ layer: 'transportation', type: 2, props: { class: 'transit', subclass: 'subway', brunnel: 'tunnel' } }))
+      .toMatchObject({ railway: 'subway', tunnel: 'yes', layer: '-1' })
+    expect(omtTags({ layer: 'transportation', type: 2, props: { class: 'rail', subclass: 'tram' } })).toMatchObject({ railway: 'tram' })
+    expect(omtTags({ layer: 'transportation', type: 2, props: { class: 'rail', subclass: 'siding' } })).toMatchObject({ railway: 'rail' })
+  })
   it('marks the ocean polygons as the sea, other water as water', () => {
     expect(omtTags({ layer: 'water', type: 3, props: { class: 'ocean' } })).toEqual({ natural: 'water', water: 'sea' })
     expect(omtTags({ layer: 'water', type: 3, props: { class: 'lake' } })).toEqual({ natural: 'water' })
