@@ -120,6 +120,10 @@ export function omtTags(f: Pick<OmtFeature, 'layer' | 'type' | 'props'>): Record
     case 'landcover':
       if (f.type !== 3) return null
       if (cls === 'wood') return { natural: 'wood' }
+      // OpenMapTiles files a city park's lawn as grass with the OSM tag kept
+      // as the subclass; reading it as plain grass lost the park, and with
+      // it everything a park is drawn with (Lujiazui Green came out `bare`).
+      if (cls === 'grass' && (p.subclass === 'park' || p.subclass === 'garden')) return { leisure: String(p.subclass), ...name }
       if (cls === 'grass') return { landuse: 'grass' }
       if (cls === 'sand') return { natural: 'sand' }
       return null
@@ -203,9 +207,48 @@ export function decodeOmtTile(vt: VTLike, z: number, x: number, y: number): OmtF
         // Polygons: keep outer rings; a courtyard punched as a hole is dropped
         // (the building pipeline treats Overpass multipolygons the same way).
         if (type === 3 && signedArea(ring) <= 0) continue
-        parts.push(ring.map((p) => tilePointToLatLon(p.x, p.y, layer.extent, z, x, y)))
+        // A tile carries a margin of its neighbours' geometry. A polygon that
+        // crosses the tile edge then arrives twice — whole from one tile and
+        // as a sliver closed by the margin's cut from the other — and the two
+        // overlap: Lujiazui Green's lake drew a fan of tilted triangles over
+        // itself. Cut every polygon to the tile's own square so neighbouring
+        // pieces abut instead.
+        const own = type === 3 ? clipToTile(ring, layer.extent) : ring
+        if (own.length < (type === 3 ? 3 : 2)) continue
+        if (type === 3) own.push(own[0])
+        parts.push(own.map((p) => tilePointToLatLon(p.x, p.y, layer.extent, z, x, y)))
       }
       if (parts.length) out.push({ layer: name, type, props: f.properties, parts })
+    }
+  }
+  return out
+}
+
+/**
+ * A polygon ring cut to the tile square [0, extent]² (Sutherland–Hodgman),
+ * in tile units. Empty when the ring lies wholly in the margin.
+ */
+export function clipToTile(
+  ring: ReadonlyArray<{ x: number; y: number }>, extent: number,
+): Array<{ x: number; y: number }> {
+  let out = ring.slice()
+  // Drop a repeated closing vertex; the clipper works on open rings.
+  if (out.length > 1 && out[0].x === out[out.length - 1].x && out[0].y === out[out.length - 1].y) out.pop()
+  const edges: Array<[(p: { x: number; y: number }) => number]> = [
+    [(p) => p.x], [(p) => extent - p.x], [(p) => p.y], [(p) => extent - p.y],
+  ]
+  for (const [d] of edges) {
+    if (out.length === 0) break
+    const input = out
+    out = []
+    for (let i = 0; i < input.length; i++) {
+      const a = input[i], b = input[(i + 1) % input.length]
+      const da = d(a), db = d(b)
+      if (da >= 0) out.push(a)
+      if ((da >= 0) !== (db >= 0)) {
+        const t = da / (da - db)
+        out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
+      }
     }
   }
   return out
