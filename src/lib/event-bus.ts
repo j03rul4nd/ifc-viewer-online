@@ -63,6 +63,8 @@ export interface SdkSiteCommand {
   exaggeration?: number
   /** Decorative cars and trains. */
   vehicles?: boolean
+  /** Underground view: `surface`, `xray` (see-through ground) or `cut` (pit over the model). */
+  subsurface?: 'surface' | 'xray' | 'cut'
   /** Art direction (map-look MAP_LOOKS id): the map comes up in this look. */
   look?: string
   /** Once the scene is built, play a time-of-day transition to this look. */

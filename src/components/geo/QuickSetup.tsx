@@ -16,6 +16,7 @@ import { LookChoices } from './sections/LookChoices'
 import { MapPrivacy } from './sections/MapPrivacy'
 import { IconBuildings, IconPlan, IconSparkle, IconTerrain } from './icons'
 import { Caption, Choices, CostDots, Group, Hint, SwitchRow } from './ui'
+import { SubsurfaceControl } from './sections/SubsurfaceControl'
 
 const PRESET_ICON: Record<ScenePresetId, (p: { size?: number }) => ReactElement> = {
   plan: IconPlan,
@@ -61,6 +62,7 @@ export function QuickSetup() {
       </div>
       {active === 'showcase' && <Hint>{t('quick.showcaseNote')}</Hint>}
       {!mapOn && <Hint>{t('quick.offHint')}</Hint>}
+      <SubsurfaceControl />
 
       <Caption>{t('quick.basemap')}</Caption>
       <Choices

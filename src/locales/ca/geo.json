@@ -444,5 +444,15 @@
       "still-water": "Aigua quieta: estancament, sediments i algues; poca autoneteja",
       "longshore-drift": "La deriva litoral mou la sorra on es fonamenta"
     }
+  },
+  "subsurface": {
+    "title": "Vista sota terra",
+    "surface": "Superfície",
+    "xray": "Raigs X",
+    "cut": "Tall",
+    "show": "Veure sota terra",
+    "buriedNotice": "Uns {{depth}} m d'aquest model són sota terra, i el mapa el tapa.",
+    "xrayHint": "El terra es torna translúcid. Gira per sota de la superfície per veure el model des de baix.",
+    "cutHint": "S'obre un forat al mapa sobre el model. Gira per sota de la superfície per veure'l des de baix."
   }
 }

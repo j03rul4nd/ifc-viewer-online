@@ -444,5 +444,15 @@
       "still-water": "Água parada: estagnação, sedimentos e algas; pouca autolimpeza",
       "longshore-drift": "A deriva litoral desloca a areia das fundações"
     }
+  },
+  "subsurface": {
+    "title": "Vista subterrânea",
+    "surface": "Superfície",
+    "xray": "Raio X",
+    "cut": "Corte",
+    "show": "Ver subsolo",
+    "buriedNotice": "Cerca de {{depth}} m deste modelo estão debaixo do solo, por isso o mapa o esconde.",
+    "xrayHint": "O solo fica translúcido. Rode por baixo da superfície para ver o modelo de baixo.",
+    "cutHint": "Abre-se uma escavação no mapa sobre o modelo. Rode por baixo da superfície para o ver de baixo."
   }
 }

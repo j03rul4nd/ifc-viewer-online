@@ -126,6 +126,8 @@ export function useGeoEffects(
         // The time-lapse runs once the city is standing — a transition over a
         // half-built scene would be a clip of tiles arriving.
         if (cmd.lookTo) ctl.playLookTransition(cmd.lookTo, cmd.lookDurationMs)
+        // Last of all: the cut follows the ground, so it waits for the relief.
+        if (cmd.subsurface) ctl.setSubsurfaceMode(cmd.subsurface)
         cmd.done?.(true)
       } catch (err) {
         cmd.done?.(false, err instanceof Error ? err.message : String(err))

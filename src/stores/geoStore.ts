@@ -7,6 +7,7 @@
 // `epoch` at start and checks it before committing. `disable()` and
 // `resetForScene()` bump the epoch, instantly invalidating in-flight work.
 
+import type { BurialAssessment, SubsurfaceMode } from '../lib/geo/subsurface'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { createLogger } from '../lib/logger'
@@ -262,6 +263,14 @@ interface GeoStore {
   terrainStyle: TerrainStyle
   /** Vertical exaggeration ×k, 1–3 (persisted). */
   terrainExaggeration: number
+  /**
+   * How the map treats what is under it (subsurface.ts). Not persisted: it is
+   * a property of the model being looked at, not a taste — a metro station
+   * wants the cut, the next building wants the plain map.
+   */
+  subsurfaceMode: SubsurfaceMode
+  /** How much of the active model is under the ground, once measured on the map. */
+  burial: BurialAssessment | null
   /** Advanced terrain look (sun, softness, occlusion, detail, contours). */
   terrainLook: TerrainLook
   /** Surrounding OSM buildings toggle (persisted). */
@@ -407,6 +416,8 @@ interface GeoStore {
   /** Put every one of them back. */
   showAllFeatures: () => void
   setTerrainExaggeration: (k: number) => void
+  setSubsurfaceMode: (mode: SubsurfaceMode) => void
+  setBurial: (b: BurialAssessment | null) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
   setPlacement: (p: GeoPlacement | null) => void
@@ -444,6 +455,8 @@ export const useGeoStore = create<GeoStore>()(
       terrainStatus:  'idle' as TerrainStatus,
       terrainStyle:   readTerrainStyle(),
       terrainExaggeration: readTerrainExaggeration(),
+      subsurfaceMode: 'surface' as SubsurfaceMode,
+      burial: null,
       terrainLook:    readTerrainLook(),
       buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
       buildingsStatus:    'idle' as const,
@@ -519,6 +532,9 @@ export const useGeoStore = create<GeoStore>()(
             editing:        false,
             draftPlacement: null,
             terrainStatus:  'idle' as TerrainStatus,
+            // geo-system.disable() puts the map back on the surface.
+            subsurfaceMode: 'surface' as SubsurfaceMode,
+            burial:         null,
             // Bumping the epoch invalidates an in-flight buildings query, and
             // its reply will be dropped by setBuildingsResult — so the status
             // has to be cleared HERE or it stays 'loading' forever and the
@@ -682,6 +698,9 @@ export const useGeoStore = create<GeoStore>()(
         lsSet(LS_TERRAIN_EXAGG, String(clamped))
         set({ terrainExaggeration: clamped }, false, 'setTerrainExaggeration')
       },
+
+      setSubsurfaceMode: (mode) => set({ subsurfaceMode: mode }, false, 'setSubsurfaceMode'),
+      setBurial: (b) => set({ burial: b }, false, 'setBurial'),
 
       setGeoref: (modelId, g) =>
         set(
