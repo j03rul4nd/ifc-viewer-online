@@ -35,7 +35,7 @@ import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
   type MeasureKind, type MeasureSettings, type MeasureSnapshot, type MeasureStep, type MeasureTool,
-  type Vec3, type DistanceItem, type MeasureNotice, type Anchor, type GeoPoint,
+  type Vec3, type DistanceItem, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
 } from './measure-types'
 
 export interface MeasureSystemDeps {
@@ -51,6 +51,8 @@ export interface MeasureSystemDeps {
   modelName?(modelId: string): string
   /** Latitude, longitude and elevation of a scene point when a map is placed. */
   geoOf?(p: THREE.Vector3, onTerrain: boolean): GeoPoint | null
+  /** Find a route (lib/route/route-service); a string says why there is none. */
+  planRoute?(req: { from: Vec3; to: Vec3; fromAnchor: Anchor | null; toAnchor: Anchor | null; mode: RouteMode }): Promise<RoutePlan | string>
   /** Client coordinates the pointer is aiming at (canvas centre under pointer lock). */
   aim(e: { clientX: number; clientY: number }): { x: number; y: number }
 }
@@ -93,6 +95,8 @@ export interface MeasureSystem {
   rename(id: string, name: string | null): void
   /** Attach a requirement, an extrusion height or a note to an item (null clears). */
   annotate(id: string, patch: Partial<Pick<MeasureItem, 'requirement' | 'extrusion' | 'note'>>): void
+  /** Travel mode for routes; with an id, recompute that route in the mode. */
+  setRouteMode(mode: RouteMode, id?: string): void
   /**
    * Add saved measurements back (from a file or the last session). Values are
    * recomputed from the points. `replace` clears the list first. Returns how
@@ -175,6 +179,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   }
   let notice: MeasureNotice | null = null
   let busy = false
+  let routeMode: RouteMode = 'foot'
 
   interface HoverState {
     pick: PickResult
@@ -227,6 +232,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       settings,
       notice,
       busy,
+      routeMode,
     }
   }
 
@@ -248,6 +254,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         if (distanceMode === 'perpendicular') return draft.plane ? 'perpendicular-target' : 'pick-plane-face'
         if (distanceMode === 'elements') return draft.element ? 'element-b' : 'element-a'
         if (distanceMode === 'headroom') return 'headroom-point'
+        if (distanceMode === 'route') return n === 0 ? 'route-start' : 'route-end'
         return n === 0 ? 'first-point' : 'second-point'
       case 'path': return n === 0 ? 'first-point' : 'next-point'
       case 'area':
@@ -278,7 +285,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     if (tool === 'area' && areaMode === 'face') return { snaps: null, wantFace: true }
     if (tool === 'distance' && distanceMode === 'perpendicular' && !draft.plane) return { snaps: null, wantFace: true }
     // Gap and headroom start from a surface, not from a snapped vertex.
-    if (tool === 'distance' && (distanceMode === 'elements' || distanceMode === 'headroom')) return { snaps: null }
+    if (tool === 'distance' && (distanceMode === 'elements' || distanceMode === 'headroom' || distanceMode === 'route')) return { snaps: null }
     return { snaps: settings.snaps }
   }
 
@@ -529,6 +536,11 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         return `${mark}${item.approximate ? '≤ ' : ''}${M.formatLength(item.value, settings)}`
       }
       case 'path':
+        if (item.route) {
+          const icon = item.route.mode === 'car' ? '🚗' : item.route.mode === 'bike' ? '🚲' : '🚶'
+          const km = item.route.metres >= 1000 ? `${M.formatNumber(item.route.metres / 1000, 1, settings.locale)} km` : M.formatLength(item.route.metres, { ...settings, units: settings.units === 'ft' ? 'ft' : 'm', precision: 0 })
+          return `${icon} ${M.formatDuration(item.route.seconds)} · ${km}`
+        }
         return `Σ ${M.formatLength(item.value, settings)}`
       case 'point':
         return [
@@ -615,7 +627,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         l.setPosition(from.clone().add(to).multiplyScalar(0.5))
         labels.push(l)
       }
-    } else if (item.kind === 'path' && item.points.length > 2) {
+    } else if (item.kind === 'path' && !item.route && item.points.length > 2) {
       for (let i = 1; i < item.points.length; i++) {
         const l = new Label('path', {}, { sub: true })
         l.setText(M.formatLength(item.segments[i - 1], settings))
@@ -763,10 +775,49 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     return null
   }
 
-  function createPath(points: THREE.Vector3[]): void {
+  function createPath(points: THREE.Vector3[], route?: PathItem['route'], anchors?: (Anchor | null)[]): void {
     const base = newBase('path', points)
     const r = M.pathLength(base.points)
-    addItem({ ...base, kind: 'path', value: r.total, segments: r.segments })
+    addItem({
+      ...base, kind: 'path', value: r.total, segments: r.segments,
+      ...(route ? { route } : {}),
+      ...(anchors && anchors.some(Boolean) ? { anchors } : {}),
+    })
+  }
+
+  const ROUTE_NOTICE: Record<string, MeasureNotice> = {
+    'no-map': 'route-no-map', 'no-network': 'route-no-network', 'no-path': 'route-no-path',
+    'no-indoor': 'route-no-indoor', 'too-far': 'route-too-far',
+  }
+
+  async function findRoute(req: NonNullable<PathItem['route']>['request'], mode: RouteMode): Promise<PathItem['route'] & { points: Vec3[] } | null> {
+    if (!deps.planRoute) { notice = 'route-unavailable'; return null }
+    busy = true; emit()
+    try {
+      const r = await deps.planRoute({ ...req, mode })
+      if (typeof r === 'string') { notice = ROUTE_NOTICE[r] ?? 'route-no-path'; return null }
+      if (r.points.length < 2) { notice = 'route-no-path'; return null }
+      return { mode, seconds: r.seconds, metres: r.metres, legs: r.legs, request: req, points: r.points }
+    } catch {
+      notice = 'route-no-path'
+      return null
+    } finally { busy = false }
+  }
+
+  /** Route: start, end, then the fastest way between them in the chosen mode. */
+  async function placeRoute(h: HoverState): Promise<void> {
+    const p = h.pick.surfacePoint.clone()
+    if (draft.points.length === 0) {
+      draft.points = [p]
+      draft.anchors = [anchorOf(h.pick)]
+      return
+    }
+    const req = { from: plain(draft.points[0]), to: plain(p), fromAnchor: draft.anchors[0] ?? null, toAnchor: anchorOf(h.pick) }
+    const found = await findRoute(req, routeMode)
+    if (!found) return
+    const { points, ...route } = found
+    createPath(points.map(v3), route, [req.fromAnchor, req.toAnchor])
+    resetDraft()
   }
 
   function createArea(points: THREE.Vector3[], source: AreaMode): void {
@@ -821,6 +872,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'distance':
         if (distanceMode === 'headroom' || distanceMode === 'elements') {
           await (distanceMode === 'headroom' ? placeHeadroom(h) : placeElement(h))
+          break
+        }
+        if (distanceMode === 'route') {
+          await placeRoute(h)
           break
         }
         if (distanceMode === 'perpendicular') {
@@ -964,15 +1019,19 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     refreshAll()
   }
 
+  function disposeVisuals(v: ItemVisuals): void {
+    disposeExtras(v)
+    for (const s of v.strokes) s.dispose()
+    v.dots.dispose()
+    v.fill?.dispose()
+    v.label.dispose()
+    v.group.removeFromParent()
+  }
+
   function remove(id: string): void {
     const entry = entries.get(id)
     if (!entry) return
-    disposeExtras(entry.visuals)
-    for (const s of entry.visuals.strokes) s.dispose()
-    entry.visuals.dots.dispose()
-    entry.visuals.fill?.dispose()
-    entry.visuals.label.dispose()
-    entry.visuals.group.removeFromParent()
+    disposeVisuals(entry.visuals)
     entries.delete(id)
     if (selectedId === id) selectedId = null
     if (highlightedId === id) highlightedId = null
@@ -1131,7 +1190,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
           case 'distance':
             createDistance(pts[0], pts[1], !!s.perpendicular, { source: s.source, clash: s.clash, approximate: s.approximate })
             break
-          case 'path': createPath(pts); break
+          case 'path': createPath(pts, s.route); break
           case 'area': createArea(pts, s.areaSource ?? 'polygon'); break
           case 'angle': createAngle(pts[0], pts[1], pts[2]); break
           case 'point': {
@@ -1158,6 +1217,26 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       refreshAll()
       emit()
       return added
+    },
+    setRouteMode(mode, id) {
+      routeMode = mode
+      emit()
+      if (!id) return
+      const entry = entries.get(id)
+      if (!entry || entry.item.kind !== 'path' || !entry.item.route || entry.item.route.mode === mode) return
+      const req = entry.item.route.request
+      enqueue(async () => {
+        const found = await findRoute(req, mode)
+        const cur = entries.get(id)
+        if (!found || !cur || cur.item.kind !== 'path') { emit(); return }
+        const { points, ...route } = found
+        const r = M.pathLength(points)
+        cur.item = { ...cur.item, points, value: r.total, segments: r.segments, route } as MeasureItem
+        disposeVisuals(cur.visuals)
+        cur.visuals = buildVisuals(cur.item)
+        refreshAll()
+        emit()
+      })
     },
     annotate(id, patch) {
       const entry = entries.get(id)

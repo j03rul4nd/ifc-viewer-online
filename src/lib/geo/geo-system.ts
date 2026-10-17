@@ -451,6 +451,8 @@ export interface GeoSystemAPI {
    * With relief loaded the relief is hit instead (measureTargets), so null.
    */
   groundHitAt(clientX: number, clientY: number): THREE.Vector3 | null
+  /** A WGS84 position as a scene point on the ground (relief when loaded). */
+  sceneOfLatLon(lat: number, lon: number): THREE.Vector3 | null
   /** One OSM building's triangles in world space (flat xyz, 9 per triangle). */
   featureTriangles(id: string): Float32Array | null
   /**
@@ -1038,6 +1040,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         if (terrain && o === terrain.group) return { kind: 'terrain' }
       }
       return null
+    },
+
+    sceneOfLatLon(lat, lon) {
+      if (!geoRoot || !placement) return null
+      geoRoot.updateMatrixWorld()
+      const { nx, ny } = latLonToNormalized(lat, lon)
+      const w = geoRoot.localToWorld(new THREE.Vector3(nx, ny, 0))
+      const g = api.groundAtWorld(w.x, w.z)
+      if (g !== null) w.y = g
+      return Number.isFinite(w.x) && Number.isFinite(w.z) ? w : null
     },
 
     groundHitAt(clientX, clientY) {

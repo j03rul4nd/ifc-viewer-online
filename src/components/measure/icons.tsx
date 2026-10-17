@@ -32,6 +32,10 @@ export const PointIcon = (p: IconProps) => (
 export const PerpendicularIcon = (p: IconProps) => (
   <Svg {...p}><path d="M2 13.5h12M8 13.5V2.5" /><path d="M8 10.5h3v3" /></Svg>
 )
+/** A winding route between two pins. */
+export const RouteIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="3.5" cy="12.5" r="1.5" /><circle cx="12.5" cy="3.5" r="1.5" /><path d="M5 12.5h4.5a2.5 2.5 0 0 0 0-5h-3a2.5 2.5 0 0 1 0-5H11" /></Svg>
+)
 /** Two blocks and the gap between them. */
 export const GapIcon = (p: IconProps) => (
   <Svg {...p}><rect x="1.5" y="3" width="4.5" height="10" rx="0.5" /><rect x="10" y="3" width="4.5" height="10" rx="0.5" /><path d="M6.5 8h3M7.5 7l-1 1 1 1M8.5 7l1 1-1 1" /></Svg>

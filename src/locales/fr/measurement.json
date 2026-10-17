@@ -31,7 +31,9 @@
     "elements": "Entre éléments",
     "elementsHint": "Écart minimal entre deux éléments, d’après leur géométrie — pour les dégagements et les conflits",
     "headroom": "Hauteur libre",
-    "headroomHint": "Un clic sur un sol : la distance verticale jusqu’à la surface au-dessus (depuis un plafond : jusqu’au sol)"
+    "headroomHint": "Un clic sur un sol : la distance verticale jusqu’à la surface au-dessus (depuis un plafond : jusqu’au sol)",
+    "route": "Itinéraire",
+    "routeHint": "Le chemin le plus rapide entre deux points : dans le bâtiment par les couloirs et les escaliers ; dehors par les rues à pied, à vélo ou en voiture"
   },
   "steps": {
     "idle": "Choisissez un outil",
@@ -48,7 +50,9 @@
     "element-a": "Cliquez sur le premier élément",
     "element-b": "Cliquez sur le second élément",
     "headroom-point": "Cliquez sur un sol (ou un plafond) pour mesurer la hauteur libre",
-    "computing": "Mesure en cours…"
+    "computing": "Mesure en cours…",
+    "route-start": "Cliquez au départ de l’itinéraire",
+    "route-end": "Cliquez à l’arrivée"
   },
   "keys": {
     "axisLock": "verrouiller l'axe",
@@ -302,7 +306,13 @@
     "no-surface": "Rien au-dessus ni au-dessous de ce point",
     "no-element": "Cliquez sur un élément de la maquette",
     "same-element": "C’est le même élément : cliquez sur un autre",
-    "no-geometry": "Cet élément n’a pas de géométrie à mesurer"
+    "no-geometry": "Cet élément n’a pas de géométrie à mesurer",
+    "route-no-map": "Les itinéraires en ville nécessitent la carte",
+    "route-no-network": "Impossible de lire les rues (OpenStreetMap saturé ?) — réessayez",
+    "route-no-path": "Aucun itinéraire entre ces deux points",
+    "route-no-indoor": "Cette maquette n’a pas de sols ni de niveaux pour un itinéraire",
+    "route-too-far": "Trop loin pour un itinéraire routier (25 km max.)",
+    "route-unavailable": "Les itinéraires ne sont pas disponibles ici"
   },
   "session": {
     "open": "Ouvrir",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "Terrain",
     "building": "Bâtiment"
+  },
+  "route": {
+    "mode": "Mode de déplacement",
+    "modes": {
+      "foot": "À pied",
+      "bike": "Vélo",
+      "car": "Voiture"
+    },
+    "legs": {
+      "street": {
+        "foot": "À pied par les rues",
+        "bike": "À vélo par les rues",
+        "car": "En voiture"
+      },
+      "door": "Entrée",
+      "walk": "Marcher",
+      "walkOn": "Marcher au {{storey}}",
+      "stairs": "Escaliers {{from}} → {{to}}",
+      "lift": "Ascenseur {{from}} → {{to}}"
+    },
+    "noteIndoor": "À l’intérieur à 1,3 m/s ; escaliers environ 17 s par niveau en montée. Estimation le long des murs et portes modélisés.",
+    "note": {
+      "foot": "À pied à 4,8 km/h sur les rues et chemins d’OpenStreetMap ; feux et attentes non compris.",
+      "bike": "À vélo à 16 km/h, sens uniques respectés ; à pied sur les trottoirs. Feux non compris.",
+      "car": "En voiture à la vitesse maximale autorisée, sens respectés ; sans trafic, feux ni stationnement."
+    },
+    "guessed": "{{m}} sans sol ni porte modélisés"
   }
 }

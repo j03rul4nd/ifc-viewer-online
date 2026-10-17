@@ -96,6 +96,8 @@ export interface ScenePicker {
   elementTriangles(modelId: string, localId: number): Promise<Float32Array | null>
   /** An OSM building's triangles in world space, or null. */
   mapTriangles(featureId: string): Float32Array | null
+  /** Several elements of one model in one read: one soup per id (null when it has none). */
+  elementsTriangles(modelId: string, localIds: number[]): Promise<Array<Float32Array | null>>
 }
 
 interface RawHit {
@@ -415,6 +417,34 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     return b ? { point: b.point, modelId: b.modelId, localId: b.localId, map: b.map } : null
   }
 
+  async function elementsTriangles(modelId: string, localIds: number[]): Promise<Array<Float32Array | null>> {
+    const model = [...deps.getModels()].find(([id]) => id === modelId)?.[1]
+    if (!model || localIds.length === 0) return localIds.map(() => null)
+    let meshes: FRAGS.MeshData[][] = []
+    try { meshes = await withTimeout(model.getItemsGeometry(localIds), 20_000, []) ?? [] } catch { return localIds.map(() => null) }
+    const world = (model as unknown as { object: THREE.Object3D }).object.matrixWorld
+    const m = new THREE.Matrix4()
+    const v = new THREE.Vector3()
+    return localIds.map((_, k) => {
+      const out: number[] = []
+      for (const mesh of meshes[k] ?? []) {
+        const pos = mesh.positions
+        if (!pos) continue
+        m.multiplyMatrices(world, mesh.transform)
+        const idx = mesh.indices
+        const count = idx ? idx.length : pos.length / 3
+        for (let i = 0; i + 2 < count; i += 3) {
+          for (let c = 0; c < 3; c++) {
+            const vi = idx ? idx[i + c] : i + c
+            v.set(pos[vi * 3], pos[vi * 3 + 1], pos[vi * 3 + 2]).applyMatrix4(m)
+            out.push(v.x, v.y, v.z)
+          }
+        }
+      }
+      return out.length ? new Float32Array(out) : null
+    })
+  }
+
   async function elementTriangles(modelId: string, localId: number): Promise<Float32Array | null> {
     const model = [...deps.getModels()].find(([id]) => id === modelId)?.[1]
     if (!model) return null
@@ -445,5 +475,5 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     try { return deps.mapFeatureTriangles?.(featureId) ?? null } catch { return null }
   }
 
-  return { pick, worldPerPixel, project, castRay, elementTriangles, mapTriangles }
+  return { pick, worldPerPixel, project, castRay, elementTriangles, elementsTriangles, mapTriangles }
 }

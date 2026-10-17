@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import {
   angleAt, distanceComponents, dominantAxis, formatArea, formatFeetInches, formatLength,
   formatNumber, isPlanar, lockToAxis, pathLength, perpendicularFoot, polygonArea,
-  polygonPerimeter, slopePercent, toDelimited, toIfcAxes, fromIfcAxes, decimalSeparator, pathProfile,
+  polygonPerimeter, slopePercent, toDelimited, toIfcAxes, fromIfcAxes, decimalSeparator, pathProfile, formatDuration,
 } from './measure-math'
 
 const v = (x: number, y: number, z: number) => ({ x, y, z })
@@ -152,5 +152,14 @@ describe('pathProfile', () => {
     expect(r.descent).toBeCloseTo(0.3)
     expect(r.net).toBeCloseTo(0.2)
     expect(r.maxSlopePct).toBeCloseTo(5)
+  })
+})
+
+describe('formatDuration', () => {
+  it('rounds travel times', () => {
+    expect(formatDuration(12.4)).toBe('12 s')
+    expect(formatDuration(89)).toBe('1 min')
+    expect(formatDuration(1680)).toBe('28 min')
+    expect(formatDuration(3900)).toBe('1 h 05 min')
   })
 })

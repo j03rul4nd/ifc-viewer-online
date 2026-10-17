@@ -31,7 +31,9 @@
     "elements": "Entre elements",
     "elementsHint": "Distància mínima entre dos elements, a partir de la seva geometria — per a holgures i interferències",
     "headroom": "Alçada lliure",
-    "headroomHint": "Un clic en un terra: la distància vertical a la superfície de sobre (des d’un sostre: fins al terra)"
+    "headroomHint": "Un clic en un terra: la distància vertical a la superfície de sobre (des d’un sostre: fins al terra)",
+    "route": "Ruta",
+    "routeHint": "El camí més ràpid entre dos punts: dins de l’edifici per passadissos i escales; fora, pels carrers a peu, en bici o en cotxe"
   },
   "steps": {
     "idle": "Tria una eina",
@@ -48,7 +50,9 @@
     "element-a": "Fes clic al primer element",
     "element-b": "Fes clic al segon element",
     "headroom-point": "Fes clic en un terra (o un sostre) per mesurar l’alçada lliure",
-    "computing": "Mesurant…"
+    "computing": "Mesurant…",
+    "route-start": "Fes clic on comença la ruta",
+    "route-end": "Fes clic on acaba"
   },
   "keys": {
     "axisLock": "bloqueja l'eix",
@@ -302,7 +306,13 @@
     "no-surface": "No hi ha res damunt ni sota d’aquest punt",
     "no-element": "Fes clic sobre un element del model",
     "same-element": "És el mateix element: fes clic en un altre",
-    "no-geometry": "Aquest element no té geometria per mesurar"
+    "no-geometry": "Aquest element no té geometria per mesurar",
+    "route-no-map": "Les rutes pel carrer necessiten el mapa activat",
+    "route-no-network": "No s’han pogut llegir els carrers (OpenStreetMap ocupat?): torna-ho a provar",
+    "route-no-path": "No hi ha ruta entre aquests dos punts",
+    "route-no-indoor": "Aquest model no té terres o plantes per on traçar la ruta",
+    "route-too-far": "Massa lluny per a una ruta pels carrers (màx. 25 km)",
+    "route-unavailable": "Les rutes no estan disponibles aquí"
   },
   "session": {
     "open": "Obre",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "Terreny",
     "building": "Edifici"
+  },
+  "route": {
+    "mode": "Mode de transport",
+    "modes": {
+      "foot": "A peu",
+      "bike": "Bici",
+      "car": "Cotxe"
+    },
+    "legs": {
+      "street": {
+        "foot": "Caminant pel carrer",
+        "bike": "En bici pel carrer",
+        "car": "En cotxe"
+      },
+      "door": "Entrada",
+      "walk": "Caminar",
+      "walkOn": "Caminar per {{storey}}",
+      "stairs": "Escales {{from}} → {{to}}",
+      "lift": "Ascensor {{from}} → {{to}}"
+    },
+    "noteIndoor": "A l’interior a 1,3 m/s; escales uns 17 s per planta en pujar. Estimació sobre els murs i portes modelats.",
+    "note": {
+      "foot": "A peu a 4,8 km/h per carrers i camins d’OpenStreetMap; sense semàfors ni esperes.",
+      "bike": "En bici a 16 km/h, respectant sentits únics; a peu per voreres. Sense semàfors.",
+      "car": "En cotxe a la velocitat màxima de cada carrer, respectant sentits; sense trànsit, semàfors ni aparcar."
+    },
+    "guessed": "{{m}} per on el model no té terra o porta"
   }
 }

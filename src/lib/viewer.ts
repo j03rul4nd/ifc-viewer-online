@@ -30,6 +30,7 @@ import {
   type IFCItemData, type IFCElementSummary, type ProjectUnits,
 } from './ifc-item-data'
 import { fileNameOfModelId, mintModelId } from './loading/model-id'
+import type { RouteService } from './route/route-service'
 import { setSceneDatumProvider, currentDatumProvider } from './bcf-viewpoint'
 import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
 import {
@@ -2521,8 +2522,56 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
     aim: aimClient,
     modelName: (modelId) => fileNameOfModelId(modelId),
+    planRoute: async (req) => {
+      const svc = await routeService()
+      return svc.plan(req)
+    },
     geoOf: (p, onTerrain) => (geoSystemInstance?.isActive() ? geoSystemInstance.geoOfScenePoint(p, onTerrain) : null),
   })
+
+  // ── Routes (lib/route): loaded on first use, a separate chunk ──────────────
+  // The public API is built at the end; the route service reads storeys through it.
+  let selfApi: ViewerAPI | null = null
+  let routeServicePromise: Promise<RouteService> | null = null
+  let routeModelKey = ''
+  function routeService(): Promise<RouteService> {
+    // A different set of models is a different building: start over.
+    const key = [...modelObjects.keys()].sort().join('|')
+    if (key !== routeModelKey) { routeModelKey = key; routeServicePromise = null }
+    routeServicePromise ??= import('./route/route-service').then(({ createRouteService, fetchOverpassJson }) => createRouteService({
+      findElements: async (classes) => {
+        const out: Array<{ modelId: string; expressId: number; name: string | null }> = []
+        for (const [modelId, model] of modelObjects) {
+          if (modelHidden.has(modelId)) continue
+          let ids: number[] = []
+          try {
+            const byCat = await model.getItemsOfCategories(classes.map((c) => new RegExp(`^${c}$`, 'i')))
+            ids = Object.values(byCat).flat()
+          } catch { ids = [] }
+          for (let i = 0; i < ids.length; i += 500) {
+            const chunk = ids.slice(i, i + 500)
+            let names: Array<string | null> = chunk.map(() => null)
+            try {
+              const data = await model.getItemsData(chunk, { attributesDefault: false, attributes: ['Name'] })
+              names = data.map((d) => {
+                const n = (d as Record<string, unknown>).Name as { value?: unknown } | undefined
+                return typeof n?.value === 'string' ? n.value : null
+              })
+            } catch { /* names are a nicety (lift spaces) */ }
+            chunk.forEach((id, k) => out.push({ modelId, expressId: id, name: names[k] }))
+          }
+        }
+        return out
+      },
+      elementsTriangles: (modelId, ids) => picker.elementsTriangles(modelId, ids),
+      storeyLevels: () => (selfApi ? selfApi.getStoreyLevels() : Promise.resolve([])),
+      geoOf: (p) => (geoSystemInstance?.isActive() ? geoSystemInstance.geoOfScenePoint(p, true) : null),
+      sceneOf: (ll) => (geoSystemInstance?.isActive() ? geoSystemInstance.sceneOfLatLon(ll.lat, ll.lon) : null),
+      // Only with the map up: the map's consent is what covers this request.
+      fetchOverpass: (q) => (geoSystemInstance?.isActive() ? fetchOverpassJson(q) : Promise.reject(new Error('map off'))),
+    }))
+    return routeServicePromise
+  }
 
   // ── Poché: flat-filled cut solids ─────────────────────────────────────────
   // A cut closed solid exposes its inside, i.e. its back faces. Rendering those
@@ -2642,6 +2691,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       frame: () => { const b = combinedModelsBox(); if (!b.isEmpty()) void world.camera.controls.fitToBox(b, false) },
       controls: () => world.camera.controls,
       recordingCanvas: () => recording?.canvas ?? null,
+      planRoute: (req: Parameters<RouteService['plan']>[0]) => routeService().then((svc) => svc.plan(req)),
+      routeDebug: () => routeService().then((svc) => svc.debug()),
     }
   }
 
@@ -3023,7 +3074,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   // ─── API pública ──────────────────────────────────────────────────────────
 
-  return {
+  const viewerApi: ViewerAPI = {
 
     async loadIfc(file, onProgress) {
       await initPromise
@@ -5187,4 +5238,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       components.dispose()
     },
   }
+  selfApi = viewerApi
+  return viewerApi
 }

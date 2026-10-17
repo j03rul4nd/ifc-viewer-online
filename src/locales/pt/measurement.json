@@ -31,7 +31,9 @@
     "elements": "Entre elementos",
     "elementsHint": "Menor folga entre dois elementos, a partir da geometria — para folgas e interferências",
     "headroom": "Altura livre",
-    "headroomHint": "Um clique num piso: a distância vertical até a superfície acima (de um teto: até o piso)"
+    "headroomHint": "Um clique num piso: a distância vertical até a superfície acima (de um teto: até o piso)",
+    "route": "Rota",
+    "routeHint": "O caminho mais rápido entre dois pontos: dentro do edifício por corredores e escadas; fora, pelas ruas a pé, de bicicleta ou de carro"
   },
   "steps": {
     "idle": "Escolha uma ferramenta",
@@ -48,7 +50,9 @@
     "element-a": "Clique no primeiro elemento",
     "element-b": "Clique no segundo elemento",
     "headroom-point": "Clique num piso (ou teto) para medir a altura livre",
-    "computing": "Medindo…"
+    "computing": "Medindo…",
+    "route-start": "Clique onde a rota começa",
+    "route-end": "Clique onde termina"
   },
   "keys": {
     "axisLock": "bloquear eixo",
@@ -302,7 +306,13 @@
     "no-surface": "Não há nada acima nem abaixo deste ponto",
     "no-element": "Clique num elemento do modelo",
     "same-element": "É o mesmo elemento: clique em outro",
-    "no-geometry": "Este elemento não tem geometria para medir"
+    "no-geometry": "Este elemento não tem geometria para medir",
+    "route-no-map": "Rotas na rua precisam do mapa ativado",
+    "route-no-network": "Não foi possível ler as ruas (OpenStreetMap ocupado?) — tente de novo",
+    "route-no-path": "Não há rota entre esses dois pontos",
+    "route-no-indoor": "Este modelo não tem pisos ou pavimentos para traçar a rota",
+    "route-too-far": "Longe demais para uma rota pelas ruas (máx. 25 km)",
+    "route-unavailable": "Rotas não estão disponíveis aqui"
   },
   "session": {
     "open": "Abrir",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "Terreno",
     "building": "Edifício"
+  },
+  "route": {
+    "mode": "Meio de transporte",
+    "modes": {
+      "foot": "A pé",
+      "bike": "Bicicleta",
+      "car": "Carro"
+    },
+    "legs": {
+      "street": {
+        "foot": "A pé pelas ruas",
+        "bike": "De bicicleta pelas ruas",
+        "car": "De carro"
+      },
+      "door": "Entrada",
+      "walk": "Caminhar",
+      "walkOn": "Caminhar no {{storey}}",
+      "stairs": "Escadas {{from}} → {{to}}",
+      "lift": "Elevador {{from}} → {{to}}"
+    },
+    "noteIndoor": "No interior a 1,3 m/s; escadas cerca de 17 s por pavimento ao subir. Estimativa pelas paredes e portas modeladas.",
+    "note": {
+      "foot": "A pé a 4,8 km/h por ruas e caminhos do OpenStreetMap; sem semáforos nem esperas.",
+      "bike": "De bicicleta a 16 km/h, respeitando mão única; a pé nas calçadas. Sem semáforos.",
+      "car": "De carro no limite de velocidade, respeitando mão única; sem trânsito, semáforos nem estacionamento."
+    },
+    "guessed": "{{m}} sem piso ou porta modelados"
   }
 }

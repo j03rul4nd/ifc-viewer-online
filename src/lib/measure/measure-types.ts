@@ -19,7 +19,32 @@ export type MeasureTool = 'none' | MeasureToolId
  * picked face. The second is the one a clearance check actually needs: two
  * walls are never measured at exactly opposite points by hand.
  */
-export type DistanceMode = 'point' | 'perpendicular' | 'elements' | 'headroom'
+export type DistanceMode = 'point' | 'perpendicular' | 'elements' | 'headroom' | 'route'
+
+/** How a route travels outdoors (indoors it is always on foot). */
+export type RouteMode = 'foot' | 'bike' | 'car'
+
+/** One stage of a route: a walk on a storey, stairs, a lift, the streets, the door between. */
+export interface RouteLeg {
+  kind: 'walk' | 'stairs' | 'lift' | 'street' | 'door'
+  storey?: string
+  from?: string
+  to?: string
+  mode?: RouteMode
+  metres: number
+  seconds: number
+  /** Streets taken, in order (outdoor legs). */
+  streets?: Array<{ name: string | null; metres: number }>
+  /** Metres where the model had no floor or no door and the route had to guess. */
+  guessedMetres?: number
+}
+
+export interface RoutePlan {
+  points: Vec3[]
+  metres: number
+  seconds: number
+  legs: RouteLeg[]
+}
 
 /** An area traced vertex by vertex, or the area of one face in a single click. */
 export type AreaMode = 'polygon' | 'face'
@@ -138,6 +163,15 @@ export interface PathItem extends ItemBase {
   kind: 'path'
   value: number
   segments: number[]
+  /** A route found by the tool (Distance → Route), not traced by hand. */
+  route?: {
+    mode: RouteMode
+    seconds: number
+    metres: number
+    legs: RouteLeg[]
+    /** What was asked, so the route can be recomputed in another mode. */
+    request: { from: Vec3; to: Vec3; fromAnchor: Anchor | null; toAnchor: Anchor | null }
+  }
 }
 
 export interface AreaItem extends ItemBase {
@@ -182,6 +216,8 @@ export type MeasureStep =
   | 'element-a'
   | 'element-b'
   | 'headroom-point'
+  | 'route-start'
+  | 'route-end'
 
 export interface MeasureSnapshot {
   tool: MeasureTool
@@ -197,11 +233,14 @@ export interface MeasureSnapshot {
   settings: MeasureSettings
   /** Why the last click made nothing, for the panel to say — cleared on the next one. */
   notice: MeasureNotice | null
-  /** An asynchronous measurement (element gap, clear height) is being computed. */
+  /** An asynchronous measurement (element gap, clear height, route) is being computed. */
   busy: boolean
+  /** Travel mode for the next route. */
+  routeMode: RouteMode
 }
 
 export type MeasureNotice = 'no-surface' | 'no-element' | 'same-element' | 'no-geometry'
+  | 'route-no-map' | 'route-no-network' | 'route-no-path' | 'route-no-indoor' | 'route-too-far' | 'route-unavailable'
 
 /** The cursor's lock, at pointer-move rate. Kept apart from the snapshot. */
 export interface MeasureHover {

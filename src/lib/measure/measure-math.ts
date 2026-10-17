@@ -262,8 +262,10 @@ export function slopePercent(a: Vec3, b: Vec3): number | null {
 export function formatItemValue(item: MeasureItem, s: MeasureSettings): string {
   switch (item.kind) {
     case 'distance':
-    case 'path':
       return formatLength(item.value, s)
+    case 'path':
+      // A found route is read by its time; its length is in the breakdown.
+      return item.route ? formatDuration(item.route.seconds) : formatLength(item.value, s)
     case 'area':
       return formatArea(item.value, s)
     case 'angle':
@@ -340,4 +342,14 @@ export function pathProfile(points: readonly Vec3[]): PathProfile {
   }
   const net = points.length > 1 ? points[points.length - 1].y - points[0].y : 0
   return { plan, climb, descent, maxSlopePct, net }
+}
+
+/** "45 s", "12 min", "1 h 05 min" — travel times, rounded the way people say them. */
+export function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '—'
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))} s`
+  const min = Math.round(seconds / 60)
+  if (min < 60) return `${min} min`
+  const h = Math.floor(min / 60)
+  return `${h} h ${String(min % 60).padStart(2, '0')} min`
 }
