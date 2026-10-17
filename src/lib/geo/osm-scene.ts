@@ -891,7 +891,13 @@ function* buildDetailedSurface(
           frame, f.isSea === true,
         ) + lift)
       : 0
-    const shoreDist = isWater ? distanceToRings(mesh.points, boundaries) : null
+    // The shore distance drives the foam and the shallows, which are metres
+    // wide. Interpolated over a starved mesh's long triangles it draws them as
+    // fans across the open water; such a surface is better left uniform.
+    const starved = isWater && longestEdge(mesh.points, mesh.faces) > DETAIL_EDGE_M[layer] * 3
+    const shoreDist = isWater
+      ? (starved ? new Array<number>(mesh.points.length).fill(0) : distanceToRings(mesh.points, boundaries))
+      : null
     const shoreOfSand = layer === 'sand' ? seaDistanceFor(features, frame) : null
     const course = isWater ? waterSurfacesFor(features, frame).get(f.id) : undefined
 

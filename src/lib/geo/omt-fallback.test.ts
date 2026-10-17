@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  decodeOmtTile, omtTags, omtToOverpassElements, tilePointToLatLon, tilesCovering, type OmtFeature,
+  clipToTile, decodeOmtTile, omtTags, omtToOverpassElements, tilePointToLatLon, tilesCovering, type OmtFeature,
 } from './omt-fallback'
 import { parseOsmFeatures } from './osm-features'
 
@@ -106,5 +106,30 @@ describe('tiles', () => {
     const out = decodeOmtTile(vt, 14, 8291, 6112)
     expect(out).toHaveLength(1)
     expect(out[0].parts).toHaveLength(1)
+  })
+})
+
+describe('clipToTile', () => {
+  it('cuts a polygon crossing the tile edge to the tile, so neighbours abut', () => {
+    // A square straddling the right edge (extent 4096, margin to 4160).
+    const ring = [{ x: 4000, y: 100 }, { x: 4150, y: 100 }, { x: 4150, y: 300 }, { x: 4000, y: 300 }, { x: 4000, y: 100 }]
+    const out = clipToTile(ring, 4096)
+    expect(out).toHaveLength(4)
+    expect(Math.max(...out.map((p) => p.x))).toBe(4096)
+    expect(Math.min(...out.map((p) => p.x))).toBe(4000)
+  })
+  it('drops a ring lying wholly in the margin and keeps one inside as is', () => {
+    expect(clipToTile([{ x: 4100, y: 10 }, { x: 4150, y: 10 }, { x: 4150, y: 60 }], 4096)).toHaveLength(0)
+    const inside = [{ x: 10, y: 10 }, { x: 50, y: 10 }, { x: 50, y: 50 }]
+    expect(clipToTile(inside, 4096)).toEqual(inside)
+  })
+})
+
+describe('park lawns in the tiles', () => {
+  it('keeps a park filed as grass a park', () => {
+    const f = (subclass: string): OmtFeature => ({ layer: 'landcover', type: 3, props: { class: 'grass', subclass }, parts: [] })
+    expect(omtTags(f('park'))).toMatchObject({ leisure: 'park' })
+    expect(omtTags(f('garden'))).toMatchObject({ leisure: 'garden' })
+    expect(omtTags(f('grass'))).toEqual({ landuse: 'grass' })
   })
 })
