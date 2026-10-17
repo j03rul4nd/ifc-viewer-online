@@ -31,7 +31,9 @@
     "elements": "Zwischen Bauteilen",
     "elementsHint": "Kürzester Abstand zwischen zwei Bauteilen, aus ihrer Geometrie – für Freiräume und Kollisionen",
     "headroom": "Lichte Höhe",
-    "headroomHint": "Ein Klick auf einen Boden: der senkrechte Abstand zur Fläche darüber (von einer Decke: nach unten zum Boden)"
+    "headroomHint": "Ein Klick auf einen Boden: der senkrechte Abstand zur Fläche darüber (von einer Decke: nach unten zum Boden)",
+    "route": "Route",
+    "routeHint": "Der schnellste Weg zwischen zwei Punkten: im Gebäude über Flure und Treppen, draußen über die Straßen zu Fuß, mit dem Rad oder dem Auto"
   },
   "steps": {
     "idle": "Werkzeug wählen",
@@ -48,7 +50,9 @@
     "element-a": "Erstes Bauteil anklicken",
     "element-b": "Zweites Bauteil anklicken",
     "headroom-point": "Boden (oder Decke) anklicken, um die lichte Höhe zu messen",
-    "computing": "Wird gemessen…"
+    "computing": "Wird gemessen…",
+    "route-start": "Startpunkt der Route anklicken",
+    "route-end": "Endpunkt anklicken"
   },
   "keys": {
     "axisLock": "Achse sperren",
@@ -302,7 +306,13 @@
     "no-surface": "Über oder unter diesem Punkt ist nichts",
     "no-element": "Auf ein Bauteil des Modells klicken",
     "same-element": "Das ist dasselbe Bauteil – ein anderes anklicken",
-    "no-geometry": "Dieses Bauteil hat keine messbare Geometrie"
+    "no-geometry": "Dieses Bauteil hat keine messbare Geometrie",
+    "route-no-map": "Routen im Freien brauchen die Karte",
+    "route-no-network": "Straßen konnten nicht gelesen werden (OpenStreetMap ausgelastet?) – erneut versuchen",
+    "route-no-path": "Keine Route zwischen diesen Punkten",
+    "route-no-indoor": "Dieses Modell hat keine Böden oder Geschosse für eine Route",
+    "route-too-far": "Zu weit für eine Straßenroute (max. 25 km)",
+    "route-unavailable": "Routen sind hier nicht verfügbar"
   },
   "session": {
     "open": "Öffnen",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "Gelände",
     "building": "Gebäude"
+  },
+  "route": {
+    "mode": "Verkehrsmittel",
+    "modes": {
+      "foot": "Zu Fuß",
+      "bike": "Rad",
+      "car": "Auto"
+    },
+    "legs": {
+      "street": {
+        "foot": "Zu Fuß über die Straßen",
+        "bike": "Mit dem Rad",
+        "car": "Mit dem Auto"
+      },
+      "door": "Eingang",
+      "walk": "Gehen",
+      "walkOn": "Gehen in {{storey}}",
+      "stairs": "Treppe {{from}} → {{to}}",
+      "lift": "Aufzug {{from}} → {{to}}"
+    },
+    "noteIndoor": "Innen 1,3 m/s; Treppen aufwärts etwa 17 s pro Geschoss. Schätzung entlang der modellierten Wände und Türen.",
+    "note": {
+      "foot": "Zu Fuß 4,8 km/h auf Straßen und Wegen aus OpenStreetMap; ohne Ampeln und Wartezeiten.",
+      "bike": "Rad 16 km/h, Einbahnstraßen beachtet; auf Gehwegen geschoben. Ohne Ampeln.",
+      "car": "Auto mit der zulässigen Höchstgeschwindigkeit, Einbahnstraßen beachtet; ohne Verkehr, Ampeln und Parken."
+    },
+    "guessed": "{{m}} ohne modellierten Boden oder Tür"
   }
 }

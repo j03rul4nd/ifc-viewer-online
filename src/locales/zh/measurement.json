@@ -31,7 +31,9 @@
     "elements": "构件之间",
     "elementsHint": "根据几何计算两个构件之间的最小间距 — 用于净距和碰撞检查",
     "headroom": "净高",
-    "headroomHint": "点击一次楼面：到上方表面的垂直距离（从顶棚点击：向下到楼面）"
+    "headroomHint": "点击一次楼面：到上方表面的垂直距离（从顶棚点击：向下到楼面）",
+    "route": "路线",
+    "routeHint": "两点之间最快的路线：建筑内走走廊和楼梯；室外沿街道步行、骑行或驾车"
   },
   "steps": {
     "idle": "选择工具",
@@ -48,7 +50,9 @@
     "element-a": "点击第一个构件",
     "element-b": "点击第二个构件",
     "headroom-point": "点击楼面（或顶棚）测量净高",
-    "computing": "正在测量…"
+    "computing": "正在测量…",
+    "route-start": "点击路线起点",
+    "route-end": "点击终点"
   },
   "keys": {
     "axisLock": "锁定轴",
@@ -302,7 +306,13 @@
     "no-surface": "此点上方和下方都没有表面",
     "no-element": "请点击模型中的构件",
     "same-element": "这是同一个构件，请点击另一个",
-    "no-geometry": "此构件没有可测量的几何"
+    "no-geometry": "此构件没有可测量的几何",
+    "route-no-map": "室外路线需要打开地图",
+    "route-no-network": "无法读取街道（OpenStreetMap 繁忙？），请重试",
+    "route-no-path": "这两点之间没有路线",
+    "route-no-indoor": "该模型没有可用于路线的楼板或楼层",
+    "route-too-far": "距离太远，无法规划街道路线（最多 25 km）",
+    "route-unavailable": "此处无法使用路线"
   },
   "session": {
     "open": "打开",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "地形",
     "building": "建筑"
+  },
+  "route": {
+    "mode": "出行方式",
+    "modes": {
+      "foot": "步行",
+      "bike": "骑行",
+      "car": "驾车"
+    },
+    "legs": {
+      "street": {
+        "foot": "沿街步行",
+        "bike": "沿街骑行",
+        "car": "驾车"
+      },
+      "door": "入口",
+      "walk": "步行",
+      "walkOn": "在 {{storey}} 步行",
+      "stairs": "楼梯 {{from}} → {{to}}",
+      "lift": "电梯 {{from}} → {{to}}"
+    },
+    "noteIndoor": "室内按 1.3 m/s；上楼梯每层约 17 秒。沿建模的墙和门估算。",
+    "note": {
+      "foot": "步行 4.8 km/h，使用 OpenStreetMap 的街道和小路；不含红绿灯和等待。",
+      "bike": "骑行 16 km/h，遵守单行线；人行道上推行。不含红绿灯。",
+      "car": "驾车按各道路限速，遵守单行线；不含拥堵、红绿灯和停车。"
+    },
+    "guessed": "{{m}} 经过模型中没有楼板或门的位置"
   }
 }

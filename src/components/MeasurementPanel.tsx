@@ -35,7 +35,7 @@ import { trackFeatureUsed } from '../lib/analytics'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { anyModalOpen } from '../lib/ui/modal-stack'
 import type {
-  LengthUnit, MeasureItem, MeasureKind, MeasureSettings, MeasureToolId,
+  LengthUnit, MeasureItem, MeasureKind, MeasureSettings, MeasureToolId, RouteMode,
 } from '../lib/measure/measure-types'
 import {
   angleAt, areaInUnits, decimalSeparator, exportNumber, formatAngle, formatArea,
@@ -45,12 +45,13 @@ import { checkItem, volumeOf } from '../lib/measure/checks'
 import { CheckBadge, MeasureRules, formatRequirement } from './measure/MeasureRules'
 import { TakeoffSection } from './measure/TakeoffSection'
 import { anchorsLine, crossesModels, formatLatLon } from './measure/anchors'
+import { RouteDetails, RouteModeChips } from './measure/RouteDetails'
 import { MeasureSession, useLoadedModelNames, useMeasureAutosave } from './measure/MeasureSession'
 import { defaultPrecisionFor, loadMeasureSettings, saveMeasureSettings } from '../lib/measure/measure-settings'
 import { isTypingTarget, useMeasureHover, useMeasureSnapshot } from './measure/useMeasureStores'
 import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
 import {
-  CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GapIcon, GearIcon, HeadroomIcon, PerpendicularIcon,
+  CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GapIcon, GearIcon, HeadroomIcon, PerpendicularIcon, RouteIcon,
   PointsIcon, TargetIcon, TrashIcon, UndoIcon,
 } from './measure/icons'
 
@@ -462,7 +463,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 options={[
                   { value: 'elements', label: <><GapIcon size={13} />{t('modes.elements')}</> },
                   { value: 'headroom', label: <><HeadroomIcon size={13} />{t('modes.headroom')}</> },
+                  { value: 'route', label: <><RouteIcon size={13} />{t('modes.route')}</> },
                 ]} />
+              {snapshot.distanceMode === 'route' && (
+                <div className="mt-1.5"><RouteModeChips touch value={snapshot.routeMode} onChange={(m) => system?.setRouteMode(m)} disabled={snapshot.busy} /></div>
+              )}
             </div>
           )}
           {tool === 'area' && !drafting && (
@@ -584,6 +589,8 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                     onRename={(name) => { system?.rename(item.id, name); setEditingId(null) }}
                     onCancelRename={() => setEditingId(null)}
                     onAnnotate={(patch) => system?.annotate(item.id, patch)}
+                    onRouteMode={(m) => system?.setRouteMode(m, item.id)}
+                    busy={snapshot.busy}
                   />
                 ))}
               </ul>
@@ -711,8 +718,12 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 options={[
                   { value: 'elements', label: <><GapIcon size={12} />{t('modes.elements')}</>, title: t('modes.elementsHint') },
                   { value: 'headroom', label: <><HeadroomIcon size={12} />{t('modes.headroom')}</>, title: t('modes.headroomHint') },
+                  { value: 'route', label: <><RouteIcon size={12} />{t('modes.route')}</>, title: t('modes.routeHint') },
                 ]}
               />
+            )}
+            {tool === 'distance' && snapshot.distanceMode === 'route' && (
+              <RouteModeChips value={snapshot.routeMode} onChange={(m) => system?.setRouteMode(m)} disabled={snapshot.busy} />
             )}
             {tool === 'area' && (
               <Segmented
@@ -825,6 +836,8 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   onRename={(name) => { system?.rename(item.id, name); setEditingId(null) }}
                   onCancelRename={() => setEditingId(null)}
                   onAnnotate={(patch) => system?.annotate(item.id, patch)}
+                  onRouteMode={(m) => system?.setRouteMode(m, item.id)}
+                  busy={snapshot.busy}
                 />
               ))}
             </ul>
@@ -925,6 +938,8 @@ interface RowProps {
   onRename(name: string | null): void
   onCancelRename(): void
   onAnnotate(patch: Partial<Pick<MeasureItem, 'requirement' | 'extrusion' | 'note'>>): void
+  onRouteMode?(mode: RouteMode): void
+  busy?: boolean
   touch?: boolean
 }
 
@@ -952,6 +967,8 @@ function MeasureRow(p: RowProps) {
         break
       }
       case 'path': {
+        // A found route has its own breakdown (RouteDetails): no per-vertex segments.
+        if (item.route) break
         // Over terrain or a ramp sequence, the length is not the question — the climb is.
         const pr = pathProfile(item.points)
         rows.push({ label: t('item.plan'), value: formatLength(pr.plan, s) })
@@ -1047,6 +1064,9 @@ function MeasureRow(p: RowProps) {
             <div className="rounded-[7px] bg-[var(--surface)] border border-[var(--border)] px-2 py-1">
               {details.map((d) => <DetailRow key={d.label} {...d} />)}
             </div>
+          )}
+          {item.kind === 'path' && item.route && (
+            <RouteDetails item={item} settings={s} busy={!!p.busy} onMode={(m) => p.onRouteMode?.(m)} />
           )}
           {anchors && (
             <p className="mt-1.5 text-[10px] leading-snug text-[var(--text-dim)] flex items-start gap-1">

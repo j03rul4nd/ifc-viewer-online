@@ -31,7 +31,9 @@
     "elements": "Between elements",
     "elementsHint": "Shortest gap between two elements, from their geometry — for clearances and clashes",
     "headroom": "Clear height",
-    "headroomHint": "One click on a floor: the vertical distance to the surface above (from a ceiling: down to the floor)"
+    "headroomHint": "One click on a floor: the vertical distance to the surface above (from a ceiling: down to the floor)",
+    "route": "Route",
+    "routeHint": "The fastest way between two points: inside the building by corridors and stairs, outside by the streets on foot, by bike or by car"
   },
   "steps": {
     "idle": "Pick a tool",
@@ -48,7 +50,9 @@
     "element-a": "Click the first element",
     "element-b": "Click the second element",
     "headroom-point": "Click a floor (or a ceiling) to measure the clear height",
-    "computing": "Measuring…"
+    "computing": "Measuring…",
+    "route-start": "Click where the route starts",
+    "route-end": "Click where it ends"
   },
   "keys": {
     "axisLock": "lock axis",
@@ -302,7 +306,13 @@
     "no-surface": "Nothing above or below this point",
     "no-element": "Click on an element of a model",
     "same-element": "That is the same element — click another one",
-    "no-geometry": "This element has no geometry to measure"
+    "no-geometry": "This element has no geometry to measure",
+    "route-no-map": "Routes outside need the map on",
+    "route-no-network": "Could not read the streets here (OpenStreetMap busy?) — try again",
+    "route-no-path": "No route between those two points",
+    "route-no-indoor": "This model has no floors or storeys to route on",
+    "route-too-far": "Too far apart for a street route (25 km max)",
+    "route-unavailable": "Routes are not available here"
   },
   "session": {
     "open": "Open",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "Ground",
     "building": "Building"
+  },
+  "route": {
+    "mode": "Travel mode",
+    "modes": {
+      "foot": "On foot",
+      "bike": "Bike",
+      "car": "Car"
+    },
+    "legs": {
+      "street": {
+        "foot": "Walk the streets",
+        "bike": "Cycle the streets",
+        "car": "Drive"
+      },
+      "door": "Entrance",
+      "walk": "Walk",
+      "walkOn": "Walk on {{storey}}",
+      "stairs": "Stairs {{from}} → {{to}}",
+      "lift": "Lift {{from}} → {{to}}"
+    },
+    "noteIndoor": "Indoors at 1.3 m/s; stairs about 17 s per storey up. An estimate along the modelled walls and doors.",
+    "note": {
+      "foot": "Walking 4.8 km/h on OpenStreetMap streets and paths; crossings and waits not included.",
+      "bike": "Cycling 16 km/h, one-ways respected; pushing on footpaths. No traffic lights included.",
+      "car": "Free-flow driving at the speed limits, one-ways respected; no traffic, lights or parking time."
+    },
+    "guessed": "{{m}} crossed where the model has no floor or no door"
   }
 }

@@ -31,7 +31,9 @@
     "elements": "Tra elementi",
     "elementsHint": "Distanza minima tra due elementi, dalla loro geometria — per spazi liberi e interferenze",
     "headroom": "Altezza libera",
-    "headroomHint": "Un clic su un pavimento: la distanza verticale dalla superficie sopra (da un soffitto: fino al pavimento)"
+    "headroomHint": "Un clic su un pavimento: la distanza verticale dalla superficie sopra (da un soffitto: fino al pavimento)",
+    "route": "Percorso",
+    "routeHint": "La via più rapida tra due punti: nell’edificio per corridoi e scale; fuori per le strade a piedi, in bici o in auto"
   },
   "steps": {
     "idle": "Scegli uno strumento",
@@ -48,7 +50,9 @@
     "element-a": "Fai clic sul primo elemento",
     "element-b": "Fai clic sul secondo elemento",
     "headroom-point": "Fai clic su un pavimento (o un soffitto) per misurare l’altezza libera",
-    "computing": "Misurazione…"
+    "computing": "Misurazione…",
+    "route-start": "Fai clic dove inizia il percorso",
+    "route-end": "Fai clic dove finisce"
   },
   "keys": {
     "axisLock": "blocca asse",
@@ -302,7 +306,13 @@
     "no-surface": "Non c’è nulla sopra o sotto questo punto",
     "no-element": "Fai clic su un elemento del modello",
     "same-element": "È lo stesso elemento: fai clic su un altro",
-    "no-geometry": "Questo elemento non ha geometria da misurare"
+    "no-geometry": "Questo elemento non ha geometria da misurare",
+    "route-no-map": "I percorsi su strada richiedono la mappa",
+    "route-no-network": "Impossibile leggere le strade (OpenStreetMap occupato?): riprova",
+    "route-no-path": "Nessun percorso tra questi due punti",
+    "route-no-indoor": "Questo modello non ha pavimenti o piani su cui tracciare il percorso",
+    "route-too-far": "Troppo lontano per un percorso su strada (max 25 km)",
+    "route-unavailable": "I percorsi non sono disponibili qui"
   },
   "session": {
     "open": "Apri",
@@ -329,5 +339,32 @@
   "anchor": {
     "terrain": "Terreno",
     "building": "Edificio"
+  },
+  "route": {
+    "mode": "Mezzo",
+    "modes": {
+      "foot": "A piedi",
+      "bike": "Bici",
+      "car": "Auto"
+    },
+    "legs": {
+      "street": {
+        "foot": "A piedi per le strade",
+        "bike": "In bici per le strade",
+        "car": "In auto"
+      },
+      "door": "Ingresso",
+      "walk": "Camminare",
+      "walkOn": "Camminare al {{storey}}",
+      "stairs": "Scale {{from}} → {{to}}",
+      "lift": "Ascensore {{from}} → {{to}}"
+    },
+    "noteIndoor": "All’interno a 1,3 m/s; scale circa 17 s per piano in salita. Stima lungo muri e porte modellati.",
+    "note": {
+      "foot": "A piedi a 4,8 km/h su strade e sentieri di OpenStreetMap; semafori e attese esclusi.",
+      "bike": "In bici a 16 km/h, sensi unici rispettati; a piedi sui marciapiedi. Semafori esclusi.",
+      "car": "In auto ai limiti di velocità, sensi unici rispettati; senza traffico, semafori né parcheggio."
+    },
+    "guessed": "{{m}} senza pavimento o porta modellati"
   }
 }

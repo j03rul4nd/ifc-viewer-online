@@ -13,7 +13,7 @@
 // THE SAME FORMAT keeps the last session in localStorage, keyed by the set of
 // models loaded, so a reload offers the measurements back.
 
-import type { Anchor, GeoPoint, MeasureItem, MeasureKind, Requirement, Vec3 } from './measure-types'
+import type { Anchor, GeoPoint, MeasureItem, MeasureKind, PathItem, Requirement, RouteLeg, Vec3 } from './measure-types'
 
 export const MEASURE_FILE_FORMAT = 'ifcviewer-measurements'
 export const MEASURE_FILE_VERSION = 1
@@ -37,6 +37,7 @@ export interface SavedMeasurement {
   note?: string | null
   anchors?: (Anchor | null)[]
   geo?: GeoPoint | null
+  route?: PathItem['route']
 }
 
 export interface MeasureFile {
@@ -71,6 +72,9 @@ export function toSaved(item: MeasureItem): SavedMeasurement {
       if (item.source) s.source = item.source
       if (item.clash) s.clash = true
       if (item.approximate) s.approximate = true
+      break
+    case 'path':
+      if (item.route) s.route = item.route
       break
     case 'area':
       s.areaSource = item.source
@@ -176,6 +180,16 @@ export function parseMeasurements(raw: string): ParseResult {
       const g = m.geo as Record<string, unknown> | undefined
       if (g && isNum(g.lat) && isNum(g.lon) && Math.abs(g.lat) <= 90 && Math.abs(g.lon) <= 180) {
         s.geo = { lat: g.lat, lon: g.lon, elevationM: isNum(g.elevationM) ? g.elevationM : null }
+      }
+    }
+    if (kind === 'path' && m.route && typeof m.route === 'object') {
+      const r = m.route as Record<string, unknown>
+      const req = r.request as Record<string, unknown> | undefined
+      const from = vec(req?.from), to = vec(req?.to)
+      if ((r.mode === 'foot' || r.mode === 'bike' || r.mode === 'car') && isNum(r.seconds) && isNum(r.metres) && Array.isArray(r.legs) && from && to) {
+        const KINDS = new Set(['walk', 'stairs', 'lift', 'street', 'door'])
+        const legs = (r.legs as unknown[]).filter((l): l is RouteLeg => !!l && typeof l === 'object' && KINDS.has((l as RouteLeg).kind) && isNum((l as RouteLeg).metres) && isNum((l as RouteLeg).seconds)).slice(0, 50)
+        s.route = { mode: r.mode, seconds: r.seconds, metres: r.metres, legs, request: { from, to, fromAnchor: anchor(req?.fromAnchor), toAnchor: anchor(req?.toAnchor) } }
       }
     }
     if (Array.isArray(m.anchors)) {
