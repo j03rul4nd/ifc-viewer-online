@@ -962,6 +962,12 @@ fixes for duplicate and empty names, which the browser can do on its own.
    `fix_type: 'batch_name'`, `fix_revalidated`, `export_clicked` with
    `source: 'batch_fix'`): never names, patterns or file names, and never
    `pricing_intent`.
+10. Reconciled with the paid roadmap (`docs-planning/11`, which listed
+   DUPLICATE_NAME among the paid auto-fix rules). Joel, 2026-10-17: bulk
+   renaming of duplicate and empty names is free and public. The paid
+   auto-fix (#280, team preview) keeps its value in what the browser cannot
+   do by renaming: missing types, proxies, and one click for every rule at
+   once.
 
 **Rejected.** Predicting the score from the diff alone (the queue is not the
 file: skipped diffs and the writer decide what is delivered; the prediction is
