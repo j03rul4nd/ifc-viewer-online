@@ -188,6 +188,45 @@ export function capSquareKiosks<B extends {
   })
 }
 
+/** A park pavilion, a toilet block, a courtyard house: two storeys, m. */
+export const PARK_PAVILION_HEIGHT_M = 7
+/** Above this, a building in a park is a building (a museum, a hall), m². */
+const PARK_PAVILION_MAX_M2 = 3000
+
+/**
+ * Bring a small, unmeasured building standing IN a park down to pavilion height.
+ *
+ * Measured in Lujiazui Green, Shanghai: five `building=yes` ways and nothing
+ * else (the toilets, a tea house, the Chen Guichun courtyard house), which the
+ * district's height prior, learned from the towers all round, raised to
+ * 26.5 m, and the named courtyard house to 185 m: six-storey blocks and a
+ * skyscraper in the middle of a lawn. What stands in a park and has no height
+ * is a pavilion, a kiosk, a toilet block or a heritage house; nothing small
+ * there is a 26 m building. A surveyed height or level count always wins, as
+ * does a building part. Park holes are ignored: a building inside a park is
+ * often cut out of the park's polygon, and it is still in the park.
+ */
+export function capParkPavilions<B extends {
+  ring: ReadonlyArray<LatLonPoint>
+  height: { heightM: number; basis?: string; source?: string }
+  isBuildingPart?: boolean
+}>(buildings: ReadonlyArray<B>, features: ReadonlyArray<OsmFeature>): B[] {
+  const parks = features
+    .filter((f) => f.kind === 'green' && f.style.cover === 'park' && !!f.ring && f.ring.length >= 3)
+    .map((f) => ({ ...floorOf(f), holes: [] }))
+  if (parks.length === 0) return buildings.slice()
+  return buildings.map((b) => {
+    if (b.isBuildingPart || b.height.basis !== 'guess' || b.height.heightM <= PARK_PAVILION_HEIGHT_M) return b
+    if (b.ring.length < 3) return b
+    if (ringArea(b.ring) * 111_320 ** 2 > PARK_PAVILION_MAX_M2) return b
+    let lat = 0; let lon = 0
+    for (const p of b.ring) { lat += p.lat; lon += p.lon }
+    const centre = { lat: lat / b.ring.length, lon: lon / b.ring.length }
+    if (!onFloor(centre, parks)) return b
+    return { ...b, height: { ...b.height, heightM: PARK_PAVILION_HEIGHT_M, source: 'rule' as const } }
+  })
+}
+
 /** Planar area of a lat/lon ring, in square degrees scaled by cos(lat). */
 function ringArea(ring: ReadonlyArray<LatLonPoint>): number {
   if (ring.length < 3) return 0

@@ -9,6 +9,103 @@ import type { LayerMeshOptions } from './osm-scene'
 
 type P = { x: number; y: number }
 type Item = { name: string; x: number; y: number; z: number; yaw: number; scale: number }
+/** One straight run of clipped hedge, in local metres. */
+export type Hedge = { a: P; b: P; width: number; height: number; tone: readonly [number, number, number] }
+/** Width of the stone coping on a lake's edge, m. */
+const COPING_M = .5
+/** The tall boundary hedge and the low path edging: width, height, run, gap. */
+// Clipped privet and box are darker and glossier than the lawn they edge,
+// which is what lets them read at all from a few hundred metres up.
+export const HEDGE_TALL = { width: 1.2, height: 1.4, run: 14, gap: 3.5, tone: [.11, .24, .09] as const }
+export const HEDGE_LOW = { width: .6, height: .6, run: 9, gap: 2.5, tone: [.15, .3, .1] as const }
+/** Hedges are set this far into the ground: the lawn is drawn a hair above it
+ * and pulled toward the eye (ground-depth-nudge), which hides a low base. */
+const HEDGE_SINK_M = .3
+type HedgeSpec = { width: number; height: number; run: number; gap: number; tone: readonly [number, number, number] }
+/** A plaza mapped as a closed pedestrian area: it is paving, not a path to edge. */
+function isPedestrianArea(f: OsmFeature): boolean {
+  const r = f.ring
+  return !!r && r.length > 3 && r[0].lat === r[r.length - 1].lat && r[0].lon === r[r.length - 1].lon
+}
+
+/**
+ * Lay clipped hedge along a polyline (closed = a ring, offset INWARD by
+ * `offset`; open = a path, offset to its left by `offset`, negative for the
+ * right). Runs of `spec.run` m with `spec.gap` m openings; a run is cut where
+ * `fits` fails, so a gate, a crossing path or a footprint opens the hedge.
+ * `atGap` is called at each opening: the place for a flowering mound.
+ */
+export function hedgeAlong(
+  line: readonly P[], closed: boolean, offset: number, id: string, fits: (p: P) => boolean,
+  spec: HedgeSpec, out: Hedge[], atGap?: (p: P, id: string) => void,
+): void {
+  if (line.length < 2) return
+  let sign = 1
+  if (closed) {
+    let area = 0
+    for (let i = 0, j = line.length - 1; i < line.length; j = i++) area += (line[j].x - line[i].x) * (line[j].y + line[i].y)
+    // Positive = counter-clockwise, whose left normal already points in.
+    sign = area > 0 ? 1 : -1
+  }
+  const n = closed ? line.length : line.length - 1
+  const step = 1.5
+  for (let i = 0; i < n; i++) {
+    const a = line[i], b = line[(i + 1) % line.length]
+    const len = Math.hypot(b.x - a.x, b.y - a.y)
+    if (len < spec.run * .4) continue
+    // Left normal; for a ring, oriented to point inside.
+    const nx = -(b.y - a.y) / len * sign, ny = (b.x - a.x) / len * sign
+    const at = (d: number): P => ({ x: a.x + (b.x - a.x) * d / len + nx * offset, y: a.y + (b.y - a.y) * d / len + ny * offset })
+    // Inset from the corners so neighbouring sides do not cross.
+    const inset = Math.abs(offset) + spec.width
+    let start: number | null = null
+    const close = (end: number) => {
+      if (start !== null && end - start >= 2) out.push({ a: at(start), b: at(end), width: spec.width, height: spec.height, tone: spec.tone })
+      start = null
+    }
+    let d = inset, k = 0
+    while (d <= len - inset) {
+      const runEnd = Math.min(len - inset, d + spec.run)
+      for (let s = d; s <= runEnd; s += step) {
+        if (fits(at(s))) { if (start === null) start = s }
+        else close(s - step / 2)
+      }
+      close(runEnd)
+      const gapAt = runEnd + spec.gap / 2
+      if (atGap && gapAt < len - inset && fits(at(gapAt))) atGap(at(gapAt), `${id}:${i}:${k}`)
+      d = runEnd + spec.gap
+      k++
+    }
+  }
+}
+
+/** All hedge runs as one mesh: boxes battered in toward a lighter clipped top. */
+function hedgeMesh(hedges: readonly Hedge[], ground: (p: P) => number): THREE.Mesh {
+  const pos: number[] = [], col: number[] = [], idx: number[] = []
+  for (const h of hedges) {
+    const len = Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y)
+    const ux = (h.b.x - h.a.x) / len, uy = (h.b.y - h.a.y) / len
+    const wx = -uy * h.width / 2, wy = ux * h.width / 2
+    const za = ground(h.a) - HEDGE_SINK_M, zb = ground(h.b) - HEDGE_SINK_M
+    const top = h.height + HEDGE_SINK_M
+    const c = (p: P, s: number, z: number, t: number) => [p.x + wx * s * t, p.y + wy * s * t, z]
+    const v = pos.length / 3
+    const corners = [c(h.a, 1, za, 1), c(h.b, 1, zb, 1), c(h.b, -1, zb, 1), c(h.a, -1, za, 1),
+      c(h.a, 1, za + top, .82), c(h.b, 1, zb + top, .82), c(h.b, -1, zb + top, .82), c(h.a, -1, za + top, .82)]
+    for (let i = 0; i < 8; i++) {
+      pos.push(...corners[i])
+      // Shaded at the foot, sunlit on the clipped top.
+      const k = i < 4 ? .62 : 1.12
+      col.push(h.tone[0] * k, h.tone[1] * k, h.tone[2] * k)
+    }
+    for (const [p, q, r, s] of [[0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7], [4, 5, 6, 7]]) idx.push(v + p, v + q, v + r, v + p, v + r, v + s)
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
+  g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere()
+  return new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .7, side: THREE.DoubleSide }))
+}
 export const PARK_DETAIL_BUDGET = 3200
 export function inside(p: P, ring: readonly P[]): boolean {
   let hit = false
@@ -17,6 +114,18 @@ export function inside(p: P, ring: readonly P[]): boolean {
     if ((a.y > p.y) !== (b.y > p.y) && p.x < (b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) hit = !hit
   }
   return hit
+}
+/** A scholar's rock: a pitted, upright lump of limestone (deterministic). */
+function taihuRock(): THREE.BufferGeometry {
+  const g = new THREE.IcosahedronGeometry(.55, 1)
+  const a = g.getAttribute('position')
+  for (let i = 0; i < a.count; i++) {
+    const x = a.getX(i), y = a.getY(i), z = a.getZ(i)
+    const k = .72 + .38 * Math.abs(Math.sin(x * 7.1 + y * 5.3) * Math.cos(z * 6.7 - x * 2.9))
+    a.setXYZ(i, x * k * .9, y * k * .75, (z * k + .55) * 1.25)
+  }
+  g.computeVertexNormals()
+  return g
 }
 function distance(p: P, a: P, b: P): number {
   const dx=b.x-a.x, dy=b.y-a.y, t=Math.max(0, Math.min(1, ((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy || 1)))
@@ -78,35 +187,49 @@ export function buildShanghaiParkDetails(features: readonly OsmFeature[], opts: 
         const p={x:a.x+(b.x-a.x)*k/steps,y:a.y+(b.y-a.y)*k/steps}
         const q={x:a.x+(b.x-a.x)*(k+1)/steps,y:a.y+(b.y-a.y)*(k+1)/steps}
         const outside={x:p.x+nx*.8,y:p.y+ny*.8}
-        // A low bank meets the same flat datum as the water, then the land.
+        // A Shanghai park lake is edged in stone, not mud: a dressed granite
+        // revetment standing ~0.4 m out of the water, capped by a coping the
+        // lawn runs up to (Lujiazui Green, Century Park, Zhongshan Park).
         const n=edgeVerts.length/3
         if(n<24000){
-          edgeVerts.push(p.x,p.y,z-.08,q.x,q.y,z-.08,q.x+nx*.6,q.y+ny*.6,Math.max(z+.12,ground(q)+.06),outside.x,outside.y,Math.max(z+.12,ground(outside)+.06))
-          edgeIndices.push(n,n+1,n+2,n,n+2,n+3)
+          const top=Math.max(z+.4,ground(q)+.05), topP=Math.max(z+.4,ground(p)+.05)
+          const cx=nx*COPING_M,cy=ny*COPING_M
+          edgeVerts.push(p.x,p.y,z-.3,q.x,q.y,z-.3,q.x,q.y,top,p.x,p.y,topP,
+            q.x+cx,q.y+cy,top,p.x+cx,p.y+cy,topP)
+          edgeIndices.push(n,n+1,n+2,n,n+2,n+3,n+3,n+2,n+4,n+3,n+4,n+5)
         }
         const id=`${f.id}/${i}/${k}`
-        if(variate(id,0)>.45 && !excluded(outside,.3))add('green','reed',outside,ground(outside),variate(id,1)*6.28,.65+variate(id,2)*.55)
+        // Reeds and irises in clumps at a few planted bays, not a fringe.
+        const bay=variate(`${f.id}/${i}`,3)<.22
+        if(bay && variate(id,0)>.3 && !excluded(outside,.3))add('green','reed',{x:p.x-nx*.6,y:p.y-ny*.6},z,variate(id,1)*6.28,.65+variate(id,2)*.55)
+        // Ornamental (Taihu-style) rocks set into the edge here and there.
+        else if(opts.scenery && variate(id,4)<.06 && !excluded(outside,.3))add('scenery','rock',{x:p.x+nx*.3,y:p.y+ny*.3},z-.1,variate(id,5)*6.28,.7+variate(id,6)*1.1)
       }
     }
   }
   if(edgeVerts.length){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(edgeVerts,3));geo.setIndex(edgeIndices);geo.computeVertexNormals()
-    const bank=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x807e66,roughness:.96,side:THREE.DoubleSide}));bank.name='mapped-lake-bank';result.water.add(bank)
+    const bank=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xa8a497,roughness:.9,side:THREE.DoubleSide}));bank.name='mapped-lake-revetment';result.water.add(bank)
   }
-  // Border planting respects every building, water polygon, road width and IFC footprint.
+  // THE CLIPPED HEDGE. What reads as "Shanghai park" from any distance is not
+  // loose shrubbery but hedges cut square: a tall privet/boxwood band just
+  // inside the park's edge, and low box edging along its paths, with flowering
+  // azalea mounds where the hedge opens. Every piece respects buildings, water,
+  // road widths and IFC footprints, so a gate or a path breaks the hedge.
+  const hedges:Hedge[]=[]
   for(const {f,ring,holes} of parks.sort((a,b)=>a.f.id.localeCompare(b.f.id))){
-    for(let i=0;i<ring.length;i++){
-      const a=ring[i],b=ring[(i+1)%ring.length],len=Math.hypot(b.x-a.x,b.y-a.y)
-      if(len<1)continue
-      for(let k=0;k<len;k+=7){
-        const id=`${f.id}:border:${i}:${k}`,p={x:a.x+(b.x-a.x)*k/len,y:a.y+(b.y-a.y)*k/len}
-        const nx=-(b.y-a.y)/len,ny=(b.x-a.x)/len
-        const sign=inside({x:p.x+nx,y:p.y+ny},ring)?1:-1
-        p.x+=nx*sign*2;p.y+=ny*sign*2
-        if(Math.hypot(p.x,p.y)>1600 || !inside(p,ring) || holes.some(h=>inside(p,h)) || excluded(p,1))continue
-        if(variate(id,0)>.32)add('green','shrub',p,ground(p),variate(id,1)*6.28,.7+variate(id,2)*.9)
-      }
-    }
+    const fits=(p:P)=>Math.hypot(p.x,p.y)<=1600 && inside(p,ring) && !holes.some(h=>inside(p,h)) && !excluded(p,.8)
+    hedgeAlong(ring,true,2.2,f.id,fits,HEDGE_TALL,hedges,(p,id)=>{
+      if(variate(id,0)>.4)add('green','shrub',p,ground(p),variate(id,1)*6.28,.8+variate(id,2)*.6)
+    })
+  }
+  for(const {f,ring} of roads.filter(r=>r.f.style.roadClass==='pedestrian' && r.f.widthM!==undefined && (!r.f.vertical || r.f.vertical.structure==='ground') && r.ring.length>=2 && !isPedestrianArea(r.f)).sort((a,b)=>a.f.id.localeCompare(b.f.id))){
+    const off=(f.widthM??2)/2+.6
+    const fits=(p:P)=>Math.hypot(p.x,p.y)<=1300 && inPark(p) && !excluded(p,.25)
+    for(const side of [1,-1])hedgeAlong(ring,false,off*side,`${f.id}:${side}`,fits,HEDGE_LOW,hedges)
+  }
+  if(hedges.length){
+    const mesh=hedgeMesh(hedges,ground);mesh.name='shanghai-hedges';result.green.add(mesh);result.counts.hedge=hedges.length
   }
   if(opts.scenery){
     for(const {f,ring} of roads.filter(r=>r.f.style.roadClass==='pedestrian' && r.f.widthM!==undefined && (!r.f.vertical || r.f.vertical.structure==='ground')).sort((a,b)=>a.f.id.localeCompare(b.f.id))){
@@ -151,9 +274,9 @@ export function buildShanghaiParkDetails(features: readonly OsmFeature[], opts: 
     for(const name of names){
       const list=items[layer].filter(x=>x.name===name),asset=opts.assets?.get(`shanghai/${name}`)
       // Lightweight working-view foliage remains visible if the optional GLB fails.
-      const geo=asset?.clone() ?? (name==='reed'?new THREE.ConeGeometry(.23,1.1,5).rotateX(Math.PI/2).translate(0,0,.55):name==='shrub'?new THREE.IcosahedronGeometry(.65,1).translate(0,0,.6):null)
+      const geo=asset?.clone() ?? (name==='reed'?new THREE.ConeGeometry(.23,1.1,5).rotateX(Math.PI/2).translate(0,0,.55):name==='shrub'?new THREE.IcosahedronGeometry(.65,1).translate(0,0,.6):name==='rock'?taihuRock():null)
       if(!geo)continue
-      const mat=new THREE.MeshStandardMaterial({vertexColors:!!geo.getAttribute('color'),color:asset?0xffffff:name==='reed'?0x688140:0x3d672e,roughness:.86})
+      const mat=new THREE.MeshStandardMaterial({vertexColors:!!geo.getAttribute('color'),color:asset?0xffffff:name==='reed'?0x688140:name==='rock'?0x9b978c:0x3d672e,roughness:.86})
       if (name === 'fountain-jets') {
         const time={value:0};mat.roughness=.18;mat.transparent=true;mat.opacity=.82
         mat.userData.animated=true;mat.userData.uniforms={uTime:time}

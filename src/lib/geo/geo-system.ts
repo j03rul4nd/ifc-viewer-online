@@ -38,7 +38,7 @@ import { buildMarinaBoatLayer, buildLakeBoatLayer } from './marina-boats'
 import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
 import { landmarksIn, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
 import { barcelonaFabricSliced, barcelonaFacadeAt } from './barcelona-fabric'
-import { capSquareKiosks } from './plaza-paving'
+import { capSquareKiosks, capParkPavilions } from './plaza-paving'
 import { buildPigeonLayer } from './pigeons'
 import { isBarcelona } from './barcelona-barris'
 import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropAsset } from './props-assets'
@@ -2362,6 +2362,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         // A lift house or a newsstand in a square, not a 19 m tower — see
         // capSquareKiosks. After the fabric, which only ever raises guesses.
         footprints = capSquareKiosks(footprints, features)
+        // ...and a pavilion in a park, not a block of flats — see capParkPavilions.
+        footprints = capParkPavilions(footprints, features)
         // At 'detailed' the facades join the same sun as the ground and the
         // canopies; at 'simple' they stay unlit, which is cheaper and is the
         // right answer when the surroundings are only there for orientation.

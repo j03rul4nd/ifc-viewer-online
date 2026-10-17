@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { parseOsmFeatures } from './osm-features'
-import { capSquareKiosks, islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving, SQUARE_KIOSK_HEIGHT_M } from './plaza-paving'
+import { capSquareKiosks, capParkPavilions, PARK_PAVILION_HEIGHT_M, islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving, SQUARE_KIOSK_HEIGHT_M } from './plaza-paving'
 import { applyGroundDepthNudge, nudgeVertexShader, GROUND_EYE_NUDGE } from './ground-depth-nudge'
 
 type OverpassElement = Record<string, unknown>
@@ -156,6 +156,30 @@ describe('capSquareKiosks', () => {
       { ring: box(1.5, 1.5, 0.07), height: { heightM: 19.2, basis: 'guess' } },
     ], features)
     expect(out.map((b) => b.height.heightM)).toEqual([12, 19.2, 19.2])
+  })
+})
+
+describe('capParkPavilions', () => {
+  it('brings the unmeasured houses of Lujiazui Green down from the prior of the towers', async () => {
+    const fixture = (await import('./__fixtures__/shanghai-parks.json')).default
+    const features = parseOsmFeatures(fixture)
+    const inPark = ['w165168178', 'w165168179', 'w165168180']
+      .map((id) => features.find((f) => f.id === id))
+      .filter((f): f is NonNullable<typeof f> => !!f)
+    expect(inPark.length).toBeGreaterThan(0)
+    const out = capParkPavilions(inPark.map((f) => ({ ring: f.ring!, height: { heightM: 185, basis: 'guess' } })), features)
+    for (const b of out) expect(b.height.heightM).toBe(PARK_PAVILION_HEIGHT_M)
+  })
+  it('leaves surveyed heights, building parts and buildings outside parks alone', async () => {
+    const fixture = (await import('./__fixtures__/shanghai-parks.json')).default
+    const features = parseOsmFeatures(fixture)
+    const house = features.find((f) => f.id === 'w165168180' || f.id === 'w165168178')!
+    const out = capParkPavilions([
+      { ring: house.ring!, height: { heightM: 12, basis: 'height' } },
+      { ring: house.ring!, height: { heightM: 26, basis: 'guess' }, isBuildingPart: true },
+      { ring: house.ring!.map((p) => ({ lat: p.lat + 0.05, lon: p.lon })), height: { heightM: 26, basis: 'guess' } },
+    ], features)
+    expect(out.map((b) => b.height.heightM)).toEqual([12, 26, 26])
   })
 })
 
