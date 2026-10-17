@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import fixture from './__fixtures__/shanghai-parks.json'
 import { parseOsmFeatures, buildFeaturesQuery } from './osm-features'
-import { buildShanghaiParkDetails, PARK_DETAIL_BUDGET } from './shanghai-parks'
+import { buildShanghaiParkDetails, PARK_DETAIL_BUDGET, hedgeAlong, HEDGE_TALL, HEDGE_LOW, inside, type Hedge } from './shanghai-parks'
 import { SHANGHAI_PARK_ASSETS } from './props-assets'
 import { metresToNormalized } from './geo-math'
 import { disposeLayer } from './osm-scene'
@@ -46,5 +46,34 @@ describe('Shanghai mapped parks',()=>{
     const fallback=buildShanghaiParkDetails(features,{...opts,assets:null})!
     expect(fallback.green.children.length).toBeGreaterThan(0)
     for(const r of [a,b,fallback])for(const g of [r.water,r.green,r.scenery])disposeLayer(g)
+  })
+  it('edges the parks and their paths in clipped hedge, and the lakes in stone',()=>{
+    const result=buildShanghaiParkDetails(features,opts)!
+    expect(result.counts.hedge).toBeGreaterThan(20)
+    expect(result.green.getObjectByName('shanghai-hedges')).toBeTruthy()
+    expect(result.water.getObjectByName('mapped-lake-revetment')).toBeTruthy()
+    for(const g of [result.water,result.green,result.scenery])disposeLayer(g)
+  })
+})
+
+describe('hedgeAlong',()=>{
+  const square=[{x:0,y:0},{x:60,y:0},{x:60,y:60},{x:0,y:60}]
+  it('runs inside a ring whichever way it winds, with openings',()=>{
+    for(const ring of [square,[...square].reverse()]){
+      const out:Hedge[]=[]
+      hedgeAlong(ring,true,2,'r',()=>true,HEDGE_TALL,out)
+      expect(out.length).toBeGreaterThan(8)
+      for(const h of out){expect(inside(h.a,ring)).toBe(true);expect(inside(h.b,ring)).toBe(true)}
+      const total=out.reduce((s,h)=>s+Math.hypot(h.b.x-h.a.x,h.b.y-h.a.y),0)
+      expect(total).toBeLessThan(4*60*.9)
+    }
+  })
+  it('breaks where the ground is taken, and edges both sides of a path',()=>{
+    const out:Hedge[]=[]
+    const path=[{x:0,y:0},{x:80,y:0}]
+    for(const side of [1,-1])hedgeAlong(path,false,1.6*side,'p',p=>p.x<30||p.x>40,HEDGE_LOW,out)
+    expect(out.some(h=>h.a.y>0)).toBe(true)
+    expect(out.some(h=>h.a.y<0)).toBe(true)
+    for(const h of out)expect(Math.min(h.a.x,h.b.x)>=40-1||Math.max(h.a.x,h.b.x)<=30+1).toBe(true)
   })
 })
