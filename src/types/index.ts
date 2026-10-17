@@ -230,6 +230,12 @@ export interface ValidationIssue {
   autoFixable: boolean
   /** Which loaded model this issue belongs to. Stamped by loader/validator, not the worker. */
   modelId?: string
+  /**
+   * RULE_DUPLICATE_NAME only: expressId of the shared parent (container ?? aggregate).
+   * Lets a fix keep one member per duplicate group. Absent on every other rule
+   * and on results produced before the field existed.
+   */
+  scopeId?: number
 }
 
 export interface ValidationResult {
@@ -255,6 +261,8 @@ export interface ValidationResult {
     clashCapped?: { checkedCount: number; totalCount: number }
     /** Per-rule execution coverage — which enabled rules ran, failed, or never ran. */
     coverage?: ValidationCoverage
+    /** Edits applied in the browser to the bytes this run validated (absent/0 = original file). */
+    edits?: number
   }
 }
 
@@ -1505,6 +1513,8 @@ export interface EditorCommand {
   description: string
   /** Scene-level modelId this command targets. Undefined = legacy / applies to any model. */
   modelId?: string
+  /** Commands of one batch (one per model) undo/redo as a unit. */
+  batchId?: string
 }
 
 // ── BCF types ─────────────────────────────────────────────────────────────────

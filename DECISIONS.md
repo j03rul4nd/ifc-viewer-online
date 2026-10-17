@@ -913,3 +913,87 @@ gizmo slot, and `useSceneGizmo` clears it on id changes).
 **Consequences.** Persisted styles can make a scan look different on return;
 the row swatch, *Use scene default* and *Reset all* make that visible. Style,
 topic and rename edits are not undoable. See docs/POINT_CLOUD.md §4.
+
+## D-36 · Browser fixes are free; the after-score is measured on the exported bytes and never replaces the original file's score
+
+**Date:** 2026-10-16 · **Status:** accepted
+
+**Context.** 3,942 scored sessions produced 9 fixes: the score named the
+problem but gave nothing to do about it. Fixes only queue diffs: the editor
+history changes neither the loaded model nor its score, and Re-validate reads
+the original bytes again. So the only honest "after" score is one measured on
+the bytes export writes. Meanwhile the upsell fake door offered paid one-click
+fixes for duplicate and empty names, which the browser can do on its own.
+
+**Decision.**
+1. **Fix all N** for RULE_DUPLICATE_NAME and RULE_EMPTY_NAME (field `Name`
+   only), on desktop and mobile, from "Fix this first" and from the open rule
+   group. A preview with an editable naming pattern (`{class}-{storey}-{n}` for
+   empty names, `{name}-{n}` and keep-first for duplicates) comes first.
+   Generated names are unique model-wide, case-insensitively, so they cannot
+   create a new duplicate.
+2. Apply is one undoable batch: one command per model, all sharing a
+   `batchId`. One Ctrl+Z, the toast's Undo or the card's Undo reverts it whole.
+3. Then each affected model is exported once, those exact bytes are validated,
+   and the same bytes are offered as `<stem>-fixed.ifc`. The card shows the
+   Health Score before → after (predicted until measured) and the issues
+   cleared and new.
+4. The after-run is isolated: a dedicated validator worker (`validateBytes`),
+   not the pool. It writes no store, cache, run history, spatial tree or
+   `validation:*` event. Its result carries `metadata.edits`, the number of
+   edits applied to the bytes it validated.
+5. The original file's score stays the headline. The panel score,
+   `RunDiffBar`, History, `validation_completed` and the certificate (which
+   hashes the original bytes) all stay on the loaded file, and the card says
+   so.
+6. No benchmark sample from an edited score. The after-run never reaches
+   `result`, and the benchmark guard also skips `metadata.edits > 0`, demo
+   files, files whose header says this app wrote them, and files already
+   posted in the session (one sample per file).
+7. A fixed file's score is shared by opening the fixed file itself: load
+   `<stem>-fixed.ifc`, validate it, share that report. The report then
+   describes exactly the file the recipient would get. The card has no share
+   button.
+8. What the browser fixes is never sold. `BROWSER_FIXABLE_RULES` (duplicate
+   and invalid GUID, duplicate and empty name) are skipped when the upsell
+   picks its rule, so the paid auto-fix fake door is limited to
+   RULE_MISSING_TYPE and RULE_PROXY_OVERUSE.
+9. Analytics carry enums and counts only (`issue_fix_applied` with
+   `fix_type: 'batch_name'`, `fix_revalidated`, `export_clicked` with
+   `source: 'batch_fix'`): never names, patterns or file names, and never
+   `pricing_intent`.
+10. Reconciled with the paid roadmap (`docs-planning/11`, which listed
+   DUPLICATE_NAME among the paid auto-fix rules). Joel, 2026-10-17: bulk
+   renaming of duplicate and empty names is free and public. The paid
+   auto-fix (#280, team preview) keeps its value in what the browser cannot
+   do by renaming: missing types, proxies, and one click for every rule at
+   once.
+
+**Rejected.** Predicting the score from the diff alone (the queue is not the
+file: skipped diffs and the writer decide what is delivered; the prediction is
+shown only until the measurement lands). Replacing the headline result with the
+after-run (it would silently move the certificate, History and the benchmark
+onto a file the user has not delivered). Flipping `autoFixable` on the name
+rules (the GUID-only "Fix N" and per-row Apply fix would pick them up with the
+wrong handler). A marker for edited scores inside shared reports (needs a new
+field in the report contract and a Worker deploy first; opening the fixed file
+already gives an honest report). Selling the name fix (it costs nothing to
+run).
+
+**Consequences.** Two scores can be on screen at once: the headline for the
+loaded file and the card for the fixed file, labelled predicted or measured.
+The after-run is one worker running every rule, slower than the pool run. The
+fixed bytes stay in memory per model until dismiss, undo, recheck or the model
+leaves the scene. The delta uses the current rules, so a profile change between
+runs shows up in it. The fixed file always carries this app's header stamp,
+even when the user turned stamping off for exports (it is new output from this
+app, and the stamp is what keeps it out of the benchmark when it is opened
+again); its header also takes the author and organisation from the export
+settings, so header-only checks can differ from the original, and the card
+says so when they do. One fixed-file check runs at a time: "Fix all" waits
+while one is in progress, and Undo, Dismiss or a newer batch stop the check's
+worker instead of letting it finish. A line whose text web-ifc cannot read
+back (an unescaped backslash) is never rewritten: its edit is skipped and
+counted, since rewriting it would blank that text. Phase B: `{type}` and `{longname}` tokens, opening the
+fixed file as the current version, certifying the fixed bytes, and fixes for
+MISSING_TYPE and PROXY_OVERUSE.

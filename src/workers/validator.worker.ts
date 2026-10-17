@@ -569,7 +569,7 @@ async function ruleDuplicateName(
     }
   }
 
-  for (const [, nameMap] of siblingGroups) {
+  for (const [parent, nameMap] of siblingGroups) {
     for (const [name, ids] of nameMap) {
       if (ids.length < 2) continue
       for (const id of ids) {
@@ -587,6 +587,9 @@ async function ruleDuplicateName(
             message: `Duplicate Name "${name}" among siblings`,
             path: getSpatialPath(id, idx),
             autoFixable: false,
+            // The group is (parent, name). Carrying the parent lets the batch
+            // fix keep one member per group; the path holds names only.
+            scopeId: parent,
           })
         } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
@@ -1052,7 +1055,11 @@ async function ruleEmptyPropertyValue(
   modelId: number,
   idx: SpatialIndex,
 ): Promise<ValidationIssue[]> {
-  // Build psetId → { first elemId, count of elements using this pset instance }
+  // Build psetId → { first elemId, count of elements using this pset instance }.
+  // "First" is the lowest express id, not the first one met: the issue is
+  // named after that element (its GlobalId is the issue's identity for the run
+  // diff and for waivers), and a re-saved file — an export with edits — lists
+  // its entities in another order. Same element, same issue, either way.
   const psetMeta = new Map<number, { first: number; count: number }>()
   const relPropIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
   for (let i = 0; i < relPropIds.size(); i++) {
@@ -1063,7 +1070,7 @@ async function ruleEmptyPropertyValue(
       const elemId = getRefId(ref)
       if (elemId === null) continue
       const existing = psetMeta.get(psetId)
-      if (existing) existing.count++
+      if (existing) { existing.count++; if (elemId < existing.first) existing.first = elemId }
       else psetMeta.set(psetId, { first: elemId, count: 1 })
     }
   }
@@ -1117,8 +1124,10 @@ async function ruleEmptyPropertyValue(
 
         const key      = `${psetName}||${name}`
         const existing = byKey.get(key)
-        if (existing) existing.count += meta.count
-        else byKey.set(key, { psetName, propName: name, count: meta.count, firstElemId: meta.first })
+        if (existing) {
+          existing.count += meta.count
+          if (meta.first < existing.firstElemId) existing.firstElemId = meta.first
+        } else byKey.set(key, { psetName, propName: name, count: meta.count, firstElemId: meta.first })
       } catch (err: unknown) {
         log.debug(`RULE_EMPTY_PROPERTY_VALUE: failed to read property #${propId} in pset #${psetId}:`, err)
         continue
@@ -1129,7 +1138,13 @@ async function ruleEmptyPropertyValue(
   const issues: ValidationIssue[] = []
   let skipped = 0
 
-  for (const [, agg] of byKey) {
+  // Most widespread first, then by name: which pairs make the cut, and in what
+  // order, must not depend on the order the file happens to list its psets in.
+  const ordered = [...byKey.entries()]
+    .sort(([ka, a], [kb, b]) => b.count - a.count || (ka < kb ? -1 : ka > kb ? 1 : 0))
+    .map(([, agg]) => agg)
+
+  for (const agg of ordered) {
     if (issues.length >= EMPTY_PROP_MAX_KEYS) { skipped++; continue }
     const { psetName, propName, count, firstElemId } = agg
     const elem   = getLine<IfcBaseEntity>(api, modelId, firstElemId)

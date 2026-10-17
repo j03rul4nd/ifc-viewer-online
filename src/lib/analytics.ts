@@ -28,12 +28,18 @@
  * Active engagement (separates passive from active users)
  *   issue_viewed           → user navigated to an issue in the 3D scene
  *   issue_fix_applied      → user applied a fix (auto-fix, rename, or batch)
+ *   fix_revalidated        → the fixed file from a batch rename was exported and
+ *                            checked in isolation {score_before, score_after, status}
  *   validation_profile_changed → user switched validation profile
  *
  * Feature adoption
  *   feature_used           → any secondary feature activated
  *   guid_fixed             → user clicked "fix all GUIDs" (kept for historical compat)
- *   export_clicked         → user triggered an IFC or GLB export (kept for historical compat)
+ *   export_clicked         → user triggered an IFC or GLB export {format, source}
+ *
+ * Fix funnel (counts and token names only — never names, patterns or files)
+ *   validation_completed → feature_used(batch_fix_preview) →
+ *   issue_fix_applied(batch_name) → fix_revalidated → export_clicked{source:'batch_fix'}
  *
  * Virality
  *   share_report_clicked   → user generated a shareable validation report URL
@@ -390,12 +396,53 @@ export function trackIssueViewed(props: {
  *   'auto_fix'   → single-issue auto-fix button
  *   'batch_guid' → "Fix N" batch button for all GUID issues
  *   'name_edit'  → inline rename via the edit field
+ *   'batch_name' → "Fix all N" batch rename (duplicate / empty names), once per apply
+ *
+ * The batch fields are counts and flags only. `pattern_tokens` names the
+ * tokens used, sorted — the pattern text itself can carry project names and
+ * is never sent.
  */
 export function trackIssueFixApplied(props: {
   rule_id:  string
-  fix_type: 'auto_fix' | 'batch_guid' | 'name_edit'
+  fix_type: 'auto_fix' | 'batch_guid' | 'name_edit' | 'batch_name'
+  /** Elements renamed. */
+  count?:          number
+  /** Issues the batch clears (keep-first renames fewer elements than it clears). */
+  cleared?:        number
+  model_count?:    number
+  keep_first?:     boolean
+  pattern_edited?: boolean
+  /** Sorted token names, e.g. 'class,n,storey'. */
+  pattern_tokens?: string
+  /** Any affected model is a gallery demo. */
+  is_demo?:        boolean
 }): void {
   track('issue_fix_applied', props)
+}
+
+/**
+ * The fixed file from a batch rename was exported and re-validated in
+ * isolation. Fired once per batch, when every model's check has settled.
+ * Scores are the measured ones (or the predicted ones when status is not 'ok').
+ */
+export function trackFixRevalidated(props: {
+  rule_id:      string
+  fix_type:     'batch_name'
+  count:        number
+  score_before: number
+  score_after:  number
+  resolved:     number
+  added:        number
+  duration_ms:  number
+  model_count:  number
+  status:       'ok' | 'error' | 'stale'
+  /**
+   * The export wrote the header from the user's export settings, which changed
+   * the header-only checks: resolved/added count those too, not only the rename.
+   */
+  header_changed?: boolean
+}): void {
+  track('fix_revalidated', props)
 }
 
 /**
@@ -425,10 +472,13 @@ export function trackGuidFixed(props: { guid_count: number }): void {
  *
  * @param props.format       'ifc' = corrected IFC binary | 'glb' = visible geometry
  * @param props.model_count  How many models were in the scene at export time
+ * @param props.source       Where the export started. Absent on events from
+ *                           before the field existed (all from the export dialog).
  */
 export function trackExportClicked(props: {
   format:      'ifc' | 'glb'
   model_count: number
+  source?:     'export_modal' | 'toolbar' | 'batch_fix'
 }): void {
   track('export_clicked', props)
 }
@@ -450,6 +500,7 @@ export function trackExportClicked(props: {
  *   'floor_plan'          → 2D floor plan view opened
  *   'takeoff'             → quantity takeoff computed
  *   'ebook_download'      → the /ebook lead magnet PDF was downloaded
+ *   'batch_fix_preview'   → the batch rename preview dialog opened
  *
  * Blog discovery (never carries search text — only its length and result count)
  *   blog_post_opened       → an article opened from a blog surface (`from` says which)
@@ -473,6 +524,7 @@ export function trackFeatureUsed(props: {
     | 'copy_for_ai'
     | 'bcf_create_topic'
     | 'ebook_download'
+    | 'batch_fix_preview'
 }): void {
   track('feature_used', props)
 }

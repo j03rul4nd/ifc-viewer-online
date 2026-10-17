@@ -22,7 +22,7 @@ export interface PaidFeature {
 }
 
 export const PAID_FEATURES: PaidFeature[] = [
-  { id: 'auto_fix',          title: 'Auto-fix, get a clean IFC back',      description: 'Missing types, duplicate and empty names, proxies reclassified, broken GUIDs — fixed on our EU servers and returned as a new IFC.', credits: 30 },
+  { id: 'auto_fix',          title: 'Auto-fix, get a clean IFC back',      description: 'Missing types and proxies reclassified — fixed on our EU servers and returned as a new IFC.', credits: 30 },
   { id: 'certificate',       title: 'Verifiable conformity certificate',    description: 'Signed result with file hash and a public verification URL your client can check.', credits: 20 },
   { id: 'server_validation', title: 'Large-file validation',               description: 'Models your browser cannot handle (200 MB+) validated on EU servers. The file is deleted when the run ends.', credits: 10, creditsNote: 'per 100 MB' },
   { id: 'version_compare',   title: 'Version comparison & history',        description: 'What changed between deliveries by GlobalId, score regressions and new issues — kept per project.', credits: null },
@@ -78,16 +78,35 @@ export const PLANS: Plan[] = [
   },
 ]
 
+/**
+ * Rules the validation panel fixes free, in the browser (GUID regeneration and
+ * the batch rename). Never offered as a paid feature: asking someone to pay
+ * for a fix that is one click away in the same panel is a fake door in the bad
+ * sense. Kept free of imports from lib/fix on purpose; a test checks that the
+ * batch-rename rules are a subset of this set.
+ */
+export const BROWSER_FIXABLE_RULES: ReadonlySet<string> = new Set([
+  'RULE_DUPLICATE_GUID', 'RULE_INVALID_GUID_FORMAT', 'RULE_DUPLICATE_NAME', 'RULE_EMPTY_NAME',
+])
+
 /** Feature the upsell suggests for a validation's dominant rule. */
 export function featureForRule(ruleId: string | undefined): PaidFeatureId {
   switch (ruleId) {
     case 'RULE_MISSING_TYPE':
-    case 'RULE_DUPLICATE_NAME':
-    case 'RULE_EMPTY_NAME':
     case 'RULE_PROXY_OVERUSE':
-    case 'RULE_DUPLICATE_GUID':
       return 'auto_fix'
     default:
       return 'certificate'
   }
+}
+
+/**
+ * The dominant rule for the upsell, skipping rules the browser already fixes
+ * free — so the pitch names a problem it could actually solve. Undefined when
+ * every rule with issues is browser-fixable.
+ */
+export function pickUpsellRule(byRule: Record<string, number>): string | undefined {
+  return Object.entries(byRule)
+    .filter(([rule]) => !BROWSER_FIXABLE_RULES.has(rule))
+    .sort((a, b) => b[1] - a[1])[0]?.[0]
 }

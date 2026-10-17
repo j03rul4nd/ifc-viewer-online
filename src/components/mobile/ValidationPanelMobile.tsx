@@ -20,6 +20,12 @@ import type {
 } from '../../types'
 import { fixGuideUrl } from '../../lib/fix-guide-url'
 import type { ScoreContribution } from '../../lib/validator'
+import { isBatchRenameRule, type BatchRenameRule } from '../../lib/fix/batch-rename'
+import type { PendingIndex } from '../../lib/fix/pending'
+import type { FixSummary } from '../../lib/fix/score-delta'
+import type { FixBatch, FixRun } from '../../stores/batchFixStore'
+import BatchFixResultCard, { BatchFixBar } from '../fix/BatchFixResultCard'
+import { toast } from '../../stores/toastStore'
 import { benchmarkReady, type BenchStats } from '../../lib/benchmark'
 import type { ValidationDiff } from '../../lib/validation-diff'
 import ValidationExportModal, { type ExportModelEntry } from '../ValidationExportModal'
@@ -63,7 +69,8 @@ export interface ValidationMobileVM {
   validationError: string | null
   hasModel: boolean
   autoFixableCount: number
-  pendingFixIds: Set<number>
+  /** Elements with a pending edit, per model. */
+  pendingFixIds: PendingIndex
   mutedCount: number
   unmuteAll: () => void
   runDiff: ValidationDiff | null
@@ -90,6 +97,28 @@ export interface ValidationMobileVM {
   onClose: () => void
   /** Select and fly to an element a simulated flood reaches (flood group). */
   onFloodJump?: (expressId: number, modelId: string) => void
+
+  // ── Batch rename ("Fix all N" for duplicate / empty names) ──
+  /** N per rule: visible issues not already renamed by hand. */
+  batchCounts: Partial<Record<BatchRenameRule, number>>
+  /** Why "Fix all N" is disabled, per rule; null when it is not. */
+  batchDisabledReason: Partial<Record<BatchRenameRule, string | null>>
+  /** Open the preview; the dialog itself is rendered by the desktop component. */
+  onOpenBatchRename: (ruleId: BatchRenameRule) => void
+  /** The applied batch, while its fixed-file card is up. */
+  fixBatch: FixBatch | null
+  /** The batch's models still in the scene, in batch order. */
+  fixModelIds: string[]
+  fixRuns: FixRun[]
+  fixSummary: FixSummary | null
+  /** Empty names left to fill, offered after a duplicate-name batch. */
+  alsoFixEmptyCount: number
+  onDownloadFixed: (modelId: string) => void
+  onUndoBatch: () => void
+  onDismissFixRun: () => void
+  onRecheckFixed: () => void
+  /** The batch was just applied: the card takes focus (the opener is gone). */
+  focusFixCard?: boolean
 }
 
 // ── Local helpers (kept out of the desktop module to avoid an import cycle) ────
@@ -122,6 +151,9 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
     exportModels, rules, resolveProfileName,
     onRun, onJumpTo, onAutoFix, onNameFix, onMute, onAddToBcf,
     onShareReport, onCopyForAI, onCopyBadge, onBatchFix, onClose, onFloodJump,
+    batchCounts, batchDisabledReason, onOpenBatchRename,
+    fixBatch, fixModelIds, fixRuns, fixSummary, alsoFixEmptyCount,
+    onDownloadFixed, onUndoBatch, onDismissFixRun, onRecheckFixed, focusFixCard = false,
   } = vm
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
@@ -341,25 +373,72 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">{t('summary.fixFirst')}</span>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    {topFix.map((c, i) => (
-                      <button
-                        key={c.ruleId}
-                        onClick={() => { setFilters({ groupBy: 'rule', activeTab: 'all' }); setSearch(''); setOpenGroups((p) => new Set(p).add(c.ruleId)); setShownAll((p) => new Set(p).add(c.ruleId)) }}
-                        className="flex items-center gap-2.5 w-full text-left py-2 px-2.5 rounded-xl active:scale-[0.99] transition-transform"
-                        style={{ background: 'var(--bg)', ...TAP }}
-                      >
-                        <span className="text-[11px] font-mono text-[var(--text-faint)] w-3.5 shrink-0 text-center">{i + 1}</span>
-                        <span className="text-[12.5px] text-[var(--text)] font-medium truncate flex-1 min-w-0">
-                          {getRuleLabel(c.ruleId, language)}
-                          <span className="text-[var(--text-faint)] font-mono ml-1.5">{c.count}</span>
-                        </span>
-                        <span className="text-[11px] font-mono font-semibold shrink-0" style={{ color: 'var(--ok)' }}>
-                          {t('summary.points', { points: Math.max(1, Math.round(c.penalty)) })}
-                        </span>
-                      </button>
-                    ))}
+                    {topFix.map((c, i) => {
+                      const batchRule = isBatchRenameRule(c.ruleId) ? c.ruleId : null
+                      const batchCount = batchRule ? (batchCounts[batchRule] ?? 0) : 0
+                      const reason = batchRule ? (batchDisabledReason[batchRule] ?? null) : null
+                      return (
+                        // The chip is a sibling of the row's button, never inside it.
+                        <div key={c.ruleId} className="flex items-stretch gap-1.5">
+                          <button
+                            onClick={() => { setFilters({ groupBy: 'rule', activeTab: 'all' }); setSearch(''); setOpenGroups((p) => new Set(p).add(c.ruleId)); setShownAll((p) => new Set(p).add(c.ruleId)) }}
+                            className="flex items-center gap-2.5 flex-1 min-w-0 text-left py-2 px-2.5 rounded-xl active:scale-[0.99] transition-transform"
+                            style={{ background: 'var(--bg)', ...TAP }}
+                          >
+                            <span className="text-[11px] font-mono text-[var(--text-faint)] w-3.5 shrink-0 text-center">{i + 1}</span>
+                            <span className="text-[12.5px] text-[var(--text)] font-medium truncate flex-1 min-w-0">
+                              {getRuleLabel(c.ruleId, language)}
+                              <span className="text-[var(--text-faint)] font-mono ml-1.5">{c.count}</span>
+                            </span>
+                            <span className="text-[11px] font-mono font-semibold shrink-0" style={{ color: 'var(--ok)' }}>
+                              {t('summary.points', { points: Math.max(1, Math.round(c.penalty)) })}
+                            </span>
+                          </button>
+                          {batchRule && batchCount > 0 && (
+                            <button
+                              type="button"
+                              data-testid="batch-fix-chip"
+                              // Not `disabled`: a touch screen shows no tooltip,
+                              // so a tap on the greyed chip says why instead.
+                              onClick={() => (reason ? toast(reason, 'info') : onOpenBatchRename(batchRule))}
+                              aria-disabled={reason ? true : undefined}
+                              title={reason ?? t('batchFix.fixAllTitle')}
+                              className={`shrink-0 px-3 rounded-xl text-[11.5px] font-semibold transition-transform ${reason ? 'opacity-40' : 'active:scale-[0.97]'}`}
+                              style={{
+                                background: 'color-mix(in srgb, var(--ok) 10%, transparent)',
+                                color:      'var(--ok)',
+                                border:     '1px solid color-mix(in srgb, var(--ok) 30%, transparent)',
+                                ...TAP,
+                              }}
+                            >
+                              {t('batchFix.fixAll', { count: batchCount })}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* The fixed file from a batch rename: its own score, never the hero's */}
+            {fixBatch && fixSummary && fixModelIds.length > 0 && (
+              <div className="px-4 pt-3">
+                <BatchFixResultCard
+                  compact
+                  batch={fixBatch}
+                  modelIds={fixModelIds}
+                  runs={fixRuns}
+                  summary={fixSummary}
+                  onDownload={onDownloadFixed}
+                  onUndo={onUndoBatch}
+                  onDismiss={onDismissFixRun}
+                  onRecheck={onRecheckFixed}
+                  alsoFixEmptyCount={alsoFixEmptyCount}
+                  onAlsoFixEmpty={() => onOpenBatchRename('RULE_EMPTY_NAME')}
+                  autoFocus={focusFixCard}
+                />
               </div>
             )}
 
@@ -410,27 +489,38 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
                 ) : orderedGroups.length === 0 ? (
                   <MobileEmpty text={t('results.noIssues')} />
                 ) : (
-                  orderedGroups.map(([groupKey, groupIssues]) => (
-                    <IssueGroup
-                      key={groupKey}
-                      groupKey={groupKey}
-                      groupIssues={groupIssues}
-                      groupBy={filters.groupBy}
-                      language={language}
-                      open={openGroups.has(groupKey)}
-                      showAll={shownAll.has(groupKey)}
-                      onToggle={() => toggleGroup(groupKey)}
-                      onShowAll={() => setShownAll((p) => new Set(p).add(groupKey))}
-                      remediationTool={remediationTool}
-                      onSelectTool={setRemediationTool}
-                      pendingFixIds={pendingFixIds}
-                      onJumpTo={onJumpTo}
-                      onAutoFix={onAutoFix}
-                      onNameFix={onNameFix}
-                      onMute={onMute}
-                      onAddToBcf={onAddToBcf}
-                    />
-                  ))
+                  orderedGroups.map(([groupKey, groupIssues]) => {
+                    const batchRule = filters.groupBy === 'rule' && isBatchRenameRule(groupKey) ? groupKey : null
+                    return (
+                      <IssueGroup
+                        key={groupKey}
+                        groupKey={groupKey}
+                        groupIssues={groupIssues}
+                        groupBy={filters.groupBy}
+                        language={language}
+                        open={openGroups.has(groupKey)}
+                        showAll={shownAll.has(groupKey)}
+                        onToggle={() => toggleGroup(groupKey)}
+                        onShowAll={() => setShownAll((p) => new Set(p).add(groupKey))}
+                        remediationTool={remediationTool}
+                        onSelectTool={setRemediationTool}
+                        batchFix={batchRule
+                          ? {
+                              count: batchCounts[batchRule] ?? 0,
+                              done: fixBatch?.ruleId === batchRule,
+                              disabledReason: batchDisabledReason[batchRule] ?? null,
+                              onFix: () => onOpenBatchRename(batchRule),
+                            }
+                          : undefined}
+                        pendingFixIds={pendingFixIds}
+                        onJumpTo={onJumpTo}
+                        onAutoFix={onAutoFix}
+                        onNameFix={onNameFix}
+                        onMute={onMute}
+                        onAddToBcf={onAddToBcf}
+                      />
+                    )
+                  })
                 )}
               </div>
             )}
@@ -460,7 +550,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
 
 function IssueGroup({
   groupKey, groupIssues, groupBy, language, open, showAll, onToggle, onShowAll,
-  remediationTool, onSelectTool, pendingFixIds, onJumpTo, onAutoFix, onNameFix, onMute, onAddToBcf,
+  remediationTool, onSelectTool, batchFix, pendingFixIds, onJumpTo, onAutoFix, onNameFix, onMute, onAddToBcf,
 }: {
   groupKey: string
   groupIssues: ValidationIssue[]
@@ -472,7 +562,9 @@ function IssueGroup({
   onShowAll: () => void
   remediationTool: AuthoringTool
   onSelectTool: (t: AuthoringTool) => void
-  pendingFixIds: Set<number>
+  /** "Fix all N" for a batch-renamable rule group. */
+  batchFix?: { count: number; done: boolean; disabledReason: string | null; onFix: () => void }
+  pendingFixIds: PendingIndex
   onJumpTo: (i: ValidationIssue) => void
   onAutoFix: (i: ValidationIssue) => void
   onNameFix: (i: ValidationIssue, field: 'Name' | 'LongName', v: string) => void
@@ -506,6 +598,15 @@ function IssueGroup({
 
       {open && (
         <div className="px-2.5 pb-2.5 flex flex-col gap-2">
+          {batchFix && (
+            <BatchFixBar
+              mobile
+              count={batchFix.count}
+              done={batchFix.done}
+              disabledReason={batchFix.disabledReason}
+              onFix={batchFix.onFix}
+            />
+          )}
           {remediation && (
             <MobileRemediation ruleId={groupKey} language={language} tool={remediationTool} onSelectTool={onSelectTool} />
           )}
@@ -513,7 +614,7 @@ function IssueGroup({
             <IssueCard
               key={issue.id}
               issue={issue}
-              hasPendingFix={pendingFixIds.has(issue.expressId)}
+              hasPendingFix={pendingFixIds.has(issue.modelId, issue.expressId)}
               onJumpTo={onJumpTo}
               onAutoFix={onAutoFix}
               onNameFix={onNameFix}

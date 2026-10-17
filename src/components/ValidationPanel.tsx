@@ -22,8 +22,23 @@ import { useBcfStore } from '../stores/bcfStore'
 import { useWaiverStore, issueKey } from '../stores/waiverStore'
 import { diffResults } from '../lib/validation-diff'
 import type { ValidationDiff } from '../lib/validation-diff'
-import { toast } from '../stores/toastStore'
-import { buildFixGuidCommand, buildRenameCommand } from '../lib/diffStore'
+import { toast, toastFromError } from '../stores/toastStore'
+import { buildFixGuidCommand, buildRenameCommand, pendingNamesForModel } from '../lib/diffStore'
+import { useBatchFixStore, type FixBatch } from '../stores/batchFixStore'
+import { buildPendingIndex, type PendingIndex } from '../lib/fix/pending'
+import {
+  countBatchTargets, fixIssueKey, isBatchRenameRule, planBatchRename, planToCommands,
+  type BatchRenamePlan, type BatchRenameRule,
+} from '../lib/fix/batch-rename'
+import type { ParsedPattern } from '../lib/fix/name-pattern'
+import { predictScoreAfter } from '../lib/fix/score-delta'
+import { runFixChecks, summarizeFixBatch } from '../lib/fix/fix-run'
+import { benchmarkCandidates, defaultBenchmarkDeps } from '../lib/benchmark-guard'
+import { pickUpsellRule } from '../lib/pricing/catalog'
+import { modelRegistry } from '../lib/model-registry'
+import { DEMO_FILENAMES } from '../demo-models/models'
+import BatchRenameDialog, { type BatchRenameApply } from './fix/BatchRenameDialog'
+import BatchFixResultCard, { BatchFixBar, downloadFixedRun, fixCardView } from './fix/BatchFixResultCard'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { runValidation, runValidationAll, explainQualityScore, calculateQualityScore } from '../lib/validator'
 import type { ScoreContribution } from '../lib/validator'
@@ -106,13 +121,50 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+// Files already posted to the benchmark this session, by file identity (the
+// OPFS cache key, else the model id). Module-level so a remount, a Re-validate
+// or a profile change never counts the same delivered file twice.
+const benchPostedKeys = new Set<string>()
+
+/** The rules "Fix all N" renames, in the order the panel offers them. */
+const BATCH_RULE_IDS: readonly BatchRenameRule[] = ['RULE_DUPLICATE_NAME', 'RULE_EMPTY_NAME']
+
+/**
+ * RULE_DUPLICATE_NAME issues the pending edits already settle: every other
+ * member of the element's group (same parent, same name) has a pending
+ * rename, so the exported file has that name once. Keep-first leaves exactly
+ * such a member behind; counted as a target, it would keep "Fix all 1" on
+ * screen after the batch, offering a rename that clears nothing. `all` holds
+ * the muted issues too: a muted member keeps its name, so its group is not
+ * settled. Groups are only known for issues that carry `scopeId`.
+ */
+function settledDuplicateKeys(
+  all: readonly ValidationIssue[],
+  pending: PendingIndex,
+  fallbackModelId: string | undefined,
+): Set<string> {
+  const members = new Map<string, number>()
+  const left = new Map<string, ValidationIssue[]>()
+  for (const i of all) {
+    if (i.ruleId !== 'RULE_DUPLICATE_NAME' || typeof i.scopeId !== 'number') continue
+    const modelId = i.modelId ?? fallbackModelId
+    const group = `${modelId ?? ''}\u0001${i.scopeId}\u0001${i.elementName}`
+    members.set(group, (members.get(group) ?? 0) + 1)
+    if (pending.hasName(modelId, i.expressId)) continue
+    const list = left.get(group)
+    if (list) list.push(i)
+    else left.set(group, [i])
+  }
+  const settled = new Set<string>()
+  for (const [group, remaining] of left) {
+    if (remaining.length === 1 && (members.get(group) ?? 0) > 1) settled.add(fixIssueKey(remaining[0]))
+  }
+  return settled
+}
+
 // ── Copy for AI — plain-text report optimised for pasting into Claude / ChatGPT ──
 // Pure function, no side-effects. Formats Health Score + issues into structured
 // text that any LLM can consume without needing to parse JSON or HTML.
-// Result objects already posted to the benchmark — dedupe across remounts so the
-// same validation is counted once (the store keeps the result identity stable).
-const benchPosted = new WeakSet<object>()
-
 function buildCopyForAIText(result: ValidationResult, fileName: string): string {
   const score = result.qualityScore ?? 0
   const grade =
@@ -436,6 +488,8 @@ const PREVIEW_ROWS = 5
 type FlatRow =
   | { kind: 'header';      groupKey: string; groupIssues: ValidationIssue[] }
   | { kind: 'remediation'; groupKey: string }
+  /** "Fix all N" for a batch-renamable rule; its own row, since the header is a button. */
+  | { kind: 'batchfix';    groupKey: BatchRenameRule }
   | { kind: 'issue';       groupKey: string; issue: ValidationIssue }
   | { kind: 'expander';    groupKey: string; hiddenCount: number }
 
@@ -700,12 +754,14 @@ function MiniBarChart({
 // ── Run button (3 states) ─────────────────────────────────────────────────────
 
 function RunButton({
-  status, progress, disabled, onClick,
+  status, progress, disabled, onClick, note,
 }: {
   status: 'idle' | 'running' | 'complete' | 'error' | 'cancelled'
   progress: number
   disabled: boolean
   onClick: () => void
+  /** Appended to the tooltip: a validation run reads the file as loaded, not the pending edits. */
+  note?: string
 }) {
   const { t } = useTranslation('validation')
   if (status === 'running') {
@@ -744,6 +800,7 @@ function RunButton({
         disabled={disabled}
         className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium border transition-all disabled:opacity-40 shrink-0"
         style={{ color: 'var(--ok)', borderColor: 'var(--ok)33', background: 'var(--ok)12' }}
+        title={note}
       >
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
           <polyline points="2,6 4.5,8.5 9,3" />
@@ -760,7 +817,7 @@ function RunButton({
         disabled={disabled}
         className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-40 shrink-0"
         style={{ color: 'var(--danger)', borderColor: 'var(--danger)44', background: 'var(--danger)12' }}
-        title={t('empty.validationErrorDesc')}
+        title={[t('empty.validationErrorDesc'), note].filter(Boolean).join(' · ')}
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
           <path d="M5 3v3M5 7.5h.01" />
@@ -778,6 +835,7 @@ function RunButton({
         disabled={disabled}
         className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium border transition-all disabled:opacity-40 shrink-0"
         style={{ color: 'var(--text-dim)', borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+        title={note}
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0">
           <path d="M3 2.5l5 2.5-5 2.5V2.5z" />
@@ -793,6 +851,7 @@ function RunButton({
       disabled={disabled}
       className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-40 shrink-0"
       style={{ color: 'var(--accent)', borderColor: 'var(--accent)44', background: 'var(--accent)14' }}
+      title={note}
     >
       <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0">
         <path d="M3 2.5l5 2.5-5 2.5V2.5z" />
@@ -1312,11 +1371,18 @@ function RunDiffBar({ diff, onDismiss }: { diff: ValidationDiff; onDismiss: () =
 // ── Executive summary (actionable score) ─────────────────────────────────────
 // "Fix this first": the rules dragging the Health Score down the most, each with
 // the points roughly recoverable by clearing it. Clicking one jumps to its group.
-function ExecutiveSummary({ score, contributions, language, onJumpToRule }: {
+// The two name rules also get a "Fix all N" chip, a sibling of the row's button
+// (a button inside a button is invalid and swallows the inner click).
+function ExecutiveSummary({
+  score, contributions, language, onJumpToRule, batchCounts, batchDisabledReason, onBatchFix,
+}: {
   score: number
   contributions: ScoreContribution[]
   language: string
   onJumpToRule: (ruleId: string) => void
+  batchCounts: Partial<Record<BatchRenameRule, number>>
+  batchDisabledReason: Partial<Record<BatchRenameRule, string | null>>
+  onBatchFix: (ruleId: BatchRenameRule) => void
 }) {
   const { t } = useTranslation('validation')
   const top = contributions.filter((c) => c.penalty > 0).slice(0, 3)
@@ -1340,25 +1406,48 @@ function ExecutiveSummary({ score, contributions, language, onJumpToRule }: {
         </span>
       </div>
       <div className="flex flex-col gap-0.5">
-        {top.map((c, i) => (
-          <button
-            key={c.ruleId}
-            onClick={() => onJumpToRule(c.ruleId)}
-            className="flex items-center gap-2 w-full text-left py-1 px-1.5 -mx-1.5 rounded hover:bg-[var(--surface)] transition-colors group"
-          >
-            <span className="text-[10px] font-mono text-[var(--text-faint)] w-3 shrink-0 text-center">{i + 1}</span>
-            <span className="text-[11px] text-[var(--text)] font-medium truncate flex-1 min-w-0 group-hover:text-[var(--accent)] transition-colors">
-              {getRuleLabel(c.ruleId, language)}
-              <span className="text-[var(--text-faint)] font-mono ml-1.5">{c.count}</span>
-            </span>
-            <span className="text-[10px] font-mono font-semibold shrink-0" style={{ color: 'var(--ok)' }}>
-              {t('summary.points', { points: Math.max(1, Math.round(c.penalty)) })}
-            </span>
-            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--accent)] shrink-0 transition-colors">
-              <path d="M4.5 2.5l4 3.5-4 3.5" />
-            </svg>
-          </button>
-        ))}
+        {top.map((c, i) => {
+          const batchRule = isBatchRenameRule(c.ruleId) ? c.ruleId : null
+          const batchCount = batchRule ? (batchCounts[batchRule] ?? 0) : 0
+          const reason = batchRule ? (batchDisabledReason[batchRule] ?? null) : null
+          return (
+            <div key={c.ruleId} className="flex items-center gap-1.5 -mx-1.5">
+              <button
+                onClick={() => onJumpToRule(c.ruleId)}
+                className="flex items-center gap-2 flex-1 min-w-0 text-left py-1 px-1.5 rounded hover:bg-[var(--surface)] transition-colors group"
+              >
+                <span className="text-[10px] font-mono text-[var(--text-faint)] w-3 shrink-0 text-center">{i + 1}</span>
+                <span className="text-[11px] text-[var(--text)] font-medium truncate flex-1 min-w-0 group-hover:text-[var(--accent)] transition-colors">
+                  {getRuleLabel(c.ruleId, language)}
+                  <span className="text-[var(--text-faint)] font-mono ml-1.5">{c.count}</span>
+                </span>
+                <span className="text-[10px] font-mono font-semibold shrink-0" style={{ color: 'var(--ok)' }}>
+                  {t('summary.points', { points: Math.max(1, Math.round(c.penalty)) })}
+                </span>
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--accent)] shrink-0 transition-colors">
+                  <path d="M4.5 2.5l4 3.5-4 3.5" />
+                </svg>
+              </button>
+              {batchRule && batchCount > 0 && (
+                <button
+                  type="button"
+                  data-testid="batch-fix-chip"
+                  onClick={() => onBatchFix(batchRule)}
+                  disabled={!!reason}
+                  title={reason ?? t('batchFix.fixAllTitle')}
+                  className="px-2 h-5 mr-1.5 rounded text-[10px] border transition-colors font-medium shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background:  'color-mix(in srgb, var(--ok) 10%, transparent)',
+                    color:       'var(--ok)',
+                    borderColor: 'color-mix(in srgb, var(--ok) 30%, transparent)',
+                  }}
+                >
+                  {t('batchFix.fixAll', { count: batchCount })}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -1622,10 +1711,13 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const ifcBuffer               = useModelStore((s) => s.ifcBuffer)
   const activeValidationModelId = useValidationStore((s) => s.activeValidationModelId)
   const { addCommand }          = useEditorHistory()
-  const { setSelection, diffs } = useEditorStore(
-    useShallow((s) => ({ setSelection: s.setSelection, diffs: s.diffs })),
+  const { setSelection, diffs, history, historyIndex } = useEditorStore(
+    useShallow((s) => ({ setSelection: s.setSelection, diffs: s.diffs, history: s.history, historyIndex: s.historyIndex })),
   )
   const sceneModels  = useSceneStore((s) => s.models)
+  const spatialTrees = useValidationStore((s) => s.spatialTrees)
+  const fixBatch     = useBatchFixStore((s) => s.batch)
+  const fixRunsById  = useBatchFixStore((s) => s.runs)
   const cachedResultsByModel = useValidationStore((s) => s.cachedResultsByModel)
   const previousResultByModel = useValidationStore((s) => s.previousResultByModel)
   const bcfTopicCount = useBcfStore((s) => s.topics.length)
@@ -1739,10 +1831,10 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     return d.unchanged ? null : d
   }, [previousResultByModel, cachedResultsByModel, activeValidationModelId])
 
-  const pendingFixIds = useMemo(
-    () => new Set(diffs.filter((d) => d.type === 'RENAME').map((d) => d.expressId)),
-    [diffs],
-  )
+  // Elements with an edit not yet exported, per model (renames and GUID fixes).
+  // Built from the history, where the modelId lives — the flattened `diffs`
+  // drop it, which used to mark #348 "edited" in every loaded model at once.
+  const pendingIndex = useMemo(() => buildPendingIndex(history, historyIndex), [history, historyIndex])
 
   // ── Filter / group ────────────────────────────────────────────────────
 
@@ -1845,6 +1937,237 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     trackIssueFixApplied({ rule_id: issue.ruleId, fix_type: 'name_edit' })
   }, [addCommand])
 
+  // ── Batch rename ("Fix all N" for duplicate / empty names) ────────────────
+  // Preview → one undoable edit per model → export → check those exact bytes
+  // in isolation → before/after on the card → download. Nothing here touches
+  // `result`, the cache or the history of runs: the headline stays on the file
+  // as loaded (D-36).
+
+  // What a batch acts on: the visible issues, minus duplicates the pending
+  // edits already settle (see settledDuplicateKeys).
+  const batchIssues = useMemo(() => {
+    const settled = settledDuplicateKeys(rawIssues, pendingIndex, activeValidationModelId ?? undefined)
+    return settled.size === 0 ? issues : issues.filter((i) => !settled.has(fixIssueKey(i)))
+  }, [issues, rawIssues, pendingIndex, activeValidationModelId])
+
+  // The card follows the scene: models that left it are not offered. An empty
+  // scene keeps none, so the batch (and its bytes) go with the last model.
+  const fixModelIds = useMemo(() => {
+    if (!fixBatch) return []
+    const inScene = new Set(sceneModels.map((m) => m.id))
+    return fixBatch.modelIds.filter((id) => inScene.has(id))
+  }, [fixBatch, sceneModels])
+  const fixRuns = useMemo(
+    () => fixModelIds.map((id) => fixRunsById[id]).filter((r): r is NonNullable<typeof r> => !!r),
+    [fixModelIds, fixRunsById],
+  )
+  // A model of the batch is still being written or checked (or queued).
+  const fixChecking = !!fixBatch && fixCardView(fixModelIds, fixRuns, fixBatch.batchId).working !== null
+
+  // N on each "Fix all N", and why the button is disabled when it is. The
+  // target models are the rule's visible issues within the model filter.
+  const batchState = useMemo(() => {
+    const counts:  Partial<Record<BatchRenameRule, number>> = {}
+    const reasons: Partial<Record<BatchRenameRule, string | null>> = {}
+    const fallback = activeValidationModelId ?? undefined
+    for (const ruleId of BATCH_RULE_IDS) {
+      counts[ruleId] = countBatchTargets(batchIssues, ruleId, pendingIndex, modelFilter, fallback)
+      let reason: string | null = null
+      if (isRunning || !result) {
+        reason = t('batchFix.disabledRunning')
+      } else if (fixChecking) {
+        // One fixed-file check at a time: each holds its own web-ifc heap and a
+        // copy of the model, and a second batch would export and check at once.
+        reason = t('batchFix.disabledChecking')
+      } else {
+        const modelIds = new Set<string>()
+        for (const i of batchIssues) {
+          if (i.ruleId !== ruleId || (modelFilter && i.modelId !== modelFilter)) continue
+          modelIds.add(i.modelId ?? fallback ?? '')
+        }
+        for (const id of modelIds) {
+          // Same check as the toolbar's IFC export: a fragments-only cache load
+          // has geometry but no IFC bytes to write the fix into.
+          if (!id || !modelRegistry.getBuffer(id)) { reason = t('batchFix.disabledNoBuffer'); break }
+          // No tree YET (an empty one is a validated model without spatial
+          // structure, which plans fine — re-validating would not change it).
+          if (spatialTrees[id] === undefined)       { reason = t('batchFix.disabledNoTree');   break }
+        }
+      }
+      reasons[ruleId] = reason
+    }
+    return { counts, reasons }
+    // sceneModels: a model loading or leaving changes which buffers exist.
+  }, [batchIssues, pendingIndex, modelFilter, activeValidationModelId, isRunning, result, fixChecking, spatialTrees, sceneModels, t])
+
+  const [batchDialog, setBatchDialog] = useState<{ ruleId: BatchRenameRule; beforeScore: number } | null>(null)
+
+  const planBatch = useCallback((ruleId: BatchRenameRule, pattern: ParsedPattern, keepFirst: boolean): BatchRenamePlan => {
+    const fallback = activeValidationModelId ?? undefined
+    const pendingNamesByModel: Record<string, ReadonlyMap<number, string>> = {}
+    for (const i of batchIssues) {
+      const id = i.modelId ?? fallback
+      if (i.ruleId === ruleId && id && !pendingNamesByModel[id]) pendingNamesByModel[id] = pendingNamesForModel(id)
+    }
+    return planBatchRename({
+      ruleId, pattern, keepFirst, modelFilter,
+      issues: batchIssues,
+      trees: spatialTrees,
+      pendingNamesByModel,
+      pending: pendingIndex,
+      fallbackModelId: fallback,
+      // Muted members keep their names, so keep-first must not keep a second one.
+      heldIssues: rawIssues.filter((i) => i.ruleId === ruleId && mutedSet.has(issueKey(i))),
+    })
+  }, [batchIssues, rawIssues, mutedSet, modelFilter, spatialTrees, pendingIndex, activeValidationModelId])
+
+  const dialogRuleId = batchDialog?.ruleId
+  const dialogPlanner = useCallback(
+    (pattern: ParsedPattern, keepFirst: boolean): BatchRenamePlan =>
+      planBatch(dialogRuleId ?? 'RULE_DUPLICATE_NAME', pattern, keepFirst),
+    [planBatch, dialogRuleId],
+  )
+  // What the exported file will no longer have, before this plan: the name
+  // issues the pending edits already clear (an element renamed by hand, an
+  // earlier batch, a duplicate group they settle). The fixed file carries
+  // every pending edit, so predicting from `issues` alone would contradict
+  // the measured score — "89 → 97 predicted" for a file that measures 100.
+  // The "before" stays the displayed score, as on the card.
+  const predictionBase = useMemo(() => {
+    const fallback = activeValidationModelId ?? undefined
+    return batchIssues.filter((i) => !(isBatchRenameRule(i.ruleId) && pendingIndex.hasName(i.modelId ?? fallback, i.expressId)))
+  }, [batchIssues, pendingIndex, activeValidationModelId])
+  const predictAfter = useCallback(
+    (plan: BatchRenamePlan) => predictScoreAfter(predictionBase, plan.clearedKeys),
+    [predictionBase],
+  )
+  const namingConventionActive = !!rules.RULE_NAMING_CONVENTION
+    && Object.keys(rules.namingConventionPatterns ?? {}).length > 0
+
+  const handleOpenBatchRename = useCallback((ruleId: BatchRenameRule) => {
+    if (batchState.reasons[ruleId] || displayScore == null) return
+    trackFeatureUsed({ feature: 'batch_fix_preview' })
+    // The "before" is the score on screen when the preview opened.
+    setBatchDialog({ ruleId, beforeScore: displayScore })
+  }, [batchState, displayScore])
+
+  const fixFileNames = useMemo(() => {
+    const names: Record<string, string> = {}
+    for (const m of sceneModels) names[m.id] = m.fileName
+    return names
+  }, [sceneModels])
+
+  // Undo a whole batch (toast, card). Ctrl+Z gets the same through the editor
+  // store, and the batch store notices by itself.
+  const handleUndoBatch = useCallback((batchId?: string) => {
+    const id = batchId ?? useBatchFixStore.getState().batch?.batchId
+    if (!id) return
+    const editor = useEditorStore.getState()
+    // Already undone (Ctrl+Z first, then the toast's button): nothing left to do.
+    if (!editor.history.slice(0, editor.historyIndex + 1).some((c) => c.batchId === id)) return
+    if (editor.undoBatch(id)) {
+      useBatchFixStore.getState().removeBatch(id)
+      toast(t('batchFix.toast.undone'), 'info')
+    } else {
+      toast(t('batchFix.toast.undoBlocked'), 'warning')
+    }
+  }, [t])
+
+  const [focusFixCardFor, setFocusFixCardFor] = useState<string | null>(null)
+
+  const handleApplyBatchRename = useCallback(({ pattern, keepFirst, patternEdited }: BatchRenameApply) => {
+    const open = batchDialog
+    setBatchDialog(null)
+    if (!open) return
+    const { ruleId, beforeScore } = open
+    // The preview was for a finished result. A run that started behind the
+    // dialog (another model's auto-validation) streams partial issues, maybe
+    // of another model: never plan from those.
+    if (isRunning || !result || batchState.reasons[ruleId]) return
+    // Plan once more from the live state: the preview can be a render behind.
+    const plan = planBatch(ruleId, pattern, keepFirst)
+    if (plan.renamed === 0 || plan.missingTree.length > 0) return
+
+    const batchId = crypto.randomUUID()
+    for (const cmd of planToCommands(plan, batchId)) addCommand(cmd)
+
+    const modelIds = Object.keys(plan.byModel).sort()
+    const keptFirst = ruleId === 'RULE_DUPLICATE_NAME' && keepFirst && plan.keepFirstAvailable
+    // Counts and token names only: never a name, the pattern text or a file name.
+    trackIssueFixApplied({
+      rule_id:        ruleId,
+      fix_type:       'batch_name',
+      count:          plan.renamed,
+      cleared:        plan.cleared,
+      model_count:    modelIds.length,
+      keep_first:     keptFirst,
+      pattern_edited: patternEdited,
+      pattern_tokens: pattern.tokens.join(','),
+      is_demo:        modelIds.some((id) => DEMO_FILENAMES.has(fixFileNames[id] ?? '')),
+    })
+    toast(t('batchFix.toast.applied', { count: plan.renamed }), 'success', {
+      duration: 10_000,
+      action:   { label: t('batchFix.toast.undo'), run: () => handleUndoBatch(batchId) },
+    })
+
+    const batch: FixBatch = {
+      batchId, ruleId, modelIds,
+      renamed:         plan.renamed,
+      cleared:         plan.cleared,
+      predictedBefore: beforeScore,
+      predictedAfter:  predictScoreAfter(predictionBase, plan.clearedKeys),
+      patternEdited,
+      keepFirst:       keptFirst,
+      tokens:          pattern.tokens,
+      startedAt:       Date.now(),
+    }
+    useBatchFixStore.getState().beginBatch(batch)
+    // The control that opened the preview is gone (its count dropped to 0):
+    // hand focus to the card, where Download and Undo now are.
+    setFocusFixCardFor(batchId)
+    void runFixChecks(batch, fixFileNames)
+  }, [batchDialog, isRunning, result, batchState, planBatch, addCommand, predictionBase, fixFileNames, handleUndoBatch, t])
+
+  // Once the card has taken focus, a later remount must not grab it again.
+  useEffect(() => {
+    if (focusFixCardFor) setFocusFixCardFor(null)
+  }, [focusFixCardFor])
+
+  // A validation run started behind the open preview (a model finished
+  // loading and auto-validates): the preview no longer matches what is on
+  // screen, so close it rather than apply a plan made from partial issues.
+  useEffect(() => {
+    if (isRunning) setBatchDialog(null)
+  }, [isRunning])
+
+  const handleDismissFixRun = useCallback(() => {
+    const batch = useBatchFixStore.getState().batch
+    if (batch) useBatchFixStore.getState().removeBatch(batch.batchId)
+  }, [])
+
+  // Check again (stale) / Retry (error): export and check every model of the
+  // batch afresh, with the edits as they are now.
+  const handleRecheckFixed = useCallback(() => {
+    const batch = useBatchFixStore.getState().batch
+    if (batch) void runFixChecks(batch, fixFileNames)
+  }, [fixFileNames])
+
+  // A fresh click, and nothing awaited before the save: see downloadFixedRun.
+  const handleDownloadFixed = useCallback((modelId: string) => {
+    const run = useBatchFixStore.getState().runs[modelId]
+    if (run) downloadFixedRun(run)?.catch((err: unknown) => toastFromError(err))
+  }, [])
+
+  const fixSummary = useMemo(() => (fixBatch
+    ? summarizeFixBatch(fixBatch, fixRunsById, sceneModels.map((m) => m.id), cachedResultsByModel, mutedSet)
+    : null), [fixBatch, fixRunsById, sceneModels, cachedResultsByModel, mutedSet])
+  const showFixCard = !!fixBatch && fixModelIds.length > 0
+
+  // Every model of the batch left the scene: drop the batch and its bytes.
+  useEffect(() => {
+    if (fixBatch && fixModelIds.length === 0) useBatchFixStore.getState().removeBatch(fixBatch.batchId)
+  }, [fixBatch, fixModelIds])
+
   // Per-model results offered to the export modal. Prefer each model's cached
   // result; the scene order is preserved. Falls back to the displayed aggregate
   // result keyed by the active model when no per-model cache exists yet (single
@@ -1878,12 +2201,31 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
 
   // ── Benchmark (anonymous, aggregate-only) ─────────────────────────────────
-  // Fold this run's Health Score into the public benchmark — once per result
-  // object. Sends ONLY the integer score (no model data); the IFC never moves.
+  // Fold each delivered file's Health Score into the public benchmark — once
+  // per file per session, never the multi-model aggregate, never a demo, a
+  // file this app wrote, or a score measured on edited bytes (benchmark-guard).
+  // Sends ONLY the integer score (no model data); the IFC never moves.
+  // Runs when a result is PUBLISHED, never when the scene changes: `result`
+  // outlives the model it describes (removing the last validated model only
+  // sets the status to idle), so re-running on a scene change would post the
+  // previous file's score under the next model's key — and then block that
+  // model's real score as already posted.
   useEffect(() => {
-    if (result && typeof result.qualityScore === 'number' && !benchPosted.has(result)) {
-      benchPosted.add(result)
-      postBenchmark(result.qualityScore)
+    if (!result) return
+    const models = useSceneStore.getState().models
+    const base = defaultBenchmarkDeps()
+    // A single model validated before the per-model cache existed has only
+    // the displayed result; it IS that model's result — when the run is
+    // finished and nothing in it names another model.
+    const isThisModels = (id: string): boolean =>
+      useValidationStore.getState().validationStatus === 'complete'
+      && result.issues.every((i) => i.modelId === undefined || i.modelId === id)
+    const deps = models.length === 1
+      ? { ...base, getResult: (id: string) => base.getResult(id) ?? (isThisModels(id) ? result : undefined) }
+      : base
+    for (const { key, score } of benchmarkCandidates(models, deps, benchPostedKeys)) {
+      benchPostedKeys.add(key)
+      postBenchmark(score)
     }
   }, [result])
 
@@ -2056,6 +2398,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     for (const [groupKey, groupIssues] of orderedGroups) {
       rows.push({ kind: 'header', groupKey, groupIssues })
       if (!openGroups.has(groupKey)) continue
+      // "Fix all N" for the two name rules: an offer while there is something
+      // to rename, a pointer to the card once a batch for the rule exists.
+      if (filters.groupBy === 'rule' && isBatchRenameRule(groupKey)
+          && ((batchState.counts[groupKey] ?? 0) > 0 || fixBatch?.ruleId === groupKey)) {
+        rows.push({ kind: 'batchfix', groupKey })
+      }
       // Per-rule fix guidance, only when grouping by rule and guidance exists.
       if (filters.groupBy === 'rule' && getRuleRemediation(groupKey, i18n.language)) {
         rows.push({ kind: 'remediation', groupKey })
@@ -2069,7 +2417,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       }
     }
     return rows
-  }, [orderedGroups, openGroups, expandedGroups, filters.groupBy, i18n.language])
+  }, [orderedGroups, openGroups, expandedGroups, filters.groupBy, i18n.language, batchState.counts, fixBatch?.ruleId])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const listRef   = useRef<HTMLDivElement>(null)
@@ -2078,16 +2426,18 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // The virtualized list does not start at the top of the scroll element
   // (a progress bar may precede it). scrollMargin tells the virtualizer that
   // offset so item positions and scroll math stay correct.
+  // The fixed-file card re-measures while it is up (onResize); this catches it
+  // appearing and going away.
   useLayoutEffect(() => {
     setListOffset(listRef.current?.offsetTop ?? 0)
-  }, [isRunning, activePanel, flatRows.length])
+  }, [isRunning, activePanel, flatRows.length, showFixCard])
 
   const virtualizer = useVirtualizer({
     count:           flatRows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize:    (i) => {
       const r = flatRows[i]
-      return r.kind === 'header' ? 30 : r.kind === 'expander' ? 37 : r.kind === 'remediation' ? 150 : 92
+      return r.kind === 'header' ? 30 : r.kind === 'expander' ? 37 : r.kind === 'remediation' ? 150 : r.kind === 'batchfix' ? 36 : 92
     },
     overscan:     8,
     scrollMargin: listOffset,
@@ -2097,37 +2447,72 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     },
   })
 
+  // The batch rename preview. One instance for both layouts: Modal turns into
+  // a bottom sheet on phones by itself. Mounted only while open, so every
+  // opening starts from the rule's default pattern.
+  const batchRenameDialog = batchDialog && (
+    <BatchRenameDialog
+      key={batchDialog.ruleId}
+      ruleId={batchDialog.ruleId}
+      onClose={() => setBatchDialog(null)}
+      planner={dialogPlanner}
+      beforeScore={batchDialog.beforeScore}
+      predictAfter={predictAfter}
+      namingConventionActive={namingConventionActive}
+      onApply={handleApplyBatchRename}
+    />
+  )
+
+  // Empty names still to fill, offered on the card after a duplicate-name batch.
+  const alsoFixEmptyCount = batchState.reasons.RULE_EMPTY_NAME ? 0 : (batchState.counts.RULE_EMPTY_NAME ?? 0)
+
   // ── Mobile: dedicated bottom-sheet variant (desktop render path untouched) ──
   // All hooks above have run; we forward the already-computed view-model + the
   // handlers so the mobile presentation duplicates none of this component's logic.
   if (isMobile) {
     return (
-      <ValidationPanelMobile
-        open={validationPanelOpen}
-        vm={{
-          language: i18n.language,
-          result, stats, displayScore, coverage, coverageIncomplete, contributions, bench,
-          issues, orderedGroups, filtered, filters, setFilters, search, setSearch,
-          modelFilter, setModelFilter, sceneModels, isRunning, progress, validationStatus, validationError,
-          hasModel, autoFixableCount, pendingFixIds, mutedCount, unmuteAll, runDiff,
-          activePanel, setActivePanel, bcfTopicCount, viewer,
-          activeProfileId, customProfiles, setActiveProfile,
-          exportModels, rules,
-          resolveProfileName: (p) => localizedProfileName(p, t),
-          onRun: handleRunValidation,
-          onJumpTo: handleJumpTo,
-          onAutoFix: handleAutoFix,
-          onNameFix: handleNameFix,
-          onMute: handleMute,
-          onAddToBcf: handleAddIssueToBcf,
-          onShareReport: handleShareReport,
-          onCopyForAI: handleCopyForAI,
-          onCopyBadge: handleCopyBadge,
-          onBatchFix: handleBatchFix,
-          onClose: toggleValidationPanel,
-          onFloodJump: handleFloodJump,
-        }}
-      />
+      <>
+        <ValidationPanelMobile
+          open={validationPanelOpen}
+          vm={{
+            language: i18n.language,
+            result, stats, displayScore, coverage, coverageIncomplete, contributions, bench,
+            issues, orderedGroups, filtered, filters, setFilters, search, setSearch,
+            modelFilter, setModelFilter, sceneModels, isRunning, progress, validationStatus, validationError,
+            hasModel, autoFixableCount, pendingFixIds: pendingIndex, mutedCount, unmuteAll, runDiff,
+            activePanel, setActivePanel, bcfTopicCount, viewer,
+            activeProfileId, customProfiles, setActiveProfile,
+            exportModels, rules,
+            resolveProfileName: (p) => localizedProfileName(p, t),
+            onRun: handleRunValidation,
+            onJumpTo: handleJumpTo,
+            onAutoFix: handleAutoFix,
+            onNameFix: handleNameFix,
+            onMute: handleMute,
+            onAddToBcf: handleAddIssueToBcf,
+            onShareReport: handleShareReport,
+            onCopyForAI: handleCopyForAI,
+            onCopyBadge: handleCopyBadge,
+            onBatchFix: handleBatchFix,
+            onClose: toggleValidationPanel,
+            onFloodJump: handleFloodJump,
+            batchCounts: batchState.counts,
+            batchDisabledReason: batchState.reasons,
+            onOpenBatchRename: handleOpenBatchRename,
+            fixBatch: showFixCard ? fixBatch : null,
+            fixModelIds,
+            fixRuns,
+            fixSummary,
+            alsoFixEmptyCount,
+            onDownloadFixed: handleDownloadFixed,
+            onUndoBatch: () => handleUndoBatch(),
+            onDismissFixRun: handleDismissFixRun,
+            onRecheckFixed: handleRecheckFixed,
+            focusFixCard: !!fixBatch && focusFixCardFor === fixBatch.batchId,
+          }}
+        />
+        {batchRenameDialog}
+      </>
     )
   }
 
@@ -2274,7 +2659,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         )}
         </div>
 
-        {/* Batch auto-fix */}
+        {/* Batch auto-fix (GUIDs only — the name rules have their own "Fix all N") */}
         {autoFixableCount > 0 && (
           <button
             onClick={handleBatchFix}
@@ -2282,7 +2667,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             className="px-2 h-6 rounded text-[10px] border transition-colors font-medium shrink-0"
             style={{ background: 'var(--ok)14', color: 'var(--ok)', borderColor: 'var(--ok)33' }}
           >
-            Fix {autoFixableCount}
+            {t('actions.fixAllCount', { count: autoFixableCount })}
           </button>
         )}
 
@@ -2368,9 +2753,9 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         )}
 
         {/* Pending fixes count */}
-        {pendingFixIds.size > 0 && (
+        {pendingIndex.size > 0 && (
           <span className="px-2 h-6 flex items-center rounded text-[10px] text-[var(--ok)] border border-[var(--ok)]33 font-mono shrink-0">
-            {t('pendingFixes', { count: pendingFixIds.size })}
+            {t('pendingFixes', { count: pendingIndex.size })}
           </span>
         )}
 
@@ -2404,6 +2789,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           progress={progress}
           disabled={!hasModel}
           onClick={handleRunValidation}
+          note={diffs.length > 0 ? t('batchFix.revalidateNote') : undefined}
         />
       </div>
 
@@ -2452,11 +2838,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       )}
 
       {/* ── Next step after the score: price-free interest capture, shown to everyone ── */}
+      {/* The rule it names skips what this panel already fixes free (GUIDs, names). */}
       {result && (
         <ScoreUpsell
           score={result.qualityScore ?? 0}
           modelId={result.issues.find((i) => i.modelId)?.modelId}
-          topRule={Object.entries(result.stats?.byRule ?? {}).sort((x, y) => y[1] - x[1])[0]?.[0]}
+          topRule={pickUpsellRule(result.stats?.byRule ?? {})}
         />
       )}
 
@@ -2675,6 +3062,24 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               </div>
             )}
 
+            {/* The fixed file from a batch rename: its own score, never the headline's */}
+            {showFixCard && fixBatch && fixSummary && (
+              <BatchFixResultCard
+                batch={fixBatch}
+                modelIds={fixModelIds}
+                runs={fixRuns}
+                summary={fixSummary}
+                onDownload={handleDownloadFixed}
+                onUndo={() => handleUndoBatch()}
+                onDismiss={handleDismissFixRun}
+                onRecheck={handleRecheckFixed}
+                alsoFixEmptyCount={alsoFixEmptyCount}
+                onAlsoFixEmpty={() => handleOpenBatchRename('RULE_EMPTY_NAME')}
+                onResize={() => setListOffset(listRef.current?.offsetTop ?? 0)}
+                autoFocus={focusFixCardFor === fixBatch.batchId}
+              />
+            )}
+
             {/* Actionable summary — what to fix first (Phase 2) */}
             {!isRunning && result && result.stats.total > 0 && (
               <ExecutiveSummary
@@ -2682,6 +3087,9 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 contributions={contributions}
                 language={i18n.language}
                 onJumpToRule={handleJumpToRule}
+                batchCounts={batchState.counts}
+                batchDisabledReason={batchState.reasons}
+                onBatchFix={handleOpenBatchRename}
               />
             )}
 
@@ -2742,6 +3150,13 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                           selectedTool={remediationTool}
                           onSelectTool={setRemediationTool}
                         />
+                      ) : row.kind === 'batchfix' ? (
+                        <BatchFixBar
+                          count={batchState.counts[row.groupKey] ?? 0}
+                          done={fixBatch?.ruleId === row.groupKey}
+                          disabledReason={batchState.reasons[row.groupKey]}
+                          onFix={() => handleOpenBatchRename(row.groupKey)}
+                        />
                       ) : row.kind === 'expander' ? (
                         <ExpanderRow
                           hiddenCount={row.hiddenCount}
@@ -2750,7 +3165,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                       ) : (
                         <IssueRow
                           issue={row.issue}
-                          hasPendingFix={pendingFixIds.has(row.issue.expressId)}
+                          hasPendingFix={pendingIndex.has(row.issue.modelId, row.issue.expressId)}
                           onJumpTo={handleJumpTo}
                           onAutoFix={handleAutoFix}
                           onNameFix={handleNameFix}
@@ -2784,6 +3199,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           onClose={() => setExportModalOpen(false)}
         />
       )}
+
+      {batchRenameDialog}
     </div>
   )
 }

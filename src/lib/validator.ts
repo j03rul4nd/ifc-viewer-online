@@ -319,8 +319,12 @@ let activeReject: ((err: Error) => void) | null = null
 // tear the timer down so it can't fire onto an already-cancelled run.
 let activeWatchdogClear: (() => void) | null = null
 
-/** Silence timeout (ms) before the watchdog declares a run hung and terminates it. */
-const WATCHDOG_SILENCE_MS = 60_000
+/**
+ * Silence timeout (ms) before the watchdog declares a run hung and terminates it.
+ * Exported so the isolated fixed-file check (lib/fix/validate-bytes) gives up
+ * on the same schedule as a normal run.
+ */
+export const WATCHDOG_SILENCE_MS = 60_000
 
 /**
  * Cancel a running validation.

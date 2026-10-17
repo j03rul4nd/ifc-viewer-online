@@ -21,7 +21,8 @@ const SeveritySchema = z.enum(['error', 'warning', 'info'])
 /**
  * Mirrors ValidationIssue in src/types/index.ts exactly.
  * Fields: id, ruleId, severity, expressId, globalId, ifcClass, elementName,
- *         message, path, autoFixable
+ *         message, path, autoFixable, scopeId (optional)
+ * modelId is not here on purpose: the launcher stamps it after the parse.
  */
 const ValidationIssueSchema = z.object({
   id:          z.string(),
@@ -34,6 +35,9 @@ const ValidationIssueSchema = z.object({
   message:     z.string(),
   path:        z.array(z.string()),
   autoFixable: z.boolean(),
+  // RULE_DUPLICATE_NAME's shared parent. Declared, or Zod strips it and the
+  // batch fix can never keep one member per group.
+  scopeId:     z.number().int().nonnegative().optional(),
 })
 
 const ValidationStatsSchema = z.object({
@@ -85,6 +89,10 @@ const ValidationResultSchema = z.object({
       // honest "none seen" instead of undefined leaking into the UI.
       unreadableEntities: z.number().int().nonnegative().default(0),
     }).optional(),
+    // Edits applied in the browser to the bytes this run validated. Stamped
+    // after the parse today (lib/fix/validate-bytes); declared so a future
+    // parse of a stamped result cannot drop it.
+    edits: z.number().int().nonnegative().optional(),
   }).optional(),
 })
 

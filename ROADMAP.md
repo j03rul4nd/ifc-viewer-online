@@ -58,6 +58,7 @@ The **only three moats are distribution/content/brand, not tech**:
 These were not on the priority table but are now in `main` and verified against the code:
 
 - ✅ **buildingSMART IDS 1.0** — see P4 above (`docs/IDS_IMPLEMENTATION_PLAN.md`).
+- ✅ **Batch name fix, phase A (2026-10, D-36)** — turns the score into an action: **Fix all N** for RULE_DUPLICATE_NAME and RULE_EMPTY_NAME, free and in the browser. Preview with an editable naming pattern, apply as one undoable batch, export, re-validate those exact bytes in isolation, show Health Score before → after, download `<stem>-fixed.ifc`. The original file's score stays the headline, the benchmark and `validation_completed` never see the after-score, and the paid fake door is limited to MISSING_TYPE and PROXY_OVERUSE. **Next (phase B):** `{type}` / `{longname}` tokens, open the fixed file as the current version, certify the fixed bytes, MISSING_TYPE and PROXY_OVERUSE fixes.
 - ✅ **3D Map / GIS mode** — places a georeferenced model on a real-world basemap (OSM/topo/satellite/custom XYZ) + optional 3D terrain, tiles rendered inside the existing three.js scene via `3d-tiles-renderer`. Georef ladder (`IfcMapConversion`/`IfcProjectedCRS` → `ePSet_MapConversion` → `IfcSite` lat-lon → manual), privacy consent, worker-based extraction (`geo-extract.worker.ts`, `geo-terrain.worker.ts`), `geoStore`, `GeoPanel`. Build-flag gated (`VITE_FEATURE_GIS`, default on). Docs: `docs/GIS_MAP_MODE.md`, `docs/GIS_MAP_INTEGRATION_PLAN.md`, `docs/TERRAIN_3D_IMPROVEMENT_PLAN.md`.
 - ✅ **Measurement tools** (length/area/edge/volume), **floor plans**, **section/clipping planes** — Sprints 7–8 (also listed below).
 - ✅ **BCF panel** — full topic CRUD, comments, viewpoint capture, filters (`BcfPanel.tsx`, `bcfStore`), beyond the original "export issues as BCF" scope.
@@ -174,7 +175,7 @@ These were not on the priority table but are now in `main` and verified against 
 - **16 validation rules** — RULE_EMPTY_NAME, RULE_EMPTY_LONGNAME, RULE_DUPLICATE_NAME, RULE_NAMING_CONVENTION, RULE_MISSING_TYPE, RULE_DUPLICATE_GUID, RULE_MISSING_PROPERTY_SET, RULE_ORPHAN_ELEMENT, RULE_WRONG_CONTAINER, RULE_BROKEN_AGGREGATE, RULE_INVALID_GUID_FORMAT, RULE_SPATIAL_HIERARCHY, RULE_CIRCULAR_REFERENCE, RULE_EMPTY_PROPERTY_VALUE, RULE_MISSING_MATERIAL, RULE_ELEMENT_IN_BUILDING
 - **Spatial tree** — `ModelTree.tsx` renders the hierarchy, virtualised with `@tanstack/react-virtual`
 - **Inline editing in tree** — Name, LongName, Description editable inline; GlobalId regenerable via confirmation modal
-- **Validation panel** — `ValidationPanel.tsx` with filters, **batch auto-fix button**
+- **Validation panel** — `ValidationPanel.tsx` with filters, **batch auto-fix button** *(since D-36 also a per-rule **Fix all N** for duplicate and empty names: preview with a naming pattern, one undoable batch, the exported bytes re-validated for a before → after score, and download of the fixed IFC)*
 - **Non-destructive editing infrastructure** — `editorStore`, `diffStore.ts`, `useEditorHistory.ts`
 - **SET_PROPERTY + REPARENT diffs** — fully implemented at export
 - **Infrastructure layer** — `Result<T,E>`, `TypedEventBus` / `appBus`, `CacheRepository`, `Brand<T,B>`, `createLogger`, `invariant`, `ErrorBoundary`

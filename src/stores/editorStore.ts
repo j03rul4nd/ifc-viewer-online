@@ -29,11 +29,23 @@ interface EditorStore {
   canRedo: boolean
 
   addCommand:          (cmd: EditorCommand) => void
+  /** Undo the last step. Adjacent commands sharing a `batchId` are one step. */
   undo:                () => void
+  /** Redo the next step. Adjacent commands sharing a `batchId` are one step. */
   redo:                () => void
+  /**
+   * Undo the batch `batchId` — only when it is the last thing applied. Returns
+   * false (and changes nothing) when a later edit sits on top of it: undoing
+   * the batch from under that edit would undo the edit too.
+   */
+  undoBatch:           (batchId: string) => boolean
   clearHistory:        () => void
   setSelection:        (refs: SelectionRef[]) => void
-  /** Remove all commands (and their diffs) that touch a specific expressId. */
+  /**
+   * Drop every pending edit on one element. Diff-level: a command that also
+   * edits other elements (a batch rename) keeps their diffs, and only a command
+   * left with no diffs disappears. What was undone stays undone.
+   */
   discardForElement:   (expressId: number, modelId?: string) => void
 }
 
@@ -78,41 +90,55 @@ export const useEditorStore = create<EditorStore>()(
       undo: () => {
         const s = get()
         if (s.historyIndex < 0) return
-        const cmd = s.history[s.historyIndex]
+        // A batch (one command per model) is one step: walk down over every
+        // adjacent command that carries the top command's batchId.
+        const top = s.history[s.historyIndex]
+        let historyIndex = s.historyIndex - 1
+        if (top?.batchId) {
+          while (historyIndex >= 0 && s.history[historyIndex].batchId === top.batchId) historyIndex--
+        }
+        const undone = s.history.slice(historyIndex + 1, s.historyIndex + 1).reverse()
         set(
-          (st) => {
-            const historyIndex = st.historyIndex - 1
-            return {
-              historyIndex,
-              diffs:   historyIndex < 0 ? [] : flattenDiffs(st.history, historyIndex),
-              canUndo: historyIndex >= 0,
-              canRedo: true,
-            }
+          {
+            historyIndex,
+            diffs:   historyIndex < 0 ? [] : flattenDiffs(s.history, historyIndex),
+            canUndo: historyIndex >= 0,
+            canRedo: true,
           },
           false,
           'undo',
         )
-        if (cmd) appBus.emit('editor:undone', { command: cmd })
+        for (const command of undone) appBus.emit('editor:undone', { command })
       },
 
       redo: () => {
         const s = get()
         if (s.historyIndex >= s.history.length - 1) return
-        const cmd = s.history[s.historyIndex + 1]
+        const next = s.history[s.historyIndex + 1]
+        let historyIndex = s.historyIndex + 1
+        if (next?.batchId) {
+          while (historyIndex + 1 < s.history.length && s.history[historyIndex + 1].batchId === next.batchId) historyIndex++
+        }
+        const redone = s.history.slice(s.historyIndex + 1, historyIndex + 1)
         set(
-          (st) => {
-            const historyIndex = st.historyIndex + 1
-            return {
-              historyIndex,
-              diffs:   flattenDiffs(st.history, historyIndex),
-              canUndo: true,
-              canRedo: historyIndex < st.history.length - 1,
-            }
+          {
+            historyIndex,
+            diffs:   flattenDiffs(s.history, historyIndex),
+            canUndo: true,
+            canRedo: historyIndex < s.history.length - 1,
           },
           false,
           'redo',
         )
-        if (cmd) appBus.emit('editor:redone', { command: cmd })
+        for (const command of redone) appBus.emit('editor:redone', { command })
+      },
+
+      undoBatch: (batchId) => {
+        const s = get()
+        const top = s.historyIndex >= 0 ? s.history[s.historyIndex] : undefined
+        if (!top || top.batchId !== batchId) return false
+        get().undo()
+        return true
       },
 
       clearHistory: () => {
@@ -129,18 +155,27 @@ export const useEditorStore = create<EditorStore>()(
 
       discardForElement: (expressId, modelId) => {
         set((s) => {
-          // Keep commands that don't affect this expressId at all
-          const kept = s.history.filter((cmd) => {
-            if (modelId && cmd.modelId && cmd.modelId !== modelId) return true
-            return !cmd.diffs.some((d) => d.expressId === expressId)
+          // Drop this element's diffs, not whole commands: a batch rename holds
+          // hundreds of elements, and discarding one of them must not discard
+          // the rest. Only a command left with no diffs goes.
+          const kept: EditorCommand[] = []
+          let applied = 0
+          s.history.forEach((cmd, i) => {
+            const touches = !(modelId && cmd.modelId && cmd.modelId !== modelId)
+            const diffs = touches ? cmd.diffs.filter((d) => d.expressId !== expressId) : cmd.diffs
+            if (diffs.length === 0) return
+            kept.push(diffs.length === cmd.diffs.length ? cmd : { ...cmd, diffs })
+            if (i <= s.historyIndex) applied++
           })
-          const historyIndex = kept.length - 1
+          // Commands the user had undone stay undone: the new index counts only
+          // the survivors that were applied before.
+          const historyIndex = applied - 1
           return {
             history:      kept,
             historyIndex,
             diffs:        historyIndex < 0 ? [] : flattenDiffs(kept, historyIndex),
             canUndo:      historyIndex >= 0,
-            canRedo:      false,
+            canRedo:      historyIndex < kept.length - 1,
           }
         }, false, 'discardForElement')
         appBus.emit('editor:history-cleared', undefined)
