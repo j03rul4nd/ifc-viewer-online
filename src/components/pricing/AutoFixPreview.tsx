@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { modelRegistry } from '../../lib/model-registry'
 import { downloadBlob } from '../../lib/diffStore'
 import { runAutoFix, type AutoFixResult } from '../../lib/autofix/run'
+import type { ProxySuggestion, ProxyTarget } from '../../lib/autofix/proxy'
 import { compareRuns, type FixComparison } from '../../lib/autofix/compare'
 import { runStandaloneValidation } from '../../lib/certify/deep-verify'
 
@@ -19,15 +20,19 @@ const CLASS_LABEL = (c: string) => `Ifc${c.charAt(3)}${c.slice(4).toLowerCase()}
 
 export default function AutoFixPreview({ modelId }: { modelId?: string }) {
   const [state, setState] = useState<State>({ phase: 'idle' })
+  // Proxy groups the user ticked. Kept across runs so a re-run re-applies them.
+  const [confirmed, setConfirmed] = useState<ProxySuggestion[]>([])
+  const [ticked, setTicked] = useState<Set<string>>(new Set())
+  const keyOf = (g: ProxySuggestion) => `${g.target}|${g.name}`
   const entry = modelId ? modelRegistry.get(modelId) : undefined
 
-  async function run() {
+  async function run(reclassify: { ids: number[]; target: ProxyTarget }[] = confirmed.map((g) => ({ ids: g.ids, target: g.target }))) {
     const buffer = modelId ? modelRegistry.getBuffer(modelId) : null
     if (!buffer) { setState({ phase: 'error', message: 'The original IFC is not in memory (loaded from cache). Reopen the .ifc file to fix it.' }); return }
     setState({ phase: 'running' })
     const t = performance.now()
     try {
-      const result = await runAutoFix(buffer)
+      const result = await runAutoFix(buffer, { reclassify })
       const ms = Math.round(performance.now() - t)
       if (result.report.changes.length === 0) { setState({ phase: 'done', result, ms, compare: { status: 'failed' } }); return }
       setState({ phase: 'done', result, ms, compare: { status: 'running' } })
@@ -53,7 +58,7 @@ export default function AutoFixPreview({ modelId }: { modelId?: string }) {
 
   if (state.phase === 'idle') {
     return (
-      <button onClick={run} disabled={!modelId} className="mt-2 h-[26px] px-2.5 text-[11px] font-medium rounded-[6px] border border-[var(--border)] hover:bg-[var(--surface)] disabled:opacity-50">
+      <button onClick={() => run()} disabled={!modelId} className="mt-2 h-[26px] px-2.5 text-[11px] font-medium rounded-[6px] border border-[var(--border)] hover:bg-[var(--surface)] disabled:opacity-50">
         Run auto-fix now (team preview)
       </button>
     )
@@ -62,6 +67,39 @@ export default function AutoFixPreview({ modelId }: { modelId?: string }) {
   if (state.phase === 'error') return <p className="mt-2 text-[11px] text-[var(--danger)]" role="alert">{state.message}</p>
 
   const { report } = state.result
+  const suggestions = report.proxySuggestions ?? []
+  function applyTicked() {
+    const add = suggestions.filter((g) => ticked.has(keyOf(g)))
+    const next = [...confirmed, ...add]
+    setConfirmed(next)
+    setTicked(new Set())
+    void run(next.map((g) => ({ ids: g.ids, target: g.target })))
+  }
+  const proxyPanel = suggestions.length > 0 && (
+    <div className="mt-2 border-t border-[var(--border)] pt-2">
+      <p className="font-medium text-[var(--text)]">{suggestions.reduce((n, g) => n + g.ids.length, 0)} proxies look like something else</p>
+      <p className="text-[var(--text-faint)]">Nothing changes until you tick a group. A wrong class is worse than a proxy, so check the names.</p>
+      <ul className="mt-1.5 space-y-1 max-h-[140px] overflow-y-auto">
+        {suggestions.map((g) => (
+          <li key={keyOf(g)}>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" className="mt-0.5" checked={ticked.has(keyOf(g))}
+                onChange={(e) => setTicked((t) => { const n = new Set(t); if (e.target.checked) n.add(keyOf(g)); else n.delete(keyOf(g)); return n })} />
+              <span className="text-[var(--text-dim)]">
+                <span className="text-[var(--text)]">{g.ids.length} × "{g.name}"</span> → {g.label}
+                <span className="text-[var(--text-faint)]"> · {g.confidence === 'high' ? 'family name' : 'mentioned in name'} "{g.keyword}"</span>
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {ticked.size > 0 && (
+        <button onClick={applyTicked} className="mt-2 h-[26px] px-2.5 text-[11px] font-medium rounded-[6px] border border-[var(--border)] hover:bg-[var(--surface-2)]">
+          Reclassify {ticked.size} group{ticked.size === 1 ? '' : 's'} and re-check
+        </button>
+      )}
+    </div>
+  )
   const skipped = Object.entries(report.missingType.skippedClasses)
   const nothing = report.changes.length === 0
   return (
@@ -102,6 +140,7 @@ export default function AutoFixPreview({ modelId }: { modelId?: string }) {
           Download fixed IFC
         </button>
       )}
+      {proxyPanel}
       <p className="mt-1.5 text-[var(--text-faint)]">Scores use the default rule profile on both files. Your original file is unchanged.</p>
     </div>
   )

@@ -14,11 +14,15 @@ import {
   readStep, writeStep, writeEntity, replaceEntity, appendEntities, nextId, strValue,
   type StepEntity, type StepFile, type StepValue,
 } from './step'
+import { suggestProxies, reclassifyProxies, PROXY_TARGET_LABEL, type ProxySuggestion, type ProxyTarget } from './proxy'
 
 export interface AutoFixReport {
   schema: StepFile['schema']
   missingType: { typesCreated: number; elementsLinked: number; skippedClasses: Record<string, number> }
   duplicateName: { renamed: number; groups: number }
+  /** Proxy groups we could reclassify — applied only when the user confirms them. */
+  proxySuggestions: ProxySuggestion[]
+  proxiesReclassified: number
   /** Human-readable list of what changed, for the before/after view. */
   changes: string[]
 }
@@ -26,6 +30,8 @@ export interface AutoFixReport {
 export interface AutoFixOptions {
   fixMissingType?: boolean
   fixDuplicateName?: boolean
+  /** Proxy groups the user confirmed: rewrite these ids as `target`. */
+  reclassify?: { ids: number[]; target: ProxyTarget }[]
   /** Injectable for deterministic tests. */
   newGuid?: () => string
 }
@@ -196,11 +202,22 @@ export function autoFixIfc(text: string, opts: AutoFixOptions = {}): { text: str
     schema: f.schema,
     missingType: { typesCreated: 0, elementsLinked: 0, skippedClasses: {} },
     duplicateName: { renamed: 0, groups: 0 },
+    proxySuggestions: [],
+    proxiesReclassified: 0,
     changes: [],
+  }
+  // Confirmed reclassifications first, so the new classes also get their types.
+  for (const r of opts.reclassify ?? []) {
+    const n = reclassifyProxies(f, r.ids, r.target)
+    if (n) {
+      report.proxiesReclassified += n
+      report.changes.push(`Reclassified ${n} proxy element${n === 1 ? '' : 's'} as ${PROXY_TARGET_LABEL[r.target]}`)
+    }
   }
   // Types first: grouping reads the original names (Revit's "Family:Type:id").
   if (opts.fixMissingType !== false) fixMissingType(f, opts.newGuid ?? randomGuid, report)
   if (opts.fixDuplicateName !== false) fixDuplicateNames(f, report)
+  report.proxySuggestions = suggestProxies(f)
   return { text: writeStep(f), report }
 }
 
