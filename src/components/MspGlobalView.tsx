@@ -93,7 +93,7 @@ function Step({ n, done, title, children }: { n: number; done: boolean; title: s
   )
 }
 
-function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile | null; onTalk: () => void }) {
+function Demo({ entry, profile, onTalk, suspended }: { entry: EventEntry; profile: Profile | null; onTalk: () => void; suspended: boolean }) {
   const [state, setState] = useState<DemoState>('idle')
   const [facts, setFacts] = useState<DemoFacts>({})
   const [run, setRun] = useState(0)
@@ -105,6 +105,16 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
     const q = new URLSearchParams({ scene: DEMO_SCENE, ui: 'article', lang: 'en' })
     return `/?${q.toString()}`
   }, [])
+
+  // Only one live 3D frame on the page: when a feature opens full screen this
+  // one stops (its frame unmounts). Two twins at once ran out of memory on
+  // tablets, and Safari reloaded the tab mid-load, again and again.
+  useEffect(() => {
+    if (!suspended) return
+    setState((st) => (st === 'loading' || st === 'ready' ? 'idle' : st))
+    setFacts({})
+    interacted.current = false
+  }, [suspended])
 
   const open = useCallback(() => {
     if (!hasWebGL()) { setState('failed'); return }
@@ -408,6 +418,22 @@ export default function MspGlobalView() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [sheet, setSheet] = useState<FeatureId | null>(null)
   const [interest, setInterest] = useState<FeatureId | null>(null)
+  const heroRef = useRef<HTMLVideoElement>(null)
+  const [heroVisible, setHeroVisible] = useState(true)
+  useEffect(() => {
+    const v = heroRef.current
+    if (!v || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setHeroVisible(e.isIntersecting), { threshold: 0.1 })
+    io.observe(v)
+    return () => io.disconnect()
+  }, [])
+  useEffect(() => {
+    const v = heroRef.current
+    if (!v) return
+    // The decoder shares the GPU with the 3D frame: give it back while a twin runs.
+    if (heroVisible && sheet === null) void v.play().catch(() => {})
+    else v.pause()
+  }, [heroVisible, sheet])
   const contactRef = useRef<HTMLElement>(null)
   const demoRef = useRef<HTMLElement>(null)
 
@@ -458,6 +484,7 @@ export default function MspGlobalView() {
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
             <button type="button" onClick={() => openFeature('barcelona')} className="group relative block w-full" aria-label="Open Barcelona live">
               <video
+              ref={heroRef}
               poster="/msp-global/hero-poster.jpg"
               width={960} height={540}
               autoPlay muted loop playsInline preload="auto"
@@ -517,7 +544,7 @@ export default function MspGlobalView() {
           <h2 className={h2}>Three taps</h2>
           <p className="mt-2 text-[16px] text-[var(--text-dim)]">Barcelona, live. On your phone.</p>
           <div className="mt-5">
-            <Demo entry={entry} profile={profile} onTalk={toContact} />
+            <Demo entry={entry} profile={profile} onTalk={toContact} suspended={sheet !== null} />
           </div>
         </section>
 
