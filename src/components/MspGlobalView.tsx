@@ -531,7 +531,7 @@ export default function MspGlobalView() {
                 poster="/msp-global/hero-poster.jpg"
                 width={960} height={540}
                 autoPlay muted loop playsInline preload="auto"
-                aria-label="18-second tour of the product: Barcelona live, a tap opening live bike data, Hotel Vela on the map, a solar heat map and Helsinki station"
+                aria-label="19-second tour of the product: Barcelona live, a tap opening live bike data, an AGV warehouse, Hotel Vela on the map and a solar heat map"
                 className="block aspect-video h-auto w-full bg-black object-cover"
                 disablePictureInPicture
               >
@@ -541,7 +541,7 @@ export default function MspGlobalView() {
             </button>
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)] md:px-4 md:py-3 md:text-[15px]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screens, 18 seconds. <span className="font-medium text-[var(--text)]">Tap to try it live.</span>
+              Real screens, 19 seconds. <span className="font-medium text-[var(--text)]">Tap to try it live.</span>
             </figcaption>
           </figure>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:hidden">{heroCtas}</div>
