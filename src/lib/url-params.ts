@@ -240,6 +240,8 @@ export interface MapDeepLink {
   buildings?: boolean
   /** `showcase` also downloads the authored props — heavier, and the nicer shot. */
   detail?: 'showcase'
+  /** `xray` / `cut` tokens: open in the underground view (subsurface.ts). */
+  subsurface?: 'xray' | 'cut'
 }
 
 /** Fully-resolved chrome flags — preset defaults with per-param overrides applied. */
@@ -493,6 +495,7 @@ function parseMapParam(v: string | null): MapDeepLink | undefined {
     if (token === 'terrain')   link.terrain = true
     if (token === 'buildings') link.buildings = true
     if (token === 'showcase')  link.detail = 'showcase'
+    if (token === 'xray' || token === 'cut') link.subsurface = token
   }
   return link
 }

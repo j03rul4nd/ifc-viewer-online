@@ -94,6 +94,10 @@ import { buildCurrentParticles, setLiveCurrent } from './current-particles'
 import { buildBeachEdgeLayer, pavedNearFor, seaBeaches } from './beach-edge'
 import { carveGround, planBeachWalls } from './beach-carve'
 import { fetchMarine, marineAt, type MarineNow } from './marine-feed'
+import {
+  applyMode as applySubsurfaceMode, assessBurial, buildPitWalls, cutPlanes, cutRect, maxPolarFor,
+  pitMaterial, restoreMaterial, saveMaterial, type BurialAssessment, type MaterialState, type SubsurfaceMode,
+} from './subsurface'
 
 const log = createLogger('GeoSystem')
 
@@ -103,8 +107,10 @@ const MAP_FOG_NEAR_M = 30_000
 const MAP_FOG_FAR_M = 55_000
 /** Precision leash (§4.7): worst-case float32 error ≈ 30 km / 2²⁴ ≈ 2 mm. */
 const MAP_MAX_DISTANCE_M = 30_000
-/** Keep the camera just above the horizon — can't go under the map. */
-const MAP_MAX_POLAR_RAD = (88 * Math.PI) / 180
+/** Keep the camera just above the horizon — can't go under the map (surface mode). */
+const MAP_MAX_POLAR_RAD = maxPolarFor('surface')
+/** Frames between sweeps that bring freshly streamed tiles and layers into the subsurface view. */
+const SUBSURFACE_SWEEP_FRAMES = 10
 /** Client-side ceiling on a building query, longer than the worker's own. */
 const BUILDINGS_TIMEOUT_MS = 45_000
 
@@ -390,6 +396,16 @@ export interface GeoSystemAPI {
    */
   setTerrainLook(look: TerrainLook): void
   /**
+   * How the map treats what is under it (see subsurface.ts): `surface` is the
+   * normal map, `xray` turns every map surface translucent, `cut` opens a pit
+   * over the model's footprint. Off the surface the camera may go under the
+   * ground plane. Sticky across rebuilds; reset to `surface` by disable().
+   */
+  setSubsurfaceMode(mode: SubsurfaceMode): void
+  getSubsurfaceMode(): SubsurfaceMode
+  /** How much of the active model is under the ground, or null with no model/map. */
+  assessSubsurface(): BurialAssessment | null
+  /**
    * Toggle surrounding OpenStreetMap buildings, extruded onto the ground.
    * Resolves once the fetch settles; failures leave the map usable and are
    * reported through the returned status rather than thrown.
@@ -659,6 +675,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let terrainStyle: TerrainStyle = 'imagery'
   let terrainExaggeration = 1
   let terrainLook: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
+  // Subsurface view. Saved states are keyed by material so a sweep is
+  // idempotent and a restore puts back exactly what each surface had.
+  let subsurfaceMode: SubsurfaceMode = 'surface'
+  let subsurfacePlanes: THREE.Plane[] | null = null
+  let subsurfaceSaved = new Map<THREE.Material, MaterialState>()
+  let subsurfaceFrames = 0
+  let pitMesh: THREE.Mesh | null = null
   /**
    * The ground with no context layers built (the plain map, or relief only):
    * what groundAtWorld / groundHeightAt read then. Cached on what it depends
@@ -1144,6 +1167,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         if (!engine) return
         engine.update()
         retuneDepthRange()
+        if (subsurfaceMode !== 'surface' && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
+          subsurfaceFrames = 0
+          sweepSubsurface()
+        }
         const now = performance.now()
         if (animatedLayers.length > 0) {
           const seconds = now / 1000
@@ -1190,6 +1217,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // that is about to be thrown away.
       teardownBuildings()
       teardownTerrain({ reseat: false })
+      clearSubsurface()
+      subsurfaceMode = 'surface'
       // Let go of the toggle in flight. Its fetch is already doomed — the token
       // moved — and leaving it in the queue would make the NEXT enable wait out
       // a full Overpass round trip for an answer nobody wants. The orphan comes
@@ -1288,6 +1317,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Clip the flat basemap under the patch so valleys BELOW the ground
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
       engine.setHole(computeHolePlanes())
+      // The ground under the model just changed: the pit walls follow it.
+      if (subsurfaceMode !== 'surface') applySubsurface()
       // The ground buildings stand on just changed — re-extrude from cache.
       await reseatBuildings()
     },
@@ -1295,6 +1326,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     setTerrainStyle(style) {
       terrainStyle = style
       terrain?.setStyle(style)
+    },
+
+    setSubsurfaceMode(mode) {
+      if (mode === subsurfaceMode) return
+      subsurfaceMode = mode
+      if (engine) applySubsurface()
+    },
+
+    getSubsurfaceMode() {
+      return subsurfaceMode
+    },
+
+    assessSubsurface() {
+      const b = ctx.getActiveModelBounds()
+      if (!b || !geoRoot) return null
+      return assessBurial(b, (x, z) => api.groundHeightAt(x, z))
     },
 
     setTerrainExaggeration(k) {
@@ -3038,11 +3085,68 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     terrain.dispose()
     terrain = null
     engine?.setHole(null) // restore the full flat basemap
+    // The pit walls stood on the relief that just went away.
+    if (subsurfaceMode !== 'surface' && engine) applySubsurface()
     // The cached prelude samples the patch just disposed; a partial build must
     // never reuse it.
     lastPrelude = null
     // Buildings were sitting on that terrain; drop them back to the plane.
     return opts.reseat === false ? undefined : reseatBuildings()
+  }
+
+  // ── Subsurface view ────────────────────────────────────────────────────────
+
+  /** Put every surface the view touched back, and take the pit away. */
+  function clearSubsurface(): void {
+    for (const [m, st] of subsurfaceSaved) restoreMaterial(m, st)
+    subsurfaceSaved = new Map()
+    subsurfacePlanes = null
+    if (pitMesh) {
+      pitMesh.removeFromParent()
+      pitMesh.geometry.dispose()
+      for (const m of pitMesh.material as THREE.Material[]) m.dispose()
+      pitMesh = null
+    }
+  }
+
+  /**
+   * Bring every map surface not yet in the view into it. Runs on a mode change
+   * and every few frames after, because the map never stops changing under
+   * the view: tiles stream in, layers rebuild, the terrain swaps material.
+   * Restore keys off the same map, so a surface is never faded twice.
+   */
+  function sweepSubsurface(): void {
+    if (!geoRoot || subsurfaceMode === 'surface') return
+    geoRoot.traverse((obj) => {
+      if (obj === pitMesh) return
+      const mat = (obj as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined
+      if (!mat) return
+      for (const m of Array.isArray(mat) ? mat : [mat]) {
+        if (subsurfaceSaved.has(m)) continue
+        const st = saveMaterial(m, subsurfaceMode)
+        if (applySubsurfaceMode(m, subsurfaceMode, subsurfacePlanes)) subsurfaceSaved.set(m, st)
+      }
+    })
+  }
+
+  function applySubsurface(): void {
+    clearSubsurface()
+    ctx.controls.maxPolarAngle = maxPolarFor(subsurfaceMode)
+    if (subsurfaceMode === 'surface') return
+    if (subsurfaceMode === 'cut') {
+      const b = ctx.getActiveModelBounds()
+      if (b) {
+        const rect = cutRect(b, ctx.getModelFootprints?.() ?? (ctx.getActiveModelFootprint?.() ? [ctx.getActiveModelFootprint!()!] : null))
+        subsurfacePlanes = cutPlanes(rect)
+        const floorY = b.center.y - b.size.y / 2 - 1
+        const geo = buildPitWalls(rect, floorY, (x, z) => api.groundHeightAt(x, z), geoRoot?.position.y ?? 0)
+        pitMesh = new THREE.Mesh(geo, pitMaterial())
+        pitMesh.name = 'subsurface-pit'
+        ctx.scene.add(pitMesh)
+      }
+    }
+    subsurfaceFrames = 0
+    sweepSubsurface()
   }
 
   /**
@@ -3385,6 +3489,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     placeSatellites(p, anchorScene, t.position.y, anchor?.modelId ?? null, satellites)
     // The hole planes live in WORLD space — refresh them when the root moves.
     if (terrain && engine) engine.setHole(computeHolePlanes())
+    // The cut follows the model it was opened for.
+    if (subsurfaceMode !== 'surface' && engine) applySubsurface()
     restage()
   }
 

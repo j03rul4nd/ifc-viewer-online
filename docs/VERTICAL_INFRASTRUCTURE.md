@@ -369,3 +369,39 @@ rather than only *that* it is wrong.
 | `terrain-integration.test.ts` | Every layer against one shared surface, under exaggeration |
 | `coastline.test.ts` | The sea, from a directed shore: which side is water, bays, split ways, dangling shorelines |
 | `hotel-vela-ifc.test.ts` | The landmark: a form the extruder could not have produced |
+
+## Underground IFC models (subsurface view)
+
+An IFC that lives below grade — a road in a tunnel, a cut-and-cover station, a
+metro platform — is placed at its **true depth** by `ground-frame` and is never
+snapped to the DEM. That is correct, and it is also why it was invisible: the
+terrain is opaque and depth-writing, and the surface camera stops at 88°.
+
+`subsurface.ts` + `geo-system.setSubsurfaceMode()` add three views:
+
+| Mode | What happens | For |
+|---|---|---|
+| `surface` | The normal map. The camera stays above the horizon. | Buildings |
+| `xray` | Every map surface under `geoRoot` drops to 28 % opacity and stops writing depth. | A long tunnel read through the hill |
+| `cut` | Clipping planes (`clipIntersection`) remove the map over the model's footprint plus a margin, and earth-coloured walls follow the ground line down to the model's underside. | A station box, a portal |
+
+Off the surface the camera may orbit under the ground plane (polar limit ≈ 179°).
+
+- **Measured, not guessed:** `assessBurial` samples the ground on a 3×3 grid over
+  the plan. At ≥ 40 % of the height buried, the panel offers the view. It never
+  switches on by itself.
+- **Sweeps, not hooks:** tiles stream and layers rebuild under the view, so the
+  RAF re-sweeps `geoRoot` every 10 frames. Materials are keyed in a map, so a
+  surface is never faded twice. Restoring puts back **only** the fields the mode
+  changed, because the basemap's hole under the terrain changes on its own.
+- **One intersection per material:** a material that already clips (the
+  basemap's terrain hole) is left out of the cut. Where it matters, it lies under
+  the terrain, and the terrain is cut.
+- **Not persisted.** The view belongs to the model being looked at.
+  `disable()` returns the map to `surface`.
+- **Entry points:** the panel (Quick setup), `?map=terrain,cut|xray`, and the SDK
+  `setSiteContext({ subsurface })` / `getSiteContext().subsurface`.
+
+Not done yet: real geometry for OSM tunnels and subway lines in the
+underground view (today they are a surface trace, or are skipped), underground
+stations from OSM, and per-asset "show above / below" markers for the twin.

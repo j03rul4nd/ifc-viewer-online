@@ -444,5 +444,15 @@
       "still-water": "Stehendes Wasser: Stagnation, Sedimente und Algen; kaum Selbstreinigung",
       "longshore-drift": "Küstenlängstransport verlagert den Sand, auf dem gegründet wird"
     }
+  },
+  "subsurface": {
+    "title": "Untergrundansicht",
+    "surface": "Oberfläche",
+    "xray": "Röntgen",
+    "cut": "Schnitt",
+    "show": "Untergrund zeigen",
+    "buriedNotice": "Etwa {{depth}} m dieses Modells liegen unter der Erde, daher verdeckt es die Karte.",
+    "xrayHint": "Der Boden wird durchsichtig. Unter die Oberfläche drehen, um das Modell von unten zu sehen.",
+    "cutHint": "Über dem Modell wird eine Grube aus der Karte geschnitten. Unter die Oberfläche drehen, um es von unten zu sehen."
   }
 }

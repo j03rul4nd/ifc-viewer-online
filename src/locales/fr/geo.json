@@ -444,5 +444,15 @@
       "still-water": "Eau stagnante : sédiments et algues ; peu d'autonettoyage",
       "longshore-drift": "La dérive littorale déplace le sable des fondations"
     }
+  },
+  "subsurface": {
+    "title": "Vue souterraine",
+    "surface": "Surface",
+    "xray": "Rayons X",
+    "cut": "Coupe",
+    "show": "Voir le sous-sol",
+    "buriedNotice": "Environ {{depth}} m de ce modèle sont sous terre : la carte le masque.",
+    "xrayHint": "Le sol devient translucide. Passez sous la surface pour voir le modèle par en dessous.",
+    "cutHint": "Une fosse est découpée dans la carte au-dessus du modèle. Passez sous la surface pour le voir par en dessous."
   }
 }
