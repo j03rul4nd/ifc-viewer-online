@@ -51,6 +51,7 @@ interface HostRow { host: string; kind: string; count: number }
 function describe(host: string, self: string): string {
   if (host === self) return 'this site (app + sample file)'
   if (/posthog\.com$/.test(host)) return 'anonymous usage stats, no file data'
+  if (/clerk\.(accounts\.dev|com)$/.test(host) || /^clerk\./.test(host)) return 'sign-in service, no file data'
   return 'third party'
 }
 
@@ -87,7 +88,7 @@ export function DataFlow({ frameRef, active }: { frameRef: RefObject<HTMLIFrameE
 
   if (!active || !rows) return null
   const self = window.location.host
-  const others = rows.filter((r) => r.host !== self && !/posthog\.com$/.test(r.host))
+  const others = rows.filter((r) => r.host !== self && r.kind === 'third party')
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
       <p className="text-[13px] font-medium text-[var(--text)]">Where the data went</p>
