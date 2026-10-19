@@ -234,7 +234,7 @@ const fmtT = (t: number) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${St
 function Kpi({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/55 px-3 py-2 backdrop-blur md:px-4 md:py-2.5">
-      <p className="text-[10.5px] font-medium uppercase tracking-[0.1em] text-white/55 md:text-[11px]">{label}</p>
+      <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.06em] text-white/55 md:text-[11px] md:tracking-[0.1em]">{label}</p>
       <p className="mt-0.5 text-[18px] font-semibold tabular-nums text-white md:text-[22px]">{value}<span className="ml-0.5 text-[12px] font-medium text-white/60 md:text-[13px]">{unit}</span></p>
     </div>
   )
@@ -381,6 +381,8 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       camera.updateProjectionMatrix()
     }
     const ro = new ResizeObserver(resize); ro.observe(mount); resize()
+    // A phone held upright sees the whole floor from higher up, not a corner of it.
+    if (camera.aspect < 0.8) { camera.position.set(30, 92, 62); controls.target.set(30, 0, 15); controls.update() }
 
     const clock = new THREE.Clock()
     const v = new THREE.Vector3()
@@ -497,7 +499,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
         </div>
         {snap && (
           <div className="mt-2 grid grid-cols-4 gap-1.5 md:mt-3 md:max-w-[620px] md:gap-2">
-            <Kpi label="Orders / h" value={snap.k.ordersPerHour} />
+            <Kpi label="Orders/h" value={snap.k.ordersPerHour} />
             <Kpi label="On time" value={snap.k.onTimePct} unit="%" />
             <Kpi label="Fleet busy" value={snap.k.utilisationPct} unit="%" />
             <Kpi label="Battery" value={snap.k.avgBattery} unit="%" />
