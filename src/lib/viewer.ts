@@ -1172,6 +1172,28 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   components.init()
 
+  // ── Upright frames ──
+  // A camera keeps its vertical angle, so a phone held upright sees a sliver
+  // of what a landscape screen shows: a scene framed for a laptop (a square, a
+  // station) loses both sides. Inside a frame (articles, the event page) an
+  // upright view widens towards what a square one would show. Walk mode keeps
+  // its own optics; a full-page app on a phone is left as it was.
+  let uprightBaseFov: number | null = null
+  const fitUprightFrame = (): void => {
+    if (window.self === window.top || walkTuningApplied) return
+    const cam = world.camera.threePersp
+    const r = container.getBoundingClientRect()
+    const aspect = r.width / Math.max(1, r.height)
+    if (uprightBaseFov === null) uprightBaseFov = cam.fov
+    const base = uprightBaseFov
+    const want = aspect < 0.9
+      ? Math.min(78, (2 * Math.atan(Math.tan((base * Math.PI) / 360) / Math.max(0.45, aspect)) * 180) / Math.PI)
+      : base
+    if (Math.abs(cam.fov - want) > 0.1) { cam.fov = want; cam.updateProjectionMatrix() }
+  }
+  const uprightObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => fitUprightFrame()) : null
+  uprightObserver?.observe(container)
+
   world.scene.three.background = new THREE.Color(0x0A0A0C)
   world.scene.three.fog        = new THREE.Fog(0x0A0A0C, 80, 200)
 
@@ -5192,6 +5214,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     dispose() {
       stopTurntable()
+      uprightObserver?.disconnect()
       // Hand BCF back to "no datum" unless a newer viewer already took over.
       if (currentDatumProvider() === datumProvider) setSceneDatumProvider(() => null)
       try { sceneGizmo?.dispose() } catch { /* ok */ }
