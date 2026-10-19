@@ -14,6 +14,7 @@
 // after a 200; any other answer is shown as an error.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { IntegrationPreview, DataFlow, PilotIdeas, INTENTS, type Intent } from './msp/EventPanels'
 import {
   trackEventPageViewed, trackEventDemoOpened, trackEventDemoInteraction, trackEventContactSent,
   type EventEntry,
@@ -160,7 +161,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
   const loaded = state === 'ready'
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-black" style={{ height: 'min(68svh, 620px)', minHeight: 360 }}>
         {state === 'idle' && (
           <button
@@ -207,7 +208,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
         )}
       </div>
 
-      <aside aria-label="What to try" className="flex flex-col gap-4">
+      <aside aria-label="What to try" className="flex min-w-0 flex-col gap-4">
         <ol className="flex flex-col gap-4">
           <Step n={1} done={loaded} title="Open a building">
             {loaded && facts.elements != null
@@ -232,6 +233,9 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
             Same hook can open a ticket in your system.
           </p>
         </div>
+
+        <IntegrationPreview picked={facts.picked} score={facts.score} />
+        <DataFlow key={run} frameRef={frameRef} active={state === 'loading' || loaded} />
 
         <div className="flex flex-wrap gap-2">
           {state !== 'idle' && (
@@ -258,6 +262,7 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
   const startedAt = useRef(Date.now())
   const [send, setSend] = useState<SendState>({ kind: 'idle' })
   const [fieldError, setFieldError] = useState<string | null>(null)
+  const [intent, setIntent] = useState<Intent | null>(null)
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -278,7 +283,7 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
           name, email, company, message,
           website: val('website'),
           elapsed_ms: Date.now() - startedAt.current,
-          event: EVENT_ID, entry, profile: profile ?? '',
+          event: EVENT_ID, entry, profile: profile ?? '', intent: intent ?? '',
         }),
       })
       const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null
@@ -309,6 +314,24 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+      <fieldset>
+        <legend className={label}>I'm interested in</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(Object.keys(INTENTS) as Intent[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={intent === k}
+              onClick={() => setIntent(intent === k ? null : k)}
+              className={`rounded-full border px-3.5 py-2 text-[14px] ${
+                intent === k ? 'border-[var(--accent)] bg-[var(--accent)] text-white' : 'border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--bg)]'
+              }`}
+            >
+              {INTENTS[k]}
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={label}>Name
           <input name="name" autoComplete="name" required maxLength={120} className={input} />
@@ -468,6 +491,17 @@ export default function MspGlobalView() {
           </div>
         </section>
 
+        {/* Screen 3b: concrete things to build together, marked Live or Pilot. */}
+        <section className="pt-14">
+          <h2 className={h2}>What we could build together</h2>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">
+            <span className="text-[var(--ok)]">Live</span> opens now. <span className="text-[var(--warn)]">Pilot</span> needs a first partner.
+          </p>
+          <div className="mt-5">
+            <PilotIdeas role={profile} />
+          </div>
+        </section>
+
         {/* Screen 4: the range. Pictures, not paragraphs. */}
         <section className="pt-14">
           <h2 className={h2}>That was the small part</h2>
@@ -512,8 +546,8 @@ export default function MspGlobalView() {
 
         {/* Screen 6: one reason to keep talking. */}
         <section ref={contactRef} id="contact" className="scroll-mt-4 pt-14">
-          <h2 className={h2}>Got a use for this?</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">Tell me in one line. I'll come back with a concrete idea.</p>
+          <h2 className={h2}>Be the first pilot</h2>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">I'm looking for first clients, partners and backers. Tell me in one line; I'll come back with a concrete idea.</p>
           <div className="mt-5 max-w-[720px]">
             <Contact entry={entry} profile={profile} />
           </div>
