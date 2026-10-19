@@ -83,11 +83,11 @@ function Step({ n, done, title, children }: { n: number; done: boolean; title: s
         {done ? '✓' : n}
       </span>
       <div className="min-w-0">
-        <p className="text-[15px] font-medium text-[var(--text)]">
+        <p className="text-[15px] font-medium text-[var(--text)] md:text-[18px]">
           {title}
           <span className="sr-only">{done ? ' (done)' : ''}</span>
         </p>
-        {children && <div className="mt-0.5 text-[14px] leading-snug text-[var(--text-dim)]">{children}</div>}
+        {children && <div className="mt-0.5 text-[14px] leading-snug text-[var(--text-dim)] md:text-[16px]">{children}</div>}
       </div>
     </li>
   )
@@ -218,7 +218,7 @@ function Demo({ entry, profile, onTalk, suspended }: { entry: EventEntry; profil
       </div>
 
       <aside aria-label="What to try" className="flex min-w-0 flex-col gap-4">
-        <ol className="flex flex-col gap-4">
+        <ol className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-6 lg:flex lg:flex-col lg:gap-5">
           <Step n={1} done={loaded} title="Open Barcelona, live">
             {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Live city data, loading.</>}
           </Step>
@@ -233,7 +233,7 @@ function Demo({ entry, profile, onTalk, suspended }: { entry: EventEntry; profil
           </Step>
         </ol>
 
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[14px] leading-relaxed text-[var(--text-dim)]">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[14px] leading-relaxed text-[var(--text-dim)] md:text-[16px]">
           <p>
             <strong className="text-[var(--text)]">Swap the city data for yours:</strong> sensors, tickets, assets.
           </p>
@@ -465,157 +465,200 @@ export default function MspGlobalView() {
   }
 
   const a = 'underline decoration-[var(--border-strong)] underline-offset-4 hover:decoration-[var(--text-dim)]'
-  const h2 = 'text-[24px] font-semibold leading-tight tracking-tight sm:text-[28px]'
+  // One type scale, stepped up on tablets: the eye lands on the headline, then
+  // the moving picture, then the one button — nothing else competes in size.
+  const h2 = 'text-[26px] font-semibold leading-[1.15] tracking-tight md:text-[36px]'
+  const lead = 'mt-2 max-w-[56ch] text-[16px] leading-relaxed text-[var(--text-dim)] md:mt-3 md:text-[19px]'
+  const kicker = 'mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-2)] md:mb-3 md:text-[13px]'
+  const primary = 'rounded-xl bg-[var(--accent)] px-6 py-3.5 text-[17px] font-semibold text-white shadow-[0_8px_24px_-12px_var(--accent)] hover:brightness-110 md:px-7 md:py-4 md:text-[18px]'
+  const secondary = 'rounded-xl border border-[var(--border-strong)] px-6 py-3.5 text-[17px] font-medium text-[var(--text)] hover:bg-[var(--surface)] md:px-7 md:py-4 md:text-[18px]'
+  const section = 'pt-14 md:pt-24'
+
+  const heroCtas = (
+    <>
+      <button type="button" onClick={toDemo} className={primary}>Try it · 30 seconds</button>
+      <button type="button" onClick={toContact} className={`${secondary} hidden md:inline-block`}>Talk to Joel</button>
+    </>
+  )
 
   return (
     <div className="min-h-full bg-[var(--bg)] text-[var(--text)]">
-      <div className="mx-auto max-w-[1100px] px-4 pb-28 sm:px-6 sm:pb-16">
-        <header className="flex items-center justify-between py-4 text-[13px] text-[var(--text-faint)]">
-          <span className="font-semibold text-[var(--text-dim)]">Joel Benítez</span>
-          <span>MSP GLOBAL 2026</span>
-        </header>
+      {/* Tablets and up: the next step stays in the top bar. Phones: bottom bar. */}
+      <header className="sticky top-0 z-20 border-b border-transparent bg-[var(--bg)] md:border-[var(--border)]">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 sm:px-6 md:px-10 md:py-4">
+          <p className="text-[13px] md:text-[15px]">
+            <span className="font-semibold text-[var(--text)]">Joel Benítez</span>
+            <span className="text-[var(--text-faint)]"> · MSP GLOBAL 2026</span>
+          </p>
+          <div className="hidden items-center gap-2 md:flex">
+            <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className="rounded-lg px-4 py-2 text-[15px] text-[var(--text-dim)] hover:bg-[var(--surface)] hover:text-[var(--text)]">Save contact</a>
+            <button type="button" onClick={toContact} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-[15px] font-semibold text-white hover:brightness-110">Talk to Joel</button>
+          </div>
+        </div>
+      </header>
 
-        {/* Screen 1: one claim, one picture, one button. */}
-        <section className="pt-2 sm:pt-8">
-          <h1 className="max-w-[16ch] text-[38px] font-semibold leading-[1.05] tracking-tight sm:text-[56px]">
-            Show clients their buildings. Live.
-          </h1>
-          <p className="mt-3 text-[18px] text-[var(--text-dim)]">Every site, asset and sensor in one link. Opens on any phone.</p>
-          <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
+      <div className="mx-auto max-w-[1180px] px-4 pb-28 sm:px-6 md:px-10 md:pb-24">
+        {/* 1 · One claim, one moving picture, one button. Side by side on landscape tablets. */}
+        <section className="pt-4 md:pt-12 lg:grid lg:grid-cols-[5fr_7fr] lg:items-center lg:gap-12">
+          <div>
+            <p className={kicker}>Live digital twins</p>
+            <h1 className="max-w-[14ch] text-[40px] font-semibold leading-[1.03] tracking-tight sm:text-[56px] md:text-[64px] lg:text-[58px]">
+              Show clients their buildings. Live.
+            </h1>
+            <p className="mt-4 max-w-[34ch] text-[18px] leading-snug text-[var(--text-dim)] md:mt-5 md:text-[23px]">
+              Every site, asset and sensor in <strong className="font-semibold text-[var(--text)]">one link</strong>. Opens on any phone.
+            </p>
+            <div className="mt-8 hidden flex-wrap gap-3 lg:flex">{heroCtas}</div>
+          </div>
+          <figure className="mt-6 overflow-hidden rounded-2xl border border-[var(--border)] md:mt-10 lg:mt-0">
             <button type="button" onClick={() => openFeature('barcelona')} className="group relative block w-full" aria-label="Open Barcelona live">
               <video
-              ref={heroRef}
-              poster="/msp-global/hero-poster.jpg"
-              width={960} height={540}
-              autoPlay muted loop playsInline preload="auto"
-              aria-label="18-second tour of the product: Barcelona live, a tap opening live bike data, Hotel Vela on the map, a solar heat map and Helsinki station"
-              className="block aspect-video h-auto w-full bg-black object-cover"
-              disablePictureInPicture
-            >
-              <source src="/msp-global/hero.mp4" type="video/mp4" />
-              <source src="/msp-global/hero.webm" type="video/webm" />
-            </video>
+                ref={heroRef}
+                poster="/msp-global/hero-poster.jpg"
+                width={960} height={540}
+                autoPlay muted loop playsInline preload="auto"
+                aria-label="18-second tour of the product: Barcelona live, a tap opening live bike data, Hotel Vela on the map, a solar heat map and Helsinki station"
+                className="block aspect-video h-auto w-full bg-black object-cover"
+                disablePictureInPicture
+              >
+                <source src="/msp-global/hero.mp4" type="video/mp4" />
+                <source src="/msp-global/hero.webm" type="video/webm" />
+              </video>
             </button>
-            <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
+            <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)] md:px-4 md:py-3 md:text-[15px]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screens, 18 seconds. Tap to try it live.
+              Real screens, 18 seconds. <span className="font-medium text-[var(--text)]">Tap to try it live.</span>
             </figcaption>
           </figure>
-          <button type="button" onClick={toDemo} className="mt-5 w-full rounded-lg bg-[var(--accent)] px-5 py-3.5 text-[17px] font-semibold text-white hover:brightness-110 sm:w-auto">
-            Try it · 30 seconds
-          </button>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:hidden">{heroCtas}</div>
         </section>
 
-        {/* Screen 2: who are you. Everything below adapts. */}
-        <section className="pt-12" aria-labelledby="who">
-          <h2 id="who" className={h2}>What do you do?</h2>
-          <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Your role">
-            {(Object.keys(PROFILES) as Profile[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={profile === k}
-                onClick={() => setProfile(k)}
-                className={`rounded-full border px-4 py-2.5 text-[15px] transition-colors ${
-                  profile === k
-                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                    : 'border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface)]'
-                }`}
-              >
-                {PROFILES[k].chip}
-              </button>
-            ))}
+        {/* 2 · Who is reading. Everything below speaks to that person. */}
+        <section className={`${section} md:grid md:grid-cols-2 md:gap-12`} aria-labelledby="who">
+          <div>
+            <p className={kicker}>For you</p>
+            <h2 id="who" className={h2}>What do you do?</h2>
+            <div className="mt-5 grid grid-cols-2 gap-2.5 md:gap-3" role="radiogroup" aria-label="Your role">
+              {(Object.keys(PROFILES) as Profile[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="radio"
+                  aria-checked={profile === k}
+                  onClick={() => setProfile(k)}
+                  className={`rounded-xl border px-4 py-3 text-left text-[15px] font-medium leading-snug transition-colors md:px-5 md:py-4 md:text-[17px] ${
+                    profile === k
+                      ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                      : 'border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface)]'
+                  }`}
+                >
+                  {PROFILES[k].chip}
+                </button>
+              ))}
+            </div>
           </div>
-          {profile && (
-            <p className="mt-4 max-w-[52ch] text-[18px] leading-snug text-[var(--text)]" aria-live="polite">
-              {PROFILES[profile].why}
-            </p>
-          )}
-          {profile && (
-            <button type="button" onClick={() => openFeature(ROLE_START[profile])} className="mt-4 rounded-lg bg-[var(--accent)] px-5 py-3 text-[16px] font-semibold text-white hover:brightness-110">
-              See it live: {FEATURES[ROLE_START[profile]].title} →
-            </button>
-          )}
+          <div className="mt-5 md:mt-0 md:self-end">
+            {profile ? (
+              <div aria-live="polite">
+                <p className="max-w-[40ch] text-[19px] font-medium leading-snug text-[var(--text)] md:text-[24px] md:leading-[1.3]">
+                  {PROFILES[profile].why}
+                </p>
+                <button type="button" onClick={() => openFeature(ROLE_START[profile])} className={`mt-5 ${primary}`}>
+                  See it live: {FEATURES[ROLE_START[profile]].title} →
+                </button>
+              </div>
+            ) : (
+              <p className="hidden text-[19px] leading-snug text-[var(--text-faint)] md:block">Pick one. The rest of the page adapts to you.</p>
+            )}
+          </div>
         </section>
 
-        {/* Screen 3: the proof, in their hands. */}
-        <section ref={demoRef} id="demo" className="scroll-mt-4 pt-12">
+        {/* 3 · The proof, in their hands. */}
+        <section ref={demoRef} id="demo" className={`scroll-mt-20 ${section}`}>
+          <p className={kicker}>Try it</p>
           <h2 className={h2}>Three taps</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">Barcelona, live. On your phone.</p>
-          <div className="mt-5">
+          <p className={lead}>Barcelona, live. On the screen in your hand.</p>
+          <div className="mt-6 md:mt-8">
             <Demo entry={entry} profile={profile} onTalk={toContact} suspended={sheet !== null} />
           </div>
         </section>
 
-        {/* Screen 3b: concrete things to build together, marked Live or Pilot. */}
-        <section className="pt-14">
+        {/* 4 · Concrete things to sell, marked Ready or Pilot. */}
+        <section className={section}>
+          <p className={kicker}>Your next offer</p>
           <h2 className={h2}>What you could sell next</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">
-            <span className="text-[var(--ok)]">Ready</span> works today. <span className="text-[var(--warn)]">Pilot</span> needs a first partner.
+          <p className={lead}>
+            <span className="font-semibold text-[var(--ok)]">Ready</span> works today. <span className="font-semibold text-[var(--warn)]">Pilot</span> needs a first partner.
           </p>
-          <div className="mt-5">
+          <div className="mt-6 md:mt-8">
             <PilotIdeas role={profile} onOpen={openFeature} />
           </div>
         </section>
 
-        {/* Screen 4: the range. Pictures, not paragraphs. */}
-        <section className="pt-14">
+        {/* 5 · The range. One large picture, then a calm grid. */}
+        <section className={section}>
+          <p className={kicker}>Live examples</p>
           <h2 className={h2}>What your clients could see</h2>
-          <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
-            {GALLERY.map((g) => (
+          <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 md:mt-8 md:gap-5">
+            {GALLERY.map((g, i) => (
               <button
                 key={g.src}
                 type="button"
                 onClick={() => openFeature(g.feature)}
-                className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left hover:border-[var(--border-strong)] sm:w-auto"
+                className={`group w-[82%] flex-none snap-start overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left hover:border-[var(--border-strong)] sm:w-auto ${i === 0 ? 'sm:col-span-2 sm:grid sm:grid-cols-[3fr_2fr] sm:items-center' : ''}`}
               >
                 <img src={g.src} alt={g.cap} width={1200} height={750} loading="lazy" className="block aspect-[8/5] h-auto w-full object-cover" />
-                <span className="block px-3 py-2.5">
-                  <span className="text-[12px] font-medium uppercase tracking-wide text-[var(--accent-2)]">{g.tag}</span>
-                  <span className="mt-0.5 block text-[15px] text-[var(--text)]">{g.cap}</span>
-                  <span className="mt-1 block text-[13px] font-medium text-[var(--accent-2)]">Open it live →</span>
+                <span className={`block px-4 py-3 ${i === 0 ? 'md:px-8' : 'md:px-5 md:py-4'}`}>
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)] md:text-[13px]">{g.tag}</span>
+                  <span className={`mt-1 block leading-snug text-[var(--text)] ${i === 0 ? 'text-[16px] md:text-[24px] md:font-medium' : 'text-[15px] md:text-[18px]'}`}>{g.cap}</span>
+                  <span className="mt-2 block text-[14px] font-semibold text-[var(--accent-2)] group-hover:underline md:text-[15px]">Open it live →</span>
                 </span>
               </button>
             ))}
           </div>
-          <p className="mt-3 text-[11px] leading-snug text-[var(--text-faint)]">
+          <p className="mt-4 text-[11px] leading-snug text-[var(--text-faint)] md:text-[12px]">
             Real screens. Map data © OpenStreetMap contributors, OpenFreeMap, Overture Maps; terrain ICGC and Mapzen; live data from Barcelona, HSL and FMI open data; climate ERA5 via Open-Meteo.
           </p>
         </section>
 
-        {/* Screen 5: who, in two lines. */}
-        <section className="pt-14">
-          <div className="flex items-center gap-4">
-            <img src="/founder.jpg" alt="" width={56} height={56} className="h-14 w-14 flex-none rounded-full object-cover" />
-            <div>
-              <p className="text-[17px] font-semibold">Joel Benítez Donari</p>
-              <p className="text-[14px] text-[var(--text-dim)]">Built IFC Viewer Online</p>
+        {/* 6 · Who, in two lines; the two ways to keep in touch beside it. */}
+        <section className={`${section} md:grid md:grid-cols-[1fr_auto] md:items-center md:gap-12`}>
+          <div>
+            <div className="flex items-center gap-4">
+              <img src="/founder.jpg" alt="" width={72} height={72} className="h-14 w-14 flex-none rounded-full object-cover md:h-[72px] md:w-[72px]" />
+              <div>
+                <p className="text-[17px] font-semibold md:text-[22px]">Joel Benítez Donari</p>
+                <p className="text-[14px] text-[var(--text-dim)] md:text-[16px]">Built IFC Viewer Online</p>
+              </div>
             </div>
+            <p className="mt-4 max-w-[46ch] text-[16px] leading-relaxed text-[var(--text-dim)] md:text-[19px]">
+              I built this alone, end to end. <span className="text-[var(--text)]">Now I'm looking for the first teams to take it further.</span>
+            </p>
+            <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[15px] md:text-[16px]">
+              <a href={LINKS.linkedin} className={a} target="_blank" rel="noopener">LinkedIn</a>
+              <a href={LINKS.portfolio} className={a} target="_blank" rel="noopener">Portfolio</a>
+              <a href={LINKS.github} className={a} target="_blank" rel="noopener">Code</a>
+            </p>
           </div>
-          <p className="mt-4 max-w-[52ch] text-[16px] leading-relaxed text-[var(--text-dim)]">
-            I built this alone, end to end. Now I'm looking for the first teams to take it further.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">
-              Save my contact
-            </a>
-            <button type="button" onClick={share} className="rounded-lg border border-[var(--border-strong)] px-4 py-2.5 text-[15px] text-[var(--text)] hover:bg-[var(--surface)]">
-              {shared === 'copied' ? 'Link copied' : 'Send to a colleague'}
-            </button>
+          <div className="mt-5 flex flex-wrap gap-3 md:mt-0 md:flex-col">
+            <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className={`${primary} text-center`}>Save my contact</a>
+            <button type="button" onClick={share} className={secondary}>{shared === 'copied' ? 'Link copied' : 'Send to a colleague'}</button>
           </div>
-          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[15px]">
-            <a href={LINKS.linkedin} className={a} target="_blank" rel="noopener">LinkedIn</a>
-            <a href={LINKS.portfolio} className={a} target="_blank" rel="noopener">Portfolio</a>
-            <a href={LINKS.github} className={a} target="_blank" rel="noopener">Code</a>
-          </p>
         </section>
 
-        {/* Screen 6: one reason to keep talking. */}
-        <section ref={contactRef} id="contact" className="scroll-mt-4 pt-14">
-          <h2 className={h2}>Want to be first?</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">Pilot, partnership or investment. One line is enough.</p>
-          <div className="mt-5 max-w-[720px]">
+        {/* 7 · One reason to keep talking. */}
+        <section ref={contactRef} id="contact" className={`scroll-mt-20 ${section} lg:grid lg:grid-cols-[2fr_3fr] lg:gap-12`}>
+          <div>
+            <p className={kicker}>Let's talk</p>
+            <h2 className={h2}>Want to be first?</h2>
+            <p className={lead}>Pilot, partnership or investment. <span className="text-[var(--text)]">One line is enough.</span></p>
+            <ul className="mt-6 hidden space-y-2 text-[16px] text-[var(--text-dim)] lg:block">
+              <li>· A reply this week, about what you wrote.</li>
+              <li>· A concrete idea for your case, not a brochure.</li>
+              <li>· No newsletter.</li>
+            </ul>
+          </div>
+          <div className="mt-6 md:mt-8 lg:mt-0">
             <Contact entry={entry} profile={profile} feature={interest} />
           </div>
         </section>
@@ -623,8 +666,8 @@ export default function MspGlobalView() {
 
       {sheet && <FeatureSheet id={sheet} onClose={() => setSheet(null)} onWant={want} />}
 
-      {/* Phone: the next step is always one thumb away. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3 sm:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+      {/* Phones: the next step is always one thumb away. */}
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3 md:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         <div className="flex gap-2">
           <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className="flex-1 rounded-lg border border-[var(--border-strong)] py-3 text-center text-[16px] font-medium text-[var(--text)]">
             Save contact
