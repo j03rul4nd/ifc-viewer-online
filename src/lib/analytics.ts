@@ -863,12 +863,14 @@ export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 
 // the event profile link, or neither) — never a name, address or form answer.
 
 export type EventEntry = 'qr' | 'profile' | 'direct'
+/** Which role the visitor tapped on the page ('none' = did not pick). */
+export type EventProfile = 'msp' | 'isv' | 'ops' | 'none'
 
 export function trackEventPageViewed(props: { event: string; entry: EventEntry }): void {
   track('event_page_viewed', props)
 }
 
-export function trackEventDemoOpened(props: { event: string; entry: EventEntry }): void {
+export function trackEventDemoOpened(props: { event: string; entry: EventEntry; profile: EventProfile }): void {
   track('event_demo_opened', props)
 }
 
@@ -878,6 +880,6 @@ export function trackEventDemoInteraction(props: { event: string; entry: EventEn
 }
 
 /** The contact was stored by the Worker (only fired on a confirmed 200). */
-export function trackEventContactSent(props: { event: string; entry: EventEntry }): void {
+export function trackEventContactSent(props: { event: string; entry: EventEntry; profile: EventProfile }): void {
   track('event_contact_sent', props)
 }

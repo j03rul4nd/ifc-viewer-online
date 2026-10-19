@@ -97,7 +97,7 @@ function Step({ n, done, title, children }: { n: number; done: boolean; title: s
   )
 }
 
-function Demo({ entry, onTalk }: { entry: EventEntry; onTalk: () => void }) {
+function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile | null; onTalk: () => void }) {
   const [state, setState] = useState<DemoState>('idle')
   const [facts, setFacts] = useState<DemoFacts>({})
   const [run, setRun] = useState(0)
@@ -116,8 +116,8 @@ function Demo({ entry, onTalk }: { entry: EventEntry; onTalk: () => void }) {
     setFacts({})
     setState('loading')
     setRun((r) => r + 1)
-    trackEventDemoOpened({ event: EVENT_ID, entry })
-  }, [entry])
+    trackEventDemoOpened({ event: EVENT_ID, entry, profile: profile ?? 'none' })
+  }, [entry, profile])
 
   // Events from the framed viewer. Same origin only.
   useEffect(() => {
@@ -209,27 +209,27 @@ function Demo({ entry, onTalk }: { entry: EventEntry; onTalk: () => void }) {
 
       <aside aria-label="What to try" className="flex flex-col gap-4">
         <ol className="flex flex-col gap-4">
-          <Step n={1} done={loaded} title="A building opens in the browser">
+          <Step n={1} done={loaded} title="Open a building">
             {loaded && facts.elements != null
-              ? <>{facts.elements.toLocaleString('en')} elements, read on this device. No install, no upload.</>
-              : <>A public sample house. Its data is read on this device.</>}
+              ? <>{facts.elements.toLocaleString('en')} elements. On your phone. Nothing uploaded.</>
+              : <>Sample house, 2.4 MB.</>}
           </Step>
-          <Step n={2} done={!!facts.picked} title="Tap any wall, door or window">
+          <Step n={2} done={!!facts.picked} title="Tap a wall or a door">
             {facts.picked
-              ? <>You picked a <strong className="text-[var(--text)]">{prettyType(facts.picked.type)}</strong>{facts.picked.name ? <> — “{facts.picked.name}”</> : null}.{facts.picked.id && <> Its permanent ID: <code className="break-all text-[13px] text-[var(--text)]">{facts.picked.id}</code></>}</>
-              : <>Every element carries its own data and a permanent ID that other systems can link to.</>}
+              ? <>You picked a <strong className="text-[var(--text)]">{prettyType(facts.picked.type)}</strong>{facts.picked.name ? <> — “{facts.picked.name}”</> : null}.{facts.picked.id && <> ID: <code className="break-all text-[13px] text-[var(--text)]">{facts.picked.id}</code></>}</>
+              : <>Every part has data and a permanent ID.</>}
           </Step>
-          <Step n={3} done={facts.score != null} title="Read the automatic health check">
+          <Step n={3} done={facts.score != null} title="Get the health check">
             {facts.score != null
-              ? <>Score <strong className="text-[var(--text)]">{facts.score}/100</strong>{facts.errors != null && <> · {facts.errors} {facts.errors === 1 ? 'error' : 'errors'} · {facts.warnings ?? 0} {facts.warnings === 1 ? 'warning' : 'warnings'}</>}. Open the bar at the bottom to see each issue.</>
-              : <>The file is checked for missing or broken data as it opens.</>}
+              ? <>Score <strong className="text-[var(--text)]">{facts.score}/100</strong>{facts.errors != null && <> · {facts.errors} {facts.errors === 1 ? 'error' : 'errors'} · {facts.warnings ?? 0} {facts.warnings === 1 ? 'warning' : 'warnings'}</>}.</>
+              : <>Broken data, found automatically.</>}
           </Step>
         </ol>
 
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[14px] leading-relaxed text-[var(--text-dim)]">
           <p>
-            <strong className="text-[var(--text)]">Notice the ticks.</strong> This page heard every step from inside the viewer.
-            That's how it plugs into your software: a tap in 3D can open a ticket, fill a record or start a workflow.
+            <strong className="text-[var(--text)]">See the ticks?</strong> This page heard you inside the 3D view.
+            Same hook can open a ticket in your system.
           </p>
         </div>
 
@@ -240,7 +240,7 @@ function Demo({ entry, onTalk }: { entry: EventEntry; onTalk: () => void }) {
             </button>
           )}
           <button type="button" onClick={onTalk} className="rounded-lg px-3.5 py-2 text-[14px] font-medium text-[var(--accent-2)] hover:underline">
-            Talk about your case →
+            Talk to Joel →
           </button>
         </div>
       </aside>
@@ -254,7 +254,7 @@ type SendState = { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent' } | { k
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function Contact({ entry }: { entry: EventEntry }) {
+function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | null }) {
   const startedAt = useRef(Date.now())
   const [send, setSend] = useState<SendState>({ kind: 'idle' })
   const [fieldError, setFieldError] = useState<string | null>(null)
@@ -278,13 +278,13 @@ function Contact({ entry }: { entry: EventEntry }) {
           name, email, company, message,
           website: val('website'),
           elapsed_ms: Date.now() - startedAt.current,
-          event: EVENT_ID, entry,
+          event: EVENT_ID, entry, profile: profile ?? '',
         }),
       })
       const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null
       if (res.ok && data?.ok) {
         setSend({ kind: 'sent' })
-        trackEventContactSent({ event: EVENT_ID, entry })
+        trackEventContactSent({ event: EVENT_ID, entry, profile: profile ?? 'none' })
       } else {
         setSend({ kind: 'error', msg: data?.error ?? 'Something went wrong on my side. Please try again, or find me on LinkedIn.' })
       }
@@ -298,7 +298,7 @@ function Contact({ entry }: { entry: EventEntry }) {
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6" role="status">
         <p className="text-[18px] font-semibold text-[var(--text)]">Got it. Thank you.</p>
         <p className="mt-2 text-[15px] leading-relaxed text-[var(--text-dim)]">
-          I'll reply by email after the event, about what you wrote. Nothing else.
+          I'll reply by email this week. About what you wrote, nothing else.
         </p>
       </div>
     )
@@ -320,8 +320,8 @@ function Contact({ entry }: { entry: EventEntry }) {
       <label className={label}>Company <span className="font-normal text-[var(--text-faint)]">(optional)</span>
         <input name="company" autoComplete="organization" maxLength={160} className={input} />
       </label>
-      <label className={label}>What would you like to solve or explore?
-        <textarea name="message" required rows={3} maxLength={1000} className={input} placeholder="e.g. show equipment from our CMMS on a building model" />
+      <label className={label}>What would you build with this?
+        <textarea name="message" required rows={2} maxLength={1000} className={input} placeholder={profile ? PROFILES[profile].hint : 'One line is enough'} />
       </label>
       {/* Honeypot: hidden from people and screen readers; bots fill it. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
@@ -332,7 +332,7 @@ function Contact({ entry }: { entry: EventEntry }) {
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] leading-snug text-[var(--text-faint)]">
-          I'll use these details only to reply to you. No newsletter.{' '}
+          Used only to reply to you. No newsletter.{' '}
           <a href={LINKS.privacy} className="underline hover:text-[var(--text-dim)]">Privacy policy</a>
         </p>
         <button
@@ -347,15 +347,49 @@ function Contact({ entry }: { entry: EventEntry }) {
   )
 }
 
+// ── Who is reading ────────────────────────────────────────────────────────────
+// MSP GLOBAL is MSPs, integrators, software vendors and corporate IT. One tap
+// tells the page which, and the rest speaks to that person: one line of why,
+// the proof that fits them, and a form hint in their own words.
+
+type Profile = 'msp' | 'isv' | 'ops'
+
+const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
+  msp: {
+    chip: 'I run IT for clients',
+    why: 'Your clients have buildings, sites and sensors. Give them one live view of all of it. It runs in the browser: nothing to install or patch.',
+    hint: 'e.g. a site dashboard for a client with 12 buildings',
+  },
+  isv: {
+    chip: 'I build software',
+    why: 'Put a 3D view inside your product. One iframe, a typed SDK, and every click comes back to your app.',
+    hint: 'e.g. show our assets in 3D inside our platform',
+  },
+  ops: {
+    chip: 'I run sites or assets',
+    why: 'Tap any asset to see what it is, where it is and its live readings. Files stay on your device.',
+    hint: 'e.g. find equipment and its sensor data by floor',
+  },
+}
+
+const GALLERY = [
+  { src: '/blog/images/urban-digital-twin-helsinki-live-800.jpg', cap: 'Live buses on a Helsinki terminal', tag: 'Live data' },
+  { src: '/blog/images/bim-model-in-city-context-800.jpg', cap: 'Barcelona, built from open data', tag: 'City scale' },
+  { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Tokyo transit, live', tag: 'Live data' },
+]
+
+const LIVE_TWIN = '/?scene=/scenes/helsinki-rautatientori.scene.json'
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MspGlobalView() {
   const entry = useMemo(readEntry, [])
+  const [profile, setProfile] = useState<Profile | null>(null)
   const contactRef = useRef<HTMLElement>(null)
   const demoRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    document.title = 'Joel Benítez at MSP GLOBAL 2026 — IFC Viewer Online'
+    document.title = 'Joel Benítez · Digital twins in the browser'
     trackEventPageViewed({ event: EVENT_ID, entry })
   }, [entry])
 
@@ -363,83 +397,134 @@ export default function MspGlobalView() {
   const toDemo = () => demoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   const a = 'underline decoration-[var(--border-strong)] underline-offset-4 hover:decoration-[var(--text-dim)]'
+  const h2 = 'text-[24px] font-semibold leading-tight tracking-tight sm:text-[28px]'
 
   return (
     <div className="min-h-full bg-[var(--bg)] text-[var(--text)]">
-      <div className="mx-auto max-w-[1100px] px-4 pb-16 sm:px-6">
+      <div className="mx-auto max-w-[1100px] px-4 pb-28 sm:px-6 sm:pb-16">
         <header className="flex items-center justify-between py-4 text-[13px] text-[var(--text-faint)]">
-          <a href="/" className="font-semibold text-[var(--text-dim)] hover:text-[var(--text)]">IFC Viewer Online</a>
-          <span>MSP GLOBAL 2026<span className="hidden sm:inline"> · PortAventura</span></span>
+          <span className="font-semibold text-[var(--text-dim)]">Joel Benítez</span>
+          <span>MSP GLOBAL 2026</span>
         </header>
 
-        {/* First screen: who, what, two actions. */}
-        <section className="pt-4 sm:pt-10">
-          <p className="text-[14px] text-[var(--text-dim)]">Joel Benítez · full-stack developer</p>
-          <h1 className="mt-2 max-w-[22ch] text-[34px] font-semibold leading-[1.1] tracking-tight sm:text-[48px]">
-            I turn heavy technical data into web tools people can use.
+        {/* Screen 1: one claim, one picture, one button. */}
+        <section className="pt-2 sm:pt-8">
+          <h1 className="max-w-[16ch] text-[38px] font-semibold leading-[1.05] tracking-tight sm:text-[56px]">
+            Digital twins that open in a browser.
           </h1>
-          <p className="mt-4 max-w-[60ch] text-[17px] leading-relaxed text-[var(--text-dim)]">
-            3D, maps and digital twins for industry and buildings. Here is one product I built and run, live on your phone.
-          </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={toDemo} className="rounded-lg bg-[var(--accent)] px-5 py-3 text-[16px] font-semibold text-white hover:brightness-110">
-              See the live demo
-            </button>
-            <button type="button" onClick={toContact} className="rounded-lg border border-[var(--border-strong)] px-5 py-3 text-[16px] font-medium text-[var(--text)] hover:bg-[var(--surface)]">
-              Talk about your case
-            </button>
-          </div>
+          <p className="mt-3 text-[18px] text-[var(--text-dim)]">Buildings. Cities. Live sensors. No install.</p>
+          <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
+            <img
+              src="/blog/images/bus-terminal-digital-twin-bay-card-800.jpg"
+              alt="A Helsinki bus terminal model on the city map, with one bay selected showing its live data and properties"
+              width={800} height={450}
+              className="block h-auto w-full"
+              fetchPriority="high"
+            />
+            <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
+              <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
+              Real screen. Tap a bus bay, get its data and live status.
+            </figcaption>
+          </figure>
+          <button type="button" onClick={toDemo} className="mt-5 w-full rounded-lg bg-[var(--accent)] px-5 py-3.5 text-[17px] font-semibold text-white hover:brightness-110 sm:w-auto">
+            Try it now · 30 s
+          </button>
         </section>
 
+        {/* Screen 2: who are you. Everything below adapts. */}
+        <section className="pt-12" aria-labelledby="who">
+          <h2 id="who" className={h2}>What do you do?</h2>
+          <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Your role">
+            {(Object.keys(PROFILES) as Profile[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={profile === k}
+                onClick={() => setProfile(k)}
+                className={`rounded-full border px-4 py-2.5 text-[15px] transition-colors ${
+                  profile === k
+                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                    : 'border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface)]'
+                }`}
+              >
+                {PROFILES[k].chip}
+              </button>
+            ))}
+          </div>
+          {profile && (
+            <p className="mt-4 max-w-[52ch] text-[18px] leading-snug text-[var(--text)]" aria-live="polite">
+              {PROFILES[profile].why}
+            </p>
+          )}
+        </section>
+
+        {/* Screen 3: the proof, in their hands. */}
         <section ref={demoRef} id="demo" className="scroll-mt-4 pt-12">
-          <h2 className="text-[22px] font-semibold tracking-tight">IFC Viewer Online</h2>
-          <p className="mt-2 max-w-[68ch] text-[15px] leading-relaxed text-[var(--text-dim)]">
-            Buildings are designed in software that exports <strong className="text-[var(--text)]">IFC</strong>: an open file where every wall,
-            door and pipe carries its data. Those files are large and usually need desktop software. This opens them in a browser,
-            checks their quality and lets other apps embed the viewer. The file is processed on the device, not on a server.
-          </p>
+          <h2 className={h2}>Try it on your phone</h2>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">A real building file. Three taps.</p>
           <div className="mt-5">
-            <Demo entry={entry} onTalk={toContact} />
+            <Demo entry={entry} profile={profile} onTalk={toContact} />
           </div>
         </section>
 
+        {/* Screen 4: the range. Pictures, not paragraphs. */}
         <section className="pt-14">
-          <h2 className="text-[22px] font-semibold tracking-tight">Where this pattern fits</h2>
-          <ul className="mt-4 grid max-w-[72ch] gap-3 text-[15px] leading-relaxed text-[var(--text-dim)]">
-            <li><strong className="text-[var(--text)]">Software vendors.</strong> Add a 3D view of a site or asset to your product with an iframe and a <a href={LINKS.sdk} className={a}>documented SDK</a>.</li>
-            <li><strong className="text-[var(--text)]">Facilities and operations.</strong> Put equipment, tickets or sensor readings on the building they belong to.</li>
-            <li><strong className="text-[var(--text)]">Data-heavy tools.</strong> Large technical files, checked and shown in a browser, without installing anything.</li>
-          </ul>
+          <h2 className={h2}>That was the small part</h2>
+          <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+            {GALLERY.map((g) => (
+              <figure key={g.src} className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] sm:w-auto">
+                <img src={g.src} alt={g.cap} width={800} height={450} loading="lazy" className="block aspect-video h-auto w-full object-cover" />
+                <figcaption className="px-3 py-2.5">
+                  <span className="text-[12px] font-medium uppercase tracking-wide text-[var(--accent-2)]">{g.tag}</span>
+                  <span className="mt-0.5 block text-[15px] text-[var(--text)]">{g.cap}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+          <a href={LIVE_TWIN} target="_blank" rel="noopener" className="mt-4 inline-block text-[16px] font-medium text-[var(--accent-2)] hover:underline">
+            Open the live Helsinki twin →
+          </a>
+          <p className="mt-1 text-[13px] text-[var(--text-faint)]">Best on a laptop. Allow the map data when asked.</p>
+          <p className="mt-6 max-w-[56ch] text-[15px] leading-relaxed text-[var(--text-dim)]">
+            Open-source 3D engine underneath. On top, built by me: the city, the live feeds, the data checks, the SDK.
+          </p>
         </section>
 
+        {/* Screen 5: who, in two lines. */}
         <section className="pt-14">
-          <h2 className="text-[22px] font-semibold tracking-tight">About me</h2>
-          <div className="mt-4 max-w-[68ch] space-y-3 text-[15px] leading-relaxed text-[var(--text-dim)]">
-            <p>
-              I'm Joel Benítez Donari. I build products end to end: from understanding the problem to shipping
-              the thing people use. TypeScript, React, Three.js, WebAssembly and Node.
-            </p>
-            <p>
-              My background is industrial software: IoT gateways, GIS and R&amp;D teams. IFC Viewer Online is my own product,
-              and it's open source.
-            </p>
+          <div className="flex items-center gap-4">
+            <img src="/founder.jpg" alt="" width={56} height={56} className="h-14 w-14 flex-none rounded-full object-cover" />
+            <div>
+              <p className="text-[17px] font-semibold">Joel Benítez Donari</p>
+              <p className="text-[14px] text-[var(--text-dim)]">Full-stack · 3D, GIS, industrial IoT</p>
+            </div>
           </div>
-          <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[15px]">
-            <a href={LINKS.portfolio} className={a} target="_blank" rel="noopener">Portfolio</a>
+          <p className="mt-4 max-w-[52ch] text-[16px] leading-relaxed text-[var(--text-dim)]">
+            I take a messy technical problem and ship the tool people use. This product is mine, end to end.
+          </p>
+          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[15px]">
             <a href={LINKS.linkedin} className={a} target="_blank" rel="noopener">LinkedIn</a>
-            <a href={LINKS.github} className={a} target="_blank" rel="noopener">Source code</a>
+            <a href={LINKS.portfolio} className={a} target="_blank" rel="noopener">Portfolio</a>
+            <a href={LINKS.github} className={a} target="_blank" rel="noopener">Code</a>
           </p>
         </section>
 
+        {/* Screen 6: one reason to keep talking. */}
         <section ref={contactRef} id="contact" className="scroll-mt-4 pt-14">
-          <h2 className="text-[22px] font-semibold tracking-tight">Have a case in mind?</h2>
-          <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-[var(--text-dim)]">
-            An integration, a product idea or a collaboration. Two lines are enough. I'll reply after the event.
-          </p>
+          <h2 className={h2}>Got a use for this?</h2>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">Tell me in one line. I'll come back with a concrete idea.</p>
           <div className="mt-5 max-w-[720px]">
-            <Contact entry={entry} />
+            <Contact entry={entry} profile={profile} />
           </div>
         </section>
+      </div>
+
+      {/* Phone: the next step is always one thumb away. */}
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3 sm:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+        <button type="button" onClick={toContact} className="w-full rounded-lg border border-[var(--border-strong)] py-3 text-[16px] font-medium text-[var(--text)]">
+          Talk to Joel
+        </button>
       </div>
     </div>
   )
