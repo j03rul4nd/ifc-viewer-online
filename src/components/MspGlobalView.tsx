@@ -210,13 +210,14 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
           <Step n={1} done={loaded} title="Open Barcelona, live">
             {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Tap “Load map and data” when asked.</>}
           </Step>
-          <Step n={2} done={!!facts.picked} title="Tap a building">
+          
+          <Step n={2} done={!!facts.live} title="Tap a bike or charger icon">
+            {facts.live ? <>{facts.live}: live from the city.</> : <>Real-time city data.</>}
+          </Step>
+          <Step n={3} done={!!facts.picked} title="Tap a building">
             {facts.picked
               ? <>{facts.picked.name ? <>“{facts.picked.name}”. </> : null}Its data opens in a card.</>
               : <>Every part knows what it is.</>}
-          </Step>
-          <Step n={3} done={!!facts.live} title="Tap a bike or charger icon">
-            {facts.live ? <>{facts.live}: live from the city.</> : <>Real-time city data.</>}
           </Step>
         </ol>
 
@@ -471,7 +472,7 @@ export default function MspGlobalView() {
         {/* Screen 3: the proof, in their hands. */}
         <section ref={demoRef} id="demo" className="scroll-mt-4 pt-12">
           <h2 className={h2}>Three taps</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">A real building. On your phone.</p>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">Barcelona, live. On your phone.</p>
           <div className="mt-5">
             <Demo entry={entry} profile={profile} onTalk={toContact} />
           </div>
