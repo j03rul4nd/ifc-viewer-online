@@ -208,7 +208,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
       <aside aria-label="What to try" className="flex min-w-0 flex-col gap-4">
         <ol className="flex flex-col gap-4">
           <Step n={1} done={loaded} title="Open Barcelona, live">
-            {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Tap “Load map and data” when asked.</>}
+            {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Tap “Load” when asked: it pulls the city’s live data.</>}
           </Step>
           
           <Step n={2} done={!!facts.live} title="Tap a bike or charger icon">
