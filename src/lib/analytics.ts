@@ -862,7 +862,7 @@ export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 
 // Four events, enum-only. `entry` is where the visit came from (the printed QR,
 // the event profile link, or neither) — never a name, address or form answer.
 
-export type EventEntry = 'qr' | 'profile' | 'direct'
+export type EventEntry = 'qr' | 'profile' | 'share' | 'direct'
 /** Which role the visitor tapped on the page ('none' = did not pick). */
 export type EventProfile = 'msp' | 'isv' | 'ops' | 'none'
 
