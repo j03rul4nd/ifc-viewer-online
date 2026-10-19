@@ -383,8 +383,9 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
 }
 
 const GALLERY = [
+  { src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
   { src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
-  { src: '/blog/images/bus-terminal-digital-twin-bay-card-800.jpg', cap: 'Every bus bay, live. Tap one, see its status.', tag: 'Transport' },
+  { src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live.', tag: 'Transport' },
   { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Live transit around any site.', tag: 'Cities' },
 ]
 
@@ -424,16 +425,17 @@ export default function MspGlobalView() {
           </h1>
           <p className="mt-3 text-[18px] text-[var(--text-dim)]">Every site, asset and sensor in one link. Opens on any phone.</p>
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
-            <img
-              src="/msp-global/hotel-vela.jpg"
-              alt="Hotel Vela in Barcelona as a 3D model, on the real city and coastline"
-              width={800} height={450}
-              className="block h-auto w-full"
-              fetchPriority="high"
+            <video
+              src="/msp-global/barcelona-live.webm"
+              poster="/msp-global/barcelona-live.jpg"
+              width={800} height={500}
+              autoPlay muted loop playsInline preload="auto"
+              aria-label="Barcelona's Plaça de Catalunya in 3D, with live bike, charger and traffic markers"
+              className="block aspect-[8/5] h-auto w-full bg-black object-cover"
             />
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screen: Hotel Vela, on the real Barcelona.
+              Real screen: Barcelona, live. Bikes, chargers, traffic.
             </figcaption>
           </figure>
           <button type="button" onClick={toDemo} className="mt-5 w-full rounded-lg bg-[var(--accent)] px-5 py-3.5 text-[17px] font-semibold text-white hover:brightness-110 sm:w-auto">
@@ -492,10 +494,10 @@ export default function MspGlobalView() {
         {/* Screen 4: the range. Pictures, not paragraphs. */}
         <section className="pt-14">
           <h2 className={h2}>What your clients could see</h2>
-          <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+          <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
             {GALLERY.map((g) => (
               <figure key={g.src} className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] sm:w-auto">
-                <img src={g.src} alt={g.cap} width={800} height={450} loading="lazy" className="block aspect-video h-auto w-full object-cover" />
+                <img src={g.src} alt={g.cap} width={800} height={450} loading="lazy" className="block aspect-[8/5] h-auto w-full object-cover" />
                 <figcaption className="px-3 py-2.5">
                   <span className="text-[12px] font-medium uppercase tracking-wide text-[var(--accent-2)]">{g.tag}</span>
                   <span className="mt-0.5 block text-[15px] text-[var(--text)]">{g.cap}</span>
