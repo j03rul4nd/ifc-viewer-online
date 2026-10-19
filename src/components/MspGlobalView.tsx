@@ -440,18 +440,17 @@ export default function MspGlobalView() {
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
             <button type="button" onClick={() => openFeature('barcelona')} className="group relative block w-full" aria-label="Open Barcelona live">
               <video
-              src="/msp-global/barcelona-live.webm"
-              poster="/msp-global/barcelona-live.jpg"
-              width={800} height={500}
+              src="/msp-global/hero.webm"
+              poster="/msp-global/hero-poster.jpg"
+              width={960} height={540}
               autoPlay muted loop playsInline preload="auto"
-              aria-label="Barcelona's Plaça de Catalunya in 3D, with live bike, charger and traffic markers"
-              className="block aspect-[8/5] h-auto w-full bg-black object-cover"
+              aria-label="18-second tour of the product: Barcelona live, a tap opening live bike data, Hotel Vela on the map, a solar heat map and Helsinki station"
+              className="block aspect-video h-auto w-full bg-black object-cover"
             />
-              <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 text-[13px] font-medium text-white group-hover:bg-black/85">Tap to explore ↗</span>
             </button>
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screen: Barcelona, live. Bikes, chargers, traffic.
+              Real screens, 18 seconds. Tap to try it live.
             </figcaption>
           </figure>
           <button type="button" onClick={toDemo} className="mt-5 w-full rounded-lg bg-[var(--accent)] px-5 py-3.5 text-[17px] font-semibold text-white hover:brightness-110 sm:w-auto">
