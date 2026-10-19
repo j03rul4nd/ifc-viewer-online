@@ -870,7 +870,7 @@ async function handleBenchGet(env, cors) {
 
 const LEAD_PREFIX = 'lead:'
 const LEAD_MIN_FILL_MS = 2500
-const LEAD_FIELDS = ['created_at', 'name', 'email', 'company', 'message', 'event', 'entry']
+const LEAD_FIELDS = ['created_at', 'name', 'email', 'company', 'message', 'event', 'entry', 'profile']
 
 function cleanText(v, max) {
   if (typeof v !== 'string') return ''
@@ -901,6 +901,7 @@ async function handleLead(request, env, cors) {
     message: cleanText(body?.message, 1000),
     event:   cleanText(body?.event, 40) || 'unknown',
     entry:   cleanText(body?.entry, 20) || 'direct',
+    profile: cleanText(body?.profile, 20),
   }
   if (lead.name.length < 2) return jsonResponse({ ok: false, error: 'Please add your name.' }, 400, cors)
   if (!isValidEmail(lead.email)) return jsonResponse({ ok: false, error: 'That email address does not look right.' }, 400, cors)
