@@ -18,6 +18,7 @@
 // step taken before that was undone under the reader's eyes.
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { consentFromEventPage } from '../lib/url-params'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { SceneStory as Story } from '../lib/scene-doc/scene-story'
@@ -44,7 +45,9 @@ interface Props {
 export default function SceneStory({ viewerApiRef, story, cardOpen }: Props) {
   const { t, i18n } = useTranslation(['viewer', 'common'])
   const [index, setIndex] = useState(0)
-  const [open, setOpen] = useState(true)
+  // On a phone inside the event page the visitor came to see the scene: the
+  // tour starts folded (its button stays) instead of covering a third of it.
+  const [open, setOpen] = useState(() => !(consentFromEventPage() && typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches))
   const bindings = useTwinDeviceStore((s) => s.bindings)
   const readings = useTwinDeviceStore(selectShownReadings)
   const timeAt = useTwinDeviceStore((s) => s.timeAt)
