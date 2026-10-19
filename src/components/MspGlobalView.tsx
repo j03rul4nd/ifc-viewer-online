@@ -14,7 +14,7 @@
 // after a 200; any other answer is shown as an error.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { IntegrationPreview, DataFlow, PilotIdeas, INTENTS, type Intent } from './msp/EventPanels'
+import { PilotIdeas, INTENTS, type Intent } from './msp/EventPanels'
 import {
   trackEventPageViewed, trackEventDemoOpened, trackEventDemoInteraction, trackEventContactSent,
   type EventEntry,
@@ -212,30 +212,26 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
         <ol className="flex flex-col gap-4">
           <Step n={1} done={loaded} title="Open a building">
             {loaded && facts.elements != null
-              ? <>{facts.elements.toLocaleString('en')} elements. On your phone. Nothing uploaded.</>
-              : <>Sample house, 2.4 MB.</>}
+              ? <>{facts.elements.toLocaleString('en')} parts. On your phone.</>
+              : <>A real house file.</>}
           </Step>
-          <Step n={2} done={!!facts.picked} title="Tap a wall or a door">
+          <Step n={2} done={!!facts.picked} title="Tap a wall">
             {facts.picked
-              ? <>You picked a <strong className="text-[var(--text)]">{prettyType(facts.picked.type)}</strong>{facts.picked.name ? <> — “{facts.picked.name}”</> : null}.{facts.picked.id && <> ID: <code className="break-all text-[13px] text-[var(--text)]">{facts.picked.id}</code></>}</>
-              : <>Every part has data and a permanent ID.</>}
+              ? <>You tapped a <strong className="text-[var(--text)]">{prettyType(facts.picked.type)}</strong>. It knows what it is.</>
+              : <>Every part knows what it is.</>}
           </Step>
-          <Step n={3} done={facts.score != null} title="Get the health check">
+          <Step n={3} done={facts.score != null} title="See its health score">
             {facts.score != null
-              ? <>Score <strong className="text-[var(--text)]">{facts.score}/100</strong>{facts.errors != null && <> · {facts.errors} {facts.errors === 1 ? 'error' : 'errors'} · {facts.warnings ?? 0} {facts.warnings === 1 ? 'warning' : 'warnings'}</>}.</>
-              : <>Broken data, found automatically.</>}
+              ? <><strong className="text-[var(--text)]">{facts.score}/100</strong>{facts.errors != null && facts.errors > 0 && <> · {facts.errors} {facts.errors === 1 ? 'problem' : 'problems'} found</>}.</>
+              : <>Problems, found for you.</>}
           </Step>
         </ol>
 
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[14px] leading-relaxed text-[var(--text-dim)]">
           <p>
-            <strong className="text-[var(--text)]">See the ticks?</strong> This page heard you inside the 3D view.
-            Same hook can open a ticket in your system.
+            <strong className="text-[var(--text)]">That tap</strong> could open a ticket in your helpdesk.
           </p>
         </div>
-
-        <IntegrationPreview picked={facts.picked} score={facts.score} />
-        <DataFlow key={run} frameRef={frameRef} active={state === 'loading' || loaded} />
 
         <div className="flex flex-wrap gap-2">
           {state !== 'idle' && (
@@ -301,10 +297,7 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
   if (send.kind === 'sent') {
     return (
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6" role="status">
-        <p className="text-[18px] font-semibold text-[var(--text)]">Got it. Thank you.</p>
-        <p className="mt-2 text-[15px] leading-relaxed text-[var(--text-dim)]">
-          I'll reply by email this week. About what you wrote, nothing else.
-        </p>
+        <p className="text-[18px] font-semibold text-[var(--text)]">Thanks. I'll write to you this week.</p>
       </div>
     )
   }
@@ -343,7 +336,7 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
       <label className={label}>Company <span className="font-normal text-[var(--text-faint)]">(optional)</span>
         <input name="company" autoComplete="organization" maxLength={160} className={input} />
       </label>
-      <label className={label}>What would you build with this?
+      <label className={label}>What would you use it for?
         <textarea name="message" required rows={2} maxLength={1000} className={input} placeholder={profile ? PROFILES[profile].hint : 'One line is enough'} />
       </label>
       {/* Honeypot: hidden from people and screen readers; bots fill it. */}
@@ -355,7 +348,7 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] leading-snug text-[var(--text-faint)]">
-          Used only to reply to you. No newsletter.{' '}
+          Only used to reply. No newsletter.{' '}
           <a href={LINKS.privacy} className="underline hover:text-[var(--text-dim)]">Privacy policy</a>
         </p>
         <button
@@ -379,26 +372,26 @@ type Profile = 'msp' | 'isv' | 'ops'
 
 const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   msp: {
-    chip: 'I run IT for clients',
-    why: 'Your clients have buildings, sites and sensors. Give them one live view of all of it. It runs in the browser: nothing to install or patch.',
-    hint: 'e.g. a site dashboard for a client with 12 buildings',
+    chip: 'I sell IT services',
+    why: 'A new service for clients you already have. No hardware. No install.',
+    hint: 'e.g. a client with 12 offices',
   },
   isv: {
-    chip: 'I build software',
-    why: 'Put a 3D view inside your product. One iframe, a typed SDK, and every click comes back to your app.',
-    hint: 'e.g. show our assets in 3D inside our platform',
+    chip: 'I sell software',
+    why: 'Add a 3D view to your product. One line of code.',
+    hint: 'e.g. a 3D tab in our platform',
   },
   ops: {
-    chip: 'I run sites or assets',
-    why: 'Tap any asset to see what it is, where it is and its live readings. Files stay on your device.',
-    hint: 'e.g. find equipment and its sensor data by floor',
+    chip: 'I run buildings',
+    why: 'Know what is where. Tap anything, see everything.',
+    hint: 'e.g. find equipment by floor',
   },
 }
 
 const GALLERY = [
-  { src: '/blog/images/urban-digital-twin-helsinki-live-800.jpg', cap: 'Live buses on a Helsinki terminal', tag: 'Live data' },
-  { src: '/blog/images/bim-model-in-city-context-800.jpg', cap: 'Barcelona, built from open data', tag: 'City scale' },
-  { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Tokyo transit, live', tag: 'Live data' },
+  { src: '/blog/images/urban-digital-twin-helsinki-live-800.jpg', cap: 'Helsinki: buses, live', tag: 'Live' },
+  { src: '/blog/images/bim-model-in-city-context-800.jpg', cap: 'Barcelona: a whole district', tag: 'City' },
+  { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Tokyo: transit, live', tag: 'Live' },
 ]
 
 const LIVE_TWIN = '/?scene=/scenes/helsinki-rautatientori.scene.json'
@@ -433,9 +426,9 @@ export default function MspGlobalView() {
         {/* Screen 1: one claim, one picture, one button. */}
         <section className="pt-2 sm:pt-8">
           <h1 className="max-w-[16ch] text-[38px] font-semibold leading-[1.05] tracking-tight sm:text-[56px]">
-            Digital twins that open in a browser.
+            Show clients their buildings. Live.
           </h1>
-          <p className="mt-3 text-[18px] text-[var(--text-dim)]">Buildings. Cities. Live sensors. No install.</p>
+          <p className="mt-3 text-[18px] text-[var(--text-dim)]">Every site, asset and sensor in one link. Opens on any phone.</p>
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
             <img
               src="/blog/images/bus-terminal-digital-twin-bay-card-800.jpg"
@@ -446,11 +439,11 @@ export default function MspGlobalView() {
             />
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screen. Tap a bus bay, get its data and live status.
+              Real screen: a Helsinki bus terminal, live.
             </figcaption>
           </figure>
           <button type="button" onClick={toDemo} className="mt-5 w-full rounded-lg bg-[var(--accent)] px-5 py-3.5 text-[17px] font-semibold text-white hover:brightness-110 sm:w-auto">
-            Try it now · 30 s
+            Try it · 30 seconds
           </button>
         </section>
 
@@ -484,8 +477,8 @@ export default function MspGlobalView() {
 
         {/* Screen 3: the proof, in their hands. */}
         <section ref={demoRef} id="demo" className="scroll-mt-4 pt-12">
-          <h2 className={h2}>Try it on your phone</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">A real building file. Three taps.</p>
+          <h2 className={h2}>Three taps</h2>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">A real building. On your phone.</p>
           <div className="mt-5">
             <Demo entry={entry} profile={profile} onTalk={toContact} />
           </div>
@@ -493,9 +486,9 @@ export default function MspGlobalView() {
 
         {/* Screen 3b: concrete things to build together, marked Live or Pilot. */}
         <section className="pt-14">
-          <h2 className={h2}>What we could build together</h2>
+          <h2 className={h2}>What you could sell next</h2>
           <p className="mt-2 text-[16px] text-[var(--text-dim)]">
-            <span className="text-[var(--ok)]">Live</span> opens now. <span className="text-[var(--warn)]">Pilot</span> needs a first partner.
+            <span className="text-[var(--ok)]">Ready</span> works today. <span className="text-[var(--warn)]">Pilot</span> needs a first partner.
           </p>
           <div className="mt-5">
             <PilotIdeas role={profile} />
@@ -504,7 +497,7 @@ export default function MspGlobalView() {
 
         {/* Screen 4: the range. Pictures, not paragraphs. */}
         <section className="pt-14">
-          <h2 className={h2}>That was the small part</h2>
+          <h2 className={h2}>Already running</h2>
           <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
             {GALLERY.map((g) => (
               <figure key={g.src} className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] sm:w-auto">
@@ -517,12 +510,9 @@ export default function MspGlobalView() {
             ))}
           </div>
           <a href={LIVE_TWIN} target="_blank" rel="noopener" className="mt-4 inline-block text-[16px] font-medium text-[var(--accent-2)] hover:underline">
-            Open the live Helsinki twin →
+            Open Helsinki live →
           </a>
-          <p className="mt-1 text-[13px] text-[var(--text-faint)]">Best on a laptop. Allow the map data when asked.</p>
-          <p className="mt-6 max-w-[56ch] text-[15px] leading-relaxed text-[var(--text-dim)]">
-            Open-source 3D engine underneath. On top, built by me: the city, the live feeds, the data checks, the SDK.
-          </p>
+          <p className="mt-1 text-[13px] text-[var(--text-faint)]">Best on a laptop.</p>
         </section>
 
         {/* Screen 5: who, in two lines. */}
@@ -531,11 +521,11 @@ export default function MspGlobalView() {
             <img src="/founder.jpg" alt="" width={56} height={56} className="h-14 w-14 flex-none rounded-full object-cover" />
             <div>
               <p className="text-[17px] font-semibold">Joel Benítez Donari</p>
-              <p className="text-[14px] text-[var(--text-dim)]">Full-stack · 3D, GIS, industrial IoT</p>
+              <p className="text-[14px] text-[var(--text-dim)]">Built IFC Viewer Online</p>
             </div>
           </div>
           <p className="mt-4 max-w-[52ch] text-[16px] leading-relaxed text-[var(--text-dim)]">
-            I take a messy technical problem and ship the tool people use. This product is mine, end to end.
+            I built this alone, end to end. Now I'm looking for the first teams to take it further.
           </p>
           <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[15px]">
             <a href={LINKS.linkedin} className={a} target="_blank" rel="noopener">LinkedIn</a>
@@ -546,8 +536,8 @@ export default function MspGlobalView() {
 
         {/* Screen 6: one reason to keep talking. */}
         <section ref={contactRef} id="contact" className="scroll-mt-4 pt-14">
-          <h2 className={h2}>Be the first pilot</h2>
-          <p className="mt-2 text-[16px] text-[var(--text-dim)]">I'm looking for first clients, partners and backers. Tell me in one line; I'll come back with a concrete idea.</p>
+          <h2 className={h2}>Want to be first?</h2>
+          <p className="mt-2 text-[16px] text-[var(--text-dim)]">Pilot, partnership or investment. One line is enough.</p>
           <div className="mt-5 max-w-[720px]">
             <Contact entry={entry} profile={profile} />
           </div>
