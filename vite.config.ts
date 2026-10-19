@@ -322,7 +322,12 @@ export default defineConfig({
     // so their chunks will always be large. Raise the warning threshold
     // to avoid noise for those unavoidable bundles.
     chunkSizeWarningLimit: 5000,
+    // Vercel's build machine has 8 GB and the build sits near the 6 GB heap:
+    // gzip-sizing every chunk and reading files wide in parallel are what tip
+    // it into OOM. Neither changes the output.
+    reportCompressedSize: false,
     rollupOptions: {
+      maxParallelFileOps: 4,
       onwarn(warning, defaultHandler) {
         // The EN locale files are intentionally both statically imported
         // (bundled eagerly so first render has translations) AND referenced
