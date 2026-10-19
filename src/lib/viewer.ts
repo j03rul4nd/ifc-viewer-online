@@ -4,6 +4,7 @@ import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 // The fragments worker, emitted with the build (served from this origin, see initPromise).
 import fragmentsWorkerUrl from '@thatopen/fragments/worker?url'
+import { isWebKit, fragmentsWorkerOptions } from './platform'
 import { createSceneGizmo, type SceneGizmo, type GizmoOptions } from './scene-gizmo'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
@@ -1627,7 +1628,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // version unpkg resolved that to, not the one installed. The worker is
     // the package's own export, emitted with the build; the WASM is the copy
     // the build already ships (vite.config copyWebIfcWasm), as our workers use.
-    fragmentsManager.init(fragmentsWorkerUrl)
+    // components types only `classicWorker`, but passes the options through
+    // as-is to fragments' FragmentsModels, which reads the worker-pool ones.
+    const initFragments = fragmentsManager.init.bind(fragmentsManager) as (url: string, options?: ReturnType<typeof fragmentsWorkerOptions>) => void
+    initFragments(fragmentsWorkerUrl, fragmentsWorkerOptions(isWebKit()))
     // fragments aligns every model to the FIRST one it loaded, whatever that
     // one is: a UTM model loaded after a local one is sent back to its
     // 4,600 km coordinates, and a local model loaded after a UTM one is thrown
