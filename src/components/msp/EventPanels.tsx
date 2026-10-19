@@ -13,7 +13,7 @@ const IDEAS: Record<Role, Idea[]> = {
   msp: [
     { title: 'Site viewer for clients', line: 'All their buildings, one link.', status: 'Live', href: '/?scene=/scenes/barcelona-placa-catalunya.scene.json' },
     { title: 'Tap it, ticket it', line: 'An asset tap opens a helpdesk ticket.', status: 'Pilot' },
-    { title: 'Live status on site', line: 'Sensors show up where they are.', status: 'Live', href: '/?scene=/scenes/helsinki-rautatientori.scene.json' },
+    { title: 'Sun and energy reports', line: 'Heat and daylight per facade, real climate.', status: 'Live' },
   ],
   isv: [
     { title: 'A 3D tab in your app', line: 'Embed it with one line.', status: 'Live', href: '/sdk/' },
@@ -21,7 +21,7 @@ const IDEAS: Record<Role, Idea[]> = {
     { title: 'Your brand on it', line: 'Your logo, your domain.', status: 'Pilot' },
   ],
   ops: [
-    { title: 'Find any asset', line: 'Tap it. See everything.', status: 'Live' },
+    { title: 'Walk, bike or drive times', line: 'Real routes, door to door, indoors too.', status: 'Live' },
     { title: 'The city around your site', line: 'Live transit, on the map.', status: 'Live', href: '/?scene=/scenes/tokyo-tochomae.scene.json' },
     { title: 'Maintenance by location', line: 'Work orders on the exact spot.', status: 'Pilot' },
   ],
