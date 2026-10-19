@@ -4,9 +4,13 @@
 // moves the deal forward: "I want this", which carries the feature into the
 // contact form. Nothing here is a mock: each entry is a deep link into the app.
 
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 
-export type FeatureId = 'itops' | 'barcelona' | 'hotel' | 'solar' | 'helsinki' | 'tokyo' | 'quality'
+// The warehouse twin is its own three.js scene, not the app in a frame: lazy,
+// so the event page does not carry it until someone opens it.
+const LazyAgvTwin = React.lazy(() => import('./agv/AgvTwin'))
+
+export type FeatureId = 'agv' | 'itops' | 'barcelona' | 'hotel' | 'solar' | 'helsinki' | 'tokyo' | 'quality'
 
 export interface Feature {
   title: string
@@ -14,17 +18,24 @@ export interface Feature {
   line: string
   /** Loads map tiles or live data from other servers when opened. */
   external?: boolean
-  /** Builds the app URL (needs the origin for model links). */
-  url: (origin: string) => string
+  /** Builds the app URL (needs the origin for model links). Absent for an inline scene. */
+  url?: (origin: string) => string
+  /** Rendered in the sheet itself instead of a frame of the app. */
+  inline?: 'agv'
 }
 
 const VELA = (o: string) => `${o}/models/hotel-vela`
 
 export const FEATURES: Record<FeatureId, Feature> = {
+  agv: {
+    title: 'Warehouse AGVs, live',
+    line: 'Six carts pick, deliver and charge. Every order closes itself in your ERP. Simulated.',
+    inline: 'agv',
+  },
   itops: {
     title: 'Office IT, live',
-    line: 'Wi-Fi, server room, CCTV, badge readers and backups on the building. Simulated feed.',
-    url: (o) => `/?model=${o}/Ifc2x3_Duplex_Architecture.ifc&name=Demo%20office&twin=itops&validate=0&ui=article&lang=en`,
+    line: 'Tap a coloured window or a label to read its device live. Wi-Fi, server room, CCTV, badges. Simulated feed.',
+    url: (o) => `/?model=${o}/Ifc2x3_Duplex_Architecture.ifc&name=Demo%20office&twin=itops&validate=0&ui=article&explore=1&lang=en`,
   },
   barcelona: {
     external: true,
@@ -70,7 +81,7 @@ export function FeatureSheet({ id, onClose, onWant }: { id: FeatureId; onClose: 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
-  const src = f.url(window.location.origin)
+  const src = f.url ? f.url(window.location.origin) : null
 
   return (
     <div role="dialog" aria-modal="true" aria-label={f.title} className="fixed inset-0 z-50 flex flex-col overscroll-contain bg-[var(--bg)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -81,11 +92,19 @@ export function FeatureSheet({ id, onClose, onWant }: { id: FeatureId; onClose: 
           {f.external && <p className="mt-0.5 text-[11px] leading-snug text-[var(--text-faint)]">Loads live map and city data from public servers. Nothing you have is sent.</p>}
         </div>
         <div className="flex flex-none items-center gap-1">
-          <a href={src} target="_blank" rel="noopener" className="hidden rounded-md px-2.5 py-1.5 text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface)] sm:inline">Full screen ↗</a>
+          {src && <a href={src} target="_blank" rel="noopener" className="hidden rounded-md px-2.5 py-1.5 text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface)] sm:inline">Full screen ↗</a>}
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-md px-3 py-1.5 text-[22px] leading-none text-[var(--text-dim)] hover:bg-[var(--surface)]">×</button>
         </div>
       </div>
-      <iframe src={src} title={f.title} className="min-h-0 flex-1 border-0 bg-black" allow="fullscreen" />
+      {f.inline === 'agv' ? (
+        <div className="relative min-h-0 flex-1">
+          <React.Suspense fallback={<div className="flex h-full items-center justify-center text-[14px] text-[var(--text-dim)]">Opening the warehouse…</div>}>
+            <LazyAgvTwin onWant={onWant} />
+          </React.Suspense>
+        </div>
+      ) : (
+        <iframe src={src ?? undefined} title={f.title} className="min-h-0 flex-1 border-0 bg-black" allow="fullscreen" />
+      )}
       <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         <p className="min-w-0 text-[14px] leading-snug text-[var(--text-dim)]">Want this for your clients?</p>
         <button type="button" onClick={onWant} className="flex-none rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">

@@ -1061,6 +1061,7 @@ export default function App() {
   // `?twin=home|community|itops`: a shared link that opens the model with a live twin demo on it.
   useEffect(() => {
     const id = /[?&]twin=(home|community|itops)\b/.exec(window.location.search)?.[1] as 'home' | 'community' | 'itops' | undefined
+    // (A demo link starts with no saved twin and saves none: twinDeviceStore.)
     if (!id) return
     // Framed (an article, the event page) the frame is the stage: the panel
     // would cover the building its labels and colours are on.

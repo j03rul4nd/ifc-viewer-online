@@ -375,7 +375,7 @@ function Contact({ entry, profile, feature }: { entry: EventEntry; profile: Prof
 // tells the page which, and the rest speaks to that person: one line of why,
 // the feature to see first, and a form hint in their own words.
 
-type Profile = 'msp' | 'mssp' | 'isv' | 'ops'
+type Profile = 'msp' | 'mssp' | 'logi' | 'isv' | 'ops'
 
 const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   msp: {
@@ -387,6 +387,11 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
     chip: 'I sell security',
     why: 'Badge readers, cameras and server rooms on the building. Alerts show where they happen.',
     hint: 'e.g. physical security for a client’s HQ',
+  },
+  logi: {
+    chip: 'I run logistics',
+    why: 'Watch every AGV, order and dock live. Each delivered order closes itself in Odoo, Salesforce or your WMS.',
+    hint: 'e.g. 12 AGVs, orders in Odoo',
   },
   isv: {
     chip: 'I sell software',
@@ -400,9 +405,10 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   },
 }
 
-const ROLE_START: Record<Profile, FeatureId> = { msp: 'itops', mssp: 'itops', isv: 'barcelona', ops: 'itops' }
+const ROLE_START: Record<Profile, FeatureId> = { msp: 'itops', mssp: 'itops', logi: 'agv', isv: 'barcelona', ops: 'itops' }
 
 const GALLERY = [
+  { feature: 'agv' as FeatureId, src: '/msp-global/agv.jpg', cap: 'Six AGVs pick, deliver and charge. Every order closes itself in your ERP.', tag: 'Logistics' },
   { feature: 'itops' as FeatureId, src: '/msp-global/office-it.jpg', cap: 'An office’s Wi-Fi, servers and doors, live. Red when something is down.', tag: 'Managed IT' },
   { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
   { feature: 'solar' as FeatureId, src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
@@ -436,6 +442,14 @@ export default function MspGlobalView() {
   }, [heroVisible, sheet])
   const contactRef = useRef<HTMLElement>(null)
   const demoRef = useRef<HTMLElement>(null)
+
+  // `?open=agv` (or any feature id): a link that lands straight in that demo.
+  useEffect(() => {
+    try {
+      const id = new URLSearchParams(window.location.search).get('open') as FeatureId | null
+      if (id && id in FEATURES) setSheet(id)
+    } catch { /* ignore */ }
+  }, [])
 
   useEffect(() => {
     document.title = 'Joel Benítez · Digital twins in the browser'
