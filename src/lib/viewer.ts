@@ -1187,7 +1187,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     if (uprightBaseFov === null) uprightBaseFov = cam.fov
     const base = uprightBaseFov
     const want = aspect < 0.9
-      ? Math.min(78, (2 * Math.atan(Math.tan((base * Math.PI) / 360) / Math.max(0.45, aspect)) * 180) / Math.PI)
+      ? Math.min(62, (2 * Math.atan(Math.tan((base * Math.PI) / 360) / Math.max(0.45, aspect)) * 180) / Math.PI)
       : base
     if (Math.abs(cam.fov - want) > 0.1) { cam.fov = want; cam.updateProjectionMatrix() }
   }
