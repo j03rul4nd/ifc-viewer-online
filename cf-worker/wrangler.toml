@@ -58,9 +58,9 @@ id      = "644a598afbf34e2daad9d261d40c476e"
 # /lead answers 503 and the page shows an error (never a fake success).
 #   wrangler kv namespace create LEADS   → paste the id below and uncomment
 #   wrangler secret put LEADS_ADMIN_TOKEN → token for GET /leads (CSV export)
-# [[kv_namespaces]]
-# binding = "LEADS"
-# id      = "<paste id>"
+[[kv_namespaces]]
+binding = "LEADS"
+id      = "11c0dec0743445cda6cfc17e9288732f"
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 # Adjust the custom domain once you have one. Until then, the default workers.dev
