@@ -453,6 +453,9 @@
     "show": "Veure sota terra",
     "buriedNotice": "Uns {{depth}} m d'aquest model són sota terra, i el mapa el tapa.",
     "xrayHint": "El terra es torna translúcid. Gira per sota de la superfície per veure el model des de baix.",
-    "cutHint": "S'obre un forat al mapa sobre el model. Gira per sota de la superfície per veure'l des de baix."
+    "cutHint": "S'obre un forat al mapa sobre el model. Gira per sota de la superfície per veure'l des de baix.",
+    "osmEstimated": "D'OpenStreetMap: {{metro}} trams de metro, {{tunnels}} túnels i {{platforms}} andanes, a profunditat estimada: OSM no registra la profunditat.",
+    "markers": "Marcar el subterrani en superfície",
+    "markersNote": "Contorn del model soterrat, i línies de metro i túnels dibuixats sobre el terra."
   }
 }

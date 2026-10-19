@@ -8,6 +8,7 @@
 // `resetForScene()` bump the epoch, instantly invalidating in-flight work.
 
 import type { BurialAssessment, SubsurfaceMode } from '../lib/geo/subsurface'
+import type { UndergroundSystem } from '../lib/geo/underground-layer'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { createLogger } from '../lib/logger'
@@ -67,6 +68,7 @@ const LS_TONE          = 'ifc-geo-context-tone:v1'
 const LS_LOOK          = 'ifc-geo-map-look:v1'
 const LS_LOOK_TUNE     = 'ifc-geo-look-tuning:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
+const LS_SUBSURFACE_MARKERS = 'ifc-geo-subsurface-markers:v1'
 const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 const LS_HIDDEN        = 'ifc-geo-hidden-features:v1'
 const LS_PANEL_MODE    = 'ifc-geo-panel-mode:v1'
@@ -271,6 +273,14 @@ interface GeoStore {
   subsurfaceMode: SubsurfaceMode
   /** How much of the active model is under the ground, once measured on the map. */
   burial: BurialAssessment | null
+  /**
+   * Mark what is under the ground ON the ground (persisted): a buried model's
+   * outline and the OSM metro/tunnel traces. "From above"; x-ray/cut are
+   * "from below". A taste, unlike the mode, so it is remembered.
+   */
+  subsurfaceMarkers: boolean
+  /** What the underground OSM layer is drawing, at estimated depth. */
+  undergroundCounts: Record<UndergroundSystem, number> | null
   /** Advanced terrain look (sun, softness, occlusion, detail, contours). */
   terrainLook: TerrainLook
   /** Surrounding OSM buildings toggle (persisted). */
@@ -418,6 +428,8 @@ interface GeoStore {
   setTerrainExaggeration: (k: number) => void
   setSubsurfaceMode: (mode: SubsurfaceMode) => void
   setBurial: (b: BurialAssessment | null) => void
+  setSubsurfaceMarkers: (on: boolean) => void
+  setUndergroundCounts: (c: Record<UndergroundSystem, number> | null) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
   setPlacement: (p: GeoPlacement | null) => void
@@ -457,6 +469,8 @@ export const useGeoStore = create<GeoStore>()(
       terrainExaggeration: readTerrainExaggeration(),
       subsurfaceMode: 'surface' as SubsurfaceMode,
       burial: null,
+      subsurfaceMarkers: lsGet(LS_SUBSURFACE_MARKERS) !== '0',
+      undergroundCounts: null,
       terrainLook:    readTerrainLook(),
       buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
       buildingsStatus:    'idle' as const,
@@ -535,6 +549,7 @@ export const useGeoStore = create<GeoStore>()(
             // geo-system.disable() puts the map back on the surface.
             subsurfaceMode: 'surface' as SubsurfaceMode,
             burial:         null,
+            undergroundCounts: null,
             // Bumping the epoch invalidates an in-flight buildings query, and
             // its reply will be dropped by setBuildingsResult — so the status
             // has to be cleared HERE or it stays 'loading' forever and the
@@ -701,6 +716,11 @@ export const useGeoStore = create<GeoStore>()(
 
       setSubsurfaceMode: (mode) => set({ subsurfaceMode: mode }, false, 'setSubsurfaceMode'),
       setBurial: (b) => set({ burial: b }, false, 'setBurial'),
+      setSubsurfaceMarkers: (on) => {
+        lsSet(LS_SUBSURFACE_MARKERS, on ? '1' : '0')
+        set({ subsurfaceMarkers: on }, false, 'setSubsurfaceMarkers')
+      },
+      setUndergroundCounts: (c) => set({ undergroundCounts: c }, false, 'setUndergroundCounts'),
 
       setGeoref: (modelId, g) =>
         set(

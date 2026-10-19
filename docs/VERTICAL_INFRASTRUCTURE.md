@@ -402,6 +402,46 @@ Off the surface the camera may orbit under the ground plane (polar limit ≈ 179
 - **Entry points:** the panel (Quick setup), `?map=terrain,cut|xray`, and the SDK
   `setSiteContext({ subsurface })` / `getSiteContext().subsurface`.
 
-Not done yet: real geometry for OSM tunnels and subway lines in the
-underground view (today they are a surface trace, or are skipped), underground
-stations from OSM, and per-asset "show above / below" markers for the twin.
+### OSM underground context (`underground-layer.ts`)
+
+In the x-ray and cut views, OSM road and rail tunnels, metro lines and
+underground platforms are drawn **at depth** as tubes and slabs.
+`buildUndergroundTraces` draws the same ways as lines on the ground.
+
+- **The depth is estimated, and says so.** OSM maps no depth. The layer uses a
+  typical depth per system (road 10 m, rail 14 m, metro 18 m), and each `layer`
+  step below −1 adds 6 m. Every mesh carries `userData.approximate`, and the
+  panel prints a warning with the counts.
+- **Portals:** a road or mainline tunnel end that does not continue into another
+  tunnel way ramps up to the surface at 6 % (road) or 3 % (rail). The ramp is
+  capped at 40 % of the way's length. Metro ends are **not** ramped, because a
+  metro way usually ends at the edge of the query box, not at a portal.
+- **The IFC wins:** nothing is drawn inside the model's plan plus the cut margin.
+- **Not swept:** the layer's materials carry `userData.subsurfaceOwned`, so the
+  x-ray fade and the cut leave them alone.
+- **Fallback tiles:** OpenMapTiles carries the OSM railway value in `subclass`.
+  Before this change the fallback turned every metro into `railway=rail`.
+
+### "From above" marks (`setSubsurfaceMarkers`)
+
+These marks appear in every mode, the plain map included. They are on by
+default and persisted:
+
+- the outline of a buried model, draped on the street;
+- the OSM metro and tunnel traces.
+
+This is the "show from above" setting. The x-ray and cut views are "show from
+below". In the panel, the SDK (`subsurfaceMarkers`) and the site state
+(`underground` counts), the two can be combined.
+
+### Demo model: Drassanes (L3)
+
+`npm run metro-drassanes` → `public/models/metro-drassanes/BCN-IVO-DRS-XX-M3-A-0001.ifc`.
+
+- **Plan:** the real OSM platforms (ways 1215124988/9) and the mapped entrances
+  (`drassanes_site.py`).
+- **Levels:** assumed, and flagged as assumed on every element
+  (`IFCVO_Provenance`).
+- **Tests:** `metro-drassanes-ifc.test.ts` checks that everything is under the
+  street, that the platforms are the OSM rings, and that the roof has a void at
+  each stair.

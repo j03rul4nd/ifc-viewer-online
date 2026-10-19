@@ -96,8 +96,9 @@ import { carveGround, planBeachWalls } from './beach-carve'
 import { fetchMarine, marineAt, type MarineNow } from './marine-feed'
 import {
   applyMode as applySubsurfaceMode, assessBurial, buildPitWalls, cutPlanes, cutRect, maxPolarFor,
-  pitMaterial, restoreMaterial, saveMaterial, type BurialAssessment, type MaterialState, type SubsurfaceMode,
+  buildSurfaceOutline, pitMaterial, restoreMaterial, saveMaterial, type BurialAssessment, type MaterialState, type SubsurfaceMode,
 } from './subsurface'
+import { buildUndergroundLayer, buildUndergroundTraces, type UndergroundSystem } from './underground-layer'
 
 const log = createLogger('GeoSystem')
 
@@ -406,6 +407,18 @@ export interface GeoSystemAPI {
   /** How much of the active model is under the ground, or null with no model/map. */
   assessSubsurface(): BurialAssessment | null
   /**
+   * What the underground OSM layer is drawing (road/rail/metro tunnels and
+   * platforms, at ESTIMATED depth), each time it is built or torn down.
+   * Null when nothing is drawn.
+   */
+  /**
+   * Mark what is under the ground ON the ground — a buried model's outline and
+   * the OSM metro/tunnel traces — in every mode, the surface map included.
+   * "Show from above"; the x-ray/cut modes are "show from below". Default on.
+   */
+  setSubsurfaceMarkers(on: boolean): void
+  setUndergroundCallback(cb: ((counts: Record<UndergroundSystem, number> | null) => void) | null): void
+  /**
    * Toggle surrounding OpenStreetMap buildings, extruded onto the ground.
    * Resolves once the fetch settles; failures leave the map usable and are
    * reported through the returned status rather than thrown.
@@ -682,6 +695,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let subsurfaceSaved = new Map<THREE.Material, MaterialState>()
   let subsurfaceFrames = 0
   let pitMesh: THREE.Mesh | null = null
+  // OSM tunnels and metro at estimated depth (underground-layer.ts), built for
+  // the feature set it was made from and rebuilt when that changes.
+  let undergroundLayer: THREE.Object3D | null = null
+  let undergroundFor: OsmFeature[] | null = null
+  let markersEnabled = true
+  let markerObjs: THREE.Object3D[] = []
+  let markersFor: OsmFeature[] | null | undefined
+  let undergroundCb: ((counts: Record<UndergroundSystem, number> | null) => void) | null = null
   /**
    * The ground with no context layers built (the plain map, or relief only):
    * what groundAtWorld / groundHeightAt read then. Cached on what it depends
@@ -1167,7 +1188,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         if (!engine) return
         engine.update()
         retuneDepthRange()
-        if (subsurfaceMode !== 'surface' && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
+        if ((subsurfaceMode !== 'surface' || markersEnabled) && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
           subsurfaceFrames = 0
           sweepSubsurface()
         }
@@ -1218,6 +1239,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       teardownBuildings()
       teardownTerrain({ reseat: false })
       clearSubsurface()
+      clearMarkers()
       subsurfaceMode = 'surface'
       // Let go of the toggle in flight. Its fetch is already doomed — the token
       // moved — and leaving it in the queue would make the NEXT enable wait out
@@ -1318,7 +1340,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
       engine.setHole(computeHolePlanes())
       // The ground under the model just changed: the pit walls follow it.
-      if (subsurfaceMode !== 'surface') applySubsurface()
+      applySubsurface()
       // The ground buildings stand on just changed — re-extrude from cache.
       await reseatBuildings()
     },
@@ -1336,6 +1358,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     getSubsurfaceMode() {
       return subsurfaceMode
+    },
+
+    setSubsurfaceMarkers(on) {
+      if (on === markersEnabled) return
+      markersEnabled = on
+      if (engine) buildMarkers()
+    },
+
+    setUndergroundCallback(cb) {
+      undergroundCb = cb
     },
 
     assessSubsurface() {
@@ -3086,7 +3118,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     terrain = null
     engine?.setHole(null) // restore the full flat basemap
     // The pit walls stood on the relief that just went away.
-    if (subsurfaceMode !== 'surface' && engine) applySubsurface()
+    if (engine) applySubsurface()
     // The cached prelude samples the patch just disposed; a partial build must
     // never reuse it.
     lastPrelude = null
@@ -3101,6 +3133,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const [m, st] of subsurfaceSaved) restoreMaterial(m, st)
     subsurfaceSaved = new Map()
     subsurfacePlanes = null
+    if (undergroundLayer) {
+      undergroundLayer.removeFromParent()
+      undergroundLayer.traverse((o) => {
+        const m = o as THREE.Mesh
+        if (!m.isMesh) return
+        m.geometry.dispose()
+        ;(m.material as THREE.Material).dispose()
+      })
+      undergroundLayer = null
+      undergroundFor = null
+      undergroundCb?.(null)
+    }
     if (pitMesh) {
       pitMesh.removeFromParent()
       pitMesh.geometry.dispose()
@@ -3116,22 +3160,105 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * Restore keys off the same map, so a surface is never faded twice.
    */
   function sweepSubsurface(): void {
-    if (!geoRoot || subsurfaceMode === 'surface') return
+    if (!geoRoot) return
+    if (markersEnabled && osmFeatures !== markersFor) buildMarkers()
+    if (subsurfaceMode === 'surface') return
+    if (osmFeatures && osmFeatures !== undergroundFor) buildUnderground()
     geoRoot.traverse((obj) => {
       if (obj === pitMesh) return
       const mat = (obj as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined
       if (!mat) return
       for (const m of Array.isArray(mat) ? mat : [mat]) {
-        if (subsurfaceSaved.has(m)) continue
+        if (subsurfaceSaved.has(m) || m.userData.subsurfaceOwned) continue
         const st = saveMaterial(m, subsurfaceMode)
         if (applySubsurfaceMode(m, subsurfaceMode, subsurfacePlanes)) subsurfaceSaved.set(m, st)
       }
     })
   }
 
+  /**
+   * The OSM tunnels, metro lines and platforms, at estimated depth. Nothing is
+   * drawn inside the model's plan (plus the cut margin): where there is an IFC
+   * of the tunnel or the station, the IFC is the truth.
+   */
+  function buildUnderground(): void {
+    if (undergroundLayer) {
+      undergroundLayer.removeFromParent()
+      undergroundLayer.traverse((o) => {
+        const m = o as THREE.Mesh
+        if (m.isMesh) { m.geometry.dispose(); (m.material as THREE.Material).dispose() }
+      })
+      undergroundLayer = null
+    }
+    undergroundFor = osmFeatures
+    const frame = lastLayerOpts ? groundFrameFor(lastLayerOpts) : bareGroundFrame()
+    if (!geoRoot || !osmFeatures || !frame) { undergroundCb?.(null); return }
+    const b = ctx.getActiveModelBounds()
+    const rect = b ? cutRect(b, ctx.getModelFootprints?.() ?? null) : null
+    geoRoot.updateWorldMatrix(true, false)
+    const tmp = new THREE.Vector3()
+    const skip = rect
+      ? (nx: number, ny: number): boolean => {
+          const w = geoRoot!.localToWorld(tmp.set(nx, ny, 0))
+          return w.x >= rect.minX && w.x <= rect.maxX && w.z >= rect.minZ && w.z <= rect.maxZ
+        }
+      : undefined
+    const built = buildUndergroundLayer(osmFeatures, { frame, skip })
+    if (!built) { undergroundCb?.(null); return }
+    undergroundLayer = built.object
+    geoRoot.add(built.object)
+    undergroundCb?.(built.counts)
+  }
+
+  function clearMarkers(): void {
+    for (const o of markerObjs) {
+      o.removeFromParent()
+      const l = o as THREE.LineSegments
+      l.geometry?.dispose()
+      ;(l.material as THREE.Material | undefined)?.dispose()
+    }
+    markerObjs = []
+    markersFor = undefined
+  }
+
+  /** The "from above" marks: the buried model's outline and the OSM traces. */
+  function buildMarkers(): void {
+    clearMarkers()
+    if (!markersEnabled || !geoRoot) return
+    markersFor = osmFeatures
+    const b = ctx.getActiveModelBounds()
+    const footprints = ctx.getModelFootprints?.() ?? (ctx.getActiveModelFootprint?.() ? [ctx.getActiveModelFootprint!()!] : null)
+    const burial = b ? assessBurial(b, (x, z) => api.groundHeightAt(x, z)) : null
+    if (b && burial?.buried) {
+      const rings = footprints && footprints.length > 0 ? footprints : [[
+        { x: b.center.x - b.size.x / 2, z: b.center.z - b.size.z / 2 },
+        { x: b.center.x + b.size.x / 2, z: b.center.z - b.size.z / 2 },
+        { x: b.center.x + b.size.x / 2, z: b.center.z + b.size.z / 2 },
+        { x: b.center.x - b.size.x / 2, z: b.center.z + b.size.z / 2 },
+      ]]
+      const outline = buildSurfaceOutline(rings, (x, z) => api.groundHeightAt(x, z), geoRoot.position.y)
+      if (outline) { ctx.scene.add(outline); markerObjs.push(outline) }
+    }
+    const frame = lastLayerOpts ? groundFrameFor(lastLayerOpts) : bareGroundFrame()
+    if (osmFeatures && frame) {
+      const rect = b ? cutRect(b, footprints) : null
+      geoRoot.updateWorldMatrix(true, false)
+      const tmp = new THREE.Vector3()
+      const skip = rect
+        ? (nx: number, ny: number): boolean => {
+            const w = geoRoot!.localToWorld(tmp.set(nx, ny, 0))
+            return w.x >= rect.minX && w.x <= rect.maxX && w.z >= rect.minZ && w.z <= rect.maxZ
+          }
+        : undefined
+      const traces = buildUndergroundTraces(osmFeatures, { frame, skip })
+      if (traces) { geoRoot.add(traces); markerObjs.push(traces) }
+    }
+  }
+
   function applySubsurface(): void {
     clearSubsurface()
     ctx.controls.maxPolarAngle = maxPolarFor(subsurfaceMode)
+    buildMarkers()
     if (subsurfaceMode === 'surface') return
     if (subsurfaceMode === 'cut') {
       const b = ctx.getActiveModelBounds()
@@ -3490,7 +3617,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // The hole planes live in WORLD space — refresh them when the root moves.
     if (terrain && engine) engine.setHole(computeHolePlanes())
     // The cut follows the model it was opened for.
-    if (subsurfaceMode !== 'surface' && engine) applySubsurface()
+    if (engine) applySubsurface()
     restage()
   }
 

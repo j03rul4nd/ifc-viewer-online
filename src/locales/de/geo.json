@@ -453,6 +453,9 @@
     "show": "Untergrund zeigen",
     "buriedNotice": "Etwa {{depth}} m dieses Modells liegen unter der Erde, daher verdeckt es die Karte.",
     "xrayHint": "Der Boden wird durchsichtig. Unter die Oberfläche drehen, um das Modell von unten zu sehen.",
-    "cutHint": "Über dem Modell wird eine Grube aus der Karte geschnitten. Unter die Oberfläche drehen, um es von unten zu sehen."
+    "cutHint": "Über dem Modell wird eine Grube aus der Karte geschnitten. Unter die Oberfläche drehen, um es von unten zu sehen.",
+    "osmEstimated": "Aus OpenStreetMap: {{metro}} U-Bahn-Abschnitte, {{tunnels}} Tunnel und {{platforms}} Bahnsteige, in geschätzter Tiefe – OSM erfasst keine Tiefe.",
+    "markers": "Unterirdisches an der Oberfläche markieren",
+    "markersNote": "Umriss eines unterirdischen Modells sowie U-Bahn-Linien und Tunnel auf dem Boden."
   }
 }

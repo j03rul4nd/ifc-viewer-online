@@ -453,6 +453,9 @@
     "show": "Ver subsolo",
     "buriedNotice": "Cerca de {{depth}} m deste modelo estão debaixo do solo, por isso o mapa o esconde.",
     "xrayHint": "O solo fica translúcido. Rode por baixo da superfície para ver o modelo de baixo.",
-    "cutHint": "Abre-se uma escavação no mapa sobre o modelo. Rode por baixo da superfície para o ver de baixo."
+    "cutHint": "Abre-se uma escavação no mapa sobre o modelo. Rode por baixo da superfície para o ver de baixo.",
+    "osmEstimated": "Do OpenStreetMap: {{metro}} troços de metro, {{tunnels}} túneis e {{platforms}} plataformas, a profundidade estimada — o OSM não regista a profundidade.",
+    "markers": "Marcar o subterrâneo à superfície",
+    "markersNote": "Contorno de um modelo enterrado, e linhas de metro e túneis desenhados no solo."
   }
 }
