@@ -22,7 +22,10 @@ RUN npm ci
 # Build. Override Vite's `base` so the app is served from the container root
 # (the repo default base is '/ifc-viewer-online/' for GitHub Pages).
 COPY . .
-RUN npm run build -- --base=/
+# Same steps as `npm run build`, but the Vite pass gets a 12 GB heap: the
+# bundle sits right at the 6 GB of the npm script and the GitHub runner
+# (16 GB) intermittently died with "JavaScript heap out of memory".
+RUN npm run build:sdk && npm run build:embed && npx tsc -b  && node --max-old-space-size=12288 node_modules/vite/bin/vite.js build --base=/
 
 # ── Stage 2: serve with nginx ────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS runtime
