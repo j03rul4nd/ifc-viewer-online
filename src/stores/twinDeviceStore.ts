@@ -20,11 +20,41 @@ export interface SourceStatus {
 
 interface Persisted { v: 1; sources: DeviceSource[]; bindings: Binding[] }
 
+let persistEnabled = true
+
+/**
+ * A demo link (`?twin=`), the event page or a frame of it is a visit, not a
+ * project: it neither loads the twin saved on this device (whose alerts would
+ * pop up before the demo even starts) nor saves its own.
+ */
+function ephemeralVisit(): boolean {
+  if (typeof window === 'undefined') return false
+  if (/[?&]twin=/.test(window.location.search)) return true
+  if (/^\/msp-global\/?$/.test(window.location.pathname)) return true
+  try {
+    return window.self !== window.top && window.top!.location.origin === window.location.origin && /^\/msp-global\/?$/.test(window.top!.location.pathname)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Simulated sources (`sim:…`) are demos: they never outlive the page. Saved
+ * once by an older version, they came back on every visit and raised their
+ * alerts before anything was open.
+ */
+function withoutDemos(p: Persisted): Persisted {
+  const sources = p.sources.filter((x) => !x.url.startsWith('sim:'))
+  const keep = new Set(sources.map((x) => x.id))
+  return { v: 1, sources, bindings: p.bindings.filter((b) => keep.has(b.sourceId)) }
+}
+
 function load(): Persisted {
+  if (ephemeralVisit()) { persistEnabled = false; return { v: 1, sources: [], bindings: [] } }
   try {
     const raw = localStorage.getItem(LS_KEY)
     const p = raw ? JSON.parse(raw) as Partial<Persisted> : null
-    if (p?.v === 1 && Array.isArray(p.sources) && Array.isArray(p.bindings)) return p as Persisted
+    if (p?.v === 1 && Array.isArray(p.sources) && Array.isArray(p.bindings)) return withoutDemos(p as Persisted)
   } catch { /* private mode */ }
   return { v: 1, sources: [], bindings: [] }
 }
@@ -34,11 +64,11 @@ function load(): Persisted {
  * to the link, and the visitor's own saved twin must survive it untouched
  * (the same rule `?layers=` follows for data layers).
  */
-let persistEnabled = true
 export function setTwinPersistence(enabled: boolean): void { persistEnabled = enabled }
 
-function save(sources: DeviceSource[], bindings: Binding[]): void {
+function save(allSources: DeviceSource[], allBindings: Binding[]): void {
   if (!persistEnabled) return
+  const { sources, bindings } = withoutDemos({ v: 1, sources: allSources, bindings: allBindings })
   try {
     if (sources.length === 0 && bindings.length === 0) localStorage.removeItem(LS_KEY)
     else localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, sources, bindings }))
