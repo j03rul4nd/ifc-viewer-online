@@ -705,7 +705,19 @@
       "highUse": "使用量大",
       "fault": "故障",
       "moving": "運転中",
-      "fireAlarm": "火災警報"
+      "fireAlarm": "火災警報",
+      "itopsSource": "デモオフィス · IT（シミュレーション）",
+      "accessPoint": "Wi-Fi",
+      "serverRoom": "サーバールーム",
+      "badge": "入退室カードリーダー",
+      "cctv": "防犯カメラ",
+      "backup": "バックアップ",
+      "apDown": "アクセスポイント停止",
+      "overheating": "過熱 > 27 °C",
+      "unpatched": "パッチ適用 < 85 %",
+      "healthy": "正常",
+      "suspicious": "入室失敗の試行",
+      "backupFailed": "バックアップ失敗"
     },
     "tplName": {
       "home": "スマートホーム",

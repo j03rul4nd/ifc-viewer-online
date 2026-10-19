@@ -16,8 +16,9 @@ import { buildCatalog, newTwinId, queryMatches, type Binding, type CatalogEntry,
 
 export const SIM_HOME_URL = 'sim:home'
 export const SIM_COMMUNITY_URL = 'sim:community'
+export const SIM_ITOPS_URL = 'sim:itops'
 
-export type TwinTemplateId = 'home' | 'community'
+export type TwinTemplateId = 'home' | 'community' | 'itops'
 
 const wave = (tMs: number, periodMs: number, phase = 0): number => Math.sin((tMs / periodMs + phase) * Math.PI * 2)
 const r1 = (v: number): number => Math.round(v * 10) / 10
@@ -105,7 +106,40 @@ export function simulateCommunity(tMs: number, dwellings = 24, storeys = 8, bays
   }
 }
 
+/**
+ * An office run by a managed-service provider: Wi-Fi access points per room, a
+ * server room (temperature, UPS, rack power), CCTV, badge readers, endpoint
+ * patching and the nightly backup. Faults come round every minute or two so a
+ * live demo shows a red room, an alert and a recovery while someone watches.
+ */
+export function simulateItOps(tMs: number, rooms = 12): unknown {
+  const step = Math.floor(tMs / 10_000) // changes every 10 s
+  const at = new Date(tMs).toISOString()
+  const hour = new Date(tMs).getHours() + new Date(tMs).getMinutes() / 60
+  const office = Math.max(0, Math.sin(((hour - 8) / 11) * Math.PI)) // 08:00–19:00
+  const aps = Array.from({ length: rooms }, (_, i) => {
+    const down = (step + i * 5) % 36 >= 33 // one AP drops for ~30 s now and then
+    const clients = down ? 0 : Math.max(0, Math.round((4 + 14 * office) * (0.6 + 0.4 * (0.5 + 0.5 * wave(tMs, 240_000, i / rooms)))))
+    const patched = Math.min(100, Math.round(78 + 22 * (0.5 + 0.5 * wave(tMs, 900_000, i / 4))))
+    return { id: `ap-${i + 1}`, kind: 'wifi-ap', online: !down, clients, patched_pct: patched, updated: at }
+  })
+  const hot = step % 18 >= 15
+  const failedBadges = step % 24 >= 21 ? 3 + (step % 3) : 0
+  const backupFailed = step % 60 >= 57
+  return {
+    site: 'Demo office (simulated)',
+    devices: [
+      ...aps,
+      { id: 'server-room', kind: 'server-room', temp_c: r1((hot ? 29.5 : 22.5) + 0.8 * wave(tMs, 120_000)), ups_pct: Math.round(96 - (hot ? 6 : 0) + 3 * wave(tMs, 600_000)), rack_kw: r1(3.2 + 0.6 * wave(tMs, 180_000)), updated: at },
+      { id: 'badge-main', kind: 'access', failed_last_5min: failedBadges, state: failedBadges >= 3 ? 'suspicious' : 'ok', updated: at },
+      { id: 'cctv-entrance', kind: 'camera', online: step % 30 !== 29, motion: step % 7 >= 5, snapshot_url: simulatedSnapshot('CCTV · entrance', tMs, step % 7 >= 5), updated: at },
+      { id: 'backup', kind: 'backup', status: backupFailed ? 'failed' : 'ok', last_run: at, updated: at },
+    ],
+  }
+}
+
 export const SIM_PRESETS: Record<string, (tMs: number) => unknown> = {
+  [SIM_ITOPS_URL]: (t) => simulateItOps(t),
   [SIM_HOME_URL]: simulateHome,
   [SIM_COMMUNITY_URL]: (t) => simulateCommunity(t),
 }
@@ -122,14 +156,17 @@ export const TEMPLATE_NAMES_EN = {
   night: 'Night', leak: 'Leak', flowing: 'Flowing', occupied: 'Occupied', free: 'Free', charging: 'EV charging',
   motion: 'Motion', offline: 'Offline', heatLoss: 'Heat loss', highUse: 'High use', fault: 'Fault', moving: 'Moving',
   fireAlarm: 'Fire alarm',
+  itopsSource: 'Demo office IT (simulated)', accessPoint: 'Wi-Fi', serverRoom: 'Server room', badge: 'Badge reader',
+  cctv: 'CCTV', backup: 'Backup', apDown: 'Access point down', overheating: 'Overheating > 27 °C',
+  unpatched: 'Patching < 85 %', healthy: 'Healthy', suspicious: 'Failed badge attempts', backupFailed: 'Backup failed',
 }
 export type TemplateNames = typeof TEMPLATE_NAMES_EN
 
 export function simulatedSource(template: TwinTemplateId = 'home', names: TemplateNames = TEMPLATE_NAMES_EN): DeviceSource {
   return {
     id: newTwinId('s'),
-    name: template === 'home' ? names.homeSource : names.communitySource,
-    url: template === 'home' ? SIM_HOME_URL : SIM_COMMUNITY_URL,
+    name: template === 'home' ? names.homeSource : template === 'itops' ? names.itopsSource : names.communitySource,
+    url: template === 'home' ? SIM_HOME_URL : template === 'itops' ? SIM_ITOPS_URL : SIM_COMMUNITY_URL,
     intervalS: 5,
     mapping: { listPath: 'devices', idField: 'id', timeField: 'updated' },
     enabled: true,
@@ -286,6 +323,54 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
   return ctx.out
 }
 
+/**
+ * Bindings for the simulated OFFICE IT estate. Every room gets an access point
+ * (red when down, amber when its endpoints lag on patches); the largest room
+ * stands in for the server room; the first door carries the badge reader and
+ * the entrance camera; the roof or top slab carries the backup.
+ */
+export function itopsBindings(trees: Record<string, SpatialNode[]>, sourceId: string, n: TemplateNames = TEMPLATE_NAMES_EN): Binding[] {
+  const all = uniqueByGuid(buildCatalog(trees))
+  const ctx: Ctx = { out: [], sourceId }
+  const bind = binder(ctx)
+
+  const spaces = ofClass(all, 'IFCSPACE')
+  // Spaces are hidden in the viewer: each device also paints a window, so its
+  // state shows on the facade while the label sits in its room.
+  const windows = ofClass(all, 'IFCWINDOW').map(refOf)
+  const server = spaces.find((e) => /server|rack|it\b|comms|data|technical|mechanical|storage|garage/i.test(e.name)) ?? spaces[0]
+  if (server) bind(`${refOf(server).label} · ${n.serverRoom}`, 'server-room', [refOf(server), ...windows.slice(-1)], [
+    rule(n.overheating, [{ field: 'temp_c', op: 'gt', value: 27 }], '#ff1f1f', 1, false, 0),
+    rule(n.healthy, [], '#22c55e', 0.7),
+  ], { label: { field: 'temp_c' } })
+
+  spaces.filter((e) => e !== server).slice(0, 12).forEach((s, i) => bind(`${refOf(s).label} · ${n.accessPoint}`, `ap-${i + 1}`, [refOf(s), ...windows.slice(i, i + 1)], [
+    rule(n.apDown, [{ field: 'online', op: 'isFalse' }], '#ff1f1f', 1, false, 0),
+    rule(n.unpatched, [{ field: 'patched_pct', op: 'lt', value: 85 }], '#f59e0b'),
+    rule(n.healthy, [], '#22c55e', 0.55),
+  ], { label: { field: 'clients' } }))
+
+  const doors = ofClass(all, 'IFCDOOR').map(refOf)
+  if (doors.length) {
+    bind(n.badge, 'badge-main', doors.slice(0, 1), [
+      rule(n.suspicious, [{ field: 'state', op: 'eq', value: 'suspicious' }], '#ff1f1f', 1, false, 0),
+    ], { label: { field: 'failed_last_5min' } })
+    bind(n.cctv, 'cctv-entrance', doors.slice(0, 1), [
+      rule(n.offline, [{ field: 'online', op: 'isFalse' }], '#7b8494', 1, false, 0),
+      rule(n.motion, [{ field: 'motion', op: 'isTrue' }], '#f97316'),
+    ], { media: { field: 'snapshot_url' } })
+  }
+
+  const roofs = ofClass(all, 'IFCROOF').map(refOf)
+  const slabs = ofClass(all, 'IFCSLAB').map(refOf)
+  bind(n.backup, 'backup', roofs.length ? roofs.slice(0, 4) : slabs.slice(-1), [
+    rule(n.healthy, [{ field: 'status', op: 'eq', value: 'ok' }], '#22c55e', 0.5),
+    rule(n.backupFailed, [{ field: 'status', op: 'eq', value: 'failed' }], '#ff1f1f', 1, false, 0),
+  ])
+  return ctx.out
+}
+
 export function templateBindings(id: TwinTemplateId, trees: Record<string, SpatialNode[]>, sourceId: string, n: TemplateNames = TEMPLATE_NAMES_EN): Binding[] {
+  if (id === 'itops') return itopsBindings(trees, sourceId, n)
   return id === 'home' ? demoBindings(trees, sourceId, n) : communityBindings(trees, sourceId, n)
 }

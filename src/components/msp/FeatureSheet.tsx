@@ -6,14 +6,14 @@
 
 import { useEffect } from 'react'
 
-export type FeatureId = 'barcelona' | 'hotel' | 'solar' | 'helsinki' | 'tokyo' | 'quality'
+export type FeatureId = 'itops' | 'barcelona' | 'hotel' | 'solar' | 'helsinki' | 'tokyo' | 'quality'
 
 export interface Feature {
   title: string
   /** What the visitor is looking at, in one line. */
   line: string
-  /** What they should do first, if anything. */
-  tip?: string
+  /** Loads map tiles or live data from other servers when opened. */
+  external?: boolean
   /** Builds the app URL (needs the origin for model links). */
   url: (origin: string) => string
 }
@@ -21,34 +21,39 @@ export interface Feature {
 const VELA = (o: string) => `${o}/models/hotel-vela`
 
 export const FEATURES: Record<FeatureId, Feature> = {
+  itops: {
+    title: 'Office IT, live',
+    line: 'Wi-Fi, server room, CCTV, badge readers and backups on the building. Simulated feed.',
+    url: (o) => `/?model=${o}/Ifc2x3_Duplex_Architecture.ifc&name=Demo%20office&twin=itops&validate=0&ui=article&lang=en`,
+  },
   barcelona: {
+    external: true,
     title: 'Barcelona, live',
     line: 'Eight buildings on the real city. Bikes, chargers and traffic, live.',
-    tip: 'Tap “Load” when asked, then tap any icon.',
     url: () => '/?scene=/scenes/barcelona-placa-catalunya.scene.json&ui=article&lang=en',
   },
   hotel: {
+    external: true,
     title: 'A building in its real city',
     line: 'Hotel Vela on Barcelona’s map, terrain and coast.',
-    tip: 'Tap “Enable map” when asked. Drag to look around.',
     url: (o) => `/?model=${VELA(o)}/BCN-IVO-ZZ-XX-M3-A-0002.ifc,${VELA(o)}/BCN-IVO-ZZ-XX-M3-S-0002.ifc,${VELA(o)}/BCN-IVO-ZZ-XX-M3-M-0002.ifc&map=terrain,buildings,showcase&validate=0&ui=article&lang=en`,
   },
   solar: {
+    external: true,
     title: 'Sun and heat, real climate',
     line: 'A full year of sun on every facade, from ten years of real weather.',
-    tip: 'Tap “Load the climate and run”. About 20 seconds.',
     url: (o) => `/?model=${VELA(o)}/BCN-IVO-ZZ-XX-M3-A-0002.ifc&analysis=year:passive&validate=0&ui=kiosk&lang=en`,
   },
   helsinki: {
+    external: true,
     title: 'Helsinki, live',
     line: 'The central station and its bus bays, updated as buses arrive.',
-    tip: 'Tap “Load” when asked.',
     url: () => '/?scene=/scenes/helsinki-rautatientori.scene.json&ui=article&lang=en',
   },
   tokyo: {
+    external: true,
     title: 'Tokyo, live transit',
     line: 'Live transit around a site, on the 3D city.',
-    tip: 'Tap “Load” when asked.',
     url: () => '/?scene=/scenes/tokyo-tochomae.scene.json&ui=article&lang=en',
   },
   quality: {
@@ -72,7 +77,8 @@ export function FeatureSheet({ id, onClose, onWant }: { id: FeatureId; onClose: 
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
         <div className="min-w-0">
           <p className="text-[16px] font-semibold text-[var(--text)]">{f.title}</p>
-          <p className="text-[13px] leading-snug text-[var(--text-dim)]">{f.tip ?? f.line}</p>
+          <p className="text-[13px] leading-snug text-[var(--text-dim)]">{f.line}</p>
+          {f.external && <p className="mt-0.5 text-[11px] leading-snug text-[var(--text-faint)]">Loads live map and city data from public servers. Nothing you have is sent.</p>}
         </div>
         <div className="flex flex-none items-center gap-1">
           <a href={src} target="_blank" rel="noopener" className="hidden rounded-md px-2.5 py-1.5 text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface)] sm:inline">Full screen ↗</a>

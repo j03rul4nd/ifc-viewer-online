@@ -705,7 +705,19 @@
       "highUse": "Hoher Verbrauch",
       "fault": "Störung",
       "moving": "In Fahrt",
-      "fireAlarm": "Brandalarm"
+      "fireAlarm": "Brandalarm",
+      "itopsSource": "Demo-Büro · IT (simuliert)",
+      "accessPoint": "WLAN",
+      "serverRoom": "Serverraum",
+      "badge": "Ausweisleser",
+      "cctv": "Videoüberwachung",
+      "backup": "Backup",
+      "apDown": "Access Point ausgefallen",
+      "overheating": "Überhitzung > 27 °C",
+      "unpatched": "Patches < 85 %",
+      "healthy": "In Ordnung",
+      "suspicious": "Fehlgeschlagene Zutrittsversuche",
+      "backupFailed": "Backup fehlgeschlagen"
     },
     "tplName": {
       "home": "Vernetztes Haus",

@@ -804,6 +804,24 @@ export function isEmbeddedByOtherSite(): boolean {
   }
 }
 
+/**
+ * True when the app is framed by this site's event page (/msp-global). There the
+ * visitor opened a live feature on purpose, from a sheet that says it loads
+ * live map and city data from public servers: that tap is the answer, so the
+ * frame does not ask again. Only that page — a same-origin frame anywhere else
+ * (the blog's live examples) still asks.
+ */
+export function consentFromEventPage(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.self === window.top) return false
+    const top = window.top!.location
+    return top.origin === window.location.origin && /^\/msp-global\/?$/.test(top.pathname)
+  } catch {
+    return false
+  }
+}
+
 /** True when the app is running inside an iframe. */
 export function isEmbedded(): boolean {
   if (typeof window === 'undefined') return false

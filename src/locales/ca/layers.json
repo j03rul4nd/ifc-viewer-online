@@ -705,7 +705,19 @@
       "highUse": "Consum alt",
       "fault": "Avaria",
       "moving": "En marxa",
-      "fireAlarm": "Alarma d'incendi"
+      "fireAlarm": "Alarma d'incendi",
+      "itopsSource": "Oficina demo · IT (simulat)",
+      "accessPoint": "Wi-Fi",
+      "serverRoom": "Sala de servidors",
+      "badge": "Lector de targetes",
+      "cctv": "CCTV",
+      "backup": "Còpia de seguretat",
+      "apDown": "Punt d'accés caigut",
+      "overheating": "Sobreescalfament > 27 °C",
+      "unpatched": "Pegats < 85 %",
+      "healthy": "Correcte",
+      "suspicious": "Intents d'accés fallits",
+      "backupFailed": "Còpia fallida"
     },
     "tplName": {
       "home": "Casa connectada",

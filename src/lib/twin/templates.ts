@@ -2,7 +2,8 @@
 // One click from "I have an IFC open" to "my building is live": add the
 // simulated source of a template and bind its devices to what the loaded
 // models contain, with names in the user's language. Also the entry point of
-// the gallery's twin demos and of the `?twin=home|community` link.
+// the gallery's twin demos and of the `?twin=home|community|itops` link. `itops`
+// (an office IT estate) is link-only: it is not offered in the panel's list.
 
 import { useTwinDeviceStore } from '../../stores/twinDeviceStore'
 import { useValidationStore } from '../../stores/validationStore'
@@ -22,7 +23,7 @@ export function templateNames(): TemplateNames {
 }
 
 /** Add the template's source and bindings. Returns how many bindings were made. */
-export function applyTemplate(id: TwinTemplateId): number {
+export function applyTemplate(id: TwinTemplateId, opts: { openPanel?: boolean } = {}): number {
   const trees = useValidationStore.getState().spatialTrees
   const names = templateNames()
   const src = simulatedSource(id, names)
@@ -33,7 +34,7 @@ export function applyTemplate(id: TwinTemplateId): number {
   store.upsertSource(src)
   bindings.forEach((b) => store.upsertBinding(b))
   store.setActive(true)
-  store.setPanelOpen(true)
+  store.setPanelOpen(opts.openPanel ?? true)
   return bindings.length
 }
 
@@ -41,12 +42,12 @@ export function applyTemplate(id: TwinTemplateId): number {
  * Apply a template once models have loaded (gallery demo, shared link). Waits
  * for the spatial trees to stop changing, up to `timeoutMs`.
  */
-export function applyTemplateWhenLoaded(id: TwinTemplateId, minModels = 1, timeoutMs = 120_000): Promise<number> {
+export function applyTemplateWhenLoaded(id: TwinTemplateId, minModels = 1, timeoutMs = 120_000, opts: { openPanel?: boolean } = {}): Promise<number> {
   return new Promise((resolve) => {
     let settle: ReturnType<typeof setTimeout> | null = null
     const done = (): void => {
       unsub(); clearTimeout(giveUp)
-      resolve(applyTemplate(id))
+      resolve(applyTemplate(id, opts))
     }
     const check = (): void => {
       if (Object.keys(useValidationStore.getState().spatialTrees).length < minModels) return
@@ -62,5 +63,5 @@ export function applyTemplateWhenLoaded(id: TwinTemplateId, minModels = 1, timeo
 
 export function parseTwinParam(search: string): TwinTemplateId | null {
   const v = new URLSearchParams(search).get('twin')
-  return v === 'home' || v === 'community' ? v : null
+  return v === 'home' || v === 'community' || v === 'itops' ? v : null
 }

@@ -8,12 +8,13 @@
 // Not asked:
 //   - inside another website's frame: that page decided what it shows, as it
 //     does for the map's tiles (see useGeoEffects). A frame of this same site
-//     (the blog's live examples) asks like any page;
+//     (the blog's live examples) asks like any page, except the event page,
+//     where opening the feature was the answer (consentFromEventPage);
 //   - for what the visitor added themselves (layers saved on this device);
 //   - when no URL leaves this origin.
 
 import { create } from 'zustand'
-import { isEmbeddedByOtherSite } from '../url-params'
+import { consentFromEventPage, isEmbeddedByOtherSite } from '../url-params'
 
 export type ExternalDataKind = 'layers' | 'layersUrl' | 'twin' | 'scene'
 
@@ -118,7 +119,7 @@ export async function layersSetupHosts(doc: unknown): Promise<string[]> {
  * or another website frames the app).
  */
 export function confirmExternalData(kind: ExternalDataKind, hosts: string[]): Promise<boolean> {
-  if (hosts.length === 0 || isEmbeddedByOtherSite()) {
+  if (hosts.length === 0 || isEmbeddedByOtherSite() || consentFromEventPage()) {
     useExternalDataPrompt.setState({ expecting: false })
     return Promise.resolve(true)
   }

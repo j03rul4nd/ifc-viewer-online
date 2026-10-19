@@ -1058,11 +1058,13 @@ export default function App() {
     const v = (a: number[]) => ({ x: a[0], y: a[1], z: a[2] })
     return { position: v(c.position), target: v(c.target) }
   }, [urlParams.camera])
-  // `?twin=home|community`: a shared link that opens the model with a live twin demo on it.
+  // `?twin=home|community|itops`: a shared link that opens the model with a live twin demo on it.
   useEffect(() => {
-    const id = /[?&]twin=(home|community)\b/.exec(window.location.search)?.[1] as 'home' | 'community' | undefined
+    const id = /[?&]twin=(home|community|itops)\b/.exec(window.location.search)?.[1] as 'home' | 'community' | 'itops' | undefined
     if (!id) return
-    void import('./lib/twin/templates').then((m) => m.applyTemplateWhenLoaded(id))
+    // Framed (an article, the event page) the frame is the stage: the panel
+    // would cover the building its labels and colours are on.
+    void import('./lib/twin/templates').then((m) => m.applyTemplateWhenLoaded(id, 1, 120_000, { openPanel: window.self === window.top }))
   }, [])
   useEffect(() => {
     if (!twinInUse) return

@@ -864,7 +864,7 @@ export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 
 
 export type EventEntry = 'qr' | 'profile' | 'share' | 'direct'
 /** Which role the visitor tapped on the page ('none' = did not pick). */
-export type EventProfile = 'msp' | 'isv' | 'ops' | 'none'
+export type EventProfile = 'msp' | 'mssp' | 'isv' | 'ops' | 'none'
 
 export function trackEventPageViewed(props: { event: string; entry: EventEntry }): void {
   track('event_page_viewed', props)
