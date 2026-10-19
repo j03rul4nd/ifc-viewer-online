@@ -705,7 +705,19 @@
       "highUse": "高用量",
       "fault": "故障",
       "moving": "运行中",
-      "fireAlarm": "火灾报警"
+      "fireAlarm": "火灾报警",
+      "itopsSource": "演示办公室 · IT（模拟）",
+      "accessPoint": "Wi-Fi",
+      "serverRoom": "服务器机房",
+      "badge": "门禁读卡器",
+      "cctv": "监控摄像",
+      "backup": "备份",
+      "apDown": "接入点离线",
+      "overheating": "过热 > 27 °C",
+      "unpatched": "补丁 < 85 %",
+      "healthy": "正常",
+      "suspicious": "刷卡失败",
+      "backupFailed": "备份失败"
     },
     "tplName": {
       "home": "智能住宅",

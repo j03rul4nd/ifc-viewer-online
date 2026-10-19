@@ -210,7 +210,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
       <aside aria-label="What to try" className="flex min-w-0 flex-col gap-4">
         <ol className="flex flex-col gap-4">
           <Step n={1} done={loaded} title="Open Barcelona, live">
-            {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Tap “Load” when asked: it pulls the city’s live data.</>}
+            {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Live city data, loading.</>}
           </Step>
           
           <Step n={2} done={!!facts.live} title="Tap a bike or charger icon">
@@ -360,33 +360,40 @@ function Contact({ entry, profile, feature }: { entry: EventEntry; profile: Prof
 }
 
 // ── Who is reading ────────────────────────────────────────────────────────────
-// MSP GLOBAL is MSPs, integrators, software vendors and corporate IT. One tap
+// Who walks MSP GLOBAL: MSP owners and their sales people, security providers
+// (MSSPs), software vendors selling into the channel, and corporate IT. One tap
 // tells the page which, and the rest speaks to that person: one line of why,
-// the proof that fits them, and a form hint in their own words.
+// the feature to see first, and a form hint in their own words.
 
-type Profile = 'msp' | 'isv' | 'ops'
+type Profile = 'msp' | 'mssp' | 'isv' | 'ops'
 
 const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   msp: {
-    chip: 'I sell IT services',
-    why: 'A new service for clients you already have. No hardware. No install.',
-    hint: 'e.g. a client with 12 offices',
+    chip: 'I run an MSP',
+    why: 'Sell a site service. Every client building, its Wi-Fi, servers and cameras on one live screen. No hardware.',
+    hint: 'e.g. a client with 6 offices and 40 access points',
+  },
+  mssp: {
+    chip: 'I sell security',
+    why: 'Badge readers, cameras and server rooms on the building. Alerts show where they happen.',
+    hint: 'e.g. physical security for a client’s HQ',
   },
   isv: {
     chip: 'I sell software',
-    why: 'Add a 3D view to your product. One line of code.',
+    why: 'Add a live 3D view to your product. One line of code. Your data on your client’s building.',
     hint: 'e.g. a 3D tab in our platform',
   },
   ops: {
-    chip: 'I run buildings',
-    why: 'Know what is where. Tap anything, see everything.',
+    chip: 'I run IT or facilities',
+    why: 'Know what is where, and what is down. Tap anything, see everything.',
     hint: 'e.g. find equipment by floor',
   },
 }
 
-const ROLE_START: Record<Profile, FeatureId> = { msp: 'barcelona', isv: 'hotel', ops: 'helsinki' }
+const ROLE_START: Record<Profile, FeatureId> = { msp: 'itops', mssp: 'itops', isv: 'barcelona', ops: 'itops' }
 
 const GALLERY = [
+  { feature: 'itops' as FeatureId, src: '/msp-global/office-it.jpg', cap: 'An office’s Wi-Fi, servers and doors, live. Red when something is down.', tag: 'Managed IT' },
   { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
   { feature: 'solar' as FeatureId, src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
   { feature: 'helsinki' as FeatureId, src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live as buses arrive.', tag: 'Transport' },

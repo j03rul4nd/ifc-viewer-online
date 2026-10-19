@@ -705,7 +705,19 @@
       "highUse": "Forte consommation",
       "fault": "Panne",
       "moving": "En marche",
-      "fireAlarm": "Alarme incendie"
+      "fireAlarm": "Alarme incendie",
+      "itopsSource": "Bureau démo · IT (simulé)",
+      "accessPoint": "Wi-Fi",
+      "serverRoom": "Salle serveurs",
+      "badge": "Lecteur de badge",
+      "cctv": "Vidéosurveillance",
+      "backup": "Sauvegarde",
+      "apDown": "Point d'accès hors ligne",
+      "overheating": "Surchauffe > 27 °C",
+      "unpatched": "Correctifs < 85 %",
+      "healthy": "Sain",
+      "suspicious": "Tentatives de badge échouées",
+      "backupFailed": "Sauvegarde échouée"
     },
     "tplName": {
       "home": "Maison connectée",

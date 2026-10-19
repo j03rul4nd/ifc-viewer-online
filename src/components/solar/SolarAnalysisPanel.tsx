@@ -32,7 +32,7 @@ import { PASSIVE_BASE_PRESETS, passiveCss, passivePerDay, passiveScore } from '.
 import { hourlyAt, typicalFromHourly, climateFromHourly, distanceKm, type HourlyWeather } from '../../lib/solar-analysis/weather'
 import { readWeatherFile, WeatherFileError } from '../../lib/solar-analysis/epw'
 import { applySolarLocation, ensureSolarLocation } from '../../lib/solar/resolve-location'
-import { parseAppUrlParams, type AnalysisDeepLink } from '../../lib/url-params'
+import { consentFromEventPage, parseAppUrlParams, type AnalysisDeepLink } from '../../lib/url-params'
 import { trackSolarAnalysisCompleted, trackSolarWeatherFileLoaded } from '../../lib/analytics'
 import { ALBEDOS } from '../../lib/solar-analysis/irradiance'
 import { sunAlmanac } from '../../lib/solar/astronomy'
@@ -1005,6 +1005,12 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
         : r.climateError ? tt('analysis.climate.error', { message: r.climateError }) : null)
     }
   }, [linkAsk, linkReady, fireLink])
+
+  // On the event page the visitor already chose to see this run: fetch the
+  // climate and run without the card (see consentFromEventPage).
+  useEffect(() => {
+    if (linkAsk && consentFromEventPage()) void acceptLink()
+  }, [linkAsk, acceptLink])
 
   // The GPU can go away (driver reset, tab in the background on a phone): stop
   // whatever pass is running instead of waiting forever on a dead context.

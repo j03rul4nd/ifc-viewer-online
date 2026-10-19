@@ -705,7 +705,19 @@
       "highUse": "Consumo alto",
       "fault": "Guasto",
       "moving": "In movimento",
-      "fireAlarm": "Allarme incendio"
+      "fireAlarm": "Allarme incendio",
+      "itopsSource": "Ufficio demo · IT (simulato)",
+      "accessPoint": "Wi-Fi",
+      "serverRoom": "Sala server",
+      "badge": "Lettore badge",
+      "cctv": "Videosorveglianza",
+      "backup": "Backup",
+      "apDown": "Access point non raggiungibile",
+      "overheating": "Surriscaldamento > 27 °C",
+      "unpatched": "Patch < 85 %",
+      "healthy": "Integro",
+      "suspicious": "Tentativi di accesso falliti",
+      "backupFailed": "Backup non riuscito"
     },
     "tplName": {
       "home": "Casa connessa",

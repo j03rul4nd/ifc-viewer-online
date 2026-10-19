@@ -264,6 +264,11 @@
       navigator.serviceWorker
         .register('%BASE_URL%coi-serviceworker.js')
         .then(() => {
+          // Reload once to come back cross-origin isolated (multithreaded IFC
+          // parsing) — but only where that can happen and has not: Vercel now
+          // sends the headers itself, and Safari has no COEP credentialless, so
+          // a reload there only restarted a model load half way through.
+          if (window.crossOriginIsolated || !('credentialless' in HTMLIFrameElement.prototype)) return
           if (!sessionStorage.getItem('coiReloaded')) {
             sessionStorage.setItem('coiReloaded', '1')
             location.reload()

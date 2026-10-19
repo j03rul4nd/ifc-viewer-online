@@ -11,7 +11,7 @@ import { useGeoStore } from '../../stores/geoStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { appBus, MAP_CONSENT_DECLINED } from '../../lib/event-bus'
 import { publishInspectorTarget } from '../../lib/inspector'
-import { emitEmbedEvent, isEmbeddedByOtherSite } from '../../lib/url-params'
+import { consentFromEventPage, emitEmbedEvent, isEmbeddedByOtherSite } from '../../lib/url-params'
 import { modelRegistry } from '../../lib/model-registry'
 import { ensureGeorefExtracted } from '../../lib/geo/geo-extract-runner'
 import { resolvePlacement } from '../../lib/geo/placement'
@@ -95,7 +95,7 @@ export function useGeoEffects(
             throw new Error('No model in the scene — site context needs a loaded model')
           }
           if (!useGeoStore.getState().consentGiven) {
-            if (!isEmbeddedByOtherSite()) {
+            if (!isEmbeddedByOtherSite() && !consentFromEventPage()) {
               const accepted = await new Promise<boolean>((decide) => ctl.setFlow({ kind: 'consent', decide }))
               if (!accepted) throw new Error(MAP_CONSENT_DECLINED)
             } else {

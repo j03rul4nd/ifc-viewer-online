@@ -5,7 +5,7 @@
 
 // ── Pilot ideas ──────────────────────────────────────────────────────────────
 
-export type Role = 'msp' | 'isv' | 'ops'
+export type Role = 'msp' | 'mssp' | 'isv' | 'ops'
 
 import type { FeatureId } from './FeatureSheet'
 
@@ -13,18 +13,23 @@ interface Idea { title: string; line: string; status: 'Live' | 'Pilot'; feature?
 
 const IDEAS: Record<Role, Idea[]> = {
   msp: [
-    { title: 'Site viewer for clients', line: 'All their buildings, one link.', status: 'Live', feature: 'barcelona' },
-    { title: 'Tap it, ticket it', line: 'An asset tap opens a helpdesk ticket.', status: 'Pilot' },
-    { title: 'Sun and energy reports', line: 'Heat and daylight per facade, real climate.', status: 'Live', feature: 'solar' },
+    { title: 'Site view for every client', line: 'Their buildings, Wi-Fi and servers, live.', status: 'Live', feature: 'itops' },
+    { title: 'Alert to ticket', line: 'A red room opens a ticket in your PSA.', status: 'Pilot' },
+    { title: 'Their street, live', line: 'Traffic and transport around the site.', status: 'Live', feature: 'barcelona' },
+  ],
+  mssp: [
+    { title: 'Physical security on the plan', line: 'Badge readers and cameras where they are.', status: 'Live', feature: 'itops' },
+    { title: 'Alerts to your SOC', line: 'Building events into your SIEM.', status: 'Pilot' },
+    { title: 'Server room watch', line: 'Heat and UPS, before they fail.', status: 'Live', feature: 'itops' },
   ],
   isv: [
-    { title: 'A 3D tab in your app', line: 'Embed it with one line.', status: 'Live', feature: 'hotel' },
+    { title: 'A 3D tab in your app', line: 'Embed it with one line.', status: 'Live', feature: 'barcelona' },
     { title: 'File quality checks', line: 'Catch bad data before it costs money.', status: 'Live', feature: 'quality' },
     { title: 'Your brand on it', line: 'Your logo, your domain.', status: 'Pilot' },
   ],
   ops: [
+    { title: 'Office IT, live', line: 'Every access point and server room on the plan.', status: 'Live', feature: 'itops' },
     { title: 'Walk, bike or drive times', line: 'Real routes, door to door, indoors too.', status: 'Live' },
-    { title: 'The city around your site', line: 'Live transit, on the map.', status: 'Live', feature: 'tokyo' },
     { title: 'Maintenance by location', line: 'Work orders on the exact spot.', status: 'Pilot' },
   ],
 }

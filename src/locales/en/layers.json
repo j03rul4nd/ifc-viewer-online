@@ -705,7 +705,19 @@
       "highUse": "High use",
       "fault": "Fault",
       "moving": "Moving",
-      "fireAlarm": "Fire alarm"
+      "fireAlarm": "Fire alarm",
+      "itopsSource": "Demo office IT (simulated)",
+      "accessPoint": "Wi-Fi",
+      "serverRoom": "Server room",
+      "badge": "Badge reader",
+      "cctv": "CCTV",
+      "backup": "Backup",
+      "apDown": "Access point down",
+      "overheating": "Overheating > 27 °C",
+      "unpatched": "Patching < 85 %",
+      "healthy": "Healthy",
+      "suspicious": "Failed badge attempts",
+      "backupFailed": "Backup failed"
     },
     "tplName": {
       "home": "Connected home",
