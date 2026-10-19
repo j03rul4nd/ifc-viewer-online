@@ -870,7 +870,8 @@ export function trackEventPageViewed(props: { event: string; entry: EventEntry }
   track('event_page_viewed', props)
 }
 
-export function trackEventDemoOpened(props: { event: string; entry: EventEntry; profile: EventProfile }): void {
+/** `feature`: which live feature opened ('demo' = the inline demo); an id, never content. */
+export function trackEventDemoOpened(props: { event: string; entry: EventEntry; profile: EventProfile; feature: string }): void {
   track('event_demo_opened', props)
 }
 
@@ -880,6 +881,6 @@ export function trackEventDemoInteraction(props: { event: string; entry: EventEn
 }
 
 /** The contact was stored by the Worker (only fired on a confirmed 200). */
-export function trackEventContactSent(props: { event: string; entry: EventEntry; profile: EventProfile }): void {
+export function trackEventContactSent(props: { event: string; entry: EventEntry; profile: EventProfile; feature: string }): void {
   track('event_contact_sent', props)
 }
