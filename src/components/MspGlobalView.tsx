@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { PilotIdeas, INTENTS, type Intent } from './msp/EventPanels'
+import { FeatureSheet, FEATURES, type FeatureId } from './msp/FeatureSheet'
 import {
   trackEventPageViewed, trackEventDemoOpened, trackEventDemoInteraction, trackEventContactSent,
   type EventEntry,
@@ -109,7 +110,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
     setFacts({})
     setState('loading')
     setRun((r) => r + 1)
-    trackEventDemoOpened({ event: EVENT_ID, entry, profile: profile ?? 'none' })
+    trackEventDemoOpened({ event: EVENT_ID, entry, profile: profile ?? 'none', feature: 'demo' })
   }, [entry, profile])
 
   // Events from the framed viewer. Same origin only.
@@ -248,7 +249,7 @@ type SendState = { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent' } | { k
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | null }) {
+function Contact({ entry, profile, feature }: { entry: EventEntry; profile: Profile | null; feature: FeatureId | null }) {
   const startedAt = useRef(Date.now())
   const [send, setSend] = useState<SendState>({ kind: 'idle' })
   const [fieldError, setFieldError] = useState<string | null>(null)
@@ -273,13 +274,13 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
           name, email, company, message,
           website: val('website'),
           elapsed_ms: Date.now() - startedAt.current,
-          event: EVENT_ID, entry, profile: profile ?? '', intent: intent ?? '',
+          event: EVENT_ID, entry, profile: profile ?? '', intent: intent ?? '', feature: feature ?? '',
         }),
       })
       const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null
       if (res.ok && data?.ok) {
         setSend({ kind: 'sent' })
-        trackEventContactSent({ event: EVENT_ID, entry, profile: profile ?? 'none' })
+        trackEventContactSent({ event: EVENT_ID, entry, profile: profile ?? 'none', feature: feature ?? 'none' })
       } else {
         setSend({ kind: 'error', msg: data?.error ?? 'Something went wrong on my side. Please try again, or find me on LinkedIn.' })
       }
@@ -331,7 +332,7 @@ function Contact({ entry, profile }: { entry: EventEntry; profile: Profile | nul
         <input name="company" autoComplete="organization" maxLength={160} className={input} />
       </label>
       <label className={label}>What would you use it for?
-        <textarea name="message" required rows={2} maxLength={1000} className={input} placeholder={profile ? PROFILES[profile].hint : 'One line is enough'} />
+        <textarea name="message" required rows={2} maxLength={1000} className={input} placeholder={feature ? `e.g. ${FEATURES[feature].title} for our clients` : profile ? PROFILES[profile].hint : 'One line is enough'} />
       </label>
       {/* Honeypot: hidden from people and screen readers; bots fill it. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
@@ -382,20 +383,23 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   },
 }
 
+const ROLE_START: Record<Profile, FeatureId> = { msp: 'barcelona', isv: 'hotel', ops: 'helsinki' }
+
 const GALLERY = [
-  { src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
-  { src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
-  { src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live.', tag: 'Transport' },
-  { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Live transit around any site.', tag: 'Cities' },
+  { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
+  { feature: 'solar' as FeatureId, src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
+  { feature: 'helsinki' as FeatureId, src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live.', tag: 'Transport' },
+  { feature: 'tokyo' as FeatureId, src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Live transit around any site.', tag: 'Cities' },
 ]
 
-const LIVE_TWIN = '/?scene=/scenes/helsinki-rautatientori.scene.json'
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MspGlobalView() {
   const entry = useMemo(readEntry, [])
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [sheet, setSheet] = useState<FeatureId | null>(null)
+  const [interest, setInterest] = useState<FeatureId | null>(null)
   const contactRef = useRef<HTMLElement>(null)
   const demoRef = useRef<HTMLElement>(null)
 
@@ -406,6 +410,15 @@ export default function MspGlobalView() {
 
   const toContact = () => contactRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const toDemo = () => demoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const openFeature = (id: FeatureId) => {
+    setSheet(id)
+    trackEventDemoOpened({ event: EVENT_ID, entry, profile: profile ?? 'none', feature: id })
+  }
+  const want = () => {
+    setInterest(sheet)
+    setSheet(null)
+    window.setTimeout(toContact, 50)
+  }
 
   const a = 'underline decoration-[var(--border-strong)] underline-offset-4 hover:decoration-[var(--text-dim)]'
   const h2 = 'text-[24px] font-semibold leading-tight tracking-tight sm:text-[28px]'
@@ -425,7 +438,8 @@ export default function MspGlobalView() {
           </h1>
           <p className="mt-3 text-[18px] text-[var(--text-dim)]">Every site, asset and sensor in one link. Opens on any phone.</p>
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
-            <video
+            <button type="button" onClick={() => openFeature('barcelona')} className="group relative block w-full" aria-label="Open Barcelona live">
+              <video
               src="/msp-global/barcelona-live.webm"
               poster="/msp-global/barcelona-live.jpg"
               width={800} height={500}
@@ -433,6 +447,8 @@ export default function MspGlobalView() {
               aria-label="Barcelona's Plaça de Catalunya in 3D, with live bike, charger and traffic markers"
               className="block aspect-[8/5] h-auto w-full bg-black object-cover"
             />
+              <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 text-[13px] font-medium text-white group-hover:bg-black/85">Tap to explore ↗</span>
+            </button>
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
               Real screen: Barcelona, live. Bikes, chargers, traffic.
@@ -469,6 +485,11 @@ export default function MspGlobalView() {
               {PROFILES[profile].why}
             </p>
           )}
+          {profile && (
+            <button type="button" onClick={() => openFeature(ROLE_START[profile])} className="mt-4 rounded-lg bg-[var(--accent)] px-5 py-3 text-[16px] font-semibold text-white hover:brightness-110">
+              See it live: {FEATURES[ROLE_START[profile]].title} →
+            </button>
+          )}
         </section>
 
         {/* Screen 3: the proof, in their hands. */}
@@ -487,7 +508,7 @@ export default function MspGlobalView() {
             <span className="text-[var(--ok)]">Ready</span> works today. <span className="text-[var(--warn)]">Pilot</span> needs a first partner.
           </p>
           <div className="mt-5">
-            <PilotIdeas role={profile} />
+            <PilotIdeas role={profile} onOpen={openFeature} />
           </div>
         </section>
 
@@ -496,19 +517,21 @@ export default function MspGlobalView() {
           <h2 className={h2}>What your clients could see</h2>
           <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
             {GALLERY.map((g) => (
-              <figure key={g.src} className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] sm:w-auto">
-                <img src={g.src} alt={g.cap} width={800} height={450} loading="lazy" className="block aspect-[8/5] h-auto w-full object-cover" />
-                <figcaption className="px-3 py-2.5">
+              <button
+                key={g.src}
+                type="button"
+                onClick={() => openFeature(g.feature)}
+                className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left hover:border-[var(--border-strong)] sm:w-auto"
+              >
+                <img src={g.src} alt={g.cap} width={800} height={500} loading="lazy" className="block aspect-[8/5] h-auto w-full object-cover" />
+                <span className="block px-3 py-2.5">
                   <span className="text-[12px] font-medium uppercase tracking-wide text-[var(--accent-2)]">{g.tag}</span>
                   <span className="mt-0.5 block text-[15px] text-[var(--text)]">{g.cap}</span>
-                </figcaption>
-              </figure>
+                  <span className="mt-1 block text-[13px] font-medium text-[var(--accent-2)]">Open it live →</span>
+                </span>
+              </button>
             ))}
           </div>
-          <a href={LIVE_TWIN} target="_blank" rel="noopener" className="mt-4 inline-block text-[16px] font-medium text-[var(--accent-2)] hover:underline">
-            Open Helsinki live →
-          </a>
-          <p className="mt-1 text-[13px] text-[var(--text-faint)]">Best on a laptop.</p>
         </section>
 
         {/* Screen 5: who, in two lines. */}
@@ -535,10 +558,12 @@ export default function MspGlobalView() {
           <h2 className={h2}>Want to be first?</h2>
           <p className="mt-2 text-[16px] text-[var(--text-dim)]">Pilot, partnership or investment. One line is enough.</p>
           <div className="mt-5 max-w-[720px]">
-            <Contact entry={entry} profile={profile} />
+            <Contact entry={entry} profile={profile} feature={interest} />
           </div>
         </section>
       </div>
+
+      {sheet && <FeatureSheet id={sheet} onClose={() => setSheet(null)} onWant={want} />}
 
       {/* Phone: the next step is always one thumb away. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3 sm:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
