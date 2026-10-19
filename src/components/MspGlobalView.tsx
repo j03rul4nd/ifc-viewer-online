@@ -26,7 +26,7 @@ const EVENT_ID = 'msp-global-2026'
 // chargers, traffic and air quality read live. `ui=article` gives the tap-to-read
 // data card and the guided tour.
 const DEMO_SCENE = '/scenes/barcelona-placa-catalunya.scene.json'
-const POSTER = '/msp-global/barcelona-live.jpg'
+const POSTER = '/msp-global/data-card.jpg'
 const LOAD_TIMEOUT_MS = 90_000
 
 const LINKS = {
@@ -388,8 +388,8 @@ const ROLE_START: Record<Profile, FeatureId> = { msp: 'barcelona', isv: 'hotel',
 const GALLERY = [
   { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
   { feature: 'solar' as FeatureId, src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
-  { feature: 'helsinki' as FeatureId, src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live.', tag: 'Transport' },
-  { feature: 'tokyo' as FeatureId, src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Live transit around any site.', tag: 'Cities' },
+  { feature: 'helsinki' as FeatureId, src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live as buses arrive.', tag: 'Transport' },
+  { feature: 'barcelona' as FeatureId, src: '/msp-global/barcelona-district.jpg', cap: 'A whole district: traffic, bikes, chargers, live.', tag: 'Cities' },
 ]
 
 
@@ -522,7 +522,7 @@ export default function MspGlobalView() {
                 onClick={() => openFeature(g.feature)}
                 className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left hover:border-[var(--border-strong)] sm:w-auto"
               >
-                <img src={g.src} alt={g.cap} width={800} height={500} loading="lazy" className="block aspect-[8/5] h-auto w-full object-cover" />
+                <img src={g.src} alt={g.cap} width={1200} height={750} loading="lazy" className="block aspect-[8/5] h-auto w-full object-cover" />
                 <span className="block px-3 py-2.5">
                   <span className="text-[12px] font-medium uppercase tracking-wide text-[var(--accent-2)]">{g.tag}</span>
                   <span className="mt-0.5 block text-[15px] text-[var(--text)]">{g.cap}</span>
@@ -531,6 +531,9 @@ export default function MspGlobalView() {
               </button>
             ))}
           </div>
+          <p className="mt-3 text-[11px] leading-snug text-[var(--text-faint)]">
+            Real screens. Map data © OpenStreetMap contributors, OpenFreeMap, Overture Maps; terrain ICGC and Mapzen; live data from Barcelona, HSL and FMI open data; climate ERA5 via Open-Meteo.
+          </p>
         </section>
 
         {/* Screen 5: who, in two lines. */}
