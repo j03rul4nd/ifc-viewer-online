@@ -29,6 +29,7 @@ const ALLOWED_ORIGINS = [
   'https://ifcvieweronline.eu',
   'http://localhost:5173',
   'http://localhost:4173',
+  'http://localhost:3000',
 ]
 
 // Where the SPA lives. Override with the APP_URL var in wrangler.toml.
@@ -858,6 +859,101 @@ async function handleBenchGet(env, cors) {
   })
 }
 
+// ── Event contact form (/msp-global) ─────────────────────────────────────────
+//
+// A handful of people at a trade fair asking to talk. Stored in the LEADS KV
+// namespace, one key per submission, and read back only through /leads with the
+// LEADS_ADMIN_TOKEN secret. No newsletter, no Resend, no third party.
+//
+// Without the binding the endpoint says so (503): the page must never show
+// "sent" for a contact that was not stored.
+
+const LEAD_PREFIX = 'lead:'
+const LEAD_MIN_FILL_MS = 2500
+const LEAD_FIELDS = ['created_at', 'name', 'email', 'company', 'message', 'event', 'entry']
+
+function cleanText(v, max) {
+  if (typeof v !== 'string') return ''
+  // eslint-disable-next-line no-control-regex
+  return v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max)
+}
+
+async function handleLead(request, env, cors) {
+  if (!cors) return jsonResponse({ ok: false, error: 'Forbidden' }, 403)
+  if (!(await underLimit(env.SUBSCRIBE_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'Too many attempts. Please wait a minute.' }, 429, { ...cors, 'Retry-After': '60' })
+  }
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, cors)
+  }
+  // Honeypot and fill time: bots fill every field and submit instantly. Answer
+  // them like a success so they do not retry, but store nothing.
+  const elapsed = Number(body?.elapsed_ms)
+  if (cleanText(body?.website, 200) || !Number.isFinite(elapsed) || elapsed < LEAD_MIN_FILL_MS) {
+    return jsonResponse({ ok: true }, 200, cors)
+  }
+  const lead = {
+    created_at: new Date().toISOString(),
+    name:    cleanText(body?.name, 120),
+    email:   cleanText(body?.email, 254).toLowerCase(),
+    company: cleanText(body?.company, 160),
+    message: cleanText(body?.message, 1000),
+    event:   cleanText(body?.event, 40) || 'unknown',
+    entry:   cleanText(body?.entry, 20) || 'direct',
+  }
+  if (lead.name.length < 2) return jsonResponse({ ok: false, error: 'Please add your name.' }, 400, cors)
+  if (!isValidEmail(lead.email)) return jsonResponse({ ok: false, error: 'That email address does not look right.' }, 400, cors)
+  if (lead.message.length < 3) return jsonResponse({ ok: false, error: 'Tell me briefly what you want to solve.' }, 400, cors)
+  if (!env.LEADS) {
+    return jsonResponse({ ok: false, error: 'The form is not available right now. Please email me instead.' }, 503, cors)
+  }
+  const key = `${LEAD_PREFIX}${lead.created_at}:${crypto.randomUUID().slice(0, 8)}`
+  await env.LEADS.put(key, JSON.stringify(lead))
+  return jsonResponse({ ok: true }, 200, cors)
+}
+
+function safeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
+
+function csvCell(v) {
+  let s = String(v ?? '')
+  // Spreadsheet formula injection: a cell starting with = + - @ runs as a formula.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+/** GET /leads[?format=json] — Authorization: Bearer <LEADS_ADMIN_TOKEN>. */
+async function handleLeadsExport(request, url, env) {
+  const auth = request.headers.get('Authorization') ?? ''
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+  if (!env.LEADS_ADMIN_TOKEN || !safeEqual(token, env.LEADS_ADMIN_TOKEN)) {
+    return jsonResponse({ ok: false, error: 'Unauthorized' }, 401)
+  }
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'LEADS not bound' }, 503)
+  const leads = []
+  let cursor
+  do {
+    const page = await env.LEADS.list({ prefix: LEAD_PREFIX, cursor })
+    for (const k of page.keys) {
+      const raw = await env.LEADS.get(k.name)
+      if (raw) { try { leads.push(JSON.parse(raw)) } catch { /* skip */ } }
+    }
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+  const noStore = { 'Cache-Control': 'no-store' }
+  if (url.searchParams.get('format') === 'json') return jsonResponse({ ok: true, leads }, 200, noStore)
+  const csv = [LEAD_FIELDS.join(','), ...leads.map((l) => LEAD_FIELDS.map((f) => csvCell(l[f])).join(','))].join('\r\n')
+  return new Response('﻿' + csv + '\r\n', {
+    status: 200,
+    headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="leads.csv"', ...noStore },
+  })
+}
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -913,6 +1009,16 @@ export default {
       }
       if (url.pathname === '/bench' && request.method === 'POST') {
         return await handleBenchPost(request, env, corsHeaders(origin))
+      }
+
+      // Event contact form, and its private export
+      if (url.pathname === '/lead' && request.method === 'POST') {
+        // Same-origin through the Vercel rewrite (or the dev proxy on any port).
+        const leadCors = corsHeaders(origin) ?? (/^http:\/\/localhost:\d+$/.test(origin) ? { 'Access-Control-Allow-Origin': origin } : null)
+        return await handleLead(request, env, leadCors)
+      }
+      if (url.pathname === '/leads' && request.method === 'GET') {
+        return await handleLeadsExport(request, url, env)
       }
 
       // Email capture

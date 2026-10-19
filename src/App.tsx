@@ -76,6 +76,8 @@ const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
+// /msp-global — event page behind the MSP GLOBAL 2026 QR.
+const LazyMspGlobalView = React.lazy(() => import('./components/MspGlobalView'))
 // Paid-workspace design on sample data — team-only (pricing preview gate).
 const LazyWorkspacePreview = React.lazy(() => import('./components/workspace/WorkspacePreview'))
 import type { SharedReportPayload } from './components/SharedReportView'
@@ -639,6 +641,7 @@ export default function App() {
       if (rel.startsWith('/verify/')) return 'verify'
       if (rel === '/welcome' || rel.startsWith('/welcome/')) return 'welcome'
       if (rel === '/ebook'   || rel.startsWith('/ebook/'))   return 'ebook'
+      if (rel === '/msp-global' || rel === '/msp-global/') return 'msp'
       if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) return 'workspace'
       // Dedicated auth pages (F2) — only exist when accounts are enabled.
       if (isAccountEnabled()) {
@@ -655,7 +658,7 @@ export default function App() {
   // Locale-driven document meta. Disabled on routes that own their own title
   // and share metadata. This hook lives in the parent, so it would otherwise
   // overwrite blog/article meta after the child effect has set it.
-  useSeo({ enabled: route !== 'ebook' && route !== 'blog' })
+  useSeo({ enabled: route !== 'ebook' && route !== 'blog' && route !== 'msp' })
 
   // /verify/<cert_hash> — public certificate verification (F1). NOT in the
   // sitemap (the space of hashes is unbounded).
@@ -764,6 +767,8 @@ export default function App() {
         setRoute('welcome')
       } else if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) {
         setRoute('workspace')
+      } else if (rel === '/msp-global' || rel === '/msp-global/') {
+        setRoute('msp')
       } else if (rel === '/ebook' || rel.startsWith('/ebook/')) {
         setRoute('ebook')
         setEbookRoute(/^\/ebook\/([^/]*)\/?$/.exec(rel)?.[1] ?? '')
@@ -4390,6 +4395,20 @@ export default function App() {
           >
             <React.Suspense fallback={null}>
               <LazyEbookView onNavigateToLanding={handleNavigateToLanding} book={ebookByRoute(ebookRoute)} />
+            </React.Suspense>
+          </motion.div>
+        )}
+
+        {route === 'msp' && (
+          <motion.div
+            key="msp"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyMspGlobalView />
             </React.Suspense>
           </motion.div>
         )}
