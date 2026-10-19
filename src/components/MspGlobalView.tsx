@@ -21,9 +21,12 @@ import {
 } from '../lib/analytics'
 
 const EVENT_ID = 'msp-global-2026'
-const DEMO_MODEL = '/Ifc2x3_Duplex_Architecture.ifc'
-const POSTER = '/modelscene.png'
-const LOAD_TIMEOUT_MS = 30_000
+// The live Barcelona twin: 8 IFC models on the real city, with bikes, EV
+// chargers, traffic and air quality read live. `ui=article` gives the tap-to-read
+// data card and the guided tour.
+const DEMO_SCENE = '/scenes/barcelona-placa-catalunya.scene.json'
+const POSTER = '/msp-global/barcelona-live.jpg'
+const LOAD_TIMEOUT_MS = 90_000
 
 const LINKS = {
   portfolio: 'https://joelbenitez.dev',
@@ -58,22 +61,12 @@ function hasWebGL(): boolean {
 type DemoState = 'idle' | 'loading' | 'ready' | 'failed'
 
 interface DemoFacts {
+  live?: string
   elements?: number
   picked?: { type: string; name: string; id: string }
   score?: number | null
   errors?: number
   warnings?: number
-}
-
-const FRIENDLY: Record<string, string> = {
-  BUILDINGELEMENTPROXY: 'generic element', CURTAINWALL: 'curtain wall', FLOWTERMINAL: 'fixture',
-  FURNISHINGELEMENT: 'furniture item', STAIRFLIGHT: 'stair flight', OPENINGELEMENT: 'opening',
-}
-
-/** IFCWALLSTANDARDCASE → "wall". The viewer reports the raw upper-case type. */
-function prettyType(t: string): string {
-  const core = t.toUpperCase().replace(/^IFC/, '').replace(/STANDARDCASE$|ELEMENTEDCASE$/, '')
-  return FRIENDLY[core] ?? core.toLowerCase()
 }
 
 function Step({ n, done, title, children }: { n: number; done: boolean; title: string; children?: ReactNode }) {
@@ -107,8 +100,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
 
   const src = useMemo(() => {
     if (typeof window === 'undefined') return ''
-    const model = `${window.location.origin}${DEMO_MODEL}`
-    const q = new URLSearchParams({ model, name: 'Duplex house (sample)', embed: '1', ui: 'minimal', lang: 'en' })
+    const q = new URLSearchParams({ scene: DEMO_SCENE, ui: 'article', lang: 'en' })
     return `/?${q.toString()}`
   }, [])
 
@@ -129,7 +121,12 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
       if (!d || d.source !== 'ifc-validator') return
       if (d.type === 'model-loaded') {
         setState('ready')
-        setFacts((f) => ({ ...f, elements: typeof d.elementCount === 'number' ? d.elementCount : undefined }))
+      } else if (d.type === 'layer-feature-picked') {
+        setFacts((f) => ({ ...f, live: typeof d.layer === 'string' ? d.layer : 'live data' }))
+        if (!interacted.current) {
+          interacted.current = true
+          trackEventDemoInteraction({ event: EVENT_ID, entry })
+        }
       } else if (d.type === 'model-error') {
         setState('failed')
       } else if (d.type === 'validation-completed') {
@@ -170,7 +167,7 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
             className="group absolute inset-0 flex items-end justify-center"
             aria-label="Open the live demo"
           >
-            <img src={POSTER} alt="The viewer showing a building model with its element tree and properties" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+            <img src={POSTER} alt="Barcelona's Plaça de Catalunya in 3D, with live bike, charger and traffic markers" className="absolute inset-0 h-full w-full object-cover opacity-70" />
             <span className="relative mb-6 rounded-lg bg-[var(--accent)] px-5 py-3 text-[15px] font-semibold text-white shadow-lg group-hover:brightness-110">
               Open the live demo
             </span>
@@ -188,14 +185,14 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
             />
             {state === 'loading' && (
               <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/70 px-3 py-1.5 text-[13px] text-white" role="status">
-                Opening a 2.4 MB sample model…
+                Opening Barcelona, live…
               </div>
             )}
           </>
         )}
         {state === 'failed' && (
           <div className="absolute inset-0">
-            <img src={POSTER} alt="Screenshot of the viewer with a building model loaded" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+            <img src={POSTER} alt="Screenshot of the live Barcelona twin" className="absolute inset-0 h-full w-full object-cover opacity-40" />
             <div className="relative flex h-full flex-col items-center justify-center gap-3 p-6 text-center" role="alert">
               <p className="max-w-sm text-[15px] text-white">
                 The live demo couldn't start on this device or connection. The screenshot behind this message is the real viewer.
@@ -210,26 +207,22 @@ function Demo({ entry, profile, onTalk }: { entry: EventEntry; profile: Profile 
 
       <aside aria-label="What to try" className="flex min-w-0 flex-col gap-4">
         <ol className="flex flex-col gap-4">
-          <Step n={1} done={loaded} title="Open a building">
-            {loaded && facts.elements != null
-              ? <>{facts.elements.toLocaleString('en')} parts. On your phone.</>
-              : <>A real house file.</>}
+          <Step n={1} done={loaded} title="Open Barcelona, live">
+            {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Tap “Load map and data” when asked.</>}
           </Step>
-          <Step n={2} done={!!facts.picked} title="Tap a wall">
+          <Step n={2} done={!!facts.picked} title="Tap a building">
             {facts.picked
-              ? <>You tapped a <strong className="text-[var(--text)]">{prettyType(facts.picked.type)}</strong>. It knows what it is.</>
+              ? <>{facts.picked.name ? <>“{facts.picked.name}”. </> : null}Its data opens in a card.</>
               : <>Every part knows what it is.</>}
           </Step>
-          <Step n={3} done={facts.score != null} title="See its health score">
-            {facts.score != null
-              ? <><strong className="text-[var(--text)]">{facts.score}/100</strong>{facts.errors != null && facts.errors > 0 && <> · {facts.errors} {facts.errors === 1 ? 'problem' : 'problems'} found</>}.</>
-              : <>Problems, found for you.</>}
+          <Step n={3} done={!!facts.live} title="Tap a bike or charger icon">
+            {facts.live ? <>{facts.live}: live from the city.</> : <>Real-time city data.</>}
           </Step>
         </ol>
 
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[14px] leading-relaxed text-[var(--text-dim)]">
           <p>
-            <strong className="text-[var(--text)]">That tap</strong> could open a ticket in your helpdesk.
+            <strong className="text-[var(--text)]">Swap the city data for yours:</strong> sensors, tickets, assets.
           </p>
         </div>
 
@@ -389,9 +382,9 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
 }
 
 const GALLERY = [
-  { src: '/blog/images/urban-digital-twin-helsinki-live-800.jpg', cap: 'Helsinki: buses, live', tag: 'Live' },
-  { src: '/blog/images/bim-model-in-city-context-800.jpg', cap: 'Barcelona: a whole district', tag: 'City' },
-  { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Tokyo: transit, live', tag: 'Live' },
+  { src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
+  { src: '/blog/images/bus-terminal-digital-twin-bay-card-800.jpg', cap: 'Every bus bay, live. Tap one, see its status.', tag: 'Transport' },
+  { src: '/blog/images/urban-digital-twin-tokyo-live-800.jpg', cap: 'Live transit around any site.', tag: 'Cities' },
 ]
 
 const LIVE_TWIN = '/?scene=/scenes/helsinki-rautatientori.scene.json'
@@ -431,15 +424,15 @@ export default function MspGlobalView() {
           <p className="mt-3 text-[18px] text-[var(--text-dim)]">Every site, asset and sensor in one link. Opens on any phone.</p>
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
             <img
-              src="/blog/images/bus-terminal-digital-twin-bay-card-800.jpg"
-              alt="A Helsinki bus terminal model on the city map, with one bay selected showing its live data and properties"
+              src="/msp-global/hotel-vela.jpg"
+              alt="Hotel Vela in Barcelona as a 3D model, on the real city and coastline"
               width={800} height={450}
               className="block h-auto w-full"
               fetchPriority="high"
             />
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screen: a Helsinki bus terminal, live.
+              Real screen: Hotel Vela, on the real Barcelona.
             </figcaption>
           </figure>
           <button type="button" onClick={toDemo} className="mt-5 w-full rounded-lg bg-[var(--accent)] px-5 py-3.5 text-[17px] font-semibold text-white hover:brightness-110 sm:w-auto">
@@ -497,7 +490,7 @@ export default function MspGlobalView() {
 
         {/* Screen 4: the range. Pictures, not paragraphs. */}
         <section className="pt-14">
-          <h2 className={h2}>Already running</h2>
+          <h2 className={h2}>What your clients could see</h2>
           <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
             {GALLERY.map((g) => (
               <figure key={g.src} className="w-[82%] flex-none snap-start overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] sm:w-auto">
