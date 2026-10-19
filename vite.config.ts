@@ -309,6 +309,9 @@ export default defineConfig({
     // PORT env override lets tooling (preview harness, CI) assign a free port;
     // day-to-day dev stays on 3000.
     port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
+    // /api/lead is a Vercel rewrite to the Worker in production; in dev it goes
+    // to `wrangler dev` (cf-worker/, port 8787).
+    proxy: { '/api/lead': { target: 'http://127.0.0.1:8787', rewrite: () => '/lead' } },
     headers: {
       'Cross-Origin-Opener-Policy':   'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',

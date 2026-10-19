@@ -857,3 +857,27 @@ export function trackBlogFeedback(props: { slug: string; lang: string; vote: 'ye
 export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 'article'; lang: string }): void {
   track('blog_tool_clicked', props)
 }
+
+// ── Event page (/msp-global) ──────────────────────────────────────────────────
+// Four events, enum-only. `entry` is where the visit came from (the printed QR,
+// the event profile link, or neither) — never a name, address or form answer.
+
+export type EventEntry = 'qr' | 'profile' | 'direct'
+
+export function trackEventPageViewed(props: { event: string; entry: EventEntry }): void {
+  track('event_page_viewed', props)
+}
+
+export function trackEventDemoOpened(props: { event: string; entry: EventEntry }): void {
+  track('event_demo_opened', props)
+}
+
+/** First element picked inside the event demo (session-once, guarded by the caller). */
+export function trackEventDemoInteraction(props: { event: string; entry: EventEntry }): void {
+  track('event_demo_interaction', props)
+}
+
+/** The contact was stored by the Worker (only fired on a confirmed 200). */
+export function trackEventContactSent(props: { event: string; entry: EventEntry }): void {
+  track('event_contact_sent', props)
+}

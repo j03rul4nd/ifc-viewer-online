@@ -1,4 +1,4 @@
-export type Route = 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'workspace'
+export type Route = 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'workspace'
 export type ViewerStyle = 'shaded' | 'blueprint' | 'xray'
 export type LoadPhase = 'reading' | 'parsing' | 'uploading' | 'done'
 
