@@ -37,19 +37,19 @@ const IDEAS: Record<Role, Idea[]> = {
 export function PilotIdeas({ role, onOpen }: { role: Role | null; onOpen: (id: FeatureId) => void }) {
   const list = IDEAS[role ?? 'msp']
   return (
-    <ul className="grid gap-2.5 sm:grid-cols-3">
+    <ul className="grid gap-2.5 sm:grid-cols-3 md:gap-4">
       {list.map((i) => {
         const inner = (
           <>
             <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
               i.status === 'Live' ? 'border border-[var(--ok)] text-[var(--ok)]' : 'border border-[var(--warn)] text-[var(--warn)]'
             }`}>{i.status === 'Live' ? 'Ready' : 'Pilot'}</span>
-            <span className="mt-1.5 block text-[16px] font-medium text-[var(--text)]">{i.title}{i.feature ? ' →' : ''}</span>
-            <span className="mt-0.5 block text-[14px] leading-snug text-[var(--text-dim)]">{i.line}</span>
+            <span className="mt-2 block text-[16px] font-semibold text-[var(--text)] md:text-[19px]">{i.title}{i.feature ? ' →' : ''}</span>
+            <span className="mt-1 block text-[14px] leading-snug text-[var(--text-dim)] md:text-[16px]">{i.line}</span>
           </>
         )
         return (
-          <li key={i.title} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5">
+          <li key={i.title} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 md:p-5">
             {i.feature
               ? <button type="button" onClick={() => onOpen(i.feature!)} className="block w-full text-left">{inner}</button>
               : inner}
