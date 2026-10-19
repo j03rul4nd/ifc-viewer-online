@@ -44,6 +44,7 @@ function readEntry(): EventEntry {
     const v = (p.get('src') ?? p.get('utm_source') ?? '').toLowerCase()
     if (v === 'qr') return 'qr'
     if (v === 'profile') return 'profile'
+    if (v === 'share') return 'share'
   } catch { /* ignore */ }
   return 'direct'
 }
@@ -410,6 +411,16 @@ export default function MspGlobalView() {
 
   const toContact = () => contactRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const toDemo = () => demoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const [shared, setShared] = useState<'idle' | 'copied'>('idle')
+  const share = async () => {
+    const url = `${window.location.origin}/msp-global?src=share`
+    const data = { title: 'Joel Benítez · digital twins', text: 'Live 3D of buildings and cities, on any phone.', url }
+    try {
+      if (navigator.share) { await navigator.share(data); return }
+      await navigator.clipboard.writeText(url)
+      setShared('copied'); window.setTimeout(() => setShared('idle'), 1800)
+    } catch { /* dismissed */ }
+  }
   const openFeature = (id: FeatureId) => {
     setSheet(id)
     trackEventDemoOpened({ event: EVENT_ID, entry, profile: profile ?? 'none', feature: id })
@@ -440,13 +451,16 @@ export default function MspGlobalView() {
           <figure className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
             <button type="button" onClick={() => openFeature('barcelona')} className="group relative block w-full" aria-label="Open Barcelona live">
               <video
-              src="/msp-global/hero.webm"
               poster="/msp-global/hero-poster.jpg"
               width={960} height={540}
               autoPlay muted loop playsInline preload="auto"
               aria-label="18-second tour of the product: Barcelona live, a tap opening live bike data, Hotel Vela on the map, a solar heat map and Helsinki station"
               className="block aspect-video h-auto w-full bg-black object-cover"
-            />
+              disablePictureInPicture
+            >
+              <source src="/msp-global/hero.mp4" type="video/mp4" />
+              <source src="/msp-global/hero.webm" type="video/webm" />
+            </video>
             </button>
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
@@ -548,6 +562,14 @@ export default function MspGlobalView() {
           <p className="mt-4 max-w-[52ch] text-[16px] leading-relaxed text-[var(--text-dim)]">
             I built this alone, end to end. Now I'm looking for the first teams to take it further.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">
+              Save my contact
+            </a>
+            <button type="button" onClick={share} className="rounded-lg border border-[var(--border-strong)] px-4 py-2.5 text-[15px] text-[var(--text)] hover:bg-[var(--surface)]">
+              {shared === 'copied' ? 'Link copied' : 'Send to a colleague'}
+            </button>
+          </div>
           <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[15px]">
             <a href={LINKS.linkedin} className={a} target="_blank" rel="noopener">LinkedIn</a>
             <a href={LINKS.portfolio} className={a} target="_blank" rel="noopener">Portfolio</a>
@@ -569,9 +591,14 @@ export default function MspGlobalView() {
 
       {/* Phone: the next step is always one thumb away. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3 sm:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-        <button type="button" onClick={toContact} className="w-full rounded-lg border border-[var(--border-strong)] py-3 text-[16px] font-medium text-[var(--text)]">
-          Talk to Joel
-        </button>
+        <div className="flex gap-2">
+          <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className="flex-1 rounded-lg border border-[var(--border-strong)] py-3 text-center text-[16px] font-medium text-[var(--text)]">
+            Save contact
+          </a>
+          <button type="button" onClick={toContact} className="flex-1 rounded-lg bg-[var(--accent)] py-3 text-[16px] font-semibold text-white">
+            Talk to Joel
+          </button>
+        </div>
       </div>
     </div>
   )

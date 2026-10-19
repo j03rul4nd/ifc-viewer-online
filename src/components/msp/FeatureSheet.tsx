@@ -68,7 +68,7 @@ export function FeatureSheet({ id, onClose, onWant }: { id: FeatureId; onClose: 
   const src = f.url(window.location.origin)
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={f.title} className="fixed inset-0 z-50 flex flex-col bg-[var(--bg)]">
+    <div role="dialog" aria-modal="true" aria-label={f.title} className="fixed inset-0 z-50 flex flex-col overscroll-contain bg-[var(--bg)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
         <div className="min-w-0">
           <p className="text-[16px] font-semibold text-[var(--text)]">{f.title}</p>
