@@ -35,8 +35,8 @@ export const FEATURES: Record<FeatureId, Feature> = {
     external: true,
   },
   agv: {
-    title: 'Warehouse AGVs, live',
-    line: 'Six carts pick, deliver and charge. Every order closes itself in your ERP. Simulated.',
+    title: 'Warehouse robots, live',
+    line: 'Tap a case. See what it saves. Simulated.',
     inline: 'agv',
   },
   itops: {
