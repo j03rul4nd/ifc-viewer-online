@@ -356,62 +356,75 @@
       "now": "In diretta ora"
     },
     "itops": {
-      "label": "IT dell'ufficio · live",
-      "simulated": "Dati simulati",
+      "label": "Il tuo ufficio, live",
       "fold": "Comprimi",
-      "allOk": "Tutto OK",
-      "allOkLine": "12 punti Wi-Fi, rack, UPS, telecamera e lettore badge inviano lo stato ogni 5 s. Il prossimo guasto appare qui, in rosso, con la sua stanza.",
-      "alerts_one": "{{count}} avviso aperto",
-      "alerts_other": "{{count}} avvisi aperti",
-      "kind": {
-        "overheat": "Sala server a {{value}}",
-        "apDown": "Punto Wi-Fi {{value}} offline",
-        "backup": "Il backup di stanotte non è riuscito",
-        "badge": "{{value}} badge rifiutati alla porta",
-        "cctv": "Telecamera dell'ingresso offline"
-      },
-      "caughtIn": "Rilevato in {{s}} s",
-      "withoutCost": "senza il gemello: ~{{time}} per accorgersene, ≈ {{cost}}",
-      "withoutTime": "senza il gemello: ~{{time}} per accorgersene",
-      "show": "Mostra",
-      "sinceOpen": "Da quando hai aperto questa pagina",
-      "caught": "Incidenti rilevati",
-      "downtime": "Ritardo evitato",
-      "avoided": "Costo evitato",
+      "pillOk": "Tutto funziona",
+      "pillAlert": "Qualcosa si è appena rotto",
+      "heroLead": "Quanto ti fa risparmiare all'anno",
+      "heroPer": "su",
+      "sites": "Numero di uffici",
+      "sitesUnit_one": "ufficio",
+      "sitesUnit_other": "uffici",
+      "heroLine": "I problemi si scoprono in {{s}} secondi, non in ore. Risolti da remoto, prima che il tuo team se ne accorga.",
+      "allOk": "Tutto funziona",
+      "allOkLine": "Quando qualcosa si rompe lo vedi qui per primo: cosa, dove e quanto costa.",
+      "happening": "Sta succedendo ora",
+      "show": "Mostrami",
+      "withoutTitle": "Senza",
+      "withoutCounting": "persi finora, e nessuno lo sa ancora",
+      "withoutUnseen": "finora inosservato",
+      "withTitle": "Con questo",
+      "withWarned": "avviso in {{s}} s, con la stanza esatta",
       "minutes": "{{n}} min",
-      "hours": "{{n}} h",
-      "withoutTitle": "Senza il gemello",
-      "withoutLine": "Un utente chiama. Qualcuno va sul posto a cercare il guasto. Ore di fermo.",
-      "withTitle": "Con il gemello",
-      "withLine": "Avviso in {{s}} s con la stanza esatta. Risolto da remoto, spesso prima che qualcuno se ne accorga.",
-      "yearFor": "Risparmio annuo per",
-      "sites": "Numero di sedi",
-      "sitesUnit_one": "sede",
-      "sitesUnit_other": "sedi",
-      "perYear": "/ anno, stimato",
-      "cta": "Metti i tuoi edifici live",
+      "more_one": "+{{count}} altro problema",
+      "more_other": "+{{count}} altri problemi",
+      "whileWatching_one": "Risparmiato mentre guardavi ({{count}} problema rilevato)",
+      "whileWatching_other": "Risparmiato mentre guardavi ({{count}} problemi rilevati)",
+      "cta": "Lo voglio per i miei edifici",
       "howTitle": "Come calcoliamo",
-      "howText": "Un ufficio di {{staff}} persone a un costo pieno di {{rate}} l'ora. In un anno: 2 surriscaldamenti della sala server (≈2 h di ufficio fermo), 12 guasti Wi-Fi (una stanza per 1 h più un intervento sul posto) e 3 backup falliti (una giornata di lavoro rifatta). La demo comprime un mese di guasti in pochi minuti.",
+      "howText": "Un ufficio di {{staff}} persone a {{rate}} l'ora. In un anno: 2 surriscaldamenti della sala server (≈2 h di ufficio fermo), 12 guasti Wi-Fi (una stanza per 1 h più l'uscita di un tecnico) e 3 backup falliti (una giornata di lavoro rifatta). Il contatore live avanza di un minuto al secondo e la demo concentra un mese di problemi in pochi minuti.",
+      "kind": {
+        "overheat": {
+          "title": "La sala server si sta surriscaldando ({{value}})",
+          "impact": "Se si spegne, 25 persone smettono di lavorare"
+        },
+        "apDown": {
+          "title": "Una sala riunioni è rimasta senza Wi-Fi",
+          "impact": "6 persone non possono lavorare"
+        },
+        "backup": {
+          "title": "Il backup di stanotte non è riuscito",
+          "impact": "Una giornata di lavoro a rischio"
+        },
+        "badge": {
+          "title": "Qualcuno cerca di entrare senza permesso",
+          "impact": "{{value}} tentativi falliti alla porta principale"
+        },
+        "cctv": {
+          "title": "La telecamera dell'ingresso non registra più",
+          "impact": "L'ingresso non è sorvegliato"
+        }
+      },
       "story": {
         "live": {
-          "title": "Questo ufficio si controlla da solo",
-          "text": "Ogni punto Wi-Fi, rack, UPS, telecamera e lettore badge invia il suo stato ogni 5 secondi e si colora sulla pianta 3D. Verde va bene. Rosso è un problema, nella stanza dove succede."
+          "title": "Il tuo edificio ti dice come sta",
+          "text": "Questo è un vero ufficio in 3D. Tutto ciò che lo fa funzionare si fa sentire da solo ogni pochi secondi. Verde va bene. Rosso è un problema, nella stanza dove succede."
         },
         "server": {
-          "title": "La sala server, prima che si guasti",
-          "text": "Adesso: {value} °C. Sopra i 27 °C diventa rossa e ricevi un avviso in pochi secondi, prima che i server rallentino e 25 persone smettano di lavorare."
+          "title": "La stanza che può fermare tutto l'ufficio",
+          "text": "La sala server è ora a {value} °C. Se si surriscalda ti avvisa in pochi secondi, prima che 25 persone restino senza poter lavorare."
         },
         "wifi": {
-          "title": "Ogni access point, ogni stanza",
-          "text": "{value} dispositivi su questo adesso. Quando un punto cade vedi quale stanza, prima della prima telefonata di lamentela, e lo risolvi senza andare sul posto."
+          "title": "Basta telefonate “il Wi-Fi non va”",
+          "text": "Vedi quale stanza ha perso la connessione prima che qualcuno alzi il telefono, e si risolve da remoto: nessun tecnico in viaggio."
         },
         "security": {
-          "title": "Porte e telecamere sullo stesso schermo",
-          "text": "Badge rifiutati negli ultimi 5 minuti: {value}. Errori ripetuti fanno scattare un avviso sulla porta dove avvengono, accanto alla telecamera che la inquadra."
+          "title": "La sicurezza sullo stesso schermo",
+          "text": "Se qualcuno insiste su una porta, scatta un avviso su quella porta, accanto alla telecamera che lo vede."
         },
         "value": {
-          "title": "Quanto vale",
-          "text": "Senza il gemello un guasto si scopre dopo ore e richiede un intervento sul posto. Con il gemello: 10 secondi, la stanza esatta, spesso risolto da remoto. Circa 12.000 € l'anno per ufficio; moltiplica per le sedi dei tuoi clienti. Nel browser, dal tuo IFC, senza hardware da installare."
+          "title": "Quanto vale per te",
+          "text": "Senza, i problemi si scoprono dopo ore e costano lavoro perso e uscite. Con questo: 10 secondi e la stanza esatta. Circa 12.000 € l'anno per ufficio. Funziona nel browser sulle planimetrie dei tuoi edifici, senza installare nulla."
         }
       }
     }

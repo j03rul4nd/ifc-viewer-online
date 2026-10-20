@@ -83,3 +83,17 @@ export function addOnsets(t: Tally, open: Incident[], prevKeys: ReadonlySet<stri
   }
   return { caught, minutesAvoided, eurAvoided }
 }
+
+/** Demo clock for the cost meter: one real second plays one minute. */
+export const DEMO_SPEED = 60
+
+/**
+ * What an open incident has cost so far had nobody noticed it, `elapsedS`
+ * real seconds after it opened (played at DEMO_SPEED), capped at its full cost.
+ */
+export function costSoFar(kind: IncidentKind, elapsedS: number): number {
+  const w = WITHOUT[kind]
+  if (!w.costEur) return 0
+  const min = Math.max(0, elapsedS) * DEMO_SPEED / 60
+  return Math.min(w.costEur, Math.round(w.costEur * min / w.noticeMin))
+}

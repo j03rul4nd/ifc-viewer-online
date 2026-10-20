@@ -356,62 +356,75 @@
       "now": "En vivo ahora"
     },
     "itops": {
-      "label": "IT de la oficina · en vivo",
-      "simulated": "Datos simulados",
+      "label": "Tu oficina, en vivo",
       "fold": "Plegar",
-      "allOk": "Todo en orden",
-      "allOkLine": "12 puntos Wi-Fi, racks, SAI, cámara y lector de tarjetas informan cada 5 s. La próxima avería aparece aquí, en rojo, con su sala.",
-      "alerts_one": "{{count}} alerta abierta",
-      "alerts_other": "{{count}} alertas abiertas",
-      "kind": {
-        "overheat": "Sala de servidores a {{value}}",
-        "apDown": "Punto Wi-Fi {{value}} caído",
-        "backup": "Ha fallado la copia de seguridad de anoche",
-        "badge": "{{value}} intentos fallidos de tarjeta en la puerta",
-        "cctv": "Cámara de la entrada sin conexión"
-      },
-      "caughtIn": "Detectado en {{s}} s",
-      "withoutCost": "sin el gemelo: ~{{time}} hasta enterarte, ≈ {{cost}}",
-      "withoutTime": "sin el gemelo: ~{{time}} hasta enterarte",
-      "show": "Ver",
-      "sinceOpen": "Desde que abriste esta página",
-      "caught": "Incidencias detectadas",
-      "downtime": "Retraso evitado",
-      "avoided": "Coste evitado",
+      "pillOk": "Todo funciona",
+      "pillAlert": "Algo acaba de fallar",
+      "heroLead": "Lo que te ahorra al año",
+      "heroPer": "en",
+      "sites": "Número de oficinas",
+      "sitesUnit_one": "oficina",
+      "sitesUnit_other": "oficinas",
+      "heroLine": "Los problemas se detectan en {{s}} segundos, no en horas. Se arreglan en remoto, antes de que tu equipo lo note.",
+      "allOk": "Todo funciona",
+      "allOkLine": "Cuando algo falle lo verás aquí primero: qué, dónde y cuánto cuesta.",
+      "happening": "Está pasando ahora",
+      "show": "Enséñamelo",
+      "withoutTitle": "Sin esto",
+      "withoutCounting": "perdidos hasta ahora, y nadie lo sabe aún",
+      "withoutUnseen": "sin que nadie se entere",
+      "withTitle": "Con esto",
+      "withWarned": "aviso en {{s}} s, con la sala exacta",
       "minutes": "{{n}} min",
-      "hours": "{{n}} h",
-      "withoutTitle": "Sin el gemelo",
-      "withoutLine": "Un usuario llama. Alguien se desplaza a buscar la avería. Horas de parada.",
-      "withTitle": "Con el gemelo",
-      "withLine": "Alerta en {{s}} s con la sala exacta. Se arregla en remoto, a menudo antes de que nadie lo note.",
-      "yearFor": "Ahorro al año para",
-      "sites": "Número de sedes",
-      "sitesUnit_one": "sede",
-      "sitesUnit_other": "sedes",
-      "perYear": "/ año, estimado",
-      "cta": "Pon tus edificios en vivo",
+      "more_one": "+{{count}} problema más",
+      "more_other": "+{{count}} problemas más",
+      "whileWatching_one": "Ahorrado mientras mirabas ({{count}} problema detectado)",
+      "whileWatching_other": "Ahorrado mientras mirabas ({{count}} problemas detectados)",
+      "cta": "Lo quiero para mis edificios",
       "howTitle": "Cómo lo calculamos",
-      "howText": "Una oficina de {{staff}} personas a un coste de {{rate}} la hora. Al año: 2 sobrecalentamientos de la sala de servidores (≈2 h con la oficina parada), 12 caídas de Wi-Fi (una sala 1 h más un desplazamiento) y 3 copias de seguridad fallidas (un día de trabajo rehecho). La demo comprime un mes de averías en minutos.",
+      "howText": "Una oficina de {{staff}} personas a {{rate}} la hora. Al año: 2 sobrecalentamientos de la sala de servidores (≈2 h con la oficina parada), 12 caídas de Wi-Fi (una sala 1 h más la visita de un técnico) y 3 copias de seguridad fallidas (un día de trabajo rehecho). El contador en vivo avanza un minuto por segundo y la demo concentra un mes de problemas en minutos.",
+      "kind": {
+        "overheat": {
+          "title": "La sala de servidores se está sobrecalentando ({{value}})",
+          "impact": "Si se apaga, 25 personas dejan de trabajar"
+        },
+        "apDown": {
+          "title": "Una sala de reuniones se ha quedado sin Wi-Fi",
+          "impact": "6 personas no pueden trabajar"
+        },
+        "backup": {
+          "title": "La copia de seguridad de anoche falló",
+          "impact": "Un día de trabajo en riesgo"
+        },
+        "badge": {
+          "title": "Alguien intenta entrar sin permiso",
+          "impact": "{{value}} intentos fallidos en la puerta principal"
+        },
+        "cctv": {
+          "title": "La cámara de la entrada ha dejado de grabar",
+          "impact": "La entrada está sin vigilancia"
+        }
+      },
       "story": {
         "live": {
-          "title": "Esta oficina se vigila sola",
-          "text": "Cada punto Wi-Fi, rack, SAI, cámara y lector de tarjetas envía su estado cada 5 segundos y se pinta en el plano 3D. Verde es que va bien. Rojo es un problema, en la sala donde ocurre."
+          "title": "Tu edificio te cuenta cómo está",
+          "text": "Esto es una oficina real en 3D. Todo lo que la mantiene funcionando informa solo cada pocos segundos. Verde es que va bien. Rojo es un problema, en la sala donde ocurre."
         },
         "server": {
-          "title": "La sala de servidores, antes de que falle",
-          "text": "Ahora mismo: {value} °C. Por encima de 27 °C se pone en rojo y recibes una alerta en segundos, antes de que los servidores se frenen y 25 personas dejen de trabajar."
+          "title": "La sala que puede parar toda la oficina",
+          "text": "La sala de servidores está ahora a {value} °C. Si se sobrecalienta te avisa en segundos, antes de que 25 personas se queden sin poder trabajar."
         },
         "wifi": {
-          "title": "Cada punto de acceso, cada sala",
-          "text": "{value} dispositivos en este ahora mismo. Cuando un punto cae ves qué sala es, antes de la primera llamada de queja, y lo arreglas sin desplazarte."
+          "title": "Se acabaron las llamadas de “no va el Wi-Fi”",
+          "text": "Ves qué sala se ha quedado sin conexión antes de que nadie descuelgue el teléfono, y se arregla en remoto: sin técnico desplazándose."
         },
         "security": {
-          "title": "Puertas y cámaras en la misma pantalla",
-          "text": "Intentos fallidos de tarjeta en los últimos 5 minutos: {value}. Los fallos repetidos lanzan una alerta en la puerta donde ocurren, junto a la cámara que lo ve."
+          "title": "La seguridad en la misma pantalla",
+          "text": "Si alguien insiste en abrir una puerta, salta una alerta en esa puerta, junto a la cámara que lo ve."
         },
         "value": {
-          "title": "Lo que vale",
-          "text": "Sin el gemelo una avería tarda horas en detectarse y un desplazamiento en arreglarse. Con él: 10 segundos, la sala exacta y, a menudo, arreglo en remoto. Unos 12.000 € al año por oficina; multiplícalo por las sedes de tus clientes. En el navegador, desde tu propio IFC, sin instalar hardware."
+          "title": "Lo que vale para ti",
+          "text": "Sin esto, los problemas tardan horas en descubrirse y cuestan trabajo perdido y desplazamientos. Con esto: 10 segundos y la sala exacta. Unos 12.000 € al año por oficina. Funciona en el navegador sobre los planos de tus edificios, sin instalar nada."
         }
       }
     }
