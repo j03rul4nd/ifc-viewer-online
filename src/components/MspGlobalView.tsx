@@ -219,23 +219,23 @@ function Demo({ entry, profile, onTalk, suspended }: { entry: EventEntry; profil
 
       <aside aria-label="What to try" className="flex min-w-0 flex-col gap-4">
         <ol className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-6 lg:flex lg:flex-col lg:gap-5">
-          <Step n={1} done={loaded} title="Open Barcelona, live">
-            {loaded ? <>Real city. Live bikes, chargers, traffic.</> : <>Live city data, loading.</>}
+          <Step n={1} done={loaded} title="Open the city">
+            {loaded ? <>Bikes, chargers and traffic, live.</> : <>A few seconds.</>}
           </Step>
           
-          <Step n={2} done={!!facts.live} title="Tap a bike or charger icon">
-            {facts.live ? <>{facts.live}: live from the city.</> : <>Real-time city data.</>}
+          <Step n={2} done={!!facts.live} title="Tap a bike icon">
+            {facts.live ? <>{facts.live}: live from the city.</> : <>Its data, right now.</>}
           </Step>
           <Step n={3} done={!!facts.picked} title="Tap a building">
             {facts.picked
               ? <>{facts.picked.name ? <>“{facts.picked.name}”. </> : null}Its data opens in a card.</>
-              : <>Every part knows what it is.</>}
+              : <>See what it is.</>}
           </Step>
         </ol>
 
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[14px] leading-relaxed text-[var(--text-dim)] md:text-[16px]">
           <p>
-            <strong className="text-[var(--text)]">Swap the city data for yours:</strong> sensors, tickets, assets.
+            <strong className="text-[var(--text)]">Your data goes here:</strong> sensors, tickets, orders.
           </p>
         </div>
 
@@ -380,32 +380,32 @@ type Profile = 'msp' | 'mssp' | 'logi' | 'imp' | 'isv' | 'ops'
 const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   msp: {
     chip: 'I run an MSP',
-    why: 'Sell a site service. Every client building, its Wi-Fi, servers and cameras on one live screen. No hardware.',
+    why: 'A new monthly service: every client site, its Wi-Fi and servers, live.',
     hint: 'e.g. a client with 6 offices and 40 access points',
   },
   mssp: {
     chip: 'I sell security',
-    why: 'Badge readers, cameras and server rooms on the building. Alerts show where they happen.',
+    why: 'Badge readers, cameras and server rooms on the plan. Alerts where they happen.',
     hint: 'e.g. physical security for a client’s HQ',
   },
   logi: {
     chip: 'I run logistics',
-    why: 'Watch every AGV, order and dock live. Each delivered order closes itself in Odoo, Salesforce or your WMS.',
+    why: 'Every AGV and order, live. Delivered orders close themselves in your ERP.',
     hint: 'e.g. 12 AGVs, orders in Odoo',
   },
   imp: {
     chip: 'I buy from China',
-    why: 'Every order on one map, from the factory to your door: QC, ship, customs, ETA. Your agent’s updates in, your ERP’s receipts out.',
+    why: 'Every order on one map. Know what is late, and what it costs you.',
     hint: 'e.g. 20 orders a month through a sourcing agent',
   },
   isv: {
     chip: 'I sell software',
-    why: 'Add a live 3D view to your product. One line of code. Your data on your client’s building.',
+    why: 'Add a live 3D view to your product. One line of code.',
     hint: 'e.g. a 3D tab in our platform',
   },
   ops: {
     chip: 'I run IT or facilities',
-    why: 'Know what is where, and what is down. Tap anything, see everything.',
+    why: 'Know what is where, and what is down. Tap anything.',
     hint: 'e.g. find equipment by floor',
   },
 }
@@ -413,13 +413,13 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
 const ROLE_START: Record<Profile, FeatureId> = { msp: 'itops', mssp: 'itops', logi: 'agv', imp: 'imports', isv: 'barcelona', ops: 'itops' }
 
 const GALLERY = [
-  { feature: 'imports' as FeatureId, src: '/msp-global/imports.jpg', cap: 'Every order from China on one map: QC, sea, air, rail, customs, ETA.', tag: 'Imports' },
-  { feature: 'agv' as FeatureId, src: '/msp-global/agv.jpg', cap: 'Six AGVs pick, deliver and charge. Every order closes itself in your ERP.', tag: 'Logistics' },
-  { feature: 'itops' as FeatureId, src: '/msp-global/office-it.jpg', cap: 'An office’s Wi-Fi, servers and doors, live. Red when something is down.', tag: 'Managed IT' },
-  { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
-  { feature: 'solar' as FeatureId, src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade, from real climate data.', tag: 'Energy' },
-  { feature: 'helsinki' as FeatureId, src: '/msp-global/helsinki-live.jpg', cap: 'A station and its bus bays, live as buses arrive.', tag: 'Transport' },
-  { feature: 'barcelona' as FeatureId, src: '/msp-global/barcelona-district.jpg', cap: 'A whole district: traffic, bikes, chargers, live.', tag: 'Cities' },
+  { feature: 'imports' as FeatureId, src: '/msp-global/imports.jpg', cap: 'Every order from China on one map.', tag: 'Imports' },
+  { feature: 'agv' as FeatureId, src: '/msp-global/agv.jpg', cap: 'Six AGVs, live. Orders close in your ERP.', tag: 'Logistics' },
+  { feature: 'itops' as FeatureId, src: '/msp-global/office-it.jpg', cap: 'An office’s IT, live. Red when it breaks.', tag: 'Managed IT' },
+  { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'A building in its real city.', tag: 'Real estate' },
+  { feature: 'solar' as FeatureId, src: '/msp-global/solar.jpg', cap: 'Sun and heat on every facade.', tag: 'Energy' },
+  { feature: 'helsinki' as FeatureId, src: '/msp-global/helsinki-live.jpg', cap: 'Bus bays, live as buses arrive.', tag: 'Transport' },
+  { feature: 'barcelona' as FeatureId, src: '/msp-global/barcelona-district.jpg', cap: 'A district: traffic, bikes, chargers.', tag: 'Cities' },
 ]
 
 
@@ -496,7 +496,7 @@ export default function MspGlobalView() {
 
   const heroCtas = (
     <>
-      <button type="button" onClick={toDemo} className={primary}>Try it · 30 seconds</button>
+      <button type="button" onClick={toDemo} className={primary}>Try it now</button>
       <button type="button" onClick={toContact} className={`${secondary} hidden md:inline-block`}>Talk to Joel</button>
     </>
   )
@@ -521,12 +521,12 @@ export default function MspGlobalView() {
         {/* 1 · One claim, one moving picture, one button. Side by side on landscape tablets. */}
         <section className="pt-4 md:pt-12 lg:grid lg:grid-cols-[5fr_7fr] lg:items-center lg:gap-12">
           <div>
-            <p className={kicker}>Live digital twins</p>
+            <p className={kicker}>Digital twins</p>
             <h1 className="max-w-[14ch] text-[40px] font-semibold leading-[1.03] tracking-tight sm:text-[56px] md:text-[64px] lg:text-[58px]">
-              Show clients their buildings. Live.
+              See every site and shipment. Live.
             </h1>
             <p className="mt-4 max-w-[34ch] text-[18px] leading-snug text-[var(--text-dim)] md:mt-5 md:text-[23px]">
-              Every site, asset and sensor in <strong className="font-semibold text-[var(--text)]">one link</strong>. Opens on any phone.
+              <strong className="font-semibold text-[var(--text)]">One link.</strong> Any phone. Nothing to install.
             </p>
             <div className="mt-8 hidden flex-wrap gap-3 lg:flex">{heroCtas}</div>
           </div>
@@ -547,7 +547,7 @@ export default function MspGlobalView() {
             </button>
             <figcaption className="flex items-center gap-2 bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--text-dim)] md:px-4 md:py-3 md:text-[15px]">
               <span className="h-2 w-2 flex-none rounded-full bg-[var(--ok)]" aria-hidden="true" />
-              Real screens, 19 seconds. <span className="font-medium text-[var(--text)]">Tap to try it live.</span>
+              Real product. <span className="font-medium text-[var(--text)]">Tap to try it.</span>
             </figcaption>
           </figure>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:hidden">{heroCtas}</div>
@@ -584,7 +584,7 @@ export default function MspGlobalView() {
                   {PROFILES[profile].why}
                 </p>
                 <button type="button" onClick={() => openFeature(ROLE_START[profile])} className={`mt-5 ${primary}`}>
-                  See it live: {FEATURES[ROLE_START[profile]].title} →
+                  Show me: {FEATURES[ROLE_START[profile]].title.replace(/, live$/, '')} →
                 </button>
               </div>
             ) : (
@@ -596,8 +596,8 @@ export default function MspGlobalView() {
         {/* 3 · The proof, in their hands. */}
         <section ref={demoRef} id="demo" className={`scroll-mt-20 ${section}`}>
           <p className={kicker}>Try it</p>
-          <h2 className={h2}>Three taps</h2>
-          <p className={lead}>Barcelona, live. On the screen in your hand.</p>
+          <h2 className={h2}>Try it: three taps</h2>
+          <p className={lead}>A real city square, live.</p>
           <div className="mt-6 md:mt-8">
             <Demo entry={entry} profile={profile} onTalk={toContact} suspended={sheet !== null} />
           </div>
@@ -605,10 +605,10 @@ export default function MspGlobalView() {
 
         {/* 4 · Concrete things to sell, marked Ready or Pilot. */}
         <section className={section}>
-          <p className={kicker}>Your next offer</p>
-          <h2 className={h2}>What you could sell next</h2>
+          <p className={kicker}>What we can do</p>
+          <h2 className={h2}>Ready now, or built with you</h2>
           <p className={lead}>
-            <span className="font-semibold text-[var(--ok)]">Ready</span> works today. <span className="font-semibold text-[var(--warn)]">Pilot</span> needs a first partner.
+            <span className="font-semibold text-[var(--ok)]">Ready</span>: works today. <span className="font-semibold text-[var(--warn)]">Pilot</span>: we build it together.
           </p>
           <div className="mt-6 md:mt-8">
             <PilotIdeas role={profile} onOpen={openFeature} />
@@ -617,8 +617,8 @@ export default function MspGlobalView() {
 
         {/* 5 · The range. One large picture, then a calm grid. */}
         <section className={section}>
-          <p className={kicker}>Live examples</p>
-          <h2 className={h2}>What your clients could see</h2>
+          <p className={kicker}>Examples</p>
+          <h2 className={h2}>Pick one. It opens live.</h2>
           <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 md:mt-8 md:gap-5">
             {GALLERY.map((g, i) => (
               <button
@@ -631,7 +631,7 @@ export default function MspGlobalView() {
                 <span className={`block px-4 py-3 ${i === 0 ? 'md:px-8' : 'md:px-5 md:py-4'}`}>
                   <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)] md:text-[13px]">{g.tag}</span>
                   <span className={`mt-1 block leading-snug text-[var(--text)] ${i === 0 ? 'text-[16px] md:text-[24px] md:font-medium' : 'text-[15px] md:text-[18px]'}`}>{g.cap}</span>
-                  <span className="mt-2 block text-[14px] font-semibold text-[var(--accent-2)] group-hover:underline md:text-[15px]">Open it live →</span>
+                  <span className="mt-2 block text-[14px] font-semibold text-[var(--accent-2)] group-hover:underline md:text-[15px]">Open live →</span>
                 </span>
               </button>
             ))}
@@ -652,7 +652,7 @@ export default function MspGlobalView() {
               </div>
             </div>
             <p className="mt-4 max-w-[46ch] text-[16px] leading-relaxed text-[var(--text-dim)] md:text-[19px]">
-              I built this alone, end to end. <span className="text-[var(--text)]">Now I'm looking for the first teams to take it further.</span>
+              I build it end to end, alone. <span className="text-[var(--text)]">Looking for first clients and partners.</span>
             </p>
             <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[15px] md:text-[16px]">
               <a href={LINKS.linkedin} className={a} target="_blank" rel="noopener">LinkedIn</a>
