@@ -49,11 +49,18 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
   const [follow, setFollow] = useState(false)
   const [tab, setTab] = useState<'needs' | 'orders' | 'boxes' | 'suppliers' | 'feeds'>('needs')
   const [detailTab, setDetailTab] = useState<'timeline' | 'qc' | 'costs' | 'docs'>('timeline')
-  // Open from the start, on the 'Needs you' list: the first thing to read.
-  const [panelOpen, setPanelOpen] = useState(true)
+  // Desktop: the panel is a column. Phone: a bottom sheet that starts as a
+  // peek (the map stays readable) and opens to read an order.
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const on = () => setNarrow(window.innerWidth < 768)
+    window.addEventListener('resize', on)
+    return () => window.removeEventListener('resize', on)
+  }, [])
   const [expedited, setExpedited] = useState<Set<string>>(new Set())
 
-  useEffect(() => { selRef.current = sel; if (sel) { setPanelOpen(true); setDetailTab('timeline') } }, [sel])
+  useEffect(() => { selRef.current = sel; if (sel) setDetailTab('timeline') }, [sel])
   useEffect(() => { followRef.current = follow }, [follow])
 
   useEffect(() => {
@@ -62,7 +69,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
     const narrow = el.clientWidth < 768
     const map = L.map(el, { zoomControl: false, attributionControl: true, worldCopyJump: true, minZoom: 1, zoomSnap: 0.25 })
     map.fitBounds(L.latLngBounds([...LANES.sea, ...LANES.rail, ...LANES.cape, PLACES.yiwu.at, PLACES.zaragoza.at]), {
-      paddingTopLeft: [20, 130], paddingBottomRight: [narrow ? 20 : 400, narrow ? 70 : 30],
+      paddingTopLeft: [20, 130], paddingBottomRight: [narrow ? 20 : 400, narrow ? Math.round(el.clientHeight * 0.4) : 30],
     })
     // Phones pinch; the buttons would sit on the panel.
     if (!narrow) L.control.zoom({ position: 'bottomleft' }).addTo(map)
@@ -154,7 +161,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
   }
 
   const tabBtn = <T extends string>(cur: T, set: (v: T) => void, id: T, label: string) => (
-    <button key={id} type="button" onClick={() => set(id)} className={`flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[12.5px] font-medium ${cur === id ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white'}`}>{label}</button>
+    <button key={id} type="button" onClick={() => set(id)} className={`flex-none whitespace-nowrap rounded-lg px-2.5 py-1.5 md:flex-1 text-[12.5px] font-medium ${cur === id ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white'}`}>{label}</button>
   )
 
   return (
@@ -170,11 +177,11 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
         .leaflet-control-attribution a{color:rgba(255,255,255,.8)!important}
         .leaflet-bar a{background:#14171c;color:#fff;border-color:rgba(255,255,255,.12)}
       `}</style>
-      <div ref={mapEl} className="absolute inset-0" />
+      <div ref={mapEl} className="absolute inset-0 isolate z-0" />
 
       <div className="pointer-events-none absolute left-3 right-3 top-3 z-[500] md:left-4 md:right-[412px] md:top-4">
         <div className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
-          <p className="truncate text-[14px] font-semibold md:text-[16px]">Your imports from China</p>
+          <p className="truncate text-[13px] font-semibold md:text-[16px]">Your imports from China</p>
           <span className="flex-none rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[11px] font-semibold text-[#f59e0b]">Simulated</span>
         </div>
         {snap && (
@@ -184,9 +191,9 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
               { l: 'Late', v: String(snap.k.atRisk), c: snap.k.atRisk > 0 ? '#f59e0b' : '#22c55e' },
               { l: 'At sea', v: fmtEur(snap.k.valueAtSeaEur), c: '#ffffff' },
             ].map((k) => (
-              <div key={k.l} className="min-w-0 rounded-xl border border-white/10 bg-black/65 px-3 py-2 backdrop-blur">
+              <div key={k.l} className="min-w-0 rounded-xl border border-white/10 bg-black/70 px-2.5 py-1.5 backdrop-blur md:px-3 md:py-2">
                 <p className="truncate text-[11px] font-medium text-white/60 md:text-[12px]">{k.l}</p>
-                <p className="truncate text-[19px] font-semibold tabular-nums md:text-[23px]" style={{ color: k.c }}>{k.v}</p>
+                <p className="truncate text-[17px] font-semibold tabular-nums md:text-[23px]" style={{ color: k.c }}>{k.v}</p>
               </div>
             ))}
           </div>
@@ -198,17 +205,22 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#ef4444]" />Late vs promise</span>
       </div>
 
-      <button type="button" onClick={() => setPanelOpen((o) => !o)} className="absolute bottom-3 right-3 z-[500] rounded-full border border-white/10 bg-black/75 px-3.5 py-2 text-[13px] font-semibold backdrop-blur md:hidden">
-        {panelOpen ? 'Hide panel' : 'Show what needs you'}
-      </button>
 
-      {panelOpen && snap && (
-        <aside className={`absolute inset-x-2 bottom-14 z-[600] flex flex-col rounded-2xl border border-white/10 bg-black/85 backdrop-blur md:inset-x-auto md:bottom-4 md:right-4 md:top-4 md:max-h-none md:w-[392px] ${row ? 'max-h-[74%]' : 'max-h-[52%]'}`}>
+
+      {snap && (
+        <aside
+          className="absolute inset-x-0 bottom-0 z-[600] flex flex-col rounded-t-2xl border-t border-white/10 bg-[#0d1014] shadow-[0_-12px_32px_rgba(0,0,0,.5)] transition-[height] duration-200 md:inset-x-auto md:bottom-4 md:right-4 md:top-4 md:w-[392px] md:rounded-2xl md:border md:bg-black/85 md:backdrop-blur"
+          style={narrow ? { height: panelOpen || row ? (row ? '82%' : '66%') : '38%', paddingBottom: 'env(safe-area-inset-bottom)' } : undefined}
+        >
+          <button type="button" onClick={() => setPanelOpen((o) => !o)} className="flex flex-none flex-col items-center gap-1 pt-2 md:hidden" aria-label={panelOpen ? 'Show more map' : 'Show more of the list'}>
+            <span className="h-1.5 w-10 rounded-full bg-white/30" />
+            <span className="text-[11px] text-white/50">{panelOpen || row ? 'Tap to see the map' : 'Tap to see more'}</span>
+          </button>
           {row && detail && live ? (
             <>
-              <div className="border-b border-white/10 p-3">
+              <div className="flex-none border-b border-white/10 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <button type="button" onClick={() => { setSel(null); setFollow(false) }} className="text-[13px] text-white/70 hover:text-white">← All orders</button>
+                  <button type="button" onClick={() => { setSel(null); setFollow(false); setPanelOpen(false) }} className="text-[13px] text-white/70 hover:text-white">← All orders</button>
                   <Chip color={STAGE_COLOR[row.stage]}>{STAGE_LABEL[row.stage]}</Chip>
                 </div>
                 <p className="mt-1.5 truncate text-[17px] font-semibold">{row.s.id} <span className="text-[13px] font-normal text-white/55">· {row.s.supplier}</span></p>
@@ -224,7 +236,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                   {onOpenWarehouse && <button type="button" onClick={onOpenWarehouse} className="rounded-lg bg-white/10 px-2.5 py-1 text-[12px]">Its arrival in the warehouse →</button>}
                 </div>
               </div>
-              <div className="flex gap-1 p-1.5">{(['timeline', 'qc', 'costs', 'docs'] as const).map((id) => tabBtn(detailTab, setDetailTab, id, id === 'qc' ? 'QC' : id[0].toUpperCase() + id.slice(1)))}</div>
+              <div className="flex flex-none gap-1 p-1.5">{(['timeline', 'qc', 'costs', 'docs'] as const).map((id) => tabBtn(detailTab, setDetailTab, id, id === 'qc' ? 'QC' : id[0].toUpperCase() + id.slice(1)))}</div>
               <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 text-[12.5px]">
                 {detailTab === 'timeline' && (
                   <ol className="relative ml-1.5 border-l border-white/15">
@@ -300,7 +312,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
             </>
           ) : (
             <>
-              <div className="flex gap-1 overflow-x-auto p-1.5">
+              <div className="flex flex-none gap-1 overflow-x-auto p-1.5 [scrollbar-width:none]">
                 {tabBtn(tab, setTab, 'needs', `Needs you${snap.needs.length ? ` · ${snap.needs.length}` : ''}`)}{tabBtn(tab, setTab, 'orders', 'Orders')}{tabBtn(tab, setTab, 'boxes', 'Containers')}{tabBtn(tab, setTab, 'suppliers', 'Suppliers')}{tabBtn(tab, setTab, 'feeds', 'Feeds')}
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
@@ -353,7 +365,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                 )}
                 {tab === 'needs' && (
                   <div>
-                    <p className="mb-2 text-[13px] leading-snug text-white/70">Start here. These orders need you; tap one to see why and what it costs.</p>
+                    <p className="mb-2 text-[13px] leading-snug text-white/70">Start here: tap an order to see why and what it costs.</p>
                     <ul className="space-y-2">
                       {snap.needs.map((n) => (
                         <li key={n.po}>

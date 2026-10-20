@@ -94,8 +94,8 @@ export function FeatureSheet({ id, onClose, onWant, onSwitch }: { id: FeatureId;
     <div role="dialog" aria-modal="true" aria-label={f.title} className="fixed inset-0 z-50 flex flex-col overscroll-contain bg-[var(--bg)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-2 sm:py-3">
         <div className="min-w-0">
-          <p className="text-[16px] font-semibold text-[var(--text)]">{f.title}</p>
-          <p className="line-clamp-2 text-[12.5px] leading-snug text-[var(--text-dim)] sm:line-clamp-none sm:text-[13px]">{f.line}</p>
+          <p className="truncate text-[16px] font-semibold text-[var(--text)]">{f.title}</p>
+          <p className="hidden text-[13px] leading-snug text-[var(--text-dim)] sm:block">{f.line}</p>
           {f.external && <p className="mt-0.5 truncate text-[10.5px] leading-snug text-[var(--text-faint)] sm:whitespace-normal sm:text-[11px]">Loads live map and city data from public servers. Nothing you have is sent.</p>}
         </div>
         <div className="flex flex-none items-center gap-1">
