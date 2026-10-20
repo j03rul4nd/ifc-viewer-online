@@ -13,34 +13,34 @@ interface Idea { title: string; line: string; status: 'Live' | 'Pilot'; feature?
 
 const IDEAS: Record<Role, Idea[]> = {
   msp: [
-    { title: 'Site view for every client', line: 'Their buildings, Wi-Fi and servers, live.', status: 'Live', feature: 'itops' },
+    { title: 'Every client site, live', line: 'Buildings, Wi-Fi and servers on one screen.', status: 'Live', feature: 'itops' },
     { title: 'Alert to ticket', line: 'A red room opens a ticket in your PSA.', status: 'Pilot' },
-    { title: 'Their street, live', line: 'Traffic and transport around the site.', status: 'Live', feature: 'barcelona' },
+    { title: 'The street outside, live', line: 'Traffic and transport around the site.', status: 'Live', feature: 'barcelona' },
   ],
   mssp: [
-    { title: 'Physical security on the plan', line: 'Badge readers and cameras where they are.', status: 'Live', feature: 'itops' },
+    { title: 'Security on the floor plan', line: 'Readers and cameras where they are.', status: 'Live', feature: 'itops' },
     { title: 'Alerts to your SOC', line: 'Building events into your SIEM.', status: 'Pilot' },
     { title: 'Server room watch', line: 'Heat and UPS, before they fail.', status: 'Live', feature: 'itops' },
   ],
   logi: [
-    { title: 'AGV fleet, live', line: 'Every cart, battery and mission on the floor plan.', status: 'Live', feature: 'agv' },
+    { title: 'AGV fleet, live', line: 'Every cart, battery and mission.', status: 'Live', feature: 'agv' },
     { title: 'Orders close in your ERP', line: 'Odoo, Salesforce or your WMS, as they happen.', status: 'Pilot' },
     { title: 'Rack locations in 3D', line: 'Find a pallet by its location code.', status: 'Live', feature: 'agv' },
   ],
   imp: [
-    { title: 'Import map, live', line: 'Every PO from factory to door, with its documents.', status: 'Live', feature: 'imports' },
-    { title: 'Your agent’s feed, mapped', line: 'BuckyDrop or your agent’s updates, read automatically.', status: 'Pilot' },
-    { title: 'Arrival in the warehouse', line: 'From the dock to the rack, with AGVs.', status: 'Live', feature: 'agv' },
+    { title: 'Import map, live', line: 'Every order, factory to door.', status: 'Live', feature: 'imports' },
+    { title: 'Your agent’s updates, mapped', line: 'From BuckyDrop or your own agent.', status: 'Pilot' },
+    { title: 'Into your warehouse', line: 'From the dock to the rack.', status: 'Live', feature: 'agv' },
   ],
   isv: [
     { title: 'A 3D tab in your app', line: 'Embed it with one line.', status: 'Live', feature: 'barcelona' },
-    { title: 'File quality checks', line: 'Catch bad data before it costs money.', status: 'Live', feature: 'quality' },
+    { title: 'File quality checks', line: 'Catch bad data before it costs you.', status: 'Live', feature: 'quality' },
     { title: 'Your brand on it', line: 'Your logo, your domain.', status: 'Pilot' },
   ],
   ops: [
-    { title: 'Office IT, live', line: 'Every access point and server room on the plan.', status: 'Live', feature: 'itops' },
-    { title: 'Walk, bike or drive times', line: 'Real routes, door to door, indoors too.', status: 'Live' },
-    { title: 'Maintenance by location', line: 'Work orders on the exact spot.', status: 'Pilot' },
+    { title: 'Office IT, live', line: 'Every access point and server room.', status: 'Live', feature: 'itops' },
+    { title: 'Routes, door to door', line: 'Walk, bike or drive. Indoors too.', status: 'Live' },
+    { title: 'Work orders on the spot', line: 'Each one pinned where it is.', status: 'Pilot' },
   ],
 }
 

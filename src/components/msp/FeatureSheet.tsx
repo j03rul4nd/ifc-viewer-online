@@ -30,7 +30,7 @@ const VELA = (o: string) => `${o}/models/hotel-vela`
 export const FEATURES: Record<FeatureId, Feature> = {
   imports: {
     title: 'Imports from China, live',
-    line: 'Every order from factory to your warehouse: QC, sea, air or rail, customs, ETA. Simulated.',
+    line: 'Every order, factory to warehouse. Simulated.',
     inline: 'imports',
     external: true,
   },
@@ -41,13 +41,13 @@ export const FEATURES: Record<FeatureId, Feature> = {
   },
   itops: {
     title: 'Office IT, live',
-    line: 'A two-floor office with its Wi-Fi, racks, UPS, camera and badge reader. Tap one to read it live. Simulated feed.',
+    line: 'Wi-Fi, racks, UPS, camera, badge reader. Tap one. Simulated.',
     url: (o) => `/?model=${o}/models/msp-office/MSP-Demo-Office.ifc&twin=itops&validate=0&ui=article&explore=1&lang=en`,
   },
   barcelona: {
     external: true,
     title: 'Barcelona, live',
-    line: 'Eight buildings on the real city. Bikes, chargers and traffic, live.',
+    line: 'Bikes, chargers and traffic, live. Tap any icon.',
     url: () => '/?scene=/scenes/barcelona-placa-catalunya.scene.json&ui=article&lang=en',
   },
   hotel: {
@@ -59,24 +59,24 @@ export const FEATURES: Record<FeatureId, Feature> = {
   solar: {
     external: true,
     title: 'Sun and heat, real climate',
-    line: 'A full year of sun on every facade, from ten years of real weather.',
+    line: 'A year of sun on every facade. Real weather.',
     url: (o) => `/?model=${VELA(o)}/BCN-IVO-ZZ-XX-M3-A-0002.ifc&analysis=year:passive&validate=0&ui=kiosk&lang=en`,
   },
   helsinki: {
     external: true,
     title: 'Helsinki, live',
-    line: 'The central station and its bus bays, updated as buses arrive.',
+    line: 'Bus bays, live as buses arrive.',
     url: () => '/?scene=/scenes/helsinki-rautatientori.scene.json&ui=article&lang=en',
   },
   tokyo: {
     external: true,
     title: 'Tokyo, live transit',
-    line: 'Live transit around a site, on the 3D city.',
+    line: 'Live transit around a site.',
     url: () => '/?scene=/scenes/tokyo-tochomae.scene.json&ui=article&lang=en',
   },
   quality: {
     title: 'File health check',
-    line: 'A building file checked in seconds. Every problem listed.',
+    line: 'A building file, checked in seconds.',
     url: (o) => `/?model=${o}/Ifc2x3_Duplex_Architecture.ifc&name=Duplex%20house&embed=1&ui=minimal&lang=en`,
   },
 }
@@ -96,7 +96,7 @@ export function FeatureSheet({ id, onClose, onWant, onSwitch }: { id: FeatureId;
         <div className="min-w-0">
           <p className="truncate text-[16px] font-semibold text-[var(--text)]">{f.title}</p>
           <p className="hidden text-[13px] leading-snug text-[var(--text-dim)] sm:block">{f.line}</p>
-          {f.external && <p className="mt-0.5 truncate text-[10.5px] leading-snug text-[var(--text-faint)] sm:whitespace-normal sm:text-[11px]">Loads live map and city data from public servers. Nothing you have is sent.</p>}
+          {f.external && <p className="mt-0.5 truncate text-[10.5px] leading-snug text-[var(--text-faint)] sm:whitespace-normal sm:text-[11px]">Loads public map data. Sends nothing of yours.</p>}
         </div>
         <div className="flex flex-none items-center gap-1">
           {src && <a href={src} target="_blank" rel="noopener" className="hidden rounded-md px-2.5 py-1.5 text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface)] sm:inline">Full screen ↗</a>}
@@ -119,7 +119,7 @@ export function FeatureSheet({ id, onClose, onWant, onSwitch }: { id: FeatureId;
         <iframe src={src ?? undefined} title={f.title} className="min-h-0 flex-1 border-0 bg-black" allow="fullscreen" />
       )}
       <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-2 sm:py-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-        <p className="min-w-0 text-[14px] leading-snug text-[var(--text-dim)]">Want this for your clients?</p>
+        <p className="min-w-0 text-[14px] leading-snug text-[var(--text-dim)]">Want this for your business?</p>
         <button type="button" onClick={onWant} className="flex-none rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">
           I want this
         </button>
