@@ -41,8 +41,8 @@ export const FEATURES: Record<FeatureId, Feature> = {
   },
   itops: {
     title: 'Office IT, live',
-    line: 'Tap a coloured window or a label to read its device live. Wi-Fi, server room, CCTV, badges. Simulated feed.',
-    url: (o) => `/?model=${o}/Ifc2x3_Duplex_Architecture.ifc&name=Demo%20office&twin=itops&validate=0&ui=article&explore=1&lang=en`,
+    line: 'A two-floor office with its Wi-Fi, racks, UPS, camera and badge reader. Tap one to read it live. Simulated feed.',
+    url: (o) => `/?model=${o}/models/msp-office/MSP-Demo-Office.ifc&twin=itops&validate=0&ui=article&explore=1&lang=en`,
   },
   barcelona: {
     external: true,
