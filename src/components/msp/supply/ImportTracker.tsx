@@ -58,9 +58,11 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
     })
     frame()
     L.control.zoom({ position: 'bottomleft' }).addTo(map)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd', maxZoom: 12,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+    // OpenStreetMap's own tiles (the app already uses them), darkened in CSS
+    // (.it-tiles below) to sit with the page; CARTO's dark set now wants a key.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 12, className: 'it-tiles',
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map)
 
     // lanes
@@ -148,6 +150,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
         [data-sel="1"] .it-pin{transform:scale(1.35);box-shadow:0 0 0 3px #fff,0 0 24px var(--c)}
         [data-risk="1"] .it-pin::after{content:'';position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:99px;background:#ef4444;border:2px solid #0b0d10}
         .leaflet-container{background:#0b0d10;font-family:Inter,system-ui,sans-serif}
+        .it-tiles{filter:invert(1) hue-rotate(180deg) brightness(.78) contrast(.92) saturate(.6)}
         .leaflet-tooltip{background:rgba(10,12,16,.9);color:#fff;border:1px solid rgba(255,255,255,.15)}
         .leaflet-control-attribution{background:rgba(10,12,16,.7)!important;color:rgba(255,255,255,.6)!important;font-size:10px}
         .leaflet-control-attribution a{color:rgba(255,255,255,.8)!important}
