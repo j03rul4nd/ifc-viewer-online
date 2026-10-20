@@ -18,16 +18,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import {
-  createSim, step, kpis, erpPayload, seeded, find, clock, pointAt,
+  createSim, step, kpis, erpPayload, seeded, find, clock, pointAt, runScenario, relocateS,
   SIZE, ROAD_Z, XW, XE, RACK_X0, RACK_X1, BAY_W, BAYS, LEVELS, RACK_ROWS, AISLES, AISLE_NAMES, LEVEL_Y,
   palletBottom, PIVOT, STAGE_Z, STUB_Z, DOCKS, CHARGERS, STATE_LABEL, ZONES,
-  type Sim, type Agv, type AgvState, type ErpTarget, type Kpis, type SimEvent, type ErpSync, type Task, type Dock, type Pallet, type Found, type Wait,
+  type Sim, type Agv, type AgvState, type ErpTarget, type Kpis, type SimEvent, type ErpSync, type Task, type Dock, type Pallet, type Found, type Wait, type ScenarioId,
 } from './sim'
 
 const STATE_COLOR: Record<AgvState, string> = {
   charging: '#22c55e', idle: '#94a3b8', parking: '#94a3b8', toCharge: '#f59e0b',
   toSource: '#38bdf8', atSource: '#a78bfa', toDest: '#5e6ad2', atDest: '#a78bfa',
 }
+const ROUTE_MAX = 400
 const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
 const waitText = (w: Wait | null): string | null => {
@@ -161,7 +162,7 @@ function textTexture(lines: string[], opts: { w?: number; h?: number; bg?: strin
 
 const WALL_H = 10.5
 
-interface Building { roof: THREE.Group; slotPallets: THREE.InstancedMesh; slotLoads: THREE.InstancedMesh; obstacle: THREE.Group; lights: THREE.MeshStandardMaterial[]; dockLights: THREE.MeshStandardMaterial[]; chargerLeds: THREE.MeshStandardMaterial[] }
+interface Building { roof: THREE.Group; doors: THREE.Mesh[]; slotPallets: THREE.InstancedMesh; slotLoads: THREE.InstancedMesh; obstacle: THREE.Group; lights: THREE.MeshStandardMaterial[]; dockLights: THREE.MeshStandardMaterial[]; chargerLeds: THREE.MeshStandardMaterial[] }
 
 function std(color: string, roughness = 0.6, metalness = 0.1, extra: THREE.MeshStandardMaterialParameters = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra })
@@ -236,18 +237,17 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   box(SIZE.w, 1.2, 0.25, plinth, SIZE.w / 2, 0.6, SIZE.d, scene)
   // dock wall with door openings
   const dockWall = wallMat(SIZE.w)
-  const doors = DOCKS.map((d) => d.x)
+  const doors: THREE.Mesh[] = []
   let x0 = 0
-  for (const dx of [...doors, SIZE.w + 1.6]) {
+  for (const dx of [...DOCKS.map((d) => d.x), SIZE.w + 1.6]) {
     const x1 = dx - 1.6
     if (x1 > x0) { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, WALL_H, 0.25), dockWall); m.position.set((x0 + x1) / 2, WALL_H / 2, 0); m.receiveShadow = true; m.castShadow = true; scene.add(m) }
     x0 = dx + 1.6
   }
   for (const d of DOCKS) {
     box(3.2, WALL_H - 3.4, 0.25, dockWall, d.x, 3.4 + (WALL_H - 3.4) / 2, 0, scene)
-    // roller door half open, dock leveler, black shelter
-    const door = box(3.0, 1.1, 0.08, std('#d7dbe0', 0.5, 0.3), d.x, 2.85, 0.05, scene)
-    door.name = 'door'
+    // roller door (opens into the header when a truck is at the door), leveler, shelter
+    doors.push(box(3.0, 3.3, 0.08, std('#c3c9d0', 0.5, 0.3), d.x, 1.65, 0.08, scene))
     box(2.4, 0.06, 0.9, std('#6b7280', 0.6, 0.6), d.x, 0.03, 0.35, scene)
     for (const o of [-1.55, 1.55]) box(0.3, 3.4, 0.6, std('#111418', 0.9), d.x + o, 1.7, -0.35, scene)
     box(3.4, 0.4, 0.6, std('#111418', 0.9), d.x, 3.6, -0.35, scene)
@@ -382,7 +382,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; ring.name = 'pulse'; obstacle.add(ring)
   obstacle.visible = false
   scene.add(obstacle)
-  return { roof: scene.getObjectByName('roof') as THREE.Group, slotPallets, slotLoads, obstacle, lights, dockLights, chargerLeds }
+  return { roof: scene.getObjectByName('roof') as THREE.Group, doors, slotPallets, slotLoads, obstacle, lights, dockLights, chargerLeds }
 }
 
 function person(x: number, z: number, ry: number): THREE.Group {
@@ -489,16 +489,26 @@ function buildCart(id: string): CartParts {
 
 const CARRIER_COLOR: Record<string, string> = { 'Transportes Ebro': '#0f766e', 'Nordline Freight': '#1d4ed8', 'Medi Cargo': '#b91c1c', 'Iber Express': '#ea580c' }
 
-function buildTruck(): { g: THREE.Group; setLivery: (carrier: string, plate: string) => void } {
+/** Pallet positions in the trailer, nose first: two across, 1.25 m rows. */
+const trailerSlot = (i: number) => ({ x: i % 2 ? 0.62 : -0.62, z: -13.45 + 0.7 + Math.floor(i / 2) * 1.25 })
+
+function buildTruck(): { g: THREE.Group; setLivery: (carrier: string, plate: string) => void; setOpen: (k: number) => void; load: ReturnType<typeof palletGroup>[] } {
   const g = new THREE.Group()
-  const trailerMat = new THREE.MeshStandardMaterial({ color: '#f3f4f6', roughness: 0.45, metalness: 0.1 })
-  const side = new THREE.MeshStandardMaterial({ roughness: 0.5 })
+  const trailerMat = new THREE.MeshStandardMaterial({ color: '#f3f4f6', roughness: 0.45, metalness: 0.1, transparent: true })
+  const side = new THREE.MeshStandardMaterial({ roughness: 0.5, transparent: true })
   const trailer = new THREE.Mesh(new THREE.BoxGeometry(2.55, 2.8, 13.2), [side, side, trailerMat, trailerMat, trailerMat, trailerMat])
   trailer.position.set(0, 2.55, -6.9); trailer.castShadow = true; g.add(trailer)
   box(2.4, 0.25, 12.6, std('#374151', 0.6, 0.5), 0, 1.05, -6.9, g)
   const cabMat = std('#e5e7eb', 0.35, 0.3)
   const cab = new THREE.Mesh(new RoundedBoxGeometry(2.45, 2.7, 2.3, 3, 0.15), cabMat); cab.position.set(0, 2.05, -15.0); cab.castShadow = true; g.add(cab)
   box(2.2, 0.9, 0.05, std('#0f172a', 0.1, 0.5), 0, 2.6, -16.17, g, false)
+  // the load, visible through the trailer while it is at the door
+  const load = Array.from({ length: 22 }, (_, i) => { const p = palletGroup(); const sl = trailerSlot(i); p.g.position.set(sl.x, 1.2, sl.z); p.g.rotation.y = Math.PI / 2; g.add(p.g); return p })
+  const setOpen = (k: number) => {
+    // see-through at the door so the loading reads, solid on the road
+    trailerMat.opacity = side.opacity = 1 - 0.72 * k
+    trailerMat.depthWrite = side.depthWrite = k < 0.5
+  }
   const wheel = new THREE.CylinderGeometry(0.5, 0.5, 0.35, 20); wheel.rotateZ(Math.PI / 2)
   const tyre = std('#111111', 0.9)
   for (const z of [-11.3, -12.6, -13.9, -15.3]) for (const x of [-1.05, 1.05]) { const w = new THREE.Mesh(wheel, tyre); w.position.set(x, 0.5, z); w.castShadow = true; g.add(w) }
@@ -511,7 +521,7 @@ function buildTruck(): { g: THREE.Group; setLivery: (carrier: string, plate: str
     side.needsUpdate = true
     cabMat.color.set(CARRIER_COLOR[carrier] ?? '#e5e7eb')
   }
-  return { g, setLivery }
+  return { g, setLivery, setOpen, load }
 }
 
 // ── UI bits ──────────────────────────────────────────────────────────────────
@@ -581,11 +591,11 @@ const LEVEL_DOT: Record<SimEvent['level'], string> = { info: '#94a3b8', ok: '#22
 
 interface AgvSnap { id: string; state: AgvState; battery: number; v: number; distanceM: number; missions: number; task: Task | null; payload: Pallet | null; wait: Wait | null; opLabel: string; home: number; lowCharge: boolean; lift: number }
 interface DockSnap { id: string; kind: 'in' | 'out'; state: Dock['state']; truck: NonNullable<Dock['truck']> | null; pending: number }
-interface Snap { t: number; k: Kpis; agvs: AgvSnap[]; tasks: Task[]; done: Task[]; docks: DockSnap[]; events: SimEvent[]; sync: ErpSync | null; syncs: ErpSync[] }
+interface Snap { t: number; k: Kpis; rush: Sim['rush']; caught: Sim['caught']; peakUntil: number; agvs: AgvSnap[]; tasks: Task[]; done: Task[]; docks: DockSnap[]; events: SimEvent[]; sync: ErpSync | null; syncs: ErpSync[] }
 
 function snapshot(s: Sim): Snap {
   return {
-    t: s.t, k: kpis(s),
+    t: s.t, k: kpis(s), rush: s.rush.map((r) => ({ ...r })), caught: [...s.caught], peakUntil: s.peakUntil,
     agvs: s.agvs.map((a) => ({
       id: a.id, state: a.state, battery: a.battery, v: a.v, distanceM: a.distanceM, missions: a.missions, task: a.task ? { ...a.task } : null,
       payload: a.payload, wait: a.wait, opLabel: a.opLabel, home: a.home, lowCharge: a.lowCharge, lift: a.turret.lift,
@@ -596,7 +606,95 @@ function snapshot(s: Sim): Snap {
   }
 }
 
-type Tab = 'fleet' | 'orders' | 'docks' | 'events' | 'erp'
+// ── Use cases a visitor can run, and what they save ──────────────────────────
+
+interface Scenario { id: ScenarioId; title: string; pain: string; value: string; outcome: (s: Snap) => string }
+const SCENARIOS: Scenario[] = [
+  {
+    id: 'mislabel', title: 'A pallet with the wrong label',
+    pain: 'A label printed for another truck ends up on a pallet. Without a check it ships to the wrong customer and you find out from a complaint.',
+    value: 'A mis-shipment typically costs €150–400 (return, re-delivery, credit note). Scanning every SSCC at the door stops it before the truck is sealed.',
+    outcome: (s) => {
+      const c = s.caught[s.caught.length - 1]
+      return c ? `Stopped at ${c.at} at ${clock(c.t).slice(0, 5)}: never loaded on the wrong truck. The operator took it to ${c.belongs}'s door and the WMS raised a P1 re-pick. ${s.caught.length} caught this shift.` : 'Waiting for the next pallet to reach a shipping lane…'
+    },
+  },
+  {
+    id: 'rush', title: 'A key customer calls: rush order',
+    pain: 'A pallet has to be on the truck that leaves in 4 minutes. Usually someone walks the floor looking for it and phones the driver to wait.',
+    value: 'The order goes to the front of the queue and to the nearest free cart. Nobody walks, nobody phones, and you see if it makes the cutoff.',
+    outcome: (s) => {
+      const r = s.rush[s.rush.length - 1]
+      if (!r) return ''
+      if (r.doneAt === undefined) return `In progress · ${fmtT(Math.max(0, r.due - s.t))} to cutoff`
+      return r.doneAt <= r.due ? `Staged in ${fmtT(r.doneAt - r.t)}: made the cutoff with ${fmtT(r.due - r.doneAt)} to spare.` : `Staged ${fmtT(r.doneAt - r.due)} after the cutoff.`
+    },
+  },
+  {
+    id: 'peak', title: 'Peak: end of month, promo, Black Friday',
+    pain: 'Twice the pallets for a few hours. Manually that means overtime, temps and mistakes, and you only know you are late when the truck leaves.',
+    value: 'Same six carts, no overtime. The board shows the queue and each truck’s cutoff, so a risk is visible before it is a delay.',
+    outcome: (s) => `${s.t < s.peakUntil ? `Peak on, ${fmtT(s.peakUntil - s.t)} left` : 'Peak over'} · queue ${s.k.queue} · ${s.k.palletsPerHour} pallets/h · on time ${s.k.onTimePct}%`,
+  },
+  {
+    id: 'blocked', title: 'Something on the floor of an aisle',
+    pain: 'A carton falls or someone walks into an aisle. A forklift driver stops, but nobody tells the rest, and the next one drives in too.',
+    value: 'Every cart’s scanner stops it short, the whole fleet knows, and no new work goes to that aisle until it is clear. No near misses, no damaged stock.',
+    outcome: (s) => `Fleet still moving ${s.k.palletsPerHour} pallets/h around it.`,
+  },
+]
+
+const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+
+function Savings({ snap }: { snap: Snap }) {
+  const [a, setA] = useState({ wage: 26, moves: 22, hours: 16, days: 250, run: 3.5, misRate: 0.1, misCost: 200 })
+  const pph = Math.max(1, snap.k.palletsPerHour)
+  const drivers = pph / a.moves
+  const labour = drivers * a.wage * a.hours * a.days
+  const run = snap.agvs.length * a.run * a.hours * a.days
+  const errors = pph * a.hours * a.days * (a.misRate / 100)
+  const errCost = errors * a.misCost
+  const total = labour - run + errCost
+  const field = (key: keyof typeof a, label: string, step = 1) => (
+    <label className="flex items-center justify-between gap-2 text-[12px] text-white/70">
+      <span>{label}</span>
+      <input type="number" step={step} value={a[key]} onChange={(e) => setA((x) => ({ ...x, [key]: Number(e.target.value) || 0 }))}
+        className="w-20 rounded-md border border-white/12 bg-black/50 px-2 py-0.5 text-right text-[12px] tabular-nums text-white focus:border-[#8b93e8] focus:outline-none" />
+    </label>
+  )
+  return (
+    <div>
+      <p className="text-[12px] leading-snug text-white/60">What this floor would cost with people on reach trucks, from what the fleet is doing right now. Change the numbers to yours.</p>
+      <div className="mt-2 rounded-xl border border-[#22c55e]/30 bg-[#22c55e]/10 p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#86efac]">Estimated saving per year</p>
+        <p className="mt-0.5 text-[26px] font-semibold tabular-nums">{eur(total)}</p>
+        <div className="mt-1.5 grid grid-cols-[1fr_auto] gap-y-0.5 text-[12px] text-white/75">
+          <span>{drivers.toFixed(1)} reach-truck drivers on the floor</span><span className="tabular-nums">{eur(labour)}</span>
+          <span>Fleet energy and service</span><span className="tabular-nums">−{eur(run)}</span>
+          <span>~{Math.round(errors)} wrong loads stopped at the door</span><span className="tabular-nums">{eur(errCost)}</span>
+        </div>
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-1.5 text-center">
+        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.palletsPerHour}</b><span className="text-[10.5px] text-white/50">pallets/h now</span></span>
+        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.km}</b><span className="text-[10.5px] text-white/50">km driven, nobody walking</span></span>
+        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.onTimePct}%</b><span className="text-[10.5px] text-white/50">pallets before cutoff</span></span>
+        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.turnaroundMin || '–'}</b><span className="text-[10.5px] text-white/50">min a truck spends at the door</span></span>
+      </div>
+      <div className="mt-3 space-y-1">
+        {field('wage', 'Driver cost €/h (loaded)')}
+        {field('moves', 'Pallet moves per driver-hour')}
+        {field('hours', 'Operating hours per day')}
+        {field('days', 'Days per year')}
+        {field('run', 'AGV energy + service €/h each', 0.5)}
+        {field('misRate', 'Manual mis-load rate %', 0.1)}
+        {field('misCost', 'Cost of one mis-shipment €', 10)}
+      </div>
+      <p className="mt-2 text-[11px] leading-snug text-white/45">Illustrative, from a simulated shift: not a quote. It leaves out the fleet’s purchase or lease, which a real business case divides by these savings.</p>
+    </div>
+  )
+}
+
+type Tab = 'cases' | 'fleet' | 'orders' | 'docks' | 'roi' | 'events' | 'erp'
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -613,7 +711,8 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
   const [sel, setSel] = useState<string | null>(null)
   const [follow, setFollow] = useState(false)
   const [speed, setSpeed] = useState(2)
-  const [tab, setTab] = useState<Tab>('fleet')
+  const [tab, setTab] = useState<Tab>('cases')
+  const [ran, setRan] = useState<Partial<Record<ScenarioId, string>>>({})
   const [erp, setErp] = useState<ErpTarget>('odoo')
   const [panelOpen, setPanelOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 768)
   const [failed, setFailed] = useState(false)
@@ -640,7 +739,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.0
     renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.shadowMap.type = THREE.PCFShadowMap
     mount.appendChild(renderer.domElement)
     renderer.domElement.style.display = 'block'
 
@@ -689,8 +788,12 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
     // routes on the floor
     const routeLines = new Map<string, THREE.Line>()
     for (const a of sim.agvs) {
-      const line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: '#5e6ad2', dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.45 }))
-      line.position.y = 0.03; scene.add(line); routeLines.set(a.id, line)
+      // a fixed buffer, drawn up to the route's length (resizing it every frame is slow and warns)
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ROUTE_MAX * 3), 3).setUsage(THREE.DynamicDrawUsage))
+      geo.setAttribute('lineDistance', new THREE.BufferAttribute(new Float32Array(ROUTE_MAX), 1).setUsage(THREE.DynamicDrawUsage))
+      const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: '#5e6ad2', dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.45 }))
+      line.position.y = 0.03; line.frustumCulled = false; scene.add(line); routeLines.set(a.id, line)
     }
     // highlight box for the selected task's source/target or a found location
     const hl = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.35, 1.5, 1.15)), new THREE.LineBasicMaterial({ color: '#fbbf24' }))
@@ -709,6 +812,8 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       layer.appendChild(el); labels.set(a.id, el)
     }
     const locLabel = document.createElement('div'); locLabel.className = 'loc-label'; locLabel.style.display = 'none'; layer.appendChild(locLabel)
+    const dockLabels = sim.docks.map(() => { const el = document.createElement('div'); el.className = 'dock-label'; layer.appendChild(el); return el })
+    let caughtSeen = sim.caught.length
 
     // picking: tap a cart
     const ray = new THREE.Raycaster(); const ndc = new THREE.Vector2()
@@ -747,7 +852,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       fly = { from: controls.target.clone(), to, camFrom: camera.position.clone(), camTo: to.clone().add(dir.multiplyScalar(d)), k: 0 }
     }
 
-    const clockT = new THREE.Clock()
+    const clockT = new THREE.Timer()
     const v = new THREE.Vector3()
     let raf = 0, lastSnap = 0
     const showLoc = (x: number, y: number, z: number, text: string) => {
@@ -758,6 +863,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
     }
     const loop = () => {
       raf = requestAnimationFrame(loop)
+      clockT.update()
       const dt = Math.min(0.1, clockT.getDelta())
       step(sim, dt * speedRef.current)
       for (const i of sim.dirty) placeSlot(sim, i, bld.slotPallets, bld.slotLoads)
@@ -797,10 +903,17 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
         c.fieldMat.opacity = a.wait ? 0.22 : 0.1
         // route
         const line = routeLines.get(a.id)!
-        const pts: THREE.Vector3[] = []
-        a.legs.forEach((l, li) => { for (let d = li === 0 ? a.s : 0; d <= l.len; d += 0.6) { const p = pointAt(l, d); pts.push(new THREE.Vector3(p.x, 0, p.z)) } const e2 = l.pts[l.pts.length - 1]; pts.push(new THREE.Vector3(e2.x, 0, e2.z)) })
-        line.geometry.setFromPoints(pts.length > 1 ? pts : [])
-        line.computeLineDistances()
+        const posA = line.geometry.getAttribute('position') as THREE.BufferAttribute
+        const disA = line.geometry.getAttribute('lineDistance') as THREE.BufferAttribute
+        let n = 0, run = 0, px = 0, pz = 0
+        const push = (x: number, z: number) => {
+          if (n >= ROUTE_MAX) return
+          if (n) run += Math.hypot(x - px, z - pz)
+          posA.setXYZ(n, x, 0, z); disA.setX(n, run); px = x; pz = z; n++
+        }
+        a.legs.forEach((l, li) => { for (let d = li === 0 ? a.s : 0; d <= l.len; d += 0.6) { const p = pointAt(l, d); push(p.x, p.z) } const e2 = l.pts[l.pts.length - 1]; push(e2.x, e2.z) })
+        line.geometry.setDrawRange(0, n > 1 ? n : 0)
+        posA.needsUpdate = true; disA.needsUpdate = true
         const m = line.material as THREE.LineDashedMaterial
         const isSel = selId === a.id
         m.opacity = selId ? (isSel ? 0.95 : 0.1) : 0.35
@@ -845,27 +958,82 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       }
       if (other) hl2.position.set(other.x, other.y, other.z)
 
-      // docks: trucks, lights, pallets on the lanes, the person with the pallet jack
+      // docks: doors, trucks and their load, the operator scanning and loading
       sim.docks.forEach((d, i) => {
         const tr = trucks[i]
         tr.g.visible = d.truckOut < 0.999
-        tr.g.position.set(d.def.x, 0, -0.4 - d.truckOut * 36)
+        const truckZ = -0.4 - d.truckOut * 36
+        tr.g.position.set(d.def.x, 0, truckZ)
         if (d.truck) tr.setLivery(d.def.kind === 'in' ? 'Supplier' : d.truck.carrier, d.truck.plate)
-        const busy = d.state !== 'docked'
-        bld.dockLights[i].color.set(busy ? '#ef4444' : '#22c55e'); bld.dockLights[i].emissive.set(busy ? '#ef4444' : '#22c55e')
+        const atDoor = d.state === 'docked' || d.state === 'sealing'
+        const door = bld.doors[i]
+        const open = atDoor && d.state !== 'sealing' ? 1 : 0
+        door.position.y += (1.65 + open * 3.05 - door.position.y) * Math.min(1, dt * 2)
+        tr.setOpen(Math.max(0, Math.min(1, (door.position.y - 1.65) / 3.05)))
+        tr.load.forEach((p, k) => p.set(d.trailer[k] ?? null))
+        const recent = sim.caught.length && sim.caught[sim.caught.length - 1].at === d.def.id && sim.t - sim.caught[sim.caught.length - 1].t < 8
+        const lamp = recent ? (Math.sin(sim.t * 12) > 0 ? '#ef4444' : '#450a0a') : atDoor && d.state === 'docked' ? '#22c55e' : '#ef4444'
+        bld.dockLights[i].color.set(lamp); bld.dockLights[i].emissive.set(lamp)
         const p = dockPallets[i]
-        const jack = jacks[i]
-        if (d.slide) {
+        const op = jacks[i]
+        const L = d.loader
+        const ease = (k: number) => k * k * (3 - 2 * k)
+        if (L) {
+          op.visible = true
+          if (L.phase === 'scan') {
+            p.set(L.pallet); p.g.position.set(d.def.x, 0, STAGE_Z)
+            op.position.set(d.def.x + 1.0, 0, STAGE_Z - 0.4); op.rotation.y = -Math.PI / 2
+          } else if (L.phase === 'carry') {
+            const sl = trailerSlot(L.slot)
+            const k = ease(Math.min(1, L.k))
+            const zw = truckZ + sl.z
+            const z = STAGE_Z + (zw - STAGE_Z) * k
+            const x = d.def.x + sl.x * Math.max(0, (k - 0.55) / 0.45)
+            p.set(L.pallet); p.g.position.set(x, z < 0 ? 1.2 * Math.min(1, -z / 0.6) : 0.03, z)
+            op.position.set(x, z < -0.6 ? 1.2 : 0, z + 1.1); op.rotation.y = Math.PI
+          } else if (L.phase === 'relocate') {
+            const to = sim.docks[L.to!]
+            const k = Math.min(1, L.k)
+            const walk = (relocateS(d, to) - 3) / relocateS(d, to)
+            const kk = ease(Math.min(1, k / walk))
+            const x = d.def.x + (to.def.x - d.def.x) * kk
+            p.set(k < walk ? L.pallet : null); p.g.position.set(x, 0.03, 1.5)
+            op.position.set(x - Math.sign(to.def.x - d.def.x) * 1.1, 0, 1.5); op.rotation.y = to.def.x > d.def.x ? Math.PI / 2 : -Math.PI / 2
+          } else {
+            const sl = trailerSlot(L.slot)
+            const z = truckZ + sl.z + (STAGE_Z - 0.8 - truckZ - sl.z) * ease(Math.min(1, L.k))
+            p.set(d.spot); p.g.position.set(d.def.x, 0, STAGE_Z)
+            op.position.set(d.def.x, z < -0.6 ? 1.2 : 0, z); op.rotation.y = 0
+          }
+        } else if (d.slide) {
           const k = d.slide.k
-          const z = d.slide.dir === 'in' ? STAGE_Z + (-3 - STAGE_Z) * k : -3 + (STAGE_Z + 3) * k
+          const z = -3 + (STAGE_Z + 3) * k
           p.set(d.slide.pallet); p.g.position.set(d.def.x, 0.03, z)
-          jack.visible = true; jack.position.set(d.def.x, 0, z + (d.slide.dir === 'in' ? 1.0 : -1.0)); jack.rotation.y = d.slide.dir === 'in' ? Math.PI : 0
+          op.visible = true; op.position.set(d.def.x, 0, z - 1.0); op.rotation.y = 0
         } else {
           p.set(d.spot); p.g.position.set(d.def.x, 0, STAGE_Z)
-          jack.visible = false
+          op.visible = atDoor; op.position.set(d.def.x + 1.6, 0, 1.2); op.rotation.y = 0.4
         }
         p.g.rotation.y = Math.PI / 2
+        // the door board: truck, progress, what the operator is doing
+        const el = dockLabels[i]
+        v.set(d.def.x, 5.1, 0.3).project(camera)
+        const vis = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1
+        el.style.display = vis ? '' : 'none'
+        if (vis) {
+          const t = d.truck
+          const line = !t ? 'Door free' : d.def.kind === 'in' ? `Unloading ${t.cap - t.count}/${t.cap}` : recent ? `✗ Wrong load caught · to ${sim.caught[sim.caught.length - 1].belongs}`
+            : d.state === 'sealing' ? `Sealing ${t.seal} · ${t.count}/${t.cap}` : L?.phase === 'scan' ? `Scanning SSCC …${L.pallet.sscc.slice(-4)}` : L?.phase === 'relocate' ? 'Walking it to its door' : `Loading ${t.count}/${t.cap}`
+          el.dataset.state = recent ? 'bad' : d.state === 'sealing' ? 'ok' : ''
+          el.style.transform = `translate(-50%,-100%) translate(${(v.x * 0.5 + 0.5) * mount.clientWidth}px,${(-v.y * 0.5 + 0.5) * mount.clientHeight}px)`
+          el.innerHTML = `<b>${d.def.id}${t ? ` · ${t.plate}` : ''}</b><small>${line}</small>`
+        }
       })
+      if (sim.caught.length > caughtSeen) {
+        caughtSeen = sim.caught.length
+        const at = sim.docks.find((d) => d.def.id === sim.caught[caughtSeen - 1].at)
+        if (at && !followRef.current) flyRef.current?.(at.def.x, 2, 26)
+      }
       sim.agvs.forEach((a, i) => {
         const on = a.state === 'charging' && a.home === i
         bld.chargerLeds[i].emissiveIntensity = on ? 1.2 + 0.8 * Math.sin(sim.t * 3) : 0.5
@@ -942,6 +1110,15 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
     else if (r.task.agv && s.tasks.includes(s.tasks.find((t) => t.id === r.task.id)!)) { setSel(r.task.agv) }
     else { const sl = s.slots[r.task.slot]; flyRef.current?.(sl.x, sl.rz, 22) }
   }
+  const trigger = (id: ScenarioId) => {
+    const s = simRef.current
+    if (!s) return
+    const msg = runScenario(s, id)
+    setRan((r) => ({ ...r, [id]: msg }))
+    if (id === 'rush') { const r = s.rush[s.rush.length - 1]; const t = r && s.tasks.find((x) => x.id === r.task); if (t) { const d = s.docks[t.dock]; flyRef.current?.(d.def.x, 4, 34) } }
+    if (id === 'peak') flyRef.current?.(22, 4, 48)
+    if (id === 'blocked') setTimeout(() => { const b = simRef.current?.blocked; if (b) flyRef.current?.((b.x0 + b.x1) / 2, b.z, 26) }, 120)
+  }
   const foundSlot = found?.kind === 'slot' && simRef.current ? simRef.current.slots[found.slot] : null
   const foundSlotTask = foundSlot && snap ? snap.tasks.find((t) => simRef.current!.slots[t.slot] === foundSlot) : null
 
@@ -981,6 +1158,11 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
         .agv-label small{font-size:10px;font-weight:500;color:rgba(255,255,255,.62)}
         .agv-label[data-sel="1"]{background:#5e6ad2;border-color:#8b93e8}
         .agv-label[data-sel="1"] small{color:rgba(255,255,255,.85)}
+        .dock-label{position:absolute;left:0;top:0;display:flex;flex-direction:column;padding:3px 8px 4px;border-radius:8px;background:rgba(15,23,42,.85);border:1px solid rgba(255,255,255,.14);font:600 11px/1.25 Inter,system-ui,sans-serif;color:#fff;white-space:nowrap;pointer-events:none}
+        .dock-label small{font-size:10px;font-weight:500;color:rgba(255,255,255,.7)}
+        .dock-label[data-state="bad"]{background:#b91c1c;border-color:#fca5a5}
+        .dock-label[data-state="bad"] small{color:#fff}
+        .dock-label[data-state="ok"]{background:#166534}
         .loc-label{position:absolute;left:0;top:0;padding:3px 8px;border-radius:8px;background:#fbbf24;color:#111;font:700 11.5px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;pointer-events:none}
         @media (max-width: 640px){.agv-label small{display:none}}
       `}</style>
@@ -1063,8 +1245,26 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       </button>
       {panelOpen && snap && (
         <aside className="absolute inset-x-2 bottom-14 flex max-h-[46%] flex-col rounded-2xl border border-white/10 bg-black/75 backdrop-blur md:inset-x-auto md:bottom-4 md:right-4 md:top-4 md:max-h-none md:w-[372px]">
-          <div className="flex gap-0.5 p-1.5">{tabBtn('fleet', 'Fleet')}{tabBtn('orders', `Orders ${snap.tasks.length}`)}{tabBtn('docks', 'Docks')}{tabBtn('events', 'Events')}{tabBtn('erp', 'ERP')}</div>
+          <div className="flex gap-0.5 overflow-x-auto p-1.5">{tabBtn('cases', 'Try it')}{tabBtn('fleet', 'Fleet')}{tabBtn('orders', `Orders ${snap.tasks.length}`)}{tabBtn('docks', 'Docks')}{tabBtn('roi', 'Savings')}{tabBtn('events', 'Events')}{tabBtn('erp', 'ERP')}</div>
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+            {tab === 'cases' && (
+              <div className="space-y-2">
+                <p className="text-[12px] leading-snug text-white/60">Four things that happen in any warehouse every week. Throw one at the floor and watch what the system does.</p>
+                {SCENARIOS.map((c) => (
+                  <div key={c.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[13.5px] font-semibold">{c.title}</p>
+                      <button type="button" onClick={() => trigger(c.id)} className="flex-none rounded-lg bg-[#5e6ad2] px-2.5 py-1 text-[12px] font-semibold hover:brightness-110">Run it</button>
+                    </div>
+                    <p className="mt-1 text-[12px] leading-snug text-white/65">{c.pain}</p>
+                    {ran[c.id] && <p className="mt-1.5 rounded-md bg-[#5e6ad2]/20 px-2 py-1.5 text-[12px] leading-snug text-[#dfe2ff]">{ran[c.id]}</p>}
+                    {ran[c.id] && <p className="mt-1 text-[12px] font-medium text-[#86efac]">{c.outcome(snap)}</p>}
+                    <p className="mt-1.5 text-[11.5px] text-white/45">{c.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {tab === 'roi' && <Savings snap={snap} />}
             {tab === 'fleet' && (
               <ul className="space-y-1.5">
                 {snap.agvs.map((a) => (
@@ -1103,6 +1303,11 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
             )}
             {tab === 'docks' && (
               <ul className="space-y-1.5">
+                <li className="grid grid-cols-3 gap-1.5 pb-1 text-center">
+                  <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.turnaroundMin || '–'}</b><span className="text-[10.5px] text-white/50">min truck at door</span></span>
+                  <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.dockToTruckS || '–'}</b><span className="text-[10.5px] text-white/50">s lane → trailer</span></span>
+                  <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.caught}</b><span className="text-[10.5px] text-white/50">wrong loads stopped</span></span>
+                </li>
                 {snap.docks.map((d) => {
                   const tr = d.truck
                   const pct = tr && tr.cap ? (d.kind === 'out' ? tr.count / tr.cap : (tr.cap - tr.count) / tr.cap) : 0
@@ -1121,6 +1326,11 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
                             <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/12"><span className="absolute inset-y-0 left-0 bg-[#5e6ad2]" style={{ width: `${pct * 100}%` }} /></span>
                             <span className="text-[11.5px] tabular-nums text-white/70">{d.kind === 'out' ? `${tr.count}/${tr.cap} loaded` : `${tr.cap - tr.count}/${tr.cap} unloaded`}</span>
                           </div>
+                          {d.kind === 'out' && (
+                            <div className="mt-1.5 grid grid-flow-col grid-rows-2 gap-0.5" aria-label={`Trailer: ${tr.count} of ${tr.cap} positions loaded`}>
+                              {Array.from({ length: Math.max(tr.cap, 2) + (Math.max(tr.cap, 2) % 2) }, (_, k) => <span key={k} className={`h-1.5 rounded-sm ${k < tr.count ? 'bg-[#a5b4fc]' : k < tr.cap ? 'bg-white/15' : 'bg-transparent'}`} />)}
+                            </div>
+                          )}
                           {d.kind === 'out' && <p className={`mt-1 text-[11.5px] ${left < 0 ? 'text-[#f87171]' : 'text-white/55'}`}>Cutoff {clock(tr.due).slice(0, 5)} · {left < 0 ? `${fmtT(-left)} late` : `${fmtT(left)} left`} · {d.pending} TO open</p>}
                         </>
                       ) : <p className="mt-0.5 text-[12px] text-white/45">No truck at the door.</p>}
