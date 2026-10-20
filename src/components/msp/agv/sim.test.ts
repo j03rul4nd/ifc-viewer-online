@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createSim, step, kpis, legsTo, erpPayload, find, sscc, SIZE, ROAD_Z, AISLES, CHARGERS, STUB_Z, FRONT, REAR, type Agv } from './sim'
+import { createSim, step, kpis, legsTo, erpPayload, find, sscc, runScenario, SIZE, ROAD_Z, AISLES, CHARGERS, STUB_Z, FRONT, REAR, type Agv } from './sim'
 
 /** The cart's footprint (chassis + forks + pallet) as an oriented rectangle, a little shrunk for float noise. */
 function corners(a: Agv): { x: number; z: number }[] {
@@ -97,4 +97,36 @@ describe('agv sim', () => {
     expect(erpPayload('salesforce', sync).method).toBe('PATCH')
     expect((erpPayload('webhook', sync).body as { sscc: string }).sscc).toBe(sync.task.pallet.sscc)
   })
+
+  it('catches a mislabelled pallet at the door and still ships every truck complete', () => {
+    const s = createSim(9)
+    for (let i = 0; i < 3000; i++) step(s, 0.1)
+    runScenario(s, 'mislabel')
+    for (let i = 0; i < 6000 && s.caught.length === 0; i++) step(s, 0.1)
+    expect(s.caught.length).toBe(1)
+    const sscc0 = s.caught[0].sscc
+    for (let i = 0; i < 1200; i++) step(s, 0.1)
+    // it went into the trailer of the load it was labelled for, not this one
+    const where = s.docks.find((d) => d.trailer.some((p) => p.sscc === sscc0))
+    const wrong = s.docks.find((d) => d.def.id === s.caught[0].at)!
+    expect(where?.def.id).not.toBe(wrong.def.id)
+    // and no truck leaves with a pallet for another door
+    for (const d of s.docks) for (const p of d.trailer) if (p.dest !== undefined && d.truck) expect(s.docks[p.dest]).toBe(d)
+  }, 60_000)
+
+  it('runs a rush order first and keeps working through peak and a blocked aisle', () => {
+    const s = createSim(4)
+    for (let i = 0; i < 3000; i++) step(s, 0.1)
+    expect(runScenario(s, 'rush')).toMatch(/cutoff/)
+    runScenario(s, 'peak')
+    runScenario(s, 'blocked')
+    let longest = 0
+    for (let i = 0; i < 9000; i++) { step(s, 0.1); for (const a of s.agvs) if (a.wait) longest = Math.max(longest, s.t - a.waitSince) }
+    expect(s.rush[0].doneAt).toBeDefined()
+    expect(s.rush[0].doneAt!).toBeLessThanOrEqual(s.rush[0].due)
+    expect(longest).toBeLessThan(60)
+    const k = kpis(s)
+    expect(k.turnaroundMin).toBeGreaterThan(0)
+    expect(k.dockToTruckS).toBeGreaterThan(0)
+  }, 60_000)
 })

@@ -116,7 +116,13 @@ const CONSONANTS = 'BCDFGHJKLMNPRSTVWXYZ'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export interface Pallet { sscc: string; sku: Sku; cases: number; kg: number; lot: string; bbd: string; h: number }
+export interface Pallet {
+  sscc: string; sku: Sku; cases: number; kg: number; lot: string; bbd: string; h: number
+  /** Outbound only: the dock (load) the WMS printed this pallet's label for. */
+  dest?: number
+  /** When it was put down on the dock lane (dock-to-truck time). */
+  stagedAt?: number
+}
 
 export interface Slot {
   aisle: number; side: -1 | 1; pos: number; level: number
@@ -139,6 +145,8 @@ export interface Task {
   slot: number
   dock: number
   priority: 1 | 2 | 3
+  /** Why it exists, when a scenario made it (rush order, relabel…). */
+  reason?: string
   createdAt: number
   due: number
   status: TaskStatus
@@ -148,7 +156,7 @@ export interface Task {
   doneAt?: number
 }
 
-export interface Truck { plate: string; carrier: string; dest: string; ref: string; cap: number; count: number; arrivedAt: number; due: number; orders: string[] }
+export interface Truck { plate: string; carrier: string; dest: string; ref: string; cap: number; count: number; arrivedAt: number; due: number; orders: string[]; seal?: string; dockedAt?: number }
 export type DockState = 'docked' | 'sealing' | 'departing' | 'empty' | 'arriving'
 export interface Dock {
   def: DockDef
@@ -160,6 +168,13 @@ export interface Dock {
   spot: Pallet | null
   spotTask: string | null
   slide: { pallet: Pallet; k: number; dir: 'in' | 'out' } | null
+  /**
+   * Outbound loading by the dock operator: scan the SSCC at the door, then take
+   * the pallet into the trailer with an electric pallet jack, and walk back.
+   */
+  loader: { pallet: Pallet; phase: 'scan' | 'carry' | 'back' | 'relocate'; k: number; slot: number; to?: number } | null
+  /** Pallets in the trailer, in loading order (for the 3D trailer). */
+  trailer: Pallet[]
 }
 
 export type AgvState = 'charging' | 'idle' | 'parking' | 'toCharge' | 'toSource' | 'atSource' | 'toDest' | 'atDest'
@@ -219,7 +234,17 @@ export interface Sim {
   seq: { to: number; so: number; po: number; ld: number; sscc: number }
   trucksOut: number
   trucksLate: number
+  /** Scenario state, and what the door checks caught. */
+  peakUntil: number
+  mislabelArmed: boolean
+  caught: { t: number; sscc: string; at: string; belongs: string }[]
+  rush: { t: number; task: string; due: number; doneAt?: number }[]
+  turnarounds: number[]   // seconds a truck spent at the door
+  dockToTruck: number[]   // seconds from staged on the lane to in the trailer
+  scenario: { id: ScenarioId; t: number } | null
 }
+
+export type ScenarioId = 'rush' | 'mislabel' | 'peak' | 'blocked'
 
 export const STATE_LABEL: Record<AgvState, string> = {
   charging: 'Charging', idle: 'Idle', parking: 'To charger', toCharge: 'Low battery',
@@ -390,7 +415,7 @@ function newOutboundLoad(s: Sim, d: Dock, di: number): void {
   }
   d.truck = truck
   const priority: 1 | 2 = carrier === 'Iber Express' ? 1 : 2
-  const pallets = 3 + Math.floor(rng() * 3)
+  const pallets = s.t < s.peakUntil ? 5 + Math.floor(rng() * 3) : 3 + Math.floor(rng() * 3)
   const nSo = pallets > 3 && rng() < 0.6 ? 2 : 1
   for (let o = 0; o < nSo; o++) {
     const so = `SO-26-${String(18400 + s.seq.so++).padStart(6, '0')}`
@@ -403,6 +428,7 @@ function newOutboundLoad(s: Sim, d: Dock, di: number): void {
       const si = free[Math.floor(rng() * free.length)]
       const slot = s.slots[si]
       slot.reserved = true
+      slot.pallet!.dest = di
       s.tasks.push({
         id: `TO-${String(41200 + s.seq.to++).padStart(7, '0')}`, type: 'PICK', ref: so, party: customer, city: truck.dest,
         pallet: slot.pallet!, from: slot.label, to: d.def.id, slot: si, dock: di, priority,
@@ -443,6 +469,82 @@ function createPutaway(s: Sim, d: Dock, di: number): void {
 
 function fillPct(s: Sim): number { return s.slots.filter((x) => x.pallet).length / s.slots.length }
 
+const SCAN_S = 1.6
+const CARRY_S = 3.2
+const BACK_S = 2.2
+/** Walking a pallet along the apron from one door to another, at 1.1 m/s, plus a scan. */
+export const relocateS = (a: Dock, b: Dock) => Math.abs(a.def.x - b.def.x) / 1.1 + 3
+
+/** Trailer pallet positions: two across, front to back (33 on a real 13.6 m trailer). */
+export const TRAILER_SLOTS = 22
+
+function newPickLine(s: Sim, di: number, reason?: string, priority: 1 | 2 = 2, due?: number): Task | null {
+  const d = s.docks[di]
+  const free = s.slots.map((_, i) => i).filter((i) => s.slots[i].pallet && !s.slots[i].reserved && !aisleBlocked(s, s.slots[i].aisle))
+  if (!free.length || !d.truck) return null
+  const si = free[Math.floor(s.rng() * free.length)]
+  const slot = s.slots[si]
+  slot.reserved = true
+  slot.pallet!.dest = di
+  const t: Task = {
+    id: `TO-${String(41200 + s.seq.to++).padStart(7, '0')}`, type: 'PICK', ref: d.truck.orders[0] ?? d.truck.ref, party: pick(s.rng, CUSTOMERS), city: d.truck.dest,
+    pallet: slot.pallet!, from: slot.label, to: d.def.id, slot: si, dock: di, priority, createdAt: s.t, due: due ?? d.truck.due, status: 'queued', reason,
+  }
+  s.tasks.push(t)
+  return t
+}
+
+/**
+ * The dock operator: scans every pallet put down on the lane. Right load →
+ * into the trailer, next position, front to back. Wrong load → it never goes
+ * on this truck: the operator walks it to the right door, and the WMS raises a
+ * priority replacement pick for this one, before the truck is sealed.
+ */
+function tickLoader(s: Sim, d: Dock, di: number, dt: number): void {
+  const tr = d.truck
+  if (!d.loader) {
+    if (d.spot && tr) d.loader = { pallet: d.spot, phase: 'scan', k: 0, slot: d.trailer.length }
+    return
+  }
+  const L = d.loader
+  L.k += dt / (L.phase === 'scan' ? SCAN_S : L.phase === 'carry' ? CARRY_S : L.phase === 'relocate' ? relocateS(d, s.docks[L.to!]) : BACK_S)
+  if (L.k < 1) return
+  if (L.phase === 'scan') {
+    const p = L.pallet
+    if (p.dest !== undefined && p.dest !== di) {
+      // caught: the operator lifts it off the lane, walks it along the apron to
+      // the right door and loads it there; the WMS re-picks the missing line
+      const right = s.docks[p.dest]
+      s.caught.push({ t: s.t, sscc: p.sscc, at: d.def.id, belongs: right.truck?.ref ?? right.def.id })
+      pushEvent(s, { level: 'alert', text: `Door scan at ${d.def.id}: SSCC …${p.sscc.slice(-6)} belongs to ${right.truck?.ref ?? right.def.id} (${right.def.id}) · not loaded` })
+      const rp = newPickLine(s, di, 'Replacement for the mislabelled pallet', 1)
+      pushEvent(s, { level: 'info', task: rp?.id, text: `Operator takes it to ${right.def.id}${rp ? ` · WMS raises ${rp.id} (P1) for the right pallet at ${d.def.id}` : ''}` })
+      L.phase = 'relocate'; L.k = 0; L.to = p.dest
+      d.spot = null
+      return
+    }
+    L.phase = 'carry'; L.k = 0
+    d.spot = null
+    return
+  }
+  if (L.phase === 'relocate') {
+    const right = s.docks[L.to!]
+    right.trailer.push(L.pallet)
+    if (right.truck) right.truck.count++
+    pushEvent(s, { level: 'ok', text: `SSCC …${L.pallet.sscc.slice(-6)} re-scanned and loaded at ${right.def.id}, its own truck` })
+    L.phase = 'back'; L.k = 0
+    return
+  }
+  if (L.phase === 'carry') {
+    d.trailer.push(L.pallet)
+    if (tr) tr.count++
+    if (L.pallet.stagedAt !== undefined) { s.dockToTruck.push(s.t - L.pallet.stagedAt); if (s.dockToTruck.length > 80) s.dockToTruck.shift() }
+    L.phase = 'back'; L.k = 0
+    return
+  }
+  d.loader = null
+}
+
 function tickDock(s: Sim, d: Dock, di: number, dt: number): void {
   if (d.slide) {
     d.slide.k += dt / 2.6
@@ -455,9 +557,12 @@ function tickDock(s: Sim, d: Dock, di: number, dt: number): void {
   switch (d.state) {
     case 'docked':
       if (d.def.kind === 'out') {
-        if (d.spot && !d.slide) { d.slide = { pallet: d.spot, k: 0, dir: 'in' }; d.spot = null }
-        const pending = s.tasks.some((t) => t.dock === di && t.type === 'PICK')
-        if (tr && !pending && !d.slide && !d.spot && tr.count >= tr.cap) { d.state = 'sealing'; d.timer = 4 }
+        tickLoader(s, d, di, dt)
+        const pending = s.tasks.some((t) => t.dock === di)
+        if (tr && !pending && !d.loader && !d.spot && tr.count >= tr.cap) {
+          d.state = 'sealing'; d.timer = 5
+          tr.seal = `ES${Math.floor(s.rng() * 9e6) + 1e6}`
+        }
       } else {
         if (d.spot && !d.spotTask) createPutaway(s, d, di)
         if (!d.spot && !d.slide && tr && tr.count > 0) { tr.count--; d.slide = { pallet: newPallet(s, pick(s.rng, SKUS)), k: 0, dir: 'out' } }
@@ -472,7 +577,8 @@ function tickDock(s: Sim, d: Dock, di: number, dt: number): void {
           s.trucksOut++
           const late = s.t > tr.due
           if (late) s.trucksLate++
-          pushEvent(s, { level: late ? 'warn' : 'ok', text: `Truck ${tr.plate} left ${d.def.id} for ${tr.dest} · ${tr.count} pallets · ${late ? 'late' : 'on time'} · ASN sent` })
+          s.turnarounds.push(s.t - (tr.dockedAt ?? tr.arrivedAt)); if (s.turnarounds.length > 50) s.turnarounds.shift()
+          pushEvent(s, { level: late ? 'warn' : 'ok', text: `Truck ${tr.plate} sealed (${tr.seal}) and left ${d.def.id} for ${tr.dest} · ${tr.count} pallets · ${late ? 'late' : 'on time'} · DESADV sent for ${tr.orders.join(', ')}` })
         } else if (tr) pushEvent(s, { level: 'ok', text: `${tr.ref} received in full · truck ${tr.plate} released from ${d.def.id}` })
       }
       break
@@ -480,9 +586,9 @@ function tickDock(s: Sim, d: Dock, di: number, dt: number): void {
       d.timer -= dt
       d.truckOut = Math.min(1, 1 - d.timer / 7)
       if (d.timer <= 0) {
-        d.state = 'empty'; d.truck = null; d.truckOut = 1
+        d.state = 'empty'; d.truck = null; d.truckOut = 1; d.trailer = []
         const f = fillPct(s)
-        d.timer = d.def.kind === 'out' ? 25 + s.rng() * 30 : f > 0.75 ? 70 : f < 0.6 ? 8 : 30
+        d.timer = d.def.kind === 'out' ? (s.t < s.peakUntil ? 6 : 25) + s.rng() * 30 : f > 0.75 ? 70 : f < 0.6 ? 8 : 30
       }
       break
     case 'empty':
@@ -495,6 +601,7 @@ function tickDock(s: Sim, d: Dock, di: number, dt: number): void {
       if (d.timer <= 0) {
         d.state = 'docked'; d.truckOut = 0
         if (d.def.kind === 'out') newOutboundLoad(s, d, di); else newInboundTruck(s, d)
+        if (d.truck) d.truck.dockedAt = s.t
       }
       break
   }
@@ -708,9 +815,20 @@ function effect(s: Sim, a: Agv, t: Task, what: 'attach' | 'detach'): void {
   const dock = s.docks[t.dock]
   const atRack = (t.type === 'PICK') === (a.state === 'atSource')
   if (what === 'attach') {
-    if (atRack) { a.payload = slot.pallet; slot.pallet = null; s.dirty.push(t.slot) } else { a.payload = dock.spot; dock.spot = null; dock.spotTask = null }
+    if (atRack) { a.payload = slot.pallet; slot.pallet = null; s.dirty.push(t.slot) }
+    else { a.payload = dock.spot; dock.spot = null; dock.spotTask = null }
   } else {
-    if (atRack) { slot.pallet = a.payload; slot.reserved = false; s.dirty.push(t.slot) } else dock.spot = a.payload
+    if (atRack) { slot.pallet = a.payload; slot.reserved = false; s.dirty.push(t.slot) }
+    else {
+      const p = a.payload!
+      p.stagedAt = s.t
+      // scenario: a label printed for another load (the error a door scan is for)
+      if (t.type === 'PICK' && s.mislabelArmed) {
+        const other = s.docks.findIndex((x, i) => i !== t.dock && x.def.kind === 'out' && x.state === 'docked' && x.truck)
+        if (other >= 0) { p.dest = other; s.docks[other].truck!.cap++; s.mislabelArmed = false }
+      }
+      dock.spot = p
+    }
     a.payload = null
   }
 }
@@ -769,6 +887,8 @@ function complete(s: Sim, a: Agv): void {
   s.syncs.unshift({ t: s.t, task: t, agv: a.id }); if (s.syncs.length > 20) s.syncs.length = 20
   a.missions++
   a.task = null
+  const rush = s.rush.find((r) => r.task === t.id)
+  if (rush) { rush.doneAt = s.t; pushEvent(s, { level: s.t <= t.due ? 'ok' : 'warn', task: t.id, text: `Rush order staged in ${fmtS(s.t - t.createdAt)} · ${s.t <= t.due ? 'makes' : 'misses'} the ${t.to} cutoff` }) }
   if (t.type === 'PICK') {
     const tr = s.docks[t.dock].truck
     const late = s.t > t.due
@@ -833,6 +953,7 @@ export function createSim(seed = 2026, fleet = 6): Sim {
     t: 0, rng, agvs: [], slots: [], dirty: [], tasks: [], done: [], docks: [], zones: ZONES.map(() => ({ holder: null })),
     events: [], syncs: [], blocked: null, blockPts: [], nextBlockAt: 70,
     seq: { to: 0, so: 0, po: 0, ld: 71, sscc: 4127 }, trucksOut: 0, trucksLate: 0,
+    peakUntil: 0, mislabelArmed: false, caught: [], rush: [], turnarounds: [], dockToTruck: [], scenario: null,
   }
   s.slots = buildSlots(rng, s)
   s.agvs = Array.from({ length: Math.min(fleet, CHARGERS.length) }, (_, i) => {
@@ -847,7 +968,7 @@ export function createSim(seed = 2026, fleet = 6): Sim {
     return a
   })
   s.docks = DOCKS.map((def, i) => ({
-    def, state: 'arriving' as DockState, timer: 1 + i * 2.5, truckOut: 1, truck: null, spot: null, spotTask: null, slide: null,
+    def, state: 'arriving' as DockState, timer: 1 + i * 2.5, truckOut: 1, truck: null, spot: null, spotTask: null, slide: null, loader: null, trailer: [],
   }))
   pushEvent(s, { level: 'info', text: `Shift started · ${s.agvs.length} AGVs online · ${Math.round(fillPct(s) * 100)}% of ${s.slots.length} locations full` })
   return s
@@ -886,7 +1007,7 @@ export function step(s: Sim, dt: number): void {
 
 // ── KPIs and lookups ─────────────────────────────────────────────────────────
 
-export interface Kpis { palletsPerHour: number; onTimePct: number; utilisationPct: number; avgBattery: number; queue: number; done: number; trucksOut: number; fillPct: number }
+export interface Kpis { palletsPerHour: number; onTimePct: number; utilisationPct: number; avgBattery: number; queue: number; done: number; trucksOut: number; fillPct: number; turnaroundMin: number; dockToTruckS: number; caught: number; km: number }
 
 export function kpis(s: Sim): Kpis {
   const windowS = Math.min(900, Math.max(60, s.t))
@@ -903,6 +1024,10 @@ export function kpis(s: Sim): Kpis {
     done: s.done.length,
     trucksOut: s.trucksOut,
     fillPct: Math.round(fillPct(s) * 100),
+    turnaroundMin: s.turnarounds.length ? Math.round((s.turnarounds.reduce((a, b) => a + b, 0) / s.turnarounds.length / 60) * 10) / 10 : 0,
+    dockToTruckS: s.dockToTruck.length ? Math.round(s.dockToTruck.reduce((a, b) => a + b, 0) / s.dockToTruck.length) : 0,
+    caught: s.caught.length,
+    km: Math.round(s.agvs.reduce((n, a) => n + a.distanceM, 0) / 100) / 10,
   }
 }
 
@@ -926,6 +1051,47 @@ export function find(s: Sim, query: string): Found | null {
   }
   const prefix = s.slots.findIndex((x) => x.label.replace(/-/g, '').startsWith(q.replace(/-/g, '')))
   return prefix >= 0 ? { kind: 'slot', slot: prefix } : null
+}
+
+const fmtS = (sec: number) => `${Math.floor(sec / 60)} min ${String(Math.round(sec % 60)).padStart(2, '0')} s`
+
+/**
+ * What a visitor can throw at the floor: each is something that happens in
+ * their own warehouse every week. Returns what the WMS did, for the page.
+ */
+export function runScenario(s: Sim, id: ScenarioId): string {
+  s.scenario = { id, t: s.t }
+  if (id === 'rush') {
+    const docks = s.docks.map((d, i) => ({ d, i })).filter(({ d }) => d.def.kind === 'out' && d.state === 'docked' && d.truck)
+    if (!docks.length) return 'No truck at a shipping door right now: try again in a few seconds.'
+    docks.sort((a, b) => a.d.truck!.due - b.d.truck!.due)
+    const { d, i } = docks[0]
+    const due = s.t + 240
+    const t = newPickLine(s, i, 'Rush order: key customer called', 1, due)
+    if (!t) return 'No free stock for a rush line right now.'
+    t.party = 'Hiper Delta (key account)'
+    t.ref = `SO-26-${String(18400 + s.seq.so++).padStart(6, '0')}`
+    d.truck!.cap++
+    d.truck!.orders.push(t.ref)
+    s.rush.push({ t: s.t, task: t.id, due })
+    pushEvent(s, { level: 'warn', task: t.id, text: `Rush ${t.ref} for Hiper Delta on the ${d.def.id} truck · 4 min to cutoff · ${t.id} jumps the queue (P1)` })
+    return `${t.ref} is added to the ${d.truck!.plate} load at ${d.def.id} with a 4-minute cutoff. ${t.id} goes to the front of the queue and to the nearest free cart.`
+  }
+  if (id === 'mislabel') {
+    s.mislabelArmed = true
+    pushEvent(s, { level: 'warn', text: 'Scenario: the next pallet staged carries a label printed for another load' })
+    return 'The next pallet put down on a shipping lane carries a label printed for another truck. Watch the door scan stop it before it is loaded.'
+  }
+  if (id === 'peak') {
+    s.peakUntil = s.t + 600
+    let added = 0
+    s.docks.forEach((d, i) => { if (d.def.kind === 'out' && d.state === 'docked' && d.truck) for (let k = 0; k < 2; k++) if (newPickLine(s, i)) { d.truck.cap++; added++ } })
+    pushEvent(s, { level: 'warn', text: `Peak: +${added} pallets on the trucks at the doors, bigger loads back to back for 10 min` })
+    return `${added} more pallets on the trucks already at the doors, and for 10 minutes the next trucks come back to back with bigger loads. Same six carts.`
+  }
+  s.nextBlockAt = s.t
+  s.blocked = null
+  return 'A carton falls in an aisle. The scanners stop the carts that reach it, and no new work goes there until it is cleared.'
 }
 
 /** Shift clock: the demo shift starts at 08:00. */
