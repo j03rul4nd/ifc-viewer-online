@@ -335,8 +335,10 @@ export function containers(t: Tracker): Container[] {
   const VESSELS: Record<string, string> = { 'MSCU 441782-1': 'MV Iberia Star · voy. 042W', 'CMAU 220983-7': 'MV Pearl River · voy. 117W', 'TGHU 580315-2': 'MV Levante Bridge · voy. 009W' }
   return [...byId].map(([id, list]) => {
     const cbm = list.reduce((n, s) => n + s.units * s.cbmPerUnit, 0)
-    const capacity = cbm > 30 ? 76 : cbm > 18 ? 67 : 33
-    return { id, type: capacity === 33 ? "20' dry" : capacity === 67 ? "40' dry" : "40' high cube", vessel: VESSELS[id] ?? 'MV —', pos: list.map((s) => s.id), cbm, capacity, stage: stageOf(t, list[0]), viaCape: list.some((s) => s.viaCape) }
+    // Real boxes: 20' ≈ 33 m³, 40' ≈ 67, 40' HC ≈ 76; more than one HC books two.
+    const capacity = cbm > 76 ? 152 : cbm > 30 ? 76 : cbm > 18 ? 67 : 33
+    const type = capacity === 152 ? "2 × 40' high cube" : capacity === 33 ? "20' dry" : capacity === 67 ? "40' dry" : "40' high cube"
+    return { id, type, vessel: VESSELS[id] ?? 'MV —', pos: list.map((s) => s.id), cbm, capacity, stage: stageOf(t, list[0]), viaCape: list.some((s) => s.viaCape) }
   })
 }
 
