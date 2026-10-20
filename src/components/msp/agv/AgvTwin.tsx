@@ -608,88 +608,86 @@ function snapshot(s: Sim): Snap {
 
 // ── Use cases a visitor can run, and what they save ──────────────────────────
 
-interface Scenario { id: ScenarioId; title: string; pain: string; value: string; outcome: (s: Snap) => string }
+interface Scenario { id: ScenarioId; title: string; gain: string; hook: string; outcome: (s: Snap) => string }
 const SCENARIOS: Scenario[] = [
   {
-    id: 'mislabel', title: 'A pallet with the wrong label',
-    pain: 'A label printed for another truck ends up on a pallet. Without a check it ships to the wrong customer and you find out from a complaint.',
-    value: 'A mis-shipment typically costs €150–400 (return, re-delivery, credit note). Scanning every SSCC at the door stops it before the truck is sealed.',
+    id: 'mislabel', title: 'Stop wrong shipments', gain: '€150–400 saved per error',
+    hook: 'A wrong label is caught at the door, not by your customer.',
     outcome: (s) => {
       const c = s.caught[s.caught.length - 1]
-      return c ? `Stopped at ${c.at} at ${clock(c.t).slice(0, 5)}: never loaded on the wrong truck. The operator took it to ${c.belongs}'s door and the WMS raised a P1 re-pick. ${s.caught.length} caught this shift.` : 'Waiting for the next pallet to reach a shipping lane…'
+      return c ? `✓ Caught at ${c.at}. It never left on the wrong truck.` : 'Watching the next pallet at the door…'
     },
   },
   {
-    id: 'rush', title: 'A key customer calls: rush order',
-    pain: 'A pallet has to be on the truck that leaves in 4 minutes. Usually someone walks the floor looking for it and phones the driver to wait.',
-    value: 'The order goes to the front of the queue and to the nearest free cart. Nobody walks, nobody phones, and you see if it makes the cutoff.',
+    id: 'rush', title: 'Say yes to rush orders', gain: '4-minute cutoff, met',
+    hook: 'The urgent order goes first. Nobody walks the floor.',
     outcome: (s) => {
       const r = s.rush[s.rush.length - 1]
       if (!r) return ''
-      if (r.doneAt === undefined) return `In progress · ${fmtT(Math.max(0, r.due - s.t))} to cutoff`
-      return r.doneAt <= r.due ? `Staged in ${fmtT(r.doneAt - r.t)}: made the cutoff with ${fmtT(r.due - r.doneAt)} to spare.` : `Staged ${fmtT(r.doneAt - r.due)} after the cutoff.`
+      if (r.doneAt === undefined) return `On its way · ${fmtT(Math.max(0, r.due - s.t))} to cutoff`
+      return r.doneAt <= r.due ? `✓ Ready in ${fmtT(r.doneAt - r.t)}, ${fmtT(r.due - r.doneAt)} to spare.` : `Ready ${fmtT(r.doneAt - r.due)} after the cutoff.`
     },
   },
   {
-    id: 'peak', title: 'Peak: end of month, promo, Black Friday',
-    pain: 'Twice the pallets for a few hours. Manually that means overtime, temps and mistakes, and you only know you are late when the truck leaves.',
-    value: 'Same six carts, no overtime. The board shows the queue and each truck’s cutoff, so a risk is visible before it is a delay.',
-    outcome: (s) => `${s.t < s.peakUntil ? `Peak on, ${fmtT(s.peakUntil - s.t)} left` : 'Peak over'} · queue ${s.k.queue} · ${s.k.palletsPerHour} pallets/h · on time ${s.k.onTimePct}%`,
+    id: 'peak', title: 'Absorb peaks, no overtime', gain: '0 extra staff',
+    hook: 'Twice the orders, the same six robots.',
+    outcome: (s) => `✓ ${s.k.palletsPerHour} pallets/h · ${s.k.onTimePct}% on time`,
   },
   {
-    id: 'blocked', title: 'Something on the floor of an aisle',
-    pain: 'A carton falls or someone walks into an aisle. A forklift driver stops, but nobody tells the rest, and the next one drives in too.',
-    value: 'Every cart’s scanner stops it short, the whole fleet knows, and no new work goes to that aisle until it is clear. No near misses, no damaged stock.',
-    outcome: (s) => `Fleet still moving ${s.k.palletsPerHour} pallets/h around it.`,
+    id: 'blocked', title: 'Safer floor, no stoppage', gain: '0 near misses',
+    hook: 'One aisle blocked. Everything else keeps moving.',
+    outcome: (s) => `✓ Still ${s.k.palletsPerHour} pallets/h.`,
   },
 ]
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+const eurShort = (n: number) => (n >= 1e6 ? `€${(n / 1e6).toFixed(1)}M` : `€${Math.round(n / 1000)}k`)
+
+const DEFAULTS = { wage: 26, moves: 22, hours: 16, days: 250, run: 3.5, misRate: 0.1, misCost: 200 }
+function saving(pph: number, fleet: number, a = DEFAULTS) {
+  const drivers = Math.max(1, pph) / a.moves
+  const labour = drivers * a.wage * a.hours * a.days
+  const run = fleet * a.run * a.hours * a.days
+  const errors = Math.max(1, pph) * a.hours * a.days * (a.misRate / 100)
+  const errCost = errors * a.misCost
+  return { drivers, labour, run, errors, errCost, total: labour - run + errCost }
+}
+
 
 function Savings({ snap }: { snap: Snap }) {
-  const [a, setA] = useState({ wage: 26, moves: 22, hours: 16, days: 250, run: 3.5, misRate: 0.1, misCost: 200 })
-  const pph = Math.max(1, snap.k.palletsPerHour)
-  const drivers = pph / a.moves
-  const labour = drivers * a.wage * a.hours * a.days
-  const run = snap.agvs.length * a.run * a.hours * a.days
-  const errors = pph * a.hours * a.days * (a.misRate / 100)
-  const errCost = errors * a.misCost
-  const total = labour - run + errCost
+  const [a, setA] = useState(DEFAULTS)
+  const r = saving(snap.k.palletsPerHour, snap.agvs.length, a)
   const field = (key: keyof typeof a, label: string, step = 1) => (
-    <label className="flex items-center justify-between gap-2 text-[12px] text-white/70">
+    <label className="flex items-center justify-between gap-2 text-[13px] text-white/70">
       <span>{label}</span>
-      <input type="number" step={step} value={a[key]} onChange={(e) => setA((x) => ({ ...x, [key]: Number(e.target.value) || 0 }))}
-        className="w-20 rounded-md border border-white/12 bg-black/50 px-2 py-0.5 text-right text-[12px] tabular-nums text-white focus:border-[#8b93e8] focus:outline-none" />
+      <input type="number" inputMode="decimal" step={step} value={a[key]} onChange={(e) => setA((x) => ({ ...x, [key]: Number(e.target.value) || 0 }))}
+        className="w-20 rounded-md border border-white/12 bg-black/50 px-2 py-1 text-right text-[14px] tabular-nums text-white focus:border-[#8b93e8] focus:outline-none" />
     </label>
   )
   return (
     <div>
-      <p className="text-[12px] leading-snug text-white/60">What this floor would cost with people on reach trucks, from what the fleet is doing right now. Change the numbers to yours.</p>
-      <div className="mt-2 rounded-xl border border-[#22c55e]/30 bg-[#22c55e]/10 p-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#86efac]">Estimated saving per year</p>
-        <p className="mt-0.5 text-[26px] font-semibold tabular-nums">{eur(total)}</p>
-        <div className="mt-1.5 grid grid-cols-[1fr_auto] gap-y-0.5 text-[12px] text-white/75">
-          <span>{drivers.toFixed(1)} reach-truck drivers on the floor</span><span className="tabular-nums">{eur(labour)}</span>
-          <span>Fleet energy and service</span><span className="tabular-nums">−{eur(run)}</span>
-          <span>~{Math.round(errors)} wrong loads stopped at the door</span><span className="tabular-nums">{eur(errCost)}</span>
+      <div className="rounded-xl border border-[#22c55e]/30 bg-[#22c55e]/10 p-3.5">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#86efac]">Saving per year</p>
+        <p className="mt-0.5 text-[32px] font-semibold leading-tight tabular-nums">{eur(r.total)}</p>
+        <div className="mt-2 grid grid-cols-[1fr_auto] gap-y-1 text-[13px] text-white/80">
+          <span>{r.drivers.toFixed(1)} forklift drivers freed</span><span className="tabular-nums">{eur(r.labour)}</span>
+          <span>Wrong shipments avoided</span><span className="tabular-nums">{eur(r.errCost)}</span>
+          <span>Robot energy & service</span><span className="tabular-nums">−{eur(r.run)}</span>
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-1.5 text-center">
-        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.palletsPerHour}</b><span className="text-[10.5px] text-white/50">pallets/h now</span></span>
-        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.km}</b><span className="text-[10.5px] text-white/50">km driven, nobody walking</span></span>
-        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.onTimePct}%</b><span className="text-[10.5px] text-white/50">pallets before cutoff</span></span>
-        <span className="rounded-lg bg-white/[0.05] px-1 py-1.5"><b className="block text-[15px] tabular-nums">{snap.k.turnaroundMin || '–'}</b><span className="text-[10.5px] text-white/50">min a truck spends at the door</span></span>
-      </div>
-      <div className="mt-3 space-y-1">
-        {field('wage', 'Driver cost €/h (loaded)')}
-        {field('moves', 'Pallet moves per driver-hour')}
-        {field('hours', 'Operating hours per day')}
-        {field('days', 'Days per year')}
-        {field('run', 'AGV energy + service €/h each', 0.5)}
-        {field('misRate', 'Manual mis-load rate %', 0.1)}
-        {field('misCost', 'Cost of one mis-shipment €', 10)}
-      </div>
-      <p className="mt-2 text-[11px] leading-snug text-white/45">Illustrative, from a simulated shift: not a quote. It leaves out the fleet’s purchase or lease, which a real business case divides by these savings.</p>
+      <details className="mt-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+        <summary className="cursor-pointer text-[13px] font-semibold text-white/80">Use your numbers</summary>
+        <div className="mt-2 space-y-1.5">
+          {field('wage', 'Driver €/hour')}
+          {field('moves', 'Pallets per driver-hour')}
+          {field('hours', 'Hours a day')}
+          {field('days', 'Days a year')}
+          {field('run', 'Robot €/hour', 0.5)}
+          {field('misRate', 'Wrong shipments %', 0.1)}
+          {field('misCost', '€ per wrong shipment', 10)}
+        </div>
+      </details>
+      <p className="mt-2 text-[11.5px] text-white/45">Estimate from this simulated shift. Robot purchase not included.</p>
     </div>
   )
 }
@@ -714,7 +712,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
   const [tab, setTab] = useState<Tab>('cases')
   const [ran, setRan] = useState<Partial<Record<ScenarioId, string>>>({})
   const [erp, setErp] = useState<ErpTarget>('odoo')
-  const [panelOpen, setPanelOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 768)
+  const [panelOpen, setPanelOpen] = useState(true)
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
   const [found, setFound] = useState<Found | null>(null)
@@ -921,7 +919,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
         // label
         const el = labels.get(a.id)!
         v.set(a.pos.x, 5.9, a.pos.z).project(camera)
-        const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1
+        const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1 && (mount.clientWidth >= 768 || isSel || !!a.wait)
         el.style.display = visible ? '' : 'none'
         if (visible) {
           el.style.transform = `translate(-50%,-100%) translate(${(v.x * 0.5 + 0.5) * mount.clientWidth}px,${(-v.y * 0.5 + 0.5) * mount.clientHeight}px)`
@@ -1019,8 +1017,10 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
         const el = dockLabels[i]
         v.set(d.def.x, 5.1, 0.3).project(camera)
         const vis = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1
-        el.style.display = vis ? '' : 'none'
-        if (vis) {
+        const narrow = mount.clientWidth < 1024
+        const show = vis && (!narrow || recent || d.state === 'sealing')
+        el.style.display = show ? '' : 'none'
+        if (show) {
           const t = d.truck
           const line = !t ? 'Door free' : d.def.kind === 'in' ? `Unloading ${t.cap - t.count}/${t.cap}` : recent ? `✗ Wrong load caught · to ${sim.caught[sim.caught.length - 1].belongs}`
             : d.state === 'sealing' ? `Sealing ${t.seal} · ${t.count}/${t.cap}` : L?.phase === 'scan' ? `Scanning SSCC …${L.pallet.sscc.slice(-4)}` : L?.phase === 'relocate' ? 'Walking it to its door' : `Loading ${t.count}/${t.cap}`
@@ -1174,19 +1174,18 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
         <div className="pointer-events-auto inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[12px] backdrop-blur">
           <span className="h-2 w-2 rounded-full bg-[#f59e0b]" />
           <span className="font-semibold">Simulated</span>
-          <span className="text-white/60">· DC Tarragona · 6 VNA AGVs · shift {snap ? clock(snap.t) : '08:00:00'}</span>
+          <span className="text-white/60">· 6 robots · {snap ? clock(snap.t).slice(0, 5) : '08:00'}</span>
         </div>
         {snap && (
-          <div className="mt-2 grid max-w-[720px] grid-cols-3 gap-1.5 md:mt-3 md:grid-cols-6 md:gap-2">
-            <Kpi label="Pallets/h" value={snap.k.palletsPerHour} />
+          <div className="mt-2 grid max-w-[560px] grid-cols-3 gap-1.5 md:mt-3 md:gap-2 lg:max-w-[720px] lg:grid-cols-5">
+            <Kpi label="Saving / year" value={eurShort(saving(snap.k.palletsPerHour, snap.agvs.length).total)} />
             <Kpi label="On time" value={snap.k.onTimePct} unit="%" />
-            <Kpi label="Fleet busy" value={snap.k.utilisationPct} unit="%" />
-            <Kpi label="Battery" value={snap.k.avgBattery} unit="%" />
-            <Kpi label="Trucks out" value={snap.k.trucksOut} />
-            <Kpi label="Stock" value={snap.k.fillPct} unit="%" />
+            <Kpi label="Pallets / hour" value={snap.k.palletsPerHour} />
+            <div className="hidden lg:block"><Kpi label="Trucks out" value={snap.k.trucksOut} /></div>
+            <div className="hidden lg:block"><Kpi label="Errors stopped" value={snap.k.caught} /></div>
           </div>
         )}
-        <form className="pointer-events-auto mt-2 flex max-w-[420px] gap-1.5" onSubmit={(e) => { e.preventDefault(); runSearch(query) }}>
+        <form className="pointer-events-auto mt-2 hidden max-w-[420px] gap-1.5 md:flex" onSubmit={(e) => { e.preventDefault(); runSearch(query) }}>
           <input value={query} onChange={(e) => { setQuery(e.target.value); setMissed(false) }} placeholder="Find B-14-3-L, an SSCC, TO, SO or AGV-03" aria-label="Find a location, pallet, order or cart"
             className="min-w-0 flex-1 rounded-lg border border-white/12 bg-black/65 px-3 py-1.5 text-[13px] text-white placeholder:text-white/40 backdrop-blur focus:border-[#8b93e8] focus:outline-none" />
           <button type="submit" className="rounded-lg bg-white/15 px-3 py-1.5 text-[13px] font-semibold hover:bg-white/25">Find</button>
@@ -1241,25 +1240,26 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
 
       {/* panel */}
       <button type="button" onClick={() => setPanelOpen((o) => !o)} className="absolute bottom-3 right-3 rounded-full border border-white/10 bg-black/70 px-3.5 py-2 text-[13px] font-semibold backdrop-blur md:hidden">
-        {panelOpen ? 'Hide panel' : 'Fleet · Orders · Docks'}
+        {panelOpen ? 'Hide' : 'See the value'}
       </button>
       {panelOpen && snap && (
-        <aside className="absolute inset-x-2 bottom-14 flex max-h-[46%] flex-col rounded-2xl border border-white/10 bg-black/75 backdrop-blur md:inset-x-auto md:bottom-4 md:right-4 md:top-4 md:max-h-none md:w-[372px]">
-          <div className="flex gap-0.5 overflow-x-auto p-1.5">{tabBtn('cases', 'Try it')}{tabBtn('fleet', 'Fleet')}{tabBtn('orders', `Orders ${snap.tasks.length}`)}{tabBtn('docks', 'Docks')}{tabBtn('roi', 'Savings')}{tabBtn('events', 'Events')}{tabBtn('erp', 'ERP')}</div>
+        <aside className="absolute inset-x-2 bottom-14 flex max-h-[52%] flex-col rounded-2xl border border-white/10 bg-black/75 backdrop-blur md:inset-x-auto md:bottom-auto md:right-4 md:top-4 md:max-h-[calc(100%-2rem)] md:w-[372px]">
+          <div className="flex flex-none gap-0.5 overflow-x-auto p-1.5">{tabBtn('cases', 'Try it')}{tabBtn('roi', 'Savings')}{tabBtn('docks', 'Docks')}{tabBtn('fleet', 'Fleet')}{tabBtn('orders', 'Orders')}{tabBtn('events', 'Log')}{tabBtn('erp', 'ERP')}</div>
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             {tab === 'cases' && (
               <div className="space-y-2">
-                <p className="text-[12px] leading-snug text-white/60">Four things that happen in any warehouse every week. Throw one at the floor and watch what the system does.</p>
+                <p className="text-[13px] text-white/60">Tap one. Watch it happen.</p>
                 {SCENARIOS.map((c) => (
-                  <div key={c.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-[13.5px] font-semibold">{c.title}</p>
-                      <button type="button" onClick={() => trigger(c.id)} className="flex-none rounded-lg bg-[#5e6ad2] px-2.5 py-1 text-[12px] font-semibold hover:brightness-110">Run it</button>
+                  <div key={c.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-semibold leading-snug">{c.title}</p>
+                        <p className="mt-0.5 text-[13px] font-semibold text-[#86efac]">{c.gain}</p>
+                      </div>
+                      {!ran[c.id] && <button type="button" onClick={() => trigger(c.id)} className="min-h-[40px] flex-none rounded-lg bg-[#5e6ad2] px-3.5 text-[14px] font-semibold hover:brightness-110">Show me</button>}
                     </div>
-                    <p className="mt-1 text-[12px] leading-snug text-white/65">{c.pain}</p>
-                    {ran[c.id] && <p className="mt-1.5 rounded-md bg-[#5e6ad2]/20 px-2 py-1.5 text-[12px] leading-snug text-[#dfe2ff]">{ran[c.id]}</p>}
-                    {ran[c.id] && <p className="mt-1 text-[12px] font-medium text-[#86efac]">{c.outcome(snap)}</p>}
-                    <p className="mt-1.5 text-[11.5px] text-white/45">{c.value}</p>
+                    <p className="mt-1 text-[13px] leading-snug text-white/60">{c.hook}</p>
+                    {ran[c.id] && <p className="mt-2 rounded-lg bg-[#22c55e]/12 px-2.5 py-2 text-[13px] font-medium text-[#bbf7d0]">{c.outcome(snap)}</p>}
                   </div>
                 ))}
               </div>
