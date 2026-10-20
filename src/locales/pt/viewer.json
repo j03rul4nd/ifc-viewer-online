@@ -354,6 +354,66 @@
       "finish": "Explorar por conta própria",
       "resume": "Tour guiado",
       "now": "Ao vivo agora"
+    },
+    "itops": {
+      "label": "TI do escritório · ao vivo",
+      "simulated": "Dados simulados",
+      "fold": "Recolher",
+      "allOk": "Tudo OK",
+      "allOkLine": "12 pontos Wi-Fi, racks, UPS, câmara e leitor de crachás reportam a cada 5 s. A próxima avaria aparece aqui, a vermelho, com a sua sala.",
+      "alerts_one": "{{count}} alerta aberto",
+      "alerts_other": "{{count}} alertas abertos",
+      "kind": {
+        "overheat": "Sala de servidores a {{value}}",
+        "apDown": "Ponto Wi-Fi {{value}} em baixo",
+        "backup": "A cópia de segurança desta noite falhou",
+        "badge": "{{value}} tentativas de crachá falhadas na porta",
+        "cctv": "Câmara da entrada offline"
+      },
+      "caughtIn": "Detetado em {{s}} s",
+      "withoutCost": "sem o gémeo: ~{{time}} até dar por isso, ≈ {{cost}}",
+      "withoutTime": "sem o gémeo: ~{{time}} até dar por isso",
+      "show": "Ver",
+      "sinceOpen": "Desde que abriu esta página",
+      "caught": "Incidentes detetados",
+      "downtime": "Atraso evitado",
+      "avoided": "Custo evitado",
+      "minutes": "{{n}} min",
+      "hours": "{{n}} h",
+      "withoutTitle": "Sem o gémeo",
+      "withoutLine": "Um utilizador liga. Alguém desloca-se para encontrar a avaria. Horas de paragem.",
+      "withTitle": "Com o gémeo",
+      "withLine": "Alerta em {{s}} s com a sala exata. Resolvido remotamente, muitas vezes antes de alguém notar.",
+      "yearFor": "Poupança por ano para",
+      "sites": "Número de instalações",
+      "sitesUnit_one": "instalação",
+      "sitesUnit_other": "instalações",
+      "perYear": "/ ano, estimado",
+      "cta": "Ponha os seus edifícios ao vivo",
+      "howTitle": "Como calculamos",
+      "howText": "Um escritório de {{staff}} pessoas a um custo de {{rate}} por hora. Por ano: 2 sobreaquecimentos da sala de servidores (≈2 h com o escritório parado), 12 falhas de Wi-Fi (uma sala durante 1 h mais uma deslocação) e 3 cópias de segurança falhadas (um dia de trabalho refeito). A demo comprime um mês de avarias em minutos.",
+      "story": {
+        "live": {
+          "title": "Este escritório vigia-se sozinho",
+          "text": "Cada ponto Wi-Fi, rack, UPS, câmara e leitor de crachás envia o seu estado a cada 5 segundos e pinta-se na planta 3D. Verde está bem. Vermelho é um problema, na sala onde acontece."
+        },
+        "server": {
+          "title": "A sala de servidores, antes de falhar",
+          "text": "Agora mesmo: {value} °C. Acima de 27 °C fica vermelha e recebe um alerta em segundos, antes de os servidores abrandarem e 25 pessoas deixarem de trabalhar."
+        },
+        "wifi": {
+          "title": "Cada ponto de acesso, cada sala",
+          "text": "{value} dispositivos neste agora mesmo. Quando um ponto cai vê qual é a sala, antes da primeira chamada de queixa, e resolve sem deslocação."
+        },
+        "security": {
+          "title": "Portas e câmaras no mesmo ecrã",
+          "text": "Tentativas de crachá falhadas nos últimos 5 minutos: {value}. Falhas repetidas lançam um alerta na porta onde acontecem, junto à câmara que a vê."
+        },
+        "value": {
+          "title": "Quanto vale",
+          "text": "Sem o gémeo uma avaria demora horas a ser detetada e uma deslocação a ser resolvida. Com ele: 10 segundos, a sala exata e, muitas vezes, resolução remota. Cerca de 12 000 € por ano por escritório; multiplique pelas instalações dos seus clientes. No navegador, a partir do seu próprio IFC, sem hardware."
+        }
+      }
     }
   }
 }

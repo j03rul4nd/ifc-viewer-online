@@ -354,6 +354,66 @@
       "finish": "Explora pel teu compte",
       "resume": "Recorregut guiat",
       "now": "En viu ara"
+    },
+    "itops": {
+      "label": "TI de l'oficina · en directe",
+      "simulated": "Dades simulades",
+      "fold": "Plegar",
+      "allOk": "Tot en ordre",
+      "allOkLine": "12 punts Wi-Fi, racks, SAI, càmera i lector de targetes informen cada 5 s. La propera avaria apareix aquí, en vermell, amb la seva sala.",
+      "alerts_one": "{{count}} alerta oberta",
+      "alerts_other": "{{count}} alertes obertes",
+      "kind": {
+        "overheat": "Sala de servidors a {{value}}",
+        "apDown": "Punt Wi-Fi {{value}} caigut",
+        "backup": "Ha fallat la còpia de seguretat d'ahir a la nit",
+        "badge": "{{value}} intents fallits de targeta a la porta",
+        "cctv": "Càmera de l'entrada sense connexió"
+      },
+      "caughtIn": "Detectat en {{s}} s",
+      "withoutCost": "sense el bessó: ~{{time}} fins que te n'adones, ≈ {{cost}}",
+      "withoutTime": "sense el bessó: ~{{time}} fins que te n'adones",
+      "show": "Veure",
+      "sinceOpen": "Des que has obert aquesta pàgina",
+      "caught": "Incidències detectades",
+      "downtime": "Retard evitat",
+      "avoided": "Cost evitat",
+      "minutes": "{{n}} min",
+      "hours": "{{n}} h",
+      "withoutTitle": "Sense el bessó",
+      "withoutLine": "Un usuari truca. Algú es desplaça a buscar l'avaria. Hores d'aturada.",
+      "withTitle": "Amb el bessó",
+      "withLine": "Alerta en {{s}} s amb la sala exacta. Es resol en remot, sovint abans que ningú ho noti.",
+      "yearFor": "Estalvi a l'any per a",
+      "sites": "Nombre de seus",
+      "sitesUnit_one": "seu",
+      "sitesUnit_other": "seus",
+      "perYear": "/ any, estimat",
+      "cta": "Posa els teus edificis en directe",
+      "howTitle": "Com ho calculem",
+      "howText": "Una oficina de {{staff}} persones a un cost de {{rate}} l'hora. A l'any: 2 sobreescalfaments de la sala de servidors (≈2 h amb l'oficina aturada), 12 caigudes de Wi-Fi (una sala 1 h més un desplaçament) i 3 còpies de seguretat fallides (un dia de feina refet). La demo comprimeix un mes d'avaries en minuts.",
+      "story": {
+        "live": {
+          "title": "Aquesta oficina es vigila sola",
+          "text": "Cada punt Wi-Fi, rack, SAI, càmera i lector de targetes envia el seu estat cada 5 segons i es pinta al plànol 3D. Verd vol dir que va bé. Vermell és un problema, a la sala on passa."
+        },
+        "server": {
+          "title": "La sala de servidors, abans que falli",
+          "text": "Ara mateix: {value} °C. Per sobre de 27 °C es posa en vermell i reps una alerta en segons, abans que els servidors s'alenteixin i 25 persones deixin de treballar."
+        },
+        "wifi": {
+          "title": "Cada punt d'accés, cada sala",
+          "text": "{value} dispositius en aquest ara mateix. Quan un punt cau veus quina sala és, abans de la primera trucada de queixa, i ho arregles sense desplaçar-te."
+        },
+        "security": {
+          "title": "Portes i càmeres a la mateixa pantalla",
+          "text": "Intents fallits de targeta en els últims 5 minuts: {value}. Els errors repetits llancen una alerta a la porta on passen, al costat de la càmera que ho veu."
+        },
+        "value": {
+          "title": "El que val",
+          "text": "Sense el bessó una avaria triga hores a detectar-se i un desplaçament a arreglar-se. Amb ell: 10 segons, la sala exacta i, sovint, arranjament en remot. Uns 12.000 € l'any per oficina; multiplica-ho per les seus dels teus clients. Al navegador, des del teu propi IFC, sense instal·lar maquinari."
+        }
+      }
     }
   }
 }

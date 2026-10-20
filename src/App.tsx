@@ -1064,8 +1064,9 @@ export default function App() {
     // (A demo link starts with no saved twin and saves none: twinDeviceStore.)
     if (!id) return
     // Framed (an article, the event page) the frame is the stage: the panel
-    // would cover the building its labels and colours are on.
-    void import('./lib/twin/templates').then((m) => m.applyTemplateWhenLoaded(id, 1, 120_000, { openPanel: window.self === window.top }))
+    // would cover the building its labels and colours are on. The office-IT
+    // demo has its own board (ItOpsImpact) and tour instead.
+    void import('./lib/twin/templates').then((m) => m.applyTemplateWhenLoaded(id, 1, 120_000, { openPanel: window.self === window.top && id !== 'itops' }))
   }, [])
   useEffect(() => {
     if (!twinInUse) return
