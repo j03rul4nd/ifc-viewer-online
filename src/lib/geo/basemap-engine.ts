@@ -32,6 +32,7 @@ import {
   TilesFadePlugin,
 } from '3d-tiles-renderer/plugins'
 import { createLogger } from '../logger'
+import { probeEnvironment } from '../loading/resource-policy'
 import type { MapProvider } from './geo-types'
 import {
   errorTargetFor, lodResolution, stylePixelScale,
@@ -47,9 +48,24 @@ const log = createLogger('Basemap')
 // tile-quality.errorTargetFor and is measured in DEVICE pixels — see the
 // diagnosis at the top of basemap/tile-quality.ts for why the old CSS-pixel
 // target of 6 made every tile look pixelated.
-const LRU_MIN_TILES = 50
-const LRU_MAX_TILES = 300
-const UNLOAD_BYTES_TARGET = 256 * 1024 * 1024
+const MB = 1024 * 1024
+
+/**
+ * How much of the streamed map a tab may keep. 3d-tiles-renderer keeps
+ * 0.3–0.4 GB of tiles by default before it frees any. On an iPhone that came
+ * on top of a scene's models: in the Barcelona tour, the step that brings the
+ * camera down to street level streamed ~130 new tiles, and iOS killed the tab.
+ * Safari then reloads it, so the tour could never get past that step. On a
+ * phone the map keeps a fraction of that and evicts it sooner.
+ */
+export function basemapBudget(mobile: boolean): {
+  minTiles: number; maxTiles: number; minBytes: number; maxBytes: number; unloadBytes: number; fadeOutTiles: number
+} {
+  return mobile
+    ? { minTiles: 24, maxTiles: 120, minBytes: 48 * MB, maxBytes: 96 * MB, unloadBytes: 64 * MB, fadeOutTiles: 40 }
+    : { minTiles: 50, maxTiles: 300, minBytes: 300 * MB, maxBytes: 400 * MB, unloadBytes: 256 * MB, fadeOutTiles: 120 }
+}
+const BUDGET = basemapBudget(probeEnvironment().mobile)
 const UNLOAD_DELAY_MS = 3_000
 /** Rolling tile-outcome window for the degraded signal. */
 const FAIL_WINDOW = 20
@@ -286,15 +302,17 @@ export function createBasemapEngine(): BasemapEngine {
       applyOverlayTexture: true,
       useRecommendedSettings: false, // recommended sets errorTarget=1 — too aggressive
     }))
-    t.registerPlugin(new UnloadTilesPlugin({ delay: UNLOAD_DELAY_MS, bytesTarget: UNLOAD_BYTES_TARGET }))
+    t.registerPlugin(new UnloadTilesPlugin({ delay: UNLOAD_DELAY_MS, bytesTarget: BUDGET.unloadBytes }))
     // Cross-fade parent → children instead of popping. More fading tiles are
     // allowed than the default 50 now that a sharp view has more of them, or a
     // fast zoom would fall back to popping exactly when it is most visible.
-    t.registerPlugin(new TilesFadePlugin({ fadeDuration: 220, maximumFadeOutTiles: 120 }))
+    t.registerPlugin(new TilesFadePlugin({ fadeDuration: 220, maximumFadeOutTiles: BUDGET.fadeOutTiles }))
 
     t.errorTarget = errorTarget()
-    t.lruCache.minSize = LRU_MIN_TILES
-    t.lruCache.maxSize = LRU_MAX_TILES
+    t.lruCache.minSize = BUDGET.minTiles
+    t.lruCache.maxSize = BUDGET.maxTiles
+    t.lruCache.minBytesSize = BUDGET.minBytes
+    t.lruCache.maxBytesSize = BUDGET.maxBytes
 
     t.addEventListener('load-model', onTileSuccess)
     t.addEventListener('load-model', onTileLoadedApplyHole)
