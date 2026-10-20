@@ -366,6 +366,66 @@
       "finish": "Explore on your own",
       "resume": "Guided tour",
       "now": "Live now"
+    },
+    "itops": {
+      "label": "Office IT · live",
+      "simulated": "Simulated feed",
+      "fold": "Fold",
+      "allOk": "All systems OK",
+      "allOkLine": "12 Wi-Fi points, racks, UPS, camera and badge reader report every 5 s. The next fault shows here, red, with its room.",
+      "alerts_one": "{{count}} open alert",
+      "alerts_other": "{{count}} open alerts",
+      "kind": {
+        "overheat": "Server room at {{value}}",
+        "apDown": "Wi-Fi point {{value}} down",
+        "backup": "Last night's backup failed",
+        "badge": "{{value}} failed badge attempts at the door",
+        "cctv": "Entrance camera offline"
+      },
+      "caughtIn": "Caught in {{s}} s",
+      "withoutCost": "without the twin: ~{{time}} to notice, ≈ {{cost}}",
+      "withoutTime": "without the twin: ~{{time}} to notice",
+      "show": "Show",
+      "sinceOpen": "Since you opened this page",
+      "caught": "Incidents caught",
+      "downtime": "Delay avoided",
+      "avoided": "Cost avoided",
+      "minutes": "{{n}} min",
+      "hours": "{{n}} h",
+      "withoutTitle": "Without the twin",
+      "withoutLine": "A user calls. Someone drives over to find the fault. Hours of downtime.",
+      "withTitle": "With the twin",
+      "withLine": "Alert in {{s}} s with the exact room. Fixed remotely, often before anyone notices.",
+      "yearFor": "Saved a year for",
+      "sites": "Number of sites",
+      "sitesUnit_one": "site",
+      "sitesUnit_other": "sites",
+      "perYear": "/ year, estimated",
+      "cta": "Put your buildings live",
+      "howTitle": "How we count",
+      "howText": "An office of {{staff}} people at a loaded {{rate}} an hour. A year: 2 server-room heat events (≈2 h with the office stopped), 12 Wi-Fi outages (one room for 1 h plus a site visit) and 3 failed backups (a day of work redone). The demo compresses a month of faults into minutes.",
+      "story": {
+        "live": {
+          "title": "This office reports itself",
+          "text": "Every Wi-Fi point, rack, UPS, camera and badge reader sends its state every 5 seconds and paints itself on the 3D plan. Green is fine. Red is a problem, in the room where it happens."
+        },
+        "server": {
+          "title": "The server room, before it fails",
+          "text": "Right now: {value} °C. Above 27 °C it turns red and you get an alert in seconds, before the servers throttle and 25 people stop working."
+        },
+        "wifi": {
+          "title": "Every access point, every room",
+          "text": "{value} devices on this one right now. When a point drops you see which room, before the first complaint call, and fix it without a site visit."
+        },
+        "security": {
+          "title": "Doors and cameras on the same screen",
+          "text": "Failed badge attempts in the last 5 minutes: {value}. Repeated failures raise an alert at the door they happen at, next to the camera that sees it."
+        },
+        "value": {
+          "title": "What it's worth",
+          "text": "Without the twin a fault takes hours to notice and a trip to fix. With it: 10 seconds, the exact room, often fixed remotely. Around €12,000 a year for one office; multiply by your clients' sites. In the browser, from your own IFC, no hardware to install."
+        }
+      }
     }
   }
 }

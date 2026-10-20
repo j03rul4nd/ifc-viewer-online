@@ -354,6 +354,66 @@
       "finish": "Selbst erkunden",
       "resume": "Geführte Tour",
       "now": "Jetzt live"
+    },
+    "itops": {
+      "label": "Büro-IT · live",
+      "simulated": "Simulierte Daten",
+      "fold": "Einklappen",
+      "allOk": "Alle Systeme OK",
+      "allOkLine": "12 WLAN-Punkte, Racks, USV, Kamera und Badge-Leser melden sich alle 5 s. Die nächste Störung erscheint hier, rot, mit ihrem Raum.",
+      "alerts_one": "{{count}} offene Warnung",
+      "alerts_other": "{{count}} offene Warnungen",
+      "kind": {
+        "overheat": "Serverraum bei {{value}}",
+        "apDown": "WLAN-Punkt {{value}} ausgefallen",
+        "backup": "Backup der letzten Nacht fehlgeschlagen",
+        "badge": "{{value}} fehlgeschlagene Badge-Versuche an der Tür",
+        "cctv": "Eingangskamera offline"
+      },
+      "caughtIn": "Erkannt in {{s}} s",
+      "withoutCost": "ohne Zwilling: ~{{time}} bis es auffällt, ≈ {{cost}}",
+      "withoutTime": "ohne Zwilling: ~{{time}} bis es auffällt",
+      "show": "Zeigen",
+      "sinceOpen": "Seit Sie diese Seite geöffnet haben",
+      "caught": "Erkannte Vorfälle",
+      "downtime": "Vermiedene Verzögerung",
+      "avoided": "Vermiedene Kosten",
+      "minutes": "{{n}} Min.",
+      "hours": "{{n}} Std.",
+      "withoutTitle": "Ohne Zwilling",
+      "withoutLine": "Ein Nutzer ruft an. Jemand fährt hin und sucht den Fehler. Stunden Ausfall.",
+      "withTitle": "Mit Zwilling",
+      "withLine": "Warnung in {{s}} s mit dem genauen Raum. Aus der Ferne behoben, oft bevor es jemand merkt.",
+      "yearFor": "Ersparnis pro Jahr für",
+      "sites": "Anzahl Standorte",
+      "sitesUnit_one": "Standort",
+      "sitesUnit_other": "Standorte",
+      "perYear": "/ Jahr, geschätzt",
+      "cta": "Ihre Gebäude live schalten",
+      "howTitle": "So rechnen wir",
+      "howText": "Ein Büro mit {{staff}} Personen zu {{rate}} pro Stunde (Vollkosten). Pro Jahr: 2 Überhitzungen im Serverraum (≈2 h Büro-Stillstand), 12 WLAN-Ausfälle (ein Raum 1 h plus Vor-Ort-Einsatz) und 3 fehlgeschlagene Backups (ein Arbeitstag neu gemacht). Die Demo verdichtet einen Monat Störungen auf Minuten.",
+      "story": {
+        "live": {
+          "title": "Dieses Büro meldet sich selbst",
+          "text": "Jeder WLAN-Punkt, jedes Rack, die USV, Kamera und Badge-Leser senden alle 5 Sekunden ihren Zustand und färben sich im 3D-Plan. Grün ist in Ordnung. Rot ist ein Problem, in dem Raum, in dem es passiert."
+        },
+        "server": {
+          "title": "Der Serverraum, bevor er ausfällt",
+          "text": "Gerade jetzt: {value} °C. Über 27 °C wird er rot und Sie werden in Sekunden gewarnt, bevor die Server drosseln und 25 Menschen nicht mehr arbeiten können."
+        },
+        "wifi": {
+          "title": "Jeder Access Point, jeder Raum",
+          "text": "{value} Geräte gerade an diesem. Fällt ein Punkt aus, sehen Sie welcher Raum, vor dem ersten Beschwerdeanruf, und beheben es ohne Anfahrt."
+        },
+        "security": {
+          "title": "Türen und Kameras auf einem Bildschirm",
+          "text": "Fehlgeschlagene Badge-Versuche in den letzten 5 Minuten: {value}. Wiederholte Fehlversuche lösen eine Warnung an genau dieser Tür aus, neben der Kamera, die sie sieht."
+        },
+        "value": {
+          "title": "Was es wert ist",
+          "text": "Ohne Zwilling fällt eine Störung erst nach Stunden auf und braucht eine Anfahrt. Mit ihm: 10 Sekunden, der genaue Raum, oft aus der Ferne behoben. Rund 12.000 € pro Jahr und Büro; mal die Standorte Ihrer Kunden. Im Browser, aus Ihrem eigenen IFC, ohne Hardware."
+        }
+      }
     }
   }
 }

@@ -40,9 +40,11 @@ interface Props {
   story: Story
   /** An element's card is open: on a phone the tour gets out of its way. */
   cardOpen: boolean
+  /** The last step's call to action (a demo that sells something). */
+  cta?: { label: string; href: string }
 }
 
-export default function SceneStory({ viewerApiRef, story, cardOpen }: Props) {
+export default function SceneStory({ viewerApiRef, story, cardOpen, cta }: Props) {
   const { t, i18n } = useTranslation(['viewer', 'common'])
   const [index, setIndex] = useState(0)
   // On a phone inside the event page the visitor came to see the scene: the
@@ -128,7 +130,7 @@ export default function SceneStory({ viewerApiRef, story, cardOpen }: Props) {
           </div>
         )}
       </div>
-      <div className="flex items-center gap-1.5 px-3 pb-3">
+      <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3">
         <div className="flex items-center gap-1 mr-auto" aria-hidden>
           {steps.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === index ? 'w-4 bg-[var(--accent)]' : 'w-1.5 bg-white/20'}`} />)}
         </div>
@@ -141,6 +143,13 @@ export default function SceneStory({ viewerApiRef, story, cardOpen }: Props) {
             className="h-8 px-3.5 rounded-[8px] text-[12px] font-semibold text-white disabled:opacity-60 disabled:cursor-wait" style={{ background: 'var(--accent)' }}>
             {settled ? t('explorer.story.next') : t('common:status.loading')}
           </button>
+        ) : cta ? (
+          <>
+            <button type="button" onClick={() => setOpen(false)} data-testid="scene-story-finish"
+              className="h-8 px-3 whitespace-nowrap rounded-[8px] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/[0.06]">{t('explorer.story.finish')}</button>
+            <a href={cta.href} target="_top" data-testid="scene-story-cta"
+              className="h-8 px-3.5 flex items-center justify-center whitespace-nowrap rounded-[8px] text-[12px] font-semibold text-white max-sm:order-last max-sm:w-full max-sm:h-10" style={{ background: 'var(--accent)' }}>{cta.label}</a>
+          </>
         ) : (
           <button type="button" onClick={() => setOpen(false)} data-testid="scene-story-finish"
             className="h-8 px-3.5 rounded-[8px] text-[12px] font-semibold text-white" style={{ background: 'var(--accent)' }}>{t('explorer.story.finish')}</button>

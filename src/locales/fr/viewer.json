@@ -354,6 +354,66 @@
       "finish": "Explorer librement",
       "resume": "Visite guidée",
       "now": "En direct"
+    },
+    "itops": {
+      "label": "IT du bureau · en direct",
+      "simulated": "Données simulées",
+      "fold": "Replier",
+      "allOk": "Tout est OK",
+      "allOkLine": "12 points Wi-Fi, baies, onduleur, caméra et lecteur de badges remontent leur état toutes les 5 s. La prochaine panne s'affiche ici, en rouge, avec sa salle.",
+      "alerts_one": "{{count}} alerte ouverte",
+      "alerts_other": "{{count}} alertes ouvertes",
+      "kind": {
+        "overheat": "Salle serveurs à {{value}}",
+        "apDown": "Point Wi-Fi {{value}} hors ligne",
+        "backup": "La sauvegarde de cette nuit a échoué",
+        "badge": "{{value}} badges refusés à la porte",
+        "cctv": "Caméra de l'entrée hors ligne"
+      },
+      "caughtIn": "Détecté en {{s}} s",
+      "withoutCost": "sans le jumeau : ~{{time}} pour s'en rendre compte, ≈ {{cost}}",
+      "withoutTime": "sans le jumeau : ~{{time}} pour s'en rendre compte",
+      "show": "Voir",
+      "sinceOpen": "Depuis l'ouverture de cette page",
+      "caught": "Incidents détectés",
+      "downtime": "Retard évité",
+      "avoided": "Coût évité",
+      "minutes": "{{n}} min",
+      "hours": "{{n}} h",
+      "withoutTitle": "Sans le jumeau",
+      "withoutLine": "Un utilisateur appelle. Quelqu'un se déplace pour trouver la panne. Des heures d'arrêt.",
+      "withTitle": "Avec le jumeau",
+      "withLine": "Alerte en {{s}} s avec la salle exacte. Corrigé à distance, souvent avant que quiconque le remarque.",
+      "yearFor": "Économie par an pour",
+      "sites": "Nombre de sites",
+      "sitesUnit_one": "site",
+      "sitesUnit_other": "sites",
+      "perYear": "/ an, estimé",
+      "cta": "Mettez vos bâtiments en direct",
+      "howTitle": "Comment nous calculons",
+      "howText": "Un bureau de {{staff}} personnes à un coût chargé de {{rate}} de l'heure. Par an : 2 surchauffes de la salle serveurs (≈2 h de bureau à l'arrêt), 12 pannes Wi-Fi (une salle pendant 1 h plus un déplacement) et 3 sauvegardes échouées (une journée de travail refaite). La démo condense un mois de pannes en quelques minutes.",
+      "story": {
+        "live": {
+          "title": "Ce bureau se surveille tout seul",
+          "text": "Chaque point Wi-Fi, baie, onduleur, caméra et lecteur de badges envoie son état toutes les 5 secondes et se colore sur le plan 3D. Vert, tout va bien. Rouge, un problème, dans la salle où il se produit."
+        },
+        "server": {
+          "title": "La salle serveurs, avant la panne",
+          "text": "En ce moment : {value} °C. Au-delà de 27 °C elle passe au rouge et vous êtes alerté en quelques secondes, avant que les serveurs ralentissent et que 25 personnes s'arrêtent de travailler."
+        },
+        "wifi": {
+          "title": "Chaque point d'accès, chaque salle",
+          "text": "{value} appareils sur celui-ci en ce moment. Quand un point tombe, vous voyez quelle salle, avant le premier appel de plainte, et vous corrigez sans vous déplacer."
+        },
+        "security": {
+          "title": "Portes et caméras sur le même écran",
+          "text": "Badges refusés ces 5 dernières minutes : {value}. Des échecs répétés déclenchent une alerte à la porte concernée, à côté de la caméra qui la filme."
+        },
+        "value": {
+          "title": "Ce que ça vaut",
+          "text": "Sans le jumeau, une panne met des heures à être vue et un déplacement à être corrigée. Avec lui : 10 secondes, la salle exacte, souvent une correction à distance. Environ 12 000 € par an et par bureau ; multipliez par les sites de vos clients. Dans le navigateur, depuis votre propre IFC, sans matériel à installer."
+        }
+      }
     }
   }
 }

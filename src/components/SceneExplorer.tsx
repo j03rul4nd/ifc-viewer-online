@@ -38,6 +38,8 @@ import { isTopPose, orbitPose, topPose, zoomPose, type Pose } from '../lib/scene
 import { currentPose, focusBox, focusElements, stepCamera } from '../lib/scene-explore/focus'
 import { TwinLiveSection } from './TwinLiveSection'
 import SceneStory from './SceneStory'
+import ItOpsImpact, { ITOPS_CTA_HREF } from './ItOpsImpact'
+import { useItOpsStory } from '../lib/twin/itops-story'
 import { bootedScene } from '../lib/scene-doc/scene-boot'
 import { ifcClassLabel } from '../lib/scene-explore/ifc-class-label'
 
@@ -89,7 +91,8 @@ export default function SceneExplorer({ viewerApiRef, selected, homePose }: Prop
     else v.frameAllModels()
   }
 
-  const story = bootedScene()?.doc.story ?? null
+  const itops = useItOpsStory()
+  const story = bootedScene()?.doc.story ?? itops
 
   return (
     <>
@@ -97,7 +100,9 @@ export default function SceneExplorer({ viewerApiRef, selected, homePose }: Prop
         <ExploreMenu viewerApiRef={viewerApiRef} />
         <NavDock viewerApiRef={viewerApiRef} onHome={goHome} />
       </div>
-      {story && <SceneStory viewerApiRef={viewerApiRef} story={story} cardOpen={pick !== null} />}
+      {story && <SceneStory viewerApiRef={viewerApiRef} story={story} cardOpen={pick !== null}
+        cta={story === itops ? { label: t('explorer.itops.cta'), href: ITOPS_CTA_HREF } : undefined} />}
+      {itops && !pick && <ItOpsImpact viewerApiRef={viewerApiRef} />}
       {pick && (
         <aside
           className="absolute z-[23] right-2 top-2 w-[330px] max-h-[calc(100%-3.5rem)] max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-9 max-sm:w-auto max-sm:max-h-[52%]
