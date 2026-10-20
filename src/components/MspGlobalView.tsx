@@ -375,7 +375,7 @@ function Contact({ entry, profile, feature }: { entry: EventEntry; profile: Prof
 // tells the page which, and the rest speaks to that person: one line of why,
 // the feature to see first, and a form hint in their own words.
 
-type Profile = 'msp' | 'mssp' | 'logi' | 'isv' | 'ops'
+type Profile = 'msp' | 'mssp' | 'logi' | 'imp' | 'isv' | 'ops'
 
 const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   msp: {
@@ -393,6 +393,11 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
     why: 'Watch every AGV, order and dock live. Each delivered order closes itself in Odoo, Salesforce or your WMS.',
     hint: 'e.g. 12 AGVs, orders in Odoo',
   },
+  imp: {
+    chip: 'I buy from China',
+    why: 'Every order on one map, from the factory to your door: QC, ship, customs, ETA. Your agent’s updates in, your ERP’s receipts out.',
+    hint: 'e.g. 20 orders a month through a sourcing agent',
+  },
   isv: {
     chip: 'I sell software',
     why: 'Add a live 3D view to your product. One line of code. Your data on your client’s building.',
@@ -405,9 +410,10 @@ const PROFILES: Record<Profile, { chip: string; why: string; hint: string }> = {
   },
 }
 
-const ROLE_START: Record<Profile, FeatureId> = { msp: 'itops', mssp: 'itops', logi: 'agv', isv: 'barcelona', ops: 'itops' }
+const ROLE_START: Record<Profile, FeatureId> = { msp: 'itops', mssp: 'itops', logi: 'agv', imp: 'imports', isv: 'barcelona', ops: 'itops' }
 
 const GALLERY = [
+  { feature: 'imports' as FeatureId, src: '/msp-global/imports.jpg', cap: 'Every order from China on one map: QC, sea, air, rail, customs, ETA.', tag: 'Imports' },
   { feature: 'agv' as FeatureId, src: '/msp-global/agv.jpg', cap: 'Six AGVs pick, deliver and charge. Every order closes itself in your ERP.', tag: 'Logistics' },
   { feature: 'itops' as FeatureId, src: '/msp-global/office-it.jpg', cap: 'An office’s Wi-Fi, servers and doors, live. Red when something is down.', tag: 'Managed IT' },
   { feature: 'hotel' as FeatureId, src: '/msp-global/hotel-vela.jpg', cap: 'Your client’s building, in its real city.', tag: 'Real estate' },
@@ -678,7 +684,7 @@ export default function MspGlobalView() {
         </section>
       </div>
 
-      {sheet && <FeatureSheet id={sheet} onClose={() => setSheet(null)} onWant={want} />}
+      {sheet && <FeatureSheet id={sheet} onClose={() => setSheet(null)} onWant={want} onSwitch={openFeature} />}
 
       {/* Phones: the next step is always one thumb away. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3 md:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>

@@ -9,8 +9,9 @@ import React, { useEffect } from 'react'
 // The warehouse twin is its own three.js scene, not the app in a frame: lazy,
 // so the event page does not carry it until someone opens it.
 const LazyAgvTwin = React.lazy(() => import('./agv/AgvTwin'))
+const LazyImportTracker = React.lazy(() => import('./supply/ImportTracker'))
 
-export type FeatureId = 'agv' | 'itops' | 'barcelona' | 'hotel' | 'solar' | 'helsinki' | 'tokyo' | 'quality'
+export type FeatureId = 'imports' | 'agv' | 'itops' | 'barcelona' | 'hotel' | 'solar' | 'helsinki' | 'tokyo' | 'quality'
 
 export interface Feature {
   title: string
@@ -21,12 +22,18 @@ export interface Feature {
   /** Builds the app URL (needs the origin for model links). Absent for an inline scene. */
   url?: (origin: string) => string
   /** Rendered in the sheet itself instead of a frame of the app. */
-  inline?: 'agv'
+  inline?: 'agv' | 'imports'
 }
 
 const VELA = (o: string) => `${o}/models/hotel-vela`
 
 export const FEATURES: Record<FeatureId, Feature> = {
+  imports: {
+    title: 'Imports from China, live',
+    line: 'Every order from factory to your warehouse: QC, sea, air or rail, customs, ETA. Simulated.',
+    inline: 'imports',
+    external: true,
+  },
   agv: {
     title: 'Warehouse AGVs, live',
     line: 'Six carts pick, deliver and charge. Every order closes itself in your ERP. Simulated.',
@@ -74,7 +81,7 @@ export const FEATURES: Record<FeatureId, Feature> = {
   },
 }
 
-export function FeatureSheet({ id, onClose, onWant }: { id: FeatureId; onClose: () => void; onWant: () => void }) {
+export function FeatureSheet({ id, onClose, onWant, onSwitch }: { id: FeatureId; onClose: () => void; onWant: () => void; onSwitch?: (id: FeatureId) => void }) {
   const f = FEATURES[id]
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -96,7 +103,13 @@ export function FeatureSheet({ id, onClose, onWant }: { id: FeatureId; onClose: 
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-md px-3 py-1.5 text-[22px] leading-none text-[var(--text-dim)] hover:bg-[var(--surface)]">×</button>
         </div>
       </div>
-      {f.inline === 'agv' ? (
+      {f.inline === 'imports' ? (
+        <div className="relative min-h-0 flex-1">
+          <React.Suspense fallback={<div className="flex h-full items-center justify-center text-[14px] text-[var(--text-dim)]">Opening the map…</div>}>
+            <LazyImportTracker onWant={onWant} onOpenWarehouse={onSwitch ? () => onSwitch('agv') : undefined} />
+          </React.Suspense>
+        </div>
+      ) : f.inline === 'agv' ? (
         <div className="relative min-h-0 flex-1">
           <React.Suspense fallback={<div className="flex h-full items-center justify-center text-[14px] text-[var(--text-dim)]">Opening the warehouse…</div>}>
             <LazyAgvTwin onWant={onWant} />

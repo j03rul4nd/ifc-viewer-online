@@ -5,7 +5,7 @@
 
 // ── Pilot ideas ──────────────────────────────────────────────────────────────
 
-export type Role = 'msp' | 'mssp' | 'logi' | 'isv' | 'ops'
+export type Role = 'msp' | 'mssp' | 'logi' | 'imp' | 'isv' | 'ops'
 
 import type { FeatureId } from './FeatureSheet'
 
@@ -26,6 +26,11 @@ const IDEAS: Record<Role, Idea[]> = {
     { title: 'AGV fleet, live', line: 'Every cart, battery and mission on the floor plan.', status: 'Live', feature: 'agv' },
     { title: 'Orders close in your ERP', line: 'Odoo, Salesforce or your WMS, as they happen.', status: 'Pilot' },
     { title: 'Rack locations in 3D', line: 'Find a pallet by its location code.', status: 'Live', feature: 'agv' },
+  ],
+  imp: [
+    { title: 'Import map, live', line: 'Every PO from factory to door, with its documents.', status: 'Live', feature: 'imports' },
+    { title: 'Your agent’s feed, mapped', line: 'BuckyDrop or your agent’s updates, read automatically.', status: 'Pilot' },
+    { title: 'Arrival in the warehouse', line: 'From the dock to the rack, with AGVs.', status: 'Live', feature: 'agv' },
   ],
   isv: [
     { title: 'A 3D tab in your app', line: 'Embed it with one line.', status: 'Live', feature: 'barcelona' },
