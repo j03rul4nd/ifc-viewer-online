@@ -447,3 +447,42 @@ export function erpReceipt(s: Shipment): unknown {
     },
   }
 }
+
+// ── What needs the buyer now ─────────────────────────────────────────────────
+
+export interface Attention { po: string; level: 'alert' | 'warn'; title: string; detail: string; impact: string }
+
+/**
+ * The few orders a buyer should look at right now, with why in plain words
+ * and what it costs them in days. Alerts first. This is where the eye goes.
+ */
+export function attention(t: Tracker): Attention[] {
+  const out: Attention[] = []
+  for (const s of t.shipments) {
+    const st = stageOf(t, s)
+    if (st === 'delivered') continue
+    const lateD = Math.round((totalH(s) - s.promisedH) / 24)
+    if (!s.qc.firstPass && (st === 'qc' || st === 'production')) {
+      out.push({ po: s.id, level: 'alert', title: 'Failed quality check', detail: `${s.qc.firstMajor} major defects (limit ${s.qc.acceptMajor}) · supplier reworking`, impact: '+2 d' })
+    } else if (st === 'customs' && s.incoterm === 'EXW' && s.delayH > 0) {
+      out.push({ po: s.id, level: 'alert', title: 'Held at customs', detail: `HS ${s.hs} query · broker on it`, impact: '+1 d' })
+    } else if (s.viaCape && (st === 'mainLeg' || st === 'toOrigin')) {
+      out.push({ po: s.id, level: 'warn', title: 'Sailing round Africa', detail: 'Red Sea risk · booked via the Cape', impact: '+10 d' })
+    } else if (s.delayH > 0 && st === 'mainLeg') {
+      out.push({ po: s.id, level: 'warn', title: 'Port congestion', detail: 'Singapore · the ship waited', impact: `+${Math.round(s.delayH / 24)} d` })
+    } else if (lateD >= 1) {
+      out.push({ po: s.id, level: 'warn', title: 'Running late', detail: `${STAGE_LABEL[st]} · later than promised`, impact: `+${lateD} d` })
+    }
+  }
+  return out.sort((a, b) => (a.level === b.level ? 0 : a.level === 'alert' ? -1 : 1)).slice(0, 4)
+}
+
+/** One sentence: where this order is and what it means for the buyer. */
+export function summary(t: Tracker, s: Shipment): string {
+  const st = stageOf(t, s)
+  const lc = landedCost(s)
+  const lateD = Math.round((totalH(s) - s.promisedH) / 24)
+  const when = st === 'delivered' ? 'Delivered' : `Arrives in ${Math.max(1, Math.round(etaH(t, s) / 24))} days`
+  const promise = lateD >= 1 ? `, ${lateD} d later than promised` : ', on time'
+  return `${when}${promise}. Costs €${lc.perUnitEur.toFixed(2)} a unit landed: ${lc.marginPct}% margin.`
+}
