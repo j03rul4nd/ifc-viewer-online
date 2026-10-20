@@ -356,62 +356,75 @@
       "now": "Jetzt live"
     },
     "itops": {
-      "label": "Büro-IT · live",
-      "simulated": "Simulierte Daten",
+      "label": "Ihr Büro, live",
       "fold": "Einklappen",
-      "allOk": "Alle Systeme OK",
-      "allOkLine": "12 WLAN-Punkte, Racks, USV, Kamera und Badge-Leser melden sich alle 5 s. Die nächste Störung erscheint hier, rot, mit ihrem Raum.",
-      "alerts_one": "{{count}} offene Warnung",
-      "alerts_other": "{{count}} offene Warnungen",
-      "kind": {
-        "overheat": "Serverraum bei {{value}}",
-        "apDown": "WLAN-Punkt {{value}} ausgefallen",
-        "backup": "Backup der letzten Nacht fehlgeschlagen",
-        "badge": "{{value}} fehlgeschlagene Badge-Versuche an der Tür",
-        "cctv": "Eingangskamera offline"
-      },
-      "caughtIn": "Erkannt in {{s}} s",
-      "withoutCost": "ohne Zwilling: ~{{time}} bis es auffällt, ≈ {{cost}}",
-      "withoutTime": "ohne Zwilling: ~{{time}} bis es auffällt",
+      "pillOk": "Alles läuft",
+      "pillAlert": "Gerade ist etwas ausgefallen",
+      "heroLead": "Das sparen Sie pro Jahr",
+      "heroPer": "bei",
+      "sites": "Anzahl Büros",
+      "sitesUnit_one": "Büro",
+      "sitesUnit_other": "Büros",
+      "heroLine": "Probleme werden in {{s}} Sekunden erkannt, nicht in Stunden. Aus der Ferne behoben, bevor Ihr Team es merkt.",
+      "allOk": "Alles läuft",
+      "allOkLine": "Fällt etwas aus, sehen Sie es hier zuerst: was, wo und was es kostet.",
+      "happening": "Passiert gerade",
       "show": "Zeigen",
-      "sinceOpen": "Seit Sie diese Seite geöffnet haben",
-      "caught": "Erkannte Vorfälle",
-      "downtime": "Vermiedene Verzögerung",
-      "avoided": "Vermiedene Kosten",
+      "withoutTitle": "Ohne das",
+      "withoutCounting": "bisher verloren, und noch weiß es niemand",
+      "withoutUnseen": "bisher unbemerkt",
+      "withTitle": "Mit dem",
+      "withWarned": "gewarnt in {{s}} s, mit dem genauen Raum",
       "minutes": "{{n}} Min.",
-      "hours": "{{n}} Std.",
-      "withoutTitle": "Ohne Zwilling",
-      "withoutLine": "Ein Nutzer ruft an. Jemand fährt hin und sucht den Fehler. Stunden Ausfall.",
-      "withTitle": "Mit Zwilling",
-      "withLine": "Warnung in {{s}} s mit dem genauen Raum. Aus der Ferne behoben, oft bevor es jemand merkt.",
-      "yearFor": "Ersparnis pro Jahr für",
-      "sites": "Anzahl Standorte",
-      "sitesUnit_one": "Standort",
-      "sitesUnit_other": "Standorte",
-      "perYear": "/ Jahr, geschätzt",
-      "cta": "Ihre Gebäude live schalten",
+      "more_one": "+{{count}} weiteres Problem",
+      "more_other": "+{{count}} weitere Probleme",
+      "whileWatching_one": "Gespart, während Sie zugesehen haben ({{count}} Problem erkannt)",
+      "whileWatching_other": "Gespart, während Sie zugesehen haben ({{count}} Probleme erkannt)",
+      "cta": "Das will ich für meine Gebäude",
       "howTitle": "So rechnen wir",
-      "howText": "Ein Büro mit {{staff}} Personen zu {{rate}} pro Stunde (Vollkosten). Pro Jahr: 2 Überhitzungen im Serverraum (≈2 h Büro-Stillstand), 12 WLAN-Ausfälle (ein Raum 1 h plus Vor-Ort-Einsatz) und 3 fehlgeschlagene Backups (ein Arbeitstag neu gemacht). Die Demo verdichtet einen Monat Störungen auf Minuten.",
+      "howText": "Ein Büro mit {{staff}} Personen zu {{rate}} pro Stunde. Pro Jahr: 2 Überhitzungen im Serverraum (≈2 h Büro-Stillstand), 12 WLAN-Ausfälle (ein Raum 1 h plus Technikereinsatz) und 3 fehlgeschlagene Backups (ein Arbeitstag neu gemacht). Der Live-Zähler spielt eine Minute pro Sekunde, die Demo verdichtet einen Monat Probleme auf Minuten.",
+      "kind": {
+        "overheat": {
+          "title": "Der Serverraum überhitzt ({{value}})",
+          "impact": "Schaltet er ab, können 25 Menschen nicht arbeiten"
+        },
+        "apDown": {
+          "title": "Ein Besprechungsraum hat kein WLAN mehr",
+          "impact": "6 Menschen können nicht arbeiten"
+        },
+        "backup": {
+          "title": "Das Backup der letzten Nacht ist fehlgeschlagen",
+          "impact": "Ein Arbeitstag steht auf dem Spiel"
+        },
+        "badge": {
+          "title": "Jemand versucht ohne Berechtigung hineinzukommen",
+          "impact": "{{value}} Fehlversuche an der Haupttür"
+        },
+        "cctv": {
+          "title": "Die Eingangskamera zeichnet nicht mehr auf",
+          "impact": "Der Eingang ist unbewacht"
+        }
+      },
       "story": {
         "live": {
-          "title": "Dieses Büro meldet sich selbst",
-          "text": "Jeder WLAN-Punkt, jedes Rack, die USV, Kamera und Badge-Leser senden alle 5 Sekunden ihren Zustand und färben sich im 3D-Plan. Grün ist in Ordnung. Rot ist ein Problem, in dem Raum, in dem es passiert."
+          "title": "Ihr Gebäude sagt Ihnen, wie es ihm geht",
+          "text": "Das ist ein echtes Büro in 3D. Alles, was es am Laufen hält, meldet sich alle paar Sekunden von selbst. Grün heißt in Ordnung. Rot heißt Problem, in dem Raum, wo es ist."
         },
         "server": {
-          "title": "Der Serverraum, bevor er ausfällt",
-          "text": "Gerade jetzt: {value} °C. Über 27 °C wird er rot und Sie werden in Sekunden gewarnt, bevor die Server drosseln und 25 Menschen nicht mehr arbeiten können."
+          "title": "Der Raum, der das ganze Büro stoppen kann",
+          "text": "Der Serverraum hat gerade {value} °C. Überhitzt er, werden Sie in Sekunden gewarnt, bevor 25 Menschen nicht mehr arbeiten können."
         },
         "wifi": {
-          "title": "Jeder Access Point, jeder Raum",
-          "text": "{value} Geräte gerade an diesem. Fällt ein Punkt aus, sehen Sie welcher Raum, vor dem ersten Beschwerdeanruf, und beheben es ohne Anfahrt."
+          "title": "Schluss mit „Das WLAN geht nicht“-Anrufen",
+          "text": "Sie sehen, welcher Raum keine Verbindung hat, bevor jemand zum Telefon greift, und es wird aus der Ferne behoben: kein Techniker muss hinfahren."
         },
         "security": {
-          "title": "Türen und Kameras auf einem Bildschirm",
-          "text": "Fehlgeschlagene Badge-Versuche in den letzten 5 Minuten: {value}. Wiederholte Fehlversuche lösen eine Warnung an genau dieser Tür aus, neben der Kamera, die sie sieht."
+          "title": "Sicherheit auf demselben Bildschirm",
+          "text": "Versucht jemand immer wieder eine Tür zu öffnen, gibt es eine Warnung an genau dieser Tür, neben der Kamera, die es sieht."
         },
         "value": {
-          "title": "Was es wert ist",
-          "text": "Ohne Zwilling fällt eine Störung erst nach Stunden auf und braucht eine Anfahrt. Mit ihm: 10 Sekunden, der genaue Raum, oft aus der Ferne behoben. Rund 12.000 € pro Jahr und Büro; mal die Standorte Ihrer Kunden. Im Browser, aus Ihrem eigenen IFC, ohne Hardware."
+          "title": "Was es Ihnen wert ist",
+          "text": "Ohne das werden Probleme erst nach Stunden entdeckt und kosten verlorene Arbeit und Einsätze. Mit dem: 10 Sekunden und der genaue Raum. Rund 12.000 € pro Jahr und Büro. Läuft im Browser auf den Plänen Ihrer Gebäude, ohne Installation."
         }
       }
     }
