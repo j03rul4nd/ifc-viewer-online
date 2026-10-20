@@ -11,9 +11,9 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   createTracker, advance, stageOf, progressOf, pointAt, etaH, totalH, trackKpis, agentUpdate, erpReceipt,
-  milestones, landedCost, expediteOption, payments, containers, supplierScores,
+  milestones, landedCost, expediteOption, payments, containers, supplierScores, attention, summary,
   PLACES, LANES, STAGE_LABEL, SIM_HOURS_PER_S,
-  type Tracker, type Shipment, type Mode, type Stage, type TrackEvent, type TrackKpis, type Container, type SupplierScore,
+  type Tracker, type Shipment, type Mode, type Stage, type TrackEvent, type TrackKpis, type Container, type SupplierScore, type Attention,
 } from './supply'
 
 const MODE_COLOR: Record<Mode, string> = { sea: '#38bdf8', air: '#f59e0b', rail: '#a78bfa' }
@@ -33,7 +33,7 @@ const fmtEur = (v: number) => (Math.abs(v) >= 1e6 ? `€${(v / 1e6).toFixed(2)}M
 const eur2 = (v: number) => `€${v.toFixed(2)}`
 
 interface Row { s: Shipment; stage: Stage; eta: number; late: boolean }
-interface Snap { h: number; k: TrackKpis; rows: Row[]; events: TrackEvent[]; boxes: Container[]; scores: SupplierScore[] }
+interface Snap { h: number; k: TrackKpis; rows: Row[]; events: TrackEvent[]; boxes: Container[]; scores: SupplierScore[]; needs: Attention[] }
 
 function Chip({ color, children }: { color: string; children: ReactNode }) {
   return <span className="rounded-full px-2 py-0.5 text-[11.5px] font-semibold" style={{ background: color + '2e', color }}>{children}</span>
@@ -47,9 +47,10 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
   const [snap, setSnap] = useState<Snap | null>(null)
   const [sel, setSel] = useState<string | null>(null)
   const [follow, setFollow] = useState(false)
-  const [tab, setTab] = useState<'orders' | 'boxes' | 'suppliers' | 'events' | 'feeds'>('orders')
+  const [tab, setTab] = useState<'needs' | 'orders' | 'boxes' | 'suppliers' | 'feeds'>('needs')
   const [detailTab, setDetailTab] = useState<'timeline' | 'qc' | 'costs' | 'docs'>('timeline')
-  const [panelOpen, setPanelOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 768)
+  // Open from the start, on the 'Needs you' list: the first thing to read.
+  const [panelOpen, setPanelOpen] = useState(true)
   const [expedited, setExpedited] = useState<Set<string>>(new Set())
 
   useEffect(() => { selRef.current = sel; if (sel) { setPanelOpen(true); setDetailTab('timeline') } }, [sel])
@@ -61,9 +62,10 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
     const narrow = el.clientWidth < 768
     const map = L.map(el, { zoomControl: false, attributionControl: true, worldCopyJump: true, minZoom: 1, zoomSnap: 0.25 })
     map.fitBounds(L.latLngBounds([...LANES.sea, ...LANES.rail, ...LANES.cape, PLACES.yiwu.at, PLACES.zaragoza.at]), {
-      paddingTopLeft: [20, 150], paddingBottomRight: [narrow ? 20 : 400, narrow ? 70 : 30],
+      paddingTopLeft: [20, 130], paddingBottomRight: [narrow ? 20 : 400, narrow ? 70 : 30],
     })
-    L.control.zoom({ position: 'bottomleft' }).addTo(map)
+    // Phones pinch; the buttons would sit on the panel.
+    if (!narrow) L.control.zoom({ position: 'bottomleft' }).addTo(map)
     // OpenStreetMap's own tiles, darkened in CSS (.it-tiles); CARTO's dark set wants a key.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 12, className: 'it-tiles',
@@ -120,7 +122,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
       if (now - lastSnap > 300) {
         lastSnap = now
         setSnap({
-          h: t.h, k: trackKpis(t), events: t.events.slice(0, 40), boxes: containers(t), scores: supplierScores(t),
+          h: t.h, k: trackKpis(t), events: t.events.slice(0, 40), boxes: containers(t), scores: supplierScores(t), needs: attention(t),
           rows: t.shipments.map((s) => ({ s: { ...s, docs: s.docs.map((d) => ({ ...d })) }, stage: stageOf(t, s), eta: etaH(t, s), late: totalH(s) > s.promisedH + 24 })),
         })
       }
@@ -136,7 +138,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
   const live = t && sel ? t.shipments.find((s) => s.id === sel) ?? null : null
   const detail = useMemo(() => {
     if (!t || !live || !row) return null
-    return { ms: milestones(t, live), lc: landedCost(live), exp: expediteOption(t, live), pay: payments(live, row.stage) }
+    return { ms: milestones(t, live), lc: landedCost(live), exp: expediteOption(t, live), pay: payments(live, row.stage), sum: summary(t, live) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap, sel])
   const feed = useMemo(() => {
@@ -171,17 +173,20 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
       <div ref={mapEl} className="absolute inset-0" />
 
       <div className="pointer-events-none absolute left-3 right-3 top-3 z-[500] md:left-4 md:right-[412px] md:top-4">
-        <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/65 px-3 py-1.5 text-[12px] backdrop-blur">
-          <span className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-          <span className="font-semibold">Simulated</span>
-          <span className="text-white/60">· 8 POs · 3 suppliers · 3 containers{snap ? ` · day ${Math.floor(snap.h / 24)}` : ''}</span>
+        <div className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
+          <p className="truncate text-[14px] font-semibold md:text-[16px]">Your imports from China</p>
+          <span className="flex-none rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[11px] font-semibold text-[#f59e0b]">Simulated</span>
         </div>
         {snap && (
-          <div className="mt-2 grid grid-cols-4 gap-1.5 md:mt-3 md:max-w-[620px] md:gap-2">
-            {[['In transit', String(snap.k.inTransit), ''], ['Late vs promise', String(snap.k.atRisk), ''], ['Value at sea', fmtEur(snap.k.valueAtSeaEur), ''], ['Door to door', String(snap.k.avgDoorToDoorD), 'd']].map(([l, v, u]) => (
-              <div key={l} className="rounded-xl border border-white/10 bg-black/60 px-2.5 py-2 backdrop-blur md:px-4 md:py-2.5">
-                <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.06em] text-white/55 md:text-[11px]">{l}</p>
-                <p className="mt-0.5 text-[17px] font-semibold tabular-nums md:text-[22px]">{v}<span className="ml-0.5 text-[12px] text-white/60">{u}</span></p>
+          <div className="mt-2 grid grid-cols-3 gap-1.5 md:mt-2.5 md:max-w-[480px] md:gap-2">
+            {[
+              { l: 'On the way', v: String(snap.k.inTransit), c: '#ffffff' },
+              { l: 'Late', v: String(snap.k.atRisk), c: snap.k.atRisk > 0 ? '#f59e0b' : '#22c55e' },
+              { l: 'At sea', v: fmtEur(snap.k.valueAtSeaEur), c: '#ffffff' },
+            ].map((k) => (
+              <div key={k.l} className="min-w-0 rounded-xl border border-white/10 bg-black/65 px-3 py-2 backdrop-blur">
+                <p className="truncate text-[11px] font-medium text-white/60 md:text-[12px]">{k.l}</p>
+                <p className="truncate text-[19px] font-semibold tabular-nums md:text-[23px]" style={{ color: k.c }}>{k.v}</p>
               </div>
             ))}
           </div>
@@ -194,11 +199,11 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
       </div>
 
       <button type="button" onClick={() => setPanelOpen((o) => !o)} className="absolute bottom-3 right-3 z-[500] rounded-full border border-white/10 bg-black/75 px-3.5 py-2 text-[13px] font-semibold backdrop-blur md:hidden">
-        {panelOpen ? 'Hide panel' : 'Orders · Containers · Suppliers'}
+        {panelOpen ? 'Hide panel' : 'Show what needs you'}
       </button>
 
       {panelOpen && snap && (
-        <aside className={`absolute inset-x-2 bottom-14 z-[600] flex flex-col rounded-2xl border border-white/10 bg-black/85 backdrop-blur md:inset-x-auto md:bottom-4 md:right-4 md:top-4 md:max-h-none md:w-[392px] ${row ? 'max-h-[72%]' : 'max-h-[50%]'}`}>
+        <aside className={`absolute inset-x-2 bottom-14 z-[600] flex flex-col rounded-2xl border border-white/10 bg-black/85 backdrop-blur md:inset-x-auto md:bottom-4 md:right-4 md:top-4 md:max-h-none md:w-[392px] ${row ? 'max-h-[74%]' : 'max-h-[52%]'}`}>
           {row && detail && live ? (
             <>
               <div className="border-b border-white/10 p-3">
@@ -206,13 +211,14 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                   <button type="button" onClick={() => { setSel(null); setFollow(false) }} className="text-[13px] text-white/70 hover:text-white">← All orders</button>
                   <Chip color={STAGE_COLOR[row.stage]}>{STAGE_LABEL[row.stage]}</Chip>
                 </div>
-                <p className="mt-1.5 text-[17px] font-semibold">{row.s.id} <span className="text-[13px] font-normal text-white/55">· {row.s.supplier}</span></p>
-                <p className="text-[13px] text-white/75">{row.s.units.toLocaleString('en')} × {row.s.goods} · {MODE_LABEL[row.s.mode]}{row.s.viaCape ? ' via Cape' : ''} · {row.s.incoterm}{row.s.container ? ` · ${row.s.container}` : ''}</p>
+                <p className="mt-1.5 truncate text-[17px] font-semibold">{row.s.id} <span className="text-[13px] font-normal text-white/55">· {row.s.supplier}</span></p>
+                <p className="break-words text-[13px] text-white/75">{row.s.units.toLocaleString('en')} × {row.s.goods} · {MODE_LABEL[row.s.mode]}{row.s.viaCape ? ' via Cape' : ''} · {row.s.incoterm}{row.s.container ? ` · ${row.s.container}` : ''}</p>
                 <div className="mt-2 grid grid-cols-3 gap-1.5 text-[11.5px]">
-                  <div className="rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">ETA</p><p className="font-semibold">{row.stage === 'delivered' ? 'Delivered' : `in ${fmtD(row.eta)}`}</p></div>
+                  <div className="min-w-0 rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">ETA</p><p className="font-semibold">{row.stage === 'delivered' ? 'Delivered' : `in ${fmtD(row.eta)}`}</p></div>
                   <div className="rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">vs promise</p><p className={`font-semibold ${row.late ? 'text-[#f59e0b]' : 'text-[#22c55e]'}`}>{row.late ? `+${fmtD(totalH(row.s) - row.s.promisedH)}` : 'on time'}</p></div>
                   <div className="rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">Landed / unit</p><p className="font-semibold">{eur2(detail.lc.perUnitEur)}</p></div>
                 </div>
+                <p className="mt-2 rounded-lg bg-[#5e6ad2]/20 px-2.5 py-2 text-[13px] leading-snug text-white">{detail.sum}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <button type="button" onClick={() => setFollow((f) => !f)} className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold ${follow ? 'bg-[#5e6ad2]' : 'bg-white/10'}`}>{follow ? 'Following' : 'Follow on map'}</button>
                   {onOpenWarehouse && <button type="button" onClick={onOpenWarehouse} className="rounded-lg bg-white/10 px-2.5 py-1 text-[12px]">Its arrival in the warehouse →</button>}
@@ -225,7 +231,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                     {detail.ms.map((m) => (
                       <li key={m.label} className="mb-2.5 ml-3">
                         <span className="absolute -left-[5px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-[#0b0d10]" style={{ background: m.done ? (m.late ? '#f59e0b' : '#22c55e') : '#475569' }} />
-                        <p className={m.done ? 'text-white' : 'text-white/55'}>{m.label}</p>
+                        <p className={`break-words ${m.done ? 'text-white' : 'text-white/55'}`}>{m.label}</p>
                         <p className="text-[11.5px] text-white/50">Planned {m.planned} · {m.done ? 'done' : 'expected'} {m.actual}{m.late && <span className="text-[#f59e0b]"> · late</span>}</p>
                         {m.note && <p className="text-[11.5px] text-[#f59e0b]">{m.note}</p>}
                       </li>
@@ -259,7 +265,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                     <ul className="divide-y divide-white/10">
                       {detail.lc.lines.map((l) => (
                         <li key={l.label} className="flex justify-between gap-3 py-1.5">
-                          <span>{l.label}{l.note && <span className="block text-[11px] text-white/45">{l.note}</span>}</span>
+                          <span className="min-w-0 break-words">{l.label}{l.note && <span className="block text-[11px] text-white/45">{l.note}</span>}</span>
                           <span className="tabular-nums text-white/90">{fmtEur(l.eur)}</span>
                         </li>
                       ))}
@@ -269,7 +275,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                     </ul>
                     <p className="mt-2 font-semibold text-white/85">Payments</p>
                     <ul className="mt-1 space-y-1">
-                      {detail.pay.map((p) => <li key={p.label} className="flex justify-between gap-2"><span className={p.paid ? 'text-white/85' : 'text-white/45'}>{p.paid ? '✓' : '○'} {p.label}</span><span className="tabular-nums">{fmtEur(p.eur)}</span></li>)}
+                      {detail.pay.map((p) => <li key={p.label} className="flex justify-between gap-2"><span className={`min-w-0 break-words ${p.paid ? 'text-white/85' : 'text-white/45'}`}>{p.paid ? '✓' : '○'} {p.label}</span><span className="tabular-nums">{fmtEur(p.eur)}</span></li>)}
                     </ul>
                     {detail.exp && (
                       <div className="mt-3 rounded-xl border border-[#f59e0b]/40 bg-[#f59e0b]/10 p-2.5">
@@ -295,7 +301,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
           ) : (
             <>
               <div className="flex gap-1 overflow-x-auto p-1.5">
-                {tabBtn(tab, setTab, 'orders', 'Orders')}{tabBtn(tab, setTab, 'boxes', 'Containers')}{tabBtn(tab, setTab, 'suppliers', 'Suppliers')}{tabBtn(tab, setTab, 'events', 'Events')}{tabBtn(tab, setTab, 'feeds', 'Feeds')}
+                {tabBtn(tab, setTab, 'needs', `Needs you${snap.needs.length ? ` · ${snap.needs.length}` : ''}`)}{tabBtn(tab, setTab, 'orders', 'Orders')}{tabBtn(tab, setTab, 'boxes', 'Containers')}{tabBtn(tab, setTab, 'suppliers', 'Suppliers')}{tabBtn(tab, setTab, 'feeds', 'Feeds')}
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
                 {tab === 'orders' && (
@@ -322,9 +328,9 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                     {snap.boxes.map((c) => (
                       <li key={c.id} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
                         <div className="flex items-center justify-between"><span className="text-[13.5px] font-semibold">{c.id}</span><Chip color={STAGE_COLOR[c.stage]}>{STAGE_LABEL[c.stage]}</Chip></div>
-                        <p className="mt-0.5 text-white/60">{c.type} · {c.vessel}{c.viaCape ? ' · via Cape' : ''}</p>
+                        <p className="mt-0.5 break-words text-white/60">{c.type} · {c.vessel}{c.viaCape ? ' · via Cape' : ''}</p>
                         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-[#38bdf8]" style={{ width: `${Math.min(100, (c.cbm / c.capacity) * 100)}%` }} /></div>
-                        <p className="mt-1 text-white/60">{c.cbm.toFixed(1)} of {c.capacity} m³ · {c.pos.length > 1 ? `consolidated: ${c.pos.join(', ')}` : c.pos[0]}</p>
+                        <p className="mt-1 break-words text-white/60">{c.cbm.toFixed(1)} of {c.capacity} m³ · {c.pos.length > 1 ? `shared by ${c.pos.join(', ')}` : c.pos[0]}</p>
                       </li>
                     ))}
                     <li className="text-[11.5px] text-white/45">The agent fills containers with several suppliers’ orders: one booking, one customs entry.</li>
@@ -334,7 +340,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                   <ul className="space-y-1.5 text-[12.5px]">
                     {snap.scores.map((sc) => (
                       <li key={sc.id} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                        <div className="flex items-center justify-between"><span className="text-[13.5px] font-semibold">{sc.name}</span><Chip color={sc.grade === 'A' ? '#22c55e' : sc.grade === 'B' ? '#f59e0b' : '#ef4444'}>Grade {sc.grade}</Chip></div>
+                        <div className="flex items-center justify-between gap-2"><span className="min-w-0 truncate text-[13.5px] font-semibold">{sc.name}</span><Chip color={sc.grade === 'A' ? '#22c55e' : sc.grade === 'B' ? '#f59e0b' : '#ef4444'}>Grade {sc.grade}</Chip></div>
                         <div className="mt-1.5 grid grid-cols-3 gap-1.5 text-[11.5px]">
                           <div><p className="text-white/50">QC 1st pass</p><p className="font-semibold">{sc.qcFirstPassPct}%</p></div>
                           <div><p className="text-white/50">On time</p><p className="font-semibold">{sc.onTimePct}%</p></div>
@@ -345,16 +351,37 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
                     ))}
                   </ul>
                 )}
-                {tab === 'events' && (
-                  <ul className="space-y-1.5 text-[12.5px]">
-                    {snap.events.map((e, i) => (
-                      <li key={`${e.h}-${i}`} className="flex gap-2">
-                        <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full" style={{ background: LEVEL_DOT[e.level] }} />
-                        <span className="tabular-nums text-white/45">d{Math.floor(e.h / 24)}</span>
-                        <button type="button" onClick={() => e.po && setSel(e.po)} className="text-left text-white/85 hover:text-white">{e.text}</button>
-                      </li>
-                    ))}
-                  </ul>
+                {tab === 'needs' && (
+                  <div>
+                    <p className="mb-2 text-[13px] leading-snug text-white/70">Start here. These orders need you; tap one to see why and what it costs.</p>
+                    <ul className="space-y-2">
+                      {snap.needs.map((n) => (
+                        <li key={n.po}>
+                          <button type="button" onClick={() => setSel(n.po)} className="flex w-full items-stretch gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-left hover:bg-white/[0.09]">
+                            <span className="w-1 flex-none" style={{ background: n.level === 'alert' ? '#ef4444' : '#f59e0b' }} />
+                            <span className="min-w-0 flex-1 py-2.5">
+                              <span className="block text-[14px] font-semibold">{n.title}</span>
+                              <span className="block break-words text-[12.5px] leading-snug text-white/65">{n.detail}</span>
+                              <span className="mt-0.5 block text-[11.5px] text-white/45">{n.po}</span>
+                            </span>
+                            <span className="flex flex-none items-center pr-3">
+                              <span className="rounded-lg px-2 py-1 text-[13px] font-bold tabular-nums" style={{ background: (n.level === 'alert' ? '#ef4444' : '#f59e0b') + '26', color: n.level === 'alert' ? '#fca5a5' : '#fcd34d' }}>{n.impact}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                      {snap.needs.length === 0 && <li className="rounded-xl bg-white/[0.05] px-3 py-3 text-[13px] text-white/70">Nothing needs you right now. Every order is on time.</li>}
+                    </ul>
+                    <p className="mb-1.5 mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/45">Latest updates</p>
+                    <ul className="space-y-1.5 text-[12.5px]">
+                      {snap.events.slice(0, 8).map((e, i) => (
+                        <li key={`${e.h}-${i}`} className="flex min-w-0 gap-2">
+                          <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full" style={{ background: LEVEL_DOT[e.level] }} />
+                          <button type="button" onClick={() => e.po && setSel(e.po)} className="min-w-0 break-words text-left text-white/80 hover:text-white">{e.text}</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 {tab === 'feeds' && feed && (
                   <div className="text-[12px]">
