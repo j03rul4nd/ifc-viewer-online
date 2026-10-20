@@ -334,6 +334,48 @@ export function itopsBindings(trees: Record<string, SpatialNode[]>, sourceId: st
   const ctx: Ctx = { out: [], sourceId }
   const bind = binder(ctx)
 
+  // A model that carries its IT as elements (MSP Demo Office: access points,
+  // racks, UPS, camera, badge reader) gets the devices themselves painted, and
+  // its shell made see-through so they show from outside.
+  const aps = ofClass(all, 'IFCCOMMUNICATIONSAPPLIANCE').filter((e) => /wi-?fi|access point|ap/i.test(e.name))
+  if (aps.length) {
+    const racks = ofClass(all, 'IFCCOMMUNICATIONSAPPLIANCE').filter((e) => /rack|switch/i.test(e.name)).map(refOf)
+    const ups = ofClass(all, 'IFCELECTRICFLOWSTORAGEDEVICE').map(refOf)
+    const serverSpace = ofClass(all, 'IFCSPACE').filter((e) => /server/i.test(e.name)).map(refOf)
+    bind(`${n.serverRoom}`, 'server-room', [...racks, ...ups, ...serverSpace], [
+      rule(n.overheating, [{ field: 'temp_c', op: 'gt', value: 27 }], '#ff1f1f', 1, false, 0),
+      rule(n.healthy, [], '#22c55e', 1),
+    ], { label: { field: 'temp_c' } })
+    aps.slice(0, 12).forEach((ap, i) => bind(`${refOf(ap).label}`, `ap-${i + 1}`, [refOf(ap)], [
+      rule(n.apDown, [{ field: 'online', op: 'isFalse' }], '#ff1f1f', 1, false, 0),
+      rule(n.unpatched, [{ field: 'patched_pct', op: 'lt', value: 85 }], '#f59e0b'),
+      rule(n.healthy, [], '#22c55e', 1),
+    ], { label: { field: 'clients' } }))
+    const badge = ofClass(all, 'IFCSENSOR').map(refOf)
+    const doors = ofClass(all, 'IFCDOOR').map(refOf)
+    bind(n.badge, 'badge-main', [...badge, ...doors.slice(0, 1)], [
+      rule(n.suspicious, [{ field: 'state', op: 'eq', value: 'suspicious' }], '#ff1f1f', 1, false, 0),
+      rule(n.healthy, [], '#22c55e', 1),
+    ], { label: { field: 'failed_last_5min' } })
+    const cams = ofClass(all, 'IFCAUDIOVISUALAPPLIANCE').map(refOf)
+    bind(n.cctv, 'cctv-entrance', cams, [
+      rule(n.offline, [{ field: 'online', op: 'isFalse' }], '#7b8494', 1, false, 0),
+      rule(n.motion, [{ field: 'motion', op: 'isTrue' }], '#f97316'),
+      rule(n.healthy, [], '#22c55e', 1),
+    ], { media: { field: 'snapshot_url' } })
+    // The shell: exterior walls, roof and windows, faded so the inside reads.
+    const shell = [
+      ...ofClass(all, 'IFCWALL').filter((e) => /external/i.test(e.name)),
+      ...ofClass(all, 'IFCSLAB').filter((e) => /roof/i.test(e.name)),
+      ...ofClass(all, 'IFCWINDOW'),
+    ].map(refOf)
+    bind(n.backup, 'backup', shell, [
+      rule(n.backupFailed, [{ field: 'status', op: 'eq', value: 'failed' }], '#ff1f1f', 0.35, false, 0),
+      rule(n.healthy, [], '#cbd5e1', 0.14),
+    ])
+    return ctx.out
+  }
+
   const spaces = ofClass(all, 'IFCSPACE')
   // Spaces are hidden in the viewer: each device also paints a window, so its
   // state shows on the facade while the label sits in its room.
