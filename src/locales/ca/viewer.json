@@ -356,62 +356,75 @@
       "now": "En viu ara"
     },
     "itops": {
-      "label": "TI de l'oficina · en directe",
-      "simulated": "Dades simulades",
+      "label": "La teva oficina, en directe",
       "fold": "Plegar",
-      "allOk": "Tot en ordre",
-      "allOkLine": "12 punts Wi-Fi, racks, SAI, càmera i lector de targetes informen cada 5 s. La propera avaria apareix aquí, en vermell, amb la seva sala.",
-      "alerts_one": "{{count}} alerta oberta",
-      "alerts_other": "{{count}} alertes obertes",
-      "kind": {
-        "overheat": "Sala de servidors a {{value}}",
-        "apDown": "Punt Wi-Fi {{value}} caigut",
-        "backup": "Ha fallat la còpia de seguretat d'ahir a la nit",
-        "badge": "{{value}} intents fallits de targeta a la porta",
-        "cctv": "Càmera de l'entrada sense connexió"
-      },
-      "caughtIn": "Detectat en {{s}} s",
-      "withoutCost": "sense el bessó: ~{{time}} fins que te n'adones, ≈ {{cost}}",
-      "withoutTime": "sense el bessó: ~{{time}} fins que te n'adones",
-      "show": "Veure",
-      "sinceOpen": "Des que has obert aquesta pàgina",
-      "caught": "Incidències detectades",
-      "downtime": "Retard evitat",
-      "avoided": "Cost evitat",
+      "pillOk": "Tot funciona",
+      "pillAlert": "Alguna cosa acaba de fallar",
+      "heroLead": "El que t'estalvia a l'any",
+      "heroPer": "a",
+      "sites": "Nombre d'oficines",
+      "sitesUnit_one": "oficina",
+      "sitesUnit_other": "oficines",
+      "heroLine": "Els problemes es detecten en {{s}} segons, no en hores. S'arreglen en remot, abans que el teu equip ho noti.",
+      "allOk": "Tot funciona",
+      "allOkLine": "Quan alguna cosa falli ho veuràs aquí primer: què, on i quant costa.",
+      "happening": "Està passant ara",
+      "show": "Ensenya-m'ho",
+      "withoutTitle": "Sense això",
+      "withoutCounting": "perduts fins ara, i ningú ho sap encara",
+      "withoutUnseen": "sense que ningú se n'adoni",
+      "withTitle": "Amb això",
+      "withWarned": "avís en {{s}} s, amb la sala exacta",
       "minutes": "{{n}} min",
-      "hours": "{{n}} h",
-      "withoutTitle": "Sense el bessó",
-      "withoutLine": "Un usuari truca. Algú es desplaça a buscar l'avaria. Hores d'aturada.",
-      "withTitle": "Amb el bessó",
-      "withLine": "Alerta en {{s}} s amb la sala exacta. Es resol en remot, sovint abans que ningú ho noti.",
-      "yearFor": "Estalvi a l'any per a",
-      "sites": "Nombre de seus",
-      "sitesUnit_one": "seu",
-      "sitesUnit_other": "seus",
-      "perYear": "/ any, estimat",
-      "cta": "Posa els teus edificis en directe",
+      "more_one": "+{{count}} problema més",
+      "more_other": "+{{count}} problemes més",
+      "whileWatching_one": "Estalviat mentre miraves ({{count}} problema detectat)",
+      "whileWatching_other": "Estalviat mentre miraves ({{count}} problemes detectats)",
+      "cta": "Ho vull per als meus edificis",
       "howTitle": "Com ho calculem",
-      "howText": "Una oficina de {{staff}} persones a un cost de {{rate}} l'hora. A l'any: 2 sobreescalfaments de la sala de servidors (≈2 h amb l'oficina aturada), 12 caigudes de Wi-Fi (una sala 1 h més un desplaçament) i 3 còpies de seguretat fallides (un dia de feina refet). La demo comprimeix un mes d'avaries en minuts.",
+      "howText": "Una oficina de {{staff}} persones a {{rate}} l'hora. A l'any: 2 sobreescalfaments de la sala de servidors (≈2 h amb l'oficina aturada), 12 caigudes de Wi-Fi (una sala 1 h més la visita d'un tècnic) i 3 còpies de seguretat fallides (un dia de feina refet). El comptador en directe avança un minut per segon i la demo concentra un mes de problemes en minuts.",
+      "kind": {
+        "overheat": {
+          "title": "La sala de servidors s'està sobreescalfant ({{value}})",
+          "impact": "Si s'apaga, 25 persones deixen de treballar"
+        },
+        "apDown": {
+          "title": "Una sala de reunions s'ha quedat sense Wi-Fi",
+          "impact": "6 persones no poden treballar"
+        },
+        "backup": {
+          "title": "La còpia de seguretat d'ahir a la nit va fallar",
+          "impact": "Un dia de feina en risc"
+        },
+        "badge": {
+          "title": "Algú intenta entrar sense permís",
+          "impact": "{{value}} intents fallits a la porta principal"
+        },
+        "cctv": {
+          "title": "La càmera de l'entrada ha deixat de gravar",
+          "impact": "L'entrada està sense vigilància"
+        }
+      },
       "story": {
         "live": {
-          "title": "Aquesta oficina es vigila sola",
-          "text": "Cada punt Wi-Fi, rack, SAI, càmera i lector de targetes envia el seu estat cada 5 segons i es pinta al plànol 3D. Verd vol dir que va bé. Vermell és un problema, a la sala on passa."
+          "title": "El teu edifici t'explica com està",
+          "text": "Això és una oficina real en 3D. Tot el que la manté funcionant informa sol cada pocs segons. Verd vol dir que va bé. Vermell és un problema, a la sala on passa."
         },
         "server": {
-          "title": "La sala de servidors, abans que falli",
-          "text": "Ara mateix: {value} °C. Per sobre de 27 °C es posa en vermell i reps una alerta en segons, abans que els servidors s'alenteixin i 25 persones deixin de treballar."
+          "title": "La sala que pot aturar tota l'oficina",
+          "text": "La sala de servidors és ara a {value} °C. Si se sobreescalfa t'avisa en segons, abans que 25 persones es quedin sense poder treballar."
         },
         "wifi": {
-          "title": "Cada punt d'accés, cada sala",
-          "text": "{value} dispositius en aquest ara mateix. Quan un punt cau veus quina sala és, abans de la primera trucada de queixa, i ho arregles sense desplaçar-te."
+          "title": "S'han acabat les trucades de “no va el Wi-Fi”",
+          "text": "Veus quina sala s'ha quedat sense connexió abans que ningú agafi el telèfon, i s'arregla en remot: sense tècnic desplaçant-se."
         },
         "security": {
-          "title": "Portes i càmeres a la mateixa pantalla",
-          "text": "Intents fallits de targeta en els últims 5 minuts: {value}. Els errors repetits llancen una alerta a la porta on passen, al costat de la càmera que ho veu."
+          "title": "La seguretat a la mateixa pantalla",
+          "text": "Si algú insisteix a obrir una porta, salta una alerta en aquella porta, al costat de la càmera que ho veu."
         },
         "value": {
-          "title": "El que val",
-          "text": "Sense el bessó una avaria triga hores a detectar-se i un desplaçament a arreglar-se. Amb ell: 10 segons, la sala exacta i, sovint, arranjament en remot. Uns 12.000 € l'any per oficina; multiplica-ho per les seus dels teus clients. Al navegador, des del teu propi IFC, sense instal·lar maquinari."
+          "title": "El que val per a tu",
+          "text": "Sense això, els problemes triguen hores a descobrir-se i costen feina perduda i desplaçaments. Amb això: 10 segons i la sala exacta. Uns 12.000 € l'any per oficina. Funciona al navegador sobre els plànols dels teus edificis, sense instal·lar res."
         }
       }
     }

@@ -37,3 +37,13 @@ describe('itops-impact', () => {
     expect(yearlySavingEur(0)).toBe(yearlySavingEur(1))
   })
 })
+
+describe('costSoFar', () => {
+  it('grows with the demo clock and stops at the full cost', async () => {
+    const { costSoFar } = await import('./itops-impact')
+    expect(costSoFar('apDown', 0)).toBe(0)
+    expect(costSoFar('apDown', 30)).toBe(Math.round(WITHOUT.apDown.costEur / 2))
+    expect(costSoFar('apDown', 3600)).toBe(WITHOUT.apDown.costEur)
+    expect(costSoFar('badge', 100)).toBe(0)
+  })
+})
