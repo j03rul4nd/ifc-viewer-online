@@ -257,7 +257,9 @@
     },
     "inScene": "场景中有 {{count}} 个",
     "inScene_other": "场景中有 {{count}} 个",
-    "needsModel": "需要先在场景中加载 IFC 模型"
+    "needsModel": "需要先在场景中加载 IFC 模型",
+    "chooseFolder": "选择文件夹…",
+    "chooseFolderHint": "整个项目文件夹：IFC、点云、GeoJSON、网格和 zip 自动分拣"
   },
   "drop": {
     "title": "拖放以添加到场景",
@@ -272,6 +274,11 @@
     "show": "显示",
     "sceneReplace": "打开“{{name}}”将替换当前场景。",
     "openScene": "打开场景",
-    "sceneAlone": "场景文件会单独打开。加载完成后再添加其他文件。"
+    "sceneAlone": "场景文件会单独打开。加载完成后再添加其他文件。",
+    "archiveOpening": "正在解压…",
+    "archiveOpened": "已解压 {{archives}}：{{count}} 个文件",
+    "archiveUnsupported": "{{names}}：浏览器暂不支持 RAR/7z，请另存为 .zip 或直接拖入文件夹",
+    "archiveFailed": "无法打开 {{name}}：{{reason}}",
+    "archiveTruncated": "压缩包过大：仅读取前一部分（4 GB / 5000 个文件）"
   }
 }

@@ -92,11 +92,14 @@ export function addDataCatalogue(flags: AddDataFlags): AddDataCard[] {
 }
 
 /** `accept` for a card's picker, or for the hub's catch-all "Choose files…". */
+/** Archives the drop path opens in the browser (lib/loading/expand-drop), plus RAR/7z so it can say why not. */
+const ARCHIVE_ACCEPT = ['.zip', '.ifczip', '.gz', '.tgz', '.tar', '.rar', '.7z']
+
 export function acceptFor(kind: AddDataKind | 'any', flags: AddDataFlags): string {
   switch (kind) {
     case 'pointcloud': return POINTCLOUD_EXTENSIONS.join(',')
     case 'video': return VIDEO_ACCEPT
-    case 'ifc': return IFC_EXTENSIONS.join(',')
+    case 'ifc': return [...IFC_EXTENSIONS, ...ARCHIVE_ACCEPT].join(',')
     case 'mesh': return [...MESH_ENTRY_EXTENSIONS, ...MESH_SIDECAR_EXTENSIONS, ...MESH_TEXTURE_EXTENSIONS].join(',')
     case 'layers': return LAYER_FILE_ACCEPT
     case 'scene': return '.json,application/json'
@@ -108,7 +111,7 @@ export function acceptFor(kind: AddDataKind | 'any', flags: AddDataFlags): strin
       if (flags.pointcloud) parts.push(...POINTCLOUD_EXTENSIONS)
       if (flags.video) parts.push(...VIDEO_FILE_EXTENSIONS)
       if (flags.mesh) parts.push(...MESH_ENTRY_EXTENSIONS, ...MESH_SIDECAR_EXTENSIONS, ...MESH_TEXTURE_EXTENSIONS)
-      parts.push(...VECTOR_EXTENSIONS, '.json')
+      parts.push(...VECTOR_EXTENSIONS, '.json', ...ARCHIVE_ACCEPT)
       return parts.join(',')
     }
   }

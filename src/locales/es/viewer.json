@@ -276,7 +276,35 @@
         "C": "Civil",
         "L": "Paisaje",
         "X": "Otros"
-      }
+      },
+      "facetUnknown": "sin dato",
+      "versionOld": "antiguas",
+      "versionLatest": "última",
+      "filterBy": "Filtrar por",
+      "supersededNote": "{{count}} revisiones antiguas de los mismos ficheros",
+      "latestOnly": "Solo la última",
+      "parkOld": "Aparcar antiguas",
+      "parkOldHint": "Saca las revisiones antiguas de la escena para liberar memoria; se recargan con un clic",
+      "memory": "{{count}} en escena · {{size}}",
+      "heavyHint": "Mucho IFC para una pestaña: aparca los ficheros que no estés mirando",
+      "parkedCount": "{{count}} aparcados · {{size}}",
+      "parkedHint": "Fuera de la escena, guardados en esta pestaña. Vuelve a cargarlos sin el diálogo de archivos.",
+      "loadAll": "Cargar todos",
+      "load": "Cargar",
+      "forget": "Olvidar {{name}}",
+      "badgeHint": "Esquema IFC · revisión leída del fichero",
+      "park": "Aparcar",
+      "parkHint": "Libera la memoria de este modelo y tenlo a un clic",
+      "parkSkipped": "{{count}} no se pudieron aparcar (el último modelo, o sin bytes IFC guardados)",
+      "facet": {
+        "discipline": "Disciplina",
+        "zone": "Zona",
+        "level": "Nivel",
+        "schema": "Esquema",
+        "version": "Versión"
+      },
+      "supersededNote_one": "1 revisión antigua del mismo fichero",
+      "supersededNote_other": "{{count}} revisiones antiguas de los mismos ficheros"
     }
   },
   "transform": {

@@ -13,6 +13,8 @@ import { PanelRail } from './components/PanelRail'
 import { usePanelRail } from './hooks/usePanelRail'
 import { useSceneContent } from './hooks/useSceneContent'
 import { isHostPanel, type RailId } from './lib/ui/panel-rail'
+import { expandArchives, isArchiveName, captureDropEntries, filesFromEntries, UNSUPPORTED_ARCHIVE_EXT } from './lib/loading/expand-drop'
+import { fileExtensionOf as extOfFile } from './lib/loading/drop-routing'
 import { planDrop, followUp, holdsForReview, listNames, plannedCount, type DropPlan, type FollowUpKind } from './lib/loading/drop-plan'
 import type { AddDataKind } from './lib/loading/add-data-catalogue'
 import { openDataPanel, openDataSamples } from './lib/ui/data-panels'
@@ -220,7 +222,7 @@ import type { TourStep } from './types'
 import { useCaptureStore } from './stores/captureStore'
 import { usePresentationStore } from './stores/presentationStore'
 import { useSolarAnalysisStore } from './stores/solarAnalysisStore'
-import { toast } from './stores/toastStore'
+import { toast, useToastStore } from './stores/toastStore'
 import { confirmExternalData, hostsIn, layersSetupHosts, useExternalDataPrompt } from './lib/privacy/external-data'
 import { ExternalDataPrompt } from './components/ExternalDataPrompt'
 import { appBus, MAP_CONSENT_DECLINED } from './lib/event-bus'
@@ -2078,6 +2080,29 @@ export default function App() {
     trackAddDataOpened({ from })
   }, [])
 
+  /**
+   * Open archives (zip, ifczip, gz, tar — nested too) into their files, then
+   * route everything like a drop: one zip of a project assembles the scene.
+   * RAR / 7z are recognised and named, not opened.
+   */
+  const routeExpanded = useCallback(async (files: File[], opts: { via?: DataVia } = {}): Promise<void> => {
+    const needs = files.some((f) => isArchiveName(f.name) || UNSUPPORTED_ARCHIVE_EXT.has(extOfFile(f.name)))
+    if (!needs) { routeDroppedFiles(files, opts); return }
+    const big = files.reduce((n, f) => n + (isArchiveName(f.name) ? f.size : 0), 0) > 20 * 1024 * 1024
+    const pending = big ? toast(tToolbar('drop.archiveOpening'), 'info', { duration: 0 }) : null
+    const r = await expandArchives(files)
+    if (pending) useToastStore.getState().removeToast(pending)
+    if (r.opened.length > 0) {
+      toast(tToolbar('drop.archiveOpened', { count: r.files.length, archives: r.opened.map((o) => o.name).join(', ') }), 'success')
+    }
+    if (r.unsupportedArchives.length > 0) {
+      toast(tToolbar('drop.archiveUnsupported', { names: r.unsupportedArchives.map((f) => f.name).join(', ') }), 'warning', { duration: 9000 })
+    }
+    for (const f of r.failed) toast(tToolbar('drop.archiveFailed', { name: f.name, reason: f.reason }), 'error')
+    if (r.truncated) toast(tToolbar('drop.archiveTruncated'), 'warning')
+    if (r.files.length > 0) routeDroppedFiles(r.files, opts)
+  }, [routeDroppedFiles, tToolbar])
+
   /** A pick in the hub: Data layers and Scene file route by intent, everything else as a drop. */
   const addFromHub = useCallback((kind: AddDataKind | 'any', files: File[]): void => {
     setShowAddData(false)
@@ -2089,8 +2114,8 @@ export default function App() {
       return
     }
     if (kind === 'scene') { void openSceneFromFile(files[0], 'hub'); return }
-    routeDroppedFiles(files, { via: 'hub' })
-  }, [openSceneFromFile, routeDroppedFiles])
+    void routeExpanded(files, { via: 'hub' })
+  }, [openSceneFromFile, routeExpanded])
 
   // Global drop over the viewer. Only OS file drags count (`hasFilePayload`):
   // the scene tree's own row drag-and-drop must pass straight through. While the
@@ -2109,7 +2134,14 @@ export default function App() {
       const files = Array.from(e.dataTransfer?.files ?? [])
       if (files.length === 0) return
       e.preventDefault()
-      routeDroppedFiles(files)
+      // Entries must be taken now: the DataTransfer is emptied once this
+      // handler returns. A folder arrives as one zero-byte "file" otherwise.
+      const entries = captureDropEntries(e.dataTransfer)
+      if (entries?.some((en) => en.isDirectory)) {
+        void filesFromEntries(entries).then((all) => routeExpanded(all))
+        return
+      }
+      void routeExpanded(files)
     }
     window.addEventListener('dragover', onDragOver)
     window.addEventListener('drop', onDrop)
@@ -2117,7 +2149,7 @@ export default function App() {
       window.removeEventListener('dragover', onDragOver)
       window.removeEventListener('drop', onDrop)
     }
-  }, [route, routeDroppedFiles])
+  }, [route, routeExpanded])
 
   // "Open an IFC file" CTA — go to viewer and immediately show the upload overlay
   // so the user can pick their own file instead of the demo being auto-loaded.

@@ -147,3 +147,21 @@ Never names, sizes, URLs or coordinates.
 Paste-a-link row, keyboard shortcuts, an empty-scene card, Capture for
 scan-only scenes, content sniffing of CSV/JSON, `.twin.json` routing, and
 promoting the app-only rail ids to the SDK.
+
+## Folders and archives
+
+A drop (or the hub's "Choose folder…") can be a whole project. Before routing,
+`lib/loading/expand-drop.ts` turns it into plain files, all in the browser:
+
+- **Folders** are walked recursively (`webkitGetAsEntry`, captured inside the
+  drop handler — the DataTransfer is empty once it returns).
+- **Archives**: `.zip` (nested up to 3 levels), `.ifczip` (the IFC inside is
+  named after the archive), `.gz` / `.tgz`, `.tar`. fflate, lazy-loaded.
+- **RAR / 7z** are recognised and named in a toast ("save as .zip or drop the
+  folder"), not opened: that needs a native-code decompressor we don't ship.
+- Junk is dropped (`__MACOSX`, dotfiles, `Thumbs.db`); expansion stops at
+  4 GB / 5,000 files with a warning.
+
+Then everything goes through `planDrop` as usual: IFCs to the import dialog,
+scans, meshes, GeoJSON layers, IDS, BCF, weather, video and scene files to
+their own subsystems.

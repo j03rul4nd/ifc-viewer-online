@@ -22,13 +22,36 @@ function writeViews(views: FederationView[]): void {
   try { localStorage.setItem(VIEWS_KEY, JSON.stringify(views)) } catch { /* quota / private mode */ }
 }
 
+/**
+ * A model taken out of the scene to free GPU memory but kept in the set: its
+ * IFC bytes stay here (this tab only) so it reloads in one click without the
+ * file dialog. Bytes live outside the reactive state — they are big and never
+ * rendered.
+ */
+export interface ParkedModel {
+  id: string
+  fileName: string
+  fileSize: number
+  parkedAt: number
+}
+const parkedBytes = new Map<string, ArrayBuffer>()
+export const takeParkedBytes = (id: string): ArrayBuffer | null => {
+  const b = parkedBytes.get(id) ?? null
+  parkedBytes.delete(id)
+  return b
+}
+
 interface FederationStore {
   opacityById: Record<string, number>
   /** Discipline the user set by hand, overriding the file-name guess. */
   disciplineById: Record<string, Discipline>
   colorByDiscipline: boolean
   views: FederationView[]
+  parked: ParkedModel[]
 
+  park: (fileName: string, bytes: ArrayBuffer) => void
+  /** Drop a parked entry (after it was reloaded, or to forget it). */
+  unpark: (id: string) => void
   setOpacity: (id: string, opacity: number) => void
   setDiscipline: (id: string, d: Discipline) => void
   setColorByDiscipline: (on: boolean) => void
@@ -43,6 +66,18 @@ export const useFederationStore = create<FederationStore>()((set) => ({
   disciplineById: {},
   colorByDiscipline: false,
   views: readViews(),
+  parked: [],
+
+  park: (fileName, bytes) => set((s) => {
+    const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+    parkedBytes.set(id, bytes)
+    for (const p of s.parked) if (p.fileName === fileName) parkedBytes.delete(p.id)
+    return { parked: [...s.parked.filter((p) => p.fileName !== fileName), { id, fileName, fileSize: bytes.byteLength, parkedAt: Date.now() }] }
+  }),
+  unpark: (id) => set((s) => {
+    parkedBytes.delete(id)
+    return { parked: s.parked.filter((p) => p.id !== id) }
+  }),
 
   setOpacity: (id, opacity) => set((s) => ({ opacityById: { ...s.opacityById, [id]: opacity } })),
   setDiscipline: (id, d) => set((s) => ({ disciplineById: { ...s.disciplineById, [id]: d } })),
@@ -63,7 +98,10 @@ export const useFederationStore = create<FederationStore>()((set) => ({
     return { opacityById, disciplineById }
   }),
   // Views are the user's, not the scene's: they survive a reset.
-  reset: () => set({ opacityById: {}, disciplineById: {}, colorByDiscipline: false }),
+  reset: () => {
+    parkedBytes.clear()
+    set({ opacityById: {}, disciplineById: {}, colorByDiscipline: false, parked: [] })
+  },
 }))
 
 /** The discipline of a model: the user's choice, else the file name's. */
