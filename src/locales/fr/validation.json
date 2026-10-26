@@ -424,6 +424,7 @@
   "summary": {
     "show3d": "Voir en 3D",
     "show3dTitle": "Afficher uniquement ces éléments en 3D",
-    "show3dAll": "Réafficher tous les problèmes en 3D"
+    "show3dAll": "Réafficher tous les problèmes en 3D",
+    "rulePassed": "Votre modèle respecte « {{rule}} » : aucun élément n’échoue à cette vérification."
   }
 }

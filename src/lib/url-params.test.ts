@@ -622,3 +622,15 @@ describe("the `embed` preset (SDK 1.18)", () => {
     expect(parseAppUrlParams('?embed=1&autoframe=1').autoFrame).toBe(true)
   })
 })
+
+describe('parseRuleParam', () => {
+  it('accepts validator rule ids, case-insensitively', async () => {
+    const { parseRuleParam } = await import('./url-params')
+    expect(parseRuleParam('RULE_MISSING_TYPE')).toBe('RULE_MISSING_TYPE')
+    expect(parseRuleParam(' rule_duplicate_name ')).toBe('RULE_DUPLICATE_NAME')
+  })
+  it('rejects anything else', async () => {
+    const { parseRuleParam } = await import('./url-params')
+    for (const v of [null, '', 'MISSING_TYPE', 'RULE_<script>', 'RULE_X']) expect(parseRuleParam(v)).toBeUndefined()
+  })
+})

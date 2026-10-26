@@ -82,6 +82,11 @@ export interface AppUrlParams {
   /** Canonical IFC class to isolate after load, e.g. "IFCWALL" (best-effort). */
   isolate?: string
   /**
+   * `?rule=RULE_MISSING_TYPE`: once the model is validated, open that rule's
+   * group and show its elements in 3D. The /fix/<rule>/ guides link here.
+   */
+  rule?: string
+  /**
    * Invite / campaign tag from `?ref=` (alias `?invite=`). Opaque, non-PII —
    * an outreach identifier like `li_ignacy`, `hn`, `md_<slug>`. Consumed by
    * attribution.ts; never rendered as a person's name. See
@@ -315,6 +320,12 @@ const INVITE_PATH_RE = /^\/(?:i|invite)\/([A-Za-z0-9_-]{1,64})\/?$/
  * accounting for the app's BASE_URL. Returns undefined when the path isn't an
  * invite path. SSR-safe (defaults to the live pathname in the browser).
  */
+/** `?rule=`: a validator rule id (RULE_ + upper snake case), or undefined. */
+export function parseRuleParam(raw: string | null): string | undefined {
+  const v = raw?.trim().toUpperCase()
+  return v && /^RULE_[A-Z0-9_]{2,60}$/.test(v) ? v : undefined
+}
+
 export function parseInvitePath(pathname?: string): string | undefined {
   const path = pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '')
   const base = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
@@ -423,6 +434,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     accent: accentHex,
     select: Number.isFinite(selectRaw) && selectRaw > 0 ? selectRaw : undefined,
     isolate: isolateRaw ? canonicalIfcType(isolateRaw) : undefined,
+    rule: parseRuleParam(p.get('rule')),
     ref: refRaw,
     background: parseBackgroundSpec(p.get('bg') ?? '') ?? undefined,
     solar: parseSolarParam(p.get('solar')),
