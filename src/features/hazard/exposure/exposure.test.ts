@@ -101,12 +101,12 @@ describe('critical-rain report', () => {
       cumRainMm: [50, 100, 200, 400], elements: ex.elements, mask: ex.mask, runoffThresholdMm: 1e9,
     })
     // Outside the mask no cell fails.
-    expect(res.steps.at(-1)!.pFail[19 * 20 + 19]).toBeNaN()
+    expect(res.steps[res.steps.length - 1].pFail[19 * 20 + 19]).toBeNaN()
     const rows = criticalRows(ex.elements, res.critical)
     const reached = rows.filter((r) => r.rainMm !== null).map((r) => r.rainMm!)
     expect(reached).toEqual([...reached].sort((a, b) => a - b))
     const csv = criticalRainCsv(rows)
-    expect(csv.split('\n')[0]).toBe('id,name,kind,critical_rain_mm,cause')
+    expect(csv.split('\n')[0]).toBe('id,name,kind,critical_rain_mm,cause,unstable_without_rain')
     expect(csv).toContain(',I.E. N° 501 & anexo,school,')
     const gj = JSON.parse(criticalRainGeoJson(rows, ex.elements, (c) => ({ lat: (Math.floor(c / 20) + 0.5) * 10 / 1e5, lon: ((c % 20) + 0.5) * 10 / 1e5 })))
     const school = gj.features.find((f: { properties: { kind: string } }) => f.properties.kind === 'school')

@@ -30,6 +30,12 @@ export interface CriticalRain {
   /** Cumulative rain (mm) of the first step that reached it; null = never in this storm. */
   rainMm: number | null
   cause: HazardCause | null
+  /**
+   * Some of its cells fail even before the storm (the "unconditionally
+   * unstable" class of SHALSTAB: too steep for the soil whatever the rain).
+   * Those cells never set a critical rain; this says the element is on them.
+   */
+  dryUnstable: boolean
 }
 
 export interface HazardInput {
@@ -51,6 +57,10 @@ export interface HazardInput {
   elements?: ExposedElement[]
   /** Study area: 1 = inside. Outside cells get no slope failure and no sources. */
   mask?: Uint8Array | null
+  /** Called with each step as it is computed (before the next one starts). */
+  onStep?(k: number, step: HazardStep): void
+  /** Keep every step in the result (default true). False with onStep on large grids. */
+  keepSteps?: boolean
 }
 
 export interface HazardStep {
@@ -59,11 +69,15 @@ export interface HazardStep {
   pFail: Float32Array
   debrisPath: Uint16Array
   debrisDeposit: Uint16Array
+  /** 1 = fails before any rain (same in every step). */
+  dryUnstable: Uint8Array
 }
 
 export interface HazardResult {
   slope: Float32Array
   upslopeArea: Float32Array
+  /** 1 = fails before any rain. */
+  dryUnstable: Uint8Array
   steps: HazardStep[]
   critical: CriticalRain[]
 }
@@ -86,9 +100,20 @@ export function runHazard(input: HazardInput): HazardResult {
 
   const steps: HazardStep[] = []
   const elements = input.elements ?? []
-  const critical: CriticalRain[] = elements.map((e) => ({ id: e.id, rainMm: null, cause: null }))
+  const wetOpts = input.wetness ?? DEFAULT_WETNESS
 
+  // Before the storm: cells that fail with the antecedent moisture alone. They
+  // are hazardous, but no rain threshold describes them, and letting them
+  // count would give every element below a cliff a critical rain of ~0 mm.
   const retained = new Float32Array(n)
+  const dryP = failureProbability(assessed, wetnessFrom(retained, upslopeArea, dem.dx, soil.mean.depthM, wetOpts), samples)
+  const dryUnstable = new Uint8Array(n)
+  for (let c = 0; c < n; c++) if (dryP[c] >= failThreshold) dryUnstable[c] = 1
+  const critical: CriticalRain[] = elements.map((e) => ({
+    id: e.id, rainMm: null, cause: null, dryUnstable: e.cells.some((c) => dryUnstable[c] === 1),
+  }))
+
+  let skipped = 0
   for (const p of cumRainMm) {
     const runoff = new Float32Array(n)
     for (let c = 0; c < n; c++) {
@@ -97,18 +122,23 @@ export function runHazard(input: HazardInput): HazardResult {
       runoff[c] = q
       retained[c] = p - q
     }
-    const wet = wetnessFrom(retained, upslopeArea, dem.dx, soil.mean.depthM, input.wetness ?? DEFAULT_WETNESS)
+    const wet = wetnessFrom(retained, upslopeArea, dem.dx, soil.mean.depthM, wetOpts)
     const pFail = failureProbability(assessed, wet, samples)
-    const debris = debrisRunout(dem, pFail, runout, receivers)
-    steps.push({ rainMm: p, runoffMm: runoff, pFail, debrisPath: debris.path, debrisDeposit: debris.deposit })
+    // Debris starts where the RAIN made the slope fail.
+    const triggered = pFail.map((v, c) => (dryUnstable[c] ? 0 : v))
+    const debris = debrisRunout(dem, triggered, runout, receivers)
+    const step: HazardStep = { rainMm: p, runoffMm: runoff, pFail, debrisPath: debris.path, debrisDeposit: debris.deposit, dryUnstable }
+    input.onStep?.(steps.length + skipped, step)
+    if (input.keepSteps === false) skipped++
+    else steps.push(step)
 
     elements.forEach((e, k) => {
       if (critical[k].rainMm !== null) return
-      const cause = reachedBy(e.cells, pFail, debris.path, debris.deposit, runoff, failThreshold, runoffThreshold)
-      if (cause) critical[k] = { id: e.id, rainMm: p, cause }
+      const cause = reachedBy(e.cells, triggered, debris.path, debris.deposit, runoff, failThreshold, runoffThreshold)
+      if (cause) critical[k] = { ...critical[k], rainMm: p, cause }
     })
   }
-  return { slope, upslopeArea, steps, critical }
+  return { slope, upslopeArea, dryUnstable, steps, critical }
 }
 
 function reachedBy(

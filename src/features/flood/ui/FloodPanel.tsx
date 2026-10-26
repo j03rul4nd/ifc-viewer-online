@@ -11,7 +11,7 @@
 // Lazy (React.lazy in App), gated by VITE_FEATURE_FLOOD. Strings come from the
 // feature's own locale files (i18n.ts), loaded when the panel first mounts.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from '../../../components/ViewportPanel'
 import { Notice, Segmented, SwitchRow, LookSlider, StatRow, ProgressBar, Button } from '../../../components/geo/ui'
@@ -39,6 +39,20 @@ import { FloodProbe } from './FloodProbe'
 import { HyetographEditor } from './HyetographEditor'
 import { CoastSection, coastFor } from './CoastSection'
 import { RiversSection, riversFor } from './RiversSection'
+import { isHazardEnabled } from '../../hazard/flag'
+import { useHazardStore } from '../../hazard/store'
+
+// The rain & slopes study: its own chunk, only in builds that enable it.
+const HazardSection = lazy(() => import('../../hazard/ui/HazardSection'))
+
+/** The KMZ's study area in scene points, for the grid's extent (map on). */
+async function hazardExtent(v: ViewerAPI): Promise<Array<{ x: number; z: number }> | undefined> {
+  const placemarks = isHazardEnabled() ? useHazardStore.getState().placemarks : null
+  if (!placemarks?.length) return undefined
+  const pts = (await v.getHazard()).extentOf(placemarks)
+  useHazardStore.getState().set({ extentPoints: pts })
+  return pts ?? undefined
+}
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -127,6 +141,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
   // Leaving the scene (models removed, panel unmounted) takes the study with it.
   useEffect(() => () => {
     sysRef.current?.clear()
+    // The slope study runs on this grid: it goes with it.
+    if (isHazardEnabled()) void viewerApiRef.current?.getHazard().then((h) => h.clear())
     useFloodStore.getState().set({ status: 'idle', report: null, stats: null, perf: null, backend: null, probe: null, probing: false, affected: null })
   }, [])
 
@@ -189,6 +205,7 @@ export default function FloodPanel({ viewerApiRef }: Props) {
         demFile: demRef.file,
         georef: pickGeoref(v),
         plane: { y: st.planeAuto ? null : st.planeY, slopePct: st.slopePct, towardsDeg: st.slopeTowardsDeg },
+        extentPoints: await hazardExtent(v),
         onStage: (stage) => useFloodStore.getState().set({ stage }),
       })
       sy.setView({ mode: st.viewMode, threshold: st.threshold, showGround: st.showGround, particles: st.particles })
@@ -540,6 +557,12 @@ export default function FloodPanel({ viewerApiRef }: Props) {
             <RiversSection t={t} caption={caption} />
 
             <CoastSection t={t} caption={caption} selectCls={selectCls} mapOn={mapOn} />
+
+            {isHazardEnabled() && (
+              <Suspense fallback={null}>
+                <HazardSection viewerApiRef={viewerApiRef} caption={caption} selectCls={selectCls} mapOn={mapOn} />
+              </Suspense>
+            )}
 
             {/* ── Build and run ────────────────────────────────────────── */}
             <div className="flex items-center gap-2">

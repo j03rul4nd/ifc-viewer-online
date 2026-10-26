@@ -1,0 +1,112 @@
+{
+  "title": "Rain & slopes",
+  "intro": "How much rain makes the slopes fail: runoff (SCS curve number), shallow landslide probability (infinite slope, Monte Carlo) and the likely path of a debris flow, step by step through the storm. Load the study area as KMZ/KML to get the critical rainfall of its homes, schools, health centres and roads.",
+  "kmz": {
+    "load": "Load KMZ / KML",
+    "replace": "Replace",
+    "remove": "Remove",
+    "none": "No study area: the grid's own extent, elements from OpenStreetMap",
+    "empty": "The file has no placemarks.",
+    "failed": "Could not read the file: {{message}}",
+    "needsMap": "Turn the map on to place a KMZ (its coordinates are WGS84) and to use the relief.",
+    "anchored": "The study area places the scene: turn the map on (with relief) and build the grid.",
+    "rebuild": "Rebuild the grid so it covers the study area."
+  },
+  "soil": {
+    "group": "Soil group",
+    "moisture": "Prior moisture",
+    "amc": {
+      "I": "Dry (AMC I)",
+      "II": "Normal (AMC II)",
+      "III": "Wet, after rain (AMC III)"
+    },
+    "cover": "Unmapped cover",
+    "cohesion": "Cohesion c′",
+    "friction": "Friction φ′",
+    "depth": "Soil depth",
+    "weight": "Unit weight γ"
+  },
+  "cover": {
+    "forest": "Forest",
+    "shrub": "Shrubland",
+    "grass": "Grassland",
+    "crop": "Cropland",
+    "bare": "Bare soil",
+    "urban": "Built-up"
+  },
+  "runout": {
+    "angle": "Debris travel angle",
+    "maxRain": "Rain to test up to"
+  },
+  "actions": {
+    "run": "Compute",
+    "rerun": "Recompute",
+    "needsGrid": "Build the grid first (above).",
+    "progress": "Rain step {{done}} of {{of}}"
+  },
+  "timeline": {
+    "play": "Play the storm",
+    "pause": "Pause",
+    "label": "Rain step",
+    "storm": "{{mm}} mm fallen · minute {{min}} of the storm",
+    "beyond": "{{mm}} mm accumulated (beyond this storm)"
+  },
+  "layer": {
+    "title": "Layer",
+    "susceptibility": "Landslides",
+    "runoff": "Runoff",
+    "debris": "Debris flow",
+    "note": {
+      "susceptibility": "Probability that the slope fails (FS < 1) as the rain soaks in. Purple: fails even without rain. Brown: likely debris paths and deposits. Blue: water down the gullies.",
+      "runoff": "Rain that has run off so far, mm (SCS curve number).",
+      "debris": "Where flows from the likely failures travel (light brown) and stop (dark brown)."
+    }
+  },
+  "view": {
+    "block": "Maquette (cut the block out, hide the map)",
+    "labels": "Labels",
+    "frame": "Frame the study area"
+  },
+  "report": {
+    "grid": "Hazard grid",
+    "cn": "Mean curve number",
+    "elements": "Exposed elements",
+    "source": {
+      "kmz": "KMZ · {{housing}} homes · {{school}} schools · {{health}} health · {{road}} roads · {{other}} other",
+      "osm": "OpenStreetMap · {{housing}} homes · {{school}} schools · {{health}} health · {{road}} roads",
+      "none": "None"
+    },
+    "coarsened": "Computed on cells {{k}}× the flood grid's, to keep it interactive.",
+    "outside": "{{n}} placemarks fall outside the grid and are not assessed.",
+    "dry": "{{ha}} ha fail even without rain with this soil (purple): too steep for it, usually rock or a cliff. They set no critical rain; check them on site."
+  },
+  "table": {
+    "title": "Critical rainfall",
+    "element": "Element",
+    "rain": "Rain",
+    "never": "> {{mm}} mm",
+    "empty": "No exposed elements in the study area.",
+    "csv": {
+      "id": "id",
+      "name": "name",
+      "kind": "kind",
+      "rain": "critical_rain_mm",
+      "cause": "cause",
+      "dry": "unstable_without_rain"
+    },
+    "dry": "On a slope that fails without rain"
+  },
+  "kind": {
+    "housing": "Home",
+    "school": "School",
+    "health": "Health centre",
+    "road": "Road",
+    "other": "Other"
+  },
+  "cause": {
+    "landslide": "landslide",
+    "debris": "debris flow",
+    "runoff": "runoff"
+  },
+  "disclaimer": "Indicative tool to communicate the hazard. It does not replace an official risk assessment, a site investigation or an early-warning system's own calibration."
+}

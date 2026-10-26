@@ -129,6 +129,7 @@ import { parsePanelTarget, parsePanelList } from './lib/ui/panel-commands'
 import { closeAllPanels } from './lib/ui/panel-registry'
 import { isSolarEnabled } from './lib/solar/solar-flag'
 import { isFloodEnabled } from './features/flood/flag'
+import { isHazardEnabled } from './features/hazard/flag'
 import { useFloodStore } from './features/flood/store'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
@@ -4830,7 +4831,8 @@ export default function App() {
                   {/* Mounted in client mode too, without its panel: the map a link,
                       a scene or the SDK asks for is answered by this controller
                       (sdk:site) — without it `?map=…&ui=client` never came up. */}
-                  {isGisEnabled() && sceneModels.length > 0 && (
+                  {/* A slope-hazard study needs no model: a KMZ anchors the map (hazard/anchor.ts). */}
+                  {isGisEnabled() && (sceneModels.length > 0 || isHazardEnabled()) && (
                     <React.Suspense fallback={null}>
                       <GeoPanel viewerApiRef={viewerApiRef} panel={!clientMode} />
                     </React.Suspense>
@@ -4856,7 +4858,7 @@ export default function App() {
 
                   {/* Rain-flood simulation (flag-gated, lazy): a 2-D storm run on
                       the user's GPU over the model, its terrain and the map. */}
-                  {isFloodEnabled() && sceneModels.length > 0 && !clientMode && (
+                  {isFloodEnabled() && (sceneModels.length > 0 || isHazardEnabled()) && !clientMode && (
                     <React.Suspense fallback={null}>
                       <FloodPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>

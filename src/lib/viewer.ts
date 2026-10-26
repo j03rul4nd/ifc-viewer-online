@@ -858,6 +858,8 @@ export interface ViewerAPI {
    * viewer, disposed with it.
    */
   getFlood(): Promise<import('../features/flood/system').FloodSystemAPI>
+  /** Lazily load the rain-triggered slope hazard study (runs on the flood grid). */
+  getHazard(): Promise<import('../features/hazard/system').HazardSystemAPI>
   /**
    * Lazily load and return the point cloud subsystem (separate chunk, created
    * once per viewer, disposed with it). Point clouds render in THIS scene with
@@ -1304,6 +1306,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let solarAnalysisInstance: import('./solar-analysis/analysis-system').SolarAnalysisAPI | null = null
   let floodPromise: Promise<import('../features/flood/system').FloodSystemAPI> | null = null
   let floodInstance: import('../features/flood/system').FloodSystemAPI | null = null
+  let hazardPromise: Promise<import('../features/hazard/system').HazardSystemAPI> | null = null
   let solarAnalysisPromise: Promise<import('./solar-analysis/analysis-system').SolarAnalysisAPI> | null = null
 
   // Point clouds (lazy chunk) — set by getPointClouds().
@@ -5002,6 +5005,17 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return floodPromise
     },
 
+    getHazard() {
+      const self = this
+      hazardPromise ??= import('../features/hazard/system').then((m) => m.createHazardSystem({
+        scene: world.scene.three,
+        requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true },
+        getGeo: () => (geoSystemInstance?.isActive() ? geoSystemInstance : null),
+        getFlood: () => self.getFlood(),
+      }))
+      return hazardPromise
+    },
+
     getSolar() {
       const self = this
       solarLoadPromise ??= import('./solar/solar-system').then((m) => {
@@ -5232,6 +5246,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       vectorLoadPromise = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
+      if (hazardPromise) void hazardPromise.then((h) => h.clear()).catch(() => { /* ok */ })
+      hazardPromise = null
       try { floodInstance?.dispose() } catch { /* ok */ }
       floodInstance = null
       floodPromise = null
