@@ -24,6 +24,10 @@ import { useWaiverStore, issueKey } from '../stores/waiverStore'
 import { diffResults } from '../lib/validation-diff'
 import type { ValidationDiff } from '../lib/validation-diff'
 import { toast, toastFromError } from '../stores/toastStore'
+import { parseAppUrlParams } from '../lib/url-params'
+
+// Read once, when the page loads: later navigation (landing → viewer) may rewrite the URL.
+const URL_RULE = typeof window === 'undefined' ? undefined : parseAppUrlParams().rule
 import { buildFixGuidCommand, buildRenameCommand, pendingNamesForModel } from '../lib/diffStore'
 import { useBatchFixStore, type FixBatch } from '../stores/batchFixStore'
 import { buildPendingIndex, type PendingIndex } from '../lib/fix/pending'
@@ -1938,6 +1942,22 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
     setSearch('')
     setFocusRule(ruleId)
   }, [setFilters])
+
+  // `?rule=RULE_X` (the "check your IFC for this error" link on /fix/<rule>/):
+  // on the first result, open that rule's group and show its elements in 3D —
+  // or say the model passes that check. Once per page load.
+  const urlRuleRef = useRef<string | undefined>(URL_RULE)
+  useEffect(() => {
+    const ruleId = urlRuleRef.current
+    if (!ruleId || !result || isRunning) return
+    urlRuleRef.current = undefined
+    if (issues.some((i) => i.ruleId === ruleId)) {
+      handleJumpToRule(ruleId)
+      if (sceneModels.length > 0) handleShowRuleIn3d(ruleId)
+    } else {
+      toast(t('summary.rulePassed', { rule: getRuleLabel(ruleId, i18n.language) }), 'success')
+    }
+  }, [result, isRunning, issues, sceneModels.length, handleShowRuleIn3d, handleJumpToRule, t, i18n.language])
 
   // ── Handlers ──────────────────────────────────────────────────────────
 

@@ -1022,6 +1022,9 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
   const appHome = APP_HOME[lang]
   const root = langPath === '' ? '../../' : '../../../' // page is /[lang/]fix/<slug>/
   const url = `${SITE}/${langPath}fix/${base.slug}/`
+  // The app opens on THIS rule once the dropped model is validated (?rule=):
+  // its group open, its elements alone in 3D, or "your model passes".
+  const checkHref = `${root}${appHome}?rule=${base.ruleId}`
   const label = labelOf(base.ruleId, lang)
   const description = descOf(base.ruleId, lang)
   const { summary, tools } = remOf(base.ruleId, lang)
@@ -1120,7 +1123,7 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
         <h1>${esc(ui.h1Pre)} <span class="accent">${esc(label)}</span><br>${esc(ui.h1Post)}</h1>
         <p class="hero-desc">${esc(summary)}</p>
         <div class="cta-row">
-          <a href="${root}${appHome}" class="cta-primary">
+          <a href="${checkHref}" class="cta-primary">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             ${esc(ui.heroCta)}
           </a>
@@ -1180,7 +1183,7 @@ ${related.length > 0 ? `
       <div class="container">
         <h2>${esc(ui.ctaTitle)}</h2>
         <p>${esc(ui.ctaBody(label))}</p>
-        <a href="${root}${appHome}" class="cta-primary">${esc(ui.ctaBtn)}</a>
+        <a href="${checkHref}" class="cta-primary">${esc(ui.ctaBtn)}</a>
       </div>
     </section>
 
