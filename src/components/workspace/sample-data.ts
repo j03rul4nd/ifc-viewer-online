@@ -73,8 +73,12 @@ export const SAMPLE_ACCOUNT = {
   name: 'Laura Méndez',
   org: 'Estudio Norte BIM',
   email: 'laura@estudionorte.example',
-  plan: 'pro' as const,
-  billing: 'monthly' as const,
+  plan: 'pro' as 'pro' | 'team',
+  billing: 'monthly' as 'monthly' | 'yearly',
+  /** Subscription state as the payment provider reports it. */
+  status: 'active' as 'active' | 'past_due' | 'canceled',
+  /** Last four digits of the card on file, as the provider exposes them. */
+  card: { brand: 'Visa', last4: '4242', expires: '08/28' },
   renewsOn: '2026-11-16',
   credits: { balance: 220, planMonthly: 200, planUsed: 30, packs: 50, packsExpireOn: '2027-08-02' },
 }
@@ -152,13 +156,17 @@ export function estimateCredits(feature: PaidFeatureId, sizeMb: number): number 
 // (docs-planning/10). The preview switches between these so each one can be
 // reviewed without a backend.
 
-export type Scenario = 'active' | 'new' | 'low_credits' | 'out_of_credits'
+export type Scenario = 'active' | 'new' | 'low_credits' | 'out_of_credits' | 'past_due' | 'canceled' | 'loading' | 'error'
 
 export const SCENARIOS: { id: Scenario; label: string }[] = [
   { id: 'active', label: 'Active account' },
   { id: 'new', label: 'Just subscribed (empty)' },
   { id: 'low_credits', label: 'Low credits' },
   { id: 'out_of_credits', label: 'Out of credits' },
+  { id: 'past_due', label: 'Payment failed' },
+  { id: 'canceled', label: 'Plan ending' },
+  { id: 'loading', label: 'Loading' },
+  { id: 'error', label: 'Could not load' },
 ]
 
 export interface WorkspaceData {
@@ -180,7 +188,11 @@ export function scenarioData(s: Scenario): WorkspaceData {
     credits: { ...SAMPLE_ACCOUNT.credits, planUsed, packs, balance: SAMPLE_ACCOUNT.credits.planMonthly - planUsed + packs },
   })
   switch (s) {
-    case 'active': return base
+    case 'active':
+    case 'loading':
+    case 'error': return base
+    case 'past_due': return { ...base, account: { ...SAMPLE_ACCOUNT, status: 'past_due' } }
+    case 'canceled': return { ...base, account: { ...SAMPLE_ACCOUNT, status: 'canceled' } }
     case 'new': return {
       account: withCredits(0, 0), projects: [], jobs: [], certificates: [],
       ledger: [{ date: '2026-10-16', kind: 'plan_grant', description: 'Pro — monthly credits', credits: 200 }],
