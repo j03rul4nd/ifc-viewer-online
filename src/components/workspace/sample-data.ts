@@ -151,6 +151,90 @@ export function estimateCredits(feature: PaidFeatureId, sizeMb: number): number 
   }
 }
 
+
+// ── Account, support and data rights ─────────────────────────────────────────
+
+export interface SampleSession { id: string; device: string; location: string; lastSeen: string; current?: boolean }
+
+export const SAMPLE_SESSIONS: SampleSession[] = [
+  { id: 's1', device: 'Chrome · Windows', location: 'Barcelona, ES', lastSeen: 'Active now', current: true },
+  { id: 's2', device: 'Safari · iPhone', location: 'Barcelona, ES', lastSeen: '2026-10-25 19:12' },
+  { id: 's3', device: 'Firefox · macOS', location: 'Girona, ES', lastSeen: '2026-10-02 08:40' },
+]
+
+export type NotificationKey = 'score_drop' | 'job_done' | 'job_failed' | 'credits_low' | 'invoice' | 'product_news'
+
+export const NOTIFICATION_OPTIONS: { key: NotificationKey; label: string; detail: string; required?: boolean }[] = [
+  { key: 'score_drop', label: 'A delivery scores lower than the previous one', detail: 'Per project, the moment the new version is checked.' },
+  { key: 'job_done', label: 'A cloud job finishes', detail: 'With a link to the result.' },
+  { key: 'job_failed', label: 'A cloud job fails', detail: 'Including whether the credits were returned.' },
+  { key: 'credits_low', label: 'Credits drop below 20 %', detail: 'Once per billing period.' },
+  { key: 'invoice', label: 'Receipts and payment problems', detail: 'Legally required — cannot be turned off.', required: true },
+  { key: 'product_news', label: 'Product news', detail: 'At most once a month. Off by default.' },
+]
+
+export const SAMPLE_NOTIFICATIONS: Record<NotificationKey, boolean> = {
+  score_drop: true, job_done: false, job_failed: true, credits_low: true, invoice: true, product_news: false,
+}
+
+export type TicketStatus = 'open' | 'waiting_on_you' | 'resolved'
+export type TicketKind = 'question' | 'bug' | 'billing' | 'data_request'
+
+export interface SampleTicket {
+  id: string
+  subject: string
+  kind: TicketKind
+  status: TicketStatus
+  updatedAt: string
+  /** Job, project or certificate the ticket is about. */
+  ref?: string
+  messages: { from: 'you' | 'support'; at: string; body: string }[]
+}
+
+export const SAMPLE_TICKETS: SampleTicket[] = [
+  {
+    id: 'T-2031', subject: 'Clash job ran out of memory on MEP + EST', kind: 'bug', status: 'waiting_on_you', updatedAt: '2026-10-04', ref: 'j-1040',
+    messages: [
+      { from: 'you', at: '2026-10-03 11:20', body: 'The clash job failed after 6 minutes. Credits were returned, but I need this result for Friday.' },
+      { from: 'support', at: '2026-10-04 09:02', body: 'Thanks — we raised the memory limit for files over 250 MB. Can you run it again and tell us if it finishes?' },
+    ],
+  },
+  {
+    id: 'T-1988', subject: 'Invoice needs our VAT ID', kind: 'billing', status: 'resolved', updatedAt: '2026-09-17',
+    messages: [
+      { from: 'you', at: '2026-09-16 18:01', body: 'Can you reissue INV-2026-0098 with ESB12345678?' },
+      { from: 'support', at: '2026-09-17 10:30', body: 'Done — the corrected invoice is in Credits & billing.' },
+    ],
+  },
+]
+
+export interface ActivityEntry { at: string; who: string; what: string; target?: string }
+
+export const SAMPLE_ACTIVITY: ActivityEntry[] = [
+  { at: '2026-10-16 16:02', who: 'You', what: 'started deep geometry tests on', target: 'HCA_ARQ_v4.ifc' },
+  { at: '2026-10-14 09:13', who: 'You', what: 'downloaded the clean IFC of', target: 'HCA_ARQ_v4.ifc' },
+  { at: '2026-10-14 09:00', who: 'You', what: 'added delivery v4 to', target: 'Hospital Comarcal — Ampliación' },
+  { at: '2026-10-11 08:31', who: 'You', what: 'validated', target: 'ZF_EST_v1.ifc (412 MB)' },
+  { at: '2026-10-09 17:41', who: 'You', what: 'issued certificate', target: 'CERT-7F3A' },
+]
+
+export interface DataRequest { id: string; kind: 'export' | 'erase_files' | 'delete_account'; requestedAt: string; status: 'processing' | 'ready' | 'done'; expiresAt?: string }
+
+export const SAMPLE_DATA_REQUESTS: DataRequest[] = [
+  { id: 'D-104', kind: 'export', requestedAt: '2026-10-12', status: 'ready', expiresAt: '2026-10-19' },
+]
+
+/** What we hold and for how long — the table behind the Privacy section. */
+export const DATA_INVENTORY: { what: string; where: string; kept: string }[] = [
+  { what: 'Name, email, company, VAT ID', where: 'EU (Neon, Frankfurt)', kept: 'While the account exists' },
+  { what: 'Projects, scores and issue lists', where: 'EU (Neon, Frankfurt)', kept: 'While the account exists; read-only 90 days after a plan ends' },
+  { what: 'Uploaded IFC files for cloud jobs', where: 'EU worker storage', kept: 'Deleted when the job ends (max. 24 h)' },
+  { what: 'Corrected IFC files', where: 'EU worker storage', kept: '7 days' },
+  { what: 'Certificates (hash + result, never the model)', where: 'EU (Neon)', kept: 'Until you revoke them — clients rely on the link' },
+  { what: 'Invoices and payments', where: 'Payment provider', kept: '6 years (Spanish tax law)' },
+  { what: 'Support conversations', where: 'EU (Neon)', kept: '2 years after the ticket closes' },
+]
+
 // ── Review scenarios ──────────────────────────────────────────────────────────
 // Every screen must be designed for empty, sparse, dense and error states
 // (docs-planning/10). The preview switches between these so each one can be
@@ -176,12 +260,17 @@ export interface WorkspaceData {
   certificates: SampleCertificate[]
   ledger: LedgerEntry[]
   invoices: SampleInvoice[]
+  sessions: SampleSession[]
+  tickets: SampleTicket[]
+  activity: ActivityEntry[]
+  dataRequests: DataRequest[]
 }
 
 export function scenarioData(s: Scenario): WorkspaceData {
   const base: WorkspaceData = {
     account: SAMPLE_ACCOUNT, projects: SAMPLE_PROJECTS, jobs: SAMPLE_JOBS,
     certificates: SAMPLE_CERTIFICATES, ledger: SAMPLE_LEDGER, invoices: SAMPLE_INVOICES,
+    sessions: SAMPLE_SESSIONS, tickets: SAMPLE_TICKETS, activity: SAMPLE_ACTIVITY, dataRequests: SAMPLE_DATA_REQUESTS,
   }
   const withCredits = (planUsed: number, packs: number) => ({
     ...SAMPLE_ACCOUNT,
@@ -197,6 +286,7 @@ export function scenarioData(s: Scenario): WorkspaceData {
       account: withCredits(0, 0), projects: [], jobs: [], certificates: [],
       ledger: [{ date: '2026-10-16', kind: 'plan_grant', description: 'Pro — monthly credits', credits: 200 }],
       invoices: [SAMPLE_INVOICES[0]],
+      sessions: SAMPLE_SESSIONS.slice(0, 1), tickets: [], activity: [], dataRequests: [],
     }
     case 'low_credits': return { ...base, account: withCredits(170, 0) }
     case 'out_of_credits': return { ...base, account: withCredits(200, 0) }

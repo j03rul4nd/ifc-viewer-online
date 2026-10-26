@@ -6,7 +6,7 @@
 //   tablet  ≥ 768  → tables, centred dialogs
 //   desktop ≥ 1024 → wider grids
 
-import { useEffect, useId, useRef } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 export function scoreColor(score: number): string {
   return score >= 80 ? 'var(--ok)' : score >= 60 ? 'var(--warn)' : 'var(--danger)'
@@ -238,6 +238,102 @@ export function Dialog({ title, onClose, children, footer, size = 'md', dismissa
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Forms and settings ────────────────────────────────────────────────────────
+
+export const inputClass = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-[13px] text-[var(--text)] focus:outline focus:outline-2 focus:outline-[var(--accent)]'
+
+export function Field({ label, hint, children, className = '' }: { label: string; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <label className={`block text-[12px] text-[var(--text-dim)] ${className}`}>
+      {label}
+      <div className="mt-1">{children}</div>
+      {hint && <span className="block mt-1 text-[11.5px] text-[var(--text-faint)]">{hint}</span>}
+    </label>
+  )
+}
+
+export function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
+  return (
+    <button type="button" role="switch" aria-checked={checked} aria-label={label} disabled={disabled} onClick={() => onChange(!checked)}
+      className={`relative shrink-0 w-[38px] h-[22px] rounded-full transition-colors disabled:opacity-50 ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--surface-2)] border border-[var(--border)]'}`}>
+      <span aria-hidden className={`absolute top-[3px] w-4 h-4 rounded-full bg-white transition-[left] ${checked ? 'left-[19px]' : 'left-[3px]'}`} />
+    </button>
+  )
+}
+
+/** One setting: what it is on the left, its control on the right (stacked on a phone). */
+export function SettingRow({ title, detail, children }: { title: string; detail?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 px-4 sm:px-5 py-3.5">
+      <div className="flex-1 min-w-0">
+        <p className="text-[13.5px] font-medium">{title}</p>
+        {detail && <p className="text-[12px] text-[var(--text-dim)] mt-0.5">{detail}</p>}
+      </div>
+      {children && <div className="shrink-0 flex flex-wrap items-center gap-2">{children}</div>}
+    </div>
+  )
+}
+
+/** A titled group of settings rows. */
+export function SettingGroup({ title, children, tone }: { title: string; children: React.ReactNode; tone?: 'danger' }) {
+  return (
+    <section className="mb-6">
+      <SectionLabel>{title}</SectionLabel>
+      <div className="rounded-[10px] border bg-[var(--surface)] divide-y divide-[var(--border)]" style={{ borderColor: tone === 'danger' ? 'color-mix(in srgb, var(--danger) 45%, var(--border))' : 'var(--border)' }}>
+        {children}
+      </div>
+    </section>
+  )
+}
+
+export function Danger({ children, onClick, disabled, type = 'button', className = '' }: BtnProps) {
+  return (
+    <button type={type} onClick={onClick} disabled={disabled}
+      className={`inline-flex items-center justify-center h-[34px] sm:h-[30px] px-3 rounded-[7px] text-[12.5px] font-medium border text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] disabled:opacity-50 ${className}`}
+      style={{ borderColor: 'color-mix(in srgb, var(--danger) 50%, var(--border))' }}>
+      {children}
+    </button>
+  )
+}
+
+// ── Tabs inside a section ─────────────────────────────────────────────────────
+// The tab is the second URL segment (/workspace/settings/security), so every
+// screen is linkable and survives a refresh — the same rule as sections.
+
+export function subFromPath<T extends string>(tabs: readonly { id: T }[], pathname = typeof location !== 'undefined' ? location.pathname : ''): T {
+  const seg = pathname.split('/workspace/')[1]?.split('/')[1]
+  return tabs.find((t) => t.id === seg)?.id ?? tabs[0].id
+}
+
+export function useSubTab<T extends string>(section: string, tabs: readonly { id: T }[]): [T, (t: T) => void] {
+  const [tab, setTab] = useState<T>(() => subFromPath(tabs))
+  const go = useCallback((t: T) => {
+    setTab(t)
+    const base = `${import.meta.env.BASE_URL ?? '/'}workspace/${section}`
+    const url = t === tabs[0].id ? base : `${base}/${t}`
+    if (typeof history !== 'undefined' && location.pathname !== url) history.pushState(null, '', url)
+  }, [section, tabs])
+  useEffect(() => {
+    const onPop = () => setTab(subFromPath(tabs))
+    addEventListener('popstate', onPop)
+    return () => removeEventListener('popstate', onPop)
+  }, [tabs])
+  return [tab, go]
+}
+
+export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs: readonly { id: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void; label: string }) {
+  return (
+    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-[var(--border)] mb-5 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {tabs.map((t) => (
+        <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)}
+          className={`shrink-0 h-[38px] px-3 -mb-px border-b-2 text-[13px] whitespace-nowrap ${value === t.id ? 'border-[var(--accent)] text-[var(--text)] font-medium' : 'border-transparent text-[var(--text-faint)] hover:text-[var(--text)]'}`}>
+          {t.label}{t.count ? <span className="ml-1.5 text-[11px] tabular-nums text-[var(--text-faint)]">{t.count}</span> : null}
+        </button>
+      ))}
     </div>
   )
 }

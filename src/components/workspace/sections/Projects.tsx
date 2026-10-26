@@ -1,7 +1,23 @@
-import { useState } from 'react'
+// Projects: the list (search, sort, archived) and one project's page with its
+// deliveries, jobs, certificates and settings. A project has its own URL,
+// /workspace/projects/<id>, so a coordinator can send a colleague straight to it.
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { SampleProject } from '../sample-data'
 import type { SectionProps } from '../registry'
-import { Panel, Head, Primary, Quiet, Empty, DataList, Sparkline, scoreColor, fmtInt } from '../ui'
+import {
+  Panel, Head, Primary, Quiet, Danger, Empty, DataList, Sparkline, Tabs, Dialog, Field, Toggle,
+  SettingGroup, SettingRow, scoreColor, fmtInt, inputClass,
+} from '../ui'
+import { featureName } from './Overview'
+
+const PROFILES = ['Health Score only', 'ISO 19650 basics', 'IDS CatSalut', 'EIR Ajuntament de Sabadell 2026']
+const BASE = `${import.meta.env.BASE_URL ?? '/'}workspace/projects`
+
+function projectFromPath(): string | null {
+  if (typeof location === 'undefined') return null
+  return location.pathname.split('/workspace/projects/')[1]?.split('/')[0] || null
+}
 
 function Delta({ project }: { project: SampleProject }) {
   const v = project.versions, prev = v[v.length - 2]
@@ -32,48 +48,191 @@ export function ProjectList({ projects, onOpen }: { projects: SampleProject[]; o
   )
 }
 
-function ProjectDetail({ project, onBack, onNewJob }: { project: SampleProject; onBack: () => void; onNewJob: () => void }) {
+function NewProjectDialog({ onClose }: { onClose: () => void }) {
+  const [f, setF] = useState({ name: '', client: '', discipline: 'ARQ', profile: PROFILES[0] })
+  return (
+    <Dialog title="New project" onClose={onClose}
+      footer={<><Quiet onClick={onClose}>Cancel</Quiet><Primary disabled={f.name.trim().length < 2} onClick={onClose}>Create project</Primary></>}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Name" className="sm:col-span-2"><input className={inputClass} value={f.name} placeholder="Hospital Comarcal — Ampliación" onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+        <Field label="Client" hint="Shown on certificates."><input className={inputClass} value={f.client} onChange={(e) => setF({ ...f, client: e.target.value })} /></Field>
+        <Field label="Discipline">
+          <select className={inputClass} value={f.discipline} onChange={(e) => setF({ ...f, discipline: e.target.value })}>
+            {['ARQ', 'EST', 'MEP', 'ARQ + MEP', 'Federated'].map((d) => <option key={d}>{d}</option>)}
+          </select>
+        </Field>
+        <Field label="Checked against" className="sm:col-span-2" hint="Every delivery is scored with this. Changing it later rescores the history.">
+          <select className={inputClass} value={f.profile} onChange={(e) => setF({ ...f, profile: e.target.value })}>
+            {PROFILES.map((p) => <option key={p}>{p}</option>)}
+            <option>Upload an IDS file…</option>
+          </select>
+        </Field>
+      </div>
+      <p className="mt-4 text-[12px] text-[var(--text-dim)]">Next you'll add the first delivery. Projects are free to create; only cloud jobs use credits.</p>
+    </Dialog>
+  )
+}
+
+const DETAIL_TABS = [
+  { id: 'deliveries', label: 'Deliveries' },
+  { id: 'jobs', label: 'Cloud jobs' },
+  { id: 'certificates', label: 'Certificates' },
+  { id: 'settings', label: 'Settings' },
+] as const
+type DetailTab = (typeof DETAIL_TABS)[number]['id']
+
+function ProjectDetail({ project, data, actions, onBack }: SectionProps & { project: SampleProject; onBack: () => void }) {
+  const [tab, setTab] = useState<DetailTab>('deliveries')
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [alerts, setAlerts] = useState(true)
   const versions = [...project.versions].reverse()
   const prevOf = (label: string) => versions[versions.findIndex((v) => v.label === label) + 1]
+  const jobs = data.jobs.filter((j) => j.project === project.id)
+  const certs = data.certificates.filter((c) => c.project === project.name)
+  const last = project.versions[project.versions.length - 1]
+
   return (
     <>
       <button onClick={onBack} className="text-[12.5px] text-[var(--text-dim)] hover:text-[var(--text)] mb-3 min-h-[32px]">← Projects</button>
-      <Head title={project.name} sub={`${project.client} · ${project.discipline}`} action={<Primary onClick={onNewJob}>Add delivery</Primary>} />
-      <Panel className="p-4 sm:p-5 mb-4">
-        <p className="text-[12px] text-[var(--text-dim)] mb-2">Health Score per delivery</p>
-        <Sparkline values={project.versions.map((v) => v.score)} width={560} height={90} className="w-full h-[90px]" />
-      </Panel>
-      <DataList
-        rows={versions}
-        rowKey={(v) => v.label}
-        primaryHeader="Delivery"
-        primary={(v) => <span className="font-medium">{v.label} <span className="font-normal text-[12px] text-[var(--text-faint)] md:hidden">· {v.date}</span></span>}
-        columns={[
-          { key: 'date', header: 'Date', hideOnPhone: true, cell: (v) => <span className="text-[var(--text-dim)]">{v.date}</span> },
-          { key: 'score', header: 'Score', cell: (v) => {
-            const prev = prevOf(v.label)
-            return <span className="tabular-nums"><span className="font-semibold" style={{ color: scoreColor(v.score) }}>{v.score}</span>{prev && v.score < prev.score && <span className="ml-2 text-[11.5px] text-[var(--danger)]">lower than {prev.label}</span>}</span>
-          } },
-          { key: 'open', header: 'Open issues', cell: (v) => <span className="tabular-nums">{fmtInt(v.issues)}</span> },
-          { key: 'new', header: 'New', cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">+{v.newIssues}</span> },
-          { key: 'fixed', header: 'Fixed', cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">−{v.fixedIssues}</span> },
-        ]}
-        actions={(v) => { const prev = prevOf(v.label); return prev ? <Quiet>Compare with {prev.label}</Quiet> : null }}
-      />
+      <Head title={project.name} sub={`${project.client} · ${project.discipline} · checked against ${PROFILES[0]}`}
+        action={<><Quiet onClick={actions.newJob}>Run a job</Quiet><Primary>Add delivery</Primary></>} />
+
+      <div className="grid gap-3 grid-cols-3 mb-5">
+        {[['Latest score', <span key="s" style={{ color: scoreColor(last.score) }}>{last.score}</span>], ['Open issues', fmtInt(last.issues)], ['Deliveries', project.versions.length]].map(([k, v]) => (
+          <Panel key={String(k)} className="p-3 sm:p-4">
+            <p className="text-[11.5px] text-[var(--text-dim)]">{k}</p>
+            <p className="mt-1 text-[20px] sm:text-[24px] font-semibold tabular-nums">{v}</p>
+          </Panel>
+        ))}
+      </div>
+
+      <Tabs label="Project" tabs={DETAIL_TABS.map((t) => ({ ...t, count: t.id === 'jobs' ? jobs.length : t.id === 'certificates' ? certs.length : t.id === 'deliveries' ? versions.length : undefined }))} value={tab} onChange={setTab} />
+
+      {tab === 'deliveries' && (
+        <>
+          <Panel className="p-4 sm:p-5 mb-4">
+            <p className="text-[12px] text-[var(--text-dim)] mb-2">Health Score per delivery</p>
+            <Sparkline values={project.versions.map((v) => v.score)} width={560} height={90} className="w-full h-[90px]" />
+          </Panel>
+          <DataList
+            rows={versions}
+            rowKey={(v) => v.label}
+            primaryHeader="Delivery"
+            primary={(v) => <span className="font-medium">{v.label} <span className="font-normal text-[12px] text-[var(--text-faint)] md:hidden">· {v.date}</span></span>}
+            columns={[
+              { key: 'date', header: 'Date', hideOnPhone: true, cell: (v) => <span className="text-[var(--text-dim)]">{v.date}</span> },
+              { key: 'score', header: 'Score', cell: (v) => {
+                const prev = prevOf(v.label)
+                return <span className="tabular-nums"><span className="font-semibold" style={{ color: scoreColor(v.score) }}>{v.score}</span>{prev && v.score < prev.score && <span className="ml-2 text-[11.5px] text-[var(--danger)]">lower than {prev.label}</span>}</span>
+              } },
+              { key: 'open', header: 'Open issues', cell: (v) => <span className="tabular-nums">{fmtInt(v.issues)}</span> },
+              { key: 'new', header: 'New', cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">+{v.newIssues}</span> },
+              { key: 'fixed', header: 'Fixed', cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">−{v.fixedIssues}</span> },
+            ]}
+            actions={(v) => { const prev = prevOf(v.label); return <><Quiet>Open in viewer</Quiet>{prev && <Quiet>Compare with {prev.label}</Quiet>}</> }}
+          />
+        </>
+      )}
+
+      {tab === 'jobs' && (jobs.length === 0
+        ? <Empty title="No cloud jobs on this project" body="Auto-fix, large-file validation and clash detection results land here." action={<Primary onClick={actions.newJob}>Run a job</Primary>} />
+        : <DataList rows={jobs} rowKey={(j) => j.id} primaryHeader="Job"
+            primary={(j) => <><p className="font-medium">{featureName(j.feature)}</p><p className="text-[11.5px] text-[var(--text-faint)]">{j.id} · {j.startedAt}</p></>}
+            columns={[
+              { key: 'file', header: 'File', className: 'max-w-[200px] truncate', cell: (j) => <span className="text-[var(--text-dim)]">{j.file}</span> },
+              { key: 'status', header: 'Status', cell: (j) => <span className="capitalize">{j.status}</span> },
+              { key: 'credits', header: 'Credits', align: 'right', cell: (j) => <span className="tabular-nums">{j.credits}</span> },
+            ]}
+            actions={(j) => (j.status === 'failed' ? <Quiet onClick={() => actions.contact('bug', j.id)}>Report</Quiet> : null)} />)}
+
+      {tab === 'certificates' && (certs.length === 0
+        ? <Empty title="No certificates for this project" body="Issue one from a delivery that passes its requirements; your client checks it with one link." />
+        : <DataList rows={certs} rowKey={(c) => c.id} primaryHeader="Certificate"
+            primary={(c) => <><p className="font-medium break-all">{c.file}</p><p className="text-[11.5px] text-[var(--text-faint)]">{c.id} · {c.issuedAt}</p></>}
+            columns={[
+              { key: 'score', header: 'Score', cell: (c) => <span className="tabular-nums font-semibold">{c.score}</span> },
+              { key: 'status', header: 'Status', cell: (c) => (c.revoked ? 'Revoked' : 'Valid') },
+            ]} />)}
+
+      {tab === 'settings' && (
+        <>
+          <SettingGroup title="Project">
+            <div className="p-4 sm:p-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Name"><input className={inputClass} defaultValue={project.name} /></Field>
+              <Field label="Client"><input className={inputClass} defaultValue={project.client} /></Field>
+              <Field label="Discipline"><input className={inputClass} defaultValue={project.discipline} /></Field>
+              <Field label="Checked against" hint="Changing it rescores every delivery; the old scores stay in the history.">
+                <select className={inputClass} defaultValue={PROFILES[0]}>{PROFILES.map((p) => <option key={p}>{p}</option>)}</select>
+              </Field>
+            </div>
+            <div className="px-4 sm:px-5 py-3 flex justify-end"><Primary>Save</Primary></div>
+          </SettingGroup>
+          <SettingGroup title="Alerts">
+            <SettingRow title="Email me when a delivery scores lower than the previous one"><Toggle label="Score drop alerts" checked={alerts} onChange={setAlerts} /></SettingRow>
+          </SettingGroup>
+          <SettingGroup title="Archive or delete" tone="danger">
+            <SettingRow title="Archive" detail="Hidden from lists and alerts; nothing is deleted. Unarchive any time."><Quiet>Archive project</Quiet></SettingRow>
+            <SettingRow title="Delete project" detail="Deliveries, scores and files go. Issued certificates stay verifiable."><Danger onClick={() => setDeleteOpen(true)}>Delete…</Danger></SettingRow>
+          </SettingGroup>
+        </>
+      )}
+
+      {deleteOpen && (
+        <Dialog title={`Delete ${project.name}?`} onClose={() => setDeleteOpen(false)}
+          footer={<><Quiet onClick={() => setDeleteOpen(false)}>Cancel</Quiet><Danger onClick={() => { setDeleteOpen(false); onBack() }}>Delete project</Danger></>}>
+          <p className="text-[13px]">{project.versions.length} deliveries and their history are deleted now. This can't be undone — archive it instead if you may need it again.</p>
+        </Dialog>
+      )}
     </>
   )
 }
 
-export default function Projects({ data, actions }: SectionProps) {
-  const [open, setOpen] = useState<string | null>(null)
+type Sort = 'recent' | 'score_asc' | 'name'
+
+export default function Projects(props: SectionProps) {
+  const { data } = props
+  const [open, setOpenState] = useState<string | null>(projectFromPath)
+  const [newOpen, setNewOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<Sort>('recent')
+  const setOpen = useCallback((id: string | null) => {
+    setOpenState(id)
+    const url = id ? `${BASE}/${id}` : BASE
+    if (typeof history !== 'undefined' && location.pathname !== url) history.pushState(null, '', url)
+  }, [])
+  useEffect(() => {
+    const onPop = () => setOpenState(projectFromPath())
+    addEventListener('popstate', onPop)
+    return () => removeEventListener('popstate', onPop)
+  }, [])
+
+  const list = useMemo(() => {
+    const last = (p: SampleProject) => p.versions[p.versions.length - 1]
+    const f = data.projects.filter((p) => !q || `${p.name} ${p.client}`.toLowerCase().includes(q.toLowerCase()))
+    return [...f].sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : sort === 'score_asc' ? last(a).score - last(b).score : last(b).date.localeCompare(last(a).date))
+  }, [data.projects, q, sort])
+
   const project = data.projects.find((p) => p.id === open)
-  if (project) return <ProjectDetail project={project} onBack={() => setOpen(null)} onNewJob={actions.newJob} />
+  if (project) return <ProjectDetail {...props} project={project} onBack={() => setOpen(null)} />
   return (
     <>
-      <Head title="Projects" sub="Each delivery keeps its Health Score, so you can see whether a model got better or worse — and prove it." action={data.projects.length > 0 ? <Primary>New project</Primary> : undefined} />
-      {data.projects.length === 0
-        ? <Empty title="No projects yet" body="A project groups the deliveries of one model. Upload the first one and every later version is compared against it automatically." action={<Primary>Create a project</Primary>} />
-        : <ProjectList projects={data.projects} onOpen={setOpen} />}
+      <Head title="Projects" sub="Each delivery keeps its Health Score, so you can see whether a model got better or worse — and prove it."
+        action={data.projects.length > 0 ? <Primary onClick={() => setNewOpen(true)}>New project</Primary> : undefined} />
+      {data.projects.length === 0 ? (
+        <Empty title="No projects yet" body="A project groups the deliveries of one model. Upload the first one and every later version is compared against it automatically." action={<Primary onClick={() => setNewOpen(true)}>Create a project</Primary>} />
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row gap-2 mb-3">
+            <input type="search" aria-label="Search projects" placeholder="Search by project or client" className={`${inputClass} sm:max-w-[320px]`} value={q} onChange={(e) => setQ(e.target.value)} />
+            <select aria-label="Sort projects" className={`${inputClass} sm:!w-auto`} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+              <option value="recent">Latest delivery first</option><option value="score_asc">Lowest score first</option><option value="name">Name</option>
+            </select>
+            <span className="sm:ml-auto self-center text-[12px] text-[var(--text-faint)]"><button className="hover:text-[var(--text)]">Show archived (0)</button></span>
+          </div>
+          {list.length === 0 ? <Empty title="No project matches" body={`Nothing called “${q}”. Check the spelling or search by client.`} /> : <ProjectList projects={list} onOpen={setOpen} />}
+        </>
+      )}
+      {newOpen && <NewProjectDialog onClose={() => setNewOpen(false)} />}
     </>
   )
 }
