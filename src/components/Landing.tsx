@@ -221,7 +221,7 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 
 // Languages that ship localized fix pages under a /<lang>/ prefix. EN lives at
 // the site root. Mirrors LANG_PATH in scripts/seo/generate-fix-pages.ts.
-import { validatorPath, solibriPath } from '../lib/localized-landings'
+import { validatorPath, solibriPath, toolLandings } from '../lib/localized-landings'
 import { isPricingPreview } from '../lib/pricing/pricing-preview'
 
 // Team-only until launch: its own chunk, never fetched by real visitors.
@@ -1517,6 +1517,17 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >
               {t('footer.solibri', 'Solibri alternative')}
             </a>
+            {/* Editor / classification / health-check landings: without a link
+                from the home, static landings stay "crawled, not indexed". */}
+            {toolLandings(langShort).map((l) => (
+              <a
+                key={l.key}
+                href={`${import.meta.env.BASE_URL}${l.path}`}
+                className="hover:text-[var(--text)] transition-colors no-underline"
+              >
+                {l.label}
+              </a>
+            ))}
             <a
               href={blogBase}
               onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}

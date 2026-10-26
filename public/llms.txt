@@ -58,6 +58,12 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 
 ## Related pages
 
+<!-- tool-landings:start -->
+- Free IFC Editor (EN, + 9 languages): https://www.ifcvieweronline.eu/ifc-editor/
+- IFC Classification Checker (EN, + 9 languages): https://www.ifcvieweronline.eu/ifc-classification-checker/
+- IFC Model Health Check (EN, + 9 languages): https://www.ifcvieweronline.eu/ifc-health-check/
+<!-- tool-landings:end -->
+
 - Online IFC Validation / IFC Validator (EN): https://www.ifcvieweronline.eu/ifc-validator/
 - Cloud IFC Validator (no upload) (EN): https://www.ifcvieweronline.eu/cloud-ifc-validator/
 - On-premise / air-gapped IFC validation (EN): https://www.ifcvieweronline.eu/on-premise-ifc-validator/

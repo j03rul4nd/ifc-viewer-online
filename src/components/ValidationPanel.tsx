@@ -1954,11 +1954,11 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
     if (issues.some((i) => i.ruleId === ruleId)) {
       handleJumpToRule(ruleId)
       if (sceneModels.length > 0) handleShowRuleIn3d(ruleId)
-    } else if (result.metadata?.coverage?.entries.some((e) => e.ruleId === ruleId && e.status === 'ok')) {
+    } else if (!unconfiguredRules.includes(ruleId) && result.metadata?.coverage?.entries.some((e) => e.ruleId === ruleId && e.status === 'ok')) {
       // Only a check that actually ran can be passed.
       toast(t('summary.rulePassed', { rule: getRuleLabel(ruleId, i18n.language) }), 'success')
     }
-  }, [result, isRunning, issues, sceneModels.length, handleShowRuleIn3d, handleJumpToRule, t, i18n.language])
+  }, [result, isRunning, issues, sceneModels.length, handleShowRuleIn3d, handleJumpToRule, unconfiguredRules, t, i18n.language])
 
   // ── Handlers ──────────────────────────────────────────────────────────
 

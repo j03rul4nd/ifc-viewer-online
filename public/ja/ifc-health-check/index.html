@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFC モデルのヘルスチェック — 0〜100 のスコアとレポート</title>
+  <meta name="description" content="アップロード不要の IFC モデルチェック：44 ルール、0〜100 のスコア、優先して直すべき問題、印刷できる（PDF 保存可）納品レポート。無料、ブラウザで動作。" />
+  <meta name="keywords" content="IFC モデル チェック, IFC ヘルスチェック, IFC 品質 レポート, IFC チェック レポート PDF, BIM モデル 品質" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+  <meta property="og:title" content="IFC モデルのヘルスチェック — 0〜100 のスコアとレポート" />
+  <meta property="og:description" content="アップロード不要の IFC モデルチェック：44 ルール、0〜100 のスコア、優先して直すべき問題、印刷できる（PDF 保存可）納品レポート。無料、ブラウザで動作。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="Health Score 77 と減点の大きい問題を先頭に表示する IFC モデルのヘルスチェック" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="IFC モデルのヘルスチェック — 0〜100 のスコアとレポート" />
+  <meta name="twitter:description" content="アップロード不要の IFC モデルチェック：44 ルール、0〜100 のスコア、優先して直すべき問題、印刷できる（PDF 保存可）納品レポート。無料、ブラウザで動作。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+  <link rel="preload" as="image" href="../../img/ifc-health-check-ja-score.jpg" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/ja/ifc-health-check/",
+      "url": "https://www.ifcvieweronline.eu/ja/ifc-health-check/",
+      "name": "IFC モデルのヘルスチェック — 0〜100 のスコアとレポート",
+      "description": "アップロード不要の IFC モデルチェック：44 ルール、0〜100 のスコア、優先して直すべき問題、印刷できる（PDF 保存可）納品レポート。無料、ブラウザで動作。",
+      "inLanguage": "ja",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online — IFC モデルのヘルスチェック",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (browser-based — Windows, macOS, Linux)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "featureList": [
+        "Health Score 0〜100",
+        "優先して直す項目",
+        "44 ルール + IDS",
+        "印刷可能な納品レポート",
+        "証明書・BCF・COBie",
+        "アップロードなし"
+      ],
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg",
+        "https://www.ifcvieweronline.eu/img/ifc-check-report-ja-export.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg",
+      "contentUrl": "https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg",
+      "url": "https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg",
+      "name": "Health Score 77 と減点の大きい問題を先頭に表示する IFC モデルのヘルスチェック",
+      "caption": "Health Score と、最も点数を取り戻せる優先修正項目。",
+      "width": 1600,
+      "height": 1000,
+      "inLanguage": "ja",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online"
+      },
+      "copyrightNotice": "IFC Viewer Online",
+      "license": "https://opensource.org/licenses/MIT",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/img/ifc-check-report-ja-export.jpg",
+      "contentUrl": "https://www.ifcvieweronline.eu/img/ifc-check-report-ja-export.jpg",
+      "url": "https://www.ifcvieweronline.eu/img/ifc-check-report-ja-export.jpg",
+      "name": "IFC チェックレポートの書き出し：印刷可能な納品レポート、証明書、BCF、CSV、JSON、COBie",
+      "caption": "結果を印刷可能なレポート、証明書、BCF、CSV、JSON、COBie で書き出し。",
+      "width": 1600,
+      "height": 1000,
+      "inLanguage": "ja",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online"
+      },
+      "copyrightNotice": "IFC Viewer Online",
+      "license": "https://opensource.org/licenses/MIT",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "IFC モデルのヘルスチェックとは？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "IFC ファイルのデータ品質（構造、識別子、分類、プロパティ、座標）の自動レビューです。IFC Viewer Online はこれを 0〜100 の Health Score にまとめ、問題ごとに対象要素を一覧します。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "結果を PDF レポートにできますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。「納品レポート」を書き出してください。スコア、問題数、優先項目をまとめた印刷可能な 1 ページの HTML レポートです。開いてブラウザから印刷、または「PDF に保存」します。JSON 証明書、CSV、BCF、COBie も用意しています。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "チェックのために IFC をアップロードする必要は？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ありません。アップロード型のサービスと違い、ファイルはブラウザで開いてチェックし、サーバーには送信しません。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "良いスコアの目安は？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "90〜100 は納品可能、75〜89 は軽微な修正でコーディネーションに使用可、50〜74 は納品前に作業が必要、50 未満は深刻なデータ問題があります。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "無料ですか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。商用プロジェクトを含むあらゆる用途で無料、アカウント不要、ファイルサイズによる課金もありません。"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/ja/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "IFC モデルのヘルスチェック",
+          "item": "https://www.ifcvieweronline.eu/ja/ifc-health-check/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { position: relative; overflow: hidden; padding: 64px 0 40px; text-align: center; }
+    .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .hero .container { position: relative; z-index: 1; }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A3ACF0; margin-bottom: 24px; font-weight: 500; }
+    h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { background: linear-gradient(100deg, #A3ACF0 0%, #6F7BE0 55%, #8B96E9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.62); max-width: 700px; margin: 0 auto 30px; }
+    .cta { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .note { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 12px; }
+    .shot { margin: 40px auto 0; max-width: 1040px; }
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 80px -30px rgba(0,0,0,0.8); background: #111; }
+    figcaption { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 10px; text-align: center; }
+    .section { padding: 56px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #8B96E9; text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .sub { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 30px; max-width: 680px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px 20px; }
+    .card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq div { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .bottom { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .bottom p { font-size: 14px; color: rgba(255,255,255,0.5); margin: 8px 0 26px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; }
+    .links { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 12px; color: rgba(255,255,255,0.45); }
+    .links a:hover { color: #fff; }
+    .copy { font-size: 11px; color: rgba(255,255,255,0.3); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="../../ja/" class="logo">IFC Viewer Online</a>
+      <a href="../../ja/" class="nav-cta">アプリを開く →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <div class="container">
+        <div class="badge">Health Score · 44 ルール · 印刷可能なレポート</div>
+        <h1>IFC モデルのヘルスチェック<br><span class="accent">30 秒でスコアとレポート</span></h1>
+        <p class="lead">IFC をドロップすると、44 の品質ルール（GUID、空間構造、タイプ、材料、プロパティセット、座標）で 0〜100 の Health Score を算出し、最も減点の大きい 3 つの問題を先頭に表示します。その後、印刷可能な納品レポート、証明書、BCF、COBie を書き出せます。</p>
+        <a href="../../ja/" class="cta">ヘルスチェックを実行 — 無料 →</a>
+        <p class="note">アカウント不要 · アップロードなし · ブラウザで動作 · 無料</p>
+        <figure class="shot">
+          <img src="../../img/ifc-health-check-ja-score.jpg" width="1600" height="1000" alt="Health Score 77 と減点の大きい問題を先頭に表示する IFC モデルのヘルスチェック" fetchpriority="high" />
+          <figcaption>Health Score と、最も点数を取り戻せる優先修正項目。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">できること</p>
+        <h2>そのまま提出できるヘルスチェック</h2>
+        <p class="sub">発注者にはひとつの数値、作成者には完全なリスト、CDE には証跡を。</p>
+        <div class="grid">
+          <div class="card"><h3>Health Score 0〜100</h3><p>重大度で重み付けしたモデルのデータ品質スコア。業界平均との比較付き。</p></div>
+          <div class="card"><h3>優先して直す項目</h3><p>最も減点の大きいルールと取り戻せる点数。ボタンひとつで該当要素を 3D 表示。</p></div>
+          <div class="card"><h3>44 ルール + IDS</h3><p>GUID、空間階層、孤立要素、タイプ、材料、Pset、単位、座標、干渉、そして任意の buildingSMART IDS ファイル。</p></div>
+          <div class="card"><h3>印刷可能な納品レポート</h3><p>1 ページの HTML レポート（この納品は差し戻されるか、何を直すか）。ブラウザから印刷や PDF 保存ができます。</p></div>
+          <div class="card"><h3>証明書・BCF・COBie</h3><p>カバレッジ証明書、作成者向けの BCF 2.1、CSV/JSON、COBie 2.4 ワークブック。</p></div>
+          <div class="card"><h3>アップロードなし</h3><p>チェックはブラウザ内の WebAssembly で実行。NDA 案件でも、オフラインでも、どのコンピュータでも。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">スクリーンショット</p>
+        <figure>
+          <img src="../../img/ifc-check-report-ja-export.jpg" width="1600" height="1000" alt="IFC チェックレポートの書き出し：印刷可能な納品レポート、証明書、BCF、CSV、JSON、COBie" loading="lazy" decoding="async" />
+          <figcaption>結果を印刷可能なレポート、証明書、BCF、CSV、JSON、COBie で書き出し。</figcaption>
+        </figure>
+        <div data-live-embed data-app="../../ja/" data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc" data-validate data-panel data-lang="ja"
+             data-title="IFC モデルのヘルスチェック" data-cta="ヘルスチェックを実行 — 無料" style="--le-h:560px;margin-top:32px"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">FAQ</p>
+        <h2>よくある質問</h2><br/>
+        <div class="faq">
+          <div><h3>IFC モデルのヘルスチェックとは？</h3><p>IFC ファイルのデータ品質（構造、識別子、分類、プロパティ、座標）の自動レビューです。IFC Viewer Online はこれを 0〜100 の Health Score にまとめ、問題ごとに対象要素を一覧します。</p></div>
+          <div><h3>結果を PDF レポートにできますか？</h3><p>はい。「納品レポート」を書き出してください。スコア、問題数、優先項目をまとめた印刷可能な 1 ページの HTML レポートです。開いてブラウザから印刷、または「PDF に保存」します。JSON 証明書、CSV、BCF、COBie も用意しています。</p></div>
+          <div><h3>チェックのために IFC をアップロードする必要は？</h3><p>ありません。アップロード型のサービスと違い、ファイルはブラウザで開いてチェックし、サーバーには送信しません。</p></div>
+          <div><h3>良いスコアの目安は？</h3><p>90〜100 は納品可能、75〜89 は軽微な修正でコーディネーションに使用可、50〜74 は納品前に作業が必要、50 未満は深刻なデータ問題があります。</p></div>
+          <div><h3>無料ですか？</h3><p>はい。商用プロジェクトを含むあらゆる用途で無料、アカウント不要、ファイルサイズによる課金もありません。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>発注者より先にモデルをチェック。</h2>
+        <p>Health Score · 優先項目 · 印刷可能なレポート · BCF · COBie</p>
+        <a href="../../ja/" class="cta">ヘルスチェックを実行 — 無料 →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="../../ja/">IFC Viewer Online</a>
+        <a href="../../ja/ifc-editor-online/">無料 IFC エディタ</a>
+        <a href="../../ja/ifc-classification-checker/">IFC 分類チェック</a>
+        <a href="../../ja/fix/">IFC エラーの修正</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="copy">IFC Viewer Online © 2026 · Free · Open source · MIT</p>
+    </div>
+  </footer>
+  <script defer src="../../seo/dot-grid.js"></script>
+  <script defer src="../../seo/live-embed.js"></script>
+</body>
+</html>

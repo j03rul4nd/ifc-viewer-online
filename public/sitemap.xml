@@ -2275,4 +2275,576 @@
   </url>
   <!-- demo-landings:end -->
 
+  <!-- tool-landings:start (scripts/seo/generate-tool-landings.mjs) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ifc-editor/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-edit-element-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-door-attributes.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/editor-ifc-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-editar-propiedades.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-atributos-puerta.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/ifc-editor-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-eigenschaften-bearbeiten.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-tuer-attribute.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editeur-ifc-en-ligne-modifier-proprietes.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editeur-ifc-en-ligne-attributs-porte.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/editor-ifc-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-editar-propriedades.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-atributos-porta.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/editor-ifc-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-modificare-proprieta.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-attributi-porta.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-en-linia-editar-propietats.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-en-linia-atributs-porta.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/ifc-editor-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-zh-edit-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-zh-door.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/ifc-editor-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-ja-edit-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-ja-door.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/ifc-editor-online/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/editor-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-th-edit-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-th-door.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ifc-classification-checker/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-elements-without-classification.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-missing-psets.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/comprobar-clasificacion-ifc-elementos-sin-clasificar.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validacion-conjuntos-propiedades-bim.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-klassifikation-pruefen-elemente-ohne-klassifikation.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-eigenschaftssaetze-pruefen.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verifier-classification-ifc-elements-non-classes.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validation-jeux-de-proprietes-bim.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verificar-classificacao-ifc-elementos-sem-classificacao.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validacao-conjuntos-propriedades-bim.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verifica-classificazione-ifc-elementi-non-classificati.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validazione-set-di-proprieta-bim.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/comprovar-classificacio-ifc-elements-sense-classificar.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validacio-conjunts-propietats-bim.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/ifc-classification-checker/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-zh.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/ifc-classification-checker/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-ja-unclassified.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-ja.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/ifc-classification-checker/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-th-unclassified.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-th.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ifc-health-check/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-model-health-check-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-checking-report-export-formats.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/informe-calidad-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/informe-calidad-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/informe-ifc-exportar-pdf-bcf-cobie.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/ifc-modellpruefung/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-modellpruefung-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-pruefbericht-export-bcf-cobie.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/controle-qualite-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/rapport-ifc-export-pdf-bcf-cobie.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verificacao-qualidade-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/relatorio-ifc-exportar-pdf-bcf-cobie.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/controllo-qualita-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/report-ifc-esporta-pdf-bcf-cobie.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/control-qualitat-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/informe-ifc-exportar-pdf-bcf-cobie-ca.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/ifc-health-check/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-health-check-zh-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-zh-export.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/ifc-health-check/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-ja-export.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/ifc-health-check/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/informe-calidad-ifc/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-modellpruefung/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-health-check-th-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-th-export.jpg</image:loc></image:image>
+  </url>
+  <!-- tool-landings:end -->
 </urlset>
