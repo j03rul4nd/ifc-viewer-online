@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} in the scene",
     "inScene_other": "{{count}} in the scene",
-    "needsModel": "Needs an IFC model in the scene first"
+    "needsModel": "Needs an IFC model in the scene first",
+    "chooseFolder": "Choose folder…",
+    "chooseFolderHint": "A whole project folder: IFCs, scans, GeoJSON, meshes and zips are sorted automatically"
   },
   "drop": {
     "title": "Drop to add to the scene",
@@ -272,6 +274,11 @@
     "show": "Show",
     "sceneReplace": "Opening “{{name}}” replaces the current scene.",
     "openScene": "Open scene",
-    "sceneAlone": "A scene file opens on its own. Add the other files once it has loaded."
+    "sceneAlone": "A scene file opens on its own. Add the other files once it has loaded.",
+    "archiveOpening": "Opening archive…",
+    "archiveOpened": "Opened {{archives}}: {{count}} files",
+    "archiveUnsupported": "{{names}}: RAR and 7z cannot be opened in the browser yet — save it as .zip, or drop the folder itself",
+    "archiveFailed": "Could not open {{name}}: {{reason}}",
+    "archiveTruncated": "The archive is very large: only the first part was taken (4 GB / 5,000 files)"
   }
 }

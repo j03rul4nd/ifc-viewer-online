@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} na cena",
     "inScene_other": "{{count}} na cena",
-    "needsModel": "Precisa primeiro de um modelo IFC na cena"
+    "needsModel": "Precisa primeiro de um modelo IFC na cena",
+    "chooseFolder": "Escolher pasta…",
+    "chooseFolderHint": "Uma pasta de projeto inteira: IFC, nuvens, GeoJSON, malhas e zips são organizados sozinhos"
   },
   "drop": {
     "title": "Largue para adicionar à cena",
@@ -272,6 +274,11 @@
     "show": "Mostrar",
     "sceneReplace": "Abrir «{{name}}» substitui a cena atual.",
     "openScene": "Abrir cena",
-    "sceneAlone": "Um ficheiro de cena abre-se sozinho. Adicione os outros ficheiros depois de carregar."
+    "sceneAlone": "Um ficheiro de cena abre-se sozinho. Adicione os outros ficheiros depois de carregar.",
+    "archiveOpening": "A abrir o arquivo…",
+    "archiveOpened": "Aberto {{archives}}: {{count}} ficheiros",
+    "archiveUnsupported": "{{names}}: RAR e 7z ainda não abrem no navegador — guarde como .zip ou arraste a pasta",
+    "archiveFailed": "Não foi possível abrir {{name}}: {{reason}}",
+    "archiveTruncated": "Arquivo muito grande: só foi usada a primeira parte (4 GB / 5.000 ficheiros)"
   }
 }

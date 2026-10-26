@@ -276,7 +276,35 @@
         "C": "Civil",
         "L": "Paisag.",
         "X": "Outros"
-      }
+      },
+      "facetUnknown": "sem dado",
+      "versionOld": "antigas",
+      "versionLatest": "última",
+      "filterBy": "Filtrar por",
+      "supersededNote": "{{count}} revisões antigas dos mesmos ficheiros",
+      "latestOnly": "Só a última",
+      "parkOld": "Estacionar antigas",
+      "parkOldHint": "Retira as revisões antigas da cena para libertar memória; recarregam com um clique",
+      "memory": "{{count}} na cena · {{size}}",
+      "heavyHint": "Muito IFC para um separador: estacione os ficheiros que não está a ver",
+      "parkedCount": "{{count}} estacionados · {{size}}",
+      "parkedHint": "Fora da cena, guardados neste separador. Volte a carregá-los sem o diálogo de ficheiros.",
+      "loadAll": "Carregar todos",
+      "load": "Carregar",
+      "forget": "Esquecer {{name}}",
+      "badgeHint": "Esquema IFC · revisão lida do ficheiro",
+      "park": "Estacionar",
+      "parkHint": "Liberta a memória deste modelo, a um clique",
+      "parkSkipped": "{{count}} não estacionados (último modelo, ou sem bytes IFC)",
+      "facet": {
+        "discipline": "Disciplina",
+        "zone": "Zona",
+        "level": "Nível",
+        "schema": "Esquema",
+        "version": "Versão"
+      },
+      "supersededNote_one": "1 revisão antiga do mesmo ficheiro",
+      "supersededNote_other": "{{count}} revisões antigas dos mesmos ficheiros"
     }
   },
   "transform": {

@@ -26,6 +26,10 @@ import { haptic } from '../lib/haptics'
 import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
 import FederationBar, { ModelLayerControls } from './FederationBar'
 import { matchesQuery } from '../lib/federation'
+import { modelRegistry } from '../lib/model-registry'
+import { useFederationStore, takeParkedBytes } from '../stores/federationStore'
+import { submitIfcBytes } from '../lib/loading'
+import { toast } from '../stores/toastStore'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -550,6 +554,7 @@ export default function ScenePanel({
   /** Federation: filter for long sets, and the per-row layer controls. */
   const [query, setQuery] = useState('')
   const [layersOpen, setLayersOpen] = useState(false)
+  const parkedCount = useFederationStore((s) => s.parked.length)
   // The tree drops ids it cannot resolve, so filtering the map filters the rows.
   const byId = useMemo(
     () => new Map(models.filter((m) => matchesQuery(m.fileName, query)).map((m) => [m.id, m])),
@@ -635,6 +640,35 @@ export default function ScenePanel({
     }
   }, [models, isolatedId])
 
+  // Park: free a model's GPU memory but keep it one click away. The IFC bytes
+  // move to federationStore; the model itself is removed like any other. The
+  // last model stays: an empty scene sends the app back to its start screen.
+  const handlePark = useCallback((ids: string[]) => {
+    const fed = useFederationStore.getState()
+    let skipped = 0
+    let left = models.length
+    for (const id of ids) {
+      const m = models.find((x) => x.id === id)
+      const bytes = modelRegistry.getBuffer(id)
+      if (!m || !bytes || bytes.byteLength < 64 || left <= 1) { skipped++; continue }
+      // A copy: the registry's buffer may later be handed to a worker and detached.
+      fed.park(m.fileName, bytes.slice(0))
+      left--
+      onRemove(id)
+    }
+    if (skipped > 0) toast(t('scene.federation.parkSkipped', { count: skipped }), 'warning')
+  }, [models, onRemove, t])
+
+  const handleUnpark = useCallback((parkedIds: string[]) => {
+    const fed = useFederationStore.getState()
+    for (const pid of parkedIds) {
+      const entry = fed.parked.find((p) => p.id === pid)
+      const bytes = takeParkedBytes(pid)
+      if (entry && bytes) submitIfcBytes(entry.fileName, bytes, {})
+      fed.unpark(pid)
+    }
+  }, [])
+
   const handleFrameAll = useCallback(() => {
     viewerApiRef.current?.frameAllModels()
   }, [viewerApiRef])
@@ -705,7 +739,7 @@ export default function ScenePanel({
         <SceneLoadingSection className="px-2 pt-2" />
 
         {/* Federation controls — the set as a whole */}
-        {models.length > 1 && (
+        {(models.length > 1 || parkedCount > 0) && (
           <FederationBar
             models={models}
             query={query}
@@ -716,6 +750,8 @@ export default function ScenePanel({
               onSetVisible(id, v)
               if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
             }}
+            onPark={handlePark}
+            onUnpark={handleUnpark}
           />
         )}
 
@@ -764,7 +800,7 @@ export default function ScenePanel({
                 onIsolate={() => handleIsolate(model.id)}
                 moveControl={models.length > 1 || looseCloudIds.length > 0 || groups.some((g) => g.user) ? moveControl : null}
               />
-              {layersOpen && models.length > 1 && <ModelLayerControls model={model} />}
+              {layersOpen && models.length > 1 && <ModelLayerControls model={model} onPark={() => handlePark([model.id])} />}
               </div>
             )}
           />

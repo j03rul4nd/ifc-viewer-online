@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} in der Szene",
     "inScene_other": "{{count}} in der Szene",
-    "needsModel": "Braucht zuerst ein IFC-Modell in der Szene"
+    "needsModel": "Braucht zuerst ein IFC-Modell in der Szene",
+    "chooseFolder": "Ordner wählen…",
+    "chooseFolderHint": "Ein ganzer Projektordner: IFCs, Scans, GeoJSON, Meshes und ZIPs werden automatisch zugeordnet"
   },
   "drop": {
     "title": "Ablegen, um zur Szene hinzuzufügen",
@@ -272,6 +274,11 @@
     "show": "Anzeigen",
     "sceneReplace": "Das Öffnen von „{{name}}“ ersetzt die aktuelle Szene.",
     "openScene": "Szene öffnen",
-    "sceneAlone": "Eine Szenendatei wird allein geöffnet. Fügen Sie die übrigen Dateien hinzu, sobald sie geladen ist."
+    "sceneAlone": "Eine Szenendatei wird allein geöffnet. Fügen Sie die übrigen Dateien hinzu, sobald sie geladen ist.",
+    "archiveOpening": "Archiv wird geöffnet…",
+    "archiveOpened": "{{archives}} geöffnet: {{count}} Dateien",
+    "archiveUnsupported": "{{names}}: RAR und 7z lassen sich im Browser noch nicht öffnen — als .zip speichern oder den Ordner ziehen",
+    "archiveFailed": "{{name}} konnte nicht geöffnet werden: {{reason}}",
+    "archiveTruncated": "Sehr großes Archiv: nur der erste Teil wurde übernommen (4 GB / 5.000 Dateien)"
   }
 }

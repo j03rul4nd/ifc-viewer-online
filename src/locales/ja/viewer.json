@@ -276,6 +276,32 @@
         "C": "土木",
         "L": "外構",
         "X": "その他"
+      },
+      "facetUnknown": "不明",
+      "versionOld": "旧版",
+      "versionLatest": "最新",
+      "filterBy": "絞り込み",
+      "supersededNote": "同じファイルの旧リビジョン {{count}} 件",
+      "latestOnly": "最新のみ",
+      "parkOld": "旧版を退避",
+      "parkOldHint": "旧リビジョンをシーンから外してメモリを解放（ワンクリックで再読込）",
+      "memory": "シーン内 {{count}} · {{size}}",
+      "heavyHint": "1 タブには大きい IFC 量です。見ていないファイルを退避してください",
+      "parkedCount": "退避中 {{count}} · {{size}}",
+      "parkedHint": "シーン外、このタブに保持。ファイル選択なしで再読込できます。",
+      "loadAll": "すべて読込",
+      "load": "読込",
+      "forget": "{{name}} を破棄",
+      "badgeHint": "IFC スキーマ · ファイルから読んだリビジョン",
+      "park": "退避",
+      "parkHint": "このモデルのメモリを解放（ワンクリックで戻せます）",
+      "parkSkipped": "{{count}} 件は退避できません（最後のモデル、または IFC データなし）",
+      "facet": {
+        "discipline": "分野",
+        "zone": "ゾーン",
+        "level": "階",
+        "schema": "スキーマ",
+        "version": "版"
       }
     }
   },

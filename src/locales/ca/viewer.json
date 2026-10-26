@@ -276,7 +276,35 @@
         "C": "Civil",
         "L": "Paisatge",
         "X": "Altres"
-      }
+      },
+      "facetUnknown": "sense dada",
+      "versionOld": "antigues",
+      "versionLatest": "darrera",
+      "filterBy": "Filtra per",
+      "supersededNote": "{{count}} revisions antigues dels mateixos fitxers",
+      "latestOnly": "Només la darrera",
+      "parkOld": "Aparca antigues",
+      "parkOldHint": "Treu les revisions antigues de l'escena per alliberar memòria; es recarreguen amb un clic",
+      "memory": "{{count}} a l'escena · {{size}}",
+      "heavyHint": "Molt IFC per a una pestanya: aparca els fitxers que no miris",
+      "parkedCount": "{{count}} aparcats · {{size}}",
+      "parkedHint": "Fora de l'escena, desats en aquesta pestanya. Torna'ls a carregar sense el diàleg de fitxers.",
+      "loadAll": "Carrega-ho tot",
+      "load": "Carrega",
+      "forget": "Oblida {{name}}",
+      "badgeHint": "Esquema IFC · revisió llegida del fitxer",
+      "park": "Aparca",
+      "parkHint": "Allibera la memòria d'aquest model i tingues-lo a un clic",
+      "parkSkipped": "{{count}} no s'han pogut aparcar (l'últim model, o sense bytes IFC)",
+      "facet": {
+        "discipline": "Disciplina",
+        "zone": "Zona",
+        "level": "Nivell",
+        "schema": "Esquema",
+        "version": "Versió"
+      },
+      "supersededNote_one": "1 revisió antiga del mateix fitxer",
+      "supersededNote_other": "{{count}} revisions antigues dels mateixos fitxers"
     }
   },
   "transform": {

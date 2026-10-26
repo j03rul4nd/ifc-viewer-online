@@ -276,6 +276,32 @@
         "C": "市政",
         "L": "景观",
         "X": "其他"
+      },
+      "facetUnknown": "未知",
+      "versionOld": "旧版本",
+      "versionLatest": "最新",
+      "filterBy": "筛选",
+      "supersededNote": "同一文件的 {{count}} 个旧版本",
+      "latestOnly": "仅最新",
+      "parkOld": "暂存旧版",
+      "parkOldHint": "将旧版本移出场景以释放内存，一键即可重新加载",
+      "memory": "场景中 {{count}} 个 · {{size}}",
+      "heavyHint": "单个标签页的 IFC 过多：请暂存暂不查看的文件",
+      "parkedCount": "已暂存 {{count}} 个 · {{size}}",
+      "parkedHint": "已移出场景，保存在此标签页中。无需文件对话框即可重新加载。",
+      "loadAll": "全部加载",
+      "load": "加载",
+      "forget": "移除 {{name}}",
+      "badgeHint": "IFC 架构 · 从文件读取的版本",
+      "park": "暂存",
+      "parkHint": "释放此模型的内存，一键可恢复",
+      "parkSkipped": "{{count}} 个无法暂存（最后一个模型，或没有 IFC 数据）",
+      "facet": {
+        "discipline": "专业",
+        "zone": "分区",
+        "level": "楼层",
+        "schema": "架构",
+        "version": "版本"
       }
     }
   },

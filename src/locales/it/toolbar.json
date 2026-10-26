@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} nella scena",
     "inScene_other": "{{count}} nella scena",
-    "needsModel": "Serve prima un modello IFC nella scena"
+    "needsModel": "Serve prima un modello IFC nella scena",
+    "chooseFolder": "Scegli cartella…",
+    "chooseFolderHint": "Un'intera cartella di progetto: IFC, nuvole, GeoJSON, mesh e zip ordinati in automatico"
   },
   "drop": {
     "title": "Rilascia per aggiungere alla scena",
@@ -272,6 +274,11 @@
     "show": "Mostra",
     "sceneReplace": "Aprire «{{name}}» sostituisce la scena attuale.",
     "openScene": "Apri scena",
-    "sceneAlone": "Un file di scena si apre da solo. Aggiungi gli altri file quando è stato caricato."
+    "sceneAlone": "Un file di scena si apre da solo. Aggiungi gli altri file quando è stato caricato.",
+    "archiveOpening": "Apertura dell'archivio…",
+    "archiveOpened": "Aperto {{archives}}: {{count}} file",
+    "archiveUnsupported": "{{names}}: RAR e 7z non si aprono ancora nel browser — salva come .zip o trascina la cartella",
+    "archiveFailed": "Impossibile aprire {{name}}: {{reason}}",
+    "archiveTruncated": "Archivio molto grande: presa solo la prima parte (4 GB / 5.000 file)"
   }
 }
