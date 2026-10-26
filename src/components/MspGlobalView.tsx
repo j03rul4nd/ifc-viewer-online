@@ -370,6 +370,15 @@ function Contact({ entry, profile, feature }: { entry: EventEntry; profile: Prof
 }
 
 // ── Who is reading ────────────────────────────────────────────────────────────
+// Static pages about each demo, with screenshots (scripts/seo/build-demo-landings.ts).
+const DEMO_PAGES: [string, string][] = [
+  ['/agv-digital-twin/', 'AGV digital twin'],
+  ['/china-import-tracker/', 'China import tracker'],
+  ['/office-it-digital-twin/', 'Office IT digital twin'],
+  ['/digital-twin-examples/', 'Digital twin examples'],
+  ['/ifc-viewer-examples/', 'IFC viewer examples'],
+]
+
 // Who walks MSP GLOBAL: MSP owners and their sales people, security providers
 // (MSSPs), software vendors selling into the channel, and corporate IT. One tap
 // tells the page which, and the rest speaks to that person: one line of why,
@@ -639,6 +648,9 @@ export default function MspGlobalView() {
           <p className="mt-4 text-[11px] leading-snug text-[var(--text-faint)] md:text-[12px]">
             Real screens. Map data © OpenStreetMap contributors, OpenFreeMap, Overture Maps; terrain ICGC and Mapzen; live data from Barcelona, HSL and FMI open data; climate ERA5 via Open-Meteo.
           </p>
+          <nav className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[var(--text-dim)]" aria-label="Read more">
+            {DEMO_PAGES.map(([href, label]) => <a key={href} href={href} className="underline-offset-2 hover:text-[var(--text)] hover:underline">{label}</a>)}
+          </nav>
         </section>
 
         {/* 6 · Who, in two lines; the two ways to keep in touch beside it. */}

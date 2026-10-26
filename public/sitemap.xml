@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
   <!-- Main app — English (canonical) -->
   <url>
@@ -1210,5 +1211,69 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+
+  <!-- demo-landings:start (scripts/seo/build-demo-landings.ts) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/agv-digital-twin/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/china-import-tracker/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/office-it-digital-twin/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ifc-viewer-examples/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/digital-twin-examples/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+  </url>
+  <!-- demo-landings:end -->
 
 </urlset>

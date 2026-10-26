@@ -82,6 +82,8 @@ function body(): string {
     `<ul>${demos}</ul>`,
     '<h2>Questions</h2>',
     faq,
+    '<h2>Read more</h2>',
+    '<ul><li><a href="/agv-digital-twin/">AGV digital twin</a></li><li><a href="/china-import-tracker/">China import tracker</a></li><li><a href="/office-it-digital-twin/">Office IT digital twin</a></li><li><a href="/digital-twin-examples/">Digital twin examples</a></li><li><a href="/ifc-viewer-examples/">IFC viewer examples</a></li></ul>',
     `<p><a href="${ROUTE}#contact">Want this for your business? Get in touch.</a></p>`,
     '</main>',
   ].join('')
