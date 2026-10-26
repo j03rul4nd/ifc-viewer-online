@@ -422,6 +422,16 @@
     }
   },
   "summary": {
+    "fixFirst": "Correggi prima ciò che recupera di più",
+    "points": "≈ +{{points}}",
+    "vsAvg": "vs media {{avg}}",
+    "grade": {
+      "excellent": "Ottimo",
+      "good": "Buono",
+      "fair": "Discreto",
+      "poor": "Scarso",
+      "critical": "Critico"
+    },
     "show3d": "Mostra in 3D",
     "show3dTitle": "Mostra solo questi elementi in 3D",
     "show3dAll": "Mostra di nuovo tutti i problemi in 3D",

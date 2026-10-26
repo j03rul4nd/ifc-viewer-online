@@ -422,6 +422,16 @@
     }
   },
   "summary": {
+    "fixFirst": "まず直すと最も回復する項目",
+    "points": "≈ +{{points}}",
+    "vsAvg": "平均 {{avg}} と比較",
+    "grade": {
+      "excellent": "優秀",
+      "good": "良好",
+      "fair": "普通",
+      "poor": "不十分",
+      "critical": "深刻"
+    },
     "show3d": "3D で表示",
     "show3dTitle": "これらの要素だけを 3D で表示",
     "show3dAll": "3D ですべての問題を再表示",

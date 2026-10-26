@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFC 分类检查 — Uniclass、OmniClass 与属性集</title>
+  <meta name="description" content="在线检查 IFC 分类：找出所有缺少 Uniclass、OmniClass 或自定义分类的构件，以及缺失的属性集和命名问题。免费，不上传。" />
+  <meta name="keywords" content="IFC 分类检查, Uniclass, OmniClass, BIM 属性集验证, BIM 命名规则检查, IDS 分类" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+  <meta property="og:title" content="IFC 分类检查 — Uniclass、OmniClass 与属性集" />
+  <meta property="og:description" content="在线检查 IFC 分类：找出所有缺少 Uniclass、OmniClass 或自定义分类的构件，以及缺失的属性集和命名问题。免费，不上传。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="IFC 分类检查列出没有分类引用的构件并在 3D 中高亮显示" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="IFC 分类检查 — Uniclass、OmniClass 与属性集" />
+  <meta name="twitter:description" content="在线检查 IFC 分类：找出所有缺少 Uniclass、OmniClass 或自定义分类的构件，以及缺失的属性集和命名问题。免费，不上传。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-classification-checker/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
+  <link rel="preload" as="image" href="../../img/ifc-classification-checker-zh-unclassified.jpg" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/zh/ifc-classification-checker/",
+      "url": "https://www.ifcvieweronline.eu/zh/ifc-classification-checker/",
+      "name": "IFC 分类检查 — Uniclass、OmniClass 与属性集",
+      "description": "在线检查 IFC 分类：找出所有缺少 Uniclass、OmniClass 或自定义分类的构件，以及缺失的属性集和命名问题。免费，不上传。",
+      "inLanguage": "zh",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online — IFC 分类检查",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (browser-based — Windows, macOS, Linux)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "featureList": [
+        "缺少分类",
+        "通过 IDS 检查分类",
+        "属性集验证",
+        "命名规则",
+        "3D 显示",
+        "可导出"
+      ],
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg",
+        "https://www.ifcvieweronline.eu/img/bim-property-set-validation-zh.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg",
+      "contentUrl": "https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg",
+      "url": "https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg",
+      "name": "IFC 分类检查列出没有分类引用的构件并在 3D 中高亮显示",
+      "caption": "没有分类的构件：列出并在 3D 模型中隔离显示。",
+      "width": 1600,
+      "height": 1000,
+      "inLanguage": "zh",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online"
+      },
+      "copyrightNotice": "IFC Viewer Online",
+      "license": "https://opensource.org/licenses/MIT",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/img/bim-property-set-validation-zh.jpg",
+      "contentUrl": "https://www.ifcvieweronline.eu/img/bim-property-set-validation-zh.jpg",
+      "url": "https://www.ifcvieweronline.eu/img/bim-property-set-validation-zh.jpg",
+      "name": "BIM 属性集验证，显示 IFC 模型中缺少属性集的构件",
+      "caption": "对缺失属性集进行同样的检查。",
+      "width": 1600,
+      "height": 1000,
+      "inLanguage": "zh",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online"
+      },
+      "copyrightNotice": "IFC Viewer Online",
+      "license": "https://opensource.org/licenses/MIT",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "如何检查 IFC 模型的分类？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "在 IFC Viewer Online 中打开 IFC，启用分类规则后进行验证（ISO 19650 和协调配置文件已包含）。它会列出所有没有分类引用的构件并在 3D 中显示。若要按构件类型要求特定体系和编码，请加载 IDS 文件。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "支持哪些分类体系？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "文件中以 IfcClassification / IfcClassificationReference 存储的任何体系：Uniclass 2015、OmniClass、CCS、NL-SfB、CoClass、MasterFormat 或自定义体系。可接受任意体系或仅限指定体系。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "也能验证属性集吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "能。规则会标出缺失的必需属性集和空值，IDS 文件还可要求特定属性、数据类型和取值。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "模型会被上传吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不会。检查通过 WebAssembly 在浏览器中运行，IFC 不会离开您的电脑。任何用途免费，无需账号。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "可以与模型作者分享结果吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "可以：导出为 BCF 2.1 供其建模软件使用，或导出 CSV、JSON，或可打印的交付报告。"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/zh/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "IFC 分类检查",
+          "item": "https://www.ifcvieweronline.eu/zh/ifc-classification-checker/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { position: relative; overflow: hidden; padding: 64px 0 40px; text-align: center; }
+    .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .hero .container { position: relative; z-index: 1; }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A3ACF0; margin-bottom: 24px; font-weight: 500; }
+    h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { background: linear-gradient(100deg, #A3ACF0 0%, #6F7BE0 55%, #8B96E9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.62); max-width: 700px; margin: 0 auto 30px; }
+    .cta { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .note { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 12px; }
+    .shot { margin: 40px auto 0; max-width: 1040px; }
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 80px -30px rgba(0,0,0,0.8); background: #111; }
+    figcaption { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 10px; text-align: center; }
+    .section { padding: 56px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #8B96E9; text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .sub { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 30px; max-width: 680px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px 20px; }
+    .card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq div { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .bottom { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .bottom p { font-size: 14px; color: rgba(255,255,255,0.5); margin: 8px 0 26px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; }
+    .links { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 12px; color: rgba(255,255,255,0.45); }
+    .links a:hover { color: #fff; }
+    .copy { font-size: 11px; color: rgba(255,255,255,0.3); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="../../zh/" class="logo">IFC Viewer Online</a>
+      <a href="../../zh/" class="nav-cta">打开应用 →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <div class="container">
+        <div class="badge">分类 · 属性集 · 命名</div>
+        <h1>IFC 分类检查<br><span class="accent">Uniclass、OmniClass、属性集</span></h1>
+        <p class="lead">找出 IFC 中所有没有分类引用的构件（任意分类体系，或仅限 BIM 执行计划要求的体系），以及缺失的属性集、空值和不符合命名规则的名称。每个问题都会列出、计数并在 3D 中显示。</p>
+        <a href="../../zh/" class="cta">检查分类 — 免费 →</a>
+        <p class="note">无需账号 · 不上传任何内容 · 在浏览器中运行 · 免费</p>
+        <figure class="shot">
+          <img src="../../img/ifc-classification-checker-zh-unclassified.jpg" width="1600" height="1000" alt="IFC 分类检查列出没有分类引用的构件并在 3D 中高亮显示" fetchpriority="high" />
+          <figcaption>没有分类的构件：列出并在 3D 模型中隔离显示。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">功能</p>
+        <h2>交付前的分类与数据检查</h2>
+        <p class="sub">BIM 协调员在模型进入 CDE 前要做的检查。</p>
+        <div class="grid">
+          <div class="card"><h3>缺少分类</h3><p>所有没有 IfcClassificationReference 的实体构件，可接受任意体系或仅限指定体系（Uniclass 2015、OmniClass、CCS、NL-SfB 等）。</p></div>
+          <div class="card"><h3>通过 IDS 检查分类</h3><p>加载 buildingSMART IDS 文件，按构件类型要求特定体系和编码；完整支持 IDS 分类维度。</p></div>
+          <div class="card"><h3>属性集验证</h3><p>按构件类别检查缺失的必需属性集和空值属性。</p></div>
+          <div class="card"><h3>命名规则</h3><p>按 BEP 中的模式检查名称，并找出空名称和重复名称（可批量重命名）。</p></div>
+          <div class="card"><h3>3D 显示</h3><p>在模型中隔离任一检查未通过的构件，其余半透明显示，并可逐个跳转。</p></div>
+          <div class="card"><h3>可导出</h3><p>将问题以 BCF 发送给作者，或下载 CSV、JSON 报告或可打印的交付报告。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">截图</p>
+        <figure>
+          <img src="../../img/bim-property-set-validation-zh.jpg" width="1600" height="1000" alt="BIM 属性集验证，显示 IFC 模型中缺少属性集的构件" loading="lazy" decoding="async" />
+          <figcaption>对缺失属性集进行同样的检查。</figcaption>
+        </figure>
+        <div data-live-embed data-app="../../zh/" data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc" data-validate data-panel data-lang="zh"
+             data-title="IFC 分类检查" data-cta="检查分类 — 免费" style="--le-h:560px;margin-top:32px"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">常见问题</p>
+        <h2>常见问题</h2><br/>
+        <div class="faq">
+          <div><h3>如何检查 IFC 模型的分类？</h3><p>在 IFC Viewer Online 中打开 IFC，启用分类规则后进行验证（ISO 19650 和协调配置文件已包含）。它会列出所有没有分类引用的构件并在 3D 中显示。若要按构件类型要求特定体系和编码，请加载 IDS 文件。</p></div>
+          <div><h3>支持哪些分类体系？</h3><p>文件中以 IfcClassification / IfcClassificationReference 存储的任何体系：Uniclass 2015、OmniClass、CCS、NL-SfB、CoClass、MasterFormat 或自定义体系。可接受任意体系或仅限指定体系。</p></div>
+          <div><h3>也能验证属性集吗？</h3><p>能。规则会标出缺失的必需属性集和空值，IDS 文件还可要求特定属性、数据类型和取值。</p></div>
+          <div><h3>模型会被上传吗？</h3><p>不会。检查通过 WebAssembly 在浏览器中运行，IFC 不会离开您的电脑。任何用途免费，无需账号。</p></div>
+          <div><h3>可以与模型作者分享结果吗？</h3><p>可以：导出为 BCF 2.1 供其建模软件使用，或导出 CSV、JSON，或可打印的交付报告。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>在模型进入 CDE 之前，就知道哪些构件没有分类。</h2>
+        <p>分类 · 属性集 · 命名 · IDS · BCF</p>
+        <a href="../../zh/" class="cta">检查分类 — 免费 →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="../../zh/">IFC Viewer Online</a>
+        <a href="../../zh/ifc-editor-online/">免费 IFC 编辑器</a>
+        <a href="../../zh/ifc-health-check/">IFC 模型健康检查</a>
+        <a href="../../zh/fix/">修复 IFC 错误</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="copy">IFC Viewer Online © 2026 · Free · Open source · MIT</p>
+    </div>
+  </footer>
+  <script defer src="../../seo/dot-grid.js"></script>
+  <script defer src="../../seo/live-embed.js"></script>
+</body>
+</html>

@@ -422,6 +422,16 @@
     }
   },
   "summary": {
+    "fixFirst": "优先修复，挽回最多分数",
+    "points": "≈ +{{points}}",
+    "vsAvg": "对比平均 {{avg}}",
+    "grade": {
+      "excellent": "优秀",
+      "good": "良好",
+      "fair": "一般",
+      "poor": "较差",
+      "critical": "严重"
+    },
     "show3d": "在 3D 中显示",
     "show3dTitle": "仅在 3D 中显示这些构件",
     "show3dAll": "在 3D 中重新显示所有问题",

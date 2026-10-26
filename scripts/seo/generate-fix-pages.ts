@@ -23,7 +23,7 @@ import {
   FIX_GUIDE_LANGS, FIX_GUIDE_LANG_PATH, HANDWRITTEN_FIX_GUIDES, fixGuideSlug,
   type FixGuideLang,
 } from '../../src/lib/fix-guide-url'
-import { validatorPath, solibriPath } from '../../src/lib/localized-landings'
+import { validatorPath, solibriPath, toolLandings } from '../../src/lib/localized-landings'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -1007,7 +1007,8 @@ function footer(ui: UI, root: string, appHome: string, langPath: string): string
         <a href="${root}${validatorPath(lang)}" class="footer-link">${esc(ui.fValidator)}</a>
         <a href="${root}tools/fix-duplicate-guids/" class="footer-link">${esc(ui.fGuids)}</a>
         <a href="${root}${solibriPath(lang)}" class="footer-link">${esc(ui.fSolibri)}</a>
-        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+${toolLandings(lang || 'en').map((t) => `        <a href="${root}${t.path}" class="footer-link">${esc(t.label)}</a>
+`).join('')}        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
       </div>
       <p class="footer-copy">${esc(ui.footerCopy)}</p>
     </div>
