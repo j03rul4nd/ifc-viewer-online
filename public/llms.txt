@@ -66,6 +66,7 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - IFC Viewer for Mac (EN): https://www.ifcvieweronline.eu/ifc-viewer-mac/
 - Fix Duplicate GUIDs in IFC: https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://www.ifcvieweronline.eu/es/
+- Live digital twin demos — AGV warehouse, imports from China on one map, office IT twin, 3D cities (EN): https://www.ifcvieweronline.eu/msp-global/
 
 ### Localized landings (9 languages — ES/DE/FR/PT/IT/CA/ZH/JA/TH)
 Each language has all four concepts (validator, Solibri alternative, cloud validator, Solibri WebChecker alternative). Validator entry points per language:
