@@ -138,7 +138,7 @@ export function exposureFromKml(placemarks: KmlPlacemark[], g: HazardGrid): KmlE
     if (!cells.size) return
     elements.push({
       id: `kml-${k}`,
-      name: p.name || p.folders.at(-1) || `#${k + 1}`,
+      name: p.name || p.folders[p.folders.length - 1] || `#${k + 1}`,
       kind: classifyPlacemark(p),
       cells: [...cells],
     })
