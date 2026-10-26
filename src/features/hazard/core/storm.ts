@@ -49,6 +49,8 @@ export interface HazardInput {
   /** Runoff (mm) above which an element counts as reached by water. */
   runoffThresholdMm?: number
   elements?: ExposedElement[]
+  /** Study area: 1 = inside. Outside cells get no slope failure and no sources. */
+  mask?: Uint8Array | null
 }
 
 export interface HazardStep {
@@ -76,6 +78,8 @@ export function runHazard(input: HazardInput): HazardResult {
   const runout = { ...DEFAULT_RUNOUT, sourceThreshold: failThreshold, ...input.runout }
 
   const slope = slopeRad(dem)
+  // Failure is only assessed inside the study area; flow still crosses out of it.
+  const assessed = input.mask ? slope.map((b, c) => (input.mask![c] ? b : NaN)) : slope
   const receivers = d8Receivers(dem)
   const upslopeArea = flowAccumulation(dem, receivers)
   const samples = sampleSoil(soil, input.samples ?? 200, input.seed ?? 1)
@@ -94,7 +98,7 @@ export function runHazard(input: HazardInput): HazardResult {
       retained[c] = p - q
     }
     const wet = wetnessFrom(retained, upslopeArea, dem.dx, soil.mean.depthM, input.wetness ?? DEFAULT_WETNESS)
-    const pFail = failureProbability(slope, wet, samples)
+    const pFail = failureProbability(assessed, wet, samples)
     const debris = debrisRunout(dem, pFail, runout, receivers)
     steps.push({ rainMm: p, runoffMm: runoff, pFail, debrisPath: debris.path, debrisDeposit: debris.deposit })
 
