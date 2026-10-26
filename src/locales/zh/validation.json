@@ -420,5 +420,10 @@
       "alsoFixEmpty": "同时填写 {{count}} 个空名称",
       "alsoFixEmpty_other": "同时填写 {{count}} 个空名称"
     }
+  },
+  "summary": {
+    "show3d": "在 3D 中显示",
+    "show3dTitle": "仅在 3D 中显示这些构件",
+    "show3dAll": "在 3D 中重新显示所有问题"
   }
 }

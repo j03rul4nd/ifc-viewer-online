@@ -131,7 +131,7 @@ describe('storm sweep', () => {
     expect(plain.critical[0]).toEqual({ id: 'flat', rainMm: null, cause: null })
     // Instability grows with rain.
     const mid = 25 * 5 + 2
-    expect(res.steps.at(-1)!.pFail[mid]).toBeGreaterThanOrEqual(res.steps[0].pFail[mid])
+    expect(res.steps[res.steps.length - 1].pFail[mid]).toBeGreaterThanOrEqual(res.steps[0].pFail[mid])
     expect(rainLadder(100, 25)).toEqual([25, 50, 75, 100])
   })
 })

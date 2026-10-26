@@ -427,5 +427,10 @@
       "alsoFixEmpty": "Rellenar también {{count}} nombre vacío",
       "alsoFixEmpty_other": "Rellenar también {{count}} nombres vacíos"
     }
+  },
+  "summary": {
+    "show3d": "Ver en 3D",
+    "show3dTitle": "Mostrar solo estos elementos en 3D",
+    "show3dAll": "Volver a mostrar todos los problemas en 3D"
   }
 }

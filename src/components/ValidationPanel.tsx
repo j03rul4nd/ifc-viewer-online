@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore } from '../stores/validationStore'
+import { useOverlayStore } from '../stores/overlayStore'
 import { useEditorStore } from '../stores/editorStore'
 import { useUIStore } from '../stores/uiStore'
 import { useModelStore } from '../stores/modelStore'
@@ -1374,7 +1375,7 @@ function RunDiffBar({ diff, onDismiss }: { diff: ValidationDiff; onDismiss: () =
 // The two name rules also get a "Fix all N" chip, a sibling of the row's button
 // (a button inside a button is invalid and swallows the inner click).
 function ExecutiveSummary({
-  score, contributions, language, onJumpToRule, batchCounts, batchDisabledReason, onBatchFix,
+  score, contributions, language, onJumpToRule, batchCounts, batchDisabledReason, onBatchFix, onShow3d, focusedRule,
 }: {
   score: number
   contributions: ScoreContribution[]
@@ -1383,6 +1384,10 @@ function ExecutiveSummary({
   batchCounts: Partial<Record<BatchRenameRule, number>>
   batchDisabledReason: Partial<Record<BatchRenameRule, string | null>>
   onBatchFix: (ruleId: BatchRenameRule) => void
+  /** Paint only this rule's elements in 3D and frame them; absent without a 3D scene. */
+  onShow3d?: (ruleId: string) => void
+  /** The rule the 3D overlay is limited to, if any. */
+  focusedRule: string | null
 }) {
   const { t } = useTranslation('validation')
   const top = contributions.filter((c) => c.penalty > 0).slice(0, 3)
@@ -1428,6 +1433,21 @@ function ExecutiveSummary({
                   <path d="M4.5 2.5l4 3.5-4 3.5" />
                 </svg>
               </button>
+              {onShow3d && (
+                <button
+                  type="button"
+                  data-testid="show-3d-chip"
+                  aria-pressed={focusedRule === c.ruleId}
+                  onClick={() => { trackFixFirstClicked({ rule_id: c.ruleId, position: i + 1, action: 'show3d', points: Math.max(1, Math.round(c.penalty)) }); onShow3d(c.ruleId) }}
+                  title={focusedRule === c.ruleId ? t('summary.show3dAll') : t('summary.show3dTitle')}
+                  className="px-2 h-5 rounded text-[10px] border transition-colors font-medium shrink-0"
+                  style={focusedRule === c.ruleId
+                    ? { background: 'color-mix(in srgb, var(--accent) 18%, transparent)', color: 'var(--accent)', borderColor: 'color-mix(in srgb, var(--accent) 45%, transparent)' }
+                    : { background: 'transparent', color: 'var(--text-dim)', borderColor: 'var(--border)' }}
+                >
+                  {t('summary.show3d')}
+                </button>
+              )}
               {batchRule && batchCount > 0 && (
                 <button
                   type="button"
@@ -1677,10 +1697,12 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
 interface ValidationPanelProps {
   /** modelId is not optional decoration — see handleJumpTo. */
   onJumpToElement?: (expressId: number, modelId?: string) => void
+  /** Frame the camera on a set of elements of one model. */
+  onFrameElements?: (ids: number[], modelId?: string) => void
   viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null | undefined
 }
 
-export default function ValidationPanel({ onJumpToElement, viewer }: ValidationPanelProps) {
+export default function ValidationPanel({ onJumpToElement, onFrameElements, viewer }: ValidationPanelProps) {
   const {
     result, partialIssues, isRunning, progress, validationStatus, validationError,
     filters, setFilters,
@@ -1889,6 +1911,28 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   // When the user clicks a "fix this first" action, focus that rule's group.
   const [focusRule, setFocusRule] = useState<string | null>(null)
+  // "Show in 3D" on a Fix-this-first row: the overlay keeps only that rule's
+  // elements (the rest ghosted) and the camera frames them, in the model with
+  // the most. Clicking the same row again goes back to every issue.
+  const ruleFocus = useOverlayStore((s) => s.ruleFocus)
+  const handleShowRuleIn3d = useCallback((ruleId: string) => {
+    const overlay = useOverlayStore.getState()
+    const vs = useValidationStore.getState()
+    if (overlay.ruleFocus === ruleId && vs.validationMode) { overlay.setRuleFocus(null); return }
+    if (!vs.validationMode) vs.toggleValidationMode()
+    overlay.setRuleFocus(ruleId)
+    const byModel = new Map<string, number[]>()
+    for (const i of issues) {
+      if (i.ruleId !== ruleId || i.expressId < 0) continue
+      const key = i.modelId ?? ''
+      const ids = byModel.get(key) ?? []
+      ids.push(i.expressId)
+      byModel.set(key, ids)
+    }
+    const [modelId, ids] = [...byModel.entries()].sort((a, b) => b[1].length - a[1].length)[0] ?? ['', []]
+    if (ids.length) onFrameElements?.(ids, modelId || undefined)
+  }, [issues, onFrameElements])
+
   const handleJumpToRule = useCallback((ruleId: string) => {
     setFilters({ groupBy: 'rule', activeTab: 'all' })
     setSearch('')
@@ -3091,6 +3135,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 batchCounts={batchState.counts}
                 batchDisabledReason={batchState.reasons}
                 onBatchFix={handleOpenBatchRename}
+                onShow3d={sceneModels.length > 0 ? handleShowRuleIn3d : undefined}
+                focusedRule={ruleFocus}
               />
             )}
 
