@@ -285,7 +285,8 @@
     "label": "GUÍAS",
     "title": "Corrige cualquier error de validación IFC",
     "subtitle": "Soluciones paso a paso para cada comprobación, con instrucciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, sin subida.",
-    "cta": "Ver todas las guías"
+    "cta": "Ver todas las guías",
+    "checkerCta": "Verificador de modelos IFC: guía completa"
   },
   "demoGallery": {
     "title": "Explora modelos de demostración",

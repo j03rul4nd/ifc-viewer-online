@@ -265,7 +265,8 @@
     "label": "修复指南",
     "title": "修复任何 IFC 验证错误",
     "subtitle": "针对每一项检查的分步修复方法，附带 Revit、ArchiCAD、Tekla 和 Allplan 的具体操作说明。免费，无需上传。",
-    "cta": "浏览所有修复指南"
+    "cta": "浏览所有修复指南",
+    "checkerCta": "IFC 模型检查器：完整指南"
   },
   "demoGallery": {
     "title": "浏览示例模型",

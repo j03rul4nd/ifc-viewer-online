@@ -265,7 +265,8 @@
     "label": "修正ガイド",
     "title": "あらゆる IFC 検証エラーを修正",
     "subtitle": "各チェックのステップバイステップの修正方法。Revit、ArchiCAD、Tekla、Allplan 向けの具体的な手順付き。無料、アップロード不要。",
-    "cta": "すべての修正ガイドを見る"
+    "cta": "すべての修正ガイドを見る",
+    "checkerCta": "IFC モデルチェッカー：完全ガイド"
   },
   "demoGallery": {
     "title": "デモモデルを見る",
