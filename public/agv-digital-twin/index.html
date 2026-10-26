@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGV Digital Twin: Live Warehouse Fleet Demo in 3D</title>
+  <meta name="description" content="A live digital twin of an AGV warehouse: every vehicle, battery, order and dock in 3D, on any phone. Delivered orders close in your ERP. Try the demo." />
+  <meta name="keywords" content="AGV digital twin, warehouse digital twin, AGV fleet monitoring, AMR fleet dashboard, automated guided vehicle simulation, warehouse 3D visualization, intralogistics digital twin, AGV Odoo integration" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/gemelo-digital-agv/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/agv-digitaler-zwilling/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/jumeau-numerique-agv/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/gemello-digitale-agv/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/besso-digital-agv/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/agv-digital-twin/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+  <meta property="og:title" content="AGV Digital Twin: Live Warehouse Fleet Demo in 3D" />
+  <meta property="og:description" content="A live digital twin of an AGV warehouse: every vehicle, battery, order and dock in 3D, on any phone. Delivered orders close in your ERP. Try the demo." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="AGV warehouse digital twin: six automated guided vehicles, racks and docks in a live 3D view" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AGV Digital Twin: Live Warehouse Fleet Demo in 3D" />
+  <meta name="twitter:description" content="A live digital twin of an AGV warehouse: every vehicle, battery, order and dock in 3D, on any phone. Delivered orders close in your ERP. Try the demo." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+
+  <link rel="preload" as="image" href="/demos/agv-warehouse-digital-twin.jpg" imagesrcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"AGV Digital Twin: Live Warehouse Fleet Demo in 3D","description":"A live digital twin of an AGV warehouse: every vehicle, battery, order and dock in 3D, on any phone. Delivered orders close in your ERP. Try the demo.","url":"https://www.ifcvieweronline.eu/agv-digital-twin/","inLanguage":"en","primaryImageOfPage":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-800.jpg","name":"Six AGVs pick, deliver and charge in a live 3D warehouse.","description":"AGV warehouse digital twin: six automated guided vehicles, racks and docks in a live 3D view","inLanguage":"en","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone-800.jpg","name":"The same warehouse twin on a phone. Nothing to install.","description":"AGV fleet digital twin open in a phone browser","inLanguage":"en","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an AGV digital twin?","acceptedAnswer":{"@type":"Answer","text":"A live 3D model of a warehouse where each automated guided vehicle, rack and dock is shown with its current state: where it is, its battery, what it is carrying and which order it serves."}},{"@type":"Question","name":"Is the data in the demo real?","acceptedAnswer":{"@type":"Answer","text":"No. The fleet in the demo is a seeded simulation, marked as such, so it runs without anyone’s private data. A real deployment reads the fleet manager or the vehicles’ own feed."}},{"@type":"Question","name":"Can it connect to my ERP or WMS?","acceptedAnswer":{"@type":"Answer","text":"Yes. Order status can flow both ways: orders in from the ERP, delivery confirmations out to Odoo, Salesforce or a WMS. Each integration is set up with the client."}}]}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/" class="logo">IFC Viewer Online</a>
+      <a href="/msp-global/?open=agv" class="nav-cta">Live demo →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">Live demo · Simulated data</p>
+        <h1>AGV digital twin <br><span class="accent">every cart, live</span></h1>
+        <p class="lead">See every automated guided vehicle, its battery, its mission and every dock in one live 3D warehouse. Delivered orders close themselves in your ERP. Opens on any phone.</p>
+        <a href="/msp-global/?open=agv" class="cta">Open the live AGV demo →</a>
+      </div>
+    </section>
+    <section class="container shots" aria-label="Screenshots">
+        <figure class="shot">
+          <img src="/demos/agv-warehouse-digital-twin.jpg" srcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="AGV warehouse digital twin: six automated guided vehicles, racks and docks in a live 3D view" fetchpriority="high" decoding="async" />
+          <figcaption>Six AGVs pick, deliver and charge in a live 3D warehouse.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/agv-warehouse-digital-twin-phone.jpg" srcset="/demos/agv-warehouse-digital-twin-phone-800.jpg 800w, /demos/agv-warehouse-digital-twin-phone.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="AGV fleet digital twin open in a phone browser" loading="lazy" decoding="async" />
+          <figcaption>The same warehouse twin on a phone. Nothing to install.</figcaption>
+        </figure>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>What you get</h2>
+        <div class="grid">
+          <div class="card"><h3>Every vehicle, live</h3><p>Position, battery and current mission for each AGV or AMR on the floor plan.</p></div>
+          <div class="card"><h3>Orders, end to end</h3><p>From pick to dock. A delivered order is closed in Odoo, Salesforce or your WMS.</p></div>
+          <div class="card"><h3>Bottlenecks at a glance</h3><p>Queues at a dock or a charger show where they happen, not in a table.</p></div>
+          <div class="card"><h3>Any screen</h3><p>A link that opens on a phone, a tablet or a wall screen. Nothing to install.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Questions</h2>
+        <div class="faq">
+          <div><h3>What is an AGV digital twin?</h3><p>A live 3D model of a warehouse where each automated guided vehicle, rack and dock is shown with its current state: where it is, its battery, what it is carrying and which order it serves.</p></div>
+          <div><h3>Is the data in the demo real?</h3><p>No. The fleet in the demo is a seeded simulation, marked as such, so it runs without anyone’s private data. A real deployment reads the fleet manager or the vehicles’ own feed.</p></div>
+          <div><h3>Can it connect to my ERP or WMS?</h3><p>Yes. Order status can flow both ways: orders in from the ERP, delivery confirmations out to Odoo, Salesforce or a WMS. Each integration is set up with the client.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>More live examples</h2>
+        <div class="more">
+          <a href="/china-import-tracker/"><img src="/demos/china-import-tracker-map-800.jpg" width="800" height="450" alt="Import tracker map: purchase orders from China by sea, air and rail with the orders that need attention" loading="lazy" decoding="async" /><span>Every order from China</span></a>
+          <a href="/office-it-digital-twin/"><img src="/demos/office-it-digital-twin-ifc-800.jpg" width="800" height="450" alt="Office IT digital twin on an IFC building model: Wi-Fi access points, racks, UPS and cameras with live status" loading="lazy" decoding="async" /><span>Office IT digital twin</span></a>
+          <a href="/ifc-viewer-examples/"><img src="/demos/ifc-viewer-hotel-model-800.jpg" width="800" height="450" alt="IFC viewer online showing the architecture, structure and MEP models of a curved hotel tower in 3D" loading="lazy" decoding="async" /><span>IFC viewer examples</span></a>
+          <a href="/digital-twin-examples/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="AGV warehouse digital twin: six automated guided vehicles, racks and docks in a live 3D view" loading="lazy" decoding="async" /><span>Digital twin examples</span></a>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>Want this for your business?</h2>
+        <p>Built end to end by Joel Benítez. Looking for first clients and partners.</p>
+        <a href="/msp-global/#contact" class="cta">Get in touch →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/">IFC Viewer Online</a>
+        <a href="/agv-digital-twin/">AGV digital twin</a>
+        <a href="/china-import-tracker/">Every order from China</a>
+        <a href="/office-it-digital-twin/">Office IT digital twin</a>
+        <a href="/ifc-viewer-examples/">IFC viewer examples</a>
+        <a href="/digital-twin-examples/">Digital twin examples</a>
+        <a href="/msp-global/">All live demos</a>
+        <a href="/ifc-validator/">IFC Validator</a>
+      </nav>
+      <nav><a href="/agv-digital-twin/" hreflang="en" lang="en">EN</a> <a href="/es/gemelo-digital-agv/" hreflang="es" lang="es">ES</a> <a href="/de/agv-digitaler-zwilling/" hreflang="de" lang="de">DE</a> <a href="/fr/jumeau-numerique-agv/" hreflang="fr" lang="fr">FR</a> <a href="/pt/gemeo-digital-agv/" hreflang="pt" lang="pt">PT</a> <a href="/it/gemello-digitale-agv/" hreflang="it" lang="it">IT</a> <a href="/ca/besso-digital-agv/" hreflang="ca" lang="ca">CA</a> <a href="/zh/agv-digital-twin/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/agv-digital-twin/" hreflang="ja" lang="ja">JA</a> <a href="/th/agv-digital-twin/" hreflang="th" lang="th">TH</a></nav>
+      <p>Screenshots © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

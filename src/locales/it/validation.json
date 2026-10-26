@@ -420,5 +420,11 @@
       "alsoFixEmpty": "Compila anche {{count}} nome vuoto",
       "alsoFixEmpty_other": "Compila anche {{count}} nomi vuoti"
     }
+  },
+  "summary": {
+    "show3d": "Mostra in 3D",
+    "show3dTitle": "Mostra solo questi elementi in 3D",
+    "show3dAll": "Mostra di nuovo tutti i problemi in 3D",
+    "rulePassed": "Il tuo modello supera «{{rule}}»: nessun elemento fallisce questo controllo."
   }
 }

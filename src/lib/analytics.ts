@@ -414,7 +414,7 @@ export function trackFixFirstClicked(props: {
   rule_id:  string
   /** 1–3, top row first. */
   position: number
-  action:   'jump' | 'batch'
+  action:   'jump' | 'batch' | 'show3d'
   /** Score points the rule costs, rounded. */
   points:   number
 }): void {

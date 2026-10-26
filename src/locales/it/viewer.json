@@ -276,7 +276,35 @@
         "C": "Civile",
         "L": "Paesagg.",
         "X": "Altro"
-      }
+      },
+      "facetUnknown": "n.d.",
+      "versionOld": "precedenti",
+      "versionLatest": "ultima",
+      "filterBy": "Filtra per",
+      "supersededNote": "{{count}} revisioni precedenti degli stessi file",
+      "latestOnly": "Solo ultima",
+      "parkOld": "Parcheggia vecchie",
+      "parkOldHint": "Toglie le revisioni precedenti dalla scena per liberare memoria; si ricaricano con un clic",
+      "memory": "{{count}} in scena · {{size}}",
+      "heavyHint": "Molto IFC per una scheda: parcheggia i file che non stai guardando",
+      "parkedCount": "{{count}} parcheggiati · {{size}}",
+      "parkedHint": "Fuori dalla scena, tenuti in questa scheda. Ricaricali senza la finestra dei file.",
+      "loadAll": "Carica tutti",
+      "load": "Carica",
+      "forget": "Dimentica {{name}}",
+      "badgeHint": "Schema IFC · revisione letta dal file",
+      "park": "Parcheggia",
+      "parkHint": "Libera la memoria di questo modello, a un clic di distanza",
+      "parkSkipped": "{{count}} non parcheggiati (ultimo modello o byte IFC assenti)",
+      "facet": {
+        "discipline": "Disciplina",
+        "zone": "Zona",
+        "level": "Livello",
+        "schema": "Schema",
+        "version": "Versione"
+      },
+      "supersededNote_one": "1 revisione precedente dello stesso file",
+      "supersededNote_other": "{{count}} revisioni precedenti degli stessi file"
     }
   },
   "transform": {

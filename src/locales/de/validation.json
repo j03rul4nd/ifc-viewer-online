@@ -420,5 +420,11 @@
       "alsoFixEmpty": "Auch {{count}} leeren Namen ausfüllen",
       "alsoFixEmpty_other": "Auch {{count}} leere Namen ausfüllen"
     }
+  },
+  "summary": {
+    "show3d": "In 3D zeigen",
+    "show3dTitle": "Nur diese Elemente in 3D zeigen",
+    "show3dAll": "Wieder alle Probleme in 3D zeigen",
+    "rulePassed": "Ihr Modell besteht „{{rule}}“: kein Element verletzt diese Prüfung."
   }
 }

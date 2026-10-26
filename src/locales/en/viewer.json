@@ -288,7 +288,35 @@
         "C": "Civil",
         "L": "Landsc.",
         "X": "Other"
-      }
+      },
+      "facetUnknown": "no data",
+      "versionOld": "older",
+      "versionLatest": "latest",
+      "filterBy": "Filter by",
+      "supersededNote": "{{count}} older revisions of the same files",
+      "latestOnly": "Latest only",
+      "parkOld": "Park older",
+      "parkOldHint": "Take older revisions out of the scene to free memory; reload them in one click",
+      "memory": "{{count}} in scene · {{size}}",
+      "heavyHint": "A lot of IFC for one browser tab: park files you are not looking at",
+      "parkedCount": "{{count}} parked · {{size}}",
+      "parkedHint": "Out of the scene, kept in this tab. Load them back without the file dialog.",
+      "loadAll": "Load all",
+      "load": "Load",
+      "forget": "Forget {{name}}",
+      "badgeHint": "IFC schema · revision read from the file",
+      "park": "Park",
+      "parkHint": "Free this model's memory, keep it one click away",
+      "parkSkipped": "{{count}} could not be parked (the last model, or no IFC bytes kept)",
+      "facet": {
+        "discipline": "Discipline",
+        "zone": "Zone",
+        "level": "Level",
+        "schema": "Schema",
+        "version": "Version"
+      },
+      "supersededNote_one": "1 older revision of the same file",
+      "supersededNote_other": "{{count}} older revisions of the same files"
     }
   },
   "transform": {

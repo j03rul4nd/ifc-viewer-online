@@ -257,7 +257,9 @@
     },
     "inScene": "シーン内に{{count}}件",
     "inScene_other": "シーン内に{{count}}件",
-    "needsModel": "先にシーンにIFCモデルが必要です"
+    "needsModel": "先にシーンにIFCモデルが必要です",
+    "chooseFolder": "フォルダーを選択…",
+    "chooseFolderHint": "プロジェクトフォルダー丸ごと：IFC・点群・GeoJSON・メッシュ・zip を自動で振り分け"
   },
   "drop": {
     "title": "ドロップしてシーンに追加",
@@ -272,6 +274,11 @@
     "show": "表示",
     "sceneReplace": "「{{name}}」を開くと現在のシーンが置き換わります。",
     "openScene": "シーンを開く",
-    "sceneAlone": "シーンファイルは単独で開きます。読み込み後に他のファイルを追加してください。"
+    "sceneAlone": "シーンファイルは単独で開きます。読み込み後に他のファイルを追加してください。",
+    "archiveOpening": "アーカイブを展開中…",
+    "archiveOpened": "{{archives}} を展開: {{count}} ファイル",
+    "archiveUnsupported": "{{names}}: RAR/7z はまだブラウザで開けません。.zip で保存するかフォルダーをドロップしてください",
+    "archiveFailed": "{{name}} を開けません: {{reason}}",
+    "archiveTruncated": "アーカイブが大きすぎるため先頭部分のみ読込みました（4 GB / 5,000 ファイル）"
   }
 }

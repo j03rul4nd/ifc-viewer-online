@@ -19,6 +19,7 @@ import { isVideoEnabled } from '../../lib/video/video-flag'
 import { isMeshEnabled } from '../../lib/mesh/mesh-flag'
 import { isGisEnabled } from '../../lib/geo/gis-flag'
 import { hasFilePayload } from '../../lib/loading/drop-routing'
+import { captureDropEntries, filesFromEntries, isJunkPath } from '../../lib/loading/expand-drop'
 import {
   acceptFor, addDataCatalogue, type AddDataCard, type AddDataFlags, type AddDataKind,
 } from '../../lib/loading/add-data-catalogue'
@@ -71,6 +72,7 @@ const CARD_ICON: Record<AddDataKind, (p: { size?: number }) => React.ReactElemen
   scene: Icons.Globe,
 }
 
+const SECONDARY_FOLDER_BTN = 'inline-flex items-center justify-center h-8 max-md:h-11 px-3 rounded-[7px] text-[12px] max-md:text-[13.5px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)]'
 const PRIMARY_BTN = 'inline-flex items-center justify-center gap-1.5 h-8 max-md:h-11 px-3 rounded-[7px] text-[12px] max-md:text-[13.5px] font-medium border border-[var(--accent)]/60 text-[var(--accent-2)] hover:bg-[var(--accent)]/10 disabled:opacity-45 disabled:hover:bg-transparent disabled:cursor-not-allowed'
 const GHOST_BTN = 'inline-flex items-center justify-center h-8 max-md:h-11 px-2.5 rounded-[7px] text-[12px] max-md:text-[13.5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
 
@@ -89,6 +91,7 @@ export default function AddDataHub({ onClose, onPick, onOpenPanel, onOpenSamples
   // One hidden input for every picker: accept and multiple are set per pick,
   // and click() is called synchronously inside the user's click.
   const inputRef = useRef<HTMLInputElement>(null)
+  const folderRef = useRef<HTMLInputElement>(null)
   const pendingKindRef = useRef<AddDataKind | 'any'>('any')
   const pick = (kind: AddDataKind | 'any'): void => {
     const input = inputRef.current
@@ -142,6 +145,19 @@ export default function AddDataHub({ onClose, onPick, onOpenPanel, onOpenSamples
   return (
     <Modal open onClose={onClose} title={t('addData.title')} description={t('addData.description')} size="lg">
       <div data-testid="add-data-hub" className="p-4 flex flex-col gap-4">
+        {/* A whole project folder: IFCs, scans, GeoJSON, meshes, zips inside. */}
+        <input
+          ref={folderRef}
+          type="file"
+          className="hidden"
+          multiple
+          {...{ webkitdirectory: '' }}
+          onChange={(e) => {
+            const files = Array.from(e.currentTarget.files ?? []).filter((f) => !isJunkPath(f.webkitRelativePath || f.name))
+            e.currentTarget.value = ''
+            if (files.length > 0) onPick('any', files)
+          }}
+        />
         <input
           ref={inputRef}
           type="file"
@@ -166,6 +182,12 @@ export default function AddDataHub({ onClose, onPick, onOpenPanel, onOpenSamples
             e.stopPropagation()
             setDragOver(false)
             const files = Array.from(e.dataTransfer.files)
+            // A dropped folder: walk it (entries must be captured right now).
+            const entries = captureDropEntries(e.dataTransfer)
+            if (entries?.some((en) => en.isDirectory)) {
+              void filesFromEntries(entries).then((all) => { if (all.length > 0) onPick('any', all) })
+              return
+            }
             if (files.length > 0) onPick('any', files)
           }}
           className={[
@@ -180,6 +202,9 @@ export default function AddDataHub({ onClose, onPick, onOpenPanel, onOpenSamples
           </div>
           <button type="button" onClick={() => pick('any')} className={PRIMARY_BTN}>
             {t('addData.chooseFiles')}
+          </button>
+          <button type="button" onClick={() => folderRef.current?.click()} className={SECONDARY_FOLDER_BTN} title={t('addData.chooseFolderHint')}>
+            {t('addData.chooseFolder')}
           </button>
         </div>
 

@@ -276,7 +276,35 @@
         "C": "VRD",
         "L": "Paysage",
         "X": "Autre"
-      }
+      },
+      "facetUnknown": "non indiqué",
+      "versionOld": "anciennes",
+      "versionLatest": "dernière",
+      "filterBy": "Filtrer par",
+      "supersededNote": "{{count}} révisions antérieures des mêmes fichiers",
+      "latestOnly": "Dernière seule",
+      "parkOld": "Mettre de côté",
+      "parkOldHint": "Retire les anciennes révisions de la scène pour libérer de la mémoire ; rechargement en un clic",
+      "memory": "{{count}} dans la scène · {{size}}",
+      "heavyHint": "Beaucoup d'IFC pour un onglet : mettez de côté les fichiers que vous ne regardez pas",
+      "parkedCount": "{{count}} de côté · {{size}}",
+      "parkedHint": "Hors de la scène, gardés dans cet onglet. Rechargez-les sans la boîte de dialogue.",
+      "loadAll": "Tout charger",
+      "load": "Charger",
+      "forget": "Oublier {{name}}",
+      "badgeHint": "Schéma IFC · révision lue dans le fichier",
+      "park": "De côté",
+      "parkHint": "Libère la mémoire de ce modèle, rechargeable en un clic",
+      "parkSkipped": "{{count}} non mis de côté (dernier modèle, ou octets IFC absents)",
+      "facet": {
+        "discipline": "Discipline",
+        "zone": "Zone",
+        "level": "Niveau",
+        "schema": "Schéma",
+        "version": "Version"
+      },
+      "supersededNote_one": "1 révision antérieure du même fichier",
+      "supersededNote_other": "{{count}} révisions antérieures des mêmes fichiers"
     }
   },
   "transform": {

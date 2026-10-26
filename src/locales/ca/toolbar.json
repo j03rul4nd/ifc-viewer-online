@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} a l’escena",
     "inScene_other": "{{count}} a l’escena",
-    "needsModel": "Primer cal un model IFC a l’escena"
+    "needsModel": "Primer cal un model IFC a l’escena",
+    "chooseFolder": "Tria una carpeta…",
+    "chooseFolderHint": "Una carpeta de projecte sencera: IFC, núvols, GeoJSON, malles i zips s'ordenen sols"
   },
   "drop": {
     "title": "Deixa anar per afegir a l’escena",
@@ -272,6 +274,11 @@
     "show": "Mostra",
     "sceneReplace": "Obrir «{{name}}» substitueix l’escena actual.",
     "openScene": "Obre l’escena",
-    "sceneAlone": "Un fitxer d’escena s’obre sol. Afegeix els altres fitxers quan s’hagi carregat."
+    "sceneAlone": "Un fitxer d’escena s’obre sol. Afegeix els altres fitxers quan s’hagi carregat.",
+    "archiveOpening": "Obrint l'arxiu comprimit…",
+    "archiveOpened": "Obert {{archives}}: {{count}} fitxers",
+    "archiveUnsupported": "{{names}}: RAR i 7z encara no s'obren al navegador — desa-ho com a .zip o arrossega la carpeta",
+    "archiveFailed": "No s'ha pogut obrir {{name}}: {{reason}}",
+    "archiveTruncated": "L'arxiu és molt gran: només se n'ha agafat la primera part (4 GB / 5.000 fitxers)"
   }
 }

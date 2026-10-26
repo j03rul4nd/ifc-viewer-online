@@ -420,5 +420,11 @@
       "alsoFixEmpty": "Preencher também {{count}} nome vazio",
       "alsoFixEmpty_other": "Preencher também {{count}} nomes vazios"
     }
+  },
+  "summary": {
+    "show3d": "Ver em 3D",
+    "show3dTitle": "Mostrar só estes elementos em 3D",
+    "show3dAll": "Voltar a mostrar todos os problemas em 3D",
+    "rulePassed": "O seu modelo cumpre «{{rule}}»: nenhum elemento falha esta verificação."
   }
 }

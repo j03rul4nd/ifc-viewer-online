@@ -166,7 +166,11 @@
       "fair": "Fair",
       "poor": "Poor",
       "critical": "Critical"
-    }
+    },
+    "show3d": "Show in 3D",
+    "show3dTitle": "Show only these elements in 3D",
+    "show3dAll": "Show all issues in 3D again",
+    "rulePassed": "Your model passes “{{rule}}”: no elements fail this check."
   },
   "waivers": {
     "mute": "Mute this issue",

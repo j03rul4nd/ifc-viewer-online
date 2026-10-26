@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} รายการในฉาก",
     "inScene_other": "{{count}} รายการในฉาก",
-    "needsModel": "ต้องมีโมเดล IFC ในฉากก่อน"
+    "needsModel": "ต้องมีโมเดล IFC ในฉากก่อน",
+    "chooseFolder": "เลือกโฟลเดอร์…",
+    "chooseFolderHint": "ทั้งโฟลเดอร์โปรเจกต์: IFC สแกน GeoJSON เมช และ zip จัดเรียงอัตโนมัติ"
   },
   "drop": {
     "title": "วางเพื่อเพิ่มลงในฉาก",
@@ -272,6 +274,11 @@
     "show": "แสดง",
     "sceneReplace": "การเปิด “{{name}}” จะแทนที่ฉากปัจจุบัน",
     "openScene": "เปิดฉาก",
-    "sceneAlone": "ไฟล์ฉากจะเปิดแยกต่างหาก เพิ่มไฟล์อื่นหลังจากโหลดเสร็จ"
+    "sceneAlone": "ไฟล์ฉากจะเปิดแยกต่างหาก เพิ่มไฟล์อื่นหลังจากโหลดเสร็จ",
+    "archiveOpening": "กำลังเปิดไฟล์บีบอัด…",
+    "archiveOpened": "เปิด {{archives}}: {{count}} ไฟล์",
+    "archiveUnsupported": "{{names}}: ยังเปิด RAR/7z ในเบราว์เซอร์ไม่ได้ บันทึกเป็น .zip หรือลากทั้งโฟลเดอร์",
+    "archiveFailed": "เปิด {{name}} ไม่ได้: {{reason}}",
+    "archiveTruncated": "ไฟล์บีบอัดใหญ่มาก ใช้เฉพาะส่วนแรก (4 GB / 5,000 ไฟล์)"
   }
 }

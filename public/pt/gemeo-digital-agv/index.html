@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gémeo digital de AGV: armazém ao vivo em 3D</title>
+  <meta name="description" content="Gémeo digital ao vivo de um armazém com AGV: cada veículo, bateria, encomenda e cais em 3D, em qualquer telemóvel. As encomendas fecham no seu ERP." />
+  <meta name="keywords" content="gémeo digital AGV, gêmeo digital armazém, monitorização frota AGV, AMR, simulação AGV, visualização 3D armazém, intralogística, AGV Odoo" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/gemelo-digital-agv/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/agv-digitaler-zwilling/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/jumeau-numerique-agv/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/gemello-digitale-agv/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/besso-digital-agv/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/agv-digital-twin/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/" />
+  <meta property="og:title" content="Gémeo digital de AGV: armazém ao vivo em 3D" />
+  <meta property="og:description" content="Gémeo digital ao vivo de um armazém com AGV: cada veículo, bateria, encomenda e cais em 3D, em qualquer telemóvel. As encomendas fecham no seu ERP." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="pt_PT" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="Gémeo digital de um armazém com AGV: seis veículos de guiamento automático, estantes e cais em 3D ao vivo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Gémeo digital de AGV: armazém ao vivo em 3D" />
+  <meta name="twitter:description" content="Gémeo digital ao vivo de um armazém com AGV: cada veículo, bateria, encomenda e cais em 3D, em qualquer telemóvel. As encomendas fecham no seu ERP." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+
+  <link rel="preload" as="image" href="/demos/agv-warehouse-digital-twin.jpg" imagesrcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Gémeo digital de AGV: armazém ao vivo em 3D","description":"Gémeo digital ao vivo de um armazém com AGV: cada veículo, bateria, encomenda e cais em 3D, em qualquer telemóvel. As encomendas fecham no seu ERP.","url":"https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/","inLanguage":"pt","primaryImageOfPage":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-800.jpg","name":"Seis AGV recolhem, entregam e carregam num armazém 3D ao vivo.","description":"Gémeo digital de um armazém com AGV: seis veículos de guiamento automático, estantes e cais em 3D ao vivo","inLanguage":"pt","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone-800.jpg","name":"O mesmo armazém no telemóvel. Nada para instalar.","description":"Gémeo digital de uma frota de AGV aberto no navegador de um telemóvel","inLanguage":"pt","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O que é um gémeo digital de AGV?","acceptedAnswer":{"@type":"Answer","text":"Um modelo 3D ao vivo de um armazém onde cada veículo, estante e cais mostra o seu estado: onde está, bateria, carga e encomenda."}},{"@type":"Question","name":"Os dados da demo são reais?","acceptedAnswer":{"@type":"Answer","text":"Não. A frota da demo é uma simulação assinalada, sem dados privados. Uma instalação real lê o gestor de frota ou os próprios veículos."}},{"@type":"Question","name":"Liga-se ao meu ERP ou WMS?","acceptedAnswer":{"@type":"Answer","text":"Sim. O estado das encomendas pode fluir nos dois sentidos: encomendas do ERP, confirmações de entrega para Odoo, Salesforce ou um WMS. Cada integração é feita com o cliente."}}]}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/pt/" class="logo">IFC Viewer Online</a>
+      <a href="/msp-global/?open=agv" class="nav-cta">Demo ao vivo →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">Demo ao vivo · Dados simulados</p>
+        <h1>Gémeo digital de AGV <br><span class="accent">cada veículo, ao vivo</span></h1>
+        <p class="lead">Cada veículo de guiamento automático, a sua bateria, a sua missão e cada cais num armazém 3D ao vivo. As encomendas entregues fecham sozinhas no seu ERP. Abre em qualquer telemóvel.</p>
+        <a href="/msp-global/?open=agv" class="cta">Abrir a demo de AGV →</a>
+      </div>
+    </section>
+    <section class="container shots" aria-label="Capturas de ecrã">
+        <figure class="shot">
+          <img src="/demos/agv-warehouse-digital-twin.jpg" srcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Gémeo digital de um armazém com AGV: seis veículos de guiamento automático, estantes e cais em 3D ao vivo" fetchpriority="high" decoding="async" />
+          <figcaption>Seis AGV recolhem, entregam e carregam num armazém 3D ao vivo.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/agv-warehouse-digital-twin-phone.jpg" srcset="/demos/agv-warehouse-digital-twin-phone-800.jpg 800w, /demos/agv-warehouse-digital-twin-phone.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Gémeo digital de uma frota de AGV aberto no navegador de um telemóvel" loading="lazy" decoding="async" />
+          <figcaption>O mesmo armazém no telemóvel. Nada para instalar.</figcaption>
+        </figure>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>O que recebe</h2>
+        <div class="grid">
+          <div class="card"><h3>Cada veículo, ao vivo</h3><p>Posição, bateria e missão de cada AGV ou AMR na planta.</p></div>
+          <div class="card"><h3>Encomendas de ponta a ponta</h3><p>Da recolha ao cais. A encomenda entregue fecha no Odoo, Salesforce ou no seu WMS.</p></div>
+          <div class="card"><h3>Estrangulamentos à vista</h3><p>As filas num cais ou carregador aparecem onde acontecem, não numa tabela.</p></div>
+          <div class="card"><h3>Qualquer ecrã</h3><p>Um link que abre no telemóvel, tablet ou ecrã de parede. Nada para instalar.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Perguntas</h2>
+        <div class="faq">
+          <div><h3>O que é um gémeo digital de AGV?</h3><p>Um modelo 3D ao vivo de um armazém onde cada veículo, estante e cais mostra o seu estado: onde está, bateria, carga e encomenda.</p></div>
+          <div><h3>Os dados da demo são reais?</h3><p>Não. A frota da demo é uma simulação assinalada, sem dados privados. Uma instalação real lê o gestor de frota ou os próprios veículos.</p></div>
+          <div><h3>Liga-se ao meu ERP ou WMS?</h3><p>Sim. O estado das encomendas pode fluir nos dois sentidos: encomendas do ERP, confirmações de entrega para Odoo, Salesforce ou um WMS. Cada integração é feita com o cliente.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Mais exemplos ao vivo</h2>
+        <div class="more">
+          <a href="/pt/rastreio-importacoes-china/"><img src="/demos/china-import-tracker-map-800.jpg" width="800" height="450" alt="Mapa de rastreio de importações: encomendas da China por mar, ar e ferrovia, com as que precisam de atenção" loading="lazy" decoding="async" /><span>Cada encomenda da China</span></a>
+          <a href="/pt/gemeo-digital-ti-escritorio/"><img src="/demos/office-it-digital-twin-ifc-800.jpg" width="800" height="450" alt="Gémeo digital de TI sobre um modelo IFC de escritório: pontos de acesso Wi-Fi, racks, UPS e câmaras com estado ao vivo" loading="lazy" decoding="async" /><span>Gémeo digital de TI</span></a>
+          <a href="/pt/exemplos-visualizador-ifc/"><img src="/demos/ifc-viewer-hotel-model-800.jpg" width="800" height="450" alt="Visualizador IFC online com os modelos de arquitetura, estrutura e instalações de uma torre de hotel curva em 3D" loading="lazy" decoding="async" /><span>Exemplos de visualizador IFC</span></a>
+          <a href="/pt/exemplos-gemeo-digital/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="Gémeo digital de um armazém com AGV: seis veículos de guiamento automático, estantes e cais em 3D ao vivo" loading="lazy" decoding="async" /><span>Exemplos de gémeo digital</span></a>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>Quer isto para a sua empresa?</h2>
+        <p>Feito de ponta a ponta por Joel Benítez. À procura dos primeiros clientes e parceiros.</p>
+        <a href="/msp-global/#contact" class="cta">Entrar em contacto →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/pt/">IFC Viewer Online</a>
+        <a href="/pt/gemeo-digital-agv/">Gémeo digital de AGV</a>
+        <a href="/pt/rastreio-importacoes-china/">Cada encomenda da China</a>
+        <a href="/pt/gemeo-digital-ti-escritorio/">Gémeo digital de TI</a>
+        <a href="/pt/exemplos-visualizador-ifc/">Exemplos de visualizador IFC</a>
+        <a href="/pt/exemplos-gemeo-digital/">Exemplos de gémeo digital</a>
+        <a href="/msp-global/">Todas as demos</a>
+        <a href="/pt/validador-ifc-online/">Validador IFC</a>
+      </nav>
+      <nav><a href="/agv-digital-twin/" hreflang="en" lang="en">EN</a> <a href="/es/gemelo-digital-agv/" hreflang="es" lang="es">ES</a> <a href="/de/agv-digitaler-zwilling/" hreflang="de" lang="de">DE</a> <a href="/fr/jumeau-numerique-agv/" hreflang="fr" lang="fr">FR</a> <a href="/pt/gemeo-digital-agv/" hreflang="pt" lang="pt">PT</a> <a href="/it/gemello-digitale-agv/" hreflang="it" lang="it">IT</a> <a href="/ca/besso-digital-agv/" hreflang="ca" lang="ca">CA</a> <a href="/zh/agv-digital-twin/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/agv-digital-twin/" hreflang="ja" lang="ja">JA</a> <a href="/th/agv-digital-twin/" hreflang="th" lang="th">TH</a></nav>
+      <p>Capturas © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

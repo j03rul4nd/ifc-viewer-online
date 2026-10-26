@@ -276,7 +276,35 @@
         "C": "Tiefbau",
         "L": "Freiraum",
         "X": "Sonst."
-      }
+      },
+      "facetUnknown": "k. A.",
+      "versionOld": "ältere",
+      "versionLatest": "neueste",
+      "filterBy": "Filtern nach",
+      "supersededNote": "{{count}} ältere Revisionen derselben Dateien",
+      "latestOnly": "Nur neueste",
+      "parkOld": "Ältere parken",
+      "parkOldHint": "Ältere Revisionen aus der Szene nehmen, um Speicher freizugeben; mit einem Klick zurück",
+      "memory": "{{count}} in der Szene · {{size}}",
+      "heavyHint": "Viel IFC für einen Tab: parken Sie Dateien, die Sie gerade nicht ansehen",
+      "parkedCount": "{{count}} geparkt · {{size}}",
+      "parkedHint": "Außerhalb der Szene, in diesem Tab gehalten. Ohne Dateidialog wieder laden.",
+      "loadAll": "Alle laden",
+      "load": "Laden",
+      "forget": "{{name}} vergessen",
+      "badgeHint": "IFC-Schema · Revision aus der Datei",
+      "park": "Parken",
+      "parkHint": "Speicher dieses Modells freigeben, mit einem Klick zurück",
+      "parkSkipped": "{{count}} nicht geparkt (letztes Modell oder keine IFC-Daten)",
+      "facet": {
+        "discipline": "Gewerk",
+        "zone": "Zone",
+        "level": "Ebene",
+        "schema": "Schema",
+        "version": "Version"
+      },
+      "supersededNote_one": "1 ältere Revision derselben Datei",
+      "supersededNote_other": "{{count}} ältere Revisionen derselben Dateien"
     }
   },
   "transform": {

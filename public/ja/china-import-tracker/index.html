@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中国輸入トラッカー：工場から倉庫まで地図で一元管理</title>
+  <meta name="description" content="中国からの輸入をライブ地図で追跡。検品、海上・航空・鉄道、通関、陸揚げ原価、到着予定を注文ごとに表示。遅れとそのコストが分かります。" />
+  <meta name="keywords" content="中国 輸入 追跡, 貨物追跡 地図, サプライチェーン 可視化, 輸入原価 計算, 発注 追跡, 中国 買付代行, コンテナ 追跡" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/seguimiento-importaciones-china/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/china-import-tracking/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/suivi-importations-chine/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/tracciamento-importazioni-cina/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/china-import-tracker/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
+  <meta property="og:title" content="中国輸入トラッカー：工場から倉庫まで地図で一元管理" />
+  <meta property="og:description" content="中国からの輸入をライブ地図で追跡。検品、海上・航空・鉄道、通関、陸揚げ原価、到着予定を注文ごとに表示。遅れとそのコストが分かります。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="輸入追跡マップ：海上・航空・鉄道で中国から届く発注と、対応が必要な注文" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="中国輸入トラッカー：工場から倉庫まで地図で一元管理" />
+  <meta name="twitter:description" content="中国からの輸入をライブ地図で追跡。検品、海上・航空・鉄道、通関、陸揚げ原価、到着予定を注文ごとに表示。遅れとそのコストが分かります。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg" />
+
+  <link rel="preload" as="image" href="/demos/china-import-tracker-map.jpg" imagesrcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"中国輸入トラッカー：工場から倉庫まで地図で一元管理","description":"中国からの輸入をライブ地図で追跡。検品、海上・航空・鉄道、通関、陸揚げ原価、到着予定を注文ごとに表示。遅れとそのコストが分かります。","url":"https://www.ifcvieweronline.eu/ja/china-import-tracker/","inLanguage":"ja","primaryImageOfPage":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map-800.jpg","name":"中国からの全注文を一枚の地図に。急ぎのものから表示。","description":"輸入追跡マップ：海上・航空・鉄道で中国から届く発注と、対応が必要な注文","inLanguage":"ja","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-timeline-800.jpg","name":"発注から納品まで：検品、船、通関、到着予定。","description":"輸入注文のタイムライン：検品、港、船、通関、到着予定","inLanguage":"ja","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost-800.jpg","name":"注文ごとの陸揚げ原価：運賃、HS コード別関税、単価。","description":"輸入注文の陸揚げ原価：FOB、運賃、HS コード別関税、消費税、単価","inLanguage":"ja","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-phone-800.jpg","name":"スマホでは、上に地図、下に遅延注文。","description":"スマホ上の中国輸入トラッカー、遅延注文の一覧付き","inLanguage":"ja","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"誰向けですか？","acceptedAnswer":{"@type":"Answer","text":"代行業者を通じて中国の工場から仕入れ、チャットや表計算、フォワーダーのメールではなく、一か所で全注文を見たい企業向けです。"}},{"@type":"Question","name":"デモのデータは本物ですか？","acceptedAnswer":{"@type":"Answer","text":"いいえ。注文、船、サプライヤーはシミュレーションで明示されています。航路と港は実在のものです。"}},{"@type":"Question","name":"関税も計算しますか？","acceptedAnswer":{"@type":"Answer","text":"デモでは HS コードと注文ごとの税率で関税を概算します。実運用ではお客様の関税データと通関業者の数値を使います。"}}]}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/ja/" class="logo">IFC Viewer Online</a>
+      <a href="/msp-global/?open=imports" class="nav-cta">ライブデモ →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">ライブデモ · シミュレーションデータ</p>
+        <h1>中国からの全注文を <br><span class="accent">一枚の地図で</span></h1>
+        <p class="lead">工場、検品、港、船、税関、倉庫。すべての発注をライブ地図で表示し、何が遅れているか、なぜか、いくらかかるかが分かります。</p>
+        <a href="/msp-global/?open=imports" class="cta">輸入トラッカーを開く →</a>
+      </div>
+    </section>
+    <section class="container shots" aria-label="スクリーンショット">
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="輸入追跡マップ：海上・航空・鉄道で中国から届く発注と、対応が必要な注文" fetchpriority="high" decoding="async" />
+          <figcaption>中国からの全注文を一枚の地図に。急ぎのものから表示。</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-order-timeline.jpg" srcset="/demos/china-import-order-timeline-800.jpg 800w, /demos/china-import-order-timeline.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="輸入注文のタイムライン：検品、港、船、通関、到着予定" loading="lazy" decoding="async" />
+          <figcaption>発注から納品まで：検品、船、通関、到着予定。</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-order-landed-cost.jpg" srcset="/demos/china-import-order-landed-cost-800.jpg 800w, /demos/china-import-order-landed-cost.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="輸入注文の陸揚げ原価：FOB、運賃、HS コード別関税、消費税、単価" loading="lazy" decoding="async" />
+          <figcaption>注文ごとの陸揚げ原価：運賃、HS コード別関税、単価。</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-phone.jpg" srcset="/demos/china-import-tracker-phone-800.jpg 800w, /demos/china-import-tracker-phone.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="スマホ上の中国輸入トラッカー、遅延注文の一覧付き" loading="lazy" decoding="async" />
+          <figcaption>スマホでは、上に地図、下に遅延注文。</figcaption>
+        </figure>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>できること</h2>
+        <div class="grid">
+          <div class="card"><h3>対応が必要なものを先に</h3><p>遅延注文や不合格の検品を上位に表示し、遅延ごとのコストも表示。</p></div>
+          <div class="card"><h3>注文ごとの陸揚げ原価</h3><p>FOB、運賃、HS コード別関税、消費税から単価まで。</p></div>
+          <div class="card"><h3>コンテナとサプライヤー</h3><p>混載コンテナ、積載率、サプライヤーごとの評価。</p></div>
+          <div class="card"><h3>代行業者からの更新</h3><p>BuckyDrop や買付代行の更新を自動で読み取り、入荷記録を ERP へ送信。</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>よくある質問</h2>
+        <div class="faq">
+          <div><h3>誰向けですか？</h3><p>代行業者を通じて中国の工場から仕入れ、チャットや表計算、フォワーダーのメールではなく、一か所で全注文を見たい企業向けです。</p></div>
+          <div><h3>デモのデータは本物ですか？</h3><p>いいえ。注文、船、サプライヤーはシミュレーションで明示されています。航路と港は実在のものです。</p></div>
+          <div><h3>関税も計算しますか？</h3><p>デモでは HS コードと注文ごとの税率で関税を概算します。実運用ではお客様の関税データと通関業者の数値を使います。</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>その他のライブ事例</h2>
+        <div class="more">
+          <a href="/ja/agv-digital-twin/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="AGV 倉庫のデジタルツイン：6 台の無人搬送車、ラック、ドックのライブ 3D 表示" loading="lazy" decoding="async" /><span>AGV デジタルツイン</span></a>
+          <a href="/ja/office-it-digital-twin/"><img src="/demos/office-it-digital-twin-ifc-800.jpg" width="800" height="450" alt="IFC オフィスモデル上の IT デジタルツイン：Wi-Fi アクセスポイント、ラック、UPS、カメラのライブ状態" loading="lazy" decoding="async" /><span>オフィス IT デジタルツイン</span></a>
+          <a href="/ja/ifc-viewer-examples/"><img src="/demos/ifc-viewer-hotel-model-800.jpg" width="800" height="450" alt="オンライン IFC ビューアで表示した曲面ホテルタワーの意匠・構造・設備 3D モデル" loading="lazy" decoding="async" /><span>IFC ビューア事例</span></a>
+          <a href="/ja/digital-twin-examples/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="AGV 倉庫のデジタルツイン：6 台の無人搬送車、ラック、ドックのライブ 3D 表示" loading="lazy" decoding="async" /><span>デジタルツイン事例</span></a>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>御社向けにも作れます</h2>
+        <p>Joel Benítez が一人で一貫して開発。最初のお客様とパートナーを探しています。</p>
+        <a href="/msp-global/#contact" class="cta">お問い合わせ →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/ja/">IFC Viewer Online</a>
+        <a href="/ja/agv-digital-twin/">AGV デジタルツイン</a>
+        <a href="/ja/china-import-tracker/">中国からの全注文を</a>
+        <a href="/ja/office-it-digital-twin/">オフィス IT デジタルツイン</a>
+        <a href="/ja/ifc-viewer-examples/">IFC ビューア事例</a>
+        <a href="/ja/digital-twin-examples/">デジタルツイン事例</a>
+        <a href="/msp-global/">すべてのライブデモ</a>
+        <a href="/ja/ifc-validator-online/">IFC バリデーター</a>
+      </nav>
+      <nav><a href="/china-import-tracker/" hreflang="en" lang="en">EN</a> <a href="/es/seguimiento-importaciones-china/" hreflang="es" lang="es">ES</a> <a href="/de/china-import-tracking/" hreflang="de" lang="de">DE</a> <a href="/fr/suivi-importations-chine/" hreflang="fr" lang="fr">FR</a> <a href="/pt/rastreio-importacoes-china/" hreflang="pt" lang="pt">PT</a> <a href="/it/tracciamento-importazioni-cina/" hreflang="it" lang="it">IT</a> <a href="/ca/seguiment-importacions-xina/" hreflang="ca" lang="ca">CA</a> <a href="/zh/china-import-tracker/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/china-import-tracker/" hreflang="ja" lang="ja">JA</a> <a href="/th/china-import-tracker/" hreflang="th" lang="th">TH</a></nav>
+      <p>スクリーンショット © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seguiment d’importacions de la Xina en un mapa</title>
+  <meta name="description" content="Segueix les importacions de la Xina en un mapa en directe: control de qualitat, vaixell, avió o tren, duana, cost final i ETA. Mira què arriba tard." />
+  <meta name="keywords" content="seguiment importacions Xina, mapa seguiment enviaments, visibilitat cadena de subministrament, cost d’importació, seguiment comandes de compra, agent de compres Xina, seguiment contenidors" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/seguimiento-importaciones-china/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/china-import-tracking/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/suivi-importations-chine/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/tracciamento-importazioni-cina/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/china-import-tracker/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/" />
+  <meta property="og:title" content="Seguiment d’importacions de la Xina en un mapa" />
+  <meta property="og:description" content="Segueix les importacions de la Xina en un mapa en directe: control de qualitat, vaixell, avió o tren, duana, cost final i ETA. Mira què arriba tard." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="ca_ES" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="Mapa de seguiment d’importacions: comandes de la Xina per vaixell, avió i tren, amb les que necessiten atenció" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Seguiment d’importacions de la Xina en un mapa" />
+  <meta name="twitter:description" content="Segueix les importacions de la Xina en un mapa en directe: control de qualitat, vaixell, avió o tren, duana, cost final i ETA. Mira què arriba tard." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg" />
+
+  <link rel="preload" as="image" href="/demos/china-import-tracker-map.jpg" imagesrcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Seguiment d’importacions de la Xina en un mapa","description":"Segueix les importacions de la Xina en un mapa en directe: control de qualitat, vaixell, avió o tren, duana, cost final i ETA. Mira què arriba tard.","url":"https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/","inLanguage":"ca","primaryImageOfPage":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map-800.jpg","name":"Cada comanda de la Xina en un mapa, l’urgent primer.","description":"Mapa de seguiment d’importacions: comandes de la Xina per vaixell, avió i tren, amb les que necessiten atenció","inLanguage":"ca","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-timeline-800.jpg","name":"Una comanda de l’ordre a la porta: qualitat, vaixell, duana, ETA.","description":"Cronologia d’una comanda importada: control de qualitat, port, vaixell, duana i ETA","inLanguage":"ca","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost-800.jpg","name":"Cost final per comanda: nòlit, aranzel per codi HS, cost per unitat.","description":"Cost final d’una comanda importada: FOB, nòlit, aranzel per codi HS, IVA i cost per unitat","inLanguage":"ca","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-phone-800.jpg","name":"Al mòbil: el mapa i, a sota, les comandes amb retard.","description":"Tauler de seguiment d’importacions de la Xina al mòbil amb les comandes amb retard","inLanguage":"ca","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Per a qui és?","acceptedAnswer":{"@type":"Answer","text":"Per a empreses que compren a fàbriques de la Xina amb un agent i volen veure totes les comandes en un lloc, en lloc de xats, fulls de càlcul i correus del transitari."}},{"@type":"Question","name":"Les dades de la demo són reals?","acceptedAnswer":{"@type":"Answer","text":"No. Comandes, vaixells i proveïdors són simulats i marcats. Les rutes i els ports són reals."}},{"@type":"Question","name":"Calcula els aranzels?","acceptedAnswer":{"@type":"Answer","text":"La demo estima l’aranzel amb un codi HS i un tipus per comanda. Una instal·lació real fa servir les teves dades aranzelàries i les xifres del teu agent de duanes."}}]}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/ca/" class="logo">IFC Viewer Online</a>
+      <a href="/msp-global/?open=imports" class="nav-cta">Demo en directe →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">Demo en directe · Dades simulades</p>
+        <h1>Cada comanda de la Xina <br><span class="accent">en un sol mapa</span></h1>
+        <p class="lead">Fàbrica, control de qualitat, port, vaixell, duana, magatzem. Un mapa en directe de cada ordre de compra, amb el que arriba tard, per què i quant et costa.</p>
+        <a href="/msp-global/?open=imports" class="cta">Obrir el seguiment en directe →</a>
+      </div>
+    </section>
+    <section class="container shots" aria-label="Captures">
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Mapa de seguiment d’importacions: comandes de la Xina per vaixell, avió i tren, amb les que necessiten atenció" fetchpriority="high" decoding="async" />
+          <figcaption>Cada comanda de la Xina en un mapa, l’urgent primer.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-order-timeline.jpg" srcset="/demos/china-import-order-timeline-800.jpg 800w, /demos/china-import-order-timeline.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Cronologia d’una comanda importada: control de qualitat, port, vaixell, duana i ETA" loading="lazy" decoding="async" />
+          <figcaption>Una comanda de l’ordre a la porta: qualitat, vaixell, duana, ETA.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-order-landed-cost.jpg" srcset="/demos/china-import-order-landed-cost-800.jpg 800w, /demos/china-import-order-landed-cost.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Cost final d’una comanda importada: FOB, nòlit, aranzel per codi HS, IVA i cost per unitat" loading="lazy" decoding="async" />
+          <figcaption>Cost final per comanda: nòlit, aranzel per codi HS, cost per unitat.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-phone.jpg" srcset="/demos/china-import-tracker-phone-800.jpg 800w, /demos/china-import-tracker-phone.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Tauler de seguiment d’importacions de la Xina al mòbil amb les comandes amb retard" loading="lazy" decoding="async" />
+          <figcaption>Al mòbil: el mapa i, a sota, les comandes amb retard.</figcaption>
+        </figure>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Què obtens</h2>
+        <div class="grid">
+          <div class="card"><h3>Primer, el que et necessita</h3><p>Comandes amb retard i inspeccions fallides a dalt, amb el cost de cada retard.</p></div>
+          <div class="card"><h3>Cost final per comanda</h3><p>FOB, nòlit, aranzel per codi HS i IVA, fins al cost per unitat.</p></div>
+          <div class="card"><h3>Contenidors i proveïdors</h3><p>Contenidors compartits, ocupació i una nota per a cada proveïdor.</p></div>
+          <div class="card"><h3>Els avisos del teu agent</h3><p>Avisos de BuckyDrop o del teu agent de compres, llegits sols; recepcions enviades al teu ERP.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Preguntes</h2>
+        <div class="faq">
+          <div><h3>Per a qui és?</h3><p>Per a empreses que compren a fàbriques de la Xina amb un agent i volen veure totes les comandes en un lloc, en lloc de xats, fulls de càlcul i correus del transitari.</p></div>
+          <div><h3>Les dades de la demo són reals?</h3><p>No. Comandes, vaixells i proveïdors són simulats i marcats. Les rutes i els ports són reals.</p></div>
+          <div><h3>Calcula els aranzels?</h3><p>La demo estima l’aranzel amb un codi HS i un tipus per comanda. Una instal·lació real fa servir les teves dades aranzelàries i les xifres del teu agent de duanes.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Més exemples en directe</h2>
+        <div class="more">
+          <a href="/ca/besso-digital-agv/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="Bessó digital d’un magatzem amb AGV: sis vehicles de guiatge automàtic, prestatgeries i molls en 3D en directe" loading="lazy" decoding="async" /><span>Bessó digital d’AGV</span></a>
+          <a href="/ca/besso-digital-it-oficina/"><img src="/demos/office-it-digital-twin-ifc-800.jpg" width="800" height="450" alt="Bessó digital d’IT sobre un model IFC d’oficina: punts d’accés wifi, racks, SAI i càmeres amb estat en directe" loading="lazy" decoding="async" /><span>Bessó digital d’IT</span></a>
+          <a href="/ca/exemples-visor-ifc/"><img src="/demos/ifc-viewer-hotel-model-800.jpg" width="800" height="450" alt="Visor IFC en línia amb els models d’arquitectura, estructura i instal·lacions d’una torre d’hotel corba en 3D" loading="lazy" decoding="async" /><span>Exemples de visor IFC</span></a>
+          <a href="/ca/exemples-besso-digital/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="Bessó digital d’un magatzem amb AGV: sis vehicles de guiatge automàtic, prestatgeries i molls en 3D en directe" loading="lazy" decoding="async" /><span>Exemples de bessó digital</span></a>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>Ho vols per a la teva empresa?</h2>
+        <p>Fet de cap a peus per Joel Benítez. Busco primers clients i socis.</p>
+        <a href="/msp-global/#contact" class="cta">Contactar →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/ca/">IFC Viewer Online</a>
+        <a href="/ca/besso-digital-agv/">Bessó digital d’AGV</a>
+        <a href="/ca/seguiment-importacions-xina/">Cada comanda de la Xina</a>
+        <a href="/ca/besso-digital-it-oficina/">Bessó digital d’IT</a>
+        <a href="/ca/exemples-visor-ifc/">Exemples de visor IFC</a>
+        <a href="/ca/exemples-besso-digital/">Exemples de bessó digital</a>
+        <a href="/msp-global/">Totes les demos</a>
+        <a href="/ca/validador-ifc-en-linia/">Validador IFC</a>
+      </nav>
+      <nav><a href="/china-import-tracker/" hreflang="en" lang="en">EN</a> <a href="/es/seguimiento-importaciones-china/" hreflang="es" lang="es">ES</a> <a href="/de/china-import-tracking/" hreflang="de" lang="de">DE</a> <a href="/fr/suivi-importations-chine/" hreflang="fr" lang="fr">FR</a> <a href="/pt/rastreio-importacoes-china/" hreflang="pt" lang="pt">PT</a> <a href="/it/tracciamento-importazioni-cina/" hreflang="it" lang="it">IT</a> <a href="/ca/seguiment-importacions-xina/" hreflang="ca" lang="ca">CA</a> <a href="/zh/china-import-tracker/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/china-import-tracker/" hreflang="ja" lang="ja">JA</a> <a href="/th/china-import-tracker/" hreflang="th" lang="th">TH</a></nav>
+      <p>Captures © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

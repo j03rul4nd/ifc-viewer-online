@@ -67,6 +67,11 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - Fix Duplicate GUIDs in IFC: https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://www.ifcvieweronline.eu/es/
 - Live digital twin demos — AGV warehouse, imports from China on one map, office IT twin, 3D cities (EN): https://www.ifcvieweronline.eu/msp-global/
+- AGV digital twin, live warehouse fleet demo (EN): https://www.ifcvieweronline.eu/agv-digital-twin/
+- China import tracker, every order on one map (EN): https://www.ifcvieweronline.eu/china-import-tracker/
+- Office IT digital twin on an IFC model (EN): https://www.ifcvieweronline.eu/office-it-digital-twin/
+- Digital twin examples, with screenshots (EN): https://www.ifcvieweronline.eu/digital-twin-examples/
+- IFC viewer examples, screenshots of real IFC models (EN): https://www.ifcvieweronline.eu/ifc-viewer-examples/
 
 ### Localized landings (9 languages — ES/DE/FR/PT/IT/CA/ZH/JA/TH)
 Each language has all four concepts (validator, Solibri alternative, cloud validator, Solibri WebChecker alternative). Validator entry points per language:

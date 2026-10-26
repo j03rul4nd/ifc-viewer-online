@@ -257,7 +257,9 @@
     },
     "inScene": "{{count}} en la escena",
     "inScene_other": "{{count}} en la escena",
-    "needsModel": "Primero necesita un modelo IFC en la escena"
+    "needsModel": "Primero necesita un modelo IFC en la escena",
+    "chooseFolder": "Elegir carpeta…",
+    "chooseFolderHint": "Una carpeta de proyecto entera: IFC, nubes, GeoJSON, mallas y zips se ordenan solos"
   },
   "drop": {
     "title": "Suelta para añadir a la escena",
@@ -272,6 +274,11 @@
     "show": "Mostrar",
     "sceneReplace": "Abrir «{{name}}» sustituye la escena actual.",
     "openScene": "Abrir escena",
-    "sceneAlone": "Un archivo de escena se abre solo. Añade los demás archivos cuando haya cargado."
+    "sceneAlone": "Un archivo de escena se abre solo. Añade los demás archivos cuando haya cargado.",
+    "archiveOpening": "Abriendo el archivo comprimido…",
+    "archiveOpened": "Abierto {{archives}}: {{count}} ficheros",
+    "archiveUnsupported": "{{names}}: RAR y 7z aún no se abren en el navegador — guárdalo como .zip o arrastra la carpeta",
+    "archiveFailed": "No se pudo abrir {{name}}: {{reason}}",
+    "archiveTruncated": "El archivo es muy grande: solo se tomó la primera parte (4 GB / 5.000 ficheros)"
   }
 }
