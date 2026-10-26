@@ -13,6 +13,10 @@ import Settings from './sections/Settings'
 import Privacy from './sections/Privacy'
 import Support from './sections/Support'
 import CancelFlow from './CancelFlow'
+import DataSources from './sections/DataSources'
+import Scenes from './sections/Scenes'
+import ConnectionWizard from './ConnectionWizard'
+import { SAMPLE_CREDENTIALS } from './connections-sample'
 import ContactDialog from './ContactDialog'
 
 describe('workspace preview (design on sample data)', () => {
@@ -121,5 +125,25 @@ describe('workspace preview (design on sample data)', () => {
 
   it('every new section is routable', () => {
     for (const id of ['settings', 'privacy', 'support'] as const) expect(sectionFromPath(`/workspace/${id}/x`)).toBe(id)
+  })
+
+  it('data sources explain the model and list saved connections', () => {
+    const html = renderToStaticMarkup(createElement(DataSources, { data: scenarioData('active'), actions }))
+    expect(html).toContain('Save a connection once')
+    expect(html).toContain('HQ sensors')
+    expect(html).toContain('On by default')
+  })
+
+  it('scenes show what live data each one reads', () => {
+    const html = renderToStaticMarkup(createElement(Scenes, { data: scenarioData('active'), actions }))
+    expect(html).toContain('Client presentation')
+    expect(html).toContain('Live data')
+  })
+
+  it('the connection wizard starts by asking how data arrives', () => {
+    const html = renderToStaticMarkup(createElement(ConnectionWizard, { credentials: SAMPLE_CREDENTIALS, onClose: noop }))
+    expect(html).toContain('How does the data arrive?')
+    expect(html).toContain('Your system sends it to us')
+    expect(html).toContain('Pick how the data arrives')
   })
 })

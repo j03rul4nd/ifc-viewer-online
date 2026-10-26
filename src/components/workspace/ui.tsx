@@ -248,7 +248,7 @@ export const inputClass = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border bord
 
 export function Field({ label, hint, children, className = '' }: { label: string; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <label className={`block text-[12px] text-[var(--text-dim)] ${className}`}>
+    <label className={`block min-w-0 text-[12px] text-[var(--text-dim)] ${className}`}>
       {label}
       <div className="mt-1">{children}</div>
       {hint && <span className="block mt-1 text-[11.5px] text-[var(--text-faint)]">{hint}</span>}
@@ -334,6 +334,34 @@ export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs:
           {t.label}{t.count ? <span className="ml-1.5 text-[11px] tabular-nums text-[var(--text-faint)]">{t.count}</span> : null}
         </button>
       ))}
+    </div>
+  )
+}
+
+// ── Inline help ───────────────────────────────────────────────────────────────
+// Help sits next to what it explains, collapsed to one "?" so the form stays
+// calm; a guided tour can open the same text via its data-tour anchor.
+
+export function Hint({ children, label = 'What is this?' }: { children: React.ReactNode; label?: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="inline">
+      <button type="button" aria-expanded={open} aria-label={label} onClick={(e) => { e.preventDefault(); setOpen((o) => !o) }}
+        className="ml-1 inline-grid place-items-center w-[16px] h-[16px] rounded-full border border-[var(--border)] text-[10px] leading-none text-[var(--text-faint)] hover:text-[var(--text)] align-[1px]">?</button>
+      {open && <span role="note" className="block mt-1.5 mb-1 rounded-[8px] bg-[var(--surface-2)] px-3 py-2 text-[12px] text-[var(--text-dim)] font-normal normal-case tracking-normal">{children}</span>}
+    </span>
+  )
+}
+
+/** Copy-to-clipboard for URLs, secrets shown once and code samples. */
+export function CopyField({ value, label, secret, mono = true }: { value: string; label: string; secret?: boolean; mono?: boolean }) {
+  const [copied, setCopied] = useState(false)
+  const [shown, setShown] = useState(!secret)
+  return (
+    <div className="flex gap-2">
+      <input readOnly aria-label={label} value={shown ? value : '•'.repeat(Math.min(value.length, 32))} className={`${inputClass} ${mono ? 'font-mono text-[12px]' : ''}`} onFocus={(e) => e.currentTarget.select()} />
+      {secret && <Quiet className="shrink-0 !h-[38px] sm:!h-[34px]" onClick={() => setShown((s) => !s)}>{shown ? 'Hide' : 'Show'}</Quiet>}
+      <Quiet className="shrink-0 !h-[38px] sm:!h-[34px]" onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? 'Copied' : 'Copy'}</Quiet>
     </div>
   )
 }
