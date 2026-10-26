@@ -202,6 +202,8 @@ import { useModelStore } from './stores/modelStore'
 import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
+import { useFederationStore } from './stores/federationStore'
+import { useFederationLook } from './hooks/useFederationLook'
 import { useGeoStore } from './stores/geoStore'
 import { parseBackgroundSpec } from './lib/scene/background'
 import { planCutY } from './lib/cover/cuts'
@@ -823,6 +825,7 @@ export default function App() {
   }, [accent])
 
   const viewerApiRef = useRef<ViewerAPI | null>(null)
+  useFederationLook(viewerApiRef)
   // The viewer frames groups for calls that carry none (SDK, embed, other
   // panels) — it needs the same grouping the Scene panel shows.
   const modelGroups = useModelGroups()
@@ -2284,6 +2287,7 @@ export default function App() {
       useModelStore.getState().removeModelEntry(id)
       useValidationStore.getState().clearValidationForModel(id)
       useTakeoffStore.getState().clearModelResult(id)
+      useFederationStore.getState().forgetModel(id)
       useGeoStore.getState().removeGeoref(id)
       // IDS: abort an in-flight check for this model, then drop its results.
       if (useIdsStore.getState().runningModelId === id) cancelActiveIdsRuns()
@@ -2360,6 +2364,7 @@ export default function App() {
     useMeshStore.getState().clearMeshes()
     modelRegistry.clear()
     clearScene()
+    useFederationStore.getState().reset()
     appBus.emit('model:cleared', undefined)
     // Clean up Sprint 7+8 panel state and viewer tools
     setMeasurementPanelOpen(false)

@@ -24,6 +24,8 @@ import { SceneLoadingSection } from './loading'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { haptic } from '../lib/haptics'
 import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
+import FederationBar, { ModelLayerControls } from './FederationBar'
+import { matchesQuery } from '../lib/federation'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -545,7 +547,14 @@ export default function ScenePanel({
   const activeModel = models.find((m) => m.id === activeModelId) ?? null
   const [isolatedId, setIsolatedId] = useState<string | null>(null)
   const { groups, groupIdOf, looseCloudIds } = useModelGroups()
-  const byId = useMemo(() => new Map(models.map((m) => [m.id, m])), [models])
+  /** Federation: filter for long sets, and the per-row layer controls. */
+  const [query, setQuery] = useState('')
+  const [layersOpen, setLayersOpen] = useState(false)
+  // The tree drops ids it cannot resolve, so filtering the map filters the rows.
+  const byId = useMemo(
+    () => new Map(models.filter((m) => matchesQuery(m.fileName, query)).map((m) => [m.id, m])),
+    [models, query],
+  )
   /** Whether the transform panel edits one file, the active file's group, or everything. */
   const [transformScope, setTransformScope] = useState<'model' | 'group' | 'scene'>('model')
   const placement = useScenePlacement(viewerApiRef)
@@ -695,8 +704,26 @@ export default function ScenePanel({
         {/* Models still loading, queued or failed — the federation as it forms */}
         <SceneLoadingSection className="px-2 pt-2" />
 
+        {/* Federation controls — the set as a whole */}
+        {models.length > 1 && (
+          <FederationBar
+            models={models}
+            query={query}
+            onQuery={setQuery}
+            layersOpen={layersOpen}
+            onLayersOpen={setLayersOpen}
+            onSetVisible={(id, v) => {
+              onSetVisible(id, v)
+              if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
+            }}
+          />
+        )}
+
         {/* Model list */}
         <div className="p-2 space-y-1">
+          {query && byId.size === 0 && (
+            <p className="text-[11px] text-[var(--text-muted)] text-center py-3">{t('scene.federation.noMatch')}</p>
+          )}
           {models.length === 0 && (
             <p className="text-[11px] text-[var(--text-muted)] text-center py-4">{t('scene.noModels')}</p>
           )}
@@ -718,6 +745,7 @@ export default function ScenePanel({
             }}
             moveTogetherActive={(g) => scope === 'group' && g.memberIds.includes(activeModelId ?? '')}
             renderModelRow={(model, moveControl) => (
+              <div>
               <ModelRow
                 model={model}
                 isActive={model.id === activeModelId}
@@ -736,6 +764,8 @@ export default function ScenePanel({
                 onIsolate={() => handleIsolate(model.id)}
                 moveControl={models.length > 1 || looseCloudIds.length > 0 || groups.some((g) => g.user) ? moveControl : null}
               />
+              {layersOpen && models.length > 1 && <ModelLayerControls model={model} />}
+              </div>
             )}
           />
         </div>
