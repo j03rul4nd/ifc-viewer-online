@@ -177,8 +177,9 @@ import { useIfcLoader } from './lib/loader'
 import {
   resetLoading, notifyModelRemoving, notifyModelRemoved, cancelAllLoads, type LoadingHooks,
   submitPointClouds, submitMeshes, canLoadKind, describeSourceError, sourceErrorKey, type SourceSubmitItem,
-  removeSourceResult, clearSources, loadPointCloudsOnce, loadMeshesOnce,
+  removeSourceResult, clearSources, loadPointCloudsOnce, loadMeshesOnce, getLoadManager,
 } from './lib/loading'
+import { canValidateWithout3d, validateWithout3d } from './lib/loading/validation-only'
 import { legacyPhase } from './lib/loading/phases'
 import {
   groupMeshFiles, hasFilePayload, fileExtensionOf, MESH_ENTRY_EXTENSIONS,
@@ -1508,6 +1509,29 @@ export default function App() {
       const reason = error.code === 'http'
         ? i18n.t('loading:error.http', { status: error.httpStatus ?? '?' })
         : i18n.t(`loading:error.${error.code}`)
+      // The geometry did not fit (a 300–400 MB model, typically) but the file is
+      // readable IFC: offer the Health Score without the 3D instead of a dead end.
+      const source = getLoadManager().failedSource(job.id)
+      if (canValidateWithout3d(error.code, source)) {
+        toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error', {
+          duration: 0,
+          action: {
+            label: i18n.t('loading:validationOnly.action'),
+            run: () => {
+              trackFeatureUsed({ feature: 'validation_only' })
+              setLoadError(null)
+              toast(i18n.t('loading:validationOnly.running', { fileName: job.displayName }), 'info')
+              validateWithout3d(source!, job.fileName).then(
+                () => toast(i18n.t('loading:validationOnly.done', { fileName: job.displayName }), 'success'),
+                (err: unknown) => toast(i18n.t('loading:validationOnly.failed', {
+                  fileName: job.displayName, reason: err instanceof Error ? err.message : String(err),
+                }), 'error'),
+              )
+            },
+          },
+        })
+        return
+      }
       toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error')
     },
 

@@ -351,5 +351,11 @@
     "many_other": "{{count}} 個のファイルはすでにシーンにあるか、読み込み中です",
     "quoted": "「{{name}}」",
     "loadAnyway": "それでも重複して読み込む"
+  },
+  "validationOnly": {
+    "action": "3D なしで検証",
+    "running": "{{fileName}} を 3D なしで検証中…",
+    "done": "{{fileName}} を 3D なしで検証しました。Health Score と問題はパネルにあります。",
+    "failed": "{{fileName}} は検証もできませんでした：{{reason}}"
   }
 }

@@ -378,5 +378,11 @@
     "many_other": "{{count}} Dateien sind bereits in der Szene oder werden geladen",
     "quoted": "„{{name}}“",
     "loadAnyway": "Trotzdem als Kopie laden"
+  },
+  "validationOnly": {
+    "action": "Ohne 3D prüfen",
+    "running": "{{fileName}} wird ohne 3D geprüft…",
+    "done": "{{fileName}} ohne 3D geprüft: Health Score und Probleme stehen im Panel.",
+    "failed": "{{fileName}} konnte auch nicht geprüft werden: {{reason}}"
   }
 }

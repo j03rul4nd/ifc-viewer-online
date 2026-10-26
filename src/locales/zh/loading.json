@@ -351,5 +351,11 @@
     "many_other": "{{count}} 个文件已在场景中或正在加载",
     "quoted": "“{{name}}”",
     "loadAnyway": "仍然加载副本"
+  },
+  "validationOnly": {
+    "action": "不加载 3D 直接验证",
+    "running": "正在不加载 3D 验证 {{fileName}}…",
+    "done": "{{fileName}} 已在无 3D 模式下验证：健康评分和问题见面板。",
+    "failed": "{{fileName}} 也无法验证：{{reason}}"
   }
 }

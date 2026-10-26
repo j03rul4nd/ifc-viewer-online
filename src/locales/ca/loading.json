@@ -378,5 +378,11 @@
     "many_other": "{{count}} fitxers ja són a l'escena o s'estan carregant",
     "quoted": "«{{name}}»",
     "loadAnyway": "Carrega'n una còpia igualment"
+  },
+  "validationOnly": {
+    "action": "Validar sense 3D",
+    "running": "Validant {{fileName}} sense 3D…",
+    "done": "{{fileName}} validat sense 3D: el Health Score i els problemes són al panell.",
+    "failed": "Tampoc s'ha pogut validar {{fileName}}: {{reason}}"
   }
 }
