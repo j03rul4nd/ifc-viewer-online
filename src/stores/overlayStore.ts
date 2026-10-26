@@ -25,11 +25,17 @@ interface OverlayStore {
   ghostOpacity: number
   /** X-ray: render the flagged elements through occluding geometry (no depth test). */
   xray: boolean
+  /**
+   * Show only this rule's issues ("Show in 3D" on a Fix-this-first row);
+   * null = every issue. Cleared with the other options.
+   */
+  ruleFocus: string | null
 
   /** Toggle one severity. Never lets the user turn ALL three off (keeps ≥1 on). */
   toggleSeverity: (severity: Severity) => void
   setGhostOpacity: (value: number) => void
   toggleXray: () => void
+  setRuleFocus: (ruleId: string | null) => void
   /** Restore defaults — called when the overlay turns off / on a fresh model. */
   resetOverlayOptions: () => void
 }
@@ -38,6 +44,7 @@ const DEFAULTS = {
   severities: { error: true, warning: true, info: true } as SeverityFilter,
   ghostOpacity: GHOST_OPACITY_DEFAULT,
   xray: false,
+  ruleFocus: null as string | null,
 }
 
 export const useOverlayStore = create<OverlayStore>()(
@@ -67,9 +74,11 @@ export const useOverlayStore = create<OverlayStore>()(
 
       toggleXray: () => set((s) => ({ xray: !s.xray }), false, 'overlay/toggleXray'),
 
+      setRuleFocus: (ruleId) => set({ ruleFocus: ruleId }, false, 'overlay/setRuleFocus'),
+
       resetOverlayOptions: () =>
         set(
-          { severities: { ...DEFAULTS.severities }, ghostOpacity: DEFAULTS.ghostOpacity, xray: DEFAULTS.xray },
+          { severities: { ...DEFAULTS.severities }, ghostOpacity: DEFAULTS.ghostOpacity, xray: DEFAULTS.xray, ruleFocus: null },
           false,
           'overlay/reset',
         ),

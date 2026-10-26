@@ -1634,6 +1634,7 @@ export default function App() {
   const ovSeverities   = useOverlayStore((s) => s.severities)
   const ovGhostOpacity = useOverlayStore((s) => s.ghostOpacity)
   const ovXray         = useOverlayStore((s) => s.xray)
+  const ovRuleFocus    = useOverlayStore((s) => s.ruleFocus)
 
   const compareHighlight = useCompareStore((s) => s.highlight)
   const compareDiff      = useCompareStore((s) => s.diff)
@@ -1662,11 +1663,12 @@ export default function App() {
       )
       viewer.setIdsHighlights(failures, true, opts)
     } else if (validationMode) {
-      viewer.setValidationHighlights(result?.issues ?? [], true, opts)
+      const issues = result?.issues ?? []
+      viewer.setValidationHighlights(ovRuleFocus ? issues.filter((i) => i.ruleId === ovRuleFocus) : issues, true, opts)
     } else {
       viewer.setValidationHighlights([], false) // clears the shared overlay channel
     }
-  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, compareHighlight, compareDiff, compareHead, compareBase])
+  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, ovRuleFocus, compareHighlight, compareDiff, compareHead, compareBase])
 
   // ── Validation for hosts: the queue, and what it tells them ───────────────
   // Auto-validation after a load and the SDK's validate() both go through
@@ -5100,7 +5102,7 @@ export default function App() {
                 {!clientMode && effectiveChrome.showValidation && (
                   <>
                     <IdsPanel viewerApiRef={viewerApiRef} onOpenLoader={() => setShowIdsModal(true)} />
-                    <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
+                    <ValidationPanel onJumpToElement={handleJumpToElement} onFrameElements={handleFocusElements} viewer={viewerRef.current} />
                   </>
                 )}
               </div>

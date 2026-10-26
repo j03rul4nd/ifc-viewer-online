@@ -420,5 +420,10 @@
       "alsoFixEmpty": "Omple també {{count}} nom buit",
       "alsoFixEmpty_other": "Omple també {{count}} noms buits"
     }
+  },
+  "summary": {
+    "show3d": "Veure en 3D",
+    "show3dTitle": "Mostrar només aquests elements en 3D",
+    "show3dAll": "Tornar a mostrar tots els problemes en 3D"
   }
 }

@@ -420,5 +420,10 @@
       "alsoFixEmpty": "Remplir aussi {{count}} nom vide",
       "alsoFixEmpty_other": "Remplir aussi {{count}} noms vides"
     }
+  },
+  "summary": {
+    "show3d": "Voir en 3D",
+    "show3dTitle": "Afficher uniquement ces éléments en 3D",
+    "show3dAll": "Réafficher tous les problèmes en 3D"
   }
 }
