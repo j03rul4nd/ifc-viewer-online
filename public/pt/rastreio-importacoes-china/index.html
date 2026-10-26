@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rastreio de importações da China num só mapa</title>
+  <meta name="description" content="Acompanhe as importações da China num mapa ao vivo: controlo de qualidade, mar, ar ou ferrovia, alfândega, custo final e ETA. Veja o que está atrasado." />
+  <meta name="keywords" content="rastreio importações China, mapa rastreio envios, visibilidade cadeia de abastecimento, custo de importação, rastreio ordens de compra, agente de compras China, rastreio contentores" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/seguimiento-importaciones-china/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/china-import-tracking/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/suivi-importations-chine/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/tracciamento-importazioni-cina/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/china-import-tracker/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/" />
+  <meta property="og:title" content="Rastreio de importações da China num só mapa" />
+  <meta property="og:description" content="Acompanhe as importações da China num mapa ao vivo: controlo de qualidade, mar, ar ou ferrovia, alfândega, custo final e ETA. Veja o que está atrasado." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="pt_PT" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="Mapa de rastreio de importações: encomendas da China por mar, ar e ferrovia, com as que precisam de atenção" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rastreio de importações da China num só mapa" />
+  <meta name="twitter:description" content="Acompanhe as importações da China num mapa ao vivo: controlo de qualidade, mar, ar ou ferrovia, alfândega, custo final e ETA. Veja o que está atrasado." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg" />
+
+  <link rel="preload" as="image" href="/demos/china-import-tracker-map.jpg" imagesrcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Rastreio de importações da China num só mapa","description":"Acompanhe as importações da China num mapa ao vivo: controlo de qualidade, mar, ar ou ferrovia, alfândega, custo final e ETA. Veja o que está atrasado.","url":"https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/","inLanguage":"pt","primaryImageOfPage":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map-800.jpg","name":"Cada encomenda da China num mapa, o urgente primeiro.","description":"Mapa de rastreio de importações: encomendas da China por mar, ar e ferrovia, com as que precisam de atenção","inLanguage":"pt","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-timeline-800.jpg","name":"Uma encomenda da ordem à porta: qualidade, navio, alfândega, ETA.","description":"Cronologia de uma encomenda importada: controlo de qualidade, porto, navio, alfândega e ETA","inLanguage":"pt","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost-800.jpg","name":"Custo final por encomenda: frete, direitos por código SH, custo por unidade.","description":"Custo final de uma encomenda importada: FOB, frete, direitos por código SH, IVA e custo por unidade","inLanguage":"pt","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-phone-800.jpg","name":"No telemóvel: o mapa e, por baixo, as encomendas atrasadas.","description":"Painel de rastreio de importações da China num telemóvel com as encomendas atrasadas","inLanguage":"pt","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Para quem é?","acceptedAnswer":{"@type":"Answer","text":"Para empresas que compram a fábricas na China através de um agente e querem ver todas as encomendas num só sítio, em vez de chats, folhas de cálculo e emails do transitário."}},{"@type":"Question","name":"Os dados da demo são reais?","acceptedAnswer":{"@type":"Answer","text":"Não. Encomendas, navios e fornecedores são simulados e assinalados. As rotas e os portos são reais."}},{"@type":"Question","name":"Calcula os direitos aduaneiros?","acceptedAnswer":{"@type":"Answer","text":"A demo estima os direitos a partir de um código SH e de uma taxa por encomenda. Uma instalação real usa os seus dados pautais e os valores do seu despachante."}}]}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/pt/" class="logo">IFC Viewer Online</a>
+      <a href="/msp-global/?open=imports" class="nav-cta">Demo ao vivo →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">Demo ao vivo · Dados simulados</p>
+        <h1>Cada encomenda da China <br><span class="accent">num só mapa</span></h1>
+        <p class="lead">Fábrica, controlo de qualidade, porto, navio, alfândega, armazém. Um mapa ao vivo de cada ordem de compra, com o que está atrasado, porquê e quanto lhe custa.</p>
+        <a href="/msp-global/?open=imports" class="cta">Abrir o rastreio ao vivo →</a>
+      </div>
+    </section>
+    <section class="container shots" aria-label="Capturas de ecrã">
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Mapa de rastreio de importações: encomendas da China por mar, ar e ferrovia, com as que precisam de atenção" fetchpriority="high" decoding="async" />
+          <figcaption>Cada encomenda da China num mapa, o urgente primeiro.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-order-timeline.jpg" srcset="/demos/china-import-order-timeline-800.jpg 800w, /demos/china-import-order-timeline.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Cronologia de uma encomenda importada: controlo de qualidade, porto, navio, alfândega e ETA" loading="lazy" decoding="async" />
+          <figcaption>Uma encomenda da ordem à porta: qualidade, navio, alfândega, ETA.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-order-landed-cost.jpg" srcset="/demos/china-import-order-landed-cost-800.jpg 800w, /demos/china-import-order-landed-cost.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Custo final de uma encomenda importada: FOB, frete, direitos por código SH, IVA e custo por unidade" loading="lazy" decoding="async" />
+          <figcaption>Custo final por encomenda: frete, direitos por código SH, custo por unidade.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-phone.jpg" srcset="/demos/china-import-tracker-phone-800.jpg 800w, /demos/china-import-tracker-phone.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="Painel de rastreio de importações da China num telemóvel com as encomendas atrasadas" loading="lazy" decoding="async" />
+          <figcaption>No telemóvel: o mapa e, por baixo, as encomendas atrasadas.</figcaption>
+        </figure>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>O que recebe</h2>
+        <div class="grid">
+          <div class="card"><h3>Primeiro, o que precisa de si</h3><p>Encomendas atrasadas e inspeções falhadas no topo, com o custo de cada atraso.</p></div>
+          <div class="card"><h3>Custo final por encomenda</h3><p>FOB, frete, direitos por código SH e IVA, até ao custo por unidade.</p></div>
+          <div class="card"><h3>Contentores e fornecedores</h3><p>Contentores partilhados, taxa de enchimento e uma nota por fornecedor.</p></div>
+          <div class="card"><h3>As atualizações do seu agente</h3><p>Atualizações da BuckyDrop ou do seu agente, lidas automaticamente; receções enviadas ao seu ERP.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Perguntas</h2>
+        <div class="faq">
+          <div><h3>Para quem é?</h3><p>Para empresas que compram a fábricas na China através de um agente e querem ver todas as encomendas num só sítio, em vez de chats, folhas de cálculo e emails do transitário.</p></div>
+          <div><h3>Os dados da demo são reais?</h3><p>Não. Encomendas, navios e fornecedores são simulados e assinalados. As rotas e os portos são reais.</p></div>
+          <div><h3>Calcula os direitos aduaneiros?</h3><p>A demo estima os direitos a partir de um código SH e de uma taxa por encomenda. Uma instalação real usa os seus dados pautais e os valores do seu despachante.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Mais exemplos ao vivo</h2>
+        <div class="more">
+          <a href="/pt/gemeo-digital-agv/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="Gémeo digital de um armazém com AGV: seis veículos de guiamento automático, estantes e cais em 3D ao vivo" loading="lazy" decoding="async" /><span>Gémeo digital de AGV</span></a>
+          <a href="/pt/gemeo-digital-ti-escritorio/"><img src="/demos/office-it-digital-twin-ifc-800.jpg" width="800" height="450" alt="Gémeo digital de TI sobre um modelo IFC de escritório: pontos de acesso Wi-Fi, racks, UPS e câmaras com estado ao vivo" loading="lazy" decoding="async" /><span>Gémeo digital de TI</span></a>
+          <a href="/pt/exemplos-visualizador-ifc/"><img src="/demos/ifc-viewer-hotel-model-800.jpg" width="800" height="450" alt="Visualizador IFC online com os modelos de arquitetura, estrutura e instalações de uma torre de hotel curva em 3D" loading="lazy" decoding="async" /><span>Exemplos de visualizador IFC</span></a>
+          <a href="/pt/exemplos-gemeo-digital/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="Gémeo digital de um armazém com AGV: seis veículos de guiamento automático, estantes e cais em 3D ao vivo" loading="lazy" decoding="async" /><span>Exemplos de gémeo digital</span></a>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>Quer isto para a sua empresa?</h2>
+        <p>Feito de ponta a ponta por Joel Benítez. À procura dos primeiros clientes e parceiros.</p>
+        <a href="/msp-global/#contact" class="cta">Entrar em contacto →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/pt/">IFC Viewer Online</a>
+        <a href="/pt/gemeo-digital-agv/">Gémeo digital de AGV</a>
+        <a href="/pt/rastreio-importacoes-china/">Cada encomenda da China</a>
+        <a href="/pt/gemeo-digital-ti-escritorio/">Gémeo digital de TI</a>
+        <a href="/pt/exemplos-visualizador-ifc/">Exemplos de visualizador IFC</a>
+        <a href="/pt/exemplos-gemeo-digital/">Exemplos de gémeo digital</a>
+        <a href="/msp-global/">Todas as demos</a>
+        <a href="/pt/validador-ifc-online/">Validador IFC</a>
+      </nav>
+      <nav><a href="/china-import-tracker/" hreflang="en" lang="en">EN</a> <a href="/es/seguimiento-importaciones-china/" hreflang="es" lang="es">ES</a> <a href="/de/china-import-tracking/" hreflang="de" lang="de">DE</a> <a href="/fr/suivi-importations-chine/" hreflang="fr" lang="fr">FR</a> <a href="/pt/rastreio-importacoes-china/" hreflang="pt" lang="pt">PT</a> <a href="/it/tracciamento-importazioni-cina/" hreflang="it" lang="it">IT</a> <a href="/ca/seguiment-importacions-xina/" hreflang="ca" lang="ca">CA</a> <a href="/zh/china-import-tracker/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/china-import-tracker/" hreflang="ja" lang="ja">JA</a> <a href="/th/china-import-tracker/" hreflang="th" lang="th">TH</a></nav>
+      <p>Capturas © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

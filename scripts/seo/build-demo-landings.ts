@@ -14,6 +14,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { withRights } from './image-metadata'
+import { LANG_PACKS, type LangPack } from './demo-landings-i18n'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SITE = 'https://www.ifcvieweronline.eu'
@@ -220,86 +221,61 @@ const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'
 const jsonEsc = (s: string) => s.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
 const imgUrl = (stem: string, small = false) => `/demos/${stem}${small ? '-800' : ''}.jpg`
 
-function figure(stem: string, i: number) {
-  const im = IMAGES[stem]
+function figure(L: Lang, stem: string, i: number) {
+  const im = L.images[stem]
   return `<figure class="shot">
           <img src="${imgUrl(stem)}" srcset="${imgUrl(stem, true)} 800w, ${imgUrl(stem)} 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="${esc(im.alt)}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" />
           <figcaption>${esc(im.cap)}</figcaption>
         </figure>`
 }
 
-function render(p: Page) {
-  const url = `${SITE}/${p.slug}/`
-  const hero = `${SITE}${imgUrl(p.images[0])}`
-  const others = PAGES.filter((o) => o.slug !== p.slug)
-  const ld = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'WebPage',
-      name: p.title,
-      description: p.description,
-      url,
-      inLanguage: 'en',
-      primaryImageOfPage: hero,
-      author: AUTHOR,
-      publisher: { '@type': 'Organization', name: 'IFC Viewer Online', url: SITE },
-    },
-    ...p.images.map((stem) => ({
-      '@context': 'https://schema.org',
-      '@type': 'ImageObject',
-      contentUrl: `${SITE}${imgUrl(stem)}`,
-      thumbnailUrl: `${SITE}${imgUrl(stem, true)}`,
-      name: IMAGES[stem].cap,
-      description: IMAGES[stem].alt,
-      width: 1600,
-      height: 900,
-      creator: AUTHOR,
-      creditText: IMAGES[stem].credit ?? OWN,
-      copyrightNotice: copyright(stem),
-      license: TERMS,
-      acquireLicensePage: TERMS,
-    })),
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: p.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
-    },
-  ]
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${esc(p.title)}</title>
-  <meta name="description" content="${esc(p.description)}" />
-  <meta name="keywords" content="${esc(p.keywords)}" />
-  <meta name="author" content="Joel Benítez" />
-  <meta name="robots" content="index, follow, max-image-preview:large" />
-  <link rel="canonical" href="${url}" />
-  <link rel="alternate" hreflang="en" href="${url}" />
-  <link rel="alternate" hreflang="x-default" href="${url}" />
+// ── Languages ──────────────────────────────────────────────────────────────
+// English is PAGES/IMAGES above; every other language is a pack in
+// demo-landings-i18n.ts with its own slugs and copy. The pictures are shared.
 
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="${url}" />
-  <meta property="og:title" content="${esc(p.title)}" />
-  <meta property="og:description" content="${esc(p.description)}" />
-  <meta property="og:site_name" content="IFC Viewer Online" />
-  <meta property="og:locale" content="en_US" />
-  <meta property="og:image" content="${hero}" />
-  <meta property="og:image:width" content="1600" />
-  <meta property="og:image:height" content="900" />
-  <meta property="og:image:alt" content="${esc(IMAGES[p.images[0]].alt)}" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${esc(p.title)}" />
-  <meta name="twitter:description" content="${esc(p.description)}" />
-  <meta name="twitter:image" content="${hero}" />
+const UI_EN = {
+  liveDemo: 'Live demo', screenshots: 'Screenshots', get: 'What you get', questions: 'Questions',
+  more: 'More live examples', wantTitle: 'Want this for your business?',
+  wantText: 'Built end to end by Joel Benítez. Looking for first clients and partners.',
+  contact: 'Get in touch', allDemos: 'All live demos', validator: 'IFC Validator', validatorPath: '/ifc-validator/',
+  rights: 'Screenshots © 2026 Joel Benítez · IFC Viewer Online',
+}
+export type Ui = typeof UI_EN
+interface Lang {
+  lang: string; locale: string; prefix: string; ui: Ui
+  pages: Record<string, Page>; images: Record<string, { alt: string; cap: string }>
+}
 
-  <link rel="preload" as="image" href="${imgUrl(p.images[0])}" imagesrcset="${imgUrl(p.images[0], true)} 800w, ${imgUrl(p.images[0])} 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
-  <link rel="stylesheet" href="/fonts.css" />
-${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o))}</script>`).join('\n')}
+const EN: Lang = {
+  lang: 'en', locale: 'en_US', prefix: '', ui: UI_EN,
+  pages: Object.fromEntries(PAGES.map((p) => [p.slug, p])),
+  images: IMAGES,
+}
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+function fromPack(pack: LangPack): Lang {
+  const pages: Record<string, Page> = {}
+  for (const base of PAGES) {
+    const t = pack.pages[base.slug]
+    if (!t) throw new Error(`${pack.lang}: no copy for ${base.slug}`)
+    const href = base.cta.href === '/' ? `/${pack.lang}/` : base.cta.href
+    pages[base.slug] = { ...t, images: base.images, cta: { href, label: t.cta } }
+  }
+  for (const stem of Object.keys(IMAGES)) if (!pack.images[stem]) throw new Error(`${pack.lang}: no alt/caption for ${stem}`)
+  return { lang: pack.lang, locale: pack.locale, prefix: `/${pack.lang}`, ui: pack.ui, pages, images: pack.images }
+}
+
+export const LANGS: Lang[] = [EN, ...LANG_PACKS.map(fromPack)]
+
+const pathOf = (L: Lang, base: string) => `${L.prefix}/${L.pages[base].slug}/`
+const cap1 = (s: string) => s.replace(/^./, (c) => c.toUpperCase())
+
+function hreflangs(base: string, indent: string, tag: 'link' | 'xhtml:link') {
+  const rows = LANGS.map((L) => `${indent}<${tag} rel="alternate" hreflang="${L.lang}" href="${SITE}${pathOf(L, base)}" />`)
+  rows.push(`${indent}<${tag} rel="alternate" hreflang="x-default" href="${SITE}${pathOf(EN, base)}" />`)
+  return rows.join('\n')
+}
+
+const STYLE = `    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; height: auto; display: block; }
@@ -339,14 +315,92 @@ ${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o
     .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
     footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
     footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
-    footer a:hover { color: rgba(255,255,255,0.7); }
+    footer a:hover { color: rgba(255,255,255,0.7); }`
+
+const copyright = (stem: string) => `© 2026 ${IMAGES[stem].credit ?? OWN}`
+
+function render(L: Lang, base: string) {
+  const p = L.pages[base]
+  const url = `${SITE}${pathOf(L, base)}`
+  const hero = `${SITE}${imgUrl(p.images[0])}`
+  const others = PAGES.filter((o) => o.slug !== base)
+  const home = L.prefix ? `${L.prefix}/` : '/'
+  const u = L.ui
+  const ld = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: p.title,
+      description: p.description,
+      url,
+      inLanguage: L.lang,
+      primaryImageOfPage: hero,
+      author: AUTHOR,
+      publisher: { '@type': 'Organization', name: 'IFC Viewer Online', url: SITE },
+    },
+    ...p.images.map((stem) => ({
+      '@context': 'https://schema.org',
+      '@type': 'ImageObject',
+      contentUrl: `${SITE}${imgUrl(stem)}`,
+      thumbnailUrl: `${SITE}${imgUrl(stem, true)}`,
+      name: L.images[stem].cap,
+      description: L.images[stem].alt,
+      inLanguage: L.lang,
+      width: 1600,
+      height: 900,
+      creator: AUTHOR,
+      creditText: IMAGES[stem].credit ?? OWN,
+      copyrightNotice: copyright(stem),
+      license: TERMS,
+      acquireLicensePage: TERMS,
+    })),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: p.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+    },
+  ]
+  return `<!doctype html>
+<html lang="${L.lang}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${esc(p.title)}</title>
+  <meta name="description" content="${esc(p.description)}" />
+  <meta name="keywords" content="${esc(p.keywords)}" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="${url}" />
+${hreflangs(base, '  ', 'link')}
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${url}" />
+  <meta property="og:title" content="${esc(p.title)}" />
+  <meta property="og:description" content="${esc(p.description)}" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="${L.locale}" />
+  <meta property="og:image" content="${hero}" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="${esc(L.images[p.images[0]].alt)}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${esc(p.title)}" />
+  <meta name="twitter:description" content="${esc(p.description)}" />
+  <meta name="twitter:image" content="${hero}" />
+
+  <link rel="preload" as="image" href="${imgUrl(p.images[0])}" imagesrcset="${imgUrl(p.images[0], true)} 800w, ${imgUrl(p.images[0])} 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o))}</script>`).join('\n')}
+
+  <style>
+${STYLE}
   </style>
 </head>
 <body>
   <header>
     <div class="container header-inner">
-      <a href="/" class="logo">IFC Viewer Online</a>
-      <a href="${p.cta.href}" class="nav-cta">Live demo →</a>
+      <a href="${home}" class="logo">IFC Viewer Online</a>
+      <a href="${p.cta.href}" class="nav-cta">${esc(u.liveDemo)} →</a>
     </div>
   </header>
   <main>
@@ -358,12 +412,12 @@ ${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o
         <a href="${p.cta.href}" class="cta">${esc(p.cta.label)} →</a>
       </div>
     </section>
-    <section class="container shots" aria-label="Screenshots">
-        ${p.images.map(figure).join('\n        ')}
+    <section class="container shots" aria-label="${esc(u.screenshots)}">
+        ${p.images.map((s, i) => figure(L, s, i)).join('\n        ')}
     </section>
     <section class="section">
       <div class="container">
-        <h2>What you get</h2>
+        <h2>${esc(u.get)}</h2>
         <div class="grid">
           ${p.points.map(([h, t]) => `<div class="card"><h3>${esc(h)}</h3><p>${esc(t)}</p></div>`).join('\n          ')}
         </div>
@@ -371,7 +425,7 @@ ${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o
     </section>
     <section class="section">
       <div class="container">
-        <h2>Questions</h2>
+        <h2>${esc(u.questions)}</h2>
         <div class="faq">
           ${p.faq.map(([q, a]) => `<div><h3>${esc(q)}</h3><p>${esc(a)}</p></div>`).join('\n          ')}
         </div>
@@ -379,29 +433,30 @@ ${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o
     </section>
     <section class="section">
       <div class="container">
-        <h2>More live examples</h2>
+        <h2>${esc(u.more)}</h2>
         <div class="more">
-          ${others.map((o) => `<a href="/${o.slug}/"><img src="${imgUrl(o.images[0], true)}" width="800" height="450" alt="${esc(IMAGES[o.images[0]].alt)}" loading="lazy" decoding="async" /><span>${esc(o.h1[0].replace(/^./, (c) => c.toUpperCase()))}</span></a>`).join('\n          ')}
+          ${others.map((o) => `<a href="${pathOf(L, o.slug)}"><img src="${imgUrl(o.images[0], true)}" width="800" height="450" alt="${esc(L.images[o.images[0]].alt)}" loading="lazy" decoding="async" /><span>${esc(cap1(L.pages[o.slug].h1[0]))}</span></a>`).join('\n          ')}
         </div>
       </div>
     </section>
     <section class="end">
       <div class="container">
-        <h2>Want this for your business?</h2>
-        <p>Built end to end by Joel Benítez. Looking for first clients and partners.</p>
-        <a href="${CONTACT}" class="cta">Get in touch →</a>
+        <h2>${esc(u.wantTitle)}</h2>
+        <p>${esc(u.wantText)}</p>
+        <a href="${CONTACT}" class="cta">${esc(u.contact)} →</a>
       </div>
     </section>
   </main>
   <footer>
     <div class="container">
       <nav>
-        <a href="/">IFC Viewer Online</a>
-        ${PAGES.map((o) => `<a href="/${o.slug}/">${esc(o.h1[0].replace(/^./, (c) => c.toUpperCase()))}</a>`).join('\n        ')}
-        <a href="/msp-global/">All live demos</a>
-        <a href="/ifc-validator/">IFC Validator</a>
+        <a href="${home}">IFC Viewer Online</a>
+        ${PAGES.map((o) => `<a href="${pathOf(L, o.slug)}">${esc(cap1(L.pages[o.slug].h1[0]))}</a>`).join('\n        ')}
+        <a href="/msp-global/">${esc(u.allDemos)}</a>
+        <a href="${u.validatorPath}">${esc(u.validator)}</a>
       </nav>
-      <p>Screenshots © 2026 Joel Benítez · IFC Viewer Online</p>
+      <nav>${LANGS.map((o) => `<a href="${pathOf(o, base)}" hreflang="${o.lang}" lang="${o.lang}">${o.lang.toUpperCase()}</a>`).join(' ')}</nav>
+      <p>${esc(u.rights)}</p>
     </div>
   </footer>
 </body>
@@ -409,39 +464,40 @@ ${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o
 `
 }
 
-/** <url> blocks with <image:image> entries, for public/sitemap.xml. */
-const copyright = (stem: string) => `© 2026 ${IMAGES[stem].credit ?? OWN}`
-
+/** <url> blocks with hreflang and <image:image> entries, for public/sitemap.xml. */
 export function sitemapBlock(lastmod: string) {
-  return PAGES.map((p) => `  <url>
-    <loc>${SITE}/${p.slug}/</loc>
+  return LANGS.flatMap((L) => PAGES.map((b) => `  <url>
+    <loc>${SITE}${pathOf(L, b.slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en"        href="${SITE}/${p.slug}/" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}/${p.slug}/" />
-${p.images.map((s) => `    <image:image><image:loc>${SITE}${imgUrl(s)}</image:loc></image:image>`).join('\n')}
-  </url>`).join('\n')
+    <priority>${L === EN ? '0.8' : '0.7'}</priority>
+${hreflangs(b.slug, '    ', 'xhtml:link')}
+${b.images.map((s) => `    <image:image><image:loc>${SITE}${imgUrl(s)}</image:loc></image:image>`).join('\n')}
+  </url>`)).join('\n')
 }
 
+/** Every page's public path, per language (for tests and links). */
+export const PAGE_PATHS = LANGS.flatMap((L) => PAGES.map((b) => ({ lang: L.lang, base: b.slug, path: pathOf(L, b.slug), page: L.pages[b.slug] })))
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  for (const p of PAGES) {
-    for (const s of p.images) {
-      if (!IMAGES[s]) throw new Error(`${p.slug}: no image entry "${s}"`)
-      for (const small of [false, true]) {
-        const f = path.join(ROOT, 'public', imgUrl(s, small))
-        if (!existsSync(f)) throw new Error(`${p.slug}: missing ${f}`)
-        // Credit, copyright and licence inside the file, as the ImageObject says.
-        writeFileSync(f, withRights(readFileSync(f), {
-          creator: OWN, credit: IMAGES[s].credit ?? OWN, copyright: copyright(s),
-          webStatement: TERMS, licensorUrl: TERMS, description: IMAGES[s].alt, sourceType: 'screenCapture',
-        }))
-      }
+  for (const s of Object.keys(IMAGES)) {
+    for (const small of [false, true]) {
+      const f = path.join(ROOT, 'public', imgUrl(s, small))
+      if (!existsSync(f)) throw new Error(`missing ${f}`)
+      // Credit, copyright and licence inside the file, as the ImageObject says.
+      writeFileSync(f, withRights(readFileSync(f), {
+        creator: OWN, credit: IMAGES[s].credit ?? OWN, copyright: copyright(s),
+        webStatement: TERMS, licensorUrl: TERMS, description: IMAGES[s].alt, sourceType: 'screenCapture',
+      }))
     }
-    const dir = path.join(ROOT, 'public', p.slug)
-    mkdirSync(dir, { recursive: true })
-    writeFileSync(path.join(dir, 'index.html'), render(p))
-    console.log(`  ✓ /${p.slug}/ · ${p.images.length} images`)
+  }
+  for (const L of LANGS) {
+    for (const b of PAGES) {
+      const dir = path.join(ROOT, 'public', pathOf(L, b.slug))
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(path.join(dir, 'index.html'), render(L, b.slug))
+    }
+    console.log(`  ✓ ${L.lang}: ${PAGES.length} pages`)
   }
   // The pages and their images in the sitemap, between markers.
   const sm = path.join(ROOT, 'public/sitemap.xml')

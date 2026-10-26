@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ตัวอย่างดิจิทัลทวิน: คลังสินค้า อาคาร และเมืองแบบสด</title>
+  <meta name="description" content="ตัวอย่างดิจิทัลทวินแบบสดที่เปิดบนมือถือได้: คลังสินค้า AGV สินค้านำเข้าจากจีน ไอทีสำนักงานบน IFC และจัตุรัสในบาร์เซโลนาและเฮลซิงกิ" />
+  <meta name="keywords" content="ตัวอย่างดิจิทัลทวิน, เดโมดิจิทัลทวิน, ดิจิทัลทวินแบบสด, ดิจิทัลทวินเมือง, ดิจิทัลทวินอาคาร, ดิจิทัลทวินคลังสินค้า, กรณีใช้งานดิจิทัลทวิน" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/ejemplos-gemelo-digital/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitaler-zwilling-beispiele/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/exemples-jumeau-numerique/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/exemplos-gemeo-digital/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/esempi-gemello-digitale/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/exemples-besso-digital/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/digital-twin-examples/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
+  <meta property="og:title" content="ตัวอย่างดิจิทัลทวิน: คลังสินค้า อาคาร และเมืองแบบสด" />
+  <meta property="og:description" content="ตัวอย่างดิจิทัลทวินแบบสดที่เปิดบนมือถือได้: คลังสินค้า AGV สินค้านำเข้าจากจีน ไอทีสำนักงานบน IFC และจัตุรัสในบาร์เซโลนาและเฮลซิงกิ" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="th_TH" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="ดิจิทัลทวินคลังสินค้า AGV: รถนำทางอัตโนมัติหกคัน ชั้นวาง และท่าโหลดในสามมิติแบบสด" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ตัวอย่างดิจิทัลทวิน: คลังสินค้า อาคาร และเมืองแบบสด" />
+  <meta name="twitter:description" content="ตัวอย่างดิจิทัลทวินแบบสดที่เปิดบนมือถือได้: คลังสินค้า AGV สินค้านำเข้าจากจีน ไอทีสำนักงานบน IFC และจัตุรัสในบาร์เซโลนาและเฮลซิงกิ" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+
+  <link rel="preload" as="image" href="/demos/agv-warehouse-digital-twin.jpg" imagesrcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"ตัวอย่างดิจิทัลทวิน: คลังสินค้า อาคาร และเมืองแบบสด","description":"ตัวอย่างดิจิทัลทวินแบบสดที่เปิดบนมือถือได้: คลังสินค้า AGV สินค้านำเข้าจากจีน ไอทีสำนักงานบน IFC และจัตุรัสในบาร์เซโลนาและเฮลซิงกิ","url":"https://www.ifcvieweronline.eu/th/digital-twin-examples/","inLanguage":"th","primaryImageOfPage":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-800.jpg","name":"AGV หกคันหยิบ ส่ง และชาร์จในคลังสินค้าสามมิติแบบสด","description":"ดิจิทัลทวินคลังสินค้า AGV: รถนำทางอัตโนมัติหกคัน ชั้นวาง และท่าโหลดในสามมิติแบบสด","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/china-import-tracker-map-800.jpg","name":"ทุกคำสั่งซื้อจากจีนบนแผนที่เดียว เรื่องด่วนขึ้นก่อน","description":"แผนที่ติดตามสินค้านำเข้า: ใบสั่งซื้อจากจีนทางเรือ อากาศ และราง พร้อมรายการที่ต้องจัดการ","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc-800.jpg","name":"ไอทีสำนักงานบนตัวอาคาร: แอคเซสพอยต์ แร็ก UPS กล้อง เครื่องอ่านบัตร","description":"ดิจิทัลทวินไอทีบนโมเดลสำนักงาน IFC: แอคเซสพอยต์ Wi-Fi แร็ก UPS และกล้อง พร้อมสถานะสด","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona-800.jpg","name":"บาร์เซโลนา จัตุรัสกาตาลุญญา: จักรยาน จุดชาร์จ และการจราจรแบบสด","description":"ดิจิทัลทวินบาร์เซโลนา: จัตุรัสกาตาลุญญาพร้อมจักรยาน จุดชาร์จ และการจราจรแบบสด","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit-800.jpg","name":"สถานีกลางเฮลซิงกิ: ช่องจอดรถบัสอัปเดตสดเมื่อรถมาถึง","description":"ดิจิทัลทวินเฮลซิงกิ: ช่องจอดรถบัสที่สถานีกลางอัปเดตทุกครั้งที่รถมาถึง","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city-800.jpg","name":"โรงแรม IFC ในเมืองจริง พร้อมภูมิประเทศและอาคารรอบข้าง","description":"IFC Viewer แสดงโมเดล BIM ของโรงแรมที่วางในเมืองบาร์เซโลนาจริงแบบสามมิติ","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","copyrightNotice":"© 2026 IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageObject","contentUrl":"https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg","thumbnailUrl":"https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis-800.jpg","name":"แสงแดดและความร้อนตลอดปีบนทุกด้านอาคาร จากข้อมูลอากาศจริง","description":"การวิเคราะห์แสงแดดบนโมเดล IFC: แสงแดดและความร้อนตลอดปีบนทุกด้านอาคารจากข้อมูลอากาศจริง","inLanguage":"th","width":1600,"height":900,"creator":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"creditText":"IFC Viewer Online","copyrightNotice":"© 2026 IFC Viewer Online","license":"https://www.ifcvieweronline.eu/terms/","acquireLicensePage":"https://www.ifcvieweronline.eu/terms/"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"ดิจิทัลทวินคืออะไร","acceptedAnswer":{"@type":"Answer","text":"โมเดลของสถานที่จริงที่เชื่อมกับข้อมูลที่เปลี่ยนแปลง เพื่อให้เห็นว่าสิ่งต่าง ๆ อยู่ที่ไหนและอยู่ในสถานะใด ณ ขณะนั้น"}},{"@type":"Question","name":"ตัวอย่างไหนใช้ข้อมูลจริง","acceptedAnswer":{"@type":"Answer","text":"ฉากเมืองใช้ข้อมูลสาธารณะจริง ส่วนคลังสินค้า การนำเข้า และไอทีสำนักงานเป็นข้อมูลจำลองที่ระบุไว้"}},{"@type":"Question","name":"ธุรกิจของฉันมีแบบนี้ได้ไหม","acceptedAnswer":{"@type":"Answer","text":"ได้ บางระบบใช้ได้วันนี้ บางระบบจะสร้างร่วมกับพาร์ตเนอร์รายแรกในรูปแบบโครงการนำร่อง"}}]}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/th/" class="logo">IFC Viewer Online</a>
+      <a href="/msp-global/" class="nav-cta">เดโมสด →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">สด · มือถือทุกเครื่อง · ไม่ต้องติดตั้ง</p>
+        <h1>ตัวอย่างดิจิทัลทวิน <br><span class="accent">เปิดดูได้ทันที</span></h1>
+        <p class="lead">คลังสินค้า ซัพพลายเชน สำนักงาน และจัตุรัสทั้งแห่ง ทุกตัวอย่างเป็นแบบสด และเปิดได้ในเบราว์เซอร์ของมือถือทุกเครื่อง</p>
+        <a href="/msp-global/" class="cta">เปิดเดโมสดทั้งหมด →</a>
+      </div>
+    </section>
+    <section class="container shots" aria-label="ภาพหน้าจอ">
+        <figure class="shot">
+          <img src="/demos/agv-warehouse-digital-twin.jpg" srcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="ดิจิทัลทวินคลังสินค้า AGV: รถนำทางอัตโนมัติหกคัน ชั้นวาง และท่าโหลดในสามมิติแบบสด" fetchpriority="high" decoding="async" />
+          <figcaption>AGV หกคันหยิบ ส่ง และชาร์จในคลังสินค้าสามมิติแบบสด</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="แผนที่ติดตามสินค้านำเข้า: ใบสั่งซื้อจากจีนทางเรือ อากาศ และราง พร้อมรายการที่ต้องจัดการ" loading="lazy" decoding="async" />
+          <figcaption>ทุกคำสั่งซื้อจากจีนบนแผนที่เดียว เรื่องด่วนขึ้นก่อน</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/office-it-digital-twin-ifc.jpg" srcset="/demos/office-it-digital-twin-ifc-800.jpg 800w, /demos/office-it-digital-twin-ifc.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="ดิจิทัลทวินไอทีบนโมเดลสำนักงาน IFC: แอคเซสพอยต์ Wi-Fi แร็ก UPS และกล้อง พร้อมสถานะสด" loading="lazy" decoding="async" />
+          <figcaption>ไอทีสำนักงานบนตัวอาคาร: แอคเซสพอยต์ แร็ก UPS กล้อง เครื่องอ่านบัตร</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/city-digital-twin-barcelona.jpg" srcset="/demos/city-digital-twin-barcelona-800.jpg 800w, /demos/city-digital-twin-barcelona.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="ดิจิทัลทวินบาร์เซโลนา: จัตุรัสกาตาลุญญาพร้อมจักรยาน จุดชาร์จ และการจราจรแบบสด" loading="lazy" decoding="async" />
+          <figcaption>บาร์เซโลนา จัตุรัสกาตาลุญญา: จักรยาน จุดชาร์จ และการจราจรแบบสด</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/city-digital-twin-helsinki-transit.jpg" srcset="/demos/city-digital-twin-helsinki-transit-800.jpg 800w, /demos/city-digital-twin-helsinki-transit.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="ดิจิทัลทวินเฮลซิงกิ: ช่องจอดรถบัสที่สถานีกลางอัปเดตทุกครั้งที่รถมาถึง" loading="lazy" decoding="async" />
+          <figcaption>สถานีกลางเฮลซิงกิ: ช่องจอดรถบัสอัปเดตสดเมื่อรถมาถึง</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/ifc-viewer-hotel-in-city.jpg" srcset="/demos/ifc-viewer-hotel-in-city-800.jpg 800w, /demos/ifc-viewer-hotel-in-city.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="IFC Viewer แสดงโมเดล BIM ของโรงแรมที่วางในเมืองบาร์เซโลนาจริงแบบสามมิติ" loading="lazy" decoding="async" />
+          <figcaption>โรงแรม IFC ในเมืองจริง พร้อมภูมิประเทศและอาคารรอบข้าง</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="/demos/ifc-solar-facade-analysis.jpg" srcset="/demos/ifc-solar-facade-analysis-800.jpg 800w, /demos/ifc-solar-facade-analysis.jpg 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="การวิเคราะห์แสงแดดบนโมเดล IFC: แสงแดดและความร้อนตลอดปีบนทุกด้านอาคารจากข้อมูลอากาศจริง" loading="lazy" decoding="async" />
+          <figcaption>แสงแดดและความร้อนตลอดปีบนทุกด้านอาคาร จากข้อมูลอากาศจริง</figcaption>
+        </figure>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>สิ่งที่คุณได้</h2>
+        <div class="grid">
+          <div class="card"><h3>สถานที่จริง</h3><p>เมืองและภูมิประเทศจากข้อมูลแผนที่เปิด อาคารจากโมเดล IFC</p></div>
+          <div class="card"><h3>ข้อมูลสด</h3><p>จักรยาน จุดชาร์จ รถบัส และการจราจรจากแหล่งข้อมูลสาธารณะ ในเมืองที่เผยแพร่ข้อมูล</p></div>
+          <div class="card"><h3>ระบบของคุณ</h3><p>อุปกรณ์ คำสั่งซื้อจาก ERP และอัปเดตการขนส่งป้อนเข้ามุมมองเดียวกันได้</p></div>
+          <div class="card"><h3>ลิงก์เดียว</h3><p>ไม่ต้องติดตั้ง ไม่ต้องมีบัญชี ลิงก์เดียวเปิดได้ทุกหน้าจอ</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>คำถามที่พบบ่อย</h2>
+        <div class="faq">
+          <div><h3>ดิจิทัลทวินคืออะไร</h3><p>โมเดลของสถานที่จริงที่เชื่อมกับข้อมูลที่เปลี่ยนแปลง เพื่อให้เห็นว่าสิ่งต่าง ๆ อยู่ที่ไหนและอยู่ในสถานะใด ณ ขณะนั้น</p></div>
+          <div><h3>ตัวอย่างไหนใช้ข้อมูลจริง</h3><p>ฉากเมืองใช้ข้อมูลสาธารณะจริง ส่วนคลังสินค้า การนำเข้า และไอทีสำนักงานเป็นข้อมูลจำลองที่ระบุไว้</p></div>
+          <div><h3>ธุรกิจของฉันมีแบบนี้ได้ไหม</h3><p>ได้ บางระบบใช้ได้วันนี้ บางระบบจะสร้างร่วมกับพาร์ตเนอร์รายแรกในรูปแบบโครงการนำร่อง</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>ตัวอย่างสดเพิ่มเติม</h2>
+        <div class="more">
+          <a href="/th/agv-digital-twin/"><img src="/demos/agv-warehouse-digital-twin-800.jpg" width="800" height="450" alt="ดิจิทัลทวินคลังสินค้า AGV: รถนำทางอัตโนมัติหกคัน ชั้นวาง และท่าโหลดในสามมิติแบบสด" loading="lazy" decoding="async" /><span>ดิจิทัลทวิน AGV</span></a>
+          <a href="/th/china-import-tracker/"><img src="/demos/china-import-tracker-map-800.jpg" width="800" height="450" alt="แผนที่ติดตามสินค้านำเข้า: ใบสั่งซื้อจากจีนทางเรือ อากาศ และราง พร้อมรายการที่ต้องจัดการ" loading="lazy" decoding="async" /><span>ทุกคำสั่งซื้อจากจีน</span></a>
+          <a href="/th/office-it-digital-twin/"><img src="/demos/office-it-digital-twin-ifc-800.jpg" width="800" height="450" alt="ดิจิทัลทวินไอทีบนโมเดลสำนักงาน IFC: แอคเซสพอยต์ Wi-Fi แร็ก UPS และกล้อง พร้อมสถานะสด" loading="lazy" decoding="async" /><span>ดิจิทัลทวินไอทีสำนักงาน</span></a>
+          <a href="/th/ifc-viewer-examples/"><img src="/demos/ifc-viewer-hotel-model-800.jpg" width="800" height="450" alt="IFC Viewer ออนไลน์แสดงโมเดลสถาปัตย์ โครงสร้าง และงานระบบของอาคารโรงแรมทรงโค้งในสามมิติ" loading="lazy" decoding="async" /><span>ตัวอย่าง IFC Viewer</span></a>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>อยากได้แบบนี้สำหรับธุรกิจของคุณไหม</h2>
+        <p>พัฒนาตั้งแต่ต้นจนจบโดย Joel Benítez กำลังมองหาลูกค้าและพาร์ตเนอร์รายแรก</p>
+        <a href="/msp-global/#contact" class="cta">ติดต่อ →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/th/">IFC Viewer Online</a>
+        <a href="/th/agv-digital-twin/">ดิจิทัลทวิน AGV</a>
+        <a href="/th/china-import-tracker/">ทุกคำสั่งซื้อจากจีน</a>
+        <a href="/th/office-it-digital-twin/">ดิจิทัลทวินไอทีสำนักงาน</a>
+        <a href="/th/ifc-viewer-examples/">ตัวอย่าง IFC Viewer</a>
+        <a href="/th/digital-twin-examples/">ตัวอย่างดิจิทัลทวิน</a>
+        <a href="/msp-global/">เดโมสดทั้งหมด</a>
+        <a href="/th/ifc-validator-online/">ตัวตรวจสอบ IFC</a>
+      </nav>
+      <nav><a href="/digital-twin-examples/" hreflang="en" lang="en">EN</a> <a href="/es/ejemplos-gemelo-digital/" hreflang="es" lang="es">ES</a> <a href="/de/digitaler-zwilling-beispiele/" hreflang="de" lang="de">DE</a> <a href="/fr/exemples-jumeau-numerique/" hreflang="fr" lang="fr">FR</a> <a href="/pt/exemplos-gemeo-digital/" hreflang="pt" lang="pt">PT</a> <a href="/it/esempi-gemello-digitale/" hreflang="it" lang="it">IT</a> <a href="/ca/exemples-besso-digital/" hreflang="ca" lang="ca">CA</a> <a href="/zh/digital-twin-examples/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/digital-twin-examples/" hreflang="ja" lang="ja">JA</a> <a href="/th/digital-twin-examples/" hreflang="th" lang="th">TH</a></nav>
+      <p>ภาพหน้าจอ © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>
