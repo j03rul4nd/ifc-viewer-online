@@ -101,7 +101,7 @@ describe('critical-rain report', () => {
       cumRainMm: [50, 100, 200, 400], elements: ex.elements, mask: ex.mask, runoffThresholdMm: 1e9,
     })
     // Outside the mask no cell fails.
-    expect(res.steps.at(-1)!.pFail[19 * 20 + 19]).toBeNaN()
+    expect(res.steps[res.steps.length - 1].pFail[19 * 20 + 19]).toBeNaN()
     const rows = criticalRows(ex.elements, res.critical)
     const reached = rows.filter((r) => r.rainMm !== null).map((r) => r.rainMm!)
     expect(reached).toEqual([...reached].sort((a, b) => a - b))
