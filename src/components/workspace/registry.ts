@@ -6,7 +6,7 @@
 
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy } from 'lucide-react'
+import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug } from 'lucide-react'
 import type { WorkspaceData, TicketKind } from './sample-data'
 import type { CheckoutItem } from '../../lib/pricing/checkout'
 import Overview from './sections/Overview'
@@ -18,8 +18,10 @@ import Team from './sections/Team'
 import Settings from './sections/Settings'
 import Privacy from './sections/Privacy'
 import Support from './sections/Support'
+import Scenes from './sections/Scenes'
+import DataSources from './sections/DataSources'
 
-export type SectionId = 'overview' | 'projects' | 'jobs' | 'certificates' | 'team' | 'billing' | 'settings' | 'privacy' | 'support'
+export type SectionId = 'overview' | 'projects' | 'jobs' | 'certificates' | 'team' | 'billing' | 'settings' | 'privacy' | 'support' | 'scenes' | 'data'
 
 /** Plans in rank order; a section is open to its plan and every plan above. */
 export const PLAN_RANK = { pro: 1, team: 2 } as const
@@ -58,6 +60,8 @@ export const SECTIONS: SectionDef[] = [
   { id: 'projects', label: 'Projects', icon: FolderKanban, requires: 'pro', Component: Projects },
   { id: 'jobs', label: 'Cloud jobs', short: 'Jobs', icon: Cpu, requires: 'pro', Component: Jobs },
   { id: 'certificates', label: 'Certificates', short: 'Certs', icon: BadgeCheck, requires: 'pro', secondary: true, Component: Certificates },
+  { id: 'scenes', label: 'Scenes', icon: Clapperboard, requires: 'pro', secondary: true, Component: Scenes },
+  { id: 'data', label: 'Data sources', short: 'Data', icon: Plug, requires: 'pro', secondary: true, Component: DataSources },
   { id: 'team', label: 'Team', icon: Users, requires: 'team', secondary: true, pitch: 'Share projects, credits and certificates with your studio — one bill, a login per person.', Component: Team },
   { id: 'billing', label: 'Credits & billing', short: 'Billing', icon: CreditCard, requires: 'pro', Component: Billing },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, requires: 'pro', secondary: true, group: 'account', Component: Settings },
