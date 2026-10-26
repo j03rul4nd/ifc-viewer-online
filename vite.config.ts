@@ -6,6 +6,7 @@ import { generateFixPages } from './scripts/seo/generate-fix-pages'
 import { generateBlogPages } from './scripts/seo/generate-blog-pages'
 import { generateLegalPages } from './scripts/seo/generate-legal-pages'
 import { generateEbookPage } from './scripts/seo/generate-ebook-page'
+import { generateMspPage } from './scripts/seo/generate-msp-page'
 import { generateLangShells } from './scripts/seo/generate-lang-shells'
 
 // ── Static landing content injection ─────────────────────────────────────────
@@ -152,6 +153,24 @@ function generateEbookPageShell(): import('vite').Plugin {
   }
 }
 
+// ── /msp-global shell ─────────────────────────────────────────────────────────
+// dist/msp-global/index.html with its own head and a crawlable summary.
+function generateMspPageShell(): import('vite').Plugin {
+  return {
+    name: 'generate-msp-page-shell',
+    apply: 'build',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      if (!existsSync(distDir)) return
+      const r = generateMspPage(distDir)
+      // eslint-disable-next-line no-console
+      console.log(`
+  ✓ Demos page: ${r.pages} shell · ${r.errors ? `⚠ ${r.errors} errors` : 'ok'}
+`)
+    },
+  }
+}
+
 // ── Localized app home shells ────────────────────────────────────────────────
 // Generates dist/<lang>/index.html for the eight languages that had no home page
 // of their own and were therefore served the English shell with a canonical
@@ -253,7 +272,7 @@ export default defineConfig({
   // dist/index.html as its template, and injectLandingContent() appends an
   // ENGLISH <noscript> block to that file. Reversing the two would give every
   // localized shell the English copy on top of its own translated block.
-  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), generateLanguageShells(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell()],
+  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), generateLanguageShells(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell(), generateMspPageShell()],
   // Served from the domain root on Vercel (https://www.ifcvieweronline.eu/).
   // BASE_PATH is honoured if set, but defaults to '/' — the single deploy target.
   base: process.env.BASE_PATH || '/',

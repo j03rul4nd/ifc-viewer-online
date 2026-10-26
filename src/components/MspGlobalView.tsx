@@ -458,7 +458,7 @@ export default function MspGlobalView() {
   }, [])
 
   useEffect(() => {
-    document.title = 'Joel Benítez · Digital twins in the browser'
+    document.title = 'Live Digital Twin Demos: Warehouse AGVs, Imports, Office IT'
     trackEventPageViewed({ event: EVENT_ID, entry })
   }, [entry])
 
@@ -508,7 +508,7 @@ export default function MspGlobalView() {
         <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 sm:px-6 md:px-10 md:py-4">
           <p className="text-[13px] md:text-[15px]">
             <span className="font-semibold text-[var(--text)]">Joel Benítez</span>
-            <span className="text-[var(--text-faint)]"> · MSP GLOBAL 2026</span>
+            <span className="text-[var(--text-faint)]"> · shown at MSP GLOBAL 2026</span>
           </p>
           <div className="hidden items-center gap-2 md:flex">
             <a href="/msp-global/joel-benitez.vcf" download="Joel Benitez.vcf" className="rounded-lg px-4 py-2 text-[15px] text-[var(--text-dim)] hover:bg-[var(--surface)] hover:text-[var(--text)]">Save contact</a>
@@ -521,9 +521,9 @@ export default function MspGlobalView() {
         {/* 1 · One claim, one moving picture, one button. Side by side on landscape tablets. */}
         <section className="pt-4 md:pt-12 lg:grid lg:grid-cols-[5fr_7fr] lg:items-center lg:gap-12">
           <div>
-            <p className={kicker}>Digital twins</p>
+            <p className={kicker}>Live digital twin demos</p>
             <h1 className="max-w-[14ch] text-[40px] font-semibold leading-[1.03] tracking-tight sm:text-[56px] md:text-[64px] lg:text-[58px]">
-              See every site and shipment. Live.
+              Digital twins of every site and shipment. Live.
             </h1>
             <p className="mt-4 max-w-[34ch] text-[18px] leading-snug text-[var(--text-dim)] md:mt-5 md:text-[23px]">
               <strong className="font-semibold text-[var(--text)]">One link.</strong> Any phone. Nothing to install.

@@ -1168,6 +1168,16 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
   </url>
 
+  <!-- Live digital twin demos (AGV warehouse, imports, office IT, cities) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/msp-global/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/msp-global/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/msp-global/" />
+  </url>
+
   <!-- Free ebook: The IFC Delivery Handbook -->
   <url>
     <loc>https://www.ifcvieweronline.eu/ebook/</loc>
