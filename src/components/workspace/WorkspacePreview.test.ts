@@ -6,6 +6,9 @@ import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
 import { estimateCredits, SAMPLE_ACCOUNT, scenarioData, creditsLeftRatio } from './sample-data'
 import PricingSection from '../pricing/PricingSection'
+import { SECTIONS, canUse, sectionFromPath } from './registry'
+import LockedSection from './LockedSection'
+import Billing from './sections/Billing'
 
 describe('workspace preview (design on sample data)', () => {
   it('renders the overview and labels itself as sample data', () => {
@@ -25,7 +28,7 @@ describe('workspace preview (design on sample data)', () => {
   })
 
   it('checkout leaves the withdrawal waiver unticked', () => {
-    const html = renderToStaticMarkup(createElement(CheckoutDialog, { item: { kind: 'pack', id: 'pack_5', name: 'One-off', priceEur: 5 }, onClose: () => {} }))
+    const html = renderToStaticMarkup(createElement(CheckoutDialog, { item: { kind: 'pack', pack: 'pack_5' }, onClose: () => {} }))
     expect(html).toContain('right of withdrawal')
     expect(html).not.toMatch(/checked=""/)
   })
@@ -54,5 +57,32 @@ describe('workspace preview (design on sample data)', () => {
     expect(html).toContain('credits a month')
     expect(html).toContain('<table')
     expect(html).not.toContain('Get Free')
+  })
+
+  it('checkout shows the VAT breakdown before payment', () => {
+    const html = renderToStaticMarkup(createElement(CheckoutDialog, { item: { kind: 'plan', plan: 'pro', period: 'monthly' }, onClose: () => {} }))
+    expect(html).toContain('VAT 21% (ES)')
+    expect(html).toContain('Buying for a company')
+    expect(html).toMatch(/Pay .*19/)
+  })
+
+  it('every section is reachable by URL and Team is locked for Pro', () => {
+    for (const s of SECTIONS) expect(sectionFromPath(`/workspace/${s.id}`)).toBe(s.id)
+    expect(sectionFromPath('/workspace/nope')).toBe('overview')
+    const team = SECTIONS.find((s) => s.id === 'team')!
+    expect(canUse('pro', team)).toBe(false)
+    expect(canUse('team', team)).toBe(true)
+    const html = renderToStaticMarkup(createElement(LockedSection, { section: team, current: 'pro', period: 'monthly', onUpgrade: () => {} }))
+    expect(html).toContain('Upgrade to Team')
+  })
+
+  it('lists render as phone cards and as a tablet/desktop table', () => {
+    const noop = () => {}
+    const html = renderToStaticMarkup(createElement(Billing, { data: scenarioData('active'), actions: { go: noop, newJob: noop, topUp: noop, buy: noop } }))
+    expect(html).toContain('Most bought')
+    expect(html).toContain('•••• 4242')
+    const overview = renderToStaticMarkup(createElement(WorkspacePreview, { onNavigateHome: noop }))
+    expect(overview).toContain('md:hidden')
+    expect(overview).toContain('hidden md:block')
   })
 })
