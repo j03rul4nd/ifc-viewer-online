@@ -60,7 +60,7 @@ import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/
 import type { ValidationRunRecord } from '../lib/validation-analytics'
 import {
   trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened,
-  trackIssueViewed, trackIssueFixApplied, trackValidationProfileChanged, trackFeatureUsed,
+  trackIssueViewed, trackIssueFixApplied, trackFixFirstClicked, trackValidationProfileChanged, trackFeatureUsed,
 } from '../lib/analytics'
 import { buildShareUrl, buildBadgeMarkdown, validationResultToSharePayload } from '../lib/share-report'
 import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '../lib/benchmark'
@@ -1413,7 +1413,7 @@ function ExecutiveSummary({
           return (
             <div key={c.ruleId} className="flex items-center gap-1.5 -mx-1.5">
               <button
-                onClick={() => onJumpToRule(c.ruleId)}
+                onClick={() => { trackFixFirstClicked({ rule_id: c.ruleId, position: i + 1, action: 'jump', points: Math.max(1, Math.round(c.penalty)) }); onJumpToRule(c.ruleId) }}
                 className="flex items-center gap-2 flex-1 min-w-0 text-left py-1 px-1.5 rounded hover:bg-[var(--surface)] transition-colors group"
               >
                 <span className="text-[10px] font-mono text-[var(--text-faint)] w-3 shrink-0 text-center">{i + 1}</span>
@@ -1432,7 +1432,7 @@ function ExecutiveSummary({
                 <button
                   type="button"
                   data-testid="batch-fix-chip"
-                  onClick={() => onBatchFix(batchRule)}
+                  onClick={() => { trackFixFirstClicked({ rule_id: batchRule, position: i + 1, action: 'batch', points: Math.max(1, Math.round(c.penalty)) }); onBatchFix(batchRule) }}
                   disabled={!!reason}
                   title={reason ?? t('batchFix.fixAllTitle')}
                   className="px-2 h-5 mr-1.5 rounded text-[10px] border transition-colors font-medium shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"

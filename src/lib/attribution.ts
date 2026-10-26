@@ -13,7 +13,7 @@
 //     screenshots, screen-shares, or the Referer header on outbound navigation.
 //   • Entirely client-side — nothing about the visitor is sent to a server.
 
-import { registerEntrySource, trackInviteLinkOpened } from './analytics'
+import { registerEntryReferrer, registerEntrySource, trackInviteLinkOpened } from './analytics'
 import { resolveInvite } from './invite-registry'
 import { parseInvitePath } from './url-params'
 
@@ -89,6 +89,102 @@ export function deriveEntrySource(ctx: EntryContext): EntrySourceCategory {
   } catch {
     return 'unknown'
   }
+}
+
+// ── Entry referrer (search / AI / social engine), first load of the tab ──────
+// entry_source above says which of OUR surfaces brought a visitor into the app,
+// not which engine sent them. PostHog's own $session_entry_referrer is the site
+// itself for most sessions: persistence is in memory, so every full navigation
+// (landing → app, blog → app) starts a new session whose referrer is our own
+// page. So the first external referrer of the tab is kept in sessionStorage —
+// as one of these fixed categories, never the raw referrer (INV-5) — with the
+// path of our site it landed on, to match visits to Search Console pages.
+
+const KEY_REFERRER = 'ifc.entry_referrer'
+const KEY_LANDING  = 'ifc.entry_landing_path'
+
+/** Hostname patterns → category. First match wins (gemini before google). */
+const REFERRER_CATEGORIES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(^|\.)gemini\.google\.com$/,      'gemini'],
+  [/(^|\.)google\.[a-z.]+$/,          'google'],
+  [/(^|\.)bing\.com$/,                'bing'],
+  [/(^|\.)duckduckgo\.com$/,          'duckduckgo'],
+  [/(^|\.)yahoo\.[a-z.]+$/,           'yahoo'],
+  [/(^|\.)ecosia\.org$/,              'ecosia'],
+  [/(^|\.)yandex\.[a-z.]+$/,          'yandex'],
+  [/(^|\.)baidu\.com$/,               'baidu'],
+  [/(^|\.)naver\.com$/,               'naver'],
+  [/(^|\.)(chatgpt|openai)\.com$/,    'chatgpt'],
+  [/(^|\.)perplexity\.ai$/,           'perplexity'],
+  [/(^|\.)claude\.ai$/,               'claude'],
+  [/(^|\.)copilot\.microsoft\.com$/,  'copilot'],
+  [/(^|\.)github\.(com|io)$/,         'github'],
+  [/(^|\.)linkedin\.com$|^lnkd\.in$/, 'linkedin'],
+  [/(^|\.)reddit\.com$/,              'reddit'],
+  [/(^|\.)(x|twitter)\.com$|^t\.co$/, 'x'],
+  [/(^|\.)youtube\.com$/,             'youtube'],
+  [/(^|\.)medium\.com$/,              'medium'],
+  [/(^|\.)facebook\.com$/,            'facebook'],
+]
+
+/**
+ * Pure: the category of a referrer. '' → 'direct'; our own origin →
+ * 'same_site' (the tab's first page was not seen); unlisted → 'other'.
+ * The hostname is only matched, never returned.
+ */
+export function categorizeReferrer(referrer: string, origin: string): string {
+  if (!referrer) return 'direct'
+  let url: URL
+  try { url = new URL(referrer) } catch { return 'other' }
+  if (url.origin === origin) return 'same_site'
+  const host = url.hostname.toLowerCase()
+  for (const [re, category] of REFERRER_CATEGORIES) if (re.test(host)) return category
+  return 'other'
+}
+
+/**
+ * Pure: the entry referrer and landing path for this page load. What the tab
+ * stored earlier wins (first touch); a same-site referrer with nothing stored
+ * lands on the referring page's path.
+ */
+export function resolveEntryReferrer(ctx: {
+  stored:   { referrer: string | null; landing: string | null }
+  referrer: string
+  origin:   string
+  pathname: string
+}): { entry_referrer: string; entry_landing_path: string } {
+  if (ctx.stored.referrer && ctx.stored.landing) {
+    return { entry_referrer: ctx.stored.referrer, entry_landing_path: ctx.stored.landing }
+  }
+  const category = categorizeReferrer(ctx.referrer, ctx.origin)
+  let landing = ctx.pathname
+  if (category === 'same_site') {
+    try { landing = new URL(ctx.referrer).pathname } catch { /* keep this page's path */ }
+  }
+  return { entry_referrer: category, entry_landing_path: landing }
+}
+
+/** Register — and remember for the tab — where this visit came from. */
+export function captureEntryReferrer(): void {
+  if (typeof window === 'undefined') return
+  let stored: { referrer: string | null; landing: string | null } = { referrer: null, landing: null }
+  try {
+    stored = {
+      referrer: window.sessionStorage.getItem(KEY_REFERRER),
+      landing:  window.sessionStorage.getItem(KEY_LANDING),
+    }
+  } catch { /* sessionStorage blocked: this page load only */ }
+  const entry = resolveEntryReferrer({
+    stored,
+    referrer: document.referrer,
+    origin:   window.location.origin,
+    pathname: window.location.pathname,
+  })
+  try {
+    window.sessionStorage.setItem(KEY_REFERRER, entry.entry_referrer)
+    window.sessionStorage.setItem(KEY_LANDING, entry.entry_landing_path)
+  } catch { /* best effort */ }
+  registerEntryReferrer(entry)
 }
 
 export interface EntrySource {

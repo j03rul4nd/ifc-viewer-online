@@ -27,6 +27,8 @@
  *
  * Active engagement (separates passive from active users)
  *   issue_viewed           → user navigated to an issue in the 3D scene
+ *   fix_first_clicked      → a row or "Fix all N" chip of the "Fix this first" summary
+ *                            {rule_id, position, action, points}
  *   issue_fix_applied      → user applied a fix (auto-fix, rename, or batch)
  *   fix_revalidated        → the fixed file from a batch rename was exported and
  *                            checked in isolation {score_before, score_after, status}
@@ -243,6 +245,19 @@ export function registerEntrySource(props: {
 }
 
 /**
+ * Register where the visit came from (a fixed referrer category, never the raw
+ * referrer) and the path of our site it first landed on, as super-properties
+ * on every later event. See captureEntryReferrer in attribution.ts.
+ */
+export function registerEntryReferrer(props: {
+  entry_referrer:     string
+  entry_landing_path: string
+}): void {
+  if (!_initialized || _optedOut) return
+  posthog.register(props)
+}
+
+/**
  * The app was opened from a personalized invite link (?ref=/?invite=/ /i/<code>).
  * Top of the outreach funnel: invite_link_opened → file_opened →
  * validation_completed → share_report_clicked, broken down by entry_source.
@@ -386,6 +401,24 @@ export function trackIssueViewed(props: {
   severity: 'error' | 'warning' | 'info'
 }): void {
   track('issue_viewed', props)
+}
+
+/**
+ * A row of the "Fix this first" summary (the three rules costing the most
+ * points) was clicked: 'jump' opens the rule's group, 'batch' opens the
+ * "Fix all N" rename preview. issue_viewed only counts the per-element
+ * "View" button, so without this the summary — the step between the score and
+ * any fix — was invisible in the funnel.
+ */
+export function trackFixFirstClicked(props: {
+  rule_id:  string
+  /** 1–3, top row first. */
+  position: number
+  action:   'jump' | 'batch'
+  /** Score points the rule costs, rounded. */
+  points:   number
+}): void {
+  track('fix_first_clicked', props)
 }
 
 /**
