@@ -715,6 +715,17 @@ export interface SiteContextOptions {
     terrainStyle?: 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem';
     /** Terrain vertical exaggeration, 1–3. */
     exaggeration?: number;
+    /**
+     * Underground view, for tunnels, metro stations and buried utilities:
+     * `xray` makes the ground see-through, `cut` opens a pit over the model.
+     * Either lets the camera orbit below the surface. Default `surface`.
+     */
+    subsurface?: 'surface' | 'xray' | 'cut';
+    /**
+     * Mark what is under the ground ON the ground, in every mode: a buried
+     * model's outline and OpenStreetMap metro lines and tunnels. Default true.
+     */
+    subsurfaceMarkers?: boolean;
     /** Decorative cars and trains. */
     vehicles?: boolean;
 }
@@ -727,6 +738,18 @@ export interface SiteContextState {
     detail: 'simple' | 'detailed' | 'showcase';
     terrainStyle: string;
     exaggeration: number;
+    subsurface: 'surface' | 'xray' | 'cut';
+    subsurfaceMarkers: boolean;
+    /**
+     * What the underground view draws from OpenStreetMap, at ESTIMATED depth
+     * (OSM maps no depth). Null when nothing is drawn.
+     */
+    underground: {
+        road: number;
+        rail: number;
+        metro: number;
+        platform: number;
+    } | null;
     vehicles: boolean;
     placement: {
         lat: number;
