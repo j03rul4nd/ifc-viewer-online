@@ -1954,7 +1954,8 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
     if (issues.some((i) => i.ruleId === ruleId)) {
       handleJumpToRule(ruleId)
       if (sceneModels.length > 0) handleShowRuleIn3d(ruleId)
-    } else {
+    } else if (result.metadata?.coverage?.entries.some((e) => e.ruleId === ruleId && e.status === 'ok')) {
+      // Only a check that actually ran can be passed.
       toast(t('summary.rulePassed', { rule: getRuleLabel(ruleId, i18n.language) }), 'success')
     }
   }, [result, isRunning, issues, sceneModels.length, handleShowRuleIn3d, handleJumpToRule, t, i18n.language])
