@@ -6,7 +6,7 @@ import { MotionConfig } from 'framer-motion'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { initAnalytics } from './lib/analytics'
 import { analyticsAllowed } from './stores/consentStore'
-import { captureAttribution } from './lib/attribution'
+import { captureAttribution, captureEntryReferrer } from './lib/attribution'
 import { parseAppUrlParams, parseInvitePath } from './lib/url-params'
 import './index.css'
 import { installKeyboardInset } from './lib/keyboard-inset'
@@ -28,6 +28,8 @@ if (analyticsAllowed()) initAnalytics()
 // the URL. After init so the super-property attaches; before render so the URL
 // is clean by the time App derives its route.
 captureAttribution({ ref: parseAppUrlParams().ref ?? parseInvitePath() })
+// Which engine (Google, Bing, ChatGPT…) and which page of ours the tab came in on.
+captureEntryReferrer()
 
 // Clerk (F2 auth) is strictly optional AND must never ride in the anonymous
 // bundle (invariant I-1 / S-1): the provider module is imported dynamically,

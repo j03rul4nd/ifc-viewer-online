@@ -3,10 +3,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 // Mock the analytics surface so we assert on intent without a live PostHog.
 vi.mock('./analytics', () => ({
   registerEntrySource: vi.fn(),
+  registerEntryReferrer: vi.fn(),
   trackInviteLinkOpened: vi.fn(),
 }))
 
-import { captureAttribution, deriveEntrySource, getStoredEntrySource } from './attribution'
+import { captureAttribution, categorizeReferrer, deriveEntrySource, getStoredEntrySource, resolveEntryReferrer } from './attribution'
 import { registerEntrySource, trackInviteLinkOpened } from './analytics'
 
 beforeEach(() => {
@@ -160,5 +161,30 @@ describe('captureAttribution — organic path (no invite)', () => {
     expect(registerEntrySource).toHaveBeenCalledWith(
       expect.objectContaining({ entry_source: 'li_ignacy' }),
     )
+  })
+})
+
+describe('entry referrer', () => {
+  const origin = 'https://www.ifcvieweronline.eu'
+  it('maps engines to fixed categories, never the hostname', () => {
+    expect(categorizeReferrer('https://www.google.de/', origin)).toBe('google')
+    expect(categorizeReferrer('https://gemini.google.com/app', origin)).toBe('gemini')
+    expect(categorizeReferrer('https://chatgpt.com/', origin)).toBe('chatgpt')
+    expect(categorizeReferrer('https://cn.bing.com/search?q=ifc', origin)).toBe('bing')
+    expect(categorizeReferrer('https://someone.example/page', origin)).toBe('other')
+    expect(categorizeReferrer('', origin)).toBe('direct')
+    expect(categorizeReferrer(origin + '/blog/x/', origin)).toBe('same_site')
+  })
+  it('keeps the first touch of the tab', () => {
+    const stored = { referrer: 'google', landing: '/blog/ifc-model-checker/' }
+    expect(resolveEntryReferrer({ stored, referrer: origin + '/', origin, pathname: '/' }))
+      .toEqual({ entry_referrer: 'google', entry_landing_path: '/blog/ifc-model-checker/' })
+  })
+  it('lands an unseen same-site entry on the referring page', () => {
+    const stored = { referrer: null, landing: null }
+    expect(resolveEntryReferrer({ stored, referrer: origin + '/ifc-validator/', origin, pathname: '/' }))
+      .toEqual({ entry_referrer: 'same_site', entry_landing_path: '/ifc-validator/' })
+    expect(resolveEntryReferrer({ stored, referrer: 'https://www.google.com/', origin, pathname: '/de/' }))
+      .toEqual({ entry_referrer: 'google', entry_landing_path: '/de/' })
   })
 })

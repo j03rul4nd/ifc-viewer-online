@@ -26,6 +26,7 @@ import type { FixSummary } from '../../lib/fix/score-delta'
 import type { FixBatch, FixRun } from '../../stores/batchFixStore'
 import BatchFixResultCard, { BatchFixBar } from '../fix/BatchFixResultCard'
 import { toast } from '../../stores/toastStore'
+import { trackFixFirstClicked } from '../../lib/analytics'
 import { benchmarkReady, type BenchStats } from '../../lib/benchmark'
 import type { ValidationDiff } from '../../lib/validation-diff'
 import ValidationExportModal, { type ExportModelEntry } from '../ValidationExportModal'
@@ -381,7 +382,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
                         // The chip is a sibling of the row's button, never inside it.
                         <div key={c.ruleId} className="flex items-stretch gap-1.5">
                           <button
-                            onClick={() => { setFilters({ groupBy: 'rule', activeTab: 'all' }); setSearch(''); setOpenGroups((p) => new Set(p).add(c.ruleId)); setShownAll((p) => new Set(p).add(c.ruleId)) }}
+                            onClick={() => { trackFixFirstClicked({ rule_id: c.ruleId, position: i + 1, action: 'jump', points: Math.max(1, Math.round(c.penalty)) }); setFilters({ groupBy: 'rule', activeTab: 'all' }); setSearch(''); setOpenGroups((p) => new Set(p).add(c.ruleId)); setShownAll((p) => new Set(p).add(c.ruleId)) }}
                             className="flex items-center gap-2.5 flex-1 min-w-0 text-left py-2 px-2.5 rounded-xl active:scale-[0.99] transition-transform"
                             style={{ background: 'var(--bg)', ...TAP }}
                           >
@@ -400,7 +401,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
                               data-testid="batch-fix-chip"
                               // Not `disabled`: a touch screen shows no tooltip,
                               // so a tap on the greyed chip says why instead.
-                              onClick={() => (reason ? toast(reason, 'info') : onOpenBatchRename(batchRule))}
+                              onClick={() => { if (reason) { toast(reason, 'info'); return } trackFixFirstClicked({ rule_id: batchRule, position: i + 1, action: 'batch', points: Math.max(1, Math.round(c.penalty)) }); onOpenBatchRename(batchRule) }}
                               aria-disabled={reason ? true : undefined}
                               title={reason ?? t('batchFix.fixAllTitle')}
                               className={`shrink-0 px-3 rounded-xl text-[11.5px] font-semibold transition-transform ${reason ? 'opacity-40' : 'active:scale-[0.97]'}`}
