@@ -29,6 +29,14 @@ function patchMeta(selector: string, content: string): void {
   if (el) el.content = content
 }
 
+// The language the page was served in. Its static <head> (index.html,
+// public/es/index.html, the generated /<lang>/ shells) already carries the
+// title and description written for search listings; the runtime copy in
+// LOCALE_META used to replace them on every load, so Google rendered the older,
+// longer EN/ES titles instead of the ones in the HTML. Meta is now patched only
+// once the user switches to a language other than the one the page was served in.
+const SERVED_LANG = typeof document === 'undefined' ? '' : document.documentElement.lang.split('-')[0]
+
 function normaliseLang(raw: string): string {
   const code = raw.split('-')[0]
   return SUPPORTED_LOCALES.includes(code) ? code : 'en'
@@ -62,7 +70,7 @@ export function useSeo({ enabled = true }: SeoOptions = {}): void {
     // language, with or without a LOCALE_META entry.
     document.documentElement.lang = locale
 
-    if (meta) {
+    if (meta && locale !== SERVED_LANG) {
       // 1. Page title
       document.title = meta.title
 

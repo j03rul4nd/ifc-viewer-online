@@ -7602,14 +7602,15 @@ Project acceptance or rejection`,
   // ── Article #7: IFC Model Checker — Pillar ────────────────────────────────
   {
     slug: 'ifc-model-checker',
-    title: 'IFC Model Checker: The Complete Guide (2026)',
+    title: 'IFC Model Checker: Free Online Validation Guide (2026)',
+    seoDescription: 'Free IFC model checker in your browser: validate IFC files against 44 rules and IDS, get a 0–100 health check score and a PDF report. No install, no upload.',
     excerpt: 'What IFC model checking actually means, how the three validation layers work, and how to use a checker to enforce quality gates before every model delivery.',
     date: '2026-06-30',
     author: 'IFC Viewer Online',
     category: 'Validation',
     categorySlug: 'validation',
     readTimeMin: 26,
-    keywords: ['IFC model checker', 'IFC validation', 'IFC quality check', 'BIM model checking', 'IFC Health Score', 'IDS validation', 'ISO 19650', 'BIM coordinator'],
+    keywords: ['IFC model checker', 'IFC model validation', 'model health check IFC', 'no-install IFC model checker', 'IFC validation', 'IFC quality check', 'BIM model checking', 'IFC Health Score', 'IDS validation', 'ISO 19650', 'BIM coordinator'],
     faqs: [
       { q: 'What is an IFC model checker?', a: 'An IFC model checker is a tool that automatically validates IFC files against structural rules (schema compliance), quality rules (naming, geometry, property completeness), and project-specific requirements (IDS 1.0). It produces a pass/fail report and a numerical quality score so BIM coordinators can enforce delivery standards without opening each model manually.' },
       { q: 'What is the difference between an IFC viewer and an IFC model checker?', a: 'A viewer lets you see geometry and browse properties. A checker validates the data structure — it finds missing property sets, duplicate GUIDs, broken spatial hierarchy, geometry errors, and IDS non-conformances that are invisible to the eye. Many tools combine both, but the checking engine is a separate function from the renderer.' },
@@ -10618,6 +10619,8 @@ export const BLOG_POSTS_FR: BlogPost[] = [
 
 export const RETIRED_POSTS: Readonly<Record<string, string>> = {
   'ifc-model-checker-guide': 'ifc-model-checker',
+  // Same FAQ and the same query as the pillar: 93 impressions in 3 months, page 5.
+  'ifc-model-checker-vs-ifc-viewer': 'ifc-model-checker',
 }
 
 function relinkRetired(value: unknown): unknown {

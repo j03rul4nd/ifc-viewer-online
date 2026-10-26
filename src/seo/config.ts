@@ -34,14 +34,14 @@ export interface LocaleMeta {
  */
 export const LOCALE_META: Record<string, LocaleMeta> = {
   en: {
-    title:       'IFC Viewer Online — Free Browser-Based BIM Viewer, Validator & Editor',
-    description: `Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Health Score 0–100 in 30 seconds. ${RULE_COUNT} rules + buildingSMART IDS, GUID auto-fix, IFC export.`,
+    title:       'Free IFC Viewer Online — IFC File & BIM Model Viewer',
+    description: 'Free online IFC file viewer and BIM model viewer. Open IFC files in your browser, no install or upload. View, measure, edit and check them in 30 seconds.',
     ogLocale:    'en_US',
     twitterDescription: 'Browser-only IFC viewer with validation, GUID auto-fix, property editing and IFC/GLB export. No login, no upload. Runs via WebAssembly.',
   },
   es: {
-    title:       'IFC Viewer Online — Visor BIM Gratuito, Validador y Editor en el Navegador',
-    description: `Visor, validador y editor IFC gratuito. Abre cualquier archivo IFC en tu navegador — sin login, sin subida, sin plugins. Health Score 0–100 en 30 segundos. ${RULE_COUNT} reglas + IDS de buildingSMART, corrección GUID, exportar IFC.`,
+    title:       'Visor IFC Online — Gratis, Sin Instalación, en tu Navegador',
+    description: 'Abre un IFC en el navegador y obtén un Health Score de 0 a 100 en menos de 30 segundos. Sin cuenta, sin subir nada, sin instalar.',
     ogLocale:    'es_ES',
     twitterDescription: 'Visor IFC en el navegador con validación, corrección GUID, edición de propiedades y exportación IFC/GLB. Sin login, sin subida. Funciona con WebAssembly.',
   },

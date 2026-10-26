@@ -265,7 +265,8 @@
     "label": "LÖSUNGEN",
     "title": "Beheben Sie jeden IFC-Validierungsfehler",
     "subtitle": "Schritt-für-Schritt-Lösungen für jede Prüfung, mit konkreten Anleitungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, ohne Upload.",
-    "cta": "Alle Lösungen ansehen"
+    "cta": "Alle Lösungen ansehen",
+    "checkerCta": "IFC Model Checker: der komplette Leitfaden"
   },
   "demoGallery": {
     "title": "Demomodelle entdecken",

@@ -1033,13 +1033,21 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               ))}
             </div>
 
-            {/* Link to the full hub (all 38 checks) */}
-            <div className="text-center mt-8 sm:mt-10">
+            {/* Link to the full hub (all checks), and to the model-checker pillar:
+                the page the validation queries in Search Console should land on */}
+            <div className="flex flex-wrap justify-center gap-3 mt-8 sm:mt-10">
               <a
                 href={fixBase}
                 className="inline-flex items-center gap-2 h-[38px] px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
               >
                 {t('fixGuides.cta')}
+                <Icons.ArrowRight size={14} />
+              </a>
+              <a
+                href={`${blogBase}ifc-model-checker/`}
+                className="inline-flex items-center gap-2 h-[38px] px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
+              >
+                {t('fixGuides.checkerCta')}
                 <Icons.ArrowRight size={14} />
               </a>
             </div>

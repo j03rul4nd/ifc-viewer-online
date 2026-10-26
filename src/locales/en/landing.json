@@ -293,7 +293,8 @@
     "label": "FIX GUIDES",
     "title": "Fix any IFC validation error",
     "subtitle": "Step-by-step fixes for every check, with concrete instructions for Revit, ArchiCAD, Tekla and Allplan. Free, no upload.",
-    "cta": "Browse all fix guides"
+    "cta": "Browse all fix guides",
+    "checkerCta": "IFC model checker: complete guide"
   },
   "demoGallery": {
     "title": "Explore demo models",
@@ -326,6 +327,6 @@
     "fixGuide": "Fix IFC errors"
   },
   "seo": {
-    "description": "Free online IFC viewer: open IFC files and BIM models in your browser with no install or upload. View, measure, edit and check them in 30 seconds."
+    "description": "Free online IFC file viewer and BIM model viewer. Open IFC files in your browser, no install or upload. View, measure, edit and check them in 30 seconds."
   }
 }
