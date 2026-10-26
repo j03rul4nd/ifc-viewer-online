@@ -8,6 +8,7 @@ import { initAnalytics } from './lib/analytics'
 import { analyticsAllowed } from './stores/consentStore'
 import { captureAttribution, captureEntryReferrer } from './lib/attribution'
 import { parseAppUrlParams, parseInvitePath } from './lib/url-params'
+import { useValidationStore } from './stores/validationStore'
 import './index.css'
 import { installKeyboardInset } from './lib/keyboard-inset'
 import { bootScene, hasSceneInLocation } from './lib/scene-doc/scene-boot'
@@ -30,6 +31,18 @@ if (analyticsAllowed()) initAnalytics()
 captureAttribution({ ref: parseAppUrlParams().ref ?? parseInvitePath() })
 // Which engine (Google, Bing, ChatGPT…) and which page of ours the tab came in on.
 captureEntryReferrer()
+
+// `?rule=` (the /fix/<rule>/ guides): make sure that rule runs, even when the
+// default profile leaves it off (classification, naming…) — otherwise the link
+// would report a pass for a check it never made. Session only: rules are not
+// persisted, the chosen profile is.
+{
+  const rule = parseAppUrlParams().rule
+  const vs = useValidationStore.getState()
+  if (rule && (vs.rules as unknown as Record<string, unknown>)[rule] === false) {
+    vs.setRules({ ...vs.rules, [rule]: true })
+  }
+}
 
 // Clerk (F2 auth) is strictly optional AND must never ride in the anonymous
 // bundle (invariant I-1 / S-1): the provider module is imported dynamically,
