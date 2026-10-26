@@ -20,6 +20,7 @@ import { isGisEnabled } from '../lib/geo/gis-flag'
 import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { isFloodEnabled } from '../features/flood/flag'
+import { isHazardEnabled } from '../features/hazard/flag'
 import { useFloodStore } from '../features/flood/store'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
@@ -787,16 +788,18 @@ export default function Toolbar({
         <ToolMenu
           id="tools" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={ToolsMenuSVG} label={t('tools')} title={t('toolsMenu')}
-          dot={toolsActive} disabled={content.models === 0} align="right"
+          // A slope-hazard study needs no model (a KMZ and the map's relief):
+          // the map and the flood panel open on an empty scene then.
+          dot={toolsActive} disabled={content.models === 0 && !isHazardEnabled()} align="right"
         >
           <MenuLabel>{t('menu.inspect')}</MenuLabel>
           <MenuItem icon={MeasureSVG} label={t('measure')} active={measurementPanelOpen}
-            badge={activeMeasurementTool !== 'none' ? '●' : undefined}
+            badge={activeMeasurementTool !== 'none' ? '●' : undefined} disabled={content.models === 0}
             onClick={() => { toggleMeasurementPanel(); setOpenMenu(null) }} />
           <MenuItem icon={SectionSVG} label={t('section')} active={clipPanelOpen}
-            badge={clipPlaneCount > 0 ? clipPlaneCount : undefined}
+            badge={clipPlaneCount > 0 ? clipPlaneCount : undefined} disabled={content.models === 0}
             onClick={() => { toggleClipPanel(); setOpenMenu(null) }} />
-          <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen}
+          <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen} disabled={content.models === 0}
             badge={activePlanViewId ? '●' : undefined}
             onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
           {(isGisEnabled() || isSolarEnabled() || isFloodEnabled()) && (

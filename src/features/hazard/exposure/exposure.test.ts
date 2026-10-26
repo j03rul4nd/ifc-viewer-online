@@ -106,7 +106,7 @@ describe('critical-rain report', () => {
     const reached = rows.filter((r) => r.rainMm !== null).map((r) => r.rainMm!)
     expect(reached).toEqual([...reached].sort((a, b) => a - b))
     const csv = criticalRainCsv(rows)
-    expect(csv.split('\n')[0]).toBe('id,name,kind,critical_rain_mm,cause')
+    expect(csv.split('\n')[0]).toBe('id,name,kind,critical_rain_mm,cause,unstable_without_rain')
     expect(csv).toContain(',I.E. N° 501 & anexo,school,')
     const gj = JSON.parse(criticalRainGeoJson(rows, ex.elements, (c) => ({ lat: (Math.floor(c / 20) + 0.5) * 10 / 1e5, lon: ((c % 20) + 0.5) * 10 / 1e5 })))
     const school = gj.features.find((f: { properties: { kind: string } }) => f.properties.kind === 'school')

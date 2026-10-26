@@ -1,0 +1,112 @@
+{
+  "title": "Lluvia y laderas",
+  "intro": "Cuánta lluvia hace fallar las laderas: escorrentía (número de curva SCS), probabilidad de deslizamiento superficial (talud infinito, Monte Carlo) y el recorrido probable de un flujo de detritos, paso a paso durante la tormenta. Carga el ámbito como KMZ/KML para obtener la lluvia crítica de sus viviendas, instituciones educativas, establecimientos de salud y vías.",
+  "kmz": {
+    "load": "Cargar KMZ / KML",
+    "replace": "Cambiar",
+    "remove": "Quitar",
+    "none": "Sin ámbito: la extensión de la rejilla, elementos de OpenStreetMap",
+    "empty": "El fichero no tiene marcas de posición.",
+    "failed": "No se pudo leer el fichero: {{message}}",
+    "needsMap": "Activa el mapa para situar un KMZ (sus coordenadas son WGS84) y usar el relieve.",
+    "anchored": "El ámbito sitúa la escena: activa el mapa (con relieve) y prepara la rejilla.",
+    "rebuild": "Vuelve a preparar la rejilla para que cubra el ámbito."
+  },
+  "soil": {
+    "group": "Grupo de suelo",
+    "moisture": "Humedad previa",
+    "amc": {
+      "I": "Seco (AMC I)",
+      "II": "Normal (AMC II)",
+      "III": "Húmedo, tras lluvias (AMC III)"
+    },
+    "cover": "Cobertura sin mapear",
+    "cohesion": "Cohesión c′",
+    "friction": "Fricción φ′",
+    "depth": "Espesor del suelo",
+    "weight": "Peso unitario γ"
+  },
+  "cover": {
+    "forest": "Bosque",
+    "shrub": "Matorral",
+    "grass": "Pastizal",
+    "crop": "Cultivo",
+    "bare": "Suelo desnudo",
+    "urban": "Urbano"
+  },
+  "runout": {
+    "angle": "Ángulo de alcance de detritos",
+    "maxRain": "Probar lluvia hasta"
+  },
+  "actions": {
+    "run": "Calcular",
+    "rerun": "Recalcular",
+    "needsGrid": "Prepara antes la rejilla (arriba).",
+    "progress": "Paso de lluvia {{done}} de {{of}}"
+  },
+  "timeline": {
+    "play": "Reproducir la tormenta",
+    "pause": "Pausa",
+    "label": "Paso de lluvia",
+    "storm": "{{mm}} mm caídos · minuto {{min}} de la tormenta",
+    "beyond": "{{mm}} mm acumulados (más allá de esta tormenta)"
+  },
+  "layer": {
+    "title": "Capa",
+    "susceptibility": "Deslizamientos",
+    "runoff": "Escorrentía",
+    "debris": "Detritos",
+    "note": {
+      "susceptibility": "Probabilidad de que la ladera falle (FS < 1) según se empapa. Morado: falla incluso sin lluvia. Marrón: recorridos y depósitos probables de detritos. Azul: agua por las quebradas.",
+      "runoff": "Lluvia que ha escurrido hasta ahora, mm (número de curva SCS).",
+      "debris": "Por dónde viajan (marrón claro) y dónde se detienen (marrón oscuro) los flujos de las roturas probables."
+    }
+  },
+  "view": {
+    "block": "Maqueta (recortar el bloque, ocultar el mapa)",
+    "labels": "Etiquetas",
+    "frame": "Encuadrar el ámbito"
+  },
+  "report": {
+    "grid": "Rejilla de peligro",
+    "cn": "Número de curva medio",
+    "elements": "Elementos expuestos",
+    "source": {
+      "kmz": "KMZ · {{housing}} viviendas · {{school}} II.EE. · {{health}} salud · {{road}} vías · {{other}} otros",
+      "osm": "OpenStreetMap · {{housing}} viviendas · {{school}} II.EE. · {{health}} salud · {{road}} vías",
+      "none": "Ninguno"
+    },
+    "coarsened": "Calculado con celdas {{k}}× las de la inundación, para que sea interactivo.",
+    "outside": "{{n}} marcas caen fuera de la rejilla y no se evalúan.",
+    "dry": "{{ha}} ha fallan incluso sin lluvia con este suelo (morado): demasiado empinadas para él, normalmente roca o escarpes. No fijan lluvia crítica; revísalas en campo."
+  },
+  "table": {
+    "title": "Lluvia crítica",
+    "element": "Elemento",
+    "rain": "Lluvia",
+    "never": "> {{mm}} mm",
+    "empty": "No hay elementos expuestos en el ámbito.",
+    "csv": {
+      "id": "id",
+      "name": "nombre",
+      "kind": "tipo",
+      "rain": "lluvia_critica_mm",
+      "cause": "causa",
+      "dry": "inestable_sin_lluvia"
+    },
+    "dry": "Sobre una ladera que falla sin lluvia"
+  },
+  "kind": {
+    "housing": "Vivienda",
+    "school": "Institución educativa",
+    "health": "Establecimiento de salud",
+    "road": "Vía",
+    "other": "Otro"
+  },
+  "cause": {
+    "landslide": "deslizamiento",
+    "debris": "flujo de detritos",
+    "runoff": "escorrentía"
+  },
+  "disclaimer": "Herramienta referencial para comunicar el peligro. No reemplaza una evaluación de riesgos oficial (p. ej. EVAR según CENEPRED), el estudio de campo ni la calibración propia de un sistema de alerta temprana."
+}

@@ -15,6 +15,7 @@
 import type { SubsurfaceMode } from '../../lib/geo/subsurface'
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
 import { useGeoStore } from '../../stores/geoStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useValidationStore } from '../../stores/validationStore'
@@ -480,9 +481,14 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
 
   const showOnMap = useCallback(async (): Promise<void> => {
     const activeModelId = useSceneStore.getState().activeModelId
-    if (!activeModelId || !viewerApiRef.current) return
+    // No model, but a scan / a study area (KMZ) anchored the scene and wrote
+    // the map's placement: the map opens there.
+    const anchored = !activeModelId && useSceneAnchorStore.getState().anchor ? useGeoStore.getState().placement : null
+    if ((!activeModelId && !anchored) || !viewerApiRef.current) return
     if (!useGeoStore.getState().consentGiven) { setFlow({ kind: 'consent' }); return }
     setFlow(null)
+    if (anchored) { await enableWithPlacement(anchored, null); return }
+    if (!activeModelId) return
 
     const g = await ensureGeorefExtracted(activeModelId)
     trackMapGeorefExtracted({

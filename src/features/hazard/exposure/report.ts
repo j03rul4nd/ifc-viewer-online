@@ -13,7 +13,7 @@ export interface CriticalRow extends CriticalRain {
 export function criticalRows(elements: ExposedElement[], critical: CriticalRain[]): CriticalRow[] {
   const byId = new Map(critical.map((c) => [c.id, c]))
   return elements
-    .map((e) => ({ name: e.name, kind: e.kind, ...(byId.get(e.id) ?? { id: e.id, rainMm: null, cause: null }) }))
+    .map((e) => ({ name: e.name, kind: e.kind, ...(byId.get(e.id) ?? { id: e.id, rainMm: null, cause: null, dryUnstable: false }) }))
     // Most exposed first: lowest critical rain, the never-reached last.
     .sort((a, b) => (a.rainMm ?? Infinity) - (b.rainMm ?? Infinity) || a.name.localeCompare(b.name))
 }
@@ -24,9 +24,11 @@ const csvCell = (v: string | number | null): string => {
   return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
-export function criticalRainCsv(rows: CriticalRow[], headers = ['id', 'name', 'kind', 'critical_rain_mm', 'cause']): string {
+export function criticalRainCsv(rows: CriticalRow[], headers = ['id', 'name', 'kind', 'critical_rain_mm', 'cause', 'unstable_without_rain']): string {
   const lines = [headers.join(',')]
-  for (const r of rows) lines.push([r.id, r.name, r.kind, r.rainMm === null ? null : Math.round(r.rainMm * 10) / 10, r.cause].map(csvCell).join(','))
+  for (const r of rows) {
+    lines.push([r.id, r.name, r.kind, r.rainMm === null ? null : Math.round(r.rainMm * 10) / 10, r.cause, r.dryUnstable ? 1 : 0].map(csvCell).join(','))
+  }
   return lines.join('\n') + '\n'
 }
 
@@ -40,7 +42,7 @@ export function criticalRainGeoJson(
     type: 'FeatureCollection',
     features: rows.map((r) => ({
       type: 'Feature',
-      properties: { id: r.id, name: r.name, kind: r.kind, critical_rain_mm: r.rainMm, cause: r.cause },
+      properties: { id: r.id, name: r.name, kind: r.kind, critical_rain_mm: r.rainMm, cause: r.cause, unstable_without_rain: r.dryUnstable },
       geometry: {
         type: 'MultiPoint',
         coordinates: (byId.get(r.id)?.cells ?? []).map((c) => {

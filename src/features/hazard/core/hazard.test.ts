@@ -128,10 +128,23 @@ describe('storm sweep', () => {
       dem: valley(5, 5, 10, 0), cn: new Float32Array(25).fill(75), cumRainMm: [50, 100],
       elements: [{ id: 'flat', name: 'Flat', kind: 'other', cells: [12] }],
     })
-    expect(plain.critical[0]).toEqual({ id: 'flat', rainMm: null, cause: null })
+    expect(plain.critical[0]).toEqual({ id: 'flat', rainMm: null, cause: null, dryUnstable: false })
     // Instability grows with rain.
     const mid = 25 * 5 + 2
     expect(res.steps[res.steps.length - 1].pFail[mid]).toBeGreaterThanOrEqual(res.steps[0].pFail[mid])
     expect(rainLadder(100, 25)).toEqual([25, 50, 75, 100])
+  })
+  it('keeps slopes that fail without rain out of the critical rain', () => {
+    // 60° with a cohesionless soil fails dry: no rain threshold describes it.
+    const dem = valley(5, 12, 10, 60)
+    const res = runHazard({
+      dem, cn: new Float32Array(60).fill(75), cumRainMm: [20, 40], runoffThresholdMm: Infinity,
+      soil: { mean: { cohesionKPa: 0, frictionDeg: 30, unitWeightKNm3: 18, depthM: 1.5 }, cov: { cohesionKPa: 0, frictionDeg: 0.05, unitWeightKNm3: 0.05, depthM: 0.1 } },
+      elements: [{ id: 'cliff', name: 'Cliff house', kind: 'housing', cells: [6 * 5 + 2] }],
+    })
+    expect(res.dryUnstable[6 * 5 + 2]).toBe(1)
+    expect(res.critical[0]).toMatchObject({ rainMm: null, cause: null, dryUnstable: true })
+    // And it starts no debris flow.
+    expect(res.steps[1].debrisPath.every((v) => v === 0)).toBe(true)
   })
 })

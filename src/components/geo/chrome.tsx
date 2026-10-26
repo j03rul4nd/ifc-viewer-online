@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { useGeoStore } from '../../stores/geoStore'
 import { useSceneStore } from '../../stores/sceneStore'
+import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
 import { normalizeDeg } from '../../lib/geo/geo-math'
 import { formatTriangles, lowerDetail } from '../../lib/geo/scene-budget'
 import { useGeoCtl } from './useGeoController'
@@ -66,6 +67,8 @@ export function MapHero() {
   const { t } = useTranslation('geo')
   const ctl = useGeoCtl()
   const activeModelId = useSceneStore((s) => s.activeModelId)
+  // A scan or a study area (KMZ) anchored the scene without a model: the map can open there.
+  const sceneAnchored = useSceneAnchorStore((s) => s.anchor !== null)
   const { mapMode, mapErrorKey, placement, degraded, editing, extraction } = useGeoStore(useShallow((s) => ({
     mapMode: s.mapMode,
     mapErrorKey: s.mapErrorKey,
@@ -123,7 +126,7 @@ export function MapHero() {
         variant="primary"
         size="lg"
         onClick={() => { void ctl.showOnMap() }}
-        disabled={!activeModelId || starting}
+        disabled={(!activeModelId && !sceneAnchored) || starting}
       >
         {starting && <Spinner size={11} />}
         {starting ? t('enable.starting') : mapMode === 'error' ? t('enable.retry') : t('enable.show')}
@@ -136,7 +139,7 @@ export function MapHero() {
           {t('panel.cancel')}
         </button>
       )}
-      {!activeModelId && <Hint>{t('enable.noModel')}</Hint>}
+      {!activeModelId && !sceneAnchored && <Hint>{t('enable.noModel')}</Hint>}
       {georefKey && extraction && mapMode === 'off' && (
         <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-faint)] leading-snug">
           <StatusDot status={extraction.status} />

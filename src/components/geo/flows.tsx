@@ -11,6 +11,7 @@ import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '../../stores/geoStore'
+import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { WGS84_RADIUS, normalizeDeg } from '../../lib/geo/geo-math'
 import { useGeoCtl } from './useGeoController'
@@ -364,7 +365,10 @@ export function ConsentDialog() {
   const { t } = useTranslation('geo')
   const ctl = useGeoCtl()
   const asking = ctl.flow?.kind === 'consent'
-  const activeModelId = useSceneStore((s) => s.activeModelId)
+  // A model, or a scan / study area (KMZ) that anchored the scene without one.
+  const modelId = useSceneStore((s) => s.activeModelId)
+  const anchored = useSceneAnchorStore((s) => s.anchor !== null)
+  const activeModelId = modelId ?? (anchored ? 'scene-anchor' : null)
   const isMobile = useIsMobile()
   // While a link's live-data question is up too, both are asked as one
   // (ExternalDataPrompt): this question waits there, and steps aside. It also

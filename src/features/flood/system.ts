@@ -59,6 +59,10 @@ export interface FloodGeoLike {
   getOsmContext?(): Promise<OsmContext | null>
   /** Scene Y (true heights) of an absolute elevation on the map's datum: where the sea stands. */
   sceneYOfElevation?(elevationM: number): number | null
+  /** Scene point of a WGS84 position on the map (null off the map). */
+  sceneOfLatLon?(lat: number, lon: number): { x: number; y: number; z: number } | null
+  /** WGS84 of a scene point. */
+  geoOfScenePoint?(p: THREE.Vector3, onTerrain: boolean): { lat: number; lon: number; elevationM: number | null } | null
 }
 
 export interface FloodContext {
@@ -141,6 +145,26 @@ export interface PrepareOptions {
    */
   fitGround?: boolean
   onStage?(stage: 'geometry' | 'raster' | 'terrain' | 'layers'): void
+  /**
+   * Scene points the grid must also cover (a study area read from a KMZ).
+   * With these the study runs without any model loaded: the ground is then
+   * the map's relief or the DEM, never fitted to a ground floor.
+   */
+  extentPoints?: PlanPoint[]
+}
+
+/** What the slope-hazard study reads from a prepared grid (features/hazard). */
+export interface HazardBasis {
+  nx: number
+  ny: number
+  dx: number
+  frame: GridPlan['frame']
+  /** Bed per cell, scene Y (true heights, as the solver sees them). */
+  bed: Float32Array
+  /** Bed per cell as drawn (the map's exaggeration included). */
+  displayBed: Float32Array
+  blocked: Uint8Array
+  osm: OsmContext | null
 }
 
 export type DemNote = 'reprojected' | 'assumedSameCrs' | 'sameCrs' | 'noHeightDatum' | 'notGeoreferenced' | 'outside'
@@ -360,6 +384,8 @@ export interface FloodSystemAPI {
    */
   setRivers(r: RiversRequest | null): RiversReport | null
   isPrepared(): boolean
+  /** The prepared grid for the slope-hazard study; null before prepare(). */
+  getHazardBasis(): HazardBasis | null
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
   dispose(): void
@@ -395,6 +421,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let georef: FloodGeoref | null = null
   // ── The neighbourhood (OSM) ──
   let osmSurface: OsmSurface | null = null
+  let osmContext: OsmContext | null = null
   /** The grid's own initial water, before any sea was added (setCoast). */
   let baseH0: Float32Array | undefined
   /** A coastal sea is standing on the grid: the run keeps its edges closed. */
@@ -668,7 +695,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       candidates.clear()
       lastAffected = null
       const ids = ctx.getLoadedModelIds()
-      if (!ids.length) throw new Error('flood: no model loaded')
+      if (!ids.length && !o.extentPoints?.length) throw new Error('flood: no model loaded')
       // Models unloaded since the last study take their geometry with them.
       for (const [id, m] of geometry) {
         if (ids.includes(id)) continue
@@ -703,6 +730,9 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
           if (!fp) points.push({ x: b.center.x - b.size.x / 2, z: b.center.z - b.size.z / 2 }, { x: b.center.x + b.size.x / 2, z: b.center.z + b.size.z / 2 })
         }
       }
+      // The ground fit and an undated DEM look under the MODELS only, never the study area.
+      const modelPoints = [...points]
+      if (o.extentPoints) points.push(...o.extentPoints)
       if (!points.length) throw new Error('flood: the models have no extent')
       const tGeo = performance.now()
 
@@ -723,6 +753,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       if (geo?.getOsmContext && o.useOsm !== false) {
         try { osm = await geo.getOsmContext() } catch (err) { osmError = (err as Error)?.message ?? String(err) }
       }
+      osmContext = osm
       const proxies: THREE.Mesh[] = []
       if (geo && o.includeMapBuildings && !osm) {
         geo.getContextRoot()?.traverseVisible((obj) => {
@@ -746,7 +777,14 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         }
       }
 
-      const groundY = o.plane.y ?? await autoGroundY(ids)
+      // Without models there is no ground floor: the plane (only used where no
+      // other ground reaches) stands at the median of the map under the area.
+      const mapMedian = (): number => {
+        if (!mapDrawn) return 0
+        const v = points.map((q) => mapDrawn!(q.x, q.z)).filter((y): y is number => y !== null && Number.isFinite(y))
+        return v.length ? median(v) : 0
+      }
+      const groundY = o.plane.y ?? (modelPoints.length ? await autoGroundY(ids) : mapMedian())
       const plane: PlaneGround = { y: groundY, slopePct: o.plane.slopePct, towardsDeg: o.plane.towardsDeg }
 
       // An imported DEM, through the model's georeference.
@@ -806,7 +844,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
           else {
             // No height datum in the file: stand the DEM on the project's ground under the model.
             demNotes.push('noHeightDatum')
-            const under = points.map((p) => raw(p.x, p.z)).filter(Number.isFinite)
+            const under = (modelPoints.length ? modelPoints : points).map((p) => raw(p.x, p.z)).filter(Number.isFinite)
             const off = groundY - median(under)
             shift = (elev) => elev + off
           }
@@ -824,12 +862,13 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       let seaYDem: number | null = null
       let seaYMap: number | null = null
       {
-        const xs = points.map((q) => q.x)
-        const zs = points.map((q) => q.z)
+        const xs = modelPoints.map((q) => q.x)
+        const zs = modelPoints.map((q) => q.z)
         const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]
-        const samples: PlanPoint[] = [...points]
-        for (let a = 0; a < 5; a++) for (let b = 0; b < 5; b++) samples.push({ x: x0 + ((x1 - x0) * (a + 0.5)) / 5, z: z0 + ((z1 - z0) * (b + 0.5)) / 5 })
-        const fit = o.fitGround !== false
+        const samples: PlanPoint[] = [...modelPoints]
+        if (modelPoints.length) for (let a = 0; a < 5; a++) for (let b = 0; b < 5; b++) samples.push({ x: x0 + ((x1 - x0) * (a + 0.5)) / 5, z: z0 + ((z1 - z0) * (b + 0.5)) / 5 })
+        // No model: nothing to fit the ground to.
+        const fit = o.fitGround !== false && modelPoints.length > 0
         /** Plane level minus the ground under the model; null within tolerance or unreadable. */
         const offsetOf = (fn: (x: number, z: number) => number | null): number | null => {
           const under: number[] = []
@@ -1365,6 +1404,13 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       if (!removePainter && ctx.addCapturePainter) {
         removePainter = ctx.addCapturePainter((c, w, h, sc) => !!(overlay && water && view.visible && overlay(c, w, h, sc)))
       }
+    },
+
+    getHazardBasis() {
+      if (!grid || !plan || !displayBed) return null
+      const bed = new Float32Array(grid.z.length)
+      for (let c = 0; c < bed.length; c++) bed[c] = grid.z[c] + grid.zRef
+      return { nx: plan.nx, ny: plan.ny, dx: plan.dx, frame: plan.frame, bed, displayBed, blocked: grid.blocked, osm: osmContext }
     },
 
     isPrepared() { return grid !== null },
