@@ -378,5 +378,11 @@
     "many_other": "{{count}} arquivos já estão na cena ou carregando",
     "quoted": "“{{name}}”",
     "loadAnyway": "Carregar uma cópia mesmo assim"
+  },
+  "validationOnly": {
+    "action": "Validar sem 3D",
+    "running": "A validar {{fileName}} sem 3D…",
+    "done": "{{fileName}} validado sem 3D: o Health Score e os problemas estão no painel.",
+    "failed": "Também não foi possível validar {{fileName}}: {{reason}}"
   }
 }

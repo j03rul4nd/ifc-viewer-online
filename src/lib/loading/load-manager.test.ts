@@ -1634,6 +1634,18 @@ describe('LoadManager — retention and history', () => {
     expect(h.job(ext.id).sourceUrl).toBeNull()
   })
 
+  it('an IFC whose geometry failed keeps its File for validation without 3D; a broken file does not', async () => {
+    const h = harness()
+    h.adapter.scripts['Huge.ifc'] = { failAt: { gate: 'identify', error: { code: 'scene', message: 'Memory overflow!', userRetryable: false } } }
+    h.adapter.scripts['Broken.ifc'] = { failAt: { gate: 'identify', error: { code: 'invalid-file', message: 'x' } } }
+    const huge = h.submit('Huge.ifc')
+    const broken = h.submit('Broken.ifc')
+    expect((await huge.settled).status).toBe('failed')
+    expect((await broken.settled).status).toBe('failed')
+    expect(h.mgr.failedSource(huge.id)?.type).toBe('file')
+    expect(h.mgr.failedSource(broken.id)).toBeNull()
+  })
+
   it('keeps at most 50 finished rows: history before models in the scene, fresh failures a minute, live rows always', async () => {
     const h = harness()
     const ids = () => h.mgr.getSnapshot().jobs.map((j) => j.id)

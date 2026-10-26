@@ -1778,7 +1778,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // ── Data ──────────────────────────────────────────────────────────────
 
   const rawIssues = result?.issues ?? partialIssues
-  const hasModel = sceneModels.length > 0 || !!ifcBuffer
+  // A model validated without 3D (its geometry did not fit) has a result but no scene model.
+  const hasModel = sceneModels.length > 0 || !!ifcBuffer || !!result
 
   // ── Waivers (Phase 3) ─────────────────────────────────────────────────────
   // Muted issues are hidden from the list AND excluded from the shown score/counts.

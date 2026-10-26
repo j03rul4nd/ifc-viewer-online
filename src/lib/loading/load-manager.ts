@@ -35,7 +35,7 @@ import type {
   Priority, ResourcePolicy, RetryDecision, RetryHints, SessionMetrics, SourceAdapter, SourceKind,
   SubmitOptions, WaitReason, DisciplineId,
 } from './types'
-import { ACTIVE_STATUSES, PRIORITY, TERMINAL_STATUSES } from './types'
+import { ACTIVE_STATUSES, GEOMETRY_FAILURE_CODES, PRIORITY, TERMINAL_STATUSES } from './types'
 import { emptySession } from './defaults'
 import { aggregateProgress, computeEta, createPhaseStates } from './phases'
 import { decideAttach, decideConvert, decideNetwork, decideSlots, effectivePriority, pickAnchor } from './scheduler'
@@ -456,6 +456,15 @@ export class LoadManager {
         if (opts.modelsOnly ? isModelJob(rec) : cancellable) this.cancel(rec.id)
       }
     })
+  }
+
+  /**
+   * The source of a failed job, while the manager still holds it: a File or a
+   * URL always, bytes only when a Retry is offered. For "validate without 3D".
+   */
+  failedSource(jobId: string): LoadSource | null {
+    const rec = this.jobs.get(jobId)
+    return rec && rec.status === 'failed' ? rec.source : null
   }
 
   /**
@@ -1375,7 +1384,12 @@ export class LoadManager {
     const s = rec.source
     if (!s) return
     if (outcome === 'failed') {
-      if (rec.error?.userRetryable !== true) rec.source = null
+      // An IFC model whose GEOMETRY failed keeps its File or URL — a handle, not
+      // the bytes — so it can still be validated without 3D (failedSource).
+      // Anything else keeps its source only for a Retry.
+      const validatable = rec.kind === 'ifc' && s.type !== 'bytes'
+        && !!rec.error && GEOMETRY_FAILURE_CODES.has(rec.error.code)
+      if (rec.error?.userRetryable !== true && !validatable) rec.source = null
       return
     }
     if (outcome === 'removed') { rec.source = null; return }

@@ -351,5 +351,11 @@
     "many_other": "ไฟล์ {{count}} ไฟล์อยู่ในฉากแล้วหรือกำลังโหลด",
     "quoted": "“{{name}}”",
     "loadAnyway": "โหลดสำเนาซ้ำ"
+  },
+  "validationOnly": {
+    "action": "ตรวจสอบโดยไม่ใช้ 3D",
+    "running": "กำลังตรวจสอบ {{fileName}} โดยไม่ใช้ 3D…",
+    "done": "ตรวจสอบ {{fileName}} โดยไม่ใช้ 3D แล้ว: Health Score และปัญหาอยู่ในแผง",
+    "failed": "ไม่สามารถตรวจสอบ {{fileName}} ได้เช่นกัน: {{reason}}"
   }
 }

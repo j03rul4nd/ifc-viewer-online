@@ -172,6 +172,15 @@ export type LoadErrorCode =
   | 'cancelled'
   | 'unknown'
 
+/**
+ * Failures of the 3D itself: the file was readable IFC, its geometry was not
+ * (scene setup, geometry parse, a worker or allocation giving out). A model
+ * that fails this way can still be validated without geometry.
+ */
+export const GEOMETRY_FAILURE_CODES: ReadonlySet<LoadErrorCode> = new Set<LoadErrorCode>([
+  'scene', 'parse', 'worker-crash', 'out-of-memory', 'gpu',
+])
+
 export interface LoadError {
   code: LoadErrorCode
   /**

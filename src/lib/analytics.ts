@@ -525,6 +525,7 @@ export function trackFeatureUsed(props: {
     | 'bcf_create_topic'
     | 'ebook_download'
     | 'batch_fix_preview'
+    | 'validation_only'
 }): void {
   track('feature_used', props)
 }
