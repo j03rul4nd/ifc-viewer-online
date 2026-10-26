@@ -3,27 +3,13 @@ import { CREDIT_PACKS, PLANS } from '../../../lib/pricing/catalog'
 import { fmtEur } from '../../../lib/pricing/checkout'
 import type { LedgerKind } from '../sample-data'
 import type { SectionProps } from '../registry'
-import { Panel, Head, SectionLabel, Primary, Quiet, Dialog, fmtInt } from '../ui'
+import { Panel, Head, SectionLabel, Primary, Quiet, SettingGroup, SettingRow, fmtInt } from '../ui'
 import CreditBar from '../CreditBar'
+import CancelFlow from '../CancelFlow'
 
 const KIND_COLOR: Record<LedgerKind, string> = { usage: 'var(--text)', purchase: 'var(--ok)', plan_grant: 'var(--ok)', refund: 'var(--ok)', expiry: 'var(--danger)' }
 /** The pack most buyers should pick: best value without a year's worth of credits. */
 const SUGGESTED_PACK = 'pack_19'
-
-function CancelDialog({ renewsOn, credits, onClose }: { renewsOn: string; credits: number; onClose: () => void }) {
-  return (
-    <Dialog title="Cancel your plan?" onClose={onClose}
-      footer={<><Quiet onClick={onClose}>Cancel plan at period end</Quiet><Primary onClick={onClose}>Keep my plan</Primary></>}>
-      <p className="text-[13.5px]">Your plan stays active until <b>{renewsOn}</b>. After that:</p>
-      <ul className="mt-3 space-y-1.5 text-[12.5px] text-[var(--text-dim)]">
-        <li>· The {credits} plan credits you have left expire; pack credits stay until their own date.</li>
-        <li>· Projects become read-only. Certificates you issued stay verifiable.</li>
-        <li>· The viewer, Health Score and IDS checks stay free, as always.</li>
-      </ul>
-      <p className="mt-4 text-[12px] text-[var(--text-faint)]">You can resume any time before {renewsOn} without paying again.</p>
-    </Dialog>
-  )
-}
 
 export default function Billing({ data, actions }: SectionProps) {
   const [cancelOpen, setCancelOpen] = useState(false)
@@ -118,7 +104,21 @@ export default function Billing({ data, actions }: SectionProps) {
         </div>
       </div>
 
-      {cancelOpen && <CancelDialog renewsOn={a.renewsOn} credits={planLeft} onClose={() => setCancelOpen(false)} />}
+      <div className="mt-8">
+        <SettingGroup title="Billing details">
+          <SettingRow title={a.org} detail="Carrer de Pau Claris 100, 08009 Barcelona, ES · VAT ID ESB12345678">
+            <Quiet>Edit</Quiet>
+          </SettingRow>
+          <SettingRow title="Invoice email" detail={`${a.email} · add a second address for your accounts team`}>
+            <Quiet>Edit</Quiet>
+          </SettingRow>
+          <SettingRow title="Something wrong with a charge?" detail="Wrong amount, missing VAT ID, a double charge — we fix it within 1 working day.">
+            <Quiet onClick={() => actions.contact('billing')}>Contact billing</Quiet>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      {cancelOpen && <CancelFlow renewsOn={a.renewsOn} credits={planLeft} onClose={() => setCancelOpen(false)} onYearly={() => actions.buy({ kind: 'plan', plan: a.plan, period: 'yearly' })} onContact={actions.contact} />}
     </>
   )
 }

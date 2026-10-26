@@ -16,14 +16,15 @@
 // Sections, their plan and their nav entry come from ./registry.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { MoreHorizontal, Lock } from 'lucide-react'
-import { SCENARIOS, scenarioData, type Scenario } from './sample-data'
+import { MoreHorizontal, Lock, LifeBuoy } from 'lucide-react'
+import { SCENARIOS, scenarioData, type Scenario, type TicketKind } from './sample-data'
 import { SECTIONS, canUse, sectionFromPath, type SectionActions, type SectionId, type SectionDef } from './registry'
 import { Banner, Primary, Quiet, Skeleton, fmtInt } from './ui'
 import { previewProvider, type CheckoutItem, type CheckoutOutcome } from '../../lib/pricing/checkout'
 import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
 import LockedSection from './LockedSection'
+import ContactDialog from './ContactDialog'
 
 const BASE = `${import.meta.env.BASE_URL ?? '/'}workspace`
 const hrefOf = (id: SectionId) => (id === 'overview' ? BASE : `${BASE}/${id}`)
@@ -59,6 +60,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const [jobOpen, setJobOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [checkout, setCheckout] = useState<CheckoutItem | null>(null)
+  const [contact, setContact] = useState<{ kind: TicketKind; ref?: string } | null>(null)
   const data = useMemo(() => scenarioData(scenario), [scenario])
   const top = useRef<HTMLDivElement>(null)
   const provider = useMemo(() => previewProvider(checkoutOutcome), [checkoutOutcome])
@@ -79,23 +81,33 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
 
   const actions: SectionActions = useMemo(() => ({
     go, newJob: () => setJobOpen(true), topUp: () => setCheckout(TOP_UP), buy: setCheckout,
+    contact: (kind, ref) => setContact({ kind, ref }),
+    // The project id rides in the URL; Projects reads it when it mounts.
+    openProject: (id) => {
+      if (typeof history !== 'undefined') history.pushState(null, '', `${hrefOf('projects')}/${id}`)
+      setSection('projects')
+      top.current?.scrollIntoView?.({ block: 'start' })
+    },
   }), [go])
 
   const plan = data.account.plan
   const current = SECTIONS.find((s) => s.id === section)!
   const tabs = SECTIONS.filter((s) => !s.secondary)
   const more = SECTIONS.filter((s) => s.secondary)
+  const work = SECTIONS.filter((s) => s.group !== 'account')
+  const account = SECTIONS.filter((s) => s.group === 'account')
+  const initials = data.account.name.split(' ').map((w) => w[0]).slice(0, 2).join('')
   const moreActive = more.some((s) => s.id === section)
 
   let body: React.ReactNode
   if (scenario === 'loading') body = <><div className="h-[28px] w-[180px] mb-5 rounded-[6px] bg-[var(--surface-2)]" /><Skeleton rows={4} /></>
   else if (scenario === 'error') body = (
     <Banner tone="danger" title="We couldn't load your workspace" action={<Primary onClick={() => setScenario('active')}>Retry</Primary>}>
-      Your projects and credits are safe. Check your connection; if it keeps failing, our status page says whether it's on our side.
+      Your projects and credits are safe. Check your connection; if it keeps failing, <button className="text-[var(--accent)] hover:underline" onClick={() => setContact({ kind: 'bug' })}>tell us</button> — the report includes what we need.
     </Banner>
   )
   else if (!canUse(plan, current)) body = <LockedSection section={current} current={plan} period={data.account.billing} onUpgrade={setCheckout} />
-  else body = <current.Component data={data} actions={actions} />
+  else body = <current.Component key={section} data={data} actions={actions} />
 
   const status = data.account.status
   return (
@@ -123,16 +135,40 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
             </label>
           </div>
         </details>
-        <button onClick={() => go('billing')} className="text-[12.5px] tabular-nums text-[var(--text-dim)] hover:text-[var(--text)] whitespace-nowrap min-h-[32px]">{fmtInt(data.account.credits.balance)} credits</button>
+        <button onClick={() => go('billing')} className="hidden sm:inline text-[12.5px] tabular-nums text-[var(--text-dim)] hover:text-[var(--text)] whitespace-nowrap min-h-[32px]">{fmtInt(data.account.credits.balance)} credits</button>
+        <button onClick={() => go('support')} aria-label="Help & support" title="Help & support" className="w-8 h-8 grid place-items-center rounded-[7px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"><LifeBuoy size={16} aria-hidden /></button>
+        <details className="relative" data-account-menu>
+          <summary aria-label="Account" className="list-none cursor-pointer w-8 h-8 grid place-items-center rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[11.5px] font-semibold">{initials}</summary>
+          <div className="absolute right-0 mt-2 w-[260px] rounded-[10px] border border-[var(--border)] bg-[var(--surface)] shadow-xl z-30 py-1.5">
+            <div className="px-4 py-2 border-b border-[var(--border)] mb-1">
+              <p className="text-[13px] font-medium truncate">{data.account.name}</p>
+              <p className="text-[11.5px] text-[var(--text-faint)] truncate">{data.account.email}</p>
+              <p className="mt-1 text-[11.5px] text-[var(--text-dim)]">{data.account.plan === 'team' ? 'Team' : 'Pro'} · {fmtInt(data.account.credits.balance)} credits</p>
+            </div>
+            {[...account, SECTIONS.find((s) => s.id === 'billing')!].map((s) => (
+              <button key={s.id} onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; go(s.id) }}
+                className="w-full text-left px-4 h-[36px] text-[13px] hover:bg-[var(--surface-2)] flex items-center gap-2.5"><s.icon size={15} aria-hidden className="text-[var(--text-dim)]" />{s.label}</button>
+            ))}
+            <button onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; setContact({ kind: 'bug' }) }}
+              className="w-full text-left px-4 h-[36px] text-[13px] hover:bg-[var(--surface-2)]">Report a problem</button>
+            <div className="border-t border-[var(--border)] mt-1 pt-1">
+              <button className="w-full text-left px-4 h-[36px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)]">Sign out</button>
+            </div>
+          </div>
+        </details>
       </header>
 
       <div className="flex max-w-[1240px] mx-auto">
         <nav aria-label="Workspace" className="hidden md:flex md:flex-col md:shrink-0 md:sticky md:top-[48px] md:self-start md:h-[calc(100dvh-48px)] md:py-5 md:px-2 lg:px-3 md:gap-0.5 md:items-center lg:items-stretch lg:w-[200px]">
-          {SECTIONS.map((s) => (
-            <span key={s.id} className="contents">
-              <span className="lg:hidden"><NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="rail" /></span>
-              <span className="hidden lg:contents"><NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="side" /></span>
-            </span>
+          {[work, account].map((group, gi) => (
+            <div key={gi} className={`flex flex-col gap-0.5 md:items-center lg:items-stretch ${gi ? 'mt-auto pt-3 border-t border-[var(--border)] w-full' : ''}`}>
+              {group.map((s) => (
+                <span key={s.id} className="contents">
+                  <span className="lg:hidden"><NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="rail" /></span>
+                  <span className="hidden lg:contents"><NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="side" /></span>
+                </span>
+              ))}
+            </div>
           ))}
         </nav>
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-5 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-8">
@@ -166,12 +202,20 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
         <div className="md:hidden fixed inset-0 z-10 bg-black/40" onClick={() => setMoreOpen(false)}>
           <div role="menu" onClick={(e) => e.stopPropagation()}
             className="absolute inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] rounded-t-[14px] border-t border-[var(--border)] bg-[var(--surface)] py-2">
-            {more.map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="menu" />)}
+            {more.map((s, i) => (
+              <div key={s.id} className={i > 0 && s.group === 'account' && more[i - 1].group !== 'account' ? 'border-t border-[var(--border)] mt-1 pt-1' : ''}>
+                <NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="menu" />
+              </div>
+            ))}
+            <div className="border-t border-[var(--border)] mt-1 pt-1">
+              <button onClick={() => { setMoreOpen(false); setContact({ kind: 'bug' }) }} className="w-full text-left h-[44px] px-4 text-[14px] text-[var(--text-faint)]">Report a problem</button>
+            </div>
           </div>
         </div>
       )}
 
       {jobOpen && <CloudJobDialog balance={data.account.credits.balance} onClose={() => setJobOpen(false)} onTopUp={() => { setJobOpen(false); setCheckout(TOP_UP) }} />}
+      {contact && <ContactDialog kind={contact.kind} refId={contact.ref} section={section} onClose={() => setContact(null)} />}
       {checkout && <CheckoutDialog item={checkout} provider={provider} onClose={() => setCheckout(null)} />}
     </div>
   )
