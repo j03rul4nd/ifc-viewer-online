@@ -1,12 +1,12 @@
 {
   "hero": {
-    "title": "Visualiseur IFC en ligne",
-    "subtitle": "Validation et édition BIM professionnelle",
+    "title": "Visionneuse IFC gratuite en ligne",
+    "subtitle": "Ouvrir, vérifier et modifier un fichier IFC dans le navigateur",
     "description": "Validez, inspectez et modifiez des fichiers IFC directement dans votre navigateur. Aucune installation requise.",
     "badge": "Sans connexion — fonctionne entièrement dans votre navigateur",
     "badgeMobile": "Sans connexion · fonctionne dans votre navigateur",
-    "h1": "Visualiseur IFC",
-    "h1Accent": "en ligne",
+    "h1": "Visionneuse IFC",
+    "h1Accent": "gratuite en ligne",
     "subtitleFull": "Détectez les erreurs IFC avant votre client. Ouvrez, validez et corrigez des fichiers IFC entièrement dans votre navigateur — sans installation, sans serveur, sans compte. Vos modèles ne quittent jamais votre machine.",
     "trustLine": "Gratuit · Open source · 100% côté client · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
     "trustLineMobile": "Gratuit · Open source · IFC2x3 · IFC4 · IFC4x3"
@@ -204,6 +204,14 @@
     "title": "Questions"
   },
   "faq": [
+    {
+      "q": "Comment ouvrir un fichier IFC en ligne gratuitement ?",
+      "a": "Glissez le fichier .ifc sur cette page ou cliquez sur « Ouvrir un IFC ». La visionneuse IFC fonctionne gratuitement dans le navigateur, sans installation, sans compte et sans envoi : le fichier est lu localement en WebAssembly. IFC2x3, IFC4, IFC4x1 et IFC4x3 sont pris en charge."
+    },
+    {
+      "q": "Quel lecteur IFC gratuit utiliser sans installer de logiciel ?",
+      "a": "Un lecteur IFC en ligne comme celui-ci : il affiche la maquette BIM en 3D, l’arborescence spatiale et les propriétés, mesure, coupe et vérifie le fichier avec 44 règles de qualité et un Health Score de 0 à 100. Rien à installer, et le fichier ne quitte pas votre ordinateur."
+    },
     {
       "q": "Mon fichier IFC est-il uploadé quelque part ?",
       "a": "Non. Les fichiers sont analysés entièrement dans votre navigateur via web-ifc, une version WebAssembly du parseur IFC open source. Rien ne quitte votre machine. L'application fonctionne complètement hors ligne une fois chargée."

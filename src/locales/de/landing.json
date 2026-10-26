@@ -1,12 +1,12 @@
 {
   "hero": {
-    "title": "IFC-Viewer Online",
-    "subtitle": "Professionelle BIM-Validierung & -Bearbeitung",
+    "title": "IFC Viewer kostenlos online",
+    "subtitle": "IFC-Datei im Browser öffnen, prüfen und bearbeiten",
     "description": "Validieren, inspizieren und bearbeiten Sie IFC-Dateien direkt im Browser. Keine Installation erforderlich.",
     "badge": "Keine Anmeldung — läuft vollständig in Ihrem Browser",
     "badgeMobile": "Keine Anmeldung · läuft im Browser",
-    "h1": "IFC-Viewer",
-    "h1Accent": "Online",
+    "h1": "IFC Viewer",
+    "h1Accent": "kostenlos online",
     "subtitleFull": "Entdecken Sie IFC-Fehler, bevor Ihr Kunde es tut. Öffnen, validieren und korrigieren Sie IFC-Dateien vollständig in Ihrem Browser — keine Installation, kein Server, kein Konto. Ihre Modelle verlassen niemals Ihren Computer.",
     "trustLine": "Kostenlos · Open Source · 100% clientseitig · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
     "trustLineMobile": "Kostenlos · Open Source · IFC2x3 · IFC4 · IFC4x3"
@@ -204,6 +204,14 @@
     "title": "Fragen"
   },
   "faq": [
+    {
+      "q": "Wie kann ich eine IFC-Datei kostenlos öffnen?",
+      "a": "Ziehen Sie die .ifc-Datei auf diese Seite oder klicken Sie auf „IFC öffnen“. Der IFC Viewer läuft kostenlos im Browser, ohne Installation, ohne Konto und ohne Upload: Die Datei wird lokal per WebAssembly gelesen. IFC2x3, IFC4, IFC4x1 und IFC4x3 werden unterstützt."
+    },
+    {
+      "q": "Kann ich ein IFC-Modell online prüfen?",
+      "a": "Ja. Nach dem Öffnen prüft der Viewer das IFC-Modell automatisch mit 44 Qualitätsregeln (doppelte GUIDs, Raumhierarchie, fehlende Typen, Materialien und Eigenschaften) und zeigt einen Health Score von 0 bis 100. Zusätzlich können Sie gegen eine IDS-Datei von buildingSMART prüfen und einen Bericht exportieren."
+    },
     {
       "q": "Wird meine IFC-Datei irgendwo hochgeladen?",
       "a": "Nein. Dateien werden vollständig in Ihrem Browser über web-ifc, einem WebAssembly-Build des Open-Source-IFC-Parsers, geparst. Nichts verlässt Ihren Computer."
