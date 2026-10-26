@@ -139,6 +139,8 @@ export function renderMspShell(template: string): string {
     `<script type="application/ld+json">${jsonEsc(JSON.stringify(faqLd))}</script>`,
   ].join('\n  ')
   html = html.replace('</head>', `  ${injected}\n</head>`)
+  // The root shell's <noscript> pitches the IFC viewer with its own <h1>.
+  html = html.replace(/<noscript>[\s\S]*?<\/noscript>\s*/, '')
   html = html.replace('<div id="root"></div>', `<div id="root">${body()}</div>`)
   return html
 }
