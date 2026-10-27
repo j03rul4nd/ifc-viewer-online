@@ -30,7 +30,7 @@ function SceneSources({ scene, onBack, onData }: { scene: SampleScene; onBack: (
         primaryHeader="Source"
         primary={(r) => {
           const c = SAMPLE_CONNECTIONS.find((x) => x.id === r.connectionId)!
-          return <><p className={`font-medium ${r.enabled ? '' : 'text-[var(--text-faint)]'}`}>{r.name}</p><p className="text-[11.5px]" style={{ color: HEALTH[c.health][1] }}>{HEALTH[c.health][0]}</p></>
+          return <><p className={`font-medium ${r.enabled ? '' : 'text-[var(--text-faint)]'}`}>{r.name}</p><p className="text-[11.5px]" style={{ color: c.health === 'failing' || c.health === 'warning' ? HEALTH[c.health][1] : 'var(--text-faint)' }}>{HEALTH[c.health][0]}</p></>
         }}
         columns={[
           { key: 'on', header: 'In scene', cell: (r) => <Toggle label={`${r.name} in this scene`} checked={r.enabled} onChange={(v) => update({ ...overrides.find((o) => o.connectionId === r.connectionId), connectionId: r.connectionId, enabled: v })} /> },
@@ -71,7 +71,7 @@ export default function Scenes({ actions }: SectionProps) {
           primaryHeader="Scene"
           primary={(s) => <><button onClick={() => setOpen(s.id)} className="font-medium text-left hover:underline">{s.name}</button><p className="text-[11.5px] text-[var(--text-faint)]">{s.project ?? 'No project'} · {s.updatedAt}</p></>}
           columns={[
-            { key: 'data', header: 'Live data', cell: (s) => { const on = resolveSceneSources(saved, s.overrides).filter((r) => r.enabled); return <span className="text-[var(--text-dim)]">{on.length ? on.map((r) => r.name.split(' — ')[0].split(' (')[0]).join(', ') : 'None'}</span> } },
+            { key: 'data', header: 'Live data', wide: true, cell: (s) => { const on = resolveSceneSources(saved, s.overrides).filter((r) => r.enabled); return <span className="text-[var(--text-dim)]">{on.length ? on.map((r) => r.name.split(' — ')[0].split(' (')[0]).join(', ') : 'None'}</span> } },
             { key: 'changed', header: 'Own settings', hideOnPhone: true, cell: (s) => <span className="tabular-nums text-[var(--text-dim)]">{s.overrides.length || '—'}</span> },
           ]}
           actions={(s) => <Quiet onClick={() => setOpen(s.id)}>Data</Quiet>}

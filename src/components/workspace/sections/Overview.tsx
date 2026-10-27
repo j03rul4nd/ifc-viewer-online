@@ -62,19 +62,22 @@ function SetupChecklist({ actions }: Pick<SectionProps, 'actions'>) {
 }
 
 function UsageThisPeriod({ data }: { data: WorkspaceData }) {
-  const used = data.ledger.filter((e) => e.kind === 'usage')
+  // Net of refunds: a job that failed on our side cost nothing.
   const byFeature = new Map<string, number>()
-  for (const e of used) { const k = e.description.split(' · ')[0]; byFeature.set(k, (byFeature.get(k) ?? 0) - e.credits) }
-  const rows = [...byFeature.entries()].sort((a, b) => b[1] - a[1])
+  for (const e of data.ledger.filter((x) => x.kind === 'usage' || x.kind === 'refund')) {
+    const k = e.description.split(/ · | failed/)[0]
+    byFeature.set(k, (byFeature.get(k) ?? 0) - e.credits)
+  }
+  const rows = [...byFeature.entries()].filter((r) => r[1] > 0).sort((a, b) => b[1] - a[1])
   const max = Math.max(1, ...rows.map((r) => r[1]))
   return (
     <Panel className="p-4 sm:p-5">
-      <p className="text-[12px] text-[var(--text-dim)]">Credits used this period</p>
+      <p className="text-[12px] text-[var(--text-dim)]">Credits used, by tool · refunds deducted</p>
       {rows.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">Nothing yet.</p> : (
         <ul className="mt-3 space-y-2">
           {rows.map(([k, v]) => (
             <li key={k} className="text-[12.5px]">
-              <div className="flex justify-between gap-2"><span className="truncate">{k}</span><span className="tabular-nums text-[var(--text-dim)]">{v}</span></div>
+              <div className="flex justify-between gap-2"><span className="min-w-0 [overflow-wrap:anywhere]">{k}</span><span className="tabular-nums text-[var(--text-dim)]">{v}</span></div>
               <div className="mt-1 h-1 rounded-full bg-[var(--surface-2)]"><div className="h-full rounded-full bg-[var(--text-dim)]" style={{ width: `${(v / max) * 100}%` }} /></div>
             </li>
           ))}
@@ -149,7 +152,7 @@ export default function Overview({ data, actions }: SectionProps) {
           {running.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">No jobs running.</p> : running.map((j) => (
             <div key={j.id} className="mt-2">
               <p className="text-[13.5px] font-medium">{featureName(j.feature)}</p>
-              <p className="text-[12px] text-[var(--text-dim)] truncate">{j.file}</p>
+              <p className="text-[12px] text-[var(--text-dim)] [overflow-wrap:anywhere]">{j.file}</p>
               {j.progress && (
                 <>
                   <div className="mt-2 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden" role="progressbar" aria-label={`${featureName(j.feature)} progress`} aria-valuenow={j.progress.pct} aria-valuemin={0} aria-valuemax={100}>
@@ -163,12 +166,15 @@ export default function Overview({ data, actions }: SectionProps) {
         </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-6 lg:gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0">
           <SectionLabel>Projects</SectionLabel>
           <ProjectList projects={data.projects} onOpen={actions.openProject} />
         </div>
-        <div className="min-w-0 lg:pt-[26px]"><UsageThisPeriod data={data} /></div>
+        <div className="min-w-0">
+          <SectionLabel>This period</SectionLabel>
+          <UsageThisPeriod data={data} />
+        </div>
       </div>
       <RecentActivity data={data} />
     </>

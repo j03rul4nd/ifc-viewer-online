@@ -22,7 +22,7 @@ export function Head({ title, sub, action }: { title: string; sub?: React.ReactN
   return (
     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
       <div className="min-w-0">
-        <h1 className="text-[19px] sm:text-[20px] font-semibold tracking-[-0.015em]">{title}</h1>
+        <h1 className="text-[19px] sm:text-[20px] font-semibold tracking-[-0.015em] [overflow-wrap:anywhere]">{title}</h1>
         {sub && <p className="text-[13px] text-[var(--text-dim)] mt-1 max-w-[640px]">{sub}</p>}
       </div>
       {action && <div className="shrink-0 flex flex-wrap gap-2">{action}</div>}
@@ -123,6 +123,8 @@ export interface Column<T> {
   cell: (row: T) => React.ReactNode
   /** Left out of the phone card (secondary detail). */
   hideOnPhone?: boolean
+  /** Phone card: the value needs the full card width (long names, lists). */
+  wide?: boolean
   /** Only on desktop (≥1024): low-priority columns that would crush a tablet table. */
   desktopOnly?: boolean
   align?: 'right'
@@ -144,12 +146,12 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
       <ul className="md:hidden divide-y divide-[var(--border)]">
         {rows.map((r) => (
           <li key={rowKey(r)} className={`px-4 py-3 ${rowClassName?.(r) ?? ''}`}>
-            <div className="text-[13.5px]">{primary(r)}</div>
+            <div className="text-[13.5px] min-w-0 [overflow-wrap:anywhere]">{primary(r)}</div>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[12.5px]">
               {columns.filter((c) => !c.hideOnPhone).map((c) => (
-                <div key={c.key} className="min-w-0">
+                <div key={c.key} className={`min-w-0 ${c.wide ? 'col-span-2' : ''}`}>
                   <dt className="text-[10.5px] uppercase tracking-[0.06em] text-[var(--text-faint)]">{c.header}</dt>
-                  <dd className="truncate">{c.cell(r)}</dd>
+                  <dd className="[overflow-wrap:anywhere]">{c.cell(r)}</dd>
                 </div>
               ))}
             </dl>
@@ -163,7 +165,7 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
             <tr>
               <th className="px-4 py-2.5 font-medium">{primaryHeader}</th>
               {columns.map((c) => <th key={c.key} className={`py-2.5 pr-4 font-medium ${c.align === 'right' ? 'text-right' : ''} ${c.desktopOnly ? 'hidden lg:table-cell' : ''}`}>{c.header}</th>)}
-              {actions && <th className="pr-4"><span className="sr-only">Actions</span></th>}
+              {actions && <th className="pr-4 text-right"><span className="sr-only">Actions</span></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
@@ -327,7 +329,12 @@ export function useSubTab<T extends string>(section: string, tabs: readonly { id
 
 export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs: readonly { id: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void; label: string }) {
   return (
-    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-[var(--border)] mb-5 -mx-4 px-4 sm:mx-0 sm:px-0">
+    <>
+    {/* Phone: a select, so no tab hides past the edge of a sideways-scrolling strip. */}
+    <select aria-label={label} className={`${inputClass} sm:hidden mb-5 font-medium`} value={value} onChange={(e) => onChange(e.target.value as T)}>
+      {tabs.map((t) => <option key={t.id} value={t.id}>{t.label}{t.count ? ` (${t.count})` : ''}</option>)}
+    </select>
+    <div role="tablist" aria-label={label} className="hidden sm:flex gap-1 overflow-x-auto border-b border-[var(--border)] mb-5">
       {tabs.map((t) => (
         <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)}
           className={`shrink-0 h-[38px] px-3 -mb-px border-b-2 text-[13px] whitespace-nowrap ${value === t.id ? 'border-[var(--accent)] text-[var(--text)] font-medium' : 'border-transparent text-[var(--text-faint)] hover:text-[var(--text)]'}`}>
@@ -335,6 +342,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs:
         </button>
       ))}
     </div>
+    </>
   )
 }
 

@@ -9,7 +9,8 @@ function Status({ status, refunded }: { status: JobStatus; refunded?: boolean })
     failed: [refunded ? 'Failed · credits returned' : 'Failed', 'var(--danger)'], queued: ['Queued', 'var(--text-dim)'],
   }
   const [label, color] = map[status]
-  return <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap" style={{ color }}><Dot color={color} />{label}</span>
+  // The dot carries the state; the words only take colour when something went wrong.
+  return <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap" style={{ color: status === 'failed' ? color : 'var(--text)' }}><Dot color={color} />{label}</span>
 }
 
 export default function Jobs({ data, actions }: SectionProps) {
@@ -25,7 +26,7 @@ export default function Jobs({ data, actions }: SectionProps) {
           primaryHeader="Job"
           primary={(j) => <><p className="font-medium">{featureName(j.feature)}</p><p className="text-[11.5px] text-[var(--text-faint)]">{j.id} · {j.startedAt}</p></>}
           columns={[
-            { key: 'file', header: 'File', className: 'max-w-[150px] lg:max-w-[240px] truncate', cell: (j) => <span className="text-[var(--text-dim)]">{j.file} <span className="text-[var(--text-faint)]">· {fmtInt(j.sizeMb)} MB</span></span> },
+            { key: 'file', header: 'File', wide: true, className: 'max-w-[180px] lg:max-w-[260px] [overflow-wrap:anywhere]', cell: (j) => <span className="text-[var(--text-dim)]">{j.file} <span className="text-[var(--text-faint)]">· {fmtInt(j.sizeMb)} MB</span></span> },
             { key: 'status', header: 'Status', cell: (j) => <><Status status={j.status} refunded={j.refunded} />{j.progress && <p className="text-[11px] text-[var(--text-faint)] whitespace-nowrap">{j.progress.pct}%</p>}</> },
             { key: 'credits', header: 'Credits', align: 'right', cell: (j) => <span className={`tabular-nums ${j.refunded ? 'line-through text-[var(--text-faint)]' : ''}`}>{j.credits}</span> },
             { key: 'result', header: 'Result', hideOnPhone: true, desktopOnly: true, className: 'max-w-[260px]', cell: (j) => <span className="text-[var(--text-dim)]">{j.result ?? '—'}</span> },

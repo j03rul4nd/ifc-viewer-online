@@ -7,7 +7,8 @@ import { Panel, Head, SectionLabel, Primary, Quiet, SettingGroup, SettingRow, fm
 import CreditBar from '../CreditBar'
 import CancelFlow from '../CancelFlow'
 
-const KIND_COLOR: Record<LedgerKind, string> = { usage: 'var(--text)', purchase: 'var(--ok)', plan_grant: 'var(--ok)', refund: 'var(--ok)', expiry: 'var(--danger)' }
+// Money in and out is not good or bad news, so only expired credits get colour.
+const KIND_COLOR: Record<LedgerKind, string> = { usage: 'var(--text-dim)', purchase: 'var(--text)', plan_grant: 'var(--text)', refund: 'var(--text)', expiry: 'var(--danger)' }
 /** The pack most buyers should pick: best value without a year's worth of credits. */
 const SUGGESTED_PACK = 'pack_19'
 
@@ -53,13 +54,13 @@ export default function Billing({ data, actions }: SectionProps) {
         {CREDIT_PACKS.map((p) => {
           const suggested = p.id === SUGGESTED_PACK
           return (
-            <Panel key={p.id} className={`p-4 flex flex-col ${suggested ? 'border-[var(--accent)]' : ''}`}>
+            <Panel key={p.id} className={`p-4 flex flex-col ${suggested ? 'border-[var(--border-strong,var(--text-faint))]' : ''}`}>
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-[13.5px] font-medium">{p.name}</p>
-                {suggested && <span className="text-[11px] text-[var(--accent)]">Most bought</span>}
+                {suggested && <span className="text-[11px] text-[var(--text-dim)] whitespace-nowrap">Most bought</span>}
               </div>
               <p className="mt-2 text-[22px] font-semibold tabular-nums">{fmtEur(p.priceEur)}</p>
-              <p className="text-[12.5px] tabular-nums">{fmtInt(p.credits)} credits {p.bonus && <span className="text-[11.5px]" style={{ color: 'var(--ok)' }}>{p.bonus}</span>}</p>
+              <p className="text-[12.5px] tabular-nums">{fmtInt(p.credits)} credits {p.bonus && <span className="text-[11.5px] text-[var(--text-dim)]">{p.bonus}</span>}</p>
               <p className="text-[11.5px] text-[var(--text-faint)] tabular-nums">{fmtEur(Math.round((p.priceEur / p.credits) * 1000) / 10)} per 100 · ≈ {Math.floor(p.credits / 30)} auto-fixes</p>
               <div className="mt-auto pt-4">
                 {suggested
@@ -79,8 +80,8 @@ export default function Billing({ data, actions }: SectionProps) {
               {data.ledger.map((e, i) => (
                 <li key={i} className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-[11.5px] text-[var(--text-faint)] w-[78px] shrink-0 tabular-nums">{e.date}</span>
-                  <span className="flex-1 min-w-0 truncate">{e.description}</span>
-                  <span className="tabular-nums shrink-0" style={{ color: KIND_COLOR[e.kind] }}>{e.credits > 0 ? '+' : ''}{e.credits}</span>
+                  <span className="flex-1 min-w-0 [overflow-wrap:anywhere]">{e.description}</span>
+                  <span className="tabular-nums shrink-0" style={{ color: KIND_COLOR[e.kind] }}>{e.credits > 0 ? '+' : '−'}{Math.abs(e.credits)}</span>
                 </li>
               ))}
             </ul>
@@ -93,7 +94,7 @@ export default function Billing({ data, actions }: SectionProps) {
               {data.invoices.map((inv) => (
                 <li key={inv.id} className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-[11.5px] text-[var(--text-faint)] w-[78px] shrink-0 tabular-nums">{inv.date}</span>
-                  <span className="flex-1 min-w-0 truncate">{inv.description}</span>
+                  <span className="flex-1 min-w-0 [overflow-wrap:anywhere]">{inv.description}</span>
                   <span className="tabular-nums shrink-0">{fmtEur(inv.amountEur)}</span>
                   <button className="text-[12px] text-[var(--accent)] hover:underline shrink-0 min-h-[32px]" aria-label={`Download invoice ${inv.id}`}>PDF</button>
                 </li>

@@ -62,7 +62,7 @@ function Security({ data, actions }: SectionProps) {
       </SettingGroup>
       <SettingGroup title="Where you're signed in">
         {data.sessions.map((s) => (
-          <SettingRow key={s.id} title={s.device} detail={<>{s.location} · {s.current ? <span style={{ color: 'var(--ok)' }}>This device</span> : `last seen ${s.lastSeen}`}</>}>
+          <SettingRow key={s.id} title={s.device} detail={<>{s.location} · {s.current ? <span className="font-medium text-[var(--text)]">This device</span> : `last seen ${s.lastSeen}`}</>}>
             {!s.current && <Quiet>Sign out</Quiet>}
           </SettingRow>
         ))}

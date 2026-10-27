@@ -141,8 +141,8 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
           <summary aria-label="Account" className="list-none cursor-pointer w-8 h-8 grid place-items-center rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[11.5px] font-semibold">{initials}</summary>
           <div className="absolute right-0 mt-2 w-[260px] rounded-[10px] border border-[var(--border)] bg-[var(--surface)] shadow-xl z-30 py-1.5">
             <div className="px-4 py-2 border-b border-[var(--border)] mb-1">
-              <p className="text-[13px] font-medium truncate">{data.account.name}</p>
-              <p className="text-[11.5px] text-[var(--text-faint)] truncate">{data.account.email}</p>
+              <p className="text-[13px] font-medium truncate" title={data.account.name}>{data.account.name}</p>
+              <p className="text-[11.5px] text-[var(--text-faint)] truncate" title={data.account.email}>{data.account.email}</p>
               <p className="mt-1 text-[11.5px] text-[var(--text-dim)]">{data.account.plan === 'team' ? 'Team' : 'Pro'} · {fmtInt(data.account.credits.balance)} credits</p>
             </div>
             {[...account, SECTIONS.find((s) => s.id === 'billing')!].map((s) => (

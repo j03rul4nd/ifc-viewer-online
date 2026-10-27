@@ -120,8 +120,8 @@ export default function Privacy({ data, actions }: SectionProps) {
           primaryHeader="Data"
           primary={(r) => <span className="font-medium">{r.what}</span>}
           columns={[
-            { key: 'where', header: 'Where', cell: (r) => <span className="text-[var(--text-dim)]">{r.where}</span> },
-            { key: 'kept', header: 'Kept', cell: (r) => <span className="text-[var(--text-dim)] whitespace-normal">{r.kept}</span> },
+            { key: 'where', header: 'Where', wide: true, cell: (r) => <span className="text-[var(--text-dim)]">{r.where}</span> },
+            { key: 'kept', header: 'Kept', wide: true, cell: (r) => <span className="text-[var(--text-dim)] whitespace-normal">{r.kept}</span> },
           ]}
         />
         <p className="mt-2 text-[12px] text-[var(--text-dim)]">The free viewer never uploads your models: files opened there stay in your browser and are not on this list.</p>

@@ -94,7 +94,7 @@ export default function ContactDialog({ kind: initialKind = 'question', section,
               </label>
               {attach && (
                 <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11.5px] text-[var(--text-dim)] font-mono">
-                  {Object.entries(diag).map(([k, v]) => <div key={k} className="contents"><dt className="text-[var(--text-faint)]">{k}</dt><dd className="truncate">{v}</dd></div>)}
+                  {Object.entries(diag).map(([k, v]) => <div key={k} className="contents"><dt className="text-[var(--text-faint)]">{k}</dt><dd className="[overflow-wrap:anywhere]">{v}</dd></div>)}
                 </dl>
               )}
             </div>
