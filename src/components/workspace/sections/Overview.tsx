@@ -39,7 +39,7 @@ function SetupChecklist({ actions }: Pick<SectionProps, 'actions'>) {
   ]
   const done = steps.filter((x) => x.done).length
   return (
-    <section aria-labelledby="setup">
+    <section aria-labelledby="setup" data-tour="setup">
       <div className="flex items-baseline justify-between mb-2">
         <SectionLabel id="setup">Get set up</SectionLabel>
         <span className="text-[12px] tabular-nums text-[var(--text-faint)]">{done} of {steps.length}</span>
@@ -90,7 +90,7 @@ function UsageThisPeriod({ data }: { data: WorkspaceData }) {
 function RecentActivity({ data }: { data: WorkspaceData }) {
   if (data.activity.length === 0) return null
   return (
-    <section className="mt-6">
+    <section className="mt-6" data-tour="activity">
       <SectionLabel>Recent activity</SectionLabel>
       <Panel>
         <ol className="divide-y divide-[var(--border)] text-[13px]">
@@ -124,7 +124,7 @@ export default function Overview({ data, actions }: SectionProps) {
     <>
       <Head title="Overview" sub={`${data.account.org} · ${plan}`} action={<Primary onClick={actions.newJob}>Run a cloud job</Primary>} />
 
-      <section aria-labelledby="attn" className="mb-6">
+      <section aria-labelledby="attn" className="mb-6" data-tour="attention">
         <SectionLabel id="attn">Needs your attention</SectionLabel>
         {items.length === 0 ? (
           <p className="text-[13px] text-[var(--text-dim)]">Nothing — every project held or improved its score.</p>
@@ -146,8 +146,8 @@ export default function Overview({ data, actions }: SectionProps) {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] mb-6">
-        <Panel className="p-4 sm:p-5"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
-        <Panel className="p-4 sm:p-5">
+        <Panel tour="credits" className="p-4 sm:p-5"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
+        <Panel tour="running" className="p-4 sm:p-5">
           <p className="text-[12px] text-[var(--text-dim)]">Running</p>
           {running.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">No jobs running.</p> : running.map((j) => (
             <div key={j.id} className="mt-2">
@@ -167,11 +167,11 @@ export default function Overview({ data, actions }: SectionProps) {
       </div>
 
       <div className="grid gap-6 lg:gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="min-w-0">
+        <div className="min-w-0" data-tour="projects">
           <SectionLabel>Projects</SectionLabel>
           <ProjectList projects={data.projects} onOpen={actions.openProject} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0" data-tour="usage">
           <SectionLabel>This period</SectionLabel>
           <UsageThisPeriod data={data} />
         </div>

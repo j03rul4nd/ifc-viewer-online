@@ -7,6 +7,7 @@ import type { SampleTicket, TicketStatus } from '../sample-data'
 import type { SectionProps } from '../registry'
 import { Head, Panel, Primary, Quiet, Empty, DataList, Dot, Field, inputClass, SectionLabel } from '../ui'
 import { KIND_LABEL } from '../ContactDialog'
+import { TOURS } from '../../../lib/workspace-tours/tours'
 
 const STATUS: Record<TicketStatus, [string, string]> = {
   open: ['Open — we\'re on it', 'var(--text-dim)'], waiting_on_you: ['Waiting for your reply', 'var(--warn)'], resolved: ['Resolved', 'var(--ok)'],
@@ -63,7 +64,7 @@ export default function Support({ data, actions }: SectionProps) {
         action={<><Quiet onClick={() => actions.contact('bug')}>Report a problem</Quiet><Primary onClick={() => actions.contact('question')}>Contact support</Primary></>} />
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] mb-6">
-        <Panel className="p-4 sm:p-5">
+        <Panel tour="help-search" className="p-4 sm:p-5">
           <Field label="Search help"><input className={inputClass} type="search" value={query} placeholder="certificate, credits, invoice…" onChange={(e) => setQuery(e.target.value)} /></Field>
           <ul className="mt-3 divide-y divide-[var(--border)]">
             {answers.map((x) => (
@@ -78,7 +79,7 @@ export default function Support({ data, actions }: SectionProps) {
           </ul>
           <a href="/blog/" className="mt-2 inline-block text-[12.5px] text-[var(--accent)] hover:underline">All guides →</a>
         </Panel>
-        <Panel className="p-4 sm:p-5">
+        <Panel tour="status" className="p-4 sm:p-5">
           <p className="text-[12px] text-[var(--text-dim)]">Service status</p>
           <p className="mt-2 inline-flex items-center gap-2 text-[13.5px] font-medium"><Dot color="var(--ok)" />All systems running</p>
           <ul className="mt-3 space-y-1 text-[12px] text-[var(--text-dim)]">
@@ -90,11 +91,28 @@ export default function Support({ data, actions }: SectionProps) {
         </Panel>
       </div>
 
+      <section className="mb-6" data-tour="tours">
+        <SectionLabel>Guided tours</SectionLabel>
+        <Panel>
+          <ul className="grid sm:grid-cols-2 divide-y sm:divide-y-0 divide-[var(--border)]">
+            {TOURS.filter((t) => !t.section.endsWith('/detail')).map((t) => (
+              <li key={t.id} className="min-w-0">
+                <button onClick={() => actions.tour(t.id)} className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-2)] rounded-[8px] flex items-baseline gap-3">
+                  <span className="min-w-0 flex-1"><span className="block text-[13px] font-medium">{t.title}</span><span className="block text-[12px] text-[var(--text-dim)]">{t.summary}</span></span>
+                  <span className="shrink-0 text-[11.5px] text-[var(--text-faint)] tabular-nums">{t.steps.length} steps</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+        <p className="mt-2 text-[12px] text-[var(--text-dim)]">Every page also offers its tour from the account menu → “Tour this page”. In the connection wizard, “Guide me” explains the step you're on.</p>
+      </section>
+
       <SectionLabel>Your requests{waiting > 0 && <span className="ml-2 normal-case tracking-normal" style={{ color: 'var(--warn)' }}>· {waiting} waiting for you</span>}</SectionLabel>
       {data.tickets.length === 0 ? (
         <Empty title="No requests yet" body="When you contact us, the conversation shows up here too — no need to dig through email." />
       ) : (
-        <DataList
+        <DataList tour="requests"
           rows={data.tickets}
           rowKey={(t) => t.id}
           primaryHeader="Request"

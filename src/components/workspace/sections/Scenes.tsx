@@ -12,19 +12,19 @@ import { HEALTH } from './DataSources'
 
 const saved = SAMPLE_CONNECTIONS.map((c) => ({ id: c.id, name: c.name, defaultInNewScenes: c.defaultInNewScenes, schedule: c.schedule }))
 
-function SceneSources({ scene, onBack, onData }: { scene: SampleScene; onBack: () => void; onData: () => void }) {
+function SceneSources({ scene, onBack, onData, onTour }: { scene: SampleScene; onBack: () => void; onData: () => void; onTour: () => void }) {
   const [overrides, setOverrides] = useState<SceneOverride[]>(scene.overrides)
   const rows = resolveSceneSources(saved, overrides)
   const update = (next: SceneOverride) => setOverrides(setOverride(overrides, next, saved.find((s) => s.id === next.connectionId)!))
   return (
     <>
       <button onClick={onBack} className="text-[12.5px] text-[var(--text-dim)] hover:text-[var(--text)] mb-3 min-h-[32px]">← Scenes</button>
-      <Head title={scene.name} sub={scene.project ?? 'No project'} action={<><Quiet>Share</Quiet><Primary>Open scene</Primary></>} />
+      <Head title={scene.name} sub={scene.project ?? 'No project'} action={<><Quiet onClick={onTour}>Tour</Quiet><Quiet>Share</Quiet><Primary>Open scene</Primary></>} />
       <div className="flex items-baseline justify-between mb-2">
         <h2 className="text-[12px] uppercase tracking-[0.08em] text-[var(--text-faint)]">Data in this scene <Hint>Each source starts as you saved it under Data sources. Change it here and only this scene changes; Reset brings back the saved setting.</Hint></h2>
         <button onClick={onData} className="text-[12.5px] text-[var(--accent)] hover:underline">Manage connections →</button>
       </div>
-      <DataList
+      <DataList tour="scene-sources"
         rows={rows}
         rowKey={(r) => r.connectionId}
         primaryHeader="Source"
@@ -59,13 +59,13 @@ export default function Scenes({ actions }: SectionProps) {
   const [open, setOpen] = useState<string | null>(null)
   const [newOpen, setNewOpen] = useState(false)
   const scene = SAMPLE_SCENES.find((s) => s.id === open)
-  if (scene) return <SceneSources scene={scene} onBack={() => setOpen(null)} onData={() => actions.go('data')} />
+  if (scene) return <SceneSources scene={scene} onBack={() => setOpen(null)} onData={() => actions.go('data')} onTour={() => actions.tour('scene')} />
   const defaults = SAMPLE_CONNECTIONS.filter((c) => c.defaultInNewScenes)
   return (
     <>
       <Head title="Scenes" sub="Saved views of your models and data, to present, share or embed." action={<Primary onClick={() => setNewOpen(true)}>New scene</Primary>} />
       {SAMPLE_SCENES.length === 0 ? <Empty title="No scenes yet" body="A scene keeps the camera, the models, the map and the live data together, ready to open or embed." /> : (
-        <DataList
+        <DataList tour="scene-list"
           rows={SAMPLE_SCENES}
           rowKey={(s) => s.id}
           primaryHeader="Scene"

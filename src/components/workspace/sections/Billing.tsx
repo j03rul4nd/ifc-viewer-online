@@ -24,8 +24,8 @@ export default function Billing({ data, actions }: SectionProps) {
     <>
       <Head title="Credits & billing" />
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
-        <Panel className="p-4 sm:p-5"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
-        <Panel className="p-4 sm:p-5">
+        <Panel tour="credits" className="p-4 sm:p-5"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
+        <Panel tour="plan" className="p-4 sm:p-5">
           <p className="text-[12px] text-[var(--text-dim)]">Plan</p>
           <p className="text-[16px] font-semibold mt-1">{plan.name} · {fmtEur((yearly ? plan.yearlyEur : plan.monthlyEur) ?? 0)}/{yearly ? 'year' : 'month'}</p>
           <p className="text-[12.5px] text-[var(--text-dim)] mt-1">
@@ -50,7 +50,7 @@ export default function Billing({ data, actions }: SectionProps) {
 
       <div className="mt-8"><SectionLabel id="topup">Top up</SectionLabel></div>
       <p className="-mt-1 mb-3 text-[12.5px] text-[var(--text-dim)]">Packs last 12 months and are spent after your plan credits.</p>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3" data-tour="packs">
         {CREDIT_PACKS.map((p) => {
           const suggested = p.id === SUGGESTED_PACK
           return (
@@ -73,8 +73,8 @@ export default function Billing({ data, actions }: SectionProps) {
       </div>
 
       <div className="grid gap-6 lg:gap-4 lg:grid-cols-2 mt-8">
-        <div className="min-w-0">
-          <SectionLabel>Credit history</SectionLabel>
+        <div className="min-w-0" data-tour="ledger">
+          <SectionLabel id="ledger">Credit history</SectionLabel>
           <Panel>
             <ul className="divide-y divide-[var(--border)] text-[13px]">
               {data.ledger.map((e, i) => (
@@ -106,7 +106,7 @@ export default function Billing({ data, actions }: SectionProps) {
       </div>
 
       <div className="mt-8">
-        <SettingGroup title="Billing details">
+        <SettingGroup title="Billing details" tour="billing-details">
           <SettingRow title={a.org} detail="Carrer de Pau Claris 100, 08009 Barcelona, ES · VAT ID ESB12345678">
             <Quiet>Edit</Quiet>
           </SettingRow>

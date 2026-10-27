@@ -35,6 +35,8 @@ export interface SectionActions {
   /** Opens the contact form; `ref` names the job, project or certificate it is about. */
   contact: (kind: TicketKind, ref?: string) => void
   openProject: (id: string) => void
+  /** Starts a guided tour by id (lib/workspace-tours), navigating to its page first. */
+  tour: (id: string) => void
 }
 
 export interface SectionProps { data: WorkspaceData; actions: SectionActions }

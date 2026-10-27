@@ -19,12 +19,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MoreHorizontal, Lock, LifeBuoy } from 'lucide-react'
 import { SCENARIOS, scenarioData, type Scenario, type TicketKind } from './sample-data'
 import { SECTIONS, canUse, sectionFromPath, type SectionActions, type SectionId, type SectionDef } from './registry'
-import { Banner, Primary, Quiet, Skeleton, fmtInt } from './ui'
+import { Banner, Primary, Quiet, Skeleton, fmtInt, NAV_EVENT, notifyNav } from './ui'
 import { previewProvider, type CheckoutItem, type CheckoutOutcome } from '../../lib/pricing/checkout'
 import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
 import LockedSection from './LockedSection'
 import ContactDialog from './ContactDialog'
+import GuidedTour from './GuidedTour'
+import { TOURS, tourForPath, seenTours, markSeen, type Tour } from '../../lib/workspace-tours/tours'
 
 const BASE = `${import.meta.env.BASE_URL ?? '/'}workspace`
 const hrefOf = (id: SectionId) => (id === 'overview' ? BASE : `${BASE}/${id}`)
@@ -61,6 +63,16 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const [moreOpen, setMoreOpen] = useState(false)
   const [checkout, setCheckout] = useState<CheckoutItem | null>(null)
   const [contact, setContact] = useState<{ kind: TicketKind; ref?: string } | null>(null)
+  const [tour, setTour] = useState<Tour | null>(null)
+  const [seen, setSeen] = useState(() => seenTours())
+  // Re-read the URL's second segment on every navigation, for sub-page tours.
+  const [path, setPath] = useState(() => (typeof location !== 'undefined' ? location.pathname : ''))
+  useEffect(() => {
+    const sync = () => setPath(location.pathname)
+    addEventListener('popstate', sync)
+    addEventListener(NAV_EVENT, sync)
+    return () => { removeEventListener('popstate', sync); removeEventListener(NAV_EVENT, sync) }
+  }, [])
   const data = useMemo(() => scenarioData(scenario), [scenario])
   const top = useRef<HTMLDivElement>(null)
   const provider = useMemo(() => previewProvider(checkoutOutcome), [checkoutOutcome])
@@ -69,7 +81,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const go = useCallback((s: SectionId) => {
     setSection(s)
     setMoreOpen(false)
-    if (typeof history !== 'undefined' && location.pathname !== hrefOf(s)) history.pushState(null, '', hrefOf(s))
+    if (typeof history !== 'undefined' && location.pathname !== hrefOf(s)) { history.pushState(null, '', hrefOf(s)); notifyNav() }
     // The app scrolls inside its route container, not the window.
     top.current?.scrollIntoView?.({ block: 'start' })
   }, [])
@@ -83,8 +95,18 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     go, newJob: () => setJobOpen(true), topUp: () => setCheckout(TOP_UP), buy: setCheckout,
     contact: (kind, ref) => setContact({ kind, ref }),
     // The project id rides in the URL; Projects reads it when it mounts.
+    tour: (id) => {
+      const t = TOURS.find((x) => x.id === id)
+      if (!t) return
+      const [sec, sub] = t.section.split('/')
+      if (sub && sub !== 'detail') { history.pushState(null, '', `${hrefOf(sec as SectionId)}/${sub}`); dispatchEvent(new PopStateEvent('popstate')) }
+      // Detail tours start from the detail page the user is already on.
+      else if (!sub) go(sec as SectionId)
+      // Let the page render before the tour looks for its anchors.
+      setTimeout(() => setTour(t), 120)
+    },
     openProject: (id) => {
-      if (typeof history !== 'undefined') history.pushState(null, '', `${hrefOf('projects')}/${id}`)
+      if (typeof history !== 'undefined') { history.pushState(null, '', `${hrefOf('projects')}/${id}`); notifyNav() }
       setSection('projects')
       top.current?.scrollIntoView?.({ block: 'start' })
     },
@@ -109,6 +131,11 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   else if (!canUse(plan, current)) body = <LockedSection section={current} current={plan} period={data.account.billing} onUpgrade={setCheckout} />
   else body = <current.Component key={section} data={data} actions={actions} />
 
+  const sub = path.split('/workspace/')[1]?.split('/')[1]
+  const pageTour = scenario === 'loading' || scenario === 'error' || !canUse(plan, current) ? undefined
+    : tourForPath(section, section === 'projects' && sub ? 'detail' : sub)
+  // Offered once per tour, never started on its own.
+  const offerTour = pageTour && !seen.has(pageTour.id) && !tour ? pageTour : undefined
   const status = data.account.status
   return (
     <div ref={top} className="min-h-[100dvh] bg-[var(--bg)] text-[var(--text)]">
@@ -151,6 +178,10 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
             ))}
             <button onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; setContact({ kind: 'bug' }) }}
               className="w-full text-left px-4 h-[36px] text-[13px] hover:bg-[var(--surface-2)]">Report a problem</button>
+            {pageTour && (
+              <button onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; setTour(pageTour) }}
+                className="w-full text-left px-4 h-[36px] text-[13px] hover:bg-[var(--surface-2)]">Tour this page</button>
+            )}
             <div className="border-t border-[var(--border)] mt-1 pt-1">
               <button className="w-full text-left px-4 h-[36px] text-[13px] text-[var(--text-dim)] hover:bg-[var(--surface-2)]">Sign out</button>
             </div>
@@ -184,6 +215,15 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
               Projects become read-only after that; certificates stay verifiable.
             </Banner>
           )}
+          {offerTour && (
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-[10px] border border-[var(--border)] px-4 py-2.5" data-tour-offer>
+              <p className="flex-1 min-w-0 text-[12.5px] text-[var(--text-dim)]"><span className="text-[var(--text)] font-medium">New here?</span> A 1-minute tour of {offerTour.title.toLowerCase() === 'your workspace' ? 'your workspace' : offerTour.title} — {offerTour.summary.charAt(0).toLowerCase() + offerTour.summary.slice(1)}</p>
+              <div className="flex gap-2 shrink-0">
+                <Quiet onClick={() => { markSeen(offerTour.id); setSeen(seenTours()) }}>Not now</Quiet>
+                <Primary onClick={() => setTour(offerTour)}>Show me</Primary>
+              </div>
+            </div>
+          )}
           {body}
         </main>
       </div>
@@ -215,6 +255,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
       )}
 
       {jobOpen && <CloudJobDialog balance={data.account.credits.balance} onClose={() => setJobOpen(false)} onTopUp={() => { setJobOpen(false); setCheckout(TOP_UP) }} />}
+      {tour && <GuidedTour key={tour.id} title={tour.title} steps={tour.steps} onClose={() => { markSeen(tour.id); setSeen(seenTours()); setTour(null) }} />}
       {contact && <ContactDialog kind={contact.kind} refId={contact.ref} section={section} onClose={() => setContact(null)} />}
       {checkout && <CheckoutDialog item={checkout} provider={provider} onClose={() => setCheckout(null)} />}
     </div>

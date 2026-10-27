@@ -8,7 +8,7 @@ export default function Certificates({ data }: SectionProps) {
       {data.certificates.length === 0 ? (
         <Empty title="No certificates issued" body="A certificate proves that a specific file passed specific checks on a specific date. Your client verifies it with one link — no account needed." />
       ) : (
-        <DataList
+        <DataList tour="cert-list"
           rows={data.certificates}
           rowKey={(c) => c.id}
           primaryHeader="Certificate"

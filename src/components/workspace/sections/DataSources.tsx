@@ -157,7 +157,7 @@ export default function DataSources({ actions }: SectionProps) {
           {SAMPLE_CONNECTIONS.length === 0 ? (
             <Empty title="No connections yet" body="Connect a sensor broker, an API, a database or a webhook. It takes about two minutes and you test it before saving." action={<Primary onClick={() => setWizard(true)}>New connection</Primary>} />
           ) : (
-            <DataList
+            <DataList tour="connection-list"
               rows={SAMPLE_CONNECTIONS}
               rowKey={(c) => c.id}
               primaryHeader="Connection"
@@ -175,11 +175,11 @@ export default function DataSources({ actions }: SectionProps) {
 
       {tab === 'credentials' && (
         <>
-          <Panel className="p-4 mb-4 text-[12.5px] text-[var(--text-dim)]">
+          <Panel tour="vault-note" className="p-4 mb-4 text-[12.5px] text-[var(--text-dim)]">
             Keys and passwords for the systems you read from. Encrypted at rest in the EU; we never show a secret again once saved — only its last four characters. Update one here and every connection using it picks it up.
             <span className="block mt-2 text-[11.5px] text-[var(--text-faint)]">Allow-list our gateway if your firewall needs it: 185.199.110.42, 185.199.111.42</span>
           </Panel>
-          <DataList
+          <DataList tour="credential-list"
             rows={SAMPLE_CREDENTIALS}
             rowKey={(c) => c.id}
             primaryHeader="Credential"
@@ -199,7 +199,7 @@ export default function DataSources({ actions }: SectionProps) {
           <Panel className="p-4 mb-4 text-[12.5px] text-[var(--text-dim)]">
             Keys for your own systems to call us: validate models from CI, send readings from Node-RED, embed private scenes. Each key does only what you tick. <a className="text-[var(--accent)] hover:underline" href="/sdk/">API reference →</a>
           </Panel>
-          <DataList
+          <DataList tour="apikey-list"
             rows={SAMPLE_API_KEYS}
             rowKey={(k) => k.id}
             primaryHeader="Key"
@@ -215,7 +215,7 @@ export default function DataSources({ actions }: SectionProps) {
       )}
 
       {tab === 'activity' && (
-        <DataList
+        <DataList tour="activity-log"
           rows={SAMPLE_INGEST_LOG}
           rowKey={(e) => e.at + e.connectionId}
           primaryHeader="When"

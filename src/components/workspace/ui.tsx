@@ -14,8 +14,8 @@ export function scoreColor(score: number): string {
 
 export const fmtInt = (n: number) => new Intl.NumberFormat(undefined).format(n)
 
-export function Panel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-[10px] border border-[var(--border)] bg-[var(--surface)] ${className}`}>{children}</div>
+export function Panel({ children, className = '', tour }: { children: React.ReactNode; className?: string; tour?: string }) {
+  return <div data-tour={tour} className={`rounded-[10px] border border-[var(--border)] bg-[var(--surface)] ${className}`}>{children}</div>
 }
 
 export function Head({ title, sub, action }: { title: string; sub?: React.ReactNode; action?: React.ReactNode }) {
@@ -25,7 +25,7 @@ export function Head({ title, sub, action }: { title: string; sub?: React.ReactN
         <h1 className="text-[19px] sm:text-[20px] font-semibold tracking-[-0.015em] [overflow-wrap:anywhere]">{title}</h1>
         {sub && <p className="text-[13px] text-[var(--text-dim)] mt-1 max-w-[640px]">{sub}</p>}
       </div>
-      {action && <div className="shrink-0 flex flex-wrap gap-2">{action}</div>}
+      {action && <div data-tour="page-action" className="shrink-0 flex flex-wrap gap-2">{action}</div>}
     </div>
   )
 }
@@ -131,7 +131,8 @@ export interface Column<T> {
   className?: string
 }
 
-export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, actions, rowClassName }: {
+export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, actions, rowClassName, tour }: {
+  tour?: string
   rows: T[]
   primaryHeader: string
   columns: Column<T>[]
@@ -142,7 +143,7 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
   rowClassName?: (row: T) => string
 }) {
   return (
-    <Panel>
+    <Panel tour={tour}>
       <ul className="md:hidden divide-y divide-[var(--border)]">
         {rows.map((r) => (
           <li key={rowKey(r)} className={`px-4 py-3 ${rowClassName?.(r) ?? ''}`}>
@@ -281,9 +282,9 @@ export function SettingRow({ title, detail, children }: { title: string; detail?
 }
 
 /** A titled group of settings rows. */
-export function SettingGroup({ title, children, tone }: { title: string; children: React.ReactNode; tone?: 'danger' }) {
+export function SettingGroup({ title, children, tone, tour }: { title: string; children: React.ReactNode; tone?: 'danger'; tour?: string }) {
   return (
-    <section className="mb-6">
+    <section className="mb-6" data-tour={tour}>
       <SectionLabel>{title}</SectionLabel>
       <div className="rounded-[10px] border bg-[var(--surface)] divide-y divide-[var(--border)]" style={{ borderColor: tone === 'danger' ? 'color-mix(in srgb, var(--danger) 45%, var(--border))' : 'var(--border)' }}>
         {children}
@@ -302,6 +303,10 @@ export function Danger({ children, onClick, disabled, type = 'button', className
   )
 }
 
+/** Fired after any in-workspace pushState, so the shell knows the URL changed. */
+export const NAV_EVENT = 'workspace:navigate'
+export const notifyNav = () => { if (typeof dispatchEvent === 'function') dispatchEvent(new Event(NAV_EVENT)) }
+
 // ── Tabs inside a section ─────────────────────────────────────────────────────
 // The tab is the second URL segment (/workspace/settings/security), so every
 // screen is linkable and survives a refresh — the same rule as sections.
@@ -317,7 +322,7 @@ export function useSubTab<T extends string>(section: string, tabs: readonly { id
     setTab(t)
     const base = `${import.meta.env.BASE_URL ?? '/'}workspace/${section}`
     const url = t === tabs[0].id ? base : `${base}/${t}`
-    if (typeof history !== 'undefined' && location.pathname !== url) history.pushState(null, '', url)
+    if (typeof history !== 'undefined' && location.pathname !== url) { history.pushState(null, '', url); notifyNav() }
   }, [section, tabs])
   useEffect(() => {
     const onPop = () => setTab(subFromPath(tabs))
@@ -331,10 +336,10 @@ export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs:
   return (
     <>
     {/* Phone: a select, so no tab hides past the edge of a sideways-scrolling strip. */}
-    <select aria-label={label} className={`${inputClass} sm:hidden mb-5 font-medium`} value={value} onChange={(e) => onChange(e.target.value as T)}>
+    <select data-tour="tabs" aria-label={label} className={`${inputClass} sm:hidden mb-5 font-medium`} value={value} onChange={(e) => onChange(e.target.value as T)}>
       {tabs.map((t) => <option key={t.id} value={t.id}>{t.label}{t.count ? ` (${t.count})` : ''}</option>)}
     </select>
-    <div role="tablist" aria-label={label} className="hidden sm:flex gap-1 overflow-x-auto border-b border-[var(--border)] mb-5">
+    <div data-tour="tabs" role="tablist" aria-label={label} className="hidden sm:flex gap-1 overflow-x-auto border-b border-[var(--border)] mb-5">
       {tabs.map((t) => (
         <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)}
           className={`shrink-0 h-[38px] px-3 -mb-px border-b-2 text-[13px] whitespace-nowrap ${value === t.id ? 'border-[var(--accent)] text-[var(--text)] font-medium' : 'border-transparent text-[var(--text-faint)] hover:text-[var(--text)]'}`}>
