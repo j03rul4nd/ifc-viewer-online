@@ -1,0 +1,197 @@
+{
+ "version": 1,
+ "entries": {
+  "f1:1746543:00902f5a448dbaf1c3fde06b1f7b0877": {
+   "frag": "65553e0d87e2c243.frag",
+   "ifc": "models/barcelona-catalunya/catalunya-mobility-hub.ifc",
+   "ifcBytes": 1746543,
+   "fragBytes": 247624
+  },
+  "f1:1075077:d5f00c5f429a0334a00cfcea9104bbdf": {
+   "frag": "5f58914c3ba39cad.frag",
+   "ifc": "models/barcelona-catalunya/endolla-pg-gracia.ifc",
+   "ifcBytes": 1075077,
+   "fragBytes": 213946
+  },
+  "f1:618962:85dbe086da01d3191375c2faa12d9d54": {
+   "frag": "1976e1927303da29.frag",
+   "ifc": "models/barcelona-catalunya/falques-bench-lamps.ifc",
+   "ifcBytes": 618962,
+   "fragBytes": 85106
+  },
+  "f1:3862697:a5022726962bbefe61280ff6aef26bd2": {
+   "frag": "86e38e854c4c0f23.frag",
+   "ifc": "models/barcelona-catalunya/fonts-bessones.ifc",
+   "ifcBytes": 3862697,
+   "fragBytes": 370745
+  },
+  "f1:1171271:5cc9d7bd6a6d6b7075dc1d26492daeca": {
+   "frag": "a0bcb0c076ebdd18.frag",
+   "ifc": "models/barcelona-catalunya/granvia-fountain.ifc",
+   "ifcBytes": 1171271,
+   "fragBytes": 197355
+  },
+  "f1:622307:c294eddb3254e07150709804f2b1bcdb": {
+   "frag": "3304d47f12ffb590.frag",
+   "ifc": "models/barcelona-catalunya/macia-monument.ifc",
+   "ifcBytes": 622307,
+   "fragBytes": 63747
+  },
+  "f1:706860:a20e151072f1cc42101604ed401afc01": {
+   "frag": "f43e67044d268291.frag",
+   "ifc": "models/barcelona-catalunya/pelai-entrance.ifc",
+   "ifcBytes": 706860,
+   "fragBytes": 132335
+  },
+  "f1:503218:2f9a48357b0e25f98df3cca997e7f007": {
+   "frag": "bf26b9ff108611d3.frag",
+   "ifc": "models/barcelona-catalunya/rambla-canaletes.ifc",
+   "ifcBytes": 503218,
+   "fragBytes": 87979
+  },
+  "f1:245678:f59be5d314cb56e900f79f928036f0e5": {
+   "frag": "98f83679494f323f.frag",
+   "ifc": "models/ciutadella/BCN-IVO-ZZ-XX-M3-Z-0003.ifc",
+   "ifcBytes": 245678,
+   "fragBytes": 49706
+  },
+  "f1:67553572:8b91c1d18d21466b03bfc060a9a19d92": {
+   "frag": "ff9cae5837b793e9.frag",
+   "ifc": "models/cras/model.ifc",
+   "ifcBytes": 67553572,
+   "fragBytes": 3666941
+  },
+  "f1:636391:b6281c1df53c54452cbf6ce482fa6ac5": {
+   "frag": "c3e164ccf29cf934.frag",
+   "ifc": "models/helsinki/elielinaukio-bus-terminal.ifc",
+   "ifcBytes": 636391,
+   "fragBytes": 101077
+  },
+  "f1:1007024:5879febf83029ef31165823155676063": {
+   "frag": "cd22b3c41e474126.frag",
+   "ifc": "models/helsinki/helsinki-cathedral.ifc",
+   "ifcBytes": 1007024,
+   "fragBytes": 195950
+  },
+  "f1:6792590:f2babdb356dd2cf0366fe225783a40c8": {
+   "frag": "7544d35dfb10db76.frag",
+   "ifc": "models/helsinki/helsinki-central-station.ifc",
+   "ifcBytes": 6792590,
+   "fragBytes": 694399
+  },
+  "f1:5229416:46b8be6bab371497f08bc2a3e88be73e": {
+   "frag": "e31aee2a79ffa2b9.frag",
+   "ifc": "models/hotel-vela/BCN-IVO-ZZ-XX-M3-A-0002.ifc",
+   "ifcBytes": 5229416,
+   "fragBytes": 546139
+  },
+  "f1:233578:e3ebbc0c87abf04357a2faec92d21146": {
+   "frag": "66544699c99a6199.frag",
+   "ifc": "models/hotel-vela/BCN-IVO-ZZ-XX-M3-M-0002.ifc",
+   "ifcBytes": 233578,
+   "fragBytes": 32405
+  },
+  "f1:1444603:891870064b1d7100776d9de152f804e1": {
+   "frag": "61a6dda61aa2ecc7.frag",
+   "ifc": "models/hotel-vela/BCN-IVO-ZZ-XX-M3-S-0002.ifc",
+   "ifcBytes": 1444603,
+   "fragBytes": 229900
+  },
+  "f1:38359:f409021d3d7b53ec10e9c23de135bbf0": {
+   "frag": "bf1d923bd7cb1bde.frag",
+   "ifc": "models/metro-drassanes/BCN-IVO-DRS-XX-M3-A-0001.ifc",
+   "ifcBytes": 38359,
+   "fragBytes": 9062
+  },
+  "f1:92432:03e4f9434a52d304199b00c9e56f25be": {
+   "frag": "9201cc74fd90acb2.frag",
+   "ifc": "models/msp-office/MSP-Demo-Office.ifc",
+   "ifcBytes": 92432,
+   "fragBytes": 16707
+  },
+  "f1:22225803:ebeadfaa20b79edf7a474e8ba672a329": {
+   "frag": "46e0eb4d33709d9e.frag",
+   "ifc": "models/oriental-pearl/SHA-IVO-ORIENTAL-PEARL-A-0001.ifc",
+   "ifcBytes": 22225803,
+   "fragBytes": 1942339
+  },
+  "f1:263610:cce99c94d8e584707963b3e356e99ea6": {
+   "frag": "ee2d8f8947bd399a.frag",
+   "ifc": "models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc",
+   "ifcBytes": 263610,
+   "fragBytes": 51664
+  },
+  "f1:52144:83f262c447af53e616f92c33ffbc8eb1": {
+   "frag": "cdfe356b127ceaf4.frag",
+   "ifc": "models/poblenou/BCN-IVO-ZZ-XX-M3-M-0001.ifc",
+   "ifcBytes": 52144,
+   "fragBytes": 10950
+  },
+  "f1:379754:02349403eff644194ca6cc5600950c87": {
+   "frag": "83faf350b33dc32a.frag",
+   "ifc": "models/poblenou/BCN-IVO-ZZ-XX-M3-S-0001.ifc",
+   "ifcBytes": 379754,
+   "fragBytes": 63990
+  },
+  "f1:263604:2b05950b6be833001d9d6b5b9c8e0ddf": {
+   "frag": "e031b709fec6e601.frag",
+   "ifc": "models/poblenou/p02/BCN-IVO-ZZ-XX-M3-A-0001.ifc",
+   "ifcBytes": 263604,
+   "fragBytes": 51693
+  },
+  "f1:39025:e8e01139d8345dc4682212790679dd51": {
+   "frag": "6a292b3b2ce10f58.frag",
+   "ifc": "models/realtime-lidar/IVO-Construction-Progress.ifc",
+   "ifcBytes": 39025,
+   "fragBytes": 7857
+  },
+  "f1:20300:e6b4fc6a21568b145d090f14b604b61d": {
+   "frag": "9ce9b428cddcd692.frag",
+   "ifc": "models/realtime-lidar/IVO-Utility-Tunnel.ifc",
+   "ifcBytes": 20300,
+   "fragBytes": 5217
+  },
+  "f1:48349:a1cc01053ac0988df000f93e4e3a654a": {
+   "frag": "bac4d0bac24f5135.frag",
+   "ifc": "models/realtime-lidar/IVO-Warehouse-Operations.ifc",
+   "ifcBytes": 48349,
+   "fragBytes": 9187
+  },
+  "f1:94255149:fd8ce811d6ae4ff4297997a54568375b": {
+   "frag": "397bf54725faea3a.frag",
+   "ifc": "models/shanghai-tower/SHA-IVO-SHANGHAI-TOWER-A-0001.ifc",
+   "ifcBytes": 94255149,
+   "fragBytes": 13373301
+  },
+  "f1:13383835:1cda0277e6ebe8e47ed681e73bd7dad3": {
+   "frag": "d5a3119c19c4e07b.frag",
+   "ifc": "models/swfc/SHA-IVO-SWFC-A-0001.ifc",
+   "ifcBytes": 13383835,
+   "fragBytes": 1058517
+  },
+  "f1:2625378:e1ce98a6822a7beecd4313a8593f13e9": {
+   "frag": "e9da2716dc3c186a.frag",
+   "ifc": "models/tokyo/tochomae-a4-entrance.ifc",
+   "ifcBytes": 2625378,
+   "fragBytes": 207235
+  },
+  "f1:4230409:b29114853e740acf872406aea849ec00": {
+   "frag": "d91065629668f0c6.frag",
+   "ifc": "models/tokyo/waseda-tram-stop.ifc",
+   "ifcBytes": 4230409,
+   "fragBytes": 373689
+  },
+  "f1:3489029:4d4a6a4639087001d6ddfa6e33577879": {
+   "frag": "08ce99075d4a9c08.frag",
+   "ifc": "models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc",
+   "ifcBytes": 3489029,
+   "fragBytes": 515575
+  },
+  "f1:21034:852d119e2b2ae2e3a616366a9d231bfd": {
+   "frag": "8f66b5b8975e62b1.frag",
+   "ifc": "models/video-demo/IVO-Operations-Pavilion.ifc",
+   "ifcBytes": 21034,
+   "fragBytes": 5703
+  }
+ }
+}

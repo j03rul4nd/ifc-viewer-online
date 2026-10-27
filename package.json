@@ -33,6 +33,7 @@
     "hotel-vela:arc": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela ARC",
     "hotel-vela:str": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela STR",
     "hotel-vela:mep": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela MEP",
+    "frags": "node --max-old-space-size=8192 --experimental-strip-types --no-warnings --import ./scripts/ebook/ts-hook.mjs scripts/frags/build-demo-frags.ts",
     "metro-drassanes": "blender --background --python scripts/blender/build-metro-drassanes.py -- public/models/metro-drassanes",
     "site-scan": "node scripts/pointcloud/build-site-scan.mjs",
     "realtime-lidar": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/pointcloud/build-realtime-snapshots.ts",

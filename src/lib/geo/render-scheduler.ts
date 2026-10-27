@@ -24,6 +24,7 @@
 
 import type * as THREE from 'three'
 import type { Steps } from './steps'
+import { isMemoryConstrained } from '../loading/device-profile'
 
 type SchedulerLike = {
   yield?: () => Promise<void>
@@ -164,6 +165,11 @@ export function deviceBudget(gl?: WebGLRenderingContext | WebGL2RenderingContext
   }
   if (nav.connection?.saveData) { score -= 1; reasons.push('saveData') }
   if (/(^|\s)(slow-)?2g/.test(nav.connection?.effectiveType ?? '')) { score -= 1; reasons.push(`network ${nav.connection?.effectiveType}`) }
+  // A phone or tablet says nothing about its memory (Safari hides it) and
+  // reports enough cores to pass for a laptop — which put an iPhone on the
+  // desktop budget, and the twin past the tab's memory ceiling. Its GPU shares
+  // that ceiling with everything else on the page: always the low tier.
+  if (isMemoryConstrained()) { score -= 3; reasons.push('memory-constrained device') }
   const renderer = rendererName(gl).toLowerCase()
   if (/swiftshader|llvmpipe|softpipe|basic render|software/.test(renderer)) { score -= 3; reasons.push(`software GL (${renderer})`) }
   const tier: DeviceTier = score <= -3 ? 'low' : score <= -1 ? 'mid' : 'high'

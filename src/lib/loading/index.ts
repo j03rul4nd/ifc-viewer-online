@@ -184,6 +184,8 @@ export function getLoadManager(): LoadManager {
       else await resolveViewer()?.removeModel(modelId)
     },
     retainedBytes: (modelId) => modelRegistry.getBuffer(modelId),
+    // The IFC files we ship come with their fragments converted offline.
+    prebuilt: (fingerprint, signal) => import('./prebuilt-frags').then((m) => m.findPrebuiltFragments(fingerprint, signal)),
     // The policy knows the device budget: a job whose estimated peak is over
     // 60 % of it converts alone.
     estimate: (sizeBytes) => policy.estimate(sizeBytes),
