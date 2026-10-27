@@ -59,7 +59,10 @@
     "rule": "规则",
     "storey": "楼层",
     "class": "类",
-    "unknownStorey": "未知"
+    "unknownStorey": "未知",
+    "showMore": "再显示 {{count}} 项",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠"
   },
   "issue": {
     "fixable": "可自动修复",
@@ -91,7 +94,11 @@
     "exportJson": "完整报告",
     "exportCsv": "问题表格",
     "exportCertificate": "证书",
-    "collapsePanel": "折叠面板"
+    "collapsePanel": "折叠面板",
+    "shareReport": "分享",
+    "shareReportTitle": "复制可分享的报告链接",
+    "reportLinkCopied": "链接已复制——粘贴即可分享您的 Health Score",
+    "reportLinkError": "无法复制链接——请重试"
   },
   "profile": {
     "label": "配置文件",
@@ -142,7 +149,12 @@
     "critical": "严重",
     "suggestedProfile": "建议配置：{{name}}",
     "allCovered": "所有类别已覆盖",
-    "unreadableEntities": "有 {{count}} 个实体无法读取，已被跳过。评分只反映模型的其余部分。"
+    "unreadableEntities": "有 {{count}} 个实体无法读取，已被跳过。评分只反映模型的其余部分。",
+    "partialTitle": "部分评分——已完成 {{ran}}/{{total}} 项检查",
+    "partialDesc": "部分检查未完成，实际评分可能低于显示值。请重新运行，或关闭受影响的检查。",
+    "statusFailed": "运行失败",
+    "statusNotRun": "未运行",
+    "ranAll": "全部 {{total}} 项检查均已运行"
   },
   "empty": {
     "noModel": "未加载模型",
@@ -175,7 +187,8 @@
     "topic": {
       "open": "打开",
       "closed": "已关闭",
-      "inProgress": "进行中"
+      "inProgress": "进行中",
+      "wontFix": "不予修复"
     },
     "comments": "{{count}} 条评论",
     "comments_other": "{{count}} 条评论",
@@ -191,6 +204,58 @@
       "delete": "删除",
       "noComments": "暂无评论",
       "local": "本地"
+    },
+    "exportSingle": "导出主题",
+    "exportTopics": "导出主题",
+    "exportVersion": "导出所用 BCF 版本",
+    "newTopic": "新建主题",
+    "createTopic": "创建主题",
+    "topicCreated": "主题已创建",
+    "topicDeleted": "主题已删除",
+    "topicUpdated": "已保存",
+    "captureView": "捕获当前视图",
+    "captureAdded": "已捕获视点",
+    "noViewpoints": "暂无视点",
+    "priority": {
+      "high": "高",
+      "normal": "普通",
+      "low": "低"
+    },
+    "type": {
+      "issue": "问题",
+      "error": "错误",
+      "warning": "警告",
+      "info": "信息",
+      "comment": "评论",
+      "request": "请求",
+      "clash": "碰撞"
+    },
+    "sort": {
+      "newest": "最新优先",
+      "oldest": "最早优先",
+      "priority": "按优先级",
+      "status": "按状态",
+      "title": "按标题"
+    },
+    "detail": {
+      "back": "主题",
+      "title": "标题",
+      "status": "状态",
+      "type": "类型",
+      "priority": "优先级",
+      "assignedTo": "指派给",
+      "assignedPlaceholder": "姓名或邮箱…",
+      "dueDate": "截止日期",
+      "description": "描述",
+      "descPlaceholder": "描述问题…",
+      "viewpoints": "视点",
+      "comments": "评论"
+    },
+    "create": {
+      "heading": "新建 BCF 主题",
+      "titleLabel": "标题",
+      "titlePlaceholder": "描述问题…",
+      "captureView": "将当前视图捕获为视点"
     }
   },
   "validating": "验证中… {{progress}}%",
@@ -230,7 +295,13 @@
     "editSubtitle": "修改此配置文件的规则和设置",
     "saveChanges": "保存更改",
     "deleteConfirm": "删除此配置文件？",
-    "deleteYes": "删除"
+    "deleteYes": "删除",
+    "thresholds": {
+      "title": "高级阈值",
+      "proxyOverusePct": "代理构件过多阈值",
+      "coordinateOffsetKm": "坐标偏移阈值",
+      "fileSizePerElementKB": "每个构件的文件大小"
+    }
   },
   "catFull": {
     "schema": "IFC 架构",
@@ -436,5 +507,16 @@
     "show3dTitle": "仅在 3D 中显示这些构件",
     "show3dAll": "在 3D 中重新显示所有问题",
     "rulePassed": "您的模型通过了“{{rule}}”：没有构件未通过此检查。"
+  },
+  "waivers": {
+    "mute": "忽略此问题",
+    "mutedCount": "已忽略 {{count}} 个问题",
+    "mutedCount_other": "已忽略 {{count}} 个问题",
+    "restoreAll": "全部恢复",
+    "scoreNote": "已忽略 {{count}} 个（不计分）"
+  },
+  "runDiff": {
+    "summary": "自上次运行：已解决 {{resolved}} · 新增 {{added}}",
+    "scoreDelta": "{{delta}} 分"
   }
 }

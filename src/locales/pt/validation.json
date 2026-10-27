@@ -59,7 +59,10 @@
     "rule": "Regra",
     "storey": "Pavimento",
     "class": "Classe",
-    "unknownStorey": "Desconhecido"
+    "unknownStorey": "Desconhecido",
+    "showMore": "Mostrar mais {{count}}",
+    "expandAll": "Expandir tudo",
+    "collapseAll": "Recolher tudo"
   },
   "issue": {
     "fixable": "Correção automática",
@@ -91,7 +94,11 @@
     "exportJson": "Relatório completo",
     "exportCsv": "Tabela de problemas",
     "exportCertificate": "Certificado",
-    "collapsePanel": "Recolher painel"
+    "collapsePanel": "Recolher painel",
+    "shareReport": "Partilhar",
+    "shareReportTitle": "Copiar ligação do relatório para partilhar",
+    "reportLinkCopied": "Ligação copiada — cole-a para partilhar o seu Health Score",
+    "reportLinkError": "Não foi possível copiar a ligação — tente novamente"
   },
   "profile": {
     "label": "Perfil",
@@ -142,7 +149,12 @@
     "critical": "Crítico",
     "suggestedProfile": "Perfil sugerido: {{name}}",
     "allCovered": "Todas as categorias cobertas",
-    "unreadableEntities": "Não foi possível ler {{count}} entidades, que foram ignoradas. A pontuação reflete o resto do modelo."
+    "unreadableEntities": "Não foi possível ler {{count}} entidades, que foram ignoradas. A pontuação reflete o resto do modelo.",
+    "partialTitle": "Nota parcial — {{ran}} de {{total}} verificações concluídas",
+    "partialDesc": "Algumas verificações não terminaram, por isso a nota real pode ser mais baixa do que parece. Volte a executar ou desative as verificações afetadas.",
+    "statusFailed": "Falhou a execução",
+    "statusNotRun": "Não executada",
+    "ranAll": "Executadas as {{total}} verificações"
   },
   "empty": {
     "noModel": "Nenhum modelo carregado",
@@ -175,7 +187,8 @@
     "topic": {
       "open": "Aberto",
       "closed": "Fechado",
-      "inProgress": "Em andamento"
+      "inProgress": "Em andamento",
+      "wontFix": "Não será corrigido"
     },
     "comments": "{{count}} comentário",
     "comments_other": "{{count}} comentários",
@@ -191,6 +204,58 @@
       "delete": "Excluir",
       "noComments": "Sem comentários ainda",
       "local": "local"
+    },
+    "exportSingle": "Exportar tópico",
+    "exportTopics": "Exportar tópicos",
+    "exportVersion": "Versão BCF para exportar",
+    "newTopic": "Novo tópico",
+    "createTopic": "Criar tópico",
+    "topicCreated": "Tópico criado",
+    "topicDeleted": "Tópico eliminado",
+    "topicUpdated": "Guardado",
+    "captureView": "Capturar vista atual",
+    "captureAdded": "Ponto de vista capturado",
+    "noViewpoints": "Sem pontos de vista",
+    "priority": {
+      "high": "Alta",
+      "normal": "Normal",
+      "low": "Baixa"
+    },
+    "type": {
+      "issue": "Problema",
+      "error": "Erro",
+      "warning": "Aviso",
+      "info": "Info",
+      "comment": "Comentário",
+      "request": "Pedido",
+      "clash": "Colisão"
+    },
+    "sort": {
+      "newest": "Mais recentes primeiro",
+      "oldest": "Mais antigos primeiro",
+      "priority": "Por prioridade",
+      "status": "Por estado",
+      "title": "Por título"
+    },
+    "detail": {
+      "back": "Tópicos",
+      "title": "Título",
+      "status": "Estado",
+      "type": "Tipo",
+      "priority": "Prioridade",
+      "assignedTo": "Atribuído a",
+      "assignedPlaceholder": "Nome ou e-mail…",
+      "dueDate": "Data limite",
+      "description": "Descrição",
+      "descPlaceholder": "Descreva o problema…",
+      "viewpoints": "Pontos de vista",
+      "comments": "Comentários"
+    },
+    "create": {
+      "heading": "Novo tópico BCF",
+      "titleLabel": "Título",
+      "titlePlaceholder": "Descreva o problema…",
+      "captureView": "Capturar a vista atual como ponto de vista"
     }
   },
   "validating": "Validando… {{progress}}%",
@@ -230,7 +295,13 @@
     "editSubtitle": "Modifique as regras e configurações deste perfil",
     "saveChanges": "Guardar alterações",
     "deleteConfirm": "Excluir este perfil?",
-    "deleteYes": "Excluir"
+    "deleteYes": "Excluir",
+    "thresholds": {
+      "title": "Limiares avançados",
+      "proxyOverusePct": "Limiar de uso excessivo de proxies",
+      "coordinateOffsetKm": "Limiar de desvio de coordenadas",
+      "fileSizePerElementKB": "Tamanho de ficheiro por elemento"
+    }
   },
   "catFull": {
     "schema": "Esquema IFC",
@@ -436,5 +507,16 @@
     "show3dTitle": "Mostrar só estes elementos em 3D",
     "show3dAll": "Voltar a mostrar todos os problemas em 3D",
     "rulePassed": "O seu modelo cumpre «{{rule}}»: nenhum elemento falha esta verificação."
+  },
+  "waivers": {
+    "mute": "Silenciar este problema",
+    "mutedCount": "{{count}} problema silenciado",
+    "mutedCount_other": "{{count}} problemas silenciados",
+    "restoreAll": "Restaurar todos",
+    "scoreNote": "{{count}} silenciados (excluídos)"
+  },
+  "runDiff": {
+    "summary": "Desde a última execução: {{resolved}} resolvidos · {{added}} novos",
+    "scoreDelta": "{{delta}} pts"
   }
 }

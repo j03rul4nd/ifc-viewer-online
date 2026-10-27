@@ -496,5 +496,17 @@
         }
       }
     }
+  },
+  "overlayHud": {
+    "error": "Erros",
+    "warning": "Avisos",
+    "info": "Info",
+    "idsFails": "Falhas IDS",
+    "toggleSeverity": "Mostrar / ocultar esta gravidade",
+    "prev": "Problema anterior",
+    "next": "Problema seguinte",
+    "settings": "Aspeto da sobreposição",
+    "dim": "Escurecer o contexto",
+    "xray": "Raio X (ver através das paredes)"
   }
 }

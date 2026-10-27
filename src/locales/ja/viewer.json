@@ -302,7 +302,8 @@
         "level": "階",
         "schema": "スキーマ",
         "version": "版"
-      }
+      },
+      "supersededNote_other": "同じファイルの古いリビジョン {{count}} 件"
     }
   },
   "transform": {
@@ -494,5 +495,17 @@
         }
       }
     }
+  },
+  "overlayHud": {
+    "error": "エラー",
+    "warning": "警告",
+    "info": "情報",
+    "idsFails": "IDS 不合格",
+    "toggleSeverity": "この重大度を表示/非表示",
+    "prev": "前の問題",
+    "next": "次の問題",
+    "settings": "オーバーレイの外観",
+    "dim": "周囲を暗くする",
+    "xray": "X 線（壁を透かして見る）"
   }
 }

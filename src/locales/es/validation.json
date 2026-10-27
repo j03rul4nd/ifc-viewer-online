@@ -149,7 +149,12 @@
     "critical": "Crítico",
     "suggestedProfile": "Perfil sugerido: {{name}}",
     "allCovered": "Todas las categorías cubiertas",
-    "unreadableEntities": "No se pudieron leer {{count}} entidades y se han omitido. La puntuación refleja el resto del modelo."
+    "unreadableEntities": "No se pudieron leer {{count}} entidades y se han omitido. La puntuación refleja el resto del modelo.",
+    "partialTitle": "Nota parcial: {{ran}} de {{total}} comprobaciones completadas",
+    "partialDesc": "Algunas comprobaciones no terminaron, así que la nota real puede ser más baja de lo que parece. Vuelve a ejecutar o desactiva las comprobaciones afectadas.",
+    "statusFailed": "Falló al ejecutarse",
+    "statusNotRun": "No se ejecutó",
+    "ranAll": "Se ejecutaron las {{total}} comprobaciones"
   },
   "empty": {
     "noModel": "Sin modelo cargado",
@@ -182,7 +187,8 @@
     "topic": {
       "open": "Abierto",
       "closed": "Cerrado",
-      "inProgress": "En progreso"
+      "inProgress": "En progreso",
+      "wontFix": "No se corregirá"
     },
     "comments": "{{count}} comentario",
     "comments_other": "{{count}} comentarios",
@@ -198,6 +204,58 @@
       "delete": "Eliminar",
       "noComments": "Sin comentarios",
       "local": "local"
+    },
+    "exportSingle": "Exportar tema",
+    "exportTopics": "Exportar temas",
+    "exportVersion": "Versión de BCF para exportar",
+    "newTopic": "Nuevo tema",
+    "createTopic": "Crear tema",
+    "topicCreated": "Tema creado",
+    "topicDeleted": "Tema eliminado",
+    "topicUpdated": "Guardado",
+    "captureView": "Capturar vista actual",
+    "captureAdded": "Punto de vista capturado",
+    "noViewpoints": "Sin puntos de vista",
+    "priority": {
+      "high": "Alta",
+      "normal": "Normal",
+      "low": "Baja"
+    },
+    "type": {
+      "issue": "Incidencia",
+      "error": "Error",
+      "warning": "Advertencia",
+      "info": "Info",
+      "comment": "Comentario",
+      "request": "Solicitud",
+      "clash": "Colisión"
+    },
+    "sort": {
+      "newest": "Más recientes primero",
+      "oldest": "Más antiguos primero",
+      "priority": "Por prioridad",
+      "status": "Por estado",
+      "title": "Por título"
+    },
+    "detail": {
+      "back": "Temas",
+      "title": "Título",
+      "status": "Estado",
+      "type": "Tipo",
+      "priority": "Prioridad",
+      "assignedTo": "Asignado a",
+      "assignedPlaceholder": "Nombre o correo…",
+      "dueDate": "Fecha límite",
+      "description": "Descripción",
+      "descPlaceholder": "Describe el problema…",
+      "viewpoints": "Puntos de vista",
+      "comments": "Comentarios"
+    },
+    "create": {
+      "heading": "Nuevo tema BCF",
+      "titleLabel": "Título",
+      "titlePlaceholder": "Describe el problema…",
+      "captureView": "Capturar la vista actual como punto de vista"
     }
   },
   "validating": "Validando… {{progress}}%",
@@ -237,7 +295,13 @@
     "editSubtitle": "Modifica las reglas y la configuración de este perfil",
     "saveChanges": "Guardar cambios",
     "deleteConfirm": "¿Eliminar este perfil?",
-    "deleteYes": "Eliminar"
+    "deleteYes": "Eliminar",
+    "thresholds": {
+      "title": "Umbrales avanzados",
+      "proxyOverusePct": "Umbral de abuso de proxies",
+      "coordinateOffsetKm": "Umbral de desplazamiento de coordenadas",
+      "fileSizePerElementKB": "Tamaño de archivo por elemento"
+    }
   },
   "catFull": {
     "schema": "Esquema IFC",
@@ -443,5 +507,16 @@
     "show3dTitle": "Mostrar solo estos elementos en 3D",
     "show3dAll": "Volver a mostrar todos los problemas en 3D",
     "rulePassed": "Tu modelo cumple «{{rule}}»: ningún elemento falla esta comprobación."
+  },
+  "waivers": {
+    "mute": "Silenciar este problema",
+    "mutedCount": "{{count}} problema silenciado",
+    "mutedCount_other": "{{count}} problemas silenciados",
+    "restoreAll": "Restaurar todos",
+    "scoreNote": "{{count}} silenciados (excluidos)"
+  },
+  "runDiff": {
+    "summary": "Desde la última ejecución: {{resolved}} resueltos · {{added}} nuevos",
+    "scoreDelta": "{{delta}} pts"
   }
 }

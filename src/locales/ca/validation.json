@@ -59,7 +59,10 @@
     "rule": "Regla",
     "storey": "Planta",
     "class": "Classe",
-    "unknownStorey": "Desconegut"
+    "unknownStorey": "Desconegut",
+    "showMore": "Mostra’n {{count}} més",
+    "expandAll": "Desplega-ho tot",
+    "collapseAll": "Plega-ho tot"
   },
   "issue": {
     "fixable": "Correcció automàtica",
@@ -91,7 +94,11 @@
     "exportJson": "Informe complet",
     "exportCsv": "Taula de problemes",
     "exportCertificate": "Certificat",
-    "collapsePanel": "Comprimeix el tauler"
+    "collapsePanel": "Comprimeix el tauler",
+    "shareReport": "Comparteix",
+    "shareReportTitle": "Copia l’enllaç de l’informe per compartir",
+    "reportLinkCopied": "Enllaç copiat: enganxa’l per compartir el teu Health Score",
+    "reportLinkError": "No s’ha pogut copiar l’enllaç; torna-ho a provar"
   },
   "profile": {
     "label": "Perfil",
@@ -142,7 +149,12 @@
     "critical": "Crític",
     "suggestedProfile": "Perfil suggerit: {{name}}",
     "allCovered": "Totes les categories cobertes",
-    "unreadableEntities": "No s'han pogut llegir {{count}} entitats i s'han omès. La puntuació reflecteix la resta del model."
+    "unreadableEntities": "No s'han pogut llegir {{count}} entitats i s'han omès. La puntuació reflecteix la resta del model.",
+    "partialTitle": "Nota parcial: {{ran}} de {{total}} comprovacions completades",
+    "partialDesc": "Algunes comprovacions no han acabat, així que la nota real pot ser més baixa del que sembla. Torna a executar o desactiva les comprovacions afectades.",
+    "statusFailed": "Ha fallat l’execució",
+    "statusNotRun": "No s’ha executat",
+    "ranAll": "S’han executat les {{total}} comprovacions"
   },
   "empty": {
     "noModel": "Cap model carregat",
@@ -175,7 +187,8 @@
     "topic": {
       "open": "Obert",
       "closed": "Tancat",
-      "inProgress": "En curs"
+      "inProgress": "En curs",
+      "wontFix": "No es corregirà"
     },
     "comments": "{{count}} comentari",
     "comments_other": "{{count}} comentaris",
@@ -191,6 +204,58 @@
       "delete": "Elimina",
       "noComments": "Encara no hi ha comentaris",
       "local": "local"
+    },
+    "exportSingle": "Exporta el tema",
+    "exportTopics": "Exporta els temes",
+    "exportVersion": "Versió BCF per exportar",
+    "newTopic": "Tema nou",
+    "createTopic": "Crea el tema",
+    "topicCreated": "Tema creat",
+    "topicDeleted": "Tema eliminat",
+    "topicUpdated": "Desat",
+    "captureView": "Captura la vista actual",
+    "captureAdded": "Punt de vista capturat",
+    "noViewpoints": "Sense punts de vista",
+    "priority": {
+      "high": "Alta",
+      "normal": "Normal",
+      "low": "Baixa"
+    },
+    "type": {
+      "issue": "Incidència",
+      "error": "Error",
+      "warning": "Advertència",
+      "info": "Info",
+      "comment": "Comentari",
+      "request": "Sol·licitud",
+      "clash": "Col·lisió"
+    },
+    "sort": {
+      "newest": "Més recents primer",
+      "oldest": "Més antics primer",
+      "priority": "Per prioritat",
+      "status": "Per estat",
+      "title": "Per títol"
+    },
+    "detail": {
+      "back": "Temes",
+      "title": "Títol",
+      "status": "Estat",
+      "type": "Tipus",
+      "priority": "Prioritat",
+      "assignedTo": "Assignat a",
+      "assignedPlaceholder": "Nom o correu…",
+      "dueDate": "Data límit",
+      "description": "Descripció",
+      "descPlaceholder": "Descriu el problema…",
+      "viewpoints": "Punts de vista",
+      "comments": "Comentaris"
+    },
+    "create": {
+      "heading": "Tema BCF nou",
+      "titleLabel": "Títol",
+      "titlePlaceholder": "Descriu el problema…",
+      "captureView": "Captura la vista actual com a punt de vista"
     }
   },
   "validating": "Validant… {{progress}}%",
@@ -230,7 +295,13 @@
     "editSubtitle": "Modifica les regles i la configuració d'aquest perfil",
     "saveChanges": "Desa els canvis",
     "deleteConfirm": "Eliminar aquest perfil?",
-    "deleteYes": "Elimina"
+    "deleteYes": "Elimina",
+    "thresholds": {
+      "title": "Llindars avançats",
+      "proxyOverusePct": "Llindar d’abús de proxies",
+      "coordinateOffsetKm": "Llindar de desplaçament de coordenades",
+      "fileSizePerElementKB": "Mida de fitxer per element"
+    }
   },
   "catFull": {
     "schema": "Esquema IFC",
@@ -436,5 +507,16 @@
     "show3dTitle": "Mostrar només aquests elements en 3D",
     "show3dAll": "Tornar a mostrar tots els problemes en 3D",
     "rulePassed": "El teu model compleix «{{rule}}»: cap element falla aquesta comprovació."
+  },
+  "waivers": {
+    "mute": "Silencia aquest problema",
+    "mutedCount": "{{count}} problema silenciat",
+    "mutedCount_other": "{{count}} problemes silenciats",
+    "restoreAll": "Restaura-ho tot",
+    "scoreNote": "{{count}} silenciats (exclosos)"
+  },
+  "runDiff": {
+    "summary": "Des de l’última execució: {{resolved}} resolts · {{added}} nous",
+    "scoreDelta": "{{delta}} pts"
   }
 }

@@ -59,7 +59,10 @@
     "rule": "กฎ",
     "storey": "ชั้น",
     "class": "คลาส",
-    "unknownStorey": "ไม่ทราบ"
+    "unknownStorey": "ไม่ทราบ",
+    "showMore": "แสดงเพิ่มอีก {{count}} รายการ",
+    "expandAll": "ขยายทั้งหมด",
+    "collapseAll": "ยุบทั้งหมด"
   },
   "issue": {
     "fixable": "แก้ไขได้อัตโนมัติ",
@@ -91,7 +94,11 @@
     "exportJson": "รายงานเต็ม",
     "exportCsv": "ตารางปัญหา",
     "exportCertificate": "ใบรับรอง",
-    "collapsePanel": "ยุบแผง"
+    "collapsePanel": "ยุบแผง",
+    "shareReport": "แชร์",
+    "shareReportTitle": "คัดลอกลิงก์รายงานเพื่อแชร์",
+    "reportLinkCopied": "คัดลอกลิงก์แล้ว — วางเพื่อแชร์ Health Score ของคุณ",
+    "reportLinkError": "คัดลอกลิงก์ไม่ได้ — ลองอีกครั้ง"
   },
   "profile": {
     "label": "โปรไฟล์",
@@ -142,7 +149,12 @@
     "critical": "วิกฤต",
     "suggestedProfile": "โปรไฟล์แนะนำ: {{name}}",
     "allCovered": "ครอบคลุมทุกประเภทแล้ว",
-    "unreadableEntities": "มี {{count}} เอนทิตีที่อ่านไม่ได้และถูกข้ามไป คะแนนสะท้อนเฉพาะส่วนที่เหลือของโมเดล"
+    "unreadableEntities": "มี {{count}} เอนทิตีที่อ่านไม่ได้และถูกข้ามไป คะแนนสะท้อนเฉพาะส่วนที่เหลือของโมเดล",
+    "partialTitle": "คะแนนบางส่วน — ตรวจเสร็จ {{ran}} จาก {{total}} รายการ",
+    "partialDesc": "การตรวจบางรายการไม่เสร็จ คะแนนจริงจึงอาจต่ำกว่าที่แสดง ให้เรียกใช้อีกครั้งหรือปิดการตรวจที่ได้รับผลกระทบ",
+    "statusFailed": "เรียกใช้ไม่สำเร็จ",
+    "statusNotRun": "ไม่ได้เรียกใช้",
+    "ranAll": "ตรวจครบทั้ง {{total}} รายการแล้ว"
   },
   "empty": {
     "noModel": "ไม่ได้โหลดโมเดล",
@@ -175,7 +187,8 @@
     "topic": {
       "open": "เปิด",
       "closed": "ปิด",
-      "inProgress": "กำลังดำเนินการ"
+      "inProgress": "กำลังดำเนินการ",
+      "wontFix": "จะไม่แก้ไข"
     },
     "comments": "{{count}} ความคิดเห็น",
     "comments_other": "{{count}} ความคิดเห็น",
@@ -191,6 +204,58 @@
       "delete": "ลบ",
       "noComments": "ยังไม่มีความคิดเห็น",
       "local": "ท้องถิ่น"
+    },
+    "exportSingle": "ส่งออกหัวข้อ",
+    "exportTopics": "ส่งออกหัวข้อ",
+    "exportVersion": "เวอร์ชัน BCF ที่ใช้ส่งออก",
+    "newTopic": "หัวข้อใหม่",
+    "createTopic": "สร้างหัวข้อ",
+    "topicCreated": "สร้างหัวข้อแล้ว",
+    "topicDeleted": "ลบหัวข้อแล้ว",
+    "topicUpdated": "บันทึกแล้ว",
+    "captureView": "จับภาพมุมมองปัจจุบัน",
+    "captureAdded": "จับภาพมุมมองแล้ว",
+    "noViewpoints": "ไม่มีมุมมอง",
+    "priority": {
+      "high": "สูง",
+      "normal": "ปกติ",
+      "low": "ต่ำ"
+    },
+    "type": {
+      "issue": "ปัญหา",
+      "error": "ข้อผิดพลาด",
+      "warning": "คำเตือน",
+      "info": "ข้อมูล",
+      "comment": "ความคิดเห็น",
+      "request": "คำขอ",
+      "clash": "การชน"
+    },
+    "sort": {
+      "newest": "ใหม่สุดก่อน",
+      "oldest": "เก่าสุดก่อน",
+      "priority": "ตามลำดับความสำคัญ",
+      "status": "ตามสถานะ",
+      "title": "ตามชื่อเรื่อง"
+    },
+    "detail": {
+      "back": "หัวข้อ",
+      "title": "ชื่อเรื่อง",
+      "status": "สถานะ",
+      "type": "ประเภท",
+      "priority": "ลำดับความสำคัญ",
+      "assignedTo": "มอบหมายให้",
+      "assignedPlaceholder": "ชื่อหรืออีเมล…",
+      "dueDate": "วันครบกำหนด",
+      "description": "คำอธิบาย",
+      "descPlaceholder": "อธิบายปัญหา…",
+      "viewpoints": "มุมมอง",
+      "comments": "ความคิดเห็น"
+    },
+    "create": {
+      "heading": "หัวข้อ BCF ใหม่",
+      "titleLabel": "ชื่อเรื่อง",
+      "titlePlaceholder": "อธิบายปัญหา…",
+      "captureView": "จับภาพมุมมองปัจจุบันเป็นมุมมอง"
     }
   },
   "validating": "กำลังตรวจสอบ… {{progress}}%",
@@ -230,7 +295,13 @@
     "editSubtitle": "แก้ไขกฎและการตั้งค่าของโปรไฟล์นี้",
     "saveChanges": "บันทึกการเปลี่ยนแปลง",
     "deleteConfirm": "ลบโปรไฟล์นี้?",
-    "deleteYes": "ลบ"
+    "deleteYes": "ลบ",
+    "thresholds": {
+      "title": "เกณฑ์ขั้นสูง",
+      "proxyOverusePct": "เกณฑ์การใช้ proxy มากเกินไป",
+      "coordinateOffsetKm": "เกณฑ์ระยะเลื่อนพิกัด",
+      "fileSizePerElementKB": "ขนาดไฟล์ต่อองค์ประกอบ"
+    }
   },
   "catFull": {
     "schema": "IFC Schema",
@@ -436,5 +507,16 @@
     "show3dTitle": "แสดงเฉพาะองค์ประกอบเหล่านี้ใน 3D",
     "show3dAll": "แสดงปัญหาทั้งหมดใน 3D อีกครั้ง",
     "rulePassed": "โมเดลของคุณผ่าน “{{rule}}”: ไม่มีองค์ประกอบใดไม่ผ่านการตรวจสอบนี้"
+  },
+  "waivers": {
+    "mute": "ปิดเสียงปัญหานี้",
+    "mutedCount": "ปิดเสียง {{count}} ปัญหา",
+    "mutedCount_other": "ปิดเสียง {{count}} ปัญหา",
+    "restoreAll": "คืนค่าทั้งหมด",
+    "scoreNote": "ปิดเสียง {{count}} (ไม่นับคะแนน)"
+  },
+  "runDiff": {
+    "summary": "ตั้งแต่ครั้งก่อน: แก้แล้ว {{resolved}} · ใหม่ {{added}}",
+    "scoreDelta": "{{delta}} คะแนน"
   }
 }
