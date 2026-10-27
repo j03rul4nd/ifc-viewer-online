@@ -250,6 +250,12 @@ export interface IfcSourceDeps {
   removeModel(modelId: string): Promise<void>
   /** IFC bytes kept for a loaded model (registry), for reloading memory-backed sources. */
   retainedBytes(modelId: string): ArrayBuffer | null
+  /**
+   * Fragments converted offline for a file we ship (prebuilt-frags), by its
+   * sampled `f1:` fingerprint; null when there are none. Asked on a cache miss,
+   * before converting.
+   */
+  prebuilt?(fingerprint: string, signal: AbortSignal): Promise<ArrayBuffer | null>
   /** Decide camera framing for this job (default: opts.frame ?? true). */
   shouldFrame?(opts: Readonly<SubmitOptions>): boolean
   /**
@@ -832,8 +838,27 @@ export function createIfcSourceAdapter(deps: IfcSourceDeps): SourceAdapter {
     }
 
     // 4. convert (miss) ──────────────────────────────────────────────────────
+    let fromPrebuilt = false
+    if (!fragments && deps.prebuilt && !ctx.hints.skipCache) {
+      // A file we ship: its geometry was converted offline. Matched by the
+      // sampled fingerprint (bytes sources carry a full one: sample it too).
+      try {
+        const sampledFp = fingerprint?.startsWith('f1:') ? fingerprint : await sampled()
+        if (sampledFp) fragments = await abortable(deps.prebuilt(sampledFp, signal), signal)
+      } catch (err) {
+        if (isCancel(err, signal)) throw abortError()
+        ctx.log.debug('prebuilt lookup failed — converting', { error: messageOf(err) })
+      }
+      if (fragments) {
+        fromPrebuilt = true
+        ctx.setMeta({ fragmentsBytes: fragments.byteLength })
+        ctx.log.info('prebuilt fragments — no conversion', { bytes: fragments.byteLength })
+      }
+    }
     if (!fragments) {
       fragments = await convert(ctx, m, enter, () => current, () => reporter)
+    }
+    if (!fromCache) {
 
       // 5. cache-write — finishes even when cancelled meanwhile (it is quick
       //    and leaves a valid entry), and MUST finish before the attach: the
@@ -920,7 +945,7 @@ export function createIfcSourceAdapter(deps: IfcSourceDeps): SourceAdapter {
         let code: LoadErrorCode
         if (keep) code = raw.code
         else if (inSetup) code = 'scene'
-        else if (inCoreLoad || fromFragmentsWorker(err)) code = fromCache ? 'cache-corrupt' : 'scene'
+        else if (inCoreLoad || fromFragmentsWorker(err)) code = fromCache || fromPrebuilt ? 'cache-corrupt' : 'scene'
         else code = 'viewer-unavailable'
         if (code === 'cache-corrupt') {
           // Self-heal: the entry goes now, and the retry (skipCache) reconverts.

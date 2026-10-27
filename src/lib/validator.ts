@@ -19,6 +19,7 @@ import { useSceneStore }      from '../stores/sceneStore'
 import { modelRegistry }      from './model-registry'
 import { toast, toastFromError } from '../stores/toastStore'
 import { createLogger }       from './logger'
+import { isMemoryConstrained } from './loading/device-profile'
 import { appBus }             from './event-bus'
 import { parseSpatialNodeArray } from './type-guards'
 import { parseValidationResultMsg, parseValidatorMsg } from './worker-schemas'
@@ -287,8 +288,40 @@ function getPoolWorker(slot: 0 | 1): Worker {
   return _pool[slot]!
 }
 
+// ── Reaping ───────────────────────────────────────────────────────────────────
+// Every job closes its model, but an Emscripten heap never shrinks: a warm
+// worker keeps the peak of the largest model it ever parsed. Two of them on an
+// iPhone, next to the viewer, is how the tab gets killed. On constrained
+// devices the pool is terminated as soon as no job is in flight; elsewhere it
+// stays warm.
+
+let jobsInFlight = 0
+let reapTimer: ReturnType<typeof setTimeout> | null = null
+
+function jobStarted(): void {
+  jobsInFlight++
+  if (reapTimer !== null) { clearTimeout(reapTimer); reapTimer = null }
+}
+
+function jobEnded(): void {
+  jobsInFlight = Math.max(0, jobsInFlight - 1)
+  if (jobsInFlight > 0 || !isMemoryConstrained()) return
+  if (reapTimer !== null) clearTimeout(reapTimer)
+  // A tick later: a tree queued behind validation starts off the same
+  // completion event and would only respawn what this just released.
+  reapTimer = setTimeout(() => {
+    reapTimer = null
+    if (jobsInFlight === 0) {
+      log.debug('Releasing validator workers (memory-constrained device)')
+      disposeValidatorWorker()
+    }
+  }, 0)
+}
+
 /** Terminate and clear the validator worker pool. */
 export function disposeValidatorWorker(): void {
+  // Whatever was in flight died with its worker.
+  jobsInFlight = 0
   for (let i = 0; i < _pool.length; i++) {
     _pool[i]?.terminate()
     _pool[i] = null
@@ -513,10 +546,13 @@ export async function buildSpatialTree(modelId?: string): Promise<void> {
   const id = `tree-${++treeRequestSeq}`
   log.debug(`Building spatial tree for "${resolvedId ?? 'active'}", id:`, id)
 
+  jobStarted()
   return new Promise<void>((resolve) => {
+    let ended = false
     const cleanup = (): void => {
       worker.removeEventListener('message', handler)
       worker.removeEventListener('error',   errorHandler)
+      if (!ended) { ended = true; jobEnded() }
     }
 
     const handler = makeTreeHandler(
@@ -636,7 +672,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     .filter(([, v]) => v === true)
     .map(([k]) => k)
 
-  const useTwoWorkers = enabledRuleKeys.length >= 4
+  // One worker on a constrained device: a second parse is a second full
+  // WebAssembly heap of the model, and the tab has no room for it.
+  const useTwoWorkers = enabledRuleKeys.length >= 4 && !isMemoryConstrained()
   const midpoint      = Math.ceil(enabledRuleKeys.length / 2)
   const subset0       = new Set(enabledRuleKeys.slice(0, midpoint))
   const subset1       = new Set(enabledRuleKeys.slice(midpoint))
@@ -664,8 +702,10 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     throw appErr
   }
 
+  jobStarted()
   return new Promise<void>((resolve, reject) => {
-    activeReject = reject
+    // Through cleanup, so a cancel also counts the job as ended.
+    activeReject = (err) => { cleanup(); reject(err) }
 
     // Track both workers completing (or just the one if no split)
     let w0Done = false
@@ -694,7 +734,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
       if (watchdogTimer !== null) { clearTimeout(watchdogTimer); watchdogTimer = null }
     }
 
+    let ended = false
     const cleanup = (): void => {
+      if (!ended) { ended = true; jobEnded() }
       activeReject = null
       activeWatchdogClear = null
       clearWatchdog()

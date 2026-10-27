@@ -53,6 +53,8 @@ interface NavigatorLike {
   hardwareConcurrency?: number
   deviceMemory?: number
   userAgentData?: { mobile?: boolean }
+  userAgent?: string
+  maxTouchPoints?: number
 }
 
 interface GlobalLike {
@@ -71,6 +73,10 @@ function positive(v: unknown): number | null {
 function probeMobile(g: GlobalLike): boolean {
   try {
     if (g.navigator?.userAgentData?.mobile === true) return true
+    // iPadOS claims to be a Mac; its touch points do not lie. Same tab killer.
+    const ua = g.navigator?.userAgent ?? ''
+    if (/iPhone|iPad|iPod/i.test(ua)) return true
+    if (/Macintosh/i.test(ua) && (g.navigator?.maxTouchPoints ?? 0) > 1) return true
   } catch { /* exotic navigator */ }
   try {
     // A coarse pointer alone is a touch laptop; with a small screen it is a

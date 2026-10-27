@@ -391,6 +391,7 @@ interface HarnessOpts {
   viewerReadyAt?: number
   indexTimeoutMs?: number
   sha256?: (data: Uint8Array) => Promise<ArrayBuffer>
+  prebuilt?: (fingerprint: string, signal: AbortSignal) => Promise<ArrayBuffer | null>
 }
 
 function harness(opts: HarnessOpts = {}) {
@@ -452,6 +453,7 @@ function harness(opts: HarnessOpts = {}) {
     estimate: (size) => policy.estimate(size),
     indexTimeoutMs: opts.indexTimeoutMs,
     sha256: opts.sha256,
+    prebuilt: opts.prebuilt,
   })
   mgr.registerAdapter(adapter)
   const events: LoadEvent[] = []
@@ -617,6 +619,26 @@ describe('IFC source — cache', () => {
     expect(h.pool.calls).toHaveLength(1)
     const fp = await fingerprintBlob(file)
     expect(h.cache.entries.get(key)?.meta.contentHash).toBe(fp)
+  })
+
+  it('a prebuilt hit skips the conversion and is cached like one', async () => {
+    const asked: string[] = []
+    const prebuilt = new Uint8Array([7, 7, 7, 7, 7]).buffer
+    const h = harness({ prebuilt: async (fp) => { asked.push(fp); return prebuilt.slice(0) } })
+    const file = ifcFile('Tower.ifc')
+    const outcome = await settle(h.submit({ type: 'file', file }))
+    expect(outcome).toMatchObject({ status: 'loaded', fromCache: false })
+    expect(h.pool.calls).toHaveLength(0)
+    expect(asked).toEqual([await fingerprintBlob(file)])
+    expect(h.viewer.calls[0].byteLength).toBe(5)
+    expect(h.cache.saved).toHaveLength(1)
+  })
+
+  it('no prebuilt fragments: converts as before', async () => {
+    const h = harness({ prebuilt: async () => null })
+    const outcome = await settle(h.submitFile('Tower.ifc'))
+    expect(outcome).toMatchObject({ status: 'loaded', fromCache: false })
+    expect(h.pool.calls).toHaveLength(1)
   })
 
   it('skipCache evicts the entry and converts', async () => {
