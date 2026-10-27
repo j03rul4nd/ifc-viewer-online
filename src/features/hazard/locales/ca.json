@@ -1,0 +1,114 @@
+{
+  "title": "Pluja i vessants",
+  "intro": "Quanta pluja fa fallar els vessants: escolament (nombre de corba SCS), probabilitat d'esllavissada superficial (talús infinit, Monte Carlo) i el recorregut probable d'un flux de derrubis, pas a pas durant la tempesta. Carrega l'àmbit com a KMZ/KML per obtenir la pluja crítica dels seus habitatges, escoles, centres de salut i vies.",
+  "kmz": {
+    "load": "Carrega KMZ / KML",
+    "replace": "Canvia",
+    "remove": "Treu",
+    "none": "Sense àmbit: l'extensió de la malla, elements d'OpenStreetMap",
+    "empty": "El fitxer no té marques de posició.",
+    "failed": "No s'ha pogut llegir el fitxer: {{message}}",
+    "needsMap": "Activa el mapa per situar un KMZ (les coordenades són WGS84) i fer servir el relleu.",
+    "anchored": "L'àmbit situa l'escena: activa el mapa (amb relleu) i prepara la malla.",
+    "rebuild": "Torna a preparar la malla perquè cobreixi l'àmbit.",
+    "example": "Prova l'exemple (Chosica, Perú)",
+    "exampleNote": "Marques d'exemple per provar l'eina, no són dades reals."
+  },
+  "soil": {
+    "group": "Grup de sòl",
+    "moisture": "Humitat prèvia",
+    "amc": {
+      "I": "Sec (AMC I)",
+      "II": "Normal (AMC II)",
+      "III": "Humit, després de pluges (AMC III)"
+    },
+    "cover": "Coberta sense mapar",
+    "cohesion": "Cohesió c′",
+    "friction": "Fricció φ′",
+    "depth": "Gruix del sòl",
+    "weight": "Pes unitari γ"
+  },
+  "cover": {
+    "forest": "Bosc",
+    "shrub": "Matollar",
+    "grass": "Prat",
+    "crop": "Conreu",
+    "bare": "Sòl nu",
+    "urban": "Urbà"
+  },
+  "runout": {
+    "angle": "Angle d'abast dels derrubis",
+    "maxRain": "Prova pluja fins a"
+  },
+  "actions": {
+    "run": "Calcula",
+    "rerun": "Recalcula",
+    "needsGrid": "Prepara abans la malla (a dalt).",
+    "progress": "Pas de pluja {{done}} de {{of}}"
+  },
+  "timeline": {
+    "play": "Reprodueix la tempesta",
+    "pause": "Pausa",
+    "label": "Pas de pluja",
+    "storm": "{{mm}} mm caiguts · minut {{min}} de la tempesta",
+    "beyond": "{{mm}} mm acumulats (més enllà d’aquesta tempesta)"
+  },
+  "layer": {
+    "title": "Capa",
+    "susceptibility": "Esllavissades",
+    "runoff": "Escolament",
+    "debris": "Derrubis",
+    "note": {
+      "susceptibility": "Probabilitat que el vessant falli (FS < 1) a mesura que es xopa. Morat: falla fins i tot sense pluja. Marró: recorreguts i dipòsits probables de derrubis. Blau: aigua pels torrents.",
+      "runoff": "Pluja que ha escolat fins ara, mm (nombre de corba SCS).",
+      "debris": "Per on viatgen (marró clar) i on s’aturen (marró fosc) els fluxos de les ruptures probables."
+    }
+  },
+  "view": {
+    "block": "Maqueta (retalla el bloc, amaga el mapa)",
+    "labels": "Etiquetes",
+    "frame": "Enquadra l'àmbit"
+  },
+  "report": {
+    "grid": "Malla de perill",
+    "cn": "Nombre de corba mitjà",
+    "elements": "Elements exposats",
+    "source": {
+      "kmz": "KMZ · {{housing}} habitatges · {{school}} escoles · {{health}} salut · {{road}} vies · {{other}} altres",
+      "osm": "OpenStreetMap · {{housing}} habitatges · {{school}} escoles · {{health}} salut · {{road}} vies",
+      "none": "Cap"
+    },
+    "coarsened": "Calculat amb cel·les {{k}}× les de la inundació, perquè sigui interactiu.",
+    "outside": "{{n}} marques queden fora de la malla i no s’avaluen.",
+    "dry": "{{ha}} ha fallen fins i tot sense pluja amb aquest sòl (morat): massa costerudes per a ell, normalment roca o cingles. No fixen pluja crítica; reviseu-les sobre el terreny."
+  },
+  "table": {
+    "title": "Pluja crítica",
+    "element": "Element",
+    "rain": "Pluja",
+    "never": "> {{mm}} mm",
+    "empty": "No hi ha elements exposats a l'àmbit.",
+    "csv": {
+      "id": "id",
+      "name": "nom",
+      "kind": "tipus",
+      "rain": "pluja_critica_mm",
+      "cause": "causa",
+      "dry": "inestable_sense_pluja"
+    },
+    "dry": "Sobre un vessant que falla sense pluja"
+  },
+  "kind": {
+    "housing": "Habitatge",
+    "school": "Escola",
+    "health": "Centre de salut",
+    "road": "Via",
+    "other": "Altre"
+  },
+  "cause": {
+    "landslide": "esllavissada",
+    "debris": "flux de derrubis",
+    "runoff": "escolament"
+  },
+  "disclaimer": "Eina orientativa per comunicar el perill. No substitueix una avaluació de riscos oficial, l'estudi de camp ni el calibratge propi d'un sistema d'alerta primerenca."
+}

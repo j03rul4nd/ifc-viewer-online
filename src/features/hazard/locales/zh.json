@@ -1,0 +1,114 @@
+{
+  "title": "降雨与边坡",
+  "intro": "多少降雨会使边坡失稳：径流（SCS曲线数）、浅层滑坡概率（无限边坡、蒙特卡洛）以及泥石流的可能路径，随暴雨逐步显示。以KMZ/KML载入研究范围，即可得到其中住宅、学校、医疗机构和道路的临界雨量。",
+  "kmz": {
+    "load": "载入 KMZ / KML",
+    "replace": "替换",
+    "remove": "移除",
+    "none": "无研究范围：使用网格范围，要素来自 OpenStreetMap",
+    "empty": "文件中没有地标。",
+    "failed": "无法读取文件：{{message}}",
+    "needsMap": "打开地图以放置KMZ（坐标为WGS84）并使用地形。",
+    "anchored": "研究范围已确定场景位置：打开地图（含地形）并生成网格。",
+    "rebuild": "请重新生成网格以覆盖研究范围。",
+    "example": "试用示例（秘鲁乔西卡）",
+    "exampleNote": "用于试用工具的示例地标，并非真实数据。"
+  },
+  "soil": {
+    "group": "土壤组",
+    "moisture": "前期湿度",
+    "amc": {
+      "I": "干燥（AMC I）",
+      "II": "正常（AMC II）",
+      "III": "湿润，雨后（AMC III）"
+    },
+    "cover": "未制图的覆盖",
+    "cohesion": "黏聚力 c′",
+    "friction": "内摩擦角 φ′",
+    "depth": "土层厚度",
+    "weight": "重度 γ"
+  },
+  "cover": {
+    "forest": "森林",
+    "shrub": "灌丛",
+    "grass": "草地",
+    "crop": "耕地",
+    "bare": "裸地",
+    "urban": "建成区"
+  },
+  "runout": {
+    "angle": "泥石流到达角",
+    "maxRain": "测试降雨上限"
+  },
+  "actions": {
+    "run": "计算",
+    "rerun": "重新计算",
+    "needsGrid": "请先生成网格（上方）。",
+    "progress": "降雨步 {{done}} / {{of}}"
+  },
+  "timeline": {
+    "play": "播放暴雨",
+    "pause": "暂停",
+    "label": "降雨步",
+    "storm": "已降 {{mm}} mm · 暴雨第 {{min}} 分钟",
+    "beyond": "累计 {{mm}} mm（超出本次暴雨）"
+  },
+  "layer": {
+    "title": "图层",
+    "susceptibility": "滑坡",
+    "runoff": "径流",
+    "debris": "泥石流",
+    "note": {
+      "susceptibility": "随着雨水入渗边坡失稳（FS < 1）的概率。紫色：无雨也会失稳。棕色：泥石流的可能路径与堆积。蓝色：沟谷中的水流。",
+      "runoff": "迄今形成径流的雨量，mm（SCS曲线数）。",
+      "debris": "可能失稳处产生的流体经过（浅棕）与停止（深棕）的位置。"
+    }
+  },
+  "view": {
+    "block": "模型（切出地块，隐藏地图）",
+    "labels": "标签",
+    "frame": "缩放至研究范围"
+  },
+  "report": {
+    "grid": "灾害网格",
+    "cn": "平均曲线数",
+    "elements": "暴露要素",
+    "source": {
+      "kmz": "KMZ · 住宅 {{housing}} · 学校 {{school}} · 医疗 {{health}} · 道路 {{road}} · 其他 {{other}}",
+      "osm": "OpenStreetMap · 住宅 {{housing}} · 学校 {{school}} · 医疗 {{health}} · 道路 {{road}}",
+      "none": "无"
+    },
+    "coarsened": "为保持交互流畅，使用洪水网格 {{k}} 倍大小的单元计算。",
+    "outside": "{{n}} 个地标位于网格之外，未作评估。",
+    "dry": "在此土壤条件下有 {{ha}} 公顷无雨也会失稳（紫色）：对该土壤而言过陡，通常为岩石或陡崖。它们不设临界雨量，请现场核查。"
+  },
+  "table": {
+    "title": "临界雨量",
+    "element": "要素",
+    "rain": "雨量",
+    "never": "> {{mm}} mm",
+    "empty": "研究范围内没有暴露要素。",
+    "csv": {
+      "id": "id",
+      "name": "name",
+      "kind": "kind",
+      "rain": "critical_rain_mm",
+      "cause": "cause",
+      "dry": "unstable_without_rain"
+    },
+    "dry": "位于无雨也会失稳的边坡上"
+  },
+  "kind": {
+    "housing": "住宅",
+    "school": "学校",
+    "health": "医疗机构",
+    "road": "道路",
+    "other": "其他"
+  },
+  "cause": {
+    "landslide": "滑坡",
+    "debris": "泥石流",
+    "runoff": "径流"
+  },
+  "disclaimer": "用于传达危险性的参考工具。不能替代官方风险评估、现场调查或预警系统自身的率定。"
+}

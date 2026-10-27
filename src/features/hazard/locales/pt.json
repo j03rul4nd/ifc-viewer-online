@@ -1,0 +1,114 @@
+{
+  "title": "Chuva e encostas",
+  "intro": "Quanta chuva faz as encostas romperem: escoamento (número de curva SCS), probabilidade de escorregamento raso (talude infinito, Monte Carlo) e o trajeto provável de um fluxo de detritos, passo a passo durante a tempestade. Carregue a área de estudo como KMZ/KML para obter a chuva crítica das suas moradias, escolas, unidades de saúde e vias.",
+  "kmz": {
+    "load": "Carregar KMZ / KML",
+    "replace": "Substituir",
+    "remove": "Remover",
+    "none": "Sem área de estudo: a extensão da malha, elementos do OpenStreetMap",
+    "empty": "O arquivo não tem marcadores.",
+    "failed": "Não foi possível ler o arquivo: {{message}}",
+    "needsMap": "Ative o mapa para posicionar um KMZ (coordenadas WGS84) e usar o relevo.",
+    "anchored": "A área posiciona a cena: ative o mapa (com relevo) e prepare a malha.",
+    "rebuild": "Prepare a malha de novo para cobrir a área.",
+    "example": "Experimentar o exemplo (Chosica, Peru)",
+    "exampleNote": "Marcadores de exemplo para experimentar a ferramenta, não são dados reais."
+  },
+  "soil": {
+    "group": "Grupo de solo",
+    "moisture": "Umidade antecedente",
+    "amc": {
+      "I": "Seco (AMC I)",
+      "II": "Normal (AMC II)",
+      "III": "Úmido, após chuvas (AMC III)"
+    },
+    "cover": "Cobertura não mapeada",
+    "cohesion": "Coesão c′",
+    "friction": "Atrito φ′",
+    "depth": "Espessura do solo",
+    "weight": "Peso específico γ"
+  },
+  "cover": {
+    "forest": "Floresta",
+    "shrub": "Matagal",
+    "grass": "Pastagem",
+    "crop": "Cultivo",
+    "bare": "Solo exposto",
+    "urban": "Urbano"
+  },
+  "runout": {
+    "angle": "Ângulo de alcance dos detritos",
+    "maxRain": "Testar chuva até"
+  },
+  "actions": {
+    "run": "Calcular",
+    "rerun": "Recalcular",
+    "needsGrid": "Prepare antes a malha (acima).",
+    "progress": "Passo de chuva {{done}} de {{of}}"
+  },
+  "timeline": {
+    "play": "Reproduzir a tempestade",
+    "pause": "Pausa",
+    "label": "Passo de chuva",
+    "storm": "{{mm}} mm caídos · minuto {{min}} da tempestade",
+    "beyond": "{{mm}} mm acumulados (além desta tempestade)"
+  },
+  "layer": {
+    "title": "Camada",
+    "susceptibility": "Escorregamentos",
+    "runoff": "Escoamento",
+    "debris": "Detritos",
+    "note": {
+      "susceptibility": "Probabilidade de a encosta romper (FS < 1) à medida que encharca. Roxo: rompe mesmo sem chuva. Marrom: trajetos e depósitos prováveis de detritos. Azul: água pelas grotas.",
+      "runoff": "Chuva que escoou até agora, mm (número de curva SCS).",
+      "debris": "Por onde viajam (marrom claro) e onde param (marrom escuro) os fluxos das rupturas prováveis."
+    }
+  },
+  "view": {
+    "block": "Maquete (recortar o bloco, ocultar o mapa)",
+    "labels": "Rótulos",
+    "frame": "Enquadrar a área"
+  },
+  "report": {
+    "grid": "Malha de perigo",
+    "cn": "Número de curva médio",
+    "elements": "Elementos expostos",
+    "source": {
+      "kmz": "KMZ · {{housing}} moradias · {{school}} escolas · {{health}} saúde · {{road}} vias · {{other}} outros",
+      "osm": "OpenStreetMap · {{housing}} moradias · {{school}} escolas · {{health}} saúde · {{road}} vias",
+      "none": "Nenhum"
+    },
+    "coarsened": "Calculado com células {{k}}× as da inundação, para ser interativo.",
+    "outside": "{{n}} marcadores ficam fora da malha e não são avaliados.",
+    "dry": "{{ha}} ha rompem mesmo sem chuva com este solo (roxo): íngremes demais para ele, normalmente rocha ou escarpas. Não fixam chuva crítica; verifique-as em campo."
+  },
+  "table": {
+    "title": "Chuva crítica",
+    "element": "Elemento",
+    "rain": "Chuva",
+    "never": "> {{mm}} mm",
+    "empty": "Não há elementos expostos na área.",
+    "csv": {
+      "id": "id",
+      "name": "nome",
+      "kind": "tipo",
+      "rain": "chuva_critica_mm",
+      "cause": "causa",
+      "dry": "instavel_sem_chuva"
+    },
+    "dry": "Sobre uma encosta que rompe sem chuva"
+  },
+  "kind": {
+    "housing": "Moradia",
+    "school": "Escola",
+    "health": "Unidade de saúde",
+    "road": "Via",
+    "other": "Outro"
+  },
+  "cause": {
+    "landslide": "escorregamento",
+    "debris": "fluxo de detritos",
+    "runoff": "escoamento"
+  },
+  "disclaimer": "Ferramenta indicativa para comunicar o perigo. Não substitui uma avaliação de risco oficial, a investigação de campo nem a calibração própria de um sistema de alerta precoce."
+}

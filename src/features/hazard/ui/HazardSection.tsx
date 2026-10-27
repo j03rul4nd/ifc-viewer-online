@@ -26,7 +26,11 @@ interface Props {
   mapOn: boolean
 }
 
-const COVERS: LandCover[] = ['forest', 'shrub', 'grass', 'crop', 'bare', 'urban']
+/** A study area to try the tool on: Quebrada Quirio, Chosica (Lima). Made-up placemarks. */
+const EXAMPLE_URL = `${import.meta.env.BASE_URL}samples/hazard/chosica-example.kml`
+const EXAMPLE_NAME = 'chosica-example.kml'
+
+const COVERS: LandCover[] =['forest', 'shrub', 'grass', 'crop', 'bare', 'urban']
 
 /**
  * The flood grid the last study ran on. The section unmounts whenever the
@@ -182,6 +186,13 @@ export default function HazardSection({ viewerApiRef, caption, selectCls, mapOn 
             <input ref={fileRef} type="file" accept=".kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml" hidden
               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void loadKmz(f) }} />
           </div>
+          {!h.kmzName && (
+            <button className="self-start text-[10.5px] text-[var(--accent-2)] hover:underline" disabled={running}
+              onClick={() => {
+                void fetch(EXAMPLE_URL).then((r) => r.blob()).then((b) => loadKmz(new File([b], EXAMPLE_NAME)))
+              }}>{t('kmz.example')}</button>
+          )}
+          {h.kmzName === EXAMPLE_NAME && <Notice tone="warn">{t('kmz.exampleNote')}</Notice>}
           {!mapOn && <Notice tone="info">{h.anchored ? t('kmz.anchored') : t('kmz.needsMap')}</Notice>}
           {h.placemarks && floodReport && !floodBusy && h.status === 'idle' && <Notice tone="muted">{t('kmz.rebuild')}</Notice>}
 

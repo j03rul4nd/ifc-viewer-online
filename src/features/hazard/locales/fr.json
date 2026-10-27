@@ -1,0 +1,114 @@
+{
+  "title": "Pluie et versants",
+  "intro": "Quelle pluie fait céder les versants : ruissellement (numéro de courbe SCS), probabilité de glissement superficiel (pente infinie, Monte Carlo) et trajet probable d'une lave torrentielle, pas à pas pendant l'orage. Chargez la zone d'étude en KMZ/KML pour obtenir la pluie critique de ses logements, écoles, centres de santé et routes.",
+  "kmz": {
+    "load": "Charger un KMZ / KML",
+    "replace": "Remplacer",
+    "remove": "Retirer",
+    "none": "Pas de zone d'étude : l'emprise de la grille, éléments d'OpenStreetMap",
+    "empty": "Le fichier ne contient aucun repère.",
+    "failed": "Impossible de lire le fichier : {{message}}",
+    "needsMap": "Activez la carte pour placer un KMZ (coordonnées WGS84) et utiliser le relief.",
+    "anchored": "La zone situe la scène : activez la carte (avec relief) et préparez la grille.",
+    "rebuild": "Reconstruisez la grille pour qu’elle couvre la zone.",
+    "example": "Essayer l'exemple (Chosica, Pérou)",
+    "exampleNote": "Repères d'exemple pour essayer l'outil, pas des données réelles."
+  },
+  "soil": {
+    "group": "Groupe de sol",
+    "moisture": "Humidité antérieure",
+    "amc": {
+      "I": "Sec (AMC I)",
+      "II": "Normal (AMC II)",
+      "III": "Humide, après des pluies (AMC III)"
+    },
+    "cover": "Couverture non cartographiée",
+    "cohesion": "Cohésion c′",
+    "friction": "Frottement φ′",
+    "depth": "Épaisseur du sol",
+    "weight": "Poids volumique γ"
+  },
+  "cover": {
+    "forest": "Forêt",
+    "shrub": "Broussailles",
+    "grass": "Prairie",
+    "crop": "Culture",
+    "bare": "Sol nu",
+    "urban": "Bâti"
+  },
+  "runout": {
+    "angle": "Angle d'atteinte de la lave",
+    "maxRain": "Tester la pluie jusqu'à"
+  },
+  "actions": {
+    "run": "Calculer",
+    "rerun": "Recalculer",
+    "needsGrid": "Préparez d'abord la grille (plus haut).",
+    "progress": "Pas de pluie {{done}} sur {{of}}"
+  },
+  "timeline": {
+    "play": "Rejouer l'orage",
+    "pause": "Pause",
+    "label": "Pas de pluie",
+    "storm": "{{mm}} mm tombés · minute {{min}} de l'orage",
+    "beyond": "{{mm}} mm cumulés (au-delà de cet orage)"
+  },
+  "layer": {
+    "title": "Couche",
+    "susceptibility": "Glissements",
+    "runoff": "Ruissellement",
+    "debris": "Lave torrentielle",
+    "note": {
+      "susceptibility": "Probabilité que le versant cède (FS < 1) à mesure qu'il s'imbibe. Violet : cède même sans pluie. Brun : trajets et dépôts probables de laves. Bleu : eau dans les ravins.",
+      "runoff": "Pluie ruisselée jusqu’ici, mm (numéro de courbe SCS).",
+      "debris": "Où les écoulements issus des ruptures probables circulent (brun clair) et s’arrêtent (brun foncé)."
+    }
+  },
+  "view": {
+    "block": "Maquette (découper le bloc, masquer la carte)",
+    "labels": "Étiquettes",
+    "frame": "Cadrer la zone"
+  },
+  "report": {
+    "grid": "Grille de danger",
+    "cn": "Numéro de courbe moyen",
+    "elements": "Éléments exposés",
+    "source": {
+      "kmz": "KMZ · {{housing}} logements · {{school}} écoles · {{health}} santé · {{road}} routes · {{other}} autres",
+      "osm": "OpenStreetMap · {{housing}} logements · {{school}} écoles · {{health}} santé · {{road}} routes",
+      "none": "Aucun"
+    },
+    "coarsened": "Calculé sur des mailles {{k}}× celles de l'inondation, pour rester interactif.",
+    "outside": "{{n}} repères tombent hors de la grille et ne sont pas évalués.",
+    "dry": "{{ha}} ha cèdent même sans pluie avec ce sol (violet) : trop raides pour lui, souvent de la roche ou une falaise. Ils ne fixent pas de pluie critique ; à vérifier sur le terrain."
+  },
+  "table": {
+    "title": "Pluie critique",
+    "element": "Élément",
+    "rain": "Pluie",
+    "never": "> {{mm}} mm",
+    "empty": "Aucun élément exposé dans la zone.",
+    "csv": {
+      "id": "id",
+      "name": "nom",
+      "kind": "type",
+      "rain": "pluie_critique_mm",
+      "cause": "cause",
+      "dry": "instable_sans_pluie"
+    },
+    "dry": "Sur un versant qui cède sans pluie"
+  },
+  "kind": {
+    "housing": "Logement",
+    "school": "École",
+    "health": "Centre de santé",
+    "road": "Route",
+    "other": "Autre"
+  },
+  "cause": {
+    "landslide": "glissement",
+    "debris": "lave torrentielle",
+    "runoff": "ruissellement"
+  },
+  "disclaimer": "Outil indicatif pour communiquer le danger. Il ne remplace ni une évaluation officielle des risques, ni une étude de terrain, ni le calage propre d'un système d'alerte précoce."
+}

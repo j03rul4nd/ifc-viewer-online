@@ -1,0 +1,114 @@
+{
+  "title": "雨と斜面",
+  "intro": "どれだけの雨で斜面が崩れるか：流出（SCSカーブナンバー）、表層崩壊の確率（無限長斜面、モンテカルロ法）、土石流の想定経路を、豪雨の進行に沿って一段ずつ示します。対象範囲をKMZ/KMLで読み込むと、住宅・学校・医療施設・道路ごとの限界雨量が得られます。",
+  "kmz": {
+    "load": "KMZ / KMLを読み込む",
+    "replace": "置き換え",
+    "remove": "削除",
+    "none": "対象範囲なし：グリッド全体、要素はOpenStreetMapから",
+    "empty": "ファイルに目印がありません。",
+    "failed": "ファイルを読み込めませんでした：{{message}}",
+    "needsMap": "KMZを配置する（座標はWGS84）には、地図をオンにして起伏を使用してください。",
+    "anchored": "対象範囲がシーンの位置を決めます：地図（起伏あり）をオンにしてグリッドを作成してください。",
+    "rebuild": "対象範囲を含むようにグリッドを作り直してください。",
+    "example": "サンプルを試す（ペルー・チョシカ）",
+    "exampleNote": "ツールを試すためのサンプルの目印です。実データではありません。"
+  },
+  "soil": {
+    "group": "土壌グループ",
+    "moisture": "先行降雨条件",
+    "amc": {
+      "I": "乾燥（AMC I）",
+      "II": "標準（AMC II）",
+      "III": "湿潤・降雨後（AMC III）"
+    },
+    "cover": "未マッピングの被覆",
+    "cohesion": "粘着力 c′",
+    "friction": "内部摩擦角 φ′",
+    "depth": "土層厚",
+    "weight": "単位体積重量 γ"
+  },
+  "cover": {
+    "forest": "森林",
+    "shrub": "低木林",
+    "grass": "草地",
+    "crop": "農地",
+    "bare": "裸地",
+    "urban": "市街地"
+  },
+  "runout": {
+    "angle": "土石流の到達角",
+    "maxRain": "試す雨量の上限"
+  },
+  "actions": {
+    "run": "計算",
+    "rerun": "再計算",
+    "needsGrid": "先にグリッドを作成してください（上）。",
+    "progress": "降雨ステップ {{done}} / {{of}}"
+  },
+  "timeline": {
+    "play": "豪雨を再生",
+    "pause": "一時停止",
+    "label": "降雨ステップ",
+    "storm": "{{mm}} mm 降雨 · 豪雨の{{min}}分目",
+    "beyond": "累積 {{mm}} mm（この豪雨を超えた分）"
+  },
+  "layer": {
+    "title": "レイヤー",
+    "susceptibility": "崩壊",
+    "runoff": "流出",
+    "debris": "土石流",
+    "note": {
+      "susceptibility": "雨が浸透するにつれて斜面が崩れる（FS < 1）確率。紫：雨がなくても崩れる。茶：土石流の想定経路と堆積。青：沢を流れる水。",
+      "runoff": "これまでに流出した雨量、mm（SCSカーブナンバー）。",
+      "debris": "想定される崩壊からの流れが通る場所（薄茶）と止まる場所（濃茶）。"
+    }
+  },
+  "view": {
+    "block": "模型（ブロックを切り出し、地図を隠す）",
+    "labels": "ラベル",
+    "frame": "対象範囲に合わせる"
+  },
+  "report": {
+    "grid": "ハザードグリッド",
+    "cn": "平均カーブナンバー",
+    "elements": "曝露要素",
+    "source": {
+      "kmz": "KMZ · 住宅 {{housing}} · 学校 {{school}} · 医療 {{health}} · 道路 {{road}} · その他 {{other}}",
+      "osm": "OpenStreetMap · 住宅 {{housing}} · 学校 {{school}} · 医療 {{health}} · 道路 {{road}}",
+      "none": "なし"
+    },
+    "coarsened": "操作性を保つため、浸水グリッドの{{k}}倍のセルで計算しました。",
+    "outside": "{{n}}個の目印がグリッド外にあり、評価されません。",
+    "dry": "この土壌では {{ha}} ha が雨なしでも崩れます（紫）：急すぎる斜面で、多くは岩盤や崖です。限界雨量は設定されません。現地で確認してください。"
+  },
+  "table": {
+    "title": "限界雨量",
+    "element": "要素",
+    "rain": "雨量",
+    "never": "> {{mm}} mm",
+    "empty": "対象範囲に曝露要素はありません。",
+    "csv": {
+      "id": "id",
+      "name": "name",
+      "kind": "kind",
+      "rain": "critical_rain_mm",
+      "cause": "cause",
+      "dry": "unstable_without_rain"
+    },
+    "dry": "雨なしでも崩れる斜面上"
+  },
+  "kind": {
+    "housing": "住宅",
+    "school": "学校",
+    "health": "医療施設",
+    "road": "道路",
+    "other": "その他"
+  },
+  "cause": {
+    "landslide": "崩壊",
+    "debris": "土石流",
+    "runoff": "流出"
+  },
+  "disclaimer": "危険性を伝えるための参考ツールです。公式のリスク評価、現地調査、早期警戒システム独自の較正に代わるものではありません。"
+}
