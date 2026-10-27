@@ -9176,6 +9176,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Sie möchten ein Modell sofort prüfen? Die kostenlose ",{"text":"IFC-Modellprüfung","href":"https://www.ifcvieweronline.eu/de/ifc-modellpruefung/"}," gibt ihm einen Score von 0 bis 100 und einen druckbaren Bericht, und die ",{"text":"IFC-Validierung online","href":"https://www.ifcvieweronline.eu/de/ifc-validator-online/"}," führt alle 44 Regeln im Browser aus – ohne Upload."]},
       {
         type: "p",
         text: "Fast jeder exportiert eine IFC und verschickt sie. Fast niemand prüft sie vorher – nicht aus Gleichgültigkeit, sondern weil „die IFC validieren“ tatsächlich mehrdeutig ist. Validieren wogegen? Gegen das Schema? Gegen die Projektanforderungen? Oder ob sie sich im Tool des Koordinators öffnen lässt? Das sind drei verschiedene Fragen mit drei verschiedenen Tools, und diese zu vermischen ist der Grund, warum so viele Modelle an der Common Data Environment abgelehnt werden.",
@@ -15308,6 +15309,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Sie möchten ein Modell sofort prüfen? Die kostenlose ",{"text":"IFC-Modellprüfung","href":"https://www.ifcvieweronline.eu/de/ifc-modellpruefung/"}," gibt ihm einen Score von 0 bis 100 und einen druckbaren Bericht, und die ",{"text":"IFC-Validierung online","href":"https://www.ifcvieweronline.eu/de/ifc-validator-online/"}," führt alle 44 Regeln im Browser aus – ohne Upload."]},
       {
         type: "callout",
         variant: "info",
@@ -16031,6 +16033,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Sie möchten ein Modell sofort prüfen? Die kostenlose ",{"text":"IFC-Modellprüfung","href":"https://www.ifcvieweronline.eu/de/ifc-modellpruefung/"}," gibt ihm einen Score von 0 bis 100 und einen druckbaren Bericht, und die ",{"text":"IFC-Validierung online","href":"https://www.ifcvieweronline.eu/de/ifc-validator-online/"}," führt alle 44 Regeln im Browser aus – ohne Upload."]},
       {
         type: "callout",
         variant: "info",

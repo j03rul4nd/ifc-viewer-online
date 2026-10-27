@@ -8122,6 +8122,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["想马上检查一个模型？免费的",{"text":"IFC 模型健康检查","href":"https://www.ifcvieweronline.eu/zh/ifc-health-check/"},"会给出 0–100 的评分和可打印报告，",{"text":"在线 IFC 验证","href":"https://www.ifcvieweronline.eu/zh/ifc-validator-online/"},"则在浏览器中运行全部 44 条规则，不上传任何内容。"]},
       {
         type: "p",
         text: "几乎每个人都是导出 IFC 就直接发送，几乎没人先检查一遍。不是因为不在乎，而是“验证 IFC”这件事本身确实含糊。根据什么来验证？模式（Schema）？项目需求？还是能否在协调员的软件里打开？这是三个不同的问题，对应三种不同的工具。把它们混为一谈，正是这么多模型在公共数据环境（CDE）被退回的原因。",
@@ -13500,6 +13501,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["想马上检查一个模型？免费的",{"text":"IFC 模型健康检查","href":"https://www.ifcvieweronline.eu/zh/ifc-health-check/"},"会给出 0–100 的评分和可打印报告，",{"text":"在线 IFC 验证","href":"https://www.ifcvieweronline.eu/zh/ifc-validator-online/"},"则在浏览器中运行全部 44 条规则，不上传任何内容。"]},
       {
         type: "callout",
         variant: "info",
@@ -14044,6 +14046,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["想马上检查一个模型？免费的",{"text":"IFC 模型健康检查","href":"https://www.ifcvieweronline.eu/zh/ifc-health-check/"},"会给出 0–100 的评分和可打印报告，",{"text":"在线 IFC 验证","href":"https://www.ifcvieweronline.eu/zh/ifc-validator-online/"},"则在浏览器中运行全部 44 条规则，不上传任何内容。"]},
       {
         type: "callout",
         variant: "info",

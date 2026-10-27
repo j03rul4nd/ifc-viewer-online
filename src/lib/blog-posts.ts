@@ -2691,6 +2691,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Want to check a model right now? The free ",{"text":"IFC model health check","href":"https://www.ifcvieweronline.eu/ifc-health-check/"}," gives it a score from 0 to 100 and a printable report, and ",{"text":"IFC model validation online","href":"https://www.ifcvieweronline.eu/ifc-validator/"}," runs all 44 rules in your browser — nothing is uploaded."]},
       { type: 'p', text: "Almost everyone exports an IFC and sends it. Almost no one checks it first — not because they don't care, but because 'validate the IFC' is genuinely ambiguous. Validate against what? The schema? The project requirements? Whether it'll open in the coordinator's tool? Those are three different questions with three different tools, and conflating them is why so many models get rejected at the Common Data Environment." },
       { type: 'p', text: "This is the practical map: what 'valid' means, the three ways to check it, what each one will and won't catch, and the checklist to run in the ten minutes before you hit send." },
       { type: 'h2', text: 'The 60-Second Answer' },
@@ -7622,6 +7623,7 @@ Project acceptance or rejection`,
       { q: 'At what project stages should IFC models be checked?', a: 'At minimum: before CDE upload (prevent junk in), at coordination stage gates (before clash detection), before client submission (formal delivery), and at FM handover (LOI completeness). On large projects, automated checking at every model revision is achievable with CLI tools or API-driven workflows.' },
     ],
     content: [
+      {"type":"p","text":["Want to check a model right now? The free ",{"text":"IFC model health check","href":"https://www.ifcvieweronline.eu/ifc-health-check/"}," gives it a score from 0 to 100 and a printable report, and ",{"text":"IFC model validation online","href":"https://www.ifcvieweronline.eu/ifc-validator/"}," runs all 44 rules in your browser — nothing is uploaded."]},
       {
         type: 'callout',
         variant: 'info',
@@ -8070,6 +8072,7 @@ Client / FM handover`,
       { q: 'Do Autodesk Viewer and Trimble Connect check IFC models?', a: 'No. Autodesk Viewer and Trimble Connect are viewers — they render geometry and allow property browsing but do not validate quality rules, check Pset completeness, detect duplicate GUIDs, or produce a Health Score. They perform L1 schema validation implicitly (they reject files they cannot parse) but nothing beyond that.' },
     ],
     content: [
+      {"type":"p","text":["Want to check a model right now? The free ",{"text":"IFC model health check","href":"https://www.ifcvieweronline.eu/ifc-health-check/"}," gives it a score from 0 to 100 and a printable report, and ",{"text":"IFC model validation online","href":"https://www.ifcvieweronline.eu/ifc-validator/"}," runs all 44 rules in your browser — nothing is uploaded."]},
       {
         type: 'callout',
         variant: 'info',

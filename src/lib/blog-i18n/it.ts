@@ -9417,6 +9417,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vuoi controllare un modello adesso? Il ",{"text":"controllo qualità IFC","href":"https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/"}," gratuito gli assegna un punteggio da 0 a 100 e un report stampabile, e la ",{"text":"validazione IFC online","href":"https://www.ifcvieweronline.eu/it/validatore-ifc-online/"}," esegue tutte le 44 regole nel browser, senza caricare nulla."]},
       {
         type: "p",
         text: "Quasi tutti esportano un IFC e lo inviano. Quasi nessuno lo controlla prima — non perché non gliene importi, ma perché \"validare l'IFC\" è genuinamente ambiguo. Validare rispetto a cosa? Lo schema? I requisiti di progetto? Se si aprirà nello strumento del coordinatore? Sono tre domande diverse con tre strumenti diversi, e confonderle è il motivo per cui così tanti modelli vengono rifiutati al Common Data Environment.",
@@ -15545,6 +15546,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vuoi controllare un modello adesso? Il ",{"text":"controllo qualità IFC","href":"https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/"}," gratuito gli assegna un punteggio da 0 a 100 e un report stampabile, e la ",{"text":"validazione IFC online","href":"https://www.ifcvieweronline.eu/it/validatore-ifc-online/"}," esegue tutte le 44 regole nel browser, senza caricare nulla."]},
       {
         type: "callout",
         variant: "info",
@@ -16261,6 +16263,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vuoi controllare un modello adesso? Il ",{"text":"controllo qualità IFC","href":"https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/"}," gratuito gli assegna un punteggio da 0 a 100 e un report stampabile, e la ",{"text":"validazione IFC online","href":"https://www.ifcvieweronline.eu/it/validatore-ifc-online/"}," esegue tutte le 44 regole nel browser, senza caricare nulla."]},
       {
         type: "callout",
         variant: "info",

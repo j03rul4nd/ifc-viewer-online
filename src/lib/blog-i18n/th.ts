@@ -9173,6 +9173,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["อยากตรวจโมเดลตอนนี้เลยไหม? ",{"text":"การตรวจสุขภาพโมเดล IFC","href":"https://www.ifcvieweronline.eu/th/ifc-health-check/"}," ฟรีให้คะแนน 0–100 และรายงานที่พิมพ์ได้ ส่วน",{"text":"การตรวจสอบ IFC ออนไลน์","href":"https://www.ifcvieweronline.eu/th/ifc-validator-online/"},"จะรันกฎทั้ง 44 ข้อในเบราว์เซอร์ โดยไม่อัปโหลดอะไร"]},
       {
         type: "p",
         text: "แทบทุกคนส่งออกไฟล์ IFC แล้วส่งต่อทันที แต่แทบไม่มีใครตรวจสอบก่อน ไม่ใช่เพราะไม่ใส่ใจ แต่เพราะคำว่า “ตรวจสอบ IFC” กำกวมจริง ๆ ตรวจเทียบกับอะไร กับสคีมา กับข้อกำหนดของโครงการ หรือกับการที่ไฟล์จะเปิดได้ในเครื่องมือของผู้ประสานงาน นี่คือคำถาม 3 ข้อที่ต่างกันและต้องใช้เครื่องมือต่างกัน 3 แบบ การเหมารวมทั้งหมดเป็นเรื่องเดียวกันคือเหตุผลที่โมเดลจำนวนมากถูกตีกลับที่สภาพแวดล้อมข้อมูลร่วม (CDE)",
@@ -15201,6 +15202,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["อยากตรวจโมเดลตอนนี้เลยไหม? ",{"text":"การตรวจสุขภาพโมเดล IFC","href":"https://www.ifcvieweronline.eu/th/ifc-health-check/"}," ฟรีให้คะแนน 0–100 และรายงานที่พิมพ์ได้ ส่วน",{"text":"การตรวจสอบ IFC ออนไลน์","href":"https://www.ifcvieweronline.eu/th/ifc-validator-online/"},"จะรันกฎทั้ง 44 ข้อในเบราว์เซอร์ โดยไม่อัปโหลดอะไร"]},
       {
         type: "callout",
         variant: "info",
@@ -15892,6 +15894,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["อยากตรวจโมเดลตอนนี้เลยไหม? ",{"text":"การตรวจสุขภาพโมเดล IFC","href":"https://www.ifcvieweronline.eu/th/ifc-health-check/"}," ฟรีให้คะแนน 0–100 และรายงานที่พิมพ์ได้ ส่วน",{"text":"การตรวจสอบ IFC ออนไลน์","href":"https://www.ifcvieweronline.eu/th/ifc-validator-online/"},"จะรันกฎทั้ง 44 ข้อในเบราว์เซอร์ โดยไม่อัปโหลดอะไร"]},
       {
         type: "callout",
         variant: "info",
