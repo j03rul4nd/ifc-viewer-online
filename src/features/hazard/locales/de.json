@@ -1,0 +1,114 @@
+{
+  "title": "Regen & Hänge",
+  "intro": "Wie viel Regen die Hänge versagen lässt: Abfluss (SCS-Curve-Number), Wahrscheinlichkeit flachgründiger Rutschungen (unendliche Böschung, Monte Carlo) und der wahrscheinliche Weg eines Murgangs, Schritt für Schritt durch das Unwetter. Lade das Untersuchungsgebiet als KMZ/KML, um den kritischen Niederschlag seiner Wohnhäuser, Schulen, Gesundheitseinrichtungen und Straßen zu erhalten.",
+  "kmz": {
+    "load": "KMZ / KML laden",
+    "replace": "Ersetzen",
+    "remove": "Entfernen",
+    "none": "Kein Untersuchungsgebiet: Ausdehnung des Rasters, Elemente aus OpenStreetMap",
+    "empty": "Die Datei enthält keine Ortsmarken.",
+    "failed": "Datei konnte nicht gelesen werden: {{message}}",
+    "needsMap": "Schalte die Karte ein, um ein KMZ zu platzieren (WGS84-Koordinaten) und das Relief zu nutzen.",
+    "anchored": "Das Gebiet verortet die Szene: Karte (mit Relief) einschalten und das Raster aufbauen.",
+    "rebuild": "Raster neu aufbauen, damit es das Gebiet abdeckt.",
+    "example": "Beispiel ausprobieren (Chosica, Peru)",
+    "exampleNote": "Beispiel-Ortsmarken zum Ausprobieren, keine echten Daten."
+  },
+  "soil": {
+    "group": "Bodengruppe",
+    "moisture": "Vorfeuchte",
+    "amc": {
+      "I": "Trocken (AMC I)",
+      "II": "Normal (AMC II)",
+      "III": "Nass, nach Regen (AMC III)"
+    },
+    "cover": "Nicht kartierte Bedeckung",
+    "cohesion": "Kohäsion c′",
+    "friction": "Reibungswinkel φ′",
+    "depth": "Bodenmächtigkeit",
+    "weight": "Wichte γ"
+  },
+  "cover": {
+    "forest": "Wald",
+    "shrub": "Gebüsch",
+    "grass": "Grünland",
+    "crop": "Acker",
+    "bare": "Offener Boden",
+    "urban": "Bebaut"
+  },
+  "runout": {
+    "angle": "Pauschalgefälle des Murgangs",
+    "maxRain": "Regen testen bis"
+  },
+  "actions": {
+    "run": "Berechnen",
+    "rerun": "Neu berechnen",
+    "needsGrid": "Zuerst das Raster aufbauen (oben).",
+    "progress": "Regenschritt {{done}} von {{of}}"
+  },
+  "timeline": {
+    "play": "Unwetter abspielen",
+    "pause": "Pause",
+    "label": "Regenschritt",
+    "storm": "{{mm}} mm gefallen · Minute {{min}} des Unwetters",
+    "beyond": "{{mm}} mm aufsummiert (über dieses Unwetter hinaus)"
+  },
+  "layer": {
+    "title": "Ebene",
+    "susceptibility": "Rutschungen",
+    "runoff": "Abfluss",
+    "debris": "Murgang",
+    "note": {
+      "susceptibility": "Wahrscheinlichkeit, dass der Hang versagt (FS < 1), während er sich vollsaugt. Violett: versagt auch ohne Regen. Braun: wahrscheinliche Murbahnen und Ablagerungen. Blau: Wasser in den Rinnen.",
+      "runoff": "Bisher abgeflossener Regen, mm (SCS-Curve-Number).",
+      "debris": "Wo die Ströme aus den wahrscheinlichen Rutschungen laufen (hellbraun) und anhalten (dunkelbraun)."
+    }
+  },
+  "view": {
+    "block": "Modell (Block ausschneiden, Karte ausblenden)",
+    "labels": "Beschriftungen",
+    "frame": "Gebiet einpassen"
+  },
+  "report": {
+    "grid": "Gefahrenraster",
+    "cn": "Mittlere Curve Number",
+    "elements": "Exponierte Elemente",
+    "source": {
+      "kmz": "KMZ · {{housing}} Wohnhäuser · {{school}} Schulen · {{health}} Gesundheit · {{road}} Straßen · {{other}} sonstige",
+      "osm": "OpenStreetMap · {{housing}} Wohnhäuser · {{school}} Schulen · {{health}} Gesundheit · {{road}} Straßen",
+      "none": "Keine"
+    },
+    "coarsened": "Mit {{k}}× so großen Zellen wie das Hochwasserraster gerechnet, damit es interaktiv bleibt.",
+    "outside": "{{n}} Ortsmarken liegen außerhalb des Rasters und werden nicht bewertet.",
+    "dry": "{{ha}} ha versagen mit diesem Boden schon ohne Regen (violett): zu steil für ihn, meist Fels oder Steilwand. Sie liefern keinen kritischen Niederschlag; vor Ort prüfen."
+  },
+  "table": {
+    "title": "Kritischer Niederschlag",
+    "element": "Element",
+    "rain": "Regen",
+    "never": "> {{mm}} mm",
+    "empty": "Keine exponierten Elemente im Gebiet.",
+    "csv": {
+      "id": "id",
+      "name": "name",
+      "kind": "typ",
+      "rain": "kritischer_niederschlag_mm",
+      "cause": "ursache",
+      "dry": "instabil_ohne_regen"
+    },
+    "dry": "Auf einem Hang, der ohne Regen versagt"
+  },
+  "kind": {
+    "housing": "Wohnhaus",
+    "school": "Schule",
+    "health": "Gesundheitseinrichtung",
+    "road": "Straße",
+    "other": "Sonstiges"
+  },
+  "cause": {
+    "landslide": "Rutschung",
+    "debris": "Murgang",
+    "runoff": "Abfluss"
+  },
+  "disclaimer": "Orientierendes Werkzeug, um die Gefahr zu vermitteln. Es ersetzt weder eine amtliche Risikobewertung noch eine Geländeuntersuchung oder die eigene Kalibrierung eines Frühwarnsystems."
+}

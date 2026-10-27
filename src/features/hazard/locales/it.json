@@ -1,0 +1,114 @@
+{
+  "title": "Pioggia e versanti",
+  "intro": "Quanta pioggia fa cedere i versanti: deflusso (curve number SCS), probabilità di frana superficiale (pendio indefinito, Monte Carlo) e percorso probabile di una colata detritica, passo dopo passo durante il temporale. Carica l'area di studio come KMZ/KML per ottenere la pioggia critica di abitazioni, scuole, strutture sanitarie e strade.",
+  "kmz": {
+    "load": "Carica KMZ / KML",
+    "replace": "Sostituisci",
+    "remove": "Rimuovi",
+    "none": "Nessuna area di studio: l'estensione della griglia, elementi da OpenStreetMap",
+    "empty": "Il file non contiene segnaposto.",
+    "failed": "Impossibile leggere il file: {{message}}",
+    "needsMap": "Attiva la mappa per collocare un KMZ (coordinate WGS84) e usare il rilievo.",
+    "anchored": "L'area colloca la scena: attiva la mappa (con rilievo) e prepara la griglia.",
+    "rebuild": "Ricostruisci la griglia perché copra l'area.",
+    "example": "Prova l'esempio (Chosica, Perù)",
+    "exampleNote": "Segnaposto d'esempio per provare lo strumento, non dati reali."
+  },
+  "soil": {
+    "group": "Gruppo di suolo",
+    "moisture": "Umidità antecedente",
+    "amc": {
+      "I": "Secco (AMC I)",
+      "II": "Normale (AMC II)",
+      "III": "Umido, dopo piogge (AMC III)"
+    },
+    "cover": "Copertura non mappata",
+    "cohesion": "Coesione c′",
+    "friction": "Attrito φ′",
+    "depth": "Spessore del suolo",
+    "weight": "Peso di volume γ"
+  },
+  "cover": {
+    "forest": "Bosco",
+    "shrub": "Arbusteto",
+    "grass": "Prato",
+    "crop": "Coltivo",
+    "bare": "Suolo nudo",
+    "urban": "Urbanizzato"
+  },
+  "runout": {
+    "angle": "Angolo di espandimento della colata",
+    "maxRain": "Prova la pioggia fino a"
+  },
+  "actions": {
+    "run": "Calcola",
+    "rerun": "Ricalcola",
+    "needsGrid": "Prepara prima la griglia (sopra).",
+    "progress": "Passo di pioggia {{done}} di {{of}}"
+  },
+  "timeline": {
+    "play": "Riproduci il temporale",
+    "pause": "Pausa",
+    "label": "Passo di pioggia",
+    "storm": "{{mm}} mm caduti · minuto {{min}} del temporale",
+    "beyond": "{{mm}} mm cumulati (oltre questo temporale)"
+  },
+  "layer": {
+    "title": "Livello",
+    "susceptibility": "Frane",
+    "runoff": "Deflusso",
+    "debris": "Colata detritica",
+    "note": {
+      "susceptibility": "Probabilità che il versante ceda (FS < 1) man mano che si imbeve. Viola: cede anche senza pioggia. Marrone: percorsi e depositi probabili delle colate. Blu: acqua negli impluvi.",
+      "runoff": "Pioggia defluita finora, mm (curve number SCS).",
+      "debris": "Dove scorrono (marrone chiaro) e si fermano (marrone scuro) le colate delle rotture probabili."
+    }
+  },
+  "view": {
+    "block": "Plastico (ritaglia il blocco, nascondi la mappa)",
+    "labels": "Etichette",
+    "frame": "Inquadra l'area"
+  },
+  "report": {
+    "grid": "Griglia di pericolo",
+    "cn": "Curve number medio",
+    "elements": "Elementi esposti",
+    "source": {
+      "kmz": "KMZ · {{housing}} abitazioni · {{school}} scuole · {{health}} sanità · {{road}} strade · {{other}} altri",
+      "osm": "OpenStreetMap · {{housing}} abitazioni · {{school}} scuole · {{health}} sanità · {{road}} strade",
+      "none": "Nessuno"
+    },
+    "coarsened": "Calcolato su celle {{k}}× quelle dell'allagamento, per restare interattivo.",
+    "outside": "{{n}} segnaposto cadono fuori dalla griglia e non vengono valutati.",
+    "dry": "{{ha}} ha cedono anche senza pioggia con questo suolo (viola): troppo ripide per esso, di solito roccia o pareti. Non fissano una pioggia critica; verificarle in sito."
+  },
+  "table": {
+    "title": "Pioggia critica",
+    "element": "Elemento",
+    "rain": "Pioggia",
+    "never": "> {{mm}} mm",
+    "empty": "Nessun elemento esposto nell'area.",
+    "csv": {
+      "id": "id",
+      "name": "nome",
+      "kind": "tipo",
+      "rain": "pioggia_critica_mm",
+      "cause": "causa",
+      "dry": "instabile_senza_pioggia"
+    },
+    "dry": "Su un versante che cede senza pioggia"
+  },
+  "kind": {
+    "housing": "Abitazione",
+    "school": "Scuola",
+    "health": "Struttura sanitaria",
+    "road": "Strada",
+    "other": "Altro"
+  },
+  "cause": {
+    "landslide": "frana",
+    "debris": "colata detritica",
+    "runoff": "deflusso"
+  },
+  "disclaimer": "Strumento indicativo per comunicare il pericolo. Non sostituisce una valutazione ufficiale del rischio, le indagini in sito né la taratura propria di un sistema di allerta precoce."
+}

@@ -10,7 +10,9 @@
     "failed": "Could not read the file: {{message}}",
     "needsMap": "Turn the map on to place a KMZ (its coordinates are WGS84) and to use the relief.",
     "anchored": "The study area places the scene: turn the map on (with relief) and build the grid.",
-    "rebuild": "Rebuild the grid so it covers the study area."
+    "rebuild": "Rebuild the grid so it covers the study area.",
+    "example": "Try the example (Chosica, Peru)",
+    "exampleNote": "Example placemarks to try the tool with, not real data."
   },
   "soil": {
     "group": "Soil group",

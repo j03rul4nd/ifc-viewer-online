@@ -10,7 +10,9 @@
     "failed": "No se pudo leer el fichero: {{message}}",
     "needsMap": "Activa el mapa para situar un KMZ (sus coordenadas son WGS84) y usar el relieve.",
     "anchored": "El ámbito sitúa la escena: activa el mapa (con relieve) y prepara la rejilla.",
-    "rebuild": "Vuelve a preparar la rejilla para que cubra el ámbito."
+    "rebuild": "Vuelve a preparar la rejilla para que cubra el ámbito.",
+    "example": "Probar el ejemplo (Chosica, Perú)",
+    "exampleNote": "Marcas de ejemplo para probar la herramienta, no son datos reales."
   },
   "soil": {
     "group": "Grupo de suelo",

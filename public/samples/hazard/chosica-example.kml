@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Quebrada Quirio (ejemplo)</name>
+<Folder><name>Ámbito de estudio</name>
+<Placemark><name>Límite del ámbito</name><Polygon><outerBoundaryIs><LinearRing><coordinates>
+-76.7060,-11.9460,0 -76.6840,-11.9460,0 -76.6840,-11.9240,0 -76.7060,-11.9240,0 -76.7060,-11.9460,0
+</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+</Folder>
+<Folder><name>Instituciones educativas</name>
+<Placemark><name>I.E. N° 1201 (ejemplo)</name><Point><coordinates>-76.6960,-11.9330,0</coordinates></Point></Placemark>
+<Placemark><name>I.E. Inicial 520 (ejemplo)</name><Point><coordinates>-76.6905,-11.9395,0</coordinates></Point></Placemark>
+</Folder>
+<Folder><name>Establecimientos de salud</name>
+<Placemark><name>Puesto de salud Quirio (ejemplo)</name><Point><coordinates>-76.6990,-11.9370,0</coordinates></Point></Placemark>
+</Folder>
+<Folder><name>Viviendas</name>
+<Placemark><name>Viviendas sector alto</name><Point><coordinates>-76.6950,-11.9290,0</coordinates></Point></Placemark>
+<Placemark><name>Viviendas cauce</name><Point><coordinates>-76.6975,-11.9350,0</coordinates></Point></Placemark>
+<Placemark><name>Viviendas ribera</name><Point><coordinates>-76.7010,-11.9410,0</coordinates></Point></Placemark>
+</Folder>
+<Folder><name>Vías</name>
+<Placemark><name>Carretera Central (tramo)</name><LineString><coordinates>-76.7055,-11.9435,0 -76.6950,-11.9415,0 -76.6850,-11.9380,0</coordinates></LineString></Placemark>
+</Folder>
+</Document></kml>
