@@ -496,5 +496,17 @@
         }
       }
     }
+  },
+  "overlayHud": {
+    "error": "Fehler",
+    "warning": "Warnungen",
+    "info": "Info",
+    "idsFails": "IDS-Fehler",
+    "toggleSeverity": "Diesen Schweregrad ein-/ausblenden",
+    "prev": "Vorheriges Problem",
+    "next": "Nächstes Problem",
+    "settings": "Darstellung der Überlagerung",
+    "dim": "Kontext abdunkeln",
+    "xray": "Röntgen (durch Wände sehen)"
   }
 }

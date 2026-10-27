@@ -496,5 +496,17 @@
         }
       }
     }
+  },
+  "overlayHud": {
+    "error": "Errors",
+    "warning": "Advertències",
+    "info": "Info",
+    "idsFails": "Errors IDS",
+    "toggleSeverity": "Mostra / amaga aquesta gravetat",
+    "prev": "Problema anterior",
+    "next": "Problema següent",
+    "settings": "Aspecte de la superposició",
+    "dim": "Atenua el context",
+    "xray": "Raigs X (veure a través dels murs)"
   }
 }

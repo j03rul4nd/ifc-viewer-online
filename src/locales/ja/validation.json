@@ -59,7 +59,10 @@
     "rule": "ルール",
     "storey": "階",
     "class": "クラス",
-    "unknownStorey": "不明"
+    "unknownStorey": "不明",
+    "showMore": "さらに {{count}} 件表示",
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ"
   },
   "issue": {
     "fixable": "自動修正可能",
@@ -91,7 +94,11 @@
     "exportJson": "完全なレポート",
     "exportCsv": "問題一覧",
     "exportCertificate": "証明書",
-    "collapsePanel": "パネルを折りたたむ"
+    "collapsePanel": "パネルを折りたたむ",
+    "shareReport": "共有",
+    "shareReportTitle": "共有用レポートリンクをコピー",
+    "reportLinkCopied": "リンクをコピーしました。貼り付けて Health Score を共有できます",
+    "reportLinkError": "リンクをコピーできませんでした。もう一度お試しください"
   },
   "profile": {
     "label": "プロファイル",
@@ -142,7 +149,12 @@
     "critical": "重大",
     "suggestedProfile": "推奨プロファイル: {{name}}",
     "allCovered": "すべてのカテゴリをカバー",
-    "unreadableEntities": "{{count}} 件のエンティティを読み込めず、スキップしました。スコアはモデルの残りの部分に基づいています。"
+    "unreadableEntities": "{{count}} 件のエンティティを読み込めず、スキップしました。スコアはモデルの残りの部分に基づいています。",
+    "partialTitle": "部分スコア：{{total}} 件中 {{ran}} 件のチェックが完了",
+    "partialDesc": "一部のチェックが完了していないため、実際のスコアは表示より低い可能性があります。再実行するか、該当するチェックを無効にしてください。",
+    "statusFailed": "実行に失敗",
+    "statusNotRun": "未実行",
+    "ranAll": "{{total}} 件すべてのチェックを実行しました"
   },
   "empty": {
     "noModel": "モデル未読み込み",
@@ -175,7 +187,8 @@
     "topic": {
       "open": "オープン",
       "closed": "クローズ",
-      "inProgress": "進行中"
+      "inProgress": "進行中",
+      "wontFix": "対応しない"
     },
     "comments": "{{count}} 件のコメント",
     "comments_other": "{{count}} 件のコメント",
@@ -191,6 +204,58 @@
       "delete": "削除",
       "noComments": "コメントはまだありません",
       "local": "ローカル"
+    },
+    "exportSingle": "トピックを書き出し",
+    "exportTopics": "トピックを書き出し",
+    "exportVersion": "書き出しに使う BCF バージョン",
+    "newTopic": "新しいトピック",
+    "createTopic": "トピックを作成",
+    "topicCreated": "トピックを作成しました",
+    "topicDeleted": "トピックを削除しました",
+    "topicUpdated": "保存しました",
+    "captureView": "現在のビューをキャプチャ",
+    "captureAdded": "ビューポイントをキャプチャしました",
+    "noViewpoints": "ビューポイントなし",
+    "priority": {
+      "high": "高",
+      "normal": "標準",
+      "low": "低"
+    },
+    "type": {
+      "issue": "課題",
+      "error": "エラー",
+      "warning": "警告",
+      "info": "情報",
+      "comment": "コメント",
+      "request": "依頼",
+      "clash": "干渉"
+    },
+    "sort": {
+      "newest": "新しい順",
+      "oldest": "古い順",
+      "priority": "優先度順",
+      "status": "ステータス順",
+      "title": "タイトル順"
+    },
+    "detail": {
+      "back": "トピック",
+      "title": "タイトル",
+      "status": "ステータス",
+      "type": "種類",
+      "priority": "優先度",
+      "assignedTo": "担当者",
+      "assignedPlaceholder": "名前またはメール…",
+      "dueDate": "期限",
+      "description": "説明",
+      "descPlaceholder": "問題を説明…",
+      "viewpoints": "ビューポイント",
+      "comments": "コメント"
+    },
+    "create": {
+      "heading": "新しい BCF トピック",
+      "titleLabel": "タイトル",
+      "titlePlaceholder": "問題を説明…",
+      "captureView": "現在のビューをビューポイントとしてキャプチャ"
     }
   },
   "validating": "検証中… {{progress}}%",
@@ -230,7 +295,13 @@
     "editSubtitle": "このプロファイルのルールと設定を変更します",
     "saveChanges": "変更を保存",
     "deleteConfirm": "このプロファイルを削除しますか？",
-    "deleteYes": "削除"
+    "deleteYes": "削除",
+    "thresholds": {
+      "title": "詳細なしきい値",
+      "proxyOverusePct": "プロキシ過多のしきい値",
+      "coordinateOffsetKm": "座標オフセットのしきい値",
+      "fileSizePerElementKB": "要素あたりのファイルサイズ"
+    }
   },
   "catFull": {
     "schema": "IFC スキーマ",
@@ -436,5 +507,16 @@
     "show3dTitle": "これらの要素だけを 3D で表示",
     "show3dAll": "3D ですべての問題を再表示",
     "rulePassed": "モデルは「{{rule}}」に合格しています。このチェックに失敗した要素はありません。"
+  },
+  "waivers": {
+    "mute": "この問題をミュート",
+    "mutedCount": "{{count}} 件の問題をミュート中",
+    "mutedCount_other": "{{count}} 件の問題をミュート中",
+    "restoreAll": "すべて元に戻す",
+    "scoreNote": "{{count}} 件ミュート（除外）"
+  },
+  "runDiff": {
+    "summary": "前回の実行から：解決 {{resolved}} · 新規 {{added}}",
+    "scoreDelta": "{{delta}} 点"
   }
 }

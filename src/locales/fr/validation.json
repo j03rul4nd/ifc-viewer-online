@@ -59,7 +59,10 @@
     "rule": "Règle",
     "storey": "Niveau",
     "class": "Classe",
-    "unknownStorey": "Inconnu"
+    "unknownStorey": "Inconnu",
+    "showMore": "Afficher {{count}} de plus",
+    "expandAll": "Tout déplier",
+    "collapseAll": "Tout replier"
   },
   "issue": {
     "fixable": "Correction automatique",
@@ -91,7 +94,11 @@
     "exportJson": "Rapport complet",
     "exportCsv": "Tableau des problèmes",
     "exportCertificate": "Certificat",
-    "collapsePanel": "Réduire le panneau"
+    "collapsePanel": "Réduire le panneau",
+    "shareReport": "Partager",
+    "shareReportTitle": "Copier le lien du rapport à partager",
+    "reportLinkCopied": "Lien copié — collez-le pour partager votre Health Score",
+    "reportLinkError": "Impossible de copier le lien — réessayez"
   },
   "profile": {
     "label": "Profil",
@@ -142,7 +149,12 @@
     "critical": "Critique",
     "suggestedProfile": "Profil suggéré : {{name}}",
     "allCovered": "Toutes les catégories couvertes",
-    "unreadableEntities": "{{count}} entités n'ont pas pu être lues et ont été ignorées. Le score porte sur le reste du modèle."
+    "unreadableEntities": "{{count}} entités n'ont pas pu être lues et ont été ignorées. Le score porte sur le reste du modèle.",
+    "partialTitle": "Score partiel — {{ran}} contrôles sur {{total}} terminés",
+    "partialDesc": "Certains contrôles ne se sont pas terminés : le score réel peut être plus bas qu’il n’y paraît. Relancez ou désactivez les contrôles concernés.",
+    "statusFailed": "Échec de l’exécution",
+    "statusNotRun": "Non exécuté",
+    "ranAll": "Les {{total}} contrôles ont été exécutés"
   },
   "empty": {
     "noModel": "Aucun modèle chargé",
@@ -175,7 +187,8 @@
     "topic": {
       "open": "Ouvert",
       "closed": "Fermé",
-      "inProgress": "En cours"
+      "inProgress": "En cours",
+      "wontFix": "Ne sera pas corrigé"
     },
     "comments": "{{count}} commentaire",
     "comments_other": "{{count}} commentaires",
@@ -191,6 +204,58 @@
       "delete": "Supprimer",
       "noComments": "Aucun commentaire",
       "local": "local"
+    },
+    "exportSingle": "Exporter le sujet",
+    "exportTopics": "Exporter les sujets",
+    "exportVersion": "Version BCF pour l’export",
+    "newTopic": "Nouveau sujet",
+    "createTopic": "Créer le sujet",
+    "topicCreated": "Sujet créé",
+    "topicDeleted": "Sujet supprimé",
+    "topicUpdated": "Enregistré",
+    "captureView": "Capturer la vue actuelle",
+    "captureAdded": "Point de vue capturé",
+    "noViewpoints": "Aucun point de vue",
+    "priority": {
+      "high": "Haute",
+      "normal": "Normale",
+      "low": "Basse"
+    },
+    "type": {
+      "issue": "Problème",
+      "error": "Erreur",
+      "warning": "Avertissement",
+      "info": "Info",
+      "comment": "Commentaire",
+      "request": "Demande",
+      "clash": "Conflit"
+    },
+    "sort": {
+      "newest": "Plus récents d’abord",
+      "oldest": "Plus anciens d’abord",
+      "priority": "Par priorité",
+      "status": "Par statut",
+      "title": "Par titre"
+    },
+    "detail": {
+      "back": "Sujets",
+      "title": "Titre",
+      "status": "Statut",
+      "type": "Type",
+      "priority": "Priorité",
+      "assignedTo": "Assigné à",
+      "assignedPlaceholder": "Nom ou e-mail…",
+      "dueDate": "Échéance",
+      "description": "Description",
+      "descPlaceholder": "Décrivez le problème…",
+      "viewpoints": "Points de vue",
+      "comments": "Commentaires"
+    },
+    "create": {
+      "heading": "Nouveau sujet BCF",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Décrivez le problème…",
+      "captureView": "Capturer la vue actuelle comme point de vue"
     }
   },
   "validating": "Validation… {{progress}}%",
@@ -230,7 +295,13 @@
     "editSubtitle": "Modifiez les règles et paramètres de ce profil",
     "saveChanges": "Enregistrer les modifications",
     "deleteConfirm": "Supprimer ce profil ?",
-    "deleteYes": "Supprimer"
+    "deleteYes": "Supprimer",
+    "thresholds": {
+      "title": "Seuils avancés",
+      "proxyOverusePct": "Seuil d’abus de proxys",
+      "coordinateOffsetKm": "Seuil de décalage des coordonnées",
+      "fileSizePerElementKB": "Taille de fichier par élément"
+    }
   },
   "catFull": {
     "schema": "Schéma IFC",
@@ -436,5 +507,16 @@
     "show3dTitle": "Afficher uniquement ces éléments en 3D",
     "show3dAll": "Réafficher tous les problèmes en 3D",
     "rulePassed": "Votre modèle respecte « {{rule}} » : aucun élément n’échoue à cette vérification."
+  },
+  "waivers": {
+    "mute": "Ignorer ce problème",
+    "mutedCount": "{{count}} problème ignoré",
+    "mutedCount_other": "{{count}} problèmes ignorés",
+    "restoreAll": "Tout rétablir",
+    "scoreNote": "{{count}} ignorés (exclus)"
+  },
+  "runDiff": {
+    "summary": "Depuis la dernière exécution : {{resolved}} résolus · {{added}} nouveaux",
+    "scoreDelta": "{{delta}} pts"
   }
 }
