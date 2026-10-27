@@ -77,7 +77,7 @@ export default function Privacy({ data, actions }: SectionProps) {
     <>
       <Head title="Privacy & data" sub="What we keep about you, where, for how long — and how to take it with you or have it deleted. No email needed for any of it." />
 
-      <SettingGroup title="Your rights">
+      <SettingGroup title="Your rights" tour="rights">
         <SettingRow title="Get a copy of your data" detail="Profile, projects, scores, issues, certificates, credit history and support tickets as JSON + CSV. Ready within 24 h; the link lasts 7 days.">
           <Primary disabled={pendingExport} onClick={() => request('export')}>{pendingExport ? 'Preparing…' : 'Request copy'}</Primary>
         </SettingRow>
@@ -95,7 +95,7 @@ export default function Privacy({ data, actions }: SectionProps) {
 
       {requests.length > 0 && (
         <section className="mb-6">
-          <DataList
+          <DataList tour="data-requests"
             rows={requests}
             rowKey={(r) => r.id}
             primaryHeader="Request"
@@ -114,7 +114,7 @@ export default function Privacy({ data, actions }: SectionProps) {
 
       <section className="mb-6">
         <h2 className="text-[12px] uppercase tracking-[0.08em] text-[var(--text-faint)] mb-2">What we hold</h2>
-        <DataList
+        <DataList tour="inventory"
           rows={DATA_INVENTORY}
           rowKey={(r) => r.what}
           primaryHeader="Data"
@@ -143,7 +143,7 @@ export default function Privacy({ data, actions }: SectionProps) {
         <p className="mt-2 text-[12px] text-[var(--text-dim)]">Questions or a complaint: privacy@ifcvieweronline.eu. You can also contact the Spanish Data Protection Agency (AEPD).</p>
       </section>
 
-      <SettingGroup title="Delete account" tone="danger">
+      <SettingGroup title="Delete account" tone="danger" tour="delete-account">
         <SettingRow title="Delete your account and all your data" detail="Cancels your plan now and deletes everything after 14 days, except what the law makes us keep.">
           <Danger onClick={() => setDeleteOpen(true)}>Delete account…</Danger>
         </SettingRow>

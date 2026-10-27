@@ -20,7 +20,7 @@ export default function Jobs({ data, actions }: SectionProps) {
       {data.jobs.length === 0 ? (
         <Empty title="No cloud jobs yet" body="Cloud jobs handle what a browser can't: fixing a model and giving you a clean IFC, validating files over 200 MB, clash detection and deep geometry tests." action={<Primary onClick={actions.newJob}>Run your first job</Primary>} />
       ) : (
-        <DataList
+        <DataList tour="job-list"
           rows={data.jobs}
           rowKey={(j) => j.id}
           primaryHeader="Job"

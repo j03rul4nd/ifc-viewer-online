@@ -27,7 +27,7 @@ function Profile({ data }: SectionProps) {
   const dirty = form.name !== a.name || form.org !== a.org || form.role !== 'BIM coordinator'
   return (
     <>
-      <SettingGroup title="Profile">
+      <SettingGroup title="Profile" tour="profile">
         <div className="p-4 sm:p-5 grid gap-4 sm:grid-cols-2">
           <Field label="Full name"><input className={inputClass} value={form.name} autoComplete="name" onChange={(e) => { setForm({ ...form, name: e.target.value }); setSaved(false) }} /></Field>
           <Field label="Company" hint="Shown on certificates and invoices."><input className={inputClass} value={form.org} autoComplete="organization" onChange={(e) => { setForm({ ...form, org: e.target.value }); setSaved(false) }} /></Field>
@@ -150,7 +150,7 @@ export default function Settings(props: SectionProps) {
       {tab === 'notifications' && <Notifications />}
       {tab === 'preferences' && <Preferences />}
       {tab === 'profile' && (
-        <SettingGroup title="Leaving" tone="danger">
+        <SettingGroup title="Leaving" tone="danger" tour="leaving">
           <SettingRow title="Cancel your plan" detail="Keeps the account and your projects (read-only); stops renewals.">
             <Quiet onClick={() => props.actions.go('billing')}>Go to billing</Quiet>
           </SettingRow>

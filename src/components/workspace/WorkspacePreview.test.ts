@@ -87,7 +87,7 @@ describe('workspace preview (design on sample data)', () => {
 
   it('lists render as phone cards and as a tablet/desktop table', () => {
     const noop = () => {}
-    const html = renderToStaticMarkup(createElement(Billing, { data: scenarioData('active'), actions: { go: noop, newJob: noop, topUp: noop, buy: noop, contact: noop, openProject: noop } }))
+    const html = renderToStaticMarkup(createElement(Billing, { data: scenarioData('active'), actions: { go: noop, newJob: noop, topUp: noop, buy: noop, contact: noop, openProject: noop, tour: noop } }))
     expect(html).toContain('Most bought')
     expect(html).toContain('•••• 4242')
     const overview = renderToStaticMarkup(createElement(WorkspacePreview, { onNavigateHome: noop }))
@@ -96,7 +96,7 @@ describe('workspace preview (design on sample data)', () => {
   })
 
   const noop = () => {}
-  const actions = { go: noop, newJob: noop, topUp: noop, buy: noop, contact: noop, openProject: noop }
+  const actions = { go: noop, newJob: noop, topUp: noop, buy: noop, contact: noop, openProject: noop, tour: noop }
 
   it('account sections render their core controls', () => {
     const data = scenarioData('active')

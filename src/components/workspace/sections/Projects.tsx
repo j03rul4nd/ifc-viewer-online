@@ -7,7 +7,7 @@ import type { SampleProject } from '../sample-data'
 import type { SectionProps } from '../registry'
 import {
   Panel, Head, Primary, Quiet, Danger, Empty, DataList, Sparkline, Tabs, Dialog, Field, Toggle,
-  SettingGroup, SettingRow, scoreColor, fmtInt, inputClass,
+  SettingGroup, SettingRow, scoreColor, fmtInt, inputClass, notifyNav,
 } from '../ui'
 import { featureName } from './Overview'
 
@@ -98,7 +98,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
       <Head title={project.name} sub={`${project.client} · ${project.discipline} · checked against ${PROFILES[0]}`}
         action={<><Quiet onClick={actions.newJob}>Run a job</Quiet><Primary>Add delivery</Primary></>} />
 
-      <div className="grid gap-3 grid-cols-3 mb-5">
+      <div className="grid gap-3 grid-cols-3 mb-5" data-tour="kpis">
         {[['Latest score', <span key="s" style={{ color: scoreColor(last.score) }}>{last.score}</span>], ['Open issues', fmtInt(last.issues)], ['Deliveries', project.versions.length]].map(([k, v]) => (
           <Panel key={String(k)} className="p-3 sm:p-4">
             <p className="text-[11.5px] text-[var(--text-dim)]">{k}</p>
@@ -111,7 +111,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
 
       {tab === 'deliveries' && (
         <>
-          <Panel className="p-4 sm:p-5 mb-4">
+          <Panel tour="score-history" className="p-4 sm:p-5 mb-4">
             <p className="text-[12px] text-[var(--text-dim)] mb-2">Health Score per delivery</p>
             <Sparkline values={project.versions.map((v) => v.score)} width={560} height={90} className="w-full h-[90px]" />
           </Panel>
@@ -168,7 +168,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
             </div>
             <div className="px-4 sm:px-5 py-3 flex justify-end"><Primary>Save</Primary></div>
           </SettingGroup>
-          <SettingGroup title="Alerts">
+          <SettingGroup title="Alerts" tour="project-alerts">
             <SettingRow title="Email me when a delivery scores lower than the previous one"><Toggle label="Score drop alerts" checked={alerts} onChange={setAlerts} /></SettingRow>
           </SettingGroup>
           <SettingGroup title="Archive or delete" tone="danger">
@@ -199,7 +199,7 @@ export default function Projects(props: SectionProps) {
   const setOpen = useCallback((id: string | null) => {
     setOpenState(id)
     const url = id ? `${BASE}/${id}` : BASE
-    if (typeof history !== 'undefined' && location.pathname !== url) history.pushState(null, '', url)
+    if (typeof history !== 'undefined' && location.pathname !== url) { history.pushState(null, '', url); notifyNav() }
   }, [])
   useEffect(() => {
     const onPop = () => setOpenState(projectFromPath())
@@ -224,13 +224,13 @@ export default function Projects(props: SectionProps) {
       ) : (
         <>
           <div className="flex flex-col sm:flex-row gap-2 mb-3">
-            <input type="search" aria-label="Search projects" placeholder="Search by project or client" className={`${inputClass} sm:max-w-[320px]`} value={q} onChange={(e) => setQ(e.target.value)} />
+            <input data-tour="project-search" type="search" aria-label="Search projects" placeholder="Search by project or client" className={`${inputClass} sm:max-w-[320px]`} value={q} onChange={(e) => setQ(e.target.value)} />
             <select aria-label="Sort projects" className={`${inputClass} sm:!w-auto`} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
               <option value="recent">Latest delivery first</option><option value="score_asc">Lowest score first</option><option value="name">Name</option>
             </select>
             <span className="sm:ml-auto self-center text-[12px] text-[var(--text-faint)]"><button className="hover:text-[var(--text)]">Show archived (0)</button></span>
           </div>
-          {list.length === 0 ? <Empty title="No project matches" body={`Nothing called “${q}”. Check the spelling or search by client.`} /> : <ProjectList projects={list} onOpen={setOpen} />}
+          {list.length === 0 ? <Empty title="No project matches" body={`Nothing called “${q}”. Check the spelling or search by client.`} /> : <div data-tour="project-list"><ProjectList projects={list} onOpen={setOpen} /></div>}
         </>
       )}
       {newOpen && <NewProjectDialog onClose={() => setNewOpen(false)} />}

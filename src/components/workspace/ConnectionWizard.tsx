@@ -18,6 +18,8 @@ import { INTERVAL_PRESETS, describeSchedule, nextRuns, validateSchedule, type Sc
 import { findRecordArrays, extractRecords, fieldsOf, guessMapping, getPath, type FieldMapping } from '../../lib/connections/mapping'
 import { SAMPLE_TEST_PAYLOAD, type SampleCredential } from './connections-sample'
 import { Dialog, Primary, Quiet, Field, Hint, Toggle, CopyField, inputClass, Dot } from './ui'
+import GuidedTour from './GuidedTour'
+import { WIZARD_TOURS } from '../../lib/workspace-tours/tours'
 
 const STEPS = ['Arrival', 'Source', 'Test', 'Read', 'When', 'Save'] as const
 
@@ -50,6 +52,7 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
   const [name, setName] = useState('')
   const [inNewScenes, setInNewScenes] = useState(true)
   const [alertOnFail, setAlertOnFail] = useState(true)
+  const [guide, setGuide] = useState(false)
 
   const p = protocol ? protocolById(protocol) : null
   const isPush = p?.mode === 'push'
@@ -87,7 +90,8 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
           ? <Primary disabled={!!blocker} onClick={() => setStep(step === 3 && !scheduled ? 5 : step + 1)}>Next</Primary>
           : <Primary disabled={!!blocker} onClick={onClose}>Save connection</Primary>}
       </>}>
-      <ol aria-label="Steps" className="flex gap-1 mb-5 overflow-x-auto -mx-1 px-1">
+      <div className="flex items-start gap-3 mb-5">
+      <ol aria-label="Steps" className="flex-1 min-w-0 flex gap-1 overflow-x-auto -mx-1 px-1">
         {STEPS.map((s, i) => (
           <li key={s} aria-current={i === step ? 'step' : undefined}
             className={`shrink-0 flex items-center gap-1.5 text-[11.5px] ${i === step ? 'text-[var(--text)] font-medium' : i < step ? 'text-[var(--text-dim)]' : 'text-[var(--text-faint)]'}`}>
@@ -96,6 +100,9 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
           </li>
         ))}
       </ol>
+      <button type="button" onClick={() => setGuide(true)} className="shrink-0 h-[26px] px-2 rounded-[7px] border border-[var(--border)] text-[11.5px] text-[var(--text-dim)] hover:text-[var(--text)]">Guide me</button>
+      </div>
+      {guide && <GuidedTour key={step} title={`Step ${step + 1}: ${STEPS[step]}`} steps={WIZARD_TOURS[step] ?? []} onClose={() => setGuide(false)} />}
 
       {step === 0 && (
         <div data-tour="arrival">
