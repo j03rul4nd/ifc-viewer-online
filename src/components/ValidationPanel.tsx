@@ -2838,6 +2838,23 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
         </button>
       </div>
 
+      {/* Actionable summary — what to fix first, right under the score. It used to sit
+          inside the scroll, below the profile row, coverage strip and banners: on a
+          laptop it was off-screen and 2.4% of validated sessions clicked it. */}
+      {!isRunning && result && result.stats.total > 0 && activePanel === 'issues' && (
+        <ExecutiveSummary
+          score={result.qualityScore ?? 0}
+          contributions={contributions}
+          language={i18n.language}
+          onJumpToRule={handleJumpToRule}
+          batchCounts={batchState.counts}
+          batchDisabledReason={batchState.reasons}
+          onBatchFix={handleOpenBatchRename}
+          onShow3d={sceneModels.length > 0 ? handleShowRuleIn3d : undefined}
+          focusedRule={ruleFocus}
+        />
+      )}
+
       {/* ── Row 2: profile dropdown + run button ── */}
       {/* data-profile-row is used by ProfileDropdown's portal to anchor its bounding rect */}
       <div data-profile-row className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] shrink-0 min-w-0">
@@ -3143,21 +3160,6 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
                 onAlsoFixEmpty={() => handleOpenBatchRename('RULE_EMPTY_NAME')}
                 onResize={() => setListOffset(listRef.current?.offsetTop ?? 0)}
                 autoFocus={focusFixCardFor === fixBatch.batchId}
-              />
-            )}
-
-            {/* Actionable summary — what to fix first (Phase 2) */}
-            {!isRunning && result && result.stats.total > 0 && (
-              <ExecutiveSummary
-                score={result.qualityScore ?? 0}
-                contributions={contributions}
-                language={i18n.language}
-                onJumpToRule={handleJumpToRule}
-                batchCounts={batchState.counts}
-                batchDisabledReason={batchState.reasons}
-                onBatchFix={handleOpenBatchRename}
-                onShow3d={sceneModels.length > 0 ? handleShowRuleIn3d : undefined}
-                focusedRule={ruleFocus}
               />
             )}
 
