@@ -277,7 +277,8 @@
     "sceneAlone": "Eine Szenendatei wird allein geöffnet. Fügen Sie die übrigen Dateien hinzu, sobald sie geladen ist.",
     "archiveOpening": "Archiv wird geöffnet…",
     "archiveOpened": "{{archives}} geöffnet: {{count}} Dateien",
-    "archiveUnsupported": "{{names}}: RAR und 7z lassen sich im Browser noch nicht öffnen — als .zip speichern oder den Ordner ziehen",
+    "archiveUnsupported": "{{names}}: xz-, bz2- und zst-Archive lassen sich im Browser noch nicht öffnen — als .zip speichern oder den Ordner ziehen",
+    "archiveEncrypted": "{{name}} ist passwortgeschützt — auf dem Rechner entpacken und dann den Ordner ziehen",
     "archiveFailed": "{{name}} konnte nicht geöffnet werden: {{reason}}",
     "archiveTruncated": "Sehr großes Archiv: nur der erste Teil wurde übernommen (4 GB / 5.000 Dateien)"
   }

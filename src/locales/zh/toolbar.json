@@ -277,7 +277,8 @@
     "sceneAlone": "场景文件会单独打开。加载完成后再添加其他文件。",
     "archiveOpening": "正在解压…",
     "archiveOpened": "已解压 {{archives}}：{{count}} 个文件",
-    "archiveUnsupported": "{{names}}：浏览器暂不支持 RAR/7z，请另存为 .zip 或直接拖入文件夹",
+    "archiveUnsupported": "{{names}}：浏览器暂不支持 xz/bz2/zst，请另存为 .zip 或直接拖入文件夹",
+    "archiveEncrypted": "{{name}} 受密码保护——请先在电脑上解压，再拖入文件夹",
     "archiveFailed": "无法打开 {{name}}：{{reason}}",
     "archiveTruncated": "压缩包过大：仅读取前一部分（4 GB / 5000 个文件）"
   }

@@ -157,8 +157,13 @@ A drop (or the hub's "Choose folder…") can be a whole project. Before routing,
   drop handler — the DataTransfer is empty once it returns).
 - **Archives**: `.zip` (nested up to 3 levels), `.ifczip` (the IFC inside is
   named after the archive), `.gz` / `.tgz`, `.tar`. fflate, lazy-loaded.
-- **RAR / 7z** are recognised and named in a toast ("save as .zip or drop the
-  folder"), not opened: that needs a native-code decompressor we don't ship.
+- **RAR / 7z** open through 7-Zip compiled to WASM (`7z-wasm`, ~1.6 MB,
+  `lib/loading/sevenzip.ts`), imported only when one is dropped. Their files go
+  through the same path as a zip's (junk filter, caps, nested archives). A
+  password-protected archive fails with its own toast ("extract it on your
+  computer"); there is no password prompt.
+- **xz / bz2 / zst** are recognised and named in a toast ("save as .zip or drop
+  the folder"), not opened.
 - Junk is dropped (`__MACOSX`, dotfiles, `Thumbs.db`); expansion stops at
   4 GB / 5,000 files with a warning.
 

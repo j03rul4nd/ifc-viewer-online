@@ -277,7 +277,8 @@
     "sceneAlone": "Un file di scena si apre da solo. Aggiungi gli altri file quando è stato caricato.",
     "archiveOpening": "Apertura dell'archivio…",
     "archiveOpened": "Aperto {{archives}}: {{count}} file",
-    "archiveUnsupported": "{{names}}: RAR e 7z non si aprono ancora nel browser — salva come .zip o trascina la cartella",
+    "archiveUnsupported": "{{names}}: gli archivi xz, bz2 e zst non si aprono ancora nel browser — salva come .zip o trascina la cartella",
+    "archiveEncrypted": "{{name}} è protetto da password — estrailo sul computer, poi trascina la cartella",
     "archiveFailed": "Impossibile aprire {{name}}: {{reason}}",
     "archiveTruncated": "Archivio molto grande: presa solo la prima parte (4 GB / 5.000 file)"
   }

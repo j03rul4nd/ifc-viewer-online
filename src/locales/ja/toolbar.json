@@ -277,7 +277,8 @@
     "sceneAlone": "シーンファイルは単独で開きます。読み込み後に他のファイルを追加してください。",
     "archiveOpening": "アーカイブを展開中…",
     "archiveOpened": "{{archives}} を展開: {{count}} ファイル",
-    "archiveUnsupported": "{{names}}: RAR/7z はまだブラウザで開けません。.zip で保存するかフォルダーをドロップしてください",
+    "archiveUnsupported": "{{names}}: xz/bz2/zst 形式はまだブラウザで開けません。.zip で保存するかフォルダーをドロップしてください",
+    "archiveEncrypted": "{{name}} はパスワードで保護されています。PC で展開してからフォルダーをドロップしてください",
     "archiveFailed": "{{name}} を開けません: {{reason}}",
     "archiveTruncated": "アーカイブが大きすぎるため先頭部分のみ読込みました（4 GB / 5,000 ファイル）"
   }

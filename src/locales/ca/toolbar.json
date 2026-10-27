@@ -277,7 +277,8 @@
     "sceneAlone": "Un fitxer d’escena s’obre sol. Afegeix els altres fitxers quan s’hagi carregat.",
     "archiveOpening": "Obrint l'arxiu comprimit…",
     "archiveOpened": "Obert {{archives}}: {{count}} fitxers",
-    "archiveUnsupported": "{{names}}: RAR i 7z encara no s'obren al navegador — desa-ho com a .zip o arrossega la carpeta",
+    "archiveUnsupported": "{{names}}: els arxius xz, bz2 i zst encara no s'obren al navegador — desa-ho com a .zip o arrossega la carpeta",
+    "archiveEncrypted": "{{name}} està protegit amb contrasenya — extreu-lo a l'ordinador i arrossega la carpeta",
     "archiveFailed": "No s'ha pogut obrir {{name}}: {{reason}}",
     "archiveTruncated": "L'arxiu és molt gran: només se n'ha agafat la primera part (4 GB / 5.000 fitxers)"
   }

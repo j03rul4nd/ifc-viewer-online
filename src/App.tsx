@@ -2084,7 +2084,7 @@ export default function App() {
   /**
    * Open archives (zip, ifczip, gz, tar — nested too) into their files, then
    * route everything like a drop: one zip of a project assembles the scene.
-   * RAR / 7z are recognised and named, not opened.
+   * RAR / 7z open through 7-Zip in WASM; xz / bz2 / zst are named, not opened.
    */
   const routeExpanded = useCallback(async (files: File[], opts: { via?: DataVia } = {}): Promise<void> => {
     const needs = files.some((f) => isArchiveName(f.name) || UNSUPPORTED_ARCHIVE_EXT.has(extOfFile(f.name)))
@@ -2099,7 +2099,9 @@ export default function App() {
     if (r.unsupportedArchives.length > 0) {
       toast(tToolbar('drop.archiveUnsupported', { names: r.unsupportedArchives.map((f) => f.name).join(', ') }), 'warning', { duration: 9000 })
     }
-    for (const f of r.failed) toast(tToolbar('drop.archiveFailed', { name: f.name, reason: f.reason }), 'error')
+    for (const f of r.failed) {
+      toast(f.encrypted ? tToolbar('drop.archiveEncrypted', { name: f.name }) : tToolbar('drop.archiveFailed', { name: f.name, reason: f.reason }), 'error', f.encrypted ? { duration: 9000 } : undefined)
+    }
     if (r.truncated) toast(tToolbar('drop.archiveTruncated'), 'warning')
     if (r.files.length > 0) routeDroppedFiles(r.files, opts)
   }, [routeDroppedFiles, tToolbar])
