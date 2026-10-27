@@ -57,6 +57,10 @@ const MORE_MARKER =
 const RULESET_AFTER_NUMBER =
   /^\d{2,3}[^\d\n]{0,15}?(?:set di|conjunto de|conjunt de|jeu de)\s+(?:regole|reglas|regras|regles|règles)/iu
 
+// "a Health Score 0–100, validation rules and IDS checks" — the number closes a
+// score range, it does not count rules. Matched on the text just before it.
+const SCORE_RANGE_BEFORE = /\b0\s*(?:[–\-~〜]|to|a|bis|à|ถึง)\s*$/iu
+
 // Every content surface that quotes the rule count, loaded raw at test time
 // (same import.meta.glob idiom as ids-testcases.test.ts — no node builtins,
 // so the browser tsconfig stays clean). Surfaces that only exist in dist/
@@ -92,6 +96,7 @@ function sweep(file: string, text: string): Offender[] {
       const context = text.slice(Math.max(0, m.index! - 40), m.index! + 40).replace(/\s+/g, ' ')
       if (MORE_MARKER.test(context)) continue
       if (RULESET_AFTER_NUMBER.test(text.slice(m.index!, m.index! + 40))) continue
+      if (SCORE_RANGE_BEFORE.test(text.slice(Math.max(0, m.index! - 12), m.index!))) continue
       offenders.push({ file, line, claim, context })
     }
   }
