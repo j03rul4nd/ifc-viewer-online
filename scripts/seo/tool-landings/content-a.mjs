@@ -156,7 +156,7 @@ export const PAGES = {
       cta: 'Check classification — free',
       shots: [
         { file: 'ifc-classification-checker-elements-without-classification', alt: 'IFC classification checker listing the elements without a classification reference and highlighting them in 3D', cap: 'Elements with no classification, listed and isolated in the 3D model.' },
-        { file: 'bim-property-set-validation-missing-psets', alt: 'BIM property set validation showing elements with missing property sets in an IFC model', cap: 'The same check for missing property sets, rule by rule.' },
+        { file: 'bim-property-set-validation-missing-psets', alt: 'BIM property set validation showing the elements with empty property values in an IFC model, isolated in 3D', cap: 'Property set validation: elements whose properties are empty, listed and shown in 3D.' },
       ],
       featTitle: 'Classification and data checks for a delivery',
       featSub: 'The checks a BIM coordinator runs before accepting a model into the CDE.',
@@ -188,7 +188,7 @@ export const PAGES = {
       cta: 'Comprobar la clasificación — gratis',
       shots: [
         { file: 'comprobar-clasificacion-ifc-elementos-sin-clasificar', alt: 'Comprobación de clasificación IFC que lista los elementos sin referencia de clasificación y los resalta en 3D', cap: 'Elementos sin clasificación, listados y aislados en el modelo 3D.' },
-        { file: 'validacion-conjuntos-propiedades-bim', alt: 'Validación de conjuntos de propiedades BIM con los elementos a los que les faltan Psets en un modelo IFC', cap: 'La misma comprobación para los conjuntos de propiedades que faltan.' },
+        { file: 'validacion-conjuntos-propiedades-bim', alt: 'Validación de conjuntos de propiedades BIM con los elementos con valores de propiedad vacíos en un modelo IFC, aislados en 3D', cap: 'Validación de Psets: elementos con propiedades vacías, listados y mostrados en 3D.' },
       ],
       featTitle: 'Comprobaciones de clasificación y datos para una entrega',
       featSub: 'Lo que revisa un coordinador BIM antes de aceptar un modelo en el CDE.',
@@ -220,7 +220,7 @@ export const PAGES = {
       cta: 'Klassifikation prüfen — kostenlos',
       shots: [
         { file: 'ifc-klassifikation-pruefen-elemente-ohne-klassifikation', alt: 'IFC-Klassifikationsprüfung mit Liste der Elemente ohne Klassifikationsreferenz, in 3D hervorgehoben', cap: 'Elemente ohne Klassifikation, aufgelistet und im 3D-Modell isoliert.' },
-        { file: 'bim-eigenschaftssaetze-pruefen', alt: 'Prüfung der BIM-Eigenschaftssätze mit Elementen ohne Psets in einem IFC-Modell', cap: 'Dieselbe Prüfung für fehlende Eigenschaftssätze.' },
+        { file: 'bim-eigenschaftssaetze-pruefen', alt: 'Prüfung der BIM-Eigenschaftssätze mit Elementen mit leeren Eigenschaftswerten in einem IFC-Modell, in 3D isoliert', cap: 'Eigenschaftssätze prüfen: Elemente mit leeren Eigenschaften, aufgelistet und in 3D gezeigt.' },
       ],
       featTitle: 'Klassifikations- und Datenprüfung für eine Übergabe',
       featSub: 'Was eine BIM-Koordination prüft, bevor ein Modell in die CDE darf.',
@@ -252,7 +252,7 @@ export const PAGES = {
       cta: 'Vérifier la classification — gratuit',
       shots: [
         { file: 'verifier-classification-ifc-elements-non-classes', alt: 'Vérification de la classification IFC listant les éléments sans référence de classification, surlignés en 3D', cap: 'Éléments sans classification, listés et isolés dans la maquette 3D.' },
-        { file: 'validation-jeux-de-proprietes-bim', alt: 'Validation des jeux de propriétés BIM montrant les éléments sans Psets dans une maquette IFC', cap: 'Le même contrôle pour les jeux de propriétés manquants.' },
+        { file: 'validation-jeux-de-proprietes-bim', alt: 'Validation des jeux de propriétés BIM montrant les éléments aux valeurs de propriétés vides dans une maquette IFC, isolés en 3D', cap: 'Validation des Psets : éléments aux propriétés vides, listés et montrés en 3D.' },
       ],
       featTitle: 'Contrôles de classification et de données pour une livraison',
       featSub: 'Ce que vérifie un coordinateur BIM avant d’accepter une maquette dans la GED.',
