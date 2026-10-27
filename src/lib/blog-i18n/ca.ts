@@ -9380,6 +9380,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vols revisar un model ara mateix? El ",{"text":"control de qualitat IFC","href":"https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/"}," gratuït li dona una nota de 0 a 100 i un informe imprimible, i la ",{"text":"validació IFC en línia","href":"https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/"}," executa les 44 regles al navegador, sense pujar res."]},
       {
         type: "p",
         text: "Gairebé tothom exporta un IFC i l'envia. Gairebé ningú el comprova abans — no perquè no els importi, sinó perquè «validar l'IFC» és genuïnament ambigu. Validar contra què? L'esquema? Els requisits del projecte? Si s'obrirà a l'eina del coordinador? Són tres preguntes diferents amb tres eines diferents, i confondre-les és per què tants models acaben rebutjats a l'entorn comú de dades (CDE).",
@@ -15505,6 +15506,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vols revisar un model ara mateix? El ",{"text":"control de qualitat IFC","href":"https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/"}," gratuït li dona una nota de 0 a 100 i un informe imprimible, i la ",{"text":"validació IFC en línia","href":"https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/"}," executa les 44 regles al navegador, sense pujar res."]},
       {
         type: "callout",
         variant: "info",
@@ -16216,6 +16218,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vols revisar un model ara mateix? El ",{"text":"control de qualitat IFC","href":"https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/"}," gratuït li dona una nota de 0 a 100 i un informe imprimible, i la ",{"text":"validació IFC en línia","href":"https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/"}," executa les 44 regles al navegador, sense pujar res."]},
       {
         type: "callout",
         variant: "info",

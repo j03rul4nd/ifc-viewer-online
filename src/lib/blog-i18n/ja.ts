@@ -8509,6 +8509,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["今すぐモデルをチェックしたいなら、無料の",{"text":"IFC モデルのヘルスチェック","href":"https://www.ifcvieweronline.eu/ja/ifc-health-check/"},"で 0〜100 のスコアと印刷可能なレポートを、",{"text":"オンライン IFC 検証","href":"https://www.ifcvieweronline.eu/ja/ifc-validator-online/"},"でブラウザ上の 44 ルールすべてを実行できます。アップロードは不要です。"]},
       {
         type: "p",
         text: "ほとんどの人はIFCをエクスポートしたら、そのまま送っています。事前にチェックする人はほとんどいません。気にしていないからではなく、「IFCを検証する」という言葉が本当に曖昧だからです。何に照らして検証するのか。スキーマなのか、プロジェクトの要件なのか、それともコーディネーターのツールで開けるかどうかなのか。これらは3つの異なる問いで、使うツールもそれぞれ違います。この3つを混同していることこそ、共通データ環境（CDE）で多くのモデルが差し戻される理由です。",
@@ -14199,6 +14200,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["今すぐモデルをチェックしたいなら、無料の",{"text":"IFC モデルのヘルスチェック","href":"https://www.ifcvieweronline.eu/ja/ifc-health-check/"},"で 0〜100 のスコアと印刷可能なレポートを、",{"text":"オンライン IFC 検証","href":"https://www.ifcvieweronline.eu/ja/ifc-validator-online/"},"でブラウザ上の 44 ルールすべてを実行できます。アップロードは不要です。"]},
       {
         type: "callout",
         variant: "info",
@@ -14822,6 +14824,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["今すぐモデルをチェックしたいなら、無料の",{"text":"IFC モデルのヘルスチェック","href":"https://www.ifcvieweronline.eu/ja/ifc-health-check/"},"で 0〜100 のスコアと印刷可能なレポートを、",{"text":"オンライン IFC 検証","href":"https://www.ifcvieweronline.eu/ja/ifc-validator-online/"},"でブラウザ上の 44 ルールすべてを実行できます。アップロードは不要です。"]},
       {
         type: "callout",
         variant: "info",

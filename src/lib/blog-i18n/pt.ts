@@ -9380,6 +9380,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Quer verificar um modelo agora mesmo? A ",{"text":"verificação de qualidade IFC","href":"https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/"}," gratuita dá-lhe uma nota de 0 a 100 e um relatório imprimível, e a ",{"text":"validação IFC online","href":"https://www.ifcvieweronline.eu/pt/validador-ifc-online/"}," executa as 44 regras no seu navegador, sem enviar nada."]},
       {
         type: "p",
         text: "Quase todo mundo exporta um IFC e envia. Quase ninguém verifica antes — não porque não se importem, mas porque \"validar o IFC\" é genuinamente ambíguo. Validar contra o quê? O schema? Os requisitos do projeto? Se vai abrir na ferramenta do coordenador? São três perguntas diferentes com três ferramentas diferentes, e confundi-las é a razão de tantos modelos serem rejeitados no Ambiente Comum de Dados (CDE).",
@@ -15499,6 +15500,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Quer verificar um modelo agora mesmo? A ",{"text":"verificação de qualidade IFC","href":"https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/"}," gratuita dá-lhe uma nota de 0 a 100 e um relatório imprimível, e a ",{"text":"validação IFC online","href":"https://www.ifcvieweronline.eu/pt/validador-ifc-online/"}," executa as 44 regras no seu navegador, sem enviar nada."]},
       {
         type: "callout",
         variant: "info",
@@ -16199,6 +16201,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Quer verificar um modelo agora mesmo? A ",{"text":"verificação de qualidade IFC","href":"https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/"}," gratuita dá-lhe uma nota de 0 a 100 e um relatório imprimível, e a ",{"text":"validação IFC online","href":"https://www.ifcvieweronline.eu/pt/validador-ifc-online/"}," executa as 44 regras no seu navegador, sem enviar nada."]},
       {
         type: "callout",
         variant: "info",

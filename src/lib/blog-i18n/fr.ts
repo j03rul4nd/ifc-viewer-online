@@ -9339,6 +9339,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vous voulez contrôler une maquette maintenant ? Le ",{"text":"contrôle qualité IFC","href":"https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/"}," gratuit lui donne une note de 0 à 100 et un rapport imprimable, et la ",{"text":"validation IFC en ligne","href":"https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/"}," exécute les 44 règles dans votre navigateur, sans rien envoyer."]},
       {
         type: "p",
         text: "Presque tout le monde exporte un IFC et l'envoie. Presque personne ne le vérifie d'abord — non par négligence, mais parce que « valider l'IFC » est réellement ambigu. Valider par rapport à quoi ? Le schéma ? Les exigences du projet ? Le fait qu'il s'ouvre dans l'outil du coordinateur ? Ce sont trois questions différentes qui appellent trois outils différents, et les confondre est la raison pour laquelle tant de maquettes sont rejetées au niveau de l'environnement commun de données.",
@@ -15486,6 +15487,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vous voulez contrôler une maquette maintenant ? Le ",{"text":"contrôle qualité IFC","href":"https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/"}," gratuit lui donne une note de 0 à 100 et un rapport imprimable, et la ",{"text":"validation IFC en ligne","href":"https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/"}," exécute les 44 règles dans votre navigateur, sans rien envoyer."]},
       {
         type: "callout",
         variant: "info",
@@ -16206,6 +16208,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
     ],
     content: [
+      {"type":"p","text":["Vous voulez contrôler une maquette maintenant ? Le ",{"text":"contrôle qualité IFC","href":"https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/"}," gratuit lui donne une note de 0 à 100 et un rapport imprimable, et la ",{"text":"validation IFC en ligne","href":"https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/"}," exécute les 44 règles dans votre navigateur, sans rien envoyer."]},
       {
         type: "callout",
         variant: "info",
