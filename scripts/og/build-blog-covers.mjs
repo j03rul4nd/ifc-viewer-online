@@ -188,6 +188,12 @@ const REAL_CAPTURE_BY_KEY = {
     shortTitle: 'REAL-TIME DATA FRESHNESS',
   },
   // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
+  // Rain & slopes: the maquette of the bundled Chosica example (scripts/og/capture-hazard-shots.mjs).
+  'rainfall-landslide-hazard-map-kmz': {
+    source: 'public/blog/images/rainfall-landslide-hazard-map-kmz-capture.jpg',
+    badge: { en: 'ACTUAL VIEWER · RAIN & SLOPES', es: 'VISOR REAL · LLUVIA Y LADERAS' },
+    shortTitle: 'CRITICAL RAINFALL MAP',
+  },
   'flood-simulation-ifc-model-online': {
     source: 'public/blog/images/flood-simulation-ifc-max-depth.jpg',
     badge: { en: 'ACTUAL VIEWER · FLOOD SIMULATION', es: 'VISOR REAL · SIMULACIÓN DE INUNDACIÓN' },
