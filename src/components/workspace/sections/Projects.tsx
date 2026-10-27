@@ -23,7 +23,8 @@ function Delta({ project }: { project: SampleProject }) {
   const v = project.versions, prev = v[v.length - 2]
   if (!prev) return <span className="text-[var(--text-faint)]">—</span>
   const d = v[v.length - 1].score - prev.score
-  return <span className="tabular-nums" style={{ color: d >= 0 ? 'var(--ok)' : 'var(--danger)' }}>{d >= 0 ? '▲' : '▼'} {Math.abs(d)}</span>
+  // Only a drop gets colour: a rise is the expected case and stays quiet.
+  return <span className={`tabular-nums whitespace-nowrap ${d < 0 ? '' : 'text-[var(--text-dim)]'}`} style={d < 0 ? { color: 'var(--danger)' } : undefined}>{d > 0 ? '+' : d < 0 ? '−' : '±'}{Math.abs(d)}</span>
 }
 
 export function ProjectList({ projects, onOpen }: { projects: SampleProject[]; onOpen: (id: string) => void }) {
@@ -129,7 +130,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
               { key: 'new', header: 'New', cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">+{v.newIssues}</span> },
               { key: 'fixed', header: 'Fixed', cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">−{v.fixedIssues}</span> },
             ]}
-            actions={(v) => { const prev = prevOf(v.label); return <><Quiet>Open in viewer</Quiet>{prev && <Quiet>Compare with {prev.label}</Quiet>}</> }}
+            actions={(v) => { const prev = prevOf(v.label); return <><Quiet className="md:hidden lg:inline-flex">Open in viewer</Quiet>{prev && <Quiet>Compare with {prev.label}</Quiet>}</> }}
           />
         </>
       )}
@@ -139,7 +140,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
         : <DataList rows={jobs} rowKey={(j) => j.id} primaryHeader="Job"
             primary={(j) => <><p className="font-medium">{featureName(j.feature)}</p><p className="text-[11.5px] text-[var(--text-faint)]">{j.id} · {j.startedAt}</p></>}
             columns={[
-              { key: 'file', header: 'File', className: 'max-w-[200px] truncate', cell: (j) => <span className="text-[var(--text-dim)]">{j.file}</span> },
+              { key: 'file', header: 'File', wide: true, className: 'max-w-[220px] [overflow-wrap:anywhere]', cell: (j) => <span className="text-[var(--text-dim)]">{j.file}</span> },
               { key: 'status', header: 'Status', cell: (j) => <span className="capitalize">{j.status}</span> },
               { key: 'credits', header: 'Credits', align: 'right', cell: (j) => <span className="tabular-nums">{j.credits}</span> },
             ]}

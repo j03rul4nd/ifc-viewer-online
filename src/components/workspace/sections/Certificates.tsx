@@ -15,7 +15,7 @@ export default function Certificates({ data }: SectionProps) {
           rowClassName={(c) => (c.revoked ? 'text-[var(--text-faint)]' : '')}
           primary={(c) => <><p className="font-medium break-all">{c.file}</p><p className="text-[11.5px] text-[var(--text-faint)]">{c.id} · {c.issuedAt} · {c.project}</p></>}
           columns={[
-            { key: 'profile', header: 'Profile', cell: (c) => c.profile },
+            { key: 'profile', header: 'Profile', wide: true, cell: (c) => c.profile },
             { key: 'score', header: 'Score', cell: (c) => <span className="tabular-nums font-semibold" style={{ color: c.revoked ? undefined : scoreColor(c.score) }}>{c.score}</span> },
             { key: 'hash', header: 'SHA-256', hideOnPhone: true, desktopOnly: true, cell: (c) => <span className="font-mono text-[12px]">{c.hash}</span> },
             { key: 'status', header: 'Status', cell: (c) => (c.revoked ? 'Revoked' : 'Valid') },

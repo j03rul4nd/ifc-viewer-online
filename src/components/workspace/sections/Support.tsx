@@ -82,9 +82,9 @@ export default function Support({ data, actions }: SectionProps) {
           <p className="text-[12px] text-[var(--text-dim)]">Service status</p>
           <p className="mt-2 inline-flex items-center gap-2 text-[13.5px] font-medium"><Dot color="var(--ok)" />All systems running</p>
           <ul className="mt-3 space-y-1 text-[12px] text-[var(--text-dim)]">
-            <li className="flex justify-between"><span>Cloud jobs</span><span style={{ color: 'var(--ok)' }}>Operational</span></li>
-            <li className="flex justify-between"><span>Certificates</span><span style={{ color: 'var(--ok)' }}>Operational</span></li>
-            <li className="flex justify-between"><span>Payments</span><span style={{ color: 'var(--ok)' }}>Operational</span></li>
+            <li className="flex justify-between"><span>Cloud jobs</span><span className="inline-flex items-center gap-1.5 text-[var(--text)]"><Dot color="var(--ok)" />Operational</span></li>
+            <li className="flex justify-between"><span>Certificates</span><span className="inline-flex items-center gap-1.5 text-[var(--text)]"><Dot color="var(--ok)" />Operational</span></li>
+            <li className="flex justify-between"><span>Payments</span><span className="inline-flex items-center gap-1.5 text-[var(--text)]"><Dot color="var(--ok)" />Operational</span></li>
           </ul>
           <p className="mt-3 text-[11.5px] text-[var(--text-faint)]">The free viewer runs in your browser and works even when these don't.</p>
         </Panel>
@@ -100,7 +100,7 @@ export default function Support({ data, actions }: SectionProps) {
           primaryHeader="Request"
           primary={(t) => <><button onClick={() => setOpen(t.id)} className="font-medium text-left hover:underline">{t.subject}</button><p className="text-[11.5px] text-[var(--text-faint)]">{t.id} · {KIND_LABEL[t.kind]}</p></>}
           columns={[
-            { key: 'status', header: 'Status', cell: (t) => <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap" style={{ color: STATUS[t.status][1] }}><Dot color={STATUS[t.status][1]} />{STATUS[t.status][0]}</span> },
+            { key: 'status', header: 'Status', wide: true, cell: (t) => <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap" style={{ color: STATUS[t.status][1] }}><Dot color={STATUS[t.status][1]} />{STATUS[t.status][0]}</span> },
             { key: 'updated', header: 'Updated', cell: (t) => <span className="text-[var(--text-dim)] tabular-nums">{t.updatedAt}</span> },
           ]}
           actions={(t) => <Quiet onClick={() => setOpen(t.id)}>Open</Quiet>}

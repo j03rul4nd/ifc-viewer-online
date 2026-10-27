@@ -101,7 +101,7 @@ export default function CheckoutDialog({ item: initial, onClose, provider = prev
                 className={`text-left rounded-[9px] border px-3 py-2.5 ${on ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)]'}`}>
                 <span className="block text-[12.5px] font-medium capitalize">{period}</span>
                 <span className="block text-[12px] text-[var(--text-dim)] tabular-nums">{fmtEur(p.totalEur)} {period === 'yearly' ? '/ yr' : '/ mo'}</span>
-                {period === 'yearly' && p.savingEur > 0 && <span className="block text-[11.5px]" style={{ color: 'var(--ok)' }}>Save {fmtEur(p.savingEur)}</span>}
+                {period === 'yearly' && p.savingEur > 0 && <span className="block text-[11.5px] text-[var(--text-dim)]">Save {fmtEur(p.savingEur)}</span>}
               </button>
             )
           })}

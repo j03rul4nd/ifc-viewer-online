@@ -34,7 +34,8 @@ export const HEALTH: Record<ConnectionHealth, [string, string]> = {
 }
 
 function Health({ h }: { h: ConnectionHealth }) {
-  return <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap" style={{ color: HEALTH[h][1] }}><Dot color={HEALTH[h][1]} />{HEALTH[h][0]}</span>
+  const loud = h === 'failing' || h === 'warning'
+  return <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap" style={{ color: loud ? HEALTH[h][1] : 'var(--text)' }}><Dot color={HEALTH[h][1]} />{HEALTH[h][0]}</span>
 }
 
 function HowItWorks() {
@@ -184,7 +185,7 @@ export default function DataSources({ actions }: SectionProps) {
             primaryHeader="Credential"
             primary={(c) => <><p className="font-medium">{c.name}</p><p className="text-[11.5px] text-[var(--text-faint)]">{CREDENTIAL_KINDS[c.kind].label} · <span className="font-mono">{c.preview}</span></p></>}
             columns={[
-              { key: 'used', header: 'Used by', cell: (c) => <span className="text-[var(--text-dim)]">{c.usedBy.map((id) => SAMPLE_CONNECTIONS.find((x) => x.id === id)?.name).join(', ')}</span> },
+              { key: 'used', header: 'Used by', wide: true, cell: (c) => <span className="text-[var(--text-dim)]">{c.usedBy.map((id) => SAMPLE_CONNECTIONS.find((x) => x.id === id)?.name).join(', ')}</span> },
               { key: 'last', header: 'Last used', hideOnPhone: true, cell: (c) => <span className="tabular-nums text-[var(--text-dim)]">{c.lastUsed ?? 'Never'}</span> },
               { key: 'exp', header: 'Expires', cell: (c) => c.expiresAt ? <span style={{ color: 'var(--warn)' }}>{c.expiresAt}</span> : <span className="text-[var(--text-faint)]">—</span> },
             ]}
@@ -204,7 +205,7 @@ export default function DataSources({ actions }: SectionProps) {
             primaryHeader="Key"
             primary={(k) => <><p className="font-medium">{k.name}</p><p className="text-[11.5px] text-[var(--text-faint)] font-mono">{k.prefix}…</p></>}
             columns={[
-              { key: 'scopes', header: 'Can', cell: (k) => <span className="text-[var(--text-dim)]">{k.scopes.map((s) => API_SCOPES.find((x) => x.id === s)?.label).join(', ')}</span> },
+              { key: 'scopes', header: 'Can', wide: true, cell: (k) => <span className="text-[var(--text-dim)]">{k.scopes.map((s) => API_SCOPES.find((x) => x.id === s)?.label).join(', ')}</span> },
               { key: 'last', header: 'Last used', hideOnPhone: true, cell: (k) => <span className="tabular-nums text-[var(--text-dim)]">{k.lastUsed ?? 'Never'}</span> },
               { key: 'exp', header: 'Expires', desktopOnly: true, cell: (k) => <span className="text-[var(--text-dim)]">{k.expiresAt ?? 'Never'}</span> },
             ]}
@@ -220,8 +221,8 @@ export default function DataSources({ actions }: SectionProps) {
           primaryHeader="When"
           primary={(e) => <span className="tabular-nums text-[12.5px]">{e.at}</span>}
           columns={[
-            { key: 'conn', header: 'Connection', cell: (e) => SAMPLE_CONNECTIONS.find((c) => c.id === e.connectionId)?.name },
-            { key: 'msg', header: 'What happened', cell: (e) => <span className="whitespace-normal" style={{ color: e.level === 'error' ? 'var(--danger)' : e.level === 'warn' ? 'var(--warn)' : 'var(--text-dim)' }}>{e.message}</span> },
+            { key: 'conn', header: 'Connection', wide: true, cell: (e) => SAMPLE_CONNECTIONS.find((c) => c.id === e.connectionId)?.name },
+            { key: 'msg', header: 'What happened', wide: true, cell: (e) => <span className="whitespace-normal" style={{ color: e.level === 'error' ? 'var(--danger)' : e.level === 'warn' ? 'var(--warn)' : 'var(--text-dim)' }}>{e.message}</span> },
           ]}
         />
       )}
