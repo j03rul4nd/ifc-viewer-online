@@ -29,14 +29,15 @@
     "district:mep": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou MEP",
     "tower": "blender --background --python scripts/blender/build-tower.py -- public/models/torre-poblenou",
     "ciutadella": "blender --background --python scripts/blender/build-ciutadella.py -- public/models/ciutadella",
-  "hotel-vela": "npm run hotel-vela:arc && npm run hotel-vela:str && npm run hotel-vela:mep",
-  "hotel-vela:arc": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela ARC",
-  "hotel-vela:str": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela STR",
-  "hotel-vela:mep": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela MEP",
+    "hotel-vela": "npm run hotel-vela:arc && npm run hotel-vela:str && npm run hotel-vela:mep",
+    "hotel-vela:arc": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela ARC",
+    "hotel-vela:str": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela STR",
+    "hotel-vela:mep": "blender --background --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela MEP",
     "metro-drassanes": "blender --background --python scripts/blender/build-metro-drassanes.py -- public/models/metro-drassanes",
     "site-scan": "node scripts/pointcloud/build-site-scan.mjs",
     "realtime-lidar": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/pointcloud/build-realtime-snapshots.ts",
-    "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo"
+    "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo",
+    "indexnow": "node scripts/seo/indexnow.mjs"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",
