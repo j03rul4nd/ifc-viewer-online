@@ -22,7 +22,7 @@ const SHOTS = {
   'editor-1':  { q: '&select=4287' },
   'editor-2':  { q: '&select=6652' },
   'class-1':   { q: '&rule=RULE_MISSING_CLASSIFICATION', after: scrollToRule },
-  'class-2':   { q: '&rule=RULE_MISSING_PROPERTY_SET', after: scrollToRule },
+  'class-2':   { q: '&rule=RULE_EMPTY_PROPERTY_VALUE', after: scrollToRule },
   'health-1':  { q: '' },
   'health-2':  { q: '', after: async (p) => { await p.getByRole('button', { name: /^(Export|Exportar|Exporter|Esporta|Exportieren|Exporta|导出|エクスポート|ส่งออก)/ }).first().click(); await p.waitForTimeout(2500) } },
 }

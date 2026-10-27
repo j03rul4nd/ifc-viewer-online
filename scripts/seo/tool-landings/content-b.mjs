@@ -217,7 +217,7 @@ export const PAGES = {
       cta: 'Verificar a classificação — grátis',
       shots: [
         { file: 'verificar-classificacao-ifc-elementos-sem-classificacao', alt: 'Verificação da classificação IFC com os elementos sem referência de classificação destacados em 3D', cap: 'Elementos sem classificação, listados e isolados no modelo 3D.' },
-        { file: 'validacao-conjuntos-propriedades-bim', alt: 'Validação de conjuntos de propriedades BIM com os elementos sem Psets num modelo IFC', cap: 'A mesma verificação para conjuntos de propriedades em falta.' },
+        { file: 'validacao-conjuntos-propriedades-bim', alt: 'Validação de conjuntos de propriedades BIM com os elementos com valores de propriedade vazios num modelo IFC, isolados em 3D', cap: 'Validação de Psets: elementos com propriedades vazias, listados e mostrados em 3D.' },
       ],
       featTitle: 'Verificações de classificação e dados para uma entrega',
       featSub: 'O que um coordenador BIM verifica antes de aceitar um modelo no CDE.',
@@ -249,7 +249,7 @@ export const PAGES = {
       cta: 'Verifica la classificazione — gratis',
       shots: [
         { file: 'verifica-classificazione-ifc-elementi-non-classificati', alt: 'Verifica della classificazione IFC con gli elementi senza riferimento di classificazione evidenziati in 3D', cap: 'Elementi senza classificazione, elencati e isolati nel modello 3D.' },
-        { file: 'validazione-set-di-proprieta-bim', alt: 'Validazione dei set di proprietà BIM con gli elementi senza Pset in un modello IFC', cap: 'Lo stesso controllo per i set di proprietà mancanti.' },
+        { file: 'validazione-set-di-proprieta-bim', alt: 'Validazione dei set di proprietà BIM con gli elementi con valori di proprietà vuoti in un modello IFC, isolati in 3D', cap: 'Validazione dei Pset: elementi con proprietà vuote, elencati e mostrati in 3D.' },
       ],
       featTitle: 'Controlli di classificazione e dati per una consegna',
       featSub: 'Ciò che un BIM coordinator verifica prima di accettare un modello nell’ACDat.',
@@ -281,7 +281,7 @@ export const PAGES = {
       cta: 'Comprovar la classificació — gratis',
       shots: [
         { file: 'comprovar-classificacio-ifc-elements-sense-classificar', alt: 'Comprovació de la classificació IFC amb els elements sense referència de classificació ressaltats en 3D', cap: 'Elements sense classificació, llistats i aïllats al model 3D.' },
-        { file: 'validacio-conjunts-propietats-bim', alt: 'Validació de conjunts de propietats BIM amb els elements sense Psets en un model IFC', cap: 'La mateixa comprovació per als conjunts de propietats que falten.' },
+        { file: 'validacio-conjunts-propietats-bim', alt: 'Validació de conjunts de propietats BIM amb els elements amb valors de propietat buits en un model IFC, aïllats en 3D', cap: 'Validació de Psets: elements amb propietats buides, llistats i mostrats en 3D.' },
       ],
       featTitle: 'Comprovacions de classificació i dades per a un lliurament',
       featSub: 'El que revisa un coordinador BIM abans d’acceptar un model al CDE.',
@@ -313,7 +313,7 @@ export const PAGES = {
       cta: '检查分类 — 免费',
       shots: [
         { file: 'ifc-classification-checker-zh-unclassified', alt: 'IFC 分类检查列出没有分类引用的构件并在 3D 中高亮显示', cap: '没有分类的构件：列出并在 3D 模型中隔离显示。' },
-        { file: 'bim-property-set-validation-zh', alt: 'BIM 属性集验证，显示 IFC 模型中缺少属性集的构件', cap: '对缺失属性集进行同样的检查。' },
+        { file: 'bim-property-set-validation-zh', alt: 'BIM 属性集验证：IFC 模型中属性值为空的构件，在 3D 中隔离显示', cap: '属性集验证：属性值为空的构件，列出并在 3D 中显示。' },
       ],
       featTitle: '交付前的分类与数据检查',
       featSub: 'BIM 协调员在模型进入 CDE 前要做的检查。',
@@ -345,7 +345,7 @@ export const PAGES = {
       cta: '分類をチェック — 無料',
       shots: [
         { file: 'ifc-classification-checker-ja-unclassified', alt: '分類参照のない要素を一覧表示し 3D でハイライトする IFC 分類チェック', cap: '分類のない要素を一覧表示し、3D モデルで分離表示。' },
-        { file: 'bim-property-set-validation-ja', alt: 'IFC モデルでプロパティセットが欠落した要素を示す BIM プロパティセット検証', cap: '欠落したプロパティセットにも同じチェック。' },
+        { file: 'bim-property-set-validation-ja', alt: 'IFC モデルでプロパティ値が空の要素を 3D で分離表示する BIM プロパティセット検証', cap: 'プロパティセット検証：値が空の要素を一覧表示し 3D で表示。' },
       ],
       featTitle: '納品前の分類・データチェック',
       featSub: 'BIM コーディネーターが CDE に受け入れる前に行うチェック。',
@@ -377,7 +377,7 @@ export const PAGES = {
       cta: 'ตรวจสอบการจัดหมวดหมู่ — ฟรี',
       shots: [
         { file: 'ifc-classification-checker-th-unclassified', alt: 'การตรวจสอบการจัดหมวดหมู่ IFC แสดงรายการองค์ประกอบที่ไม่มีการจัดหมวดหมู่และไฮไลต์ใน 3D', cap: 'องค์ประกอบที่ไม่มีการจัดหมวดหมู่ แสดงรายการและแยกแสดงในโมเดล 3D' },
-        { file: 'bim-property-set-validation-th', alt: 'การตรวจสอบชุดคุณสมบัติ BIM แสดงองค์ประกอบที่ขาด Pset ในโมเดล IFC', cap: 'การตรวจสอบแบบเดียวกันสำหรับชุดคุณสมบัติที่ขาด' },
+        { file: 'bim-property-set-validation-th', alt: 'การตรวจสอบชุดคุณสมบัติ BIM แสดงองค์ประกอบที่มีค่าคุณสมบัติว่างในโมเดล IFC แยกแสดงใน 3D', cap: 'ตรวจชุดคุณสมบัติ: องค์ประกอบที่มีค่าคุณสมบัติว่าง แสดงรายการและแสดงใน 3D' },
       ],
       featTitle: 'ตรวจการจัดหมวดหมู่และข้อมูลก่อนส่งมอบ',
       featSub: 'สิ่งที่ผู้ประสานงาน BIM ตรวจก่อนรับโมเดลเข้าสู่ CDE',
