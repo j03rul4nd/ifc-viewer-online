@@ -440,7 +440,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           {/* Logo */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             <Icons.Logo size={22} aria-hidden="true" />
-            <span className="text-[14px] sm:text-[15px] font-semibold tracking-tight">IFC Viewer</span>
+            <span className="text-[14px] sm:text-[15px] font-semibold tracking-tight whitespace-nowrap">IFC Viewer</span>
           </div>
 
           {/* Desktop nav — md (768px+) tablet-friendly, lg (1024px+) full */}
@@ -502,7 +502,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               className="text-[12px] font-medium text-[var(--text-dim)] bg-transparent border-0 px-1 py-1 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >Blog</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+              className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
               aria-label="GitHub repository"
             >
               {GITHUB_SVG}
@@ -597,6 +597,17 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.3 }}
             className="flex gap-3 justify-center mt-7 sm:mt-8 flex-wrap"
           >
+            {/* Phone first: one tap loads the sample model. Only 24% of phone
+                visitors opened a model (desktop 57%) — few carry an IFC on
+                their phone, and the second button used to be GitHub. */}
+            <button
+              type="button"
+              onClick={onLaunch}
+              className="sm:hidden inline-flex items-center gap-2 h-[44px] px-5 text-[14px] font-semibold rounded-[10px] bg-[var(--accent)] text-white active:brightness-90 cursor-pointer"
+            >
+              <Icons.ArrowRight size={15} />
+              {t('actions.loadDemo')}
+            </button>
             <StarBorder
               as="button"
               color="rgba(94,106,210,0.9)"
@@ -614,7 +625,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <a
               href={GITHUB_URL}
               target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-[38px] px-4 text-[13px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
+              className="hidden sm:inline-flex items-center gap-2 h-[38px] px-4 text-[13px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
               aria-label="View source code on GitHub"
             >
               {GITHUB_SVG}
@@ -654,7 +665,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           </motion.div>
 
           {/* Hero card, with Bimo perched on its top edge */}
-          <div className="relative mt-10 sm:mt-14">
+          <div className="relative mt-[128px] sm:mt-14">
           <BimoMascot className="absolute z-[4] right-[3%] sm:right-[5%] w-[128px] h-[128px] sm:w-[190px] sm:h-[190px] -top-[100px] sm:-top-[152px]" />
           <motion.div
             initial={{ opacity: 0, y: 24 }}
