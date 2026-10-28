@@ -104,7 +104,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
         action={<><Quiet onClick={actions.newJob}>{tx("Run a job")}</Quiet><Primary>{tx("Add delivery")}</Primary></>} />
 
       <div className="grid gap-3 grid-cols-3 mb-5" data-tour="kpis">
-        {[['Latest score', <span key="s" style={{ color: scoreColor(last.score) }}>{last.score}</span>], ['Open issues', fmtInt(last.issues)], ['Deliveries', project.versions.length]].map(([k, v]) => (
+        {[[tx('Latest score'), <span key="s" style={{ color: scoreColor(last.score) }}>{last.score}</span>], [tx('Open issues'), fmtInt(last.issues)], [tx('Deliveries'), project.versions.length]].map(([k, v]) => (
           <Panel key={String(k)} className="p-3 sm:p-4">
             <p className="text-[11.5px] text-[var(--text-dim)]">{k}</p>
             <p className="mt-1 text-[20px] sm:text-[24px] font-semibold tabular-nums">{v}</p>

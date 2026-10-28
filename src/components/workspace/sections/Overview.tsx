@@ -81,7 +81,7 @@ function UsageThisPeriod({ data }: { data: WorkspaceData }) {
         <ul className="mt-3 space-y-2">
           {rows.map(([k, v]) => (
             <li key={k} className="text-[12.5px]">
-              <div className="flex justify-between gap-2"><span className="min-w-0 [overflow-wrap:anywhere]">{k}</span><span className="tabular-nums text-[var(--text-dim)]">{v}</span></div>
+              <div className="flex justify-between gap-2"><span className="min-w-0 [overflow-wrap:anywhere]">{tx(k)}</span><span className="tabular-nums text-[var(--text-dim)]">{v}</span></div>
               <div className="mt-1 h-1 rounded-full bg-[var(--surface-2)]"><div className="h-full rounded-full bg-[var(--text-dim)]" style={{ width: `${(v / max) * 100}%` }} /></div>
             </li>
           ))}

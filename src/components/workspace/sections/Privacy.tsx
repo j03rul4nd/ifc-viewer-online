@@ -139,7 +139,7 @@ export default function Privacy({ data, actions }: SectionProps) {
               <li key={p.name} className="px-4 py-2.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-3">
                 <span className="font-medium sm:w-[260px] shrink-0">{tx(p.name)}</span>
                 <span className="flex-1 text-[var(--text-dim)]">{tx(p.role)}</span>
-                <span className="text-[12px] text-[var(--text-faint)]">{p.region}</span>
+                <span className="text-[12px] text-[var(--text-faint)]">{tx(p.region)}</span>
               </li>
             ))}
           </ul>

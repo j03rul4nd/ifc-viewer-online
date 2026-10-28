@@ -37,7 +37,7 @@ const CATALOGUES = {
 
 /** Module-level constants in components whose strings are UI copy. */
 const UI_CONSTS = new Set(['STEPS', 'REASONS', 'OFFER', 'KIND_LABEL', 'PLACEHOLDER', 'REPLY_TIME', 'STATUS', 'HEALTH', 'ANSWERS',
-  'PROCESSORS', 'REQUEST_LABEL', 'PROFILES', 'DETAIL_TABS', 'TABS', 'boxes', 'ROLES'])
+  'PROCESSORS', 'REQUEST_LABEL', 'PROFILES', 'DETAIL_TABS', 'TABS', 'boxes', 'ROLES', 'map'])
 const CONST_KEYS = new Set(['label', 'title', 'body', 'action', 'q', 'a', 'name', 'role'])
 
 const keys = new Set()
