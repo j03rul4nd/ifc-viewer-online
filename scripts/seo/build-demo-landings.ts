@@ -239,6 +239,7 @@ const UI_EN = {
   wantText: 'Built end to end by Joel Benítez. Looking for first clients and partners.',
   contact: 'Get in touch', allDemos: 'All live demos', validator: 'IFC Validator', validatorPath: '/ifc-validator/',
   rights: 'Screenshots © 2026 Joel Benítez · IFC Viewer Online',
+  build: 'Build your own twin',
 }
 export type Ui = typeof UI_EN
 interface Lang {
@@ -275,6 +276,9 @@ function hreflangs(base: string, indent: string, tag: 'link' | 'xhtml:link') {
   return rows.join('\n')
 }
 
+/** Pages whose demo the builder can make your own. */
+const BUILD_KIND: Record<string, string> = { 'agv-digital-twin': 'agv', 'china-import-tracker': 'imports' }
+
 const STYLE = `    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
     a { color: inherit; text-decoration: none; }
@@ -292,6 +296,9 @@ const STYLE = `    *, *::before, *::after { box-sizing: border-box; margin: 0; p
     .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
     .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
     .cta:hover { background: #4F5ABF; }
+    .cta2 { display: inline-block; margin-left: 10px; padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #E8E8F0; font-size: 15px; font-weight: 600; }
+    .cta2:hover { border-color: rgba(139,150,233,0.6); }
+    @media (max-width: 520px) { .cta2 { margin: 10px 0 0; } }
     .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
     .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
     .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
@@ -410,6 +417,7 @@ ${STYLE}
         <h1>${esc(p.h1[0])} <br><span class="accent">${esc(p.h1[1])}</span></h1>
         <p class="lead">${esc(p.lead)}</p>
         <a href="${p.cta.href}" class="cta">${esc(p.cta.label)} →</a>
+        ${BUILD_KIND[base] ? `<a href="/twin-builder/?kind=${BUILD_KIND[base]}" class="cta2">${esc(u.build)} →</a>` : ''}
       </div>
     </section>
     <section class="container shots" aria-label="${esc(u.screenshots)}">
@@ -453,6 +461,7 @@ ${STYLE}
         <a href="${home}">IFC Viewer Online</a>
         ${PAGES.map((o) => `<a href="${pathOf(L, o.slug)}">${esc(cap1(L.pages[o.slug].h1[0]))}</a>`).join('\n        ')}
         <a href="/msp-global/">${esc(u.allDemos)}</a>
+        <a href="/twin-builder/">${esc(u.build)}</a>
         <a href="${u.validatorPath}">${esc(u.validator)}</a>
       </nav>
       <nav>${LANGS.map((o) => `<a href="${pathOf(o, base)}" hreflang="${o.lang}" lang="${o.lang}">${o.lang.toUpperCase()}</a>`).join(' ')}</nav>

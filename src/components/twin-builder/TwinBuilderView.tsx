@@ -36,7 +36,7 @@ export default function TwinBuilderView() {
   const [msg, setMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { document.title = 'Build your own digital twin · AGV warehouse or import tracker' }, [])
+  useEffect(() => { document.title = 'Digital Twin Builder: AGV Warehouse and Import Tracker, Free' }, [])
   useEffect(() => { saveLocal(KEY.agv, agv) }, [agv])
   useEffect(() => { saveLocal(KEY.imports, imp) }, [imp])
 

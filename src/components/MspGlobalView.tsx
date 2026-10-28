@@ -377,6 +377,7 @@ const DEMO_PAGES: [string, string][] = [
   ['/office-it-digital-twin/', 'Office IT digital twin'],
   ['/digital-twin-examples/', 'Digital twin examples'],
   ['/ifc-viewer-examples/', 'IFC viewer examples'],
+  ['/twin-builder/', 'Build your own twin'],
 ]
 
 // Who walks MSP GLOBAL: MSP owners and their sales people, security providers
