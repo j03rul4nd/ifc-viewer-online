@@ -1,0 +1,20 @@
+# Local WordPress for trying the plugin: http://localhost:8088
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_RANDOM_ROOT_PASSWORD: '1'
+  wordpress:
+    image: wordpress:6.8-php8.3-apache
+    depends_on: [db]
+    ports: ['8088:80']
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./ifc-viewer-online:/var/www/html/wp-content/plugins/ifc-viewer-online

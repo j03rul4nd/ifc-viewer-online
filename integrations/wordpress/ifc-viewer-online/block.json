@@ -1,0 +1,28 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ifc-viewer-online/viewer",
+	"title": "IFC Viewer",
+	"category": "embed",
+	"icon": "building",
+	"description": "Embed an interactive 3D IFC (BIM) model with its Health Score.",
+	"keywords": [ "ifc", "bim", "3d", "model", "viewer" ],
+	"textdomain": "ifc-viewer-online",
+	"supports": { "html": false, "align": [ "wide", "full" ] },
+	"attributes": {
+		"attachment": { "type": "number", "default": 0 },
+		"model": { "type": "string", "default": "" },
+		"name": { "type": "string", "default": "" },
+		"height": { "type": "number", "default": 600 },
+		"ui": { "type": "string", "default": "article" },
+		"view": { "type": "string", "default": "iso" },
+		"wheel": { "type": "string", "default": "ctrl" },
+		"validate": { "type": "string", "default": "1" },
+		"turntable": { "type": "string", "default": "" },
+		"lang": { "type": "string", "default": "" },
+		"accent": { "type": "string", "default": "" },
+		"bg": { "type": "string", "default": "" },
+		"title": { "type": "string", "default": "" }
+	},
+	"editorScript": "ifcvo-block-editor"
+}
