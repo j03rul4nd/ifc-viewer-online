@@ -10,6 +10,9 @@ import { importBcf, downloadBcfBlob } from '../lib/bcf'
 import { clippingPlanesFromCuts, cutsFromClippingPlanes } from '../lib/bcf-viewpoint'
 import { toast } from '../stores/toastStore'
 import { trackFeatureUsed } from '../lib/analytics'
+import { measureAnnotations, measurementsFromViewpoint } from '../lib/measure/bcf-measure'
+import type { MeasureItem } from '../lib/measure/measure-types'
+import i18n from '../i18n/config'
 import type { BcfTopic, BcfViewpoint, ViewerHandle } from '../types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -51,9 +54,22 @@ function formatDate(iso?: string): string {
 /** What the panel needs from the viewer. Sections are optional: a host with no
  *  section tool still captures and opens cameras. */
 type BcfViewer = Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'>
-  & Partial<Pick<ViewerHandle, 'getSectionPlanes' | 'applySectionPlanes'>>
+  & Partial<Pick<ViewerHandle, 'getSectionPlanes' | 'applySectionPlanes' | 'getMeasurements' | 'restoreMeasurements'>>
 
-/** The view as it is now — snapshot, camera and section planes — in scene axes. */
+/** A measurement's name as the Measure panel shows it. */
+function measureName(item: MeasureItem): string {
+  return item.name ?? i18n.t(`item.${item.kind}`, { ns: 'measurement', n: item.seq, defaultValue: `${item.kind} ${item.seq}` })
+}
+
+/** The measurements on screen, as a viewpoint carries them — or null when there are none. */
+function captureMeasurements(viewer: BcfViewer): ReturnType<typeof measureAnnotations> | null {
+  const m = viewer.getMeasurements?.()
+  if (!m) return null
+  const a = measureAnnotations(m.items, m.settings, measureName)
+  return a.measurements.length > 0 ? a : null
+}
+
+/** The view as it is now — snapshot, camera, section planes and measurements — in scene axes. */
 function captureViewpoint(viewer: BcfViewer): BcfViewpoint {
   const snapshot = viewer.takeSnapshot?.() || undefined
   // Camera capture shares the same primitive as Tour Mode (D-24). Before,
@@ -61,6 +77,7 @@ function captureViewpoint(viewer: BcfViewer): BcfViewpoint {
   // snapshot-only and could not be navigated back to.
   const cam  = viewer.getCameraViewpoint?.() ?? null
   const cuts = viewer.getSectionPlanes?.()
+  const measures = captureMeasurements(viewer)
   return {
     guid: crypto.randomUUID(),
     snapshotBase64: snapshot,
@@ -72,6 +89,7 @@ function captureViewpoint(viewer: BcfViewer): BcfViewpoint {
       aspectRatio:     cam.aspect,
     } : {}),
     ...(cuts ? { clippingPlanes: clippingPlanesFromCuts(cuts) } : {}),
+    ...(measures ? { lines: measures.lines, measurements: measures.measurements } : {}),
   }
 }
 
@@ -81,6 +99,9 @@ function openViewpoint(viewer: BcfViewer | null | undefined, vp: BcfViewpoint | 
   viewer.setCameraViewpoint(vp.cameraPosition, vp.cameraDirection)
   // Absent = taken before planes were recorded: leave the current cuts alone.
   if (vp.clippingPlanes) viewer.applySectionPlanes?.(cutsFromClippingPlanes(vp.clippingPlanes))
+  // Measurements it carries replace the ones on screen; none = leave them.
+  const saved = measurementsFromViewpoint(vp)
+  if (saved.length > 0) viewer.restoreMeasurements?.(saved)
 }
 
 // ── Small shared UI pieces ────────────────────────────────────────────────────
@@ -604,11 +625,17 @@ function BcfCreateForm({ viewer, onBack, onCreated }: CreateFormProps) {
   const handleCreate = useCallback(() => {
     if (!title.trim()) return
     const viewpoints: BcfViewpoint[] = captureView && viewer ? [captureViewpoint(viewer)] : []
+    // The values travel as text: a BCF line has a length but no name or unit.
+    const measured = captureView && viewer ? captureMeasurements(viewer)?.notes ?? [] : []
+    const description = [
+      desc.trim(),
+      measured.length > 0 ? `${t('bcf.measurementsHeading')}\n${measured.map((n) => `- ${n}`).join('\n')}` : '',
+    ].filter(Boolean).join('\n\n')
     const guid = crypto.randomUUID()
     const topic: BcfTopic = {
       guid,
       title:          title.trim(),
-      description:    desc.trim() || undefined,
+      description:    description || undefined,
       status:         'Open',
       topicType:      type,
       priority,

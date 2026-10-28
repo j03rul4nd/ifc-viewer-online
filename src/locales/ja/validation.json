@@ -211,6 +211,7 @@
     "newTopic": "新しいトピック",
     "createTopic": "トピックを作成",
     "topicCreated": "トピックを作成しました",
+    "measurementsHeading": "計測:",
     "topicDeleted": "トピックを削除しました",
     "topicUpdated": "保存しました",
     "captureView": "現在のビューをキャプチャ",

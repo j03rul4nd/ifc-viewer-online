@@ -211,6 +211,7 @@
     "newTopic": "新建主题",
     "createTopic": "创建主题",
     "topicCreated": "主题已创建",
+    "measurementsHeading": "测量：",
     "topicDeleted": "主题已删除",
     "topicUpdated": "已保存",
     "captureView": "捕获当前视图",

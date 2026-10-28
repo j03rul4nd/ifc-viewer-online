@@ -73,6 +73,7 @@ function mapFrame(vp: BcfViewpoint, f: (v: Vec3Like) => Vec3Like): BcfViewpoint 
       direction: tidy(f(p.direction)),
     }))
   }
+  if (vp.lines) out.lines = vp.lines.map((l) => ({ start: tidy(f(l.start)), end: tidy(f(l.end)) }))
   return out
 }
 
@@ -106,6 +107,7 @@ export function shiftViewpoint(vp: BcfViewpoint, d: Vec3Like | null | undefined)
   const out: BcfViewpoint = { ...vp }
   if (vp.cameraPosition) out.cameraPosition = add(vp.cameraPosition)
   if (vp.clippingPlanes) out.clippingPlanes = vp.clippingPlanes.map((p) => ({ ...p, location: add(p.location) }))
+  if (vp.lines) out.lines = vp.lines.map((l) => ({ start: add(l.start), end: add(l.end) }))
   return out
 }
 

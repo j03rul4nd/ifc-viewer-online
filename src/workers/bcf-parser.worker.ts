@@ -152,6 +152,15 @@ export function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: stri
   }
   vp.clippingPlanes = planes
 
+  // Line segments (measurements, markups). Absent element = none.
+  const lines: NonNullable<BcfViewpoint['lines']> = []
+  for (const lineBlock of tagBlocks(tagText(vpXml, 'Lines'), 'Line')) {
+    const start = parseFloat3(lineBlock, 'StartPoint')
+    const end   = parseFloat3(lineBlock, 'EndPoint')
+    if (start && end) lines.push({ start, end })
+  }
+  if (lines.length > 0) vp.lines = lines
+
   if (snapshotB64) vp.snapshotBase64 = snapshotB64
 
   return viewpointFromBcf(vp)

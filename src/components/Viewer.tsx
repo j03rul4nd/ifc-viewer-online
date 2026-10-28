@@ -97,6 +97,11 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     takeSnapshot:         () => apiRef.current?.takeSnapshot() ?? '',
     getSectionPlanes:     () => apiRef.current?.getSections().getActivePlanes() ?? [],
     applySectionPlanes:   (planes) => apiRef.current?.getSections().applyPlanes(planes),
+    getMeasurements:      () => {
+      const snap = apiRef.current?.getMeasure().getSnapshot()
+      return snap ? { items: snap.items, settings: snap.settings } : null
+    },
+    restoreMeasurements:  (saved) => apiRef.current?.getMeasure().restore(saved, { replace: true }) ?? 0,
   }), [])
 
   // The outer div owns the absolute-fill layout. PostproductionRenderer

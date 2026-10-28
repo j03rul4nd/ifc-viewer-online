@@ -100,6 +100,10 @@ export interface ViewerHandle {
    * Each comes back as a face plane; an empty list removes all cuts.
    */
   applySectionPlanes: (planes: ReadonlyArray<{ point: Vec3Like; normal: Vec3Like }>) => void
+  /** The measurements on screen and the settings they are formatted with (BCF capture). */
+  getMeasurements: () => { items: readonly import('../lib/measure/measure-types').MeasureItem[]; settings: import('../lib/measure/measure-types').MeasureSettings } | null
+  /** Replace the measurements with these (opening a BCF viewpoint). Returns how many were drawn. */
+  restoreMeasurements: (saved: readonly import('../lib/measure/measure-file').SavedMeasurement[]) => number
 }
 
 // ── Camera state (BCF viewpoints + Tour Mode — D-24) ──────────────────────────
@@ -1523,6 +1527,12 @@ export interface EditorCommand {
  * A BCF clipping plane. As in the spec, `direction` points to the side that is
  * cut AWAY (the invisible side) — the opposite of a three.js plane normal.
  */
+/** A BCF line segment (an element of <Lines>). */
+export interface BcfLine {
+  start: Vec3Like
+  end:   Vec3Like
+}
+
 export interface BcfClippingPlane {
   location:  Vec3Like
   direction: Vec3Like
@@ -1548,6 +1558,17 @@ export interface BcfViewpoint {
    * Empty = recorded as "no cuts": opening it removes them.
    */
   clippingPlanes?:   BcfClippingPlane[]
+  /**
+   * Line segments drawn in the view (BCF <Lines>): the measurements on
+   * screen when it was taken. Every BCF tool can show them.
+   */
+  lines?:            BcfLine[]
+  /**
+   * The measurements themselves, kept in the app (not written to the file:
+   * BCF has no element for them) so opening the viewpoint brings them back
+   * whole — kind, name, requirement — rather than as bare lines.
+   */
+  measurements?:     import('../lib/measure/measure-file').SavedMeasurement[]
 }
 
 export interface BcfComment {
