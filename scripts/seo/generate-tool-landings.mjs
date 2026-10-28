@@ -106,6 +106,9 @@ function render(c, l) {
   <meta name="twitter:image" content="${imgUrl(hero)}" />
 ${hreflang(c)}
   <link rel="preload" as="image" href="${root}img/${hero.file}.jpg" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="/fonts.css" />
   <script type="application/ld+json">
 ${json(ld)}
