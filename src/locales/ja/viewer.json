@@ -304,6 +304,13 @@
         "version": "版"
       },
       "supersededNote_other": "同じファイルの古いリビジョン {{count}} 件"
+    },
+    "documents": {
+      "title": "文書 · {{count}}",
+      "open": "新しいタブで開く",
+      "download": "ダウンロード",
+      "remove": "{{name}} を削除",
+      "note": "フォルダー/アーカイブに含まれていた文書です。このタブ内のみ、アップロードされません。"
     }
   },
   "transform": {

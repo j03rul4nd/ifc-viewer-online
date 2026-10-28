@@ -172,5 +172,9 @@
     "specProhibitedButPresent": "移除符合此禁止规范的构件。",
     "wrongDataType": "修正 {{what}} 的数据类型 — 必须为 {{expected}}。",
     "unsupportedPattern": "请手动检查此值 — 该模式无法自动评估。"
+  },
+  "library": {
+    "label": "你的 IDS（{{count}}）",
+    "switch": "当前 IDS"
   }
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { zipSync, gzipSync, strToU8 } from 'fflate'
+import { looksEncrypted } from './sevenzip'
 import { expandArchives, readTar, isJunkPath, isArchiveName } from './expand-drop'
 
 const file = (name: string, bytes: Uint8Array | string): File =>
@@ -128,11 +129,33 @@ describe('expandArchives — RAR and 7z (7-Zip in WASM)', () => {
     expect(r.failed.map((f) => [f.name, f.encrypted])).toEqual([['locked.7z', true], ['locked.rar', true]])
     expect(r.files.map((f) => f.name)).toEqual(['ok.ifc'])
   }, 30_000)
+  it('does not call a damaged archive "password-protected"', async () => {
+    // Real 7z signature, header cut off: 7-Zip aborts the same way as on
+    // encrypted headers, but nothing in the bytes declares a password.
+    const cut = b64(SEVEN_Z).slice(0, 40)
+    const r = await expandArchives([file('cut.7z', cut), file('cut.rar', rar([['a.ifc', 'ISO']]).slice(0, 30))])
+    expect(r.failed.map((f) => [f.name, !!f.encrypted])).toEqual([['cut.7z', false], ['cut.rar', false]])
+  }, 30_000)
+  it('opens a healthy archive whose files are merely NAMED encrypted', async () => {
+    const r = await expandArchives([file('x.rar', rar([['encrypted-notes.ifc', 'ISO']]))])
+    expect(r.failed).toEqual([])
+    expect(r.files.map((f) => f.name)).toEqual(['encrypted-notes.ifc'])
+  }, 30_000)
   it('reports a corrupt RAR', async () => {
     const r = await expandArchives([file('bad.rar', 'Rar! not really')])
     expect(r.failed).toHaveLength(1)
     expect(r.failed[0].encrypted).toBeUndefined()
   }, 30_000)
+})
+
+describe('looksEncrypted', () => {
+  it('reads the password markers from the bytes', () => {
+    expect(looksEncrypted(b64(SEVEN_Z_ENCRYPTED))).toBe(true)
+    expect(looksEncrypted(b64(SEVEN_Z))).toBe(false)
+    expect(looksEncrypted(rar([['a.ifc', 'ISO']], true))).toBe(true)
+    expect(looksEncrypted(rar([['a.ifc', 'ISO']]))).toBe(false)
+    expect(looksEncrypted(strToU8('PK not an archive we read'))).toBe(false)
+  })
 })
 
 describe('helpers', () => {

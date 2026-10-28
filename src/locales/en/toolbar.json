@@ -280,6 +280,11 @@
     "archiveUnsupported": "{{names}}: xz, bz2 and zst archives cannot be opened in the browser yet — save it as .zip, or drop the folder itself",
     "archiveEncrypted": "{{name}} is password-protected — extract it on your computer, then drop the folder",
     "archiveFailed": "Could not open {{name}}: {{reason}}",
-    "archiveTruncated": "The archive is very large: only the first part was taken (4 GB / 5,000 files)"
+    "archiveTruncated": "The archive is very large: only the first part was taken (4 GB / 5,000 files)",
+    "idsWillCheck": "{{file}} will check the models as soon as they load",
+    "idsWillCheckMore": "{{file}} will check the models as soon as they load · {{count}} more IDS kept in the library",
+    "idsChecked": "{{file}}: models checked — results in the IDS panel",
+    "documentsKept": "{{count}} project document kept with the scene",
+    "documentsKept_other": "{{count}} project documents kept with the scene"
   }
 }

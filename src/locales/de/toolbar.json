@@ -280,6 +280,11 @@
     "archiveUnsupported": "{{names}}: xz-, bz2- und zst-Archive lassen sich im Browser noch nicht öffnen — als .zip speichern oder den Ordner ziehen",
     "archiveEncrypted": "{{name}} ist passwortgeschützt — auf dem Rechner entpacken und dann den Ordner ziehen",
     "archiveFailed": "{{name}} konnte nicht geöffnet werden: {{reason}}",
-    "archiveTruncated": "Sehr großes Archiv: nur der erste Teil wurde übernommen (4 GB / 5.000 Dateien)"
+    "archiveTruncated": "Sehr großes Archiv: nur der erste Teil wurde übernommen (4 GB / 5.000 Dateien)",
+    "idsWillCheck": "{{file}} prüft die Modelle, sobald sie geladen sind",
+    "idsWillCheckMore": "{{file}} prüft die Modelle nach dem Laden · {{count}} weitere IDS in der Bibliothek",
+    "idsChecked": "{{file}}: Modelle geprüft — Ergebnisse im IDS-Bereich",
+    "documentsKept": "{{count}} Projektdokument bei der Szene abgelegt",
+    "documentsKept_other": "{{count}} Projektdokumente bei der Szene abgelegt"
   }
 }

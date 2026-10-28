@@ -305,6 +305,13 @@
       },
       "supersededNote_one": "1 révision antérieure du même fichier",
       "supersededNote_other": "{{count}} révisions antérieures des mêmes fichiers"
+    },
+    "documents": {
+      "title": "Documents · {{count}}",
+      "open": "ouvrir dans un nouvel onglet",
+      "download": "télécharger",
+      "remove": "Retirer {{name}}",
+      "note": "Fournis avec votre dossier ou archive. Gardés dans cet onglet uniquement, jamais envoyés."
     }
   },
   "transform": {

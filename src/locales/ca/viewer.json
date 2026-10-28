@@ -305,6 +305,13 @@
       },
       "supersededNote_one": "1 revisió antiga del mateix fitxer",
       "supersededNote_other": "{{count}} revisions antigues dels mateixos fitxers"
+    },
+    "documents": {
+      "title": "Documents · {{count}}",
+      "open": "obre en una pestanya nova",
+      "download": "descarrega",
+      "remove": "Treu {{name}}",
+      "note": "Venien a la teva carpeta o arxiu. Només es desen en aquesta pestanya; no es pugen."
     }
   },
   "transform": {

@@ -172,5 +172,9 @@
     "specProhibitedButPresent": "Remove the elements that match this prohibited specification.",
     "wrongDataType": "Fix the data type of {{what}} — it must be {{expected}}.",
     "unsupportedPattern": "Check this value manually — the pattern can't be evaluated automatically."
+  },
+  "library": {
+    "label": "Your IDS files ({{count}})",
+    "switch": "Active IDS"
   }
 }

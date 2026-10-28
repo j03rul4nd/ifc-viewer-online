@@ -48,19 +48,12 @@
     "progress": "Comprobando todos los modelos — {{done}} / {{total}}",
     "modelsTitle": "Puntuaciones por modelo — clic para ver"
   },
-
   "pager": {
-
     "counter": "{{current}} / {{total}}",
-
     "next": "Siguiente",
-
     "prev": "Anterior",
-
     "backToList": "Volver a la lista",
-
     "swipeHint": "Desliza hacia arriba para el siguiente problema"
-
   },
   "summary": {
     "score": "{{score}}",
@@ -179,5 +172,9 @@
     "specProhibitedButPresent": "Elimina los elementos que cumplen esta especificación prohibida.",
     "wrongDataType": "Corrige el tipo de dato de {{what}} — debe ser {{expected}}.",
     "unsupportedPattern": "Revisa este valor manualmente — el patrón no se puede evaluar automáticamente."
+  },
+  "library": {
+    "label": "Tus IDS ({{count}})",
+    "switch": "IDS activo"
   }
 }

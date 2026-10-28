@@ -280,6 +280,11 @@
     "archiveUnsupported": "{{names}} : les archives xz, bz2 et zst ne s'ouvrent pas encore dans le navigateur — enregistrez en .zip ou déposez le dossier",
     "archiveEncrypted": "{{name}} est protégé par mot de passe — extrayez-le sur votre ordinateur, puis déposez le dossier",
     "archiveFailed": "Impossible d'ouvrir {{name}} : {{reason}}",
-    "archiveTruncated": "Archive très volumineuse : seule la première partie est prise (4 Go / 5 000 fichiers)"
+    "archiveTruncated": "Archive très volumineuse : seule la première partie est prise (4 Go / 5 000 fichiers)",
+    "idsWillCheck": "{{file}} vérifiera les maquettes dès leur chargement",
+    "idsWillCheckMore": "{{file}} vérifiera les maquettes dès leur chargement · {{count}} autres IDS dans la bibliothèque",
+    "idsChecked": "{{file}} : maquettes vérifiées — résultats dans le panneau IDS",
+    "documentsKept": "{{count}} document du projet conservé avec la scène",
+    "documentsKept_other": "{{count}} documents du projet conservés avec la scène"
   }
 }

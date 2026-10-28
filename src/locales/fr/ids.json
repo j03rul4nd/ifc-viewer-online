@@ -172,5 +172,9 @@
     "specProhibitedButPresent": "Supprimez les éléments correspondant à cette spécification interdite.",
     "wrongDataType": "Corrigez le type de données de {{what}} — il doit être {{expected}}.",
     "unsupportedPattern": "Vérifiez cette valeur manuellement — le motif ne peut pas être évalué automatiquement."
+  },
+  "library": {
+    "label": "Vos IDS ({{count}})",
+    "switch": "IDS actif"
   }
 }

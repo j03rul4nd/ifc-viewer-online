@@ -172,5 +172,9 @@
     "specProhibitedButPresent": "ลบองค์ประกอบที่ตรงกับสเปกต้องห้ามนี้ออก",
     "wrongDataType": "แก้ไขชนิดข้อมูลของ {{what}} — ต้องเป็น {{expected}}",
     "unsupportedPattern": "ตรวจสอบค่านี้ด้วยตนเอง — รูปแบบนี้ไม่สามารถประเมินอัตโนมัติได้"
+  },
+  "library": {
+    "label": "IDS ของคุณ ({{count}})",
+    "switch": "IDS ที่ใช้งาน"
   }
 }

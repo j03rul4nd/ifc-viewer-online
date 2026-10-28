@@ -172,5 +172,9 @@
     "specProhibitedButPresent": "Elimina els elements que coincideixen amb aquesta especificació prohibida.",
     "wrongDataType": "Corregeix el tipus de dada de {{what}} — ha de ser {{expected}}.",
     "unsupportedPattern": "Comprova aquest valor manualment — el patró no es pot avaluar automàticament."
+  },
+  "library": {
+    "label": "Els teus IDS ({{count}})",
+    "switch": "IDS actiu"
   }
 }

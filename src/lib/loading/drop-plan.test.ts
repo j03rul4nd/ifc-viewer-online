@@ -63,10 +63,11 @@ describe('planDrop + followUp', () => {
     expect(p.unsupported).toEqual([])
   })
 
-  it('keeps one IDS and one scene file', () => {
+  it('keeps every IDS (first active, the rest for the library) and one scene file', () => {
     const ids = plan(['a.ids', 'b.ids'])
     expect(ids.ids?.name).toBe('a.ids')
-    expect(names(ids.unsupported)).toEqual(['b.ids'])
+    expect(names(ids.moreIds)).toEqual(['b.ids'])
+    expect(ids.unsupported).toEqual([])
     const scene = plan(['p.scene.json', 'q.scene.json'])
     expect(scene.scene?.name).toBe('p.scene.json')
     expect(names(scene.unsupported)).toEqual(['q.scene.json'])
@@ -82,8 +83,16 @@ describe('planDrop + followUp', () => {
     expect(followUp(p, on).open).toBe('mesh')
   })
 
-  it('keeps the README next to an IFC out of the scans', () => {
-    expect(names(plan(['README.txt', 'x.ifc']).unsupported)).toEqual(['README.txt'])
+  it('keeps the README next to an IFC out of the scans, as a project document', () => {
+    const p = plan(['README.txt', 'x.ifc'])
+    expect(p.pointcloud).toEqual([])
+    expect(names(p.documents)).toEqual(['README.txt'])
+  })
+
+  it('keeps PDFs, office files and images as documents, and still refuses unknown files', () => {
+    const p = plan(['x.ifc', 'Pliego.pdf', 'Mediciones.xlsx', 'foto.jpg', 'plano.dwg', 'thing.xyz123'])
+    expect(names(p.documents).sort()).toEqual(['Mediciones.xlsx', 'Pliego.pdf', 'foto.jpg', 'plano.dwg'])
+    expect(names(p.unsupported)).toEqual(['thing.xyz123'])
   })
 
   it('does nothing when the chrome is not interactive', () => {

@@ -304,6 +304,13 @@
         "version": "版本"
       },
       "supersededNote_other": "同一文件的 {{count}} 个旧版本"
+    },
+    "documents": {
+      "title": "文档 · {{count}}",
+      "open": "在新标签页打开",
+      "download": "下载",
+      "remove": "移除 {{name}}",
+      "note": "来自你的文件夹或压缩包。仅保存在此标签页，不会上传。"
     }
   },
   "transform": {

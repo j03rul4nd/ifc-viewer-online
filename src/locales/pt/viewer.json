@@ -305,6 +305,13 @@
       },
       "supersededNote_one": "1 revisão antiga do mesmo ficheiro",
       "supersededNote_other": "{{count}} revisões antigas dos mesmos ficheiros"
+    },
+    "documents": {
+      "title": "Documentos · {{count}}",
+      "open": "abrir num novo separador",
+      "download": "transferir",
+      "remove": "Remover {{name}}",
+      "note": "Vieram na sua pasta ou arquivo. Só neste separador, nunca enviados."
     }
   },
   "transform": {
