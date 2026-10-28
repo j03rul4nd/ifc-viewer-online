@@ -15,7 +15,7 @@ const log = createLogger('Prebuilt')
 
 interface Manifest {
   version: 1
-  entries: Record<string, { frag: string; fragBytes: number }>
+  entries: Record<string, { frag: string; fragBytes: number; tree?: string }>
 }
 
 let manifest: Promise<Manifest | null> | null = null
@@ -53,6 +53,33 @@ export async function findPrebuiltFragments(fingerprint: string | null, signal: 
   } catch (err) {
     if (signal.aborted) throw err
     log.debug('prebuilt fetch failed — converting:', err)
+    return null
+  }
+}
+
+export interface PrebuiltTree {
+  tree: unknown
+  decomp: [number, number[]][] | null
+}
+
+/**
+ * The spatial tree built offline for this `f1:` fingerprint, or null. What the
+ * validator worker would answer to `build-tree` — without the second web-ifc
+ * parse of the whole file that a phone cannot afford next to the viewer.
+ */
+export async function findPrebuiltTree(fingerprint: string | null, signal?: AbortSignal): Promise<PrebuiltTree | null> {
+  if (!fingerprint || !fingerprint.startsWith('f1:') || typeof fetch !== 'function') return null
+  const entry = (await loadManifest())?.entries[fingerprint]
+  if (!entry?.tree) return null
+  try {
+    const res = await fetch(`${base()}models-frag/${entry.tree}`, { signal, cache: 'force-cache' })
+    if (!res.ok) return null
+    const body = await res.json() as { tree?: unknown; decomp?: unknown }
+    if (!Array.isArray(body.tree)) return null
+    return { tree: body.tree, decomp: Array.isArray(body.decomp) ? body.decomp as [number, number[]][] : null }
+  } catch (err) {
+    if (signal?.aborted) throw err
+    log.debug('prebuilt tree fetch failed — building it:', err)
     return null
   }
 }
