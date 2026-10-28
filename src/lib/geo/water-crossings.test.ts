@@ -41,6 +41,21 @@ describe('findWaterCrossings', () => {
     expect(out.every((c) => c.water === 'Huangpu' && c.waterId === 'w1')).toBe(true)
   })
 
+  it('names an unnamed river polygon after the named centre line running through it', () => {
+    const unnamed: OsmFeature = { ...river, name: undefined }
+    const centre: OsmFeature = {
+      id: 'w9', kind: 'water', name: 'Huangpu River',
+      ring: [{ lat: -1, lon: 0.0009 }, { lat: -1, lon: 0.0011 }, { lat: 1, lon: 0.0011 }, { lat: 1, lon: 0.0009 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true }, style: { roofShape: 'flat', roofHeightM: 0 },
+      waterCourse: { line: [{ lat: -0.5, lon: 0.001 }, { lat: 0, lon: 0.001 }, { lat: 0.5, lon: 0.001 }], widthM: 20 },
+    }
+    const out = findWaterCrossings([
+      unnamed, centre,
+      way('w2', 'road', { highway: 'primary', bridge: 'yes' }, 0, 'Nanpu Bridge'),
+    ])
+    expect(out.find((c) => c.name === 'Nanpu Bridge')?.water).toBe('Huangpu River')
+  })
+
   it('folds the unnamed ramps of a bridge into the named one', () => {
     const out = findWaterCrossings([
       river,

@@ -74,6 +74,24 @@ function bodiesOf(features: ReadonlyArray<OsmFeature>): Body[] {
     }
     out.push({ id: f.id, name: f.name ?? (f.isSea ? 'Sea' : undefined), ring: f.ring, minLat, maxLat, minLon, maxLon })
   }
+  // A river's area polygon is often unnamed — the Huangpu's is — while its
+  // centre line (waterway=river) carries the name. An unnamed body takes the
+  // name of the named watercourse that runs through it, the one with the most
+  // of its stations inside.
+  const courses = features.filter((f) => f.name && f.waterCourse && f.waterCourse.line.length > 0)
+  for (const b of out) {
+    if (b.name || courses.length === 0) continue
+    let best: { name: string; hits: number } | null = null
+    for (const c of courses) {
+      let hits = 0
+      for (const p of c.waterCourse!.line) {
+        if (p.lat < b.minLat || p.lat > b.maxLat || p.lon < b.minLon || p.lon > b.maxLon) continue
+        if (inRing(p, b.ring)) hits++
+      }
+      if (hits > 0 && (!best || hits > best.hits)) best = { name: c.name!, hits }
+    }
+    if (best) b.name = best.name
+  }
   return out
 }
 
