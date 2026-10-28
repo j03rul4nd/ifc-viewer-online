@@ -39,6 +39,8 @@ async function fetchOne(
   signal: AbortSignal | undefined,
   onProgress?: (p: FetchProgress) => void,
 ): Promise<Fetched> {
+  // Its prebuilt fragments start downloading now, alongside the IFC.
+  void import('../lib/loading/prebuilt-frags').then((m) => m.warmPrebuiltForUrl(url)).catch(() => {})
   const res = await fetch(url, { signal, cache: 'force-cache' })
   if (!res.ok) throw new DemoFetchError(`HTTP ${res.status} ${res.statusText}`)
 

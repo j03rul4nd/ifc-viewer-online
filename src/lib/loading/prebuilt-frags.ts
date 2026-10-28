@@ -15,7 +15,58 @@ const log = createLogger('Prebuilt')
 
 interface Manifest {
   version: 1
-  entries: Record<string, { frag: string; fragBytes: number; tree?: string }>
+  entries: Record<string, { frag: string; fragBytes: number; tree?: string; ifc?: string }>
+}
+
+// ── Warm-up by URL ────────────────────────────────────────────────────────────
+// A model we ship is matched by its content, so the lookup has to wait for
+// the IFC download — and the .frag download then starts only after it: two
+// transfers in a row. When a load starts from one of our own URLs the manifest
+// already says which .frag (and tree) it will be, so both start alongside the
+// IFC and the lookup claims them. Same bytes either way (the content match
+// still decides); a warm-up nobody claims is dropped after a minute.
+
+const WARM_TTL_MS = 60_000
+const warm = new Map<string, { at: number; body: Promise<Response | null> }>()
+
+function startWarm(file: string): void {
+  if (warm.has(file)) return
+  const body = fetch(`${base()}models-frag/${file}`, { cache: 'force-cache' })
+    .then((r) => (r.ok ? r : null))
+    .catch(() => null)
+  warm.set(file, { at: Date.now(), body })
+  setTimeout(() => { if (warm.get(file)?.body === body) warm.delete(file) }, WARM_TTL_MS)
+}
+
+function claim(file: string): Promise<Response | null> | null {
+  const w = warm.get(file)
+  if (!w) return null
+  warm.delete(file)
+  return Date.now() - w.at < WARM_TTL_MS ? w.body : null
+}
+
+/**
+ * The load of `url` is starting: if it is one of the IFC files we ship, start
+ * fetching its fragments and tree now, in parallel with the IFC itself.
+ * Fire and forget; any failure leaves the normal lookup to run.
+ */
+export function warmPrebuiltForUrl(url: string): void {
+  if (typeof fetch !== 'function') return
+  let path: string
+  try {
+    const u = new URL(url, globalThis.location?.href)
+    if (globalThis.location && u.origin !== globalThis.location.origin) return
+    path = decodeURIComponent(u.pathname)
+  } catch { return }
+  const root = base()
+  if (!path.startsWith(root)) return
+  const rel = path.slice(root.length)
+  void loadManifest().then((m) => {
+    const entry = m && Object.values(m.entries).find((e) => e.ifc === rel)
+    if (!entry) return
+    startWarm(entry.frag)
+    if (entry.tree) startWarm(entry.tree)
+  })
 }
 
 let manifest: Promise<Manifest | null> | null = null
@@ -44,7 +95,7 @@ export async function findPrebuiltFragments(fingerprint: string | null, signal: 
   const entry = m?.entries[fingerprint]
   if (!entry) return null
   try {
-    const res = await fetch(`${base()}models-frag/${entry.frag}`, { signal, cache: 'force-cache' })
+    const res = (await claim(entry.frag)) ?? await fetch(`${base()}models-frag/${entry.frag}`, { signal, cache: 'force-cache' })
     if (!res.ok) return null
     const buf = await res.arrayBuffer()
     if (buf.byteLength === 0 || (entry.fragBytes && buf.byteLength !== entry.fragBytes)) return null
@@ -72,7 +123,7 @@ export async function findPrebuiltTree(fingerprint: string | null, signal?: Abor
   const entry = (await loadManifest())?.entries[fingerprint]
   if (!entry?.tree) return null
   try {
-    const res = await fetch(`${base()}models-frag/${entry.tree}`, { signal, cache: 'force-cache' })
+    const res = (await claim(entry.tree)) ?? await fetch(`${base()}models-frag/${entry.tree}`, { signal, cache: 'force-cache' })
     if (!res.ok) return null
     const body = await res.json() as { tree?: unknown; decomp?: unknown }
     if (!Array.isArray(body.tree)) return null
@@ -87,4 +138,5 @@ export async function findPrebuiltTree(fingerprint: string | null, signal?: Abor
 /** Tests only. */
 export function __resetPrebuiltManifest(): void {
   manifest = null
+  warm.clear()
 }
