@@ -96,6 +96,11 @@ function ifcvo_build_embed_url( $atts ) {
 		'embed' => '1',
 	);
 	$name = sanitize_text_field( (string) $atts['name'] );
+	// The REST route URL ends in "file/<id>", so give the viewer the real file name.
+	if ( '' === $name && false !== strpos( $model, 'ifc-viewer-online/v1/file/' ) ) {
+		$attachment_id = (int) substr( $model, strrpos( $model, '/' ) + 1 );
+		$name          = wp_basename( (string) get_attached_file( $attachment_id ) );
+	}
 	if ( '' !== $name ) {
 		$query['name'] = $name;
 	}
@@ -205,7 +210,11 @@ function ifcvo_register_routes() {
 			'callback'            => 'ifcvo_serve_file',
 			'permission_callback' => '__return_true',
 			'args'                => array(
-				'id' => array( 'validate_callback' => 'is_numeric' ),
+				'id' => array(
+					'validate_callback' => function ( $value ) {
+						return is_numeric( $value );
+					},
+				),
 			),
 		)
 	);
@@ -217,8 +226,9 @@ function ifcvo_attachment_is_public( $attachment_id ) {
 	if ( $parent ) {
 		return 'publish' === get_post_status( $parent ) && '' === get_post_field( 'post_password', $parent );
 	}
-	// Unattached media: as public as the file URL itself already is.
-	return 'inherit' === get_post_status( $attachment_id );
+	// Unattached media: as public as the file URL itself already is. WordPress
+	// reports an unattached attachment as 'publish' (its stored status is 'inherit').
+	return in_array( get_post_status( $attachment_id ), array( 'inherit', 'publish' ), true );
 }
 
 function ifcvo_serve_file( WP_REST_Request $request ) {
