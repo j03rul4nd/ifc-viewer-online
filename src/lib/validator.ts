@@ -483,6 +483,21 @@ let treeRequestSeq = 0
  * @param modelId - The sceneStore/registry ID of the model to build the tree for.
  *                  Falls back to the active model when omitted.
  */
+/**
+ * Install a tree built elsewhere (prebuilt-frags) for a registered model, as
+ * if the worker had answered. False when the payload does not parse or the
+ * model is gone — the caller then builds it.
+ */
+export function applySpatialTree(modelId: string, rawTree: unknown, decomp: [number, number[]][] | null): boolean {
+  if (!modelRegistry.get(modelId)) return false
+  const tree = parseSpatialNodeArray(rawTree, 'applySpatialTree')
+  if (tree.length === 0) return false
+  const vs = useValidationStore.getState()
+  vs.setSpatialTreeForModel(modelId, tree)
+  if (decomp) vs.setDecompMapForModel(modelId, new Map(decomp))
+  return true
+}
+
 export async function buildSpatialTree(modelId?: string): Promise<void> {
   const {
     setSpatialTreeForModel,

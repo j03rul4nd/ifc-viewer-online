@@ -2,196 +2,228 @@
  "version": 1,
  "entries": {
   "f1:1746543:00902f5a448dbaf1c3fde06b1f7b0877": {
-   "frag": "65553e0d87e2c243.frag",
+   "frag": "92d73a9262d42003.frag",
    "ifc": "models/barcelona-catalunya/catalunya-mobility-hub.ifc",
    "ifcBytes": 1746543,
-   "fragBytes": 247624
+   "fragBytes": 247624,
+   "tree": "755d69d324881f56.tree.json"
   },
   "f1:1075077:d5f00c5f429a0334a00cfcea9104bbdf": {
-   "frag": "5f58914c3ba39cad.frag",
+   "frag": "a5c3dcc98288de2b.frag",
    "ifc": "models/barcelona-catalunya/endolla-pg-gracia.ifc",
    "ifcBytes": 1075077,
-   "fragBytes": 213946
+   "fragBytes": 213944,
+   "tree": "efd7726f02d2c0e0.tree.json"
   },
   "f1:618962:85dbe086da01d3191375c2faa12d9d54": {
-   "frag": "1976e1927303da29.frag",
+   "frag": "282cfe506b2bef56.frag",
    "ifc": "models/barcelona-catalunya/falques-bench-lamps.ifc",
    "ifcBytes": 618962,
-   "fragBytes": 85106
+   "fragBytes": 85106,
+   "tree": "24e3b3e19f562d12.tree.json"
   },
   "f1:3862697:a5022726962bbefe61280ff6aef26bd2": {
-   "frag": "86e38e854c4c0f23.frag",
+   "frag": "e25bb1342621d5f2.frag",
    "ifc": "models/barcelona-catalunya/fonts-bessones.ifc",
    "ifcBytes": 3862697,
-   "fragBytes": 370745
+   "fragBytes": 370744,
+   "tree": "c4bc080ad2bfe519.tree.json"
   },
   "f1:1171271:5cc9d7bd6a6d6b7075dc1d26492daeca": {
-   "frag": "a0bcb0c076ebdd18.frag",
+   "frag": "53bbc4ed4092e95b.frag",
    "ifc": "models/barcelona-catalunya/granvia-fountain.ifc",
    "ifcBytes": 1171271,
-   "fragBytes": 197355
+   "fragBytes": 197347,
+   "tree": "4144cb272f8554bd.tree.json"
   },
   "f1:622307:c294eddb3254e07150709804f2b1bcdb": {
-   "frag": "3304d47f12ffb590.frag",
+   "frag": "594bf4a466aaa0ab.frag",
    "ifc": "models/barcelona-catalunya/macia-monument.ifc",
    "ifcBytes": 622307,
-   "fragBytes": 63747
+   "fragBytes": 63748,
+   "tree": "dbfcc0f7d54581e2.tree.json"
   },
   "f1:706860:a20e151072f1cc42101604ed401afc01": {
-   "frag": "f43e67044d268291.frag",
+   "frag": "0607897ccbf96d19.frag",
    "ifc": "models/barcelona-catalunya/pelai-entrance.ifc",
    "ifcBytes": 706860,
-   "fragBytes": 132335
+   "fragBytes": 132333,
+   "tree": "8ecce021b0ee248b.tree.json"
   },
   "f1:503218:2f9a48357b0e25f98df3cca997e7f007": {
-   "frag": "bf26b9ff108611d3.frag",
+   "frag": "bdb9b8bb6945d528.frag",
    "ifc": "models/barcelona-catalunya/rambla-canaletes.ifc",
    "ifcBytes": 503218,
-   "fragBytes": 87979
+   "fragBytes": 87979,
+   "tree": "63709fbbd2592f99.tree.json"
   },
   "f1:245678:f59be5d314cb56e900f79f928036f0e5": {
-   "frag": "98f83679494f323f.frag",
+   "frag": "e9e0f5d750ca8a92.frag",
    "ifc": "models/ciutadella/BCN-IVO-ZZ-XX-M3-Z-0003.ifc",
    "ifcBytes": 245678,
-   "fragBytes": 49706
+   "fragBytes": 49703,
+   "tree": "2f5450909535934e.tree.json"
   },
   "f1:67553572:8b91c1d18d21466b03bfc060a9a19d92": {
-   "frag": "ff9cae5837b793e9.frag",
+   "frag": "c2db2f7725f70eb1.frag",
    "ifc": "models/cras/model.ifc",
    "ifcBytes": 67553572,
-   "fragBytes": 3666941
+   "fragBytes": 3666940,
+   "tree": "456eb3ef36883b93.tree.json"
   },
   "f1:636391:b6281c1df53c54452cbf6ce482fa6ac5": {
-   "frag": "c3e164ccf29cf934.frag",
+   "frag": "7a5a9dafd1fa5b84.frag",
    "ifc": "models/helsinki/elielinaukio-bus-terminal.ifc",
    "ifcBytes": 636391,
-   "fragBytes": 101077
+   "fragBytes": 101075,
+   "tree": "6ba6a55a66b6d6ed.tree.json"
   },
   "f1:1007024:5879febf83029ef31165823155676063": {
-   "frag": "cd22b3c41e474126.frag",
+   "frag": "6a4965d48eae274f.frag",
    "ifc": "models/helsinki/helsinki-cathedral.ifc",
    "ifcBytes": 1007024,
-   "fragBytes": 195950
+   "fragBytes": 195946,
+   "tree": "ce21dc495a159e40.tree.json"
   },
   "f1:6792590:f2babdb356dd2cf0366fe225783a40c8": {
-   "frag": "7544d35dfb10db76.frag",
+   "frag": "977bfd5a9e3d8d74.frag",
    "ifc": "models/helsinki/helsinki-central-station.ifc",
    "ifcBytes": 6792590,
-   "fragBytes": 694399
+   "fragBytes": 694402,
+   "tree": "ddc4a3c56b9463b6.tree.json"
   },
   "f1:5229416:46b8be6bab371497f08bc2a3e88be73e": {
-   "frag": "e31aee2a79ffa2b9.frag",
+   "frag": "38bd0a7df19b2807.frag",
    "ifc": "models/hotel-vela/BCN-IVO-ZZ-XX-M3-A-0002.ifc",
    "ifcBytes": 5229416,
-   "fragBytes": 546139
+   "fragBytes": 546139,
+   "tree": "657fe1d30185444f.tree.json"
   },
   "f1:233578:e3ebbc0c87abf04357a2faec92d21146": {
-   "frag": "66544699c99a6199.frag",
+   "frag": "6e38dc9261ea6a0a.frag",
    "ifc": "models/hotel-vela/BCN-IVO-ZZ-XX-M3-M-0002.ifc",
    "ifcBytes": 233578,
-   "fragBytes": 32405
+   "fragBytes": 32405,
+   "tree": "7e90db42013c4cd9.tree.json"
   },
   "f1:1444603:891870064b1d7100776d9de152f804e1": {
-   "frag": "61a6dda61aa2ecc7.frag",
+   "frag": "7213792201b41792.frag",
    "ifc": "models/hotel-vela/BCN-IVO-ZZ-XX-M3-S-0002.ifc",
    "ifcBytes": 1444603,
-   "fragBytes": 229900
+   "fragBytes": 229896,
+   "tree": "f10ce36e5e811695.tree.json"
   },
   "f1:38359:f409021d3d7b53ec10e9c23de135bbf0": {
-   "frag": "bf1d923bd7cb1bde.frag",
+   "frag": "dcda853ab82ffd6f.frag",
    "ifc": "models/metro-drassanes/BCN-IVO-DRS-XX-M3-A-0001.ifc",
    "ifcBytes": 38359,
-   "fragBytes": 9062
+   "fragBytes": 9065,
+   "tree": "922eb25f9d8c45af.tree.json"
   },
   "f1:92432:03e4f9434a52d304199b00c9e56f25be": {
-   "frag": "9201cc74fd90acb2.frag",
+   "frag": "970d476e0077ee0c.frag",
    "ifc": "models/msp-office/MSP-Demo-Office.ifc",
    "ifcBytes": 92432,
-   "fragBytes": 16707
+   "fragBytes": 16709,
+   "tree": "1b1e6a6b5c605f29.tree.json"
   },
   "f1:22225803:ebeadfaa20b79edf7a474e8ba672a329": {
-   "frag": "46e0eb4d33709d9e.frag",
+   "frag": "0f46a43e35dd2c8e.frag",
    "ifc": "models/oriental-pearl/SHA-IVO-ORIENTAL-PEARL-A-0001.ifc",
    "ifcBytes": 22225803,
-   "fragBytes": 1942339
+   "fragBytes": 1942342,
+   "tree": "fceeffa548363e72.tree.json"
   },
   "f1:263610:cce99c94d8e584707963b3e356e99ea6": {
-   "frag": "ee2d8f8947bd399a.frag",
+   "frag": "855af49eb50b65b4.frag",
    "ifc": "models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc",
    "ifcBytes": 263610,
-   "fragBytes": 51664
+   "fragBytes": 51661,
+   "tree": "15deedb744a04054.tree.json"
   },
   "f1:52144:83f262c447af53e616f92c33ffbc8eb1": {
-   "frag": "cdfe356b127ceaf4.frag",
+   "frag": "920afcda49ead108.frag",
    "ifc": "models/poblenou/BCN-IVO-ZZ-XX-M3-M-0001.ifc",
    "ifcBytes": 52144,
-   "fragBytes": 10950
+   "fragBytes": 10950,
+   "tree": "e8c933863f8aae18.tree.json"
   },
   "f1:379754:02349403eff644194ca6cc5600950c87": {
-   "frag": "83faf350b33dc32a.frag",
+   "frag": "8f7d8c0a98c3ef51.frag",
    "ifc": "models/poblenou/BCN-IVO-ZZ-XX-M3-S-0001.ifc",
    "ifcBytes": 379754,
-   "fragBytes": 63990
+   "fragBytes": 63989,
+   "tree": "f5243a883bb0bc91.tree.json"
   },
   "f1:263604:2b05950b6be833001d9d6b5b9c8e0ddf": {
-   "frag": "e031b709fec6e601.frag",
+   "frag": "8c1fb83d58214ca8.frag",
    "ifc": "models/poblenou/p02/BCN-IVO-ZZ-XX-M3-A-0001.ifc",
    "ifcBytes": 263604,
-   "fragBytes": 51693
+   "fragBytes": 51694,
+   "tree": "e4f6f4721b57207c.tree.json"
   },
   "f1:39025:e8e01139d8345dc4682212790679dd51": {
-   "frag": "6a292b3b2ce10f58.frag",
+   "frag": "a78b67e59d91b945.frag",
    "ifc": "models/realtime-lidar/IVO-Construction-Progress.ifc",
    "ifcBytes": 39025,
-   "fragBytes": 7857
+   "fragBytes": 7858,
+   "tree": "fc88277f9be809f3.tree.json"
   },
   "f1:20300:e6b4fc6a21568b145d090f14b604b61d": {
-   "frag": "9ce9b428cddcd692.frag",
+   "frag": "5185a11e52444ed8.frag",
    "ifc": "models/realtime-lidar/IVO-Utility-Tunnel.ifc",
    "ifcBytes": 20300,
-   "fragBytes": 5217
+   "fragBytes": 5216,
+   "tree": "7e35b0760ceec6d5.tree.json"
   },
   "f1:48349:a1cc01053ac0988df000f93e4e3a654a": {
-   "frag": "bac4d0bac24f5135.frag",
+   "frag": "7b079754b3e24bc3.frag",
    "ifc": "models/realtime-lidar/IVO-Warehouse-Operations.ifc",
    "ifcBytes": 48349,
-   "fragBytes": 9187
+   "fragBytes": 9188,
+   "tree": "56f463363e20ec02.tree.json"
   },
   "f1:94255149:fd8ce811d6ae4ff4297997a54568375b": {
-   "frag": "397bf54725faea3a.frag",
+   "frag": "d77eb68e54acedb9.frag",
    "ifc": "models/shanghai-tower/SHA-IVO-SHANGHAI-TOWER-A-0001.ifc",
    "ifcBytes": 94255149,
-   "fragBytes": 13373301
+   "fragBytes": 13373287,
+   "tree": "5499f145d5b7ec6c.tree.json"
   },
   "f1:13383835:1cda0277e6ebe8e47ed681e73bd7dad3": {
-   "frag": "d5a3119c19c4e07b.frag",
+   "frag": "8f837c1899c1b39d.frag",
    "ifc": "models/swfc/SHA-IVO-SWFC-A-0001.ifc",
    "ifcBytes": 13383835,
-   "fragBytes": 1058517
+   "fragBytes": 1058514,
+   "tree": "eb63a04bb577f73c.tree.json"
   },
   "f1:2625378:e1ce98a6822a7beecd4313a8593f13e9": {
-   "frag": "e9da2716dc3c186a.frag",
+   "frag": "a1e28517b778e873.frag",
    "ifc": "models/tokyo/tochomae-a4-entrance.ifc",
    "ifcBytes": 2625378,
-   "fragBytes": 207235
+   "fragBytes": 207235,
+   "tree": "5b21ea7595ab31f8.tree.json"
   },
   "f1:4230409:b29114853e740acf872406aea849ec00": {
-   "frag": "d91065629668f0c6.frag",
+   "frag": "8581696ec79d5b36.frag",
    "ifc": "models/tokyo/waseda-tram-stop.ifc",
    "ifcBytes": 4230409,
-   "fragBytes": 373689
+   "fragBytes": 373691,
+   "tree": "158d364e9fc12879.tree.json"
   },
   "f1:3489029:4d4a6a4639087001d6ddfa6e33577879": {
-   "frag": "08ce99075d4a9c08.frag",
+   "frag": "9425186f4b772b15.frag",
    "ifc": "models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc",
    "ifcBytes": 3489029,
-   "fragBytes": 515575
+   "fragBytes": 515576,
+   "tree": "80d4bec728c20e8f.tree.json"
   },
   "f1:21034:852d119e2b2ae2e3a616366a9d231bfd": {
-   "frag": "8f66b5b8975e62b1.frag",
+   "frag": "e067c711d24ba45a.frag",
    "ifc": "models/video-demo/IVO-Operations-Pavilion.ifc",
    "ifcBytes": 21034,
-   "fragBytes": 5703
+   "fragBytes": 5704,
+   "tree": "d2ce41ffdd1142f4.tree.json"
   }
  }
 }

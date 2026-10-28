@@ -43,7 +43,7 @@ import { useModelStore } from '../../stores/modelStore'
 import { modelRegistry } from '../model-registry'
 import { appBus, type LoadJobEventBase } from '../event-bus'
 import { deriveIfcFileName, fetchFileFromUrl, fetchIfcFromUrl } from '../fetch-ifc-url'
-import { buildSpatialTree } from '../validator'
+import { buildSpatialTree, applySpatialTree } from '../validator'
 import { cacheRepo } from '../cache-repository'
 import { unwrapOr } from '../result'
 import { isGisEnabled } from '../geo/gis-flag'
@@ -169,7 +169,19 @@ export function getLoadManager(): LoadManager {
         : undefined,
     }),
     commit: commitIfcModel,
-    buildIndex: (modelId) => buildSpatialTree(modelId),
+    buildIndex: async (modelId) => {
+      // A file we ship comes with its tree: no second web-ifc parse of it.
+      const fp = fingerprintByModel.get(modelId) ?? null
+      if (fp) {
+        try {
+          const pre = await import('./prebuilt-frags').then((m) => m.findPrebuiltTree(fp))
+          if (pre && applySpatialTree(modelId, pre.tree, pre.decomp)) return
+        } catch (err) {
+          log.debug('prebuilt tree skipped:', err)
+        }
+      }
+      await buildSpatialTree(modelId)
+    },
     afterCommit: (modelId, ifcBuffer) => {
       // GIS badge pre-scan (cheap token scan, no WASM). Dynamic import keeps
       // the geo tree out of the entry chunk when the flag is off.

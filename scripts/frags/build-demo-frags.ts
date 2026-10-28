@@ -39,7 +39,48 @@ const SKIPPED_FAR_RE = /meters away from the origin and will be skipped/
 export interface FragManifest {
   version: 1
   /** fingerprint (lib/loading/fingerprint) → file under /models-frag/ */
-  entries: Record<string, { frag: string; ifc: string; ifcBytes: number; fragBytes: number }>
+  entries: Record<string, { frag: string; ifc: string; ifcBytes: number; fragBytes: number; tree?: string }>
+}
+
+// ── Spatial tree, from the validator worker itself ────────────────────────────
+// After the geometry the loader builds the spatial tree: another full web-ifc
+// parse, in the validator worker. Shipping it too means a phone loading one of
+// these models never opens the IFC with web-ifc at all. The worker module is
+// driven here as it is in the browser — same code, so the same tree.
+
+type TreeReply = { type: string; id: string; tree?: unknown; decomp?: unknown; message?: string }
+let workerHandler: ((e: { data: unknown }) => void) | null = null
+const replies = new Map<string, (m: TreeReply) => void>()
+
+async function loadValidatorWorker(): Promise<void> {
+  if (workerHandler) return
+  const { IfcAPI } = await import('web-ifc')
+  // The worker points web-ifc at the app's base URL; in Node it lives here.
+  const setPath = IfcAPI.prototype.SetWasmPath
+  IfcAPI.prototype.SetWasmPath = function (this: InstanceType<typeof IfcAPI>) {
+    return setPath.call(this, WASM_DIR, true)
+  }
+  ;(globalThis as unknown as { self: unknown }).self = {
+    postMessage: (m: TreeReply) => replies.get(m.id)?.(m),
+  }
+  await import('../../src/workers/validator.worker.ts')
+  workerHandler = (globalThis as unknown as { self: { onmessage: (e: { data: unknown }) => void } }).self.onmessage
+}
+
+async function buildTree(bytes: Uint8Array): Promise<{ tree: unknown; decomp: unknown }> {
+  await loadValidatorWorker()
+  const id = `tree-${Math.random().toString(36).slice(2)}`
+  const buffer = bytes.slice().buffer
+  return new Promise((resolve, reject) => {
+    let tree: unknown = null
+    let decomp: unknown = null
+    replies.set(id, (m) => {
+      if (m.type === 'tree') { tree = m.tree; decomp = m.decomp ?? null }
+      else if (m.type === 'tree-done') { replies.delete(id); resolve({ tree, decomp }) }
+      else if (m.type === 'error') { replies.delete(id); reject(new Error(m.message)) }
+    })
+    workerHandler!({ data: { type: 'build-tree', id, buffer } })
+  })
 }
 
 async function walk(dir: string): Promise<string[]> {
@@ -102,24 +143,32 @@ async function main(): Promise<void> {
     const rel = relative(join(ROOT, 'public'), file).replace(/\\/g, '/')
     const bytes = new Uint8Array(await readFile(file))
     const fp = await fingerprintBytes(bytes)
-    const name = createHash('sha256').update(fp).digest('hex').slice(0, 16) + '.frag'
+    // Named by their CONTENT: the files are served immutable (vercel.json),
+    // so a reconversion (a new importer) must get a new URL, never the old one.
     const prev = old.entries[fp]
-    const exists = await stat(join(OUT, name)).then((s) => s.size > 0, () => false)
-    if (!force && prev && prev.frag === name && exists) {
+    const has = (f: string | undefined): Promise<boolean> =>
+      f ? stat(join(OUT, f)).then((s) => s.size > 0, () => false) : Promise.resolve(false)
+    if (!force && prev && await has(prev.frag) && await has(prev.tree)) {
       next.entries[fp] = { ...prev, ifc: rel }
       continue
     }
     const t0 = Date.now()
     const frag = await convert(bytes)
+    const id = (b: Uint8Array | string): string => createHash('sha256').update(b).digest('hex').slice(0, 16)
+    const name = `${id(frag)}.frag`
     await writeFile(join(OUT, name), frag)
-    next.entries[fp] = { frag: name, ifc: rel, ifcBytes: bytes.byteLength, fragBytes: frag.byteLength }
+    const { tree, decomp } = await buildTree(bytes)
+    const treeJson = JSON.stringify({ tree, decomp })
+    const treeName = `${id(treeJson)}.tree.json`
+    await writeFile(join(OUT, treeName), treeJson)
+    next.entries[fp] = { frag: name, ifc: rel, ifcBytes: bytes.byteLength, fragBytes: frag.byteLength, tree: treeName }
     converted++
     console.log(`${rel}: ${(bytes.byteLength / 1e6).toFixed(1)} MB → ${(frag.byteLength / 1e6).toFixed(1)} MB in ${((Date.now() - t0) / 1000).toFixed(1)} s`)
   }
   // Fragments no IFC points at any more.
-  const keep = new Set(Object.values(next.entries).map((e) => e.frag))
+  const keep = new Set(Object.values(next.entries).flatMap((e) => [e.frag, e.tree ?? '']))
   for (const e of await readdir(OUT)) {
-    if (e.endsWith('.frag') && !keep.has(e)) await rm(join(OUT, e))
+    if ((e.endsWith('.frag') || e.endsWith('.tree.json')) && !keep.has(e)) await rm(join(OUT, e))
   }
   await writeFile(MANIFEST, JSON.stringify(next, null, 1) + '\n')
   console.log(`${files.length} IFC, ${converted} converted, manifest: ${Object.keys(next.entries).length} entries`)
