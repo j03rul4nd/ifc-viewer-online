@@ -18,7 +18,7 @@
 // the model base keeps sitting on the ground (plan §4.5). Scene metres map to
 // normalized z through 1/(WORLD × cosφ₀).
 
-import { demSourceFor } from './dem-sources'
+import { demSourceFor, markDemSourceFailed } from './dem-sources'
 import * as THREE from 'three'
 import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
@@ -155,6 +155,24 @@ export async function buildTerrainPatch(
   // a zoom it does not serve: ICGC stops at 14, so a patch there is one level
   // wider and coarser — still finer than the source's own 5 m.
   const dem = demSourceFor(placement.lat, placement.lon)
+  try {
+    return await buildTerrainPatchFrom(dem, placement, provider, opts)
+  } catch (err) {
+    if (dem.id === 'terrarium') throw err
+    // One regional tile failing stops the whole build; the global mosaic is
+    // the fallback (dem-sources).
+    log.warn(`${dem.id} unavailable, building the terrain from the global DEM:`, err instanceof Error ? err.message : err)
+    markDemSourceFailed(dem.id)
+    return buildTerrainPatchFrom(demSourceFor(placement.lat, placement.lon), placement, provider, opts)
+  }
+}
+
+async function buildTerrainPatchFrom(
+  dem: ReturnType<typeof demSourceFor>,
+  placement: GeoPlacement,
+  provider: MapProvider | null,
+  opts: TerrainBuildOptions,
+): Promise<TerrainPatch> {
   const zoom = Math.min(terrainZoomFor(placement.lat, opts.modelSpanM ?? null), dem.maxZoom)
   const imageryZoom = provider ? imageryZoomFor(zoom, provider.id, provider.maxZoom) : null
 

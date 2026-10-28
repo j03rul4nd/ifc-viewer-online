@@ -11,7 +11,7 @@
 // mismatch is accepted and absorbed by the user-facing height-offset slider.
 
 import { latLonToTilePixel } from './geo-math'
-import { demSourceFor, demTileUrl } from './dem-sources'
+import { demSourceFor, demTileUrl, markDemSourceFailed } from './dem-sources'
 import { createLogger } from '../logger'
 
 const log = createLogger('GeoElevation')
@@ -50,6 +50,20 @@ export function terrariumTileUrl(z: number, x: number, y: number): string {
  */
 export async function sampleElevation(lat: number, lon: number, zoom = SAMPLE_ZOOM): Promise<number> {
   const dem = demSourceFor(lat, lon)
+  try {
+    return await sampleFrom(dem, lat, lon, zoom)
+  } catch (err) {
+    if (dem.id === 'terrarium') throw err
+    // A regional server that fails falls back to the global mosaic (dem-sources).
+    log.warn(`${dem.id} unavailable, using the global DEM:`, err instanceof Error ? err.message : err)
+    markDemSourceFailed(dem.id)
+    return sampleFrom(demSourceFor(lat, lon), lat, lon, zoom)
+  }
+}
+
+async function sampleFrom(
+  dem: ReturnType<typeof demSourceFor>, lat: number, lon: number, zoom: number,
+): Promise<number> {
   const z = Math.min(zoom, dem.maxZoom)
   const { x, y, px, py } = latLonToTilePixel(lat, lon, z, TILE_DIM)
   const url = demTileUrl(dem, z, x, y)

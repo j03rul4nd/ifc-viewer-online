@@ -120,10 +120,31 @@ export function demSourceById(id: DemSourceId | undefined | null): DemSource {
   return REGIONAL.find((s) => s.id === id) ?? TERRARIUM_SOURCE
 }
 
+/**
+ * Regional sources that failed this session. A regional server is one agency's
+ * endpoint and it can move or go down: on 2026-10-28 the ICGC tile path started
+ * answering 404 for every tile, so Barcelona had no ground height at all — the
+ * terrain never built, and every IFC was lifted by its absolute elevation
+ * (20.7 m at Plaça de Catalunya) over a flat map. The global mosaic is worse
+ * ground than a 5 m survey, and far better than none.
+ */
+const failedRegional = new Set<DemSourceId>()
+
+/** Stop using a regional source for the rest of the session. */
+export function markDemSourceFailed(id: DemSourceId): void {
+  if (id !== TERRARIUM_SOURCE.id) failedRegional.add(id)
+}
+
+/** For tests. */
+export function resetDemSourceFailures(): void {
+  failedRegional.clear()
+}
+
 /** The best source for a site: a regional one that covers it, else the global one. */
 export function demSourceFor(lat: number, lon: number): DemSource {
   const inside = (b: [number, number, number, number]): boolean => lon >= b[0] && lon <= b[2] && lat >= b[1] && lat <= b[3]
-  return REGIONAL.find((s) => (s.boxes ?? (s.bbox ? [s.bbox] : [])).some(inside)) ?? TERRARIUM_SOURCE
+  return REGIONAL.find((s) => !failedRegional.has(s.id) && (s.boxes ?? (s.bbox ? [s.bbox] : [])).some(inside))
+    ?? TERRARIUM_SOURCE
 }
 
 export function demTileUrl(source: DemSource, z: number, x: number, y: number): string {
