@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crea il tuo gemello digitale: magazzino AGV o importazioni</title>
+  <meta name="description" content="Crea il tuo gemello digitale nel browser: un magazzino con AGV dal tuo layout e dai tuoi prodotti, o il tracciamento delle importazioni dal tuo foglio. Gratis." />
+  <meta name="keywords" content="creare gemello digitale, gemello digitale gratis, simulatore di magazzino, simulazione AGV, gemello digitale magazzino, tracciamento importazioni, tracciamento ordini, costo sbarcato" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+  <meta property="og:title" content="Crea il tuo gemello digitale: magazzino AGV o importazioni" />
+  <meta property="og:description" content="Crea il tuo gemello digitale nel browser: un magazzino con AGV dal tuo layout e dai tuoi prodotti, o il tracciamento delle importazioni dal tuo foglio. Gratis." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="it_IT" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Crea il tuo gemello digitale: magazzino AGV o importazioni" />
+  <meta name="twitter:description" content="Crea il tuo gemello digitale nel browser: un magazzino con AGV dal tuo layout e dai tuoi prodotti, o il tracciamento delle importazioni dal tuo foglio. Gratis." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Crea il tuo gemello digitale","url":"https://www.ifcvieweronline.eu/it/creare-gemello-digitale/","description":"Crea il tuo gemello digitale nel browser: un magazzino con AGV dal tuo layout e dai tuoi prodotti, o il tracciamento delle importazioni dal tuo foglio. Gratis.","image":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","inLanguage":"it","applicationCategory":"BusinessApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"Magazzino con AGV","inLanguage":"it","url":"https://www.ifcvieweronline.eu/twin-builder/?kind=agv","step":[{"@type":"HowToStep","position":1,"name":"Disegna il capannone","text":"Corsie, campate, livelli, baie di carico e scarico e numero di veicoli."},{"@type":"HowToStep","position":2,"name":"Carica i prodotti","text":"Incolla da Excel o carica un CSV: codice, nome, colli e kg."},{"@type":"HowToStep","position":3,"name":"Indica chi servi","text":"Clienti, città, vettori (uno espresso) e fornitori."},{"@type":"HowToStep","position":4,"name":"Collega il tuo ERP","text":"Odoo, Salesforce o un webhook riceve ogni ordine confermato."},{"@type":"HowToStep","position":5,"name":"Mostra la tua flotta reale","text":"Le posizioni del tuo gestore di flotta sostituiscono i veicoli simulati."}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"Tracciamento importazioni","inLanguage":"it","url":"https://www.ifcvieweronline.eu/twin-builder/?kind=imports","step":[{"@type":"HowToStep","position":1,"name":"Di’ dove va la merce","text":"La tua azienda, il tuo agente, il tuo magazzino e l’hub dell’agente."},{"@type":"HowToStep","position":2,"name":"Scegli la rotta","text":"Porti, aeroporti e terminal ferroviari tra Cina ed Europa."},{"@type":"HowToStep","position":3,"name":"Carica fornitori e ordini","text":"Da un foglio: ordine, fornitore, unità, prezzo, HS, modalità e date."},{"@type":"HowToStep","position":4,"name":"Usa le tue date reali","text":"Oggi è oggi: cosa è in ritardo, di quanto, e il nuovo arrivo."},{"@type":"HowToStep","position":5,"name":"Aggiungi gli aggiornamenti dell’agente","text":"Un CSV o un URL con ordine, stato, data e posizione."}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","inLanguage":"it","mainEntity":[{"@type":"Question","name":"È gratis?","acceptedAnswer":{"@type":"Answer","text":"Sì. Funziona interamente nel browser, senza account e senza installare nulla."}},{"@type":"Question","name":"Dove sono i miei dati?","acceptedAnswer":{"@type":"Answer","text":"Nel tuo browser. Puoi esportarli in un file o condividerli con un link che non passa da alcun server. La chiave dell’ERP non lascia mai il browser."}},{"@type":"Question","name":"Si collega al mio ERP o alla mia flotta?","acceptedAnswer":{"@type":"Answer","text":"Sì, dal browser: Odoo, Salesforce o un webhook, e JSON o WebSocket per la flotta. Il tuo sistema deve consentire questo sito (CORS)."}},{"@type":"Question","name":"Lo strumento è in italiano?","acceptedAnswer":{"@type":"Answer","text":"L’interfaccia è in inglese; legge fogli separati da virgola o punto e virgola."}}]}</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .cta2 { display: inline-block; margin-left: 10px; padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #E8E8F0; font-size: 15px; font-weight: 600; }
+    .cta2:hover { border-color: rgba(139,150,233,0.6); }
+    @media (max-width: 520px) { .cta2 { margin: 10px 0 0; } }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+    .steps { display: grid; gap: 12px; padding-left: 20px; margin-top: 18px; }
+    .steps h3 { font-size: 15px; font-weight: 600; }
+    .steps p { font-size: 14px; color: rgba(255,255,255,0.58); }
+    .shot img { max-width: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/it/" class="logo">IFC Viewer Online</a>
+      <a href="/twin-builder/" class="nav-cta">Crea il tuo gemello →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">Gratis · Nel browser · Niente da installare</p>
+        <h1>Crea il tuo <br><span class="accent">gemello digitale</span></h1>
+        <p class="lead">Un magazzino con AGV dal tuo layout e dai tuoi prodotti, o una mappa delle tue importazioni dai tuoi ordini. Tutto gira nel browser: non si carica nulla.</p>
+        <a href="/twin-builder/?kind=agv" class="cta">Crea il mio magazzino →</a>
+        <a href="/twin-builder/?kind=imports" class="cta2">Crea il mio tracciamento →</a>
+      </div>
+    </section>
+    
+    <section class="section">
+      <div class="container">
+        <h2>Magazzino con AGV</h2>
+        <figure class="shot"><img src="/demos/agv-warehouse-digital-twin.jpg" srcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="Gemello digitale di un magazzino con AGV: sei veicoli a guida automatica, scaffali e baie in 3D dal vivo" loading="lazy" decoding="async" /></figure>
+        <ol class="steps"><li><h3>Disegna il capannone</h3><p>Corsie, campate, livelli, baie di carico e scarico e numero di veicoli.</p></li><li><h3>Carica i prodotti</h3><p>Incolla da Excel o carica un CSV: codice, nome, colli e kg.</p></li><li><h3>Indica chi servi</h3><p>Clienti, città, vettori (uno espresso) e fornitori.</p></li><li><h3>Collega il tuo ERP</h3><p>Odoo, Salesforce o un webhook riceve ogni ordine confermato.</p></li><li><h3>Mostra la tua flotta reale</h3><p>Le posizioni del tuo gestore di flotta sostituiscono i veicoli simulati.</p></li></ol>
+        <p style="margin-top:18px"><a class="cta" href="/twin-builder/?kind=agv">Crea il mio magazzino →</a></p>
+      </div>
+    </section>
+    
+    <section class="section">
+      <div class="container">
+        <h2>Tracciamento importazioni</h2>
+        <figure class="shot"><img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="Mappa di tracciamento importazioni: ordini dalla Cina via mare, aereo e treno, con quelli che richiedono attenzione" loading="lazy" decoding="async" /></figure>
+        <ol class="steps"><li><h3>Di’ dove va la merce</h3><p>La tua azienda, il tuo agente, il tuo magazzino e l’hub dell’agente.</p></li><li><h3>Scegli la rotta</h3><p>Porti, aeroporti e terminal ferroviari tra Cina ed Europa.</p></li><li><h3>Carica fornitori e ordini</h3><p>Da un foglio: ordine, fornitore, unità, prezzo, HS, modalità e date.</p></li><li><h3>Usa le tue date reali</h3><p>Oggi è oggi: cosa è in ritardo, di quanto, e il nuovo arrivo.</p></li><li><h3>Aggiungi gli aggiornamenti dell’agente</h3><p>Un CSV o un URL con ordine, stato, data e posizione.</p></li></ol>
+        <p style="margin-top:18px"><a class="cta" href="/twin-builder/?kind=imports">Crea il mio tracciamento →</a></p>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Domande</h2>
+        <div class="faq">
+          <div><h3>È gratis?</h3><p>Sì. Funziona interamente nel browser, senza account e senza installare nulla.</p></div>
+          <div><h3>Dove sono i miei dati?</h3><p>Nel tuo browser. Puoi esportarli in un file o condividerli con un link che non passa da alcun server. La chiave dell’ERP non lascia mai il browser.</p></div>
+          <div><h3>Si collega al mio ERP o alla mia flotta?</h3><p>Sì, dal browser: Odoo, Salesforce o un webhook, e JSON o WebSocket per la flotta. Il tuo sistema deve consentire questo sito (CORS).</p></div>
+          <div><h3>Lo strumento è in italiano?</h3><p>L’interfaccia è in inglese; legge fogli separati da virgola o punto e virgola.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>Lo vuoi per la tua azienda?</h2>
+        <p>Realizzato da capo a fondo da Joel Benítez. Cerco i primi clienti e partner.</p>
+        <a href="/msp-global/#contact" class="cta">Contattami →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/it/">IFC Viewer Online</a>
+        <a href="/it/gemello-digitale-agv/">Gemello digitale AGV</a>
+        <a href="/it/tracciamento-importazioni-cina/">Ogni ordine dalla Cina</a>
+        <a href="/it/esempi-gemello-digitale/">Esempi di gemello digitale</a>
+        <a href="/msp-global/">Tutte le demo</a>
+      </nav>
+      <nav><a href="/twin-builder/" hreflang="en" lang="en">EN</a> <a href="/es/crear-gemelo-digital/" hreflang="es" lang="es">ES</a> <a href="/de/digitalen-zwilling-erstellen/" hreflang="de" lang="de">DE</a> <a href="/fr/creer-jumeau-numerique/" hreflang="fr" lang="fr">FR</a> <a href="/pt/criar-gemeo-digital/" hreflang="pt" lang="pt">PT</a> <a href="/it/creare-gemello-digitale/" hreflang="it" lang="it">IT</a> <a href="/ca/crear-besso-digital/" hreflang="ca" lang="ca">CA</a> <a href="/zh/twin-builder/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/twin-builder/" hreflang="ja" lang="ja">JA</a> <a href="/th/twin-builder/" hreflang="th" lang="th">TH</a></nav>
+      <p>Screenshot © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

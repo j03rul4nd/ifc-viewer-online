@@ -2859,4 +2859,197 @@
     <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-th-export.jpg</image:loc></image:image>
   </url>
   <!-- tool-landings:end -->
+  <!-- twin-builder-i18n:start (scripts/seo/build-twin-builder-landings.ts) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/twin-builder/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/crear-gemelo-digital/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/creare-gemello-digitale/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/crear-besso-digital/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/twin-builder/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/twin-builder/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/twin-builder/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+  <!-- twin-builder-i18n:end -->
+
 </urlset>
