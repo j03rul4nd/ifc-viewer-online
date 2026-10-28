@@ -48,7 +48,7 @@ interface SceneStore {
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   /** Called by loader when a model finishes loading into the scene. */
-  addModel:         (id: string, info: ModelInfo) => void
+  addModel:         (id: string, info: ModelInfo, extra?: Pick<SceneModel, 'mapCoordsKm'>) => void
   /** Remove a model entry (call AFTER the viewer has disposed the geometry). */
   removeModel:      (id: string) => void
   /** Toggle or set a model's visibility flag (reflects viewer applyFilters state). */
@@ -80,7 +80,7 @@ export const useSceneStore = create<SceneStore>()(
       activeModelId: null,
       background:    readBackground(),
 
-      addModel: (id, info) =>
+      addModel: (id, info, extra) =>
         set(
           (s) => {
             // Replace existing entry with the same id if re-loaded
@@ -94,6 +94,7 @@ export const useSceneStore = create<SceneStore>()(
               visible:      true,
               transform:    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 },
               loadedAt:     Date.now(),
+              ...(extra?.mapCoordsKm ? { mapCoordsKm: extra.mapCoordsKm } : {}),
             }
             return { models: [...filtered, entry], activeModelId: id }
           },

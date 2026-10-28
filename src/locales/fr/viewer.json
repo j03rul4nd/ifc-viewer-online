@@ -237,6 +237,8 @@
     },
     "placedByHand": "Manuel",
     "placedByHandHint": "Placé à la main : la carte ne le replace pas selon sa géoréférence. « Réinitialiser » le rend à la carte.",
+    "mapCoords": "Coord. carte",
+    "mapCoordsHint": "Coordonnées cartographiques dans la géométrie (≈{{east}} km E, {{north}} km N). Affiché décalé pour la précision ; mesures, BCF et exports gardent les coordonnées réelles.",
     "frameOnDoubleClick": "Double-clic pour cadrer",
     "federation": {
       "search": "Chercher parmi {{count}} maquettes…",

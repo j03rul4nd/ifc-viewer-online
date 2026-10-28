@@ -237,6 +237,8 @@
     },
     "placedByHand": "À mão",
     "placedByHandHint": "Colocado à mão: o mapa não o recoloca pela sua georreferência. «Repor» devolve-o ao mapa.",
+    "mapCoords": "Coord. de mapa",
+    "mapCoordsHint": "Coordenadas de mapa na geometria (≈{{east}} km E, {{north}} km N). Mostrado deslocado por precisão; medições, BCF e exportações mantêm as coordenadas reais.",
     "frameOnDoubleClick": "Duplo clique para enquadrar",
     "federation": {
       "search": "Procurar entre {{count}} modelos…",

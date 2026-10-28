@@ -64,6 +64,12 @@ export interface SceneModel {
    * undo a calibration. Cleared by Reset, which hands placement back to the map.
    */
   placedByHand?: boolean
+  /**
+   * Where the file's geometry really is, in km east/north of its own origin,
+   * when it was modelled at map coordinates (UTM in the vertices) and the
+   * viewer drew it shifted for precision. Absent for an ordinary model.
+   */
+  mapCoordsKm?: { east: number; north: number } | null
 }
 
 export interface SelectedInfo {
@@ -793,7 +799,7 @@ export const RULE_METADATA: Record<string, RuleMetadata> = {
   },
   RULE_COORDINATE_OFFSET: {
     id: 'RULE_COORDINATE_OFFSET', label: 'Large coordinate offset',
-    description: 'Model geometry is positioned more than 10 km from the WCS origin — causes floating-point precision errors in viewers',
+    description: 'Model geometry is positioned more than 10 km from the WCS origin — many tools lose precision there (this viewer compensates)',
     category: 'quality', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
   },
   RULE_FILE_SIZE_ANOMALY: {
@@ -1015,7 +1021,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'MEP system missing',     description: 'MEP flow element not assigned to any IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/structural clash',   description: 'MEP element bounding box overlaps a structural element' },
     RULE_PROXY_OVERUSE:              { label: 'Proxy overuse',          description: 'More than 5% of elements are IfcBuildingElementProxy — typically unconverted Revit families' },
-    RULE_COORDINATE_OFFSET:          { label: 'Large coordinate offset', description: 'Model geometry is more than 10 km from the WCS origin — causes floating-point precision errors' },
+    RULE_COORDINATE_OFFSET:          { label: 'Large coordinate offset', description: 'Model geometry is more than 10 km from the WCS origin — many tools lose precision there; this viewer compensates' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'File size anomaly',       description: 'File is unusually large per element — over-detailed geometry or embedded textures likely' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Opening without host',    description: 'IfcOpeningElement not connected to any host element via IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Duplicate storey elevation', description: 'Two or more storeys in the same building share the same elevation value' },
@@ -1061,7 +1067,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP faltante',      description: 'Elemento de flujo MEP no asignado a ningún IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Colisión MEP/estructura',   description: 'Caja de colisión de elemento MEP solapa con elemento estructural' },
     RULE_PROXY_OVERUSE:              { label: 'Exceso de elementos proxy',  description: 'Más del 5% de los elementos son IfcBuildingElementProxy — familias Revit sin convertir' },
-    RULE_COORDINATE_OFFSET:          { label: 'Desfase de coordenadas',     description: 'La geometría del modelo está a más de 10 km del origen WCS — provoca errores de precisión de coma flotante' },
+    RULE_COORDINATE_OFFSET:          { label: 'Desfase de coordenadas',     description: 'La geometría del modelo está a más de 10 km del origen WCS — muchas herramientas pierden precisión ahí; este visor lo compensa' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalía de tamaño de archivo', description: 'El archivo es inusualmente grande por elemento — probablemente geometría sobredetallada o texturas embebidas' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Abertura sin host',           description: 'IfcOpeningElement no conectado a ningún elemento anfitrión vía IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevación de planta duplicada', description: 'Dos o más plantas del mismo edificio comparten el mismo valor de elevación' },
@@ -1107,7 +1113,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'Système MEP manquant',      description: 'Élément de flux MEP non affecté à un IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Conflit MEP/structure',     description: 'La boîte englobante d\'un élément MEP chevauche un élément structurel' },
     RULE_PROXY_OVERUSE:              { label: 'Suremploi de proxies',       description: 'Plus de 5% des éléments sont IfcBuildingElementProxy — typiquement des familles Revit non converties' },
-    RULE_COORDINATE_OFFSET:          { label: 'Décalage de coordonnées',   description: 'La géométrie est à plus de 10 km de l\'origine SCM — provoque des erreurs de précision virgule flottante' },
+    RULE_COORDINATE_OFFSET:          { label: 'Décalage de coordonnées',   description: 'La géométrie est à plus de 10 km de l\'origine SCM — beaucoup d\'outils y perdent en précision ; ce visualiseur compense' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalie de taille de fichier', description: 'Le fichier est anormalement volumineux par élément — géométrie trop détaillée ou textures incorporées' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Ouverture sans hôte',         description: 'IfcOpeningElement non connecté à un élément hôte via IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Élévation de niveau dupliquée', description: 'Deux niveaux ou plus dans le même bâtiment ont la même valeur d\'élévation' },
@@ -1153,7 +1159,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'MEP-System fehlt',          description: 'MEP-Strömungselement keinem IfcSystem zugewiesen' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/Struktur-Kollision',    description: 'Begrenzungsrahmen eines MEP-Elements überlappt ein Strukturelement' },
     RULE_PROXY_OVERUSE:              { label: 'Proxy-Überbenutzung',        description: 'Mehr als 5% der Elemente sind IfcBuildingElementProxy — typischerweise nicht konvertierte Revit-Familien' },
-    RULE_COORDINATE_OFFSET:          { label: 'Großer Koordinatenversatz', description: 'Geometrie ist mehr als 10 km vom WCS-Ursprung entfernt — verursacht Gleitkomma-Präzisionsfehler' },
+    RULE_COORDINATE_OFFSET:          { label: 'Großer Koordinatenversatz', description: 'Geometrie ist mehr als 10 km vom WCS-Ursprung entfernt — viele Programme verlieren dort an Genauigkeit; dieser Viewer gleicht es aus' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Dateigrößen-Anomalie',      description: 'Datei ist pro Element ungewöhnlich groß — wahrscheinlich übermäßig detaillierte Geometrie oder eingebettete Texturen' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Öffnung ohne Host',          description: 'IfcOpeningElement nicht mit einem Host-Element über IfcRelVoidsElement verbunden' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Duplizierte Geschosshöhe',   description: 'Zwei oder mehr Geschosse im selben Gebäude haben denselben Höhenwert' },
@@ -1199,7 +1205,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP em falta',      description: 'Elemento de fluxo MEP não atribuído a nenhum IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Colisão MEP/estrutura',     description: 'Caixa delimitadora de elemento MEP sobrepõe elemento estrutural' },
     RULE_PROXY_OVERUSE:              { label: 'Uso excessivo de proxy',     description: 'Mais de 5% dos elementos são IfcBuildingElementProxy — tipicamente famílias Revit não convertidas' },
-    RULE_COORDINATE_OFFSET:          { label: 'Grande desvio de coordenadas', description: 'A geometria está a mais de 10 km da origem WCS — provoca erros de precisão de vírgula flutuante' },
+    RULE_COORDINATE_OFFSET:          { label: 'Grande desvio de coordenadas', description: 'A geometria está a mais de 10 km da origem WCS — muitas ferramentas perdem precisão aí; este visualizador compensa' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia de tamanho de ficheiro', description: 'O ficheiro é anormalmente grande por elemento — geometria excessivamente detalhada ou texturas incorporadas' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Abertura sem hospedeiro',    description: 'IfcOpeningElement não conectado a nenhum elemento hospedeiro via IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevação de piso duplicada', description: 'Dois ou mais pisos no mesmo edifício partilham o mesmo valor de elevação' },
@@ -1245,7 +1251,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP mancante',      description: 'Elemento di flusso MEP non assegnato ad alcun IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Scontro MEP/struttura',     description: 'Il bounding box di un elemento MEP si sovrappone a un elemento strutturale' },
     RULE_PROXY_OVERUSE:              { label: 'Uso eccessivo di proxy',     description: 'Più del 5% degli elementi sono IfcBuildingElementProxy — tipicamente famiglie Revit non convertite' },
-    RULE_COORDINATE_OFFSET:          { label: 'Grande offset di coordinate', description: 'La geometria è a più di 10 km dall\'origine WCS — causa errori di precisione in virgola mobile' },
+    RULE_COORDINATE_OFFSET:          { label: 'Grande offset di coordinate', description: 'La geometria è a più di 10 km dall\'origine WCS — molti strumenti perdono precisione lì; questo visualizzatore compensa' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia dimensione file',   description: 'Il file è insolitamente grande per elemento — probabile geometria troppo dettagliata o texture incorporate' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Apertura senza host',        description: 'IfcOpeningElement non collegato ad alcun elemento host tramite IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevazione piano duplicata', description: 'Due o più piani nello stesso edificio condividono lo stesso valore di elevazione' },
@@ -1291,7 +1297,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: '缺少 MEP 系统',             description: 'MEP 流量元素未分配到任何 IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/结构碰撞',              description: 'MEP 元素边界框与结构元素重叠' },
     RULE_PROXY_OVERUSE:              { label: '代理元素过多',               description: '超过5%的元素是 IfcBuildingElementProxy — 通常是未转换的 Revit 族' },
-    RULE_COORDINATE_OFFSET:          { label: '大坐标偏移',                description: '模型几何距离 WCS 原点超过 10 公里 — 导致浮点精度错误' },
+    RULE_COORDINATE_OFFSET:          { label: '大坐标偏移',                description: '模型几何距离 WCS 原点超过 10 公里 — 许多工具在此会损失精度；本查看器会自动补偿' },
     RULE_FILE_SIZE_ANOMALY:          { label: '文件大小异常',               description: '每个元素的文件大小异常偏大 — 可能是过于精细的几何体或嵌入纹理' },
     RULE_OPENING_WITHOUT_HOST:       { label: '开洞无宿主',                 description: 'IfcOpeningElement 未通过 IfcRelVoidsElement 连接到任何宿主元素' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: '楼层高程重复',               description: '同一建筑中两个或多个楼层共享相同的高程值' },
@@ -1337,7 +1343,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'MEP システム欠落',          description: 'いずれの IfcSystem にも割り当てられていない MEP フロー要素' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/構造干渉',              description: 'MEP 要素のバウンディングボックスが構造要素と重なっている' },
     RULE_PROXY_OVERUSE:              { label: 'プロキシの過剰使用',         description: '5%以上の要素が IfcBuildingElementProxy — 通常は変換されていない Revit ファミリ' },
-    RULE_COORDINATE_OFFSET:          { label: '大きな座標オフセット',       description: 'モデルジオメトリが WCS 原点から 10 km 以上離れている — 浮動小数点精度エラーを引き起こす' },
+    RULE_COORDINATE_OFFSET:          { label: '大きな座標オフセット',       description: 'モデルジオメトリが WCS 原点から 10 km 以上離れている — 多くのツールで精度が落ちます（このビューアーは補正します）' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'ファイルサイズの異常',        description: '要素あたりのファイルサイズが異常に大きい — 過度に詳細なジオメトリまたは埋め込みテクスチャの可能性' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'ホストのない開口',            description: 'IfcOpeningElement が IfcRelVoidsElement を介してホスト要素に接続されていない' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: '階高さの重複',               description: '同じ建物内の2つ以上の階が同じ高さの値を共有している' },
@@ -1383,7 +1389,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'ระบบ MEP หายไป',           description: 'องค์ประกอบการไหล MEP ไม่ได้กำหนดให้กับ IfcSystem ใด ๆ' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'การชน MEP/โครงสร้าง',      description: 'Bounding box ขององค์ประกอบ MEP ทับซ้อนกับองค์ประกอบโครงสร้าง' },
     RULE_PROXY_OVERUSE:              { label: 'การใช้ proxy มากเกินไป',     description: 'มากกว่า 5% ขององค์ประกอบเป็น IfcBuildingElementProxy — มักเป็นกลุ่ม Revit ที่ยังไม่ได้แปลง' },
-    RULE_COORDINATE_OFFSET:          { label: 'ค่าชดเชยพิกัดขนาดใหญ่',    description: 'เรขาคณิตของโมเดลอยู่ห่างจากจุดกำเนิด WCS มากกว่า 10 กม. — ทำให้เกิดข้อผิดพลาดความแม่นยำทศนิยม' },
+    RULE_COORDINATE_OFFSET:          { label: 'ค่าชดเชยพิกัดขนาดใหญ่',    description: 'เรขาคณิตของโมเดลอยู่ห่างจากจุดกำเนิด WCS มากกว่า 10 กม. — หลายเครื่องมือสูญเสียความแม่นยำ แต่โปรแกรมดูนี้ชดเชยให้' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'ความผิดปกติขนาดไฟล์',       description: 'ไฟล์มีขนาดใหญ่ผิดปกติต่อองค์ประกอบ — น่าจะเป็นเรขาคณิตละเอียดเกินไปหรือพื้นผิวที่ฝังอยู่' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'ช่องเปิดไม่มีโฮสต์',        description: 'IfcOpeningElement ไม่ได้เชื่อมต่อกับองค์ประกอบโฮสต์ใด ๆ ผ่าน IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'ระดับชั้นซ้ำกัน',           description: 'ชั้นสองชั้นขึ้นไปในอาคารเดียวกันมีค่าระดับชั้นเดียวกัน' },
@@ -1429,7 +1435,7 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP que falta',     description: 'Element de flux MEP no assignat a cap IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Col·lisió MEP/estructura',  description: 'La caixa delimitadora d\'un element MEP se superposa a un element estructural' },
     RULE_PROXY_OVERUSE:              { label: 'Ús excessiu de proxies',     description: 'Més del 5% dels elements són IfcBuildingElementProxy — típicament famílies de Revit no convertides' },
-    RULE_COORDINATE_OFFSET:          { label: 'Gran desplaçament de coordenades', description: 'La geometria està a més de 10 km de l\'origen WCS — provoca errors de precisió en coma flotant' },
+    RULE_COORDINATE_OFFSET:          { label: 'Gran desplaçament de coordenades', description: 'La geometria està a més de 10 km de l\'origen WCS — moltes eines hi perden precisió; aquest visor ho compensa' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia de mida de fitxer',  description: 'El fitxer és inusualment gran per element — probablement geometria massa detallada o textures incrustades' },
     RULE_OPENING_WITHOUT_HOST:       { label: 'Obertura sense amfitrió',     description: 'IfcOpeningElement no connectat a cap element amfitrió via IfcRelVoidsElement' },
     RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevació de planta duplicada', description: 'Dues o més plantes del mateix edifici comparteixen el mateix valor d\'elevació' },

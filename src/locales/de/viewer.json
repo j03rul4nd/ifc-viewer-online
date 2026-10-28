@@ -237,6 +237,8 @@
     },
     "placedByHand": "Manuell",
     "placedByHandHint": "Von Hand platziert: Die Karte setzt es nicht nach seiner Georeferenz zurück. „Zurücksetzen“ gibt es der Karte zurück.",
+    "mapCoords": "Kartenkoord.",
+    "mapCoordsHint": "Kartenkoordinaten in der Geometrie (≈{{east}} km O, {{north}} km N). Für die Genauigkeit verschoben angezeigt; Messungen, BCF und Exporte behalten die echten Koordinaten.",
     "frameOnDoubleClick": "Doppelklick zum Einpassen",
     "federation": {
       "search": "In {{count}} Modellen suchen…",

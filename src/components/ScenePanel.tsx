@@ -265,6 +265,17 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
               {t('scene.placedByHand')}
             </span>
           )}
+          {model.mapCoordsKm && (
+            <span
+              title={t('scene.mapCoordsHint', {
+                east: Math.round(model.mapCoordsKm.east).toLocaleString(),
+                north: Math.round(model.mapCoordsKm.north).toLocaleString(),
+              })}
+              className="ml-1.5 px-1 py-px rounded bg-[rgba(94,106,210,0.14)] text-[var(--accent-2)] text-[9px] font-medium"
+            >
+              {t('scene.mapCoords')}
+            </span>
+          )}
         </p>
       </button>
 

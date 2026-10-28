@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
 import Viewer from './components/Viewer'
+import { toIfcAxes } from './lib/measure/measure-math'
+
+/** Below this shift a model is just off-centre, not modelled at map coordinates. */
+const MAP_COORDS_MIN_M = 10_000
 import Toolbar from './components/Toolbar'
 import Sidebar from './components/Sidebar'
 import UploadOverlay from './components/UploadOverlay'
@@ -1480,11 +1484,16 @@ export default function App() {
       }
       // Notify an embedding parent (CDE / blog) that a model is ready, echoing
       // the SDK requestId of THIS job so it resolves the right add() promise.
+      // How far the viewer moved the geometry for precision (a file drawn in
+      // UTM, docs/FAR_COORDINATES.md), in IFC axes, so a host can translate
+      // between what it sees and the file's real coordinates.
+      const shift = viewerApiRef.current?.getModelCoordination(modelId) ?? null
       emitEmbedEvent('model-loaded', {
         modelId,
         fileName: info.fileName,
         elementCount: info.elementCount,
         fromCache,
+        coordination: shift ? toIfcAxes(shift) : null,
         requestId: ctx.requestId ?? undefined,
       })
       progressRelayRef.current.delete(ctx.jobId)
@@ -1493,7 +1502,14 @@ export default function App() {
       if (!firstInScene) trackFeatureUsed({ feature: 'multi_model' })
 
       // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
-      addSceneModel(modelId, info)
+      // A file drawn shifted (map coordinates in its vertices) says so in the
+      // Scene panel: drawn = real + shift, so the geometry is really at −shift.
+      const far = shift ? toIfcAxes(shift) : null
+      addSceneModel(modelId, info, {
+        mapCoordsKm: far && Math.hypot(far.x, far.y) > MAP_COORDS_MIN_M
+          ? { east: -far.x / 1000, north: -far.y / 1000 }
+          : null,
+      })
 
       const isDemo = ctx.origin === 'demo' || ctx.origin === 'companion' || DEMO_FILENAMES.has(info.fileName)
       trackFileOpened({
