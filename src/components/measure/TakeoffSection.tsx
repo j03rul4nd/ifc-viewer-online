@@ -99,7 +99,7 @@ export function TakeoffSection({ selection, viewerApiRef, settings, onFlash }: {
     const rows = buildRows()
     const sep = decimalSeparator(settings.locale) === ',' ? ';' : ','
     const blob = new Blob(['﻿' + toDelimited(rows, sep)], { type: 'text/csv;charset=utf-8' })
-    const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
+    const stamp = new Date().toISOString().slice(0, 16).replace(/\D/g, '')
     void shareOrDownload(blob, `${t('takeoff.filename')}-${stamp}.csv`)
   }, [buildRows, settings.locale, t])
 

@@ -371,7 +371,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
     // own convention, which makes the file open as numbers there.
     const sep = decimalSeparator(snapshot.settings.locale) === ',' ? ';' : ','
     const blob = new Blob(['﻿' + toDelimited(rows, sep)], { type: 'text/csv;charset=utf-8' })
-    const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
+    const stamp = new Date().toISOString().slice(0, 16).replace(/\D/g, '')
     // Phones: the share sheet (Mail, Files, WhatsApp); desktop: a download.
     void shareOrDownload(blob, `${t('export.filename')}-${stamp}.csv`)
   }, [buildRows, snapshot, t])
