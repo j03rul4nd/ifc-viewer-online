@@ -33,7 +33,7 @@ import {
 import { fileNameOfModelId, mintModelId } from './loading/model-id'
 import type { RouteService } from './route/route-service'
 import { setSceneDatumProvider, currentDatumProvider } from './bcf-viewpoint'
-import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
+import { resolveDatum, withinDatum, isShifted, crsPlacement, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type MapConversionLike, type Vec3 as DatumVec3 } from './coordination-datum'
 import {
   isAbortError, isFragmentsLoadAborted, loadCancelledError, pickActiveAfterDiscard,
   pollModelIdle, stageFraction, throwIfLoadAborted, type ModelIdleResult,
@@ -619,6 +619,13 @@ export interface ViewerAPI {
    * lost when it does.
    */
   getModelCoordination(modelId?: string): { x: number; y: number; z: number } | null
+  /**
+   * Draw a LOCAL model where its IfcMapConversion puts it on the grid that
+   * the scene datum is drawn in (a UTM model loaded beside it). Pass null to
+   * undo. Returns true when the model is now placed by its conversion.
+   * See coordination-datum, crsPlacement.
+   */
+  placeByMapConversion(modelId: string, conv: MapConversionLike | null): boolean
   /** Read back a model's transform values (in degrees for rotation). Defaults to active model. */
   getModelTransform(modelId?: string): Required<ModelTransform>
   /** Fit the camera to the combined bounding box of ALL loaded models. */
@@ -1833,10 +1840,28 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   function releaseDatumIfUnused(): void {
     if (!sceneDatum) return
     const d = sceneDatum
-    for (const c of modelCoordination.values()) {
+    for (const [id, c] of modelCoordination) {
+      if (crsPlaced.has(id)) continue
       if (c.x === d.x && c.y === d.y && c.z === d.z) return
     }
     sceneDatum = null
+    // Models placed through their map conversion were placed against this
+    // datum; without it they go back to their own coordinates.
+    for (const id of [...crsPlaced.keys()]) unplaceByConversion(id)
+  }
+
+  /** Local models drawn through their IfcMapConversion, and the placement applied. */
+  const crsPlaced = new Map<string, { position: DatumVec3; yawRad: number }>()
+
+  function unplaceByConversion(modelId: string): void {
+    const applied = crsPlaced.get(modelId)
+    crsPlaced.delete(modelId)
+    const model = modelObjects.get(modelId)
+    if (!applied || !model) return
+    model.object.position.sub(new THREE.Vector3(applied.position.x, applied.position.y, applied.position.z))
+    model.object.rotation.y -= applied.yawRad
+    model.object.updateMatrixWorld(true)
+    modelCoordination.set(modelId, { ...DATUM_ZERO })
   }
 
   function fmtShift(v: DatumVec3): string {
@@ -3075,6 +3100,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivotTransforms.delete(modelId)
       modelObjects.delete(modelId)
       modelCoordination.delete(modelId)
+      crsPlaced.delete(modelId)
       releaseDatumIfUnused()
       typeMapByModel.delete(modelId)
       modelHidden.delete(modelId)
@@ -3125,6 +3151,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
     modelObjects.clear()
     modelCoordination.clear()
+    crsPlaced.clear()
     sceneDatum = null
     typeMapByModel.clear()
     modelHidden.clear()
@@ -4066,6 +4093,30 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return (tid ? modelCoordination.get(tid) : null) ?? null
     },
 
+    placeByMapConversion(modelId, conv) {
+      const model = modelObjects.get(modelId)
+      if (!model) return false
+      // Only a model the loader left in its own coordinates: one drawn
+      // shifted already has its grid in its vertices.
+      const own = modelCoordination.get(modelId)
+      if (!crsPlaced.has(modelId) && isShifted(own)) return false
+      const next = conv ? crsPlacement(conv, sceneDatum) : null
+      const prev = crsPlaced.get(modelId)
+      if (prev && next && prev.yawRad === next.yawRad
+        && prev.position.x === next.position.x && prev.position.y === next.position.y && prev.position.z === next.position.z) return true
+      unplaceByConversion(modelId)
+      if (!next) return false
+      model.object.rotation.y += next.yawRad
+      model.object.position.add(new THREE.Vector3(next.position.x, next.position.y, next.position.z))
+      model.object.updateMatrixWorld(true)
+      crsPlaced.set(modelId, next)
+      // The translation part. Exact for an unrotated conversion; with a
+      // rotation, real file coordinates are no longer a pure offset away.
+      modelCoordination.set(modelId, { ...next.position })
+      log.info(`"${modelId}" placed by its IfcMapConversion in the scene datum (${fmtShift(next.position)} m, ${(next.yawRad * 180 / Math.PI).toFixed(2)}°)`)
+      return true
+    },
+
     getFragmentsModel(modelId?: string) {
       const tid = modelId ?? currentModelId
       return (tid ? modelObjects.get(tid) : null) ?? currentModel ?? null
@@ -4229,6 +4280,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       modelObjects.delete(modelId)
       modelCoordination.delete(modelId)
+      crsPlaced.delete(modelId)
       releaseDatumIfUnused()
       typeMapByModel.delete(modelId)
       modelHidden.delete(modelId)

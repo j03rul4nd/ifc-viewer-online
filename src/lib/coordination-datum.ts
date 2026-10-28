@@ -115,3 +115,55 @@ export function resolveDatum({ own, drawnCentre, datum }: DatumInput): DatumResu
     role: 'joined',
   }
 }
+
+// ── Federating a LOCAL model through its IfcMapConversion ─────────────────────
+// The other half of a mixed federation: an architecture model in local
+// coordinates that states, in its IfcMapConversion, where its origin sits on
+// the grid — next to a civil model whose vertices ARE that grid (UTM). Both
+// describe one site; only the CRS relates them. With the datum set by the
+// civil model (drawn = grid + D), the local one is drawn at
+//
+//     drawn = Ry(θ) · local + scene(E, N, H) + D
+//
+// θ = the conversion's rotation (its X axis, CCW from grid east, which is a
+// CCW turn about scene +Y), scene(E, N, H) = (E, H, −N). Scale is left at 1:
+// a grid scale factor (0.9996 in UTM) shrinks distances by 0.4 mm per metre,
+// which no viewer that federates by shared coordinates applies either, and
+// applying it would change every measurement taken on the model.
+
+/** What a local model's IfcMapConversion says (metres, degrees). */
+export interface MapConversionLike {
+  eastings: number
+  northings: number
+  heightM: number | null
+  /** X axis of the local frame, degrees CCW from grid east. */
+  rotationDeg: number
+}
+
+export interface CrsPlacement {
+  /** Translation of the model's object, scene axes: scene(E, N, H) + D. */
+  position: Vec3
+  /** Turn about scene +Y, radians. */
+  yawRad: number
+}
+
+/**
+ * Where a local model with a map conversion belongs in a scene whose datum is
+ * `datum`, or null when it does not belong there: no datum, or a conversion
+ * that puts it on another site (beyond the join radius of the datum's origin —
+ * another zone, another CRS, or a wrong conversion that must stay visible
+ * rather than be drawn hundreds of kilometres away).
+ */
+export function crsPlacement(conv: MapConversionLike, datum: Vec3 | null): CrsPlacement | null {
+  if (!datum || !isShifted(datum)) return null
+  const { eastings: e, northings: n } = conv
+  if (!Number.isFinite(e) || !Number.isFinite(n)) return null
+  const h = conv.heightM !== null && Number.isFinite(conv.heightM) ? conv.heightM : 0
+  const grid: Vec3 = { x: e, y: h, z: -n }
+  if (planDistance(grid, datumOrigin(datum)) > DATUM_JOIN_RADIUS_M) return null
+  const rot = Number.isFinite(conv.rotationDeg) ? conv.rotationDeg : 0
+  return {
+    position: { x: grid.x + datum.x, y: grid.y + datum.y, z: grid.z + datum.z },
+    yawRad: (rot * Math.PI) / 180,
+  }
+}
