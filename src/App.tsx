@@ -83,7 +83,9 @@ const LazyMspGlobalView = React.lazy(() => import('./components/MspGlobalView'))
 // /twin-builder — build your own AGV or import twin, all in the browser.
 const LazyTwinBuilderView = React.lazy(() => import('./components/twin-builder/TwinBuilderView'))
 // Paid-workspace design on sample data — team-only (pricing preview gate).
-const LazyWorkspacePreview = React.lazy(() => import('./components/workspace/WorkspacePreview'))
+const LazyWorkspacePreview = React.lazy(() =>
+  // Its translations travel with the route: start both downloads together.
+  Promise.all([import('./components/workspace/WorkspacePreview'), i18n.loadNamespaces('workspace')]).then(([m]) => m))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'

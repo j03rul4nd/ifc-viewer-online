@@ -107,8 +107,13 @@ export function quote(item: CheckoutItem, buyer: Buyer): CheckoutQuote {
   }
 }
 
-export const fmtEur = (n: number) =>
-  new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR', minimumFractionDigits: Number.isInteger(n) ? 0 : 2 }).format(n)
+export const fmtEur = (n: number, locale?: string) =>
+  new Intl.NumberFormat(locale ?? currentLocale(), { style: 'currency', currency: 'EUR', minimumFractionDigits: Number.isInteger(n) ? 0 : 2 }).format(n)
+
+/** The page language (html lang), so prices read the way the rest of the screen does. */
+function currentLocale(): string | undefined {
+  return typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined
+}
 
 // ── Provider seam ─────────────────────────────────────────────────────────────
 

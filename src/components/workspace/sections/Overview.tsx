@@ -4,45 +4,48 @@ import type { SectionProps } from '../registry'
 import { Panel, Head, SectionLabel, Primary, Quiet, type Tone } from '../ui'
 import CreditBar from '../CreditBar'
 import { ProjectList } from './Projects'
+import { useTx, rich, type Tx } from '../i18n'
 
-export const featureName = (id: PaidFeatureId) => PAID_FEATURES.find((f) => f.id === id)?.title ?? id
+
+export const featureName = (id: PaidFeatureId, tx: Tx = (s) => s) => tx(PAID_FEATURES.find((f) => f.id === id)?.title ?? id)
 
 interface Attention { tone: Tone; title: string; detail: string; action: string; run: () => void }
 const TONE_COLOR: Record<Tone, string> = { danger: 'var(--danger)', warn: 'var(--warn)', info: 'var(--text-dim)', ok: 'var(--ok)' }
 
-export function attentionItems(data: WorkspaceData, actions: SectionProps['actions']): Attention[] {
+export function attentionItems(data: WorkspaceData, actions: SectionProps['actions'], tx: Tx): Attention[] {
   const items: Attention[] = []
   const c = data.account.credits
-  if (c.balance === 0) items.push({ tone: 'danger', title: 'You are out of credits', detail: 'Cloud jobs are paused until your plan renews or you top up. Browser tools keep working.', action: 'Top up', run: actions.topUp })
-  else if (creditsLeftRatio(c) <= 0.2) items.push({ tone: 'warn', title: `${c.balance} credits left this period`, detail: `Enough for about ${Math.floor(c.balance / 30)} auto-fix runs.`, action: 'Top up', run: actions.topUp })
+  if (c.balance === 0) items.push({ tone: 'danger', title: tx('You are out of credits'), detail: tx('Cloud jobs are paused until your plan renews or you top up. Browser tools keep working.'), action: tx('Top up'), run: actions.topUp })
+  else if (creditsLeftRatio(c) <= 0.2) items.push({ tone: 'warn', title: tx('{{n}} credits left this period', { n: c.balance }), detail: tx('Enough for about {{n}} auto-fix runs.', { n: Math.floor(c.balance / 30) }), action: tx('Top up'), run: actions.topUp })
   for (const p of data.projects) {
     const v = p.versions
     if (v.length >= 2 && v[v.length - 1].score < v[v.length - 2].score) {
       const last = v[v.length - 1], prev = v[v.length - 2]
-      items.push({ tone: 'warn', title: `${p.name}: ${last.label} scored lower than ${prev.label}`, detail: `${last.score} vs ${prev.score} · ${last.newIssues} new issues`, action: 'Compare versions', run: () => actions.go('projects') })
+      items.push({ tone: 'warn', title: tx('{{project}}: {{last}} scored lower than {{prev}}', { project: p.name, last: last.label, prev: prev.label }), detail: tx('{{a}} vs {{b}} · {{n}} new issues', { a: last.score, b: prev.score, n: last.newIssues }), action: tx('Compare versions'), run: () => actions.go('projects') })
     }
   }
   for (const j of data.jobs.filter((j) => j.status === 'failed')) {
-    items.push({ tone: 'info', title: `${featureName(j.feature)} failed on ${j.file}`, detail: j.refunded ? `${j.credits} credits were returned.` : (j.result ?? ''), action: 'See job', run: () => actions.go('jobs') })
+    items.push({ tone: 'info', title: tx('{{job}} failed on {{file}}', { job: featureName(j.feature, tx), file: j.file }), detail: j.refunded ? tx('{{n}} credits were returned.', { n: j.credits }) : tx(j.result ?? ''), action: tx('See job'), run: () => actions.go('jobs') })
   }
   return items
 }
 
 /** First-run steps, in the order that gets a new subscriber to their first proof of value. */
 function SetupChecklist({ actions }: Pick<SectionProps, 'actions'>) {
+  const tx = useTx()
   const steps: { title: string; body: string; done: boolean; action: string; run: () => void }[] = [
-    { title: 'Your plan is active', body: '200 credits are in your balance.', done: true, action: '', run: () => {} },
-    { title: 'Create your first project', body: 'One project per model you deliver. Every version you add is compared with the last.', done: false, action: 'Create project', run: () => actions.go('projects') },
-    { title: 'Pick the requirements you are checked against', body: 'Health Score only, an IDS, or your client’s EIR. You can change it per project.', done: false, action: 'Open settings', run: () => actions.go('settings') },
-    { title: 'Run your first cloud job', body: 'Auto-fix gives you a clean IFC back; the cost is shown before it runs.', done: false, action: 'Run a job', run: actions.newJob },
-    { title: 'Issue a certificate for a client', body: 'One link they can check without an account.', done: false, action: 'See how', run: () => actions.go('certificates') },
+    { title: tx("Your plan is active"), body: tx("200 credits are in your balance."), done: true, action: '', run: () => {} },
+    { title: tx("Create your first project"), body: tx("One project per model you deliver. Every version you add is compared with the last."), done: false, action: tx("Create project"), run: () => actions.go('projects') },
+    { title: tx("Pick the requirements you are checked against"), body: tx("Health Score only, an IDS, or your client’s EIR. You can change it per project."), done: false, action: tx("Open settings"), run: () => actions.go('settings') },
+    { title: tx("Run your first cloud job"), body: tx("Auto-fix gives you a clean IFC back; the cost is shown before it runs."), done: false, action: tx("Run a job"), run: actions.newJob },
+    { title: tx("Issue a certificate for a client"), body: tx("One link they can check without an account."), done: false, action: tx("See how"), run: () => actions.go('certificates') },
   ]
   const done = steps.filter((x) => x.done).length
   return (
     <section aria-labelledby="setup" data-tour="setup">
       <div className="flex items-baseline justify-between mb-2">
-        <SectionLabel id="setup">Get set up</SectionLabel>
-        <span className="text-[12px] tabular-nums text-[var(--text-faint)]">{done} of {steps.length}</span>
+        <SectionLabel id="setup">{tx("Get set up")}</SectionLabel>
+        <span className="text-[12px] tabular-nums text-[var(--text-faint)]">{tx('{{done}} of {{total}}', { done, total: steps.length })}</span>
       </div>
       <ol className="rounded-[10px] border border-[var(--border)] divide-y divide-[var(--border)] bg-[var(--surface)]">
         {steps.map((st, i) => (
@@ -56,12 +59,13 @@ function SetupChecklist({ actions }: Pick<SectionProps, 'actions'>) {
           </li>
         ))}
       </ol>
-      <p className="mt-3 text-[12px] text-[var(--text-dim)]">Stuck? <button className="text-[var(--accent)] hover:underline" onClick={() => actions.contact('question')}>Ask us</button> — a person answers within one working day.</p>
+      <p className="mt-3 text-[12px] text-[var(--text-dim)]">{rich(tx('Stuck? <0>Ask us</0> — a person answers within one working day.'), [(c) => <button className="text-[var(--accent)] hover:underline" onClick={() => actions.contact('question')}>{c}</button>])}</p>
     </section>
   )
 }
 
 function UsageThisPeriod({ data }: { data: WorkspaceData }) {
+  const tx = useTx()
   // Net of refunds: a job that failed on our side cost nothing.
   const byFeature = new Map<string, number>()
   for (const e of data.ledger.filter((x) => x.kind === 'usage' || x.kind === 'refund')) {
@@ -72,12 +76,12 @@ function UsageThisPeriod({ data }: { data: WorkspaceData }) {
   const max = Math.max(1, ...rows.map((r) => r[1]))
   return (
     <Panel className="p-4 sm:p-5">
-      <p className="text-[12px] text-[var(--text-dim)]">Credits used, by tool · refunds deducted</p>
-      {rows.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">Nothing yet.</p> : (
+      <p className="text-[12px] text-[var(--text-dim)]">{tx("Credits used, by tool · refunds deducted")}</p>
+      {rows.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">{tx("Nothing yet.")}</p> : (
         <ul className="mt-3 space-y-2">
           {rows.map(([k, v]) => (
             <li key={k} className="text-[12.5px]">
-              <div className="flex justify-between gap-2"><span className="min-w-0 [overflow-wrap:anywhere]">{k}</span><span className="tabular-nums text-[var(--text-dim)]">{v}</span></div>
+              <div className="flex justify-between gap-2"><span className="min-w-0 [overflow-wrap:anywhere]">{tx(k)}</span><span className="tabular-nums text-[var(--text-dim)]">{v}</span></div>
               <div className="mt-1 h-1 rounded-full bg-[var(--surface-2)]"><div className="h-full rounded-full bg-[var(--text-dim)]" style={{ width: `${(v / max) * 100}%` }} /></div>
             </li>
           ))}
@@ -88,16 +92,17 @@ function UsageThisPeriod({ data }: { data: WorkspaceData }) {
 }
 
 function RecentActivity({ data }: { data: WorkspaceData }) {
+  const tx = useTx()
   if (data.activity.length === 0) return null
   return (
     <section className="mt-6" data-tour="activity">
-      <SectionLabel>Recent activity</SectionLabel>
+      <SectionLabel>{tx("Recent activity")}</SectionLabel>
       <Panel>
         <ol className="divide-y divide-[var(--border)] text-[13px]">
           {data.activity.map((e, i) => (
             <li key={i} className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3 px-4 py-2.5">
               <span className="text-[11.5px] text-[var(--text-faint)] tabular-nums sm:w-[120px] shrink-0">{e.at}</span>
-              <span className="min-w-0"><span className="text-[var(--text-dim)]">{e.who} {e.what}</span> {e.target && <span className="font-medium break-words">{e.target}</span>}</span>
+              <span className="min-w-0 text-[var(--text-dim)]">{rich(tx(`${e.who} ${e.what} <0>{{target}}</0>`, { target: e.target }), [(c) => <span className="font-medium text-[var(--text)] break-words">{c}</span>])}</span>
             </li>
           ))}
         </ol>
@@ -107,27 +112,28 @@ function RecentActivity({ data }: { data: WorkspaceData }) {
 }
 
 export default function Overview({ data, actions }: SectionProps) {
+  const tx = useTx()
   const plan = data.account.plan === 'team' ? 'Team' : 'Pro'
   if (data.projects.length === 0 && data.jobs.length === 0) {
     return (
       <>
-        <Head title="Your workspace" sub={`${data.account.org} · ${plan}`} />
+        <Head title={tx("Your workspace")} sub={`${data.account.org} · ${plan}`} />
         <Panel className="p-4 sm:p-5 mb-6"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
         <SetupChecklist actions={actions} />
       </>
     )
   }
 
-  const items = attentionItems(data, actions)
+  const items = attentionItems(data, actions, tx)
   const running = data.jobs.filter((j) => j.status === 'running')
   return (
     <>
-      <Head title="Overview" sub={`${data.account.org} · ${plan}`} action={<Primary onClick={actions.newJob}>Run a cloud job</Primary>} />
+      <Head title={tx("Overview")} sub={`${data.account.org} · ${plan}`} action={<Primary onClick={actions.newJob}>{tx("Run a cloud job")}</Primary>} />
 
       <section aria-labelledby="attn" className="mb-6" data-tour="attention">
-        <SectionLabel id="attn">Needs your attention</SectionLabel>
+        <SectionLabel id="attn">{tx("Needs your attention")}</SectionLabel>
         {items.length === 0 ? (
-          <p className="text-[13px] text-[var(--text-dim)]">Nothing — every project held or improved its score.</p>
+          <p className="text-[13px] text-[var(--text-dim)]">{tx("Nothing — every project held or improved its score.")}</p>
         ) : (
           <ul className="rounded-[10px] border border-[var(--border)] divide-y divide-[var(--border)]">
             {items.map((it, i) => (
@@ -148,14 +154,14 @@ export default function Overview({ data, actions }: SectionProps) {
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] mb-6">
         <Panel tour="credits" className="p-4 sm:p-5"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
         <Panel tour="running" className="p-4 sm:p-5">
-          <p className="text-[12px] text-[var(--text-dim)]">Running</p>
-          {running.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">No jobs running.</p> : running.map((j) => (
+          <p className="text-[12px] text-[var(--text-dim)]">{tx("Running")}</p>
+          {running.length === 0 ? <p className="mt-2 text-[13px] text-[var(--text-dim)]">{tx("No jobs running.")}</p> : running.map((j) => (
             <div key={j.id} className="mt-2">
-              <p className="text-[13.5px] font-medium">{featureName(j.feature)}</p>
+              <p className="text-[13.5px] font-medium">{featureName(j.feature, tx)}</p>
               <p className="text-[12px] text-[var(--text-dim)] [overflow-wrap:anywhere]">{j.file}</p>
               {j.progress && (
                 <>
-                  <div className="mt-2 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden" role="progressbar" aria-label={`${featureName(j.feature)} progress`} aria-valuenow={j.progress.pct} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="mt-2 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden" role="progressbar" aria-label={`${featureName(j.feature, tx)} progress`} aria-valuenow={j.progress.pct} aria-valuemin={0} aria-valuemax={100}>
                     <div className="h-full bg-[var(--text-dim)]" style={{ width: `${j.progress.pct}%` }} />
                   </div>
                   <p className="mt-1 text-[11.5px] text-[var(--text-faint)]">{j.progress.step} · {j.progress.pct}%</p>
@@ -168,11 +174,11 @@ export default function Overview({ data, actions }: SectionProps) {
 
       <div className="grid gap-6 lg:gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0" data-tour="projects">
-          <SectionLabel>Projects</SectionLabel>
+          <SectionLabel>{tx("Projects")}</SectionLabel>
           <ProjectList projects={data.projects} onOpen={actions.openProject} />
         </div>
         <div className="min-w-0" data-tour="usage">
-          <SectionLabel>This period</SectionLabel>
+          <SectionLabel>{tx("This period")}</SectionLabel>
           <UsageThisPeriod data={data} />
         </div>
       </div>
