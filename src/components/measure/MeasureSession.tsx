@@ -91,7 +91,7 @@ export function MeasureSession({ system, items, modelNames, onFlash, touch }: {
   const save = useCallback(() => {
     if (!items.length) return
     const blob = new Blob([serializeMeasurements(items, modelNames)], { type: 'application/json' })
-    const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
+    const stamp = new Date().toISOString().slice(0, 16).replace(/\D/g, '')
     void shareOrDownload(blob, `${t('export.filename')}-${stamp}.json`)
   }, [items, modelNames, t])
 
