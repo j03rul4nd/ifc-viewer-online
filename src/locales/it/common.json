@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Ridimensiona il pannello",
-    "resizePanelHint": "Trascina o usa i tasti freccia per ridimensionare. Doppio clic per cambiare dimensione."
+    "resizePanelHint": "Trascina o usa i tasti freccia per ridimensionare. Doppio clic per cambiare dimensione.",
+    "maximizePanel": "Ingrandisci pannello",
+    "restorePanel": "Ripristina dimensione pannello"
   }
 }

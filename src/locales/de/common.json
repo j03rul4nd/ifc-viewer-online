@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Panelgröße ändern",
-    "resizePanelHint": "Ziehen oder Pfeiltasten verwenden, um die Größe zu ändern. Doppelklick wechselt die Größe."
+    "resizePanelHint": "Ziehen oder Pfeiltasten verwenden, um die Größe zu ändern. Doppelklick wechselt die Größe.",
+    "maximizePanel": "Bereich maximieren",
+    "restorePanel": "Bereichsgröße wiederherstellen"
   }
 }

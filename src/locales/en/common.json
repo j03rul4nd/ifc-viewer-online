@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Resize panel",
-    "resizePanelHint": "Drag or use the arrow keys to resize. Double-click to switch size."
+    "resizePanelHint": "Drag or use the arrow keys to resize. Double-click to switch size.",
+    "maximizePanel": "Maximize panel",
+    "restorePanel": "Restore panel size"
   }
 }

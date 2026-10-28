@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Redimensionar o painel",
-    "resizePanelHint": "Arraste ou use as teclas de seta para redimensionar. Clique duas vezes para alternar o tamanho."
+    "resizePanelHint": "Arraste ou use as teclas de seta para redimensionar. Clique duas vezes para alternar o tamanho.",
+    "maximizePanel": "Maximizar painel",
+    "restorePanel": "Restaurar tamanho do painel"
   }
 }

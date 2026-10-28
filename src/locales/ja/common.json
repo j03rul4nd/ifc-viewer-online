@@ -352,6 +352,8 @@
   },
   "layout": {
     "resizePanel": "パネルのサイズを変更",
-    "resizePanelHint": "ドラッグするか矢印キーでサイズを変更します。ダブルクリックでサイズを切り替えます。"
+    "resizePanelHint": "ドラッグするか矢印キーでサイズを変更します。ダブルクリックでサイズを切り替えます。",
+    "maximizePanel": "パネルを最大化",
+    "restorePanel": "パネルのサイズを戻す"
   }
 }
