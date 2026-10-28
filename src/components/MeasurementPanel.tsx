@@ -44,7 +44,7 @@ import {
 import { checkItem, volumeOf } from '../lib/measure/checks'
 import { CheckBadge, MeasureRules, formatRequirement } from './measure/MeasureRules'
 import { TakeoffSection } from './measure/TakeoffSection'
-import { anchorsLine, crossesModels, formatLatLon } from './measure/anchors'
+import { anchorsLine, crossKind, formatLatLon } from './measure/anchors'
 import { RouteDetails, RouteModeChips } from './measure/RouteDetails'
 import { MeasureSession, useLoadedModelNames, useMeasureAutosave } from './measure/MeasureSession'
 import { defaultPrecisionFor, loadMeasureSettings, saveMeasureSettings } from '../lib/measure/measure-settings'
@@ -1072,7 +1072,7 @@ function MeasureRow(p: RowProps) {
             <p className="mt-1.5 text-[10px] leading-snug text-[var(--text-dim)] flex items-start gap-1">
               <span className="text-[var(--text-faint)] shrink-0">{t('item.on')}</span>
               <span className="min-w-0 break-words">{anchors}</span>
-              {crossesModels(item) && <span className="shrink-0 px-1 rounded bg-[rgba(94,106,210,0.15)] text-[var(--accent-2)]">{t('item.crossModel')}</span>}
+              {(() => { const ck = crossKind(item); return ck && <span className="shrink-0 px-1 rounded bg-[rgba(94,106,210,0.15)] text-[var(--accent-2)]">{ck === 'models' ? t('item.crossModel') : ck === 'modelMap' ? t('item.crossModelMap') : t('item.crossMap')}</span> })()}
             </p>
           )}
           {note && <p className="mt-1.5 text-[10px] text-[var(--text-faint)] leading-snug">{note}</p>}

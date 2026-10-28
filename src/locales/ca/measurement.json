@@ -111,6 +111,8 @@
     "headroomNote": "Alçada lliure vertical fins a la superfície següent.",
     "on": "Sobre",
     "crossModel": "Entre models",
+    "crossModelMap": "Model ↔ mapa",
+    "crossMap": "Entre elements del mapa",
     "climb": "Pujada · baixada",
     "maxSlope": "Pendent màxim",
     "latLon": "Lat, lon",

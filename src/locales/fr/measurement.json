@@ -111,6 +111,8 @@
     "headroomNote": "Hauteur libre verticale jusqu’à la surface suivante.",
     "on": "Sur",
     "crossModel": "Entre maquettes",
+    "crossModelMap": "Maquette ↔ carte",
+    "crossMap": "Entre éléments de la carte",
     "climb": "Montée · descente",
     "maxSlope": "Pente maximale",
     "latLon": "Lat, lon",
