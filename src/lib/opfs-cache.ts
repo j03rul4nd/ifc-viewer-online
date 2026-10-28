@@ -400,6 +400,7 @@ export async function saveCacheEntry(key: string, input: SaveCacheEntryInput): P
 
     await writeFile(dir, `${base}${META}`, JSON.stringify(entry))
     log.debug('Saved cache entry:', key, `(${fragBytes} bytes fragments${ifcSize != null ? `, ${ifcSize} bytes IFC` : ''})`)
+    requestPersistence()
     return { ok: true }
   } catch (err) {
     await removeEntryFiles(dir, base)
@@ -409,6 +410,35 @@ export async function saveCacheEntry(key: string, input: SaveCacheEntryInput): P
   } finally {
     writing.delete(base)
   }
+}
+
+let persistAsked = false
+
+/**
+ * Ask once, after the first entry lands, for storage the browser will not
+ * evict under pressure. Without it Safari may drop the whole origin's OPFS
+ * after days unused (or sooner on a full phone), and the next visit converts
+ * again. Asked here rather than on page load: it is only worth asking for once
+ * there is something to keep, and Chrome grants it more readily to an origin
+ * the visitor has used. A refusal changes nothing.
+ */
+export function requestPersistence(nav: unknown = typeof navigator !== 'undefined' ? navigator : undefined): void {
+  if (persistAsked) return
+  persistAsked = true
+  const storage = (nav as { storage?: { persisted?: () => Promise<boolean>; persist?: () => Promise<boolean> } } | undefined)?.storage
+  if (typeof storage?.persist !== 'function') return
+  void (async () => {
+    try {
+      if (await storage.persisted?.()) return
+      const granted = await storage.persist!()
+      log.debug('persistent storage', granted ? 'granted' : 'refused')
+    } catch { /* not allowed in this context */ }
+  })()
+}
+
+/** Tests only. */
+export function __resetPersistence(): void {
+  persistAsked = false
 }
 
 /**

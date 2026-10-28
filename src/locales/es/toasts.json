@@ -16,7 +16,8 @@
     "dropUnsupported_other": "{{count}} archivos no tienen un formato compatible",
     "dropBcfHint": "Abre el panel BCF para importar archivos .bcf",
     "dropWeatherNoModel": "Abre primero un modelo y luego suelta encima el archivo climático .epw",
-    "mapDeclined": "El enlace pedía mostrar el mapa; sigue apagado hasta que lo permitas (panel Mapa)."
+    "mapDeclined": "El enlace pedía mostrar el mapa; sigue apagado hasta que lo permitas (panel Mapa).",
+    "heavyOnDevice": "\"{{fileName}}\" pesa {{mb}} MB: es grande para este dispositivo. Convertirlo aquí puede cerrar la pestaña; en un ordenador carga sin problema."
   },
   "validation": {
     "complete": "Validación completada — {{count}} incidencias encontradas",
@@ -47,5 +48,9 @@
   },
   "scene": {
     "failed": "No se pudo abrir la escena: {{message}}"
+  },
+  "viewer": {
+    "gpuLost": "La vista 3D se ha quedado sin memoria gráfica. Recarga para recuperarla.",
+    "reload": "Recargar"
   }
 }

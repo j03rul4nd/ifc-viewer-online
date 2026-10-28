@@ -16,7 +16,8 @@
     "dropUnsupported_other": "{{count}} files are not a supported format",
     "dropBcfHint": "Open the BCF panel to import .bcf files",
     "dropWeatherNoModel": "Open a model first, then drop the .epw weather file on it",
-    "mapDeclined": "The link asked to show the map; it stays off until you allow it (Map panel)."
+    "mapDeclined": "The link asked to show the map; it stays off until you allow it (Map panel).",
+    "heavyOnDevice": "\"{{fileName}}\" is {{mb}} MB: large for this device. Converting it here may close the tab — on a computer it loads safely."
   },
   "validation": {
     "complete": "Validation complete — {{count}} issues found",
@@ -47,5 +48,9 @@
   },
   "scene": {
     "failed": "The scene could not be opened: {{message}}"
+  },
+  "viewer": {
+    "gpuLost": "The 3D view lost its graphics memory. Reload to get it back.",
+    "reload": "Reload"
   }
 }

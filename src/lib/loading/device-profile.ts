@@ -60,6 +60,19 @@ export function computeMemoryConstrained(g: unknown = globalThis): boolean {
   return env.deviceMemoryGB !== null && env.deviceMemoryGB <= 4
 }
 
+/**
+ * Above this an IFC converted ON a constrained device risks the tab: the
+ * conversion peaks near 5× the file plus ~100 MB, next to the viewer and the
+ * GPU in one capped process. Measured headroom on recent iPhones is roughly a
+ * 1–1.5 GB tab; 80 MB (≈ 500 MB peak) is where it stops being comfortable.
+ */
+export const HEAVY_CONVERT_BYTES = 80 * 1024 * 1024
+
+/** True when converting `sizeBytes` here deserves a warning first. */
+export function isHeavyConvert(sizeBytes: number, constrained = isMemoryConstrained()): boolean {
+  return constrained && sizeBytes >= HEAVY_CONVERT_BYTES
+}
+
 let cached: boolean | null = null
 
 /**

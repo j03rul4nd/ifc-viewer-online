@@ -392,6 +392,7 @@ interface HarnessOpts {
   indexTimeoutMs?: number
   sha256?: (data: Uint8Array) => Promise<ArrayBuffer>
   prebuilt?: (fingerprint: string, signal: AbortSignal) => Promise<ArrayBuffer | null>
+  willConvert?: (info: { fileName: string; sizeBytes: number }) => void
 }
 
 function harness(opts: HarnessOpts = {}) {
@@ -454,6 +455,7 @@ function harness(opts: HarnessOpts = {}) {
     indexTimeoutMs: opts.indexTimeoutMs,
     sha256: opts.sha256,
     prebuilt: opts.prebuilt,
+    willConvert: opts.willConvert,
   })
   mgr.registerAdapter(adapter)
   const events: LoadEvent[] = []
@@ -639,6 +641,15 @@ describe('IFC source — cache', () => {
     const outcome = await settle(h.submitFile('Tower.ifc'))
     expect(outcome).toMatchObject({ status: 'loaded', fromCache: false })
     expect(h.pool.calls).toHaveLength(1)
+  })
+
+  it('announces a conversion on the device, and not a prebuilt hit', async () => {
+    const seen: string[] = []
+    const conv = harness({ prebuilt: async () => null, willConvert: (i) => seen.push(i.fileName) })
+    await settle(conv.submitFile('Big.ifc'))
+    const hit = harness({ prebuilt: async () => new Uint8Array([1, 2, 3]).buffer, willConvert: (i) => seen.push(i.fileName) })
+    await settle(hit.submitFile('Shipped.ifc'))
+    expect(seen).toEqual(['Big.ifc'])
   })
 
   it('skipCache evicts the entry and converts', async () => {

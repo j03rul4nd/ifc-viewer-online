@@ -1168,6 +1168,44 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   if (coarsePointer) wr.setPixelRatio(densityFor('standard'))
   wr.shadowMap.enabled   = true
   wr.shadowMap.type      = THREE.PCFShadowMap   // PCFSoftShadowMap deprecated in Three.js r175+
+
+  // ── Losing the GPU ──
+  // iOS reclaims a tab's WebGL context under memory pressure (a second heavy
+  // tab, the map, a big model) and the canvas goes blank. three.js already
+  // keeps the context restorable and re-uploads what it draws; the postpro
+  // targets need their size back. Safari often never gives the context back,
+  // though — after a few seconds the visitor gets a toast with a reload
+  // instead of a black viewer that looks like a crash.
+  {
+    const canvas = wr.domElement
+    let lostTimer: ReturnType<typeof setTimeout> | null = null
+    canvas.addEventListener('webglcontextlost', () => {
+      log.warn('WebGL context lost')
+      if (lostTimer) clearTimeout(lostTimer)
+      lostTimer = setTimeout(() => {
+        lostTimer = null
+        // A disposed viewer loses its context on purpose (forceContextLoss —
+        // React mounts the viewer twice in dev, a remount replaces it): its
+        // canvas has left the page. Only a live, still-lost canvas is news.
+        if (!canvas.isConnected) return
+        try { if (!wr.getContext().isContextLost()) return } catch { /* no context at all: tell */ }
+        void Promise.all([import('../stores/toastStore'), import('../i18n/config')]).then(([{ toast }, { default: i18n }]) => {
+          toast(i18n.t('toasts:viewer.gpuLost'), 'error', {
+            duration: 0,
+            action: { label: i18n.t('toasts:viewer.reload'), run: () => window.location.reload() },
+          })
+        }).catch(() => { /* nothing left to tell */ })
+      }, 4000)
+    })
+    canvas.addEventListener('webglcontextrestored', () => {
+      log.info('WebGL context restored')
+      if (lostTimer) { clearTimeout(lostTimer); lostTimer = null }
+      // Inside the try: this can fire before postproductionReady is declared.
+      try {
+        if (postproductionReady) world.renderer?.postproduction.setSize(canvas.width, canvas.height)
+      } catch { /* not initialised */ }
+    })
+  }
   wr.outputColorSpace    = THREE.SRGBColorSpace
   wr.toneMapping         = THREE.ACESFilmicToneMapping
   wr.toneMappingExposure = 1.05

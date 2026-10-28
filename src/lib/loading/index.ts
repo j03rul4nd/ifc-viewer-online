@@ -34,6 +34,7 @@ import { createMeshSourceAdapter } from './mesh-source'
 import { registerLoadingController, type DuplicateMatch, type ImportOptions, type LoadingController } from './controller'
 import { inferBatchName } from './discipline'
 import { fingerprintBlob, meshIdentity } from './fingerprint'
+import { isHeavyConvert } from './device-profile'
 import type {
   JobHandle, JobOrigin, LoadBatchView, LoadError, LoadEvent, LoadJobView, LoadSource, Priority, SourceKind, SubmitOptions,
 } from './types'
@@ -197,6 +198,10 @@ export function getLoadManager(): LoadManager {
     },
     retainedBytes: (modelId) => modelRegistry.getBuffer(modelId),
     // The IFC files we ship come with their fragments converted offline.
+    willConvert: ({ fileName, sizeBytes }) => {
+      if (!isHeavyConvert(sizeBytes)) return
+      toast(i18n.t('toasts:model.heavyOnDevice', { fileName, mb: Math.round(sizeBytes / 1024 ** 2) }), 'warning', { duration: 9000 })
+    },
     prebuilt: (fingerprint, signal) => import('./prebuilt-frags').then((m) => m.findPrebuiltFragments(fingerprint, signal)),
     // The policy knows the device budget: a job whose estimated peak is over
     // 60 % of it converts alone.

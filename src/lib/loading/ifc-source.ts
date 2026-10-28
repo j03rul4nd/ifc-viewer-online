@@ -256,6 +256,12 @@ export interface IfcSourceDeps {
    * before converting.
    */
   prebuilt?(fingerprint: string, signal: AbortSignal): Promise<ArrayBuffer | null>
+  /**
+   * Called once when this file is about to be converted on the device (no
+   * cache, no prebuilt). The app warns there when the file is large for the
+   * device — the conversion peak is what kills a phone's tab. Must not throw.
+   */
+  willConvert?(info: { fileName: string; sizeBytes: number }): void
   /** Decide camera framing for this job (default: opts.frame ?? true). */
   shouldFrame?(opts: Readonly<SubmitOptions>): boolean
   /**
@@ -856,6 +862,7 @@ export function createIfcSourceAdapter(deps: IfcSourceDeps): SourceAdapter {
       }
     }
     if (!fragments) {
+      try { deps.willConvert?.({ fileName, sizeBytes: size }) } catch { /* a warning must not fail the load */ }
       fragments = await convert(ctx, m, enter, () => current, () => reporter)
     }
     if (!fromCache) {
