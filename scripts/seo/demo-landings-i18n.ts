@@ -25,6 +25,7 @@ const es: LangPack = {
     wantText: 'Hecho de principio a fin por Joel Benítez. Busco primeros clientes y socios.',
     contact: 'Contactar', allDemos: 'Todas las demos', validator: 'Validador IFC', validatorPath: '/es/ifc-validador/',
     rights: 'Capturas © 2026 Joel Benítez · IFC Viewer Online',
+    build: 'Crea tu propio gemelo',
   },
   pages: {
     'agv-digital-twin': {
@@ -160,6 +161,7 @@ const de: LangPack = {
     wantText: 'Komplett entwickelt von Joel Benítez. Auf der Suche nach ersten Kunden und Partnern.',
     contact: 'Kontakt aufnehmen', allDemos: 'Alle Live-Demos', validator: 'IFC-Validator', validatorPath: '/de/ifc-validator-online/',
     rights: 'Screenshots © 2026 Joel Benítez · IFC Viewer Online',
+    build: 'Eigenen Zwilling bauen',
   },
   pages: {
     'agv-digital-twin': {
@@ -295,6 +297,7 @@ const fr: LangPack = {
     wantText: 'Conçu de bout en bout par Joel Benítez. À la recherche de premiers clients et partenaires.',
     contact: 'Prendre contact', allDemos: 'Toutes les démos', validator: 'Validateur IFC', validatorPath: '/fr/validateur-ifc-en-ligne/',
     rights: "Captures d'écran © 2026 Joel Benítez · IFC Viewer Online",
+    build: 'Créez votre propre jumeau',
   },
   pages: {
     'agv-digital-twin': {
@@ -430,6 +433,7 @@ const pt: LangPack = {
     wantText: 'Feito de ponta a ponta por Joel Benítez. À procura dos primeiros clientes e parceiros.',
     contact: 'Entrar em contacto', allDemos: 'Todas as demos', validator: 'Validador IFC', validatorPath: '/pt/validador-ifc-online/',
     rights: 'Capturas © 2026 Joel Benítez · IFC Viewer Online',
+    build: 'Crie o seu próprio gémeo',
   },
   pages: {
     'agv-digital-twin': {
@@ -565,6 +569,7 @@ const it: LangPack = {
     wantText: 'Realizzato da capo a fondo da Joel Benítez. Cerco i primi clienti e partner.',
     contact: 'Contattami', allDemos: 'Tutte le demo', validator: 'Validatore IFC', validatorPath: '/it/validatore-ifc-online/',
     rights: 'Screenshot © 2026 Joel Benítez · IFC Viewer Online',
+    build: 'Crea il tuo gemello',
   },
   pages: {
     'agv-digital-twin': {
@@ -700,6 +705,7 @@ const ca: LangPack = {
     wantText: 'Fet de cap a peus per Joel Benítez. Busco primers clients i socis.',
     contact: 'Contactar', allDemos: 'Totes les demos', validator: 'Validador IFC', validatorPath: '/ca/validador-ifc-en-linia/',
     rights: 'Captures © 2026 Joel Benítez · IFC Viewer Online',
+    build: 'Crea el teu propi bessó',
   },
   pages: {
     'agv-digital-twin': {
@@ -835,6 +841,7 @@ const zh: LangPack = {
     wantText: '由 Joel Benítez 从头到尾独立打造。正在寻找首批客户和合作伙伴。',
     contact: '联系我', allDemos: '全部实时演示', validator: 'IFC 验证器', validatorPath: '/zh/ifc-validator-online/',
     rights: '截图 © 2026 Joel Benítez · IFC Viewer Online',
+    build: '创建你自己的数字孪生',
   },
   pages: {
     'agv-digital-twin': {
@@ -970,6 +977,7 @@ const ja: LangPack = {
     wantText: 'Joel Benítez が一人で一貫して開発。最初のお客様とパートナーを探しています。',
     contact: 'お問い合わせ', allDemos: 'すべてのライブデモ', validator: 'IFC バリデーター', validatorPath: '/ja/ifc-validator-online/',
     rights: 'スクリーンショット © 2026 Joel Benítez · IFC Viewer Online',
+    build: '自分のデジタルツインを作る',
   },
   pages: {
     'agv-digital-twin': {
@@ -1105,6 +1113,7 @@ const th: LangPack = {
     wantText: 'พัฒนาตั้งแต่ต้นจนจบโดย Joel Benítez กำลังมองหาลูกค้าและพาร์ตเนอร์รายแรก',
     contact: 'ติดต่อ', allDemos: 'เดโมสดทั้งหมด', validator: 'ตัวตรวจสอบ IFC', validatorPath: '/th/ifc-validator-online/',
     rights: 'ภาพหน้าจอ © 2026 Joel Benítez · IFC Viewer Online',
+    build: 'สร้างดิจิทัลทวินของคุณเอง',
   },
   pages: {
     'agv-digital-twin': {

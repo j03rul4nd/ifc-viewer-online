@@ -7,6 +7,7 @@ import { generateBlogPages } from './scripts/seo/generate-blog-pages'
 import { generateLegalPages } from './scripts/seo/generate-legal-pages'
 import { generateEbookPage } from './scripts/seo/generate-ebook-page'
 import { generateMspPage } from './scripts/seo/generate-msp-page'
+import { generateTwinBuilderPage } from './scripts/seo/generate-twin-builder-page'
 import { generateLangShells } from './scripts/seo/generate-lang-shells'
 
 // ── Static landing content injection ─────────────────────────────────────────
@@ -163,9 +164,11 @@ function generateMspPageShell(): import('vite').Plugin {
       const distDir = path.resolve(__dirname, 'dist')
       if (!existsSync(distDir)) return
       const r = generateMspPage(distDir)
+      const tb = generateTwinBuilderPage(distDir)
+      r.pages += tb.pages; r.errors += tb.errors
       // eslint-disable-next-line no-console
       console.log(`
-  ✓ Demos page: ${r.pages} shell · ${r.errors ? `⚠ ${r.errors} errors` : 'ok'}
+  ✓ Demos + twin builder pages: ${r.pages} shells · ${r.errors ? `⚠ ${r.errors} errors` : 'ok'}
 `)
     },
   }

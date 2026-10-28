@@ -78,6 +78,7 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - Office IT digital twin on an IFC model (EN): https://www.ifcvieweronline.eu/office-it-digital-twin/
 - Digital twin examples, with screenshots (EN): https://www.ifcvieweronline.eu/digital-twin-examples/
 - IFC viewer examples, screenshots of real IFC models (EN): https://www.ifcvieweronline.eu/ifc-viewer-examples/
+- Digital twin builder: your own AGV warehouse twin or import tracker from your layout, products and orders spreadsheet, in the browser (EN): https://www.ifcvieweronline.eu/twin-builder/
 
 ### Localized landings (9 languages — ES/DE/FR/PT/IT/CA/ZH/JA/TH)
 Each language has all four concepts (validator, Solibri alternative, cloud validator, Solibri WebChecker alternative). Validator entry points per language:

@@ -1212,10 +1212,22 @@
     <priority>0.3</priority>
   </url>
 
+  <!-- Digital twin builder (AGV warehouse, import tracker) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/twin-builder/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+  </url>
+
   <!-- demo-landings:start (scripts/seo/build-demo-landings.ts) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/agv-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1234,7 +1246,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/china-import-tracker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1255,7 +1267,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/office-it-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1274,7 +1286,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1297,7 +1309,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/digital-twin-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1321,7 +1333,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/gemelo-digital-agv/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1340,7 +1352,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/seguimiento-importaciones-china/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1361,7 +1373,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/gemelo-digital-it-oficina/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1380,7 +1392,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/ejemplos-visor-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1403,7 +1415,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/ejemplos-gemelo-digital/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1427,7 +1439,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/agv-digitaler-zwilling/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1446,7 +1458,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/china-import-tracking/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1467,7 +1479,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/it-digitaler-zwilling-buero/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1486,7 +1498,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/ifc-viewer-beispiele/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1509,7 +1521,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/digitaler-zwilling-beispiele/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1533,7 +1545,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/jumeau-numerique-agv/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1552,7 +1564,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/suivi-importations-chine/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1573,7 +1585,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/jumeau-numerique-it-bureau/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1592,7 +1604,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/exemples-visionneuse-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1615,7 +1627,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/exemples-jumeau-numerique/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1639,7 +1651,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1658,7 +1670,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1679,7 +1691,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/gemeo-digital-ti-escritorio/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1698,7 +1710,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/exemplos-visualizador-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1721,7 +1733,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/exemplos-gemeo-digital/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1745,7 +1757,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/gemello-digitale-agv/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1764,7 +1776,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/tracciamento-importazioni-cina/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1785,7 +1797,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/gemello-digitale-it-ufficio/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1804,7 +1816,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/esempi-visualizzatore-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1827,7 +1839,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/esempi-gemello-digitale/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1851,7 +1863,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/besso-digital-agv/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1870,7 +1882,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1891,7 +1903,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/besso-digital-it-oficina/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1910,7 +1922,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/exemples-visor-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1933,7 +1945,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/exemples-besso-digital/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1957,7 +1969,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/agv-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1976,7 +1988,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/china-import-tracker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1997,7 +2009,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/office-it-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2016,7 +2028,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2039,7 +2051,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/digital-twin-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2063,7 +2075,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/agv-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -2082,7 +2094,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/china-import-tracker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -2103,7 +2115,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/office-it-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2122,7 +2134,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2145,7 +2157,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/digital-twin-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2169,7 +2181,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/agv-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -2188,7 +2200,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/china-import-tracker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -2209,7 +2221,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/office-it-digital-twin/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2228,7 +2240,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2251,7 +2263,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/digital-twin-examples/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
