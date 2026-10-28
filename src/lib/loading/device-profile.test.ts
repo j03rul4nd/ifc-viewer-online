@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeMemoryConstrained, isAppleMobile } from './device-profile'
+import { computeMemoryConstrained, isAppleMobile, isHeavyConvert, HEAVY_CONVERT_BYTES } from './device-profile'
 
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
 const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
@@ -34,5 +34,11 @@ describe('device profile', () => {
   it('never throws on an empty global', () => {
     expect(computeMemoryConstrained({})).toBe(false)
     expect(computeMemoryConstrained(null)).toBe(false)
+  })
+
+  it('flags a heavy conversion only on a constrained device', () => {
+    expect(isHeavyConvert(HEAVY_CONVERT_BYTES, true)).toBe(true)
+    expect(isHeavyConvert(HEAVY_CONVERT_BYTES - 1, true)).toBe(false)
+    expect(isHeavyConvert(500 * 1024 * 1024, false)).toBe(false)
   })
 })

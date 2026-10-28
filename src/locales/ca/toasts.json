@@ -16,7 +16,8 @@
     "dropUnsupported_other": "{{count}} fitxers no tenen un format compatible",
     "dropBcfHint": "Obre el panell BCF per importar fitxers .bcf",
     "dropWeatherNoModel": "Obre primer un model i després deixa-hi anar el fitxer climàtic .epw",
-    "mapDeclined": "L'enllaç demanava mostrar el mapa; continua apagat fins que ho permetis (panell Mapa)."
+    "mapDeclined": "L'enllaç demanava mostrar el mapa; continua apagat fins que ho permetis (panell Mapa).",
+    "heavyOnDevice": "\"{{fileName}}\" pesa {{mb}} MB: és gran per a aquest dispositiu. Convertir-lo aquí pot tancar la pestanya; en un ordinador es carrega sense problemes."
   },
   "validation": {
     "complete": "Validació completada — {{count}} problema(es) trobat(s)",
@@ -47,5 +48,9 @@
   },
   "scene": {
     "failed": "No s'ha pogut obrir l'escena: {{message}}"
+  },
+  "viewer": {
+    "gpuLost": "La vista 3D s'ha quedat sense memòria gràfica. Recarrega per recuperar-la.",
+    "reload": "Recarrega"
   }
 }
