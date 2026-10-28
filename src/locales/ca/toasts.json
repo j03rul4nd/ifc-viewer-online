@@ -9,6 +9,8 @@
     "mapFailed": "No s'ha pogut obrir el mode mapa: {{message}}",
     "scanLoadFailed": "No s'ha pogut carregar l'escaneig de l'enllaç: {{message}}",
     "loadFailedNamed": "No s'ha pogut carregar \"{{fileName}}\" — {{reason}}",
+    "serverProcessingAction": "Processar al servidor (properament)",
+    "serverProcessingNoted": "Anotat: el processament al servidor de fitxers grans arribarà al pla Pro. Mentrestant, prova d'exportar el model per parts o amb menys propietats.",
     "batchLoaded_one": "{{name}} — {{count}} model carregat",
     "batchLoaded_other": "{{name}} — {{count}} models carregats",
     "batchPartial": "{{name}} — {{loaded}} carregats, {{failed}} amb error",

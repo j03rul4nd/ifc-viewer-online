@@ -9,6 +9,8 @@
     "mapFailed": "Impossibile aprire la modalità mappa: {{message}}",
     "scanLoadFailed": "Impossibile caricare la scansione del link: {{message}}",
     "loadFailedNamed": "Impossibile caricare \"{{fileName}}\" — {{reason}}",
+    "serverProcessingAction": "Elabora sul server (in arrivo)",
+    "serverProcessingNoted": "Annotato: l'elaborazione su server dei file grandi arriverà con Pro. Nel frattempo prova a esportare il modello in parti o con meno proprietà.",
     "batchLoaded_one": "{{name}} — {{count}} modello caricato",
     "batchLoaded_other": "{{name}} — {{count}} modelli caricati",
     "batchPartial": "{{name}} — {{loaded}} caricati, {{failed}} non riusciti",

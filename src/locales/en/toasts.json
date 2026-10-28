@@ -9,6 +9,8 @@
     "mapFailed": "Map mode could not open: {{message}}",
     "scanLoadFailed": "Could not load the linked scan: {{message}}",
     "loadFailedNamed": "\"{{fileName}}\" could not be loaded — {{reason}}",
+    "serverProcessingAction": "Process on server (coming soon)",
+    "serverProcessingNoted": "Noted — server processing for large files is coming to Pro. For now, try exporting the model in parts or with fewer properties.",
     "batchLoaded_one": "{{name}} — {{count}} model loaded",
     "batchLoaded_other": "{{name}} — {{count}} models loaded",
     "batchPartial": "{{name}} — {{loaded}} loaded, {{failed}} failed",

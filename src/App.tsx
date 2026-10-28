@@ -268,6 +268,7 @@ import {
   trackViewerFirstInteraction,
   trackFeatureUsed,
   trackFileOpenFailed,
+  trackServerProcessingInterest,
   trackIdsFileLoaded,
 } from './lib/analytics'
 
@@ -528,6 +529,10 @@ function measurementsOut(api: ViewerAPI) {
 }
 
 // Camera presets accepted by the `ifcviewer:view` embed command.
+/** Files at or above this size that fail to load get the server-processing
+ *  fake door: ~10 % of uploads are > 100 MB (docs-planning/08 §1). */
+const LARGE_FILE_FAKE_DOOR_MB = 100
+
 const CAMERA_PRESETS: CameraPreset[] = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right']
 
 // All non-English blog language prefixes supported in URLs
@@ -1543,6 +1548,19 @@ export default function App() {
       const reason = error.code === 'http'
         ? i18n.t('loading:error.http', { status: error.httpStatus ?? '?' })
         : i18n.t(`loading:error.${error.code}`)
+      // Fake door (docs-planning/12 §7): a large file the browser could not
+      // take is the strongest intent to pay we measure. Server processing does
+      // not exist yet; the click only counts demand.
+      const sizeMb = Math.round(job.sizeBytes / 1_048_576)
+      const serverProcessingDoor = sizeMb >= LARGE_FILE_FAKE_DOOR_MB && !isEmbedded()
+        ? {
+            label: tToasts('model.serverProcessingAction'),
+            run: () => {
+              trackServerProcessingInterest({ file_size_mb: sizeMb })
+              toast(tToasts('model.serverProcessingNoted'), 'info', { duration: 10000 })
+            },
+          }
+        : undefined
       // The geometry did not fit (a 300–400 MB model, typically) but the file is
       // readable IFC: offer the Health Score without the 3D instead of a dead end.
       const source = getLoadManager().failedSource(job.id)
@@ -1556,7 +1574,9 @@ export default function App() {
               setLoadError(null)
               toast(i18n.t('loading:validationOnly.running', { fileName: job.displayName }), 'info')
               validateWithout3d(source!, job.fileName).then(
-                () => toast(i18n.t('loading:validationOnly.done', { fileName: job.displayName }), 'success'),
+                // Validated, but still no 3D: the moment server processing would help.
+                () => toast(i18n.t('loading:validationOnly.done', { fileName: job.displayName }), 'success',
+                  serverProcessingDoor ? { duration: 0, action: serverProcessingDoor } : undefined),
                 (err: unknown) => toast(i18n.t('loading:validationOnly.failed', {
                   fileName: job.displayName, reason: err instanceof Error ? err.message : String(err),
                 }), 'error'),
@@ -1566,7 +1586,8 @@ export default function App() {
         })
         return
       }
-      toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error')
+      toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error',
+        serverProcessingDoor ? { duration: 0, action: serverProcessingDoor } : undefined)
     },
 
     onLoadCancelled: (job) => {

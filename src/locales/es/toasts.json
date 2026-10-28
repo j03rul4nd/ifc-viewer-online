@@ -9,6 +9,8 @@
     "mapFailed": "No se pudo abrir el modo mapa: {{message}}",
     "scanLoadFailed": "No se pudo cargar el escaneo del enlace: {{message}}",
     "loadFailedNamed": "No se pudo cargar \"{{fileName}}\" — {{reason}}",
+    "serverProcessingAction": "Procesar en servidor (próximamente)",
+    "serverProcessingNoted": "Anotado: el procesado en servidor de archivos grandes llegará al plan Pro. Mientras tanto, prueba a exportar el modelo por partes o con menos propiedades.",
     "batchLoaded_one": "{{name}} — {{count}} modelo cargado",
     "batchLoaded_other": "{{name}} — {{count}} modelos cargados",
     "batchPartial": "{{name}} — {{loaded}} cargados, {{failed}} con error",
