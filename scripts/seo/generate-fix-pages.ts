@@ -120,9 +120,6 @@ function fixCoverUrl(lang: Lang, cat: string): string {
 
 /** Browser theme color (matches the app shell) + inline SVG favicon. */
 const THEME_COLOR = '#0A0A0C'
-const FAVICON =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235E6AD2'/%3E%3Cpath d='M8 22 L16 8 L24 22 Z M12 22 L16 15 L20 22' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"
-
 // Rules already covered by a richer, hand-authored page — skip them here so we
 // don't publish a thinner competing page. Shared with the app, which links to
 // the hand-authored page for exactly these rules.
@@ -955,7 +952,9 @@ ${p.keywords ? `  <meta name="keywords" content="${esc(p.keywords)}" />\n` : ''}
   <meta name="twitter:description" content="${esc(p.desc)}" />
   <meta name="twitter:image" content="${p.ogImg}" />
 ${p.altLinksHtml ?? altLinks(p.slug)}
-  <link rel="icon" href="${FAVICON}" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 ${FONT_LINKS}
   <script type="application/ld+json">
 ${JSON.stringify(p.jsonLd, null, 2)}
