@@ -177,6 +177,7 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
   const created  = text('CreationDate')
   const author   = text('CreationAuthor')
   const assigned = text('AssignedTo')
+  const due      = text('DueDate')
 
   // Labels: 2.1 repeats <Labels>, each one a label; 3.0 has one <Labels> that
   // holds a <Label> per label. Each <Labels> is read by what it holds.
@@ -207,6 +208,7 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
     priority:       priority || undefined,
     creationDate:   created  || undefined,
     creationAuthor: author   || undefined,
+    dueDate:        due      || undefined,
     assignedTo:     assigned || undefined,
     labels:         labels.length > 0 ? labels : undefined,
     comments,

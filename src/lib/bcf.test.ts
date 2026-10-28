@@ -481,6 +481,26 @@ describe('BCF import: comments', () => {
     }
   })
 
+  it('writes the 2.1 required CreationDate and CreationAuthor even when the issue has none', () => {
+    const bare = { ...topicWithComments(), creationDate: undefined, creationAuthor: undefined }
+    bare.comments = bare.comments.map((c) => ({ ...c, author: '' }))
+    const markup = buildBcfTextEntries([bare], '2.1')[`${bare.guid}/markup.bcf`]
+    expect(markup).toMatch(/<CreationDate>\d{4}-\d{2}-\d{2}T[^<]+<\/CreationDate>/)
+    expect(markup).toContain('<CreationAuthor>IFC Viewer Online</CreationAuthor>')
+    expect(markup).not.toContain('<Author></Author>')
+  })
+
+  it('round-trips DueDate in 2.1 and 3.0, right after CreationAuthor', () => {
+    for (const version of ['2.1', '3.0'] as const) {
+      const sent = { ...topicWithComments(), dueDate: '2026-11-30T00:00:00Z' }
+      const markup = buildBcfTextEntries([sent], version)[`${sent.guid}/markup.bcf`]
+      const names = topicChildren(markup)
+      expect(names.indexOf('DueDate'), version).toBe(names.indexOf('CreationAuthor') + 1)
+      const [topic] = parseBcfZip(asBuffer(exportBcfZip([sent], version))).topics
+      expect(topic.dueDate, version).toBe(sent.dueDate)
+    }
+  })
+
   it('decodes &apos; and character references another tool writes, once', () => {
     const topic = 'eeeeeeee-0000-0000-0000-000000000011'
     const { topics } = parseBcfZip(zipOf({
