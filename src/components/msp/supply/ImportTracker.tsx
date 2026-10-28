@@ -10,11 +10,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
-  createTracker, advance, stageOf, progressOf, pointAt, etaH, totalH, trackKpis, agentUpdate, erpReceipt,
+  createTracker, advance, stageOf, positionOf, configureSupply, applyUpdates, etaH, totalH, trackKpis, agentUpdate, erpReceipt,
   milestones, landedCost, expediteOption, payments, containers, supplierScores, attention, summary,
   PLACES, LANES, STAGE_LABEL, SIM_HOURS_PER_S,
-  type Tracker, type Shipment, type Mode, type Stage, type TrackEvent, type TrackKpis, type Container, type SupplierScore, type Attention,
+  type AgentUpdateRow, type Tracker, type Shipment, type Mode, type Stage, type TrackEvent, type TrackKpis, type Container, type SupplierScore, type Attention,
 } from './supply'
+import { updatesFromJson, type ImportsTwinConfig } from './config'
 
 const MODE_COLOR: Record<Mode, string> = { sea: '#38bdf8', air: '#f59e0b', rail: '#a78bfa' }
 const MODE_LABEL: Record<Mode, string> = { sea: 'Sea', air: 'Air', rail: 'Rail' }
@@ -39,7 +40,13 @@ function Chip({ color, children }: { color: string; children: ReactNode }) {
   return <span className="rounded-full px-2 py-0.5 text-[11.5px] font-semibold" style={{ background: color + '2e', color }}>{children}</span>
 }
 
-export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: () => void; onOpenWarehouse?: () => void }) {
+export default function ImportTracker({ onWant, onOpenWarehouse, config, updates }: {
+  onWant?: () => void; onOpenWarehouse?: () => void
+  /** A user's own setup (the builder). Read once, on mount: remount to change it. */
+  config?: ImportsTwinConfig
+  /** Agent updates to apply (a spreadsheet the user loaded); new ones are applied as they come. */
+  updates?: AgentUpdateRow[]
+}) {
   const mapEl = useRef<HTMLDivElement>(null)
   const trackerRef = useRef<Tracker | null>(null)
   const selRef = useRef<string | null>(null)
@@ -59,6 +66,38 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
     return () => window.removeEventListener('resize', on)
   }, [])
   const [expedited, setExpedited] = useState<Set<string>>(new Set())
+  const [feedStatus, setFeedStatus] = useState<{ ok: boolean; text: string } | null>(null)
+
+  // Updates the user loaded from a spreadsheet: applied once each.
+  const appliedRef = useRef(0)
+  useEffect(() => {
+    const t = trackerRef.current
+    if (!t || !updates?.length || appliedRef.current >= updates.length) return
+    applyUpdates(t, updates.slice(appliedRef.current))
+    appliedRef.current = updates.length
+  }, [updates, snap])
+
+  // The agent's portal, polled from this browser.
+  useEffect(() => {
+    const f = config?.feed
+    if (!f?.enabled || !f.url) return
+    let stop = false, timer = 0
+    const poll = async () => {
+      try {
+        const res = await fetch(f.url, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const rows = updatesFromJson(await res.json(), f.listPath)
+        const t = trackerRef.current
+        const n = t ? applyUpdates(t, rows) : 0
+        if (!stop) setFeedStatus({ ok: true, text: `Agent feed · ${n} updates · ${new Date().toLocaleTimeString()}` })
+      } catch (e) {
+        if (!stop) setFeedStatus({ ok: false, text: `Agent feed: ${(e as Error).message || 'failed'} (CORS?)` })
+      }
+      if (!stop) timer = window.setTimeout(poll, f.everyS * 1000)
+    }
+    void poll()
+    return () => { stop = true; window.clearTimeout(timer) }
+  }, [config?.feed])
 
   useEffect(() => { selRef.current = sel; if (sel) setDetailTab('timeline') }, [sel])
   useEffect(() => { followRef.current = follow }, [follow])
@@ -68,9 +107,18 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
     if (!el) return
     const narrow = el.clientWidth < 768
     const map = L.map(el, { zoomControl: false, attributionControl: true, worldCopyJump: true, minZoom: 1, zoomSnap: 0.25 })
-    map.fitBounds(L.latLngBounds([...LANES.sea, ...LANES.rail, ...LANES.cape, PLACES.yiwu.at, PLACES.zaragoza.at]), {
-      paddingTopLeft: [20, 130], paddingBottomRight: [narrow ? 20 : 400, narrow ? Math.round(el.clientHeight * 0.4) : 30],
-    })
+    configureSupply(config?.setup)
+    const bounds = L.latLngBounds([...LANES.sea, ...LANES.rail, ...LANES.cape, ...Object.values(PLACES).map((p) => p.at)])
+    // Frame everything; again when the box first gets a real size (it can mount hidden or tiny).
+    const frame = () => {
+      const w = el.clientWidth, h = el.clientHeight
+      if (w < 50 || h < 50) return false
+      const n = w < 768
+      map.fitBounds(bounds, { paddingTopLeft: [20, Math.min(130, h * 0.2)], paddingBottomRight: [n ? 20 : Math.min(400, w * 0.4), n ? Math.round(h * 0.4) : 30] })
+      return true
+    }
+    let framed = frame()
+    if (!framed) map.setView([30, 60], 2)
     // Phones pinch; the buttons would sit on the panel.
     if (!narrow) L.control.zoom({ position: 'bottomleft' }).addTo(map)
     // OpenStreetMap's own tiles, darkened in CSS (.it-tiles); CARTO's dark set wants a key.
@@ -89,7 +137,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
     }
 
     const t = createTracker(21)
-    advance(t, 24 * 4)
+    if (!t.live) advance(t, 24 * 4)
     trackerRef.current = t
 
     const markers = new Map<string, L.Marker>()
@@ -99,7 +147,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
         className: '', iconSize: [30, 30], iconAnchor: [15, 15],
         html: `<div class="it-pin" style="--c:${MODE_COLOR[s.mode]}"><svg viewBox="0 0 20 20" width="15" height="15" style="color:#0b0d10">${MODE_GLYPH[s.mode]}</svg></div>`,
       })
-      const m = L.marker(pointAt(s.route, progressOf(t, s)).at, { icon }).addTo(map)
+      const m = L.marker(positionOf(t, s).at, { icon }).addTo(map)
       m.on('click', () => setSel(s.id))
       markers.set(s.id, m)
     }
@@ -110,7 +158,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
       const dt = Math.min(0.1, (now - last) / 1000); last = now
       advance(t, dt * SIM_HOURS_PER_S)
       for (const s of t.shipments) {
-        const p = pointAt(s.route, progressOf(t, s))
+        const p = positionOf(t, s)
         const m = markers.get(s.id)!
         m.setLatLng(p.at)
         const elm = m.getElement()
@@ -135,7 +183,10 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
       }
     }
     raf = requestAnimationFrame(loop)
-    const ro = new ResizeObserver(() => map.invalidateSize())
+    let touched = false
+    map.on('zoomstart movestart', (e) => { if ((e as L.LeafletEvent & { originalEvent?: Event }).originalEvent) touched = true })
+    map.on('mousedown touchstart', () => { touched = true })
+    const ro = new ResizeObserver(() => { map.invalidateSize(); if (!touched) framed = frame() || framed })
     ro.observe(el)
     return () => { cancelAnimationFrame(raf); ro.disconnect(); map.remove() }
   }, [])
@@ -181,8 +232,11 @@ export default function ImportTracker({ onWant, onOpenWarehouse }: { onWant?: ()
 
       <div className="pointer-events-none absolute left-3 right-3 top-3 z-[500] md:left-4 md:right-[412px] md:top-4">
         <div className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
-          <p className="truncate text-[13px] font-semibold md:text-[16px]">Your imports from China</p>
-          <span className="flex-none rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[11px] font-semibold text-[#f59e0b]">Simulated</span>
+          <p className="truncate text-[13px] font-semibold md:text-[16px]">{config ? `${config.setup.company} · imports` : 'Your imports from China'}</p>
+          {config?.setup.live
+            ? <span className="flex-none rounded-full bg-[#22c55e]/20 px-2 py-0.5 text-[11px] font-semibold text-[#22c55e]">Your dates</span>
+            : <span className="flex-none rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[11px] font-semibold text-[#f59e0b]">Simulated</span>}
+          {feedStatus && <span className={`flex-none text-[11px] ${feedStatus.ok ? 'text-[#86efac]' : 'text-[#fca5a5]'}`}>{feedStatus.text}</span>}
         </div>
         {snap && (
           <div className="mt-2 grid grid-cols-3 gap-1.5 md:mt-2.5 md:max-w-[480px] md:gap-2">
