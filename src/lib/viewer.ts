@@ -2464,6 +2464,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     pdTime = Date.now()
     pdX    = e.clientX
     pdY    = e.clientY
+    // Pressing on the scene hands the keyboard back to it: a toolbar button
+    // clicked a moment ago would otherwise keep focus and eat the arrow keys.
+    const focused = document.activeElement as HTMLElement | null
+    if (focused && focused !== document.body && !canvas.contains(focused)) focused.blur?.()
   }
 
   const onPointerUp = (e: PointerEvent): void => {
