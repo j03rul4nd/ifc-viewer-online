@@ -305,6 +305,13 @@
       },
       "supersededNote_one": "1 ältere Revision derselben Datei",
       "supersededNote_other": "{{count}} ältere Revisionen derselben Dateien"
+    },
+    "documents": {
+      "title": "Dokumente · {{count}}",
+      "open": "in neuem Tab öffnen",
+      "download": "herunterladen",
+      "remove": "{{name}} entfernen",
+      "note": "Kamen mit Ihrem Ordner oder Archiv. Nur in diesem Tab, nie hochgeladen."
     }
   },
   "transform": {

@@ -30,6 +30,14 @@ export type DeferredReasonKey = 'unsupported.e57' | 'unsupported.proprietary'
 export interface DropPlan {
   ifc: File[]
   ids: File | null
+  /** Further .ids files of the same drop: kept in the IDS library, not discarded. */
+  moreIds: File[]
+  /**
+   * Project documents that travel with the models — PDFs, office files,
+   * images, notes, CAD exports. Nothing renders them in 3D; they are kept with
+   * the scene (documentStore) so the set arrives whole.
+   */
+  documents: File[]
   bcf: File[]
   pointcloud: File[]
   /** Entry files, sidecars and textures — one selection for the mesh loader. */
@@ -48,12 +56,25 @@ export interface DropPlan {
 /** The data kinds a drop can hand to a panel, in follow-up priority order. */
 export type FollowUpKind = 'pointcloud' | 'mesh' | 'video' | 'layers'
 
+/**
+ * Files kept as project documents. Text and CSV only land here when
+ * classifyFiles already decided they are not a point list (next to an IFC).
+ */
+export const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set([
+  '.pdf', '.doc', '.docx', '.odt', '.rtf', '.md', '.txt', '.csv',
+  '.xls', '.xlsx', '.ods', '.ppt', '.pptx', '.odp',
+  '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.tif', '.tiff', '.heic',
+  '.dwg', '.dxf', '.rvt', '.rfa', '.nwd', '.nwc', '.skp', '.3dm', '.pln',
+  '.xml', '.json', '.yaml', '.yml', '.ini', '.cfg', '.html', '.htm', '.eml', '.msg',
+])
+
 export function planDrop(files: readonly File[], caps: DropCaps): DropPlan {
   const r = classifyFiles(files)
-  const unsupported: File[] = [...r.other]
+  const documents = r.other.filter((f) => DOCUMENT_EXTENSIONS.has(fileExtensionOf(f.name)))
+  const unsupported: File[] = r.other.filter((f) => !DOCUMENT_EXTENSIONS.has(fileExtensionOf(f.name)))
 
   const ids = r.ids[0] ?? null
-  unsupported.push(...r.ids.slice(1))
+  const moreIds = r.ids.slice(1)
 
   let scene: File | null = null
   if (caps.scene) {
@@ -84,12 +105,12 @@ export function planDrop(files: readonly File[], caps: DropCaps): DropPlan {
     else deferred.push({ reasonKey, files: [file] })
   }
 
-  return { ifc: r.ifc, ids, bcf: r.bcf, pointcloud, mesh, video, vector: r.vector, weather, scene, deferred, unsupported }
+  return { ifc: r.ifc, ids, moreIds, documents, bcf: r.bcf, pointcloud, mesh, video, vector: r.vector, weather, scene, deferred, unsupported }
 }
 
 /** Number of files some subsystem will open (mesh counts its entry files). */
 export function plannedCount(plan: DropPlan): number {
-  return plan.ifc.length + (plan.ids ? 1 : 0) + plan.bcf.length + plan.pointcloud.length
+  return plan.ifc.length + (plan.ids ? 1 : 0) + plan.moreIds.length + plan.documents.length + plan.bcf.length + plan.pointcloud.length
     + groupMeshFiles(plan.mesh).length + plan.video.length + plan.vector.length + plan.weather.length + (plan.scene ? 1 : 0)
 }
 

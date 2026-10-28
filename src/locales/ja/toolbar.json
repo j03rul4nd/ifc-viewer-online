@@ -280,6 +280,11 @@
     "archiveUnsupported": "{{names}}: xz/bz2/zst 形式はまだブラウザで開けません。.zip で保存するかフォルダーをドロップしてください",
     "archiveEncrypted": "{{name}} はパスワードで保護されています。PC で展開してからフォルダーをドロップしてください",
     "archiveFailed": "{{name}} を開けません: {{reason}}",
-    "archiveTruncated": "アーカイブが大きすぎるため先頭部分のみ読込みました（4 GB / 5,000 ファイル）"
+    "archiveTruncated": "アーカイブが大きすぎるため先頭部分のみ読込みました（4 GB / 5,000 ファイル）",
+    "idsWillCheck": "読込が終わり次第 {{file}} でモデルをチェックします",
+    "idsWillCheckMore": "読込後に {{file}} でチェック · 他の IDS {{count}} 件をライブラリに保存",
+    "idsChecked": "{{file}}: チェック完了 — 結果は IDS パネルに",
+    "documentsKept": "プロジェクト文書 {{count}} 件をシーンに保存",
+    "documentsKept_other": "プロジェクト文書 {{count}} 件をシーンに保存"
   }
 }

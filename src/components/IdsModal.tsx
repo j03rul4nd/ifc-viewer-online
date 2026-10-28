@@ -47,6 +47,15 @@ export default function IdsModal({ onClose }: IdsModalProps) {
   const hasBuffer = useMemo(() => (modelId ? !!modelRegistry.getBuffer(modelId) : false), [modelId, models])
   const busy = status === 'running' || status === 'cancelling'
   const { run, cancel } = useIdsRun()
+  const library = useIdsStore((s) => s.library)
+  // Clearing the active IDS keeps the rest of the library: the next one takes over.
+  const clearActive = (): void => {
+    const st = useIdsStore.getState()
+    const rest = st.library.filter((e) => e.fileName !== fileName)
+    if (rest.length === 0) { reset(); return }
+    st.removeFromLibrary(fileName ?? '')
+    setLoaded(rest[0].fileName, rest[0].doc)
+  }
 
   // Raw .ids XML kept locally so it can be synced to the account (the store only
   // holds the parsed doc). Set on load, cleared on reset.
@@ -148,9 +157,32 @@ export default function IdsModal({ onClose }: IdsModalProps) {
             </button>
             {doc && <span className="text-[11px] text-[var(--text-faint)]">{t('loader.specCount', { count: doc.specifications.length })}</span>}
             {(fileName || result) && !busy && (
-              <button onClick={() => { reset(); setRawXml(null) }} className="ml-auto text-[11px] text-[var(--text-faint)] hover:text-[var(--text)]">{t('loader.clear')}</button>
+              <button onClick={() => { clearActive(); setRawXml(null) }} className="ml-auto text-[11px] text-[var(--text-faint)] hover:text-[var(--text)]">{t('loader.clear')}</button>
             )}
           </div>
+
+          {/* Every IDS loaded this session — dropped together or one by one */}
+          {library.length > 1 && !busy && (
+            <div className="flex flex-col gap-1.5" data-testid="ids-library">
+              <span className="text-[10.5px] text-[var(--text-faint)]">{t('library.label', { count: library.length })}</span>
+              <div className="flex flex-wrap gap-1.5">
+                {library.map((e) => {
+                  const active = fileName === e.fileName
+                  return (
+                    <button
+                      key={e.fileName}
+                      onClick={() => { if (!active) { setLoaded(e.fileName, e.doc); setRawXml(null) } }}
+                      aria-pressed={active}
+                      title={t('loader.specCount', { count: e.doc.specifications.length })}
+                      className={`h-7 px-2.5 rounded-md border text-[11px] font-mono transition-colors ${active ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]'}`}
+                    >
+                      {e.fileName}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* EIR / BIM Validation — editable rule profiles that compile to the same engine */}
           <button

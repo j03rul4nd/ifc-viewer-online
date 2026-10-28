@@ -280,6 +280,11 @@
     "archiveUnsupported": "{{names}}：浏览器暂不支持 xz/bz2/zst，请另存为 .zip 或直接拖入文件夹",
     "archiveEncrypted": "{{name}} 受密码保护——请先在电脑上解压，再拖入文件夹",
     "archiveFailed": "无法打开 {{name}}：{{reason}}",
-    "archiveTruncated": "压缩包过大：仅读取前一部分（4 GB / 5000 个文件）"
+    "archiveTruncated": "压缩包过大：仅读取前一部分（4 GB / 5000 个文件）",
+    "idsWillCheck": "模型加载完成后将立即用 {{file}} 检查",
+    "idsWillCheckMore": "加载后用 {{file}} 检查 · 另有 {{count}} 个 IDS 已存入库",
+    "idsChecked": "{{file}}：模型已检查 — 结果见 IDS 面板",
+    "documentsKept": "已随场景保存 {{count}} 个项目文档",
+    "documentsKept_other": "已随场景保存 {{count}} 个项目文档"
   }
 }

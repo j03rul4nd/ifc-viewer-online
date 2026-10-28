@@ -170,3 +170,24 @@ A drop (or the hub's "Choose folder…") can be a whole project. Before routing,
 Then everything goes through `planDrop` as usual: IFCs to the import dialog,
 scans, meshes, GeoJSON layers, IDS, BCF, weather, video and scene files to
 their own subsystems.
+
+## Everything that travels with the models
+
+A project folder or archive usually holds more than geometry. What happens to
+each kind (App `routeDroppedFiles`, plan from `drop-plan.ts`):
+
+- **IDS** — every `.ids` is kept: the first becomes active, the rest go to the
+  IDS library (`idsStore.library`; switch from the IDS dialog or the panel
+  header). When IFCs arrive in the same drop, the active IDS checks them
+  automatically once the upload review closes and the loads settle
+  (`autoRunPending`, at least one NEW model), and the IDS panel opens.
+  An IDS dropped alone still opens the IDS dialog.
+- **BCF** (`.bcf`, `.bcfzip`) — imported straight away, several files merged
+  into the open topics (`importBcf(file, { append })`, de-duplicated by guid).
+- **Documents** — PDF, office files, images (without a mesh), notes, CAD
+  exports, configs (`DOCUMENT_EXTENSIONS`) are kept in `documentStore` and
+  listed in the Scene panel; PDFs, images and text open in a new tab, the rest
+  download. In memory only, never uploaded, cleared with the scene.
+- RAR / 7z: a crash out of 7-Zip is only reported as "password-protected"
+  when the archive's own bytes declare a password (`looksEncrypted`);
+  anything else is a plain "could not read".

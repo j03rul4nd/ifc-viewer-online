@@ -66,6 +66,7 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
   const activeModelId = useSceneStore((s) => s.activeModelId)
   const models = useSceneStore((s) => s.models)
   const fileName = useIdsStore((s) => s.fileName)
+  const library = useIdsStore((s) => s.library)
   const doc = useIdsStore((s) => s.doc)
   const status = useIdsStore((s) => s.status)
   const progress = useIdsStore((s) => s.progress)
@@ -280,7 +281,20 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
         <Icons.Shield size={13} className="text-[var(--accent)] shrink-0" />
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">{t('title')}</span>
-        {fileName && <span className="text-[10px] font-mono text-[var(--text-faint)] truncate max-w-[160px]">{fileName}</span>}
+        {fileName && library.length > 1 ? (
+          <select
+            value={fileName}
+            disabled={busy}
+            onChange={(e) => {
+              const entry = library.find((x) => x.fileName === e.target.value)
+              if (entry) useIdsStore.getState().setLoaded(entry.fileName, entry.doc)
+            }}
+            aria-label={t('library.switch')}
+            className="h-6 max-w-[180px] bg-transparent border border-[var(--border)] rounded-[5px] text-[10px] font-mono text-[var(--text-dim)] px-1 focus:outline-none focus:border-[var(--accent)]"
+          >
+            {library.map((x) => <option key={x.fileName} value={x.fileName}>{x.fileName}</option>)}
+          </select>
+        ) : fileName && <span className="text-[10px] font-mono text-[var(--text-faint)] truncate max-w-[160px]">{fileName}</span>}
         {modelName && (
           <span className="text-[10px] text-[var(--text-faint)] bg-[var(--surface-2)] border border-[var(--border)] rounded-full px-1.5 py-0.5 truncate max-w-[160px]" title={t('summary.checkedModel')}>
             {modelName}

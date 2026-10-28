@@ -172,5 +172,9 @@
     "specProhibitedButPresent": "この禁止仕様に一致する要素を削除してください。",
     "wrongDataType": "{{what}}のデータ型を修正してください — {{expected}}である必要があります。",
     "unsupportedPattern": "この値は手動で確認してください — このパターンは自動評価できません。"
+  },
+  "library": {
+    "label": "あなたの IDS（{{count}}）",
+    "switch": "使用中の IDS"
   }
 }

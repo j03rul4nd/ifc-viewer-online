@@ -25,6 +25,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { haptic } from '../lib/haptics'
 import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
 import FederationBar, { ModelLayerControls } from './FederationBar'
+import ProjectDocuments from './ProjectDocuments'
 import { matchesQuery } from '../lib/federation'
 import { modelRegistry } from '../lib/model-registry'
 import { useFederationStore, takeParkedBytes } from '../stores/federationStore'
@@ -884,6 +885,9 @@ export default function ScenePanel({
             )}
           </div>
         )}
+        {/* Documents that came with the models (folder / zip drops) */}
+        <ProjectDocuments />
+
         {/* Render quality */}
         <div className="border-t border-[var(--border)] px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-2 font-medium">{t('renderQuality.title')}</p>

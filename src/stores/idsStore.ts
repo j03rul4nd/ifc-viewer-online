@@ -70,7 +70,25 @@ interface IdsStore {
   /** Drop all IDS state for a removed model (wired next to clearValidationForModel). */
   clearForModel: (modelId: string) => void
   reset: () => void
+  /**
+   * Every IDS loaded this session (dropped together, picked one by one). The
+   * active one is `fileName`/`doc`; the others wait here so a coordinator with
+   * one IDS per discipline or per stage can switch without re-picking files.
+   */
+  library: Array<{ fileName: string; doc: IdsDocument }>
+  /** Keep an IDS in the library without making it the active one. */
+  addToLibrary: (fileName: string, doc: IdsDocument) => void
+  removeFromLibrary: (fileName: string) => void
+  /**
+   * Set when an IDS arrived together with IFCs: once those models finish
+   * loading, App checks them against it without anyone pressing Run.
+   */
+  autoRunPending: boolean
+  setAutoRunPending: (on: boolean) => void
 }
+
+const upsert = (lib: Array<{ fileName: string; doc: IdsDocument }>, fileName: string, doc: IdsDocument) =>
+  [...lib.filter((e) => e.fileName !== fileName), { fileName, doc }]
 
 export const useIdsStore = create<IdsStore>()(
   devtools(
@@ -89,6 +107,11 @@ export const useIdsStore = create<IdsStore>()(
       panelOpen: false,
       filters: DEFAULT_FILTERS,
       multiRun: null,
+      library: [],
+      autoRunPending: false,
+      addToLibrary: (fileName, doc) => set((s) => ({ library: upsert(s.library, fileName, doc) }), false, 'ids/library/add'),
+      removeFromLibrary: (fileName) => set((s) => ({ library: s.library.filter((e) => e.fileName !== fileName) }), false, 'ids/library/remove'),
+      setAutoRunPending: (on) => set({ autoRunPending: on }, false, 'ids/autoRun'),
 
       setPanelOpen: (open) => set({ panelOpen: open }, false, 'ids/panelOpen'),
       setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } }), false, 'ids/filters'),
@@ -101,8 +124,8 @@ export const useIdsStore = create<IdsStore>()(
           // An in-flight run keeps its status/progress (§5.2 "keeps status");
           // otherwise loading a good file lands on a clean idle state.
           (s) => (s.status === 'running' || s.status === 'cancelling'
-            ? { fileName, doc, error: null }
-            : { fileName, doc, status: 'idle' as IdsStatus, progress: 0, progressPhase: null, error: null }),
+            ? { fileName, doc, error: null, library: upsert(s.library, fileName, doc) }
+            : { fileName, doc, status: 'idle' as IdsStatus, progress: 0, progressPhase: null, error: null, library: upsert(s.library, fileName, doc) }),
           false,
           'ids/loaded',
         ),
@@ -178,6 +201,8 @@ export const useIdsStore = create<IdsStore>()(
       reset: () =>
         set(
           {
+            library: [],
+            autoRunPending: false,
             fileName: null,
             doc: null,
             resultsByModel: {},

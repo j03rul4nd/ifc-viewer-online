@@ -255,6 +255,9 @@ import { runIds, cancelActiveIdsRuns, IdsCheckError } from './lib/ids/ids-runner
 import { parseIds, IdsParseError } from './lib/ids/ids-parser'
 import { renderReasons } from './lib/ids/ids-engine-facets'
 import { useIdsStore } from './stores/idsStore'
+import { useIdsRun } from './hooks/useIdsRun'
+import { useDocumentStore } from './stores/documentStore'
+import { useBcfStore } from './stores/bcfStore'
 import { useOverlayStore } from './stores/overlayStore'
 import {
   trackFileOpened,
@@ -1225,6 +1228,27 @@ export default function App() {
   // ?validate and georef extraction indefinitely.
   const loadsActive = useLoadingStore((s) => s.summary.managedActive > 0)
 
+  // An IDS dropped together with IFCs checks them as soon as they are in:
+  // drop the folder, get the results. Waits for the upload review and every
+  // load to settle, and for at least one NEW model (the baseline is the count
+  // when the drop happened — a scene that already had models must not be
+  // checked before the dropped ones arrive).
+  const idsAutoRun = useIdsStore((s) => s.autoRunPending)
+  const idsAutoBaseline = useRef(0)
+  const { runAll: runIdsOnAll } = useIdsRun()
+  useEffect(() => {
+    if (!idsAutoRun || loadsActive || showUpload) return
+    if (sceneModels.length <= idsAutoBaseline.current) return
+    useIdsStore.getState().setAutoRunPending(false)
+    void runIdsOnAll().then(() => {
+      const st = useIdsStore.getState()
+      if (Object.keys(st.resultsByModel).length > 0) {
+        st.setPanelOpen(true)
+        toast(tToolbar('drop.idsChecked', { file: st.fileName ?? '', count: sceneModels.length }), 'success')
+      }
+    })
+  }, [idsAutoRun, loadsActive, showUpload, sceneModels.length, runIdsOnAll, tToolbar])
+
   // `?view=` / `?turntable=` (the article preset): the presentation shot,
   // taken the first time the loads settle with something in the scene —
   // whoever loaded it: the URL, the SDK's addFromUrl, bytes from a host.
@@ -1896,10 +1920,11 @@ export default function App() {
   // Parse on the main thread, load into the store and open the IDS modal. Auto-
   // run is intentionally OFF (a long check shouldn't start from a drop) — the
   // user clicks Run. Returns true if the file was an .ids (handled here).
-  const handleIdsFile = useCallback(async (file: File): Promise<boolean> => {
+  const handleIdsFile = useCallback(async (file: File, opts: { libraryOnly?: boolean; quiet?: boolean } = {}): Promise<boolean> => {
     if (!file.name.toLowerCase().endsWith('.ids')) return false
     try {
       const doc = parseIds(await file.text())
+      if (opts.libraryOnly) { useIdsStore.getState().addToLibrary(file.name, doc); return true }
       useIdsStore.getState().setLoaded(file.name, doc)
       const facetKinds = new Set<string>()
       for (const s of doc.specifications) {
@@ -1907,7 +1932,7 @@ export default function App() {
         for (const r of s.requirements) facetKinds.add(r.facet.kind)
       }
       trackIdsFileLoaded({ spec_count: doc.specifications.length, facet_count: facetKinds.size })
-      setShowIdsModal(true)
+      if (!opts.quiet) setShowIdsModal(true)
     } catch (err) {
       const msg = err instanceof IdsParseError ? err.message : (err instanceof Error ? err.message : String(err))
       useIdsStore.getState().setError('parse', i18n.t('ids:loader.parseError', { message: msg }))
@@ -1982,7 +2007,18 @@ export default function App() {
       setUploadInitial(plan.ifc)
       setShowUpload(true)
     }
-    if (plan.ids) void handleIdsFile(plan.ids)
+    if (plan.ids) {
+      // With IFCs in the same drop the IDS checks them by itself once they
+      // load; without, the IDS dialog opens as before (the user picks a model).
+      const withModels = plan.ifc.length > 0
+      void handleIdsFile(plan.ids, { quiet: withModels })
+      for (const more of plan.moreIds) void handleIdsFile(more, { libraryOnly: true })
+      if (withModels) {
+        idsAutoBaseline.current = useSceneStore.getState().models.length
+        useIdsStore.getState().setAutoRunPending(true)
+        if (interactive) toast(tToolbar(plan.moreIds.length > 0 ? 'drop.idsWillCheckMore' : 'drop.idsWillCheck', { file: plan.ids.name, count: plan.moreIds.length }), 'info')
+      }
+    }
     // Scans, meshes and clips that arrive WITH IFCs wait for the upload dialog:
     // it reviews the IFCs before they become jobs, and a scan that started
     // meanwhile found no model to align against (nor an anchor job to wait
@@ -2006,7 +2042,24 @@ export default function App() {
     // GeoJSON never waits for the IFC dialog: a layer re-anchors on its own
     // when the model's placement arrives (vector-runner rebuilds on it).
     if (plan.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(plan.vector)
-    if (plan.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
+    // BCF topics join the ones already open (never replace a session's issues).
+    if (plan.bcf.length > 0) {
+      void (async () => {
+        const { importBcf } = await import('./lib/bcf')
+        for (const f of plan.bcf) {
+          try { await importBcf(f, { append: useBcfStore.getState().topics.length > 0 }) } catch { /* importBcf toasts */ }
+        }
+      })()
+    }
+    // Documents travel with the project: kept next to the scene, listed in the Scene panel.
+    if (plan.documents.length > 0) {
+      const added = useDocumentStore.getState().add(plan.documents)
+      if (added > 0 && interactive) {
+        toast(tToolbar('drop.documentsKept', { count: added }), 'info', {
+          action: { label: tToolbar('drop.show'), run: () => setScenePanelOpen(true) },
+        })
+      }
+    }
     // Scanner formats we recognise but cannot decode get specific advice.
     for (const d of plan.deferred) {
       void i18n.loadNamespaces('pointcloud').then(() => {
@@ -2410,6 +2463,7 @@ export default function App() {
     useTakeoffStore.getState().reset()
     cancelActiveIdsRuns()
     useIdsStore.getState().reset()
+    useDocumentStore.getState().clear()
     useGeoStore.getState().resetForScene()
     useSolarStore.getState().resetForScene()
     useCaptureStore.getState().resetCapture()

@@ -280,6 +280,11 @@
     "archiveUnsupported": "{{names}}: els arxius xz, bz2 i zst encara no s'obren al navegador — desa-ho com a .zip o arrossega la carpeta",
     "archiveEncrypted": "{{name}} està protegit amb contrasenya — extreu-lo a l'ordinador i arrossega la carpeta",
     "archiveFailed": "No s'ha pogut obrir {{name}}: {{reason}}",
-    "archiveTruncated": "L'arxiu és molt gran: només se n'ha agafat la primera part (4 GB / 5.000 fitxers)"
+    "archiveTruncated": "L'arxiu és molt gran: només se n'ha agafat la primera part (4 GB / 5.000 fitxers)",
+    "idsWillCheck": "{{file}} comprovarà els models tan bon punt acabin de carregar",
+    "idsWillCheckMore": "{{file}} comprovarà els models quan carreguin · {{count}} IDS més a la biblioteca",
+    "idsChecked": "{{file}}: models comprovats — resultats al panell IDS",
+    "documentsKept": "{{count}} document del projecte desat amb l'escena",
+    "documentsKept_other": "{{count}} documents del projecte desats amb l'escena"
   }
 }

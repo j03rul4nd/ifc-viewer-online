@@ -27,7 +27,12 @@ function getBcfWorker(): Worker {
   return _bcfWorker
 }
 
-export async function importBcf(file: File): Promise<void> {
+/**
+ * `append`: add the file's topics to the ones already open instead of
+ * replacing them — several BCFs dropped with a model (one per discipline or
+ * per meeting) all end up in the panel.
+ */
+export async function importBcf(file: File, opts: { append?: boolean } = {}): Promise<void> {
   const store = useBcfStore.getState()
   store.setIsParsing(true)
   store.setParseError(null)
@@ -55,9 +60,14 @@ export async function importBcf(file: File): Promise<void> {
       // The file is in real coordinates; the scene is drawn shifted by the
       // datum when a model carries map coordinates (bcf-viewpoint).
       const datum = currentSceneDatum()
-      store.setTopics(datum
+      const topics = datum
         ? msg.topics.map((t) => ({ ...t, viewpoints: t.viewpoints.map((vp) => shiftViewpoint(vp, datum)) }))
-        : msg.topics)
+        : msg.topics
+      if (opts.append) {
+        // The same file dropped twice must not double every topic.
+        const have = new Set(useBcfStore.getState().topics.map((t) => t.guid))
+        store.addTopics(topics.filter((t) => !have.has(t.guid)))
+      } else store.setTopics(topics)
       store.setIsParsing(false)
       useBcfStore.setState({ importedVersion: msg.version })
       appBus.emit('bcf:imported', { topicCount: msg.topics.length })

@@ -317,6 +317,13 @@
       },
       "supersededNote_one": "1 older revision of the same file",
       "supersededNote_other": "{{count}} older revisions of the same files"
+    },
+    "documents": {
+      "title": "Documents · {{count}}",
+      "open": "open in a new tab",
+      "download": "download",
+      "remove": "Remove {{name}}",
+      "note": "Came with your folder or archive. Kept in this tab only, never uploaded."
     }
   },
   "transform": {
