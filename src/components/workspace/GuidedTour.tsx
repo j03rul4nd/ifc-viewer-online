@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { placeCard, type Placement, type Rect, type TourStep } from '../../lib/workspace-tours/tours'
+import { useTx } from './i18n'
 
 const PAD = 6
 
@@ -21,6 +22,7 @@ function findTarget(id?: string): HTMLElement | null {
 }
 
 export default function GuidedTour({ title, steps, onClose }: { title: string; steps: TourStep[]; onClose: (finished: boolean) => void }) {
+  const tx = useTx()
   // Resolve once on open: only steps that point at something visible (or at nothing on purpose).
   const live = useMemo(() => steps.filter((s) => !s.target || findTarget(s.target)), [steps])
   const [i, setI] = useState(0)
@@ -90,16 +92,16 @@ export default function GuidedTour({ title, steps, onClose }: { title: string; s
           : 'absolute w-[340px] rounded-[12px]'}
         style={floatStyle}>
         <div className="border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-2xl rounded-[inherit] p-4">
-          <p className="text-[11px] text-[var(--text-faint)] tabular-nums">{title} · {i + 1} of {live.length}</p>
-          <h2 id={titleId} className="mt-1 text-[14.5px] font-semibold [overflow-wrap:anywhere]">{step.title}</h2>
-          <p className="mt-1 text-[13px] text-[var(--text-dim)] leading-[1.5] [overflow-wrap:anywhere]">{step.body}</p>
+          <p className="text-[11px] text-[var(--text-faint)] tabular-nums">{tx('{{title}} · {{n}} of {{total}}', { title: tx(title), n: i + 1, total: live.length })}</p>
+          <h2 id={titleId} className="mt-1 text-[14.5px] font-semibold [overflow-wrap:anywhere]">{tx(step.title)}</h2>
+          <p className="mt-1 text-[13px] text-[var(--text-dim)] leading-[1.5] [overflow-wrap:anywhere]">{tx(step.body)}</p>
           <div className="mt-3 flex items-center gap-2">
             <div aria-hidden className="flex gap-1 mr-auto">
               {live.map((_, k) => <span key={k} className="w-1.5 h-1.5 rounded-full" style={{ background: k === i ? 'var(--text)' : 'var(--border)' }} />)}
             </div>
-            {!last && <button onClick={() => onClose(false)} className="h-[32px] px-2 text-[12.5px] text-[var(--text-faint)] hover:text-[var(--text)]">Skip</button>}
-            {i > 0 && <button onClick={() => go(-1)} className="h-[32px] px-3 rounded-[7px] border border-[var(--border)] text-[12.5px] text-[var(--text-dim)] hover:text-[var(--text)]">Back</button>}
-            <button ref={next} onClick={() => go(1)} className="h-[32px] px-3.5 rounded-[7px] bg-[var(--accent)] text-white text-[12.5px] font-medium hover:brightness-110">{last ? 'Done' : 'Next'}</button>
+            {!last && <button onClick={() => onClose(false)} className="h-[32px] px-2 text-[12.5px] text-[var(--text-faint)] hover:text-[var(--text)]">{tx("Skip")}</button>}
+            {i > 0 && <button onClick={() => go(-1)} className="h-[32px] px-3 rounded-[7px] border border-[var(--border)] text-[12.5px] text-[var(--text-dim)] hover:text-[var(--text)]">{tx("Back")}</button>}
+            <button ref={next} onClick={() => go(1)} className="h-[32px] px-3.5 rounded-[7px] bg-[var(--accent)] text-white text-[12.5px] font-medium hover:brightness-110">{last ? tx("Done") : tx("Next")}</button>
           </div>
         </div>
       </div>

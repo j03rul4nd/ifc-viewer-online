@@ -20,18 +20,21 @@ import { SAMPLE_TEST_PAYLOAD, type SampleCredential } from './connections-sample
 import { Dialog, Primary, Quiet, Field, Hint, Toggle, CopyField, inputClass, Dot } from './ui'
 import GuidedTour from './GuidedTour'
 import { WIZARD_TOURS } from '../../lib/workspace-tours/tours'
+import { useTx, rich, wsLocale } from './i18n'
+
 
 const STEPS = ['Arrival', 'Source', 'Test', 'Read', 'When', 'Save'] as const
 
 function ProtocolField({ f, value, onChange }: { f: FieldDef; value: string; onChange: (v: string) => void }) {
+  const tx = useTx()
   const control = f.type === 'select'
-    ? <select className={inputClass} value={value || f.options?.[0]?.value} onChange={(e) => onChange(e.target.value)}>{f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
+    ? <select className={inputClass} value={value || f.options?.[0]?.value} onChange={(e) => onChange(e.target.value)}>{f.options?.map((o) => <option key={o.value} value={o.value}>{tx(o.label)}</option>)}</select>
     : f.type === 'textarea'
       ? <textarea className={`${inputClass} !h-[84px] py-2 font-mono text-[12px] resize-y`} value={value} placeholder={f.example} onChange={(e) => onChange(e.target.value)} />
       : <input className={`${inputClass} ${f.type === 'url' ? 'font-mono text-[12px]' : ''}`} type={f.type === 'number' ? 'number' : 'text'} inputMode={f.type === 'url' ? 'url' : undefined} value={value} placeholder={f.example} onChange={(e) => onChange(e.target.value)} />
   return (
     <div data-tour={`field-${f.key}`}>
-      <Field label={`${f.label}${f.required ? '' : ' (optional)'}`} hint={<>{f.help}{f.example && !value && f.type !== 'select' && <> <button type="button" className="text-[var(--accent)] hover:underline" onClick={() => onChange(f.example!)}>Use the example</button></>}</>}>
+      <Field label={f.required ? tx(f.label) : tx('{{label}} (optional)', { label: tx(f.label) })} hint={<>{tx(f.help)}{f.example && !value && f.type !== 'select' && <> <button type="button" className="text-[var(--accent)] hover:underline" onClick={() => onChange(f.example!)}>{tx("Use the example")}</button></>}</>}>
         {control}
       </Field>
     </div>
@@ -39,6 +42,7 @@ function ProtocolField({ f, value, onChange }: { f: FieldDef; value: string; onC
 }
 
 export default function ConnectionWizard({ credentials, onClose }: { credentials: SampleCredential[]; onClose: () => void }) {
+  const tx = useTx()
   const [step, setStep] = useState(0)
   const [mode, setMode] = useState<IngestMode | null>(null)
   const [protocol, setProtocol] = useState<ProtocolId | null>(null)
@@ -59,7 +63,7 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
   const scheduled = p && (p.mode === 'pull' || p.mode === 'database' || p.mode === 'file')
   const records = useMemo(() => (mapping ? extractRecords(SAMPLE_TEST_PAYLOAD, mapping.recordsPath) : []), [mapping])
   const fields = useMemo(() => fieldsOf(records), [records])
-  const scheduleError = scheduled ? validateSchedule(schedule, p?.minIntervalS) : null
+  const scheduleError = scheduled ? validateSchedule(schedule, p?.minIntervalS, tx) : null
   const credsForProtocol = credentials.filter((c) => p?.auth.includes(c.kind))
 
   const runTest = () => {
@@ -70,7 +74,7 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
   // Why Next is disabled — said in words, never a silent grey button.
   const blocker: string | null = [
     !protocol ? 'Pick how the data arrives and the protocol' : null,
-    p && missingFields(p, values).length ? `Fill in: ${missingFields(p, values).map((f) => f.label).join(', ')}` : null,
+    p && missingFields(p, values).length ? tx('Fill in: {{fields}}', { fields: missingFields(p, values).map((f) => tx(f.label)).join(', ') }) : null,
     tested === 'ok' ? null : isPush ? 'Send a test request first' : 'Run the test first',
     mapping && (mapping.place.kind !== 'none' || mapping.values.length) ? null : 'Tell us where each record is, or pick a value',
     scheduleError,
@@ -82,49 +86,49 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
   const webhookSecret = 'whsec_7Qm2r9XcV1pLk3Hs8Tn0'
 
   return (
-    <Dialog title="New data connection" onClose={onClose} size="lg"
+    <Dialog title={tx("New data connection")} onClose={onClose} size="lg"
       footer={<>
-        {step > 0 ? <Quiet onClick={() => setStep(step === 5 && !scheduled ? 3 : step - 1)}>Back</Quiet> : <Quiet onClick={onClose}>Cancel</Quiet>}
+        {step > 0 ? <Quiet onClick={() => setStep(step === 5 && !scheduled ? 3 : step - 1)}>{tx("Back")}</Quiet> : <Quiet onClick={onClose}>{tx("Cancel")}</Quiet>}
         {blocker && <span className="text-[11.5px] text-[var(--text-faint)] sm:self-center sm:mr-auto sm:order-first">{blocker}</span>}
         {step < STEPS.length - 1
-          ? <Primary disabled={!!blocker} onClick={() => setStep(step === 3 && !scheduled ? 5 : step + 1)}>Next</Primary>
-          : <Primary disabled={!!blocker} onClick={onClose}>Save connection</Primary>}
+          ? <Primary disabled={!!blocker} onClick={() => setStep(step === 3 && !scheduled ? 5 : step + 1)}>{tx("Next")}</Primary>
+          : <Primary disabled={!!blocker} onClick={onClose}>{tx("Save connection")}</Primary>}
       </>}>
       <div className="flex items-start gap-3 mb-5">
-      <ol aria-label="Steps" className="flex-1 min-w-0 flex gap-1 overflow-x-auto -mx-1 px-1">
+      <ol aria-label={tx("Steps")} className="flex-1 min-w-0 flex gap-1 overflow-x-auto -mx-1 px-1">
         {STEPS.map((s, i) => (
           <li key={s} aria-current={i === step ? 'step' : undefined}
             className={`shrink-0 flex items-center gap-1.5 text-[11.5px] ${i === step ? 'text-[var(--text)] font-medium' : i < step ? 'text-[var(--text-dim)]' : 'text-[var(--text-faint)]'}`}>
             <span className={`w-5 h-5 grid place-items-center rounded-full text-[10.5px] ${i < step ? 'text-white' : i === step ? 'border border-[var(--accent)]' : 'border border-[var(--border)]'}`} style={i < step ? { background: 'var(--ok)' } : undefined}>{i < step ? '✓' : i + 1}</span>
-            {s}{i < STEPS.length - 1 && <span aria-hidden className="mx-1 text-[var(--text-faint)]">›</span>}
+            {tx(s)}{i < STEPS.length - 1 && <span aria-hidden className="mx-1 text-[var(--text-faint)]">›</span>}
           </li>
         ))}
       </ol>
-      <button type="button" onClick={() => setGuide(true)} className="shrink-0 h-[26px] px-2 rounded-[7px] border border-[var(--border)] text-[11.5px] text-[var(--text-dim)] hover:text-[var(--text)]">Guide me</button>
+      <button type="button" onClick={() => setGuide(true)} className="shrink-0 h-[26px] px-2 rounded-[7px] border border-[var(--border)] text-[11.5px] text-[var(--text-dim)] hover:text-[var(--text)]">{tx("Guide me")}</button>
       </div>
-      {guide && <GuidedTour key={step} title={`Step ${step + 1}: ${STEPS[step]}`} steps={WIZARD_TOURS[step] ?? []} onClose={() => setGuide(false)} />}
+      {guide && <GuidedTour key={step} title={tx('Step {{n}}: {{name}}', { n: step + 1, name: tx(STEPS[step]) })} steps={WIZARD_TOURS[step] ?? []} onClose={() => setGuide(false)} />}
 
       {step === 0 && (
         <div data-tour="arrival">
-          <p className="text-[13px] font-medium mb-1">How does the data arrive? <Hint>Not sure? Ask who runs the system: “Can you give me a URL I can read, or can your system call a URL of ours?” The first is <b>fetch on a schedule</b>, the second is <b>your system sends it</b>.</Hint></p>
+          <p className="text-[13px] font-medium mb-1">{tx("How does the data arrive?")} <Hint>{rich(tx('Not sure? Ask who runs the system: “Can you give me a URL I can read, or can your system call a URL of ours?” The first is <0>fetch on a schedule</0>, the second is <1>your system sends it</1>.'), [(c) => <b>{c}</b>, (c) => <b>{c}</b>])}</Hint></p>
           <div className="grid gap-2 sm:grid-cols-2 mt-2">
             {MODES.map((m) => (
               <button key={m.id} aria-pressed={mode === m.id} onClick={() => { setMode(m.id); setProtocol(protocolsFor(m.id).length === 1 ? protocolsFor(m.id)[0].id : null) }}
                 className={`text-left rounded-[10px] border p-3 ${mode === m.id ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'}`}>
-                <p className="text-[13px] font-medium">{m.title}</p>
-                <p className="text-[12px] text-[var(--text-dim)] mt-0.5">{m.body}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">e.g. {m.examples}</p>
+                <p className="text-[13px] font-medium">{tx(m.title)}</p>
+                <p className="text-[12px] text-[var(--text-dim)] mt-0.5">{tx(m.body)}</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{tx('e.g. {{examples}}', { examples: tx(m.examples) })}</p>
               </button>
             ))}
           </div>
           {mode && protocolsFor(mode).length > 1 && (
             <div className="mt-4" data-tour="protocol">
-              <p className="text-[12px] text-[var(--text-dim)] mb-2">Which kind?</p>
+              <p className="text-[12px] text-[var(--text-dim)] mb-2">{tx("Which kind?")}</p>
               <div className="space-y-1.5">
                 {protocolsFor(mode).map((x) => (
                   <label key={x.id} className={`flex items-start gap-2.5 rounded-[9px] border px-3 py-2.5 cursor-pointer ${protocol === x.id ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)]'}`}>
                     <input type="radio" name="protocol" className="mt-0.5" checked={protocol === x.id} onChange={() => setProtocol(x.id)} />
-                    <span><span className="block text-[13px] font-medium">{x.name}</span><span className="block text-[12px] text-[var(--text-dim)]">{x.pickWhen}</span></span>
+                    <span><span className="block text-[13px] font-medium">{tx(x.name)}</span><span className="block text-[12px] text-[var(--text-dim)]">{tx(x.pickWhen)}</span></span>
                   </label>
                 ))}
               </div>
@@ -135,10 +139,10 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
 
       {step === 1 && p && (
         <div className="grid gap-4 grid-cols-[minmax(0,1fr)]">
-          <p className="text-[12px] text-[var(--text-faint)]">{p.name}</p>
+          <p className="text-[12px] text-[var(--text-faint)]">{tx(p.name)}</p>
           {isPush && (
             <div className="rounded-[10px] bg-[var(--surface-2)] p-3 text-[12.5px] text-[var(--text-dim)]" data-tour="webhook-intro">
-              We create a private URL for this connection. Your system sends each update to it as an HTTPS POST with a JSON body. You'll get the URL and its secret in the next step.
+              {tx("We create a private URL for this connection. Your system sends each update to it as an HTTPS POST with a JSON body. You'll get the URL and its secret in the next step.")}
             </div>
           )}
           {p.fields.filter((f) => !f.when || values[f.when.key] === f.when.equals).map((f) => (
@@ -146,18 +150,18 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
           ))}
           {p.auth.length > 0 && (
             <div data-tour="credential">
-              <Field label="Credentials" hint="Saved once, encrypted in the EU, reused by every connection that needs them. We never show a secret again after you save it.">
+              <Field label={tx("Credentials")} hint={tx("Saved once, encrypted in the EU, reused by every connection that needs them. We never show a secret again after you save it.")}>
                 <select className={inputClass} value={credId} onChange={(e) => setCredId(e.target.value)}>
-                  <option value="">None — the source is public</option>
+                  <option value="">{tx("None — the source is public")}</option>
                   {credsForProtocol.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.preview})</option>)}
-                  {p.auth.map((k) => <option key={k} value={`new:${k}`}>+ New: {CREDENTIAL_KINDS[k].label}</option>)}
+                  {p.auth.map((k) => <option key={k} value={`new:${k}`}>{tx('+ New: {{kind}}', { kind: tx(CREDENTIAL_KINDS[k].label) })}</option>)}
                 </select>
               </Field>
               {credId.startsWith('new:') && (
                 <div className="mt-3 rounded-[10px] border border-[var(--border)] p-3 grid gap-3 sm:grid-cols-2">
-                  <Field label="Name it" className="sm:col-span-2" hint="So you recognise it later, e.g. “TMB developer key”."><input className={inputClass} value={newCred.name ?? ''} onChange={(e) => setNewCred({ ...newCred, name: e.target.value })} /></Field>
+                  <Field label={tx("Name it")} className="sm:col-span-2" hint={tx("So you recognise it later, e.g. “TMB developer key”.")}><input className={inputClass} value={newCred.name ?? ''} onChange={(e) => setNewCred({ ...newCred, name: e.target.value })} /></Field>
                   {CREDENTIAL_KINDS[credId.slice(4) as keyof typeof CREDENTIAL_KINDS].fields.map((f) => (
-                    <Field key={f.key} label={f.label} hint={f.help || undefined}>
+                    <Field key={f.key} label={tx(f.label)} hint={f.help ? tx(f.help) : undefined}>
                       <input className={`${inputClass} font-mono text-[12px]`} type={f.secret ? 'password' : 'text'} autoComplete="off" placeholder={f.example} value={newCred[f.key] ?? ''} onChange={(e) => setNewCred({ ...newCred, [f.key]: e.target.value })} />
                     </Field>
                   ))}
@@ -171,52 +175,52 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
       {step === 2 && p && (
         isPush ? (
           <div className="grid gap-4 grid-cols-[minmax(0,1fr)]" data-tour="webhook">
-            <Field label="Your webhook URL" hint="Paste it in your system's webhook or HTTP action settings."><CopyField label="Webhook URL" value={webhookUrl} /></Field>
-            <Field label="Signing secret" hint="Your system signs each body with it (HMAC-SHA256, header X-Signature). Shown in full only now — store it in your system."><CopyField label="Signing secret" value={webhookSecret} secret /></Field>
-            <Field label="Try it from a terminal" hint="Sends one sample message; this screen updates when it arrives.">
-              <CopyField label="Example request" value={`curl -X POST ${webhookUrl} -H "Content-Type: application/json" -d '{"alarms":[{"alarm_id":"A1","asset_tag":"AHU-03","severity":2,"raised_at":"2026-10-26T10:00:00Z"}]}'`} />
+            <Field label={tx("Your webhook URL")} hint={tx("Paste it in your system's webhook or HTTP action settings.")}><CopyField label={tx("Webhook URL")} value={webhookUrl} /></Field>
+            <Field label={tx("Signing secret")} hint={tx("Your system signs each body with it (HMAC-SHA256, header X-Signature). Shown in full only now — store it in your system.")}><CopyField label={tx("Signing secret")} value={webhookSecret} secret /></Field>
+            <Field label={tx("Try it from a terminal")} hint={tx("Sends one sample message; this screen updates when it arrives.")}>
+              <CopyField label={tx("Example request")} value={`curl -X POST ${webhookUrl} -H "Content-Type: application/json" -d '{"alarms":[{"alarm_id":"A1","asset_tag":"AHU-03","severity":2,"raised_at":"2026-10-26T10:00:00Z"}]}'`} />
             </Field>
             <div className="rounded-[10px] bg-[var(--surface-2)] p-3 flex items-center gap-3" role="status">
               <Dot color={tested === 'ok' ? 'var(--ok)' : 'var(--text-dim)'} />
-              <span className="flex-1 text-[12.5px]">{tested === 'ok' ? 'Request received · 200 OK · 3 records' : tested === 'running' ? 'Waiting for the first request…' : 'Nothing received yet'}</span>
-              {tested !== 'ok' && <Quiet onClick={runTest}>{tested === 'running' ? 'Listening…' : 'Start listening'}</Quiet>}
+              <span className="flex-1 text-[12.5px]">{tested === 'ok' ? tx("Request received · 200 OK · 3 records") : tested === 'running' ? tx("Waiting for the first request…") : tx("Nothing received yet")}</span>
+              {tested !== 'ok' && <Quiet onClick={runTest}>{tested === 'running' ? tx("Listening…") : tx("Start listening")}</Quiet>}
             </div>
           </div>
         ) : (
           <div className="grid gap-3 grid-cols-[minmax(0,1fr)]" data-tour="test">
-            <p className="text-[13px]">We'll make one request to <span className="font-mono text-[12px] break-all">{values.url || values.broker || values.host || values.bucket}</span> and show what comes back. Nothing is saved yet.</p>
+            <p className="text-[13px]">{rich(tx("We'll make one request to <0>{{address}}</0> and show what comes back. Nothing is saved yet.", { address: values.url || values.broker || values.host || values.bucket }), [(c) => <span className="font-mono text-[12px] break-all">{c}</span>])}</p>
             <div className="flex items-center gap-3">
-              <Primary onClick={runTest} disabled={tested === 'running'}>{tested === 'running' ? 'Testing…' : tested === 'ok' ? 'Test again' : 'Test connection'}</Primary>
-              {tested === 'ok' && <span className="text-[12.5px]" style={{ color: 'var(--ok)' }}>✓ 200 OK · 412 ms · 1.2 KB · 3 records</span>}
+              <Primary onClick={runTest} disabled={tested === 'running'}>{tested === 'running' ? tx("Testing…") : tested === 'ok' ? tx("Test again") : tx("Test connection")}</Primary>
+              {tested === 'ok' && <span className="text-[12.5px]" style={{ color: 'var(--ok)' }}>✓ 200 OK · 412 ms · 1.2 KB · {tx('{{count}} records', { count: 3 })}</span>}
             </div>
             {tested === 'ok' && (
               <details className="rounded-[10px] border border-[var(--border)]">
-                <summary className="cursor-pointer px-3 py-2 text-[12.5px] text-[var(--text-dim)]">See the raw response</summary>
+                <summary className="cursor-pointer px-3 py-2 text-[12.5px] text-[var(--text-dim)]">{tx("See the raw response")}</summary>
                 <pre className="px-3 pb-3 text-[11.5px] font-mono overflow-x-auto max-h-[220px]">{JSON.stringify(SAMPLE_TEST_PAYLOAD, null, 2)}</pre>
               </details>
             )}
-            <p className="text-[11.5px] text-[var(--text-faint)]">If it fails we say why in plain words — wrong key, not reachable, blocked by a firewall — and what to try.</p>
+            <p className="text-[11.5px] text-[var(--text-faint)]">{tx("If it fails we say why in plain words — wrong key, not reachable, blocked by a firewall — and what to try.")}</p>
           </div>
         )
       )}
 
       {step === 3 && mapping && (
         <div className="grid gap-4 grid-cols-[minmax(0,1fr)]" data-tour="mapping">
-          <p className="text-[12.5px] text-[var(--text-dim)]">We guessed from the test response. Check the preview below and fix anything that's off.</p>
+          <p className="text-[12.5px] text-[var(--text-dim)]">{tx("We guessed from the test response. Check the preview below and fix anything that's off.")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="List of records" hint="Where in the response each reading or item is.">
+            <Field label={tx("List of records")} hint={tx("Where in the response each reading or item is.")}>
               <select className={`${inputClass} font-mono text-[12px]`} value={mapping.recordsPath} onChange={(e) => setMapping({ ...guessMapping(getPath(SAMPLE_TEST_PAYLOAD, '')), recordsPath: e.target.value })}>
-                {findRecordArrays(SAMPLE_TEST_PAYLOAD).map((a) => <option key={a.path} value={a.path}>{a.path || '(top level)'} — {a.count} items</option>)}
+                {findRecordArrays(SAMPLE_TEST_PAYLOAD).map((a) => <option key={a.path} value={a.path}>{tx('{{path}} — {{count}} items', { path: a.path || tx('(top level)'), count: a.count })}</option>)}
               </select>
             </Field>
-            <Field label="Unique id" hint="Same value every time for the same sensor or asset, so history lines up.">
+            <Field label={tx("Unique id")} hint={tx("Same value every time for the same sensor or asset, so history lines up.")}>
               <select className={`${inputClass} font-mono text-[12px]`} value={mapping.id ?? ''} onChange={(e) => setMapping({ ...mapping, id: e.target.value || undefined })}>
-                <option value="">None</option>{fields.map((f) => <option key={f}>{f}</option>)}
+                <option value="">{tx("None")}</option>{fields.map((f) => <option key={f}>{f}</option>)}
               </select>
             </Field>
           </div>
           <fieldset>
-            <legend className="text-[12px] text-[var(--text-dim)] mb-1.5">Where each record is <Hint>Coordinates put a point on the map. An IFC element links the reading to a room, a pump or a door in the model — the scene colours that element.</Hint></legend>
+            <legend className="text-[12px] text-[var(--text-dim)] mb-1.5">{tx("Where each record is")} <Hint>{tx("Coordinates put a point on the map. An IFC element links the reading to a room, a pump or a door in the model — the scene colours that element.")}</Hint></legend>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {([['ifc', 'An IFC element (GlobalId, tag or name)'], ['latlon', 'Latitude and longitude'], ['geojson', 'GeoJSON geometry'], ['none', 'No position — a table only']] as const).map(([k, label]) => (
                 <label key={k} className={`flex items-center gap-2 rounded-[9px] border px-3 py-2 text-[12.5px] cursor-pointer ${mapping.place.kind === k ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)]'}`}>
@@ -226,21 +230,21 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
             </div>
             {mapping.place.kind === 'ifc' && (() => { const pl = mapping.place; return (
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                <Field label="Field"><select className={`${inputClass} font-mono text-[12px]`} value={pl.field} onChange={(e) => setMapping({ ...mapping, place: { ...pl, field: e.target.value } })}>{fields.map((f) => <option key={f}>{f}</option>)}</select></Field>
-                <Field label="Matches the element's"><select className={inputClass} value={pl.matchBy} onChange={(e) => setMapping({ ...mapping, place: { ...pl, matchBy: e.target.value as 'GlobalId' } })}><option>GlobalId</option><option>Tag</option><option>Name</option></select></Field>
+                <Field label={tx("Field")}><select className={`${inputClass} font-mono text-[12px]`} value={pl.field} onChange={(e) => setMapping({ ...mapping, place: { ...pl, field: e.target.value } })}>{fields.map((f) => <option key={f}>{f}</option>)}</select></Field>
+                <Field label={tx("Matches the element's")}><select className={inputClass} value={pl.matchBy} onChange={(e) => setMapping({ ...mapping, place: { ...pl, matchBy: e.target.value as 'GlobalId' } })}><option>{tx("GlobalId")}</option><option>{tx("Tag")}</option><option>{tx("Name")}</option></select></Field>
               </div>) })()}
             {mapping.place.kind === 'latlon' && (() => { const pl = mapping.place; return (
               <div className="mt-2 grid gap-3 grid-cols-2">
-                <Field label="Latitude"><select className={`${inputClass} font-mono text-[12px]`} value={pl.lat} onChange={(e) => setMapping({ ...mapping, place: { ...pl, lat: e.target.value } })}>{fields.map((f) => <option key={f}>{f}</option>)}</select></Field>
-                <Field label="Longitude"><select className={`${inputClass} font-mono text-[12px]`} value={pl.lon} onChange={(e) => setMapping({ ...mapping, place: { ...pl, lon: e.target.value } })}>{fields.map((f) => <option key={f}>{f}</option>)}</select></Field>
+                <Field label={tx("Latitude")}><select className={`${inputClass} font-mono text-[12px]`} value={pl.lat} onChange={(e) => setMapping({ ...mapping, place: { ...pl, lat: e.target.value } })}>{fields.map((f) => <option key={f}>{f}</option>)}</select></Field>
+                <Field label={tx("Longitude")}><select className={`${inputClass} font-mono text-[12px]`} value={pl.lon} onChange={(e) => setMapping({ ...mapping, place: { ...pl, lon: e.target.value } })}>{fields.map((f) => <option key={f}>{f}</option>)}</select></Field>
               </div>) })()}
           </fieldset>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Time of the reading" hint="Without it we use the time it arrived.">
-              <select className={`${inputClass} font-mono text-[12px]`} value={mapping.time ?? ''} onChange={(e) => setMapping({ ...mapping, time: e.target.value || undefined })}><option value="">Arrival time</option>{fields.map((f) => <option key={f}>{f}</option>)}</select>
+            <Field label={tx("Time of the reading")} hint={tx("Without it we use the time it arrived.")}>
+              <select className={`${inputClass} font-mono text-[12px]`} value={mapping.time ?? ''} onChange={(e) => setMapping({ ...mapping, time: e.target.value || undefined })}><option value="">{tx("Arrival time")}</option>{fields.map((f) => <option key={f}>{f}</option>)}</select>
             </Field>
             <fieldset>
-              <legend className="text-[12px] text-[var(--text-dim)]">Values to show and keep</legend>
+              <legend className="text-[12px] text-[var(--text-dim)]">{tx("Values to show and keep")}</legend>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {fields.filter((f) => f !== mapping.id && f !== mapping.time).map((f) => {
                   const on = mapping.values.includes(f)
@@ -251,11 +255,11 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
             </fieldset>
           </div>
           <div>
-            <p className="text-[12px] text-[var(--text-dim)] mb-1.5">Preview — first {Math.min(3, records.length)} records as the scene will see them</p>
+            <p className="text-[12px] text-[var(--text-dim)] mb-1.5">{tx('Preview — first {{count}} records as the scene will see them', { count: Math.min(3, records.length) })}</p>
             <div className="overflow-x-auto rounded-[10px] border border-[var(--border)]">
               <table className="w-full text-[12px] font-mono">
                 <thead className="text-left text-[10.5px] uppercase tracking-[0.06em] text-[var(--text-faint)] font-sans">
-                  <tr><th className="px-3 py-2">id</th><th className="pr-3">where</th><th className="pr-3">time</th>{mapping.values.map((v) => <th key={v} className="pr-3">{v}</th>)}</tr>
+                  <tr><th className="px-3 py-2">{tx("id")}</th><th className="pr-3">{tx("where")}</th><th className="pr-3">{tx("time")}</th>{mapping.values.map((v) => <th key={v} className="pr-3">{v}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
                   {records.slice(0, 3).map((r, i) => (
@@ -275,55 +279,55 @@ export default function ConnectionWizard({ credentials, onClose }: { credentials
 
       {step === 4 && p && (
         <div className="grid gap-4 grid-cols-[minmax(0,1fr)]" data-tour="schedule">
-          <div role="radiogroup" aria-label="Schedule type" className="grid grid-cols-3 gap-2">
+          <div role="radiogroup" aria-label={tx("Schedule type")} className="grid grid-cols-3 gap-2">
             {([['preset', 'Every…'], ['daily', 'Once a day'], ['cron', 'Cron']] as const).map(([k, label]) => (
               <button key={k} role="radio" aria-checked={scheduleKind === k} onClick={() => { setScheduleKind(k); setSchedule(k === 'preset' ? { kind: 'interval', seconds: 300 } : k === 'daily' ? { kind: 'daily', time: '06:30' } : { kind: 'cron', expr: '*/15 * * * *' }) }}
                 className={`h-[36px] rounded-[9px] border text-[12.5px] ${scheduleKind === k ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)]'}`}>{label}</button>
             ))}
           </div>
           {schedule.kind === 'interval' && (
-            <Field label="How often" hint={`This source allows every ${p.minIntervalS ?? 10} s at most often. Faster isn't always better: most open data changes every few minutes.`}>
+            <Field label={tx("How often")} hint={tx("This source allows every {{n}} s at most often. Faster isn't always better: most open data changes every few minutes.", { n: p.minIntervalS ?? 10 })}>
               <select className={inputClass} value={schedule.seconds} onChange={(e) => setSchedule({ kind: 'interval', seconds: Number(e.target.value) })}>
-                {INTERVAL_PRESETS.map((x) => <option key={x.seconds} value={x.seconds} disabled={x.seconds < (p.minIntervalS ?? 0)}>{x.label}</option>)}
+                {INTERVAL_PRESETS.map((x) => <option key={x.seconds} value={x.seconds} disabled={x.seconds < (p.minIntervalS ?? 0)}>{tx(x.label)}</option>)}
               </select>
             </Field>
           )}
           {schedule.kind === 'daily' && (
-            <Field label="At" hint="In your time zone (Europe/Madrid). Change it in Settings → Preferences.">
+            <Field label={tx("At")} hint={tx("In your time zone (Europe/Madrid). Change it in Settings → Preferences.")}>
               <input type="time" className={inputClass} value={schedule.time} onChange={(e) => setSchedule({ kind: 'daily', time: e.target.value })} />
             </Field>
           )}
           {schedule.kind === 'cron' && (
-            <Field label="Cron line" hint={<>Five parts: minute hour day month weekday. <code className="font-mono">30 6 * * 1-5</code> = weekdays at 06:30. <code className="font-mono">*/15 * * * *</code> = every 15 minutes.</>}>
+            <Field label={tx("Cron line")} hint={rich(tx('Five parts: minute hour day month weekday. <0>30 6 * * 1-5</0> = weekdays at 06:30. <1>*/15 * * * *</1> = every 15 minutes.'), [(c) => <code className="font-mono">{c}</code>, (c) => <code className="font-mono">{c}</code>])}>
               <input className={`${inputClass} font-mono`} value={schedule.expr} spellCheck={false} onChange={(e) => setSchedule({ kind: 'cron', expr: e.target.value })} aria-invalid={!!scheduleError} />
             </Field>
           )}
           <div className="rounded-[10px] bg-[var(--surface-2)] p-3 text-[12.5px]" role="status">
             {scheduleError
               ? <span style={{ color: 'var(--danger)' }}>{scheduleError}</span>
-              : <><p className="font-medium">{describeSchedule(schedule)}</p><p className="text-[var(--text-dim)] mt-0.5">Next: {nextRuns(schedule, new Date(), 3).map((d) => d.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })).join(' · ')}</p></>}
+              : <><p className="font-medium">{describeSchedule(schedule, tx, wsLocale())}</p><p className="text-[var(--text-dim)] mt-0.5">{tx('Next: {{runs}}', { runs: nextRuns(schedule, new Date(), 3).map((d) => d.toLocaleString(wsLocale(), { weekday: 'short', hour: '2-digit', minute: '2-digit' })).join(' · ') })}</p></>}
           </div>
-          <p className="text-[11.5px] text-[var(--text-faint)]">Reading data never uses credits. If the source fails 3 times in a row we pause and tell you, instead of hammering it.</p>
+          <p className="text-[11.5px] text-[var(--text-faint)]">{tx("Reading data never uses credits. If the source fails 3 times in a row we pause and tell you, instead of hammering it.")}</p>
         </div>
       )}
 
       {step === 5 && p && (
         <div className="grid gap-4 grid-cols-[minmax(0,1fr)]" data-tour="save">
-          <Field label="Name" hint="What you'll see in scenes and alerts."><input className={inputClass} value={name} placeholder={`${p.name} — HQ`} onChange={(e) => setName(e.target.value)} /></Field>
+          <Field label={tx("Name")} hint={tx("What you'll see in scenes and alerts.")}><input className={inputClass} value={name} placeholder={`${tx(p.name)} — HQ`} onChange={(e) => setName(e.target.value)} /></Field>
           <div className="rounded-[10px] border border-[var(--border)] divide-y divide-[var(--border)]">
             <div className="flex items-center gap-4 px-4 py-3">
-              <div className="flex-1"><p className="text-[13px] font-medium">Turn on in every new scene</p><p className="text-[12px] text-[var(--text-dim)]">New scenes start with it. Each scene can still switch it off or change it — that never changes this connection.</p></div>
-              <Toggle label="Turn on in every new scene" checked={inNewScenes} onChange={setInNewScenes} />
+              <div className="flex-1"><p className="text-[13px] font-medium">{tx("Turn on in every new scene")}</p><p className="text-[12px] text-[var(--text-dim)]">{tx("New scenes start with it. Each scene can still switch it off or change it — that never changes this connection.")}</p></div>
+              <Toggle label={tx("Turn on in every new scene")} checked={inNewScenes} onChange={setInNewScenes} />
             </div>
             <div className="flex items-center gap-4 px-4 py-3">
-              <div className="flex-1"><p className="text-[13px] font-medium">Email me if it stops working</p><p className="text-[12px] text-[var(--text-dim)]">After 3 failures in a row, or no data for 1 hour on a live source.</p></div>
-              <Toggle label="Email me if it stops working" checked={alertOnFail} onChange={setAlertOnFail} />
+              <div className="flex-1"><p className="text-[13px] font-medium">{tx("Email me if it stops working")}</p><p className="text-[12px] text-[var(--text-dim)]">{tx("After 3 failures in a row, or no data for 1 hour on a live source.")}</p></div>
+              <Toggle label={tx("Email me if it stops working")} checked={alertOnFail} onChange={setAlertOnFail} />
             </div>
           </div>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[12px]">
-            <dt className="text-[var(--text-faint)]">Arrives</dt><dd>{MODES.find((m) => m.id === p.mode)?.title} · {p.name}</dd>
-            {scheduled && <><dt className="text-[var(--text-faint)]">When</dt><dd>{describeSchedule(schedule)}</dd></>}
-            <dt className="text-[var(--text-faint)]">Reads</dt><dd>{mapping?.values.join(', ') || '—'} {mapping?.place.kind === 'ifc' ? 'on IFC elements' : mapping?.place.kind === 'latlon' ? 'as map points' : ''}</dd>
+            <dt className="text-[var(--text-faint)]">{tx("Arrives")}</dt><dd>{tx(MODES.find((m) => m.id === p.mode)!.title)} · {tx(p.name)}</dd>
+            {scheduled && <><dt className="text-[var(--text-faint)]">{tx("When")}</dt><dd>{describeSchedule(schedule, tx, wsLocale())}</dd></>}
+            <dt className="text-[var(--text-faint)]">{tx("Reads")}</dt><dd>{mapping?.values.join(', ') || '—'} {mapping?.place.kind === 'ifc' ? tx("on IFC elements") : mapping?.place.kind === 'latlon' ? tx("as map points") : ''}</dd>
           </dl>
         </div>
       )}

@@ -7,6 +7,7 @@
 import { useMemo, useState } from 'react'
 import type { TicketKind } from './sample-data'
 import { Dialog, Field, Primary, Quiet, inputClass } from './ui'
+import { useTx } from './i18n'
 
 export const KIND_LABEL: Record<TicketKind, string> = {
   question: 'A question', bug: 'Something is not working', billing: 'Billing or invoices', data_request: 'My data (privacy)',
@@ -42,6 +43,7 @@ export default function ContactDialog({ kind: initialKind = 'question', section,
   refId?: string
   onClose: () => void
 }) {
+  const tx = useTx()
   const [kind, setKind] = useState<TicketKind>(initialKind)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -53,44 +55,44 @@ export default function ContactDialog({ kind: initialKind = 'question', section,
 
   if (sent) {
     return (
-      <Dialog title="Request sent" onClose={onClose} footer={<Primary onClick={onClose}>Done</Primary>}>
-        <p className="text-[13.5px]">We'll answer {REPLY_TIME[kind]}, by email and in Help & support.</p>
-        <p className="mt-2 text-[12.5px] text-[var(--text-dim)]">Reference T-2032. Reply to the email to add anything.</p>
+      <Dialog title={tx("Request sent")} onClose={onClose} footer={<Primary onClick={onClose}>{tx("Done")}</Primary>}>
+        <p className="text-[13.5px]">{tx("We'll answer {{when}}, by email and in Help & support.", { when: tx(REPLY_TIME[kind]) })}</p>
+        <p className="mt-2 text-[12.5px] text-[var(--text-dim)]">{tx("Reference T-2032. Reply to the email to add anything.")}</p>
       </Dialog>
     )
   }
 
   return (
-    <Dialog title="Contact support" onClose={onClose} size="lg"
-      footer={<><Quiet onClick={onClose}>Cancel</Quiet><Primary disabled={!ok} onClick={() => setSent(true)}>Send</Primary></>}>
-      <div role="radiogroup" aria-label="Topic" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+    <Dialog title={tx("Contact support")} onClose={onClose} size="lg"
+      footer={<><Quiet onClick={onClose}>{tx("Cancel")}</Quiet><Primary disabled={!ok} onClick={() => setSent(true)}>{tx("Send")}</Primary></>}>
+      <div role="radiogroup" aria-label={tx("Topic")} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {(Object.keys(KIND_LABEL) as TicketKind[]).map((k) => (
           <button key={k} role="radio" aria-checked={kind === k} onClick={() => setKind(k)}
             className={`text-left rounded-[9px] border px-3 py-2.5 text-[12.5px] ${kind === k ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)]'}`}>
-            {KIND_LABEL[k]}
+            {tx(KIND_LABEL[k])}
           </button>
         ))}
       </div>
 
       <div className="mt-4 grid gap-3">
-        <Field label="Subject"><input className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={120} /></Field>
-        <Field label="Details" hint={kind === 'bug' ? 'Steps to reproduce help most. Attach a screenshot if you have one.' : undefined}>
+        <Field label={tx("Subject")}><input className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={120} /></Field>
+        <Field label={tx("Details")} hint={kind === 'bug' ? tx("Steps to reproduce help most. Attach a screenshot if you have one.") : undefined}>
           <textarea className={`${inputClass} !h-[120px] py-2 resize-y`} value={body} placeholder={PLACEHOLDER[kind]} onChange={(e) => setBody(e.target.value)} />
         </Field>
         <div className="flex flex-wrap items-center gap-2">
-          <Quiet>Attach files</Quiet>
-          <span className="text-[11.5px] text-[var(--text-faint)]">Screenshots, BCF or logs · max 10 MB. Don't attach models — reference the job instead.</span>
+          <Quiet>{tx("Attach files")}</Quiet>
+          <span className="text-[11.5px] text-[var(--text-faint)]">{tx("Screenshots, BCF or logs · max 10 MB. Don't attach models — reference the job instead.")}</span>
         </div>
         {kind === 'bug' && (
           <>
             <label className="flex items-start gap-2.5 text-[12.5px]">
               <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} className="mt-0.5 shrink-0" />
-              <span>It blocks a delivery due in the next 48 h</span>
+              <span>{tx("It blocks a delivery due in the next 48 h")}</span>
             </label>
             <div className="rounded-[10px] bg-[var(--surface-2)] p-3">
               <label className="flex items-center gap-2.5 text-[12.5px]">
                 <input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />
-                <span>Include technical details</span>
+                <span>{tx("Include technical details")}</span>
               </label>
               {attach && (
                 <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11.5px] text-[var(--text-dim)] font-mono">
@@ -101,7 +103,7 @@ export default function ContactDialog({ kind: initialKind = 'question', section,
           </>
         )}
       </div>
-      <p className="mt-4 text-[11.5px] text-[var(--text-faint)]">We answer {REPLY_TIME[kind]}.</p>
+      <p className="mt-4 text-[11.5px] text-[var(--text-faint)]">{tx('We answer {{when}}.', { when: tx(REPLY_TIME[kind]) })}</p>
     </Dialog>
   )
 }

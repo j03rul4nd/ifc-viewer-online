@@ -7,12 +7,14 @@
 //   desktop ≥ 1024 → wider grids
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { wsLocale, wsT, useTx } from './i18n'
+
 
 export function scoreColor(score: number): string {
   return score >= 80 ? 'var(--ok)' : score >= 60 ? 'var(--warn)' : 'var(--danger)'
 }
 
-export const fmtInt = (n: number) => new Intl.NumberFormat(undefined).format(n)
+export const fmtInt = (n: number) => new Intl.NumberFormat(wsLocale()).format(n)
 
 export function Panel({ children, className = '', tour }: { children: React.ReactNode; className?: string; tour?: string }) {
   return <div data-tour={tour} className={`rounded-[10px] border border-[var(--border)] bg-[var(--surface)] ${className}`}>{children}</div>
@@ -89,8 +91,9 @@ export function Dot({ color }: { color: string }) {
 
 /** Placeholder blocks while data loads. Static on purpose: no pulsing. */
 export function Skeleton({ rows = 3 }: { rows?: number }) {
+  const tx = useTx()
   return (
-    <div aria-busy="true" aria-label="Loading" className="space-y-2">
+    <div aria-busy="true" aria-label={tx("Loading")} className="space-y-2">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="h-[52px] rounded-[10px] bg-[var(--surface-2)]" style={{ opacity: 1 - i * 0.2 }} />
       ))}
@@ -99,14 +102,15 @@ export function Skeleton({ rows = 3 }: { rows?: number }) {
 }
 
 export function Sparkline({ values, width = 110, height = 28, className = '' }: { values: number[]; width?: number; height?: number; className?: string }) {
-  if (values.length < 2) return <span className="text-[11.5px] text-[var(--text-faint)]">First delivery</span>
+  const tx = useTx()
+  if (values.length < 2) return <span className="text-[11.5px] text-[var(--text-faint)]">{tx("First delivery")}</span>
   const min = Math.min(...values, 50), max = Math.max(...values, 100)
   const x = (i: number) => (i / (values.length - 1)) * (width - 6) + 3
   const y = (v: number) => height - 3 - ((v - min) / (max - min || 1)) * (height - 6)
   const d = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
   const last = values[values.length - 1]
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} preserveAspectRatio="none" className={`max-w-full ${className}`} role="img" aria-label={`Score per delivery: ${values.join(', ')}`}>
+    <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} preserveAspectRatio="none" className={`max-w-full ${className}`} role="img" aria-label={wsT('Score per delivery: {{values}}', { values: values.join(', ') })}>
       <path d={d} fill="none" stroke="var(--text-dim)" strokeWidth={1.4} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       <circle cx={x(values.length - 1)} cy={y(last)} r={2.6} fill={scoreColor(last)} />
     </svg>
@@ -142,6 +146,7 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
   actions?: (row: T) => React.ReactNode
   rowClassName?: (row: T) => string
 }) {
+  const tx = useTx()
   return (
     <Panel tour={tour}>
       <ul className="md:hidden divide-y divide-[var(--border)]">
@@ -166,7 +171,7 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
             <tr>
               <th className="px-4 py-2.5 font-medium">{primaryHeader}</th>
               {columns.map((c) => <th key={c.key} className={`py-2.5 pr-4 font-medium ${c.align === 'right' ? 'text-right' : ''} ${c.desktopOnly ? 'hidden lg:table-cell' : ''}`}>{c.header}</th>)}
-              {actions && <th className="pr-4 text-right"><span className="sr-only">Actions</span></th>}
+              {actions && <th className="pr-4 text-right"><span className="sr-only">{tx("Actions")}</span></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
@@ -198,6 +203,7 @@ export function Dialog({ title, onClose, children, footer, size = 'md', dismissa
   /** False while something irreversible is in flight (payment redirect). */
   dismissable?: boolean
 }) {
+  const tx = useTx()
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
   const close = useRef(onClose)
@@ -231,7 +237,7 @@ export function Dialog({ title, onClose, children, footer, size = 'md', dismissa
         <div className="flex items-center gap-3 px-5 sm:px-6 pt-4 sm:pt-5">
           <h2 id={titleId} className="flex-1 text-[17px] font-semibold">{title}</h2>
           {dismissable && (
-            <button data-close onClick={onClose} aria-label="Close" className="w-8 h-8 -mr-2 grid place-items-center rounded-[7px] text-[var(--text-dim)] hover:bg-[var(--surface-2)]">✕</button>
+            <button data-close onClick={onClose} aria-label={tx("Close")} className="w-8 h-8 -mr-2 grid place-items-center rounded-[7px] text-[var(--text-dim)] hover:bg-[var(--surface-2)]">✕</button>
           )}
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-4">{children}</div>
@@ -333,17 +339,18 @@ export function useSubTab<T extends string>(section: string, tabs: readonly { id
 }
 
 export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs: readonly { id: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void; label: string }) {
+  const tx = useTx()
   return (
     <>
     {/* Phone: a select, so no tab hides past the edge of a sideways-scrolling strip. */}
     <select data-tour="tabs" aria-label={label} className={`${inputClass} sm:hidden mb-5 font-medium`} value={value} onChange={(e) => onChange(e.target.value as T)}>
-      {tabs.map((t) => <option key={t.id} value={t.id}>{t.label}{t.count ? ` (${t.count})` : ''}</option>)}
+      {tabs.map((t) => <option key={t.id} value={t.id}>{tx(t.label)}{t.count ? ` (${t.count})` : ''}</option>)}
     </select>
     <div data-tour="tabs" role="tablist" aria-label={label} className="hidden sm:flex gap-1 overflow-x-auto border-b border-[var(--border)] mb-5">
       {tabs.map((t) => (
         <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)}
           className={`shrink-0 h-[38px] px-3 -mb-px border-b-2 text-[13px] whitespace-nowrap ${value === t.id ? 'border-[var(--accent)] text-[var(--text)] font-medium' : 'border-transparent text-[var(--text-faint)] hover:text-[var(--text)]'}`}>
-          {t.label}{t.count ? <span className="ml-1.5 text-[11px] tabular-nums text-[var(--text-faint)]">{t.count}</span> : null}
+          {tx(t.label)}{t.count ? <span className="ml-1.5 text-[11px] tabular-nums text-[var(--text-faint)]">{t.count}</span> : null}
         </button>
       ))}
     </div>
@@ -368,13 +375,14 @@ export function Hint({ children, label = 'What is this?' }: { children: React.Re
 
 /** Copy-to-clipboard for URLs, secrets shown once and code samples. */
 export function CopyField({ value, label, secret, mono = true }: { value: string; label: string; secret?: boolean; mono?: boolean }) {
+  const tx = useTx()
   const [copied, setCopied] = useState(false)
   const [shown, setShown] = useState(!secret)
   return (
     <div className="flex gap-2">
       <input readOnly aria-label={label} value={shown ? value : '•'.repeat(Math.min(value.length, 32))} className={`${inputClass} ${mono ? 'font-mono text-[12px]' : ''}`} onFocus={(e) => e.currentTarget.select()} />
-      {secret && <Quiet className="shrink-0 !h-[38px] sm:!h-[34px]" onClick={() => setShown((s) => !s)}>{shown ? 'Hide' : 'Show'}</Quiet>}
-      <Quiet className="shrink-0 !h-[38px] sm:!h-[34px]" onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? 'Copied' : 'Copy'}</Quiet>
+      {secret && <Quiet className="shrink-0 !h-[38px] sm:!h-[34px]" onClick={() => setShown((s) => !s)}>{shown ? tx("Hide") : tx("Show")}</Quiet>}
+      <Quiet className="shrink-0 !h-[38px] sm:!h-[34px]" onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? tx("Copied") : tx("Copy")}</Quiet>
     </div>
   )
 }

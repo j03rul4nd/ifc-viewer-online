@@ -81,7 +81,9 @@ const LazyEbookView = React.lazy(() => import('./components/EbookView'))
 // /msp-global — event page behind the MSP GLOBAL 2026 QR.
 const LazyMspGlobalView = React.lazy(() => import('./components/MspGlobalView'))
 // Paid-workspace design on sample data — team-only (pricing preview gate).
-const LazyWorkspacePreview = React.lazy(() => import('./components/workspace/WorkspacePreview'))
+const LazyWorkspacePreview = React.lazy(() =>
+  // Its translations travel with the route: start both downloads together.
+  Promise.all([import('./components/workspace/WorkspacePreview'), i18n.loadNamespaces('workspace')]).then(([m]) => m))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
