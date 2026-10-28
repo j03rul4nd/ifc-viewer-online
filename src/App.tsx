@@ -2681,6 +2681,33 @@ export default function App() {
   // its georeferencing does, so both have to re-trigger the placement.
   }, [sceneModels.length, georefByModel, loadsActive])
 
+  // ── Federate local + map-coordinate models through the CRS (no map needed) ─
+  //
+  // A civil model with UTM in its vertices sets the scene datum; an
+  // architecture model in local coordinates beside it says, in its
+  // IfcMapConversion, where its origin sits on that same grid. Each is right
+  // and they were drawn 4 600 km apart: only the CRS relates them. This draws
+  // the local one at its grid position in the datum (viewer
+  // placeByMapConversion). In map mode the map already places every model by
+  // latitude/longitude, and it reads each model's position as its file
+  // coordinates — so this steps aside there rather than be counted twice.
+  const mapMode = useGeoStore((s) => s.mapMode)
+  useEffect(() => {
+    const api = viewerApiRef.current
+    if (!api?.placeByMapConversion) return
+    const mapOff = mapMode === 'off' || mapMode === 'error'
+    for (const m of useSceneStore.getState().models) {
+      const g = georefByModel[m.id]
+      const conv = mapOff && !m.placedByHand && g && !g.largeWcsOffset
+        && (g.status === 'found' || g.status === 'partial')
+        && g.eastings !== null && g.northings !== null
+        && (g.eastings !== 0 || g.northings !== 0)
+        ? { eastings: g.eastings, northings: g.northings, heightM: g.heightM, rotationDeg: g.rotationDeg }
+        : null
+      api.placeByMapConversion(m.id, conv)
+    }
+  }, [sceneModels.length, georefByModel, loadsActive, mapMode])
+
   // ── Load model from raw IFC bytes handed in by a host app (SDK path) ───────
   // The bytes stay the registry's copy once committed (no File wrap, no extra
   // read); failures and cancels reach the host as model-error via the hooks.

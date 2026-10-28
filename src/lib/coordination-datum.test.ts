@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveDatum, withinDatum, isShifted, DATUM_JOIN_RADIUS_M, type Vec3 } from './coordination-datum'
+import { resolveDatum, withinDatum, isShifted, crsPlacement, DATUM_JOIN_RADIUS_M, type Vec3 } from './coordination-datum'
 
 // Scene axes: x = easting, y = up, z = −northing. The coordination is what the
 // loader added: drawn = real + c. Civil 3D in UTM 31N around Castellbisbal.
@@ -85,5 +85,41 @@ describe('withinDatum / isShifted', () => {
     expect(isShifted({ x: 1e-9, y: 0, z: -1e-9 })).toBe(false)
     expect(isShifted({ x: 0.01, y: 0, z: 0 })).toBe(true)
     expect(isShifted(null)).toBe(false)
+  })
+})
+
+describe('crsPlacement (local model with IfcMapConversion next to a UTM model)', () => {
+  // A UTM file drawn shifted by its first mesh: real (412 700 E, 4 593 500 N, 150)
+  // is drawn at the scene origin. Scene axes: x = E, y = H, z = −N.
+  const D: Vec3 = { x: -412_700, y: -150, z: 4_593_500 }
+  // Apply a placement to a local point (IFC axes X east, Y north, Z up).
+  const draw = (p: { position: Vec3; yawRad: number }, local: { x: number; y: number; z: number }): Vec3 => {
+    const sx = local.x, sy = local.z, sz = -local.y
+    const c = Math.cos(p.yawRad), s = Math.sin(p.yawRad)
+    return { x: sx * c + sz * s + p.position.x, y: sy + p.position.y, z: -sx * s + sz * c + p.position.z }
+  }
+
+  it('draws the local origin where its grid point is drawn in the datum', () => {
+    const p = crsPlacement({ eastings: 412_730, northings: 4_593_520, heightM: 151, rotationDeg: 0 }, D)!
+    // 30 m east, 20 m north and 1 m above the UTM model's datum origin.
+    const o = draw(p, { x: 0, y: 0, z: 0 })
+    expect(o.x).toBeCloseTo(30, 6)
+    expect(o.y).toBeCloseTo(1, 6)
+    expect(o.z).toBeCloseTo(-20, 6)
+  })
+
+  it('turns the local frame by the conversion rotation (X axis CCW from grid east)', () => {
+    const p = crsPlacement({ eastings: 412_700, northings: 4_593_500, heightM: 150, rotationDeg: 90 }, D)!
+    // Local +X points grid north after a 90° CCW turn: 10 m north of the origin.
+    const q = draw(p, { x: 10, y: 0, z: 0 })
+    expect(q.x).toBeCloseTo(0, 6)
+    expect(q.z).toBeCloseTo(-10, 6)
+  })
+
+  it('refuses without a datum, and for a conversion on another site', () => {
+    const conv = { eastings: 412_730, northings: 4_593_520, heightM: null, rotationDeg: 0 }
+    expect(crsPlacement(conv, null)).toBeNull()
+    expect(crsPlacement({ ...conv, northings: 4_593_520 + DATUM_JOIN_RADIUS_M + 1 }, D)).toBeNull()
+    expect(crsPlacement({ ...conv, eastings: NaN }, D)).toBeNull()
   })
 })

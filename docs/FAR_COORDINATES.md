@@ -90,6 +90,9 @@ Todo esto da por hecho que el offset es 0, que era cierto hasta ahora:
 - `largeWcsOffset` existe en `GeorefExtraction` pero **nadie lo activa**: hay que conectarlo a «modelo desplazado» para que el aviso de la UI (`status.largeOffset`) aparezca.
 - **Federación A + B/C**: un modelo de arquitectura local con MapConversion y un modelo civil en UTM solo encajan pasando por el CRS: `CRS = MapConversion(local)` frente a `CRS = geometría`. Hoy eso lo hacen los «satélites» del mapa (vía lat/lon), y solo en modo mapa. Lo correcto a medio plazo es que el datum viva en el marco **CRS** cuando haya georreferencia, y no en el marco del fichero. Es la fase más grande; hacerla después de la 2.
 
+### Federación A + B/C sin mapa (hecha)
+Un modelo local con `IfcMapConversion` junto a uno con UTM en los vértices: el UTM fija el datum (`drawn = grid + D`) y el local se dibuja en `Ry(θ)·local + (E, H, −N) + D` (`crsPlacement` en `coordination-datum.ts`, `placeByMapConversion` en el visor, efecto en `App.tsx`). Solo si (E, N) cae a menos de 100 km del origen del datum; si no, otro sitio u otro CRS, y se deja donde está. Escala de cuadrícula ignorada (0,4 mm/m en UTM). En modo mapa se desactiva: el mapa ya coloca cada modelo por lat/lon y leería el desplazamiento como coordenadas del fichero. Con giro, `getModelCoordination` del modelo local solo da la parte de traslación. Al quitar el último modelo del datum, el local vuelve a sus coordenadas.
+
 ### Fase 4: decírselo al usuario
 - Aviso discreto en el panel del modelo: «Coordenadas de mapa detectadas (≈412 km E, 4 593 km N). Se muestra desplazado; las coordenadas reales se conservan en medidas, BCF y exportaciones.» Más el botón «Elegir sistema de coordenadas…» para el caso C. ×10 idiomas.
 - La regla del validador `RULE_COORDINATE_OFFSET` se mantiene (es un consejo de autoría correcto para otras herramientas), pero su texto debe dejar de sugerir que el visor falla.
