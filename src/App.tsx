@@ -80,6 +80,8 @@ const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
 // /msp-global — event page behind the MSP GLOBAL 2026 QR.
 const LazyMspGlobalView = React.lazy(() => import('./components/MspGlobalView'))
+// /twin-builder — build your own AGV or import twin, all in the browser.
+const LazyTwinBuilderView = React.lazy(() => import('./components/twin-builder/TwinBuilderView'))
 // Paid-workspace design on sample data — team-only (pricing preview gate).
 const LazyWorkspacePreview = React.lazy(() => import('./components/workspace/WorkspacePreview'))
 import type { SharedReportPayload } from './components/SharedReportView'
@@ -648,6 +650,7 @@ export default function App() {
       if (rel === '/welcome' || rel.startsWith('/welcome/')) return 'welcome'
       if (rel === '/ebook'   || rel.startsWith('/ebook/'))   return 'ebook'
       if (rel === '/msp-global' || rel === '/msp-global/') return 'msp'
+      if (rel === '/twin-builder' || rel === '/twin-builder/') return 'twin'
       if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) return 'workspace'
       // Dedicated auth pages (F2) — only exist when accounts are enabled.
       if (isAccountEnabled()) {
@@ -664,7 +667,7 @@ export default function App() {
   // Locale-driven document meta. Disabled on routes that own their own title
   // and share metadata. This hook lives in the parent, so it would otherwise
   // overwrite blog/article meta after the child effect has set it.
-  useSeo({ enabled: route !== 'ebook' && route !== 'blog' && route !== 'msp' })
+  useSeo({ enabled: route !== 'ebook' && route !== 'blog' && route !== 'msp' && route !== 'twin' })
 
   // /verify/<cert_hash> — public certificate verification (F1). NOT in the
   // sitemap (the space of hashes is unbounded).
@@ -775,6 +778,8 @@ export default function App() {
         setRoute('workspace')
       } else if (rel === '/msp-global' || rel === '/msp-global/') {
         setRoute('msp')
+      } else if (rel === '/twin-builder' || rel === '/twin-builder/') {
+        setRoute('twin')
       } else if (rel === '/ebook' || rel.startsWith('/ebook/')) {
         setRoute('ebook')
         setEbookRoute(/^\/ebook\/([^/]*)\/?$/.exec(rel)?.[1] ?? '')
@@ -4463,6 +4468,20 @@ export default function App() {
           >
             <React.Suspense fallback={null}>
               <LazyEbookView onNavigateToLanding={handleNavigateToLanding} book={ebookByRoute(ebookRoute)} />
+            </React.Suspense>
+          </motion.div>
+        )}
+
+        {route === 'twin' && (
+          <motion.div
+            key="twin"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0"
+          >
+            <React.Suspense fallback={null}>
+              <LazyTwinBuilderView />
             </React.Suspense>
           </motion.div>
         )}

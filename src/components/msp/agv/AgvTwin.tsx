@@ -18,11 +18,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import {
-  createSim, step, kpis, erpPayload, seeded, find, clock, pointAt, runScenario, relocateS,
+  createSim, step, kpis, erpPayload, configureAgv, applyFleet, seeded, find, clock, pointAt, runScenario, relocateS,
   SIZE, ROAD_Z, XW, XE, RACK_X0, RACK_X1, BAY_W, BAYS, LEVELS, RACK_ROWS, AISLES, AISLE_NAMES, LEVEL_Y,
   palletBottom, PIVOT, STAGE_Z, STUB_Z, DOCKS, CHARGERS, STATE_LABEL, ZONES,
   type Sim, type Agv, type AgvState, type ErpTarget, type Kpis, type SimEvent, type ErpSync, type Task, type Dock, type Pallet, type Found, type Wait, type ScenarioId,
 } from './sim'
+import { startFleetFeed, type AgvTwinConfig } from './config'
 
 const STATE_COLOR: Record<AgvState, string> = {
   charging: '#22c55e', idle: '#94a3b8', parking: '#94a3b8', toCharge: '#f59e0b',
@@ -350,23 +351,24 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   }
   // control room: a glazed office in the north-west corner, with a warm light
   const glass = new THREE.MeshPhysicalMaterial({ color: '#a8c7e6', roughness: 0.05, metalness: 0, transmission: 0.6, transparent: true, opacity: 0.35 })
-  box(7, 3, 7, glass, 4, 1.5, 31.5, scene, false)
-  box(7.1, 0.2, 7.1, std('#e5e7eb', 0.6), 4, 3.1, 31.5, scene)
-  box(6.8, 0.02, 6.8, std('#5b6470', 0.8), 4, 0.02, 31.5, scene, false)
+  const OZ = SIZE.d - 4.5
+  box(7, 3, 7, glass, 4, 1.5, OZ, scene, false)
+  box(7.1, 0.2, 7.1, std('#e5e7eb', 0.6), 4, 3.1, OZ, scene)
+  box(6.8, 0.02, 6.8, std('#5b6470', 0.8), 4, 0.02, OZ, scene, false)
   for (const [dx, dz] of [[-1.6, -1.2], [1.2, -1.2], [-1.6, 1.4]]) {
-    box(1.6, 0.06, 0.7, std('#f1f5f9', 0.5), 4 + dx, 0.75, 31.5 + dz, scene)
-    box(0.55, 0.36, 0.03, std('#0b1220', 0.3, 0, { emissive: '#3b82f6', emissiveIntensity: 0.6 }), 4 + dx, 1.05, 31.5 + dz - 0.2, scene, false)
+    box(1.6, 0.06, 0.7, std('#f1f5f9', 0.5), 4 + dx, 0.75, OZ + dz, scene)
+    box(0.55, 0.36, 0.03, std('#0b1220', 0.3, 0, { emissive: '#3b82f6', emissiveIntensity: 0.6 }), 4 + dx, 1.05, OZ + dz - 0.2, scene, false)
   }
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.6), new THREE.MeshBasicMaterial({ map: textTexture(['CONTROL ROOM'], { w: 512, h: 96, bg: '#0f172a' }) }))
-  sign.position.set(4, 2.7, 27.95); sign.rotation.y = Math.PI; scene.add(sign)
-  const warm = new THREE.PointLight('#ffd9a0', 6, 10, 2); warm.position.set(4, 2.6, 31.5); scene.add(warm)
+  sign.position.set(4, 2.7, OZ - 3.55); sign.rotation.y = Math.PI; scene.add(sign)
+  const warm = new THREE.PointLight('#ffd9a0', 6, 10, 2); warm.position.set(4, 2.6, OZ); scene.add(warm)
   // battery and spare-parts corner: shelving with boxes
   for (let i = 0; i < 3; i++) {
-    box(2.2, 2, 0.6, std('#64748b', 0.6, 0.4), 54 + i * 0 + 0, 1, 31 + i * 1.6, scene)
-    for (let l = 0; l < 3; l++) box(2, 0.4, 0.5, std(['#e2b46f', '#94a3b8', '#d1d5db'][l], 0.8), 54, 0.3 + l * 0.7, 31 + i * 1.6, scene)
+    box(2.2, 2, 0.6, std('#64748b', 0.6, 0.4), SIZE.w - 6, 1, SIZE.d - 5 + i * 1.6, scene)
+    for (let l = 0; l < 3; l++) box(2, 0.4, 0.5, std(['#e2b46f', '#94a3b8', '#d1d5db'][l], 0.8), SIZE.w - 6, 0.3 + l * 0.7, SIZE.d - 5 + i * 1.6, scene)
   }
   // people: two in hi-vis by the docks, one on the walkway
-  for (const [x, z, ry] of [[DOCKS[1].x + 1.7, 1.4, 0.4], [DOCKS[4].x - 1.7, 1.6, -0.5], [1.1, 18, 0]] as const) scene.add(person(x, z, ry))
+  for (const [x, z, ry] of [[(DOCKS[1] ?? DOCKS[0]).x + 1.7, 1.4, 0.4], [DOCKS[DOCKS.length - 1].x - 1.7, 1.6, -0.5], [1.1, SIZE.d / 2, 0]] as const) scene.add(person(x, z, ry))
 
   // the obstacle that blocks an aisle now and then: a fallen carton, cones and a person
   const obstacle = new THREE.Group()
@@ -589,7 +591,7 @@ function TaskCard({ t, now }: { t: Task; now: number }) {
 
 const LEVEL_DOT: Record<SimEvent['level'], string> = { info: '#94a3b8', ok: '#22c55e', warn: '#f59e0b', alert: '#ef4444' }
 
-interface AgvSnap { id: string; state: AgvState; battery: number; v: number; distanceM: number; missions: number; task: Task | null; payload: Pallet | null; wait: Wait | null; opLabel: string; home: number; lowCharge: boolean; lift: number }
+interface AgvSnap { live: boolean; id: string; state: AgvState; battery: number; v: number; distanceM: number; missions: number; task: Task | null; payload: Pallet | null; wait: Wait | null; opLabel: string; home: number; lowCharge: boolean; lift: number }
 interface DockSnap { id: string; kind: 'in' | 'out'; state: Dock['state']; truck: NonNullable<Dock['truck']> | null; pending: number }
 interface Snap { t: number; k: Kpis; rush: Sim['rush']; caught: Sim['caught']; peakUntil: number; agvs: AgvSnap[]; tasks: Task[]; done: Task[]; docks: DockSnap[]; events: SimEvent[]; sync: ErpSync | null; syncs: ErpSync[] }
 
@@ -597,8 +599,8 @@ function snapshot(s: Sim): Snap {
   return {
     t: s.t, k: kpis(s), rush: s.rush.map((r) => ({ ...r })), caught: [...s.caught], peakUntil: s.peakUntil,
     agvs: s.agvs.map((a) => ({
-      id: a.id, state: a.state, battery: a.battery, v: a.v, distanceM: a.distanceM, missions: a.missions, task: a.task ? { ...a.task } : null,
-      payload: a.payload, wait: a.wait, opLabel: a.opLabel, home: a.home, lowCharge: a.lowCharge, lift: a.turret.lift,
+      live: !!a.external, id: a.id, state: a.state, battery: a.battery, v: a.v, distanceM: a.distanceM, missions: a.missions, task: a.task ? { ...a.task } : null,
+      payload: a.payload, wait: a.wait, opLabel: a.external ? `${a.external.realId}${a.external.mission ? ` · ${a.external.mission}` : ' · live'}` : a.opLabel, home: a.home, lowCharge: a.lowCharge, lift: a.turret.lift,
     })),
     tasks: s.tasks.map((t) => ({ ...t })), done: s.done.slice(0, 12),
     docks: s.docks.map((d, i) => ({ id: d.def.id, kind: d.def.kind, state: d.state, truck: d.truck ? { ...d.truck } : null, pending: s.tasks.filter((t) => t.dock === i).length })),
@@ -696,7 +698,7 @@ type Tab = 'cases' | 'fleet' | 'orders' | 'docks' | 'roi' | 'events' | 'erp'
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function AgvTwin({ onWant }: { onWant?: () => void }) {
+export default function AgvTwin({ onWant, config }: { onWant?: () => void; config?: AgvTwinConfig }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const labelsRef = useRef<HTMLDivElement>(null)
   const simRef = useRef<Sim | null>(null)
@@ -711,12 +713,14 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
   const [speed, setSpeed] = useState(2)
   const [tab, setTab] = useState<Tab>('cases')
   const [ran, setRan] = useState<Partial<Record<ScenarioId, string>>>({})
-  const [erp, setErp] = useState<ErpTarget>('odoo')
+  const [erp, setErp] = useState<ErpTarget>(config?.erp.target ?? 'odoo')
   const [panelOpen, setPanelOpen] = useState(true)
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
   const [found, setFound] = useState<Found | null>(null)
   const [missed, setMissed] = useState(false)
+  const [feedStatus, setFeedStatus] = useState<{ ok: boolean; text: string } | null>(null)
+  const [sent, setSent] = useState<{ id: string; ok: boolean; text: string }[]>([])
 
   useEffect(() => { selRef.current = sel }, [sel])
   useEffect(() => { followRef.current = follow }, [follow])
@@ -743,32 +747,36 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
 
     const scene = new THREE.Scene()
     scene.background = new THREE.Color('#0d1014')
-    scene.fog = new THREE.Fog('#0d1014', 95, 190)
+    // the demo centre is 60 × 36 m; a bigger one pushes everything out in proportion
+    const K = Math.max(1, SIZE.w / 60, SIZE.d / 36)
+    const CX = SIZE.w / 2, CZ = SIZE.d / 2
+    scene.fog = new THREE.Fog('#0d1014', 95 * K, 190 * K)
     const pmrem = new THREE.PMREMGenerator(renderer)
     const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = envTex
     scene.environmentIntensity = 0.35
     const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 500)
-    camera.position.set(40, 38, 72)
+    camera.position.set(CX + 10 * K, 38 * K, CZ - 1 + 55 * K)
     const controls = new OrbitControls(camera, renderer.domElement)
-    controls.target.set(30, 0, 17)
+    controls.target.set(CX, 0, CZ - 1)
     controls.enableDamping = true
     controls.maxPolarAngle = 1.4
     controls.minDistance = 5
-    controls.maxDistance = 140
+    controls.maxDistance = 140 * K
 
     scene.add(new THREE.HemisphereLight('#e6edf7', '#2a2d33', 0.7))
     const sun = new THREE.DirectionalLight('#fff4e5', 2.1)
-    sun.position.set(12, 52, 44); sun.target.position.set(30, 0, 18)
+    sun.position.set(CX - 18 * K, 52 * K, CZ + 26 * K); sun.target.position.set(CX, 0, CZ)
     sun.castShadow = true
     sun.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048)
-    Object.assign(sun.shadow.camera, { left: -42, right: 42, top: 42, bottom: -42, near: 5, far: 140 })
+    Object.assign(sun.shadow.camera, { left: -42 * K, right: 42 * K, top: 42 * K, bottom: -42 * K, near: 5, far: 140 * K })
     sun.shadow.bias = -0.0005
     sun.shadow.normalBias = 0.02
     scene.add(sun, sun.target)
-    const fill = new THREE.DirectionalLight('#a9bcff', 0.35); fill.position.set(60, 20, 50); scene.add(fill)
+    const fill = new THREE.DirectionalLight('#a9bcff', 0.35); fill.position.set(SIZE.w, 20 * K, CZ + 32 * K); scene.add(fill)
 
-    const sim = createSim(2026)
+    configureAgv(config?.layout, config?.catalogue)
+    const sim = createSim(2026, config?.layout.fleet ?? 6)
     // warm up so the first frame already shows a working shift
     for (let i = 0; i < 6000; i++) step(sim, 0.1)
     simRef.current = sim
@@ -840,7 +848,7 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       camera.updateProjectionMatrix()
     }
     const ro = new ResizeObserver(resize); ro.observe(mount); resize()
-    if (camera.aspect < 0.8) { camera.position.set(30, 92, 62); controls.target.set(30, 0, 15); controls.update() }
+    if (camera.aspect < 0.8) { camera.position.set(CX, 92 * K, CZ - 3 + 47 * K); controls.target.set(CX, 0, CZ - 3); controls.update() }
 
     // smooth camera flights (search results, selecting a far cart)
     let fly: { from: THREE.Vector3; to: THREE.Vector3; camFrom: THREE.Vector3; camTo: THREE.Vector3; k: number } | null = null
@@ -1090,8 +1098,31 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
     }
   }, [])
 
+  // A real fleet: the user's own feed, called from this browser.
+  useEffect(() => {
+    if (!config?.feed.enabled) return
+    return startFleetFeed(config.feed, (r) => { if (simRef.current) applyFleet(simRef.current, r) }, setFeedStatus)
+  }, [config?.feed])
+
+  // A real ERP: each new confirmation goes to the user's endpoint, when they said so.
+  const lastSent = useRef<string | null>(null)
+  useEffect(() => {
+    const sync = snap?.sync
+    if (!config?.erp.send || !config.erp.endpoint || !sync) return
+    const key = sync.task.id + sync.t
+    if (lastSent.current === key) return
+    lastSent.current = key
+    const p = erpPayload(erp, sync, config.erp.endpoint)
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (config.erp.auth) headers.Authorization = config.erp.auth
+    fetch(p.url, { method: p.method, headers, body: JSON.stringify(p.body) })
+      .then((r) => ({ ok: r.ok, text: `HTTP ${r.status}` }))
+      .catch((e: Error) => ({ ok: false, text: e.message || 'Failed (CORS?)' }))
+      .then((res) => setSent((l) => [{ id: sync.task.id, ...res }, ...l].slice(0, 6)))
+  }, [snap?.sync, config?.erp, erp])
+
   const selected = useMemo(() => snap?.agvs.find((a) => a.id === sel) ?? null, [snap, sel])
-  const payload = useMemo(() => (snap?.sync ? erpPayload(erp, snap.sync) : null), [snap?.sync, erp])
+  const payload = useMemo(() => (snap?.sync ? erpPayload(erp, snap.sync, config?.erp.endpoint) : null), [snap?.sync, erp, config?.erp.endpoint])
 
   const selectAgv = (id: string) => {
     setSel(id); setFound(null)
@@ -1172,9 +1203,16 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
       {/* top-left: what this is, the numbers, search, the selected cart */}
       <div className="pointer-events-none absolute left-3 top-3 right-3 md:left-4 md:top-4 md:right-[392px]">
         <div className="pointer-events-auto inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[12px] backdrop-blur">
-          <span className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-          <span className="font-semibold">Simulated</span>
-          <span className="text-white/60">· 6 robots · {snap ? clock(snap.t).slice(0, 5) : '08:00'}</span>
+          {(() => {
+            const live = snap?.agvs.filter((a) => a.live).length ?? 0
+            const n = snap?.agvs.length ?? config?.layout.fleet ?? 6
+            return (<>
+              <span className={`h-2 w-2 rounded-full ${live ? 'bg-[#22c55e]' : 'bg-[#f59e0b]'}`} />
+              <span className="font-semibold">{live ? `Live · ${live} real` : 'Simulated'}</span>
+              <span className="text-white/60">{config ? `· ${config.name} ` : ''}· {live ? `${n - live} simulated` : `${n} robots`} · {snap ? clock(snap.t).slice(0, 5) : '08:00'}</span>
+              {feedStatus && <span className={feedStatus.ok ? 'text-[#86efac]' : 'text-[#fca5a5]'}>· {feedStatus.text}</span>}
+            </>)
+          })()}
         </div>
         {snap && (
           <div className="mt-2 grid max-w-[560px] grid-cols-3 gap-1.5 md:mt-3 md:gap-2 lg:max-w-[720px] lg:grid-cols-5">
@@ -1371,7 +1409,12 @@ export default function AgvTwin({ onWant }: { onWant?: () => void }) {
                     <li key={s.task.id + s.t} className="flex justify-between gap-2"><span>{s.task.id} · {s.task.ref} → {erp === 'odoo' ? 'stock move done' : erp === 'salesforce' ? 'work order completed' : s.task.type === 'PICK' ? 'pallet.staged' : 'pallet.putaway'}</span><span className="text-[#22c55e]">✓</span></li>
                   ))}
                 </ul>
-                <p className="mt-2 text-[11px] text-white/45">Preview only: nothing is sent. In a real project it uses your endpoint and your API key.</p>
+                {config?.erp.send && config.erp.endpoint ? (
+                  <ul className="mt-2 space-y-1 text-[11.5px]">
+                    <li className="text-white/55">Sending to {config.erp.endpoint}</li>
+                    {sent.map((x, i) => <li key={x.id + i} className={x.ok ? 'text-[#86efac]' : 'text-[#fca5a5]'}>{x.id} · {x.text}</li>)}
+                  </ul>
+                ) : <p className="mt-2 text-[11px] text-white/45">Preview only: nothing is sent. {config ? 'Add your endpoint in the builder and turn on sending.' : 'In a real project it uses your endpoint and your API key.'}</p>}
                 {onWant && <button type="button" onClick={onWant} className="mt-3 w-full rounded-lg bg-[#5e6ad2] py-2 text-[13px] font-semibold">Connect it to our ERP</button>}
               </div>
             )}

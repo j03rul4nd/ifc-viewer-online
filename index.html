@@ -23,7 +23,7 @@
       // noindex and lose the home canonical. Keep in sync with App.tsx routes.
       (function () {
         var p = location.pathname
-        var known = /^\/(?:index\.html)?$|^\/(?:(?:es|de|fr|pt|it|ca|zh|ja|th)\/)?blog(?:\/|$)|^\/(?:privacy|terms|verify|welcome|ebook|msp-global|sign-in|sign-up|account|dashboard|admin)(?:\/|$)|^\/(?:i|invite)\/[A-Za-z0-9_-]{1,64}\/?$/
+        var known = /^\/(?:index\.html)?$|^\/(?:(?:es|de|fr|pt|it|ca|zh|ja|th)\/)?blog(?:\/|$)|^\/(?:privacy|terms|verify|welcome|ebook|msp-global|twin-builder|sign-in|sign-up|account|dashboard|admin)(?:\/|$)|^\/(?:i|invite)\/[A-Za-z0-9_-]{1,64}\/?$/
         if (known.test(p)) return
         document.querySelector('meta[name="robots"]').setAttribute('content', 'noindex, follow')
         var c = document.querySelector('link[rel="canonical"]')

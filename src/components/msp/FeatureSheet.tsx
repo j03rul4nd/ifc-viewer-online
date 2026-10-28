@@ -119,7 +119,10 @@ export function FeatureSheet({ id, onClose, onWant, onSwitch }: { id: FeatureId;
         <iframe src={src ?? undefined} title={f.title} className="min-h-0 flex-1 border-0 bg-black" allow="fullscreen" />
       )}
       <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-2 sm:py-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-        <p className="min-w-0 text-[14px] leading-snug text-[var(--text-dim)]">Want this for your business?</p>
+        <p className="min-w-0 text-[14px] leading-snug text-[var(--text-dim)]">
+          Want this for your business?
+          {(f.inline === 'agv' || f.inline === 'imports') && <> <a href={`/twin-builder?kind=${f.inline}`} className="whitespace-nowrap font-medium text-[var(--accent-2)] underline-offset-2 hover:underline">Build your own →</a></>}
+        </p>
         <button type="button" onClick={onWant} className="flex-none rounded-lg bg-[var(--accent)] px-4 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">
           I want this
         </button>

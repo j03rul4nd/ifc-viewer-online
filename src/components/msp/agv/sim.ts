@@ -25,26 +25,56 @@
 export interface Vec { x: number; z: number }
 
 // ── Layout ───────────────────────────────────────────────────────────────────
+// Every value below is derived from an AgvLayout by configureAgv(). They are
+// `let` so the 3D scene, which imports them, sees a user's own warehouse: ES
+// module bindings are live. The defaults are the demo's centre, exactly.
 
-export const SIZE = { w: 60, d: 36 }
+export interface AgvLayout {
+  /** Aisles the carts drive (1–6). Each has a rack row on both sides. */
+  aisles: number
+  /** Bays along each rack row (4–30), 2.7 m each, two pallets per bay. */
+  bays: number
+  /** Pallet levels per bay (2–6). */
+  levels: number
+  /** Outbound doors (1–8) and inbound doors (1–3), on the front wall. */
+  docksOut: number
+  docksIn: number
+  /** Carts (1–12); each has its own charger. */
+  fleet: number
+}
+
+export interface AgvCatalogue {
+  site: string
+  skus: Sku[]
+  customers: string[]
+  cities: string[]
+  carriers: string[]
+  /** This carrier's loads are priority 1 (express). Optional. */
+  priorityCarrier?: string
+  suppliers: string[]
+}
+
+export const DEFAULT_LAYOUT: AgvLayout = { aisles: 3, bays: 13, levels: 4, docksOut: 4, docksIn: 1, fleet: 6 }
+
+export let SIZE = { w: 60, d: 36 }
 export const ROAD_Z = 6
 export const XW = 9
-export const XE = 51
-export const CROSS_X = [XW, XE]
+export let XE = 51
+export let CROSS_X = [XW, XE]
 export const RACK_X0 = 12
-export const RACK_X1 = 48
+export let RACK_X1 = 48
 export const BAY_W = 2.7
-export const BAYS = Math.floor((RACK_X1 - RACK_X0) / BAY_W)
-export const LEVELS = 4
+export let BAYS = Math.floor((RACK_X1 - RACK_X0) / BAY_W)
+export let LEVELS = 4
 /** Rack rows (z of the row's centre). Row 11 is the back of row 12.4: stock, no aisle. */
-export const RACK_ROWS = [11, 12.4, 18, 19.4, 25, 26.4, 32]
+export let RACK_ROWS = [11, 12.4, 18, 19.4, 25, 26.4, 32]
 /** Aisle centre lines where carts drive (eastbound). */
-export const AISLES = [15.2, 22.2, 29.2]
-export const AISLE_NAMES = ['A', 'B', 'C']
+export let AISLES = [15.2, 22.2, 29.2]
+export let AISLE_NAMES = ['A', 'B', 'C']
 /** From an aisle centre to the pallet centres of the rack rows each side. */
 export const FACE = 2.8
 /** Beam centre heights; a pallet sits 6 cm above. */
-export const LEVEL_Y = [0.18, 1.45, 2.7, 3.95]
+export let LEVEL_Y = [0.18, 1.45, 2.7, 3.95]
 export const palletBottom = (level: number): number => LEVEL_Y[level] + 0.06
 
 // Cart geometry (metres from the cart's centre, along its heading).
@@ -60,21 +90,65 @@ export const STUB_Z = 3.2
 export const STAGE_Z = ROAD_Z - FACE
 
 export interface DockDef { id: string; x: number; kind: 'out' | 'in' }
-export const DOCKS: DockDef[] = [
+export let DOCKS: DockDef[] = [
   { id: 'D1', x: 12.5, kind: 'out' }, { id: 'D2', x: 17, kind: 'out' }, { id: 'D3', x: 21.5, kind: 'out' },
   { id: 'D4', x: 26, kind: 'out' }, { id: 'D5', x: 30.5, kind: 'in' },
 ]
-export const CHARGERS = [33.5, 36, 38.5, 41, 43.5, 46]
+export let CHARGERS = [33.5, 36, 38.5, 41, 43.5, 46]
 
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 /**
- * Zones a single cart may hold: where aisles A and B merge into the east
- * cross aisle. (Backing out of a charger reserves its whole swing instead.)
+ * Zones a single cart may hold: where each aisle but the last merges into the
+ * east cross aisle. (Backing out of a charger reserves its whole swing instead.)
  */
-export const ZONES: Rect[] = [
-  { x0: 47.6, x1: 52.6, z0: AISLES[0] - 1.8, z1: AISLES[0] + 1.8 },
-  { x0: 47.6, x1: 52.6, z0: AISLES[1] - 1.8, z1: AISLES[1] + 1.8 },
-]
+export let ZONES: Rect[] = []
+
+const AISLE_STEP = 7
+const DOCK_STEP = 4.5
+const CHARGER_STEP = 2.5
+
+/** Clamp a layout to what the floor model supports. */
+export function clampLayout(l: Partial<AgvLayout>): AgvLayout {
+  const n = (v: unknown, lo: number, hi: number, d: number) => {
+    const x = Math.round(Number(v))
+    return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d
+  }
+  const D = DEFAULT_LAYOUT
+  return {
+    aisles: n(l.aisles, 1, 6, D.aisles), bays: n(l.bays, 4, 30, D.bays), levels: n(l.levels, 2, 6, D.levels),
+    docksOut: n(l.docksOut, 1, 8, D.docksOut), docksIn: n(l.docksIn, 1, 3, D.docksIn), fleet: n(l.fleet, 1, 12, D.fleet),
+  }
+}
+
+/**
+ * Lay out the building for this layout and catalogue. Call before createSim()
+ * and before the scene is built; the demo calls it with no arguments.
+ */
+export function configureAgv(layout: Partial<AgvLayout> = DEFAULT_LAYOUT, catalogue?: Partial<AgvCatalogue>): AgvLayout {
+  const l = clampLayout(layout)
+  BAYS = l.bays
+  RACK_X1 = RACK_X0 + BAYS * BAY_W + 0.9
+  LEVELS = l.levels
+  LEVEL_Y = Array.from({ length: LEVELS }, (_, i) => (i === 0 ? 0.18 : 1.45 + (i - 1) * 1.25))
+  AISLES = Array.from({ length: l.aisles }, (_, i) => 15.2 + i * AISLE_STEP)
+  AISLE_NAMES = AISLES.map((_, i) => String.fromCharCode(65 + i))
+  // back-to-back rows between aisles; a single row behind the first and last
+  const rows = new Set<number>([Math.round((AISLES[0] - FACE - 1.4) * 10) / 10])
+  for (const z of AISLES) { rows.add(Math.round((z - FACE) * 10) / 10); rows.add(Math.round((z + FACE) * 10) / 10) }
+  RACK_ROWS = [...rows].sort((a, b) => a - b)
+  const docks: DockDef[] = []
+  for (let i = 0; i < l.docksOut + l.docksIn; i++) docks.push({ id: `D${i + 1}`, x: 12.5 + i * DOCK_STEP, kind: i < l.docksOut ? 'out' : 'in' })
+  DOCKS = docks
+  const firstCharger = DOCKS[DOCKS.length - 1].x + 3
+  CHARGERS = Array.from({ length: l.fleet }, (_, i) => firstCharger + i * CHARGER_STEP)
+  XE = Math.max(RACK_X1 + 3, CHARGERS[CHARGERS.length - 1] + 5)
+  CROSS_X = [XW, XE]
+  SIZE = { w: XE + 9, d: AISLES[AISLES.length - 1] + FACE + 4 }
+  ZONES = AISLES.slice(0, -1).map((z) => ({ x0: XE - 3.4, x1: XE + 1.6, z0: z - 1.8, z1: z + 1.8 }))
+  if (catalogue) applyCatalogue(catalogue)
+  else applyCatalogue(DEFAULT_CATALOGUE)
+  return l
+}
 
 const SPEED = 1.6           // m/s empty
 const SPEED_LOADED = 1.2
@@ -96,7 +170,7 @@ const AVAILABLE = 40
 // ── Catalogue (fictional) ────────────────────────────────────────────────────
 
 export interface Sku { code: string; name: string; cases: number; kgCase: number; color: string; wrap: string }
-export const SKUS: Sku[] = [
+const DEMO_SKUS: Sku[] = [
   { code: 'WAT-150-06', name: 'Mineral water 1.5 L ×6', cases: 84, kgCase: 9.3, color: '#cfe3f2', wrap: 'film' },
   { code: 'OIL-100-12', name: 'Olive oil 1 L ×12', cases: 60, kgCase: 11.6, color: '#c7b36b', wrap: 'carton' },
   { code: 'PAS-050-24', name: 'Pasta 500 g ×24', cases: 80, kgCase: 12.4, color: '#d9b06a', wrap: 'carton' },
@@ -108,10 +182,36 @@ export const SKUS: Sku[] = [
   { code: 'COF-100-06', name: 'Coffee beans 1 kg ×6', cases: 70, kgCase: 6.2, color: '#8a6243', wrap: 'carton' },
   { code: 'RCE-100-10', name: 'Rice 1 kg ×10', cases: 80, kgCase: 10.2, color: '#e3d6b4', wrap: 'carton' },
 ]
-const CUSTOMERS = ['Supermercados Costa', 'Frescamar Retail', 'Nordwind Markt', 'Mercat del Sol', 'Atlas Cash & Carry', 'Hiper Delta', 'Vía Norte Foods', 'Maison Durand']
-const CITIES = ['Tarragona', 'Valencia', 'Zaragoza', 'Lyon', 'Toulouse', 'Madrid', 'Bilbao', 'Montpellier']
-const CARRIERS = ['Transportes Ebro', 'Nordline Freight', 'Medi Cargo', 'Iber Express']
-const SUPPLIERS = ['Aguas de Montaña', 'Aceites del Sur', 'Pastificio Valle', 'Conservas Ribera', 'Limpia Hogar SA', 'Café Altura']
+const DEMO_CUSTOMERS = ['Supermercados Costa', 'Frescamar Retail', 'Nordwind Markt', 'Mercat del Sol', 'Atlas Cash & Carry', 'Hiper Delta', 'Vía Norte Foods', 'Maison Durand']
+const DEMO_CITIES = ['Tarragona', 'Valencia', 'Zaragoza', 'Lyon', 'Toulouse', 'Madrid', 'Bilbao', 'Montpellier']
+const DEMO_CARRIERS = ['Transportes Ebro', 'Nordline Freight', 'Medi Cargo', 'Iber Express']
+const DEMO_SUPPLIERS = ['Aguas de Montaña', 'Aceites del Sur', 'Pastificio Valle', 'Conservas Ribera', 'Limpia Hogar SA', 'Café Altura']
+
+export const DEFAULT_CATALOGUE: AgvCatalogue = {
+  site: 'DC Tarragona', skus: DEMO_SKUS, customers: DEMO_CUSTOMERS, cities: DEMO_CITIES,
+  carriers: DEMO_CARRIERS, priorityCarrier: 'Iber Express', suppliers: DEMO_SUPPLIERS,
+}
+export let SKUS: Sku[] = DEMO_SKUS
+let CUSTOMERS = DEMO_CUSTOMERS
+let CITIES = DEMO_CITIES
+let CARRIERS = DEMO_CARRIERS
+let SUPPLIERS = DEMO_SUPPLIERS
+let PRIORITY_CARRIER: string | undefined = 'Iber Express'
+let SITE = 'DC Tarragona'
+
+/** Use a catalogue; anything missing or empty keeps the demo's. */
+function applyCatalogue(c: Partial<AgvCatalogue>): void {
+  const D = DEFAULT_CATALOGUE
+  const list = (v: string[] | undefined, d: string[]) => (v && v.filter(Boolean).length ? v.filter(Boolean) : d)
+  SKUS = c.skus?.length ? c.skus : D.skus
+  CUSTOMERS = list(c.customers, D.customers)
+  CITIES = list(c.cities, D.cities)
+  CARRIERS = list(c.carriers, D.carriers)
+  SUPPLIERS = list(c.suppliers, D.suppliers)
+  PRIORITY_CARRIER = c.carriers?.length ? c.priorityCarrier : D.priorityCarrier
+  SITE = c.site?.trim() || D.site
+}
+
 const CONSONANTS = 'BCDFGHJKLMNPRSTVWXYZ'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -209,6 +309,8 @@ export interface Agv {
   idleT: number
   distanceM: number
   missions: number
+  /** Driven by a real fleet manager (applyFleet): the sim neither moves it nor gives it work. */
+  external?: { realId: string; mission: string; seenAt: number }
 }
 
 export interface SimEvent { t: number; level: 'info' | 'ok' | 'warn' | 'alert'; text: string; agv?: string; task?: string }
@@ -414,7 +516,7 @@ function newOutboundLoad(s: Sim, d: Dock, di: number): void {
     cap: 0, count: 0, arrivedAt: s.t, due: s.t + 420 + rng() * 240, orders: [],
   }
   d.truck = truck
-  const priority: 1 | 2 = carrier === 'Iber Express' ? 1 : 2
+  const priority: 1 | 2 = carrier === PRIORITY_CARRIER ? 1 : 2
   const pallets = s.t < s.peakUntil ? 5 + Math.floor(rng() * 3) : 3 + Math.floor(rng() * 3)
   const nSo = pallets > 3 && rng() < 0.6 ? 2 : 1
   for (let o = 0; o < nSo; o++) {
@@ -444,7 +546,7 @@ function newInboundTruck(s: Sim, d: Dock): void {
   const rng = s.rng
   const n = 4 + Math.floor(rng() * 3)
   d.truck = {
-    plate: plate(rng), carrier: pick(rng, SUPPLIERS), dest: 'DC Tarragona', ref: `PO-26-${String(11870 + s.seq.po++).padStart(5, '0')}`,
+    plate: plate(rng), carrier: pick(rng, SUPPLIERS), dest: SITE, ref: `PO-26-${String(11870 + s.seq.po++).padStart(5, '0')}`,
     cap: n, count: n, arrivedAt: s.t, due: s.t + 600, orders: [],
   }
   pushEvent(s, { level: 'info', text: `Inbound ${d.truck.ref} · ${n} pallets from ${d.truck.carrier} at ${d.def.id} (truck ${d.truck.plate})` })
@@ -857,7 +959,7 @@ function goHome(s: Sim, a: Agv, low: boolean): void {
 }
 
 function dispatch(s: Sim): void {
-  const free = s.agvs.filter((a) => !a.task && (a.state === 'idle' || (a.state === 'charging' && !a.lowCharge && a.battery >= AVAILABLE)))
+  const free = s.agvs.filter((a) => !a.external && !a.task && (a.state === 'idle' || (a.state === 'charging' && !a.lowCharge && a.battery >= AVAILABLE)))
   if (!free.length) return
   const queued = s.tasks
     .filter((t) => t.status === 'queued' && !aisleBlocked(s, s.slots[t.slot].aisle))
@@ -982,7 +1084,7 @@ function tick(s: Sim, dt: number): void {
   if (s.t >= s.nextBlockAt && !s.blocked) {
     const aisle = Math.floor(s.rng() * AISLES.length)
     const z = AISLES[aisle]
-    const x0 = 17 + s.rng() * 24
+    const x0 = RACK_X0 + 5 + s.rng() * Math.max(2, RACK_X1 - RACK_X0 - 12)
     const clear = s.agvs.every((a) => a.claim.every((q) => Math.hypot(q.x - (x0 + 1), q.z - z) > 4))
     if (clear) {
       s.blocked = { aisle, z, x0, x1: x0 + 2, until: s.t + 16 }
@@ -998,7 +1100,7 @@ function tick(s: Sim, dt: number): void {
   }
 
   dispatch(s)
-  for (const a of s.agvs) tickAgv(s, a, dt)
+  for (const a of s.agvs) if (!a.external) tickAgv(s, a, dt)
 }
 
 export function step(s: Sim, dt: number): void {
@@ -1051,6 +1153,42 @@ export function find(s: Sim, query: string): Found | null {
   }
   const prefix = s.slots.findIndex((x) => x.label.replace(/-/g, '').startsWith(q.replace(/-/g, '')))
   return prefix >= 0 ? { kind: 'slot', slot: prefix } : null
+}
+
+// ── A real fleet ─────────────────────────────────────────────────────────────
+
+/** One cart as a fleet manager reports it, already in this building's metres. */
+export interface FleetReport { id: string; x: number; z: number; heading?: number; battery?: number; state?: AgvState; mission?: string }
+
+/**
+ * Put real carts on the floor. A reported cart takes over the simulated one
+ * already bound to its id (or the next free one); from then on only reports
+ * move it. The cart keeps its scene id; the real id rides in `external`.
+ * Carts the feed never names keep simulating.
+ */
+export function applyFleet(s: Sim, reports: FleetReport[]): void {
+  for (const r of reports) {
+    if (!r.id || !Number.isFinite(r.x) || !Number.isFinite(r.z)) continue
+    const a = s.agvs.find((x) => x.external?.realId === r.id) ?? s.agvs.find((x) => !x.external && !x.task) ?? s.agvs.find((x) => !x.external)
+    if (!a) continue
+    if (!a.external) {
+      // hand its work back: not yet picked up → queue it again; under way → drop it
+      const t = a.task
+      if (t && t.status === 'assigned') { t.status = 'queued'; t.agv = undefined }
+      else if (t) { s.tasks = s.tasks.filter((x) => x !== t); s.slots[t.slot].reserved = false }
+      a.task = null; a.payload = null; a.ops = []
+      for (const z of a.zones) if (s.zones[z]?.holder === a.id) s.zones[z].holder = null
+      a.zones = []
+    }
+    const prev = a.pos
+    a.pos = { x: r.x, z: r.z }
+    a.heading = Number.isFinite(r.heading) ? r.heading! : (Math.hypot(r.x - prev.x, r.z - prev.z) > 0.05 ? Math.atan2(r.z - prev.z, r.x - prev.x) : a.heading)
+    if (Number.isFinite(r.battery)) a.battery = Math.max(0, Math.min(100, r.battery!))
+    if (r.state) a.state = r.state
+    a.legs = []; a.v = 0; a.wait = null
+    a.claim = bodyPts(a)
+    a.external = { realId: r.id, mission: r.mission ?? '', seenAt: s.t }
+  }
 }
 
 const fmtS = (sec: number) => `${Math.floor(sec / 60)} min ${String(Math.round(sec % 60)).padStart(2, '0')} s`
@@ -1108,13 +1246,14 @@ export type ErpTarget = 'odoo' | 'salesforce' | 'webhook'
  * The request a finished transfer order would turn into, in each system's own
  * API shape. A preview: the demo sends nothing anywhere.
  */
-export function erpPayload(target: ErpTarget, sync: ErpSync): { method: string; url: string; body: unknown } {
+export function erpPayload(target: ErpTarget, sync: ErpSync, endpoint = ''): { method: string; url: string; body: unknown } {
+  const base = endpoint.replace(/\/+$/, '')
   const t = sync.task
   const at = new Date(Date.UTC(2026, 9, 21, 8, 0, Math.round(t.doneAt ?? sync.t))).toISOString()
   if (target === 'odoo') {
     return {
       method: 'POST',
-      url: 'https://your-company.odoo.com/jsonrpc',
+      url: base ? `${base}/jsonrpc` : 'https://your-company.odoo.com/jsonrpc',
       body: {
         jsonrpc: '2.0', method: 'call',
         params: {
@@ -1132,13 +1271,13 @@ export function erpPayload(target: ErpTarget, sync: ErpSync): { method: string; 
   if (target === 'salesforce') {
     return {
       method: 'PATCH',
-      url: `/services/data/v61.0/sobjects/WorkOrder/External_Id__c/${encodeURIComponent(t.id)}`,
+      url: `${base}/services/data/v61.0/sobjects/WorkOrder/External_Id__c/${encodeURIComponent(t.id)}`,
       body: { Status: 'Completed', Subject: `${t.type} ${t.pallet.cases}× ${t.pallet.sku.code} · ${t.from} → ${t.to}`, Order__c: t.ref, Account__c: t.party, SSCC__c: t.pallet.sscc, AGV__c: sync.agv, Completed_At__c: at },
     }
   }
   return {
     method: 'POST',
-    url: 'https://hooks.your-company.com/wms',
+    url: base || 'https://hooks.your-company.com/wms',
     body: {
       event: t.type === 'PICK' ? 'pallet.staged' : 'pallet.putaway', transfer_order: t.id, order: t.ref, party: t.party,
       sscc: t.pallet.sscc, sku: t.pallet.sku.code, cases: t.pallet.cases, weight_kg: t.pallet.kg, lot: t.pallet.lot,
@@ -1146,3 +1285,6 @@ export function erpPayload(target: ErpTarget, sync: ErpSync): { method: string; 
     },
   }
 }
+
+// The demo centre, until someone configures their own.
+configureAgv()
