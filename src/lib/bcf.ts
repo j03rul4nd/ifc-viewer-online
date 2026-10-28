@@ -109,6 +109,9 @@ export function issuesToBcfTopics(
 
 // ── XML builders (BCF 2.1 + 3.0) ─────────────────────────────────────────────
 
+/** Author written where the schema requires one and the issue has none. */
+const BCF_FALLBACK_AUTHOR = 'IFC Viewer Online'
+
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -127,7 +130,7 @@ function snapshotFileName(vp: BcfTopic['viewpoints'][number], i: number): string
 function commentXml(c: BcfComment, indent: string): string {
   return `${indent}<Comment Guid="${c.guid}">
 ${indent}  <Date>${xmlEscape(c.date || new Date().toISOString())}</Date>
-${indent}  <Author>${xmlEscape(c.author || '')}</Author>
+${indent}  <Author>${xmlEscape(c.author || BCF_FALLBACK_AUTHOR)}</Author>
 ${indent}  <Comment>${xmlEscape(c.text)}</Comment>${c.viewpointGuid ? `\n${indent}  <Viewpoint Guid="${c.viewpointGuid}" />` : ''}
 ${indent}</Comment>`
 }
@@ -146,14 +149,20 @@ function buildMarkup21(topic: BcfTopic): string {
   const comments = t.comments.map((c) => `\n${commentXml(c, '  ')}`).join('')
 
   // Schema order: Title, Priority, Labels, CreationDate, CreationAuthor,
-  // AssignedTo, Description. 2.1 has no <Label>: <Labels> is itself the
-  // label, repeated once per label (3.0 made it a container).
+  // DueDate, AssignedTo, Description. 2.1 has no <Label>: <Labels> is itself
+  // the label, repeated once per label (3.0 made it a container).
   const labels = (t.labels ?? []).map((l) => `\n    <Labels>${xmlEscape(l)}</Labels>`).join('')
+  // CreationDate and CreationAuthor are REQUIRED in 2.1 (the author is
+  // optional in 3.0): a topic without them fails a strict reader's schema check.
+  const created = t.creationDate || new Date().toISOString()
+  const author = t.creationAuthor || BCF_FALLBACK_AUTHOR
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Markup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="markup.xsd">
   <Topic Guid="${t.guid}" TopicType="${xmlEscape(t.topicType || 'Issue')}" TopicStatus="${xmlEscape(t.status || 'Open')}">
-    <Title>${xmlEscape(t.title)}</Title>${t.priority ? `\n    <Priority>${xmlEscape(t.priority)}</Priority>` : ''}${labels}${t.creationDate ? `\n    <CreationDate>${t.creationDate}</CreationDate>` : ''}${t.creationAuthor ? `\n    <CreationAuthor>${xmlEscape(t.creationAuthor)}</CreationAuthor>` : ''}${t.assignedTo ? `\n    <AssignedTo>${xmlEscape(t.assignedTo)}</AssignedTo>` : ''}${t.description ? `\n    <Description>${xmlEscape(t.description)}</Description>` : ''}
+    <Title>${xmlEscape(t.title)}</Title>${t.priority ? `\n    <Priority>${xmlEscape(t.priority)}</Priority>` : ''}${labels}
+    <CreationDate>${xmlEscape(created)}</CreationDate>
+    <CreationAuthor>${xmlEscape(author)}</CreationAuthor>${t.dueDate ? `\n    <DueDate>${xmlEscape(t.dueDate)}</DueDate>` : ''}${t.assignedTo ? `\n    <AssignedTo>${xmlEscape(t.assignedTo)}</AssignedTo>` : ''}${t.description ? `\n    <Description>${xmlEscape(t.description)}</Description>` : ''}
   </Topic>${comments}${vps}
 </Markup>`
 }
