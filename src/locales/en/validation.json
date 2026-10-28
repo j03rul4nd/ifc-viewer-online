@@ -217,6 +217,7 @@
     "newTopic": "New topic",
     "createTopic": "Create topic",
     "topicCreated": "Topic created",
+    "measurementsHeading": "Measurements:",
     "topicDeleted": "Topic deleted",
     "topicUpdated": "Saved",
     "captureView": "Capture current view",

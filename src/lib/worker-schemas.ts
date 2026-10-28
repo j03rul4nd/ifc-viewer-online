@@ -270,6 +270,10 @@ const BcfViewpointSchema = z.object({
     location:  z.object({ x: z.number(), y: z.number(), z: z.number() }),
     direction: z.object({ x: z.number(), y: z.number(), z: z.number() }),
   })).optional(),
+  lines:            z.array(z.object({
+    start: z.object({ x: z.number(), y: z.number(), z: z.number() }),
+    end:   z.object({ x: z.number(), y: z.number(), z: z.number() }),
+  })).optional(),
 })
 
 const BcfCommentSchema = z.object({
@@ -290,6 +294,7 @@ const BcfTopicSchema = z.object({
   priority:           z.string().optional(),
   creationDate:       z.string().optional(),
   creationAuthor:     z.string().optional(),
+  dueDate:            z.string().optional(),
   assignedTo:         z.string().optional(),
   labels:             z.array(z.string()).optional(),
   viewpoints:         z.array(BcfViewpointSchema),

@@ -212,6 +212,14 @@ function buildViewpointXml(sceneVp: BcfTopic['viewpoints'][number], vpGuid: stri
   if (!pos || !dir || !up) return ''
   // AspectRatio is required by the 3.0 PerspectiveCamera schema.
   const aspect = version === '3.0' ? `\n    <AspectRatio>${vp.aspectRatio ?? 1}</AspectRatio>` : ''
+  // <Lines> comes between the camera and <ClippingPlanes> in both schemas.
+  const lines = vp.lines && vp.lines.length > 0 ? `
+  <Lines>
+${vp.lines.map((l) => `    <Line>
+      <StartPoint>${xyzXml(l.start)}</StartPoint>
+      <EndPoint>${xyzXml(l.end)}</EndPoint>
+    </Line>`).join('\n')}
+  </Lines>` : ''
   // Same element names in 2.1 and 3.0, after the camera in both schemas.
   const clipping = vp.clippingPlanes && vp.clippingPlanes.length > 0 ? `
   <ClippingPlanes>
@@ -233,7 +241,7 @@ ${vp.clippingPlanes.map((p) => `    <ClippingPlane>
     <CameraDirection>${xyzXml(dir)}</CameraDirection>
     <CameraUpVector>${xyzXml(up)}</CameraUpVector>
     <FieldOfView>${fov}</FieldOfView>${aspect}
-  </PerspectiveCamera>${clipping}
+  </PerspectiveCamera>${lines}${clipping}
 </VisualizationInfo>`
 }
 

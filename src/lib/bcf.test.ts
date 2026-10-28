@@ -227,6 +227,39 @@ describe('BCF viewpoint frame (scene y-up ↔ IFC Z-up)', () => {
   })
 })
 
+describe('BCF lines (measurements)', () => {
+  const line = { start: { x: 0, y: 1, z: 0 }, end: { x: 4, y: 1, z: -5 } }
+
+  it('writes <Lines> between the camera and the planes, in IFC axes, and reads them back', () => {
+    for (const version of ['2.1', '3.0'] as const) {
+      const xml = bcfv({
+        guid: 'g',
+        cameraPosition:  { x: 0, y: 30, z: 0 },
+        cameraDirection: { x: 0, y: -1, z: 0 },
+        lines: [line],
+        clippingPlanes: [],
+      }, version)
+      const at = xml.indexOf('<Lines>')
+      expect(at, version).toBeGreaterThan(xml.indexOf('</PerspectiveCamera>'))
+      // 4 m east, 5 m north, 1 m up.
+      expect(xyzOf(xml, 'EndPoint', at), version).toEqual({ x: 4, y: 5, z: 1 })
+      expect(parseViewpoint(xml, 'g').lines, version).toEqual([line])
+    }
+  })
+
+  it('survives the worker message schema, as does DueDate', () => {
+    const parsed = parseBcfParserMsg({
+      type: 'done', id: 'x', version: '2.1',
+      topics: [{ ...sampleTopic(), dueDate: '2026-11-30', viewpoints: [{ guid: 'g', lines: [line] }] }],
+    })
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok && parsed.data.type === 'done') {
+      expect(parsed.data.topics[0].viewpoints[0].lines).toEqual([line])
+      expect(parsed.data.topics[0].dueDate).toBe('2026-11-30')
+    }
+  })
+})
+
 describe('BCF clipping planes', () => {
   // A plan cut at 3 m that keeps what is below: the three.js normal points
   // DOWN (the kept side), so BCF's Direction points UP (the side cut away).
