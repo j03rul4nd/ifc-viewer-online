@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>デジタルツイン作成ツール：AGV倉庫と輸入追跡を無料で</title>
+  <meta name="description" content="ブラウザで自分のデジタルツインを作成。自社のレイアウトと商品から AGV 倉庫を、発注表から輸入追跡マップを作れます。無料、インストール不要。" />
+  <meta name="keywords" content="デジタルツイン 作成, デジタルツイン 無料, 倉庫 シミュレーション, AGV シミュレーション, 倉庫 デジタルツイン, 輸入 追跡, 発注 追跡, 輸入原価" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+  <meta property="og:title" content="デジタルツイン作成ツール：AGV倉庫と輸入追跡を無料で" />
+  <meta property="og:description" content="ブラウザで自分のデジタルツインを作成。自社のレイアウトと商品から AGV 倉庫を、発注表から輸入追跡マップを作れます。無料、インストール不要。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="デジタルツイン作成ツール：AGV倉庫と輸入追跡を無料で" />
+  <meta name="twitter:description" content="ブラウザで自分のデジタルツインを作成。自社のレイアウトと商品から AGV 倉庫を、発注表から輸入追跡マップを作れます。無料、インストール不要。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"自分だけの デジタルツインを作る","url":"https://www.ifcvieweronline.eu/ja/twin-builder/","description":"ブラウザで自分のデジタルツインを作成。自社のレイアウトと商品から AGV 倉庫を、発注表から輸入追跡マップを作れます。無料、インストール不要。","image":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","inLanguage":"ja","applicationCategory":"BusinessApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"AGV 倉庫","inLanguage":"ja","url":"https://www.ifcvieweronline.eu/twin-builder/?kind=agv","step":[{"@type":"HowToStep","position":1,"name":"建物を設定","text":"通路、ベイ、段数、入出荷ドック、車両台数。"},{"@type":"HowToStep","position":2,"name":"商品を読み込む","text":"Excel から貼り付けるか CSV を読み込み：コード、名称、ケース数、重量。"},{"@type":"HowToStep","position":3,"name":"取引先を設定","text":"顧客、都市、運送会社（1 社を特急に）、仕入先。"},{"@type":"HowToStep","position":4,"name":"ERP と連携","text":"Odoo、Salesforce、または任意の Webhook に確定作業を送信。"},{"@type":"HowToStep","position":5,"name":"実際の車両を表示","text":"車両管理システムの位置がシミュレーション車両に置き換わります。"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"輸入トラッカー","inLanguage":"ja","url":"https://www.ifcvieweronline.eu/twin-builder/?kind=imports","step":[{"@type":"HowToStep","position":1,"name":"届け先を設定","text":"会社、買付代行、倉庫、代行業者の拠点。"},{"@type":"HowToStep","position":2,"name":"ルートを選ぶ","text":"中国と欧州の間の港、空港、鉄道ターミナル。"},{"@type":"HowToStep","position":3,"name":"仕入先と発注を読み込む","text":"表から：発注番号、仕入先、数量、単価、HS、輸送手段、日付。"},{"@type":"HowToStep","position":4,"name":"実際の日付を使う","text":"今日を基準に、遅れている注文、遅れ日数、新しい到着日を表示。"},{"@type":"HowToStep","position":5,"name":"代行業者の更新を追加","text":"注文、状況、日付、位置を含む CSV または URL。"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","inLanguage":"ja","mainEntity":[{"@type":"Question","name":"無料ですか？","acceptedAnswer":{"@type":"Answer","text":"はい。ブラウザだけで動作し、アカウントもインストールも不要です。"}},{"@type":"Question","name":"データはどこに保存されますか？","acceptedAnswer":{"@type":"Answer","text":"ブラウザ内です。ファイルに書き出すか、サーバーを経由しないリンクで共有できます。ERP のキーはブラウザの外に出ません。"}},{"@type":"Question","name":"ERP や車両管理と連携できますか？","acceptedAnswer":{"@type":"Answer","text":"はい、ブラウザから直接：Odoo、Salesforce、Webhook、車両は JSON か WebSocket。お使いのシステムがこのサイトからのアクセスを許可している必要があります（CORS）。"}},{"@type":"Question","name":"日本語で使えますか？","acceptedAnswer":{"@type":"Answer","text":"画面は英語です。カンマ区切り・セミコロン区切りの表を読み込めます。"}}]}</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .cta2 { display: inline-block; margin-left: 10px; padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #E8E8F0; font-size: 15px; font-weight: 600; }
+    .cta2:hover { border-color: rgba(139,150,233,0.6); }
+    @media (max-width: 520px) { .cta2 { margin: 10px 0 0; } }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+    .steps { display: grid; gap: 12px; padding-left: 20px; margin-top: 18px; }
+    .steps h3 { font-size: 15px; font-weight: 600; }
+    .steps p { font-size: 14px; color: rgba(255,255,255,0.58); }
+    .shot img { max-width: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/ja/" class="logo">IFC Viewer Online</a>
+      <a href="/twin-builder/" class="nav-cta">自分のデジタルツインを作る →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">無料 · ブラウザで動作 · インストール不要</p>
+        <h1>自分だけの <br><span class="accent">デジタルツインを作る</span></h1>
+        <p class="lead">自社のレイアウトと商品から AGV 倉庫を、発注データから輸入マップを作成。すべてブラウザ内で動作し、何もアップロードしません。</p>
+        <a href="/twin-builder/?kind=agv" class="cta">倉庫を作る →</a>
+        <a href="/twin-builder/?kind=imports" class="cta2">トラッカーを作る →</a>
+      </div>
+    </section>
+    
+    <section class="section">
+      <div class="container">
+        <h2>AGV 倉庫</h2>
+        <figure class="shot"><img src="/demos/agv-warehouse-digital-twin.jpg" srcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="AGV 倉庫のデジタルツイン：6 台の無人搬送車、ラック、ドックのライブ 3D 表示" loading="lazy" decoding="async" /></figure>
+        <ol class="steps"><li><h3>建物を設定</h3><p>通路、ベイ、段数、入出荷ドック、車両台数。</p></li><li><h3>商品を読み込む</h3><p>Excel から貼り付けるか CSV を読み込み：コード、名称、ケース数、重量。</p></li><li><h3>取引先を設定</h3><p>顧客、都市、運送会社（1 社を特急に）、仕入先。</p></li><li><h3>ERP と連携</h3><p>Odoo、Salesforce、または任意の Webhook に確定作業を送信。</p></li><li><h3>実際の車両を表示</h3><p>車両管理システムの位置がシミュレーション車両に置き換わります。</p></li></ol>
+        <p style="margin-top:18px"><a class="cta" href="/twin-builder/?kind=agv">倉庫を作る →</a></p>
+      </div>
+    </section>
+    
+    <section class="section">
+      <div class="container">
+        <h2>輸入トラッカー</h2>
+        <figure class="shot"><img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="輸入追跡マップ：海上・航空・鉄道で中国から届く発注と、対応が必要な注文" loading="lazy" decoding="async" /></figure>
+        <ol class="steps"><li><h3>届け先を設定</h3><p>会社、買付代行、倉庫、代行業者の拠点。</p></li><li><h3>ルートを選ぶ</h3><p>中国と欧州の間の港、空港、鉄道ターミナル。</p></li><li><h3>仕入先と発注を読み込む</h3><p>表から：発注番号、仕入先、数量、単価、HS、輸送手段、日付。</p></li><li><h3>実際の日付を使う</h3><p>今日を基準に、遅れている注文、遅れ日数、新しい到着日を表示。</p></li><li><h3>代行業者の更新を追加</h3><p>注文、状況、日付、位置を含む CSV または URL。</p></li></ol>
+        <p style="margin-top:18px"><a class="cta" href="/twin-builder/?kind=imports">トラッカーを作る →</a></p>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>よくある質問</h2>
+        <div class="faq">
+          <div><h3>無料ですか？</h3><p>はい。ブラウザだけで動作し、アカウントもインストールも不要です。</p></div>
+          <div><h3>データはどこに保存されますか？</h3><p>ブラウザ内です。ファイルに書き出すか、サーバーを経由しないリンクで共有できます。ERP のキーはブラウザの外に出ません。</p></div>
+          <div><h3>ERP や車両管理と連携できますか？</h3><p>はい、ブラウザから直接：Odoo、Salesforce、Webhook、車両は JSON か WebSocket。お使いのシステムがこのサイトからのアクセスを許可している必要があります（CORS）。</p></div>
+          <div><h3>日本語で使えますか？</h3><p>画面は英語です。カンマ区切り・セミコロン区切りの表を読み込めます。</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>御社向けにも作れます</h2>
+        <p>Joel Benítez が一人で一貫して開発。最初のお客様とパートナーを探しています。</p>
+        <a href="/msp-global/#contact" class="cta">お問い合わせ →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/ja/">IFC Viewer Online</a>
+        <a href="/ja/agv-digital-twin/">AGV デジタルツイン</a>
+        <a href="/ja/china-import-tracker/">中国からの全注文を</a>
+        <a href="/ja/digital-twin-examples/">デジタルツイン事例</a>
+        <a href="/msp-global/">すべてのライブデモ</a>
+      </nav>
+      <nav><a href="/twin-builder/" hreflang="en" lang="en">EN</a> <a href="/es/crear-gemelo-digital/" hreflang="es" lang="es">ES</a> <a href="/de/digitalen-zwilling-erstellen/" hreflang="de" lang="de">DE</a> <a href="/fr/creer-jumeau-numerique/" hreflang="fr" lang="fr">FR</a> <a href="/pt/criar-gemeo-digital/" hreflang="pt" lang="pt">PT</a> <a href="/it/creare-gemello-digitale/" hreflang="it" lang="it">IT</a> <a href="/ca/crear-besso-digital/" hreflang="ca" lang="ca">CA</a> <a href="/zh/twin-builder/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/twin-builder/" hreflang="ja" lang="ja">JA</a> <a href="/th/twin-builder/" hreflang="th" lang="th">TH</a></nav>
+      <p>スクリーンショット © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

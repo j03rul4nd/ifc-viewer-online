@@ -11,6 +11,7 @@
 
 import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
+import { builderHreflangs } from './build-twin-builder-landings'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const ROUTE = '/twin-builder/'
@@ -103,7 +104,7 @@ export function renderTwinBuilderShell(template: string): string {
   set(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, esc(description))
   set(/(<meta\s+name="twitter:image"\s+content=")[^"]*(")/, esc(image))
   set(/(<meta\s+name="twitter:image:alt"\s+content=")[^"]*(")/, esc(imageAlt))
-  // English only; the root shell's language set and app schema are not this page's.
+  // The builder's own language set (the localized pages) replaces the home page's.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
   html = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>\s*/g, '')
 
@@ -139,8 +140,7 @@ export function renderTwinBuilderShell(template: string): string {
     mainEntity: TWIN_BUILDER_FAQ.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
   }
   const injected = [
-    `<link rel="alternate" hreflang="en" href="${esc(canonical)}" />`,
-    `<link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />`,
+    builderHreflangs('').split('\n').join('\n  '),
     ...[appLd, ...howTo, faqLd].map((o) => `<script type="application/ld+json">${jsonEsc(JSON.stringify(o))}</script>`),
   ].join('\n  ')
   html = html.replace('</head>', `  ${injected}\n</head>`)

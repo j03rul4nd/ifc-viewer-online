@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สร้างดิจิทัลทวิน: คลังสินค้า AGV หรือติดตามสินค้านำเข้า</title>
+  <meta name="description" content="สร้างดิจิทัลทวินของคุณเองในเบราว์เซอร์: คลังสินค้า AGV จากผังและสินค้าของคุณ หรือแผนที่ติดตามสินค้านำเข้าจากไฟล์คำสั่งซื้อ ฟรี ไม่ต้องติดตั้ง" />
+  <meta name="keywords" content="สร้างดิจิทัลทวิน, ดิจิทัลทวินฟรี, จำลองคลังสินค้า, จำลอง AGV, ดิจิทัลทวินคลังสินค้า, ติดตามสินค้านำเข้า, ติดตามใบสั่งซื้อ, ต้นทุนนำเข้า" />
+  <meta name="author" content="Joel Benítez" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/crear-gemelo-digital/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/creare-gemello-digitale/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/crear-besso-digital/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/twin-builder/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/th/twin-builder/" />
+  <meta property="og:title" content="สร้างดิจิทัลทวิน: คลังสินค้า AGV หรือติดตามสินค้านำเข้า" />
+  <meta property="og:description" content="สร้างดิจิทัลทวินของคุณเองในเบราว์เซอร์: คลังสินค้า AGV จากผังและสินค้าของคุณ หรือแผนที่ติดตามสินค้านำเข้าจากไฟล์คำสั่งซื้อ ฟรี ไม่ต้องติดตั้ง" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="th_TH" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="900" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="สร้างดิจิทัลทวิน: คลังสินค้า AGV หรือติดตามสินค้านำเข้า" />
+  <meta name="twitter:description" content="สร้างดิจิทัลทวินของคุณเองในเบราว์เซอร์: คลังสินค้า AGV จากผังและสินค้าของคุณ หรือแผนที่ติดตามสินค้านำเข้าจากไฟล์คำสั่งซื้อ ฟรี ไม่ต้องติดตั้ง" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"สร้างดิจิทัลทวิน ของคุณเอง","url":"https://www.ifcvieweronline.eu/th/twin-builder/","description":"สร้างดิจิทัลทวินของคุณเองในเบราว์เซอร์: คลังสินค้า AGV จากผังและสินค้าของคุณ หรือแผนที่ติดตามสินค้านำเข้าจากไฟล์คำสั่งซื้อ ฟรี ไม่ต้องติดตั้ง","image":"https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg","inLanguage":"th","applicationCategory":"BusinessApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Joel Benítez","url":"https://github.com/j03rul4nd"},"publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"คลังสินค้า AGV","inLanguage":"th","url":"https://www.ifcvieweronline.eu/twin-builder/?kind=agv","step":[{"@type":"HowToStep","position":1,"name":"กำหนดอาคาร","text":"ทางเดิน ช่องวาง ชั้น ท่าโหลดเข้าและออก และจำนวนรถ"},{"@type":"HowToStep","position":2,"name":"นำเข้าสินค้า","text":"วางจาก Excel หรืออัปโหลด CSV: รหัส ชื่อ จำนวนกล่อง และน้ำหนัก"},{"@type":"HowToStep","position":3,"name":"ระบุลูกค้า","text":"ลูกค้า เมือง ผู้ขนส่ง (กำหนดด่วนได้หนึ่งราย) และซัพพลายเออร์"},{"@type":"HowToStep","position":4,"name":"เชื่อม ERP","text":"Odoo, Salesforce หรือ webhook รับทุกงานที่ยืนยันแล้ว"},{"@type":"HowToStep","position":5,"name":"แสดงฝูงรถจริง","text":"ตำแหน่งจากระบบจัดการฝูงรถแทนรถที่จำลอง"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"ติดตามสินค้านำเข้า","inLanguage":"th","url":"https://www.ifcvieweronline.eu/twin-builder/?kind=imports","step":[{"@type":"HowToStep","position":1,"name":"ระบุปลายทาง","text":"บริษัท ตัวแทนจัดซื้อ คลังสินค้า และศูนย์ของตัวแทน"},{"@type":"HowToStep","position":2,"name":"เลือกเส้นทาง","text":"ท่าเรือ สนามบิน และสถานีรถไฟระหว่างจีนกับยุโรป"},{"@type":"HowToStep","position":3,"name":"นำเข้าซัพพลายเออร์และคำสั่งซื้อ","text":"จากสเปรดชีต: เลขที่ ซัพพลายเออร์ จำนวน ราคา HS วิธีขนส่ง และวันที่"},{"@type":"HowToStep","position":4,"name":"ใช้วันที่จริง","text":"ยึดวันนี้: อะไรล่าช้า ช้าเท่าไร และวันถึงใหม่"},{"@type":"HowToStep","position":5,"name":"เพิ่มอัปเดตจากตัวแทน","text":"CSV หรือ URL ที่มีคำสั่งซื้อ สถานะ วันที่ และตำแหน่ง"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","inLanguage":"th","mainEntity":[{"@type":"Question","name":"ใช้ฟรีไหม","acceptedAnswer":{"@type":"Answer","text":"ฟรี ทำงานในเบราว์เซอร์ทั้งหมด ไม่ต้องมีบัญชีและไม่ต้องติดตั้ง"}},{"@type":"Question","name":"ข้อมูลของฉันเก็บไว้ที่ไหน","acceptedAnswer":{"@type":"Answer","text":"ในเบราว์เซอร์ของคุณ ส่งออกเป็นไฟล์หรือแชร์ด้วยลิงก์ที่ไม่ผ่านเซิร์ฟเวอร์ใด คีย์ ERP ไม่ออกจากเบราว์เซอร์"}},{"@type":"Question","name":"เชื่อม ERP หรือฝูงรถของฉันได้ไหม","acceptedAnswer":{"@type":"Answer","text":"ได้ จากเบราว์เซอร์โดยตรง: Odoo, Salesforce หรือ webhook และ JSON หรือ WebSocket สำหรับฝูงรถ ระบบของคุณต้องอนุญาตเว็บนี้ (CORS)"}},{"@type":"Question","name":"มีภาษาไทยไหม","acceptedAnswer":{"@type":"Answer","text":"หน้าจอเป็นภาษาอังกฤษ อ่านสเปรดชีตที่คั่นด้วยจุลภาคหรืออัฒภาคได้"}}]}</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #8B96E9; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
+    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #4F5ABF; }
+    .cta2 { display: inline-block; margin-left: 10px; padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #E8E8F0; font-size: 15px; font-weight: 600; }
+    .cta2:hover { border-color: rgba(139,150,233,0.6); }
+    @media (max-width: 520px) { .cta2 { margin: 10px 0 0; } }
+    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 18px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+    .faq { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+    .faq div { padding: 20px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq div:last-child { border-bottom: none; }
+    .faq h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
+    .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+    .more a:hover { border-color: rgba(139,150,233,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+    .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
+    footer a:hover { color: rgba(255,255,255,0.7); }
+    .steps { display: grid; gap: 12px; padding-left: 20px; margin-top: 18px; }
+    .steps h3 { font-size: 15px; font-weight: 600; }
+    .steps p { font-size: 14px; color: rgba(255,255,255,0.58); }
+    .shot img { max-width: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="/th/" class="logo">IFC Viewer Online</a>
+      <a href="/twin-builder/" class="nav-cta">สร้างดิจิทัลทวินของคุณเอง →</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">ฟรี · ในเบราว์เซอร์ · ไม่ต้องติดตั้ง</p>
+        <h1>สร้างดิจิทัลทวิน <br><span class="accent">ของคุณเอง</span></h1>
+        <p class="lead">คลังสินค้า AGV จากผังและสินค้าของคุณ หรือแผนที่สินค้านำเข้าจากคำสั่งซื้อของคุณ ทุกอย่างทำงานในเบราว์เซอร์ ไม่มีการอัปโหลด</p>
+        <a href="/twin-builder/?kind=agv" class="cta">สร้างคลังสินค้าของฉัน →</a>
+        <a href="/twin-builder/?kind=imports" class="cta2">สร้างระบบติดตามของฉัน →</a>
+      </div>
+    </section>
+    
+    <section class="section">
+      <div class="container">
+        <h2>คลังสินค้า AGV</h2>
+        <figure class="shot"><img src="/demos/agv-warehouse-digital-twin.jpg" srcset="/demos/agv-warehouse-digital-twin-800.jpg 800w, /demos/agv-warehouse-digital-twin.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="ดิจิทัลทวินคลังสินค้า AGV: รถนำทางอัตโนมัติหกคัน ชั้นวาง และท่าโหลดในสามมิติแบบสด" loading="lazy" decoding="async" /></figure>
+        <ol class="steps"><li><h3>กำหนดอาคาร</h3><p>ทางเดิน ช่องวาง ชั้น ท่าโหลดเข้าและออก และจำนวนรถ</p></li><li><h3>นำเข้าสินค้า</h3><p>วางจาก Excel หรืออัปโหลด CSV: รหัส ชื่อ จำนวนกล่อง และน้ำหนัก</p></li><li><h3>ระบุลูกค้า</h3><p>ลูกค้า เมือง ผู้ขนส่ง (กำหนดด่วนได้หนึ่งราย) และซัพพลายเออร์</p></li><li><h3>เชื่อม ERP</h3><p>Odoo, Salesforce หรือ webhook รับทุกงานที่ยืนยันแล้ว</p></li><li><h3>แสดงฝูงรถจริง</h3><p>ตำแหน่งจากระบบจัดการฝูงรถแทนรถที่จำลอง</p></li></ol>
+        <p style="margin-top:18px"><a class="cta" href="/twin-builder/?kind=agv">สร้างคลังสินค้าของฉัน →</a></p>
+      </div>
+    </section>
+    
+    <section class="section">
+      <div class="container">
+        <h2>ติดตามสินค้านำเข้า</h2>
+        <figure class="shot"><img src="/demos/china-import-tracker-map.jpg" srcset="/demos/china-import-tracker-map-800.jpg 800w, /demos/china-import-tracker-map.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="แผนที่ติดตามสินค้านำเข้า: ใบสั่งซื้อจากจีนทางเรือ อากาศ และราง พร้อมรายการที่ต้องจัดการ" loading="lazy" decoding="async" /></figure>
+        <ol class="steps"><li><h3>ระบุปลายทาง</h3><p>บริษัท ตัวแทนจัดซื้อ คลังสินค้า และศูนย์ของตัวแทน</p></li><li><h3>เลือกเส้นทาง</h3><p>ท่าเรือ สนามบิน และสถานีรถไฟระหว่างจีนกับยุโรป</p></li><li><h3>นำเข้าซัพพลายเออร์และคำสั่งซื้อ</h3><p>จากสเปรดชีต: เลขที่ ซัพพลายเออร์ จำนวน ราคา HS วิธีขนส่ง และวันที่</p></li><li><h3>ใช้วันที่จริง</h3><p>ยึดวันนี้: อะไรล่าช้า ช้าเท่าไร และวันถึงใหม่</p></li><li><h3>เพิ่มอัปเดตจากตัวแทน</h3><p>CSV หรือ URL ที่มีคำสั่งซื้อ สถานะ วันที่ และตำแหน่ง</p></li></ol>
+        <p style="margin-top:18px"><a class="cta" href="/twin-builder/?kind=imports">สร้างระบบติดตามของฉัน →</a></p>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>คำถามที่พบบ่อย</h2>
+        <div class="faq">
+          <div><h3>ใช้ฟรีไหม</h3><p>ฟรี ทำงานในเบราว์เซอร์ทั้งหมด ไม่ต้องมีบัญชีและไม่ต้องติดตั้ง</p></div>
+          <div><h3>ข้อมูลของฉันเก็บไว้ที่ไหน</h3><p>ในเบราว์เซอร์ของคุณ ส่งออกเป็นไฟล์หรือแชร์ด้วยลิงก์ที่ไม่ผ่านเซิร์ฟเวอร์ใด คีย์ ERP ไม่ออกจากเบราว์เซอร์</p></div>
+          <div><h3>เชื่อม ERP หรือฝูงรถของฉันได้ไหม</h3><p>ได้ จากเบราว์เซอร์โดยตรง: Odoo, Salesforce หรือ webhook และ JSON หรือ WebSocket สำหรับฝูงรถ ระบบของคุณต้องอนุญาตเว็บนี้ (CORS)</p></div>
+          <div><h3>มีภาษาไทยไหม</h3><p>หน้าจอเป็นภาษาอังกฤษ อ่านสเปรดชีตที่คั่นด้วยจุลภาคหรืออัฒภาคได้</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="end">
+      <div class="container">
+        <h2>อยากได้แบบนี้สำหรับธุรกิจของคุณไหม</h2>
+        <p>พัฒนาตั้งแต่ต้นจนจบโดย Joel Benítez กำลังมองหาลูกค้าและพาร์ตเนอร์รายแรก</p>
+        <a href="/msp-global/#contact" class="cta">ติดต่อ →</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/th/">IFC Viewer Online</a>
+        <a href="/th/agv-digital-twin/">ดิจิทัลทวิน AGV</a>
+        <a href="/th/china-import-tracker/">ทุกคำสั่งซื้อจากจีน</a>
+        <a href="/th/digital-twin-examples/">ตัวอย่างดิจิทัลทวิน</a>
+        <a href="/msp-global/">เดโมสดทั้งหมด</a>
+      </nav>
+      <nav><a href="/twin-builder/" hreflang="en" lang="en">EN</a> <a href="/es/crear-gemelo-digital/" hreflang="es" lang="es">ES</a> <a href="/de/digitalen-zwilling-erstellen/" hreflang="de" lang="de">DE</a> <a href="/fr/creer-jumeau-numerique/" hreflang="fr" lang="fr">FR</a> <a href="/pt/criar-gemeo-digital/" hreflang="pt" lang="pt">PT</a> <a href="/it/creare-gemello-digitale/" hreflang="it" lang="it">IT</a> <a href="/ca/crear-besso-digital/" hreflang="ca" lang="ca">CA</a> <a href="/zh/twin-builder/" hreflang="zh" lang="zh">ZH</a> <a href="/ja/twin-builder/" hreflang="ja" lang="ja">JA</a> <a href="/th/twin-builder/" hreflang="th" lang="th">TH</a></nav>
+      <p>ภาพหน้าจอ © 2026 Joel Benítez · IFC Viewer Online</p>
+    </div>
+  </footer>
+</body>
+</html>

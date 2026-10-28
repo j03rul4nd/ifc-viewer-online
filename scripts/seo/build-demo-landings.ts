@@ -267,7 +267,7 @@ function fromPack(pack: LangPack): Lang {
 
 export const LANGS: Lang[] = [EN, ...LANG_PACKS.map(fromPack)]
 
-const pathOf = (L: Lang, base: string) => `${L.prefix}/${L.pages[base].slug}/`
+export const pathOf = (L: Lang, base: string) => `${L.prefix}/${L.pages[base].slug}/`
 const cap1 = (s: string) => s.replace(/^./, (c) => c.toUpperCase())
 
 function hreflangs(base: string, indent: string, tag: 'link' | 'xhtml:link') {
@@ -279,7 +279,7 @@ function hreflangs(base: string, indent: string, tag: 'link' | 'xhtml:link') {
 /** Pages whose demo the builder can make your own. */
 const BUILD_KIND: Record<string, string> = { 'agv-digital-twin': 'agv', 'china-import-tracker': 'imports' }
 
-const STYLE = `    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+export const STYLE = `    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; height: auto; display: block; }
