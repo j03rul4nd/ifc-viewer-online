@@ -111,6 +111,8 @@
     "headroomNote": "到下一表面的垂直净高。",
     "on": "位于",
     "crossModel": "跨模型",
+    "crossModelMap": "模型 ↔ 地图",
+    "crossMap": "地图要素之间",
     "climb": "上升 · 下降",
     "maxSlope": "最大坡度",
     "latLon": "纬度, 经度",

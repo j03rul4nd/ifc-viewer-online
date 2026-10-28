@@ -41,11 +41,23 @@ export function anchorsLine(item: MeasureItem, t: T, s: MeasureSettings): string
 }
 
 /** Different models (or a model and the map) at the two ends: a coordination measurement. */
-export function crossesModels(item: MeasureItem): boolean {
+/**
+ * What a measurement's two ends stand on, when they differ: two IFC models,
+ * a model and the map (an OSM building or the relief), or two map features.
+ * Null when both ends are on the same thing — the common case, no tag.
+ */
+export type CrossKind = 'models' | 'modelMap' | 'map'
+
+export function crossKind(item: MeasureItem): CrossKind | null {
   const a = item.anchors
-  if (!a || a.length < 2 || !a[0] || !a[a.length - 1]) return false
+  if (!a || a.length < 2 || !a[0] || !a[a.length - 1]) return null
+  const first = a[0]!, last = a[a.length - 1]!
   const k = (x: Anchor) => x.model ?? (x.map?.kind === 'building' ? `osm:${x.map.id}` : x.map?.kind ?? '')
-  return k(a[0]!) !== k(a[a.length - 1]!)
+  if (k(first) === k(last)) return null
+  const onModel = (x: Anchor) => !!x.model
+  if (onModel(first) && onModel(last)) return 'models'
+  if (onModel(first) || onModel(last)) return 'modelMap'
+  return 'map'
 }
 
 export function formatLatLon(g: GeoPoint, locale: string): string {

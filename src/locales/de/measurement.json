@@ -111,6 +111,8 @@
     "headroomNote": "Senkrechte lichte Höhe bis zur nächsten Fläche.",
     "on": "Auf",
     "crossModel": "Modellübergreifend",
+    "crossModelMap": "Modell ↔ Karte",
+    "crossMap": "Zwischen Kartenobjekten",
     "climb": "Anstieg · Gefälle",
     "maxSlope": "Größte Neigung",
     "latLon": "Breite, Länge",

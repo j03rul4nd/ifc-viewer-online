@@ -111,6 +111,8 @@
     "headroomNote": "Vertical clear height to the next surface.",
     "on": "On",
     "crossModel": "Across models",
+    "crossModelMap": "Model ↔ map",
+    "crossMap": "Across map features",
     "climb": "Climb · descent",
     "maxSlope": "Steepest slope",
     "latLon": "Lat, lon",

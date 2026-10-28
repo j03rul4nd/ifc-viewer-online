@@ -111,6 +111,8 @@
     "headroomNote": "次の面までの鉛直方向の有効高さです。",
     "on": "対象",
     "crossModel": "モデル間",
+    "crossModelMap": "モデル ↔ 地図",
+    "crossMap": "地図の要素間",
     "climb": "上り・下り",
     "maxSlope": "最大勾配",
     "latLon": "緯度・経度",
