@@ -1947,7 +1947,7 @@ export function parseOsmFeatures(
         const ring = bufferWaterway(pts, widthM)
         if (ring) {
           out.push({
-            id: `w${el.id}`, kind, ring, height, style,
+            id: `w${el.id}`, kind, ring, height, style, name: el.tags?.['name'],
             waterCourse: { line: pts.map((q) => ({ lat: q.lat, lon: q.lon })), widthM },
           })
         }
