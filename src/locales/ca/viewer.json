@@ -237,6 +237,8 @@
     },
     "placedByHand": "A mà",
     "placedByHandHint": "L'has col·locat a mà: el mapa no el recol·loca amb la seva georeferència. «Restablir» el retorna al mapa.",
+    "mapCoords": "Coord. de mapa",
+    "mapCoordsHint": "Coordenades de mapa a la geometria (≈{{east}} km E, {{north}} km N). Es mostra desplaçat per precisió; mesures, BCF i exportacions conserven les coordenades reals.",
     "frameOnDoubleClick": "Doble clic per enquadrar",
     "federation": {
       "search": "Cerca entre {{count}} models…",

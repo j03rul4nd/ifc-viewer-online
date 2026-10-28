@@ -237,6 +237,8 @@
     },
     "placedByHand": "手動",
     "placedByHandHint": "手動で配置済み：地図はジオリファレンスで再配置しません。「リセット」で地図に戻ります。",
+    "mapCoords": "地図座標",
+    "mapCoordsHint": "ジオメトリに地図座標があります（約 東 {{east}} km、北 {{north}} km）。精度のためずらして表示しています。計測・BCF・エクスポートは実座標のままです。",
     "frameOnDoubleClick": "ダブルクリックでフィット",
     "federation": {
       "search": "{{count}} 件のモデルから検索…",

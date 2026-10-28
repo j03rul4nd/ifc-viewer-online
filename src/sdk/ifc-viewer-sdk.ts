@@ -225,6 +225,14 @@ export interface ModelLoadedEvent {
   fileName: string
   elementCount: number
   fromCache: boolean
+  /**
+   * How far the viewer moved this model's geometry to draw it precisely, in
+   * metres and IFC axes (X east, Y north, Z up): `shown = real + coordination`.
+   * Non-zero for files modelled at map coordinates (e.g. UTM in the vertices);
+   * null when the viewer does not know. Measurements, BCF and exports already
+   * give REAL coordinates; this is for a host that reads positions itself.
+   */
+  coordination?: { x: number; y: number; z: number } | null
 }
 export interface ModelErrorEvent { message: string; url?: string; name?: string }
 export interface ModelProgressEvent { percent: number; phase: string }

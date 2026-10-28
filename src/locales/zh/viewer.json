@@ -237,6 +237,8 @@
     },
     "placedByHand": "手动",
     "placedByHandHint": "已手动放置：地图不会按其地理参考重新放置。“重置”将其交还给地图。",
+    "mapCoords": "地图坐标",
+    "mapCoordsHint": "几何中包含地图坐标（约东 {{east}} 公里、北 {{north}} 公里）。为保证精度而平移显示；测量、BCF 和导出保留真实坐标。",
     "frameOnDoubleClick": "双击以取景",
     "federation": {
       "search": "在 {{count}} 个模型中查找…",

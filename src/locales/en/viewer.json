@@ -249,6 +249,8 @@
     },
     "placedByHand": "By hand",
     "placedByHandHint": "You placed this by hand: the map will not re-seat it from its georeference. Reset hands it back to the map.",
+    "mapCoords": "Map coords",
+    "mapCoordsHint": "Map coordinates in the geometry (≈{{east}} km E, {{north}} km N). Shown shifted for precision; measurements, BCF and exports keep the real coordinates.",
     "frameOnDoubleClick": "Double-click to frame",
     "federation": {
       "search": "Find among {{count}} models…",
