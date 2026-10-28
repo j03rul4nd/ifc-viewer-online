@@ -256,6 +256,8 @@ export interface IfcSourceDeps {
    * before converting.
    */
   prebuilt?(fingerprint: string, signal: AbortSignal): Promise<ArrayBuffer | null>
+  /** A URL load is starting: prefetch whatever `prebuilt` will be asked for it. Fire and forget. */
+  warmUrl?(url: string): void
   /**
    * Called once when this file is about to be converted on the device (no
    * cache, no prebuilt). The app warns there when the file is large for the
@@ -699,6 +701,9 @@ export function createIfcSourceAdapter(deps: IfcSourceDeps): SourceAdapter {
     const fetchOnce = (url: string, hint: string | undefined): Promise<File> =>
       deps.fetchUrl(url, hint, { signal: ctx.signal, onProgress })
 
+    if (!ctx.hints.skipCache) {
+      try { deps.warmUrl?.(source.url) } catch { /* only a head start */ }
+    }
     const ticket = await ctx.acquire('network')
     let file: File
     try {

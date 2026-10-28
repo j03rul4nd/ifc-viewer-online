@@ -202,6 +202,7 @@ export function getLoadManager(): LoadManager {
       if (!isHeavyConvert(sizeBytes)) return
       toast(i18n.t('toasts:model.heavyOnDevice', { fileName, mb: Math.round(sizeBytes / 1024 ** 2) }), 'warning', { duration: 9000 })
     },
+    warmUrl: (url) => { void import('./prebuilt-frags').then((m) => m.warmPrebuiltForUrl(url)) },
     prebuilt: (fingerprint, signal) => import('./prebuilt-frags').then((m) => m.findPrebuiltFragments(fingerprint, signal)),
     // The policy knows the device budget: a job whose estimated peak is over
     // 60 % of it converts alone.
