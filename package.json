@@ -59,6 +59,7 @@
     "@types/leaflet": "^1.9.22",
     "@types/three": "^0.184.0",
     "3d-tiles-renderer": "^0.4.28",
+    "7z-wasm": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",

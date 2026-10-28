@@ -92,7 +92,7 @@ export function addDataCatalogue(flags: AddDataFlags): AddDataCard[] {
 }
 
 /** `accept` for a card's picker, or for the hub's catch-all "Choose files…". */
-/** Archives the drop path opens in the browser (lib/loading/expand-drop), plus RAR/7z so it can say why not. */
+/** Archives the drop path opens in the browser (lib/loading/expand-drop), RAR/7z included (7-Zip in WASM). */
 const ARCHIVE_ACCEPT = ['.zip', '.ifczip', '.gz', '.tgz', '.tar', '.rar', '.7z']
 
 export function acceptFor(kind: AddDataKind | 'any', flags: AddDataFlags): string {

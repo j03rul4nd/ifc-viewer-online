@@ -277,7 +277,8 @@
     "sceneAlone": "Um ficheiro de cena abre-se sozinho. Adicione os outros ficheiros depois de carregar.",
     "archiveOpening": "A abrir o arquivo…",
     "archiveOpened": "Aberto {{archives}}: {{count}} ficheiros",
-    "archiveUnsupported": "{{names}}: RAR e 7z ainda não abrem no navegador — guarde como .zip ou arraste a pasta",
+    "archiveUnsupported": "{{names}}: os arquivos xz, bz2 e zst ainda não abrem no navegador — guarde como .zip ou arraste a pasta",
+    "archiveEncrypted": "{{name}} está protegido por palavra-passe — extraia-o no computador e arraste a pasta",
     "archiveFailed": "Não foi possível abrir {{name}}: {{reason}}",
     "archiveTruncated": "Arquivo muito grande: só foi usada a primeira parte (4 GB / 5.000 ficheiros)"
   }

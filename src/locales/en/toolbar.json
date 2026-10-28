@@ -277,7 +277,8 @@
     "sceneAlone": "A scene file opens on its own. Add the other files once it has loaded.",
     "archiveOpening": "Opening archive…",
     "archiveOpened": "Opened {{archives}}: {{count}} files",
-    "archiveUnsupported": "{{names}}: RAR and 7z cannot be opened in the browser yet — save it as .zip, or drop the folder itself",
+    "archiveUnsupported": "{{names}}: xz, bz2 and zst archives cannot be opened in the browser yet — save it as .zip, or drop the folder itself",
+    "archiveEncrypted": "{{name}} is password-protected — extract it on your computer, then drop the folder",
     "archiveFailed": "Could not open {{name}}: {{reason}}",
     "archiveTruncated": "The archive is very large: only the first part was taken (4 GB / 5,000 files)"
   }

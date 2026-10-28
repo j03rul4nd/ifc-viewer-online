@@ -7,9 +7,9 @@
 //
 // Everything runs in the browser (fflate, already a dependency, lazy-loaded):
 // nothing is uploaded. Supported containers: folders, .zip (nested too),
-// .ifczip, .gz/.tgz, .tar. RAR and 7z need a native-code decompressor the app
-// does not ship; they come back in `unsupportedArchives` so the caller can say
-// so instead of "unsupported file".
+// .ifczip, .gz/.tgz, .tar, and .rar/.7z through 7-Zip in WASM (sevenzip.ts,
+// loaded only when one is dropped). xz / bz2 / zst come back in
+// `unsupportedArchives` so the caller can say so instead of "unsupported file".
 
 import { fileExtensionOf, isWeatherZipName } from './drop-routing'
 
@@ -17,8 +17,9 @@ import { fileExtensionOf, isWeatherZipName } from './drop-routing'
 const ZIP_EXT = new Set(['.zip', '.ifczip'])
 const GZ_EXT = new Set(['.gz', '.tgz'])
 const TAR_EXT = new Set(['.tar'])
+const SEVENZIP_EXT = new Set(['.rar', '.7z'])
 /** Archives recognised but not opened in the browser. */
-export const UNSUPPORTED_ARCHIVE_EXT = new Set(['.rar', '.7z', '.xz', '.bz2', '.zst'])
+export const UNSUPPORTED_ARCHIVE_EXT = new Set(['.xz', '.bz2', '.zst'])
 
 /** Stop before a hostile or huge archive takes the tab down. */
 export const MAX_EXPANDED_BYTES = 4 * 1024 ** 3
@@ -29,10 +30,10 @@ export interface ExpandResult {
   files: File[]
   /** Archives that were opened, with how many files each gave. */
   opened: Array<{ name: string; count: number }>
-  /** RAR / 7z / … — recognised, not opened. */
+  /** xz / bz2 / zst — recognised, not opened. */
   unsupportedArchives: File[]
-  /** Archives that failed to open (corrupt, encrypted). */
-  failed: Array<{ name: string; reason: string }>
+  /** Archives that failed to open (corrupt, or password-protected: `encrypted`). */
+  failed: Array<{ name: string; reason: string; encrypted?: boolean }>
   /** True when a size or count cap cut the expansion short. */
   truncated: boolean
 }
@@ -48,7 +49,7 @@ export function isJunkPath(path: string): boolean {
 export function isArchiveName(name: string): boolean {
   const ext = fileExtensionOf(name)
   if (ext === '.zip' && isWeatherZipName(name)) return false // the solar panel opens those itself
-  return ZIP_EXT.has(ext) || GZ_EXT.has(ext) || TAR_EXT.has(ext)
+  return ZIP_EXT.has(ext) || GZ_EXT.has(ext) || TAR_EXT.has(ext) || SEVENZIP_EXT.has(ext)
 }
 
 const baseName = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
@@ -110,20 +111,26 @@ export async function expandArchives(files: readonly File[], onProgress?: (name:
     let entries: Array<{ path: string; data: Uint8Array }>
     try {
       const bytes = new Uint8Array(await file.arrayBuffer())
-      const fflate = await import('fflate')
-      if (ZIP_EXT.has(ext)) {
-        const map = await new Promise<Record<string, Uint8Array>>((ok, ko) =>
-          fflate.unzip(bytes, { filter: (f) => !f.name.endsWith('/') && !isJunkPath(f.name) }, (err, data) => (err ? ko(err) : ok(data))))
-        entries = Object.entries(map).map(([path, data]) => ({ path, data }))
-      } else if (GZ_EXT.has(ext)) {
-        const raw = fflate.gunzipSync(bytes)
-        const inner = file.name.replace(/\.t?gz$/i, ext === '.tgz' ? '.tar' : '')
-        entries = fileExtensionOf(inner) === '.tar' ? readTar(raw) : [{ path: inner, data: raw }]
+      if (SEVENZIP_EXT.has(ext)) {
+        const { extractWith7z } = await import('./sevenzip')
+        entries = (await extractWith7z(bytes)).filter((e) => !isJunkPath(e.path))
       } else {
-        entries = readTar(bytes)
+        const fflate = await import('fflate')
+        if (ZIP_EXT.has(ext)) {
+          const map = await new Promise<Record<string, Uint8Array>>((ok, ko) =>
+            fflate.unzip(bytes, { filter: (f) => !f.name.endsWith('/') && !isJunkPath(f.name) }, (err, data) => (err ? ko(err) : ok(data))))
+          entries = Object.entries(map).map(([path, data]) => ({ path, data }))
+        } else if (GZ_EXT.has(ext)) {
+          const raw = fflate.gunzipSync(bytes)
+          const inner = file.name.replace(/\.t?gz$/i, ext === '.tgz' ? '.tar' : '')
+          entries = fileExtensionOf(inner) === '.tar' ? readTar(raw) : [{ path: inner, data: raw }]
+        } else {
+          entries = readTar(bytes)
+        }
       }
     } catch (err) {
-      res.failed.push({ name: file.name, reason: err instanceof Error ? err.message : String(err) })
+      const encrypted = err instanceof Error && err.name === 'EncryptedArchiveError'
+      res.failed.push({ name: file.name, reason: err instanceof Error ? err.message : String(err), ...(encrypted ? { encrypted } : {}) })
       return
     }
     const before = res.files.length
