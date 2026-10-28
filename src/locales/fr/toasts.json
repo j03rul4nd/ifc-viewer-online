@@ -9,6 +9,8 @@
     "mapFailed": "Le mode carte n'a pas pu s'ouvrir : {{message}}",
     "scanLoadFailed": "Impossible de charger le scan du lien : {{message}}",
     "loadFailedNamed": "Impossible de charger \"{{fileName}}\" — {{reason}}",
+    "serverProcessingAction": "Traiter sur le serveur (bientôt)",
+    "serverProcessingNoted": "Noté — le traitement serveur des gros fichiers arrive avec Pro. En attendant, exportez le modèle en plusieurs parties ou avec moins de propriétés.",
     "batchLoaded_one": "{{name}} — {{count}} modèle chargé",
     "batchLoaded_other": "{{name}} — {{count}} modèles chargés",
     "batchPartial": "{{name}} — {{loaded}} chargés, {{failed}} en échec",

@@ -9,6 +9,8 @@
     "mapFailed": "マップモードを開けませんでした: {{message}}",
     "scanLoadFailed": "リンクのスキャンを読み込めませんでした: {{message}}",
     "loadFailedNamed": "\"{{fileName}}\" を読み込めませんでした — {{reason}}",
+    "serverProcessingAction": "サーバーで処理（近日公開）",
+    "serverProcessingNoted": "承知しました。大きなファイルのサーバー処理は Pro で提供予定です。それまではモデルを分割するか、プロパティを減らして書き出してください。",
     "batchLoaded_other": "{{name}} — {{count}} 個のモデルを読み込みました",
     "batchPartial": "{{name}} — {{loaded}} 件読み込み、{{failed}} 件失敗",
     "dropUnsupported_other": "{{count}} 個のファイルは対応していない形式です",

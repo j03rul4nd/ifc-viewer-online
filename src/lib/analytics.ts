@@ -807,21 +807,38 @@ export function trackCertificateVerifiedView(props: {
 // ── Pro funnel (F2) ──────────────────────────────────────────────────────────
 // INV-5 as always: no email, no Clerk ids, no Stripe ids in any event.
 
+/**
+ * The last Pro entry point or upsell the user went through, so the checkout
+ * event can say WHERE the intent to pay came from. Module state, not storage:
+ * the checkout starts in the same page.
+ */
+let lastProSource: string | null = null
+
 /** A Pro/account entry point was clicked (which one, never who). */
 export function trackProEntryClick(props: {
   source: 'toolbar' | 'export_modal' | 'profile_modal' | 'landing'
 }): void {
+  lastProSource = props.source
   track('pro_entry_click', props)
 }
 
 export function trackProUpsellShown(props: {
   trigger: 'api_keys' | 'rulesets' | 'history' | 'landing' | 'manual'
 }): void {
+  lastProSource = `upsell_${props.trigger}`
   track('pro_upsell_shown', props)
 }
 
 export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): void {
-  track('checkout_started', props)
+  track('checkout_started', { ...props, source: lastProSource ?? 'unknown' })
+}
+
+/**
+ * Fake door: a large file failed in the browser and the user asked for server
+ * processing, which does not exist yet. Size only — never the file name.
+ */
+export function trackServerProcessingInterest(props: { file_size_mb: number }): void {
+  track('server_processing_interest', props)
 }
 
 /** Fired client-side when the post-checkout entitlement poll confirms the plan. */

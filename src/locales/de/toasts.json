@@ -9,6 +9,8 @@
     "mapFailed": "Der Kartenmodus ließ sich nicht öffnen: {{message}}",
     "scanLoadFailed": "Der verlinkte Scan konnte nicht geladen werden: {{message}}",
     "loadFailedNamed": "\"{{fileName}}\" konnte nicht geladen werden — {{reason}}",
+    "serverProcessingAction": "Auf dem Server verarbeiten (demnächst)",
+    "serverProcessingNoted": "Notiert — Serververarbeitung großer Dateien kommt mit Pro. Exportiere das Modell bis dahin in Teilen oder mit weniger Eigenschaften.",
     "batchLoaded_one": "{{name}} — {{count}} Modell geladen",
     "batchLoaded_other": "{{name}} — {{count}} Modelle geladen",
     "batchPartial": "{{name}} — {{loaded}} geladen, {{failed}} fehlgeschlagen",
