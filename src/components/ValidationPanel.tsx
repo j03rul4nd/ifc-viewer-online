@@ -73,7 +73,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import ValidationPanelMobile from './mobile/ValidationPanelMobile'
 import ScoreUpsell from './pricing/ScoreUpsell'
 import { FloodValidationSlot } from '../features/flood/ui/FloodValidationSlot'
-import { DRAWER_MIN_PX, drawerHeightCss } from '../lib/ui/lane'
+import { DRAWER_DEFAULT_RATIO, DRAWER_MIN_PX, DRAWER_RATIO_MAX, drawerHeightCss } from '../lib/ui/lane'
 import { useLaneStore, selectDrawerReservePx } from '../stores/laneStore'
 import { DrawerResizeGrip } from './DrawerResizeGrip'
 
@@ -1799,6 +1799,21 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
   // over this drawer's right side (lib/ui/lane, WINDOW_DESIGN R6).
   const drawerRef = useRef<HTMLDivElement>(null)
   const drawerRatio = useUIStore((s) => s.bottomDrawerRatio)
+  const setDrawerRatio = useUIStore((s) => s.setBottomDrawerRatio)
+  const { t: tc } = useTranslation('common')
+  // Maximize gives the list the whole column but the scene's minimum; restore
+  // goes back to the height it had, not to a default the user never chose.
+  const restoreRatioRef = useRef<number | null>(null)
+  const maximized = drawerRatio >= DRAWER_RATIO_MAX - 0.05
+  const toggleMaximized = useCallback(() => {
+    if (maximized) {
+      setDrawerRatio(restoreRatioRef.current ?? DRAWER_DEFAULT_RATIO)
+      restoreRatioRef.current = null
+    } else {
+      restoreRatioRef.current = drawerRatio
+      setDrawerRatio(DRAWER_RATIO_MAX)
+    }
+  }, [maximized, drawerRatio, setDrawerRatio])
   const drawerReserve = useLaneStore(selectDrawerReservePx)
 
   // ── Data ──────────────────────────────────────────────────────────────
@@ -2485,9 +2500,12 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
     return rows
   }, [orderedGroups, openGroups, expandedGroups, filters.groupBy, i18n.language, batchState.counts, fixBatch?.ruleId])
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const listRef   = useRef<HTMLDivElement>(null)
+  const scrollRef  = useRef<HTMLDivElement>(null)
+  const listRef    = useRef<HTMLDivElement>(null)
+  const summaryRef = useRef<HTMLDivElement>(null)
+  const stickyRef  = useRef<HTMLDivElement>(null)
   const [listOffset, setListOffset] = useState(0)
+  const [stickyPx, setStickyPx] = useState(0)
 
   // The virtualized list does not start at the top of the scroll element
   // (a progress bar may precede it). scrollMargin tells the virtualizer that
@@ -2496,7 +2514,20 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
   // appearing and going away.
   useLayoutEffect(() => {
     setListOffset(listRef.current?.offsetTop ?? 0)
+    setStickyPx(stickyRef.current?.offsetHeight ?? 0)
   }, [isRunning, activePanel, flatRows.length, showFixCard])
+  // The summary above the list scrolls with it and changes height on its own
+  // (a notice dismissed, the profile card), which moves where the list starts.
+  useEffect(() => {
+    const els = [summaryRef.current, stickyRef.current].filter(Boolean) as HTMLElement[]
+    if (els.length === 0 || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      setListOffset(listRef.current?.offsetTop ?? 0)
+      setStickyPx(stickyRef.current?.offsetHeight ?? 0)
+    })
+    els.forEach((el) => ro.observe(el))
+    return () => ro.disconnect()
+  }, [activePanel])
 
   const virtualizer = useVirtualizer({
     count:           flatRows.length,
@@ -2507,6 +2538,8 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
     },
     overscan:     8,
     scrollMargin: listOffset,
+    // A row scrolled to lands below the pinned tab/filter rows, not under them.
+    scrollPaddingStart: stickyPx,
     getItemKey:   (i) => {
       const r = flatRows[i]
       return r.kind === 'issue' ? r.issue.id : `${r.kind}:${r.groupKey}`
@@ -2825,6 +2858,25 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
           </span>
         )}
 
+        {/* Maximize / restore */}
+        <button
+          onClick={toggleMaximized}
+          aria-label={maximized ? tc('layout.restorePanel') : tc('layout.maximizePanel')}
+          title={maximized ? tc('layout.restorePanel') : tc('layout.maximizePanel')}
+          aria-pressed={maximized}
+          className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
+        >
+          {maximized ? (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 1v3H1M8 1v3h3M4 11V8H1M8 11V8h3" />
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 4V1h3M11 4V1H8M1 8v3h3M11 8v3H8" />
+            </svg>
+          )}
+        </button>
+
         {/* Collapse */}
         <button
           onClick={toggleValidationPanel}
@@ -2838,9 +2890,17 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
         </button>
       </div>
 
+      {/* ── One scroll for everything below the title row ──
+          The summary, profile row, chips and notices used to be fixed above the
+          list and took ~350 px: at the default drawer height the issue list got
+          ZERO pixels. They now scroll away with the list, while the tab and
+          filter rows stay pinned (sticky) so the list can always be steered. */}
+      <div ref={scrollRef} className="relative flex-1 min-h-0 overflow-y-auto scroll-thick max-md:pb-[calc(var(--mobile-nav-h)+var(--mobile-nav-margin)+env(safe-area-inset-bottom,0px)+8px)]">
+      <div ref={summaryRef}>
       {/* Actionable summary — what to fix first, right under the score. It used to sit
-          inside the scroll, below the profile row, coverage strip and banners: on a
-          laptop it was off-screen and 2.4% of validated sessions clicked it. */}
+          below the profile row, coverage strip and banners: on a laptop it was
+          off-screen and 2.4% of validated sessions clicked it. It stays FIRST in
+          the scroll, so it is still the first thing seen when the panel opens. */}
       {!isRunning && result && result.stats.total > 0 && activePanel === 'issues' && (
         <ExecutiveSummary
           score={result.qualityScore ?? 0}
@@ -2984,7 +3044,10 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
       {coverageIncomplete && coverage && (
         <CoverageIntegrityStrip coverage={coverage} language={i18n.language} />
       )}
+      </div>
 
+      {/* Pinned while the list scrolls under it. */}
+      <div ref={stickyRef} className="sticky top-0 z-10 bg-[var(--surface)]">
       {/* ── Toolbar row A: tab toggle + severity filter ── */}
       <div className="flex items-center gap-1.5 px-3 h-8 border-b border-[var(--border)] shrink-0 overflow-x-auto">
         {/* Issues / BCF / History toggle */}
@@ -3105,9 +3168,9 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
           <SearchInput value={search} onChange={setSearch} />
         </div>
       )}
+      </div>
 
       {/* ── Content ── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto max-md:pb-[calc(var(--mobile-nav-h)+var(--mobile-nav-margin)+env(safe-area-inset-bottom,0px)+8px)]">
         {activePanel === 'history' ? (
           <ValidationHistoryPanel onClose={() => setActivePanel('issues')} />
         ) : activePanel === 'bcf' ? (

@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Redimensionner le panneau",
-    "resizePanelHint": "Faites glisser ou utilisez les flèches du clavier pour redimensionner. Double-cliquez pour changer de taille."
+    "resizePanelHint": "Faites glisser ou utilisez les flèches du clavier pour redimensionner. Double-cliquez pour changer de taille.",
+    "maximizePanel": "Agrandir le panneau",
+    "restorePanel": "Restaurer la taille du panneau"
   }
 }

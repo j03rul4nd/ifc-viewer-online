@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Cambiar el tamaño del panel",
-    "resizePanelHint": "Arrastra o usa las teclas de flecha para cambiar el tamaño. Doble clic para alternar el tamaño."
+    "resizePanelHint": "Arrastra o usa las teclas de flecha para cambiar el tamaño. Doble clic para alternar el tamaño.",
+    "maximizePanel": "Maximizar panel",
+    "restorePanel": "Restaurar tamaño del panel"
   }
 }

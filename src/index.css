@@ -167,6 +167,23 @@ body {
   .glass-md ::-webkit-scrollbar-thumb:hover,
   [data-bottom-drawer] ::-webkit-scrollbar-thumb:hover { background: #8B8D98; }
 }
+/* A long list you are meant to scroll through (the issue list): a 12 px bar
+   with a padded thumb, wide enough to grab without aiming. */
+@media (pointer: fine) {
+  .scroll-thick::-webkit-scrollbar { width: 12px; }
+  .scroll-thick::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); }
+  .scroll-thick::-webkit-scrollbar-thumb {
+    background: #6B6D79; border-radius: 8px;
+    border: 3px solid transparent; background-clip: padding-box; min-height: 40px;
+  }
+  .scroll-thick::-webkit-scrollbar-thumb:hover { background: #9A9CA8; background-clip: padding-box; }
+}
+@supports not selector(::-webkit-scrollbar) {
+  @media (pointer: fine) {
+    /* Out-ranks the drawer's `thin` rule below. */
+    [data-bottom-drawer] .scroll-thick.scroll-thick { scrollbar-width: auto; }
+  }
+}
 /* Firefox only: Chrome 121+ drops ::-webkit-scrollbar styling once
    scrollbar-color is set (and it inherits), so scope it to engines without it. */
 @supports not selector(::-webkit-scrollbar) {

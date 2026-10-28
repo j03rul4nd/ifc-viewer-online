@@ -356,6 +356,8 @@
   },
   "layout": {
     "resizePanel": "Redimensiona el tauler",
-    "resizePanelHint": "Arrossega o fes servir les tecles de fletxa per redimensionar. Fes doble clic per canviar la mida."
+    "resizePanelHint": "Arrossega o fes servir les tecles de fletxa per redimensionar. Fes doble clic per canviar la mida.",
+    "maximizePanel": "Maximitzar el panell",
+    "restorePanel": "Restaurar la mida del panell"
   }
 }

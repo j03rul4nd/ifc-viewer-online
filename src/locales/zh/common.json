@@ -352,6 +352,8 @@
   },
   "layout": {
     "resizePanel": "调整面板大小",
-    "resizePanelHint": "拖动或使用方向键调整大小。双击切换尺寸。"
+    "resizePanelHint": "拖动或使用方向键调整大小。双击切换尺寸。",
+    "maximizePanel": "最大化面板",
+    "restorePanel": "还原面板大小"
   }
 }
