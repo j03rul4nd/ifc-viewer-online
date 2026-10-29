@@ -33,11 +33,14 @@ const CATALOGUES = {
   'src/components/workspace/registry.ts': ['label', 'short', 'pitch'],
   'src/components/workspace/sample-data.ts': ['label', 'detail', 'what', 'where', 'kept', 'description'],
   'src/components/workspace/connections-sample.ts': ['label', 'detail', 'note', 'message'],
+  'src/components/workspace/plan-sample-data.ts': ['when'],
+  'src/lib/plans/features.ts': ['does'],
+  'src/lib/plans/ai-credits.ts': ['label'],
 }
 
 /** Module-level constants in components whose strings are UI copy. */
 const UI_CONSTS = new Set(['STEPS', 'REASONS', 'OFFER', 'KIND_LABEL', 'PLACEHOLDER', 'REPLY_TIME', 'STATUS', 'HEALTH', 'ANSWERS',
-  'PROCESSORS', 'REQUEST_LABEL', 'PROFILES', 'DETAIL_TABS', 'TABS', 'boxes', 'ROLES', 'map'])
+  'PROCESSORS', 'REQUEST_LABEL', 'PROFILES', 'DETAIL_TABS', 'TABS', 'boxes', 'ROLES', 'map', 'PRIORITY', 'VERDICT', 'STATES'])
 const CONST_KEYS = new Set(['label', 'title', 'body', 'action', 'q', 'a', 'name', 'role'])
 
 const keys = new Set()

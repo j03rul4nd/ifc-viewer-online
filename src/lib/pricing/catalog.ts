@@ -59,22 +59,25 @@ export interface Plan {
   highlighted?: boolean
 }
 
+// Prices from docs-planning/12 §2 (2026-10-28). Team is €35 per editor with a
+// 3-editor minimum, sold here as its minimum bundle; reviewers and guests are
+// free. The full catalogue, with Reception and Developer, is lib/plans/plans.ts.
 export const PLANS: Plan[] = [
   {
     id: 'free', name: 'Free', audience: 'Anyone with an IFC', monthlyEur: 0, yearlyEur: 0,
-    features: ['Viewer, measure, section, multi-model', 'Health Score and rule checks', 'IDS validation', 'Runs 100% in your browser — files never leave it'],
+    features: ['Viewer, measure, section, multi-model', 'Health Score, rule checks and IDS', 'Requirements links, delivery report, BCF', 'Runs 100% in your browser — files never leave it'],
   },
   {
-    id: 'pro', name: 'Pro', audience: 'BIM coordinators', monthlyEur: 19, yearlyEur: 182, highlighted: true,
-    features: ['200 credits every month', 'Version comparison & project history', 'Signed IDS/EIR reports', 'bSDD / Uniclass classification checks', 'No watermark'],
+    id: 'pro', name: 'Pro', audience: 'Freelancers, 1 person', monthlyEur: 19, yearlyEur: 190, highlighted: true,
+    features: ['Large files on EU servers (up to 1 GB)', 'Projects with versions, 20 GB', 'A link for your client, with password and expiry', 'Verifiable certificates with your logo', 'Score history and what got worse'],
   },
   {
-    id: 'team', name: 'Team', audience: 'Studios, 5 seats', monthlyEur: 79, yearlyEur: 758,
-    features: ['1,000 shared credits every month', 'Shared workspace and roles', 'Project health monitor and alerts'],
+    id: 'team', name: 'Team', audience: 'Studios — €35 per editor, 3 minimum', monthlyEur: 105, yearlyEur: 1044,
+    features: ['Quality gate on every upload', 'House standard shared across projects', 'Team BCF issues — reviewers and guests free', 'Client portal with your logo', 'ISO 19650 states and audit log'],
   },
   {
-    id: 'business', name: 'Business', audience: 'Enterprise & on-premise', monthlyEur: null, yearlyEur: null,
-    features: ['API, CLI and CI integration', 'SSO, SLA and DPA', 'Air-gapped on-premise appliance', 'Training and onboarding'],
+    id: 'business', name: 'Enterprise', audience: 'Reception across a portfolio, on-premise', monthlyEur: null, yearlyEur: null,
+    features: ['Reception plan on every project', 'SSO, SLA and DPA', 'Air-gapped on-premise appliance', 'From €6,000 a year'],
   },
 ]
 

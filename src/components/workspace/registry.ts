@@ -6,7 +6,7 @@
 
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug } from 'lucide-react'
+import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles } from 'lucide-react'
 import type { WorkspaceData, TicketKind } from './sample-data'
 import type { CheckoutItem } from '../../lib/pricing/checkout'
 import Overview from './sections/Overview'
@@ -20,8 +20,15 @@ import Privacy from './sections/Privacy'
 import Support from './sections/Support'
 import Scenes from './sections/Scenes'
 import DataSources from './sections/DataSources'
+import Issues from './sections/Issues'
+import Quality from './sections/Quality'
+import Reception from './sections/Reception'
+import Integrations from './sections/Integrations'
+import Api from './sections/Api'
+import Ai from './sections/Ai'
 
 export type SectionId = 'overview' | 'projects' | 'jobs' | 'certificates' | 'team' | 'billing' | 'settings' | 'privacy' | 'support' | 'scenes' | 'data'
+  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai'
 
 /** Plans in rank order; a section is open to its plan and every plan above. */
 export const PLAN_RANK = { pro: 1, team: 2 } as const
@@ -54,6 +61,8 @@ export interface SectionDef {
   group?: 'work' | 'account'
   /** One line shown to plans that can't open it yet: what they would get. */
   pitch?: string
+  /** Designed but not built: the nav marks it "Soon" and the screen says so (lib/plans/features). */
+  soon?: boolean
   Component: ComponentType<SectionProps>
 }
 
@@ -65,6 +74,12 @@ export const SECTIONS: SectionDef[] = [
   { id: 'scenes', label: 'Scenes', icon: Clapperboard, requires: 'pro', secondary: true, Component: Scenes },
   { id: 'data', label: 'Data sources', short: 'Data', icon: Plug, requires: 'pro', secondary: true, Component: DataSources },
   { id: 'team', label: 'Team', icon: Users, requires: 'team', secondary: true, pitch: 'Share projects, credits and certificates with your studio — one bill, a login per person.', Component: Team },
+  { id: 'issues', label: 'Issues', icon: ListTodo, requires: 'team', secondary: true, soon: true, pitch: 'BCF issues for the whole team, assigned and tracked, with reviewers and guests free.', Component: Issues },
+  { id: 'quality', label: 'Quality gate', short: 'Quality', icon: ShieldHalf, requires: 'team', secondary: true, soon: true, pitch: 'Validate every upload with your house standard and publish only what passes.', Component: Quality },
+  { id: 'reception', label: 'Reception', icon: Inbox, requires: 'team', secondary: true, soon: true, pitch: 'Receive supplier models that already meet your requirements, and see who delivers well.', Component: Reception },
+  { id: 'integrations', label: 'Integrations', icon: Blocks, requires: 'pro', secondary: true, soon: true, Component: Integrations },
+  { id: 'api', label: 'API', icon: Code2, requires: 'pro', secondary: true, soon: true, Component: Api },
+  { id: 'ai', label: 'AI credits', short: 'AI', icon: Sparkles, requires: 'pro', secondary: true, soon: true, Component: Ai },
   { id: 'billing', label: 'Credits & billing', short: 'Billing', icon: CreditCard, requires: 'pro', Component: Billing },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, requires: 'pro', secondary: true, group: 'account', Component: Settings },
   { id: 'privacy', label: 'Privacy & data', icon: ShieldCheck, requires: 'pro', secondary: true, group: 'account', Component: Privacy },
