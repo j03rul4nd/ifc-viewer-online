@@ -38,6 +38,8 @@
     "routeHint": "El camino más rápido entre dos puntos: dentro del edificio por pasillos y escaleras; fuera, por las calles a pie, en bici o en coche",
     "aligned": "Alineada",
     "alignedHint": "Dos puntos, con su línea de cota al lado",
+    "linear": "Lineal",
+    "linearHint": "Dos puntos medidos sobre un eje: el desarrollo horizontal, el fondo o la altura, no en diagonal",
     "chain": "Encadenada",
     "chainHint": "Varios puntos en una línea: cada tramo y la longitud total",
     "baseline": "Desde base",
@@ -46,6 +48,8 @@
     "levelHint": "Cotas de nivel: el primer punto es ±0,00 y los demás, por encima o por debajo",
     "radius": "Radio",
     "radiusHint": "Tres puntos de un arco: centro, radio y diámetro",
+    "leader": "Directriz",
+    "leaderHint": "Una flecha a un punto con una nota: escríbela en el campo de nota",
     "dimensionFinishHint": "Doble clic o Intro para terminar"
   },
   "steps": {
@@ -89,6 +93,10 @@
   },
   "settings": {
     "units": "Unidades",
+    "terminator": "Extremos de cota",
+    "terminatorTick": "Marca",
+    "terminatorArrow": "Flecha",
+    "terminatorDot": "Punto",
     "precision": "Precisión",
     "ftin": "pie-pulg",
     "components": "Mostrar los tramos X · Y · Z de cada distancia"

@@ -74,3 +74,49 @@ describe('layoutDimension: radius', () => {
     expect(layoutDimension('radius', [P(0), P(1), P(2)])).toBeNull()
   })
 })
+
+describe('layoutDimension: CAD modes', () => {
+  it('linear measures along the axis the points differ most in, not the slant', () => {
+    // 6 m along x, 1 m up: DIMLINEAR gives 6, not 6.08.
+    const d = layoutDimension('linear', [P(0), P(6, 1, 0)], { toward: P(0, 0, 20) })!
+    expect(d.value).toBeCloseTo(6, 9)
+    // The height between two levels: 3 m along y, a little offset in plan.
+    const h = layoutDimension('linear', [P(0), P(0.2, 3, 0)], { toward: P(0, 0, 20) })!
+    expect(h.value).toBeCloseTo(3, 9)
+  })
+
+  it('puts the dimension line beyond the point that sticks out, never through the object', () => {
+    const d = layoutDimension('linear', [P(0, 0, 0), P(6, 2, 0)], { toward: P(0, 0, 20) })!
+    // Offset is +y in this elevation: the line clears the higher point (y = 2).
+    expect(d.tags[0].at.y).toBeGreaterThan(2)
+  })
+
+  it('radius also gives the length of the arc from the first point to the last', () => {
+    const r = 2
+    const at = (a: number) => P(r * Math.cos(a), 0, r * Math.sin(a))
+    // A quarter circle, through its middle.
+    const d = layoutDimension('radius', [at(0), at(Math.PI / 4), at(Math.PI / 2)])!
+    expect(d.tags.find((t) => t.kind === 'arc')!.value).toBeCloseTo((Math.PI / 2) * r, 9)
+    // The other way round the circle: three quarters.
+    const big = layoutDimension('radius', [at(0), at(Math.PI), at(Math.PI / 2)])!
+    expect(big.tags.find((t) => t.kind === 'arc')!.value).toBeCloseTo((3 * Math.PI / 2) * r, 9)
+  })
+
+  it('leader: an arrow to the target and a note where the second click was', () => {
+    const d = layoutDimension('leader', [P(0, 0, 0), P(2, 2, 0)], { markSize: 0.3 })!
+    expect(d.tags).toHaveLength(1)
+    expect(d.tags[0].kind).toBe('note')
+    // The arrow's tip is at the target.
+    expect(d.segments.some((q) => q.x === 0 && q.y === 0 && q.z === 0)).toBe(true)
+  })
+
+  it('terminators: arrows and dots draw more strokes than a tick, same value', () => {
+    const pts = [P(0), P(5)]
+    const tick = layoutDimension('aligned', pts, { terminator: 'tick' })!
+    const arrow = layoutDimension('aligned', pts, { terminator: 'arrow' })!
+    const dot = layoutDimension('aligned', pts, { terminator: 'dot' })!
+    expect(arrow.value).toBeCloseTo(tick.value, 9)
+    expect(arrow.segments.length).toBeGreaterThan(tick.segments.length)
+    expect(dot.segments.length).toBeGreaterThan(arrow.segments.length)
+  })
+})

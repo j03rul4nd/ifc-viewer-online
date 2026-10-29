@@ -15,14 +15,23 @@
 //             running distance to each, as a setting-out schedule reads.
 //   level     a level mark per point (cota de nivel): the first is ±0.00, each
 //             other is its height above or below it. Plan levels, not lengths.
-//   radius    three points on an arc: its centre, radius and diameter — a
-//             column, a pipe, a curved façade.
+//   radius    three points on an arc: its centre, radius, diameter and the
+//             length of the arc from the first point to the last — a column,
+//             a pipe, a curved façade.
+//   linear    two points measured along ONE axis (AutoCAD's DIMLINEAR): the
+//             horizontal run, the plan depth or the height between them,
+//             whichever they differ most in — not the slanted distance.
+//   leader    an arrow to a point and a note at the other end (MLEADER): the
+//             comment a coordinator pins on the model.
 //
 // Geometry only, in scene axes (y up). Pure: no THREE, no scene.
 
 export interface Vec3 { x: number; y: number; z: number }
 
-export type DimensionMode = 'aligned' | 'chain' | 'baseline' | 'level' | 'radius'
+export type DimensionMode = 'aligned' | 'linear' | 'chain' | 'baseline' | 'level' | 'radius' | 'leader'
+
+/** How each end of a dimension line is drawn. */
+export type DimensionTerminator = 'tick' | 'arrow' | 'dot'
 
 const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z })
 const add = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z })
@@ -39,7 +48,7 @@ export function minPoints(mode: DimensionMode): number {
 }
 /** Modes that finish on their own when they have their points. */
 export function autoFinishes(mode: DimensionMode, n: number): boolean {
-  return (mode === 'aligned' && n >= 2) || (mode === 'radius' && n >= 3)
+  return ((mode === 'aligned' || mode === 'linear' || mode === 'leader') && n >= 2) || (mode === 'radius' && n >= 3)
 }
 
 /** One value on the drawing and where its tag goes. */
@@ -47,7 +56,7 @@ export interface DimensionTag {
   at: Vec3
   value: number
   /** 'length' for distances, 'level' for signed heights, 'radius'/'diameter'. */
-  kind: 'length' | 'level' | 'radius' | 'diameter'
+  kind: 'length' | 'level' | 'radius' | 'diameter' | 'arc' | 'note'
 }
 
 export interface DimensionLayout {
@@ -99,9 +108,21 @@ export function dimensionOffset(total: number): number {
  * Lay out a linear dimension (aligned / chain / baseline).
  * `toward` is a vector pointing from the points toward the viewer (optional).
  */
-function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline', toward: Vec3 | null, labelPx: number): DimensionLayout {
+/** The scene axis two points differ most along — what DIMLINEAR measures. */
+export function dominantAxis(a: Vec3, b: Vec3): Vec3 {
+  const d = sub(b, a)
+  const ax = Math.abs(d.x), ay = Math.abs(d.y), az = Math.abs(d.z)
+  if (ay >= ax && ay >= az) return { x: 0, y: Math.sign(d.y) || 1, z: 0 }
+  if (ax >= az) return { x: Math.sign(d.x) || 1, y: 0, z: 0 }
+  return { x: 0, y: 0, z: Math.sign(d.z) || 1 }
+}
+
+function linear(
+  points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline', toward: Vec3 | null, labelPx: number,
+  axis: Vec3 | null = null, terminator: DimensionTerminator = 'tick',
+): DimensionLayout {
   const p0 = points[0]
-  const u = norm(sub(points[1], p0))
+  const u = axis ?? norm(sub(points[1], p0))
   // Stations along the line, kept in click order for baseline, sorted for chain.
   const stations = points.map((p, i) => ({ i, t: dot(sub(p, p0), u), p }))
   const ordered = mode === 'chain' ? [...stations].sort((a, b) => a.t - b.t) : stations
@@ -113,6 +134,10 @@ function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline',
   // Stacked lines (a chain's overall, baseline rows) clear one tag height each.
   const step = 1 + Math.max(0.7, (labelPx * 1.5) / off)
   const n = offsetDirection(u, toward)
+  // The dimension line goes beyond the point that sticks out furthest, so it
+  // never runs through the object (points off the line, a linear dimension's
+  // second point higher than its first).
+  const lift = Math.max(0, ...points.map((p) => dot(sub(p, p0), n)))
   const tick = off * 0.22
   // 45° architectural tick, in the plane of the dimension line and its offset.
   const tickDir = norm(add(u, n))
@@ -121,7 +146,7 @@ function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline',
   const tags: DimensionTag[] = []
   const parts: number[] = []
 
-  const onLine = (t: number, k = 1): Vec3 => add(add(p0, mul(u, t)), mul(n, off * k))
+  const onLine = (t: number, k = 1): Vec3 => add(add(p0, mul(u, t)), mul(n, off * k + lift))
   const extension = (p: Vec3, foot: Vec3): void => {
     // From just off the point to a little past the dimension line.
     const d = sub(foot, p)
@@ -130,7 +155,23 @@ function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline',
     const dirN = mul(d, 1 / l)
     segments.push(add(p, mul(dirN, Math.min(off * 0.15, l * 0.3))), add(foot, mul(dirN, tick * 0.8)))
   }
-  const tickAt = (q: Vec3): void => { segments.push(sub(q, mul(tickDir, tick)), add(q, mul(tickDir, tick))) }
+  // `inward` points along the dimension line toward its middle (arrows open that way).
+  const tickAt = (q: Vec3, inward: Vec3 = u): void => {
+    if (terminator === 'arrow') {
+      const back = mul(inward, tick * 1.6)
+      segments.push(q, add(add(q, back), mul(n, tick * 0.55)), q, sub(add(q, back), mul(n, tick * 0.55)))
+    } else if (terminator === 'dot') {
+      const r = tick * 0.45, w = norm(cross(u, n))
+      let prev = add(q, mul(n, r))
+      for (let i = 1; i <= 12; i++) {
+        const a = (i / 12) * Math.PI * 2
+        const nx = add(q, add(mul(n, r * Math.cos(a)), mul(len(w) > 0 ? w : u, r * Math.sin(a))))
+        segments.push(prev, nx); prev = nx
+      }
+    } else {
+      segments.push(sub(q, mul(tickDir, tick)), add(q, mul(tickDir, tick)))
+    }
+  }
 
   if (mode === 'baseline') {
     // One line per station, stacked away from the object: the schedule reads
@@ -144,7 +185,7 @@ function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline',
       segments.push(a, b)
       extension(p0, onLine(baseT, level))
       extension(s.p, b)
-      tickAt(a); tickAt(b)
+      tickAt(a, mul(u, Math.sign(s.t - baseT) || 1)); tickAt(b, mul(u, -(Math.sign(s.t - baseT) || 1)))
       const v = Math.abs(s.t - baseT)
       parts.push(v)
       tags.push({ at: mul(add(a, b), 0.5), value: v, kind: 'length' })
@@ -156,10 +197,11 @@ function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline',
   const a = onLine(ordered[0].t)
   const b = onLine(ordered[ordered.length - 1].t)
   segments.push(a, b)
+  const tMid = (ordered[0].t + ordered[ordered.length - 1].t) / 2
   for (const s of ordered) {
     const foot = onLine(s.t)
     extension(s.p, foot)
-    tickAt(foot)
+    tickAt(foot, mul(u, s.t <= tMid ? 1 : -1))
   }
   for (let k = 1; k < ordered.length; k++) {
     const v = ordered[k].t - ordered[k - 1].t
@@ -173,7 +215,7 @@ function linear(points: readonly Vec3[], mode: 'aligned' | 'chain' | 'baseline',
     segments.push(a2, b2)
     extension(ordered[0].p, a2)
     extension(ordered[ordered.length - 1].p, b2)
-    tickAt(a2); tickAt(b2)
+    tickAt(a2, u); tickAt(b2, mul(u, -1))
     tags.push({ at: mul(add(a2, b2), 0.5), value: total, kind: 'length' })
   }
   return { segments, tags, value: total, parts }
@@ -238,17 +280,54 @@ function radiusLayout(points: readonly Vec3[]): DimensionLayout | null {
   segments.push(center, points[0])
   const c = radius * 0.08
   segments.push(add(center, mul(e1, -c)), add(center, mul(e1, c)), add(center, mul(e2, -c)), add(center, mul(e2, c)))
+  // The arc from the first point to the last, through the middle one.
+  const angleOf = (p: Vec3): number => {
+    const d = sub(p, center)
+    const a = Math.atan2(dot(d, e2), dot(d, e1))
+    return a < 0 ? a + Math.PI * 2 : a
+  }
+  const a1 = angleOf(points[1]), a2 = angleOf(points[2])
+  const sweep = a1 <= a2 ? a2 : a2 - Math.PI * 2
+  const arcLen = Math.abs(sweep) * radius
+  const arcMid = add(center, add(mul(e1, radius * 1.12 * Math.cos(sweep / 2)), mul(e2, radius * 1.12 * Math.sin(sweep / 2))))
   return {
     segments,
     tags: [
       { at: mul(add(center, points[0]), 0.5), value: radius, kind: 'radius' },
       { at: add(center, mul(e2, -radius * 0.25)), value: radius * 2, kind: 'diameter' },
+      { at: arcMid, value: arcLen, kind: 'arc' },
     ],
     value: radius,
-    parts: [radius, radius * 2],
+    parts: [radius, radius * 2, arcLen],
     center,
     radius,
   }
+}
+
+/**
+ * A leader: an arrowhead at the target, a line to where the note sits and a
+ * short horizontal landing under the note, as MLEADER draws it.
+ */
+function leaderLayout(points: readonly Vec3[], size: number): DimensionLayout | null {
+  const target = points[0], at = points[1]
+  const d = sub(target, at)
+  const l = len(d)
+  if (l < 1e-9) return null
+  const u = mul(d, 1 / l)
+  const side = norm(cross(u, UP).x || cross(u, UP).z ? cross(u, UP) : { x: 1, y: 0, z: 0 })
+  const head = Math.min(size, l * 0.3)
+  const back = sub(target, mul(u, head))
+  const segments: Vec3[] = [
+    at, target,
+    target, add(back, mul(side, head * 0.35)),
+    target, sub(back, mul(side, head * 0.35)),
+  ]
+  // The landing runs away from the target, horizontally.
+  const away = norm({ x: -u.x, y: 0, z: -u.z })
+  const landing = len(away) > 0 ? away : { x: 1, y: 0, z: 0 }
+  const end = add(at, mul(landing, size * 2))
+  segments.push(at, end)
+  return { segments, tags: [{ at: add(at, mul(landing, size)), value: l, kind: 'note' }], value: l, parts: [l] }
 }
 
 /**
@@ -261,11 +340,20 @@ function radiusLayout(points: readonly Vec3[]): DimensionLayout | null {
  */
 export function layoutDimension(
   mode: DimensionMode, points: readonly Vec3[],
-  opts: { toward?: Vec3 | null; markSize?: number; labelSize?: number } = {},
+  opts: { toward?: Vec3 | null; markSize?: number; labelSize?: number; terminator?: DimensionTerminator } = {},
 ): DimensionLayout | null {
   if (points.length < minPoints(mode)) return null
   if (mode === 'level') return levels(points, opts.markSize ?? 0.3)
   if (mode === 'radius') return radiusLayout(points.slice(0, 3))
   if (len(sub(points[1], points[0])) < 1e-9) return null
-  return linear(mode === 'aligned' ? points.slice(0, 2) : points, mode, opts.toward ?? null, opts.labelSize ?? 0)
+  if (mode === 'leader') return leaderLayout(points.slice(0, 2), Math.max(opts.markSize ?? 0.3, (opts.labelSize ?? 0) * 0.6))
+  const term = opts.terminator ?? 'tick'
+  if (mode === 'linear') {
+    const pts = points.slice(0, 2)
+    const axis = dominantAxis(pts[0], pts[1])
+    // Measured along the axis: zero there means nothing to dimension.
+    if (Math.abs(dot(sub(pts[1], pts[0]), axis)) < 1e-9) return null
+    return linear(pts, 'aligned', opts.toward ?? null, opts.labelSize ?? 0, axis, term)
+  }
+  return linear(mode === 'aligned' ? points.slice(0, 2) : points, mode, opts.toward ?? null, opts.labelSize ?? 0, null, term)
 }

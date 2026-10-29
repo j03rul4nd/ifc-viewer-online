@@ -38,6 +38,8 @@
     "routeHint": "两点之间最快的路线：建筑内走走廊和楼梯；室外沿街道步行、骑行或驾车",
     "aligned": "对齐",
     "alignedHint": "两点，旁边绘制尺寸线",
+    "linear": "线性",
+    "linearHint": "沿一个轴测量两点：水平长度、进深或高度，而非斜距",
     "chain": "连续",
     "chainHint": "一条线上的多个点：每一跨和总长",
     "baseline": "基线",
@@ -46,6 +48,8 @@
     "levelHint": "标高：第一个点为 ±0.00，其余在其上或其下",
     "radius": "半径",
     "radiusHint": "圆弧上的三个点：圆心、半径和直径",
+    "leader": "引线",
+    "leaderHint": "指向一个点的箭头和注释（在注释栏中填写）",
     "dimensionFinishHint": "双击或按 Enter 完成"
   },
   "steps": {
@@ -89,6 +93,10 @@
   },
   "settings": {
     "units": "单位",
+    "terminator": "尺寸线端点",
+    "terminatorTick": "斜线",
+    "terminatorArrow": "箭头",
+    "terminatorDot": "圆点",
     "precision": "精度",
     "ftin": "英尺-英寸",
     "components": "显示每段距离的 X · Y · Z 分量"

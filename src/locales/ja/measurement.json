@@ -38,6 +38,8 @@
     "routeHint": "2点間の最短経路：建物内は廊下と階段、屋外は道路を徒歩・自転車・車で",
     "aligned": "平行",
     "alignedHint": "2点を寸法線で表示",
+    "linear": "長さ（軸）",
+    "linearHint": "1つの軸に沿って測る2点：水平距離・奥行き・高さ（斜距離ではない）",
     "chain": "直列",
     "chainHint": "一直線上の複数点：各スパンと全長",
     "baseline": "累進",
@@ -46,6 +48,8 @@
     "levelHint": "レベル表示：最初の点が±0.00、他はその上下",
     "radius": "半径",
     "radiusHint": "円弧上の3点：中心・半径・直径",
+    "leader": "引出線",
+    "leaderHint": "点を指す矢印とメモ（メモ欄に入力）",
     "dimensionFinishHint": "ダブルクリックまたはEnterで終了"
   },
   "steps": {
@@ -89,6 +93,10 @@
   },
   "settings": {
     "units": "単位",
+    "terminator": "寸法線の端",
+    "terminatorTick": "斜線",
+    "terminatorArrow": "矢印",
+    "terminatorDot": "点",
     "precision": "精度",
     "ftin": "フィート・インチ",
     "components": "各距離の X · Y · Z 成分を表示"

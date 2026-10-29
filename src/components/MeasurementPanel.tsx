@@ -54,7 +54,7 @@ import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
 import {
   CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GapIcon, GearIcon, HeadroomIcon, PerpendicularIcon, RouteIcon,
   PointsIcon, TargetIcon, TrashIcon, UndoIcon,
-  DimensionIcon, ChainIcon, BaselineIcon, LevelIcon, RadiusIcon,
+  DimensionIcon, ChainIcon, BaselineIcon, LevelIcon, RadiusIcon, LinearIcon, LeaderIcon,
 } from './measure/icons'
 
 interface MeasurementPanelProps {
@@ -75,13 +75,18 @@ function DimensionModes({ value, onChange, size }: { value: DimensionMode; onCha
       <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
         options={[
           { value: 'aligned', label: <><DimensionIcon size={size} />{t('modes.aligned')}</>, title: t('modes.alignedHint') },
+          { value: 'linear', label: <><LinearIcon size={size} />{t('modes.linear')}</>, title: t('modes.linearHint') },
           { value: 'chain', label: <><ChainIcon size={size} />{t('modes.chain')}</>, title: t('modes.chainHint') },
-          { value: 'baseline', label: <><BaselineIcon size={size} />{t('modes.baseline')}</>, title: t('modes.baselineHint') },
         ]} />
       <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
         options={[
+          { value: 'baseline', label: <><BaselineIcon size={size} />{t('modes.baseline')}</>, title: t('modes.baselineHint') },
           { value: 'level', label: <><LevelIcon size={size} />{t('modes.level')}</>, title: t('modes.levelHint') },
+        ]} />
+      <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
+        options={[
           { value: 'radius', label: <><RadiusIcon size={size} />{t('modes.radius')}</>, title: t('modes.radiusHint') },
+          { value: 'leader', label: <><LeaderIcon size={size} />{t('modes.leader')}</>, title: t('modes.leaderHint') },
         ]} />
     </>
   )
@@ -576,6 +581,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   <Segmented label={t('settings.precision')} value={settings.precision} onChange={(p) => updateSettings({ precision: p })} options={precisionOptions} />
                 </div>
                 <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('settings.terminator')}</span>
+                  <Segmented label={t('settings.terminator')} value={settings.dimTerminator} onChange={(v) => updateSettings({ dimTerminator: v })}
+                    options={[{ value: 'tick', label: t('settings.terminatorTick') }, { value: 'arrow', label: t('settings.terminatorArrow') }, { value: 'dot', label: t('settings.terminatorDot') }]} />
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <span className="text-[11px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('snap.title')}</span>
                   <div className="flex flex-wrap gap-1.5">
                     {(['vertex', 'midpoint', 'edge'] as const).map((k) => (
@@ -809,6 +819,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('settings.precision')}</span>
                 <Segmented label={t('settings.precision')} value={settings.precision} onChange={(p) => updateSettings({ precision: p })} options={precisionOptions} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('settings.terminator')}</span>
+                <Segmented label={t('settings.terminator')} value={settings.dimTerminator} onChange={(v) => updateSettings({ dimTerminator: v })}
+                  options={[{ value: 'tick', label: t('settings.terminatorTick') }, { value: 'arrow', label: t('settings.terminatorArrow') }, { value: 'dot', label: t('settings.terminatorDot') }]} />
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('snap.title')}</span>
