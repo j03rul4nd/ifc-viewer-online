@@ -13,8 +13,9 @@
   "noModelHint": "โหลดโมเดล IFC เพื่อรันโปรไฟล์นี้",
   "sidebar": {
     "new": "ใหม่",
-    "import": "นำเข้า .json หรือ .ids",
-    "empty": "ยังไม่มีโปรไฟล์"
+    "import": "นำเข้า .json, .ids หรือ .xlsx",
+    "empty": "ยังไม่มีโปรไฟล์",
+    "excelTemplate": "เทมเพลต Excel"
   },
   "selectOrCreate": "เลือกหรือสร้างโปรไฟล์",
   "builtinBadge": "มีมาให้ (จะบันทึกเป็นสำเนา)",
@@ -27,7 +28,8 @@
     "export": "ส่งออก .json",
     "delete": "ลบ",
     "save": "บันทึก",
-    "useAndRun": "ใช้และรัน"
+    "useAndRun": "ใช้และรัน",
+    "exportExcel": "ส่งออกเป็น Excel"
   },
   "ruleTypes": {
     "entityExists": "มีเอนทิตีอยู่",
@@ -109,6 +111,45 @@
     "importFailed": "นำเข้าไม่สำเร็จ: {{detail}}",
     "addRuleFirst": "เพิ่มกฎอย่างน้อยหนึ่งข้อก่อน",
     "loadModelFirst": "โหลดโมเดล IFC ก่อน",
-    "allIgnored": "กฎทั้งหมดถูกละเว้น — ไม่มีสิ่งที่จะรัน"
+    "allIgnored": "กฎทั้งหมดถูกละเว้น — ไม่มีสิ่งที่จะรัน",
+    "excelNoRules": "ไม่มีแถวที่ใช้ได้ในชีต {{detail}}",
+    "excelWithWarnings": "ข้าม {{count}} แถว แถวแรก: {{first}}"
+  },
+  "excel": {
+    "sheet": "ข้อกำหนด",
+    "instructionsSheet": "วิธีกรอก",
+    "templateFile": "requirements-template",
+    "headers": {
+      "entity": "องค์ประกอบ (คลาส IFC)",
+      "predefinedType": "ประเภทที่กำหนดไว้",
+      "pset": "ชุดคุณสมบัติ",
+      "property": "คุณสมบัติ",
+      "rule": "กฎ",
+      "value": "ค่า",
+      "severity": "ความรุนแรง",
+      "optional": "เฉพาะเมื่อมี",
+      "message": "ข้อความ"
+    },
+    "instructions": [
+      "หนึ่งข้อกำหนดต่อหนึ่งแถว กรอกชีต “ข้อกำหนด” แล้วนำเข้าใน IFC Viewer Online (โปรไฟล์ EIR → นำเข้า)",
+      "องค์ประกอบ: คลาส IFC เช่น IfcDoor, IfcWall หรือ IfcSpace ประเภทที่กำหนดไว้ (ไม่บังคับ) ใช้จำกัดขอบเขต เช่น FIRE_DOOR",
+      "กฎ: exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification",
+      "exists: มีองค์ประกอบนั้นอย่างน้อยหนึ่งชิ้น pset: ต้องมีชุดคุณสมบัติ required / not-empty: ต้องมีคุณสมบัติ / ต้องมีค่า",
+      "equals: ค่าคือค่าที่ตรงกันทุกตัว (true/false ตัวพิมพ์เล็ก) numeric: ค่าคือการเปรียบเทียบ เช่น \">= 0\" หรือ \"< 3.5\" one-of: ค่าที่อนุญาตคั่นด้วย \";\" pattern: นิพจน์ปกติ classification: \"ระบบ\" หรือ \"ระบบ: รหัส\"",
+      "ความรุนแรง: error (ค่าเริ่มต้น), warning, info หรือ ignored เฉพาะเมื่อมี: ใส่ \"yes\" เพื่อไม่ให้โมเดลที่ไม่มีองค์ประกอบนั้นไม่ผ่าน",
+      "ไฟล์ถูกอ่านในเบราว์เซอร์ของคุณและไม่ถูกอัปโหลด"
+    ],
+    "errors": {
+      "missingEntity": "แถว {{row}}: ไม่มีองค์ประกอบ (คลาส IFC)",
+      "notIfcClass": "แถว {{row}}: “{{detail}}” ไม่ใช่คลาส IFC",
+      "unknownRule": "แถว {{row}}: ไม่รู้จักกฎ “{{detail}}”",
+      "missingPset": "แถว {{row}}: ไม่มีชุดคุณสมบัติ",
+      "missingProperty": "แถว {{row}}: ไม่มีคุณสมบัติ",
+      "missingValue": "แถว {{row}}: ไม่มีค่า",
+      "badComparison": "แถว {{row}}: “{{detail}}” ไม่ใช่การเปรียบเทียบแบบ \">= 0\"",
+      "missingValues": "แถว {{row}}: ไม่มีค่าที่อนุญาต (คั่นด้วย ;)",
+      "missingPattern": "แถว {{row}}: ไม่มีรูปแบบ",
+      "badPattern": "แถว {{row}}: “{{detail}}” ไม่ใช่นิพจน์ปกติที่ถูกต้อง"
+    }
   }
 }

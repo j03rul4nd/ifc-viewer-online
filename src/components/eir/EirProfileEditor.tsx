@@ -22,6 +22,7 @@ import {
   lintProfile, lintByRule, type LintCode,
 } from '../../lib/eir'
 import { parseIds } from '../../lib/ids/ids-parser'
+import { buildEirExcel, parseEirExcel, EXCEL_COLUMNS, type ExcelLabels } from '../../lib/eir/eir-excel'
 import type { EirProfile, EirRule, EirRuleType, EirSeverity, NumericOperator } from '../../lib/eir'
 import SavedRulesetPicker from '../pro/SavedRulesetPicker'
 
@@ -172,8 +173,47 @@ export default function EirProfileEditor({ onClose }: Props) {
     URL.revokeObjectURL(url)
   }
 
+  // Requirements written in Excel (one per row) — see lib/eir/eir-excel.ts.
+  const excelLabels = (): ExcelLabels => ({
+    sheet: t('excel.sheet'),
+    instructionsSheet: t('excel.instructionsSheet'),
+    headers: Object.fromEntries(EXCEL_COLUMNS.map((c) => [c, t(`excel.headers.${c}`)])) as ExcelLabels['headers'],
+    instructions: t('excel.instructions', { returnObjects: true }) as string[],
+  })
+  const downloadBytes = (bytes: Uint8Array, fileName: string): void => {
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  const onExcelTemplate = async (): Promise<void> => {
+    try { downloadBytes(await buildEirExcel(excelLabels()), `${t('excel.templateFile')}.xlsx`) }
+    catch (err) { toast(t('toasts.importFailed', { detail: err instanceof Error ? err.message : String(err) }), 'error') }
+  }
+  const onExcelExport = async (): Promise<void> => {
+    if (!draft) return
+    try { downloadBytes(await buildEirExcel(excelLabels(), draft), `${slug(draft.name)}.xlsx`) }
+    catch (err) { toast(t('toasts.importFailed', { detail: err instanceof Error ? err.message : String(err) }), 'error') }
+  }
+
   const onImport = async (file: File): Promise<void> => {
     try {
+      if (/\.xlsx$/i.test(file.name)) {
+        const { profile, warnings } = await parseEirExcel(await file.arrayBuffer(), file.name.replace(/\.xlsx$/i, ''))
+        const first = warnings[0] ? t(`excel.errors.${warnings[0].code}`, { row: warnings[0].row, detail: warnings[0].detail ?? '' }) : ''
+        if (profile.rules.length === 0) {
+          toast(t('toasts.excelNoRules', { detail: first }), 'error', { duration: 8000 })
+          return
+        }
+        await save(profile)
+        setDraft(profile)
+        if (warnings.length) toast(t('toasts.excelWithWarnings', { count: warnings.length, first }), 'warning', { duration: 10000 })
+        else toast(t('toasts.imported'), 'success')
+        return
+      }
       const text = await file.text()
       // A buildingSMART .ids (XML) is converted to an editable EIR profile;
       // otherwise treat the file as an EIR profile JSON.
@@ -266,9 +306,12 @@ export default function EirProfileEditor({ onClose }: Props) {
                 <button onClick={() => fileRef.current?.click()} title={t('sidebar.import')} className="w-7 h-7 grid place-items-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]">
                   <Icons.Upload size={13} />
                 </button>
-                <input ref={fileRef} type="file" accept=".json,application/json,.ids,.xml,application/xml,text/xml" className="hidden"
+                <input ref={fileRef} type="file" accept=".json,application/json,.ids,.xml,application/xml,text/xml,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = '' }} />
               </div>
+              <button onClick={() => void onExcelTemplate()} className="mx-2 mt-2 h-7 rounded-md border border-dashed border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)]">
+                {t('sidebar.excelTemplate')}
+              </button>
               <div className="overflow-y-auto flex-1 p-1.5 flex flex-col gap-0.5">
                 {profiles.map((p) => {
                   const active = draft?.id === p.id || (draft && !draft.id && false)
@@ -348,6 +391,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                     <div className="ml-auto flex items-center gap-1.5">
                       <button onClick={duplicate} title={t('actions.duplicate')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Copy size={13} /></button>
                       <button onClick={onExport} title={t('actions.export')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Download size={13} /></button>
+                      <button onClick={() => void onExcelExport()} title={t('actions.exportExcel')} className="h-8 px-2 rounded-md border border-[var(--border)] text-[10.5px] font-semibold text-[var(--text-dim)] hover:text-[var(--text)]">XLSX</button>
                       {!draftIsBuiltin && draft.id && (
                         <button onClick={() => void onDelete()} title={t('actions.delete')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--danger)] hover:brightness-125"><Icons.X size={13} /></button>
                       )}

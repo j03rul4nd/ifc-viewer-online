@@ -13,8 +13,9 @@
   "noModelHint": "Carregue um modelo IFC para executar este perfil",
   "sidebar": {
     "new": "Novo",
-    "import": "Importar .json ou .ids",
-    "empty": "Ainda não há perfis"
+    "import": "Importar .json, .ids ou .xlsx",
+    "empty": "Ainda não há perfis",
+    "excelTemplate": "Modelo Excel"
   },
   "selectOrCreate": "Selecione ou crie um perfil",
   "builtinBadge": "predefinido (guarda uma cópia)",
@@ -27,7 +28,8 @@
     "export": "Exportar .json",
     "delete": "Eliminar",
     "save": "Guardar",
-    "useAndRun": "Usar e executar"
+    "useAndRun": "Usar e executar",
+    "exportExcel": "Exportar para Excel"
   },
   "ruleTypes": {
     "entityExists": "A entidade existe",
@@ -109,6 +111,45 @@
     "importFailed": "Falha ao importar: {{detail}}",
     "addRuleFirst": "Adicione pelo menos uma regra primeiro",
     "loadModelFirst": "Carregue primeiro um modelo IFC",
-    "allIgnored": "Todas as regras estão ignoradas — nada para executar"
+    "allIgnored": "Todas as regras estão ignoradas — nada para executar",
+    "excelNoRules": "Nenhuma linha da folha pode ser usada. {{detail}}",
+    "excelWithWarnings": "{{count}} linha(s) ignoradas. Primeira: {{first}}"
+  },
+  "excel": {
+    "sheet": "Requisitos",
+    "instructionsSheet": "Como preencher",
+    "templateFile": "modelo-requisitos",
+    "headers": {
+      "entity": "Elemento (classe IFC)",
+      "predefinedType": "Tipo predefinido",
+      "pset": "Conjunto de propriedades",
+      "property": "Propriedade",
+      "rule": "Regra",
+      "value": "Valor",
+      "severity": "Gravidade",
+      "optional": "Só se existir",
+      "message": "Mensagem"
+    },
+    "instructions": [
+      "Um requisito por linha. Preencha a folha «Requisitos» e importe-a no IFC Viewer Online (Perfis EIR → Importar).",
+      "Elemento: uma classe IFC como IfcDoor, IfcWall ou IfcSpace. O tipo predefinido (opcional) restringe-a, p. ex. FIRE_DOOR.",
+      "Regra: exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification.",
+      "exists: pelo menos um elemento desse tipo. pset: o conjunto de propriedades tem de existir. required / not-empty: a propriedade tem de existir / ter valor.",
+      "equals: Valor é o valor exato (true/false em minúsculas). numeric: Valor é uma comparação como \">= 0\" ou \"< 3.5\". one-of: valores permitidos separados por \";\". pattern: uma expressão regular. classification: \"Sistema\" ou \"Sistema: código\".",
+      "Gravidade: error (predefinido), warning, info ou ignored. Só se existir: \"sim\" para que um modelo sem esses elementos não falhe.",
+      "O ficheiro é lido no seu navegador e nunca é enviado."
+    ],
+    "errors": {
+      "missingEntity": "linha {{row}}: sem elemento (classe IFC)",
+      "notIfcClass": "linha {{row}}: «{{detail}}» não é uma classe IFC",
+      "unknownRule": "linha {{row}}: regra desconhecida «{{detail}}»",
+      "missingPset": "linha {{row}}: falta o conjunto de propriedades",
+      "missingProperty": "linha {{row}}: falta a propriedade",
+      "missingValue": "linha {{row}}: falta o valor",
+      "badComparison": "linha {{row}}: «{{detail}}» não é uma comparação como \">= 0\"",
+      "missingValues": "linha {{row}}: faltam os valores permitidos (separe-os com ;)",
+      "missingPattern": "linha {{row}}: falta o padrão",
+      "badPattern": "linha {{row}}: «{{detail}}» não é uma expressão regular válida"
+    }
   }
 }

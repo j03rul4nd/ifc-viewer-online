@@ -13,8 +13,9 @@
   "noModelHint": "Carrega un model IFC per executar aquest perfil",
   "sidebar": {
     "new": "Nou",
-    "import": "Importa .json o .ids",
-    "empty": "Encara no hi ha perfils"
+    "import": "Importar .json, .ids o .xlsx",
+    "empty": "Encara no hi ha perfils",
+    "excelTemplate": "Plantilla Excel"
   },
   "selectOrCreate": "Selecciona o crea un perfil",
   "builtinBadge": "predefinit (desa una còpia)",
@@ -27,7 +28,8 @@
     "export": "Exporta .json",
     "delete": "Elimina",
     "save": "Desa",
-    "useAndRun": "Usa i executa"
+    "useAndRun": "Usa i executa",
+    "exportExcel": "Exportar a Excel"
   },
   "ruleTypes": {
     "entityExists": "L'entitat existeix",
@@ -109,6 +111,45 @@
     "importFailed": "Error en importar: {{detail}}",
     "addRuleFirst": "Afegeix almenys una regla primer",
     "loadModelFirst": "Carrega primer un model IFC",
-    "allIgnored": "Totes les regles estan ignorades — res a executar"
+    "allIgnored": "Totes les regles estan ignorades — res a executar",
+    "excelNoRules": "Cap fila del full es pot fer servir. {{detail}}",
+    "excelWithWarnings": "{{count}} fila(es) omeses. Primera: {{first}}"
+  },
+  "excel": {
+    "sheet": "Requisits",
+    "instructionsSheet": "Com omplir-la",
+    "templateFile": "plantilla-requisits",
+    "headers": {
+      "entity": "Element (classe IFC)",
+      "predefinedType": "Tipus predefinit",
+      "pset": "Conjunt de propietats",
+      "property": "Propietat",
+      "rule": "Regla",
+      "value": "Valor",
+      "severity": "Gravetat",
+      "optional": "Només si existeix",
+      "message": "Missatge"
+    },
+    "instructions": [
+      "Un requisit per fila. Omple el full «Requisits» i importa'l a IFC Viewer Online (Perfils EIR → Importar).",
+      "Element: una classe IFC com IfcDoor, IfcWall o IfcSpace. Tipus predefinit (opcional) l'acota, p. ex. FIRE_DOOR.",
+      "Regla: exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification.",
+      "exists: almenys un element d'aquest tipus. pset: el conjunt de propietats ha d'existir. required / not-empty: la propietat ha d'existir / tenir valor.",
+      "equals: Valor és el valor exacte (true/false en minúscules). numeric: Valor és una comparació com \">= 0\" o \"< 3.5\". one-of: valors permesos separats per \";\". pattern: una expressió regular. classification: \"Sistema\" o \"Sistema: codi\".",
+      "Gravetat: error (per defecte), warning, info o ignored. Només si existeix: \"sí\" perquè un model sense aquests elements no falli.",
+      "El fitxer es llegeix al teu navegador i mai no es puja."
+    ],
+    "errors": {
+      "missingEntity": "fila {{row}}: sense element (classe IFC)",
+      "notIfcClass": "fila {{row}}: «{{detail}}» no és una classe IFC",
+      "unknownRule": "fila {{row}}: regla desconeguda «{{detail}}»",
+      "missingPset": "fila {{row}}: falta el conjunt de propietats",
+      "missingProperty": "fila {{row}}: falta la propietat",
+      "missingValue": "fila {{row}}: falta el valor",
+      "badComparison": "fila {{row}}: «{{detail}}» no és una comparació com \">= 0\"",
+      "missingValues": "fila {{row}}: falten els valors permesos (separa'ls amb ;)",
+      "missingPattern": "fila {{row}}: falta el patró",
+      "badPattern": "fila {{row}}: «{{detail}}» no és una expressió regular vàlida"
+    }
   }
 }
