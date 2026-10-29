@@ -54,6 +54,7 @@ English · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Fran�
 - [Documentation map](#documentation-map)
 - [The 44 validation rules](#the-44-validation-rules)
 - [Contributing](#contributing)
+- [Open source, free and paid](#open-source-free-and-paid)
 - [License](#license)
 
 ---
@@ -329,9 +330,34 @@ New validation rules, translations and bug fixes are especially welcome. Read [`
 
 ---
 
+## Open source, free and paid
+
+**The rules we follow**
+
+1. **Everything that is free in the browser today stays free, forever.** Nothing is taken away from anyone.
+2. **What costs a server is paid:** storage, server processing, bandwidth, hosted APIs.
+3. **New professional productivity tools** (for example batch work across many files) may launch in a paid plan, even when they run in the browser.
+4. **The free plan gets nothing that runs on our servers**, so it never depends on an account or a quota.
+
+**Free, open source (MIT, this repo)**
+
+The viewer, the 44-rule validator and Health Score, one-click fixes and fix guides, buildingSMART IDS, EIR profiles, the editor and IFC export, BCF import/export, version compare, measuring and takeoff, sections and floor plans, capture and presentations, the 3D map, point clouds and data layers, solar / flood / slope analyses, digital twins and scene documents, the JS SDK, iframe embedding and the WordPress plugin. All of it runs in your browser, with no account.
+
+**Paid plans (planned, not live yet)**
+
+| Plan | For | What it adds |
+|---|---|---|
+| **Pro** | One person | Large files processed on the server, cloud projects with versions and "what changed", private links for clients (expiry, password), cloud BCF issues with free guests, verifiable certificates with your logo |
+| **Team** | Studios and engineering firms (from 3 editors; reviewers and guests free) | A shared BCF issue manager, automatic validation on every upload that turns failures into assigned issues, a company standard (EIR/IDS profiles, naming), a client portal with your logo, a publishing gate with audit log, monthly reports |
+| **Reception** | Contractors, developers, owners and FM teams who *receive* models | Publish your requirements as a link; suppliers check and fix for free in their browser and deliver through it; you get an inbox of what passed, what failed and who delivers well |
+| **Developer** | Platforms and CDEs | Hosted validation API, billed by use |
+| **Enterprise** | Large contractors and public bodies | Reception across a portfolio, SSO, DPA, SLA and isolated / on-premise deployment |
+
+Paid features run on separate cloud infrastructure that is not part of this repository. Prices will be on the website when the plans open.
+
 ## License
 
-The code in this repository is [MIT](LICENSE): fork it, self-host it, use it commercially. Paid cloud features (storage, team workspaces, server processing) run on separate infrastructure that is not part of this repo. Everything that is free in the browser today stays free.
+The code in this repository is [MIT](LICENSE): fork it, self-host it, use it commercially.
 
 ---
 
