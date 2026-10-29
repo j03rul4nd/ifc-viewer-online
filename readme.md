@@ -353,7 +353,7 @@ The viewer, the 44-rule validator and Health Score, one-click fixes and fix guid
 | **Developer** | Platforms and CDEs | Hosted validation API, billed by use |
 | **Enterprise** | Large contractors and public bodies | Reception across a portfolio, SSO, DPA, SLA and isolated / on-premise deployment |
 
-Paid features run on separate cloud infrastructure that is not part of this repository. Prices will be on the website when the plans open.
+> **Not everything is in this repo.** The paid plans are built on **private, closed-source code**: the cloud backend and API, accounts and billing, storage, server processing and the team workspace. That code lives in private repositories and is not covered by the MIT license. Some paid screens exist here only as hidden UI behind flags; they do nothing without the private backend. This repo is the full free product, not the whole company.
 
 ## License
 
