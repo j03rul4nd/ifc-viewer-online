@@ -142,7 +142,8 @@
       "reel": "リール",
       "post": "投稿",
       "portrait": "縦型",
-      "wide": "ワイド"
+      "wide": "ワイド",
+      "email": "メール"
     },
     "export": {
       "preset": "どこに投稿しますか？",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "キャプチャ",
-  "screenshot": "スクリーンショット"
+  "screenshot": "スクリーンショット",
+  "emailDone": "メール用 GIF をダウンロードしました。メール配信ツール(Mailchimp、HubSpot、Outlook など)にアップロードし、画像を 3D モデルにリンクしてください。",
+  "emailDoneNoLink": "メール用 GIF をダウンロードしました。メール配信ツール(Mailchimp、HubSpot、Outlook など)にアップロードしてください。モデルを公開リンクから開くと、モデルへのリンクも取得できます。",
+  "emailCopyLink": "3D モデルへのリンクをコピー",
+  "emailLinkCopied": "リンクをコピーしました。画像のリンクとして貼り付けてください"
 }

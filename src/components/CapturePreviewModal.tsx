@@ -38,6 +38,7 @@ import {
   getBuiltInBed, decodeUserAudio, scheduleAudioEnvelope, resolveAudioOffset,
   BUILTIN_BED_IDS, type BuiltInBedId,
 } from '../lib/capture/audio-library'
+import { parseAppUrlParams } from '../lib/url-params'
 import { SOCIAL_PRESETS, matchSocialPreset, type SocialPresetId } from '../lib/capture/social-presets'
 import {
   planFrameTimestamps, estimateGifBytes, formatBytes, MAX_GIF_FRAMES,
@@ -422,6 +423,9 @@ export default function CapturePreviewModal() {
     }
   }, [clip, exporting, pause, renderSettings, startExport, setExportProgress, finishExport, t])
 
+  // Declared before the exporters: the GIF export reads it (Email gets its own hint).
+  const presetId = useMemo(() => matchSocialPreset(aspectPreset, fit, targetHeight), [aspectPreset, fit, targetHeight])
+
   const handleGif = useCallback(async () => {
     if (!clip || exporting) return
     pause()
@@ -437,12 +441,29 @@ export default function CapturePreviewModal() {
     if (result.ok) {
       await downloadBlob(result.value, `ifc-clip-${timestamp()}.gif`)
       appBus.emit('capture:exported', { format: 'gif', target: 'download' })
-      toast(t('gifDone'), 'success')
+      if (presetId === 'email') {
+        // The GIF goes into the email tool (Mailchimp, HubSpot, Outlook…), which
+        // hosts it; what the viewer can add is the link the image should open:
+        // this page, when the model came from a public URL.
+        // Without `lang`: the recipient reads the viewer in their own language.
+        const modelLink = parseAppUrlParams().modelUrls.length > 0
+          ? (() => { const u = new URL(window.location.href); u.hash = ''; u.searchParams.delete('lang'); return u.toString() })()
+          : null
+        toast(t(modelLink ? 'emailDone' : 'emailDoneNoLink'), 'success', modelLink ? {
+          duration: 0,
+          action: {
+            label: t('emailCopyLink'),
+            run: () => { void navigator.clipboard?.writeText(modelLink).then(() => toast(t('emailLinkCopied'), 'success')) },
+          },
+        } : { duration: 10000 })
+      } else {
+        toast(t('gifDone'), 'success')
+      }
     } else {
       log.error('GIF export failed:', result.error)
       toast(t('exportFailed', { message: result.error.message }), 'error')
     }
-  }, [clip, exporting, pause, renderSettings, fps, startExport, setExportProgress, finishExport, t])
+  }, [clip, exporting, pause, renderSettings, fps, startExport, setExportProgress, finishExport, t, presetId])
 
   // ── Output estimate ────────────────────────────────────────────────────────
   // A GIF encode is a 10–30 s commitment; showing frame count, output pixels and
@@ -460,7 +481,6 @@ export default function CapturePreviewModal() {
     }
   }, [timeline.trim, fps, layout])
 
-  const presetId = useMemo(() => matchSocialPreset(aspectPreset, fit), [aspectPreset, fit])
   const windowSec = timeline.trim.end - timeline.trim.start
   const audioLabel: string | null = useMemo(() => {
     if (timeline.audio.kind === 'user') return timeline.audio.fileName

@@ -142,7 +142,8 @@
       "reel": "Reel",
       "post": "Post",
       "portrait": "Portrait",
-      "wide": "Wide"
+      "wide": "Wide",
+      "email": "Email"
     },
     "export": {
       "preset": "Where is this going?",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "Capture",
-  "screenshot": "Screenshot"
+  "screenshot": "Screenshot",
+  "emailDone": "GIF for email downloaded. Upload it to your email tool (Mailchimp, HubSpot, Outlook…) and link the image to the 3D model.",
+  "emailDoneNoLink": "GIF for email downloaded. Upload it to your email tool (Mailchimp, HubSpot, Outlook…). Open the model from a public link to also get a link to it.",
+  "emailCopyLink": "Copy link to the 3D model",
+  "emailLinkCopied": "Link copied — paste it as the image link"
 }
