@@ -31,6 +31,9 @@ Nessun account. Nessun ruleset da configurare. Nessun limite di dimensione. I tu
 
 </div>
 
+> **Nota:** questa traduzione può essere indietro rispetto alla versione inglese. L’elenco completo e aggiornato delle funzioni è nel [README in inglese](readme.md) e l’indice della documentazione in [`docs/README.md`](docs/README.md).
+
+
 ---
 
 <div align="center">

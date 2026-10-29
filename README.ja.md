@@ -31,6 +31,9 @@
 
 </div>
 
+> **注:** この翻訳は英語版より古い場合があります。最新の機能一覧は[英語版 README](readme.md)、ドキュメント索引は [`docs/README.md`](docs/README.md) を参照してください。
+
+
 ---
 
 <div align="center">

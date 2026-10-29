@@ -15,7 +15,7 @@ Thanks for your interest in IFC Viewer Online. This is a small, fast-moving proj
 3. Run locally before pushing:
    ```bash
    npm install
-   npm run lint
+   npx tsc -b
    npm test
    npm run build
    ```

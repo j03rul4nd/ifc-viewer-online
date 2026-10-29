@@ -31,6 +31,9 @@ Sem conta. Sem ruleset para configurar. Sem limite de tamanho. Seus modelos nunc
 
 </div>
 
+> **Nota:** esta tradução pode estar atrás da versão em inglês. A lista completa e atual de funcionalidades está no [README em inglês](readme.md) e o índice da documentação em [`docs/README.md`](docs/README.md).
+
+
 ---
 
 <div align="center">
