@@ -10,9 +10,9 @@
 // Exit codes: 0 done (--once) · 1 configuration error.
 
 import { createHash } from 'node:crypto'
-import { checkIds, parseIdsXml, validateIfc } from './engine'
+import { checkIds, parseIdsXml, validateIfc, type FailedRule } from './engine'
 
-export const ENGINE = 'ifcvo-browser-engine/1'
+export const ENGINE = 'ifcvo-browser-engine/2'
 const IDLE_MS = 15_000
 const MAX_BYTES = 3 * 1024 ** 3
 
@@ -23,7 +23,7 @@ interface Claim {
 }
 
 type Outcome =
-  | { outcome: 'validated'; score: number; failed_specs: number; issues: number; errors: number; engine: string }
+  | { outcome: 'validated'; score: number; failed_specs: number; issues: number; errors: number; engine: string; failed_rules: FailedRule[] }
   | { outcome: 'invalid_file'; reason: string }
 
 /** STEP files start with this; anything else is not an IFC we can read. */
@@ -52,7 +52,7 @@ export async function evaluate(bytes: Uint8Array, expectedHash: string, requirem
   }
   let failedSpecs = 0
   if (isIdsXml(requirements)) failedSpecs = (await checkIds(bytes, parseIdsXml(requirements))).failedSpecs
-  return { outcome: 'validated', score: v.score, failed_specs: failedSpecs, issues: v.issues, errors: v.errors, engine: ENGINE }
+  return { outcome: 'validated', score: v.score, failed_specs: failedSpecs, issues: v.issues, errors: v.errors, engine: ENGINE, failed_rules: v.rules.slice(0, 100) }
 }
 
 async function api(path: string, init: RequestInit = {}): Promise<Response> {

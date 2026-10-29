@@ -44,7 +44,32 @@ function call(handler: Handler, request: Record<string, unknown>, terminal: stri
   })
 }
 
+export interface FailedRule {
+  rule_id: string
+  count: number
+  /** Worst severity seen for the rule. */
+  severity: 'error' | 'warning' | 'info'
+  /** Up to 200 GlobalIds of affected elements. */
+  guids: string[]
+}
+
+const RANK = { info: 0, warning: 1, error: 2 } as const
+
+/** Groups issues per rule for the API's auto-issues (T6). Pure. */
+export function summarizeRules(issues: ValidationResult['issues']): FailedRule[] {
+  const by = new Map<string, FailedRule>()
+  for (const i of issues) {
+    let r = by.get(i.ruleId)
+    if (!r) by.set(i.ruleId, (r = { rule_id: i.ruleId, count: 0, severity: i.severity, guids: [] }))
+    r.count++
+    if (RANK[i.severity] > RANK[r.severity]) r.severity = i.severity
+    if (i.globalId && r.guids.length < 200 && !r.guids.includes(i.globalId)) r.guids.push(i.globalId)
+  }
+  return [...by.values()].sort((a, b) => RANK[b.severity] - RANK[a.severity] || b.count - a.count)
+}
+
 export interface EngineResult {
+  rules: FailedRule[]
   score: number
   issues: number
   errors: number
@@ -60,6 +85,7 @@ export async function validateIfc(bytes: Uint8Array, rules: RulesConfig = DEFAUL
   if (msg.type === 'error') throw new Error(String(msg.message))
   const result = msg.result as ValidationResult & { unreadableEntities?: number }
   return {
+    rules: summarizeRules(result.issues),
     score: calculateQualityScore(result),
     issues: result.issues.length,
     errors: result.issues.filter((i) => i.severity === 'error').length,
