@@ -52,5 +52,9 @@
   "viewer": {
     "gpuLost": "3D 视图丢失了图形内存。请重新加载以恢复。",
     "reload": "重新加载"
+  },
+  "requirements": {
+    "invalid": "此要求链接已损坏或来自更新的版本。请向发送者索取新链接。",
+    "idsInvalid": "无法读取此要求链接中的 IDS。"
   }
 }

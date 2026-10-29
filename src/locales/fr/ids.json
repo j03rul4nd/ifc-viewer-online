@@ -176,5 +176,42 @@
   "library": {
     "label": "Vos IDS ({{count}})",
     "switch": "IDS actif"
+  },
+  "requirements": {
+    "banner": {
+      "label": "Exigences de livraison",
+      "from": "Exigences de {{issuer}}",
+      "dropModel": "Ouvrez votre modèle IFC pour le vérifier par rapport à ces exigences",
+      "checking": "Vérification de votre modèle…",
+      "pass": "Conforme aux exigences",
+      "fail": "Pas encore conforme aux exigences",
+      "scoreMin": "Health Score d’au moins {{min}}",
+      "scoreValue": "Health Score {{value}} (minimum {{min}})",
+      "idsPending": "{{name}} : vérification…",
+      "idsValue": "{{name}} : {{passed}} spécifications sur {{total}} respectées",
+      "openFile": "Ouvrir un IFC",
+      "close": "Masquer les exigences",
+      "needsRun": "Lancez la validation pour obtenir le verdict",
+      "runValidation": "Ouvrir la validation"
+    },
+    "create": {
+      "open": "Créer un lien d’exigences pour les fournisseurs",
+      "title": "Lien d’exigences",
+      "intro": "Vos fournisseurs ouvrent le lien et vérifient leur modèle par rapport à ces exigences dans leur propre navigateur avant de l’envoyer.",
+      "what": "Ce qui est livré",
+      "whatPlaceholder": "Modèle de structure, phase 2",
+      "who": "Qui fixe les exigences (facultatif)",
+      "whoPlaceholder": "Votre entreprise",
+      "minScore": "Health Score minimum",
+      "profileNote": "Calculé avec le profil « {{profile}} ».",
+      "includeIds": "Inclure l’IDS « {{name}} »",
+      "noIds": "Chargez un IDS ci-dessus pour l’inclure",
+      "copy": "Copier le lien",
+      "private": "Les exigences voyagent dans le lien ; rien n’est stocké sur un serveur.",
+      "copied": "Lien d’exigences copié",
+      "empty": "Ajoutez au moins un score minimum ou un IDS",
+      "tooLong": "Cet IDS est trop volumineux pour un lien. Envoyez le fichier .ids.",
+      "failed": "Impossible de créer le lien"
+    }
   }
 }

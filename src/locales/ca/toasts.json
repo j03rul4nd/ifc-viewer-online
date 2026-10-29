@@ -54,5 +54,9 @@
   "viewer": {
     "gpuLost": "La vista 3D s'ha quedat sense memòria gràfica. Recarrega per recuperar-la.",
     "reload": "Recarrega"
+  },
+  "requirements": {
+    "invalid": "Aquest enllaç de requisits està malmès o és d'una versió més nova. Demana'n un de nou a qui te l'ha enviat.",
+    "idsInvalid": "No s'ha pogut llegir l'IDS d'aquest enllaç de requisits."
   }
 }

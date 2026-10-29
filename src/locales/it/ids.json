@@ -176,5 +176,42 @@
   "library": {
     "label": "I tuoi IDS ({{count}})",
     "switch": "IDS attivo"
+  },
+  "requirements": {
+    "banner": {
+      "label": "Requisiti di consegna",
+      "from": "Requisiti di {{issuer}}",
+      "dropModel": "Apri il tuo modello IFC per verificarlo rispetto a questi requisiti",
+      "checking": "Verifica del modello in corso…",
+      "pass": "Soddisfa i requisiti",
+      "fail": "Non soddisfa ancora i requisiti",
+      "scoreMin": "Health Score di almeno {{min}}",
+      "scoreValue": "Health Score {{value}} (minimo {{min}})",
+      "idsPending": "{{name}}: verifica in corso…",
+      "idsValue": "{{name}}: superate {{passed}} specifiche su {{total}}",
+      "openFile": "Apri IFC",
+      "close": "Nascondi requisiti",
+      "needsRun": "Esegui la validazione per ottenere il verdetto",
+      "runValidation": "Apri validazione"
+    },
+    "create": {
+      "open": "Crea un link di requisiti per i fornitori",
+      "title": "Link di requisiti",
+      "intro": "I fornitori aprono il link e verificano il loro modello rispetto a questi requisiti nel proprio browser prima di inviarlo.",
+      "what": "Cosa viene consegnato",
+      "whatPlaceholder": "Modello strutturale, fase 2",
+      "who": "Chi fissa i requisiti (facoltativo)",
+      "whoPlaceholder": "La tua azienda",
+      "minScore": "Health Score minimo",
+      "profileNote": "Calcolato con il profilo «{{profile}}».",
+      "includeIds": "Includi l’IDS «{{name}}»",
+      "noIds": "Carica un IDS qui sopra per includerlo",
+      "copy": "Copia link",
+      "private": "I requisiti viaggiano dentro il link; nessun server memorizza nulla.",
+      "copied": "Link di requisiti copiato",
+      "empty": "Aggiungi almeno un punteggio minimo o un IDS",
+      "tooLong": "Questo IDS è troppo grande per un link. Invia il file .ids.",
+      "failed": "Impossibile creare il link"
+    }
   }
 }

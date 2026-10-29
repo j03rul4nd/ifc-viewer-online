@@ -54,5 +54,9 @@
   "viewer": {
     "gpuLost": "La vue 3D a perdu sa mémoire graphique. Rechargez pour la retrouver.",
     "reload": "Recharger"
+  },
+  "requirements": {
+    "invalid": "Ce lien d’exigences est endommagé ou provient d’une version plus récente. Demandez-en un nouveau à l’expéditeur.",
+    "idsInvalid": "L’IDS de ce lien d’exigences n’a pas pu être lu."
   }
 }

@@ -176,5 +176,42 @@
   "library": {
     "label": "你的 IDS（{{count}}）",
     "switch": "当前 IDS"
+  },
+  "requirements": {
+    "banner": {
+      "label": "交付要求",
+      "from": "{{issuer}} 的要求",
+      "dropModel": "打开你的 IFC 模型,按这些要求进行检查",
+      "checking": "正在检查你的模型…",
+      "pass": "符合要求",
+      "fail": "尚未符合要求",
+      "scoreMin": "Health Score 至少 {{min}}",
+      "scoreValue": "Health Score {{value}}(最低 {{min}})",
+      "idsPending": "{{name}}:检查中…",
+      "idsValue": "{{name}}:{{total}} 项规范中通过 {{passed}} 项",
+      "openFile": "打开 IFC",
+      "close": "隐藏要求",
+      "needsRun": "运行验证以获得结论",
+      "runValidation": "打开验证"
+    },
+    "create": {
+      "open": "为供应商创建要求链接",
+      "title": "要求链接",
+      "intro": "供应商打开链接,在发送前用自己的浏览器按这些要求检查模型。",
+      "what": "交付内容",
+      "whatPlaceholder": "结构模型,第 2 阶段",
+      "who": "提出要求的单位(可选)",
+      "whoPlaceholder": "你的公司",
+      "minScore": "最低 Health Score",
+      "profileNote": "按“{{profile}}”配置计算。",
+      "includeIds": "包含 IDS“{{name}}”",
+      "noIds": "在上方加载 IDS 后可包含",
+      "copy": "复制链接",
+      "private": "要求包含在链接中,不会在任何服务器上保存。",
+      "copied": "已复制要求链接",
+      "empty": "请至少添加最低分数或一个 IDS",
+      "tooLong": "此 IDS 太大,无法放入链接。请直接发送 .ids 文件。",
+      "failed": "无法创建链接"
+    }
   }
 }

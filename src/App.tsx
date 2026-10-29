@@ -259,6 +259,8 @@ import { runIds, cancelActiveIdsRuns, IdsCheckError } from './lib/ids/ids-runner
 import { parseIds, IdsParseError } from './lib/ids/ids-parser'
 import { renderReasons } from './lib/ids/ids-engine-facets'
 import { useIdsStore } from './stores/idsStore'
+import { useRequirementsStore } from './stores/requirementsStore'
+import RequirementsBanner from './components/requirements/RequirementsBanner'
 import { useIdsRun } from './hooks/useIdsRun'
 import { useDocumentStore } from './stores/documentStore'
 import { useBcfStore } from './stores/bcfStore'
@@ -272,6 +274,7 @@ import {
   trackViewerFirstInteraction,
   trackFeatureUsed,
   trackFileOpenFailed,
+  trackRequirementsLinkOpened,
   trackServerProcessingInterest,
   trackIdsFileLoaded,
 } from './lib/analytics'
@@ -614,6 +617,52 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Requirements links (doc 17, M1): `#r=<payload>` ──────────────────────
+  // The receiver's requirements: the validation profile is selected, the IDS
+  // loaded and queued to run on the first model the supplier opens. The
+  // fragment stays in the URL so a reload keeps the requirements.
+  // A second link opened in the same tab only changes the fragment (no reload),
+  // so `hashchange` applies it too.
+  useEffect(() => {
+    const apply = (): void => {
+      const hash = window.location.hash
+      if (!hash.startsWith('#r=')) return
+      void (async () => {
+        const { decodeRequirements, requirementsFromHash } = await import('./lib/requirements/requirements-link')
+        const req = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        trackRequirementsLinkOpened({ has_score: typeof req?.s === 'number', has_ids: typeof req?.x === 'string', valid: req !== null })
+        if (!req) {
+          toast(tToasts('requirements.invalid'), 'error', { duration: 8000 })
+          return
+        }
+        // The score is only comparable when computed with the link's profile
+        // (none = the default rules), whatever the supplier had selected.
+        if (typeof req.s === 'number') {
+          const vs = useValidationStore.getState()
+          const want = req.p ?? null
+          if (vs.activeProfileId !== want) vs.setActiveProfile(want)
+        }
+        if (req.x) {
+          try {
+            useIdsStore.getState().setLoaded(req.xn ?? 'requirements.ids', parseIds(req.x))
+            // Baseline 0: a model already open (a second link) is checked too.
+            idsAutoBaseline.current = 0
+            useIdsStore.getState().setAutoRunPending(true)
+          } catch (err) {
+            toast(tToasts('requirements.idsInvalid'), 'error', { duration: 8000 })
+            if (!(err instanceof IdsParseError)) throw err
+          }
+        }
+        useRequirementsStore.getState().setActive(req)
+      })()
+    }
+    apply()
+    window.addEventListener('hashchange', apply)
+    return () => window.removeEventListener('hashchange', apply)
+  // Registered once at boot.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ── Personalized invite context (Phase 1) ────────────────────────────────
   // Resolved from the session attribution captured in main.tsx (NOT the live
   // URL, which has already been stripped of ?ref=/ /i/<code>). Drives the
@@ -655,6 +704,8 @@ export default function App() {
       if (decodeReportHash(window.location.hash)) return 'report'
       // A deep-linked model (or explicit embed) opens straight into the viewer.
       if (urlParams.modelUrls.length > 0 || urlParams.embed) return 'viewer'
+      // A requirements link opens on the viewer, ready for the supplier's file.
+      if (window.location.hash.startsWith('#r=')) return 'viewer'
       const base = import.meta.env.BASE_URL ?? '/'
       const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
       if (BLOG_LANG_RE.test(rel) || rel.startsWith('/blog')) return 'blog'
@@ -5163,6 +5214,10 @@ export default function App() {
                       </div>
                     </MobileSheet>
                   )}
+
+                  {/* Requirements link (doc 17, M1): who asks for what, and the verdict.
+                      Inside the viewport so the toolbar's menus open over it. */}
+                  <RequirementsBanner onOpenFile={handleOpenUpload} />
 
                   {effectiveChrome.showHome && (
                     <button
