@@ -50,6 +50,10 @@
     "radiusHint": "Trois points d’un arc : centre, rayon et diamètre",
     "leader": "Ligne de repère",
     "leaderHint": "Une flèche vers un point avec une note : saisissez-la dans le champ note",
+    "angular": "Angulaire",
+    "angularHint": "Trois points — un côté, le sommet, l’autre côté : l’angle avec son arc",
+    "ordinate": "Ordonnée",
+    "ordinateHint": "Le premier point est l’origine ; chaque autre point reçoit son X (est) et son Y (nord) par rapport à lui",
     "dimensionFinishHint": "Double-clic ou Entrée pour terminer"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "Face",
     "surface": "Surface",
     "cloud": "Point du scan",
+    "perpendicular": "Perpendiculaire",
+    "polar": "Polaire {{deg}}°",
+    "polarToggle": "Polaire 15°",
     "axis": "Axe {{axis}}",
     "close": "Fermer la surface"
   },

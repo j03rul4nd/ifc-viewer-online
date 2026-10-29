@@ -50,6 +50,10 @@
     "radiusHint": "Three points on an arc: centre, radius and diameter",
     "leader": "Leader",
     "leaderHint": "An arrow to a point with a note — write it in the note field",
+    "angular": "Angular",
+    "angularHint": "Three points — one side, the vertex, the other side: the angle with its arc",
+    "ordinate": "Ordinate",
+    "ordinateHint": "The first point is the origin; each other point gets its X (east) and Y (north) from it",
     "dimensionFinishHint": "Double-click or press Enter to finish"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "Face",
     "surface": "Surface",
     "cloud": "Scan point",
+    "perpendicular": "Perpendicular",
+    "polar": "Polar {{deg}}°",
+    "polarToggle": "Polar 15°",
     "axis": "Axis {{axis}}",
     "close": "Close area"
   },

@@ -69,6 +69,44 @@ export function lockToAxis(anchor: Vec3, point: Vec3, axis: IfcAxis = dominantAx
   return { point: add(anchor, scale(dir, t)), axis }
 }
 
+/**
+ * Polar tracking, as AutoCAD does it: when the direction from `anchor` to
+ * `point` in PLAN is within `toleranceDeg` of a multiple of `stepDeg`, the
+ * point is pulled onto that ray (keeping its height and its plan distance).
+ * Null when it is not close to one — tracking attracts, it does not force.
+ * Angles are counter-clockwise from east, as a plan reads them.
+ *
+ * Only for a move that is mostly IN PLAN: on a façade every point shares the
+ * wall's plan direction, and announcing "polar 0°" for a move up the wall is
+ * noise, not help.
+ */
+export function polarTrack(anchor: Vec3, point: Vec3, stepDeg = 15, toleranceDeg = 3): { point: Vec3; angleDeg: number } | null {
+  const dx = point.x - anchor.x
+  const dn = -(point.z - anchor.z) // scene z is south: north is −z
+  const r = Math.hypot(dx, dn)
+  if (r < 1e-9) return null
+  if (Math.abs(point.y - anchor.y) > r * 0.25) return null
+  const a = (Math.atan2(dn, dx) * 180) / Math.PI
+  const snapped = Math.round(a / stepDeg) * stepDeg
+  if (Math.abs(a - snapped) > toleranceDeg) return null
+  const rad = (snapped * Math.PI) / 180
+  const angleDeg = ((snapped % 360) + 360) % 360
+  return { point: { x: anchor.x + r * Math.cos(rad), y: point.y, z: anchor.z - r * Math.sin(rad) }, angleDeg }
+}
+
+/**
+ * The foot of the perpendicular from `from` onto the segment a–b, or null when
+ * it falls outside the segment (AutoCAD's PER snap on a line you can see).
+ */
+export function perpendicularOnSegment(from: Vec3, a: Vec3, b: Vec3): Vec3 | null {
+  const ab = sub(b, a)
+  const l2 = dot(ab, ab)
+  if (l2 < 1e-18) return null
+  const t = dot(sub(from, a), ab) / l2
+  if (t < 0 || t > 1) return null
+  return add(a, scale(ab, t))
+}
+
 /** Foot of the perpendicular from `point` onto the plane through `planePoint`. */
 export function perpendicularFoot(point: Vec3, planePoint: Vec3, normal: Vec3): Vec3 {
   const n = scale(normal, 1 / (length(normal) || 1))
@@ -286,6 +324,12 @@ export function formatItemValue(item: MeasureItem, s: MeasureSettings): string {
       if (item.mode === 'level') return formatLevel(item.value, s)
       if (item.mode === 'radius') return `R ${formatLength(item.value, s)} · Ø ${formatLength(item.value * 2, s)}`
       if (item.mode === 'leader') return item.note || '✎'
+      if (item.mode === 'angular') return formatAngle(item.value, s)
+      if (item.mode === 'ordinate' && item.points.length >= 2) {
+        // The last point's offsets from the origin, as the drawing tags it.
+        const o = item.points[0], q = item.points[item.points.length - 1]
+        return `X ${formatLevel(q.x - o.x, s)} · Y ${formatLevel(-(q.z - o.z), s)}`
+      }
       return formatLength(item.value, s)
   }
 }

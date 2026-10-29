@@ -54,7 +54,7 @@ import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
 import {
   CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GapIcon, GearIcon, HeadroomIcon, PerpendicularIcon, RouteIcon,
   PointsIcon, TargetIcon, TrashIcon, UndoIcon,
-  DimensionIcon, ChainIcon, BaselineIcon, LevelIcon, RadiusIcon, LinearIcon, LeaderIcon,
+  DimensionIcon, ChainIcon, BaselineIcon, LevelIcon, RadiusIcon, LinearIcon, LeaderIcon, AngularIcon, OrdinateIcon,
 } from './measure/icons'
 
 interface MeasurementPanelProps {
@@ -86,6 +86,11 @@ function DimensionModes({ value, onChange, size }: { value: DimensionMode; onCha
       <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
         options={[
           { value: 'radius', label: <><RadiusIcon size={size} />{t('modes.radius')}</>, title: t('modes.radiusHint') },
+          { value: 'angular', label: <><AngularIcon size={size} />{t('modes.angular')}</>, title: t('modes.angularHint') },
+        ]} />
+      <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
+        options={[
+          { value: 'ordinate', label: <><OrdinateIcon size={size} />{t('modes.ordinate')}</>, title: t('modes.ordinateHint') },
           { value: 'leader', label: <><LeaderIcon size={size} />{t('modes.leader')}</>, title: t('modes.leaderHint') },
         ]} />
     </>
@@ -593,6 +598,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                         {t(`snap.${k}`)}
                       </Chip>
                     ))}
+                    <Chip on={settings.polar} onClick={() => updateSettings({ polar: !settings.polar })}>{t('snap.polarToggle')}</Chip>
                   </div>
                 </div>
                 <label className="flex items-center justify-between gap-3 min-h-[40px] text-[13px] text-[var(--text)]">
@@ -833,6 +839,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                       {t(`snap.${k}`)}
                     </Chip>
                   ))}
+                  <Chip on={settings.polar} onClick={() => updateSettings({ polar: !settings.polar })}>{t('snap.polarToggle')}</Chip>
                 </div>
                 <span className="text-[10px] text-[var(--text-faint)] leading-snug">{t('snap.hint')}</span>
               </div>

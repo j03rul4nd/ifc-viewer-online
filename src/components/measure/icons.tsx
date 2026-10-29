@@ -41,6 +41,14 @@ export const LinearIcon = (p: IconProps) => (
 export const LeaderIcon = (p: IconProps) => (
   <Svg {...p}><path d="M2.5 13.5L9 6h5" /><path d="M2.5 13.5l.6-3M2.5 13.5l3-.7" /><path d="M9.5 3.5h4.5" strokeWidth="1" /></Svg>
 )
+/** Angular dimension: two sides and the arc between them. */
+export const AngularIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M2.5 13.5h11M2.5 13.5L11 3" /><path d="M8.5 13.5a6 6 0 0 0-1.6-4.2" /></Svg>
+)
+/** Ordinate: points tagged with their X/Y from an origin. */
+export const OrdinateIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M2.5 13.5h3M4 12v3" /><path d="M8 9l2-2.5h3.5M11 13l1.5-2h2" /><circle cx="8" cy="9" r=".9" fill="currentColor" /><circle cx="11" cy="13" r=".9" fill="currentColor" /></Svg>
+)
 /** Chained dimension: three bays on one line. */
 export const ChainIcon = (p: IconProps) => (
   <Svg {...p}><path d="M1.5 5v6M6 5v6M10 5v6M14.5 5v6M1.5 8.5h13" /></Svg>

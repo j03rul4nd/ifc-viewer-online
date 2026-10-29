@@ -27,6 +27,7 @@ const SNAP_COLOR: Record<SnapKind, string> = {
   face: '#ECEDEE',
   surface: '#ECEDEE',
   cloud: '#B49CFF',
+  perpendicular: '#6CE0FF',
 }
 const AXIS_COLOR = { x: '#FF5A5A', y: '#4CD964', z: '#4C8DFF' } as const
 
@@ -59,6 +60,9 @@ function SnapGlyph({ kind, color, closing }: { kind: SnapKind; color: string; cl
     shape = <><path d="M12 5l7.5 13h-15z" {...halo} /><path d="M12 5l7.5 13h-15z" {...common} /></>
   } else if (kind === 'edge') {
     shape = <><path d="M12 5l7 7-7 7-7-7z" {...halo} /><path d="M12 5l7 7-7 7-7-7z" {...common} /></>
+  } else if (kind === 'perpendicular') {
+    // AutoCAD's PER marker: a right angle.
+    shape = <><path d="M6 6v12h12M6 12h6v6" {...halo} /><path d="M6 6v12h12M6 12h6v6" {...common} /></>
   } else if (kind === 'cloud') {
     shape = <>{[[8, 9], [15, 8], [11, 15]].map(([x, y]) => <circle key={`${x}${y}`} cx={x} cy={y} r="2.2" fill={color} stroke="rgba(0,0,0,0.6)" strokeWidth="1" />)}</>
   } else {
@@ -111,7 +115,8 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
     || (tool === 'distance' && snapshot.distanceMode === 'point') || (tool === 'area' && snapshot.areaMode === 'polygon'))
   const color = hover ? (hover.axis ? AXIS_COLOR[hover.axis] : SNAP_COLOR[hover.kind]) : '#fff'
   const snapLabel = hover
-    ? hover.closing ? t('snap.close') : hover.axis ? t('snap.axis', { axis: hover.axis.toUpperCase() }) : t(`snap.${hover.kind}`)
+    ? hover.closing ? t('snap.close') : hover.axis ? t('snap.axis', { axis: hover.axis.toUpperCase() })
+      : hover.polarDeg != null ? t('snap.polar', { deg: hover.polarDeg }) : t(`snap.${hover.kind}`)
     : null
 
   const bar = rect && (

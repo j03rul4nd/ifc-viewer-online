@@ -120,3 +120,23 @@ describe('layoutDimension: CAD modes', () => {
     expect(dot.segments.length).toBeGreaterThan(arrow.segments.length)
   })
 })
+
+describe('layoutDimension: angular and ordinate', () => {
+  it('angular: the angle at the middle point, with an arc between the sides', () => {
+    const d = layoutDimension('angular', [P(5, 0, 0), P(0), P(0, 0, -5)])!
+    expect(d.value).toBeCloseTo(90, 9)
+    expect(d.tags[0].kind).toBe('angle')
+    expect(d.segments.length).toBeGreaterThan(8)
+    // Collinear sides have no angle to dimension.
+    expect(layoutDimension('angular', [P(5), P(0), P(-5)])).toBeNull()
+  })
+
+  it('ordinate: east and north of each point from the first', () => {
+    // Scene z is south, so a point at z = −4 is 4 m north.
+    const d = layoutDimension('ordinate', [P(10, 0, 10), P(13, 0, 6), P(8, 0, 12)])!
+    expect(d.tags).toHaveLength(2)
+    expect(d.tags[0]).toMatchObject({ kind: 'ordinate', value: 3, value2: 4 })
+    expect(d.tags[1].value).toBeCloseTo(-2, 9)
+    expect(d.tags[1].value2).toBeCloseTo(-2, 9)
+  })
+})
