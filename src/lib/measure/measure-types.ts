@@ -14,8 +14,8 @@ export interface Vec3 { x: number; y: number; z: number }
 export type MeasureToolId = 'distance' | 'path' | 'area' | 'angle' | 'point' | 'dimension'
 
 /** How a dimension reads its points — see dimension-math. */
-export type { DimensionMode } from './dimension-math'
-import type { DimensionMode } from './dimension-math'
+export type { DimensionMode, DimensionTerminator } from './dimension-math'
+import type { DimensionMode, DimensionTerminator } from './dimension-math'
 export type MeasureTool = 'none' | MeasureToolId
 
 /**
@@ -76,6 +76,8 @@ export interface MeasureSettings {
   showComponents: boolean
   /** BCP-47 tag used for the decimal separator. */
   locale: string
+  /** How dimension lines end: architectural tick, arrow or dot (dimension style). */
+  dimTerminator: DimensionTerminator
 }
 
 export const DEFAULT_MEASURE_SETTINGS: MeasureSettings = {
@@ -84,6 +86,7 @@ export const DEFAULT_MEASURE_SETTINGS: MeasureSettings = {
   snaps: { vertex: true, midpoint: true, edge: true },
   showComponents: false,
   locale: 'en',
+  dimTerminator: 'tick',
 }
 
 export type IfcAxis = 'x' | 'y' | 'z'

@@ -38,6 +38,8 @@
     "routeHint": "El camí més ràpid entre dos punts: dins de l’edifici per passadissos i escales; fora, pels carrers a peu, en bici o en cotxe",
     "aligned": "Alineada",
     "alignedHint": "Dos punts, amb la línia de cota al costat",
+    "linear": "Lineal",
+    "linearHint": "Dos punts mesurats sobre un eix: el recorregut horitzontal, el fons o l’alçada, no en diagonal",
     "chain": "Encadenada",
     "chainHint": "Diversos punts en una línia: cada tram i la longitud total",
     "baseline": "Des de base",
@@ -46,6 +48,8 @@
     "levelHint": "Cotes de nivell: el primer punt és ±0,00 i la resta, per sobre o per sota",
     "radius": "Radi",
     "radiusHint": "Tres punts d’un arc: centre, radi i diàmetre",
+    "leader": "Directriu",
+    "leaderHint": "Una fletxa a un punt amb una nota: escriu-la al camp de nota",
     "dimensionFinishHint": "Doble clic o Retorn per acabar"
   },
   "steps": {
@@ -89,6 +93,10 @@
   },
   "settings": {
     "units": "Unitats",
+    "terminator": "Extrems de cota",
+    "terminatorTick": "Marca",
+    "terminatorArrow": "Fletxa",
+    "terminatorDot": "Punt",
     "precision": "Precisió",
     "ftin": "peu-polz",
     "components": "Mostra els trams X · Y · Z de cada distància"

@@ -38,6 +38,8 @@
     "routeHint": "Der schnellste Weg zwischen zwei Punkten: im Gebäude über Flure und Treppen, draußen über die Straßen zu Fuß, mit dem Rad oder dem Auto",
     "aligned": "Ausgerichtet",
     "alignedHint": "Zwei Punkte, mit Maßlinie daneben",
+    "linear": "Linear",
+    "linearHint": "Zwei Punkte entlang einer Achse gemessen – horizontale Länge, Tiefe oder Höhe, nicht schräg",
     "chain": "Kette",
     "chainHint": "Mehrere Punkte auf einer Linie: jedes Feld und die Gesamtlänge",
     "baseline": "Bezug",
@@ -46,6 +48,8 @@
     "levelHint": "Höhenkoten: der erste Punkt ist ±0,00, die anderen darüber oder darunter",
     "radius": "Radius",
     "radiusHint": "Drei Punkte auf einem Bogen: Mittelpunkt, Radius und Durchmesser",
+    "leader": "Führungslinie",
+    "leaderHint": "Ein Pfeil auf einen Punkt mit Notiz – im Notizfeld eingeben",
     "dimensionFinishHint": "Doppelklick oder Eingabe zum Abschließen"
   },
   "steps": {
@@ -89,6 +93,10 @@
   },
   "settings": {
     "units": "Einheiten",
+    "terminator": "Maßbegrenzung",
+    "terminatorTick": "Schrägstrich",
+    "terminatorArrow": "Pfeil",
+    "terminatorDot": "Punkt",
     "precision": "Genauigkeit",
     "ftin": "Fuß-Zoll",
     "components": "X · Y · Z-Anteile jedes Abstands anzeigen"

@@ -33,6 +33,14 @@ export const PointIcon = (p: IconProps) => (
 export const DimensionIcon = (p: IconProps) => (
   <Svg {...p}><path d="M2.5 4v8M13.5 4v8M2.5 9.5h11" /><path d="M1.5 10.5l2-2M12.5 10.5l2-2" /><path d="M5.5 6.5h5" strokeWidth="1" /></Svg>
 )
+/** Linear: a dimension locked to one axis, square to it. */
+export const LinearIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M3 13V5M13 13V2.5M3 6.5h10" /><path d="M2 7.5l2-2M12 7.5l2-2" /><path d="M3 13l10-10.5" strokeDasharray="1.5 1.5" strokeWidth="1" /></Svg>
+)
+/** Leader: an arrow to a point and a note. */
+export const LeaderIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M2.5 13.5L9 6h5" /><path d="M2.5 13.5l.6-3M2.5 13.5l3-.7" /><path d="M9.5 3.5h4.5" strokeWidth="1" /></Svg>
+)
 /** Chained dimension: three bays on one line. */
 export const ChainIcon = (p: IconProps) => (
   <Svg {...p}><path d="M1.5 5v6M6 5v6M10 5v6M14.5 5v6M1.5 8.5h13" /></Svg>

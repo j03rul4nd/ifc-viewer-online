@@ -381,7 +381,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'angle':
         return n === 2 ? { kind: 'angle', value: M.angleAt(draft.points[0], draft.points[1], p) } : null
       case 'dimension': {
-        const d = layoutDimension(dimensionMode, [...draft.points, p].map(plain), { toward: facingFrom(draft.points[0] ?? p) })
+        const d = layoutDimension(dimensionMode, [...draft.points, p].map(plain), { toward: facingFrom(draft.points[0] ?? p), terminator: settings.dimTerminator })
         return d ? { kind: 'length', value: Math.abs(d.value) } : null
       }
       default:
@@ -480,7 +480,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       // before the click, not discovered after it.
       if (tool === 'dimension') {
         const poly = [...pts, h.point]
-        const d = layoutDimension(dimensionMode, poly.map(plain), { toward: facingFrom(pts[0]), markSize: markSizeAt(pts[0]), labelSize: labelSizeAt(pts[0]) })
+        const d = layoutDimension(dimensionMode, poly.map(plain), { toward: facingFrom(pts[0]), markSize: markSizeAt(pts[0]), labelSize: labelSizeAt(pts[0]), terminator: settings.dimTerminator })
         if (d) { draftDims.setSegments(d.segments.map(v3)); rubber.object.visible = dimensionMode === 'radius' }
       }
     }
@@ -504,7 +504,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
 
   function dimensionLayoutOf(item: DimensionItem): DimensionLayout | null {
     const p0 = v3(item.points[0])
-    return layoutDimension(item.mode, item.points, { toward: item.facing ?? facingFrom(p0), markSize: markSizeAt(p0), labelSize: labelSizeAt(p0) })
+    return layoutDimension(item.mode, item.points, { toward: item.facing ?? facingFrom(p0), markSize: markSizeAt(p0), labelSize: labelSizeAt(p0), terminator: settings.dimTerminator })
   }
 
   /** Which tag carries the headline (and the select / delete handle). */
@@ -518,6 +518,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'level': return M.formatLevel(t.value, settings)
       case 'radius': return `R ${M.formatLength(t.value, settings)}`
       case 'diameter': return `Ø ${M.formatLength(t.value, settings)}`
+      case 'arc': return `⌒ ${M.formatLength(t.value, settings)}`
+      case 'note': return '✎'
       default: return M.formatLength(t.value, settings)
     }
   }
@@ -583,7 +585,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     const check = checkStatus(item)
     if (check) text = text.replace(/^[^\n]*/, (first) => `${first} ${check === 'pass' ? '✓' : '✗'}`)
     if (item.kind === 'area' && item.extrusion) text += `\n${M.formatVolume(volumeOf(item.value, item.extrusion), settings)}`
-    if (item.note) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
+    // A leader's note IS its label; every other item adds it under the value.
+    if (item.note && !(item.kind === 'dimension' && item.mode === 'leader')) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
     return text
   }
 
@@ -609,6 +612,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'dimension': {
         const d = dimensionLayoutOf(item)
         if (!d || !d.tags.length) return M.formatItemValue(item, settings)
+        if (item.mode === 'leader') return item.note ? item.note : '✎'
         const head = tagText(d.tags[headlineTag(item, d.tags)])
         return item.mode === 'chain' && item.points.length > 2 ? `Σ ${head}` : item.mode === 'baseline' ? `⊢ ${head}` : head
       }
@@ -1239,6 +1243,13 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     },
     setSettings(patch) {
       settings = { ...settings, ...patch, snaps: { ...settings.snaps, ...(patch.snaps ?? {}) } }
+      // A dimension's strokes and tags are built from the settings (units,
+      // precision, terminators): rebuild them, or they keep the old ones.
+      for (const e of entries.values()) {
+        if (e.item.kind !== 'dimension') continue
+        disposeVisuals(e.visuals)
+        e.visuals = buildVisuals(e.item)
+      }
       refreshAll()
       publishHud()
       emit()

@@ -38,6 +38,8 @@
     "routeHint": "The fastest way between two points: inside the building by corridors and stairs, outside by the streets on foot, by bike or by car",
     "aligned": "Aligned",
     "alignedHint": "Two points, drawn as a dimension line beside them",
+    "linear": "Linear",
+    "linearHint": "Two points measured along one axis — the horizontal run, the depth or the height, not the slant",
     "chain": "Chain",
     "chainHint": "Several points on one line: every bay and the overall length",
     "baseline": "Baseline",
@@ -46,6 +48,8 @@
     "levelHint": "Level marks: the first point is ±0.00, the others above or below it",
     "radius": "Radius",
     "radiusHint": "Three points on an arc: centre, radius and diameter",
+    "leader": "Leader",
+    "leaderHint": "An arrow to a point with a note — write it in the note field",
     "dimensionFinishHint": "Double-click or press Enter to finish"
   },
   "steps": {
@@ -89,6 +93,10 @@
   },
   "settings": {
     "units": "Units",
+    "terminator": "Dimension ends",
+    "terminatorTick": "Tick",
+    "terminatorArrow": "Arrow",
+    "terminatorDot": "Dot",
     "precision": "Precision",
     "ftin": "ft-in",
     "components": "Show the X · Y · Z legs of every distance"

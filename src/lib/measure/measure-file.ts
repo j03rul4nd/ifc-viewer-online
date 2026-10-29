@@ -57,7 +57,7 @@ const POINTS_OF: Record<MeasureKind, [number, number]> = {
   dimension: [2, 500],
 }
 
-const DIMENSION_MODES: readonly DimensionMode[] = ['aligned', 'chain', 'baseline', 'level', 'radius']
+const DIMENSION_MODES: readonly DimensionMode[] = ['aligned', 'linear', 'chain', 'baseline', 'level', 'radius', 'leader']
 
 /** A stable key for a set of models: same files in any order, same key. */
 export function modelSetKey(fileNames: readonly string[]): string {

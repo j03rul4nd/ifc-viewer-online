@@ -285,6 +285,7 @@ export function formatItemValue(item: MeasureItem, s: MeasureSettings): string {
     case 'dimension':
       if (item.mode === 'level') return formatLevel(item.value, s)
       if (item.mode === 'radius') return `R ${formatLength(item.value, s)} · Ø ${formatLength(item.value * 2, s)}`
+      if (item.mode === 'leader') return item.note || '✎'
       return formatLength(item.value, s)
   }
 }
