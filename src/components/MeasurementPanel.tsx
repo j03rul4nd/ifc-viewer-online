@@ -36,6 +36,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { anyModalOpen } from '../lib/ui/modal-stack'
 import type {
   LengthUnit, MeasureItem, MeasureKind, MeasureSettings, MeasureToolId, RouteMode,
+  DimensionMode,
 } from '../lib/measure/measure-types'
 import {
   angleAt, areaInUnits, decimalSeparator, exportNumber, formatAngle, formatArea,
@@ -53,16 +54,37 @@ import { MeasureHud, TOOL_ICON } from './measure/MeasureHud'
 import {
   CheckIcon, CloseIcon, CopyIcon, DownloadIcon, EyeIcon, FaceIcon, GapIcon, GearIcon, HeadroomIcon, PerpendicularIcon, RouteIcon,
   PointsIcon, TargetIcon, TrashIcon, UndoIcon,
+  DimensionIcon, ChainIcon, BaselineIcon, LevelIcon, RadiusIcon,
 } from './measure/icons'
 
 interface MeasurementPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
 }
 
-const TOOLS: readonly MeasureToolId[] = ['distance', 'path', 'area', 'angle', 'point']
+const TOOLS: readonly MeasureToolId[] = ['distance', 'path', 'area', 'angle', 'point', 'dimension']
 const UNITS: readonly LengthUnit[] = ['m', 'cm', 'mm', 'ft']
 const KIND_COLOR: Record<MeasureKind, string> = {
-  distance: '#FFB224', path: '#FFB224', area: '#3DD68C', angle: '#F76B8A', point: '#B49CFF',
+  distance: '#FFB224', path: '#FFB224', area: '#3DD68C', angle: '#F76B8A', point: '#B49CFF', dimension: '#5EEAD4',
+}
+
+/** The dimension modes, two rows: linear, then level and radius. */
+function DimensionModes({ value, onChange, size }: { value: DimensionMode; onChange: (m: DimensionMode) => void; size: number }) {
+  const { t } = useTranslation('measurement')
+  return (
+    <>
+      <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
+        options={[
+          { value: 'aligned', label: <><DimensionIcon size={size} />{t('modes.aligned')}</>, title: t('modes.alignedHint') },
+          { value: 'chain', label: <><ChainIcon size={size} />{t('modes.chain')}</>, title: t('modes.chainHint') },
+          { value: 'baseline', label: <><BaselineIcon size={size} />{t('modes.baseline')}</>, title: t('modes.baselineHint') },
+        ]} />
+      <Segmented label={t('tools.dimension')} value={value} onChange={onChange}
+        options={[
+          { value: 'level', label: <><LevelIcon size={size} />{t('modes.level')}</>, title: t('modes.levelHint') },
+          { value: 'radius', label: <><RadiusIcon size={size} />{t('modes.radius')}</>, title: t('modes.radiusHint') },
+        ]} />
+    </>
+  )
 }
 
 // ── Small pieces ──────────────────────────────────────────────────────────────
@@ -261,7 +283,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
         return
       }
       // Top-row digits only: the numpad digits are the camera presets.
-      const digit = /^Digit([1-5])$/.exec(e.code)
+      const digit = /^Digit([1-6])$/.exec(e.code)
       if (!mod && !e.shiftKey && digit) {
         const next = TOOLS[Number(digit[1]) - 1]
         chooseTool(system.getSnapshot().tool === next ? 'none' : next)
@@ -432,7 +454,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           </div>
 
           {/* Tools */}
-          <div className="shrink-0 grid grid-cols-5 gap-1.5 px-2 pb-2">
+          <div className="shrink-0 grid grid-cols-6 gap-1 px-2 pb-2">
             {TOOLS.map((id) => {
               const Icon = TOOL_ICON[id]
               const active = tool === id
@@ -468,6 +490,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               {snapshot.distanceMode === 'route' && (
                 <div className="mt-1.5"><RouteModeChips touch value={snapshot.routeMode} onChange={(m) => system?.setRouteMode(m)} disabled={snapshot.busy} /></div>
               )}
+            </div>
+          )}
+          {tool === 'dimension' && !drafting && (
+            <div className="shrink-0 px-2 pb-2 flex flex-col gap-1 [&_button]:min-h-[36px] [&_button]:text-[12px]">
+              <DimensionModes value={snapshot.dimensionMode} onChange={(m) => system?.setDimensionMode(m)} size={13} />
             </div>
           )}
           {tool === 'area' && !drafting && (
@@ -664,7 +691,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
         </div>
 
         {/* Tools */}
-        <div className="shrink-0 grid grid-cols-5 gap-1 p-1.5">
+        <div className="shrink-0 grid grid-cols-6 gap-1 p-1.5">
           {TOOLS.map((id, i) => {
             const Icon = TOOL_ICON[id]
             const active = tool === id
@@ -697,7 +724,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
         {/* Mode, and what to do with a measurement half drawn. The step itself
             is spelled out in the bar at the top of the viewport, where the eyes
             are — repeating it here cost the list its room in short windows. */}
-        {tool !== 'none' && (tool === 'distance' || tool === 'area' || snapshot.draftPoints > 0) && (
+        {tool !== 'none' && (tool === 'distance' || tool === 'area' || tool === 'dimension' || snapshot.draftPoints > 0) && (
           <div className="shrink-0 px-2 pb-2 flex flex-col gap-1.5">
             {tool === 'distance' && (
               <Segmented
@@ -724,6 +751,9 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             )}
             {tool === 'distance' && snapshot.distanceMode === 'route' && (
               <RouteModeChips value={snapshot.routeMode} onChange={(m) => system?.setRouteMode(m)} disabled={snapshot.busy} />
+            )}
+            {tool === 'dimension' && (
+              <DimensionModes value={snapshot.dimensionMode} onChange={(m) => system?.setDimensionMode(m)} size={12} />
             )}
             {tool === 'area' && (
               <Segmented
@@ -753,6 +783,9 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 </div>
                 {tool === 'area' && snapshot.areaMode === 'polygon' && snapshot.draftPoints >= 3 && (
                   <span className="text-[10px] text-[var(--text-faint)] leading-snug px-0.5">{t('keys.closeHint')}</span>
+                )}
+                {tool === 'dimension' && snapshot.canFinish && (
+                  <span className="text-[10px] text-[var(--text-faint)] leading-snug px-0.5">{t('modes.dimensionFinishHint')}</span>
                 )}
               </div>
             )}

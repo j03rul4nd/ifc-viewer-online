@@ -19,7 +19,9 @@
     "angle": "Angle",
     "angleHint": "Angle entre tres punts",
     "point": "Punt",
-    "pointHint": "Coordenades X, Y, Z d'un punt"
+    "pointHint": "Coordenades X, Y, Z d'un punt",
+    "dimension": "Cota",
+    "dimensionHint": "Cotes com en un plànol: alineades, encadenades, des de base, de nivell i radi"
   },
   "modes": {
     "point": "Punt a punt",
@@ -33,7 +35,18 @@
     "headroom": "Alçada lliure",
     "headroomHint": "Un clic en un terra: la distància vertical a la superfície de sobre (des d’un sostre: fins al terra)",
     "route": "Ruta",
-    "routeHint": "El camí més ràpid entre dos punts: dins de l’edifici per passadissos i escales; fora, pels carrers a peu, en bici o en cotxe"
+    "routeHint": "El camí més ràpid entre dos punts: dins de l’edifici per passadissos i escales; fora, pels carrers a peu, en bici o en cotxe",
+    "aligned": "Alineada",
+    "alignedHint": "Dos punts, amb la línia de cota al costat",
+    "chain": "Encadenada",
+    "chainHint": "Diversos punts en una línia: cada tram i la longitud total",
+    "baseline": "Des de base",
+    "baselineHint": "Cada punt mesurat des del primer, com un replantejament",
+    "level": "Nivell",
+    "levelHint": "Cotes de nivell: el primer punt és ±0,00 i la resta, per sobre o per sota",
+    "radius": "Radi",
+    "radiusHint": "Tres punts d’un arc: centre, radi i diàmetre",
+    "dimensionFinishHint": "Doble clic o Retorn per acabar"
   },
   "steps": {
     "idle": "Tria una eina",
@@ -86,6 +99,7 @@
     "area": "Àrea {{n}}",
     "angle": "Angle {{n}}",
     "point": "Punt {{n}}",
+    "dimension": "Cota {{n}}",
     "rename": "Doble clic per reanomenar",
     "renameAction": "Reanomena",
     "focus": "Apropa",

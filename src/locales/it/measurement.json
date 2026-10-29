@@ -19,7 +19,9 @@
     "angle": "Angolo",
     "angleHint": "Angolo tra tre punti",
     "point": "Punto",
-    "pointHint": "Coordinate X, Y, Z di un punto"
+    "pointHint": "Coordinate X, Y, Z di un punto",
+    "dimension": "Quota",
+    "dimensionHint": "Quote come in un disegno: allineate, in catena, da base, di livello e raggio"
   },
   "modes": {
     "point": "Punto a punto",
@@ -33,7 +35,18 @@
     "headroom": "Altezza libera",
     "headroomHint": "Un clic su un pavimento: la distanza verticale dalla superficie sopra (da un soffitto: fino al pavimento)",
     "route": "Percorso",
-    "routeHint": "La via più rapida tra due punti: nell’edificio per corridoi e scale; fuori per le strade a piedi, in bici o in auto"
+    "routeHint": "La via più rapida tra due punti: nell’edificio per corridoi e scale; fuori per le strade a piedi, in bici o in auto",
+    "aligned": "Allineata",
+    "alignedHint": "Due punti, con la linea di quota accanto",
+    "chain": "In catena",
+    "chainHint": "Più punti su una linea: ogni campata e la lunghezza totale",
+    "baseline": "Da base",
+    "baselineHint": "Ogni punto misurato dal primo, come un tracciamento",
+    "level": "Livello",
+    "levelHint": "Quote di livello: il primo punto è ±0,00, gli altri sopra o sotto",
+    "radius": "Raggio",
+    "radiusHint": "Tre punti su un arco: centro, raggio e diametro",
+    "dimensionFinishHint": "Doppio clic o Invio per finire"
   },
   "steps": {
     "idle": "Scegli uno strumento",
@@ -86,6 +99,7 @@
     "area": "Area {{n}}",
     "angle": "Angolo {{n}}",
     "point": "Punto {{n}}",
+    "dimension": "Quota {{n}}",
     "rename": "Doppio clic per rinominare",
     "renameAction": "Rinomina",
     "focus": "Zoom su",

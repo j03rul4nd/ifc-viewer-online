@@ -19,7 +19,9 @@
     "angle": "Angle",
     "angleHint": "Angle between three points",
     "point": "Point",
-    "pointHint": "X, Y, Z coordinates of a point"
+    "pointHint": "X, Y, Z coordinates of a point",
+    "dimension": "Dimension",
+    "dimensionHint": "Dimensions as a drawing shows them: aligned, chained, from a baseline, levels, radius"
   },
   "modes": {
     "point": "Point to point",
@@ -33,7 +35,18 @@
     "headroom": "Clear height",
     "headroomHint": "One click on a floor: the vertical distance to the surface above (from a ceiling: down to the floor)",
     "route": "Route",
-    "routeHint": "The fastest way between two points: inside the building by corridors and stairs, outside by the streets on foot, by bike or by car"
+    "routeHint": "The fastest way between two points: inside the building by corridors and stairs, outside by the streets on foot, by bike or by car",
+    "aligned": "Aligned",
+    "alignedHint": "Two points, drawn as a dimension line beside them",
+    "chain": "Chain",
+    "chainHint": "Several points on one line: every bay and the overall length",
+    "baseline": "Baseline",
+    "baselineHint": "Each point measured from the first, as a setting-out schedule",
+    "level": "Level",
+    "levelHint": "Level marks: the first point is ±0.00, the others above or below it",
+    "radius": "Radius",
+    "radiusHint": "Three points on an arc: centre, radius and diameter",
+    "dimensionFinishHint": "Double-click or press Enter to finish"
   },
   "steps": {
     "idle": "Pick a tool",
@@ -86,6 +99,7 @@
     "area": "Area {{n}}",
     "angle": "Angle {{n}}",
     "point": "Point {{n}}",
+    "dimension": "Dimension {{n}}",
     "rename": "Double-click to rename",
     "renameAction": "Rename",
     "focus": "Zoom to",

@@ -258,6 +258,16 @@ export function slopePercent(a: Vec3, b: Vec3): number | null {
   return (c.dz / c.horizontal) * 100
 }
 
+/**
+ * A level as a drawing writes it: ±0.00 at the datum, +3.20 above, −0.45
+ * below. Same units and precision as lengths.
+ */
+export function formatLevel(metres: number, s: Pick<MeasureSettings, 'units' | 'precision' | 'locale'>): string {
+  const half = 0.5 * Math.pow(10, -s.precision) / (s.units === 'mm' ? 1000 : s.units === 'cm' ? 100 : 1)
+  if (Math.abs(metres) < half) return `±${formatLength(0, s)}`
+  return `${metres > 0 ? '+' : '−'}${formatLength(Math.abs(metres), s)}`
+}
+
 /** The single headline value of an item, as its label and list row show it. */
 export function formatItemValue(item: MeasureItem, s: MeasureSettings): string {
   switch (item.kind) {
@@ -272,6 +282,10 @@ export function formatItemValue(item: MeasureItem, s: MeasureSettings): string {
       return formatAngle(item.value, s)
     case 'point':
       return `Z ${formatCoordinate(item.coords.z, s)}`
+    case 'dimension':
+      if (item.mode === 'level') return formatLevel(item.value, s)
+      if (item.mode === 'radius') return `R ${formatLength(item.value, s)} · Ø ${formatLength(item.value * 2, s)}`
+      return formatLength(item.value, s)
   }
 }
 

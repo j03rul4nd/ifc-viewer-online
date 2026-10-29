@@ -13,7 +13,7 @@
 // THE SAME FORMAT keeps the last session in localStorage, keyed by the set of
 // models loaded, so a reload offers the measurements back.
 
-import type { Anchor, GeoPoint, MeasureItem, MeasureKind, PathItem, Requirement, RouteLeg, Vec3 } from './measure-types'
+import type { Anchor, DimensionMode, GeoPoint, MeasureItem, MeasureKind, PathItem, Requirement, RouteLeg, Vec3 } from './measure-types'
 
 export const MEASURE_FILE_FORMAT = 'ifcviewer-measurements'
 export const MEASURE_FILE_VERSION = 1
@@ -38,6 +38,9 @@ export interface SavedMeasurement {
   anchors?: (Anchor | null)[]
   geo?: GeoPoint | null
   route?: PathItem['route']
+  /** Dimensions: how the points are read, and the side the line was drawn on. */
+  dimensionMode?: DimensionMode
+  facing?: Vec3 | null
 }
 
 export interface MeasureFile {
@@ -51,7 +54,10 @@ export interface MeasureFile {
 
 const POINTS_OF: Record<MeasureKind, [number, number]> = {
   distance: [2, 2], path: [2, 10_000], area: [3, 10_000], angle: [3, 3], point: [1, 1],
+  dimension: [2, 500],
 }
+
+const DIMENSION_MODES: readonly DimensionMode[] = ['aligned', 'chain', 'baseline', 'level', 'radius']
 
 /** A stable key for a set of models: same files in any order, same key. */
 export function modelSetKey(fileNames: readonly string[]): string {
@@ -84,6 +90,10 @@ export function toSaved(item: MeasureItem): SavedMeasurement {
       s.coords = { ...item.coords }
       s.frame = item.frame
       if (item.geo) s.geo = item.geo
+      break
+    case 'dimension':
+      s.dimensionMode = item.mode
+      if (item.facing) s.facing = { ...item.facing }
       break
   }
   return s
@@ -156,7 +166,7 @@ export function parseMeasurements(raw: string): ParseResult {
   for (const raw of o.measurements as unknown[]) {
     const m = raw as Record<string, unknown> | null
     const kind = m?.kind
-    if (!m || (kind !== 'distance' && kind !== 'path' && kind !== 'area' && kind !== 'angle' && kind !== 'point')) { skipped++; continue }
+    if (!m || (kind !== 'distance' && kind !== 'path' && kind !== 'area' && kind !== 'angle' && kind !== 'point' && kind !== 'dimension')) { skipped++; continue }
     const pts = Array.isArray(m.points) ? (m.points as unknown[]).map(vec) : []
     const [lo, hi] = POINTS_OF[kind]
     if (pts.some((p) => !p) || pts.length < lo || pts.length > hi) { skipped++; continue }
@@ -169,6 +179,12 @@ export function parseMeasurements(raw: string): ParseResult {
       if (m.source === 'elements' || m.source === 'headroom') s.source = m.source
       if (m.clash === true) s.clash = true
       if (m.approximate === true) s.approximate = true
+    }
+    if (kind === 'dimension') {
+      const mode = DIMENSION_MODES.includes(m.dimensionMode as DimensionMode) ? m.dimensionMode as DimensionMode : 'aligned'
+      if (mode === 'radius' && pts.length !== 3) { skipped++; continue }
+      s.dimensionMode = mode
+      s.facing = vec(m.facing)
     }
     if (kind === 'area') {
       s.areaSource = m.areaSource === 'face' ? 'face' : 'polygon'

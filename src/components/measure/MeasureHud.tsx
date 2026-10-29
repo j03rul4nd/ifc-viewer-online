@@ -18,7 +18,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { MeasureHover, MeasureSnapshot, SnapKind } from '../../lib/measure/measure-types'
 import { formatAngle, formatArea, formatLength } from '../../lib/measure/measure-math'
-import { AngleIcon, AreaIcon, DistanceIcon, PathIcon, PointIcon } from './icons'
+import { AngleIcon, AreaIcon, DimensionIcon, DistanceIcon, PathIcon, PointIcon } from './icons'
 
 const SNAP_COLOR: Record<SnapKind, string> = {
   vertex: '#3DD68C',
@@ -36,6 +36,7 @@ export const TOOL_ICON = {
   area: AreaIcon,
   angle: AngleIcon,
   point: PointIcon,
+  dimension: DimensionIcon,
 } as const
 
 function Kbd({ children }: { children: React.ReactNode }) {
@@ -106,7 +107,7 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
   const liveText = live
     ? live.kind === 'length' ? formatLength(live.value, s) : live.kind === 'area' ? formatArea(live.value, s) : formatAngle(live.value, s)
     : null
-  const lockable = snapshot.draftPoints > 0 && (tool === 'path' || tool === 'angle'
+  const lockable = snapshot.draftPoints > 0 && (tool === 'path' || tool === 'angle' || tool === 'dimension'
     || (tool === 'distance' && snapshot.distanceMode === 'point') || (tool === 'area' && snapshot.areaMode === 'polygon'))
   const color = hover ? (hover.axis ? AXIS_COLOR[hover.axis] : SNAP_COLOR[hover.kind]) : '#fff'
   const snapLabel = hover

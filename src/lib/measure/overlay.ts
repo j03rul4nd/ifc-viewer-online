@@ -28,6 +28,7 @@ export const OVERLAY_COLORS = {
   area: 0x3DD68C,
   angle: 0xF76B8A,
   point: 0xB49CFF,
+  dimension: 0x5EEAD4,
   preview: 0xFFFFFF,
   highlight: 0x6CE0FF,
   axisX: 0xFF5A5A,
