@@ -935,3 +935,22 @@ export function trackEventDemoInteraction(props: { event: string; entry: EventEn
 export function trackEventContactSent(props: { event: string; entry: EventEntry; profile: EventProfile; feature: string }): void {
   track('event_contact_sent', props)
 }
+
+// ── Requirements links (doc 17, M1) ──────────────────────────────────────────
+// Never the title, issuer or IDS content: only which kinds of requirement the
+// link carries and coarse outcomes.
+
+/** A receiver built a requirements link. */
+export function trackRequirementsLinkCreated(props: { has_score: boolean; has_ids: boolean; has_profile: boolean }): void {
+  track('requirements_link_created', props)
+}
+
+/** A supplier opened a requirements link. */
+export function trackRequirementsLinkOpened(props: { has_score: boolean; has_ids: boolean; valid: boolean }): void {
+  track('requirements_link_opened', props)
+}
+
+/** The model got its verdict against a requirements link. */
+export function trackRequirementsVerdict(props: { pass: boolean; score_bucket: string | null }): void {
+  track('requirements_verdict', props)
+}

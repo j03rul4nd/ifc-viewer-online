@@ -25,6 +25,7 @@ import { localizeIdsError, idsErrorDetail } from './ids/error-text'
 import { idsResultToSharePayload } from '../lib/ids/ids-share'
 import { buildShareUrl } from '../lib/share-report'
 import SavedRulesetPicker from './pro/SavedRulesetPicker'
+import RequirementsLinkCreator from './requirements/RequirementsLinkCreator'
 
 interface IdsModalProps {
   onClose: () => void
@@ -325,6 +326,9 @@ export default function IdsModal({ onClose }: IdsModalProps) {
               </div>
             )
           })()}
+
+          {/* Requirements link for suppliers (doc 17, M1) */}
+          {!busy && <RequirementsLinkCreator />}
 
           {!doc && !result && (
             <div className="px-3 py-6 rounded-lg border border-dashed border-[var(--border)] text-[11.5px] text-[var(--text-faint)] text-center leading-relaxed">

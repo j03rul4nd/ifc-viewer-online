@@ -54,5 +54,9 @@
   "viewer": {
     "gpuLost": "Die 3D-Ansicht hat ihren Grafikspeicher verloren. Neu laden, um sie wiederherzustellen.",
     "reload": "Neu laden"
+  },
+  "requirements": {
+    "invalid": "Dieser Anforderungslink ist beschädigt oder stammt aus einer neueren Version. Bitten Sie den Absender um einen neuen.",
+    "idsInvalid": "Die IDS in diesem Anforderungslink konnte nicht gelesen werden."
   }
 }

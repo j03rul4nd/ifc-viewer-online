@@ -176,5 +176,42 @@
   "library": {
     "label": "Els teus IDS ({{count}})",
     "switch": "IDS actiu"
+  },
+  "requirements": {
+    "banner": {
+      "label": "Requisits de lliurament",
+      "from": "Requisits de {{issuer}}",
+      "dropModel": "Obre el teu model IFC per comprovar-lo amb aquests requisits",
+      "checking": "Comprovant el teu model…",
+      "pass": "Compleix els requisits",
+      "fail": "Encara no compleix els requisits",
+      "scoreMin": "Health Score d'almenys {{min}}",
+      "scoreValue": "Health Score {{value}} (mínim {{min}})",
+      "idsPending": "{{name}}: comprovant…",
+      "idsValue": "{{name}}: compleixen {{passed}} de {{total}} especificacions",
+      "openFile": "Obrir IFC",
+      "close": "Amagar requisits",
+      "needsRun": "Executa la validació per obtenir el veredicte",
+      "runValidation": "Obrir validació"
+    },
+    "create": {
+      "open": "Crear un enllaç de requisits per a proveïdors",
+      "title": "Enllaç de requisits",
+      "intro": "Els proveïdors obren l'enllaç i comproven el seu model amb aquests requisits al seu navegador abans d'enviar-lo.",
+      "what": "Què es lliura",
+      "whatPlaceholder": "Model d'estructures, fase 2",
+      "who": "Qui fixa els requisits (opcional)",
+      "whoPlaceholder": "La teva empresa",
+      "minScore": "Health Score mínim",
+      "profileNote": "Calculat amb el perfil «{{profile}}».",
+      "includeIds": "Incloure l'IDS «{{name}}»",
+      "noIds": "Carrega un IDS a dalt per incloure'l",
+      "copy": "Copiar enllaç",
+      "private": "Els requisits viatgen dins l'enllaç; no es desa res a cap servidor.",
+      "copied": "Enllaç de requisits copiat",
+      "empty": "Afegeix almenys una nota mínima o un IDS",
+      "tooLong": "Aquest IDS és massa gran per a un enllaç. Envia el fitxer .ids.",
+      "failed": "No s'ha pogut crear l'enllaç"
+    }
   }
 }

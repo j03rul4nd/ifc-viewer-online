@@ -176,5 +176,42 @@
   "library": {
     "label": "Tus IDS ({{count}})",
     "switch": "IDS activo"
+  },
+  "requirements": {
+    "banner": {
+      "label": "Requisitos de entrega",
+      "from": "Requisitos de {{issuer}}",
+      "dropModel": "Abre tu modelo IFC para comprobarlo contra estos requisitos",
+      "checking": "Comprobando tu modelo…",
+      "pass": "Cumple los requisitos",
+      "fail": "Todavía no cumple los requisitos",
+      "scoreMin": "Health Score de al menos {{min}}",
+      "scoreValue": "Health Score {{value}} (mínimo {{min}})",
+      "idsPending": "{{name}}: comprobando…",
+      "idsValue": "{{name}}: cumplen {{passed}} de {{total}} especificaciones",
+      "openFile": "Abrir IFC",
+      "close": "Ocultar requisitos",
+      "needsRun": "Ejecuta la validación para obtener el veredicto",
+      "runValidation": "Abrir validación"
+    },
+    "create": {
+      "open": "Crear un enlace de requisitos para proveedores",
+      "title": "Enlace de requisitos",
+      "intro": "Tus proveedores abren el enlace y comprueban su modelo contra estos requisitos en su propio navegador antes de enviártelo.",
+      "what": "Qué se entrega",
+      "whatPlaceholder": "Modelo de estructuras, fase 2",
+      "who": "Quién fija los requisitos (opcional)",
+      "whoPlaceholder": "Tu empresa",
+      "minScore": "Health Score mínimo",
+      "profileNote": "Calculado con el perfil «{{profile}}».",
+      "includeIds": "Incluir el IDS «{{name}}»",
+      "noIds": "Carga un IDS arriba para incluirlo",
+      "copy": "Copiar enlace",
+      "private": "Los requisitos viajan dentro del enlace; no se guarda nada en ningún servidor.",
+      "copied": "Enlace de requisitos copiado",
+      "empty": "Añade al menos una nota mínima o un IDS",
+      "tooLong": "Este IDS es demasiado grande para un enlace. Envía el archivo .ids.",
+      "failed": "No se pudo crear el enlace"
+    }
   }
 }

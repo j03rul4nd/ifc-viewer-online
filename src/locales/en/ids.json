@@ -176,5 +176,42 @@
   "library": {
     "label": "Your IDS files ({{count}})",
     "switch": "Active IDS"
+  },
+  "requirements": {
+    "banner": {
+      "label": "Delivery requirements",
+      "from": "Requirements from {{issuer}}",
+      "dropModel": "Open your IFC model to check it against these requirements",
+      "checking": "Checking your model…",
+      "pass": "Meets the requirements",
+      "fail": "Does not meet the requirements yet",
+      "scoreMin": "Health Score of at least {{min}}",
+      "scoreValue": "Health Score {{value}} (minimum {{min}})",
+      "idsPending": "{{name}}: checking…",
+      "idsValue": "{{name}}: {{passed}} of {{total}} specifications pass",
+      "openFile": "Open IFC",
+      "close": "Hide requirements",
+      "needsRun": "Run the validation to get the verdict",
+      "runValidation": "Open validation"
+    },
+    "create": {
+      "open": "Create a requirements link for suppliers",
+      "title": "Requirements link",
+      "intro": "Suppliers open the link and check their model against these requirements in their own browser before sending it.",
+      "what": "What is being delivered",
+      "whatPlaceholder": "Structural model, stage 2",
+      "who": "Who sets the requirements (optional)",
+      "whoPlaceholder": "Your company",
+      "minScore": "Minimum Health Score",
+      "profileNote": "Computed with the \"{{profile}}\" profile.",
+      "includeIds": "Include the IDS \"{{name}}\"",
+      "noIds": "Load an IDS above to include it",
+      "copy": "Copy link",
+      "private": "The requirements travel inside the link; nothing is stored on a server.",
+      "copied": "Requirements link copied",
+      "empty": "Add at least a minimum score or an IDS",
+      "tooLong": "This IDS is too large for a link. Send the .ids file instead.",
+      "failed": "Could not create the link"
+    }
   }
 }

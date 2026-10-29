@@ -176,5 +176,42 @@
   "library": {
     "label": "Ihre IDS ({{count}})",
     "switch": "Aktive IDS"
+  },
+  "requirements": {
+    "banner": {
+      "label": "Lieferanforderungen",
+      "from": "Anforderungen von {{issuer}}",
+      "dropModel": "Öffnen Sie Ihr IFC-Modell, um es gegen diese Anforderungen zu prüfen",
+      "checking": "Ihr Modell wird geprüft…",
+      "pass": "Erfüllt die Anforderungen",
+      "fail": "Erfüllt die Anforderungen noch nicht",
+      "scoreMin": "Health Score von mindestens {{min}}",
+      "scoreValue": "Health Score {{value}} (Minimum {{min}})",
+      "idsPending": "{{name}}: wird geprüft…",
+      "idsValue": "{{name}}: {{passed}} von {{total}} Spezifikationen erfüllt",
+      "openFile": "IFC öffnen",
+      "close": "Anforderungen ausblenden",
+      "needsRun": "Führen Sie die Validierung aus, um das Ergebnis zu erhalten",
+      "runValidation": "Validierung öffnen"
+    },
+    "create": {
+      "open": "Anforderungslink für Lieferanten erstellen",
+      "title": "Anforderungslink",
+      "intro": "Lieferanten öffnen den Link und prüfen ihr Modell vor dem Versand in ihrem eigenen Browser gegen diese Anforderungen.",
+      "what": "Was geliefert wird",
+      "whatPlaceholder": "Tragwerksmodell, Phase 2",
+      "who": "Wer die Anforderungen festlegt (optional)",
+      "whoPlaceholder": "Ihr Unternehmen",
+      "minScore": "Mindest-Health-Score",
+      "profileNote": "Berechnet mit dem Profil „{{profile}}“.",
+      "includeIds": "IDS „{{name}}“ einschließen",
+      "noIds": "Laden Sie oben eine IDS, um sie einzuschließen",
+      "copy": "Link kopieren",
+      "private": "Die Anforderungen stecken im Link; auf keinem Server wird etwas gespeichert.",
+      "copied": "Anforderungslink kopiert",
+      "empty": "Fügen Sie mindestens einen Mindestwert oder eine IDS hinzu",
+      "tooLong": "Diese IDS ist zu groß für einen Link. Senden Sie die .ids-Datei.",
+      "failed": "Link konnte nicht erstellt werden"
+    }
   }
 }

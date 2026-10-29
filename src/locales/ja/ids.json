@@ -176,5 +176,42 @@
   "library": {
     "label": "あなたの IDS（{{count}}）",
     "switch": "使用中の IDS"
+  },
+  "requirements": {
+    "banner": {
+      "label": "納品要件",
+      "from": "{{issuer}} の要件",
+      "dropModel": "IFC モデルを開いて、この要件に照らして確認してください",
+      "checking": "モデルを確認しています…",
+      "pass": "要件を満たしています",
+      "fail": "まだ要件を満たしていません",
+      "scoreMin": "Health Score {{min}} 以上",
+      "scoreValue": "Health Score {{value}}(最低 {{min}})",
+      "idsPending": "{{name}}: 確認中…",
+      "idsValue": "{{name}}: {{total}} 件中 {{passed}} 件の仕様に合格",
+      "openFile": "IFC を開く",
+      "close": "要件を隠す",
+      "needsRun": "判定を得るには検証を実行してください",
+      "runValidation": "検証を開く"
+    },
+    "create": {
+      "open": "協力会社向けの要件リンクを作成",
+      "title": "要件リンク",
+      "intro": "協力会社はリンクを開き、送付前に自分のブラウザでモデルをこの要件に照らして確認します。",
+      "what": "納品物",
+      "whatPlaceholder": "構造モデル フェーズ 2",
+      "who": "要件を定める組織(任意)",
+      "whoPlaceholder": "貴社名",
+      "minScore": "最低 Health Score",
+      "profileNote": "「{{profile}}」プロファイルで計算します。",
+      "includeIds": "IDS「{{name}}」を含める",
+      "noIds": "含めるには上で IDS を読み込んでください",
+      "copy": "リンクをコピー",
+      "private": "要件はリンクの中に含まれ、サーバーには何も保存されません。",
+      "copied": "要件リンクをコピーしました",
+      "empty": "最低スコアか IDS を少なくとも一つ追加してください",
+      "tooLong": "この IDS はリンクには大きすぎます。.ids ファイルを送ってください。",
+      "failed": "リンクを作成できませんでした"
+    }
   }
 }
