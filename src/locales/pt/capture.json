@@ -142,7 +142,8 @@
       "reel": "Reel",
       "post": "Post",
       "portrait": "Vertical",
-      "wide": "Panorâmico"
+      "wide": "Panorâmico",
+      "email": "Email"
     },
     "export": {
       "preset": "Para onde vai?",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "Capturar",
-  "screenshot": "Captura de ecrã"
+  "screenshot": "Captura de ecrã",
+  "emailDone": "GIF para email transferido. Carregue-o na sua ferramenta de email (Mailchimp, HubSpot, Outlook…) e ligue a imagem ao modelo 3D.",
+  "emailDoneNoLink": "GIF para email transferido. Carregue-o na sua ferramenta de email (Mailchimp, HubSpot, Outlook…). Abra o modelo a partir de um link público para ter também um link para ele.",
+  "emailCopyLink": "Copiar link para o modelo 3D",
+  "emailLinkCopied": "Link copiado: cole-o como link da imagem"
 }

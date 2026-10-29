@@ -22,3 +22,13 @@ describe('export settings', () => {
     expect(mb).toBeLessThan(40)
   })
 })
+
+describe('email preset', () => {
+  it('is Wide at the email height, and only then', async () => {
+    const { matchSocialPreset, SOCIAL_PRESETS, EMAIL_GIF_HEIGHT } = await import('./social-presets')
+    expect(SOCIAL_PRESETS.email).toMatchObject({ aspect: 'wide', fit: 'fit', height: EMAIL_GIF_HEIGHT, gifFps: 8 })
+    expect(matchSocialPreset('wide', 'fit', EMAIL_GIF_HEIGHT)).toBe('email')
+    expect(matchSocialPreset('wide', 'fit', 1080)).toBe('wide')
+    expect(matchSocialPreset('wide', 'fit')).toBe('wide')
+  })
+})

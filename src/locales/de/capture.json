@@ -142,7 +142,8 @@
       "reel": "Reel",
       "post": "Post",
       "portrait": "Hochformat",
-      "wide": "Breitbild"
+      "wide": "Breitbild",
+      "email": "E-Mail"
     },
     "export": {
       "preset": "Wo soll das hin?",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "Aufnehmen",
-  "screenshot": "Screenshot"
+  "screenshot": "Screenshot",
+  "emailDone": "GIF für E-Mail heruntergeladen. Laden Sie es in Ihr E-Mail-Tool (Mailchimp, HubSpot, Outlook…) hoch und verlinken Sie das Bild mit dem 3D-Modell.",
+  "emailDoneNoLink": "GIF für E-Mail heruntergeladen. Laden Sie es in Ihr E-Mail-Tool (Mailchimp, HubSpot, Outlook…) hoch. Öffnen Sie das Modell über einen öffentlichen Link, um auch einen Link darauf zu erhalten.",
+  "emailCopyLink": "Link zum 3D-Modell kopieren",
+  "emailLinkCopied": "Link kopiert – als Bildlink einfügen"
 }

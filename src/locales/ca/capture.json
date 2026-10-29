@@ -142,7 +142,8 @@
       "reel": "Reel",
       "post": "Post",
       "portrait": "Vertical",
-      "wide": "Panoràmic"
+      "wide": "Panoràmic",
+      "email": "Correu"
     },
     "export": {
       "preset": "On es publicarà?",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "Capturar",
-  "screenshot": "Captura de pantalla"
+  "screenshot": "Captura de pantalla",
+  "emailDone": "GIF per a correu descarregat. Puja’l a la teva eina de correu (Mailchimp, HubSpot, Outlook…) i enllaça la imatge al model 3D.",
+  "emailDoneNoLink": "GIF per a correu descarregat. Puja’l a la teva eina de correu (Mailchimp, HubSpot, Outlook…). Obre el model des d’un enllaç públic per tenir-ne també un enllaç.",
+  "emailCopyLink": "Copiar l’enllaç al model 3D",
+  "emailLinkCopied": "Enllaç copiat: enganxa’l com a enllaç de la imatge"
 }

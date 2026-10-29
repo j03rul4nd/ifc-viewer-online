@@ -142,7 +142,8 @@
       "reel": "Reel",
       "post": "Post",
       "portrait": "Portrait",
-      "wide": "Large"
+      "wide": "Large",
+      "email": "E-mail"
     },
     "export": {
       "preset": "Destination ?",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "Capturer",
-  "screenshot": "Capture d'écran"
+  "screenshot": "Capture d'écran",
+  "emailDone": "GIF pour e-mail téléchargé. Importez-le dans votre outil d’e-mail (Mailchimp, HubSpot, Outlook…) et liez l’image au modèle 3D.",
+  "emailDoneNoLink": "GIF pour e-mail téléchargé. Importez-le dans votre outil d’e-mail (Mailchimp, HubSpot, Outlook…). Ouvrez le modèle depuis un lien public pour obtenir aussi un lien vers lui.",
+  "emailCopyLink": "Copier le lien vers le modèle 3D",
+  "emailLinkCopied": "Lien copié : collez-le comme lien de l’image"
 }

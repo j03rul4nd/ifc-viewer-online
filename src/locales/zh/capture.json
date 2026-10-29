@@ -142,7 +142,8 @@
       "reel": "Reel",
       "post": "帖子",
       "portrait": "竖版",
-      "wide": "宽屏"
+      "wide": "宽屏",
+      "email": "邮件"
     },
     "export": {
       "preset": "发布到哪里？",
@@ -1103,5 +1104,9 @@
     }
   },
   "mobileMenu": "截取",
-  "screenshot": "截图"
+  "screenshot": "截图",
+  "emailDone": "邮件用 GIF 已下载。将其上传到你的邮件工具(Mailchimp、HubSpot、Outlook 等),并把图片链接到 3D 模型。",
+  "emailDoneNoLink": "邮件用 GIF 已下载。将其上传到你的邮件工具(Mailchimp、HubSpot、Outlook 等)。从公开链接打开模型,即可同时获得模型链接。",
+  "emailCopyLink": "复制 3D 模型链接",
+  "emailLinkCopied": "链接已复制,请粘贴为图片链接"
 }
