@@ -105,7 +105,7 @@ Some of these modules are behind build flags (`VITE_FEATURE_GIS`, `VITE_FEATURE_
 
 ## See it in action
 
-> Every clip is the **real app** running in a browser. The model is the open [Duplex Apartment](public/Ifc2x3_Duplex_Architecture.ifc) reference IFC (7,131 elements), parsed and validated 100% client-side.
+> Every clip is the **real app** running in a browser, with no edited footage. The first three use the open [Duplex Apartment](public/Ifc2x3_Duplex_Architecture.ifc) reference IFC (7,131 elements); the rest use the Barcelona reference models in `public/models/`. Re-record them with `scripts/gif/capture.mjs` and `scripts/gif/features.mjs`, then `scripts/gif/encode.mjs`.
 
 ### Navigate the model and inspect IFC properties
 
@@ -118,6 +118,36 @@ Some of these modules are behind build flags (`VITE_FEATURE_GIS`, `VITE_FEATURE_
 ### Export a corrected model
 
 ![Export to IFC, GLB and BCF](assets/feature-export.gif)
+
+### Sun and climate analysis
+
+One link loads the model, reads the site's real climate (ERA5) and paints the passive sun impact on every facade, hour by hour.
+
+![Solar and climate analysis on the Hotel Vela reference IFC](assets/feature-solar.gif)
+
+### Rain and flooding on the map
+
+The model on its real street, with the map's relief, and a storm run as a 2D flood simulation on the GPU.
+
+![Flood simulation around a georeferenced tower in Poblenou, Barcelona](assets/feature-flood.gif)
+
+### Point clouds next to the IFC
+
+A site scan (LAS) aligned with the model it surveys, both in the same scene.
+
+![Point cloud site scan aligned with the IFC model](assets/feature-pointcloud.gif)
+
+### A city digital twin from one scene file
+
+`?scene=` opens eight IFC models in Plaça de Catalunya, Barcelona, on the city map with live open data.
+
+![Barcelona Plaça de Catalunya digital twin scene](assets/feature-twin.gif)
+
+### Clip Studio
+
+Generate a presentation from the model (storeys, systems, findings) and edit it into a clip for LinkedIn, Reels or TikTok.
+
+![Clip Studio generating and playing a presentation of the model](assets/feature-clips.gif)
 
 ---
 
