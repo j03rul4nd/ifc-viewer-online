@@ -19,7 +19,9 @@
     "angle": "Ángulo",
     "angleHint": "Ángulo entre tres puntos",
     "point": "Punto",
-    "pointHint": "Coordenadas X, Y, Z de un punto"
+    "pointHint": "Coordenadas X, Y, Z de un punto",
+    "dimension": "Cota",
+    "dimensionHint": "Cotas como en un plano: alineadas, encadenadas, desde base, de nivel y radio"
   },
   "modes": {
     "point": "Punto a punto",
@@ -33,7 +35,18 @@
     "headroom": "Altura libre",
     "headroomHint": "Un clic en un suelo: la distancia vertical a la superficie de encima (desde un techo: hasta el suelo)",
     "route": "Ruta",
-    "routeHint": "El camino más rápido entre dos puntos: dentro del edificio por pasillos y escaleras; fuera, por las calles a pie, en bici o en coche"
+    "routeHint": "El camino más rápido entre dos puntos: dentro del edificio por pasillos y escaleras; fuera, por las calles a pie, en bici o en coche",
+    "aligned": "Alineada",
+    "alignedHint": "Dos puntos, con su línea de cota al lado",
+    "chain": "Encadenada",
+    "chainHint": "Varios puntos en una línea: cada tramo y la longitud total",
+    "baseline": "Desde base",
+    "baselineHint": "Cada punto medido desde el primero, como un replanteo",
+    "level": "Nivel",
+    "levelHint": "Cotas de nivel: el primer punto es ±0,00 y los demás, por encima o por debajo",
+    "radius": "Radio",
+    "radiusHint": "Tres puntos de un arco: centro, radio y diámetro",
+    "dimensionFinishHint": "Doble clic o Intro para terminar"
   },
   "steps": {
     "idle": "Elige una herramienta",
@@ -86,6 +99,7 @@
     "area": "Área {{n}}",
     "angle": "Ángulo {{n}}",
     "point": "Punto {{n}}",
+    "dimension": "Cota {{n}}",
     "rename": "Doble clic para renombrar",
     "renameAction": "Renombrar",
     "focus": "Acercar",

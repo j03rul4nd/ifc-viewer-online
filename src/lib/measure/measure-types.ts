@@ -11,7 +11,11 @@
 export interface Vec3 { x: number; y: number; z: number }
 
 /** The tools a person can pick. `none` is ordinary navigation and selection. */
-export type MeasureToolId = 'distance' | 'path' | 'area' | 'angle' | 'point'
+export type MeasureToolId = 'distance' | 'path' | 'area' | 'angle' | 'point' | 'dimension'
+
+/** How a dimension reads its points — see dimension-math. */
+export type { DimensionMode } from './dimension-math'
+import type { DimensionMode } from './dimension-math'
 export type MeasureTool = 'none' | MeasureToolId
 
 /**
@@ -199,7 +203,23 @@ export interface PointItem extends ItemBase {
   geo?: GeoPoint | null
 }
 
-export type MeasureItem = DistanceItem | PathItem | AreaItem | AngleItem | PointItem
+/**
+ * A drawing dimension (cota): aligned, chained, from a baseline, a level mark
+ * or a radius. `value` is the headline (total, last level, radius); `parts`
+ * the bays / running distances / levels / [radius, diameter].
+ */
+export interface DimensionItem extends ItemBase {
+  kind: 'dimension'
+  mode: DimensionMode
+  value: number
+  parts: number[]
+  /** Radius: the arc's centre. */
+  center?: Vec3 | null
+  /** Toward the viewer when it was drawn: which side the dimension line sits on. */
+  facing?: Vec3 | null
+}
+
+export type MeasureItem = DistanceItem | PathItem | AreaItem | AngleItem | PointItem | DimensionItem
 export type MeasureKind = MeasureItem['kind']
 
 /** What the draft needs from the person next — the panel turns it into a sentence. */
@@ -223,6 +243,7 @@ export interface MeasureSnapshot {
   tool: MeasureTool
   distanceMode: DistanceMode
   areaMode: AreaMode
+  dimensionMode: DimensionMode
   step: MeasureStep
   /** Points placed in the measurement being drawn. */
   draftPoints: number

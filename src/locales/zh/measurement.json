@@ -19,7 +19,9 @@
     "angle": "角度",
     "angleHint": "三点构成的角度",
     "point": "点",
-    "pointHint": "点的 X, Y, Z 坐标"
+    "pointHint": "点的 X, Y, Z 坐标",
+    "dimension": "标注",
+    "dimensionHint": "像图纸一样标注：对齐、连续、基线、标高和半径"
   },
   "modes": {
     "point": "点到点",
@@ -33,7 +35,18 @@
     "headroom": "净高",
     "headroomHint": "点击一次楼面：到上方表面的垂直距离（从顶棚点击：向下到楼面）",
     "route": "路线",
-    "routeHint": "两点之间最快的路线：建筑内走走廊和楼梯；室外沿街道步行、骑行或驾车"
+    "routeHint": "两点之间最快的路线：建筑内走走廊和楼梯；室外沿街道步行、骑行或驾车",
+    "aligned": "对齐",
+    "alignedHint": "两点，旁边绘制尺寸线",
+    "chain": "连续",
+    "chainHint": "一条线上的多个点：每一跨和总长",
+    "baseline": "基线",
+    "baselineHint": "每个点都从第一个点量起，如同放线表",
+    "level": "标高",
+    "levelHint": "标高：第一个点为 ±0.00，其余在其上或其下",
+    "radius": "半径",
+    "radiusHint": "圆弧上的三个点：圆心、半径和直径",
+    "dimensionFinishHint": "双击或按 Enter 完成"
   },
   "steps": {
     "idle": "选择工具",
@@ -86,6 +99,7 @@
     "area": "面积 {{n}}",
     "angle": "角度 {{n}}",
     "point": "点 {{n}}",
+    "dimension": "标注 {{n}}",
     "rename": "双击重命名",
     "renameAction": "重命名",
     "focus": "缩放至",

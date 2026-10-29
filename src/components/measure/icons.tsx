@@ -29,6 +29,26 @@ export const AngleIcon = (p: IconProps) => (
 export const PointIcon = (p: IconProps) => (
   <Svg {...p}><circle cx="8" cy="8" r="2" fill="currentColor" /><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3" /></Svg>
 )
+/** A dimension line with its extension lines and ticks. */
+export const DimensionIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M2.5 4v8M13.5 4v8M2.5 9.5h11" /><path d="M1.5 10.5l2-2M12.5 10.5l2-2" /><path d="M5.5 6.5h5" strokeWidth="1" /></Svg>
+)
+/** Chained dimension: three bays on one line. */
+export const ChainIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M1.5 5v6M6 5v6M10 5v6M14.5 5v6M1.5 8.5h13" /></Svg>
+)
+/** Baseline: every dimension from the same first line. */
+export const BaselineIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M2 3v10M2 6h6M2 9.5h9M2 13h12M8 4.5v3M11 8v3M14 11.5v3" /></Svg>
+)
+/** A level mark: inverted triangle on a line. */
+export const LevelIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M1.5 11h13" /><path d="M5 6.5h4L7 11z" fill="currentColor" fillOpacity="0.25" /></Svg>
+)
+/** A circle, its centre and radius. */
+export const RadiusIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="8" cy="8" r="5.5" /><path d="M8 8l3.9-3.9" /><circle cx="8" cy="8" r=".8" fill="currentColor" /></Svg>
+)
 export const PerpendicularIcon = (p: IconProps) => (
   <Svg {...p}><path d="M2 13.5h12M8 13.5V2.5" /><path d="M8 10.5h3v3" /></Svg>
 )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { missingModels, modelSetKey, parseMeasurements, serializeMeasurements } from './measure-file'
-import type { AreaItem, DistanceItem, PointItem } from './measure-types'
+import type { AreaItem, DimensionItem, DistanceItem, PointItem } from './measure-types'
 
 const base = { seq: 1, name: null, visible: true }
 const dist: DistanceItem = {
@@ -52,5 +52,36 @@ describe('measure file', () => {
   it('model set key ignores order and case; missing models are reported', () => {
     expect(modelSetKey(['B.ifc', 'a.IFC', 'b.ifc'])).toBe('a.ifc|b.ifc')
     expect(missingModels(['A.ifc', 'M.ifc'], ['a.ifc'])).toEqual(['M.ifc'])
+  })
+})
+
+describe('measure file: dimensions', () => {
+  const chain: DimensionItem = {
+    id: 'd', seq: 1, name: 'Grid A', visible: true, kind: 'dimension', mode: 'chain',
+    points: [{ x: 0, y: 0, z: 0 }, { x: 6, y: 0, z: 0 }, { x: 12, y: 0, z: 0 }],
+    value: 12, parts: [6, 6], facing: { x: 0, y: 5, z: 10 },
+  }
+
+  it('keeps the mode and the side the line was drawn on', () => {
+    const r = parseMeasurements(serializeMeasurements([chain], []))
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const [s] = r.file.measurements
+    expect(s.kind).toBe('dimension')
+    expect(s.dimensionMode).toBe('chain')
+    expect(s.facing).toEqual({ x: 0, y: 5, z: 10 })
+    expect(s.points).toHaveLength(3)
+  })
+
+  it('skips a radius that does not have exactly three points, and an unknown mode reads as aligned', () => {
+    const bad = JSON.stringify({ format: 'ifcviewer-measurements', version: 1, models: [], measurements: [
+      { kind: 'dimension', dimensionMode: 'radius', points: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }] },
+      { kind: 'dimension', dimensionMode: 'spiral', points: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }] },
+    ] })
+    const r = parseMeasurements(bad)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.skipped).toBe(1)
+    expect(r.file.measurements[0].dimensionMode).toBe('aligned')
   })
 })

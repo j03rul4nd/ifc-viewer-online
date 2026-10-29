@@ -13,7 +13,7 @@ const en = load('en').layout as Record<string, string>
 
 describe('common.layout parity', () => {
   it('EN defines the grip keys', () => {
-    expect(Object.keys(en).sort()).toEqual(['resizePanel', 'resizePanelHint'])
+    expect(Object.keys(en).sort()).toEqual(['maximizePanel', 'resizePanel', 'resizePanelHint', 'restorePanel'])
   })
 
   for (const l of LOCALES) {

@@ -25,7 +25,8 @@
 import * as THREE from 'three'
 import './measure.css'
 import type { ScenePicker, PickResult, PickOptions } from './picker'
-import { Stroke, Dots, Fill, Label, OVERLAY_COLORS, paintLabel } from './overlay'
+import { Stroke, Segments, Dots, Fill, Label, OVERLAY_COLORS, paintLabel } from './overlay'
+import { autoFinishes, layoutDimension, minPoints, type DimensionLayout, type DimensionTag } from './dimension-math'
 import { checkItem, volumeOf } from './checks'
 import { minDistance } from './clearance-math'
 import type { SavedMeasurement } from './measure-file'
@@ -35,7 +36,7 @@ import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
   type MeasureKind, type MeasureSettings, type MeasureSnapshot, type MeasureStep, type MeasureTool,
-  type Vec3, type DistanceItem, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
+  type Vec3, type DistanceItem, type DimensionItem, type DimensionMode, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
 } from './measure-types'
 
 export interface MeasureSystemDeps {
@@ -67,6 +68,7 @@ export interface MeasureSystem {
   isActive(): boolean
   setDistanceMode(mode: DistanceMode): void
   setAreaMode(mode: AreaMode): void
+  setDimensionMode(mode: DimensionMode): void
   setSettings(patch: Partial<MeasureSettings>): void
   setStrings(strings: { deleteTitle: string }): void
 
@@ -125,6 +127,9 @@ interface ItemVisuals {
   label: Label
   /** Axis legs of a distance, or segment tags of a path — drawn when selected. */
   extras: { strokes: Stroke[]; labels: Label[] } | null
+  /** Dimensions: every stroke of the annotation, and the value tags besides the headline. */
+  segs: Segments | null
+  tags: Label[]
 }
 
 interface Entry {
@@ -138,6 +143,7 @@ const KIND_COLOR: Record<MeasureKind, number> = {
   area: OVERLAY_COLORS.area,
   angle: OVERLAY_COLORS.angle,
   point: OVERLAY_COLORS.point,
+  dimension: OVERLAY_COLORS.dimension,
 }
 const AXIS_COLOR: Record<IfcAxis, number> = { x: OVERLAY_COLORS.axisX, y: OVERLAY_COLORS.axisY, z: OVERLAY_COLORS.axisZ }
 
@@ -160,10 +166,11 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   let tool: MeasureTool = 'none'
   let distanceMode: DistanceMode = 'point'
   let areaMode: AreaMode = 'polygon'
+  let dimensionMode: DimensionMode = 'aligned'
   let settings: MeasureSettings = { ...DEFAULT_MEASURE_SETTINGS }
   let deleteTitle = 'Delete'
   const entries = new Map<string, Entry>()
-  const seq: Record<MeasureKind, number> = { distance: 0, path: 0, area: 0, angle: 0, point: 0 }
+  const seq: Record<MeasureKind, number> = { distance: 0, path: 0, area: 0, angle: 0, point: 0, dimension: 0 }
   let selectedId: string | null = null
   let highlightedId: string | null = null
 
@@ -200,6 +207,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   const draftStroke = new Stroke({ color: OVERLAY_COLORS.distance, width: 2.5 })
   const rubber = new Stroke({ color: OVERLAY_COLORS.preview, width: 2, dashed: true })
   const draftDots = new Dots(OVERLAY_COLORS.distance, 9)
+  const draftDims = new Segments({ color: OVERLAY_COLORS.dimension, width: 1.6, ghost: false })
   const draftFill = new Fill(OVERLAY_COLORS.area, 0.16)
   const draftArc = new Stroke({ color: OVERLAY_COLORS.angle, width: 2, ghost: false })
   const edgeHighlight = new Stroke({ color: OVERLAY_COLORS.highlight, width: 3.5, ghost: false })
@@ -209,7 +217,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   const planeOutline = new Stroke({ color: OVERLAY_COLORS.highlight, width: 1.5, ghost: false, closed: true, dashed: true })
   const draftGroup = new THREE.Group()
   draftGroup.name = 'measure-draft'
-  for (const o of [draftFill, faceFill, planeFill, draftStroke, rubber, draftArc, edgeHighlight, faceOutline, planeOutline, draftDots]) {
+  for (const o of [draftFill, faceFill, planeFill, draftStroke, rubber, draftArc, edgeHighlight, faceOutline, planeOutline, draftDims, draftDots]) {
     draftGroup.add(o.object)
   }
   root.add(draftGroup)
@@ -224,6 +232,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       tool,
       distanceMode,
       areaMode,
+      dimensionMode,
       step: currentStep(),
       draftPoints: draft.points.length,
       canFinish: canFinish(),
@@ -261,12 +270,16 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         if (areaMode === 'face') return 'pick-face'
         return n === 0 ? 'first-point' : 'next-point'
       case 'angle': return n === 0 ? 'first-point' : n === 1 ? 'angle-vertex' : 'angle-end'
+      case 'dimension':
+        if (n === 0) return 'first-point'
+        return dimensionMode === 'aligned' ? 'second-point' : 'next-point'
     }
   }
 
   function canFinish(): boolean {
     if (tool === 'path') return draft.points.length >= 2
     if (tool === 'area' && areaMode === 'polygon') return draft.points.length >= 3
+    if (tool === 'dimension') return !autoFinishes(dimensionMode, 99) && draft.points.length >= minPoints(dimensionMode)
     return false
   }
 
@@ -325,7 +338,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     let axis: IfcAxis | null = null
     let closing = false
     const anchor = draft.points[draft.points.length - 1]
-    const lockable = tool === 'distance' ? distanceMode === 'point' : tool === 'path' || tool === 'area' && areaMode === 'polygon' || tool === 'angle'
+    const lockable = tool === 'distance' ? distanceMode === 'point' : tool === 'path' || tool === 'area' && areaMode === 'polygon' || tool === 'angle' || tool === 'dimension'
     if (anchor && shiftDown && lockable) {
       const locked = M.lockToAxis(anchor, point)
       point = v3(locked.point)
@@ -367,6 +380,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         return { kind: 'area', value: M.polygonArea(hover.closing ? draft.points : [...draft.points, p]) }
       case 'angle':
         return n === 2 ? { kind: 'angle', value: M.angleAt(draft.points[0], draft.points[1], p) } : null
+      case 'dimension': {
+        const d = layoutDimension(dimensionMode, [...draft.points, p].map(plain), { toward: facingFrom(draft.points[0] ?? p) })
+        return d ? { kind: 'length', value: Math.abs(d.value) } : null
+      }
       default:
         return null
     }
@@ -401,7 +418,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
   }
 
   function hideDraft(): void {
-    for (const o of [draftStroke, rubber, draftDots, draftFill, draftArc, edgeHighlight, faceFill, faceOutline, planeFill, planeOutline]) {
+    for (const o of [draftStroke, rubber, draftDots, draftFill, draftArc, edgeHighlight, faceFill, faceOutline, planeFill, planeOutline, draftDims]) {
       o.object.visible = false
     }
   }
@@ -459,6 +476,49 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       if (tool === 'angle' && pts.length === 2) {
         draftArc.setPoints(arcPoints(pts[0], pts[1], h.point))
       }
+      // The dimension as it will be drawn, so its side and offset are chosen
+      // before the click, not discovered after it.
+      if (tool === 'dimension') {
+        const poly = [...pts, h.point]
+        const d = layoutDimension(dimensionMode, poly.map(plain), { toward: facingFrom(pts[0]), markSize: markSizeAt(pts[0]), labelSize: labelSizeAt(pts[0]) })
+        if (d) { draftDims.setSegments(d.segments.map(v3)); rubber.object.visible = dimensionMode === 'radius' }
+      }
+    }
+  }
+
+  /** From a point toward the camera: the side a dimension line is drawn on. */
+  function facingFrom(p: THREE.Vector3): Vec3 {
+    const c = deps.getCamera().position
+    return { x: c.x - p.x, y: c.y - p.y, z: c.z - p.z }
+  }
+
+  /** A value tag's height on screen (about 22 px), in metres where it is drawn. */
+  function labelSizeAt(p: THREE.Vector3): number {
+    return deps.picker.worldPerPixel(p) * 22
+  }
+
+  /** A level mark a readable size on screen (about 14 px) where it is drawn. */
+  function markSizeAt(p: THREE.Vector3): number {
+    return Math.max(0.05, deps.picker.worldPerPixel(p) * 14)
+  }
+
+  function dimensionLayoutOf(item: DimensionItem): DimensionLayout | null {
+    const p0 = v3(item.points[0])
+    return layoutDimension(item.mode, item.points, { toward: item.facing ?? facingFrom(p0), markSize: markSizeAt(p0), labelSize: labelSizeAt(p0) })
+  }
+
+  /** Which tag carries the headline (and the select / delete handle). */
+  function headlineTag(item: DimensionItem, tags: readonly DimensionTag[]): number {
+    if (item.mode === 'chain' || item.mode === 'baseline' || item.mode === 'level') return tags.length - 1
+    return 0
+  }
+
+  function tagText(t: DimensionTag): string {
+    switch (t.kind) {
+      case 'level': return M.formatLevel(t.value, settings)
+      case 'radius': return `R ${M.formatLength(t.value, settings)}`
+      case 'diameter': return `Ø ${M.formatLength(t.value, settings)}`
+      default: return M.formatLength(t.value, settings)
     }
   }
 
@@ -510,6 +570,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       }
       case 'point':
         return p[0]
+      case 'dimension': {
+        const d = dimensionLayoutOf(item)
+        return d && d.tags.length ? v3(d.tags[headlineTag(item, d.tags)].at) : p[0]
+      }
     }
   }
 
@@ -542,6 +606,12 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
           return `${icon} ${M.formatDuration(item.route.seconds)} · ${km}`
         }
         return `Σ ${M.formatLength(item.value, settings)}`
+      case 'dimension': {
+        const d = dimensionLayoutOf(item)
+        if (!d || !d.tags.length) return M.formatItemValue(item, settings)
+        const head = tagText(d.tags[headlineTag(item, d.tags)])
+        return item.mode === 'chain' && item.points.length > 2 ? `Σ ${head}` : item.mode === 'baseline' ? `⊢ ${head}` : head
+      }
       case 'point':
         return [
           `X ${M.formatCoordinate(item.coords.x, settings)}`,
@@ -580,6 +650,25 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       arc.setPoints(arcPoints(p[0], p[1], p[2]))
       strokes.push(arc)
     }
+    let segs: Segments | null = null
+    const tags: Label[] = []
+    if (item.kind === 'dimension') {
+      const d = dimensionLayoutOf(item)
+      if (d) {
+        segs = new Segments({ color, width: 1.6, ghost: true })
+        segs.setSegments(d.segments.map(v3))
+        group.add(segs.object)
+        const head = headlineTag(item, d.tags)
+        d.tags.forEach((t, i) => {
+          if (i === head) return
+          const l = new Label('dimension', { onClick: () => select(item.id === selectedId ? null : item.id) }, { sub: true })
+          l.setText(tagText(t))
+          l.setPosition(v3(t.at))
+          group.add(l.object)
+          tags.push(l)
+        })
+      }
+    }
     for (const s of strokes) group.add(s.object)
 
     const dots = new Dots(color, item.kind === 'point' ? 11 : 8)
@@ -597,7 +686,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     group.add(label.object)
 
     root.add(group)
-    return { group, strokes, dots, fill, label, extras: null }
+    return { group, strokes, dots, fill, label, extras: null, segs, tags }
   }
 
   /** Axis legs of a distance / segment tags of a path, shown when selected. */
@@ -659,6 +748,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     visuals.group.visible = item.visible
     const width = selected ? 3.5 : highlighted ? 3 : 2.5
     for (const s of visuals.strokes) s.setWidth(width)
+    visuals.segs?.setWidth(selected ? 2.4 : highlighted ? 2 : 1.6)
     visuals.dots.setSize(selected ? 10 : item.kind === 'point' ? 11 : 8)
     visuals.fill?.setOpacity(selected ? 0.3 : highlighted ? 0.26 : 0.2)
     visuals.label.setState({ selected, hovered: highlighted })
@@ -844,6 +934,20 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     addItem({ ...base, kind: 'point', coords, frame, ...(geo ? { geo } : {}), ...(anchor ? { anchors: [anchor] } : {}) })
   }
 
+  function createDimension(points: THREE.Vector3[], mode: DimensionMode, facing: Vec3 | null = null): boolean {
+    const pts = points.map(plain)
+    const toward = facing ?? facingFrom(points[0])
+    const d = layoutDimension(mode, pts, { toward })
+    if (!d) return false
+    const base = newBase('dimension', points)
+    addItem({
+      ...base, kind: 'dimension', mode, value: d.value, parts: d.parts,
+      center: d.center ?? null, facing: toward,
+      ...(draft.anchors.length === points.length ? { anchors: [...draft.anchors] } : {}),
+    })
+    return true
+  }
+
   // ── Placing points ───────────────────────────────────────────────────────────
 
   function resetDraft(): void {
@@ -924,6 +1028,16 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
           resetDraft()
         }
         break
+      case 'dimension':
+        if (isDuplicate(p)) return
+        draft.points.push(p)
+        draft.anchors.push(anchorOf(h.pick))
+        if (autoFinishes(dimensionMode, draft.points.length)) {
+          // Three points in a row have no circle: say so rather than draw nothing.
+          if (!createDimension(draft.points, dimensionMode)) notice = 'no-geometry'
+          resetDraft()
+        }
+        break
       case 'none':
         return
     }
@@ -979,6 +1093,9 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     } else if (tool === 'area' && areaMode === 'polygon' && draft.points.length >= 3) {
       createArea(draft.points, 'polygon')
       resetDraft()
+    } else if (tool === 'dimension' && canFinish()) {
+      if (!createDimension(draft.points, dimensionMode)) notice = 'no-geometry'
+      resetDraft()
     } else {
       return
     }
@@ -1024,6 +1141,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     for (const s of v.strokes) s.dispose()
     v.dots.dispose()
     v.fill?.dispose()
+    v.segs?.dispose()
+    for (const t of v.tags) t.dispose()
     v.label.dispose()
     v.group.removeFromParent()
   }
@@ -1094,6 +1213,15 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     setDistanceMode(mode) {
       if (mode === distanceMode) return
       distanceMode = mode
+      resetDraft()
+      lastPick = null
+      applyHover()
+      emit()
+      if (pointer) schedulePick()
+    },
+    setDimensionMode(mode) {
+      if (mode === dimensionMode) return
+      dimensionMode = mode
       resetDraft()
       lastPick = null
       applyHover()
@@ -1193,6 +1321,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
           case 'path': createPath(pts, s.route); break
           case 'area': createArea(pts, s.areaSource ?? 'polygon'); break
           case 'angle': createAngle(pts[0], pts[1], pts[2]); break
+          case 'dimension': createDimension(pts, s.dimensionMode ?? 'aligned', s.facing ?? null); break
           case 'point': {
             const base = newBase('point', pts)
             // The coordinates as they were read on the model; recomputing them
@@ -1266,7 +1395,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       const p = new THREE.Vector3()
       let painted = false
       for (const { visuals } of entries.values()) {
-        for (const label of [visuals.label, ...(visuals.extras?.labels ?? [])]) {
+        for (const label of [visuals.label, ...visuals.tags, ...(visuals.extras?.labels ?? [])]) {
           if (!label.isShown()) continue
           label.object.getWorldPosition(p).project(camera)
           if (!Number.isFinite(p.x) || p.z < -1 || p.z > 1) continue
@@ -1283,7 +1412,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     },
     dispose() {
       clear()
-      for (const o of [draftStroke, rubber, draftDots, draftFill, draftArc, edgeHighlight, faceFill, faceOutline, planeFill, planeOutline]) o.dispose()
+      for (const o of [draftStroke, rubber, draftDots, draftFill, draftArc, edgeHighlight, faceFill, faceOutline, planeFill, planeOutline, draftDims]) o.dispose()
       root.removeFromParent()
       listeners.clear()
       hoverListeners.clear()

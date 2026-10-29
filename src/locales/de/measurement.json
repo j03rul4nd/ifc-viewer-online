@@ -19,7 +19,9 @@
     "angle": "Winkel",
     "angleHint": "Winkel zwischen drei Punkten",
     "point": "Punkt",
-    "pointHint": "Koordinaten X, Y, Z eines Punkts"
+    "pointHint": "Koordinaten X, Y, Z eines Punkts",
+    "dimension": "Bemaßung",
+    "dimensionHint": "Bemaßung wie in einer Zeichnung: ausgerichtet, Kette, Bezug, Höhenkoten, Radius"
   },
   "modes": {
     "point": "Punkt zu Punkt",
@@ -33,7 +35,18 @@
     "headroom": "Lichte Höhe",
     "headroomHint": "Ein Klick auf einen Boden: der senkrechte Abstand zur Fläche darüber (von einer Decke: nach unten zum Boden)",
     "route": "Route",
-    "routeHint": "Der schnellste Weg zwischen zwei Punkten: im Gebäude über Flure und Treppen, draußen über die Straßen zu Fuß, mit dem Rad oder dem Auto"
+    "routeHint": "Der schnellste Weg zwischen zwei Punkten: im Gebäude über Flure und Treppen, draußen über die Straßen zu Fuß, mit dem Rad oder dem Auto",
+    "aligned": "Ausgerichtet",
+    "alignedHint": "Zwei Punkte, mit Maßlinie daneben",
+    "chain": "Kette",
+    "chainHint": "Mehrere Punkte auf einer Linie: jedes Feld und die Gesamtlänge",
+    "baseline": "Bezug",
+    "baselineHint": "Jeder Punkt vom ersten aus gemessen, wie eine Absteckliste",
+    "level": "Höhe",
+    "levelHint": "Höhenkoten: der erste Punkt ist ±0,00, die anderen darüber oder darunter",
+    "radius": "Radius",
+    "radiusHint": "Drei Punkte auf einem Bogen: Mittelpunkt, Radius und Durchmesser",
+    "dimensionFinishHint": "Doppelklick oder Eingabe zum Abschließen"
   },
   "steps": {
     "idle": "Werkzeug wählen",
@@ -86,6 +99,7 @@
     "area": "Fläche {{n}}",
     "angle": "Winkel {{n}}",
     "point": "Punkt {{n}}",
+    "dimension": "Bemaßung {{n}}",
     "rename": "Doppelklick zum Umbenennen",
     "renameAction": "Umbenennen",
     "focus": "Heranzoomen",

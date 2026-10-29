@@ -19,7 +19,9 @@
     "angle": "角度",
     "angleHint": "3 点がなす角度",
     "point": "点",
-    "pointHint": "点の X, Y, Z 座標"
+    "pointHint": "点の X, Y, Z 座標",
+    "dimension": "寸法",
+    "dimensionHint": "図面のような寸法：平行・直列・累進・レベル・半径"
   },
   "modes": {
     "point": "点から点",
@@ -33,7 +35,18 @@
     "headroom": "有効高さ",
     "headroomHint": "床を1回クリック：上の面までの鉛直距離（天井からは床まで）",
     "route": "経路",
-    "routeHint": "2点間の最短経路：建物内は廊下と階段、屋外は道路を徒歩・自転車・車で"
+    "routeHint": "2点間の最短経路：建物内は廊下と階段、屋外は道路を徒歩・自転車・車で",
+    "aligned": "平行",
+    "alignedHint": "2点を寸法線で表示",
+    "chain": "直列",
+    "chainHint": "一直線上の複数点：各スパンと全長",
+    "baseline": "累進",
+    "baselineHint": "最初の点からの距離を各点ごとに（墨出し表のように）",
+    "level": "レベル",
+    "levelHint": "レベル表示：最初の点が±0.00、他はその上下",
+    "radius": "半径",
+    "radiusHint": "円弧上の3点：中心・半径・直径",
+    "dimensionFinishHint": "ダブルクリックまたはEnterで終了"
   },
   "steps": {
     "idle": "ツールを選択",
@@ -86,6 +99,7 @@
     "area": "面積 {{n}}",
     "angle": "角度 {{n}}",
     "point": "点 {{n}}",
+    "dimension": "寸法 {{n}}",
     "rename": "ダブルクリックで名前を変更",
     "renameAction": "名前を変更",
     "focus": "ズーム",

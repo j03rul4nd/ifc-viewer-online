@@ -19,7 +19,9 @@
     "angle": "Angle",
     "angleHint": "Angle entre trois points",
     "point": "Point",
-    "pointHint": "Coordonnées X, Y, Z d'un point"
+    "pointHint": "Coordonnées X, Y, Z d'un point",
+    "dimension": "Cote",
+    "dimensionHint": "Des cotes comme sur un plan : alignées, en chaîne, depuis une base, de niveau et rayon"
   },
   "modes": {
     "point": "Point à point",
@@ -33,7 +35,18 @@
     "headroom": "Hauteur libre",
     "headroomHint": "Un clic sur un sol : la distance verticale jusqu’à la surface au-dessus (depuis un plafond : jusqu’au sol)",
     "route": "Itinéraire",
-    "routeHint": "Le chemin le plus rapide entre deux points : dans le bâtiment par les couloirs et les escaliers ; dehors par les rues à pied, à vélo ou en voiture"
+    "routeHint": "Le chemin le plus rapide entre deux points : dans le bâtiment par les couloirs et les escaliers ; dehors par les rues à pied, à vélo ou en voiture",
+    "aligned": "Alignée",
+    "alignedHint": "Deux points, avec leur ligne de cote à côté",
+    "chain": "En chaîne",
+    "chainHint": "Plusieurs points sur une ligne : chaque travée et la longueur totale",
+    "baseline": "Depuis base",
+    "baselineHint": "Chaque point mesuré depuis le premier, comme une implantation",
+    "level": "Niveau",
+    "levelHint": "Cotes de niveau : le premier point est ±0,00, les autres au-dessus ou en dessous",
+    "radius": "Rayon",
+    "radiusHint": "Trois points d’un arc : centre, rayon et diamètre",
+    "dimensionFinishHint": "Double-clic ou Entrée pour terminer"
   },
   "steps": {
     "idle": "Choisissez un outil",
@@ -86,6 +99,7 @@
     "area": "Surface {{n}}",
     "angle": "Angle {{n}}",
     "point": "Point {{n}}",
+    "dimension": "Cote {{n}}",
     "rename": "Double-cliquez pour renommer",
     "renameAction": "Renommer",
     "focus": "Zoomer",

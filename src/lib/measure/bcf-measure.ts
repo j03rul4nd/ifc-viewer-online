@@ -13,6 +13,7 @@
 
 import type { BcfLine } from '../../types'
 import { formatItemValue } from './measure-math'
+import { layoutDimension } from './dimension-math'
 import { toSaved, type SavedMeasurement } from './measure-file'
 import type { MeasureItem, MeasureSettings, Vec3 } from './measure-types'
 
@@ -34,6 +35,14 @@ export function measureLines(item: MeasureItem): BcfLine[] {
       return p.length >= 3 ? [seg(p[1], p[0]), seg(p[1], p[2])] : []
     case 'point':
       return []
+    case 'dimension': {
+      // The annotation as drawn: dimension line, extension lines, ticks.
+      const d = layoutDimension(item.mode, p, { toward: item.facing ?? null })
+      if (!d) return []
+      const out: BcfLine[] = []
+      for (let i = 0; i + 1 < d.segments.length; i += 2) out.push(seg(d.segments[i], d.segments[i + 1]))
+      return out
+    }
   }
 }
 

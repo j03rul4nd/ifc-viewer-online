@@ -70,6 +70,7 @@ export function targetsFor(item: MeasureItem, hasExtrusion: boolean): CheckTarge
     case 'area': return hasExtrusion ? ['value', 'volume'] : ['value']
     case 'angle': return ['value']
     case 'point': return ['height']
+    case 'dimension': return ['value']
   }
 }
 
