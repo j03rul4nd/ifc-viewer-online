@@ -323,7 +323,8 @@
       "archicad": "ArchiCAD",
       "tekla": "Tekla",
       "allplan": "Allplan"
-    }
+    },
+    "detected": "导出自 {{app}}"
   },
   "export": {
     "title": "导出校验结果",
