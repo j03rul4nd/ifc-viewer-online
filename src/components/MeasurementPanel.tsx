@@ -454,7 +454,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           </div>
 
           {/* Tools */}
-          <div className="shrink-0 grid grid-cols-6 gap-1 px-2 pb-2">
+          <div className="shrink-0 grid grid-cols-3 gap-1.5 px-2 pb-2">
             {TOOLS.map((id) => {
               const Icon = TOOL_ICON[id]
               const active = tool === id
@@ -462,7 +462,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 <button key={id} type="button" aria-pressed={active} aria-label={t(`tools.${id}Hint`)}
                   onClick={() => { haptic('tick'); chooseTool(active ? 'none' : id) }}
                   className={[
-                    'flex flex-col items-center justify-center gap-1 h-[56px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0',
+                    'flex flex-col items-center justify-center gap-1 h-[52px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0 overflow-hidden',
                     active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] bg-white/[0.04]',
                   ].join(' ')}>
                   <Icon size={19} />
@@ -691,7 +691,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
         </div>
 
         {/* Tools */}
-        <div className="shrink-0 grid grid-cols-6 gap-1 p-1.5">
+        <div className="shrink-0 grid grid-cols-3 gap-1 p-1.5">
           {TOOLS.map((id, i) => {
             const Icon = TOOL_ICON[id]
             const active = tool === id
@@ -703,14 +703,14 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 title={`${t(`tools.${id}Hint`)} (${i + 1})`}
                 onClick={() => chooseTool(active ? 'none' : id)}
                 className={[
-                  'relative flex flex-col items-center justify-center gap-1 h-[52px] rounded-[9px] transition-all',
+                  'relative flex flex-col items-center justify-center gap-1 h-[46px] px-1.5 rounded-[9px] transition-all min-w-0 overflow-hidden',
                   active
                     ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(94,106,210,0.35)]'
                     : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
                 ].join(' ')}
               >
-                <Icon size={17} />
-                <span className="text-[10px] font-medium leading-none">{t(`tools.${id}`)}</span>
+                <Icon size={15} className="shrink-0" />
+                <span className="max-w-full truncate text-[11px] font-medium leading-tight">{t(`tools.${id}`)}</span>
                 {!isMobile && (
                   <span className={['absolute top-1 right-1.5 text-[8.5px] font-mono leading-none', active ? 'text-white/70' : 'text-[var(--text-faint)]'].join(' ')}>
                     {i + 1}
