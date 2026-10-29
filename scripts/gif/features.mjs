@@ -23,6 +23,9 @@ const URLS = {
   flood: `/?model=${VELA}&model=/models/hotel-vela/BCN-IVO-ZZ-XX-M3-S-0002.ifc&map=terrain,buildings&flood=extreme,2m&ui=kiosk&lang=en`,
   pointcloud: `/?model=/models/realtime-lidar/IVO-Construction-Progress.ifc&scan=/models/realtime-lidar/construction-progress-snapshot.ply&ui=kiosk&view=iso&turntable=8&lang=en`,
   hero: `/?model=/Ifc2x3_Duplex_Architecture.ifc&lang=en`,
+  tree: `/?model=/Ifc2x3_Duplex_Architecture.ifc&lang=en`,
+  overlay: `/?model=/Ifc2x3_Duplex_Architecture.ifc&lang=en`,
+  export: `/?model=/Ifc2x3_Duplex_Architecture.ifc&lang=en`,
   twin: `/?scene=/scenes/barcelona-placa-catalunya.scene.json&ui=kiosk&turntable=6&lang=en`,
   clips: `/?model=${VELA}&lang=en`,
 }
@@ -61,6 +64,12 @@ async function tilt(dy = 160) {
 async function zoomOut(n = 6) {
   await page.mouse.move(W * 0.5, H * 0.4)
   for (let i = 0; i < n; i++) { await page.mouse.wheel(0, 400); await wait(120) }
+}
+
+/** Until the Health Score summary ("Fix this first") is on screen. */
+async function waitScore(maxS = 120) {
+  await page.waitForFunction(() => /fix this first|first to recover/i.test(document.body.innerText), null, { timeout: maxS * 1000, polling: 500 }).catch(() => log('no score'))
+  await wait(1200)
 }
 
 async function waitLoaded(maxS = 60) {
@@ -150,6 +159,30 @@ if (scene === 'solar') {
   await orbit(220); await wait(1500)
   await page.getByRole('button', { name: /show in 3d/i }).nth(1).click({ timeout: 8000 }).catch(() => {})
   await wait(3500); mark('second')
+} else if (scene === 'tree') {
+  await waitLoaded(); await foldDrawer(); mark('loaded')
+  await root().getByRole('button', { name: /expand all/i }).first().click({ timeout: 4000 }).catch((e) => log('miss expand', e.message.slice(0, 80)))
+  await wait(1500)
+  const rows = page.locator('div[class*="h-[30px]"]')
+  const n = await rows.count(); log('tree rows', n)
+  for (const idx of [8, 14, 22, 30].filter((i) => i < n)) {
+    await rows.nth(idx).click({ timeout: 3000 }).catch(() => {}); await wait(2200)
+  }
+  mark('picked')
+} else if (scene === 'overlay') {
+  // validation paints the issues on the model; Show in 3D opens the HUD that steps through them
+  await waitLoaded(); await page.mouse.click(1245, 123); await waitScore(); mark('score')
+  await page.getByRole('button', { name: /show in 3d/i }).first().click({ timeout: 8000 }).catch((e) => log('miss 3d', e.message.slice(0, 80)))
+  await wait(3000)
+  for (let i = 0; i < 5; i++) {
+    await page.getByRole('button', { name: /next issue/i }).first().click({ timeout: 6000 }).catch((e) => log('miss next', e.message.slice(0, 80)))
+    await wait(2200)
+  }
+  mark('stepped')
+} else if (scene === 'export') {
+  await waitLoaded(); await waitScore(); mark('score')
+  await root().getByRole('button', { name: /^export$/i }).first().click({ timeout: 6000 }).catch((e) => log('miss export', e.message.slice(0, 80)))
+  await wait(5000); mark('export')
 } else if (scene === 'clips') {
   await waitLoaded(); mark('loaded')
   await clickText(/^capture/i); await wait(800)
@@ -162,6 +195,6 @@ if (scene === 'solar') {
 mark('end')
 
 await ctx.close(); await browser.close()
-const vid = readdirSync(OUT).filter((f) => f.endsWith('.webm') && !/^(hero|validate|tree|section|plans|measure|overlay|export|solar|flood|pointcloud|twin|clips|hero)\.webm$/.test(f))
+const vid = readdirSync(OUT).filter((f) => f.endsWith('.webm') && !/^(hero|validate|tree|section|plans|measure|overlay|export|solar|flood|pointcloud|twin|clips|hero|tree|overlay|export)\.webm$/.test(f))
 if (vid.length) { rmSync(`${OUT}/${scene}.webm`, { force: true }); renameSync(`${OUT}/${vid[0]}`, `${OUT}/${scene}.webm`) }
 log('saved', `${OUT}/${scene}.webm`)

@@ -105,19 +105,23 @@ Some of these modules are behind build flags (`VITE_FEATURE_GIS`, `VITE_FEATURE_
 
 ## See it in action
 
-> Every clip is the **real app** running in a browser, with no edited footage. The first three use the open [Duplex Apartment](public/Ifc2x3_Duplex_Architecture.ifc) reference IFC (7,131 elements); the rest use the Barcelona reference models in `public/models/`. Re-record them with `scripts/gif/capture.mjs`, `scripts/gif/features.mjs` and `scripts/gif/flood-frames.mjs`, then `scripts/gif/encode.mjs` / `scripts/gif/montage.mjs` (the header GIF).
+> Every clip is the **real app** running in a browser, with no edited footage. The first three and the header's opening use the open [Duplex Apartment](public/Ifc2x3_Duplex_Architecture.ifc) reference IFC (7,131 elements); the rest use the Barcelona reference models in `public/models/`. Re-record them with `scripts/gif/capture.mjs`, `scripts/gif/features.mjs` and `scripts/gif/flood-frames.mjs`, then `scripts/gif/encode.mjs` / `scripts/gif/montage.mjs` (the header GIF).
 
 ### Navigate the model and inspect IFC properties
 
 ![Spatial tree navigation and IFC property inspection](assets/feature-tree.gif)
 
-### Highlight every issue in 3D
+### Step through every issue in 3D
+
+After validation, *Show in 3D* opens a bar that walks the issues one by one, with the elements highlighted on the model.
 
 ![Validation issues highlighted in the 3D scene](assets/feature-overlay.gif)
 
-### Export a corrected model
+### Export the results
 
-![Export to IFC, GLB and BCF](assets/feature-export.gif)
+A full JSON report, a CSV for Excel, a signed certificate, BCF, a one-page delivery report or a COBie workbook, all written in the browser.
+
+![Validation export: JSON, CSV, certificate, BCF, delivery report and COBie](assets/feature-export.gif)
 
 ### Sun and climate analysis
 
