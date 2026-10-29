@@ -323,7 +323,8 @@
       "archicad": "ArchiCAD",
       "tekla": "Tekla",
       "allplan": "Allplan"
-    }
+    },
+    "detected": "{{app}} から書き出し"
   },
   "export": {
     "title": "検証結果をエクスポート",

@@ -323,7 +323,8 @@
       "archicad": "ArchiCAD",
       "tekla": "Tekla",
       "allplan": "Allplan"
-    }
+    },
+    "detected": "Exportat des de {{app}}"
   },
   "export": {
     "title": "Exporta els resultats de validació",

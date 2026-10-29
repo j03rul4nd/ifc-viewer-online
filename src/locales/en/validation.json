@@ -350,7 +350,8 @@
       "archicad": "ArchiCAD",
       "tekla": "Tekla",
       "allplan": "Allplan"
-    }
+    },
+    "detected": "Exported from {{app}}"
   },
   "export": {
     "title": "Export validation results",

@@ -41,6 +41,7 @@ import { runFixChecks, summarizeFixBatch } from '../lib/fix/fix-run'
 import { benchmarkCandidates, defaultBenchmarkDeps } from '../lib/benchmark-guard'
 import { pickUpsellRule } from '../lib/pricing/catalog'
 import { modelRegistry } from '../lib/model-registry'
+import { detectAuthoringToolFromBuffer } from '../lib/ifc-authoring-tool'
 import { DEMO_FILENAMES } from '../demo-models/models'
 import BatchRenameDialog, { type BatchRenameApply } from './fix/BatchRenameDialog'
 import BatchFixResultCard, { BatchFixBar, downloadFixedRun, fixCardView } from './fix/BatchFixResultCard'
@@ -591,9 +592,11 @@ interface RemediationBlockProps {
   language: string
   selectedTool: AuthoringTool
   onSelectTool: (tool: AuthoringTool) => void
+  /** Application named in the model's header, when it maps to a tool. */
+  detectedApp?: { tool: AuthoringTool; application: string } | null
 }
 
-function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: RemediationBlockProps) {
+function RemediationBlock({ ruleId, language, selectedTool, onSelectTool, detectedApp }: RemediationBlockProps) {
   const { t } = useTranslation('validation')
   const remediation = getRuleRemediation(ruleId, language)
   if (!remediation) return null
@@ -616,7 +619,7 @@ function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: Reme
       <p className="text-[11px] text-[var(--text-dim)] leading-relaxed mb-2">{remediation.summary}</p>
 
       {/* Authoring-tool tabs */}
-      <div className="flex flex-wrap gap-1 mb-2">
+      <div className="flex flex-wrap items-center gap-1 mb-2">
         {AUTHORING_TOOLS.map((tool) => {
           const active = tool === selectedTool
           return (
@@ -634,6 +637,11 @@ function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: Reme
             </button>
           )
         })}
+        {detectedApp && (
+          <span className="text-[10px] text-[var(--text-faint)] ml-1 truncate" title={detectedApp.application}>
+            {t('remediation.detected', { app: detectedApp.application })}
+          </span>
+        )}
       </div>
 
       <p className="text-[11px] leading-relaxed" style={{ color: toolSteps ? 'var(--text)' : 'var(--text-faint)' }}>
@@ -1765,7 +1773,26 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   // Selected authoring tool for the per-rule remediation guidance (D-22).
   // Lifted here so the choice persists across rules and virtualizer remounts.
-  const [remediationTool, setRemediationTool] = useState<AuthoringTool>('revit')
+  // The remediation tab opens on the tool the active model was exported from
+  // (read from its IFC header); otherwise on the visitor's last choice.
+  const [remediationTool, setRemediationToolState] = useState<AuthoringTool>(() => {
+    try {
+      const saved = localStorage.getItem('ifc.remediationTool') as AuthoringTool | null
+      return saved && AUTHORING_TOOLS.includes(saved) ? saved : 'revit'
+    } catch { return 'revit' }
+  })
+  const setRemediationTool = useCallback((tool: AuthoringTool) => {
+    setRemediationToolState(tool)
+    try { localStorage.setItem('ifc.remediationTool', tool) } catch { /* storage blocked: session only */ }
+  }, [])
+  const remediationModelId = useSceneStore((s) => s.activeModelId ?? s.models[0]?.id ?? null)
+  const detectedApp = useMemo(
+    () => (remediationModelId ? detectAuthoringToolFromBuffer(modelRegistry.getBuffer(remediationModelId)) : null),
+    [remediationModelId],
+  )
+  useEffect(() => {
+    if (detectedApp) setRemediationToolState(detectedApp.tool)
+  }, [detectedApp])
 
   // ── Phantom rules (enabled but always 0 without config) ──────────────────────
   // Bug 2 fix: detect rules that are active but need configuration to produce results.
@@ -3282,6 +3309,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
                           language={i18n.language}
                           selectedTool={remediationTool}
                           onSelectTool={setRemediationTool}
+                          detectedApp={detectedApp}
                         />
                       ) : row.kind === 'batchfix' ? (
                         <BatchFixBar
