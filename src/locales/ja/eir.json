@@ -13,8 +13,9 @@
   "noModelHint": "このプロファイルを実行するには IFC モデルを読み込んでください",
   "sidebar": {
     "new": "新規",
-    "import": ".json または .ids をインポート",
-    "empty": "プロファイルはまだありません"
+    "import": ".json、.ids、.xlsx を読み込む",
+    "empty": "プロファイルはまだありません",
+    "excelTemplate": "Excel テンプレート"
   },
   "selectOrCreate": "プロファイルを選択または作成",
   "builtinBadge": "組み込み（コピーを保存）",
@@ -27,7 +28,8 @@
     "export": ".json をエクスポート",
     "delete": "削除",
     "save": "保存",
-    "useAndRun": "使用して実行"
+    "useAndRun": "使用して実行",
+    "exportExcel": "Excel に書き出す"
   },
   "ruleTypes": {
     "entityExists": "エンティティが存在",
@@ -109,6 +111,45 @@
     "importFailed": "インポートに失敗しました: {{detail}}",
     "addRuleFirst": "先にルールを少なくとも1件追加してください",
     "loadModelFirst": "先に IFC モデルを読み込んでください",
-    "allIgnored": "すべてのルールが無視されています — 実行する対象がありません"
+    "allIgnored": "すべてのルールが無視されています — 実行する対象がありません",
+    "excelNoRules": "シートに使える行がありません。{{detail}}",
+    "excelWithWarnings": "{{count}} 行をスキップしました。最初: {{first}}"
+  },
+  "excel": {
+    "sheet": "要件",
+    "instructionsSheet": "記入方法",
+    "templateFile": "requirements-template",
+    "headers": {
+      "entity": "要素(IFC クラス)",
+      "predefinedType": "定義済みタイプ",
+      "pset": "プロパティセット",
+      "property": "プロパティ",
+      "rule": "ルール",
+      "value": "値",
+      "severity": "重要度",
+      "optional": "存在する場合のみ",
+      "message": "メッセージ"
+    },
+    "instructions": [
+      "1 行に 1 つの要件を書きます。「要件」シートに記入し、IFC Viewer Online(EIR プロファイル → 読み込み)で読み込んでください。",
+      "要素: IfcDoor、IfcWall、IfcSpace などの IFC クラス。定義済みタイプ(任意)で絞り込めます(例: FIRE_DOOR)。",
+      "ルール: exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification。",
+      "exists: その要素が 1 つ以上あること。pset: プロパティセットがあること。required / not-empty: プロパティがあること / 値があること。",
+      "equals: 値は完全一致(true/false は小文字)。numeric: 値は \">= 0\" や \"< 3.5\" のような比較。one-of: \";\" 区切りの許容値。pattern: 正規表現。classification: \"体系\" または \"体系: コード\"。",
+      "重要度: error(既定)、warning、info、ignored。存在する場合のみ: \"yes\" にすると、その要素がないモデルは不合格になりません。",
+      "ファイルはブラウザ内で読み込まれ、アップロードされません。"
+    ],
+    "errors": {
+      "missingEntity": "{{row}} 行目: 要素(IFC クラス)がありません",
+      "notIfcClass": "{{row}} 行目: 「{{detail}}」は IFC クラスではありません",
+      "unknownRule": "{{row}} 行目: 不明なルール「{{detail}}」",
+      "missingPset": "{{row}} 行目: プロパティセットがありません",
+      "missingProperty": "{{row}} 行目: プロパティがありません",
+      "missingValue": "{{row}} 行目: 値がありません",
+      "badComparison": "{{row}} 行目: 「{{detail}}」は \">= 0\" のような比較ではありません",
+      "missingValues": "{{row}} 行目: 許容値がありません(; で区切る)",
+      "missingPattern": "{{row}} 行目: パターンがありません",
+      "badPattern": "{{row}} 行目: 「{{detail}}」は有効な正規表現ではありません"
+    }
   }
 }

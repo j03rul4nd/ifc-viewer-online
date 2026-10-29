@@ -13,8 +13,9 @@
   "noModelHint": "Load an IFC model to run this profile",
   "sidebar": {
     "new": "New",
-    "import": "Import .json or .ids",
-    "empty": "No profiles yet"
+    "import": "Import .json, .ids or .xlsx",
+    "empty": "No profiles yet",
+    "excelTemplate": "Excel template"
   },
   "selectOrCreate": "Select or create a profile",
   "builtinBadge": "built-in (saves a copy)",
@@ -27,7 +28,8 @@
     "export": "Export .json",
     "delete": "Delete",
     "save": "Save",
-    "useAndRun": "Use & run"
+    "useAndRun": "Use & run",
+    "exportExcel": "Export to Excel"
   },
   "ruleTypes": {
     "entityExists": "Entity exists",
@@ -109,6 +111,45 @@
     "importFailed": "Import failed: {{detail}}",
     "addRuleFirst": "Add at least one rule first",
     "loadModelFirst": "Load an IFC model first",
-    "allIgnored": "All rules are ignored — nothing to run"
+    "allIgnored": "All rules are ignored — nothing to run",
+    "excelNoRules": "No usable rows in the sheet. {{detail}}",
+    "excelWithWarnings": "{{count}} row(s) skipped. First: {{first}}"
+  },
+  "excel": {
+    "sheet": "Requirements",
+    "instructionsSheet": "How to fill",
+    "templateFile": "requirements-template",
+    "headers": {
+      "entity": "Element (IFC class)",
+      "predefinedType": "Predefined type",
+      "pset": "Property set",
+      "property": "Property",
+      "rule": "Rule",
+      "value": "Value",
+      "severity": "Severity",
+      "optional": "Only if present",
+      "message": "Message"
+    },
+    "instructions": [
+      "One requirement per row. Fill the \"Requirements\" sheet and import it in IFC Viewer Online (EIR profiles → Import).",
+      "Element: an IFC class such as IfcDoor, IfcWall or IfcSpace. Predefined type (optional) narrows it, e.g. FIRE_DOOR.",
+      "Rule: exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification.",
+      "exists: at least one such element. pset: the property set must be present. required / not-empty: the property must be present / have a value.",
+      "equals: Value is the exact value (true/false in lowercase). numeric: Value is a comparison such as \">= 0\" or \"< 3.5\". one-of: allowed values separated by \";\". pattern: a regular expression. classification: \"System\" or \"System: code\".",
+      "Severity: error (default), warning, info or ignored. Only if present: \"yes\" so a model without such elements does not fail.",
+      "The file is read in your browser and never uploaded."
+    ],
+    "errors": {
+      "missingEntity": "row {{row}}: no element (IFC class)",
+      "notIfcClass": "row {{row}}: \"{{detail}}\" is not an IFC class",
+      "unknownRule": "row {{row}}: unknown rule \"{{detail}}\"",
+      "missingPset": "row {{row}}: no property set",
+      "missingProperty": "row {{row}}: no property",
+      "missingValue": "row {{row}}: no value",
+      "badComparison": "row {{row}}: \"{{detail}}\" is not a comparison like \">= 0\"",
+      "missingValues": "row {{row}}: no allowed values (separate them with ;)",
+      "missingPattern": "row {{row}}: no pattern",
+      "badPattern": "row {{row}}: \"{{detail}}\" is not a valid regular expression"
+    }
   }
 }

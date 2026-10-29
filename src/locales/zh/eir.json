@@ -13,8 +13,9 @@
   "noModelHint": "加载 IFC 模型以运行此配置",
   "sidebar": {
     "new": "新建",
-    "import": "导入 .json 或 .ids",
-    "empty": "暂无配置"
+    "import": "导入 .json、.ids 或 .xlsx",
+    "empty": "暂无配置",
+    "excelTemplate": "Excel 模板"
   },
   "selectOrCreate": "选择或创建一个配置",
   "builtinBadge": "内置（会保存副本）",
@@ -27,7 +28,8 @@
     "export": "导出 .json",
     "delete": "删除",
     "save": "保存",
-    "useAndRun": "使用并运行"
+    "useAndRun": "使用并运行",
+    "exportExcel": "导出到 Excel"
   },
   "ruleTypes": {
     "entityExists": "实体存在",
@@ -109,6 +111,45 @@
     "importFailed": "导入失败：{{detail}}",
     "addRuleFirst": "请先添加至少一条规则",
     "loadModelFirst": "请先加载 IFC 模型",
-    "allIgnored": "所有规则均被忽略 — 无可运行项"
+    "allIgnored": "所有规则均被忽略 — 无可运行项",
+    "excelNoRules": "表格中没有可用的行。{{detail}}",
+    "excelWithWarnings": "已跳过 {{count}} 行。第一行:{{first}}"
+  },
+  "excel": {
+    "sheet": "要求",
+    "instructionsSheet": "填写说明",
+    "templateFile": "requirements-template",
+    "headers": {
+      "entity": "元素(IFC 类)",
+      "predefinedType": "预定义类型",
+      "pset": "属性集",
+      "property": "属性",
+      "rule": "规则",
+      "value": "值",
+      "severity": "严重程度",
+      "optional": "仅当存在时",
+      "message": "消息"
+    },
+    "instructions": [
+      "每行一条要求。填写“要求”表,然后在 IFC Viewer Online 中导入(EIR 配置 → 导入)。",
+      "元素:IFC 类,如 IfcDoor、IfcWall 或 IfcSpace。预定义类型(可选)用于缩小范围,例如 FIRE_DOOR。",
+      "规则:exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification。",
+      "exists:至少有一个此类元素。pset:必须有该属性集。required / not-empty:属性必须存在 / 必须有值。",
+      "equals:值为精确值(true/false 用小写)。numeric:值为比较式,如 \">= 0\" 或 \"< 3.5\"。one-of:允许的值,用 \";\" 分隔。pattern:正则表达式。classification:\"体系\" 或 \"体系: 编码\"。",
+      "严重程度:error(默认)、warning、info 或 ignored。仅当存在时:填 \"yes\",没有此类元素的模型不会判为不合格。",
+      "文件在你的浏览器中读取,不会上传。"
+    ],
+    "errors": {
+      "missingEntity": "第 {{row}} 行:没有元素(IFC 类)",
+      "notIfcClass": "第 {{row}} 行:“{{detail}}”不是 IFC 类",
+      "unknownRule": "第 {{row}} 行:未知规则“{{detail}}”",
+      "missingPset": "第 {{row}} 行:缺少属性集",
+      "missingProperty": "第 {{row}} 行:缺少属性",
+      "missingValue": "第 {{row}} 行:缺少值",
+      "badComparison": "第 {{row}} 行:“{{detail}}”不是 \">= 0\" 这样的比较式",
+      "missingValues": "第 {{row}} 行:缺少允许的值(用 ; 分隔)",
+      "missingPattern": "第 {{row}} 行:缺少模式",
+      "badPattern": "第 {{row}} 行:“{{detail}}”不是有效的正则表达式"
+    }
   }
 }

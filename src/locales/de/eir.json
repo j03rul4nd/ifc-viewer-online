@@ -13,8 +13,9 @@
   "noModelHint": "Lade ein IFC-Modell, um dieses Profil auszuführen",
   "sidebar": {
     "new": "Neu",
-    "import": "Import .json oder .ids",
-    "empty": "Noch keine Profile"
+    "import": ".json, .ids oder .xlsx importieren",
+    "empty": "Noch keine Profile",
+    "excelTemplate": "Excel-Vorlage"
   },
   "selectOrCreate": "Profil auswählen oder erstellen",
   "builtinBadge": "vorinstalliert (speichert eine Kopie)",
@@ -27,7 +28,8 @@
     "export": "Export .json",
     "delete": "Löschen",
     "save": "Speichern",
-    "useAndRun": "Anwenden & prüfen"
+    "useAndRun": "Anwenden & prüfen",
+    "exportExcel": "Nach Excel exportieren"
   },
   "ruleTypes": {
     "entityExists": "Entität vorhanden",
@@ -109,6 +111,45 @@
     "importFailed": "Import fehlgeschlagen: {{detail}}",
     "addRuleFirst": "Füge zuerst mindestens eine Regel hinzu",
     "loadModelFirst": "Lade zuerst ein IFC-Modell",
-    "allIgnored": "Alle Regeln sind ignoriert — nichts auszuführen"
+    "allIgnored": "Alle Regeln sind ignoriert — nichts auszuführen",
+    "excelNoRules": "Keine verwendbaren Zeilen im Blatt. {{detail}}",
+    "excelWithWarnings": "{{count}} Zeile(n) übersprungen. Erste: {{first}}"
+  },
+  "excel": {
+    "sheet": "Anforderungen",
+    "instructionsSheet": "Ausfüllhilfe",
+    "templateFile": "anforderungen-vorlage",
+    "headers": {
+      "entity": "Element (IFC-Klasse)",
+      "predefinedType": "Vordefinierter Typ",
+      "pset": "Eigenschaftssatz",
+      "property": "Eigenschaft",
+      "rule": "Regel",
+      "value": "Wert",
+      "severity": "Schweregrad",
+      "optional": "Nur falls vorhanden",
+      "message": "Meldung"
+    },
+    "instructions": [
+      "Eine Anforderung pro Zeile. Füllen Sie das Blatt „Anforderungen“ aus und importieren Sie es in IFC Viewer Online (EIR-Profile → Importieren).",
+      "Element: eine IFC-Klasse wie IfcDoor, IfcWall oder IfcSpace. Der vordefinierte Typ (optional) grenzt ein, z. B. FIRE_DOOR.",
+      "Regel: exists, pset, required, not-empty, equals, numeric, one-of, pattern, classification.",
+      "exists: mindestens ein solches Element. pset: der Eigenschaftssatz muss vorhanden sein. required / not-empty: die Eigenschaft muss vorhanden sein / einen Wert haben.",
+      "equals: Wert ist der genaue Wert (true/false klein). numeric: Wert ist ein Vergleich wie \">= 0\" oder \"< 3.5\". one-of: erlaubte Werte, getrennt durch \";\". pattern: ein regulärer Ausdruck. classification: \"System\" oder \"System: Code\".",
+      "Schweregrad: error (Standard), warning, info oder ignored. Nur falls vorhanden: \"ja\", damit ein Modell ohne solche Elemente nicht durchfällt.",
+      "Die Datei wird in Ihrem Browser gelesen und nie hochgeladen."
+    ],
+    "errors": {
+      "missingEntity": "Zeile {{row}}: kein Element (IFC-Klasse)",
+      "notIfcClass": "Zeile {{row}}: „{{detail}}“ ist keine IFC-Klasse",
+      "unknownRule": "Zeile {{row}}: unbekannte Regel „{{detail}}“",
+      "missingPset": "Zeile {{row}}: kein Eigenschaftssatz",
+      "missingProperty": "Zeile {{row}}: keine Eigenschaft",
+      "missingValue": "Zeile {{row}}: kein Wert",
+      "badComparison": "Zeile {{row}}: „{{detail}}“ ist kein Vergleich wie \">= 0\"",
+      "missingValues": "Zeile {{row}}: keine erlaubten Werte (durch ; trennen)",
+      "missingPattern": "Zeile {{row}}: kein Muster",
+      "badPattern": "Zeile {{row}}: „{{detail}}“ ist kein gültiger regulärer Ausdruck"
+    }
   }
 }
