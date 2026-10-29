@@ -80,3 +80,6 @@ __pycache__/
 /.tmp/shanghai-bridges/
 /.tmp/shanghai-rail/
 /.tmp/shanghai-city/
+
+# Server validation runner bundle (npm run build:runner)
+dist-runner/
