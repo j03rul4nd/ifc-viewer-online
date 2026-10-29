@@ -19,6 +19,7 @@ export function parseMeasureSettings(raw: string | null): StoredMeasureSettings 
     snaps: { ...DEFAULT_MEASURE_SETTINGS.snaps },
     showComponents: DEFAULT_MEASURE_SETTINGS.showComponents,
     dimTerminator: DEFAULT_MEASURE_SETTINGS.dimTerminator,
+    polar: DEFAULT_MEASURE_SETTINGS.polar,
   }
   if (!raw) return base
   try {
@@ -32,6 +33,7 @@ export function parseMeasureSettings(raw: string | null): StoredMeasureSettings 
       }
     }
     if (typeof v.showComponents === 'boolean') base.showComponents = v.showComponents
+    if (typeof v.polar === 'boolean') base.polar = v.polar
     if (v.dimTerminator === 'tick' || v.dimTerminator === 'arrow' || v.dimTerminator === 'dot') base.dimTerminator = v.dimTerminator
   } catch { /* corrupt: defaults */ }
   return base

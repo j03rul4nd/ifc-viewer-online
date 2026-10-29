@@ -50,6 +50,10 @@
     "radiusHint": "Tres punts d’un arc: centre, radi i diàmetre",
     "leader": "Directriu",
     "leaderHint": "Una fletxa a un punt amb una nota: escriu-la al camp de nota",
+    "angular": "Angular",
+    "angularHint": "Tres punts —un costat, el vèrtex, l’altre costat—: l’angle amb el seu arc",
+    "ordinate": "Coordenades",
+    "ordinateHint": "El primer punt és l’origen; cadascun dels altres mostra la seva X (est) i Y (nord) respecte d’ell",
     "dimensionFinishHint": "Doble clic o Retorn per acabar"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "Cara",
     "surface": "Superfície",
     "cloud": "Punt de l'escaneig",
+    "perpendicular": "Perpendicular",
+    "polar": "Polar {{deg}}°",
+    "polarToggle": "Polar 15°",
     "axis": "Eix {{axis}}",
     "close": "Tanca l'àrea"
   },

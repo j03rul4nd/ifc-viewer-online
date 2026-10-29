@@ -36,7 +36,7 @@ import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
   type MeasureKind, type MeasureSettings, type MeasureSnapshot, type MeasureStep, type MeasureTool,
-  type Vec3, type DistanceItem, type DimensionItem, type DimensionMode, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
+  type Vec3, type SnapKind, type DistanceItem, type DimensionItem, type DimensionMode, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
 } from './measure-types'
 
 export interface MeasureSystemDeps {
@@ -152,6 +152,8 @@ const plain = (p: THREE.Vector3): Vec3 => ({ x: p.x, y: p.y, z: p.z })
 
 /** Pixels within which a click on the first vertex closes an area. */
 const CLOSE_PX = 12
+/** How near the cursor must be to the foot of a perpendicular for PER to take it. */
+const PERP_PX = 12
 /** A second click this close to the previous point is the second half of a double-click. */
 const DUPLICATE_PX = 4
 
@@ -194,6 +196,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     point: THREE.Vector3
     axis: IfcAxis | null
     closing: boolean
+    /** What the point locked onto when it is not what the picker found (perpendicular). */
+    snap: SnapKind | null
+    /** Polar tracking angle, when the point was pulled onto one. */
+    polarDeg: number | null
     cursor: { x: number; y: number }
     camera: string
   }
@@ -339,10 +345,26 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     let closing = false
     const anchor = draft.points[draft.points.length - 1]
     const lockable = tool === 'distance' ? distanceMode === 'point' : tool === 'path' || tool === 'area' && areaMode === 'polygon' || tool === 'angle' || tool === 'dimension'
+    let snap: SnapKind | null = null
+    let polarDeg: number | null = null
     if (anchor && shiftDown && lockable) {
       const locked = M.lockToAxis(anchor, point)
       point = v3(locked.point)
       axis = locked.axis
+    } else if (anchor && lockable) {
+      // Perpendicular (PER): over an edge, the foot of the perpendicular from
+      // the last point, when the cursor is near it — the shortest distance to a
+      // wall line, square to it.
+      const foot = pick.edge && settings.snaps.edge ? M.perpendicularOnSegment(plain(anchor), plain(pick.edge[0]), plain(pick.edge[1])) : null
+      const footPx = foot ? deps.picker.project(v3(foot)) : null
+      if (foot && footPx && Math.hypot(footPx.x - cursor.x, footPx.y - cursor.y) <= PERP_PX) {
+        point = v3(foot)
+        snap = 'perpendicular'
+      } else if (settings.polar && pick.kind !== 'vertex' && pick.kind !== 'midpoint') {
+        // Polar tracking attracts toward 15° rays in plan; a real snap wins.
+        const tracked = M.polarTrack(plain(anchor), plain(point))
+        if (tracked) { point = v3(tracked.point); polarDeg = tracked.angleDeg }
+      }
     }
     if (tool === 'area' && areaMode === 'polygon' && draft.points.length >= 3) {
       const first = deps.picker.project(draft.points[0])
@@ -350,9 +372,11 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         closing = true
         point = draft.points[0].clone()
         axis = null
+        snap = null
+        polarDeg = null
       }
     }
-    hover = { pick, point, axis, closing, cursor, camera: lastPick.camera }
+    hover = { pick, point, axis, closing, snap, polarDeg, cursor, camera: lastPick.camera }
     renderDraft()
     publishHud()
   }
@@ -402,7 +426,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     hudHover = {
       clientX: screen.x,
       clientY: screen.y,
-      kind: hover.closing ? 'vertex' : hover.pick.kind,
+      kind: hover.closing ? 'vertex' : hover.snap ?? hover.pick.kind,
+      polarDeg: hover.polarDeg,
       axis: hover.axis,
       live: liveValue(),
       closing: hover.closing,
@@ -465,7 +490,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     }
     if (h && pts.length > 0) {
       const last = pts[pts.length - 1]
-      rubber.setColor(h.axis ? AXIS_COLOR[h.axis] : OVERLAY_COLORS.preview)
+      rubber.setColor(h.axis ? AXIS_COLOR[h.axis] : h.polarDeg !== null ? OVERLAY_COLORS.highlight : OVERLAY_COLORS.preview)
       rubber.setDashScale(deps.picker.worldPerPixel(h.point))
       rubber.setPoints([last, h.point])
       if (tool === 'area' && areaMode === 'polygon' && pts.length >= 2) {
@@ -509,7 +534,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
 
   /** Which tag carries the headline (and the select / delete handle). */
   function headlineTag(item: DimensionItem, tags: readonly DimensionTag[]): number {
-    if (item.mode === 'chain' || item.mode === 'baseline' || item.mode === 'level') return tags.length - 1
+    if (item.mode === 'chain' || item.mode === 'baseline' || item.mode === 'level' || item.mode === 'ordinate') return tags.length - 1
     return 0
   }
 
@@ -520,6 +545,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'diameter': return `Ø ${M.formatLength(t.value, settings)}`
       case 'arc': return `⌒ ${M.formatLength(t.value, settings)}`
       case 'note': return '✎'
+      case 'angle': return M.formatAngle(t.value, settings)
+      case 'ordinate': return `X ${M.formatLevel(t.value, settings)} · Y ${M.formatLevel(t.value2 ?? 0, settings)}`
       default: return M.formatLength(t.value, settings)
     }
   }
@@ -581,12 +608,16 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
 
   function labelText(item: MeasureItem): string {
     let text = baseLabelText(item)
+    // Text override, as CAD writes it: a note with <> replaces the label, the
+    // measured value standing where the <> is ("<> libre" → "1,20 m libre").
+    const override = item.note && item.note.includes('<>')
+    if (override) text = item.note!.split('<>').join(text)
     // A glyph as well as the colour: red/green alone fails one reader in twelve.
     const check = checkStatus(item)
     if (check) text = text.replace(/^[^\n]*/, (first) => `${first} ${check === 'pass' ? '✓' : '✗'}`)
     if (item.kind === 'area' && item.extrusion) text += `\n${M.formatVolume(volumeOf(item.value, item.extrusion), settings)}`
     // A leader's note IS its label; every other item adds it under the value.
-    if (item.note && !(item.kind === 'dimension' && item.mode === 'leader')) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
+    if (item.note && !override && !(item.kind === 'dimension' && item.mode === 'leader')) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
     return text
   }
 

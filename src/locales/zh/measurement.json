@@ -50,6 +50,10 @@
     "radiusHint": "圆弧上的三个点：圆心、半径和直径",
     "leader": "引线",
     "leaderHint": "指向一个点的箭头和注释（在注释栏中填写）",
+    "angular": "角度",
+    "angularHint": "三个点——一侧、顶点、另一侧：带圆弧的角度",
+    "ordinate": "坐标",
+    "ordinateHint": "第一个点为原点；其余各点显示相对它的 X（东）和 Y（北）",
     "dimensionFinishHint": "双击或按 Enter 完成"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "面",
     "surface": "表面",
     "cloud": "扫描点",
+    "perpendicular": "垂足",
+    "polar": "极轴 {{deg}}°",
+    "polarToggle": "极轴追踪 15°",
     "axis": "{{axis}} 轴",
     "close": "闭合面积"
   },

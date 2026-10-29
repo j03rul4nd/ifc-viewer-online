@@ -57,7 +57,7 @@ const POINTS_OF: Record<MeasureKind, [number, number]> = {
   dimension: [2, 500],
 }
 
-const DIMENSION_MODES: readonly DimensionMode[] = ['aligned', 'linear', 'chain', 'baseline', 'level', 'radius', 'leader']
+const DIMENSION_MODES: readonly DimensionMode[] = ['aligned', 'linear', 'chain', 'baseline', 'level', 'radius', 'leader', 'angular', 'ordinate']
 
 /** A stable key for a set of models: same files in any order, same key. */
 export function modelSetKey(fileNames: readonly string[]): string {
@@ -182,7 +182,7 @@ export function parseMeasurements(raw: string): ParseResult {
     }
     if (kind === 'dimension') {
       const mode = DIMENSION_MODES.includes(m.dimensionMode as DimensionMode) ? m.dimensionMode as DimensionMode : 'aligned'
-      if (mode === 'radius' && pts.length !== 3) { skipped++; continue }
+      if ((mode === 'radius' || mode === 'angular') && pts.length !== 3) { skipped++; continue }
       s.dimensionMode = mode
       s.facing = vec(m.facing)
     }

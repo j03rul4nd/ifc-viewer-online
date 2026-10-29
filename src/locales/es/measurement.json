@@ -50,6 +50,10 @@
     "radiusHint": "Tres puntos de un arco: centro, radio y diámetro",
     "leader": "Directriz",
     "leaderHint": "Una flecha a un punto con una nota: escríbela en el campo de nota",
+    "angular": "Angular",
+    "angularHint": "Tres puntos —un lado, el vértice, el otro lado—: el ángulo con su arco",
+    "ordinate": "Coordenadas",
+    "ordinateHint": "El primer punto es el origen; cada uno de los demás muestra su X (este) e Y (norte) respecto a él",
     "dimensionFinishHint": "Doble clic o Intro para terminar"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "Cara",
     "surface": "Superficie",
     "cloud": "Punto del escaneo",
+    "perpendicular": "Perpendicular",
+    "polar": "Polar {{deg}}°",
+    "polarToggle": "Polar 15°",
     "axis": "Eje {{axis}}",
     "close": "Cerrar área"
   },

@@ -50,6 +50,10 @@
     "radiusHint": "円弧上の3点：中心・半径・直径",
     "leader": "引出線",
     "leaderHint": "点を指す矢印とメモ（メモ欄に入力）",
+    "angular": "角度",
+    "angularHint": "3点（片側・頂点・もう片側）：円弧付きの角度",
+    "ordinate": "座標",
+    "ordinateHint": "最初の点が原点。他の各点にその点からのX（東）とY（北）を表示",
     "dimensionFinishHint": "ダブルクリックまたはEnterで終了"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "面",
     "surface": "サーフェス",
     "cloud": "スキャン点",
+    "perpendicular": "垂線",
+    "polar": "極 {{deg}}°",
+    "polarToggle": "極トラッキング 15°",
     "axis": "{{axis}} 軸",
     "close": "面積を閉じる"
   },

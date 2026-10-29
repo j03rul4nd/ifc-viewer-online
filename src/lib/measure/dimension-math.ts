@@ -23,12 +23,17 @@
 //             whichever they differ most in — not the slanted distance.
 //   leader    an arrow to a point and a note at the other end (MLEADER): the
 //             comment a coordinator pins on the model.
+//   angular   three points — a point on one side, the vertex, a point on the
+//             other (DIMANGULAR): an arc between the sides and the angle.
+//   ordinate  the first point is the origin; every other point is tagged
+//             with how far east (X) and north (Y) of it it is (DIMORDINATE),
+//             as a setting-out drawing lists them.
 //
 // Geometry only, in scene axes (y up). Pure: no THREE, no scene.
 
 export interface Vec3 { x: number; y: number; z: number }
 
-export type DimensionMode = 'aligned' | 'linear' | 'chain' | 'baseline' | 'level' | 'radius' | 'leader'
+export type DimensionMode = 'aligned' | 'linear' | 'chain' | 'baseline' | 'level' | 'radius' | 'leader' | 'angular' | 'ordinate'
 
 /** How each end of a dimension line is drawn. */
 export type DimensionTerminator = 'tick' | 'arrow' | 'dot'
@@ -44,11 +49,11 @@ const UP: Vec3 = { x: 0, y: 1, z: 0 }
 
 /** Points each mode needs before it can be finished; radius is exactly 3. */
 export function minPoints(mode: DimensionMode): number {
-  return mode === 'radius' ? 3 : mode === 'level' ? 2 : 2
+  return mode === 'radius' || mode === 'angular' ? 3 : 2
 }
 /** Modes that finish on their own when they have their points. */
 export function autoFinishes(mode: DimensionMode, n: number): boolean {
-  return ((mode === 'aligned' || mode === 'linear' || mode === 'leader') && n >= 2) || (mode === 'radius' && n >= 3)
+  return ((mode === 'aligned' || mode === 'linear' || mode === 'leader') && n >= 2) || ((mode === 'radius' || mode === 'angular') && n >= 3)
 }
 
 /** One value on the drawing and where its tag goes. */
@@ -56,7 +61,9 @@ export interface DimensionTag {
   at: Vec3
   value: number
   /** 'length' for distances, 'level' for signed heights, 'radius'/'diameter'. */
-  kind: 'length' | 'level' | 'radius' | 'diameter' | 'arc' | 'note'
+  kind: 'length' | 'level' | 'radius' | 'diameter' | 'arc' | 'note' | 'angle' | 'ordinate'
+  /** Ordinate tags: the second value (north offset); `value` is the east one. */
+  value2?: number
 }
 
 export interface DimensionLayout {
@@ -330,6 +337,63 @@ function leaderLayout(points: readonly Vec3[], size: number): DimensionLayout | 
   return { segments, tags: [{ at: add(at, mul(landing, size)), value: l, kind: 'note' }], value: l, parts: [l] }
 }
 
+/** DIMANGULAR: an arc between the two sides, extension lines out to it, the angle. */
+function angularLayout(points: readonly Vec3[], labelPx: number): DimensionLayout | null {
+  const [a, v, c] = points
+  const u1 = sub(a, v), u2 = sub(c, v)
+  const l1 = len(u1), l2 = len(u2)
+  if (l1 < 1e-9 || l2 < 1e-9) return null
+  const d1 = mul(u1, 1 / l1), d2 = mul(u2, 1 / l2)
+  const cosA = Math.max(-1, Math.min(1, dot(d1, d2)))
+  const angle = Math.acos(cosA)
+  if (angle < 1e-6 || Math.PI - angle < 1e-6) return null
+  // The arc's radius: inside the shorter side, but never smaller than a tag.
+  const r = Math.max(Math.min(l1, l2) * 0.6, labelPx * 2.5)
+  // An orthonormal frame in the plane of the angle, e1 along the first side.
+  const e1 = d1
+  const e2 = norm(sub(d2, mul(e1, cosA)))
+  const segments: Vec3[] = []
+  const N = Math.max(8, Math.ceil((angle / Math.PI) * 48))
+  let prev = add(v, mul(e1, r))
+  for (let i = 1; i <= N; i++) {
+    const t = (i / N) * angle
+    const q = add(v, add(mul(e1, r * Math.cos(t)), mul(e2, r * Math.sin(t))))
+    segments.push(prev, q)
+    prev = q
+  }
+  // Extension lines when a side is shorter than the arc reaches.
+  if (l1 < r * 1.1) segments.push(a, add(v, mul(d1, r * 1.1)))
+  if (l2 < r * 1.1) segments.push(c, add(v, mul(d2, r * 1.1)))
+  const mid = add(v, add(mul(e1, r * 1.18 * Math.cos(angle / 2)), mul(e2, r * 1.18 * Math.sin(angle / 2))))
+  const deg = (angle * 180) / Math.PI
+  return { segments, tags: [{ at: mid, value: deg, kind: 'angle' }], value: deg, parts: [deg] }
+}
+
+/**
+ * DIMORDINATE: every point after the first is tagged with its east (X) and
+ * north (Y) offset from the first, on a short leader. Plan axes: scene x is
+ * east, scene −z is north.
+ */
+function ordinateLayout(points: readonly Vec3[], toward: Vec3 | null, size: number): DimensionLayout {
+  const o = points[0]
+  const segments: Vec3[] = []
+  const tags: DimensionTag[] = []
+  const parts: number[] = []
+  const up = toward ? offsetDirection({ x: 1, y: 0, z: 0 }, toward) : { x: 0, y: 1, z: 0 }
+  // The origin's own mark: a small cross.
+  segments.push(sub(o, { x: size, y: 0, z: 0 }), add(o, { x: size, y: 0, z: 0 }), sub(o, { x: 0, y: 0, z: size }), add(o, { x: 0, y: 0, z: size }))
+  for (const p of points.slice(1)) {
+    const knee = add(p, mul(up, size * 2))
+    const end = add(knee, { x: size * 1.5, y: 0, z: 0 })
+    segments.push(p, knee, knee, end)
+    const east = p.x - o.x
+    const north = -(p.z - o.z)
+    parts.push(Math.hypot(east, north))
+    tags.push({ at: add(end, { x: size * 1.5, y: 0, z: 0 }), value: east, value2: north, kind: 'ordinate' })
+  }
+  return { segments, tags, value: parts[parts.length - 1] ?? 0, parts }
+}
+
 /**
  * Lay out a dimension. `toward` points from the measured points toward the
  * viewer (camera position minus first point), so the dimension line is drawn
@@ -345,6 +409,8 @@ export function layoutDimension(
   if (points.length < minPoints(mode)) return null
   if (mode === 'level') return levels(points, opts.markSize ?? 0.3)
   if (mode === 'radius') return radiusLayout(points.slice(0, 3))
+  if (mode === 'angular') return angularLayout(points.slice(0, 3), opts.labelSize ?? 0)
+  if (mode === 'ordinate') return ordinateLayout(points, opts.toward ?? null, Math.max(opts.markSize ?? 0.3, (opts.labelSize ?? 0) * 0.5))
   if (len(sub(points[1], points[0])) < 1e-9) return null
   if (mode === 'leader') return leaderLayout(points.slice(0, 2), Math.max(opts.markSize ?? 0.3, (opts.labelSize ?? 0) * 0.6))
   const term = opts.terminator ?? 'tick'

@@ -50,6 +50,10 @@
     "radiusHint": "Drei Punkte auf einem Bogen: Mittelpunkt, Radius und Durchmesser",
     "leader": "Führungslinie",
     "leaderHint": "Ein Pfeil auf einen Punkt mit Notiz – im Notizfeld eingeben",
+    "angular": "Winkel",
+    "angularHint": "Drei Punkte – eine Seite, der Scheitel, die andere Seite: der Winkel mit Bogen",
+    "ordinate": "Koordinaten",
+    "ordinateHint": "Der erste Punkt ist der Ursprung; jeder weitere zeigt sein X (Ost) und Y (Nord) dazu",
     "dimensionFinishHint": "Doppelklick oder Eingabe zum Abschließen"
   },
   "steps": {
@@ -88,6 +92,9 @@
     "face": "Fläche",
     "surface": "Oberfläche",
     "cloud": "Scanpunkt",
+    "perpendicular": "Lot",
+    "polar": "Polar {{deg}}°",
+    "polarToggle": "Polar 15°",
     "axis": "Achse {{axis}}",
     "close": "Fläche schließen"
   },
