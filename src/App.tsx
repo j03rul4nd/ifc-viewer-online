@@ -90,6 +90,8 @@ const LazyTwinBuilderView = React.lazy(() => import('./components/twin-builder/T
 const LazyWorkspacePreview = React.lazy(() =>
   // Its translations travel with the route: start both downloads together.
   Promise.all([import('./components/workspace/WorkspacePreview'), i18n.loadNamespaces('workspace')]).then(([m]) => m))
+// Hidden plan landings (/plans/*) — same pricing-preview gate as the workspace.
+const LazyPlansSite = React.lazy(() => import('./components/plans/PlansSite'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
@@ -717,6 +719,7 @@ export default function App() {
       if (rel === '/msp-global' || rel === '/msp-global/') return 'msp'
       if (rel === '/twin-builder' || rel === '/twin-builder/') return 'twin'
       if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) return 'workspace'
+      if ((rel === '/plans' || rel.startsWith('/plans/')) && isPricingPreview()) return 'plans'
       // Dedicated auth pages (F2) — only exist when accounts are enabled.
       if (isAccountEnabled()) {
         if (rel === '/sign-in' || rel.startsWith('/sign-in/')) return 'signin'
@@ -841,6 +844,8 @@ export default function App() {
         setRoute('welcome')
       } else if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) {
         setRoute('workspace')
+      } else if ((rel === '/plans' || rel.startsWith('/plans/')) && isPricingPreview()) {
+        setRoute('plans')
       } else if (rel === '/msp-global' || rel === '/msp-global/') {
         setRoute('msp')
       } else if (rel === '/twin-builder' || rel === '/twin-builder/') {
@@ -4780,6 +4785,20 @@ export default function App() {
           >
             <React.Suspense fallback={null}>
               <LazyWorkspacePreview onNavigateHome={handleNavigateToLanding} />
+            </React.Suspense>
+          </motion.div>
+        )}
+
+        {route === 'plans' && (
+          <motion.div
+            key="plans"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyPlansSite onNavigateHome={handleNavigateToLanding} />
             </React.Suspense>
           </motion.div>
         )}

@@ -40,7 +40,7 @@ describe('checkout quote', () => {
   it('yearly plans show what they save over twelve months', () => {
     const p = itemPrice({ kind: 'plan', plan: 'pro', period: 'yearly' })
     expect(p.recurring).toBe('yearly')
-    expect(p.savingEur).toBe(19 * 12 - 182)
+    expect(p.savingEur).toBe(19 * 12 - 190)
   })
 
   it('packs are one-off', () => {

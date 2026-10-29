@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MoreHorizontal, Lock, LifeBuoy } from 'lucide-react'
 import { SCENARIOS, scenarioData, type Scenario, type TicketKind } from './sample-data'
+import { SoonChip } from './Soon'
 import { SECTIONS, canUse, sectionFromPath, type SectionActions, type SectionId, type SectionDef } from './registry'
 import { Banner, Primary, Quiet, Skeleton, fmtInt, NAV_EVENT, notifyNav } from './ui'
 import { previewProvider, type CheckoutItem, type CheckoutOutcome } from '../../lib/pricing/checkout'
@@ -53,6 +54,7 @@ function NavLink({ s, active, locked, go, variant }: { s: SectionDef; active: bo
       className={`shrink-0 flex items-center no-underline ${base} ${tone}`}>
       <Icon aria-hidden size={variant === 'tab' ? 20 : 16} strokeWidth={active ? 2.1 : 1.7} />
       {variant !== 'rail' && <span className={variant === 'side' || variant === 'menu' ? 'flex-1' : ''}>{variant === 'tab' ? tx(s.short ?? s.label) : tx(s.label)}</span>}
+      {s.soon && (variant === 'side' || variant === 'menu') && <SoonChip />}
       {locked && variant !== 'tab' && variant !== 'rail' && <Lock aria-label={tx("Needs an upgrade")} size={12} className="text-[var(--text-faint)]" />}
     </a>
   )

@@ -47,7 +47,7 @@ export default function PricingSection() {
       case 'free': return { title: 'Stay on Free', body: 'Viewing, validation, IDS and the Health Score are free and run in your browser. You only pay for cloud work.' }
       case 'credits': return { title: `Buy credits — about ${EUR(packMonthly)} a month`, body: `${needed} credits a month is cheaper with packs than a subscription (${EUR(proMonthly)}). Packs last 12 months.` }
       case 'pro': return { title: `Pro — ${EUR(proMonthly)} a month`, body: `Covers ${Math.min(needed, 200)} of your ${needed} monthly credits${needed > 200 ? ' (top up the rest)' : ''}, plus project history and version comparison. Packs would cost ${EUR(packMonthly)}.` }
-      case 'team': return { title: `Team — ${EUR(billing === 'yearly' ? (team.yearlyEur ?? 0) / 12 : team.monthlyEur ?? 0)} a month`, body: '1,000 shared credits for up to 5 people, with a shared workspace and a health monitor per project.' }
+      case 'team': return { title: `Team — ${EUR(billing === 'yearly' ? (team.yearlyEur ?? 0) / 12 : team.monthlyEur ?? 0)} a month`, body: 'From 3 editors at €35 each: quality gate on every upload, shared house standard and team issues. Reviewers and guests are free.' }
     }
   }, [recommend, needed, packMonthly, proMonthly, billing, team])
 
@@ -59,12 +59,12 @@ export default function PricingSection() {
 
   const rows: { label: string; free: string; pro: string; team: string }[] = [
     { label: 'Viewer, measure, section, multi-model', free: '✓', pro: '✓', team: '✓' },
-    { label: 'Health Score, 44 rules, IDS 1.0', free: '✓', pro: '✓', team: '✓' },
-    { label: 'Where files are processed', free: 'Your browser only', pro: 'Browser · EU cloud when you ask', team: 'Browser · EU cloud when you ask' },
-    { label: 'Credits for cloud jobs', free: 'Buy packs if needed', pro: '200 / month', team: '1,000 / month, shared' },
-    { label: 'Project history & version comparison', free: '—', pro: '✓', team: '✓' },
-    { label: 'Signed IDS/EIR reports, no watermark', free: '—', pro: '✓', team: '✓' },
-    { label: 'Seats', free: '1', pro: '1', team: '5' },
+    { label: 'Health Score, 44 rules, IDS 1.0, requirements links', free: '✓', pro: '✓', team: '✓' },
+    { label: 'Where files are processed', free: 'Your browser only', pro: 'Browser · EU servers up to 1 GB', team: 'Browser · EU servers up to 3 GB' },
+    { label: 'Cloud projects with versions', free: '—', pro: '20 GB', team: '100 GB per editor' },
+    { label: 'Client link / client portal with your logo', free: '—', pro: 'Link', team: 'Portal' },
+    { label: 'Quality gate, house standard, team issues', free: '—', pro: '—', team: '✓ (coming soon)' },
+    { label: 'Seats', free: '1', pro: '1', team: '€35 per editor, 3 minimum · reviewers free' },
   ]
   const price = (p: typeof pro) => billing === 'yearly' ? `${EUR((p.yearlyEur ?? 0) / 12)}/mo, billed yearly` : `${EUR(p.monthlyEur ?? 0)}/mo`
 
@@ -72,7 +72,7 @@ export default function PricingSection() {
     <section id="pricing" className="border-t border-[var(--border)] py-14 sm:py-[90px] px-4 sm:px-7" aria-labelledby="pricing-heading">
       <div className="max-w-[1080px] mx-auto">
         <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-faint)] mb-3">
-          Internal preview · not public · <a href={`${import.meta.env.BASE_URL}workspace`} className="underline normal-case tracking-normal">open the paid workspace design →</a>
+          Internal preview · not public · <a href={`${import.meta.env.BASE_URL}plans`} className="underline normal-case tracking-normal">all plans →</a> · <a href={`${import.meta.env.BASE_URL}workspace`} className="underline normal-case tracking-normal">paid workspace design →</a>
         </p>
         <h2 id="pricing-heading" className="font-semibold tracking-[-0.03em] mb-3 max-w-[720px]" style={{ fontSize: 'clamp(22px, 5vw, 34px)' }}>
           Everything in your browser stays free. You pay only when our servers do the work.
