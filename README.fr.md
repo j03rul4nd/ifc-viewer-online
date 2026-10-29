@@ -31,6 +31,9 @@ Sans compte. Sans configurer de ruleset. Sans limite de taille. Vos modèles ne 
 
 </div>
 
+> **Note :** cette traduction peut être en retard sur la version anglaise. La liste complète et à jour des fonctions est dans le [README anglais](readme.md) et l’index de la documentation dans [`docs/README.md`](docs/README.md).
+
+
 ---
 
 <div align="center">

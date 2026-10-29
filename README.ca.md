@@ -31,6 +31,9 @@ Sense compte. Sense configurar cap ruleset. Sense límit de mida. Els teus model
 
 </div>
 
+> **Nota:** aquesta traducció pot anar per darrere de la versió en anglès. La llista completa i actual de funcions és al [README en anglès](readme.md) i l’índex de documentació a [`docs/README.md`](docs/README.md).
+
+
 ---
 
 <div align="center">

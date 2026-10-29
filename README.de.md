@@ -31,6 +31,9 @@ Kein Konto. Kein Regelsatz zum Konfigurieren. Keine Größenbeschränkung. Deine
 
 </div>
 
+> **Hinweis:** Diese Übersetzung kann hinter der englischen Version zurückliegen. Die vollständige, aktuelle Funktionsliste steht im [englischen README](readme.md), der Doku-Index in [`docs/README.md`](docs/README.md).
+
+
 ---
 
 <div align="center">
