@@ -95,6 +95,9 @@ const LazyPlansSite = React.lazy(() => import('./components/plans/PlansSite'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
+import DualScreenPane, { DualScreenOffer } from './components/dual/DualScreenPane'
+import { useDualLayout } from './hooks/useDualLayout'
+import { useDualScreenStore } from './stores/dualScreenStore'
 import { MobileSheet } from './components/mobile/MobileSheet'
 import OverlayHud from './components/OverlayHud'
 import Blog from './components/Blog'
@@ -1979,6 +1982,45 @@ export default function App() {
     setIsDesktop(mq.matches)
     return () => mq.removeEventListener('change', handler)
   }, [desktopQuery])
+
+  // ── Dual-screen layout (docs/DUAL_SCREEN.md) ──────────────────────────────
+  // One geometry listener for the whole app. Not in embeds (the segments are
+  // the host page's, not the iframe's) and not in the client skin, which is a
+  // presentation with nothing to inspect beside it.
+  const dualState = useDualLayout()
+  const dualAllowed = route === 'viewer' && !embedChrome.embed && !clientMode
+  const dualLayout = dualAllowed ? dualState.layout : null
+  const dualView = useDualScreenStore((s) => s.view)
+  const setDualView = useDualScreenStore((s) => s.setView)
+  const setDualStatus = useDualScreenStore((s) => s.setStatus)
+  useEffect(() => {
+    setDualStatus({ active: !!dualLayout, canSplit: dualAllowed && dualState.canSplit, hardware: dualState.hardware })
+  }, [dualLayout, dualAllowed, dualState.canSplit, dualState.hardware, setDualStatus])
+  const dualActiveRef = useRef(false)
+  dualActiveRef.current = !!dualLayout
+
+  // Phone surfaces that open "the panel" open the companion pane's instead
+  // when split — there is no drawer to slide up over the model.
+  const openSidebarTab = useCallback((tab: 'props' | 'cats' | 'qty'): void => {
+    setPendingSidebarTab(tab)
+    if (dualActiveRef.current) {
+      if (useDualScreenStore.getState().view === 'tree') setDualView('explore')
+    } else {
+      setMobileSidebarOpen(true)
+    }
+  }, [setPendingSidebarTab, setMobileSidebarOpen, setDualView])
+
+  // The tree follows a selection made in the 3D view while both are on
+  // screen — the point of having them side by side. `follow` opens and
+  // scrolls without re-selecting, so this cannot loop back into the viewer.
+  useEffect(() => {
+    if (!dualLayout || dualView === 'inspect' || !selected) return
+    const id = window.setTimeout(() => {
+      const expressId = Number(selected.id)
+      if (Number.isFinite(expressId)) modelTreeRef.current?.revealElement(expressId, selected.modelId, { follow: true })
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [selected, dualLayout === null, dualView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Detect WebGPU availability ────────────────────────────────────────────
   useEffect(() => {
@@ -4588,6 +4630,29 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  // The selection column, placed by the layout: the floating panel / phone
+  // drawer, or docked in the dual-screen pane. Only one placement renders.
+  const renderSidebar = (docked: boolean): React.ReactNode => (
+    <Sidebar
+      categories={legendCategories}
+      elementCount={legendElementCount}
+      sceneModels={sceneModels}
+      selected={selected}
+      hidden={hidden}
+      onToggleHidden={handleToggleHidden}
+      isolated={isolated}
+      onSetIsolated={handleSetIsolatedCategory}
+      onFrame={(id) => viewerRef.current?.frameCategory(id)}
+      onSelectElement={(id, modelId) => viewerApiRef.current?.selectElement(id, modelId)}
+      onFrameElement={handleFrameElement}
+      onRevealInTree={handleRevealInTree}
+      viewerApiRef={viewerApiRef}
+      mobileOpen={docked ? false : mobileSidebarOpen}
+      onMobileClose={() => setMobileSidebarOpen(false)}
+      docked={docked}
+    />
+  )
+
   return (
     <>
       <AnimatePresence>
@@ -4833,6 +4898,14 @@ export default function App() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
+            // Split: the viewer and its toolbar keep to their own segment, so
+            // nothing interactive lands on the hinge. Same element either way —
+            // only its box changes, so the renderer resizes rather than restarts.
+            style={dualLayout ? {
+              left: dualLayout.viewer.x, top: dualLayout.viewer.y,
+              width: dualLayout.viewer.width, height: dualLayout.viewer.height,
+              right: 'auto', bottom: 'auto',
+            } : undefined}
           >
             {effectiveChrome.showToolbar && (
               // Phones: the toolbar floats over the scene (capsules, see
@@ -4850,6 +4923,7 @@ export default function App() {
                   const displayCount = activeEntry?.elementCount ?? modelInfo?.elementCount ?? 0
                   return (
                     <Toolbar
+                      compact={!!dualLayout}
                       fileName={displayName}
                       elementCount={displayCount}
                       // Models already in the scene stay usable while others load;
@@ -4889,7 +4963,7 @@ export default function App() {
               {/* Collapsed tree: the strip stays on its own edge, and is the
                   control that brings it back. Before this the tree simply
                   vanished and the only way back was a menu two clicks away. */}
-              {!treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
+              {!treeVisible && sceneModels.length > 0 && isDesktop && !dualLayout && effectiveChrome.showTree && (
                 <ColumnStrip
                   edge="left"
                   label={tTree('spatialTree')}
@@ -4897,7 +4971,7 @@ export default function App() {
                 />
               )}
 
-              {treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
+              {treeVisible && sceneModels.length > 0 && isDesktop && !dualLayout && effectiveChrome.showTree && (
                 <>
                   <Panel
                     id="tree"
@@ -5188,25 +5262,11 @@ export default function App() {
                     />
                   )}
 
-                  {effectiveChrome.showSidebar && (
-                    <Sidebar
-                      categories={legendCategories}
-                      elementCount={legendElementCount}
-                      sceneModels={sceneModels}
-                      selected={selected}
-                      hidden={hidden}
-                      onToggleHidden={handleToggleHidden}
-                      isolated={isolated}
-                      onSetIsolated={handleSetIsolatedCategory}
-                      onFrame={(id) => viewerRef.current?.frameCategory(id)}
-                      onSelectElement={(id, modelId) => viewerApiRef.current?.selectElement(id, modelId)}
-                      onFrameElement={handleFrameElement}
-                      onRevealInTree={handleRevealInTree}
-                      viewerApiRef={viewerApiRef}
-                      mobileOpen={mobileSidebarOpen}
-                      onMobileClose={() => setMobileSidebarOpen(false)}
-                    />
+                  {dualState.hardware && !dualLayout && dualAllowed && sceneModels.length > 0 && (
+                    <DualScreenOffer hardware />
                   )}
+
+                  {effectiveChrome.showSidebar && !dualLayout && renderSidebar(false)}
 
                   {/* Spatial tree on a phone: the desktop column cannot fit, so the
                       same tree opens as a sheet (Tools → Tree). Picking an element
@@ -5215,7 +5275,7 @@ export default function App() {
                       The ref is the same one the desktop column takes (only one
                       of the two is ever mounted): without it, "Reveal in tree"
                       on a phone opened the sheet and never reached the tree. */}
-                  {!isDesktop && sceneModels.length > 0 && effectiveChrome.showTree && (
+                  {!isDesktop && !dualLayout && sceneModels.length > 0 && effectiveChrome.showTree && (
                     <MobileSheet open={treeVisible} onClose={() => setTreeVisible(false)} label={tTree('spatialTree')} snapPoints={[0.55, 0.92]}>
                       <div className="flex flex-col h-full min-h-0 overflow-hidden">
                         <ModelTree
@@ -5317,7 +5377,7 @@ export default function App() {
                     onHide={handleHideElement}
                     onIsolateCategory={handleIsolateCategory}
                     onReveal={(id, modelId) => { setElementCardOpen(false); handleRevealInTree(id, modelId) }}
-                    onAllProperties={() => { setElementCardOpen(false); setPendingSidebarTab('props'); setMobileSidebarOpen(true) }}
+                    onAllProperties={() => { setElementCardOpen(false); openSidebarTab('props') }}
                   />
                   )}
                   <div className="sr-only" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</div>
@@ -5330,10 +5390,7 @@ export default function App() {
                     visible={sceneModels.length > 0}
                     selected={selected}
                     canIsolate={!!selected}
-                    onOpenSidebarTab={(tab) => {
-                      setPendingSidebarTab(tab)
-                      setMobileSidebarOpen(true)
-                    }}
+                    onOpenSidebarTab={openSidebarTab}
                     onReset={() => viewerRef.current?.resetCamera()}
                     onUpload={openUploadModal}
                     onIsolate={handleIsolate}
@@ -5463,6 +5520,26 @@ export default function App() {
       {/* ── Loading Center (popover on desktop, sheet on mobile; portals itself) ── */}
       {/* Quiet presets (kiosk, article) leave progress to the host: it gets
           model-progress events, and a figure is no place for a load panel. */}
+      {dualLayout && (
+        <DualScreenPane
+          layout={dualLayout}
+          hasModels={sceneModels.length > 0}
+          tree={effectiveChrome.showTree ? (
+            // The only tree mounted while split (the column and the phone
+            // sheet both step aside), so it takes the shared ref.
+            <ModelTree
+              ref={modelTreeRef}
+              onSelectElement={handleSelectTreeElement}
+              onFocusElements={handleFocusElements}
+              onFilterBySubtree={() => { useValidationStore.getState().setFilters({ ruleIds: [], search: '' }) }}
+              onRemoveModel={(id) => { void handleRemoveModel(id) }}
+              onOpenScene={(id) => { handleSetActiveModel(id); setScenePanelOpen(true) }}
+              onFrameItems={(ids) => { viewerApiRef.current?.frameItems(ids) }}
+            />
+          ) : null}
+          properties={effectiveChrome.showSidebar ? renderSidebar(true) : null}
+        />
+      )}
       {route === 'viewer' && !effectiveChrome.quiet && <LoadingCenter anchor={toolbarIsFull ? 'toolbar' : 'floating'} />}
 
       {/* ── Loading indicator for presets without a toolbar (kiosk, client) ── */}

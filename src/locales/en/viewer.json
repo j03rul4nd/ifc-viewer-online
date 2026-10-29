@@ -517,5 +517,20 @@
         }
       }
     }
+  },
+  "dualScreen": {
+    "pane": "Model and properties",
+    "views": "Pane view",
+    "view": {
+      "explore": "Tree + properties",
+      "inspect": "Properties",
+      "tree": "Tree"
+    },
+    "swap": "Swap screens",
+    "single": "Use one screen",
+    "useBoth": "Use both screens",
+    "split": "Split view",
+    "menu": "Split screen",
+    "noModel": "Load a model to browse its spatial structure here."
   }
 }

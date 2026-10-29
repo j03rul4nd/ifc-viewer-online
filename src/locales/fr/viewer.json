@@ -517,5 +517,20 @@
     "settings": "Apparence de la superposition",
     "dim": "Atténuer le contexte",
     "xray": "Rayons X (voir à travers les murs)"
+  },
+  "dualScreen": {
+    "pane": "Modèle et propriétés",
+    "views": "Vue du panneau",
+    "view": {
+      "explore": "Arbre + propriétés",
+      "inspect": "Propriétés",
+      "tree": "Arbre"
+    },
+    "swap": "Inverser les écrans",
+    "single": "Utiliser un seul écran",
+    "useBoth": "Utiliser les deux écrans",
+    "split": "Vue partagée",
+    "menu": "Écran partagé",
+    "noModel": "Chargez un modèle pour parcourir ici sa structure spatiale."
   }
 }

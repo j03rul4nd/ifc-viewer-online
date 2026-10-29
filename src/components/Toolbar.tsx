@@ -8,6 +8,7 @@ import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
 import { haptic } from '../lib/haptics'
 import { useSceneStore } from '../stores/sceneStore'
+import { useDualScreenStore } from '../stores/dualScreenStore'
 import { useModelGroups } from '../hooks/useModelGroups'
 import { toast } from '../stores/toastStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
@@ -41,6 +42,12 @@ import { LoadingIndicator } from './loading'
 const log = createLogger('Toolbar')
 
 interface ToolbarProps {
+  /**
+   * The bar is narrower than the breakpoints think: one screen of a dual-screen
+   * layout, where the viewport is wide but this column is not. Triggers go
+   * icon-only (docs/DUAL_SCREEN.md) so every menu stays reachable.
+   */
+  compact?: boolean
   fileName: string | null
   elementCount: number
   loadingState: 'idle' | 'loading' | 'loaded' | 'error'
@@ -232,7 +239,7 @@ function scoreColor(score: number): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Toolbar({
-  fileName, elementCount, loadingState, canIsolate,
+  compact = false, fileName, elementCount, loadingState, canIsolate,
   viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenAddData, onOpenSceneFile, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
   variant = 'full', tools = ['validate', 'measure'],
 }: ToolbarProps) {
@@ -242,6 +249,9 @@ export default function Toolbar({
   const { t: tLayers } = useTranslation('layers')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
+  const { t: tViewer } = useTranslation('viewer')
+  const dualStatus = useDualScreenStore((s) => s.status)
+  const setDualPref = useDualScreenStore((s) => s.setPref)
 
   // Account (F2) — button only exists when a Clerk key is configured. The
   // open/close flag lives in the store so pickers/upsells can open it too.
@@ -432,6 +442,11 @@ export default function Toolbar({
       <rect x="7.5" y="1" width="5.5" height="5.5" rx="1" opacity="0.6"/>
       <rect x="1" y="7.5" width="5.5" height="5.5" rx="1" opacity="0.6"/>
       <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1"/>
+    </svg>
+  )
+  const SplitSVG = (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="1" y="2" width="5" height="10" rx="1" /><rect x="8" y="2" width="5" height="10" rx="1" />
     </svg>
   )
   const MeasureSVG = (
@@ -635,7 +650,7 @@ export default function Toolbar({
         {fileName && (
           <span className="md:hidden text-[12px] text-[var(--text-dim)] truncate min-w-0 max-w-[40vw]">{fileName}</span>
         )}
-        <div className="hidden lg:flex items-center gap-1.5 min-w-0" title={fileName ?? undefined}>
+        <div className={`hidden ${compact ? '' : 'lg:flex'} items-center gap-1.5 min-w-0`} title={fileName ?? undefined}>
           {loadingState !== 'idle' && (
             <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: statusColor }} />
           )}
@@ -659,7 +674,7 @@ export default function Toolbar({
           Open is the IFC door: one click to the IFC review. Its caret adds
           the demo gallery and scene files. Every other kind of data has one
           labelled, always-enabled door next to it: + Add data (the hub). */}
-      <div className="hidden md:flex items-center shrink-0">
+      <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center shrink-0`}>
         <button
           onClick={onUpload}
           title={t('openFile')}
@@ -704,7 +719,7 @@ export default function Toolbar({
         }}
       />
       {onOpenAddData && (
-        <div className="hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5">
+        <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5`}>
           <button
             type="button"
             data-testid="toolbar-add-data"
@@ -723,12 +738,12 @@ export default function Toolbar({
       {/* ── Validate — the hero action, with its result attached ──────────────
           The score and issue count sit on the same pill as the button that
           produced them: one glance answers "how is this model doing?". */}
-      <div className="hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5">
+      <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center shrink-0 ml-1 lg:ml-1.5`}>
         {ValidatePill}
       </div>
 
       {/* ── Check ▾ — everything that reads the model against a standard ──── */}
-      <div className="hidden md:flex items-center shrink-0 ml-0.5 lg:ml-1">
+      <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center shrink-0 ml-0.5 lg:ml-1`}>
         <ToolMenu
           id="check" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={<Icons.Shield size={14} />} label={t('menu.check')} title={t('menu.checkTooltip')}
@@ -760,7 +775,7 @@ export default function Toolbar({
           follow scene content, NOT the validation run (auto-validate used to
           grey these out right after every load): View opens for any content
           (a scan-only scene has a Scene list), Tools and Share need an IFC. */}
-      <div className="hidden md:flex items-center gap-0.5 shrink-0">
+      <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center gap-0.5 shrink-0`}>
         <ToolMenu
           id="view" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={ViewMenuSVG} label={t('view')} title={t('viewMenu')}
@@ -769,6 +784,13 @@ export default function Toolbar({
           <MenuLabel>{t('menu.navigate')}</MenuLabel>
           <MenuItem icon={TreeSVG} label={t('tree')} active={treeVisible} disabled={content.models === 0}
             onClick={() => { setTreeVisible(!treeVisible); setOpenMenu(null) }} />
+          {dualStatus.canSplit && (
+            <MenuItem icon={SplitSVG} label={tViewer('dualScreen.menu')} active={dualStatus.active}
+              onClick={() => {
+                setDualPref(dualStatus.active ? 'off' : dualStatus.hardware ? 'auto' : 'split')
+                setOpenMenu(null)
+              }} />
+          )}
           <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
             badge={sceneModels.length > 0 ? sceneModels.length : undefined}
             onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />
@@ -828,7 +850,7 @@ export default function Toolbar({
       {/* Screenshot, replay, studios and background — one menu on desktop,
           plain buttons on phones. Owns the replay buffer and the capture /
           studio modals, so it stays mounted at every width. */}
-      <div className="contents md:flex md:items-center md:ml-0.5">
+      <div className={`${compact ? 'tb-icons ' : ''}contents md:flex md:items-center md:ml-0.5`}>
         <CaptureToolbar viewerApiRef={viewerApiRef} variant="menu" />
       </div>
 
@@ -837,7 +859,7 @@ export default function Toolbar({
       {/* ── Share ▾ — every way the work leaves this tab ──────────────────────
           Accent border while the model has unsaved edits (diffs > 0), so
           pending changes are visible without a notification. */}
-      <div className="hidden md:flex items-center shrink-0">
+      <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center shrink-0`}>
         <ToolMenu
           id="share" openMenu={openMenu} setOpenMenu={setOpenMenu}
           icon={
@@ -890,7 +912,7 @@ export default function Toolbar({
       </div>
 
       {/* ── Utilities: help · account · language ───────────────────────────── */}
-      <div className="hidden md:flex items-center gap-0.5 shrink-0 ml-0.5 lg:ml-1">
+      <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center gap-0.5 shrink-0 ml-0.5 lg:ml-1`}>
         <button
           onClick={onOpenHelp}
           title={tCommon('shortcuts.title')}

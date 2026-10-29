@@ -45,7 +45,7 @@ export interface ModelTreeHandle {
    * Returns what it did, because it cannot always do what was asked and a
    * button that silently does nothing is worse than one that says why.
    */
-  revealElement: (expressId: number, modelId?: string) => RevealOutcome
+  revealElement: (expressId: number, modelId?: string, opts?: { follow?: boolean }) => RevealOutcome
 }
 
 // The flattening, filtering, expansion and issue-indexing all live in
@@ -571,18 +571,24 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     }, [decompMaps])
 
     useImperativeHandle(ref, () => ({
-      revealElement(expressId: number, modelId?: string): RevealOutcome {
+      revealElement(expressId: number, modelId?: string, opts?: { follow?: boolean }): RevealOutcome {
         // Which model, decided once and up front. The old version expanded
         // ancestors in whichever tree matched first and then selected without a
         // model at all, so revealing an issue in a federated set opened the
         // right row number in the wrong building.
         const target = resolveRevealTarget(allTrees, expressId, modelId, hostOf)
         if (!target) return { ok: false }
+        // Following a selection made elsewhere (the dual-screen tree tracking
+        // the 3D view) must not change it: only open and scroll, and never to
+        // a host — that would swap the user's pick for its container.
+        const follow = opts?.follow === true
+        // A search in progress is the user's; following must not clear it.
+        if (follow && (target.viaHost || isFiltering)) return { ok: false }
 
         // Functional updates: on a phone the tree has only just mounted, and
         // its first-levels auto-expansion may not have landed in the state
         // this handle closed over. Copying that stale set dropped it.
-        setQuery('')   // a filtered list may not contain the target row
+        if (!follow) setQuery('')   // a filtered list may not contain the target row
         setCollapsedModels((prev) => {
           if (!prev.has(target.modelId)) return prev
           const next = new Set(prev)
@@ -605,6 +611,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         // effect below.
         setPendingReveal({ key: scopedElementKey(target.modelId, target.expressId) })
 
+        if (follow) return { ok: true, viaHost: false }
         setSelection([{ expressId: target.expressId, modelId: target.modelId }])
         onSelectElement?.(target.expressId, target.modelId, 'reveal')
 
@@ -614,7 +621,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
           ?? `#${target.expressId}`
         return { ok: true, viaHost: true, hostName }
       },
-    }), [allTrees, hostOf, setSelection, onSelectElement, sceneGroups])
+    }), [allTrees, hostOf, setSelection, onSelectElement, sceneGroups, isFiltering])
 
     // Scroll to a revealed row once it is actually in the list. This used to
     // happen two animation frames after the state was set, against a list
