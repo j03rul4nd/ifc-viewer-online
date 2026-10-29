@@ -516,5 +516,20 @@
     "settings": "叠加显示外观",
     "dim": "淡化其余部分",
     "xray": "X 光（透视墙体）"
+  },
+  "dualScreen": {
+    "pane": "模型与属性",
+    "views": "面板视图",
+    "view": {
+      "explore": "树 + 属性",
+      "inspect": "属性",
+      "tree": "树"
+    },
+    "swap": "交换屏幕",
+    "single": "使用单屏",
+    "useBoth": "使用双屏",
+    "split": "分屏视图",
+    "menu": "分屏",
+    "noModel": "加载模型后即可在此浏览其空间结构。"
   }
 }

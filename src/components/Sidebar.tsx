@@ -2116,12 +2116,18 @@ interface SidebarProps {
   mobileOpen?: boolean
   /** Mobile-only: called when user taps close button or backdrop */
   onMobileClose?: () => void
+  /**
+   * Fill the parent instead of floating: the companion pane of a dual-screen
+   * layout. The column is then a place, not a panel — it neither collapses nor
+   * joins the one-at-a-time rule, since it shares the screen with nothing.
+   */
+  docked?: boolean
 }
 
 export default function Sidebar({
   categories, elementCount, sceneModels = [], selected, hidden, onToggleHidden,
   isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
-  onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose,
+  onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose, docked = false,
 }: SidebarProps) {
   const { t } = useTranslation('sidebar')
   const [tab, setTab] = useState<SidebarTab>('props')
@@ -2147,13 +2153,14 @@ export default function Sidebar({
   // announceOpen directly rather than useViewportPanel: that hook's job is to
   // step THIS column aside, and a panel cannot step itself aside.
   useEffect(() => {
+    if (docked) return
     if (!sidebarExpanded) {
       announceClosed('properties')
       return
     }
     announceOpen('properties', () => setSidebarExpanded(false))
     return () => announceClosed('properties')
-  }, [sidebarExpanded, setSidebarExpanded])
+  }, [sidebarExpanded, setSidebarExpanded, docked])
 
   // Consume pendingSidebarTab from store — works even when Sidebar was unmounted at click time
   const pendingTab = useUIStore(s => s.pendingSidebarTab)
@@ -2218,7 +2225,7 @@ export default function Sidebar({
         transition={{ duration: 0.3, ease: 'easeOut' }}
         // Desktop (md+): absolute floating panel anchored top-right of viewer
         // Mobile (<md): fixed full-height drawer from right edge
-        className={[
+        className={docked ? 'flex flex-col overflow-hidden h-full min-h-0 bg-[var(--surface)]' : [
           // Base: glass + border (desktop always, mobile overridden by mobile-sidebar-sheet media query)
           'glass border border-[var(--border)] flex flex-col overflow-hidden',
           // Desktop
@@ -2247,7 +2254,7 @@ export default function Sidebar({
         data-properties-panel=""
       >
       {/* Mobile: drag handle + header row */}
-      <div className="md:hidden flex flex-col items-center shrink-0">
+      <div className={docked ? 'hidden' : 'md:hidden flex flex-col items-center shrink-0'}>
         <div className="pt-[14px] pb-[6px] w-full flex justify-center">
           <div className="sheet-handle" />
         </div>
@@ -2336,7 +2343,7 @@ export default function Sidebar({
       </div>
 
       {/* Mobile: safe-area bottom spacer */}
-      <div className="md:hidden shrink-0"
+      <div className={docked ? 'shrink-0' : 'md:hidden shrink-0'}
         style={{ height: 'env(safe-area-inset-bottom, 0px)' }}
       />
     </motion.div>

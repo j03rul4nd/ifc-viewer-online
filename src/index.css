@@ -650,3 +650,16 @@ kbd {
   [data-testid="layers-panel"] button { touch-action: manipulation; }
   [data-testid="layers-panel"] input[type="checkbox"] { width: 18px; height: 18px; }
 }
+
+/* Toolbar in one screen of a dual-screen layout (Toolbar `compact`): the
+   triggers go icon-only. font-size 0 rather than removing the text, so each
+   button keeps its accessible name. Explicitly sized badges keep theirs.
+   docs/DUAL_SCREEN.md */
+.tb-icons button:not([role='menu'] button) {
+  font-size: 0;
+  gap: 2px;
+  padding-inline: 6px;
+}
+.tb-icons button:not([role='menu'] button) > span:not(.absolute) {
+  font-size: 0;
+}

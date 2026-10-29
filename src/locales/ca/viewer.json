@@ -517,5 +517,20 @@
     "settings": "Aspecte de la superposició",
     "dim": "Atenua el context",
     "xray": "Raigs X (veure a través dels murs)"
+  },
+  "dualScreen": {
+    "pane": "Model i propietats",
+    "views": "Vista del panell",
+    "view": {
+      "explore": "Arbre + propietats",
+      "inspect": "Propietats",
+      "tree": "Arbre"
+    },
+    "swap": "Intercanviar pantalles",
+    "single": "Fer servir una pantalla",
+    "useBoth": "Fer servir les dues pantalles",
+    "split": "Vista dividida",
+    "menu": "Pantalla dividida",
+    "noModel": "Carrega un model per recórrer aquí la seva estructura espacial."
   }
 }

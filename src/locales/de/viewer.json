@@ -517,5 +517,20 @@
     "settings": "Darstellung der Überlagerung",
     "dim": "Kontext abdunkeln",
     "xray": "Röntgen (durch Wände sehen)"
+  },
+  "dualScreen": {
+    "pane": "Modell und Eigenschaften",
+    "views": "Bereichsansicht",
+    "view": {
+      "explore": "Baum + Eigenschaften",
+      "inspect": "Eigenschaften",
+      "tree": "Baum"
+    },
+    "swap": "Bildschirme tauschen",
+    "single": "Einen Bildschirm nutzen",
+    "useBoth": "Beide Bildschirme nutzen",
+    "split": "Geteilte Ansicht",
+    "menu": "Geteilter Bildschirm",
+    "noModel": "Lade ein Modell, um hier seine räumliche Struktur zu durchsuchen."
   }
 }

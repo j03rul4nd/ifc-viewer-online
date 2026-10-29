@@ -517,5 +517,20 @@
     "settings": "Aspetto della sovrapposizione",
     "dim": "Attenua il contesto",
     "xray": "Raggi X (vedi attraverso i muri)"
+  },
+  "dualScreen": {
+    "pane": "Modello e proprietà",
+    "views": "Vista del pannello",
+    "view": {
+      "explore": "Albero + proprietà",
+      "inspect": "Proprietà",
+      "tree": "Albero"
+    },
+    "swap": "Scambia schermi",
+    "single": "Usa un solo schermo",
+    "useBoth": "Usa entrambi gli schermi",
+    "split": "Vista divisa",
+    "menu": "Schermo diviso",
+    "noModel": "Carica un modello per esplorarne qui la struttura spaziale."
   }
 }
