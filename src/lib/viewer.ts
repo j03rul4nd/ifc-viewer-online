@@ -1362,6 +1362,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
   let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
   let vectorLoadPromise: Promise<import('./layers/vector-layer-system').VectorLayerSystemAPI> | null = null
+  /** The data layers, once loaded — their features are measurable like any geometry. */
+  let vectorInstance: import('./layers/vector-layer-system').VectorLayerSystemAPI | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
@@ -2586,7 +2588,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const extra = [...world.meshes].filter((o) => !roots.has(o)) as THREE.Object3D[]
       // The map's OSM buildings and relief: measure to the neighbour, on the street, up a slope.
       const geo = geoSystemInstance?.isActive() ? geoSystemInstance : null
-      return geo ? [...extra, ...geo.measureTargets()] : extra
+      const layers = vectorInstance?.measureTargets() ?? []
+      return [...extra, ...layers, ...(geo ? geo.measureTargets() : [])]
     },
     getClippingPlanes: () => wr.clippingPlanes,
     getSnapResolver: () => snapResolver,
@@ -5252,7 +5255,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
             console.debug('[Viewer] vector layer fit failed:', e instanceof Error ? e.message : e)
           }
         },
-      }))
+      })).then((v) => { vectorInstance = v; return v })
       return vectorLoadPromise
     },
 
@@ -5338,6 +5341,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pointCloudLoadPromise = null
       if (vectorLoadPromise) void vectorLoadPromise.then((v) => v.dispose()).catch(() => { /* ok */ })
       vectorLoadPromise = null
+      vectorInstance = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
       if (hazardPromise) void hazardPromise.then((h) => h.clear()).catch(() => { /* ok */ })
