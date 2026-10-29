@@ -35,9 +35,9 @@ English · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Fran�
 
 <div align="center">
 
-[![IFC Viewer Online: load a model, validate it, and get a Health Score, all in the browser](assets/demo.gif)](https://www.ifcvieweronline.eu/)
+[![IFC Viewer Online: validate a model, then a city digital twin, solar analysis, point clouds and Clip Studio, all in the browser](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>Load a demo model → run a validation profile → Health Score + ranked issues, 100% in your browser. <a href="https://www.ifcvieweronline.eu/">Try it live →</a></i></sub>
+<sub><i>Health Score and Fix this first → a live city twin → sun and climate → point clouds → Clip Studio. All in your browser. <a href="https://www.ifcvieweronline.eu/">Try it live →</a></i></sub>
 
 </div>
 
@@ -105,7 +105,7 @@ Some of these modules are behind build flags (`VITE_FEATURE_GIS`, `VITE_FEATURE_
 
 ## See it in action
 
-> Every clip is the **real app** running in a browser, with no edited footage. The first three use the open [Duplex Apartment](public/Ifc2x3_Duplex_Architecture.ifc) reference IFC (7,131 elements); the rest use the Barcelona reference models in `public/models/`. Re-record them with `scripts/gif/capture.mjs` and `scripts/gif/features.mjs`, then `scripts/gif/encode.mjs`.
+> Every clip is the **real app** running in a browser, with no edited footage. The first three use the open [Duplex Apartment](public/Ifc2x3_Duplex_Architecture.ifc) reference IFC (7,131 elements); the rest use the Barcelona reference models in `public/models/`. Re-record them with `scripts/gif/capture.mjs`, `scripts/gif/features.mjs` and `scripts/gif/flood-frames.mjs`, then `scripts/gif/encode.mjs` / `scripts/gif/montage.mjs` (the header GIF).
 
 ### Navigate the model and inspect IFC properties
 
@@ -127,13 +127,13 @@ One link loads the model, reads the site's real climate (ERA5) and paints the pa
 
 ### Rain and flooding on the map
 
-The model on its real street, with the map's relief, and a storm run as a 2D flood simulation on the GPU.
+The Hotel Vela on Barcelona's real relief, with the city around it: a 2-hour storm runs as a 2D flood simulation on the GPU, then the maximum depth it left.
 
-![Flood simulation around a georeferenced tower in Poblenou, Barcelona](assets/feature-flood.gif)
+![Flood simulation around the Hotel Vela reference IFC in Barcelona](assets/feature-flood.gif)
 
 ### Point clouds next to the IFC
 
-A site scan (LAS) aligned with the model it surveys, both in the same scene.
+A construction-progress scan aligned with the IFC it surveys, in the same scene.
 
 ![Point cloud site scan aligned with the IFC model](assets/feature-pointcloud.gif)
 
