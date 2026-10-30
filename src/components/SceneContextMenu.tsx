@@ -6,6 +6,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { readSegments, segmentAt } from '../lib/ui/display-segments'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import type { SelectedInfo } from '../types'
@@ -108,9 +109,12 @@ export default function SceneContextMenu({
     if (!payload) return
     const el = ref.current
     const h = el?.offsetHeight ?? 240
-    const x = Math.min(payload.x, window.innerWidth  - MENU_W - 8)
-    const y = Math.min(payload.y, window.innerHeight - h - 8)
-    setPos({ x: Math.max(8, x), y: Math.max(8, y) })
+    // Within the screen that was tapped, so the menu never lands on a hinge.
+    const box = segmentAt(readSegments(window as unknown as Parameters<typeof readSegments>[0]), payload.x, payload.y)
+      ?? { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }
+    const x = Math.min(payload.x, box.x + box.width - MENU_W - 8)
+    const y = Math.min(payload.y, box.y + box.height - h - 8)
+    setPos({ x: Math.max(box.x + 8, x), y: Math.max(box.y + 8, y) })
     setCopied(false)
   }, [payload])
 

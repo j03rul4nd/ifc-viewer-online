@@ -58,6 +58,18 @@ export function readSegments(win: SegmentsSource | undefined): SegmentRect[] {
   return []
 }
 
+/** The segment holding a point; on the hinge, the nearer one. Null with no segments. */
+export function segmentAt(segments: SegmentRect[], x: number, y: number): SegmentRect | null {
+  let best: SegmentRect | null = null
+  let bestDistance = Infinity
+  for (const s of segments) {
+    const dx = Math.max(s.x - x, 0, x - (s.x + s.width))
+    const dy = Math.max(s.y - y, 0, y - (s.y + s.height))
+    if (dx + dy < bestDistance) { best = s; bestDistance = dx + dy }
+  }
+  return best
+}
+
 function toRect(r: SegmentRect): SegmentRect {
   return { x: r.x, y: r.y, width: r.width, height: r.height }
 }

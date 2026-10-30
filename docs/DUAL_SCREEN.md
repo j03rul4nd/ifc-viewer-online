@@ -95,10 +95,10 @@ Fold*) is the next check.
 
 ## Known limits / next steps
 
-- Dialogs, sheets and toasts stay on the viewer's segment. Overlays that do not use
-  the shared `m-sheet` hooks (context menu, some full-screen tools) are not confined yet.
-- The validation panel docks under the viewer, which halves a portrait segment;
-  it could move into the pane as a fourth view.
+- Dialogs, sheets and toasts stay on the viewer's segment, and the context menu on
+  the screen that was tapped. Some full-screen tools (studios) are not confined yet.
+- The validation and IDS drawers open over the pane instead of under the viewer;
+  collapsing one uncovers the pane. Below 768 px they remain sheets on the viewer.
 - Model comparison on two screens (scenario D) needs a second renderer or a
   second camera view over the same scene; not built — it would double GPU
   memory on phones and needs its own design.
