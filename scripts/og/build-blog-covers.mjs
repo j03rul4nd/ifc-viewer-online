@@ -189,6 +189,11 @@ const REAL_CAPTURE_BY_KEY = {
   },
   // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
   // Rain & slopes: the maquette of the bundled Chosica example (scripts/og/capture-hazard-shots.mjs).
+  'foldable-phone-ifc-viewer': {
+    source: 'public/blog/images/foldable-ifc-viewer-book-posture.jpg',
+    badge: { en: 'ACTUAL VIEWER · TWO SCREENS', es: 'VISOR REAL · DOS PANTALLAS' },
+    shortTitle: 'IFC ON FOLDABLE PHONES',
+  },
   'rainfall-landslide-hazard-map-kmz': {
     source: 'public/blog/images/rainfall-landslide-hazard-map-kmz-capture.jpg',
     badge: { en: 'ACTUAL VIEWER · RAIN & SLOPES', es: 'VISOR REAL · LLUVIA Y LADERAS' },

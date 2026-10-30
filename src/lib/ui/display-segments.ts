@@ -100,6 +100,15 @@ export function canOfferSplit(i: Pick<ResolveInput, 'segments' | 'viewportWidth'
   return hardwarePair(i.segments) !== null || (i.coarsePointer && i.viewportWidth >= MANUAL_SPLIT_MIN_WIDTH)
 }
 
+/** What the app will do on this screen, in the terms a reader cares about. */
+export type FoldableVerdict = 'two-screens' | 'manual' | 'phone' | 'desktop'
+
+export function foldableVerdict(i: Pick<ResolveInput, 'segments' | 'viewportWidth' | 'coarsePointer'>): FoldableVerdict {
+  if (hardwarePair(i.segments) !== null) return 'two-screens'
+  if (canOfferSplit(i)) return 'manual'
+  return i.coarsePointer ? 'phone' : 'desktop'
+}
+
 /** The layout to use, or null for the normal single-screen app. */
 export function resolveDualLayout(i: ResolveInput): DualLayout | null {
   if (i.pref === 'off') return null

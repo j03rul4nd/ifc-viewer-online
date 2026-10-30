@@ -706,6 +706,21 @@ html[data-dual] .dual-sheet {
   width: var(--dual-w) !important;
   bottom: calc(100dvh - var(--dual-y) - var(--dual-h)) !important;
 }
+/* The phone nav (a stacked split under 768 px) keeps to the viewer's screen and
+   stops covering the pane. */
+html[data-dual] .dual-nav,
+html[data-dual] .dual-nav-sheet {
+  left: calc(var(--dual-x) + 12px) !important;
+  right: auto !important;
+  width: calc(var(--dual-w) - 24px) !important;
+}
+html[data-dual] .dual-nav {
+  bottom: calc(100dvh - var(--dual-y) - var(--dual-h) + 8px) !important;
+}
+html[data-dual] .dual-nav-sheet {
+  bottom: calc(100dvh - var(--dual-y) - var(--dual-h) + 76px) !important;
+  max-height: calc(var(--dual-h) - 92px) !important;
+}
 html[data-dual] .dual-toasts {
   left: calc(var(--dual-x) + 12px) !important;
   right: auto !important;

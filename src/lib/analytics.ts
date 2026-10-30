@@ -540,6 +540,8 @@ export function trackExportClicked(props: {
  *   blog_topic_opened      → a topic hub page opened
  *   blog_search            → a search settled (debounced) with its result count
  *   blog_tool_clicked      → a tool CTA clicked from the blog
+ *   foldable_report        → "did the split work?" answered in the foldable article
+ *   dual_screen_active     → a split in use, once per page load
  */
 export function trackFeatureUsed(props: {
   feature:
@@ -907,6 +909,16 @@ export function trackBlogFeedback(props: { slug: string; lang: string; vote: 'ye
 
 export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 'article'; lang: string }): void {
   track('blog_tool_clicked', props)
+}
+
+/** "Did it work on your device?" from the foldable article. Never a device name. */
+export function trackFoldableReport(props: { verdict: string; works: boolean; segments: number; lang: string }): void {
+  track('foldable_report', props)
+}
+
+/** A split actually in use, once per page load: the end of the foldable funnel. */
+export function trackDualScreenActive(props: { source: string; posture: string }): void {
+  track('dual_screen_active', props)
 }
 
 // ── Event page (/msp-global) ──────────────────────────────────────────────────

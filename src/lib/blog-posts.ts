@@ -6,6 +6,7 @@ import { TWIN_CLUSTER2_POSTS_EN } from './blog-twin-cluster2-en.ts'
 import { HAZARD_POSTS_EN } from './blog-hazard-en.ts'
 import { FLOOD_POSTS_EN } from './blog-flood-en.ts'
 import { MEASURE_POSTS_EN } from './blog-measure-en.ts'
+import { FOLDABLE_POSTS_EN } from './blog-foldable-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -75,6 +76,36 @@ export type ContentBlock =
    * rating and its class, on a depth × speed chart (FloodHazard.tsx). The
    * labels travel with the post so they are translated with it.
    */
+  /**
+   * "What will the viewer do on my phone?" Live read of the display segments,
+   * the link that opens the sample split, and a report (FoldableCheck.tsx).
+   */
+  | {
+      type: 'foldable-check'
+      title?: string
+      caption?: string
+      labels: {
+        live: string
+        segments: string
+        viewport: string
+        pointer: string
+        touch: string
+        mouse: string
+        verdicts: { 'two-screens': string; manual: string; phone: string; desktop: string }
+        open: string
+        openHint: string
+        shapes: string
+        book: string
+        tabletop: string
+        flat: string
+        viewer: string
+        pane: string
+        report: string
+        reportYes: string
+        reportNo: string
+        reportThanks: string
+      }
+    }
   | {
       type: 'flood-hazard'
       title?: string
@@ -326,6 +357,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
   ...TWIN_CLUSTER_POSTS_EN,
   ...TWIN_POSTS_EN,
   ...MEASURE_POSTS_EN,
+  ...FOLDABLE_POSTS_EN,
   ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,
   {

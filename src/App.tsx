@@ -272,6 +272,7 @@ import { useBcfStore } from './stores/bcfStore'
 import { useOverlayStore } from './stores/overlayStore'
 import {
   trackFileOpened,
+  trackDualScreenActive,
   trackValidationCompleted,
   trackLandingCtaClicked,
   trackValidationPanelOpened,
@@ -1996,6 +1997,12 @@ export default function App() {
   useEffect(() => {
     setDualStatus({ active: !!dualLayout, canSplit: dualAllowed && dualState.canSplit, hardware: dualState.hardware })
   }, [dualLayout, dualAllowed, dualState.canSplit, dualState.hardware, setDualStatus])
+  const dualTracked = useRef(false)
+  useEffect(() => {
+    if (!dualLayout || dualTracked.current) return
+    dualTracked.current = true
+    trackDualScreenActive({ source: dualLayout.source, posture: dualLayout.posture })
+  }, [dualLayout])
   // Dialogs, sheets and toasts portal to <body>, outside the viewer's box. They
   // read its segment from here (index.css, "Overlays in a split") and stay off
   // the hinge, without each one having to know the layout exists.

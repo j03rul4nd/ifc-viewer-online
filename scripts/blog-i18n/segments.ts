@@ -70,6 +70,13 @@ function blockFields(b: ContentBlock, at: string, add: (path: string, value: unk
     // target's translated heading by relinkSections(), never translated here.
     case 'related': add(`${at}.why`, b.why); break
     case 'tool': add(`${at}.why`, b.why); break
+    case 'foldable-check': {
+      add(`${at}.title`, b.title); add(`${at}.caption`, b.caption)
+      const l = b.labels
+      for (const k of ['live', 'segments', 'viewport', 'pointer', 'touch', 'mouse', 'open', 'openHint', 'shapes', 'book', 'tabletop', 'flat', 'viewer', 'pane', 'report', 'reportYes', 'reportNo', 'reportThanks'] as const) add(`${at}.labels.${k}`, l[k])
+      for (const k of ['two-screens', 'manual', 'phone', 'desktop'] as const) add(`${at}.labels.verdicts.${k}`, l.verdicts[k])
+      break
+    }
     case 'flood-hazard': {
       add(`${at}.title`, b.title); add(`${at}.caption`, b.caption)
       const l = b.labels

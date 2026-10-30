@@ -15,7 +15,17 @@ interface DualScreenPrefs { pref: DualScreenPref; view: DualPaneView; swap: bool
 const LS_KEY = 'ifc-dual-screen:v1'
 const DEFAULTS: DualScreenPrefs = { pref: 'auto', view: 'explore', swap: false }
 
+/** A link may ask for the split (?split=1, the foldable article). The screen still decides. */
+function askedForSplit(): boolean {
+  return typeof location !== 'undefined' && new URLSearchParams(location.search).get('split') === '1'
+}
+
 function load(): DualScreenPrefs {
+  if (askedForSplit()) return { ...stored(), pref: 'split' }
+  return stored()
+}
+
+function stored(): DualScreenPrefs {
   if (typeof localStorage === 'undefined') return DEFAULTS
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') as Partial<DualScreenPrefs>
