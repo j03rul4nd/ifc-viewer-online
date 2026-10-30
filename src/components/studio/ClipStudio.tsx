@@ -245,7 +245,7 @@ export default function ClipStudio() {
   )
 
   return createPortal(
-    <div className="studio-root lp-studio fixed inset-0 z-[80] flex flex-col bg-[var(--bg)] text-[var(--text)]" role="dialog" aria-modal="true" aria-label={t('studio.title')}>
+    <div className="dual-full studio-root lp-studio fixed inset-0 z-[80] flex flex-col bg-[var(--bg)] text-[var(--text)]" role="dialog" aria-modal="true" aria-label={t('studio.title')}>
       {/* Top bar */}
       <header className="studio-header flex min-h-12 shrink-0 items-center gap-2 border-b border-[var(--border)] px-3">
         <button type="button" className="studio-icon-btn" onClick={close} aria-label={t('studio.close')}><Icons.X size={16} /></button>
@@ -254,7 +254,7 @@ export default function ClipStudio() {
           <button type="button" className="studio-icon-btn" disabled={!canUndo} onClick={undo} aria-label={t('studio.undo')} title={t('studio.undo')}><Icons.StepBack size={14} /></button>
           <button type="button" className="studio-icon-btn" disabled={!canRedo} onClick={redo} aria-label={t('studio.redo')} title={t('studio.redo')}><Icons.StepFwd size={14} /></button>
         </div>
-        <span className="ml-auto hidden text-[11px] text-[var(--text-faint)] lg:inline">{t('studio.shortcuts')}</span>
+        <span className="dual-hide ml-auto hidden text-[11px] text-[var(--text-faint)] lg:inline">{t('studio.shortcuts')}</span>
         <button type="button" className="studio-btn studio-btn--accent ml-auto lg:ml-3" disabled={!webcodecs || duration <= 0 || !!job} onClick={onExport}>
           <Icons.Download size={14} aria-hidden="true" /> {t('studio.export')}
         </button>

@@ -96,9 +96,10 @@ Fold*) is the next check.
 ## Known limits / next steps
 
 - Dialogs, sheets and toasts stay on the viewer's segment, and the context menu on
-  the screen that was tapped. Some full-screen tools (studios) are not confined yet.
+  the screen that was tapped. The clip and cover studios take the viewer's segment.
 - The validation and IDS drawers open over the pane instead of under the viewer;
-  collapsing one uncovers the pane. Below 768 px they remain sheets on the viewer.
+  collapsing one uncovers the pane, and their resize grip and maximize button are
+  hidden, having nothing to do there. Below 768 px they remain sheets on the viewer.
 - Model comparison on two screens (scenario D) needs a second renderer or a
   second camera view over the same scene; not built — it would double GPU
   memory on phones and needs its own design.
