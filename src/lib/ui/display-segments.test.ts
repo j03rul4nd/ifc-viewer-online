@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readSegments, resolveDualLayout, canOfferSplit, type ResolveInput } from './display-segments'
+import { readSegments, resolveDualLayout, canOfferSplit, segmentAt, type ResolveInput } from './display-segments'
 
 // Surface Duo spanned, book posture: two 540px panes and a 34px hinge.
 const DUO = [
@@ -82,6 +82,16 @@ describe('resolveDualLayout', () => {
   it('does not split a phone or a mouse-driven desktop on request', () => {
     expect(resolveDualLayout({ ...base, pref: 'split' })).toBeNull()
     expect(resolveDualLayout({ ...base, pref: 'split', viewportWidth: 1400, viewportHeight: 900, coarsePointer: false })).toBeNull()
+  })
+})
+
+describe('segmentAt', () => {
+  it('finds the segment under a point, and the nearer one on the hinge', () => {
+    expect(segmentAt(DUO, 100, 100)).toEqual(DUO[0])
+    expect(segmentAt(DUO, 800, 100)).toEqual(DUO[1])
+    expect(segmentAt(DUO, 545, 100)).toEqual(DUO[0])
+    expect(segmentAt(DUO, 570, 100)).toEqual(DUO[1])
+    expect(segmentAt([], 1, 1)).toBeNull()
   })
 })
 

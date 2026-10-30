@@ -713,3 +713,18 @@ html[data-dual] .dual-toasts {
   top: calc(var(--dual-y) + 52px) !important;
   bottom: auto !important;
 }
+
+/* The results drawers (validation, IDS) in a split: placed over the pane instead
+   of under the viewer, so they stop halving a portrait screen. Moved by CSS, not
+   by React, so the panel keeps its filters and scroll; out of the column's flow,
+   the viewer takes the height back and the lane measures no drawer. Collapsing
+   one uncovers the pane as it was. */
+html[data-dual] [data-bottom-drawer] {
+  position: fixed;
+  left: var(--dual-pane-x);
+  top: var(--dual-pane-y);
+  width: var(--dual-pane-w);
+  height: var(--dual-pane-h) !important;
+  padding-right: 0 !important;
+  border-top: none;
+}

@@ -2000,6 +2000,7 @@ export default function App() {
   // read its segment from here (index.css, "Overlays in a split") and stay off
   // the hinge, without each one having to know the layout exists.
   const dualViewerRect = dualLayout?.viewer ?? null
+  const dualPaneRect = dualLayout?.pane ?? null
   useLayoutEffect(() => {
     const root = document.documentElement
     if (!dualViewerRect) { root.removeAttribute('data-dual'); return }
@@ -2008,7 +2009,14 @@ export default function App() {
     root.style.setProperty('--dual-y', `${dualViewerRect.y}px`)
     root.style.setProperty('--dual-w', `${dualViewerRect.width}px`)
     root.style.setProperty('--dual-h', `${dualViewerRect.height}px`)
-  }, [dualViewerRect?.x, dualViewerRect?.y, dualViewerRect?.width, dualViewerRect?.height]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (dualPaneRect) {
+      root.style.setProperty('--dual-pane-x', `${dualPaneRect.x}px`)
+      root.style.setProperty('--dual-pane-y', `${dualPaneRect.y}px`)
+      root.style.setProperty('--dual-pane-w', `${dualPaneRect.width}px`)
+      root.style.setProperty('--dual-pane-h', `${dualPaneRect.height}px`)
+    }
+  }, [dualViewerRect?.x, dualViewerRect?.y, dualViewerRect?.width, dualViewerRect?.height,
+      dualPaneRect?.x, dualPaneRect?.y, dualPaneRect?.width, dualPaneRect?.height]) // eslint-disable-line react-hooks/exhaustive-deps
   const dualActiveRef = useRef(false)
   dualActiveRef.current = !!dualLayout
 
@@ -4918,6 +4926,9 @@ export default function App() {
               left: dualLayout.viewer.x, top: dualLayout.viewer.y,
               width: dualLayout.viewer.width, height: dualLayout.viewer.height,
               right: 'auto', bottom: 'auto',
+              // Above the pane, because the results drawer lives in this
+              // stacking context and is placed over the pane (index.css).
+              zIndex: 22,
             } : undefined}
           >
             {effectiveChrome.showToolbar && (
