@@ -95,8 +95,8 @@ Fold*) is the next check.
 
 ## Known limits / next steps
 
-- Modals and toasts still centre on the full viewport, so on a side-by-side
-  device they can straddle the hinge. Next: centre them on the viewer segment.
+- Dialogs, sheets and toasts stay on the viewer's segment. Overlays that do not use
+  the shared `m-sheet` hooks (context menu, some full-screen tools) are not confined yet.
 - The validation panel docks under the viewer, which halves a portrait segment;
   it could move into the pane as a fourth view.
 - Model comparison on two screens (scenario D) needs a second renderer or a

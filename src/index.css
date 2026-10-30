@@ -663,3 +663,53 @@ kbd {
 .tb-icons button:not([role='menu'] button) > span:not(.absolute) {
   font-size: 0;
 }
+
+/* Overlays in a split (docs/DUAL_SCREEN.md). Everything below portals to <body>
+   and would otherwise centre on the whole viewport, straddling the hinge; here
+   it is confined to the viewer's segment. --dual-* are published by App.
+   `!important` for the same reason as the sheet rules above: these override
+   them, and the dialogs' own Tailwind classes, at any width. */
+html[data-dual] .m-sheet-host {
+  inset: auto !important;
+  left: var(--dual-x) !important;
+  top: var(--dual-y) !important;
+  width: var(--dual-w) !important;
+  height: var(--dual-h) !important;
+}
+html[data-dual] .m-sheet {
+  max-width: calc(var(--dual-w) - 24px) !important;
+  max-height: calc(var(--dual-h) - 24px) !important;
+}
+/* Inside a host, the host already centres the card. */
+html[data-dual] .m-sheet-host .m-sheet {
+  position: relative !important;
+  inset: auto !important;
+}
+/* A card that positions itself (Modal). */
+html[data-dual] .m-sheet:not(.m-sheet-host *) {
+  position: fixed !important;
+  inset: auto !important;
+  left: calc(var(--dual-x) + var(--dual-w) / 2) !important;
+  top: calc(var(--dual-y) + var(--dual-h) / 2) !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 16px !important;
+}
+html[data-dual] .m-sheet.m-sheet-full {
+  width: var(--dual-w) !important;
+  height: var(--dual-h) !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+html[data-dual] .dual-sheet {
+  left: var(--dual-x) !important;
+  right: auto !important;
+  width: var(--dual-w) !important;
+  bottom: calc(100dvh - var(--dual-y) - var(--dual-h)) !important;
+}
+html[data-dual] .dual-toasts {
+  left: calc(var(--dual-x) + 12px) !important;
+  right: auto !important;
+  width: calc(var(--dual-w) - 24px) !important;
+  top: calc(var(--dual-y) + 52px) !important;
+  bottom: auto !important;
+}
