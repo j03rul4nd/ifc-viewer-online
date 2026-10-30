@@ -1,3 +1,5 @@
+import { guessMapping, queryLocs } from './devices'
+import type { CatalogEntry } from './devices'
 import { describe, it, expect } from 'vitest'
 import {
   bindingState, buildCatalog, buildGuidIndex, deviceKey, evaluateTwinAlerts, metricOf, parseReadings, planPaint, queryMatches,
@@ -244,5 +246,36 @@ describe('assembly parts', () => {
     expect(posts.map((p) => p.expressId)).toEqual([51, 52])
     expect(posts[0].storey).toBe('Street level')
     expect(buildGuidIndex(station).get('LOCK-01')).toEqual([{ modelId: 'hub', expressId: 53 }])
+  })
+})
+
+describe('query cache and mapping guess', () => {
+  const entry = (expressId: number, ifcClass: string): CatalogEntry => ({ modelId: 'm', expressId, globalId: `g${expressId}`, ifcClass, name: `n${expressId}`, storey: 'L1' })
+  const q = { classes: ['IfcDoor'], storey: '', nameContains: '' }
+
+  it('answers per catalog: a new catalog is searched again', () => {
+    const a = [entry(1, 'IfcDoor'), entry(2, 'IfcWall')]
+    expect(queryLocs(q, a)).toBe(queryLocs({ ...q }, a))
+    expect(queryLocs(q, a).map((l) => l.expressId)).toEqual([1])
+    expect(queryLocs(q, [entry(3, 'IfcDoor'), entry(4, 'IfcDoor')]).map((l) => l.expressId)).toEqual([3, 4])
+  })
+
+  it('resolveLocs does not write into the cached answer', () => {
+    const cat = [entry(1, 'IfcDoor')]
+    const b = { targets: [], query: q } as unknown as Binding
+    resolveLocs(b, new Map(), cat).push({ modelId: 'x', expressId: 9 })
+    expect(queryLocs(q, cat)).toHaveLength(1)
+  })
+
+  it('finds the largest list, a unique id and a time', () => {
+    const body = { meta: { tags: [{ a: 1 }] }, data: { devices: [
+      { id: 'a', name: 'same', ts: '2026-01-01T00:00:00Z' }, { id: 'b', name: 'same', ts: '2026-01-01T00:00:01Z' },
+    ] } }
+    expect(guessMapping(body)).toEqual({ listPath: 'data.devices', idField: 'id', timeField: 'ts', devices: 2 })
+  })
+
+  it('skips an id field that repeats, and says nothing about a non-list', () => {
+    expect(guessMapping([{ id: 'a', name: 'x' }, { id: 'a', name: 'y' }])?.idField).toBe('name')
+    expect(guessMapping({ temp: 21 })).toBeNull()
   })
 })

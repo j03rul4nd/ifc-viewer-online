@@ -14,7 +14,7 @@ import { httpFreshness, plannedDelayMs, type Freshness } from '../layers/feeds'
 import { nextDelayMs } from '../layers/live-feed'
 import { getLayersProxy } from '../layers/vector-runner'
 import {
-  buildCatalog, buildGuidIndex, resolveLocs, evaluateTwinAlerts, parseReadings, planPaint, readingsToStored, storedToReadings,
+  resolveLocs, evaluateTwinAlerts, parseReadings, planPaint, readingsToStored, storedToReadings,
   deviceKey, type CatalogEntry, type DeviceSource, type ElementLoc, type Reading, type StoredReading,
 } from './devices'
 import { indexedDbBackend, prune, type HistoryBackend } from '../layers/history-store'
@@ -25,6 +25,7 @@ import { getNotifySettings, notifyAlert } from '../layers/alert-notify'
 import { toast } from '../../stores/toastStore'
 import i18n from '../../i18n/config'
 import { SIM_PRESETS } from './device-sim'
+import { twinElements } from './element-index'
 import { decodeGtfsRt } from '../layers/gtfs-rt-pb'
 import { isBsWfs, parseBsWfs } from '../layers/bswfs'
 import { connectMqtt, messageBody } from './mqtt-ws'
@@ -36,11 +37,15 @@ export const isStreamUrl = (url: string): boolean => /^wss?:\/\//i.test(url)
 
 type FetchResult = { ok: true; body: unknown; freshness: Freshness | null } | { ok: false; errorKey: string }
 
-export async function fetchDeviceSource(src: DeviceSource, signal?: AbortSignal): Promise<FetchResult> {
+export async function fetchDeviceSource(
+  src: DeviceSource, signal?: AbortSignal,
+  /** The form's header while testing a source, before it is saved. */
+  secretHeaders?: Record<string, string>,
+): Promise<FetchResult> {
   const sim = SIM_PRESETS[src.url]
   if (sim) return { ok: true, body: sim(Date.now()), freshness: null }
   if (!/^https?:\/\//i.test(src.url)) return { ok: false, errorKey: 'error.url' }
-  const headers: Record<string, string> = { Accept: 'application/json, application/x-protobuf;q=0.9, */*;q=0.5', ...(loadSecrets()[src.id] ?? {}) }
+  const headers: Record<string, string> = { Accept: 'application/json, application/x-protobuf;q=0.9, */*;q=0.5', ...(secretHeaders ?? loadSecrets()[src.id] ?? {}) }
   const attempt = async (target: string): Promise<FetchResult> => {
     const res = await fetch(target, { signal, headers })
     if (!res.ok) return { ok: false, errorKey: 'error.http' }
@@ -80,6 +85,10 @@ export function deviceBody(bytes: Uint8Array): unknown {
 }
 
 let started = false
+let focusRunner: ((bindingId: string) => void) | null = null
+
+/** Frame and select a binding's elements in the model (panel, alert toast). */
+export function focusTwinBinding(bindingId: string): void { focusRunner?.(bindingId) }
 
 /** Idempotent. Returns a stop function (tests / HMR). */
 export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
@@ -103,7 +112,7 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     if (!frame) return
     await backend.put(series(sourceId), frame)
     if (writes % 20 === 0) await prune(backend, series(sourceId), t - hours * 3_600_000)
-    void refreshSpan()
+    scheduleSpan()
   }
 
   const refreshSpan = async (): Promise<void> => {
@@ -114,7 +123,18 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
       if (st.from !== null) from = Math.min(from, st.from)
       if (st.to !== null) to = Math.max(to, st.to)
     }
-    store.getState().setHistorySpan(Number.isFinite(from) && to > from ? { from, to } : null)
+    const span = Number.isFinite(from) && to > from ? { from, to } : null
+    const was = store.getState().historySpan
+    if (span?.from !== was?.from || span?.to !== was?.to) store.getState().setHistorySpan(span)
+  }
+
+  // stats() reads and unpacks every frame of every source, and a slider's end
+  // does not need to move more often than a person can see it.
+  const SPAN_REFRESH_MS = 5000
+  let spanTimer: ReturnType<typeof setTimeout> | null = null
+  const scheduleSpan = (): void => {
+    if (spanTimer) return
+    spanTimer = setTimeout(() => { spanTimer = null; void refreshSpan() }, SPAN_REFRESH_MS)
   }
 
   /** Should polling go on in a hidden tab? Only when the user asked to be told about alerts. */
@@ -133,27 +153,18 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
   }
 
   /**
-   * WebSocket sources (ws:// / wss://): every message is a JSON body read with
-   * the source's mapping, often a single device. Reconnects with backoff.
-   * Browsers cannot set headers on a WebSocket: keys go in the URL if the
-   * server takes them there.
+   * A stream can send dozens of messages a second (HSL: one per vehicle per
+   * second), so messages are read in batches: once a second, each device keeps
+   * its newest reading, the store changes once and history records once.
    */
-  /**
-   * MQTT over WebSocket (a source with `topics`). A broker can send dozens of
-   * messages a second (HSL: one per vehicle per second), so they are read in
-   * batches: once a second, each device keeps its newest reading, the store
-   * changes once and history records once. A message without the device id
-   * (a bus between stops has no `stop`) is not a device.
-   */
-  const connectMqttSource = (id: string, src: DeviceSource, p: Poller): void => {
+  const streamBatcher = (src: DeviceSource, opts: { requireId?: boolean }) => {
     const pending: unknown[] = []
-    let flushTimer: ReturnType<typeof setInterval> | null = null
     const flush = (): void => {
       if (pending.length === 0) return
       const now = Date.now()
       const newest = new Map<string, Reading>()
       for (const body of pending.splice(0)) {
-        for (const r of parseReadings(body, src, now, { requireId: true })) {
+        for (const r of parseReadings(body, src, now, opts)) {
           const prev = newest.get(r.deviceId)
           if (!prev || r.at >= prev.at) newest.set(r.deviceId, r)
         }
@@ -163,14 +174,27 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
       const all = [...store.getState().readings.values()].filter((x) => x.sourceId === src.id)
       void record(src.id, all, now)
     }
+    const timer = setInterval(flush, 1000)
+    return {
+      push: (body: unknown): void => { if (pending.length < 5000) pending.push(body) },
+      stop: (): void => { clearInterval(timer); flush() },
+    }
+  }
+
+  /**
+   * MQTT over WebSocket (a source with `topics`). A message without the device
+   * id (a bus between stops has no `stop`) is not a device.
+   */
+  const connectMqttSource = (id: string, src: DeviceSource, p: Poller): void => {
+    const batch = streamBatcher(src, { requireId: true })
     let client: { close(): void }
     try {
       client = connectMqtt(src.url, {
         topics: src.topics ?? [],
         onOpen: () => { p.failures = 0 },
-        onMessage: (topic, payload) => { if (pending.length < 5000) pending.push(messageBody(topic, payload)) },
+        onMessage: (topic, payload) => { batch.push(messageBody(topic, payload)) },
         onClose: () => {
-          if (flushTimer) clearInterval(flushTimer)
+          batch.stop()
           if (pollers.get(id) !== p || p.ws !== handle) return
           p.ws = null
           p.failures++
@@ -178,12 +202,17 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
           p.timer = setTimeout(() => connect(id), nextDelayMs(Math.min(src.intervalS, 5), p.failures))
         },
       })
-    } catch { store.getState().setError(id, 'error.url'); return }
-    flushTimer = setInterval(flush, 1000)
-    const handle = { close: () => { if (flushTimer) clearInterval(flushTimer); flush(); client.close() } }
+    } catch { batch.stop(); store.getState().setError(id, 'error.url'); return }
+    const handle = { close: () => { batch.stop(); client.close() } }
     p.ws = handle
   }
 
+  /**
+   * WebSocket sources (ws:// / wss://): every message is a JSON body read with
+   * the source's mapping, often a single device. Reconnects with backoff.
+   * Browsers cannot set headers on a WebSocket: keys go in the URL if the
+   * server takes them there.
+   */
   const connect = (id: string): void => {
     const p = pollers.get(id)
     const src = store.getState().sources.find((s) => s.id === id)
@@ -192,14 +221,16 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     let ws: WebSocket
     try { ws = new WebSocket(src.url) } catch { store.getState().setError(id, 'error.url'); return }
     p.ws = ws
+    const batch = streamBatcher(src, {})
     ws.onopen = () => { p.failures = 0 }
     ws.onmessage = (ev) => {
       if (typeof ev.data !== 'string') return
       let body: unknown
       try { body = JSON.parse(ev.data) } catch { store.getState().setError(id, 'error.json'); return }
-      accept(src, body, Date.now())
+      batch.push(body)
     }
     ws.onclose = () => {
+      batch.stop()
       if (pollers.get(id) !== p || p.ws !== ws) return
       p.ws = null
       p.failures++
@@ -262,7 +293,17 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
   // ── Time travel ─────────────────────────────────────────────────────────────
   const framesCache = new Map<string, { at: number; frames: Frame[] }>()
   let travelSeq = 0
+  // A slider sends far more instants than a rebuild can answer: while one runs,
+  // only the latest request waits, so the picture catches up instead of queueing.
+  let travelling = false
+  let travelNext: number | null = null
   const travel = async (t: number): Promise<void> => {
+    if (travelling) { travelNext = t; return }
+    travelling = true
+    try { await travelTo(t) } finally { travelling = false }
+    if (travelNext !== null) { const next = travelNext; travelNext = null; void travel(next) }
+  }
+  const travelTo = async (t: number): Promise<void> => {
     const seq = ++travelSeq
     const past = new Map<string, Reading>()
     for (const src of store.getState().sources) {
@@ -317,7 +358,7 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
   let treesRef: unknown = null
   const syncIndex = (): void => {
     const trees = useValidationStore.getState().spatialTrees
-    if (trees !== treesRef) { treesRef = trees; guidIndex = buildGuidIndex(trees); catalog = buildCatalog(trees) }
+    if (trees !== treesRef) { treesRef = trees; ({ guidIndex, catalog } = twinElements(trees)) }
   }
 
   const focusBinding = (bindingId: string): void => {
@@ -333,6 +374,7 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
     viewer.selectElement(first.expressId, first.modelId)
   }
   const resolveLocsFor = (b: import('./devices').Binding): ElementLoc[] => resolveLocs(b, guidIndex, catalog)
+  focusRunner = focusBinding
 
   // Coalesced with a timer, not rAF: rAF is frozen in a hidden tab, and the
   // twin must be current the moment the user looks again.
@@ -369,6 +411,8 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
   return () => {
     unsubStore(); unsubTrees(); clearInterval(clock)
     if (pending) clearTimeout(pending)
+    if (spanTimer) clearTimeout(spanTimer)
+    focusRunner = null
     for (const id of [...pollers.keys()]) stopPoller(id)
     started = false
   }

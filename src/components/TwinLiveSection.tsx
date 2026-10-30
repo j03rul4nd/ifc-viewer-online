@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next'
 import { useEffect, useMemo, useState } from 'react'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
 import { useValidationStore } from '../stores/validationStore'
-import { bindingState, buildCatalog, readingsForElement, type Reading } from '../lib/twin/devices'
+import { bindingState, readingsForElement, type Reading } from '../lib/twin/devices'
+import { twinElements } from '../lib/twin/element-index'
 import { localizeBindings } from '../lib/twin/localize'
 import { metricSeries, thinSeries, type SeriesPoint } from '../lib/twin/series'
 import type { Frame } from '../lib/layers/history-codec'
@@ -32,8 +33,9 @@ export function TwinLiveSection({ globalId: given, modelId, expressId }: {
   const trees = useValidationStore((s) => s.spatialTrees)
   const entry = useMemo(() => {
     if (bindings.length === 0) return undefined
-    const all = modelId ? buildCatalog({ [modelId]: trees[modelId] ?? [] }) : buildCatalog(trees)
-    return all.find((e) => (given ? e.globalId === given : e.expressId === expressId))
+    const { catalog, byLoc } = twinElements(trees)
+    if (modelId && expressId != null) { const hit = byLoc.get(`${modelId}#${expressId}`); if (hit) return hit }
+    return catalog.find((e) => (!modelId || e.modelId === modelId) && (given ? e.globalId === given : e.expressId === expressId))
   }, [bindings.length, trees, modelId, expressId, given])
   const globalId = given || entry?.globalId
   if (!globalId) return null
@@ -71,13 +73,23 @@ function ReadingTable({ reading, until }: { reading: Reading; until: number }) {
   const { t } = useTranslation('layers', { keyPrefix: 'devices' })
   const frames = useSourceFrames(reading.sourceId, reading.at)
   const rows = reading.props.filter((p) => !p.joined && !(typeof p.value === 'string' && p.value.startsWith('data:'))).slice(0, 12)
+  // Each series walks every recorded frame: once per reading, not once per render.
+  const seriesKey = rows.map((p) => p.path).join('|')
+  const seriesByPath = useMemo(() => {
+    const out = new Map<string, SeriesPoint[]>()
+    if (!frames) return out
+    for (const p of rows) {
+      if (typeof p.value !== 'number') continue
+      out.set(p.path, thinSeries(metricSeries(frames, reading.deviceId, p.path, until - SPARK_WINDOW_MS).filter(([at]) => at <= until)))
+    }
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frames, reading.deviceId, reading.at, seriesKey, Math.floor(until / 60_000)])
   return (
               <table className="w-full text-[10px] max-md:text-[12.5px] max-md:leading-relaxed">
                 <tbody>
                   {rows.map((p) => {
-                    const series = frames && typeof p.value === 'number'
-                      ? thinSeries(metricSeries(frames, reading.deviceId, p.path, until - SPARK_WINDOW_MS).filter(([at]) => at <= until))
-                      : null
+                    const series = seriesByPath.get(p.path)
                     return (
                     <tr key={p.path}>
                       <td className="pr-2 text-[var(--text-faint)] truncate max-w-[110px]">{p.path}</td>
