@@ -64,7 +64,11 @@ function load(): Persisted {
  * to the link, and the visitor's own saved twin must survive it untouched
  * (the same rule `?layers=` follows for data layers).
  */
-export function setTwinPersistence(enabled: boolean): void { persistEnabled = enabled }
+export function setTwinPersistence(enabled: boolean): void {
+  // What was edited under the old rule is saved under the old rule.
+  flushTwinPersistence()
+  persistEnabled = enabled
+}
 
 function save(allSources: DeviceSource[], allBindings: Binding[]): void {
   if (!persistEnabled) return
@@ -74,6 +78,28 @@ function save(allSources: DeviceSource[], allBindings: Binding[]): void {
     else localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, sources, bindings }))
   } catch { /* quota / private mode */ }
 }
+
+// localStorage is synchronous and the document is the whole twin, so writing it
+// on every keystroke of a rule name stalls the typing. Edits land in the store
+// at once; the disk follows after a pause in them, and before the page goes.
+const SAVE_DELAY_MS = 400
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleSave(): void {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(flushTwinPersistence, SAVE_DELAY_MS)
+}
+
+/** Write any pending edit now. */
+export function flushTwinPersistence(): void {
+  if (!saveTimer) return
+  clearTimeout(saveTimer)
+  saveTimer = null
+  const s = useTwinDeviceStore.getState()
+  save(s.sources, s.bindings)
+}
+
+if (typeof window !== 'undefined') window.addEventListener('pagehide', flushTwinPersistence)
 
 export function loadSecrets(): Record<string, Record<string, string>> {
   try { return JSON.parse(localStorage.getItem(SECRETS_KEY) ?? '{}') ?? {} } catch { return {} }
@@ -113,6 +139,8 @@ interface TwinDeviceState {
   upsertSource: (s: DeviceSource) => void
   removeSource: (id: string) => void
   upsertBinding: (b: Binding) => void
+  /** Many at once: one store change and one repaint, however long the list. */
+  addBindings: (list: Binding[]) => void
   removeBinding: (id: string) => void
   moveBinding: (id: string, dir: -1 | 1) => void
   replaceAll: (sources: DeviceSource[], bindings: Binding[]) => void
@@ -132,7 +160,7 @@ const initialRetention = (() => { try { const v = Number(localStorage.getItem(RE
 const initial = load()
 
 export const useTwinDeviceStore = create<TwinDeviceState>()(devtools((set, get) => {
-  const persist = (): void => { const s = get(); save(s.sources, s.bindings) }
+  const persist = scheduleSave
   return {
     panelOpen: false,
     active: true,
@@ -186,6 +214,11 @@ export const useTwinDeviceStore = create<TwinDeviceState>()(devtools((set, get) 
         const bindings = i < 0 ? [...s.bindings, b] : s.bindings.map((x) => (x.id === b.id ? b : x))
         return { bindings, version: s.version + 1 }
       })
+      persist()
+    },
+    addBindings: (list) => {
+      if (list.length === 0) return
+      set((s) => ({ bindings: [...s.bindings, ...list], version: s.version + 1 }))
       persist()
     },
     removeBinding: (id) => {

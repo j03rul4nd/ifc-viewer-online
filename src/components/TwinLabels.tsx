@@ -8,7 +8,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
 import { useValidationStore } from '../stores/validationStore'
-import { bindingState, buildCatalog, buildGuidIndex, deviceKey, metricOf, resolveLocs, type Binding, type Reading } from '../lib/twin/devices'
+import { bindingState, deviceKey, metricOf, resolveLocs, type Binding, type Reading } from '../lib/twin/devices'
+import { twinElements } from '../lib/twin/element-index'
 import type { ViewerAPI } from '../lib/viewer'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { declutter, paintTwinLabels, type TwinLabelPaint } from '../lib/twin/label-paint'
@@ -48,8 +49,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
     let cancelled = false
     const viewer = viewerApiRef.current
     if (!viewer || !active || labelled.length === 0) { setAnchors([]); return }
-    const guidIndex = buildGuidIndex(trees)
-    const catalog = buildCatalog(trees)
+    const { guidIndex, catalog } = twinElements(trees)
     void (async () => {
       const out: Anchor[] = []
       for (const b of labelled) {

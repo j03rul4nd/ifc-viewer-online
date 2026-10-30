@@ -64,28 +64,48 @@ function deviceValue(r: Reading, field: string): string {
   return p ? p.display : ''
 }
 
-/** Pair devices with elements. Pure; the panel previews it before creating anything. */
-export function planBulkBind(readings: Reading[], catalog: CatalogEntry[], o: BulkMatchOptions): BulkPlan {
+interface Candidate { ref: ElementRef; tokens: string[]; guid: string }
+interface BulkIndex { byExact: Map<string, ElementRef[]>; byToken: Map<string, Candidate[]> }
+
+const indexCache = new WeakMap<CatalogEntry[], Map<string, BulkIndex>>()
+
+/** The catalog ready to match against, remembered per catalog and per set of options. */
+function bulkIndex(catalog: CatalogEntry[], o: BulkMatchOptions): BulkIndex {
+  let perOptions = indexCache.get(catalog)
+  if (!perOptions) indexCache.set(catalog, perOptions = new Map())
+  const key = JSON.stringify([o.elementKey, o.mode, o.classes])
+  const hit = perOptions.get(key)
+  if (hit) return hit
   // One candidate per GlobalId: a binding by GlobalId already reaches every model that has it.
   const seen = new Set<string>()
-  const candidates: Array<{ ref: ElementRef; tokens: string[]; guid: string }> = []
+  const byToken = new Map<string, Candidate[]>()
+  const byExact = new Map<string, ElementRef[]>()
   for (const e of catalog) {
     if (!e.globalId || seen.has(e.globalId)) continue
     if (o.classes.length && !o.classes.some((c) => classMatches(c, e.ifcClass))) continue
     seen.add(e.globalId)
     const raw = o.elementKey === 'name' ? e.name : e.globalId
     if (!raw) continue
-    candidates.push({ ref: { globalId: e.globalId, label: e.name || e.ifcClass }, tokens: matchTokens(raw), guid: e.globalId })
-  }
-  const byExact = new Map<string, ElementRef[]>()
-  if (o.mode === 'equals') {
-    for (const c of candidates) {
+    const c: Candidate = { ref: { globalId: e.globalId, label: e.name || e.ifcClass }, tokens: matchTokens(raw), guid: e.globalId }
+    if (o.mode === 'equals') {
       const k = o.elementKey === 'globalId' ? c.guid : c.tokens.join(' ')
       const list = byExact.get(k)
       if (list) list.push(c.ref); else byExact.set(k, [c.ref])
+    } else {
+      for (const tok of new Set(c.tokens)) {
+        const list = byToken.get(tok)
+        if (list) list.push(c); else byToken.set(tok, [c])
+      }
     }
   }
+  const index = { byExact, byToken }
+  perOptions.set(key, index)
+  return index
+}
 
+/** Pair devices with elements. Pure; the panel previews it before creating anything. */
+export function planBulkBind(readings: Reading[], catalog: CatalogEntry[], o: BulkMatchOptions): BulkPlan {
+  const { byExact, byToken } = bulkIndex(catalog, o)
   const plan: BulkPlan = { matched: [], unmatched: [], elements: 0 }
   const reached = new Set<string>()
   for (const r of readings) {
@@ -94,7 +114,17 @@ export function planBulkBind(readings: Reading[], catalog: CatalogEntry[], o: Bu
     let targets: ElementRef[] = []
     if (tokens.length) {
       if (o.mode === 'equals') targets = byExact.get(o.elementKey === 'globalId' ? value.trim() : tokens.join(' ')) ?? []
-      else targets = candidates.filter((c) => containsRun(c.tokens, tokens)).map((c) => c.ref)
+      else {
+        // Only elements holding the device's RAREST token can contain the whole
+        // run: comparing every device with every element took 6.6 s for 1 000
+        // devices and 200 k elements, on each new reading.
+        let pool: Candidate[] = []
+        for (let i = 0; i < tokens.length; i++) {
+          const list = byToken.get(tokens[i]) ?? []
+          if (i === 0 || list.length < pool.length) pool = list
+        }
+        targets = pool.filter((c) => containsRun(c.tokens, tokens)).map((c) => c.ref)
+      }
     }
     if (targets.length === 0) { plan.unmatched.push({ deviceId: r.deviceId, value }); continue }
     targets.forEach((t) => reached.add(t.globalId))
