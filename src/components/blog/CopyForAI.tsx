@@ -149,6 +149,8 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       return block.why ? `> 🛠 ${block.why}\n` : ''
     case 'bars':
       return [block.title ? `**${block.title}**` : '', ...block.items.map((i) => `- ${i.label}: ${i.value}${block.unit ?? ''}${i.note ? ` (${i.note})` : ''}`), ''].join('\n')
+    case 'foldable-check':
+      return [block.title ? `**${block.title}**` : '', ...Object.values(block.labels.verdicts).map((v) => `- ${v}`), ''].join('\n')
     case 'flood-hazard':
       return [
         block.title ? `**${block.title}**` : '',

@@ -19,6 +19,7 @@ import EmbedConfigurator from './blog/EmbedConfigurator'
 import SpatialMediaDemo from './blog/SpatialMediaDemo'
 import ToolDemo from './blog/ToolDemo'
 import FloodHazard from './blog/FloodHazard'
+import FoldableCheck from './blog/FoldableCheck'
 import SmartTable from './blog/SmartTable'
 import { editorialCopy } from '../lib/blog-editorial-copy'
 import { HERO_SIZES, heroSources } from '../lib/blog-hero'
@@ -356,6 +357,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'bars':
       return <Bars title={block.title} unit={block.unit} max={block.max} caption={block.caption} items={block.items} lang={lang} />
+
+    case 'foldable-check':
+      return <FoldableCheck title={block.title} caption={block.caption} labels={block.labels} lang={lang} />
 
     case 'flood-hazard':
       return <FloodHazard title={block.title} caption={block.caption} depth={block.depth} velocity={block.velocity} labels={block.labels} lang={lang} />
@@ -957,7 +961,7 @@ function cardBadges(post: BlogPost, read: Set<string>, copy: BlogHubCopy): Array
 }
 
 function hasDemo(post: BlogPost): boolean {
-  return post.content.some((b) => b.type === 'spatial-demo' || b.type === 'tool-demo' || b.type === 'ifc-demo' || b.type === 'embed-configurator')
+  return post.content.some((b) => b.type === 'spatial-demo' || b.type === 'tool-demo' || b.type === 'ifc-demo' || b.type === 'embed-configurator' || b.type === 'foldable-check')
 }
 
 function Badge({ label, tone }: { label: string; tone: 'accent' | 'ok' | 'demo' }) {

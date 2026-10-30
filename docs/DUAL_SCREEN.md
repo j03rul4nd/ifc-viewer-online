@@ -55,6 +55,11 @@ plus *swap screens* and *use one screen*. When a split is possible but off, a
 segments (tablets, iPad, foldables lying flat) the user may choose
 *View → Split screen*. It is never turned on automatically.
 
+**Link.** `?split=1` asks for the split for that visit; the screen still decides. The
+article `foldable-phone-ifc-viewer` links to it, with a live check (`FoldableCheck`).
+Funnel: `blog_tool_clicked` (`foldable-open`) → `dual_screen_active` (source, posture),
+plus `foldable_report` (the reader's answer, never a device name).
+
 ## Single source of truth
 
 - The `Viewer` element is never moved in the React tree: the split only changes

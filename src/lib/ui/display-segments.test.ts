@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readSegments, resolveDualLayout, canOfferSplit, segmentAt, type ResolveInput } from './display-segments'
+import { readSegments, resolveDualLayout, canOfferSplit, segmentAt, foldableVerdict, type ResolveInput } from './display-segments'
 
 // Surface Duo spanned, book posture: two 540px panes and a 34px hinge.
 const DUO = [
@@ -82,6 +82,15 @@ describe('resolveDualLayout', () => {
   it('does not split a phone or a mouse-driven desktop on request', () => {
     expect(resolveDualLayout({ ...base, pref: 'split' })).toBeNull()
     expect(resolveDualLayout({ ...base, pref: 'split', viewportWidth: 1400, viewportHeight: 900, coarsePointer: false })).toBeNull()
+  })
+})
+
+describe('foldableVerdict', () => {
+  it('follows what the browser reports, not a device', () => {
+    expect(foldableVerdict({ segments: DUO, viewportWidth: 1114, coarsePointer: true })).toBe('two-screens')
+    expect(foldableVerdict({ segments: [], viewportWidth: 884, coarsePointer: true })).toBe('manual')
+    expect(foldableVerdict({ segments: [], viewportWidth: 412, coarsePointer: true })).toBe('phone')
+    expect(foldableVerdict({ segments: [], viewportWidth: 1440, coarsePointer: false })).toBe('desktop')
   })
 })
 

@@ -167,7 +167,7 @@ function MiniSheet({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 18, opacity: 0, scale: 0.96 }}
             transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.7 }}
-            className="fixed left-3 right-3 z-[22] overflow-hidden rounded-[28px] mobile-sheet-glass"
+            className="dual-nav-sheet fixed left-3 right-3 z-[22] overflow-hidden rounded-[28px] mobile-sheet-glass"
             style={{
               bottom: `calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 10px)`,
             }}
@@ -471,7 +471,7 @@ export default function MobileBottomNav({
 
       {/* ── Floating pill nav bar ─────────────────────────────────────────────── */}
       <div
-        className="fixed left-3 right-3 z-[20] flex md:hidden mobile-pill-glass"
+        className="dual-nav fixed left-3 right-3 z-[20] flex md:hidden mobile-pill-glass"
         style={{
           bottom: `calc(var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px))`,
           height: 'var(--mobile-nav-h)',
