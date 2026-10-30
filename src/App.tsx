@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
@@ -1996,6 +1996,19 @@ export default function App() {
   useEffect(() => {
     setDualStatus({ active: !!dualLayout, canSplit: dualAllowed && dualState.canSplit, hardware: dualState.hardware })
   }, [dualLayout, dualAllowed, dualState.canSplit, dualState.hardware, setDualStatus])
+  // Dialogs, sheets and toasts portal to <body>, outside the viewer's box. They
+  // read its segment from here (index.css, "Overlays in a split") and stay off
+  // the hinge, without each one having to know the layout exists.
+  const dualViewerRect = dualLayout?.viewer ?? null
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (!dualViewerRect) { root.removeAttribute('data-dual'); return }
+    root.setAttribute('data-dual', '')
+    root.style.setProperty('--dual-x', `${dualViewerRect.x}px`)
+    root.style.setProperty('--dual-y', `${dualViewerRect.y}px`)
+    root.style.setProperty('--dual-w', `${dualViewerRect.width}px`)
+    root.style.setProperty('--dual-h', `${dualViewerRect.height}px`)
+  }, [dualViewerRect?.x, dualViewerRect?.y, dualViewerRect?.width, dualViewerRect?.height]) // eslint-disable-line react-hooks/exhaustive-deps
   const dualActiveRef = useRef(false)
   dualActiveRef.current = !!dualLayout
 

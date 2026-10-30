@@ -286,7 +286,7 @@ export function MobileSheet({
         onPointerMoveCapture={onRootPointerMove}
         onPointerUp={clearArm}
         onPointerCancel={clearArm}
-        className="fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y outline-none"
+        className="dual-sheet fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y outline-none"
       >
         {/* ── THE VISIBLE BAND ──────────────────────────────────────────────
             The sheet is always `sheetH` tall — the largest detent — and lower
