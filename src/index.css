@@ -728,3 +728,49 @@ html[data-dual] [data-bottom-drawer] {
   padding-right: 0 !important;
   border-top: none;
 }
+/* Over the pane a drawer has its full height already: nothing to drag or maximize. */
+html[data-dual] .dual-hide {
+  display: none !important;
+}
+/* A full-screen tool takes one screen, not both with the hinge through it. */
+html[data-dual] .dual-full {
+  inset: auto !important;
+  left: var(--dual-x) !important;
+  top: var(--dual-y) !important;
+  width: var(--dual-w) !important;
+  height: var(--dual-h) !important;
+}
+/* The studio's breakpoints read the viewport, which still counts both screens:
+   one screen gets its phone layout (preview, timeline, sheet), not three columns. */
+html[data-dual] .studio-body {
+  display: flex !important;
+  flex: 1 1 0;
+}
+html[data-dual] .studio-bin,
+html[data-dual] .studio-side {
+  display: none !important;
+}
+html[data-dual] .studio-sheet {
+  display: flex !important;
+}
+html[data-dual] .studio-stage {
+  flex: 1 1 auto;
+  min-height: 200px;
+}
+/* The cover studio likewise: its phone order, preview first, then the columns. */
+html[data-dual] .cover-body {
+  flex-direction: column !important;
+  overflow-y: auto !important;
+}
+html[data-dual] .cover-body > aside {
+  width: auto !important;
+  overflow: visible !important;
+}
+html[data-dual] .cover-body > main {
+  order: -1 !important;
+  flex: none !important;
+}
+html[data-dual] .cover-stage {
+  flex: none !important;
+  height: calc(var(--dual-h) * 0.5) !important;
+}

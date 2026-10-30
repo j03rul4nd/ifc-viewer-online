@@ -2891,7 +2891,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
           aria-label={maximized ? tc('layout.restorePanel') : tc('layout.maximizePanel')}
           title={maximized ? tc('layout.restorePanel') : tc('layout.maximizePanel')}
           aria-pressed={maximized}
-          className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
+          className="dual-hide w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
         >
           {maximized ? (
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

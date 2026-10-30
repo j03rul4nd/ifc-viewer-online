@@ -127,7 +127,7 @@ export function DrawerResizeGrip({ drawerRef, minPx }: DrawerResizeGripProps) {
       onDoubleClick={() => setRatio(nextDetent(current(), 1, true))}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="h-5 shrink-0 cursor-ns-resize flex items-center justify-center select-none touch-none outline-none focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:-outline-offset-2"
+      className="dual-hide h-5 shrink-0 cursor-ns-resize flex items-center justify-center select-none touch-none outline-none focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:-outline-offset-2"
       style={{
         background: dragging ? 'var(--accent)33' : hovered ? 'var(--accent)1a' : 'var(--surface-2)',
         borderBottom: '1px solid var(--border)',
