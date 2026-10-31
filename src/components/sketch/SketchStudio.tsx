@@ -18,7 +18,8 @@ import { RAIL_CLEARANCE_PX, resolveStudioLayout } from '../../lib/sketch/layout'
 import { add, dot, isEdgeOn, planeFromNormal, planeNormal, presetPlane, scale, sub } from '../../lib/sketch/plane'
 import { DEFAULT_ORBIT, PAPER, SketchRenderer } from '../../lib/sketch/renderer'
 import { OneEuro, resolvePressure, simplifyStroke } from '../../lib/sketch/stroke'
-import { deleteImage, loadDoc, loadImages, readImageFile, saveDoc, saveImage } from '../../lib/sketch/storage'
+import { deleteImage, loadContextModels, loadDoc, loadImages, readImageFile, saveContextModels, saveDoc, saveImage, type ContextModel } from '../../lib/sketch/storage'
+import { SKETCH_CHANNEL, type HandoffMessage } from '../../lib/sketch/handoff'
 import type { BrushKind, OrbitState, ReferenceImage, SketchDoc, SketchPlane, Stroke, Vec3 } from '../../lib/sketch/types'
 import { readSegments, resolveDualLayout } from '../../lib/ui/display-segments'
 import { StudioControls, TopBar, PageStrip, type SketchTool } from './SketchPanels'
@@ -101,6 +102,16 @@ export default function SketchStudio() {
   const [webglFailed, setWebglFailed] = useState(false)
   const [recording, setRecording] = useState(false)
   const [hasContext, setHasContext] = useState(false)
+  // Read once and taken off the URL: a reload must not wait for a viewer long gone.
+  const [handoff] = useState<'none' | 'waiting' | 'ready'>(() => {
+    const q = new URLSearchParams(location.search)
+    return !q.has('from-viewer') ? 'none' : q.has('ready') ? 'ready' : 'waiting'
+  })
+  const [preparing, setPreparing] = useState(handoff === 'waiting')
+  const preparingRef = useRef(preparing)
+  useEffect(() => {
+    if (handoff !== 'none') window.history.replaceState(null, '', location.pathname)
+  }, [handoff])
 
   const doc = history.present
   const page = activePage(doc)
@@ -131,12 +142,18 @@ export default function SketchStudio() {
       setImages(savedImages)
       setLoaded(true)
     })
+    // A viewer tab still preparing the model will announce it on the channel.
+    if (handoff !== 'waiting') {
+      void loadContextModels().then((models) => {
+        if (alive && models.length) void showContextRef.current(models, handoff === 'ready' ? 'announce' : 'quiet')
+      })
+    }
     return () => {
       alive = false
       engine.dispose()
       engineRef.current = null
     }
-  }, [setHistory])
+  }, [handoff, setHistory])
 
   // A fold, a Split View or a rotation arrives here as a new size, nothing more.
   useEffect(() => {
@@ -172,6 +189,7 @@ export default function SketchStudio() {
 
   // ── Saving ─────────────────────────────────────────────────────────────────
   const channelRef = useRef<BroadcastChannel | null>(null)
+  const showContextRef = useRef<(models: ContextModel[], mode: 'announce' | 'quiet') => Promise<boolean>>(async () => false)
 
   const flush = useCallback(async () => {
     const ok = await saveDoc(historyRef.current.present)
@@ -195,20 +213,31 @@ export default function SketchStudio() {
   // A second window of the studio: last save shows here, unless a stroke is under way.
   useEffect(() => {
     if (typeof BroadcastChannel === 'undefined') return
-    const channel = new BroadcastChannel('ifc-sketch')
+    const channel = new BroadcastChannel(SKETCH_CHANNEL)
     channelRef.current = channel
-    channel.onmessage = () => {
+    channel.onmessage = (e: MessageEvent<HandoffMessage | 'saved'>) => {
+      if (e.data !== 'saved') {
+        if (e.data.type === 'context-ask') return
+        // Once is enough: a second window of the studio may have asked as well.
+        if (!preparingRef.current) return
+        preparingRef.current = false
+        setPreparing(false)
+        if (e.data.type === 'context-failed') flash(tx(e.data.reason === 'too-big' ? 'context.tooBig' : 'context.failed'))
+        else void loadContextModels().then((models) => showContextRef.current(models, 'announce'))
+        return
+      }
       if (liveRef.current) return
       void Promise.all([loadDoc(), loadImages()]).then(([savedDoc, savedImages]) => {
         if (savedDoc) setHistory((h) => replacePresent(h, savedDoc))
         setImages(savedImages)
       })
     }
+    if (preparingRef.current) channel.postMessage({ type: 'context-ask' } satisfies HandoffMessage)
     return () => {
       channelRef.current = null
       channel.close()
     }
-  }, [setHistory])
+  }, [flash, setHistory, tx])
 
   // The strip's thumbnail follows the drawing, after it has settled.
   const pageId = page.id
@@ -537,6 +566,39 @@ export default function SketchStudio() {
     setHistory((h) => commit(h, forgetImage(h.present, image.id)))
   }, [setHistory])
 
+  // ── The model under the sketch ─────────────────────────────────────────────
+  const showContext = useCallback(async (models: ContextModel[], mode: 'announce' | 'quiet'): Promise<boolean> => {
+    const engine = engineRef.current
+    if (!engine) return false
+    try {
+      await engine.loadContext(await Promise.all(models.map((m) => m.blob.arrayBuffer())))
+    } catch {
+      flash(tx('context.failed'))
+      return false
+    }
+    setHasContext(models.length > 0)
+    // The camera is not saved: without this a reload lands inside the building.
+    const bounds = engine.bounds()
+    if (bounds) {
+      // Draw where the model is, not at the origin it may be far from.
+      applyOrbit({ ...engine.orbitState, target: bounds.center, distance: bounds.radius * 3.4 })
+      setPlane({ ...planeRef.current, origin: bounds.center })
+      if (mode === 'announce') flash(tx('context.loaded'))
+    }
+    return true
+  }, [applyOrbit, flash, setPlane, tx])
+  showContextRef.current = showContext
+
+  const adoptContext = useCallback(async (models: ContextModel[]) => {
+    if (await showContext(models, 'announce')) setSaveFailed(!(await saveContextModels(models)))
+  }, [showContext])
+
+  const clearContext = useCallback(() => {
+    engineRef.current?.clearContext()
+    setHasContext(false)
+    void saveContextModels([])
+  }, [])
+
   // ── Replay ─────────────────────────────────────────────────────────────────
   const recordReplay = useCallback(async () => {
     const engine = engineRef.current
@@ -705,7 +767,7 @@ export default function SketchStudio() {
             setRailSide(side)
             try { localStorage.setItem(SIDE_KEY, side) } catch { /* private mode */ }
           }}
-          flash={flash} recording={recording} onRecord={recordReplay} hasContext={hasContext} setHasContext={setHasContext}
+          flash={flash} recording={recording} onRecord={recordReplay} hasContext={hasContext} onContextFile={(file) => { void adoptContext([{ name: file.name, blob: file }]) }} onClearContext={clearContext}
           onSaveView={() => {
             const engine = engineRef.current
             if (!engine) return
@@ -724,6 +786,7 @@ export default function SketchStudio() {
             </div>
           )}
           {notice && <div role="status" className="px-3 py-2 rounded-lg text-[12px] border max-w-[90%] text-center" style={{ background: 'var(--sk-panel)', borderColor: 'var(--sk-line)' }}>{notice}</div>}
+          {preparing && <div role="status" className="px-3 py-2 rounded-lg text-[12px] border" style={{ background: 'var(--sk-panel)', borderColor: 'var(--sk-line)' }}>{tx('context.preparing')}</div>}
           {recording && <div role="status" className="px-3 py-2 rounded-lg text-[12px] border" style={{ background: 'var(--sk-panel)', borderColor: 'var(--sk-line)' }}>{tx('export.recording')}</div>}
           {!notice && !edgeOn && !recording && regular && (
             <div className="px-3 h-7 rounded-full flex items-center gap-2 text-[11px]" style={{ background: 'var(--sk-panel)', color: 'var(--sk-dim)' }}>

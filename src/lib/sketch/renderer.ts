@@ -464,19 +464,20 @@ export class SketchRenderer {
     }
   }
 
-  /** A glTF/GLB to sketch over. Replaces the previous one. Returns its size, or null. */
-  async loadContext(buffer: ArrayBuffer): Promise<number | null> {
-    const gltf = await new GLTFLoader().parseAsync(buffer, '')
+  /** The models to sketch over, replacing any before. Parses all before touching the scene. */
+  async loadContext(buffers: ArrayBuffer[]): Promise<void> {
+    const loader = new GLTFLoader()
+    const scenes = await Promise.all(buffers.map(async (b) => (await loader.parseAsync(b, '')).scene))
     this.clearContext()
     const material = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })
-    gltf.scene.traverse((o) => {
-      const mesh = o as THREE.Mesh
-      if (mesh.isMesh) { mesh.material = material; mesh.renderOrder = -1 }
-    })
-    this.contextGroup.add(gltf.scene)
-    const box = new THREE.Box3().setFromObject(gltf.scene)
+    for (const scene of scenes) {
+      scene.traverse((o) => {
+        const mesh = o as THREE.Mesh
+        if (mesh.isMesh) { mesh.material = material; mesh.renderOrder = -1 }
+      })
+      this.contextGroup.add(scene)
+    }
     this.invalidate()
-    return box.isEmpty() ? null : box.getSize(new THREE.Vector3()).length()
   }
 
   clearContext(): void {

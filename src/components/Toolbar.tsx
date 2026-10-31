@@ -31,6 +31,7 @@ import { useSceneContent } from '../hooks/useSceneContent'
 
 // Account surface (F2) — lazy so @clerk/* stays out of the eager bundle (I-1).
 const AccountModal = React.lazy(() => import('./account/AccountModal'))
+import { openSketchWithModels } from '../lib/sketch/handoff'
 import {
   exportAsIfc, exportAsGlb, downloadBlob,
   getDiffsForModel,
@@ -797,7 +798,19 @@ export default function Toolbar({
               }} />
           )}
           <MenuItem icon={SketchSVG} label={tViewer('dualScreen.sketch')}
-            onClick={() => { window.location.assign('/sketch') }} />
+            onClick={() => {
+              setOpenMenu(null)
+              void openSketchWithModels(sceneModels.map((model) => ({
+                name: model.fileName,
+                read: async () => {
+                  const obj = viewerApiRef.current?.getModelObject(model.id)
+                  if (!obj) throw new Error('Model object not found')
+                  return exportAsGlb(obj, viewerApiRef.current?.getFragmentsModel(model.id))
+                },
+              }))).catch((err: unknown) => {
+                toast(t('exportGlbFailed', { message: err instanceof Error ? err.message : String(err) }), 'error')
+              })
+            }} />
           <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
             badge={sceneModels.length > 0 ? sceneModels.length : undefined}
             onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />

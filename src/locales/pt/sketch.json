@@ -104,7 +104,9 @@
     "load": "Esboçar sobre um modelo (GLB)",
     "clear": "Remover o modelo",
     "failed": "Não foi possível ler esse ficheiro como modelo GLB.",
-    "loaded": "Modelo carregado. Use a ferramenta de plano para desenhar em qualquer face."
+    "loaded": "Modelo carregado. Use a ferramenta de plano para desenhar em qualquer face.",
+    "preparing": "A preparar o seu modelo…",
+    "tooBig": "Esse modelo é demasiado pesado para esboçar por cima neste dispositivo. Pode esboçar sem ele."
   },
   "export": {
     "label": "Exportar",

@@ -104,7 +104,9 @@
     "load": "Schizza su un modello (GLB)",
     "clear": "Rimuovi il modello",
     "failed": "Impossibile leggere il file come modello GLB.",
-    "loaded": "Modello caricato. Usa lo strumento piano per disegnare su una qualsiasi faccia."
+    "loaded": "Modello caricato. Usa lo strumento piano per disegnare su una qualsiasi faccia.",
+    "preparing": "Preparazione del modello…",
+    "tooBig": "Questo modello è troppo pesante per schizzarci sopra su questo dispositivo. Puoi schizzare senza."
   },
   "export": {
     "label": "Esporta",

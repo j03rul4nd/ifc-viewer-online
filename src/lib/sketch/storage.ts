@@ -57,6 +57,28 @@ export async function saveDoc(doc: SketchDoc): Promise<boolean> {
   }
 }
 
+/** The models under the sketch: a page of a sketch is meaningless without them. */
+export interface ContextModel { name: string; blob: Blob }
+
+const CONTEXT = 'context'
+
+export async function loadContextModels(): Promise<ContextModel[]> {
+  try {
+    return (await run<ContextModel[] | undefined>(DOCS, 'readonly', (s) => s.get(CONTEXT))) ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function saveContextModels(models: ContextModel[]): Promise<boolean> {
+  try {
+    await run<unknown>(DOCS, 'readwrite', (s) => (models.length ? s.put(models, CONTEXT) : s.delete(CONTEXT)) as IDBRequest<unknown>)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function loadImages(): Promise<ReferenceImage[]> {
   try {
     return await run<ReferenceImage[]>(IMAGES, 'readonly', (s) => s.getAll() as IDBRequest<ReferenceImage[]>)

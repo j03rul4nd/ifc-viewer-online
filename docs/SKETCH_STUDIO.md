@@ -14,7 +14,7 @@ the browser: IndexedDB, no account, no server.
 | View | Compass (drag to orbit, tap an axis), top/front/right/3D, parallel projection, fit, saved views. Distance fades strokes so a wire sketch reads as 3D. |
 | Organise | Pages with thumbnails, layers (hide, lock), undo and redo. |
 | References | Image board (library, camera, paste, drop) docked or floating. Images can be placed on the plane to trace, with opacity. A live plan and elevation of the sketch. |
-| Context | A GLB can sit under the sketch. The viewer's own GLB export is how an IFC gets here. |
+| Context | *View → 3D sketch* in the viewer sends every open model to the studio in a new tab, which also keeps the viewer open for Split View. A GLB file works too. Models are saved with the sketch, on this device. Faces can set the drawing plane. |
 | Export | PNG, SVG (real paths), sketch file, replay video where MediaRecorder allows. |
 
 ## Input rules (`lib/sketch/gestures.ts`)
@@ -52,5 +52,7 @@ unmeasured. Do not claim them until they are.
 
 - Stored stroke weight is screen-space: it does not scale with zoom.
 - SVG uses each stroke's average weight.
-- The model under the sketch is not saved with it.
+- Handoff stops above 300 MB of GLB. The figure is a guess at what a phone holds, not a measurement.
+- Strokes are 32-bit floats: on a model with UTM coordinates in its vertices they will jitter.
+- The context is one per browser, not per sketch or page.
 - Tilt and Pencil hover are not used.

@@ -104,7 +104,9 @@
     "load": "Sketch over a model (GLB)",
     "clear": "Remove the model",
     "failed": "That file could not be read as a GLB model.",
-    "loaded": "Model loaded. Use the plane tool to draw on any of its faces."
+    "loaded": "Model loaded. Use the plane tool to draw on any of its faces.",
+    "preparing": "Preparing your model…",
+    "tooBig": "That model is too heavy to sketch over on this device. You can still sketch without it."
   },
   "export": {
     "label": "Export",
