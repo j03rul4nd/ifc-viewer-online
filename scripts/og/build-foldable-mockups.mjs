@@ -43,9 +43,24 @@ body{background:linear-gradient(#454a5d 0 52%,#23252f 52%);perspective:1300px}
 .shadow{position:absolute;left:-3%;right:-3%;top:640px;height:70px;background:radial-gradient(closest-side,rgba(0,0,0,.7),transparent)}
 </style><div class="d"><div class="half t"><div class="screen"></div></div><div class="half b"><div class="screen"></div></div><div class="shadow"></div></div>`
 
+// A tall flip-format phone, half-folded.
+const flip = (img) => `<style>${BASE}
+body{background:linear-gradient(#454a5d 0 50%,#23252f 50%);perspective:1000px}
+.d{position:relative;width:300px;height:340px;transform-style:preserve-3d;margin-top:-290px;transform:scale(.84)}
+.half{left:0;width:300px;height:340px}
+.t{top:0;border-radius:26px 26px 4px 4px;transform-origin:center bottom;transform:rotateX(-5deg)}
+.b{top:340px;border-radius:4px 4px 26px 26px;transform-origin:center top;transform:rotateX(42deg)}
+.screen{background-image:url(${img});background-size:286px auto}
+.t .screen{background-position:center top}.b .screen{background-position:center bottom}
+.shadow{position:absolute;left:-6%;right:-6%;top:610px;height:60px;background:radial-gradient(closest-side,rgba(0,0,0,.7),transparent)}
+</style><div class="d"><div class="half t"><div class="screen"></div></div><div class="half b"><div class="screen"></div></div><div class="shadow"></div></div>`
+
 const SHOTS = [
   { name: 'foldable-ifc-viewer-book-posture', width: 1114, height: 720, html: book },
+  { name: 'foldable-ifc-viewer-federated-models', width: 1114, height: 720, html: book },
+  { name: 'foldable-ifc-viewer-validation-second-screen', width: 1114, height: 720, html: book },
   { name: 'foldable-ifc-viewer-tabletop-posture', width: 720, height: 900, html: tabletop },
+  { name: 'foldable-ifc-viewer-flip-format', width: 360, height: 840, html: flip },
 ]
 
 const browser = await chromium.launch({ executablePath: EXE })

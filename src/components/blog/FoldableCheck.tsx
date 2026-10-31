@@ -96,7 +96,7 @@ export default function FoldableCheck({ title, caption, labels, lang = 'en' }: P
   const tone = verdict === 'two-screens' || verdict === 'manual' ? 'var(--ok)' : 'var(--text-dim)'
   // Same-origin, resolved here so the viewer reads a full URL. split=1 asks for
   // the split; where the screen cannot give one the app stays single-screen.
-  const href = `${import.meta.env.BASE_URL}?model=${encodeURIComponent(`${typeof window === 'undefined' ? '' : window.location.origin}${import.meta.env.BASE_URL}Ifc2x3_Duplex_Architecture.ifc`)}&split=1&lang=${lang}`
+  const href = `${import.meta.env.BASE_URL}?model=${encodeURIComponent(`${typeof window === 'undefined' ? '' : window.location.origin}${import.meta.env.BASE_URL}models/hotel-vela/BCN-IVO-ZZ-XX-M3-A-0002.ifc`)}&split=1&lang=${lang}`
 
   const report = (works: boolean) => {
     if (!state) return

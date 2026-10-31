@@ -14,7 +14,7 @@
 //     a fallback; removed from current browsers.
 //   - Device Posture API (`navigator.devicePosture.type`) — 'continuous' or
 //     'folded'. Informational only: it says the device is bent, not where.
-//   - Safari/WebKit implements none of these. No commercial device name is
+//   - Safari 27.1 has both only behind feature flags (checked 2026-10). No commercial device name is
 //     exposed to the web, so there is nothing to detect "an iPhone Duo" by and
 //     we do not try: a device is dual when it REPORTS two segments.
 
