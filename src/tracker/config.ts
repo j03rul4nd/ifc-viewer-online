@@ -53,9 +53,19 @@ export interface TrackerConfig {
   lazy: 'visible' | 'click'
 }
 
+// Concrete neutrals (hue 95) and one verdigris accent, defined in OKLCH. See docs/COLOR_SYSTEM.md.
 export const PALETTES = {
-  dark: { bg: '#0b0f17', ocean: '#10182a', land: '#5b6a86', text: '#e8ebf1', panel: '#121824' },
-  light: { bg: '#f5f6f8', ocean: '#dfe5ee', land: '#98a4b6', text: '#1a2130', panel: '#ffffff' },
+  dark: { bg: '#100f0c', ocean: '#131b1b', land: '#65635c', text: '#ecebe7', panel: '#181714', accent: '#55cac3', ok: '#6fc884', warn: '#f2af48', idle: '#94928d' },
+  light: { bg: '#f4f3f0', ocean: '#d6e1e0', land: '#94928a', text: '#1c1b16', panel: '#fefdfc', accent: '#00696a', ok: '#206b38', warn: '#915c08', idle: '#65635e' },
+}
+
+/** Text that stays readable on any colour a brand picks. */
+export function onColor(c: string): string {
+  const m = c.match(/^#([0-9a-f]{6})/i)
+  if (!m) return '#ffffff'
+  const l = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16) / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)
+  const y = .2126 * l[0] + .7152 * l[1] + .0722 * l[2]
+  return 1.05 / (y + .05) >= (y + .05) / .05 ? '#ffffff' : '#0f0e0b'
 }
 
 export const DEFAULTS: TrackerConfig = {

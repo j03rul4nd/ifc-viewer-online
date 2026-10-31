@@ -21,7 +21,7 @@ const CSS = `
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .hd{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:8px;pointer-events:none;max-width:calc(100% - 24px)}
 .hd img{height:24px;max-width:120px;object-fit:contain}.hd b,.lg span{text-shadow:0 0 3px var(--bg),0 0 3px var(--bg)}.hd b{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sim{padding:2px 8px;border-radius:99px;font-size:11px;background:color-mix(in srgb,#f5a524 18%,var(--pn));color:#f5a524;border:1px solid color-mix(in srgb,#f5a524 40%,transparent);white-space:nowrap}
+.sim{padding:2px 8px;border-radius:99px;font-size:11px;background:color-mix(in srgb,var(--wn) 18%,var(--pn));color:var(--wn);border:1px solid color-mix(in srgb,var(--wn) 40%,transparent);white-space:nowrap}
 .tb{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
 .g{display:flex;flex-direction:column;background:var(--pn);border:1px solid var(--ln);border-radius:8px;overflow:hidden}
 button{all:unset;box-sizing:border-box;cursor:pointer;display:grid;place-items:center;width:32px;height:32px;color:var(--tx);font-size:12px}
@@ -53,7 +53,6 @@ const ICON: Record<string, string> = {
   map: '<path d="M2.5 4.5l3.5-1.5 4 1.5 3.5-1.5v8.5L10 12.500l-4-1.500-3.500 1.500zM6 3v8M10 4.500v8"/>',
 }
 const svg = (n: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICON[n]}</svg>`
-const STATUS_COLOR: Record<Status, string> = { pending: '#8b95a7', transit: '', delayed: '#f5a524', delivered: '#30b56f' }
 
 function hex(c: string): number[] {
   const m = c.match(/^#([0-9a-f]{3,8})$/i)
@@ -102,6 +101,7 @@ const mount: Mount = (host, root, initial) => {
   const g2 = c2.getContext('2d')!
   let gl: GlobeGL | null = null
   let flatDots: LL[] | null = null
+  let STATUS_COLOR: Record<Status, string> = { pending: PALETTES.dark.idle, transit: '', delayed: PALETTES.dark.warn, delivered: PALETTES.dark.ok }
   let colors = { ocean: '', land: '', accent: '', muted: '', bg: '', text: '' }
 
   function applyTheme(): void {
@@ -109,10 +109,11 @@ const mount: Mount = (host, root, initial) => {
     const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
     const dark = th.preset === 'dark' || (th.preset === 'auto' && prefersDark)
     const base = PALETTES[dark ? 'dark' : 'light']
-    const accent = th.accent ?? '#5E6AD2'
-    colors = { ocean: th.ocean ?? base.ocean, land: th.land ?? base.land, accent, muted: dark ? 'rgba(232,235,241,.28)' : 'rgba(26,33,48,.28)', bg: th.background ?? base.bg, text: th.text ?? base.text }
+    const accent = th.accent ?? base.accent
+    STATUS_COLOR = { pending: base.idle, transit: '', delayed: base.warn, delivered: base.ok }
+    colors = { ocean: th.ocean ?? base.ocean, land: th.land ?? base.land, accent, muted: dark ? 'rgba(236,235,231,.28)' : 'rgba(28,27,22,.28)', bg: th.background ?? base.bg, text: th.text ?? base.text }
     // The configured values are fallbacks: --tg-* set in the host's own stylesheet win.
-    $<HTMLStyleElement>('.th').textContent = `:host{--a:var(--tg-accent,${accent});--bg:var(--tg-background,${colors.bg});--tx:var(--tg-text,${colors.text});--pn:var(--tg-panel,${th.panel ?? base.panel});font-family:var(--tg-font,${th.font ?? 'inherit'})}`
+    $<HTMLStyleElement>('.th').textContent = `:host{--wn:${base.warn};--a:var(--tg-accent,${accent});--bg:var(--tg-background,${colors.bg});--tx:var(--tg-text,${colors.text});--pn:var(--tg-panel,${th.panel ?? base.panel});font-family:var(--tg-font,${th.font ?? 'inherit'})}`
     const cs = getComputedStyle(host)
     colors.accent = cs.getPropertyValue('--a').trim() || accent; colors.bg = cs.getPropertyValue('--bg').trim() || colors.bg; colors.text = cs.getPropertyValue('--tx').trim() || colors.text
     host.style.borderRadius = `${th.radius}px`
@@ -210,7 +211,7 @@ const mount: Mount = (host, root, initial) => {
   // On a pale ocean a saturated rim looks like a bruise: tone it towards the ocean.
   function glowColor(): number[] {
     const a = hex(colors.accent), o = hex(colors.ocean), lum = o[0] * .3 + o[1] * .6 + o[2] * .1
-    return lum > .5 ? a.map((v, i) => v * .3 + o[i] * .7) : a
+    return a.map((v, i) => v * .3 + o[i] * .7)
   }
   function drawGlobeRoute(it: Item, sel: boolean): void {
     const m = it.route!, n = m.points.length, split = pointAt(m, it.progress).index
