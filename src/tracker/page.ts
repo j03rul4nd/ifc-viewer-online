@@ -2,7 +2,7 @@
 // What a recipient opens from the email: one shipment under the sender's brand.
 // Static: the shipment comes from the link or the sender's own endpoint, and
 // events go only to the sender's own beacon.
-import { decodeRaw, encodeConfig, normalizeConfig, normalizeShipments, PALETTES, resolveState, safeUrl, type Shipment, type Status, type TrackerConfig } from './config'
+import { decodeRaw, encodeConfig, normalizeConfig, normalizeShipments, PALETTES, onColor, resolveState, safeUrl, type Shipment, type Status, type TrackerConfig } from './config'
 import { pickLang, words } from './i18n'
 import { linkParams, normalizePage, outgoing, shipmentFromLink, type PageConfig } from './page-config'
 import { pageWords } from './page-i18n'
@@ -43,7 +43,7 @@ function applyBrand(): void {
   const dark = th.preset === 'dark' || (th.preset === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)
   const base = PALETTES[dark ? 'dark' : 'light']
   const s = document.documentElement.style
-  s.setProperty('--a', th.accent ?? '#5E6AD2'); s.setProperty('--bg', th.background ?? base.bg); s.setProperty('--tx', th.text ?? base.text); s.setProperty('--pn', th.panel ?? base.panel); s.setProperty('--r', `${th.radius}px`)
+  const accent = th.accent ?? base.accent; s.setProperty('--a', accent); s.setProperty('--on', onColor(accent)); s.setProperty('--wn', base.warn); s.setProperty('--bg', th.background ?? base.bg); s.setProperty('--tx', th.text ?? base.text); s.setProperty('--pn', th.panel ?? base.panel); s.setProperty('--r', `${th.radius}px`)
   if (th.font) s.setProperty('--f', th.font)
   if (page.fontUrl && 'FontFace' in window) {
     void new FontFace('TrackBrand', `url("${encodeURI(page.fontUrl)}")`).load().then(f => { document.fonts.add(f); s.setProperty('--f', `TrackBrand,${th.font ?? 'system-ui,sans-serif'}`) }).catch(() => undefined)

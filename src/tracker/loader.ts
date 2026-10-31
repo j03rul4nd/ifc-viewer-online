@@ -34,8 +34,8 @@ class TrackingGlobe extends HTMLElement {
     const cfg = this.cfg = this.readConfig()
     const root = this.attachShadow({ mode: 'open' })
     const dark = cfg.theme.preset !== 'light'
-    const bg = cfg.theme.background ?? (dark ? '#0b0f17' : '#f5f6f8')
-    const ball = cfg.theme.ocean ?? (dark ? '#111826' : '#e4e8ee')
+    const bg = cfg.theme.background ?? (dark ? '#100f0c' : '#f4f3f0')
+    const ball = cfg.theme.ocean ?? (dark ? '#131b1b' : '#d6e1e0')
     const style = this.getAttribute('height') === 'fill' ? 'height:100%' : `height:${cfg.height}px;max-height:100dvh`
     root.innerHTML = `<style>:host{display:block;contain:content;${style};border-radius:${cfg.theme.radius}px;overflow:hidden;background:${bg}}.ph{position:absolute;inset:0;display:grid;place-items:center}.b{width:min(62%,62cqh,420px);aspect-ratio:1;border-radius:50%;background:${ball}}button{all:unset;cursor:pointer;position:absolute;padding:10px 18px;border-radius:999px;background:#fff;color:#111;font:500 14px system-ui,sans-serif}</style><div class="ph" part="placeholder"><div class="b"></div></div>`
     this.style.position = this.style.position || 'relative'

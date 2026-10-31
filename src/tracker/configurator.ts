@@ -46,7 +46,7 @@ const DEMOS: Record<string, Partial<Shipment>[]> = {
 const state: { cfg: Record<string, unknown>; source: string; demo: string; pasted: string; base: string; tab: string; esp: string; linkData: string; linkStyle: string; kit: string; imageBase: string; fields: FieldNames } = {
   cfg: {
     title: '', view: 'globe', height: 560, autoRotate: true, speed: 1,
-    theme: { preset: 'dark', landStyle: 'dots', radius: 12, accent: '#5E6AD2' },
+    theme: { preset: 'dark', landStyle: 'dots', radius: 12 },
     controls: { drag: true, zoom: true, viewSwitch: true, list: true, search: true, legend: true, fullscreen: true },
   },
   source: 'demo', demo: 'china', pasted: '', base: `${location.origin}/track/v1/`, tab: 'html', esp: 'mailchimp', linkData: 'fields', linkStyle: 'hash', kit: '', imageBase: '', fields: { ...DEFAULT_FIELDS },
@@ -154,13 +154,13 @@ for (const f of LINK_FIELDS) {
 // and a new theme starts from its own colours rather than keeping the old theme's.
 function seedColors(): void {
   const pal = PALETTES[get('theme.preset') === 'light' ? 'light' : 'dark']
-  for (const [k, d] of [['background', pal.bg], ['ocean', pal.ocean], ['land', pal.land]]) {
+  for (const [k, d] of [['accent', pal.accent], ['background', pal.bg], ['ocean', pal.ocean], ['land', pal.land]]) {
     document.querySelector<HTMLInputElement>(`[data-k="theme.${k}"]`)!.value = String(get(`theme.${k}`) ?? d)
   }
 }
 seedColors()
 document.querySelector('[data-k="theme.preset"]')!.addEventListener('input', () => {
-  for (const k of ['background', 'ocean', 'land']) set(`theme.${k}`, undefined)
+  for (const k of ['accent', 'background', 'ocean', 'land']) set(`theme.${k}`, undefined)
   seedColors(); apply()
 })
 
@@ -223,15 +223,15 @@ function contain(g: CanvasRenderingContext2D, m: HTMLImageElement, W: number, H:
 }
 function statusBand(g: CanvasRenderingContext2D, W: number, H: number, band: number, status: Status, cfg: TrackerConfig): void {
   const dark = cfg.theme.preset !== 'light', pal = PALETTES[dark ? 'dark' : 'light'], t = words(pickLang(cfg.lang))
-  const accent = cfg.theme.accent ?? '#5E6AD2', fg = cfg.theme.text ?? pal.text, order: Status[] = ['pending', 'transit', 'delivered']
+  const accent = cfg.theme.accent ?? pal.accent, fg = cfg.theme.text ?? pal.text, order: Status[] = ['pending', 'transit', 'delivered']
   const at = status === 'delayed' ? 1 : order.indexOf(status), late = status === 'delayed'
   g.fillStyle = cfg.theme.panel ?? pal.panel; g.fillRect(0, H, W, band)
   const pad = W * .04, cell = (W - pad * 2) / 3, y = H + band * .42
   g.textBaseline = 'middle'
   order.forEach((st, i) => {
-    g.fillStyle = i <= at ? (late && i === at ? '#f5a524' : accent) : fg + '33'
+    g.fillStyle = i <= at ? (late && i === at ? pal.warn : accent) : fg + '33'
     g.fillRect(pad + i * cell, y - band * .3, cell - W * .012, Math.max(3, band * .05))
-    g.fillStyle = i === at ? (late ? '#f5a524' : accent) : fg
+    g.fillStyle = i === at ? (late ? pal.warn : accent) : fg
     g.font = `${i === at ? 700 : 400} ${Math.round(band * .24)}px ${cfg.theme.font ?? 'Arial, sans-serif'}`
     g.fillText(i === at ? t[status] : t[st], pad + i * cell, y + band * .08)
   })
