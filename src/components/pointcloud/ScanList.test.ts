@@ -129,7 +129,7 @@ describe('ScanList', () => {
     props.issueCountById = { a: 2 }
     render()
     const dot = row('a').querySelector('[data-testid=pc-row-health]') as HTMLElement
-    expect(dot.style.background).toMatch(/rgb\(245, 166, 35\)|#F5A623/i)
+    expect(dot.style.background).toMatch(/rgb\(233, 162, 59\)|#E9A23B/i)
     expect(dot.title).toContain('Things to check: 2')
   })
 })

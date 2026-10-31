@@ -125,5 +125,5 @@ export function Note({ tone = 'info', children }: { tone?: 'info' | 'ok' | 'warn
 }
 
 export function Code({ children }: { children: string }) {
-  return <pre className="max-h-56 overflow-auto rounded-lg bg-black/50 p-2.5 text-[11.5px] leading-snug text-[#c7d2fe]"><code>{children}</code></pre>
+  return <pre className="max-h-56 overflow-auto rounded-lg bg-black/50 p-2.5 text-[11.5px] leading-snug text-[#bde8e4]"><code>{children}</code></pre>
 }

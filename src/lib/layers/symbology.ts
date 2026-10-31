@@ -78,7 +78,7 @@ export function resolveSymbol(props: FlatProp[], s: Symbology): (SymbolStyle & {
 
 // ── Suggestions ────────────────────────────────────────────────────────────────
 
-const PALETTE = ['#2fb7ff', '#ffd23f', '#5ce27a', '#ff4f8b', '#b18cff', '#ff7a1a', '#3ee0d0', '#e0523f', '#c0ca33', '#ffffff']
+const PALETTE = ['#2fb7ff', '#ffd23f', '#5ce27a', '#ff4f8b', '#c8a97e', '#ff7a1a', '#3ee0d0', '#e0523f', '#c0ca33', '#ffffff']
 
 /**
  * Keyword → icon, multilingual (ES/CA/EN/FR/DE/IT/PT): what a value or field

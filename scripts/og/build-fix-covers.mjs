@@ -35,7 +35,7 @@ const CAT_COLORS = {
   quality:        { color: '#34d399', glow: '52,211,153' },
   classification: { color: '#c084fc', glow: '192,132,252' },
   lod:            { color: '#67d7f0', glow: '103,215,240' },
-  iso19650:       { color: '#55cac3', glow: '129,140,248' },
+  iso19650:       { color: '#55cac3', glow: '85,202,195' },
   mep:            { color: '#4aeabd', glow: '74,234,189' },
   clash:          { color: '#fbbf24', glow: '251,191,36' },
 }

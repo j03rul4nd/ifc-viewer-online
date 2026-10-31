@@ -29,7 +29,7 @@ interface _Blob {
 }
 
 export default function Aurora({
-  colorStops = ['#0A8481', '#7C3AED', '#3B82F6'],
+  colorStops = ['#0A8481', '#b08d5f', '#3B82F6'],
   amplitude  = 0.25,
   blend      = 'screen',
   speed      = 1,

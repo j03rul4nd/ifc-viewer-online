@@ -1,6 +1,6 @@
 # Colour system
 
-Pilot on the Tracking Globe pages. Not applied to the rest of the site yet.
+Applied across the app, generators and generated pages.
 
 **Why not what we had:** `#5E6AD2` is the indigo of Linear and of the AI-generated
 look around it; near-black with a blue cast and Radix status colours complete the
@@ -27,3 +27,7 @@ All listed text and accent pairs measure at least 5.4:1 (WCAG 2.2 AA).
 **Rules:** colour means something or it is not there. No gradients on UI. Text on the
 accent is computed, because brands choose any colour. Brand overrides replace the
 accent and neutrals, never the status meanings.
+
+**On the main site** `--accent` is the fill, `#0a8481` (white text 4.5:1, 4.2:1 on the dark canvas), and `--accent-2`, `#55cac3`, is accent text on dark. The tracking widget keeps `#55cac3` as its one accent with computed text. Light theme uses `#00696a`.
+
+**Left on purpose:** blue where it means water or a discipline, categorical data colours, SDK syntax highlighting. **Not changed:** raster images (covers, screenshots, OG cards), ebooks, the mascot model.

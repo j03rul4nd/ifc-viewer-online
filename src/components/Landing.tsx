@@ -990,7 +990,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 scale={1.4}
                 brightness={0.45}
                 color1="#0A8481"
-                color2="#7C3AED"
+                color2="#b08d5f"
                 noiseFrequency={1.8}
                 noiseAmplitude={0.9}
                 bandHeight={0.48}

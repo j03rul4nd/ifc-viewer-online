@@ -163,7 +163,7 @@ export default function SoftAurora({
   scale = 1.5,
   brightness = 1.0,
   color1 = '#0A8481',
-  color2 = '#7C3AED',
+  color2 = '#b08d5f',
   noiseFrequency = 2.5,
   noiseAmplitude = 1.0,
   bandHeight = 0.5,

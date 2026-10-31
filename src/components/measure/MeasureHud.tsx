@@ -26,7 +26,7 @@ const SNAP_COLOR: Record<SnapKind, string> = {
   edge: '#E9A23B',
   face: '#ECEBE7',
   surface: '#ECEBE7',
-  cloud: '#B49CFF',
+  cloud: '#c8a97e',
   perpendicular: '#6CE0FF',
 }
 const AXIS_COLOR = { x: '#FF5A5A', y: '#4CD964', z: '#4C8DFF' } as const

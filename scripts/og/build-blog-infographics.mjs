@@ -35,7 +35,7 @@ const FONTS = `
 
 // One palette for every figure, so a series reads as a series.
 const C = {
-  bg: '#f7f8fb', card: '#ffffff', ink: '#0f172a', sub: '#475569', faint: '#a09e98', line: '#dbe1ea',
+  bg: '#f7f8fb', card: '#ffffff', ink: '#100f0c', sub: '#605e57', faint: '#a09e98', line: '#dbe1ea',
   brand: '#0a8481', brandSoft: '#eceefc', green: '#0f9f6e', greenSoft: '#e3f6ee', red: '#dc3545', redSoft: '#fdeaec',
   amber: '#c27c0e', amberSoft: '#fdf3df', cyan: '#0e8fb0', cyanSoft: '#e1f4f9', violet: '#b08d5f', violetSoft: '#f1ebfe',
 }
@@ -551,7 +551,7 @@ FIGURES['las-classification-codes-asprs'] = () => {
   const codes = [
     [0, 'Never classified', '#9ca3af'], [1, 'Unclassified', '#cbd5e1'], [2, 'Ground', '#a16207'], [3, 'Low vegetation', '#86efac'],
     [4, 'Medium vegetation', '#3fa866'], [5, 'High vegetation', '#15803d'], [6, 'Building', '#e0523f'], [7, 'Low point (noise)', '#111827'],
-    [8, 'Reserved', '#e5e7eb'], [9, 'Water', '#3b82f6'], [10, 'Rail', '#7c3aed'], [11, 'Road surface', '#6b7280'],
+    [8, 'Reserved', '#e5e7eb'], [9, 'Water', '#3b82f6'], [10, 'Rail', '#b08d5f'], [11, 'Road surface', '#6b7280'],
     [12, 'Reserved', '#e5e7eb'], [13, 'Wire – guard', '#e9a23b'], [14, 'Wire – conductor', '#fbbf24'], [15, 'Transmission tower', '#ea580c'],
     [16, 'Wire connector', '#fdba74'], [17, 'Bridge deck', '#0891b2'], [18, 'High noise', '#374151'],
   ]

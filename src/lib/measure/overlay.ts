@@ -470,7 +470,7 @@ export class Label {
 // its dimensions.
 
 const LABEL_INK: Record<string, string> = {
-  distance: '#E9A23B', path: '#E9A23B', area: '#3DD68C', angle: '#F76B8A', point: '#B49CFF',
+  distance: '#E9A23B', path: '#E9A23B', area: '#3DD68C', angle: '#F76B8A', point: '#c8a97e',
   'axis-x': '#FF5A5A', 'axis-y': '#4CD964', 'axis-z': '#4C8DFF',
 }
 

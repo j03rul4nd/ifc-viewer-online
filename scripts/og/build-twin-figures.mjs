@@ -39,7 +39,7 @@ const FONTS = `
 const SCRIPT_FONT = { ja: "'Yu Gothic UI','Meiryo UI','Yu Gothic'", zh: "'Microsoft YaHei UI','Microsoft YaHei'", th: "'Leelawadee UI','Tahoma'" }
 
 const C = {
-  bg: '#f7f8fb', card: '#ffffff', ink: '#0f172a', sub: '#475569', faint: '#a09e98', line: '#dbe1ea',
+  bg: '#f7f8fb', card: '#ffffff', ink: '#100f0c', sub: '#605e57', faint: '#a09e98', line: '#dbe1ea',
   brand: '#0a8481', brandSoft: '#eceefc', green: '#0f9f6e', greenSoft: '#e3f6ee', red: '#dc3545', redSoft: '#fdeaec',
   amber: '#c27c0e', amberSoft: '#fdf3df', cyan: '#0e8fb0', cyanSoft: '#e1f4f9', violet: '#b08d5f', violetSoft: '#f1ebfe',
   earth: '#efe6d4', earthLine: '#c8b28a',

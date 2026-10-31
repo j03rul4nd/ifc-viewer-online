@@ -114,7 +114,7 @@ let host: VectorHost | null = null
 const built = new Map<string, { data: VectorLayerData; key: string; visible: boolean }>()
 
 /** Palette for new layers: distinct over both a satellite and a dark map. */
-const PALETTE = ['#ff7a1a', '#2fb7ff', '#ffd23f', '#ff4f8b', '#5ce27a', '#b18cff', '#ffffff']
+const PALETTE = ['#ff7a1a', '#2fb7ff', '#ffd23f', '#ff4f8b', '#5ce27a', '#c8a97e', '#ffffff']
 
 // ── Host wiring ────────────────────────────────────────────────────────────────
 

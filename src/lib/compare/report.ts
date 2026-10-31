@@ -78,19 +78,19 @@ ${ids.bySpec.map((s) => `<tr><td>${h(s.spec)}</td><td class="n">${s.baseFailed}/
 
   return `<!doctype html><html lang="${h(locale)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${h(text.title)}</title><style>
-body{font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#0f172a;background:#fff;margin:0;padding:24px;max-width:1100px;margin:auto}
+body{font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#100f0c;background:#fff;margin:0;padding:24px;max-width:1100px;margin:auto}
 h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-.sub{color:#475569;margin-bottom:16px}.tiles{display:flex;flex-wrap:wrap;gap:10px}
-.tile{border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;min-width:120px}.tile b{display:block;font-size:22px}.tile span{color:#475569;font-size:12px}
+.sub{color:#605e57;margin-bottom:16px}.tiles{display:flex;flex-wrap:wrap;gap:10px}
+.tile{border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;min-width:120px}.tile b{display:block;font-size:22px}.tile span{color:#605e57;font-size:12px}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
 th{background:#f8fafc;font-weight:600}.n{text-align:right;font-variant-numeric:tabular-nums}.add{color:#15803d}.rem{color:#b91c1c}.mod{color:#b45309}
 tr.added td:first-child{color:#15803d}tr.removed td:first-child{color:#b91c1c}tr.modified td:first-child{color:#b45309}
-code{background:#f1f5f9;padding:0 3px;border-radius:3px}small{color:#64748b}i{color:#475569;font-style:normal;font-weight:600}
+code{background:#f1f5f9;padding:0 3px;border-radius:3px}small{color:#64748b}i{color:#605e57;font-style:normal;font-weight:600}
 @media print{body{padding:0}}
 </style></head><body>
 <h1>${h(text.title)}</h1>
 <div class="sub">${h(text.subtitle(diff.baseLabel, diff.headLabel, date))}</div>
-<div class="tiles">${tile(text.added, c.added, '#15803d')}${tile(text.removed, c.removed, '#b91c1c')}${tile(text.modified, c.modified, '#b45309')}${tile(text.unchanged, c.unchanged, '#475569')}${tile(text.churn, churnPercent(c) + ' %', '#0f172a')}</div>
+<div class="tiles">${tile(text.added, c.added, '#15803d')}${tile(text.removed, c.removed, '#b91c1c')}${tile(text.modified, c.modified, '#b45309')}${tile(text.unchanged, c.unchanged, '#605e57')}${tile(text.churn, churnPercent(c) + ' %', '#100f0c')}</div>
 <h2>${h(text.files)}</h2>
 <table><thead><tr><th>${h(text.file)}</th><th></th><th class="n">+</th><th class="n">−</th><th class="n">Δ</th></tr></thead><tbody>
 ${diff.files.map((f) => `<tr><td>${h(f.base ?? '—')} → ${h(f.head ?? '—')}</td><td><small>${h(text.pairing[f.reason] ?? f.reason)}${f.overlap ? ` · ${Math.round(f.overlap * 100)} %` : ''}</small></td><td class="n add">${f.counts.added || ''}</td><td class="n rem">${f.counts.removed || ''}</td><td class="n mod">${f.counts.modified || ''}</td></tr>`).join('')}

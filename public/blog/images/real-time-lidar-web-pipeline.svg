@@ -27,7 +27,7 @@
 
   <g font-family="Inter,Segoe UI,sans-serif">
     <g transform="translate(85 310)">
-      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#334155" stroke-width="2"/>
+      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#45433d" stroke-width="2"/>
       <circle cx="122" cy="78" r="45" fill="#0b1220" stroke="#22d3ee" stroke-width="5"/>
       <path d="M82 83Q122 42 162 83M92 101Q122 72 152 101" fill="none" stroke="#67e8f9" stroke-width="5" stroke-linecap="round"/>
       <text x="122" y="170" text-anchor="middle" fill="#f8fafc" font-size="25" font-weight="700">LiDAR sensor</text>
@@ -35,14 +35,14 @@
     </g>
 
     <g transform="translate(385 310)">
-      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#334155" stroke-width="2"/>
+      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#45433d" stroke-width="2"/>
       <path d="M62 60h120v80H62zM82 82h80M82 104h55M82 126h38" fill="none" stroke="#34d399" stroke-width="7" stroke-linecap="round"/>
       <text x="122" y="170" text-anchor="middle" fill="#f8fafc" font-size="25" font-weight="700">Edge gateway</text>
       <text x="122" y="205" text-anchor="middle" fill="#a09e98" font-size="18">ROI · voxel · frame ID</text>
     </g>
 
     <g transform="translate(685 310)">
-      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#334155" stroke-width="2"/>
+      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#45433d" stroke-width="2"/>
       <path d="M58 80h128M58 112h128M58 144h128" stroke="#e9a23b" stroke-width="9" stroke-linecap="round"/>
       <circle cx="84" cy="80" r="8" fill="#fcd34d"/><circle cx="150" cy="112" r="8" fill="#fcd34d"/><circle cx="112" cy="144" r="8" fill="#fcd34d"/>
       <text x="122" y="170" text-anchor="middle" fill="#f8fafc" font-size="25" font-weight="700">Binary transport</text>
@@ -50,7 +50,7 @@
     </g>
 
     <g transform="translate(985 310)">
-      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#334155" stroke-width="2"/>
+      <rect width="245" height="250" rx="26" fill="#111c2c" stroke="#45433d" stroke-width="2"/>
       <rect x="53" y="62" width="140" height="94" rx="12" fill="#0b1220" stroke="#c8a97e" stroke-width="4"/>
       <path d="M76 133l27-37 25 22 25-39 18 54" fill="none" stroke="#d8c4a3" stroke-width="6" stroke-linejoin="round"/>
       <text x="122" y="190" text-anchor="middle" fill="#f8fafc" font-size="25" font-weight="700">2–3 frame buffer</text>

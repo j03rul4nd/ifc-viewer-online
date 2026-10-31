@@ -378,7 +378,7 @@ function BeatStrip({ music, wave, cut, onDrop, label }: {
     ctx.clearRect(0, 0, w, h)
     const x = (sec: number) => (sec / span) * w
     const css = getComputedStyle(c)
-    const accent = css.getPropertyValue('--accent').trim() || '#7c83ff'
+    const accent = css.getPropertyValue('--accent').trim() || '#55cac3'
     const faint = css.getPropertyValue('--text-faint').trim() || '#888'
     // Window the clip uses.
     ctx.fillStyle = accent

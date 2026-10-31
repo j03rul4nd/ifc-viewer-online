@@ -64,7 +64,7 @@ interface MeasurementPanelProps {
 const TOOLS: readonly MeasureToolId[] = ['distance', 'path', 'area', 'angle', 'point', 'dimension']
 const UNITS: readonly LengthUnit[] = ['m', 'cm', 'mm', 'ft']
 const KIND_COLOR: Record<MeasureKind, string> = {
-  distance: '#E9A23B', path: '#E9A23B', area: '#3DD68C', angle: '#F76B8A', point: '#B49CFF', dimension: '#5EEAD4',
+  distance: '#E9A23B', path: '#E9A23B', area: '#3DD68C', angle: '#F76B8A', point: '#c8a97e', dimension: '#5EEAD4',
 }
 
 /** The dimension modes, two rows: linear, then level and radius. */

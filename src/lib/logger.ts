@@ -84,7 +84,7 @@ export function resetOnceGuards(): void { _onceSeen.clear() }
 // Deterministic: same channel → same color, across page loads.
 
 const _PALETTE = [
-  '#0A8481', '#7C3AED', '#3B82F6', '#0EA5E9',
+  '#0A8481', '#b08d5f', '#3B82F6', '#0EA5E9',
   '#10B981', '#E9A23B', '#E0523F', '#EC4899',
 ]
 

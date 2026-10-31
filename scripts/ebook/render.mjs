@@ -523,7 +523,7 @@ figcaption{font-size:8.4pt; color:var(--dim); margin-top:2.5mm; line-height:1.45
 .cat__b{font-size:8.6pt; line-height:1.45; margin:0; color:var(--dim)}
 .cat__dot{width:2.6mm; height:2.6mm; border-radius:50%; flex:none; background:var(--accent)}
 .cat--schema{background:#DC2626} .cat--spatial{background:#EA580C} .cat--quality{background:#00696A}
-.cat--lod{background:#7C3AED} .cat--iso19650{background:#0891B2} .cat--classification{background:#0D9488}
+.cat--lod{background:#b08d5f} .cat--iso19650{background:#0891B2} .cat--classification{background:#0D9488}
 .cat--mep{background:#CA8A04} .cat--clash{background:#BE185D}
 
 /* ── Rule reference ────────────────────────────────────────────────────── */

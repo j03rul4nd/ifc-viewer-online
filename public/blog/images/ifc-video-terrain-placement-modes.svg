@@ -3,7 +3,7 @@
   <desc id="desc">Three side-by-side diagrams compare a construction video placed as a screen, draped over terrain, and used as a camera-facing billboard beside an IFC pavilion.</desc>
   <defs>
     <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b1119"/><stop offset="1" stop-color="#171724"/></linearGradient>
-    <linearGradient id="terrain" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#334155"/><stop offset="1" stop-color="#172033"/></linearGradient>
+    <linearGradient id="terrain" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#45433d"/><stop offset="1" stop-color="#172033"/></linearGradient>
     <linearGradient id="video" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e9a23b"/><stop offset=".5" stop-color="#fb7185"/><stop offset="1" stop-color="#0a8481"/></linearGradient>
   </defs>
   <rect width="1600" height="900" rx="40" fill="url(#bg2)"/>
@@ -12,7 +12,7 @@
 
   <g font-family="Inter,Segoe UI,sans-serif">
     <g transform="translate(80 250)">
-      <rect width="450" height="520" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <rect width="450" height="520" rx="28" fill="#111827" stroke="#45433d" stroke-width="2"/>
       <path d="M35 380Q120 315 215 350T415 320V450H35Z" fill="url(#terrain)"/>
       <path d="M210 360V190h190v170" fill="none" stroke="#22d3ee" stroke-width="8"/>
       <rect x="225" y="205" width="160" height="105" rx="7" fill="url(#video)" stroke="#fed7aa" stroke-width="4"/>
@@ -23,7 +23,7 @@
     </g>
 
     <g transform="translate(575 250)">
-      <rect width="450" height="520" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <rect width="450" height="520" rx="28" fill="#111827" stroke="#45433d" stroke-width="2"/>
       <path d="M35 380Q120 315 215 350T415 320V450H35Z" fill="url(#terrain)"/>
       <path d="M100 365l140-78 125 52-143 83z" fill="url(#video)" opacity=".76" stroke="#fed7aa" stroke-width="4"/>
       <path d="M125 330l85-50 90 37" fill="none" stroke="#fff" stroke-width="5" opacity=".8"/>
@@ -34,7 +34,7 @@
     </g>
 
     <g transform="translate(1070 250)">
-      <rect width="450" height="520" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <rect width="450" height="520" rx="28" fill="#111827" stroke="#45433d" stroke-width="2"/>
       <path d="M35 380Q120 315 215 350T415 320V450H35Z" fill="url(#terrain)"/>
       <path d="M100 380V245M100 245l85-45 85 45v120M185 200v120" fill="none" stroke="#22d3ee" stroke-width="7"/>
       <g transform="translate(215 180)">

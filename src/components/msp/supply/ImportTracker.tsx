@@ -296,7 +296,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                   <ol className="relative ml-1.5 border-l border-white/15">
                     {detail.ms.map((m) => (
                       <li key={m.label} className="mb-2.5 ml-3">
-                        <span className="absolute -left-[5px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-[#0b0d10]" style={{ background: m.done ? (m.late ? '#e9a23b' : '#3fa866') : '#475569' }} />
+                        <span className="absolute -left-[5px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-[#0b0d10]" style={{ background: m.done ? (m.late ? '#e9a23b' : '#3fa866') : '#605e57' }} />
                         <p className={`break-words ${m.done ? 'text-white' : 'text-white/55'}`}>{m.label}</p>
                         <p className="text-[11.5px] text-white/50">Planned {m.planned} · {m.done ? 'done' : 'expected'} {m.actual}{m.late && <span className="text-[#e9a23b]"> · late</span>}</p>
                         {m.note && <p className="text-[11.5px] text-[#e9a23b]">{m.note}</p>}
@@ -453,9 +453,9 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                   <div className="text-[12px]">
                     <p className="leading-snug text-white/65">Your sourcing agent (BuckyDrop or a local agent) and your forwarder already track your orders. This puts their updates on one map and pushes the receipt, with its landed cost, to your ERP.</p>
                     <p className="mt-3 font-semibold text-white/85">In · agent / forwarder update ({feed.id})</p>
-                    <pre className="mt-1 max-h-44 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#c7d2fe]"><code>{JSON.stringify(feed.agent, null, 2)}</code></pre>
+                    <pre className="mt-1 max-h-44 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#bde8e4]"><code>{JSON.stringify(feed.agent, null, 2)}</code></pre>
                     <p className="mt-3 font-semibold text-white/85">Out · receipt in Odoo on delivery</p>
-                    <pre className="mt-1 max-h-32 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#c7d2fe]"><code>{JSON.stringify(feed.erp, null, 2)}</code></pre>
+                    <pre className="mt-1 max-h-32 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#bde8e4]"><code>{JSON.stringify(feed.erp, null, 2)}</code></pre>
                     <p className="mt-2 text-[11px] text-white/45">Illustrative shapes, nothing is sent. A real project maps your agent’s actual feed (API, email or spreadsheet): that is the pilot.</p>
                     {onWant && <button type="button" onClick={onWant} className="mt-3 w-full rounded-lg bg-[#0a8481] py-2 text-[13px] font-semibold">Track our orders like this</button>}
                   </div>

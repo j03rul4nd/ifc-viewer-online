@@ -42,7 +42,7 @@
       /* spotlight on .step cards */
       '.step{position:relative;overflow:hidden}' +
       '.step::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;' +
-      'transition:opacity .3s ease;background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(94,106,210,0.16),transparent 62%)}' +
+      'transition:opacity .3s ease;background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(10,132,129,0.16),transparent 62%)}' +
       '.step:hover::after{opacity:1}' +
       /* GUID toolkit */
       '.guid-tool{margin-top:22px;display:grid;gap:22px;max-width:620px}' +
@@ -52,7 +52,7 @@
       'color:#E8E8F0;letter-spacing:0.02em;outline:none;transition:border-color .15s,box-shadow .15s}' +
       '.guid-tool textarea{resize:vertical;min-height:96px;line-height:1.6}' +
       '.guid-tool textarea::placeholder,.guid-gen input::placeholder{color:rgba(255,255,255,0.26)}' +
-      '.guid-tool textarea:focus,.guid-gen input:focus{border-color:rgba(94,106,210,0.6);box-shadow:0 0 0 3px rgba(94,106,210,0.15)}' +
+      '.guid-tool textarea:focus,.guid-gen input:focus{border-color:rgba(10,132,129,0.6);box-shadow:0 0 0 3px rgba(10,132,129,0.15)}' +
       '.guid-summary{margin-top:11px;font-size:13px;line-height:1.5;font-family:"Geist Mono","Cascadia Code",monospace;min-height:1.1em}' +
       '.guid-summary .g-ok{color:#7ED3A0}.guid-summary .g-warn{color:#F5C16B}.guid-summary .g-bad{color:#FF8082}.guid-summary .g-dim{color:rgba(255,255,255,0.4)}' +
       '.guid-detail{margin-top:8px;display:flex;flex-direction:column;gap:5px}' +
@@ -61,21 +61,21 @@
       '.guid-detail .g-tag{flex-shrink:0;font-size:10px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px}' +
       '.guid-detail .g-tag.warn{background:rgba(245,166,35,0.14);color:#F5C16B;border:1px solid rgba(245,166,35,0.3)}' +
       '.guid-detail .g-tag.bad{background:rgba(255,77,79,0.13);color:#FF8082;border:1px solid rgba(255,77,79,0.3)}' +
-      '.guid-detail .g-tag.dup{background:rgba(94,106,210,0.15);color:#9AA4EE;border:1px solid rgba(94,106,210,0.32)}' +
+      '.guid-detail .g-tag.dup{background:rgba(10,132,129,0.15);color:#9AA4EE;border:1px solid rgba(10,132,129,0.32)}' +
       '.guid-detail .g-val{color:rgba(255,255,255,0.78);word-break:break-all}' +
       '.guid-gen{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}' +
       '.guid-gen input{flex:1 1 240px;min-width:0}' +
       '.guid-gen button{flex-shrink:0;cursor:pointer;border-radius:10px;padding:0 18px;font-size:13px;font-weight:600;' +
       'font-family:inherit;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#E8E8F0;transition:background .15s,border-color .15s,color .15s}' +
       '.guid-gen button:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.22)}' +
-      '.guid-gen button#guidGenBtn{background:#5E6AD2;border-color:#5E6AD2;color:#fff}' +
+      '.guid-gen button#guidGenBtn{background:#0a8481;border-color:#0a8481;color:#fff}' +
       '.guid-gen button#guidGenBtn:hover{background:#4F5ABF;border-color:#4F5ABF}' +
       '.guid-gen button:disabled{opacity:0.45;cursor:default}' +
       /* IFC file inspector */
       '.ifc-inspect{margin-top:22px;max-width:620px}' +
       '.ifc-drop{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;padding:30px 20px;' +
       'border:1.5px dashed rgba(255,255,255,0.16);border-radius:12px;background:rgba(255,255,255,0.02);cursor:pointer;transition:border-color .15s,background .15s}' +
-      '.ifc-drop:hover,.ifc-drop.drag{border-color:rgba(94,106,210,0.55);background:rgba(94,106,210,0.05)}' +
+      '.ifc-drop:hover,.ifc-drop.drag{border-color:rgba(10,132,129,0.55);background:rgba(10,132,129,0.05)}' +
       '.ifc-drop svg{color:#8B96E9;opacity:0.85}' +
       '.ifc-drop-text{font-size:14px;color:rgba(255,255,255,0.72)}' +
       '.ifc-drop-link{color:#8B96E9;text-decoration:underline}' +
@@ -85,7 +85,7 @@
       '.ifc-row:last-child{border-bottom:none}' +
       '.ifc-row .k{color:rgba(255,255,255,0.42);font-size:12px;flex-shrink:0}' +
       '.ifc-row .v{color:#E8E8F0;font-size:13px;font-family:"Geist Mono","Cascadia Code",monospace;text-align:right;word-break:break-word}' +
-      '.ifc-badge{display:inline-block;padding:2px 9px;border-radius:6px;background:rgba(94,106,210,0.15);color:#9AA4EE;border:1px solid rgba(94,106,210,0.32);font-weight:600;font-size:12px;font-family:"Geist Mono","Cascadia Code",monospace}' +
+      '.ifc-badge{display:inline-block;padding:2px 9px;border-radius:6px;background:rgba(10,132,129,0.15);color:#9AA4EE;border:1px solid rgba(10,132,129,0.32);font-weight:600;font-size:12px;font-family:"Geist Mono","Cascadia Code",monospace}' +
       '.ifc-err{color:#FF8082;font-size:13px;padding:14px 16px}' +
       '.ifc-actions{padding:14px 16px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:rgba(255,255,255,0.02);border-top:1px solid rgba(255,255,255,0.05)}' +
       '.ifc-actions a{font-size:13px;font-weight:600;color:#8B96E9}' +
@@ -95,9 +95,9 @@
       '.cmp-chip{cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:100px;' +
       'border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.6);transition:color .15s,border-color .15s,background .15s}' +
       '.cmp-chip:hover{color:#fff;border-color:rgba(255,255,255,0.25)}' +
-      '.cmp-chip.is-active{background:rgba(94,106,210,0.15);border-color:rgba(94,106,210,0.5);color:#9AA4EE}' +
+      '.cmp-chip.is-active{background:rgba(10,132,129,0.15);border-color:rgba(10,132,129,0.5);color:#9AA4EE}' +
       '.compare-table tbody tr{transition:background .15s}' +
-      '.compare-table tbody tr:hover{background:rgba(94,106,210,0.06)}' +
+      '.compare-table tbody tr:hover{background:rgba(10,132,129,0.06)}' +
       '@media (prefers-reduced-motion: reduce){[data-sr]{opacity:1;transform:none;transition:none}.step::after{transition:none}}';
     var s = document.createElement('style');
     s.setAttribute('data-seo-enhance', '');
@@ -111,7 +111,7 @@
     var parent = canvas.parentElement;
     if (!ctx || !parent) return;
 
-    var color = (canvas.getAttribute('data-color') || '94,106,210').trim();
+    var color = (canvas.getAttribute('data-color') || '10,132,129').trim();
     var spacing = parseInt(canvas.getAttribute('data-spacing') || '28', 10);
     var dotRadius = parseFloat(canvas.getAttribute('data-radius') || '1.4');
     var interactive = !coarse && !prefersReduced;

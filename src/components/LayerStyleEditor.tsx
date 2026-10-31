@@ -31,7 +31,7 @@ import { toast } from '../stores/toastStore'
 
 type T = (k: string, o?: Record<string, unknown>) => string
 
-const PALETTE = ['#2fb7ff', '#5ce27a', '#ffd23f', '#e0523f', '#b18cff', '#ff7a1a', '#3ee0d0', '#ff4f8b', '#c0ca33', '#ffffff']
+const PALETTE = ['#2fb7ff', '#5ce27a', '#ffd23f', '#e0523f', '#c8a97e', '#ff7a1a', '#3ee0d0', '#ff4f8b', '#c0ca33', '#ffffff']
 const OPS: FilterOp[] = ['eq', 'neq', 'in', 'notIn', 'contains', 'startsWith', 'gt', 'gte', 'lt', 'lte', 'between', 'exists', 'missing', 'isTrue', 'isFalse']
 const NO_VALUE_OPS = new Set<FilterOp>(['exists', 'missing', 'isTrue', 'isFalse'])
 

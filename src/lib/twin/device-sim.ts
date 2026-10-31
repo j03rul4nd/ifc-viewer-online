@@ -212,7 +212,7 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
 
   const spaces = ofClass(all, 'IFCSPACE')
   spaces.slice(0, 6).forEach((s, i) => bind(`${refOf(s).label} · ${n.temperature}`, `room-${i + 1}`, [refOf(s)], [
-    rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#a855f7'),
+    rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#b08d5f'),
     rule(n.cold, [{ field: 'temp_c', op: 'lt', value: 20 }], '#3b82f6'),
     rule(n.warm, [{ field: 'temp_c', op: 'gt', value: 23 }], '#e0523f'),
     rule(n.comfort, [], '#3fa866', 0.6),
@@ -234,7 +234,7 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
   const windows = ofClass(all, 'IFCWINDOW').map(refOf)
   if (spaces.length === 0) {
     windows.slice(0, 6).forEach((w, i) => bind(`${w.label} · ${n.window}`, `room-${i + 1}`, [w], [
-      rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#a855f7'),
+      rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#b08d5f'),
     ], { label: { field: 'temp_c' } }))
   }
 
@@ -243,7 +243,7 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
   bind(n.solar, 'solar', roofs.length ? roofs.slice(0, 4) : slabs.slice(-1), [
     rule(n.producingHigh, [{ field: 'pv_kw', op: 'gt', value: 2 }], '#facc15'),
     rule(n.producing, [{ field: 'pv_kw', op: 'gt', value: 0.1 }], '#fde68a'),
-    rule(n.night, [], '#334155'),
+    rule(n.night, [], '#45433d'),
   ], { label: { field: 'pv_kw' } })
 
   const water = ofClass(all, 'IFCPIPE', 'IFCFLOWSEGMENT', 'IFCSANITARYTERMINAL', 'IFCFLOWTERMINAL').map(refOf)
@@ -274,7 +274,7 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
   // Dwellings: spaces that are not parking; fall back to storeys' slabs.
   const spaces = ofClass(all, 'IFCSPACE').filter((e) => !PARKING_NAME.test(e.name))
   spaces.slice(0, 24).forEach((s, i) => bind(`${refOf(s).label} · ${n.dwelling}`, `flat-${i + 1}`, [refOf(s)], [
-    rule(n.heatLoss, [{ field: 'heat_loss', op: 'isTrue' }], '#a855f7', 1, false, 1),
+    rule(n.heatLoss, [{ field: 'heat_loss', op: 'isTrue' }], '#b08d5f', 1, false, 1),
     rule(n.cold, [{ field: 'temp_c', op: 'lt', value: 20 }], '#3b82f6'),
     rule(n.warm, [{ field: 'temp_c', op: 'gt', value: 22.5 }], '#e0523f'),
     rule(n.comfort, [], '#3fa866', 0.6),
@@ -314,7 +314,7 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
   const slabs = ofClass(all, 'IFCSLAB').map(refOf)
   bind(n.solar, 'roof-solar', roofs.length ? roofs.slice(0, 4) : slabs.slice(-1), [
     rule(n.producing, [{ field: 'pv_kw', op: 'gt', value: 0.1 }], '#facc15'),
-    rule(n.night, [], '#334155'),
+    rule(n.night, [], '#45433d'),
   ], { label: { field: 'pv_kw' } })
 
   // Fire alarm: every storey slab, so the whole building goes red at once.

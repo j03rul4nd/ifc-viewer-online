@@ -30,7 +30,7 @@
 
 .pv-mlabel[data-kind='area'] { --c: #3dd68c; }
 .pv-mlabel[data-kind='angle'] { --c: #f76b8a; }
-.pv-mlabel[data-kind='point'] { --c: #b49cff; }
+.pv-mlabel[data-kind='point'] { --c: #c8a97e; }
 .pv-mlabel[data-kind='axis-x'] { --c: #ff5a5a; }
 .pv-mlabel[data-kind='axis-y'] { --c: #4cd964; }
 .pv-mlabel[data-kind='axis-z'] { --c: #4c8dff; }

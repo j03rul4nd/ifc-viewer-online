@@ -290,7 +290,7 @@ export const FEED_PRESETS: FeedPreset[] = [
         rule('full', '#2fb7ff', { kind: 'icon', icon: 'parking' }),
         rule('out_of_service', '#a09e98', { kind: 'icon', icon: 'warning' }),
       ],
-      fallback: fallback('#b18cff', { kind: 'icon', icon: 'bike' }),
+      fallback: fallback('#c8a97e', { kind: 'icon', icon: 'bike' }),
     },
   },
   {

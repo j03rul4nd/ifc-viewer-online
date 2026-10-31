@@ -307,7 +307,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   for (const rz of RACK_ROWS) for (const x of [RACK_X0 - 0.25, RACK_X1 + 0.25]) box(0.12, 0.4, 1.2, guard, x, 0.2, rz, scene)
   // aisle signs hanging at the aisle mouths
   AISLES.forEach((z, i) => {
-    const s = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.9), new THREE.MeshBasicMaterial({ map: textTexture([`AISLE ${AISLE_NAMES[i]}`, `${AISLE_NAMES[i]}-01 → ${AISLE_NAMES[i]}-${BAYS * 2}`], { w: 256, h: 144, bg: '#0f172a' }), side: THREE.DoubleSide }))
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.9), new THREE.MeshBasicMaterial({ map: textTexture([`AISLE ${AISLE_NAMES[i]}`, `${AISLE_NAMES[i]}-01 → ${AISLE_NAMES[i]}-${BAYS * 2}`], { w: 256, h: 144, bg: '#100f0c' }), side: THREE.DoubleSide }))
     s.position.set(RACK_X0 - 0.6, 6, z); s.rotation.y = Math.PI / 2; scene.add(s)
   })
 
@@ -337,7 +337,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   const chargerLeds: THREE.MeshStandardMaterial[] = []
   for (const x of CHARGERS) {
     box(0.7, 1.4, 0.35, std('#e5e7eb', 0.4, 0.2), x, 0.9, 0.35, scene)
-    box(0.5, 0.18, 0.02, std('#0f172a', 0.4), x, 1.3, 0.54, scene, false)
+    box(0.5, 0.18, 0.02, std('#100f0c', 0.4), x, 1.3, 0.54, scene, false)
     const led = std('#3fa866', 0.3, 0, { emissive: '#3fa866', emissiveIntensity: 1.5 }); chargerLeds.push(led)
     box(0.42, 0.05, 0.02, led, x, 1.05, 0.54, scene, false)
     box(0.9, 0.02, 1.0, std('#4b5563', 0.4, 0.6), x, 0.01, 1.4, scene, false) // floor contacts
@@ -359,7 +359,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
     box(1.6, 0.06, 0.7, std('#f1f5f9', 0.5), 4 + dx, 0.75, OZ + dz, scene)
     box(0.55, 0.36, 0.03, std('#0b1220', 0.3, 0, { emissive: '#3b82f6', emissiveIntensity: 0.6 }), 4 + dx, 1.05, OZ + dz - 0.2, scene, false)
   }
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.6), new THREE.MeshBasicMaterial({ map: textTexture(['CONTROL ROOM'], { w: 512, h: 96, bg: '#0f172a' }) }))
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.6), new THREE.MeshBasicMaterial({ map: textTexture(['CONTROL ROOM'], { w: 512, h: 96, bg: '#100f0c' }) }))
   sign.position.set(4, 2.7, OZ - 3.55); sign.rotation.y = Math.PI; scene.add(sign)
   const warm = new THREE.PointLight('#ffd9a0', 6, 10, 2); warm.position.set(4, 2.6, OZ); scene.add(warm)
   // battery and spare-parts corner: shelving with boxes
@@ -503,7 +503,7 @@ function buildTruck(): { g: THREE.Group; setLivery: (carrier: string, plate: str
   box(2.4, 0.25, 12.6, std('#374151', 0.6, 0.5), 0, 1.05, -6.9, g)
   const cabMat = std('#e5e7eb', 0.35, 0.3)
   const cab = new THREE.Mesh(new RoundedBoxGeometry(2.45, 2.7, 2.3, 3, 0.15), cabMat); cab.position.set(0, 2.05, -15.0); cab.castShadow = true; g.add(cab)
-  box(2.2, 0.9, 0.05, std('#0f172a', 0.1, 0.5), 0, 2.6, -16.17, g, false)
+  box(2.2, 0.9, 0.05, std('#100f0c', 0.1, 0.5), 0, 2.6, -16.17, g, false)
   // the load, visible through the trailer while it is at the door
   const load = Array.from({ length: 22 }, (_, i) => { const p = palletGroup(); const sl = trailerSlot(i); p.g.position.set(sl.x, 1.2, sl.z); p.g.rotation.y = Math.PI / 2; g.add(p.g); return p })
   const setOpen = (k: number) => {
@@ -519,7 +519,7 @@ function buildTruck(): { g: THREE.Group; setLivery: (carrier: string, plate: str
     if (carrier + plate === last) return
     last = carrier + plate
     side.map?.dispose()
-    side.map = textTexture([carrier.toUpperCase(), plate], { w: 1024, h: 220, bg: CARRIER_COLOR[carrier] ?? '#334155' })
+    side.map = textTexture([carrier.toUpperCase(), plate], { w: 1024, h: 220, bg: CARRIER_COLOR[carrier] ?? '#45433d' })
     side.needsUpdate = true
     cabMat.color.set(CARRIER_COLOR[carrier] ?? '#e5e7eb')
   }
@@ -1401,7 +1401,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
                 {payload && snap.sync ? (
                   <>
                     <p className="mt-2 text-[12px] text-white/80"><span className="font-semibold">{snap.sync.task.id}</span> · {snap.sync.task.type} · {snap.sync.agv} · {clock(snap.sync.t).slice(0, 5)}</p>
-                    <pre className="mt-1.5 max-h-56 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#c7d2fe]"><code>{`${payload.method} ${payload.url}\n\n${JSON.stringify(payload.body, null, 2)}`}</code></pre>
+                    <pre className="mt-1.5 max-h-56 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#bde8e4]"><code>{`${payload.method} ${payload.url}\n\n${JSON.stringify(payload.body, null, 2)}`}</code></pre>
                   </>
                 ) : <p className="mt-2 text-[12px] text-white/50">Waiting for the first confirmation…</p>}
                 <ul className="mt-2 space-y-1 text-[12px] text-white/70">
