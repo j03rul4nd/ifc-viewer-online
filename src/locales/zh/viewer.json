@@ -518,6 +518,7 @@
     "xray": "X 光（透视墙体）"
   },
   "dualScreen": {
+    "sketch": "3D 草图",
     "pane": "模型与属性",
     "views": "面板视图",
     "view": {

@@ -519,6 +519,7 @@
     "xray": "Rayos X (ver a través de los muros)"
   },
   "dualScreen": {
+    "sketch": "Boceto 3D",
     "pane": "Modelo y propiedades",
     "views": "Vista del panel",
     "view": {

@@ -99,7 +99,7 @@ void i18n
     resourcesToBackend(
       (language: string, namespace: string) => {
         // The paid workspace namespace is never bundled, not even in EN: it loads with its route.
-        if (language === DEFAULT_LOCALE && namespace !== 'workspace') return Promise.resolve({}) // already bundled; guard for Rollup
+        if (language === DEFAULT_LOCALE && namespace !== 'workspace' && namespace !== 'sketch') return Promise.resolve({}) // already bundled; guard for Rollup
         return loadLocaleNamespace(language, namespace)
       },
     ),

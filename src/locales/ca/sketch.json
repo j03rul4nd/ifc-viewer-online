@@ -1,0 +1,121 @@
+{
+  "title": "Esbós 3D",
+  "back": "Torna al visor",
+  "notSaved": "No s'ha pogut desar en aquest navegador",
+  "tools": {
+    "label": "Eines",
+    "pen": "Ploma",
+    "pencil": "Llapis",
+    "marker": "Retolador",
+    "line": "Línia recta",
+    "eraser": "Esborrador",
+    "pick": "Fixa el pla des del dibuix"
+  },
+  "color": "Color",
+  "customColor": "Color personalitzat",
+  "size": "Gruix",
+  "plane": {
+    "label": "Pla de dibuix",
+    "ground": "Terra",
+    "front": "Front",
+    "side": "Lateral",
+    "facing": "Cap a mi",
+    "lookAt": "Mira'l",
+    "move": "Mou",
+    "rotate": "Gira",
+    "edgeOn": "Aquest pla es veu de cantell des d'aquí.",
+    "fix": "Cap a mi",
+    "picked": "Pla fixat des del dibuix.",
+    "pickedSurface": "Pla fixat en aquesta cara.",
+    "pickNothing": "Aquí no hi ha res on alinear-se. Toca un traç o una cara del model."
+  },
+  "view": {
+    "label": "Vista",
+    "top": "Planta",
+    "front": "Front",
+    "right": "Dreta",
+    "iso": "3D",
+    "ortho": "Paral·lela",
+    "fit": "Enquadra",
+    "save": "Desa",
+    "views": "Vistes desades",
+    "remove": "Treu la vista",
+    "orbitHint": "Arrossega per orbitar"
+  },
+  "layers": {
+    "label": "Capes",
+    "add": "Afegeix una capa",
+    "name": "Capa {{n}}",
+    "hide": "Amaga",
+    "show": "Mostra",
+    "lock": "Bloqueja",
+    "unlock": "Desbloqueja",
+    "delete": "Elimina la capa",
+    "locked": "Aquesta capa està bloquejada o amagada."
+  },
+  "pages": {
+    "label": "Pàgines",
+    "add": "Afegeix una pàgina",
+    "delete": "Elimina la pàgina",
+    "name": "Pàgina {{n}}"
+  },
+  "undo": "Desfés",
+  "redo": "Refés",
+  "clear": "Buida la capa",
+  "more": "Més",
+  "paper": {
+    "label": "Paper",
+    "warm": "Càlid",
+    "white": "Blanc",
+    "night": "Nit"
+  },
+  "side": {
+    "label": "Eines a la",
+    "left": "Esquerra",
+    "right": "Dreta"
+  },
+  "fingerDraw": "Dibuixa amb el dit",
+  "status": {
+    "pen": "La ploma dibuixa",
+    "finger": "El dit dibuixa",
+    "fingerOff": "Els dits naveguen",
+    "orbit": "2 dits orbiten",
+    "pan": "3 dits desplacen"
+  },
+  "refs": {
+    "label": "Referències",
+    "images": "Imatges",
+    "live": "Planta i alçat",
+    "add": "Afegeix imatges",
+    "camera": "Fes una foto",
+    "empty": "Porta una foto d'obra, un plànol o un esbós anterior per dibuixar al seu costat.",
+    "place": "Col·loca al pla",
+    "delete": "Elimina la imatge",
+    "close": "Tanca les referències",
+    "opacity": "Opacitat",
+    "removePlaced": "Treu de l'escena",
+    "placed": "Col·locada al pla de dibuix.",
+    "tooMany": "No s'ha pogut llegir aquesta imatge.",
+    "top": "Planta",
+    "front": "Alçat",
+    "liveEmpty": "Dibuixa alguna cosa i apareixerà aquí vista des de dalt i de front."
+  },
+  "context": {
+    "load": "Esbossa sobre un model (GLB)",
+    "clear": "Treu el model",
+    "failed": "Aquest fitxer no s'ha pogut llegir com a model GLB.",
+    "loaded": "Model carregat. Fes servir l'eina de pla per dibuixar en qualsevol de les seves cares."
+  },
+  "export": {
+    "label": "Exporta",
+    "png": "Imatge (PNG)",
+    "svg": "Vector (SVG)",
+    "file": "Fitxer d'esbós",
+    "open": "Obre un esbós",
+    "video": "Vídeo del procés",
+    "recording": "S'està gravant el procés…",
+    "badFile": "Aquest fitxer no és un esbós.",
+    "noVideo": "Aquest navegador no pot gravar vídeo."
+  },
+  "webgl": "Aquest dispositiu no ha pogut iniciar el dibuix en 3D."
+}

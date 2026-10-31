@@ -1,0 +1,121 @@
+{
+  "title": "Croquis 3D",
+  "back": "Retour à la visionneuse",
+  "notSaved": "Enregistrement impossible dans ce navigateur",
+  "tools": {
+    "label": "Outils",
+    "pen": "Stylo",
+    "pencil": "Crayon",
+    "marker": "Marqueur",
+    "line": "Ligne droite",
+    "eraser": "Gomme",
+    "pick": "Définir le plan depuis le dessin"
+  },
+  "color": "Couleur",
+  "customColor": "Couleur personnalisée",
+  "size": "Épaisseur",
+  "plane": {
+    "label": "Plan de dessin",
+    "ground": "Sol",
+    "front": "Face",
+    "side": "Côté",
+    "facing": "Vers moi",
+    "lookAt": "Le regarder",
+    "move": "Déplacer",
+    "rotate": "Pivoter",
+    "edgeOn": "Ce plan est vu par la tranche d'ici.",
+    "fix": "Vers moi",
+    "picked": "Plan défini depuis le dessin.",
+    "pickedSurface": "Plan défini sur cette face.",
+    "pickNothing": "Rien sur quoi s'aligner ici. Touchez un trait ou une face du modèle."
+  },
+  "view": {
+    "label": "Vue",
+    "top": "Dessus",
+    "front": "Face",
+    "right": "Droite",
+    "iso": "3D",
+    "ortho": "Parallèle",
+    "fit": "Cadrer",
+    "save": "Enregistrer",
+    "views": "Vues enregistrées",
+    "remove": "Retirer la vue",
+    "orbitHint": "Faites glisser pour orbiter"
+  },
+  "layers": {
+    "label": "Calques",
+    "add": "Ajouter un calque",
+    "name": "Calque {{n}}",
+    "hide": "Masquer",
+    "show": "Afficher",
+    "lock": "Verrouiller",
+    "unlock": "Déverrouiller",
+    "delete": "Supprimer le calque",
+    "locked": "Ce calque est verrouillé ou masqué."
+  },
+  "pages": {
+    "label": "Pages",
+    "add": "Ajouter une page",
+    "delete": "Supprimer la page",
+    "name": "Page {{n}}"
+  },
+  "undo": "Annuler",
+  "redo": "Rétablir",
+  "clear": "Vider le calque",
+  "more": "Plus",
+  "paper": {
+    "label": "Papier",
+    "warm": "Chaud",
+    "white": "Blanc",
+    "night": "Nuit"
+  },
+  "side": {
+    "label": "Outils à",
+    "left": "Gauche",
+    "right": "Droite"
+  },
+  "fingerDraw": "Dessiner au doigt",
+  "status": {
+    "pen": "Le stylo dessine",
+    "finger": "Le doigt dessine",
+    "fingerOff": "Les doigts naviguent",
+    "orbit": "2 doigts : orbite",
+    "pan": "3 doigts : déplacement"
+  },
+  "refs": {
+    "label": "Références",
+    "images": "Images",
+    "live": "Plan et élévation",
+    "add": "Ajouter des images",
+    "camera": "Prendre une photo",
+    "empty": "Importez une photo de chantier, un plan ou un ancien croquis pour dessiner à côté.",
+    "place": "Placer sur le plan",
+    "delete": "Supprimer l'image",
+    "close": "Fermer les références",
+    "opacity": "Opacité",
+    "removePlaced": "Retirer de la scène",
+    "placed": "Placée sur le plan de dessin.",
+    "tooMany": "Impossible de lire cette image.",
+    "top": "Plan",
+    "front": "Élévation",
+    "liveEmpty": "Dessinez : le dessin apparaît ici vu de dessus et de face."
+  },
+  "context": {
+    "load": "Dessiner sur un modèle (GLB)",
+    "clear": "Retirer le modèle",
+    "failed": "Impossible de lire ce fichier comme modèle GLB.",
+    "loaded": "Modèle chargé. Utilisez l'outil de plan pour dessiner sur n'importe quelle face."
+  },
+  "export": {
+    "label": "Exporter",
+    "png": "Image (PNG)",
+    "svg": "Vecteur (SVG)",
+    "file": "Fichier de croquis",
+    "open": "Ouvrir un croquis",
+    "video": "Vidéo du processus",
+    "recording": "Enregistrement du processus…",
+    "badFile": "Ce fichier n'est pas un croquis.",
+    "noVideo": "Ce navigateur ne peut pas enregistrer de vidéo."
+  },
+  "webgl": "Cet appareil n'a pas pu lancer le dessin 3D."
+}

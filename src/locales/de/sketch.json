@@ -1,0 +1,121 @@
+{
+  "title": "3D-Skizze",
+  "back": "Zurück zum Viewer",
+  "notSaved": "Speichern in diesem Browser nicht möglich",
+  "tools": {
+    "label": "Werkzeuge",
+    "pen": "Stift",
+    "pencil": "Bleistift",
+    "marker": "Marker",
+    "line": "Gerade Linie",
+    "eraser": "Radierer",
+    "pick": "Ebene aus der Zeichnung setzen"
+  },
+  "color": "Farbe",
+  "customColor": "Eigene Farbe",
+  "size": "Stärke",
+  "plane": {
+    "label": "Zeichenebene",
+    "ground": "Boden",
+    "front": "Vorne",
+    "side": "Seite",
+    "facing": "Zu mir",
+    "lookAt": "Ansehen",
+    "move": "Verschieben",
+    "rotate": "Drehen",
+    "edgeOn": "Diese Ebene ist von hier aus nur als Kante sichtbar.",
+    "fix": "Zu mir",
+    "picked": "Ebene aus der Zeichnung gesetzt.",
+    "pickedSurface": "Ebene auf diese Fläche gesetzt.",
+    "pickNothing": "Hier gibt es nichts zum Ausrichten. Tippen Sie auf einen Strich oder eine Modellfläche."
+  },
+  "view": {
+    "label": "Ansicht",
+    "top": "Oben",
+    "front": "Vorne",
+    "right": "Rechts",
+    "iso": "3D",
+    "ortho": "Parallel",
+    "fit": "Einpassen",
+    "save": "Speichern",
+    "views": "Gespeicherte Ansichten",
+    "remove": "Ansicht entfernen",
+    "orbitHint": "Zum Drehen ziehen"
+  },
+  "layers": {
+    "label": "Ebenen",
+    "add": "Ebene hinzufügen",
+    "name": "Ebene {{n}}",
+    "hide": "Ausblenden",
+    "show": "Einblenden",
+    "lock": "Sperren",
+    "unlock": "Entsperren",
+    "delete": "Ebene löschen",
+    "locked": "Diese Ebene ist gesperrt oder ausgeblendet."
+  },
+  "pages": {
+    "label": "Seiten",
+    "add": "Seite hinzufügen",
+    "delete": "Seite löschen",
+    "name": "Seite {{n}}"
+  },
+  "undo": "Rückgängig",
+  "redo": "Wiederholen",
+  "clear": "Ebene leeren",
+  "more": "Mehr",
+  "paper": {
+    "label": "Papier",
+    "warm": "Warm",
+    "white": "Weiß",
+    "night": "Nacht"
+  },
+  "side": {
+    "label": "Werkzeuge",
+    "left": "Links",
+    "right": "Rechts"
+  },
+  "fingerDraw": "Mit dem Finger zeichnen",
+  "status": {
+    "pen": "Stift zeichnet",
+    "finger": "Finger zeichnet",
+    "fingerOff": "Finger navigieren",
+    "orbit": "2 Finger drehen",
+    "pan": "3 Finger verschieben"
+  },
+  "refs": {
+    "label": "Referenzen",
+    "images": "Bilder",
+    "live": "Grundriss und Ansicht",
+    "add": "Bilder hinzufügen",
+    "camera": "Foto aufnehmen",
+    "empty": "Holen Sie ein Baustellenfoto, einen Plan oder eine frühere Skizze dazu, um daneben zu zeichnen.",
+    "place": "Auf die Ebene legen",
+    "delete": "Bild löschen",
+    "close": "Referenzen schließen",
+    "opacity": "Deckkraft",
+    "removePlaced": "Aus der Szene entfernen",
+    "placed": "Auf die Zeichenebene gelegt.",
+    "tooMany": "Dieses Bild konnte nicht gelesen werden.",
+    "top": "Grundriss",
+    "front": "Ansicht",
+    "liveEmpty": "Zeichnen Sie etwas, und es erscheint hier von oben und von vorne."
+  },
+  "context": {
+    "load": "Über ein Modell skizzieren (GLB)",
+    "clear": "Modell entfernen",
+    "failed": "Diese Datei konnte nicht als GLB-Modell gelesen werden.",
+    "loaded": "Modell geladen. Mit dem Ebenenwerkzeug zeichnen Sie auf jeder seiner Flächen."
+  },
+  "export": {
+    "label": "Exportieren",
+    "png": "Bild (PNG)",
+    "svg": "Vektor (SVG)",
+    "file": "Skizzendatei",
+    "open": "Skizze öffnen",
+    "video": "Prozessvideo",
+    "recording": "Prozess wird aufgezeichnet…",
+    "badFile": "Das ist keine Skizzendatei.",
+    "noVideo": "Dieser Browser kann kein Video aufzeichnen."
+  },
+  "webgl": "Dieses Gerät konnte das 3D-Zeichnen nicht starten."
+}

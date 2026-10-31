@@ -302,7 +302,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'workspace' | 'plans'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'sketch' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'workspace' | 'plans'
 }): void {
   track('route_changed', props)
 }

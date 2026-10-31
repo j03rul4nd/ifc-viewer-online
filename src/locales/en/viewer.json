@@ -519,6 +519,7 @@
     }
   },
   "dualScreen": {
+    "sketch": "3D sketch",
     "pane": "Model and properties",
     "views": "Pane view",
     "view": {

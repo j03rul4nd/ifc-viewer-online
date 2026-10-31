@@ -1,0 +1,121 @@
+{
+  "title": "Schizzo 3D",
+  "back": "Torna al visualizzatore",
+  "notSaved": "Impossibile salvare in questo browser",
+  "tools": {
+    "label": "Strumenti",
+    "pen": "Penna",
+    "pencil": "Matita",
+    "marker": "Pennarello",
+    "line": "Linea retta",
+    "eraser": "Gomma",
+    "pick": "Imposta il piano dal disegno"
+  },
+  "color": "Colore",
+  "customColor": "Colore personalizzato",
+  "size": "Spessore",
+  "plane": {
+    "label": "Piano di disegno",
+    "ground": "Suolo",
+    "front": "Fronte",
+    "side": "Lato",
+    "facing": "Verso di me",
+    "lookAt": "Guardalo",
+    "move": "Sposta",
+    "rotate": "Ruota",
+    "edgeOn": "Da qui questo piano si vede di taglio.",
+    "fix": "Verso di me",
+    "picked": "Piano impostato dal disegno.",
+    "pickedSurface": "Piano impostato su quella faccia.",
+    "pickNothing": "Qui non c'è nulla a cui allinearsi. Tocca un tratto o una faccia del modello."
+  },
+  "view": {
+    "label": "Vista",
+    "top": "Alto",
+    "front": "Fronte",
+    "right": "Destra",
+    "iso": "3D",
+    "ortho": "Parallela",
+    "fit": "Inquadra",
+    "save": "Salva",
+    "views": "Viste salvate",
+    "remove": "Rimuovi vista",
+    "orbitHint": "Trascina per orbitare"
+  },
+  "layers": {
+    "label": "Livelli",
+    "add": "Aggiungi livello",
+    "name": "Livello {{n}}",
+    "hide": "Nascondi",
+    "show": "Mostra",
+    "lock": "Blocca",
+    "unlock": "Sblocca",
+    "delete": "Elimina livello",
+    "locked": "Questo livello è bloccato o nascosto."
+  },
+  "pages": {
+    "label": "Pagine",
+    "add": "Aggiungi pagina",
+    "delete": "Elimina pagina",
+    "name": "Pagina {{n}}"
+  },
+  "undo": "Annulla",
+  "redo": "Ripeti",
+  "clear": "Svuota livello",
+  "more": "Altro",
+  "paper": {
+    "label": "Carta",
+    "warm": "Calda",
+    "white": "Bianca",
+    "night": "Notte"
+  },
+  "side": {
+    "label": "Strumenti a",
+    "left": "Sinistra",
+    "right": "Destra"
+  },
+  "fingerDraw": "Disegna con il dito",
+  "status": {
+    "pen": "La penna disegna",
+    "finger": "Il dito disegna",
+    "fingerOff": "Le dita navigano",
+    "orbit": "2 dita: orbita",
+    "pan": "3 dita: sposta"
+  },
+  "refs": {
+    "label": "Riferimenti",
+    "images": "Immagini",
+    "live": "Pianta e prospetto",
+    "add": "Aggiungi immagini",
+    "camera": "Scatta una foto",
+    "empty": "Porta una foto di cantiere, una pianta o uno schizzo precedente per disegnarci accanto.",
+    "place": "Posiziona sul piano",
+    "delete": "Elimina immagine",
+    "close": "Chiudi riferimenti",
+    "opacity": "Opacità",
+    "removePlaced": "Rimuovi dalla scena",
+    "placed": "Posizionata sul piano di disegno.",
+    "tooMany": "Impossibile leggere questa immagine.",
+    "top": "Pianta",
+    "front": "Prospetto",
+    "liveEmpty": "Disegna qualcosa e apparirà qui visto dall'alto e di fronte."
+  },
+  "context": {
+    "load": "Schizza su un modello (GLB)",
+    "clear": "Rimuovi il modello",
+    "failed": "Impossibile leggere il file come modello GLB.",
+    "loaded": "Modello caricato. Usa lo strumento piano per disegnare su una qualsiasi faccia."
+  },
+  "export": {
+    "label": "Esporta",
+    "png": "Immagine (PNG)",
+    "svg": "Vettoriale (SVG)",
+    "file": "File di schizzo",
+    "open": "Apri uno schizzo",
+    "video": "Video del processo",
+    "recording": "Registrazione del processo…",
+    "badFile": "Questo file non è uno schizzo.",
+    "noVideo": "Questo browser non può registrare video."
+  },
+  "webgl": "Questo dispositivo non ha potuto avviare il disegno 3D."
+}

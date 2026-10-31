@@ -519,6 +519,7 @@
     "xray": "Raigs X (veure a través dels murs)"
   },
   "dualScreen": {
+    "sketch": "Esbós 3D",
     "pane": "Model i propietats",
     "views": "Vista del panell",
     "view": {

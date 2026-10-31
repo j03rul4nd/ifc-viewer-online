@@ -1,0 +1,121 @@
+{
+  "title": "3D sketch",
+  "back": "Back to the viewer",
+  "notSaved": "Could not save in this browser",
+  "tools": {
+    "label": "Tools",
+    "pen": "Pen",
+    "pencil": "Pencil",
+    "marker": "Marker",
+    "line": "Straight line",
+    "eraser": "Eraser",
+    "pick": "Set plane from the drawing"
+  },
+  "color": "Colour",
+  "customColor": "Custom colour",
+  "size": "Size",
+  "plane": {
+    "label": "Drawing plane",
+    "ground": "Ground",
+    "front": "Front",
+    "side": "Side",
+    "facing": "Face me",
+    "lookAt": "Look at it",
+    "move": "Move",
+    "rotate": "Rotate",
+    "edgeOn": "This plane is edge-on from here.",
+    "fix": "Face me",
+    "picked": "Plane set from the drawing.",
+    "pickedSurface": "Plane set on that face.",
+    "pickNothing": "Nothing to align to there. Tap a stroke or a model face."
+  },
+  "view": {
+    "label": "View",
+    "top": "Top",
+    "front": "Front",
+    "right": "Right",
+    "iso": "3D",
+    "ortho": "Parallel",
+    "fit": "Fit",
+    "save": "Save",
+    "views": "Saved views",
+    "remove": "Remove view",
+    "orbitHint": "Drag to orbit"
+  },
+  "layers": {
+    "label": "Layers",
+    "add": "Add layer",
+    "name": "Layer {{n}}",
+    "hide": "Hide",
+    "show": "Show",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "delete": "Delete layer",
+    "locked": "This layer is locked or hidden."
+  },
+  "pages": {
+    "label": "Pages",
+    "add": "Add page",
+    "delete": "Delete page",
+    "name": "Page {{n}}"
+  },
+  "undo": "Undo",
+  "redo": "Redo",
+  "clear": "Clear layer",
+  "more": "More",
+  "paper": {
+    "label": "Paper",
+    "warm": "Warm",
+    "white": "White",
+    "night": "Night"
+  },
+  "side": {
+    "label": "Tools on the",
+    "left": "Left",
+    "right": "Right"
+  },
+  "fingerDraw": "Draw with a finger",
+  "status": {
+    "pen": "Pen draws",
+    "finger": "Finger draws",
+    "fingerOff": "Fingers navigate",
+    "orbit": "2 fingers orbit",
+    "pan": "3 fingers pan"
+  },
+  "refs": {
+    "label": "References",
+    "images": "Images",
+    "live": "Plan and elevation",
+    "add": "Add images",
+    "camera": "Take a photo",
+    "empty": "Bring in a site photo, a plan or an earlier sketch to draw beside it.",
+    "place": "Place on the plane",
+    "delete": "Delete image",
+    "close": "Close references",
+    "opacity": "Opacity",
+    "removePlaced": "Remove from the scene",
+    "placed": "Placed on the drawing plane.",
+    "tooMany": "That image could not be read.",
+    "top": "Plan",
+    "front": "Elevation",
+    "liveEmpty": "Draw something and it appears here from above and from the front."
+  },
+  "context": {
+    "load": "Sketch over a model (GLB)",
+    "clear": "Remove the model",
+    "failed": "That file could not be read as a GLB model.",
+    "loaded": "Model loaded. Use the plane tool to draw on any of its faces."
+  },
+  "export": {
+    "label": "Export",
+    "png": "Image (PNG)",
+    "svg": "Vector (SVG)",
+    "file": "Sketch file",
+    "open": "Open a sketch file",
+    "video": "Replay video",
+    "recording": "Recording the replay…",
+    "badFile": "That is not a sketch file.",
+    "noVideo": "This browser cannot record video."
+  },
+  "webgl": "This device could not start 3D drawing."
+}

@@ -519,6 +519,7 @@
     "xray": "Raggi X (vedi attraverso i muri)"
   },
   "dualScreen": {
+    "sketch": "Schizzo 3D",
     "pane": "Modello e proprietà",
     "views": "Vista del pannello",
     "view": {
