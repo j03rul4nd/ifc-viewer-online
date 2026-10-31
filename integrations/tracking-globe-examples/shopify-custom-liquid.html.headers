@@ -1,0 +1,1 @@
+{"content-security-policy":"block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;","x-frame-options":"DENY"}

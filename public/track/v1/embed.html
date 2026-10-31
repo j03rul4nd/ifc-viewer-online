@@ -1,0 +1,12 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Tracking globe</title>
+<style>html,body{margin:0;height:100%;background:transparent}tracking-globe{display:block;height:100%}</style></head>
+<body><tracking-globe id="g" height="fill"></tracking-globe>
+<script>
+// The configuration lives in the fragment, so it never reaches a server log. ?c= is for hosts that drop fragments.
+var m=location.hash.match(/[#&]c=([\w-]+)/)||location.search.match(/[?&]c=([\w-]+)/);
+if(m)document.getElementById('g').setAttribute('config',m[1]);
+var l=location.search.match(/[?&]lang=(\w+)/);if(l)document.documentElement.lang=l[1];
+</script>
+<script src="tracker.js"></script>
+</body></html>
