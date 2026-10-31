@@ -22,14 +22,14 @@ const TOPIC_TYPES   = ['Issue', 'Error', 'Warning', 'Info', 'Comment', 'Request'
 const PRIORITIES    = ['High', 'Normal', 'Low'] as const
 
 const STATUS_COLORS: Record<string, string> = {
-  'Open':        '#ef4444',
-  'In Progress': '#f59e0b',
-  'Closed':      '#22c55e',
+  'Open':        '#e0523f',
+  'In Progress': '#e9a23b',
+  'Closed':      '#3fa866',
   "Won't Fix":   '#6b7280',
 }
 const PRIORITY_COLORS: Record<string, string> = {
-  'High':   '#ef4444',
-  'Normal': '#f59e0b',
+  'High':   '#e0523f',
+  'Normal': '#e9a23b',
   'Low':    '#6b7280',
 }
 const PRIORITY_ORDER: Record<string, number> = { 'High': 0, 'Normal': 1, 'Low': 2 }

@@ -145,13 +145,13 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
 
   return (
     <div className={chrome} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <div className="pointer-events-none fixed inset-0" aria-hidden style={{ background: light ? 'radial-gradient(90% 60% at 50% -10%, rgba(139,92,246,0.12), transparent 60%)' : 'radial-gradient(90% 60% at 50% -10%, rgba(139,92,246,0.20), transparent 60%)' }} />
+      <div className="pointer-events-none fixed inset-0" aria-hidden style={{ background: light ? 'radial-gradient(90% 60% at 50% -10%, rgba(176,141,95,0.12), transparent 60%)' : 'radial-gradient(90% 60% at 50% -10%, rgba(176,141,95,0.20), transparent 60%)' }} />
 
       <div className="relative z-10 mx-auto w-full max-w-[1100px] px-5 py-8 md:py-12">
         <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-[clamp(22px,3vw,30px)] font-semibold tracking-[-0.02em] leading-tight">{t('admin.title')}</h1>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider" style={{ background: 'rgba(94,106,210,0.15)', color: 'var(--accent)' }}>{t('admin.liveBadge')}</span>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider" style={{ background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }}>{t('admin.liveBadge')}</span>
           </div>
           <button onClick={onBack} className="h-9 px-4 rounded-lg text-[12px] font-medium border" style={ghost}>{t('admin.back')}</button>
         </header>
@@ -171,7 +171,7 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
         </nav>
 
         {notice && (
-          <div className="flex items-center justify-between gap-3 text-[12px] rounded-xl px-4 py-2.5 mb-4 border" style={{ borderColor: 'rgba(245,166,35,0.3)', background: 'rgba(245,166,35,0.06)', color: light ? '#8a5a00' : '#f5c76a' }}>
+          <div className="flex items-center justify-between gap-3 text-[12px] rounded-xl px-4 py-2.5 mb-4 border" style={{ borderColor: 'rgba(233,162,59,0.3)', background: 'rgba(233,162,59,0.06)', color: light ? '#8a5a00' : '#f5c76a' }}>
             <span>{notice}</span>
             <button onClick={() => setNotice(null)} className="text-[11px] underline opacity-80">{t('admin.dismiss')}</button>
           </div>
@@ -206,14 +206,14 @@ interface TabProps {
 const thCls = 'py-1.5 px-2 font-medium'
 const planBadge = (plan: string): React.CSSProperties => plan === 'free'
   ? { background: 'var(--surface-2)', color: 'var(--text-muted)' }
-  : { background: 'rgba(94,106,210,0.15)', color: 'var(--accent)' }
+  : { background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }
 const statusColor = (s: string): React.CSSProperties =>
   s === 'active' ? { color: 'var(--ok, #4caf82)' }
-  : s === 'past_due' || s === 'suspended' ? { color: '#F5A623' }
-  : { color: 'var(--danger, #e5534b)' }
+  : s === 'past_due' || s === 'suspended' ? { color: '#E9A23B' }
+  : { color: 'var(--danger, #e0523f)' }
 const selectCls = 'h-7 px-1.5 rounded-md text-[11px] border bg-transparent'
 const btnCls = 'h-7 px-2 rounded-md text-[10px] border disabled:opacity-40'
-const dangerStyle: React.CSSProperties = { borderColor: 'rgba(229,83,75,0.4)', color: 'var(--danger, #e5534b)' }
+const dangerStyle: React.CSSProperties = { borderColor: 'rgba(224,82,63,0.4)', color: 'var(--danger, #e0523f)' }
 
 function SectionCard({ card, title, children }: { card: React.CSSProperties; title?: string; children: React.ReactNode }) {
   return (
@@ -387,7 +387,7 @@ function UsersTab({ call, card, ghost, busy, setBusy, setNotice, plans, openAudi
                 <td className="py-2 pr-2 text-[11px] font-mono" title={u.id}>{short(u.id)}</td>
                 <td className="py-2 px-2 text-[11px]">
                   {u.global_role === 'super_admin'
-                    ? <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase" style={{ background: 'rgba(245,166,35,0.14)', color: '#F5A623' }}>{t('admin.roleSuperAdmin')}</span>
+                    ? <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase" style={{ background: 'rgba(233,162,59,0.14)', color: '#E9A23B' }}>{t('admin.roleSuperAdmin')}</span>
                     : <span style={{ color: 'var(--text-muted)' }}>{t('admin.roleUser')}</span>}
                 </td>
                 <td className="py-2 px-2">
@@ -866,7 +866,7 @@ function WorkspacesTab({ call, card, ghost, busy, setBusy, setNotice, plans }: T
                 <td className="py-2 pl-2 text-right whitespace-nowrap">
                   <button disabled={busy} onClick={() => void toggleUsage(w.id)} className={`${btnCls} mr-1.5`} style={ghost}>{t('admin.usage')}</button>
                   <button disabled={busy} onClick={() => editLimits(w)} className={`${btnCls} mr-1.5`} style={ghost}>{t('admin.limits')}</button>
-                  <button disabled={busy} onClick={() => void resetUsage(w.id)} className={btnCls} style={{ borderColor: 'rgba(245,166,35,0.4)', color: '#F5A623' }}>{t('admin.reset')}</button>
+                  <button disabled={busy} onClick={() => void resetUsage(w.id)} className={btnCls} style={{ borderColor: 'rgba(233,162,59,0.4)', color: '#E9A23B' }}>{t('admin.reset')}</button>
                 </td>
               </tr>
               {expanded === w.id && (
@@ -988,7 +988,7 @@ function PlansTab({ call, card, ghost, busy, setBusy, setNotice, reloadPlans }: 
           </label>
           <button disabled={busy} onClick={() => void create()} className="h-8 px-4 rounded-lg text-[12px] font-medium" style={{ background: 'var(--accent)', color: '#fff' }}>{t('admin.createPlan')}</button>
         </div>
-        {formError && <p className="mt-2 text-[11px]" style={{ color: 'var(--danger, #e5534b)' }}>{formError}</p>}
+        {formError && <p className="mt-2 text-[11px]" style={{ color: 'var(--danger, #e0523f)' }}>{formError}</p>}
       </SectionCard>
 
       <SectionCard card={card} title={t('admin.plansTitle')}>

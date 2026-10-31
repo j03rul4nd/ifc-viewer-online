@@ -129,15 +129,15 @@ const QUALITY_LEVELS = [
 ] as const
 /** Samples shown before "show all" — the featured ones first. */
 const SAMPLES_COLLAPSED = 4
-const SEVERITY_TINT: Record<Issue['severity'], string> = { error: '#E5484D', warn: '#F5A623', info: '#5E9ED6' }
+const SEVERITY_TINT: Record<Issue['severity'], string> = { error: '#E0523F', warn: '#E9A23B', info: '#5E9ED6' }
 type DemoViewMode = 'point-cloud' | 'ifc' | 'overlay' | 'xray' | 'scan-vs-bim' | 'comparison'
 
 /** Confidence → badge colour. A guess must never look like a measurement. */
 const CONFIDENCE_TINT: Record<string, string> = {
-  exact: '#30A46C',
+  exact: '#3FA866',
   high: '#5E9ED6',
-  approximate: '#F5A623',
-  manual: '#E5484D',
+  approximate: '#E9A23B',
+  manual: '#E0523F',
 }
 
 /**
@@ -1332,10 +1332,10 @@ export default function PointCloudPanel({
         className="rounded-[12px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 flex flex-col gap-2"
       >
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge tint="#F5A623">{t('replay.simulatedBadge')}</Badge>
+          <Badge tint="#E9A23B">{t('replay.simulatedBadge')}</Badge>
           <DemoChip>IFC + LiDAR</DemoChip>
           <DemoChip>{activeShowcase.frameRate} FPS</DemoChip>
-          {(companionLoaded || replayState) && <Badge tint="#30A46C">{t('replay.ifcLoaded')}</Badge>}
+          {(companionLoaded || replayState) && <Badge tint="#3FA866">{t('replay.ifcLoaded')}</Badge>}
         </div>
         <div className="text-[13px] font-semibold text-[var(--text)]">
           {tDynamic(`replay.showcases.${activeShowcase.copyKey}.name`)}
@@ -1352,7 +1352,7 @@ export default function PointCloudPanel({
           <div className="flex flex-col gap-2" aria-live="polite">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Badge tint={replayState.status === 'playing' ? '#30A46C' : '#F5A623'}>
+                <Badge tint={replayState.status === 'playing' ? '#3FA866' : '#E9A23B'}>
                   {t(`replay.status.${replayState.status}`)}
                 </Badge>
                 <span className="text-[11px] font-mono tabular-nums text-[var(--text-faint)]">
@@ -1399,8 +1399,8 @@ export default function PointCloudPanel({
             {transportState && (
               <Disclosure title={t('replay.transport.title')} badge={
                 <Badge tint={
-                  transportState.status === 'connected' ? '#30A46C'
-                    : transportState.status === 'reconnecting' ? '#E5484D' : '#F5A623'
+                  transportState.status === 'connected' ? '#3FA866'
+                    : transportState.status === 'reconnecting' ? '#E0523F' : '#E9A23B'
                 }>
                   {t(`replay.transport.status.${transportState.status}`)}
                 </Badge>
@@ -2205,8 +2205,8 @@ export default function PointCloudPanel({
                 <>
                   {isMulti && <Hint>{t('scope.analyzeCaption')}</Hint>}
                   {filtersActive && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-[#F5A62355] bg-[#F5A62314] px-3 py-2">
-                      <span className="w-2 h-2 rounded-full bg-[#F5A623] shrink-0" />
+                    <div className="flex items-center gap-2 rounded-[10px] border border-[#E9A23B55] bg-[#E9A23B14] px-3 py-2">
+                      <span className="w-2 h-2 rounded-full bg-[#E9A23B] shrink-0" />
                       <span className="flex-1 text-[12px] text-[var(--text-dim)]">{t('analyze.activeBanner')}</span>
                       <button type="button" onClick={clearAnalysis}
                         className="text-[12px] font-medium text-[var(--accent)] hover:underline underline-offset-2 whitespace-nowrap">
@@ -2508,7 +2508,7 @@ function CheckUp({ issues, onFix, t, describeError, cloud, title, children }: {
   const [expanded, setExpanded] = useState(hasError)
   useEffect(() => { setExpanded(hasError) }, [hasError, cloud.id])
   const worst = issues[0]?.severity ?? 'info'
-  const tint = issues.length === 0 ? '#30A46C' : SEVERITY_TINT[worst]
+  const tint = issues.length === 0 ? '#3FA866' : SEVERITY_TINT[worst]
   return (
     <div className="rounded-[12px] border overflow-hidden" style={{ borderColor: `${tint}55` }} data-testid="pc-checkup">
       <button

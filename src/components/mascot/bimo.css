@@ -33,7 +33,7 @@
 .bimo-shadow { transform-origin: 50% 50%; animation: bimo-shadow 3.2s ease-in-out infinite; }
 
 .bimo-interactive { cursor: pointer; border-radius: 999px; -webkit-tap-highlight-color: transparent; }
-.bimo-interactive:focus-visible { outline: 2px solid var(--accent-2, #8B93E8); outline-offset: 4px; }
+.bimo-interactive:focus-visible { outline: 2px solid var(--accent-2, #55CAC3); outline-offset: 4px; }
 .bimo-interactive .bimo-svg { transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
 .bimo-interactive:hover .bimo-svg { transform: translateY(-2px) scale(1.04); }
 .bimo-interactive:active .bimo-svg { transform: scale(.94, .9); transition-duration: .08s; }
@@ -105,8 +105,8 @@
 /* ── shared UI around Bimo (speech bubble, cards) ── */
 .bimo-bubble {
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--accent-2, #8B93E8) 30%, var(--border, #2a2b36));
-  background: color-mix(in srgb, var(--accent, #5E6AD2) 7%, var(--surface, #101014));
+  border: 1px solid color-mix(in srgb, var(--accent-2, #55CAC3) 30%, var(--border, #2a2b36));
+  background: color-mix(in srgb, var(--accent, #0A8481) 7%, var(--surface, #181714));
   border-radius: 16px;
   animation: bimo-bubble-in .45s cubic-bezier(.34,1.56,.64,1) both;
 }

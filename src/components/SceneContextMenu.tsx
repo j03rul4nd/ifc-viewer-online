@@ -56,11 +56,11 @@ function Item({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 px-3 h-8 text-left text-[12px] transition-colors rounded-md ${
         danger
-          ? 'text-[#E5484D] hover:bg-[#E5484D18]'
+          ? 'text-[#E0523F] hover:bg-[#E0523F18]'
           : 'text-[var(--text)] hover:bg-[var(--surface-2)]'
       }`}
     >
-      <span className={`shrink-0 ${danger ? 'text-[#E5484D]' : 'text-[var(--text-dim)]'}`}>{icon}</span>
+      <span className={`shrink-0 ${danger ? 'text-[#E0523F]' : 'text-[var(--text-dim)]'}`}>{icon}</span>
       <span className="flex-1 truncate">{label}</span>
       {hint && <kbd className="shrink-0 text-[9.5px] font-mono text-[var(--text-faint)] px-1 py-0.5 rounded border border-[var(--border)] bg-[var(--surface-2)] leading-none">{hint}</kbd>}
     </button>
@@ -205,7 +205,7 @@ export default function SceneContextMenu({
           <Item icon={<TreeIcon />}         label={t('contextMenu.revealInTree')}    onClick={run(() => onReveal(expressId, info.modelId))} />
           <Item
             icon={copied
-              ? <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#30A46C" strokeWidth="1.8" strokeLinecap="round"><path d="M2 6l3 3 5-5" /></svg>
+              ? <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#3FA866" strokeWidth="1.8" strokeLinecap="round"><path d="M2 6l3 3 5-5" /></svg>
               : <Icons.Copy size={13} />}
             label={copied ? t('contextMenu.copied') : t('contextMenu.copyId')}
             onClick={copyId}

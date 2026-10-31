@@ -31,12 +31,12 @@ export function getCoveredCategories(rules: RulesConfig): ValidationCategoryType
 const CATEGORY_COLORS: Partial<Record<ValidationCategoryType, string>> = {
   schema:         '#5E9ED6',
   spatial:        '#5E9ED6',
-  quality:        '#30A46C',
-  lod:            '#F5A623',
+  quality:        '#3FA866',
+  lod:            '#E9A23B',
   iso19650:       '#9B8EF7',
-  classification: '#F5A623',
+  classification: '#E9A23B',
   mep:            '#5E9ED6',
-  clash:          '#E5484D',
+  clash:          '#E0523F',
 }
 
 function CategoryChip({ cat, checked }: { cat: ValidationCategoryType; checked: boolean }) {
@@ -83,8 +83,8 @@ function getSuggestedProfile(uncovered: ValidationCategoryType[]): string | null
 function ScoreRing({ score }: { score: number }) {
   const { t } = useTranslation('validation')
   const color =
-    score >= 80 ? '#30A46C' :
-    score >= 50 ? '#F5A623' :
+    score >= 80 ? '#3FA866' :
+    score >= 50 ? '#E9A23B' :
     'var(--danger)'
 
   const label =

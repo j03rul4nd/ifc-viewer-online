@@ -177,14 +177,14 @@ export default function Bimo({
         </linearGradient>
         <radialGradient id={`${uid}-limb`} cx="35%" cy="30%" r="75%">
           <stop offset="0%" stopColor="#B7BEFF" />
-          <stop offset="100%" stopColor="#5E6AD2" />
+          <stop offset="100%" stopColor="#0A8481" />
         </radialGradient>
         <filter id={`${uid}-glow`} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="1.6" />
         </filter>
       </defs>
 
-      <ellipse className="bimo-shadow" cx="60" cy="124" rx="30" ry="4.5" fill="#5E6AD2" opacity="0.28" />
+      <ellipse className="bimo-shadow" cx="60" cy="124" rx="30" ry="4.5" fill="#0A8481" opacity="0.28" />
 
       <g className="bimo-rig">
         {/* feet */}
@@ -198,7 +198,7 @@ export default function Bimo({
 
           {/* antenna */}
           <g className="bimo-antenna">
-            <path d="M60 22 C60 16 62 13 61 7" stroke="#8B93E8" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+            <path d="M60 22 C60 16 62 13 61 7" stroke="#55CAC3" strokeWidth="3.2" fill="none" strokeLinecap="round" />
             <rect x="56.5" y="1" width="8" height="8" rx="2" transform="rotate(45 60.5 5)" fill="#DCE0FF" />
             <rect x="56.5" y="1" width="8" height="8" rx="2" transform="rotate(45 60.5 5)" fill="#A9B0FF"
               opacity={0.35 * f.glow} filter={`url(#${uid}-glow)`} />

@@ -20,7 +20,7 @@ interface ModelInfoPanelProps {
   gpuBackend?:  GpuBackend
 }
 
-const FM_COLOR: Record<FmTier, string> = { ready: '#30A46C', partial: '#F5A623', insufficient: '#E5484D' }
+const FM_COLOR: Record<FmTier, string> = { ready: '#3FA866', partial: '#E9A23B', insufficient: '#E0523F' }
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '—'
@@ -44,18 +44,18 @@ interface SizeHealth {
 function getSizeHealth(bytes: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
   const mb = bytes / 1024 / 1024
   if (bytes === 0) return { label: t('health.unknown'), color: '#888', bg: 'rgba(136,136,136,0.12)', tip: t('info.sizeUnavailable') }
-  if (mb < 1)     return { label: t('health.tiny'),    color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: t('info.sizeTip.tiny') }
-  if (mb < 10)    return { label: t('health.light'),   color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: t('info.sizeTip.light') }
+  if (mb < 1)     return { label: t('health.tiny'),    color: '#3FA866', bg: 'rgba(63,168,102,0.12)', tip: t('info.sizeTip.tiny') }
+  if (mb < 10)    return { label: t('health.light'),   color: '#3FA866', bg: 'rgba(63,168,102,0.12)', tip: t('info.sizeTip.light') }
   if (mb < 50)    return { label: t('health.normal'),  color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.sizeTip.normal') }
-  if (mb < 150)   return { label: t('health.large'),   color: '#F5A623', bg: 'rgba(245,166,35,0.12)', tip: t('info.sizeTip.large') }
-  return            { label: t('health.heavy'),   color: '#E5484D', bg: 'rgba(229,72,77,0.12)', tip: t('info.sizeTip.heavy') }
+  if (mb < 150)   return { label: t('health.large'),   color: '#E9A23B', bg: 'rgba(233,162,59,0.12)', tip: t('info.sizeTip.large') }
+  return            { label: t('health.heavy'),   color: '#E0523F', bg: 'rgba(224,82,63,0.12)', tip: t('info.sizeTip.heavy') }
 }
 
 function getElementHealth(count: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
-  if (count < 1_000)  return { label: t('health.small'),   color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: t('info.elementTip.small') }
+  if (count < 1_000)  return { label: t('health.small'),   color: '#3FA866', bg: 'rgba(63,168,102,0.12)', tip: t('info.elementTip.small') }
   if (count < 10_000) return { label: t('health.typical'), color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.elementTip.typical') }
-  if (count < 50_000) return { label: t('health.complex'), color: '#F5A623', bg: 'rgba(245,166,35,0.12)', tip: t('info.elementTip.complex') }
-  return                { label: t('health.dense'),   color: '#E5484D', bg: 'rgba(229,72,77,0.12)', tip: t('info.elementTip.dense') }
+  if (count < 50_000) return { label: t('health.complex'), color: '#E9A23B', bg: 'rgba(233,162,59,0.12)', tip: t('info.elementTip.complex') }
+  return                { label: t('health.dense'),   color: '#E0523F', bg: 'rgba(224,82,63,0.12)', tip: t('info.elementTip.dense') }
 }
 
 function HealthBadge({ h }: { h: SizeHealth }) {
@@ -137,7 +137,7 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
           <span
             className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold border"
             style={(() => {
-              const c = qualityScore >= 80 ? '#30A46C' : qualityScore >= 50 ? '#F5A623' : '#E5484D'
+              const c = qualityScore >= 80 ? '#3FA866' : qualityScore >= 50 ? '#E9A23B' : '#E0523F'
               return { color: c, borderColor: `${c}44`, background: `${c}14` }
             })()}
             title={t('info.qualityScore', { score: qualityScore })}
@@ -159,7 +159,7 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
             className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold border leading-none"
             style={
               gpuBackend === 'webgpu'
-                ? { color: '#5E6AD2', borderColor: '#5E6AD244', background: '#5E6AD214' }
+                ? { color: '#0A8481', borderColor: '#0A848144', background: '#0A848114' }
                 : { color: '#888', borderColor: '#88888844', background: '#88888814' }
             }
             title={gpuBackend === 'webgpu' ? t('info.rendererTip.webgpu') : t('info.rendererTip.webgl')}
@@ -200,8 +200,8 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
               sub={qualityLabel}
               badge={{
                 label: qualityBadgeLabel,
-                color: qualityScore >= 80 ? '#30A46C' : qualityScore >= 50 ? '#F5A623' : '#E5484D',
-                bg:    qualityScore >= 80 ? 'rgba(48,164,108,0.12)' : qualityScore >= 50 ? 'rgba(245,166,35,0.12)' : 'rgba(229,72,77,0.12)',
+                color: qualityScore >= 80 ? '#3FA866' : qualityScore >= 50 ? '#E9A23B' : '#E0523F',
+                bg:    qualityScore >= 80 ? 'rgba(63,168,102,0.12)' : qualityScore >= 50 ? 'rgba(233,162,59,0.12)' : 'rgba(224,82,63,0.12)',
                 tip:   t('info.qualityScore', { score: qualityScore }),
               }}
             />
@@ -213,7 +213,7 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
               value={gpuBackend === 'detecting' ? t('info.detecting') : gpuBackend === 'webgpu' ? 'WebGPU' : 'WebGL'}
               badge={
                 gpuBackend === 'webgpu'
-                  ? { label: 'GPU', color: '#5E6AD2', bg: 'rgba(94,106,210,0.12)', tip: t('info.rendererTip.webgpu') }
+                  ? { label: 'GPU', color: '#0A8481', bg: 'rgba(10,132,129,0.12)', tip: t('info.rendererTip.webgpu') }
                   : gpuBackend === 'webgl'
                   ? { label: 'GL', color: '#888', bg: 'rgba(136,136,136,0.12)', tip: t('info.rendererTip.webgl') }
                   : undefined

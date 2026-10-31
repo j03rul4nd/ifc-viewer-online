@@ -23,9 +23,9 @@ import { AngleIcon, AreaIcon, DimensionIcon, DistanceIcon, PathIcon, PointIcon }
 const SNAP_COLOR: Record<SnapKind, string> = {
   vertex: '#3DD68C',
   midpoint: '#6CE0FF',
-  edge: '#FFB224',
-  face: '#ECEDEE',
-  surface: '#ECEDEE',
+  edge: '#E9A23B',
+  face: '#ECEBE7',
+  surface: '#ECEBE7',
   cloud: '#B49CFF',
   perpendicular: '#6CE0FF',
 }
@@ -132,7 +132,7 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
           {t(`tools.${tool}`)}
         </span>
         <span className="w-px h-3.5 bg-white/15" />
-        <span className={['text-[11.5px] whitespace-nowrap truncate', snapshot.notice ? 'text-[#FFB224]' : 'text-white/90'].join(' ')}>
+        <span className={['text-[11.5px] whitespace-nowrap truncate', snapshot.notice ? 'text-[#E9A23B]' : 'text-white/90'].join(' ')}>
           {snapshot.busy ? t('steps.computing') : snapshot.notice ? t(`notice.${snapshot.notice}`) : t(`steps.${step}`)}
         </span>
         <span className="hidden sm:flex items-center gap-2 text-[10.5px] text-white/55 whitespace-nowrap">

@@ -424,7 +424,7 @@ function TwinDemos({ onPick }: { onPick: (set: DemoSet) => void }) {
         {sets.map((s) => (
           <button key={s.id} type="button" onClick={() => onPick(s)} data-testid={`twin-demo-card-${s.twin}`}
             className="text-left p-3 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex gap-3 items-start">
-            <span className="mt-0.5 w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" aria-hidden />
+            <span className="mt-0.5 w-2 h-2 rounded-full bg-[#3fa866] animate-pulse shrink-0" aria-hidden />
             <span className="min-w-0">
               <span className="block text-[13px] font-medium">{t(`${s.twin}.name` as never)}</span>
               <span className="block mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug">{t(`${s.twin}.description` as never)}</span>

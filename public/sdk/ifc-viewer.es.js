@@ -1303,7 +1303,7 @@ const f = class f {
         border: "0",
         borderRadius: "8px",
         cursor: "pointer",
-        background: e.accent ?? "var(--ifcv-accent, #5e6ad2)",
+        background: e.accent ?? "var(--ifcv-accent, #0a8481)",
         color: "#fff",
         font: "600 13px system-ui, sans-serif"
       }), i.addEventListener("click", () => this.activate()), r.appendChild(i);

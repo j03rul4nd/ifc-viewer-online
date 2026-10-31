@@ -363,7 +363,7 @@ export default function ToolDemo({
   return (
     <figure ref={figureRef} className="tool-demo my-9">
       <div
-        className={`relative w-full overflow-hidden rounded-2xl border border-[rgba(94,106,210,0.32)] bg-[#0d0d10] shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6)] ${config.tall ? 'aspect-square' : 'aspect-[16/10]'} max-sm:aspect-[4/5]`}
+        className={`relative w-full overflow-hidden rounded-2xl border border-[rgba(10,132,129,0.32)] bg-[#0d0d10] shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6)] ${config.tall ? 'aspect-square' : 'aspect-[16/10]'} max-sm:aspect-[4/5]`}
         style={{ maxHeight: height }}
       >
         {live && (
@@ -398,7 +398,7 @@ export default function ToolDemo({
             <h3 className="mb-2 text-[20px] font-semibold tracking-tight text-white sm:text-[24px]">{title}</h3>
             <p className="mb-5 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-[14px]">{description}</p>
             {phase === 'idle' ? (
-              <button type="button" onClick={start} className="rounded-lg bg-[#5e6ad2] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#67e8f9]">
+              <button type="button" onClick={start} className="rounded-lg bg-[#0a8481] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#67e8f9]">
                 {launchLabel}
               </button>
             ) : phase !== 'error' && (
@@ -439,7 +439,7 @@ export default function ToolDemo({
             <button
               type="button"
               onClick={runNext}
-              className="rounded-md bg-[#5e6ad2] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#67e8f9]"
+              className="rounded-md bg-[#0a8481] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#67e8f9]"
             >
               {actionLabel}
             </button>

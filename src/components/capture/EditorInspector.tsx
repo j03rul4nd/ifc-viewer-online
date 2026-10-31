@@ -22,7 +22,7 @@ export type InspectorTab = 'text' | 'effects' | 'audio' | 'export'
 export const INSPECTOR_TABS: readonly InspectorTab[] = ['text', 'effects', 'audio', 'export']
 
 /** Text colours offered as one-click swatches (plus a free colour input). */
-const SWATCHES = ['#FFFFFF', '#0B0D11', '#4C7EF3', '#2E9E7A', '#F5A623', '#E0534E']
+const SWATCHES = ['#FFFFFF', '#0B0D11', '#4C7EF3', '#2E9E7A', '#E9A23B', '#E0534E']
 
 const label = 'text-[10px] font-semibold uppercase tracking-wide text-[var(--text-faint)]'
 const row = 'flex flex-col gap-1.5'

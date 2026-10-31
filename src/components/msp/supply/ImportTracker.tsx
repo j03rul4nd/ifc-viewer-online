@@ -17,12 +17,12 @@ import {
 } from './supply'
 import { updatesFromJson, type ImportsTwinConfig } from './config'
 
-const MODE_COLOR: Record<Mode, string> = { sea: '#38bdf8', air: '#f59e0b', rail: '#a78bfa' }
+const MODE_COLOR: Record<Mode, string> = { sea: '#38bdf8', air: '#e9a23b', rail: '#c8a97e' }
 const MODE_LABEL: Record<Mode, string> = { sea: 'Sea', air: 'Air', rail: 'Rail' }
 const STAGE_COLOR: Record<Stage, string> = {
-  production: '#94a3b8', qc: '#a78bfa', toOrigin: '#5e6ad2', mainLeg: '#38bdf8', customs: '#f59e0b', lastMile: '#22c55e', delivered: '#22c55e',
+  production: '#a09e98', qc: '#c8a97e', toOrigin: '#0a8481', mainLeg: '#38bdf8', customs: '#e9a23b', lastMile: '#3fa866', delivered: '#3fa866',
 }
-const LEVEL_DOT: Record<TrackEvent['level'], string> = { info: '#94a3b8', ok: '#22c55e', warn: '#f59e0b', alert: '#ef4444' }
+const LEVEL_DOT: Record<TrackEvent['level'], string> = { info: '#a09e98', ok: '#3fa866', warn: '#e9a23b', alert: '#e0523f' }
 const MODE_GLYPH: Record<Mode, string> = {
   sea: '<path d="M3 13h14l-2 4H5zM6 13V8h8v5M9 8V5h2v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
   air: '<path d="M10 2l1.5 6 6.5 3v1.6l-6.5-1.4L11 16l2 1.3V18l-3-.8-3 .8v-.7L9 16l-.5-4.8L2 12.6V11l6.5-3z" fill="currentColor"/>',
@@ -131,7 +131,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
     L.polyline(LANES.air, { color: MODE_COLOR.air, weight: 2, opacity: 0.45, dashArray: '2 6' }).addTo(map)
     L.polyline(LANES.rail, { color: MODE_COLOR.rail, weight: 2, opacity: 0.45, dashArray: '8 5' }).addTo(map)
     for (const p of Object.values(PLACES)) {
-      const color = p.kind === 'warehouse' ? '#22c55e' : p.kind === 'hub' ? '#a78bfa' : p.kind === 'supplier' ? '#e2e8f0' : '#94a3b8'
+      const color = p.kind === 'warehouse' ? '#3fa866' : p.kind === 'hub' ? '#c8a97e' : p.kind === 'supplier' ? '#e2e8f0' : '#a09e98'
       L.circleMarker(p.at, { radius: p.kind === 'warehouse' || p.kind === 'hub' ? 7 : 4.5, color, weight: 2, fillColor: color, fillOpacity: 0.35 })
         .bindTooltip(p.name, { direction: 'top', offset: [0, -6] }).addTo(map)
     }
@@ -220,7 +220,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
       <style>{`
         .it-pin{width:30px;height:30px;border-radius:999px;background:var(--c);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(11,13,16,.85),0 0 18px var(--c);cursor:pointer;transition:transform .2s;position:relative}
         [data-sel="1"] .it-pin{transform:scale(1.35);box-shadow:0 0 0 3px #fff,0 0 24px var(--c)}
-        [data-risk="1"] .it-pin::after{content:'';position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:99px;background:#ef4444;border:2px solid #0b0d10}
+        [data-risk="1"] .it-pin::after{content:'';position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:99px;background:#e0523f;border:2px solid #0b0d10}
         .leaflet-container{background:#0b0d10;font-family:Inter,system-ui,sans-serif}
         .it-tiles{filter:invert(1) hue-rotate(180deg) brightness(.78) contrast(.92) saturate(.6)}
         .leaflet-tooltip{background:rgba(10,12,16,.9);color:#fff;border:1px solid rgba(255,255,255,.15)}
@@ -234,15 +234,15 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
         <div className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
           <p className="truncate text-[13px] font-semibold md:text-[16px]">{config ? `${config.setup.company} · imports` : 'Your imports from China'}</p>
           {config?.setup.live
-            ? <span className="flex-none rounded-full bg-[#22c55e]/20 px-2 py-0.5 text-[11px] font-semibold text-[#22c55e]">Your dates</span>
-            : <span className="flex-none rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[11px] font-semibold text-[#f59e0b]">Simulated</span>}
+            ? <span className="flex-none rounded-full bg-[#3fa866]/20 px-2 py-0.5 text-[11px] font-semibold text-[#3fa866]">Your dates</span>
+            : <span className="flex-none rounded-full bg-[#e9a23b]/20 px-2 py-0.5 text-[11px] font-semibold text-[#e9a23b]">Simulated</span>}
           {feedStatus && <span className={`flex-none text-[11px] ${feedStatus.ok ? 'text-[#86efac]' : 'text-[#fca5a5]'}`}>{feedStatus.text}</span>}
         </div>
         {snap && (
           <div className="mt-2 grid grid-cols-3 gap-1.5 md:mt-2.5 md:max-w-[480px] md:gap-2">
             {[
               { l: 'On the way', v: String(snap.k.inTransit), c: '#ffffff' },
-              { l: 'Late', v: String(snap.k.atRisk), c: snap.k.atRisk > 0 ? '#f59e0b' : '#22c55e' },
+              { l: 'Late', v: String(snap.k.atRisk), c: snap.k.atRisk > 0 ? '#e9a23b' : '#3fa866' },
               { l: 'At sea', v: fmtEur(snap.k.valueAtSeaEur), c: '#ffffff' },
             ].map((k) => (
               <div key={k.l} className="min-w-0 rounded-xl border border-white/10 bg-black/70 px-2.5 py-1.5 backdrop-blur md:px-3 md:py-2">
@@ -256,7 +256,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
 
       <div className="absolute bottom-3 left-14 z-[500] hidden gap-3 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[12px] backdrop-blur lg:flex">
         {(['sea', 'air', 'rail'] as Mode[]).map((m) => <span key={m} className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: MODE_COLOR[m] }} />{MODE_LABEL[m]}</span>)}
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#ef4444]" />Late vs promise</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#e0523f]" />Late vs promise</span>
       </div>
 
 
@@ -281,12 +281,12 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                 <p className="break-words text-[13px] text-white/75">{row.s.units.toLocaleString('en')} × {row.s.goods} · {MODE_LABEL[row.s.mode]}{row.s.viaCape ? ' via Cape' : ''} · {row.s.incoterm}{row.s.container ? ` · ${row.s.container}` : ''}</p>
                 <div className="mt-2 grid grid-cols-3 gap-1.5 text-[11.5px]">
                   <div className="min-w-0 rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">ETA</p><p className="font-semibold">{row.stage === 'delivered' ? 'Delivered' : `in ${fmtD(row.eta)}`}</p></div>
-                  <div className="rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">vs promise</p><p className={`font-semibold ${row.late ? 'text-[#f59e0b]' : 'text-[#22c55e]'}`}>{row.late ? `+${fmtD(totalH(row.s) - row.s.promisedH)}` : 'on time'}</p></div>
+                  <div className="rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">vs promise</p><p className={`font-semibold ${row.late ? 'text-[#e9a23b]' : 'text-[#3fa866]'}`}>{row.late ? `+${fmtD(totalH(row.s) - row.s.promisedH)}` : 'on time'}</p></div>
                   <div className="rounded-lg bg-white/[0.06] px-2 py-1.5"><p className="text-white/50">Landed / unit</p><p className="font-semibold">{eur2(detail.lc.perUnitEur)}</p></div>
                 </div>
-                <p className="mt-2 rounded-lg bg-[#5e6ad2]/20 px-2.5 py-2 text-[13px] leading-snug text-white">{detail.sum}</p>
+                <p className="mt-2 rounded-lg bg-[#0a8481]/20 px-2.5 py-2 text-[13px] leading-snug text-white">{detail.sum}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <button type="button" onClick={() => setFollow((f) => !f)} className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold ${follow ? 'bg-[#5e6ad2]' : 'bg-white/10'}`}>{follow ? 'Following' : 'Follow on map'}</button>
+                  <button type="button" onClick={() => setFollow((f) => !f)} className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold ${follow ? 'bg-[#0a8481]' : 'bg-white/10'}`}>{follow ? 'Following' : 'Follow on map'}</button>
                   {onOpenWarehouse && <button type="button" onClick={onOpenWarehouse} className="rounded-lg bg-white/10 px-2.5 py-1 text-[12px]">Its arrival in the warehouse →</button>}
                 </div>
               </div>
@@ -296,10 +296,10 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                   <ol className="relative ml-1.5 border-l border-white/15">
                     {detail.ms.map((m) => (
                       <li key={m.label} className="mb-2.5 ml-3">
-                        <span className="absolute -left-[5px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-[#0b0d10]" style={{ background: m.done ? (m.late ? '#f59e0b' : '#22c55e') : '#475569' }} />
+                        <span className="absolute -left-[5px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-[#0b0d10]" style={{ background: m.done ? (m.late ? '#e9a23b' : '#3fa866') : '#475569' }} />
                         <p className={`break-words ${m.done ? 'text-white' : 'text-white/55'}`}>{m.label}</p>
-                        <p className="text-[11.5px] text-white/50">Planned {m.planned} · {m.done ? 'done' : 'expected'} {m.actual}{m.late && <span className="text-[#f59e0b]"> · late</span>}</p>
-                        {m.note && <p className="text-[11.5px] text-[#f59e0b]">{m.note}</p>}
+                        <p className="text-[11.5px] text-white/50">Planned {m.planned} · {m.done ? 'done' : 'expected'} {m.actual}{m.late && <span className="text-[#e9a23b]"> · late</span>}</p>
+                        {m.note && <p className="text-[11.5px] text-[#e9a23b]">{m.note}</p>}
                       </li>
                     ))}
                   </ol>
@@ -313,12 +313,12 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                     </div>
                     <div className="mt-2 space-y-1.5">
                       <div className="rounded-lg border border-white/10 px-2.5 py-2">
-                        <div className="flex justify-between"><span>First inspection</span><Chip color={live.qc.firstPass ? '#22c55e' : '#ef4444'}>{live.qc.firstPass ? 'Pass' : 'Fail'}</Chip></div>
+                        <div className="flex justify-between"><span>First inspection</span><Chip color={live.qc.firstPass ? '#3fa866' : '#e0523f'}>{live.qc.firstPass ? 'Pass' : 'Fail'}</Chip></div>
                         <p className="mt-1 text-white/65">{live.qc.firstMajor} major · {live.qc.firstMinor} minor defects</p>
                       </div>
                       {!live.qc.firstPass && (
                         <div className="rounded-lg border border-white/10 px-2.5 py-2">
-                          <div className="flex justify-between"><span>Re-inspection after rework</span><Chip color="#22c55e">Pass</Chip></div>
+                          <div className="flex justify-between"><span>Re-inspection after rework</span><Chip color="#3fa866">Pass</Chip></div>
                           <p className="mt-1 text-white/65">{live.qc.finalMajor} major · {live.qc.finalMinor} minor · 2 days added, supplier pays re-inspection</p>
                         </div>
                       )}
@@ -344,10 +344,10 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                       {detail.pay.map((p) => <li key={p.label} className="flex justify-between gap-2"><span className={`min-w-0 break-words ${p.paid ? 'text-white/85' : 'text-white/45'}`}>{p.paid ? '✓' : '○'} {p.label}</span><span className="tabular-nums">{fmtEur(p.eur)}</span></li>)}
                     </ul>
                     {detail.exp && (
-                      <div className="mt-3 rounded-xl border border-[#f59e0b]/40 bg-[#f59e0b]/10 p-2.5">
+                      <div className="mt-3 rounded-xl border border-[#e9a23b]/40 bg-[#e9a23b]/10 p-2.5">
                         <p className="font-semibold">What if it flies?</p>
                         <p className="mt-0.5 text-white/75">Air instead of {live.mode}: <b>+{fmtEur(detail.exp.extraEur)}</b> (+{eur2(detail.exp.perUnitDeltaEur)}/unit), about <b>{detail.exp.daysSaved} days sooner</b>. Margin {detail.lc.marginPct}% → {Math.round((1 - (detail.lc.perUnitEur + detail.exp.perUnitDeltaEur) / live.priceEur) * 100)}%.</p>
-                        <button type="button" disabled={expedited.has(live.id)} onClick={() => expedite(live, detail.exp!)} className="mt-2 rounded-lg bg-[#f59e0b] px-3 py-1.5 text-[12.5px] font-semibold text-black disabled:opacity-60">{expedited.has(live.id) ? 'Re-quote requested' : 'Ask the agent to re-quote by air'}</button>
+                        <button type="button" disabled={expedited.has(live.id)} onClick={() => expedite(live, detail.exp!)} className="mt-2 rounded-lg bg-[#e9a23b] px-3 py-1.5 text-[12.5px] font-semibold text-black disabled:opacity-60">{expedited.has(live.id) ? 'Re-quote requested' : 'Ask the agent to re-quote by air'}</button>
                       </div>
                     )}
                   </div>
@@ -377,7 +377,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                         <button type="button" onClick={() => setSel(s.id)} className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left hover:bg-white/[0.08]">
                           <div className="flex items-center justify-between gap-2">
                             <span className="flex items-center gap-2 text-[13.5px] font-semibold"><span className="h-2 w-2 rounded-full" style={{ background: MODE_COLOR[s.mode] }} />{s.id}</span>
-                            <span className="text-[11.5px] font-semibold" style={{ color: late && stage !== 'delivered' ? '#f59e0b' : STAGE_COLOR[stage] }}>{STAGE_LABEL[stage]}</span>
+                            <span className="text-[11.5px] font-semibold" style={{ color: late && stage !== 'delivered' ? '#e9a23b' : STAGE_COLOR[stage] }}>{STAGE_LABEL[stage]}</span>
                           </div>
                           <div className="mt-1 flex justify-between gap-2 text-[12px] text-white/60">
                             <span className="truncate">{s.goods} · {s.supplier.split(' ')[0]}</span>
@@ -406,7 +406,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                   <ul className="space-y-1.5 text-[12.5px]">
                     {snap.scores.map((sc) => (
                       <li key={sc.id} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                        <div className="flex items-center justify-between gap-2"><span className="min-w-0 truncate text-[13.5px] font-semibold">{sc.name}</span><Chip color={sc.grade === 'A' ? '#22c55e' : sc.grade === 'B' ? '#f59e0b' : '#ef4444'}>Grade {sc.grade}</Chip></div>
+                        <div className="flex items-center justify-between gap-2"><span className="min-w-0 truncate text-[13.5px] font-semibold">{sc.name}</span><Chip color={sc.grade === 'A' ? '#3fa866' : sc.grade === 'B' ? '#e9a23b' : '#e0523f'}>Grade {sc.grade}</Chip></div>
                         <div className="mt-1.5 grid grid-cols-3 gap-1.5 text-[11.5px]">
                           <div><p className="text-white/50">QC 1st pass</p><p className="font-semibold">{sc.qcFirstPassPct}%</p></div>
                           <div><p className="text-white/50">On time</p><p className="font-semibold">{sc.onTimePct}%</p></div>
@@ -424,14 +424,14 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                       {snap.needs.map((n) => (
                         <li key={n.po}>
                           <button type="button" onClick={() => setSel(n.po)} className="flex w-full items-stretch gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-left hover:bg-white/[0.09]">
-                            <span className="w-1 flex-none" style={{ background: n.level === 'alert' ? '#ef4444' : '#f59e0b' }} />
+                            <span className="w-1 flex-none" style={{ background: n.level === 'alert' ? '#e0523f' : '#e9a23b' }} />
                             <span className="min-w-0 flex-1 py-2.5">
                               <span className="block text-[14px] font-semibold">{n.title}</span>
                               <span className="block break-words text-[12.5px] leading-snug text-white/65">{n.detail}</span>
                               <span className="mt-0.5 block text-[11.5px] text-white/45">{n.po}</span>
                             </span>
                             <span className="flex flex-none items-center pr-3">
-                              <span className="rounded-lg px-2 py-1 text-[13px] font-bold tabular-nums" style={{ background: (n.level === 'alert' ? '#ef4444' : '#f59e0b') + '26', color: n.level === 'alert' ? '#fca5a5' : '#fcd34d' }}>{n.impact}</span>
+                              <span className="rounded-lg px-2 py-1 text-[13px] font-bold tabular-nums" style={{ background: (n.level === 'alert' ? '#e0523f' : '#e9a23b') + '26', color: n.level === 'alert' ? '#fca5a5' : '#fcd34d' }}>{n.impact}</span>
                             </span>
                           </button>
                         </li>
@@ -457,7 +457,7 @@ export default function ImportTracker({ onWant, onOpenWarehouse, config, updates
                     <p className="mt-3 font-semibold text-white/85">Out · receipt in Odoo on delivery</p>
                     <pre className="mt-1 max-h-32 overflow-auto rounded-lg bg-black/60 p-2.5 text-[11px] leading-snug text-[#c7d2fe]"><code>{JSON.stringify(feed.erp, null, 2)}</code></pre>
                     <p className="mt-2 text-[11px] text-white/45">Illustrative shapes, nothing is sent. A real project maps your agent’s actual feed (API, email or spreadsheet): that is the pilot.</p>
-                    {onWant && <button type="button" onClick={onWant} className="mt-3 w-full rounded-lg bg-[#5e6ad2] py-2 text-[13px] font-semibold">Track our orders like this</button>}
+                    {onWant && <button type="button" onClick={onWant} className="mt-3 w-full rounded-lg bg-[#0a8481] py-2 text-[13px] font-semibold">Track our orders like this</button>}
                   </div>
                 )}
               </div>

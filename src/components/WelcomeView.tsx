@@ -114,7 +114,7 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
             <motion.p
               custom={2} variants={fade} initial="hidden" animate="show"
               className="mt-3 text-[13px] font-medium px-3 py-1 rounded-full"
-              style={{ color: 'var(--accent-2)', background: light ? 'rgba(54,69,196,0.08)' : 'rgba(139,147,232,0.12)' }}
+              style={{ color: 'var(--accent-2)', background: light ? 'rgba(0,105,106,0.08)' : 'rgba(85,202,195,0.12)' }}
             >
               {t('welcomePage.signedInAs', { email })}
             </motion.p>
@@ -141,7 +141,7 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
                   className="rounded-[16px] border p-4 flex flex-col items-center gap-2 text-center"
                   style={tile}
                 >
-                  <span className="grid place-items-center w-10 h-10 rounded-[12px]" style={{ color: 'var(--accent-2)', background: light ? 'rgba(54,69,196,0.08)' : 'rgba(139,147,232,0.10)' }}>
+                  <span className="grid place-items-center w-10 h-10 rounded-[12px]" style={{ color: 'var(--accent-2)', background: light ? 'rgba(0,105,106,0.08)' : 'rgba(85,202,195,0.10)' }}>
                     <Icon />
                   </span>
                   <span className="text-[13px] font-semibold" style={{ color: 'var(--text)' }}>{title}</span>
@@ -163,7 +163,7 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
               className="group relative h-12 px-7 rounded-full text-[14px] font-semibold text-white cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
                 background: 'linear-gradient(160deg, var(--accent), var(--accent-2))',
-                boxShadow: '0 14px 34px -10px rgba(94,106,210,0.6), inset 0 1px 0 rgba(255,255,255,0.25)',
+                boxShadow: '0 14px 34px -10px rgba(10,132,129,0.6), inset 0 1px 0 rgba(255,255,255,0.25)',
                 ['--tw-ring-color' as string]: 'var(--accent-2)',
                 ['--tw-ring-offset-color' as string]: 'var(--bg)',
               }}

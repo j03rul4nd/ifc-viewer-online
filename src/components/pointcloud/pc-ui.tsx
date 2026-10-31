@@ -80,7 +80,7 @@ export function Stat({ label, value }: { label: string; value: string }) {
 }
 
 export function Note({ children, tone = 'info' }: { children: React.ReactNode; tone?: 'info' | 'warn' }) {
-  const color = tone === 'warn' ? '#F5A623' : 'var(--text-dim)'
+  const color = tone === 'warn' ? '#E9A23B' : 'var(--text-dim)'
   return (
     <div className="text-[11.5px] leading-snug" style={{ color }}>{children}</div>
   )
@@ -278,7 +278,7 @@ export function RowIcon({ label, onClick, children, danger, pressed, testId }: {
       aria-label={label}
       aria-pressed={pressed}
       className={`w-7 h-7 max-md:w-11 max-md:h-11 shrink-0 flex items-center justify-center rounded-[7px] text-[var(--text-faint)] hover:bg-[var(--surface)] transition-colors ${
-        danger ? 'hover:text-[#E5484D]' : 'hover:text-[var(--text)]'
+        danger ? 'hover:text-[#E0523F]' : 'hover:text-[var(--text)]'
       }`}
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

@@ -371,7 +371,7 @@ function NorthArrow({ rad }: { rad: number }) {
     <svg width="26" height="30" viewBox="-13 -17 26 30" aria-label="N" className="shrink-0">
       <circle r="11" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" />
       <g transform={`rotate(${(rad * 180) / Math.PI})`}>
-        <path d="M0 -9 L4.5 4 L0 1 L-4.5 4 Z" fill="#f25c54" />
+        <path d="M0 -9 L4.5 4 L0 1 L-4.5 4 Z" fill="#e0523f" />
         <text y="-13" textAnchor="middle" fontSize="7" fontWeight="700" fill="#f2f4f8">N</text>
       </g>
     </svg>

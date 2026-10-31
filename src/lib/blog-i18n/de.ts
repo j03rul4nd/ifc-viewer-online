@@ -4242,7 +4242,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "code",
         lang: "json",
-        text: "{\n  \"sourceId\": \"bicing-status\",\n  \"deviceId\": \"65\",\n  \"query\": { \"classes\": [\"IfcBuildingElementProxy\"], \"nameContains\": \"ancoratge\" },\n  \"rules\": [\n    { \"name\": \"No bikes\", \"filters\": [{ \"field\": \"num_vehicles_available\", \"op\": \"eq\", \"value\": 0 }],\n      \"effect\": { \"color\": \"#ef4444\" }, \"alert\": { \"forMin\": 15 } }\n  ]\n}",
+        text: "{\n  \"sourceId\": \"bicing-status\",\n  \"deviceId\": \"65\",\n  \"query\": { \"classes\": [\"IfcBuildingElementProxy\"], \"nameContains\": \"ancoratge\" },\n  \"rules\": [\n    { \"name\": \"No bikes\", \"filters\": [{ \"field\": \"num_vehicles_available\", \"op\": \"eq\", \"value\": 0 }],\n      \"effect\": { \"color\": \"#e0523f\" }, \"alert\": { \"forMin\": 15 } }\n  ]\n}",
       },
       {
         type: "image",

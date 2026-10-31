@@ -129,7 +129,7 @@ export interface Aggregation {
 
 export const RAMPS: Record<string, ColorStop[]> = {
   // empty → filling → full (chargers, docks, parking)
-  occupancy: [{ at: 0, color: '#2fb7ff' }, { at: 0.5, color: '#ffd23f' }, { at: 1, color: '#f25c54' }],
+  occupancy: [{ at: 0, color: '#2fb7ff' }, { at: 0.5, color: '#ffd23f' }, { at: 1, color: '#e0523f' }],
   // free-flowing → congested
   traffic: [{ at: 0, color: '#5ce27a' }, { at: 0.5, color: '#ffd23f' }, { at: 1, color: '#d7263d' }],
   // density heat

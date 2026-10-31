@@ -149,7 +149,7 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
         </button>
       )}
       {entitlement.status === 'canceled' && (
-        <p className="text-[10px] leading-snug rounded px-2 py-1" style={{ background: 'rgba(245,166,35,0.10)', color: '#F5A623' }}>
+        <p className="text-[10px] leading-snug rounded px-2 py-1" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>
           {t('sync.readOnlyNote')}
         </p>
       )}
@@ -166,7 +166,7 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
           </button>
           {canWrite && (
             <button onClick={() => void handleDelete(r.id)} disabled={busy === r.id}
-              className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
+              className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
               {t('sync.delete')}
             </button>
           )}

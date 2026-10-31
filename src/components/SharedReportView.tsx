@@ -99,7 +99,7 @@ export function decodeReportHash(hash: string): SharedReportPayload | null {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number): string {
-  return score >= 80 ? 'var(--ok)' : score >= 50 ? '#F5A623' : 'var(--danger)'
+  return score >= 80 ? 'var(--ok)' : score >= 50 ? '#E9A23B' : 'var(--danger)'
 }
 
 function scoreLabel(score: number): string {
@@ -112,7 +112,7 @@ function scoreLabel(score: number): string {
 
 function severityColor(s: string): string {
   if (s === 'e') return 'var(--danger)'
-  if (s === 'w') return '#F5A623'
+  if (s === 'w') return '#E9A23B'
   return '#5E9ED6'
 }
 
@@ -225,7 +225,7 @@ export default function SharedReportView({ payload, onOpenViewer }: Props) {
                 <span style={{ color: 'var(--danger)' }}>{payload.e} error{payload.e !== 1 ? 's' : ''}</span>
               )}
               {payload.w > 0 && (
-                <span style={{ color: '#F5A623' }}>{payload.w} warning{payload.w !== 1 ? 's' : ''}</span>
+                <span style={{ color: '#E9A23B' }}>{payload.w} warning{payload.w !== 1 ? 's' : ''}</span>
               )}
               {payload.i > 0 && (
                 <span style={{ color: '#5E9ED6' }}>{payload.i} info</span>

@@ -7,11 +7,11 @@
 //   <BorderGlow
 //     backgroundColor="#18181f"
 //     borderRadius={12}
-//     glowColor="94 106 210"   ← RGB components as a space-separated string
+//     glowColor="10 132 129"   ← RGB components as a space-separated string
 //     glowRadius={30}
 //     glowIntensity={0.6}
 //     coneSpread={20}
-//     colors={['#5E6AD2', '#8B93E8', '#3B82F6']}
+//     colors={['#0A8481', '#55CAC3', '#3B82F6']}
 //     className="w-full"
 //   >
 //     <div className="p-6">content</div>
@@ -26,7 +26,7 @@ export interface BorderGlowProps {
   backgroundColor?: string
   /** border-radius in px for the outer wrapper. Default: 12. */
   borderRadius?: number
-  /** RGB components of the glow as "R G B" e.g. "94 106 210". Default: accent blue. */
+  /** RGB components of the glow as "R G B" e.g. "10 132 129". Default: accent blue. */
   glowColor?: string
   /** Radius of the cursor-tracked radial glow in px. Default: 40. */
   glowRadius?: number
@@ -43,11 +43,11 @@ export default function BorderGlow({
   children,
   backgroundColor = '#18181f',
   borderRadius    = 12,
-  glowColor       = '94 106 210',
+  glowColor       = '10 132 129',
   glowRadius      = 40,
   glowIntensity   = 0.7,
   coneSpread      = 20,
-  colors          = ['#5E6AD2', '#8B93E8', '#3B82F6'],
+  colors          = ['#0A8481', '#55CAC3', '#3B82F6'],
   className       = '',
 }: BorderGlowProps) {
   const outerRef = useRef<HTMLDivElement>(null)

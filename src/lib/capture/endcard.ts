@@ -32,7 +32,7 @@ export interface EndCardOptions {
 
 /** Draw the card at time t (seconds). Pure canvas — also used for previews and tests. */
 export function drawEndCard(ctx: CanvasRenderingContext2D, w: number, h: number, spec: EndCardSpec, t: number): void {
-  const accent = spec.accent ?? '#6366f1'
+  const accent = spec.accent ?? '#0a8481'
   const d = Math.max(0.5, spec.durationSec)
 
   // Ambient gradient: three soft blobs orbiting slowly over a near-black base.
@@ -164,7 +164,7 @@ function luminanceOf(hex: string): number {
 
 function withAlpha(hex: string, a: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex)
-  if (!m) return `rgba(99,102,241,${a})`
+  if (!m) return `rgba(10,132,129,${a})`
   const n = parseInt(m[1], 16)
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
 }

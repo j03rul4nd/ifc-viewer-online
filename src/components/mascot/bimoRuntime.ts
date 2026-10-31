@@ -200,7 +200,7 @@ export async function createBimo(opts: BimoOptions): Promise<Bimo> {
   Object.assign(key.shadow.camera, { left: -1, right: 1, top: 1.5, bottom: -0.5 })
   const fill = new THREE.DirectionalLight(0xb8c2ff, 0.4); fill.position.set(-2.2, 1.2, 1.4)
   const rim = new THREE.DirectionalLight(0x8b93e8, 1.9); rim.position.set(-0.6, 2.0, -2.2)
-  const kick = new THREE.PointLight(0x5e6ad2, 1.4, 5); kick.position.set(1.8, 0.5, -1.2)
+  const kick = new THREE.PointLight(0x0a8481, 1.4, 5); kick.position.set(1.8, 0.5, -1.2)
   scene.add(key, fill, rim, kick)
   // A soft light that follows the pointer, so highlights glide over the
   // pearl shell and the visor as the visitor moves: he reacts to the room.

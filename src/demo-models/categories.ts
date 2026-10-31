@@ -23,12 +23,12 @@ export type DemoCategory = (typeof DEMO_CATEGORIES)[number]
 
 /** Per-category accent colour (CSS rgb/hex) used for the gallery chip + card tag. */
 export const CATEGORY_META: Record<DemoCategory, { accent: string }> = {
-  Reference:      { accent: '#94A3B8' },
+  Reference:      { accent: '#A09E98' },
   Residential:    { accent: '#6FB8D9' },
-  Commercial:     { accent: '#5E6AD2' },
+  Commercial:     { accent: '#0A8481' },
   Industrial:     { accent: '#C99A4B' },
   MEP:            { accent: '#3FB68B' },
-  Structural:     { accent: '#A78BFA' },
+  Structural:     { accent: '#C8A97E' },
   Infrastructure: { accent: '#D98A6F' },
 }
 

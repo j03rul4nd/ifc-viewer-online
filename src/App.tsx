@@ -779,7 +779,7 @@ export default function App() {
     const m = BLOG_LANG_RE.exec(rel)
     return m ? m[1] : 'en'
   })
-  const [accent, setAccent] = useState(() => urlParams.accent ?? '#5E6AD2')
+  const [accent, setAccent] = useState(() => urlParams.accent ?? '#0A8481')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
     try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
@@ -5345,7 +5345,7 @@ export default function App() {
                   {effectiveChrome.showHome && (
                     <button
                       onClick={handleNavigateToLanding}
-                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(24,23,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                     >
                       <Icons.Chevron size={12} className="rotate-180" />
                       <span className="hidden xs:inline">{tCommon('actions.home')}</span>
@@ -5597,7 +5597,7 @@ export default function App() {
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
-          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[rgba(24,23,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
           style={{ bottom: `max(calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 8px), 16px)` }}
         >
           {activeFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}

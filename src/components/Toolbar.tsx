@@ -530,9 +530,9 @@ export default function Toolbar({
     <span
       className="px-1.5 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums shrink-0"
       style={{
-        background: errorCount > 0 ? 'var(--danger)22' : '#F5A62322',
-        color:      errorCount > 0 ? 'var(--danger)'   : '#F5A623',
-        border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#F5A62333'}`,
+        background: errorCount > 0 ? 'var(--danger)22' : '#E9A23B22',
+        color:      errorCount > 0 ? 'var(--danger)'   : '#E9A23B',
+        border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#E9A23B33'}`,
       }}
     >
       {errorCount > 0 ? `${errorCount}E` : issueCount}

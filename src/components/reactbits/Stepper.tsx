@@ -113,13 +113,13 @@ function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators =
   const status = currentStep === step ? 'active' : currentStep < step ? 'inactive' : 'complete';
   return (
     <motion.div onClick={() => { if (step !== currentStep && !disableStepIndicators) onClickStep(step); }} className={`relative outline-none focus:outline-none ${disableStepIndicators ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`} animate={status} initial={false}>
-      <motion.div variants={{ inactive: { scale: 1, backgroundColor: '#222', color: '#a3a3a3' }, active: { scale: 1, backgroundColor: '#5E6AD2', color: '#5E6AD2' }, complete: { scale: 1, backgroundColor: '#5E6AD2', color: '#5E6AD2' } }} transition={{ duration: 0.3 }} className="flex h-8 w-8 items-center justify-center rounded-full font-semibold">
+      <motion.div variants={{ inactive: { scale: 1, backgroundColor: '#222', color: '#a3a3a3' }, active: { scale: 1, backgroundColor: '#0A8481', color: '#0A8481' }, complete: { scale: 1, backgroundColor: '#0A8481', color: '#0A8481' } }} transition={{ duration: 0.3 }} className="flex h-8 w-8 items-center justify-center rounded-full font-semibold">
         {status === 'complete' ? (
           <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.1, type: 'tween', ease: 'easeOut', duration: 0.3 }} strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         ) : status === 'active' ? (
-          <div className="h-3 w-3 rounded-full bg-[#0A0A0C]" />
+          <div className="h-3 w-3 rounded-full bg-[#100F0C]" />
         ) : (
           <span className="text-sm">{step}</span>
         )}
@@ -131,7 +131,7 @@ function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators =
 function StepConnector({ isComplete }: { isComplete: boolean }) {
   return (
     <div className="relative mx-2 h-0.5 flex-1 overflow-hidden rounded bg-neutral-600">
-      <motion.div className="absolute left-0 top-0 h-full bg-[#5E6AD2]" variants={{ incomplete: { width: 0 }, complete: { width: '100%' } }} initial={false} animate={isComplete ? 'complete' : 'incomplete'} transition={{ duration: 0.4 }} />
+      <motion.div className="absolute left-0 top-0 h-full bg-[#0A8481]" variants={{ incomplete: { width: 0 }, complete: { width: '100%' } }} initial={false} animate={isComplete ? 'complete' : 'incomplete'} transition={{ duration: 0.4 }} />
     </div>
   );
 }

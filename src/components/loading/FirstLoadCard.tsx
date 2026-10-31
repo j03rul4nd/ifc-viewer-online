@@ -171,7 +171,7 @@ function JobView({ job, jobs }: { job: LoadJobView; jobs: readonly LoadJobView[]
       </div>
 
       {failed && job.error ? (
-        <div className="mt-3 rounded-[8px] border border-[rgba(229,72,77,0.3)] bg-[rgba(229,72,77,0.07)] p-2.5">
+        <div className="mt-3 rounded-[8px] border border-[rgba(224,82,63,0.3)] bg-[rgba(224,82,63,0.07)] p-2.5">
           <p className="text-[12px] leading-snug text-[var(--text)]">{errorText(job.error, job.kind, t, resolveDetail).reason}</p>
           <p className="mt-1 text-[10.5px] text-[var(--danger)]">{describePhaseLine(job, jobs, t)}</p>
         </div>

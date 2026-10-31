@@ -77,7 +77,7 @@ export function SourcesTab() {
                 <Switch checked={s.enabled} label={t('enabled')} onChange={(enabled) => useTwinDeviceStore.getState().upsertSource({ ...s, enabled })} />
                 <button type="button" className="flex-1 min-w-0 text-left group" onClick={() => setFlow({ kind: 'source', id: s.id })} aria-label={`${t('edit')}: ${s.name}`}>
                   <span className="block truncate text-[12.5px] max-md:text-[14px] font-medium text-[var(--text)] group-hover:underline">{s.name}</span>
-                  <span className={`block truncate text-[11.5px] ${failed ? 'text-[var(--danger,#ef4444)]' : 'text-[var(--text-faint)]'}`}>
+                  <span className={`block truncate text-[11.5px] ${failed ? 'text-[var(--danger,#e0523f)]' : 'text-[var(--text-faint)]'}`}>
                     {!s.enabled ? t('off') : failed ? t((st.errorKey ?? 'error.http') as never) : st ? t('status', { count: st.devices, time: timeOf(st.lastAt) }) : t('waiting')}
                   </span>
                 </button>

@@ -22,7 +22,7 @@ const log = (...a) => console.log('[blog-covers]', ...a)
 const CAT_COLORS = {
   'tool-guides':    { color: '#34d399', glow: '16,185,129' },
   'validation':     { color: '#f87171', glow: '239,68,68' },
-  'best-practices': { color: '#818cf8', glow: '94,106,210' },
+  'best-practices': { color: '#55cac3', glow: '10,132,129' },
   'ifc-tips':       { color: '#67d7f0', glow: '103,215,240' },
   'standards':      { color: '#c084fc', glow: '192,132,252' },
   'digital-twins':  { color: '#22d3ee', glow: '34,211,238' },
@@ -235,7 +235,7 @@ function coverHtml({ slug, lang, title, cat }) {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${W}px;height:${H}px;overflow:hidden}
-body{font-family:'Inter',system-ui,sans-serif;background:#0A0A0C;color:#fff;position:relative}
+body{font-family:'Inter',system-ui,sans-serif;background:#100F0C;color:#fff;position:relative}
 .glow{position:absolute;inset:0;background:
   radial-gradient(780px 650px at 92% 50%, rgba(${c.glow},.17), transparent 62%),
   radial-gradient(380px 350px at 6% 88%,  rgba(${c.glow},.09), transparent 58%)}
@@ -247,8 +247,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0A0A0C;color:#fff;posi
 .wrap{position:relative;height:100%;display:flex;align-items:center;padding:60px 56px 60px 72px;gap:44px}
 .left{flex:1;display:flex;flex-direction:column;min-width:0}
 .brand{display:flex;align-items:center;gap:10px;margin-bottom:34px}
-.logo{width:36px;height:36px;border-radius:9px;background:#5E6AD2;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 5px 16px rgba(94,106,210,.5)}
+.logo{width:36px;height:36px;border-radius:9px;background:#0A8481;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 5px 16px rgba(10,132,129,.5)}
 .brandname{font-size:15.5px;font-weight:700;color:#7a84d8;letter-spacing:-.01em}
 .cat{display:inline-flex;align-items:center;font-family:monospace;font-size:9px;font-weight:700;
   letter-spacing:.15em;color:${c.color};
@@ -319,7 +319,7 @@ body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#08090c;color:white;
   linear-gradient(90deg,rgba(5,7,12,.46) 0%,transparent 58%)}
 .top{position:absolute;left:${pad}px;right:${pad}px;top:${Math.round(pad*.72)}px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .brand{display:flex;align-items:center;gap:12px;padding:10px 15px;border-radius:13px;background:rgba(8,9,14,.76);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);font-size:${brandSize}px;font-weight:800}
-.logo{width:${Math.round(brandSize*1.9)}px;height:${Math.round(brandSize*1.9)}px;border-radius:9px;background:#5e6ad2;display:grid;place-items:center;font-size:${brandSize}px}
+.logo{width:${Math.round(brandSize*1.9)}px;height:${Math.round(brandSize*1.9)}px;border-radius:9px;background:#0a8481;display:grid;place-items:center;font-size:${brandSize}px}
 .badge{padding:9px 14px;border-radius:999px;background:rgba(8,9,14,.82);border:1px solid rgba(34,211,238,.48);color:#67e8f9;font:800 ${badgeSize}px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;text-align:center}
 .content{position:absolute;left:${pad}px;right:${pad}px;bottom:${Math.round(pad*.78)}px}
 h1{max-width:${horizontal ? '94%' : '100%'};font-size:${titleSize}px;line-height:1.04;letter-spacing:-.035em;font-weight:850;text-wrap:balance;text-shadow:0 3px 25px rgba(0,0,0,.9)}

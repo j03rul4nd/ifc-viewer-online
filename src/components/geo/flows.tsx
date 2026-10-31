@@ -300,7 +300,7 @@ export function PlacementEditor() {
           className={[
             'flex-1 h-[30px] rounded-[8px] text-[11px] font-medium border transition-colors',
             picking
-              ? 'border-[var(--accent)] text-[var(--accent-2)] bg-[rgba(94,106,210,0.10)]'
+              ? 'border-[var(--accent)] text-[var(--accent-2)] bg-[rgba(10,132,129,0.10)]'
               : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)]',
           ].join(' ')}
         >

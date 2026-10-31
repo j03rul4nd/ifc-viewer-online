@@ -43,8 +43,8 @@ export function ToolGrid({ items, onPick }: ToolGridProps) {
             item.open ? 'text-white' : 'text-[rgba(255,255,255,0.62)]',
           ].join(' ')}
           style={{
-            background: item.open ? 'rgba(94,106,210,0.20)' : 'rgba(255,255,255,0.05)',
-            border: item.open ? '0.5px solid rgba(94,106,210,0.42)' : '0.5px solid transparent',
+            background: item.open ? 'rgba(10,132,129,0.20)' : 'rgba(255,255,255,0.05)',
+            border: item.open ? '0.5px solid rgba(10,132,129,0.42)' : '0.5px solid transparent',
             WebkitTapHighlightColor: 'transparent',
           }}
         >

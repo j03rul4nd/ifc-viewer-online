@@ -116,7 +116,7 @@ function DualRange({ limits, value, step, color, onChange, label, touch = false 
           aria-valuemax={limits.max}
           aria-valuenow={value[side]}
           onKeyDown={onKey(side)}
-          className={[touch ? 'w-6 h-6' : 'w-3.5 h-3.5', 'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#0A0A0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-white/60'].join(' ')}
+          className={[touch ? 'w-6 h-6' : 'w-3.5 h-3.5', 'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#100F0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-white/60'].join(' ')}
           style={{ left: `${pct(value[side])}%`, background: color }}
         />
       ))}
@@ -181,7 +181,7 @@ function IconButton({ title, onClick, children, danger, active }: {
       onClick={(e) => { e.stopPropagation(); onClick() }}
       className={[
         'flex-none w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors',
-        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)]'
+        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]'
           : active ? 'text-[var(--accent-2)] hover:bg-white/[0.06]'
             : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/[0.06]',
       ].join(' ')}
@@ -370,7 +370,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
             onClick={q.onClick}
             className={[
               'flex flex-col items-center justify-center gap-1 h-[52px] rounded-[9px] transition-all',
-              q.active ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(94,106,210,0.35)]'
+              q.active ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(10,132,129,0.35)]'
                 : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
             ].join(' ')}
           >
@@ -381,7 +381,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       </div>
 
       {snap.placing && (
-        <div className="shrink-0 mx-2 mb-2 rounded-[9px] border border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.08)] px-2.5 py-2">
+        <div className="shrink-0 mx-2 mb-2 rounded-[9px] border border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.08)] px-2.5 py-2">
           <div className="text-[11.5px] text-[var(--text)]">{t('section.placing')}</div>
           <div className="mt-0.5 text-[10px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
         </div>
@@ -392,7 +392,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       <div className="min-h-[96px] flex-1 overflow-y-auto border-t border-[var(--border)] px-2 py-2 flex flex-col gap-1.5">
         {snap.box && (
           <div
-            className={['rounded-[9px] border p-2', snap.selectedId === 'box' ? 'border-[rgba(94,106,210,0.55)] bg-[rgba(94,106,210,0.06)]' : 'border-[var(--border)]'].join(' ')}
+            className={['rounded-[9px] border p-2', snap.selectedId === 'box' ? 'border-[rgba(10,132,129,0.55)] bg-[rgba(10,132,129,0.06)]' : 'border-[var(--border)]'].join(' ')}
             onClick={() => system.select('box')}
           >
             <div className="flex items-center gap-1.5">
@@ -442,10 +442,10 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
             <div
               key={p.id}
               onClick={() => system.select(p.id)}
-              className={['rounded-[9px] border px-2 py-1.5 cursor-pointer', selected ? 'border-[rgba(94,106,210,0.55)] bg-[rgba(94,106,210,0.06)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'].join(' ')}
+              className={['rounded-[9px] border px-2 py-1.5 cursor-pointer', selected ? 'border-[rgba(10,132,129,0.55)] bg-[rgba(10,132,129,0.06)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'].join(' ')}
             >
               <div className="flex items-center gap-1.5">
-                <span className="flex-none w-4 h-4 rounded-[4px] text-[9.5px] font-bold flex items-center justify-center text-[#0A0A0C]" style={{ background: color, opacity: p.enabled ? 1 : 0.4 }}>
+                <span className="flex-none w-4 h-4 rounded-[4px] text-[9.5px] font-bold flex items-center justify-center text-[#100F0C]" style={{ background: color, opacity: p.enabled ? 1 : 0.4 }}>
                   {p.axis ? p.axis.toUpperCase() : '◇'}
                 </span>
                 <span className={['flex-1 min-w-0 truncate text-[11.5px]', p.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>
@@ -577,8 +577,8 @@ function MBtn({ title, onClick, children, danger, active }: {
       onClick={(e) => { e.stopPropagation(); haptic('tick'); onClick() }}
       className={[
         'flex-none w-10 h-10 flex items-center justify-center rounded-[11px] active:scale-[0.93] transition-transform',
-        danger ? 'text-[var(--danger)] bg-[rgba(229,72,77,0.1)]'
-          : active ? 'text-[var(--accent-2)] bg-[rgba(94,106,210,0.16)]'
+        danger ? 'text-[var(--danger)] bg-[rgba(224,82,63,0.1)]'
+          : active ? 'text-[var(--accent-2)] bg-[rgba(10,132,129,0.16)]'
             : 'text-[var(--text-dim)] bg-white/[0.05]',
       ].join(' ')}
     >
@@ -599,7 +599,7 @@ function Chip({ on, onClick, children, disabled, dataLevel }: {
       onClick={() => { haptic('tick'); onClick() }}
       className={[
         'shrink-0 h-9 px-3 rounded-full text-[12px] font-medium flex items-center gap-1.5 border whitespace-nowrap max-w-[220px] disabled:opacity-40',
-        on ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+        on ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
       ].join(' ')}
     >
       {children}
@@ -691,7 +691,7 @@ function SectionMobileBody({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {snap.placing && (
-          <div className="mx-2 mb-2 rounded-[12px] border border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.1)] px-3 py-2.5">
+          <div className="mx-2 mb-2 rounded-[12px] border border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.1)] px-3 py-2.5">
             <div className="text-[13px] text-[var(--text)]">{t('section.placing')}</div>
             <div className="mt-0.5 text-[11.5px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
           </div>
@@ -727,7 +727,7 @@ function SectionMobileBody({
           return (
             <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
               <div className="flex items-center gap-2">
-                <span className="flex-none w-5 h-5 rounded-[5px] text-[10.5px] font-bold flex items-center justify-center text-[#0A0A0C]" style={{ background: color }}>
+                <span className="flex-none w-5 h-5 rounded-[5px] text-[10.5px] font-bold flex items-center justify-center text-[#100F0C]" style={{ background: color }}>
                   {plane.axis ? plane.axis.toUpperCase() : '◇'}
                 </span>
                 <span className={['flex-1 min-w-0 truncate text-[13px] font-medium', plane.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>
@@ -840,7 +840,7 @@ function SectionMobileBody({
               <input type="checkbox" checked={snap.gizmos} onChange={(e) => system.setGizmosVisible(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
             </label>
             <button type="button" onClick={() => { haptic('select'); system.clear() }}
-              className="h-11 rounded-[11px] text-[13px] font-medium text-[var(--danger)] bg-[rgba(229,72,77,0.1)] flex items-center justify-center gap-2">
+              className="h-11 rounded-[11px] text-[13px] font-medium text-[var(--danger)] bg-[rgba(224,82,63,0.1)] flex items-center justify-center gap-2">
               <TrashIcon size={15} />{t('section.clearAll')}
             </button>
           </div>

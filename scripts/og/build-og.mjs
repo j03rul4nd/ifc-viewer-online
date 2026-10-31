@@ -214,22 +214,22 @@ function cardHtml(code, shotB64) {
   <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:${W}px;height:${H}px;overflow:hidden}
-  body{font-family:${family};background:#0A0A0C;color:#fff;position:relative}
+  body{font-family:${family};background:#100F0C;color:#fff;position:relative}
   .glow{position:absolute;inset:0;background:
-    radial-gradient(900px 500px at 78% 18%, rgba(94,106,210,.28), transparent 60%),
-    radial-gradient(700px 500px at 12% 95%, rgba(94,106,210,.14), transparent 55%);}
+    radial-gradient(900px 500px at 78% 18%, rgba(10,132,129,.28), transparent 60%),
+    radial-gradient(700px 500px at 12% 95%, rgba(10,132,129,.14), transparent 55%);}
   .grid{position:absolute;inset:0;opacity:.05;background-image:
     linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);
     background-size:48px 48px;mask-image:linear-gradient(180deg,#000,transparent 75%)}
   .wrap{position:relative;height:100%;display:grid;grid-template-columns:1fr 1fr;gap:0}
   .left{padding:60px 0 60px 72px;display:flex;flex-direction:column;justify-content:center}
   .brand{display:flex;align-items:center;gap:14px;margin-bottom:28px}
-  .logo{width:52px;height:52px;border-radius:13px;background:#5E6AD2;display:flex;align-items:center;justify-content:center;
-    box-shadow:0 8px 28px rgba(94,106,210,.5)}
+  .logo{width:52px;height:52px;border-radius:13px;background:#0A8481;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 28px rgba(10,132,129,.5)}
   .brandname{font-size:23px;font-weight:700;letter-spacing:-.01em}
   .brandname span{color:#9aa3ec}
   h1{font-size:50px;line-height:1.08;font-weight:800;letter-spacing:-.02em;margin-bottom:20px;max-width:540px}
-  h1 .hl{background:linear-gradient(90deg,#8b95f0,#5E6AD2);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1 .hl{background:linear-gradient(90deg,#8b95f0,#0A8481);-webkit-background-clip:text;background-clip:text;color:transparent}
   .sub{font-size:21px;line-height:1.45;color:#b9bdc9;font-weight:400;max-width:520px;margin-bottom:28px}
   .chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
   .chip{font-size:16px;font-weight:600;color:#e7e9f0;background:rgba(255,255,255,.06);

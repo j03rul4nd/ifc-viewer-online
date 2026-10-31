@@ -158,7 +158,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
                 {f.base ?? '—'} <span className="text-[var(--text-faint)]">→</span> {f.head ?? '—'}
               </span>
               <span className="flex items-center gap-2">
-                <span className="text-[10.5px]" style={{ color: f.reason === 'unmatched' || f.reason === 'file-name' ? '#F5A623' : 'var(--text-faint)' }}>
+                <span className="text-[10.5px]" style={{ color: f.reason === 'unmatched' || f.reason === 'file-name' ? '#E9A23B' : 'var(--text-faint)' }}>
                   {t(`pairing.${f.reason}`)}{f.overlap ? ` · ${Math.round(f.overlap * 100)} %` : ''}
                 </span>
                 <span className="ml-auto tabular-nums whitespace-nowrap">

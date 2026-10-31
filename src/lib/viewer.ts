@@ -963,7 +963,7 @@ export interface ViewerAPI {
 // ─── Highlight material presets ──────────────────────────────────────────────
 
 const HOVER_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0x5E6AD2),
+  color: new THREE.Color(0x0a8481),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.45,
   transparent: true,

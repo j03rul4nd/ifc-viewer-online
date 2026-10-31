@@ -85,15 +85,15 @@ export function BindingsTab() {
           const color = state.kind === 'rule' ? state.rule.effect.color : state.kind === 'stale' || state.kind === 'nodata' ? b.staleColor : null
           const label = state.kind === 'rule' ? state.rule.name : state.kind === 'stale' ? t('stale') : state.kind === 'nodata' ? t('nodata') : t('noRule')
           return (
-            <div className={`flex items-center gap-2 pl-4 pr-2.5 py-2 min-h-[60px] border-t border-[var(--border)] ${ring ? 'shadow-[inset_2px_0_0_var(--danger,#ef4444)]' : ''}`} data-testid="twin-binding">
+            <div className={`flex items-center gap-2 pl-4 pr-2.5 py-2 min-h-[60px] border-t border-[var(--border)] ${ring ? 'shadow-[inset_2px_0_0_var(--danger,#e0523f)]' : ''}`} data-testid="twin-binding">
               <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-[var(--border-strong)]" style={{ background: color ?? 'transparent' }} aria-hidden />
               <button type="button" className="flex-1 min-w-0 pl-1 text-left group" onClick={() => setFlow({ kind: 'binding', id: b.id })}>
                 <span className="flex items-baseline gap-2">
                   <span className="flex-1 min-w-0 truncate text-[12.5px] max-md:text-[14px] font-medium text-[var(--text)] group-hover:underline">{b.name}</span>
                   <span className="shrink-0 max-w-[40%] truncate text-[11.5px] text-[var(--text-dim)]" data-testid="twin-binding-state">{label}</span>
                 </span>
-                <span className={`block text-[11.5px] leading-[1.4] [overflow-wrap:anywhere] ${found ? 'text-[var(--text-faint)]' : 'text-[var(--warn,#f59e0b)]'}`}>
-                  {ring && <span className="font-medium text-[var(--danger,#ef4444)]">{t('alerting')} · </span>}
+                <span className={`block text-[11.5px] leading-[1.4] [overflow-wrap:anywhere] ${found ? 'text-[var(--text-faint)]' : 'text-[var(--warn,#e9a23b)]'}`}>
+                  {ring && <span className="font-medium text-[var(--danger,#e0523f)]">{t('alerting')} · </span>}
                   {b.deviceId} → {found ? t('targetsFound', { count: found }) : t('targetsMissing', { count: b.targets.length })}
                 </span>
               </button>
@@ -121,7 +121,7 @@ export function BindingFlow({ id }: { id: string }) {
   const put = (patch: Partial<Binding>): void => store().upsertBinding({ ...b, ...patch })
   const setRule = (r: TwinRule): void => put({ rules: b.rules.map((x) => (x.id === r.id ? r : x)) })
   const addRule = (): void => put({
-    rules: [...b.rules, { id: newTwinId('r'), name: t('newRule'), match: 'all', filters: [{ field: fields[0] ?? '', op: 'gt', value: 0 }], effect: { color: '#ef4444', opacity: 1, hide: false } }],
+    rules: [...b.rules, { id: newTwinId('r'), name: t('newRule'), match: 'all', filters: [{ field: fields[0] ?? '', op: 'gt', value: 0 }], effect: { color: '#e0523f', opacity: 1, hide: false } }],
   })
   const inSel = !!selection && b.targets.some((x) => x.globalId === selection.globalId)
   const index = store().bindings.findIndex((x) => x.id === b.id)

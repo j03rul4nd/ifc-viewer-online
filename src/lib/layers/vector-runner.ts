@@ -1512,7 +1512,7 @@ export function addSimulatedLiveLayer(name: string): AddResult {
     rules: [
       { value: 'on_time', label: 'on time', color: '#5ce27a', symbol: { kind: 'icon', icon: 'train' }, sizeM: 4, visible: true },
       { value: 'delayed', color: '#ffd23f', symbol: { kind: 'icon', icon: 'train' }, sizeM: 4, visible: true },
-      { value: 'alarm', color: '#f25c54', symbol: { kind: 'icon', icon: 'warning' }, sizeM: 5, visible: true },
+      { value: 'alarm', color: '#e0523f', symbol: { kind: 'icon', icon: 'warning' }, sizeM: 5, visible: true },
     ],
     fallback: { ...layer.symbology.fallback, visible: true },
   })

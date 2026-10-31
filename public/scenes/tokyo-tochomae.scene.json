@@ -110,7 +110,7 @@
               }
             ],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             },
@@ -124,13 +124,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 900
       },
       {
@@ -158,7 +158,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -175,7 +175,7 @@
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 120,
         "label": {
           "field": "odpt:trainNumber"
@@ -199,13 +199,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 600
       }
     ]

@@ -32,7 +32,7 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
   const [autoValidate, setAutoValidate] = useState(true)
   const [openPanel, setOpenPanel]       = useState(false)
   const [forceLang, setForceLang]       = useState(false)
-  const [accent, setAccent]             = useState('#5E6AD2')
+  const [accent, setAccent]             = useState('#0A8481')
   const [height, setHeight]             = useState(600)
   const [tab, setTab]                   = useState<'iframe' | 'url'>('iframe')
   const [copied, setCopied]             = useState<'iframe' | 'url' | null>(null)
@@ -55,7 +55,7 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
       autoValidate,
       openPanel,
       lang: forceLang ? defaultLang : undefined,
-      accent: accent.toLowerCase() !== '#5e6ad2' ? accent : undefined,
+      accent: accent.toLowerCase() !== '#0a8481' ? accent : undefined,
     })
   }, [validUrl, baseUrl, trimmedUrl, preset, autoValidate, openPanel, forceLang, defaultLang, accent])
 

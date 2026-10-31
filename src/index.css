@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --accent: #5E6AD2;
-  --accent-2: #8B93E8;
-  --bg: #0A0A0C;
-  --surface: #101014;
-  --surface-2: #15161C;
-  --border: #1F2028;
-  --border-strong: #2A2B35;
-  --text: #ECEDEE;
-  --text-dim: #8B8D98;
-  --text-faint: #54555E;
-  --danger: #E5484D;
-  --warn: #F5A623;
-  --ok: #30A46C;
+  --accent: #0A8481;
+  --accent-2: #55CAC3;
+  --bg: #100F0C;
+  --surface: #181714;
+  --surface-2: #21201D;
+  --border: #2B2A26;
+  --border-strong: #3A3933;
+  --text: #ECEBE7;
+  --text-dim: #A09E98;
+  --text-faint: #7F7D78;
+  --danger: #E0523F;
+  --warn: #E9A23B;
+  --ok: #3FA866;
   /* Mobile floating nav (single source of truth for the pill height) */
   --mobile-nav-h: 56px;
   /* Height of the floating top capsules on phones (0 elsewhere): overlays
@@ -159,13 +159,13 @@ body {
 }
 
 /* Floating panels and the results drawers: a thumb you can actually see
-   (#6B6D79 is about 3.7:1 on the glass at rgba(16,16,20,.94); the global
+   (#6B6D79 is about 3.7:1 on the glass at rgba(24,23,20,.94); the global
    --border-strong was about 1.3:1). Above .no-scrollbar, which still wins. */
 @media (pointer: fine) {
   .glass-md ::-webkit-scrollbar-thumb,
   [data-bottom-drawer] ::-webkit-scrollbar-thumb { background: #6B6D79; }
   .glass-md ::-webkit-scrollbar-thumb:hover,
-  [data-bottom-drawer] ::-webkit-scrollbar-thumb:hover { background: #8B8D98; }
+  [data-bottom-drawer] ::-webkit-scrollbar-thumb:hover { background: #A09E98; }
 }
 /* A long list you are meant to scroll through (the issue list): a 12 px bar
    with a padded thumb, wide enough to grab without aiming. */
@@ -240,7 +240,7 @@ body {
 .glass {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
-  background: rgba(16, 16, 20, 0.82);
+  background: rgba(24, 23, 20, 0.82);
 }
 
 /*
@@ -262,7 +262,7 @@ body {
 .glass-md {
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
-  background: rgba(16, 16, 20, 0.94);
+  background: rgba(24, 23, 20, 0.94);
 }
 
 .glass-xl {
@@ -273,7 +273,7 @@ body {
 
 /* Fallback when backdrop-filter is not supported (older WebKit) */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .glass, .glass-md { background: rgba(10, 10, 12, 0.96) !important; }
+  .glass, .glass-md { background: rgba(16, 15, 12, 0.96) !important; }
   .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
 }
 
@@ -390,7 +390,7 @@ kbd {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, transparent, rgba(94,106,210,0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(10,132,129,0.5), transparent);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -493,17 +493,17 @@ kbd {
    Settings › Accessibility › Display & Text Size reach the page as media
    queries in Safari:
    • Increase Contrast → prefers-contrast: more. The faint/dim text tokens are
-     tuned for a calm dark UI (faint is ~2.6:1 on the background, under WCAG
+     tuned for a calm dark UI (faint is ~4.7:1 on the background, ~4:1 on raised surfaces, under WCAG
      AA); with the setting on they move to AA and borders get visible.
    • Reduce Transparency → prefers-reduced-transparency. The frosted glass
      surfaces (blurred, translucent) become solid, which is also cheaper for
      the GPU. */
 @media (prefers-contrast: more) {
   :root:not(.lp-light) {
-    --text-dim: #B4B6C0;
-    --text-faint: #9A9CA6;
-    --border: #3A3B46;
-    --border-strong: #565866;
+    --text-dim: #C4C2BC;
+    --text-faint: #A8A6A0;
+    --border: #45433D;
+    --border-strong: #605E57;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -587,23 +587,23 @@ kbd {
    --surface: the dark palette's faint/accent/status hues were tuned for a
    black page and dropped to ~3:1 on white, which is what made light mode
    tiring to read. Contrast on --bg / --surface / --surface-2:
-     text-dim   #363A52  10.3 / 11.1 / 9.8    accent-2  #4150C8  6.1 / 6.5 / 5.7
-     text-faint #5B6180   5.6 /  6.1 / 5.3    danger    #C81E1E  5.3 / 5.7 / 5.0
-     ok         #137333   5.5 /  6.0 / 5.2    warn      #A14A08  5.6 / 6.0 / 5.3 */
+     text-dim   #4E4D48  10.3 / 11.1 / 9.8    accent-2  #006061  6.1 / 6.5 / 5.7
+     text-faint #65635E   5.6 /  6.1 / 5.3    danger    #AF2B25  5.3 / 5.7 / 5.0
+     ok         #206B38   5.5 /  6.0 / 5.2    warn      #915C08  5.6 / 6.0 / 5.3 */
 .lp-light {
-  --bg:           #F5F6FA;
+  --bg:           #F4F3F0;
   --surface:      #FFFFFF;
-  --surface-2:    #EEF0F5;
-  --border:       #D9DDE8;
-  --border-strong:#BEC3D4;
-  --text:         #0B0D1A;
-  --text-dim:     #363A52;
-  --text-faint:   #5B6180;
-  --accent:       #3645C4;
-  --accent-2:     #4150C8;
-  --ok:           #137333;
-  --danger:       #C81E1E;
-  --warn:         #A14A08;
+  --surface-2:    #E9E8E4;
+  --border:       #D5D4D0;
+  --border-strong:#BCBBB5;
+  --text:         #1C1B16;
+  --text-dim:     #4E4D48;
+  --text-faint:   #65635E;
+  --accent:       #00696A;
+  --accent-2:     #006061;
+  --ok:           #206B38;
+  --danger:       #AF2B25;
+  --warn:         #915C08;
   /* Text that sets no colour of its own inherits from here, not from the
      dark theme's :root/body colour (which left it near-white on white). */
   color:          var(--text);
@@ -634,7 +634,7 @@ kbd {
 
 /* Sticky blog navs: swap hardcoded dark rgba for a light frosted glass */
 .lp-light nav.lp-sticky-nav {
-  background: rgba(245, 246, 250, 0.92) !important;
+  background: rgba(244, 243, 240, 0.92) !important;
 }
 
 /* Data layers panel on phones: every control is a finger target (≥ 36 px),

@@ -51,13 +51,13 @@ function tokenize(code: string): Token[] {
 
 const TOKEN_STYLE: Record<string, string> = {
   'comment':   'text-[var(--text-faint)] italic',
-  'entity-id': 'text-[#818cf8]',           // indigo — entity references
+  'entity-id': 'text-[#55cac3]',           // indigo — entity references
   'ifc-class': 'text-[#fbbf24]',           // amber — IFC class names
   'enum':      'text-[#34d399]',           // green — enum values (.NOTDEFINED.)
   'string':    'text-[#6ee7b7]',           // teal — string literals
   'number':    'text-[#fb923c]',           // orange — numbers
-  'punct':     'text-[#94a3b8]',           // slate — punctuation
-  'null':      'text-[#94a3b8]',           // slate — null ($)
+  'punct':     'text-[#a09e98]',           // slate — punctuation
+  'null':      'text-[#a09e98]',           // slate — null ($)
   'plain':     'text-[var(--text)]',
 }
 

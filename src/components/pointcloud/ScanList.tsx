@@ -139,14 +139,14 @@ export function ScanList({ describeError, issueCountById, onVisible, onSolo, onF
 
       {confirmRemove && selected.length > 0 && (
         <div data-testid="pc-remove-confirm" role="alert"
-          className="rounded-[10px] border border-[#E5484D55] bg-[#E5484D12] px-3 py-2 flex flex-col gap-2">
+          className="rounded-[10px] border border-[#E0523F55] bg-[#E0523F12] px-3 py-2 flex flex-col gap-2">
           <div className="text-[12px] leading-snug text-[var(--text)]">{t('bulk.removeConfirm', { count: selected.length })}</div>
           <div className="flex gap-1.5">
             <button
               type="button"
               data-testid="pc-remove-yes"
               onClick={() => { const ids2 = [...selected]; setConfirmRemove(false); onRemove(ids2) }}
-              className="flex-1 px-3 py-1.5 max-md:min-h-[44px] rounded-[8px] text-[12px] font-semibold bg-[#E5484D] text-white hover:brightness-110"
+              className="flex-1 px-3 py-1.5 max-md:min-h-[44px] rounded-[8px] text-[12px] font-semibold bg-[#E0523F] text-white hover:brightness-110"
             >
               {t('bulk.removeYes')}
             </button>
@@ -192,7 +192,7 @@ function BulkBar({ count, onShow, onHide, onSolo, onFrame, onTopic, topicOpen, o
       <button type="button" className={btn} data-testid="pc-bulk-frame" onClick={onFrame}>{t('bulk.frame')}</button>
       <button type="button" className={btn} data-testid="pc-bulk-topic" aria-expanded={topicOpen} onClick={onTopic}>{t('bulk.topic')}</button>
       {onRename && <button type="button" className={btn} data-testid="pc-bulk-rename" onClick={onRename}>{t('bulk.rename')}</button>}
-      <button type="button" className={`${btn} hover:!text-[#E5484D]`} data-testid="pc-bulk-remove" onClick={onRemove}>{t('bulk.remove')}</button>
+      <button type="button" className={`${btn} hover:!text-[#E0523F]`} data-testid="pc-bulk-remove" onClick={onRemove}>{t('bulk.remove')}</button>
       <span className="flex-1" />
       <RowIcon label={t('bulk.clear')} onClick={onClear}><path d="M3 3l8 8M11 3L3 11" /></RowIcon>
     </div>
@@ -273,7 +273,7 @@ const ScanRow = memo(function ScanRow({
   const label = cloudLabel(cloud)
   const parsing = cloud.status === 'parsing'
   const failed = cloud.status === 'error'
-  const dot = failed ? '#E5484D' : parsing ? 'var(--accent)' : issueCount > 0 ? '#F5A623' : '#30A46C'
+  const dot = failed ? '#E0523F' : parsing ? 'var(--accent)' : issueCount > 0 ? '#E9A23B' : '#3FA866'
   const topics = topicsOf(topicState, itemKey('cloud', cloud.fileKey))
   const colour = hexColor(cloud.color ?? 0x888888)
 
@@ -357,7 +357,7 @@ const ScanRow = memo(function ScanRow({
               {label}
             </div>
           )}
-          <div className={`text-[11px] font-mono ${failed ? 'text-[#E5484D] select-text' : 'text-[var(--text-faint)]'} truncate flex items-center gap-1`}>
+          <div className={`text-[11px] font-mono ${failed ? 'text-[#E0523F] select-text' : 'text-[var(--text-faint)]'} truncate flex items-center gap-1`}>
             {topics.length > 0 && (
               <span className="flex gap-0.5 shrink-0" title={topics.map((x) => x.name).join(', ')}>
                 {topics.slice(0, 3).map((x) => (
@@ -397,7 +397,7 @@ const ScanRow = memo(function ScanRow({
             type="button"
             data-testid="pc-row-remove"
             onClick={(e) => { e.stopPropagation(); remove() }}
-            className="shrink-0 px-2 py-1 max-md:min-h-[44px] rounded-[7px] text-[11px] font-semibold text-white bg-[#E5484D]"
+            className="shrink-0 px-2 py-1 max-md:min-h-[44px] rounded-[7px] text-[11px] font-semibold text-white bg-[#E0523F]"
           >
             {t('list.removeConfirm')}
           </button>

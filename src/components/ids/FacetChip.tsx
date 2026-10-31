@@ -19,7 +19,7 @@ export function FacetChip({ kind, active, onClick }: {
     onClick ? 'cursor-pointer' : ''
   } ${
     active
-      ? 'bg-[rgba(94,106,210,0.18)] text-[var(--accent)] border border-[rgba(94,106,210,0.4)]'
+      ? 'bg-[rgba(10,132,129,0.18)] text-[var(--accent)] border border-[rgba(10,132,129,0.4)]'
       : 'bg-[var(--surface-2)] text-[var(--text-faint)] border border-[var(--border)]'
   }`
   return onClick

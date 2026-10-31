@@ -470,7 +470,7 @@ export default function CopyForAI({
         className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 sm:h-9 px-4
                    text-[13px] sm:text-[12.5px] font-medium rounded-xl
                    border border-[var(--border)] bg-[var(--surface)] text-[var(--text-dim)]
-                   hover:border-[rgba(94,106,210,0.4)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]
+                   hover:border-[rgba(10,132,129,0.4)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]
                    active:bg-[var(--surface-2)] transition-all
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >

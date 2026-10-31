@@ -53,7 +53,7 @@ export function BimTerm({ term, children }: TermProps) {
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <span
-            className="border-b border-dashed border-[rgba(94,106,210,0.5)] cursor-help text-[var(--text)]
+            className="border-b border-dashed border-[rgba(10,132,129,0.5)] cursor-help text-[var(--text)]
                        hover:border-[var(--accent)] hover:text-[var(--text)] transition-colors"
           >
             {children}
@@ -65,7 +65,7 @@ export function BimTerm({ term, children }: TermProps) {
             align="center"
             sideOffset={6}
             className="max-w-[300px] px-3 py-2.5 rounded-xl border border-[var(--border-strong)]
-                       bg-[rgba(16,16,20,0.96)] backdrop-blur-lg text-[12.5px] leading-[1.55]
+                       bg-[rgba(24,23,20,0.96)] backdrop-blur-lg text-[12.5px] leading-[1.55]
                        text-[var(--text-dim)] shadow-xl z-50 select-none"
           >
             <span className="font-semibold text-[var(--text)]">{term}</span>

@@ -229,7 +229,7 @@ function buildCopyForAIText(result: ValidationResult, fileName: string): string 
 
 function severityBorderColor(sev: ValidationIssue['severity']): string {
   if (sev === 'error')   return 'var(--danger)'
-  if (sev === 'warning') return '#F5A623'
+  if (sev === 'warning') return '#E9A23B'
   return '#5E9ED6'
 }
 
@@ -249,7 +249,7 @@ function RuleBadge({ ruleId }: { ruleId: string }) {
   const meta   = RULE_METADATA[ruleId]
   const label  = getRuleLabel(ruleId, i18n.language)
   const sev    = meta?.defaultSeverity ?? 'info'
-  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#F5A623' : '#5E9ED6'
+  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#E9A23B' : '#5E9ED6'
   const std    = meta?.standard
 
   return (
@@ -461,7 +461,7 @@ function IssueRow({
 function GroupHeader({ label, count, ruleId }: { label: string; count: number; ruleId?: string }) {
   const meta  = ruleId ? RULE_METADATA[ruleId] : undefined
   const sev   = meta?.defaultSeverity
-  const color = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#F5A623' : undefined
+  const color = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#E9A23B' : undefined
   const std   = meta?.standard
 
   return (
@@ -514,7 +514,7 @@ function GroupHeaderRow({
   const label  = groupBy === 'rule' ? getRuleLabel(groupKey, language) : groupKey
   const meta   = groupBy === 'rule' ? RULE_METADATA[groupKey] : undefined
   const sev    = meta?.defaultSeverity
-  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#F5A623' : undefined
+  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#E9A23B' : undefined
   const std    = meta?.standard
 
   // Severity distribution within this group
@@ -555,7 +555,7 @@ function GroupHeaderRow({
       {/* Per-severity counts inside the group */}
       <div className="flex items-center gap-1 shrink-0">
         {eCount > 0 && <span className="text-[9px] font-mono text-[var(--danger)]">{eCount}E</span>}
-        {wCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#F5A623' }}>{wCount}W</span>}
+        {wCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#E9A23B' }}>{wCount}W</span>}
         {iCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#5E9ED6' }}>{iCount}I</span>}
       </div>
 
@@ -758,7 +758,7 @@ function MiniBarChart({
   return (
     <div className="flex h-2 w-14 rounded overflow-hidden gap-px shrink-0" style={{ background: 'var(--border)' }}>
       {errors > 0   && <div style={{ width: `${pE * 100}%`, background: 'var(--danger)', transition: 'width 300ms' }} />}
-      {warnings > 0 && <div style={{ width: `${pW * 100}%`, background: '#F5A623', transition: 'width 300ms' }} />}
+      {warnings > 0 && <div style={{ width: `${pW * 100}%`, background: '#E9A23B', transition: 'width 300ms' }} />}
       {info > 0     && <div style={{ width: `${pI * 100}%`, background: '#5E9ED6', transition: 'width 300ms' }} />}
     </div>
   )
@@ -946,9 +946,9 @@ function ProfileDropdown({
         <div
           key={profile.id}
           className="flex flex-col justify-center gap-2 p-2.5 rounded-lg"
-          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}
+          style={{ background: 'rgba(224,82,63,0.08)', border: '1px solid rgba(224,82,63,0.3)' }}
         >
-          <p className="text-[10px] font-medium" style={{ color: '#ef4444' }}>
+          <p className="text-[10px] font-medium" style={{ color: '#e0523f' }}>
             {t('customProfile.deleteConfirm', { defaultValue: 'Delete this profile?' })}
           </p>
           <div className="flex gap-1.5">
@@ -966,7 +966,7 @@ function ProfileDropdown({
                 if (activeProfileId === customProfile.id) onSelect(null)
               }}
               className="flex-1 h-6 rounded text-[10px] font-semibold transition-colors"
-              style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+              style={{ background: 'rgba(224,82,63,0.15)', color: '#e0523f', border: '1px solid rgba(224,82,63,0.3)' }}
             >
               {t('customProfile.deleteYes', { defaultValue: 'Delete' })}
             </button>
@@ -1020,7 +1020,7 @@ function ProfileDropdown({
               onClick={(e) => { e.stopPropagation(); setDeletingId(customProfile.id) }}
               className="w-5 h-5 flex items-center justify-center rounded transition-colors"
               style={{ color: 'var(--text-faint)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.12)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(224,82,63,0.12)'; (e.currentTarget as HTMLButtonElement).style.color = '#e0523f' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
               title={t('profile.deleteCustom')}
             >
@@ -1208,9 +1208,9 @@ const CAT_COLOR: Record<string, string> = {
   schema:         '#5E9ED6',
   spatial:        'var(--accent)',
   quality:        'var(--ok)',
-  lod:            '#F5A623',
+  lod:            '#E9A23B',
   iso19650:       'var(--accent)',
-  classification: '#F5A623',
+  classification: '#E9A23B',
   mep:            'var(--accent)',
   clash:          'var(--danger)',
 }
@@ -1234,7 +1234,7 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
   const score      = Number.isFinite(qualityScore) ? Math.max(0, Math.min(100, Math.round(qualityScore))) : 0
   const scoreColor =
     score >= 80 ? 'var(--ok)' :
-    score >= 50 ? '#F5A623'   : 'var(--danger)'
+    score >= 50 ? '#E9A23B'   : 'var(--danger)'
 
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
@@ -1407,7 +1407,7 @@ function ExecutiveSummary({
 
   const grade =
     score >= 85 ? 'excellent' : score >= 70 ? 'good' : score >= 50 ? 'fair' : score >= 30 ? 'poor' : 'critical'
-  const gradeColor = score >= 70 ? 'var(--ok)' : score >= 50 ? '#F5A623' : 'var(--danger)'
+  const gradeColor = score >= 70 ? 'var(--ok)' : score >= 50 ? '#E9A23B' : 'var(--danger)'
 
   return (
     <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
@@ -1502,7 +1502,7 @@ function ScoreSparkline({ runs }: { runs: ValidationRunRecord[] }) {
     return `${x.toFixed(1)},${y.toFixed(1)}`
   }).join(' ')
   const lastScore = scores[scores.length - 1]
-  const lineColor = lastScore >= 80 ? 'var(--ok)' : lastScore >= 50 ? '#F5A623' : 'var(--danger)'
+  const lineColor = lastScore >= 80 ? 'var(--ok)' : lastScore >= 50 ? '#E9A23B' : 'var(--danger)'
   return (
     <svg width={W} height={H} className="shrink-0">
       <polyline
@@ -1525,7 +1525,7 @@ function ScoreSparkline({ runs }: { runs: ValidationRunRecord[] }) {
 }
 
 function scoreColor(s: number): string {
-  return s >= 80 ? 'var(--ok)' : s >= 50 ? '#F5A623' : 'var(--danger)'
+  return s >= 80 ? 'var(--ok)' : s >= 50 ? '#E9A23B' : 'var(--danger)'
 }
 
 function ValidationHistoryPanel({ onClose }: { onClose: () => void }) {
@@ -2669,7 +2669,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span className="text-[11px] text-[var(--danger)] font-mono">{stats.errors}E</span>
             )}
             {stats.warnings > 0 && (
-              <span className="text-[11px] font-mono" style={{ color: '#F5A623' }}>{stats.warnings}W</span>
+              <span className="text-[11px] font-mono" style={{ color: '#E9A23B' }}>{stats.warnings}W</span>
             )}
             {stats.info > 0 && (
               <span className="text-[11px] font-mono" style={{ color: '#5E9ED6' }}>{stats.info}I</span>
@@ -2681,7 +2681,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span
                 className="px-1.5 py-0.5 rounded-full font-mono font-bold text-[10px] border leading-none"
                 style={(() => {
-                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#F5A623' : 'var(--danger)'
+                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#E9A23B' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
               >
@@ -2729,7 +2729,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span className="text-[var(--danger)] shrink-0">{stats.errors}E</span>
             )}
             {stats.warnings > 0 && (
-              <span style={{ color: '#F5A623' }} className="shrink-0">{stats.warnings}W</span>
+              <span style={{ color: '#E9A23B' }} className="shrink-0">{stats.warnings}W</span>
             )}
             {stats.info > 0 && (
               <span style={{ color: '#5E9ED6' }} className="shrink-0">{stats.info}I</span>
@@ -2741,7 +2741,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span
                 className="ml-0.5 px-1.5 py-0.5 rounded-full font-bold text-[9px] border leading-none shrink-0"
                 style={(() => {
-                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#F5A623' : 'var(--danger)'
+                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#E9A23B' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
                 title={[
@@ -3022,7 +3022,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
       {/* Prevents false confidence: user sees "Naming Convention: 0 issues" and thinks model is fine. */}
       {result && showPhantomNotice && unconfiguredRules.length > 0 && (
         <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#F5A623" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#E9A23B" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
             <circle cx="5" cy="5" r="4.5" />
             <path d="M5 3v2.5M5 7h.01" />
           </svg>
@@ -3032,7 +3032,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span
                 key={ruleId}
                 className="shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border whitespace-nowrap"
-                style={{ color: '#F5A623', borderColor: '#F5A62333', background: '#F5A62314' }}
+                style={{ color: '#E9A23B', borderColor: '#E9A23B33', background: '#E9A23B14' }}
                 title={t('phantom.ruleTooltip')}
               >
                 ⚙ {getRuleLabel(ruleId, i18n.language)}
@@ -3054,7 +3054,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
       {/* ── Clash cap notice (Bug 1 fix) ── */}
       {result?.metadata?.clashCapped && (
         <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#F5A623" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#E9A23B" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
             <circle cx="5" cy="5" r="4.5" />
             <path d="M5 3v2.5M5 7h.01" />
           </svg>
@@ -3113,7 +3113,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
 
                 const tabColor =
                   tab === 'errors'   ? 'var(--danger)' :
-                  tab === 'warnings' ? '#F5A623' :
+                  tab === 'warnings' ? '#E9A23B' :
                   tab === 'info'     ? '#5E9ED6' : undefined
 
                 return (

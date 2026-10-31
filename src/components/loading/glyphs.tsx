@@ -124,7 +124,7 @@ export function IconButton({
 }) {
   const tones = {
     default: 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-    danger:  'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)]',
+    danger:  'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]',
     armed:   'text-white bg-[var(--danger)] hover:brightness-110',
   }
   return (
@@ -163,8 +163,8 @@ export function TextButton({
 }) {
   const tones = {
     default: 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-    danger:  'text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)]',
-    accent:  'text-[var(--accent-2)] hover:bg-[rgba(94,106,210,0.12)]',
+    danger:  'text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]',
+    accent:  'text-[var(--accent-2)] hover:bg-[rgba(10,132,129,0.12)]',
   }
   return (
     <button

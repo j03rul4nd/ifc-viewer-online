@@ -19,8 +19,8 @@ interface OverlayHudProps {
 }
 
 const SEV_META: { key: Severity; color: string }[] = [
-  { key: 'error',   color: '#E5484D' },
-  { key: 'warning', color: '#F5A623' },
+  { key: 'error',   color: '#E0523F' },
+  { key: 'warning', color: '#E9A23B' },
   { key: 'info',    color: '#5E9ED6' },
 ]
 
@@ -97,7 +97,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
             })
           ) : (
             <span className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium">
-              <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#E5484D' }} />
+              <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#E0523F' }} />
               <span className="tabular-nums text-[var(--text)]">{counts.error}</span>
               <span className="text-[var(--text-dim)] hidden sm:inline">{t('overlayHud.idsFails', { defaultValue: 'IDS fails' })}</span>
             </span>
@@ -133,7 +133,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
             onClick={() => setShowSettings((v) => !v)}
             title={t('overlayHud.settings', { defaultValue: 'Overlay appearance' })}
             className="p-1 rounded-md transition-colors hover:bg-[rgba(255,255,255,0.06)]"
-            style={{ color: showSettings ? 'var(--accent, #5E6AD2)' : 'var(--text-dim)' }}
+            style={{ color: showSettings ? 'var(--accent, #0A8481)' : 'var(--text-dim)' }}
           >
             <Gear />
           </button>
@@ -151,12 +151,12 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
                 step={0.01}
                 value={ghostOpacity}
                 onChange={(e) => setGhostOpacity(parseFloat(e.target.value))}
-                className="w-[96px] accent-[var(--accent,#5E6AD2)]"
+                className="w-[96px] accent-[var(--accent,#0A8481)]"
               />
             </label>
             <label className="flex items-center justify-between gap-3 text-[11px] text-[var(--text-dim)] cursor-pointer">
               <span>{t('overlayHud.xray', { defaultValue: 'X-ray (see through walls)' })}</span>
-              <input type="checkbox" checked={xray} onChange={toggleXray} className="accent-[var(--accent,#5E6AD2)]" />
+              <input type="checkbox" checked={xray} onChange={toggleXray} className="accent-[var(--accent,#0A8481)]" />
             </label>
           </div>
         )}

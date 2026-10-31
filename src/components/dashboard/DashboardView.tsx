@@ -143,8 +143,8 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
     ? { background: 'rgba(255,255,255,0.72)', borderColor: 'rgba(15,17,35,0.08)', boxShadow: '0 20px 50px -24px rgba(40,48,120,0.22)' }
     : { background: 'rgba(18,19,26,0.6)', borderColor: 'rgba(255,255,255,0.08)', boxShadow: '0 24px 70px -30px rgba(0,0,0,0.7)' }
   const scrim = light
-    ? 'radial-gradient(90% 60% at 50% -10%, rgba(94,106,210,0.14), transparent 60%)'
-    : 'radial-gradient(90% 60% at 50% -10%, rgba(94,106,210,0.22), transparent 60%)'
+    ? 'radial-gradient(90% 60% at 50% -10%, rgba(10,132,129,0.14), transparent 60%)'
+    : 'radial-gradient(90% 60% at 50% -10%, rgba(10,132,129,0.22), transparent 60%)'
 
   const ghostBtn = 'h-9 px-3.5 rounded-lg text-[12px] font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
   const ghostStyle = { borderColor: 'var(--border)', color: 'var(--text)' }
@@ -186,7 +186,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
             <button
               onClick={() => onNavigate('/sign-in')}
               className="mt-2 h-11 px-6 rounded-full text-[14px] font-semibold text-white"
-              style={{ background: 'linear-gradient(160deg, var(--accent), var(--accent-2))', boxShadow: '0 12px 30px -10px rgba(94,106,210,0.6)' }}
+              style={{ background: 'linear-gradient(160deg, var(--accent), var(--accent-2))', boxShadow: '0 12px 30px -10px rgba(10,132,129,0.6)' }}
             >
               {status === 'loading' ? t('dashboard.loadingSession') : t('dashboard.signInCta')}
             </button>
@@ -213,7 +213,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
                   <ul className="flex flex-col gap-1.5">
                     {history.items!.map((c) => (
                       <li key={c.cert_hash} className="flex items-center gap-3 px-3 py-2 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
-                        <span className="text-[16px] font-bold tabular-nums w-9 text-center" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#F5A623' }}>{c.payload.health_score}</span>
+                        <span className="text-[16px] font-bold tabular-nums w-9 text-center" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#E9A23B' }}>{c.payload.health_score}</span>
                         <span className="flex-1 min-w-0 text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
                           {new Date(c.created_at).toLocaleDateString()} · <span className="font-mono">{c.cert_hash.slice(0, 12)}…</span>
                           {c.status === 'revoked' ? ` · ${t('history.revoked')}` : ''}
@@ -230,9 +230,9 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
                 <section className="rounded-[20px] border p-5 backdrop-blur-xl flex flex-col gap-3" style={card}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2"><span style={{ color: 'var(--accent-2)' }}><PlanIcon /></span><h2 className="text-[14px] font-semibold">{t('plan.title')}</h2></div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase" style={proBadge ? { background: 'var(--surface-2)', color: 'var(--text-muted)' } : { background: 'rgba(94,106,210,0.15)', color: 'var(--accent)' }}>{entitlement.plan}</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase" style={proBadge ? { background: 'var(--surface-2)', color: 'var(--text-muted)' } : { background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }}>{entitlement.plan}</span>
                   </div>
-                  {entitlement.status === 'past_due' && <p className="text-[11px] rounded-lg px-2 py-1.5" style={{ background: 'rgba(245,166,35,0.10)', color: '#F5A623' }}>! {t('plan.pastDue')}</p>}
+                  {entitlement.status === 'past_due' && <p className="text-[11px] rounded-lg px-2 py-1.5" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>! {t('plan.pastDue')}</p>}
                   {proBadge ? (
                     <>
                       <ul className="text-[11px] leading-relaxed list-disc pl-4" style={{ color: 'var(--text-muted)' }}>
@@ -275,7 +275,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
                     <li key={k.id} className="flex items-center gap-2 px-3 py-2 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
                       <code className="font-mono text-[11px]" style={{ color: 'var(--text)' }}>{k.prefix}…</code>
                       <span className="flex-1 text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{new Date(k.created_at).toLocaleDateString()}{k.last_used_at ? ` · ${t('keys.lastUsed')} ${new Date(k.last_used_at).toLocaleDateString()}` : ''}</span>
-                      <button onClick={() => void handleRevoke(k.id)} disabled={busy === k.id} className="h-7 px-2 rounded-lg text-[10px] font-medium border" style={{ borderColor: 'var(--border)', color: 'var(--danger,#e5534b)' }}>{t('keys.revoke')}</button>
+                      <button onClick={() => void handleRevoke(k.id)} disabled={busy === k.id} className="h-7 px-2 rounded-lg text-[10px] font-medium border" style={{ borderColor: 'var(--border)', color: 'var(--danger,#e0523f)' }}>{t('keys.revoke')}</button>
                     </li>
                   ))}
                 </ul>
@@ -295,7 +295,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
               {branding.phase === 'ready' && branding.logo && (
                 <div className="flex items-center gap-3">
                   <img src={branding.logo} alt="" className="max-h-12 max-w-[180px] object-contain rounded bg-white p-1.5" />
-                  <button onClick={() => void handleRemoveLogo()} disabled={busy === 'logo'} className="h-7 px-2.5 rounded-lg text-[11px] font-medium border" style={{ borderColor: 'var(--border)', color: 'var(--danger,#e5534b)' }}>{t('branding.remove')}</button>
+                  <button onClick={() => void handleRemoveLogo()} disabled={busy === 'logo'} className="h-7 px-2.5 rounded-lg text-[11px] font-medium border" style={{ borderColor: 'var(--border)', color: 'var(--danger,#e0523f)' }}>{t('branding.remove')}</button>
                 </div>
               )}
               {branding.phase === 'ready' && !branding.logo && !proBadge && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{t('branding.empty', { kb: Math.round(MAX_LOGO_BYTES / 1024) })}</p>}
@@ -311,7 +311,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
 function StatTile({ card, Icon, label, value, accent }: { card: React.CSSProperties; Icon: () => React.JSX.Element; label: string; value: string; accent?: boolean }) {
   return (
     <div className="rounded-[18px] border p-4 backdrop-blur-xl flex flex-col gap-2" style={card}>
-      <span className="grid place-items-center w-8 h-8 rounded-[10px]" style={{ color: 'var(--accent-2)', background: 'rgba(94,106,210,0.10)' }}><Icon /></span>
+      <span className="grid place-items-center w-8 h-8 rounded-[10px]" style={{ color: 'var(--accent-2)', background: 'rgba(10,132,129,0.10)' }}><Icon /></span>
       <span className="text-[26px] font-semibold tabular-nums leading-none" style={accent ? { color: 'var(--ok, #4caf82)' } : { color: 'var(--text)' }}>{value}</span>
       <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{label}</span>
     </div>

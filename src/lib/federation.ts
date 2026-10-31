@@ -18,7 +18,7 @@ export const DISCIPLINE_COLORS: Record<Discipline, string> = {
   M: '#3d9be9', // mechanical / HVAC — blue
   E: '#f2c14e', // electrical — yellow
   P: '#4cc38a', // plumbing / drainage — green
-  F: '#e5484d', // fire protection — red
+  F: '#e0523f', // fire protection — red
   C: '#a07855', // civil / site — earth
   L: '#7bb662', // landscape — leaf
   X: '#9b8afb', // anything else — violet

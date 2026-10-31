@@ -26,8 +26,8 @@ import {
 import { startFleetFeed, type AgvTwinConfig } from './config'
 
 const STATE_COLOR: Record<AgvState, string> = {
-  charging: '#22c55e', idle: '#94a3b8', parking: '#94a3b8', toCharge: '#f59e0b',
-  toSource: '#38bdf8', atSource: '#a78bfa', toDest: '#5e6ad2', atDest: '#a78bfa',
+  charging: '#3fa866', idle: '#a09e98', parking: '#a09e98', toCharge: '#e9a23b',
+  toSource: '#38bdf8', atSource: '#c8a97e', toDest: '#0a8481', atDest: '#c8a97e',
 }
 const ROUTE_MAX = 400
 const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
@@ -110,13 +110,13 @@ function floorTexture(): THREE.CanvasTexture {
   }
   // charger bays
   for (const [i, x] of CHARGERS.entries()) {
-    g.fillStyle = 'rgba(34,197,94,0.16)'; g.fillRect(X(x - 0.75), Z(0.6), X(1.5), Z(4))
-    g.strokeStyle = '#22c55e'; g.lineWidth = 3; g.strokeRect(X(x - 0.75), Z(0.6), X(1.5), Z(4))
+    g.fillStyle = 'rgba(63,168,102,0.16)'; g.fillRect(X(x - 0.75), Z(0.6), X(1.5), Z(4))
+    g.strokeStyle = '#3fa866'; g.lineWidth = 3; g.strokeRect(X(x - 0.75), Z(0.6), X(1.5), Z(4))
     g.fillStyle = 'rgba(255,255,255,0.85)'; g.font = `700 ${PX * 0.5}px Inter, system-ui, sans-serif`; g.textAlign = 'center'
     g.fillText(`C${i + 1}`, X(x), Z(4.4))
   }
   // pedestrian walkway on the west side and a zebra over the road
-  g.fillStyle = 'rgba(34,197,94,0.28)'; g.fillRect(X(0.4), Z(8), X(1.5), Z(19))
+  g.fillStyle = 'rgba(63,168,102,0.28)'; g.fillRect(X(0.4), Z(8), X(1.5), Z(19))
   g.strokeStyle = '#16a34a'; g.lineWidth = 3; g.strokeRect(X(0.4), Z(8), X(1.5), Z(19))
   g.fillStyle = 'rgba(255,255,255,0.8)'
   for (let k = 0; k < 6; k++) g.fillRect(X(3 + k * 0.55), Z(ROAD_Z - 1.6), X(0.3), Z(3.2))
@@ -338,7 +338,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   for (const x of CHARGERS) {
     box(0.7, 1.4, 0.35, std('#e5e7eb', 0.4, 0.2), x, 0.9, 0.35, scene)
     box(0.5, 0.18, 0.02, std('#0f172a', 0.4), x, 1.3, 0.54, scene, false)
-    const led = std('#22c55e', 0.3, 0, { emissive: '#22c55e', emissiveIntensity: 1.5 }); chargerLeds.push(led)
+    const led = std('#3fa866', 0.3, 0, { emissive: '#3fa866', emissiveIntensity: 1.5 }); chargerLeds.push(led)
     box(0.42, 0.05, 0.02, led, x, 1.05, 0.54, scene, false)
     box(0.9, 0.02, 1.0, std('#4b5563', 0.4, 0.6), x, 0.01, 1.4, scene, false) // floor contacts
   }
@@ -346,7 +346,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   const dockLights: THREE.MeshStandardMaterial[] = []
   for (const d of DOCKS) {
     box(0.22, 0.5, 0.12, std('#111418', 0.5), d.x + 1.9, 2.6, 0.2, scene, false)
-    const lm = std('#22c55e', 0.3, 0, { emissive: '#22c55e', emissiveIntensity: 2 }); dockLights.push(lm)
+    const lm = std('#3fa866', 0.3, 0, { emissive: '#3fa866', emissiveIntensity: 2 }); dockLights.push(lm)
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8), lm); bulb.position.set(d.x + 1.9, 2.6, 0.28); scene.add(bulb)
   }
   // control room: a glazed office in the north-west corner, with a warm light
@@ -365,7 +365,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
   // battery and spare-parts corner: shelving with boxes
   for (let i = 0; i < 3; i++) {
     box(2.2, 2, 0.6, std('#64748b', 0.6, 0.4), SIZE.w - 6, 1, SIZE.d - 5 + i * 1.6, scene)
-    for (let l = 0; l < 3; l++) box(2, 0.4, 0.5, std(['#e2b46f', '#94a3b8', '#d1d5db'][l], 0.8), SIZE.w - 6, 0.3 + l * 0.7, SIZE.d - 5 + i * 1.6, scene)
+    for (let l = 0; l < 3; l++) box(2, 0.4, 0.5, std(['#e2b46f', '#a09e98', '#d1d5db'][l], 0.8), SIZE.w - 6, 0.3 + l * 0.7, SIZE.d - 5 + i * 1.6, scene)
   }
   // people: two in hi-vis by the docks, one on the walkway
   for (const [x, z, ry] of [[(DOCKS[1] ?? DOCKS[0]).x + 1.7, 1.4, 0.4], [DOCKS[DOCKS.length - 1].x - 1.7, 1.6, -0.5], [1.1, SIZE.d / 2, 0]] as const) scene.add(person(x, z, ry))
@@ -380,7 +380,7 @@ function buildBuilding(scene: THREE.Scene, sim: Sim): Building {
     const cone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 16), coneMat); cone.position.set(dx, 0.35, 0); cone.castShadow = true; obstacle.add(cone)
   }
   obstacle.add(person(1.0, -0.9, 2.4))
-  const ring = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.2, 48), new THREE.MeshBasicMaterial({ color: '#ef4444', transparent: true, opacity: 0.8, side: THREE.DoubleSide }))
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.2, 48), new THREE.MeshBasicMaterial({ color: '#e0523f', transparent: true, opacity: 0.8, side: THREE.DoubleSide }))
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; ring.name = 'pulse'; obstacle.add(ring)
   obstacle.visible = false
   scene.add(obstacle)
@@ -481,7 +481,7 @@ function buildCart(id: string): CartParts {
   // blue warning spot projected ahead, and the scanner's protective field
   const spot = new THREE.Mesh(new THREE.CircleGeometry(0.3, 28), new THREE.MeshBasicMaterial({ color: '#3b82f6', transparent: true, opacity: 0.75 }))
   spot.rotation.x = -Math.PI / 2; spot.position.set(3.0, 0.016, 0); root.add(spot)
-  const fieldMat = new THREE.MeshBasicMaterial({ color: '#22c55e', transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false })
+  const fieldMat = new THREE.MeshBasicMaterial({ color: '#3fa866', transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false })
   const field = new THREE.Mesh(new THREE.CircleGeometry(1, 32, -0.6, 1.2), fieldMat)
   field.rotation.x = -Math.PI / 2; field.position.set(1.9, 0.012, 0); root.add(field)
   return { root, strip, beacon, carriage, turret, forks, load, spot, field, fieldMat, heading: 0 }
@@ -540,7 +540,7 @@ function Kpi({ label, value, unit }: { label: string; value: string | number; un
 }
 
 function Battery({ pct }: { pct: number }) {
-  const c = pct < 28 ? '#ef4444' : pct < 45 ? '#f59e0b' : '#22c55e'
+  const c = pct < 28 ? '#e0523f' : pct < 45 ? '#e9a23b' : '#3fa866'
   return (
     <span className="inline-flex items-center gap-1.5 tabular-nums">
       <span className="relative h-2 w-9 overflow-hidden rounded-sm bg-white/15"><span className="absolute inset-y-0 left-0" style={{ width: `${pct}%`, background: c }} /></span>
@@ -550,7 +550,7 @@ function Battery({ pct }: { pct: number }) {
 }
 
 const TypePill = ({ t }: { t: Task }) => (
-  <span className={`rounded px-1.5 py-px text-[10.5px] font-bold tracking-wide ${t.type === 'PICK' ? 'bg-[#5e6ad2]/30 text-[#c7cbff]' : 'bg-[#0ea5e9]/25 text-[#bae6fd]'}`}>{t.type}</span>
+  <span className={`rounded px-1.5 py-px text-[10.5px] font-bold tracking-wide ${t.type === 'PICK' ? 'bg-[#0a8481]/30 text-[#c7cbff]' : 'bg-[#0ea5e9]/25 text-[#bae6fd]'}`}>{t.type}</span>
 )
 const Prio = ({ p }: { p: number }) => p === 1 ? <span className="rounded bg-[#ea580c]/30 px-1.5 py-px text-[10.5px] font-bold text-[#fdba74]">P1</span> : null
 
@@ -580,7 +580,7 @@ function TaskCard({ t, now }: { t: Task; now: number }) {
       <ol className="mt-2.5 flex items-center gap-1">
         {STEPS.map((s, i) => (
           <li key={s.key} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <span className={`h-1.5 w-full rounded-full ${i <= si ? 'bg-[#5e6ad2]' : 'bg-white/12'} ${i === si + 1 ? 'animate-pulse bg-[#5e6ad2]/45' : ''}`} />
+            <span className={`h-1.5 w-full rounded-full ${i <= si ? 'bg-[#0a8481]' : 'bg-white/12'} ${i === si + 1 ? 'animate-pulse bg-[#0a8481]/45' : ''}`} />
             <span className={`truncate text-[9.5px] ${i <= si ? 'text-white/80' : 'text-white/40'}`}>{s.label}</span>
           </li>
         ))}
@@ -589,7 +589,7 @@ function TaskCard({ t, now }: { t: Task; now: number }) {
   )
 }
 
-const LEVEL_DOT: Record<SimEvent['level'], string> = { info: '#94a3b8', ok: '#22c55e', warn: '#f59e0b', alert: '#ef4444' }
+const LEVEL_DOT: Record<SimEvent['level'], string> = { info: '#a09e98', ok: '#3fa866', warn: '#e9a23b', alert: '#e0523f' }
 
 interface AgvSnap { live: boolean; id: string; state: AgvState; battery: number; v: number; distanceM: number; missions: number; task: Task | null; payload: Pallet | null; wait: Wait | null; opLabel: string; home: number; lowCharge: boolean; lift: number }
 interface DockSnap { id: string; kind: 'in' | 'out'; state: Dock['state']; truck: NonNullable<Dock['truck']> | null; pending: number }
@@ -663,12 +663,12 @@ function Savings({ snap }: { snap: Snap }) {
     <label className="flex items-center justify-between gap-2 text-[13px] text-white/70">
       <span>{label}</span>
       <input type="number" inputMode="decimal" step={step} value={a[key]} onChange={(e) => setA((x) => ({ ...x, [key]: Number(e.target.value) || 0 }))}
-        className="w-20 rounded-md border border-white/12 bg-black/50 px-2 py-1 text-right text-[14px] tabular-nums text-white focus:border-[#8b93e8] focus:outline-none" />
+        className="w-20 rounded-md border border-white/12 bg-black/50 px-2 py-1 text-right text-[14px] tabular-nums text-white focus:border-[#55cac3] focus:outline-none" />
     </label>
   )
   return (
     <div>
-      <div className="rounded-xl border border-[#22c55e]/30 bg-[#22c55e]/10 p-3.5">
+      <div className="rounded-xl border border-[#3fa866]/30 bg-[#3fa866]/10 p-3.5">
         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#86efac]">Saving per year</p>
         <p className="mt-0.5 text-[32px] font-semibold leading-tight tabular-nums">{eur(r.total)}</p>
         <div className="mt-2 grid grid-cols-[1fr_auto] gap-y-1 text-[13px] text-white/80">
@@ -798,7 +798,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
       const geo = new THREE.BufferGeometry()
       geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ROUTE_MAX * 3), 3).setUsage(THREE.DynamicDrawUsage))
       geo.setAttribute('lineDistance', new THREE.BufferAttribute(new Float32Array(ROUTE_MAX), 1).setUsage(THREE.DynamicDrawUsage))
-      const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: '#5e6ad2', dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.45 }))
+      const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: '#0a8481', dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.45 }))
       line.position.y = 0.03; line.frustumCulled = false; scene.add(line); routeLines.set(a.id, line)
     }
     // highlight box for the selected task's source/target or a found location
@@ -885,7 +885,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
         while (dh < -Math.PI) dh += 2 * Math.PI
         c.heading += dh * Math.min(1, dt * 12)
         c.root.rotation.y = c.heading
-        const col = a.wait ? (a.wait.kind === 'obstacle' ? '#ef4444' : '#f59e0b') : STATE_COLOR[a.state]
+        const col = a.wait ? (a.wait.kind === 'obstacle' ? '#e0523f' : '#e9a23b') : STATE_COLOR[a.state]
         c.strip.color.set(col); c.strip.emissive.set(col)
         c.beacon.color.set(col); c.beacon.emissive.set(col)
         const moving = a.v > 0.05
@@ -905,7 +905,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
         c.field.scale.set(reach, reach, 1)
         c.field.position.x = rev ? -1.2 : 1.9
         c.field.rotation.z = rev ? Math.PI : 0
-        c.fieldMat.color.set(a.wait ? (a.wait.kind === 'obstacle' ? '#ef4444' : '#f59e0b') : '#22c55e')
+        c.fieldMat.color.set(a.wait ? (a.wait.kind === 'obstacle' ? '#e0523f' : '#e9a23b') : '#3fa866')
         c.fieldMat.opacity = a.wait ? 0.22 : 0.1
         // route
         const line = routeLines.get(a.id)!
@@ -978,7 +978,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
         tr.setOpen(Math.max(0, Math.min(1, (door.position.y - 1.65) / 3.05)))
         tr.load.forEach((p, k) => p.set(d.trailer[k] ?? null))
         const recent = sim.caught.length && sim.caught[sim.caught.length - 1].at === d.def.id && sim.t - sim.caught[sim.caught.length - 1].t < 8
-        const lamp = recent ? (Math.sin(sim.t * 12) > 0 ? '#ef4444' : '#450a0a') : atDoor && d.state === 'docked' ? '#22c55e' : '#ef4444'
+        const lamp = recent ? (Math.sin(sim.t * 12) > 0 ? '#e0523f' : '#450a0a') : atDoor && d.state === 'docked' ? '#3fa866' : '#e0523f'
         bld.dockLights[i].color.set(lamp); bld.dockLights[i].emissive.set(lamp)
         const p = dockPallets[i]
         const op = jacks[i]
@@ -1187,7 +1187,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
         .agv-label b span{width:7px;height:7px;border-radius:99px}
         .agv-label em{font-style:normal;font-weight:500;color:rgba(255,255,255,.6)}
         .agv-label small{font-size:10px;font-weight:500;color:rgba(255,255,255,.62)}
-        .agv-label[data-sel="1"]{background:#5e6ad2;border-color:#8b93e8}
+        .agv-label[data-sel="1"]{background:#0a8481;border-color:#55cac3}
         .agv-label[data-sel="1"] small{color:rgba(255,255,255,.85)}
         .dock-label{position:absolute;left:0;top:0;display:flex;flex-direction:column;padding:3px 8px 4px;border-radius:8px;background:rgba(15,23,42,.85);border:1px solid rgba(255,255,255,.14);font:600 11px/1.25 Inter,system-ui,sans-serif;color:#fff;white-space:nowrap;pointer-events:none}
         .dock-label small{font-size:10px;font-weight:500;color:rgba(255,255,255,.7)}
@@ -1207,7 +1207,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
             const live = snap?.agvs.filter((a) => a.live).length ?? 0
             const n = snap?.agvs.length ?? config?.layout.fleet ?? 6
             return (<>
-              <span className={`h-2 w-2 rounded-full ${live ? 'bg-[#22c55e]' : 'bg-[#f59e0b]'}`} />
+              <span className={`h-2 w-2 rounded-full ${live ? 'bg-[#3fa866]' : 'bg-[#e9a23b]'}`} />
               <span className="font-semibold">{live ? `Live · ${live} real` : 'Simulated'}</span>
               <span className="text-white/60">{config ? `· ${config.name} ` : ''}· {live ? `${n - live} simulated` : `${n} robots`} · {snap ? clock(snap.t).slice(0, 5) : '08:00'}</span>
               {feedStatus && <span className={feedStatus.ok ? 'text-[#86efac]' : 'text-[#fca5a5]'}>· {feedStatus.text}</span>}
@@ -1225,7 +1225,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
         )}
         <form className="pointer-events-auto mt-2 hidden max-w-[420px] gap-1.5 md:flex" onSubmit={(e) => { e.preventDefault(); runSearch(query) }}>
           <input value={query} onChange={(e) => { setQuery(e.target.value); setMissed(false) }} placeholder="Find B-14-3-L, an SSCC, TO, SO or AGV-03" aria-label="Find a location, pallet, order or cart"
-            className="min-w-0 flex-1 rounded-lg border border-white/12 bg-black/65 px-3 py-1.5 text-[13px] text-white placeholder:text-white/40 backdrop-blur focus:border-[#8b93e8] focus:outline-none" />
+            className="min-w-0 flex-1 rounded-lg border border-white/12 bg-black/65 px-3 py-1.5 text-[13px] text-white placeholder:text-white/40 backdrop-blur focus:border-[#55cac3] focus:outline-none" />
           <button type="submit" className="rounded-lg bg-white/15 px-3 py-1.5 text-[13px] font-semibold hover:bg-white/25">Find</button>
           {(found || missed) && <button type="button" onClick={() => { setFound(null); setMissed(false); setQuery('') }} className="rounded-lg bg-white/10 px-2.5 text-[13px] text-white/70">×</button>}
         </form>
@@ -1252,7 +1252,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
               <span className="rounded-full px-2 py-0.5 text-[11.5px] font-semibold" style={{ background: STATE_COLOR[selected.state] + '33', color: STATE_COLOR[selected.state] }}>{STATE_LABEL[selected.state]}</span>
             </div>
             {(selected.wait || (selected.opLabel && (selected.state === 'atSource' || selected.state === 'atDest'))) && (
-              <p className={`mt-1 text-[12.5px] ${selected.wait ? 'text-[#fbbf24]' : 'text-[#c4b5fd]'}`}>{waitText(selected.wait) ?? selected.opLabel}</p>
+              <p className={`mt-1 text-[12.5px] ${selected.wait ? 'text-[#fbbf24]' : 'text-[#d8c4a3]'}`}>{waitText(selected.wait) ?? selected.opLabel}</p>
             )}
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[12.5px] text-white/70">
               <span>Battery</span><Battery pct={selected.battery} />
@@ -1262,7 +1262,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
             </div>
             {selected.task ? <TaskCard t={selected.task} now={snap!.t} /> : <p className="mt-2 text-[12.5px] text-white/55">{selected.state === 'charging' ? 'Charging, available for the next order.' : 'No order.'}</p>}
             <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => setFollow((f) => !f)} className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold ${follow ? 'bg-[#5e6ad2] text-white' : 'bg-white/10 text-white'}`}>{follow ? 'Following' : 'Follow'}</button>
+              <button type="button" onClick={() => setFollow((f) => !f)} className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold ${follow ? 'bg-[#0a8481] text-white' : 'bg-white/10 text-white'}`}>{follow ? 'Following' : 'Follow'}</button>
               <button type="button" onClick={() => { setSel(null); setFollow(false) }} className="rounded-lg bg-white/10 px-3 py-1.5 text-[12.5px] text-white/80">Close</button>
             </div>
           </div>
@@ -1294,10 +1294,10 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
                         <p className="text-[15px] font-semibold leading-snug">{c.title}</p>
                         <p className="mt-0.5 text-[13px] font-semibold text-[#86efac]">{c.gain}</p>
                       </div>
-                      {!ran[c.id] && <button type="button" onClick={() => trigger(c.id)} className="min-h-[40px] flex-none rounded-lg bg-[#5e6ad2] px-3.5 text-[14px] font-semibold hover:brightness-110">Show me</button>}
+                      {!ran[c.id] && <button type="button" onClick={() => trigger(c.id)} className="min-h-[40px] flex-none rounded-lg bg-[#0a8481] px-3.5 text-[14px] font-semibold hover:brightness-110">Show me</button>}
                     </div>
                     <p className="mt-1 text-[13px] leading-snug text-white/60">{c.hook}</p>
-                    {ran[c.id] && <p className="mt-2 rounded-lg bg-[#22c55e]/12 px-2.5 py-2 text-[13px] font-medium text-[#bbf7d0]">{c.outcome(snap)}</p>}
+                    {ran[c.id] && <p className="mt-2 rounded-lg bg-[#3fa866]/12 px-2.5 py-2 text-[13px] font-medium text-[#bbf7d0]">{c.outcome(snap)}</p>}
                   </div>
                 ))}
               </div>
@@ -1307,7 +1307,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
               <ul className="space-y-1.5">
                 {snap.agvs.map((a) => (
                   <li key={a.id}>
-                    <button type="button" onClick={() => selectAgv(a.id)} className={`w-full rounded-xl border px-3 py-2 text-left ${sel === a.id ? 'border-[#8b93e8] bg-[#5e6ad2]/25' : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.08]'}`}>
+                    <button type="button" onClick={() => selectAgv(a.id)} className={`w-full rounded-xl border px-3 py-2 text-left ${sel === a.id ? 'border-[#55cac3] bg-[#0a8481]/25' : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.08]'}`}>
                       <div className="flex items-center justify-between">
                         <span className="text-[13.5px] font-semibold">{a.id}</span>
                         <span className="text-[11.5px] font-semibold" style={{ color: a.wait ? '#fbbf24' : STATE_COLOR[a.state] }}>{a.wait ? 'Waiting' : STATE_LABEL[a.state]}</span>
@@ -1354,14 +1354,14 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
                     <li key={d.id} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[13.5px] font-semibold">{d.id} <span className="font-normal text-white/50">· {d.kind === 'in' ? 'receiving' : 'shipping'}</span></span>
-                        <span className="text-[11.5px] font-semibold capitalize" style={{ color: d.state === 'docked' ? '#22c55e' : '#f59e0b' }}>{d.state === 'empty' ? 'free' : d.state}</span>
+                        <span className="text-[11.5px] font-semibold capitalize" style={{ color: d.state === 'docked' ? '#3fa866' : '#e9a23b' }}>{d.state === 'empty' ? 'free' : d.state}</span>
                       </div>
                       {tr ? (
                         <>
                           <p className="mt-0.5 text-[12px] text-white/75">{tr.plate} · {tr.carrier} {d.kind === 'out' ? `→ ${tr.dest}` : ''}</p>
                           <p className="text-[11.5px] text-white/50">{tr.ref}{tr.orders.length ? ` · ${tr.orders.join(', ')}` : ''}</p>
                           <div className="mt-1.5 flex items-center gap-2">
-                            <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/12"><span className="absolute inset-y-0 left-0 bg-[#5e6ad2]" style={{ width: `${pct * 100}%` }} /></span>
+                            <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/12"><span className="absolute inset-y-0 left-0 bg-[#0a8481]" style={{ width: `${pct * 100}%` }} /></span>
                             <span className="text-[11.5px] tabular-nums text-white/70">{d.kind === 'out' ? `${tr.count}/${tr.cap} loaded` : `${tr.cap - tr.count}/${tr.cap} unloaded`}</span>
                           </div>
                           {d.kind === 'out' && (
@@ -1406,7 +1406,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
                 ) : <p className="mt-2 text-[12px] text-white/50">Waiting for the first confirmation…</p>}
                 <ul className="mt-2 space-y-1 text-[12px] text-white/70">
                   {snap.syncs.map((s) => (
-                    <li key={s.task.id + s.t} className="flex justify-between gap-2"><span>{s.task.id} · {s.task.ref} → {erp === 'odoo' ? 'stock move done' : erp === 'salesforce' ? 'work order completed' : s.task.type === 'PICK' ? 'pallet.staged' : 'pallet.putaway'}</span><span className="text-[#22c55e]">✓</span></li>
+                    <li key={s.task.id + s.t} className="flex justify-between gap-2"><span>{s.task.id} · {s.task.ref} → {erp === 'odoo' ? 'stock move done' : erp === 'salesforce' ? 'work order completed' : s.task.type === 'PICK' ? 'pallet.staged' : 'pallet.putaway'}</span><span className="text-[#3fa866]">✓</span></li>
                   ))}
                 </ul>
                 {config?.erp.send && config.erp.endpoint ? (
@@ -1415,7 +1415,7 @@ export default function AgvTwin({ onWant, config }: { onWant?: () => void; confi
                     {sent.map((x, i) => <li key={x.id + i} className={x.ok ? 'text-[#86efac]' : 'text-[#fca5a5]'}>{x.id} · {x.text}</li>)}
                   </ul>
                 ) : <p className="mt-2 text-[11px] text-white/45">Preview only: nothing is sent. {config ? 'Add your endpoint in the builder and turn on sending.' : 'In a real project it uses your endpoint and your API key.'}</p>}
-                {onWant && <button type="button" onClick={onWant} className="mt-3 w-full rounded-lg bg-[#5e6ad2] py-2 text-[13px] font-semibold">Connect it to our ERP</button>}
+                {onWant && <button type="button" onClick={onWant} className="mt-3 w-full rounded-lg bg-[#0a8481] py-2 text-[13px] font-semibold">Connect it to our ERP</button>}
               </div>
             )}
           </div>

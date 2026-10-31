@@ -35,7 +35,7 @@ const CAT_COLORS = {
   quality:        { color: '#34d399', glow: '52,211,153' },
   classification: { color: '#c084fc', glow: '192,132,252' },
   lod:            { color: '#67d7f0', glow: '103,215,240' },
-  iso19650:       { color: '#818cf8', glow: '129,140,248' },
+  iso19650:       { color: '#55cac3', glow: '129,140,248' },
   mep:            { color: '#4aeabd', glow: '74,234,189' },
   clash:          { color: '#fbbf24', glow: '251,191,36' },
 }
@@ -261,7 +261,7 @@ function coverHtml(lang, cat) {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${W}px;height:${H}px;overflow:hidden}
-body{font-family:${fontFamily};background:#0A0A0C;color:#fff;position:relative}
+body{font-family:${fontFamily};background:#100F0C;color:#fff;position:relative}
 .glow{position:absolute;inset:0;background:
   radial-gradient(820px 700px at 91% 48%, rgba(${c.glow},.18), transparent 60%),
   radial-gradient(400px 380px at 5% 85%,  rgba(${c.glow},.09), transparent 58%)}
@@ -273,8 +273,8 @@ body{font-family:${fontFamily};background:#0A0A0C;color:#fff;position:relative}
 .wrap{position:relative;height:100%;display:flex;align-items:center;padding:52px 56px 52px 72px;gap:44px}
 .left{flex:1;display:flex;flex-direction:column;min-width:0}
 .brand{display:flex;align-items:center;gap:10px;margin-bottom:26px}
-.logo{width:36px;height:36px;border-radius:9px;background:#5E6AD2;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 5px 16px rgba(94,106,210,.5)}
+.logo{width:36px;height:36px;border-radius:9px;background:#0A8481;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 5px 16px rgba(10,132,129,.5)}
 .brandname{font-size:15.5px;font-weight:700;color:#7a84d8;letter-spacing:-.01em}
 .badge{display:inline-flex;align-items:center;font-family:monospace;font-size:8.5px;font-weight:700;
   letter-spacing:.15em;color:${c.color};

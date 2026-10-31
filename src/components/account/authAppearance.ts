@@ -8,15 +8,15 @@
 export function authAppearance(light: boolean) {
   return {
     variables: {
-      colorPrimary: light ? '#3645C4' : '#5E6AD2',
+      colorPrimary: light ? '#00696A' : '#0A8481',
       colorPrimaryForeground: '#FFFFFF',
       colorBackground: 'transparent',
-      colorForeground: light ? '#0B0D1A' : '#ECEDEE',
-      colorMutedForeground: light ? '#414560' : '#8B8D98',
+      colorForeground: light ? '#1C1B16' : '#ECEBE7',
+      colorMutedForeground: light ? '#414560' : '#A09E98',
       colorInput: light ? 'rgba(15,17,35,0.03)' : 'rgba(255,255,255,0.04)',
-      colorInputForeground: light ? '#0B0D1A' : '#ECEDEE',
+      colorInputForeground: light ? '#1C1B16' : '#ECEBE7',
       colorBorder: light ? 'rgba(15,17,35,0.12)' : 'rgba(255,255,255,0.12)',
-      colorRing: light ? '#3645C4' : '#5E6AD2',
+      colorRing: light ? '#00696A' : '#0A8481',
       borderRadius: '12px',
     },
     elements: {

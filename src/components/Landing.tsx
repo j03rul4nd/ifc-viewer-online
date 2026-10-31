@@ -78,8 +78,8 @@ function ThemeToggleBtn({ theme, onToggle }: { theme: 'dark' | 'light'; onToggle
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const GRADIENT_HERO    = ['#5E6AD2', '#A78BFA', '#6FB8D9', '#5E6AD2'] as const
-const GRADIENT_SUBTEXT = ['#5E6AD2', '#A78BFA', '#6FB8D9', '#5E6AD2'] as const
+const GRADIENT_HERO    = ['#0A8481', '#C8A97E', '#6FB8D9', '#0A8481'] as const
+const GRADIENT_SUBTEXT = ['#0A8481', '#C8A97E', '#6FB8D9', '#0A8481'] as const
 
 const GITHUB_URL = 'https://github.com/j03rul4nd/ifc-viewer-online'
 
@@ -126,7 +126,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 function HeroPreview({ lightBg }: { lightBg?: boolean }) {
   const tooltipBg = lightBg
     ? 'bg-[rgba(255,255,255,0.95)] shadow-[0_4px_16px_rgba(0,0,0,0.10)]'
-    : 'bg-[rgba(16,16,20,0.92)]'
+    : 'bg-[rgba(24,23,20,0.92)]'
   return (
     <div className="relative bg-[var(--bg)] flex overflow-hidden">
       {/* 3D render — always shown */}
@@ -357,8 +357,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               edgeFadeWidth={0.15}
               colorCycleSpeed={0.0}
               brightness={0.07}
-              color1="#5E6AD2"
-              color2="#8B93E8"
+              color1="#0A8481"
+              color2="#55CAC3"
               color3="#4a5280"
               enableMouseInteraction={false}
               mouseInfluence={0.8}
@@ -377,15 +377,15 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <div style={{
               position: 'absolute', inset: 0,
               background: [
-                'radial-gradient(ellipse 90% 60% at 10% 40%, rgba(54,69,196,0.07) 0%, transparent 55%)',
-                'radial-gradient(ellipse 70% 50% at 90% 15%, rgba(94,106,210,0.05) 0%, transparent 50%)',
-                'radial-gradient(ellipse 50% 40% at 50% 90%, rgba(54,69,196,0.04) 0%, transparent 55%)',
+                'radial-gradient(ellipse 90% 60% at 10% 40%, rgba(0,105,106,0.07) 0%, transparent 55%)',
+                'radial-gradient(ellipse 70% 50% at 90% 15%, rgba(10,132,129,0.05) 0%, transparent 50%)',
+                'radial-gradient(ellipse 50% 40% at 50% 90%, rgba(0,105,106,0.04) 0%, transparent 55%)',
               ].join(', '),
             }} />
             {/* WebGL directional rays — single context, proven lightweight */}
             <SideRays
               speed={0.55}
-              rayColor1="#3645C4"
+              rayColor1="#00696A"
               rayColor2="#6B7FE8"
               intensity={0.5}
               spread={1.3}
@@ -408,8 +408,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           >
             <SideRays
               speed={1.2}
-              rayColor1="#5E6AD2"
-              rayColor2="#A78BFA"
+              rayColor1="#0A8481"
+              rayColor2="#C8A97E"
               intensity={0.9}
               spread={1.4}
               origin="top-right"
@@ -526,7 +526,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           {/* Badge */}
           <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5 }}>
             <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[11px] sm:text-[12px] text-[var(--text-dim)] mb-5 sm:mb-7 max-w-full overflow-hidden">
-              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[rgba(94,106,210,0.15)] text-[var(--accent-2)] text-[10px] sm:text-[10.5px] font-semibold font-mono tracking-wider shrink-0">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[rgba(10,132,129,0.15)] text-[var(--accent-2)] text-[10px] sm:text-[10.5px] font-semibold font-mono tracking-wider shrink-0">
                 FREE
               </span>
               {/* Shortened text on mobile */}
@@ -610,7 +610,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </button>
             <StarBorder
               as="button"
-              color="rgba(94,106,210,0.9)"
+              color="rgba(10,132,129,0.9)"
               speed="5s"
               thickness={1}
               onClick={onOpenUpload}
@@ -671,7 +671,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.45, ease: 'easeOut' }}
-            className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_rgba(94,106,210,0.3)]"
+            className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_rgba(10,132,129,0.3)]"
             aria-label="Application preview"
           >
             {/* Mock browser bar */}
@@ -724,7 +724,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             zIndex: 2,
             position: 'relative',
             ...(landingTheme === 'light' && {
-              background: 'linear-gradient(180deg, rgba(94,106,210,0.04) 0%, transparent 100%)',
+              background: 'linear-gradient(180deg, rgba(10,132,129,0.04) 0%, transparent 100%)',
             }),
           }}
           aria-label="Key statistics"
@@ -797,7 +797,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 >
                   <div
                     className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg flex items-center justify-center mb-3 sm:mb-4"
-                    style={{ background: 'rgba(34,197,94,0.10)', color: 'var(--ok)' }}
+                    style={{ background: 'rgba(63,168,102,0.10)', color: 'var(--ok)' }}
                     aria-hidden="true"
                   >
                     <card.icon size={15} />
@@ -859,11 +859,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 key={i}
                 backgroundColor={landingTheme === 'light' ? '#FFFFFF' : '#18181f'}
                 borderRadius={0}
-                glowColor={landingTheme === 'light' ? '54 69 196' : '94 106 210'}
+                glowColor={landingTheme === 'light' ? '54 69 196' : '10 132 129'}
                 glowRadius={30}
                 glowIntensity={landingTheme === 'light' ? 0.18 : 0.6}
                 coneSpread={20}
-                colors={['#5E6AD2', '#8B93E8', '#3B82F6']}
+                colors={['#0A8481', '#55CAC3', '#3B82F6']}
                 className="w-full"
               >
                 <motion.div
@@ -877,7 +877,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <div
-                        className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg bg-[rgba(94,106,210,0.12)] text-[var(--accent-2)] flex items-center justify-center mb-3 sm:mb-4 cursor-default"
+                        className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg bg-[rgba(10,132,129,0.12)] text-[var(--accent-2)] flex items-center justify-center mb-3 sm:mb-4 cursor-default"
                         aria-hidden="true"
                       >
                         <f.icon size={15} />
@@ -941,7 +941,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 <PixelCard
                   key={i}
                   variant="purple"
-                  colors="#5E6AD2,#8B93E8,#A78BFA"
+                  colors="#0A8481,#55CAC3,#C8A97E"
                   gap={9}
                   speed={28}
                   className="rounded-xl w-full"
@@ -989,7 +989,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 speed={0.22}
                 scale={1.4}
                 brightness={0.45}
-                color1="#5E6AD2"
+                color1="#0A8481"
                 color2="#7C3AED"
                 noiseFrequency={1.8}
                 noiseAmplitude={0.9}
@@ -1163,10 +1163,10 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             {/* Light mode: inner card with border + shadow */}
             {landingTheme === 'light' && (
               <div
-                className="relative mx-auto mb-8 sm:mb-10 rounded-2xl border border-[rgba(94,106,210,0.18)] overflow-hidden"
+                className="relative mx-auto mb-8 sm:mb-10 rounded-2xl border border-[rgba(10,132,129,0.18)] overflow-hidden"
                 style={{
                   background: 'rgba(255,255,255,0.75)',
-                  boxShadow: '0 1px 4px rgba(94,106,210,0.08), 0 8px 32px rgba(94,106,210,0.07)',
+                  boxShadow: '0 1px 4px rgba(10,132,129,0.08), 0 8px 32px rgba(10,132,129,0.07)',
                   backdropFilter: 'blur(8px)',
                   padding: 'clamp(28px, 5vw, 52px)',
                 }}
@@ -1176,7 +1176,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   className="absolute top-0 right-0 pointer-events-none"
                   style={{
                     width: '280px', height: '200px',
-                    background: 'radial-gradient(ellipse at 100% 0%, rgba(94,106,210,0.12) 0%, transparent 65%)',
+                    background: 'radial-gradient(ellipse at 100% 0%, rgba(10,132,129,0.12) 0%, transparent 65%)',
                   }}
                   aria-hidden="true"
                 />
@@ -1206,7 +1206,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     <a
                       href={GITHUB_URL}
                       target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[rgba(94,106,210,0.06)] transition-colors no-underline"
+                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[rgba(10,132,129,0.06)] transition-colors no-underline"
                       aria-label="View source code on GitHub"
                     >
                       {GITHUB_SVG}
@@ -1307,7 +1307,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               <div className="absolute inset-0 hidden sm:block" aria-hidden="true">
                 <Grainient
                   color1="#16182e"
-                  color2="#5E6AD2"
+                  color2="#0A8481"
                   color3="#080810"
                   timeSpeed={0.10}
                   warpStrength={0.5}
@@ -1325,9 +1325,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 <ShapeGrid
                   direction="diagonal"
                   speed={0.3}
-                  borderColor="rgba(94,106,210,0.15)"
+                  borderColor="rgba(10,132,129,0.15)"
                   squareSize={48}
-                  hoverFillColor="rgba(94,106,210,0.08)"
+                  hoverFillColor="rgba(10,132,129,0.08)"
                   shape="square"
                   hoverTrailAmount={3}
                 />
@@ -1338,7 +1338,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <div className="absolute inset-0" aria-hidden="true">
               <Grainient
                 color1="#c7d0ff"
-                color2="#5E6AD2"
+                color2="#0A8481"
                 color3="#e8ecff"
                 timeSpeed={0.09}
                 warpStrength={0.45}
@@ -1361,7 +1361,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           <div
             style={{ position: 'relative', zIndex: 1 }}
             className={landingTheme === 'light'
-              ? 'mx-auto max-w-[680px] rounded-2xl border border-white/70 bg-white/85 px-5 py-9 sm:px-10 sm:py-11 shadow-[0_20px_60px_-24px_rgba(54,69,196,0.45)] backdrop-blur-md'
+              ? 'mx-auto max-w-[680px] rounded-2xl border border-white/70 bg-white/85 px-5 py-9 sm:px-10 sm:py-11 shadow-[0_20px_60px_-24px_rgba(0,105,106,0.45)] backdrop-blur-md'
               : undefined}
           >
             <motion.h2
@@ -1402,7 +1402,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >
               <StarBorder
                 as="button"
-                color="rgba(94,106,210,0.9)"
+                color="rgba(10,132,129,0.9)"
                 speed="4s"
                 thickness={1}
                 onClick={onOpenUpload}

@@ -45,7 +45,7 @@ export function TwinLiveSection({ globalId: given, modelId, expressId }: {
   return (
     <div className="border-b border-[var(--border)] px-3 py-2 flex flex-col gap-2" data-testid="twin-live-section">
       <div className="flex items-center gap-1.5 text-[11px] max-md:text-[13px] font-medium">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" aria-hidden />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#3fa866] animate-pulse" aria-hidden />
         {t('inspectorTitle')}
         {timeAt !== null && <span className="text-[10px] font-normal text-[var(--text-dim)]">· {new Date(timeAt).toLocaleString()}</span>}
       </div>
