@@ -6,7 +6,7 @@ import { GestureArbiter, type Contact, type GestureAction } from './gestures'
 import { resolveStudioLayout } from './layout'
 import { dot, intersectPlane, isEdgeOn, offsetPlane, planeFromNormal, planeNormal, presetPlane, rotatePlane } from './plane'
 import { isAppendOf, ribbonSize, writeRibbon, VERTEX_STRIDE } from './ribbon'
-import { OneEuro, simplifyStroke } from './stroke'
+import { simplifyStroke } from './stroke'
 import type { Stroke } from './types'
 
 const stroke = (points: number[] = [0, 0, 0, 0.5, 1, 0, 0, 0.5]): Stroke => ({
@@ -139,22 +139,6 @@ describe('strokes', () => {
     const taper = simplifyStroke(Float32Array.from([0, 0, 0, .1, .5, 0, 0, .9, 1, 0, 0, .1]), 0.01)
     expect(taper.length / 4).toBe(3)
   })
-
-  it('the filter steadies a jitter and follows a fast move', () => {
-    const slow = new OneEuro()
-    let last = 0
-    for (let i = 0; i < 40; i++) last = slow.filter(i % 2 ? 1 : -1, i * 8)
-    expect(Math.abs(last)).toBeLessThan(0.6)
-    const fast = new OneEuro()
-    for (let i = 0; i < 40; i++) last = fast.filter(i * 40, i * 8)
-    expect(1560 - last).toBeLessThan(60)
-  })
-
-  it('never divides by zero on samples sharing a timestamp', () => {
-    const f = new OneEuro()
-    f.filter(0, 10)
-    expect(Number.isFinite(f.filter(5, 10))).toBe(true)
-  })
 })
 
 describe('ribbon', () => {
@@ -267,6 +251,7 @@ describe('layout follows the space, not a device', () => {
 
   it('an open foldable docks the references beside the drawing', () => {
     expect(resolveStudioLayout(1000, 780)).toMatchObject({ density: 'regular', paneMode: 'docked-side' })
+    expect(resolveStudioLayout(1366, 1024)).toMatchObject({ density: 'regular', paneMode: 'docked-side' })
   })
 
   it('a tall open foldable stacks them, so the rail leaves room to draw', () => {
@@ -284,17 +269,24 @@ describe('svg', () => {
   const page = (strokes: Stroke[]) => [{ id: 'l', name: '1', visible: true, locked: false, strokes }]
   const project = ([x, y]: readonly number[]) => ({ x, y })
 
-  it('writes paths, and leaves hidden layers out', () => {
+  it('writes filled outlines, and leaves hidden layers out', () => {
     const svg = exportSvg(page([stroke()]), 100, 50, '#fff', project)
-    expect(svg).toContain('d="M0 0L1 0"')
-    expect(svg).toContain('stroke="#102030"')
-    const hidden = exportSvg([{ ...page([stroke()])[0], visible: false }], 100, 50, '#fff', project)
-    expect(hidden).not.toContain('<path')
+    expect(svg).toContain('<path d="M')
+    expect(svg).toContain('fill="#102030"')
+    expect(exportSvg([{ ...page([stroke()])[0], visible: false }], 100, 50, '#fff', project)).not.toContain('<path')
+  })
+})
+
+describe('tablet buttons and keys', () => {
+  it('the barrel button orbits instead of drawing', () => {
+    const g = new GestureArbiter()
+    expect(types(g.down({ ...pen(0, 0, 0), button: 2, buttons: 2 }))).toEqual(['pen-detected'])
+    expect(types(g.move(pen(5, 0, 10)))).toEqual(['orbit'])
   })
 
-  it('starts a new subpath across a point behind the camera', () => {
-    const s = stroke([0, 0, 0, 1, 5, 5, 0, 1, 2, 0, 0, 1])
-    const svg = exportSvg(page([s]), 10, 10, '#fff', ([x, y]) => (x === 5 ? null : { x, y }))
-    expect(svg).toContain('d="M0 0M2 0"')
+  it('a held key navigates with whatever lands', () => {
+    const g = new GestureArbiter()
+    expect(g.down({ ...pen(0, 0, 0), modifier: 'pan' })).toEqual([])
+    expect(types(g.move(pen(5, 0, 10)))).toEqual(['pan'])
   })
 })

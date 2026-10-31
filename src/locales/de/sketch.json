@@ -98,7 +98,8 @@
     "tooMany": "Dieses Bild konnte nicht gelesen werden.",
     "top": "Grundriss",
     "front": "Ansicht",
-    "liveEmpty": "Zeichnen Sie etwas, und es erscheint hier von oben und von vorne."
+    "liveEmpty": "Zeichnen Sie etwas, und es erscheint hier von oben und von vorne.",
+    "window": "In anderem Fenster öffnen"
   },
   "context": {
     "load": "Über ein Modell skizzieren (GLB)",
@@ -106,7 +107,10 @@
     "failed": "Diese Datei konnte nicht als GLB-Modell gelesen werden.",
     "loaded": "Modell geladen. Mit dem Ebenenwerkzeug zeichnen Sie auf jeder seiner Flächen.",
     "preparing": "Ihr Modell wird vorbereitet…",
-    "tooBig": "Dieses Modell ist zu groß, um auf diesem Gerät darüber zu skizzieren. Sie können ohne es skizzieren."
+    "tooBig": "Dieses Modell ist zu groß, um auf diesem Gerät darüber zu skizzieren. Sie können ohne es skizzieren.",
+    "label": "Unter der Skizze",
+    "mesh": "Modell",
+    "points": "Scan"
   },
   "export": {
     "label": "Exportieren",
@@ -117,7 +121,50 @@
     "video": "Prozessvideo",
     "recording": "Prozess wird aufgezeichnet…",
     "badFile": "Das ist keine Skizzendatei.",
-    "noVideo": "Dieser Browser kann kein Video aufzeichnen."
+    "noVideo": "Dieser Browser kann kein Video aufzeichnen.",
+    "toApps": "In andere Apps",
+    "psd": "Ebenen (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "3D-Linien (OBJ)",
+    "psdHint": "PSD öffnet mit Ebenen in Krita, Clip Studio und Sketchbook. In Procreate über die Galerie importieren, um sie zu behalten.",
+    "pngClear": "Transparentes PNG"
   },
-  "webgl": "Dieses Gerät konnte das 3D-Zeichnen nicht starten."
+  "webgl": "Dieses Gerät konnte das 3D-Zeichnen nicht starten.",
+  "gpuLost": "Das System hat den Grafikchip entzogen. Ihre Zeichnung ist sicher und kommt von selbst zurück.",
+  "tabs": {
+    "ink": "Tinte",
+    "plane": "Ebene",
+    "view": "Ansicht",
+    "layers": "Ebenen",
+    "file": "Datei"
+  },
+  "rail": {
+    "open": "Werkzeuge zeigen",
+    "close": "Werkzeuge ausblenden"
+  },
+  "ink": {
+    "label": "Strich",
+    "stabilizer": "Stabilisator",
+    "entry": "Strichanfang",
+    "exit": "Strichende",
+    "snap": "Enden verbinden"
+  },
+  "pen": {
+    "label": "Stift",
+    "curve": "Druckverhalten",
+    "soft": "Weich",
+    "normal": "Normal",
+    "firm": "Fest",
+    "try": "Ziehen Sie mit dem Stift eine Linie, um ihn zu testen.",
+    "noPen": "Das war kein Stift. Ein Grafiktablett im Mausmodus erscheint so.",
+    "noPressure": "Dieser Stift meldet keinen Druck. Prüfen Sie den Tablett-Treiber; unter Windows Windows Ink aktivieren.",
+    "reading": "Druck {{pressure}} % · Neigung {{tilt}}°"
+  },
+  "share": {
+    "label": "Teilen",
+    "instagram": "Instagram-Storys",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Bild gespeichert. Laden Sie es in Instagram hoch.",
+    "savedLinkedin": "Bild gespeichert. Hängen Sie es an Ihren LinkedIn-Beitrag an."
+  }
 }

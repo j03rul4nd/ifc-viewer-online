@@ -98,7 +98,8 @@
     "tooMany": "No s'ha pogut llegir aquesta imatge.",
     "top": "Planta",
     "front": "Alçat",
-    "liveEmpty": "Dibuixa alguna cosa i apareixerà aquí vista des de dalt i de front."
+    "liveEmpty": "Dibuixa alguna cosa i apareixerà aquí vista des de dalt i de front.",
+    "window": "Obre en una altra finestra"
   },
   "context": {
     "load": "Esbossa sobre un model (GLB)",
@@ -106,7 +107,10 @@
     "failed": "Aquest fitxer no s'ha pogut llegir com a model GLB.",
     "loaded": "Model carregat. Fes servir l'eina de pla per dibuixar en qualsevol de les seves cares.",
     "preparing": "S'està preparant el teu model…",
-    "tooBig": "Aquest model pesa massa per esbossar-hi a sobre en aquest dispositiu. Pots esbossar sense ell."
+    "tooBig": "Aquest model pesa massa per esbossar-hi a sobre en aquest dispositiu. Pots esbossar sense ell.",
+    "label": "Sota l'esbós",
+    "mesh": "Model",
+    "points": "Escaneig"
   },
   "export": {
     "label": "Exporta",
@@ -117,7 +121,50 @@
     "video": "Vídeo del procés",
     "recording": "S'està gravant el procés…",
     "badFile": "Aquest fitxer no és un esbós.",
-    "noVideo": "Aquest navegador no pot gravar vídeo."
+    "noVideo": "Aquest navegador no pot gravar vídeo.",
+    "toApps": "A altres apps",
+    "psd": "Capes (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "Línies 3D (OBJ)",
+    "psdHint": "El PSD s'obre amb capes a Krita, Clip Studio i Sketchbook. A Procreate, importa'l des de la Galeria per conservar-les.",
+    "pngClear": "PNG transparent"
   },
-  "webgl": "Aquest dispositiu no ha pogut iniciar el dibuix en 3D."
+  "webgl": "Aquest dispositiu no ha pogut iniciar el dibuix en 3D.",
+  "gpuLost": "El sistema ha retirat el xip gràfic. El dibuix és segur i torna sol.",
+  "tabs": {
+    "ink": "Tinta",
+    "plane": "Pla",
+    "view": "Vista",
+    "layers": "Capes",
+    "file": "Fitxer"
+  },
+  "rail": {
+    "open": "Mostra les eines",
+    "close": "Amaga les eines"
+  },
+  "ink": {
+    "label": "Traç",
+    "stabilizer": "Estabilitzador",
+    "entry": "Inici del traç",
+    "exit": "Final del traç",
+    "snap": "Uneix els extrems"
+  },
+  "pen": {
+    "label": "Llapis",
+    "curve": "Resposta a la pressió",
+    "soft": "Suau",
+    "normal": "Normal",
+    "firm": "Ferma",
+    "try": "Traça una línia amb el llapis per provar-lo.",
+    "noPen": "Això no era un llapis. Una tauleta en mode ratolí es veu així.",
+    "noPressure": "Aquest llapis no informa de pressió. Revisa el controlador de la tauleta; a Windows, activa Windows Ink.",
+    "reading": "Pressió {{pressure}} % · inclinació {{tilt}}°"
+  },
+  "share": {
+    "label": "Comparteix",
+    "instagram": "Històries d'Instagram",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Imatge desada. Puja-la des d'Instagram.",
+    "savedLinkedin": "Imatge desada. Adjunta-la a la teva publicació de LinkedIn."
+  }
 }

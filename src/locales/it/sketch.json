@@ -98,7 +98,8 @@
     "tooMany": "Impossibile leggere questa immagine.",
     "top": "Pianta",
     "front": "Prospetto",
-    "liveEmpty": "Disegna qualcosa e apparirà qui visto dall'alto e di fronte."
+    "liveEmpty": "Disegna qualcosa e apparirà qui visto dall'alto e di fronte.",
+    "window": "Apri in un'altra finestra"
   },
   "context": {
     "load": "Schizza su un modello (GLB)",
@@ -106,7 +107,10 @@
     "failed": "Impossibile leggere il file come modello GLB.",
     "loaded": "Modello caricato. Usa lo strumento piano per disegnare su una qualsiasi faccia.",
     "preparing": "Preparazione del modello…",
-    "tooBig": "Questo modello è troppo pesante per schizzarci sopra su questo dispositivo. Puoi schizzare senza."
+    "tooBig": "Questo modello è troppo pesante per schizzarci sopra su questo dispositivo. Puoi schizzare senza.",
+    "label": "Sotto lo schizzo",
+    "mesh": "Modello",
+    "points": "Scansione"
   },
   "export": {
     "label": "Esporta",
@@ -117,7 +121,50 @@
     "video": "Video del processo",
     "recording": "Registrazione del processo…",
     "badFile": "Questo file non è uno schizzo.",
-    "noVideo": "Questo browser non può registrare video."
+    "noVideo": "Questo browser non può registrare video.",
+    "toApps": "Verso altre app",
+    "psd": "Livelli (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "Linee 3D (OBJ)",
+    "psdHint": "Il PSD si apre con i livelli in Krita, Clip Studio e Sketchbook. In Procreate importalo dalla Galleria per conservarli.",
+    "pngClear": "PNG trasparente"
   },
-  "webgl": "Questo dispositivo non ha potuto avviare il disegno 3D."
+  "webgl": "Questo dispositivo non ha potuto avviare il disegno 3D.",
+  "gpuLost": "Il sistema ha ritirato il chip grafico. Il disegno è al sicuro e torna da solo.",
+  "tabs": {
+    "ink": "Inchiostro",
+    "plane": "Piano",
+    "view": "Vista",
+    "layers": "Livelli",
+    "file": "File"
+  },
+  "rail": {
+    "open": "Mostra strumenti",
+    "close": "Nascondi strumenti"
+  },
+  "ink": {
+    "label": "Tratto",
+    "stabilizer": "Stabilizzatore",
+    "entry": "Inizio tratto",
+    "exit": "Fine tratto",
+    "snap": "Unisci estremità"
+  },
+  "pen": {
+    "label": "Penna",
+    "curve": "Risposta alla pressione",
+    "soft": "Morbida",
+    "normal": "Normale",
+    "firm": "Decisa",
+    "try": "Traccia una linea con la penna per provarla.",
+    "noPen": "Non era una penna. Una tavoletta in modalità mouse appare così.",
+    "noPressure": "Questa penna non segnala la pressione. Controlla il driver della tavoletta; su Windows attiva Windows Ink.",
+    "reading": "Pressione {{pressure}} % · inclinazione {{tilt}}°"
+  },
+  "share": {
+    "label": "Condividi",
+    "instagram": "Storie di Instagram",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Immagine salvata. Caricala da Instagram.",
+    "savedLinkedin": "Immagine salvata. Allegala al tuo post su LinkedIn."
+  }
 }

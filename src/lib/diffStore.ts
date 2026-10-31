@@ -399,6 +399,10 @@ export async function exportAsGlb(
     }
     log.info('Scene geometry is GPU-only; rebuilding from the fragments model')
     rebuilt = await meshesFromFragments(model)
+    // The library's transforms stop at the model: where the model was moved to
+    // in the scene (federation, placement) has to come along too.
+    obj.updateWorldMatrix(true, false)
+    rebuilt.applyMatrix4(obj.matrixWorld)
     target = rebuilt
   }
 

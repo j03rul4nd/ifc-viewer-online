@@ -98,7 +98,8 @@
     "tooMany": "That image could not be read.",
     "top": "Plan",
     "front": "Elevation",
-    "liveEmpty": "Draw something and it appears here from above and from the front."
+    "liveEmpty": "Draw something and it appears here from above and from the front.",
+    "window": "Open in another window"
   },
   "context": {
     "load": "Sketch over a model (GLB)",
@@ -106,7 +107,10 @@
     "failed": "That file could not be read as a GLB model.",
     "loaded": "Model loaded. Use the plane tool to draw on any of its faces.",
     "preparing": "Preparing your model…",
-    "tooBig": "That model is too heavy to sketch over on this device. You can still sketch without it."
+    "tooBig": "That model is too heavy to sketch over on this device. You can still sketch without it.",
+    "label": "Under the sketch",
+    "mesh": "Model",
+    "points": "Scan"
   },
   "export": {
     "label": "Export",
@@ -117,7 +121,50 @@
     "video": "Replay video",
     "recording": "Recording the replay…",
     "badFile": "That is not a sketch file.",
-    "noVideo": "This browser cannot record video."
+    "noVideo": "This browser cannot record video.",
+    "toApps": "To other apps",
+    "psd": "Layers (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "3D lines (OBJ)",
+    "psdHint": "PSD opens with layers in Krita, Clip Studio and Sketchbook. In Procreate, import it from the Gallery to keep them.",
+    "pngClear": "Transparent PNG"
   },
-  "webgl": "This device could not start 3D drawing."
+  "webgl": "This device could not start 3D drawing.",
+  "gpuLost": "The graphics chip was taken away. Your drawing is safe and returns by itself.",
+  "tabs": {
+    "ink": "Ink",
+    "plane": "Plane",
+    "view": "View",
+    "layers": "Layers",
+    "file": "File"
+  },
+  "rail": {
+    "open": "Show the tools",
+    "close": "Hide the tools"
+  },
+  "ink": {
+    "label": "Line",
+    "stabilizer": "Stabilizer",
+    "entry": "Line start",
+    "exit": "Line end",
+    "snap": "Join line ends"
+  },
+  "pen": {
+    "label": "Pen",
+    "curve": "Pressure response",
+    "soft": "Soft",
+    "normal": "Normal",
+    "firm": "Firm",
+    "try": "Draw a line with your pen to test it.",
+    "noPen": "That was not a pen. A drawing tablet in mouse mode shows up like this.",
+    "noPressure": "This pen reports no pressure. Check your tablet driver; on Windows, enable Windows Ink.",
+    "reading": "Pressure {{pressure}} % · tilt {{tilt}}°"
+  },
+  "share": {
+    "label": "Share",
+    "instagram": "Instagram Stories",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Image saved. Upload it from Instagram.",
+    "savedLinkedin": "Image saved. Attach it to your LinkedIn post."
+  }
 }

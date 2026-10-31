@@ -98,7 +98,8 @@
     "tooMany": "Impossible de lire cette image.",
     "top": "Plan",
     "front": "Élévation",
-    "liveEmpty": "Dessinez : le dessin apparaît ici vu de dessus et de face."
+    "liveEmpty": "Dessinez : le dessin apparaît ici vu de dessus et de face.",
+    "window": "Ouvrir dans une autre fenêtre"
   },
   "context": {
     "load": "Dessiner sur un modèle (GLB)",
@@ -106,7 +107,10 @@
     "failed": "Impossible de lire ce fichier comme modèle GLB.",
     "loaded": "Modèle chargé. Utilisez l'outil de plan pour dessiner sur n'importe quelle face.",
     "preparing": "Préparation de votre modèle…",
-    "tooBig": "Ce modèle est trop lourd pour dessiner dessus sur cet appareil. Vous pouvez dessiner sans lui."
+    "tooBig": "Ce modèle est trop lourd pour dessiner dessus sur cet appareil. Vous pouvez dessiner sans lui.",
+    "label": "Sous le croquis",
+    "mesh": "Modèle",
+    "points": "Scan"
   },
   "export": {
     "label": "Exporter",
@@ -117,7 +121,50 @@
     "video": "Vidéo du processus",
     "recording": "Enregistrement du processus…",
     "badFile": "Ce fichier n'est pas un croquis.",
-    "noVideo": "Ce navigateur ne peut pas enregistrer de vidéo."
+    "noVideo": "Ce navigateur ne peut pas enregistrer de vidéo.",
+    "toApps": "Vers d'autres apps",
+    "psd": "Calques (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "Lignes 3D (OBJ)",
+    "psdHint": "Le PSD s'ouvre avec ses calques dans Krita, Clip Studio et Sketchbook. Dans Procreate, importez-le depuis la Galerie pour les garder.",
+    "pngClear": "PNG transparent"
   },
-  "webgl": "Cet appareil n'a pas pu lancer le dessin 3D."
+  "webgl": "Cet appareil n'a pas pu lancer le dessin 3D.",
+  "gpuLost": "Le système a repris la puce graphique. Votre dessin est en sécurité et revient seul.",
+  "tabs": {
+    "ink": "Encre",
+    "plane": "Plan",
+    "view": "Vue",
+    "layers": "Calques",
+    "file": "Fichier"
+  },
+  "rail": {
+    "open": "Afficher les outils",
+    "close": "Masquer les outils"
+  },
+  "ink": {
+    "label": "Tracé",
+    "stabilizer": "Stabilisateur",
+    "entry": "Début du tracé",
+    "exit": "Fin du tracé",
+    "snap": "Joindre les extrémités"
+  },
+  "pen": {
+    "label": "Stylet",
+    "curve": "Réponse à la pression",
+    "soft": "Douce",
+    "normal": "Normale",
+    "firm": "Ferme",
+    "try": "Tracez une ligne au stylet pour le tester.",
+    "noPen": "Ce n'était pas un stylet. Une tablette en mode souris apparaît ainsi.",
+    "noPressure": "Ce stylet ne transmet pas la pression. Vérifiez le pilote de la tablette ; sous Windows, activez Windows Ink.",
+    "reading": "Pression {{pressure}} % · inclinaison {{tilt}}°"
+  },
+  "share": {
+    "label": "Partager",
+    "instagram": "Stories Instagram",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Image enregistrée. Publiez-la depuis Instagram.",
+    "savedLinkedin": "Image enregistrée. Joignez-la à votre post LinkedIn."
+  }
 }

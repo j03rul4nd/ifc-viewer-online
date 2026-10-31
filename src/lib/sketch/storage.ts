@@ -57,22 +57,33 @@ export async function saveDoc(doc: SketchDoc): Promise<boolean> {
   }
 }
 
-/** The models under the sketch: a page of a sketch is meaningless without them. */
-export interface ContextModel { name: string; blob: Blob }
+/** What sits under the sketch: a model as GLB, or a sampled scan as plain points. */
+export interface ContextPoints { positions: Float32Array; colors?: Uint8Array }
+
+export type ContextItem =
+  | { id: string; name: string; kind: 'mesh'; blob: Blob }
+  | ({ id: string; name: string; kind: 'points' } & ContextPoints)
+
+export const contextBytes = (item: ContextItem): number =>
+  item.kind === 'mesh' ? item.blob.size : item.positions.byteLength + (item.colors?.byteLength ?? 0)
 
 const CONTEXT = 'context'
 
-export async function loadContextModels(): Promise<ContextModel[]> {
+export async function loadContext(): Promise<ContextItem[]> {
   try {
-    return (await run<ContextModel[] | undefined>(DOCS, 'readonly', (s) => s.get(CONTEXT))) ?? []
+    const saved = await run<unknown>(DOCS, 'readonly', (s) => s.get(CONTEXT) as IDBRequest<unknown>)
+    if (!Array.isArray(saved)) return []
+    // Saved before items had a kind: a name and a GLB.
+    return (saved as (ContextItem | { name: string; blob: Blob })[]).map((item, i) =>
+      'kind' in item ? item : { id: `saved-${i}`, name: item.name, kind: 'mesh' as const, blob: item.blob })
   } catch {
     return []
   }
 }
 
-export async function saveContextModels(models: ContextModel[]): Promise<boolean> {
+export async function saveContext(items: ContextItem[]): Promise<boolean> {
   try {
-    await run<unknown>(DOCS, 'readwrite', (s) => (models.length ? s.put(models, CONTEXT) : s.delete(CONTEXT)) as IDBRequest<unknown>)
+    await run<unknown>(DOCS, 'readwrite', (s) => (items.length ? s.put(items, CONTEXT) : s.delete(CONTEXT)) as IDBRequest<unknown>)
     return true
   } catch {
     return false

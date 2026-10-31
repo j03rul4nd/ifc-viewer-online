@@ -1,22 +1,23 @@
 // ─── Sketch studio: the controls ──────────────────────────────────────────────
-// The same sections in two arrangements. With room: a rail against one edge, on
-// the side the user chose, so a left-hander's pen hand does not cover it. Without
-// room: one row of tools under the thumb, the rest in a sheet that opens above it.
+// Five tabs instead of one long panel, in two arrangements. With room: a rail on
+// the side the user chose, which folds away so a tablet gets its whole screen.
+// Without room: one row of tools under the thumb, the tabs in a sheet above it.
 
 import { useRef, useState, type ReactNode } from 'react'
 import {
-  activePage, addLayer, addPage, addView, clearLayer, commit, deleteLayer, deletePage, parseDoc, patchLayer, removeView,
-  serializeDoc, setActiveLayer, setActivePage, setPaper, startHistory, type History,
+  adoptContextFile, applyOrbit, clearContext, exportBlender, exportObjFile, exportPng, exportPsd, exportSketchFile, exportVector,
+  fitAll, lookAtPlane, orbitBy, planeFacingMe, setPlane, setPlanePreset, shareSketch, toggleContext,
+} from '../../hooks/sketch/actions'
+import { useReplayRecorder } from '../../hooks/sketch/useReplayRecorder'
+import {
+  activePage, addLayer, addPage, addView, clearLayer, deleteLayer, deletePage, newId, parseDoc, patchLayer, removeView,
+  setActiveLayer, setActivePage, setPaper, startHistory,
 } from '../../lib/sketch/document'
-import { exportSvg } from '../../lib/sketch/export-svg'
-import { offsetPlane, presetPlane, rotatePlane, type PlanePreset } from '../../lib/sketch/plane'
-import { PAPER, type SketchRenderer } from '../../lib/sketch/renderer'
-import type { BrushKind, OrbitState, PaperKind, SavedView, SketchDoc, SketchPlane } from '../../lib/sketch/types'
-import { downloadBlob } from './SketchStudio'
-
-export type SketchTool = BrushKind | 'line' | 'eraser' | 'pick'
-type Tx = (key: string, o?: Record<string, unknown>) => string
-type SetHistory = (next: History | ((h: History) => History)) => void
+import type { PressureCurve } from '../../lib/sketch/ink'
+import { offsetPlane, rotatePlane, type PlanePreset } from '../../lib/sketch/plane'
+import type { PaperKind } from '../../lib/sketch/types'
+import { useSketchStore, type PanelTab, type SketchTool } from '../../stores/sketchStore'
+import type { Tx } from './SketchStudio'
 
 const ICONS: Record<string, ReactNode> = {
   pen: <path d="M3 13l1-3 7-7 2 2-7 7-3 1z" />,
@@ -29,46 +30,39 @@ const ICONS: Record<string, ReactNode> = {
   redo: <path d="M10 3l3 3-3 3M13 6H6.5a3.5 3.5 0 000 7H9" />,
   refs: <><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><path d="M3 11l3-3 2.5 2.5L10.5 8.5l2.5 2.5" /></>,
   more: <path d="M3 5h10M3 8h10M3 11h10" />,
+  rail: <><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><path d="M6.5 3v10" /></>,
   eye: <><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" /><circle cx="8" cy="8" r="1.8" /></>,
   eyeOff: <path d="M2 2l12 12M6.5 3.7A6.8 6.8 0 018 3.5c4 0 6.5 4.5 6.5 4.5a11 11 0 01-2 2.6M4 5.2A11 11 0 001.5 8S4 12.5 8 12.5c1 0 1.9-.3 2.7-.7" />,
   lock: <><rect x="3.5" y="7" width="9" height="6.5" rx="1" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></>,
   unlock: <><rect x="3.5" y="7" width="9" height="6.5" rx="1" /><path d="M5.5 7V5a2.5 2.5 0 014.8-1" /></>,
-  trash: <path d="M3 4.500h10M6.5 4.500V3h3v1.500M4.5 4.500l.6 8.500h5.800l.6-8.5" />,
+  trash: <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />,
   plus: <path d="M8 3v10M3 8h10" />,
   back: <path d="M10 3L5 8l5 5" />,
 }
 
-function Icon({ name, size = 16 }: { name: keyof typeof ICONS; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      {ICONS[name]}
-    </svg>
-  )
+function Icon({ name }: { name: string }) {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{ICONS[name]}</svg>
 }
 
 const glass = { background: 'var(--sk-panel)', borderColor: 'var(--sk-line)', WebkitBackdropFilter: 'blur(14px)', backdropFilter: 'blur(14px)' } as const
 
-function IconButton({ label, icon, onClick, active, disabled, size = 40 }: { label: string; icon: keyof typeof ICONS; onClick: () => void; active?: boolean; disabled?: boolean; size?: number }) {
+function IconButton({ label, icon, onClick, active, disabled, size = 40 }: { label: string; icon: string; onClick: () => void; active?: boolean; disabled?: boolean; size?: number }) {
   return (
     <button
       type="button" aria-label={label} title={label} aria-pressed={active} disabled={disabled} onClick={onClick}
       className="shrink-0 grid place-items-center rounded-lg disabled:opacity-30"
       style={{ width: size, height: size, background: active ? 'var(--sk-active)' : 'transparent', color: active ? 'var(--sk-on-active)' : 'var(--sk-text)' }}
-    >
-      <Icon name={icon} />
-    </button>
+    ><Icon name={icon} /></button>
   )
 }
 
-function Chip({ children, onClick, active, grow }: { children: ReactNode; onClick: () => void; active?: boolean; grow?: boolean }) {
+function Chip({ children, onClick, active, grow = true }: { children: ReactNode; onClick: () => void; active?: boolean; grow?: boolean }) {
   return (
     <button
       type="button" onClick={onClick} aria-pressed={active}
       className={`h-9 px-1.5 rounded-lg text-[11.5px] font-medium truncate ${grow ? 'flex-1 min-w-0' : 'shrink-0'}`}
       style={{ background: active ? 'var(--sk-active)' : 'var(--sk-soft)', color: active ? 'var(--sk-on-active)' : 'var(--sk-text)' }}
-    >
-      {children}
-    </button>
+    >{children}</button>
   )
 }
 
@@ -81,12 +75,32 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+function Slider({ label, value, min, max, step, onChange }: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void }) {
+  return (
+    <label className="flex items-center gap-2 h-9 text-[12px]">
+      <span className="w-[42%] truncate">{label}</span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="flex-1 min-w-0" style={{ touchAction: 'none' }} />
+    </label>
+  )
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center justify-between gap-2 h-9 text-[12px]">
+      {label}
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="w-5 h-5" />
+    </label>
+  )
+}
+
 // ── Top bar ──────────────────────────────────────────────────────────────────
 
-export function TopBar({ tx, compact, refsOpen, onToggleRefs, canUndo, canRedo, onUndo, onRedo, saveFailed }: {
-  tx: Tx; compact: boolean; refsOpen: boolean; onToggleRefs: () => void
-  canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void; saveFailed: boolean
-}) {
+export function TopBar({ tx, compact }: { tx: Tx; compact: boolean }) {
+  const canUndo = useSketchStore((s) => s.history.past.length > 0)
+  const canRedo = useSketchStore((s) => s.history.future.length > 0)
+  const refsOpen = useSketchStore((s) => s.refsOpen)
+  const saveFailed = useSketchStore((s) => s.saveFailed)
+  const { undo, redo, set } = useSketchStore.getState()
   return (
     <div className="absolute z-20 flex items-center gap-1 left-2 right-2" style={{ top: 'max(8px, env(safe-area-inset-top))' }}>
       <a href="/" aria-label={tx('back')} title={tx('back')} className="w-10 h-10 grid place-items-center rounded-xl border" style={glass}><Icon name="back" /></a>
@@ -94,9 +108,9 @@ export function TopBar({ tx, compact, refsOpen, onToggleRefs, canUndo, canRedo, 
       {saveFailed && <span role="alert" className="ml-2 px-2 h-7 flex items-center rounded-md text-[11px] truncate" style={{ background: '#C8322B', color: '#fff' }}>{tx('notSaved')}</span>}
       <div className="flex-1" />
       <div className="flex items-center rounded-xl border" style={glass}>
-        <IconButton label={tx('undo')} icon="undo" onClick={onUndo} disabled={!canUndo} />
-        <IconButton label={tx('redo')} icon="redo" onClick={onRedo} disabled={!canRedo} />
-        <IconButton label={tx('refs.label')} icon="refs" onClick={onToggleRefs} active={refsOpen} />
+        <IconButton label={tx('undo')} icon="undo" onClick={undo} disabled={!canUndo} />
+        <IconButton label={tx('redo')} icon="redo" onClick={redo} disabled={!canRedo} />
+        <IconButton label={tx('refs.label')} icon="refs" active={refsOpen} onClick={() => set({ refsOpen: !refsOpen, sheetOpen: false })} />
       </div>
     </div>
   )
@@ -104,48 +118,47 @@ export function TopBar({ tx, compact, refsOpen, onToggleRefs, canUndo, canRedo, 
 
 // ── Page strip ───────────────────────────────────────────────────────────────
 
-export function PageStrip({ tx, doc, setHistory, railSide }: { tx: Tx; doc: SketchDoc; setHistory: SetHistory; railSide: 'left' | 'right' }) {
+export function PageStrip({ tx }: { tx: Tx }) {
+  const pages = useSketchStore((s) => s.history.present.pages)
+  const activeId = useSketchStore((s) => s.history.present.activePageId)
+  const railSide = useSketchStore((s) => s.railSide)
+  const railOpen = useSketchStore((s) => s.railOpen)
+  const { edit, touch } = useSketchStore.getState()
+  const inset = railOpen ? 268 : 58
   return (
     <div
-      className="absolute z-10 flex items-center gap-1.5 p-1.5 rounded-xl border overflow-x-auto"
-      style={{ ...glass, bottom: 'max(10px, env(safe-area-inset-bottom))', left: railSide === 'left' ? 268 : 10, right: railSide === 'right' ? 268 : 10, width: 'fit-content', maxWidth: 'calc(100% - 280px)', marginInline: 'auto', touchAction: 'pan-x' }}
-      aria-label={tx('pages.label')}
+      className="absolute z-10 flex items-center gap-1.5 p-1.5 rounded-xl border overflow-x-auto" aria-label={tx('pages.label')}
+      style={{ ...glass, bottom: 'max(10px, env(safe-area-inset-bottom))', left: railSide === 'left' ? inset : 10, right: railSide === 'right' ? inset : 10, width: 'fit-content', maxWidth: `calc(100% - ${inset + 12}px)`, marginInline: 'auto', touchAction: 'pan-x' }}
     >
-      {doc.pages.map((p, i) => {
-        const active = p.id === doc.activePageId
+      {pages.map((p, i) => {
+        const active = p.id === activeId
         return (
           <div key={p.id} className="relative shrink-0">
             <button
-              type="button" onClick={() => setHistory((h) => ({ ...h, present: setActivePage(h.present, p.id) }))}
-              aria-label={tx('pages.name', { n: i + 1 })} aria-current={active}
-              className="block w-14 h-10 rounded-md overflow-hidden border-2"
-              style={{ borderColor: active ? 'var(--sk-active)' : 'var(--sk-line)', background: 'var(--sk-soft)' }}
-            >
-              {p.thumb && <img src={p.thumb} alt="" className="w-full h-full object-cover" draggable={false} />}
-            </button>
-            {active && doc.pages.length > 1 && (
+              type="button" onClick={() => touch((doc) => setActivePage(doc, p.id))} aria-label={tx('pages.name', { n: i + 1 })} aria-current={active}
+              className="block w-14 h-10 rounded-md overflow-hidden border-2" style={{ borderColor: active ? 'var(--sk-active)' : 'var(--sk-line)', background: 'var(--sk-soft)' }}
+            >{p.thumb && <img src={p.thumb} alt="" className="w-full h-full object-cover" draggable={false} />}</button>
+            {active && pages.length > 1 && (
               <button
-                type="button" aria-label={tx('pages.delete')} title={tx('pages.delete')}
-                onClick={() => setHistory((h) => commit(h, deletePage(h.present, p.id)))}
-                className="absolute -top-1 -right-1 w-5 h-5 grid place-items-center rounded-full text-[11px] leading-none"
-                style={{ background: 'var(--sk-active)', color: 'var(--sk-on-active)' }}
+                type="button" aria-label={tx('pages.delete')} title={tx('pages.delete')} onClick={() => edit((doc) => deletePage(doc, p.id))}
+                className="absolute -top-1 -right-1 w-5 h-5 grid place-items-center rounded-full text-[11px] leading-none" style={{ background: 'var(--sk-active)', color: 'var(--sk-on-active)' }}
               >×</button>
             )}
           </div>
         )
       })}
-      <IconButton label={tx('pages.add')} icon="plus" onClick={() => setHistory((h) => commit(h, addPage(h.present)))} />
+      <IconButton label={tx('pages.add')} icon="plus" onClick={() => edit(addPage)} />
     </div>
   )
 }
 
-// ── The compass ──────────────────────────────────────────────────────────────
+// ── Compass ──────────────────────────────────────────────────────────────────
 
-const AXES: { key: 'x' | 'y' | 'z'; dir: [number, number, number]; color: string; preset: 'right' | 'top' | 'front' }[] = [
+const AXES = [
   { key: 'x', dir: [1, 0, 0], color: '#C8322B', preset: 'right' },
   { key: 'y', dir: [0, 1, 0], color: '#2E9E5B', preset: 'top' },
   { key: 'z', dir: [0, 0, 1], color: '#1F5FBF', preset: 'front' },
-]
+] as const
 
 const VIEW_ANGLES = {
   top: { azimuth: 0, elevation: Math.PI / 2 - 0.01 },
@@ -154,29 +167,26 @@ const VIEW_ANGLES = {
   iso: { azimuth: 0.62, elevation: 0.42 },
 }
 
-/** Drag to orbit, tap an axis to look down it. Live with the camera. */
-function Compass({ orbit, onOrbit, onPreset, label }: { orbit: OrbitState; onOrbit: (dx: number, dy: number) => void; onPreset: (p: keyof typeof VIEW_ANGLES) => void; label: string }) {
+function Compass({ label }: { label: string }) {
+  const orbit = useSketchStore((s) => s.orbit)
   const last = useRef<{ x: number; y: number; moved: number } | null>(null)
   const size = 92
   const r = 32
   const sa = Math.sin(orbit.azimuth), ca = Math.cos(orbit.azimuth), se = Math.sin(orbit.elevation), ce = Math.cos(orbit.elevation)
   const placed = AXES.map((a) => {
     const [x, y, z] = a.dir
-    const sx = x * ca - z * sa
-    const sy = -(y * ce - (x * sa + z * ca) * se)
     const depth = (x * sa + z * ca) * ce + y * se
-    return { ...a, sx: size / 2 + sx * r, sy: size / 2 + sy * r, depth }
+    return { ...a, sx: size / 2 + (x * ca - z * sa) * r, sy: size / 2 - (y * ce - (x * sa + z * ca) * se) * r, depth }
   }).sort((p, q) => p.depth - q.depth)
   return (
     <div
-      role="img" aria-label={label} title={label}
-      className="relative mx-auto" style={{ width: size, height: size, touchAction: 'none', cursor: 'grab' }}
+      role="img" aria-label={label} title={label} className="relative mx-auto" style={{ width: size, height: size, touchAction: 'none', cursor: 'grab' }}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); last.current = { x: e.clientX, y: e.clientY, moved: 0 } }}
       onPointerMove={(e) => {
         if (!last.current) return
         const dx = e.clientX - last.current.x, dy = e.clientY - last.current.y
         last.current = { x: e.clientX, y: e.clientY, moved: last.current.moved + Math.abs(dx) + Math.abs(dy) }
-        onOrbit(dx * 1.6, dy * 1.6)
+        orbitBy(dx * 1.6, dy * 1.6)
       }}
       onPointerUp={(e) => {
         const s = last.current
@@ -184,7 +194,7 @@ function Compass({ orbit, onOrbit, onPreset, label }: { orbit: OrbitState; onOrb
         if (!s || s.moved > 6) return
         const box = e.currentTarget.getBoundingClientRect()
         const near = placed.slice().reverse().find((p) => Math.hypot(p.sx - (e.clientX - box.left), p.sy - (e.clientY - box.top)) < 16)
-        if (near) onPreset(near.preset)
+        if (near) applyOrbit({ ...orbit, ...VIEW_ANGLES[near.preset] })
       }}
       onPointerCancel={() => { last.current = null }}
     >
@@ -202,15 +212,14 @@ function Compass({ orbit, onOrbit, onPreset, label }: { orbit: OrbitState; onOrb
   )
 }
 
-/** Drag sideways to slide the plane along its normal. Springs back: there is no end to run out of. */
+/** Drag sideways to slide the plane along its normal. Has no end to run out of. */
 function NudgeSlider({ label, onDelta }: { label: string; onDelta: (pixels: number) => void }) {
   const last = useRef<number | null>(null)
   const [offset, setOffset] = useState(0)
   return (
     <div
       role="slider" aria-label={label} aria-valuenow={0} tabIndex={0}
-      className="relative flex-1 h-9 rounded-lg overflow-hidden select-none flex items-center justify-center text-[12px]"
-      style={{ background: 'var(--sk-soft)', touchAction: 'none', cursor: 'ew-resize' }}
+      className="relative flex-1 h-9 rounded-lg overflow-hidden select-none flex items-center justify-center text-[12px]" style={{ background: 'var(--sk-soft)', touchAction: 'none', cursor: 'ew-resize' }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft') onDelta(-8); if (e.key === 'ArrowRight') onDelta(8) }}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); last.current = e.clientX }}
       onPointerMove={(e) => {
@@ -222,242 +231,200 @@ function NudgeSlider({ label, onDelta }: { label: string; onDelta: (pixels: numb
       onPointerUp={() => { last.current = null; setOffset(0) }}
       onPointerCancel={() => { last.current = null; setOffset(0) }}
     >
-      <span
-        className="absolute inset-y-0 w-[200%]"
-        style={{ left: '-50%', transform: `translateX(${offset % 12}px)`, backgroundImage: 'repeating-linear-gradient(90deg, var(--sk-line) 0 1px, transparent 1px 12px)' }}
-      />
+      <span className="absolute inset-y-0 w-[200%]" style={{ left: '-50%', transform: `translateX(${offset % 12}px)`, backgroundImage: 'repeating-linear-gradient(90deg, var(--sk-line) 0 1px, transparent 1px 12px)' }} />
       <span className="relative">{label}</span>
     </div>
   )
 }
 
-// ── Everything else ──────────────────────────────────────────────────────────
+// ── Tabs ─────────────────────────────────────────────────────────────────────
 
-interface ControlsProps {
-  tx: Tx; regular: boolean; short: boolean; railSide: 'left' | 'right'; open: boolean; setOpen: (open: boolean) => void
-  tool: SketchTool; setTool: (t: SketchTool) => void
-  color: string; setColor: (c: string) => void; swatches: string[]; width: number; setWidth: (w: number) => void
-  plane: SketchPlane; setPlane: (p: SketchPlane) => void; planeFacingMe: () => void; lookAtPlane: () => void
-  orbit: OrbitState; setOrbit: (o: OrbitState) => void; orbitBy: (dx: number, dy: number) => void; fitAll: () => void
-  doc: SketchDoc; setHistory: SetHistory; activeLayerId: string
-  engine: SketchRenderer | null; fingerDraw: boolean; setFingerDraw: (on: boolean) => void; setRailSide: (s: 'left' | 'right') => void
-  flash: (m: string) => void; recording: boolean; onRecord: () => void; hasContext: boolean; onContextFile: (file: File) => void; onClearContext: () => void
-  onSaveView: () => SavedView | undefined
-}
-
-const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'pick']
+const SWATCHES = ['#17130F', '#FFFFFF', '#C8322B', '#1F5FBF']
 const WIDTHS = [1.5, 3, 6, 11]
 
-export function StudioControls(p: ControlsProps) {
-  const { tx, regular, short, railSide, open, setOpen, tool, setTool, color, setColor, swatches, width, setWidth } = p
-
-  const toolRow = TOOLS.map((name) => (
-    <IconButton key={name} label={tx(`tools.${name}`)} icon={name} active={tool === name} onClick={() => setTool(name)} size={regular ? 34 : 40} />
-  ))
-
-  const inkSection = (
-    <Section title={tx('color')}>
-      <div className="flex items-center gap-2">
-        {swatches.map((c) => (
-          <button
-            key={c} type="button" aria-label={c} aria-pressed={color === c} onClick={() => setColor(c)}
-            className="w-8 h-8 rounded-lg border" style={{ background: c, borderColor: 'var(--sk-line)', outline: color === c ? '2px solid var(--sk-active)' : 'none', outlineOffset: 1 }}
-          />
-        ))}
-        <label className="relative w-8 h-8 rounded-lg overflow-hidden border cursor-pointer" title={tx('customColor')} style={{ borderColor: 'var(--sk-line)', background: 'conic-gradient(#c8322b,#e0b020,#2e9e5b,#1f5fbf,#a03ab0,#c8322b)' }}>
-          <input type="color" aria-label={tx('customColor')} value={color} onChange={(e) => setColor(e.target.value)} className="absolute inset-0 opacity-0" />
-        </label>
-      </div>
-      <div className="flex items-center gap-1 mt-2" role="group" aria-label={tx('size')}>
-        {WIDTHS.map((w) => (
-          <button key={w} type="button" aria-label={`${tx('size')} ${w}`} aria-pressed={width === w} onClick={() => setWidth(w)} className="flex-1 h-9 grid place-items-center rounded-lg" style={{ background: width === w ? 'var(--sk-soft)' : 'transparent', outline: width === w ? '1px solid var(--sk-line)' : 'none' }}>
-            <span className="rounded-full" style={{ width: Math.max(3, w * 1.3), height: Math.max(3, w * 1.3), background: 'var(--sk-text)' }} />
-          </button>
-        ))}
-      </div>
-    </Section>
-  )
-
-  const viewSection = (
-    <Section title={tx('view.label')}>
-      <Compass
-        orbit={p.orbit} onOrbit={p.orbitBy} label={tx('view.orbitHint')}
-        onPreset={(name) => p.setOrbit({ ...p.orbit, ...VIEW_ANGLES[name] })}
-      />
-      <div className="flex gap-1 mt-2">
-        {(['top', 'front', 'right', 'iso'] as const).map((v) => (
-          <Chip key={v} grow onClick={() => p.setOrbit({ ...p.orbit, ...VIEW_ANGLES[v] })}>{tx(`view.${v}`)}</Chip>
-        ))}
-      </div>
-      <div className="flex gap-1 mt-1">
-        <Chip grow active={p.orbit.mode === 'orthographic'} onClick={() => p.setOrbit({ ...p.orbit, mode: p.orbit.mode === 'perspective' ? 'orthographic' : 'perspective' })}>{tx('view.ortho')}</Chip>
-        <Chip grow onClick={p.fitAll}>{tx('view.fit')}</Chip>
-        <Chip grow onClick={() => { const v = p.onSaveView(); if (v) p.setHistory((h) => commit(h, addView(h.present, v))) }}>{tx('view.save')}</Chip>
-      </div>
-      <SavedViews {...p} />
-    </Section>
-  )
-
-  const planeSection = (
-    <Section title={tx('plane.label')}>
-      <div className="flex gap-1">
-        {(['ground', 'front', 'side'] as PlanePreset[]).map((name) => (
-          <Chip key={name} grow onClick={() => p.setPlane(presetPlane(name, p.plane.origin))}>{tx(`plane.${name}`)}</Chip>
-        ))}
-      </div>
-      <div className="flex gap-1 mt-1">
-        <Chip grow onClick={p.planeFacingMe}>{tx('plane.facing')}</Chip>
-        <Chip grow onClick={p.lookAtPlane}>{tx('plane.lookAt')}</Chip>
-      </div>
-      <div className="flex items-center gap-1 mt-1">
-        <NudgeSlider label={tx('plane.move')} onDelta={(px) => p.setPlane(offsetPlane(p.plane, px * (p.engine?.worldPerPixel() ?? 0.02)))} />
-      </div>
-      <div className="flex items-center gap-1 mt-1" role="group" aria-label={tx('plane.rotate')}>
-        <span className="text-[11px] pr-1" style={{ color: 'var(--sk-dim)' }}>{tx('plane.rotate')}</span>
-        {AXES.map((a) => (
-          <button
-            key={a.key} type="button" onClick={() => p.setPlane(rotatePlane(p.plane, a.dir, Math.PI / 12))}
-            aria-label={`${tx('plane.rotate')} ${a.key.toUpperCase()} 15°`} title={`${a.key.toUpperCase()} +15°`}
-            className="flex-1 h-9 rounded-lg text-[12px] font-semibold" style={{ background: 'var(--sk-soft)', color: a.color }}
-          >{a.key.toUpperCase()}</button>
-        ))}
-      </div>
-    </Section>
-  )
-
-  const layersSection = <LayersSection {...p} />
-  const moreSection = <MoreSection {...p} />
-
-  if (regular) {
-    return (
-      <aside
-        aria-label={tx('tools.label')}
-        className="absolute z-10 w-[252px] rounded-xl border overflow-y-auto overscroll-contain"
-        style={{ ...glass, top: 'calc(max(8px, env(safe-area-inset-top)) + 48px)', bottom: 'max(10px, env(safe-area-inset-bottom))', [railSide]: 8, touchAction: 'pan-y' }}
-      >
-        <div className="flex items-center justify-between px-2 py-1.5 border-b" style={{ borderColor: 'var(--sk-line)' }}>{toolRow}</div>
-        {inkSection}{planeSection}{viewSection}{layersSection}{moreSection}
-      </aside>
-    )
-  }
-
+function InkTab({ tx }: { tx: Tx }) {
+  const color = useSketchStore((s) => s.color)
+  const width = useSketchStore((s) => s.width)
+  const ink = useSketchStore((s) => s.ink)
+  const snapEnds = useSketchStore((s) => s.snapEnds)
+  const fingerDraw = useSketchStore((s) => s.fingerDraw)
+  const pen = useSketchStore((s) => s.pen)
+  const { setPrefs, setInk } = useSketchStore.getState()
   return (
     <>
-      {open && (
-        <div
-          className="absolute z-20 left-2 right-2 rounded-xl border overflow-y-auto overscroll-contain"
-          style={{ ...glass, bottom: 'calc(max(8px, env(safe-area-inset-bottom)) + 52px)', maxHeight: short ? 'calc(100% - 116px)' : '62%', touchAction: 'pan-y' }}
-        >
-          {inkSection}{planeSection}{viewSection}{layersSection}{moreSection}
+      <Section title={tx('color')}>
+        <div className="flex items-center gap-2">
+          {SWATCHES.map((c) => (
+            <button key={c} type="button" aria-label={c} aria-pressed={color === c} onClick={() => setPrefs({ color: c })} className="w-8 h-8 rounded-lg border" style={{ background: c, borderColor: 'var(--sk-line)', outline: color === c ? '2px solid var(--sk-active)' : 'none', outlineOffset: 1 }} />
+          ))}
+          <label className="relative w-8 h-8 rounded-lg overflow-hidden border cursor-pointer" title={tx('customColor')} style={{ borderColor: 'var(--sk-line)', background: 'conic-gradient(#c8322b,#e0b020,#2e9e5b,#1f5fbf,#a03ab0,#c8322b)' }}>
+            <input type="color" aria-label={tx('customColor')} value={color} onChange={(e) => setPrefs({ color: e.target.value })} className="absolute inset-0 opacity-0" />
+          </label>
         </div>
-      )}
-      <div className="absolute z-20 left-2 right-2 h-12 px-1 rounded-xl border flex items-center justify-between overflow-x-auto" style={{ ...glass, bottom: 'max(8px, env(safe-area-inset-bottom))', touchAction: 'pan-x' }}>
-        {toolRow}
-        <button type="button" aria-label={tx('color')} onClick={() => setOpen(!open)} className="shrink-0 w-10 h-10 grid place-items-center">
-          <span className="w-6 h-6 rounded-full border" style={{ background: color, borderColor: 'var(--sk-line)' }} />
-        </button>
-        <IconButton label={tx('more')} icon="more" active={open} onClick={() => setOpen(!open)} />
-      </div>
+        <div className="flex items-center gap-1 mt-2" role="group" aria-label={tx('size')}>
+          {WIDTHS.map((w) => (
+            <button key={w} type="button" aria-label={`${tx('size')} ${w}`} aria-pressed={width === w} onClick={() => setPrefs({ width: w })} className="flex-1 h-9 grid place-items-center rounded-lg" style={{ background: width === w ? 'var(--sk-soft)' : 'transparent', outline: width === w ? '1px solid var(--sk-line)' : 'none' }}>
+              <span className="rounded-full" style={{ width: Math.max(3, w * 1.3), height: Math.max(3, w * 1.3), background: 'var(--sk-text)' }} />
+            </button>
+          ))}
+        </div>
+      </Section>
+      <Section title={tx('ink.label')}>
+        <Slider label={tx('ink.stabilizer')} value={ink.stabilizer} min={0} max={10} step={1} onChange={(v) => setInk({ stabilizer: v })} />
+        <Slider label={tx('ink.entry')} value={ink.entryTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ entryTaper: v })} />
+        <Slider label={tx('ink.exit')} value={ink.exitTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ exitTaper: v })} />
+        <Toggle label={tx('ink.snap')} checked={snapEnds} onChange={(v) => setPrefs({ snapEnds: v })} />
+      </Section>
+      <Section title={tx('pen.label')}>
+        <div className="flex gap-1" role="group" aria-label={tx('pen.curve')}>
+          {(['soft', 'normal', 'firm'] as PressureCurve[]).map((c) => <Chip key={c} active={ink.curve === c} onClick={() => setInk({ curve: c })}>{tx(`pen.${c}`)}</Chip>)}
+        </div>
+        <p className="mt-2 min-h-8 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }} role="status">
+          {!pen ? tx('pen.try') : pen.kind !== 'pen' ? tx('pen.noPen') : pen.hasPressure ? tx('pen.reading', { pressure: Math.round(pen.pressure * 100), tilt: Math.round(pen.tilt * 90) }) : tx('pen.noPressure')}
+        </p>
+        <Toggle label={tx('fingerDraw')} checked={fingerDraw} onChange={(v) => setPrefs({ fingerDraw: v })} />
+      </Section>
     </>
   )
 }
 
-function SavedViews({ tx, doc, engine, setOrbit, setPlane, setHistory }: ControlsProps) {
-  const views = activePage(doc).views
-  if (views.length === 0) return null
+function PlaneTab({ tx }: { tx: Tx }) {
+  const plane = useSketchStore((s) => s.plane)
+  const engine = useSketchStore((s) => s.engine)
   return (
-    <div className="flex gap-1 mt-2 overflow-x-auto" aria-label={tx('view.views')} style={{ touchAction: 'pan-x' }}>
-      {views.map((v) => (
-        <div key={v.id} className="relative shrink-0">
-          <button type="button" onClick={() => { setOrbit(v.orbit); setPlane(v.plane); engine?.invalidate() }} className="block w-14 h-10 rounded-md overflow-hidden border" style={{ borderColor: 'var(--sk-line)' }}>
-            <img src={v.thumb} alt="" className="w-full h-full object-cover" draggable={false} />
-          </button>
-          <button type="button" aria-label={tx('view.remove')} onClick={() => setHistory((h) => commit(h, removeView(h.present, v.id)))} className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[11px] leading-none" style={{ background: 'var(--sk-active)', color: 'var(--sk-on-active)' }}>×</button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function LayersSection({ tx, doc, setHistory, activeLayerId }: ControlsProps) {
-  const layers = activePage(doc).layers
-  return (
-    <Section title={tx('layers.label')}>
-      <ul className="flex flex-col-reverse gap-0.5">
-        {layers.map((l, i) => (
-          <li key={l.id} className="flex items-center rounded-lg" style={{ background: l.id === activeLayerId ? 'var(--sk-soft)' : 'transparent' }}>
-            <button type="button" aria-current={l.id === activeLayerId} onClick={() => setHistory((h) => ({ ...h, present: setActiveLayer(h.present, l.id) }))} className="flex-1 min-w-0 h-9 px-2 text-left text-[12px] truncate">
-              {tx('layers.name', { n: i + 1 })} <span style={{ color: 'var(--sk-dim)' }}>· {l.strokes.length}</span>
-            </button>
-            <IconButton size={34} label={tx(l.visible ? 'layers.hide' : 'layers.show')} icon={l.visible ? 'eye' : 'eyeOff'} onClick={() => setHistory((h) => commit(h, patchLayer(h.present, l.id, { visible: !l.visible })))} />
-            <IconButton size={34} label={tx(l.locked ? 'layers.unlock' : 'layers.lock')} icon={l.locked ? 'lock' : 'unlock'} onClick={() => setHistory((h) => commit(h, patchLayer(h.present, l.id, { locked: !l.locked })))} />
-            {layers.length > 1 && <IconButton size={34} label={tx('layers.delete')} icon="trash" onClick={() => setHistory((h) => commit(h, deleteLayer(h.present, l.id)))} />}
-          </li>
-        ))}
-      </ul>
+    <Section title={tx('plane.label')}>
+      <div className="flex gap-1">
+        {(['ground', 'front', 'side'] as PlanePreset[]).map((name) => <Chip key={name} onClick={() => setPlanePreset(name)}>{tx(`plane.${name}`)}</Chip>)}
+      </div>
       <div className="flex gap-1 mt-1">
-        <Chip grow onClick={() => setHistory((h) => commit(h, addLayer(h.present, String(activePage(h.present).layers.length + 1))))}>{tx('layers.add')}</Chip>
-        <Chip grow onClick={() => setHistory((h) => commit(h, clearLayer(h.present)))}>{tx('clear')}</Chip>
+        <Chip onClick={planeFacingMe}>{tx('plane.facing')}</Chip>
+        <Chip onClick={lookAtPlane}>{tx('plane.lookAt')}</Chip>
+      </div>
+      <div className="flex items-center gap-1 mt-1"><NudgeSlider label={tx('plane.move')} onDelta={(px) => setPlane(offsetPlane(plane, px * (engine?.worldPerPixel() ?? 0.02)))} /></div>
+      <div className="flex items-center gap-1 mt-1" role="group" aria-label={tx('plane.rotate')}>
+        <span className="text-[11px] pr-1" style={{ color: 'var(--sk-dim)' }}>{tx('plane.rotate')}</span>
+        {AXES.map((a) => (
+          <button key={a.key} type="button" onClick={() => setPlane(rotatePlane(plane, a.dir, Math.PI / 12))} aria-label={`${tx('plane.rotate')} ${a.key.toUpperCase()} 15°`} title={`${a.key.toUpperCase()} +15°`} className="flex-1 h-9 rounded-lg text-[12px] font-semibold" style={{ background: 'var(--sk-soft)', color: a.color }}>{a.key.toUpperCase()}</button>
+        ))}
       </div>
     </Section>
   )
 }
 
-function MoreSection(p: ControlsProps) {
-  const { tx, doc, engine, setHistory, flash, recording, onRecord, regular, railSide, setRailSide, fingerDraw, setFingerDraw, hasContext, onContextFile, onClearContext } = p
+function ViewTab({ tx }: { tx: Tx }) {
+  const orbit = useSketchStore((s) => s.orbit)
+  const views = useSketchStore((s) => activePage(s.history.present).views)
+  const context = useSketchStore((s) => s.context)
+  const { edit } = useSketchStore.getState()
+  return (
+    <>
+      <Section title={tx('view.label')}>
+        <Compass label={tx('view.orbitHint')} />
+        <div className="flex gap-1 mt-2">{(['top', 'front', 'right', 'iso'] as const).map((v) => <Chip key={v} onClick={() => applyOrbit({ ...orbit, ...VIEW_ANGLES[v] })}>{tx(`view.${v}`)}</Chip>)}</div>
+        <div className="flex gap-1 mt-1">
+          <Chip active={orbit.mode === 'orthographic'} onClick={() => applyOrbit({ ...orbit, mode: orbit.mode === 'perspective' ? 'orthographic' : 'perspective' })}>{tx('view.ortho')}</Chip>
+          <Chip onClick={fitAll}>{tx('view.fit')}</Chip>
+          <Chip onClick={() => {
+            const { engine, plane } = useSketchStore.getState()
+            if (engine) edit((doc) => addView(doc, { id: newId(), orbit: engine.orbitState, plane, thumb: engine.thumbnail(120) }))
+          }}>{tx('view.save')}</Chip>
+        </div>
+        {views.length > 0 && (
+          <div className="flex gap-1 mt-2 overflow-x-auto" aria-label={tx('view.views')} style={{ touchAction: 'pan-x' }}>
+            {views.map((v) => (
+              <div key={v.id} className="relative shrink-0 pt-1 pr-1">
+                <button type="button" onClick={() => { applyOrbit(v.orbit); setPlane(v.plane) }} className="block w-14 h-10 rounded-md overflow-hidden border" style={{ borderColor: 'var(--sk-line)' }}><img src={v.thumb} alt="" className="w-full h-full object-cover" draggable={false} /></button>
+                <button type="button" aria-label={tx('view.remove')} onClick={() => edit((doc) => removeView(doc, v.id))} className="absolute top-0 right-0 w-5 h-5 rounded-full text-[11px] leading-none" style={{ background: 'var(--sk-active)', color: 'var(--sk-on-active)' }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+      {context.length > 0 && (
+        <Section title={tx('context.label')}>
+          <ul className="flex flex-col gap-0.5">
+            {context.map((c) => (
+              <li key={c.id} className="flex items-center gap-1 h-9 text-[12px]">
+                <span className="flex-1 min-w-0 truncate" title={c.name}>{c.name}</span>
+                <span className="text-[10px]" style={{ color: 'var(--sk-dim)' }}>{tx(`context.${c.kind}`)}</span>
+                <IconButton size={34} label={tx(c.visible ? 'layers.hide' : 'layers.show')} icon={c.visible ? 'eye' : 'eyeOff'} onClick={() => toggleContext(c.id)} />
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+    </>
+  )
+}
+
+function LayersTab({ tx }: { tx: Tx }) {
+  const layers = useSketchStore((s) => activePage(s.history.present).layers)
+  const activeId = useSketchStore((s) => activePage(s.history.present).activeLayerId)
+  const { edit, touch } = useSketchStore.getState()
+  return (
+    <Section title={tx('layers.label')}>
+      <ul className="flex flex-col-reverse gap-0.5">
+        {layers.map((l, i) => (
+          <li key={l.id} className="flex items-center rounded-lg" style={{ background: l.id === activeId ? 'var(--sk-soft)' : 'transparent' }}>
+            <button type="button" aria-current={l.id === activeId} onClick={() => touch((doc) => setActiveLayer(doc, l.id))} className="flex-1 min-w-0 h-9 px-2 text-left text-[12px] truncate">
+              {tx('layers.name', { n: i + 1 })} <span style={{ color: 'var(--sk-dim)' }}>· {l.strokes.length}</span>
+            </button>
+            <IconButton size={34} label={tx(l.visible ? 'layers.hide' : 'layers.show')} icon={l.visible ? 'eye' : 'eyeOff'} onClick={() => edit((doc) => patchLayer(doc, l.id, { visible: !l.visible }))} />
+            <IconButton size={34} label={tx(l.locked ? 'layers.unlock' : 'layers.lock')} icon={l.locked ? 'lock' : 'unlock'} onClick={() => edit((doc) => patchLayer(doc, l.id, { locked: !l.locked }))} />
+            {layers.length > 1 && <IconButton size={34} label={tx('layers.delete')} icon="trash" onClick={() => edit((doc) => deleteLayer(doc, l.id))} />}
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-1 mt-1">
+        <Chip onClick={() => edit((doc) => addLayer(doc, String(activePage(doc).layers.length + 1)))}>{tx('layers.add')}</Chip>
+        <Chip onClick={() => edit(clearLayer)}>{tx('clear')}</Chip>
+      </div>
+    </Section>
+  )
+}
+
+function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
+  const paper = useSketchStore((s) => s.history.present.paper)
+  const railSide = useSketchStore((s) => s.railSide)
+  const hasContext = useSketchStore((s) => s.context.length > 0)
+  const pages = useSketchStore((s) => s.history.present.pages)
+  const activeId = useSketchStore((s) => s.history.present.activePageId)
+  const recording = useSketchStore((s) => s.recording)
+  const { edit, touch, setPrefs, set, flash } = useSketchStore.getState()
+  const record = useReplayRecorder(tx as (key: string) => string)
   const fileRef = useRef<HTMLInputElement>(null)
   const glbRef = useRef<HTMLInputElement>(null)
 
-  const exportPng = async () => {
-    const blob = await engine?.toBlob()
-    if (blob) downloadBlob(blob, 'sketch.png')
+  const share = async (target: 'instagram-story' | 'linkedin') => {
+    const outcome = await shareSketch(target)
+    if (outcome === 'saved') flash(tx(target === 'linkedin' ? 'share.savedLinkedin' : 'share.savedInstagram'))
   }
-  const exportVector = () => {
-    if (!engine) return
-    const c = engine.canvas
-    const svg = exportSvg(activePage(doc).layers, c.clientWidth, c.clientHeight, PAPER[doc.paper].bg, (pt) => engine.project(pt))
-    downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), 'sketch.svg')
-  }
+
   return (
     <>
-      {!regular && (
-        <Section title={tx('pages.label')}>
-          <div className="flex items-center gap-1 overflow-x-auto" style={{ touchAction: 'pan-x' }}>
-            {doc.pages.map((pg, i) => (
-              <Chip key={pg.id} active={pg.id === doc.activePageId} onClick={() => setHistory((h) => ({ ...h, present: setActivePage(h.present, pg.id) }))}>{i + 1}</Chip>
-            ))}
-            <IconButton size={36} label={tx('pages.add')} icon="plus" onClick={() => setHistory((h) => commit(h, addPage(h.present)))} />
-          </div>
-        </Section>
-      )}
-      <Section title={tx('paper.label')}>
-        <div className="flex gap-1">
-          {(['warm', 'white', 'night'] as PaperKind[]).map((name) => (
-            <Chip key={name} grow active={doc.paper === name} onClick={() => setHistory((h) => commit(h, setPaper(h.present, name)))}>{tx(`paper.${name}`)}</Chip>
-          ))}
+      <Section title={tx('share.label')}>
+        <div className="grid grid-cols-2 gap-1">
+          <Chip onClick={() => { void share('instagram-story') }}>{tx('share.instagram')}</Chip>
+          <Chip onClick={() => { void share('linkedin') }}>{tx('share.linkedin')}</Chip>
         </div>
-        {regular && (
-          <div className="flex items-center gap-1 mt-2">
-            <span className="text-[11px] flex-1" style={{ color: 'var(--sk-dim)' }}>{tx('side.label')}</span>
-            <Chip active={railSide === 'left'} onClick={() => setRailSide('left')}>{tx('side.left')}</Chip>
-            <Chip active={railSide === 'right'} onClick={() => setRailSide('right')}>{tx('side.right')}</Chip>
-          </div>
-        )}
-        <label className="flex items-center justify-between gap-2 mt-2 h-8 text-[12px]">
-          {tx('fingerDraw')}
-          <input type="checkbox" checked={fingerDraw} onChange={(e) => setFingerDraw(e.target.checked)} className="w-5 h-5" />
-        </label>
+      </Section>
+      <Section title={tx('export.toApps')}>
+        <div className="grid grid-cols-2 gap-1">
+          <Chip onClick={() => exportPsd((i) => tx('layers.name', { n: i + 1 }))}>{tx('export.psd')}</Chip>
+          <Chip onClick={exportBlender}>{tx('export.blender')}</Chip>
+          <Chip onClick={exportObjFile}>{tx('export.obj')}</Chip>
+          <Chip onClick={exportVector}>{tx('export.svg')}</Chip>
+        </div>
+        <p className="mt-2 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }}>{tx('export.psdHint')}</p>
       </Section>
       <Section title={tx('export.label')}>
         <div className="grid grid-cols-2 gap-1">
-          <Chip onClick={() => { void exportPng() }}>{tx('export.png')}</Chip>
-          <Chip onClick={exportVector}>{tx('export.svg')}</Chip>
-          <Chip active={recording} onClick={onRecord}>{tx('export.video')}</Chip>
-          <Chip onClick={() => downloadBlob(new Blob([serializeDoc(doc)], { type: 'application/json' }), 'drawing.sketch.json')}>{tx('export.file')}</Chip>
+          <Chip onClick={() => { void exportPng(false) }}>{tx('export.png')}</Chip>
+          <Chip onClick={() => { void exportPng(true) }}>{tx('export.pngClear')}</Chip>
+          <Chip active={recording} onClick={() => { void record() }}>{tx('export.video')}</Chip>
+          <Chip onClick={exportSketchFile}>{tx('export.file')}</Chip>
           <Chip onClick={() => fileRef.current?.click()}>{tx('export.open')}</Chip>
-          {hasContext
-            ? <Chip onClick={onClearContext}>{tx('context.clear')}</Chip>
-            : <Chip onClick={() => glbRef.current?.click()}>{tx('context.load')}</Chip>}
+          {hasContext ? <Chip onClick={clearContext}>{tx('context.clear')}</Chip> : <Chip onClick={() => glbRef.current?.click()}>{tx('context.load')}</Chip>}
         </div>
         <input
           ref={fileRef} type="file" accept=".json,application/json" hidden
@@ -466,19 +433,120 @@ function MoreSection(p: ControlsProps) {
             e.target.value = ''
             if (!file) return
             const next = parseDoc(await file.text())
-            if (next) setHistory(startHistory(next))
+            if (next) set({ history: startHistory(next) })
             else flash(tx('export.badFile'))
           }}
         />
-        <input
-          ref={glbRef} type="file" accept=".glb,model/gltf-binary" hidden
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            e.target.value = ''
-            if (file) onContextFile(file)
-          }}
-        />
+        <input ref={glbRef} type="file" accept=".glb,model/gltf-binary" hidden onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) void adoptContextFile(file, tx as (key: string) => string)
+        }} />
       </Section>
+      {!regular && (
+        <Section title={tx('pages.label')}>
+          <div className="flex items-center gap-1 overflow-x-auto" style={{ touchAction: 'pan-x' }}>
+            {pages.map((pg, i) => <Chip key={pg.id} grow={false} active={pg.id === activeId} onClick={() => touch((doc) => setActivePage(doc, pg.id))}>{i + 1}</Chip>)}
+            <IconButton size={36} label={tx('pages.add')} icon="plus" onClick={() => edit(addPage)} />
+          </div>
+        </Section>
+      )}
+      <Section title={tx('paper.label')}>
+        <div className="flex gap-1">
+          {(['warm', 'white', 'night'] as PaperKind[]).map((name) => <Chip key={name} active={paper === name} onClick={() => edit((doc) => setPaper(doc, name))}>{tx(`paper.${name}`)}</Chip>)}
+        </div>
+        {regular && (
+          <div className="flex items-center gap-1 mt-2">
+            <span className="text-[11px] flex-1" style={{ color: 'var(--sk-dim)' }}>{tx('side.label')}</span>
+            <Chip grow={false} active={railSide === 'left'} onClick={() => setPrefs({ railSide: 'left' })}>{tx('side.left')}</Chip>
+            <Chip grow={false} active={railSide === 'right'} onClick={() => setPrefs({ railSide: 'right' })}>{tx('side.right')}</Chip>
+          </div>
+        )}
+      </Section>
+    </>
+  )
+}
+
+const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'pick']
+const TABS: PanelTab[] = ['ink', 'plane', 'view', 'layers', 'file']
+
+function TabStrip({ tx }: { tx: Tx }) {
+  const tab = useSketchStore((s) => s.tab)
+  const { setPrefs } = useSketchStore.getState()
+  return (
+    <div role="tablist" className="flex gap-0.5 p-1 border-b shrink-0" style={{ borderColor: 'var(--sk-line)' }}>
+      {TABS.map((name) => (
+        <button key={name} role="tab" type="button" aria-selected={tab === name} onClick={() => setPrefs({ tab: name })} className="flex-1 min-w-0 h-8 rounded-md text-[11px] font-medium truncate" style={{ background: tab === name ? 'var(--sk-soft)' : 'transparent', color: tab === name ? 'var(--sk-text)' : 'var(--sk-dim)' }}>{tx(`tabs.${name}`)}</button>
+      ))}
+    </div>
+  )
+}
+
+function TabBody({ tx, regular }: { tx: Tx; regular: boolean }) {
+  const tab = useSketchStore((s) => s.tab)
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
+      {tab === 'ink' && <InkTab tx={tx} />}
+      {tab === 'plane' && <PlaneTab tx={tx} />}
+      {tab === 'view' && <ViewTab tx={tx} />}
+      {tab === 'layers' && <LayersTab tx={tx} />}
+      {tab === 'file' && <FileTab tx={tx} regular={regular} />}
+    </div>
+  )
+}
+
+export function StudioControls({ tx, regular, short }: { tx: Tx; regular: boolean; short: boolean }) {
+  const tool = useSketchStore((s) => s.tool)
+  const color = useSketchStore((s) => s.color)
+  const railSide = useSketchStore((s) => s.railSide)
+  const railOpen = useSketchStore((s) => s.railOpen)
+  const sheetOpen = useSketchStore((s) => s.sheetOpen)
+  const { setPrefs, set } = useSketchStore.getState()
+  const top = 'calc(max(8px, env(safe-area-inset-top)) + 48px)'
+  const bottom = 'max(10px, env(safe-area-inset-bottom))'
+
+  const toolRow = TOOLS.map((name) => (
+    <IconButton key={name} label={tx(`tools.${name}`)} icon={name} active={tool === name} onClick={() => setPrefs({ tool: name })} size={regular ? 34 : 40} />
+  ))
+
+  if (regular && !railOpen) {
+    return (
+      <aside aria-label={tx('tools.label')} className="absolute z-10 w-[46px] rounded-xl border flex flex-col items-center gap-0.5 p-1 overflow-y-auto" style={{ ...glass, top, [railSide]: 8, maxHeight: 'calc(100% - 66px)' }}>
+        <IconButton size={36} label={tx('rail.open')} icon="rail" onClick={() => setPrefs({ railOpen: true })} />
+        {toolRow}
+        <span className="w-6 h-6 m-1 rounded-full border shrink-0" style={{ background: color, borderColor: 'var(--sk-line)' }} />
+      </aside>
+    )
+  }
+
+  if (regular) {
+    return (
+      <aside aria-label={tx('tools.label')} className="absolute z-10 w-[252px] rounded-xl border flex flex-col overflow-hidden" style={{ ...glass, top, bottom, [railSide]: 8 }}>
+        <div className="flex items-center justify-between px-1 py-1.5 border-b shrink-0" style={{ borderColor: 'var(--sk-line)' }}>
+          {toolRow}
+          <IconButton size={30} label={tx('rail.close')} icon="rail" onClick={() => setPrefs({ railOpen: false })} />
+        </div>
+        <TabStrip tx={tx} />
+        <TabBody tx={tx} regular />
+      </aside>
+    )
+  }
+
+  return (
+    <>
+      {sheetOpen && (
+        <div className="absolute z-20 left-2 right-2 rounded-xl border flex flex-col overflow-hidden" style={{ ...glass, bottom: 'calc(max(8px, env(safe-area-inset-bottom)) + 52px)', height: short ? 'calc(100% - 116px)' : '58%' }}>
+          <TabStrip tx={tx} />
+          <TabBody tx={tx} regular={false} />
+        </div>
+      )}
+      <div className="absolute z-20 left-2 right-2 h-12 px-1 rounded-xl border flex items-center justify-between overflow-x-auto" style={{ ...glass, bottom: 'max(8px, env(safe-area-inset-bottom))', touchAction: 'pan-x' }}>
+        {toolRow}
+        <button type="button" aria-label={tx('color')} onClick={() => { setPrefs({ tab: 'ink' }); set({ sheetOpen: !sheetOpen, refsOpen: false }) }} className="shrink-0 w-10 h-10 grid place-items-center">
+          <span className="w-6 h-6 rounded-full border" style={{ background: color, borderColor: 'var(--sk-line)' }} />
+        </button>
+        <IconButton label={tx('more')} icon="more" active={sheetOpen} onClick={() => set({ sheetOpen: !sheetOpen, refsOpen: false })} />
+      </div>
     </>
   )
 }

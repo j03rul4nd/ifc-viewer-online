@@ -1,58 +1,133 @@
 # Sketch studio (`/sketch`)
 
-Draw in 3D with a pen or a finger, on a phone first. Strokes land on a drawing
-plane you can move, turn and take from the drawing. Everything runs and stays in
-the browser: IndexedDB, no account, no server.
+Draw in 3D with a pen or a finger, on a phone, tablet or drawing display. Strokes
+land on a drawing plane you can move, turn and take from the drawing or a model.
+Everything runs and stays in the browser: IndexedDB, no account, no server.
 
-## What it does
+## Where things live
 
-| Area | Behaviour |
+Dependencies point one way; `lib/sketch/boundaries.test.ts` fails if they stop.
+
+    components/sketch   what it looks like: composes, holds no behaviour
+    hooks/sketch        behaviour: engine life, input, saving, layout; actions.ts
+                        is everything a button or gesture can do, free of React
+    stores/sketchStore  state, one store. Subscribe to the field you show
+    lib/sketch          the rest: no React, no store, mostly pure and tested
+
+From outside these folders, import `lib/sketch` (its index) or open the route.
+
+To add a tool: a `SketchTool`, an icon and label, then its branch in
+`useSketchInput`. An export: a pure writer in `lib/sketch`, a function in
+`actions.ts`, a chip in `FileTab`. A saved field must be optional, because
+documents already exist on people's devices; read it with a default.
+
+## The line (`lib/sketch/ink.ts`)
+
+The stages drawing software runs, in order:
+
+1. **Device reading.** Pressure, then tilt (`altitudeAngle`, or `tiltX/Y`). A pen
+   stuck at exactly 0.5 has no sensor; speed stands in, as it does for a finger.
+2. **Pressure curve.** Soft, normal, firm.
+3. **Stabilizer.** Gaussian average over 1 to 21 recent samples, the idea behind
+   Krita's Stabilizer and Clip Studio's Stabilization. On lift the line catches up
+   with the pen, so it ends where the pen ended.
+4. **Thin.** Douglas-Peucker in 3D, keeping pressure changes.
+5. **Curve.** Centripetal Catmull-Rom: no overshoot where spacing is uneven.
+   Corners over 50° are cut, not rounded.
+6. **Ends.** Start and end tapers, capped at 40 % of a short stroke each. Ends can
+   join a nearby endpoint or the stroke's own start, even across planes.
+
+Holding still at the end of a stroke straightens it, snapped to the plane's axes.
+Finished strokes are polylines with weight per vertex. There is no node editor:
+vertices cannot be dragged after the fact.
+
+## Input (`lib/sketch/gestures.ts`, `hooks/sketch/useSketchInput.ts`)
+
+| Contact | Does |
 |---|---|
-| Ink | Pen, pencil, marker, straight line, eraser. Weight follows pressure, in screen pixels. One Euro smoothing; coalesced pen samples are used when the browser gives them. |
-| Hold to straighten | Pausing at the end of a stroke turns it into a straight line, snapped to the plane's axes when close. |
-| Plane | Ground, front, side, facing the camera. Slide along the normal, rotate 15° per axis. The plane tool takes it from a stroke point or a model face. Edge-on planes refuse input and offer the fix. |
-| View | Compass (drag to orbit, tap an axis), top/front/right/3D, parallel projection, fit, saved views. Distance fades strokes so a wire sketch reads as 3D. |
-| Organise | Pages with thumbnails, layers (hide, lock), undo and redo. |
-| References | Image board (library, camera, paste, drop) docked or floating. Images can be placed on the plane to trace, with opacity. A live plan and elevation of the sketch. |
-| Context | *View → 3D sketch* in the viewer sends every open model to the studio in a new tab, which also keeps the viewer open for Split View. A GLB file works too. Models are saved with the sketch, on this device. Faces can set the drawing plane. |
-| Export | PNG, SVG (real paths), sketch file, replay video where MediaRecorder allows. |
+| Pen | Draws, and switches fingers to navigation. Palms over 44 px are ignored |
+| Pen's other end (eraser) | Erases, whatever tool is in hand |
+| Pen barrel button | Orbits |
+| Pen hovering | Shows where the brush lands |
+| One finger | Draws until a pen appears (setting) |
+| Two fingers / three | Orbit and pinch / pan. Quick taps: undo / redo |
+| Mouse | Left draws, right orbits, middle pans, wheel zooms |
+| Space / Alt held | Pan / orbit with anything |
+| `[` `]`, `P B M L E`, Ctrl+Z | Size, tools, undo |
 
-## Input rules (`lib/sketch/gestures.ts`)
+Drawing tablets and displays (Wacom, Huion, XP-Pen) reach the browser as Pointer
+Events through their driver. The Ink tab reads the live values, and says when a
+driver is reporting a mouse: on Windows that usually means Windows Ink is off.
 
-Pen always draws and switches fingers to navigation. One finger draws until then.
-Two fingers orbit and pinch, three pan. Two and three finger taps undo and redo.
-A second finger within 160 ms cancels the first finger's stroke. A palm-sized
-contact is ignored once a pen is in use.
+## Under load
 
-## Layout (`lib/sketch/layout.ts`)
+- A pointer event only appends to an array. The GPU buffer is rebuilt at most once
+  a frame, and a stalled thread gets its samples back from `getCoalescedEvents`.
+- Over 12,000 live points, the stroke commits and carries on.
+- A stroke re-renders no React: panels subscribe to single fields.
+- `SaveQueue`: one write at a time, only the newest waits. Thumbnails wait for idle.
+- A lost GPU context shows a notice and returns by itself. A failed save says so.
+- A model that will not export does not cost the others.
 
-Read from the studio's own box on every resize. No device is named. Apple's
-guidance for iPhone Duo is the same: size classes and live window size, because a
-fold can resize the app mid-session.
+## Layout (`lib/sketch/layout.ts`, `useStudioLayout`)
 
-- Regular (at least 600×480): tool rail on the side the user picks, page strip.
-- Compact: one row of tools under the thumb, the rest in a sheet.
-- References dock beside or below the drawing when both fit, otherwise float.
-- Browsers reporting viewport segments split at the hinge. WebKit does not report
-  them (`docs/DUAL_SCREEN.md`), and a flat inner screen has no seam to avoid.
+Read from the studio's own box on every resize. No device is named.
 
-iOS Split View and a second Safari window are only a smaller box here. Windows
-share IndexedDB and refresh each other through a BroadcastChannel; the last save
-wins, so simultaneous drawing in two windows of the same sketch is not merged.
+- Regular (at least 600×480): rail on either side, which folds to a strip.
+- Compact: one row of tools under the thumb, tabs in a sheet.
+- References dock beside or below when the drawing keeps room, otherwise float.
+- A browser reporting two segments splits at the hinge. Half open (Z Flip's Flex
+  mode), the drawing takes the flat lower half. WebKit reports no segments
+  (`docs/DUAL_SCREEN.md`), and a flat screen has no seam to avoid.
 
-## Not validated
+### Split screen
 
-Tested in desktop Chromium with synthetic pen events at emulated sizes. **Not run
-on an iPhone Duo, an Apple Pencil, or any physical foldable.** Apple says Pencil
-support on iPhone Duo arrives "later this year". Latency, palm size, Safari's
-`getCoalescedEvents`, canvas video recording and storage limits on iOS are
-unmeasured. Do not claim them until they are.
+The system's split (iPad, iPhone Duo, Android) needs nothing: it is a smaller box.
+To draw next to the references full size, the arrow in the references pane opens
+`/sketch?pane=refs` in its own window. That window owns no document: it shares the
+image library and asks the studio to place or delete over a BroadcastChannel. It
+also works on a second monitor beside a drawing display. Two windows of the
+studio itself: the last save wins, not merged.
+
+## Under the sketch
+
+*View → 3D sketch* in the viewer sends what is visible (`lib/viewer-sketch-sources.ts`):
+IFC models and meshes as GLB in their placed positions, point clouds as up to 600,000
+resident points each. It is saved with the sketch on this device, each can be hidden
+in the View tab, and a face or scan point can set the drawing plane. A GLB file works too.
+
+## Getting it out
+
+| To | Use | Keeps |
+|---|---|---|
+| Procreate | PSD, imported from the **Gallery** (*Add* flattens) | Layers, this view |
+| Sketchbook, Krita, Clip Studio, Photoshop | PSD | Layers, this view |
+| Blender | `.py`: Text Editor > Run Script, or `blender --python` | 3D, layers, colour, pressure as radius |
+| Anything reading polylines | OBJ | 3D, layers as objects |
+| Illustrator, Inkscape, layouts | SVG | Vector outlines with weight, this view |
+| Instagram Stories, LinkedIn | Share buttons | 1080×1920 / 1200×1200 image |
+
+No web API posts to Stories or attaches an image to a LinkedIn post. Both buttons
+open the system share sheet with the image; where there is none, the image is
+saved and the studio says what to do next. Nothing is posted without the user.
+
+## Validated, and not
+
+- PSD read with Pillow, layers intact. Not opened in Procreate, Sketchbook, Krita
+  or Clip Studio themselves.
+- Blender script run headless in Blender 4.5: curves, radius, materials.
+- Desktop Chromium with synthetic pen events: pressure and tilt reading, sizes of
+  Z Flip, iPad, iPad split, a Duo-like space and a drawing display, an emulated
+  hinge, a lost and restored GPU context.
+- **Not run on an iPhone Duo, Z Flip, iPad, Apple Pencil, S Pen or drawing tablet.**
+  Latency, feel, palm size, eraser-end and barrel behaviour per driver, iOS storage
+  limits and the share sheet are unmeasured. Sizes above are from public specs, not
+  devices. Apple says Pencil on iPhone Duo arrives "later this year".
+- Point cloud handoff is covered by types and code review only: no scan was loaded.
 
 ## Known limits
 
 - Stored stroke weight is screen-space: it does not scale with zoom.
-- SVG uses each stroke's average weight.
-- Handoff stops above 300 MB of GLB. The figure is a guess at what a phone holds, not a measurement.
-- Strokes are 32-bit floats: on a model with UTM coordinates in its vertices they will jitter.
+- Handoff stops above 300 MB. The figure is an estimate, not a measurement.
+- Strokes are 32-bit floats: with UTM coordinates in the vertices they will jitter.
 - The context is one per browser, not per sketch or page.
-- Tilt and Pencil hover are not used.

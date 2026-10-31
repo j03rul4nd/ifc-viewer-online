@@ -98,7 +98,8 @@
     "tooMany": "Não foi possível ler essa imagem.",
     "top": "Planta",
     "front": "Alçado",
-    "liveEmpty": "Desenhe algo e aparece aqui visto de cima e de frente."
+    "liveEmpty": "Desenhe algo e aparece aqui visto de cima e de frente.",
+    "window": "Abrir noutra janela"
   },
   "context": {
     "load": "Esboçar sobre um modelo (GLB)",
@@ -106,7 +107,10 @@
     "failed": "Não foi possível ler esse ficheiro como modelo GLB.",
     "loaded": "Modelo carregado. Use a ferramenta de plano para desenhar em qualquer face.",
     "preparing": "A preparar o seu modelo…",
-    "tooBig": "Esse modelo é demasiado pesado para esboçar por cima neste dispositivo. Pode esboçar sem ele."
+    "tooBig": "Esse modelo é demasiado pesado para esboçar por cima neste dispositivo. Pode esboçar sem ele.",
+    "label": "Sob o esboço",
+    "mesh": "Modelo",
+    "points": "Digitalização"
   },
   "export": {
     "label": "Exportar",
@@ -117,7 +121,50 @@
     "video": "Vídeo do processo",
     "recording": "A gravar o processo…",
     "badFile": "Esse ficheiro não é um esboço.",
-    "noVideo": "Este navegador não consegue gravar vídeo."
+    "noVideo": "Este navegador não consegue gravar vídeo.",
+    "toApps": "Para outras apps",
+    "psd": "Camadas (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "Linhas 3D (OBJ)",
+    "psdHint": "O PSD abre com camadas no Krita, Clip Studio e Sketchbook. No Procreate, importe-o pela Galeria para as manter.",
+    "pngClear": "PNG transparente"
   },
-  "webgl": "Este dispositivo não conseguiu iniciar o desenho 3D."
+  "webgl": "Este dispositivo não conseguiu iniciar o desenho 3D.",
+  "gpuLost": "O sistema retirou o chip gráfico. O desenho está seguro e volta sozinho.",
+  "tabs": {
+    "ink": "Tinta",
+    "plane": "Plano",
+    "view": "Vista",
+    "layers": "Camadas",
+    "file": "Ficheiro"
+  },
+  "rail": {
+    "open": "Mostrar ferramentas",
+    "close": "Ocultar ferramentas"
+  },
+  "ink": {
+    "label": "Traço",
+    "stabilizer": "Estabilizador",
+    "entry": "Início do traço",
+    "exit": "Fim do traço",
+    "snap": "Unir extremidades"
+  },
+  "pen": {
+    "label": "Caneta",
+    "curve": "Resposta à pressão",
+    "soft": "Suave",
+    "normal": "Normal",
+    "firm": "Firme",
+    "try": "Trace uma linha com a caneta para a testar.",
+    "noPen": "Isso não foi uma caneta. Uma mesa digitalizadora em modo rato aparece assim.",
+    "noPressure": "Esta caneta não indica pressão. Verifique o controlador da mesa; no Windows, ative o Windows Ink.",
+    "reading": "Pressão {{pressure}} % · inclinação {{tilt}}°"
+  },
+  "share": {
+    "label": "Partilhar",
+    "instagram": "Stories do Instagram",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Imagem guardada. Carregue-a no Instagram.",
+    "savedLinkedin": "Imagem guardada. Anexe-a à sua publicação no LinkedIn."
+  }
 }
