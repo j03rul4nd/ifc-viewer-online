@@ -141,7 +141,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         width: 2228,
         height: 1440,
         alt: "2 画面に分割された IFC Viewer Online：左に Duplex モデルの 3D、右に空間ツリーと属性",
-        caption: "ブック姿勢：540 px の画面 2 つと 34 px のヒンジ。実際のビューアとサンプルモデルを使い Chrome でエミュレートしたもので、スマホで撮影したものではありません。",
+        caption: "ブック姿勢：540 px の画面 2 つと 34 px のヒンジ。実際のビューアとサンプルモデルを Chrome でエミュレートし、説明用の端末に表示したものです。写真でも実在の製品でもありません。",
       },
       {
         type: "image",

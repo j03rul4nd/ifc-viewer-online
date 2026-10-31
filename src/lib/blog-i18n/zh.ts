@@ -138,7 +138,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         width: 2228,
         height: 1440,
         alt: "IFC Viewer Online 分布在两块屏上：左侧为 Duplex 模型 3D 视图，右侧为空间结构树和属性",
-        caption: "书本姿态：两块 540 px 屏幕和 34 px 铰链。在 Chrome 中用真实查看器和示例模型模拟，并非手机实拍。",
+        caption: "书本姿态：两块 540 px 屏幕和 34 px 铰链。真实查看器和示例模型，在 Chrome 中模拟并显示在示意设备上：并非照片，也不是真实产品。",
       },
       {
         type: "image",
