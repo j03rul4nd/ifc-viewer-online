@@ -162,7 +162,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         width: 2228,
         height: 1440,
         alt: "IFC Viewer Online réparti sur deux écrans : le modèle Duplex en 3D à gauche, l'arbre spatial et les propriétés à droite",
-        caption: "Position livre : deux écrans de 540 px et une charnière de 34 px. Émulé dans Chrome avec la vraie visionneuse et le modèle d'exemple, pas photographié sur un téléphone.",
+        caption: "Position livre : deux écrans de 540 px et une charnière de 34 px. La vraie visionneuse et le modèle d'exemple, émulés dans Chrome et présentés sur un appareil illustratif : ni une photo, ni un produit réel.",
       },
       {
         type: "image",

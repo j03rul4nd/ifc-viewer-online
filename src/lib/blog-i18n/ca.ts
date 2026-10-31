@@ -160,7 +160,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         width: 2228,
         height: 1440,
         alt: "IFC Viewer Online dividit en dues pantalles: el model Duplex en 3D a l'esquerra i l'arbre espacial amb propietats a la dreta",
-        caption: "Postura de llibre: dues pantalles de 540 px i una frontissa de 34 px. Emulat a Chrome amb el visor real i el model d'exemple, no fotografiat en un mòbil.",
+        caption: "Postura de llibre: dues pantalles de 540 px i una frontissa de 34 px. El visor real i el model d'exemple, emulats a Chrome i mostrats en un dispositiu il·lustratiu: no és una foto ni un producte real.",
       },
       {
         type: "image",

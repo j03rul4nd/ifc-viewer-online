@@ -162,7 +162,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         width: 2228,
         height: 1440,
         alt: "IFC Viewer Online auf zwei Bildschirme verteilt: das Duplex-Modell in 3D links, der Raumstrukturbaum mit Eigenschaften rechts",
-        caption: "Buchhaltung: zwei Bildschirme mit 540 px und ein Scharnier mit 34 px. In Chrome emuliert mit dem echten Viewer und dem Beispielmodell, nicht auf einem Handy fotografiert.",
+        caption: "Buchhaltung: zwei Bildschirme mit 540 px und ein Scharnier mit 34 px. Der echte Viewer und das Beispielmodell, in Chrome emuliert und auf einem illustrativen Gerät gezeigt: weder Foto noch reales Produkt.",
       },
       {
         type: "image",

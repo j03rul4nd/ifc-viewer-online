@@ -89,7 +89,7 @@ export const FOLDABLE_POSTS_EN: BlogPost[] = [
         ['Fully open', 'One screen; split available from View → Split screen', 'Looking at the whole model, or showing it to someone'],
         ['Closed (cover screen)', 'The normal phone app', 'A quick look, then open the phone without losing your place'],
       ] },
-      { ...shot('foldable-ifc-viewer-book-posture', 1114, 720), alt: 'IFC Viewer Online split across two screens: the Duplex model in 3D on the left and the spatial tree with properties on the right', caption: 'Book posture: two 540 px screens and a 34 px hinge. Emulated in Chrome with the real viewer and the sample model, not photographed on a phone.' },
+      { ...shot('foldable-ifc-viewer-book-posture', 1114, 720), alt: 'IFC Viewer Online split across two screens: the Duplex model in 3D on the left and the spatial tree with properties on the right', caption: 'Book posture: two 540 px screens and a 34 px hinge. The real viewer and sample model, emulated in Chrome and shown on an illustrative device: not a photo, not a real product.' },
       { ...shot('foldable-ifc-viewer-tabletop-posture', 720, 900), alt: 'IFC Viewer Online in tabletop posture with the 3D model on the upper screen and the model data on the lower screen', caption: 'Tabletop posture, emulated the same way: the model above the fold, the data under your thumbs.' },
 
       { type: 'h2', text: 'Three things to try on the sample model' },

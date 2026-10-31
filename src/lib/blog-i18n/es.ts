@@ -162,7 +162,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         width: 2228,
         height: 1440,
         alt: "IFC Viewer Online dividido en dos pantallas: el modelo Duplex en 3D a la izquierda y el árbol espacial con propiedades a la derecha",
-        caption: "Postura de libro: dos pantallas de 540 px y una bisagra de 34 px. Emulado en Chrome con el visor real y el modelo de ejemplo, no fotografiado en un móvil.",
+        caption: "Postura de libro: dos pantallas de 540 px y una bisagra de 34 px. El visor real y el modelo de ejemplo, emulados en Chrome y mostrados en un dispositivo ilustrativo: ni es una foto ni un producto real.",
       },
       {
         type: "image",
