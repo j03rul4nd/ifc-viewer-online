@@ -519,6 +519,7 @@
     "xray": "Röntgen (durch Wände sehen)"
   },
   "dualScreen": {
+    "sketch": "3D-Skizze",
     "pane": "Modell und Eigenschaften",
     "views": "Bereichsansicht",
     "view": {

@@ -1,0 +1,121 @@
+{
+  "title": "Esboço 3D",
+  "back": "Voltar ao visualizador",
+  "notSaved": "Não foi possível guardar neste navegador",
+  "tools": {
+    "label": "Ferramentas",
+    "pen": "Caneta",
+    "pencil": "Lápis",
+    "marker": "Marcador",
+    "line": "Linha reta",
+    "eraser": "Borracha",
+    "pick": "Definir plano a partir do desenho"
+  },
+  "color": "Cor",
+  "customColor": "Cor personalizada",
+  "size": "Espessura",
+  "plane": {
+    "label": "Plano de desenho",
+    "ground": "Chão",
+    "front": "Frente",
+    "side": "Lado",
+    "facing": "Virado para mim",
+    "lookAt": "Olhar para ele",
+    "move": "Mover",
+    "rotate": "Rodar",
+    "edgeOn": "Daqui este plano vê-se de perfil.",
+    "fix": "Virado para mim",
+    "picked": "Plano definido a partir do desenho.",
+    "pickedSurface": "Plano definido nessa face.",
+    "pickNothing": "Não há nada aqui para alinhar. Toque num traço ou numa face do modelo."
+  },
+  "view": {
+    "label": "Vista",
+    "top": "Topo",
+    "front": "Frente",
+    "right": "Direita",
+    "iso": "3D",
+    "ortho": "Paralela",
+    "fit": "Enquadrar",
+    "save": "Guardar",
+    "views": "Vistas guardadas",
+    "remove": "Remover vista",
+    "orbitHint": "Arraste para orbitar"
+  },
+  "layers": {
+    "label": "Camadas",
+    "add": "Adicionar camada",
+    "name": "Camada {{n}}",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "lock": "Bloquear",
+    "unlock": "Desbloquear",
+    "delete": "Eliminar camada",
+    "locked": "Esta camada está bloqueada ou oculta."
+  },
+  "pages": {
+    "label": "Páginas",
+    "add": "Adicionar página",
+    "delete": "Eliminar página",
+    "name": "Página {{n}}"
+  },
+  "undo": "Desfazer",
+  "redo": "Refazer",
+  "clear": "Limpar camada",
+  "more": "Mais",
+  "paper": {
+    "label": "Papel",
+    "warm": "Quente",
+    "white": "Branco",
+    "night": "Noite"
+  },
+  "side": {
+    "label": "Ferramentas à",
+    "left": "Esquerda",
+    "right": "Direita"
+  },
+  "fingerDraw": "Desenhar com o dedo",
+  "status": {
+    "pen": "A caneta desenha",
+    "finger": "O dedo desenha",
+    "fingerOff": "Os dedos navegam",
+    "orbit": "2 dedos orbitam",
+    "pan": "3 dedos deslocam"
+  },
+  "refs": {
+    "label": "Referências",
+    "images": "Imagens",
+    "live": "Planta e alçado",
+    "add": "Adicionar imagens",
+    "camera": "Tirar uma foto",
+    "empty": "Traga uma foto de obra, uma planta ou um esboço anterior para desenhar ao lado.",
+    "place": "Colocar no plano",
+    "delete": "Eliminar imagem",
+    "close": "Fechar referências",
+    "opacity": "Opacidade",
+    "removePlaced": "Remover da cena",
+    "placed": "Colocada no plano de desenho.",
+    "tooMany": "Não foi possível ler essa imagem.",
+    "top": "Planta",
+    "front": "Alçado",
+    "liveEmpty": "Desenhe algo e aparece aqui visto de cima e de frente."
+  },
+  "context": {
+    "load": "Esboçar sobre um modelo (GLB)",
+    "clear": "Remover o modelo",
+    "failed": "Não foi possível ler esse ficheiro como modelo GLB.",
+    "loaded": "Modelo carregado. Use a ferramenta de plano para desenhar em qualquer face."
+  },
+  "export": {
+    "label": "Exportar",
+    "png": "Imagem (PNG)",
+    "svg": "Vetor (SVG)",
+    "file": "Ficheiro de esboço",
+    "open": "Abrir um esboço",
+    "video": "Vídeo do processo",
+    "recording": "A gravar o processo…",
+    "badFile": "Esse ficheiro não é um esboço.",
+    "noVideo": "Este navegador não consegue gravar vídeo."
+  },
+  "webgl": "Este dispositivo não conseguiu iniciar o desenho 3D."
+}

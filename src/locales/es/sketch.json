@@ -1,0 +1,121 @@
+{
+  "title": "Boceto 3D",
+  "back": "Volver al visor",
+  "notSaved": "No se pudo guardar en este navegador",
+  "tools": {
+    "label": "Herramientas",
+    "pen": "Pluma",
+    "pencil": "Lápiz",
+    "marker": "Rotulador",
+    "line": "Línea recta",
+    "eraser": "Borrador",
+    "pick": "Fijar plano desde el dibujo"
+  },
+  "color": "Color",
+  "customColor": "Color personalizado",
+  "size": "Grosor",
+  "plane": {
+    "label": "Plano de dibujo",
+    "ground": "Suelo",
+    "front": "Frente",
+    "side": "Lateral",
+    "facing": "Hacia mí",
+    "lookAt": "Mirarlo",
+    "move": "Mover",
+    "rotate": "Girar",
+    "edgeOn": "Este plano se ve de canto desde aquí.",
+    "fix": "Hacia mí",
+    "picked": "Plano fijado desde el dibujo.",
+    "pickedSurface": "Plano fijado en esa cara.",
+    "pickNothing": "Ahí no hay nada a lo que alinearse. Toca un trazo o una cara del modelo."
+  },
+  "view": {
+    "label": "Vista",
+    "top": "Planta",
+    "front": "Frente",
+    "right": "Dcha.",
+    "iso": "3D",
+    "ortho": "Paralela",
+    "fit": "Ajustar",
+    "save": "Guardar",
+    "views": "Vistas guardadas",
+    "remove": "Quitar vista",
+    "orbitHint": "Arrastra para orbitar"
+  },
+  "layers": {
+    "label": "Capas",
+    "add": "Añadir capa",
+    "name": "Capa {{n}}",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "lock": "Bloquear",
+    "unlock": "Desbloquear",
+    "delete": "Eliminar capa",
+    "locked": "Esta capa está bloqueada u oculta."
+  },
+  "pages": {
+    "label": "Páginas",
+    "add": "Añadir página",
+    "delete": "Eliminar página",
+    "name": "Página {{n}}"
+  },
+  "undo": "Deshacer",
+  "redo": "Rehacer",
+  "clear": "Vaciar capa",
+  "more": "Más",
+  "paper": {
+    "label": "Papel",
+    "warm": "Cálido",
+    "white": "Blanco",
+    "night": "Noche"
+  },
+  "side": {
+    "label": "Herramientas a la",
+    "left": "Izquierda",
+    "right": "Derecha"
+  },
+  "fingerDraw": "Dibujar con el dedo",
+  "status": {
+    "pen": "La pluma dibuja",
+    "finger": "El dedo dibuja",
+    "fingerOff": "Los dedos navegan",
+    "orbit": "2 dedos orbitan",
+    "pan": "3 dedos desplazan"
+  },
+  "refs": {
+    "label": "Referencias",
+    "images": "Imágenes",
+    "live": "Planta y alzado",
+    "add": "Añadir imágenes",
+    "camera": "Hacer una foto",
+    "empty": "Trae una foto de obra, un plano o un boceto anterior para dibujar a su lado.",
+    "place": "Colocar en el plano",
+    "delete": "Eliminar imagen",
+    "close": "Cerrar referencias",
+    "opacity": "Opacidad",
+    "removePlaced": "Quitar de la escena",
+    "placed": "Colocada en el plano de dibujo.",
+    "tooMany": "No se pudo leer esa imagen.",
+    "top": "Planta",
+    "front": "Alzado",
+    "liveEmpty": "Dibuja algo y aparecerá aquí visto desde arriba y de frente."
+  },
+  "context": {
+    "load": "Bocetar sobre un modelo (GLB)",
+    "clear": "Quitar el modelo",
+    "failed": "Ese archivo no se pudo leer como modelo GLB.",
+    "loaded": "Modelo cargado. Usa la herramienta de plano para dibujar en cualquiera de sus caras."
+  },
+  "export": {
+    "label": "Exportar",
+    "png": "Imagen (PNG)",
+    "svg": "Vector (SVG)",
+    "file": "Archivo de boceto",
+    "open": "Abrir un boceto",
+    "video": "Vídeo del proceso",
+    "recording": "Grabando el proceso…",
+    "badFile": "Ese archivo no es un boceto.",
+    "noVideo": "Este navegador no puede grabar vídeo."
+  },
+  "webgl": "Este dispositivo no pudo iniciar el dibujo en 3D."
+}

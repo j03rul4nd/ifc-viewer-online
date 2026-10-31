@@ -444,6 +444,11 @@ export default function Toolbar({
       <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1"/>
     </svg>
   )
+  const SketchSVG = (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 13l1-3 7-7 2 2-7 7-3 1z" />
+    </svg>
+  )
   const SplitSVG = (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
       <rect x="1" y="2" width="5" height="10" rx="1" /><rect x="8" y="2" width="5" height="10" rx="1" />
@@ -791,6 +796,8 @@ export default function Toolbar({
                 setOpenMenu(null)
               }} />
           )}
+          <MenuItem icon={SketchSVG} label={tViewer('dualScreen.sketch')}
+            onClick={() => { window.location.assign('/sketch') }} />
           <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
             badge={sceneModels.length > 0 ? sceneModels.length : undefined}
             onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />

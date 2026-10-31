@@ -1,0 +1,121 @@
+{
+  "title": "3D 草图",
+  "back": "返回查看器",
+  "notSaved": "无法在此浏览器中保存",
+  "tools": {
+    "label": "工具",
+    "pen": "钢笔",
+    "pencil": "铅笔",
+    "marker": "马克笔",
+    "line": "直线",
+    "eraser": "橡皮擦",
+    "pick": "从图中设置平面"
+  },
+  "color": "颜色",
+  "customColor": "自定义颜色",
+  "size": "粗细",
+  "plane": {
+    "label": "绘图平面",
+    "ground": "地面",
+    "front": "前",
+    "side": "侧",
+    "facing": "朝向我",
+    "lookAt": "正视平面",
+    "move": "移动",
+    "rotate": "旋转",
+    "edgeOn": "从这里看，此平面几乎成一条线。",
+    "fix": "朝向我",
+    "picked": "已从图中设置平面。",
+    "pickedSurface": "已在该面上设置平面。",
+    "pickNothing": "这里没有可对齐的对象。请点按笔画或模型的面。"
+  },
+  "view": {
+    "label": "视图",
+    "top": "顶",
+    "front": "前",
+    "right": "右",
+    "iso": "3D",
+    "ortho": "平行",
+    "fit": "适应",
+    "save": "保存",
+    "views": "已保存的视图",
+    "remove": "移除视图",
+    "orbitHint": "拖动以环绕"
+  },
+  "layers": {
+    "label": "图层",
+    "add": "添加图层",
+    "name": "图层 {{n}}",
+    "hide": "隐藏",
+    "show": "显示",
+    "lock": "锁定",
+    "unlock": "解锁",
+    "delete": "删除图层",
+    "locked": "此图层已锁定或隐藏。"
+  },
+  "pages": {
+    "label": "页面",
+    "add": "添加页面",
+    "delete": "删除页面",
+    "name": "第 {{n}} 页"
+  },
+  "undo": "撤销",
+  "redo": "重做",
+  "clear": "清空图层",
+  "more": "更多",
+  "paper": {
+    "label": "纸张",
+    "warm": "暖色",
+    "white": "白色",
+    "night": "夜间"
+  },
+  "side": {
+    "label": "工具位于",
+    "left": "左侧",
+    "right": "右侧"
+  },
+  "fingerDraw": "用手指绘图",
+  "status": {
+    "pen": "笔绘图",
+    "finger": "手指绘图",
+    "fingerOff": "手指用于导航",
+    "orbit": "双指环绕",
+    "pan": "三指平移"
+  },
+  "refs": {
+    "label": "参考",
+    "images": "图片",
+    "live": "平面与立面",
+    "add": "添加图片",
+    "camera": "拍照",
+    "empty": "导入现场照片、图纸或以前的草图，在旁边对照绘制。",
+    "place": "放到平面上",
+    "delete": "删除图片",
+    "close": "关闭参考",
+    "opacity": "不透明度",
+    "removePlaced": "从场景移除",
+    "placed": "已放到绘图平面上。",
+    "tooMany": "无法读取该图片。",
+    "top": "平面图",
+    "front": "立面图",
+    "liveEmpty": "开始绘制后，这里会显示俯视和正视效果。"
+  },
+  "context": {
+    "load": "在模型上绘制草图 (GLB)",
+    "clear": "移除模型",
+    "failed": "无法将该文件读取为 GLB 模型。",
+    "loaded": "模型已加载。使用平面工具可在其任意面上绘制。"
+  },
+  "export": {
+    "label": "导出",
+    "png": "图片 (PNG)",
+    "svg": "矢量 (SVG)",
+    "file": "草图文件",
+    "open": "打开草图",
+    "video": "过程视频",
+    "recording": "正在录制过程…",
+    "badFile": "该文件不是草图文件。",
+    "noVideo": "此浏览器无法录制视频。"
+  },
+  "webgl": "此设备无法启动 3D 绘图。"
+}

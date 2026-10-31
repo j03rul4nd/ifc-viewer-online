@@ -518,6 +518,7 @@
     "xray": "X 線（壁を透かして見る）"
   },
   "dualScreen": {
+    "sketch": "3D スケッチ",
     "pane": "モデルとプロパティ",
     "views": "パネル表示",
     "view": {
