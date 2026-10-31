@@ -535,6 +535,7 @@ const mount: Mount = (host, root, initial) => {
         view = glFailed ? 'map' : cfg.view; spin = cfg.autoRotate; filter = ''; input.value = ''
         applyTheme(); rebuild(cfg.shipments); renderChrome(); recenter(); startFeed(); return
       }
+      if (m === 'rotate') { spin = false; tween = null; lng = ((lng + (a[0] as number) + 540) % 360) - 180; return }
       if (m === 'toPNG') {
         draw(performance.now())
         const out = document.createElement('canvas'); out.width = c2.width; out.height = c2.height

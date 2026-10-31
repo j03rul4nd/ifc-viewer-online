@@ -80,6 +80,7 @@ class TrackingGlobe extends HTMLElement {
   select(id: string | null): void { this.invoke('select', [id]) }
   setView(v: 'globe' | 'map'): void { this.invoke('setView', [v]) }
   update(cfg: unknown): void { this.invoke('update', [cfg]) }
+  rotate(deg: number): void { this.invoke('rotate', [deg]) }
   toPNG(): string | undefined { return this.ctl?.call('toPNG', []) as string | undefined }
   load(): void { void this.start() }
 }
