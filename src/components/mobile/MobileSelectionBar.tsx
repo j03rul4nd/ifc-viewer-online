@@ -72,7 +72,7 @@ export function MobileSelectionBar({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ type: 'spring', damping: 30, stiffness: 380 }}
-          className="fixed left-3 right-3 z-[19] md:hidden mobile-pill-glass flex items-center gap-1.5 pl-3.5 pr-1.5 py-1.5"
+          className="dual-hide fixed left-3 right-3 z-[19] md:hidden mobile-pill-glass flex items-center gap-1.5 pl-3.5 pr-1.5 py-1.5"
           style={{
             bottom: 'calc(var(--mobile-nav-clearance) + env(safe-area-inset-bottom, 0px))',
             borderRadius: 22,

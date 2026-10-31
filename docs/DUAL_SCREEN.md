@@ -11,17 +11,16 @@ legend, quantities) on the other. It never decides from a device name.
 | Viewport Segments API — `window.viewport.segments`, CSS `horizontal-/vertical-viewport-segments`, `env(viewport-segment-*)` | Chromium (Chrome/Edge/Samsung Internet) on Android foldables and Windows dual-screen | Primary source of the geometry |
 | `window.getWindowSegments()` | Old Edge on Surface Duo; removed from current browsers | Fallback read only |
 | Device Posture API — `navigator.devicePosture` | Chromium on Android | Change event only (re-measure on fold) |
-| Safari / WebKit | none of the above | — single-screen app |
+| Safari 27.1 / WebKit (iPhone Duo) | Both APIs as a preview behind feature flags, off by default | Same code path when on; otherwise the manual split (viewport up to 951 px) |
 
 Things to know:
 
 - A foldable lying **flat** reports one segment (there is no seam to avoid), so
   the app stays single-screen. Two segments appear in book or tabletop posture,
   or when an app spans two physical panels (Surface Duo).
-- There is no web API that names a device. A future "iPhone Duo" or any other
-  two-panel phone gets the split only if its browser implements viewport
-  segments. Until WebKit does, iOS devices get the normal phone/tablet app, plus
-  the manual split described below on wide touch screens.
+- There is no web API that names a device. The iPhone Duo gets the automatic split only
+  with Safari's feature flags on; otherwise, open, the manual split below. Unverified on
+  the phone itself.
 - Embeds never split (the segments describe the host page, not the iframe), nor
   does the client presentation skin.
 
