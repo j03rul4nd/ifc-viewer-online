@@ -63,6 +63,61 @@ from mainland China.** For buyers there, host `tracker.js` and `engine.js` on a
 server in China and change the script address; the widget makes no other request
 unless you give it a feed, a lookup or a logo.
 
+## Email and sales campaigns
+
+Email clients run no scripts, so the live map cannot go inside an email. The email
+carries an image and a personal link; the link opens a tracking page under the
+sender's brand, and that page is where the sales features live. Configure it in
+the configurator's **Tracking page** section and **Email** tab.
+
+**Nothing here has been sent from a real email platform yet.** The page, the block
+and the images were run in Chrome (`scripts/track/qa-email.cjs`), and the tags were
+checked against public documentation and community threads only. Send a test first.
+
+| Platform | Tag in the link | How sure |
+|---|---|---|
+| Mailchimp | `*\|TRACK_ID\|*` | Standard merge tag. Field names become upper case. |
+| HubSpot | `{{ contact.track_id }}` | Community threads report click tracking mangling `+` and that filters such as `urlencode` can be ignored, so no filter is used. Keep values plain. |
+| Salesforce Marketing Cloud | `%%=UrlEncode(%%track_id%%)=%%` | Follows the `UrlEncode` reference. |
+| Account Engagement (Pardot) | `{{Recipient.track_id__c}}` | Handlebars merge language. No documented URL encoder found, so keep values plain. |
+| Klaviyo | `{{ event.track_id }}` | For flows triggered by an event. Campaigns use profile properties: change it by hand. |
+
+**Status, two ways.** Fields in the link are fixed at sending, though progress moves
+with the dates. A lookup URL (`id` only in the link) is always current, needs your
+endpoint with CORS, and is the way for anything private. If the lookup fails the
+page shows the link's data and says so. Values must not contain `&` or `#`.
+
+**Sales features on the page:** a message and button per status (an apology and an
+offer when delayed, a repeat order when delivered), offer code, up to four products,
+star links to your review page on delivery, support link. Links accept `{id}` and
+`{status}`. Every outgoing link gets `utm_source`, `utm_medium`, `utm_campaign`
+and `utm_content` unless it already has them.
+
+**Brand:** logo, title, tagline, all colours, radius, font name or a woff2 file,
+language, your site and privacy links. The credit link stays. A brand file hosted
+by you (`k=` in the link) shortens links and lets you change offers after sending.
+
+**Measuring ROI.** Clicks on the email link are counted by your platform; sales by
+your shop analytics through the UTMs. Optional: `beacon` receives a `text/plain`
+JSON POST for `view`, `click`, `map` and `promo_copy`, with the reference and
+campaign, sent from the recipient's browser to you only, never to us. Telling
+recipients about it is your responsibility. We make no claim about uplift: send a
+share of recipients the plain email and compare.
+
+**Images:** four status PNGs, named so a tag can pick one
+(`tracking-*|TRACK_STATUS|*.png`), and a 24-frame GIF of about 0.5 MB in our test,
+which adds real weight to an email. They show an empty globe, never another recipient's route,
+so the map in the email is not personal; the page's is. Some Outlook desktop
+versions show only the GIF's first frame. Host the images yourself.
+
+**Trust and abuse.** Anyone can edit a link, so the page is display only: no
+secrets, no forms, only https links, no HTML. Because brand and links travel in the
+link, someone could dress our page up with another brand; on our domain the footer
+names where links go and says the sender's content is not verified. For real
+campaigns host `p.html`, `page.js`, `tracker.js` and `engine.js` on your domain.
+The page is `noindex` and sends no referrer. Dropping `#` for `?` on our address
+would put recipient data in our server logs: self-host in that case.
+
 ## Configuration
 
 ```jsonc

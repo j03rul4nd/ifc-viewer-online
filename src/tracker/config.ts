@@ -19,6 +19,7 @@ export interface Shipment {
   eta?: string
   position?: [number, number]
   note?: string
+  events?: { at?: string; label: string; place?: string }[]
 }
 
 export interface Theme {
@@ -118,6 +119,7 @@ export function normalizeShipment(raw: unknown, i = 0): Shipment | null {
     etd: str(o.etd ?? o.departure, 30), eta: str(o.eta ?? o.arrival, 30),
     position: hasPos && Number.isFinite(pos[0]) && Number.isFinite(pos[1]) && Math.abs(pos[0]) <= 90 && Math.abs(pos[1]) <= 180 ? [pos[0], pos[1]] : undefined,
     note: str(o.note, 160),
+    events: Array.isArray(o.events) ? o.events.slice(0, 30).flatMap(e => { const x = (e ?? {}) as Record<string, unknown>, label = str(x.label ?? x.status ?? x.description, 120); return label ? [{ at: str(x.at ?? x.date ?? x.time, 30), label, place: str(x.place ?? x.location, 80) }] : [] }) : undefined,
   }
 }
 export function normalizeShipments(raw: unknown): Shipment[] {
@@ -174,17 +176,22 @@ export function compactConfig(c: TrackerConfig): Record<string, unknown> {
 }
 
 export function encodeConfig(c: TrackerConfig): string {
-  const bytes = new TextEncoder().encode(JSON.stringify(compactConfig(c)))
+  return encodeRaw(compactConfig(c))
+}
+export function encodeRaw(v: unknown): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(v))
   let s = ''; bytes.forEach(b => { s += String.fromCharCode(b) })
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
-export function decodeConfig(s: string | null | undefined): TrackerConfig {
-  if (!s) return normalizeConfig({})
+export function decodeRaw(s: string | null | undefined): Record<string, unknown> {
+  if (!s) return {}
   try {
     const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'))
-    return normalizeConfig(JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)))))
-  } catch { return normalizeConfig({}) }
+    const v = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))))
+    return v && typeof v === 'object' ? v : {}
+  } catch { return {} }
 }
+export function decodeConfig(s: string | null | undefined): TrackerConfig { return normalizeConfig(decodeRaw(s)) }
 
 /** Where a shipment is along its way, 0–1, and in what state. */
 export function resolveState(s: Shipment, now: number): { progress: number; status: Status } {
