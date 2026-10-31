@@ -11,6 +11,19 @@ import { pageWords } from './page-i18n'
 
 type El = HTMLElement & { update(c: unknown): void; toPNG(): string | undefined; rotate(d: number): void; setView(v: string): void }
 const STORE = 'tracking-globe:config'
+declare const __SUBSCRIBE_URL__: string
+
+// Pro is not on sale: only the team opens this, with the app's own preview gate.
+// A static page cannot enforce a plan; this is a storefront lock, not protection.
+function proUnlocked(): boolean {
+  const param = new URLSearchParams(location.search).get('preview')
+  try {
+    if (param === 'pricing') sessionStorage.setItem('ifc:preview-pricing', '1')
+    else if (param === 'off') sessionStorage.removeItem('ifc:preview-pricing')
+    return sessionStorage.getItem('ifc:preview-pricing') === '1'
+  } catch { return param === 'pricing' }
+}
+const PRO = proUnlocked()
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
 const DEMOS: Record<string, Partial<Shipment>[]> = {
@@ -85,6 +98,7 @@ function brandKit(cfg: TrackerConfig): Record<string, unknown> {
   return { ...rest, lookup: state.linkData === 'lookup' ? get('lookup') : undefined, page: normalizePage(get('page')) }
 }
 function emailOutputs(cfg: TrackerConfig, base: string): Record<string, string> {
+  if (!PRO) return {}
   const kit = brandKit(cfg), brand = encodeRaw(kit), esp = state.esp as Esp, lang = pickLang(cfg.lang), w = pageWords(lang), t = words(lang)
   const lookup = state.linkData === 'lookup'
   const link = trackingLink({ base, brand, kit: state.kit.trim() || undefined, esp, fields: state.fields, lookup, query: state.linkStyle === 'query', campaign: normalizePage(get('page')).campaign })
@@ -107,8 +121,7 @@ function apply(): void {
     document.querySelectorAll<HTMLElement>('[data-out]').forEach(n => { n.textContent = out[n.dataset.out!] ?? '' })
     const size = encodeConfig(cfg).length
     $('warn-size').hidden = size < 6000
-    $('warn-link').hidden = out.emailLink.length < 1800
-    $<HTMLAnchorElement>('email-test').href = out.emailTest
+    if (PRO) { $('warn-link').hidden = out.emailLink.length < 1800; $<HTMLAnchorElement>('email-test').href = out.emailTest }
     document.querySelectorAll<HTMLElement>('[data-when-lookup]').forEach(n => { n.hidden = state.linkData !== 'lookup' })
     $('warn-public').hidden = state.source !== 'paste'
     $('warn-feed').hidden = state.source !== 'feed'
@@ -149,6 +162,20 @@ seedColors()
 document.querySelector('[data-k="theme.preset"]')!.addEventListener('input', () => {
   for (const k of ['background', 'ocean', 'land']) set(`theme.${k}`, undefined)
   seedColors(); apply()
+})
+
+document.querySelectorAll<HTMLElement>('[data-pro]').forEach(n => { n.hidden = !PRO })
+document.querySelector<HTMLElement>('[data-pro-lock]')!.hidden = PRO
+const notify = $<HTMLFormElement>('pro-notify')
+notify.hidden = !__SUBSCRIBE_URL__
+notify.addEventListener('submit', async e => {
+  e.preventDefault()
+  const out = notify.querySelector('small')!, email = notify.querySelector('input')!.value.trim()
+  try {
+    const r = await fetch(__SUBSCRIBE_URL__, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, source: 'pro:email_tracking', locale: document.documentElement.lang }) })
+    if (!r.ok) throw new Error(String(r.status))
+    out.textContent = out.dataset.thanks ?? ''
+  } catch { out.textContent = out.dataset.error ?? '' }
 })
 
 // Tabs, as a real tablist

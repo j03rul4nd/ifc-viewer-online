@@ -65,6 +65,10 @@ unless you give it a feed, a lookup or a logo.
 
 ## Email and sales campaigns
 
+**Pro plan, not on sale yet.** The website widget stays free. The builder is locked
+on the configurator (`?preview=pricing` opens it for the team). That is a storefront
+lock: a static page cannot enforce a plan, and links already sent keep working.
+
 Email clients run no scripts, so the live map cannot go inside an email. The email
 carries an image and a personal link; the link opens a tracking page under the
 sender's brand, and that page is where the sales features live. Configure it in

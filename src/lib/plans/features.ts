@@ -30,6 +30,9 @@ export const PAID_FEATURE_DEFS: PaidFeatureDef[] = [
   { id: 'email_preview', code: 'V4', family: 'sales', plan: 'pro', status: 'live', server: false,
     title: 'Email-ready GIF of the model', pitch: 'A 600 px GIF for Mailchimp, HubSpot or Outlook, linked to the 3D model.' },
 
+  { id: 'email_tracking', code: 'V5', family: 'sales', plan: 'pro', status: 'live', server: false,
+    title: 'Shipment tracking for email campaigns', pitch: 'Personal links for Mailchimp, HubSpot or Salesforce and a branded tracking page with offers, products and reviews.' },
+
   // ── Team ──
   { id: 'quality_gate', code: 'T1', family: 'quality', plan: 'team', status: 'soon', server: true, section: 'quality',
     title: 'Quality gate', pitch: 'Every upload is validated with your company profile. Nothing is published below the minimum score without a reviewer\'s approval.' },
