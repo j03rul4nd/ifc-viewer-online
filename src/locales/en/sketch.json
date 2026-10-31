@@ -9,7 +9,9 @@
     "marker": "Marker",
     "line": "Straight line",
     "eraser": "Eraser",
-    "pick": "Set plane from the drawing"
+    "pick": "Set plane from the drawing",
+    "lasso": "Lasso",
+    "picker": "Sample a colour"
   },
   "color": "Colour",
   "customColor": "Custom colour",
@@ -51,7 +53,11 @@
     "lock": "Lock",
     "unlock": "Unlock",
     "delete": "Delete layer",
-    "locked": "This layer is locked or hidden."
+    "locked": "This layer is locked or hidden.",
+    "up": "Move up",
+    "down": "Move down",
+    "duplicate": "Duplicate",
+    "merge": "Merge down"
   },
   "pages": {
     "label": "Pages",
@@ -147,7 +153,8 @@
     "stabilizer": "Stabilizer",
     "entry": "Line start",
     "exit": "Line end",
-    "snap": "Join line ends"
+    "snap": "Join line ends",
+    "opacity": "Opacity"
   },
   "pen": {
     "label": "Pen",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Image saved. Upload it from Instagram.",
     "savedLinkedin": "Image saved. Attach it to your LinkedIn post."
+  },
+  "ui": {
+    "show": "Show the interface"
+  },
+  "swapColors": "Swap colours",
+  "recentColors": "Recent colours",
+  "brushes": {
+    "label": "Brushes",
+    "technical": "Technical pen",
+    "ink": "Ink",
+    "sketch": "Sketch",
+    "shade": "Shading",
+    "marker": "Marker",
+    "save": "Save as brush",
+    "mine": "My brush {{n}}",
+    "delete": "Delete brush"
+  },
+  "symmetry": {
+    "label": "Symmetry",
+    "off": "Off",
+    "vertical": "Left-right",
+    "horizontal": "Up-down",
+    "both": "Both"
+  },
+  "eraser": {
+    "label": "Eraser",
+    "part": "Part of a stroke",
+    "stroke": "Whole stroke"
+  },
+  "selection": {
+    "label": "Selection",
+    "count": "{{n}} selected",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "done": "Done"
+  },
+  "keys": {
+    "label": "Shortcuts",
+    "tools": "Pen, pencil, marker, line",
+    "eraser": "Eraser",
+    "lasso": "Lasso",
+    "picker": "Sample a colour",
+    "size": "Brush size",
+    "opacity": "Opacity",
+    "colors": "Swap, default colours",
+    "pan": "Pan",
+    "orbit": "Orbit",
+    "zoom": "Zoom",
+    "lineFrom": "Line from the last stroke",
+    "hide": "Hide the interface",
+    "undo": "Undo, redo",
+    "deselect": "Deselect"
   }
 }

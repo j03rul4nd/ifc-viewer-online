@@ -33,6 +33,9 @@ export function useSketchEngine(canvasRef: RefObject<HTMLCanvasElement>, boxRef:
       engine.syncLayers(page.layers)
       engine.setPaper(history.present.paper)
       void engine.syncPlaced(page.placed, (id) => images.find((i) => i.id === id)?.blob)
+      // Undo or a page change can take selected strokes away.
+      const ids = new Set(store.getState().selection)
+      engine.setSelection(ids.size ? page.layers.flatMap((l) => l.strokes).filter((s) => ids.has(s.id)) : [])
     }
     syncPage()
     const unsubscribe = store.subscribe((s, prev) => {

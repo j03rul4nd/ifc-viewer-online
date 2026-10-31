@@ -9,7 +9,9 @@
     "marker": "马克笔",
     "line": "直线",
     "eraser": "橡皮擦",
-    "pick": "从图中设置平面"
+    "pick": "从图中设置平面",
+    "lasso": "套索",
+    "picker": "吸取颜色"
   },
   "color": "颜色",
   "customColor": "自定义颜色",
@@ -51,7 +53,11 @@
     "lock": "锁定",
     "unlock": "解锁",
     "delete": "删除图层",
-    "locked": "此图层已锁定或隐藏。"
+    "locked": "此图层已锁定或隐藏。",
+    "up": "上移",
+    "down": "下移",
+    "duplicate": "复制",
+    "merge": "向下合并"
   },
   "pages": {
     "label": "页面",
@@ -147,7 +153,8 @@
     "stabilizer": "防抖",
     "entry": "线条起点",
     "exit": "线条终点",
-    "snap": "连接端点"
+    "snap": "连接端点",
+    "opacity": "不透明度"
   },
   "pen": {
     "label": "手写笔",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "图片已保存。请在 Instagram 中上传。",
     "savedLinkedin": "图片已保存。请将其附加到 LinkedIn 帖子。"
+  },
+  "ui": {
+    "show": "显示界面"
+  },
+  "swapColors": "交换颜色",
+  "recentColors": "最近的颜色",
+  "brushes": {
+    "label": "画笔",
+    "technical": "针管笔",
+    "ink": "墨水",
+    "sketch": "草稿",
+    "shade": "阴影",
+    "marker": "马克笔",
+    "save": "保存为画笔",
+    "mine": "我的画笔 {{n}}",
+    "delete": "删除画笔"
+  },
+  "symmetry": {
+    "label": "对称",
+    "off": "关",
+    "vertical": "左右",
+    "horizontal": "上下",
+    "both": "两者"
+  },
+  "eraser": {
+    "label": "橡皮擦",
+    "part": "部分笔画",
+    "stroke": "整条笔画"
+  },
+  "selection": {
+    "label": "选区",
+    "count": "已选 {{n}} 个",
+    "duplicate": "复制",
+    "delete": "删除",
+    "done": "完成"
+  },
+  "keys": {
+    "label": "快捷键",
+    "tools": "钢笔、铅笔、马克笔、直线",
+    "eraser": "橡皮擦",
+    "lasso": "套索",
+    "picker": "吸取颜色",
+    "size": "画笔大小",
+    "opacity": "不透明度",
+    "colors": "交换、默认颜色",
+    "pan": "平移",
+    "orbit": "环绕",
+    "zoom": "缩放",
+    "lineFrom": "从上一笔画直线",
+    "hide": "隐藏界面",
+    "undo": "撤销、重做",
+    "deselect": "取消选择"
   }
 }

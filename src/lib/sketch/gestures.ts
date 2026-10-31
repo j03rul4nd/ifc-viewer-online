@@ -6,6 +6,7 @@
 //   one finger     draws until a pen has been seen (or fingerDraw is switched off)
 //   two fingers    orbit and pinch; a quick tap undoes
 //   three fingers  pan; a quick tap redoes
+//   four fingers   a quick tap hides or shows the interface
 //   mouse          left draws, right orbits, middle pans
 //   pen barrel     orbits, as a tablet's side button does in most software
 //   held key       Space pans, Alt orbits, with whatever is pressed
@@ -29,7 +30,7 @@ export interface Contact {
   /** MouseEvent.buttons */
   buttons?: number
   /** A key held while this contact landed. */
-  modifier?: 'orbit' | 'pan'
+  modifier?: 'orbit' | 'pan' | 'zoom'
 }
 
 export type GestureAction =
@@ -43,6 +44,7 @@ export type GestureAction =
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'pen-detected' }
+  | { type: 'toggle-ui' }
 
 /** A finger landing this soon after the first turns the stroke into a gesture. */
 export const CANCEL_WINDOW_MS = 160
@@ -52,7 +54,7 @@ const TAP_SLOP_PX = 14
 /** Bigger than any fingertip reports; ignored once a pen is in use. */
 const PALM_SIZE_PX = 44
 
-type Mode = 'idle' | 'draw' | 'gesture' | 'mouse-orbit' | 'mouse-pan'
+type Mode = 'idle' | 'draw' | 'gesture' | 'mouse-orbit' | 'mouse-pan' | 'mouse-zoom'
 
 export class GestureArbiter {
   private readonly touches = new Map<number, Contact>()
@@ -66,6 +68,7 @@ export class GestureArbiter {
   private lastDistance = 0
   private lastX = 0
   private lastY = 0
+  private anchorY = 0
 
   /** Off once a pen appears. The user may also set it by hand. */
   fingerDraw = true
@@ -82,6 +85,11 @@ export class GestureArbiter {
 
   move(c: Contact): GestureAction[] {
     if (c.id === this.drawer && this.mode === 'draw') return [{ type: 'draw-move', contact: c }]
+    if (this.mode === 'mouse-zoom') {
+      const dy = c.y - this.lastY
+      this.lastY = c.y
+      return [{ type: 'zoom', factor: Math.exp(-dy * 0.01), x: this.lastX, y: this.anchorY }]
+    }
     if (this.mode === 'mouse-orbit' || this.mode === 'mouse-pan') {
       const dx = c.x - this.lastX
       const dy = c.y - this.lastY
@@ -101,7 +109,7 @@ export class GestureArbiter {
       this.mode = 'idle'
       return [{ type: 'draw-end' }]
     }
-    if (this.mode === 'mouse-orbit' || this.mode === 'mouse-pan') {
+    if (this.mode === 'mouse-orbit' || this.mode === 'mouse-pan' || this.mode === 'mouse-zoom') {
       this.mode = 'idle'
       return []
     }
@@ -117,6 +125,7 @@ export class GestureArbiter {
     if (!quick) return []
     if (this.peakFingers === 2) return [{ type: 'undo' }]
     if (this.peakFingers === 3) return [{ type: 'redo' }]
+    if (this.peakFingers === 4) return [{ type: 'toggle-ui' }]
     return []
   }
 
@@ -129,7 +138,7 @@ export class GestureArbiter {
       return [{ type: 'draw-cancel' }]
     }
     if (this.touches.size === 0 && this.mode === 'gesture') this.mode = 'idle'
-    if (this.mode === 'mouse-orbit' || this.mode === 'mouse-pan') this.mode = 'idle'
+    if (this.mode === 'mouse-orbit' || this.mode === 'mouse-pan' || this.mode === 'mouse-zoom') this.mode = 'idle'
     return []
   }
 
@@ -140,10 +149,11 @@ export class GestureArbiter {
     return [{ type: 'pen-detected' }]
   }
 
-  private navigate(c: Contact, how: 'orbit' | 'pan'): GestureAction[] {
-    this.mode = how === 'orbit' ? 'mouse-orbit' : 'mouse-pan'
+  private navigate(c: Contact, how: 'orbit' | 'pan' | 'zoom'): GestureAction[] {
+    this.mode = how === 'orbit' ? 'mouse-orbit' : how === 'pan' ? 'mouse-pan' : 'mouse-zoom'
     this.lastX = c.x
     this.lastY = c.y
+    this.anchorY = c.y
     return []
   }
 

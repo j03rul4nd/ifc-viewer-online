@@ -9,7 +9,9 @@
     "marker": "Marcador",
     "line": "Linha reta",
     "eraser": "Borracha",
-    "pick": "Definir plano a partir do desenho"
+    "pick": "Definir plano a partir do desenho",
+    "lasso": "Laço",
+    "picker": "Recolher uma cor"
   },
   "color": "Cor",
   "customColor": "Cor personalizada",
@@ -51,7 +53,11 @@
     "lock": "Bloquear",
     "unlock": "Desbloquear",
     "delete": "Eliminar camada",
-    "locked": "Esta camada está bloqueada ou oculta."
+    "locked": "Esta camada está bloqueada ou oculta.",
+    "up": "Subir",
+    "down": "Descer",
+    "duplicate": "Duplicar",
+    "merge": "Unir para baixo"
   },
   "pages": {
     "label": "Páginas",
@@ -147,7 +153,8 @@
     "stabilizer": "Estabilizador",
     "entry": "Início do traço",
     "exit": "Fim do traço",
-    "snap": "Unir extremidades"
+    "snap": "Unir extremidades",
+    "opacity": "Opacidade"
   },
   "pen": {
     "label": "Caneta",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Imagem guardada. Carregue-a no Instagram.",
     "savedLinkedin": "Imagem guardada. Anexe-a à sua publicação no LinkedIn."
+  },
+  "ui": {
+    "show": "Mostrar a interface"
+  },
+  "swapColors": "Trocar cores",
+  "recentColors": "Cores recentes",
+  "brushes": {
+    "label": "Pincéis",
+    "technical": "Caneta técnica",
+    "ink": "Tinta",
+    "sketch": "Esboço",
+    "shade": "Sombreado",
+    "marker": "Marcador",
+    "save": "Guardar como pincel",
+    "mine": "O meu pincel {{n}}",
+    "delete": "Eliminar pincel"
+  },
+  "symmetry": {
+    "label": "Simetria",
+    "off": "Não",
+    "vertical": "Esq.-dir.",
+    "horizontal": "Cima-baixo",
+    "both": "Ambas"
+  },
+  "eraser": {
+    "label": "Borracha",
+    "part": "Parte do traço",
+    "stroke": "Traço inteiro"
+  },
+  "selection": {
+    "label": "Seleção",
+    "count": "{{n}} selecionados",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar",
+    "done": "Concluído"
+  },
+  "keys": {
+    "label": "Atalhos",
+    "tools": "Caneta, lápis, marcador, linha",
+    "eraser": "Borracha",
+    "lasso": "Laço",
+    "picker": "Recolher uma cor",
+    "size": "Tamanho do pincel",
+    "opacity": "Opacidade",
+    "colors": "Trocar, cores predefinidas",
+    "pan": "Deslocar",
+    "orbit": "Orbitar",
+    "zoom": "Zoom",
+    "lineFrom": "Linha desde o último traço",
+    "hide": "Ocultar a interface",
+    "undo": "Desfazer, refazer",
+    "deselect": "Desmarcar"
   }
 }

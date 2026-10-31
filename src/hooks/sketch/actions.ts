@@ -2,7 +2,9 @@
 // What buttons, gestures and shortcuts all do, in one place and free of React:
 // the camera, the plane, the models under the sketch, exports, sharing.
 
-import { activePage, newId, placeImage, serializeDoc } from '../../lib/sketch/document'
+import type { BrushPreset } from '../../lib/sketch/brushes'
+import { activePage, addStrokes, mapLayerStrokes, newId, placeImage, serializeDoc } from '../../lib/sketch/document'
+import { mapStroke, rotateOnPlane, scaleAbout, strokesCenter } from '../../lib/sketch/edit'
 import { exportBlenderScript, exportObj } from '../../lib/sketch/export-blender'
 import { encodePsd } from '../../lib/sketch/export-psd'
 import { exportSvg } from '../../lib/sketch/export-svg'
@@ -11,7 +13,7 @@ import { paintLayer, renderLayerCanvas } from '../../lib/sketch/raster'
 import { PAPER } from '../../lib/sketch/renderer'
 import { fitIntoCard, LINKEDIN_SHARE_URL, shareImage, SHARE_SIZE, type ShareOutcome, type ShareTarget } from '../../lib/sketch/share'
 import { saveContext, type ContextItem } from '../../lib/sketch/storage'
-import type { OrbitState, ReferenceImage, SketchPlane, Vec3 } from '../../lib/sketch/types'
+import type { OrbitState, ReferenceImage, SketchPlane, Stroke, Vec3 } from '../../lib/sketch/types'
 import { useSketchStore as store } from '../../stores/sketchStore'
 
 const state = () => store.getState()
@@ -143,6 +145,64 @@ export function placeReference(image: ReferenceImage, tx: Tx): void {
   state().flash(tx('refs.placed'))
 }
 
+// ── Selection and colour ─────────────────────────────────────────────────────
+
+export function pickColorAt(x: number, y: number): void {
+  const { engine, color, setPrefs } = state()
+  if (engine) setPrefs({ color: engine.pickColor(x, y), colorB: color })
+}
+
+export function selectedStrokes(): Stroke[] {
+  const ids = new Set(state().selection)
+  return activePage(state().history.present).layers.flatMap((l) => l.strokes).filter((s) => ids.has(s.id))
+}
+
+export function syncSelection(): void {
+  state().engine?.setSelection(selectedStrokes())
+}
+
+export function clearSelection(): void {
+  state().set({ selection: [] })
+  syncSelection()
+}
+
+/** Every change is one undo step, and keeps the strokes selected. */
+function changeSelection(f: (p: Vec3) => Vec3): void {
+  const ids = new Set(state().selection)
+  state().edit((doc) => mapLayerStrokes(doc, (strokes) => (strokes.some((s) => ids.has(s.id)) ? strokes.map((s) => (ids.has(s.id) ? mapStroke(s, f) : s)) : strokes)))
+  syncSelection()
+}
+
+export const scaleSelection = (k: number): void => changeSelection(scaleAbout(strokesCenter(selectedStrokes()), k))
+
+export const rotateSelection = (angle: number): void => changeSelection(rotateOnPlane(state().plane, strokesCenter(selectedStrokes()), angle))
+
+export function deleteSelection(): void {
+  const ids = new Set(state().selection)
+  state().edit((doc) => mapLayerStrokes(doc, (strokes) => (strokes.some((s) => ids.has(s.id)) ? strokes.filter((s) => !ids.has(s.id)) : strokes)))
+  clearSelection()
+}
+
+/** A copy, nudged so it shows, which becomes the selection. */
+export function duplicateSelection(): void {
+  const { engine, plane } = state()
+  const nudge = scale(plane.u, (engine?.worldPerPixel() ?? 0.01) * 24)
+  const copies = selectedStrokes().map((s) => mapStroke(s, (p) => add(p, nudge), newId()))
+  state().edit((doc) => addStrokes(doc, copies))
+  state().set({ selection: copies.map((s) => s.id) })
+  syncSelection()
+}
+
+export function saveBrush(name: string): void {
+  const { tool, width, opacity, ink, brushes, setPrefs } = state()
+  const brush = tool === 'pencil' || tool === 'marker' ? tool : 'pen'
+  setPrefs({ brushes: [...brushes, { id: newId(), name, brush, width, opacity, ink }] })
+}
+
+export function applyBrush(preset: BrushPreset): void {
+  state().setPrefs({ tool: preset.brush, width: preset.width, opacity: preset.opacity, ink: preset.ink })
+}
+
 // ── Files ────────────────────────────────────────────────────────────────────
 
 export function downloadBlob(blob: Blob, name: string): void {
@@ -201,9 +261,9 @@ export function exportPsd(layerName: (index: number) => string): void {
   if (!cctx) return
   const layers = visibleLayers().map((layer, i) => {
     const canvas = renderLayerCanvas(layer, v.width, v.height, v.project, k)
-    if (layer.visible) cctx.drawImage(canvas, 0, 0, w, h)
+    if (layer.visible) { cctx.globalAlpha = layer.opacity ?? 1; cctx.drawImage(canvas, 0, 0, w, h); cctx.globalAlpha = 1 }
     const rgba = canvas.getContext('2d')!.getImageData(0, 0, w, h).data
-    return { name: layerName(i), rgba, visible: layer.visible }
+    return { name: layerName(i), rgba, visible: layer.visible, opacity: layer.opacity ?? 1 }
   })
   const bytes = encodePsd(w, h, layers, cctx.getImageData(0, 0, w, h).data)
   downloadBlob(new Blob([bytes as BlobPart], { type: 'image/vnd.adobe.photoshop' }), 'sketch.psd')

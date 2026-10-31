@@ -7,13 +7,16 @@
 // ones back through getCoalescedEvents.
 
 import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
-import { addStroke, newId, removeStrokes } from '../../lib/sketch/document'
+import { pushRecent } from '../../lib/sketch/brushes'
+import { activePage, addStrokes, mapLayerStrokes, newId, removeStrokes } from '../../lib/sketch/document'
+import { eraseAround, mapStroke, mirrorMaps, recognizeShape, strokeInLasso, translateBy, type Point2 } from '../../lib/sketch/edit'
 import { GestureArbiter, type Contact, type GestureAction } from '../../lib/sketch/gestures'
 import { findEndpointSnap, finishStroke, readTilt, sampleWeight, Stabilizer } from '../../lib/sketch/ink'
 import { add, dot, scale, sub } from '../../lib/sketch/plane'
+import { pointInPolygon } from '../../lib/sketch/edit'
 import type { SketchDoc, SketchPlane, Stroke, Vec3 } from '../../lib/sketch/types'
 import { useSketchStore, type SketchTool } from '../../stores/sketchStore'
-import { orbitBy, panBy, setPlane, zoomBy } from './actions'
+import { deleteSelection, orbitBy, panBy, pickColorAt, selectedStrokes, setPlane, syncSelection, zoomBy } from './actions'
 
 const STRAIGHTEN_MS = 480
 const STRAIGHTEN_SLOP_PX = 5
@@ -28,7 +31,10 @@ const PENCIL_TILT_GAIN = 1.6
 
 interface Live {
   samples: number[]
-  tool: Exclude<SketchTool, 'eraser' | 'pick'>
+  tool: Exclude<SketchTool, 'eraser' | 'pick' | 'lasso' | 'picker'>
+  opacity: number
+  /** A recognized shape: the pen no longer changes it. */
+  frozen: boolean
   color: string
   width: number
   straight: boolean
@@ -43,6 +49,13 @@ interface Live {
 }
 
 const store = useSketchStore
+
+/** Only where text goes do keys belong to the field: a slider must not kill the shortcuts. */
+function isTyping(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (el?.tagName === 'TEXTAREA' || el?.tagName === 'SELECT') return true
+  return el?.tagName === 'INPUT' && !['range', 'checkbox', 'color', 'file'].includes((el as HTMLInputElement).type)
+}
 
 function snapToAxes(start: Vec3, end: Vec3, p: SketchPlane): Vec3 {
   const d = sub(end, start)
@@ -63,13 +76,38 @@ export interface SketchInputHandlers {
   onPointerLeave: () => void
 }
 
-export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObject<HTMLElement>, tx: (key: string) => string): SketchInputHandlers {
+export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObject<HTMLElement>, lassoRef: RefObject<SVGPolylineElement>, tx: (key: string) => string): SketchInputHandlers {
   const arbiter = useRef(new GestureArbiter())
   const live = useRef<Live | null>(null)
   const liveDirty = useRef(false)
-  const eraseBase = useRef<SketchDoc | null>(null)
+  /** The document before a sweep or a move: the whole gesture is one undo step. */
+  const sweepBase = useRef<SketchDoc | null>(null)
+  const lastEnd = useRef<Vec3 | null>(null)
+  const lasso = useRef<Point2[] | null>(null)
+  const moveFrom = useRef<Vec3 | null>(null)
   const straighten = useRef(0)
-  const modifier = useRef<'orbit' | 'pan' | null>(null)
+  const modifier = useRef<'orbit' | 'pan' | 'zoom' | null>(null)
+
+  const drawLasso = () => {
+    const path = lassoRef.current
+    if (path) path.setAttribute('points', (lasso.current ?? []).map((p) => `${p.x},${p.y}`).join(' '))
+  }
+
+  /** Is this point within the box around what is selected? */
+  const overSelection = (x: number, y: number): boolean => {
+    const { engine } = store.getState()
+    if (!engine) return false
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const st of selectedStrokes()) {
+      for (let i = 0; i < st.points.length; i += 4) {
+        const p = engine.project([st.points[i], st.points[i + 1], st.points[i + 2]])
+        if (!p) continue
+        minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y)
+      }
+    }
+    const box = [{ x: minX - 12, y: minY - 12 }, { x: maxX + 12, y: minY - 12 }, { x: maxX + 12, y: maxY + 12 }, { x: minX - 12, y: maxY + 12 }]
+    return pointInPolygon({ x, y }, box)
+  }
   const lastPenInfo = useRef(0)
 
   // The finger setting lives in the store; the arbiter also turns it off on a pen.
@@ -101,8 +139,10 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
     if (!engine || !liveDirty.current) return
     liveDirty.current = false
     const l = live.current
-    if (!l || l.samples.length === 0) { engine.setLive(null); return }
-    engine.setLive({ id: 'live', brush: l.tool === 'line' ? 'pen' : l.tool, color: l.color, width: l.width, points: Float32Array.from(l.samples) }, false)
+    if (!l || l.samples.length === 0) { engine.setLive([]); return }
+    const stroke: Stroke = { id: 'live', brush: l.tool === 'line' ? 'pen' : l.tool, color: l.color, width: l.width, opacity: l.opacity, points: Float32Array.from(l.samples) }
+    const { plane, symmetry } = store.getState()
+    engine.setLive([stroke, ...mirrorMaps(plane, symmetry).map((f, i) => mapStroke(stroke, f, `live-${i}`))], false)
   }, [])
 
   useEffect(() => {
@@ -122,7 +162,7 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
   const extend = useCallback((x: number, y: number, t: number, e: PointerEvent) => {
     const l = live.current
     const { engine, ink, plane } = store.getState()
-    if (!l || !engine) return
+    if (!l || !engine || l.frozen) return
     l.penX = x
     l.penY = y
     const at = l.straight ? { x, y } : l.stabilizer.push(x, y)
@@ -146,11 +186,18 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
     straighten.current = window.setTimeout(() => {
       const l = live.current
       if (!l || l.straight || l.samples.length < 8) return
-      const n = l.samples.length
+      const { plane } = store.getState()
+      const shape = recognizeShape(l.samples, plane)
       l.straight = true
-      const start: Vec3 = [l.samples[0], l.samples[1], l.samples[2]]
-      const end = snapToAxes(start, [l.samples[n - 4], l.samples[n - 3], l.samples[n - 2]], store.getState().plane)
-      l.samples = [start[0], start[1], start[2], l.samples[3], end[0], end[1], end[2], l.samples[n - 1]]
+      if (shape.kind === 'line') {
+        const start: Vec3 = [l.samples[0], l.samples[1], l.samples[2]]
+        const n = l.samples.length
+        const end = snapToAxes(start, [l.samples[n - 4], l.samples[n - 3], l.samples[n - 2]], plane)
+        l.samples = [start[0], start[1], start[2], l.samples[3], end[0], end[1], end[2], l.samples[n - 1]]
+      } else {
+        l.samples = shape.points
+        l.frozen = true
+      }
       markLive()
       navigator.vibrate?.(8)
     }, STRAIGHTEN_MS)
@@ -185,18 +232,23 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
     if (!engine) return
     live.current = null
     liveDirty.current = false
-    if (!l || l.samples.length === 0) { engine.setLive(null); return }
+    if (!l || l.samples.length === 0) { engine.setLive([]); return }
     // The stabilizer trails the pen: finish where the pen actually lifted.
     if (!l.straight && !restart) {
       const hit = engine.hitPlane(l.penX, l.penY)
       if (hit) l.samples.push(hit[0], hit[1], hit[2], l.samples[l.samples.length - 1])
     }
     const raw = Float32Array.from(l.samples)
-    snapEnds(raw)
+    if (!l.frozen) snapEnds(raw)
     const points = finishStroke(raw, engine.worldPerPixel(), restart ? { ...ink, exitTaper: 0 } : ink, l.straight)
-    const stroke: Stroke = { id: newId(), brush: l.tool === 'line' ? 'pen' : l.tool, color: l.color, width: l.width, points }
-    if (!edit((doc) => addStroke(doc, stroke))) flash(tx('layers.locked'))
-    engine.setLive(null)
+    const stroke: Stroke = { id: newId(), brush: l.tool === 'line' ? 'pen' : l.tool, color: l.color, width: l.width, opacity: l.opacity, points }
+    const { plane, symmetry, recent, setPrefs } = store.getState()
+    const all = [stroke, ...mirrorMaps(plane, symmetry).map((f) => mapStroke(stroke, f, newId()))]
+    if (edit((doc) => addStrokes(doc, all))) {
+      lastEnd.current = [points[points.length - 4], points[points.length - 3], points[points.length - 2]]
+      if (recent[0] !== l.color) setPrefs({ recent: pushRecent(recent, l.color) })
+    } else flash(tx('layers.locked'))
+    engine.setLive([])
     if (restart) {
       const n = l.samples.length
       live.current = { ...l, samples: l.samples.slice(n - 4) }
@@ -204,10 +256,15 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
   }, [tx])
 
   const eraseAt = useCallback((x: number, y: number) => {
-    const { engine, touch } = store.getState()
+    const { engine, touch, eraser } = store.getState()
     if (!engine) return
-    const ids = engine.strokesAt(x, y, ERASER_RADIUS_PX)
-    if (ids.length) touch((doc) => removeStrokes(doc, new Set(ids)))
+    if (engine.strokesAt(x, y, ERASER_RADIUS_PX).length === 0) return
+    if (eraser === 'stroke') {
+      const ids = engine.strokesAt(x, y, ERASER_RADIUS_PX)
+      touch((doc) => removeStrokes(doc, new Set(ids)))
+    } else {
+      touch((doc) => mapLayerStrokes(doc, (strokes) => eraseAround(strokes, x, y, ERASER_RADIUS_PX, (p) => engine.project(p))))
+    }
   }, [])
 
   const run = useCallback((actions: GestureAction[], event?: PointerEvent) => {
@@ -235,16 +292,40 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
             } else s.flash(tx('plane.pickNothing'))
             break
           }
+          if (current === 'picker') {
+            pickColorAt(x, y)
+            break
+          }
+          if (current === 'lasso') {
+            const hit = engine.hitPlane(x, y)
+            if (s.selection.length && hit && overSelection(x, y)) {
+              // Inside the selection: this drag moves it, as one undo step.
+              sweepBase.current = s.history.present
+              moveFrom.current = hit
+            } else {
+              s.set({ selection: [] })
+              syncSelection()
+              lasso.current = [{ x, y }]
+              drawLasso()
+            }
+            break
+          }
           s.set({ drawing: true })
           if (current === 'eraser') {
-            eraseBase.current = s.history.present
+            sweepBase.current = s.history.present
             eraseAt(x, y)
             break
           }
           const t = action.contact.timeMs
           live.current = {
-            samples: [], tool: current, color: s.color, width: s.width, straight: current === 'line',
+            samples: [], tool: current, color: s.color, width: s.width, opacity: s.opacity, frozen: false, straight: current === 'line',
             stabilizer: new Stabilizer(s.ink.stabilizer), weight: null, lastX: x, lastY: y, lastT: t, penX: x, penY: y,
+          }
+          // Shift: a straight line from where the last stroke ended.
+          if (event?.shiftKey && lastEnd.current) {
+            const e = lastEnd.current
+            live.current.samples.push(e[0], e[1], e[2], 0.7)
+            live.current.straight = true
           }
           if (event) extend(x, y, t, event)
           if (current === 'line' && live.current.samples.length === 4) live.current.samples.push(...live.current.samples)
@@ -254,7 +335,19 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
         }
         case 'draw-move': {
           const { x, y, timeMs } = action.contact
-          if (eraseBase.current) { eraseAt(x, y); break }
+          if (lasso.current) { lasso.current.push({ x, y }); drawLasso(); break }
+          if (moveFrom.current) {
+            const hit = engine.hitPlane(x, y)
+            if (hit) {
+              const delta = sub(hit, moveFrom.current)
+              moveFrom.current = hit
+              const ids = new Set(s.selection)
+              s.touch((doc) => mapLayerStrokes(doc, (strokes) => (strokes.some((st) => ids.has(st.id)) ? strokes.map((st) => (ids.has(st.id) ? mapStroke(st, translateBy(delta)) : st)) : strokes)))
+              syncSelection()
+            }
+            break
+          }
+          if (sweepBase.current) { eraseAt(x, y); break }
           const l = live.current
           if (!l || !event) break
           const samples = event.getCoalescedEvents?.() ?? []
@@ -272,9 +365,20 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
         }
         case 'draw-end': {
           s.set({ drawing: false })
-          const base = eraseBase.current
+          if (lasso.current) {
+            const polygon = lasso.current
+            lasso.current = null
+            drawLasso()
+            const page = activePage(s.history.present)
+            const ids = page.layers.filter((l) => l.visible && !l.locked).flatMap((l) => l.strokes).filter((st) => strokeInLasso(st, polygon, (p) => engine.project(p))).map((st) => st.id)
+            s.set({ selection: ids })
+            syncSelection()
+            break
+          }
+          moveFrom.current = null
+          const base = sweepBase.current
           if (base) {
-            eraseBase.current = null
+            sweepBase.current = null
             const swept = store.getState().history
             if (swept.present !== base) {
               // The whole sweep is one undo step, back to before it started.
@@ -288,20 +392,24 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
         case 'draw-cancel':
           window.clearTimeout(straighten.current)
           s.set({ drawing: false })
-          if (eraseBase.current) {
-            const base = eraseBase.current
-            eraseBase.current = null
+          if (sweepBase.current) {
+            const base = sweepBase.current
+            sweepBase.current = null
             s.touch(() => base)
           }
+          lasso.current = null
+          moveFrom.current = null
+          drawLasso()
           live.current = null
           liveDirty.current = false
-          engine.setLive(null)
+          engine.setLive([])
           break
         case 'orbit': orbitBy(action.dx, action.dy); break
         case 'pan': panBy(action.dx, action.dy); break
         case 'zoom': zoomBy(action.factor, action.x, action.y, box.clientWidth, box.clientHeight); break
         case 'undo': s.undo(); break
         case 'redo': s.redo(); break
+        case 'toggle-ui': s.set({ uiHidden: !s.uiHidden }); break
       }
     }
   }, [armStraighten, boxRef, commitLive, eraseAt, extend, tx])
@@ -335,25 +443,40 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
   // Navigation and shortcuts from a keyboard: desk tablets, folios, laptops.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.closest?.('input,textarea,select')) return
+      if (isTyping(e.target)) return
       const s = store.getState()
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault()
-        if (e.shiftKey) s.redo()
-        else s.undo()
+      if (e.metaKey || e.ctrlKey) {
+        const key = e.key.toLowerCase()
+        if (key === 'z') { e.preventDefault(); if (e.shiftKey) s.redo(); else s.undo() }
+        if (key === 'y') { e.preventDefault(); s.redo() }
+        if (key === 'd') { e.preventDefault(); s.set({ selection: [] }); syncSelection() }
         return
       }
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key === '[') s.setPrefs({ width: Math.max(0.5, s.width - 0.5) })
-      if (e.key === ']') s.setPrefs({ width: Math.min(40, s.width + 0.5) })
-      const map: Record<string, SketchTool> = { p: 'pen', b: 'pencil', m: 'marker', l: 'line', e: 'eraser' }
+      if (e.altKey) return
+      if (e.key === '[') s.setPrefs({ width: Math.max(0.5, s.width - (s.width > 10 ? 2 : 0.5)) })
+      if (e.key === ']') s.setPrefs({ width: Math.min(60, s.width + (s.width >= 10 ? 2 : 0.5)) })
+      // Photoshop, Clip Studio and Krita all set opacity from the number row.
+      if (/^[0-9]$/.test(e.key)) s.setPrefs({ opacity: e.key === '0' ? 1 : Number(e.key) / 10 })
+      // Tab still walks the controls for anyone on them: it only hides from the drawing.
+      if (e.key === 'Tab' && document.activeElement === document.body) { e.preventDefault(); s.set({ uiHidden: !s.uiHidden }) }
+      if (e.key === 'Escape') { s.set({ selection: [] }); syncSelection() }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && s.selection.length) deleteSelection()
+      if (e.key.toLowerCase() === 'x') s.setPrefs({ color: s.colorB, colorB: s.color })
+      if (e.key.toLowerCase() === 'd') s.setPrefs({ color: '#17130F', colorB: '#FFFFFF' })
+      if (e.key === '?') s.setPrefs({ tab: 'file', railOpen: true })
+      const map: Record<string, SketchTool> = { p: 'pen', b: 'pencil', y: 'marker', u: 'line', e: 'eraser', l: 'lasso', i: 'picker' }
       const next = map[e.key.toLowerCase()]
       if (next) s.setPrefs({ tool: next })
     }
     const onModifier = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.closest?.('input,textarea,select')) return
-      if (e.code === 'Space') { e.preventDefault(); modifier.current = e.type === 'keydown' ? 'pan' : null }
-      if (e.key === 'Alt') { e.preventDefault(); modifier.current = e.type === 'keydown' ? 'orbit' : null }
+      if (isTyping(e.target)) return
+      // Space pans, as everywhere. With Shift it turns, as Krita rotates its canvas;
+      // with Ctrl it zooms, as in Clip Studio and Photoshop.
+      if (e.code === 'Space' && !(e.target as HTMLElement)?.closest?.('button,a,[role=slider]')) {
+        e.preventDefault()
+        modifier.current = e.type === 'keydown' ? (e.shiftKey ? 'orbit' : e.ctrlKey || e.metaKey ? 'zoom' : 'pan') : null
+      }
+      if (e.key === 'Alt') e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     window.addEventListener('keydown', onModifier)
@@ -370,9 +493,17 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
       e.preventDefault()
       // Capture can refuse a pointer that has just gone; the stroke still has to start.
       try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* moves stay on the box */ }
+      // Back to the drawing: a control keeping focus would swallow Space and Tab.
+      ;(document.activeElement as HTMLElement | null)?.blur?.()
       store.getState().set({ sheetOpen: false })
       report(e.nativeEvent)
       moveRing(e.nativeEvent, false)
+      // Alt samples a colour in Clip Studio and Photoshop, whatever tool is in hand.
+      if (e.altKey) {
+        const r = boxRef.current!.getBoundingClientRect()
+        pickColorAt(e.clientX - r.left, e.clientY - r.top)
+        return
+      }
       run(arbiter.current.down(contactOf(e.nativeEvent)), e.nativeEvent)
     },
     onPointerMove: (e) => {

@@ -9,7 +9,9 @@
     "marker": "Marker",
     "line": "Gerade Linie",
     "eraser": "Radierer",
-    "pick": "Ebene aus der Zeichnung setzen"
+    "pick": "Ebene aus der Zeichnung setzen",
+    "lasso": "Lasso",
+    "picker": "Farbe aufnehmen"
   },
   "color": "Farbe",
   "customColor": "Eigene Farbe",
@@ -51,7 +53,11 @@
     "lock": "Sperren",
     "unlock": "Entsperren",
     "delete": "Ebene löschen",
-    "locked": "Diese Ebene ist gesperrt oder ausgeblendet."
+    "locked": "Diese Ebene ist gesperrt oder ausgeblendet.",
+    "up": "Nach oben",
+    "down": "Nach unten",
+    "duplicate": "Duplizieren",
+    "merge": "Nach unten vereinen"
   },
   "pages": {
     "label": "Seiten",
@@ -147,7 +153,8 @@
     "stabilizer": "Stabilisator",
     "entry": "Strichanfang",
     "exit": "Strichende",
-    "snap": "Enden verbinden"
+    "snap": "Enden verbinden",
+    "opacity": "Deckkraft"
   },
   "pen": {
     "label": "Stift",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Bild gespeichert. Laden Sie es in Instagram hoch.",
     "savedLinkedin": "Bild gespeichert. Hängen Sie es an Ihren LinkedIn-Beitrag an."
+  },
+  "ui": {
+    "show": "Oberfläche zeigen"
+  },
+  "swapColors": "Farben tauschen",
+  "recentColors": "Letzte Farben",
+  "brushes": {
+    "label": "Pinsel",
+    "technical": "Technischer Stift",
+    "ink": "Tinte",
+    "sketch": "Skizze",
+    "shade": "Schattierung",
+    "marker": "Marker",
+    "save": "Als Pinsel speichern",
+    "mine": "Mein Pinsel {{n}}",
+    "delete": "Pinsel löschen"
+  },
+  "symmetry": {
+    "label": "Symmetrie",
+    "off": "Aus",
+    "vertical": "Links-rechts",
+    "horizontal": "Oben-unten",
+    "both": "Beide"
+  },
+  "eraser": {
+    "label": "Radierer",
+    "part": "Teil des Strichs",
+    "stroke": "Ganzer Strich"
+  },
+  "selection": {
+    "label": "Auswahl",
+    "count": "{{n}} ausgewählt",
+    "duplicate": "Duplizieren",
+    "delete": "Löschen",
+    "done": "Fertig"
+  },
+  "keys": {
+    "label": "Tastenkürzel",
+    "tools": "Stift, Bleistift, Marker, Linie",
+    "eraser": "Radierer",
+    "lasso": "Lasso",
+    "picker": "Farbe aufnehmen",
+    "size": "Pinselgröße",
+    "opacity": "Deckkraft",
+    "colors": "Tauschen, Standardfarben",
+    "pan": "Verschieben",
+    "orbit": "Drehen",
+    "zoom": "Zoom",
+    "lineFrom": "Linie vom letzten Strich",
+    "hide": "Oberfläche ausblenden",
+    "undo": "Rückgängig, wiederholen",
+    "deselect": "Auswahl aufheben"
   }
 }

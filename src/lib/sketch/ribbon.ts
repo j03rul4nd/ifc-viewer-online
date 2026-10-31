@@ -47,7 +47,7 @@ export function writeRibbon(stroke: Stroke, out: RibbonBuffers, indexOffset: num
   if (n === 0) return 0
   const count = Math.max(n, 2)
   const [r, g, b] = hexToRgb(stroke.color)
-  const a = Math.round(BRUSH_ALPHA[stroke.brush] * 255)
+  const a = Math.round(BRUSH_ALPHA[stroke.brush] * (stroke.opacity ?? 1) * 255)
   const base = out.vertexCount
 
   const read = (i: number): [number, number, number, number] => {

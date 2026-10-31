@@ -20,6 +20,7 @@ export const PAPER: Record<PaperKind, { bg: string; ink: string; grid: string; p
 }
 
 const FOV = 38
+const SELECTION_COLOR = '#2F7BFF'
 export const DEFAULT_ORBIT: OrbitState = { target: [0, 1, 0], azimuth: 0.62, elevation: 0.42, distance: 12, mode: 'perspective' }
 
 const RIBBON_VERTEX = /* glsl */ `
@@ -61,13 +62,14 @@ const RIBBON_VERTEX = /* glsl */ `
 `
 
 const RIBBON_FRAGMENT = /* glsl */ `
+  uniform float uOpacity;
   varying vec4 vColor;
   varying float vSide;
   varying float vWidth;
   float noise(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   void main() {
     float edge = 1.0 - smoothstep(1.0 - 2.0 / vWidth, 1.0, abs(vSide));
-    float alpha = vColor.a * edge;
+    float alpha = vColor.a * edge * uOpacity;
     // Only the pencil has this alpha band: its tooth comes from the paper, in screen space.
     if (vColor.a > 0.5 && vColor.a < 0.95 && vWidth < 40.0) alpha *= 0.55 + 0.45 * noise(floor(gl_FragCoord.xy / 1.5));
     if (alpha < 0.004) discard;
@@ -231,6 +233,7 @@ export class SketchRenderer {
   private readonly ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, -2000, 5000)
   private readonly raycaster = new THREE.Raycaster()
   private readonly ribbon: THREE.ShaderMaterial
+  private readonly selection: RibbonBatch
   private readonly batches = new Map<string, RibbonBatch>()
   private readonly live: RibbonBatch
   private readonly planeMesh: THREE.Mesh
@@ -281,14 +284,12 @@ export class SketchRenderer {
     canvas.addEventListener('webglcontextlost', this.handleLost)
     canvas.addEventListener('webglcontextrestored', this.handleRestored)
 
-    this.ribbon = new THREE.ShaderMaterial({
-      vertexShader: RIBBON_VERTEX, fragmentShader: RIBBON_FRAGMENT, transparent: true,
-      depthTest: false, depthWrite: false, side: THREE.DoubleSide,
-      uniforms: { uResolution: { value: new THREE.Vector2(1, 1) }, uFadeNear: { value: 10 }, uFadeFar: { value: 30 } },
-    })
+    this.ribbon = this.ribbonMaterial()
     this.live = new RibbonBatch(this.ribbon)
     this.live.mesh.renderOrder = 1000
-    this.scene.add(this.live.mesh)
+    this.selection = new RibbonBatch(this.ribbon)
+    this.selection.mesh.renderOrder = 1001
+    this.scene.add(this.live.mesh, this.selection.mesh)
 
     const quad = new THREE.PlaneGeometry(1, 1)
     this.groundMesh = this.guideMesh(quad, 0)
@@ -300,6 +301,21 @@ export class SketchRenderer {
     this.scene.add(this.lights)
     this.setPaper('warm')
     this.applyCamera()
+  }
+
+  /** One per layer for its opacity; everything else is shared, so one write reaches all. */
+  private ribbonMaterial(): THREE.ShaderMaterial {
+    const shared = this.ribbon?.uniforms
+    return new THREE.ShaderMaterial({
+      vertexShader: RIBBON_VERTEX, fragmentShader: RIBBON_FRAGMENT, transparent: true,
+      depthTest: false, depthWrite: false, side: THREE.DoubleSide,
+      uniforms: {
+        uResolution: shared?.uResolution ?? { value: new THREE.Vector2(1, 1) },
+        uFadeNear: shared?.uFadeNear ?? { value: 10 },
+        uFadeFar: shared?.uFadeFar ?? { value: 30 },
+        uOpacity: { value: 1 },
+      },
+    })
   }
 
   private guideMesh(quad: THREE.BufferGeometry, renderOrder: number): THREE.Mesh {
@@ -421,17 +437,19 @@ export class SketchRenderer {
       seen.add(layer.id)
       let batch = this.batches.get(layer.id)
       if (!batch) {
-        batch = new RibbonBatch(this.ribbon)
+        batch = new RibbonBatch(this.ribbonMaterial())
         this.batches.set(layer.id, batch)
         this.scene.add(batch.mesh)
       }
       batch.sync(layer.strokes)
       batch.mesh.visible = layer.visible
+      ;(batch.mesh.material as THREE.ShaderMaterial).uniforms.uOpacity.value = layer.opacity ?? 1
       batch.mesh.renderOrder = 10 + index
     })
     for (const [id, batch] of this.batches) {
       if (seen.has(id)) continue
       this.scene.remove(batch.mesh)
+      ;(batch.mesh.material as THREE.Material).dispose()
       batch.dispose()
       this.batches.delete(id)
     }
@@ -439,9 +457,31 @@ export class SketchRenderer {
   }
 
   /** Pass false from inside onBeforeFrame: that frame is already on its way. */
-  setLive(stroke: Stroke | null, invalidate = true): void {
-    this.live.sync(stroke ? [stroke] : [])
+  setLive(strokes: readonly Stroke[], invalidate = true): void {
+    this.live.sync(strokes)
     if (invalidate) this.invalidate()
+  }
+
+  /** Show these strokes as selected, drawn over the drawing in the selection colour. */
+  setSelection(strokes: readonly Stroke[]): void {
+    this.selection.sync(strokes.map((s) => ({ ...s, color: SELECTION_COLOR, opacity: 0.8, brush: 'pen' as const })))
+    this.invalidate()
+  }
+
+  /** What colour is on screen at this point: ink, a reference, a model, or the paper. */
+  pickColor(x: number, y: number): string {
+    const was = this.showGuides
+    this.showGuides = false
+    this.renderNow()
+    const c = document.createElement('canvas')
+    c.width = c.height = 1
+    const ctx = c.getContext('2d', { willReadFrequently: true })
+    const ratio = this.canvas.width / this.width
+    ctx?.drawImage(this.canvas, x * ratio, y * ratio, 1, 1, 0, 0, 1, 1)
+    const data = ctx?.getImageData(0, 0, 1, 1).data
+    this.showGuides = was
+    this.invalidate()
+    return data ? `#${[data[0], data[1], data[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}` : '#000000'
   }
 
   /** Replay: show the first `count` strokes in layer order; null restores everything. */

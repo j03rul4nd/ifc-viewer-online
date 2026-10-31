@@ -23,6 +23,8 @@ export interface Stroke {
   color: string
   /** Screen pixels at full pressure. Strokes keep their weight at any zoom. */
   width: number
+  /** 0..1, on top of the brush's own. Absent means 1. */
+  opacity?: number
   /** x, y, z, pressure (0..1) per point. */
   points: Float32Array
 }
@@ -32,6 +34,8 @@ export interface SketchLayer {
   name: string
   visible: boolean
   locked: boolean
+  /** 0..1. Absent means 1. */
+  opacity?: number
   strokes: readonly Stroke[]
 }
 

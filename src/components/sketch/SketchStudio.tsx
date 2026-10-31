@@ -16,7 +16,7 @@ import { useSketchStore } from '../../stores/sketchStore'
 import { ErrorBoundary } from '../ErrorBoundary'
 import ReferencePane from './ReferencePane'
 import ReferenceWindow from './ReferenceWindow'
-import { PageStrip, StudioControls, TopBar } from './SketchPanels'
+import { PageStrip, SelectionBar, StudioControls, TopBar } from './SketchPanels'
 
 export type Tx = (key: string, o?: Record<string, unknown>) => string
 
@@ -35,6 +35,7 @@ function Studio({ tx }: { tx: Tx }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
+  const lassoRef = useRef<SVGPolylineElement>(null)
   const [webglFailed, setWebglFailed] = useState(false)
   const onFailed = useCallback(() => setWebglFailed(true), [])
 
@@ -52,11 +53,12 @@ function Studio({ tx }: { tx: Tx }) {
   const refsOpen = useSketchStore((s) => s.refsOpen)
   const paper = useSketchStore((s) => s.history.present.paper)
   const drawing = useSketchStore((s) => s.drawing)
+  const uiHidden = useSketchStore((s) => s.uiHidden)
   const { width, height, layout, hardware } = useStudioLayout(rootRef, railSide === 'right')
 
   useSketchEngine(canvasRef, boxRef, onFailed)
   useSketchPersistence(handoff, tx as (key: string) => string)
-  const input = useSketchInput(boxRef, ringRef, tx as (key: string) => string)
+  const input = useSketchInput(boxRef, ringRef, lassoRef, tx as (key: string) => string)
 
   // Safari's page pinch ignores touch-action in places; the drawing surface owns gestures.
   useEffect(() => {
@@ -112,12 +114,24 @@ function Studio({ tx }: { tx: Tx }) {
         >
           <canvas ref={canvasRef} className="w-full h-full block" />
           <div ref={ringRef} className="absolute left-0 top-0 rounded-full pointer-events-none" style={{ opacity: 0, border: '1px solid #888' }} />
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden>
+            <polyline ref={lassoRef} fill="rgba(47,123,255,.08)" stroke="#2F7BFF" strokeWidth="1.5" strokeDasharray="5 4" />
+          </svg>
         </div>
-        <div style={chrome}>
-          <TopBar tx={tx} compact={!regular} />
-          <StudioControls tx={tx} regular={regular} short={layout.short} />
-          {regular && !layout.short && <PageStrip tx={tx} />}
-        </div>
+        {!uiHidden && (
+          <div style={chrome}>
+            <TopBar tx={tx} compact={!regular} />
+            <StudioControls tx={tx} regular={regular} short={layout.short} />
+            {regular && !layout.short && <PageStrip tx={tx} />}
+            <SelectionBar tx={tx} regular={regular} />
+          </div>
+        )}
+        {uiHidden && (
+          <button
+            type="button" aria-label={tx('ui.show')} title={tx('ui.show')} onClick={() => useSketchStore.getState().set({ uiHidden: false })}
+            className="absolute right-2 z-20 w-10 h-10 rounded-full opacity-40 text-[14px]" style={{ top: 'max(8px, env(safe-area-inset-top))', background: 'var(--sk-panel)' }}
+          >⤢</button>
+        )}
         <Notices tx={tx} regular={regular} short={layout.short} />
         {refsOpen && !docked && <FloatingWindow bounds={{ width, height }} short={layout.short}><ReferencePane tx={tx} /></FloatingWindow>}
       </div>

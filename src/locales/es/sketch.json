@@ -9,7 +9,9 @@
     "marker": "Rotulador",
     "line": "Línea recta",
     "eraser": "Borrador",
-    "pick": "Fijar plano desde el dibujo"
+    "pick": "Fijar plano desde el dibujo",
+    "lasso": "Lazo",
+    "picker": "Tomar un color"
   },
   "color": "Color",
   "customColor": "Color personalizado",
@@ -51,7 +53,11 @@
     "lock": "Bloquear",
     "unlock": "Desbloquear",
     "delete": "Eliminar capa",
-    "locked": "Esta capa está bloqueada u oculta."
+    "locked": "Esta capa está bloqueada u oculta.",
+    "up": "Subir",
+    "down": "Bajar",
+    "duplicate": "Duplicar",
+    "merge": "Combinar abajo"
   },
   "pages": {
     "label": "Páginas",
@@ -147,7 +153,8 @@
     "stabilizer": "Estabilizador",
     "entry": "Inicio del trazo",
     "exit": "Final del trazo",
-    "snap": "Unir extremos"
+    "snap": "Unir extremos",
+    "opacity": "Opacidad"
   },
   "pen": {
     "label": "Lápiz",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Imagen guardada. Súbela desde Instagram.",
     "savedLinkedin": "Imagen guardada. Adjúntala a tu publicación de LinkedIn."
+  },
+  "ui": {
+    "show": "Mostrar la interfaz"
+  },
+  "swapColors": "Intercambiar colores",
+  "recentColors": "Colores recientes",
+  "brushes": {
+    "label": "Pinceles",
+    "technical": "Pluma técnica",
+    "ink": "Tinta",
+    "sketch": "Boceto",
+    "shade": "Sombreado",
+    "marker": "Rotulador",
+    "save": "Guardar como pincel",
+    "mine": "Mi pincel {{n}}",
+    "delete": "Eliminar pincel"
+  },
+  "symmetry": {
+    "label": "Simetría",
+    "off": "No",
+    "vertical": "Izq.-dcha.",
+    "horizontal": "Arriba-abajo",
+    "both": "Ambas"
+  },
+  "eraser": {
+    "label": "Borrador",
+    "part": "Parte del trazo",
+    "stroke": "Trazo entero"
+  },
+  "selection": {
+    "label": "Selección",
+    "count": "{{n}} seleccionados",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar",
+    "done": "Listo"
+  },
+  "keys": {
+    "label": "Atajos",
+    "tools": "Pluma, lápiz, rotulador, línea",
+    "eraser": "Borrador",
+    "lasso": "Lazo",
+    "picker": "Tomar un color",
+    "size": "Tamaño del pincel",
+    "opacity": "Opacidad",
+    "colors": "Intercambiar, colores por defecto",
+    "pan": "Desplazar",
+    "orbit": "Orbitar",
+    "zoom": "Zoom",
+    "lineFrom": "Línea desde el último trazo",
+    "hide": "Ocultar la interfaz",
+    "undo": "Deshacer, rehacer",
+    "deselect": "Quitar selección"
   }
 }
