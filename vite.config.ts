@@ -333,6 +333,9 @@ export default defineConfig({
     port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
     // /api/lead is a Vercel rewrite to the Worker in production; in dev it goes
     // to `wrangler dev` (cf-worker/, port 8787).
+    // A git worktree links node_modules from the main checkout, outside this root,
+    // and the tests import the 7-Zip wasm from there.
+    ...(process.env.VITEST ? { fs: { strict: false } } : {}),
     proxy: { '/api/lead': { target: 'http://127.0.0.1:8787', rewrite: () => '/lead' } },
     headers: {
       'Cross-Origin-Opener-Policy':   'same-origin',
