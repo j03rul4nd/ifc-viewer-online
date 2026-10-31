@@ -8,6 +8,8 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { intersectPlane, planeFromNormal, planeNormal } from './plane'
+import type { EndpointCandidate } from './ink'
+import type { ContextItem, ContextPoints } from './storage'
 import { isAppendOf, ribbonSize, VERTEX_STRIDE, writeRibbon, type RibbonBuffers } from './ribbon'
 import type { OrbitState, PaperKind, PlacedImage, SketchLayer, SketchPlane, Stroke, Vec3 } from './types'
 
@@ -204,6 +206,20 @@ function planeUniforms(tint: string, dotColor: string, fill: number, dots: numbe
   }
 }
 
+function buildPoints(item: ContextPoints): THREE.Points {
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.BufferAttribute(item.positions, 3))
+  if (item.colors) geometry.setAttribute('color', new THREE.BufferAttribute(item.colors, 3, true))
+  const material = new THREE.PointsMaterial({
+    size: 1.6, sizeAttenuation: false, vertexColors: !!item.colors, color: item.colors ? 0xffffff : 0x6e5a4c,
+    transparent: true, opacity: 0.75, depthWrite: false,
+  })
+  const points = new THREE.Points(geometry, material)
+  points.renderOrder = -1
+  points.frustumCulled = false
+  return points
+}
+
 const toV = (v: Vec3): THREE.Vector3 => new THREE.Vector3(v[0], v[1], v[2])
 
 export interface PickResult { kind: 'surface' | 'stroke'; plane: SketchPlane }
@@ -235,6 +251,24 @@ export class SketchRenderer {
 
   /** Runs after a frame is drawn: the second view follows, for one. */
   onFrame: (() => void) | null = null
+  /** Runs before a frame is drawn: the live stroke is built here, once per frame. */
+  onBeforeFrame: (() => void) | null = null
+  onContextLost: (() => void) | null = null
+  onContextRestored: (() => void) | null = null
+  private contextLost = false
+  private paper: PaperKind = 'warm'
+  private readonly handleLost = () => {
+    this.contextLost = true
+    this.onContextLost?.()
+  }
+  private readonly handleRestored = () => {
+    // three re-creates its GPU state; the buffers upload again from their arrays.
+    this.contextLost = false
+    // The clear colour is GL state and went with the context.
+    this.setPaper(this.paper)
+    this.onContextRestored?.()
+    this.invalidate()
+  }
 
   constructor(readonly canvas: HTMLCanvasElement, plane: SketchPlane) {
     this.plane = plane
@@ -244,6 +278,8 @@ export class SketchRenderer {
       preserveDrawingBuffer: true,
     })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3))
+    canvas.addEventListener('webglcontextlost', this.handleLost)
+    canvas.addEventListener('webglcontextrestored', this.handleRestored)
 
     this.ribbon = new THREE.ShaderMaterial({
       vertexShader: RIBBON_VERTEX, fragmentShader: RIBBON_FRAGMENT, transparent: true,
@@ -281,6 +317,7 @@ export class SketchRenderer {
   get orbitState(): OrbitState { return this.orbit }
 
   setPaper(paper: PaperKind): void {
+    this.paper = paper
     const p = PAPER[paper]
     this.renderer.setClearColor(new THREE.Color(p.bg), 1)
     const set = (mesh: THREE.Mesh, fill: number, dots: number) => {
@@ -401,9 +438,10 @@ export class SketchRenderer {
     this.invalidate()
   }
 
-  setLive(stroke: Stroke | null): void {
+  /** Pass false from inside onBeforeFrame: that frame is already on its way. */
+  setLive(stroke: Stroke | null, invalidate = true): void {
     this.live.sync(stroke ? [stroke] : [])
-    this.invalidate()
+    if (invalidate) this.invalidate()
   }
 
   /** Replay: show the first `count` strokes in layer order; null restores everything. */
@@ -464,23 +502,40 @@ export class SketchRenderer {
     }
   }
 
-  /** The models to sketch over, replacing any before. Parses all before touching the scene. */
-  async loadContext(buffers: ArrayBuffer[]): Promise<void> {
+  /** What to sketch over, replacing all before. Parses everything before touching the scene. */
+  async loadContext(items: readonly ContextItem[]): Promise<void> {
     const loader = new GLTFLoader()
-    const scenes = await Promise.all(buffers.map(async (b) => (await loader.parseAsync(b, '')).scene))
-    this.clearContext()
-    const material = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })
-    for (const scene of scenes) {
+    const built = await Promise.all(items.map(async (item) => {
+      if (item.kind === 'points') return { id: item.id, object: buildPoints(item) as THREE.Object3D }
+      const { scene } = await loader.parseAsync(await item.blob.arrayBuffer(), '')
+      const material = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })
       scene.traverse((o) => {
         const mesh = o as THREE.Mesh
         if (mesh.isMesh) { mesh.material = material; mesh.renderOrder = -1 }
       })
-      this.contextGroup.add(scene)
+      return { id: item.id, object: scene as THREE.Object3D }
+    }))
+    this.clearContext()
+    for (const { id, object } of built) {
+      object.name = id
+      this.contextGroup.add(object)
     }
     this.invalidate()
   }
 
+  setContextVisible(id: string, visible: boolean): void {
+    const object = this.contextGroup.getObjectByName(id)
+    if (object) object.visible = visible
+    this.invalidate()
+  }
+
   clearContext(): void {
+    this.contextGroup.traverse((o) => {
+      const mesh = o as THREE.Mesh
+      mesh.geometry?.dispose?.()
+      const material = mesh.material as THREE.Material | undefined
+      material?.dispose?.()
+    })
     this.contextGroup.clear()
     this.invalidate()
   }
@@ -513,11 +568,14 @@ export class SketchRenderer {
   /** Align to the face under the finger, else move through the nearest stroke. */
   pick(x: number, y: number, current: SketchPlane): PickResult | null {
     this.raycaster.setFromCamera(new THREE.Vector2((x / this.width) * 2 - 1, -(y / this.height) * 2 + 1), this.camera)
-    const hit = this.raycaster.intersectObject(this.contextGroup, true)[0]
+    this.raycaster.params.Points.threshold = this.worldPerPixel() * 8
+    const hit = this.raycaster.intersectObject(this.contextGroup, true).find((h) => h.object.visible)
     if (hit?.face) {
       const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
       return { kind: 'surface', plane: planeFromNormal([hit.point.x, hit.point.y, hit.point.z], [n.x, n.y, n.z]) }
     }
+    // A scan point has no face: the plane keeps its angle and moves through it.
+    if (hit) return { kind: 'stroke', plane: { ...current, origin: [hit.point.x, hit.point.y, hit.point.z] } }
     let best: Vec3 | null = null
     let bestDistance = 28
     for (const layer of this.layers) {
@@ -533,6 +591,25 @@ export class SketchRenderer {
       }
     }
     return best ? { kind: 'stroke', plane: { ...current, origin: best } } : null
+  }
+
+  /** Both ends of every visible stroke: what a new line can join. */
+  endpointCandidates(): EndpointCandidate[] {
+    const out: EndpointCandidate[] = []
+    const add = (s: Stroke, i: number) => {
+      const world: Vec3 = [s.points[i], s.points[i + 1], s.points[i + 2]]
+      const p = this.project(world)
+      if (p) out.push({ x: p.x, y: p.y, world })
+    }
+    for (const layer of this.layers) {
+      if (!layer.visible) continue
+      for (const stroke of layer.strokes) {
+        if (stroke.points.length < 8) continue
+        add(stroke, 0)
+        add(stroke, stroke.points.length - 4)
+      }
+    }
+    return out
   }
 
   /** Stroke ids within `radius` px of a screen point, on layers that may be edited. */
@@ -584,7 +661,8 @@ export class SketchRenderer {
   }
 
   renderNow(): void {
-    if (this.disposed) return
+    if (this.disposed || this.contextLost) return
+    this.onBeforeFrame?.()
     this.planeMesh.visible = this.showGuides
     this.groundMesh.visible = this.showGuides
     this.renderer.render(this.scene, this.camera)
@@ -640,6 +718,9 @@ export class SketchRenderer {
   dispose(): void {
     this.disposed = true
     cancelAnimationFrame(this.frame)
+    this.canvas.removeEventListener('webglcontextlost', this.handleLost)
+    this.canvas.removeEventListener('webglcontextrestored', this.handleRestored)
+    this.clearContext()
     for (const b of this.batches.values()) b.dispose()
     this.live.dispose()
     for (const t of this.textures.values()) t.dispose()

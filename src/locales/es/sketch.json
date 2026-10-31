@@ -98,7 +98,8 @@
     "tooMany": "No se pudo leer esa imagen.",
     "top": "Planta",
     "front": "Alzado",
-    "liveEmpty": "Dibuja algo y aparecerá aquí visto desde arriba y de frente."
+    "liveEmpty": "Dibuja algo y aparecerá aquí visto desde arriba y de frente.",
+    "window": "Abrir en otra ventana"
   },
   "context": {
     "load": "Bocetar sobre un modelo (GLB)",
@@ -106,7 +107,10 @@
     "failed": "Ese archivo no se pudo leer como modelo GLB.",
     "loaded": "Modelo cargado. Usa la herramienta de plano para dibujar en cualquiera de sus caras.",
     "preparing": "Preparando tu modelo…",
-    "tooBig": "Ese modelo pesa demasiado para bocetar encima en este dispositivo. Puedes bocetar sin él."
+    "tooBig": "Ese modelo pesa demasiado para bocetar encima en este dispositivo. Puedes bocetar sin él.",
+    "label": "Bajo el boceto",
+    "mesh": "Modelo",
+    "points": "Escaneo"
   },
   "export": {
     "label": "Exportar",
@@ -117,7 +121,50 @@
     "video": "Vídeo del proceso",
     "recording": "Grabando el proceso…",
     "badFile": "Ese archivo no es un boceto.",
-    "noVideo": "Este navegador no puede grabar vídeo."
+    "noVideo": "Este navegador no puede grabar vídeo.",
+    "toApps": "A otras apps",
+    "psd": "Capas (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "Líneas 3D (OBJ)",
+    "psdHint": "El PSD abre con capas en Krita, Clip Studio y Sketchbook. En Procreate, impórtalo desde la Galería para conservarlas.",
+    "pngClear": "PNG transparente"
   },
-  "webgl": "Este dispositivo no pudo iniciar el dibujo en 3D."
+  "webgl": "Este dispositivo no pudo iniciar el dibujo en 3D.",
+  "gpuLost": "El sistema retiró el chip gráfico. Tu dibujo está a salvo y vuelve solo.",
+  "tabs": {
+    "ink": "Tinta",
+    "plane": "Plano",
+    "view": "Vista",
+    "layers": "Capas",
+    "file": "Archivo"
+  },
+  "rail": {
+    "open": "Mostrar herramientas",
+    "close": "Ocultar herramientas"
+  },
+  "ink": {
+    "label": "Trazo",
+    "stabilizer": "Estabilizador",
+    "entry": "Inicio del trazo",
+    "exit": "Final del trazo",
+    "snap": "Unir extremos"
+  },
+  "pen": {
+    "label": "Lápiz",
+    "curve": "Respuesta a la presión",
+    "soft": "Suave",
+    "normal": "Normal",
+    "firm": "Firme",
+    "try": "Traza una línea con tu lápiz para probarlo.",
+    "noPen": "Eso no era un lápiz. Una tableta en modo ratón se ve así.",
+    "noPressure": "Este lápiz no informa de presión. Revisa el controlador de la tableta; en Windows, activa Windows Ink.",
+    "reading": "Presión {{pressure}} % · inclinación {{tilt}}°"
+  },
+  "share": {
+    "label": "Compartir",
+    "instagram": "Historias de Instagram",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "Imagen guardada. Súbela desde Instagram.",
+    "savedLinkedin": "Imagen guardada. Adjúntala a tu publicación de LinkedIn."
+  }
 }

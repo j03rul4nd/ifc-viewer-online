@@ -1,42 +1,5 @@
-// ─── Turning pen samples into a stroke ────────────────────────────────────────
-// Two jobs: steady the hand while it moves without adding lag at speed (a One
-// Euro filter, which smooths slow movement and follows fast movement), and
-// thin the finished stroke so a day of hatching still fits on a phone.
-
-export class OneEuro {
-  private x: number | null = null
-  private dx = 0
-  private t = 0
-
-  constructor(private readonly minCutoff = 1.4, private readonly beta = 0.012, private readonly dCutoff = 1) {}
-
-  private static alpha(cutoff: number, dt: number): number {
-    const tau = 1 / (2 * Math.PI * cutoff)
-    return 1 / (1 + tau / dt)
-  }
-
-  filter(value: number, timeMs: number): number {
-    if (this.x === null) {
-      this.x = value
-      this.t = timeMs
-      return value
-    }
-    // Coalesced samples can share a timestamp; never divide by zero.
-    const dt = Math.max((timeMs - this.t) / 1000, 1 / 1000)
-    this.t = timeMs
-    const dx = (value - this.x) / dt
-    this.dx += OneEuro.alpha(this.dCutoff, dt) * (dx - this.dx)
-    const cutoff = this.minCutoff + this.beta * Math.abs(this.dx)
-    this.x += OneEuro.alpha(cutoff, dt) * (value - this.x)
-    return this.x
-  }
-}
-
-/** A finger or mouse reports no pressure: give it a line with a little taper instead. */
-export function resolvePressure(pointerType: string, pressure: number, sampleIndex: number): number {
-  if (pointerType === 'pen' && pressure > 0) return Math.min(1, Math.max(0.05, pressure))
-  return Math.min(0.75, 0.35 + sampleIndex * 0.08)
-}
+// ─── Stroke geometry helpers ──────────────────────────────────────────────────
+// Thinning a finished stroke, so a day of hatching still fits on a phone.
 
 const POINT = 4
 

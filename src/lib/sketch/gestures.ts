@@ -7,6 +7,8 @@
 //   two fingers    orbit and pinch; a quick tap undoes
 //   three fingers  pan; a quick tap redoes
 //   mouse          left draws, right orbits, middle pans
+//   pen barrel     orbits, as a tablet's side button does in most software
+//   held key       Space pans, Alt orbits, with whatever is pressed
 //
 // A two-finger gesture never lands on both fingers in the same millisecond, so
 // the first finger's stroke is provisional: a second finger arriving soon after
@@ -24,6 +26,10 @@ export interface Contact {
   size?: number
   /** MouseEvent.button */
   button?: number
+  /** MouseEvent.buttons */
+  buttons?: number
+  /** A key held while this contact landed. */
+  modifier?: 'orbit' | 'pan'
 }
 
 export type GestureAction =
@@ -67,6 +73,8 @@ export class GestureArbiter {
   get usingPen(): boolean { return this.penSeen }
 
   down(c: Contact): GestureAction[] {
+    if (c.modifier) return this.navigate(c, c.modifier)
+    if (c.kind === 'pen' && (c.button === 2 || ((c.buttons ?? 0) & 2) !== 0)) return [...this.notePen(), ...this.navigate(c, 'orbit')]
     if (c.kind === 'pen') return this.penDown(c)
     if (c.kind === 'mouse') return this.mouseDown(c)
     return this.touchDown(c)
@@ -125,13 +133,22 @@ export class GestureArbiter {
     return []
   }
 
+  private notePen(): GestureAction[] {
+    if (this.penSeen) return []
+    this.penSeen = true
+    this.fingerDraw = false
+    return [{ type: 'pen-detected' }]
+  }
+
+  private navigate(c: Contact, how: 'orbit' | 'pan'): GestureAction[] {
+    this.mode = how === 'orbit' ? 'mouse-orbit' : 'mouse-pan'
+    this.lastX = c.x
+    this.lastY = c.y
+    return []
+  }
+
   private penDown(c: Contact): GestureAction[] {
-    const out: GestureAction[] = []
-    if (!this.penSeen) {
-      this.penSeen = true
-      this.fingerDraw = false
-      out.push({ type: 'pen-detected' })
-    }
+    const out: GestureAction[] = this.notePen()
     // The hand landed first, as it does: the pen wins, whatever it was doing.
     if (this.mode === 'draw') out.push({ type: 'draw-cancel' })
     this.touches.clear()
@@ -143,12 +160,7 @@ export class GestureArbiter {
   }
 
   private mouseDown(c: Contact): GestureAction[] {
-    if (c.button === 2 || c.button === 1) {
-      this.mode = c.button === 2 ? 'mouse-orbit' : 'mouse-pan'
-      this.lastX = c.x
-      this.lastY = c.y
-      return []
-    }
+    if (c.button === 2 || c.button === 1) return this.navigate(c, c.button === 2 ? 'orbit' : 'pan')
     this.mode = 'draw'
     this.drawer = c.id
     this.drawStart = c.timeMs

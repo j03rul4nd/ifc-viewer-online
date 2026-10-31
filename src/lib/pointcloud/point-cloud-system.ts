@@ -144,6 +144,11 @@ export interface PointCloudSystemAPI {
   setRenderBudget(budget: number): void
   /** Temporarily lower draw pressure while the camera is moving. */
   setInteractionActive(active: boolean): void
+  /**
+   * An evenly thinned copy of what a cloud has resident, in world space, for
+   * work outside this scene. Null if it has nothing resident yet.
+   */
+  samplePoints(cloudId: string, maxPoints: number): { positions: Float32Array; colors?: Uint8Array } | null
   /** World-space bounds of one cloud, or of all of them when id is omitted. */
   getBounds(cloudId?: string): { min: THREE.Vector3; max: THREE.Vector3 } | null
   /** Frame a cloud (or every cloud) with the viewer's own camera framing. */
@@ -955,6 +960,35 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       if (interactionActive === active) return
       interactionActive = active
       invalidateLod()
+    },
+
+    samplePoints(cloudId, maxPoints) {
+      const cloud = clouds.get(cloudId)
+      if (!cloud) return null
+      cloud.root.updateMatrixWorld(true)
+      const chunks = cloud.chunks.map((c) => c.points)
+      const total = chunks.reduce((n, p) => n + (p.geometry.getAttribute('position')?.count ?? 0), 0)
+      if (total === 0) return null
+      const step = Math.max(1, Math.ceil(total / maxPoints))
+      const count = Math.ceil(total / step)
+      const positions = new Float32Array(count * 3)
+      const colorAttribute = chunks[0].geometry.getAttribute('color')
+      const colors = colorAttribute ? new Uint8Array(count * 3) : undefined
+      const v = new THREE.Vector3()
+      let w = 0
+      for (const points of chunks) {
+        const p = points.geometry.getAttribute('position')
+        const c = points.geometry.getAttribute('color')
+        if (!p) continue
+        for (let i = 0; i < p.count && w < count; i += step, w++) {
+          v.fromBufferAttribute(p, i).applyMatrix4(points.matrixWorld)
+          positions[w * 3] = v.x; positions[w * 3 + 1] = v.y; positions[w * 3 + 2] = v.z
+          if (colors && c) {
+            colors[w * 3] = c.getX(i) * 255; colors[w * 3 + 1] = c.getY(i) * 255; colors[w * 3 + 2] = c.getZ(i) * 255
+          }
+        }
+      }
+      return { positions: positions.subarray(0, w * 3), colors: colors?.subarray(0, w * 3) }
     },
 
     getBounds(cloudId) {

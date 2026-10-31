@@ -98,7 +98,8 @@
     "tooMany": "无法读取该图片。",
     "top": "平面图",
     "front": "立面图",
-    "liveEmpty": "开始绘制后，这里会显示俯视和正视效果。"
+    "liveEmpty": "开始绘制后，这里会显示俯视和正视效果。",
+    "window": "在另一个窗口打开"
   },
   "context": {
     "load": "在模型上绘制草图 (GLB)",
@@ -106,7 +107,10 @@
     "failed": "无法将该文件读取为 GLB 模型。",
     "loaded": "模型已加载。使用平面工具可在其任意面上绘制。",
     "preparing": "正在准备模型…",
-    "tooBig": "该模型太大，无法在此设备上叠加绘制。您仍可不带模型绘制草图。"
+    "tooBig": "该模型太大，无法在此设备上叠加绘制。您仍可不带模型绘制草图。",
+    "label": "草图下方",
+    "mesh": "模型",
+    "points": "扫描"
   },
   "export": {
     "label": "导出",
@@ -117,7 +121,50 @@
     "video": "过程视频",
     "recording": "正在录制过程…",
     "badFile": "该文件不是草图文件。",
-    "noVideo": "此浏览器无法录制视频。"
+    "noVideo": "此浏览器无法录制视频。",
+    "toApps": "导出到其他应用",
+    "psd": "图层 (PSD)",
+    "blender": "Blender (.py)",
+    "obj": "3D 线条 (OBJ)",
+    "psdHint": "PSD 在 Krita、Clip Studio 和 Sketchbook 中保留图层。在 Procreate 中请从图库导入以保留图层。",
+    "pngClear": "透明 PNG"
   },
-  "webgl": "此设备无法启动 3D 绘图。"
+  "webgl": "此设备无法启动 3D 绘图。",
+  "gpuLost": "系统已收回图形芯片。您的绘图是安全的，会自动恢复。",
+  "tabs": {
+    "ink": "墨迹",
+    "plane": "平面",
+    "view": "视图",
+    "layers": "图层",
+    "file": "文件"
+  },
+  "rail": {
+    "open": "显示工具",
+    "close": "隐藏工具"
+  },
+  "ink": {
+    "label": "线条",
+    "stabilizer": "防抖",
+    "entry": "线条起点",
+    "exit": "线条终点",
+    "snap": "连接端点"
+  },
+  "pen": {
+    "label": "手写笔",
+    "curve": "压感响应",
+    "soft": "柔和",
+    "normal": "正常",
+    "firm": "硬朗",
+    "try": "用手写笔画一条线进行测试。",
+    "noPen": "这不是手写笔。鼠标模式下的数位板会这样显示。",
+    "noPressure": "此手写笔未报告压感。请检查数位板驱动；在 Windows 上启用 Windows Ink。",
+    "reading": "压感 {{pressure}} % · 倾斜 {{tilt}}°"
+  },
+  "share": {
+    "label": "分享",
+    "instagram": "Instagram 快拍",
+    "linkedin": "LinkedIn",
+    "savedInstagram": "图片已保存。请在 Instagram 中上传。",
+    "savedLinkedin": "图片已保存。请将其附加到 LinkedIn 帖子。"
+  }
 }
