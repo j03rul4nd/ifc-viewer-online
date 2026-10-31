@@ -9,6 +9,8 @@ export interface PsdLayer {
   /** RGBA, straight alpha, width × height × 4. */
   rgba: Uint8ClampedArray | Uint8Array
   visible: boolean
+  /** 0..1. Absent means 1. */
+  opacity?: number
 }
 
 class Writer {
@@ -78,7 +80,7 @@ function layerRecord(layer: PsdLayer, width: number, height: number, channels: U
   w.u16(4)
   ;[-1, 0, 1, 2].forEach((id, i) => { w.i16(id); w.u32(channels[i].length) })
   w.ascii('8BIM'); w.ascii('norm')
-  w.u8(255) // opacity
+  w.u8(Math.round((layer.opacity ?? 1) * 255)) // opacity
   w.u8(0) // clipping
   w.u8(layer.visible ? 0 : 2) // flags: bit 1 hides the layer
   w.u8(0) // filler

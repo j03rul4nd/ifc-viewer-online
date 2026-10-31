@@ -9,7 +9,9 @@
     "marker": "マーカー",
     "line": "直線",
     "eraser": "消しゴム",
-    "pick": "描画から平面を設定"
+    "pick": "描画から平面を設定",
+    "lasso": "投げなわ",
+    "picker": "色を取得"
   },
   "color": "色",
   "customColor": "カスタムカラー",
@@ -51,7 +53,11 @@
     "lock": "ロック",
     "unlock": "ロック解除",
     "delete": "レイヤーを削除",
-    "locked": "このレイヤーはロック中または非表示です。"
+    "locked": "このレイヤーはロック中または非表示です。",
+    "up": "上へ",
+    "down": "下へ",
+    "duplicate": "複製",
+    "merge": "下に結合"
   },
   "pages": {
     "label": "ページ",
@@ -147,7 +153,8 @@
     "stabilizer": "手ぶれ補正",
     "entry": "線の入り",
     "exit": "線の抜き",
-    "snap": "端点をつなぐ"
+    "snap": "端点をつなぐ",
+    "opacity": "不透明度"
   },
   "pen": {
     "label": "ペン",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "画像を保存しました。Instagram からアップロードしてください。",
     "savedLinkedin": "画像を保存しました。LinkedIn の投稿に添付してください。"
+  },
+  "ui": {
+    "show": "インターフェースを表示"
+  },
+  "swapColors": "色を入れ替え",
+  "recentColors": "最近の色",
+  "brushes": {
+    "label": "ブラシ",
+    "technical": "製図ペン",
+    "ink": "インク",
+    "sketch": "下書き",
+    "shade": "陰影",
+    "marker": "マーカー",
+    "save": "ブラシとして保存",
+    "mine": "マイブラシ {{n}}",
+    "delete": "ブラシを削除"
+  },
+  "symmetry": {
+    "label": "対称",
+    "off": "オフ",
+    "vertical": "左右",
+    "horizontal": "上下",
+    "both": "両方"
+  },
+  "eraser": {
+    "label": "消しゴム",
+    "part": "線の一部",
+    "stroke": "線全体"
+  },
+  "selection": {
+    "label": "選択",
+    "count": "{{n}} 個を選択",
+    "duplicate": "複製",
+    "delete": "削除",
+    "done": "完了"
+  },
+  "keys": {
+    "label": "ショートカット",
+    "tools": "ペン、鉛筆、マーカー、直線",
+    "eraser": "消しゴム",
+    "lasso": "投げなわ",
+    "picker": "色を取得",
+    "size": "ブラシサイズ",
+    "opacity": "不透明度",
+    "colors": "入れ替え、既定の色",
+    "pan": "移動",
+    "orbit": "回転",
+    "zoom": "ズーム",
+    "lineFrom": "前の線から直線",
+    "hide": "インターフェースを隠す",
+    "undo": "元に戻す、やり直し",
+    "deselect": "選択解除"
   }
 }

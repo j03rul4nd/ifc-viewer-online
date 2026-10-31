@@ -9,7 +9,9 @@
     "marker": "Retolador",
     "line": "Línia recta",
     "eraser": "Esborrador",
-    "pick": "Fixa el pla des del dibuix"
+    "pick": "Fixa el pla des del dibuix",
+    "lasso": "Llaç",
+    "picker": "Agafa un color"
   },
   "color": "Color",
   "customColor": "Color personalitzat",
@@ -51,7 +53,11 @@
     "lock": "Bloqueja",
     "unlock": "Desbloqueja",
     "delete": "Elimina la capa",
-    "locked": "Aquesta capa està bloquejada o amagada."
+    "locked": "Aquesta capa està bloquejada o amagada.",
+    "up": "Puja",
+    "down": "Baixa",
+    "duplicate": "Duplica",
+    "merge": "Combina avall"
   },
   "pages": {
     "label": "Pàgines",
@@ -147,7 +153,8 @@
     "stabilizer": "Estabilitzador",
     "entry": "Inici del traç",
     "exit": "Final del traç",
-    "snap": "Uneix els extrems"
+    "snap": "Uneix els extrems",
+    "opacity": "Opacitat"
   },
   "pen": {
     "label": "Llapis",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Imatge desada. Puja-la des d'Instagram.",
     "savedLinkedin": "Imatge desada. Adjunta-la a la teva publicació de LinkedIn."
+  },
+  "ui": {
+    "show": "Mostra la interfície"
+  },
+  "swapColors": "Intercanvia colors",
+  "recentColors": "Colors recents",
+  "brushes": {
+    "label": "Pinzells",
+    "technical": "Ploma tècnica",
+    "ink": "Tinta",
+    "sketch": "Esbós",
+    "shade": "Ombrejat",
+    "marker": "Retolador",
+    "save": "Desa com a pinzell",
+    "mine": "El meu pinzell {{n}}",
+    "delete": "Elimina el pinzell"
+  },
+  "symmetry": {
+    "label": "Simetria",
+    "off": "No",
+    "vertical": "Esq.-dta.",
+    "horizontal": "Dalt-baix",
+    "both": "Totes dues"
+  },
+  "eraser": {
+    "label": "Esborrador",
+    "part": "Part del traç",
+    "stroke": "Traç sencer"
+  },
+  "selection": {
+    "label": "Selecció",
+    "count": "{{n}} seleccionats",
+    "duplicate": "Duplica",
+    "delete": "Elimina",
+    "done": "Fet"
+  },
+  "keys": {
+    "label": "Dreceres",
+    "tools": "Ploma, llapis, retolador, línia",
+    "eraser": "Esborrador",
+    "lasso": "Llaç",
+    "picker": "Agafa un color",
+    "size": "Mida del pinzell",
+    "opacity": "Opacitat",
+    "colors": "Intercanvia, colors per defecte",
+    "pan": "Desplaça",
+    "orbit": "Orbita",
+    "zoom": "Zoom",
+    "lineFrom": "Línia des de l'últim traç",
+    "hide": "Amaga la interfície",
+    "undo": "Desfés, refés",
+    "deselect": "Treu la selecció"
   }
 }

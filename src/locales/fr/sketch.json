@@ -9,7 +9,9 @@
     "marker": "Marqueur",
     "line": "Ligne droite",
     "eraser": "Gomme",
-    "pick": "Définir le plan depuis le dessin"
+    "pick": "Définir le plan depuis le dessin",
+    "lasso": "Lasso",
+    "picker": "Prélever une couleur"
   },
   "color": "Couleur",
   "customColor": "Couleur personnalisée",
@@ -51,7 +53,11 @@
     "lock": "Verrouiller",
     "unlock": "Déverrouiller",
     "delete": "Supprimer le calque",
-    "locked": "Ce calque est verrouillé ou masqué."
+    "locked": "Ce calque est verrouillé ou masqué.",
+    "up": "Monter",
+    "down": "Descendre",
+    "duplicate": "Dupliquer",
+    "merge": "Fusionner vers le bas"
   },
   "pages": {
     "label": "Pages",
@@ -147,7 +153,8 @@
     "stabilizer": "Stabilisateur",
     "entry": "Début du tracé",
     "exit": "Fin du tracé",
-    "snap": "Joindre les extrémités"
+    "snap": "Joindre les extrémités",
+    "opacity": "Opacité"
   },
   "pen": {
     "label": "Stylet",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Image enregistrée. Publiez-la depuis Instagram.",
     "savedLinkedin": "Image enregistrée. Joignez-la à votre post LinkedIn."
+  },
+  "ui": {
+    "show": "Afficher l'interface"
+  },
+  "swapColors": "Échanger les couleurs",
+  "recentColors": "Couleurs récentes",
+  "brushes": {
+    "label": "Pinceaux",
+    "technical": "Stylo technique",
+    "ink": "Encre",
+    "sketch": "Esquisse",
+    "shade": "Ombrage",
+    "marker": "Marqueur",
+    "save": "Enregistrer le pinceau",
+    "mine": "Mon pinceau {{n}}",
+    "delete": "Supprimer le pinceau"
+  },
+  "symmetry": {
+    "label": "Symétrie",
+    "off": "Non",
+    "vertical": "Gauche-droite",
+    "horizontal": "Haut-bas",
+    "both": "Les deux"
+  },
+  "eraser": {
+    "label": "Gomme",
+    "part": "Partie du tracé",
+    "stroke": "Tracé entier"
+  },
+  "selection": {
+    "label": "Sélection",
+    "count": "{{n}} sélectionnés",
+    "duplicate": "Dupliquer",
+    "delete": "Supprimer",
+    "done": "Terminé"
+  },
+  "keys": {
+    "label": "Raccourcis",
+    "tools": "Stylo, crayon, marqueur, ligne",
+    "eraser": "Gomme",
+    "lasso": "Lasso",
+    "picker": "Prélever une couleur",
+    "size": "Taille du pinceau",
+    "opacity": "Opacité",
+    "colors": "Échanger, couleurs par défaut",
+    "pan": "Déplacer",
+    "orbit": "Orbiter",
+    "zoom": "Zoom",
+    "lineFrom": "Ligne depuis le dernier tracé",
+    "hide": "Masquer l'interface",
+    "undo": "Annuler, rétablir",
+    "deselect": "Désélectionner"
   }
 }

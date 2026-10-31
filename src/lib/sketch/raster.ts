@@ -60,10 +60,10 @@ function outlineRun(run: { p: Point2; r: number }[]): Point2[] {
 }
 
 /** Paint one layer onto a 2D context, leaving everything else transparent. */
-export function paintLayer(ctx: CanvasRenderingContext2D, layer: SketchLayer, project: Project, scale: number): void {
+export function paintLayer(ctx: CanvasRenderingContext2D, layer: SketchLayer, project: Project, scale: number, layerOpacity = layer.opacity ?? 1): void {
   for (const stroke of layer.strokes) {
     ctx.fillStyle = stroke.color
-    ctx.globalAlpha = BRUSH_ALPHA[stroke.brush]
+    ctx.globalAlpha = BRUSH_ALPHA[stroke.brush] * (stroke.opacity ?? 1) * layerOpacity
     for (const polygon of strokeOutline(stroke, project, scale)) {
       ctx.beginPath()
       polygon.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
@@ -79,6 +79,7 @@ export function renderLayerCanvas(layer: SketchLayer, width: number, height: num
   canvas.width = Math.round(width * scale)
   canvas.height = Math.round(height * scale)
   const ctx = canvas.getContext('2d')
-  if (ctx) paintLayer(ctx, layer, project, scale)
+  // PSD carries layer opacity as its own value: the pixels stay at full strength.
+  if (ctx) paintLayer(ctx, layer, project, scale, 1)
   return canvas
 }

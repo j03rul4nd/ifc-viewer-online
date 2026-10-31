@@ -37,9 +37,28 @@ The stages drawing software runs, in order:
 6. **Ends.** Start and end tapers, capped at 40 % of a short stroke each. Ends can
    join a nearby endpoint or the stroke's own start, even across planes.
 
-Holding still at the end of a stroke straightens it, snapped to the plane's axes.
+Holding still at the end of a stroke recognizes it, QuickShape style: a line snapped
+to the plane's axes, or, if it closes, an ellipse or a rectangle. A closed scribble
+stays a line rather than being forced into a shape.
 Finished strokes are polylines with weight per vertex. There is no node editor:
 vertices cannot be dragged after the fact.
+
+## What designers expect from other apps
+
+Each of these has a pure rule in `lib/sketch/edit.ts` or `brushes.ts`.
+
+| Feature | From | Here |
+|---|---|---|
+| Brush presets, saved | Clip Studio sub tools, Procreate library | Tool, size, opacity, curve, stabilizer, tapers |
+| Lasso, then move, scale, rotate, duplicate, delete | All | Strokes, in 3D, on the active plane |
+| Eraser that cuts | All | Part of a stroke, or the whole one |
+| Symmetry | Procreate guides, Krita, Sketchbook | Across the plane's own axes |
+| Layer opacity, duplicate, merge down, reorder | All | PSD keeps the opacity |
+| Colour sampling, recent colours, two colour slots | All | Samples anything on screen |
+
+Not here: blend modes, clipping and alpha lock, custom brush tips, canvas roll, a
+vertex editor, editable shortcuts, a free pressure curve, ORA export, long-press
+colour picking.
 
 ## Input (`lib/sketch/gestures.ts`, `hooks/sketch/useSketchInput.ts`)
 
@@ -52,8 +71,12 @@ vertices cannot be dragged after the fact.
 | One finger | Draws until a pen appears (setting) |
 | Two fingers / three | Orbit and pinch / pan. Quick taps: undo / redo |
 | Mouse | Left draws, right orbits, middle pans, wheel zooms |
-| Space / Alt held | Pan / orbit with anything |
-| `[` `]`, `P B M L E`, Ctrl+Z | Size, tools, undo |
+| Space held | Pan with anything |
+| Four fingers, or Tab | Hide or show the interface |
+| Alt, or `I` | Sample any colour on screen |
+| Shift at the start of a stroke | Straight line from where the last one ended |
+| Shift+Space / Ctrl+Space | Orbit / zoom by dragging |
+| `P B Y U E L`, `[` `]`, `1`–`0`, `X`, `D`, Ctrl+Z/Y, Ctrl+D | Tools, size, opacity, swap and default colours, undo, deselect |
 
 Drawing tablets and displays (Wacom, Huion, XP-Pen) reach the browser as Pointer
 Events through their driver. The Ink tab reads the live values, and says when a

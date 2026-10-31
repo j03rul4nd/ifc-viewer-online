@@ -9,7 +9,9 @@
     "marker": "Pennarello",
     "line": "Linea retta",
     "eraser": "Gomma",
-    "pick": "Imposta il piano dal disegno"
+    "pick": "Imposta il piano dal disegno",
+    "lasso": "Lazo",
+    "picker": "Preleva un colore"
   },
   "color": "Colore",
   "customColor": "Colore personalizzato",
@@ -51,7 +53,11 @@
     "lock": "Blocca",
     "unlock": "Sblocca",
     "delete": "Elimina livello",
-    "locked": "Questo livello è bloccato o nascosto."
+    "locked": "Questo livello è bloccato o nascosto.",
+    "up": "Sposta su",
+    "down": "Sposta giù",
+    "duplicate": "Duplica",
+    "merge": "Unisci sotto"
   },
   "pages": {
     "label": "Pagine",
@@ -147,7 +153,8 @@
     "stabilizer": "Stabilizzatore",
     "entry": "Inizio tratto",
     "exit": "Fine tratto",
-    "snap": "Unisci estremità"
+    "snap": "Unisci estremità",
+    "opacity": "Opacità"
   },
   "pen": {
     "label": "Penna",
@@ -166,5 +173,57 @@
     "linkedin": "LinkedIn",
     "savedInstagram": "Immagine salvata. Caricala da Instagram.",
     "savedLinkedin": "Immagine salvata. Allegala al tuo post su LinkedIn."
+  },
+  "ui": {
+    "show": "Mostra l'interfaccia"
+  },
+  "swapColors": "Scambia i colori",
+  "recentColors": "Colori recenti",
+  "brushes": {
+    "label": "Pennelli",
+    "technical": "Penna tecnica",
+    "ink": "Inchiostro",
+    "sketch": "Schizzo",
+    "shade": "Ombreggiatura",
+    "marker": "Pennarello",
+    "save": "Salva come pennello",
+    "mine": "Il mio pennello {{n}}",
+    "delete": "Elimina pennello"
+  },
+  "symmetry": {
+    "label": "Simmetria",
+    "off": "No",
+    "vertical": "Sin.-des.",
+    "horizontal": "Su-giù",
+    "both": "Entrambe"
+  },
+  "eraser": {
+    "label": "Gomma",
+    "part": "Parte del tratto",
+    "stroke": "Tratto intero"
+  },
+  "selection": {
+    "label": "Selezione",
+    "count": "{{n}} selezionati",
+    "duplicate": "Duplica",
+    "delete": "Elimina",
+    "done": "Fatto"
+  },
+  "keys": {
+    "label": "Scorciatoie",
+    "tools": "Penna, matita, pennarello, linea",
+    "eraser": "Gomma",
+    "lasso": "Lazo",
+    "picker": "Preleva un colore",
+    "size": "Dimensione pennello",
+    "opacity": "Opacità",
+    "colors": "Scambia, colori predefiniti",
+    "pan": "Sposta",
+    "orbit": "Orbita",
+    "zoom": "Zoom",
+    "lineFrom": "Linea dall'ultimo tratto",
+    "hide": "Nascondi l'interfaccia",
+    "undo": "Annulla, ripeti",
+    "deselect": "Deseleziona"
   }
 }

@@ -5,14 +5,16 @@
 
 import { useRef, useState, type ReactNode } from 'react'
 import {
-  adoptContextFile, applyOrbit, clearContext, exportBlender, exportObjFile, exportPng, exportPsd, exportSketchFile, exportVector,
+  adoptContextFile, applyOrbit, clearContext, clearSelection, deleteSelection, duplicateSelection, rotateSelection, saveBrush, scaleSelection, applyBrush, exportBlender, exportObjFile, exportPng, exportPsd, exportSketchFile, exportVector,
   fitAll, lookAtPlane, orbitBy, planeFacingMe, setPlane, setPlanePreset, shareSketch, toggleContext,
 } from '../../hooks/sketch/actions'
 import { useReplayRecorder } from '../../hooks/sketch/useReplayRecorder'
 import {
-  activePage, addLayer, addPage, addView, clearLayer, deleteLayer, deletePage, newId, parseDoc, patchLayer, removeView,
+  activeLayer, activePage, addLayer, addPage, addView, clearLayer, deleteLayer, deletePage, duplicateLayer, mergeLayerDown, moveLayer, newId, parseDoc, patchLayer, removeView,
   setActiveLayer, setActivePage, setPaper, startHistory,
 } from '../../lib/sketch/document'
+import { BUILTIN_BRUSHES } from '../../lib/sketch/brushes'
+import type { Symmetry } from '../../lib/sketch/edit'
 import type { PressureCurve } from '../../lib/sketch/ink'
 import { offsetPlane, rotatePlane, type PlanePreset } from '../../lib/sketch/plane'
 import type { PaperKind } from '../../lib/sketch/types'
@@ -38,6 +40,10 @@ const ICONS: Record<string, ReactNode> = {
   trash: <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />,
   plus: <path d="M8 3v10M3 8h10" />,
   back: <path d="M10 3L5 8l5 5" />,
+  lasso: <path d="M8 3c3.5 0 6 1.5 6 3.500S11.5 10 8 10 2 8.5 2 6.5 4.5 3 8 3zM4.5 9.500c-1 1.5 0 3 1.5 3.5" strokeDasharray="2 1.5" />,
+  picker: <path d="M10 3l3 3-1.5 1.5-3-3L10 3zM8.5 4.500L3 10v3h3l5.5-5.5" />,
+  up: <path d="M8 13V3M4 7l4-4 4 4" />,
+  down: <path d="M8 3v10M4 9l4 4 4-4" />,
 }
 
 function Icon({ name }: { name: string }) {
@@ -242,7 +248,31 @@ function NudgeSlider({ label, onDelta }: { label: string; onDelta: (pixels: numb
 const SWATCHES = ['#17130F', '#FFFFFF', '#C8322B', '#1F5FBF']
 const WIDTHS = [1.5, 3, 6, 11]
 
+function BrushSection({ tx }: { tx: Tx }) {
+  const brushes = useSketchStore((s) => s.brushes)
+  const { setPrefs } = useSketchStore.getState()
+  return (
+    <Section title={tx('brushes.label')}>
+      <div className="grid grid-cols-2 gap-1">
+        {BUILTIN_BRUSHES.map((b) => <Chip key={b.id} onClick={() => applyBrush(b)}>{tx(`brushes.${b.id}`)}</Chip>)}
+        {brushes.map((b) => (
+          <div key={b.id} className="flex items-center gap-0.5 min-w-0">
+            <Chip onClick={() => applyBrush(b)}>{b.name}</Chip>
+            <IconButton size={28} label={tx('brushes.delete')} icon="trash" onClick={() => setPrefs({ brushes: brushes.filter((o) => o.id !== b.id) })} />
+          </div>
+        ))}
+        <Chip onClick={() => saveBrush(tx('brushes.mine', { n: brushes.length + 1 }))}>{tx('brushes.save')}</Chip>
+      </div>
+    </Section>
+  )
+}
+
 function InkTab({ tx }: { tx: Tx }) {
+  const opacity = useSketchStore((s) => s.opacity)
+  const recent = useSketchStore((s) => s.recent)
+  const colorB = useSketchStore((s) => s.colorB)
+  const symmetry = useSketchStore((s) => s.symmetry)
+  const eraser = useSketchStore((s) => s.eraser)
   const color = useSketchStore((s) => s.color)
   const width = useSketchStore((s) => s.width)
   const ink = useSketchStore((s) => s.ink)
@@ -252,6 +282,7 @@ function InkTab({ tx }: { tx: Tx }) {
   const { setPrefs, setInk } = useSketchStore.getState()
   return (
     <>
+      <BrushSection tx={tx} />
       <Section title={tx('color')}>
         <div className="flex items-center gap-2">
           {SWATCHES.map((c) => (
@@ -260,7 +291,16 @@ function InkTab({ tx }: { tx: Tx }) {
           <label className="relative w-8 h-8 rounded-lg overflow-hidden border cursor-pointer" title={tx('customColor')} style={{ borderColor: 'var(--sk-line)', background: 'conic-gradient(#c8322b,#e0b020,#2e9e5b,#1f5fbf,#a03ab0,#c8322b)' }}>
             <input type="color" aria-label={tx('customColor')} value={color} onChange={(e) => setPrefs({ color: e.target.value })} className="absolute inset-0 opacity-0" />
           </label>
+          <button type="button" aria-label={tx('swapColors')} title={tx('swapColors')} onClick={() => setPrefs({ color: colorB, colorB: color })} className="relative w-8 h-8 shrink-0">
+            <span className="absolute right-0 bottom-0 w-5 h-5 rounded border" style={{ background: colorB, borderColor: 'var(--sk-line)' }} />
+            <span className="absolute left-0 top-0 w-5 h-5 rounded border" style={{ background: color, borderColor: 'var(--sk-line)' }} />
+          </button>
         </div>
+        {recent.length > 0 && (
+          <div className="flex gap-1 mt-2" role="group" aria-label={tx('recentColors')}>
+            {recent.map((c) => <button key={c} type="button" aria-label={c} onClick={() => setPrefs({ color: c })} className="w-5 h-5 rounded border" style={{ background: c, borderColor: 'var(--sk-line)' }} />)}
+          </div>
+        )}
         <div className="flex items-center gap-1 mt-2" role="group" aria-label={tx('size')}>
           {WIDTHS.map((w) => (
             <button key={w} type="button" aria-label={`${tx('size')} ${w}`} aria-pressed={width === w} onClick={() => setPrefs({ width: w })} className="flex-1 h-9 grid place-items-center rounded-lg" style={{ background: width === w ? 'var(--sk-soft)' : 'transparent', outline: width === w ? '1px solid var(--sk-line)' : 'none' }}>
@@ -270,10 +310,22 @@ function InkTab({ tx }: { tx: Tx }) {
         </div>
       </Section>
       <Section title={tx('ink.label')}>
+        <Slider label={tx('ink.opacity')} value={opacity} min={0.05} max={1} step={0.05} onChange={(v) => setPrefs({ opacity: v })} />
         <Slider label={tx('ink.stabilizer')} value={ink.stabilizer} min={0} max={10} step={1} onChange={(v) => setInk({ stabilizer: v })} />
         <Slider label={tx('ink.entry')} value={ink.entryTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ entryTaper: v })} />
         <Slider label={tx('ink.exit')} value={ink.exitTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ exitTaper: v })} />
         <Toggle label={tx('ink.snap')} checked={snapEnds} onChange={(v) => setPrefs({ snapEnds: v })} />
+      </Section>
+      <Section title={tx('symmetry.label')}>
+        <div className="grid grid-cols-2 gap-1">
+          {(['off', 'vertical', 'horizontal', 'both'] as Symmetry[]).map((v) => <Chip key={v} active={symmetry === v} onClick={() => setPrefs({ symmetry: v })}>{tx(`symmetry.${v}`)}</Chip>)}
+        </div>
+      </Section>
+      <Section title={tx('eraser.label')}>
+        <div className="flex gap-1">
+          <Chip active={eraser === 'part'} onClick={() => setPrefs({ eraser: 'part' })}>{tx('eraser.part')}</Chip>
+          <Chip active={eraser === 'stroke'} onClick={() => setPrefs({ eraser: 'stroke' })}>{tx('eraser.stroke')}</Chip>
+        </div>
       </Section>
       <Section title={tx('pen.label')}>
         <div className="flex gap-1" role="group" aria-label={tx('pen.curve')}>
@@ -361,6 +413,7 @@ function LayersTab({ tx }: { tx: Tx }) {
   const layers = useSketchStore((s) => activePage(s.history.present).layers)
   const activeId = useSketchStore((s) => activePage(s.history.present).activeLayerId)
   const { edit, touch } = useSketchStore.getState()
+  const active = layers.find((l) => l.id === activeId) ?? layers[0]
   return (
     <Section title={tx('layers.label')}>
       <ul className="flex flex-col-reverse gap-0.5">
@@ -369,12 +422,23 @@ function LayersTab({ tx }: { tx: Tx }) {
             <button type="button" aria-current={l.id === activeId} onClick={() => touch((doc) => setActiveLayer(doc, l.id))} className="flex-1 min-w-0 h-9 px-2 text-left text-[12px] truncate">
               {tx('layers.name', { n: i + 1 })} <span style={{ color: 'var(--sk-dim)' }}>· {l.strokes.length}</span>
             </button>
+            {l.id === activeId && layers.length > 1 && (
+              <>
+                <IconButton size={26} label={tx('layers.up')} icon="up" onClick={() => edit((doc) => moveLayer(doc, l.id, 1))} disabled={i === layers.length - 1} />
+                <IconButton size={26} label={tx('layers.down')} icon="down" onClick={() => edit((doc) => moveLayer(doc, l.id, -1))} disabled={i === 0} />
+              </>
+            )}
             <IconButton size={34} label={tx(l.visible ? 'layers.hide' : 'layers.show')} icon={l.visible ? 'eye' : 'eyeOff'} onClick={() => edit((doc) => patchLayer(doc, l.id, { visible: !l.visible }))} />
             <IconButton size={34} label={tx(l.locked ? 'layers.unlock' : 'layers.lock')} icon={l.locked ? 'lock' : 'unlock'} onClick={() => edit((doc) => patchLayer(doc, l.id, { locked: !l.locked }))} />
             {layers.length > 1 && <IconButton size={34} label={tx('layers.delete')} icon="trash" onClick={() => edit((doc) => deleteLayer(doc, l.id))} />}
           </li>
         ))}
       </ul>
+      <Slider label={tx('ink.opacity')} value={active.opacity ?? 1} min={0} max={1} step={0.05} onChange={(v) => touch((doc) => patchLayer(doc, active.id, { opacity: v }))} />
+      <div className="flex gap-1 mt-1">
+        <Chip onClick={() => edit(duplicateLayer)}>{tx('layers.duplicate')}</Chip>
+        <Chip onClick={() => edit(mergeLayerDown)}>{tx('layers.merge')}</Chip>
+      </div>
       <div className="flex gap-1 mt-1">
         <Chip onClick={() => edit((doc) => addLayer(doc, String(activePage(doc).layers.length + 1)))}>{tx('layers.add')}</Chip>
         <Chip onClick={() => edit(clearLayer)}>{tx('clear')}</Chip>
@@ -443,6 +507,13 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
           if (file) void adoptContextFile(file, tx as (key: string) => string)
         }} />
       </Section>
+      <Section title={tx('keys.label')}>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+          {SHORTCUTS.map(([keys, label]) => (
+            <div key={label} className="contents"><dt className="font-mono" style={{ color: 'var(--sk-dim)' }}>{keys}</dt><dd className="m-0">{tx(`keys.${label}`)}</dd></div>
+          ))}
+        </dl>
+      </Section>
       {!regular && (
         <Section title={tx('pages.label')}>
           <div className="flex items-center gap-1 overflow-x-auto" style={{ touchAction: 'pan-x' }}>
@@ -467,7 +538,31 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
   )
 }
 
-const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'pick']
+const SHORTCUTS = [
+  ['P B Y U', 'tools'], ['E', 'eraser'], ['L', 'lasso'], ['I · Alt', 'picker'], ['[ ]', 'size'], ['1–0', 'opacity'], ['X · D', 'colors'],
+  ['Space', 'pan'], ['Shift+Space', 'orbit'], ['Ctrl+Space', 'zoom'], ['Shift', 'lineFrom'], ['Tab', 'hide'], ['Ctrl+Z · Y', 'undo'], ['Ctrl+D', 'deselect'],
+] as const
+
+/** What a lasso can do. Shown only while something is selected. */
+export function SelectionBar({ tx, regular }: { tx: Tx; regular: boolean }) {
+  const count = useSketchStore((s) => s.selection.length)
+  if (count === 0) return null
+  return (
+    <div role="toolbar" aria-label={tx('selection.label')} className="absolute z-20 flex items-center gap-1 p-1 rounded-xl border left-1/2 -translate-x-1/2 max-w-[96%] overflow-x-auto" style={{ ...glass, top: 'calc(max(8px, env(safe-area-inset-top)) + 48px)', touchAction: 'pan-x' }}>
+      <span className="px-2 text-[11px] shrink-0" style={{ color: 'var(--sk-dim)' }}>{tx('selection.count', { n: count })}</span>
+      <Chip grow={false} onClick={() => scaleSelection(0.9)}>−10%</Chip>
+      <Chip grow={false} onClick={() => scaleSelection(1.1)}>+10%</Chip>
+      <Chip grow={false} onClick={() => rotateSelection(-Math.PI / 12)}>↺15°</Chip>
+      <Chip grow={false} onClick={() => rotateSelection(Math.PI / 12)}>↻15°</Chip>
+      <Chip grow={false} onClick={duplicateSelection}>{tx('selection.duplicate')}</Chip>
+      <IconButton size={36} label={tx('selection.delete')} icon="trash" onClick={deleteSelection} />
+      {regular && <Chip grow={false} onClick={clearSelection}>{tx('selection.done')}</Chip>}
+      {!regular && <IconButton size={36} label={tx('selection.done')} icon="plus" onClick={clearSelection} />}
+    </div>
+  )
+}
+
+const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'lasso', 'picker', 'pick']
 const TABS: PanelTab[] = ['ink', 'plane', 'view', 'layers', 'file']
 
 function TabStrip({ tx }: { tx: Tx }) {
@@ -522,9 +617,9 @@ export function StudioControls({ tx, regular, short }: { tx: Tx; regular: boolea
   if (regular) {
     return (
       <aside aria-label={tx('tools.label')} className="absolute z-10 w-[252px] rounded-xl border flex flex-col overflow-hidden" style={{ ...glass, top, bottom, [railSide]: 8 }}>
-        <div className="flex items-center justify-between px-1 py-1.5 border-b shrink-0" style={{ borderColor: 'var(--sk-line)' }}>
+        <div className="flex flex-wrap items-center gap-0.5 p-1 border-b shrink-0" style={{ borderColor: 'var(--sk-line)' }}>
           {toolRow}
-          <IconButton size={30} label={tx('rail.close')} icon="rail" onClick={() => setPrefs({ railOpen: false })} />
+          <IconButton size={34} label={tx('rail.close')} icon="rail" onClick={() => setPrefs({ railOpen: false })} />
         </div>
         <TabStrip tx={tx} />
         <TabBody tx={tx} regular />

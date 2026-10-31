@@ -46,6 +46,60 @@ export function addStroke(doc: SketchDoc, stroke: Stroke): SketchDoc | null {
   return updatePage(doc, (page) => updateLayer(page, layer.id, (l) => ({ ...l, strokes: [...l.strokes, stroke] })))
 }
 
+export function addStrokes(doc: SketchDoc, strokes: readonly Stroke[]): SketchDoc | null {
+  const layer = activeLayer(activePage(doc))
+  if (layer.locked || !layer.visible) return null
+  return updatePage(doc, (page) => updateLayer(page, layer.id, (l) => ({ ...l, strokes: [...l.strokes, ...strokes] })))
+}
+
+/** Change the strokes of every layer that may be edited; a layer left as is stays shared. */
+export function mapLayerStrokes(doc: SketchDoc, change: (strokes: readonly Stroke[]) => readonly Stroke[]): SketchDoc {
+  return updatePage(doc, (page) => {
+    let touched = false
+    const layers = page.layers.map((l) => {
+      if (l.locked || !l.visible) return l
+      const strokes = change(l.strokes)
+      if (strokes === l.strokes) return l
+      touched = true
+      return { ...l, strokes }
+    })
+    return touched ? { ...page, layers } : page
+  })
+}
+
+export function duplicateLayer(doc: SketchDoc): SketchDoc {
+  return updatePage(doc, (page) => {
+    const source = activeLayer(page)
+    const copy = { ...source, id: newId(), strokes: source.strokes.map((s) => ({ ...s, id: newId() })) }
+    const at = page.layers.indexOf(source) + 1
+    return { ...page, layers: [...page.layers.slice(0, at), copy, ...page.layers.slice(at)], activeLayerId: copy.id }
+  })
+}
+
+/** Into the layer below. The bottom layer has nowhere to go. */
+export function mergeLayerDown(doc: SketchDoc): SketchDoc {
+  const page = activePage(doc)
+  const at = page.layers.indexOf(activeLayer(page))
+  if (at <= 0) return doc
+  return updatePage(doc, (p) => {
+    const below = p.layers[at - 1]
+    const merged = { ...below, strokes: [...below.strokes, ...p.layers[at].strokes] }
+    return { ...p, layers: [...p.layers.slice(0, at - 1), merged, ...p.layers.slice(at + 1)], activeLayerId: merged.id }
+  })
+}
+
+export function moveLayer(doc: SketchDoc, id: string, by: -1 | 1): SketchDoc {
+  const page = activePage(doc)
+  const at = page.layers.findIndex((l) => l.id === id)
+  const to = at + by
+  if (at < 0 || to < 0 || to >= page.layers.length) return doc
+  return updatePage(doc, (p) => {
+    const layers = p.layers.slice()
+    ;[layers[at], layers[to]] = [layers[to], layers[at]]
+    return { ...p, layers }
+  })
+}
+
 export function removeStrokes(doc: SketchDoc, ids: ReadonlySet<string>): SketchDoc {
   if (ids.size === 0) return doc
   return updatePage(doc, (page) => ({
@@ -67,7 +121,7 @@ export function addLayer(doc: SketchDoc, name: string): SketchDoc {
   return updatePage(doc, (page) => ({ ...page, layers: [...page.layers, layer], activeLayerId: layer.id }))
 }
 
-export function patchLayer(doc: SketchDoc, id: string, patch: Partial<Pick<SketchLayer, 'visible' | 'locked' | 'name'>>): SketchDoc {
+export function patchLayer(doc: SketchDoc, id: string, patch: Partial<Pick<SketchLayer, 'visible' | 'locked' | 'name' | 'opacity'>>): SketchDoc {
   return updatePage(doc, (page) => updateLayer(page, id, (l) => ({ ...l, ...patch })))
 }
 

@@ -15,7 +15,7 @@ function strokePath(stroke: Stroke, project: Project): string {
     .map((polygon) => polygon.map((p, i) => `${i ? 'L' : 'M'}${n(p.x)} ${n(p.y)}`).join('') + 'Z')
     .join('')
   if (!d) return ''
-  const alpha = BRUSH_ALPHA[stroke.brush]
+  const alpha = BRUSH_ALPHA[stroke.brush] * (stroke.opacity ?? 1)
   return `<path d="${d}" fill="${stroke.color}"${alpha < 1 ? ` fill-opacity="${alpha}"` : ''}/>`
 }
 
@@ -24,7 +24,7 @@ const escapeXml = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&a
 export function exportSvg(layers: readonly SketchLayer[], width: number, height: number, background: string, project: Project): string {
   const body = layers
     .filter((l) => l.visible)
-    .map((l) => `<g id="${escapeXml(`layer-${l.name}`)}">${l.strokes.map((s) => strokePath(s, project)).join('')}</g>`)
+    .map((l) => `<g id="${escapeXml(`layer-${l.name}`)}"${(l.opacity ?? 1) < 1 ? ` opacity="${l.opacity}"` : ''}>${l.strokes.map((s) => strokePath(s, project)).join('')}</g>`)
     .join('')
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="${background}"/>${body}</svg>`
 }
