@@ -7,6 +7,7 @@ import { HAZARD_POSTS_EN } from './blog-hazard-en.ts'
 import { FLOOD_POSTS_EN } from './blog-flood-en.ts'
 import { MEASURE_POSTS_EN } from './blog-measure-en.ts'
 import { FOLDABLE_POSTS_EN } from './blog-foldable-en.ts'
+import { TRACKING_POSTS_EN } from './blog-tracking-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -357,6 +358,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
   ...TWIN_CLUSTER_POSTS_EN,
   ...TWIN_POSTS_EN,
   ...MEASURE_POSTS_EN,
+  ...TRACKING_POSTS_EN,
   ...FOLDABLE_POSTS_EN,
   ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,
