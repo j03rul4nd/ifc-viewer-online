@@ -64,7 +64,7 @@ interface MeasurementPanelProps {
 const TOOLS: readonly MeasureToolId[] = ['distance', 'path', 'area', 'angle', 'point', 'dimension']
 const UNITS: readonly LengthUnit[] = ['m', 'cm', 'mm', 'ft']
 const KIND_COLOR: Record<MeasureKind, string> = {
-  distance: '#FFB224', path: '#FFB224', area: '#3DD68C', angle: '#F76B8A', point: '#B49CFF', dimension: '#5EEAD4',
+  distance: '#E9A23B', path: '#E9A23B', area: '#3DD68C', angle: '#F76B8A', point: '#c8a97e', dimension: '#5EEAD4',
 }
 
 /** The dimension modes, two rows: linear, then level and radius. */
@@ -140,7 +140,7 @@ function Chip({ on, onClick, children, title }: { on: boolean; onClick: () => vo
       className={[
         'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10.5px] font-medium border transition-colors',
         on
-          ? 'border-[var(--accent)] text-[var(--text)] bg-[rgba(94,106,210,0.16)]'
+          ? 'border-[var(--accent)] text-[var(--text)] bg-[rgba(10,132,129,0.16)]'
           : 'border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text-dim)]',
       ].join(' ')}
     >
@@ -164,7 +164,7 @@ function IconButton({ title, onClick, children, danger, active, touch }: {
       className={[
         'flex-none flex items-center justify-center transition-colors',
         touch ? 'w-10 h-10 rounded-[11px] bg-white/[0.05]' : 'w-6 h-6 rounded-[6px]',
-        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)]'
+        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]'
           : active ? 'text-[var(--accent-2)] hover:bg-white/[0.06]'
             : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/[0.06]',
       ].join(' ')}
@@ -721,7 +721,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 className={[
                   'relative flex flex-col items-center justify-center gap-1 h-[46px] px-1.5 rounded-[9px] transition-all min-w-0 overflow-hidden',
                   active
-                    ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(94,106,210,0.35)]'
+                    ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(10,132,129,0.35)]'
                     : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
                 ].join(' ')}
               >
@@ -955,7 +955,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               </span>
             ) : (
               <button type="button" onClick={() => setConfirmClear(true)} title={t('actions.clearAll')}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] text-[11px] text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)] transition-colors">
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] text-[11px] text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)] transition-colors">
                 <TrashIcon size={12} />{t('actions.clearAll')}
               </button>
             )}
@@ -1077,7 +1077,7 @@ function MeasureRow(p: RowProps) {
       onMouseLeave={() => p.onHover(false)}
       className={[
         'group mx-1 rounded-[8px] transition-colors',
-        p.selected ? 'bg-[rgba(94,106,210,0.12)] ring-1 ring-inset ring-[rgba(94,106,210,0.45)]' : 'hover:bg-[var(--surface-2)]',
+        p.selected ? 'bg-[rgba(10,132,129,0.12)] ring-1 ring-inset ring-[rgba(10,132,129,0.45)]' : 'hover:bg-[var(--surface-2)]',
       ].join(' ')}
     >
       <div role="button" tabIndex={0} onClick={p.onSelect}
@@ -1127,7 +1127,7 @@ function MeasureRow(p: RowProps) {
             <p className="mt-1.5 text-[10px] leading-snug text-[var(--text-dim)] flex items-start gap-1">
               <span className="text-[var(--text-faint)] shrink-0">{t('item.on')}</span>
               <span className="min-w-0 break-words">{anchors}</span>
-              {(() => { const ck = crossKind(item); return ck && <span className="shrink-0 px-1 rounded bg-[rgba(94,106,210,0.15)] text-[var(--accent-2)]">{ck === 'models' ? t('item.crossModel') : ck === 'modelMap' ? t('item.crossModelMap') : t('item.crossMap')}</span> })()}
+              {(() => { const ck = crossKind(item); return ck && <span className="shrink-0 px-1 rounded bg-[rgba(10,132,129,0.15)] text-[var(--accent-2)]">{ck === 'models' ? t('item.crossModel') : ck === 'modelMap' ? t('item.crossModelMap') : t('item.crossMap')}</span> })()}
             </p>
           )}
           {note && <p className="mt-1.5 text-[10px] text-[var(--text-faint)] leading-snug">{note}</p>}

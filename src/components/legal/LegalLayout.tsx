@@ -26,8 +26,8 @@ export default function LegalLayout({ pageTitle, lastUpdated, onNavigateToLandin
       >
         <SideRays
           speed={0.6}
-          rayColor1="#5E6AD2"
-          rayColor2="#8B93E8"
+          rayColor1="#0A8481"
+          rayColor2="#55CAC3"
           intensity={0.65}
           spread={1.1}
           origin="top-right"

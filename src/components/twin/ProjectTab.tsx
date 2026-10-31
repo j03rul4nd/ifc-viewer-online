@@ -129,7 +129,7 @@ export function TimelineDock() {
   return (
     <div className={`shrink-0 ${MARGIN} py-2.5 flex flex-col gap-1.5 border-t border-[var(--border)] [@media(max-height:480px)]:hidden`} data-testid="twin-history">
       <div className="flex items-center gap-2 min-h-6 text-[11.5px] max-md:text-[13px]">
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${shown === null ? 'bg-[var(--ok,#22c55e)]' : 'bg-[var(--warn,#f59e0b)]'}`} aria-hidden />
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${shown === null ? 'bg-[var(--ok,#3fa866)]' : 'bg-[var(--warn,#e9a23b)]'}`} aria-hidden />
         <span className="flex-1 min-w-0 truncate tabular-nums text-[var(--text)]">{shown === null ? t('timeLive') : new Date(shown).toLocaleString()}</span>
         {timeAt !== null && <Btn variant="ghost" className="!h-6 max-md:!h-9 !px-1.5" onClick={() => { setDrag(null); pending.current = null; store().setTimeAt(null) }}>{t('backToLive')}</Btn>}
       </div>

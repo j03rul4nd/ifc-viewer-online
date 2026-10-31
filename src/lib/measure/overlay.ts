@@ -470,7 +470,7 @@ export class Label {
 // its dimensions.
 
 const LABEL_INK: Record<string, string> = {
-  distance: '#FFB224', path: '#FFB224', area: '#3DD68C', angle: '#F76B8A', point: '#B49CFF',
+  distance: '#E9A23B', path: '#E9A23B', area: '#3DD68C', angle: '#F76B8A', point: '#c8a97e',
   'axis-x': '#FF5A5A', 'axis-y': '#4CD964', 'axis-z': '#4C8DFF',
 }
 
@@ -484,7 +484,7 @@ export function paintLabel(ctx: CanvasRenderingContext2D, label: Label, x: numbe
   const text = label.text
   if (!text) return
   const sub = label.isSub
-  const ink = LABEL_INK[label.kind] ?? '#FFB224'
+  const ink = LABEL_INK[label.kind] ?? '#E9A23B'
   const size = (sub ? 10.5 : 11.5) * s
   const lines = text.split('\n')
   ctx.save()

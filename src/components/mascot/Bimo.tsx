@@ -37,7 +37,7 @@ export type BimoProps = {
 
 const EYE_L = { x: 45, y: 56 }
 const EYE_R = { x: 75, y: 56 }
-const EYE_COLOR = '#A9B0FF'
+const EYE_COLOR = '#55cac3'
 
 function lerpFace(a: BimoFace, b: BimoFace, k: number): BimoFace {
   const out = { ...b }
@@ -177,14 +177,14 @@ export default function Bimo({
         </linearGradient>
         <radialGradient id={`${uid}-limb`} cx="35%" cy="30%" r="75%">
           <stop offset="0%" stopColor="#B7BEFF" />
-          <stop offset="100%" stopColor="#5E6AD2" />
+          <stop offset="100%" stopColor="#0A8481" />
         </radialGradient>
         <filter id={`${uid}-glow`} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="1.6" />
         </filter>
       </defs>
 
-      <ellipse className="bimo-shadow" cx="60" cy="124" rx="30" ry="4.5" fill="#5E6AD2" opacity="0.28" />
+      <ellipse className="bimo-shadow" cx="60" cy="124" rx="30" ry="4.5" fill="#0A8481" opacity="0.28" />
 
       <g className="bimo-rig">
         {/* feet */}
@@ -198,9 +198,9 @@ export default function Bimo({
 
           {/* antenna */}
           <g className="bimo-antenna">
-            <path d="M60 22 C60 16 62 13 61 7" stroke="#8B93E8" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+            <path d="M60 22 C60 16 62 13 61 7" stroke="#55CAC3" strokeWidth="3.2" fill="none" strokeLinecap="round" />
             <rect x="56.5" y="1" width="8" height="8" rx="2" transform="rotate(45 60.5 5)" fill="#DCE0FF" />
-            <rect x="56.5" y="1" width="8" height="8" rx="2" transform="rotate(45 60.5 5)" fill="#A9B0FF"
+            <rect x="56.5" y="1" width="8" height="8" rx="2" transform="rotate(45 60.5 5)" fill="#55cac3"
               opacity={0.35 * f.glow} filter={`url(#${uid}-glow)`} />
           </g>
 
@@ -260,13 +260,13 @@ export default function Bimo({
 
       {/* emotion props */}
       {shown === 'sleepy' && (
-        <g className="bimo-fx bimo-fx-z" fill="#A9B0FF" fontFamily="inherit" fontWeight="700">
+        <g className="bimo-fx bimo-fx-z" fill="#55cac3" fontFamily="inherit" fontWeight="700">
           <text x="92" y="28" fontSize="10">z</text>
           <text x="100" y="18" fontSize="7">z</text>
         </g>
       )}
       {shown === 'thinking' && (
-        <g className="bimo-fx bimo-fx-dots" fill="#A9B0FF">
+        <g className="bimo-fx bimo-fx-dots" fill="#55cac3">
           <circle cx="94" cy="26" r="2" /><circle cx="101" cy="20" r="2.6" /><circle cx="109" cy="12" r="3.2" />
         </g>
       )}

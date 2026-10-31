@@ -122,7 +122,7 @@ export function TakeoffSection({ selection, viewerApiRef, settings, onFlash }: {
           <div className="mt-1 flex items-center gap-1" role="radiogroup" aria-label={t('takeoff.groupLabel')}>
             {(['class', 'type', 'storey', 'model'] as const).map((g) => (
               <button key={g} type="button" role="radio" aria-checked={groupBy === g} onClick={() => setGroupBy(g)}
-                className={['px-1.5 py-0.5 rounded-full text-[10px] border', groupBy === g ? 'border-[var(--accent)] text-[var(--text)] bg-[rgba(94,106,210,0.12)]' : 'border-[var(--border)] text-[var(--text-dim)]'].join(' ')}>
+                className={['px-1.5 py-0.5 rounded-full text-[10px] border', groupBy === g ? 'border-[var(--accent)] text-[var(--text)] bg-[rgba(10,132,129,0.12)]' : 'border-[var(--border)] text-[var(--text-dim)]'].join(' ')}>
                 {t(`takeoff.groupBy.${g}`)}
               </button>
             ))}
@@ -149,7 +149,7 @@ export function TakeoffSection({ selection, viewerApiRef, settings, onFlash }: {
                         <td key={k} className="px-1.5 py-1 text-right font-mono text-[var(--text)] whitespace-nowrap"
                           title={`${m.sources.join(' · ')} — ${t('takeoff.coverageOf', { covered: m.covered, count: r.count })}`}>
                           {m.mixedUnits ? t('takeoff.mixed') : `${fmt(m.total)} ${unitOf(k, m.unit)}`}
-                          {partial && <span className="ml-0.5 text-[#FFB224]" aria-label={t('takeoff.partial')}>*</span>}
+                          {partial && <span className="ml-0.5 text-[#E9A23B]" aria-label={t('takeoff.partial')}>*</span>}
                         </td>
                       )
                     })}
@@ -159,7 +159,7 @@ export function TakeoffSection({ selection, viewerApiRef, settings, onFlash }: {
             </table>
           </div>
           {result.withoutQuantities > 0 && (
-            <div className="mt-1 text-[9.5px] leading-snug text-[#FFB224]">
+            <div className="mt-1 text-[9.5px] leading-snug text-[#E9A23B]">
               {t('takeoff.missing', { count: result.withoutQuantities, total: result.count })}
             </div>
           )}

@@ -47,11 +47,11 @@ export function PresetSources() {
           <span className="text-[11px] text-[var(--text)] truncate">{t(`presets.${p.id}.name` as never)}</span>
           <span className="shrink-0 px-1 rounded text-[8px] font-mono font-semibold bg-white/[0.06] text-[var(--text-dim)]">{KIND_BADGE[p.kind]}</span>
           {p.needsKey === 'tmb' && !tmbKeys && (
-            <span className="shrink-0 px-1 rounded text-[8px] font-semibold bg-[#f5a524]/20 text-[#f5a524]"
+            <span className="shrink-0 px-1 rounded text-[8px] font-semibold bg-[#e9a23b]/20 text-[#e9a23b]"
               title={t('tmb.why')}>{t('tmb.needsKey')}</span>
           )}
           {p.needsProxy && (
-            <span className={`shrink-0 px-1 rounded text-[8px] font-semibold ${hasProxy ? 'bg-white/[0.06] text-[var(--text-dim)]' : 'bg-[#f5a524]/20 text-[#f5a524]'}`}
+            <span className={`shrink-0 px-1 rounded text-[8px] font-semibold ${hasProxy ? 'bg-white/[0.06] text-[var(--text-dim)]' : 'bg-[#e9a23b]/20 text-[#e9a23b]'}`}
               title={t('presets.needsProxyHint')}>{t('presets.needsProxy')}</span>
           )}
         </div>
@@ -137,7 +137,7 @@ export function LiveControls({ layer }: { layer: VectorLayer }) {
       {status && (
         <div className="text-[10px] leading-snug text-[var(--text-faint)]" data-testid="live-status">
           {status.error
-            ? <span className="text-[#f25c54]">{t(status.error)}{status.failures > 1 ? ` · ${t('live.retrying', { n: status.failures })}` : ''}</span>
+            ? <span className="text-[#e0523f]">{t(status.error)}{status.failures > 1 ? ` · ${t('live.retrying', { n: status.failures })}` : ''}</span>
             : (
               <>
                 {status.dataAt !== null
@@ -232,7 +232,7 @@ function HistoryRow({ layer, t }: { layer: VectorLayer; t: (k: string, o?: Recor
             {sinceH >= 1 ? t('history.spanH', { n: Math.floor(sinceH) }) : t('history.spanM', { n: Math.max(1, Math.round(sinceH * 60)) })}
           </span>
           <span className="flex-1" />
-          <button className="text-[10px] text-[var(--text-faint)] hover:text-[#f25c54]"
+          <button className="text-[10px] text-[var(--text-faint)] hover:text-[#e0523f]"
             onClick={async () => { await clearHistory(layer.id); setStats({ bytes: 0, from: null }) }}>{t('history.clear')}</button>
         </div>
       )}

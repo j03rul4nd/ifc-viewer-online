@@ -159,7 +159,7 @@ function postHref(slug: string, lang: string): string {
 }
 
 const INLINE_LINK_CLASS =
-  'text-[var(--accent-2)] underline decoration-[rgba(129,140,248,0.4)] underline-offset-2 ' +
+  'text-[var(--accent-2)] underline decoration-[rgba(85,202,195,0.4)] underline-offset-2 ' +
   'hover:decoration-[var(--accent-2)] transition-colors'
 
 function RenderInline({ text, lang, onNavigateToPost }: {
@@ -256,7 +256,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
         <ol className="mb-6 space-y-3 pl-0 list-none">
           {block.items.map((item, i) => (
             <li key={i} className="flex gap-3 text-[15px] leading-[1.72] text-[var(--text-dim)]">
-              <span className="shrink-0 w-[22px] h-[22px] mt-[0px] rounded-full bg-[rgba(94,106,210,0.15)] text-[var(--accent-2)] text-[11px] font-bold font-mono flex items-center justify-center">
+              <span className="shrink-0 w-[22px] h-[22px] mt-[0px] rounded-full bg-[rgba(10,132,129,0.15)] text-[var(--accent-2)] text-[11px] font-bold font-mono flex items-center justify-center">
                 {i + 1}
               </span>
               <span className="pt-[2px]">{item}</span>
@@ -460,7 +460,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
             <SpotlightCard
               key={i}
               className="p-4 sm:p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] h-full"
-              spotlightColor="rgba(94,106,210,0.13)"
+              spotlightColor="rgba(10,132,129,0.13)"
             >
               {/* Phone: icon beside the text — half the height of a stacked card. */}
               <div className="flex gap-3.5 sm:block">
@@ -490,7 +490,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
                 aria-label={side.label}
                 className={`p-4 sm:p-5 rounded-xl border ${
                   accent
-                    ? 'border-[rgba(94,106,210,0.4)] bg-[rgba(94,106,210,0.05)]'
+                    ? 'border-[rgba(10,132,129,0.4)] bg-[rgba(10,132,129,0.05)]'
                     : 'border-[var(--border)] bg-[var(--surface)]'
                 }`}
               >
@@ -652,8 +652,8 @@ function PostCard({ post, onClick, theme = 'dark', from, position, read, copy, l
   const touched = lastTouched(post)
   return (
     <SpotlightCard
-      className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(94,106,210,0.4)] active:scale-[0.99] hover:-translate-y-[2px] transition-all duration-200 cursor-pointer overflow-hidden"
-      spotlightColor={theme === 'dark' ? 'rgba(94,106,210,0.10)' : 'rgba(94,106,210,0.08)'}
+      className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(10,132,129,0.4)] active:scale-[0.99] hover:-translate-y-[2px] transition-all duration-200 cursor-pointer overflow-hidden"
+      spotlightColor={theme === 'dark' ? 'rgba(10,132,129,0.10)' : 'rgba(10,132,129,0.08)'}
     >
       <a
         href={postHref(post.slug, post.lang ?? 'en')}
@@ -740,13 +740,13 @@ function FeaturedCard({ post, onClick, theme = 'dark', featuredLabel = 'FEATURED
         event.preventDefault()
         onClick()
       }}
-      className="group block relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(94,106,210,0.5)] transition-all duration-200 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      className="group block relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(10,132,129,0.5)] transition-all duration-200 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       aria-label={post.title}
     >
       {/* Accent gradient overlay on hover */}
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10"
-        style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(94,106,210,0.07) 0%, transparent 65%)' }}
+        style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(10,132,129,0.07) 0%, transparent 65%)' }}
       />
 
       {/* Mobile hero image strip — shown only on mobile */}
@@ -771,7 +771,7 @@ function FeaturedCard({ post, onClick, theme = 'dark', featuredLabel = 'FEATURED
         {/* Text column */}
         <div className="relative flex flex-col gap-3 sm:gap-4 p-5 sm:p-8 z-20">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.10)] text-[10px] font-mono font-bold text-[var(--accent-2)] tracking-wider">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.10)] text-[10px] font-mono font-bold text-[var(--accent-2)] tracking-wider">
               {featuredLabel}
             </span>
             <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider ${catColor(post.categorySlug)}`}>
@@ -792,7 +792,7 @@ function FeaturedCard({ post, onClick, theme = 'dark', featuredLabel = 'FEATURED
 
           <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mt-1">
             <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] text-[var(--text-faint)]">
-              <div className="w-[16px] h-[16px] rounded-full bg-[rgba(94,106,210,0.2)] flex items-center justify-center text-[8px] font-bold text-[var(--accent-2)] shrink-0">
+              <div className="w-[16px] h-[16px] rounded-full bg-[rgba(10,132,129,0.2)] flex items-center justify-center text-[8px] font-bold text-[var(--accent-2)] shrink-0">
                 {post.author.charAt(0)}
               </div>
               <span>{post.author}</span>
@@ -1055,8 +1055,8 @@ function HeroBackdrop({ theme }: { theme: 'dark' | 'light' }) {
   }, [])
 
   const staticBg = theme === 'dark'
-    ? 'radial-gradient(ellipse 80% 70% at 15% 0%, rgba(94,106,210,0.22), transparent 60%), radial-gradient(ellipse 60% 60% at 90% 10%, rgba(34,211,238,0.08), transparent 60%)'
-    : 'radial-gradient(ellipse 80% 70% at 15% 0%, rgba(54,69,196,0.14), transparent 60%), linear-gradient(180deg, #eef0ff 0%, var(--bg) 100%)'
+    ? 'radial-gradient(ellipse 80% 70% at 15% 0%, rgba(10,132,129,0.22), transparent 60%), radial-gradient(ellipse 60% 60% at 90% 10%, rgba(34,211,238,0.08), transparent 60%)'
+    : 'radial-gradient(ellipse 80% 70% at 15% 0%, rgba(0,105,106,0.14), transparent 60%), linear-gradient(180deg, #eef0ff 0%, var(--bg) 100%)'
 
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -1064,7 +1064,7 @@ function HeroBackdrop({ theme }: { theme: 'dark' | 'light' }) {
       {live && theme === 'dark' && (
         <div className="absolute inset-0 opacity-70">
           <FaultyTerminal
-            scale={2.2} gridMul={[3, 1]} digitSize={1.0} timeScale={0.15} tint="#5E6AD2"
+            scale={2.2} gridMul={[3, 1]} digitSize={1.0} timeScale={0.15} tint="#0A8481"
             scanlineIntensity={0.7} glitchAmount={0.9} flickerAmount={0.6} noiseAmp={0.9} brightness={0.55}
             mouseReact={true} mouseStrength={0.35} curvature={0} chromaticAberration={0} pageLoadAnimation={false}
             className="w-full h-full"
@@ -1073,7 +1073,7 @@ function HeroBackdrop({ theme }: { theme: 'dark' | 'light' }) {
       )}
       {live && theme === 'light' && (
         <div className="absolute inset-0" style={{ opacity: 0.6 }}>
-          <SoftAurora color1="#3645C4" color2="#6B7FE8" brightness={0.45} speed={0.25} scale={1.2} bandHeight={0.52} bandSpread={0.9} noiseAmplitude={0.8} layerOffset={0.8} />
+          <SoftAurora color1="#00696A" color2="#6B7FE8" brightness={0.45} speed={0.25} scale={1.2} bandHeight={0.52} bandSpread={0.9} noiseAmplitude={0.8} layerOffset={0.8} />
         </div>
       )}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, var(--bg) 100%)' }} />
@@ -1350,7 +1350,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
 
   const navBg = landingTheme === 'dark'
     ? 'bg-[rgba(10,10,14,0.88)]'
-    : 'bg-[rgba(245,246,250,0.92)]'
+    : 'bg-[rgba(244,243,240,0.92)]'
 
   const nav = (
     <nav className={`lp-sticky-nav sticky top-0 z-20 border-b border-[var(--border)] backdrop-blur-[14px] ${navBg}`}>
@@ -1463,7 +1463,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
                 placeholder={copy.searchPlaceholder}
                 autoComplete="off"
                 enterKeyHint="search"
-                className="w-full h-14 sm:h-[60px] rounded-2xl border border-[var(--border-strong)] bg-[color:var(--surface)] pl-12 pr-14 sm:pr-24 text-[16px] text-[var(--text)] placeholder:text-[var(--text-faint)] shadow-[0_18px_50px_rgba(0,0,0,.18)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(94,106,210,.24)]"
+                className="w-full h-14 sm:h-[60px] rounded-2xl border border-[var(--border-strong)] bg-[color:var(--surface)] pl-12 pr-14 sm:pr-24 text-[16px] text-[var(--text)] placeholder:text-[var(--text-faint)] shadow-[0_18px_50px_rgba(0,0,0,.18)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(10,132,129,.24)]"
               />
               {query ? (
                 <button
@@ -1624,7 +1624,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
                   id="blog-sort"
                   value={sort}
                   onChange={(event) => setSort(event.target.value as BlogSort)}
-                  className="min-h-11 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none cursor-pointer focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(94,106,210,.24)]"
+                  className="min-h-11 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none cursor-pointer focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(10,132,129,.24)]"
                 >
                   <option value="newest">{copy.newest}</option>
                   <option value="shortest">{copy.shortest}</option>
@@ -2039,7 +2039,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
   const navBg = landingTheme === 'dark'
     ? 'bg-[rgba(10,10,14,0.88)]'
-    : 'bg-[rgba(245,246,250,0.92)]'
+    : 'bg-[rgba(244,243,240,0.92)]'
 
   return (
     <RecsProvider value={recsNav}>
@@ -2151,7 +2151,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
               {/* Meta row: author + date | CopyForAI on its own line on mobile */}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2 text-[12px] text-[var(--text-faint)]">
-                  <div className="w-[18px] h-[18px] rounded-full bg-[rgba(94,106,210,0.18)] flex items-center justify-center text-[9px] font-bold text-[var(--accent-2)] shrink-0">
+                  <div className="w-[18px] h-[18px] rounded-full bg-[rgba(10,132,129,0.18)] flex items-center justify-center text-[9px] font-bold text-[var(--accent-2)] shrink-0">
                     {post.author.charAt(0)}
                   </div>
                   <span>{post.author}</span>

@@ -445,7 +445,7 @@ function LayerRow({ layer, expanded, onToggleExpand }: { layer: VectorLayer; exp
       </div>
 
       {far !== null && far > 20 && (
-        <div className="mt-1 text-[10px] text-[var(--warning,#f5a524)] leading-snug">{t('warn.far', { km: Math.round(far) })}</div>
+        <div className="mt-1 text-[10px] text-[var(--warning,#e9a23b)] leading-snug">{t('warn.far', { km: Math.round(far) })}</div>
       )}
 
       {expanded && d && (

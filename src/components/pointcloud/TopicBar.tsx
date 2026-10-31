@@ -155,7 +155,7 @@ export function TopicBar({ onVisible, onSolo }: TopicBarProps) {
                 aria-label={t('topics.delete')}
                 title={t('topics.delete')}
                 onClick={() => useTopicStore.getState().deleteTopic(topic.id)}
-                className="w-7 h-7 max-md:w-10 max-md:h-10 shrink-0 flex items-center justify-center rounded-[7px] text-[var(--text-faint)] hover:text-[#E5484D]"
+                className="w-7 h-7 max-md:w-10 max-md:h-10 shrink-0 flex items-center justify-center rounded-[7px] text-[var(--text-faint)] hover:text-[#E0523F]"
               >
                 <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M3 3l8 8M11 3L3 11" /></svg>
               </button>

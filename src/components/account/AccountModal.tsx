@@ -240,7 +240,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-40"
           aria-hidden
-          style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(94,106,210,0.18), transparent 72%)' }}
+          style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(10,132,129,0.18), transparent 72%)' }}
         />
 
         <SheetGrip onClose={onClose} />
@@ -308,14 +308,14 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                     className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
                     style={entitlement.plan === 'free'
                       ? { background: 'var(--surface-2)', color: 'var(--text-muted)' }
-                      : { background: 'rgba(94,106,210,0.15)', color: 'var(--accent)' }}
+                      : { background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }}
                   >
                     {entitlement.plan}
                   </span>
                 </div>
 
                 {entitlement.status === 'past_due' && (
-                  <p className="text-[11px] leading-snug rounded-lg px-2 py-1.5" style={{ background: 'rgba(245,166,35,0.10)', color: '#F5A623' }}>
+                  <p className="text-[11px] leading-snug rounded-lg px-2 py-1.5" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>
                     ! {t('plan.pastDue')}
                   </p>
                 )}
@@ -384,7 +384,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                       {k.last_used_at ? ` · ${t('keys.lastUsed')} ${new Date(k.last_used_at).toLocaleDateString()}` : ''}
                     </span>
                     <button onClick={() => void handleRevoke(k.id)} disabled={busy === k.id}
-                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
                       {t('keys.revoke')}
                     </button>
                   </div>
@@ -417,7 +417,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   <div className="flex items-center gap-3">
                     <img src={branding.logo} alt="" className="max-h-10 max-w-[160px] object-contain rounded bg-white p-1" />
                     <button onClick={() => void handleRemoveLogo()} disabled={busy === 'logo'}
-                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
                       {t('branding.remove')}
                     </button>
                   </div>
@@ -438,7 +438,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 )}
                 {history.phase === 'ready' && history.items.map((c) => (
                   <div key={c.cert_hash} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border)]">
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#F5A623' }}>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#E9A23B' }}>
                       {c.payload.health_score}
                     </span>
                     <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">

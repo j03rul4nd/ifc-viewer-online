@@ -35,7 +35,7 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
       </pre>
       <button
         onClick={reset}
-        className="px-5 py-2 bg-[var(--accent,#5E6AD2)] text-white rounded-[8px] text-[13px] font-medium hover:brightness-110 active:brightness-90 transition"
+        className="px-5 py-2 bg-[var(--accent,#0A8481)] text-white rounded-[8px] text-[13px] font-medium hover:brightness-110 active:brightness-90 transition"
       >
         {t('boundary.reload')}
       </button>

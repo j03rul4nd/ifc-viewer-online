@@ -487,7 +487,7 @@ export default function ValidationExportModal({
   const FORMATS: Array<{ id: ExportFormat; label: string; desc: string; tag: string; color: string }> = [
     { id: 'json',        label: t('export.fmtJsonLabel'),  desc: t('export.fmtJsonDesc'),  tag: 'JSON', color: 'var(--accent)' },
     { id: 'csv',         label: t('export.fmtCsvLabel'),   desc: t('export.fmtCsvDesc'),   tag: 'CSV',  color: 'var(--ok)' },
-    { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: '#F5A623' },
+    { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: '#E9A23B' },
     { id: 'bcf',         label: t('export.fmtBcfLabel'),   desc: t('export.fmtBcfDesc'),   tag: 'BCF',  color: 'var(--accent)' },
     { id: 'delivery',    label: t('export.fmtReportLabel'), desc: t('export.fmtReportDesc'), tag: 'HTML', color: '#5E9ED6' },
     { id: 'cobie',       label: t('export.fmtCobieLabel'),  desc: t('export.fmtCobieDesc'),  tag: 'XLSX', color: 'var(--ok)' },
@@ -495,7 +495,7 @@ export default function ValidationExportModal({
 
   const SEVERITIES: Array<{ id: Severity; label: string; color: string }> = [
     { id: 'error',   label: t('filters.errors'),   color: 'var(--danger)' },
-    { id: 'warning', label: t('filters.warnings'), color: '#F5A623' },
+    { id: 'warning', label: t('filters.warnings'), color: '#E9A23B' },
     { id: 'info',    label: t('filters.info'),     color: '#5E9ED6' },
   ]
 
@@ -574,9 +574,9 @@ export default function ValidationExportModal({
 
           {/* Verifiable certificate (F1) — only rendered with a configured backend */}
           {format === 'certificate' && cloudAvailable && (
-            <section className="rounded-lg border border-[#F5A62333] bg-[#F5A6230a] p-2.5 flex flex-col gap-2">
+            <section className="rounded-lg border border-[#E9A23B33] bg-[#E9A23B0a] p-2.5 flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#F5A623" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#E9A23B" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 1l4 1.5v3c0 2.5-1.7 4.4-4 5.5-2.3-1.1-4-3-4-5.5v-3L6 1z"/><path d="M4.2 6l1.3 1.3 2.3-2.6"/>
                 </svg>
                 <span className="text-[11px] font-semibold text-[var(--text)]">{t('export.verifiableTitle')}</span>
@@ -584,7 +584,7 @@ export default function ValidationExportModal({
               <p className="text-[10px] text-[var(--text-muted)] leading-snug">{t('export.verifiableDesc')}</p>
 
               {certifyState === 'failed' && (
-                <p className="text-[10px] leading-snug" style={{ color: '#F5A623' }}>{t('export.verifiableError')}</p>
+                <p className="text-[10px] leading-snug" style={{ color: '#E9A23B' }}>{t('export.verifiableError')}</p>
               )}
 
               {typeof certifyState === 'object' ? (
@@ -650,7 +650,7 @@ export default function ValidationExportModal({
                     onClick={handleIssueVerifiable}
                     disabled={certifyState === 'busy' || selectedModels.length !== 1}
                     className="self-start h-7 px-3 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: '#F5A623', color: '#1a1205' }}
+                    style={{ background: '#E9A23B', color: '#1a1205' }}
                   >
                     {certifyState === 'busy' ? t('export.verifiableBusy') : t('export.verifiableBtn')}
                   </button>
@@ -750,7 +750,7 @@ export default function ValidationExportModal({
 
         {/* Footer — live summary + download */}
         <div className="px-4 py-3 border-t border-[var(--border)] bg-[rgba(255,255,255,0.02)] shrink-0 flex items-center justify-between gap-3">
-          <p className="text-[11px] leading-tight" style={format === 'cobie' && cobieState === 'failed' ? { color: 'var(--danger, #e5534b)' } : { color: 'var(--text-muted)' }}>
+          <p className="text-[11px] leading-tight" style={format === 'cobie' && cobieState === 'failed' ? { color: 'var(--danger, #e0523f)' } : { color: 'var(--text-muted)' }}>
             {format === 'cobie' && cobieState === 'failed'
               ? t('export.cobieFailed')
               : severityApplies

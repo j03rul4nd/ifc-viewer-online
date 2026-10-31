@@ -54,7 +54,7 @@ const VARIANTS = {
   blue:    { activeColor: '#e0f2fe', gap: 10, speed: 25, colors: '#e0f2fe,#7dd3fc,#0ea5e9', noFocus: false },
   yellow:  { activeColor: '#fef08a', gap: 3, speed: 20, colors: '#fef08a,#fde047,#eab308', noFocus: false },
   pink:    { activeColor: '#fecdd3', gap: 6, speed: 80, colors: '#fecdd3,#fda4af,#e11d48', noFocus: true },
-  purple:  { activeColor: '#c4b5fd', gap: 8, speed: 30, colors: '#5E6AD2,#8B93E8,#A78BFA', noFocus: false },
+  purple:  { activeColor: '#d8c4a3', gap: 8, speed: 30, colors: '#0A8481,#55CAC3,#C8A97E', noFocus: false },
 };
 
 interface PixelCardProps {

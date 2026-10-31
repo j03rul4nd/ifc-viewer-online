@@ -93,7 +93,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -121,13 +121,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -157,7 +157,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -185,13 +185,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -221,7 +221,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -249,13 +249,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -285,7 +285,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -313,13 +313,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -349,7 +349,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -377,13 +377,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -413,7 +413,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -441,13 +441,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -477,7 +477,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -505,13 +505,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -541,7 +541,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -569,13 +569,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"
@@ -605,7 +605,7 @@
               }
             ],
             "effect": {
-              "color": "#22c55e",
+              "color": "#3fa866",
               "opacity": 1,
               "hide": false
             }
@@ -633,13 +633,13 @@
             "match": "all",
             "filters": [],
             "effect": {
-              "color": "#f59e0b",
+              "color": "#e9a23b",
               "opacity": 1,
               "hide": false
             }
           }
         ],
-        "staleColor": "#8a8f98",
+        "staleColor": "#a09e98",
         "staleAfterS": 45,
         "label": {
           "field": "VP.desi"

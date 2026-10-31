@@ -44,7 +44,7 @@ function drawNorth(ctx: CanvasRenderingContext2D, cx: number, cy: number, rad: n
   ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1; ctx.stroke()
   ctx.rotate(rad)
   ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(5, 4); ctx.lineTo(0, 1); ctx.lineTo(-5, 4); ctx.closePath()
-  ctx.fillStyle = '#f25c54'; ctx.fill()
+  ctx.fillStyle = '#e0523f'; ctx.fill()
   ctx.fillStyle = '#f2f4f8'; ctx.font = `700 8px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   ctx.fillText('N', 0, -16 + 0.5)
   ctx.restore()

@@ -72,7 +72,7 @@ export function LookChoices() {
               aria-checked={on}
               onClick={() => ctl.applyMapLook(look.id)}
               className={`flex flex-col gap-1 p-1 rounded-[7px] border text-left transition-colors ${
-                on ? 'border-[var(--accent)] bg-[var(--accent-soft,rgba(99,102,241,0.12))]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                on ? 'border-[var(--accent)] bg-[var(--accent-soft,rgba(10,132,129,0.12))]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
               }`}
             >
               <Swatch look={look} />

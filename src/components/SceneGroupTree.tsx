@@ -418,7 +418,7 @@ export default function SceneGroupTree({
             key={g.id}
             {...dropProps(g.id, dropOnto(g.id))}
             className={`rounded-[8px] border transition-colors ${
-              dropTarget === g.id ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.08)]'
+              dropTarget === g.id ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.08)]'
                 : hasActive ? 'border-[var(--border-strong)]' : 'border-[var(--border)]'
             }`}
           >

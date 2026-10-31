@@ -65,7 +65,7 @@ export const LOOKS: Record<LookId, Look> = {
   native: {
     id: 'native', palette: null, glazingOpacity: 1, background: null, grade: null,
     type: { family: 'sans', titleFamily: 'sans', ink: '#ffffff', muted: '#d4d4d8', uppercase: false },
-    accent: '#6366f1', card: { base: '#07070b', blobs: ['#6366f1', '#0ea5e9', '#a855f7'] },
+    accent: '#0a8481', card: { base: '#07070b', blobs: ['#0a8481', '#0ea5e9', '#b08d5f'] },
     light: null,
   },
   // Pantone 2026 Cloud Dancer: a clay model on warm paper, an editorial serif in

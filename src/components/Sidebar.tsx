@@ -46,8 +46,8 @@ function findSpatialPath(
 
 
 const CLASS_COLOR: Record<string, string> = {
-  IfcProject: '#5E6AD2', IfcSite: '#30A46C',
-  IfcBuilding: '#8B93E8', IfcBuildingStorey: '#F5A623',
+  IfcProject: '#0A8481', IfcSite: '#3FA866',
+  IfcBuilding: '#55CAC3', IfcBuildingStorey: '#E9A23B',
   IfcSpace: '#6FB8D9', IfcZone: '#D4A373',
 }
 
@@ -107,7 +107,7 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
       title={`Copy ${label ?? value}`}
     >
       {copied ? (
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#30A46C" strokeWidth="1.8" strokeLinecap="round">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#3FA866" strokeWidth="1.8" strokeLinecap="round">
           <path d="M2 6l3 3 5-5" />
         </svg>
       ) : (
@@ -230,8 +230,8 @@ function ReadOnlyField({ label, value, mono = false, copyable = false }: {
 function IssuePill({ issue }: { issue: ValidationIssue }) {
   const [open, setOpen] = useState(false)
   const colors = {
-    error:   { bg: '#E5484D18', border: '#E5484D44', text: '#E5484D', dot: '#E5484D' },
-    warning: { bg: '#F5A62318', border: '#F5A62344', text: '#F5A623', dot: '#F5A623' },
+    error:   { bg: '#E0523F18', border: '#E0523F44', text: '#E0523F', dot: '#E0523F' },
+    warning: { bg: '#E9A23B18', border: '#E9A23B44', text: '#E9A23B', dot: '#E9A23B' },
     info:    { bg: '#5E9ED618', border: '#5E9ED644', text: '#5E9ED6', dot: '#5E9ED6' },
   }[issue.severity]
 
@@ -247,7 +247,7 @@ function IssuePill({ issue }: { issue: ValidationIssue }) {
           {issue.message}
         </span>
         {issue.autoFixable && (
-          <span className="text-[9px] px-1 py-0.5 rounded bg-[#30A46C18] text-[#30A46C] border border-[#30A46C33] shrink-0 font-medium">
+          <span className="text-[9px] px-1 py-0.5 rounded bg-[#3FA86618] text-[#3FA866] border border-[#3FA86633] shrink-0 font-medium">
             AUTO-FIX
           </span>
         )}
@@ -972,12 +972,12 @@ function PropertiesPanel({
             </span>
           )}
           {errorCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#E5484D22] text-[#E5484D] border border-[#E5484D44] font-medium leading-none">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#E0523F22] text-[#E0523F] border border-[#E0523F44] font-medium leading-none">
               {errorCount} err
             </span>
           )}
           {warningCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F5A62322] text-[#F5A623] border border-[#F5A62344] font-medium leading-none">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#E9A23B22] text-[#E9A23B] border border-[#E9A23B44] font-medium leading-none">
               {warningCount} warn
             </span>
           )}
@@ -1004,14 +1004,14 @@ function PropertiesPanel({
                     onClick={handleExportJson}
                     className="w-full text-left px-3 py-2 text-[11.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
                   >
-                    <span className="font-mono text-[9px] text-[#30A46C]">JSON</span>
+                    <span className="font-mono text-[9px] text-[#3FA866]">JSON</span>
                     Export JSON
                   </button>
                   <button
                     onClick={handleExportCsv}
                     className="w-full text-left px-3 py-2 text-[11.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
                   >
-                    <span className="font-mono text-[9px] text-[#F5A623]">CSV</span>
+                    <span className="font-mono text-[9px] text-[#E9A23B]">CSV</span>
                     Export CSV
                   </button>
                 </div>
@@ -1164,15 +1164,15 @@ function PropertiesPanel({
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
               <div className="px-4 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: isHidden ? '#E5484D' : '#30A46C' }} />
+                  <div className="w-2 h-2 rounded-full" style={{ background: isHidden ? '#E0523F' : '#3FA866' }} />
                   <span className="text-[12px] text-[var(--text)]">{isHidden ? t('properties.hidden') : t('properties.visible')}</span>
                 </div>
                 <button
                   onClick={() => setElementsVisible(expandWithDecomp(expressId!, decompMap), isHidden, selected?.modelId ?? '')}
                   className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition-colors border ${
                     isHidden
-                      ? 'bg-[#30A46C22] border-[#30A46C44] text-[#30A46C] hover:bg-[#30A46C33]'
-                      : 'bg-[#E5484D22] border-[#E5484D44] text-[#E5484D] hover:bg-[#E5484D33]'
+                      ? 'bg-[#3FA86622] border-[#3FA86644] text-[#3FA866] hover:bg-[#3FA86633]'
+                      : 'bg-[#E0523F22] border-[#E0523F44] text-[#E0523F] hover:bg-[#E0523F33]'
                   }`}
                 >
                   {isHidden ? t('actions.showElement') : t('actions.hideElement')}
@@ -1268,8 +1268,8 @@ function PropertiesPanel({
 
                 {/* IFC data load error notice */}
                 {ifcState.status === 'error' && (
-                  <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[#F5A62312] border border-[#F5A62330] flex items-center gap-2">
-                    <span className="text-[10.5px] text-[#F5A623]">{t('properties.loadError')}</span>
+                  <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[#E9A23B12] border border-[#E9A23B30] flex items-center gap-2">
+                    <span className="text-[10.5px] text-[#E9A23B]">{t('properties.loadError')}</span>
                   </div>
                 )}
               </div>
@@ -1543,8 +1543,8 @@ function CategoryRow({
       <div
         className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] group/row hover:bg-[var(--surface-2)] transition-colors rounded-[6px] mx-1"
         style={{
-          background:  isIsolated ? 'rgba(94,106,210,0.1)' : undefined,
-          outline:     isIsolated ? '1px solid rgba(94,106,210,0.3)' : undefined,
+          background:  isIsolated ? 'rgba(10,132,129,0.1)' : undefined,
+          outline:     isIsolated ? '1px solid rgba(10,132,129,0.3)' : undefined,
           opacity:     isHidden   ? 0.4 : 1,
         }}
       >
@@ -1587,7 +1587,7 @@ function CategoryRow({
         {hasIssues && (
           <span
             className="inline-flex items-center gap-0.5 text-[10px] font-mono px-1 py-0.5 rounded leading-none shrink-0"
-            style={{ color: '#F5A623', background: 'rgba(245,166,35,0.15)', border: '1px solid rgba(245,166,35,0.25)' }}
+            style={{ color: '#E9A23B', background: 'rgba(233,162,59,0.15)', border: '1px solid rgba(233,162,59,0.25)' }}
             title={`${issueCount} validation issue${issueCount !== 1 ? 's' : ''}`}
           >
             <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" style={{ opacity: 0.9 }}>
@@ -1815,7 +1815,7 @@ function CategoryPanel({
           </span>
           {typesWithIssues > 0 && (
             <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none"
-              style={{ color: '#F5A623', background: 'rgba(245,166,35,0.12)', border: '1px solid rgba(245,166,35,0.2)' }}>
+              style={{ color: '#E9A23B', background: 'rgba(233,162,59,0.12)', border: '1px solid rgba(233,162,59,0.2)' }}>
               <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M6 2L10.5 10H1.5L6 2zm0 2.5v2.5m0 1.5v.01"/>
               </svg>

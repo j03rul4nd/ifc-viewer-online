@@ -22,7 +22,7 @@ import { formatStart } from '../../lib/capture/tiktok-link'
 import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
 
 const SPEEDS = [0.5, 1, 1.5, 2, 3]
-const COLORS = ['#ffffff', '#0b0d1a', '#ffd84d', '#ff4d6d', '#4dd2ff', '#7cff8a']
+const COLORS = ['#ffffff', '#1c1b16', '#ffd84d', '#ff4d6d', '#4dd2ff', '#7cff8a']
 
 export function StudioInspector() {
   const { t } = useTranslation('capture')
@@ -277,7 +277,7 @@ function ProjectPanel() {
         <div className="grid grid-cols-2 gap-1.5">
           {LOOK_IDS.map((id) => {
             const lk = LOOKS[id]
-            const swatch = [lk.background?.top ?? '#0a0a0c', lk.palette?.envelope ?? '#9aa0ae', lk.palette?.glazing ?? '#6b7a90', lk.accent]
+            const swatch = [lk.background?.top ?? '#100f0c', lk.palette?.envelope ?? '#9aa0ae', lk.palette?.glazing ?? '#6b7a90', lk.accent]
             return (
               <button key={id} type="button" className="studio-look" aria-pressed={(project.lookId ?? 'native') === id} onClick={() => edit((p) => restyleProject(p, id))}>
                 <span className="studio-look-swatch" aria-hidden="true">{swatch.map((c, i) => <span key={i} style={{ background: c }} />)}</span>

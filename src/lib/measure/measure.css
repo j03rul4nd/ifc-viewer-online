@@ -4,7 +4,7 @@
    alike, and the colour says what kind of value it is without a legend. */
 
 .pv-mlabel {
-  --c: #ffb224;
+  --c: #e9a23b;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -30,7 +30,7 @@
 
 .pv-mlabel[data-kind='area'] { --c: #3dd68c; }
 .pv-mlabel[data-kind='angle'] { --c: #f76b8a; }
-.pv-mlabel[data-kind='point'] { --c: #b49cff; }
+.pv-mlabel[data-kind='point'] { --c: #c8a97e; }
 .pv-mlabel[data-kind='axis-x'] { --c: #ff5a5a; }
 .pv-mlabel[data-kind='axis-y'] { --c: #4cd964; }
 .pv-mlabel[data-kind='axis-z'] { --c: #4c8dff; }
@@ -72,7 +72,7 @@
   cursor: pointer;
   pointer-events: auto;
 }
-.pv-mlabel__del:hover { background: rgba(229, 72, 77, 0.9); color: #fff; }
+.pv-mlabel__del:hover { background: rgba(224, 82, 63, 0.9); color: #fff; }
 .pv-mlabel--interactive:hover .pv-mlabel__del,
 .pv-mlabel.is-selected .pv-mlabel__del { display: inline-flex; }
 

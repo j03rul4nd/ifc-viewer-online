@@ -90,7 +90,7 @@ export default function TableOfContents({ headings, label = 'On this page', aria
               'w-full text-left px-2 py-2 sm:py-1.5 rounded-lg text-[13px] sm:text-[12.5px] leading-[1.4] transition-all duration-150 min-h-[40px] sm:min-h-0',
               h.depth === 3 ? 'pl-5' : '',
               h.id === activeId
-                ? 'text-[var(--text)] bg-[rgba(94,106,210,0.1)] font-medium'
+                ? 'text-[var(--text)] bg-[rgba(10,132,129,0.1)] font-medium'
                 : 'text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:bg-[rgba(255,255,255,0.04)]',
             ].join(' ')}
           >

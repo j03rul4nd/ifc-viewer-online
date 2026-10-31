@@ -12,9 +12,9 @@
 //   <ShapeGrid
 //     direction="diagonal"
 //     speed={0.3}
-//     borderColor="rgba(94,106,210,0.08)"
+//     borderColor="rgba(10,132,129,0.08)"
 //     squareSize={48}
-//     hoverFillColor="rgba(94,106,210,0.06)"
+//     hoverFillColor="rgba(10,132,129,0.06)"
 //     shape="square"
 //     hoverTrailAmount={3}
 //   />
@@ -48,7 +48,7 @@ export default function ShapeGrid({
   speed           = 0.5,
   borderColor     = 'rgba(255,255,255,0.08)',
   squareSize      = 48,
-  hoverFillColor  = 'rgba(94,106,210,0.06)',
+  hoverFillColor  = 'rgba(10,132,129,0.06)',
   hoverTrailAmount = 3,
   shape           = 'square',
   className       = '',

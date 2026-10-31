@@ -371,7 +371,7 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
             <div className="grid grid-cols-2 gap-1.5">
               {LOOK_IDS.map((id) => {
                 const lk = LOOKS[id]
-                const swatch = [lk.background?.top ?? '#0a0a0c', lk.palette?.envelope ?? '#9aa0ae', lk.palette?.glazing ?? '#6b7a90', lk.accent]
+                const swatch = [lk.background?.top ?? '#100f0c', lk.palette?.envelope ?? '#9aa0ae', lk.palette?.glazing ?? '#6b7a90', lk.accent]
                 return (
                   <button key={id} type="button" className="studio-look" aria-pressed={(draft.look ?? 'native') === id} onClick={() => set({ look: id })}>
                     <span className="studio-look-swatch" aria-hidden="true">

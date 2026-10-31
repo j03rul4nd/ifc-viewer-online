@@ -17,19 +17,19 @@ import { Preview2D } from './render2d'
 const app = document.getElementById('app')!
 app.innerHTML = `
 <style>
-  body { margin: 0; background: #0a0a0c; color: #e7e7ea; font: 13px/1.45 system-ui, sans-serif; }
+  body { margin: 0; background: #100f0c; color: #e7e7ea; font: 13px/1.45 system-ui, sans-serif; }
   .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 16px; }
   @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
   canvas { width: 100%; image-rendering: pixelated; background: #15161b; border-radius: 10px; }
   .card { background: rgba(22,24,30,.9); border: 1px solid #262833; border-radius: 10px; padding: 12px; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
   button, select { background: #1c1e26; color: inherit; border: 1px solid #30333f; border-radius: 7px; padding: 5px 9px; font: inherit; }
-  button.primary { background: #5E6AD2; border-color: #5E6AD2; color: #fff; }
+  button.primary { background: #0A8481; border-color: #0A8481; color: #fff; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
-  dt { color: #8b8d98; } dd { margin: 0; text-align: right; }
+  dt { color: #a09e98; } dd { margin: 0; text-align: right; }
   pre { white-space: pre-wrap; font: 11px/1.4 ui-monospace, monospace; max-height: 50vh; overflow: auto; }
   .warn { color: #e5b567; font-size: 12px; }
-  h1 { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: #8b8d98; margin: 0 0 6px; }
+  h1 { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: #a09e98; margin: 0 0 6px; }
 </style>
 <div class="wrap">
   <div>

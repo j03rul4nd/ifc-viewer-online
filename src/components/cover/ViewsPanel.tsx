@@ -92,7 +92,7 @@ export default function ViewsPanel(p: Props) {
             <button className={cls.btn} onClick={p.onFrameFocus} disabled={!p.focusCat || !!busy} title={t('cover.frameFocus')} aria-label={t('cover.frameFocus')}><Icons.Search size={13} /></button>
           </div>
         </label>
-        {LOOKS[p.look].wantsFocus && !p.focusCat && <div className="text-[11px] text-[var(--warn,#F5A623)] mb-2">{t('cover.focusHint')}</div>}
+        {LOOKS[p.look].wantsFocus && !p.focusCat && <div className="text-[11px] text-[var(--warn,#E9A23B)] mb-2">{t('cover.focusHint')}</div>}
       </Section>
 
       <Section title={t('cover.viral.title')}>

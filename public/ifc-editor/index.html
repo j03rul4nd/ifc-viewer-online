@@ -183,31 +183,31 @@
   </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.5; }
+    html, body { background: #100F0C; color: #ecebe7; font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.5; }
     a { color: inherit; text-decoration: none; }
     .container { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
     header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
     .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .logo { font-size: 14px; font-weight: 600; color: #55CAC3; }
     .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
     .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
     .hero { position: relative; overflow: hidden; padding: 64px 0 40px; text-align: center; }
     .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-    .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(10,132,129,0.16), transparent 70%); }
     .hero .container { position: relative; z-index: 1; }
-    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A3ACF0; margin-bottom: 24px; font-weight: 500; }
+    .badge { display: inline-block; background: rgba(10,132,129,0.1); border: 1px solid rgba(10,132,129,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #55cac3; margin-bottom: 24px; font-weight: 500; }
     h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 18px; }
-    .accent { background: linear-gradient(100deg, #A3ACF0 0%, #6F7BE0 55%, #8B96E9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #8B96E9; }
+    .accent { background: linear-gradient(100deg, #55cac3 0%, #6F7BE0 55%, #55CAC3 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #55CAC3; }
     .lead { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.62); max-width: 700px; margin: 0 auto 30px; }
-    .cta { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
-    .cta:hover { background: #4F5ABF; }
+    .cta { display: inline-flex; align-items: center; gap: 8px; background: #0A8481; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #0A8481; }
     .note { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 12px; }
     .shot { margin: 40px auto 0; max-width: 1040px; }
     figure { margin: 0; }
     figure img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 80px -30px rgba(0,0,0,0.8); background: #111; }
     figcaption { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 10px; text-align: center; }
     .section { padding: 56px 0; border-top: 1px solid rgba(255,255,255,0.06); }
-    .label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #8B96E9; text-transform: uppercase; margin-bottom: 10px; }
+    .label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #55CAC3; text-transform: uppercase; margin-bottom: 10px; }
     h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
     .sub { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 30px; max-width: 680px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
@@ -237,7 +237,7 @@
   </header>
   <main>
     <section class="hero">
-      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <canvas class="hero-bg" data-dot-grid data-color="10,132,129" aria-hidden="true"></canvas>
       <div class="container">
         <div class="badge">Free · No install · Nothing uploaded</div>
         <h1>Free IFC Editor<br><span class="accent">online, in your browser</span></h1>

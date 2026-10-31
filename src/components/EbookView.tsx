@@ -338,7 +338,7 @@ export default function EbookView({ onNavigateToLanding, book = PRIMARY_EBOOK }:
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)', color: 'var(--text)', position: 'relative' }}>
       <div className="absolute left-0 right-0 top-0 pointer-events-none hidden sm:block" style={{ height: '70vh', zIndex: 0 }} aria-hidden="true">
         <SideRays
-          speed={0.6} rayColor1="#5E6AD2" rayColor2="#8B93E8" intensity={0.65}
+          speed={0.6} rayColor1="#0A8481" rayColor2="#55CAC3" intensity={0.65}
           spread={1.1} origin="top-right" saturation={1.0} blend={0.5} falloff={2.8} opacity={0.22}
         />
       </div>

@@ -21,7 +21,7 @@ import { PageStrip, StudioControls, TopBar } from './SketchPanels'
 export type Tx = (key: string, o?: Record<string, unknown>) => string
 
 const CHROME_LIGHT = { '--sk-panel': 'rgba(250,246,242,.92)', '--sk-line': 'rgba(50,35,25,.14)', '--sk-text': '#241C16', '--sk-dim': '#6D5F55', '--sk-active': '#241C16', '--sk-on-active': '#FAF6F2', '--sk-soft': 'rgba(50,35,25,.07)' }
-const CHROME_NIGHT = { '--sk-panel': 'rgba(24,25,32,.92)', '--sk-line': 'rgba(255,255,255,.1)', '--sk-text': '#ECEDEE', '--sk-dim': '#9A9CA8', '--sk-active': '#ECEDEE', '--sk-on-active': '#15161C', '--sk-soft': 'rgba(255,255,255,.08)' }
+const CHROME_NIGHT = { '--sk-panel': 'rgba(24,25,32,.92)', '--sk-line': 'rgba(255,255,255,.1)', '--sk-text': '#ECEBE7', '--sk-dim': '#9A9CA8', '--sk-active': '#ECEBE7', '--sk-on-active': '#21201D', '--sk-soft': 'rgba(255,255,255,.08)' }
 
 export default function SketchStudio() {
   const { t } = useTranslation('sketch' as never)

@@ -129,28 +129,28 @@
 
   <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+html, body { background: #100F0C; color: #ecebe7; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
 a { color: inherit; text-decoration: none; }
 .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
 header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; }
-.logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+.logo { font-size: 14px; font-weight: 600; color: #0A8481; }
 .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
 .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
 .hero { position: relative; overflow: hidden; padding: 72px 0 52px; text-align: center; }
 .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
-.hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+.hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(10,132,129,0.16), transparent 70%); }
 .hero .container { position: relative; z-index: 1; }
-.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(10,132,129,0.1); border: 1px solid rgba(10,132,129,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #55CAC3; margin-bottom: 28px; font-weight: 500; }
 .hero h1 { font-size: clamp(1.8rem, 5vw, 3.0rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-.accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
+.accent { background: linear-gradient(100deg, #55CAC3 0%, #0A8481 55%, #55CAC3 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #0A8481; }
 .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
-.cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
-.cta-primary:hover { background: #4F5ABF; }
+.cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #0A8481; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+.cta-primary:hover { background: #0A8481; }
 .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
 .section { padding: 60px 0; }
 .divider { border-top: 1px solid rgba(255,255,255,0.06); }
-.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #0A8481; text-transform: uppercase; margin-bottom: 12px; }
 .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
 .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 620px; }
 .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
@@ -158,17 +158,17 @@ header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
 .feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
 .feature-card p { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
 .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; gap: 1px; }
-.rule { background: #0A0A0C; padding: 18px 20px; }
+.rule { background: #100F0C; padding: 18px 20px; }
 .rule-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
 .rule-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
-.rule-tag { display: inline-block; margin-top: 8px; background: rgba(94,106,210,0.12); color: #8B96E9; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+.rule-tag { display: inline-block; margin-top: 8px; background: rgba(10,132,129,0.12); color: #55CAC3; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
 .compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
 .compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.4); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
 .compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
 .compare-table tr:last-child td { border-bottom: none; }
 .col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
 .col-a { color: rgba(255,255,255,0.4); }
-.col-b { color: #E8E8F0; }
+.col-b { color: #ecebe7; }
 .badge-ok { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
 .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
 .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -200,7 +200,7 @@ footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-ali
   <main>
 
     <section class="hero">
-      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <canvas class="hero-bg" data-dot-grid data-color="10,132,129" aria-hidden="true"></canvas>
       <div class="container">
         <div class="hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Basado en web · Nada se sube · Gratis</div>
         <h1>Una alternativa gratuita a<br><span class="accent">Solibri WebChecker</span></h1>

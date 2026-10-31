@@ -16,7 +16,7 @@ import type { OrbitState, PaperKind, PlacedImage, SketchLayer, SketchPlane, Stro
 export const PAPER: Record<PaperKind, { bg: string; ink: string; grid: string; plane: string }> = {
   warm: { bg: '#E4D6CC', ink: '#17130F', grid: '#3A2E26', plane: '#6E5A4C' },
   white: { bg: '#F7F6F3', ink: '#141414', grid: '#2B2B2B', plane: '#6A6F78' },
-  night: { bg: '#15161C', ink: '#ECEDEE', grid: '#C8CAD4', plane: '#8B93E8' },
+  night: { bg: '#21201D', ink: '#ECEBE7', grid: '#C8CAD4', plane: '#55CAC3' },
 }
 
 const FOV = 38

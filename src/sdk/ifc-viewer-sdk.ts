@@ -2875,7 +2875,7 @@ export class IfcViewer {
       btn.textContent = o.launchLabel ?? '▶ Open the 3D model'
       Object.assign(btn.style, {
         marginTop: '6px', padding: '10px 16px', border: '0', borderRadius: '8px', cursor: 'pointer',
-        background: o.accent ?? 'var(--ifcv-accent, #5e6ad2)', color: '#fff', font: '600 13px system-ui, sans-serif',
+        background: o.accent ?? 'var(--ifcv-accent, #0a8481)', color: '#fff', font: '600 13px system-ui, sans-serif',
       })
       btn.addEventListener('click', () => this.activate())
       poster.appendChild(btn)
@@ -3030,7 +3030,7 @@ export class IfcViewer {
 // ─── <ifc-viewer> custom element ──────────────────────────────────────────────
 // Zero-JS integration: drop the tag into any HTML/dashboard and set attributes.
 //
-//   <ifc-viewer model="https://host/a.ifc" ui="minimal" accent="#22c55e"
+//   <ifc-viewer model="https://host/a.ifc" ui="minimal" accent="#3fa866"
 //   <ifc-viewer model="https://host/a.ifc" panels="scene,map"
 //               style="display:block;height:520px"></ifc-viewer>
 //   <ifc-viewer model="https://host/a.ifc" background="white"

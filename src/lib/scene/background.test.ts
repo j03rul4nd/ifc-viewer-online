@@ -69,7 +69,7 @@ describe('isLightBackground / gridColorFor', () => {
 describe('presets', () => {
   it('ships studio first and unchanged — the default must not move', () => {
     expect(BACKGROUND_PRESETS[0].id).toBe('studio')
-    expect(BACKGROUND_PRESETS[0].top).toBe('#0a0a0c')
+    expect(BACKGROUND_PRESETS[0].top).toBe('#100f0c')
     expect(DEFAULT_BACKGROUND.preset).toBe('studio')
   })
 

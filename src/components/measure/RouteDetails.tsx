@@ -24,7 +24,7 @@ export function RouteModeChips({ value, onChange, disabled, touch }: { value: Ro
         <button key={mode} type="button" role="radio" aria-checked={value === mode} disabled={disabled}
           onClick={(e) => { e.stopPropagation(); onChange(mode) }}
           className={['flex items-center gap-1 rounded-full border disabled:opacity-50', touch ? 'px-3 py-1.5 text-[12px]' : 'px-2 py-0.5 text-[10.5px]',
-            value === mode ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.14)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]'].join(' ')}>
+            value === mode ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.14)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]'].join(' ')}>
           <span aria-hidden="true">{icon}</span>{t(`route.modes.${mode}`)}
         </button>
       ))}
@@ -68,7 +68,7 @@ export function RouteDetails({ item, settings: s, busy, onMode }: { item: PathIt
                 <span className="text-[var(--text)]">{line.title}</span>
                 {line.detail && <span className="block text-[var(--text-faint)] break-words">{line.detail}</span>}
                 {(l.guessedMetres ?? 0) >= 1 && (
-                  <span className="block text-[#FFB224]">⚠ {t('route.guessed', { m: distance(l.guessedMetres!, s) })}</span>
+                  <span className="block text-[#E9A23B]">⚠ {t('route.guessed', { m: distance(l.guessedMetres!, s) })}</span>
                 )}
               </span>
               {l.kind !== 'door' && (

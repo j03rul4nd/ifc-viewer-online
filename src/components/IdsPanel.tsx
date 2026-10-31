@@ -371,7 +371,7 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
 
       {/* Stale-result honesty banner (§5.4) */}
       {stale && runMeta && (
-        <div className="px-3 py-1 text-[10px] border-b border-[var(--border)]" style={{ color: '#F5A623' }}>
+        <div className="px-3 py-1 text-[10px] border-b border-[var(--border)]" style={{ color: '#E9A23B' }}>
           {t('states.staleIds', { file: runMeta.idsFileName })}
         </div>
       )}
@@ -657,7 +657,7 @@ function RowView({ row, focused, expanded, onClick }: {
   }
   if (row.kind === 'group') {
     // EIR severity recolours a FAILING spec: warning→amber, info→accent.
-    const failColor = row.severity === 'warning' ? '#F5A623' : row.severity === 'info' ? 'var(--accent)' : 'var(--danger)'
+    const failColor = row.severity === 'warning' ? '#E9A23B' : row.severity === 'info' ? 'var(--accent)' : 'var(--danger)'
     const failIcon = row.severity === 'warning' ? '!' : row.severity === 'info' ? 'i' : '✗'
     const color = row.status === 'pass' ? 'var(--ok)' : row.status === 'fail' ? failColor : 'var(--text-faint)'
     const icon = row.status === 'pass' ? '✓' : row.status === 'fail' ? failIcon : '–'

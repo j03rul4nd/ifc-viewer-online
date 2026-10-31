@@ -17,7 +17,7 @@ export interface IdsReportMeta {
   generatedAt?: string
 }
 
-const SCORE_HEX = (s: number): string => (s >= 80 ? '#2B8A3E' : s >= 50 ? '#F5A623' : '#E5484D')
+const SCORE_HEX = (s: number): string => (s >= 80 ? '#2B8A3E' : s >= 50 ? '#E9A23B' : '#E0523F')
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -108,7 +108,7 @@ export function toIdsHtml(result: IdsResult, meta: IdsReportMeta = {}): string {
   const unreadable = result.unreadableEntities ?? 0
   const statusBadge = (s: 'pass' | 'fail' | 'na', skipped: boolean): string => {
     const label = s === 'pass' ? 'PASS' : s === 'fail' ? 'FAIL' : (skipped ? 'SKIPPED' : 'N/A')
-    const color = s === 'pass' ? '#2B8A3E' : s === 'fail' ? '#E5484D' : '#868E96'
+    const color = s === 'pass' ? '#2B8A3E' : s === 'fail' ? '#E0523F' : '#868E96'
     return `<span class="badge" style="background:${color}1a;color:${color};border-color:${color}55">${label}</span>`
   }
 
@@ -150,12 +150,12 @@ header { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid
 .badge { font: 700 10px/1 ui-monospace, monospace; padding: 3px 7px; border-radius: 99px; border: 1px solid; letter-spacing: .04em; }
 .spec-desc { color: #868E96; font-size: 12.5px; margin: 8px 0 0; }
 .note { color: #868E96; font-size: 12px; font-style: italic; margin: 8px 0 0; }
-.warn { color: #E5484D; font-size: 12.5px; font-weight: 600; margin: 0 0 16px; padding: 8px 12px; border: 1px solid #E5484D55; border-radius: 8px; background: #E5484D14; }
+.warn { color: #E0523F; font-size: 12.5px; font-weight: 600; margin: 0 0 16px; padding: 8px 12px; border: 1px solid #E0523F55; border-radius: 8px; background: #E0523F14; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
 th { background: #f6f6f8; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #868E96; }
 .mono { font-family: ui-monospace, monospace; }
-.reasons { color: #E5484D; }
+.reasons { color: #E0523F; }
 footer { margin-top: 28px; font-size: 11px; color: #868E96; border-top: 1px solid #ddd; padding-top: 12px; }
 </style></head>
 <body>
@@ -167,7 +167,7 @@ footer { margin-top: 28px; font-size: 11px; color: #868E96; border-top: 1px soli
   </div>
   <div class="counts">
     <span style="color:#2B8A3E">${result.passedSpecs} pass</span>
-    <span style="color:#E5484D">${result.failedSpecs} fail</span>
+    <span style="color:#E0523F">${result.failedSpecs} fail</span>
     ${result.naSpecs > 0 ? `<span style="color:#868E96">${result.naSpecs} n/a</span>` : ''}
   </div>
 </header>

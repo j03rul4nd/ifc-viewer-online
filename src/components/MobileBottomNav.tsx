@@ -76,7 +76,7 @@ function NavTab({
           className="absolute inset-x-[6px] rounded-[16px] pointer-events-none"
           style={{
             top: 7, bottom: 7,
-            background: 'rgba(94,106,210,0.15)',
+            background: 'rgba(10,132,129,0.15)',
             boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.08)',
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 360, mass: 0.55 }}
@@ -87,10 +87,10 @@ function NavTab({
       <span className="relative z-10 flex items-center justify-center">
         <motion.span
           animate={{
-            color: active ? '#8B93E8' : '#54555E',
+            color: active ? '#55CAC3' : '#7F7D78',
             scale: active ? 1.08 : 1,
             filter: active
-              ? 'drop-shadow(0 0 5px rgba(139,147,232,0.45))'
+              ? 'drop-shadow(0 0 5px rgba(85,202,195,0.45))'
               : 'drop-shadow(0 0 0px transparent)',
           }}
           transition={{ type: 'spring', damping: 20, stiffness: 280 }}
@@ -118,7 +118,7 @@ function NavTab({
       {/* Label */}
       <motion.span
         animate={{
-          color: active ? '#8B93E8' : '#54555E',
+          color: active ? '#55CAC3' : '#7F7D78',
           fontWeight: active ? 600 : 400,
         }}
         transition={{ duration: 0.15 }}
@@ -221,9 +221,9 @@ function SheetBtn({
       disabled={disabled}
       className="flex flex-col items-center gap-[7px] py-3 px-1 rounded-2xl transition-all duration-150 disabled:opacity-30 active:scale-[0.92]"
       style={{
-        background: active ? 'rgba(94,106,210,0.18)' : 'rgba(255,255,255,0.04)',
-        color: active ? '#8B93E8' : 'rgba(255,255,255,0.5)',
-        border: `0.5px solid ${active ? 'rgba(94,106,210,0.28)' : 'rgba(255,255,255,0.06)'}`,
+        background: active ? 'rgba(10,132,129,0.18)' : 'rgba(255,255,255,0.04)',
+        color: active ? '#55CAC3' : 'rgba(255,255,255,0.5)',
+        border: `0.5px solid ${active ? 'rgba(10,132,129,0.28)' : 'rgba(255,255,255,0.06)'}`,
         WebkitTapHighlightColor: 'transparent',
       }}
     >
@@ -398,12 +398,12 @@ export default function MobileBottomNav({
             onClick={openIds}
             className="w-full mb-3 flex items-center gap-3 h-[52px] px-3 rounded-2xl active:scale-[0.98] transition-transform"
             style={{
-              background: 'rgba(94,106,210,0.16)',
-              border: '0.5px solid rgba(94,106,210,0.32)',
+              background: 'rgba(10,132,129,0.16)',
+              border: '0.5px solid rgba(10,132,129,0.32)',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(94,106,210,0.22)', color: '#8B93E8' }}>
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(10,132,129,0.22)', color: '#55CAC3' }}>
               <Icons.Shield size={18} />
             </span>
             <span className="flex-1 min-w-0 text-left">
@@ -418,7 +418,7 @@ export default function MobileBottomNav({
               className="w-full mb-3 flex items-center gap-3 h-[52px] px-3 rounded-2xl active:scale-[0.98] transition-transform"
               style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.12)', WebkitTapHighlightColor: 'transparent' }}
             >
-              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(245,166,35,0.16)', color: '#F5A623' }}>
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(233,162,59,0.16)', color: '#E9A23B' }}>
                 <Icons.GitCompare size={18} />
               </span>
               <span className="flex-1 min-w-0 text-left">

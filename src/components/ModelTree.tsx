@@ -84,10 +84,10 @@ const CLASS_ABBR: Record<string, string> = {
 }
 
 const CLASS_COLOR: Record<string, string> = {
-  IfcProject:        '#5E6AD2',
-  IfcSite:           '#30A46C',
-  IfcBuilding:       '#8B93E8',
-  IfcBuildingStorey: '#F5A623',
+  IfcProject:        '#0A8481',
+  IfcSite:           '#3FA866',
+  IfcBuilding:       '#55CAC3',
+  IfcBuildingStorey: '#E9A23B',
   IfcSpace:          '#6FB8D9',
   IfcZone:           '#D4A373',
 }
@@ -204,7 +204,7 @@ function TreeContextMenu({
 
 function ClassBadge({ cls }: { cls: string }) {
   const abbr  = CLASS_ABBR[cls] ?? cls.replace('Ifc', '').slice(0, 3).toUpperCase()
-  const color = CLASS_COLOR[cls] ?? '#54555E'
+  const color = CLASS_COLOR[cls] ?? '#7F7D78'
   return (
     <span
       className="inline-flex items-center justify-center rounded px-1 text-[9px] font-mono font-bold leading-none shrink-0"
@@ -227,16 +227,16 @@ function IssueBadge({
       onClick={onClick}
       className="inline-flex items-center gap-0.5 px-1 rounded text-[10px] font-mono font-semibold leading-none shrink-0 hover:brightness-125 transition-all"
       style={{
-        background: errors > 0 ? '#E5484D22' : '#F5A62322',
-        color:      errors > 0 ? '#E5484D'   : '#F5A623',
-        border: `1px solid ${errors > 0 ? '#E5484D44' : '#F5A62344'}`,
+        background: errors > 0 ? '#E0523F22' : '#E9A23B22',
+        color:      errors > 0 ? '#E0523F'   : '#E9A23B',
+        border: `1px solid ${errors > 0 ? '#E0523F44' : '#E9A23B44'}`,
         height: 16,
       }}
       title={t('issueBadge', { errors, warnings })}
     >
       {errors > 0 && <span className="text-[var(--danger)]">{errors}</span>}
       {errors > 0 && warnings > 0 && <span className="opacity-40">·</span>}
-      {warnings > 0 && <span style={{ color: '#F5A623' }}>{warnings}</span>}
+      {warnings > 0 && <span style={{ color: '#E9A23B' }}>{warnings}</span>}
     </button>
   )
 }
@@ -1094,7 +1094,7 @@ function SpatialRow({
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: allHidden ? 0.45 : 1,
-        backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
+        backgroundColor: isSelected ? 'rgba(10,132,129,0.12)' : undefined,
       }}
       onClick={() => onSelect(node.expressId, modelId)}
       onDoubleClick={(e) => {
@@ -1276,7 +1276,7 @@ function ElementRow({
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: isHidden ? 0.4 : 1,
-        backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
+        backgroundColor: isSelected ? 'rgba(10,132,129,0.12)' : undefined,
       }}
       onClick={() => !editing && onSelect(element.expressId, modelId)}
       onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId], modelId) }}

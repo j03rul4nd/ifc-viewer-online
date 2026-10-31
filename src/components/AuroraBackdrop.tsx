@@ -19,10 +19,10 @@ interface AuroraBackdropProps {
 export default function AuroraBackdrop({ light = false, intensity = 1 }: AuroraBackdropProps) {
   const reduce = useReducedMotion()
 
-  const glow = `radial-gradient(46% 34% at 50% 20%, rgba(94,106,210,${(light ? 0.16 : 0.28) * intensity}), transparent 70%)`
+  const glow = `radial-gradient(46% 34% at 50% 20%, rgba(10,132,129,${(light ? 0.16 : 0.28) * intensity}), transparent 70%)`
   const scrim = light
-    ? 'radial-gradient(130% 100% at 50% 22%, rgba(245,246,250,0) 0%, rgba(245,246,250,0.30) 62%, var(--bg) 100%)'
-    : 'radial-gradient(130% 100% at 50% 22%, rgba(10,10,12,0) 0%, rgba(10,10,12,0.35) 62%, var(--bg) 100%)'
+    ? 'radial-gradient(130% 100% at 50% 22%, rgba(244,243,240,0) 0%, rgba(244,243,240,0.30) 62%, var(--bg) 100%)'
+    : 'radial-gradient(130% 100% at 50% 22%, rgba(16,15,12,0) 0%, rgba(16,15,12,0.35) 62%, var(--bg) 100%)'
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -35,8 +35,8 @@ export default function AuroraBackdrop({ light = false, intensity = 1 }: AuroraB
               <SoftAurora
                 speed={0.45}
                 brightness={(light ? 1.0 : 1.35) * intensity}
-                color1="#5E6AD2"
-                color2="#8B5CF6"
+                color1="#0A8481"
+                color2="#B08D5F"
                 bandHeight={0.62}
                 bandSpread={1.15}
               />

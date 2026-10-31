@@ -113,7 +113,7 @@ export function MeasureSession({ system, items, modelNames, onFlash, touch }: {
   return (
     <div className="shrink-0">
       {offer && (
-        <div className="mx-2 my-1.5 rounded-[8px] border border-[rgba(94,106,210,0.45)] bg-[rgba(94,106,210,0.1)] px-2.5 py-2 flex items-center gap-2" role="status">
+        <div className="mx-2 my-1.5 rounded-[8px] border border-[rgba(10,132,129,0.45)] bg-[rgba(10,132,129,0.1)] px-2.5 py-2 flex items-center gap-2" role="status">
           <span className={['flex-1 text-[var(--text)]', touch ? 'text-[12.5px]' : 'text-[11px]'].join(' ')}>{t('session.offer', { count: offer.length })}</span>
           <button type="button" onClick={restore} className={['rounded-[6px] font-semibold text-white bg-[var(--accent)] hover:brightness-110', touch ? 'px-3 py-2 text-[12.5px]' : 'px-2 py-1 text-[11px]'].join(' ')}>
             {t('session.restore')}
@@ -123,7 +123,7 @@ export function MeasureSession({ system, items, modelNames, onFlash, touch }: {
         </div>
       )}
       {warning && (
-        <div className="mx-2 mb-1 text-[10.5px] leading-snug text-[#FFB224] flex items-start gap-1.5" role="alert">
+        <div className="mx-2 mb-1 text-[10.5px] leading-snug text-[#E9A23B] flex items-start gap-1.5" role="alert">
           <span className="flex-1">{warning}</span>
           <button type="button" onClick={() => setWarning(null)} aria-label={t('session.dismiss')} className="text-[var(--text-faint)] hover:text-[var(--text)]">×</button>
         </div>

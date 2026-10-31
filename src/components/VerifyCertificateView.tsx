@@ -184,8 +184,8 @@ type DeepState =
 
 const STATUS_ICON: Record<'pass' | 'fail' | 'warning', { glyph: string; color: string }> = {
   pass: { glyph: '✓', color: 'var(--ok, #4caf82)' },
-  fail: { glyph: '✕', color: 'var(--danger, #e5534b)' },
-  warning: { glyph: '!', color: '#F5A623' },
+  fail: { glyph: '✕', color: 'var(--danger, #e0523f)' },
+  warning: { glyph: '!', color: '#E9A23B' },
 }
 
 export default function VerifyCertificateView({ hash, onNavigateToLanding }: VerifyCertificateViewProps) {
@@ -265,19 +265,19 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
   }
 
   return (
-    <div className="min-h-full w-full flex justify-center px-4 py-10 bg-[var(--bg,#0b0b0f)] text-[var(--text,#e8e8ee)] print:bg-white print:text-black print:py-2">
+    <div className="min-h-full w-full flex justify-center px-4 py-10 bg-[var(--bg,#100f0c)] text-[var(--text,#e8e8ee)] print:bg-white print:text-black print:py-2">
       <div className="w-full max-w-[640px] flex flex-col gap-4">
         {/* Header */}
         <div>
-          <button onClick={onNavigateToLanding} className="print:hidden text-[12px] text-[var(--text-muted,#9a9aa5)] hover:text-[var(--text)] transition-colors">
+          <button onClick={onNavigateToLanding} className="print:hidden text-[12px] text-[var(--text-muted,#a09e98)] hover:text-[var(--text)] transition-colors">
             ← {t('backToApp')}
           </button>
           <h1 className="text-[20px] font-semibold mt-2">{t('title')}</h1>
-          <p className="text-[12px] text-[var(--text-muted,#9a9aa5)] mt-1">{t('subtitle')}</p>
+          <p className="text-[12px] text-[var(--text-muted,#a09e98)] mt-1">{t('subtitle')}</p>
         </div>
 
         {load.phase === 'loading' && (
-          <p role="status" className="text-[13px] text-[var(--text-muted,#9a9aa5)]">{t('loading')}</p>
+          <p role="status" className="text-[13px] text-[var(--text-muted,#a09e98)]">{t('loading')}</p>
         )}
 
         {load.phase === 'error' && (
@@ -286,7 +286,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
               {load.code === 'not_found' ? `∅ ${t('notFound')}` : `⚠ ${t('networkError')}`}
             </p>
             {load.code !== 'not_found' && (
-              <button onClick={() => void fetchCert()} className="self-start h-7 px-3 rounded-lg text-[12px] font-medium border border-[var(--border,#2a2a33)] hover:border-[var(--accent,#5E6AD2)] transition-colors">
+              <button onClick={() => void fetchCert()} className="self-start h-7 px-3 rounded-lg text-[12px] font-medium border border-[var(--border,#2a2a33)] hover:border-[var(--accent,#0A8481)] transition-colors">
                 {t('retry')}
               </button>
             )}
@@ -302,13 +302,13 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
             <div key={`${entry.key_id}-${idx}`} className="rounded-xl border border-[var(--border,#2a2a33)] overflow-hidden">
               {/* Revoked banner */}
               {revoked && (
-                <div className="px-4 py-2 text-[12px] font-semibold" style={{ background: 'rgba(229,83,75,0.12)', color: 'var(--danger, #e5534b)' }}>
+                <div className="px-4 py-2 text-[12px] font-semibold" style={{ background: 'rgba(224,82,63,0.12)', color: 'var(--danger, #e0523f)' }}>
                   ✕ {t('revokedBanner')}
                 </div>
               )}
               {/* Partial / custom profile banner — visually distinct from a full default run */}
               {coverage.partial && (
-                <div className="px-4 py-2 text-[12px] font-medium" style={{ background: 'rgba(245,166,35,0.10)', color: '#F5A623' }}>
+                <div className="px-4 py-2 text-[12px] font-medium" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>
                   ! {t('partialBanner', { profile: coverage.profileId })}
                 </div>
               )}
@@ -327,22 +327,22 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                 <div className="flex items-baseline justify-between gap-3 flex-wrap">
                   <div>
                     <span className="text-[32px] font-bold leading-none">{entry.payload.health_score}</span>
-                    <span className="text-[13px] text-[var(--text-muted,#9a9aa5)]"> /100 · {t('healthScore')}</span>
+                    <span className="text-[13px] text-[var(--text-muted,#a09e98)]"> /100 · {t('healthScore')}</span>
                   </div>
-                  <span className="text-[12px] text-[var(--text-muted,#9a9aa5)]">
+                  <span className="text-[12px] text-[var(--text-muted,#a09e98)]">
                     {t('coverage', { checked: coverage.checked, total: coverage.total, profile: coverage.profileId })}
                   </span>
                 </div>
 
                 {/* Metadata */}
                 <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
-                  <dt className="text-[var(--text-muted,#9a9aa5)]">{t('issuedAt')}</dt>
+                  <dt className="text-[var(--text-muted,#a09e98)]">{t('issuedAt')}</dt>
                   <dd className="font-mono">{entry.payload.validated_at}</dd>
-                  <dt className="text-[var(--text-muted,#9a9aa5)]">{t('validator')}</dt>
+                  <dt className="text-[var(--text-muted,#a09e98)]">{t('validator')}</dt>
                   <dd className="font-mono">{entry.payload.validator_version}</dd>
-                  <dt className="text-[var(--text-muted,#9a9aa5)]">{t('ruleset')}</dt>
+                  <dt className="text-[var(--text-muted,#a09e98)]">{t('ruleset')}</dt>
                   <dd className="font-mono break-all">{entry.payload.ruleset_version}</dd>
-                  <dt className="text-[var(--text-muted,#9a9aa5)]">{t('fileHash')}</dt>
+                  <dt className="text-[var(--text-muted,#a09e98)]">{t('fileHash')}</dt>
                   <dd className="font-mono break-all">{entry.payload.file_hash_sha256}</dd>
                 </dl>
 
@@ -367,7 +367,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                       onClick={() => void handleVerify(entry)}
                       disabled={verify === 'checking'}
                       className="print:hidden h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
-                      style={{ background: 'var(--accent, #5E6AD2)', color: 'white' }}
+                      style={{ background: 'var(--accent, #0A8481)', color: 'white' }}
                     >
                       {verify === 'checking' ? t('verifying') : t('verifyBtn')}
                     </button>
@@ -377,13 +377,13 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                         <span className="text-[12px] font-semibold" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('verified')}</span>
                       )}
                       {verify === 'valid' && revoked && (
-                        <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('validButRevoked')}</span>
+                        <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e0523f)' }}>✕ {t('validButRevoked')}</span>
                       )}
                       {verify === 'invalid' && (
-                        <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('invalidSignature')}</span>
+                        <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e0523f)' }}>✕ {t('invalidSignature')}</span>
                       )}
                       {verify === 'unknown_key' && (
-                        <span className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('unknownKey')}</span>
+                        <span className="text-[12px] font-semibold" style={{ color: '#E9A23B' }}>! {t('unknownKey')}</span>
                       )}
                     </span>
                   </div>
@@ -394,11 +394,11 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                   <div className="flex items-center gap-4 rounded-lg border border-[var(--border,#2a2a33)] p-3">
                     <QrSvg text={verifyUrl} label={t('qrAlt')} />
                     <div className="min-w-0 flex flex-col gap-1.5">
-                      <p className="text-[11px] text-[var(--text-muted,#9a9aa5)]">{t('qrCaption')}</p>
+                      <p className="text-[11px] text-[var(--text-muted,#a09e98)]">{t('qrCaption')}</p>
                       <p className="font-mono text-[10px] break-all leading-snug">{verifyUrl}</p>
                       <button
                         onClick={() => window.print()}
-                        className="print:hidden self-start h-7 px-3 rounded-lg text-[12px] font-medium border border-[var(--border,#2a2a33)] hover:border-[var(--accent,#5E6AD2)] transition-colors"
+                        className="print:hidden self-start h-7 px-3 rounded-lg text-[12px] font-medium border border-[var(--border,#2a2a33)] hover:border-[var(--accent,#0A8481)] transition-colors"
                       >
                         🖨 {t('printBtn')}
                       </button>
@@ -414,7 +414,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                     {(deep.phase === 'idle' || deep.phase === 'mismatch' || deep.phase === 'read_error' ||
                       deep.phase === 'reproduced' || deep.phase === 'differs') && (
                       <label
-                        className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[var(--border,#2a2a33)] hover:border-[var(--accent,#5E6AD2)] transition-colors px-3 py-4 cursor-pointer text-center"
+                        className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[var(--border,#2a2a33)] hover:border-[var(--accent,#0A8481)] transition-colors px-3 py-4 cursor-pointer text-center"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault()
@@ -423,7 +423,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                         }}
                       >
                         <span className="text-[12px]">{t('deepHint')}</span>
-                        <span className="text-[11px] text-[var(--text-muted,#9a9aa5)]">{t('deepPrivacy')}</span>
+                        <span className="text-[11px] text-[var(--text-muted,#a09e98)]">{t('deepPrivacy')}</span>
                         <input
                           type="file"
                           accept=".ifc"
@@ -440,21 +440,21 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                     {/* Deep-verify outcome — announced to screen readers */}
                     <div role="status" aria-live="polite" className="flex flex-col gap-2">
                       {deep.phase === 'hashing' && (
-                        <p className="text-[12px] text-[var(--text-muted,#9a9aa5)]">{t('deepHashing')}</p>
+                        <p className="text-[12px] text-[var(--text-muted,#a09e98)]">{t('deepHashing')}</p>
                       )}
                       {deep.phase === 'read_error' && (
-                        <p className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('deepReadError')}</p>
+                        <p className="text-[12px] font-semibold" style={{ color: '#E9A23B' }}>! {t('deepReadError')}</p>
                       )}
                       {deep.phase === 'mismatch' && (
                         <div>
-                          <p className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('deepMismatch')}</p>
-                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">{t('deepMismatchExplain')}</p>
+                          <p className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e0523f)' }}>✕ {t('deepMismatch')}</p>
+                          <p className="text-[11px] text-[var(--text-muted,#a09e98)] mt-1">{t('deepMismatchExplain')}</p>
                         </div>
                       )}
                       {(deep.phase === 'match' || deep.phase === 'rerunning' || deep.phase === 'rerun_error') && (
                         <div>
                           <p className="text-[12px] font-semibold" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('deepMatch')}</p>
-                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">{t('deepMatchExplain')}</p>
+                          <p className="text-[11px] text-[var(--text-muted,#a09e98)] mt-1">{t('deepMatchExplain')}</p>
                         </div>
                       )}
                       {deep.phase === 'reproduced' && (
@@ -463,7 +463,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                           <p className="text-[12px] font-semibold mt-1" style={{ color: 'var(--ok, #4caf82)' }}>
                             ✓ {t('rerunReproduced', { count: deep.comparedCount })}
                           </p>
-                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">
+                          <p className="text-[11px] text-[var(--text-muted,#a09e98)] mt-1">
                             {t('rerunScore', { score: deep.score })}
                             {deep.notReevaluated > 0 && ` · ${t('rerunNotReevaluated', { count: deep.notReevaluated })}`}
                           </p>
@@ -471,41 +471,41 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                       )}
                       {deep.phase === 'differs' && (
                         <div>
-                          <p className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>
+                          <p className="text-[12px] font-semibold" style={{ color: '#E9A23B' }}>
                             ! {t('rerunDiffers', { count: deep.diffs.length })}
                           </p>
                           <div className="rounded-lg border border-[var(--border,#2a2a33)] max-h-[160px] overflow-y-auto mt-1">
                             {deep.diffs.map((d) => (
                               <div key={d.rule_id} className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border,#2a2a33)] last:border-b-0 text-[11px]">
                                 <span className="flex-1 font-mono truncate">{d.rule_id}</span>
-                                <span className="text-[var(--text-muted,#9a9aa5)]">{t('rerunCertified')}: {t(`ruleStatus.${d.certified}`)}</span>
+                                <span className="text-[var(--text-muted,#a09e98)]">{t('rerunCertified')}: {t(`ruleStatus.${d.certified}`)}</span>
                                 <span>{t('rerunNow')}: {t(`ruleStatus.${d.recomputed}`)}</span>
                               </div>
                             ))}
                           </div>
-                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">
+                          <p className="text-[11px] text-[var(--text-muted,#a09e98)] mt-1">
                             {t('rerunScore', { score: deep.score })}
                             {deep.notReevaluated > 0 && ` · ${t('rerunNotReevaluated', { count: deep.notReevaluated })}`}
                           </p>
                         </div>
                       )}
                       {deep.phase === 'rerunning' && (
-                        <p className="text-[12px] text-[var(--text-muted,#9a9aa5)]">{t('rerunRunning', { percent: deep.progress })}</p>
+                        <p className="text-[12px] text-[var(--text-muted,#a09e98)]">{t('rerunRunning', { percent: deep.progress })}</p>
                       )}
                       {deep.phase === 'rerun_error' && (
-                        <p className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('rerunError')}</p>
+                        <p className="text-[12px] font-semibold" style={{ color: '#E9A23B' }}>! {t('rerunError')}</p>
                       )}
                     </div>
 
                     {(deep.phase === 'match' || deep.phase === 'rerun_error') && (
                       <div className="flex flex-col gap-1">
                         {coverage.partial && (
-                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)]">! {t('rerunPartialNote')}</p>
+                          <p className="text-[11px] text-[var(--text-muted,#a09e98)]">! {t('rerunPartialNote')}</p>
                         )}
                         <button
                           onClick={() => void handleRerun(deep.buffer, entry)}
                           className="self-start h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors"
-                          style={{ background: 'var(--accent, #5E6AD2)', color: 'white' }}
+                          style={{ background: 'var(--accent, #0A8481)', color: 'white' }}
                         >
                           {t('rerunBtn')}
                         </button>
@@ -515,8 +515,8 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                 )}
 
                 {/* Honest copy (R-5): what each verification level does and does not prove */}
-                <p className="text-[10px] text-[var(--text-muted,#9a9aa5)] leading-snug">{t('honesty')}</p>
-                <p className="text-[10px] text-[var(--text-muted,#9a9aa5)] leading-snug">{t('levels')}</p>
+                <p className="text-[10px] text-[var(--text-muted,#a09e98)] leading-snug">{t('honesty')}</p>
+                <p className="text-[10px] text-[var(--text-muted,#a09e98)] leading-snug">{t('levels')}</p>
               </div>
             </div>
           )

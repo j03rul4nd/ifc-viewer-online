@@ -39,9 +39,9 @@ const FONTS = `
 const SCRIPT_FONT = { ja: "'Yu Gothic UI','Meiryo UI','Yu Gothic'", zh: "'Microsoft YaHei UI','Microsoft YaHei'", th: "'Leelawadee UI','Tahoma'" }
 
 const C = {
-  bg: '#f7f8fb', card: '#ffffff', ink: '#0f172a', sub: '#475569', faint: '#94a3b8', line: '#dbe1ea',
-  brand: '#5e6ad2', brandSoft: '#eceefc', green: '#0f9f6e', greenSoft: '#e3f6ee', red: '#dc3545', redSoft: '#fdeaec',
-  amber: '#c27c0e', amberSoft: '#fdf3df', cyan: '#0e8fb0', cyanSoft: '#e1f4f9', violet: '#8b5cf6', violetSoft: '#f1ebfe',
+  bg: '#f7f8fb', card: '#ffffff', ink: '#100f0c', sub: '#605e57', faint: '#a09e98', line: '#dbe1ea',
+  brand: '#0a8481', brandSoft: '#eceefc', green: '#0f9f6e', greenSoft: '#e3f6ee', red: '#dc3545', redSoft: '#fdeaec',
+  amber: '#c27c0e', amberSoft: '#fdf3df', cyan: '#0e8fb0', cyanSoft: '#e1f4f9', violet: '#b08d5f', violetSoft: '#f1ebfe',
   earth: '#efe6d4', earthLine: '#c8b28a',
 }
 
@@ -885,7 +885,7 @@ FIGURES['digital-twin-maturity-levels'] = (t, lang) => {
     return `<div class="st" style="left:${i * 290}px;bottom:${i * 62}px;border-top-color:${colors[i]}">
       <div class="lv" style="color:${colors[i]}">${i + 1} · ${name}</div>
       <div class="wh">${what}</div>
-      ${has ? `<img src="${shots[i]}">` : `<div class="none">${i === 2 ? '<svg width="120" height="44" viewBox="0 0 120 44"><path d="M4 36 L28 28 L50 31 L72 18 L94 22 L116 8" fill="none" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/></svg>' : '<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#94a3b8" stroke-width="3"/><path d="M10 34 L34 10" stroke="#94a3b8" stroke-width="3"/></svg>'}</div>`}
+      ${has ? `<img src="${shots[i]}">` : `<div class="none">${i === 2 ? '<svg width="120" height="44" viewBox="0 0 120 44"><path d="M4 36 L28 28 L50 31 L72 18 L94 22 L116 8" fill="none" stroke="#a09e98" stroke-width="3" stroke-dasharray="6 5"/></svg>' : '<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#a09e98" stroke-width="3"/><path d="M10 34 L34 10" stroke="#a09e98" stroke-width="3"/></svg>'}</div>`}
       <div class="hr"><b style="color:${has ? colors[i] : C.sub}">${has ? m.here : m.notHere}</b> · ${here}</div>
     </div>`
   }).join('')

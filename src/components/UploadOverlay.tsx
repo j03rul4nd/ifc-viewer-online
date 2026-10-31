@@ -153,7 +153,7 @@ function IdleView({
         className="relative py-8 sm:py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         style={{
           border:     `2px dashed ${isDragging ? 'var(--accent)' : 'var(--border-strong)'}`,
-          background: isDragging ? 'rgba(94,106,210,0.06)' : 'var(--surface-2)',
+          background: isDragging ? 'rgba(10,132,129,0.06)' : 'var(--surface-2)',
         }}
       >
         {isDragging && (

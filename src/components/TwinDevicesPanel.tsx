@@ -111,12 +111,12 @@ function StatusLine() {
       <Switch checked={active} onChange={(v) => useTwinDeviceStore.getState().setActive(v)} label={t('live')} testId="twin-active" />
       <span className="flex-1 min-w-0 truncate text-[12px] max-md:text-[13px] text-[var(--text-dim)]">
         {active ? t('panel.summaryDevices', { count: readings.size }) : t('panel.paused')}
-        {errors > 0 && <button type="button" className="ml-1.5 text-[var(--danger,#ef4444)] hover:underline" onClick={() => { nav.setFlow(null); nav.setTab('sources') }}>· {t('panel.summaryErrors', { count: errors })}</button>}
+        {errors > 0 && <button type="button" className="ml-1.5 text-[var(--danger,#e0523f)] hover:underline" onClick={() => { nav.setFlow(null); nav.setTab('sources') }}>· {t('panel.summaryErrors', { count: errors })}</button>}
       </span>
       {alerts > 0 && (
         <button type="button" onClick={() => { nav.setFlow(null); nav.setTab('bindings'); nav.setStateFilter(ALERT_FILTER) }}
-          className="shrink-0 inline-flex items-center gap-1.5 h-6 max-md:h-9 px-2 rounded-full border border-[var(--danger,#ef4444)] text-[11.5px] text-[var(--text)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#ef4444)]" aria-hidden />{t('alertsActive', { count: alerts })}
+          className="shrink-0 inline-flex items-center gap-1.5 h-6 max-md:h-9 px-2 rounded-full border border-[var(--danger,#e0523f)] text-[11.5px] text-[var(--text)]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e0523f)]" aria-hidden />{t('alertsActive', { count: alerts })}
         </button>
       )}
     </div>

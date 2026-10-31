@@ -26,9 +26,9 @@ export function clientScoreTier(score: number): ClientScoreTier {
 /** Semantic colour per tier (theme CSS variables with safe fallbacks). */
 export function clientScoreColor(tier: ClientScoreTier): string {
   switch (tier) {
-    case 'verified':  return 'var(--ok, #22c55e)'
-    case 'attention': return '#F5A623'
-    case 'review':    return 'var(--danger, #ef4444)'
+    case 'verified':  return 'var(--ok, #3fa866)'
+    case 'attention': return '#E9A23B'
+    case 'review':    return 'var(--danger, #e0523f)'
   }
 }
 

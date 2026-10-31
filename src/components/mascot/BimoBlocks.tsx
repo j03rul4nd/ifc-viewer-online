@@ -48,7 +48,7 @@ export function checklistEmotion(done: number, total: number): BimoEmotion {
 
 // ── Confetti ─────────────────────────────────────────────────────────────────
 
-const CONFETTI_COLORS = ['#5E6AD2', '#8B93E8', '#FF8FB1', '#FFD66B', '#30A46C', '#A9B0FF']
+const CONFETTI_COLORS = ['#0A8481', '#55CAC3', '#FF8FB1', '#FFD66B', '#3FA866', '#55cac3']
 
 export function Confetti({ fire }: { fire: number }) {
   if (!fire) return null

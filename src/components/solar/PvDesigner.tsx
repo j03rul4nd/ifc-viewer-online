@@ -145,7 +145,7 @@ export default function PvDesigner(p: Props) {
           </>
         )}
       </div>
-      {out && out.tilt !== tiltDeg && <p className="text-[9.5px] text-[#F5A623]">{t('pv.tiltChanged')}</p>}
+      {out && out.tilt !== tiltDeg && <p className="text-[9.5px] text-[#E9A23B]">{t('pv.tiltChanged')}</p>}
       {!out && <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('pv.hint')}</p>}
 
       {out && y && (
@@ -167,13 +167,13 @@ export default function PvDesigner(p: Props) {
             <div className="flex items-end gap-[3px] h-[56px]">
               {out.months.map((s, m) => (
                 <div key={m} className="flex-1 h-full flex flex-col items-center justify-end gap-0.5" title={`${nf(s * y.kWhYear)} kWh`}>
-                  <div className="w-full rounded-t-[2px] bg-[#F5A623]" style={{ height: `${(s / maxMonth) * 100}%` }} />
+                  <div className="w-full rounded-t-[2px] bg-[#E9A23B]" style={{ height: `${(s / maxMonth) * 100}%` }} />
                   <span className="text-[8px] text-[var(--text-faint)]">{monthName(m)}</span>
                 </div>
               ))}
             </div>
           </div>
-          {!p.measuredSky && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('pv.clearSky')}</p>}
+          {!p.measuredSky && <p className="text-[9.5px] text-[#E9A23B] leading-snug">{t('pv.clearSky')}</p>}
           <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('pv.note')}</p>
         </>
       )}

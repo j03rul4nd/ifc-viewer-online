@@ -26,7 +26,7 @@ export function Field({ label, hint, className = '', children }: { label: string
 export function Btn({ variant = 'secondary', className = '', ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   const v = variant === 'primary' ? 'bg-[var(--accent)] text-white hover:brightness-110'
     : variant === 'ghost' ? 'text-[var(--accent-2,var(--accent))] hover:bg-[var(--surface-2)]'
-    : variant === 'danger' ? 'text-[var(--danger,#ef4444)] hover:bg-[var(--surface-2)]'
+    : variant === 'danger' ? 'text-[var(--danger,#e0523f)] hover:bg-[var(--surface-2)]'
     : 'border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)]'
   return (
     <button type="button" {...rest}
@@ -69,7 +69,7 @@ export function Section({ title, trailing, children }: { title?: string; trailin
 }
 
 export function Hint({ children, tone = 'muted' }: { children: React.ReactNode; tone?: 'muted' | 'warn' | 'danger' | 'ok' }) {
-  const color = tone === 'danger' ? 'text-[var(--danger,#ef4444)]' : tone === 'warn' ? 'text-[var(--warn,#f59e0b)]' : tone === 'ok' ? 'text-[var(--text)]' : 'text-[var(--text-faint)]'
+  const color = tone === 'danger' ? 'text-[var(--danger,#e0523f)]' : tone === 'warn' ? 'text-[var(--warn,#e9a23b)]' : tone === 'ok' ? 'text-[var(--text)]' : 'text-[var(--text-faint)]'
   return <p className={`text-[11.5px] max-md:text-[13px] leading-[1.45] ${color}`}>{children}</p>
 }
 

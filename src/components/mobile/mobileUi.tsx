@@ -143,7 +143,7 @@ export function PrimaryCTA({
       className="w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-[14px] font-semibold text-white transition-all active:scale-[0.985] disabled:opacity-40 disabled:active:scale-100"
       style={{
         background: 'linear-gradient(180deg, var(--accent-2), var(--accent))',
-        boxShadow: '0 6px 20px rgba(94,106,210,0.32), inset 0 1px 0 rgba(255,255,255,0.15)',
+        boxShadow: '0 6px 20px rgba(10,132,129,0.32), inset 0 1px 0 rgba(255,255,255,0.15)',
         ...TAP,
       }}
     >
@@ -233,7 +233,7 @@ export function Segmented<T extends string>({
             {on && (
               <span
                 className="absolute inset-0 rounded-xl"
-                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(94,106,210,0.3)' }}
+                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(10,132,129,0.3)' }}
               />
             )}
             <span className="relative z-10 flex items-center gap-1.5">{o.label}</span>
