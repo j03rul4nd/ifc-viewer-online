@@ -17,7 +17,7 @@ export const PLAN_DEFS: PlanDef[] = [
     promise: 'My file opens, my client sees it and there is a record.',
     monthlyEur: 19, yearlyEur: 190,
     quotas: { storageGb: 20, maxFileMb: 1024, apiCallsMonth: 500, cloudCreditsMonth: 20, aiCreditsMonth: 50 },
-    includes: ['large_files', 'cloud_projects', 'client_link', 'certificates', 'score_history', 'qualified_timestamp', 'weekly_digest', 'server_autofix', 'hosted_api', 'cloud_storage_pickers', 'email_preview'],
+    includes: ['large_files', 'cloud_projects', 'client_link', 'certificates', 'score_history', 'qualified_timestamp', 'weekly_digest', 'server_autofix', 'hosted_api', 'cloud_storage_pickers', 'email_preview', 'email_tracking'],
     extends: 'free', highlighted: true,
   },
   {
