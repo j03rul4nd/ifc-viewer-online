@@ -12,7 +12,6 @@
 //   BorderGlow     – cursor-tracked glow border for feature / step cards
 //   ShapeGrid      – scrolling square-grid canvas for final CTA background
 //   GradualBlur    – stacked backdrop-blur strips at hero bottom edge
-//   GradientText   – animated flowing gradient text (H1 "Online" + subtitle)
 //   ShinyText      – framer-motion shimmer sweep (hero badge)
 //   TextType       – gsap-cursor typewriter (hero typing tagline)
 //   DecryptedText  – scramble-reveal text (section labels)
@@ -27,7 +26,6 @@ import { isAccountEnabled, openAccountModal } from '../stores/cloudAccountStore'
 import { LanguageSelectorNav } from './LanguageSelector'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
-import GradientText  from './reactbits/GradientText'
 import ShinyText     from './reactbits/ShinyText'
 import TextType      from './reactbits/TextType'
 import DecryptedText from './reactbits/DecryptedText'
@@ -78,7 +76,6 @@ function ThemeToggleBtn({ theme, onToggle }: { theme: 'dark' | 'light'; onToggle
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const GRADIENT_HERO    = ['#0A8481', '#C8A97E', '#6FB8D9', '#0A8481'] as const
 const GRADIENT_SUBTEXT = ['#0A8481', '#C8A97E', '#6FB8D9', '#0A8481'] as const
 
 const GITHUB_URL = 'https://github.com/j03rul4nd/ifc-viewer-online'
@@ -556,11 +553,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             style={{ fontSize: 'clamp(36px, 9vw, 82px)' }}
           >
             IFC Viewer{' '}
-            <span className="font-serif italic font-normal">
-              <GradientText colors={[...GRADIENT_HERO]} animationSpeed={6}>
-                Online
-              </GradientText>
-            </span>
+            <span className="text-[var(--text-dim)]">Online</span>
           </motion.h1>
 
           {/* TextType cycling tagline */}
@@ -960,7 +953,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     className="p-5 sm:p-[26px] h-full"
                   >
                     <div
-                      className="font-serif text-[24px] sm:text-[28px] font-normal mb-3 tracking-tight"
+                      className="text-[24px] sm:text-[28px] font-semibold mb-3 tracking-tight"
                       style={{ color: 'var(--accent-2)' }}
                       aria-hidden="true"
                     >
