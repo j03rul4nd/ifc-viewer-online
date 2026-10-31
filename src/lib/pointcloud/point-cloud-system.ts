@@ -972,13 +972,13 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       const step = Math.max(1, Math.ceil(total / maxPoints))
       const count = Math.ceil(total / step)
       const positions = new Float32Array(count * 3)
-      const colorAttribute = chunks[0].geometry.getAttribute('color')
+      const colorAttribute = chunks[0].geometry.getAttribute('pcColor')
       const colors = colorAttribute ? new Uint8Array(count * 3) : undefined
       const v = new THREE.Vector3()
       let w = 0
       for (const points of chunks) {
         const p = points.geometry.getAttribute('position')
-        const c = points.geometry.getAttribute('color')
+        const c = points.geometry.getAttribute('pcColor')
         if (!p) continue
         for (let i = 0; i < p.count && w < count; i += step, w++) {
           v.fromBufferAttribute(p, i).applyMatrix4(points.matrixWorld)

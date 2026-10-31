@@ -123,7 +123,7 @@ saved and the studio says what to do next. Nothing is posted without the user.
   Latency, feel, palm size, eraser-end and barrel behaviour per driver, iOS storage
   limits and the share sheet are unmeasured. Sizes above are from public specs, not
   devices. Apple says Pencil on iPhone Duo arrives "later this year".
-- Point cloud handoff is covered by types and code review only: no scan was loaded.
+- End to end in Chromium: two IFC models, and an IFC with a real PLY scan (position, colour, plane from a scan point, reload). PSD and Blender with two layers. Barrel button, a blocked main thread mid-stroke, 30,000 samples in one stroke.
 
 ## Known limits
 
