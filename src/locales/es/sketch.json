@@ -104,7 +104,9 @@
     "load": "Bocetar sobre un modelo (GLB)",
     "clear": "Quitar el modelo",
     "failed": "Ese archivo no se pudo leer como modelo GLB.",
-    "loaded": "Modelo cargado. Usa la herramienta de plano para dibujar en cualquiera de sus caras."
+    "loaded": "Modelo cargado. Usa la herramienta de plano para dibujar en cualquiera de sus caras.",
+    "preparing": "Preparando tu modelo…",
+    "tooBig": "Ese modelo pesa demasiado para bocetar encima en este dispositivo. Puedes bocetar sin él."
   },
   "export": {
     "label": "Exportar",

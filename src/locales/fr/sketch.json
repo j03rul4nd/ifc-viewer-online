@@ -104,7 +104,9 @@
     "load": "Dessiner sur un modèle (GLB)",
     "clear": "Retirer le modèle",
     "failed": "Impossible de lire ce fichier comme modèle GLB.",
-    "loaded": "Modèle chargé. Utilisez l'outil de plan pour dessiner sur n'importe quelle face."
+    "loaded": "Modèle chargé. Utilisez l'outil de plan pour dessiner sur n'importe quelle face.",
+    "preparing": "Préparation de votre modèle…",
+    "tooBig": "Ce modèle est trop lourd pour dessiner dessus sur cet appareil. Vous pouvez dessiner sans lui."
   },
   "export": {
     "label": "Exporter",

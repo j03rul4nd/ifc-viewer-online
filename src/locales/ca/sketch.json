@@ -104,7 +104,9 @@
     "load": "Esbossa sobre un model (GLB)",
     "clear": "Treu el model",
     "failed": "Aquest fitxer no s'ha pogut llegir com a model GLB.",
-    "loaded": "Model carregat. Fes servir l'eina de pla per dibuixar en qualsevol de les seves cares."
+    "loaded": "Model carregat. Fes servir l'eina de pla per dibuixar en qualsevol de les seves cares.",
+    "preparing": "S'està preparant el teu model…",
+    "tooBig": "Aquest model pesa massa per esbossar-hi a sobre en aquest dispositiu. Pots esbossar sense ell."
   },
   "export": {
     "label": "Exporta",

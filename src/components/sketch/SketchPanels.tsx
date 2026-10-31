@@ -241,7 +241,7 @@ interface ControlsProps {
   orbit: OrbitState; setOrbit: (o: OrbitState) => void; orbitBy: (dx: number, dy: number) => void; fitAll: () => void
   doc: SketchDoc; setHistory: SetHistory; activeLayerId: string
   engine: SketchRenderer | null; fingerDraw: boolean; setFingerDraw: (on: boolean) => void; setRailSide: (s: 'left' | 'right') => void
-  flash: (m: string) => void; recording: boolean; onRecord: () => void; hasContext: boolean; setHasContext: (v: boolean) => void
+  flash: (m: string) => void; recording: boolean; onRecord: () => void; hasContext: boolean; onContextFile: (file: File) => void; onClearContext: () => void
   onSaveView: () => SavedView | undefined
 }
 
@@ -404,7 +404,7 @@ function LayersSection({ tx, doc, setHistory, activeLayerId }: ControlsProps) {
 }
 
 function MoreSection(p: ControlsProps) {
-  const { tx, doc, engine, setHistory, flash, recording, onRecord, regular, railSide, setRailSide, fingerDraw, setFingerDraw, hasContext, setHasContext } = p
+  const { tx, doc, engine, setHistory, flash, recording, onRecord, regular, railSide, setRailSide, fingerDraw, setFingerDraw, hasContext, onContextFile, onClearContext } = p
   const fileRef = useRef<HTMLInputElement>(null)
   const glbRef = useRef<HTMLInputElement>(null)
 
@@ -418,19 +418,6 @@ function MoreSection(p: ControlsProps) {
     const svg = exportSvg(activePage(doc).layers, c.clientWidth, c.clientHeight, PAPER[doc.paper].bg, (pt) => engine.project(pt))
     downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), 'sketch.svg')
   }
-  const loadGlb = async (file: File) => {
-    if (!engine) return
-    try {
-      const diagonal = await engine.loadContext(await file.arrayBuffer())
-      setHasContext(true)
-      if (diagonal) p.setOrbit({ ...p.orbit, distance: diagonal * 1.5 })
-      p.fitAll()
-      flash(tx('context.loaded'))
-    } catch {
-      flash(tx('context.failed'))
-    }
-  }
-
   return (
     <>
       {!regular && (
@@ -469,7 +456,7 @@ function MoreSection(p: ControlsProps) {
           <Chip onClick={() => downloadBlob(new Blob([serializeDoc(doc)], { type: 'application/json' }), 'drawing.sketch.json')}>{tx('export.file')}</Chip>
           <Chip onClick={() => fileRef.current?.click()}>{tx('export.open')}</Chip>
           {hasContext
-            ? <Chip onClick={() => { engine?.clearContext(); setHasContext(false) }}>{tx('context.clear')}</Chip>
+            ? <Chip onClick={onClearContext}>{tx('context.clear')}</Chip>
             : <Chip onClick={() => glbRef.current?.click()}>{tx('context.load')}</Chip>}
         </div>
         <input
@@ -488,7 +475,7 @@ function MoreSection(p: ControlsProps) {
           onChange={(e) => {
             const file = e.target.files?.[0]
             e.target.value = ''
-            if (file) void loadGlb(file)
+            if (file) onContextFile(file)
           }}
         />
       </Section>

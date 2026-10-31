@@ -104,7 +104,9 @@
     "load": "Über ein Modell skizzieren (GLB)",
     "clear": "Modell entfernen",
     "failed": "Diese Datei konnte nicht als GLB-Modell gelesen werden.",
-    "loaded": "Modell geladen. Mit dem Ebenenwerkzeug zeichnen Sie auf jeder seiner Flächen."
+    "loaded": "Modell geladen. Mit dem Ebenenwerkzeug zeichnen Sie auf jeder seiner Flächen.",
+    "preparing": "Ihr Modell wird vorbereitet…",
+    "tooBig": "Dieses Modell ist zu groß, um auf diesem Gerät darüber zu skizzieren. Sie können ohne es skizzieren."
   },
   "export": {
     "label": "Exportieren",
