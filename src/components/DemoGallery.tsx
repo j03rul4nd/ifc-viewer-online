@@ -9,7 +9,7 @@
 // Without it (the legacy path) the gallery downloads each member itself, with
 // a live progress bar, and hands each File to `onModelReady` in turn.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
@@ -23,6 +23,7 @@ import { createLogger } from '../lib/logger'
 import { trackDemoGalleryOpened, trackDemoModelSelected } from '../lib/analytics'
 
 const log = createLogger('DemoGallery')
+const PortLibrary = lazy(() => import('./PortLibrary'))
 
 // Typed i18n keys for category labels (keeps react-i18next's key-literal typing happy).
 const CATEGORY_KEY = {
@@ -56,7 +57,7 @@ interface DemoGalleryProps {
 
 export default function DemoGallery({ open, onClose, onModelReady, onSetSelected }: DemoGalleryProps) {
   const { t } = useTranslation('landing')
-  const [filter, setFilter]       = useState<DemoCategory | 'all'>('all')
+  const [filter, setFilter]       = useState<DemoCategory | 'all' | 'port'>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [progress, setProgress]   = useState<FetchProgress | null>(null)
   const [errorId, setErrorId]     = useState<string | null>(null)
@@ -66,7 +67,7 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
   // Sets, not models: a federated project is one demo that happens to be three
   // files, and offering it as three cards makes the reader federate by hand.
   const sets       = useMemo(() => demoSets(), [])
-  const visible    = filter === 'all' ? sets : sets.filter((s) => s.category === filter)
+  const visible    = filter === 'all' ? sets : filter === 'port' ? [] : sets.filter((s) => s.category === filter)
 
   useEffect(() => {
     if (open) trackDemoGalleryOpened()
@@ -179,10 +180,14 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
                   {t(CATEGORY_KEY[c])}
                 </FilterChip>
               ))}
+              <FilterChip active={filter === 'port'} onClick={() => setFilter('port')}>Port de Barcelona</FilterChip>
             </div>
 
             {/* Cards */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 [-webkit-overflow-scrolling:touch]">
+              {filter === 'port' && (
+                <Suspense fallback={null}><PortLibrary onPick={(s) => void handleLoad(s)} /></Suspense>
+              )}
               {filter === 'all' && <SceneDemos />}
               {onSetSelected && filter === 'all' && <TwinDemos onPick={(s) => void handleLoad(s)} />}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">

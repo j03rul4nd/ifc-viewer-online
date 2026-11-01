@@ -816,7 +816,20 @@
       "addCondition": "+ Condición",
       "opacity": "Opacidad",
       "importReplace": "Esto sustituye tus {{sources}} fuentes y {{bindings}} vínculos. ¿Continuar?",
-      "operated": "Estado operativo"
+      "operated": "Estado operativo",
+      "fiware": {
+        "kind": "Tipo de fuente",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL del Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio o Stellio. Debe permitir peticiones desde este sitio (CORS) y usar https.",
+        "type": "Tipo de entidad",
+        "tenant": "Tenant (opcional)",
+        "context": "Contexto JSON-LD (opcional)",
+        "contextHint": "Da a los atributos sus nombres cortos.",
+        "servicePath": "Service path (opcional)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "Trabajando… {{s}} s",
     "announce": "Sigue esperando a {{host}}",
     "announceGeneric": "Sigue trabajando"
+  },
+  "portLibrary": {
+    "intro": "Cerramientos, grúas, mobiliario urbano y monumentos modelados por el Port de Barcelona. Abre cualquiera en el visor y añádelo a tu escena.",
+    "search": "Buscar objetos",
+    "all": "Todos",
+    "count_one": "{{count}} objeto",
+    "count_other": "{{count}} objetos",
+    "empty": "Ningún objeto coincide con esa búsqueda.",
+    "onPortSite": "{{size}} · descarga en la web del Port",
+    "credit": "Biblioteca de objetos del",
+    "categories": {
+      "fences": "Cerramientos",
+      "port": "Elementos portuarios",
+      "road": "Elementos viales",
+      "equipment": "Equipamiento portuario",
+      "operation": "Medios de operación",
+      "transport": "Medios de transporte",
+      "furniture": "Mobiliario urbano",
+      "monument": "Monumentos"
+    }
   }
 }

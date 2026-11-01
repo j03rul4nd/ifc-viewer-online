@@ -29,6 +29,7 @@ import { twinElements } from './element-index'
 import { decodeGtfsRt } from '../layers/gtfs-rt-pb'
 import { isBsWfs, parseBsWfs } from '../layers/bswfs'
 import { connectMqtt, messageBody } from './mqtt-ws'
+import { ngsiHeaders, NGSI_MAX_PAGES, NGSI_PAGE } from './ngsi'
 import type { ViewerAPI } from '../viewer'
 
 interface Poller { timer: ReturnType<typeof setTimeout> | null; failures: number; ctrl: AbortController | null; sig: string; ws?: { close(): void } | null }
@@ -45,7 +46,7 @@ export async function fetchDeviceSource(
   const sim = SIM_PRESETS[src.url]
   if (sim) return { ok: true, body: sim(Date.now()), freshness: null }
   if (!/^https?:\/\//i.test(src.url)) return { ok: false, errorKey: 'error.url' }
-  const headers: Record<string, string> = { Accept: 'application/json, application/x-protobuf;q=0.9, */*;q=0.5', ...(secretHeaders ?? loadSecrets()[src.id] ?? {}) }
+  const headers: Record<string, string> = { Accept: 'application/json, application/x-protobuf;q=0.9, */*;q=0.5', ...(src.ngsi ? ngsiHeaders(src.ngsi) : {}), ...(secretHeaders ?? loadSecrets()[src.id] ?? {}) }
   const attempt = async (target: string): Promise<FetchResult> => {
     const res = await fetch(target, { signal, headers })
     if (!res.ok) return { ok: false, errorKey: 'error.http' }
@@ -53,7 +54,17 @@ export async function fetchDeviceSource(
     return body === undefined ? { ok: false, errorKey: 'error.json' } : { ok: true, body, freshness: httpFreshness(res.headers) }
   }
   try {
-    return await attempt(src.url)
+    const first = await attempt(src.url)
+    if (!src.ngsi || !first.ok || !Array.isArray(first.body)) return first
+    // A broker answers a page at a time.
+    const all: unknown[] = [...first.body]
+    for (let page = 1, last = first.body.length; last === NGSI_PAGE && page < NGSI_MAX_PAGES; page++) {
+      const next = await attempt(`${src.url}&offset=${page * NGSI_PAGE}`)
+      if (!next.ok || !Array.isArray(next.body)) return next
+      all.push(...next.body)
+      last = next.body.length
+    }
+    return { ...first, body: all }
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, errorKey: 'error.aborted' }
     const proxy = getLayersProxy()
@@ -281,7 +292,7 @@ export function startTwinRunner(getViewer: () => ViewerAPI | null): () => void {
 
   const syncPollers = (): void => {
     const { sources, active } = store.getState()
-    const want = new Map(active ? sources.filter((s) => s.enabled).map((s) => [s.id, `${s.url}|${s.intervalS}|${JSON.stringify(s.mapping)}|${(s.topics ?? []).join(' ')}`]) : [])
+    const want = new Map(active ? sources.filter((s) => s.enabled).map((s) => [s.id, `${s.url}|${s.intervalS}|${JSON.stringify(s.mapping)}|${(s.topics ?? []).join(' ')}|${s.ngsi ? JSON.stringify(s.ngsi) : ''}`]) : [])
     for (const [id, p] of pollers) if (want.get(id) !== p.sig) stopPoller(id)
     for (const [id, sig] of want) {
       if (pollers.has(id)) continue

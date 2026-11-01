@@ -816,7 +816,20 @@
       "addCondition": "+ Bedingung",
       "opacity": "Deckkraft",
       "importReplace": "Das ersetzt deine {{sources}} Quellen und {{bindings}} Verknüpfungen. Fortfahren?",
-      "operated": "Betriebszustand"
+      "operated": "Betriebszustand",
+      "fiware": {
+        "kind": "Quellentyp",
+        "kindApi": "REST-API",
+        "kindBroker": "FIWARE-Broker",
+        "broker": "Context-Broker-URL",
+        "brokerHint": "Orion, Orion-LD, Scorpio oder Stellio. Er muss Anfragen von dieser Website erlauben (CORS) und https verwenden.",
+        "type": "Entitätstyp",
+        "tenant": "Tenant (optional)",
+        "context": "JSON-LD-Kontext (optional)",
+        "contextHint": "Gibt den Attributen ihre Kurznamen.",
+        "servicePath": "Service-Pfad (optional)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "Wird bearbeitet… {{s}} s",
     "announce": "Warte noch auf {{host}}",
     "announceGeneric": "Wird noch bearbeitet"
+  },
+  "portLibrary": {
+    "intro": "Zäune, Kräne, Stadtmobiliar und Denkmäler, modelliert vom Hafen Barcelona. Öffne ein Objekt im Viewer und füge es deiner Szene hinzu.",
+    "search": "Objekte suchen",
+    "all": "Alle",
+    "count_one": "{{count}} Objekt",
+    "count_other": "{{count}} Objekte",
+    "empty": "Kein Objekt passt zu dieser Suche.",
+    "onPortSite": "{{size}} · Download auf der Website des Hafens",
+    "credit": "Objektbibliothek von",
+    "categories": {
+      "fences": "Zäune",
+      "port": "Hafenelemente",
+      "road": "Straßenelemente",
+      "equipment": "Hafenausrüstung",
+      "operation": "Betriebsmittel",
+      "transport": "Transportmittel",
+      "furniture": "Stadtmobiliar",
+      "monument": "Denkmäler"
+    }
   }
 }

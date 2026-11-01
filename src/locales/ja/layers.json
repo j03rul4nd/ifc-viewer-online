@@ -816,7 +816,20 @@
       "addCondition": "+ 条件",
       "opacity": "不透明度",
       "importReplace": "{{sources}} 件のソースと {{bindings}} 件のバインドを置き換えます。続行しますか?",
-      "operated": "運用状態"
+      "operated": "運用状態",
+      "fiware": {
+        "kind": "ソースの種類",
+        "kindApi": "REST API",
+        "kindBroker": "FIWARE ブローカー",
+        "broker": "Context Broker の URL",
+        "brokerHint": "Orion、Orion-LD、Scorpio、Stellio。このサイトからのリクエストを許可（CORS）し、https を使う必要があります。",
+        "type": "エンティティ型",
+        "tenant": "テナント（任意）",
+        "context": "JSON-LD コンテキスト（任意）",
+        "contextHint": "属性に短い名前を付けます。",
+        "servicePath": "サービスパス（任意）",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "処理中… {{s}} 秒",
     "announce": "{{host}} の応答をまだ待っています",
     "announceGeneric": "まだ処理中です"
+  },
+  "portLibrary": {
+    "intro": "バルセロナ港がモデリングしたフェンス、クレーン、街路設備、モニュメント。ビューアで開いてシーンに追加できます。",
+    "search": "オブジェクトを検索",
+    "all": "すべて",
+    "count_one": "{{count}} 件",
+    "count_other": "{{count}} 件",
+    "empty": "該当するオブジェクトはありません。",
+    "onPortSite": "{{size}} · 港のサイトでダウンロード",
+    "credit": "オブジェクトライブラリの提供:",
+    "categories": {
+      "fences": "フェンス",
+      "port": "港湾要素",
+      "road": "道路要素",
+      "equipment": "港湾設備",
+      "operation": "運用機材",
+      "transport": "輸送手段",
+      "furniture": "街路設備",
+      "monument": "モニュメント"
+    }
   }
 }

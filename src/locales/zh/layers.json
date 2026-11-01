@@ -816,7 +816,20 @@
       "addCondition": "+ 条件",
       "opacity": "不透明度",
       "importReplace": "这将替换你的 {{sources}} 个数据源和 {{bindings}} 个绑定。是否继续?",
-      "operated": "运行状态"
+      "operated": "运行状态",
+      "fiware": {
+        "kind": "数据源类型",
+        "kindApi": "REST API",
+        "kindBroker": "FIWARE 代理",
+        "broker": "Context Broker 地址",
+        "brokerHint": "Orion、Orion-LD、Scorpio 或 Stellio。它必须允许来自本站的请求（CORS）并使用 https。",
+        "type": "实体类型",
+        "tenant": "租户（可选）",
+        "context": "JSON-LD 上下文（可选）",
+        "contextHint": "为属性提供简短名称。",
+        "servicePath": "服务路径（可选）",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "处理中… {{s}} 秒",
     "announce": "仍在等待 {{host}}",
     "announceGeneric": "仍在处理"
+  },
+  "portLibrary": {
+    "intro": "由巴塞罗那港建模的围栏、起重机、街道设施和纪念物。可在查看器中打开并添加到场景。",
+    "search": "搜索对象",
+    "all": "全部",
+    "count_one": "{{count}} 个对象",
+    "count_other": "{{count}} 个对象",
+    "empty": "没有符合搜索条件的对象。",
+    "onPortSite": "{{size}} · 在港口网站下载",
+    "credit": "对象库来自",
+    "categories": {
+      "fences": "围栏",
+      "port": "港口构件",
+      "road": "道路构件",
+      "equipment": "港口设备",
+      "operation": "作业设备",
+      "transport": "运输工具",
+      "furniture": "街道设施",
+      "monument": "纪念物"
+    }
   }
 }

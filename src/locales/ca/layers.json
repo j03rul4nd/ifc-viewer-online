@@ -816,7 +816,20 @@
       "addCondition": "+ Condició",
       "opacity": "Opacitat",
       "importReplace": "Això substitueix les teves {{sources}} fonts i {{bindings}} vincles. Vols continuar?",
-      "operated": "Estat operatiu"
+      "operated": "Estat operatiu",
+      "fiware": {
+        "kind": "Tipus de font",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL del Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio o Stellio. Ha de permetre peticions des d’aquest lloc (CORS) i fer servir https.",
+        "type": "Tipus d’entitat",
+        "tenant": "Tenant (opcional)",
+        "context": "Context JSON-LD (opcional)",
+        "contextHint": "Dona als atributs els seus noms curts.",
+        "servicePath": "Service path (opcional)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "Treballant… {{s}} s",
     "announce": "Encara esperant {{host}}",
     "announceGeneric": "Encara treballant"
+  },
+  "portLibrary": {
+    "intro": "Tancaments, grues, mobiliari urbà i monuments modelats pel Port de Barcelona. Obre’n qualsevol al visor i afegeix-lo a la teva escena.",
+    "search": "Cerca objectes",
+    "all": "Tots",
+    "count_one": "{{count}} objecte",
+    "count_other": "{{count}} objectes",
+    "empty": "Cap objecte coincideix amb aquesta cerca.",
+    "onPortSite": "{{size}} · descàrrega al web del Port",
+    "credit": "Biblioteca d’objectes del",
+    "categories": {
+      "fences": "Tancaments",
+      "port": "Elements portuaris",
+      "road": "Elements viaris",
+      "equipment": "Equipament portuari",
+      "operation": "Mitjans d’operació",
+      "transport": "Mitjans de transport",
+      "furniture": "Mobiliari urbà",
+      "monument": "Monuments"
+    }
   }
 }

@@ -816,7 +816,20 @@
       "addCondition": "+ Condição",
       "opacity": "Opacidade",
       "importReplace": "Isto substitui as suas {{sources}} fontes e {{bindings}} vínculos. Continuar?",
-      "operated": "Estado operacional"
+      "operated": "Estado operacional",
+      "fiware": {
+        "kind": "Tipo de fonte",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL do Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio ou Stellio. Tem de permitir pedidos deste site (CORS) e usar https.",
+        "type": "Tipo de entidade",
+        "tenant": "Tenant (opcional)",
+        "context": "Contexto JSON-LD (opcional)",
+        "contextHint": "Dá aos atributos os seus nomes curtos.",
+        "servicePath": "Service path (opcional)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "A processar… {{s}} s",
     "announce": "Ainda à espera de {{host}}",
     "announceGeneric": "Ainda a processar"
+  },
+  "portLibrary": {
+    "intro": "Vedações, gruas, mobiliário urbano e monumentos modelados pelo Porto de Barcelona. Abra qualquer um no visualizador e adicione-o à sua cena.",
+    "search": "Pesquisar objetos",
+    "all": "Todos",
+    "count_one": "{{count}} objeto",
+    "count_other": "{{count}} objetos",
+    "empty": "Nenhum objeto corresponde a essa pesquisa.",
+    "onPortSite": "{{size}} · transferir no site do Porto",
+    "credit": "Biblioteca de objetos do",
+    "categories": {
+      "fences": "Vedações",
+      "port": "Elementos portuários",
+      "road": "Elementos viários",
+      "equipment": "Equipamento portuário",
+      "operation": "Meios de operação",
+      "transport": "Meios de transporte",
+      "furniture": "Mobiliário urbano",
+      "monument": "Monumentos"
+    }
   }
 }

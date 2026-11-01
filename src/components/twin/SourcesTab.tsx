@@ -9,6 +9,7 @@ import { fetchDeviceSource, isStreamUrl } from '../../lib/twin/device-runner'
 import { DEFAULT_MAPPING, guessMapping, newTwinId, parseReadings, type DeviceSource } from '../../lib/twin/devices'
 import { applyTemplate, TWIN_TEMPLATES } from '../../lib/twin/templates'
 import type { TwinTemplateId } from '../../lib/twin/device-sim'
+import { DEFAULT_NGSI, ngsiUrl, type NgsiConfig } from '../../lib/twin/ngsi'
 import { Expander } from '../geo/ui'
 import { Btn, Field, Hint, inputCls, MARGIN, Section, Switch } from './ui'
 import { timeOf, useTwinNav } from './nav'
@@ -138,6 +139,12 @@ export function SourceFlow({ id }: { id: string | null }) {
     })
   }
 
+  const setNgsi = (ngsi: NgsiConfig | undefined): void => {
+    setDraft({ ...draft, ngsi, url: ngsi ? ngsiUrl(ngsi) : draft.url })
+    setTest({ kind: 'idle' })
+  }
+  const ngsi = draft.ngsi
+
   const save = (): void => {
     const store = useTwinDeviceStore.getState()
     store.setHeaders(draft.id, header[0].trim() ? { [header[0].trim()]: header[1] } : null)
@@ -150,9 +157,38 @@ export function SourceFlow({ id }: { id: string | null }) {
       <BackBar title={saved ? t('panel.editSource') : t('newSource')} />
       <Section>
         <Field label={t('name')}><input className={inputCls} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></Field>
+        <div role="group" aria-label={t('panel.fiware.kind')} className="grid grid-cols-2 gap-2">
+          <Btn variant={ngsi ? 'secondary' : 'primary'} aria-pressed={!ngsi} onClick={() => setNgsi(undefined)}>{t('panel.fiware.kindApi')}</Btn>
+          <Btn variant={ngsi ? 'primary' : 'secondary'} aria-pressed={!!ngsi} data-testid="twin-source-fiware" onClick={() => setNgsi(ngsi ?? { ...DEFAULT_NGSI })}>{t('panel.fiware.kindBroker')}</Btn>
+        </div>
+        {ngsi ? (
+          <>
+            <Field label={t('panel.fiware.broker')} hint={t('panel.fiware.brokerHint')}>
+              <input className={inputCls} value={ngsi.broker} inputMode="url" spellCheck={false} placeholder="https://broker.example.com:1026" data-testid="twin-fiware-broker" onChange={(e) => setNgsi({ ...ngsi, broker: e.target.value })} />
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label={t('panel.fiware.api')}>
+                <select className={inputCls} value={ngsi.api} data-testid="twin-fiware-api" onChange={(e) => setNgsi({ ...ngsi, api: e.target.value === 'v2' ? 'v2' : 'ld' })}>
+                  <option value="ld">NGSI-LD</option>
+                  <option value="v2">NGSIv2</option>
+                </select>
+              </Field>
+              <Field label={t('panel.fiware.type')}>
+                <input className={inputCls} spellCheck={false} placeholder="AirQualityObserved" value={ngsi.type} data-testid="twin-fiware-type" onChange={(e) => setNgsi({ ...ngsi, type: e.target.value })} />
+              </Field>
+            </div>
+            <Field label={t('panel.fiware.tenant')}>
+              <input className={inputCls} spellCheck={false} value={ngsi.tenant} onChange={(e) => setNgsi({ ...ngsi, tenant: e.target.value })} />
+            </Field>
+            {ngsi.api === 'ld'
+              ? <Field label={t('panel.fiware.context')} hint={t('panel.fiware.contextHint')}><input className={inputCls} inputMode="url" spellCheck={false} value={ngsi.context} onChange={(e) => setNgsi({ ...ngsi, context: e.target.value })} /></Field>
+              : <Field label={t('panel.fiware.servicePath')}><input className={inputCls} spellCheck={false} placeholder="/" value={ngsi.servicePath} onChange={(e) => setNgsi({ ...ngsi, servicePath: e.target.value })} /></Field>}
+          </>
+        ) : (
         <Field label={t('panel.url')}>
           <input className={inputCls} value={draft.url} inputMode="url" spellCheck={false} placeholder="https://…/api/devices · wss://…" data-testid="twin-source-url" onChange={(e) => setUrl(e.target.value)} />
         </Field>
+        )}
         {stream ? <Hint>{t('panel.streamNoTest')}</Hint> : (
           <div className="flex items-center gap-3">
             <Btn disabled={!draft.url.trim() || test.kind === 'running'} onClick={() => void runTest()} data-testid="twin-source-test">
