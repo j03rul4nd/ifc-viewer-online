@@ -5,8 +5,8 @@
 // (imports @clerk/*) — App loads it only when one of these routes is visited,
 // so the anonymous bundle stays byte-identical (I-1).
 //
-// Design: the same aurora shader + vibrancy glass as /welcome; Clerk's embedded
-// component is themed (authAppearance) so it sits on our glass card, not its own.
+// Design: what the account is for beside a plain card; Clerk's embedded component
+// is themed (authAppearance) so it sits on our card, not its own.
 //
 // Behaviour:
 //  · /sign-in, /sign-up — combined flow; completion lands on /welcome.
@@ -15,12 +15,10 @@
 //    card whose completion returns right back to /account.
 
 import { useEffect } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { SignIn, SignUp, UserProfile } from '@clerk/react'
 import { useCloudAccountStore } from '../../stores/cloudAccountStore'
-import AuroraBackdrop from '../AuroraBackdrop'
-import BimoMascot from '../mascot/BimoMascot'
+import { Check } from 'lucide-react'
 import { authAppearance } from './authAppearance'
 
 export type AuthPageKind = 'signin' | 'signup' | 'account'
@@ -35,7 +33,6 @@ interface AuthPageProps {
 export default function AuthPage({ kind, onNavigateHome, onNavigateWelcome, theme = 'dark' }: AuthPageProps) {
   const { t } = useTranslation('pro')
   const status = useCloudAccountStore((s) => s.status)
-  const reduce = useReducedMotion()
   const light = theme === 'light'
   const appearance = authAppearance(light)
 
@@ -47,56 +44,37 @@ export default function AuthPage({ kind, onNavigateHome, onNavigateWelcome, them
   // Account (UserProfile) is wide; sign-in/up cards are narrow.
   const wide = kind === 'account' && status === 'signed-in'
 
-  const card = light
-    ? { background: 'rgba(255,255,255,0.72)', borderColor: 'rgba(15,17,35,0.08)', boxShadow: '0 24px 70px -20px rgba(40,48,120,0.28)' }
-    : { background: 'rgba(18,19,26,0.55)', borderColor: 'rgba(255,255,255,0.09)', boxShadow: '0 30px 90px -30px rgba(0,0,0,0.75)' }
-
   return (
-    <div className={`relative min-h-full w-full overflow-hidden ${light ? 'lp-light' : ''}`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <AuroraBackdrop light={light} />
-
-      <div className="relative z-10 min-h-full w-full flex flex-col items-center justify-center gap-6 px-4 py-12 overflow-y-auto">
-        <motion.button
-          initial={{ opacity: 0, y: reduce ? 0 : 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduce ? 0 : 0.4 }}
-          onClick={onNavigateHome}
-          className="text-[12px] font-medium cursor-pointer transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-dim)' }}
-        >
-          ← {t('backHome')}
-        </motion.button>
-
-        {!wide && (
-          <div className="relative w-[120px] h-[120px] -mb-8 z-10">
-            <BimoMascot
-              variant="inline" initial="wave" bubble="right"
-              greetingKey={kind === 'signup' ? 'signup' : 'signin'}
-              className="absolute inset-0"
-            />
+    <div className={`min-h-[100dvh] w-full ${light ? 'lp-light' : ''}`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      <div className="min-h-[100dvh] w-full max-w-[1040px] mx-auto px-4 sm:px-6 py-6 flex flex-col">
+        <button onClick={onNavigateHome} className="self-start min-h-[32px] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] cursor-pointer">← {t('backHome')}</button>
+        <div className={`flex-1 py-8 grid gap-10 items-center ${wide ? '' : 'lg:grid-cols-[1fr_auto]'}`}>
+          {!wide && (
+            <section className="hidden lg:block max-w-[420px]">
+              <h1 className="text-[30px] leading-[1.15] font-semibold tracking-[-0.02em]">{t('authTitle')}</h1>
+              <ul className="mt-6 space-y-3 text-[14px] text-[var(--text-dim)]">
+                {(['authPoint1', 'authPoint2', 'authPoint3'] as const).map((k) => (
+                  <li key={k} className="flex gap-2.5"><Check aria-hidden size={16} className="mt-[3px] shrink-0 text-[var(--accent-2)]" />{t(k)}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <div className={`rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-3 justify-self-center ${wide ? 'w-full max-w-[880px]' : 'max-w-full'}`}>
+            {kind === 'signin' && status !== 'signed-in' && (
+              <SignIn routing="hash" withSignUp oauthFlow="redirect" fallbackRedirectUrl="/welcome" signUpUrl="/sign-up" appearance={appearance} />
+            )}
+            {kind === 'signup' && status !== 'signed-in' && (
+              <SignUp routing="hash" oauthFlow="redirect" fallbackRedirectUrl="/welcome" signInUrl="/sign-in" appearance={appearance} />
+            )}
+            {kind === 'account' && (
+              status === 'signed-in' ? (
+                <UserProfile routing="hash" appearance={appearance} />
+              ) : (
+                <SignIn routing="hash" withSignUp oauthFlow="redirect" fallbackRedirectUrl="/account" signUpUrl="/sign-up" appearance={appearance} />
+              )
+            )}
           </div>
-        )}
-        <motion.div
-          initial={{ opacity: 0, y: reduce ? 0 : 16, scale: reduce ? 1 : 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: reduce ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`rounded-[24px] border p-2 sm:p-3 backdrop-blur-xl ${wide ? 'w-full max-w-[880px]' : ''}`}
-          style={card}
-        >
-          {kind === 'signin' && status !== 'signed-in' && (
-            <SignIn routing="hash" withSignUp oauthFlow="redirect" fallbackRedirectUrl="/welcome" signUpUrl="/sign-up" appearance={appearance} />
-          )}
-          {kind === 'signup' && status !== 'signed-in' && (
-            <SignUp routing="hash" oauthFlow="redirect" fallbackRedirectUrl="/welcome" signInUrl="/sign-in" appearance={appearance} />
-          )}
-          {kind === 'account' && (
-            status === 'signed-in' ? (
-              <UserProfile routing="hash" appearance={appearance} />
-            ) : (
-              <SignIn routing="hash" withSignUp oauthFlow="redirect" fallbackRedirectUrl="/account" signUpUrl="/sign-up" appearance={appearance} />
-            )
-          )}
-        </motion.div>
+        </div>
       </div>
     </div>
   )

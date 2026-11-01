@@ -98,5 +98,9 @@
     "hint": "アカウントはビューアーツールバーの「アカウント」ボタンにあります。"
   },
   "manageProfile": "プロフィール管理",
-  "backHome": "IFC Viewer Online に戻る"
+  "backHome": "IFC Viewer Online に戻る",
+  "authTitle": "プロジェクト、証明書、請求をアカウントで一元管理",
+  "authPoint1": "ビューアーとバリデーターは引き続き無料、アカウント不要",
+  "authPoint2": "ブラウザで開いたファイルはブラウザ内にとどまります",
+  "authPoint3": "ファイルがサーバーに送られるのはクラウド機能を使うときだけです"
 }

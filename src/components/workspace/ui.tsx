@@ -22,9 +22,9 @@ export function Panel({ children, className = '', tour }: { children: React.Reac
 
 export function Head({ title, sub, action }: { title: string; sub?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
       <div className="min-w-0">
-        <h1 className="text-[19px] sm:text-[20px] font-semibold tracking-[-0.015em] [overflow-wrap:anywhere]">{title}</h1>
+        <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em] [overflow-wrap:anywhere]">{title}</h1>
         {sub && <p className="text-[13px] text-[var(--text-dim)] mt-1 max-w-[640px]">{sub}</p>}
       </div>
       {action && <div data-tour="page-action" className="shrink-0 flex flex-wrap gap-2">{action}</div>}
@@ -33,7 +33,7 @@ export function Head({ title, sub, action }: { title: string; sub?: React.ReactN
 }
 
 export function SectionLabel({ children, id }: { children: React.ReactNode; id?: string }) {
-  return <h2 id={id} className="text-[12px] uppercase tracking-[0.08em] text-[var(--text-faint)] mb-2">{children}</h2>
+  return <h2 id={id} className="text-[13px] font-medium text-[var(--text-dim)] mb-2.5">{children}</h2>
 }
 
 type BtnProps = { children: React.ReactNode; onClick?: () => void; disabled?: boolean; type?: 'button' | 'submit'; className?: string; 'aria-label'?: string }
@@ -42,7 +42,7 @@ type BtnProps = { children: React.ReactNode; onClick?: () => void; disabled?: bo
 export function Primary({ children, onClick, disabled, type = 'button', className = '', ...rest }: BtnProps) {
   return (
     <button type={type} onClick={onClick} disabled={disabled} aria-label={rest['aria-label']}
-      className={`inline-flex items-center justify-center h-[36px] sm:h-[32px] px-3.5 rounded-[8px] text-[13px] font-medium bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${className}`}>
+      className={`inline-flex items-center justify-center h-[38px] sm:h-[34px] px-3.5 rounded-[8px] text-[13px] font-medium whitespace-nowrap bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${className}`}>
       {children}
     </button>
   )
@@ -51,7 +51,7 @@ export function Primary({ children, onClick, disabled, type = 'button', classNam
 export function Quiet({ children, onClick, disabled, type = 'button', className = '', ...rest }: BtnProps) {
   return (
     <button type={type} onClick={onClick} disabled={disabled} aria-label={rest['aria-label']}
-      className={`inline-flex items-center justify-center h-[34px] sm:h-[28px] px-2.5 rounded-[7px] text-[12.5px] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${className}`}>
+      className={`inline-flex items-center justify-center h-[38px] sm:h-[32px] px-3 rounded-[8px] text-[13px] whitespace-nowrap text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${className}`}>
       {children}
     </button>
   )
@@ -156,7 +156,7 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[12.5px]">
               {columns.filter((c) => !c.hideOnPhone).map((c) => (
                 <div key={c.key} className={`min-w-0 ${c.wide ? 'col-span-2' : ''}`}>
-                  <dt className="text-[10.5px] uppercase tracking-[0.06em] text-[var(--text-faint)]">{c.header}</dt>
+                  <dt className="text-[11.5px] text-[var(--text-faint)]">{c.header}</dt>
                   <dd className="[overflow-wrap:anywhere]">{c.cell(r)}</dd>
                 </div>
               ))}
@@ -167,7 +167,7 @@ export function DataList<T>({ rows, columns, rowKey, primary, primaryHeader, act
       </ul>
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-[13px]">
-          <thead className="text-left text-[11px] uppercase tracking-[0.06em] text-[var(--text-faint)]">
+          <thead className="text-left text-[12px] text-[var(--text-faint)]">
             <tr>
               <th className="px-4 py-2.5 font-medium">{primaryHeader}</th>
               {columns.map((c) => <th key={c.key} className={`py-2.5 pr-4 font-medium ${c.align === 'right' ? 'text-right' : ''} ${c.desktopOnly ? 'hidden lg:table-cell' : ''}`}>{c.header}</th>)}

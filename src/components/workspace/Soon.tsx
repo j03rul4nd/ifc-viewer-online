@@ -11,7 +11,7 @@ import { useTx } from './i18n'
 
 export function SoonChip() {
   const tx = useTx()
-  return <span className="text-[10px] uppercase tracking-[0.06em] px-1.5 py-[1px] rounded-[5px] border border-[var(--border)] text-[var(--text-faint)]">{tx('Soon')}</span>
+  return <span className="text-[11px] text-[var(--text-faint)]">{tx('Soon')}</span>
 }
 
 export function SoonBanner({ section }: { section: string }) {

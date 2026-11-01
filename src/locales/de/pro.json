@@ -98,5 +98,9 @@
     "hint": "Ihr Konto finden Sie hinter dem Konto-Button in der Viewer-Leiste."
   },
   "manageProfile": "Profil verwalten",
-  "backHome": "Zurück zu IFC Viewer Online"
+  "backHome": "Zurück zu IFC Viewer Online",
+  "authTitle": "Ihr Konto bündelt Projekte, Zertifikate und Abrechnung",
+  "authPoint1": "Viewer und Validator bleiben kostenlos und ohne Konto",
+  "authPoint2": "Im Browser geöffnete Dateien bleiben im Browser",
+  "authPoint3": "Ihre Dateien erreichen unsere Server nur, wenn Sie eine Cloud-Funktion nutzen"
 }

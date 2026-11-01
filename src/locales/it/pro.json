@@ -98,5 +98,9 @@
     "hint": "Il tuo account vive dietro il pulsante Account nella barra del viewer."
   },
   "manageProfile": "Gestisci profilo",
-  "backHome": "Torna a IFC Viewer Online"
+  "backHome": "Torna a IFC Viewer Online",
+  "authTitle": "Il tuo account riunisce progetti, certificati e fatturazione",
+  "authPoint1": "Il visualizzatore e il validatore restano gratuiti e senza account",
+  "authPoint2": "Ciò che apri nel browser resta nel browser",
+  "authPoint3": "I tuoi file arrivano ai nostri server solo se usi una funzione cloud"
 }

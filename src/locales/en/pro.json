@@ -226,5 +226,9 @@
     "thAction": "Action",
     "thTarget": "Target",
     "thDetails": "Details"
-  }
+  },
+  "authTitle": "Your account keeps projects, certificates and billing together",
+  "authPoint1": "The viewer and validator stay free, with no account",
+  "authPoint2": "Files you open in the browser stay in the browser",
+  "authPoint3": "Your files reach our servers only when you run a cloud feature"
 }

@@ -40,13 +40,7 @@ export default function Billing({ data, actions }: SectionProps) {
               : <>
                   {!yearly && a.plan !== 'team' && <Quiet onClick={() => actions.buy({ kind: 'plan', plan: a.plan, period: 'yearly' })}>{tx("Switch to yearly")}</Quiet>}
                   {a.plan === 'pro' && <Quiet onClick={() => actions.buy({ kind: 'plan', plan: 'team', period: a.billing })}>{tx("Upgrade to Team")}</Quiet>}
-                  <Quiet onClick={() => setCancelOpen(true)}>{tx("Cancel plan")}</Quiet>
                 </>}
-          </div>
-          <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center gap-3">
-            <span aria-hidden className="h-[22px] px-1.5 grid place-items-center rounded-[4px] border border-[var(--border)] text-[10px] font-semibold">{a.card.brand.toUpperCase()}</span>
-            <span className="flex-1 text-[12.5px] tabular-nums">•••• {a.card.last4} <span className="text-[var(--text-faint)]">· {tx('expires {{date}}', { date: a.card.expires })}</span></span>
-            <button className="text-[12.5px] text-[var(--accent)] hover:underline min-h-[32px]">{tx("Update")}</button>
           </div>
         </Panel>
       </div>
@@ -110,6 +104,9 @@ export default function Billing({ data, actions }: SectionProps) {
 
       <div className="mt-8">
         <SettingGroup title={tx("Billing details")} tour="billing-details">
+          <SettingRow title={tx("Payment method")} detail={<span className="tabular-nums">{a.card.brand} •••• {a.card.last4} · {tx('expires {{date}}', { date: a.card.expires })}</span>}>
+            <Quiet>{tx("Update")}</Quiet>
+          </SettingRow>
           <SettingRow title={a.org} detail={tx("Carrer de Pau Claris 100, 08009 Barcelona, ES · VAT ID ESB12345678")}>
             <Quiet>{tx("Edit")}</Quiet>
           </SettingRow>
@@ -119,6 +116,11 @@ export default function Billing({ data, actions }: SectionProps) {
           <SettingRow title={tx("Something wrong with a charge?")} detail={tx("Wrong amount, missing VAT ID, a double charge — we fix it within 1 working day.")}>
             <Quiet onClick={() => actions.contact('billing')}>{tx("Contact billing")}</Quiet>
           </SettingRow>
+          {!canceled && (
+            <SettingRow title={tx("Cancel plan")} detail={tx('Renews {{date}}.', { date: a.renewsOn })}>
+              <Quiet onClick={() => setCancelOpen(true)}>{tx("Cancel plan")}</Quiet>
+            </SettingRow>
+          )}
         </SettingGroup>
       </div>
 
