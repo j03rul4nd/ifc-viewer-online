@@ -314,7 +314,7 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
           <strong>Resend</strong> — sending the email updates you subscribed to.
         </li>
         <li>
-          <strong>Cloudflare</strong> — running the shared-report function, the anonymous Health
+          <strong>Cloudflare</strong> — delivering the demo model files, running the shared-report function, the anonymous Health
           Score benchmark, and basic abuse protection (rate limiting by IP). Cloudflare processes request metadata (including IP
           addresses) as part of its infrastructure; see{' '}
           <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer"

@@ -1,0 +1,10 @@
+{
+  "name": "ifc-viewer-models",
+  "compatibility_date": "2026-10-23",
+  "main": "worker/index.js",
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/models/shanghai-tower/SHA-IVO-SHANGHAI-TOWER-A-0001.ifc", "/models/cras/model.ifc"]
+  }
+}
