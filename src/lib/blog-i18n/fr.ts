@@ -304,7 +304,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
     faqs: [
       {
         q: "Comment dessiner sur mon modèle IFC ?",
-        a: "Ouvrez le modèle dans la visionneuse et choisissez Vue, puis Croquis 3D. Le studio s’ouvre dans un nouvel onglet avec le modèle en fond. Avec l’outil de plan, appuyez sur une face pour y poser le plan de dessin, puis dessinez.",
+        a: "Ouvrez le modèle dans la visionneuse et choisissez Affichage, puis Croquis 3D. Le studio s’ouvre dans un nouvel onglet avec le modèle en fond. Avec l’outil de plan, appuyez sur une face pour y poser le plan de dessin, puis dessinez.",
       },
       {
         q: "Mon modèle est-il envoyé en ligne ?",
@@ -392,7 +392,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
             body: "Déposez un ou plusieurs IFC dans la visionneuse. Plusieurs modèles voyagent ensemble.",
           },
           {
-            title: "Vue, puis Croquis 3D",
+            title: "Affichage, puis Croquis 3D",
             body: "Le studio s’ouvre dans un nouvel onglet avec vos modèles en fond, à tourner, afficher ou masquer.",
           },
           {
@@ -462,7 +462,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           " dans Blender, mais nous ne proposons pas cette conversion. Dessiner à plusieurs en direct n’est pas possible non plus. Les très gros modèles dépendent de la mémoire de votre appareil, et nous n’avons pas encore essayé sur de vraies tablettes.",
         ],
       },
-      { type: "tool", id: "viewer", why: "Ouvrez votre IFC, puis choisissez Vue, Croquis 3D." },
+      { type: "tool", id: "viewer", why: "Ouvrez votre IFC, puis choisissez Affichage, Croquis 3D." },
     ],
     lang: "fr",
     translationKey: "sketch-over-ifc-bim-model-redline",
@@ -515,7 +515,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       },
       {
         q: "Puis-je dessiner sur ma propre ville ou mon ouvrage ?",
-        a: "Oui, si vous l’avez sous forme de modèle ou de scan ouvert dans la visionneuse : choisissez Vue, puis Croquis 3D. Il apparaît alors en fond, prêt à recevoir vos traits.",
+        a: "Oui, si vous l’avez sous forme de modèle ou de scan ouvert dans la visionneuse : choisissez Affichage, puis Croquis 3D. Il apparaît alors en fond, prêt à recevoir vos traits.",
       },
       {
         q: "Est-ce une analyse de crue ou de structure ?",
