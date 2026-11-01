@@ -5,6 +5,8 @@
 // rest, which is what makes undo and the renderer's diff cheap.
 // docs/SKETCH_STUDIO.md.
 
+import type { LayerFilters } from './filters'
+
 export type Vec3 = readonly [number, number, number]
 
 /** A drawing plane: a point on it and two orthonormal directions along it. */
@@ -40,6 +42,7 @@ export interface SketchLayer {
   opacity?: number
   /** Absent means normal. */
   blend?: LayerBlend
+  filters?: LayerFilters
   strokes: readonly Stroke[]
 }
 
@@ -111,4 +114,8 @@ export interface ReferenceImage {
   width: number
   height: number
   blob: Blob
+  /** Where it sits on the reference board. */
+  board?: { x: number; y: number; scale: number }
+  /** Floating over the drawing, to look at while drawing. */
+  pin?: { x: number; y: number; width: number; opacity: number; through: boolean }
 }

@@ -31,7 +31,10 @@
     "fix": "Hacia mí",
     "picked": "Plano fijado desde el dibujo.",
     "pickedSurface": "Plano fijado en esa cara.",
-    "pickNothing": "Ahí no hay nada a lo que alinearse. Toca un trazo o una cara del modelo."
+    "pickNothing": "Ahí no hay nada a lo que alinearse. Toca un trazo o una cara del modelo.",
+    "auto": "Auto",
+    "back": "Plano atrás",
+    "forward": "Plano adelante"
   },
   "view": {
     "label": "Vista",
@@ -45,7 +48,8 @@
     "views": "Vistas guardadas",
     "remove": "Quitar vista",
     "orbitHint": "Arrastra para orbitar",
-    "roll": "Girar el lienzo"
+    "roll": "Girar el lienzo",
+    "home": "Inicio"
   },
   "layers": {
     "label": "Capas",
@@ -108,7 +112,20 @@
     "top": "Planta",
     "front": "Alzado",
     "liveEmpty": "Dibuja algo y aparecerá aquí visto desde arriba y de frente.",
-    "window": "Abrir en otra ventana"
+    "window": "Abrir en otra ventana",
+    "board": "Tablero",
+    "pin": "Fijar",
+    "palette": "Paleta",
+    "paletteDone": "Colores añadidos a los recientes.",
+    "capture": "Capturar vista",
+    "captureName": "Vista",
+    "boardEmpty": "Añade imágenes en la lista y ordénalas aquí: tu lluvia de ideas, en un sitio.",
+    "through": "Calcar a través",
+    "unpin": "Soltar",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "fit": "Encuadrar",
+    "resize": "Redimensionar"
   },
   "context": {
     "load": "Bocetar sobre un modelo (GLB)",
@@ -158,7 +175,8 @@
     "entry": "Inicio del trazo",
     "exit": "Final del trazo",
     "snap": "Unir extremos",
-    "opacity": "Opacidad"
+    "opacity": "Opacidad",
+    "anchor": "Empezar en extremos"
   },
   "pen": {
     "label": "Lápiz",
@@ -306,5 +324,20 @@
     "bottom-left": "Abajo izquierda",
     "bottom-right": "Abajo derecha",
     "local": "Guardado solo en este navegador: si borras sus datos, se pierde."
+  },
+  "filters": {
+    "label": "Filtros",
+    "none": "Ninguno",
+    "blueprint": "Plano azul",
+    "wash": "Aguada",
+    "chalk": "Tiza",
+    "neon": "Neón",
+    "faded": "Desvaído",
+    "hue": "Tono",
+    "saturation": "Saturación",
+    "brightness": "Brillo",
+    "soft": "Borde suave",
+    "grain": "Grano",
+    "glow": "Halo"
   }
 }

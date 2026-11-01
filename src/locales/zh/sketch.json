@@ -31,7 +31,10 @@
     "fix": "朝向我",
     "picked": "已从图中设置平面。",
     "pickedSurface": "已在该面上设置平面。",
-    "pickNothing": "这里没有可对齐的对象。请点按笔画或模型的面。"
+    "pickNothing": "这里没有可对齐的对象。请点按笔画或模型的面。",
+    "auto": "自动",
+    "back": "平面后移",
+    "forward": "平面前移"
   },
   "view": {
     "label": "视图",
@@ -45,7 +48,8 @@
     "views": "已保存的视图",
     "remove": "移除视图",
     "orbitHint": "拖动以环绕",
-    "roll": "旋转画布"
+    "roll": "旋转画布",
+    "home": "主视图"
   },
   "layers": {
     "label": "图层",
@@ -108,7 +112,20 @@
     "top": "平面图",
     "front": "立面图",
     "liveEmpty": "开始绘制后，这里会显示俯视和正视效果。",
-    "window": "在另一个窗口打开"
+    "window": "在另一个窗口打开",
+    "board": "看板",
+    "pin": "固定",
+    "palette": "调色板",
+    "paletteDone": "颜色已加入最近使用。",
+    "capture": "捕获视图",
+    "captureName": "视图",
+    "boardEmpty": "在列表中添加图片并在此排列：把灵感集中在一处。",
+    "through": "穿透描摹",
+    "unpin": "取消固定",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fit": "适应",
+    "resize": "调整大小"
   },
   "context": {
     "load": "在模型上绘制草图 (GLB)",
@@ -158,7 +175,8 @@
     "entry": "线条起点",
     "exit": "线条终点",
     "snap": "连接端点",
-    "opacity": "不透明度"
+    "opacity": "不透明度",
+    "anchor": "从线条端点开始"
   },
   "pen": {
     "label": "手写笔",
@@ -306,5 +324,20 @@
     "bottom-left": "左下",
     "bottom-right": "右下",
     "local": "仅保存在此浏览器中：清除其数据会将其删除。"
+  },
+  "filters": {
+    "label": "滤镜",
+    "none": "无",
+    "blueprint": "蓝图",
+    "wash": "水洗",
+    "chalk": "粉笔",
+    "neon": "霓虹",
+    "faded": "褪色",
+    "hue": "色相",
+    "saturation": "饱和度",
+    "brightness": "亮度",
+    "soft": "柔化边缘",
+    "grain": "颗粒",
+    "glow": "光晕"
   }
 }

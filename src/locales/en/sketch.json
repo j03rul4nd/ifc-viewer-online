@@ -31,7 +31,10 @@
     "fix": "Face me",
     "picked": "Plane set from the drawing.",
     "pickedSurface": "Plane set on that face.",
-    "pickNothing": "Nothing to align to there. Tap a stroke or a model face."
+    "pickNothing": "Nothing to align to there. Tap a stroke or a model face.",
+    "auto": "Auto",
+    "back": "Plane back",
+    "forward": "Plane forward"
   },
   "view": {
     "label": "View",
@@ -45,7 +48,8 @@
     "views": "Saved views",
     "remove": "Remove view",
     "orbitHint": "Drag to orbit",
-    "roll": "Rotate the canvas"
+    "roll": "Rotate the canvas",
+    "home": "Home"
   },
   "layers": {
     "label": "Layers",
@@ -108,7 +112,20 @@
     "top": "Plan",
     "front": "Elevation",
     "liveEmpty": "Draw something and it appears here from above and from the front.",
-    "window": "Open in another window"
+    "window": "Open in another window",
+    "board": "Board",
+    "pin": "Pin",
+    "palette": "Palette",
+    "paletteDone": "Colours added to the recent ones.",
+    "capture": "Capture view",
+    "captureName": "View",
+    "boardEmpty": "Add images in the list and arrange them here: your brainstorm, in one place.",
+    "through": "Trace through",
+    "unpin": "Unpin",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit",
+    "resize": "Resize"
   },
   "context": {
     "load": "Sketch over a model (GLB)",
@@ -158,7 +175,8 @@
     "entry": "Line start",
     "exit": "Line end",
     "snap": "Join line ends",
-    "opacity": "Opacity"
+    "opacity": "Opacity",
+    "anchor": "Start on line ends"
   },
   "pen": {
     "label": "Pen",
@@ -306,5 +324,20 @@
     "bottom-left": "Bottom left",
     "bottom-right": "Bottom right",
     "local": "Saved in this browser only: clearing its data deletes it."
+  },
+  "filters": {
+    "label": "Filters",
+    "none": "None",
+    "blueprint": "Blueprint",
+    "wash": "Wash",
+    "chalk": "Chalk",
+    "neon": "Neon",
+    "faded": "Faded",
+    "hue": "Hue",
+    "saturation": "Saturation",
+    "brightness": "Brightness",
+    "soft": "Soft edge",
+    "grain": "Grain",
+    "glow": "Glow"
   }
 }

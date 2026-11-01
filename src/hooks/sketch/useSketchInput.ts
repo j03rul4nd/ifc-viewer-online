@@ -13,7 +13,8 @@ import { eraseAround, mapStroke, mirrorMaps, recognizeShape, reshapeStroke, stro
 import { actionForKey } from '../../lib/sketch/keymap'
 import { GestureArbiter, type Contact, type GestureAction } from '../../lib/sketch/gestures'
 import { applyTip, findEndpointSnap, finishStroke, readTilt, sampleWeight, Stabilizer } from '../../lib/sketch/ink'
-import { add, dot, scale, sub } from '../../lib/sketch/plane'
+import { facingAxis } from '../../lib/sketch/filters'
+import { add, dot, presetPlane, scale, sub } from '../../lib/sketch/plane'
 import { pointInPolygon } from '../../lib/sketch/edit'
 import type { SketchDoc, SketchPlane, Stroke, Vec3 } from '../../lib/sketch/types'
 import { useSketchStore, type SketchTool } from '../../stores/sketchStore'
@@ -23,6 +24,7 @@ const STRAIGHTEN_MS = 480
 const STRAIGHTEN_SLOP_PX = 5
 const ERASER_RADIUS_PX = 16
 const SNAP_RADIUS_PX = 10
+const ANCHOR_RADIUS_PX = 18
 const RESHAPE_RADIUS_PX = 70
 /** Touch and hold samples a colour, once fingers navigate. As in Procreate. */
 const LONG_PRESS_MS = 520
@@ -90,6 +92,23 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
   const lastEnd = useRef<Vec3 | null>(null)
   const lasso = useRef<Point2[] | null>(null)
   const moveFrom = useRef<Vec3 | null>(null)
+
+  /**
+   * Before a stroke lands: the plane the user would have chosen. The axis most
+   * facing them if on auto, and through the line end the pen started on, so the
+   * next wall grows out of the corner instead of floating somewhere behind it.
+   */
+  const alignPlaneForStroke = (x: number, y: number): void => {
+    const { engine, autoPlane, anchorStart, plane } = store.getState()
+    if (!engine) return
+    let next = plane
+    if (autoPlane) next = presetPlane(facingAxis(engine.viewDirection()), next.origin)
+    if (anchorStart) {
+      const hit = findEndpointSnap(x, y, engine.endpointCandidates(), ANCHOR_RADIUS_PX)
+      if (hit) next = { ...next, origin: hit.world }
+    }
+    if (next !== plane) setPlane(next)
+  }
   const reshaping = useRef<{ id: string; index: number } | null>(null)
   const longPress = useRef(0)
 
@@ -355,6 +374,7 @@ export function useSketchInput(boxRef: RefObject<HTMLElement>, ringRef: RefObjec
             break
           }
           s.set({ drawing: true })
+          if (current !== 'eraser') alignPlaneForStroke(x, y)
           if (current === 'eraser') {
             sweepBase.current = s.history.present
             eraseAt(x, y)

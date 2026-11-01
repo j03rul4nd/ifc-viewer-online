@@ -16,7 +16,8 @@ import { useSketchStore } from '../../stores/sketchStore'
 import { ErrorBoundary } from '../ErrorBoundary'
 import ReferencePane from './ReferencePane'
 import ReferenceWindow from './ReferenceWindow'
-import { LinkBar, MeetingBar, PageStrip, SelectionBar, StudioControls, TopBar } from './SketchPanels'
+import ReferencePins from './ReferencePins'
+import { LinkBar, MeetingBar, PageStrip, PlaneBar, SelectionBar, StudioControls, TopBar } from './SketchPanels'
 
 export type Tx = (key: string, o?: Record<string, unknown>) => string
 
@@ -64,6 +65,7 @@ function Studio({ tx, mode }: { tx: Tx; mode: 'edit' | 'audience' | 'link' }) {
   const laser = useSketchStore((s) => s.laser)
   const drawing = useSketchStore((s) => s.drawing)
   const uiHidden = useSketchStore((s) => s.uiHidden)
+  const selecting = useSketchStore((s) => s.selection.length > 0)
   const { width, height, layout, hardware } = useStudioLayout(rootRef, railSide === 'right')
 
   useSketchEngine(canvasRef, boxRef, onFailed)
@@ -150,6 +152,7 @@ function Studio({ tx, mode }: { tx: Tx; mode: 'edit' | 'audience' | 'link' }) {
             <StudioControls tx={tx} regular={regular} short={layout.short} />
             {regular && !layout.short && <PageStrip tx={tx} />}
             <SelectionBar tx={tx} regular={regular} />
+            {!selecting && <PlaneBar tx={tx} regular={regular} />}
           </div>
         )}
         {mode === 'edit' && uiHidden && !meeting && (
@@ -161,6 +164,7 @@ function Studio({ tx, mode }: { tx: Tx; mode: 'edit' | 'audience' | 'link' }) {
         {laser && (
           <div aria-hidden className="absolute z-30 w-4 h-4 -ml-2 -mt-2 rounded-full pointer-events-none" style={{ left: `${laser.x * 100}%`, top: `${laser.y * 100}%`, background: '#FF2A2A', boxShadow: '0 0 14px 5px rgba(255,42,42,.55)' }} />
         )}
+        {mode === 'edit' && <ReferencePins tx={tx} />}
         {meeting && <MeetingBar tx={tx} />}
         {(meeting || mode === 'audience') && <BrandCorner />}
         {mode === 'link' && <LinkBar tx={tx} />}

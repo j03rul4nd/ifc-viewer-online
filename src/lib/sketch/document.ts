@@ -121,7 +121,7 @@ export function addLayer(doc: SketchDoc, name: string): SketchDoc {
   return updatePage(doc, (page) => ({ ...page, layers: [...page.layers, layer], activeLayerId: layer.id }))
 }
 
-export function patchLayer(doc: SketchDoc, id: string, patch: Partial<Pick<SketchLayer, 'visible' | 'locked' | 'name' | 'opacity' | 'blend'>>): SketchDoc {
+export function patchLayer(doc: SketchDoc, id: string, patch: Partial<Pick<SketchLayer, 'visible' | 'locked' | 'name' | 'opacity' | 'blend' | 'filters'>>): SketchDoc {
   return updatePage(doc, (page) => updateLayer(page, id, (l) => ({ ...l, ...patch })))
 }
 
