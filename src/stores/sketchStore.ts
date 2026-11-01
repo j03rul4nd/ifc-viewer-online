@@ -2,7 +2,9 @@ import { create } from 'zustand'
 import {
   commit, createDoc, redo, replacePresent, startHistory, undo, type History,
 } from '../lib/sketch/document'
+import { EMPTY_BRAND, type SketchBrand } from '../lib/sketch/brand'
 import type { BrushPreset } from '../lib/sketch/brushes'
+import type { KeyOverrides } from '../lib/sketch/keymap'
 import type { Symmetry } from '../lib/sketch/edit'
 import { DEFAULT_INK, type InkSettings } from '../lib/sketch/ink'
 import { presetPlane } from '../lib/sketch/plane'
@@ -15,7 +17,7 @@ import type { BrushKind, OrbitState, ReferenceImage, SketchDoc, SketchPlane } fr
 // stays in the input hook. The drawing tools persist, because a brush is a
 // working preference. The document persists elsewhere (IndexedDB).
 
-export type SketchTool = BrushKind | 'line' | 'eraser' | 'pick' | 'lasso' | 'picker'
+export type SketchTool = BrushKind | 'line' | 'eraser' | 'pick' | 'lasso' | 'picker' | 'reshape' | 'laser'
 export type PanelTab = 'ink' | 'plane' | 'view' | 'layers' | 'file'
 
 export interface ContextEntry { id: string; name: string; kind: 'mesh' | 'points'; visible: boolean }
@@ -38,13 +40,14 @@ interface Prefs {
   symmetry: Symmetry
   eraser: 'part' | 'stroke'
   brushes: BrushPreset[]
+  keys: KeyOverrides
 }
 
 const KEY = 'ifc-sketch:prefs:v1'
 const DEFAULTS: Prefs = {
   tool: 'pen', color: '#17130F', width: 3, ink: DEFAULT_INK, snapEnds: true,
   fingerDraw: true, railSide: 'left', railOpen: true, tab: 'ink',
-  opacity: 1, colorB: '#FFFFFF', recent: [], symmetry: 'off', eraser: 'part', brushes: [],
+  opacity: 1, colorB: '#FFFFFF', recent: [], symmetry: 'off', eraser: 'part', brushes: [], keys: {},
 }
 
 function loadPrefs(): Prefs {
@@ -70,6 +73,13 @@ export interface SketchState extends Prefs {
   /** Lassoed stroke ids. */
   selection: string[]
   uiHidden: boolean
+  brand: SketchBrand
+  /** Presenting: a minimal bar, and the audience window follows. */
+  meeting: boolean
+  /** The laser, as a share of the drawing's box. Null when off. */
+  laser: { x: number; y: number } | null
+  /** A link or an audience window: nothing here is edited or saved. */
+  readOnly: boolean
   refsOpen: boolean
   sheetOpen: boolean
   preparing: boolean
@@ -103,6 +113,10 @@ export const useSketchStore = create<SketchState>()((set, get) => ({
   drawing: false,
   selection: [],
   uiHidden: false,
+  brand: EMPTY_BRAND,
+  meeting: false,
+  laser: null,
+  readOnly: false,
   refsOpen: false,
   sheetOpen: false,
   preparing: false,
@@ -113,9 +127,9 @@ export const useSketchStore = create<SketchState>()((set, get) => ({
 
   setPrefs: (patch) => {
     set(patch)
-    const { tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes } = get()
+    const { tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes, keys } = get()
     try {
-      localStorage.setItem(KEY, JSON.stringify({ tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes }))
+      localStorage.setItem(KEY, JSON.stringify({ tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes, keys }))
     } catch { /* private mode: the session still works */ }
   },
   setInk: (patch) => get().setPrefs({ ink: { ...get().ink, ...patch } }),

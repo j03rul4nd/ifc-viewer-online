@@ -11,7 +11,9 @@
     "eraser": "Esborrador",
     "pick": "Fixa el pla des del dibuix",
     "lasso": "Llaç",
-    "picker": "Agafa un color"
+    "picker": "Agafa un color",
+    "reshape": "Remodela una línia",
+    "laser": "Làser"
   },
   "color": "Color",
   "customColor": "Color personalitzat",
@@ -42,7 +44,8 @@
     "save": "Desa",
     "views": "Vistes desades",
     "remove": "Treu la vista",
-    "orbitHint": "Arrossega per orbitar"
+    "orbitHint": "Arrossega per orbitar",
+    "roll": "Gira el llenç"
   },
   "layers": {
     "label": "Capes",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "Línies 3D (OBJ)",
     "psdHint": "El PSD s'obre amb capes a Krita, Clip Studio i Sketchbook. A Procreate, importa'l des de la Galeria per conservar-les.",
-    "pngClear": "PNG transparent"
+    "pngClear": "PNG transparent",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "Aquest dispositiu no ha pogut iniciar el dibuix en 3D.",
   "gpuLost": "El sistema ha retirat el xip gràfic. El dibuix és segur i torna sol.",
@@ -165,7 +169,8 @@
     "try": "Traça una línia amb el llapis per provar-lo.",
     "noPen": "Això no era un llapis. Una tauleta en mode ratolí es veu així.",
     "noPressure": "Aquest llapis no informa de pressió. Revisa el controlador de la tauleta; a Windows, activa Windows Ink.",
-    "reading": "Pressió {{pressure}} % · inclinació {{tilt}}°"
+    "reading": "Pressió {{pressure}} % · inclinació {{tilt}}°",
+    "custom": "Pròpia"
   },
   "share": {
     "label": "Comparteix",
@@ -225,5 +230,81 @@
     "hide": "Amaga la interfície",
     "undo": "Desfés, refés",
     "deselect": "Treu la selecció"
+  },
+  "tip": {
+    "label": "Punta",
+    "round": "Rodona",
+    "flat": "Plomí pla",
+    "dash": "Guions",
+    "bristle": "Cerres"
+  },
+  "blend": {
+    "label": "Fusió",
+    "normal": "Normal",
+    "multiply": "Multiplica",
+    "screen": "Trama",
+    "add": "Suma"
+  },
+  "background": {
+    "color": "Color del full",
+    "pattern": "Guia",
+    "dots": "Punts",
+    "grid": "Quadrícula",
+    "lines": "Línies",
+    "plain": "Llis",
+    "use": "Com a fons",
+    "clearImage": "Treu la imatge",
+    "imageHint": "Qualsevol imatge de referència pot anar darrere del dibuix."
+  },
+  "studios": {
+    "label": "Portada i Clip Studio",
+    "image": "Envia aquesta vista",
+    "video": "Envia el procés",
+    "sent": "Enviat. Al visor, afegeix-lo des de l'estudi de portades o el Clip Studio."
+  },
+  "meeting": {
+    "label": "Reunions",
+    "start": "Presenta",
+    "end": "Acaba",
+    "audience": "Finestra d'audiència",
+    "link": "Copia l'enllaç de lectura",
+    "link-copied": "Enllaç copiat. Obre aquesta pàgina, sense seguir els canvis posteriors.",
+    "link-too-long": "Aquesta pàgina és massa llarga per a un enllaç. Envia el fitxer d'esbós.",
+    "link-failed": "No s'ha pogut copiar l'enllaç.",
+    "hint": "Comparteix la finestra d'audiència a Meet, Zoom o Teams, o posa-la en un projector. Et segueix en aquest ordinador.",
+    "readOnly": "Còpia de només lectura",
+    "keep": "Desa una còpia",
+    "badLink": "No s'ha pogut obrir aquest enllaç."
+  },
+  "keymap": {
+    "pen": "Ploma",
+    "pencil": "Llapis",
+    "marker": "Retolador",
+    "line": "Línia",
+    "eraser": "Esborrador",
+    "lasso": "Llaç",
+    "picker": "Agafa color",
+    "reshape": "Remodela",
+    "laser": "Làser",
+    "swap": "Intercanvia colors",
+    "defaults": "Colors per defecte",
+    "sizeDown": "Més petit",
+    "sizeUp": "Més gran",
+    "rollLeft": "Gira a l'esquerra",
+    "rollRight": "Gira a la dreta"
+  },
+  "brand": {
+    "label": "La teva marca",
+    "name": "Empresa",
+    "logo": "Puja el logo",
+    "removeLogo": "Treu el logo",
+    "colors": "Colors",
+    "removeColor": "Treu el color",
+    "mark": "Signa les imatges",
+    "top-left": "Dalt esquerra",
+    "top-right": "Dalt dreta",
+    "bottom-left": "Baix esquerra",
+    "bottom-right": "Baix dreta",
+    "local": "Desat només en aquest navegador: si n'esborres les dades, es perd."
   }
 }

@@ -31,7 +31,9 @@ export function useSketchEngine(canvasRef: RefObject<HTMLCanvasElement>, boxRef:
       const { history, images } = store.getState()
       const page = activePage(history.present)
       engine.syncLayers(page.layers)
-      engine.setPaper(history.present.paper)
+      engine.setBackground(history.present.paper, history.present.background)
+      const bg = history.present.background?.imageId ?? null
+      void engine.setBackgroundImage(bg, images.find((i) => i.id === bg)?.blob)
       void engine.syncPlaced(page.placed, (id) => images.find((i) => i.id === id)?.blob)
       // Undo or a page change can take selected strokes away.
       const ids = new Set(store.getState().selection)

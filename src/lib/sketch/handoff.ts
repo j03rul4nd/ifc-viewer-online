@@ -5,6 +5,7 @@
 // are saved. One model failing does not cost the others.
 
 import { newId } from './document'
+import type { OrbitState } from './types'
 import { contextBytes, saveContext, type ContextItem } from './storage'
 
 export const SKETCH_CHANNEL = 'ifc-sketch'
@@ -18,6 +19,10 @@ export type HandoffMessage =
   | { type: 'images-changed' }
   | { type: 'place'; imageId: string }
   | { type: 'forget'; imageId: string }
+  /** From a presenter to the audience window. */
+  | { type: 'view'; orbit: OrbitState; pageId: string; laser: { x: number; y: number } | null }
+  /** The studio left something for Clip Studio or the cover studio. */
+  | { type: 'outbox' }
 
 /** How long the viewer keeps the answer for a tab that is slow to load. */
 const ANSWER_FOR_MS = 10 * 60 * 1000

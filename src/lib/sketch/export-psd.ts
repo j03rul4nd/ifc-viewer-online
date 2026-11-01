@@ -11,6 +11,7 @@ export interface PsdLayer {
   visible: boolean
   /** 0..1. Absent means 1. */
   opacity?: number
+  blend?: 'normal' | 'multiply' | 'screen' | 'add'
 }
 
 class Writer {
@@ -79,7 +80,7 @@ function layerRecord(layer: PsdLayer, width: number, height: number, channels: U
   w.u32(0); w.u32(0); w.u32(height); w.u32(width)
   w.u16(4)
   ;[-1, 0, 1, 2].forEach((id, i) => { w.i16(id); w.u32(channels[i].length) })
-  w.ascii('8BIM'); w.ascii('norm')
+  w.ascii('8BIM'); w.ascii({ normal: 'norm', multiply: 'mul ', screen: 'scrn', add: 'lddg' }[layer.blend ?? 'normal'])
   w.u8(Math.round((layer.opacity ?? 1) * 255)) // opacity
   w.u8(0) // clipping
   w.u8(layer.visible ? 0 : 2) // flags: bit 1 hides the layer

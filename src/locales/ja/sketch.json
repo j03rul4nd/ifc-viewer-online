@@ -11,7 +11,9 @@
     "eraser": "消しゴム",
     "pick": "描画から平面を設定",
     "lasso": "投げなわ",
-    "picker": "色を取得"
+    "picker": "色を取得",
+    "reshape": "線を変形",
+    "laser": "レーザー"
   },
   "color": "色",
   "customColor": "カスタムカラー",
@@ -42,7 +44,8 @@
     "save": "保存",
     "views": "保存したビュー",
     "remove": "ビューを削除",
-    "orbitHint": "ドラッグで回転"
+    "orbitHint": "ドラッグで回転",
+    "roll": "キャンバスを回転"
   },
   "layers": {
     "label": "レイヤー",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "3D 線 (OBJ)",
     "psdHint": "PSD は Krita、Clip Studio、Sketchbook でレイヤー付きで開けます。Procreate ではギャラリーから読み込むとレイヤーが保たれます。",
-    "pngClear": "透過 PNG"
+    "pngClear": "透過 PNG",
+    "ora": "Krita、GIMP (ORA)"
   },
   "webgl": "このデバイスでは 3D 描画を開始できませんでした。",
   "gpuLost": "システムがグラフィックチップを解放しました。描画は安全で、自動的に戻ります。",
@@ -165,7 +169,8 @@
     "try": "ペンで線を引いてテストしてください。",
     "noPen": "ペンではありません。マウスモードのペンタブレットはこのように表示されます。",
     "noPressure": "このペンは筆圧を報告しません。タブレットのドライバーを確認し、Windows では Windows Ink を有効にしてください。",
-    "reading": "筆圧 {{pressure}} % · 傾き {{tilt}}°"
+    "reading": "筆圧 {{pressure}} % · 傾き {{tilt}}°",
+    "custom": "カスタム"
   },
   "share": {
     "label": "共有",
@@ -225,5 +230,81 @@
     "hide": "インターフェースを隠す",
     "undo": "元に戻す、やり直し",
     "deselect": "選択解除"
+  },
+  "tip": {
+    "label": "先端",
+    "round": "丸",
+    "flat": "平ペン",
+    "dash": "破線",
+    "bristle": "毛"
+  },
+  "blend": {
+    "label": "合成",
+    "normal": "通常",
+    "multiply": "乗算",
+    "screen": "スクリーン",
+    "add": "加算"
+  },
+  "background": {
+    "color": "用紙の色",
+    "pattern": "ガイド",
+    "dots": "点",
+    "grid": "グリッド",
+    "lines": "罫線",
+    "plain": "なし",
+    "use": "背景にする",
+    "clearImage": "画像を削除",
+    "imageHint": "参考画像はどれも描画の背後に置けます。"
+  },
+  "studios": {
+    "label": "表紙と Clip Studio",
+    "image": "このビューを送信",
+    "video": "プロセスを送信",
+    "sent": "送信しました。ビューアーの表紙スタジオまたは Clip Studio から追加してください。"
+  },
+  "meeting": {
+    "label": "会議",
+    "start": "発表",
+    "end": "終了",
+    "audience": "視聴者ウィンドウ",
+    "link": "閲覧用リンクをコピー",
+    "link-copied": "リンクをコピーしました。このページを開きますが、以後の変更は反映されません。",
+    "link-too-long": "このページはリンクには長すぎます。スケッチファイルを送ってください。",
+    "link-failed": "リンクをコピーできませんでした。",
+    "hint": "視聴者ウィンドウを Meet、Zoom、Teams で共有するか、プロジェクターに映します。このコンピューター上であなたに追従します。",
+    "readOnly": "閲覧専用コピー",
+    "keep": "コピーを保存",
+    "badLink": "リンクを開けませんでした。"
+  },
+  "keymap": {
+    "pen": "ペン",
+    "pencil": "鉛筆",
+    "marker": "マーカー",
+    "line": "直線",
+    "eraser": "消しゴム",
+    "lasso": "投げなわ",
+    "picker": "色を取得",
+    "reshape": "変形",
+    "laser": "レーザー",
+    "swap": "色を入れ替え",
+    "defaults": "既定の色",
+    "sizeDown": "小さく",
+    "sizeUp": "大きく",
+    "rollLeft": "左に回転",
+    "rollRight": "右に回転"
+  },
+  "brand": {
+    "label": "ブランド",
+    "name": "会社名",
+    "logo": "ロゴをアップロード",
+    "removeLogo": "ロゴを削除",
+    "colors": "色",
+    "removeColor": "色を削除",
+    "mark": "画像に署名",
+    "top-left": "左上",
+    "top-right": "右上",
+    "bottom-left": "左下",
+    "bottom-right": "右下",
+    "local": "このブラウザーにのみ保存されます。データを消去すると失われます。"
   }
 }

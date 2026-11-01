@@ -11,7 +11,9 @@
     "eraser": "Gomme",
     "pick": "Définir le plan depuis le dessin",
     "lasso": "Lasso",
-    "picker": "Prélever une couleur"
+    "picker": "Prélever une couleur",
+    "reshape": "Remodeler une ligne",
+    "laser": "Laser"
   },
   "color": "Couleur",
   "customColor": "Couleur personnalisée",
@@ -42,7 +44,8 @@
     "save": "Enregistrer",
     "views": "Vues enregistrées",
     "remove": "Retirer la vue",
-    "orbitHint": "Faites glisser pour orbiter"
+    "orbitHint": "Faites glisser pour orbiter",
+    "roll": "Pivoter le canevas"
   },
   "layers": {
     "label": "Calques",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "Lignes 3D (OBJ)",
     "psdHint": "Le PSD s'ouvre avec ses calques dans Krita, Clip Studio et Sketchbook. Dans Procreate, importez-le depuis la Galerie pour les garder.",
-    "pngClear": "PNG transparent"
+    "pngClear": "PNG transparent",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "Cet appareil n'a pas pu lancer le dessin 3D.",
   "gpuLost": "Le système a repris la puce graphique. Votre dessin est en sécurité et revient seul.",
@@ -165,7 +169,8 @@
     "try": "Tracez une ligne au stylet pour le tester.",
     "noPen": "Ce n'était pas un stylet. Une tablette en mode souris apparaît ainsi.",
     "noPressure": "Ce stylet ne transmet pas la pression. Vérifiez le pilote de la tablette ; sous Windows, activez Windows Ink.",
-    "reading": "Pression {{pressure}} % · inclinaison {{tilt}}°"
+    "reading": "Pression {{pressure}} % · inclinaison {{tilt}}°",
+    "custom": "Perso"
   },
   "share": {
     "label": "Partager",
@@ -225,5 +230,81 @@
     "hide": "Masquer l'interface",
     "undo": "Annuler, rétablir",
     "deselect": "Désélectionner"
+  },
+  "tip": {
+    "label": "Pointe",
+    "round": "Ronde",
+    "flat": "Plume plate",
+    "dash": "Tirets",
+    "bristle": "Poils"
+  },
+  "blend": {
+    "label": "Fusion",
+    "normal": "Normal",
+    "multiply": "Produit",
+    "screen": "Superposition claire",
+    "add": "Ajout"
+  },
+  "background": {
+    "color": "Couleur de la feuille",
+    "pattern": "Guide",
+    "dots": "Points",
+    "grid": "Grille",
+    "lines": "Lignes",
+    "plain": "Uni",
+    "use": "En arrière-plan",
+    "clearImage": "Retirer l'image",
+    "imageHint": "Toute image de référence peut passer derrière le dessin."
+  },
+  "studios": {
+    "label": "Couverture et Clip Studio",
+    "image": "Envoyer cette vue",
+    "video": "Envoyer le processus",
+    "sent": "Envoyé. Dans la visionneuse, ajoutez-le depuis le studio de couverture ou Clip Studio."
+  },
+  "meeting": {
+    "label": "Réunions",
+    "start": "Présenter",
+    "end": "Terminer",
+    "audience": "Fenêtre d'audience",
+    "link": "Copier le lien en lecture",
+    "link-copied": "Lien copié. Il ouvre cette page, sans suivre les changements ultérieurs.",
+    "link-too-long": "Cette page est trop longue pour un lien. Envoyez le fichier de croquis.",
+    "link-failed": "Impossible de copier le lien.",
+    "hint": "Partagez la fenêtre d'audience dans Meet, Zoom ou Teams, ou sur un projecteur. Elle vous suit sur cet ordinateur.",
+    "readOnly": "Copie en lecture seule",
+    "keep": "Garder une copie",
+    "badLink": "Impossible d'ouvrir ce lien."
+  },
+  "keymap": {
+    "pen": "Stylo",
+    "pencil": "Crayon",
+    "marker": "Marqueur",
+    "line": "Ligne",
+    "eraser": "Gomme",
+    "lasso": "Lasso",
+    "picker": "Prélever",
+    "reshape": "Remodeler",
+    "laser": "Laser",
+    "swap": "Échanger les couleurs",
+    "defaults": "Couleurs par défaut",
+    "sizeDown": "Plus petit",
+    "sizeUp": "Plus grand",
+    "rollLeft": "Pivoter à gauche",
+    "rollRight": "Pivoter à droite"
+  },
+  "brand": {
+    "label": "Votre marque",
+    "name": "Entreprise",
+    "logo": "Importer le logo",
+    "removeLogo": "Retirer le logo",
+    "colors": "Couleurs",
+    "removeColor": "Retirer la couleur",
+    "mark": "Signer les images",
+    "top-left": "Haut gauche",
+    "top-right": "Haut droite",
+    "bottom-left": "Bas gauche",
+    "bottom-right": "Bas droite",
+    "local": "Enregistré dans ce navigateur uniquement : effacer ses données le supprime."
   }
 }

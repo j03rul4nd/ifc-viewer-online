@@ -10,10 +10,14 @@
 
 import { simplifyStroke } from './stroke'
 
-export type PressureCurve = 'soft' | 'normal' | 'firm'
+export type PressureCurve = 'soft' | 'normal' | 'firm' | 'custom'
+export type StrokeTip = 'round' | 'flat' | 'dash' | 'bristle'
 
 export interface InkSettings {
   curve: PressureCurve
+  /** The handle of the custom curve, 0..1 each way. */
+  curvePoint?: readonly [number, number]
+  tip?: StrokeTip
   /** 0 (raw hand) to 10. */
   stabilizer: number
   /** 0 to 1: how long the line takes to reach full weight. */
@@ -24,10 +28,16 @@ export interface InkSettings {
 
 export const DEFAULT_INK: InkSettings = { curve: 'normal', stabilizer: 3, entryTaper: 0.3, exitTaper: 0.45 }
 
-const GAMMA: Record<PressureCurve, number> = { soft: 0.6, normal: 1, firm: 1.6 }
+const GAMMA: Record<Exclude<PressureCurve, 'custom'>, number> = { soft: 0.6, normal: 1, firm: 1.6 }
 
-export const applyPressureCurve = (p: number, curve: PressureCurve): number =>
-  Math.pow(Math.min(1, Math.max(0, p)), GAMMA[curve])
+export function applyPressureCurve(p: number, curve: PressureCurve, point: readonly [number, number] = [0.5, 0.5]): number {
+  const x = Math.min(1, Math.max(0, p))
+  if (curve !== 'custom') return Math.pow(x, GAMMA[curve])
+  // A quadratic from (0,0) to (1,1) with one handle: solve its t for x, read its y.
+  const a = 1 - 2 * point[0]
+  const t = Math.abs(a) < 1e-6 ? x : (-point[0] + Math.sqrt(point[0] * point[0] + a * x)) / a
+  return Math.min(1, Math.max(0, 2 * (1 - t) * t * point[1] + t * t))
+}
 
 /** 0 upright, 1 flat on the glass. Devices report either tilt or altitude, rarely both. */
 export function readTilt(e: { altitudeAngle?: number; tiltX?: number; tiltY?: number }): number {
@@ -41,10 +51,10 @@ export function readTilt(e: { altitudeAngle?: number; tiltX?: number; tiltY?: nu
  * as with a real nib.
  */
 export function sampleWeight(
-  kind: string, pressure: number, speedPxPerMs: number, curve: PressureCurve, previous: number | null,
+  kind: string, pressure: number, speedPxPerMs: number, curve: PressureCurve, previous: number | null, point?: readonly [number, number],
 ): number {
   const raw = kind === 'pen' && pressure > 0 && pressure !== 0.5
-    ? applyPressureCurve(pressure, curve)
+    ? applyPressureCurve(pressure, curve, point)
     : 0.8 - Math.min(1, speedPxPerMs / 3) * 0.45
   // Sensors are noisy, and a jump in weight reads as a lump in the line.
   return previous === null ? raw : previous + (raw - previous) * 0.45
@@ -157,6 +167,64 @@ export function finishStroke(samples: Float32Array, worldPerPixel: number, ink: 
   const thin = simplifyStroke(samples, worldPerPixel * 0.35)
   const curve = smoothPath(thin, worldPerPixel * MAX_SEGMENT_PX)
   return applyTapers(curve, ink.entryTaper * TAPER_PX * worldPerPixel, ink.exitTaper * TAPER_PX * worldPerPixel)
+}
+
+/** Dashes and the gap between them, as multiples of the line's weight in pixels. */
+const DASH = 5
+const BRISTLE_OFFSET = 0.55
+const BRISTLE_WEIGHT = 0.4
+
+/**
+ * What the tip does to a finished line. Baked into the points rather than kept as
+ * a shader effect, so it survives every export the same way. May return several
+ * strokes. A real image tip would need textured ribbons; these are shaped lines.
+ */
+export function applyTip(points: Float32Array, tip: StrokeTip, plane: { u: readonly number[]; v: readonly number[] }, worldPerPixel: number, width: number): Float32Array[] {
+  const n = points.length / 4
+  if (tip === 'round' || n < 2) return [points]
+  if (tip === 'flat') {
+    // A nib held at 45°: thick across it, a hairline along it.
+    const out = points.slice()
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1) * 4, b = Math.min(n - 1, i + 1) * 4
+      const d = [points[b] - points[a], points[b + 1] - points[a + 1], points[b + 2] - points[a + 2]]
+      const u = d[0] * plane.u[0] + d[1] * plane.u[1] + d[2] * plane.u[2]
+      const v = d[0] * plane.v[0] + d[1] * plane.v[1] + d[2] * plane.v[2]
+      out[i * 4 + 3] *= 0.2 + 1.3 * Math.abs(Math.sin(Math.atan2(v, u) + Math.PI / 4))
+    }
+    return [out]
+  }
+  if (tip === 'dash') {
+    const period = width * DASH * worldPerPixel
+    const pieces: number[][] = [[]]
+    let along = 0
+    for (let i = 0; i < n; i++) {
+      if (i > 0) along += dist(points, i - 1, i)
+      const on = Math.floor(along / period) % 2 === 0
+      const current = pieces[pieces.length - 1]
+      if (on) current.push(points[i * 4], points[i * 4 + 1], points[i * 4 + 2], points[i * 4 + 3])
+      else if (current.length) pieces.push([])
+    }
+    return pieces.filter((p) => p.length >= 8).map((p) => Float32Array.from(p))
+  }
+  const offset = width * BRISTLE_OFFSET * worldPerPixel
+  return [0, 1, -1].map((side) => {
+    const out = points.slice()
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1) * 4, b = Math.min(n - 1, i + 1) * 4
+      const d = [points[b] - points[a], points[b + 1] - points[a + 1], points[b + 2] - points[a + 2]]
+      const u = d[0] * plane.u[0] + d[1] * plane.u[1] + d[2] * plane.u[2]
+      const v = d[0] * plane.v[0] + d[1] * plane.v[1] + d[2] * plane.v[2]
+      const len = Math.hypot(u, v) || 1
+      // Perpendicular within the plane.
+      const nu = -v / len * side * offset, nv = u / len * side * offset
+      out[i * 4] += plane.u[0] * nu + plane.v[0] * nv
+      out[i * 4 + 1] += plane.u[1] * nu + plane.v[1] * nv
+      out[i * 4 + 2] += plane.u[2] * nu + plane.v[2] * nv
+      out[i * 4 + 3] *= BRISTLE_WEIGHT
+    }
+    return out
+  })
 }
 
 /** A stroke end on screen, and where it is in the scene. */

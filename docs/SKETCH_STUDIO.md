@@ -56,9 +56,50 @@ Each of these has a pure rule in `lib/sketch/edit.ts` or `brushes.ts`.
 | Layer opacity, duplicate, merge down, reorder | All | PSD keeps the opacity |
 | Colour sampling, recent colours, two colour slots | All | Samples anything on screen |
 
-Not here: blend modes, clipping and alpha lock, custom brush tips, canvas roll, a
-vertex editor, editable shortcuts, a free pressure curve, ORA export, long-press
-colour picking.
+| Layer blend modes | All | Normal, multiply, screen, add; PSD, ORA and SVG keep them |
+| Tips | Clip Studio, Krita | Round, flat nib, dashes, bristle: baked into the line, so every export agrees |
+| Free pressure curve | Clip Studio, Krita | One handle, in the Ink tab |
+| Canvas rotation | All | Buttons and `,` `.` |
+| Reshape | Vertex editing | Pull a line by any point, with falloff. Not individual nodes with handles |
+| Editable shortcuts | Clip Studio, Krita | File tab. A key in use swaps |
+| Hold to sample | Procreate | Once fingers navigate |
+
+Not here, on purpose: clipping masks and alpha lock. They work on a layer's pixels
+and strokes here are lines in 3D with no fixed pixels. Bitmap brush tips would need
+textured ribbons. Bezier nodes with handles would need a different stroke format.
+
+## Backgrounds
+
+Paper kinds, any colour (the tools adapt to stay readable), a dots, grid, lines or
+plain guide, and any reference image behind the drawing. PNG, sharing and the
+studios include colour and picture; layered files stay transparent.
+
+## Brand
+
+Company name, logo, up to six colours in the swatches, and a mark on PNGs, sharing
+cards and what goes to the studios, in the corner chosen. Shown while presenting.
+Layered files stay unsigned, because a signature does not belong to a layer. It
+lives in this browser's storage and the studio says it can be wiped; permanent
+storage and team sharing need a server, so they are candidates for the paid plans.
+
+## With the rest of the product
+
+The studio sends its current view (or a replay video) to an outbox in IndexedDB.
+In the viewer the cover studio's *Sketch* view and Clip Studio's *Add my sketch*
+take it, adding it as they add any shot or file. Same browser only.
+
+## Meetings
+
+No server, so no live drawing between people; that would be a paid, hosted feature.
+What works today:
+
+- *Present*: full screen, a laser, a minimal bar, arrow keys for pages.
+- *Audience window* (`?pane=audience`): the clean drawing, following the presenter's
+  camera, page and laser, and new strokes as they save. Share that window in Meet,
+  Zoom or Teams, or put it on the projector. Same browser and machine.
+- *Copy link*: a read-only snapshot of the page in the URL fragment. It never
+  reaches a server and does not follow later changes. Readers can orbit, or keep a
+  copy. Long sketches exceed what a link safely carries, and the studio says so.
 
 ## Input (`lib/sketch/gestures.ts`, `hooks/sketch/useSketchInput.ts`)
 

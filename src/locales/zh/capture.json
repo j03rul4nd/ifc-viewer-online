@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "添加我的草图"
   },
   "cover": {
     "open": "封面工作室 — 从模型生成封面、幻灯片和帖子",
@@ -1100,7 +1101,9 @@
         "grow": "生长",
         "stack": "叠加",
         "crown": "冠顶"
-      }
+      },
+      "sketch": "草图",
+      "sketchHint": "从工作室发送的最新 3D 草图；如果没有，则打开工作室"
     }
   },
   "mobileMenu": "截取",

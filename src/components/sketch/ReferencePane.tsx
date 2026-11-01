@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { placeReference } from '../../hooks/sketch/actions'
-import { activePage, forgetImage, newId, patchPlaced, removePlaced } from '../../lib/sketch/document'
+import { activePage, forgetImage, newId, patchPlaced, removePlaced, setBackground } from '../../lib/sketch/document'
 import { fitOrtho, PAPER } from '../../lib/sketch/renderer'
 import { deleteImage, readImageFile, saveImage } from '../../lib/sketch/storage'
 import type { PlacedImage, ReferenceImage } from '../../lib/sketch/types'
@@ -59,6 +59,7 @@ function StudioImages({ tx }: { tx: Tx }) {
     <ImageList
       tx={tx} images={images} placed={placed} onAdd={add}
       onPlace={(image) => placeReference(image, tx)}
+      onBackground={(image) => useSketchStore.getState().edit((doc) => setBackground(doc, { imageId: image.id }))}
       onDelete={(image) => {
         const s = useSketchStore.getState()
         void deleteImage(image.id)
@@ -76,9 +77,10 @@ interface ListProps {
   onAdd: (files: Iterable<File>) => void | Promise<void>
   onPlace: (image: ReferenceImage) => void
   onDelete: (image: ReferenceImage) => void
+  onBackground?: (image: ReferenceImage) => void
 }
 
-export function ImageList({ tx, images, placed, onAdd, onPlace, onDelete }: ListProps) {
+export function ImageList({ tx, images, placed, onAdd, onPlace, onDelete, onBackground }: ListProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +106,7 @@ export function ImageList({ tx, images, placed, onAdd, onPlace, onDelete }: List
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
       </div>
       {images.length === 0 && <p className="m-auto max-w-[240px] px-3 text-center text-[12px]" style={{ color: 'var(--sk-dim)' }}>{tx('refs.empty')}</p>}
-      {images.map((image) => <ImageCard key={image.id} tx={tx} image={image} placed={placed} onPlace={onPlace} onDelete={onDelete} />)}
+      {images.map((image) => <ImageCard key={image.id} tx={tx} image={image} placed={placed} onPlace={onPlace} onDelete={onDelete} onBackground={onBackground} />)}
     </div>
   )
 }
@@ -119,7 +121,7 @@ function useObjectUrl(blob: Blob): string {
   return url
 }
 
-function ImageCard({ tx, image, placed, onPlace, onDelete }: { image: ReferenceImage } & Pick<ListProps, 'tx' | 'placed' | 'onPlace' | 'onDelete'>) {
+function ImageCard({ tx, image, placed, onPlace, onDelete, onBackground }: { image: ReferenceImage } & Pick<ListProps, 'tx' | 'placed' | 'onPlace' | 'onDelete' | 'onBackground'>) {
   const url = useObjectUrl(image.blob)
   const inScene = placed.filter((item) => item.imageId === image.id)
   const s = useSketchStore.getState()
@@ -128,6 +130,7 @@ function ImageCard({ tx, image, placed, onPlace, onDelete }: { image: ReferenceI
       <img src={url || undefined} alt={image.name} className="block w-full h-auto" draggable={false} style={{ WebkitTouchCallout: 'none' }} />
       <figcaption className="flex items-center gap-1 p-1">
         <button type="button" onClick={() => onPlace(image)} className="flex-1 min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('refs.place')}</button>
+        {onBackground && <button type="button" onClick={() => onBackground(image)} className="min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('background.use')}</button>}
         <button type="button" aria-label={tx('refs.delete')} title={tx('refs.delete')} onClick={() => onDelete(image)} className="w-9 h-9 shrink-0 rounded-lg text-[15px]">×</button>
       </figcaption>
       {inScene.map((item) => (

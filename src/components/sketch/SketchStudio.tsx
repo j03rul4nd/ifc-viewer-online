@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { useTranslation } from 'react-i18next'
 import { isEdgeOn } from '../../lib/sketch/plane'
 import { PAPER } from '../../lib/sketch/renderer'
-import { planeFacingMe, zoomBy } from '../../hooks/sketch/actions'
+import { orbitBy, planeFacingMe, zoomBy } from '../../hooks/sketch/actions'
 import { useSketchEngine } from '../../hooks/sketch/useSketchEngine'
 import { useSketchInput } from '../../hooks/sketch/useSketchInput'
 import { useSketchPersistence } from '../../hooks/sketch/useSketchPersistence'
@@ -16,9 +16,15 @@ import { useSketchStore } from '../../stores/sketchStore'
 import { ErrorBoundary } from '../ErrorBoundary'
 import ReferencePane from './ReferencePane'
 import ReferenceWindow from './ReferenceWindow'
-import { PageStrip, SelectionBar, StudioControls, TopBar } from './SketchPanels'
+import { LinkBar, MeetingBar, PageStrip, SelectionBar, StudioControls, TopBar } from './SketchPanels'
 
 export type Tx = (key: string, o?: Record<string, unknown>) => string
+
+/** The tools have to stay readable on a sheet of any colour. */
+const isDark = (hex: string): boolean => {
+  const n = parseInt(hex.slice(1), 16)
+  return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) < 110
+}
 
 const CHROME_LIGHT = { '--sk-panel': 'rgba(250,246,242,.92)', '--sk-line': 'rgba(50,35,25,.14)', '--sk-text': '#241C16', '--sk-dim': '#6D5F55', '--sk-active': '#241C16', '--sk-on-active': '#FAF6F2', '--sk-soft': 'rgba(50,35,25,.07)' }
 const CHROME_NIGHT = { '--sk-panel': 'rgba(24,25,32,.92)', '--sk-line': 'rgba(255,255,255,.1)', '--sk-text': '#ECEBE7', '--sk-dim': '#9A9CA8', '--sk-active': '#ECEBE7', '--sk-on-active': '#21201D', '--sk-soft': 'rgba(255,255,255,.08)' }
@@ -27,10 +33,11 @@ export default function SketchStudio() {
   const { t } = useTranslation('sketch' as never)
   const tx = t as unknown as Tx
   const windowMode = new URLSearchParams(location.search).get('pane') === 'refs'
-  return <ErrorBoundary>{windowMode ? <ReferenceWindow tx={tx} /> : <Studio tx={tx} />}</ErrorBoundary>
+  const mode = new URLSearchParams(location.search).get('pane') === 'audience' ? 'audience' : /[#&]s=/.test(location.hash) ? 'link' : 'edit'
+  return <ErrorBoundary>{windowMode ? <ReferenceWindow tx={tx} /> : <Studio tx={tx} mode={mode} />}</ErrorBoundary>
 }
 
-function Studio({ tx }: { tx: Tx }) {
+function Studio({ tx, mode }: { tx: Tx; mode: 'edit' | 'audience' | 'link' }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -52,13 +59,32 @@ function Studio({ tx }: { tx: Tx }) {
   const railSide = useSketchStore((s) => s.railSide)
   const refsOpen = useSketchStore((s) => s.refsOpen)
   const paper = useSketchStore((s) => s.history.present.paper)
+  const sheet = useSketchStore((s) => s.history.present.background?.color)
+  const meeting = useSketchStore((s) => s.meeting)
+  const laser = useSketchStore((s) => s.laser)
   const drawing = useSketchStore((s) => s.drawing)
   const uiHidden = useSketchStore((s) => s.uiHidden)
   const { width, height, layout, hardware } = useStudioLayout(rootRef, railSide === 'right')
 
   useSketchEngine(canvasRef, boxRef, onFailed)
-  useSketchPersistence(handoff, tx as (key: string) => string)
-  const input = useSketchInput(boxRef, ringRef, lassoRef, tx as (key: string) => string)
+  useSketchPersistence(handoff, tx as (key: string) => string, mode)
+  const editing = useSketchInput(boxRef, ringRef, lassoRef, tx as (key: string) => string)
+  // A link can be turned to look at; an audience window just follows.
+  const dragFrom = useRef<{ x: number; y: number } | null>(null)
+  const input = mode === 'edit' ? editing : mode === 'audience' ? {} : {
+    onPointerDown: (e: React.PointerEvent) => { dragFrom.current = { x: e.clientX, y: e.clientY } },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (!dragFrom.current) return
+      orbitBy(e.clientX - dragFrom.current.x, e.clientY - dragFrom.current.y)
+      dragFrom.current = { x: e.clientX, y: e.clientY }
+    },
+    onPointerUp: () => { dragFrom.current = null },
+    onPointerCancel: () => { dragFrom.current = null },
+  }
+
+  // What the audience sees is the drawing, not the construction lines.
+  const engine = useSketchStore((s) => s.engine)
+  useEffect(() => { if (mode === 'audience') engine?.setGuides(false) }, [engine, mode])
 
   // Safari's page pinch ignores touch-action in places; the drawing surface owns gestures.
   useEffect(() => {
@@ -96,8 +122,8 @@ function Studio({ tx }: { tx: Tx }) {
     [side ? (paneFirst ? 'borderRight' : 'borderLeft') : (paneFirst ? 'borderBottom' : 'borderTop')]: '1px solid var(--sk-line)',
   }
   const rootStyle = {
-    ...(paper === 'night' ? CHROME_NIGHT : CHROME_LIGHT),
-    background: PAPER[paper].bg, color: 'var(--sk-text)', touchAction: 'none',
+    ...((sheet ? isDark(sheet) : paper === 'night') ? CHROME_NIGHT : CHROME_LIGHT),
+    background: sheet ?? PAPER[paper].bg, color: 'var(--sk-text)', touchAction: 'none',
     WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', flexDirection: side ? 'row' : 'column',
   } as CSSProperties
   // The tools step back while the pen is down: the drawing is what matters then.
@@ -118,7 +144,7 @@ function Studio({ tx }: { tx: Tx }) {
             <polyline ref={lassoRef} fill="rgba(47,123,255,.08)" stroke="#2F7BFF" strokeWidth="1.5" strokeDasharray="5 4" />
           </svg>
         </div>
-        {!uiHidden && (
+        {mode === 'edit' && !uiHidden && (
           <div style={chrome}>
             <TopBar tx={tx} compact={!regular} />
             <StudioControls tx={tx} regular={regular} short={layout.short} />
@@ -126,13 +152,19 @@ function Studio({ tx }: { tx: Tx }) {
             <SelectionBar tx={tx} regular={regular} />
           </div>
         )}
-        {uiHidden && (
+        {mode === 'edit' && uiHidden && !meeting && (
           <button
             type="button" aria-label={tx('ui.show')} title={tx('ui.show')} onClick={() => useSketchStore.getState().set({ uiHidden: false })}
             className="absolute right-2 z-20 w-10 h-10 rounded-full opacity-40 text-[14px]" style={{ top: 'max(8px, env(safe-area-inset-top))', background: 'var(--sk-panel)' }}
           >⤢</button>
         )}
-        <Notices tx={tx} regular={regular} short={layout.short} />
+        {laser && (
+          <div aria-hidden className="absolute z-30 w-4 h-4 -ml-2 -mt-2 rounded-full pointer-events-none" style={{ left: `${laser.x * 100}%`, top: `${laser.y * 100}%`, background: '#FF2A2A', boxShadow: '0 0 14px 5px rgba(255,42,42,.55)' }} />
+        )}
+        {meeting && <MeetingBar tx={tx} />}
+        {(meeting || mode === 'audience') && <BrandCorner />}
+        {mode === 'link' && <LinkBar tx={tx} />}
+        {mode !== 'audience' && <Notices tx={tx} regular={regular} short={layout.short} />}
         {refsOpen && !docked && <FloatingWindow bounds={{ width, height }} short={layout.short}><ReferencePane tx={tx} /></FloatingWindow>}
       </div>
       {docked && <div className="min-w-0 min-h-0" style={paneStyle}><ReferencePane tx={tx} /></div>}
@@ -141,6 +173,25 @@ function Studio({ tx }: { tx: Tx }) {
 }
 
 const pill: CSSProperties = { background: 'var(--sk-panel)', borderColor: 'var(--sk-line)' }
+
+/** The company on screen while presenting. */
+function BrandCorner() {
+  const brand = useSketchStore((s) => s.brand)
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    if (!brand.logo) { setUrl(''); return }
+    const next = URL.createObjectURL(brand.logo)
+    setUrl(next)
+    return () => URL.revokeObjectURL(next)
+  }, [brand.logo])
+  if (!url && !brand.name) return null
+  return (
+    <div className="absolute z-20 left-3 top-3 flex items-center gap-2 pointer-events-none text-[14px] font-medium">
+      {url && <img src={url} alt="" className="h-8 w-auto" />}
+      {brand.name}
+    </div>
+  )
+}
 
 /** Messages over the drawing. Its own component: they change while nothing else does. */
 function Notices({ tx, regular, short }: { tx: Tx; regular: boolean; short: boolean }) {

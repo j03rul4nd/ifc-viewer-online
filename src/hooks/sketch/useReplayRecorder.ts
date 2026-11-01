@@ -6,8 +6,8 @@ import { activePage } from '../../lib/sketch/document'
 import { useSketchStore } from '../../stores/sketchStore'
 import { downloadBlob } from './actions'
 
-export function useReplayRecorder(tx: (key: string) => string): () => Promise<void> {
-  return useCallback(async () => {
+export function useReplayRecorder(tx: (key: string) => string): (deliver?: (video: Blob) => void) => Promise<void> {
+  return useCallback(async (deliver) => {
     const s = useSketchStore.getState()
     const { engine } = s
     if (!engine || s.recording) return
@@ -40,7 +40,9 @@ export function useReplayRecorder(tx: (key: string) => string): () => Promise<vo
       })
       recorder.stop()
       await stopped
-      downloadBlob(new Blob(chunks, { type: mime }), `sketch-replay.${mime.includes('mp4') ? 'mp4' : 'webm'}`)
+      const video = new Blob(chunks, { type: mime })
+      if (deliver) deliver(video)
+      else downloadBlob(video, `sketch-replay.${mime.includes('mp4') ? 'mp4' : 'webm'}`)
     } finally {
       stream.getTracks().forEach((track) => track.stop())
       engine.reveal(null)

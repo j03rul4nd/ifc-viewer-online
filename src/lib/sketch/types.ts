@@ -29,6 +29,8 @@ export interface Stroke {
   points: Float32Array
 }
 
+export type LayerBlend = 'normal' | 'multiply' | 'screen' | 'add'
+
 export interface SketchLayer {
   id: string
   name: string
@@ -36,6 +38,8 @@ export interface SketchLayer {
   locked: boolean
   /** 0..1. Absent means 1. */
   opacity?: number
+  /** Absent means normal. */
+  blend?: LayerBlend
   strokes: readonly Stroke[]
 }
 
@@ -60,6 +64,8 @@ export interface OrbitState {
   elevation: number
   distance: number
   mode: CameraMode
+  /** Canvas rotation, radians. Absent means level. */
+  roll?: number
 }
 
 export interface SavedView {
@@ -80,12 +86,22 @@ export interface SketchPage {
 }
 
 export type PaperKind = 'warm' | 'white' | 'night'
+export type GridPattern = 'dots' | 'grid' | 'lines' | 'plain'
+
+/** Over the paper kind: a colour of one's own, the guide's pattern, a picture. */
+export interface SketchBackground {
+  color?: string
+  pattern?: GridPattern
+  /** A reference image from the library. */
+  imageId?: string
+}
 
 export interface SketchDoc {
   version: 1
   pages: readonly SketchPage[]
   activePageId: string
   paper: PaperKind
+  background?: SketchBackground
 }
 
 /** A reference image the user brought in. The bytes live in IndexedDB. */

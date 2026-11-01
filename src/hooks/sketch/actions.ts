@@ -2,6 +2,7 @@
 // What buttons, gestures and shortcuts all do, in one place and free of React:
 // the camera, the plane, the models under the sketch, exports, sharing.
 
+import { inkFor, paintBrandMark, type SketchBrand } from '../../lib/sketch/brand'
 import type { BrushPreset } from '../../lib/sketch/brushes'
 import { activePage, addStrokes, mapLayerStrokes, newId, placeImage, serializeDoc } from '../../lib/sketch/document'
 import { mapStroke, rotateOnPlane, scaleAbout, strokesCenter } from '../../lib/sketch/edit'
@@ -9,10 +10,13 @@ import { exportBlenderScript, exportObj } from '../../lib/sketch/export-blender'
 import { encodePsd } from '../../lib/sketch/export-psd'
 import { exportSvg } from '../../lib/sketch/export-svg'
 import { add, dot, planeFromNormal, planeNormal, scale, type PlanePreset, presetPlane } from '../../lib/sketch/plane'
-import { paintLayer, renderLayerCanvas } from '../../lib/sketch/raster'
+import { COMPOSITE_OP, paintLayer, renderLayerCanvas } from '../../lib/sketch/raster'
+import { encodeOra } from '../../lib/sketch/export-ora'
+import { encodeSketchLink, SAFE_LINK_LENGTH } from '../../lib/sketch/share-link'
 import { PAPER } from '../../lib/sketch/renderer'
 import { fitIntoCard, LINKEDIN_SHARE_URL, shareImage, SHARE_SIZE, type ShareOutcome, type ShareTarget } from '../../lib/sketch/share'
-import { saveContext, type ContextItem } from '../../lib/sketch/storage'
+import { saveBrand, saveContext, saveOutbox, type ContextItem } from '../../lib/sketch/storage'
+import { SKETCH_CHANNEL, type HandoffMessage } from '../../lib/sketch/handoff'
 import type { OrbitState, ReferenceImage, SketchPlane, Stroke, Vec3 } from '../../lib/sketch/types'
 import { useSketchStore as store } from '../../stores/sketchStore'
 
@@ -25,10 +29,17 @@ export function applyOrbit(next: OrbitState): void {
   state().set({ orbit: next })
 }
 
-const axes = (o: OrbitState): { right: Vec3; up: Vec3 } => ({
-  right: [Math.cos(o.azimuth), 0, -Math.sin(o.azimuth)],
-  up: [-Math.sin(o.elevation) * Math.sin(o.azimuth), Math.cos(o.elevation), -Math.sin(o.elevation) * Math.cos(o.azimuth)],
-})
+const axes = (o: OrbitState): { right: Vec3; up: Vec3 } => {
+  const right: Vec3 = [Math.cos(o.azimuth), 0, -Math.sin(o.azimuth)]
+  const up: Vec3 = [-Math.sin(o.elevation) * Math.sin(o.azimuth), Math.cos(o.elevation), -Math.sin(o.elevation) * Math.cos(o.azimuth)]
+  const c = Math.cos(o.roll ?? 0), s = Math.sin(o.roll ?? 0)
+  return { right: add(scale(right, c), scale(up, s)), up: add(scale(up, c), scale(right, -s)) }
+}
+
+export function rollBy(angle: number): void {
+  const o = state().engine?.orbitState
+  if (o) applyOrbit({ ...o, roll: (o.roll ?? 0) + angle })
+}
 
 export function orbitBy(dx: number, dy: number): void {
   const o = state().engine?.orbitState
@@ -222,6 +233,45 @@ function viewport(): { width: number; height: number; project: (p: Vec3) => { x:
   return { width: engine.canvas.clientWidth, height: engine.canvas.clientHeight, project: (p) => engine.project(p) }
 }
 
+type View = NonNullable<ReturnType<typeof viewport>>
+
+const sheetColor = (): string => {
+  const doc = state().history.present
+  return doc.background?.color ?? PAPER[doc.paper].bg
+}
+
+/** The sheet, its picture if it has one, then the layers with their blend. */
+async function composeInto(ctx: CanvasRenderingContext2D, w: number, h: number, v: Pick<View, 'width' | 'height' | 'project'>, k: number, sheet: boolean): Promise<void> {
+  if (sheet) {
+    ctx.fillStyle = sheetColor()
+    ctx.fillRect(0, 0, w, h)
+    const id = state().history.present.background?.imageId
+    const blob = id ? state().images.find((i) => i.id === id)?.blob : undefined
+    if (blob) {
+      const bitmap = await createImageBitmap(blob)
+      const f = Math.max(w / bitmap.width, h / bitmap.height)
+      ctx.drawImage(bitmap, (w - bitmap.width * f) / 2, (h - bitmap.height * f) / 2, bitmap.width * f, bitmap.height * f)
+      bitmap.close()
+    }
+  }
+  for (const layer of visibleLayers()) {
+    if (!layer.visible) continue
+    const canvas = renderLayerCanvas(layer, v.width, v.height, v.project, k)
+    ctx.globalAlpha = layer.opacity ?? 1
+    ctx.globalCompositeOperation = COMPOSITE_OP[layer.blend ?? 'normal']
+    ctx.drawImage(canvas, 0, 0)
+    ctx.globalAlpha = 1
+    ctx.globalCompositeOperation = 'source-over'
+  }
+  if (sheet) await paintBrandMark(ctx, w, h, state().brand, inkFor(sheetColor()))
+}
+
+export function setBrand(patch: Partial<SketchBrand>): void {
+  const brand = { ...state().brand, ...patch }
+  state().set({ brand })
+  void saveBrand(brand).then((ok) => state().set({ saveFailed: !ok }))
+}
+
 /** The long side of raster exports: sharp in a layout, light enough for a phone. */
 const EXPORT_LONG_SIDE = 2048
 
@@ -234,8 +284,7 @@ export async function exportPng(transparent: boolean): Promise<void> {
   canvas.height = Math.round(v.height * k)
   const ctx = canvas.getContext('2d')
   if (!ctx) return
-  if (!transparent) { ctx.fillStyle = PAPER[state().history.present.paper].bg; ctx.fillRect(0, 0, canvas.width, canvas.height) }
-  for (const layer of visibleLayers()) if (layer.visible) paintLayer(ctx, layer, v.project, k)
+  await composeInto(ctx, canvas.width, canvas.height, v, k, !transparent)
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
   if (blob) downloadBlob(blob, transparent ? 'sketch-transparent.png' : 'sketch.png')
 }
@@ -243,7 +292,7 @@ export async function exportPng(transparent: boolean): Promise<void> {
 export function exportVector(): void {
   const v = viewport()
   if (!v) return
-  const svg = exportSvg(visibleLayers(), v.width, v.height, PAPER[state().history.present.paper].bg, v.project)
+  const svg = exportSvg(visibleLayers(), v.width, v.height, sheetColor(), v.project)
   downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), 'sketch.svg')
 }
 
@@ -261,12 +310,109 @@ export function exportPsd(layerName: (index: number) => string): void {
   if (!cctx) return
   const layers = visibleLayers().map((layer, i) => {
     const canvas = renderLayerCanvas(layer, v.width, v.height, v.project, k)
-    if (layer.visible) { cctx.globalAlpha = layer.opacity ?? 1; cctx.drawImage(canvas, 0, 0, w, h); cctx.globalAlpha = 1 }
+    if (layer.visible) {
+      cctx.globalAlpha = layer.opacity ?? 1
+      cctx.globalCompositeOperation = COMPOSITE_OP[layer.blend ?? 'normal']
+      cctx.drawImage(canvas, 0, 0, w, h)
+      cctx.globalAlpha = 1
+      cctx.globalCompositeOperation = 'source-over'
+    }
     const rgba = canvas.getContext('2d')!.getImageData(0, 0, w, h).data
-    return { name: layerName(i), rgba, visible: layer.visible, opacity: layer.opacity ?? 1 }
+    return { name: layerName(i), rgba, visible: layer.visible, opacity: layer.opacity ?? 1, blend: layer.blend }
   })
   const bytes = encodePsd(w, h, layers, cctx.getImageData(0, 0, w, h).data)
   downloadBlob(new Blob([bytes as BlobPart], { type: 'image/vnd.adobe.photoshop' }), 'sketch.psd')
+}
+
+const pngBytes = async (canvas: HTMLCanvasElement): Promise<Uint8Array> => {
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+  return new Uint8Array(await blob!.arrayBuffer())
+}
+
+/** OpenRaster: Krita, GIMP and MyPaint, with layers, opacity and blend. */
+export async function exportOraFile(layerName: (index: number) => string): Promise<void> {
+  const v = viewport()
+  if (!v) return
+  const k = EXPORT_LONG_SIDE / Math.max(v.width, v.height)
+  const w = Math.round(v.width * k)
+  const h = Math.round(v.height * k)
+  const layers = await Promise.all(visibleLayers().map(async (layer, i) => ({
+    name: layerName(i), png: await pngBytes(renderLayerCanvas(layer, v.width, v.height, v.project, k)),
+    visible: layer.visible, opacity: layer.opacity ?? 1, blend: layer.blend ?? 'normal',
+  })))
+  const merged = document.createElement('canvas')
+  merged.width = w
+  merged.height = h
+  await composeInto(merged.getContext('2d')!, w, h, v, k, false)
+  const thumb = document.createElement('canvas')
+  thumb.width = Math.min(256, w)
+  thumb.height = Math.round(thumb.width * h / w)
+  thumb.getContext('2d')!.drawImage(merged, 0, 0, thumb.width, thumb.height)
+  const bytes = encodeOra(w, h, layers, await pngBytes(merged), await pngBytes(thumb))
+  downloadBlob(new Blob([bytes as BlobPart], { type: 'image/openraster' }), 'sketch.ora')
+}
+
+const post = (message: HandoffMessage): void => {
+  const channel = new BroadcastChannel(SKETCH_CHANNEL)
+  channel.postMessage(message)
+  channel.close()
+}
+
+/** Leave this view for the viewer's cover studio and Clip Studio to take. */
+export async function sendImageToStudios(): Promise<boolean> {
+  const v = viewport()
+  if (!v) return false
+  const k = EXPORT_LONG_SIDE / Math.max(v.width, v.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(v.width * k)
+  canvas.height = Math.round(v.height * k)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return false
+  await composeInto(ctx, canvas.width, canvas.height, v, k, true)
+  const image = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+  if (!image || !(await saveOutbox({ image, width: canvas.width, height: canvas.height }))) return false
+  post({ type: 'outbox' })
+  return true
+}
+
+export async function sendVideoToStudios(video: Blob): Promise<boolean> {
+  const { engine } = state()
+  if (!engine || !(await saveOutbox({ video, width: engine.canvas.width, height: engine.canvas.height }))) return false
+  post({ type: 'outbox' })
+  return true
+}
+
+// ── Meetings ─────────────────────────────────────────────────────────────────
+
+export function startMeeting(): void {
+  state().set({ meeting: true, uiHidden: true, sheetOpen: false })
+  state().setPrefs({ tool: 'laser' })
+  void document.documentElement.requestFullscreen?.().catch(() => undefined)
+}
+
+export function endMeeting(): void {
+  state().set({ meeting: false, uiHidden: false, laser: null })
+  state().setPrefs({ tool: 'pen' })
+  if (document.fullscreenElement) void document.exitFullscreen?.()
+}
+
+export function stepPage(by: number): void {
+  const doc = state().history.present
+  const at = doc.pages.findIndex((p) => p.id === doc.activePageId)
+  const next = doc.pages[at + by]
+  if (next) state().touch((d) => ({ ...d, activePageId: next.id }))
+}
+
+/** A read-only snapshot in a link. Null if it is too long to travel safely. */
+export async function copySketchLink(): Promise<'copied' | 'too-long' | 'failed'> {
+  try {
+    const code = await encodeSketchLink(state().history.present)
+    if (code.length > SAFE_LINK_LENGTH) return 'too-long'
+    await navigator.clipboard.writeText(`${location.origin}/sketch#s=${code}`)
+    return 'copied'
+  } catch {
+    return 'failed'
+  }
 }
 
 export function exportBlender(): void {
@@ -295,7 +441,7 @@ async function shareCard(target: ShareTarget): Promise<File | null> {
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
   const paper = PAPER[state().history.present.paper]
-  ctx.fillStyle = paper.bg
+  ctx.fillStyle = sheetColor()
   ctx.fillRect(0, 0, width, height)
   // Frame the drawing, not the screen it was drawn on.
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
@@ -316,11 +462,15 @@ async function shareCard(target: ShareTarget): Promise<File | null> {
     return s && { x: s.x - minX + fit.x / fit.scale, y: s.y - minY + fit.y / fit.scale }
   }
   for (const layer of visibleLayers()) if (layer.visible) paintLayer(ctx, layer, project, fit.scale)
-  ctx.fillStyle = paper.ink
-  ctx.globalAlpha = 0.55
-  ctx.font = '500 26px system-ui, sans-serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('ifcvieweronline.eu/sketch', width / 2, height - 90)
+  const { brand } = state()
+  if (brand.mark && (brand.name || brand.logo)) await paintBrandMark(ctx, width, height, brand, inkFor(sheetColor()))
+  else {
+    ctx.fillStyle = paper.ink
+    ctx.globalAlpha = 0.55
+    ctx.font = '500 26px system-ui, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('ifcvieweronline.eu/sketch', width / 2, height - 90)
+  }
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
   return blob && new File([blob], `sketch-${target}.png`, { type: 'image/png' })
 }

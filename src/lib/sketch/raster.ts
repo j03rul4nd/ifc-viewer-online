@@ -74,6 +74,9 @@ export function paintLayer(ctx: CanvasRenderingContext2D, layer: SketchLayer, pr
   ctx.globalAlpha = 1
 }
 
+/** How a finished layer canvas lands on what is below it. */
+export const COMPOSITE_OP: Record<string, GlobalCompositeOperation> = { normal: 'source-over', multiply: 'multiply', screen: 'screen', add: 'lighter' }
+
 export function renderLayerCanvas(layer: SketchLayer, width: number, height: number, project: Project, scale: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(width * scale)

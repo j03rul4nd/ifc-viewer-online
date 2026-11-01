@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "Meine Skizze hinzufügen"
   },
   "cover": {
     "open": "Cover-Studio — Titelbilder, Folien und Posts aus dem Modell",
@@ -1100,7 +1101,9 @@
         "grow": "Wachsen",
         "stack": "Stapeln",
         "crown": "Krone"
-      }
+      },
+      "sketch": "Skizze",
+      "sketchHint": "Ihre letzte aus dem Studio gesendete 3D-Skizze; öffnet das Studio, wenn keine vorliegt"
     }
   },
   "mobileMenu": "Aufnehmen",

@@ -11,7 +11,9 @@
     "eraser": "Borracha",
     "pick": "Definir plano a partir do desenho",
     "lasso": "Laço",
-    "picker": "Recolher uma cor"
+    "picker": "Recolher uma cor",
+    "reshape": "Remodelar uma linha",
+    "laser": "Laser"
   },
   "color": "Cor",
   "customColor": "Cor personalizada",
@@ -42,7 +44,8 @@
     "save": "Guardar",
     "views": "Vistas guardadas",
     "remove": "Remover vista",
-    "orbitHint": "Arraste para orbitar"
+    "orbitHint": "Arraste para orbitar",
+    "roll": "Rodar a tela"
   },
   "layers": {
     "label": "Camadas",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "Linhas 3D (OBJ)",
     "psdHint": "O PSD abre com camadas no Krita, Clip Studio e Sketchbook. No Procreate, importe-o pela Galeria para as manter.",
-    "pngClear": "PNG transparente"
+    "pngClear": "PNG transparente",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "Este dispositivo não conseguiu iniciar o desenho 3D.",
   "gpuLost": "O sistema retirou o chip gráfico. O desenho está seguro e volta sozinho.",
@@ -165,7 +169,8 @@
     "try": "Trace uma linha com a caneta para a testar.",
     "noPen": "Isso não foi uma caneta. Uma mesa digitalizadora em modo rato aparece assim.",
     "noPressure": "Esta caneta não indica pressão. Verifique o controlador da mesa; no Windows, ative o Windows Ink.",
-    "reading": "Pressão {{pressure}} % · inclinação {{tilt}}°"
+    "reading": "Pressão {{pressure}} % · inclinação {{tilt}}°",
+    "custom": "Própria"
   },
   "share": {
     "label": "Partilhar",
@@ -225,5 +230,81 @@
     "hide": "Ocultar a interface",
     "undo": "Desfazer, refazer",
     "deselect": "Desmarcar"
+  },
+  "tip": {
+    "label": "Ponta",
+    "round": "Redonda",
+    "flat": "Aparo plano",
+    "dash": "Tracejado",
+    "bristle": "Cerdas"
+  },
+  "blend": {
+    "label": "Mistura",
+    "normal": "Normal",
+    "multiply": "Multiplicar",
+    "screen": "Ecrã",
+    "add": "Somar"
+  },
+  "background": {
+    "color": "Cor da folha",
+    "pattern": "Guia",
+    "dots": "Pontos",
+    "grid": "Grelha",
+    "lines": "Linhas",
+    "plain": "Lisa",
+    "use": "Como fundo",
+    "clearImage": "Remover a imagem",
+    "imageHint": "Qualquer imagem de referência pode ficar atrás do desenho."
+  },
+  "studios": {
+    "label": "Capa e Clip Studio",
+    "image": "Enviar esta vista",
+    "video": "Enviar o processo",
+    "sent": "Enviado. No visualizador, adicione-o a partir do estúdio de capas ou do Clip Studio."
+  },
+  "meeting": {
+    "label": "Reuniões",
+    "start": "Apresentar",
+    "end": "Terminar",
+    "audience": "Janela da audiência",
+    "link": "Copiar ligação de leitura",
+    "link-copied": "Ligação copiada. Abre esta página, sem seguir alterações posteriores.",
+    "link-too-long": "Esta página é demasiado longa para uma ligação. Envie o ficheiro de esboço.",
+    "link-failed": "Não foi possível copiar a ligação.",
+    "hint": "Partilhe a janela da audiência no Meet, Zoom ou Teams, ou num projetor. Segue-o neste computador.",
+    "readOnly": "Cópia só de leitura",
+    "keep": "Guardar uma cópia",
+    "badLink": "Não foi possível abrir essa ligação."
+  },
+  "keymap": {
+    "pen": "Caneta",
+    "pencil": "Lápis",
+    "marker": "Marcador",
+    "line": "Linha",
+    "eraser": "Borracha",
+    "lasso": "Laço",
+    "picker": "Recolher cor",
+    "reshape": "Remodelar",
+    "laser": "Laser",
+    "swap": "Trocar cores",
+    "defaults": "Cores predefinidas",
+    "sizeDown": "Mais pequeno",
+    "sizeUp": "Maior",
+    "rollLeft": "Rodar à esquerda",
+    "rollRight": "Rodar à direita"
+  },
+  "brand": {
+    "label": "A sua marca",
+    "name": "Empresa",
+    "logo": "Carregar logótipo",
+    "removeLogo": "Remover logótipo",
+    "colors": "Cores",
+    "removeColor": "Remover cor",
+    "mark": "Assinar imagens",
+    "top-left": "Cima esquerda",
+    "top-right": "Cima direita",
+    "bottom-left": "Baixo esquerda",
+    "bottom-right": "Baixo direita",
+    "local": "Guardado só neste navegador: apagar os dados elimina-o."
   }
 }

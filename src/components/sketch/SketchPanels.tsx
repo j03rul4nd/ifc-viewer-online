@@ -3,21 +3,24 @@
 // the side the user chose, which folds away so a tablet gets its whole screen.
 // Without room: one row of tools under the thumb, the tabs in a sheet above it.
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
-  adoptContextFile, applyOrbit, clearContext, clearSelection, deleteSelection, duplicateSelection, rotateSelection, saveBrush, scaleSelection, applyBrush, exportBlender, exportObjFile, exportPng, exportPsd, exportSketchFile, exportVector,
+  setBrand, adoptContextFile, applyOrbit, clearContext, copySketchLink, endMeeting, exportOraFile, rollBy, sendImageToStudios, sendVideoToStudios, startMeeting, stepPage, clearSelection, deleteSelection, duplicateSelection, rotateSelection, saveBrush, scaleSelection, applyBrush, exportBlender, exportObjFile, exportPng, exportPsd, exportSketchFile, exportVector,
   fitAll, lookAtPlane, orbitBy, planeFacingMe, setPlane, setPlanePreset, shareSketch, toggleContext,
 } from '../../hooks/sketch/actions'
 import { useReplayRecorder } from '../../hooks/sketch/useReplayRecorder'
 import {
   activeLayer, activePage, addLayer, addPage, addView, clearLayer, deleteLayer, deletePage, duplicateLayer, mergeLayerDown, moveLayer, newId, parseDoc, patchLayer, removeView,
-  setActiveLayer, setActivePage, setPaper, startHistory,
+  setActiveLayer, setActivePage, setBackground, setPaper, startHistory,
 } from '../../lib/sketch/document'
+import type { BrandCorner } from '../../lib/sketch/brand'
 import { BUILTIN_BRUSHES } from '../../lib/sketch/brushes'
 import type { Symmetry } from '../../lib/sketch/edit'
-import type { PressureCurve } from '../../lib/sketch/ink'
+import type { PressureCurve, StrokeTip } from '../../lib/sketch/ink'
+import { isBindable, KEY_ACTIONS, keyFor, rebind, type KeyAction } from '../../lib/sketch/keymap'
+import { saveDoc } from '../../lib/sketch/storage'
 import { offsetPlane, rotatePlane, type PlanePreset } from '../../lib/sketch/plane'
-import type { PaperKind } from '../../lib/sketch/types'
+import type { GridPattern, LayerBlend, PaperKind } from '../../lib/sketch/types'
 import { useSketchStore, type PanelTab, type SketchTool } from '../../stores/sketchStore'
 import type { Tx } from './SketchStudio'
 
@@ -42,6 +45,9 @@ const ICONS: Record<string, ReactNode> = {
   back: <path d="M10 3L5 8l5 5" />,
   lasso: <path d="M8 3c3.5 0 6 1.5 6 3.500S11.5 10 8 10 2 8.5 2 6.5 4.5 3 8 3zM4.5 9.500c-1 1.5 0 3 1.5 3.5" strokeDasharray="2 1.5" />,
   picker: <path d="M10 3l3 3-1.5 1.5-3-3L10 3zM8.5 4.500L3 10v3h3l5.5-5.5" />,
+  reshape: <><path d="M2 12C5 4 11 4 14 12" /><circle cx="8" cy="6" r="1.6" /></>,
+  laser: <><circle cx="8" cy="8" r="2" /><path d="M8 2v2M8 12v2M2 8h2M12 8h2" /></>,
+  present: <><rect x="2" y="3" width="12" height="8" rx="1" /><path d="M8 11v3M5 14h6" /></>,
   up: <path d="M8 13V3M4 7l4-4 4 4" />,
   down: <path d="M8 3v10M4 9l4 4 4-4" />,
 }
@@ -116,6 +122,7 @@ export function TopBar({ tx, compact }: { tx: Tx; compact: boolean }) {
       <div className="flex items-center rounded-xl border" style={glass}>
         <IconButton label={tx('undo')} icon="undo" onClick={undo} disabled={!canUndo} />
         <IconButton label={tx('redo')} icon="redo" onClick={redo} disabled={!canRedo} />
+        <IconButton label={tx('meeting.start')} icon="present" onClick={startMeeting} />
         <IconButton label={tx('refs.label')} icon="refs" active={refsOpen} onClick={() => set({ refsOpen: !refsOpen, sheetOpen: false })} />
       </div>
     </div>
@@ -248,6 +255,75 @@ function NudgeSlider({ label, onDelta }: { label: string; onDelta: (pixels: numb
 const SWATCHES = ['#17130F', '#FFFFFF', '#C8322B', '#1F5FBF']
 const WIDTHS = [1.5, 3, 6, 11]
 
+const MIDDLE = [0.5, 0.5] as const
+
+/** Drag the handle: x is how hard you press, y how much line you get. */
+function CurveEditor({ tx }: { tx: Tx }) {
+  const point = useSketchStore((s) => s.ink.curvePoint) ?? MIDDLE
+  const { setInk } = useSketchStore.getState()
+  const size = 120
+  const move = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.type !== 'pointerdown' && e.buttons === 0) return
+    const r = e.currentTarget.getBoundingClientRect()
+    setInk({ curvePoint: [Math.min(0.98, Math.max(0.02, (e.clientX - r.left) / r.width)), Math.min(0.98, Math.max(0.02, 1 - (e.clientY - r.top) / r.height))] })
+  }
+  return (
+    <svg
+      role="img" aria-label={tx('pen.curve')} width={size} height={size} viewBox="0 0 120 120" className="mt-2 mx-auto block rounded-lg" style={{ background: 'var(--sk-soft)', touchAction: 'none', cursor: 'grab' }}
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e) }} onPointerMove={move}
+    >
+      <path d={`M0 120Q${point[0] * 120} ${(1 - point[1]) * 120} 120 0`} fill="none" stroke="var(--sk-text)" strokeWidth="1.5" />
+      <circle cx={point[0] * 120} cy={(1 - point[1]) * 120} r="7" fill="var(--sk-active)" />
+    </svg>
+  )
+}
+
+function BrandSection({ tx }: { tx: Tx }) {
+  const brand = useSketchStore((s) => s.brand)
+  const logoRef = useRef<HTMLInputElement>(null)
+  const [logoUrl, setLogoUrl] = useState('')
+  useEffect(() => {
+    if (!brand.logo) { setLogoUrl(''); return }
+    const url = URL.createObjectURL(brand.logo)
+    setLogoUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [brand.logo])
+  return (
+    <Section title={tx('brand.label')}>
+      <label className="flex items-center gap-2 h-9 text-[12px]">
+        <span className="shrink-0">{tx('brand.name')}</span>
+        <input type="text" value={brand.name} maxLength={60} onChange={(e) => setBrand({ name: e.target.value })} className="flex-1 min-w-0 h-8 px-2 rounded-md border bg-transparent select-text" style={{ borderColor: 'var(--sk-line)', userSelect: 'text' }} />
+      </label>
+      <div className="flex items-center gap-1 mt-1">
+        {logoUrl && <img src={logoUrl} alt="" className="h-9 w-9 object-contain rounded" style={{ background: 'var(--sk-soft)' }} />}
+        <Chip onClick={() => logoRef.current?.click()}>{tx('brand.logo')}</Chip>
+        {brand.logo && <IconButton size={34} label={tx('brand.removeLogo')} icon="trash" onClick={() => setBrand({ logo: undefined })} />}
+        <input ref={logoRef} type="file" accept="image/*" hidden onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) setBrand({ logo: file })
+        }} />
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 mt-2" role="group" aria-label={tx('brand.colors')}>
+        {brand.colors.map((c) => <button key={c} type="button" aria-label={`${tx('brand.removeColor')} ${c}`} title={tx('brand.removeColor')} onClick={() => setBrand({ colors: brand.colors.filter((o) => o !== c) })} className="w-7 h-7 rounded-md border" style={{ background: c, borderColor: 'var(--sk-line)' }} />)}
+        {brand.colors.length < 6 && (
+          <label className="relative h-7 px-2 grid place-items-center rounded-md text-[11px] cursor-pointer" style={{ background: 'var(--sk-soft)' }}>
+            + {tx('brand.colors')}
+            <input type="color" aria-label={tx('brand.colors')} className="absolute inset-0 opacity-0" onBlur={(e) => { const c = e.target.value; if (!brand.colors.includes(c)) setBrand({ colors: [...brand.colors, c] }) }} />
+          </label>
+        )}
+      </div>
+      <Toggle label={tx('brand.mark')} checked={brand.mark} onChange={(v) => setBrand({ mark: v })} />
+      {brand.mark && (
+        <div className="grid grid-cols-2 gap-1">
+          {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as BrandCorner[]).map((c) => <Chip key={c} active={brand.corner === c} onClick={() => setBrand({ corner: c })}>{tx(`brand.${c}`)}</Chip>)}
+        </div>
+      )}
+      <p className="mt-2 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }}>{tx('brand.local')}</p>
+    </Section>
+  )
+}
+
 function BrushSection({ tx }: { tx: Tx }) {
   const brushes = useSketchStore((s) => s.brushes)
   const { setPrefs } = useSketchStore.getState()
@@ -273,6 +349,7 @@ function InkTab({ tx }: { tx: Tx }) {
   const colorB = useSketchStore((s) => s.colorB)
   const symmetry = useSketchStore((s) => s.symmetry)
   const eraser = useSketchStore((s) => s.eraser)
+  const brandColors = useSketchStore((s) => s.brand.colors)
   const color = useSketchStore((s) => s.color)
   const width = useSketchStore((s) => s.width)
   const ink = useSketchStore((s) => s.ink)
@@ -284,8 +361,8 @@ function InkTab({ tx }: { tx: Tx }) {
     <>
       <BrushSection tx={tx} />
       <Section title={tx('color')}>
-        <div className="flex items-center gap-2">
-          {SWATCHES.map((c) => (
+        <div className="flex flex-wrap items-center gap-2">
+          {[...SWATCHES, ...brandColors].map((c) => (
             <button key={c} type="button" aria-label={c} aria-pressed={color === c} onClick={() => setPrefs({ color: c })} className="w-8 h-8 rounded-lg border" style={{ background: c, borderColor: 'var(--sk-line)', outline: color === c ? '2px solid var(--sk-active)' : 'none', outlineOffset: 1 }} />
           ))}
           <label className="relative w-8 h-8 rounded-lg overflow-hidden border cursor-pointer" title={tx('customColor')} style={{ borderColor: 'var(--sk-line)', background: 'conic-gradient(#c8322b,#e0b020,#2e9e5b,#1f5fbf,#a03ab0,#c8322b)' }}>
@@ -316,6 +393,11 @@ function InkTab({ tx }: { tx: Tx }) {
         <Slider label={tx('ink.exit')} value={ink.exitTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ exitTaper: v })} />
         <Toggle label={tx('ink.snap')} checked={snapEnds} onChange={(v) => setPrefs({ snapEnds: v })} />
       </Section>
+      <Section title={tx('tip.label')}>
+        <div className="grid grid-cols-2 gap-1">
+          {(['round', 'flat', 'dash', 'bristle'] as StrokeTip[]).map((v) => <Chip key={v} active={(ink.tip ?? 'round') === v} onClick={() => setInk({ tip: v })}>{tx(`tip.${v}`)}</Chip>)}
+        </div>
+      </Section>
       <Section title={tx('symmetry.label')}>
         <div className="grid grid-cols-2 gap-1">
           {(['off', 'vertical', 'horizontal', 'both'] as Symmetry[]).map((v) => <Chip key={v} active={symmetry === v} onClick={() => setPrefs({ symmetry: v })}>{tx(`symmetry.${v}`)}</Chip>)}
@@ -329,8 +411,9 @@ function InkTab({ tx }: { tx: Tx }) {
       </Section>
       <Section title={tx('pen.label')}>
         <div className="flex gap-1" role="group" aria-label={tx('pen.curve')}>
-          {(['soft', 'normal', 'firm'] as PressureCurve[]).map((c) => <Chip key={c} active={ink.curve === c} onClick={() => setInk({ curve: c })}>{tx(`pen.${c}`)}</Chip>)}
+          {(['soft', 'normal', 'firm', 'custom'] as PressureCurve[]).map((c) => <Chip key={c} active={ink.curve === c} onClick={() => setInk({ curve: c })}>{tx(`pen.${c}`)}</Chip>)}
         </div>
+        {ink.curve === 'custom' && <CurveEditor tx={tx} />}
         <p className="mt-2 min-h-8 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }} role="status">
           {!pen ? tx('pen.try') : pen.kind !== 'pen' ? tx('pen.noPen') : pen.hasPressure ? tx('pen.reading', { pressure: Math.round(pen.pressure * 100), tilt: Math.round(pen.tilt * 90) }) : tx('pen.noPressure')}
         </p>
@@ -380,6 +463,12 @@ function ViewTab({ tx }: { tx: Tx }) {
             const { engine, plane } = useSketchStore.getState()
             if (engine) edit((doc) => addView(doc, { id: newId(), orbit: engine.orbitState, plane, thumb: engine.thumbnail(120) }))
           }}>{tx('view.save')}</Chip>
+        </div>
+        <div className="flex items-center gap-1 mt-1" role="group" aria-label={tx('view.roll')}>
+          <span className="text-[11px] flex-1" style={{ color: 'var(--sk-dim)' }}>{tx('view.roll')}</span>
+          <Chip grow={false} onClick={() => rollBy(-Math.PI / 12)}>↺15°</Chip>
+          <Chip grow={false} onClick={() => rollBy(Math.PI / 12)}>↻15°</Chip>
+          <Chip grow={false} onClick={() => applyOrbit({ ...orbit, roll: 0 })}>0°</Chip>
         </div>
         {views.length > 0 && (
           <div className="flex gap-1 mt-2 overflow-x-auto" aria-label={tx('view.views')} style={{ touchAction: 'pan-x' }}>
@@ -435,6 +524,9 @@ function LayersTab({ tx }: { tx: Tx }) {
         ))}
       </ul>
       <Slider label={tx('ink.opacity')} value={active.opacity ?? 1} min={0} max={1} step={0.05} onChange={(v) => touch((doc) => patchLayer(doc, active.id, { opacity: v }))} />
+      <div className="grid grid-cols-2 gap-1 mt-1" role="group" aria-label={tx('blend.label')}>
+        {(['normal', 'multiply', 'screen', 'add'] as LayerBlend[]).map((b) => <Chip key={b} active={(active.blend ?? 'normal') === b} onClick={() => edit((doc) => patchLayer(doc, active.id, { blend: b }))}>{tx(`blend.${b}`)}</Chip>)}
+      </div>
       <div className="flex gap-1 mt-1">
         <Chip onClick={() => edit(duplicateLayer)}>{tx('layers.duplicate')}</Chip>
         <Chip onClick={() => edit(mergeLayerDown)}>{tx('layers.merge')}</Chip>
@@ -449,6 +541,9 @@ function LayersTab({ tx }: { tx: Tx }) {
 
 function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
   const paper = useSketchStore((s) => s.history.present.paper)
+  const sheet = useSketchStore((s) => s.history.present.background?.color)
+  const pattern = useSketchStore((s) => s.history.present.background?.pattern)
+  const hasImage = useSketchStore((s) => !!s.history.present.background?.imageId)
   const railSide = useSketchStore((s) => s.railSide)
   const hasContext = useSketchStore((s) => s.context.length > 0)
   const pages = useSketchStore((s) => s.history.present.pages)
@@ -472,9 +567,24 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
           <Chip onClick={() => { void share('linkedin') }}>{tx('share.linkedin')}</Chip>
         </div>
       </Section>
+      <Section title={tx('studios.label')}>
+        <div className="grid grid-cols-2 gap-1">
+          <Chip onClick={() => { void sendImageToStudios().then((ok) => flash(tx(ok ? 'studios.sent' : 'notSaved'))) }}>{tx('studios.image')}</Chip>
+          <Chip active={recording} onClick={() => { void record((video) => { void sendVideoToStudios(video).then((ok) => flash(tx(ok ? 'studios.sent' : 'notSaved'))) }) }}>{tx('studios.video')}</Chip>
+        </div>
+      </Section>
+      <Section title={tx('meeting.label')}>
+        <div className="grid grid-cols-2 gap-1">
+          <Chip onClick={startMeeting}>{tx('meeting.start')}</Chip>
+          <Chip onClick={() => { window.open('/sketch?pane=audience', '_blank') }}>{tx('meeting.audience')}</Chip>
+          <Chip onClick={() => { void copySketchLink().then((r) => flash(tx(`meeting.link-${r}`))) }}>{tx('meeting.link')}</Chip>
+        </div>
+        <p className="mt-2 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }}>{tx('meeting.hint')}</p>
+      </Section>
       <Section title={tx('export.toApps')}>
         <div className="grid grid-cols-2 gap-1">
           <Chip onClick={() => exportPsd((i) => tx('layers.name', { n: i + 1 }))}>{tx('export.psd')}</Chip>
+          <Chip onClick={() => { void exportOraFile((i) => tx('layers.name', { n: i + 1 })) }}>{tx('export.ora')}</Chip>
           <Chip onClick={exportBlender}>{tx('export.blender')}</Chip>
           <Chip onClick={exportObjFile}>{tx('export.obj')}</Chip>
           <Chip onClick={exportVector}>{tx('export.svg')}</Chip>
@@ -508,7 +618,8 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
         }} />
       </Section>
       <Section title={tx('keys.label')}>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+        <KeyEditor tx={tx} />
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] mt-2">
           {SHORTCUTS.map(([keys, label]) => (
             <div key={label} className="contents"><dt className="font-mono" style={{ color: 'var(--sk-dim)' }}>{keys}</dt><dd className="m-0">{tx(`keys.${label}`)}</dd></div>
           ))}
@@ -522,10 +633,20 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
           </div>
         </Section>
       )}
+      <BrandSection tx={tx} />
       <Section title={tx('paper.label')}>
         <div className="flex gap-1">
           {(['warm', 'white', 'night'] as PaperKind[]).map((name) => <Chip key={name} active={paper === name} onClick={() => edit((doc) => setPaper(doc, name))}>{tx(`paper.${name}`)}</Chip>)}
         </div>
+        <label className="flex items-center justify-between gap-2 h-9 mt-1 text-[12px]">
+          {tx('background.color')}
+          <input type="color" aria-label={tx('background.color')} value={sheet ?? '#E4D6CC'} onChange={(e) => touch((doc) => setBackground(doc, { color: e.target.value }))} className="w-9 h-7" />
+        </label>
+        <div className="grid grid-cols-4 gap-1 mt-1" role="group" aria-label={tx('background.pattern')}>
+          {(['dots', 'grid', 'lines', 'plain'] as GridPattern[]).map((p) => <Chip key={p} active={(pattern ?? 'dots') === p} onClick={() => edit((doc) => setBackground(doc, { pattern: p }))}>{tx(`background.${p}`)}</Chip>)}
+        </div>
+        {hasImage && <div className="flex mt-1"><Chip onClick={() => edit((doc) => setBackground(doc, { imageId: undefined }))}>{tx('background.clearImage')}</Chip></div>}
+        {!hasImage && <p className="mt-1 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }}>{tx('background.imageHint')}</p>}
         {regular && (
           <div className="flex items-center gap-1 mt-2">
             <span className="text-[11px] flex-1" style={{ color: 'var(--sk-dim)' }}>{tx('side.label')}</span>
@@ -539,9 +660,67 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
 }
 
 const SHORTCUTS = [
-  ['P B Y U', 'tools'], ['E', 'eraser'], ['L', 'lasso'], ['I · Alt', 'picker'], ['[ ]', 'size'], ['1–0', 'opacity'], ['X · D', 'colors'],
+  ['Alt', 'picker'], ['1–0', 'opacity'],
   ['Space', 'pan'], ['Shift+Space', 'orbit'], ['Ctrl+Space', 'zoom'], ['Shift', 'lineFrom'], ['Tab', 'hide'], ['Ctrl+Z · Y', 'undo'], ['Ctrl+D', 'deselect'],
 ] as const
+
+/** Tap an action, press a key. A key already in use swaps, so nothing is left without one. */
+function KeyEditor({ tx }: { tx: Tx }) {
+  const keys = useSketchStore((s) => s.keys)
+  const [waiting, setWaiting] = useState<KeyAction | null>(null)
+  return (
+    <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+      {KEY_ACTIONS.map((action) => (
+        <button
+          key={action} type="button" className="flex items-center justify-between gap-1 h-7 px-1 rounded text-[11px] min-w-0"
+          style={{ background: waiting === action ? 'var(--sk-soft)' : 'transparent' }}
+          onClick={() => setWaiting(action)}
+          onBlur={() => setWaiting(null)}
+          onKeyDownCapture={(e) => {
+            if (waiting !== action) return
+            e.preventDefault()
+            e.stopPropagation()
+            e.nativeEvent.stopImmediatePropagation()
+            if (isBindable(e.key)) useSketchStore.getState().setPrefs({ keys: rebind(keys, action, e.key) })
+            setWaiting(null)
+          }}
+        >
+          <span className="truncate">{tx(`keymap.${action}`)}</span>
+          <kbd className="font-mono" style={{ color: 'var(--sk-dim)' }}>{waiting === action ? '…' : keyFor(action, keys).toUpperCase()}</kbd>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** While presenting: only what a presenter touches. */
+export function MeetingBar({ tx }: { tx: Tx }) {
+  const tool = useSketchStore((s) => s.tool)
+  const count = useSketchStore((s) => s.history.present.pages.length)
+  const at = useSketchStore((s) => s.history.present.pages.findIndex((p) => p.id === s.history.present.activePageId))
+  const { setPrefs } = useSketchStore.getState()
+  return (
+    <div role="toolbar" aria-label={tx('meeting.label')} className="absolute z-30 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1 rounded-xl border" style={{ ...glass, bottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      <Chip grow={false} onClick={() => stepPage(-1)}>‹</Chip>
+      <span className="px-1 text-[12px] tabular-nums">{at + 1}/{count}</span>
+      <Chip grow={false} onClick={() => stepPage(1)}>›</Chip>
+      <IconButton size={36} label={tx('tools.laser')} icon="laser" active={tool === 'laser'} onClick={() => setPrefs({ tool: 'laser' })} />
+      <IconButton size={36} label={tx('tools.pen')} icon="pen" active={tool === 'pen'} onClick={() => setPrefs({ tool: 'pen' })} />
+      <IconButton size={36} label={tx('undo')} icon="undo" onClick={useSketchStore.getState().undo} />
+      <Chip grow={false} onClick={endMeeting}>{tx('meeting.end')}</Chip>
+    </div>
+  )
+}
+
+/** Someone else's sketch from a link: look, or keep a copy as your own. */
+export function LinkBar({ tx }: { tx: Tx }) {
+  return (
+    <div className="absolute z-30 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1 pl-3 rounded-xl border text-[12px] max-w-[94%]" style={{ ...glass, bottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      <span className="truncate">{tx('meeting.readOnly')}</span>
+      <Chip grow={false} onClick={() => { void saveDoc(useSketchStore.getState().history.present).then(() => { location.href = '/sketch' }) }}>{tx('meeting.keep')}</Chip>
+    </div>
+  )
+}
 
 /** What a lasso can do. Shown only while something is selected. */
 export function SelectionBar({ tx, regular }: { tx: Tx; regular: boolean }) {
@@ -562,7 +741,7 @@ export function SelectionBar({ tx, regular }: { tx: Tx; regular: boolean }) {
   )
 }
 
-const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'lasso', 'picker', 'pick']
+const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'lasso', 'reshape', 'picker', 'pick']
 const TABS: PanelTab[] = ['ink', 'plane', 'view', 'layers', 'file']
 
 function TabStrip({ tx }: { tx: Tx }) {
