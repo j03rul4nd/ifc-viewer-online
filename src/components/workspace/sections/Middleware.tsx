@@ -1,50 +1,114 @@
 import { useState } from 'react'
 import type { SectionProps } from '../registry'
-import { Banner, CopyField, DataList, Danger, Dialog, Dot, Field, Head, Panel, Primary, Quiet, SectionLabel, Tabs, fmtInt, inputClass } from '../ui'
+import { Banner, CopyField, DataList, Danger, Dialog, Dot, Field, Head, Panel, Primary, Quiet, SectionLabel, fmtInt, inputClass } from '../ui'
 import { SoonBanner } from '../Soon'
 import { useTx } from '../i18n'
 
-type Kind = 'api' | 'cron' | 'etl'
-type Status = 'running' | 'idle' | 'stopped' | 'failed'
+type Kind = 'api' | 'cron'
+type Status = 'running' | 'idle' | 'stopped' | 'failed' | 'review'
 
-interface Service {
-  id: string; name: string; kind: Kind; image: string; repo: string; schedule: string; port: string
-  memory: number; envKeys: string[]; origins: string; status: Status; gbHours: number; note?: string
-}
+interface Service { id: string; name: string; kind: Kind; source: string; schedule: string; hosts: string[]; status: Status; gbHours: number }
+interface TemplateVar { name: string; secret?: boolean; required?: boolean; placeholder?: string }
+interface Template { id: string; kind: Kind; name: string; body: string; vars: TemplateVar[] }
 
 const GATEWAY = 'https://api.ifcvieweronline.eu/mw/'
-const QUOTA = { gbHours: 250, services: 4, requests: 1_000_000 }
+const QUOTA_GB_HOURS = 250
 
-const SAMPLE: Service[] = [
-  { id: 'trains-api', name: 'Trains API', kind: 'api', image: 'ghcr.io/acme/trains-api:1.4', repo: 'https://github.com/acme/trains-api', schedule: '', port: '8080', memory: 256, envKeys: ['DATABASE_URL'], origins: 'https://www.ifcvieweronline.eu', status: 'running', gbHours: 118 },
-  { id: 'stations-etl', name: 'Stations collector', kind: 'cron', image: 'ghcr.io/acme/stations-etl:2.0', repo: 'https://github.com/acme/stations-etl', schedule: '*/5 * * * *', port: '', memory: 256, envKeys: ['DATABASE_URL', 'SOURCE_URL'], origins: '', status: 'idle', gbHours: 21 },
-  { id: 'nightly', name: 'Nightly clean-up', kind: 'etl', image: 'ghcr.io/acme/cleanup:0.3', repo: '', schedule: '0 3 * * *', port: '', memory: 512, envKeys: ['DATABASE_URL'], origins: '', status: 'failed', gbHours: 2, note: 'Exited with code 1' },
+/** Mirrors lib/middleware-templates in the API: the terms are signed in this exact wording. */
+const TERMS = [
+  'I act on behalf of the organization named here and may bind it.',
+  'The organization owns the data sources it configures, or is authorized to access them in this way, and complies with their terms.',
+  'It owns or is authorized to run any repository or image it submits.',
+  'It will not use this service to mine, send unsolicited messages, attack, overload, scan or gain unauthorized access to any system.',
+  'It is responsible for the data it processes and for claims or penalties arising from its configuration and its containers.',
+  'The provider may suspend a service at once on suspected abuse, and may disclose these records to the authorities when legally required.',
 ]
 
-const STATUS_COLOR: Record<Status, string> = { running: 'var(--ok)', idle: 'var(--text-faint)', stopped: 'var(--text-faint)', failed: 'var(--danger)' }
+const SAMPLE: Service[] = [
+  { id: 'trains', name: 'Trains API', kind: 'api', source: 'Read-only API over your table', schedule: '', hosts: [], status: 'running', gbHours: 118 },
+  { id: 'stations', name: 'Stations collector', kind: 'cron', source: 'Collect an API into your database', schedule: '*/5 * * * *', hosts: ['data.renfe.example'], status: 'idle', gbHours: 21 },
+  { id: 'own', name: 'Delay predictor', kind: 'cron', source: 'Your container', schedule: '0 * * * *', hosts: [], status: 'review', gbHours: 0 },
+]
 
-/** Customers' own containers, next to their own database. The twin reads the API through the gateway. */
-export default function Middleware(_: SectionProps) {
+const COLOR: Record<Status, string> = { running: 'var(--ok)', idle: 'var(--text-faint)', stopped: 'var(--text-faint)', failed: 'var(--danger)', review: 'var(--warn)' }
+
+/** By agreement with us. Verified templates take variables; a customer's own container takes a review. */
+export default function Middleware({ actions }: SectionProps) {
   const tx = useTx()
+  const TEMPLATES: Template[] = [
+    { id: 'fetch-to-postgres', kind: 'cron', name: tx('Collect an API into your database'), body: tx('On a schedule, reads one address of yours and saves its items in your table.'), vars: [
+      { name: 'SOURCE_URL', required: true, placeholder: 'https://data.example.com/stations' }, { name: 'LIST_PATH', placeholder: 'data.items' }, { name: 'ID_FIELD', placeholder: 'id' },
+      { name: 'SOURCE_AUTH_HEADER', secret: true }, { name: 'DATABASE_URL', secret: true, required: true, placeholder: 'postgres://…' }, { name: 'TARGET_TABLE', required: true, placeholder: 'trains' },
+    ] },
+    { id: 'postgres-read-api', kind: 'api', name: tx('Read-only API over your table'), body: tx('The twin reads this API, never your database. It can only read.'), vars: [
+      { name: 'DATABASE_URL', secret: true, required: true, placeholder: 'postgres://…' }, { name: 'SOURCE_TABLE', required: true, placeholder: 'trains' },
+    ] },
+    { id: 'fetch-cache-api', kind: 'api', name: tx('Cached API over a public source'), body: tx('For a source that blocks browsers: refreshes at most once a minute and serves the copy.'), vars: [
+      { name: 'SOURCE_URL', required: true, placeholder: 'https://data.example.com/stations' }, { name: 'LIST_PATH', placeholder: 'data.items' }, { name: 'SOURCE_AUTH_HEADER', secret: true }, { name: 'REFRESH_SECONDS', placeholder: '300' },
+    ] },
+  ]
   const [services, setServices] = useState(SAMPLE)
-  const [adding, setAdding] = useState(false)
+  const [signed, setSigned] = useState<{ name: string; company: string } | null>(null)
+  const [signing, setSigning] = useState<Template | null | 'terms'>(null)
+  const [using, setUsing] = useState<Template | null>(null)
   const [cap, setCap] = useState('')
-  const KIND: Record<Kind, string> = { api: tx('API'), cron: tx('Cron job'), etl: tx('ETL') }
-  const STATUS: Record<Status, string> = { running: tx('Running'), idle: tx('Waiting for its schedule'), stopped: tx('Stopped'), failed: tx('Failed') }
-
+  const STATUS: Record<Status, string> = { running: tx('Running'), idle: tx('Waiting for its schedule'), stopped: tx('Stopped'), failed: tx('Failed'), review: tx('In review by our team') }
   const used = services.reduce((a, s) => a + s.gbHours, 0)
-  const limit = Math.min(QUOTA.gbHours, Number(cap) > 0 ? Number(cap) : Infinity)
+  const limit = Math.min(QUOTA_GB_HOURS, Number(cap) > 0 ? Number(cap) : Infinity)
   const pct = Math.min(100, Math.round((used / limit) * 100))
-  const set = (id: string, status: Status): void => setServices((all) => all.map((s) => (s.id === id ? { ...s, status, note: undefined } : s)))
+  const set = (id: string, status: Status): void => setServices((all) => all.map((s) => (s.id === id ? { ...s, status } : s)))
   const apis = services.filter((s) => s.kind === 'api')
+  const choose = (t: Template): void => { if (signed) setUsing(t); else setSigning(t) }
 
   return (
     <>
-      <Head title={tx('Middleware')} sub={tx('Run your own APIs, cron jobs and ETLs next to your database. The digital twin reads your API, never your database directly.')}
-        action={<Primary disabled={services.length >= QUOTA.services} onClick={() => setAdding(true)}>{tx('New service')}</Primary>} />
+      <Head title={tx('Middleware')} sub={tx('Feed the digital twin from your own data, through containers we verified. The database stays yours.')} />
       <SoonBanner section="middleware" />
-      {pct >= 80 && <div className="mb-6"><Banner tone="warn" title={tx('{{pct}}% of this month\'s budget is used', { pct })}>{tx('At 100% jobs pause and APIs stop until next month or until you raise the cap.')}</Banner></div>}
+      <div className="mb-8">
+        <Banner tone="info" title={tx('Enabled by agreement')} action={<Quiet onClick={() => actions.contact('question', 'middleware')}>{tx('Talk to us')}</Quiet>}>
+          {tx('We switch this on after talking to your team, as an Enterprise feature or an extra on your plan.')}
+        </Banner>
+      </div>
 
+      <SectionLabel>{tx('Verified containers')}</SectionLabel>
+      <p className="mb-3 text-[13px] leading-[1.5] text-[var(--text-dim)] max-w-[680px]">{tx('Set the variables and you are done. They cannot run other code: one declared public address, read only, on a limited schedule.')}</p>
+      <div className="grid gap-3 sm:grid-cols-3 mb-8">
+        {TEMPLATES.map((t) => (
+          <Panel key={t.id} className="p-4 flex flex-col gap-2 min-w-0">
+            <p className="text-[13.5px] font-medium">{t.name}</p>
+            <p className="flex-1 text-[12.5px] leading-[1.5] text-[var(--text-dim)]">{t.body}</p>
+            <div className="pt-1"><Quiet onClick={() => choose(t)}>{tx('Set up')}</Quiet></div>
+          </Panel>
+        ))}
+      </div>
+
+      <SectionLabel>{tx('Your own containers')}</SectionLabel>
+      <Panel className="p-4 mb-8 flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+        <p className="flex-1 text-[13px] leading-[1.5] text-[var(--text-dim)]">{tx('Only by agreement. Tell us what it does and show us the repository; we review it and approve that exact image before it can start. A new image needs a new review.')}</p>
+        <Quiet onClick={() => actions.contact('question', 'middleware own container')}>{tx('Request a review')}</Quiet>
+      </Panel>
+
+      <SectionLabel>{tx('Services')}</SectionLabel>
+      <div className="mb-8">
+        <DataList rows={services} rowKey={(s) => s.id} primaryHeader={tx('Service')}
+          primary={(s) => <><p className="font-medium [overflow-wrap:anywhere]">{s.name}</p><p className="text-[11.5px] text-[var(--text-faint)] [overflow-wrap:anywhere]">{tx(s.source)}</p></>}
+          columns={[
+            { key: 'status', header: tx('Status'), cell: (s) => <span className="inline-flex items-center gap-1.5 text-[12.5px]"><Dot color={COLOR[s.status]} />{STATUS[s.status]}</span> },
+            { key: 'when', header: tx('Schedule'), hideOnPhone: true, cell: (s) => <span className="font-mono text-[12px] text-[var(--text-dim)]">{s.schedule || '—'}</span> },
+            { key: 'hosts', header: tx('Reads from'), hideOnPhone: true, cell: (s) => <span className="text-[12px] text-[var(--text-dim)] [overflow-wrap:anywhere]">{s.hosts.join(', ') || '—'}</span> },
+            { key: 'use', header: tx('Use'), hideOnPhone: true, cell: (s) => <span className="text-[12.5px] tabular-nums whitespace-nowrap">{fmtInt(Math.round(s.gbHours))} GB·h</span> },
+          ]}
+          actions={(s) => (
+            <div className="flex flex-wrap justify-end gap-1.5">
+              {s.status !== 'review' && (s.status === 'running'
+                ? <Quiet onClick={() => set(s.id, 'stopped')}>{tx('Stop')}</Quiet>
+                : <Quiet onClick={() => set(s.id, s.kind === 'api' ? 'running' : 'idle')}>{tx('Start')}</Quiet>)}
+              <Danger onClick={() => setServices((all) => all.filter((x) => x.id !== s.id))}>{tx('Remove')}</Danger>
+            </div>
+          )} />
+      </div>
+
+      {pct >= 80 && <div className="mb-6"><Banner tone="warn" title={tx('{{pct}}% of this month\'s budget is used', { pct })}>{tx('At 100% jobs pause and APIs stop until next month or until you raise the cap.')}</Banner></div>}
       <div className="grid gap-3 sm:grid-cols-3 mb-8">
         <Panel className="p-4 sm:col-span-2 min-w-0">
           <p className="text-[12px] text-[var(--text-dim)]">{tx('Compute this month')}</p>
@@ -56,30 +120,9 @@ export default function Middleware(_: SectionProps) {
         </Panel>
         <Panel className="p-4 min-w-0">
           <Field label={tx('Team spending cap (GB·h a month)')} hint={tx('Only the owner can change it. Empty means the plan\'s allowance.')}>
-            <input className={inputClass} inputMode="numeric" value={cap} placeholder={String(QUOTA.gbHours)} onChange={(e) => setCap(e.target.value.replace(/\D/g, ''))} />
+            <input className={inputClass} inputMode="numeric" value={cap} placeholder={String(QUOTA_GB_HOURS)} onChange={(e) => setCap(e.target.value.replace(/\D/g, ''))} />
           </Field>
         </Panel>
-      </div>
-
-      <SectionLabel>{tx('Services')}</SectionLabel>
-      <div className="mb-8">
-        <DataList rows={services} rowKey={(s) => s.id} primaryHeader={tx('Service')}
-          primary={(s) => <><p className="font-medium [overflow-wrap:anywhere]">{s.name}</p><p className="text-[11.5px] text-[var(--text-faint)] [overflow-wrap:anywhere]">{s.image}</p></>}
-          columns={[
-            { key: 'kind', header: tx('Type'), cell: (s) => <span className="text-[12.5px]">{KIND[s.kind]}</span> },
-            { key: 'status', header: tx('Status'), cell: (s) => <span className="inline-flex items-center gap-1.5 text-[12.5px]"><Dot color={STATUS_COLOR[s.status]} />{STATUS[s.status]}</span> },
-            { key: 'when', header: tx('Schedule'), hideOnPhone: true, cell: (s) => <span className="font-mono text-[12px] text-[var(--text-dim)]">{s.schedule || '—'}</span> },
-            { key: 'use', header: tx('Use'), hideOnPhone: true, cell: (s) => <span className="text-[12.5px] tabular-nums whitespace-nowrap">{fmtInt(Math.round(s.gbHours))} GB·h</span> },
-          ]}
-          actions={(s) => (
-            <div className="flex flex-wrap justify-end gap-1.5">
-              {s.status === 'running'
-                ? <Quiet onClick={() => set(s.id, 'stopped')}>{tx('Stop')}</Quiet>
-                : <Quiet onClick={() => set(s.id, s.kind === 'api' ? 'running' : 'idle')}>{tx('Start')}</Quiet>}
-              {s.kind !== 'api' && <Quiet onClick={() => set(s.id, 'running')}>{tx('Run now')}</Quiet>}
-              <Danger onClick={() => setServices((all) => all.filter((x) => x.id !== s.id))}>{tx('Remove')}</Danger>
-            </div>
-          )} />
       </div>
 
       {apis.length > 0 && (
@@ -93,97 +136,86 @@ export default function Middleware(_: SectionProps) {
       )}
 
       <SectionLabel>{tx('Monitoring')}</SectionLabel>
-      <Panel className="p-4 mb-8 min-w-0">
+      <Panel className="p-4 mb-8 min-w-0 flex flex-col gap-3">
         <p className="text-[13px] leading-[1.5] text-[var(--text-dim)]">{tx('Point Grafana at this Prometheus endpoint with a metrics token: state, runs, compute and requests per service.')}</p>
-        <div className="mt-3"><CopyField label={tx('Metrics endpoint')} value="https://api.ifcvieweronline.eu/middleware/metrics" /></div>
+        <CopyField label={tx('Metrics endpoint')} value="https://api.ifcvieweronline.eu/middleware/metrics" />
       </Panel>
 
-      {adding && <NewService onClose={() => setAdding(false)} onAdd={(s) => { setServices((all) => [...all, s]); setAdding(false) }} />}
+      <SectionLabel>{tx('Signed terms')}</SectionLabel>
+      <Panel className="p-4 mb-8 flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+        <p className="flex-1 text-[13px] leading-[1.5] text-[var(--text-dim)] [overflow-wrap:anywhere]">{signed ? tx('Signed by {{name}} for {{company}}.', signed) : tx('Not signed yet. Required before the first service.')}</p>
+        <Quiet onClick={() => setSigning('terms')}>{signed ? tx('Read the terms') : tx('Read and sign')}</Quiet>
+      </Panel>
+
+      {signing && <SignTerms signed={signed} onClose={() => setSigning(null)} onSign={(s) => { setSigned(s); const next = signing; setSigning(null); if (next !== 'terms') setUsing(next) }} />}
+      {using && <UseTemplate template={using} onClose={() => setUsing(null)} onAdd={(s) => { setServices((all) => [...all, s]); setUsing(null) }} />}
     </>
   )
 }
 
-const CRON = /^(\S+\s+){4}\S+$/
-const IMAGE = /^[a-z0-9][\w./:@-]*$/
-
-function NewService({ onClose, onAdd }: { onClose: () => void; onAdd: (s: Service) => void }) {
+function SignTerms({ signed, onClose, onSign }: { signed: { name: string; company: string } | null; onClose: () => void; onSign: (s: { name: string; company: string }) => void }) {
   const tx = useTx()
-  const [kind, setKind] = useState<Kind>('api')
   const [name, setName] = useState('')
-  const [image, setImage] = useState('')
-  const [repo, setRepo] = useState('')
-  const [schedule, setSchedule] = useState('*/5 * * * *')
-  const [port, setPort] = useState('8080')
-  const [memory, setMemory] = useState(256)
-  const [origins, setOrigins] = useState('https://www.ifcvieweronline.eu')
-  const [env, setEnv] = useState<Array<[string, string]>>([['', '']])
-  const [tried, setTried] = useState(false)
+  const [company, setCompany] = useState('')
+  const [accept, setAccept] = useState(false)
+  const ready = name.trim().length >= 3 && company.trim().length >= 2 && accept
+  return (
+    <Dialog title={tx('Terms of use of the middleware')} onClose={onClose} size="lg"
+      footer={signed ? <Quiet onClick={onClose}>{tx('Close')}</Quiet> : <><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={() => onSign({ name: name.trim(), company: company.trim() })}>{tx('Sign')}</Primary></>}>
+      <div className="flex flex-col gap-4">
+        <p className="text-[12.5px] leading-[1.5] text-[var(--text-dim)]">{tx('These terms apply in English. We keep who signed, when and from which address.')}</p>
+        <ul lang="en" className="flex flex-col gap-2 pl-4 list-disc text-[13px] leading-[1.5]">{TERMS.map((t) => <li key={t}>{t}</li>)}</ul>
+        {!signed && (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={tx('Your full name')}><input className={inputClass} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+              <Field label={tx('Organization')}><input className={inputClass} autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} /></Field>
+            </div>
+            <label className="flex items-start gap-2.5 text-[13px] leading-[1.5]">
+              <input type="checkbox" className="mt-1" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
+              <span>{tx('I have read these terms and accept them on behalf of this organization.')}</span>
+            </label>
+          </>
+        )}
+      </div>
+    </Dialog>
+  )
+}
 
-  const errors = {
-    name: !name.trim(),
-    image: !IMAGE.test(image.trim()),
-    schedule: kind === 'cron' && !CRON.test(schedule.trim()),
-    port: kind === 'api' && !(Number(port) > 0 && Number(port) < 65536),
-  }
-  const invalid = Object.values(errors).some(Boolean)
-  const error = (bad: boolean, text: string) => (tried && bad ? <span className="text-[var(--danger)]">{text}</span> : undefined)
-  const submit = (): void => {
+function UseTemplate({ template: t, onClose, onAdd }: { template: Template; onClose: () => void; onAdd: (s: Service) => void }) {
+  const tx = useTx()
+  const [name, setName] = useState(t.name)
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [schedule, setSchedule] = useState('*/5 * * * *')
+  const [origins, setOrigins] = useState('https://www.ifcvieweronline.eu')
+  const [tried, setTried] = useState(false)
+  const missing = t.vars.some((v) => v.required && !values[v.name]?.trim())
+  const badUrl = values.SOURCE_URL ? !/^https:\/\/[^/@]+/.test(values.SOURCE_URL.trim()) : false
+  const invalid = missing || badUrl || !name.trim() || (t.kind === 'cron' && !/^(\S+\s+){4}\S+$/.test(schedule.trim()))
+  const create = (): void => {
     setTried(true)
     if (invalid) return
-    onAdd({
-      id: name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: name.trim(), kind, image: image.trim(), repo: repo.trim(), schedule: kind === 'api' ? '' : schedule.trim(), port: kind === 'api' ? port : '',
-      memory, envKeys: env.map(([k]) => k.trim()).filter(Boolean), origins, status: 'stopped', gbHours: 0,
-    })
+    let host: string[] = []
+    try { host = values.SOURCE_URL ? [new URL(values.SOURCE_URL).hostname] : [] } catch { /* checked above */ }
+    onAdd({ id: `${t.id}-${Date.now().toString(36)}`, name: name.trim(), kind: t.kind, source: t.id === 'fetch-to-postgres' ? 'Collect an API into your database' : t.id === 'postgres-read-api' ? 'Read-only API over your table' : 'Cached API over a public source', schedule: t.kind === 'cron' ? schedule.trim() : '', hosts: host, status: 'stopped', gbHours: 0 })
   }
-  const TYPES: Array<{ id: Kind; label: string }> = [{ id: 'api', label: tx('API') }, { id: 'cron', label: tx('Cron job') }, { id: 'etl', label: tx('ETL') }]
-  const HELP: Record<Kind, string> = {
-    api: tx('Stays on and answers requests. This is what the twin connects to.'),
-    cron: tx('Starts on a schedule, does its work and stops. You pay only while it runs.'),
-    etl: tx('Runs when you start it, or on an optional schedule. For heavier imports.'),
-  }
-
   return (
-    <Dialog title={tx('New service')} onClose={onClose} size="lg"
-      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary onClick={submit}>{tx('Create service')}</Primary></>}>
+    <Dialog title={t.name} onClose={onClose} size="lg"
+      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary onClick={create}>{tx('Create service')}</Primary></>}>
       <div className="flex flex-col gap-4">
-        <Tabs tabs={TYPES} value={kind} onChange={setKind} label={tx('Type')} />
-        <p className="text-[12.5px] leading-[1.5] text-[var(--text-dim)]">{HELP[kind]}</p>
-        <Field label={tx('Name')} hint={error(errors.name, tx('Give it a name.'))}><input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} /></Field>
-        <Field label={tx('Docker image')} hint={error(errors.image, tx('Use a registry reference, not a web address.')) ?? tx('A public image or one in our registry, for example ghcr.io/acme/api:1.0')}>
-          <input className={`${inputClass} font-mono`} spellCheck={false} value={image} placeholder="ghcr.io/acme/api:1.0" onChange={(e) => setImage(e.target.value)} />
-        </Field>
-        <Field label={tx('Repository (optional)')} hint={tx('For your team\'s reference. We run the image and do not build from it.')}>
-          <input className={inputClass} inputMode="url" spellCheck={false} value={repo} placeholder="https://github.com/acme/api" onChange={(e) => setRepo(e.target.value)} />
-        </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {kind === 'api'
-            ? <Field label={tx('Port it listens on')} hint={error(errors.port, tx('Enter a port between 1 and 65535.'))}><input className={inputClass} inputMode="numeric" value={port} onChange={(e) => setPort(e.target.value.replace(/\D/g, ''))} /></Field>
-            : <Field label={kind === 'cron' ? tx('Schedule (cron, UTC)') : tx('Schedule (optional, cron, UTC)')} hint={error(errors.schedule, tx('Five fields, for example */5 * * * *'))}><input className={`${inputClass} font-mono`} spellCheck={false} value={schedule} onChange={(e) => setSchedule(e.target.value)} /></Field>}
-          <Field label={tx('Memory')}>
-            <select className={inputClass} value={memory} onChange={(e) => setMemory(Number(e.target.value))}>
-              {[256, 512].map((m) => <option key={m} value={m}>{m} MB</option>)}
-            </select>
+        <p className="text-[12.5px] leading-[1.5] text-[var(--text-dim)]">{t.body}</p>
+        <Field label={tx('Name')}><input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} /></Field>
+        {t.vars.map((v) => (
+          <Field key={v.name} label={v.required ? v.name : `${v.name} · ${tx('optional')}`}
+            hint={tried && v.required && !values[v.name]?.trim() ? <span className="text-[var(--danger)]">{tx('This is required.')}</span> : v.name === 'SOURCE_URL' && badUrl ? <span className="text-[var(--danger)]">{tx('Use a public https address.')}</span> : undefined}>
+            <input className={`${inputClass} font-mono`} spellCheck={false} autoComplete="off" type={v.secret ? 'password' : 'text'} placeholder={v.placeholder}
+              value={values[v.name] ?? ''} onChange={(e) => setValues({ ...values, [v.name]: e.target.value })} />
           </Field>
-        </div>
-        {kind === 'api' && (
-          <Field label={tx('Allowed origins')} hint={tx('Websites that may call this API from a browser, separated by commas.')}>
-            <input className={inputClass} spellCheck={false} value={origins} onChange={(e) => setOrigins(e.target.value)} />
-          </Field>
-        )}
-        <div>
-          <p className="text-[12px] text-[var(--text-dim)]">{tx('Environment variables')}</p>
-          <p className="mt-0.5 mb-2 text-[11.5px] leading-[1.45] text-[var(--text-faint)]">{tx('Encrypted when saved. After that we show the names only. Your database address goes here: the database stays yours.')}</p>
-          <div className="flex flex-col gap-2">
-            {env.map(([k, v], i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-                <input className={`${inputClass} font-mono`} aria-label={tx('Name')} spellCheck={false} placeholder="DATABASE_URL" value={k} onChange={(e) => setEnv(env.map((r, j) => (j === i ? [e.target.value, r[1]] : r)))} />
-                <input className={inputClass} aria-label={tx('Value')} type="password" autoComplete="off" value={v} onChange={(e) => setEnv(env.map((r, j) => (j === i ? [r[0], e.target.value] : r)))} />
-                <Quiet onClick={() => setEnv(env.length > 1 ? env.filter((_, j) => j !== i) : [['', '']])}>{tx('Remove')}</Quiet>
-              </div>
-            ))}
-          </div>
-          <div className="mt-2"><Quiet onClick={() => setEnv([...env, ['', '']])}>{tx('Add variable')}</Quiet></div>
-        </div>
+        ))}
+        {t.kind === 'cron'
+          ? <Field label={tx('Schedule (cron, UTC)')} hint={tx('At most every 5 minutes.')}><input className={`${inputClass} font-mono`} spellCheck={false} value={schedule} onChange={(e) => setSchedule(e.target.value)} /></Field>
+          : <Field label={tx('Allowed origins')} hint={tx('Websites that may call this API from a browser, separated by commas.')}><input className={inputClass} spellCheck={false} value={origins} onChange={(e) => setOrigins(e.target.value)} /></Field>}
+        <p className="text-[11.5px] leading-[1.45] text-[var(--text-faint)]">{tx('Secrets are encrypted when saved. After that we show the names only.')}</p>
       </div>
     </Dialog>
   )

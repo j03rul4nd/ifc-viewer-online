@@ -91,8 +91,8 @@ export const PAID_FEATURE_DEFS: PaidFeatureDef[] = [
   { id: 'api_credits', code: 'DEV', family: 'api', plan: 'developer', status: 'preview', server: true, section: 'api',
     title: 'Hosted API with credits', pitch: '5,000 credits a month, then €0.01 a credit. Validate, store and compare by API.' },
 
-  { id: 'data_middleware', code: 'MW', family: 'api', plan: 'team', status: 'preview', server: true, section: 'middleware',
-    title: 'Data middleware', pitch: 'Your own APIs, cron jobs and ETLs in containers. A paid add-on from €29 a month.' },
+  { id: 'data_middleware', code: 'MW', family: 'api', plan: 'enterprise', status: 'preview', server: true, section: 'middleware',
+    title: 'Data middleware', pitch: 'Verified containers that feed the twin from your data. By agreement: Enterprise, or an extra on your plan.' },
 
   // ── Optional AI (doc 18 §0: never the core, always disclosed, capped) ──
   { id: 'ai_eir_draft', code: 'AI1', family: 'ai', plan: 'team', status: 'planned', server: true, ai: true, section: 'ai',
