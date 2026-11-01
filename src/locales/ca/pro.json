@@ -98,5 +98,9 @@
     "hint": "El teu compte viu darrere del botó Compte a la barra del visor."
   },
   "manageProfile": "Gestiona el perfil",
-  "backHome": "Torna a IFC Viewer Online"
+  "backHome": "Torna a IFC Viewer Online",
+  "authTitle": "El teu compte reuneix projectes, certificats i facturació",
+  "authPoint1": "El visor i el validador continuen gratis i sense compte",
+  "authPoint2": "El que obres al navegador es queda al navegador",
+  "authPoint3": "Els teus fitxers només arriben als nostres servidors si fas servir una funció al núvol"
 }

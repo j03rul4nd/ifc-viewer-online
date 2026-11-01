@@ -80,7 +80,7 @@ export const SECTIONS: SectionDef[] = [
   { id: 'integrations', label: 'Integrations', icon: Blocks, requires: 'pro', secondary: true, soon: true, Component: Integrations },
   { id: 'api', label: 'API', icon: Code2, requires: 'pro', secondary: true, soon: true, Component: Api },
   { id: 'ai', label: 'AI credits', short: 'AI', icon: Sparkles, requires: 'pro', secondary: true, soon: true, Component: Ai },
-  { id: 'billing', label: 'Credits & billing', short: 'Billing', icon: CreditCard, requires: 'pro', Component: Billing },
+  { id: 'billing', label: 'Credits & billing', short: 'Billing', icon: CreditCard, requires: 'pro', group: 'account', Component: Billing },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, requires: 'pro', secondary: true, group: 'account', Component: Settings },
   { id: 'privacy', label: 'Privacy & data', icon: ShieldCheck, requires: 'pro', secondary: true, group: 'account', Component: Privacy },
   { id: 'support', label: 'Help & support', short: 'Help', icon: LifeBuoy, requires: 'pro', secondary: true, group: 'account', Component: Support },

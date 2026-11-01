@@ -98,5 +98,9 @@
     "hint": "账户入口位于查看器工具栏的“账户”按钮。"
   },
   "manageProfile": "管理个人资料",
-  "backHome": "返回 IFC Viewer Online"
+  "backHome": "返回 IFC Viewer Online",
+  "authTitle": "账户集中管理项目、证书和账单",
+  "authPoint1": "查看器和验证器继续免费，无需账户",
+  "authPoint2": "在浏览器中打开的文件只留在浏览器中",
+  "authPoint3": "只有使用云功能时，文件才会到达我们的服务器"
 }
