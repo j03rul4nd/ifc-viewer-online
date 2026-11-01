@@ -61,7 +61,7 @@ describe('blog hub discovery', () => {
       'city-open-data-browser-test',
       'real-time-city-data-freshness-test',
     ]))
-    expect(results).toHaveLength(27)
+    expect(results).toHaveLength(29)
   })
 
   it('filters by category and sorts short reads first', () => {

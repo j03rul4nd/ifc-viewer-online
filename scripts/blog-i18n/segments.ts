@@ -70,6 +70,11 @@ function blockFields(b: ContentBlock, at: string, add: (path: string, value: unk
     // target's translated heading by relinkSections(), never translated here.
     case 'related': add(`${at}.why`, b.why); break
     case 'tool': add(`${at}.why`, b.why); break
+    case 'sketch-demo': {
+      add(`${at}.title`, b.title); add(`${at}.description`, b.description); add(`${at}.posterAlt`, b.posterAlt); add(`${at}.launchLabel`, b.launchLabel)
+      for (const k of Object.keys(b.labels) as (keyof typeof b.labels)[]) add(`${at}.labels.${k}`, b.labels[k])
+      break
+    }
     case 'foldable-check': {
       add(`${at}.title`, b.title); add(`${at}.caption`, b.caption)
       const l = b.labels

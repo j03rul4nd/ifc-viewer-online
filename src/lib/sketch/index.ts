@@ -9,5 +9,6 @@
 
 export type { BrushKind, OrbitState, SketchDoc, SketchLayer, SketchPage, SketchPlane, Stroke, Vec3 } from './types'
 export { openSketchWithModels, type ModelSource } from './handoff'
+export type { ShowcaseId } from './showcase'
 export type { ContextItem, ContextPoints, SketchOutbox } from './storage'
 export { loadOutbox } from './storage'

@@ -8,7 +8,7 @@
 
 import type { BlogPost } from './blog-posts'
 
-export type ToolId = 'viewer' | 'validator' | 'guid-fixer' | 'fix-guides' | 'embed' | 'sdk' | 'handbook' | 'bim-handbook'
+export type ToolId = 'viewer' | 'validator' | 'guid-fixer' | 'fix-guides' | 'embed' | 'sdk' | 'handbook' | 'bim-handbook' | 'sketch'
 
 interface ToolCopy { name: string; action: string; blurb: string }
 
@@ -22,6 +22,23 @@ export interface BlogTool {
 }
 
 export const BLOG_TOOLS: BlogTool[] = [
+  {
+    id: 'sketch', icon: 'share',
+    href: { en: '/sketch' },
+    terms: ['3d sketch', 'sketching', 'draw in 3d', 'redline', 'croquis', 'boceto', 'skizze', 'esboço', 'schizzo', '草图', 'スケッチ', 'ภาพร่าง'],
+    copy: {
+      en: { name: '3D sketch studio', action: 'Open the studio', blurb: 'Draw in 3D with a pen or a finger, over your models if you like. Free, in the browser, no account.' },
+      es: { name: 'Estudio de boceto 3D', action: 'Abrir el estudio', blurb: 'Dibuja en 3D con lápiz o dedo, también sobre tus modelos. Gratis, en el navegador y sin cuenta.' },
+      de: { name: '3D-Skizzenstudio', action: 'Studio öffnen', blurb: 'In 3D zeichnen, mit Stift oder Finger, auch auf Ihren Modellen. Kostenlos, im Browser, ohne Konto.' },
+      fr: { name: 'Studio de croquis 3D', action: 'Ouvrir le studio', blurb: 'Dessinez en 3D au stylet ou au doigt, y compris sur vos modèles. Gratuit, dans le navigateur, sans compte.' },
+      pt: { name: 'Estúdio de esboço 3D', action: 'Abrir o estúdio', blurb: 'Desenhe em 3D com caneta ou dedo, também sobre seus modelos. Grátis, no navegador, sem conta.' },
+      it: { name: 'Studio di schizzo 3D', action: 'Apri lo studio', blurb: 'Disegna in 3D con penna o dito, anche sui tuoi modelli. Gratis, nel browser, senza account.' },
+      ca: { name: 'Estudi d’esbós 3D', action: 'Obre l’estudi', blurb: 'Dibuixa en 3D amb llapis o dit, també sobre els teus models. Gratis, al navegador i sense compte.' },
+      zh: { name: '3D 草图工作室', action: '打开工作室', blurb: '用触控笔或手指在 3D 中绘制，也可画在模型上。免费，在浏览器中运行，无需账户。' },
+      ja: { name: '3Dスケッチスタジオ', action: 'スタジオを開く', blurb: 'ペンや指で3D空間に描けます。モデルの上にも。無料、ブラウザーで動作、アカウント不要。' },
+      th: { name: 'สตูดิโอสเก็ตช์ 3 มิติ', action: 'เปิดสตูดิโอ', blurb: 'วาดแบบ 3 มิติด้วยปากกาหรือนิ้ว วาดบนโมเดลก็ได้ ฟรี ทำงานในเบราว์เซอร์ ไม่ต้องมีบัญชี' },
+    },
+  },
   {
     id: 'validator', icon: 'check',
     href: { en: '/ifc-validator/', es: '/es/ifc-validador/', de: '/de/ifc-validator-online/', fr: '/fr/validateur-ifc-en-ligne/', zh: '/zh/ifc-validator-online/', ja: '/ja/ifc-validator-online/', th: '/th/ifc-validator-online/', pt: '/pt/validador-ifc-online/', it: '/it/validatore-ifc-online/', ca: '/ca/validador-ifc-en-linia/' },

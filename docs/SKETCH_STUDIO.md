@@ -226,3 +226,11 @@ saved and the studio says what to do next. Nothing is posted without the user.
 - Handoff stops above 300 MB. The figure is an estimate, not a measurement.
 - Strokes are 32-bit floats: with UTM coordinates in the vertices they will jitter.
 - The context is one per browser, not per sketch or page.
+
+## Showcase drawings
+
+`lib/sketch/showcase.ts` plots the drawings used by the articles (`blog-sketch-en.ts`) and
+their live block (`components/sketch/SketchDemo.tsx`, loaded on press by
+`blog/SketchDemoBlock.tsx`). They are ordinary documents from seeded code, not hand
+drawings, and the captions say so. The demo keeps nothing; its Open button uses the
+read-only link, which frames the drawing on arrival.

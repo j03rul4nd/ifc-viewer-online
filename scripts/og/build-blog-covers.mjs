@@ -189,6 +189,10 @@ const REAL_CAPTURE_BY_KEY = {
   },
   // Rain-flood simulation: captures of real runs (scripts/og/capture-flood-shots.mjs).
   // Rain & slopes: the maquette of the bundled Chosica example (scripts/og/capture-hazard-shots.mjs).
+  // 3D sketches: drawings plotted in the studio's engine (lib/sketch/showcase.ts) and one real IFC.
+  '3d-sketching-online-draw-in-3d': { source: 'public/blog/images/3d-sketch-twisted-tower-browser-1600x900.jpg', badge: { en: 'REAL ENGINE · DRAW LIVE', es: 'MOTOR REAL · DIBUJA EN VIVO' }, shortTitle: '3D SKETCHING ONLINE' },
+  'sketch-over-ifc-bim-model-redline': { source: 'public/blog/images/3d-sketch-redlines-over-ifc-model-1600x900.jpg', badge: { en: 'REAL IFC · SKETCH OVER IT', es: 'IFC REAL · BOCETA ENCIMA' }, shortTitle: 'SKETCH OVER IFC IN 3D' },
+  'digital-twin-infrastructure-concept-sketch': { source: 'public/blog/images/3d-sketch-cable-stayed-bridge-monitoring-1600x900.jpg', badge: { en: 'ILLUSTRATION · LIVE DEMO', es: 'ILUSTRACIÓN · DEMO EN VIVO' }, shortTitle: 'SKETCH A DIGITAL TWIN' },
   'foldable-phone-ifc-viewer': {
     source: 'public/blog/images/foldable-ifc-viewer-book-posture.jpg',
     badge: { en: 'ACTUAL VIEWER · TWO SCREENS', es: 'VISOR REAL · DOS PANTALLAS' },

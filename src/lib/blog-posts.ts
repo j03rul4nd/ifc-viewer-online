@@ -8,6 +8,7 @@ import { FLOOD_POSTS_EN } from './blog-flood-en.ts'
 import { MEASURE_POSTS_EN } from './blog-measure-en.ts'
 import { FOLDABLE_POSTS_EN } from './blog-foldable-en.ts'
 import { TRACKING_POSTS_EN } from './blog-tracking-en.ts'
+import { SKETCH_POSTS_EN } from './blog-sketch-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -71,12 +72,28 @@ export type ContentBlock =
    */
   | { type: 'related'; to: string; section?: string; why?: string }
   /** A tool on this site that does what the paragraph describes (see lib/blog-tools.ts). */
-  | { type: 'tool'; id: 'viewer' | 'validator' | 'guid-fixer' | 'fix-guides' | 'embed' | 'sdk' | 'handbook' | 'bim-handbook'; why?: string }
+  | { type: 'tool'; id: 'viewer' | 'validator' | 'guid-fixer' | 'fix-guides' | 'embed' | 'sdk' | 'handbook' | 'bim-handbook' | 'sketch'; why?: string }
   /**
    * "Is this water dangerous?" Depth and speed sliders → the FD2320 hazard
    * rating and its class, on a depth × speed chart (FloodHazard.tsx). The
    * labels travel with the post so they are translated with it.
    */
+  /** A drawing from lib/sketch/showcase replaying in the real engine (SketchDemoBlock.tsx). */
+  | {
+      type: 'sketch-demo'
+      scene: 'pavilion' | 'tower' | 'bridge' | 'city' | 'markup'
+      title: string
+      description: string
+      poster: string
+      posterAlt: string
+      launchLabel: string
+      labels: {
+        orbit: string; draw: string; replay: string; undo: string; open: string
+        plane: string; ground: string; front: string; side: string
+        filter: string; original: string; blueprint: string; wash: string; chalk: string; neon: string; faded: string
+        hintOrbit: string; hintDraw: string; noGpu: string
+      }
+    }
   /**
    * "What will the viewer do on my phone?" Live read of the display segments,
    * the link that opens the sample split, and a report (FoldableCheck.tsx).
@@ -359,6 +376,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
   ...TWIN_POSTS_EN,
   ...MEASURE_POSTS_EN,
   ...TRACKING_POSTS_EN,
+  ...SKETCH_POSTS_EN,
   ...FOLDABLE_POSTS_EN,
   ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,
