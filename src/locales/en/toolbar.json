@@ -27,6 +27,7 @@
   "section": "Section",
   "clippingPlanes": "Clipping planes — section cuts",
   "plans": "Plans",
+  "drawings": "Drawings",
   "floorPlanViews": "Floor plan views — storey sections",
   "export": "Export",
   "exportModels": "Export {{count}} models",

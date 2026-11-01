@@ -1,0 +1,111 @@
+{
+  "title": "Plans",
+  "sheet": "Plan",
+  "none": "Aucun plan pour l'instant",
+  "blank": "Nouveau plan vierge",
+  "blankName": "Plan {{n}}",
+  "fit": "Cadrer",
+  "paper": "Papier",
+  "dark": "Sombre",
+  "panel": "Panneau",
+  "close": "Fermer les plans",
+  "undo": "Annuler",
+  "redo": "Rétablir",
+  "working": "En cours…",
+  "dismiss": "Fermer",
+  "empty": {
+    "title": "Vos plans, à côté du modèle",
+    "body": "Ouvrez un DXF ou un PDF, ou coupez un plan dans l'IFC. Les fichiers restent dans ce navigateur."
+  },
+  "import": {
+    "button": "Ouvrir DXF / PDF",
+    "skipped": "Non lu dans ce fichier : {{list}}."
+  },
+  "errors": {
+    "dwg": "{{name}} est un DWG (AutoCAD {{detail}}). Le DWG ne s'ouvre pas encore ici. Enregistrez-le en DXF : dans AutoCAD, Enregistrer sous → DXF, ou convertissez-le sur votre ordinateur avec ODA File Converter (gratuit), puis ouvrez le DXF.",
+    "dxfBinary": "{{name}} est un DXF binaire. Réenregistrez-le en DXF ASCII et ouvrez celui-ci.",
+    "notDxf": "{{name}} n'est ni un DXF ni un PDF lisible par ce visualiseur.",
+    "tooBig": "{{name}} génère trop d'entités pour être dessiné dans un navigateur.",
+    "pdfPassword": "{{name}} est protégé par un mot de passe. Retirez-le et réessayez.",
+    "pdfBroken": "{{name}} n'a pas pu être lu comme PDF : {{detail}}",
+    "unknown": "{{name}} n'a pas pu être ouvert : {{detail}}",
+    "emptyCut": "Cette coupe ne traverse aucune géométrie. Essayez un autre niveau ou une autre hauteur.",
+    "cutFailed": "La coupe a échoué : {{detail}}"
+  },
+  "tools": {
+    "label": "Outils de dessin",
+    "select": "Sélectionner et déplacer",
+    "pan": "Panoramique",
+    "line": "Ligne",
+    "polyline": "Polyligne",
+    "rect": "Rectangle",
+    "circle": "Cercle",
+    "text": "Texte",
+    "dimension": "Cote",
+    "calibrate": "Définir l'échelle",
+    "align": "Aligner sur le modèle"
+  },
+  "hints": {
+    "select": "Cliquez pour sélectionner, glissez pour déplacer, Suppr pour effacer.",
+    "pan": "Glissez pour vous déplacer, molette pour zoomer.",
+    "line": "Cliquez deux points.",
+    "polyline": "Cliquez les points ; double-clic ou Entrée pour finir.",
+    "rect": "Cliquez deux coins.",
+    "circle": "Cliquez le centre, puis le bord.",
+    "text": "Cliquez où placer le texte.",
+    "dimension": "Cliquez deux points pour les mesurer et les annoter.",
+    "calibrate": "Cliquez les deux extrémités d'une longueur connue.",
+    "align": "Cliquez sur ce plan, puis au même endroit sur la référence. Deux fois."
+  },
+  "ask": {
+    "text": "Texte",
+    "length": "Longueur réelle (m)",
+    "ok": "OK",
+    "cancel": "Annuler"
+  },
+  "calibrate": {
+    "done": "Échelle définie : 1 unité = {{value}} m."
+  },
+  "generate": {
+    "title": "Depuis l'IFC",
+    "needModel": "Chargez un modèle pour couper plans et sections.",
+    "kind": "Que couper",
+    "plan": "Plan d'étage",
+    "sectionX": "Coupe selon X",
+    "sectionY": "Coupe selon Y",
+    "level": "Niveau",
+    "base": "Base du modèle",
+    "height": "Hauteur de coupe au-dessus du niveau",
+    "position": "Position de la coupe",
+    "run": "Générer",
+    "planName": "Plan {{level}} +{{height}} m",
+    "sectionName": "Coupe {{axis}} {{pos}} %"
+  },
+  "sheetSection": "Ce plan",
+  "visible": "Afficher",
+  "in3d": "Afficher dans la vue 3D",
+  "elevation": "Hauteur",
+  "live": "Appareils en direct ({{count}})",
+  "page": "Page {{n}} sur {{total}}",
+  "units": "1 unité = {{value}} m",
+  "noUnits": "Pas d'échelle : utilisez Définir l'échelle ou Aligner.",
+  "fileCoords": "Coordonnées du fichier",
+  "remove": "Fermer le plan",
+  "layers": {
+    "title": "Calques ({{count}})",
+    "new": "Calque",
+    "visible": "Afficher {{name}}",
+    "color": "Couleur de {{name}}",
+    "lock": "Verrouiller {{name}}",
+    "delete": "Supprimer {{name}} et son contenu"
+  },
+  "export": {
+    "title": "Exporter",
+    "sheetTitle": "Titre du plan",
+    "project": "Projet",
+    "author": "Dessiné par",
+    "paper": "Format de papier",
+    "dxfNoPage": "Le DXF contient les lignes et textes ajoutés, pas la page du PDF.",
+    "pdfLatin": "Ce PDF n'écrit que du texte latin : les autres écritures apparaissent en « ? ». Le SVG les conserve."
+  }
+}

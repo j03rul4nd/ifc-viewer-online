@@ -1,0 +1,111 @@
+{
+  "title": "图纸",
+  "sheet": "图纸",
+  "none": "还没有图纸",
+  "blank": "新建空白图纸",
+  "blankName": "图纸 {{n}}",
+  "fit": "适应窗口",
+  "paper": "白纸",
+  "dark": "深色",
+  "panel": "面板",
+  "close": "关闭图纸",
+  "undo": "撤销",
+  "redo": "重做",
+  "working": "处理中…",
+  "dismiss": "关闭",
+  "empty": {
+    "title": "图纸就在模型旁边",
+    "body": "打开 DXF 或 PDF，或从 IFC 剖切平面图。文件只保留在此浏览器中。"
+  },
+  "import": {
+    "button": "打开 DXF / PDF",
+    "skipped": "此文件中未读取：{{list}}。"
+  },
+  "errors": {
+    "dwg": "{{name}} 是 DWG（AutoCAD {{detail}}）。此处暂时无法打开 DWG。请另存为 DXF：在 AutoCAD 中选择“另存为 → DXF”，或在本机用免费的 ODA File Converter 转换，然后打开 DXF。",
+    "dxfBinary": "{{name}} 是二进制 DXF。请另存为 ASCII DXF 后再打开。",
+    "notDxf": "{{name}} 不是此查看器可读取的 DXF 或 PDF。",
+    "tooBig": "{{name}} 展开后实体过多，无法在浏览器中绘制。",
+    "pdfPassword": "{{name}} 受密码保护。请移除密码后重试。",
+    "pdfBroken": "无法将 {{name}} 作为 PDF 读取：{{detail}}",
+    "unknown": "无法打开 {{name}}：{{detail}}",
+    "emptyCut": "该剖切未穿过任何几何体。请尝试其他标高或高度。",
+    "cutFailed": "剖切失败：{{detail}}"
+  },
+  "tools": {
+    "label": "绘图工具",
+    "select": "选择并移动",
+    "pan": "平移",
+    "line": "直线",
+    "polyline": "多段线",
+    "rect": "矩形",
+    "circle": "圆",
+    "text": "文字",
+    "dimension": "标注",
+    "calibrate": "设置比例",
+    "align": "与模型对齐"
+  },
+  "hints": {
+    "select": "单击选择，拖动移动，按 Delete 删除。",
+    "pan": "拖动平移，滚轮缩放。",
+    "line": "单击两点。",
+    "polyline": "单击各点；双击或按 Enter 结束。",
+    "rect": "单击两个角点。",
+    "circle": "单击圆心，再单击边缘。",
+    "text": "单击放置文字的位置。",
+    "dimension": "单击两点进行测量并标注。",
+    "calibrate": "单击已知长度的两端。",
+    "align": "单击此图纸，再单击参照上的同一位置。重复两次。"
+  },
+  "ask": {
+    "text": "文字",
+    "length": "实际长度（米）",
+    "ok": "确定",
+    "cancel": "取消"
+  },
+  "calibrate": {
+    "done": "比例已设置：1 单位 = {{value}} 米。"
+  },
+  "generate": {
+    "title": "来自 IFC",
+    "needModel": "加载模型后可剖切平面图和剖面图。",
+    "kind": "剖切类型",
+    "plan": "平面图",
+    "sectionX": "沿 X 剖面",
+    "sectionY": "沿 Y 剖面",
+    "level": "标高",
+    "base": "模型底部",
+    "height": "标高以上的剖切高度",
+    "position": "剖面位置",
+    "run": "生成",
+    "planName": "平面图 {{level}} +{{height}} 米",
+    "sectionName": "剖面 {{axis}} {{pos}}%"
+  },
+  "sheetSection": "此图纸",
+  "visible": "显示",
+  "in3d": "在 3D 视图中显示",
+  "elevation": "高度",
+  "live": "实时设备（{{count}}）",
+  "page": "第 {{n}} 页，共 {{total}} 页",
+  "units": "1 单位 = {{value}} 米",
+  "noUnits": "尚无比例：请使用设置比例或对齐。",
+  "fileCoords": "文件坐标",
+  "remove": "关闭图纸",
+  "layers": {
+    "title": "图层（{{count}}）",
+    "new": "图层",
+    "visible": "显示 {{name}}",
+    "color": "{{name}} 的颜色",
+    "lock": "锁定 {{name}}",
+    "delete": "删除 {{name}} 及其内容"
+  },
+  "export": {
+    "title": "导出",
+    "sheetTitle": "图纸标题",
+    "project": "项目",
+    "author": "绘制人",
+    "paper": "纸张大小",
+    "dxfNoPage": "DXF 包含添加的线条和文字，不含 PDF 页面。",
+    "pdfLatin": "此 PDF 仅写入拉丁文字：其他文字显示为“?”。SVG 可保留。"
+  }
+}

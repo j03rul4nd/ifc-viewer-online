@@ -1,0 +1,111 @@
+{
+  "title": "Planos",
+  "sheet": "Plano",
+  "none": "Aún no hay planos",
+  "blank": "Plano en blanco nuevo",
+  "blankName": "Plano {{n}}",
+  "fit": "Encuadrar",
+  "paper": "Papel",
+  "dark": "Oscuro",
+  "panel": "Panel",
+  "close": "Cerrar planos",
+  "undo": "Deshacer",
+  "redo": "Rehacer",
+  "working": "Trabajando…",
+  "dismiss": "Cerrar",
+  "empty": {
+    "title": "Tus planos, junto al modelo",
+    "body": "Abre un DXF o un PDF, o corta una planta del IFC. Los ficheros se quedan en este navegador."
+  },
+  "import": {
+    "button": "Abrir DXF / PDF",
+    "skipped": "No leído de este fichero: {{list}}."
+  },
+  "errors": {
+    "dwg": "{{name}} es un DWG (AutoCAD {{detail}}). Aún no se puede abrir DWG aquí. Guárdalo como DXF: en AutoCAD, Guardar como → DXF, o conviértelo en tu ordenador con el ODA File Converter gratuito, y abre el DXF.",
+    "dxfBinary": "{{name}} es un DXF binario. Guárdalo de nuevo como DXF ASCII y abre ese.",
+    "notDxf": "{{name}} no es un DXF ni un PDF que este visor pueda leer.",
+    "tooBig": "{{name}} se expande a demasiadas entidades para dibujarlas en un navegador.",
+    "pdfPassword": "{{name}} está protegido con contraseña. Quítala e inténtalo de nuevo.",
+    "pdfBroken": "{{name}} no se pudo leer como PDF: {{detail}}",
+    "unknown": "{{name}} no se pudo abrir: {{detail}}",
+    "emptyCut": "Ese corte no atraviesa ninguna geometría. Prueba con otro nivel o altura.",
+    "cutFailed": "El corte ha fallado: {{detail}}"
+  },
+  "tools": {
+    "label": "Herramientas de dibujo",
+    "select": "Seleccionar y mover",
+    "pan": "Desplazar",
+    "line": "Línea",
+    "polyline": "Polilínea",
+    "rect": "Rectángulo",
+    "circle": "Círculo",
+    "text": "Texto",
+    "dimension": "Cota",
+    "calibrate": "Fijar la escala",
+    "align": "Alinear con el modelo"
+  },
+  "hints": {
+    "select": "Clic para seleccionar, arrastra para mover, Supr para borrar.",
+    "pan": "Arrastra para desplazar, rueda para acercar.",
+    "line": "Clic en dos puntos.",
+    "polyline": "Clic en los puntos; doble clic o Intro para terminar.",
+    "rect": "Clic en dos esquinas.",
+    "circle": "Clic en el centro y luego en el borde.",
+    "text": "Clic donde va el texto.",
+    "dimension": "Clic en dos puntos para medirlos y rotularlos.",
+    "calibrate": "Clic en los extremos de una longitud conocida.",
+    "align": "Clic en este plano y luego en el mismo punto de la referencia. Dos veces."
+  },
+  "ask": {
+    "text": "Texto",
+    "length": "Longitud real (m)",
+    "ok": "Aceptar",
+    "cancel": "Cancelar"
+  },
+  "calibrate": {
+    "done": "Escala fijada: 1 unidad = {{value}} m."
+  },
+  "generate": {
+    "title": "Desde el IFC",
+    "needModel": "Carga un modelo para cortar plantas y secciones.",
+    "kind": "Qué cortar",
+    "plan": "Planta",
+    "sectionX": "Sección por X",
+    "sectionY": "Sección por Y",
+    "level": "Nivel",
+    "base": "Base del modelo",
+    "height": "Altura de corte sobre el nivel",
+    "position": "Posición de la sección",
+    "run": "Generar",
+    "planName": "Planta {{level}} +{{height}} m",
+    "sectionName": "Sección {{axis}} {{pos}}%"
+  },
+  "sheetSection": "Este plano",
+  "visible": "Mostrar",
+  "in3d": "Mostrar en la vista 3D",
+  "elevation": "Altura",
+  "live": "Dispositivos en vivo ({{count}})",
+  "page": "Página {{n}} de {{total}}",
+  "units": "1 unidad = {{value}} m",
+  "noUnits": "Sin escala: usa Fijar la escala o Alinear.",
+  "fileCoords": "Coordenadas del fichero",
+  "remove": "Cerrar plano",
+  "layers": {
+    "title": "Capas ({{count}})",
+    "new": "Capa",
+    "visible": "Mostrar {{name}}",
+    "color": "Color de {{name}}",
+    "lock": "Bloquear {{name}}",
+    "delete": "Borrar {{name}} y lo que contiene"
+  },
+  "export": {
+    "title": "Exportar",
+    "sheetTitle": "Título del plano",
+    "project": "Proyecto",
+    "author": "Dibujado por",
+    "paper": "Tamaño de papel",
+    "dxfNoPage": "El DXF lleva las líneas y textos añadidos, no la página del PDF.",
+    "pdfLatin": "Este PDF solo escribe texto latino: otros alfabetos salen como “?”. El SVG los conserva."
+  }
+}

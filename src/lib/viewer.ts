@@ -937,6 +937,18 @@ export interface ViewerAPI {
   /** Remove all section planes and the box, and close any open storey view. */
   cleanupSectionAndPlans(): void
 
+  // ─── Technical drawings (see docs/DRAWINGS.md) ───────────────────────────────
+  /** What drawings need of the scene: where to lay a sheet in 3D and how to redraw. */
+  drawingHost(): { scene: THREE.Scene; requestRender(): void }
+  /** Every visible model's triangles in scene space, per IFC class; the source of plans and sections. */
+  collectDrawingSoups(skip: RegExp): Promise<Map<string, Float32Array[]>>
+  /** The scene's box in scene space, or null with nothing loaded. */
+  drawingSceneBounds(): THREE.Box3 | null
+  /** Centres of elements by GlobalId in model XY (x, −z), across all models. */
+  drawingElementCenters(guids: string[]): Promise<Map<string, { x: number; y: number }>>
+  /** The 3D camera in model XY, for the marker on the sheet. */
+  drawingCamera(): { x: number; y: number; dx: number; dy: number } | null
+
   // ─── Floor plan / storey views ───────────────────────────────────────────────
   /**
    * Detect IfcBuildingStorey entities and create a section view for each one.
@@ -4836,6 +4848,70 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const levels = mergeLevels(all)
       storeyLevelsCache = { key, levels }
       return levels
+    },
+
+    drawingHost() {
+      return { scene: world.scene.three, requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true } }
+    },
+
+    async collectDrawingSoups(skip) {
+      const out = new Map<string, Float32Array[]>()
+      const { collectItemTriangles } = await import('./scene/item-triangles')
+      const v = new THREE.Vector3()
+      for (const [modelId, model] of modelObjects) {
+        if (modelHidden.has(modelId)) continue
+        const soups = await collectItemTriangles(model as unknown as import('./scene/item-triangles').ItemGeometrySource, {
+          skip, bucket: (category) => category,
+          onWarn: (m, e) => console.debug('[Viewer] drawing soups:', m, e),
+        })
+        model.object.updateWorldMatrix(true, false)
+        const m = model.object.matrixWorld
+        for (const [category, chunks] of soups) {
+          for (const tri of chunks) {
+            for (let i = 0; i < tri.length; i += 3) {
+              v.set(tri[i], tri[i + 1], tri[i + 2]).applyMatrix4(m)
+              tri[i] = v.x; tri[i + 1] = v.y; tri[i + 2] = v.z
+            }
+          }
+          const list = out.get(category)
+          if (list) list.push(...chunks); else out.set(category, chunks)
+        }
+      }
+      return out
+    },
+
+    drawingSceneBounds() {
+      const box = combinedModelsBox()
+      return box.isEmpty() ? null : box
+    },
+
+    async drawingElementCenters(guids) {
+      const out = new Map<string, { x: number; y: number }>()
+      for (const model of modelObjects.values()) {
+        const missing = guids.filter((g) => !out.has(g))
+        if (!missing.length) break
+        try {
+          const ids = await model.getLocalIdsByGuids(missing)
+          for (let i = 0; i < missing.length; i++) {
+            const id = ids[i]
+            if (typeof id !== 'number') continue
+            const b = await model.getMergedBox([id])
+            if (b.isEmpty()) continue
+            const c = b.getCenter(new THREE.Vector3())
+            out.set(missing[i], { x: c.x, y: -c.z })
+          }
+        } catch (e) { console.debug('[Viewer] element centres:', e) }
+      }
+      return out
+    },
+
+    drawingCamera() {
+      try {
+        const controls = world.camera.controls
+        const pos = controls.getPosition(new THREE.Vector3())
+        const tgt = controls.getTarget(new THREE.Vector3())
+        return { x: pos.x, y: -pos.z, dx: tgt.x - pos.x, dy: -(tgt.z - pos.z) }
+      } catch { return null }
     },
 
     cleanupSectionAndPlans() {

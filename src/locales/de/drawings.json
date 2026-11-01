@@ -1,0 +1,111 @@
+{
+  "title": "Zeichnungen",
+  "sheet": "Zeichnung",
+  "none": "Noch keine Zeichnungen",
+  "blank": "Neue leere Zeichnung",
+  "blankName": "Zeichnung {{n}}",
+  "fit": "Einpassen",
+  "paper": "Papier",
+  "dark": "Dunkel",
+  "panel": "Seitenleiste",
+  "close": "Zeichnungen schließen",
+  "undo": "Rückgängig",
+  "redo": "Wiederholen",
+  "working": "Wird bearbeitet…",
+  "dismiss": "Schließen",
+  "empty": {
+    "title": "Ihre Zeichnungen neben dem Modell",
+    "body": "Öffnen Sie eine DXF oder PDF oder schneiden Sie einen Grundriss aus dem IFC. Die Dateien bleiben in diesem Browser."
+  },
+  "import": {
+    "button": "DXF / PDF öffnen",
+    "skipped": "Aus dieser Datei nicht gelesen: {{list}}."
+  },
+  "errors": {
+    "dwg": "{{name}} ist eine DWG (AutoCAD {{detail}}). DWG lässt sich hier noch nicht öffnen. Speichern Sie sie als DXF: in AutoCAD über Speichern unter → DXF, oder konvertieren Sie sie lokal mit dem kostenlosen ODA File Converter, und öffnen Sie dann die DXF.",
+    "dxfBinary": "{{name}} ist eine binäre DXF. Speichern Sie sie als ASCII-DXF und öffnen Sie diese.",
+    "notDxf": "{{name}} ist keine DXF oder PDF, die dieser Viewer lesen kann.",
+    "tooBig": "{{name}} ergibt zu viele Objekte für die Darstellung im Browser.",
+    "pdfPassword": "{{name}} ist passwortgeschützt. Entfernen Sie das Passwort und versuchen Sie es erneut.",
+    "pdfBroken": "{{name}} konnte nicht als PDF gelesen werden: {{detail}}",
+    "unknown": "{{name}} konnte nicht geöffnet werden: {{detail}}",
+    "emptyCut": "Dieser Schnitt trifft keine Geometrie. Versuchen Sie eine andere Ebene oder Höhe.",
+    "cutFailed": "Der Schnitt ist fehlgeschlagen: {{detail}}"
+  },
+  "tools": {
+    "label": "Zeichenwerkzeuge",
+    "select": "Auswählen und verschieben",
+    "pan": "Schwenken",
+    "line": "Linie",
+    "polyline": "Polylinie",
+    "rect": "Rechteck",
+    "circle": "Kreis",
+    "text": "Text",
+    "dimension": "Bemaßung",
+    "calibrate": "Maßstab festlegen",
+    "align": "Am Modell ausrichten"
+  },
+  "hints": {
+    "select": "Klicken zum Auswählen, ziehen zum Verschieben, Entf zum Löschen.",
+    "pan": "Ziehen zum Schwenken, Mausrad zum Zoomen.",
+    "line": "Zwei Punkte anklicken.",
+    "polyline": "Punkte anklicken; Doppelklick oder Enter zum Beenden.",
+    "rect": "Zwei Ecken anklicken.",
+    "circle": "Mittelpunkt, dann Rand anklicken.",
+    "text": "Klicken, wo der Text stehen soll.",
+    "dimension": "Zwei Punkte anklicken, um sie zu messen und zu beschriften.",
+    "calibrate": "Beide Enden einer bekannten Länge anklicken.",
+    "align": "Auf diese Zeichnung klicken, dann auf dieselbe Stelle der Referenz. Zweimal."
+  },
+  "ask": {
+    "text": "Text",
+    "length": "Reale Länge (m)",
+    "ok": "OK",
+    "cancel": "Abbrechen"
+  },
+  "calibrate": {
+    "done": "Maßstab festgelegt: 1 Einheit = {{value}} m."
+  },
+  "generate": {
+    "title": "Aus dem IFC",
+    "needModel": "Laden Sie ein Modell, um Grundrisse und Schnitte zu erzeugen.",
+    "kind": "Was schneiden",
+    "plan": "Grundriss",
+    "sectionX": "Schnitt quer zu X",
+    "sectionY": "Schnitt quer zu Y",
+    "level": "Ebene",
+    "base": "Modellbasis",
+    "height": "Schnitthöhe über der Ebene",
+    "position": "Schnittposition",
+    "run": "Erzeugen",
+    "planName": "Grundriss {{level}} +{{height}} m",
+    "sectionName": "Schnitt {{axis}} {{pos}} %"
+  },
+  "sheetSection": "Diese Zeichnung",
+  "visible": "Anzeigen",
+  "in3d": "In der 3D-Ansicht anzeigen",
+  "elevation": "Höhe",
+  "live": "Live-Geräte ({{count}})",
+  "page": "Seite {{n}} von {{total}}",
+  "units": "1 Einheit = {{value}} m",
+  "noUnits": "Kein Maßstab: Maßstab festlegen oder ausrichten.",
+  "fileCoords": "Dateikoordinaten",
+  "remove": "Zeichnung schließen",
+  "layers": {
+    "title": "Layer ({{count}})",
+    "new": "Layer",
+    "visible": "{{name}} anzeigen",
+    "color": "Farbe von {{name}}",
+    "lock": "{{name}} sperren",
+    "delete": "{{name}} samt Inhalt löschen"
+  },
+  "export": {
+    "title": "Exportieren",
+    "sheetTitle": "Zeichnungstitel",
+    "project": "Projekt",
+    "author": "Gezeichnet von",
+    "paper": "Papierformat",
+    "dxfNoPage": "Die DXF enthält die hinzugefügten Linien und Texte, nicht die PDF-Seite.",
+    "pdfLatin": "Dieses PDF schreibt nur lateinischen Text: andere Schriften erscheinen als „?“. SVG behält sie."
+  }
+}

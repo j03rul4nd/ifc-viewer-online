@@ -1,0 +1,111 @@
+{
+  "title": "Disegni",
+  "sheet": "Disegno",
+  "none": "Ancora nessun disegno",
+  "blank": "Nuovo disegno vuoto",
+  "blankName": "Disegno {{n}}",
+  "fit": "Inquadra",
+  "paper": "Carta",
+  "dark": "Scuro",
+  "panel": "Pannello",
+  "close": "Chiudi i disegni",
+  "undo": "Annulla",
+  "redo": "Ripeti",
+  "working": "In corso…",
+  "dismiss": "Chiudi",
+  "empty": {
+    "title": "I tuoi disegni, accanto al modello",
+    "body": "Apri un DXF o un PDF, o taglia una pianta dall'IFC. I file restano in questo browser."
+  },
+  "import": {
+    "button": "Apri DXF / PDF",
+    "skipped": "Non letto da questo file: {{list}}."
+  },
+  "errors": {
+    "dwg": "{{name}} è un DWG (AutoCAD {{detail}}). Qui il DWG non si può ancora aprire. Salvalo come DXF: in AutoCAD, Salva con nome → DXF, o convertilo sul tuo computer con ODA File Converter gratuito, poi apri il DXF.",
+    "dxfBinary": "{{name}} è un DXF binario. Salvalo di nuovo come DXF ASCII e apri quello.",
+    "notDxf": "{{name}} non è un DXF o PDF leggibile da questo visualizzatore.",
+    "tooBig": "{{name}} genera troppe entità da disegnare in un browser.",
+    "pdfPassword": "{{name}} è protetto da password. Rimuovila e riprova.",
+    "pdfBroken": "{{name}} non si può leggere come PDF: {{detail}}",
+    "unknown": "{{name}} non si può aprire: {{detail}}",
+    "emptyCut": "Questo taglio non attraversa alcuna geometria. Prova un altro livello o altezza.",
+    "cutFailed": "Il taglio non è riuscito: {{detail}}"
+  },
+  "tools": {
+    "label": "Strumenti di disegno",
+    "select": "Seleziona e sposta",
+    "pan": "Panoramica",
+    "line": "Linea",
+    "polyline": "Polilinea",
+    "rect": "Rettangolo",
+    "circle": "Cerchio",
+    "text": "Testo",
+    "dimension": "Quota",
+    "calibrate": "Imposta la scala",
+    "align": "Allinea al modello"
+  },
+  "hints": {
+    "select": "Clic per selezionare, trascina per spostare, Canc per eliminare.",
+    "pan": "Trascina per spostarti, rotella per lo zoom.",
+    "line": "Clic su due punti.",
+    "polyline": "Clic sui punti; doppio clic o Invio per finire.",
+    "rect": "Clic su due angoli.",
+    "circle": "Clic sul centro, poi sul bordo.",
+    "text": "Clic dove va il testo.",
+    "dimension": "Clic su due punti per misurarli ed etichettarli.",
+    "calibrate": "Clic sugli estremi di una lunghezza nota.",
+    "align": "Clic su questo disegno, poi sullo stesso punto del riferimento. Due volte."
+  },
+  "ask": {
+    "text": "Testo",
+    "length": "Lunghezza reale (m)",
+    "ok": "OK",
+    "cancel": "Annulla"
+  },
+  "calibrate": {
+    "done": "Scala impostata: 1 unità = {{value}} m."
+  },
+  "generate": {
+    "title": "Dall'IFC",
+    "needModel": "Carica un modello per tagliare piante e sezioni.",
+    "kind": "Cosa tagliare",
+    "plan": "Pianta",
+    "sectionX": "Sezione su X",
+    "sectionY": "Sezione su Y",
+    "level": "Livello",
+    "base": "Base del modello",
+    "height": "Altezza di taglio sopra il livello",
+    "position": "Posizione della sezione",
+    "run": "Genera",
+    "planName": "Pianta {{level}} +{{height}} m",
+    "sectionName": "Sezione {{axis}} {{pos}}%"
+  },
+  "sheetSection": "Questo disegno",
+  "visible": "Mostra",
+  "in3d": "Mostra nella vista 3D",
+  "elevation": "Altezza",
+  "live": "Dispositivi in tempo reale ({{count}})",
+  "page": "Pagina {{n}} di {{total}}",
+  "units": "1 unità = {{value}} m",
+  "noUnits": "Nessuna scala: usa Imposta la scala o Allinea.",
+  "fileCoords": "Coordinate del file",
+  "remove": "Chiudi il disegno",
+  "layers": {
+    "title": "Layer ({{count}})",
+    "new": "Layer",
+    "visible": "Mostra {{name}}",
+    "color": "Colore di {{name}}",
+    "lock": "Blocca {{name}}",
+    "delete": "Elimina {{name}} e il suo contenuto"
+  },
+  "export": {
+    "title": "Esporta",
+    "sheetTitle": "Titolo del disegno",
+    "project": "Progetto",
+    "author": "Disegnato da",
+    "paper": "Formato carta",
+    "dxfNoPage": "Il DXF contiene linee e testi aggiunti, non la pagina del PDF.",
+    "pdfLatin": "Questo PDF scrive solo testo latino: altri alfabeti appaiono come “?”. L'SVG li conserva."
+  }
+}

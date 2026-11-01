@@ -24,6 +24,7 @@ import type enPointCloud from '../locales/en/pointcloud.json';
 import type enMesh from '../locales/en/mesh.json';
 import type enLayers from '../locales/en/layers.json';
 import type enVideo from '../locales/en/video.json';
+import type enDrawings from '../locales/en/drawings.json';
 import type enLoading from '../locales/en/loading.json';
 import type enCompare from '../locales/en/compare.json';
 
@@ -57,6 +58,7 @@ declare module 'i18next' {
       mesh: typeof enMesh;
       layers: typeof enLayers;
       video: typeof enVideo;
+      drawings: typeof enDrawings;
       loading: typeof enLoading;
       compare: typeof enCompare;
     };

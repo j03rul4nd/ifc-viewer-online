@@ -1,0 +1,111 @@
+{
+  "title": "図面",
+  "sheet": "図面",
+  "none": "図面はまだありません",
+  "blank": "新しい空の図面",
+  "blankName": "図面 {{n}}",
+  "fit": "全体表示",
+  "paper": "用紙",
+  "dark": "ダーク",
+  "panel": "パネル",
+  "close": "図面を閉じる",
+  "undo": "元に戻す",
+  "redo": "やり直す",
+  "working": "処理中…",
+  "dismiss": "閉じる",
+  "empty": {
+    "title": "モデルの横に図面を",
+    "body": "DXF や PDF を開くか、IFC から平面図を切り出します。ファイルはこのブラウザー内に留まります。"
+  },
+  "import": {
+    "button": "DXF / PDF を開く",
+    "skipped": "このファイルから読み取れなかったもの: {{list}}。"
+  },
+  "errors": {
+    "dwg": "{{name}} は DWG (AutoCAD {{detail}}) です。ここではまだ DWG を開けません。DXF で保存してください。AutoCAD の「名前を付けて保存 → DXF」か、無料の ODA File Converter でお使いのコンピューター上で変換し、DXF を開きます。",
+    "dxfBinary": "{{name}} はバイナリ DXF です。ASCII DXF で保存し直して開いてください。",
+    "notDxf": "{{name}} はこのビューアーで読める DXF または PDF ではありません。",
+    "tooBig": "{{name}} は展開するとエンティティが多すぎ、ブラウザーで描画できません。",
+    "pdfPassword": "{{name}} はパスワードで保護されています。解除してやり直してください。",
+    "pdfBroken": "{{name}} を PDF として読めませんでした: {{detail}}",
+    "unknown": "{{name}} を開けませんでした: {{detail}}",
+    "emptyCut": "この切断面はジオメトリを通りません。別のレベルや高さを試してください。",
+    "cutFailed": "切断に失敗しました: {{detail}}"
+  },
+  "tools": {
+    "label": "作図ツール",
+    "select": "選択と移動",
+    "pan": "パン",
+    "line": "線",
+    "polyline": "ポリライン",
+    "rect": "長方形",
+    "circle": "円",
+    "text": "文字",
+    "dimension": "寸法",
+    "calibrate": "縮尺を設定",
+    "align": "モデルに位置合わせ"
+  },
+  "hints": {
+    "select": "クリックで選択、ドラッグで移動、Delete で削除。",
+    "pan": "ドラッグでパン、ホイールでズーム。",
+    "line": "2 点をクリック。",
+    "polyline": "点をクリックし、ダブルクリックか Enter で終了。",
+    "rect": "2 つの角をクリック。",
+    "circle": "中心、次に縁をクリック。",
+    "text": "文字を置く位置をクリック。",
+    "dimension": "2 点をクリックして計測し注記します。",
+    "calibrate": "長さが分かっている区間の両端をクリック。",
+    "align": "この図面、次に参照の同じ位置をクリック。これを 2 回。"
+  },
+  "ask": {
+    "text": "文字",
+    "length": "実長 (m)",
+    "ok": "OK",
+    "cancel": "キャンセル"
+  },
+  "calibrate": {
+    "done": "縮尺を設定しました: 1 単位 = {{value}} m。"
+  },
+  "generate": {
+    "title": "IFC から",
+    "needModel": "平面図や断面図を切り出すにはモデルを読み込んでください。",
+    "kind": "切断の種類",
+    "plan": "平面図",
+    "sectionX": "X 方向の断面",
+    "sectionY": "Y 方向の断面",
+    "level": "レベル",
+    "base": "モデルの基部",
+    "height": "レベルからの切断高さ",
+    "position": "断面の位置",
+    "run": "生成",
+    "planName": "平面図 {{level}} +{{height}} m",
+    "sectionName": "断面 {{axis}} {{pos}}%"
+  },
+  "sheetSection": "この図面",
+  "visible": "表示",
+  "in3d": "3D ビューに表示",
+  "elevation": "高さ",
+  "live": "ライブデバイス ({{count}})",
+  "page": "{{n}} / {{total}} ページ",
+  "units": "1 単位 = {{value}} m",
+  "noUnits": "縮尺なし: 縮尺の設定か位置合わせを使ってください。",
+  "fileCoords": "ファイルの座標",
+  "remove": "図面を閉じる",
+  "layers": {
+    "title": "レイヤー ({{count}})",
+    "new": "レイヤー",
+    "visible": "{{name}} を表示",
+    "color": "{{name}} の色",
+    "lock": "{{name}} をロック",
+    "delete": "{{name}} と内容を削除"
+  },
+  "export": {
+    "title": "書き出し",
+    "sheetTitle": "図面名",
+    "project": "プロジェクト",
+    "author": "作図者",
+    "paper": "用紙サイズ",
+    "dxfNoPage": "DXF には追加した線と文字が入り、PDF のページは入りません。",
+    "pdfLatin": "この PDF はラテン文字のみ書き出します。他の文字は「?」になります。SVG では保持されます。"
+  }
+}

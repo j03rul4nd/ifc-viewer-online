@@ -5,6 +5,7 @@ import { LanguageSelector } from './LanguageSelector'
 import { CaptureToolbar } from './CaptureToolbar'
 import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
+import { useDrawingStore } from '../stores/drawingStore'
 import { useUIStore } from '../stores/uiStore'
 import { haptic } from '../lib/haptics'
 import { useSceneStore } from '../stores/sceneStore'
@@ -276,6 +277,8 @@ export default function Toolbar({
   const { validationMode, toggleValidationMode, result } = useValidationStore()
   const qualityScore = result?.qualityScore ?? null
 
+  const drawingsOpen = useDrawingStore((s) => s.panelOpen)
+  const setDrawingsOpen = useDrawingStore((s) => s.setPanelOpen)
   const {
     treeVisible, setTreeVisible, openSidebarLegend, scenePanelOpen, toggleScenePanel,
     measurementPanelOpen, toggleMeasurementPanel, activeMeasurementTool,
@@ -838,6 +841,8 @@ export default function Toolbar({
           <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen} disabled={content.models === 0}
             badge={activePlanViewId ? '●' : undefined}
             onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
+          <MenuItem icon={PlansSVG} label={t('drawings')} active={drawingsOpen}
+            onClick={() => { setDrawingsOpen(!drawingsOpen); setOpenMenu(null) }} />
           {(isGisEnabled() || isSolarEnabled() || isFloodEnabled()) && (
             <>
               <MenuDivider />

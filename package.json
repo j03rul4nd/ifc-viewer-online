@@ -79,6 +79,7 @@
     "mediabunny": "1.59.0",
     "ogl": "^1.0.11",
     "pbf": "^4.0.2",
+    "pdfjs-dist": "^4.10.38",
     "posthog-js": "^1.376.0",
     "proj4": "^2.20.9",
     "qrcode-generator": "^2.0.4",

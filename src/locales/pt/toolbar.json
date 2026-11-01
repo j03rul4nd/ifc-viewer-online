@@ -27,6 +27,7 @@
   "section": "Corte",
   "clippingPlanes": "Planos de corte — seções",
   "plans": "Plantas",
+  "drawings": "Desenhos técnicos",
   "floorPlanViews": "Plantas baixas — seções por pavimento",
   "export": "Exportar",
   "exportModels": "Exportar {{count}} modelos",

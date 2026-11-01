@@ -27,6 +27,7 @@
   "section": "断面",
   "clippingPlanes": "クリッピングプレーン — 断面",
   "plans": "平面図",
+  "drawings": "図面",
   "floorPlanViews": "フロアプラン — 階断面",
   "export": "エクスポート",
   "exportModels": "{{count}} モデルをエクスポート",

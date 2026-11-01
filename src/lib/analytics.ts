@@ -561,6 +561,10 @@ export function trackFeatureUsed(props: {
     | 'ebook_download'
     | 'batch_fix_preview'
     | 'validation_only'
+    | 'drawing_import'
+    | 'drawing_generate'
+    | 'drawing_export'
+    | 'drawing_dwg_refused'
 }): void {
   track('feature_used', props)
 }
