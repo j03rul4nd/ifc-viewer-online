@@ -7,7 +7,7 @@ import { toast } from '../../stores/toastStore'
 import { bulkBindings, planBulkBind, type BulkMatchOptions } from '../../lib/twin/bulk-bind'
 import { deviceKey, newTwinId, type Binding, type Reading } from '../../lib/twin/devices'
 import { Btn, EmptyNote, Field, Hint, inputCls, MARGIN, Section, VirtualRows } from './ui'
-import { metricsLine, useSelectionRef, useShownReadings, useTwinElements, useTwinNav } from './nav'
+import { metricsLine, useSelectionRef, useShownReadings, useTwinElements, useTwinNav, deviceLabel } from './nav'
 import { BackBar } from './ProjectTab'
 
 export function DevicesTab() {
@@ -33,7 +33,7 @@ export function DevicesTab() {
   const bind = (r: Reading): void => {
     if (!sel) return
     const b: Binding = {
-      id: newTwinId('b'), name: `${sel.label} · ${r.deviceId}`, sourceId: r.sourceId, deviceId: r.deviceId,
+      id: newTwinId('b'), name: `${sel.label} · ${deviceLabel(r.deviceId)}`, sourceId: r.sourceId, deviceId: r.deviceId,
       targets: [sel], rules: [], staleColor: null, staleAfterS: 0,
     }
     useTwinDeviceStore.getState().upsertBinding(b)
@@ -57,7 +57,7 @@ export function DevicesTab() {
           return (
             <div className={`flex items-center gap-3 ${MARGIN} py-2 min-h-[52px] border-t border-[var(--border)]`}>
               <div className="flex-1 min-w-0">
-                <div className="truncate text-[12.5px] max-md:text-[14px] font-medium text-[var(--text)]">{r.deviceId}</div>
+                <div className="truncate text-[12.5px] max-md:text-[14px] font-medium text-[var(--text)]" title={r.deviceId}>{deviceLabel(r.deviceId)}</div>
                 <div className="truncate text-[11.5px] text-[var(--text-faint)] tabular-nums">{metricsLine(r) || '—'}</div>
               </div>
               {n > 0 && <span className="shrink-0 text-[11.5px] text-[var(--text-dim)]">{t('panel.bound', { count: n })}</span>}

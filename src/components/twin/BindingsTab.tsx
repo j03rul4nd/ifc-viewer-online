@@ -9,7 +9,7 @@ import { stateKeyOf, stateSummary } from '../../lib/twin/series'
 import type { Filter, FilterOp } from '../../lib/layers/style-groups'
 import { Expander } from '../geo/ui'
 import { Btn, EmptyNote, Field, Hint, IconBtn, inputCls, MARGIN, Section, VirtualRows } from './ui'
-import { ALERT_FILTER, metricsLine, timeOf, useSelectionRef, useShownReadings, useTwinElements, useTwinNav } from './nav'
+import { ALERT_FILTER, metricsLine, timeOf, useSelectionRef, useShownReadings, useTwinElements, useTwinNav, deviceLabel } from './nav'
 import { BackBar } from './ProjectTab'
 
 const OPS: FilterOp[] = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'isTrue', 'isFalse', 'contains', 'exists', 'missing']
@@ -94,7 +94,7 @@ export function BindingsTab() {
                 </span>
                 <span className={`block text-[11.5px] leading-[1.4] [overflow-wrap:anywhere] ${found ? 'text-[var(--text-faint)]' : 'text-[var(--warn,#e9a23b)]'}`}>
                   {ring && <span className="font-medium text-[var(--danger,#e0523f)]">{t('alerting')} · </span>}
-                  {b.deviceId} → {found ? t('targetsFound', { count: found }) : t('targetsMissing', { count: b.targets.length })}
+                  {deviceLabel(b.deviceId)} → {found ? t('targetsFound', { count: found }) : t('targetsMissing', { count: b.targets.length })}
                 </span>
               </button>
               <IconBtn label={t('panel.locate')} disabled={!found} onClick={() => focusTwinBinding(b.id)}><TargetIcon /></IconBtn>
@@ -133,7 +133,7 @@ export function BindingFlow({ id }: { id: string }) {
       <Section>
         <Field label={t('name')}><input className={inputCls} value={b.name} onChange={(e) => put({ name: e.target.value })} /></Field>
         <div className="flex flex-col gap-0.5">
-          <span className="text-[12px] font-medium text-[var(--text)]">{b.deviceId}</span>
+          <span className="min-w-0 [overflow-wrap:anywhere] text-[12px] font-medium text-[var(--text)]" title={b.deviceId}>{deviceLabel(b.deviceId)}</span>
           <Hint>{reading ? `${metricsLine(reading, 8)} · ${timeOf(reading.at)}` : t('nodata')}</Hint>
         </div>
       </Section>

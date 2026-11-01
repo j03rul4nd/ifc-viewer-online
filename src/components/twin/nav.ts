@@ -79,7 +79,12 @@ export function download(name: string, text: string, type = 'application/json'):
 
 export const timeOf = (ms: number | null): string => (ms ? new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—')
 
+/** What tells devices apart: a broker's URNs all begin the same, and a row cuts the end. */
+export const deviceLabel = (id: string): string => id.replace(/^urn:ngsi-ld:/, '')
+
 export function metricsLine(r: Reading, max = 3): string {
-  return r.props.filter((p) => !p.joined && p.field !== 'id' && p.field !== 'updated' && p.field !== 'kind')
-    .slice(0, max).map((p) => `${p.field} ${p.display}`).join(' · ')
+  const own = r.props.filter((p) => !p.joined)
+  const unit = (field: string): string => { const u = own.find((p) => p.field === `${field}_unit`); return u ? ` ${u.display}` : '' }
+  return own.filter((p) => !['id', 'updated', 'kind', 'type', 'lat', 'lon', 'observedAt'].includes(p.field) && !p.field.endsWith('_unit'))
+    .slice(0, max).map((p) => `${p.field} ${p.display}${unit(p.field)}`).join(' · ')
 }
